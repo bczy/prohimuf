@@ -6,6 +6,7 @@ import type { HudData } from "@render/ui/HUD";
 import { StartScreen } from "@render/ui/StartScreen";
 import { EndScreen } from "@render/ui/EndScreen";
 import { GameScene } from "./GameScene";
+import { STALINGRAD_19 as ACTIVE_MAP } from "@game/maps/stalingrad_19";
 import { useAudio } from "@hooks/useAudio";
 
 type AppPhase = "START" | "PLAYING" | "END";
@@ -93,10 +94,10 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          // Fit facade height to screen: map is 5 rows × 1 unit = 5 world units tall
-          // Also ensure width covers at least the VIEW_WIDTH=18 units
-          const zoomByHeight = (size.height - 40) / 5;
-          const zoomByWidth = size.width / 18;
+          // Fit facade to screen — derive from active map dimensions
+          const { rows, tileH, cols, tileW } = ACTIVE_MAP;
+          const zoomByHeight = (size.height - 40) / (rows * tileH);
+          const zoomByWidth = size.width / (cols * tileW);
           camera.zoom = Math.min(zoomByHeight, zoomByWidth);
           camera.updateProjectionMatrix();
         }}
