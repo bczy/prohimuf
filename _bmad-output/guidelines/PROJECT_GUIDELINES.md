@@ -244,34 +244,48 @@ Avant toute implémentation non-triviale, répondre à :
 
 ## 10. MVP — Séquence de Build
 
-### Sprint 0 — Setup
+### Sprint 0 — Setup ✅ DONE
 
 - Init projet Vite + React + TypeScript + R3F
-- Config ESLint + Prettier + Vitest
+- Config ESLint + Prettier + Vitest + commitlint
 - Architecture de dossiers
 - CI basique (lint + tests)
 
-### Sprint 1 — Boucle Core
+### Sprint 1 — Boucle Core ✅ DONE
 
-- Player entity (position, mouvement)
-- Une carte simple (un arrondissement)
-- Un point de pickup + un point de livraison
-- Un type de flic (patrouille simple)
-- Détection basique
-- Vitest sur tous les systèmes game/
+- Facade shooter : crosshair souris, ennemis dans fenêtres (state machine HIDDEN→DEAD)
+- Bullets joueur + retour de feu ennemis
+- Scroll horizontal aux bords (style Prohibition original)
+- 58 tests Vitest verts
+- Sprites wirés (facade_bg, enemy_sprite, enemy_shooting, crosshair, bullet_player)
 
-### Sprint 2 — Habillage
+### Sprint 2 — Système de Tiles & Cartes
 
-- Esthétique fanzine noir/blanc + néons
-- Effets Paper Mario dépliage
-- Audio boom bap + tension
+**Objectif :** Cartes grandes et variées définies par données, générées par tiling.
 
-### Sprint 3+ — Enrichissement
+- `TileType` enum : WALL, WINDOW_EMPTY, WINDOW_BREAKABLE, BALCONY, DOOR...
+- `TileMap` : grille 2D de TileType + metadata (nom, ambiance, tileset)
+- `TilesetDef` : pour chaque TileType, sprite + couleur fallback
+- `tileMapSystem` : parser + générateur de FacadeMap depuis TileMap (TDD)
+- Génération de tiles via Pollinations.ai (réutiliser scripts/generate-assets)
+- Au moins 2 cartes data-driven : `stalingrad_19.ts`, `vitry_94.ts`
+- Rendu : `TiledFacade` remplace `FacadeBackground` — affiche le tileset complet
 
-- Contacts recrutables (un par sprint)
-- Nouveaux arrondissements
-- Features UI (flyers, fanzine, leaderboard narratif)
-- Antagonistes supplémentaires
+### Sprint 3 — Habillage Fanzine
+
+- Esthétique noir/blanc photocopié + néons acides (jaune fluo, rose fuchsia, vert acide)
+- Règle : ce qui brille est interactif, ce qui est gris est décor
+- Effets Paper Mario : dépliage à l'apparition des ennemis
+- UI fanzine : HUD style coupure de journal, menu = couverture de zine
+- Audio boom bap adaptatif : tempo s'accélère quand ennemis approchent
+
+### Sprint 4+ — Enrichissement
+
+- 5 contacts recrutables (un par sprint) : DJ Masta Klem, Faïza, Seb le Blond, Oxane, Karim
+- RG en civil (micro-tells visuels, détectables à l'œil)
+- Indics (contact retourné = apparence normale)
+- Leaderboard narratif (UNE de journal fictif)
+- Niveau final : 31 décembre 1999
 
 ---
 

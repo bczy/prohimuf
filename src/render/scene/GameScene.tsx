@@ -1,7 +1,8 @@
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGameLoop } from "@hooks/useGameLoop";
-import { FACADE_01 } from "@game/maps/facade01";
+import { tileMapToFacade } from "@game/systems/tileMapSystem";
+import { STALINGRAD_19 } from "@game/maps/stalingrad_19";
 import type { HudData } from "@render/ui/HUD";
 import { FacadeBackground } from "./FacadeBackground";
 import { CrosshairSprite } from "./CrosshairSprite";
@@ -9,9 +10,12 @@ import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
 import { useMouse } from "@hooks/useMouse";
 
-// Facade total width in world units: 20 cols × 2 units = 40
-// Viewport shows ~18 units → scroll range = 40 - 18 = 22
-const FACADE_WORLD_WIDTH = FACADE_01.width * 2;
+const ACTIVE_MAP = STALINGRAD_19;
+const ACTIVE_FACADE = tileMapToFacade(ACTIVE_MAP);
+
+// Facade total width in world units: cols × tileW
+// Viewport shows ~18 units → scroll range = total - 18
+const FACADE_WORLD_WIDTH = ACTIVE_MAP.cols * ACTIVE_MAP.tileW;
 export const VIEW_WIDTH = 18;
 const SCROLL_RANGE = FACADE_WORLD_WIDTH - VIEW_WIDTH;
 const SCROLL_MIN = -(SCROLL_RANGE / 2);
@@ -28,7 +32,7 @@ interface Props {
 }
 
 export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
-  const stateRef = useGameLoop(FACADE_01, canvasRef, onHudUpdate);
+  const stateRef = useGameLoop(ACTIVE_FACADE, canvasRef, onHudUpdate);
   const mouseRef = useMouse(canvasRef);
   const { camera } = useThree();
 
@@ -48,12 +52,12 @@ export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
 
   return (
     <>
-      <FacadeBackground map={FACADE_01} />
-      {FACADE_01.slots.map((slot) => (
+      <FacadeBackground map={ACTIVE_FACADE} />
+      {ACTIVE_FACADE.slots.map((slot) => (
         <EnemySprite
           key={`${String(slot.col)}-${String(slot.row)}`}
           stateRef={stateRef}
-          slotIndex={slot.col + slot.row * FACADE_01.width}
+          slotIndex={slot.col + slot.row * ACTIVE_FACADE.width}
           screenPosition={slot.screenPosition}
         />
       ))}
