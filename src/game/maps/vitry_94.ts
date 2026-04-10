@@ -9,8 +9,8 @@ export const VITRY_94: TileMap = {
   name: "Vitry — 94",
   cols: 28,
   rows: 6,
-  tileW: 2,
-  tileH: 1.5,
+  tileW: 1,
+  tileH: 1,
   tiles: [
     // row 0 — toit plat
     [

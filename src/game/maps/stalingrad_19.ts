@@ -9,8 +9,8 @@ export const STALINGRAD_19: TileMap = {
   name: "Stalingrad — 19e",
   cols: 24,
   rows: 5,
-  tileW: 2,
-  tileH: 1.5,
+  tileW: 1,
+  tileH: 1,
   tiles: [
     // row 0 — toiture
     [

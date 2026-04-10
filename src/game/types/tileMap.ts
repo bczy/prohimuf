@@ -1,8 +1,9 @@
 export type TileType = "WALL" | "WINDOW_DARK" | "WINDOW_LIT" | "BALCONY" | "DOOR" | "ROOFTOP";
 
 export interface TilesetDef {
-  readonly sprite: string;
-  readonly fallbackColor: string;
+  readonly color: string;
+  /** Optional sprite — if omitted, only flat color is used */
+  readonly sprite?: string;
 }
 
 export type Tileset = Record<TileType, TilesetDef>;

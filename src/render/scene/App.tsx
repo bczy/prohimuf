@@ -93,8 +93,11 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          // Fit the 18-unit-wide facade to screen width
-          camera.zoom = size.width / 18;
+          // Fit facade height to screen: map is 5 rows × 1 unit = 5 world units tall
+          // Also ensure width covers at least the VIEW_WIDTH=18 units
+          const zoomByHeight = (size.height - 40) / 5;
+          const zoomByWidth = size.width / 18;
+          camera.zoom = Math.min(zoomByHeight, zoomByWidth);
           camera.updateProjectionMatrix();
         }}
       >

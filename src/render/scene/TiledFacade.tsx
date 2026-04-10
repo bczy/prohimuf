@@ -1,11 +1,10 @@
-import { memo, useEffect, useRef } from "react";
+import { memo } from "react";
 import type { JSX } from "react";
-import { TextureLoader } from "three";
-import type { Texture, Mesh, MeshBasicMaterial } from "three";
-import type { TileMap, TileType, Tileset } from "@game/types/tileMap";
+import type { TileMap, TileType } from "@game/types/tileMap";
 import { TILESET_DEFAULT } from "@game/maps/tileset_default";
 
-const TILESET: Tileset = TILESET_DEFAULT;
+// Window types get an inner "glow" inset panel
+const WINDOW_TYPES = new Set<TileType>(["WINDOW_DARK", "WINDOW_LIT"]);
 
 interface TileProps {
   tileType: TileType;
@@ -16,29 +15,59 @@ interface TileProps {
 }
 
 function TileMesh({ tileType, x, y, w, h }: TileProps): JSX.Element {
-  const meshRef = useRef<Mesh>(null);
-  const def = TILESET[tileType];
+  const def = TILESET_DEFAULT[tileType];
+  const isWindow = WINDOW_TYPES.has(tileType);
 
-  useEffect(() => {
-    const loader = new TextureLoader();
-    loader.load(
-      `${import.meta.env.BASE_URL}assets/tiles/${def.sprite}`,
-      (t: Texture) => {
-        const mesh = meshRef.current;
-        if (mesh === null) return;
-        const mat = mesh.material as MeshBasicMaterial;
-        mat.map = t;
-        mat.needsUpdate = true;
-      },
-      undefined,
-      () => undefined, // keep fallback color on error
+  if (isWindow) {
+    // Window: outer frame (wall color) + inner pane (window color)
+    const frameColor = TILESET_DEFAULT.WALL.color;
+    const paneW = w * 0.6;
+    const paneH = h * 0.65;
+    return (
+      <>
+        {/* Frame — same as wall */}
+        <mesh position={[x, y, -0.5]}>
+          <planeGeometry args={[w, h]} />
+          <meshBasicMaterial color={frameColor} />
+        </mesh>
+        {/* Pane */}
+        <mesh position={[x, y, -0.4]}>
+          <planeGeometry args={[paneW, paneH]} />
+          <meshBasicMaterial color={def.color} />
+        </mesh>
+        {/* Warm inner glow for lit windows */}
+        {tileType === "WINDOW_LIT" && (
+          <mesh position={[x, y, -0.3]}>
+            <planeGeometry args={[paneW * 0.6, paneH * 0.6]} />
+            <meshBasicMaterial color="#ffe0a0" transparent opacity={0.4} />
+          </mesh>
+        )}
+      </>
     );
-  }, [def.sprite]);
+  }
 
+  // Balcony: wall + thin ledge strip at bottom
+  if (tileType === "BALCONY") {
+    return (
+      <>
+        <mesh position={[x, y, -0.5]}>
+          <planeGeometry args={[w, h]} />
+          <meshBasicMaterial color={def.color} />
+        </mesh>
+        {/* Iron railing line */}
+        <mesh position={[x, y - h * 0.35, -0.4]}>
+          <planeGeometry args={[w, h * 0.08]} />
+          <meshBasicMaterial color="#111" />
+        </mesh>
+      </>
+    );
+  }
+
+  // All other tiles (WALL, ROOFTOP, DOOR): flat color
   return (
-    <mesh ref={meshRef} position={[x, y, -0.5]}>
+    <mesh position={[x, y, -0.5]}>
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial color={def.fallbackColor} />
+      <meshBasicMaterial color={def.color} />
     </mesh>
   );
 }
@@ -57,7 +86,6 @@ export const TiledFacade = memo(function TiledFacade({ map }: Props): JSX.Elemen
         row.map((tileType, colIdx) => {
           const x = colIdx * map.tileW - offsetX;
           const y = -(rowIdx * map.tileH - offsetY);
-          // DOOR is taller
           const h = tileType === "DOOR" ? map.tileH * 2 : map.tileH;
           return (
             <TileMesh
