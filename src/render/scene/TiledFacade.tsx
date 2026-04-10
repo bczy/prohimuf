@@ -2,144 +2,186 @@ import { memo, useMemo } from "react";
 import type { JSX } from "react";
 import { CanvasTexture } from "three";
 import type { TileMap, TileType } from "@game/types/tileMap";
-import { TILESET_DEFAULT } from "@game/maps/tileset_default";
 
 const WINDOW_TYPES = new Set<TileType>(["WINDOW_DARK", "WINDOW_LIT"]);
-const STRUCTURE_TYPES = new Set<TileType>(["WALL", "ROOFTOP", "BALCONY"]);
 
 function seededRand(seed: number): number {
   const x = Math.sin(seed + 1) * 43758.5453123;
   return x - Math.floor(x);
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  return [
-    parseInt(hex.slice(1, 3), 16),
-    parseInt(hex.slice(3, 5), 16),
-    parseInt(hex.slice(5, 7), 16),
-  ];
-}
+// Draw the entire facade as one canvas texture
+function makeFacadeTexture(map: TileMap): CanvasTexture {
+  const PX = 64; // pixels per tile
+  const W = map.cols * PX;
+  const H = map.rows * PX;
 
-function makeWallTexture(baseColor: string, seed: number): CanvasTexture {
-  const size = 128;
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (ctx === null) return new CanvasTexture(canvas);
 
-  const [r, g, b] = hexToRgb(baseColor);
-  const drift = (seededRand(seed * 7) - 0.5) * 16;
-  const vr = String(Math.round(Math.max(0, Math.min(255, r + drift))));
-  const vg = String(Math.round(Math.max(0, Math.min(255, g + drift * 0.8))));
-  const vb = String(Math.round(Math.max(0, Math.min(255, b + drift * 1.2))));
-  ctx.fillStyle = `rgb(${vr},${vg},${vb})`;
-  ctx.fillRect(0, 0, size, size);
+  // --- 1. Base wall fill ---
+  ctx.fillStyle = "#1e1530";
+  ctx.fillRect(0, 0, W, H);
 
-  const imgData = ctx.getImageData(0, 0, size, size);
+  // --- 2. Stone block pattern ---
+  // Horizontal mortar lines every ~20px
+  const blockH = 18;
+  const blockW = 48;
+  for (let py = 0; py < H; py += blockH) {
+    const row = Math.floor(py / blockH);
+    const offset = (row % 2) * (blockW / 2);
+    // Mortar line (darker)
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, py, W, 2);
+    // Vertical joints
+    for (let px = offset; px < W; px += blockW) {
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillRect(px, py, 2, blockH);
+    }
+  }
+
+  // --- 3. Pixel grain over entire wall ---
+  const imgData = ctx.getImageData(0, 0, W, H);
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
-    const noise = (seededRand(seed * 1000 + i) - 0.5) * 40;
+    const seed = i * 0.0001;
+    const noise = (seededRand(seed) - 0.5) * 28;
     const pr = data[i] ?? 0;
     const pg = data[i + 1] ?? 0;
     const pb = data[i + 2] ?? 0;
     data[i] = Math.max(0, Math.min(255, pr + noise));
-    data[i + 1] = Math.max(0, Math.min(255, pg + noise * 0.9));
-    data[i + 2] = Math.max(0, Math.min(255, pb + noise * 1.1));
+    data[i + 1] = Math.max(0, Math.min(255, pg + noise * 0.85));
+    data[i + 2] = Math.max(0, Math.min(255, pb + noise * 1.15));
   }
   ctx.putImageData(imgData, 0, 0);
 
-  for (let y = 0; y < size; y += 3) {
-    ctx.fillStyle = "rgba(0,0,0,0.06)";
-    ctx.fillRect(0, y, size, 1);
+  // --- 4. Horizontal scanlines (photocopied look) ---
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillStyle = "rgba(0,0,0,0.07)";
+    ctx.fillRect(0, y, W, 1);
   }
 
-  if (seededRand(seed * 3) > 0.65) {
-    const cx = Math.floor(seededRand(seed * 13) * size);
-    const len = 20 + Math.floor(seededRand(seed * 17) * 60);
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, 0);
-    ctx.lineTo(cx + (seededRand(seed * 19) - 0.5) * 10, len);
-    ctx.stroke();
-  }
+  // --- 5. Draw each tile on top ---
+  map.tiles.forEach((row, rowIdx) => {
+    row.forEach((tileType, colIdx) => {
+      const tx = colIdx * PX;
+      const ty = rowIdx * PX;
+      const seed = colIdx * 31 + rowIdx * 97;
+
+      if (tileType === "ROOFTOP") {
+        // Slightly darker top strip
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.fillRect(tx, ty, PX, PX);
+        // Zinc roof edge line
+        ctx.fillStyle = "#3a2d50";
+        ctx.fillRect(tx, ty + PX - 6, PX, 6);
+        return;
+      }
+
+      if (tileType === "DOOR") {
+        // Double door
+        ctx.fillStyle = "#0d0810";
+        ctx.fillRect(tx + 6, ty, PX - 12, PX * 2 - 4);
+        // Door frame
+        ctx.strokeStyle = "#3a2040";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(tx + 6, ty, PX - 12, PX * 2 - 4);
+        // Door split
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(tx + PX / 2 - 1, ty, 2, PX * 2 - 4);
+        // Interphone
+        ctx.fillStyle = "#ffe600";
+        ctx.fillRect(tx + PX - 14, ty + 8, 6, 4);
+        return;
+      }
+
+      if (tileType === "BALCONY") {
+        // Iron railing — thin horizontal bar + vertical pickets
+        const railY = ty + PX - 10;
+        ctx.fillStyle = "#111";
+        ctx.fillRect(tx, railY, PX, 3); // top rail
+        ctx.fillRect(tx, ty + PX - 3, PX, 3); // bottom rail
+        // Pickets
+        for (let px = tx + 6; px < tx + PX; px += 8) {
+          ctx.fillStyle = "#1a1020";
+          ctx.fillRect(px, railY, 2, 10);
+        }
+        return;
+      }
+
+      if (WINDOW_TYPES.has(tileType)) {
+        const isLit = tileType === "WINDOW_LIT";
+        const margin = 10;
+        const pw = PX - margin * 2;
+        const ph = PX - margin * 2 - 4;
+
+        // Window recess (darker wall area)
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillRect(tx + margin - 3, ty + margin - 3, pw + 6, ph + 6);
+
+        // Stone surround / lintel
+        ctx.fillStyle = "#2d2048";
+        ctx.fillRect(tx + margin - 2, ty + margin - 2, pw + 4, ph + 4);
+
+        if (isLit) {
+          // Warm glow fill
+          ctx.fillStyle = "#c84400";
+          ctx.fillRect(tx + margin, ty + margin, pw, ph);
+          // Bright center
+          const grad = ctx.createRadialGradient(
+            tx + PX / 2,
+            ty + PX / 2,
+            0,
+            tx + PX / 2,
+            ty + PX / 2,
+            pw * 0.6,
+          );
+          grad.addColorStop(0, "rgba(255,200,80,0.7)");
+          grad.addColorStop(1, "rgba(180,60,0,0)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(tx + margin, ty + margin, pw, ph);
+          // Window cross (frame)
+          ctx.fillStyle = "rgba(0,0,0,0.5)";
+          ctx.fillRect(tx + PX / 2 - 1, ty + margin, 2, ph);
+          ctx.fillRect(tx + margin, ty + PX / 2 - 1, pw, 2);
+        } else {
+          // Dark void
+          ctx.fillStyle = "#050308";
+          ctx.fillRect(tx + margin, ty + margin, pw, ph);
+          // Faint shutter lines
+          ctx.fillStyle = "rgba(30,20,50,0.8)";
+          for (let sy = ty + margin + 4; sy < ty + margin + ph; sy += 5) {
+            ctx.fillRect(tx + margin, sy, pw, 2);
+          }
+        }
+
+        // Occasional lighted window flicker mark
+        if (isLit && seededRand(seed * 5) > 0.7) {
+          ctx.fillStyle = "rgba(255,160,40,0.15)";
+          ctx.fillRect(tx, ty, PX, PX);
+        }
+        return;
+      }
+
+      // WALL — add subtle variation patch
+      if (seededRand(seed * 11) > 0.75) {
+        const stainX = tx + Math.floor(seededRand(seed * 3) * (PX - 10));
+        const stainY = ty + Math.floor(seededRand(seed * 7) * (PX - 20));
+        ctx.fillStyle = "rgba(0,0,0,0.12)";
+        ctx.fillRect(
+          stainX,
+          stainY,
+          8 + Math.floor(seededRand(seed) * 12),
+          16 + Math.floor(seededRand(seed * 13) * 20),
+        );
+      }
+    });
+  });
 
   return new CanvasTexture(canvas);
-}
-
-interface TileProps {
-  tileType: TileType;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  col: number;
-  row: number;
-}
-
-function TileMesh({ tileType, x, y, w, h, col, row }: TileProps): JSX.Element {
-  const def = TILESET_DEFAULT[tileType];
-  const seed = col * 31 + row * 97;
-
-  const wallTexture = useMemo(
-    () => (STRUCTURE_TYPES.has(tileType) ? makeWallTexture(def.color, seed) : null),
-    [],
-  );
-
-  if (WINDOW_TYPES.has(tileType)) {
-    const frameColor = TILESET_DEFAULT.WALL.color;
-    const paneW = w * 0.6;
-    const paneH = h * 0.65;
-    return (
-      <>
-        <mesh position={[x, y, -0.5]}>
-          <planeGeometry args={[w, h]} />
-          <meshBasicMaterial color={frameColor} />
-        </mesh>
-        <mesh position={[x, y, -0.4]}>
-          <planeGeometry args={[paneW, paneH]} />
-          <meshBasicMaterial color={def.color} />
-        </mesh>
-        {tileType === "WINDOW_LIT" && (
-          <mesh position={[x, y, -0.3]}>
-            <planeGeometry args={[paneW * 0.6, paneH * 0.6]} />
-            <meshBasicMaterial color="#ffe0a0" transparent opacity={0.4} />
-          </mesh>
-        )}
-      </>
-    );
-  }
-
-  if (tileType === "BALCONY") {
-    return (
-      <>
-        <mesh position={[x, y, -0.5]}>
-          <planeGeometry args={[w, h]} />
-          {wallTexture !== null ? (
-            <meshBasicMaterial map={wallTexture} />
-          ) : (
-            <meshBasicMaterial color={def.color} />
-          )}
-        </mesh>
-        <mesh position={[x, y - h * 0.35, -0.4]}>
-          <planeGeometry args={[w, h * 0.08]} />
-          <meshBasicMaterial color="#0a0710" />
-        </mesh>
-      </>
-    );
-  }
-
-  return (
-    <mesh position={[x, y, -0.5]}>
-      <planeGeometry args={[w, h]} />
-      {wallTexture !== null ? (
-        <meshBasicMaterial map={wallTexture} />
-      ) : (
-        <meshBasicMaterial color={def.color} />
-      )}
-    </mesh>
-  );
 }
 
 interface Props {
@@ -147,30 +189,15 @@ interface Props {
 }
 
 export const TiledFacade = memo(function TiledFacade({ map }: Props): JSX.Element {
-  const offsetX = (map.cols - 1) * map.tileW * 0.5;
-  const offsetY = (map.rows - 1) * map.tileH * 0.5;
+  const facadeW = map.cols * map.tileW;
+  const facadeH = map.rows * map.tileH;
+
+  const texture = useMemo(() => makeFacadeTexture(map), [map]);
 
   return (
-    <>
-      {map.tiles.map((row, rowIdx) =>
-        row.map((tileType, colIdx) => {
-          const x = colIdx * map.tileW - offsetX;
-          const y = -(rowIdx * map.tileH - offsetY);
-          const h = tileType === "DOOR" ? map.tileH * 2 : map.tileH;
-          return (
-            <TileMesh
-              key={`${String(colIdx)}-${String(rowIdx)}`}
-              tileType={tileType}
-              x={x}
-              y={y}
-              w={map.tileW}
-              h={h}
-              col={colIdx}
-              row={rowIdx}
-            />
-          );
-        }),
-      )}
-    </>
+    <mesh position={[0, 0, -0.5]}>
+      <planeGeometry args={[facadeW, facadeH]} />
+      <meshBasicMaterial map={texture} />
+    </mesh>
   );
 });
