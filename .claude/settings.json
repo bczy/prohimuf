@@ -61,7 +61,10 @@
       "Bash(echo \"test: $?\")",
       "Bash(git remote:*)",
       "Bash(rtk gh:*)",
-      "Bash(gh workflow:*)"
+      "Bash(gh workflow:*)",
+      "Bash(git push:*)",
+      "Bash(gh run:*)",
+      "Bash(rtk ps:*)"
     ]
   }
 }
