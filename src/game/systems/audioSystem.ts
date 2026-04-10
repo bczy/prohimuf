@@ -12,10 +12,12 @@ export interface AudioSystem {
 //   0.0–0.4  → calm  (bgm_loop)
 //   0.4–0.7  → tense (bgm_tension)
 //   0.7–1.0  → danger (bgm_danger)
+const BASE = import.meta.env.BASE_URL;
+
 const BGM_TRACKS = [
-  "/assets/audio/bgm_loop.mp3", // tier 0 — calm
-  "/assets/audio/bgm_tension.mp3", // tier 1 — tense
-  "/assets/audio/bgm_danger.mp3", // tier 2 — danger
+  `${BASE}assets/audio/bgm_loop.mp3`, // tier 0 — calm
+  `${BASE}assets/audio/bgm_tension.mp3`, // tier 1 — tense
+  `${BASE}assets/audio/bgm_danger.mp3`, // tier 2 — danger
 ] as const;
 
 const TENSION_THRESHOLDS = [0.4, 0.7] as const;
@@ -43,7 +45,7 @@ export function createAudioSystem(): AudioSystem {
 
   function getSfx(name: string): Howl {
     sfxCache[name] ??= new Howl({
-      src: [`/assets/audio/${name}.mp3`],
+      src: [`${BASE}assets/audio/${name}.mp3`],
       volume: 0.7,
     });
     return sfxCache[name];
