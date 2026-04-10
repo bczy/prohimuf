@@ -22,23 +22,20 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
   const ctx = canvas.getContext("2d");
   if (ctx === null) return new CanvasTexture(canvas);
 
-  // --- 1. Base wall fill ---
-  ctx.fillStyle = "#1e1530";
+  // --- 1. Base wall fill — pierre haussmannienne nuit, gris-bleu froid ---
+  ctx.fillStyle = "#2a2a35";
   ctx.fillRect(0, 0, W, H);
 
   // --- 2. Stone block pattern ---
-  // Horizontal mortar lines every ~20px
   const blockH = 18;
   const blockW = 48;
   for (let py = 0; py < H; py += blockH) {
     const row = Math.floor(py / blockH);
     const offset = (row % 2) * (blockW / 2);
-    // Mortar line (darker)
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
     ctx.fillRect(0, py, W, 2);
-    // Vertical joints
     for (let px = offset; px < W; px += blockW) {
-      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
       ctx.fillRect(px, py, 2, blockH);
     }
   }
@@ -48,7 +45,7 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
     const seed = i * 0.0001;
-    const noise = (seededRand(seed) - 0.5) * 28;
+    const noise = (seededRand(seed) - 0.5) * 22;
     const pr = data[i] ?? 0;
     const pg = data[i + 1] ?? 0;
     const pb = data[i + 2] ?? 0;
@@ -72,11 +69,9 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
       const seed = colIdx * 31 + rowIdx * 97;
 
       if (tileType === "ROOFTOP") {
-        // Slightly darker top strip
-        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
         ctx.fillRect(tx, ty, PX, PX);
-        // Zinc roof edge line
-        ctx.fillStyle = "#3a2d50";
+        ctx.fillStyle = "#3a3a48";
         ctx.fillRect(tx, ty + PX - 6, PX, 6);
         return;
       }
@@ -123,12 +118,12 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
         ctx.fillRect(tx + margin - 3, ty + margin - 3, pw + 6, ph + 6);
 
         // Stone surround / lintel
-        ctx.fillStyle = "#2d2048";
+        ctx.fillStyle = "#383840";
         ctx.fillRect(tx + margin - 2, ty + margin - 2, pw + 4, ph + 4);
 
         if (isLit) {
           // Warm glow fill
-          ctx.fillStyle = "#c84400";
+          ctx.fillStyle = "#e05000";
           ctx.fillRect(tx + margin, ty + margin, pw, ph);
           // Bright center
           const grad = ctx.createRadialGradient(
@@ -139,8 +134,8 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
             ty + PX / 2,
             pw * 0.6,
           );
-          grad.addColorStop(0, "rgba(255,200,80,0.7)");
-          grad.addColorStop(1, "rgba(180,60,0,0)");
+          grad.addColorStop(0, "rgba(255,220,120,0.9)");
+          grad.addColorStop(1, "rgba(220,80,0,0.1)");
           ctx.fillStyle = grad;
           ctx.fillRect(tx + margin, ty + margin, pw, ph);
           // Window cross (frame)
