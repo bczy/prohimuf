@@ -94,11 +94,16 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          // Fit facade to screen — derive from active map dimensions
-          const { rows, tileH, cols, tileW } = ACTIVE_MAP;
-          const zoomByHeight = (size.height - 40) / (rows * tileH);
-          const zoomByWidth = size.width / (cols * tileW);
+          // Show ~10 rows of the facade at a time (viewport height = 10 world units)
+          // Width: show ~18 cols at a time
+          const VIEW_ROWS = 10;
+          const VIEW_COLS = 18;
+          const zoomByHeight = (size.height - 40) / VIEW_ROWS;
+          const zoomByWidth = size.width / VIEW_COLS;
           camera.zoom = Math.min(zoomByHeight, zoomByWidth);
+          // Start camera at street level (bottom of facade)
+          const facadeH = ACTIVE_MAP.rows * ACTIVE_MAP.tileH;
+          camera.position.y = -(facadeH / 2 - VIEW_ROWS / 2);
           camera.updateProjectionMatrix();
         }}
       >

@@ -13,18 +13,24 @@ import { useMouse } from "@hooks/useMouse";
 const ACTIVE_MAP = STALINGRAD_19;
 const ACTIVE_FACADE = tileMapToFacade(ACTIVE_MAP);
 
-// Facade total width in world units: cols × tileW
-// Viewport shows ~18 units → scroll range = total - 18
-const FACADE_WORLD_WIDTH = ACTIVE_MAP.cols * ACTIVE_MAP.tileW;
-export const VIEW_WIDTH = 18;
-const SCROLL_RANGE = FACADE_WORLD_WIDTH - VIEW_WIDTH;
-const SCROLL_MIN = -(SCROLL_RANGE / 2);
-const SCROLL_MAX = SCROLL_RANGE / 2;
+const FACADE_W = ACTIVE_MAP.cols * ACTIVE_MAP.tileW;
+const FACADE_H = ACTIVE_MAP.rows * ACTIVE_MAP.tileH;
 
-// Edge scroll: trigger zone is 15% of screen width on each side
-const EDGE_ZONE = 0.15;
-// Scroll speed in world units per second
-const SCROLL_SPEED = 8;
+// Viewport in world units (will be refined by camera zoom, but approximated here)
+const VIEW_W = 18;
+const VIEW_H = 10; // approx — depends on aspect ratio
+
+// Horizontal scroll
+const H_SCROLL_MIN = -(FACADE_W - VIEW_W) / 2;
+const H_SCROLL_MAX = (FACADE_W - VIEW_W) / 2;
+
+// Vertical scroll: facade origin is at y=0 (centre), so top is +FACADE_H/2, bottom is -FACADE_H/2
+const V_SCROLL_MIN = -(FACADE_H - VIEW_H) / 2; // camera y min (looking down toward street)
+const V_SCROLL_MAX = (FACADE_H - VIEW_H) / 2; // camera y max (looking up toward roof)
+
+// Edge zones and speed
+const EDGE_ZONE = 0.12;
+const SCROLL_SPEED = 6;
 
 interface Props {
   onHudUpdate: (data: HudData) => void;
@@ -37,15 +43,30 @@ export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
   const { camera } = useThree();
 
   useFrame((_state, delta) => {
-    const mouseX = mouseRef.current.x;
-    let scrollDir = 0;
-    if (mouseX < EDGE_ZONE) scrollDir = -1;
-    else if (mouseX > 1 - EDGE_ZONE) scrollDir = 1;
+    const { x: mouseX, y: mouseY } = mouseRef.current;
 
-    if (scrollDir !== 0) {
+    // Horizontal scroll (left/right edges)
+    let scrollX = 0;
+    if (mouseX < EDGE_ZONE) scrollX = -1;
+    else if (mouseX > 1 - EDGE_ZONE) scrollX = 1;
+
+    if (scrollX !== 0) {
       camera.position.x = Math.max(
-        SCROLL_MIN,
-        Math.min(SCROLL_MAX, camera.position.x + scrollDir * SCROLL_SPEED * delta),
+        H_SCROLL_MIN,
+        Math.min(H_SCROLL_MAX, camera.position.x + scrollX * SCROLL_SPEED * delta),
+      );
+    }
+
+    // Vertical scroll (top/bottom edges)
+    let scrollY = 0;
+    if (mouseY < EDGE_ZONE)
+      scrollY = 1; // mouse at top → scroll up (positive y)
+    else if (mouseY > 1 - EDGE_ZONE) scrollY = -1; // mouse at bottom → scroll down
+
+    if (scrollY !== 0) {
+      camera.position.y = Math.max(
+        V_SCROLL_MIN,
+        Math.min(V_SCROLL_MAX, camera.position.y + scrollY * SCROLL_SPEED * delta),
       );
     }
   });
