@@ -12,18 +12,17 @@ export interface UseAudioReturn {
 export function useAudio(): UseAudioReturn {
   const audioRef = useRef<AudioSystem | null>(null);
 
-  audioRef.current ??= createAudioSystem();
-
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio === null) return;
     return () => {
-      audio.dispose();
+      audioRef.current?.dispose();
     };
   }, []);
 
+  // Lazy-init on first call — satisfies browser autoplay policy (must be
+  // triggered from a user gesture, not at component mount time)
   const playBgm = useCallback((): void => {
-    audioRef.current?.playBgm();
+    audioRef.current ??= createAudioSystem();
+    audioRef.current.playBgm();
   }, []);
 
   const stopBgm = useCallback((): void => {
