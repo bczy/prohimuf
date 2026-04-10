@@ -1,6 +1,12 @@
 import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 
+export interface TopdownHudData {
+  phase: Phase;
+  hasCargo: boolean;
+  detectionLevel: number;
+}
+
 export interface HudData {
   score: number;
   lives: number;

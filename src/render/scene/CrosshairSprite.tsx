@@ -1,8 +1,8 @@
 import { useRef, useMemo } from "react";
 import type { JSX } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CanvasTexture } from "three";
-import type { Mesh, MeshBasicMaterial, Camera } from "three";
+import type { Mesh, MeshBasicMaterial, Camera, OrthographicCamera } from "three";
 import type { GameState } from "@game/types/gameState";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 
@@ -83,6 +83,7 @@ interface Props {
 export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
   const meshRef = useRef<Mesh>(null);
   const texture = useMemo(() => makeCrosshairTexture(), []);
+  const { size } = useThree();
 
   useFrame(() => {
     const mesh = meshRef.current;
@@ -92,8 +93,11 @@ export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
       mat.map = texture;
       mat.needsUpdate = true;
     }
+    const ortho = cameraRef as OrthographicCamera;
+    const viewW = size.width / ortho.zoom;
+    const viewH = size.height / ortho.zoom;
     const { crosshair } = stateRef.current;
-    const local = crosshairToWorld(crosshair);
+    const local = crosshairToWorld(crosshair, viewW, viewH);
     mesh.position.x = local.x + cameraRef.position.x;
     mesh.position.y = local.y + cameraRef.position.y;
   });

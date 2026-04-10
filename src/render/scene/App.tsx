@@ -6,7 +6,7 @@ import type { HudData } from "@render/ui/HUD";
 import { StartScreen } from "@render/ui/StartScreen";
 import { EndScreen } from "@render/ui/EndScreen";
 import { GameScene } from "./GameScene";
-import { STALINGRAD_19 as ACTIVE_MAP } from "@game/maps/stalingrad_19";
+
 import { useAudio } from "@hooks/useAudio";
 
 type AppPhase = "START" | "PLAYING" | "END";
@@ -94,17 +94,28 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          // Fit the entire facade on screen (all rows + all cols visible at once)
-          const facadeW = ACTIVE_MAP.cols * ACTIVE_MAP.tileW;
-          const facadeH = ACTIVE_MAP.rows * ACTIVE_MAP.tileH;
-          const zoomByHeight = (size.height - 40) / facadeH;
-          const zoomByWidth = size.width / facadeW;
-          camera.zoom = Math.min(zoomByHeight, zoomByWidth);
-          camera.position.y = 0;
+          // rue_belliard: 4 buildings (12+10+8+14 cols) + 3 gaps of 2 = 50 units wide, 18 rows tall
+          const STREET_W = 50;
+          const STREET_H = 18;
+          // Fit street width into viewport — no sky gaps
+          const zoomByWidth = size.width / STREET_W;
+          // Never show more than STREET_H rows (tiles stay readable)
+          const zoomByHeight = (size.height - 40) / STREET_H;
+          camera.zoom = Math.max(zoomByWidth, zoomByHeight);
+          // Start camera showing RDC (ground floor) + road strip below buildings.
+          // Buildings span y=[-9,+9]. Shift camera down so bottom 3 units of view = road.
+          const viewH = size.height / camera.zoom;
+          // Center of view at: bottom_of_buildings - road_strip/2 + viewH/2
+          camera.position.y = -(STREET_H / 2) - 1.5 + viewH / 2;
           camera.updateProjectionMatrix();
         }}
       >
-        <ambientLight intensity={1.5} />
+        {/* Ambient chaud pour lisibilité globale */}
+        <ambientLight intensity={2.2} />
+        {/* Lumière rasante depuis la gauche — relief des joints de pierre */}
+        <directionalLight position={[-12, 2, 4]} intensity={0.8} />
+        {/* Contre-lumière bleue nuit depuis la droite */}
+        <directionalLight position={[10, -1, 3]} intensity={0.2} color="#2040a0" />
         <Suspense fallback={null}>
           <GameScene key={gameKey} onHudUpdate={setHudData} canvasRef={canvasRef} />
         </Suspense>

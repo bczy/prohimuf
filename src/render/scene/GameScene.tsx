@@ -1,32 +1,68 @@
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
 import { tileMapToFacade } from "@game/systems/tileMapSystem";
-import { STALINGRAD_19 } from "@game/maps/stalingrad_19";
+import { RUE_BELLIARD, BUILDING_GAP, STREET_HEIGHT } from "@game/maps/rue_belliard";
 import type { HudData } from "@render/ui/HUD";
 import { TiledFacade } from "./TiledFacade";
+import { StreetBackground } from "./StreetBackground";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
 import { useMouse } from "@hooks/useMouse";
 
-const ACTIVE_MAP = STALINGRAD_19;
-const ACTIVE_FACADE = tileMapToFacade(ACTIVE_MAP);
+// Build per-building facades and compute their world x offsets
+// Buildings are placed left-to-right, bottom-aligned to a common ground line
+const buildingLayouts = (() => {
+  const layouts: { offsetX: number; facade: ReturnType<typeof tileMapToFacade> }[] = [];
+  let cursorX = 0;
+  for (const map of RUE_BELLIARD) {
+    const buildingW = map.cols * map.tileW;
+    // Centre each building around its midpoint
+    const centerX = cursorX + buildingW / 2;
+    layouts.push({
+      offsetX: centerX,
+      facade: tileMapToFacade(map, centerX, STREET_HEIGHT),
+    });
+    cursorX += buildingW + BUILDING_GAP;
+  }
+  // Re-centre the entire street around x=0
+  const totalW = cursorX - BUILDING_GAP;
+  const streetCenterX = totalW / 2;
+  return layouts.map((l) => ({
+    offsetX: l.offsetX - streetCenterX,
+    facade: {
+      ...l.facade,
+      slots: l.facade.slots.map((s) => ({
+        ...s,
+        screenPosition: {
+          x: s.screenPosition.x - streetCenterX,
+          y: s.screenPosition.y,
+        },
+      })),
+    },
+  }));
+})();
 
-const FACADE_W = ACTIVE_MAP.cols * ACTIVE_MAP.tileW;
-const FACADE_H = ACTIVE_MAP.rows * ACTIVE_MAP.tileH;
+// Merge all slots into one FacadeMap for the game loop (slot indices are contiguous)
+const MERGED_FACADE = (() => {
+  const allSlots = buildingLayouts.flatMap((l) => l.facade.slots);
+  const maxCols = Math.max(...RUE_BELLIARD.map((m) => m.cols));
+  return {
+    width: maxCols,
+    height: STREET_HEIGHT,
+    slots: allSlots,
+  };
+})();
 
-// Viewport in world units (will be refined by camera zoom, but approximated here)
-const VIEW_W = 18;
-const VIEW_H = 10; // approx — depends on aspect ratio
+const FACADE_W = (() => {
+  let w = 0;
+  for (const map of RUE_BELLIARD) w += map.cols * map.tileW + BUILDING_GAP;
+  return w;
+})();
 
-// Horizontal scroll
-const H_SCROLL_MIN = -(FACADE_W - VIEW_W) / 2;
-const H_SCROLL_MAX = (FACADE_W - VIEW_W) / 2;
-
-// Vertical scroll: facade origin is at y=0 (centre), so top is +FACADE_H/2, bottom is -FACADE_H/2
-const V_SCROLL_MIN = -(FACADE_H - VIEW_H) / 2; // camera y min (looking down toward street)
-const V_SCROLL_MAX = (FACADE_H - VIEW_H) / 2; // camera y max (looking up toward roof)
+const FACADE_H = STREET_HEIGHT;
 
 // Edge zones and speed
 const EDGE_ZONE = 0.12;
@@ -38,47 +74,68 @@ interface Props {
 }
 
 export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
-  const stateRef = useGameLoop(ACTIVE_FACADE, canvasRef, onHudUpdate);
+  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate);
   const mouseRef = useMouse(canvasRef);
-  const { camera } = useThree();
+  const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
     const { x: mouseX, y: mouseY } = mouseRef.current;
+    const ortho = camera as OrthographicCamera;
 
-    // Horizontal scroll (left/right edges)
+    const viewW = size.width / ortho.zoom;
+    const viewH = size.height / ortho.zoom;
+
+    const hScrollMin = -(FACADE_W - viewW) / 2;
+    const hScrollMax = (FACADE_W - viewW) / 2;
+    // Include 4 units of road below buildings in the scrollable zone
+    const ROAD_EXTRA = 4;
+    const totalSceneH = FACADE_H + ROAD_EXTRA;
+    const vScrollMin = -(totalSceneH - viewH) / 2 - ROAD_EXTRA / 2;
+    const vScrollMax = (totalSceneH - viewH) / 2 + ROAD_EXTRA / 2;
+
     let scrollX = 0;
     if (mouseX < EDGE_ZONE) scrollX = -1;
     else if (mouseX > 1 - EDGE_ZONE) scrollX = 1;
 
     if (scrollX !== 0) {
       camera.position.x = Math.max(
-        H_SCROLL_MIN,
-        Math.min(H_SCROLL_MAX, camera.position.x + scrollX * SCROLL_SPEED * delta),
+        hScrollMin,
+        Math.min(hScrollMax, camera.position.x + scrollX * SCROLL_SPEED * delta),
       );
     }
 
-    // Vertical scroll (top/bottom edges)
     let scrollY = 0;
-    if (mouseY < EDGE_ZONE)
-      scrollY = 1; // mouse at top → scroll up (positive y)
-    else if (mouseY > 1 - EDGE_ZONE) scrollY = -1; // mouse at bottom → scroll down
+    if (mouseY < EDGE_ZONE) scrollY = 1;
+    else if (mouseY > 1 - EDGE_ZONE) scrollY = -1;
 
     if (scrollY !== 0) {
       camera.position.y = Math.max(
-        V_SCROLL_MIN,
-        Math.min(V_SCROLL_MAX, camera.position.y + scrollY * SCROLL_SPEED * delta),
+        vScrollMin,
+        Math.min(vScrollMax, camera.position.y + scrollY * SCROLL_SPEED * delta),
       );
     }
   });
 
   return (
     <>
-      <TiledFacade map={ACTIVE_MAP} />
-      {ACTIVE_FACADE.slots.map((slot) => (
+      <StreetBackground width={FACADE_W} height={STREET_HEIGHT * 2} groundY={-FACADE_H / 2} />
+      {buildingLayouts.map((layout, i) => {
+        const map = RUE_BELLIARD[i];
+        if (map === undefined) return null;
+        return (
+          <TiledFacade
+            key={i}
+            map={map}
+            worldOffsetX={layout.offsetX}
+            streetHeight={STREET_HEIGHT}
+          />
+        );
+      })}
+      {MERGED_FACADE.slots.map((slot, idx) => (
         <EnemySprite
-          key={`${String(slot.col)}-${String(slot.row)}`}
+          key={`slot-${String(idx)}`}
           stateRef={stateRef}
-          slotIndex={slot.col + slot.row * ACTIVE_FACADE.width}
+          slotIndex={idx}
           screenPosition={slot.screenPosition}
         />
       ))}

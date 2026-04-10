@@ -3,6 +3,58 @@ import type { JSX } from "react";
 import { CanvasTexture } from "three";
 import type { TileMap, TileType } from "@game/types/tileMap";
 
+function makeNormalMap(diffuseCanvas: HTMLCanvasElement): CanvasTexture {
+  const W = diffuseCanvas.width;
+  const H = diffuseCanvas.height;
+  const srcCtx = diffuseCanvas.getContext("2d");
+  const src = srcCtx?.getImageData(0, 0, W, H);
+  const sd = src?.data ?? new Uint8ClampedArray(W * H * 4);
+
+  // Luminance from RGB
+  const lum = (i: number) =>
+    0.299 * (sd[i] ?? 0) + 0.587 * (sd[i + 1] ?? 0) + 0.114 * (sd[i + 2] ?? 0);
+
+  const normal = document.createElement("canvas");
+  normal.width = W;
+  normal.height = H;
+  const nctx = normal.getContext("2d");
+  if (nctx === null) return new CanvasTexture(normal);
+  const dst = nctx.createImageData(W, H);
+  const dd = dst.data;
+
+  const strength = 10.0; // bump intensity — plus élevé = joints de pierre plus marqués
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const idx = (y * W + x) * 4;
+      const tl = lum(((y - 1 + H) % H) * W * 4 + ((x - 1 + W) % W) * 4);
+      const t = lum(((y - 1 + H) % H) * W * 4 + x * 4);
+      const tr = lum(((y - 1 + H) % H) * W * 4 + ((x + 1) % W) * 4);
+      const l = lum(y * W * 4 + ((x - 1 + W) % W) * 4);
+      const r = lum(y * W * 4 + ((x + 1) % W) * 4);
+      const bl = lum(((y + 1) % H) * W * 4 + ((x - 1 + W) % W) * 4);
+      const b = lum(((y + 1) % H) * W * 4 + x * 4);
+      const br = lum(((y + 1) % H) * W * 4 + ((x + 1) % W) * 4);
+
+      // Sobel
+      const dx = (tr + 2 * r + br - tl - 2 * l - bl) / 255;
+      const dy = (bl + 2 * b + br - tl - 2 * t - tr) / 255;
+
+      // Normalise to [0,255]
+      const nx = -dx * strength;
+      const ny = -dy * strength;
+      const len = Math.sqrt(nx * nx + ny * ny + 1);
+      dd[idx] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+      dd[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+      dd[idx + 2] = Math.round(((1 / len) * 0.5 + 0.5) * 255);
+      dd[idx + 3] = 255;
+    }
+  }
+
+  nctx.putImageData(dst, 0, 0);
+  return new CanvasTexture(normal);
+}
+
 const WINDOW_TYPES = new Set<TileType>(["WINDOW_DARK", "WINDOW_LIT"]);
 
 function seededRand(seed: number): number {
@@ -39,7 +91,7 @@ const LIGHT_VARIANTS: [string, string, string, string][] = [
   ["#1a1500", "rgba(255,240,100,1)", "rgba(200,180,10,0.55)", "rgba(180,160,0,0.08)"], // jaune fluo
 ];
 
-function makeFacadeTexture(map: TileMap): CanvasTexture {
+function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
   const PX = 80; // pixels per tile — plus grand = plus de détail
   const W = map.cols * PX;
   const H = map.rows * PX;
@@ -48,7 +100,7 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d");
-  if (ctx === null) return new CanvasTexture(canvas);
+  if (ctx === null) return canvas;
 
   // ── 1. Gradient de fond : plus sombre en haut (ciel), plus chaud en bas (rue) ──
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -364,6 +416,134 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
         return;
       }
 
+      // ── SHOP : vitrine commerciale ──
+      if (tileType === "SHOP") {
+        // Grande baie vitrée
+        const sw = PX - 8;
+        const sh = PX - 14;
+        const sx2 = tx + 4;
+        const sy2 = ty + 6;
+        // Cadre métal sombre
+        ctx.fillStyle = "#282030";
+        ctx.fillRect(sx2 - 3, sy2 - 3, sw + 6, sh + 6);
+        // Vitrine — couleur selon seed
+        const shopPick = seed % 4;
+        if (shopPick === 0) {
+          // Boucherie — néon rouge
+          ctx.fillStyle = "#0c0508";
+          ctx.fillRect(sx2, sy2, sw, sh);
+          const shopGrad = ctx.createLinearGradient(sx2, sy2, sx2, sy2 + sh);
+          shopGrad.addColorStop(0, "rgba(200,20,20,0.25)");
+          shopGrad.addColorStop(1, "rgba(80,0,0,0.05)");
+          ctx.fillStyle = shopGrad;
+          ctx.fillRect(sx2, sy2, sw, sh);
+          // Enseigne néon
+          ctx.fillStyle = "rgba(255,60,60,0.7)";
+          ctx.fillRect(sx2 + 6, sy2 + 4, sw - 12, 3);
+        } else if (shopPick === 1) {
+          // Tabac — jaune
+          ctx.fillStyle = "#080604";
+          ctx.fillRect(sx2, sy2, sw, sh);
+          ctx.fillStyle = "rgba(220,180,0,0.3)";
+          ctx.fillRect(sx2, sy2, sw, sh);
+          // Losange tabac
+          ctx.fillStyle = "rgba(220,180,0,0.6)";
+          const mid = sx2 + sw / 2;
+          ctx.beginPath();
+          ctx.moveTo(mid, sy2 + 4);
+          ctx.lineTo(mid + 8, sy2 + 10);
+          ctx.lineTo(mid, sy2 + 16);
+          ctx.lineTo(mid - 8, sy2 + 10);
+          ctx.closePath();
+          ctx.fill();
+        } else if (shopPick === 2) {
+          // Bar — enseigne bleue
+          ctx.fillStyle = "#04080c";
+          ctx.fillRect(sx2, sy2, sw, sh);
+          const barGrad = ctx.createLinearGradient(sx2, sy2, sx2 + sw, sy2);
+          barGrad.addColorStop(0, "rgba(20,60,160,0.2)");
+          barGrad.addColorStop(0.5, "rgba(60,120,220,0.35)");
+          barGrad.addColorStop(1, "rgba(20,60,160,0.2)");
+          ctx.fillStyle = barGrad;
+          ctx.fillRect(sx2, sy2, sw, sh);
+          // Néon "BAR"
+          ctx.fillStyle = "rgba(80,160,255,0.8)";
+          ctx.fillRect(sx2 + 8, sy2 + 5, 6, 3);
+          ctx.fillRect(sx2 + 16, sy2 + 5, 6, 3);
+          ctx.fillRect(sx2 + 24, sy2 + 5, 6, 3);
+        } else {
+          // Pharmacie — croix verte
+          ctx.fillStyle = "#040806";
+          ctx.fillRect(sx2, sy2, sw, sh);
+          ctx.fillStyle = "rgba(0,200,80,0.5)";
+          const cx3 = sx2 + sw / 2;
+          ctx.fillRect(cx3 - 2, sy2 + 4, 4, 12);
+          ctx.fillRect(cx3 - 6, sy2 + 8, 12, 4);
+        }
+        // Reflet sur la vitrine
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.fillRect(sx2, sy2, sw * 0.3, sh);
+        // Panneau au-dessus
+        ctx.fillStyle = "#1a1828";
+        ctx.fillRect(tx, ty, PX, 6);
+        return;
+      }
+
+      // ── FIRE_ESCAPE : escalier métallique ──
+      if (tileType === "FIRE_ESCAPE") {
+        // Fond mur normal (déjà dessiné) + structure métallique
+        // Montants verticaux
+        ctx.fillStyle = "#1a1828";
+        ctx.fillRect(tx + PX * 0.2, ty, 3, PX);
+        ctx.fillRect(tx + PX * 0.75, ty, 3, PX);
+        // Reflet
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillRect(tx + PX * 0.2, ty, 1, PX);
+        ctx.fillRect(tx + PX * 0.75, ty, 1, PX);
+        // Palier horizontal au centre
+        ctx.fillStyle = "#252338";
+        ctx.fillRect(tx + PX * 0.15, ty + PX * 0.45, PX * 0.65, 5);
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(tx + PX * 0.15, ty + PX * 0.45 + 5, PX * 0.65, 2);
+        // Barreau diagonal — escalier
+        ctx.fillStyle = "#1e1c30";
+        for (let step = 0; step < 4; step++) {
+          const sy3 = ty + PX * 0.05 + step * PX * 0.1;
+          ctx.fillRect(tx + PX * 0.2, sy3, PX * 0.55, 2);
+        }
+        // Rouille / oxydation
+        ctx.fillStyle = "rgba(120,50,10,0.12)";
+        ctx.fillRect(tx + PX * 0.2, ty + PX * 0.6, 3, PX * 0.3);
+        return;
+      }
+
+      // ── ARCH : arcade décorative haussmannienne ──
+      if (tileType === "ARCH") {
+        // Pilastre gauche et droit
+        ctx.fillStyle = "#484660";
+        ctx.fillRect(tx, ty, 10, PX);
+        ctx.fillRect(tx + PX - 10, ty, 10, PX);
+        // Reflet pilastre
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        ctx.fillRect(tx, ty, 3, PX);
+        ctx.fillRect(tx + PX - 10, ty, 3, PX);
+        // Arc en plein cintre
+        ctx.fillStyle = "#3a3850";
+        ctx.beginPath();
+        ctx.ellipse(tx + PX / 2, ty + PX * 0.45, PX * 0.35, PX * 0.35, 0, Math.PI, 0);
+        ctx.fill();
+        // Clé de voûte
+        ctx.fillStyle = "#555370";
+        ctx.fillRect(tx + PX / 2 - 5, ty + PX * 0.08, 10, 8);
+        // Ombre portée de l'arcade
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(tx + 10, ty + PX * 0.45, PX - 20, PX * 0.55);
+        // Moulure corniche
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillRect(tx, ty + PX * 0.8, PX, 3);
+        return;
+      }
+
       // ── WALL : détails procéduraux ──
       const wallV = seededRand(seed * 11);
       if (wallV > 0.72) {
@@ -437,22 +617,100 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
     });
   });
 
-  return new CanvasTexture(canvas);
+  return canvas;
 }
 
 interface Props {
   map: TileMap;
+  /** World x position of the building centre (default 0) */
+  worldOffsetX?: number;
+  /** Total street height in rows — building is bottom-aligned within this height */
+  streetHeight?: number;
 }
 
-export const TiledFacade = memo(function TiledFacade({ map }: Props): JSX.Element {
+// Depth constants (world units)
+const CORNICE_DEPTH = 0.22; // how far cornices stick out from the facade
+const CORNICE_H = 0.12; // height of each cornice band
+const BASE_DEPTH = 0.35; // soubassement sticks out more
+const BASE_H = 0.18;
+const FACADE_Z = 0; // facade plane z
+const SIDE_SHADOW_W = 0.15; // width of the right-edge shadow strip
+
+export const TiledFacade = memo(function TiledFacade({
+  map,
+  worldOffsetX = 0,
+  streetHeight,
+}: Props): JSX.Element {
   const facadeW = map.cols * map.tileW;
   const facadeH = map.rows * map.tileH;
-  const texture = useMemo(() => makeFacadeTexture(map), [map]);
+  const yOffset = streetHeight !== undefined ? -((streetHeight - map.rows) * map.tileH) / 2 : 0;
+
+  // Absolute world coords of the mesh centre
+  const cx = worldOffsetX;
+  const cy = yOffset;
+
+  // Building base Y (bottom edge of building in world space)
+  const baseY = cy - facadeH / 2;
+
+  const { diffuse, normal } = useMemo(() => {
+    const diffuseCanvas = makeFacadeCanvas(map);
+    return {
+      diffuse: new CanvasTexture(diffuseCanvas),
+      normal: makeNormalMap(diffuseCanvas),
+    };
+  }, [map]);
+
+  // Cornice positions: one per floor boundary (every tileH rows)
+  // Skip row 0 (top of building) — only interior joints
+  const cornices = useMemo(() => {
+    const result: number[] = [];
+    for (let row = 1; row < map.rows; row++) {
+      // y in world space: top of building minus row*tileH, offset to mesh centre
+      const worldY = cy + facadeH / 2 - row * map.tileH;
+      result.push(worldY);
+    }
+    return result;
+  }, [map, cy, facadeH]);
 
   return (
-    <mesh position={[0, 0, -0.5]}>
-      <planeGeometry args={[facadeW, facadeH]} />
-      <meshBasicMaterial map={texture} />
-    </mesh>
+    <>
+      {/* Main facade plane */}
+      <mesh position={[cx, cy, FACADE_Z]}>
+        <planeGeometry args={[facadeW, facadeH]} />
+        <meshStandardMaterial
+          map={diffuse}
+          normalMap={normal}
+          normalScale={[2.5, 2.5]}
+          roughness={0.6}
+          metalness={0.0}
+        />
+      </mesh>
+
+      {/* Corniches inter-étages — horizontal bands that stick out */}
+      {cornices.map((worldY, i) => (
+        <mesh key={i} position={[cx, worldY, FACADE_Z + CORNICE_DEPTH / 2]} castShadow>
+          <boxGeometry args={[facadeW, CORNICE_H, CORNICE_DEPTH]} />
+          <meshStandardMaterial color="#38354e" roughness={0.7} metalness={0.05} />
+        </mesh>
+      ))}
+
+      {/* Soubassement — heavier base that sticks out more */}
+      <mesh position={[cx, baseY + BASE_H / 2, FACADE_Z + BASE_DEPTH / 2]} castShadow>
+        <boxGeometry args={[facadeW, BASE_H, BASE_DEPTH]} />
+        <meshStandardMaterial color="#28253a" roughness={0.8} metalness={0.0} />
+      </mesh>
+
+      {/* Right-edge shadow — thin dark strip simulating depth on the right side */}
+      <mesh position={[cx + facadeW / 2 + SIDE_SHADOW_W / 2, cy, FACADE_Z - 0.1]}>
+        <planeGeometry args={[SIDE_SHADOW_W, facadeH]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.55} />
+      </mesh>
+
+      {/* Top-edge dark band — sky meets rooftop */}
+      <mesh position={[cx, cy + facadeH / 2 + 0.05, FACADE_Z - 0.1]}>
+        <planeGeometry args={[facadeW, 0.1]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.4} />
+      </mesh>
+    </>
   );
 });
