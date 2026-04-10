@@ -10,7 +10,10 @@ export function moveCrosshair(mouseX: number, mouseY: number): Crosshair {
   };
 }
 
-export function crosshairToWorld(crosshair: Crosshair, viewW: number, viewH: number): Vec2 {
+export const VIEW_W = 18;
+export const VIEW_H = 12;
+
+export function crosshairToWorld(crosshair: Crosshair, viewW = VIEW_W, viewH = VIEW_H): Vec2 {
   return {
     x: (crosshair.position.x - 0.5) * viewW || 0,
     y: -(crosshair.position.y - 0.5) * viewH || 0,

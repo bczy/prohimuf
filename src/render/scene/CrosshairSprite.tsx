@@ -7,8 +7,6 @@ import type { GameState } from "@game/types/gameState";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 
 const CROSSHAIR_COLOR = "#00ffff";
-const VIEW_W = 18;
-const VIEW_H = 12;
 
 interface Props {
   stateRef: React.RefObject<GameState>;
@@ -41,7 +39,7 @@ export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
     if (mesh === null) return;
     const { crosshair } = stateRef.current;
     // Offset by camera X so crosshair stays under the mouse while facade scrolls
-    const local = crosshairToWorld(crosshair, VIEW_W, VIEW_H);
+    const local = crosshairToWorld(crosshair);
     mesh.position.x = local.x + cameraRef.position.x;
     mesh.position.y = local.y;
   });
