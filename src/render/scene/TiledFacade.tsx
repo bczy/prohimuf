@@ -23,7 +23,7 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
   if (ctx === null) return new CanvasTexture(canvas);
 
   // --- 1. Base wall fill — pierre haussmannienne nuit, gris-bleu froid ---
-  ctx.fillStyle = "#2a2a35";
+  ctx.fillStyle = "#3e3e50";
   ctx.fillRect(0, 0, W, H);
 
   // --- 2. Stone block pattern ---
@@ -71,7 +71,7 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
       if (tileType === "ROOFTOP") {
         ctx.fillStyle = "rgba(0,0,0,0.25)";
         ctx.fillRect(tx, ty, PX, PX);
-        ctx.fillStyle = "#3a3a48";
+        ctx.fillStyle = "#4a4a5a";
         ctx.fillRect(tx, ty + PX - 6, PX, 6);
         return;
       }
@@ -118,7 +118,7 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
         ctx.fillRect(tx + margin - 3, ty + margin - 3, pw + 6, ph + 6);
 
         // Stone surround / lintel
-        ctx.fillStyle = "#383840";
+        ctx.fillStyle = "#484858";
         ctx.fillRect(tx + margin - 2, ty + margin - 2, pw + 4, ph + 4);
 
         if (isLit) {
