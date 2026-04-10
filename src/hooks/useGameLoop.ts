@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import type { OrthographicCamera } from "three";
 import { createInitialState, tickGameState } from "@game/systems/stateMachine";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
@@ -17,12 +18,15 @@ export function useGameLoop(
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
   const gameStateRef = useRef<GameState>(createInitialState(facade));
-  const { camera } = useThree();
+  const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
     const safeDelta = Math.min(delta, MAX_DELTA);
     const prev = gameStateRef.current;
     const mouse = mouseRef.current;
+    const ortho = camera as OrthographicCamera;
+    const viewW = size.width / ortho.zoom;
+    const viewH = size.height / ortho.zoom;
 
     if (
       (prev.phase === "GAME_OVER" || prev.phase === "LEVEL_COMPLETE") &&
@@ -40,6 +44,8 @@ export function useGameLoop(
       safeDelta,
       facade,
       camera.position.x,
+      viewW,
+      viewH,
     );
     gameStateRef.current = next;
 
