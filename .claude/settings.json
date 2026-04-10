@@ -59,7 +59,9 @@
       "Bash(echo \"lint: $?\")",
       "Bash(echo \"format: $?\")",
       "Bash(echo \"test: $?\")",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "Bash(rtk gh:*)",
+      "Bash(gh workflow:*)"
     ]
   }
 }

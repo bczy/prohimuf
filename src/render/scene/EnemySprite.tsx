@@ -14,8 +14,14 @@ interface Props {
 
 export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX.Element {
   const meshRef = useRef<Mesh>(null);
-  const idleTexture = useLoader(TextureLoader, "/assets/enemy_sprite.png");
-  const shootTexture = useLoader(TextureLoader, "/assets/enemy_shooting.png");
+  const idleTexture = useLoader(
+    TextureLoader,
+    `${import.meta.env.BASE_URL}assets/enemy_sprite.png`,
+  );
+  const shootTexture = useLoader(
+    TextureLoader,
+    `${import.meta.env.BASE_URL}assets/enemy_shooting.png`,
+  );
 
   useFrame(() => {
     const mesh = meshRef.current;

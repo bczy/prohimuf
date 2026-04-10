@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import type { JSX } from "react";
 import { Canvas } from "@react-three/fiber";
 import { HUD } from "@render/ui/HUD";
@@ -94,7 +94,9 @@ export function App(): JSX.Element {
         style={{ width: "100%", height: "100%", background: "#000000" }}
       >
         <ambientLight intensity={0.5} />
-        <GameScene key={gameKey} onHudUpdate={setHudData} canvasRef={canvasRef} />
+        <Suspense fallback={null}>
+          <GameScene key={gameKey} onHudUpdate={setHudData} canvasRef={canvasRef} />
+        </Suspense>
       </Canvas>
       <HUD data={hudData} />
     </div>

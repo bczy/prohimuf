@@ -13,7 +13,7 @@ interface Props {
 }
 
 export const FacadeBackground = memo(function FacadeBackground({ map }: Props): JSX.Element {
-  const bgTexture = useLoader(TextureLoader, "/assets/facade_bg.png");
+  const bgTexture = useLoader(TextureLoader, `${import.meta.env.BASE_URL}assets/facade_bg.png`);
 
   const bgWidth = map.width * 2 + 2;
   const bgHeight = map.height * 1.5 + 2;
