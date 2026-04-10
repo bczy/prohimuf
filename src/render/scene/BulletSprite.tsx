@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { Mesh, MeshBasicMaterial } from "three";
+import { TextureLoader } from "three";
+import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 
 const MAX_BULLETS = 20;
@@ -14,6 +15,19 @@ interface Props {
 
 export function BulletSprite({ stateRef }: Props): JSX.Element {
   const meshRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_BULLETS }, () => null));
+  const playerTexRef = useRef<Texture | null>(null);
+
+  useEffect(() => {
+    const loader = new TextureLoader();
+    loader.load(
+      `${import.meta.env.BASE_URL}assets/bullet_player.png`,
+      (t) => {
+        playerTexRef.current = t;
+      },
+      undefined,
+      () => undefined,
+    );
+  }, []);
 
   useFrame(() => {
     const bullets = stateRef.current.bullets;
@@ -29,7 +43,18 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       mesh.position.x = bullet.position.x;
       mesh.position.y = bullet.position.y;
       const mat = mesh.material as MeshBasicMaterial;
-      mat.color.set(bullet.fromPlayer ? PLAYER_BULLET_COLOR : ENEMY_BULLET_COLOR);
+      if (bullet.fromPlayer && playerTexRef.current !== null) {
+        if (mat.map !== playerTexRef.current) {
+          mat.map = playerTexRef.current;
+          mat.needsUpdate = true;
+        }
+      } else {
+        if (mat.map !== null) {
+          mat.map = null;
+          mat.needsUpdate = true;
+        }
+        mat.color.set(bullet.fromPlayer ? PLAYER_BULLET_COLOR : ENEMY_BULLET_COLOR);
+      }
     }
   });
 
@@ -44,7 +69,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
           visible={false}
         >
           <circleGeometry args={[0.1, 8]} />
-          <meshBasicMaterial color={PLAYER_BULLET_COLOR} />
+          <meshBasicMaterial color={PLAYER_BULLET_COLOR} transparent />
         </mesh>
       ))}
     </>
