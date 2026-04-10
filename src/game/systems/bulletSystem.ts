@@ -9,19 +9,16 @@ const HIT_RADIUS = 0.8;
 const OUT_OF_BOUNDS_X = 20;
 const OUT_OF_BOUNDS_Y = 15;
 
-// Bullet always fires straight up (toward the building facade)
-// cameraOffsetX is the horizontal scroll offset of the camera in world units
-export const VIEW_W = 18;
-export const VIEW_H = 12;
-
 export function fireBullet(
   crosshair: Crosshair,
   fromPlayer: boolean,
   nextId: number,
   cameraOffsetX = 0,
+  viewW = 18,
+  viewH = 12,
 ): Bullet {
-  const worldX = (crosshair.position.x - 0.5) * VIEW_W + cameraOffsetX;
-  const worldY = -(crosshair.position.y - 0.5) * VIEW_H;
+  const worldX = (crosshair.position.x - 0.5) * viewW + cameraOffsetX;
+  const worldY = -(crosshair.position.y - 0.5) * viewH;
   return {
     id: nextId,
     position: { x: worldX, y: worldY },
