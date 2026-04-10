@@ -65,7 +65,17 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
     ctx.fillRect(0, y, W, 1);
   }
 
-  // --- 5. Draw each tile on top ---
+  // --- 5. Floor cornices between rows (horizontal ledge at each floor boundary) ---
+  for (let rowIdx = 1; rowIdx < map.rows; rowIdx++) {
+    const cy = rowIdx * PX;
+    // Stone ledge — slightly lighter than wall
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(0, cy - 3, W, 3);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(0, cy, W, 2);
+  }
+
+  // --- 6. Draw each tile on top ---
   map.tiles.forEach((row, rowIdx) => {
     row.forEach((tileType, colIdx) => {
       const tx = colIdx * PX;
@@ -94,20 +104,6 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
         // Interphone
         ctx.fillStyle = "#ffe600";
         ctx.fillRect(tx + PX - 14, ty + 8, 6, 4);
-        return;
-      }
-
-      if (tileType === "BALCONY") {
-        // Iron railing — thin horizontal bar + vertical pickets
-        const railY = ty + PX - 10;
-        ctx.fillStyle = "#111";
-        ctx.fillRect(tx, railY, PX, 3); // top rail
-        ctx.fillRect(tx, ty + PX - 3, PX, 3); // bottom rail
-        // Pickets
-        for (let px = tx + 6; px < tx + PX; px += 8) {
-          ctx.fillStyle = "#1a1020";
-          ctx.fillRect(px, railY, 2, 10);
-        }
         return;
       }
 
