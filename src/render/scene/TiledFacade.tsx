@@ -26,17 +26,21 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
   ctx.fillStyle = "#3e3e50";
   ctx.fillRect(0, 0, W, H);
 
-  // --- 2. Stone block pattern ---
+  // --- 2. Stone block pattern (subtle joints, not full-width lines) ---
   const blockH = 18;
-  const blockW = 48;
+  const blockW = 44;
   for (let py = 0; py < H; py += blockH) {
     const row = Math.floor(py / blockH);
     const offset = (row % 2) * (blockW / 2);
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fillRect(0, py, W, 2);
+    // Horizontal joint — short segments per block, not full width
     for (let px = offset; px < W; px += blockW) {
-      ctx.fillStyle = "rgba(0,0,0,0.2)";
-      ctx.fillRect(px, py, 2, blockH);
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.fillRect(px + 2, py, blockW - 4, 1);
+    }
+    // Vertical joints
+    for (let px = offset; px < W; px += blockW) {
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.fillRect(px, py + 1, 1, blockH - 2);
     }
   }
 
