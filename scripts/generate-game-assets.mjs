@@ -28,17 +28,49 @@ const ASSETS = [
   },
   {
     name: "enemy_sprite",
-    description: "Enemy sprite — undercover cop standing",
+    description: "Enemy sprite — undercover cop standing (variant 1)",
     prompt:
       "Paris 90s undercover cop, plain clothes, standing in window, fanzine photocopy style, high contrast black white, neon yellow glow outline, flat sprite, game character, no background transparent",
     width: 128,
     height: 128,
   },
   {
+    name: "enemy_sprite_2",
+    description: "Enemy sprite — plainclothes detective standing (variant 2)",
+    prompt:
+      "Paris 90s plainclothes detective, trench coat, arms crossed, standing in dark window, fanzine photocopy style, high contrast black white, neon cyan glow outline, flat sprite, game character, no background transparent",
+    width: 128,
+    height: 128,
+  },
+  {
+    name: "enemy_sprite_3",
+    description: "Enemy sprite — BAC officer standing (variant 3)",
+    prompt:
+      "Paris 90s BAC police officer, dark uniform, cap, standing menacing in window, fanzine photocopy style, high contrast black white, neon red glow outline, flat sprite, game character, no background transparent",
+    width: 128,
+    height: 128,
+  },
+  {
     name: "enemy_shooting",
-    description: "Enemy sprite — undercover cop shooting",
+    description: "Enemy sprite — undercover cop shooting (variant 1)",
     prompt:
       "Paris 90s undercover cop shooting gun from window, fanzine photocopy style, high contrast black white, orange neon glow, flat sprite, game character, no background transparent",
+    width: 128,
+    height: 128,
+  },
+  {
+    name: "enemy_shooting_2",
+    description: "Enemy sprite — plainclothes detective shooting (variant 2)",
+    prompt:
+      "Paris 90s plainclothes detective firing pistol sideways from window, fanzine photocopy style, high contrast black white, cyan neon glow, flat sprite, game character, no background transparent",
+    width: 128,
+    height: 128,
+  },
+  {
+    name: "enemy_shooting_3",
+    description: "Enemy sprite — BAC officer shooting (variant 3)",
+    prompt:
+      "Paris 90s BAC police officer shooting from window, two-handed grip, fanzine photocopy style, high contrast black white, red neon glow, flat sprite, game character, no background transparent",
     width: 128,
     height: 128,
   },

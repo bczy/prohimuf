@@ -29,24 +29,36 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
   const prevStateRef = useRef<string>("HIDDEN");
 
   useEffect(() => {
+    // Pick variant 1–3 deterministically per slot, fall back to variant 1 on 404
+    const v = (slotIndex % 3) + 1;
+    const suffix = v === 1 ? "" : `_${String(v)}`;
     const loader = new TextureLoader();
+    const fallbackLoad = (ref: React.MutableRefObject<Texture | null>, fallbackPath: string) =>
+      loader.load(
+        fallbackPath,
+        (t) => {
+          ref.current = t;
+        },
+        undefined,
+        () => undefined,
+      );
     loader.load(
-      `${import.meta.env.BASE_URL}assets/enemy_sprite.png`,
+      `${import.meta.env.BASE_URL}assets/enemy_sprite${suffix}.png`,
       (t) => {
         idleTextureRef.current = t;
       },
       undefined,
-      () => undefined,
+      () => fallbackLoad(idleTextureRef, `${import.meta.env.BASE_URL}assets/enemy_sprite.png`),
     );
     loader.load(
-      `${import.meta.env.BASE_URL}assets/enemy_shooting.png`,
+      `${import.meta.env.BASE_URL}assets/enemy_shooting${suffix}.png`,
       (t) => {
         shootTextureRef.current = t;
       },
       undefined,
-      () => undefined,
+      () => fallbackLoad(shootTextureRef, `${import.meta.env.BASE_URL}assets/enemy_shooting.png`),
     );
-  }, []);
+  }, [slotIndex]);
 
   useFrame((_state, delta) => {
     const mesh = meshRef.current;
