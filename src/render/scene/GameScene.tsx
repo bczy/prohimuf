@@ -4,7 +4,7 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import { tileMapToFacade } from "@game/systems/tileMapSystem";
 import { STALINGRAD_19 } from "@game/maps/stalingrad_19";
 import type { HudData } from "@render/ui/HUD";
-import { FacadeBackground } from "./FacadeBackground";
+import { TiledFacade } from "./TiledFacade";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
@@ -52,7 +52,7 @@ export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
 
   return (
     <>
-      <FacadeBackground map={ACTIVE_FACADE} />
+      <TiledFacade map={ACTIVE_MAP} />
       {ACTIVE_FACADE.slots.map((slot) => (
         <EnemySprite
           key={`${String(slot.col)}-${String(slot.row)}`}
