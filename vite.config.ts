@@ -12,7 +12,7 @@ export default defineConfig({
       "@hooks": resolve(__dirname, "src/hooks"),
     },
   },
-  base: "/muf/",
+  base: "/prohimuf/",
   build: {
     target: "es2022",
     outDir: "dist",
