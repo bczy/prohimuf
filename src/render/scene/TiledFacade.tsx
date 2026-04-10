@@ -122,41 +122,78 @@ function makeFacadeTexture(map: TileMap): CanvasTexture {
         ctx.fillRect(tx + margin - 2, ty + margin - 2, pw + 4, ph + 4);
 
         if (isLit) {
-          // Warm glow fill
-          ctx.fillStyle = "#e05000";
+          // Varied light color per window: warm orange, yellow, amber, red-orange, cold white
+          const lightVariants: [string, string, string][] = [
+            ["#d04800", "rgba(255,210,100,0.9)", "rgba(210,70,0,0.1)"], // orange chaud
+            ["#c03000", "rgba(255,160,60,0.9)", "rgba(180,40,0,0.1)"], // rouge-orange
+            ["#b05000", "rgba(255,230,80,0.85)", "rgba(200,80,0,0.1)"], // jaune ambré
+            ["#a04020", "rgba(255,180,80,0.9)", "rgba(160,50,0,0.1)"], // ambre profond
+            ["#204060", "rgba(180,220,255,0.7)", "rgba(20,60,120,0.05)"], // lumière froide TV/écran
+          ];
+          const variant = lightVariants[seed % lightVariants.length] ?? [
+            "#d04800",
+            "rgba(255,210,100,0.9)",
+            "rgba(210,70,0,0.1)",
+          ];
+          ctx.fillStyle = variant[0];
           ctx.fillRect(tx + margin, ty + margin, pw, ph);
-          // Bright center
+
           const grad = ctx.createRadialGradient(
             tx + PX / 2,
             ty + PX / 2,
             0,
             tx + PX / 2,
             ty + PX / 2,
-            pw * 0.6,
+            pw * 0.65,
           );
-          grad.addColorStop(0, "rgba(255,220,120,0.9)");
-          grad.addColorStop(1, "rgba(220,80,0,0.1)");
+          grad.addColorStop(0, variant[1]);
+          grad.addColorStop(1, variant[2]);
           ctx.fillStyle = grad;
           ctx.fillRect(tx + margin, ty + margin, pw, ph);
-          // Window cross (frame)
-          ctx.fillStyle = "rgba(0,0,0,0.5)";
+
+          // Window frame cross
+          ctx.fillStyle = "rgba(0,0,0,0.45)";
           ctx.fillRect(tx + PX / 2 - 1, ty + margin, 2, ph);
           ctx.fillRect(tx + margin, ty + PX / 2 - 1, pw, 2);
-        } else {
-          // Dark void
-          ctx.fillStyle = "#050308";
-          ctx.fillRect(tx + margin, ty + margin, pw, ph);
-          // Faint shutter lines
-          ctx.fillStyle = "rgba(30,20,50,0.8)";
-          for (let sy = ty + margin + 4; sy < ty + margin + ph; sy += 5) {
-            ctx.fillRect(tx + margin, sy, pw, 2);
-          }
-        }
 
-        // Occasional lighted window flicker mark
-        if (isLit && seededRand(seed * 5) > 0.7) {
-          ctx.fillStyle = "rgba(255,160,40,0.15)";
-          ctx.fillRect(tx, ty, PX, PX);
+          // Silhouette in some windows (person standing)
+          if (seededRand(seed * 17) > 0.6) {
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            const sx = tx + PX / 2 - 3 + Math.floor((seededRand(seed * 23) - 0.5) * 8);
+            const headR = 3;
+            // Head
+            ctx.beginPath();
+            ctx.arc(sx, ty + margin + 6, headR, 0, Math.PI * 2);
+            ctx.fill();
+            // Body
+            ctx.fillRect(sx - 3, ty + margin + 9, 6, ph - 14);
+          }
+        } else {
+          // Dark void — varied: some black, some with partial shutters
+          const darkVariant = seed % 3;
+          if (darkVariant === 0) {
+            // Pure void
+            ctx.fillStyle = "#020105";
+            ctx.fillRect(tx + margin, ty + margin, pw, ph);
+          } else if (darkVariant === 1) {
+            // Half-closed shutters
+            ctx.fillStyle = "#080510";
+            ctx.fillRect(tx + margin, ty + margin, pw, ph);
+            ctx.fillStyle = "#1a1428";
+            const shutterH = Math.floor(ph * (0.3 + seededRand(seed * 7) * 0.4));
+            ctx.fillRect(tx + margin, ty + margin, pw, shutterH);
+            // Shutter slats
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            for (let sy = ty + margin + 3; sy < ty + margin + shutterH; sy += 4) {
+              ctx.fillRect(tx + margin, sy, pw, 1);
+            }
+          } else {
+            // Faint blue night light inside (reflet ciel)
+            ctx.fillStyle = "#060410";
+            ctx.fillRect(tx + margin, ty + margin, pw, ph);
+            ctx.fillStyle = "rgba(40,40,80,0.4)";
+            ctx.fillRect(tx + margin, ty + margin, pw, ph / 2);
+          }
         }
         return;
       }
