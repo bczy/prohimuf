@@ -1,0 +1,78 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-04-11T00:00:00.000Z",
+    "last_updated": "2026-04-11T00:15:00.000Z"
+  },
+  "mode": "full_rescan",
+  "scan_level": "deep",
+  "project_root": "/Users/bertrand.coizy/git/perso/muf",
+  "project_knowledge": "/Users/bertrand.coizy/git/perso/muf/docs",
+  "project_type_id": "game",
+  "repository_type": "monolith",
+  "completed_steps": [
+    {
+      "step": "step_0.5",
+      "status": "completed",
+      "timestamp": "2026-04-11T00:00:00.000Z",
+      "summary": "Loaded doc requirements for game project type"
+    },
+    {
+      "step": "step_1",
+      "status": "completed",
+      "timestamp": "2026-04-11T00:00:00.000Z",
+      "summary": "Classified as monolith, project_type=game, TypeScript/R3F"
+    },
+    {
+      "step": "step_3",
+      "status": "completed",
+      "timestamp": "2026-04-11T00:05:00.000Z",
+      "summary": "Tech stack: React 19 + R3F + Three.js + Vitest + Howler.js"
+    },
+    {
+      "step": "step_4",
+      "status": "completed",
+      "timestamp": "2026-04-11T00:10:00.000Z",
+      "summary": "Scanned all src/ — game systems, render layer, maps, hooks"
+    },
+    {
+      "step": "step_9",
+      "status": "completed",
+      "timestamp": "2026-04-11T00:15:00.000Z",
+      "summary": "Updated render-layer.md (3D depth geometry), roadmap.md (Sprint 2 depth items), index.md"
+    }
+  ],
+  "current_step": "complete",
+  "findings": {
+    "project_name": "muf (Prohibition Remake)",
+    "tech_stack": [
+      "React 19",
+      "React Three Fiber",
+      "Three.js",
+      "TypeScript strict",
+      "Vite",
+      "Vitest",
+      "Howler.js",
+      "Yarn 4"
+    ],
+    "architecture": "game-logic / render strict separation",
+    "game_type": "2D shooting gallery (Prohibition Atari ST remake)",
+    "active_map": "rue_belliard — 4 buildings variable heights, 50×18 world units",
+    "test_count": 107,
+    "key_changes_since_last_scan": [
+      "TiledFacade: added 3D depth geometry (cornices boxGeometry, soubassement, edge shadow strips)",
+      "StreetBackground: groundY prop for precise sky/pavement alignment",
+      "GameScene: multi-building layout from rue_belliard, MERGED_FACADE slot system",
+      "tileMapToFacade: worldOffsetX + streetHeight params for bottom-alignment",
+      "Lighting revised: 3 directional lights to sculpt cornice depth",
+      "App.tsx: camera zoom by street dimensions, road-strip initial position"
+    ]
+  },
+  "outputs_generated": [
+    "project-scan-report.json",
+    "docs/render-layer.md (updated — 3D depth section)",
+    "docs/roadmap.md (updated — Sprint 2 depth items)",
+    "docs/index.md (updated — rescan date + quick reference table)"
+  ],
+  "resume_instructions": "Rescan complete. All docs current."
+}
