@@ -10,4 +10,7 @@ export const TILESET_DEFAULT: Tileset = {
   DOOR: { color: "#1a0a0a" }, // heavy dark entrance
   WINDOW_DARK: { color: "#080510" }, // void — no one home, pure black
   WINDOW_LIT: { color: "#ff6600" }, // neon orange glow — someone's there
+  SHOP: { color: "#1a0a20" }, // vitrine commerciale
+  FIRE_ESCAPE: { color: "#2a2030" }, // escalier de secours
+  ARCH: { color: "#2a1f3d" }, // arcade haussmannienne
 };
