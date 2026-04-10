@@ -1,4 +1,13 @@
-export type TileType = "WALL" | "WINDOW_DARK" | "WINDOW_LIT" | "BALCONY" | "DOOR" | "ROOFTOP";
+export type TileType =
+  | "WALL"
+  | "WINDOW_DARK"
+  | "WINDOW_LIT"
+  | "BALCONY"
+  | "DOOR"
+  | "ROOFTOP"
+  | "SHOP" // vitrine commerciale au rdc
+  | "FIRE_ESCAPE" // escalier de secours métallique sur le mur
+  | "ARCH"; // arcade haussmannienne (mur plein avec arc décoratif)
 
 export interface TilesetDef {
   readonly color: string;
