@@ -120,20 +120,22 @@ function sleep(ms) {
 
 function fetchImage(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        fetchImage(res.headers.location).then(resolve).catch(reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      res.on("data", (chunk) => chunks.push(chunk));
-      res.on("end", () => resolve(Buffer.concat(chunks)));
-    }).on("error", reject);
+    https
+      .get(url, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          fetchImage(res.headers.location).then(resolve).catch(reject);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => resolve(Buffer.concat(chunks)));
+      })
+      .on("error", reject);
   });
 }
 
@@ -179,9 +181,7 @@ async function main() {
 
   if (args.includes("--list")) {
     console.log("Available assets:");
-    ASSETS.forEach((a) =>
-      console.log(`  ${a.name.padEnd(32)} ${a.description}`)
-    );
+    ASSETS.forEach((a) => console.log(`  ${a.name.padEnd(32)} ${a.description}`));
     return;
   }
 

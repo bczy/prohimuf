@@ -6,7 +6,8 @@ const { mockHowlInstance, mockHowler } = vi.hoisted(() => {
     stop: vi.fn(),
     playing: vi.fn(() => false),
     rate: vi.fn(),
-    volume: vi.fn(),
+    volume: vi.fn(() => 0),
+    fade: vi.fn(),
   };
   const mockHowler = {
     stop: vi.fn(),
@@ -51,18 +52,23 @@ describe("createAudioSystem", () => {
     }).not.toThrow();
   });
 
-  it("setTension(0) sets rate to 0.9 and volume to 0.4", () => {
+  it("setTension(0) triggers crossfade (fade called)", () => {
     const audio = createAudioSystem();
     audio.setTension(0);
-    expect(mockHowlInstance.rate).toHaveBeenCalledWith(0.9);
-    expect(mockHowlInstance.volume).toHaveBeenCalledWith(0.4);
+    expect(mockHowlInstance.fade).toHaveBeenCalled();
   });
 
-  it("setTension(1) sets rate to 1.2 and volume to 0.8", () => {
+  it("setTension(1) triggers crossfade to danger tier", () => {
     const audio = createAudioSystem();
     audio.setTension(1);
-    expect(mockHowlInstance.rate).toHaveBeenCalledWith(expect.closeTo(1.2, 5));
-    expect(mockHowlInstance.volume).toHaveBeenCalledWith(expect.closeTo(0.8, 5));
+    expect(mockHowlInstance.fade).toHaveBeenCalled();
+  });
+
+  it("setTension adjusts rate on current track", () => {
+    const audio = createAudioSystem();
+    audio.playBgm();
+    audio.setTension(0.5);
+    expect(mockHowlInstance.rate).toHaveBeenCalled();
   });
 
   it("playBgm calls play when not already playing", () => {
@@ -74,14 +80,19 @@ describe("createAudioSystem", () => {
   it("playBgm does not call play when already playing", () => {
     mockHowlInstance.playing.mockReturnValue(true);
     const audio = createAudioSystem();
+    // First playBgm starts tier 0 — play is called once (not playing → play)
+    audio.playBgm();
+    vi.clearAllMocks();
+    mockHowlInstance.playing.mockReturnValue(true);
+    // Second call — same tier, crossfadeTo no-ops
     audio.playBgm();
     expect(mockHowlInstance.play).not.toHaveBeenCalled();
   });
 
-  it("stopBgm calls stop", () => {
+  it("stopBgm calls fade on all tracks", () => {
     const audio = createAudioSystem();
     audio.stopBgm();
-    expect(mockHowlInstance.stop).toHaveBeenCalled();
+    expect(mockHowlInstance.fade).toHaveBeenCalled();
   });
 
   it("dispose calls Howler.stop and Howler.unload", () => {

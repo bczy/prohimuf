@@ -42,7 +42,24 @@
       "Bash(rtk curl:*)",
       "Bash(chmod +x .husky/commit-msg)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(r['identifier'], r.get\\('title',''\\)\\) for r in d['response']['docs']]\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Cipher.mp3\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jazzy%20Frenchy.mp3\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Hip%20Hop%20Feel.mp3\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Darkest%20Child.mp3\")",
+      "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Reformat.mp3\")",
+      "Bash(node scripts/download-audio.mjs)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(git rm:*)",
+      "Bash(yarn format:check)",
+      "Bash(yarn format:*)",
+      "Bash(echo \"typecheck: $?\")",
+      "Bash(echo \"lint: $?\")",
+      "Bash(echo \"format: $?\")",
+      "Bash(echo \"test: $?\")",
+      "Bash(git remote:*)"
     ]
   }
 }

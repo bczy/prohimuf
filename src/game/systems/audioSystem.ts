@@ -8,12 +8,36 @@ export interface AudioSystem {
   dispose(): void;
 }
 
+// Three tension tiers:
+//   0.0–0.4  → calm  (bgm_loop)
+//   0.4–0.7  → tense (bgm_tension)
+//   0.7–1.0  → danger (bgm_danger)
+const BGM_TRACKS = [
+  "/assets/audio/bgm_loop.mp3", // tier 0 — calm
+  "/assets/audio/bgm_tension.mp3", // tier 1 — tense
+  "/assets/audio/bgm_danger.mp3", // tier 2 — danger
+] as const;
+
+const TENSION_THRESHOLDS = [0.4, 0.7] as const;
+
+function getTier(level: number): number {
+  if (level >= TENSION_THRESHOLDS[1]) return 2;
+  if (level >= TENSION_THRESHOLDS[0]) return 1;
+  return 0;
+}
+
 export function createAudioSystem(): AudioSystem {
-  const bgm = new Howl({
-    src: ["/assets/audio/bgm_loop.mp3"],
-    loop: true,
-    volume: 0.4,
-  });
+  const bgms = BGM_TRACKS.map(
+    (src) =>
+      new Howl({
+        src: [src],
+        loop: true,
+        volume: 0,
+      }),
+  );
+
+  let currentTier = -1;
+  const FADE_MS = 800;
 
   const sfxCache: Partial<Record<string, Howl>> = {};
 
@@ -25,23 +49,60 @@ export function createAudioSystem(): AudioSystem {
     return sfxCache[name];
   }
 
+  function crossfadeTo(tier: number, targetVolume: number): void {
+    if (tier === currentTier) return;
+
+    // Fade out current tier
+    if (currentTier >= 0) {
+      const prev = bgms[currentTier];
+      if (prev !== undefined) {
+        prev.fade(prev.volume(), 0, FADE_MS);
+        setTimeout(() => {
+          prev.stop();
+        }, FADE_MS);
+      }
+    }
+
+    // Fade in new tier
+    const next = bgms[tier];
+    if (next !== undefined) {
+      if (!next.playing()) next.play();
+      next.fade(0, targetVolume, FADE_MS);
+    }
+
+    currentTier = tier;
+  }
+
   return {
     playBgm(): void {
-      if (!bgm.playing()) {
-        bgm.play();
+      if (currentTier === -1) {
+        crossfadeTo(0, 0.5);
       }
     },
 
     stopBgm(): void {
-      bgm.stop();
+      bgms.forEach((h) => {
+        h.fade(h.volume(), 0, FADE_MS);
+      });
+      setTimeout(() => {
+        bgms.forEach((h) => {
+          h.stop();
+        });
+      }, FADE_MS);
+      currentTier = -1;
     },
 
     setTension(level: number): void {
       const clamped = Math.min(1, Math.max(0, level));
-      const rate = 0.9 + clamped * 0.3;
-      const volume = 0.4 + clamped * 0.4;
-      bgm.rate(rate);
-      bgm.volume(volume);
+      const tier = getTier(clamped);
+      // Volume scales 0.4→0.75 with tension
+      const volume = 0.4 + clamped * 0.35;
+      crossfadeTo(tier, volume);
+      // Also adjust rate on current track for subtle feel
+      const current = bgms[currentTier >= 0 ? currentTier : 0];
+      if (current !== undefined) {
+        current.rate(0.95 + clamped * 0.1);
+      }
     },
 
     playSfx(name: "shoot" | "hit" | "death" | "win"): void {

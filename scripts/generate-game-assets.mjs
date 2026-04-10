@@ -97,9 +97,7 @@ async function generateImage(asset, retries = 5) {
     } catch (e) {
       if (i < retries - 1) {
         const wait = (i + 1) * 15000;
-        console.log(
-          `  [retry ${i + 1}] ${e.message} — waiting ${wait / 1000}s...`
-        );
+        console.log(`  [retry ${i + 1}] ${e.message} — waiting ${wait / 1000}s...`);
         await sleep(wait);
       } else {
         throw e;
