@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { createInitialState, tickGameState } from "@game/systems/stateMachine";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
@@ -17,6 +17,7 @@ export function useGameLoop(
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
   const gameStateRef = useRef<GameState>(createInitialState(facade));
+  const { camera } = useThree();
 
   useFrame((_state, delta) => {
     const safeDelta = Math.min(delta, MAX_DELTA);
@@ -31,7 +32,15 @@ export function useGameLoop(
       return;
     }
 
-    const next = tickGameState(prev, mouse.fire, mouse.x, mouse.y, safeDelta, facade);
+    const next = tickGameState(
+      prev,
+      mouse.fire,
+      mouse.x,
+      mouse.y,
+      safeDelta,
+      facade,
+      camera.position.x,
+    );
     gameStateRef.current = next;
 
     if (

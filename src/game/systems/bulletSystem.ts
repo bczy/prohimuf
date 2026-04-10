@@ -10,8 +10,14 @@ const OUT_OF_BOUNDS_X = 20;
 const OUT_OF_BOUNDS_Y = 15;
 
 // Bullet always fires straight up (toward the building facade)
-export function fireBullet(crosshair: Crosshair, fromPlayer: boolean, nextId: number): Bullet {
-  const worldX = (crosshair.position.x - 0.5) * 20;
+// cameraOffsetX is the horizontal scroll offset of the camera in world units
+export function fireBullet(
+  crosshair: Crosshair,
+  fromPlayer: boolean,
+  nextId: number,
+  cameraOffsetX = 0,
+): Bullet {
+  const worldX = (crosshair.position.x - 0.5) * 20 + cameraOffsetX;
   const worldY = -(crosshair.position.y - 0.5) * 12;
   return {
     id: nextId,

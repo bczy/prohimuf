@@ -34,6 +34,7 @@ export function tickGameState(
   mouseY: number,
   delta: number,
   facade: FacadeMap,
+  cameraOffsetX = 0,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     return state;
@@ -58,7 +59,7 @@ export function tickGameState(
   let bullets: readonly Bullet[] = state.bullets;
   if (fire) {
     _nextBulletId++;
-    bullets = [...bullets, fireBullet(crosshair, true, _nextBulletId)];
+    bullets = [...bullets, fireBullet(crosshair, true, _nextBulletId, cameraOffsetX)];
   }
 
   // 5. SHOOTING enemies fire at player

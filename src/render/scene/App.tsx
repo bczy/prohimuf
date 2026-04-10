@@ -98,7 +98,7 @@ export function App(): JSX.Element {
           camera.updateProjectionMatrix();
         }}
       >
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={1.5} />
         <Suspense fallback={null}>
           <GameScene key={gameKey} onHudUpdate={setHudData} canvasRef={canvasRef} />
         </Suspense>

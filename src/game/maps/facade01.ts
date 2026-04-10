@@ -1,8 +1,8 @@
 import type { FacadeMap } from "@game/types/map";
 
-// 8 colonnes × 4 rangées de fenêtres
-// screenPosition : x = col * 2 - 7,  y = -(row * 1.5 - 2.25)
-const COLS = 8;
+// 20 colonnes × 4 rangées — plus large que le viewport (~10 unités visibles)
+// screenPosition : x = col * 2 - 19,  y = -(row * 1.5 - 2.25)
+const COLS = 20;
 const ROWS = 4;
 
 export const FACADE_01: FacadeMap = {
@@ -12,7 +12,7 @@ export const FACADE_01: FacadeMap = {
     Array.from({ length: COLS }, (_, col) => ({
       col,
       row,
-      screenPosition: { x: col * 2 - 7, y: -(row * 1.5 - 2.25) },
+      screenPosition: { x: col * 2 - (COLS - 2), y: -(row * 1.5 - 2.25) },
     })),
   ).flat(),
 };

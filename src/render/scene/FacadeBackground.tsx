@@ -5,10 +5,10 @@ import type { Texture, MeshBasicMaterial } from "three";
 import type { Mesh } from "three";
 import type { FacadeMap } from "@game/types/map";
 
-const FACADE_COLOR = "#2d1b4e";
+const FACADE_COLOR = "#4a2f7a";
 const WINDOW_W = 1.2;
 const WINDOW_H = 0.8;
-const WINDOW_COLOR = "#2a1a1a";
+const WINDOW_COLOR = "#1a0f2e";
 
 interface Props {
   map: FacadeMap;
