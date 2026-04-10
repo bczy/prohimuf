@@ -92,6 +92,11 @@ export function App(): JSX.Element {
         orthographic
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
+        onCreated={({ camera, size }) => {
+          // Fit the 18-unit-wide facade to screen width
+          camera.zoom = size.width / 18;
+          camera.updateProjectionMatrix();
+        }}
       >
         <ambientLight intensity={0.5} />
         <Suspense fallback={null}>

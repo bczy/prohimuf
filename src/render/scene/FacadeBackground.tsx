@@ -5,7 +5,7 @@ import type { Texture, MeshBasicMaterial } from "three";
 import type { Mesh } from "three";
 import type { FacadeMap } from "@game/types/map";
 
-const FACADE_COLOR = "#1a0a2e";
+const FACADE_COLOR = "#2d1b4e";
 const WINDOW_W = 1.2;
 const WINDOW_H = 0.8;
 const WINDOW_COLOR = "#2a1a1a";
