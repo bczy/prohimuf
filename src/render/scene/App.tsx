@@ -14,7 +14,7 @@ import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { loadUnlockedLevels, unlockLevel, LEVELS } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
-import { saveScore } from "@game/systems/highScoreSystem";
+import { saveScore, isHighScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
@@ -211,7 +211,13 @@ export function App(): JSX.Element {
         <Suspense fallback={null}>
           <GameScene
             key={gameKey}
-            onHudUpdate={setHudData}
+            onHudUpdate={(data) => {
+              setHudData({
+                ...data,
+                levelName: selectedLevel.name,
+                isHighScore: isHighScore(selectedLevel.id, data.score),
+              });
+            }}
             canvasRef={canvasRef}
             playSfx={audio.playSfx}
             levelParams={levelParams}

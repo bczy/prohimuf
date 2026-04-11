@@ -7,6 +7,8 @@ export interface HudData {
   timeRemaining: number;
   phase: Phase;
   wave: number;
+  levelName?: string;
+  isHighScore?: boolean;
 }
 
 // Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
@@ -74,8 +76,37 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       <div style={hudStyle}>
         <div style={itemStyle}>
           <span style={labelStyle}>score</span>
-          <span style={valueStyle(NEON_YELLOW)}>{String(data.score).padStart(4, "0")}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={valueStyle(NEON_YELLOW)}>{String(data.score).padStart(4, "0")}</span>
+            {data.isHighScore === true && (
+              <span
+                style={{
+                  fontSize: "9px",
+                  color: NEON_GREEN,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                ★HI
+              </span>
+            )}
+          </div>
         </div>
+        {data.levelName !== undefined && (
+          <div style={itemStyle}>
+            <span style={labelStyle}>niveau</span>
+            <span
+              style={{
+                fontSize: "12px",
+                color: "#aaa",
+                fontFamily: "monospace",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {data.levelName}
+            </span>
+          </div>
+        )}
         <div style={itemStyle}>
           <span style={labelStyle}>vague</span>
           <span style={valueStyle(NEON_GREEN)}>{data.wave}</span>
