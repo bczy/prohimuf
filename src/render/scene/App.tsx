@@ -16,6 +16,7 @@ import type { LevelConfig } from "@game/levels/levels";
 import { saveScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
+import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
 
 type AppPhase = "MENU" | "PLAYING" | "END";
 
@@ -152,9 +153,12 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          const STREET_W = 50;
-          const STREET_H = 18;
-          const zoomByWidth = size.width / STREET_W;
+          const lvLayout = LEVEL_LAYOUTS[selectedLevel.id] ?? DEFAULT_LAYOUT;
+          let totalW = 0;
+          for (const m of lvLayout.buildings) totalW += m.cols * m.tileW + lvLayout.gap;
+          totalW -= lvLayout.gap;
+          const STREET_H = lvLayout.streetHeight;
+          const zoomByWidth = size.width / totalW;
           const zoomByHeight = (size.height - 40) / STREET_H;
           camera.zoom = Math.max(zoomByWidth, zoomByHeight);
           const viewH = size.height / camera.zoom;
@@ -172,6 +176,7 @@ export function App(): JSX.Element {
             canvasRef={canvasRef}
             playSfx={audio.playSfx}
             levelParams={levelParams}
+            levelId={selectedLevel.id}
           />
         </Suspense>
       </Canvas>

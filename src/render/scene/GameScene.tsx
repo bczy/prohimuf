@@ -1,9 +1,10 @@
 import type { JSX } from "react";
+import { useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
 import { tileMapToFacade } from "@game/systems/tileMapSystem";
-import { RUE_BELLIARD, BUILDING_GAP, STREET_HEIGHT } from "@game/maps/rue_belliard";
+import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
 import type { HudData } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { TiledFacade } from "./TiledFacade";
@@ -12,58 +13,6 @@ import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
 import { useMouse } from "@hooks/useMouse";
-
-// Build per-building facades and compute their world x offsets
-// Buildings are placed left-to-right, bottom-aligned to a common ground line
-const buildingLayouts = (() => {
-  const layouts: { offsetX: number; facade: ReturnType<typeof tileMapToFacade> }[] = [];
-  let cursorX = 0;
-  for (const map of RUE_BELLIARD) {
-    const buildingW = map.cols * map.tileW;
-    // Centre each building around its midpoint
-    const centerX = cursorX + buildingW / 2;
-    layouts.push({
-      offsetX: centerX,
-      facade: tileMapToFacade(map, centerX, STREET_HEIGHT),
-    });
-    cursorX += buildingW + BUILDING_GAP;
-  }
-  // Re-centre the entire street around x=0
-  const totalW = cursorX - BUILDING_GAP;
-  const streetCenterX = totalW / 2;
-  return layouts.map((l) => ({
-    offsetX: l.offsetX - streetCenterX,
-    facade: {
-      ...l.facade,
-      slots: l.facade.slots.map((s) => ({
-        ...s,
-        screenPosition: {
-          x: s.screenPosition.x - streetCenterX,
-          y: s.screenPosition.y,
-        },
-      })),
-    },
-  }));
-})();
-
-// Merge all slots into one FacadeMap for the game loop (slot indices are contiguous)
-const MERGED_FACADE = (() => {
-  const allSlots = buildingLayouts.flatMap((l) => l.facade.slots);
-  const maxCols = Math.max(...RUE_BELLIARD.map((m) => m.cols));
-  return {
-    width: maxCols,
-    height: STREET_HEIGHT,
-    slots: allSlots,
-  };
-})();
-
-const FACADE_W = (() => {
-  let w = 0;
-  for (const map of RUE_BELLIARD) w += map.cols * map.tileW + BUILDING_GAP;
-  return w;
-})();
-
-const FACADE_H = STREET_HEIGHT;
 
 // Edge zones and speed
 const EDGE_ZONE = 0.12;
@@ -74,10 +23,65 @@ interface Props {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void;
   levelParams?: LevelParams;
+  levelId?: string;
 }
 
-export function GameScene({ onHudUpdate, canvasRef, playSfx, levelParams }: Props): JSX.Element {
-  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate, playSfx, levelParams);
+export function GameScene({
+  onHudUpdate,
+  canvasRef,
+  playSfx,
+  levelParams,
+  levelId,
+}: Props): JSX.Element {
+  const layout = (levelId !== undefined ? LEVEL_LAYOUTS[levelId] : undefined) ?? DEFAULT_LAYOUT;
+
+  // Build per-building facades and compute their world x offsets
+  const { buildingLayouts, mergedFacade, facadeW, facadeH } = useMemo(() => {
+    const layouts: { offsetX: number; facade: ReturnType<typeof tileMapToFacade> }[] = [];
+    let cursorX = 0;
+    for (const map of layout.buildings) {
+      const buildingW = map.cols * map.tileW;
+      const centerX = cursorX + buildingW / 2;
+      layouts.push({
+        offsetX: centerX,
+        facade: tileMapToFacade(map, centerX, layout.streetHeight),
+      });
+      cursorX += buildingW + layout.gap;
+    }
+    // Re-centre the entire street around x=0
+    const totalW = cursorX - layout.gap;
+    const streetCenterX = totalW / 2;
+    const centeredLayouts = layouts.map((l) => ({
+      offsetX: l.offsetX - streetCenterX,
+      facade: {
+        ...l.facade,
+        slots: l.facade.slots.map((s) => ({
+          ...s,
+          screenPosition: {
+            x: s.screenPosition.x - streetCenterX,
+            y: s.screenPosition.y,
+          },
+        })),
+      },
+    }));
+
+    const allSlots = centeredLayouts.flatMap((l) => l.facade.slots);
+    const maxCols = Math.max(...layout.buildings.map((m) => m.cols));
+    const merged = {
+      width: maxCols,
+      height: layout.streetHeight,
+      slots: allSlots,
+    };
+
+    return {
+      buildingLayouts: centeredLayouts,
+      mergedFacade: merged,
+      facadeW: totalW,
+      facadeH: layout.streetHeight,
+    };
+  }, [layout]);
+
+  const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams);
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 
@@ -88,11 +92,10 @@ export function GameScene({ onHudUpdate, canvasRef, playSfx, levelParams }: Prop
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
 
-    const hScrollMin = -(FACADE_W - viewW) / 2;
-    const hScrollMax = (FACADE_W - viewW) / 2;
-    // Include 4 units of road below buildings in the scrollable zone
+    const hScrollMin = -(facadeW - viewW) / 2;
+    const hScrollMax = (facadeW - viewW) / 2;
     const ROAD_EXTRA = 4;
-    const totalSceneH = FACADE_H + ROAD_EXTRA;
+    const totalSceneH = facadeH + ROAD_EXTRA;
     const vScrollMin = -(totalSceneH - viewH) / 2 - ROAD_EXTRA / 2;
     const vScrollMax = (totalSceneH - viewH) / 2 + ROAD_EXTRA / 2;
 
@@ -121,20 +124,20 @@ export function GameScene({ onHudUpdate, canvasRef, playSfx, levelParams }: Prop
 
   return (
     <>
-      <StreetBackground width={FACADE_W} height={STREET_HEIGHT * 2} groundY={-FACADE_H / 2} />
-      {buildingLayouts.map((layout, i) => {
-        const map = RUE_BELLIARD[i];
+      <StreetBackground width={facadeW} height={facadeH * 2} groundY={-facadeH / 2} />
+      {buildingLayouts.map((bl, i) => {
+        const map = layout.buildings[i];
         if (map === undefined) return null;
         return (
           <TiledFacade
             key={i}
             map={map}
-            worldOffsetX={layout.offsetX}
-            streetHeight={STREET_HEIGHT}
+            worldOffsetX={bl.offsetX}
+            streetHeight={layout.streetHeight}
           />
         );
       })}
-      {MERGED_FACADE.slots.map((slot, idx) => (
+      {mergedFacade.slots.map((slot, idx) => (
         <EnemySprite
           key={`slot-${String(idx)}`}
           stateRef={stateRef}
