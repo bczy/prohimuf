@@ -118,31 +118,6 @@ Bullets that go out of viewport bounds are removed.
 
 ---
 
-## Top-down Systems (Sprint 3)
-
-### TopdownState
-
-```ts
-interface TopdownState {
-  phase: Phase;
-  player: Player; // position, velocity, direction
-  cops: readonly Cop[]; // patrol paths, detection state
-  delivery: DeliveryState; // active cargo, destination, progress
-  detectionLevel: number; // 0.0–1.0
-}
-```
-
-### Systems
-
-| System          | File                     | Purpose                       |
-| --------------- | ------------------------ | ----------------------------- |
-| Player movement | `playerSystem.ts`        | WASD 4-dir, speed, collisions |
-| Cop AI          | `copSystem.ts`           | Patrol + detection cone       |
-| Delivery        | `deliverySystem.ts`      | Pickup, carry, drop logic     |
-| State machine   | `topdownStateMachine.ts` | Integrates all sub-systems    |
-
----
-
 ## Vec2 (`vec2.ts`)
 
 Minimal immutable 2D vector helpers: `add`, `sub`, `scale`, `length`, `normalize`, `dot`.

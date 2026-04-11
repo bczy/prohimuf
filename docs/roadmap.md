@@ -16,7 +16,7 @@
 
 - [x] `GameState` type + `tickGameState` state machine
 - [x] Enemy system: IDLE → APPEARING → VISIBLE → SHOOTING → HIT → DEAD
-- [x] Bullet system: fire, move, hit detection (player bullets + enemy bullets)
+- [x] Bullet system: fire, move, hit detection (player + enemy bullets)
 - [x] Crosshair system
 - [x] Timer (90s countdown)
 - [x] Wave system (respawn on all-dead)
@@ -29,62 +29,50 @@
 - [x] `TiledFacade` — procedural Canvas2D facade renderer
 - [x] 9 tile types: WALL, WINDOW_LIT, WINDOW_DARK, BALCONY, DOOR, ROOFTOP, SHOP, FIRE_ESCAPE, ARCH
 - [x] Normal map (Sobel filter) — bump mapping relief on stone joints
-- [x] `TiledFacade` 3D depth: extruded cornices + soubassement (`boxGeometry`), edge shadow strips
-- [x] `StreetBackground` — sky gradient + stars + pavement + neon reflections, ground-line aligned
+- [x] `TiledFacade` 3D depth: extruded cornices + soubassement, edge shadow strips
+- [x] `StreetBackground` — sky gradient + stars + pavement + neon reflections
 - [x] Multi-building street: `rue_belliard` (4 buildings, variable heights, bottom-aligned)
 - [x] Camera zoom fills viewport; horizontal + vertical scroll on mouse edge
-- [x] Audio system: Howler.js, 3 BGM tension tiers, SFX
+- [x] Audio system: Howler.js, 3 BGM tension tiers, SFX (shoot.wav)
 - [x] Asset generator: Pollinations.ai FLUX, 25+ sprite definitions
 - [x] Lighting: ambient + rasant directional + blue counter-light
 
-### Sprint 3 — Top-down Prototype (in progress)
+### Sprint 3 — Gameplay Polish
 
-- [x] Top-down types: `Player`, `Cop`, `DeliveryState`, `TopdownState`, `TopdownInput`
-- [x] `playerSystem` — movement + velocity
-- [x] `copSystem` — patrol + detection cone
-- [x] `deliverySystem` — pickup/carry/drop
-- [x] `topdownStateMachine` — integrates sub-systems
-- [x] `useTopdownLoop` hook + `TopdownScene` R3F scene
-- [x] `vitry_94` top-down map draft
-- [x] `PlayerSprite`, `CopSprite`, `DeliverySprite` — placeholder sprites (colored meshes, no asset)
-- [x] Bugfix: bullet bounds constant `OUT_OF_BOUNDS_X` 20 → 60 (bullets no longer vanish mid-screen)
-- [x] Bugfix: fire input uses `pendingShots` counter instead of boolean flag (rapid fire reliable)
-- [x] Bugfix: shoot SFX wired to fire event
-- [ ] Collision system against map tiles
-- [ ] Detection meter in HUD
+- [x] Bullet bounds fix: `OUT_OF_BOUNDS_X` 20 → 60 (full street width)
+- [x] Fire input reliability: `pendingShots` counter (no lost clicks, no spray)
+- [x] Shoot SFX: `shoot.wav` generated and wired
 
 ---
 
 ## Planned
 
-### Level Editor (next major initiative)
+### Sprint 4 — Menu & Préférences
 
-- Standalone tool (separate page or app), zero server required
-- Visual grid editor: click tile → place TileType
-- Multi-building street layout support
-- JSON export compatible with `TileMap` interface
-- Auto-built palette from TileType union
-- BMAD workflow: CP → CA → CE → SP pending
+- [ ] Écran de sélection de niveau (choix de la carte / du quartier)
+- [ ] High scores (localStorage, top 10 par niveau)
+- [ ] Préférences : volume son, volume musique, nombre de vies, difficulté
+- [ ] Persistance des préférences entre sessions (localStorage)
 
-### Sprint 4 — Full Top-down Level
+### Sprint 5 — Multiple Levels
 
-- Complete top-down game loop (pick up → deliver → avoid)
-- Real Vitry 94 map with collision zones
-- Detection escalation → police chase
-- Multiple delivery objectives per wave
+- [ ] 2e carte (nouveau quartier, nouveaux bâtiments)
+- [ ] 3e carte
+- [ ] Tuning ennemi par niveau (vitesse, taux de spawn)
+- [ ] Progression : débloquer le niveau suivant au LEVEL_COMPLETE
 
-### Sprint 5 — Story & Narrative
+### Sprint 6 — Story & Narrative
 
-- NPC network: DJ Masta Klem, Faïza, Seb le Blond, Oxane, Karim
-- Dialogue system (fanzine style)
-- Multiple districts: Vitry, Stalingrad 19e, Belleville, Châtelet
+- [ ] Réseau NPC : DJ Masta Klem, Faïza, Seb le Blond, Oxane, Karim
+- [ ] Système de dialogues (style fanzine, entre les niveaux)
+- [ ] Quartiers : Vitry, Stalingrad 19e, Belleville, Châtelet
 
-### Sprint 6 — Polish & Release
+### Sprint 7 — Polish & Release
 
-- Full sprite set (generated + refined)
-- Proper audio assets (boom bap tracks)
-- Mobile-friendly input
-- Deploy to itch.io or GitHub Pages
+- [ ] Sprite set complet (générés + raffinés)
+- [ ] Assets audio définitifs (boom bap tracks)
+- [ ] Input mobile
+- [ ] Deploy itch.io ou GitHub Pages
 
 ---
 
@@ -94,6 +82,6 @@
 | --------------------- | ------------------------------------------------------------ |
 | Generated tile assets | Opaque backgrounds — not integrable into procedural renderer |
 | Audio files           | Placeholder paths — actual MP3s not yet recorded/sourced     |
-| Top-down collision    | Not implemented — player can walk through walls              |
-| Level editor          | Not started — blocked on BMAD CP                             |
 | Sprite assets         | Most sprites still missing actual PNG files                  |
+| High scores           | Not implemented                                              |
+| Level select          | Not implemented                                              |

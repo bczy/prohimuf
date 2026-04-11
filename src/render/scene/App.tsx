@@ -2,16 +2,14 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import type { JSX } from "react";
 import { Canvas } from "@react-three/fiber";
 import { HUD } from "@render/ui/HUD";
-import type { HudData, TopdownHudData } from "@render/ui/HUD";
+import type { HudData } from "@render/ui/HUD";
 import { StartScreen } from "@render/ui/StartScreen";
 import { EndScreen } from "@render/ui/EndScreen";
 import { GameScene } from "./GameScene";
-import { TopdownScene } from "./TopdownScene";
 
 import { useAudio } from "@hooks/useAudio";
 
 type AppPhase = "START" | "PLAYING" | "END";
-type PlayingMode = "FACADE" | "TOPDOWN";
 
 const INITIAL_HUD: HudData = {
   score: 0,
@@ -21,17 +19,9 @@ const INITIAL_HUD: HudData = {
   wave: 1,
 };
 
-const INITIAL_TOPDOWN_HUD: TopdownHudData = {
-  phase: "PLAYING",
-  hasCargo: false,
-  detectionLevel: 0,
-};
-
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>("START");
-  const [playingMode, setPlayingMode] = useState<PlayingMode>("FACADE");
   const [hudData, setHudData] = useState<HudData>(INITIAL_HUD);
-  const [topdownHudData, setTopdownHudData] = useState<TopdownHudData>(INITIAL_TOPDOWN_HUD);
   const [gameKey, setGameKey] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
@@ -45,42 +35,25 @@ export function App(): JSX.Element {
   }, [appPhase, playBgm]);
 
   useEffect(() => {
-    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
-    if (phase === "GAME_OVER") {
+    if (hudData.phase === "GAME_OVER") {
       stopBgm();
     }
-  }, [hudData.phase, topdownHudData.phase, playingMode, stopBgm]);
+  }, [hudData.phase, stopBgm]);
 
   useEffect(() => {
     const tension = 1 - hudData.timeRemaining / 90;
     setTension(tension);
   }, [hudData.timeRemaining, setTension]);
 
-  // Switch to topdown when facade level complete
   useEffect(() => {
-    if (hudData.phase === "LEVEL_COMPLETE" && playingMode === "FACADE") {
-      const timer = setTimeout(() => {
-        setPlayingMode("TOPDOWN");
-      }, 1500);
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-    return undefined;
-  }, [hudData.phase, playingMode]);
-
-  // End screen trigger
-  useEffect(() => {
-    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
-    if (phase !== "GAME_OVER" && phase !== "LEVEL_COMPLETE") return;
-    if (playingMode === "FACADE" && phase === "LEVEL_COMPLETE") return; // switching to topdown
+    if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
     const timer = setTimeout(() => {
       setAppPhase("END");
     }, 1500);
     return () => {
       clearTimeout(timer);
     };
-  }, [hudData.phase, topdownHudData.phase, playingMode]);
+  }, [hudData.phase]);
 
   function handleStart(): void {
     setAppPhase("PLAYING");
@@ -88,9 +61,7 @@ export function App(): JSX.Element {
 
   function handleRestart(): void {
     setHudData(INITIAL_HUD);
-    setTopdownHudData(INITIAL_TOPDOWN_HUD);
     setGameKey((k) => k + 1);
-    setPlayingMode("FACADE");
     setAppPhase("PLAYING");
   }
 
@@ -99,8 +70,10 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "END") {
-    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
-    const endPhase = phase === "GAME_OVER" || phase === "LEVEL_COMPLETE" ? phase : "GAME_OVER";
+    const endPhase =
+      hudData.phase === "GAME_OVER" || hudData.phase === "LEVEL_COMPLETE"
+        ? hudData.phase
+        : "GAME_OVER";
     return (
       <EndScreen
         phase={endPhase}
@@ -136,23 +109,15 @@ export function App(): JSX.Element {
         {/* Contre-lumière bleue nuit depuis la droite */}
         <directionalLight position={[10, -1, 3]} intensity={0.2} color="#2040a0" />
         <Suspense fallback={null}>
-          {playingMode === "FACADE" ? (
-            <GameScene
-              key={gameKey}
-              onHudUpdate={setHudData}
-              canvasRef={canvasRef}
-              playSfx={audio.playSfx}
-            />
-          ) : (
-            <TopdownScene
-              key={`topdown-${String(gameKey)}`}
-              onHudUpdate={setTopdownHudData}
-              canvasRef={canvasRef}
-            />
-          )}
+          <GameScene
+            key={gameKey}
+            onHudUpdate={setHudData}
+            canvasRef={canvasRef}
+            playSfx={audio.playSfx}
+          />
         </Suspense>
       </Canvas>
-      {playingMode === "FACADE" ? <HUD data={hudData} /> : <HUD topdownData={topdownHudData} />}
+      <HUD data={hudData} />
     </div>
   );
 }

@@ -1,12 +1,6 @@
 import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 
-export interface TopdownHudData {
-  phase: Phase;
-  hasCargo: boolean;
-  detectionLevel: number;
-}
-
 export interface HudData {
   score: number;
   lives: number;
@@ -69,37 +63,8 @@ const valueStyle = (color: string): React.CSSProperties => ({
   lineHeight: 1,
 });
 
-function PhaseOverlay({ phase }: { phase: Phase }): JSX.Element | null {
-  const msg = phaseMessage(phase);
-  if (msg === null) return null;
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "'Impact', sans-serif",
-          fontSize: "72px",
-          color: msg.color,
-          letterSpacing: "0.1em",
-          textShadow: `0 0 20px ${msg.color}, 0 0 40px ${msg.color}`,
-          transform: "rotate(-3deg)",
-        }}
-      >
-        {msg.text}
-      </div>
-    </div>
-  );
-}
-
-function FacadeHUD({ data }: { data: HudData }): JSX.Element {
+export function HUD({ data }: { data: HudData }): JSX.Element {
+  const msg = phaseMessage(data.phase);
   const timeColor =
     data.timeRemaining < 20 ? NEON_PINK : data.timeRemaining < 40 ? NEON_ORANGE : NEON_GREEN;
   const livesColor = data.lives <= 1 ? NEON_PINK : NEON_YELLOW;
@@ -124,69 +89,32 @@ function FacadeHUD({ data }: { data: HudData }): JSX.Element {
           <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
         </div>
       </div>
-      <PhaseOverlay phase={data.phase} />
-    </>
-  );
-}
 
-function TopdownHUD({ data }: { data: TopdownHudData }): JSX.Element {
-  const detectionColor =
-    data.detectionLevel > 0.7 ? NEON_PINK : data.detectionLevel > 0.4 ? NEON_ORANGE : NEON_GREEN;
-  const barWidth = Math.round(data.detectionLevel * 100);
-
-  return (
-    <>
-      <div style={hudStyle}>
-        {/* Cargo status */}
-        <div style={itemStyle}>
-          <span style={labelStyle}>cargo</span>
-          <span style={valueStyle(data.hasCargo ? NEON_YELLOW : "#444")}>
-            {data.hasCargo ? "■" : "□"}
-          </span>
-        </div>
-
-        {/* Detection meter */}
-        <div style={{ ...itemStyle, flex: 1, padding: "0 16px" }}>
-          <span style={labelStyle}>détection</span>
+      {msg !== null && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
           <div
             style={{
-              width: "100%",
-              height: "8px",
-              background: "#222",
-              border: `1px solid ${detectionColor}`,
-              marginTop: "2px",
+              fontFamily: "'Impact', sans-serif",
+              fontSize: "72px",
+              color: msg.color,
+              letterSpacing: "0.1em",
+              textShadow: `0 0 20px ${msg.color}, 0 0 40px ${msg.color}`,
+              transform: "rotate(-3deg)",
             }}
           >
-            <div
-              style={{
-                width: `${String(barWidth)}%`,
-                height: "100%",
-                background: detectionColor,
-                boxShadow: `0 0 6px ${detectionColor}`,
-                transition: "width 0.1s",
-              }}
-            />
+            {msg.text}
           </div>
         </div>
-
-        {/* Phase indicator */}
-        <div style={itemStyle}>
-          <span style={labelStyle}>phase</span>
-          <span style={valueStyle(NEON_GREEN)}>TOP</span>
-        </div>
-      </div>
-      <PhaseOverlay phase={data.phase} />
+      )}
     </>
   );
-}
-
-type HUDProps =
-  | { data: HudData; topdownData?: undefined }
-  | { topdownData: TopdownHudData; data?: undefined };
-
-export function HUD({ data, topdownData }: HUDProps): JSX.Element {
-  if (topdownData !== undefined) {
-    return <TopdownHUD data={topdownData} />;
-  }
-  return <FacadeHUD data={data} />;
 }
