@@ -6,6 +6,7 @@ import { HUD } from "@render/ui/HUD";
 import type { HudData } from "@render/ui/HUD";
 import { MainMenu } from "@render/ui/MainMenu";
 import { EndScreen } from "@render/ui/EndScreen";
+import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { GameScene } from "./GameScene";
 
 import { useAudio } from "@hooks/useAudio";
@@ -17,8 +18,9 @@ import { saveScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
+import { PRE_LEVEL_NARRATIVE, POST_LEVEL_NARRATIVE } from "@game/systems/narrativeSystem";
 
-type AppPhase = "MENU" | "PLAYING" | "END";
+type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END";
 
 function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   return {
@@ -78,11 +80,9 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
 
-    // Save score
     const dateStr = new Date().toISOString();
     saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
 
-    // Unlock next level on LEVEL_COMPLETE
     if (hudData.phase === "LEVEL_COMPLETE") {
       const currentIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
       const nextLevel = LEVELS[currentIdx + 1];
@@ -93,7 +93,14 @@ export function App(): JSX.Element {
     }
 
     const timer = setTimeout(() => {
-      setAppPhase("END");
+      if (
+        hudData.phase === "LEVEL_COMPLETE" &&
+        POST_LEVEL_NARRATIVE[selectedLevel.id] !== undefined
+      ) {
+        setAppPhase("NARRATIVE_POST");
+      } else {
+        setAppPhase("END");
+      }
     }, 1500);
     return () => {
       clearTimeout(timer);
@@ -105,7 +112,11 @@ export function App(): JSX.Element {
     setSelectedLevel(level);
     setHudData(buildHudInitial(level, prefs));
     setGameKey((k) => k + 1);
-    setAppPhase("PLAYING");
+    if (PRE_LEVEL_NARRATIVE[levelId] !== undefined) {
+      setAppPhase("NARRATIVE_PRE");
+    } else {
+      setAppPhase("PLAYING");
+    }
   }
 
   function handleSavePrefs(updated: Prefs): void {
@@ -128,6 +139,34 @@ export function App(): JSX.Element {
     );
   }
 
+  if (appPhase === "NARRATIVE_PRE") {
+    const scene = PRE_LEVEL_NARRATIVE[selectedLevel.id];
+    if (scene !== undefined) {
+      return (
+        <NarrativeScreen
+          scene={scene}
+          onDone={() => {
+            setAppPhase("PLAYING");
+          }}
+        />
+      );
+    }
+  }
+
+  if (appPhase === "NARRATIVE_POST") {
+    const scene = POST_LEVEL_NARRATIVE[selectedLevel.id];
+    if (scene !== undefined) {
+      return (
+        <NarrativeScreen
+          scene={scene}
+          onDone={() => {
+            setAppPhase("END");
+          }}
+        />
+      );
+    }
+  }
+
   if (appPhase === "END") {
     const endPhase =
       hudData.phase === "GAME_OVER" || hudData.phase === "LEVEL_COMPLETE"
@@ -144,6 +183,7 @@ export function App(): JSX.Element {
   }
 
   const levelParams = buildLevelParams(selectedLevel, prefs);
+  const lvLayout = LEVEL_LAYOUTS[selectedLevel.id] ?? DEFAULT_LAYOUT;
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", cursor: "none" }}>
@@ -153,7 +193,6 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          const lvLayout = LEVEL_LAYOUTS[selectedLevel.id] ?? DEFAULT_LAYOUT;
           let totalW = 0;
           for (const m of lvLayout.buildings) totalW += m.cols * m.tileW + lvLayout.gap;
           totalW -= lvLayout.gap;
