@@ -71,10 +71,11 @@ const SCROLL_SPEED = 6;
 interface Props {
   onHudUpdate: (data: HudData) => void;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  playSfx: (name: "shoot" | "hit" | "death" | "win") => void;
 }
 
-export function GameScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
-  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate);
+export function GameScene({ onHudUpdate, canvasRef, playSfx }: Props): JSX.Element {
+  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate, playSfx);
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 

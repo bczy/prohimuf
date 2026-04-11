@@ -14,6 +14,7 @@ export function useGameLoop(
   facade: FacadeMap,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   onHudUpdate: (data: HudData) => void,
+  playSfx: (name: "shoot" | "hit" | "death" | "win") => void,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -28,17 +29,24 @@ export function useGameLoop(
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
 
+    const hasPendingShot = mouse.pendingShots > 0;
+
     if (
       (prev.phase === "GAME_OVER" || prev.phase === "LEVEL_COMPLETE") &&
-      (mouse.fire || keyboardRef.current.restart)
+      (hasPendingShot || keyboardRef.current.restart)
     ) {
+      mouseRef.current.pendingShots = 0;
       gameStateRef.current = createInitialState(facade);
       return;
     }
 
+    const didFire = hasPendingShot;
+    mouseRef.current.pendingShots = Math.max(0, mouse.pendingShots - 1);
+    if (didFire) playSfx("shoot");
+
     const next = tickGameState(
       prev,
-      mouse.fire,
+      didFire,
       mouse.x,
       mouse.y,
       safeDelta,

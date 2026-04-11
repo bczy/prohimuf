@@ -25,8 +25,8 @@ describe("tickBullets", () => {
     expect(moved.position.x).toBeCloseTo(b.position.x + b.velocity.x * 0.1);
   });
 
-  it("removes bullets out of bounds (|x| > 20)", () => {
-    const b = { id: 1, position: { x: 21, y: 0 }, velocity: { x: 1, y: 0 }, fromPlayer: true };
+  it("removes bullets out of bounds (|x| > 60)", () => {
+    const b = { id: 1, position: { x: 61, y: 0 }, velocity: { x: 1, y: 0 }, fromPlayer: true };
     const result = tickBullets([b], 0.016);
     expect(result.length).toBe(0);
   });

@@ -117,7 +117,12 @@ export function App(): JSX.Element {
         {/* Contre-lumière bleue nuit depuis la droite */}
         <directionalLight position={[10, -1, 3]} intensity={0.2} color="#2040a0" />
         <Suspense fallback={null}>
-          <GameScene key={gameKey} onHudUpdate={setHudData} canvasRef={canvasRef} />
+          <GameScene
+            key={gameKey}
+            onHudUpdate={setHudData}
+            canvasRef={canvasRef}
+            playSfx={audio.playSfx}
+          />
         </Suspense>
       </Canvas>
       <HUD data={hudData} />

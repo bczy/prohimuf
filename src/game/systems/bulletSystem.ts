@@ -6,7 +6,7 @@ import { hitEnemy } from "@game/systems/enemySystem";
 
 export const BULLET_SPEED = 20;
 const HIT_RADIUS = 0.8;
-const OUT_OF_BOUNDS_X = 20;
+const OUT_OF_BOUNDS_X = 60;
 const OUT_OF_BOUNDS_Y = 15;
 
 export function fireBullet(

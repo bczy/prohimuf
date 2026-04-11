@@ -3,13 +3,14 @@ import { useEffect, useRef } from "react";
 export interface MouseState {
   x: number;
   y: number;
-  fire: boolean;
+  /** Number of clicks pending since last frame. Consumed (decremented) by the gameloop. */
+  pendingShots: number;
 }
 
 export function useMouse(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
 ): React.RefObject<MouseState> {
-  const mouseRef = useRef<MouseState>({ x: 0.5, y: 0.5, fire: false });
+  const mouseRef = useRef<MouseState>({ x: 0.5, y: 0.5, pendingShots: 0 });
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent): void => {
@@ -25,23 +26,21 @@ export function useMouse(
 
     const onMouseDown = (e: MouseEvent): void => {
       if (e.button === 0) {
-        mouseRef.current = { ...mouseRef.current, fire: true };
+        mouseRef.current = { ...mouseRef.current, pendingShots: mouseRef.current.pendingShots + 1 };
       }
     };
 
-    const onMouseUp = (e: MouseEvent): void => {
-      if (e.button === 0) {
-        mouseRef.current = { ...mouseRef.current, fire: false };
-      }
+    const onBlur = (): void => {
+      mouseRef.current = { ...mouseRef.current, pendingShots: 0 };
     };
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("blur", onBlur);
     };
   }, [canvasRef]);
 

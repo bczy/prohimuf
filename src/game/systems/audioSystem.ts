@@ -44,8 +44,9 @@ export function createAudioSystem(): AudioSystem {
   const sfxCache: Partial<Record<string, Howl>> = {};
 
   function getSfx(name: string): Howl {
+    const ext = name === "shoot" ? "wav" : "mp3";
     sfxCache[name] ??= new Howl({
-      src: [`${BASE}assets/audio/${name}.mp3`],
+      src: [`${BASE}assets/audio/${name}.${ext}`],
       volume: 0.7,
     });
     return sfxCache[name];
