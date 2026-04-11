@@ -95,7 +95,10 @@
       "Bash(node scripts/generate-assets.mjs --asset tile_balcony_plant)",
       "Bash(node scripts/generate-assets.mjs --asset tile_balcony_laundry)",
       "Bash(node scripts/generate-assets.mjs --asset street_road_egout)",
-      "Bash(node /Users/bertrand.coizy/git/perso/muf/scripts/generate-assets.mjs --asset street_road_egout)"
+      "Bash(node /Users/bertrand.coizy/git/perso/muf/scripts/generate-assets.mjs --asset street_road_egout)",
+      "Bash(node -e ':*)",
+      "Bash(node)",
+      "Bash(rtk vitest:*)"
     ]
   }
 }

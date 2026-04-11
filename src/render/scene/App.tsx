@@ -2,14 +2,16 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import type { JSX } from "react";
 import { Canvas } from "@react-three/fiber";
 import { HUD } from "@render/ui/HUD";
-import type { HudData } from "@render/ui/HUD";
+import type { HudData, TopdownHudData } from "@render/ui/HUD";
 import { StartScreen } from "@render/ui/StartScreen";
 import { EndScreen } from "@render/ui/EndScreen";
 import { GameScene } from "./GameScene";
+import { TopdownScene } from "./TopdownScene";
 
 import { useAudio } from "@hooks/useAudio";
 
 type AppPhase = "START" | "PLAYING" | "END";
+type PlayingMode = "FACADE" | "TOPDOWN";
 
 const INITIAL_HUD: HudData = {
   score: 0,
@@ -19,9 +21,17 @@ const INITIAL_HUD: HudData = {
   wave: 1,
 };
 
+const INITIAL_TOPDOWN_HUD: TopdownHudData = {
+  phase: "PLAYING",
+  hasCargo: false,
+  detectionLevel: 0,
+};
+
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>("START");
+  const [playingMode, setPlayingMode] = useState<PlayingMode>("FACADE");
   const [hudData, setHudData] = useState<HudData>(INITIAL_HUD);
+  const [topdownHudData, setTopdownHudData] = useState<TopdownHudData>(INITIAL_TOPDOWN_HUD);
   const [gameKey, setGameKey] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
@@ -35,27 +45,42 @@ export function App(): JSX.Element {
   }, [appPhase, playBgm]);
 
   useEffect(() => {
-    if (hudData.phase === "GAME_OVER") {
+    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
+    if (phase === "GAME_OVER") {
       stopBgm();
     }
-  }, [hudData.phase, stopBgm]);
+  }, [hudData.phase, topdownHudData.phase, playingMode, stopBgm]);
 
   useEffect(() => {
     const tension = 1 - hudData.timeRemaining / 90;
     setTension(tension);
   }, [hudData.timeRemaining, setTension]);
 
+  // Switch to topdown when facade level complete
   useEffect(() => {
-    if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") {
-      return;
+    if (hudData.phase === "LEVEL_COMPLETE" && playingMode === "FACADE") {
+      const timer = setTimeout(() => {
+        setPlayingMode("TOPDOWN");
+      }, 1500);
+      return () => {
+        clearTimeout(timer);
+      };
     }
+    return undefined;
+  }, [hudData.phase, playingMode]);
+
+  // End screen trigger
+  useEffect(() => {
+    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
+    if (phase !== "GAME_OVER" && phase !== "LEVEL_COMPLETE") return;
+    if (playingMode === "FACADE" && phase === "LEVEL_COMPLETE") return; // switching to topdown
     const timer = setTimeout(() => {
       setAppPhase("END");
     }, 1500);
     return () => {
       clearTimeout(timer);
     };
-  }, [hudData.phase]);
+  }, [hudData.phase, topdownHudData.phase, playingMode]);
 
   function handleStart(): void {
     setAppPhase("PLAYING");
@@ -63,7 +88,9 @@ export function App(): JSX.Element {
 
   function handleRestart(): void {
     setHudData(INITIAL_HUD);
+    setTopdownHudData(INITIAL_TOPDOWN_HUD);
     setGameKey((k) => k + 1);
+    setPlayingMode("FACADE");
     setAppPhase("PLAYING");
   }
 
@@ -72,10 +99,8 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "END") {
-    const endPhase =
-      hudData.phase === "GAME_OVER" || hudData.phase === "LEVEL_COMPLETE"
-        ? hudData.phase
-        : "GAME_OVER";
+    const phase = playingMode === "FACADE" ? hudData.phase : topdownHudData.phase;
+    const endPhase = phase === "GAME_OVER" || phase === "LEVEL_COMPLETE" ? phase : "GAME_OVER";
     return (
       <EndScreen
         phase={endPhase}
@@ -94,18 +119,12 @@ export function App(): JSX.Element {
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
         onCreated={({ camera, size }) => {
-          // rue_belliard: 4 buildings (12+10+8+14 cols) + 3 gaps of 2 = 50 units wide, 18 rows tall
           const STREET_W = 50;
           const STREET_H = 18;
-          // Fit street width into viewport — no sky gaps
           const zoomByWidth = size.width / STREET_W;
-          // Never show more than STREET_H rows (tiles stay readable)
           const zoomByHeight = (size.height - 40) / STREET_H;
           camera.zoom = Math.max(zoomByWidth, zoomByHeight);
-          // Start camera showing RDC (ground floor) + road strip below buildings.
-          // Buildings span y=[-9,+9]. Shift camera down so bottom 3 units of view = road.
           const viewH = size.height / camera.zoom;
-          // Center of view at: bottom_of_buildings - road_strip/2 + viewH/2
           camera.position.y = -(STREET_H / 2) - 1.5 + viewH / 2;
           camera.updateProjectionMatrix();
         }}
@@ -117,15 +136,23 @@ export function App(): JSX.Element {
         {/* Contre-lumière bleue nuit depuis la droite */}
         <directionalLight position={[10, -1, 3]} intensity={0.2} color="#2040a0" />
         <Suspense fallback={null}>
-          <GameScene
-            key={gameKey}
-            onHudUpdate={setHudData}
-            canvasRef={canvasRef}
-            playSfx={audio.playSfx}
-          />
+          {playingMode === "FACADE" ? (
+            <GameScene
+              key={gameKey}
+              onHudUpdate={setHudData}
+              canvasRef={canvasRef}
+              playSfx={audio.playSfx}
+            />
+          ) : (
+            <TopdownScene
+              key={`topdown-${String(gameKey)}`}
+              onHudUpdate={setTopdownHudData}
+              canvasRef={canvasRef}
+            />
+          )}
         </Suspense>
       </Canvas>
-      <HUD data={hudData} />
+      {playingMode === "FACADE" ? <HUD data={hudData} /> : <HUD topdownData={topdownHudData} />}
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function tickTopdown(
   const halfW = map.widthUnits / 2;
   const halfH = map.heightUnits / 2;
   const bounds = { minX: -halfW, maxX: halfW, minY: -halfH, maxY: halfH };
-  const movedPlayer = movePlayer(state.player, input, delta, bounds);
+  const movedPlayer = movePlayer(state.player, input, delta, bounds, map.solidRects);
 
   // 2. Tick cops
   const tickedCops = state.cops.map((cop, i) => {

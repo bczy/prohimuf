@@ -42,14 +42,14 @@ Tension is computed from time remaining: `tension = 1 - timeRemaining / 90` and 
 
 SFX are lazy-loaded and cached on first use:
 
-| Name    | Trigger        |
-| ------- | -------------- |
-| `shoot` | Player fires   |
-| `hit`   | Enemy hit      |
-| `death` | Enemy killed   |
-| `win`   | Level complete |
+| Name    | File        | Trigger                  |
+| ------- | ----------- | ------------------------ |
+| `shoot` | `shoot.wav` | Player fires (shoot SFX) |
+| `hit`   | `hit.mp3`   | Enemy hit                |
+| `death` | `death.mp3` | Enemy killed             |
+| `win`   | `win.mp3`   | Level complete           |
 
-Files expected at `public/assets/audio/<name>.mp3`.
+Files expected at `public/assets/audio/<file>`. `shoot.wav` is wired to the fire input event (Sprint 3 bugfix).
 
 ---
 

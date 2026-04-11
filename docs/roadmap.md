@@ -46,7 +46,10 @@
 - [x] `topdownStateMachine` — integrates sub-systems
 - [x] `useTopdownLoop` hook + `TopdownScene` R3F scene
 - [x] `vitry_94` top-down map draft
-- [ ] `PlayerSprite`, `CopSprite`, `DeliverySprite` — sprites awaiting assets
+- [x] `PlayerSprite`, `CopSprite`, `DeliverySprite` — placeholder sprites (colored meshes, no asset)
+- [x] Bugfix: bullet bounds constant `OUT_OF_BOUNDS_X` 20 → 60 (bullets no longer vanish mid-screen)
+- [x] Bugfix: fire input uses `pendingShots` counter instead of boolean flag (rapid fire reliable)
+- [x] Bugfix: shoot SFX wired to fire event
 - [ ] Collision system against map tiles
 - [ ] Detection meter in HUD
 
