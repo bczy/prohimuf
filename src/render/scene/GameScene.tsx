@@ -5,6 +5,7 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import { tileMapToFacade } from "@game/systems/tileMapSystem";
 import { RUE_BELLIARD, BUILDING_GAP, STREET_HEIGHT } from "@game/maps/rue_belliard";
 import type { HudData } from "@render/ui/HUD";
+import type { LevelParams } from "@game/systems/stateMachine";
 import { TiledFacade } from "./TiledFacade";
 import { StreetBackground } from "./StreetBackground";
 import { CrosshairSprite } from "./CrosshairSprite";
@@ -72,10 +73,11 @@ interface Props {
   onHudUpdate: (data: HudData) => void;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void;
+  levelParams?: LevelParams;
 }
 
-export function GameScene({ onHudUpdate, canvasRef, playSfx }: Props): JSX.Element {
-  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate, playSfx);
+export function GameScene({ onHudUpdate, canvasRef, playSfx, levelParams }: Props): JSX.Element {
+  const stateRef = useGameLoop(MERGED_FACADE, canvasRef, onHudUpdate, playSfx, levelParams);
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 

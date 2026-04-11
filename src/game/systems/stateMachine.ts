@@ -14,15 +14,32 @@ const PLAYER_HIT_RADIUS = 1.0;
 
 let _nextBulletId = 1;
 
-export function createInitialState(facade: FacadeMap): GameState {
+export interface LevelParams {
+  lives: number;
+  timeSeconds: number;
+  enemiesToWin: number;
+  enemySpeedMultiplier: number;
+}
+
+export const DEFAULT_LEVEL_PARAMS: LevelParams = {
+  lives: 3,
+  timeSeconds: LEVEL_TIME_SECONDS,
+  enemiesToWin: ENEMIES_TO_WIN,
+  enemySpeedMultiplier: 1.0,
+};
+
+export function createInitialState(
+  facade: FacadeMap,
+  params: LevelParams = DEFAULT_LEVEL_PARAMS,
+): GameState {
   return {
     phase: "PLAYING",
     crosshair: { position: { x: 0.5, y: 0.5 } },
     enemies: spawnWave(1, facade),
     bullets: [],
     score: 0,
-    lives: 3,
-    timeRemaining: LEVEL_TIME_SECONDS,
+    lives: params.lives,
+    timeRemaining: params.timeSeconds,
     wave: 1,
   };
 }
@@ -37,12 +54,13 @@ export function tickGameState(
   cameraOffsetX = 0,
   viewW = 18,
   viewH = 12,
+  enemiesToWin = ENEMIES_TO_WIN,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     return state;
   }
 
-  if (state.score >= ENEMIES_TO_WIN) {
+  if (state.score >= enemiesToWin) {
     return { ...state, phase: "LEVEL_COMPLETE" };
   }
 
@@ -131,7 +149,7 @@ export function tickGameState(
     };
   }
 
-  const finalPhase = newScore >= ENEMIES_TO_WIN ? "LEVEL_COMPLETE" : "PLAYING";
+  const finalPhase = newScore >= enemiesToWin ? "LEVEL_COMPLETE" : "PLAYING";
 
   return {
     phase: finalPhase,

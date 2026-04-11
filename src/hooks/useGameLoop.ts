@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { createInitialState, tickGameState } from "@game/systems/stateMachine";
+import type { LevelParams } from "@game/systems/stateMachine";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
 import type { GameState } from "@game/types/gameState";
@@ -15,10 +16,11 @@ export function useGameLoop(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   onHudUpdate: (data: HudData) => void,
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void,
+  levelParams?: LevelParams,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
-  const gameStateRef = useRef<GameState>(createInitialState(facade));
+  const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams));
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -36,7 +38,7 @@ export function useGameLoop(
       (hasPendingShot || keyboardRef.current.restart)
     ) {
       mouseRef.current.pendingShots = 0;
-      gameStateRef.current = createInitialState(facade);
+      gameStateRef.current = createInitialState(facade, levelParams);
       return;
     }
 
@@ -54,6 +56,7 @@ export function useGameLoop(
       camera.position.x,
       viewW,
       viewH,
+      levelParams?.enemiesToWin,
     );
     gameStateRef.current = next;
 

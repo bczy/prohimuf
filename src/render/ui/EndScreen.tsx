@@ -86,7 +86,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
             animation: "blink 1s step-start infinite",
           }}
         >
-          [ CLIQUER POUR RECOMMENCER ]
+          [ CLIQUER POUR RETOURNER AU MENU ]
         </div>
       </div>
 
