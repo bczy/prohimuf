@@ -179,17 +179,19 @@ describe("tickTopdown — détection", () => {
     expect(s.detectionLevel).toBeLessThanOrEqual(1);
   });
 
-  it("phase passe à GAME_OVER si detectionLevel >= 1.0", () => {
+  it("phase passe à GAME_OVER si cop CHASE rattrape le joueur", () => {
+    // detectionLevel already at 1 → cops enter CHASE
+    // Place player exactly on cop position → cop catches immediately
+    const copStart = TOPDOWN_TEST.copWaypoints[0]?.[0] ?? { x: 0, y: 0 };
     const state = {
       ...createTopdownInitialState(TOPDOWN_TEST),
-      detectionLevel: 0.99,
-      // Place player on top of first cop waypoint to guarantee ALERT
+      detectionLevel: 1.0,
       player: {
         ...createTopdownInitialState(TOPDOWN_TEST).player,
-        position: TOPDOWN_TEST.copWaypoints[0]?.[0] ?? { x: 0, y: 0 },
+        position: copStart,
       },
     };
-    const result = tickTopdown(state, noInput, 10, TOPDOWN_TEST);
+    const result = tickTopdown(state, noInput, 0.016, TOPDOWN_TEST);
     expect(result.phase).toBe("GAME_OVER");
   });
 });

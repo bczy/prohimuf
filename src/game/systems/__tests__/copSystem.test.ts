@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   tickCop,
   detectPlayer,
+  isCopCatchingPlayer,
   COP_SPEED,
   DETECTION_RADIUS,
   ALERT_DURATION,
@@ -89,5 +90,20 @@ describe("detectPlayer", () => {
     expect(COP_SPEED).toBeGreaterThan(0);
     expect(DETECTION_RADIUS).toBeGreaterThan(0);
     expect(ALERT_DURATION).toBeGreaterThan(0);
+  });
+});
+
+describe("tickCop — CHASE", () => {
+  it("se déplace vers le joueur en mode chase", () => {
+    const cop = { ...createCop(1, { x: 0, y: 0 }), state: "CHASE" as const };
+    const playerPos = { x: 5, y: 0 };
+    const result = tickCop(cop, WAYPOINTS, 1, true, playerPos);
+    expect(result.position.x).toBeGreaterThan(0);
+  });
+
+  it("isCopCatchingPlayer détecte le contact", () => {
+    const cop = { ...createCop(1, { x: 0, y: 0 }), state: "CHASE" as const };
+    expect(isCopCatchingPlayer(cop, { x: 0.3, y: 0 })).toBe(true);
+    expect(isCopCatchingPlayer(cop, { x: 5, y: 0 })).toBe(false);
   });
 });

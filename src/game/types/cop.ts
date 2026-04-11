@@ -1,6 +1,6 @@
 import type { Vec2 } from "@game/types/vector";
 
-export type CopState = "PATROLLING" | "ALERT";
+export type CopState = "PATROLLING" | "ALERT" | "CHASE";
 
 export interface Cop {
   readonly id: number;

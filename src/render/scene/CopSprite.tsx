@@ -6,6 +6,7 @@ import type { TopdownState } from "@game/types/topdownState";
 
 const COLOR_PATROLLING = "#ff2d9b";
 const COLOR_ALERT = "#ff6600";
+const COLOR_CHASE = "#ff0000";
 
 interface Props {
   stateRef: React.RefObject<TopdownState>;
@@ -30,7 +31,8 @@ export function CopSprite({ stateRef, copIndex }: Props): JSX.Element {
     mesh.position.y = cop.position.y;
 
     const mat = mesh.material as MeshBasicMaterial;
-    const color = cop.state === "ALERT" ? COLOR_ALERT : COLOR_PATROLLING;
+    const color =
+      cop.state === "CHASE" ? COLOR_CHASE : cop.state === "ALERT" ? COLOR_ALERT : COLOR_PATROLLING;
     mat.color.set(color);
   });
 

@@ -1,11 +1,13 @@
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useTopdownLoop } from "@hooks/useTopdownLoop";
-import { TOPDOWN_TEST } from "@game/maps/topdown_test";
+import { VITRY_94_TOPDOWN } from "@game/maps/vitry_94_topdown";
 import type { TopdownHudData } from "@render/ui/HUD";
 import { PlayerSprite } from "./PlayerSprite";
 import { CopSprite } from "./CopSprite";
 import { DeliverySprite } from "./DeliverySprite";
+
+const MAP = VITRY_94_TOPDOWN;
 
 interface Props {
   onHudUpdate: (data: TopdownHudData) => void;
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export function TopdownScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
-  const stateRef = useTopdownLoop(TOPDOWN_TEST, canvasRef, onHudUpdate);
+  const stateRef = useTopdownLoop(MAP, canvasRef, onHudUpdate);
 
   useFrame(({ camera }) => {
     const { x, y } = stateRef.current.player.position;
@@ -24,10 +26,10 @@ export function TopdownScene({ onHudUpdate, canvasRef }: Props): JSX.Element {
   return (
     <>
       <PlayerSprite stateRef={stateRef} />
-      {TOPDOWN_TEST.copWaypoints.map((_, i) => (
+      {MAP.copWaypoints.map((_, i) => (
         <CopSprite key={i} stateRef={stateRef} copIndex={i} />
       ))}
-      <DeliverySprite stateRef={stateRef} map={TOPDOWN_TEST} />
+      <DeliverySprite stateRef={stateRef} map={MAP} />
     </>
   );
 }
