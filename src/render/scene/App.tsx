@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { JSX } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
@@ -7,6 +7,7 @@ import type { HudData } from "@render/ui/HUD";
 import { MainMenu } from "@render/ui/MainMenu";
 import { EndScreen } from "@render/ui/EndScreen";
 import { NarrativeScreen } from "@render/ui/NarrativeScreen";
+import { PauseScreen } from "@render/ui/PauseScreen";
 import { GameScene } from "./GameScene";
 
 import { useAudio } from "@hooks/useAudio";
@@ -44,6 +45,7 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>("MENU");
+  const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [unlockedLevels, setUnlockedLevels] = useState<ReadonlySet<string>>(loadUnlockedLevels);
   const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(
@@ -58,13 +60,30 @@ export function App(): JSX.Element {
 
   const { playBgm, stopBgm, setTension } = audio;
 
+  // Escape toggles pause — only during active gameplay
   useEffect(() => {
-    if (appPhase === "PLAYING") {
+    if (appPhase !== "PLAYING") return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") setPaused((p) => !p);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [appPhase]);
+
+  // Reset pause when leaving PLAYING phase
+  useEffect(() => {
+    if (appPhase !== "PLAYING") setPaused(false);
+  }, [appPhase]);
+
+  useEffect(() => {
+    if (appPhase === "PLAYING" && !paused) {
       playBgm();
     } else {
       stopBgm();
     }
-  }, [appPhase, playBgm, stopBgm]);
+  }, [appPhase, paused, playBgm, stopBgm]);
 
   useEffect(() => {
     if (hudData.phase === "GAME_OVER") {
@@ -119,12 +138,13 @@ export function App(): JSX.Element {
     }
   }
 
-  function handleSavePrefs(updated: Prefs): void {
+  const handleSavePrefs = useCallback((updated: Prefs): void => {
     savePrefs(updated);
     setPrefs(updated);
-  }
+  }, []);
 
   function handleBackToMenu(): void {
+    setPaused(false);
     setAppPhase("MENU");
   }
 
@@ -186,7 +206,14 @@ export function App(): JSX.Element {
   const lvLayout = LEVEL_LAYOUTS[selectedLevel.id] ?? DEFAULT_LAYOUT;
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", cursor: "none" }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100vw",
+        height: "100vh",
+        cursor: paused ? "default" : "none",
+      }}
+    >
       <Canvas
         ref={canvasRef}
         orthographic
@@ -222,10 +249,21 @@ export function App(): JSX.Element {
             playSfx={audio.playSfx}
             levelParams={levelParams}
             levelId={selectedLevel.id}
+            paused={paused}
           />
         </Suspense>
       </Canvas>
       <HUD data={hudData} />
+      {paused && (
+        <PauseScreen
+          prefs={prefs}
+          onResume={() => {
+            setPaused(false);
+          }}
+          onMenu={handleBackToMenu}
+          onSavePrefs={handleSavePrefs}
+        />
+      )}
     </div>
   );
 }

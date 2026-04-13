@@ -24,6 +24,7 @@ interface Props {
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void;
   levelParams?: LevelParams;
   levelId?: string;
+  paused?: boolean;
 }
 
 export function GameScene({
@@ -32,6 +33,7 @@ export function GameScene({
   playSfx,
   levelParams,
   levelId,
+  paused,
 }: Props): JSX.Element {
   const layout = (levelId !== undefined ? LEVEL_LAYOUTS[levelId] : undefined) ?? DEFAULT_LAYOUT;
 
@@ -81,7 +83,7 @@ export function GameScene({
     };
   }, [layout]);
 
-  const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams);
+  const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams, paused);
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 

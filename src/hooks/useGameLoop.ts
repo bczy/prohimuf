@@ -17,6 +17,7 @@ export function useGameLoop(
   onHudUpdate: (data: HudData) => void,
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void,
   levelParams?: LevelParams,
+  paused = false,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -24,6 +25,7 @@ export function useGameLoop(
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
+    if (paused) return;
     const safeDelta = Math.min(delta, MAX_DELTA);
     const prev = gameStateRef.current;
     const mouse = mouseRef.current;
