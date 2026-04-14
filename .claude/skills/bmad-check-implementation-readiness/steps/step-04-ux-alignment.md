@@ -6,7 +6,8 @@ outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 
 ## STEP GOAL:
 
-To check if UX documentation exists and validate that it aligns with PRD requirements and Architecture decisions, ensuring architecture accounts for both PRD and UX needs.
+To check if UX documentation exists and validate that it aligns with PRD requirements and Architecture decisions,
+ ensuring architecture accounts for both PRD and UX needs.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -14,8 +15,10 @@ To check if UX documentation exists and validate that it aligns with PRD require
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
@@ -29,14 +32,18 @@ To check if UX documentation exists and validate that it aligns with PRD require
 
 - 🎯 Check for UX document existence first
 - 🚫 Don't assume UX is not needed
-- 💬 Validate alignment between UX, PRD, and Architecture
+- 💬 Validate alignment between UX,
+ PRD,
+ and Architecture
 - 🚪 Add findings to the output report
 
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Search for UX documentation
-- 💾 If found, validate alignment
-- 📖 If not found, assess if UX is implied
+- 💾 If found,
+ validate alignment
+- 📖 If not found,
+ assess if UX is implied
 - 🚫 FORBIDDEN to proceed without completing assessment
 
 ## UX ALIGNMENT PROCESS:
@@ -70,7 +77,8 @@ Search patterns:
 #### B. UX ↔ Architecture Alignment
 
 - Verify architecture supports UX requirements
-- Check performance needs (responsiveness, load times)
+- Check performance needs (responsiveness,
+ load times)
 - Identify UI components not supported by architecture
 
 ### 4. If No UX Document
@@ -96,7 +104,9 @@ Append to {outputFile}:
 
 ### Alignment Issues
 
-[List any misalignments between UX, PRD, and Architecture]
+[List any misalignments between UX,
+ PRD,
+ and Architecture]
 
 ### Warnings
 
@@ -105,7 +115,8 @@ Append to {outputFile}:
 
 ### 6. Auto-Proceed to Next Step
 
-After UX assessment complete, immediately load next step.
+After UX assessment complete,
+ immediately load next step.
 
 ## PROCEEDING TO EPIC QUALITY REVIEW
 

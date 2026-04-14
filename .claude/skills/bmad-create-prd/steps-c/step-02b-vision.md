@@ -12,17 +12,21 @@ Discover what makes this product special and understand the product vision throu
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product-focused PM facilitator collaborating with an expert peer
-- ✅ We engage in collaborative dialogue, not command-response
-- ✅ You bring structured thinking and facilitation skills, while the user brings domain expertise and product vision
+- ✅ We engage in collaborative dialogue,
+ not command-response
+- ✅ You bring structured thinking and facilitation skills,
+ while the user brings domain expertise and product vision
 
 ### Step-Specific Rules:
 
@@ -36,14 +40,21 @@ Discover what makes this product special and understand the product vision throu
 
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after vision discovery is complete
-- 📖 Update frontmatter, adding this step to the end of the list of stepsCompleted
+- 📖 Update frontmatter,
+ adding this step to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from steps 1 and 2 are available
-- Project classification exists from step 2 (project type, domain, complexity, context)
-- Input documents already loaded are in memory (product briefs, research, brainstorming, project docs)
+- Project classification exists from step 2 (project type,
+ domain,
+ complexity,
+ context)
+- Input documents already loaded are in memory (product briefs,
+ research,
+ brainstorming,
+ project docs)
 - No executive summary content yet (that's step 2c)
 - This step ONLY discovers — it does NOT write to the document
 
@@ -66,14 +77,17 @@ Guide the conversation to uncover the product's unique value:
 - **User delight:** "What would make users say 'this is exactly what I needed'?"
 - **Differentiation moment:** "What's the moment where users realize this is different or better than alternatives?"
 - **Core insight:** "What insight or approach makes this product possible or unique?"
-- **Value proposition:** "If you had one sentence to explain why someone should use this over anything else, what would it be?"
+- **Value proposition:** "If you had one sentence to explain why someone should use this over anything else,
+ what would it be?"
 
 ### 3. Understand the Vision
 
 Dig deeper into the product vision:
 
-- **Problem framing:** "What's the real problem you're solving — not the surface symptom, but the deeper need?"
-- **Future state:** "When this product is successful, what does the world look like for your users?"
+- **Problem framing:** "What's the real problem you're solving — not the surface symptom,
+ but the deeper need?"
+- **Future state:** "When this product is successful,
+ what does the world look like for your users?"
 - **Why now:** "Why is this the right time to build this?"
 
 ### 4. Validate Understanding
@@ -92,9 +106,11 @@ Let the user confirm or refine your understanding.
 
 ### N. Present MENU OPTIONS
 
-Present your understanding of the product vision for review, then display menu:
+Present your understanding of the product vision for review,
+ then display menu:
 
-"Based on our conversation, I have a clear picture of your product vision and what makes it special. I'll use these insights to draft the Executive Summary in the next step.
+"Based on our conversation,
+ I have a clear picture of your product vision and what makes it special. I'll use these insights to draft the Executive Summary in the next step.
 
 **What would you like to do?**"
 
@@ -102,20 +118,32 @@ Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Ex
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the current vision insights, process the enhanced insights that come back, ask user if they accept the improvements, if yes update understanding then redisplay menu, if no keep original understanding then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the current vision insights, process the collaborative insights, ask user if they accept the changes, if yes update understanding then redisplay menu, if no keep original understanding then redisplay menu
-- IF C: Update {outputFile} frontmatter by adding this step name to the end of stepsCompleted array, then read fully and follow: ./step-02c-executive-summary.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the current vision insights,
+ process the enhanced insights that come back,
+ ask user if they accept the improvements,
+ if yes update understanding then redisplay menu,
+ if no keep original understanding then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the current vision insights,
+ process the collaborative insights,
+ ask user if they accept the changes,
+ if yes update understanding then redisplay menu,
+ if no keep original understanding then redisplay menu
+- IF C: Update {outputFile} frontmatter by adding this step name to the end of stepsCompleted array,
+ then read fully and follow: ./step-02c-executive-summary.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN [C continue option] is selected and [stepsCompleted updated], will you then read fully and follow: `./step-02c-executive-summary.md` to generate the Executive Summary.
+ONLY WHEN [C continue option] is selected and [stepsCompleted updated],
+ will you then read fully and follow: `./step-02c-executive-summary.md` to generate the Executive Summary.
 
 ---
 
@@ -125,7 +153,9 @@ ONLY WHEN [C continue option] is selected and [stepsCompleted updated], will you
 
 - Classification context from step 2 acknowledged and built upon
 - Natural conversation to understand product vision and differentiator
-- User's existing documents (briefs, research, brainstorming) leveraged for vision insights
+- User's existing documents (briefs,
+ research,
+ brainstorming) leveraged for vision insights
 - Vision and differentiator validated with user before proceeding
 - Clear understanding established that will inform Executive Summary generation
 - Frontmatter updated with stepsCompleted when C selected
@@ -141,4 +171,7 @@ ONLY WHEN [C continue option] is selected and [stepsCompleted updated], will you
 ❌ **CRITICAL**: Reading only partial step file - leads to incomplete understanding and poor decisions
 ❌ **CRITICAL**: Proceeding with 'C' without fully reading and understanding the next step file
 
-**Master Rule:** This step is vision discovery only. No content generation, no document writing. Have natural conversations, build on what you know from classification, and establish the vision that will feed into the Executive Summary.
+**Master Rule:** This step is vision discovery only. No content generation,
+ no document writing. Have natural conversations,
+ build on what you know from classification,
+ and establish the vision that will feed into the Executive Summary.

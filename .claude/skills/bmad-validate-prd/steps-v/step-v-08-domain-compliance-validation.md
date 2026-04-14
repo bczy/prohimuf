@@ -11,7 +11,11 @@ domainComplexityData: "../data/domain-complexity.csv"
 
 ## STEP GOAL:
 
-Validate domain-specific requirements are present for high-complexity domains (Healthcare, Fintech, GovTech, etc.), ensuring regulatory and compliance requirements are properly documented.
+Validate domain-specific requirements are present for high-complexity domains (Healthcare,
+ Fintech,
+ GovTech,
+ etc.),
+ ensuring regulatory and compliance requirements are properly documented.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -19,15 +23,19 @@ Validate domain-specific requirements are present for high-complexity domains (H
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring domain expertise and compliance knowledge
 - ✅ This step runs autonomously - no user input needed
 
@@ -49,14 +57,18 @@ Validate domain-specific requirements are present for high-complexity domains (H
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file with frontmatter classification, validation report
+- Available context: PRD file with frontmatter classification,
+ validation report
 - Focus: Domain compliance only (conditional on domain complexity)
-- Limits: Don't validate other aspects, conditional execution
+- Limits: Don't validate other aspects,
+ conditional execution
 - Dependencies: Steps 2-7 completed - format and requirements validation done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Load Domain Complexity Data
 
@@ -73,7 +85,8 @@ Internalize this data - it drives which domains require special compliance secti
 
 ### 2. Extract Domain Classification
 
-From PRD frontmatter, extract:
+From PRD frontmatter,
+ extract:
 
 - `classification.domain` - what domain is this PRD for?
 
@@ -85,7 +98,9 @@ Treat as "general" (low complexity) and proceed to step 4
 **Low complexity domains (skip detailed checks):**
 
 - General
-- Consumer apps (standard e-commerce, social, productivity)
+- Consumer apps (standard e-commerce,
+ social,
+ productivity)
 - Content websites
 - Business tools (standard)
 
@@ -94,7 +109,8 @@ Treat as "general" (low complexity) and proceed to step 4
 - Healthcare / Healthtech
 - Fintech / Financial services
 - GovTech / Public sector
-- EdTech (educational records, accredited courses)
+- EdTech (educational records,
+ accredited courses)
 - Legal tech
 - Other regulated domains
 
@@ -104,19 +120,26 @@ Treat as "general" (low complexity) and proceed to step 4
 
 "Perform domain compliance validation for {domain}:
 
-Based on {domain} requirements, check PRD for:
+Based on {domain} requirements,
+ check PRD for:
 
 **Healthcare:**
 
 - Clinical Requirements section
-- Regulatory Pathway (FDA, HIPAA, etc.)
+- Regulatory Pathway (FDA,
+ HIPAA,
+ etc.)
 - Safety Measures
-- HIPAA Compliance (data privacy, security)
+- HIPAA Compliance (data privacy,
+ security)
 - Patient safety considerations
 
 **Fintech:**
 
-- Compliance Matrix (SOC2, PCI-DSS, GDPR, etc.)
+- Compliance Matrix (SOC2,
+ PCI-DSS,
+ GDPR,
+ etc.)
 - Security Architecture
 - Audit Requirements
 - Fraud Prevention measures
@@ -124,7 +147,8 @@ Based on {domain} requirements, check PRD for:
 
 **GovTech:**
 
-- Accessibility Standards (WCAG 2.1 AA, Section 508)
+- Accessibility Standards (WCAG 2.1 AA,
+ Section 508)
 - Procurement Compliance
 - Security Clearance requirements
 - Data residency requirements
@@ -169,7 +193,8 @@ Domain: {domain} (low complexity)
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile}
+Without delay,
+ read fully and follow: {nextStepFile}
 
 ### 6. Report Compliance Findings (High-Complexity Domains)
 
@@ -205,7 +230,9 @@ Append to validation report:
 **Required Sections Present:** {count}/{total}
 **Compliance Gaps:** {count}
 
-**Severity:** [Critical if missing regulatory sections, Warning if incomplete, Pass if complete]
+**Severity:** [Critical if missing regulatory sections,
+ Warning if incomplete,
+ Pass if complete]
 
 **Recommendation:**
 [If Critical] "PRD is missing required domain-specific compliance sections. These are essential for {domain} products."
@@ -222,7 +249,8 @@ Compliance Status: {status}
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-09-project-type-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-09-project-type-validation.md)
 
 ---
 

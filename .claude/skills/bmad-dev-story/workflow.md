@@ -6,11 +6,19 @@
 
 - Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}
 - Generate all documents in {document_output_language}
-- Only modify the story file in these areas: Tasks/Subtasks checkboxes, Dev Agent Record (Debug Log, Completion Notes), File List, Change Log, and Status
+- Only modify the story file in these areas: Tasks/Subtasks checkboxes,
+ Dev Agent Record (Debug Log,
+ Completion Notes),
+ File List,
+ Change Log,
+ and Status
 - Execute ALL steps in exact order; do NOT skip steps
-- Absolutely DO NOT stop because of "milestones", "significant progress", or "session boundaries". Continue in a single execution until the story is COMPLETE (all ACs satisfied and all tasks/subtasks checked) UNLESS a HALT condition is triggered or the USER gives other instruction.
+- Absolutely DO NOT stop because of "milestones",
+ "significant progress",
+ or "session boundaries". Continue in a single execution until the story is COMPLETE (all ACs satisfied and all tasks/subtasks checked) UNLESS a HALT condition is triggered or the USER gives other instruction.
 - Do NOT schedule a "next session" or request review pauses unless a HALT condition applies. Only Step 6 decides completion.
-- User skill level ({user_skill_level}) affects conversation style ONLY, not code updates.
+- User skill level ({user_skill_level}) affects conversation style ONLY,
+ not code updates.
 
 ---
 
@@ -20,8 +28,10 @@
 
 Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
-- `project_name`, `user_name`
-- `communication_language`, `document_output_language`
+- `project_name`,
+ `user_name`
+- `communication_language`,
+ `document_output_language`
 - `user_skill_level`
 - `implementation_artifacts`
 - `date` as system-generated current datetime
@@ -42,14 +52,22 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 <workflow>
   <critical>Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}</critical>
   <critical>Generate all documents in {document_output_language}</critical>
-  <critical>Only modify the story file in these areas: Tasks/Subtasks checkboxes, Dev Agent Record (Debug Log, Completion Notes), File List,
-    Change Log, and Status</critical>
+  <critical>Only modify the story file in these areas: Tasks/Subtasks checkboxes,
+ Dev Agent Record (Debug Log,
+ Completion Notes),
+ File List,
+
+    Change Log,
+ and Status</critical>
   <critical>Execute ALL steps in exact order; do NOT skip steps</critical>
-  <critical>Absolutely DO NOT stop because of "milestones", "significant progress", or "session boundaries". Continue in a single execution
+  <critical>Absolutely DO NOT stop because of "milestones",
+ "significant progress",
+ or "session boundaries". Continue in a single execution
     until the story is COMPLETE (all ACs satisfied and all tasks/subtasks checked) UNLESS a HALT condition is triggered or the USER gives
     other instruction.</critical>
   <critical>Do NOT schedule a "next session" or request review pauses unless a HALT condition applies. Only Step 6 decides completion.</critical>
-  <critical>User skill level ({user_skill_level}) affects conversation style ONLY, not code updates.</critical>
+  <critical>User skill level ({user_skill_level}) affects conversation style ONLY,
+ not code updates.</critical>
 
   <step n="1" goal="Find next ready story and load it" tag="sprint-status">
     <check if="{{story_path}} is provided">
@@ -67,7 +85,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
       <action>Parse the development_status section completely to understand story order</action>
 
       <action>Find the FIRST story (by reading in order from top to bottom) where:
-        - Key matches pattern: number-number-name (e.g., "1-2-user-auth")
+        - Key matches pattern: number-number-name (e.g.,
+ "1-2-user-auth")
         - NOT an epic key (epic-X) or retrospective (epic-X-retrospective)
         - Status value equals "ready-for-dev"
       </action>
@@ -86,7 +105,11 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
           💡 **Tip:** Stories in `ready-for-dev` may not have been validated. Consider running `validate-create-story` first for a quality
           check.
         </output>
-        <ask>Choose option [1], [2], [3], or [4], or specify story file path:</ask>
+        <ask>Choose option [1],
+ [2],
+ [3],
+ or [4],
+ or specify story file path:</ask>
 
         <check if="user chooses '1'">
           <action>HALT - Run create-story to create next story</action>
@@ -130,7 +153,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
           2. Run `*validate-create-story` to improve existing stories
           3. Specify which story to develop
         </output>
-        <ask>What would you like to do? Choose option [1], [2], or [3]:</ask>
+        <ask>What would you like to do? Choose option [1],
+ [2],
+ or [3]:</ask>
 
         <check if="user chooses '1'">
           <action>HALT - Run create-story to create next story</action>
@@ -152,16 +177,26 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
       </check>
     </check>
 
-    <action>Store the found story_key (e.g., "1-2-user-authentication") for later status updates</action>
+    <action>Store the found story_key (e.g.,
+ "1-2-user-authentication") for later status updates</action>
     <action>Find matching story file in {implementation_artifacts} using story_key pattern: {{story_key}}.md</action>
     <action>Read COMPLETE story file from discovered path</action>
 
     <anchor id="task_check" />
 
-    <action>Parse sections: Story, Acceptance Criteria, Tasks/Subtasks, Dev Notes, Dev Agent Record, File List, Change Log, Status</action>
+    <action>Parse sections: Story,
+ Acceptance Criteria,
+ Tasks/Subtasks,
+ Dev Notes,
+ Dev Agent Record,
+ File List,
+ Change Log,
+ Status</action>
 
     <action>Load comprehensive context from story file's Dev Notes section</action>
-    <action>Extract developer guidance from Dev Notes: architecture requirements, previous learnings, technical specifications</action>
+    <action>Extract developer guidance from Dev Notes: architecture requirements,
+ previous learnings,
+ technical specifications</action>
     <action>Use enhanced story context to inform implementation decisions and approaches</action>
 
     <action>Identify first incomplete task (unchecked [ ]) in Tasks/Subtasks</action>
@@ -178,9 +213,18 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
     <critical>Load all available context to inform implementation</critical>
 
     <action>Load {project_context} for coding standards and project-wide patterns (if exists)</action>
-    <action>Parse sections: Story, Acceptance Criteria, Tasks/Subtasks, Dev Notes, Dev Agent Record, File List, Change Log, Status</action>
+    <action>Parse sections: Story,
+ Acceptance Criteria,
+ Tasks/Subtasks,
+ Dev Notes,
+ Dev Agent Record,
+ File List,
+ Change Log,
+ Status</action>
     <action>Load comprehensive context from story file's Dev Notes section</action>
-    <action>Extract developer guidance from Dev Notes: architecture requirements, previous learnings, technical specifications</action>
+    <action>Extract developer guidance from Dev Notes: architecture requirements,
+ previous learnings,
+ technical specifications</action>
     <action>Use enhanced story context to inform implementation decisions and approaches</action>
     <output>✅ **Context Loaded**
       Story and project context available for implementation
@@ -209,7 +253,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
         **Review Outcome:** {{review_outcome}}
         **Action Items:** {{unchecked_review_count}} remaining to address
-        **Priorities:** {{high_count}} High, {{med_count}} Medium, {{low_count}} Low
+        **Priorities:** {{high_count}} High,
+ {{med_count}} Medium,
+ {{low_count}} Low
 
         **Strategy:** Will prioritize review follow-up tasks (marked [AI-Review]) before continuing with regular tasks.
       </output>
@@ -325,7 +371,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
     <!-- REVIEW FOLLOW-UP HANDLING -->
     <check if="task is review follow-up (has [AI-Review] prefix)">
-      <action>Extract review item details (severity, description, related AC/file)</action>
+      <action>Extract review item details (severity,
+ description,
+ related AC/file)</action>
       <action>Add to resolution tracking list: {{resolved_review_items}}</action>
 
       <!-- Mark task in Review Follow-ups section -->
@@ -341,7 +389,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
     <!-- ONLY MARK COMPLETE IF ALL VALIDATION PASS -->
     <check if="ALL validation gates pass AND tests ACTUALLY exist and pass">
       <action>ONLY THEN mark the task (and subtasks) checkbox with [x]</action>
-      <action>Update File List section with ALL new, modified, or deleted files (paths relative to repo root)</action>
+      <action>Update File List section with ALL new,
+ modified,
+ or deleted files (paths relative to repo root)</action>
       <action>Add completion notes to Dev Agent Record summarizing what was ACTUALLY implemented and tested</action>
     </check>
 
@@ -380,8 +430,10 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
       - Unit tests for core functionality added/updated
       - Integration tests for component interactions added when required
       - End-to-end tests for critical flows added when story demands them
-      - All tests pass (no regressions, new tests successful)
-      - Code quality checks pass (linting, static analysis if configured)
+      - All tests pass (no regressions,
+ new tests successful)
+      - Code quality checks pass (linting,
+ static analysis if configured)
       - File List includes every new/modified/deleted file (relative paths)
       - Dev Agent Record contains implementation notes
       - Change Log includes summary of changes
@@ -395,7 +447,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
       <action>Verify current status is "in-progress" (expected previous state)</action>
       <action>Update development_status[{{story_key}}] = "review"</action>
       <action>Update last_updated field to current date</action>
-      <action>Save file, preserving ALL comments and structure including STATUS DEFINITIONS</action>
+      <action>Save file,
+ preserving ALL comments and structure including STATUS DEFINITIONS</action>
       <output>✅ Story status updated to "review" in sprint-status.yaml</output>
     </check>
 
@@ -404,9 +457,11 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
     </check>
 
     <check if="story key not found in sprint status">
-      <output>⚠️ Story file updated, but sprint-status update failed: {{story_key}} not found
+      <output>⚠️ Story file updated,
+ but sprint-status update failed: {{story_key}} not found
 
-        Story status is set to "review" in file, but sprint-status.yaml may be out of sync.
+        Story status is set to "review" in file,
+ but sprint-status.yaml may be out of sync.
       </output>
     </check>
 
@@ -423,32 +478,44 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
     <action>Prepare a concise summary in Dev Agent Record → Completion Notes</action>
 
     <action>Communicate to {user_name} that story implementation is complete and ready for review</action>
-    <action>Summarize key accomplishments: story ID, story key, title, key changes made, tests added, files modified</action>
+    <action>Summarize key accomplishments: story ID,
+ story key,
+ title,
+ key changes made,
+ tests added,
+ files modified</action>
     <action>Provide the story file path and current status (now "review")</action>
 
-    <action>Based on {user_skill_level}, ask if user needs any explanations about:
+    <action>Based on {user_skill_level},
+ ask if user needs any explanations about:
       - What was implemented and how it works
       - Why certain technical decisions were made
       - How to test or verify the changes
-      - Any patterns, libraries, or approaches used
+      - Any patterns,
+ libraries,
+ or approaches used
       - Anything else they'd like clarified
     </action>
 
     <check if="user asks for explanations">
-      <action>Provide clear, contextual explanations tailored to {user_skill_level}</action>
+      <action>Provide clear,
+ contextual explanations tailored to {user_skill_level}</action>
       <action>Use examples and references to specific code when helpful</action>
     </check>
 
-    <action>Once explanations are complete (or user indicates no questions), suggest logical next steps</action>
+    <action>Once explanations are complete (or user indicates no questions),
+ suggest logical next steps</action>
     <action>Recommended next steps (flexible based on project setup):
       - Review the implemented story and test the changes
       - Verify all acceptance criteria are met
       - Ensure deployment readiness if applicable
       - Run `code-review` workflow for peer review
-      - Optional: If Test Architect module installed, run `/bmad:tea:automate` to expand guardrail tests
+      - Optional: If Test Architect module installed,
+ run `/bmad:tea:automate` to expand guardrail tests
     </action>
 
-    <output>💡 **Tip:** For best results, run `code-review` using a **different** LLM than the one that implemented this story.</output>
+    <output>💡 **Tip:** For best results,
+ run `code-review` using a **different** LLM than the one that implemented this story.</output>
     <check if="{sprint_status} file exists">
       <action>Suggest checking {sprint_status} to see project progress</action>
     </check>

@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on validating architectural coherence and completeness
 - ✅ VALIDATE all requirements are covered by architectural decisions
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -19,7 +21,13 @@
 - ✅ Run comprehensive validation checks on the complete architecture
 - ⚠️ Present A/P/C menu after generating validation results
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5, 6, 7]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6,
+ 7]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -40,13 +48,19 @@ This step will generate content and present choices:
 ## CONTEXT BOUNDARIES:
 
 - Complete architecture document with all sections is available
-- All architectural decisions, patterns, and structure are defined
-- Focus on validation, gap analysis, and coherence checking
+- All architectural decisions,
+ patterns,
+ and structure are defined
+- Focus on validation,
+ gap analysis,
+ and coherence checking
 - Prepare for handoff to implementation phase
 
 ## YOUR TASK:
 
-Validate the complete architecture for coherence, completeness, and readiness to guide AI agents through consistent implementation.
+Validate the complete architecture for coherence,
+ completeness,
+ and readiness to guide AI agents through consistent implementation.
 
 ## VALIDATION SEQUENCE:
 
@@ -123,7 +137,8 @@ Assess if AI agents can implement consistently:
 - Are all potential conflict points addressed?
 - Are naming conventions comprehensive?
 - Are communication patterns fully specified?
-- Are process patterns (error handling, etc.) complete?
+- Are process patterns (error handling,
+ etc.) complete?
 
 ### 4. Gap Analysis
 
@@ -152,7 +167,8 @@ Identify and document any missing elements:
 
 ### 5. Address Validation Issues
 
-For any issues found, facilitate resolution:
+For any issues found,
+ facilitate resolution:
 
 **Critical Issues:**
 "I found some issues that need to be addressed before implementation:
@@ -166,7 +182,8 @@ These could cause implementation problems. How would you like to resolve this?"
 
 {{important_issue_description}}
 
-These aren't blocking, but addressing them would make implementation smoother. Should we work on these?"
+These aren't blocking,
+ but addressing them would make implementation smoother. Should we work on these?"
 
 **Minor Issues:**
 "Here are some minor suggestions for improvement:
@@ -308,26 +325,37 @@ Show the validation results and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with validation issues
 - Process enhanced solutions for complex concerns
 - Ask user: "Accept these architectural improvements? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with validation context
 - Process collaborative insights on implementation readiness
 - Ask user: "Accept these changes to the validation results? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5, 6, 7]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6,
+ 7]`
 - Load `./step-08-complete.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -354,6 +382,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-08-complete.md` to complete the workflow and provide implementation guidance.
+After user selects 'C' and content is saved to document,
+ load `./step-08-complete.md` to complete the workflow and provide implementation guidance.
 
 Remember: Do NOT proceed to step-08 until user explicitly selects 'C' from the A/P/C menu and content is saved!

@@ -6,7 +6,8 @@ outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 
 ## STEP GOAL:
 
-To validate that all Functional Requirements from the PRD are captured in the epics and stories document, identifying any gaps in coverage.
+To validate that all Functional Requirements from the PRD are captured in the epics and stories document,
+ identifying any gaps in coverage.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -14,8 +15,10 @@ To validate that all Functional Requirements from the PRD are captured in the ep
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
@@ -142,7 +145,8 @@ Append to {outputFile}:
 
 ### 7. Auto-Proceed to Next Step
 
-After coverage validation complete, immediately load next step.
+After coverage validation complete,
+ immediately load next step.
 
 ## PROCEEDING TO UX ALIGNMENT
 

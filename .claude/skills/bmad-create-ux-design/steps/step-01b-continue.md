@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on understanding where we left off and continuing appropriately
 - 🚪 RESUME workflow from exact point where it was interrupted
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -28,7 +30,8 @@
 
 ## YOUR TASK:
 
-Resume the UX design workflow from where it was left off, ensuring smooth continuation.
+Resume the UX design workflow from where it was left off,
+ ensuring smooth continuation.
 
 ## CONTINUATION SEQUENCE:
 
@@ -45,7 +48,8 @@ Review the frontmatter to understand:
 
 Reload the context documents listed in `inputDocuments`:
 
-- For each document in `inputDocuments`, load the complete file
+- For each document in `inputDocuments`,
+ load the complete file
 - This ensures you have full context for continuation
 - Don't discover new documents - only reload what was previously processed
 
@@ -66,11 +70,13 @@ Welcome the user back and provide context:
 - Current UX design document is ready with all completed sections
 - Ready to continue from where we left off
 
-Does this look right, or do you want to make any adjustments before we proceed?"
+Does this look right,
+ or do you want to make any adjustments before we proceed?"
 
 ### 4. Determine Next Step
 
-Based on `lastStep` value, determine which step to load next:
+Based on `lastStep` value,
+ determine which step to load next:
 
 - If `lastStep = 1` → Load `./step-02-discovery.md`
 - If `lastStep = 2` → Load `./step-03-core-experience.md`
@@ -80,7 +86,8 @@ Based on `lastStep` value, determine which step to load next:
 
 ### 5. Present Continuation Options
 
-After presenting current progress, ask:
+After presenting current progress,
+ ask:
 "Ready to continue with Step {nextStepNumber}: {nextStepTitle}?
 
 [C] Continue to Step {nextStepNumber}"
@@ -110,7 +117,9 @@ If `lastStep` indicates the final step is completed:
 
 The final UX design specification is ready at {planning_artifacts}/ux-design-specification.md with all sections completed through step {finalStepNumber}.
 
-The complete UX design includes visual foundations, user flows, and design specifications ready for implementation.
+The complete UX design includes visual foundations,
+ user flows,
+ and design specifications ready for implementation.
 
 Would you like me to:
 
@@ -122,6 +131,7 @@ What would be most helpful?"
 
 ## NEXT STEP:
 
-After user confirms they're ready to continue, load the appropriate next step file based on the `lastStep` value from frontmatter.
+After user confirms they're ready to continue,
+ load the appropriate next step file based on the `lastStep` value from frontmatter.
 
 Remember: Do NOT load the next step until user explicitly selects [C] to continue!

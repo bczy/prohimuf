@@ -2,7 +2,8 @@
 
 ## STEP GOAL:
 
-To generate all epics with their stories based on the approved epics_list, following the template structure exactly.
+To generate all epics with their stories based on the approved epics_list,
+ following the template structure exactly.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -11,14 +12,17 @@ To generate all epics with their stories based on the approved epics_list, follo
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
 - 🔄 CRITICAL: Process epics sequentially
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product strategist and technical specifications writer
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring story creation and acceptance criteria expertise
 - ✅ User brings their implementation priorities and constraints
 
@@ -45,16 +49,22 @@ Load {planning_artifacts}/epics.md and review:
 
 - Approved epics_list from Step 2
 - FR coverage map
-- All requirements (FRs, NFRs, additional, **UX Design requirements if present**)
+- All requirements (FRs,
+ NFRs,
+ additional,
+ **UX Design requirements if present**)
 - Template structure at the end of the document
 
-**UX Design Integration**: If UX Design Requirements (UX-DRs) were extracted in Step 1, ensure they are visible during story creation. UX-DRs must be covered by stories — either within existing epics (e.g., accessibility fixes for a feature epic) or in a dedicated "Design System / UX Polish" epic.
+**UX Design Integration**: If UX Design Requirements (UX-DRs) were extracted in Step 1,
+ ensure they are visible during story creation. UX-DRs must be covered by stories — either within existing epics (e.g.,
+ accessibility fixes for a feature epic) or in a dedicated "Design System / UX Polish" epic.
 
 ### 2. Explain Story Creation Approach
 
 **STORY CREATION GUIDELINES:**
 
-For each epic, create stories that:
+For each epic,
+ create stories that:
 
 - Follow the exact template structure
 - Are sized for single dev agent completion
@@ -82,7 +92,9 @@ Stories must be independently completable in sequence:
 ### Story {N}.{M}: {story_title}
 
 As a {user_type},
+
 I want {capability},
+
 So that {value_benefit}.
 
 **Acceptance Criteria:**
@@ -110,7 +122,8 @@ _Epic 2: Content Creation_
 **❌ BAD STORY EXAMPLES:**
 
 - Story: "Set up database" (no user value)
-- Story: "Create all models" (too large, no user value)
+- Story: "Create all models" (too large,
+ no user value)
 - Story: "Build authentication system" (too large)
 - Story: "Login UI (depends on Story 1.3 API endpoint)" (future dependency!)
 - Story: "Edit post (requires Story 1.4 to be implemented first)" (wrong order!)
@@ -141,9 +154,11 @@ Work with user to break down the epic into stories:
 
 For each story in the epic:
 
-1. **Story Title**: Clear, action-oriented
+1. **Story Title**: Clear,
+ action-oriented
 2. **User Story**: Complete the As a/I want/So that format
-3. **Acceptance Criteria**: Write specific, testable criteria
+3. **Acceptance Criteria**: Write specific,
+ testable criteria
 
 **AC Writing Guidelines:**
 
@@ -166,7 +181,8 @@ After writing each story:
 When story is approved:
 
 - Append it to {planning_artifacts}/epics.md following template structure
-- Use correct numbering (Epic N, Story M)
+- Use correct numbering (Epic N,
+ Story M)
 - Maintain proper markdown formatting
 
 ### 4. Epic Completion
@@ -180,7 +196,10 @@ After all stories for an epic are complete:
 
 ### 5. Repeat for All Epics
 
-Continue the process for each epic in the approved list, processing them in order (Epic 1, Epic 2, etc.).
+Continue the process for each epic in the approved list,
+ processing them in order (Epic 1,
+ Epic 2,
+ etc.).
 
 ### 6. Final Document Completion
 
@@ -200,9 +219,13 @@ The final {planning_artifacts}/epics.md must follow this structure exactly:
 2. **Requirements Inventory** with all three subsections populated
 3. **FR Coverage Map** showing requirement to epic mapping
 4. **Epic List** with approved epic structure
-5. **Epic sections** for each epic (N = 1, 2, 3...)
+5. **Epic sections** for each epic (N = 1,
+ 2,
+ 3...)
    - Epic title and goal
-   - All stories for that epic (M = 1, 2, 3...)
+   - All stories for that epic (M = 1,
+ 2,
+ 3...)
      - Story title and user story
      - Acceptance Criteria using Given/When/Then format
 
@@ -216,19 +239,23 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 
 - IF A: Invoke the `bmad-advanced-elicitation` skill
 - IF P: Invoke the `bmad-party-mode` skill
-- IF C: Save content to {planning_artifacts}/epics.md, update frontmatter, then read fully and follow: ./step-04-final-validation.md
+- IF C: Save content to {planning_artifacts}/epics.md,
+ update frontmatter,
+ then read fully and follow: ./step-04-final-validation.md
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#7-present-final-menu-options)
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 - User can chat or ask questions - always respond and then end with display again of the menu options
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN [C continue option] is selected and [all epics and stories saved to document following the template structure exactly], will you then read fully and follow: `./step-04-final-validation.md` to begin final validation phase.
+ONLY WHEN [C continue option] is selected and [all epics and stories saved to document following the template structure exactly],
+ will you then read fully and follow: `./step-04-final-validation.md` to begin final validation phase.
 
 ---
 
@@ -252,4 +279,6 @@ ONLY WHEN [C continue option] is selected and [all epics and stories saved to do
 - Missing acceptance criteria
 - Not following proper formatting
 
-**Master Rule:** Skipping steps, optimizing sequences, or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.
+**Master Rule:** Skipping steps,
+ optimizing sequences,
+ or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.

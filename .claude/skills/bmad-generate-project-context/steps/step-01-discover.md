@@ -4,7 +4,8 @@
 
 - 🛑 NEVER generate content without user input
 - ✅ ALWAYS treat this as collaborative discovery between technical peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on discovering existing project context and technology stack
 - 🎯 IDENTIFY critical implementation rules that AI agents need
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -21,18 +22,23 @@
 
 - Variables from workflow.md are available in memory
 - Focus on existing project files and architecture decisions
-- Look for patterns, conventions, and unique requirements
+- Look for patterns,
+ conventions,
+ and unique requirements
 - Prioritize rules that prevent implementation mistakes
 
 ## YOUR TASK:
 
-Discover the project's technology stack, existing patterns, and critical implementation rules that AI agents must follow when writing code.
+Discover the project's technology stack,
+ existing patterns,
+ and critical implementation rules that AI agents must follow when writing code.
 
 ## DISCOVERY SEQUENCE:
 
 ### 1. Check for Existing Project Context
 
-First, check if project context already exists:
+First,
+ check if project context already exists:
 
 - Look for file at `{project_knowledge}/project-context.md or {project-root}/**/project-context.md`
 - If exists: Read complete file to understand existing rules
@@ -50,16 +56,26 @@ Load and analyze project files to identify technologies:
 
 **Package Files:**
 
-- Check for `package.json`, `requirements.txt`, `Cargo.toml`, etc.
+- Check for `package.json`,
+ `requirements.txt`,
+ `Cargo.toml`,
+ etc.
 - Extract exact versions of all dependencies
 - Note development vs production dependencies
 
 **Configuration Files:**
 
 - Look for project language specific configs ( example: `tsconfig.json`)
-- Build tool configs (webpack, vite, next.config.js, etc.)
-- Linting and formatting configs (.eslintrc, .prettierrc, etc.)
-- Testing configurations (jest.config.js, vitest.config.ts, etc.)
+- Build tool configs (webpack,
+ vite,
+ next.config.js,
+ etc.)
+- Linting and formatting configs (.eslintrc,
+ .prettierrc,
+ etc.)
+- Testing configurations (jest.config.js,
+ vitest.config.ts,
+ etc.)
 
 ### 3. Identify Existing Code Patterns
 
@@ -67,7 +83,9 @@ Search through existing codebase for patterns:
 
 **Naming Conventions:**
 
-- File naming patterns (PascalCase, kebab-case, etc.)
+- File naming patterns (PascalCase,
+ kebab-case,
+ etc.)
 - Component/function naming conventions
 - Variable naming patterns
 - Test file naming patterns
@@ -119,7 +137,8 @@ Look for rules that AI agents might miss:
 
 ### 5. Initialize Project Context Document
 
-Based on discovery, create or update the context document:
+Based on discovery,
+ create or update the context document:
 
 #### A. Fresh Document Setup (if no existing context)
 
@@ -148,9 +167,12 @@ Report findings to user:
 
 **Key Areas for Context Rules:**
 
-- {{area_1}} (e.g., TypeScript configuration)
-- {{area_2}} (e.g., Testing patterns)
-- {{area_3}} (e.g., Code organization)
+- {{area_1}} (e.g.,
+ TypeScript configuration)
+- {{area_2}} (e.g.,
+ Testing patterns)
+- {{area_3}} (e.g.,
+ Code organization)
 
 {if_existing_context}
 **Existing Context:** Found {{sections}} sections already defined. We can update or add to these.
@@ -181,6 +203,7 @@ Ready to create/update your project context. This will help AI agents implement 
 
 ## NEXT STEP:
 
-After user selects [C] to continue, load `./step-02-generate.md` to collaboratively generate the specific project context rules.
+After user selects [C] to continue,
+ load `./step-02-generate.md` to collaboratively generate the specific project context rules.
 
 Remember: Do NOT proceed to step-02 until user explicitly selects [C] from the menu and discovery is confirmed and the initial file has been written as directed in this discovery step!

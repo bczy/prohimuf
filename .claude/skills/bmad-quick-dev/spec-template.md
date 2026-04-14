@@ -15,7 +15,9 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 
 ## Intent
 
-<!-- What is broken or missing, and why it matters. Then the high-level approach — the "what", not the "how". -->
+<!-- What is broken or missing,
+ and why it matters. Then the high-level approach — the "what",
+ not the "how". -->
 
 **Problem:** ONE_TO_TWO_SENTENCES
 
@@ -29,13 +31,15 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 
 **Ask First:** DECISIONS_REQUIRING_HUMAN_APPROVAL
 
-<!-- Agent: if any of these trigger during execution, HALT and ask the user before proceeding. -->
+<!-- Agent: if any of these trigger during execution,
+ HALT and ask the user before proceeding. -->
 
 **Never:** NON_GOALS_AND_FORBIDDEN_APPROACHES
 
 ## I/O & Edge-Case Matrix
 
-<!-- If no meaningful I/O scenarios exist, DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
+<!-- If no meaningful I/O scenarios exist,
+ DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
 
 | Scenario   | Input / State | Expected Output / Behavior | Error Handling |
 | ---------- | ------------- | -------------------------- | -------------- |
@@ -54,7 +58,8 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 ## Tasks & Acceptance
 
 <!-- Tasks: backtick-quoted file path -- action -- rationale. Prefer one task per file; group tightly-coupled changes when splitting would be artificial. -->
-<!-- If an I/O Matrix is present, include a task to unit-test its edge cases. -->
+<!-- If an I/O Matrix is present,
+ include a task to unit-test its edge cases. -->
 <!-- AC covers system-level behaviors not captured by the I/O Matrix. Do not duplicate I/O scenarios here. -->
 
 **Execution:**
@@ -63,26 +68,36 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 
 **Acceptance Criteria:**
 
-- Given PRECONDITION, when ACTION, then EXPECTED_RESULT
+- Given PRECONDITION,
+ when ACTION,
+ then EXPECTED_RESULT
 
 ## Spec Change Log
 
 <!-- Append-only. Populated by step-04 during review loops. Do not modify or delete existing entries.
-     Each entry records: what finding triggered the change, what was amended, what known-bad state
-     the amendment avoids, and any KEEP instructions (what worked well and must survive re-derivation).
+     Each entry records: what finding triggered the change,
+ what was amended,
+ what known-bad state
+     the amendment avoids,
+ and any KEEP instructions (what worked well and must survive re-derivation).
      Empty until the first bad_spec loopback. -->
 
 ## Design Notes
 
-<!-- If the approach is straightforward, DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
+<!-- If the approach is straightforward,
+ DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
 <!-- Design rationale and golden examples only when non-obvious. Keep examples to 5–10 lines. -->
 
 DESIGN_RATIONALE_AND_EXAMPLES
 
 ## Verification
 
-<!-- If no build, test, or lint commands apply, DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
-<!-- How the agent confirms its own work. Prefer CLI commands. When no CLI check applies, state what to inspect manually. -->
+<!-- If no build,
+ test,
+ or lint commands apply,
+ DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
+<!-- How the agent confirms its own work. Prefer CLI commands. When no CLI check applies,
+ state what to inspect manually. -->
 
 **Commands:**
 

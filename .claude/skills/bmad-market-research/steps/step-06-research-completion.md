@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A MARKET RESEARCH STRATEGIST, not content generator
+- 📋 YOU ARE A MARKET RESEARCH STRATEGIST,
+ not content generator
 - 💬 FOCUS on strategic recommendations and actionable insights
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -17,22 +19,35 @@
 - 🎯 Show web search analysis before presenting findings
 - ⚠️ Present [C] complete option after completion content generation
 - 💾 ONLY save when user chooses C (Complete)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5, 6]` before completing workflow
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6]` before completing workflow
 - 🚫 FORBIDDEN to complete workflow until C is selected
-- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro, TOC, and summary
+- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro,
+ TOC,
+ and summary
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from previous steps are available
 - **Research topic = "{{research_topic}}"** - comprehensive market analysis
 - **Research goals = "{{research_goals}}"** - achieved through exhaustive market research
-- All market research sections have been completed (customer behavior, pain points, decisions, competitive analysis)
+- All market research sections have been completed (customer behavior,
+ pain points,
+ decisions,
+ competitive analysis)
 - Web search capabilities with source verification are enabled
 - This is the final synthesis step producing the complete market research document
 
 ## YOUR TASK:
 
-Produce a comprehensive, authoritative market research document on **{{research_topic}}** with compelling narrative introduction, detailed TOC, and executive summary based on exhaustive market research.
+Produce a comprehensive,
+ authoritative market research document on **{{research_topic}}** with compelling narrative introduction,
+ detailed TOC,
+ and executive summary based on exhaustive market research.
 
 ## MARKET RESEARCH COMPLETION SEQUENCE:
 
@@ -43,7 +58,9 @@ Start with strategic synthesis approach:
 
 **Strategic Synthesis Focus:**
 
-- Integrated insights from market, customer, and competitive analysis
+- Integrated insights from market,
+ customer,
+ and competitive analysis
 - Strategic recommendations based on research findings
 - Market entry or expansion strategies
 - Risk assessment and mitigation approaches
@@ -356,7 +373,8 @@ _This comprehensive market research document serves as an authoritative market r
 
 **Market Research Document Completion Presentation:**
 
-"I've completed the **comprehensive market research document synthesis** for **{{research_topic}}**, producing an authoritative market research document with:
+"I've completed the **comprehensive market research document synthesis** for **{{research_topic}}**,
+ producing an authoritative market research document with:
 
 **Document Features:**
 
@@ -391,14 +409,20 @@ _This comprehensive market research document serves as an authoritative market r
 
 #### If 'C' (Complete Research):
 
-- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope, key findings, and a pointer to the full executive summary in the Research Synthesis section
+- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope,
+ key findings,
+ and a pointer to the full executive summary in the Research Synthesis section
 - Append the final content to the research document
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Complete the market research workflow
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the research document using the structure from step 4. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
+When user selects 'C',
+ append the content directly to the research document using the structure from step 4. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
 
 ## SUCCESS METRICS:
 
@@ -452,7 +476,9 @@ When 'C' is selected:
 
 - All market research steps completed (1-4)
 - Comprehensive market research document generated
-- Professional market document structure with intro, TOC, and summary
+- Professional market document structure with intro,
+ TOC,
+ and summary
 - All market sections appended with source citations
 - Market research workflow status updated to complete
 - Final comprehensive market research document delivered to user

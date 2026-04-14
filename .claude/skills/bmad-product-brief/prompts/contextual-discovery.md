@@ -4,17 +4,25 @@
 
 # Stage 2: Contextual Discovery
 
-**Goal:** Armed with the user's stated intent, intelligently gather and synthesize all available context — documents, project knowledge, and web research — so later stages work from a rich, relevant foundation.
+**Goal:** Armed with the user's stated intent,
+ intelligently gather and synthesize all available context — documents,
+ project knowledge,
+ and web research — so later stages work from a rich,
+ relevant foundation.
 
 ## Subagent Fan-Out
 
-Now that you know what the brief is about, fan out subagents in parallel to gather context. Each subagent receives the product intent summary so it knows what's relevant.
+Now that you know what the brief is about,
+ fan out subagents in parallel to gather context. Each subagent receives the product intent summary so it knows what's relevant.
 
 **Launch in parallel:**
 
 1. **Artifact Analyzer** (`../agents/artifact-analyzer.md`) — Scans `{planning_artifacts}` and `{project_knowledge}` for relevant documents. Also scans any specific paths the user provided. Returns structured synthesis of what it found.
 
-2. **Web Researcher** (`../agents/web-researcher.md`) — Searches for competitive landscape, market context, trends, and relevant industry data. Returns structured findings scoped to the product domain.
+2. **Web Researcher** (`../agents/web-researcher.md`) — Searches for competitive landscape,
+ market context,
+ trends,
+ and relevant industry data. Returns structured findings scoped to the product domain.
 
 ### Graceful Degradation
 
@@ -39,7 +47,8 @@ Once subagent results return (or inline scanning completes):
 - Present a concise summary of what you found: "Here's what I learned from your documents and web research..."
 - Highlight anything surprising or worth discussing
 - Share the gaps you've identified
-- Ask: "Anything else you'd like to add, or shall we move on to filling in the details?"
+- Ask: "Anything else you'd like to add,
+ or shall we move on to filling in the details?"
 - Route to `guided-elicitation.md`
 
 **Yolo mode:**

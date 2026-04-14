@@ -4,7 +4,8 @@
 
 - 🛑 NEVER generate content without user input
 - ✅ ALWAYS treat this as collaborative facilitation
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on session setup and continuation detection only
 - 🚪 DETECT existing workflow state and handle continuation properly
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the `communication_language`
@@ -31,12 +32,15 @@ Initialize the brainstorming workflow by detecting continuation state and settin
 
 ### 1. Check for Existing Sessions
 
-First, check the brainstorming sessions folder for existing sessions:
+First,
+ check the brainstorming sessions folder for existing sessions:
 
 - List all files in `{output_folder}/brainstorming/`
 - **DO NOT read any file contents** - only list filenames
-- If files exist, identify the most recent by date/time in the filename
-- If no files exist, this is a fresh workflow
+- If files exist,
+ identify the most recent by date/time in the filename
+- If no files exist,
+ this is a fresh workflow
 
 ### 2. Handle Existing Sessions (If Files Found)
 
@@ -75,7 +79,8 @@ cp "../template.md" "{brainstorming_session_output_file}"
 **Check for Context File:**
 
 - Check if `context_file` is provided in workflow invocation
-- If context file exists and is readable, load it
+- If context file exists and is readable,
+ load it
 - Parse context content for project-specific guidance
 - Use context to inform session setup and approach recommendations
 
@@ -83,22 +88,28 @@ cp "../template.md" "{brainstorming_session_output_file}"
 
 "Welcome {{user_name}}! I'm excited to facilitate your brainstorming session. I'll guide you through proven creativity techniques to generate innovative ideas and breakthrough solutions.
 
-**Context Loading:** [If context_file provided, indicate context is loaded]
-**Context-Based Guidance:** [If context available, briefly mention focus areas]
+**Context Loading:** [If context_file provided,
+ indicate context is loaded]
+**Context-Based Guidance:** [If context available,
+ briefly mention focus areas]
 
 **Let's set up your session for maximum creativity and productivity:**
 
 **Session Discovery Questions:**
 
 1. **What are we brainstorming about?** (The central topic or challenge)
-2. **What specific outcomes are you hoping for?** (Types of ideas, solutions, or insights)"
+2. **What specific outcomes are you hoping for?** (Types of ideas,
+ solutions,
+ or insights)"
 
 #### D. Process User Responses
 
-Wait for user responses, then:
+Wait for user responses,
+ then:
 
 **Session Analysis:**
-"Based on your responses, I understand we're focusing on **[summarized topic]** with goals around **[summarized objectives]**.
+"Based on your responses,
+ I understand we're focusing on **[summarized topic]** with goals around **[summarized objectives]**.
 
 **Session Parameters:**
 
@@ -134,7 +145,8 @@ Append to document:
 
 ### Context Guidance
 
-_[If context file provided, summarize key context and focus areas]_
+_[If context file provided,
+ summarize key context and focus areas]_
 
 ### Session Setup
 
@@ -143,7 +155,8 @@ _[Content based on conversation about session parameters and facilitator approac
 
 ## APPEND TO DOCUMENT:
 
-When user selects approach, append the session overview content directly to `{brainstorming_session_output_file}` using the structure from above.
+When user selects approach,
+ append the session overview content directly to `{brainstorming_session_output_file}` using the structure from above.
 
 ### E. Continue to Technique Selection
 
@@ -153,7 +166,8 @@ When user selects approach, append the session overview content directly to `{br
 [1] User-Selected Techniques - Browse our complete technique library
 [2] AI-Recommended Techniques - Get customized suggestions based on your goals
 [3] Random Technique Selection - Discover unexpected creative methods
-[4] Progressive Technique Flow - Start broad, then systematically narrow focus
+[4] Progressive Technique Flow - Start broad,
+ then systematically narrow focus
 
 Which approach appeals to you most? (Enter 1-4)"
 
@@ -164,7 +178,8 @@ Which approach appeals to you most? (Enter 1-4)"
 #### When user selects approach number:
 
 - **Append initial session overview to `{brainstorming_session_output_file}`**
-- **Update frontmatter:** `stepsCompleted: [1]`, `selected_approach: '[selected approach]'`
+- **Update frontmatter:** `stepsCompleted: [1]`,
+ `selected_approach: '[selected approach]'`
 - **Load the appropriate step-02 file** based on selection
 
 ### 5. Handle User Selection
@@ -209,6 +224,7 @@ After user selects approach number:
 
 ## NEXT STEPS:
 
-Based on user's approach selection, load the appropriate step-02 file for technique selection and facilitation.
+Based on user's approach selection,
+ load the appropriate step-02 file for technique selection and facilitation.
 
 Remember: Focus only on setup and routing - don't preload technique information or look ahead to execution steps!

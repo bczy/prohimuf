@@ -5,11 +5,16 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
-- 💬 FOCUS on establishing visual design foundation (colors, typography, spacing)
-- 🎯 COLLABORATIVE discovery, not assumption-based design
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
+- 💬 FOCUS on establishing visual design foundation (colors,
+ typography,
+ spacing)
+- 🎯 COLLABORATIVE discovery,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +23,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating visual foundation content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -41,11 +47,16 @@ This step will generate content and present choices:
 - Current document and frontmatter from previous steps are available
 - Design system choice from step 6 provides component foundation
 - Emotional response goals from step 4 inform visual decisions
-- Focus on colors, typography, spacing, and layout foundation
+- Focus on colors,
+ typography,
+ spacing,
+ and layout foundation
 
 ## YOUR TASK:
 
-Establish the visual design foundation including color themes, typography, and spacing systems.
+Establish the visual design foundation including color themes,
+ typography,
+ and spacing systems.
 
 ## VISUAL FOUNDATION SEQUENCE:
 
@@ -54,15 +65,20 @@ Establish the visual design foundation including color themes, typography, and s
 Check for existing brand requirements:
 "Do you have existing brand guidelines or a specific color palette I should follow? (y/n)
 
-If yes, I'll extract and document your brand colors and create semantic color mappings.
-If no, I'll generate theme options based on your project's personality and emotional goals from our earlier discussion."
+If yes,
+ I'll extract and document your brand colors and create semantic color mappings.
+If no,
+ I'll generate theme options based on your project's personality and emotional goals from our earlier discussion."
 
 ### 2. Generate Color Theme Options (If no brand guidelines)
 
 Create visual exploration opportunities:
-"If no existing brand guidelines, I'll create a color theme visualizer to help you explore options.
+"If no existing brand guidelines,
+ I'll create a color theme visualizer to help you explore options.
 
-🎨 I can generate comprehensive HTML color theme visualizers with multiple theme options, complete UI examples, and the ability to see how colors work in real interface contexts.
+🎨 I can generate comprehensive HTML color theme visualizers with multiple theme options,
+ complete UI examples,
+ and the ability to see how colors work in real interface contexts.
 
 This will help you make an informed decision about the visual direction for {{project_name}}."
 
@@ -71,7 +87,10 @@ This will help you make an informed decision about the visual direction for {{pr
 Establish the typographic foundation:
 "**Typography Questions:**
 
-- What should the overall tone feel like? (Professional, friendly, modern, classic?)
+- What should the overall tone feel like? (Professional,
+ friendly,
+ modern,
+ classic?)
 - How much text content will users read? (Headings only? Long-form content?)
 - Any accessibility requirements for font sizes or contrast?
 - Any brand fonts we must use?
@@ -79,7 +98,11 @@ Establish the typographic foundation:
 **Typography Strategy:**
 
 - Choose primary and secondary typefaces
-- Establish type scale (h1, h2, h3, body, etc.)
+- Establish type scale (h1,
+ h2,
+ h3,
+ body,
+ etc.)
 - Define line heights and spacing relationships
 - Consider readability and accessibility"
 
@@ -89,9 +112,12 @@ Define the structural foundation:
 "**Spacing and Layout Foundation:**
 
 - How should the overall layout feel? (Dense and efficient? Airy and spacious?)
-- What spacing unit should we use? (4px, 8px, 12px base?)
+- What spacing unit should we use? (4px,
+ 8px,
+ 12px base?)
 - How much white space should be between elements?
-- Should we use a grid system? If so, what column structure?
+- Should we use a grid system? If so,
+ what column structure?
 
 **Layout Principles:**
 
@@ -107,7 +133,12 @@ Synthesize all visual decisions:
 **Color System:**
 
 - [Color strategy based on brand guidelines or generated themes]
-- Semantic color mapping (primary, secondary, success, warning, error, etc.)
+- Semantic color mapping (primary,
+ secondary,
+ success,
+ warning,
+ error,
+ etc.)
 - Accessibility compliance (contrast ratios)
 
 **Typography System:**
@@ -130,7 +161,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Visual Design Foundation
@@ -155,7 +187,8 @@ When saving to document, append these Level 2 and Level 3 sections:
 ### 7. Present Content and Menu
 
 Show the generated visual foundation content and present choices:
-"I've established the visual design foundation for {{project_name}}. This provides the building blocks for consistent, beautiful design.
+"I've established the visual design foundation for {{project_name}}. This provides the building blocks for consistent,
+ beautiful design.
 
 **Here's what I'll add to the document:**
 
@@ -173,16 +206,20 @@ Show the generated visual foundation content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current visual foundation content
 - Process the enhanced visual insights that come back
 - Ask user: "Accept these improvements to the visual foundation? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current visual foundation
 - Process the collaborative visual insights that come back
 - Ask user: "Accept these changes to the visual foundation? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -192,7 +229,8 @@ Show the generated visual foundation content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -220,6 +258,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-09-design-directions.md` to generate design direction mockups.
+After user selects 'C' and content is saved to document,
+ load `./step-09-design-directions.md` to generate design direction mockups.
 
 Remember: Do NOT proceed to step-09 until user explicitly selects 'C' from the A/P/C menu and content is saved!

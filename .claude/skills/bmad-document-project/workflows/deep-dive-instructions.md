@@ -8,7 +8,9 @@
 <critical>YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`</critical>
 
 <step n="13" goal="Deep-dive documentation of specific area" if="workflow_mode == deep_dive">
-<critical>Deep-dive mode requires literal full-file review. Sampling, guessing, or relying solely on tooling output is FORBIDDEN.</critical>
+<critical>Deep-dive mode requires literal full-file review. Sampling,
+ guessing,
+ or relying solely on tooling output is FORBIDDEN.</critical>
 <action>Load existing project structure from index.md and project-parts.json (if exists)</action>
 <action>Load source tree analysis to understand available areas</action>
 
@@ -57,9 +59,12 @@
 
 **Or specify custom:**
 
-- Folder path (e.g., "client/src/features/dashboard")
-- File path (e.g., "server/src/api/users.ts")
-- Feature name (e.g., "authentication system")
+- Folder path (e.g.,
+ "client/src/features/dashboard")
+- File path (e.g.,
+ "server/src/api/users.ts")
+- Feature name (e.g.,
+ "authentication system")
 
 Enter your choice (number or custom path):
 </ask>
@@ -84,21 +89,45 @@ This will read EVERY file in this area. Proceed? [y/n]
 <step n="13b" goal="Comprehensive exhaustive scan of target area">
   <action>Set scan_mode = "exhaustive"</action>
   <action>Initialize file_inventory = []</action>
-  <critical>You must read every line of every file in scope and capture a plain-language explanation (what the file does, side effects, why it matters) that future developer agents can act on. No shortcuts.</critical>
+  <critical>You must read every line of every file in scope and capture a plain-language explanation (what the file does,
+ side effects,
+ why it matters) that future developer agents can act on. No shortcuts.</critical>
 
   <check if="target_type == folder">
     <action>Get complete recursive file list from {{target_path}}</action>
-    <action>Filter out: node_modules/, .git/, dist/, build/, coverage/, *.min.js, *.map</action>
+    <action>Filter out: node_modules/,
+ .git/,
+ dist/,
+ build/,
+ coverage/,
+ *.min.js,
+ *.map</action>
     <action>For EVERY remaining file in folder:
       - Read complete file contents (all lines)
-      - Extract all exports (functions, classes, types, interfaces, constants)
+      - Extract all exports (functions,
+ classes,
+ types,
+ interfaces,
+ constants)
       - Extract all imports (dependencies)
       - Identify purpose from comments and code structure
-      - Write 1-2 sentences (minimum) in natural language describing behaviour, side effects, assumptions, and anything a developer must know before modifying the file
+      - Write 1-2 sentences (minimum) in natural language describing behaviour,
+ side effects,
+ assumptions,
+ and anything a developer must know before modifying the file
       - Extract function signatures with parameter types and return types
-      - Note any TODOs, FIXMEs, or comments
-      - Identify patterns (hooks, components, services, controllers, etc.)
-      - Capture per-file contributor guidance: `contributor_note`, `risks`, `verification_steps`, `suggested_tests`
+      - Note any TODOs,
+ FIXMEs,
+ or comments
+      - Identify patterns (hooks,
+ components,
+ services,
+ controllers,
+ etc.)
+      - Capture per-file contributor guidance: `contributor_note`,
+ `risks`,
+ `verification_steps`,
+ `suggested_tests`
       - Store in file_inventory
     </action>
   </check>
@@ -114,7 +143,9 @@ This will read EVERY file in this area. Proceed? [y/n]
   <check if="target_type == api_group">
     <action>Identify all route/controller files in API group</action>
     <action>Read all route handlers completely</action>
-    <action>Read associated middleware, controllers, services</action>
+    <action>Read associated middleware,
+ controllers,
+ services</action>
     <action>Read data models and schemas used</action>
     <action>Extract complete request/response schemas</action>
     <action>Document authentication and authorization requirements</action>
@@ -123,7 +154,11 @@ This will read EVERY file in this area. Proceed? [y/n]
 
   <check if="target_type == feature">
     <action>Search codebase for all files related to feature name</action>
-    <action>Include: UI components, API endpoints, models, services, tests</action>
+    <action>Include: UI components,
+ API endpoints,
+ models,
+ services,
+ tests</action>
     <action>Read each file completely</action>
     <action>Store all in file_inventory</action>
   </check>
@@ -131,16 +166,29 @@ This will read EVERY file in this area. Proceed? [y/n]
   <check if="target_type == component_group">
     <action>Get all component files in group</action>
     <action>Read each component completely</action>
-    <action>Extract: Props interfaces, hooks used, child components, state management</action>
+    <action>Extract: Props interfaces,
+ hooks used,
+ child components,
+ state management</action>
     <action>Store all in file_inventory</action>
   </check>
 
-<action>For each file in file\*inventory, document: - **File Path:** Full path - **Purpose:** What this file does (1-2 sentences) - **Lines of Code:** Total LOC - **Exports:** Complete list with signatures
+<action>For each file in file\*inventory,
+ document: - **File Path:** Full path - **Purpose:** What this file does (1-2 sentences) - **Lines of Code:** Total LOC - **Exports:** Complete list with signatures
 
 - Functions: `functionName(param: Type): ReturnType` - Description
   - Classes: `ClassName` - Description with key methods
   - Types/Interfaces: `TypeName` - Description
-  - Constants: `CONSTANT_NAME: Type` - Description - **Imports/Dependencies:** What it uses and why - **Used By:** Files that import this (dependents) - **Key Implementation Details:** Important logic, algorithms, patterns - **State Management:** If applicable (Redux, Context, local state) - **Side Effects:** API calls, database queries, file I/O, external services - **Error Handling:** Try/catch blocks, error boundaries, validation - **Testing:** Associated test files and coverage - **Comments/TODOs:** Any inline documentation or planned work
+  - Constants: `CONSTANT_NAME: Type` - Description - **Imports/Dependencies:** What it uses and why - **Used By:** Files that import this (dependents) - **Key Implementation Details:** Important logic,
+ algorithms,
+ patterns - **State Management:** If applicable (Redux,
+ Context,
+ local state) - **Side Effects:** API calls,
+ database queries,
+ file I/O,
+ external services - **Error Handling:** Try/catch blocks,
+ error boundaries,
+ validation - **Testing:** Associated test files and coverage - **Comments/TODOs:** Any inline documentation or planned work
     </action>
 
 <template-output>comprehensive_file_inventory</template-output>
@@ -200,7 +248,11 @@ This will read EVERY file in this area. Proceed? [y/n]
 
 <template-output>deep_dive_documentation</template-output>
 
-<action>Update state file: - Add to deep_dive_targets array: {"target_name": "{{target_name}}", "target_path": "{{target_path}}", "files_analyzed": {{file_count}}, "output_file": "deep-dive-{{sanitized_target_name}}.md", "timestamp": "{{now}}"} - Add output to outputs_generated - Update last_updated timestamp
+<action>Update state file: - Add to deep_dive_targets array: {"target_name": "{{target_name}}",
+ "target_path": "{{target_path}}",
+ "files_analyzed": {{file_count}},
+ "output_file": "deep-dive-{{sanitized_target_name}}.md",
+ "timestamp": "{{now}}"} - Add output to outputs_generated - Update last_updated timestamp
 </action>
 </step>
 
@@ -222,7 +274,8 @@ Detailed exhaustive analysis of specific areas:
 
 <action>Add link to new deep-dive doc:
 
-- [{{target_name}} Deep-Dive](./deep-dive-{{sanitized_target_name}}.md) - Comprehensive analysis of {{target_description}} ({{file_count}} files, {{total_loc}} LOC) - Generated {{date}}
+- [{{target_name}} Deep-Dive](./deep-dive-{{sanitized_target_name}}.md) - Comprehensive analysis of {{target_description}} ({{file_count}} files,
+ {{total_loc}} LOC) - Generated {{date}}
   </action>
 
   <action>Update index metadata:

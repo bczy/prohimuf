@@ -19,14 +19,16 @@ stateDiagram-v2
     HIT --> IDLE : wave respawn
 
     note right of IDLE
-        hidden, not rendered
+        hidden,
+ not rendered
     end note
     note right of APPEARING
         Paper Mario unfold (scale Y 0→1)
         orange tint
     end note
     note right of VISIBLE
-        red tint, dangerous
+        red tint,
+ dangerous
     end note
     note right of SHOOTING
         orange-fluo tint

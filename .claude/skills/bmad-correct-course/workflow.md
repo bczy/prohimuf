@@ -2,7 +2,12 @@
 
 **Goal:** Manage significant changes during sprint execution by analyzing impact across all project artifacts and producing a structured Sprint Change Proposal.
 
-**Your Role:** You are a Developer navigating change management. Analyze the triggering issue, assess impact across PRD, epics, architecture, and UX artifacts, and produce an actionable Sprint Change Proposal with clear handoff.
+**Your Role:** You are a Developer navigating change management. Analyze the triggering issue,
+ assess impact across PRD,
+ epics,
+ architecture,
+ and UX artifacts,
+ and produce an actionable Sprint Change Proposal with clear handoff.
 
 ---
 
@@ -12,8 +17,10 @@
 
 Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
-- `project_name`, `user_name`
-- `communication_language`, `document_output_language`
+- `project_name`,
+ `user_name`
+- `communication_language`,
+ `document_output_language`
 - `user_skill_level`
 - `implementation_artifacts`
 - `planning_artifacts`
@@ -22,7 +29,11 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 - YOU MUST ALWAYS SPEAK OUTPUT in your Agent communication style with the config `{communication_language}`
 - Language MUST be tailored to `{user_skill_level}`
 - Generate all documents in `{document_output_language}`
-- DOCUMENT OUTPUT: Updated epics, stories, or PRD sections. Clear, actionable changes. User skill level (`{user_skill_level}`) affects conversation style ONLY, not document updates.
+- DOCUMENT OUTPUT: Updated epics,
+ stories,
+ or PRD sections. Clear,
+ actionable changes. User skill level (`{user_skill_level}`) affects conversation style ONLY,
+ not document updates.
 
 ### Paths
 
@@ -51,26 +62,46 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 **Strategy**: Course correction needs broad project context to assess change impact accurately. Load all available planning artifacts.
 
-**Discovery Process for FULL_LOAD documents (PRD, Epics, Architecture, UX Design, Spec):**
+**Discovery Process for FULL_LOAD documents (PRD,
+ Epics,
+ Architecture,
+ UX Design,
+ Spec):**
 
-1. **Search for whole document first** - Look for files matching the whole-document pattern (e.g., `*prd*.md`, `*epic*.md`, `*architecture*.md`, `*ux*.md`, `*spec-*.md`)
-2. **Check for sharded version** - If whole document not found, look for a directory with `index.md` (e.g., `prd/index.md`, `epics/index.md`)
+1. **Search for whole document first** - Look for files matching the whole-document pattern (e.g.,
+ `*prd*.md`,
+ `*epic*.md`,
+ `*architecture*.md`,
+ `*ux*.md`,
+ `*spec-*.md`)
+2. **Check for sharded version** - If whole document not found,
+ look for a directory with `index.md` (e.g.,
+ `prd/index.md`,
+ `epics/index.md`)
 3. **If sharded version found**:
    - Read `index.md` to understand the document structure
    - Read ALL section files listed in the index
    - Process the combined content as a single document
-4. **Priority**: If both whole and sharded versions exist, use the whole document
+4. **Priority**: If both whole and sharded versions exist,
+ use the whole document
 
 **Discovery Process for INDEX_GUIDED documents (Document Project):**
 
 1. **Search for index file** - Look for `{project_knowledge}/index.md`
 2. **If found**: Read the index to understand available documentation sections
-3. **Selectively load sections** based on relevance to the change being analyzed — do NOT load everything, only sections that relate to the impacted areas
+3. **Selectively load sections** based on relevance to the change being analyzed — do NOT load everything,
+ only sections that relate to the impacted areas
 4. **This document is optional** — skip if `{project_knowledge}` does not exist (greenfield projects)
 
-**Fuzzy matching**: Be flexible with document names — users may use variations like `prd.md`, `bmm-prd.md`, `product-requirements.md`, etc.
+**Fuzzy matching**: Be flexible with document names — users may use variations like `prd.md`,
+ `bmm-prd.md`,
+ `product-requirements.md`,
+ etc.
 
-**Missing documents**: Not all documents may exist. PRD and Epics are essential; Architecture, UX Design, Spec, and Document Project are loaded if available. HALT if PRD or Epics cannot be found.
+**Missing documents**: Not all documents may exist. PRD and Epics are essential; Architecture,
+ UX Design,
+ Spec,
+ and Document Project are loaded if available. HALT if PRD or Epics cannot be found.
 
 <workflow>
 
@@ -90,7 +121,10 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 <action if="change trigger is unclear">HALT: "Cannot navigate change without clear understanding of the triggering issue. Please provide specific details about what needs to change and why."</action>
 
-<action if="core documents are unavailable">HALT: "Need access to project documents (PRD, Epics, Architecture, UI/UX) to assess change impact. Please ensure these documents are accessible."</action>
+<action if="core documents are unavailable">HALT: "Need access to project documents (PRD,
+ Epics,
+ Architecture,
+ UI/UX) to assess change impact. Please ensure these documents are accessible."</action>
 </step>
 
 <step n="2" goal="Execute Change Analysis Checklist">
@@ -107,7 +141,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 </step>
 
 <step n="3" goal="Draft Specific Change Proposals">
-<action>Based on checklist findings, create explicit edit proposals for each identified artifact</action>
+<action>Based on checklist findings,
+ create explicit edit proposals for each identified artifact</action>
 
 <action>For Story changes:</action>
 
@@ -138,7 +173,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 <action>For Architecture changes:</action>
 
-- Identify affected components, patterns, or technology choices
+- Identify affected components,
+ patterns,
+ or technology choices
 - Describe diagram updates needed
 - Note any ripple effects on other components
 
@@ -150,7 +187,9 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 <check if="mode is Incremental">
   <action>Present each edit proposal individually</action>
-  <ask>Review and refine this change? Options: Approve [a], Edit [e], Skip [s]</ask>
+  <ask>Review and refine this change? Options: Approve [a],
+ Edit [e],
+ Skip [s]</ask>
   <action>Iterate on each proposal based on user feedback</action>
 </check>
 
@@ -171,8 +210,12 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 - Epic Impact: Which epics are affected and how
 - Story Impact: Current and future stories requiring changes
-- Artifact Conflicts: PRD, Architecture, UI/UX documents needing updates
-- Technical Impact: Code, infrastructure, or deployment implications
+- Artifact Conflicts: PRD,
+ Architecture,
+ UI/UX documents needing updates
+- Technical Impact: Code,
+ infrastructure,
+ or deployment implications
 
 <action>Section 3: Recommended Approach</action>
 
@@ -181,12 +224,17 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
   - Potential Rollback: Revert completed work to simplify resolution
   - MVP Review: Reduce scope or modify goals
 - Provide clear rationale for recommendation
-- Include effort estimate, risk assessment, and timeline impact
+- Include effort estimate,
+ risk assessment,
+ and timeline impact
 
 <action>Section 4: Detailed Change Proposals</action>
 
 - Include all refined edit proposals from Step 3
-- Group by artifact type (Stories, PRD, Architecture, UI/UX)
+- Group by artifact type (Stories,
+ PRD,
+ Architecture,
+ UI/UX)
 - Ensure each change includes before/after and justification
 
 <action>Section 5: Implementation Handoff</action>
@@ -260,7 +308,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 - Specific edit proposals with before/after
 - Implementation handoff plan
 
-<action>Report workflow completion to user with personalized message: "Correct Course workflow complete, {user_name}!"</action>
+<action>Report workflow completion to user with personalized message: "Correct Course workflow complete,
+ {user_name}!"</action>
 <action>Remind user of success criteria and next steps for Developer agent</action>
 </step>
 

@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A REGULATORY ANALYST, not content generator
+- 📋 YOU ARE A REGULATORY ANALYST,
+ not content generator
 - 💬 FOCUS on compliance requirements and regulatory landscape
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
@@ -19,7 +21,10 @@
 - ⚠️ Present [C] continue option after regulatory content generation
 - 📝 WRITE REGULATORY ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -82,7 +87,9 @@ Search the web: "data privacy regulations {{research_topic}}"
 
 **Privacy focus:**
 
-- GDPR, CCPA, and other data protection laws
+- GDPR,
+ CCPA,
+ and other data protection laws
 - Industry-specific privacy requirements
 - Data governance and security standards
 - User consent and data handling requirements
@@ -93,7 +100,8 @@ Prepare regulatory content with source citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Regulatory Requirements
@@ -154,7 +162,10 @@ Show the generated regulatory analysis and present continue option:
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Load: `./step-05-technical-trends.md`
 
 ## APPEND TO DOCUMENT:
@@ -201,6 +212,7 @@ Content is already written to document when generated in step 5. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-05-technical-trends.md` to analyze technical trends and innovations in the domain.
+After user selects 'C' and content is saved to document,
+ load `./step-05-technical-trends.md` to analyze technical trends and innovations in the domain.
 
 Remember: Search the web to verify regulatory facts and provide practical implementation considerations!

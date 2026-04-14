@@ -11,7 +11,8 @@
 ## Test Quality
 
 - [ ] All generated tests run successfully
-- [ ] Tests use proper locators (semantic, accessible)
+- [ ] Tests use proper locators (semantic,
+ accessible)
 - [ ] Tests have clear descriptions
 - [ ] No hardcoded waits or sleeps
 - [ ] Tests are independent (no order dependency)

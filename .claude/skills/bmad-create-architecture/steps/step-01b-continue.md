@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on understanding current state and getting user confirmation
 - 🚪 HANDLE workflow resumption smoothly and transparently
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -42,7 +44,9 @@ Read the existing architecture document completely and analyze:
 - `stepsCompleted`: What steps have been done
 - `inputDocuments`: What documents were loaded
 - `lastStep`: Last step that was executed
-- `project_name`, `user_name`, `date`: Basic context
+- `project_name`,
+ `user_name`,
+ `date`: Basic context
 
 **Content Analysis:**
 
@@ -85,14 +89,19 @@ Show the user their current progress:
 
 - Identify the next step based on `stepsCompleted`
 - Load the appropriate step file to continue
-- Example: If `stepsCompleted: [1, 2, 3]`, load `./step-04-decisions.md`
+- Example: If `stepsCompleted: [1,
+ 2,
+ 3]`,
+ load `./step-04-decisions.md`
 
 #### If 'C' (Continue to next logical step):
 
 - Analyze the document content to determine logical next step
 - May need to review content quality and completeness
-- If content seems complete for current step, advance to next
-- If content seems incomplete, suggest staying on current step
+- If content seems complete for current step,
+ advance to next
+- If content seems incomplete,
+ suggest staying on current step
 
 #### If 'O' (Overview of all remaining steps):
 
@@ -131,11 +140,13 @@ After user makes choice:
 
 #### If document appears corrupted or incomplete:
 
-- Ask user: "The document seems incomplete. Would you like me to try to recover what's here, or would you prefer to start fresh?"
+- Ask user: "The document seems incomplete. Would you like me to try to recover what's here,
+ or would you prefer to start fresh?"
 
 #### If document is complete but workflow not marked as done:
 
-- Ask user: "The architecture looks complete! Should I mark this workflow as finished, or is there more you'd like to work on?"
+- Ask user: "The architecture looks complete! Should I mark this workflow as finished,
+ or is there more you'd like to work on?"
 
 ## SUCCESS METRICS:
 
@@ -159,7 +170,8 @@ After user makes choice:
 
 ## NEXT STEP:
 
-After user selects their continuation option, load the appropriate step file based on their choice. The step file will handle the detailed work from that point forward.
+After user selects their continuation option,
+ load the appropriate step file based on their choice. The step file will handle the detailed work from that point forward.
 
 Valid step files to load:
 
@@ -171,4 +183,5 @@ Valid step files to load:
 - `./step-07-validation.md`
 - `./step-08-complete.md`
 
-Remember: The goal is smooth, transparent resumption that respects the work already done while giving the user control over how to proceed.
+Remember: The goal is smooth,
+ transparent resumption that respects the work already done while giving the user control over how to proceed.

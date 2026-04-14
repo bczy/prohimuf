@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on defining desired emotional responses and user feelings
-- 🎯 COLLABORATIVE discovery, not assumption-based design
+- 🎯 COLLABORATIVE discovery,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating emotional response content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -93,7 +97,8 @@ Which of these emotional states are most critical for your product's success?"
 Link feelings to design implications:
 "**Design Implications:**
 
-- If we want users to feel [emotional state], what UX choices support this?
+- If we want users to feel [emotional state],
+ what UX choices support this?
 - What interactions might create negative emotions we want to avoid?
 - Where can we add moments of delight or surprise?
 - How do we build trust and confidence through design?
@@ -121,7 +126,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Desired Emotional Response
@@ -168,16 +174,20 @@ Show the generated emotional response content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current emotional response content
 - Process the enhanced emotional insights that come back
 - Ask user: "Accept these improvements to the emotional response definition? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current emotional response definition
 - Process the collaborative emotional insights that come back
 - Ask user: "Accept these changes to the emotional response definition? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -187,7 +197,8 @@ Show the generated emotional response content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -215,6 +226,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-05-inspiration.md` to analyze UX patterns from inspiring products.
+After user selects 'C' and content is saved to document,
+ load `./step-05-inspiration.md` to analyze UX patterns from inspiring products.
 
 Remember: Do NOT proceed to step-05 until user explicitly selects 'C' from the A/P/C menu and content is saved!

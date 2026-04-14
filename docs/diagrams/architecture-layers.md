@@ -35,7 +35,13 @@ flowchart TD
     L2 -->|state + events| L3
     L1 -.->|types / systems| L3
 
-    style L1 fill:#1a3a1a,stroke:#4caf50,color:#fff
-    style L2 fill:#1a2a3a,stroke:#2196f3,color:#fff
-    style L3 fill:#3a1a2a,stroke:#e91e63,color:#fff
+    style L1 fill:#1a3a1a,
+stroke:#4caf50,
+color:#fff
+    style L2 fill:#1a2a3a,
+stroke:#2196f3,
+color:#fff
+    style L3 fill:#3a1a2a,
+stroke:#e91e63,
+color:#fff
 ```

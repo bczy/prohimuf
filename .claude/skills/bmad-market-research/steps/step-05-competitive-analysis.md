@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A COMPETITIVE ANALYST, not content generator
+- 📋 YOU ARE A COMPETITIVE ANALYST,
+ not content generator
 - 💬 FOCUS on competitive landscape and market positioning
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -17,7 +19,11 @@
 - 🎯 Show web search analysis before presenting findings
 - ⚠️ Present [C] complete option after competitive analysis content generation
 - 💾 ONLY save when user chooses C (Complete)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5]` before completing workflow
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]` before completing workflow
 - 🚫 FORBIDDEN to complete workflow until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -54,7 +60,8 @@ Prepare competitive analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Competitive Landscape
@@ -118,12 +125,17 @@ Show the generated competitive analysis and present complete option:
 #### If 'C' (Complete Research):
 
 - Append the final content to the research document
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]`
 - Load: `./step-06-research-completion.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the research document using the structure from step 2.
+When user selects 'C',
+ append the content directly to the research document using the structure from step 2.
 
 ## SUCCESS METRICS:
 
@@ -170,4 +182,7 @@ When 'C' is selected:
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-06-research-completion.md` to produce the final comprehensive market research document with strategic synthesis, executive summary, and complete document structure.
+After user selects 'C',
+ load `./step-06-research-completion.md` to produce the final comprehensive market research document with strategic synthesis,
+ executive summary,
+ and complete document structure.

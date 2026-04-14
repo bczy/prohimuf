@@ -7,9 +7,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on strategic scope decisions that keep projects viable
 - 🎯 EMPHASIZE lean MVP thinking while preserving long-term vision
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -21,14 +23,18 @@
 - 📚 Review the complete PRD document built so far
 - ⚠️ Present A/P/C menu after generating scoping decisions
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
+- 📖 Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
 
 - Complete PRD document built so far is available for review
-- User journeys, success criteria, and domain requirements are documented
-- Focus on strategic scope decisions, not feature details
+- User journeys,
+ success criteria,
+ and domain requirements are documented
+- Focus on strategic scope decisions,
+ not feature details
 - Balance between user value and implementation feasibility
 
 ## YOUR TASK:
@@ -41,16 +47,23 @@ Conduct comprehensive scoping exercise to define MVP boundaries and prioritize f
 
 Analyze everything documented so far:
 
-- Present synthesis of established vision, success criteria, journeys
+- Present synthesis of established vision,
+ success criteria,
+ journeys
 - Assess domain and innovation focus
-- Evaluate scope implications: simple MVP, medium, or complex project
+- Evaluate scope implications: simple MVP,
+ medium,
+ or complex project
 - Ask if initial assessment feels right or if they see it differently
 
 ### 2. Define MVP Strategy
 
 Facilitate strategic MVP decisions:
 
-- Explore MVP philosophy options: problem-solving, experience, platform, or revenue MVP
+- Explore MVP philosophy options: problem-solving,
+ experience,
+ platform,
+ or revenue MVP
 - Ask critical questions:
   - What's the minimum that would make users say 'this is useful'?
   - What would make investors/partners say 'this has potential'?
@@ -64,8 +77,10 @@ Use structured decision-making for scope:
 **Must-Have Analysis:**
 
 - Guide identification of absolute MVP necessities
-- For each journey and success criterion, ask:
-  - Without this, does the product fail?
+- For each journey and success criterion,
+ ask:
+  - Without this,
+ does the product fail?
   - Can this be manual initially?
   - Is this a deal-breaker for early adopters?
 - Analyze journeys for MVP essentials
@@ -76,14 +91,18 @@ Use structured decision-making for scope:
   - Features that enhance but aren't essential
   - User types that can be added later
   - Advanced functionality that builds on MVP
-- Ask what features could be added in versions 2, 3, etc.
+- Ask what features could be added in versions 2,
+ 3,
+ etc.
 
 ### 4. Progressive Feature Roadmap
 
 Create phased development approach:
 
 - Guide mapping of features across development phases
-- Structure as Phase 1 (MVP), Phase 2 (Growth), Phase 3 (Vision)
+- Structure as Phase 1 (MVP),
+ Phase 2 (Growth),
+ Phase 3 (Vision)
 - Ensure clear progression and dependencies
 
 - Core user value delivery
@@ -166,31 +185,47 @@ Prepare comprehensive scoping section:
 
 ### 7. Present MENU OPTIONS
 
-Present the scoping decisions for review, then display menu:
+Present the scoping decisions for review,
+ then display menu:
 
 - Show strategic scoping plan (using structure from step 6)
 - Highlight MVP boundaries and phased roadmap
-- Ask if they'd like to refine further, get other perspectives, or proceed
+- Ask if they'd like to refine further,
+ get other perspectives,
+ or proceed
 - Present menu options naturally as part of conversation
 
 Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Functional Requirements (Step 9 of 11)"
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the current scoping analysis, process the enhanced insights that come back, ask user if they accept the improvements, if yes update content then redisplay menu, if no keep original content then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the scoping context, process the collaborative insights on MVP and roadmap decisions, ask user if they accept the changes, if yes update content then redisplay menu, if no keep original content then redisplay menu
-- IF C: Append the final content to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: ./step-09-functional.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the current scoping analysis,
+ process the enhanced insights that come back,
+ ask user if they accept the improvements,
+ if yes update content then redisplay menu,
+ if no keep original content then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the scoping context,
+ process the collaborative insights on MVP and roadmap decisions,
+ ask user if they accept the changes,
+ if yes update content then redisplay menu,
+ if no keep original content then redisplay menu
+- IF C: Append the final content to {outputFile},
+ update frontmatter by adding this step name to the end of the stepsCompleted array,
+ then read fully and follow: ./step-09-functional.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -218,6 +253,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load ./step-09-functional.md.
+After user selects 'C' and content is saved to document,
+ load ./step-09-functional.md.
 
 Remember: Do NOT proceed to step-09 until user explicitly selects 'C' from the A/P/C menu and content is saved!

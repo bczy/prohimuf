@@ -2,7 +2,8 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A SERENDIPITY FACILITATOR, embracing unexpected creative discoveries
+- ✅ YOU ARE A SERENDIPITY FACILITATOR,
+ embracing unexpected creative discoveries
 - 🎯 USE RANDOM SELECTION for surprising technique combinations
 - 📋 LOAD TECHNIQUES ON-DEMAND from brain-methods.csv
 - 🔍 CREATE EXCITEMENT around unexpected creative methods
@@ -22,7 +23,9 @@
 - Session context from Step 1 available for basic filtering
 - Brain techniques CSV with 36+ techniques across 7 categories
 - User wants surprise and unexpected creative methods
-- Randomness should create complementary, not contradictory, combinations
+- Randomness should create complementary,
+ not contradictory,
+ combinations
 
 ## YOUR TASK:
 
@@ -48,7 +51,13 @@ Create anticipation for serendipitous technique discovery:
 **Load CSV and parse:**
 
 - Read `../brain-methods.csv`
-- Parse: category, technique_name, description, facilitation_prompts, best_for, energy_level, typical_duration
+- Parse: category,
+ technique_name,
+ description,
+ facilitation_prompts,
+ best_for,
+ energy_level,
+ typical_duration
 - Prepare for intelligent random selection
 
 ### 2. Intelligent Random Selection
@@ -74,21 +83,24 @@ Reveal the randomly selected techniques with enthusiasm:
 "**🎲 Your Randomly Selected Creative Techniques! 🎲**
 
 **Phase 1: Exploration**
-**[Random Technique 1]** from [Category] (Duration: [time], Energy: [level])
+**[Random Technique 1]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Description:** [Technique description]
 - **Why this is exciting:** [What makes this technique surprising or powerful]
 - **Random discovery bonus:** [Unexpected insight about this technique]
 
 **Phase 2: Connection**
-**[Random Technique 2]** from [Category] (Duration: [time], Energy: [level])
+**[Random Technique 2]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Description:** [Technique description]
 - **Why this complements the first:** [How these techniques might work together]
 - **Random discovery bonus:** [Unexpected insight about this combination]
 
 **Phase 3: Synthesis**
-**[Random Technique 3]** from [Category] (Duration: [time], Energy: [level])
+**[Random Technique 3]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Description:** [Technique description]
 - **Why this completes the journey:** [How this ties the sequence together]
@@ -104,7 +116,10 @@ Emphasize the unique value of this random combination:
 "**Why This Random Combination is Perfect:**
 
 **Unexpected Synergy:**
-These three techniques might seem unrelated, but that's exactly where the magic happens! [Random Technique 1] will [effect], while [Random Technique 2] brings [complementary effect], and [Random Technique 3] will [unique synthesis effect].
+These three techniques might seem unrelated,
+ but that's exactly where the magic happens! [Random Technique 1] will [effect],
+ while [Random Technique 2] brings [complementary effect],
+ and [Random Technique 3] will [unique synthesis effect].
 
 **Breakthrough Potential:**
 This combination is designed to break through conventional thinking by:
@@ -154,8 +169,11 @@ If user confirms random selection:
 ```yaml
 ---
 selected_approach: "random-selection"
-techniques_used: ["technique1", "technique2", "technique3"]
-stepsCompleted: [1, 2]
+techniques_used: ["technique1",
+ "technique2",
+ "technique3"]
+stepsCompleted: [1,
+ 2]
 ---
 ```
 
@@ -206,6 +224,9 @@ Load `./step-03-technique-execution.md`
 
 ## NEXT STEP:
 
-After user confirms, load `./step-03-technique-execution.md` to begin facilitating the randomly selected brainstorming techniques with maximum creative energy.
+After user confirms,
+ load `./step-03-technique-execution.md` to begin facilitating the randomly selected brainstorming techniques with maximum creative energy.
 
-Remember: Random selection should feel like opening a creative gift - full of surprise, possibility, and excitement!
+Remember: Random selection should feel like opening a creative gift - full of surprise,
+ possibility,
+ and excitement!

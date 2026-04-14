@@ -12,10 +12,15 @@ Use `../resources/brief-template.md` as a guide — adapt structure to fit the p
 
 **Writing principles:**
 
-- **Executive audience** — persuasive, clear, concise. 1-2 pages.
+- **Executive audience** — persuasive,
+ clear,
+ concise. 1-2 pages.
 - **Lead with the problem** — make the reader feel the pain before presenting the solution
-- **Concrete over abstract** — specific examples, real scenarios, measurable outcomes
-- **Confident voice** — this is a pitch, not a hedge
+- **Concrete over abstract** — specific examples,
+ real scenarios,
+ measurable outcomes
+- **Confident voice** — this is a pitch,
+ not a hedge
 - Write in `{document_output_language}`
 
 **Create the output document at:** `{planning_artifacts}/product-brief-{project_name}.md`
@@ -34,7 +39,8 @@ inputs: [list of input files used]
 
 ## Step 2: Fan Out Review Subagents
 
-Before showing the draft to the user, run it through multiple review lenses in parallel.
+Before showing the draft to the user,
+ run it through multiple review lenses in parallel.
 
 **Launch in parallel:**
 
@@ -47,14 +53,20 @@ Before showing the draft to the user, run it through multiple review lenses in p
    - For devtools: "Developer experience and adoption friction critic"
    - For marketplace: "Network effects and chicken-and-egg problem analyst"
    - For enterprise: "Procurement and organizational change management reviewer"
-   - **When domain is unclear, default to:** "Go-to-market and launch risk reviewer" — examines distribution, pricing, and first-customer acquisition. Almost always valuable, frequently missed.
-     Describe the lens, run the review yourself inline.
+   - **When domain is unclear,
+ default to:** "Go-to-market and launch risk reviewer" — examines distribution,
+ pricing,
+ and first-customer acquisition. Almost always valuable,
+ frequently missed.
+     Describe the lens,
+ run the review yourself inline.
 
 ### Graceful Degradation
 
 If subagents are unavailable:
 
-- Perform all three review passes yourself, sequentially
+- Perform all three review passes yourself,
+ sequentially
 - Apply each lens deliberately — don't blend them into one generic review
 - The quality of review matters more than the parallelism
 
@@ -62,9 +74,14 @@ If subagents are unavailable:
 
 After all reviews complete:
 
-1. **Triage findings** — group by theme, remove duplicates
-2. **Apply non-controversial improvements** directly to the draft (obvious gaps, unclear language, missing specifics)
-3. **Flag substantive suggestions** that need user input (strategic choices, scope questions, market positioning decisions)
+1. **Triage findings** — group by theme,
+ remove duplicates
+2. **Apply non-controversial improvements** directly to the draft (obvious gaps,
+ unclear language,
+ missing specifics)
+3. **Flag substantive suggestions** that need user input (strategic choices,
+ scope questions,
+ market positioning decisions)
 
 ## Step 4: Present to User
 
@@ -74,16 +91,22 @@ After all reviews complete:
 
 Present the draft brief to the user. Then share the reviewer insights:
 
-"Here's your product brief draft. Before we finalize, my review panel surfaced some things worth considering:
+"Here's your product brief draft. Before we finalize,
+ my review panel surfaced some things worth considering:
 
 **[Grouped reviewer findings — only the substantive ones that need user input]**
 
 What do you think? Any changes you'd like to make?"
 
-Present reviewer findings with brief rationale, then offer: "Want me to dig into any of these, or are you ready to make your revisions?"
+Present reviewer findings with brief rationale,
+ then offer: "Want me to dig into any of these,
+ or are you ready to make your revisions?"
 
-**Iterate** as long as the user wants to refine. Use the "anything else, or are we happy with this?" soft gate.
+**Iterate** as long as the user wants to refine. Use the "anything else,
+ or are we happy with this?" soft gate.
 
 ## Stage Complete
 
-This stage is complete when: (a) the draft has been reviewed by all three lenses and improvements integrated, AND either (autonomous) save and route directly, or (guided/yolo) the user is satisfied. Route to `finalize.md`.
+This stage is complete when: (a) the draft has been reviewed by all three lenses and improvements integrated,
+ AND either (autonomous) save and route directly,
+ or (guided/yolo) the user is satisfied. Route to `finalize.md`.

@@ -7,9 +7,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on project-type specific requirements and technical considerations
 - 🎯 DATA-DRIVEN: Use CSV configuration to guide discovery
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -20,7 +22,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating project-type content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
+- 📖 Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -48,7 +51,11 @@ Conduct project-type specific discovery using CSV-driven guidance to define tech
 
 **Return format:**
 Return ONLY the matching row as a YAML-formatted object with these fields:
-project_type, key_questions, required_sections, skip_sections, innovation_signals
+project_type,
+ key_questions,
+ required_sections,
+ skip_sections,
+ innovation_signals
 
 **Do NOT return the entire CSV - only the matching row.**"
 
@@ -85,14 +92,17 @@ Ask naturally:
 
 ### 3. Document Project-Type Specific Requirements
 
-Based on user answers to key_questions, synthesize comprehensive requirements:
+Based on user answers to key_questions,
+ synthesize comprehensive requirements:
 
 #### Requirement Categories:
 
 Cover the areas indicated by `required_sections` from CSV:
 
 - Synthesize what was discovered for each required section
-- Document specific requirements, constraints, and decisions
+- Document specific requirements,
+ constraints,
+ and decisions
 - Connect to product differentiator when relevant
 
 #### Skip Irrelevant Sections:
@@ -101,7 +111,8 @@ Skip areas indicated by `skip_sections` from CSV to avoid wasting time on irrele
 
 ### 4. Generate Dynamic Content Sections
 
-Parse `required_sections` list from the matched CSV row. For each section name, generate corresponding content:
+Parse `required_sections` list from the matched CSV row. For each section name,
+ generate corresponding content:
 
 #### Common CSV Section Mappings:
 
@@ -124,7 +135,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## [Project Type] Specific Requirements
@@ -146,9 +158,11 @@ When saving to document, append these Level 2 and Level 3 sections:
 
 ### 6. Present MENU OPTIONS
 
-Present the project-type content for review, then display menu:
+Present the project-type content for review,
+ then display menu:
 
-"Based on our conversation and best practices for this product type, I've documented the {project_type}-specific requirements for {{project_name}}.
+"Based on our conversation and best practices for this product type,
+ I've documented the {project_type}-specific requirements for {{project_name}}.
 
 **Here's what I'll add to the document:**
 
@@ -160,20 +174,33 @@ Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Sc
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the current project-type content, process the enhanced technical insights that come back, ask user "Accept these improvements to the technical requirements? (y/n)", if yes update content with improvements then redisplay menu, if no keep original content then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the current project-type requirements, process the collaborative technical expertise and validation, ask user "Accept these changes to the technical requirements? (y/n)", if yes update content with improvements then redisplay menu, if no keep original content then redisplay menu
-- IF C: Append the final content to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: ./step-08-scoping.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the current project-type content,
+ process the enhanced technical insights that come back,
+ ask user "Accept these improvements to the technical requirements? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original content then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the current project-type requirements,
+ process the collaborative technical expertise and validation,
+ ask user "Accept these changes to the technical requirements? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original content then redisplay menu
+- IF C: Append the final content to {outputFile},
+ update frontmatter by adding this step name to the end of the stepsCompleted array,
+ then read fully and follow: ./step-08-scoping.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from previous steps.
+When user selects 'C',
+ append the content directly to the document using the structure from previous steps.
 
 ## SUCCESS METRICS:
 
@@ -203,24 +230,32 @@ When user selects 'C', append the content directly to the document using the str
 
 **For api_backend:**
 
-- Focus on endpoints, authentication, data schemas, rate limiting
+- Focus on endpoints,
+ authentication,
+ data schemas,
+ rate limiting
 - Skip visual design and user journey sections
 - Generate API specification documentation
 
 **For mobile_app:**
 
-- Focus on platform requirements, device permissions, offline mode
+- Focus on platform requirements,
+ device permissions,
+ offline mode
 - Skip API endpoint documentation unless needed
 - Generate mobile-specific technical requirements
 
 **For saas_b2b:**
 
-- Focus on multi-tenancy, permissions, integrations
+- Focus on multi-tenancy,
+ permissions,
+ integrations
 - Skip mobile-first considerations unless relevant
 - Generate enterprise-specific requirements
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-08-scoping.md` to define project scope.
+After user selects 'C' and content is saved to document,
+ load `./step-08-scoping.md` to define project scope.
 
 Remember: Do NOT proceed to step-08 (Scoping) until user explicitly selects 'C' from the A/P/C menu and content is saved!

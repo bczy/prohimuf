@@ -9,7 +9,8 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Analyze non-standard PRD and identify gaps to achieve BMAD PRD parity, presenting user with options for how to proceed.
+Analyze non-standard PRD and identify gaps to achieve BMAD PRD parity,
+ presenting user with options for how to proceed.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,15 +18,19 @@ Analyze non-standard PRD and identify gaps to achieve BMAD PRD parity, presentin
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring BMAD PRD standards expertise and gap analysis
 - ✅ User brings domain knowledge and PRD context
 
@@ -45,18 +50,24 @@ Analyze non-standard PRD and identify gaps to achieve BMAD PRD parity, presentin
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: Non-standard PRD from step 2, validation report in progress
-- Focus: Parity analysis only - what's missing, what's needed
-- Limits: Don't perform validation checks, don't auto-proceed
+- Available context: Non-standard PRD from step 2,
+ validation report in progress
+- Focus: Parity analysis only - what's missing,
+ what's needed
+- Limits: Don't perform validation checks,
+ don't auto-proceed
 - Dependencies: Step 2 classified PRD as non-standard and user chose parity check
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Analyze Each BMAD PRD Section
 
-For each of the 6 BMAD PRD core sections, analyze:
+For each of the 6 BMAD PRD core sections,
+ analyze:
 
 **Executive Summary:**
 
@@ -98,13 +109,15 @@ For each of the 6 BMAD PRD core sections, analyze:
 
 ### 2. Estimate Effort to Reach Parity
 
-For each missing or incomplete section, estimate:
+For each missing or incomplete section,
+ estimate:
 
 **Effort Level:**
 
 - Minimal - Section exists but needs minor enhancements
 - Moderate - Section missing but content exists elsewhere in PRD
-- Significant - Section missing, requires new content creation
+- Significant - Section missing,
+ requires new content creation
 
 **Total Parity Effort:**
 
@@ -193,8 +206,11 @@ Your PRD is missing {count} of 6 core BMAD PRD sections. The overall effort to r
 
 - IF C (Continue): Display "Proceeding with validation..." then read fully and follow: {nextStepFile}
 - IF E (Exit): Display parity summary and exit validation
-- IF S (Save): Confirm saved, display summary, exit
-- IF Any other: help user respond, then redisplay menu
+- IF S (Save): Confirm saved,
+ display summary,
+ exit
+- IF Any other: help user respond,
+ then redisplay menu
 
 ---
 
@@ -207,7 +223,9 @@ Your PRD is missing {count} of 6 core BMAD PRD sections. The overall effort to r
 - Overall parity effort assessed correctly
 - Parity analysis reported to validation report
 - Clear summary presented to user
-- User can choose to continue validation, exit, or save report
+- User can choose to continue validation,
+ exit,
+ or save report
 
 ### ❌ SYSTEM FAILURE:
 
@@ -217,4 +235,5 @@ Your PRD is missing {count} of 6 core BMAD PRD sections. The overall effort to r
 - Auto-proceeding without user decision
 - Unclear recommendations
 
-**Master Rule:** Parity check informs user of gaps and effort, but user decides whether to proceed with validation or address gaps first.
+**Master Rule:** Parity check informs user of gaps and effort,
+ but user decides whether to proceed with validation or address gaps first.

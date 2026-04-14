@@ -113,7 +113,8 @@ This project is organized into {{parts_count}} distinct parts:
 {{#if has_assets}}
 {{#each asset_locations}}
 
-- **{{asset_type}}**: `{{location}}` ({{file_count}} files, {{total_size}})
+- **{{asset_type}}**: `{{location}}` ({{file_count}} files,
+ {{total_size}})
   {{/each}}
   {{else}}
   No significant assets detected.

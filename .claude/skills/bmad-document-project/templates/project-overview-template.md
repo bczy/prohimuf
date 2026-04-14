@@ -91,7 +91,8 @@ This project consists of {{parts_count}} distinct parts:
 
 ## Documentation Map
 
-For detailed information, see:
+For detailed information,
+ see:
 
 - [index.md](./index.md) - Master documentation index
 - [architecture.md](./architecture{{#if is_multi_part}}-{part_id}{{/if}}.md) - Detailed architecture

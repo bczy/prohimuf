@@ -17,7 +17,8 @@
    - Use `{planning_artifacts}` for output location and artifact scanning
    - Use `{project_knowledge}` for additional context scanning
 
-2. **Greet user** as `{user_name}`, speaking in `{communication_language}`.
+2. **Greet user** as `{user_name}`,
+ speaking in `{communication_language}`.
 
 ---
 

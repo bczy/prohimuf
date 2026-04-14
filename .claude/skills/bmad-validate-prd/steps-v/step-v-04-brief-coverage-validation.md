@@ -10,7 +10,8 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Validate that PRD covers all content from Product Brief (if brief was used as input), mapping brief content to PRD sections and identifying gaps.
+Validate that PRD covers all content from Product Brief (if brief was used as input),
+ mapping brief content to PRD sections and identifying gaps.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -18,15 +19,19 @@ Validate that PRD covers all content from Product Brief (if brief was used as in
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring analytical rigor and traceability expertise
 - ✅ This step runs autonomously - no user input needed
 
@@ -48,14 +53,19 @@ Validate that PRD covers all content from Product Brief (if brief was used as in
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, input documents from step 1, validation report
+- Available context: PRD file,
+ input documents from step 1,
+ validation report
 - Focus: Product Brief coverage only (conditional)
-- Limits: Don't validate other aspects, conditional execution
+- Limits: Don't validate other aspects,
+ conditional execution
 - Dependencies: Step 1 completed - input documents loaded
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Check for Product Brief
 
@@ -74,7 +84,8 @@ Display: "**Product Brief Coverage: Skipped** (No Product Brief provided)
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile}
+Without delay,
+ read fully and follow: {nextStepFile}
 
 **IF Product Brief exists:** Continue to step 2 below
 
@@ -93,7 +104,8 @@ Without delay, read fully and follow: {nextStepFile}
    - Goals/objectives
    - Differentiators
    - Constraints
-3. For each item, search PRD for corresponding coverage
+3. For each item,
+ search PRD for corresponding coverage
 4. Classify coverage: Fully Covered / Partially Covered / Not Found / Intentionally Excluded
 5. Note any gaps with severity: Critical / Moderate / Informational
 
@@ -101,7 +113,8 @@ Return structured coverage map with classifications."
 
 ### 3. Graceful Degradation (if Task tool unavailable)
 
-If Task tool unavailable, perform analysis directly:
+If Task tool unavailable,
+ perform analysis directly:
 
 **Extract from Product Brief:**
 
@@ -112,7 +125,8 @@ If Task tool unavailable, perform analysis directly:
 - Goals: What are the success criteria?
 - Differentiators: What makes it unique?
 
-**For each item, search PRD:**
+**For each item,
+ search PRD:**
 
 - Scan Executive Summary for vision
 - Check User Journeys or user personas
@@ -132,9 +146,13 @@ If Task tool unavailable, perform analysis directly:
 
 **For each gap (Partially Covered or Not Found):**
 
-- Is this Critical? (Core vision, primary users, main features)
-- Is this Moderate? (Secondary features, some goals)
-- Is this Informational? (Nice-to-have features, minor details)
+- Is this Critical? (Core vision,
+ primary users,
+ main features)
+- Is this Moderate? (Secondary features,
+ some goals)
+- Is this Informational? (Nice-to-have features,
+ minor details)
 
 **Note:** Some exclusions may be intentional (valid scoping decisions)
 
@@ -188,7 +206,8 @@ Overall Coverage: {assessment}
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-05-measurability-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-05-measurability-validation.md)
 
 ---
 
@@ -213,4 +232,5 @@ Without delay, read fully and follow: {nextStepFile} (step-v-05-measurability-va
 - Not reporting findings to validation report
 - Not auto-proceeding
 
-**Master Rule:** Product Brief coverage is conditional - skip if no brief, validate thoroughly if brief exists. Always auto-proceed.
+**Master Rule:** Product Brief coverage is conditional - skip if no brief,
+ validate thoroughly if brief exists. Always auto-proceed.

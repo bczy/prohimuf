@@ -4,8 +4,10 @@
 
 - 🛑 NEVER generate content without user input
 - ✅ ALWAYS treat this as collaborative completion between technical peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
-- 💬 FOCUS on finalizing a lean, LLM-optimized project context
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
+- 💬 FOCUS on finalizing a lean,
+ LLM-optimized project context
 - 🎯 ENSURE all critical rules are captured and actionable
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -21,12 +23,16 @@
 
 - All rule categories from step-2 are complete
 - Technology stack and versions are documented
-- Focus on final review, optimization, and completion
+- Focus on final review,
+ optimization,
+ and completion
 - Ensure the context file is ready for AI agent consumption
 
 ## YOUR TASK:
 
-Complete the project context file, optimize it for LLM efficiency, and provide guidance for usage and maintenance.
+Complete the project context file,
+ optimize it for LLM efficiency,
+ and provide guidance for usage and maintenance.
 
 ## COMPLETION SEQUENCE:
 
@@ -56,7 +62,8 @@ Ensure the file is lean and efficient:
 
 - Remove any redundant rules or obvious information
 - Combine related rules into concise bullet points
-- Use specific, actionable language
+- Use specific,
+ actionable language
 - Ensure each rule provides unique value
 
 **Formatting Optimization:**
@@ -115,7 +122,8 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - Read this file before implementing any code
 - Follow ALL rules exactly as documented
-- When in doubt, prefer the more restrictive option
+- When in doubt,
+ prefer the more restrictive option
 - Update this file if new patterns emerge
 
 **For Humans:**
@@ -130,7 +138,8 @@ Last Updated: {{date}}
 
 ### 4. Present Completion Summary
 
-Based on user skill level, present the completion:
+Based on user skill level,
+ present the completion:
 
 **Expert Mode:**
 "Project context complete. Optimized for LLM consumption with {{rule_count}} critical rules across {{section_count}} sections.
@@ -176,7 +185,8 @@ Think of this as a 'rules of the road' guide for AI agents working on your proje
 - Workflow patterns to follow
 
 **How AI agents use it:**
-They read this file before writing any code, ensuring everything they create follows your project's standards perfectly.
+They read this file before writing any code,
+ ensuring everything they create follows your project's standards perfectly.
 
 Your project context is saved and ready to help agents implement consistently!"
 
@@ -194,12 +204,19 @@ date: "{{date}}"
 sections_completed:
   [
     "technology_stack",
+
     "language_rules",
+
     "framework_rules",
+
     "testing_rules",
+
     "quality_rules",
+
     "workflow_rules",
+
     "anti_patterns",
+
   ]
 status: "complete"
 rule_count: { { total_rules } }
@@ -258,7 +275,8 @@ Your optimized project context file is ready at:
 2. Update this file when your technology stack or patterns evolve
 3. Review quarterly to optimize and remove outdated rules
 
-Your project context will help ensure high-quality, consistent implementation across all development work. Great work capturing your project's critical implementation requirements!"
+Your project context will help ensure high-quality,
+ consistent implementation across all development work. Great work capturing your project's critical implementation requirements!"
 
 ## SUCCESS METRICS:
 
@@ -281,6 +299,8 @@ Your project context will help ensure high-quality, consistent implementation ac
 
 ## WORKFLOW COMPLETE:
 
-This is the final step of the Generate Project Context workflow. The user now has a comprehensive, optimized project context file that will ensure consistent, high-quality implementation across all AI agents working on the project.
+This is the final step of the Generate Project Context workflow. The user now has a comprehensive,
+ optimized project context file that will ensure consistent,
+ high-quality implementation across all AI agents working on the project.
 
 The project context file serves as the critical "rules of the road" that agents need to implement code consistently with the project's standards and patterns.

@@ -12,7 +12,11 @@ optional-inputs:
   - "CI logs"
   - "Linting reports"
 validation-rules:
-  - "Only permitted story sections modified: Tasks/Subtasks checkboxes, Dev Agent Record, File List, Change Log, Status"
+  - "Only permitted story sections modified: Tasks/Subtasks checkboxes,
+ Dev Agent Record,
+ File List,
+ Change Log,
+ Status"
   - "All implementation requirements from story Dev Notes must be satisfied"
   - "Definition of Done checklist must pass completely"
   - "Enhanced story context must contain sufficient technical guidance"
@@ -24,16 +28,21 @@ validation-rules:
 
 ## 📋 Context & Requirements Validation
 
-- [ ] **Story Context Completeness:** Dev Notes contains ALL necessary technical requirements, architecture patterns, and implementation guidance
+- [ ] **Story Context Completeness:** Dev Notes contains ALL necessary technical requirements,
+ architecture patterns,
+ and implementation guidance
 - [ ] **Architecture Compliance:** Implementation follows all architectural requirements specified in Dev Notes
-- [ ] **Technical Specifications:** All technical specifications (libraries, frameworks, versions) from Dev Notes are implemented correctly
+- [ ] **Technical Specifications:** All technical specifications (libraries,
+ frameworks,
+ versions) from Dev Notes are implemented correctly
 - [ ] **Previous Story Learnings:** Previous story insights incorporated (if applicable) and build upon appropriately
 
 ## ✅ Implementation Completion
 
 - [ ] **All Tasks Complete:** Every task and subtask marked complete with [x]
 - [ ] **Acceptance Criteria Satisfaction:** Implementation satisfies EVERY Acceptance Criterion in the story
-- [ ] **No Ambiguous Implementation:** Clear, unambiguous implementation that meets story requirements
+- [ ] **No Ambiguous Implementation:** Clear,
+ unambiguous implementation that meets story requirements
 - [ ] **Edge Cases Handled:** Error conditions and edge cases appropriately addressed
 - [ ] **Dependencies Within Scope:** Only uses dependencies specified in story or project-context.md
 
@@ -49,7 +58,9 @@ validation-rules:
 
 ## 📝 Documentation & Tracking
 
-- [ ] **File List Complete:** File List includes EVERY new, modified, or deleted file (paths relative to repo root)
+- [ ] **File List Complete:** File List includes EVERY new,
+ modified,
+ or deleted file (paths relative to repo root)
 - [ ] **Dev Agent Record Updated:** Contains relevant Implementation Notes and/or Debug Log for this work
 - [ ] **Change Log Updated:** Change Log includes clear summary of what changed and why
 - [ ] **Review Follow-ups:** All review follow-up tasks (marked [AI-Review]) completed and corresponding review items marked resolved (if applicable)

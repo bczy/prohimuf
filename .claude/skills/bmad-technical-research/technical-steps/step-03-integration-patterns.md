@@ -5,10 +5,14 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE AN INTEGRATION ANALYST, not content generator
-- 💬 FOCUS on APIs, protocols, and system interoperability
+- 📋 YOU ARE AN INTEGRATION ANALYST,
+ not content generator
+- 💬 FOCUS on APIs,
+ protocols,
+ and system interoperability
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -19,7 +23,9 @@
 - ⚠️ Present [C] continue option after integration patterns content generation
 - 📝 WRITE INTEGRATION PATTERNS ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -27,18 +33,23 @@
 - Current document and frontmatter from previous steps are available
 - **Research topic = "{{research_topic}}"** - established from initial discussion
 - **Research goals = "{{research_goals}}"** - established from initial discussion
-- Focus on APIs, protocols, and system interoperability
+- Focus on APIs,
+ protocols,
+ and system interoperability
 - Web search capabilities with source verification are enabled
 
 ## YOUR TASK:
 
-Conduct integration patterns analysis focusing on APIs, communication protocols, and system interoperability. Search the web to verify and supplement current facts.
+Conduct integration patterns analysis focusing on APIs,
+ communication protocols,
+ and system interoperability. Search the web to verify and supplement current facts.
 
 ## INTEGRATION PATTERNS ANALYSIS SEQUENCE:
 
 ### 1. Begin Integration Patterns Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different integration areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different integration areas simultaneously and thoroughly.
 
 Start with integration patterns research approach:
 "Now I'll conduct **integration patterns analysis** for **{{research_topic}}** to understand system integration approaches.
@@ -74,7 +85,8 @@ Search the web: "{{research_topic}} microservices integration patterns"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate integration patterns findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate integration patterns findings:
 
 **Research Coverage:**
 
@@ -84,7 +96,9 @@ Search the web: "{{research_topic}} microservices integration patterns"
 - Microservices integration patterns documentation
 
 **Cross-Integration Analysis:**
-[Identify patterns connecting API choices, communication protocols, and system design]
+[Identify patterns connecting API choices,
+ communication protocols,
+ and system design]
 
 **Quality Assessment:**
 [Overall confidence levels and research gaps identified]"
@@ -97,7 +111,8 @@ Prepare integration patterns analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Integration Patterns Analysis
@@ -116,7 +131,9 @@ _Source: [URL]_
 [Communication protocols analysis with source citations]
 _HTTP/HTTPS Protocols: [Web-based communication patterns and evolution]_
 _WebSocket Protocols: [Real-time communication and persistent connections]_
-_Message Queue Protocols: [AMQP, MQTT, and messaging patterns]_
+_Message Queue Protocols: [AMQP,
+ MQTT,
+ and messaging patterns]_
 _grpc and Protocol Buffers: [High-performance binary communication protocols]_
 _Source: [URL]_
 
@@ -152,7 +169,9 @@ _Source: [URL]_
 [Event-driven analysis with source citations]
 _Publish-Subscribe Patterns: [Event broadcasting and subscription models]_
 _Event Sourcing: [Event-based state management and persistence]_
-_Message Broker Patterns: [RabbitMQ, Kafka, and message routing]_
+_Message Broker Patterns: [RabbitMQ,
+ Kafka,
+ and message routing]_
 _CQRS Patterns: [Command Query Responsibility Segregation]_
 _Source: [URL]_
 
@@ -188,7 +207,9 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2, 3]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3]`
 - Load: `./step-04-architectural-patterns.md`
 
 ## APPEND TO DOCUMENT:
@@ -243,6 +264,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-04-architectural-patterns.md` to analyze architectural patterns, design decisions, and system structures for {{research_topic}}.
+After user selects 'C',
+ load `./step-04-architectural-patterns.md` to analyze architectural patterns,
+ design decisions,
+ and system structures for {{research_topic}}.
 
 Remember: Always write research content to document immediately and emphasize current integration data with rigorous source verification!

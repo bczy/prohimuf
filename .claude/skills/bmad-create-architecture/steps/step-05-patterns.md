@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on patterns that prevent AI agent implementation conflicts
 - 🎯 EMPHASIZE what agents could decide DIFFERENTLY if not specified
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -16,10 +18,15 @@
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Show your analysis before taking any action
-- 🎯 Focus on consistency, not implementation details
+- 🎯 Focus on consistency,
+ not implementation details
 - ⚠️ Present A/P/C menu after generating patterns content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -41,18 +48,21 @@ This step will generate content and present choices:
 
 - Core architectural decisions from step 4 are complete
 - Technology stack is decided and versions are verified
-- Focus on HOW agents should implement, not WHAT they should implement
+- Focus on HOW agents should implement,
+ not WHAT they should implement
 - Consider what could vary between different AI agents
 
 ## YOUR TASK:
 
-Define implementation patterns and consistency rules that ensure multiple AI agents write compatible, consistent code that works together seamlessly.
+Define implementation patterns and consistency rules that ensure multiple AI agents write compatible,
+ consistent code that works together seamlessly.
 
 ## PATTERNS DEFINITION SEQUENCE:
 
 ### 1. Identify Potential Conflict Points
 
-Based on the chosen technology stack and decisions, identify where AI agents could make different choices:
+Based on the chosen technology stack and decisions,
+ identify where AI agents could make different choices:
 
 **Naming Conflicts:**
 
@@ -96,12 +106,15 @@ Based on the chosen technology stack and decisions, identify where AI agents cou
 
 ### 2. Facilitate Pattern Decisions
 
-For each conflict category, facilitate collaborative pattern definition:
+For each conflict category,
+ facilitate collaborative pattern definition:
 
 **Present the Conflict Point:**
-"Given that we're using {{tech_stack}}, different AI agents might handle {{conflict_area}} differently.
+"Given that we're using {{tech_stack}},
+ different AI agents might handle {{conflict_area}} differently.
 
-For example, one agent might name database tables 'users' while another uses 'Users' - this would cause conflicts.
+For example,
+ one agent might name database tables 'users' while another uses 'Users' - this would cause conflicts.
 
 We need to establish consistent patterns that all agents follow."
 
@@ -123,7 +136,9 @@ Which approach makes the most sense for our project?"
 
 **Database Naming:**
 
-- Table naming: users, Users, or user?
+- Table naming: users,
+ Users,
+ or user?
 - Column naming: user_id or userId?
 - Foreign key format: user_id or fk_user?
 - Index naming: idx_users_email or users_email_index?
@@ -162,8 +177,11 @@ Which approach makes the most sense for our project?"
 
 **API Formats:**
 
-- API response wrapper? {data: ..., error: ...} or direct response?
-- Error format? {message, code} or {error: {type, detail}}?
+- API response wrapper? {data: ...,
+ error: ...} or direct response?
+- Error format? {message,
+ code} or {error: {type,
+ detail}}?
 - Date format in JSON? ISO strings or timestamps?
 - Success response structure?
 
@@ -308,31 +326,42 @@ Show the generated patterns content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with current patterns
 - Process enhanced consistency rules that come back
 - Ask user: "Accept these additional pattern refinements? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with implementation patterns context
 - Process collaborative insights about potential conflicts
 - Ask user: "Accept these changes to the implementation patterns? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]`
 - Load `./step-06-structure.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 4.
+When user selects 'C',
+ append the content directly to the document using the structure from step 4.
 
 ## SUCCESS METRICS:
 
 ✅ All potential AI agent conflict points identified and addressed
-✅ Comprehensive patterns defined for naming, structure, and communication
+✅ Comprehensive patterns defined for naming,
+ structure,
+ and communication
 ✅ Concrete examples provided for each pattern
 ✅ Enforcement guidelines clearly documented
 ✅ User collaborated on pattern decisions rather than receiving recommendations
@@ -354,6 +383,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-06-structure.md` to define the complete project structure.
+After user selects 'C' and content is saved to document,
+ load `./step-06-structure.md` to define the complete project structure.
 
 Remember: Do NOT proceed to step-06 until user explicitly selects 'C' from the A/P/C menu and content is saved!

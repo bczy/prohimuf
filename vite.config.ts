@@ -4,22 +4,41 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
+
   resolve: {
     alias: {
-      "@game": resolve(__dirname, "src/game"),
-      "@render": resolve(__dirname, "src/render"),
-      "@assets": resolve(__dirname, "src/assets"),
-      "@hooks": resolve(__dirname, "src/hooks"),
+      "@game": resolve(__dirname,
+ "src/game"),
+
+      "@render": resolve(__dirname,
+ "src/render"),
+
+      "@assets": resolve(__dirname,
+ "src/assets"),
+
+      "@hooks": resolve(__dirname,
+ "src/hooks"),
+
     },
+
   },
+
   base: "/prohimuf/",
+
   build: {
     target: "es2022",
+
     outDir: "dist",
+
     sourcemap: true,
+
   },
+
   server: {
     port: 5173,
+
     open: true,
+
   },
+
 });

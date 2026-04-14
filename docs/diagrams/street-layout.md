@@ -26,13 +26,31 @@ block-beta
   origin["← x = −25 ·········· x = 0 (street centre) ·········· x = +25 →"]:9
   space:1
 
-  style A fill:#c8a87a,stroke:#7a5c3a,color:#000
-  style B fill:#9fb8c8,stroke:#4a6a7a,color:#000
-  style C fill:#b8c89f,stroke:#5a7a4a,color:#000
-  style D fill:#c8b0d0,stroke:#7a5a8a,color:#000
-  style gAB fill:#e8e0d0,stroke:#bbb,color:#555
-  style gBC fill:#e8e0d0,stroke:#bbb,color:#555
-  style gCD fill:#e8e0d0,stroke:#bbb,color:#555
-  style sky fill:#87ceeb,stroke:#5599bb,color:#003366
-  style pave fill:#a09080,stroke:#706050,color:#fff
+  style A fill:#c8a87a,
+stroke:#7a5c3a,
+color:#000
+  style B fill:#9fb8c8,
+stroke:#4a6a7a,
+color:#000
+  style C fill:#b8c89f,
+stroke:#5a7a4a,
+color:#000
+  style D fill:#c8b0d0,
+stroke:#7a5a8a,
+color:#000
+  style gAB fill:#e8e0d0,
+stroke:#bbb,
+color:#555
+  style gBC fill:#e8e0d0,
+stroke:#bbb,
+color:#555
+  style gCD fill:#e8e0d0,
+stroke:#bbb,
+color:#555
+  style sky fill:#87ceeb,
+stroke:#5599bb,
+color:#003366
+  style pave fill:#a09080,
+stroke:#706050,
+color:#fff
 ```

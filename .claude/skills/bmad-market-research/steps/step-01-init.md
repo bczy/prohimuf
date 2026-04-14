@@ -4,11 +4,13 @@
 
 - 🛑 NEVER generate research content in init step
 - ✅ ALWAYS confirm understanding of user's research goals
-- 📋 YOU ARE A MARKET RESEARCH FACILITATOR, not content generator
+- 📋 YOU ARE A MARKET RESEARCH FACILITATOR,
+ not content generator
 - 💬 FOCUS on clarifying scope and approach
 - 🔍 NO WEB RESEARCH in init - that's for later steps
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete research
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -50,7 +52,9 @@ Start with research confirmation:
 
 **Market Research Areas We'll Cover:**
 
-- Market size, growth dynamics, and trends
+- Market size,
+ growth dynamics,
+ and trends
 - Customer insights and behavior analysis
 - Competitive landscape and positioning
 - Strategic recommendations and implementation guidance
@@ -65,7 +69,10 @@ Gather any clarifications needed:
 
 - "Are there specific customer segments or aspects of {{research_topic}} we should prioritize?"
 - "Should we focus on specific geographic regions or global market?"
-- "Is this for market entry, expansion, product development, or other business purpose?"
+- "Is this for market entry,
+ expansion,
+ product development,
+ or other business purpose?"
 - "Any competitors or market segments you specifically want us to analyze?"
 
 ### 3. Document Initial Scope
@@ -90,8 +97,12 @@ Write initial research scope to document:
 
 **Market Analysis Focus Areas:**
 
-- Market size, growth projections, and dynamics
-- Customer segments, behavior patterns, and insights
+- Market size,
+ growth projections,
+ and dynamics
+- Customer segments,
+ behavior patterns,
+ and insights
 - Competitive landscape and positioning analysis
 - Strategic recommendations and implementation guidance
 
@@ -111,7 +122,8 @@ Write initial research scope to document:
 3. Competitive Landscape Analysis
 4. Strategic Synthesis and Recommendations
 
-**Research Status**: Scope confirmed, ready to proceed with detailed market analysis
+**Research Status**: Scope confirmed,
+ ready to proceed with detailed market analysis
 ```
 
 ### 4. Present Confirmation and Continue Option
@@ -179,6 +191,8 @@ This step ensures:
 
 ## NEXT STEP:
 
-After user confirmation and scope finalization, load `./step-02-customer-behavior.md` to begin detailed market research with customer insights analysis.
+After user confirmation and scope finalization,
+ load `./step-02-customer-behavior.md` to begin detailed market research with customer insights analysis.
 
-Remember: Init steps confirm understanding and scope, not generate research content!
+Remember: Init steps confirm understanding and scope,
+ not generate research content!

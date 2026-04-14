@@ -1,6 +1,9 @@
 # Product Brief Template
 
-This is a flexible guide for the executive product brief — adapt it to serve the product's story. Merge sections, add new ones, reorder as needed. The product determines the structure, not the template.
+This is a flexible guide for the executive product brief — adapt it to serve the product's story. Merge sections,
+ add new ones,
+ reorder as needed. The product determines the structure,
+ not the template.
 
 ## Sensible Default Structure
 
@@ -10,26 +13,33 @@ This is a flexible guide for the executive product brief — adapt it to serve t
 ## Executive Summary
 
 [2-3 paragraph narrative: What is this? What problem does it solve? Why does it matter? Why now?
-This should be compelling enough to stand alone — if someone reads only this section, they should understand the vision.]
+This should be compelling enough to stand alone — if someone reads only this section,
+ they should understand the vision.]
 
 ## The Problem
 
 [What pain exists? Who feels it? How are they coping today? What's the cost of the status quo?
-Be specific — real scenarios, real frustrations, real consequences.]
+Be specific — real scenarios,
+ real frustrations,
+ real consequences.]
 
 ## The Solution
 
 [What are we building? How does it solve the problem?
-Focus on the experience and outcome, not the implementation.]
+Focus on the experience and outcome,
+ not the implementation.]
 
 ## What Makes This Different
 
 [Key differentiators. Why this approach vs alternatives? What's the unfair advantage?
-Be honest — if the moat is execution speed, say so. Don't fabricate technical moats.]
+Be honest — if the moat is execution speed,
+ say so. Don't fabricate technical moats.]
 
 ## Who This Serves
 
-[Primary users — vivid but brief. Who are they, what do they need, what does success look like for them?
+[Primary users — vivid but brief. Who are they,
+ what do they need,
+ what does success look like for them?
 Secondary users if relevant.]
 
 ## Success Criteria
@@ -40,7 +50,8 @@ Mix of user success signals and business objectives. Be measurable.]
 ## Scope
 
 [What's in for the first version? What's explicitly out?
-Keep this tight — it's a boundary document, not a feature list.]
+Keep this tight — it's a boundary document,
+ not a feature list.]
 
 ## Vision
 
@@ -57,4 +68,5 @@ Inspiring but grounded.]
 - **If scope is well-defined:** Merge "Scope" and "Vision" into "Roadmap Thinking"
 - **If the problem is well-known:** Shorten "The Problem" and expand "What Makes This Different"
 
-The brief should be 1-2 pages. If it's longer, you're putting in too much detail — that's what the distillate is for.
+The brief should be 1-2 pages. If it's longer,
+ you're putting in too much detail — that's what the distillate is for.

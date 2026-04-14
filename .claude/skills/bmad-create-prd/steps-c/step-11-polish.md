@@ -6,9 +6,12 @@
 
 - 🛑 CRITICAL: Load the ENTIRE document before making changes
 - 📖 CRITICAL: Read complete step file before taking action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
 - ✅ This is a POLISH step - optimize existing content
-- 📋 IMPROVE flow, coherence, and readability
+- 📋 IMPROVE flow,
+ coherence,
+ and readability
 - 💬 PRESERVE user's voice and intent
 - 🎯 MAINTAIN all essential information while improving presentation
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -34,7 +37,9 @@
 
 ## YOUR TASK:
 
-Optimize the complete PRD document for flow, coherence, and professional presentation while preserving all essential information.
+Optimize the complete PRD document for flow,
+ coherence,
+ and professional presentation while preserving all essential information.
 
 ## DOCUMENT POLISH SEQUENCE:
 
@@ -43,7 +48,9 @@ Optimize the complete PRD document for flow, coherence, and professional present
 **CRITICAL:** Load the PRD purpose document first:
 
 - Read `../data/prd-purpose.md` to understand what makes a great BMAD PRD
-- Internalize the philosophy: information density, traceability, measurable requirements
+- Internalize the philosophy: information density,
+ traceability,
+ measurable requirements
 - Keep the dual-audience nature (humans + LLMs) in mind
 
 **Then Load the PRD Document:**
@@ -80,7 +87,9 @@ Review the entire document with PRD purpose principles in mind:
 **Header Structure:**
 
 - Are all main sections using ## Level 2 headers?
-- Is the hierarchy consistent (##, ###, ####)?
+- Is the hierarchy consistent (##,
+ ###,
+ ####)?
 - Can sections be easily extracted or referenced?
 - Are headers descriptive and clear?
 
@@ -93,19 +102,36 @@ Review the entire document with PRD purpose principles in mind:
 
 ### 2b. Brainstorming Reconciliation (if brainstorming input exists)
 
-**Check the PRD frontmatter `inputDocuments` for any brainstorming document** (e.g., `brainstorming-session*.md`, `brainstorming-report.md`). If a brainstorming document was used as input:
+**Check the PRD frontmatter `inputDocuments` for any brainstorming document** (e.g.,
+ `brainstorming-session*.md`,
+ `brainstorming-report.md`). If a brainstorming document was used as input:
 
-1. **Load the brainstorming document** and extract all distinct ideas, themes, and recommendations
-2. **Cross-reference against the PRD** — for each brainstorming idea, check if it landed in any PRD section (requirements, success criteria, user journeys, scope, etc.)
+1. **Load the brainstorming document** and extract all distinct ideas,
+ themes,
+ and recommendations
+2. **Cross-reference against the PRD** — for each brainstorming idea,
+ check if it landed in any PRD section (requirements,
+ success criteria,
+ user journeys,
+ scope,
+ etc.)
 3. **Identify dropped ideas** — ideas from brainstorming that do not appear anywhere in the PRD. Pay special attention to:
-   - Tone, personality, and interaction design ideas (these are most commonly lost)
+   - Tone,
+ personality,
+ and interaction design ideas (these are most commonly lost)
    - Design philosophy and coaching approach ideas
-   - "What should this feel like" ideas (UX feel, not just UX function)
+   - "What should this feel like" ideas (UX feel,
+ not just UX function)
    - Qualitative/soft ideas that don't map cleanly to functional requirements
 4. **Present findings to user**: "These brainstorming ideas did not make it into the PRD: [list]. Should any be incorporated?"
-5. **If user wants to incorporate dropped ideas**: Add them to the most appropriate PRD section (success criteria, non-functional requirements, or a new section if needed)
+5. **If user wants to incorporate dropped ideas**: Add them to the most appropriate PRD section (success criteria,
+ non-functional requirements,
+ or a new section if needed)
 
-**Why this matters**: Brainstorming documents are often long, and the PRD's structured template has an implicit bias toward concrete/structural ideas. Soft ideas (tone, philosophy, interaction feel) frequently get silently dropped because they don't map cleanly to FR/NFR format.
+**Why this matters**: Brainstorming documents are often long,
+ and the PRD's structured template has an implicit bias toward concrete/structural ideas. Soft ideas (tone,
+ philosophy,
+ interaction feel) frequently get silently dropped because they don't map cleanly to FR/NFR format.
 
 ### 3. Optimization Actions
 
@@ -141,14 +167,17 @@ Make targeted improvements:
 
 ### 4. Preserve Critical Information
 
-**While optimizing, ensure NOTHING essential is lost:**
+**While optimizing,
+ ensure NOTHING essential is lost:**
 
 **Must Preserve:**
 
 - All user success criteria
 - All functional requirements (capability contract)
 - All user journey narratives
-- All scope decisions (MVP, Growth, Vision)
+- All scope decisions (MVP,
+ Growth,
+ Vision)
 - All non-functional requirements
 - Product differentiator and vision
 - Domain-specific requirements
@@ -175,31 +204,49 @@ Create the polished version:
 
 ### 6. Present MENU OPTIONS
 
-Present the polished document for review, then display menu:
+Present the polished document for review,
+ then display menu:
 
 - Show what changed in the polish
-- Highlight improvements made (flow, duplication, headers)
-- Ask if they'd like to refine further, get other perspectives, or proceed
+- Highlight improvements made (flow,
+ duplication,
+ headers)
+- Ask if they'd like to refine further,
+ get other perspectives,
+ or proceed
 - Present menu options naturally as part of conversation
 
 Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Complete PRD (Step 12 of 12)"
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the polished document, process the enhanced refinements that come back, ask user "Accept these polish improvements? (y/n)", if yes update content with improvements then redisplay menu, if no keep original polish then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the polished document, process the collaborative refinements to flow and coherence, ask user "Accept these polish changes? (y/n)", if yes update content with improvements then redisplay menu, if no keep original polish then redisplay menu
-- IF C: Save the polished document to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: ./step-12-complete.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the polished document,
+ process the enhanced refinements that come back,
+ ask user "Accept these polish improvements? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original polish then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the polished document,
+ process the collaborative refinements to flow and coherence,
+ ask user "Accept these polish changes? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original polish then redisplay menu
+- IF C: Save the polished document to {outputFile},
+ update frontmatter by adding this step name to the end of the stepsCompleted array,
+ then read fully and follow: ./step-12-complete.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', replace the entire document content with the polished version.
+When user selects 'C',
+ replace the entire document content with the polished version.
 
 ## SUCCESS METRICS:
 
@@ -231,6 +278,7 @@ When user selects 'C', replace the entire document content with the polished ver
 
 ## NEXT STEP:
 
-After user selects 'C' and polished document is saved, load `./step-12-complete.md` to complete the workflow.
+After user selects 'C' and polished document is saved,
+ load `./step-12-complete.md` to complete the workflow.
 
 Remember: Do NOT proceed to step-12 until user explicitly selects 'C' from the A/P/C menu and polished document is saved!

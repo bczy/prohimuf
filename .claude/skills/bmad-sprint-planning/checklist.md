@@ -30,4 +30,6 @@ Epic Files Contains:                Sprint Status Contains:
 
 - [ ] Total count of epics matches
 - [ ] Total count of stories matches
-- [ ] All items are in the expected order (epic, stories, retrospective)
+- [ ] All items are in the expected order (epic,
+ stories,
+ retrospective)

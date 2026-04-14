@@ -4,7 +4,10 @@
 
 ## STEP GOAL:
 
-For complex domains only that have a mapping in ../data/domain-complexity.csv, explore domain-specific constraints, compliance requirements, and technical considerations that shape the product.
+For complex domains only that have a mapping in ../data/domain-complexity.csv,
+ explore domain-specific constraints,
+ compliance requirements,
+ and technical considerations that shape the product.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -12,49 +15,67 @@ For complex domains only that have a mapping in ../data/domain-complexity.csv, e
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product-focused PM facilitator collaborating with an expert peer
-- ✅ We engage in collaborative dialogue, not command-response
-- ✅ You bring structured thinking and facilitation skills, while the user brings domain expertise
+- ✅ We engage in collaborative dialogue,
+ not command-response
+- ✅ You bring structured thinking and facilitation skills,
+ while the user brings domain expertise
 
 ### Step-Specific Rules:
 
 - 🎯 This step is OPTIONAL - only needed for complex domains
 - 🚫 SKIP if domain complexity is "low" from step-02
 - 💬 APPROACH: Natural conversation to discover domain-specific needs
-- 🎯 Focus on constraints, compliance, and domain patterns
+- 🎯 Focus on constraints,
+ compliance,
+ and domain patterns
 
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Check domain complexity from step-02 classification first
-- ⚠️ If complexity is "low", offer to skip this step
+- ⚠️ If complexity is "low",
+ offer to skip this step
 - ⚠️ Present A/P/C menu after domain requirements defined (or skipped)
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
+- 📖 Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
 
 - Domain classification from step-02 is available
-- If complexity is low, this step may be skipped
+- If complexity is low,
+ this step may be skipped
 - Domain CSV data provides complexity reference
-- Focus on domain-specific constraints, not general requirements
+- Focus on domain-specific constraints,
+ not general requirements
 
 ## YOUR TASK:
 
-For complex domains, explore what makes this domain special:
+For complex domains,
+ explore what makes this domain special:
 
-- **Compliance requirements** - regulations, standards, certifications
-- **Technical constraints** - security, privacy, integration requirements
-- **Domain patterns** - common patterns, best practices, anti-patterns
-- **Risks and mitigations** - what could go wrong, how to prevent it
+- **Compliance requirements** - regulations,
+ standards,
+ certifications
+- **Technical constraints** - security,
+ privacy,
+ integration requirements
+- **Domain patterns** - common patterns,
+ best practices,
+ anti-patterns
+- **Risks and mitigations** - what could go wrong,
+ how to prevent it
 
 ## DOMAIN DISCOVERY SEQUENCE:
 
@@ -63,7 +84,10 @@ For complex domains, explore what makes this domain special:
 **Review classification from step-02:**
 
 - What's the domain complexity level? (low/medium/high)
-- What's the specific domain? (healthcare, fintech, education, etc.)
+- What's the specific domain? (healthcare,
+ fintech,
+ education,
+ etc.)
 
 **If complexity is LOW:**
 
@@ -89,7 +113,10 @@ Proceed with domain exploration.
 
 **Return format:**
 Return ONLY the matching row as a YAML-formatted object with these fields:
-domain, complexity, typical_concerns, compliance_requirements
+domain,
+ complexity,
+ typical_concerns,
+ compliance_requirements
 
 **Do NOT return the entire CSV - only the matching row.**"
 
@@ -106,17 +133,34 @@ domain, complexity, typical_concerns, compliance_requirements
 
 Acknowledge the domain and explore what makes it complex:
 
-- What regulations apply? (HIPAA, PCI-DSS, GDPR, SOX, etc.)
-- What standards matter? (ISO, NIST, domain-specific standards)
-- What certifications are needed? (security, privacy, domain-specific)
-- What integrations are required? (EMR systems, payment processors, etc.)
+- What regulations apply? (HIPAA,
+ PCI-DSS,
+ GDPR,
+ SOX,
+ etc.)
+- What standards matter? (ISO,
+ NIST,
+ domain-specific standards)
+- What certifications are needed? (security,
+ privacy,
+ domain-specific)
+- What integrations are required? (EMR systems,
+ payment processors,
+ etc.)
 
 **Explore technical constraints:**
 
-- Security requirements (encryption, audit logs, access control)
-- Privacy requirements (data handling, consent, retention)
-- Performance requirements (real-time, batch, latency)
-- Availability requirements (uptime, disaster recovery)
+- Security requirements (encryption,
+ audit logs,
+ access control)
+- Privacy requirements (data handling,
+ consent,
+ retention)
+- Performance requirements (real-time,
+ batch,
+ latency)
+- Availability requirements (uptime,
+ disaster recovery)
 
 ### 4. Document Domain Requirements
 
@@ -129,7 +173,9 @@ Acknowledge the domain and explore what makes it complex:
 
 ### Technical Constraints
 
-- [Security, privacy, performance needs]
+- [Security,
+ privacy,
+ performance needs]
 
 ### Integration Requirements
 
@@ -144,7 +190,8 @@ Acknowledge the domain and explore what makes it complex:
 
 **Check with the user:**
 
-"Are there other domain-specific concerns we should consider? For [this domain], what typically gets overlooked?"
+"Are there other domain-specific concerns we should consider? For [this domain],
+ what typically gets overlooked?"
 
 ### N. Present MENU OPTIONS
 
@@ -152,20 +199,26 @@ Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue - Sav
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill, and when finished redisplay the menu
-- IF P: Invoke the `bmad-party-mode` skill, and when finished redisplay the menu
-- IF C: Save content to {outputFile}, update frontmatter, then read fully and follow: ./step-06-innovation.md
+- IF A: Invoke the `bmad-advanced-elicitation` skill,
+ and when finished redisplay the menu
+- IF P: Invoke the `bmad-party-mode` skill,
+ and when finished redisplay the menu
+- IF C: Save content to {outputFile},
+ update frontmatter,
+ then read fully and follow: ./step-06-innovation.md
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#n-present-menu-options)
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## APPEND TO DOCUMENT
 
-When user selects 'C', append to `{outputFile}`:
+When user selects 'C',
+ append to `{outputFile}`:
 
 ```markdown
 ## Domain-Specific Requirements
@@ -173,11 +226,13 @@ When user selects 'C', append to `{outputFile}`:
 {{discovered domain requirements}}
 ```
 
-If step was skipped, append nothing and proceed.
+If step was skipped,
+ append nothing and proceed.
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN [C continue option] is selected and [content saved or skipped], will you then read fully and follow: `./step-06-innovation.md` to explore innovation.
+ONLY WHEN [C continue option] is selected and [content saved or skipped],
+ will you then read fully and follow: `./step-06-innovation.md` to explore innovation.
 
 ---
 
@@ -188,7 +243,9 @@ ONLY WHEN [C continue option] is selected and [content saved or skipped], will y
 - Domain complexity checked before proceeding
 - Offered to skip if complexity is low
 - Natural conversation exploring domain concerns
-- Compliance, technical, and integration requirements identified
+- Compliance,
+ technical,
+ and integration requirements identified
 - Domain-specific risks documented with mitigations
 - User validated completeness
 - Content properly saved (or step skipped) when C selected
@@ -203,4 +260,8 @@ ONLY WHEN [C continue option] is selected and [content saved or skipped], will y
 - Being generic instead of domain-specific
 - Proceeding without user validation
 
-**Master Rule:** This step is OPTIONAL for simple domains. For complex domains, focus on compliance, constraints, and domain patterns. Natural conversation, not checklists.
+**Master Rule:** This step is OPTIONAL for simple domains. For complex domains,
+ focus on compliance,
+ constraints,
+ and domain patterns. Natural conversation,
+ not checklists.

@@ -3,19 +3,24 @@
 
 # Stage 3: Guided Elicitation
 
-**Goal:** Fill the gaps in what you know. By now you have the user's brain dump, artifact analysis, and web research. This stage is about smart, targeted questioning — not rote section-by-section interrogation.
+**Goal:** Fill the gaps in what you know. By now you have the user's brain dump,
+ artifact analysis,
+ and web research. This stage is about smart,
+ targeted questioning — not rote section-by-section interrogation.
 
 **Skip this stage entirely in Yolo and Autonomous modes** — go directly to `draft-and-review.md`.
 
 ## Approach
 
-You are NOT walking through a rigid questionnaire. You're having a conversation that covers the substance of a great product brief. The topics below are your mental checklist, not a script. Adapt to:
+You are NOT walking through a rigid questionnaire. You're having a conversation that covers the substance of a great product brief. The topics below are your mental checklist,
+ not a script. Adapt to:
 
 - What you already know (don't re-ask what's been covered)
 - What the user is excited about (follow their energy)
 - What's genuinely unclear (focus questions where they matter)
 
-## Topics to Cover (flexibly, conversationally)
+## Topics to Cover (flexibly,
+ conversationally)
 
 ### Vision & Problem
 
@@ -42,18 +47,28 @@ You are NOT walking through a rigid questionnaire. You're having a conversation 
 - How will you know this is working? What metrics matter?
 - What's the minimum viable version that creates real value?
 - What's explicitly NOT in scope for the first version?
-- If this is wildly successful, what does it become in 2-3 years?
+- If this is wildly successful,
+ what does it become in 2-3 years?
 
 ## The Flow
 
 For each topic area where you have gaps:
 
-1. **Lead with what you know** — "Based on your input and my research, it sounds like [X]. Is that right?"
-2. **Ask the gap question** — targeted, specific, not generic
+1. **Lead with what you know** — "Based on your input and my research,
+ it sounds like [X]. Is that right?"
+2. **Ask the gap question** — targeted,
+ specific,
+ not generic
 3. **Reflect and confirm** — paraphrase what you heard
-4. **"Anything else on this, or shall we move on?"** — the soft gate
+4. **"Anything else on this,
+ or shall we move on?"** — the soft gate
 
-If the user is giving you detail beyond brief scope (requirements, architecture, platform details, timelines), **capture it silently** for the distillate. Acknowledge it briefly ("Good detail, I'll capture that") but don't derail the conversation.
+If the user is giving you detail beyond brief scope (requirements,
+ architecture,
+ platform details,
+ timelines),
+ **capture it silently** for the distillate. Acknowledge it briefly ("Good detail,
+ I'll capture that") but don't derail the conversation.
 
 ## When to Move On
 
@@ -67,9 +82,12 @@ When you have enough substance to draft a compelling 1-2 page executive brief co
 
 You don't need perfection — you need enough to draft well. Missing details can be surfaced during the review stage.
 
-If the user is providing complete, confident answers and you have solid coverage across all four topic areas after fewer than 3-4 exchanges, proactively offer to draft early.
+If the user is providing complete,
+ confident answers and you have solid coverage across all four topic areas after fewer than 3-4 exchanges,
+ proactively offer to draft early.
 
-**Transition:** "I think I have a solid picture. Ready for me to draft the brief, or is there anything else you'd like to add?"
+**Transition:** "I think I have a solid picture. Ready for me to draft the brief,
+ or is there anything else you'd like to add?"
 
 ## Stage Complete
 

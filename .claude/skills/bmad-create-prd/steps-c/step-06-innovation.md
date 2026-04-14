@@ -7,9 +7,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on detecting and exploring innovative aspects of the product
 - 🎯 OPTIONAL STEP: Only proceed if innovation signals are detected
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -20,7 +22,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating innovation content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
+- 📖 Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -28,20 +31,25 @@
 - Current document and frontmatter from previous steps are available
 - Project type from step-02 is available for innovation signal matching
 - Project-type CSV data will be loaded in this step
-- Focus on detecting genuine innovation, not forced creativity
+- Focus on detecting genuine innovation,
+ not forced creativity
 
 ## OPTIONAL STEP CHECK:
 
-Before proceeding with this step, scan for innovation signals:
+Before proceeding with this step,
+ scan for innovation signals:
 
-- Listen for language like "nothing like this exists", "rethinking how X works"
+- Listen for language like "nothing like this exists",
+ "rethinking how X works"
 - Check for project-type innovation signals from CSV
 - Look for novel approaches or unique combinations
-- If no innovation detected, skip this step
+- If no innovation detected,
+ skip this step
 
 ## YOUR TASK:
 
-Detect and explore innovation patterns in the product, focusing on what makes it truly novel and how to validate the innovative aspects.
+Detect and explore innovation patterns in the product,
+ focusing on what makes it truly novel and how to validate the innovative aspects.
 
 ## INNOVATION DISCOVERY SEQUENCE:
 
@@ -87,7 +95,8 @@ Ask targeted innovation discovery questions:
 
 ### 4. Deep Innovation Exploration (If Detected)
 
-If innovation signals are found, explore deeply:
+If innovation signals are found,
+ explore deeply:
 
 #### Innovation Discovery Questions:
 
@@ -99,7 +108,8 @@ If innovation signals are found, explore deeply:
 
 #### Market Context Research:
 
-If relevant innovation detected, consider web search for context:
+If relevant innovation detected,
+ consider web search for context:
 Use `web_search_triggers` from project-type CSV:
 `[web_search_triggers] {concept} innovations {date}`
 
@@ -109,7 +119,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Innovation & Novel Patterns
@@ -133,27 +144,42 @@ When saving to document, append these Level 2 and Level 3 sections:
 
 ### 6. Present MENU OPTIONS (Only if Innovation Detected)
 
-Present the innovation content for review, then display menu:
+Present the innovation content for review,
+ then display menu:
 
 - Show identified innovative aspects (using structure from section 5)
 - Highlight differentiation from existing solutions
-- Ask if they'd like to refine further, get other perspectives, or proceed
+- Ask if they'd like to refine further,
+ get other perspectives,
+ or proceed
 - Present menu options naturally as part of conversation
 
 Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Project Type Analysis (Step 7 of 11)"
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the current innovation content, process the enhanced innovation insights that come back, ask user "Accept these improvements to the innovation analysis? (y/n)", if yes update content with improvements then redisplay menu, if no keep original content then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the current innovation content, process the collaborative innovation exploration and ideation, ask user "Accept these changes to the innovation analysis? (y/n)", if yes update content with improvements then redisplay menu, if no keep original content then redisplay menu
-- IF C: Append the final content to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: ./step-07-project-type.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the current innovation content,
+ process the enhanced innovation insights that come back,
+ ask user "Accept these improvements to the innovation analysis? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original content then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the current innovation content,
+ process the collaborative innovation exploration and ideation,
+ ask user "Accept these changes to the innovation analysis? (y/n)",
+ if yes update content with improvements then redisplay menu,
+ if no keep original content then redisplay menu
+- IF C: Append the final content to {outputFile},
+ update frontmatter by adding this step name to the end of the stepsCompleted array,
+ then read fully and follow: ./step-07-project-type.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## NO INNOVATION DETECTED:
 
@@ -167,8 +193,10 @@ Display: "**Select:** [A] Advanced Elicitation - Let's try to find innovative an
 
 ### Menu Handling Logic:
 
-- IF A: Proceed with content generation anyway, then return to menu
-- IF C: Skip this step, then read fully and follow: ./step-07-project-type.md
+- IF A: Proceed with content generation anyway,
+ then return to menu
+- IF C: Skip this step,
+ then read fully and follow: ./step-07-project-type.md
 
 ### EXECUTION RULES:
 
@@ -177,7 +205,8 @@ Display: "**Select:** [A] Advanced Elicitation - Let's try to find innovative an
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 5.
+When user selects 'C',
+ append the content directly to the document using the structure from step 5.
 
 ## SUCCESS METRICS:
 
@@ -214,6 +243,7 @@ Skip this step and load `./step-07-project-type.md` if:
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document (or step is skipped), load `./step-07-project-type.md`.
+After user selects 'C' and content is saved to document (or step is skipped),
+ load `./step-07-project-type.md`.
 
 Remember: Do NOT proceed to step-07 until user explicitly selects 'C' from the A/P/C menu (or confirms step skip)!

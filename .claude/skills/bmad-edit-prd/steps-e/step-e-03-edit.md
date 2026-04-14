@@ -8,7 +8,10 @@ prdPurpose: "../data/prd-purpose.md"
 
 ## STEP GOAL:
 
-Apply changes to the PRD following the approved change plan from step e-02, including content updates, structure improvements, and format conversion if needed.
+Apply changes to the PRD following the approved change plan from step e-02,
+ including content updates,
+ structure improvements,
+ and format conversion if needed.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -16,16 +19,20 @@ Apply changes to the PRD following the approved change plan from step e-02, incl
 
 - 🛑 ALWAYS generate content WITH user input/approval
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and PRD Improvement Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring analytical expertise and precise editing skills
 - ✅ User brings domain knowledge and approval authority
 
@@ -33,7 +40,8 @@ Apply changes to the PRD following the approved change plan from step e-02, incl
 
 - 🎯 Focus ONLY on implementing approved changes from step e-02
 - 🚫 FORBIDDEN to make changes beyond the approved plan
-- 💬 Approach: Methodical, section-by-section execution
+- 💬 Approach: Methodical,
+ section-by-section execution
 - 🚪 This is a middle step - user can request adjustments
 
 ## EXECUTION PROTOCOLS:
@@ -45,18 +53,24 @@ Apply changes to the PRD following the approved change plan from step e-02, incl
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, approved change plan from step e-02, prd-purpose standards
+- Available context: PRD file,
+ approved change plan from step e-02,
+ prd-purpose standards
 - Focus: Implementing changes from approved plan only
-- Limits: Don't add changes beyond plan, don't validate yet
+- Limits: Don't add changes beyond plan,
+ don't validate yet
 - Dependencies: Step e-02 completed - plan approved by user
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Retrieve Approved Change Plan
 
-From step e-02, retrieve:
+From step e-02,
+ retrieve:
 
 - **Approved changes:** Section-by-section list
 - **Priority order:** Sequence to apply changes
@@ -99,7 +113,9 @@ Apply changes and return updated section."
 **Graceful degradation (if no Task tool):**
 
 - Perform edits directly in current context
-- Load PRD section, apply changes, save
+- Load PRD section,
+ apply changes,
+ save
 
 ### 3. Execute Changes Section-by-Section
 
@@ -168,7 +184,9 @@ classification:
   projectType: "{project_type}"
   complexity: "{complexity}"
 inputDocuments: [list of input documents]
-stepsCompleted: ["step-e-01-discovery", "step-e-02-review", "step-e-03-edit"]
+stepsCompleted: ["step-e-01-discovery",
+ "step-e-02-review",
+ "step-e-03-edit"]
 lastEdited: "{current_date}"
 editHistory:
   - date: "{current_date}"
@@ -213,7 +231,8 @@ Display:
 
 **PRD is ready for:**
 
-- Use in downstream workflows (UX, Architecture)
+- Use in downstream workflows (UX,
+ Architecture)
 - Validation (if not yet validated)
 
 **What would you like to do next?**"
@@ -234,7 +253,8 @@ Display:
 
 - IF V (Validate): Display "Starting validation workflow..." then read fully and follow: `./steps-v/step-v-01-discovery.md`
 - IF S (Summary): Present edit summary and exit
-- IF A (Adjust): Accept additional requirements, loop back to editing
+- IF A (Adjust): Accept additional requirements,
+ loop back to editing
 - IF X (Exit): Display summary and exit
 
 ---

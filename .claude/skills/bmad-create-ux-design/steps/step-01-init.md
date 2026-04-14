@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on initialization and setup only - don't look ahead to future steps
 - 🚪 DETECT existing workflow state and handle continuation properly
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -34,11 +36,14 @@ Initialize the UX design workflow by detecting continuation state and setting up
 
 ### 1. Check for Existing Workflow
 
-First, check if the output document already exists:
+First,
+ check if the output document already exists:
 
 - Look for file at `{planning_artifacts}/*ux-design-specification*.md`
-- If exists, read the complete file including frontmatter
-- If not exists, this is a fresh workflow
+- If exists,
+ read the complete file including frontmatter
+- If not exists,
+ this is a fresh workflow
 
 ### 2. Handle Continuation (If Document Exists)
 
@@ -61,7 +66,10 @@ Discover and load context documents using smart discovery. Documents can be in t
 - {product_knowledge}/\*\*
 - {project-root}/docs/\*\*
 
-Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called _foo_/index.md (which indicates sharded content)
+Also - when searching - documents can be a single markdown file,
+ or a folder with an index and multiple files. For Example,
+ if searching for `*foo*.md` and not found,
+ also search for a folder called _foo_/index.md (which indicates sharded content)
 
 Try to discover the following:
 
@@ -70,13 +78,17 @@ Try to discover the following:
 - Project Documentation (generally multiple documents might be found for this in the `{product_knowledge}` or `docs` folder.)
 - Project Context (`**/project-context.md`)
 
-<critical>Confirm what you have found with the user, along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
+<critical>Confirm what you have found with the user,
+ along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
 
 **Loading Rules:**
 
 - Load ALL discovered files completely that the user confirmed or provided (no offset/limit)
-- If there is a project context, whatever is relevant should try to be biased in the remainder of this whole workflow process
-- For sharded folders, load ALL files to get complete picture, using the index first to potentially know the potential of each document
+- If there is a project context,
+ whatever is relevant should try to be biased in the remainder of this whole workflow process
+- For sharded folders,
+ load ALL files to get complete picture,
+ using the index first to potentially know the potential of each document
 - index.md is a guide to what's relevant whenever available
 - Track all successfully loaded files in frontmatter `inputDocuments` array
 
@@ -106,13 +118,16 @@ Report what was found:
 
 **Files loaded:** {list of specific file names or "No additional documents found"}
 
-Do you have any other documents you'd like me to include, or shall we continue to the next step?
+Do you have any other documents you'd like me to include,
+ or shall we continue to the next step?
 
 [C] Continue to UX discovery"
 
 ## NEXT STEP:
 
-After user selects [C] to continue, ensure the file `{planning_artifacts}/ux-design-specification.md` has been created and saved, and then load `./step-02-discovery.md` to begin the UX discovery phase.
+After user selects [C] to continue,
+ ensure the file `{planning_artifacts}/ux-design-specification.md` has been created and saved,
+ and then load `./step-02-discovery.md` to begin the UX discovery phase.
 
 Remember: Do NOT proceed to step-02 until output file has been updated and user explicitly selects [C] to continue!
 

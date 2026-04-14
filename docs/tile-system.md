@@ -50,11 +50,14 @@ interface WindowSlot {
 
 ---
 
-## Conversion: `tileMapToFacade(map, worldOffsetX, streetHeight)`
+## Conversion: `tileMapToFacade(map,
+ worldOffsetX,
+ streetHeight)`
 
 `src/game/systems/tileMapSystem.ts`
 
-Filters tiles to window types only, converts grid indices to world positions:
+Filters tiles to window types only,
+ converts grid indices to world positions:
 
 ```ts
 worldX = worldOffsetX + col * tileW - ((cols - 1) * tileW) / 2;
@@ -71,24 +74,31 @@ Four buildings placed left-to-right with `BUILDING_GAP = 2` world units between 
 
 | Building   | Cols | Rows | Style                          |
 | ---------- | ---- | ---- | ------------------------------ |
-| BELLIARD_A | 12   | 18   | Haussmannien, pierre de taille |
-| BELLIARD_B | 10   | 12   | Années 70, béton brut          |
+| BELLIARD_A | 12   | 18   | Haussmannien,
+ pierre de taille |
+| BELLIARD_B | 10   | 12   | Années 70,
+ béton brut          |
 | BELLIARD_C | 8    | 8    | Petit pavillon/commerce        |
 | BELLIARD_D | 14   | 15   | Copropriété moderne            |
 
 Total street width: `12+2+10+2+8+2+14 = 50` world units  
-`STREET_HEIGHT = 18` (max building height, used for bottom-alignment)
+`STREET_HEIGHT = 18` (max building height,
+ used for bottom-alignment)
 
 → Layout diagram: [diagrams/street-layout.md](./diagrams/street-layout.md)
 
 ### Map authoring helpers
 
 ```ts
-// Fill a row with wall, then override specific positions
-function row(cols, ...[count, type][]): TileType[]
+// Fill a row with wall,
+ then override specific positions
+function row(cols,
+ ...[count,
+ type][]): TileType[]
 
 // Fill entire row with one type
-function solidRow(cols, type): TileType[]
+function solidRow(cols,
+ type): TileType[]
 ```
 
 ---
@@ -97,8 +107,11 @@ function solidRow(cols, type): TileType[]
 
 | File               | Status     | Description                                        |
 | ------------------ | ---------- | -------------------------------------------------- |
-| `rue_belliard.ts`  | **Active** | Shooting gallery, 4 buildings                      |
-| `stalingrad_19.ts` | Draft      | 48×40, uses `rep()`/`frow()` helpers, not imported |
+| `rue_belliard.ts`  | **Active** | Shooting gallery,
+ 4 buildings                      |
+| `stalingrad_19.ts` | Draft      | 48×40,
+ uses `rep()`/`frow()` helpers,
+ not imported |
 | `vitry_94.ts`      | Draft      | Top-down map                                       |
 | `topdown_test.ts`  | Active     | Top-down prototype map                             |
 | `facade01.ts`      | Legacy     | Simple single-building facade                      |
@@ -124,7 +137,8 @@ The procedural `TiledFacade` renderer draws each tile type via Canvas2D draw fun
 
 A standalone tool is planned (BMAD CP → CA → CE → SP). Goals:
 
-- Visual grid editor, click to place TileType
+- Visual grid editor,
+ click to place TileType
 - Multi-building street layout
 - JSON export compatible with `TileMap` interface
 - Zero server required — runs as local static page

@@ -4,12 +4,14 @@
 
 - 🛑 NEVER generate content without user input
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on evaluating starter template options with current versions
 - 🌐 ALWAYS search the web to verify current versions - NEVER trust hardcoded versions
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete architecture
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -18,7 +20,9 @@
 - 🌐 Search the web to verify current versions and options
 - ⚠️ Present A/P/C menu after generating starter template analysis
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -46,14 +50,16 @@ This step will generate content and present choices:
 
 ## YOUR TASK:
 
-Discover technical preferences and evaluate starter template options, leveraging existing technical preferences and establishing solid architectural foundations.
+Discover technical preferences and evaluate starter template options,
+ leveraging existing technical preferences and establishing solid architectural foundations.
 
 ## STARTER EVALUATION SEQUENCE:
 
 ### 0. Check Technical Preferences & Context
 
 **Check Project Context for Existing Technical Preferences:**
-"Before we dive into starter templates, let me check if you have any technical preferences already documented.
+"Before we dive into starter templates,
+ let me check if you have any technical preferences already documented.
 
 {{if_project_context_exists}}
 I found some technical rules in your project context file:
@@ -71,13 +77,25 @@ No existing technical preferences found in project context file. We'll establish
 {{/if_project_context}}"
 
 **Discover User Technical Preferences:**
-"Based on your project context, let's discuss your technical preferences:
+"Based on your project context,
+ let's discuss your technical preferences:
 
 {{primary_technology_category}} Preferences:
 
-- **Languages**: Do you have preferences between TypeScript/JavaScript, Python, Go, Rust, etc.?
-- **Frameworks**: Any existing familiarity or preferences (React, Vue, Angular, Next.js, etc.)?
-- **Databases**: Any preferences or existing infrastructure (PostgreSQL, MongoDB, MySQL, etc.)?
+- **Languages**: Do you have preferences between TypeScript/JavaScript,
+ Python,
+ Go,
+ Rust,
+ etc.?
+- **Frameworks**: Any existing familiarity or preferences (React,
+ Vue,
+ Angular,
+ Next.js,
+ etc.)?
+- **Databases**: Any preferences or existing infrastructure (PostgreSQL,
+ MongoDB,
+ MySQL,
+ etc.)?
 
 **Development Experience:**
 
@@ -86,30 +104,54 @@ No existing technical preferences found in project context file. We'll establish
 
 **Platform/Deployment Preferences:**
 
-- Cloud provider preferences (AWS, Vercel, Railway, etc.)?
-- Container preferences (Docker, Serverless, Traditional)?
+- Cloud provider preferences (AWS,
+ Vercel,
+ Railway,
+ etc.)?
+- Container preferences (Docker,
+ Serverless,
+ Traditional)?
 
 **Integrations:**
 
 - Any existing systems or APIs you need to integrate with?
-- Third-party services you plan to use (payment, authentication, analytics, etc.)?
+- Third-party services you plan to use (payment,
+ authentication,
+ analytics,
+ etc.)?
 
 These preferences will help me recommend the most suitable starter templates and guide our architectural decisions."
 
 ### 1. Identify Primary Technology Domain
 
-Based on project context analysis and technical preferences, identify the primary technology stack:
+Based on project context analysis and technical preferences,
+ identify the primary technology stack:
 
-- **Web application** → Look for Next.js, Vite, Remix, SvelteKit starters
-- **Mobile app** → Look for React Native, Expo, Flutter starters
-- **API/Backend** → Look for NestJS, Express, Fastify, Supabase starters
-- **CLI tool** → Look for CLI framework starters (oclif, commander, etc.)
-- **Full-stack** → Look for T3, RedwoodJS, Blitz, Next.js starters
-- **Desktop** → Look for Electron, Tauri starters
+- **Web application** → Look for Next.js,
+ Vite,
+ Remix,
+ SvelteKit starters
+- **Mobile app** → Look for React Native,
+ Expo,
+ Flutter starters
+- **API/Backend** → Look for NestJS,
+ Express,
+ Fastify,
+ Supabase starters
+- **CLI tool** → Look for CLI framework starters (oclif,
+ commander,
+ etc.)
+- **Full-stack** → Look for T3,
+ RedwoodJS,
+ Blitz,
+ Next.js starters
+- **Desktop** → Look for Electron,
+ Tauri starters
 
 ### 2. UX Requirements Consideration
 
-If UX specification was loaded, consider UX requirements when selecting starter:
+If UX specification was loaded,
+ consider UX requirements when selecting starter:
 
 - **Rich animations** → Framer Motion compatible starter
 - **Complex forms** → React Hook Form included starter
@@ -119,7 +161,8 @@ If UX specification was loaded, consider UX requirements when selecting starter:
 
 ### 3. Research Current Starter Options
 
-Search the web to find current, maintained starter templates:
+Search the web to find current,
+ maintained starter templates:
 
 ```
 Search the web: "{{primary_technology}} starter template CLI create command latest"
@@ -129,7 +172,8 @@ Search the web: "{{primary_technology}} production-ready starter best practices"
 
 ### 4. Investigate Top Starter Options
 
-For each promising starter found, investigate details:
+For each promising starter found,
+ investigate details:
 
 ```
 Search the web: "{{starter_name}} default setup technologies included latest"
@@ -140,12 +184,16 @@ Search the web: "{{starter_name}} recent updates maintenance status"
 
 ### 5. Analyze What Each Starter Provides
 
-For each viable starter option, document:
+For each viable starter option,
+ document:
 
 **Technology Decisions Made:**
 
 - Language/TypeScript configuration
-- Styling solution (CSS, Tailwind, Styled Components, etc.)
+- Styling solution (CSS,
+ Tailwind,
+ Styled Components,
+ etc.)
 - Testing framework setup
 - Linting/Formatting configuration
 - Build tooling and optimization
@@ -179,7 +227,8 @@ Based on user skill level and project needs:
 This would establish our base architecture with these technical decisions already made. Use it?"
 
 **For Intermediate Users:**
-"I found {{starter_name}}, which is a well-maintained starter for {{project_type}} projects.
+"I found {{starter_name}},
+ which is a well-maintained starter for {{project_type}} projects.
 
 It makes these architectural decisions for us:
 {{decision_list_with_explanations}}
@@ -187,7 +236,8 @@ It makes these architectural decisions for us:
 This gives us a solid foundation following current best practices. Should we use it?"
 
 **For Beginner Users:**
-"I found {{starter_name}}, which is like a pre-built foundation for your project.
+"I found {{starter_name}},
+ which is like a pre-built foundation for your project.
 
 Think of it like buying a prefab house frame instead of cutting each board yourself.
 
@@ -198,7 +248,8 @@ This is a great starting point that follows best practices and saves us from mak
 
 ### 7. Get Current CLI Commands
 
-If user shows interest in a starter, get the exact current commands:
+If user shows interest in a starter,
+ get the exact current commands:
 
 ```
 Search the web: "{{starter_name}} CLI command options flags latest"
@@ -278,32 +329,41 @@ Show the generated content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with current starter analysis
 - Process enhanced insights about starter options or custom approaches
 - Ask user: "Accept these changes to the starter template evaluation? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with starter evaluation context
 - Process collaborative insights about starter trade-offs
 - Ask user: "Accept these changes to the starter template evaluation? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2, 3]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3]`
 - Load `./step-04-decisions.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 8.
+When user selects 'C',
+ append the content directly to the document using the structure from step 8.
 
 ## SUCCESS METRICS:
 
 ✅ Primary technology domain correctly identified from project context
-✅ Current, maintained starter templates researched and evaluated
-✅ All versions verified using web search, not hardcoded
+✅ Current,
+ maintained starter templates researched and evaluated
+✅ All versions verified using web search,
+ not hardcoded
 ✅ Architectural implications of starter choice clearly documented
 ✅ User provided with clear rationale for starter selection
 ✅ A/P/C menu presented and handled correctly
@@ -323,6 +383,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-04-decisions.md` to begin making specific architectural decisions.
+After user selects 'C' and content is saved to document,
+ load `./step-04-decisions.md` to begin making specific architectural decisions.
 
 Remember: Do NOT proceed to step-04 until user explicitly selects 'C' from the A/P/C menu and content is saved!

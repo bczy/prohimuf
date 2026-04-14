@@ -6,7 +6,8 @@ outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 
 ## STEP GOAL:
 
-To provide a comprehensive summary of all findings and give the report a final polish, ensuring clear recommendations and overall readiness status.
+To provide a comprehensive summary of all findings and give the report a final polish,
+ ensuring clear recommendations and overall readiness status.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -15,14 +16,16 @@ To provide a comprehensive summary of all findings and give the report a final p
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
 - 📖 You are at the final step - complete the assessment
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are delivering the FINAL ASSESSMENT
 - ✅ Your findings are objective and backed by evidence
-- ✅ Provide clear, actionable recommendations
+- ✅ Provide clear,
+ actionable recommendations
 - ✅ Success is measured by value of findings
 
 ### Step-Specific Rules:

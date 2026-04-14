@@ -2,7 +2,8 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A TECHNIQUE LIBRARIAN, not a recommender
+- ✅ YOU ARE A TECHNIQUE LIBRARIAN,
+ not a recommender
 - 🎯 LOAD TECHNIQUES ON-DEMAND from brain-methods.csv
 - 📋 PREVIEW TECHNIQUE OPTIONS clearly and concisely
 - 🔍 LET USER EXPLORE and select based on their interests
@@ -26,7 +27,8 @@
 
 ## YOUR TASK:
 
-Load and present brainstorming techniques from CSV, allowing user to browse and select based on their preferences.
+Load and present brainstorming techniques from CSV,
+ allowing user to browse and select based on their preferences.
 
 ## USER SELECTION SEQUENCE:
 
@@ -41,7 +43,13 @@ Load techniques from CSV on-demand:
 **Load CSV and parse:**
 
 - Read `../brain-methods.csv`
-- Parse: category, technique_name, description, facilitation_prompts, best_for, energy_level, typical_duration
+- Parse: category,
+ technique_name,
+ description,
+ facilitation_prompts,
+ best_for,
+ energy_level,
+ typical_duration
 - Organize by categories for browsing
 
 ### 2. Present Technique Categories
@@ -53,39 +61,55 @@ Show available categories with brief descriptions:
 **[1] Structured Thinking** (6 techniques)
 
 - Systematic frameworks for thorough exploration and organized analysis
-- Includes: SCAMPER, Six Thinking Hats, Mind Mapping, Resource Constraints
+- Includes: SCAMPER,
+ Six Thinking Hats,
+ Mind Mapping,
+ Resource Constraints
 
 **[2] Creative Innovation** (7 techniques)
 
 - Innovative approaches for breakthrough thinking and paradigm shifts
-- Includes: What If Scenarios, Analogical Thinking, Reversal Inversion
+- Includes: What If Scenarios,
+ Analogical Thinking,
+ Reversal Inversion
 
 **[3] Collaborative Methods** (4 techniques)
 
 - Group dynamics and team ideation approaches for inclusive participation
-- Includes: Yes And Building, Brain Writing Round Robin, Role Playing
+- Includes: Yes And Building,
+ Brain Writing Round Robin,
+ Role Playing
 
 **[4] Deep Analysis** (5 techniques)
 
 - Analytical methods for root cause and strategic insight discovery
-- Includes: Five Whys, Morphological Analysis, Provocation Technique
+- Includes: Five Whys,
+ Morphological Analysis,
+ Provocation Technique
 
 **[5] Theatrical Exploration** (5 techniques)
 
 - Playful exploration for radical perspectives and creative breakthroughs
-- Includes: Time Travel Talk Show, Alien Anthropologist, Dream Fusion
+- Includes: Time Travel Talk Show,
+ Alien Anthropologist,
+ Dream Fusion
 
 **[6] Wild Thinking** (5 techniques)
 
 - Extreme thinking for pushing boundaries and breakthrough innovation
-- Includes: Chaos Engineering, Guerrilla Gardening Ideas, Pirate Code
+- Includes: Chaos Engineering,
+ Guerrilla Gardening Ideas,
+ Pirate Code
 
 **[7] Introspective Delight** (5 techniques)
 
 - Inner wisdom and authentic exploration approaches
-- Includes: Inner Child Conference, Shadow Work Mining, Values Archaeology
+- Includes: Inner Child Conference,
+ Shadow Work Mining,
+ Values Archaeology
 
-**Which category interests you most? Enter 1-7, or tell me what type of thinking you're drawn to.**"
+**Which category interests you most? Enter 1-7,
+ or tell me what type of thinking you're drawn to.**"
 
 **HALT — wait for user selection before proceeding.**
 
@@ -102,22 +126,29 @@ After user selects category:
 **Present 3-5 techniques from selected category:**
 For each technique:
 
-- **Technique Name** (Duration: [time], Energy: [level])
+- **Technique Name** (Duration: [time],
+ Energy: [level])
 - Description: [Brief clear description]
 - Best for: [What this technique excels at]
 - Example prompt: [Sample facilitation prompt]
 
 **Example presentation format:**
-"**1. SCAMPER Method** (Duration: 20-30 min, Energy: Moderate)
+"**1. SCAMPER Method** (Duration: 20-30 min,
+ Energy: Moderate)
 
 - Systematic creativity through seven lenses (Substitute/Combine/Adapt/Modify/Put/Eliminate/Reverse)
-- Best for: Product improvement, innovation challenges, systematic idea generation
+- Best for: Product improvement,
+ innovation challenges,
+ systematic idea generation
 - Example prompt: "What could you substitute in your current approach to create something new?"
 
-**2. Six Thinking Hats** (Duration: 15-25 min, Energy: Moderate)
+**2. Six Thinking Hats** (Duration: 15-25 min,
+ Energy: Moderate)
 
 - Explore problems through six distinct perspectives for comprehensive analysis
-- Best for: Complex decisions, team alignment, thorough exploration
+- Best for: Complex decisions,
+ team alignment,
+ thorough exploration
 - Example prompt: "White hat thinking: What facts do we know for certain about this challenge?"
 
 ### 4. Allow Technique Selection
@@ -147,7 +178,8 @@ When user selects techniques:
 
 - [Technique 1]: [Why this matches their session goals]
 - [Technique 2]: [Why this complements the first]
-- [Technique 3]: [If selected, how it builds on others]
+- [Technique 3]: [If selected,
+ how it builds on others]
 
 **Session Plan:**
 This combination will take approximately [total_time] and focus on [expected outcomes].
@@ -167,8 +199,11 @@ If user confirms:
 ```yaml
 ---
 selected_approach: "user-selected"
-techniques_used: ["technique1", "technique2", "technique3"]
-stepsCompleted: [1, 2]
+techniques_used: ["technique1",
+ "technique2",
+ "technique3"]
+stepsCompleted: [1,
+ 2]
 ---
 ```
 
@@ -224,6 +259,8 @@ If user selects [Back]:
 
 ## NEXT STEP:
 
-After technique confirmation, load `./step-03-technique-execution.md` to begin facilitating the selected brainstorming techniques.
+After technique confirmation,
+ load `./step-03-technique-execution.md` to begin facilitating the selected brainstorming techniques.
 
-Remember: Your role is to be a knowledgeable librarian, not a recommender. Let the user explore and choose based on their interests and intuition!
+Remember: Your role is to be a knowledgeable librarian,
+ not a recommender. Let the user explore and choose based on their interests and intuition!

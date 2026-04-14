@@ -1,6 +1,7 @@
 # Underground Paris — Project Guidelines
 
-> Ces guidelines sont **non-négociables**. Toute décision technique ou de design doit être validée contre elles. En cas de doute, on revient à ces principes.
+> Ces guidelines sont **non-négociables**. Toute décision technique ou de design doit être validée contre elles. En cas de doute,
+ on revient à ces principes.
 
 **Version :** 1.0
 **Date :** 2026-04-10
@@ -24,12 +25,14 @@ C'est tout. Toute feature qui ne sert pas directement cette boucle est hors scop
 
 ### Le Test du Cahier des Charges
 
-Avant d'ajouter une feature, poser la question :
+Avant d'ajouter une feature,
+ poser la question :
 
 > "Est-ce que Prohibition Atari ST avait ça ?"
 
 - **Oui** → on l'implémente fidèlement
-- **Non** → c'est une extension consciente, documentée et justifiée
+- **Non** → c'est une extension consciente,
+ documentée et justifiée
 
 ---
 
@@ -37,7 +40,8 @@ Avant d'ajouter une feature, poser la question :
 
 ### TDD — Test-Driven Development
 
-- **Règle :** Les tests s'écrivent AVANT l'implémentation, toujours
+- **Règle :** Les tests s'écrivent AVANT l'implémentation,
+ toujours
 - **Outil :** Vitest
 - **Périmètre :** Tout ce qui est dans `src/game/` doit être couvert
 - **Vérification :** Aucun merge sans tests verts
@@ -47,7 +51,8 @@ Avant d'ajouter une feature, poser la question :
 - Ne pas implémenter ce qui n'est pas requis maintenant
 - Pas de config pour des cas hypothétiques
 - Pas d'abstraction pour une utilisation future incertaine
-- Si ce n'est pas dans les guidelines ou la story courante, ça n'existe pas
+- Si ce n'est pas dans les guidelines ou la story courante,
+ ça n'existe pas
 
 ### DRY — Don't Repeat Yourself
 
@@ -74,7 +79,9 @@ Format      : Prettier
 Build       : Vite
 Deploy      : GitHub Pages (static)
 Audio       : Howler.js
-Assets IA   : Gemini Image Generation (Google) — génération des sprites, textures, éléments visuels
+Assets IA   : Gemini Image Generation (Google) — génération des sprites,
+ textures,
+ éléments visuels
 ```
 
 ### Règles TypeScript
@@ -86,7 +93,8 @@ Assets IA   : Gemini Image Generation (Google) — génération des sprites, tex
 
 ### Règles ESLint / Prettier
 
-- Config commitée, appliquée en pre-commit hook
+- Config commitée,
+ appliquée en pre-commit hook
 - Aucun warning ignoré sans commentaire justificatif
 - Format automatique avant chaque commit
 
@@ -99,15 +107,29 @@ Assets IA   : Gemini Image Generation (Google) — génération des sprites, tex
 ```
 src/
   game/           ← PURE LOGIC — zéro import React/R3F ici
-    entities/     ← player, contacts, cops (types + logic)
-    systems/      ← movement, detection, delivery, recruitment
+    entities/     ← player,
+ contacts,
+ cops (types + logic)
+    systems/      ← movement,
+ detection,
+ delivery,
+ recruitment
     state/        ← game state machine
     types/        ← toutes les interfaces TypeScript
-  render/         ← R3F ONLY — consomme game state, ne le produit pas
-    scene/        ← scène 3D, camera, lights
-    ui/           ← HUD, menus, fanzine UI
-    effects/      ← Paper Mario dépliage, néons, shaders
-  assets/         ← sprites, audio, fonts
+  render/         ← R3F ONLY — consomme game state,
+ ne le produit pas
+    scene/        ← scène 3D,
+ camera,
+ lights
+    ui/           ← HUD,
+ menus,
+ fanzine UI
+    effects/      ← Paper Mario dépliage,
+ néons,
+ shaders
+  assets/         ← sprites,
+ audio,
+ fonts
   hooks/          ← bridge game loop ↔ React (useFrame etc.)
 ```
 
@@ -121,7 +143,8 @@ src/
 
 ### Game Loop
 
-- Game loop dans `useFrame` de R3F — pas de `setInterval`, pas de `setTimeout`
+- Game loop dans `useFrame` de R3F — pas de `setInterval`,
+ pas de `setTimeout`
 - État du jeu dans une ref ou un store Zustand — pas dans `useState`
 - Pas de re-render React pour chaque frame
 
@@ -131,9 +154,14 @@ src/
 
 ### Identité Visuelle
 
-- **Palette :** Noir et blanc "photocopié" + néons acides (jaune fluo, rose fuchsia, vert acide, orange brûlé)
+- **Palette :** Noir et blanc "photocopié" + néons acides (jaune fluo,
+ rose fuchsia,
+ vert acide,
+ orange brûlé)
 - **Règle :** Ce qui brille est interactif. Ce qui est gris est décor.
-- **Texture :** Grain photocopie, légèrement sale, style fanzine
+- **Texture :** Grain photocopie,
+ légèrement sale,
+ style fanzine
 
 ### Paper Mario Rules
 
@@ -143,7 +171,9 @@ src/
 
 ### UI Fanzine
 
-- Tous les écrans UI sont des artefacts de l'univers (pages de fanzine, flyers, unes de journaux)
+- Tous les écrans UI sont des artefacts de l'univers (pages de fanzine,
+ flyers,
+ unes de journaux)
 - Le menu principal est une couverture de zine
 - L'écran de game over est une "UNE" de journal fictif
 - La sélection de niveau est une pile de flyers de raves
@@ -161,7 +191,8 @@ src/
 
 ## 6. Audio
 
-- Boucles instrumentales **boom bap / rap français 90s** — samples vinyle, scratches
+- Boucles instrumentales **boom bap / rap français 90s** — samples vinyle,
+ scratches
 - **Minimum 10 tracks** en rotation
 - La musique est **le seul indicateur de tension** — pas de barre de stress
   - Tempo s'accélère quand les flics approchent
@@ -177,20 +208,27 @@ src/
 | Nom                | Rôle                     | Zone             | Risque                                      |
 | ------------------ | ------------------------ | ---------------- | ------------------------------------------- |
 | DJ Masta Klem      | Sonorisateur             | Vitry (94)       | Lent (caisse de vinyles)                    |
-| Faïza "La Logiste" | Organisation / Lieux     | Stalingrad (19e) | Bavarde, visée par les RG                   |
-| Seb le Blond       | "Le reste"               | Châtelet         | Peu fiable, indispensable                   |
+| Faïza "La Logiste" | Organisation / Lieux     | Stalingrad (19e) | Bavarde,
+ visée par les RG                   |
+| Seb le Blond       | "Le reste"               | Châtelet         | Peu fiable,
+ indispensable                   |
 | Oxane              | Photographe / Réputation | Belleville (20e) | Photos peuvent tomber en de mauvaises mains |
-| Karim "Le Mécano"  | Générateurs              | Pantin (93)      | Van repérable, jamais chopé                 |
+| Karim "Le Mécano"  | Générateurs              | Pantin (93)      | Van repérable,
+ jamais chopé                 |
 
 ### Antagonistes
 
-- **BAC de nuit** — patrouilles visibles, règles claires
-- **RG en civil** — micro-tells visuels, détectables à l'œil (pas de jauge)
+- **BAC de nuit** — patrouilles visibles,
+ règles claires
+- **RG en civil** — micro-tells visuels,
+ détectables à l'œil (pas de jauge)
 - **Indics** — un contact retourné garde une apparence normale
 
 ### Niveau Final
 
-- **31 décembre 1999** — bug de l'an 2000, Paris en délire, flics débordés
+- **31 décembre 1999** — bug de l'an 2000,
+ Paris en délire,
+ flics débordés
 
 ---
 
@@ -202,7 +240,18 @@ src/
 - Carte de Paris (arrondissements périphériques)
 - 5 contacts recrutables
 - BAC + RG comme antagonistes
-- Full feature set original (score, vies, timer, minimap, barre de vie, jauge détection, menu, cutscenes, inventaire, leaderboard, niveaux de difficulté, game over)
+- Full feature set original (score,
+ vies,
+ timer,
+ minimap,
+ barre de vie,
+ jauge détection,
+ menu,
+ cutscenes,
+ inventaire,
+ leaderboard,
+ niveaux de difficulté,
+ game over)
 - Esthétique fanzine néon
 - Audio boom bap adaptatif
 - Niveau inversé RG (1 niveau sur 10)
@@ -232,7 +281,8 @@ src/
 
 ### Revue Architecturale
 
-Avant toute implémentation non-triviale, répondre à :
+Avant toute implémentation non-triviale,
+ répondre à :
 
 1. Cette feature appartient-elle à `game/` ou `render/` ?
 2. Est-ce que ça ajoute de la logique dans le rendu ? (interdit)
@@ -253,36 +303,59 @@ Avant toute implémentation non-triviale, répondre à :
 
 ### Sprint 1 — Boucle Core ✅ DONE
 
-- Facade shooter : crosshair souris, ennemis dans fenêtres (state machine HIDDEN→DEAD)
+- Facade shooter : crosshair souris,
+ ennemis dans fenêtres (state machine HIDDEN→DEAD)
 - Bullets joueur + retour de feu ennemis
 - Scroll horizontal aux bords (style Prohibition original)
 - 58 tests Vitest verts
-- Sprites wirés (facade_bg, enemy_sprite, enemy_shooting, crosshair, bullet_player)
+- Sprites wirés (facade_bg,
+ enemy_sprite,
+ enemy_shooting,
+ crosshair,
+ bullet_player)
 
 ### Sprint 2 — Système de Tiles & Cartes
 
-**Objectif :** Cartes grandes et variées définies par données, générées par tiling.
+**Objectif :** Cartes grandes et variées définies par données,
+ générées par tiling.
 
-- `TileType` enum : WALL, WINDOW_EMPTY, WINDOW_BREAKABLE, BALCONY, DOOR...
-- `TileMap` : grille 2D de TileType + metadata (nom, ambiance, tileset)
-- `TilesetDef` : pour chaque TileType, sprite + couleur fallback
+- `TileType` enum : WALL,
+ WINDOW_EMPTY,
+ WINDOW_BREAKABLE,
+ BALCONY,
+ DOOR...
+- `TileMap` : grille 2D de TileType + metadata (nom,
+ ambiance,
+ tileset)
+- `TilesetDef` : pour chaque TileType,
+ sprite + couleur fallback
 - `tileMapSystem` : parser + générateur de FacadeMap depuis TileMap (TDD)
 - Génération de tiles via Pollinations.ai (réutiliser scripts/generate-assets)
-- Au moins 2 cartes data-driven : `stalingrad_19.ts`, `vitry_94.ts`
+- Au moins 2 cartes data-driven : `stalingrad_19.ts`,
+ `vitry_94.ts`
 - Rendu : `TiledFacade` remplace `FacadeBackground` — affiche le tileset complet
 
 ### Sprint 3 — Habillage Fanzine
 
-- Esthétique noir/blanc photocopié + néons acides (jaune fluo, rose fuchsia, vert acide)
-- Règle : ce qui brille est interactif, ce qui est gris est décor
+- Esthétique noir/blanc photocopié + néons acides (jaune fluo,
+ rose fuchsia,
+ vert acide)
+- Règle : ce qui brille est interactif,
+ ce qui est gris est décor
 - Effets Paper Mario : dépliage à l'apparition des ennemis
-- UI fanzine : HUD style coupure de journal, menu = couverture de zine
+- UI fanzine : HUD style coupure de journal,
+ menu = couverture de zine
 - Audio boom bap adaptatif : tempo s'accélère quand ennemis approchent
 
 ### Sprint 4+ — Enrichissement
 
-- 5 contacts recrutables (un par sprint) : DJ Masta Klem, Faïza, Seb le Blond, Oxane, Karim
-- RG en civil (micro-tells visuels, détectables à l'œil)
+- 5 contacts recrutables (un par sprint) : DJ Masta Klem,
+ Faïza,
+ Seb le Blond,
+ Oxane,
+ Karim
+- RG en civil (micro-tells visuels,
+ détectables à l'œil)
 - Indics (contact retourné = apparence normale)
 - Leaderboard narratif (UNE de journal fictif)
 - Niveau final : 31 décembre 1999

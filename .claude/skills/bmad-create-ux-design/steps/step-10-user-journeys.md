@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on designing user flows and journey interactions
-- 🎯 COLLABORATIVE flow design, not assumption-based layouts
+- 🎯 COLLABORATIVE flow design,
+ not assumption-based layouts
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating user journey content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -52,7 +56,8 @@ Design detailed user journey flows for critical user interactions.
 ### 1. Load PRD User Journeys as Foundation
 
 Start with user journeys already defined in the PRD:
-"Great! Since we have the PRD available, let's build on the user journeys already documented there.
+"Great! Since we have the PRD available,
+ let's build on the user journeys already documented there.
 
 **Existing User Journeys from PRD:**
 I've already loaded these user journeys from your PRD:
@@ -61,7 +66,8 @@ I've already loaded these user journeys from your PRD:
 These journeys tell us **who** users are and **why** they take certain actions. Now we need to design **how** those journeys work in detail.
 
 **Critical Journeys to Design Flows For:**
-Looking at the PRD journeys, I need to design detailed interaction flows for:
+Looking at the PRD journeys,
+ I need to design detailed interaction flows for:
 
 - [Critical journey 1 identified from PRD narratives]
 - [Critical journey 2 identified from PRD narratives]
@@ -71,7 +77,8 @@ The PRD gave us the stories - now we design the mechanics!"
 
 ### 2. Design Each Journey Flow
 
-For each critical journey, design detailed flow:
+For each critical journey,
+ design detailed flow:
 
 **For [Journey Name]:**
 "Let's design the flow for users accomplishing [journey goal].
@@ -105,7 +112,8 @@ Each diagram will map the complete user experience from start to finish."
 
 Refine flows for optimal user experience:
 "**Flow Optimization:**
-For each journey, let's ensure we're:
+For each journey,
+ let's ensure we're:
 
 - Minimizing steps to value (getting users to success quickly)
 - Reducing cognitive load at each decision point
@@ -123,7 +131,8 @@ For each journey, let's ensure we're:
 
 Extract reusable patterns across journeys:
 "**Journey Patterns:**
-Across these flows, I'm seeing some common patterns we can standardize:
+Across these flows,
+ I'm seeing some common patterns we can standardize:
 
 **Navigation Patterns:**
 
@@ -148,7 +157,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## User Journey Flows
@@ -191,16 +201,20 @@ Show the generated user journey content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current user journey content
 - Process the enhanced journey insights that come back
 - Ask user: "Accept these improvements to the user journeys? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current user journeys
 - Process the collaborative journey insights that come back
 - Ask user: "Accept these changes to the user journeys? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -210,7 +224,8 @@ Show the generated user journey content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -237,6 +252,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-11-component-strategy.md` to define component library strategy.
+After user selects 'C' and content is saved to document,
+ load `./step-11-component-strategy.md` to define component library strategy.
 
 Remember: Do NOT proceed to step-11 until user explicitly selects 'C' from the A/P/C menu and content is saved!

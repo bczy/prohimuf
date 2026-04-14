@@ -10,7 +10,8 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Detect if PRD follows BMAD format and route appropriately - classify as BMAD Standard / BMAD Variant / Non-Standard, with optional parity check for non-standard formats.
+Detect if PRD follows BMAD format and route appropriately - classify as BMAD Standard / BMAD Variant / Non-Standard,
+ with optional parity check for non-standard formats.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -18,15 +19,19 @@ Detect if PRD follows BMAD format and route appropriately - classify as BMAD Sta
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring systematic validation expertise and pattern recognition
 - ✅ User brings domain knowledge and PRD context
 
@@ -34,7 +39,8 @@ Detect if PRD follows BMAD format and route appropriately - classify as BMAD Sta
 
 - 🎯 Focus ONLY on detecting format and classifying structure
 - 🚫 FORBIDDEN to perform other validation checks in this step
-- 💬 Approach: Analytical and systematic, clear reporting of findings
+- 💬 Approach: Analytical and systematic,
+ clear reporting of findings
 - 🚪 This is a branch step - may route to parity check for non-standard PRDs
 
 ## EXECUTION PROTOCOLS:
@@ -46,14 +52,18 @@ Detect if PRD follows BMAD format and route appropriately - classify as BMAD Sta
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file loaded in step 1, validation report initialized
+- Available context: PRD file loaded in step 1,
+ validation report initialized
 - Focus: Format detection and classification only
-- Limits: Don't perform other validation, don't skip classification
+- Limits: Don't perform other validation,
+ don't skip classification
 - Dependencies: Step 1 completed - PRD loaded and report initialized
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Extract PRD Structure
 
@@ -75,12 +85,25 @@ Load the complete PRD file and extract:
 
 Check if the PRD contains the following BMAD PRD core sections:
 
-1. **Executive Summary** (or variations: ## Executive Summary, ## Overview, ## Introduction)
-2. **Success Criteria** (or: ## Success Criteria, ## Goals, ## Objectives)
-3. **Product Scope** (or: ## Product Scope, ## Scope, ## In Scope, ## Out of Scope)
-4. **User Journeys** (or: ## User Journeys, ## User Stories, ## User Flows)
-5. **Functional Requirements** (or: ## Functional Requirements, ## Features, ## Capabilities)
-6. **Non-Functional Requirements** (or: ## Non-Functional Requirements, ## NFRs, ## Quality Attributes)
+1. **Executive Summary** (or variations: ## Executive Summary,
+ ## Overview,
+ ## Introduction)
+2. **Success Criteria** (or: ## Success Criteria,
+ ## Goals,
+ ## Objectives)
+3. **Product Scope** (or: ## Product Scope,
+ ## Scope,
+ ## In Scope,
+ ## Out of Scope)
+4. **User Journeys** (or: ## User Journeys,
+ ## User Stories,
+ ## User Flows)
+5. **Functional Requirements** (or: ## Functional Requirements,
+ ## Features,
+ ## Capabilities)
+6. **Non-Functional Requirements** (or: ## Non-Functional Requirements,
+ ## NFRs,
+ ## Quality Attributes)
 
 **Count matches:**
 
@@ -90,7 +113,8 @@ Check if the PRD contains the following BMAD PRD core sections:
 
 ### 3. Classify PRD Format
 
-Based on core section count, classify:
+Based on core section count,
+ classify:
 
 **BMAD Standard:**
 
@@ -107,7 +131,9 @@ Based on core section count, classify:
 
 - Fewer than 3 core sections present
 - Does not follow BMAD PRD structure
-- May be completely custom format, legacy format, or from another framework
+- May be completely custom format,
+ legacy format,
+ or from another framework
 
 ### 4. Report Format Findings to Validation Report
 
@@ -140,7 +166,8 @@ Display: "**Format Detected:** {classification}
 
 Proceeding to systematic validation checks..."
 
-Without delay, read fully and follow: {nextStepFile} (step-v-03-density-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-03-density-validation.md)
 
 **IF format is Non-Standard (< 3 core sections):**
 
@@ -168,7 +195,8 @@ Present MENU OPTIONS below for user selection
 - IF A (Parity Check): Read fully and follow: {altStepFile} (step-v-02b-parity-check.md)
 - IF B (Validate As-Is): Display "Proceeding with validation..." then read fully and follow: {nextStepFile}
 - IF C (Exit): Display format findings summary and exit validation
-- IF Any other: help user respond, then redisplay menu
+- IF Any other: help user respond,
+ then redisplay menu
 
 ---
 
@@ -182,7 +210,9 @@ Present MENU OPTIONS below for user selection
 - Findings reported to validation report
 - BMAD Standard/Variant PRDs proceed directly to next validation step
 - Non-Standard PRDs pause and present options to user
-- User can choose parity check, validate as-is, or exit
+- User can choose parity check,
+ validate as-is,
+ or exit
 
 ### ❌ SYSTEM FAILURE:
 

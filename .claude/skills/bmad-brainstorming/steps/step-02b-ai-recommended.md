@@ -2,10 +2,13 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A TECHNIQUE MATCHMAKER, using AI analysis to recommend optimal approaches
+- ✅ YOU ARE A TECHNIQUE MATCHMAKER,
+ using AI analysis to recommend optimal approaches
 - 🎯 ANALYZE SESSION CONTEXT from Step 1 for intelligent technique matching
 - 📋 LOAD TECHNIQUES ON-DEMAND from brain-methods.csv for recommendations
-- 🔍 MATCH TECHNIQUES to user goals, constraints, and preferences
+- 🔍 MATCH TECHNIQUES to user goals,
+ constraints,
+ and preferences
 - 💬 PROVIDE CLEAR RATIONALE for each recommendation
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the `communication_language`
 
@@ -19,7 +22,9 @@
 
 ## CONTEXT BOUNDARIES:
 
-- Session context (`session_topic`, `session_goals`, constraints) from Step 1
+- Session context (`session_topic`,
+ `session_goals`,
+ constraints) from Step 1
 - Brain techniques CSV with 36+ techniques across 7 categories
 - User wants expert guidance in technique selection
 - Must analyze multiple factors for optimal matching
@@ -48,7 +53,13 @@ Load techniques from CSV for analysis:
 **Load CSV and parse:**
 
 - Read `../brain-methods.csv`
-- Parse: category, technique_name, description, facilitation_prompts, best_for, energy_level, typical_duration
+- Parse: category,
+ technique_name,
+ description,
+ facilitation_prompts,
+ best_for,
+ energy_level,
+ typical_duration
 
 ### 2. Context Analysis for Technique Matching
 
@@ -58,23 +69,32 @@ Analyze user's session context across multiple dimensions:
 
 **1. Goal Analysis:**
 
-- Innovation/New Ideas → creative, wild categories
-- Problem Solving → deep, structured categories
+- Innovation/New Ideas → creative,
+ wild categories
+- Problem Solving → deep,
+ structured categories
 - Team Building → collaborative category
 - Personal Insight → introspective_delight category
-- Strategic Planning → structured, deep categories
+- Strategic Planning → structured,
+ deep categories
 
 **2. Complexity Match:**
 
-- Complex/Abstract Topic → deep, structured techniques
-- Familiar/Concrete Topic → creative, wild techniques
+- Complex/Abstract Topic → deep,
+ structured techniques
+- Familiar/Concrete Topic → creative,
+ wild techniques
 - Emotional/Personal Topic → introspective_delight techniques
 
 **3. Energy/Tone Assessment:**
 
-- User language formal → structured, analytical techniques
-- User language playful → creative, theatrical, wild techniques
-- User language reflective → introspective_delight, deep techniques
+- User language formal → structured,
+ analytical techniques
+- User language playful → creative,
+ theatrical,
+ wild techniques
+- User language reflective → introspective_delight,
+ deep techniques
 
 **4. Time Available:**
 
@@ -84,26 +104,31 @@ Analyze user's session context across multiple dimensions:
 
 ### 3. Generate Technique Recommendations
 
-Based on context analysis, create tailored recommendations:
+Based on context analysis,
+ create tailored recommendations:
 
 "**My AI Analysis Results:**
 
-Based on your session context, I recommend this customized technique sequence:
+Based on your session context,
+ I recommend this customized technique sequence:
 
 **Phase 1: Foundation Setting**
-**[Technique Name]** from [Category] (Duration: [time], Energy: [level])
+**[Technique Name]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Why this fits:** [Specific connection to user's goals/context]
 - **Expected outcome:** [What this will accomplish for their session]
 
 **Phase 2: Idea Generation**
-**[Technique Name]** from [Category] (Duration: [time], Energy: [level])
+**[Technique Name]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Why this builds on Phase 1:** [Complementary effect explanation]
 - **Expected outcome:** [How this develops the foundation]
 
 **Phase 3: Refinement & Action** (If time allows)
-**[Technique Name]** from [Category] (Duration: [time], Energy: [level])
+**[Technique Name]** from [Category] (Duration: [time],
+ Energy: [level])
 
 - **Why this concludes effectively:** [Final phase rationale]
 - **Expected outcome:** [How this leads to actionable results]
@@ -117,7 +142,8 @@ Provide deeper insight into each recommended technique:
 
 **Detailed Technique Explanations:**
 
-"For each recommended technique, here's what makes it perfect for your session:
+"For each recommended technique,
+ here's what makes it perfect for your session:
 
 **1. [Technique 1]:**
 
@@ -142,7 +168,8 @@ Provide deeper insight into each recommended technique:
 
 ### 5. Get User Confirmation
 
-"This AI-recommended sequence is designed specifically for your [session_topic] goals, considering your [constraints] and focusing on [primary_outcome].
+"This AI-recommended sequence is designed specifically for your [session_topic] goals,
+ considering your [constraints] and focusing on [primary_outcome].
 
 **Does this approach sound perfect for your session?**
 
@@ -182,8 +209,11 @@ If user confirms recommendations:
 ```yaml
 ---
 selected_approach: "ai-recommended"
-techniques_used: ["technique1", "technique2", "technique3"]
-stepsCompleted: [1, 2]
+techniques_used: ["technique1",
+ "technique2",
+ "technique3"]
+stepsCompleted: [1,
+ 2]
 ---
 ```
 
@@ -234,6 +264,7 @@ Load `./step-03-technique-execution.md`
 
 ## NEXT STEP:
 
-After user confirmation, load `./step-03-technique-execution.md` to begin facilitating the AI-recommended brainstorming techniques.
+After user confirmation,
+ load `./step-03-technique-execution.md` to begin facilitating the AI-recommended brainstorming techniques.
 
 Remember: Your recommendations should demonstrate clear expertise while respecting user's final decision-making authority!

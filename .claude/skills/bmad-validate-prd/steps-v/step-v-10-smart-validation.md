@@ -9,7 +9,12 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Validate Functional Requirements meet SMART quality criteria (Specific, Measurable, Attainable, Relevant, Traceable), ensuring high-quality requirements.
+Validate Functional Requirements meet SMART quality criteria (Specific,
+ Measurable,
+ Attainable,
+ Relevant,
+ Traceable),
+ ensuring high-quality requirements.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,16 +22,20 @@ Validate Functional Requirements meet SMART quality criteria (Specific, Measurab
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring requirements engineering expertise and quality assessment
 - ✅ This step runs autonomously - no user input needed
 
@@ -40,7 +49,11 @@ Validate Functional Requirements meet SMART quality criteria (Specific, Measurab
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Extract all FRs from PRD
-- 🎯 Score each FR on SMART criteria (Specific, Measurable, Attainable, Relevant, Traceable)
+- 🎯 Score each FR on SMART criteria (Specific,
+ Measurable,
+ Attainable,
+ Relevant,
+ Traceable)
 - 💾 Flag FRs with score < 3 in any category
 - 📖 Append scoring table and suggestions to validation report
 - 📖 Display "Proceeding to next check..." and load next step
@@ -48,20 +61,27 @@ Validate Functional Requirements meet SMART quality criteria (Specific, Measurab
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, validation report
+- Available context: PRD file,
+ validation report
 - Focus: FR quality assessment only using SMART framework
-- Limits: Don't validate NFRs or other aspects, don't pause for user input
+- Limits: Don't validate NFRs or other aspects,
+ don't pause for user input
 - Dependencies: Steps 2-9 completed - comprehensive validation checks done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Extract All Functional Requirements
 
-From the PRD's Functional Requirements section, extract:
+From the PRD's Functional Requirements section,
+ extract:
 
-- All FRs with their FR numbers (FR-001, FR-002, etc.)
+- All FRs with their FR numbers (FR-001,
+ FR-002,
+ etc.)
 - Count total FRs
 
 ### 2. Attempt Sub-Process Validation
@@ -72,37 +92,48 @@ From the PRD's Functional Requirements section, extract:
 
 {List all FRs}
 
-**For each FR, score on SMART criteria (1-5 scale):**
+**For each FR,
+ score on SMART criteria (1-5 scale):**
 
 **Specific (1-5):**
 
-- 5: Clear, unambiguous, well-defined
+- 5: Clear,
+ unambiguous,
+ well-defined
 - 3: Somewhat clear but could be more specific
-- 1: Vague, ambiguous, unclear
+- 1: Vague,
+ ambiguous,
+ unclear
 
 **Measurable (1-5):**
 
-- 5: Quantifiable metrics, testable
+- 5: Quantifiable metrics,
+ testable
 - 3: Partially measurable
-- 1: Not measurable, subjective
+- 1: Not measurable,
+ subjective
 
 **Attainable (1-5):**
 
-- 5: Realistic, achievable with constraints
+- 5: Realistic,
+ achievable with constraints
 - 3: Probably achievable but uncertain
-- 1: Unrealistic, technically infeasible
+- 1: Unrealistic,
+ technically infeasible
 
 **Relevant (1-5):**
 
 - 5: Clearly aligned with user needs and business objectives
 - 3: Somewhat relevant but connection unclear
-- 1: Not relevant, doesn't align with goals
+- 1: Not relevant,
+ doesn't align with goals
 
 **Traceable (1-5):**
 
 - 5: Clearly traces to user journey or business objective
 - 3: Partially traceable
-- 1: Orphan requirement, no clear source
+- 1: Orphan requirement,
+ no clear source
 
 **For each FR with score < 3 in any category:**
 
@@ -159,7 +190,9 @@ Append to validation report:
 
 [Continue for all FRs]
 
-**Legend:** 1=Poor, 3=Acceptable, 5=Excellent
+**Legend:** 1=Poor,
+ 3=Acceptable,
+ 5=Excellent
 **Flag:** X = Score < 3 in one or more categories
 
 ### Improvement Suggestions
@@ -171,7 +204,9 @@ Append to validation report:
 
 ### Overall Assessment
 
-**Severity:** [Critical if >30% flagged FRs, Warning if 10-30%, Pass if <10%]
+**Severity:** [Critical if >30% flagged FRs,
+ Warning if 10-30%,
+ Pass if <10%]
 
 **Recommendation:**
 [If Critical] "Many FRs have quality issues. Revise flagged FRs using SMART framework to improve clarity and testability."
@@ -187,7 +222,8 @@ FR Quality: {percentage}% with acceptable scores ({severity})
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-11-holistic-quality-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-11-holistic-quality-validation.md)
 
 ---
 
@@ -214,4 +250,5 @@ Without delay, read fully and follow: {nextStepFile} (step-v-11-holistic-quality
 - Not reporting findings to validation report
 - Not auto-proceeding
 
-**Master Rule:** FRs should be high-quality, not just present. SMART framework provides objective quality measure.
+**Master Rule:** FRs should be high-quality,
+ not just present. SMART framework provides objective quality measure.

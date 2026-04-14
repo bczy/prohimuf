@@ -10,15 +10,19 @@ To design and get approval for the epics_list that will organize all requirement
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product strategist and technical specifications writer
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring product strategy and epic design expertise
 - ✅ User brings their product vision and priorities
 
@@ -26,7 +30,8 @@ To design and get approval for the epics_list that will organize all requirement
 
 - 🎯 Focus ONLY on creating the epics_list
 - 🚫 FORBIDDEN to create individual stories in this step
-- 💬 Organize epics around user value, not technical layers
+- 💬 Organize epics around user value,
+ not technical layers
 - 🚪 GET explicit approval for the epics_list
 - 🔗 **CRITICAL: Each epic must be standalone and enable future epics without requiring future epics to function**
 
@@ -58,13 +63,21 @@ Load {planning_artifacts}/epics.md and review:
 5. **🔗 Dependency-Free Within Epic**: Stories within an epic must NOT depend on future stories
 
 **⚠️ CRITICAL PRINCIPLE:**
-Organize by USER VALUE, not technical layers:
+Organize by USER VALUE,
+ not technical layers:
 
 **✅ CORRECT Epic Examples (Standalone & Enable Future Epics):**
 
-- Epic 1: User Authentication & Profiles (users can register, login, manage profiles) - **Standalone: Complete auth system**
-- Epic 2: Content Creation (users can create, edit, publish content) - **Standalone: Uses auth, creates content**
-- Epic 3: Social Interaction (users can follow, comment, like content) - **Standalone: Uses auth + content**
+- Epic 1: User Authentication & Profiles (users can register,
+ login,
+ manage profiles) - **Standalone: Complete auth system**
+- Epic 2: Content Creation (users can create,
+ edit,
+ publish content) - **Standalone: Uses auth,
+ creates content**
+- Epic 3: Social Interaction (users can follow,
+ comment,
+ like content) - **Standalone: Uses auth + content**
 - Epic 4: Search & Discovery (users can find content and other users) - **Standalone: Uses all previous**
 
 **❌ WRONG Epic Examples (Technical Layers or Dependencies):**
@@ -91,7 +104,8 @@ Organize by USER VALUE, not technical layers:
 **Step B: Propose Epic Structure**
 For each proposed epic:
 
-1. **Epic Title**: User-centric, value-focused
+1. **Epic Title**: User-centric,
+ value-focused
 2. **User Outcome**: What users can accomplish after this epic
 3. **FR Coverage**: Which FR numbers this epic addresses
 4. **Implementation Notes**: Any technical or UX considerations
@@ -105,11 +119,17 @@ Format the epics_list as:
 
 ### Epic 1: [Epic Title]
 [Epic goal statement - what users can accomplish]
-**FRs covered:** FR1, FR2, FR3, etc.
+**FRs covered:** FR1,
+ FR2,
+ FR3,
+ etc.
 
 ### Epic 2: [Epic Title]
 [Epic goal statement - what users can accomplish]
-**FRs covered:** FR4, FR5, FR6, etc.
+**FRs covered:** FR4,
+ FR5,
+ FR6,
+ etc.
 
 [Continue for all epics]
 ```
@@ -161,7 +181,8 @@ If user wants changes:
 
 ## CONTENT TO UPDATE IN DOCUMENT:
 
-After approval, update {planning_artifacts}/epics.md:
+After approval,
+ update {planning_artifacts}/epics.md:
 
 1. Replace {{epics_list}} placeholder with the approved epic list
 2. Replace {{requirements_coverage_map}} with the coverage map
@@ -175,19 +196,24 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 
 - IF A: Invoke the `bmad-advanced-elicitation` skill
 - IF P: Invoke the `bmad-party-mode` skill
-- IF C: Save approved epics_list to {planning_artifacts}/epics.md, update frontmatter, then read fully and follow: ./step-03-create-stories.md
+- IF C: Save approved epics_list to {planning_artifacts}/epics.md,
+ update frontmatter,
+ then read fully and follow: ./step-03-create-stories.md
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#8-present-menu-options)
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution completes, redisplay the menu
-- User can chat or ask questions - always respond when conversation ends, redisplay the menu options
+- After other menu items execution completes,
+ redisplay the menu
+- User can chat or ask questions - always respond when conversation ends,
+ redisplay the menu options
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN C is selected and the approved epics_list is saved to document, will you then read fully and follow: ./step-03-create-stories.md to begin story creation step.
+ONLY WHEN C is selected and the approved epics_list is saved to document,
+ will you then read fully and follow: ./step-03-create-stories.md to begin story creation step.
 
 ---
 
@@ -209,4 +235,6 @@ ONLY WHEN C is selected and the approved epics_list is saved to document, will y
 - No user approval obtained
 - epics_list not saved to document
 
-**Master Rule:** Skipping steps, optimizing sequences, or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.
+**Master Rule:** Skipping steps,
+ optimizing sequences,
+ or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.

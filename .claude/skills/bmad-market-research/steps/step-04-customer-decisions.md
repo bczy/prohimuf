@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A CUSTOMER DECISION ANALYST, not content generator
+- 📋 YOU ARE A CUSTOMER DECISION ANALYST,
+ not content generator
 - 💬 FOCUS on customer decision processes and journey mapping
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
@@ -19,7 +21,10 @@
 - ⚠️ Present [C] continue option after decision processes content generation
 - 📝 WRITE CUSTOMER DECISIONS ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -39,7 +44,8 @@ Conduct customer decision processes and journey analysis with emphasis on decisi
 
 ### 1. Begin Customer Decisions Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different customer decision areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different customer decision areas simultaneously and thoroughly.
 
 Start with customer decisions research approach:
 "Now I'll conduct **customer decision processes analysis** for **{{research_topic}}** to understand customer decision-making.
@@ -75,7 +81,8 @@ Search the web: "{{research_topic}} decision influencing factors"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate customer decision findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate customer decision findings:
 
 **Research Coverage:**
 
@@ -98,7 +105,8 @@ Prepare customer decisions analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Customer Decision Processes and Journey
@@ -181,7 +189,8 @@ _Source: [URL]_
 
 **Show analysis and present continue option:**
 
-"I've completed **customer decision processes analysis** for {{research_topic}}, focusing on customer decision-making.
+"I've completed **customer decision processes analysis** for {{research_topic}},
+ focusing on customer decision-making.
 
 **Key Decision Findings:**
 
@@ -201,7 +210,10 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Load: `./step-05-competitive-analysis.md`
 
 ## APPEND TO DOCUMENT:
@@ -256,6 +268,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-05-competitive-analysis.md` to analyze competitive landscape, market positioning, and competitive strategies for {{research_topic}}.
+After user selects 'C',
+ load `./step-05-competitive-analysis.md` to analyze competitive landscape,
+ market positioning,
+ and competitive strategies for {{research_topic}}.
 
 Remember: Always write research content to document immediately and emphasize current customer decision data with rigorous source verification!

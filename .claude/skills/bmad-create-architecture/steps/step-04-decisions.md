@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on making critical architectural decisions collaboratively
 - 🌐 ALWAYS search the web to verify current technology versions
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -19,7 +21,10 @@
 - 🌐 Search the web to verify technology versions and options
 - ⚠️ Present A/P/C menu after each major decision category
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -44,18 +49,22 @@ This step will generate content and present choices for each decision category:
 - Project context file may contain technical preferences and rules
 - Technical preferences discovered in step 3 are available
 - Focus on decisions not already made by starter template or existing preferences
-- Collaborative decision making, not recommendations
+- Collaborative decision making,
+ not recommendations
 
 ## YOUR TASK:
 
-Facilitate collaborative architectural decision making, leveraging existing technical preferences and starter template decisions, focusing on remaining choices critical to the project's success.
+Facilitate collaborative architectural decision making,
+ leveraging existing technical preferences and starter template decisions,
+ focusing on remaining choices critical to the project's success.
 
 ## DECISION MAKING SEQUENCE:
 
 ### 1. Load Decision Framework & Check Existing Preferences
 
 **Review Technical Preferences from Step 3:**
-"Based on our technical preferences discussion in step 3, let's build on those foundations:
+"Based on our technical preferences discussion in step 3,
+ let's build on those foundations:
 
 **Your Technical Preferences:**
 {{user_technical_preferences_from_step_3}}
@@ -67,7 +76,10 @@ Facilitate collaborative architectural decision making, leveraging existing tech
 {{project_context_technical_rules}}"
 
 **Identify Remaining Decisions:**
-Based on technical preferences, starter template choice, and project context, identify remaining critical decisions:
+Based on technical preferences,
+ starter template choice,
+ and project context,
+ identify remaining critical decisions:
 
 **Already Decided (Don't re-decide these):**
 
@@ -99,7 +111,9 @@ Based on technical preferences, starter template choice, and project context, id
 
 #### Category 3: API & Communication
 
-- API design patterns (REST, GraphQL, etc.)
+- API design patterns (REST,
+ GraphQL,
+ etc.)
 - API documentation approach
 - Error handling standards
 - Rate limiting strategy
@@ -123,7 +137,8 @@ Based on technical preferences, starter template choice, and project context, id
 
 ### 3. Facilitate Each Decision Category
 
-For each category, facilitate collaborative decision making:
+For each category,
+ facilitate collaborative decision making:
 
 **Present the Decision:**
 Based on user skill level and project context:
@@ -143,7 +158,8 @@ We need to choose {{Specific_Decision}}.
 Common options:
 {{option_list_with_brief_explanations}}
 
-For your project, I'd lean toward {{recommendation}} because {{reason}}. What are your thoughts?"
+For your project,
+ I'd lean toward {{recommendation}} because {{reason}}. What are your thoughts?"
 
 **Beginner Mode:**
 "Let's talk about {{Human_Friendly_Category}}.
@@ -189,7 +205,8 @@ Search the web: "{{technology}} production readiness"
 
 ### 4. Check for Cascading Implications
 
-After each major decision, identify related decisions:
+After each major decision,
+ identify related decisions:
 
 "This choice means we'll also need to decide:
 
@@ -198,7 +215,8 @@ After each major decision, identify related decisions:
 
 ### 5. Generate Decisions Content
 
-After facilitating all decision categories, prepare the content to append:
+After facilitating all decision categories,
+ prepare the content to append:
 
 #### Content Structure:
 
@@ -267,26 +285,34 @@ Show the generated decisions content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with specific decision categories
 - Process enhanced insights about particular decisions
 - Ask user: "Accept these enhancements to the architectural decisions? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with architectural decisions context
 - Process collaborative insights about decision trade-offs
 - Ask user: "Accept these changes to the architectural decisions? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Load `./step-05-patterns.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 5.
+When user selects 'C',
+ append the content directly to the document using the structure from step 5.
 
 ## SUCCESS METRICS:
 
@@ -313,6 +339,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-05-patterns.md` to define implementation patterns that ensure consistency across AI agents.
+After user selects 'C' and content is saved to document,
+ load `./step-05-patterns.md` to define implementation patterns that ensure consistency across AI agents.
 
 Remember: Do NOT proceed to step-05 until user explicitly selects 'C' from the A/P/C menu and content is saved!

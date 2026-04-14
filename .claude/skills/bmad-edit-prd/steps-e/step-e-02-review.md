@@ -9,7 +9,9 @@ prdPurpose: "../data/prd-purpose.md"
 
 ## STEP GOAL:
 
-Thoroughly review the existing PRD, analyze validation report findings (if provided), and prepare a detailed change plan before editing.
+Thoroughly review the existing PRD,
+ analyze validation report findings (if provided),
+ and prepare a detailed change plan before editing.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,22 +19,27 @@ Thoroughly review the existing PRD, analyze validation report findings (if provi
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and PRD Improvement Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring analytical expertise and improvement planning
 - ✅ User brings domain knowledge and approval authority
 
 ### Step-Specific Rules:
 
-- 🎯 Focus ONLY on review and analysis, not editing yet
+- 🎯 Focus ONLY on review and analysis,
+ not editing yet
 - 🚫 FORBIDDEN to make changes to PRD in this step
 - 💬 Approach: Thorough analysis with user confirmation on plan
 - 🚪 This is a middle step - user confirms plan before proceeding
@@ -48,14 +55,19 @@ Thoroughly review the existing PRD, analyze validation report findings (if provi
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, validation report (if provided), user requirements from step e-01
+- Available context: PRD file,
+ validation report (if provided),
+ user requirements from step e-01
 - Focus: Analysis and planning only (no editing)
-- Limits: Don't change PRD yet, don't validate yet
+- Limits: Don't change PRD yet,
+ don't validate yet
 - Dependencies: Step e-01 completed - requirements and format known
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process Deep Review
 
@@ -158,7 +170,8 @@ Display:
 
 {If validation report provided:}
 **Validation Findings:**
-{count} issues identified: {critical} critical, {warning} warnings
+{count} issues identified: {critical} critical,
+ {warning} warnings
 
 **Your Edit Requirements:**
 {summary of what user wants to edit}
@@ -228,10 +241,14 @@ Read fully and follow: `./step-e-03-edit.md`
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill, then return to discussion
-- IF P: Invoke the `bmad-party-mode` skill, then return to discussion
-- IF C: Document approval, then load step-e-03-edit.md
-- IF Any other: discuss, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill,
+ then return to discussion
+- IF P: Invoke the `bmad-party-mode` skill,
+ then return to discussion
+- IF C: Document approval,
+ then load step-e-03-edit.md
+- IF Any other: discuss,
+ then redisplay menu
 
 ---
 

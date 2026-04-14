@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A SYSTEMS ARCHITECT, not content generator
+- 📋 YOU ARE A SYSTEMS ARCHITECT,
+ not content generator
 - 💬 FOCUS on architectural patterns and design decisions
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
@@ -19,7 +21,10 @@
 - ⚠️ Present [C] continue option after architectural patterns content generation
 - 📝 WRITE ARCHITECTURAL PATTERNS ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -58,7 +63,9 @@ Search the web: "system architecture patterns best practices"
 
 **Architecture focus:**
 
-- Microservices, monolithic, and serverless patterns
+- Microservices,
+ monolithic,
+ and serverless patterns
 - Event-driven and reactive architectures
 - Domain-driven design patterns
 - Cloud-native and edge architecture patterns
@@ -93,7 +100,8 @@ Prepare architectural analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Architectural Patterns and Design
@@ -155,12 +163,16 @@ Show the generated architectural patterns and present continue option:
 #### If 'C' (Continue):
 
 - Append the final content to the research document
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Load: `./step-05-implementation-research.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the research document using the structure from step 5.
+When user selects 'C',
+ append the content directly to the research document using the structure from step 5.
 
 ## SUCCESS METRICS:
 
@@ -197,6 +209,7 @@ When user selects 'C', append the content directly to the research document usin
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-05-implementation-research.md` to focus on implementation approaches and technology adoption.
+After user selects 'C' and content is saved to document,
+ load `./step-05-implementation-research.md` to focus on implementation approaches and technology adoption.
 
 Remember: Always emphasize current architectural data and rigorous source verification!

@@ -5,10 +5,14 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A CUSTOMER NEEDS ANALYST, not content generator
-- 💬 FOCUS on customer pain points, challenges, and unmet needs
+- 📋 YOU ARE A CUSTOMER NEEDS ANALYST,
+ not content generator
+- 💬 FOCUS on customer pain points,
+ challenges,
+ and unmet needs
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -19,14 +23,18 @@
 - ⚠️ Present [C] continue option after pain points content generation
 - 📝 WRITE CUSTOMER PAIN POINTS ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from previous steps are available
 - Customer behavior analysis completed in previous step
-- Focus on customer pain points, challenges, and unmet needs
+- Focus on customer pain points,
+ challenges,
+ and unmet needs
 - Web search capabilities with source verification are enabled
 - **Research topic = "{{research_topic}}"** - established from initial discussion
 - **Research goals = "{{research_goals}}"** - established from initial discussion
@@ -39,7 +47,8 @@ Conduct customer pain points and needs analysis with emphasis on challenges and 
 
 ### 1. Begin Customer Pain Points Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different customer pain point areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different customer pain point areas simultaneously and thoroughly.
 
 Start with customer pain points research approach:
 "Now I'll conduct **customer pain points analysis** for **{{research_topic}}** to understand customer challenges.
@@ -75,7 +84,8 @@ Search the web: "{{research_topic}} customer barriers to adoption"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate customer pain points findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate customer pain points findings:
 
 **Research Coverage:**
 
@@ -98,7 +108,8 @@ Prepare customer pain points analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Customer Pain Points and Needs
@@ -171,7 +182,8 @@ _Source: [URL]_
 
 **Show analysis and present continue option:**
 
-"I've completed **customer pain points analysis** for {{research_topic}}, focusing on customer challenges.
+"I've completed **customer pain points analysis** for {{research_topic}},
+ focusing on customer challenges.
 
 **Key Pain Points Findings:**
 
@@ -191,7 +203,9 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2, 3]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3]`
 - Load: `./step-04-customer-decisions.md`
 
 ## APPEND TO DOCUMENT:
@@ -246,6 +260,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-04-customer-decisions.md` to analyze customer decision processes, journey mapping, and decision factors for {{research_topic}}.
+After user selects 'C',
+ load `./step-04-customer-decisions.md` to analyze customer decision processes,
+ journey mapping,
+ and decision factors for {{research_topic}}.
 
 Remember: Always write research content to document immediately and emphasize current customer pain points data with rigorous source verification!

@@ -5,12 +5,16 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A TECHNICAL RESEARCH STRATEGIST, not content generator
+- 📋 YOU ARE A TECHNICAL RESEARCH STRATEGIST,
+ not content generator
 - 💬 FOCUS on comprehensive technical synthesis and authoritative conclusions
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
-- 📄 PRODUCE COMPREHENSIVE DOCUMENT with narrative intro, TOC, and summary
+- 📄 PRODUCE COMPREHENSIVE DOCUMENT with narrative intro,
+ TOC,
+ and summary
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -18,22 +22,34 @@
 - 🎯 Show web search analysis before presenting findings
 - ⚠️ Present [C] complete option after synthesis content generation
 - 💾 ONLY save when user chooses C (Complete)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5, 6]` before completing workflow
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6]` before completing workflow
 - 🚫 FORBIDDEN to complete workflow until C is selected
-- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro, TOC, and summary
+- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro,
+ TOC,
+ and summary
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from previous steps are available
 - **Research topic = "{{research_topic}}"** - comprehensive technical analysis
 - **Research goals = "{{research_goals}}"** - achieved through exhaustive technical research
-- All technical research sections have been completed (overview, architecture, implementation)
+- All technical research sections have been completed (overview,
+ architecture,
+ implementation)
 - Web search capabilities with source verification are enabled
 - This is the final synthesis step producing the complete technical research document
 
 ## YOUR TASK:
 
-Produce a comprehensive, authoritative technical research document on **{{research_topic}}** with compelling narrative introduction, detailed TOC, and executive summary based on exhaustive technical research.
+Produce a comprehensive,
+ authoritative technical research document on **{{research_topic}}** with compelling narrative introduction,
+ detailed TOC,
+ and executive summary based on exhaustive technical research.
 
 ## COMPREHENSIVE TECHNICAL DOCUMENT SYNTHESIS:
 
@@ -72,7 +88,8 @@ Produce a comprehensive, authoritative technical research document on **{{resear
 - Establish technical research significance and current relevance
 - Outline comprehensive technical research methodology
 - Preview key technical findings and strategic implications
-- Set authoritative, technical expert tone
+- Set authoritative,
+ technical expert tone
 
 **Web Search for Technical Introduction Context:**
 Search the web: "{{research_topic}} technical significance importance"
@@ -168,7 +185,9 @@ _Source: [URL]_
 [Complete system design analysis]
 _Design Principles: [Core principles guiding {{research_topic}} implementations]_
 _Best Practice Patterns: [Industry-standard approaches and methodologies]_
-_Architectural Quality Attributes: [Performance, scalability, maintainability considerations]_
+_Architectural Quality Attributes: [Performance,
+ scalability,
+ maintainability considerations]_
 _Source: [URL]_
 
 ## 3. Implementation Approaches and Best Practices
@@ -178,7 +197,9 @@ _Source: [URL]_
 [Implementation analysis from step-04 with current context]
 _Development Approaches: [Current development methodologies and approaches]_
 _Code Organization Patterns: [Structural patterns and organization strategies]_
-_Quality Assurance Practices: [Testing, validation, and quality approaches]_
+_Quality Assurance Practices: [Testing,
+ validation,
+ and quality approaches]_
 _Deployment Strategies: [Current deployment and operations practices]_
 _Source: [URL]_
 
@@ -382,7 +403,8 @@ _This comprehensive technical research document serves as an authoritative techn
 
 **Technical Document Completion Presentation:**
 
-"I've completed the **comprehensive technical research document synthesis** for **{{research_topic}}**, producing an authoritative technical research document with:
+"I've completed the **comprehensive technical research document synthesis** for **{{research_topic}}**,
+ producing an authoritative technical research document with:
 
 **Technical Document Features:**
 
@@ -398,7 +420,9 @@ _This comprehensive technical research document serves as an authoritative techn
 - Technical landscape and architecture analysis fully documented
 - Implementation approaches and best practices comprehensively covered
 - Technology stack evolution and trends detailed
-- Integration, performance, and security analysis complete
+- Integration,
+ performance,
+ and security analysis complete
 - Strategic technical insights and implementation guidance provided
 
 **Technical Document Standards Met:**
@@ -416,15 +440,23 @@ _This comprehensive technical research document serves as an authoritative techn
 
 #### If 'C' (Complete Research):
 
-- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope, key findings, and a pointer to the full executive summary in the Research Synthesis section
+- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope,
+ key findings,
+ and a pointer to the full executive summary in the Research Synthesis section
 - Append the complete technical document to the research file
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5, 6]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6]`
 - Complete the technical research workflow
 - Provide final technical document delivery confirmation
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the complete comprehensive technical research document using the full structure above. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
+When user selects 'C',
+ append the complete comprehensive technical research document using the full structure above. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
 
 ## SUCCESS METRICS:
 
@@ -470,7 +502,9 @@ When 'C' is selected:
 
 - All technical research steps completed (1-5)
 - Comprehensive technical research document generated
-- Professional technical document structure with intro, TOC, and summary
+- Professional technical document structure with intro,
+ TOC,
+ and summary
 - All technical sections appended with source citations
 - Technical research workflow status updated to complete
 - Final comprehensive technical research document delivered to user

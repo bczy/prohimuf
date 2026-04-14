@@ -36,17 +36,21 @@ stateDiagram-v2
 - `StartScreen` / `EndScreen` are plain HTML overlays (no R3F)
 - `Canvas` wraps the R3F scene with orthographic camera
 - Lighting is set here and applies globally
-- Audio lifecycle: BGM starts on PLAYING, stops on GAME_OVER, tension driven by `timeRemaining`
+- Audio lifecycle: BGM starts on PLAYING,
+ stops on GAME_OVER,
+ tension driven by `timeRemaining`
 
 ### Camera Setup
 
 ```ts
-onCreated={({ camera, size }) => {
+onCreated={({ camera,
+ size }) => {
   const STREET_W = 50;  // total street width in world units
   const STREET_H = 18;  // max building height in rows
   const zoomByWidth  = size.width  / STREET_W;
   const zoomByHeight = (size.height - 40) / STREET_H;
-  camera.zoom = Math.max(zoomByWidth, zoomByHeight);
+  camera.zoom = Math.max(zoomByWidth,
+ zoomByHeight);
   // Start showing bottom of facade + road strip
   const viewH = size.height / camera.zoom;
   camera.position.y = -(STREET_H / 2) - 1.5 + viewH / 2;
@@ -58,26 +62,38 @@ onCreated={({ camera, size }) => {
 
 | Light              | Position      | Intensity | Notes                            |
 | ------------------ | ------------- | --------- | -------------------------------- |
-| `ambientLight`     | —             | 2.2       | Neutral white, main fill         |
-| `directionalLight` | `[-12, 2, 4]` | 0.8       | Rasant left — stone joint relief |
-| `directionalLight` | `[10, -1, 3]` | 0.2       | Blue counter-light from right    |
+| `ambientLight`     | —             | 2.2       | Neutral white,
+ main fill         |
+| `directionalLight` | `[-12,
+ 2,
+ 4]` | 0.8       | Rasant left — stone joint relief |
+| `directionalLight` | `[10,
+ -1,
+ 3]` | 0.2       | Blue counter-light from right    |
 
 ---
 
 ## GameScene.tsx — Shooting Gallery
 
-Builds the multi-building street from `RUE_BELLIARD` (4 buildings, bottom-aligned).
+Builds the multi-building street from `RUE_BELLIARD` (4 buildings,
+ bottom-aligned).
 
-**Data prep (module-level, runs once):**
+**Data prep (module-level,
+ runs once):**
 
-- `buildingLayouts` — computes world `offsetX` and `FacadeMap` per building, re-centred around x=0
+- `buildingLayouts` — computes world `offsetX` and `FacadeMap` per building,
+ re-centred around x=0
 - `MERGED_FACADE` — all window slots merged for the game loop
-- `FACADE_W = 50`, `FACADE_H = STREET_HEIGHT = 18`
+- `FACADE_W = 50`,
+ `FACADE_H = STREET_HEIGHT = 18`
 
 **Per-frame scroll (useFrame):**
 
-- Horizontal: mouse edge zones trigger X scroll, clamped to `[-(FACADE_W-viewW)/2, +(FACADE_W-viewW)/2]`
-- Vertical: mouse edge zones trigger Y scroll, clamped to include 4 extra road units below buildings
+- Horizontal: mouse edge zones trigger X scroll,
+ clamped to `[-(FACADE_W-viewW)/2,
+ +(FACADE_W-viewW)/2]`
+- Vertical: mouse edge zones trigger Y scroll,
+ clamped to include 4 extra road units below buildings
 
 **Children:**
 
@@ -91,15 +107,21 @@ Builds the multi-building street from `RUE_BELLIARD` (4 buildings, bottom-aligne
 
 ## TiledFacade.tsx — Procedural Facade
 
-Renders a `TileMap` as a Canvas2D texture with a normal map, **plus real 3D geometry** for architectural depth.
+Renders a `TileMap` as a Canvas2D texture with a normal map,
+ **plus real 3D geometry** for architectural depth.
 
-**Props:** `map: TileMap`, `worldOffsetX?: number`, `streetHeight?: number`
+**Props:** `map: TileMap`,
+ `worldOffsetX?: number`,
+ `streetHeight?: number`
 
 ### Texture pipeline
 
 1. `makeFacadeCanvas(map)` — draws all tiles procedurally on an `HTMLCanvasElement` (80px per tile)
 2. `makeNormalMap(diffuseCanvas)` — Sobel filter on luminance → RGB normal map (strength = 10)
-3. Main plane: `meshStandardMaterial` with `normalMap`, `normalScale={[2.5, 2.5]}`, `roughness={0.6}`
+3. Main plane: `meshStandardMaterial` with `normalMap`,
+ `normalScale={[2.5,
+ 2.5]}`,
+ `roughness={0.6}`
 
 ### 3D depth geometry (overlaid on the facade plane)
 
@@ -107,21 +129,37 @@ Each building emits additional meshes that physically protrude from the facade:
 
 | Element            | Geometry                         | Depth      | Purpose                                                |
 | ------------------ | -------------------------------- | ---------- | ------------------------------------------------------ |
-| Cornice bands      | `boxGeometry` per floor boundary | 0.22 units | Catches directional light, casts shadow on floor below |
-| Soubassement       | `boxGeometry` at building base   | 0.35 units | Heavier base mass, more prominent shadow               |
+| Cornice bands      | `boxGeometry` per floor boundary | 0.22 units | Catches directional light,
+ casts shadow on floor below |
+| Soubassement       | `boxGeometry` at building base   | 0.35 units | Heavier base mass,
+ more prominent shadow               |
 | Right-edge shadow  | thin `planeGeometry`             | z -0.1     | Simulates shadow gap between adjacent buildings        |
 | Top-edge dark band | thin `planeGeometry`             | z -0.1     | Sky-meets-rooftop transition                           |
 
-Constants defined at module level: `CORNICE_DEPTH = 0.22`, `CORNICE_H = 0.12`, `BASE_DEPTH = 0.35`, `BASE_H = 0.18`.
+Constants defined at module level: `CORNICE_DEPTH = 0.22`,
+ `CORNICE_H = 0.12`,
+ `BASE_DEPTH = 0.35`,
+ `BASE_H = 0.18`.
 
 ### Tile rendering — each `TileType` has a dedicated Canvas2D draw function:
 
-- `WALL` — stone blocks with Sobel-derived joint lines, occasional graffiti / moisture stains / pipes / posters
-- `WINDOW_LIT` — glowing interior (10 warm/cool light variants), radial gradient, silhouette overlay (35% chance)
-- `WINDOW_DARK` — 5 dark variants: void, half-open shutters, night-sky reflection, drawn curtain, neon green reflection
-- `BALCONY` — wrought-iron railing, random plant or laundry
-- `DOOR` — arched double door, intercom, floor light halo
-- `ROOFTOP` — zinc parapet, random TV antenna (25%) or chimney (20%)
+- `WALL` — stone blocks with Sobel-derived joint lines,
+ occasional graffiti / moisture stains / pipes / posters
+- `WINDOW_LIT` — glowing interior (10 warm/cool light variants),
+ radial gradient,
+ silhouette overlay (35% chance)
+- `WINDOW_DARK` — 5 dark variants: void,
+ half-open shutters,
+ night-sky reflection,
+ drawn curtain,
+ neon green reflection
+- `BALCONY` — wrought-iron railing,
+ random plant or laundry
+- `DOOR` — arched double door,
+ intercom,
+ floor light halo
+- `ROOFTOP` — zinc parapet,
+ random TV antenna (25%) or chimney (20%)
 - `SHOP` — commercial signage band
 - `FIRE_ESCAPE` — diagonal metal ladder on wall with rust patches
 - `ARCH` — Haussmannian decorative arch with keystones and pilasters
@@ -137,7 +175,8 @@ Formula: `mesh_centre_y = yOffset = -((streetHeight - map.rows) * tileH) / 2`
 
 Renders a `height × width` plane behind the buildings (`z = -1`).
 
-Canvas2D content: 72% sky (deep blue gradient + stars), 28% pavement (dark concrete + slab joints + neon reflection).
+Canvas2D content: 72% sky (deep blue gradient + stars),
+ 28% pavement (dark concrete + slab joints + neon reflection).
 
 `groundY` prop positions the sky/pavement join in world space. `meshY` is computed so the join lands at exactly `groundY`.
 
@@ -145,7 +184,9 @@ Canvas2D content: 72% sky (deep blue gradient + stars), 28% pavement (dark concr
 
 ## Sprites
 
-All sprites are `<mesh position={[x, y, z]}><planeGeometry /><meshBasicMaterial /></mesh>` planes facing the camera.
+All sprites are `<mesh position={[x,
+ y,
+ z]}><planeGeometry /><meshBasicMaterial /></mesh>` planes facing the camera.
 
 | Component         | Source data                         | Z depth |
 | ----------------- | ----------------------------------- | ------- |
@@ -160,4 +201,9 @@ All sprites are `<mesh position={[x, y, z]}><planeGeometry /><meshBasicMaterial 
 
 ## HUD
 
-Plain HTML `<div>` overlay, absolutely positioned over the Canvas. Displays score, lives, timer, wave. Re-renders only when `HudData` changes (pushed via `onHudUpdate` callback, not a game state subscription).
+Plain HTML `<div>` overlay,
+ absolutely positioned over the Canvas. Displays score,
+ lives,
+ timer,
+ wave. Re-renders only when `HudData` changes (pushed via `onHudUpdate` callback,
+ not a game state subscription).

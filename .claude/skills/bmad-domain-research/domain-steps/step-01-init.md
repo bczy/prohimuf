@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user confirmation
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ FOCUS EXCLUSIVELY on confirming domain research scope and approach
-- 📋 YOU ARE A DOMAIN RESEARCH PLANNER, not content generator
+- 📋 YOU ARE A DOMAIN RESEARCH PLANNER,
+ not content generator
 - 💬 ACKNOWLEDGE and CONFIRM understanding of domain research goals
 - 🔍 This is SCOPE CONFIRMATION ONLY - no web research yet
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -41,10 +43,18 @@ Start with domain scope understanding:
 
 **Domain Research Scope:**
 
-- **Industry Analysis**: Industry structure, market dynamics, and competitive landscape
-- **Regulatory Environment**: Compliance requirements, regulations, and standards
-- **Technology Patterns**: Innovation trends, technology adoption, and digital transformation
-- **Economic Factors**: Market size, growth trends, and economic impact
+- **Industry Analysis**: Industry structure,
+ market dynamics,
+ and competitive landscape
+- **Regulatory Environment**: Compliance requirements,
+ regulations,
+ and standards
+- **Technology Patterns**: Innovation trends,
+ technology adoption,
+ and digital transformation
+- **Economic Factors**: Market size,
+ growth trends,
+ and economic impact
 - **Supply Chain**: Value chain analysis and ecosystem relationships
 
 **Research Approach:**
@@ -59,13 +69,22 @@ Start with domain scope understanding:
 Present clear scope confirmation:
 "**Domain Research Scope Confirmation:**
 
-For **{{research_topic}}**, I will research:
+For **{{research_topic}}**,
+ I will research:
 
-✅ **Industry Analysis** - market structure, key players, competitive dynamics
-✅ **Regulatory Requirements** - compliance standards, legal frameworks
-✅ **Technology Trends** - innovation patterns, digital transformation
-✅ **Economic Factors** - market size, growth projections, economic impact
-✅ **Supply Chain Analysis** - value chain, ecosystem, partnerships
+✅ **Industry Analysis** - market structure,
+ key players,
+ competitive dynamics
+✅ **Regulatory Requirements** - compliance standards,
+ legal frameworks
+✅ **Technology Trends** - innovation patterns,
+ digital transformation
+✅ **Economic Factors** - market size,
+ growth projections,
+ economic impact
+✅ **Supply Chain Analysis** - value chain,
+ ecosystem,
+ partnerships
 
 **All claims verified against current public sources.**
 
@@ -82,7 +101,8 @@ For **{{research_topic}}**, I will research:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append scope confirmation:
+When user selects 'C',
+ append scope confirmation:
 
 ```markdown
 ## Domain Research Scope Confirmation
@@ -92,11 +112,16 @@ When user selects 'C', append scope confirmation:
 
 **Domain Research Scope:**
 
-- Industry Analysis - market structure, competitive landscape
-- Regulatory Environment - compliance requirements, legal frameworks
-- Technology Trends - innovation patterns, digital transformation
-- Economic Factors - market size, growth projections
-- Supply Chain Analysis - value chain, ecosystem relationships
+- Industry Analysis - market structure,
+ competitive landscape
+- Regulatory Environment - compliance requirements,
+ legal frameworks
+- Technology Trends - innovation patterns,
+ digital transformation
+- Economic Factors - market size,
+ growth projections
+- Supply Chain Analysis - value chain,
+ ecosystem relationships
 
 **Research Methodology:**
 
@@ -132,6 +157,8 @@ When user selects 'C', append scope confirmation:
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-02-domain-analysis.md` to begin industry analysis.
+After user selects 'C',
+ load `./step-02-domain-analysis.md` to begin industry analysis.
 
-Remember: This is SCOPE CONFIRMATION ONLY - no actual domain research yet, just confirming the research approach and scope!
+Remember: This is SCOPE CONFIRMATION ONLY - no actual domain research yet,
+ just confirming the research approach and scope!

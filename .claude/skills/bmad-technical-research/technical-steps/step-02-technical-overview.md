@@ -5,10 +5,15 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A TECHNOLOGY STACK ANALYST, not content generator
-- 💬 FOCUS on languages, frameworks, tools, and platforms
+- 📋 YOU ARE A TECHNOLOGY STACK ANALYST,
+ not content generator
+- 💬 FOCUS on languages,
+ frameworks,
+ tools,
+ and platforms
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -19,7 +24,8 @@
 - ⚠️ Present [C] continue option after technology stack content generation
 - 📝 WRITE TECHNOLOGY STACK ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -27,18 +33,25 @@
 - Current document and frontmatter from step-01 are available
 - **Research topic = "{{research_topic}}"** - established from initial discussion
 - **Research goals = "{{research_goals}}"** - established from initial discussion
-- Focus on languages, frameworks, tools, and platforms
+- Focus on languages,
+ frameworks,
+ tools,
+ and platforms
 - Web search capabilities with source verification are enabled
 
 ## YOUR TASK:
 
-Conduct technology stack analysis focusing on languages, frameworks, tools, and platforms. Search the web to verify and supplement current facts.
+Conduct technology stack analysis focusing on languages,
+ frameworks,
+ tools,
+ and platforms. Search the web to verify and supplement current facts.
 
 ## TECHNOLOGY STACK ANALYSIS SEQUENCE:
 
 ### 1. Begin Technology Stack Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different technology stack areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different technology stack areas simultaneously and thoroughly.
 
 Start with technology stack research approach:
 "Now I'll conduct **technology stack analysis** for **{{research_topic}}** to understand the technology landscape.
@@ -74,7 +87,8 @@ Search the web: "{{research_topic}} cloud infrastructure platforms"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate technology stack findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate technology stack findings:
 
 **Research Coverage:**
 
@@ -84,7 +98,9 @@ Search the web: "{{research_topic}} cloud infrastructure platforms"
 - Cloud infrastructure and deployment platform analysis
 
 **Cross-Technology Analysis:**
-[Identify patterns connecting language choices, frameworks, and platform decisions]
+[Identify patterns connecting language choices,
+ frameworks,
+ and platform decisions]
 
 **Quality Assessment:**
 [Overall confidence levels and research gaps identified]"
@@ -97,7 +113,8 @@ Prepare technology stack analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Technology Stack Analysis
@@ -124,8 +141,13 @@ _Source: [URL]_
 
 [Database analysis with source citations]
 _Relational Databases: [Traditional SQL databases and their evolution]_
-_NoSQL Databases: [Document, key-value, graph, and other NoSQL options]_
-_In-Memory Databases: [Redis, Memcached, and performance-focused solutions]_
+_NoSQL Databases: [Document,
+ key-value,
+ graph,
+ and other NoSQL options]_
+_In-Memory Databases: [Redis,
+ Memcached,
+ and performance-focused solutions]_
 _Data Warehousing: [Analytics and big data storage solutions]_
 _Source: [URL]_
 
@@ -134,15 +156,23 @@ _Source: [URL]_
 [Tools and platforms analysis with source citations]
 _IDE and Editors: [Development environments and their evolution]_
 _Version Control: [Git and related development tools]_
-_Build Systems: [Compilation, packaging, and automation tools]_
-_Testing Frameworks: [Unit testing, integration testing, and QA tools]_
+_Build Systems: [Compilation,
+ packaging,
+ and automation tools]_
+_Testing Frameworks: [Unit testing,
+ integration testing,
+ and QA tools]_
 _Source: [URL]_
 
 ### Cloud Infrastructure and Deployment
 
 [Cloud platforms analysis with source citations]
-_Major Cloud Providers: [AWS, Azure, GCP and their services]_
-_Container Technologies: [Docker, Kubernetes, and orchestration]_
+_Major Cloud Providers: [AWS,
+ Azure,
+ GCP and their services]_
+_Container Technologies: [Docker,
+ Kubernetes,
+ and orchestration]_
 _Serverless Platforms: [FaaS and event-driven computing]_
 _CDN and Edge Computing: [Content delivery and distributed computing]_
 _Source: [URL]_
@@ -179,7 +209,8 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2]`
 - Load: `./step-03-integration-patterns.md`
 
 ## APPEND TO DOCUMENT:
@@ -234,6 +265,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-03-integration-patterns.md` to analyze APIs, communication protocols, and system interoperability for {{research_topic}}.
+After user selects 'C',
+ load `./step-03-integration-patterns.md` to analyze APIs,
+ communication protocols,
+ and system interoperability for {{research_topic}}.
 
 Remember: Always write research content to document immediately and emphasize current technology data with rigorous source verification!

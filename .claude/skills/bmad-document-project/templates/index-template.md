@@ -153,10 +153,16 @@ This documentation was generated specifically to enable AI agents to understand 
 ### When Planning New Features:
 
 **UI-only features:**
-{{#if is_multi_part}}→ Reference: `architecture-{{ui_part_id}}.md`, `component-inventory-{{ui_part_id}}.md`{{else}}→ Reference: `architecture.md`, `component-inventory.md`{{/if}}
+{{#if is_multi_part}}→ Reference: `architecture-{{ui_part_id}}.md`,
+ `component-inventory-{{ui_part_id}}.md`{{else}}→ Reference: `architecture.md`,
+ `component-inventory.md`{{/if}}
 
 **API/Backend features:**
-{{#if is_multi_part}}→ Reference: `architecture-{{api_part_id}}.md`, `api-contracts-{{api_part_id}}.md`, `data-models-{{api_part_id}}.md`{{else}}→ Reference: `architecture.md`{{#if has_api_docs}}, `api-contracts.md`{{/if}}{{#if has_data_models}}, `data-models.md`{{/if}}{{/if}}
+{{#if is_multi_part}}→ Reference: `architecture-{{api_part_id}}.md`,
+ `api-contracts-{{api_part_id}}.md`,
+ `data-models-{{api_part_id}}.md`{{else}}→ Reference: `architecture.md`{{#if has_api_docs}},
+ `api-contracts.md`{{/if}}{{#if has_data_models}},
+ `data-models.md`{{/if}}{{/if}}
 
 **Full-stack features:**
 → Reference: All architecture docs{{#if is_multi_part}} + `integration-architecture.md`{{/if}}

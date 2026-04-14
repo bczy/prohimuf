@@ -15,15 +15,19 @@ Present summary of completed edits and offer next steps including seamless integ
 
 - 🛑 ALWAYS generate content WITH user input/approval
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and PRD Improvement Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring synthesis and summary expertise
 - ✅ User chooses next actions
 
@@ -31,7 +35,8 @@ Present summary of completed edits and offer next steps including seamless integ
 
 - 🎯 Focus ONLY on presenting summary and options
 - 🚫 FORBIDDEN to make additional changes
-- 💬 Approach: Clear, concise summary with actionable options
+- 💬 Approach: Clear,
+ concise summary with actionable options
 - 🚪 This is the final edit step - no more edits
 
 ## EXECUTION PROTOCOLS:
@@ -43,18 +48,23 @@ Present summary of completed edits and offer next steps including seamless integ
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: Updated PRD file, edit history from step e-03
+- Available context: Updated PRD file,
+ edit history from step e-03
 - Focus: Summary and options only (no more editing)
-- Limits: Don't make changes, just present options
+- Limits: Don't make changes,
+ just present options
 - Dependencies: Step e-03 completed - all edits applied
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Compile Edit Summary
 
-From step e-03 change execution, compile:
+From step e-03 change execution,
+ compile:
 
 **Changes Made:**
 
@@ -93,7 +103,8 @@ Display:
 
 **PRD is now ready for:**
 
-- Downstream workflows (UX Design, Architecture)
+- Downstream workflows (UX Design,
+ Architecture)
 - Validation to ensure quality
 - Production use
 
@@ -125,7 +136,8 @@ Display:
 - **IF E (Edit More):**
   - Display: "**Additional Edits**"
   - Ask: "What additional edits would you like to make?"
-  - Accept input, then display: "**Returning to edit step...**"
+  - Accept input,
+ then display: "**Returning to edit step...**"
   - Read fully and follow: `./step-e-03-edit.md` again
 
 - **IF S (Summary):**
@@ -141,7 +153,8 @@ Display:
   - Display: "**Edit Workflow Complete**"
   - Exit
 
-- **IF Any other:** Help user, then redisplay menu
+- **IF Any other:** Help user,
+ then redisplay menu
 
 ---
 
@@ -153,7 +166,9 @@ Display:
 - All changes clearly documented
 - Options presented with clear expectations
 - Validation option seamlessly integrates with steps-v workflow
-- User can validate, edit more, or exit
+- User can validate,
+ edit more,
+ or exit
 - Clean handoff to validation workflow (if chosen)
 - Edit workflow completes properly
 

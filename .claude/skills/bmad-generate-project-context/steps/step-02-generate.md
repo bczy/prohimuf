@@ -4,7 +4,8 @@
 
 - 🛑 NEVER generate content without user input
 - ✅ ALWAYS treat this as collaborative discovery between technical peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on unobvious rules that AI agents need to be reminded of
 - 🎯 KEEP CONTENT LEAN - optimize for LLM context efficiency
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -14,7 +15,8 @@
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Show your analysis before taking any action
-- 📝 Focus on specific, actionable rules rather than general advice
+- 📝 Focus on specific,
+ actionable rules rather than general advice
 - ⚠️ Present A/P/C menu after each major rule category
 - 💾 ONLY save when user chooses C (Continue)
 - 📖 Update frontmatter with completed sections
@@ -44,7 +46,8 @@ This step will generate content and present choices for each rule category:
 
 ## YOUR TASK:
 
-Collaboratively generate specific, critical rules that AI agents must follow when implementing code in this project.
+Collaboratively generate specific,
+ critical rules that AI agents must follow when implementing code in this project.
 
 ## CONTEXT GENERATION SEQUENCE:
 
@@ -53,7 +56,8 @@ Collaboratively generate specific, critical rules that AI agents must follow whe
 Document the exact technology stack from discovery:
 
 **Core Technologies:**
-Based on user skill level, present findings:
+Based on user skill level,
+ present findings:
 
 **Expert Mode:**
 "Technology stack from your architecture and package files:
@@ -88,7 +92,8 @@ Should I document any special version rules or compatibility requirements?"
 Focus on unobvious language patterns agents might miss:
 
 **TypeScript/JavaScript Rules:**
-"Based on your codebase, I notice some specific patterns:
+"Based on your codebase,
+ I notice some specific patterns:
 
 **Configuration Requirements:**
 {{typescript_config_rules}}
@@ -109,7 +114,8 @@ Adapt to the actual language in use with similar focused questions.
 Document framework-specific patterns:
 
 **React Rules (if applicable):**
-"For React development, I see these patterns:
+"For React development,
+ I see these patterns:
 
 **Hooks Usage:**
 {{hooks_usage_patterns}}
@@ -126,7 +132,11 @@ Document framework-specific patterns:
 Should I add any other React-specific rules?"
 
 **Other Framework Rules:**
-Adapt for Vue, Angular, Next.js, Express, etc.
+Adapt for Vue,
+ Angular,
+ Next.js,
+ Express,
+ etc.
 
 ### 4. Testing Rules
 
@@ -196,7 +206,8 @@ Should I document any other workflow rules?"
 Identify rules that prevent common mistakes:
 
 **Anti-Patterns to Avoid:**
-"Based on your codebase, here are critical things agents must NOT do:
+"Based on your codebase,
+ here are critical things agents must NOT do:
 
 {{critical_anti_patterns_with_examples}}
 
@@ -213,7 +224,8 @@ Are there other 'gotchas' agents should know about?"
 
 ### 8. Generate Context Content
 
-For each category, prepare lean content for the project context file:
+For each category,
+ prepare lean content for the project context file:
 
 #### Content Structure:
 
@@ -251,7 +263,8 @@ For each category, prepare lean content for the project context file:
 
 ### 9. Present Content and Menu
 
-After each category, show the generated rules and present choices:
+After each category,
+ show the generated rules and present choices:
 
 "I've drafted the {{category_name}} rules for your project context.
 
@@ -273,16 +286,20 @@ After each category, show the generated rules and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with current category rules
 - Process enhanced rules that come back
 - Ask user: "Accept these enhanced rules for {{category}}? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with category rules context
 - Process collaborative insights on implementation patterns
 - Ask user: "Accept these changes to {{category}} rules? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -292,7 +309,8 @@ After each category, show the generated rules and present choices:
 
 ## APPEND TO PROJECT CONTEXT:
 
-When user selects 'C' for a category, append the content directly to `{output_folder}/project-context.md` using the structure from step 8.
+When user selects 'C' for a category,
+ append the content directly to `{output_folder}/project-context.md` using the structure from step 8.
 
 ## SUCCESS METRICS:
 
@@ -316,6 +334,7 @@ When user selects 'C' for a category, append the content directly to `{output_fo
 
 ## NEXT STEP:
 
-After completing all rule categories and user selects 'C' for the final category, load `./step-03-complete.md` to finalize the project context file.
+After completing all rule categories and user selects 'C' for the final category,
+ load `./step-03-complete.md` to finalize the project context file.
 
 Remember: Do NOT proceed to step-03 until all categories are complete and user explicitly selects 'C' for each!

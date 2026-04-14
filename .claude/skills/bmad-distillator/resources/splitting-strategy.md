@@ -1,6 +1,8 @@
 # Semantic Splitting Strategy
 
-When the source content is large (exceeds ~15,000 tokens) or a token_budget requires it, split the distillate into semantically coherent sections rather than arbitrary size breaks.
+When the source content is large (exceeds ~15,
+000 tokens) or a token_budget requires it,
+ split the distillate into semantically coherent sections rather than arbitrary size breaks.
 
 ## Why Semantic Over Size-Based
 
@@ -10,19 +12,25 @@ Arbitrary splits (every N tokens) break coherence. A downstream workflow loading
 
 ### 1. Identify Natural Boundaries
 
-After the initial extraction and deduplication (Steps 1-2 of the compression process), look for natural semantic boundaries:
+After the initial extraction and deduplication (Steps 1-2 of the compression process),
+ look for natural semantic boundaries:
 
 - Distinct problem domains or functional areas
-- Different stakeholder perspectives (users, technical, business)
+- Different stakeholder perspectives (users,
+ technical,
+ business)
 - Temporal boundaries (current state vs future vision)
 - Scope boundaries (in-scope vs out-of-scope vs deferred)
-- Phase boundaries (analysis, design, implementation)
+- Phase boundaries (analysis,
+ design,
+ implementation)
 
 Choose boundaries that produce sections a downstream workflow might load independently.
 
 ### 2. Assign Items to Sections
 
-For each extracted item, assign it to the most relevant section. Items that span multiple sections go in the root distillate.
+For each extracted item,
+ assign it to the most relevant section. Items that span multiple sections go in the root distillate.
 
 Cross-cutting items (items relevant to multiple sections):
 
@@ -34,9 +42,14 @@ Cross-cutting items (items relevant to multiple sections):
 
 The root distillate contains:
 
-- **Orientation** (3-5 bullets): what was distilled, from what sources, for what consumer, how many sections
+- **Orientation** (3-5 bullets): what was distilled,
+ from what sources,
+ for what consumer,
+ how many sections
 - **Cross-references**: list of section distillates with 1-line descriptions
-- **Cross-cutting items**: facts, decisions, and constraints that span multiple sections
+- **Cross-cutting items**: facts,
+ decisions,
+ and constraints that span multiple sections
 - **Scope summary**: high-level in/out/deferred if applicable
 
 ### 4. Produce Section Distillates
@@ -55,7 +68,9 @@ Create a folder `{base-name}-distillate/` containing:
 
 ```
 {base-name}-distillate/
-├── _index.md           # Root distillate: orientation, cross-cutting items, section manifest
+├── _index.md           # Root distillate: orientation,
+ cross-cutting items,
+ section manifest
 ├── 01-{topic-slug}.md  # Self-contained section
 ├── 02-{topic-slug}.md
 └── 03-{topic-slug}.md
@@ -77,9 +92,12 @@ When a token_budget is specified:
 
 - Root distillate: ~20% of budget (orientation + cross-cutting items)
 - Remaining budget split proportionally across sections based on content density
-- If a section exceeds its proportional share, compress more aggressively or sub-split
+- If a section exceeds its proportional share,
+ compress more aggressively or sub-split
 
 When no token_budget but splitting is needed:
 
-- Aim for sections of 3,000-5,000 tokens each
+- Aim for sections of 3,
+000-5,
+000 tokens each
 - Root distillate as small as possible while remaining useful standalone

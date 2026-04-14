@@ -6,7 +6,10 @@ outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 
 ## STEP GOAL:
 
-To discover, inventory, and organize all project documents, identifying duplicates and determining which versions to use for the assessment.
+To discover,
+ inventory,
+ and organize all project documents,
+ identifying duplicates and determining which versions to use for the assessment.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -14,8 +17,10 @@ To discover, inventory, and organize all project documents, identifying duplicat
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
@@ -47,7 +52,10 @@ To discover, inventory, and organize all project documents, identifying duplicat
 
 I will:
 
-1. Search for all required documents (PRD, Architecture, Epics, UX)
+1. Search for all required documents (PRD,
+ Architecture,
+ Epics,
+ UX)
 2. Group sharded documents together
 3. Identify any duplicates (whole + sharded versions)
 4. Present findings for your confirmation"
@@ -84,7 +92,8 @@ For each document type found:
 ## [Document Type] Files Found
 
 **Whole Documents:**
-- [filename.md] ([size], [modified date])
+- [filename.md] ([size],
+ [modified date])
 
 **Sharded Documents:**
 - Folder: [foldername]/
@@ -146,12 +155,15 @@ Display: **Select an Option:** [C] Continue to File Validation
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed with 'C' selection
-- If duplicates identified, insist on resolution first
+- If duplicates identified,
+ insist on resolution first
 - User can clarify file locations or request additional searches
 
 #### Menu Handling Logic:
 
-- IF C: Save document inventory to {outputFile}, update frontmatter with completed step and files being included, and then read fully and follow: ./step-02-prd-analysis.md
+- IF C: Save document inventory to {outputFile},
+ update frontmatter with completed step and files being included,
+ and then read fully and follow: ./step-02-prd-analysis.md
 - IF Any other comments or queries: help user respond then redisplay menu
 
 ## CRITICAL STEP COMPLETION NOTE

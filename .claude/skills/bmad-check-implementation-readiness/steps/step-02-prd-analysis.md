@@ -15,8 +15,10 @@ To fully read and analyze the PRD document (whole or sharded) to extract all Fun
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
@@ -66,7 +68,10 @@ From the document inventory in step 1:
 
 Search for and extract:
 
-- Numbered FRs (FR1, FR2, FR3, etc.)
+- Numbered FRs (FR1,
+ FR2,
+ FR3,
+ etc.)
 - Requirements labeled "Functional Requirement"
 - User stories or use cases that represent functional needs
 - Business rules that must be implemented
@@ -87,12 +92,19 @@ Total FRs: [count]
 
 Search for and extract:
 
-- Performance requirements (response times, throughput)
-- Security requirements (authentication, encryption, etc.)
-- Usability requirements (accessibility, ease of use)
-- Reliability requirements (uptime, error rates)
-- Scalability requirements (concurrent users, data growth)
-- Compliance requirements (standards, regulations)
+- Performance requirements (response times,
+ throughput)
+- Security requirements (authentication,
+ encryption,
+ etc.)
+- Usability requirements (accessibility,
+ ease of use)
+- Reliability requirements (uptime,
+ error rates)
+- Scalability requirements (concurrent users,
+ data growth)
+- Compliance requirements (standards,
+ regulations)
 
 Format findings as:
 
@@ -141,7 +153,8 @@ Append to {outputFile}:
 
 ### 7. Auto-Proceed to Next Step
 
-After PRD analysis complete, immediately load next step for epic coverage validation.
+After PRD analysis complete,
+ immediately load next step for epic coverage validation.
 
 ## PROCEEDING TO EPIC COVERAGE VALIDATION
 

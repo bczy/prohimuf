@@ -1,7 +1,8 @@
 # Change Navigation Checklist
 
 <critical>This checklist is executed as part of: ./workflow.md</critical>
-<critical>Work through each section systematically with the user, recording findings and impacts</critical>
+<critical>Work through each section systematically with the user,
+ recording findings and impacts</critical>
 
 <checklist>
 
@@ -27,7 +28,10 @@
 
 <check-item id="1.3">
 <prompt>Assess initial impact and gather supporting evidence</prompt>
-<action>Collect concrete examples, error messages, stakeholder feedback, or technical constraints</action>
+<action>Collect concrete examples,
+ error messages,
+ stakeholder feedback,
+ or technical constraints</action>
 <action>Document evidence for later reference</action>
 <status>[ ] Done / [ ] N/A / [ ] Action-needed</status>
 </check-item>
@@ -44,7 +48,8 @@
 <check-item id="2.1">
 <prompt>Evaluate current epic containing the trigger story</prompt>
 <action>Can this epic still be completed as originally planned?</action>
-<action>If no, what modifications are needed?</action>
+<action>If no,
+ what modifications are needed?</action>
 <status>[ ] Done / [ ] N/A / [ ] Action-needed</status>
 </check-item>
 
@@ -87,7 +92,9 @@
 <check-item id="3.1">
 <prompt>Check PRD for conflicts</prompt>
 <action>Does issue conflict with core PRD goals or objectives?</action>
-<action>Do requirements need modification, addition, or removal?</action>
+<action>Do requirements need modification,
+ addition,
+ or removal?</action>
 <action>Is the defined MVP still achievable or does scope need adjustment?</action>
 <status>[ ] Done / [ ] N/A / [ ] Action-needed</status>
 </check-item>
@@ -167,7 +174,8 @@
 
 <check-item id="4.4">
 <prompt>Select recommended path forward</prompt>
-<action>Based on analysis of all options, choose the best path</action>
+<action>Based on analysis of all options,
+ choose the best path</action>
 <action>Provide clear rationale considering:</action>
   - Implementation effort and timeline impact
   - Technical risk and complexity
@@ -185,7 +193,8 @@
 
 <check-item id="5.1">
 <prompt>Create identified issue summary</prompt>
-<action>Write clear, concise problem statement</action>
+<action>Write clear,
+ concise problem statement</action>
 <action>Include context about discovery and impact</action>
 <status>[ ] Done / [ ] N/A / [ ] Action-needed</status>
 </check-item>
@@ -282,7 +291,8 @@
 <execution-notes>
 <note>This checklist is for SIGNIFICANT changes affecting project direction</note>
 <note>Work interactively with user - they make final decisions</note>
-<note>Be factual, not blame-oriented when analyzing issues</note>
+<note>Be factual,
+ not blame-oriented when analyzing issues</note>
 <note>Handle changes professionally as opportunities to improve the project</note>
 <note>Maintain conversation context throughout - this is collaborative work</note>
 </execution-notes>

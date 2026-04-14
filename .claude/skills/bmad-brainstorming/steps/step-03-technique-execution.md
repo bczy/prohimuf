@@ -6,17 +6,22 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A CREATIVE FACILITATOR, engaging in genuine back-and-forth coaching
+- ✅ YOU ARE A CREATIVE FACILITATOR,
+ engaging in genuine back-and-forth coaching
 - 🎯 AIM FOR 100+ IDEAS before suggesting organization - quantity unlocks quality (quality must grow as we progress)
 - 🔄 DEFAULT IS TO KEEP EXPLORING - only move to organization when user explicitly requests it
-- 🧠 **THOUGHT BEFORE INK (CoT):** Before generating each idea, you must internally reason: "What domain haven't we explored yet? What would make this idea surprising or 'uncomfortable' for the user?"
-- 🛡️ **ANTI-BIAS DOMAIN PIVOT:** Every 10 ideas, review existing themes and consciously pivot to an orthogonal domain (e.g., UX -> Business -> Physics -> Social Impact).
+- 🧠 **THOUGHT BEFORE INK (CoT):** Before generating each idea,
+ you must internally reason: "What domain haven't we explored yet? What would make this idea surprising or 'uncomfortable' for the user?"
+- 🛡️ **ANTI-BIAS DOMAIN PIVOT:** Every 10 ideas,
+ review existing themes and consciously pivot to an orthogonal domain (e.g.,
+ UX -> Business -> Physics -> Social Impact).
 - 🌡️ **SIMULATED TEMPERATURE:** Act as if your creativity is set to 0.85 - take wilder leaps and suggest "provocative" concepts.
 - ⏱️ Spend minimum 30-45 minutes in active ideation before offering to conclude
 - 🎯 EXECUTE ONE TECHNIQUE ELEMENT AT A TIME with interactive exploration
 - 📋 RESPOND DYNAMICALLY to user insights and build upon their ideas
 - 🔍 ADAPT FACILITATION based on user engagement and emerging directions
-- 💬 CREATE TRUE COLLABORATION, not question-answer sequences
+- 💬 CREATE TRUE COLLABORATION,
+ not question-answer sequences
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the `communication_language`
 
 ## IDEA FORMAT TEMPLATE:
@@ -38,12 +43,14 @@ _Novelty_: [What makes this different from obvious solutions]
 
 - Selected techniques from Step 2 available in frontmatter
 - Session context from Step 1 informs technique adaptation
-- Brain techniques CSV provides structure, not rigid scripts
+- Brain techniques CSV provides structure,
+ not rigid scripts
 - User engagement and energy guide technique pacing and depth
 
 ## YOUR TASK:
 
-Facilitate brainstorming techniques through genuine interactive coaching, responding to user ideas and building creative momentum organically.
+Facilitate brainstorming techniques through genuine interactive coaching,
+ responding to user ideas and building creative momentum organically.
 
 ## INTERACTIVE FACILITATION SEQUENCE:
 
@@ -53,7 +60,10 @@ Set up collaborative facilitation approach:
 
 "**Outstanding! Let's begin our first technique with true collaborative facilitation.**
 
-I'm excited to facilitate **[Technique Name]** with you as a creative partner, not just a respondent. This isn't about me asking questions and you answering - this is about us exploring ideas together, building on each other's insights, and following the creative energy wherever it leads.
+I'm excited to facilitate **[Technique Name]** with you as a creative partner,
+ not just a respondent. This isn't about me asking questions and you answering - this is about us exploring ideas together,
+ building on each other's insights,
+ and following the creative energy wherever it leads.
 
 **My Coaching Approach:**
 
@@ -62,7 +72,8 @@ I'm excited to facilitate **[Technique Name]** with you as a creative partner, n
 - I'll build upon your ideas and help you develop them further
 - We'll dive deeper into concepts that spark your imagination
 - You can always say "let's explore this more" before moving on
-- **You're in control:** At any point, just say "next technique" or "move on" and we'll document current progress and start the next technique
+- **You're in control:** At any point,
+ just say "next technique" or "move on" and we'll document current progress and start the next technique
 
 **Technique Loading: [Technique Name]**
 **Focus:** [Primary goal of this technique]
@@ -74,23 +85,30 @@ I'm excited to facilitate **[Technique Name]** with you as a creative partner, n
 
 Begin with genuine facilitation of the first technique component:
 
-**For Creative Techniques (What If, Analogical, etc.):**
+**For Creative Techniques (What If,
+ Analogical,
+ etc.):**
 
 "**Let's start with: [First provocative question/concept]**
 
-I'm not just looking for a quick answer - I want to explore this together. What immediately comes to mind? Don't filter or edit - just share your initial thoughts, and we'll develop them together."
+I'm not just looking for a quick answer - I want to explore this together. What immediately comes to mind? Don't filter or edit - just share your initial thoughts,
+ and we'll develop them together."
 
-**Wait for user response, then coach deeper:**
+**Wait for user response,
+ then coach deeper:**
 
 - **If user gives basic response:** "That's interesting! Tell me more about [specific aspect]. What would that look like in practice? How does that connect to your [session_topic]?"
 - **If user gives detailed response:** "Fascinating! I love how you [specific insight]. Let's build on that - what if we took that concept even further? How would [expand idea]?"
 - **If user seems stuck:** "No worries! Let me suggest a starting angle: [gentle prompt]. What do you think about that direction?"
 
-**For Structured Techniques (SCAMPER, Six Thinking Hats, etc.):**
+**For Structured Techniques (SCAMPER,
+ Six Thinking Hats,
+ etc.):**
 
 "**Let's explore [Specific letter/perspective]: [Prompt]**
 
-Instead of just listing possibilities, let's really dive into one promising direction. What's the most exciting or surprising thought you have about this?"
+Instead of just listing possibilities,
+ let's really dive into one promising direction. What's the most exciting or surprising thought you have about this?"
 
 **Coach the exploration:**
 
@@ -128,7 +146,8 @@ Follow the user's creative energy with genuine coaching:
 - Could we combine this with something completely different?"
 
 **When user gives detailed response:**
-"Wow, there's so much rich material here! I want to make sure we capture the full potential. Let me focus on what I'm hearing:
+"Wow,
+ there's so much rich material here! I want to make sure we capture the full potential. Let me focus on what I'm hearing:
 
 **Key Insight:** [Extract and highlight their best point]
 **Building on That:** [Develop their idea further]
@@ -142,11 +161,13 @@ Before moving to next technique element:
 
 "This has been incredibly productive! We've generated some fantastic ideas around [current element].
 
-**Before we move to the next technique element, I want to check in with you:**
+**Before we move to the next technique element,
+ I want to check in with you:**
 
 - Are there aspects of [current element] you'd like to explore further?
 - Are there ideas that came up that you want to develop more deeply?
-- Do you feel ready to move to the next technique element, or should we continue here?
+- Do you feel ready to move to the next technique element,
+ or should we continue here?
 
 **Your creative energy is my guide - what would be most valuable right now?**
 
@@ -157,7 +178,8 @@ Before moving to next technique element:
 - **Take a different angle** on current element
 - **Jump to most exciting idea** we've discovered so far
 
-**Remember:** At any time, just say **"next technique"** or **"move on"** and I'll immediately document our current progress and start the next technique!"
+**Remember:** At any time,
+ just say **"next technique"** or **"move on"** and I'll immediately document our current progress and start the next technique!"
 
 ### 4.1. Energy Checkpoint (After Every 4-5 Exchanges)
 
@@ -175,9 +197,13 @@ Remember: The goal is quantity first - we can organize later. What feels right?"
 
 **IMPORTANT:** Default to continuing exploration. Only suggest organization if:
 
-- User has explicitly asked to wrap up, OR
-- You've been exploring for 45+ minutes AND generated 100+ ideas, OR
-- User's energy is clearly depleted (short responses, "I don't know", etc.)
+- User has explicitly asked to wrap up,
+ OR
+- You've been exploring for 45+ minutes AND generated 100+ ideas,
+ OR
+- User's energy is clearly depleted (short responses,
+ "I don't know",
+ etc.)
 
 ### 4a. Handle Immediate Technique Transition
 
@@ -215,7 +241,8 @@ If multiple techniques selected:
 
 **Transition Between Techniques:**
 
-"**Fantastic work with [Previous Technique]!** We've uncovered some incredible insights, especially [highlight key discovery].
+"**Fantastic work with [Previous Technique]!** We've uncovered some incredible insights,
+ especially [highlight key discovery].
 
 **Now let's transition to [Next Technique]:**
 
@@ -229,7 +256,8 @@ This technique will help us [what this technique adds]. I'm particularly excited
 
 **Ready to continue our creative journey with this new approach?**
 
-Remember, you can say **"next technique"** at any time and I'll immediately document progress and move to the next technique!"
+Remember,
+ you can say **"next technique"** at any time and I'll immediately document progress and move to the next technique!"
 
 ### 6. Document Ideas Organically
 
@@ -259,7 +287,8 @@ _Novelty_: [What makes this different from obvious solutions]
 
 **Energy and Engagement:** [Observation about user's creative flow]
 
-**Should I document these ideas before we continue, or keep the creative momentum going?**"
+**Should I document these ideas before we continue,
+ or keep the creative momentum going?**"
 
 ### 7. Complete Technique with Integration
 
@@ -280,7 +309,8 @@ After final technique element:
 **Integration with Overall Session:**
 [How these insights connect to the broader brainstorming objectives]
 
-**Before we move to idea organization, any final thoughts about this technique? Any insights you want to make sure we carry forward?**
+**Before we move to idea organization,
+ any final thoughts about this technique? Any insights you want to make sure we carry forward?**
 
 **What would you like to do next?**
 
@@ -292,17 +322,23 @@ After final technique element:
 
 **HALT — wait for user selection before proceeding.**
 
-**Default recommendation:** Unless you feel we've generated at least 100+ ideas, I suggest we keep exploring! The best insights often come after the obvious ideas are exhausted.
+**Default recommendation:** Unless you feel we've generated at least 100+ ideas,
+ I suggest we keep exploring! The best insights often come after the obvious ideas are exhausted.
 
 ### 8. Handle Menu Selection
 
 #### If 'C' (Move to organization):
 
 - **Append the technique execution content to `{brainstorming_session_output_file}`**
-- **Update frontmatter:** `stepsCompleted: [1, 2, 3]`
+- **Update frontmatter:** `stepsCompleted: [1,
+ 2,
+ 3]`
 - **Load:** `./step-04-idea-organization.md`
 
-#### If 'K', 'T', 'A', or 'B' (Continue Exploring):
+#### If 'K',
+ 'T',
+ 'A',
+ or 'B' (Continue Exploring):
 
 - **Stay in Step 3** and restart the facilitation loop for the chosen path (or pause if break requested).
 - For option A: Invoke the `bmad-advanced-elicitation` skill
@@ -315,7 +351,9 @@ Update frontmatter and document with interactive session insights:
 
 ```yaml
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1,
+ 2,
+ 3]
 techniques_used: [completed techniques]
 ideas_generated: [total count]
 technique_execution_complete: true
@@ -346,7 +384,9 @@ facilitation_notes: [key insights about user's creative process]
 
 ### Creative Facilitation Narrative
 
-_[Short narrative describing the user and AI collaboration journey - what made this session special, breakthrough moments, and how the creative partnership unfolded]_
+_[Short narrative describing the user and AI collaboration journey - what made this session special,
+ breakthrough moments,
+ and how the creative partnership unfolded]_
 
 ### Session Highlights
 
@@ -358,7 +398,8 @@ _[Short narrative describing the user and AI collaboration journey - what made t
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to `{brainstorming_session_output_file}` using the structure from above.
+When user selects 'C',
+ append the content directly to `{brainstorming_session_output_file}` using the structure from above.
 
 ## SUCCESS METRICS:
 
@@ -396,6 +437,9 @@ When user selects 'C', append the content directly to `{brainstorming_session_ou
 
 ## NEXT STEP:
 
-After technique completion and user confirmation, load `./step-04-idea-organization.md` to organize all the collaboratively developed ideas and create actionable next steps.
+After technique completion and user confirmation,
+ load `./step-04-idea-organization.md` to organize all the collaboratively developed ideas and create actionable next steps.
 
-Remember: This is creative coaching, not technique delivery! The user's creative energy is your guide, not the technique structure.
+Remember: This is creative coaching,
+ not technique delivery! The user's creative energy is your guide,
+ not the technique structure.

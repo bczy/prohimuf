@@ -4,9 +4,13 @@
 
 - [ ] Scan level selection offered (quick/deep/exhaustive) for initial_scan and full_rescan modes
 - [ ] Deep-dive mode automatically uses exhaustive scan (no choice given)
-- [ ] Quick scan does NOT read source files (only patterns, configs, manifests)
+- [ ] Quick scan does NOT read source files (only patterns,
+ configs,
+ manifests)
 - [ ] Deep scan reads files in critical directories per project type
-- [ ] Exhaustive scan reads ALL source files (excluding node_modules, dist, build)
+- [ ] Exhaustive scan reads ALL source files (excluding node_modules,
+ dist,
+ build)
 - [ ] State file (project-scan-report.json) created at workflow start
 - [ ] State file updated after each step completion
 - [ ] State file contains all required fields per schema
@@ -29,7 +33,11 @@
 - [ ] Batching applied for deep and exhaustive scan levels
 - [ ] Batches organized by SUBFOLDER (not arbitrary file count)
 - [ ] Large files (>5000 LOC) handled with appropriate judgment
-- [ ] Each batch: read files, extract info, write output, validate, purge context
+- [ ] Each batch: read files,
+ extract info,
+ write output,
+ validate,
+ purge context
 - [ ] Batch completion tracked in state file (batches_completed array)
 - [ ] Batch summaries kept in context (1-2 sentences max)
 
@@ -43,7 +51,10 @@
 
 ## Technology Stack Analysis
 
-- [ ] All major technologies identified (framework, language, database, etc.)
+- [ ] All major technologies identified (framework,
+ language,
+ database,
+ etc.)
 - [ ] Versions captured where available
 - [ ] Technology decision table is complete and accurate
 - [ ] Dependencies and libraries documented
@@ -116,7 +127,8 @@
 - [ ] All existing docs linked from index (if found)
 - [ ] Getting started section provides clear next steps
 - [ ] AI-assisted development guidance included
-- [ ] Navigation structure matches project complexity (simple for single-part, detailed for multi-part)
+- [ ] Navigation structure matches project complexity (simple for single-part,
+ detailed for multi-part)
 
 ## File Completeness
 
@@ -156,7 +168,8 @@
 ## Output Validation
 
 - [ ] All files saved to correct output folder
-- [ ] File naming follows convention (no part suffix for single-part, with suffix for multi-part)
+- [ ] File naming follows convention (no part suffix for single-part,
+ with suffix for multi-part)
 - [ ] No broken internal links between documents
 - [ ] Markdown formatting is correct and renders properly
 - [ ] JSON files are valid (project-parts.json if applicable)
@@ -193,7 +206,9 @@
 - [ ] Code snippets included for key implementation details
 - [ ] Patterns and design approaches documented
 - [ ] State management strategy explained
-- [ ] Side effects documented (API calls, DB queries, etc.)
+- [ ] Side effects documented (API calls,
+ DB queries,
+ etc.)
 - [ ] Error handling approaches captured
 - [ ] Testing files and coverage documented
 - [ ] TODOs and comments extracted
@@ -212,7 +227,8 @@
 ## State File Quality
 
 - [ ] State file is valid JSON (no syntax errors)
-- [ ] State file is optimized (no pretty-printing, minimal whitespace)
+- [ ] State file is optimized (no pretty-printing,
+ minimal whitespace)
 - [ ] State file contains all completed steps with timestamps
 - [ ] State file outputs_generated list is accurate and complete
 - [ ] State file resume_instructions are clear and actionable

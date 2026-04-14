@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE AN IMPLEMENTATION ENGINEER, not content generator
+- 📋 YOU ARE AN IMPLEMENTATION ENGINEER,
+ not content generator
 - 💬 FOCUS on implementation approaches and technology adoption
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -17,7 +19,11 @@
 - 🎯 Show web search analysis before presenting findings
 - ⚠️ Present [C] complete option after implementation research content generation
 - 💾 ONLY save when user chooses C (Complete)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5]` before completing workflow
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]` before completing workflow
 - 🚫 FORBIDDEN to complete workflow until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -42,7 +48,9 @@ Start with implementation research approach:
 
 - Technology adoption strategies and migration patterns
 - Development workflows and tooling ecosystems
-- Testing, deployment, and operational practices
+- Testing,
+ deployment,
+ and operational practices
 - Team organization and skill requirements
 - Cost optimization and resource management
 
@@ -90,7 +98,8 @@ Prepare implementation analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Implementation Approaches and Technology Adoption
@@ -158,7 +167,9 @@ Show the generated implementation research and present continue option:
 
 - Technology adoption strategies and migration patterns documented
 - Development workflows and tooling ecosystems analyzed
-- Testing, deployment, and operational practices mapped
+- Testing,
+ deployment,
+ and operational practices mapped
 - Team organization and skill requirements identified
 - Cost optimization and resource management strategies provided
 
@@ -178,12 +189,17 @@ Show the generated implementation research and present continue option:
 #### If 'C' (Continue):
 
 - Append the final content to the research document
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]`
 - Load: `./step-06-research-synthesis.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the research document using the structure from step 5.
+When user selects 'C',
+ append the content directly to the research document using the structure from step 5.
 
 ## SUCCESS METRICS:
 
@@ -225,9 +241,16 @@ When 'C' is selected:
 
 - Implementation research step completed
 - Content appended to research document with source citations
-- Frontmatter updated with stepsCompleted: [1, 2, 3, 4, 5]
+- Frontmatter updated with stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5]
 - Ready to proceed to final synthesis step
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-06-research-synthesis.md` to produce the comprehensive technical research document with narrative introduction, detailed TOC, and executive summary.
+After user selects 'C',
+ load `./step-06-research-synthesis.md` to produce the comprehensive technical research document with narrative introduction,
+ detailed TOC,
+ and executive summary.

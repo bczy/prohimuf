@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on defining the core user experience and platform
-- 🎯 COLLABORATIVE discovery, not assumption-based design
+- 🎯 COLLABORATIVE discovery,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating core experience content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -45,7 +49,9 @@ This step will generate content and present choices:
 
 ## YOUR TASK:
 
-Define the core user experience, platform requirements, and what makes the interaction effortless.
+Define the core user experience,
+ platform requirements,
+ and what makes the interaction effortless.
 
 ## CORE EXPERIENCE DISCOVERY SEQUENCE:
 
@@ -59,7 +65,8 @@ Start by identifying the most important user interaction:
 - What's the ONE thing users will do most frequently?
 - What user action is absolutely critical to get right?
 - What should be completely effortless for users?
-- If we nail one interaction, everything else follows - what is it?
+- If we nail one interaction,
+ everything else follows - what is it?
 
 Think about the core loop or primary action that defines your product's value."
 
@@ -70,7 +77,10 @@ Determine where and how users will interact:
 
 **Platform Questions:**
 
-- Web, mobile app, desktop, or multiple platforms?
+- Web,
+ mobile app,
+ desktop,
+ or multiple platforms?
 - Will this be primarily touch-based or mouse/keyboard?
 - Any specific platform requirements or constraints?
 - Do we need to consider offline functionality?
@@ -83,7 +93,9 @@ Surface what should feel magical or completely seamless:
 
 - What user actions should feel completely natural and require zero thought?
 - Where do users currently struggle with similar products?
-- What interaction, if made effortless, would create delight?
+- What interaction,
+ if made effortless,
+ would create delight?
 - What should happen automatically without user intervention?
 - Where can we eliminate steps that competitors require?"
 
@@ -94,14 +106,17 @@ Identify the moments that determine success or failure:
 
 - What's the moment where users realize 'this is better'?
 - When does the user feel successful or accomplished?
-- What interaction, if failed, would ruin the experience?
+- What interaction,
+ if failed,
+ would ruin the experience?
 - What are the make-or-break user flows?
 - Where does first-time user success happen?"
 
 ### 5. Synthesize Experience Principles
 
 Extract guiding principles from the conversation:
-"Based on our discussion, I'm hearing these core experience principles for {{project_name}}:
+"Based on our discussion,
+ I'm hearing these core experience principles for {{project_name}}:
 
 **Experience Principles:**
 
@@ -118,7 +133,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Core User Experience
@@ -165,16 +181,20 @@ Show the generated core experience content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current core experience content
 - Process the enhanced experience insights that come back
 - Ask user: "Accept these improvements to the core experience definition? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current core experience definition
 - Process the collaborative experience improvements that come back
 - Ask user: "Accept these changes to the core experience definition? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -184,7 +204,8 @@ Show the generated core experience content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -212,6 +233,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-04-emotional-response.md` to define desired emotional responses.
+After user selects 'C' and content is saved to document,
+ load `./step-04-emotional-response.md` to define desired emotional responses.
 
 Remember: Do NOT proceed to step-04 until user explicitly selects 'C' from the A/P/C menu and content is saved!

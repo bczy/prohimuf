@@ -8,7 +8,10 @@ prdPurpose: "../data/prd-purpose.md"
 
 ## STEP GOAL:
 
-Analyze legacy PRD against BMAD standards, identify gaps, propose conversion strategy, and let user choose how to proceed.
+Analyze legacy PRD against BMAD standards,
+ identify gaps,
+ propose conversion strategy,
+ and let user choose how to proceed.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -16,15 +19,19 @@ Analyze legacy PRD against BMAD standards, identify gaps, propose conversion str
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and PRD Improvement Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring BMAD standards expertise and conversion guidance
 - ✅ User brings domain knowledge and edit requirements
 
@@ -44,14 +51,19 @@ Analyze legacy PRD against BMAD standards, identify gaps, propose conversion str
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: Legacy PRD, user's edit requirements, prd-purpose standards
+- Available context: Legacy PRD,
+ user's edit requirements,
+ prd-purpose standards
 - Focus: Conversion assessment only (not actual conversion)
-- Limits: Don't convert yet, don't validate yet
+- Limits: Don't convert yet,
+ don't validate yet
 - Dependencies: Step e-01 detected legacy format and routed here
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process Assessment
 
@@ -61,9 +73,15 @@ Analyze legacy PRD against BMAD standards, identify gaps, propose conversion str
 
 **Load the PRD and prd-purpose.md**
 
-**For each BMAD PRD section, analyze:**
+**For each BMAD PRD section,
+ analyze:**
 
-1. Does PRD have this section? (Executive Summary, Success Criteria, Product Scope, User Journeys, Functional Requirements, Non-Functional Requirements)
+1. Does PRD have this section? (Executive Summary,
+ Success Criteria,
+ Product Scope,
+ User Journeys,
+ Functional Requirements,
+ Non-Functional Requirements)
 2. If present: Is it complete and well-structured?
 3. If missing: What content exists that could migrate to this section?
 4. Effort to create/complete: Minimal / Moderate / Significant
@@ -151,13 +169,15 @@ Display:
 {Reiterate user's stated edit requirements}
 
 **Recommendation:**
-{Based on effort and user goals, recommend best approach}
+{Based on effort and user goals,
+ recommend best approach}
 
 **How would you like to proceed?**"
 
 ### 4. Present MENU OPTIONS
 
-**[R] Restructure to BMAD** - Full conversion to BMAD format, then apply your edits
+**[R] Restructure to BMAD** - Full conversion to BMAD format,
+ then apply your edits
 **[I] Targeted Improvements** - Apply your edits to existing structure without restructuring
 **[E] Edit & Restructure** - Do both: convert format AND apply your edits
 **[X] Exit** - Review assessment and decide
@@ -169,10 +189,14 @@ Display:
 
 #### Menu Handling Logic:
 
-- IF R (Restructure): Note conversion mode, then load next step
-- IF I (Targeted): Note targeted mode, then load next step
-- IF E (Edit & Restructure): Note both mode, then load next step
-- IF X (Exit): Display summary, exit
+- IF R (Restructure): Note conversion mode,
+ then load next step
+- IF I (Targeted): Note targeted mode,
+ then load next step
+- IF E (Edit & Restructure): Note both mode,
+ then load next step
+- IF X (Exit): Display summary,
+ exit
 
 ### 5. Document Conversion Strategy
 

@@ -2,102 +2,205 @@
   "permissions": {
     "allow": [
       "Bash(rtk ls:*)",
+
       "Bash(rtk find:*)",
+
       "Bash(rtk git:*)",
+
       "Bash(rtk read:*)",
+
       "Bash(yarn --version)",
+
       "Bash(yarn config:*)",
+
       "Bash(yarn install:*)",
+
       "Bash(NODE_TLS_REJECT_UNAUTHORIZED=0 yarn install)",
+
       "Bash(yarn husky:*)",
+
       "Bash(yarn test:*)",
+
       "Bash(yarn typecheck:*)",
+
       "Bash(yarn lint:*)",
+
       "Bash(yarn add:*)",
+
       "Bash(yarn build:*)",
+
       "Bash(yarn test:coverage)",
+
       "Bash(yarn dev:*)",
+
       "Bash(rtk tree:*)",
+
       "Bash(rtk tsc:*)",
+
       "Bash(echo \"exit: $?\")",
+
       "Bash(rtk grep:*)",
+
       "WebSearch",
+
       "WebFetch(domain:www.mobygames.com)",
+
       "WebFetch(domain:www.myabandonware.com)",
+
       "Bash(nc -z localhost 9334)",
+
       "Bash(timeout 5 uvx blender-mcp)",
+
       "Bash(gtimeout 5 uvx blender-mcp)",
+
       "Bash(uvx blender-mcp:*)",
+
       "Bash(uvx --system-certs blender-mcp --help)",
+
       "Bash(ssh jean-mi:*)",
+
       "Bash(python3 -c ':*)",
+
       "Read(//Users/bertrand.coizy/**)",
+
       "Read(//Users/bertrand.coizy/.cache/uv/**)",
+
       "Bash(nc -z localhost 9876)",
+
       "Bash(node scripts/generate-game-assets.mjs)",
+
       "Bash(python3 -m json.tool)",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mcpServers', {}\\), indent=2\\)\\)\")",
+
+      "Bash(python3 -c \"import json,
+sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mcpServers',
+ {}\\),
+ indent=2\\)\\)\")",
+
       "WebFetch(domain:freemusicarchive.org)",
+
       "WebFetch(domain:ccmixter.org)",
+
       "Bash(rtk curl:*)",
+
       "Bash(chmod +x .husky/commit-msg)",
+
       "Bash(git add:*)",
+
       "Bash(git commit -m ':*)",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(r['identifier'], r.get\\('title',''\\)\\) for r in d['response']['docs']]\")",
+
+      "Bash(python3 -c \"import json,
+sys; d=json.load\\(sys.stdin\\); [print\\(r['identifier'],
+ r.get\\('title',
+''\\)\\) for r in d['response']['docs']]\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Cipher.mp3\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jazzy%20Frenchy.mp3\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Hip%20Hop%20Feel.mp3\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Darkest%20Child.mp3\")",
+
       "Bash(curl -sI \"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Reformat.mp3\")",
+
       "Bash(node scripts/download-audio.mjs)",
+
       "Bash(echo \"EXIT: $?\")",
+
       "Bash(git rm:*)",
+
       "Bash(yarn format:check)",
+
       "Bash(yarn format:*)",
+
       "Bash(echo \"typecheck: $?\")",
+
       "Bash(echo \"lint: $?\")",
+
       "Bash(echo \"format: $?\")",
+
       "Bash(echo \"test: $?\")",
+
       "Bash(git remote:*)",
+
       "Bash(rtk gh:*)",
+
       "Bash(gh workflow:*)",
+
       "Bash(git push:*)",
+
       "Bash(gh run:*)",
+
       "Bash(rtk ps:*)",
+
       "Bash(node scripts/generate-tiles.mjs)",
+
       "Bash(rtk du:*)",
+
       "Bash(rtk wc:*)",
+
       "Bash(npm test:*)",
+
       "Bash(rtk lint:*)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_shop_boucherie)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_shop_tabac)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_fire_escape)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_arch_haussmann)",
+
       "Bash(wait)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_shop_bar)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_shop_pharmacie)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_rooftop_zinc)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_balcony_ironwork)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_wall_graffiti)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_wall_poster)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_window_lit_orange)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_window_lit_blue)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_window_lit_neon_green)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_window_dark_shutters)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_window_dark_curtain)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_door_main)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_wall_pipe)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_wall_damp)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_wall_clean)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_rooftop_chimney)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_rooftop_antenna)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_balcony_plant)",
+
       "Bash(node scripts/generate-assets.mjs --asset tile_balcony_laundry)",
+
       "Bash(node scripts/generate-assets.mjs --asset street_road_egout)",
+
       "Bash(node /Users/bertrand.coizy/git/perso/muf/scripts/generate-assets.mjs --asset street_road_egout)",
+
       "Bash(node -e ':*)",
+
       "Bash(node)",
+
       "Bash(rtk vitest:*)"
     ]
   }

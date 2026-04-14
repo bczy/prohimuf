@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on understanding project scope and requirements for architecture
-- 🎯 ANALYZE loaded documents, don't assume or generate requirements
+- 🎯 ANALYZE loaded documents,
+ don't assume or generate requirements
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating project context analysis
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -39,13 +43,18 @@ This step will generate content and present choices:
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from step 1 are available
-- Input documents already loaded are in memory (PRD, epics, UX spec, etc.)
+- Input documents already loaded are in memory (PRD,
+ epics,
+ UX spec,
+ etc.)
 - Focus on architectural implications of requirements
 - No technology decisions yet - pure analysis phase
 
 ## YOUR TASK:
 
-Fully read and Analyze the loaded project documents to understand architectural scope, requirements, and constraints before beginning decision making.
+Fully read and Analyze the loaded project documents to understand architectural scope,
+ requirements,
+ and constraints before beginning decision making.
 
 ## CONTEXT ANALYSIS SEQUENCE:
 
@@ -54,7 +63,9 @@ Fully read and Analyze the loaded project documents to understand architectural 
 **From PRD Analysis:**
 
 - Extract and analyze Functional Requirements (FRs)
-- Identify Non-Functional Requirements (NFRs) like performance, security, compliance
+- Identify Non-Functional Requirements (NFRs) like performance,
+ security,
+ compliance
 - Note any technical constraints or dependencies mentioned
 - Count and categorize requirements to understand project scale
 
@@ -70,12 +81,14 @@ Fully read and Analyze the loaded project documents to understand architectural 
 - Extract architectural implications from UX requirements:
   - Component complexity (simple forms vs rich interactions)
   - Animation/transition requirements
-  - Real-time update needs (live data, collaborative features)
+  - Real-time update needs (live data,
+ collaborative features)
   - Platform-specific UI requirements
   - Accessibility standards (WCAG compliance level)
   - Responsive design breakpoints
   - Offline capability requirements
-  - Performance expectations (load times, interaction responsiveness)
+  - Performance expectations (load times,
+ interaction responsiveness)
 
 ### 2. Project Scale Assessment
 
@@ -173,26 +186,32 @@ Show the generated content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current context analysis
 - Process the enhanced architectural insights that come back
 - Ask user: "Accept these enhancements to the project context analysis? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current project context
 - Process the collaborative improvements to architectural understanding
 - Ask user: "Accept these changes to the project context analysis? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2]`
 - Load `./step-03-starter.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 4.
+When user selects 'C',
+ append the content directly to the document using the structure from step 4.
 
 ## SUCCESS METRICS:
 
@@ -219,6 +238,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-03-starter.md` to evaluate starter template options.
+After user selects 'C' and content is saved to document,
+ load `./step-03-starter.md` to evaluate starter template options.
 
 Remember: Do NOT proceed to step-03 until user explicitly selects 'C' from the A/P/C menu and content is saved!

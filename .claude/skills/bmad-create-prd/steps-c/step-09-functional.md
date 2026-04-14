@@ -7,9 +7,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between PM peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on creating comprehensive capability inventory for the product
 - 🎯 CRITICAL: This is THE CAPABILITY CONTRACT for all downstream work
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -20,15 +22,22 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating functional requirements
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
+- 📖 Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from previous steps are available
-- ALL previous content (executive summary, success criteria, journeys, domain, innovation, project-type) must be referenced
+- ALL previous content (executive summary,
+ success criteria,
+ journeys,
+ domain,
+ innovation,
+ project-type) must be referenced
 - No additional data files needed for this step
-- Focus on capabilities, not implementation details
+- Focus on capabilities,
+ not implementation details
 
 ## CRITICAL IMPORTANCE:
 
@@ -37,7 +46,8 @@
 - UX designers will ONLY design what's listed here
 - Architects will ONLY support what's listed here
 - Epic breakdown will ONLY implement what's listed here
-- If a capability is missing from FRs, it will NOT exist in the final product
+- If a capability is missing from FRs,
+ it will NOT exist in the final product
 
 ## FUNCTIONAL REQUIREMENTS SYNTHESIS SEQUENCE:
 
@@ -51,8 +61,11 @@ FRs define WHAT capabilities the product must have. They are the complete invent
 **Critical Properties:**
 ✅ Each FR is a testable capability
 ✅ Each FR is implementation-agnostic (could be built many ways)
-✅ Each FR specifies WHO and WHAT, not HOW
-✅ No UI details, no performance numbers, no technology choices
+✅ Each FR specifies WHO and WHAT,
+ not HOW
+✅ No UI details,
+ no performance numbers,
+ no technology choices
 ✅ Comprehensive coverage of capability areas
 
 **How They Will Be Used:**
@@ -93,7 +106,9 @@ Create complete functional requirements using this format:
 **Format:**
 
 - FR#: [Actor] can [capability] [context/constraint if needed]
-- Number sequentially (FR1, FR2, FR3...)
+- Number sequentially (FR1,
+ FR2,
+ FR3...)
 - Aim for 20-50 FRs for typical projects
 
 **Altitude Check:**
@@ -106,7 +121,8 @@ Each FR should answer "WHAT capability exists?" NOT "HOW it's implemented?"
 
 ### 5. Self-Validation Process
 
-Before presenting to user, validate the FR list:
+Before presenting to user,
+ validate the FR list:
 
 **Completeness Check:**
 
@@ -127,7 +143,9 @@ Before presenting to user, validate the FR list:
 
 1. "Is each FR clear enough that someone could test whether it exists?"
 2. "Is each FR independent (not dependent on reading other FRs to understand)?"
-3. "Did I avoid vague terms like 'good', 'fast', 'easy'?" (Use NFRs for quality attributes)
+3. "Did I avoid vague terms like 'good',
+ 'fast',
+ 'easy'?" (Use NFRs for quality attributes)
 
 ### 6. Generate Functional Requirements Content
 
@@ -135,7 +153,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Functional Requirements
@@ -156,12 +175,15 @@ When saving to document, append these Level 2 and Level 3 sections:
 
 ### 7. Present MENU OPTIONS
 
-Present the functional requirements for review, then display menu:
+Present the functional requirements for review,
+ then display menu:
 
 - Show synthesized functional requirements (using structure from step 6)
 - Emphasize this is the capability contract for all downstream work
 - Highlight that every feature must trace back to these requirements
-- Ask if they'd like to refine further, get other perspectives, or proceed
+- Ask if they'd like to refine further,
+ get other perspectives,
+ or proceed
 - Present menu options naturally as part of conversation
 
 **What would you like to do?**"
@@ -170,26 +192,40 @@ Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to No
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill with the current FR list, process the enhanced capability coverage that comes back, ask user if they accept the additions, if yes update content then redisplay menu, if no keep original content then redisplay menu
-- IF P: Invoke the `bmad-party-mode` skill with the current FR list, process the collaborative capability validation and additions, ask user if they accept the changes, if yes update content then redisplay menu, if no keep original content then redisplay menu
-- IF C: Append the final content to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: ./step-10-nonfunctional.md
-- IF Any other: help user respond, then redisplay menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill with the current FR list,
+ process the enhanced capability coverage that comes back,
+ ask user if they accept the additions,
+ if yes update content then redisplay menu,
+ if no keep original content then redisplay menu
+- IF P: Invoke the `bmad-party-mode` skill with the current FR list,
+ process the collaborative capability validation and additions,
+ ask user if they accept the changes,
+ if yes update content then redisplay menu,
+ if no keep original content then redisplay menu
+- IF C: Append the final content to {outputFile},
+ update frontmatter by adding this step name to the end of the stepsCompleted array,
+ then read fully and follow: ./step-10-nonfunctional.md
+- IF Any other: help user respond,
+ then redisplay menu
 
 #### EXECUTION RULES:
 
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
-- After other menu items execution, return to this menu
+- After other menu items execution,
+ return to this menu
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
 ✅ All previous discovery content synthesized into FRs
 ✅ FRs organized by capability areas (not technology)
-✅ Each FR states WHAT capability exists, not HOW to implement
+✅ Each FR states WHAT capability exists,
+ not HOW to implement
 ✅ Comprehensive coverage with 20-50 FRs typical
 ✅ Altitude validation ensures implementation-agnostic requirements
 ✅ Completeness check validates coverage of all discussed capabilities
@@ -216,6 +252,7 @@ Emphasize to user: "This FR list is now binding. Any feature not listed here wil
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load ./step-10-nonfunctional.md to define non-functional requirements.
+After user selects 'C' and content is saved to document,
+ load ./step-10-nonfunctional.md to define non-functional requirements.
 
 Remember: Do NOT proceed to step-10 until user explicitly selects 'C' from the A/P/C menu and content is saved!

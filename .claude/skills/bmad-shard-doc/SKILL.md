@@ -1,11 +1,13 @@
 ---
 name: bmad-shard-doc
-description: "Splits large markdown documents into smaller, organized files based on level 2 (default) sections. Use if the user says perform shard document"
+description: "Splits large markdown documents into smaller,
+ organized files based on level 2 (default) sections. Use if the user says perform shard document"
 ---
 
 # Shard Document
 
-**Goal:** Split large markdown documents into smaller, organized files based on level 2 sections using `npx @kayvan/markdown-tree-parser`.
+**Goal:** Split large markdown documents into smaller,
+ organized files based on level 2 sections using `npx @kayvan/markdown-tree-parser`.
 
 ## CRITICAL RULES
 
@@ -25,9 +27,11 @@ description: "Splits large markdown documents into smaller, organized files base
 
 ### Step 2: Get Destination Folder
 
-- Determine default destination: same location as source file, folder named after source file without .md extension
+- Determine default destination: same location as source file,
+ folder named after source file without .md extension
   - Example: `/path/to/architecture.md` --> `/path/to/architecture/`
-- Ask user for the destination folder path (`[y]` to confirm use of default: `[suggested-path]`, else enter a new path)
+- Ask user for the destination folder path (`[y]` to confirm use of default: `[suggested-path]`,
+ else enter a new path)
 - If user accepts default: use the suggested destination path
 - If user provides custom path: use the custom destination path
 - Verify destination folder exists or can be created
@@ -82,9 +86,11 @@ Present user with options for the original document:
 
 #### If user selects `m` (move)
 
-- Determine default archive location: same directory as source, in an `archive` subfolder
+- Determine default archive location: same directory as source,
+ in an `archive` subfolder
   - Example: `/path/to/architecture.md` --> `/path/to/archive/architecture.md`
-- Ask: Archive location (`[y]` to use default: `[default-archive-path]`, or provide custom path)
+- Ask: Archive location (`[y]` to use default: `[default-archive-path]`,
+ or provide custom path)
 - If user accepts default: use default archive path
 - If user provides custom path: use custom archive path
 - Create archive directory if it does not exist

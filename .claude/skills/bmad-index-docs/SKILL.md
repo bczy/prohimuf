@@ -15,11 +15,14 @@ description: "Generates or updates an index.md to reference all docs in the fold
 
 ### Step 2: Group Content
 
-- Organize files by type, purpose, or subdirectory
+- Organize files by type,
+ purpose,
+ or subdirectory
 
 ### Step 3: Generate Descriptions
 
-- Read each file to understand its actual purpose and create brief (3-10 word) descriptions based on the content, not just the filename
+- Read each file to understand its actual purpose and create brief (3-10 word) descriptions based on the content,
+ not just the filename
 
 ### Step 4: Create/Update Index
 

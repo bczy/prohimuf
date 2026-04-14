@@ -11,7 +11,10 @@ projectTypesData: "../data/project-types.csv"
 
 ## STEP GOAL:
 
-Validate project-type specific requirements are properly documented - different project types (api_backend, web_app, mobile_app, etc.) have different required and excluded sections.
+Validate project-type specific requirements are properly documented - different project types (api_backend,
+ web_app,
+ mobile_app,
+ etc.) have different required and excluded sections.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -19,15 +22,19 @@ Validate project-type specific requirements are properly documented - different 
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring project type expertise and architectural knowledge
 - ✅ This step runs autonomously - no user input needed
 
@@ -35,7 +42,8 @@ Validate project-type specific requirements are properly documented - different 
 
 - 🎯 Focus ONLY on project-type compliance
 - 🚫 FORBIDDEN to validate other aspects in this step
-- 💬 Approach: Validate required sections present, excluded sections absent
+- 💬 Approach: Validate required sections present,
+ excluded sections absent
 - 🚪 This is a validation sequence step - auto-proceeds when complete
 
 ## EXECUTION PROTOCOLS:
@@ -49,14 +57,18 @@ Validate project-type specific requirements are properly documented - different 
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file with frontmatter classification, validation report
+- Available context: PRD file with frontmatter classification,
+ validation report
 - Focus: Project-type compliance only
-- Limits: Don't validate other aspects, don't pause for user input
+- Limits: Don't validate other aspects,
+ don't pause for user input
 - Dependencies: Steps 2-8 completed - domain and requirements validation done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Load Project Types Data
 
@@ -74,7 +86,8 @@ Internalize this data - it drives what sections must be present or absent for ea
 
 ### 2. Extract Project Type Classification
 
-From PRD frontmatter, extract:
+From PRD frontmatter,
+ extract:
 
 - `classification.projectType` - what type of project is this?
 
@@ -95,7 +108,8 @@ Assume "web_app" (most common) and note in findings
 
 ### 3. Determine Required and Excluded Sections from CSV Data
 
-**From loaded project-types.csv data, for this project type:**
+**From loaded project-types.csv data,
+ for this project type:**
 
 **Required sections:** (from required_sections column)
 These MUST be present in the PRD
@@ -105,54 +119,90 @@ These MUST NOT be present in the PRD
 
 **Example mappings from CSV:**
 
-- api_backend: Required=[endpoint_specs, auth_model, data_schemas], Skip=[ux_ui, visual_design]
-- mobile_app: Required=[platform_reqs, device_permissions, offline_mode], Skip=[desktop_features, cli_commands]
-- cli_tool: Required=[command_structure, output_formats, config_schema], Skip=[visual_design, ux_principles, touch_interactions]
+- api_backend: Required=[endpoint_specs,
+ auth_model,
+ data_schemas],
+ Skip=[ux_ui,
+ visual_design]
+- mobile_app: Required=[platform_reqs,
+ device_permissions,
+ offline_mode],
+ Skip=[desktop_features,
+ cli_commands]
+- cli_tool: Required=[command_structure,
+ output_formats,
+ config_schema],
+ Skip=[visual_design,
+ ux_principles,
+ touch_interactions]
 - etc.
 
 ### 4. Validate Against CSV-Based Requirements
 
-**Based on project type, determine:**
+**Based on project type,
+ determine:**
 
 **api_backend:**
 
-- Required: Endpoint Specs, Auth Model, Data Schemas, API Versioning
-- Excluded: UX/UI sections, mobile-specific sections
+- Required: Endpoint Specs,
+ Auth Model,
+ Data Schemas,
+ API Versioning
+- Excluded: UX/UI sections,
+ mobile-specific sections
 
 **web_app:**
 
-- Required: User Journeys, UX/UI Requirements, Responsive Design
+- Required: User Journeys,
+ UX/UI Requirements,
+ Responsive Design
 - Excluded: None typically
 
 **mobile_app:**
 
-- Required: Mobile UX, Platform specifics (iOS/Android), Offline mode
+- Required: Mobile UX,
+ Platform specifics (iOS/Android),
+ Offline mode
 - Excluded: Desktop-specific sections
 
 **desktop_app:**
 
-- Required: Desktop UX, Platform specifics (Windows/Mac/Linux)
+- Required: Desktop UX,
+ Platform specifics (Windows/Mac/Linux)
 - Excluded: Mobile-specific sections
 
 **data_pipeline:**
 
-- Required: Data Sources, Data Transformation, Data Sinks, Error Handling
+- Required: Data Sources,
+ Data Transformation,
+ Data Sinks,
+ Error Handling
 - Excluded: UX/UI sections
 
 **ml_system:**
 
-- Required: Model Requirements, Training Data, Inference Requirements, Model Performance
+- Required: Model Requirements,
+ Training Data,
+ Inference Requirements,
+ Model Performance
 - Excluded: UX/UI sections (unless ML UI)
 
 **library_sdk:**
 
-- Required: API Surface, Usage Examples, Integration Guide
-- Excluded: UX/UI sections, deployment sections
+- Required: API Surface,
+ Usage Examples,
+ Integration Guide
+- Excluded: UX/UI sections,
+ deployment sections
 
 **infrastructure:**
 
-- Required: Infrastructure Components, Deployment, Monitoring, Scaling
-- Excluded: Feature requirements (this is infrastructure, not product)
+- Required: Infrastructure Components,
+ Deployment,
+ Monitoring,
+ Scaling
+- Excluded: Feature requirements (this is infrastructure,
+ not product)
 
 ### 4. Attempt Sub-Process Validation
 
@@ -231,7 +281,9 @@ Append to validation report:
 **Excluded Sections Present:** {violations} (should be 0)
 **Compliance Score:** {percentage}%
 
-**Severity:** [Critical if required sections missing, Warning if incomplete, Pass if complete]
+**Severity:** [Critical if required sections missing,
+ Warning if incomplete,
+ Pass if complete]
 
 **Recommendation:**
 [If Critical] "PRD is missing required sections for {projectType}. Add missing sections to properly specify this type of project."
@@ -248,7 +300,8 @@ Compliance: {score}%
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-10-smart-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-10-smart-validation.md)
 
 ---
 

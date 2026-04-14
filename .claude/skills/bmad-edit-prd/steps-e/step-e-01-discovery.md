@@ -7,7 +7,10 @@ prdPurpose: "../data/prd-purpose.md"
 
 ## STEP GOAL:
 
-Understand what the user wants to edit in the PRD, detect PRD format/type, check for validation report guidance, and route appropriately.
+Understand what the user wants to edit in the PRD,
+ detect PRD format/type,
+ check for validation report guidance,
+ and route appropriately.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -15,16 +18,20 @@ Understand what the user wants to edit in the PRD, detect PRD format/type, check
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and PRD Improvement Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring analytical expertise and improvement guidance
 - ✅ User brings domain knowledge and edit requirements
 
@@ -32,7 +39,8 @@ Understand what the user wants to edit in the PRD, detect PRD format/type, check
 
 - 🎯 Focus ONLY on discovering user intent and PRD format
 - 🚫 FORBIDDEN to make any edits yet
-- 💬 Approach: Inquisitive and analytical, understanding before acting
+- 💬 Approach: Inquisitive and analytical,
+ understanding before acting
 - 🚪 This is a branch step - may route to legacy conversion
 
 ## EXECUTION PROTOCOLS:
@@ -47,14 +55,19 @@ Understand what the user wants to edit in the PRD, detect PRD format/type, check
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file to edit, optional validation report, auto-detected validation reports
+- Available context: PRD file to edit,
+ optional validation report,
+ auto-detected validation reports
 - Focus: User intent discovery and format detection only
-- Limits: Don't edit yet, don't validate yet
+- Limits: Don't edit yet,
+ don't validate yet
 - Dependencies: None - this is first edit step
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Load PRD Purpose Standards
 
@@ -109,7 +122,9 @@ This report contains findings from previous validation checks and can help guide
 **IF U (Use validation report):**
 
 - Load the validation report file
-- Extract findings, issues, and improvement suggestions
+- Extract findings,
+ issues,
+ and improvement suggestions
 - Note: "Validation report loaded - will use it to guide prioritized improvements"
 - Continue to step 5
 
@@ -127,7 +142,8 @@ This report contains findings from previous validation checks and can help guide
 
 "**Do you have a validation report to guide edits?**
 
-If you've run the validation workflow on this PRD, I can use that report to guide improvements and prioritize changes.
+If you've run the validation workflow on this PRD,
+ I can use that report to guide improvements and prioritize changes.
 
 Validation report path (or type 'none'):"
 
@@ -136,7 +152,9 @@ Validation report path (or type 'none'):"
 **If validation report path provided:**
 
 - Load the validation report
-- Extract findings, severity, improvement suggestions
+- Extract findings,
+ severity,
+ improvement suggestions
 - Note: "Validation report loaded - will use it to guide prioritized improvements"
 
 **If no validation report:**
@@ -150,7 +168,9 @@ Validation report path (or type 'none'):"
 
 Please describe the changes you want to make. For example:
 
-- Fix specific issues (information density, implementation leakage, etc.)
+- Fix specific issues (information density,
+ implementation leakage,
+ etc.)
 - Add missing sections or content
 - Improve structure and flow
 - Convert to BMAD format (if legacy PRD)
@@ -179,8 +199,10 @@ Analyze the loaded PRD:
 **Classify format:**
 
 - **BMAD Standard:** 5-6 core sections present
-- **BMAD Variant:** 3-4 core sections present, generally follows BMAD patterns
-- **Legacy (Non-Standard):** Fewer than 3 core sections, does not follow BMAD structure
+- **BMAD Variant:** 3-4 core sections present,
+ generally follows BMAD patterns
+- **Legacy (Non-Standard):** Fewer than 3 core sections,
+ does not follow BMAD structure
 
 ### 8. Route Based on Format and Context
 
@@ -210,7 +232,8 @@ Present MENU OPTIONS below for user selection
 
 ### 9. Present MENU OPTIONS (Legacy PRDs Only)
 
-**[C] Convert to BMAD Format** - Convert PRD to BMAD standard structure, then apply your edits
+**[C] Convert to BMAD Format** - Convert PRD to BMAD standard structure,
+ then apply your edits
 **[E] Edit As-Is** - Apply your edits without converting the format
 **[X] Exit** - Exit and review conversion options
 
@@ -224,7 +247,8 @@ Present MENU OPTIONS below for user selection
 - IF C (Convert): Read fully and follow: `./step-e-01b-legacy-conversion.md`
 - IF E (Edit As-Is): Display "Proceeding with edits..." then load next step
 - IF X (Exit): Display summary and exit
-- IF Any other: help user, then redisplay menu
+- IF Any other: help user,
+ then redisplay menu
 
 ---
 

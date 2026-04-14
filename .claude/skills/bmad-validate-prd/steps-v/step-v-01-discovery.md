@@ -8,7 +8,9 @@ prdPurpose: "../data/prd-purpose.md"
 
 ## STEP GOAL:
 
-Handle fresh context validation by confirming PRD path, discovering and loading input documents from frontmatter, and initializing the validation report.
+Handle fresh context validation by confirming PRD path,
+ discovering and loading input documents from frontmatter,
+ and initializing the validation report.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -16,21 +18,26 @@ Handle fresh context validation by confirming PRD path, discovering and loading 
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring systematic validation expertise and analytical rigor
 - ✅ User brings domain knowledge and specific PRD context
 
 ### Step-Specific Rules:
 
-- 🎯 Focus ONLY on discovering PRD and input documents, not validating yet
+- 🎯 Focus ONLY on discovering PRD and input documents,
+ not validating yet
 - 🚫 FORBIDDEN to perform any validation checks in this step
 - 💬 Approach: Systematic discovery with clear reporting to user
 - 🚪 This is the setup step - get everything ready for validation
@@ -44,21 +51,27 @@ Handle fresh context validation by confirming PRD path, discovering and loading 
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD path (user-specified or discovered), workflow configuration
+- Available context: PRD path (user-specified or discovered),
+ workflow configuration
 - Focus: Document discovery and setup only
-- Limits: Don't perform validation, don't skip discovery
+- Limits: Don't perform validation,
+ don't skip discovery
 - Dependencies: Configuration loaded from PRD workflow.md initialization
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Load PRD Purpose and Standards
 
 Load and read the complete file at:
 `{prdPurpose}`
 
-This file contains the BMAD PRD philosophy, standards, and validation criteria that will guide all validation checks. Internalize this understanding - it defines what makes a great BMAD PRD.
+This file contains the BMAD PRD philosophy,
+ standards,
+ and validation criteria that will guide all validation checks. Internalize this understanding - it defines what makes a great BMAD PRD.
 
 ### 2. Discover PRD to Validate
 
@@ -66,7 +79,8 @@ This file contains the BMAD PRD philosophy, standards, and validation criteria t
 
 - Use provided path
 
-**If no PRD path provided, auto-discover:**
+**If no PRD path provided,
+ auto-discover:**
 
 - Search `{planning_artifacts}` for files matching `*prd*.md`
 - Also check for sharded PRDs: `{planning_artifacts}/*prd*/*.md`
@@ -97,10 +111,13 @@ Once PRD path is provided:
 
 ### 4. Extract Frontmatter and Input Documents
 
-From the loaded PRD frontmatter, extract:
+From the loaded PRD frontmatter,
+ extract:
 
 - `inputDocuments: []` array (if present)
-- Any other relevant metadata (classification, date, etc.)
+- Any other relevant metadata (classification,
+ date,
+ etc.)
 
 **If no inputDocuments array exists:**
 Note this and proceed with PRD-only validation
@@ -134,7 +151,8 @@ These could include:
 - Standards or compliance documents
 - Competitive analysis or benchmarks
 
-Please provide paths to any additional documents, or type 'none' to proceed."
+Please provide paths to any additional documents,
+ or type 'none' to proceed."
 
 **Load any additional documents provided by user.**
 
@@ -200,11 +218,16 @@ Display: **Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Conti
 
 #### Menu Handling Logic:
 
-- IF A: Invoke the `bmad-advanced-elicitation` skill, and when finished redisplay the menu
-- IF P: Invoke the `bmad-party-mode` skill, and when finished redisplay the menu
+- IF A: Invoke the `bmad-advanced-elicitation` skill,
+ and when finished redisplay the menu
+- IF P: Invoke the `bmad-party-mode` skill,
+ and when finished redisplay the menu
 - IF C: Read fully and follow: {nextStepFile} to begin format detection
-- IF user provides additional document: Load it, update report, redisplay summary
-- IF Any other: help user, then redisplay menu
+- IF user provides additional document: Load it,
+ update report,
+ redisplay summary
+- IF Any other: help user,
+ then redisplay menu
 
 ---
 

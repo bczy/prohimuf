@@ -4,7 +4,8 @@
 flowchart TD
 
   subgraph Input["Input Layer"]
-    MOUSE["useMouse\n(mouseX, mouseY → ref)"]
+    MOUSE["useMouse\n(mouseX,
+ mouseY → ref)"]
     KEYBOARD["useKeyboard\n(fire → ref)"]
   end
 
@@ -41,7 +42,8 @@ flowchart TD
     HUDCOMP["HUD Component\n(React re-render)"]
   end
 
-  MOUSE -->|mouseX, mouseY| USEFRAME
+  MOUSE -->|mouseX,
+ mouseY| USEFRAME
   KEYBOARD -->|fire| USEFRAME
   STATEREF -->|prev GameState| USEFRAME
   USEFRAME --> Tick

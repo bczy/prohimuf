@@ -1,18 +1,29 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+
     "lib": ["ES2022"],
+
     "module": "ESNext",
+
     "moduleResolution": "Bundler",
+
     "strict": true,
+
     "noEmit": true,
+
     "skipLibCheck": true
   },
+
   "include": [
     "vite.config.ts",
+
     "vitest.config.ts",
+
     "eslint.config.ts",
+
     "prettier.config.ts",
+
     "scripts/**/*.ts"
   ]
 }

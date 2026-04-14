@@ -10,7 +10,10 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Final comprehensive completeness check - validate no template variables remain, each section has required content, section-specific completeness, and frontmatter is properly populated.
+Final comprehensive completeness check - validate no template variables remain,
+ each section has required content,
+ section-specific completeness,
+ and frontmatter is properly populated.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -18,15 +21,19 @@ Final comprehensive completeness check - validate no template variables remain, 
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring attention to detail and completeness verification
 - ✅ This step runs autonomously - no user input needed
 
@@ -49,14 +56,19 @@ Final comprehensive completeness check - validate no template variables remain, 
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: Complete PRD file, frontmatter, validation report
+- Available context: Complete PRD file,
+ frontmatter,
+ validation report
 - Focus: Completeness verification only (final gate)
-- Limits: Don't assess quality, don't pause for user input
+- Limits: Don't assess quality,
+ don't pause for user input
 - Dependencies: Steps 1-11 completed - all validation checks done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process Validation
 
@@ -67,7 +79,11 @@ Final comprehensive completeness check - validate no template variables remain, 
 **1. Template Completeness:**
 
 - Scan PRD for any remaining template variables
-- Look for: {variable}, {{variable}}, {placeholder}, [placeholder], etc.
+- Look for: {variable},
+ {{variable}},
+ {placeholder},
+ [placeholder],
+ etc.
 - List any found with line numbers
 
 **2. Content Completeness:**
@@ -91,7 +107,8 @@ For each section: Is required content present? (Yes/No/Partial)
 **4. Frontmatter Completeness:**
 
 - stepsCompleted: Populated?
-- classification: Present (domain, projectType)?
+- classification: Present (domain,
+ projectType)?
 - inputDocuments: Tracked?
 - date: Present?
 
@@ -150,42 +167,54 @@ Append to validation report:
 ### Template Completeness
 
 **Template Variables Found:** {count}
-{If count > 0, list variables with line numbers}
-{If count = 0, note: No template variables remaining ✓}
+{If count > 0,
+ list variables with line numbers}
+{If count = 0,
+ note: No template variables remaining ✓}
 
 ### Content Completeness by Section
 
 **Executive Summary:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 **Success Criteria:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 **Product Scope:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 **User Journeys:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 **Functional Requirements:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 **Non-Functional Requirements:** [Complete/Incomplete/Missing]
-{If incomplete or missing, note specific gaps}
+{If incomplete or missing,
+ note specific gaps}
 
 ### Section-Specific Completeness
 
 **Success Criteria Measurability:** [All/Some/None] measurable
-{If Some or None, note which criteria lack metrics}
+{If Some or None,
+ note which criteria lack metrics}
 
 **User Journeys Coverage:** [Yes/Partial/No] - covers all user types
-{If Partial or No, note missing user types}
+{If Partial or No,
+ note missing user types}
 
 **FRs Cover MVP Scope:** [Yes/Partial/No]
-{If Partial or No, note scope gaps}
+{If Partial or No,
+ note scope gaps}
 
 **NFRs Have Specific Criteria:** [All/Some/None]
-{If Some or None, note which NFRs lack specificity}
+{If Some or None,
+ note which NFRs lack specificity}
 
 ### Frontmatter Completeness
 
@@ -203,7 +232,9 @@ Append to validation report:
 **Critical Gaps:** [count] [list if any]
 **Minor Gaps:** [count] [list if any]
 
-**Severity:** [Critical if template variables exist or critical sections missing, Warning if minor gaps, Pass if complete]
+**Severity:** [Critical if template variables exist or critical sections missing,
+ Warning if minor gaps,
+ Pass if complete]
 
 **Recommendation:**
 [If Critical] "PRD has completeness gaps that must be addressed before use. Fix template variables and complete missing sections."
@@ -219,7 +250,8 @@ Overall Completeness: {percentage}% ({severity})
 
 **Proceeding to final step...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-13-report-complete.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-13-report-complete.md)
 
 ---
 
@@ -229,7 +261,9 @@ Without delay, read fully and follow: {nextStepFile} (step-v-13-report-complete.
 
 - Scanned for template variables systematically
 - Validated each section for required content
-- Validated section-specific completeness (measurability, coverage, scope)
+- Validated section-specific completeness (measurability,
+ coverage,
+ scope)
 - Validated frontmatter completeness
 - Completeness matrix built with all checks
 - Severity assessed correctly

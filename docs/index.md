@@ -9,15 +9,39 @@
 
 | Document                                 | Description                                                             |
 | ---------------------------------------- | ----------------------------------------------------------------------- |
-| [overview.md](./overview.md)             | Project vision, gameplay, universe                                      |
-| [architecture.md](./architecture.md)     | Technical architecture, folder structure, data flow, camera, tech stack |
-| [game-systems.md](./game-systems.md)     | Game logic systems (state machine, enemies, bullets, crosshair)         |
-| [render-layer.md](./render-layer.md)     | R3F scene, TiledFacade, StreetBackground, sprites, HUD                  |
-| [tile-system.md](./tile-system.md)       | TileMap types, FacadeMap conversion, rue_belliard map, tileset          |
-| [audio-system.md](./audio-system.md)     | Audio system (Howler.js, tension tiers, BGM/SFX)                        |
-| [asset-pipeline.md](./asset-pipeline.md) | Asset generation scripts (Pollinations.ai, sprites, tiles)              |
-| [dev-guidelines.md](./dev-guidelines.md) | TDD, YAGNI, DRY — project coding standards                              |
-| [roadmap.md](./roadmap.md)               | Sprint status, planned features, known gaps                             |
+| [overview.md](./overview.md)             | Project vision,
+ gameplay,
+ universe                                      |
+| [architecture.md](./architecture.md)     | Technical architecture,
+ folder structure,
+ data flow,
+ camera,
+ tech stack |
+| [game-systems.md](./game-systems.md)     | Game logic systems (state machine,
+ enemies,
+ bullets,
+ crosshair)         |
+| [render-layer.md](./render-layer.md)     | R3F scene,
+ TiledFacade,
+ StreetBackground,
+ sprites,
+ HUD                  |
+| [tile-system.md](./tile-system.md)       | TileMap types,
+ FacadeMap conversion,
+ rue_belliard map,
+ tileset          |
+| [audio-system.md](./audio-system.md)     | Audio system (Howler.js,
+ tension tiers,
+ BGM/SFX)                        |
+| [asset-pipeline.md](./asset-pipeline.md) | Asset generation scripts (Pollinations.ai,
+ sprites,
+ tiles)              |
+| [dev-guidelines.md](./dev-guidelines.md) | TDD,
+ YAGNI,
+ DRY — project coding standards                              |
+| [roadmap.md](./roadmap.md)               | Sprint status,
+ planned features,
+ known gaps                             |
 
 ## Diagrams
 
@@ -35,9 +59,12 @@
 
 | Area         | Current state                                             |
 | ------------ | --------------------------------------------------------- |
-| Active map   | `rue_belliard` — 4 buildings, 50 units wide, 18 rows tall |
+| Active map   | `rue_belliard` — 4 buildings,
+ 50 units wide,
+ 18 rows tall |
 | Game mode    | Shooting gallery (facade)                                 |
-| Test count   | 63 tests, all green                                       |
+| Test count   | 63 tests,
+ all green                                       |
 | Entry point  | `src/main.tsx` → `App.tsx`                                |
 | Dev command  | `yarn dev`                                                |
 | Test command | `yarn test`                                               |

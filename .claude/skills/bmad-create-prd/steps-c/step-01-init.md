@@ -4,7 +4,9 @@
 
 ## STEP GOAL:
 
-Initialize the PRD workflow by detecting continuation state, discovering input documents, and setting up the document structure for collaborative product requirement discovery.
+Initialize the PRD workflow by detecting continuation state,
+ discovering input documents,
+ and setting up the document structure for collaborative product requirement discovery.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -12,16 +14,22 @@ Initialize the PRD workflow by detecting continuation state, discovering input d
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product-focused PM facilitator collaborating with an expert peer
-- ✅ If you already have been given a name, communication_style and persona, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
-- ✅ You bring structured thinking and facilitation skills, while the user brings domain expertise and product vision
+- ✅ If you already have been given a name,
+ communication_style and persona,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
+- ✅ You bring structured thinking and facilitation skills,
+ while the user brings domain expertise and product vision
 
 ### Step-Specific Rules:
 
@@ -44,21 +52,27 @@ Initialize the PRD workflow by detecting continuation state, discovering input d
 - Limits: Don't assume knowledge from other steps or create content yet
 - Dependencies: Configuration loaded from workflow.md initialization
 
-## Sequence of Instructions (Do not deviate, skip, or optimize)
+## Sequence of Instructions (Do not deviate,
+ skip,
+ or optimize)
 
 ### 1. Check for Existing Workflow State
 
-First, check if the output document already exists:
+First,
+ check if the output document already exists:
 
 **Workflow State Detection:**
 
 - Look for file at `{outputFile}`
-- If exists, read the complete file including frontmatter
-- If not exists, this is a fresh workflow
+- If exists,
+ read the complete file including frontmatter
+- If not exists,
+ this is a fresh workflow
 
 ### 2. Handle Continuation (If Document Exists)
 
-If the document exists and has frontmatter with `stepsCompleted` BUT `step-12-complete` is NOT in the list, follow the Continuation Protocol since the document is incomplete:
+If the document exists and has frontmatter with `stepsCompleted` BUT `step-12-complete` is NOT in the list,
+ follow the Continuation Protocol since the document is incomplete:
 
 **Continuation Protocol:**
 
@@ -80,7 +94,10 @@ Discover and load context documents using smart discovery. Documents can be in t
 - {project_knowledge}/\*\*
 - docs/\*\*
 
-Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called _foo_/index.md (which indicates sharded content)
+Also - when searching - documents can be a single markdown file,
+ or a folder with an index and multiple files. For Example,
+ if searching for `*foo*.md` and not found,
+ also search for a folder called _foo_/index.md (which indicates sharded content)
 
 Try to discover the following:
 
@@ -89,13 +106,17 @@ Try to discover the following:
 - Project Documentation (generally multiple documents might be found for this in the `{project_knowledge}` or `docs` folder.)
 - Project Context (`**/project-context.md`)
 
-<critical>Confirm what you have found with the user, along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
+<critical>Confirm what you have found with the user,
+ along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
 
 **Loading Rules:**
 
 - Load ALL discovered files completely that the user confirmed or provided (no offset/limit)
-- If there is a project context, whatever is relevant should try to be biased in the remainder of this whole workflow process
-- For sharded folders, load ALL files to get complete picture, using the index first to potentially know the potential of each document
+- If there is a project context,
+ whatever is relevant should try to be biased in the remainder of this whole workflow process
+- For sharded folders,
+ load ALL files to get complete picture,
+ using the index first to potentially know the potential of each document
 - index.md is a guide to what's relevant whenever available
 - Track all successfully loaded files in frontmatter `inputDocuments` array
 
@@ -127,10 +148,12 @@ Try to discover the following:
 **Files loaded:** {list of specific file names or "No additional documents found"}
 
 {if projectDocsCount > 0}
-📋 **Note:** This is a **brownfield project**. Your existing project documentation has been loaded. In the next step, I'll ask specifically about what new features or changes you want to add to your existing system.
+📋 **Note:** This is a **brownfield project**. Your existing project documentation has been loaded. In the next step,
+ I'll ask specifically about what new features or changes you want to add to your existing system.
 {/if}
 
-Do you have any other documents you'd like me to include, or shall we continue to the next step?"
+Do you have any other documents you'd like me to include,
+ or shall we continue to the next step?"
 
 ### 4. Present MENU OPTIONS
 
@@ -140,8 +163,12 @@ Display menu after setup report:
 
 #### Menu Handling Logic:
 
-- IF C: Update output file frontmatter, adding this step name to the end of the list of stepsCompleted, then read fully and follow: ./step-02-discovery.md
-- IF user provides additional files: Load them, update inputDocuments and documentCounts, redisplay report
+- IF C: Update output file frontmatter,
+ adding this step name to the end of the list of stepsCompleted,
+ then read fully and follow: ./step-02-discovery.md
+- IF user provides additional files: Load them,
+ update inputDocuments and documentCounts,
+ redisplay report
 - IF user asks questions: Answer and redisplay menu
 
 #### EXECUTION RULES:
@@ -151,7 +178,8 @@ Display menu after setup report:
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN [C continue option] is selected and [frontmatter properly updated with this step added to stepsCompleted and documentCounts], will you then read fully and follow: `./step-02-discovery.md` to begin project discovery.
+ONLY WHEN [C continue option] is selected and [frontmatter properly updated with this step added to stepsCompleted and documentCounts],
+ will you then read fully and follow: `./step-02-discovery.md` to begin project discovery.
 
 ---
 
@@ -177,4 +205,6 @@ ONLY WHEN [C continue option] is selected and [frontmatter properly updated with
 - Not reporting discovered documents to user clearly
 - Proceeding without user selecting 'C' (Continue)
 
-**Master Rule:** Skipping steps, optimizing sequences, or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.
+**Master Rule:** Skipping steps,
+ optimizing sequences,
+ or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.

@@ -2,7 +2,8 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A CONTINUATION FACILITATOR, not a fresh starter
+- ✅ YOU ARE A CONTINUATION FACILITATOR,
+ not a fresh starter
 - 🎯 RESPECT EXISTING WORKFLOW state and progress
 - 📋 UNDERSTAND PREVIOUS SESSION context and outcomes
 - 🔍 SEAMLESSLY RESUME from where user left off
@@ -21,7 +22,9 @@
 - Existing document with frontmatter is available
 - Previous steps completed indicate session progress
 - Brain techniques CSV loaded when needed for remaining steps
-- User may want to continue, modify, or restart
+- User may want to continue,
+ modify,
+ or restart
 
 ## YOUR TASK:
 
@@ -36,7 +39,9 @@ Load existing document and analyze current state:
 **Document Analysis:**
 
 - Read existing `{brainstorming_session_output_file}`
-- Examine frontmatter for `stepsCompleted`, `session_topic`, `session_goals`
+- Examine frontmatter for `stepsCompleted`,
+ `session_topic`,
+ `session_goals`
 - Review content to understand session progress and outcomes
 - Identify current stage and next logical steps
 
@@ -55,7 +60,8 @@ Load existing document and analyze current state:
 
 ### 2. Present Continuation Options
 
-Based on session analysis, provide appropriate options:
+Based on session analysis,
+ provide appropriate options:
 
 **If Session Completed:**
 "Your brainstorming session appears to be complete!

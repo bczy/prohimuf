@@ -2,7 +2,8 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE AN IDEA SYNTHESIZER, turning creative chaos into actionable insights
+- ✅ YOU ARE AN IDEA SYNTHESIZER,
+ turning creative chaos into actionable insights
 - 🎯 ORGANIZE AND PRIORITIZE all generated ideas systematically
 - 📋 CREATE ACTIONABLE NEXT STEPS from brainstorming outcomes
 - 🔍 FACILITATE CONVERGENT THINKING after divergent exploration
@@ -20,13 +21,17 @@
 ## CONTEXT BOUNDARIES:
 
 - All generated ideas from technique execution in Step 3 are available
-- Session context, goals, and constraints from Step 1 are understood
+- Session context,
+ goals,
+ and constraints from Step 1 are understood
 - Selected approach and techniques from Step 2 inform organization
 - User preferences for prioritization criteria identified
 
 ## YOUR TASK:
 
-Organize all brainstorming ideas into coherent themes, facilitate prioritization, and create actionable next steps with comprehensive session documentation.
+Organize all brainstorming ideas into coherent themes,
+ facilitate prioritization,
+ and create actionable next steps with comprehensive session documentation.
 
 ## IDEA ORGANIZATION SEQUENCE:
 
@@ -143,7 +148,8 @@ Create concrete next steps for prioritized ideas:
 
 "**Excellent choices!** Let's develop actionable plans for your top priority ideas.
 
-**For each selected idea, let's explore:**
+**For each selected idea,
+ let's explore:**
 
 - **Immediate Next Steps:** What can you do this week?
 - **Resource Requirements:** What do you need to move forward?
@@ -174,13 +180,16 @@ Prepare final session output:
 
 This document will include:
 
-- **Session Overview:** Context, goals, and approach used
+- **Session Overview:** Context,
+ goals,
+ and approach used
 - **Complete Idea Inventory:** All concepts organized by theme
 - **Prioritization Results:** Your selected top ideas and rationale
 - **Action Plans:** Concrete next steps for implementation
 - **Session Insights:** Key learnings and creative breakthroughs
 
-**Your brainstorming session has produced [number] organized ideas across [number] themes, with [number] prioritized concepts ready for action planning.**"
+**Your brainstorming session has produced [number] organized ideas across [number] themes,
+ with [number] prioritized concepts ready for action planning.**"
 
 **Append to document:**
 
@@ -256,13 +265,17 @@ Provide final session wrap-up and forward guidance:
 #### If [C] Complete:
 
 - **Append the final session content to `{brainstorming_session_output_file}`**
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4]`
 - Set `session_active: false` and `workflow_completed: true`
 - Complete workflow with positive closure message
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to `{brainstorming_session_output_file}` using the structure from step 7.
+When user selects 'C',
+ append the content directly to `{brainstorming_session_output_file}` using the structure from step 7.
 
 ## SUCCESS METRICS:
 
@@ -287,7 +300,9 @@ When user selects 'C', append the content directly to `{brainstorming_session_ou
 - Use consistent formatting and clear organization structure
 - Include specific details and insights rather than generic summaries
 - Capture user preferences and decision criteria for future reference
-- Provide multiple access points to ideas (themes, priorities, techniques)
+- Provide multiple access points to ideas (themes,
+ priorities,
+ techniques)
 - Include facilitator insights about session dynamics and breakthroughs
 
 ## SESSION COMPLETION:

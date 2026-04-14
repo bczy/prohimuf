@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on understanding project context and user needs
-- 🎯 COLLABORATIVE discovery, not assumption-based design
+- 🎯 COLLABORATIVE discovery,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -17,7 +20,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating project understanding content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -38,23 +42,30 @@ This step will generate content and present choices:
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from step 1 are available
-- Input documents (PRD, briefs, epics) already loaded are in memory
+- Input documents (PRD,
+ briefs,
+ epics) already loaded are in memory
 - No additional data files needed for this step
 - Focus on project and user understanding
 
 ## YOUR TASK:
 
-Understand the project context, target users, and what makes this product special from a UX perspective.
+Understand the project context,
+ target users,
+ and what makes this product special from a UX perspective.
 
 ## PROJECT DISCOVERY SEQUENCE:
 
 ### 1. Review Loaded Context
 
 Start by analyzing what we know from the loaded documents:
-"Based on the project documentation we have loaded, let me confirm what I'm understanding about {{project_name}}.
+"Based on the project documentation we have loaded,
+ let me confirm what I'm understanding about {{project_name}}.
 
 **From the documents:**
-{summary of key insights from loaded PRD, briefs, and other context documents}
+{summary of key insights from loaded PRD,
+ briefs,
+ and other context documents}
 
 **Target Users:**
 {summary of user information from loaded documents}
@@ -67,7 +78,8 @@ Does this match your understanding? Are there any corrections or additions you'd
 ### 2. Fill Context Gaps (If no documents or gaps exist)
 
 If no documents were loaded or key information is missing:
-"Since we don't have complete documentation, let's start with the essentials:
+"Since we don't have complete documentation,
+ let's start with the essentials:
 
 **What are you building?** (Describe your product in 1-2 sentences)
 
@@ -94,7 +106,8 @@ Dive into user understanding:
 ### 4. Identify UX Design Challenges
 
 Surface the key UX challenges to address:
-"From what we've discussed, I'm seeing some key UX design considerations:
+"From what we've discussed,
+ I'm seeing some key UX design considerations:
 
 **Design Challenges:**
 
@@ -115,7 +128,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Executive Summary
@@ -154,12 +168,15 @@ Show the generated project understanding content and present choices:
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/ux-design-specification.md`
-- Update frontmatter: `stepsCompleted: [1, 2]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2]`
 - Load `./step-03-core-experience.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document. Only after the content is saved to document, read fully and follow: `./step-03-core-experience.md`.
+When user selects 'C',
+ append the content directly to the document. Only after the content is saved to document,
+ read fully and follow: `./step-03-core-experience.md`.
 
 ## SUCCESS METRICS:
 

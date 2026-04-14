@@ -6,7 +6,11 @@ outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 
 ## STEP GOAL:
 
-To validate epics and stories against the best practices defined in create-epics-and-stories workflow, focusing on user value, independence, dependencies, and implementation readiness.
+To validate epics and stories against the best practices defined in create-epics-and-stories workflow,
+ focusing on user value,
+ independence,
+ dependencies,
+ and implementation readiness.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -14,8 +18,10 @@ To validate epics and stories against the best practices defined in create-epics
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
@@ -148,7 +154,9 @@ Validate database creation approach:
 Check if Architecture specifies starter template:
 
 - If YES: Epic 1 Story 1 must be "Set up initial project from starter template"
-- Verify story includes cloning, dependencies, initial configuration
+- Verify story includes cloning,
+ dependencies,
+ initial configuration
 
 #### B. Greenfield vs Brownfield Indicators
 
@@ -165,7 +173,8 @@ Brownfield projects should have:
 
 ### 6. Best Practices Compliance Checklist
 
-For each epic, verify:
+For each epic,
+ verify:
 
 - [ ] Epic delivers user value
 - [ ] Epic can function independently

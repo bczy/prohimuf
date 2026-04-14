@@ -4,7 +4,9 @@
 
 **Your Role:** Deep-dive documentation specialist.
 
-- Deep-dive mode requires literal full-file review. Sampling, guessing, or relying solely on tooling output is FORBIDDEN.
+- Deep-dive mode requires literal full-file review. Sampling,
+ guessing,
+ or relying solely on tooling output is FORBIDDEN.
 
 ---
 
@@ -16,7 +18,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 - `project_knowledge`
 - `user_name`
-- `communication_language`, `document_output_language`
+- `communication_language`,
+ `document_output_language`
 - `date` as system-generated current datetime
 
 ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the configured `{communication_language}`.

@@ -1,8 +1,13 @@
 # Sprint Status Workflow
 
-**Goal:** Summarize sprint status, surface risks, and recommend the next workflow action.
+**Goal:** Summarize sprint status,
+ surface risks,
+ and recommend the next workflow action.
 
-**Your Role:** You are a Developer providing clear, actionable sprint visibility. No time estimates — focus on status, risks, and next steps.
+**Your Role:** You are a Developer providing clear,
+ actionable sprint visibility. No time estimates — focus on status,
+ risks,
+ and next steps.
 
 ---
 
@@ -12,8 +17,10 @@
 
 Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
-- `project_name`, `user_name`
-- `communication_language`, `document_output_language`
+- `project_name`,
+ `user_name`
+- `communication_language`,
+ `document_output_language`
 - `implementation_artifacts`
 - `date` as system-generated current datetime
 - YOU MUST ALWAYS SPEAK OUTPUT in your Agent communication style with the config `{communication_language}`
@@ -59,7 +66,8 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
   <action>Try {sprint_status_file}</action>
   <check if="file not found">
     <output>❌ sprint-status.yaml not found.
-Run `/bmad:bmm:workflows:sprint-planning` to generate it, then rerun sprint-status.</output>
+Run `/bmad:bmm:workflows:sprint-planning` to generate it,
+ then rerun sprint-status.</output>
     <action>Exit workflow</action>
   </check>
   <action>Continue to Step 2</action>
@@ -67,22 +75,44 @@ Run `/bmad:bmm:workflows:sprint-planning` to generate it, then rerun sprint-stat
 
 <step n="2" goal="Read and parse sprint-status.yaml">
   <action>Read the FULL file: {sprint_status_file}</action>
-  <action>Parse fields: generated, last_updated, project, project_key, tracking_system, story_location</action>
+  <action>Parse fields: generated,
+ last_updated,
+ project,
+ project_key,
+ tracking_system,
+ story_location</action>
   <action>Parse development_status map. Classify keys:</action>
   - Epics: keys starting with "epic-" (and not ending with "-retrospective")
   - Retrospectives: keys ending with "-retrospective"
-  - Stories: everything else (e.g., 1-2-login-form)
+  - Stories: everything else (e.g.,
+ 1-2-login-form)
   <action>Map legacy story status "drafted" → "ready-for-dev"</action>
-  <action>Count story statuses: backlog, ready-for-dev, in-progress, review, done</action>
+  <action>Count story statuses: backlog,
+ ready-for-dev,
+ in-progress,
+ review,
+ done</action>
   <action>Map legacy epic status "contexted" → "in-progress"</action>
-  <action>Count epic statuses: backlog, in-progress, done</action>
-  <action>Count retrospective statuses: optional, done</action>
+  <action>Count epic statuses: backlog,
+ in-progress,
+ done</action>
+  <action>Count retrospective statuses: optional,
+ done</action>
 
 <action>Validate all statuses against known values:</action>
 
-- Valid story statuses: backlog, ready-for-dev, in-progress, review, done, drafted (legacy)
-- Valid epic statuses: backlog, in-progress, done, contexted (legacy)
-- Valid retrospective statuses: optional, done
+- Valid story statuses: backlog,
+ ready-for-dev,
+ in-progress,
+ review,
+ done,
+ drafted (legacy)
+- Valid epic statuses: backlog,
+ in-progress,
+ done,
+ contexted (legacy)
+- Valid retrospective statuses: optional,
+ done
 
   <check if="any status is unrecognized">
     <output>
@@ -94,16 +124,25 @@ Run `/bmad:bmm:workflows:sprint-planning` to generate it, then rerun sprint-stat
 
 **Valid statuses:**
 
-- Stories: backlog, ready-for-dev, in-progress, review, done
-- Epics: backlog, in-progress, done
-- Retrospectives: optional, done
+- Stories: backlog,
+ ready-for-dev,
+ in-progress,
+ review,
+ done
+- Epics: backlog,
+ in-progress,
+ done
+- Retrospectives: optional,
+ done
   </output>
   <ask>How should these be corrected?
   {{#each invalid_entries}}
   {{@index}}. {{key}}: "{{status}}" → [select valid status]
   {{/each}}
 
-Enter corrections (e.g., "1=in-progress, 2=backlog") or "skip" to continue without fixing:</ask>
+Enter corrections (e.g.,
+ "1=in-progress,
+ 2=backlog") or "skip" to continue without fixing:</ask>
 <check if="user provided corrections">
 <action>Update sprint-status.yaml with corrected values</action>
 <action>Re-parse the file with corrected statuses</action>
@@ -115,21 +154,27 @@ Enter corrections (e.g., "1=in-progress, 2=backlog") or "skip" to continue witho
 - IF any story has status "review": suggest `/bmad:bmm:workflows:code-review`
 - IF any story has status "in-progress" AND no stories have status "ready-for-dev": recommend staying focused on active story
 - IF all epics have status "backlog" AND no stories have status "ready-for-dev": prompt `/bmad:bmm:workflows:create-story`
-- IF `last_updated` timestamp is more than 7 days old (or `last_updated` is missing, fall back to `generated`): warn "sprint-status.yaml may be stale"
-- IF any story key doesn't match an epic pattern (e.g., story "5-1-..." but no "epic-5"): warn "orphaned story detected"
+- IF `last_updated` timestamp is more than 7 days old (or `last_updated` is missing,
+ fall back to `generated`): warn "sprint-status.yaml may be stale"
+- IF any story key doesn't match an epic pattern (e.g.,
+ story "5-1-..." but no "epic-5"): warn "orphaned story detected"
 - IF any epic has status in-progress but has no associated stories: warn "in-progress epic has no stories"
   </step>
 
 <step n="3" goal="Select next action recommendation">
   <action>Pick the next recommended workflow using priority:</action>
-  <note>When selecting "first" story: sort by epic number, then story number (e.g., 1-1 before 1-2 before 2-1)</note>
+  <note>When selecting "first" story: sort by epic number,
+ then story number (e.g.,
+ 1-1 before 1-2 before 2-1)</note>
   1. If any story status == in-progress → recommend `dev-story` for the first in-progress story
   2. Else if any story status == review → recommend `code-review` for the first review story
   3. Else if any story status == ready-for-dev → recommend `dev-story`
   4. Else if any story status == backlog → recommend `create-story`
   5. Else if any retrospective status == optional → recommend `retrospective`
   6. Else → All implementation items done; congratulate the user - you both did amazing work together!
-  <action>Store selected recommendation as: next_story_id, next_workflow_id, next_agent (DEV)</action>
+  <action>Store selected recommendation as: next_story_id,
+ next_workflow_id,
+ next_agent (DEV)</action>
 </step>
 
 <step n="4" goal="Display summary">
@@ -140,9 +185,15 @@ Enter corrections (e.g., "1=in-progress, 2=backlog") or "skip" to continue witho
 - Tracking: {{tracking_system}}
 - Status file: {sprint_status_file}
 
-**Stories:** backlog {{count_backlog}}, ready-for-dev {{count_ready}}, in-progress {{count_in_progress}}, review {{count_review}}, done {{count_done}}
+**Stories:** backlog {{count_backlog}},
+ ready-for-dev {{count_ready}},
+ in-progress {{count_in_progress}},
+ review {{count_review}},
+ done {{count_done}}
 
-**Epics:** backlog {{epic_backlog}}, in-progress {{epic_in_progress}}, done {{epic_done}}
+**Epics:** backlog {{epic_backlog}},
+ in-progress {{epic_in_progress}},
+ done {{epic_done}}
 
 **Next Recommendation:** /bmad:bmm:workflows:{{next_workflow_id}} ({{next_story_id}})
 
@@ -167,7 +218,8 @@ Choice:</ask>
 
   <check if="choice == 1">
     <output>Run `/bmad:bmm:workflows:{{next_workflow_id}}`.
-If the command targets a story, set `story_key={{next_story_id}}` when prompted.</output>
+If the command targets a story,
+ set `story_key={{next_story_id}}` when prompted.</output>
   </check>
 
   <check if="choice == 2">
@@ -226,7 +278,11 @@ If the command targets a story, set `story_key={{next_story_id}}` when prompted.
 
 <action>Read and parse {sprint_status_file}</action>
 
-<action>Validate required metadata fields exist: generated, project, project_key, tracking_system, story_location (last_updated is optional for backward compatibility)</action>
+<action>Validate required metadata fields exist: generated,
+ project,
+ project_key,
+ tracking_system,
+ story_location (last_updated is optional for backward compatibility)</action>
 <check if="any required field missing">
 <template-output>is_valid = false</template-output>
 <template-output>error = "Missing required field(s): {{missing_fields}}"</template-output>
@@ -244,9 +300,16 @@ If the command targets a story, set `story_key={{next_story_id}}` when prompted.
 
 <action>Validate all status values against known valid statuses:</action>
 
-- Stories: backlog, ready-for-dev, in-progress, review, done (legacy: drafted)
-- Epics: backlog, in-progress, done (legacy: contexted)
-- Retrospectives: optional, done
+- Stories: backlog,
+ ready-for-dev,
+ in-progress,
+ review,
+ done (legacy: drafted)
+- Epics: backlog,
+ in-progress,
+ done (legacy: contexted)
+- Retrospectives: optional,
+ done
   <check if="any invalid status found">
   <template-output>is_valid = false</template-output>
   <template-output>error = "Invalid status values: {{invalid_entries}}"</template-output>
@@ -255,7 +318,8 @@ If the command targets a story, set `story_key={{next_story_id}}` when prompted.
   </check>
 
 <template-output>is_valid = true</template-output>
-<template-output>message = "sprint-status.yaml valid: metadata complete, all statuses recognized"</template-output>
+<template-output>message = "sprint-status.yaml valid: metadata complete,
+ all statuses recognized"</template-output>
 </step>
 
 </workflow>

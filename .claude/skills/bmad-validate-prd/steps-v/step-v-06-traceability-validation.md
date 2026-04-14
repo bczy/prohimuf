@@ -9,7 +9,8 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Validate the traceability chain from Executive Summary → Success Criteria → User Journeys → Functional Requirements is intact, ensuring every requirement traces back to a user need or business objective.
+Validate the traceability chain from Executive Summary → Success Criteria → User Journeys → Functional Requirements is intact,
+ ensuring every requirement traces back to a user need or business objective.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,15 +18,19 @@ Validate the traceability chain from Executive Summary → Success Criteria → 
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring analytical rigor and traceability matrix expertise
 - ✅ This step runs autonomously - no user input needed
 
@@ -46,14 +51,18 @@ Validate the traceability chain from Executive Summary → Success Criteria → 
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, validation report
+- Available context: PRD file,
+ validation report
 - Focus: Traceability chain validation only
-- Limits: Don't validate other aspects, don't pause for user input
+- Limits: Don't validate other aspects,
+ don't pause for user input
 - Dependencies: Steps 2-5 completed - initial validations done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process Validation
 
@@ -61,9 +70,12 @@ Validate the traceability chain from Executive Summary → Success Criteria → 
 
 "Perform traceability validation on this PRD:
 
-1. Extract content from Executive Summary (vision, goals)
+1. Extract content from Executive Summary (vision,
+ goals)
 2. Extract Success Criteria
-3. Extract User Journeys (user types, flows, outcomes)
+3. Extract User Journeys (user types,
+ flows,
+ outcomes)
 4. Extract Functional Requirements (FRs)
 5. Extract Product Scope (in-scope items)
 
@@ -86,11 +98,14 @@ Return structured findings with chain status and orphan list."
 
 ### 2. Graceful Degradation (if Task tool unavailable)
 
-If Task tool unavailable, perform analysis directly:
+If Task tool unavailable,
+ perform analysis directly:
 
 **Step 1: Extract key elements**
 
-- Executive Summary: Note vision, goals, objectives
+- Executive Summary: Note vision,
+ goals,
+ objectives
 - Success Criteria: List all criteria
 - User Journeys: List user types and their flows
 - Functional Requirements: List all FRs
@@ -104,12 +119,14 @@ If Task tool unavailable, perform analysis directly:
 
 **Step 3: Validate Success Criteria → User Journeys**
 
-- For each success criterion, is there a user journey that achieves it?
+- For each success criterion,
+ is there a user journey that achieves it?
 - Note success criteria without supporting journeys
 
 **Step 4: Validate User Journeys → FRs**
 
-- For each user journey/flow, are there FRs that enable it?
+- For each user journey/flow,
+ are there FRs that enable it?
 - List FRs with no clear user journey origin
 - Note orphan FRs (requirements without traceable source)
 
@@ -180,7 +197,9 @@ Append to validation report:
 
 **Total Traceability Issues:** {total}
 
-**Severity:** [Critical if orphan FRs exist, Warning if gaps, Pass if intact]
+**Severity:** [Critical if orphan FRs exist,
+ Warning if gaps,
+ Pass if intact]
 
 **Recommendation:**
 [If Critical] "Orphan requirements exist - every FR must trace back to a user need or business objective."
@@ -196,7 +215,8 @@ Total Issues: {count} ({severity})
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-07-implementation-leakage-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-07-implementation-leakage-validation.md)
 
 ---
 

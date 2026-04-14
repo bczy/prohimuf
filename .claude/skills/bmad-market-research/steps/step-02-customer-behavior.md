@@ -4,12 +4,14 @@
 
 - 🛑 NEVER generate content without web search verification
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A CUSTOMER BEHAVIOR ANALYST, not content generator
+- 📋 YOU ARE A CUSTOMER BEHAVIOR ANALYST,
+ not content generator
 - 💬 FOCUS on customer behavior patterns and demographic analysis
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete research
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -18,7 +20,8 @@
 - ⚠️ Present [C] continue option after customer behavior content generation
 - 📝 WRITE CUSTOMER BEHAVIOR ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -38,7 +41,8 @@ Conduct customer behavior and segment analysis with emphasis on patterns and dem
 
 ### 1. Begin Customer Behavior Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different customer behavior areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different customer behavior areas simultaneously and thoroughly.
 
 Start with customer behavior research approach:
 "Now I'll conduct **customer behavior analysis** for **{{research_topic}}** to understand customer patterns.
@@ -74,7 +78,8 @@ Search the web: "{{research_topic}} customer behavior drivers"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate customer behavior findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate customer behavior findings:
 
 **Research Coverage:**
 
@@ -85,7 +90,9 @@ Search the web: "{{research_topic}} customer behavior drivers"
 - Customer interaction patterns and engagement
 
 **Cross-Behavior Analysis:**
-[Identify patterns connecting demographics, psychographics, and behaviors]
+[Identify patterns connecting demographics,
+ psychographics,
+ and behaviors]
 
 **Quality Assessment:**
 [Overall confidence levels and research gaps identified]"
@@ -98,7 +105,8 @@ Prepare customer behavior analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Customer Behavior and Segments
@@ -132,9 +140,15 @@ _Source: [URL]_
 ### Customer Segment Profiles
 
 [Detailed customer segment profiles with source citations]
-_Segment 1: [Detailed profile including demographics, psychographics, behavior]_
-_Segment 2: [Detailed profile including demographics, psychographics, behavior]_
-_Segment 3: [Detailed profile including demographics, psychographics, behavior]_
+_Segment 1: [Detailed profile including demographics,
+ psychographics,
+ behavior]_
+_Segment 2: [Detailed profile including demographics,
+ psychographics,
+ behavior]_
+_Segment 3: [Detailed profile including demographics,
+ psychographics,
+ behavior]_
 _Source: [URL]_
 
 ### Behavior Drivers and Influences
@@ -160,7 +174,8 @@ _Source: [URL]_
 
 **Show analysis and present continue option:**
 
-"I've completed **customer behavior analysis** for {{research_topic}}, focusing on customer patterns.
+"I've completed **customer behavior analysis** for {{research_topic}},
+ focusing on customer patterns.
 
 **Key Customer Behavior Findings:**
 
@@ -180,7 +195,8 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2]`
 - Load: `./step-03-customer-pain-points.md`
 
 ## APPEND TO DOCUMENT:
@@ -234,6 +250,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-03-customer-pain-points.md` to analyze customer pain points, challenges, and unmet needs for {{research_topic}}.
+After user selects 'C',
+ load `./step-03-customer-pain-points.md` to analyze customer pain points,
+ challenges,
+ and unmet needs for {{research_topic}}.
 
 Remember: Always write research content to document immediately and emphasize current customer data with rigorous source verification!

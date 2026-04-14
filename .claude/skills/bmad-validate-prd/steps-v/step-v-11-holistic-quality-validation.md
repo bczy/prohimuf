@@ -9,7 +9,11 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Assess the PRD as a cohesive, compelling document - evaluating document flow, dual audience effectiveness (humans and LLMs), BMAD PRD principles compliance, and overall quality rating.
+Assess the PRD as a cohesive,
+ compelling document - evaluating document flow,
+ dual audience effectiveness (humans and LLMs),
+ BMAD PRD principles compliance,
+ and overall quality rating.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,16 +21,20 @@ Assess the PRD as a cohesive, compelling document - evaluating document flow, du
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring analytical rigor and document quality expertise
 - ✅ This step runs autonomously - no user input needed
 - ✅ Uses Advanced Elicitation for multi-perspective evaluation
@@ -41,21 +49,27 @@ Assess the PRD as a cohesive, compelling document - evaluating document flow, du
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Use Advanced Elicitation for multi-perspective assessment
-- 🎯 Evaluate document flow, dual audience, BMAD principles
+- 🎯 Evaluate document flow,
+ dual audience,
+ BMAD principles
 - 💾 Append comprehensive assessment to validation report
 - 📖 Display "Proceeding to next check..." and load next step
 - 🚫 FORBIDDEN to pause or request user input
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: Complete PRD file, validation report with findings from steps 1-10
+- Available context: Complete PRD file,
+ validation report with findings from steps 1-10
 - Focus: Holistic quality - the WHOLE document
-- Limits: Don't re-validate individual components, don't pause for user input
+- Limits: Don't re-validate individual components,
+ don't pause for user input
 - Dependencies: Steps 1-10 completed - all systematic checks done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process with Advanced Elicitation
 
@@ -105,22 +119,28 @@ Invoke the `bmad-advanced-elicitation` skill
 **4. Overall Quality Rating:**
 Rate the PRD on 5-point scale:
 
-- Excellent (5/5): Exemplary, ready for production use
+- Excellent (5/5): Exemplary,
+ ready for production use
 - Good (4/5): Strong with minor improvements needed
 - Adequate (3/5): Acceptable but needs refinement
 - Needs Work (2/5): Significant gaps or issues
-- Problematic (1/5): Major flaws, needs substantial revision
+- Problematic (1/5): Major flaws,
+ needs substantial revision
 
 **5. Top 3 Improvements:**
 Identify the 3 most impactful improvements to make this a great PRD
 
-Return comprehensive assessment with all perspectives, rating, and top 3 improvements."
+Return comprehensive assessment with all perspectives,
+ rating,
+ and top 3 improvements."
 
 **Graceful degradation (if no Task tool or Advanced Elicitation unavailable):**
 
 - Perform holistic assessment directly in current context
 - Read complete PRD
-- Evaluate document flow, coherence, transitions
+- Evaluate document flow,
+ coherence,
+ transitions
 - Assess dual audience effectiveness
 - Check BMAD principles compliance
 - Assign overall quality rating
@@ -210,11 +230,13 @@ Append to validation report:
 
 **Scale:**
 
-- 5/5 - Excellent: Exemplary, ready for production use
+- 5/5 - Excellent: Exemplary,
+ ready for production use
 - 4/5 - Good: Strong with minor improvements needed
 - 3/5 - Adequate: Acceptable but needs refinement
 - 2/5 - Needs Work: Significant gaps or issues
-- 1/5 - Problematic: Major flaws, needs substantial revision
+- 1/5 - Problematic: Major flaws,
+ needs substantial revision
 
 ### Top 3 Improvements
 
@@ -242,7 +264,8 @@ Overall Rating: {rating}/5 - {label}
 
 **Proceeding to final validation checks...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-12-completeness-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-12-completeness-validation.md)
 
 ---
 
@@ -271,4 +294,5 @@ Without delay, read fully and follow: {nextStepFile} (step-v-12-completeness-val
 - Not reporting comprehensive assessment to validation report
 - Not auto-proceeding
 
-**Master Rule:** This evaluates the WHOLE document, not just components. Answers "Is this a good PRD?" and "What would make it great?"
+**Master Rule:** This evaluates the WHOLE document,
+ not just components. Answers "Is this a good PRD?" and "What would make it great?"

@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on responsive design strategy and accessibility compliance
-- 🎯 COLLABORATIVE strategy definition, not assumption-based design
+- 🎯 COLLABORATIVE strategy definition,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating responsive/accessibility content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -59,7 +63,9 @@ Establish how the design adapts across devices:
 **Desktop Strategy:**
 
 - How should we use extra screen real estate?
-- Multi-column layouts, side navigation, or content density?
+- Multi-column layouts,
+ side navigation,
+ or content density?
 - What desktop-specific features can we include?
 
 **Tablet Strategy:**
@@ -86,7 +92,8 @@ We need to define screen size breakpoints where layouts adapt.
 - Tablet: 768px - 1023px
 - Desktop: 1024px+
 
-**For {{project_name}}, should we:**
+**For {{project_name}},
+ should we:**
 
 - Use standard breakpoints or custom ones?
 - Focus on mobile-first or desktop-first design?
@@ -106,7 +113,9 @@ What level of WCAG compliance does {{project_name}} need?
 
 **Based on your product:**
 
-- [Recommendation based on user base, legal requirements, etc.]
+- [Recommendation based on user base,
+ legal requirements,
+ etc.]
 
 **Key Accessibility Considerations:**
 
@@ -124,13 +133,18 @@ Plan how to ensure responsive design and accessibility:
 **Responsive Testing:**
 
 - Device testing on actual phones/tablets
-- Browser testing across Chrome, Firefox, Safari, Edge
+- Browser testing across Chrome,
+ Firefox,
+ Safari,
+ Edge
 - Real device network performance testing
 
 **Accessibility Testing:**
 
 - Automated accessibility testing tools
-- Screen reader testing (VoiceOver, NVDA, JAWS)
+- Screen reader testing (VoiceOver,
+ NVDA,
+ JAWS)
 - Keyboard-only navigation testing
 - Color blindness simulation testing
 
@@ -147,7 +161,10 @@ Create specific guidelines for developers:
 
 **Responsive Development:**
 
-- Use relative units (rem, %, vw, vh) over fixed pixels
+- Use relative units (rem,
+ %,
+ vw,
+ vh) over fixed pixels
 - Implement mobile-first media queries
 - Test touch targets and gesture areas
 - Optimize images and assets for different devices
@@ -166,7 +183,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Responsive Design & Accessibility
@@ -213,16 +231,20 @@ Show the generated responsive and accessibility content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current responsive/accessibility content
 - Process the enhanced insights that come back
 - Ask user: "Accept these improvements to the responsive/accessibility strategy? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current responsive/accessibility strategy
 - Process the collaborative insights that come back
 - Ask user: "Accept these changes to the responsive/accessibility strategy? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -232,7 +254,8 @@ Show the generated responsive and accessibility content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -260,6 +283,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-14-complete.md` to finalize the UX design workflow.
+After user selects 'C' and content is saved to document,
+ load `./step-14-complete.md` to finalize the UX design workflow.
 
 Remember: Do NOT proceed to step-14 until user explicitly selects 'C' from the A/P/C menu and content is saved!

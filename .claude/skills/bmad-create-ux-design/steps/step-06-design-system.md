@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on choosing appropriate design system approach
-- 🎯 COLLABORATIVE decision-making, not recommendation-only
+- 🎯 COLLABORATIVE decision-making,
+ not recommendation-only
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating design system decision content
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -52,7 +56,9 @@ Choose appropriate design system approach based on project requirements and cons
 ### 1. Present Design System Options
 
 Educate about design system approaches:
-"For {{project_name}}, we need to choose a design system foundation. Think of design systems like LEGO blocks for UI - they provide proven components and patterns, ensuring consistency and speeding development.
+"For {{project_name}},
+ we need to choose a design system foundation. Think of design systems like LEGO blocks for UI - they provide proven components and patterns,
+ ensuring consistency and speeding development.
 
 **Design System Approaches:**
 
@@ -63,14 +69,18 @@ Educate about design system approaches:
 - Higher initial investment
 - Perfect for established brands with unique needs
 
-**2. Established System (Material Design, Ant Design, etc.)**
+**2. Established System (Material Design,
+ Ant Design,
+ etc.)**
 
 - Fast development with proven patterns
 - Great defaults and accessibility built-in
 - Less visual differentiation
 - Ideal for startups or internal tools
 
-**3. Themeable System (MUI, Chakra UI, Tailwind UI)**
+**3. Themeable System (MUI,
+ Chakra UI,
+ Tailwind UI)**
 
 - Customizable with strong foundation
 - Brand flexibility with proven components
@@ -125,7 +135,9 @@ Dive deeper into relevant options:
 Help user make informed choice:
 "**Decision Framework:**
 
-1. What's most important: Speed, uniqueness, or balance?
+1. What's most important: Speed,
+ uniqueness,
+ or balance?
 2. How much design expertise does your team have?
 3. Are there existing brand guidelines to follow?
 4. What's your timeline and budget?
@@ -136,7 +148,8 @@ Let's evaluate options based on your answers to these questions."
 ### 5. Finalize Design System Choice
 
 Confirm and document the decision:
-"Based on our analysis, I recommend [Design System Choice] for {{project_name}}.
+"Based on our analysis,
+ I recommend [Design System Choice] for {{project_name}}.
 
 **Rationale:**
 
@@ -158,7 +171,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Design System Foundation
@@ -201,16 +215,20 @@ Show the generated design system content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current design system content
 - Process the enhanced design system insights that come back
 - Ask user: "Accept these improvements to the design system decision? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current design system choice
 - Process the collaborative design system insights that come back
 - Ask user: "Accept these changes to the design system decision? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -220,7 +238,8 @@ Show the generated design system content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -248,6 +267,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-07-defining-experience.md` to define the core user interaction.
+After user selects 'C' and content is saved to document,
+ load `./step-07-defining-experience.md` to define the core user interaction.
 
 Remember: Do NOT proceed to step-07 until user explicitly selects 'C' from the A/P/C menu and content is saved!

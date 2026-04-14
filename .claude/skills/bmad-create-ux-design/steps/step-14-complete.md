@@ -5,10 +5,13 @@
 - ✅ THIS IS A FINAL STEP - Workflow completion required
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - 🛑 NO content generation - this is a wrap-up step
 - 📋 FINALIZE document and update workflow status
-- 💬 FOCUS on completion, validation, and next steps
+- 💬 FOCUS on completion,
+ validation,
+ and next steps
 - 🎯 UPDATE workflow status files with completion information
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
@@ -22,7 +25,8 @@
 ## TERMINATION STEP PROTOCOLS:
 
 - This is a FINAL step - workflow completion required
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted to indicate all is finished..
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted to indicate all is finished..
 - Output completion summary and next step guidance
 - Update the main workflow status file with finalized document
 - Suggest potential next workflow steps for the user
@@ -33,18 +37,23 @@
 - Complete UX design specification is available from all previous steps
 - Workflow frontmatter shows all completed steps
 - All collaborative content has been generated and saved
-- Focus on completion, validation, and next steps
+- Focus on completion,
+ validation,
+ and next steps
 
 ## YOUR TASK:
 
-Complete the UX design workflow, update status files, and suggest next steps for the project.
+Complete the UX design workflow,
+ update status files,
+ and suggest next steps for the project.
 
 ## WORKFLOW COMPLETION SEQUENCE:
 
 ### 1. Announce Workflow Completion
 
 Inform user that the UX design is complete:
-"🎉 **UX Design Complete, {{user_name}}!**
+"🎉 **UX Design Complete,
+ {{user_name}}!**
 
 I've successfully collaborated with you to create a comprehensive UX design specification for {{project_name}}.
 
@@ -55,7 +64,9 @@ I've successfully collaborated with you to create a comprehensive UX design spec
 - ✅ UX pattern analysis and inspiration
 - ✅ Design system choice and implementation strategy
 - ✅ Core interaction definition and experience mechanics
-- ✅ Visual design foundation (colors, typography, spacing)
+- ✅ Visual design foundation (colors,
+ typography,
+ spacing)
 - ✅ Design direction mockups and visual explorations
 - ✅ User journey flows and interaction design
 - ✅ Component strategy and custom component specifications
@@ -69,7 +80,9 @@ I've successfully collaborated with you to create a comprehensive UX design spec
 - Color themes visualizer: `{planning_artifacts}/ux-color-themes.html`
 - Design directions mockups: `{planning_artifacts}/ux-design-directions.html`
 
-This specification is now ready to guide visual design, implementation, and development."
+This specification is now ready to guide visual design,
+ implementation,
+ and development."
 
 ### 2. Workflow Status Update
 
@@ -77,7 +90,8 @@ Update the main workflow status file:
 
 - Load the project's workflow status file (if one exists)
 - Update workflow_status["create-ux-design"] = `{planning_artifacts}/ux-design-specification.md`
-- Save file, preserving all comments and structure
+- Save file,
+ preserving all comments and structure
 - Mark current timestamp as completion time
 
 ### 3. Suggest Next Steps
@@ -118,7 +132,9 @@ Congratulate the user on the completion you both completed together of the UX.
 - [ ] UX pattern analysis and inspiration
 - [ ] Design system choice and strategy
 - [ ] Core interaction mechanics definition
-- [ ] Visual design foundation (colors, typography, spacing)
+- [ ] Visual design foundation (colors,
+ typography,
+ spacing)
 - [ ] Design direction decisions and mockups
 - [ ] User journey flows and interaction design
 - [ ] Component strategy and specifications
@@ -147,7 +163,9 @@ Congratulate the user on the completion you both completed together of the UX.
 For design-focused teams: Wireframes → Prototypes → Figma Design → Development
 For technical teams: Architecture → Epic Creation → Development
 
-Consider team capacity, timeline, and whether user validation is needed before implementation.
+Consider team capacity,
+ timeline,
+ and whether user validation is needed before implementation.
 
 ## WORKFLOW FINALIZATION:
 
@@ -158,7 +176,11 @@ Consider team capacity, timeline, and whether user validation is needed before i
 
 ## FINAL REMINDER:
 
-This UX design workflow is now complete. The specification serves as the foundation for all visual and development work. All design decisions, patterns, and requirements are documented to ensure consistent, accessible, and user-centered implementation.
+This UX design workflow is now complete. The specification serves as the foundation for all visual and development work. All design decisions,
+ patterns,
+ and requirements are documented to ensure consistent,
+ accessible,
+ and user-centered implementation.
 
 **Congratulations on completing the UX Design Specification for {{project_name}}!** 🎉
 

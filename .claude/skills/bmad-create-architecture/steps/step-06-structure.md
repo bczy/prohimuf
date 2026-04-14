@@ -5,9 +5,11 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on defining complete project structure and clear boundaries
 - 🗺️ MAP requirements/epics to architectural components
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -16,10 +18,16 @@
 ## EXECUTION PROTOCOLS:
 
 - 🎯 Show your analysis before taking any action
-- 🗺️ Create complete project tree, not generic placeholders
+- 🗺️ Create complete project tree,
+ not generic placeholders
 - ⚠️ Present A/P/C menu after generating project structure
 - 💾 ONLY save when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5, 6]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -46,7 +54,8 @@ This step will generate content and present choices:
 
 ## YOUR TASK:
 
-Define the complete project structure and architectural boundaries based on all decisions made, creating a concrete implementation guide for AI agents.
+Define the complete project structure and architectural boundaries based on all decisions made,
+ creating a concrete implementation guide for AI agents.
 
 ## PROJECT STRUCTURE SEQUENCE:
 
@@ -70,11 +79,14 @@ Map project requirements to architectural components:
 
 ### 2. Define Project Directory Structure
 
-Based on technology stack and patterns, create the complete project structure:
+Based on technology stack and patterns,
+ create the complete project structure:
 
 **Root Configuration Files:**
 
-- Package management files (package.json, requirements.txt, etc.)
+- Package management files (package.json,
+ requirements.txt,
+ etc.)
 - Build and development configuration
 - Environment configuration files
 - CI/CD pipeline files
@@ -328,26 +340,36 @@ Show the generated project structure content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with current project structure
 - Process enhanced organizational insights that come back
 - Ask user: "Accept these changes to the project structure? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with project structure context
 - Process collaborative insights about organization trade-offs
 - Ask user: "Accept these changes to the project structure? (y/n)"
-- If yes: Update content, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
 - Append the final content to `{planning_artifacts}/architecture.md`
-- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5, 6]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6]`
 - Load `./step-07-validation.md`
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -361,7 +383,8 @@ When user selects 'C', append the content directly to the document using the str
 
 ## FAILURE MODES:
 
-❌ Creating generic placeholder structure instead of specific, complete tree
+❌ Creating generic placeholder structure instead of specific,
+ complete tree
 ❌ Not mapping requirements to specific files and directories
 ❌ Missing important integration boundaries
 ❌ Not considering the chosen technology stack in structure design
@@ -374,6 +397,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-07-validation.md` to validate architectural coherence and completeness.
+After user selects 'C' and content is saved to document,
+ load `./step-07-validation.md` to validate architectural coherence and completeness.
 
 Remember: Do NOT proceed to step-07 until user explicitly selects 'C' from the A/P/C menu and content is saved!

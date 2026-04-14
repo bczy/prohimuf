@@ -5,11 +5,14 @@
 - 🛑 NEVER generate content without user input
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between UX facilitator and stakeholder
-- 📋 YOU ARE A UX FACILITATOR, not a content generator
+- 📋 YOU ARE A UX FACILITATOR,
+ not a content generator
 - 💬 FOCUS on generating and evaluating design direction variations
-- 🎯 COLLABORATIVE exploration, not assumption-based design
+- 🎯 COLLABORATIVE exploration,
+ not assumption-based design
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
@@ -18,7 +21,8 @@
 - 🎯 Show your analysis before taking any action
 - ⚠️ Present A/P/C menu after generating design direction content
 - 💾 Generate HTML visualizer for design directions
-- 📖 Update output file frontmatter, adding this step to the end of the list of stepsCompleted.
+- 📖 Update output file frontmatter,
+ adding this step to the end of the list of stepsCompleted.
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## COLLABORATION MENUS (A/P/C):
@@ -82,7 +86,8 @@ Each mockup represents a complete visual direction for your app's look and feel.
 ### 3. Present Design Exploration Framework
 
 Guide evaluation criteria:
-"As you explore the design directions, look for:
+"As you explore the design directions,
+ look for:
 
 ✅ **Layout Intuitiveness** - Which information hierarchy matches your priorities?
 ✅ **Interaction Style** - Which interaction style fits your core experience?
@@ -115,14 +120,16 @@ Help user choose or combine elements:
 ### 5. Document Design Direction Decision
 
 Capture the chosen approach:
-"Based on your exploration, I'm understanding your design direction preference:
+"Based on your exploration,
+ I'm understanding your design direction preference:
 
 **Chosen Direction:** [Direction number or combination]
 **Key Elements:** [Specific elements you liked]
 **Modifications Needed:** [Any changes requested]
 **Rationale:** [Why this direction works for your product]
 
-This will become our design foundation moving forward. Are we ready to lock this in, or do you want to explore variations?"
+This will become our design foundation moving forward. Are we ready to lock this in,
+ or do you want to explore variations?"
 
 ### 6. Generate Design Direction Content
 
@@ -130,7 +137,8 @@ Prepare the content to append to the document:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Design Direction Decision
@@ -173,16 +181,20 @@ Show the generated design direction content and present choices:
 - Invoke the `bmad-advanced-elicitation` skill with the current design direction content
 - Process the enhanced design insights that come back
 - Ask user: "Accept these improvements to the design direction? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'P' (Party Mode):
 
 - Invoke the `bmad-party-mode` skill with the current design direction
 - Process the collaborative design insights that come back
 - Ask user: "Accept these changes to the design direction? (y/n)"
-- If yes: Update content with improvements, then return to A/P/C menu
-- If no: Keep original content, then return to A/P/C menu
+- If yes: Update content with improvements,
+ then return to A/P/C menu
+- If no: Keep original content,
+ then return to A/P/C menu
 
 #### If 'C' (Continue):
 
@@ -192,7 +204,8 @@ Show the generated design direction content and present choices:
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C', append the content directly to the document using the structure from step 6.
+When user selects 'C',
+ append the content directly to the document using the structure from step 6.
 
 ## SUCCESS METRICS:
 
@@ -220,6 +233,7 @@ When user selects 'C', append the content directly to the document using the str
 
 ## NEXT STEP:
 
-After user selects 'C' and content is saved to document, load `./step-10-user-journeys.md` to design user journey flows.
+After user selects 'C' and content is saved to document,
+ load `./step-10-user-journeys.md` to design user journey flows.
 
 Remember: Do NOT proceed to step-10 until user explicitly selects 'C' from the A/P/C menu and content is saved!

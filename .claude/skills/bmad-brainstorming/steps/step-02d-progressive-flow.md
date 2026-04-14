@@ -2,7 +2,8 @@
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
-- ✅ YOU ARE A CREATIVE JOURNEY GUIDE, orchestrating systematic idea development
+- ✅ YOU ARE A CREATIVE JOURNEY GUIDE,
+ orchestrating systematic idea development
 - 🎯 DESIGN PROGRESSIVE FLOW from broad exploration to focused action
 - 📋 LOAD TECHNIQUES ON-DEMAND from brain-methods.csv for each phase
 - 🔍 MATCH TECHNIQUES to natural creative progression stages
@@ -21,7 +22,8 @@
 
 - Session context from Step 1 available for journey design
 - Brain techniques CSV with 36+ techniques across 7 categories
-- User wants systematic, comprehensive idea development
+- User wants systematic,
+ comprehensive idea development
 - Must design natural progression from divergent to convergent thinking
 
 ## YOUR TASK:
@@ -34,7 +36,9 @@ Design a progressive technique flow that takes users from expansive exploration 
 
 Explain the value of systematic creative progression:
 
-"Excellent choice! Progressive Technique Flow is perfect for comprehensive idea development. This approach mirrors how natural creativity works - starting broad, exploring possibilities, then systematically refining toward actionable solutions.
+"Excellent choice! Progressive Technique Flow is perfect for comprehensive idea development. This approach mirrors how natural creativity works - starting broad,
+ exploring possibilities,
+ then systematically refining toward actionable solutions.
 
 **The Creative Journey We'll Take:**
 
@@ -46,7 +50,9 @@ Explain the value of systematic creative progression:
 
 **Phase 2: PATTERN RECOGNITION** (Analytical Thinking)
 
-- Identify themes, connections, and emerging patterns
+- Identify themes,
+ connections,
+ and emerging patterns
 - Organize the creative chaos into meaningful groups
 - Discover insights and relationships between ideas
 
@@ -59,7 +65,9 @@ Explain the value of systematic creative progression:
 **Phase 4: ACTION PLANNING** (Implementation Focus)
 
 - Create concrete next steps and implementation strategies
-- Identify resources, timelines, and success metrics
+- Identify resources,
+ timelines,
+ and success metrics
 - Transform ideas into actionable plans
 
 **Loading Brain Techniques Library for Journey Design...**"
@@ -67,7 +75,13 @@ Explain the value of systematic creative progression:
 **Load CSV and parse:**
 
 - Read `../brain-methods.csv`
-- Parse: category, technique_name, description, facilitation_prompts, best_for, energy_level, typical_duration
+- Parse: category,
+ technique_name,
+ description,
+ facilitation_prompts,
+ best_for,
+ energy_level,
+ typical_duration
 - Map techniques to each phase of the creative journey
 
 ### 2. Design Phase-Specific Technique Selection
@@ -76,20 +90,23 @@ Select optimal techniques for each progressive phase:
 
 **Phase 1: Expansive Exploration Techniques**
 
-"For **Expansive Exploration**, I'm selecting techniques that maximize creative breadth and wild thinking:
+"For **Expansive Exploration**,
+ I'm selecting techniques that maximize creative breadth and wild thinking:
 
 **Recommended Technique: [Exploration Technique]**
 
 - **Category:** Creative/Innovative techniques
 - **Why for Phase 1:** Perfect for generating maximum idea quantity without constraints
 - **Expected Outcome:** [Number]+ raw ideas across diverse categories
-- **Creative Energy:** High energy, expansive thinking
+- **Creative Energy:** High energy,
+ expansive thinking
 
 **Alternative if time-constrained:** [Simpler exploration technique]"
 
 **Phase 2: Pattern Recognition Techniques**
 
-"For **Pattern Recognition**, we need techniques that help organize and find meaning in the creative abundance:
+"For **Pattern Recognition**,
+ we need techniques that help organize and find meaning in the creative abundance:
 
 **Recommended Technique: [Analysis Technique]**
 
@@ -102,7 +119,8 @@ Select optimal techniques for each progressive phase:
 
 **Phase 3: Idea Development Techniques**
 
-"For **Idea Development**, we select techniques that refine and elaborate promising concepts:
+"For **Idea Development**,
+ we select techniques that refine and elaborate promising concepts:
 
 **Recommended Technique: [Development Technique]**
 
@@ -113,7 +131,8 @@ Select optimal techniques for each progressive phase:
 
 **Phase 4: Action Planning Techniques**
 
-"For **Action Planning**, we choose techniques that create concrete implementation pathways:
+"For **Action Planning**,
+ we choose techniques that create concrete implementation pathways:
 
 **Recommended Technique: [Planning Technique]**
 
@@ -135,7 +154,9 @@ Show the full progressive flow with timing and transitions:
 
 - **Technique:** [Selected technique]
 - **Goal:** Generate [number]+ diverse ideas without limits
-- **Energy:** High, wild, boundary-breaking creativity
+- **Energy:** High,
+ wild,
+ boundary-breaking creativity
 
 **→ Phase Transition:** We'll review and cluster ideas before moving deeper
 
@@ -143,7 +164,9 @@ Show the full progressive flow with timing and transitions:
 
 - **Technique:** [Selected technique]
 - **Goal:** Identify themes and prioritize most promising directions
-- **Energy:** Focused, analytical, insight-seeking
+- **Energy:** Focused,
+ analytical,
+ insight-seeking
 
 **→ Phase Transition:** Select top concepts for detailed development
 
@@ -151,7 +174,9 @@ Show the full progressive flow with timing and transitions:
 
 - **Technique:** [Selected technique]
 - **Goal:** Refine priority ideas with depth and practicality
-- **Energy:** Building, enhancing, feasibility-focused
+- **Energy:** Building,
+ enhancing,
+ feasibility-focused
 
 **→ Phase Transition:** Choose final concepts for implementation planning
 
@@ -159,7 +184,9 @@ Show the full progressive flow with timing and transitions:
 
 - **Technique:** [Selected technique]
 - **Goal:** Create concrete implementation plans and next steps
-- **Energy:** Practical, action-oriented, milestone-setting
+- **Energy:** Practical,
+ action-oriented,
+ milestone-setting
 
 **Progressive Benefits:**
 
@@ -208,8 +235,12 @@ If user confirms progressive flow:
 ```yaml
 ---
 selected_approach: "progressive-flow"
-techniques_used: ["technique1", "technique2", "technique3", "technique4"]
-stepsCompleted: [1, 2]
+techniques_used: ["technique1",
+ "technique2",
+ "technique3",
+ "technique4"]
+stepsCompleted: [1,
+ 2]
 ---
 ```
 
@@ -261,6 +292,9 @@ Load `./step-03-technique-execution.md`
 
 ## NEXT STEP:
 
-After user confirmation, load `./step-03-technique-execution.md` to begin facilitating the progressive technique flow with clear phase transitions and systematic development.
+After user confirmation,
+ load `./step-03-technique-execution.md` to begin facilitating the progressive technique flow with clear phase transitions and systematic development.
 
-Remember: Progressive flow should feel like a guided creative journey - systematic, comprehensive, and naturally leading from wild ideas to actionable plans!
+Remember: Progressive flow should feel like a guided creative journey - systematic,
+ comprehensive,
+ and naturally leading from wild ideas to actionable plans!

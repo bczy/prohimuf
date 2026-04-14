@@ -4,9 +4,11 @@
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ ALWAYS treat this as collaborative discovery between architectural peers
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - 💬 FOCUS on initialization and setup only - don't look ahead to future steps
 - 🚪 DETECT existing workflow state and handle continuation properly
 - ⚠️ ABSOLUTELY NO TIME ESTIMATES - AI development speed has fundamentally changed
@@ -28,17 +30,22 @@
 
 ## YOUR TASK:
 
-Initialize the Architecture workflow by detecting continuation state, discovering input documents, and setting up the document for collaborative architectural decision making.
+Initialize the Architecture workflow by detecting continuation state,
+ discovering input documents,
+ and setting up the document for collaborative architectural decision making.
 
 ## INITIALIZATION SEQUENCE:
 
 ### 1. Check for Existing Workflow
 
-First, check if the output document already exists:
+First,
+ check if the output document already exists:
 
 - Look for existing {planning_artifacts}/`*architecture*.md`
-- If exists, read the complete file(s) including frontmatter
-- If not exists, this is a fresh workflow
+- If exists,
+ read the complete file(s) including frontmatter
+- If not exists,
+ this is a fresh workflow
 
 ### 2. Handle Continuation (If Document Exists)
 
@@ -61,7 +68,10 @@ Discover and load context documents using smart discovery. Documents can be in t
 - {project_knowledge}/\*\*
 - {project-root}/docs/\*\*
 
-Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called _foo_/index.md (which indicates sharded content)
+Also - when searching - documents can be a single markdown file,
+ or a folder with an index and multiple files. For Example,
+ if searching for `*foo*.md` and not found,
+ also search for a folder called _foo_/index.md (which indicates sharded content)
 
 Try to discover the following:
 
@@ -72,19 +82,24 @@ Try to discover the following:
 - Project Documentation (generally multiple documents might be found for this in the `{project_knowledge}` or `{project-root}/docs` folder.)
 - Project Context (`**/project-context.md`)
 
-<critical>Confirm what you have found with the user, along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
+<critical>Confirm what you have found with the user,
+ along with asking if the user wants to provide anything else. Only after this confirmation will you proceed to follow the loading rules</critical>
 
 **Loading Rules:**
 
 - Load ALL discovered files completely that the user confirmed or provided (no offset/limit)
-- If there is a project context, whatever is relevant should try to be biased in the remainder of this whole workflow process
-- For sharded folders, load ALL files to get complete picture, using the index first to potentially know the potential of each document
+- If there is a project context,
+ whatever is relevant should try to be biased in the remainder of this whole workflow process
+- For sharded folders,
+ load ALL files to get complete picture,
+ using the index first to potentially know the potential of each document
 - index.md is a guide to what's relevant whenever available
 - Track all successfully loaded files in frontmatter `inputDocuments` array
 
 #### B. Validate Required Inputs
 
-Before proceeding, verify we have the essential inputs:
+Before proceeding,
+ verify we have the essential inputs:
 
 **PRD Validation:**
 
@@ -150,6 +165,8 @@ Ready to begin architectural decision making. Do you have any other documents yo
 
 ## NEXT STEP:
 
-After user selects [C] to continue, only after ensuring all the template output has been created, then load `./step-02-context.md` to analyze the project context and begin architectural decision making.
+After user selects [C] to continue,
+ only after ensuring all the template output has been created,
+ then load `./step-02-context.md` to analyze the project context and begin architectural decision making.
 
 Remember: Do NOT proceed to step-02 until user explicitly selects [C] from the menu and setup is confirmed!

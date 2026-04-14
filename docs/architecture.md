@@ -6,10 +6,15 @@
 src/
 ├── game/                   # Pure game logic — zero React/Three deps
 │   ├── types/              # Shared type definitions (no functions)
-│   │   ├── gameState.ts    # GameState, Phase
-│   │   ├── tileMap.ts      # TileMap, TileType, Tileset
-│   │   ├── map.ts          # FacadeMap, WindowSlot
-│   │   ├── topdownState.ts # TopdownState, TopdownInput
+│   │   ├── gameState.ts    # GameState,
+ Phase
+│   │   ├── tileMap.ts      # TileMap,
+ TileType,
+ Tileset
+│   │   ├── map.ts          # FacadeMap,
+ WindowSlot
+│   │   ├── topdownState.ts # TopdownState,
+ TopdownInput
 │   │   ├── player.ts       # Player
 │   │   ├── cop.ts          # Cop
 │   │   ├── delivery.ts     # DeliveryState
@@ -67,7 +72,10 @@ src/
 │       ├── StartScreen.tsx
 │       └── EndScreen.tsx
 ├── assets/
-│   ├── audio/              # bgm_loop.mp3, bgm_tension.mp3, bgm_danger.mp3, sfx/
+│   ├── audio/              # bgm_loop.mp3,
+ bgm_tension.mp3,
+ bgm_danger.mp3,
+ sfx/
 │   └── generated/          # PNG sprites from generate-assets.mjs
 └── main.tsx
 scripts/
@@ -88,7 +96,8 @@ All game logic lives in `src/game/` and is pure TypeScript with zero React or Th
 - Deterministic state — same input always produces same output
 - Easy porting to any renderer
 
-React hooks in `src/hooks/` are the only bridge. They subscribe to the R3F `useFrame` loop and call game system functions, then update refs used by render components.
+React hooks in `src/hooks/` are the only bridge. They subscribe to the R3F `useFrame` loop and call game system functions,
+ then update refs used by render components.
 
 → See [diagrams/architecture-layers.md](./diagrams/architecture-layers.md)
 
@@ -122,7 +131,9 @@ stateRef.current = newState    ← ref (no re-render)
         │
         ▼
 R3F Components read stateRef every frame
-(EnemySprite, BulletSprite, CrosshairSprite…)
+(EnemySprite,
+ BulletSprite,
+ CrosshairSprite…)
 ```
 
 HUD data is pushed via `onHudUpdate` callback (triggers React re-render only when values change).
@@ -136,12 +147,14 @@ Orthographic camera. Zoom is computed on `onCreated` to fill the viewport:
 ```ts
 const zoomByWidth = size.width / STREET_W; // fill horizontally
 const zoomByHeight = (size.height - 40) / STREET_H; // fill vertically (minus HUD)
-camera.zoom = Math.max(zoomByWidth, zoomByHeight);
+camera.zoom = Math.max(zoomByWidth,
+ zoomByHeight);
 ```
 
 Initial position shows the ground floor + a strip of road below buildings.
 
-Horizontal and vertical scroll via mouse edge zones (GameScene `useFrame`), clamped to scene bounds.
+Horizontal and vertical scroll via mouse edge zones (GameScene `useFrame`),
+ clamped to scene bounds.
 
 ---
 
@@ -156,4 +169,5 @@ Horizontal and vertical scroll via mouse edge zones (GameScene `useFrame`), clam
 | Tests            | Vitest                             |
 | Audio            | Howler.js                          |
 | Package manager  | Yarn 4 (PnP)                       |
-| Asset generation | Pollinations.ai (FLUX model, free) |
+| Asset generation | Pollinations.ai (FLUX model,
+ free) |

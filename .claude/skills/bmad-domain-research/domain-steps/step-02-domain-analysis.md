@@ -5,10 +5,14 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE AN INDUSTRY ANALYST, not content generator
-- 💬 FOCUS on market size, growth, and industry dynamics
+- 📋 YOU ARE AN INDUSTRY ANALYST,
+ not content generator
+- 💬 FOCUS on market size,
+ growth,
+ and industry dynamics
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
 - 📝 WRITE CONTENT IMMEDIATELY TO DOCUMENT
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -19,7 +23,8 @@
 - ⚠️ Present [C] continue option after industry analysis content generation
 - 📝 WRITE INDUSTRY ANALYSIS TO DOCUMENT IMMEDIATELY
 - 💾 ONLY proceed when user chooses C (Continue)
-- 📖 Update frontmatter `stepsCompleted: [1, 2]` before loading next step
+- 📖 Update frontmatter `stepsCompleted: [1,
+ 2]` before loading next step
 - 🚫 FORBIDDEN to load next step until C is selected
 
 ## CONTEXT BOUNDARIES:
@@ -27,18 +32,23 @@
 - Current document and frontmatter from step-01 are available
 - **Research topic = "{{research_topic}}"** - established from initial discussion
 - **Research goals = "{{research_goals}}"** - established from initial discussion
-- Focus on market size, growth, and industry dynamics
+- Focus on market size,
+ growth,
+ and industry dynamics
 - Web search capabilities with source verification are enabled
 
 ## YOUR TASK:
 
-Conduct industry analysis focusing on market size, growth, and industry dynamics. Search the web to verify and supplement current facts.
+Conduct industry analysis focusing on market size,
+ growth,
+ and industry dynamics. Search the web to verify and supplement current facts.
 
 ## INDUSTRY ANALYSIS SEQUENCE:
 
 ### 1. Begin Industry Analysis
 
-**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents, subprocesses or parallel processing if available to thoroughly analyze different industry areas simultaneously and thoroughly.
+**UTILIZE SUBPROCESSES AND SUBAGENTS**: Use research subagents,
+ subprocesses or parallel processing if available to thoroughly analyze different industry areas simultaneously and thoroughly.
 
 Start with industry research approach:
 "Now I'll conduct **industry analysis** for **{{research_topic}}** to understand market dynamics.
@@ -65,8 +75,11 @@ Search the web: "{{research_topic}} industry trends evolution"
 **Analysis approach:**
 
 - Look for recent market research reports and industry analyses
-- Search for authoritative sources (market research firms, industry associations)
-- Identify market size, growth rates, and segmentation data
+- Search for authoritative sources (market research firms,
+ industry associations)
+- Identify market size,
+ growth rates,
+ and segmentation data
 - Research industry trends and evolution patterns
 - Analyze economic impact and value creation metrics
 
@@ -74,7 +87,8 @@ Search the web: "{{research_topic}} industry trends evolution"
 
 **Collect and analyze findings from all parallel searches:**
 
-"After executing comprehensive parallel web searches, let me analyze and aggregate industry findings:
+"After executing comprehensive parallel web searches,
+ let me analyze and aggregate industry findings:
 
 **Research Coverage:**
 
@@ -84,7 +98,9 @@ Search the web: "{{research_topic}} industry trends evolution"
 - Industry trends and evolution patterns
 
 **Cross-Industry Analysis:**
-[Identify patterns connecting market dynamics, segmentation, and trends]
+[Identify patterns connecting market dynamics,
+ segmentation,
+ and trends]
 
 **Quality Assessment:**
 [Overall confidence levels and research gaps identified]"
@@ -97,7 +113,8 @@ Prepare industry analysis with web search citations:
 
 #### Content Structure:
 
-When saving to document, append these Level 2 and Level 3 sections:
+When saving to document,
+ append these Level 2 and Level 3 sections:
 
 ```markdown
 ## Industry Analysis
@@ -170,7 +187,8 @@ _Source: [URL]_
 #### If 'C' (Continue):
 
 - **CONTENT ALREADY WRITTEN TO DOCUMENT**
-- Update frontmatter: `stepsCompleted: [1, 2]`
+- Update frontmatter: `stepsCompleted: [1,
+ 2]`
 - Load: `./step-03-competitive-landscape.md`
 
 ## APPEND TO DOCUMENT:
@@ -206,8 +224,11 @@ Content is already written to document when generated in step 4. No additional a
 ## INDUSTRY RESEARCH PROTOCOLS:
 
 - Research market research reports and industry analyses
-- Use authoritative sources (market research firms, industry associations)
-- Analyze market size, growth rates, and segmentation data
+- Use authoritative sources (market research firms,
+ industry associations)
+- Analyze market size,
+ growth rates,
+ and segmentation data
 - Study industry trends and evolution patterns
 - Search the web to verify facts
 - Present conflicting information when sources disagree
@@ -224,6 +245,9 @@ Content is already written to document when generated in step 4. No additional a
 
 ## NEXT STEP:
 
-After user selects 'C', load `./step-03-competitive-landscape.md` to analyze competitive landscape, key players, and ecosystem analysis for {{research_topic}}.
+After user selects 'C',
+ load `./step-03-competitive-landscape.md` to analyze competitive landscape,
+ key players,
+ and ecosystem analysis for {{research_topic}}.
 
 Remember: Always write research content to document immediately and search the web to verify facts!

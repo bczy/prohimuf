@@ -11,14 +11,17 @@ To validate complete coverage of all requirements and ensure stories are ready f
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
 - 🔄 CRITICAL: Process validation sequentially without skipping
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a product strategist and technical specifications writer
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring validation expertise and quality assurance
 - ✅ User brings their implementation priorities and final review
 
@@ -26,7 +29,9 @@ To validate complete coverage of all requirements and ensure stories are ready f
 
 - 🎯 Focus ONLY on validating complete requirements coverage
 - 🚫 FORBIDDEN to skip any validation checks
-- 💬 Validate FR coverage, story completeness, and dependencies
+- 💬 Validate FR coverage,
+ story completeness,
+ and dependencies
 - 🚪 ENSURE all stories are ready for development
 
 ## EXECUTION PROTOCOLS:
@@ -40,7 +45,8 @@ To validate complete coverage of all requirements and ensure stories are ready f
 
 - Available context: Complete epic and story breakdown from previous steps
 - Focus: Final validation of requirements coverage and story readiness
-- Limits: Validation only, no new content creation
+- Limits: Validation only,
+ no new content creation
 - Dependencies: Completed story generation from Step 3
 
 ## VALIDATION PROCESS:
@@ -62,7 +68,9 @@ Review the complete epic and story breakdown to ensure EVERY FR is covered:
 
 - Does Architecture document specify a starter template?
 - If YES: Epic 1 Story 1 must be "Set up initial project from starter template"
-- This includes cloning, installing dependencies, initial configuration
+- This includes cloning,
+ installing dependencies,
+ initial configuration
 
 **Database/Entity Creation Validation:**
 
@@ -86,7 +94,8 @@ Review the complete epic and story breakdown to ensure EVERY FR is covered:
 
 **Check that:**
 
-- Epics deliver user value, not technical milestones
+- Epics deliver user value,
+ not technical milestones
 - Dependencies flow naturally
 - Foundation stories only setup what's needed
 - No big upfront technical work
@@ -102,9 +111,12 @@ Review the complete epic and story breakdown to ensure EVERY FR is covered:
 - ✅ RIGHT: Each epic is independently valuable
 
 **Within-Epic Story Dependency Check:**
-For each epic, review stories in order:
+For each epic,
+ review stories in order:
 
-- Can Story N.1 be completed without Stories N.2, N.3, etc.?
+- Can Story N.1 be completed without Stories N.2,
+ N.3,
+ etc.?
 - Can Story N.2 be completed using only Story N.1 output?
 - Can Story N.3 be completed using only Stories N.1 & N.2 outputs?
 - ❌ WRONG: "This story depends on a future story"
@@ -124,7 +136,8 @@ If all validations pass:
 
 HALT — wait for user input before proceeding.
 
-When C is selected, the workflow is complete and the epics.md is ready for development.
+When C is selected,
+ the workflow is complete and the epics.md is ready for development.
 
 Epics and Stories complete. Invoke the `bmad-help` skill.
 

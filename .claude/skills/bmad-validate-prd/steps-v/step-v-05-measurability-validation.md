@@ -9,7 +9,9 @@ validationReportPath: "{validation_report_path}"
 
 ## STEP GOAL:
 
-Validate that all Functional Requirements (FRs) and Non-Functional Requirements (NFRs) are measurable, testable, and follow proper format without implementation details.
+Validate that all Functional Requirements (FRs) and Non-Functional Requirements (NFRs) are measurable,
+ testable,
+ and follow proper format without implementation details.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -17,15 +19,19 @@ Validate that all Functional Requirements (FRs) and Non-Functional Requirements 
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in systematic validation, not collaborative dialogue
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in systematic validation,
+ not collaborative dialogue
 - ✅ You bring analytical rigor and requirements engineering expertise
 - ✅ This step runs autonomously - no user input needed
 
@@ -46,14 +52,18 @@ Validate that all Functional Requirements (FRs) and Non-Functional Requirements 
 
 ## CONTEXT BOUNDARIES:
 
-- Available context: PRD file, validation report
+- Available context: PRD file,
+ validation report
 - Focus: FR and NFR measurability only
-- Limits: Don't validate other aspects, don't pause for user input
+- Limits: Don't validate other aspects,
+ don't pause for user input
 - Dependencies: Steps 2-4 completed - initial validation checks done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Attempt Sub-Process Validation
 
@@ -66,9 +76,19 @@ Validate that all Functional Requirements (FRs) and Non-Functional Requirements 
 1. Extract all FRs from Functional Requirements section
 2. Check each FR for:
    - '[Actor] can [capability]' format compliance
-   - No subjective adjectives (easy, fast, simple, intuitive, etc.)
-   - No vague quantifiers (multiple, several, some, many, etc.)
-   - No implementation details (technology names, library names, data structures unless capability-relevant)
+   - No subjective adjectives (easy,
+ fast,
+ simple,
+ intuitive,
+ etc.)
+   - No vague quantifiers (multiple,
+ several,
+ some,
+ many,
+ etc.)
+   - No implementation details (technology names,
+ library names,
+ data structures unless capability-relevant)
 3. Document violations with line numbers
 
 **Non-Functional Requirements (NFRs):**
@@ -76,15 +96,20 @@ Validate that all Functional Requirements (FRs) and Non-Functional Requirements 
 1. Extract all NFRs from Non-Functional Requirements section
 2. Check each NFR for:
    - Specific metrics with measurement methods
-   - Template compliance (criterion, metric, measurement method, context)
-   - Context included (why this matters, who it affects)
+   - Template compliance (criterion,
+ metric,
+ measurement method,
+ context)
+   - Context included (why this matters,
+ who it affects)
 3. Document violations with line numbers
 
 Return structured findings with violation counts and examples."
 
 ### 2. Graceful Degradation (if Task tool unavailable)
 
-If Task tool unavailable, perform analysis directly:
+If Task tool unavailable,
+ perform analysis directly:
 
 **Functional Requirements Analysis:**
 
@@ -98,18 +123,41 @@ Extract all FRs and check each for:
 
 **No subjective adjectives:**
 
-- Scan for: easy, fast, simple, intuitive, user-friendly, responsive, quick, efficient (without metrics)
+- Scan for: easy,
+ fast,
+ simple,
+ intuitive,
+ user-friendly,
+ responsive,
+ quick,
+ efficient (without metrics)
 - Note line numbers
 
 **No vague quantifiers:**
 
-- Scan for: multiple, several, some, many, few, various, number of
+- Scan for: multiple,
+ several,
+ some,
+ many,
+ few,
+ various,
+ number of
 - Note line numbers
 
 **No implementation details:**
 
-- Scan for: React, Vue, Angular, PostgreSQL, MongoDB, AWS, Docker, Kubernetes, Redux, etc.
-- Unless capability-relevant (e.g., "API consumers can access...")
+- Scan for: React,
+ Vue,
+ Angular,
+ PostgreSQL,
+ MongoDB,
+ AWS,
+ Docker,
+ Kubernetes,
+ Redux,
+ etc.
+- Unless capability-relevant (e.g.,
+ "API consumers can access...")
 - Note line numbers
 
 **Non-Functional Requirements Analysis:**
@@ -118,7 +166,9 @@ Extract all NFRs and check each for:
 
 **Specific metrics:**
 
-- Is there a measurable criterion? (e.g., "response time < 200ms", not "fast response")
+- Is there a measurable criterion? (e.g.,
+ "response time < 200ms",
+ not "fast response")
 - Can this be measured or tested?
 
 **Template compliance:**
@@ -159,16 +209,20 @@ Append to validation report:
 **Total FRs Analyzed:** {count}
 
 **Format Violations:** {count}
-[If violations exist, list examples with line numbers]
+[If violations exist,
+ list examples with line numbers]
 
 **Subjective Adjectives Found:** {count}
-[If found, list examples with line numbers]
+[If found,
+ list examples with line numbers]
 
 **Vague Quantifiers Found:** {count}
-[If found, list examples with line numbers]
+[If found,
+ list examples with line numbers]
 
 **Implementation Leakage:** {count}
-[If found, list examples with line numbers]
+[If found,
+ list examples with line numbers]
 
 **FR Violations Total:** {total}
 
@@ -177,13 +231,16 @@ Append to validation report:
 **Total NFRs Analyzed:** {count}
 
 **Missing Metrics:** {count}
-[If missing, list examples with line numbers]
+[If missing,
+ list examples with line numbers]
 
 **Incomplete Template:** {count}
-[If incomplete, list examples with line numbers]
+[If incomplete,
+ list examples with line numbers]
 
 **Missing Context:** {count}
-[If missing, list examples with line numbers]
+[If missing,
+ list examples with line numbers]
 
 **NFR Violations Total:** {total}
 
@@ -192,7 +249,9 @@ Append to validation report:
 **Total Requirements:** {FRs + NFRs}
 **Total Violations:** {FR violations + NFR violations}
 
-**Severity:** [Critical if >10 violations, Warning if 5-10, Pass if <5]
+**Severity:** [Critical if >10 violations,
+ Warning if 5-10,
+ Pass if <5]
 
 **Recommendation:**
 [If Critical] "Many requirements are not measurable or testable. Requirements must be revised to be testable for downstream work."
@@ -208,7 +267,8 @@ Total Violations: {count} ({severity})
 
 **Proceeding to next validation check...**"
 
-Without delay, read fully and follow: {nextStepFile} (step-v-06-traceability-validation.md)
+Without delay,
+ read fully and follow: {nextStepFile} (step-v-06-traceability-validation.md)
 
 ---
 
@@ -232,4 +292,6 @@ Without delay, read fully and follow: {nextStepFile} (step-v-06-traceability-val
 - Not assessing severity
 - Not auto-proceeding
 
-**Master Rule:** Requirements must be testable to be useful. Validate every requirement for measurability, document violations, auto-proceed.
+**Master Rule:** Requirements must be testable to be useful. Validate every requirement for measurability,
+ document violations,
+ auto-proceed.

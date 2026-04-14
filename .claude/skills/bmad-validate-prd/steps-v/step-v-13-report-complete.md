@@ -8,7 +8,10 @@ prdFile: "{prd_file_path}"
 
 ## STEP GOAL:
 
-Finalize validation report, summarize all findings from steps 1-12, present summary to user conversationally, and offer actionable next steps.
+Finalize validation report,
+ summarize all findings from steps 1-12,
+ present summary to user conversationally,
+ and offer actionable next steps.
 
 ## MANDATORY EXECUTION RULES (READ FIRST):
 
@@ -16,16 +19,20 @@ Finalize validation report, summarize all findings from steps 1-12, present summ
 
 - 🛑 NEVER generate content without user input
 - 📖 CRITICAL: Read the complete step file before taking any action
-- 🔄 CRITICAL: When loading next step with 'C', ensure entire file is read
-- 📋 YOU ARE A FACILITATOR, not a content generator
+- 🔄 CRITICAL: When loading next step with 'C',
+ ensure entire file is read
+- 📋 YOU ARE A FACILITATOR,
+ not a content generator
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 - ✅ YOU MUST ALWAYS WRITE all artifact and document content in `{document_output_language}`
 
 ### Role Reinforcement:
 
 - ✅ You are a Validation Architect and Quality Assurance Specialist
-- ✅ If you already have been given communication or persona patterns, continue to use those while playing this new role
-- ✅ We engage in collaborative dialogue, not command-response
+- ✅ If you already have been given communication or persona patterns,
+ continue to use those while playing this new role
+- ✅ We engage in collaborative dialogue,
+ not command-response
 - ✅ You bring synthesis and summary expertise
 - ✅ This is the FINAL step - requires user interaction
 
@@ -49,12 +56,15 @@ Finalize validation report, summarize all findings from steps 1-12, present summ
 
 - Available context: Complete validation report with findings from all validation steps
 - Focus: Summary and presentation only (no new validation)
-- Limits: Don't add new findings, just synthesize existing
+- Limits: Don't add new findings,
+ just synthesize existing
 - Dependencies: Steps 1-12 completed - all validation checks done
 
 ## MANDATORY SEQUENCE
 
-**CRITICAL:** Follow this sequence exactly. Do not skip, reorder, or improvise unless user explicitly requests a change.
+**CRITICAL:** Follow this sequence exactly. Do not skip,
+ reorder,
+ or improvise unless user explicitly requests a change.
 
 ### 1. Load Complete Validation Report
 
@@ -63,7 +73,8 @@ Read the entire validation report from {validationReportPath}
 Extract all findings from:
 
 - Format Detection (Step 2)
-- Parity Analysis (Step 2B, if applicable)
+- Parity Analysis (Step 2B,
+ if applicable)
 - Information Density (Step 3)
 - Product Brief Coverage (Step 4)
 - Measurability (Step 5)
@@ -87,17 +98,29 @@ inputDocuments: [list of documents]
 validationStepsCompleted:
   [
     "step-v-01-discovery",
+
     "step-v-02-format-detection",
+
     "step-v-03-density-validation",
+
     "step-v-04-brief-coverage-validation",
+
     "step-v-05-measurability-validation",
+
     "step-v-06-traceability-validation",
+
     "step-v-07-implementation-leakage-validation",
+
     "step-v-08-domain-compliance-validation",
+
     "step-v-09-project-type-validation",
+
     "step-v-10-smart-validation",
+
     "step-v-11-holistic-quality-validation",
+
     "step-v-12-completeness-validation",
+
   ]
 validationStatus: COMPLETE
 holisticQualityRating: "{rating from step 11}"
@@ -110,7 +133,8 @@ overallStatus: "{Pass/Warning/Critical based on all findings}"
 **Overall Status:**
 
 - Determine from all validation findings
-- **Pass:** All critical checks pass, minor warnings acceptable
+- **Pass:** All critical checks pass,
+ minor warnings acceptable
 - **Warning:** Some issues found but PRD is usable
 - **Critical:** Major issues that prevent PRD from being fit for purpose
 
@@ -148,10 +172,12 @@ Display:
 {Present quick results table with key findings}
 
 **Critical Issues:** {count or "None"}
-{If any, list briefly}
+{If any,
+ list briefly}
 
 **Warnings:** {count or "None"}
-{If any, list briefly}
+{If any,
+ list briefly}
 
 **Strengths:**
 {List key strengths}
@@ -179,7 +205,9 @@ Display:
 
 **[R] Review Detailed Findings** - Walk through validation report section by section
 **[E] Use Edit Workflow** - Use validation report with Edit workflow for systematic improvements
-**[F] Fix Simpler Items** - Immediate fixes for simple issues (anti-patterns, leakage, missing headers)
+**[F] Fix Simpler Items** - Immediate fixes for simple issues (anti-patterns,
+ leakage,
+ missing headers)
 **[X] Exit** - Exit and Suggest Next Steps.
 
 #### EXECUTION RULES:
@@ -193,12 +221,16 @@ Display:
   - Walk through validation report section by section
   - Present findings from each validation step
   - Allow user to ask questions
-  - After review, return to menu
+  - After review,
+ return to menu
 
 - **IF E (Use Edit Workflow):**
-  - Explain: "The Edit workflow can use this validation report to systematically address issues. Edit mode will guide you through discovering what to edit, reviewing the PRD, and applying targeted improvements."
+  - Explain: "The Edit workflow can use this validation report to systematically address issues. Edit mode will guide you through discovering what to edit,
+ reviewing the PRD,
+ and applying targeted improvements."
   - Offer: "Would you like to launch Edit mode now? It will help you fix validation findings systematically."
-  - If yes: Invoke the `bmad-edit-prd` skill, passing the validation report path as context
+  - If yes: Invoke the `bmad-edit-prd` skill,
+ passing the validation report path as context
   - If no: Return to menu
 
 - **IF F (Fix Simpler Items):**
@@ -208,7 +240,8 @@ Display:
     - Implementation leakage (remove technology names from FRs/NFRs)
     - Missing section headers (add ## headers)
   - Ask: "Which simple fixes would you like me to make?"
-  - If user specifies fixes, make them and update validation report
+  - If user specifies fixes,
+ make them and update validation report
   - Return to menu
 
 - **IF X (Exit):**
@@ -216,7 +249,8 @@ Display:
   - Display: "**Summary:** {overall status} - {recommendation}"
   - PRD Validation complete. Invoke the `bmad-help` skill.
 
-- **IF Any other:** Help user, then redisplay menu
+- **IF Any other:** Help user,
+ then redisplay menu
 
 ---
 
@@ -229,12 +263,16 @@ Display:
 - Report frontmatter updated with final status
 - Overall status determined correctly (Pass/Warning/Critical)
 - Quick results table presented
-- Critical issues, warnings, and strengths listed
+- Critical issues,
+ warnings,
+ and strengths listed
 - Holistic quality rating included
 - Top 3 improvements presented
 - Clear recommendation provided
 - Menu options presented with clear explanations
-- User can review findings, get help, or exit
+- User can review findings,
+ get help,
+ or exit
 
 ### ❌ SYSTEM FAILURE:
 
