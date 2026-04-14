@@ -5,13 +5,14 @@ import type { NarrativeScene } from "@game/systems/narrativeSystem";
 interface Props {
   scene: NarrativeScene;
   onDone: () => void;
+  showSkipButton?: boolean;
 }
 
 const NEON_YELLOW = "#ffe600";
 const NEON_GREEN = "#39ff14";
 const CHAR_DELAY_MS = 28;
 
-export function NarrativeScreen({ scene, onDone }: Props): JSX.Element {
+export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props): JSX.Element {
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [done, setDone] = useState(false);
@@ -63,6 +64,11 @@ export function NarrativeScreen({ scene, onDone }: Props): JSX.Element {
 
   const displayedText = fullText.slice(0, charIndex);
 
+  function handleSkip(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.stopPropagation();
+    onDone();
+  }
+
   return (
     <div
       onClick={advance}
@@ -107,6 +113,30 @@ export function NarrativeScreen({ scene, onDone }: Props): JSX.Element {
       >
         UNDERGROUND PARIS — FANZINE CLANDESTIN — 1998
       </div>
+
+      {showSkipButton && (
+        <button
+          type="button"
+          onClick={handleSkip}
+          style={{
+            position: "absolute",
+            top: 30,
+            left: 16,
+            border: `2px solid ${NEON_YELLOW}`,
+            background: "rgba(0,0,0,0.88)",
+            color: NEON_YELLOW,
+            padding: "6px 12px",
+            fontSize: "11px",
+            letterSpacing: "0.18em",
+            fontFamily: "inherit",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            pointerEvents: "auto",
+          }}
+        >
+          Passer
+        </button>
+      )}
 
       {/* Progress dots */}
       <div

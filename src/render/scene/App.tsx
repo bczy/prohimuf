@@ -165,6 +165,7 @@ export function App(): JSX.Element {
       return (
         <NarrativeScreen
           scene={scene}
+          showSkipButton
           onDone={() => {
             setAppPhase("PLAYING");
           }}
@@ -225,8 +226,9 @@ export function App(): JSX.Element {
           totalW -= lvLayout.gap;
           const STREET_H = lvLayout.streetHeight;
           const zoomByWidth = size.width / totalW;
-          const zoomByHeight = (size.height - 40) / STREET_H;
-          camera.zoom = Math.max(zoomByWidth, zoomByHeight);
+          const VISIBLE_ROWS = 8;
+          const zoomByVisibleRows = (size.height - 40) / VISIBLE_ROWS;
+          camera.zoom = Math.max(zoomByWidth, zoomByVisibleRows);
           const viewH = size.height / camera.zoom;
           camera.position.y = -(STREET_H / 2) - 1.5 + viewH / 2;
           camera.updateProjectionMatrix();

@@ -8,8 +8,54 @@ import { useMouse } from "@hooks/useMouse";
 import type { GameState } from "@game/types/gameState";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
+import { crosshairToWorld } from "@game/systems/crosshairSystem";
 
 const MAX_DELTA = 0.1;
+const DIRECTION_DEAD_ZONE = 0.2;
+
+function computeTargetIndicator(
+  state: GameState,
+  facade: FacadeMap,
+  crosshairWorld: { x: number; y: number },
+): HudData["targetIndicator"] {
+  let nearestSlot = null as { x: number; y: number } | null;
+  let nearestDistSq = Number.POSITIVE_INFINITY;
+
+  for (const enemy of state.enemies) {
+    if (enemy.state === "DEAD" || enemy.state === "HIDDEN" || enemy.state === "HIT") {
+      continue;
+    }
+    const slot = facade.slots[enemy.slotIndex];
+    if (slot === undefined) continue;
+    const dx = slot.screenPosition.x - crosshairWorld.x;
+    const dy = slot.screenPosition.y - crosshairWorld.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < nearestDistSq) {
+      nearestDistSq = distSq;
+      nearestSlot = { x: slot.screenPosition.x, y: slot.screenPosition.y };
+    }
+  }
+
+  if (nearestSlot === null) {
+    return { up: false, down: false, left: false, right: false };
+  }
+
+  return {
+    up: nearestSlot.y - crosshairWorld.y > DIRECTION_DEAD_ZONE,
+    down: crosshairWorld.y - nearestSlot.y > DIRECTION_DEAD_ZONE,
+    left: crosshairWorld.x - nearestSlot.x > DIRECTION_DEAD_ZONE,
+    right: nearestSlot.x - crosshairWorld.x > DIRECTION_DEAD_ZONE,
+  };
+}
+
+function isSameIndicator(
+  a: HudData["targetIndicator"] | undefined,
+  b: HudData["targetIndicator"] | undefined,
+): boolean {
+  if (a === undefined && b === undefined) return true;
+  if (a === undefined || b === undefined) return false;
+  return a.up === b.up && a.down === b.down && a.left === b.left && a.right === b.right;
+}
 
 export function useGameLoop(
   facade: FacadeMap,
@@ -62,12 +108,27 @@ export function useGameLoop(
     );
     gameStateRef.current = next;
 
+    const nextCrosshairLocal = crosshairToWorld(next.crosshair, viewW, viewH);
+    const nextCrosshairWorld = {
+      x: nextCrosshairLocal.x + camera.position.x,
+      y: nextCrosshairLocal.y + camera.position.y,
+    };
+    const prevCrosshairLocal = crosshairToWorld(prev.crosshair, viewW, viewH);
+    const prevCrosshairWorld = {
+      x: prevCrosshairLocal.x + camera.position.x,
+      y: prevCrosshairLocal.y + camera.position.y,
+    };
+
+    const targetIndicator = computeTargetIndicator(next, facade, nextCrosshairWorld);
+    const prevTargetIndicator = computeTargetIndicator(prev, facade, prevCrosshairWorld);
+
     if (
       next.score !== prev.score ||
       next.lives !== prev.lives ||
       Math.floor(next.timeRemaining) !== Math.floor(prev.timeRemaining) ||
       next.phase !== prev.phase ||
-      next.wave !== prev.wave
+      next.wave !== prev.wave ||
+      !isSameIndicator(prevTargetIndicator, targetIndicator)
     ) {
       onHudUpdate({
         score: next.score,
@@ -75,6 +136,7 @@ export function useGameLoop(
         timeRemaining: next.timeRemaining,
         phase: next.phase,
         wave: next.wave,
+        targetIndicator,
       });
     }
   });

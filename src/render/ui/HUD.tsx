@@ -1,6 +1,13 @@
 import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 
+export interface HudTargetIndicator {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
+
 export interface HudData {
   score: number;
   lives: number;
@@ -9,6 +16,7 @@ export interface HudData {
   wave: number;
   levelName?: string;
   isHighScore?: boolean;
+  targetIndicator?: HudTargetIndicator;
 }
 
 // Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
@@ -65,11 +73,92 @@ const valueStyle = (color: string): React.CSSProperties => ({
   lineHeight: 1,
 });
 
+const targetRingStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  pointerEvents: "none",
+};
+
+const arrowWrapStyle: React.CSSProperties = {
+  position: "fixed",
+  width: 40,
+  height: 40,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const arrowCoreStyle: React.CSSProperties = {
+  position: "relative",
+  width: 34,
+  height: 34,
+  opacity: 0.3,
+  filter: "none",
+  transition: "opacity 120ms ease, filter 120ms ease",
+};
+
+const activeArrowStyle: React.CSSProperties = {
+  opacity: 1,
+  filter: `drop-shadow(0 0 6px ${NEON_YELLOW}) drop-shadow(0 0 12px ${NEON_ORANGE})`,
+};
+
+function ArrowIndicator({
+  direction,
+  active,
+}: {
+  direction: "up" | "down" | "left" | "right";
+  active: boolean;
+}): JSX.Element {
+  const rotation = {
+    right: "rotate(0deg)",
+    down: "rotate(90deg)",
+    left: "rotate(180deg)",
+    up: "rotate(270deg)",
+  }[direction];
+
+  return (
+    <span
+      style={{
+        ...arrowCoreStyle,
+        transform: rotation,
+        ...(active ? activeArrowStyle : null),
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 2,
+          top: "50%",
+          width: 19,
+          height: 8,
+          transform: "translateY(-50%)",
+          background: NEON_YELLOW,
+          borderRadius: 999,
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          right: 0,
+          top: "50%",
+          width: 0,
+          height: 0,
+          transform: "translateY(-50%)",
+          borderTop: "10px solid transparent",
+          borderBottom: "10px solid transparent",
+          borderLeft: `16px solid ${NEON_YELLOW}`,
+        }}
+      />
+    </span>
+  );
+}
+
 export function HUD({ data }: { data: HudData }): JSX.Element {
   const msg = phaseMessage(data.phase);
   const timeColor =
     data.timeRemaining < 20 ? NEON_PINK : data.timeRemaining < 40 ? NEON_ORANGE : NEON_GREEN;
   const livesColor = data.lives <= 1 ? NEON_PINK : NEON_YELLOW;
+  const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
 
   return (
     <>
@@ -119,6 +208,49 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           <span style={labelStyle}>vies</span>
           <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
         </div>
+      </div>
+
+      <div style={targetRingStyle}>
+        <span
+          style={{
+            ...arrowWrapStyle,
+            top: 52,
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <ArrowIndicator direction="up" active={indicator.up} />
+        </span>
+        <span
+          style={{
+            ...arrowWrapStyle,
+            bottom: 8,
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <ArrowIndicator direction="down" active={indicator.down} />
+        </span>
+        <span
+          style={{
+            ...arrowWrapStyle,
+            top: "50%",
+            left: 8,
+            transform: "translateY(-50%)",
+          }}
+        >
+          <ArrowIndicator direction="left" active={indicator.left} />
+        </span>
+        <span
+          style={{
+            ...arrowWrapStyle,
+            top: "50%",
+            right: 8,
+            transform: "translateY(-50%)",
+          }}
+        >
+          <ArrowIndicator direction="right" active={indicator.right} />
+        </span>
       </div>
 
       {msg !== null && (
