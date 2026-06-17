@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
+import { applyPixelFilter } from "./pixelArt";
 
 const MAX_BULLETS = 20;
 const PLAYER_BULLET_COLOR = "#ffff00";
@@ -22,7 +23,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
     loader.load(
       `${import.meta.env.BASE_URL}assets/bullet_player.png`,
       (t) => {
-        playerTexRef.current = t;
+        playerTexRef.current = applyPixelFilter(t);
       },
       undefined,
       () => undefined,
