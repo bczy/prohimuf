@@ -18,16 +18,16 @@ React Three Fiber.
 
 ## Stack technique
 
-| Couche               | Technologie                       |
-| -------------------- | --------------------------------- |
-| Framework            | React 19                          |
-| Rendu 3D             | React Three Fiber + Three.js      |
-| Langage              | TypeScript (strict)               |
-| Build / dev          | Vite                              |
-| Tests                | Vitest                            |
-| Audio                | Howler.js                         |
-| Gestionnaire de paquets | Yarn 4 (Plug'n'Play)           |
-| Génération d'assets  | Pollinations.ai (modèle FLUX, gratuit) |
+| Couche                  | Technologie                            |
+| ----------------------- | -------------------------------------- |
+| Framework               | React 19                               |
+| Rendu 3D                | React Three Fiber + Three.js           |
+| Langage                 | TypeScript (strict)                    |
+| Build / dev             | Vite                                   |
+| Tests                   | Vitest                                 |
+| Audio                   | Howler.js                              |
+| Gestionnaire de paquets | Yarn 4 (Plug'n'Play)                   |
+| Génération d'assets     | Pollinations.ai (modèle FLUX, gratuit) |
 
 ---
 
@@ -47,19 +47,19 @@ Ouvrez ensuite l'URL affichée par Vite (par défaut `http://localhost:5173`).
 
 ## Scripts disponibles
 
-| Commande              | Description                                      |
-| --------------------- | ------------------------------------------------ |
-| `yarn dev`            | Serveur de développement Vite (HMR)              |
-| `yarn build`          | Vérification de types puis build de production   |
-| `yarn preview`        | Prévisualise le build de production              |
-| `yarn typecheck`      | Vérification TypeScript sans émettre de fichiers |
-| `yarn lint`           | Analyse ESLint                                   |
-| `yarn lint:fix`       | ESLint avec correction automatique               |
-| `yarn format`         | Formatage Prettier                               |
-| `yarn format:check`   | Vérifie le formatage sans modifier               |
-| `yarn test`           | Lance la suite de tests Vitest                   |
-| `yarn test:watch`     | Tests en mode watch                              |
-| `yarn test:coverage`  | Tests avec rapport de couverture                 |
+| Commande             | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `yarn dev`           | Serveur de développement Vite (HMR)              |
+| `yarn build`         | Vérification de types puis build de production   |
+| `yarn preview`       | Prévisualise le build de production              |
+| `yarn typecheck`     | Vérification TypeScript sans émettre de fichiers |
+| `yarn lint`          | Analyse ESLint                                   |
+| `yarn lint:fix`      | ESLint avec correction automatique               |
+| `yarn format`        | Formatage Prettier                               |
+| `yarn format:check`  | Vérifie le formatage sans modifier               |
+| `yarn test`          | Lance la suite de tests Vitest                   |
+| `yarn test:watch`    | Tests en mode watch                              |
+| `yarn test:coverage` | Tests avec rapport de couverture                 |
 
 ---
 
