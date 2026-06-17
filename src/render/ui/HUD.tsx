@@ -16,7 +16,7 @@ export interface HudData {
   wave: number;
   levelName?: string;
   isHighScore?: boolean;
-  targetIndicator?: HudTargetIndicator;
+  targetIndicator?: HudTargetIndicator | undefined;
 }
 
 // Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
