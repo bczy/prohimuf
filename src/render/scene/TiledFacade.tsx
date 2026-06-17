@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import type { JSX } from "react";
 import { CanvasTexture } from "three";
 import type { TileMap, TileType } from "@game/types/tileMap";
+import { applyPixelFilter, pixelateCanvas } from "./pixelArt";
 
 function makeNormalMap(diffuseCanvas: HTMLCanvasElement): CanvasTexture {
   const W = diffuseCanvas.width;
@@ -654,9 +655,13 @@ export const TiledFacade = memo(function TiledFacade({
 
   const { diffuse, normal } = useMemo(() => {
     const diffuseCanvas = makeFacadeCanvas(map);
+    // Style B: collapse the finely-drawn facade into chunky 16-bit pixels and
+    // band the palette. The normal map is derived from the pixelated canvas so
+    // the relief stays aligned with the pixel grid.
+    pixelateCanvas(diffuseCanvas, 5, 8);
     return {
-      diffuse: new CanvasTexture(diffuseCanvas),
-      normal: makeNormalMap(diffuseCanvas),
+      diffuse: applyPixelFilter(new CanvasTexture(diffuseCanvas)),
+      normal: applyPixelFilter(makeNormalMap(diffuseCanvas)),
     };
   }, [map]);
 

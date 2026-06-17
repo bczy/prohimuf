@@ -5,6 +5,7 @@ import { TextureLoader } from "three";
 import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
+import { applyPixelFilter } from "./pixelArt";
 
 // Neon colors per state (guidelines: ce qui brille est interactif)
 const NEON: Record<string, string> = {
@@ -37,7 +38,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
       loader.load(
         fallbackPath,
         (t) => {
-          ref.current = t;
+          ref.current = applyPixelFilter(t);
         },
         undefined,
         () => undefined,
@@ -45,7 +46,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
     loader.load(
       `${import.meta.env.BASE_URL}assets/enemy_sprite${suffix}.png`,
       (t) => {
-        idleTextureRef.current = t;
+        idleTextureRef.current = applyPixelFilter(t);
       },
       undefined,
       () => fallbackLoad(idleTextureRef, `${import.meta.env.BASE_URL}assets/enemy_sprite.png`),
@@ -53,7 +54,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
     loader.load(
       `${import.meta.env.BASE_URL}assets/enemy_shooting${suffix}.png`,
       (t) => {
-        shootTextureRef.current = t;
+        shootTextureRef.current = applyPixelFilter(t);
       },
       undefined,
       () => fallbackLoad(shootTextureRef, `${import.meta.env.BASE_URL}assets/enemy_shooting.png`),

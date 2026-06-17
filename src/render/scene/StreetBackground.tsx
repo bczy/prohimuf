@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { JSX } from "react";
-import { CanvasTexture } from "three";
+import { makePixelCanvasTexture } from "./pixelArt";
 
 // Fraction of canvas height devoted to sky (rest is pavement)
 const SKY_FRAC = 0.72;
@@ -78,7 +78,8 @@ function makeStreetCanvas(w: number, h: number): HTMLCanvasElement {
 export function StreetBackground({ width, height, groundY }: Props): JSX.Element {
   const texture = useMemo(() => {
     const canvas = makeStreetCanvas(width, height);
-    return new CanvasTexture(canvas);
+    // Style B: chunky pixels + banded palette, then crisp nearest filtering.
+    return makePixelCanvasTexture(canvas, 6, 7);
   }, [width, height]);
 
   // The sky/pavement join is at SKY_FRAC of the canvas from the top.
