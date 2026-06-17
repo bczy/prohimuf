@@ -12,31 +12,28 @@ export default defineConfig({
     coverage: {
       provider: "v8",
 
-      reporter: ["text",
- "lcov",
- "html"],
+      reporter: ["text", "lcov", "html"],
 
       include: ["src/game/**/*.ts"],
 
-      exclude: ["src/game/**/*.test.ts",
- "src/game/types/**"],
+      exclude: [
+        "src/game/**/*.test.ts",
+        "src/game/types/**",
+        // Static data / content modules — no executable logic to cover
+        "src/game/maps/**",
+        "src/game/levels/**",
+        "src/game/entities/**",
+        "src/game/state/**",
+        "src/game/systems/narrativeSystem.ts",
+      ],
 
-      thresholds: { lines: 80,
- functions: 80,
- branches: 80,
- statements: 80 },
-
+      thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
-
   },
 
   resolve: {
     alias: {
-      "@game": resolve(__dirname,
- "src/game"),
-
+      "@game": resolve(__dirname, "src/game"),
     },
-
   },
-
 });

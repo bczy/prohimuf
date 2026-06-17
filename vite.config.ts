@@ -7,20 +7,14 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@game": resolve(__dirname,
- "src/game"),
+      "@game": resolve(__dirname, "src/game"),
 
-      "@render": resolve(__dirname,
- "src/render"),
+      "@render": resolve(__dirname, "src/render"),
 
-      "@assets": resolve(__dirname,
- "src/assets"),
+      "@assets": resolve(__dirname, "src/assets"),
 
-      "@hooks": resolve(__dirname,
- "src/hooks"),
-
+      "@hooks": resolve(__dirname, "src/hooks"),
     },
-
   },
 
   base: "/prohimuf/",
@@ -31,14 +25,11 @@ export default defineConfig({
     outDir: "dist",
 
     sourcemap: true,
-
   },
 
   server: {
     port: 5173,
 
     open: true,
-
   },
-
 });

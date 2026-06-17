@@ -15,17 +15,15 @@ export default tseslint.config(
       ".yarn/**",
 
       "scripts/**",
- // Gemini asset generation scripts — linted separately
+      // Gemini asset generation scripts — linted separately
       "eslint.config.ts",
- // self-referential lint causes false positives
+      // self-referential lint causes false positives
       "vite.config.ts",
 
       "vitest.config.ts",
 
       "prettier.config.ts",
-
     ],
-
   },
 
   js.configs.recommended,
@@ -38,18 +36,13 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.ts",
- "*.tsx"],
-
+          allowDefaultProject: ["*.ts", "*.tsx"],
         },
 
         tsconfigRootDir: import.meta.dirname,
-
       },
 
-      globals: { ...globals.browser,
- ...globals.es2022 },
-
+      globals: { ...globals.browser, ...globals.es2022 },
     },
 
     rules: {
@@ -71,23 +64,16 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": [
         "error",
 
-        { argsIgnorePattern: "^_",
- varsIgnorePattern: "^_" },
-
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
 
       "@typescript-eslint/consistent-type-imports": [
         "error",
 
-        { prefer: "type-imports",
- fixStyle: "inline-type-imports" },
-
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
-
     },
-
   },
 
   prettierConfig,
-
 );

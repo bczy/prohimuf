@@ -18,7 +18,6 @@ const config: Config = {
   arrowParens: "always",
 
   endOfLine: "lf",
-
 };
 
 export default config;

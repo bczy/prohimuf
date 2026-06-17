@@ -1,0 +1,4 @@
+# Vendored tooling — not subject to project formatting
+.claude/
+_bmad/
+_bmad-output/

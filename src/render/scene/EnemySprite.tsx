@@ -33,7 +33,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
     const v = (slotIndex % 3) + 1;
     const suffix = v === 1 ? "" : `_${String(v)}`;
     const loader = new TextureLoader();
-    const fallbackLoad = (ref: React.MutableRefObject<Texture | null>, fallbackPath: string) =>
+    const fallbackLoad = (ref: React.RefObject<Texture | null>, fallbackPath: string) =>
       loader.load(
         fallbackPath,
         (t) => {

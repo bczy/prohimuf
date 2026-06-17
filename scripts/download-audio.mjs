@@ -1,12 +1,5 @@
 #!/usr/bin/env node
-/**
- * Audio downloader — Prohibition remake
- * Downloads boom bap / hip-hop instrumental tracks from Internet Archive (public domain / CC)
- * No login required — all files are freely accessible.
- *
- * Usage:
- *   node scripts/download-audio.mjs
- */
+/** * Audio downloader — Prohibition remake * Downloads boom bap / hip-hop instrumental tracks from Internet Archive (public domain / CC) * No login required — all files are freely accessible. * * Usage: *   node scripts/download-audio.mjs */
 
 import fs from "fs";
 import path from "path";
@@ -15,11 +8,9 @@ import http from "http";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUTPUT_DIR = path.resolve(__dirname,
- "../public/assets/audio");
+const OUTPUT_DIR = path.resolve(__dirname, "../public/assets/audio");
 
-// All tracks from Internet Archive — public domain or CC licensed,
- direct MP3 links
+// All tracks from Internet Archive — public domain or CC licensed, direct MP3 links
 const TRACKS = [
   // BGM tracks (loops for in-game music)
   {
@@ -31,7 +22,6 @@ const TRACKS = [
 
     // Fallback: use a simpler known-good IA track
     fallback: "https://archive.org/download/testmp3testfile/mpthreetest.mp3",
-
   },
 
   {
@@ -42,13 +32,10 @@ const TRACKS = [
     url: "https://archive.org/download/78_honeysuckle-rose_fats-waller-and-his-rhythm-fats-waller-ed-kirkeby_gbia0001280b/Honeysuckle%20Rose%20-%20Fats%20Waller%20and%20his%20Rhythm.mp3",
 
     fallback: "https://archive.org/download/testmp3testfile/mpthreetest.mp3",
-
   },
-
 ];
 
-// For the real boom bap tracks,
- we'll use these IA identifiers
+// For the real boom bap tracks, we'll use these IA identifiers
 // and construct direct download URLs from their known file structure
 const IA_TRACKS = [
   {
@@ -59,7 +46,6 @@ const IA_TRACKS = [
     identifier: "LukHash_-_Hard_Impact",
 
     file: "LukHash_-_05_-_Hard_Impact.mp3",
-
   },
 
   {
@@ -70,30 +56,23 @@ const IA_TRACKS = [
     identifier: "LukHash_-_War_Inside_My_Head",
 
     file: "LukHash_-_01_-_War_Inside_My_Head.mp3",
-
   },
-
 ];
 
 function sleep(ms) {
-  return new Promise((r) => setTimeout(r,
- ms));
+  return new Promise((r) => setTimeout(r, ms));
 }
 
-function download(url,
- destPath) {
-  return new Promise((resolve,
- reject) => {
+function download(url, destPath) {
+  return new Promise((resolve, reject) => {
     const proto = url.startsWith("https") ? https : http;
     const file = fs.createWriteStream(destPath);
 
-    const req = proto.get(url,
- (res) => {
+    const req = proto.get(url, (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         file.close();
         fs.unlinkSync(destPath);
-        download(res.headers.location,
- destPath).then(resolve).catch(reject);
+        download(res.headers.location, destPath).then(resolve).catch(reject);
         return;
       }
       if (res.statusCode !== 200) {
@@ -103,8 +82,7 @@ function download(url,
         return;
       }
       res.pipe(file);
-      file.on("finish",
- () => {
+      file.on("finish", () => {
         file.close();
         const size = fs.statSync(destPath).size;
         if (size < 10000) {
@@ -116,15 +94,13 @@ function download(url,
       });
     });
 
-    req.on("error",
- (err) => {
+    req.on("error", (err) => {
       file.close();
       if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
       reject(err);
     });
 
-    req.setTimeout(30000,
- () => {
+    req.setTimeout(30000, () => {
       req.destroy();
       file.close();
       if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
@@ -135,17 +111,13 @@ function download(url,
 
 // Fetch the IA item metadata to find actual MP3 files
 async function getIAFiles(identifier) {
-  return new Promise((resolve,
- reject) => {
+  return new Promise((resolve, reject) => {
     const url = `https://archive.org/metadata/${identifier}/files`;
     https
-      .get(url,
- (res) => {
+      .get(url, (res) => {
         const chunks = [];
-        res.on("data",
- (c) => chunks.push(c));
-        res.on("end",
- () => {
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => {
           try {
             const data = JSON.parse(Buffer.concat(chunks).toString());
             resolve(data.result ?? []);
@@ -154,17 +126,12 @@ async function getIAFiles(identifier) {
           }
         });
       })
-      .on("error",
- reject);
+      .on("error", reject);
   });
 }
 
-async function downloadTrack(name,
- description,
- url,
- retries = 3) {
-  const destPath = path.join(OUTPUT_DIR,
- `${name}.mp3`);
+async function downloadTrack(name, description, url, retries = 3) {
+  const destPath = path.join(OUTPUT_DIR, `${name}.mp3`);
 
   if (fs.existsSync(destPath)) {
     console.log(`  [skip] ${name} — already exists`);
@@ -172,13 +139,11 @@ async function downloadTrack(name,
   }
 
   console.log(`\n  [dl]   ${name} — ${description}`);
-  console.log(`         ${url.slice(0,
- 80)}...`);
+  console.log(`         ${url.slice(0, 80)}...`);
 
   for (let i = 0; i < retries; i++) {
     try {
-      const size = await download(url,
- destPath);
+      const size = await download(url, destPath);
       const kb = Math.round(size / 1024);
       console.log(`  [ok]   ${name}.mp3 (${String(kb)} KB)`);
       return true;
@@ -197,8 +162,7 @@ async function downloadTrack(name,
 
 // Curated list of boom bap / hip-hop instrumental tracks on Internet Archive
 // All are public domain or CC licensed
-// All Kevin MacLeod — CC-BY 4.0 (attribution required,
- free to use)
+// All Kevin MacLeod — CC-BY 4.0 (attribution required, free to use)
 // incompetech.com — URLs verified 2026-04-10
 const CURATED = [
   {
@@ -207,7 +171,6 @@ const CURATED = [
     description: "Main BGM — Funky Chunk (boom bap groove)",
 
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Funky%20Chunk.mp3",
-
   },
 
   {
@@ -216,7 +179,6 @@ const CURATED = [
     description: "Secondary BGM — Ouroboros (dark groove)",
 
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ouroboros.mp3",
-
   },
 
   {
@@ -225,7 +187,6 @@ const CURATED = [
     description: "Tension BGM — Sneaky Snitch (suspense)",
 
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3",
-
   },
 
   {
@@ -234,7 +195,6 @@ const CURATED = [
     description: "Danger BGM — Darkest Child (high tension)",
 
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Darkest%20Child.mp3",
-
   },
 
   {
@@ -243,16 +203,13 @@ const CURATED = [
     description: "Victory BGM — Reformat (upbeat)",
 
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Reformat.mp3",
-
   },
-
 ];
 
 const FALLBACKS = {};
 
 async function main() {
-  fs.mkdirSync(OUTPUT_DIR,
- { recursive: true });
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
   console.log(`Downloading ${String(CURATED.length)} audio tracks → public/assets/audio/\n`);
 
@@ -260,20 +217,15 @@ async function main() {
   let failed = [];
 
   for (const track of CURATED) {
-    const ok = await downloadTrack(track.name,
- track.description,
- track.url);
+    const ok = await downloadTrack(track.name, track.description, track.url);
     if (ok) {
       downloaded++;
     } else {
       // Try fallback
       const fallbackUrl = FALLBACKS[track.name];
       if (fallbackUrl) {
-        console.log(`  [fallback] trying ${fallbackUrl.slice(0,
- 60)}...`);
-        const ok2 = await downloadTrack(track.name,
- track.description,
- fallbackUrl);
+        console.log(`  [fallback] trying ${fallbackUrl.slice(0, 60)}...`);
+        const ok2 = await downloadTrack(track.name, track.description, fallbackUrl);
         if (ok2) {
           downloaded++;
         } else {
@@ -289,8 +241,7 @@ async function main() {
   console.log(`\nDone. ${String(downloaded)}/${String(CURATED.length)} tracks downloaded.`);
 
   if (failed.length > 0) {
-    console.log(`\nFailed: ${failed.join(",
- ")}`);
+    console.log(`\nFailed: ${failed.join(", ")}`);
     console.log("These files need to be added manually to public/assets/audio/");
   }
 
@@ -302,7 +253,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Fatal:",
- err.message);
+  console.error("Fatal:", err.message);
   process.exit(1);
 });

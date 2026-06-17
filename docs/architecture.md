@@ -97,7 +97,7 @@ All game logic lives in `src/game/` and is pure TypeScript with zero React or Th
 - Easy porting to any renderer
 
 React hooks in `src/hooks/` are the only bridge. They subscribe to the R3F `useFrame` loop and call game system functions,
- then update refs used by render components.
+then update refs used by render components.
 
 → See [diagrams/architecture-layers.md](./diagrams/architecture-layers.md)
 
@@ -147,27 +147,26 @@ Orthographic camera. Zoom is computed on `onCreated` to fill the viewport:
 ```ts
 const zoomByWidth = size.width / STREET_W; // fill horizontally
 const zoomByHeight = (size.height - 40) / STREET_H; // fill vertically (minus HUD)
-camera.zoom = Math.max(zoomByWidth,
- zoomByHeight);
+camera.zoom = Math.max(zoomByWidth, zoomByHeight);
 ```
 
 Initial position shows the ground floor + a strip of road below buildings.
 
 Horizontal and vertical scroll via mouse edge zones (GameScene `useFrame`),
- clamped to scene bounds.
+clamped to scene bounds.
 
 ---
 
 ## Tech Stack
 
-| Layer            | Technology                         |
-| ---------------- | ---------------------------------- |
-| Framework        | React 19                           |
-| 3D renderer      | React Three Fiber + Three.js       |
-| Language         | TypeScript (strict)                |
-| Build            | Vite                               |
-| Tests            | Vitest                             |
-| Audio            | Howler.js                          |
-| Package manager  | Yarn 4 (PnP)                       |
-| Asset generation | Pollinations.ai (FLUX model,
- free) |
+| Layer            | Technology                   |
+| ---------------- | ---------------------------- |
+| Framework        | React 19                     |
+| 3D renderer      | React Three Fiber + Three.js |
+| Language         | TypeScript (strict)          |
+| Build            | Vite                         |
+| Tests            | Vitest                       |
+| Audio            | Howler.js                    |
+| Package manager  | Yarn 4 (PnP)                 |
+| Asset generation | Pollinations.ai (FLUX model, |
+| free)            |

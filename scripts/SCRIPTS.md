@@ -1,27 +1,28 @@
 # Asset Generation Scripts
 
 Scripts for generating game assets (sprites,
- tiles,
- audio) without a paid API key.
+tiles,
+audio) without a paid API key.
 All generators are idempotent — existing files are always skipped.
 
 ---
 
 ## Overview
 
-| Script                     | What it generates                                | Output directory        | Requires                    |
-| -------------------------- | ------------------------------------------------ | ----------------------- | --------------------------- |
-| `generate-assets.mjs`      | Character sprites,
- UI screens                    | `src/assets/generated/` | nothing                     |
-| `generate-game-assets.mjs` | In-game sprites (enemies,
- crosshair,
- background) | `public/assets/`        | nothing                     |
-| `generate-tiles.mjs`       | Building facade tile textures                    | `public/assets/tiles/`  | nothing (HF_TOKEN optional) |
-| `download-audio.mjs`       | BGM and tension music tracks                     | `public/assets/audio/`  | nothing                     |
+| Script                     | What it generates         | Output directory | Requires |
+| -------------------------- | ------------------------- | ---------------- | -------- |
+| `generate-assets.mjs`      | Character sprites,        |
+| UI screens                 | `src/assets/generated/`   | nothing          |
+| `generate-game-assets.mjs` | In-game sprites (enemies, |
+
+crosshair,
+background) | `public/assets/` | nothing |
+| `generate-tiles.mjs` | Building facade tile textures | `public/assets/tiles/` | nothing (HF_TOKEN optional) |
+| `download-audio.mjs` | BGM and tension music tracks | `public/assets/audio/` | nothing |
 
 All image generators call **Pollinations.ai** (free,
- no account,
- no API key).
+no account,
+no API key).
 `generate-tiles.mjs` also supports **Hugging Face Inference API** as a faster alternative.
 
 ---
@@ -29,10 +30,10 @@ All image generators call **Pollinations.ai** (free,
 ## generate-assets.mjs — Character & UI Sprites
 
 Generates character sprites (player,
- contacts,
- antagonists) and UI screens (menu,
- game over,
- flyers).
+contacts,
+antagonists) and UI screens (menu,
+game over,
+flyers).
 Output goes to `src/assets/generated/`.
 
 ### Commands
@@ -87,42 +88,42 @@ node scripts/generate-assets.mjs
 
 #### Contacts (10 sprites)
 
-| Name                            | Description                       | Size    |
-| ------------------------------- | --------------------------------- | ------- |
-| `contact_dj_masta_klem`         | DJ Masta Klem,
- Vitry 94           | 512×512 |
-| `contact_dj_masta_klem_talking` | DJ Masta Klem — dialogue          | 512×512 |
-| `contact_faiza`                 | Faïza La Logiste,
- Stalingrad 19e  | 512×512 |
-| `contact_faiza_stressed`        | Faïza La Logiste — stressed       | 512×512 |
-| `contact_seb_le_blond`          | Seb le Blond,
- Châtelet            | 512×512 |
-| `contact_seb_scared`            | Seb le Blond — scared             | 512×512 |
-| `contact_oxane`                 | Oxane photographe,
- Belleville 20e | 512×512 |
-| `contact_oxane_shooting`        | Oxane — taking a photo            | 512×512 |
-| `contact_karim`                 | Karim Le Mécano,
- Pantin 93        | 512×512 |
-| `contact_karim_working`         | Karim — repairing equipment       | 512×512 |
+| Name                            | Description                 | Size    |
+| ------------------------------- | --------------------------- | ------- |
+| `contact_dj_masta_klem`         | DJ Masta Klem,              |
+| Vitry 94                        | 512×512                     |
+| `contact_dj_masta_klem_talking` | DJ Masta Klem — dialogue    | 512×512 |
+| `contact_faiza`                 | Faïza La Logiste,           |
+| Stalingrad 19e                  | 512×512                     |
+| `contact_faiza_stressed`        | Faïza La Logiste — stressed | 512×512 |
+| `contact_seb_le_blond`          | Seb le Blond,               |
+| Châtelet                        | 512×512                     |
+| `contact_seb_scared`            | Seb le Blond — scared       | 512×512 |
+| `contact_oxane`                 | Oxane photographe,          |
+| Belleville 20e                  | 512×512                     |
+| `contact_oxane_shooting`        | Oxane — taking a photo      | 512×512 |
+| `contact_karim`                 | Karim Le Mécano,            |
+| Pantin 93                       | 512×512                     |
+| `contact_karim_working`         | Karim — repairing equipment | 512×512 |
 
 #### New Contacts / NPCs (8 sprites)
 
-| Name                      | Description                             | Size    |
-| ------------------------- | --------------------------------------- | ------- |
-| `contact_mamie_rosa`      | Mamie Rosa — logeuse complice,
- Barbès   | 512×512 |
-| `contact_pierrot_le_tech` | Pierrot Le Tech — sono & lumières       | 512×512 |
-| `contact_yasmine`         | Yasmine — avocate militante,
- République | 512×512 |
-| `contact_djibril`         | Djibril — dealer de flyers,
- Oberkampf   | 512×512 |
-| `contact_nathalie`        | Nathalie — barwoman,
- Ménilmontant       | 512×512 |
-| `contact_marco`           | Marco — videur underground              | 512×512 |
-| `contact_leila_graf`      | Leila — graffiti artist,
- Canal          | 512×512 |
-| `contact_rene_imprimeur`  | René — imprimeur clandestin,
- 11e        | 512×512 |
+| Name                      | Description                       | Size    |
+| ------------------------- | --------------------------------- | ------- |
+| `contact_mamie_rosa`      | Mamie Rosa — logeuse complice,    |
+| Barbès                    | 512×512                           |
+| `contact_pierrot_le_tech` | Pierrot Le Tech — sono & lumières | 512×512 |
+| `contact_yasmine`         | Yasmine — avocate militante,      |
+| République                | 512×512                           |
+| `contact_djibril`         | Djibril — dealer de flyers,       |
+| Oberkampf                 | 512×512                           |
+| `contact_nathalie`        | Nathalie — barwoman,              |
+| Ménilmontant              | 512×512                           |
+| `contact_marco`           | Marco — videur underground        | 512×512 |
+| `contact_leila_graf`      | Leila — graffiti artist,          |
+| Canal                     | 512×512                           |
+| `contact_rene_imprimeur`  | René — imprimeur clandestin,      |
+| 11e                       | 512×512                           |
 
 #### Antagonists (7 sprites)
 
@@ -168,10 +169,10 @@ node scripts/generate-assets.mjs
 ### Behaviour
 
 - **Skip**: if the output file already exists,
- it is not regenerated. Delete the file to force a new generation.
+  it is not regenerated. Delete the file to force a new generation.
 - **Retry**: up to 5 attempts per asset. Each retry waits `attempt × 15s` (15s,
- 30s,
- 45s…).
+  30s,
+  45s…).
 - **Rate limit**: 5s pause between assets.
 - **Seed**: random per run — each generation produces a different image.
 
@@ -180,9 +181,9 @@ node scripts/generate-assets.mjs
 ## generate-game-assets.mjs — In-Game Sprites
 
 Generates the sprites used directly during gameplay: the facade background,
- enemy states,
- the crosshair,
- and the player bullet.
+enemy states,
+the crosshair,
+and the player bullet.
 Output goes to `public/assets/`.
 
 ### Commands
@@ -279,7 +280,7 @@ node scripts/generate-game-assets.mjs
 
 - **Skip**: existing files are not overwritten.
 - **Retry**: up to 5 attempts,
- exponential backoff (`attempt × 15s`).
+  exponential backoff (`attempt × 15s`).
 - **Rate limit**: 5s pause between assets.
 - **Verbose**: prints the Pollinations URL prefix for each fetch attempt.
 
@@ -288,13 +289,13 @@ node scripts/generate-game-assets.mjs
 ## generate-tiles.mjs — Building Facade Tiles
 
 Generates tileable textures for the procedural building facade: walls,
- windows,
- rooftops,
- doors.
+windows,
+rooftops,
+doors.
 Output goes to `public/assets/tiles/`.
 
 Supports two image generation backends,
- tried in order by default.
+tried in order by default.
 
 ### Commands
 
@@ -348,38 +349,38 @@ HF_TOKEN=hf_xxx node scripts/generate-tiles.mjs --tile tile_rooftop
 
 #### Walls (10 tiles)
 
-| Name                       | Description                    | Size    |
-| -------------------------- | ------------------------------ | ------- |
-| `tile_wall`                | Haussmann plaster — clean      | 128×128 |
-| `tile_wall_cracked`        | Wall — cracked,
- weathered      | 128×128 |
-| `tile_wall_graffiti`       | Wall — graffiti tags + flyers  | 128×128 |
-| `tile_wall_graffiti_large` | Wall — large graffiti piece    | 128×128 |
-| `tile_wall_poster`         | Wall — rave flyers pasted      | 128×128 |
-| `tile_wall_brick`          | Wall — exposed brick,
- banlieue | 128×128 |
-| `tile_wall_concrete`       | Wall — brutalist concrete      | 128×128 |
-| `tile_wall_tiles_facade`   | Wall — ceramic facade tiles    | 128×128 |
-| `tile_wall_ivy`            | Wall — ivy-covered stone       | 128×128 |
-| `tile_wall_stained`        | Wall — water-stained plaster   | 128×128 |
+| Name                       | Description                   | Size    |
+| -------------------------- | ----------------------------- | ------- |
+| `tile_wall`                | Haussmann plaster — clean     | 128×128 |
+| `tile_wall_cracked`        | Wall — cracked,               |
+| weathered                  | 128×128                       |
+| `tile_wall_graffiti`       | Wall — graffiti tags + flyers | 128×128 |
+| `tile_wall_graffiti_large` | Wall — large graffiti piece   | 128×128 |
+| `tile_wall_poster`         | Wall — rave flyers pasted     | 128×128 |
+| `tile_wall_brick`          | Wall — exposed brick,         |
+| banlieue                   | 128×128                       |
+| `tile_wall_concrete`       | Wall — brutalist concrete     | 128×128 |
+| `tile_wall_tiles_facade`   | Wall — ceramic facade tiles   | 128×128 |
+| `tile_wall_ivy`            | Wall — ivy-covered stone      | 128×128 |
+| `tile_wall_stained`        | Wall — water-stained plaster  | 128×128 |
 
 #### Windows (9 tiles)
 
-| Name                        | Description                         | Size    |
-| --------------------------- | ----------------------------------- | ------- |
-| `tile_window_dark`          | Window — shutters closed,
- dark      | 128×128 |
-| `tile_window_lit`           | Window — warm neon glow inside      | 128×128 |
-| `tile_window_tv`            | Window — TV flickering inside       | 128×128 |
-| `tile_window_open`          | Window — open,
- curtains blowing     | 128×128 |
-| `tile_window_boarded`       | Window — boarded up                 | 128×128 |
-| `tile_window_bars`          | Window — iron bars,
- rez-de-chaussée | 128×128 |
-| `tile_window_neon_sign`     | Window — shop with neon sign        | 128×128 |
-| `tile_window_small`         | Window — small mansard attic        | 128×64  |
-| `tile_window_shutters_open` | Window — volets ouverts,
- cold light | 128×128 |
+| Name                        | Description                    | Size    |
+| --------------------------- | ------------------------------ | ------- |
+| `tile_window_dark`          | Window — shutters closed,      |
+| dark                        | 128×128                        |
+| `tile_window_lit`           | Window — warm neon glow inside | 128×128 |
+| `tile_window_tv`            | Window — TV flickering inside  | 128×128 |
+| `tile_window_open`          | Window — open,                 |
+| curtains blowing            | 128×128                        |
+| `tile_window_boarded`       | Window — boarded up            | 128×128 |
+| `tile_window_bars`          | Window — iron bars,            |
+| rez-de-chaussée             | 128×128                        |
+| `tile_window_neon_sign`     | Window — shop with neon sign   | 128×128 |
+| `tile_window_small`         | Window — small mansard attic   | 128×64  |
+| `tile_window_shutters_open` | Window — volets ouverts,       |
+| cold light                  | 128×128                        |
 
 #### Balconies (3 tiles)
 
@@ -393,8 +394,8 @@ HF_TOKEN=hf_xxx node scripts/generate-tiles.mjs --tile tile_rooftop
 
 | Name                       | Description                | Size    |
 | -------------------------- | -------------------------- | ------- |
-| `tile_rooftop`             | Rooftop — zinc,
- chimneys   | 128×128 |
+| `tile_rooftop`             | Rooftop — zinc,            |
+| chimneys                   | 128×128                    |
 | `tile_rooftop_satellite`   | Rooftop — satellite dishes | 128×128 |
 | `tile_rooftop_water_tower` | Rooftop — water tower      | 128×256 |
 | `tile_rooftop_skylight`    | Rooftop — velux skylight   | 128×128 |
@@ -414,8 +415,8 @@ HF_TOKEN=hf_xxx node scripts/generate-tiles.mjs --tile tile_rooftop
 | Name                    | Description                    | Size    |
 | ----------------------- | ------------------------------ | ------- |
 | `tile_shopfront_closed` | Shop — metal shutter closed    | 128×128 |
-| `tile_shopfront_bar`    | Shop — bar café,
- lights on     | 128×128 |
+| `tile_shopfront_bar`    | Shop — bar café,               |
+| lights on               | 128×128                        |
 | `tile_basement_window`  | Basement — frosted half-window | 128×64  |
 | `tile_garage_door`      | Garage — rolling metal gate    | 128×128 |
 
@@ -431,20 +432,20 @@ HF_TOKEN=hf_xxx node scripts/generate-tiles.mjs --tile tile_rooftop
 
 ### Sources compared
 
-|             | Pollinations.ai     | Hugging Face (FLUX.1-schnell)        |
-| ----------- | ------------------- | ------------------------------------ |
-| API key     | Not required        | Optional (`HF_TOKEN`)                |
-| Speed       | Slow (rate limited) | Fast with token                      |
-| Quality     | Good                | Good                                 |
-| Retry wait  | 20s × attempt       | 10s × attempt                        |
-| Max retries | 4                   | 3                                    |
-| Fallback    | —                   | Yes,
- auto falls back to Pollinations |
+|                                 | Pollinations.ai     | Hugging Face (FLUX.1-schnell) |
+| ------------------------------- | ------------------- | ----------------------------- |
+| API key                         | Not required        | Optional (`HF_TOKEN`)         |
+| Speed                           | Slow (rate limited) | Fast with token               |
+| Quality                         | Good                | Good                          |
+| Retry wait                      | 20s × attempt       | 10s × attempt                 |
+| Max retries                     | 4                   | 3                             |
+| Fallback                        | —                   | Yes,                          |
+| auto falls back to Pollinations |
 
 ### Behaviour
 
 - **Auto mode** (default): tries HuggingFace first. If it fails,
- falls back to Pollinations.
+  falls back to Pollinations.
 - **Skip**: existing tiles are not regenerated. Delete the file to force a new one.
 - **Image validation**: responses are checked for minimum size (>2KB) and valid PNG/JPEG magic bytes (HF only).
 - **Rate limit**: 2s pause between tiles.
@@ -454,12 +455,12 @@ HF_TOKEN=hf_xxx node scripts/generate-tiles.mjs --tile tile_rooftop
 ## download-audio.mjs — BGM & Music Tracks
 
 Downloads royalty-free music tracks for in-game audio from **incompetech.com** (Kevin MacLeod,
- CC-BY 4.0).
+CC-BY 4.0).
 Output goes to `public/assets/audio/`.
 
 > **Attribution**: Kevin MacLeod tracks require attribution per CC-BY 4.0.
 > Credit: "Music by Kevin MacLeod — incompetech.com,
- licensed under CC-BY 4.0"
+> licensed under CC-BY 4.0"
 
 ### Commands
 
@@ -506,12 +507,12 @@ node scripts/download-audio.mjs
 - **Skip**: files over 10KB that already exist are not re-downloaded.
 - **Validation**: files under 10KB are deleted and treated as failed (error pages from the server).
 - **Retry**: up to 3 attempts per track,
- 5s wait between retries.
+  5s wait between retries.
 - **Timeout**: 30s per download request.
 - **Fallback**: `FALLBACKS` map in the script can define per-track backup URLs (currently empty).
 - **Rate limit**: 1s pause between tracks.
 - At the end,
- the script prints the Howler-compatible paths for all tracks.
+  the script prints the Howler-compatible paths for all tracks.
 
 ---
 
