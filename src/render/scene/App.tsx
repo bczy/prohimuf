@@ -127,7 +127,8 @@ export function App(): JSX.Element {
   }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, unlockedLevels]);
 
   function handlePlay(levelId: string): void {
-    const level = LEVELS.find((l) => l.id === levelId) ?? (LEVELS[0] as unknown as LevelConfig);
+    const level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0];
+    if (level === undefined) return;
     setSelectedLevel(level);
     setHudData(buildHudInitial(level, prefs));
     setGameKey((k) => k + 1);
