@@ -2,7 +2,7 @@
 
 All systems are pure functions: `(state,
  input) → newState`. No side effects,
- fully unit-tested.
+fully unit-tested.
 
 ---
 
@@ -26,35 +26,36 @@ interface GameState {
 ```
 
 ### `tickGameState(state,
- fire,
- mouseX,
- mouseY,
- delta,
- facade,
- cameraOffsetX,
- viewW,
- viewH)`
+
+fire,
+mouseX,
+mouseY,
+delta,
+facade,
+cameraOffsetX,
+viewW,
+viewH)`
 
 Called every frame. Order of operations:
 
 1. **Crosshair** — `moveCrosshair(mouseX,
- mouseY)` → `{x,
- y}` normalised
+mouseY)` → `{x,
+y}` normalised
 2. **Tick enemies** — each enemy advances its internal state timer
 3. **Wave respawn** — if all enemies dead,
- increment wave and spawn new wave
+   increment wave and spawn new wave
 4. **Player fire** — if `fire=true`,
- create bullet from crosshair world position
+   create bullet from crosshair world position
 5. **Enemy fire** — every SHOOTING enemy emits a downward bullet
 6. **Tick bullets** — move all bullets by velocity × delta
 7. **Hit detection** — player bullets vs enemy slots,
- enemy bullets vs player origin
+   enemy bullets vs player origin
 8. **Timer** — decrement; 0 → GAME_OVER
 9. **Win condition** — score ≥ `ENEMIES_TO_WIN` (10) → LEVEL_COMPLETE
 
 Constants: `LEVEL_TIME_SECONDS = 90`,
- `ENEMIES_TO_WIN = 10`,
- `PLAYER_HIT_RADIUS = 1.0`
+`ENEMIES_TO_WIN = 10`,
+`PLAYER_HIT_RADIUS = 1.0`
 
 ---
 
@@ -109,11 +110,12 @@ Enemies cycle through a timer-based state machine. `SHOOTING` enemies fire bulle
 ## Bullet System (`bulletSystem.ts`)
 
 ### `fireBullet(crosshair,
- fromPlayer,
- id,
- cameraOffsetX,
- viewW,
- viewH)`
+
+fromPlayer,
+id,
+cameraOffsetX,
+viewW,
+viewH)`
 
 Converts normalised crosshair position `[0,
 1]` to world coordinates using real viewport dimensions:
@@ -127,11 +129,12 @@ Player bullets travel upward (`velocity.y = +BULLET_SPEED`).
 Enemy bullets travel downward (`velocity.y = -BULLET_SPEED`).
 
 ### `checkBulletHits(bullets,
- enemies,
- facade)`
+
+enemies,
+facade)`
 
 For each player bullet,
- checks proximity against each non-dead enemy's slot world position. Hit radius: 0.6 units.
+checks proximity against each non-dead enemy's slot world position. Hit radius: 0.6 units.
 
 Bullets that go out of viewport bounds are removed.
 
@@ -155,11 +158,11 @@ Bullets that go out of viewport bounds are removed.
 ## Vec2 (`vec2.ts`)
 
 Minimal immutable 2D vector helpers: `add`,
- `sub`,
- `scale`,
- `length`,
- `normalize`,
- `dot`.
+`sub`,
+`scale`,
+`length`,
+`normalize`,
+`dot`.
 
 ---
 

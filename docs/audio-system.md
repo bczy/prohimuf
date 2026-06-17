@@ -23,7 +23,7 @@ interface AudioSystem {
 ## BGM Tension System
 
 Three parallel BGM tracks,
- each looping at volume 0. `setTension` crossfades between them:
+each looping at volume 0. `setTension` crossfades between them:
 
 | Tier | File              | Tension range      |
 | ---- | ----------------- | ------------------ |
@@ -59,10 +59,7 @@ Files expected at `public/assets/audio/<file>`. `shoot.wav` is wired to the fire
 `src/hooks/useAudio.ts` creates the AudioSystem once via `useRef` and exposes stable callbacks via `useCallback`. The hook handles `dispose()` on unmount.
 
 ```ts
-const { playBgm,
- stopBgm,
- setTension,
- playSfx } = useAudio();
+const { playBgm, stopBgm, setTension, playSfx } = useAudio();
 ```
 
 ---

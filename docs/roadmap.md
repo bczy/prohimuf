@@ -17,51 +17,51 @@
 - [x] `GameState` type + `tickGameState` state machine
 - [x] Enemy system: IDLE → APPEARING → VISIBLE → SHOOTING → HIT → DEAD
 - [x] Bullet system: fire,
- move,
- hit detection (player + enemy bullets)
+      move,
+      hit detection (player + enemy bullets)
 - [x] Crosshair system
 - [x] Timer (90s countdown)
 - [x] Wave system (respawn on all-dead)
 - [x] Lives (3 lives,
- GAME_OVER at 0)
+      GAME_OVER at 0)
 - [x] HUD: score,
- lives,
- timer,
- wave
+      lives,
+      timer,
+      wave
 - [x] StartScreen / EndScreen
 
 ### Sprint 2 — Visual Polish
 
 - [x] `TiledFacade` — procedural Canvas2D facade renderer
 - [x] 9 tile types: WALL,
- WINDOW_LIT,
- WINDOW_DARK,
- BALCONY,
- DOOR,
- ROOFTOP,
- SHOP,
- FIRE_ESCAPE,
- ARCH
+      WINDOW_LIT,
+      WINDOW_DARK,
+      BALCONY,
+      DOOR,
+      ROOFTOP,
+      SHOP,
+      FIRE_ESCAPE,
+      ARCH
 - [x] Normal map (Sobel filter) — bump mapping relief on stone joints
 - [x] `TiledFacade` 3D depth: extruded cornices + soubassement,
- edge shadow strips
+      edge shadow strips
 - [x] `StreetBackground` — sky gradient + stars + pavement + neon reflections
 - [x] Multi-building street: `rue_belliard` (4 buildings,
- variable heights,
- bottom-aligned)
+      variable heights,
+      bottom-aligned)
 - [x] Camera zoom fills viewport; horizontal + vertical scroll on mouse edge
 - [x] Audio system: Howler.js,
- 3 BGM tension tiers,
- SFX (shoot.wav)
+      3 BGM tension tiers,
+      SFX (shoot.wav)
 - [x] Asset generator: Pollinations.ai FLUX,
- 25+ sprite definitions
+      25+ sprite definitions
 - [x] Lighting: ambient + rasant directional + blue counter-light
 
 ### Sprint 3 — Gameplay Polish
 
 - [x] Bullet bounds fix: `OUT_OF_BOUNDS_X` 20 → 60 (full street width)
 - [x] Fire input reliability: `pendingShots` counter (no lost clicks,
- no spray)
+      no spray)
 - [x] Shoot SFX: `shoot.wav` generated and wired
 
 ---
@@ -72,35 +72,35 @@
 
 - [ ] Écran de sélection de niveau (choix de la carte / du quartier)
 - [ ] High scores (localStorage,
- top 10 par niveau)
+      top 10 par niveau)
 - [ ] Préférences : volume son,
- volume musique,
- nombre de vies,
- difficulté
+      volume musique,
+      nombre de vies,
+      difficulté
 - [ ] Persistance des préférences entre sessions (localStorage)
 
 ### Sprint 5 — Multiple Levels
 
 - [ ] 2e carte (nouveau quartier,
- nouveaux bâtiments)
+      nouveaux bâtiments)
 - [ ] 3e carte
 - [ ] Tuning ennemi par niveau (vitesse,
- taux de spawn)
+      taux de spawn)
 - [ ] Progression : débloquer le niveau suivant au LEVEL_COMPLETE
 
 ### Sprint 6 — Story & Narrative
 
 - [ ] Réseau NPC : DJ Masta Klem,
- Faïza,
- Seb le Blond,
- Oxane,
- Karim
+      Faïza,
+      Seb le Blond,
+      Oxane,
+      Karim
 - [ ] Système de dialogues (style fanzine,
- entre les niveaux)
+      entre les niveaux)
 - [ ] Quartiers : Vitry,
- Stalingrad 19e,
- Belleville,
- Châtelet
+      Stalingrad 19e,
+      Belleville,
+      Châtelet
 
 ### Sprint 7 — Polish & Release
 

@@ -1,20 +1,5 @@
 #!/usr/bin/env node
-/**
- * Regenerate the in-game raster sprites in a unified 16-bit pixel-art style.
- *
- * Only the sprites that are actually rendered during gameplay are covered:
- * enemy variants (idle + shooting, 1..3) and the player bullet. These are
- * tinted by neon color-multiply in EnemySprite.tsx, so each figure is drawn
- * in light tones on a PURE BLACK background (black multiplies to black and
- * stays invisible against the window; the figure glows when tinted).
- *
- * Output goes straight to public/assets/ (drop-in, identical filenames).
- * Set OUT_DIR=demo/pixel-sprites to preview without overwriting.
- *
- * Usage:
- *   node scripts/regen-pixel-sprites.mjs            # write to public/assets
- *   OUT_DIR=demo/pixel-sprites node scripts/regen-pixel-sprites.mjs
- */
+/** * Regenerate the in-game raster sprites in a unified 16-bit pixel-art style. * * Only the sprites that are actually rendered during gameplay are covered: * enemy variants (idle + shooting, 1..3) and the player bullet. These are * tinted by neon color-multiply in EnemySprite.tsx, so each figure is drawn * in light tones on a PURE BLACK background (black multiplies to black and * stays invisible against the window; the figure glows when tinted). * * Output goes straight to public/assets/ (drop-in, identical filenames). * Set OUT_DIR=demo/pixel-sprites to preview without overwriting. * * Usage: *   node scripts/regen-pixel-sprites.mjs            # write to public/assets *   OUT_DIR=demo/pixel-sprites node scripts/regen-pixel-sprites.mjs */
 
 import fs from "fs";
 import path from "path";
@@ -45,8 +30,7 @@ const ASSETS = [
   },
   {
     name: "enemy_sprite_3",
-    prompt:
-      "a menacing plainclothes cop wearing sunglasses and a hood, standing facing forward",
+    prompt: "a menacing plainclothes cop wearing sunglasses and a hood, standing facing forward",
     width: 256,
     height: 256,
   },

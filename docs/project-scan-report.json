@@ -37,9 +37,7 @@
 
       "timestamp": "2026-04-11T00:00:00.000Z",
 
-      "summary": "Classified as monolith,
- project_type=game,
- TypeScript/R3F"
+      "summary": "Classified as monolith, project_type=game, TypeScript/R3F"
     },
 
     {
@@ -59,10 +57,7 @@
 
       "timestamp": "2026-04-11T00:10:00.000Z",
 
-      "summary": "Scanned all src/ — game systems,
- render layer,
- maps,
- hooks"
+      "summary": "Scanned all src/ — game systems, render layer, maps, hooks"
     },
 
     {
@@ -72,9 +67,7 @@
 
       "timestamp": "2026-04-11T00:15:00.000Z",
 
-      "summary": "Updated render-layer.md (3D depth geometry),
- roadmap.md (Sprint 2 depth items),
- index.md"
+      "summary": "Updated render-layer.md (3D depth geometry), roadmap.md (Sprint 2 depth items), index.md"
     }
   ],
 
@@ -105,27 +98,22 @@
 
     "game_type": "2D shooting gallery (Prohibition Atari ST remake)",
 
-    "active_map": "rue_belliard — 4 buildings variable heights,
- 50×18 world units",
+    "active_map": "rue_belliard — 4 buildings variable heights, 50×18 world units",
 
     "test_count": 107,
 
     "key_changes_since_last_scan": [
-      "TiledFacade: added 3D depth geometry (cornices boxGeometry,
- soubassement,
- edge shadow strips)",
+      "TiledFacade: added 3D depth geometry (cornices boxGeometry, soubassement, edge shadow strips)",
 
       "StreetBackground: groundY prop for precise sky/pavement alignment",
 
-      "GameScene: multi-building layout from rue_belliard,
- MERGED_FACADE slot system",
+      "GameScene: multi-building layout from rue_belliard, MERGED_FACADE slot system",
 
       "tileMapToFacade: worldOffsetX + streetHeight params for bottom-alignment",
 
       "Lighting revised: 3 directional lights to sculpt cornice depth",
 
-      "App.tsx: camera zoom by street dimensions,
- road-strip initial position"
+      "App.tsx: camera zoom by street dimensions, road-strip initial position"
     ]
   },
 
