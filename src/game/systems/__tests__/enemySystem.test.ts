@@ -1,11 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { spawnWave, tickEnemy, hitEnemy } from "@game/systems/enemySystem";
+import type { Enemy, EnemyState } from "@game/types/enemy";
 import { FACADE_01 } from "@game/maps/facade01";
 
+// Build a normal (shooting, 1 hp) enemy in the given state for deterministic
+// state-machine tests.
+function mk(state: EnemyState, timer: number, over: Partial<Enemy> = {}): Enemy {
+  return { id: 1, slotIndex: 0, state, timer, kind: "normal", hp: 1, ...over };
+}
+
 describe("spawnWave", () => {
-  it("wave 1 spawns 7 enemies", () => {
+  it("wave 1 spawns 3 enemies", () => {
     const enemies = spawnWave(1, FACADE_01);
-    expect(enemies.length).toBe(7);
+    expect(enemies.length).toBe(3);
   });
 
   it("all enemies start as HIDDEN", () => {
@@ -26,6 +33,14 @@ describe("spawnWave", () => {
     const w2 = spawnWave(2, FACADE_01);
     expect(w2.length).toBeGreaterThan(w1.length);
   });
+
+  it("assigns a kind and matching hp to every enemy", () => {
+    const enemies = spawnWave(3, FACADE_01);
+    enemies.forEach((e) => {
+      expect(e.kind).toBeDefined();
+      expect(e.hp).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
 
 describe("tickEnemy", () => {
@@ -37,39 +52,41 @@ describe("tickEnemy", () => {
   });
 
   it("transitions HIDDEN → APPEARING when timer reaches 0", () => {
-    const e = { id: 1, slotIndex: 0, state: "HIDDEN" as const, timer: 0.05 };
-    const ticked = tickEnemy(e, 0.1);
-    expect(ticked.state).toBe("APPEARING");
+    expect(tickEnemy(mk("HIDDEN", 0.05), 0.1).state).toBe("APPEARING");
   });
 
   it("transitions APPEARING → VISIBLE when timer reaches 0", () => {
-    const e = { id: 1, slotIndex: 0, state: "APPEARING" as const, timer: 0.05 };
-    const ticked = tickEnemy(e, 0.1);
-    expect(ticked.state).toBe("VISIBLE");
+    expect(tickEnemy(mk("APPEARING", 0.05), 0.1).state).toBe("VISIBLE");
   });
 
-  it("transitions VISIBLE → SHOOTING when timer reaches 0", () => {
-    const e = { id: 1, slotIndex: 0, state: "VISIBLE" as const, timer: 0.05 };
-    const ticked = tickEnemy(e, 0.1);
-    expect(ticked.state).toBe("SHOOTING");
+  it("transitions VISIBLE → SHOOTING for a shooting enemy", () => {
+    expect(tickEnemy(mk("VISIBLE", 0.05), 0.1).state).toBe("SHOOTING");
+  });
+
+  it("transitions VISIBLE → HIDDEN for a non-shooting enemy (civilian)", () => {
+    expect(tickEnemy(mk("VISIBLE", 0.05, { kind: "civilian" }), 0.1).state).toBe("HIDDEN");
   });
 
   it("DEAD state does not change", () => {
-    const e = { id: 1, slotIndex: 0, state: "DEAD" as const, timer: 0 };
-    const ticked = tickEnemy(e, 0.5);
-    expect(ticked.state).toBe("DEAD");
+    expect(tickEnemy(mk("DEAD", 0), 0.5).state).toBe("DEAD");
   });
 });
 
 describe("hitEnemy", () => {
-  it("transitions VISIBLE enemy to HIT", () => {
-    const e = { id: 1, slotIndex: 0, state: "VISIBLE" as const, timer: 1 };
-    expect(hitEnemy(e).state).toBe("HIT");
+  it("transitions VISIBLE enemy to HIT and decrements hp", () => {
+    const hit = hitEnemy(mk("VISIBLE", 1));
+    expect(hit.state).toBe("HIT");
+    expect(hit.hp).toBe(0);
   });
 
-  it("HIT enemy transitions to DEAD on next tick", () => {
-    const e = { id: 1, slotIndex: 0, state: "HIT" as const, timer: 0.05 };
-    const ticked = tickEnemy(e, 0.1);
-    expect(ticked.state).toBe("DEAD");
+  it("a 1-hp enemy goes DEAD after the HIT flash", () => {
+    const hit = hitEnemy(mk("VISIBLE", 1)); // hp 1 -> 0
+    expect(tickEnemy(hit, 0.3).state).toBe("DEAD");
+  });
+
+  it("a riot enemy (2 hp) survives the first hit and pops back up", () => {
+    const hit = hitEnemy(mk("VISIBLE", 1, { kind: "riot", hp: 2 })); // hp 2 -> 1
+    expect(hit.hp).toBe(1);
+    expect(tickEnemy(hit, 0.3).state).toBe("VISIBLE");
   });
 });

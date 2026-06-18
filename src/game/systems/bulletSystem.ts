@@ -3,6 +3,18 @@ import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import { hitEnemy } from "@game/systems/enemySystem";
+import { ARCHETYPES } from "@game/types/enemyTypes";
+
+export interface HitResult {
+  readonly bullets: readonly Bullet[];
+  readonly enemies: readonly Enemy[];
+  // Net effects of this tick's player hits.
+  readonly scoreDelta: number;
+  readonly livesDelta: number;
+  readonly timeDelta: number;
+  // Targets that count toward the level win (cops only), neutralised this tick.
+  readonly targetsDown: number;
+}
 
 export const BULLET_SPEED = 20;
 const HIT_RADIUS = 0.8;
@@ -45,10 +57,13 @@ export function checkBulletHits(
   bullets: readonly Bullet[],
   enemies: readonly Enemy[],
   facade: FacadeMap,
-): { bullets: readonly Bullet[]; enemies: readonly Enemy[]; hits: number } {
-  let hits = 0;
+): HitResult {
   const hitBulletIds = new Set<number>();
   const hitEnemyIds = new Set<number>();
+  let scoreDelta = 0;
+  let livesDelta = 0;
+  let timeDelta = 0;
+  let targetsDown = 0;
 
   for (const bullet of bullets) {
     if (!bullet.fromPlayer) continue;
@@ -64,7 +79,14 @@ export function checkBulletHits(
       if (Math.sqrt(dx * dx + dy * dy) <= HIT_RADIUS) {
         hitBulletIds.add(bullet.id);
         hitEnemyIds.add(enemy.id);
-        hits++;
+        // Effects only land when this hit takes the enemy down (hp -> 0).
+        if (enemy.hp - 1 <= 0) {
+          const a = ARCHETYPES[enemy.kind];
+          scoreDelta += a.scoreDelta;
+          livesDelta += a.livesDelta;
+          timeDelta += a.timeDelta;
+          if (a.countsAsTarget) targetsDown++;
+        }
       }
     }
   }
@@ -72,6 +94,9 @@ export function checkBulletHits(
   return {
     bullets: bullets.filter((b) => !hitBulletIds.has(b.id)),
     enemies: enemies.map((e) => (hitEnemyIds.has(e.id) ? hitEnemy(e) : e)),
-    hits,
+    scoreDelta,
+    livesDelta,
+    timeDelta,
+    targetsDown,
   };
 }

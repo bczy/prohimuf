@@ -42,7 +42,14 @@ describe("checkBulletHits", () => {
   it("player bullet hits VISIBLE enemy in same slot position → removes bullet, marks enemy HIT", () => {
     const slot = FACADE_01.slots[0];
     if (slot === undefined) throw new Error("expected slot");
-    const enemy = { id: 1, slotIndex: 0, state: "VISIBLE" as const, timer: 1 };
+    const enemy = {
+      id: 1,
+      slotIndex: 0,
+      state: "VISIBLE" as const,
+      timer: 1,
+      kind: "normal" as const,
+      hp: 1,
+    };
     const bullet = {
       id: 10,
       position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
@@ -50,7 +57,8 @@ describe("checkBulletHits", () => {
       fromPlayer: true,
     };
     const result = checkBulletHits([bullet], [enemy], FACADE_01);
-    expect(result.hits).toBe(1);
+    expect(result.targetsDown).toBe(1);
+    expect(result.scoreDelta).toBe(1);
     expect(result.bullets.length).toBe(0);
     const hitEnemy = result.enemies[0];
     if (hitEnemy === undefined) throw new Error("expected enemy");
@@ -58,7 +66,14 @@ describe("checkBulletHits", () => {
   });
 
   it("bullet misses enemy far away", () => {
-    const enemy = { id: 1, slotIndex: 0, state: "VISIBLE" as const, timer: 1 };
+    const enemy = {
+      id: 1,
+      slotIndex: 0,
+      state: "VISIBLE" as const,
+      timer: 1,
+      kind: "normal" as const,
+      hp: 1,
+    };
     const bullet = {
       id: 10,
       position: { x: 100, y: 100 },
@@ -66,14 +81,21 @@ describe("checkBulletHits", () => {
       fromPlayer: true,
     };
     const result = checkBulletHits([bullet], [enemy], FACADE_01);
-    expect(result.hits).toBe(0);
+    expect(result.targetsDown).toBe(0);
     expect(result.bullets.length).toBe(1);
   });
 
   it("player bullet does not hit DEAD enemy", () => {
     const slot = FACADE_01.slots[0];
     if (slot === undefined) throw new Error("expected slot");
-    const enemy = { id: 1, slotIndex: 0, state: "DEAD" as const, timer: 0 };
+    const enemy = {
+      id: 1,
+      slotIndex: 0,
+      state: "DEAD" as const,
+      timer: 0,
+      kind: "normal" as const,
+      hp: 1,
+    };
     const bullet = {
       id: 10,
       position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
@@ -81,6 +103,6 @@ describe("checkBulletHits", () => {
       fromPlayer: true,
     };
     const result = checkBulletHits([bullet], [enemy], FACADE_01);
-    expect(result.hits).toBe(0);
+    expect(result.targetsDown).toBe(0);
   });
 });
