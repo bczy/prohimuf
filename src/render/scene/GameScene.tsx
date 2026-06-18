@@ -6,7 +6,7 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import {
   computeWindowSlots,
   FACADE_ASPECT,
-  WINDOW_GRID,
+  getWindowGrid,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
@@ -43,14 +43,14 @@ export function GameScene({
   const facadeH = WORLD_HEIGHT;
   const facadeW = WORLD_HEIGHT * FACADE_ASPECT;
 
-  const mergedFacade = useMemo(
-    () => ({
-      width: WINDOW_GRID.cols,
-      height: WINDOW_GRID.rows,
-      slots: computeWindowSlots(facadeW, facadeH),
-    }),
-    [facadeW, facadeH],
-  );
+  const mergedFacade = useMemo(() => {
+    const grid = getWindowGrid(levelId);
+    return {
+      width: grid.cols,
+      height: grid.rows,
+      slots: computeWindowSlots(facadeW, facadeH, grid),
+    };
+  }, [facadeW, facadeH, levelId]);
 
   const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams, paused);
   const mouseRef = useMouse(canvasRef);

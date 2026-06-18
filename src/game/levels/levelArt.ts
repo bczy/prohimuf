@@ -66,6 +66,8 @@ export interface LevelArt {
   readonly label: string;
   readonly parallax: LevelArtParallax;
   readonly prompts: Record<LayerName, string>;
+  /** Per-level override of the enemy window grid; falls back to WINDOW_GRID. */
+  readonly windowGrid?: WindowGrid;
 }
 
 const LEVELS = manifest.levels as readonly LevelArt[];
@@ -99,4 +101,9 @@ export function levelLayerUrl(id: string, layer: LayerName): string {
 export function getLevelArt(id: string | undefined): LevelArt {
   const found = id !== undefined ? LEVEL_ART[id] : undefined;
   return found ?? FIRST_LEVEL;
+}
+
+/** The enemy window grid for a level (per-level override or the default). */
+export function getWindowGrid(id: string | undefined): WindowGrid {
+  return getLevelArt(id).windowGrid ?? WINDOW_GRID;
 }

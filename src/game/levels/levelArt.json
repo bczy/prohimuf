@@ -25,6 +25,14 @@
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
       "parallax": { "sky": 0.88, "facade": 0.0, "street": 0.04 },
+      "windowGrid": {
+        "cols": 7,
+        "rows": 3,
+        "left": 0.09,
+        "right": 0.91,
+        "top": 0.17,
+        "bottom": 0.55
+      },
       "prompts": {
         "sky": "parisian night sky with stars and distant haussmann rooftops silhouette, full moon haze",
         "facade": "long parisian haussmann stone apartment facade at night, front elevation, many tall windows some glowing warm orange others dark with shutters, ornate wrought iron balconies, zinc roof, ground floor shops with neon signs",
@@ -36,6 +44,14 @@
       "name": "Stalingrad",
       "label": "Stalingrad, Paris 19e, 1998",
       "parallax": { "sky": 0.9, "facade": 0.0, "street": 0.05 },
+      "windowGrid": {
+        "cols": 7,
+        "rows": 3,
+        "left": 0.08,
+        "right": 0.92,
+        "top": 0.16,
+        "bottom": 0.5
+      },
       "prompts": {
         "sky": "gritty night sky over north-east paris, hazy orange light pollution, distant cranes and tower blocks",
         "facade": "mixed parisian facade at night, haussmann stone next to 1970s concrete tower block, grid of lit and dark windows, graffiti at street level, neon kebab shop sign, front elevation",
@@ -47,6 +63,14 @@
       "name": "Vitry — 94",
       "label": "Vitry-sur-Seine, Val-de-Marne 94, 1998",
       "parallax": { "sky": 0.92, "facade": 0.0, "street": 0.06 },
+      "windowGrid": {
+        "cols": 5,
+        "rows": 4,
+        "left": 0.14,
+        "right": 0.9,
+        "top": 0.16,
+        "bottom": 0.82
+      },
       "prompts": {
         "sky": "suburban paris banlieue night sky, sodium orange haze, silhouettes of tall tower blocks",
         "facade": "1970s french social housing concrete tower facade at night, repetitive grid of windows some lit warm some dark, balconies with laundry, ground floor metal shutters and tags, front elevation",

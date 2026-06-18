@@ -111,7 +111,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
 
   return (
     <mesh ref={meshRef} position={[screenPosition.x, screenPosition.y, 0]} visible={false}>
-      <planeGeometry args={[0.9, 0.65]} />
+      <planeGeometry args={[1.4, 1.8]} />
       <meshBasicMaterial color="#ff3030" transparent />
     </mesh>
   );
