@@ -1,0 +1,82 @@
+name: Style B Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/graphics-change-conversation-279ooc"]
+    paths-ignore:
+      - "screenshots/**"
+
+# Allow the job to commit the generated screenshots back to the branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Render high-res screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      # Installed via npm (not yarn) so yarn.lock stays untouched; node-modules
+      # linker lets the script resolve "playwright" from node_modules.
+      - name: Install Playwright + Chromium
+        run: |
+          npm install --no-save playwright@1.48.0
+          npx playwright install --with-deps chromium
+
+      - name: Capture screenshots
+        run: |
+          yarn preview --port 4173 &
+          SERVER_PID=$!
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:4173/prohimuf/ >/dev/null && break
+            sleep 1
+          done
+          PREVIEW_URL="http://localhost:4173/prohimuf/" node scripts/screenshot-preview.mjs
+          kill $SERVER_PID || true
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: style-b-screenshots
+          path: screenshots/
+          retention-days: 14
+
+      - name: Commit screenshots to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f screenshots/
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+          else
+            git commit -m "chore(preview): update Style B screenshots [skip ci]"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
