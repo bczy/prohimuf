@@ -7,7 +7,8 @@ import { applyPixelFilter } from "./pixelArt";
 // Native facade resolution to draw the frame texture at (matches the art).
 const TEX_W = 1280;
 const TEX_H = 768;
-const IRON = "rgba(9,7,18,0.9)";
+const IRON = "rgba(9,7,18,0.88)";
+const HILIGHT = "rgba(150,150,180,0.32)";
 
 /**
  * Build a transparent overlay texture: for each window zone, a wrought-iron
@@ -35,10 +36,10 @@ function buildFrameTexture(zones: readonly WindowZone[]): CanvasTexture | null {
 
     // Light window framing (delimits the opening without caging it): thin
     // semi-transparent box + a single mullion cross.
-    g.strokeStyle = "rgba(10,8,18,0.5)";
-    g.lineWidth = lw * 0.6;
+    g.strokeStyle = "rgba(10,8,18,0.42)";
+    g.lineWidth = lw * 0.5;
     g.strokeRect(left, top, ww, hh);
-    g.lineWidth = lw * 0.4;
+    g.lineWidth = lw * 0.32;
     g.beginPath();
     g.moveTo(cx, top);
     g.lineTo(cx, top + hh);
@@ -46,23 +47,31 @@ function buildFrameTexture(zones: readonly WindowZone[]): CanvasTexture | null {
     g.lineTo(left + ww, cy);
     g.stroke();
 
-    // Wrought-iron balcony railing — the real foreground element: it crosses in
-    // front of the cop's lower body. Wider than the window, with a top rail
-    // (plus a faint sheen) and evenly spaced balusters.
+    // Wrought-iron balcony railing — the real foreground element, crossing in
+    // front of the cop's lower body. Top + mid + bottom rails, thin round
+    // balusters (left-edge sheen for a cylindrical look) and spear finials.
     const railLeft = left - ww * 0.05;
     const railW = ww * 1.1;
     const railTop = cy + hh * 0.2;
     const railBottom = top + hh + hh * 0.22;
+    const midY = (railTop + railBottom) / 2;
+
     g.fillStyle = IRON;
-    g.fillRect(railLeft, railTop, railW, lw * 1.4); // top rail
-    g.fillStyle = "rgba(150,150,175,0.22)"; // sheen
-    g.fillRect(railLeft, railTop - lw * 0.25, railW, lw * 0.35);
-    g.fillStyle = IRON;
+    g.fillRect(railLeft, railTop, railW, lw * 1.5); // top rail
+    g.fillRect(railLeft, midY - lw * 0.4, railW, lw * 0.8); // ornate mid rail
     g.fillRect(railLeft, railBottom - lw, railW, lw); // bottom rail
-    const balusters = Math.max(4, Math.round(railW / (TEX_W * 0.016)));
+    g.fillStyle = HILIGHT;
+    g.fillRect(railLeft, railTop, railW, Math.max(1, lw * 0.35)); // top-rail sheen
+
+    const balusters = Math.max(6, Math.round(railW / (TEX_W * 0.012)));
+    const bw = lw * 0.5;
     for (let i = 0; i <= balusters; i++) {
       const bx = railLeft + railW * (i / balusters);
-      g.fillRect(bx - lw * 0.28, railTop, lw * 0.56, railBottom - railTop);
+      g.fillStyle = IRON;
+      g.fillRect(bx - bw / 2, railTop, bw, railBottom - railTop); // baluster
+      g.fillRect(bx - bw * 0.4, railTop - lw * 1.1, bw * 0.8, lw * 1.1); // spear finial
+      g.fillStyle = HILIGHT;
+      g.fillRect(bx - bw / 2, railTop, Math.max(1, bw * 0.34), railBottom - railTop); // sheen
     }
   }
 
