@@ -7,7 +7,7 @@ import { applyPixelFilter } from "./pixelArt";
 // Native facade resolution to draw the frame texture at (matches the art).
 const TEX_W = 1280;
 const TEX_H = 768;
-const IRON = "#0b0912";
+const IRON = "rgba(9,7,18,0.9)";
 
 /**
  * Build a transparent overlay texture: for each window zone, a wrought-iron
@@ -33,11 +33,12 @@ function buildFrameTexture(zones: readonly WindowZone[]): CanvasTexture | null {
     const cx = z.x * TEX_W;
     const cy = z.y * TEX_H;
 
-    // Window frame + mullion cross
-    g.strokeStyle = IRON;
-    g.lineWidth = lw;
+    // Light window framing (delimits the opening without caging it): thin
+    // semi-transparent box + a single mullion cross.
+    g.strokeStyle = "rgba(10,8,18,0.5)";
+    g.lineWidth = lw * 0.6;
     g.strokeRect(left, top, ww, hh);
-    g.lineWidth = lw * 0.55;
+    g.lineWidth = lw * 0.4;
     g.beginPath();
     g.moveTo(cx, top);
     g.lineTo(cx, top + hh);
@@ -45,19 +46,23 @@ function buildFrameTexture(zones: readonly WindowZone[]): CanvasTexture | null {
     g.lineTo(left + ww, cy);
     g.stroke();
 
-    // Balcony railing across the lower part, slightly wider than the window and
-    // extending below the sill — this is the bit that passes in front of cops.
+    // Wrought-iron balcony railing — the real foreground element: it crosses in
+    // front of the cop's lower body. Wider than the window, with a top rail
+    // (plus a faint sheen) and evenly spaced balusters.
     const railLeft = left - ww * 0.05;
     const railW = ww * 1.1;
-    const railTop = cy + hh * 0.12;
-    const railBottom = top + hh + hh * 0.18;
+    const railTop = cy + hh * 0.2;
+    const railBottom = top + hh + hh * 0.22;
     g.fillStyle = IRON;
-    g.fillRect(railLeft, railTop, railW, lw * 1.3); // top rail
+    g.fillRect(railLeft, railTop, railW, lw * 1.4); // top rail
+    g.fillStyle = "rgba(150,150,175,0.22)"; // sheen
+    g.fillRect(railLeft, railTop - lw * 0.25, railW, lw * 0.35);
+    g.fillStyle = IRON;
     g.fillRect(railLeft, railBottom - lw, railW, lw); // bottom rail
-    const balusters = Math.max(5, Math.round(railW / (TEX_W * 0.011)));
+    const balusters = Math.max(4, Math.round(railW / (TEX_W * 0.016)));
     for (let i = 0; i <= balusters; i++) {
       const bx = railLeft + railW * (i / balusters);
-      g.fillRect(bx - lw * 0.3, railTop, lw * 0.6, railBottom - railTop);
+      g.fillRect(bx - lw * 0.28, railTop, lw * 0.56, railBottom - railTop);
     }
   }
 
