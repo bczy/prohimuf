@@ -108,6 +108,10 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nothing to commit."
           else
-            git commit -m "chore(preview): update level art + screenshots [skip ci]"
+            # No [skip ci]: this commit becomes the PR head, so we let CI run on
+            # it (code is unchanged → passes) to keep the head's status green.
+            # It won't re-trigger this preview workflow, which ignores the
+            # screenshots/ and public/assets/levels/ paths it touches.
+            git commit -m "chore(preview): update level art + screenshots"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
