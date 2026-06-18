@@ -7,8 +7,7 @@ import { tileMapToFacade } from "@game/systems/tileMapSystem";
 import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
 import type { HudData } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
-import { TiledFacade } from "./TiledFacade";
-import { StreetBackground } from "./StreetBackground";
+import { LevelBackdrop } from "./LevelBackdrop";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
@@ -37,8 +36,10 @@ export function GameScene({
 }: Props): JSX.Element {
   const layout = (levelId !== undefined ? LEVEL_LAYOUTS[levelId] : undefined) ?? DEFAULT_LAYOUT;
 
-  // Build per-building facades and compute their world x offsets
-  const { buildingLayouts, mergedFacade, facadeW, facadeH } = useMemo(() => {
+  // Build per-building facades and compute their world x offsets. The art is
+  // a single backdrop image now, but the tile maps still drive enemy slot
+  // positions (the windows where cops appear).
+  const { mergedFacade, facadeW, facadeH } = useMemo(() => {
     const layouts: { offsetX: number; facade: ReturnType<typeof tileMapToFacade> }[] = [];
     let cursorX = 0;
     for (const map of layout.buildings) {
@@ -76,7 +77,6 @@ export function GameScene({
     };
 
     return {
-      buildingLayouts: centeredLayouts,
       mergedFacade: merged,
       facadeW: totalW,
       facadeH: layout.streetHeight,
@@ -126,19 +126,7 @@ export function GameScene({
 
   return (
     <>
-      <StreetBackground width={facadeW} height={facadeH * 2} groundY={-facadeH / 2} />
-      {buildingLayouts.map((bl, i) => {
-        const map = layout.buildings[i];
-        if (map === undefined) return null;
-        return (
-          <TiledFacade
-            key={i}
-            map={map}
-            worldOffsetX={bl.offsetX}
-            streetHeight={layout.streetHeight}
-          />
-        );
-      })}
+      <LevelBackdrop levelId={levelId} facadeW={facadeW} facadeH={facadeH} />
       {mergedFacade.slots.map((slot, idx) => (
         <EnemySprite
           key={`slot-${String(idx)}`}

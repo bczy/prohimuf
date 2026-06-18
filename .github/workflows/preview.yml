@@ -2,12 +2,18 @@ name: Style B Preview
 
 on:
   workflow_dispatch:
+    inputs:
+      regenerate:
+        description: "Regenerate all level art from scratch (AI)"
+        type: boolean
+        default: false
   push:
     branches: ["claude/graphics-change-conversation-279ooc"]
     paths-ignore:
       - "screenshots/**"
+      - "public/assets/levels/**"
 
-# Allow the job to commit the generated screenshots back to the branch.
+# Allow the job to commit generated art + screenshots back to the branch.
 permissions:
   contents: write
 
@@ -17,7 +23,7 @@ concurrency:
 
 jobs:
   preview:
-    name: Render high-res screenshots
+    name: Generate art · render levels · contact sheet
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,17 +47,30 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # AI level art (pollinations). Only missing files are generated unless the
+      # run was dispatched with regenerate=true. Must run before the build so
+      # vite copies the images from public/ into dist/.
+      - name: Generate level art
+        run: |
+          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+            echo "Forcing full regeneration of level art"
+            rm -rf public/assets/levels
+            FORCE=1 node scripts/gen-level-art.mjs
+          else
+            node scripts/gen-level-art.mjs
+          fi
+
       - name: Build
         run: yarn build
 
-      # Installed via npm (not yarn) so yarn.lock stays untouched; node-modules
-      # linker lets the script resolve "playwright" from node_modules.
+      # Installed via npm (not yarn) so yarn.lock stays untouched; the
+      # node-modules linker lets the scripts resolve these from node_modules.
       - name: Install Playwright + Chromium
         run: |
-          npm install --no-save --legacy-peer-deps playwright@1.48.0
+          npm install --no-save --legacy-peer-deps playwright@1.48.0 @napi-rs/canvas
           npx playwright install --with-deps chromium
 
-      - name: Capture screenshots
+      - name: Render levels
         run: |
           # Call vite directly — running it through the corepack `yarn` shim in
           # the background proved unreliable (the server detached and died).
@@ -81,14 +100,14 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Commit screenshots to branch
+      - name: Commit generated art + screenshots
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f screenshots/
+          git add -f screenshots/ public/assets/levels/
           if git diff --cached --quiet; then
-            echo "No screenshot changes to commit."
+            echo "Nothing to commit."
           else
-            git commit -m "chore(preview): update Style B screenshots [skip ci]"
+            git commit -m "chore(preview): update level art + screenshots [skip ci]"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
