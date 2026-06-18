@@ -106,7 +106,19 @@ export function useGameLoop(
       viewH,
       levelParams?.enemiesToWin,
     );
-    gameStateRef.current = next;
+    // Dev/screenshot hook: when set, pin every live cop to VISIBLE (no shooting)
+    // so contact-sheet captures reliably show them. Never set in production.
+    const frozen =
+      typeof window !== "undefined" &&
+      (window as unknown as { __MUF_FREEZE_COPS__?: boolean }).__MUF_FREEZE_COPS__ === true;
+    gameStateRef.current = frozen
+      ? {
+          ...next,
+          enemies: next.enemies.map((e) =>
+            e.state === "DEAD" || e.state === "HIT" ? e : { ...e, state: "VISIBLE", timer: 999 },
+          ),
+        }
+      : next;
 
     const nextCrosshairLocal = crosshairToWorld(next.crosshair, viewW, viewH);
     const nextCrosshairWorld = {
