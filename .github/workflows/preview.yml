@@ -60,13 +60,6 @@ jobs:
             node scripts/gen-level-art.mjs
           fi
 
-      # The foreground layer is generated on a magenta chroma background; key it
-      # out to transparency so it composites in front of the cops.
-      - name: Cut out foreground layer
-        run: |
-          npm install --no-save --legacy-peer-deps @napi-rs/canvas
-          node scripts/cutout-foreground.mjs
-
       - name: Build
         run: yarn build
 
@@ -76,6 +69,19 @@ jobs:
         run: |
           npm install --no-save --legacy-peer-deps playwright@1.48.0 @napi-rs/canvas
           npx playwright install --with-deps chromium
+
+      # Chroma-key the magenta foreground to transparency. Done AFTER the build
+      # (npm before `yarn build` corrupts the yarn install), so we update both
+      # the source (committed) and the built copy that the preview serves.
+      - name: Cut out foreground layer
+        run: |
+          node scripts/cutout-foreground.mjs
+          for d in public/assets/levels/*/; do
+            id=$(basename "$d")
+            if [ -f "$d/foreground.png" ] && [ -d "dist/assets/levels/$id" ]; then
+              cp "$d/foreground.png" "dist/assets/levels/$id/foreground.png"
+            fi
+          done
 
       - name: Render levels
         run: |
