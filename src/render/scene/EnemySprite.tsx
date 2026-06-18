@@ -48,6 +48,9 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   // behind the railing), portrait aspect. Fallback for grid-only levels.
   const planeH = size !== undefined ? size.y * 0.8 : 1.3;
   const planeW = size !== undefined ? planeH * 0.5 : 0.8;
+  // Drop the sprite below the window centre so the feet rest at the sill/balcony
+  // and the railing crosses the legs (instead of the cop floating mid-window).
+  const bodyY = screenPosition.y - planeH * 0.28;
   const muzzleX = planeW * 0.45;
   const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
@@ -110,7 +113,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
 
     mesh.visible = true;
     mesh.position.x = screenPosition.x;
-    mesh.position.y = screenPosition.y;
+    mesh.position.y = bodyY;
 
     // Paper Mario unfold: scale Y 0 → 1 over APPEARING phase (~0.3s)
     if (enemy.state === "APPEARING") {
@@ -139,14 +142,14 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
       const fmat = flash.material as MeshBasicMaterial;
       if (enemy.state === "SHOOTING") {
         flash.visible = true;
-        flash.position.set(screenPosition.x + muzzleX, screenPosition.y + muzzleY, 0.6);
+        flash.position.set(screenPosition.x + muzzleX, bodyY + muzzleY, 0.6);
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);
         fmat.color.set("#ffd27a");
         fmat.opacity = 0.95;
       } else if (enemy.state === "HIT") {
         flash.visible = true;
-        flash.position.set(screenPosition.x, screenPosition.y + 0.1, 0.6);
+        flash.position.set(screenPosition.x, bodyY + 0.1, 0.6);
         flash.scale.setScalar(1.6);
         fmat.color.set("#ffffff");
         fmat.opacity = 1;
@@ -158,11 +161,11 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
 
   return (
     <>
-      <mesh ref={meshRef} position={[screenPosition.x, screenPosition.y, 0]} visible={false}>
+      <mesh ref={meshRef} position={[screenPosition.x, bodyY, 0]} visible={false}>
         <planeGeometry args={[planeW, planeH]} />
         <meshBasicMaterial color="#ff3030" transparent />
       </mesh>
-      <mesh ref={flashRef} position={[screenPosition.x, screenPosition.y, 0.6]} visible={false}>
+      <mesh ref={flashRef} position={[screenPosition.x, bodyY, 0.6]} visible={false}>
         <planeGeometry args={[0.8, 0.8]} />
         <meshBasicMaterial
           map={getGlowTexture()}
