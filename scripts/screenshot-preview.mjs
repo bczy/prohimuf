@@ -75,6 +75,21 @@ async function captureLevel(context, level, withMenu) {
   await page.close();
 }
 
+// Capture a front-end screen booted directly via the ?preview= hook (no play).
+async function captureScreen(context, file, query) {
+  const page = await context.newPage();
+  try {
+    await page.goto(`${BASE_URL}${query}`, { waitUntil: "networkidle" });
+    await sleep(2500); // let the typewriter / backdrop settle
+    await page.screenshot({ path: path.join(OUT_DIR, file) });
+    console.log(`  captured ${file}`);
+  } catch (e) {
+    console.error(`  failed ${file}: ${e.message}`);
+  } finally {
+    await page.close();
+  }
+}
+
 // Stitch the captured shots into one labelled contact sheet.
 async function buildContactSheet() {
   let canvasMod;
@@ -86,9 +101,12 @@ async function buildContactSheet() {
   }
   const { createCanvas, loadImage } = canvasMod;
 
-  const shots = ["00_menu.png", ...LEVELS.map((l) => `level_${l.id}.png`)].filter((f) =>
-    fs.existsSync(path.join(OUT_DIR, f)),
-  );
+  const shots = [
+    "00_menu.png",
+    "01_narrative.png",
+    ...LEVELS.map((l) => `level_${l.id}.png`),
+    "09_end.png",
+  ].filter((f) => fs.existsSync(path.join(OUT_DIR, f)));
   if (shots.length === 0) return;
 
   const cols = 2;
@@ -142,6 +160,11 @@ async function main() {
       console.error(`  failed ${LEVELS[i].id}: ${e.message}`);
     }
   }
+
+  console.log("[screen] narrative");
+  await captureScreen(context, "01_narrative.png", "?preview=narrative");
+  console.log("[screen] end");
+  await captureScreen(context, "09_end.png", "?preview=end");
 
   await browser.close();
   await buildContactSheet();
