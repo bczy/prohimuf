@@ -53,14 +53,25 @@ jobs:
 
       - name: Capture screenshots
         run: |
-          yarn preview --port 4173 &
+          # Call vite directly — running it through the corepack `yarn` shim in
+          # the background proved unreliable (the server detached and died).
+          node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort \
+            > /tmp/preview.log 2>&1 &
           SERVER_PID=$!
+          echo "preview server pid=$SERVER_PID"
+          UP=0
           for i in $(seq 1 60); do
-            curl -sf http://localhost:4173/prohimuf/ >/dev/null && break
+            if curl -sf http://127.0.0.1:4173/prohimuf/ >/dev/null; then UP=1; break; fi
             sleep 1
           done
-          PREVIEW_URL="http://localhost:4173/prohimuf/" node scripts/screenshot-preview.mjs
-          kill $SERVER_PID || true
+          if [ "$UP" != "1" ]; then
+            echo "::error::Preview server failed to start"
+            cat /tmp/preview.log || true
+            exit 1
+          fi
+          echo "preview server is up"
+          PREVIEW_URL="http://127.0.0.1:4173/prohimuf/" node scripts/screenshot-preview.mjs
+          kill "$SERVER_PID" 2>/dev/null || true
 
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
@@ -68,6 +79,7 @@ jobs:
           name: style-b-screenshots
           path: screenshots/
           retention-days: 14
+          if-no-files-found: error
 
       - name: Commit screenshots to branch
         run: |

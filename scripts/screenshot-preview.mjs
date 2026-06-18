@@ -104,7 +104,12 @@ async function main() {
   }
 
   await browser.close();
-  console.log("done.");
+
+  const produced = fs.readdirSync(OUT_DIR).filter((f) => f.endsWith(".png"));
+  if (produced.length === 0) {
+    throw new Error("no screenshots were produced");
+  }
+  console.log(`done — ${produced.length} screenshot(s): ${produced.join(", ")}`);
 }
 
 main().catch((e) => {
