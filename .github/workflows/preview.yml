@@ -60,6 +60,13 @@ jobs:
             node scripts/gen-level-art.mjs
           fi
 
+      # The foreground layer is generated on a magenta chroma background; key it
+      # out to transparency so it composites in front of the cops.
+      - name: Cut out foreground layer
+        run: |
+          npm install --no-save @napi-rs/canvas
+          node scripts/cutout-foreground.mjs
+
       - name: Build
         run: yarn build
 

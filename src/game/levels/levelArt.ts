@@ -1,7 +1,7 @@
 import manifest from "./levelArt.json";
 import type { WindowSlot } from "@game/types/map";
 
-export type LayerName = "sky" | "facade" | "street";
+export type LayerName = "sky" | "facade" | "street" | "foreground";
 
 /** Native aspect ratio (w/h) of the facade art, used to size the plane. */
 export const FACADE_ASPECT = manifest.sizes.facade.width / manifest.sizes.facade.height;

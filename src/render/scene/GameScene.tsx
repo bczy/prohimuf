@@ -13,6 +13,7 @@ import type { HudData } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
+import { ForegroundImage } from "./ForegroundImage";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
@@ -107,6 +108,7 @@ export function GameScene({
         />
       ))}
       <ForegroundFrames zones={zones} facadeW={facadeW} facadeH={facadeH} />
+      <ForegroundImage levelId={levelId} facadeW={facadeW} facadeH={facadeH} />
       <BulletSprite stateRef={stateRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />
     </>

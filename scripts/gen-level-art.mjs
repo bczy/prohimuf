@@ -22,7 +22,7 @@ const OUT_ROOT = path.resolve(ROOT, "public/assets/levels");
 const MANIFEST = path.resolve(ROOT, "src/game/levels/levelArt.json");
 
 const FORCE = process.argv.includes("--force") || process.env.FORCE === "1";
-const LAYERS = ["sky", "facade", "street"];
+const LAYERS = ["sky", "facade", "street", "foreground"];
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
 const { style, sizes, levels } = manifest;

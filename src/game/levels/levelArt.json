@@ -4,7 +4,8 @@
   "sizes": {
     "sky": { "width": 1024, "height": 384 },
     "facade": { "width": 1280, "height": 768 },
-    "street": { "width": 1024, "height": 320 }
+    "street": { "width": 1024, "height": 320 },
+    "foreground": { "width": 1280, "height": 768 }
   },
   "world": {
     "$comment": "Facade plane height in world units. Width is derived from the facade image aspect ratio so the art shows at its native proportions.",
@@ -45,7 +46,8 @@
       "prompts": {
         "sky": "parisian night sky with stars and distant haussmann rooftops silhouette, full moon haze",
         "facade": "long parisian haussmann stone apartment facade at night, front elevation, many tall windows some glowing warm orange others dark with shutters, ornate wrought iron balconies, zinc roof, ground floor shops with neon signs",
-        "street": "parisian night sidewalk and cobblestone street, wet asphalt reflections, neon glow, gutter, street level horizontal strip"
+        "street": "parisian night sidewalk and cobblestone street, wet asphalt reflections, neon glow, gutter, street level horizontal strip",
+        "foreground": "row of ornate parisian wrought iron balcony railings and window guard bars, thick black ironwork silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no building, no wall, no sky"
       }
     },
     {
@@ -73,7 +75,8 @@
       "prompts": {
         "sky": "gritty night sky over north-east paris, hazy orange light pollution, distant cranes and tower blocks",
         "facade": "mixed parisian facade at night, haussmann stone next to 1970s concrete tower block, grid of lit and dark windows, graffiti at street level, neon kebab shop sign, front elevation",
-        "street": "rough urban night street and sidewalk, metro entrance railing, wet pavement, neon reflections, horizontal strip"
+        "street": "rough urban night street and sidewalk, metro entrance railing, wet pavement, neon reflections, horizontal strip",
+        "foreground": "row of plain metal window bars and balcony railings, thick black silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no building, no wall, no sky"
       }
     },
     {
@@ -103,7 +106,8 @@
       "prompts": {
         "sky": "suburban paris banlieue night sky, sodium orange haze, silhouettes of tall tower blocks",
         "facade": "1970s french social housing concrete tower facade at night, repetitive grid of windows some lit warm some dark, balconies with laundry, ground floor metal shutters and tags, front elevation",
-        "street": "concrete suburban plaza and parking lot at night, painted parking lines, lamp post glow, wet ground reflections, horizontal strip"
+        "street": "concrete suburban plaza and parking lot at night, painted parking lines, lamp post glow, wet ground reflections, horizontal strip",
+        "foreground": "row of concrete balcony parapets and metal guard railings, thick black silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no building, no wall, no sky"
       }
     }
   ]
