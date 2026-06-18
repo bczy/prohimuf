@@ -560,3 +560,16 @@ Then run:
 ```bash
 node scripts/generate-assets.mjs --asset my_new_sprite
 ```
+
+## Regenerating level art (Style B)
+
+`gen-level-art.mjs` only generates **missing** files, so reruns are stable.
+To re-roll the AI art (random seed each run):
+
+- **One level:** delete its folder, e.g. `rm -rf public/assets/levels/vitry`,
+  then push a commit that also touches a non-ignored file (the preview
+  workflow ignores `public/assets/levels/**`), and CI regenerates the missing
+  layers.
+- **All levels:** run the _Style B Preview_ workflow with `regenerate=true`
+  (force), or delete `public/assets/levels/*` and push alongside any source
+  change.

@@ -18,10 +18,14 @@ import type { LevelConfig } from "@game/levels/levels";
 import { saveScore, isHighScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
-import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
 import { PRE_LEVEL_NARRATIVE, POST_LEVEL_NARRATIVE } from "@game/systems/narrativeSystem";
 
 type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END";
+
+// Preview harness hook: `?preview=narrative|end` boots straight into a screen
+// so the screenshot tool can capture the front-end screens without playing.
+const PREVIEW_SCREEN =
+  typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
 
 function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   return {
@@ -44,16 +48,21 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
 }
 
 export function App(): JSX.Element {
-  const [appPhase, setAppPhase] = useState<AppPhase>("MENU");
+  const [appPhase, setAppPhase] = useState<AppPhase>(
+    PREVIEW_SCREEN === "narrative" ? "NARRATIVE_PRE" : PREVIEW_SCREEN === "end" ? "END" : "MENU",
+  );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [unlockedLevels, setUnlockedLevels] = useState<ReadonlySet<string>>(loadUnlockedLevels);
   const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(
     () => LEVELS[0] as unknown as LevelConfig,
   );
-  const [hudData, setHudData] = useState<HudData>(() =>
-    buildHudInitial(LEVELS[0] as unknown as LevelConfig, loadPrefs()),
-  );
+  const [hudData, setHudData] = useState<HudData>(() => {
+    const initial = buildHudInitial(LEVELS[0] as unknown as LevelConfig, loadPrefs());
+    return PREVIEW_SCREEN === "end"
+      ? { ...initial, phase: "GAME_OVER", score: 4200, wave: 3 }
+      : initial;
+  });
   const [gameKey, setGameKey] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
@@ -205,7 +214,6 @@ export function App(): JSX.Element {
   }
 
   const levelParams = buildLevelParams(selectedLevel, prefs);
-  const lvLayout = LEVEL_LAYOUTS[selectedLevel.id] ?? DEFAULT_LAYOUT;
 
   return (
     <div
@@ -221,19 +229,6 @@ export function App(): JSX.Element {
         orthographic
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
-        onCreated={({ camera, size }) => {
-          let totalW = 0;
-          for (const m of lvLayout.buildings) totalW += m.cols * m.tileW + lvLayout.gap;
-          totalW -= lvLayout.gap;
-          const STREET_H = lvLayout.streetHeight;
-          const zoomByWidth = size.width / totalW;
-          const VISIBLE_ROWS = 8;
-          const zoomByVisibleRows = (size.height - 40) / VISIBLE_ROWS;
-          camera.zoom = Math.max(zoomByWidth, zoomByVisibleRows);
-          const viewH = size.height / camera.zoom;
-          camera.position.y = -(STREET_H / 2) - 1.5 + viewH / 2;
-          camera.updateProjectionMatrix();
-        }}
       >
         <ambientLight intensity={2.2} />
         <directionalLight position={[-12, 2, 4]} intensity={0.8} />

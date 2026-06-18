@@ -1,8 +1,5 @@
-# Corepack fetches the pinned Yarn from repo.yarnpkg.com by default, which is
-# blocked on some restricted networks (sandboxes/CI mirrors). Point it at the
-# npm registry, which is reachable, so `yarn` works without that host.
-export COREPACK_NPM_REGISTRY="${COREPACK_NPM_REGISTRY:-https://registry.npmjs.org}"
-
+# Use npm/npx (not the corepack `yarn` shim) so the hook runs without needing
+# to fetch a package manager over the network.
 npx lint-staged
-yarn lint
-yarn format:check
+npm run lint
+npm run format:check

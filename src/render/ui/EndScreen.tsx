@@ -13,13 +13,19 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
   const label = isGameOver ? "— UNE —" : "— SUCCÈS —";
   const title = isGameOver ? "LE LIVREUR DU 19ÈME INTERPELLÉ" : "LA RAVE A EU LIEU";
 
+  // Phase-tinted facade backdrop: cold red on defeat, warm green on success.
+  const overlay = isGameOver
+    ? "rgba(22,4,8,0.78), rgba(8,4,12,0.95)"
+    : "rgba(6,18,10,0.72), rgba(8,6,18,0.94)";
+
   return (
     <div
       onClick={onRestart}
       style={{
         position: "fixed",
         inset: 0,
-        background: "#000000",
+        background: `linear-gradient(${overlay}), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
+        imageRendering: "pixelated",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

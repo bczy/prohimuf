@@ -1,0 +1,81 @@
+{
+  "$comment": "Single source of truth for level backdrop art. Read by the app (rendering) and by scripts/gen-level-art.mjs (AI generation). Add a level by appending an entry here, then run the preview harness.",
+  "style": "16-bit pixel art, crisp clean pixels, cohesive night palette deep blue violet with warm orange window light and magenta cyan neon accents, dithering, retro snes game art, no text, no watermark, no people",
+  "sizes": {
+    "sky": { "width": 1024, "height": 384 },
+    "facade": { "width": 1280, "height": 768 },
+    "street": { "width": 1024, "height": 320 }
+  },
+  "world": {
+    "$comment": "Facade plane height in world units. Width is derived from the facade image aspect ratio so the art shows at its native proportions.",
+    "heightUnits": 12
+  },
+  "windowGrid": {
+    "$comment": "Where cops pop up, as a normalized grid over the facade image (0..1, y down). Tuned to the upper lit-window floors of the generated facades.",
+    "cols": 7,
+    "rows": 3,
+    "left": 0.1,
+    "right": 0.9,
+    "top": 0.12,
+    "bottom": 0.5
+  },
+  "levels": [
+    {
+      "id": "belliard",
+      "name": "Rue Belliard",
+      "label": "Rue Belliard, Paris 18e, 1998",
+      "parallax": { "sky": 0.88, "facade": 0.0, "street": 0.04 },
+      "windowGrid": {
+        "cols": 7,
+        "rows": 3,
+        "left": 0.09,
+        "right": 0.91,
+        "top": 0.17,
+        "bottom": 0.55
+      },
+      "prompts": {
+        "sky": "parisian night sky with stars and distant haussmann rooftops silhouette, full moon haze",
+        "facade": "long parisian haussmann stone apartment facade at night, front elevation, many tall windows some glowing warm orange others dark with shutters, ornate wrought iron balconies, zinc roof, ground floor shops with neon signs",
+        "street": "parisian night sidewalk and cobblestone street, wet asphalt reflections, neon glow, gutter, street level horizontal strip"
+      }
+    },
+    {
+      "id": "stalingrad",
+      "name": "Stalingrad",
+      "label": "Stalingrad, Paris 19e, 1998",
+      "parallax": { "sky": 0.9, "facade": 0.0, "street": 0.05 },
+      "windowGrid": {
+        "cols": 7,
+        "rows": 3,
+        "left": 0.08,
+        "right": 0.92,
+        "top": 0.16,
+        "bottom": 0.5
+      },
+      "prompts": {
+        "sky": "gritty night sky over north-east paris, hazy orange light pollution, distant cranes and tower blocks",
+        "facade": "mixed parisian facade at night, haussmann stone next to 1970s concrete tower block, grid of lit and dark windows, graffiti at street level, neon kebab shop sign, front elevation",
+        "street": "rough urban night street and sidewalk, metro entrance railing, wet pavement, neon reflections, horizontal strip"
+      }
+    },
+    {
+      "id": "vitry",
+      "name": "Vitry — 94",
+      "label": "Vitry-sur-Seine, Val-de-Marne 94, 1998",
+      "parallax": { "sky": 0.92, "facade": 0.0, "street": 0.06 },
+      "windowGrid": {
+        "cols": 5,
+        "rows": 4,
+        "left": 0.14,
+        "right": 0.9,
+        "top": 0.16,
+        "bottom": 0.82
+      },
+      "prompts": {
+        "sky": "suburban paris banlieue night sky, sodium orange haze, silhouettes of tall tower blocks",
+        "facade": "1970s french social housing concrete tower facade at night, repetitive grid of windows some lit warm some dark, balconies with laundry, ground floor metal shutters and tags, front elevation",
+        "street": "concrete suburban plaza and parking lot at night, painted parking lines, lamp post glow, wet ground reflections, horizontal strip"
+      }
+    }
+  ]
+}
