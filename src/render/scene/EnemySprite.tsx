@@ -44,10 +44,10 @@ interface Props {
 }
 
 export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props): JSX.Element {
-  // Size the cop to its window: a bit taller than the opening (head/torso above
-  // the sill, legs behind the railing), portrait aspect. Fallback for grid levels.
-  const planeH = size !== undefined ? size.y * 1.5 : 1.8;
-  const planeW = size !== undefined ? planeH * 0.62 : 1.4;
+  // Size the cop to roughly fit the window opening (head near the top, legs
+  // behind the railing), portrait aspect. Fallback for grid-only levels.
+  const planeH = size !== undefined ? size.y * 0.8 : 1.3;
+  const planeW = size !== undefined ? planeH * 0.5 : 0.8;
   const muzzleX = planeW * 0.45;
   const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
