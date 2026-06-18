@@ -33,6 +33,15 @@
         "top": 0.17,
         "bottom": 0.55
       },
+      "windows": {
+        "w": 0.085,
+        "h": 0.13,
+        "rows": [
+          { "y": 0.2, "xs": [0.1, 0.225, 0.35, 0.5, 0.64, 0.775, 0.9] },
+          { "y": 0.37, "xs": [0.1, 0.225, 0.35, 0.5, 0.64, 0.775, 0.9] },
+          { "y": 0.53, "xs": [0.1, 0.225, 0.35, 0.5, 0.64, 0.775, 0.9] }
+        ]
+      },
       "prompts": {
         "sky": "parisian night sky with stars and distant haussmann rooftops silhouette, full moon haze",
         "facade": "long parisian haussmann stone apartment facade at night, front elevation, many tall windows some glowing warm orange others dark with shutters, ornate wrought iron balconies, zinc roof, ground floor shops with neon signs",
@@ -52,6 +61,15 @@
         "top": 0.16,
         "bottom": 0.5
       },
+      "windows": {
+        "w": 0.07,
+        "h": 0.1,
+        "rows": [
+          { "y": 0.13, "xs": [0.06, 0.16, 0.34, 0.45, 0.56, 0.74, 0.85, 0.95] },
+          { "y": 0.26, "xs": [0.06, 0.16, 0.34, 0.45, 0.56, 0.74, 0.85, 0.95] },
+          { "y": 0.39, "xs": [0.06, 0.16, 0.34, 0.45, 0.56, 0.74, 0.85, 0.95] }
+        ]
+      },
       "prompts": {
         "sky": "gritty night sky over north-east paris, hazy orange light pollution, distant cranes and tower blocks",
         "facade": "mixed parisian facade at night, haussmann stone next to 1970s concrete tower block, grid of lit and dark windows, graffiti at street level, neon kebab shop sign, front elevation",
@@ -70,6 +88,17 @@
         "right": 0.9,
         "top": 0.16,
         "bottom": 0.82
+      },
+      "windows": {
+        "w": 0.1,
+        "h": 0.1,
+        "rows": [
+          { "y": 0.12, "xs": [0.09, 0.42, 0.55, 0.8, 0.92] },
+          { "y": 0.26, "xs": [0.09, 0.42, 0.55, 0.8, 0.92] },
+          { "y": 0.4, "xs": [0.09, 0.42, 0.55, 0.8, 0.92] },
+          { "y": 0.54, "xs": [0.09, 0.42, 0.55, 0.8, 0.92] },
+          { "y": 0.68, "xs": [0.09, 0.42, 0.55, 0.8, 0.92] }
+        ]
       },
       "prompts": {
         "sky": "suburban paris banlieue night sky, sodium orange haze, silhouettes of tall tower blocks",

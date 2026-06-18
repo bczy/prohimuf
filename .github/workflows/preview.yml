@@ -13,9 +13,9 @@ on:
       - "screenshots/**"
       - "public/assets/levels/**"
 
-# Read-only: screenshots are published as a build artifact, not committed.
+# TEMPORARY: write needed for the dev screenshot commit step below.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: preview-${{ github.ref }}
@@ -104,3 +104,17 @@ jobs:
           path: screenshots/
           retention-days: 14
           if-no-files-found: error
+
+      # TEMPORARY (dev iteration only — remove before merging to keep the PR
+      # head green): commit screenshots back so they can be reviewed inline.
+      - name: Commit screenshots (dev preview)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f screenshots/ public/assets/levels/
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "chore(preview): dev screenshots"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
