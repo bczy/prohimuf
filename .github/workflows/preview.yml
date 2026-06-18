@@ -64,7 +64,7 @@ jobs:
       # out to transparency so it composites in front of the cops.
       - name: Cut out foreground layer
         run: |
-          npm install --no-save @napi-rs/canvas
+          npm install --no-save --legacy-peer-deps @napi-rs/canvas
           node scripts/cutout-foreground.mjs
 
       - name: Build
