@@ -75,8 +75,7 @@ export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props
       style={{
         position: "fixed",
         inset: 0,
-        background:
-          "linear-gradient(rgba(8,6,20,0.5), rgba(8,6,20,0.96)), url('/assets/levels/belliard/facade.png') center/cover no-repeat",
+        background: `linear-gradient(rgba(8,6,20,0.5), rgba(8,6,20,0.96)), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
         imageRendering: "pixelated",
         display: "flex",
         flexDirection: "column",

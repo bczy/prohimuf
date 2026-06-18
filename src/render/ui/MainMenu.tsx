@@ -22,8 +22,7 @@ interface Props {
 const base: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background:
-    "linear-gradient(rgba(10,7,26,0.38) 0%, rgba(10,7,26,0.6) 45%, rgba(10,6,24,0.82) 100%), url('/assets/levels/belliard/facade.png') center/cover no-repeat",
+  background: `linear-gradient(rgba(10,7,26,0.38) 0%, rgba(10,7,26,0.6) 45%, rgba(10,6,24,0.82) 100%), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
   imageRendering: "pixelated",
   color: "#fff",
   fontFamily: "'Impact', 'Arial Narrow', sans-serif",

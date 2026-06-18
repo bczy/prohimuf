@@ -11,8 +11,7 @@ export function StartScreen({ onStart }: StartScreenProps): JSX.Element {
       style={{
         position: "fixed",
         inset: 0,
-        background:
-          "radial-gradient(ellipse at center, rgba(8,6,20,0.6) 0%, rgba(8,6,20,0.92) 100%), url('/assets/levels/belliard/facade.png') center/cover no-repeat",
+        background: `radial-gradient(ellipse at center, rgba(8,6,20,0.6) 0%, rgba(8,6,20,0.92) 100%), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
         imageRendering: "pixelated",
         display: "flex",
         flexDirection: "column",
