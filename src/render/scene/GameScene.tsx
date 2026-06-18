@@ -56,13 +56,15 @@ export function GameScene({
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 
-  // Frame the whole facade: fit its height to the viewport, centred at origin.
+  // Frame the facade to *cover* the viewport (no background bars on the sides):
+  // fill the wider axis, letting the other overflow a little — that overflow is
+  // scrollable via the mouse edges. Centred at the origin.
   useEffect(() => {
     const ortho = camera as OrthographicCamera;
-    ortho.zoom = (size.height / facadeH) * 0.98;
+    ortho.zoom = Math.max(size.width / facadeW, size.height / facadeH);
     ortho.position.set(0, 0, 100);
     ortho.updateProjectionMatrix();
-  }, [camera, size.height, size.width, facadeH]);
+  }, [camera, size.height, size.width, facadeW, facadeH]);
 
   useFrame((_state, delta) => {
     const { x: mouseX, y: mouseY } = mouseRef.current;
