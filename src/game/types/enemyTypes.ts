@@ -51,7 +51,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     weight: 15,
     spriteBase: "enemy_riot",
     variants: 1,
-    tint: "#7fd4ff",
+    tint: "#dbe9ff",
   },
   biker: {
     kind: "biker",
@@ -66,7 +66,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     weight: 15,
     spriteBase: "enemy_biker",
     variants: 1,
-    tint: "#ffe27a",
+    tint: "#fff7e0",
   },
   bonus: {
     kind: "bonus",
@@ -81,7 +81,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     weight: 5,
     spriteBase: "enemy_bonus",
     variants: 1,
-    tint: "#ffd24a",
+    tint: "#ffe9a8",
   },
   civilian: {
     kind: "civilian",
@@ -97,7 +97,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     weight: 12,
     spriteBase: "enemy_civilian",
     variants: 1,
-    tint: "#8effa6",
+    tint: "#d8ffe2",
   },
 };
 
