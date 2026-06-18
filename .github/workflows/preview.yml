@@ -13,9 +13,9 @@ on:
       - "screenshots/**"
       - "public/assets/levels/**"
 
-# Allow the job to commit generated art + screenshots back to the branch.
+# Read-only: screenshots are published as a build artifact, not committed.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: preview-${{ github.ref }}
@@ -92,6 +92,11 @@ jobs:
           PREVIEW_URL="http://127.0.0.1:4173/prohimuf/" node scripts/screenshot-preview.mjs
           kill "$SERVER_PID" 2>/dev/null || true
 
+      # Screenshots are published as a downloadable artifact only — NOT
+      # committed back to the branch. Auto-committing made a bot commit the PR
+      # head, which (a) carried no CI status because GitHub does not run
+      # workflows on GITHUB_TOKEN pushes, and (b) superseded the code commit's
+      # own CI run. Artifact-only keeps the PR head on the real code commit.
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
         with:
@@ -99,19 +104,3 @@ jobs:
           path: screenshots/
           retention-days: 14
           if-no-files-found: error
-
-      - name: Commit generated art + screenshots
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f screenshots/ public/assets/levels/
-          if git diff --cached --quiet; then
-            echo "Nothing to commit."
-          else
-            # No [skip ci]: this commit becomes the PR head, so we let CI run on
-            # it (code is unchanged → passes) to keep the head's status green.
-            # It won't re-trigger this preview workflow, which ignores the
-            # screenshots/ and public/assets/levels/ paths it touches.
-            git commit -m "chore(preview): update level art + screenshots"
-            git push origin HEAD:${GITHUB_REF_NAME}
-          fi
