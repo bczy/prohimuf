@@ -1,10 +1,14 @@
 import type { JSX } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
-import { tileMapToFacade } from "@game/systems/tileMapSystem";
-import { LEVEL_LAYOUTS, DEFAULT_LAYOUT } from "@game/maps/levelMaps";
+import {
+  computeWindowSlots,
+  FACADE_ASPECT,
+  WINDOW_GRID,
+  WORLD_HEIGHT,
+} from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { LevelBackdrop } from "./LevelBackdrop";
@@ -13,7 +17,7 @@ import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
 import { useMouse } from "@hooks/useMouse";
 
-// Edge zones and speed
+// Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
 const SCROLL_SPEED = 6;
 
@@ -34,58 +38,31 @@ export function GameScene({
   levelId,
   paused,
 }: Props): JSX.Element {
-  const layout = (levelId !== undefined ? LEVEL_LAYOUTS[levelId] : undefined) ?? DEFAULT_LAYOUT;
+  // The level is an image now: size the playfield from the facade art's native
+  // aspect ratio, and place enemy windows on a normalized grid over it.
+  const facadeH = WORLD_HEIGHT;
+  const facadeW = WORLD_HEIGHT * FACADE_ASPECT;
 
-  // Build per-building facades and compute their world x offsets. The art is
-  // a single backdrop image now, but the tile maps still drive enemy slot
-  // positions (the windows where cops appear).
-  const { mergedFacade, facadeW, facadeH } = useMemo(() => {
-    const layouts: { offsetX: number; facade: ReturnType<typeof tileMapToFacade> }[] = [];
-    let cursorX = 0;
-    for (const map of layout.buildings) {
-      const buildingW = map.cols * map.tileW;
-      const centerX = cursorX + buildingW / 2;
-      layouts.push({
-        offsetX: centerX,
-        facade: tileMapToFacade(map, centerX, layout.streetHeight),
-      });
-      cursorX += buildingW + layout.gap;
-    }
-    // Re-centre the entire street around x=0
-    const totalW = cursorX - layout.gap;
-    const streetCenterX = totalW / 2;
-    const centeredLayouts = layouts.map((l) => ({
-      offsetX: l.offsetX - streetCenterX,
-      facade: {
-        ...l.facade,
-        slots: l.facade.slots.map((s) => ({
-          ...s,
-          screenPosition: {
-            x: s.screenPosition.x - streetCenterX,
-            y: s.screenPosition.y,
-          },
-        })),
-      },
-    }));
-
-    const allSlots = centeredLayouts.flatMap((l) => l.facade.slots);
-    const maxCols = Math.max(...layout.buildings.map((m) => m.cols));
-    const merged = {
-      width: maxCols,
-      height: layout.streetHeight,
-      slots: allSlots,
-    };
-
-    return {
-      mergedFacade: merged,
-      facadeW: totalW,
-      facadeH: layout.streetHeight,
-    };
-  }, [layout]);
+  const mergedFacade = useMemo(
+    () => ({
+      width: WINDOW_GRID.cols,
+      height: WINDOW_GRID.rows,
+      slots: computeWindowSlots(facadeW, facadeH),
+    }),
+    [facadeW, facadeH],
+  );
 
   const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams, paused);
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
+
+  // Frame the whole facade: fit its height to the viewport, centred at origin.
+  useEffect(() => {
+    const ortho = camera as OrthographicCamera;
+    ortho.zoom = (size.height / facadeH) * 0.98;
+    ortho.position.set(0, 0, 100);
+    ortho.updateProjectionMatrix();
+  }, [camera, size.height, size.width, facadeH]);
 
   useFrame((_state, delta) => {
     const { x: mouseX, y: mouseY } = mouseRef.current;
@@ -93,33 +70,26 @@ export function GameScene({
 
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
-
-    const hScrollMin = -(facadeW - viewW) / 2;
-    const hScrollMax = (facadeW - viewW) / 2;
-    const ROAD_EXTRA = 4;
-    const totalSceneH = facadeH + ROAD_EXTRA;
-    const vScrollMin = -(totalSceneH - viewH) / 2 - ROAD_EXTRA / 2;
-    const vScrollMax = (totalSceneH - viewH) / 2 + ROAD_EXTRA / 2;
+    const rangeX = Math.max(0, (facadeW - viewW) / 2);
+    const rangeY = Math.max(0, (facadeH - viewH) / 2);
 
     let scrollX = 0;
     if (mouseX < EDGE_ZONE) scrollX = -1;
     else if (mouseX > 1 - EDGE_ZONE) scrollX = 1;
-
-    if (scrollX !== 0) {
+    if (scrollX !== 0 && rangeX > 0) {
       camera.position.x = Math.max(
-        hScrollMin,
-        Math.min(hScrollMax, camera.position.x + scrollX * SCROLL_SPEED * delta),
+        -rangeX,
+        Math.min(rangeX, camera.position.x + scrollX * SCROLL_SPEED * delta),
       );
     }
 
     let scrollY = 0;
     if (mouseY < EDGE_ZONE) scrollY = 1;
     else if (mouseY > 1 - EDGE_ZONE) scrollY = -1;
-
-    if (scrollY !== 0) {
+    if (scrollY !== 0 && rangeY > 0) {
       camera.position.y = Math.max(
-        vScrollMin,
-        Math.min(vScrollMax, camera.position.y + scrollY * SCROLL_SPEED * delta),
+        -rangeY,
+        Math.min(rangeY, camera.position.y + scrollY * SCROLL_SPEED * delta),
       );
     }
   });

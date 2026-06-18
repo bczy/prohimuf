@@ -1,6 +1,58 @@
 import manifest from "./levelArt.json";
+import type { WindowSlot } from "@game/types/map";
 
 export type LayerName = "sky" | "facade" | "street";
+
+/** Native aspect ratio (w/h) of the facade art, used to size the plane. */
+export const FACADE_ASPECT = manifest.sizes.facade.width / manifest.sizes.facade.height;
+
+/** Facade plane height in world units (width = height × aspect). */
+export const WORLD_HEIGHT = manifest.world.heightUnits;
+
+export interface WindowGrid {
+  readonly cols: number;
+  readonly rows: number;
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+export const WINDOW_GRID: WindowGrid = {
+  cols: manifest.windowGrid.cols,
+  rows: manifest.windowGrid.rows,
+  left: manifest.windowGrid.left,
+  right: manifest.windowGrid.right,
+  top: manifest.windowGrid.top,
+  bottom: manifest.windowGrid.bottom,
+};
+
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/**
+ * Build enemy window slots as world positions from a normalized grid over the
+ * facade image. The facade plane is centred at the origin, so x∈[-W/2,W/2] and
+ * y∈[-H/2,H/2] with y up (the grid's y is top-down, hence the flip).
+ */
+export function computeWindowSlots(
+  facadeW: number,
+  facadeH: number,
+  grid: WindowGrid = WINDOW_GRID,
+): WindowSlot[] {
+  const slots: WindowSlot[] = [];
+  for (let r = 0; r < grid.rows; r++) {
+    const ny = grid.rows === 1 ? 0.5 : lerp(grid.top, grid.bottom, r / (grid.rows - 1));
+    for (let c = 0; c < grid.cols; c++) {
+      const nx = grid.cols === 1 ? 0.5 : lerp(grid.left, grid.right, c / (grid.cols - 1));
+      slots.push({
+        col: c,
+        row: r,
+        screenPosition: { x: (nx - 0.5) * facadeW, y: (0.5 - ny) * facadeH },
+      });
+    }
+  }
+  return slots;
+}
 
 export interface LevelArtParallax {
   readonly sky: number;

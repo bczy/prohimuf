@@ -93,8 +93,9 @@ export const LevelBackdrop = memo(function LevelBackdrop({
         <meshBasicMaterial color={FALLBACK.facade} />
       </mesh>
 
-      {/* Street — foreground ground, slight parallax */}
-      <mesh ref={streetRef} position={[0, -facadeH * 0.62, -0.6]}>
+      {/* Street — ground band; kept behind the facade so it only shows when the
+          facade does not fully cover the view */}
+      <mesh ref={streetRef} position={[0, -facadeH * 0.62, -2]}>
         <planeGeometry args={[streetW, streetH]} />
         <meshBasicMaterial color={FALLBACK.street} />
       </mesh>

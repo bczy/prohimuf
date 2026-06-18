@@ -6,6 +6,19 @@
     "facade": { "width": 1280, "height": 768 },
     "street": { "width": 1024, "height": 320 }
   },
+  "world": {
+    "$comment": "Facade plane height in world units. Width is derived from the facade image aspect ratio so the art shows at its native proportions.",
+    "heightUnits": 12
+  },
+  "windowGrid": {
+    "$comment": "Where cops pop up, as a normalized grid over the facade image (0..1, y down). Tuned to the upper lit-window floors of the generated facades.",
+    "cols": 7,
+    "rows": 3,
+    "left": 0.1,
+    "right": 0.9,
+    "top": 0.12,
+    "bottom": 0.5
+  },
   "levels": [
     {
       "id": "belliard",
