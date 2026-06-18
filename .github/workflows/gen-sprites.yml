@@ -1,0 +1,52 @@
+name: Generate enemy-type sprites
+
+# Generation of the extra enemy archetype sprites. Generates only MISSING
+# files, chroma-keys them, and commits them to the current branch so the deploy
+# build (which uses committed assets) ships them. After the first run the
+# sprites exist, so subsequent pushes are quick no-ops (nothing to commit).
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/graphics-change-conversation-279ooc"]
+    paths:
+      - "scripts/gen-enemy-types.mjs"
+      - ".github/workflows/gen-sprites.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate missing enemy-type sprites
+        run: node scripts/gen-enemy-types.mjs
+
+      - name: Chroma-key sprite backgrounds to transparency
+        run: |
+          npm install --no-save --legacy-peer-deps @napi-rs/canvas
+          node scripts/cutout-enemies.mjs
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f public/assets/enemy_*.png
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate enemy-type sprites (riot/biker/civilian/bonus)"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi

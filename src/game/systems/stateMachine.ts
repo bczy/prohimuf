@@ -104,7 +104,7 @@ export function tickGameState(
 
   // 7. Player bullet hits on enemies
   const hitResult = checkBulletHits(movedBullets, activeEnemies, facade);
-  const newScore = state.score + hitResult.hits;
+  const newScore = Math.max(0, state.score + hitResult.scoreDelta);
 
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
@@ -118,7 +118,8 @@ export function tickGameState(
   }
   const finalBullets = hitResult.bullets.filter((b) => !hitBulletIds.has(b.id));
 
-  const newLives = playerHit ? state.lives - 1 : state.lives;
+  // Lives change from being shot AND from mistakes (shooting a civilian).
+  const newLives = state.lives - (playerHit ? 1 : 0) + hitResult.livesDelta;
 
   if (newLives <= 0) {
     return {
@@ -133,9 +134,9 @@ export function tickGameState(
     };
   }
 
-  // 9. Tick timer
-  const timeRemaining = tickTimer(state.timeRemaining, delta);
-  if (timeRemaining === 0) {
+  // 9. Tick timer (bonus enemies add seconds back)
+  const timeRemaining = tickTimer(state.timeRemaining, delta) + hitResult.timeDelta;
+  if (timeRemaining <= 0) {
     return {
       ...state,
       crosshair,

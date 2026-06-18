@@ -12,6 +12,8 @@ import { crosshairToWorld } from "@game/systems/crosshairSystem";
 
 const MAX_DELTA = 0.1;
 const DIRECTION_DEAD_ZONE = 0.2;
+// Order used by the dev freeze hook to show every enemy type on the contact sheet.
+const FREEZE_KINDS = ["normal", "riot", "biker", "civilian", "bonus"] as const;
 
 function computeTargetIndicator(
   state: GameState,
@@ -120,6 +122,8 @@ export function useGameLoop(
             slotIndex: i,
             state: "VISIBLE" as const,
             timer: 999,
+            kind: FREEZE_KINDS[i % FREEZE_KINDS.length] ?? "normal",
+            hp: 1,
           })),
         }
       : next;
