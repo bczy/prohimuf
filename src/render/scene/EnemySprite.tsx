@@ -7,12 +7,12 @@ import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
 import { applyPixelFilter } from "./pixelArt";
 
-// Neon colors per state (guidelines: ce qui brille est interactif)
-const NEON: Record<string, string> = {
-  APPEARING: "#ff6600", // orange brûlé — dépliage
-  VISIBLE: "#ff2020", // rouge vif — visible, danger
-  SHOOTING: "#ff8800", // orange fluo — tire !
-  HIT: "#ffffff", // blanc flash — touché
+// Subtle per-state tint multiplied over the cop sprite. Kept near-white so the
+// pixel-art figure stays readable (true colours), with a faint warm telegraph
+// when shooting and a white flash on hit.
+const TINT: Record<string, string> = {
+  SHOOTING: "#ffe1b0",
+  HIT: "#ffffff",
 };
 
 interface Props {
@@ -100,13 +100,8 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
       mat.needsUpdate = true;
     }
 
-    // Neon color tint (emissive-like via color multiply on MeshBasicMaterial)
-    const neonHex = NEON[enemy.state];
-    if (neonHex !== undefined) {
-      mat.color.set(neonHex);
-    } else {
-      mat.color.set("#ffffff");
-    }
+    // Show the true cop sprite; only a faint tint for shooting / hit feedback.
+    mat.color.set(TINT[enemy.state] ?? "#ffffff");
   });
 
   return (
