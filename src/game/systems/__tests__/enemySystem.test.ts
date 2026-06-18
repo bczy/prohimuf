@@ -3,9 +3,9 @@ import { spawnWave, tickEnemy, hitEnemy } from "@game/systems/enemySystem";
 import { FACADE_01 } from "@game/maps/facade01";
 
 describe("spawnWave", () => {
-  it("wave 1 spawns 3 enemies", () => {
+  it("wave 1 spawns 7 enemies", () => {
     const enemies = spawnWave(1, FACADE_01);
-    expect(enemies.length).toBe(3);
+    expect(enemies.length).toBe(7);
   });
 
   it("all enemies start as HIDDEN", () => {
