@@ -106,17 +106,21 @@ export function useGameLoop(
       viewH,
       levelParams?.enemiesToWin,
     );
-    // Dev/screenshot hook: when set, pin every live cop to VISIBLE (no shooting)
-    // so contact-sheet captures reliably show them. Never set in production.
+    // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
+    // window so contact-sheet captures show cop-vs-window proportion across the
+    // whole facade. Never set in production.
     const frozen =
       typeof window !== "undefined" &&
       (window as unknown as { __MUF_FREEZE_COPS__?: boolean }).__MUF_FREEZE_COPS__ === true;
     gameStateRef.current = frozen
       ? {
           ...next,
-          enemies: next.enemies.map((e) =>
-            e.state === "DEAD" || e.state === "HIT" ? e : { ...e, state: "VISIBLE", timer: 999 },
-          ),
+          enemies: facade.slots.map((_slot, i) => ({
+            id: i,
+            slotIndex: i,
+            state: "VISIBLE" as const,
+            timer: 999,
+          })),
         }
       : next;
 
