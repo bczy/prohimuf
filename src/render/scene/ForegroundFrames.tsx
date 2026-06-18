@@ -31,21 +31,13 @@ function buildFrameTexture(zones: readonly WindowZone[]): CanvasTexture | null {
     const hh = z.h * TEX_H;
     const left = z.x * TEX_W - ww / 2;
     const top = z.y * TEX_H - hh / 2;
-    const cx = z.x * TEX_W;
     const cy = z.y * TEX_H;
 
-    // Light window framing (delimits the opening without caging it): thin
-    // semi-transparent box + a single mullion cross.
+    // Light window framing: a thin box outline delimits the opening. No mullion
+    // cross — only the balcony railing below reads as foreground ironwork.
     g.strokeStyle = "rgba(10,8,18,0.42)";
     g.lineWidth = lw * 0.5;
     g.strokeRect(left, top, ww, hh);
-    g.lineWidth = lw * 0.32;
-    g.beginPath();
-    g.moveTo(cx, top);
-    g.lineTo(cx, top + hh);
-    g.moveTo(left, cy);
-    g.lineTo(left + ww, cy);
-    g.stroke();
 
     // Wrought-iron balcony railing — the real foreground element, crossing in
     // front of the cop's lower body. Top + mid + bottom rails, thin round
