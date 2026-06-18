@@ -1,7 +1,7 @@
 import manifest from "./levelArt.json";
 import type { WindowSlot } from "@game/types/map";
 
-export type LayerName = "sky" | "facade" | "street";
+export type LayerName = "sky" | "facade" | "street" | "foreground";
 
 /** Native aspect ratio (w/h) of the facade art, used to size the plane. */
 export const FACADE_ASPECT = manifest.sizes.facade.width / manifest.sizes.facade.height;
@@ -60,6 +60,21 @@ export interface LevelArtParallax {
   readonly street: number;
 }
 
+/** A single hand-placed window, normalized to the facade image (centre + size, y-down). */
+export interface WindowZone {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+/** Compact per-level window layout: shared size + rows of x-centres. */
+export interface WindowRows {
+  readonly w: number;
+  readonly h: number;
+  readonly rows: readonly { readonly y: number; readonly xs: readonly number[] }[];
+}
+
 export interface LevelArt {
   readonly id: string;
   readonly name: string;
@@ -68,6 +83,8 @@ export interface LevelArt {
   readonly prompts: Record<LayerName, string>;
   /** Per-level override of the enemy window grid; falls back to WINDOW_GRID. */
   readonly windowGrid?: WindowGrid;
+  /** Hand-authored window zones (level design); takes priority over windowGrid. */
+  readonly windows?: WindowRows;
 }
 
 const LEVELS = manifest.levels as readonly LevelArt[];
@@ -106,4 +123,41 @@ export function getLevelArt(id: string | undefined): LevelArt {
 /** The enemy window grid for a level (per-level override or the default). */
 export function getWindowGrid(id: string | undefined): WindowGrid {
   return getLevelArt(id).windowGrid ?? WINDOW_GRID;
+}
+
+/**
+ * Hand-authored window zones for a level (normalized, y-down). Uses the
+ * explicit `windows` layout when declared, otherwise expands the parametric
+ * window grid so every level still yields usable zones.
+ */
+export function getWindowZones(id: string | undefined): WindowZone[] {
+  const art = getLevelArt(id);
+  if (art.windows !== undefined) {
+    const { w, h, rows } = art.windows;
+    return rows.flatMap((row) => row.xs.map((x) => ({ x, y: row.y, w, h })));
+  }
+  const g = art.windowGrid ?? WINDOW_GRID;
+  const zones: WindowZone[] = [];
+  for (let r = 0; r < g.rows; r++) {
+    const y = g.rows === 1 ? 0.5 : lerp(g.top, g.bottom, r / (g.rows - 1));
+    for (let c = 0; c < g.cols; c++) {
+      const x = g.cols === 1 ? 0.5 : lerp(g.left, g.right, c / (g.cols - 1));
+      zones.push({ x, y, w: 0.085, h: 0.12 });
+    }
+  }
+  return zones;
+}
+
+/** Enemy slots in world space, derived from the level's window zones. */
+export function computeLevelSlots(
+  id: string | undefined,
+  facadeW: number,
+  facadeH: number,
+): WindowSlot[] {
+  return getWindowZones(id).map((z, i) => ({
+    col: i,
+    row: 0,
+    screenPosition: { x: (z.x - 0.5) * facadeW, y: (0.5 - z.y) * facadeH },
+    size: { x: z.w * facadeW, y: z.h * facadeH },
+  }));
 }

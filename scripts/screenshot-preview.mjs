@@ -21,7 +21,7 @@ const OUT_DIR = path.resolve(ROOT, "screenshots");
 // 16:9 at 2x device scale → 3840×2160 PNGs ("grosses images" for definition).
 const VIEWPORT = { width: 1920, height: 1080 };
 const DEVICE_SCALE = 2;
-const ENEMY_WAIT_MS = 15000; // let cops appear in the windows before the shot
+const ENEMY_WAIT_MS = 4000; // cops are frozen VISIBLE (see addInitScript), so a short settle is enough
 
 const manifest = JSON.parse(
   fs.readFileSync(path.resolve(ROOT, "src/game/levels/levelArt.json"), "utf8"),
@@ -45,6 +45,8 @@ async function dismissNarrative(page) {
 async function captureLevel(context, level, withMenu) {
   const page = await context.newPage();
   await page.addInitScript(() => {
+    // Freeze cops VISIBLE so every capture reliably shows them at full size.
+    window.__MUF_FREEZE_COPS__ = true;
     try {
       localStorage.setItem("muf_progress", JSON.stringify(["belliard", "stalingrad", "vitry"]));
       localStorage.setItem(

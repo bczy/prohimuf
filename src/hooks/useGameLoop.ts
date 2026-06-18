@@ -106,7 +106,23 @@ export function useGameLoop(
       viewH,
       levelParams?.enemiesToWin,
     );
-    gameStateRef.current = next;
+    // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
+    // window so contact-sheet captures show cop-vs-window proportion across the
+    // whole facade. Never set in production.
+    const frozen =
+      typeof window !== "undefined" &&
+      (window as unknown as { __MUF_FREEZE_COPS__?: boolean }).__MUF_FREEZE_COPS__ === true;
+    gameStateRef.current = frozen
+      ? {
+          ...next,
+          enemies: facade.slots.map((_slot, i) => ({
+            id: i,
+            slotIndex: i,
+            state: "VISIBLE" as const,
+            timer: 999,
+          })),
+        }
+      : next;
 
     const nextCrosshairLocal = crosshairToWorld(next.crosshair, viewW, viewH);
     const nextCrosshairWorld = {

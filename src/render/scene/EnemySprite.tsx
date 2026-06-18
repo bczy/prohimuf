@@ -39,9 +39,20 @@ interface Props {
   stateRef: React.RefObject<GameState>;
   slotIndex: number;
   screenPosition: Vec2;
+  /** World-space window size; the cop is sized to stand in it. */
+  size?: Vec2 | undefined;
 }
 
-export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX.Element {
+export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props): JSX.Element {
+  // Size the cop to roughly fit the window opening (head near the top, legs
+  // behind the railing), portrait aspect. Fallback for grid-only levels.
+  const planeH = size !== undefined ? size.y * 0.8 : 1.3;
+  const planeW = size !== undefined ? planeH * 0.5 : 0.8;
+  // Drop the sprite below the window centre so the feet rest at the sill/balcony
+  // and the railing crosses the legs (instead of the cop floating mid-window).
+  const bodyY = screenPosition.y - planeH * 0.28;
+  const muzzleX = planeW * 0.45;
+  const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
   const flashRef = useRef<Mesh>(null);
   const idleTextureRef = useRef<Texture | null>(null);
@@ -102,7 +113,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
 
     mesh.visible = true;
     mesh.position.x = screenPosition.x;
-    mesh.position.y = screenPosition.y;
+    mesh.position.y = bodyY;
 
     // Paper Mario unfold: scale Y 0 → 1 over APPEARING phase (~0.3s)
     if (enemy.state === "APPEARING") {
@@ -131,14 +142,14 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
       const fmat = flash.material as MeshBasicMaterial;
       if (enemy.state === "SHOOTING") {
         flash.visible = true;
-        flash.position.set(screenPosition.x + 0.62, screenPosition.y + 0.2, 0.2);
+        flash.position.set(screenPosition.x + muzzleX, bodyY + muzzleY, 0.6);
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);
         fmat.color.set("#ffd27a");
         fmat.opacity = 0.95;
       } else if (enemy.state === "HIT") {
         flash.visible = true;
-        flash.position.set(screenPosition.x, screenPosition.y + 0.1, 0.2);
+        flash.position.set(screenPosition.x, bodyY + 0.1, 0.6);
         flash.scale.setScalar(1.6);
         fmat.color.set("#ffffff");
         fmat.opacity = 1;
@@ -150,12 +161,12 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition }: Props): JSX
 
   return (
     <>
-      <mesh ref={meshRef} position={[screenPosition.x, screenPosition.y, 0]} visible={false}>
-        <planeGeometry args={[1.4, 1.8]} />
+      <mesh ref={meshRef} position={[screenPosition.x, bodyY, 0]} visible={false}>
+        <planeGeometry args={[planeW, planeH]} />
         <meshBasicMaterial color="#ff3030" transparent />
       </mesh>
-      <mesh ref={flashRef} position={[screenPosition.x, screenPosition.y, 0.2]} visible={false}>
-        <planeGeometry args={[1, 1]} />
+      <mesh ref={flashRef} position={[screenPosition.x, bodyY, 0.6]} visible={false}>
+        <planeGeometry args={[0.8, 0.8]} />
         <meshBasicMaterial
           map={getGlowTexture()}
           transparent

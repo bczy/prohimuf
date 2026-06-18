@@ -4,14 +4,15 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
 import {
-  computeWindowSlots,
+  computeLevelSlots,
   FACADE_ASPECT,
-  getWindowGrid,
+  getWindowZones,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { LevelBackdrop } from "./LevelBackdrop";
+import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
@@ -39,17 +40,14 @@ export function GameScene({
   paused,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art's native
-  // aspect ratio, and place enemy windows on a normalized grid over it.
+  // aspect ratio, and place enemy windows from the level's hand-authored zones.
   const facadeH = WORLD_HEIGHT;
   const facadeW = WORLD_HEIGHT * FACADE_ASPECT;
 
+  const zones = useMemo(() => getWindowZones(levelId), [levelId]);
   const mergedFacade = useMemo(() => {
-    const grid = getWindowGrid(levelId);
-    return {
-      width: grid.cols,
-      height: grid.rows,
-      slots: computeWindowSlots(facadeW, facadeH, grid),
-    };
+    const slots = computeLevelSlots(levelId, facadeW, facadeH);
+    return { width: slots.length, height: 1, slots };
   }, [facadeW, facadeH, levelId]);
 
   const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams, paused);
@@ -105,8 +103,10 @@ export function GameScene({
           stateRef={stateRef}
           slotIndex={idx}
           screenPosition={slot.screenPosition}
+          size={slot.size}
         />
       ))}
+      <ForegroundFrames zones={zones} facadeW={facadeW} facadeH={facadeH} />
       <BulletSprite stateRef={stateRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />
     </>
