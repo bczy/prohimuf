@@ -23,7 +23,7 @@ const base: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background:
-    "linear-gradient(rgba(8,6,20,0.55) 0%, rgba(9,6,22,0.8) 45%, rgba(10,6,24,0.94) 100%), url('/assets/levels/belliard/facade.png') center/cover no-repeat",
+    "linear-gradient(rgba(10,7,26,0.38) 0%, rgba(10,7,26,0.6) 45%, rgba(10,6,24,0.82) 100%), url('/assets/levels/belliard/facade.png') center/cover no-repeat",
   imageRendering: "pixelated",
   color: "#fff",
   fontFamily: "'Impact', 'Arial Narrow', sans-serif",
@@ -97,6 +97,8 @@ function LevelCard({
       onClick={unlocked ? onPlay : undefined}
       style={{
         border: `1px solid ${unlocked ? NEON_YELLOW : "#333"}`,
+        background: "rgba(6,4,16,0.62)",
+        backdropFilter: "blur(2px)",
         padding: "16px",
         cursor: unlocked ? "pointer" : "default",
         opacity: unlocked ? 1 : 0.4,
