@@ -48,7 +48,7 @@ jobs:
       # linker lets the script resolve "playwright" from node_modules.
       - name: Install Playwright + Chromium
         run: |
-          npm install --no-save playwright@1.48.0
+          npm install --no-save --legacy-peer-deps playwright@1.48.0
           npx playwright install --with-deps chromium
 
       - name: Capture screenshots
