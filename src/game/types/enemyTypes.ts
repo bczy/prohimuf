@@ -20,6 +20,7 @@ export interface Archetype {
   readonly spriteBase: string; // e.g. "enemy_sprite", "enemy_riot"
   readonly variants: number; // number of visual variants (suffixes _2.._N)
   readonly tint: string; // neon color-multiply tint
+  readonly aspect: number; // sprite plane width relative to its height
 }
 
 export const ARCHETYPES: Record<EnemyKind, Archetype> = {
@@ -37,6 +38,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_sprite",
     variants: 3,
     tint: "#ffffff",
+    aspect: 0.5,
   },
   riot: {
     kind: "riot",
@@ -52,6 +54,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_riot",
     variants: 1,
     tint: "#dbe9ff",
+    aspect: 0.62,
   },
   biker: {
     kind: "biker",
@@ -67,6 +70,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_biker",
     variants: 1,
     tint: "#fff7e0",
+    aspect: 0.5,
   },
   bonus: {
     kind: "bonus",
@@ -82,6 +86,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_bonus",
     variants: 1,
     tint: "#ffe9a8",
+    aspect: 0.52,
   },
   civilian: {
     kind: "civilian",
@@ -98,6 +103,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_civilian",
     variants: 1,
     tint: "#d8ffe2",
+    aspect: 0.95,
   },
 };
 

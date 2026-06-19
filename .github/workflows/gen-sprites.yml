@@ -1,16 +1,12 @@
 name: Generate enemy-type sprites
 
 # Generation of the extra enemy archetype sprites. Generates only MISSING
-# files, chroma-keys them, and commits them to the current branch so the deploy
-# build (which uses committed assets) ships them. After the first run the
-# sprites exist, so subsequent pushes are quick no-ops (nothing to commit).
+# files, chroma-keys them, and commits them to the current branch. Manual only
+# (workflow_dispatch): the sprites are already committed, so this is just a
+# regeneration tool — running it on every push re-keyed existing sprites and
+# created noise.
 on:
   workflow_dispatch:
-  push:
-    branches: ["claude/graphics-change-conversation-279ooc"]
-    paths:
-      - "scripts/gen-enemy-types.mjs"
-      - ".github/workflows/gen-sprites.yml"
 
 permissions:
   contents: write
