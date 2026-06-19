@@ -37,14 +37,13 @@ interface Props {
 }
 
 export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props): JSX.Element {
-  // Size the cop to roughly fit the window opening (head near the top, legs
-  // behind the railing), portrait aspect. Fallback for grid-only levels.
+  // Square base plane sized to the window height; per-kind width is applied via
+  // scale.x each frame (the courier-on-a-bike is wider than the portrait cops),
+  // since the occupant's kind changes every wave. Fallback for grid-only levels.
   const planeH = size !== undefined ? size.y * 0.8 : 1.3;
-  const planeW = size !== undefined ? planeH * 0.5 : 0.8;
   // Drop the sprite below the window centre so the feet rest at the sill/balcony
   // and the railing crosses the legs (instead of the cop floating mid-window).
   const bodyY = screenPosition.y - planeH * 0.28;
-  const muzzleX = planeW * 0.45;
   const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
   const flashRef = useRef<Mesh>(null);
@@ -76,15 +75,19 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
     mesh.position.x = screenPosition.x;
     mesh.position.y = bodyY;
 
-    // Paper Mario unfold: scale Y 0 → 1 over APPEARING phase (~0.3s)
+    // Per-kind width (square base plane scaled on X). Paper Mario unfold scales
+    // Y 0 → 1 over the APPEARING phase (~0.3s), keeping the kind's width.
+    const aspect = archetype.aspect;
     if (enemy.state === "APPEARING") {
       unfoldTimerRef.current = Math.min(unfoldTimerRef.current + delta, 0.3);
       const t = unfoldTimerRef.current / 0.3;
       mesh.scale.y = t;
-      mesh.scale.x = 1 + (1 - t) * 0.3; // slight squash on X as it unfolds
+      mesh.scale.x = aspect * (1 + (1 - t) * 0.3); // slight extra squash as it unfolds
     } else {
-      mesh.scale.set(1, 1, 1);
+      mesh.scale.set(aspect, 1, 1);
     }
+
+    const muzzleX = planeH * aspect * 0.45;
 
     // Texture for this kind/variant/state (shared cache; new-type sprites fall
     // back to the normal cop until they exist).
@@ -126,7 +129,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   return (
     <>
       <mesh ref={meshRef} position={[screenPosition.x, bodyY, 0]} visible={false}>
-        <planeGeometry args={[planeW, planeH]} />
+        <planeGeometry args={[planeH, planeH]} />
         <meshBasicMaterial color="#ff3030" transparent />
       </mesh>
       <mesh ref={flashRef} position={[screenPosition.x, bodyY, 0.6]} visible={false}>
