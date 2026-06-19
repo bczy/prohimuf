@@ -67,6 +67,14 @@ export function App(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
 
+  // Red vignette flash whenever a life is lost (shot, or shooting a civilian).
+  const prevLivesRef = useRef(hudData.lives);
+  const [lifeFlash, setLifeFlash] = useState(0);
+  useEffect(() => {
+    if (hudData.lives < prevLivesRef.current) setLifeFlash((k) => k + 1);
+    prevLivesRef.current = hudData.lives;
+  }, [hudData.lives]);
+
   const { playBgm, stopBgm, setTension } = audio;
 
   // Escape toggles pause — only during active gameplay
@@ -251,6 +259,20 @@ export function App(): JSX.Element {
           />
         </Suspense>
       </Canvas>
+      <style>{`@keyframes mufRedFlash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}`}</style>
+      {lifeFlash > 0 && (
+        <div
+          key={lifeFlash}
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background:
+              "radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(220,0,0,0.55) 100%)",
+            animation: "mufRedFlash 0.6s ease-out forwards",
+          }}
+        />
+      )}
       <HUD data={hudData} />
       {paused && (
         <PauseScreen

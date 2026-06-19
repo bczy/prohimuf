@@ -4,6 +4,7 @@ import type { Enemy } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import { hitEnemy } from "@game/systems/enemySystem";
 import { ARCHETYPES } from "@game/types/enemyTypes";
+import type { HitEvent } from "@game/types/feedback";
 
 export interface HitResult {
   readonly bullets: readonly Bullet[];
@@ -14,6 +15,8 @@ export interface HitResult {
   readonly timeDelta: number;
   // Targets that count toward the level win (cops only), neutralised this tick.
   readonly targetsDown: number;
+  // Per-takedown events (for floating feedback).
+  readonly events: readonly HitEvent[];
 }
 
 export const BULLET_SPEED = 20;
@@ -64,6 +67,7 @@ export function checkBulletHits(
   let livesDelta = 0;
   let timeDelta = 0;
   let targetsDown = 0;
+  const events: HitEvent[] = [];
 
   for (const bullet of bullets) {
     if (!bullet.fromPlayer) continue;
@@ -86,6 +90,12 @@ export function checkBulletHits(
           livesDelta += a.livesDelta;
           timeDelta += a.timeDelta;
           if (a.countsAsTarget) targetsDown++;
+          events.push({
+            slotIndex: enemy.slotIndex,
+            scoreDelta: a.scoreDelta,
+            livesDelta: a.livesDelta,
+            timeDelta: a.timeDelta,
+          });
         }
       }
     }
@@ -98,5 +108,6 @@ export function checkBulletHits(
     livesDelta,
     timeDelta,
     targetsDown,
+    events,
   };
 }
