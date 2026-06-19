@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
@@ -16,6 +16,8 @@ import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { BulletSprite } from "./BulletSprite";
+import { FeedbackLayer } from "./FeedbackLayer";
+import type { Floater } from "./FeedbackLayer";
 import { useMouse } from "@hooks/useMouse";
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
@@ -50,7 +52,16 @@ export function GameScene({
     return { width: slots.length, height: 1, slots };
   }, [facadeW, facadeH, levelId]);
 
-  const stateRef = useGameLoop(mergedFacade, canvasRef, onHudUpdate, playSfx, levelParams, paused);
+  const feedbackRef = useRef<Floater[]>([]);
+  const stateRef = useGameLoop(
+    mergedFacade,
+    canvasRef,
+    onHudUpdate,
+    playSfx,
+    levelParams,
+    paused,
+    feedbackRef,
+  );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
 
@@ -108,6 +119,7 @@ export function GameScene({
       ))}
       <ForegroundFrames zones={zones} facadeW={facadeW} facadeH={facadeH} />
       <BulletSprite stateRef={stateRef} />
+      <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />
     </>
   );

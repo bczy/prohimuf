@@ -9,6 +9,7 @@ import type { GameState } from "@game/types/gameState";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
+import type { Floater } from "@render/scene/FeedbackLayer";
 
 const MAX_DELTA = 0.1;
 const DIRECTION_DEAD_ZONE = 0.2;
@@ -66,6 +67,7 @@ export function useGameLoop(
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void,
   levelParams?: LevelParams,
   paused = false,
+  feedbackQueueRef?: React.RefObject<Floater[]>,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -127,6 +129,33 @@ export function useGameLoop(
           })),
         }
       : next;
+
+    // Floating feedback for each takedown: bonus time, civilian penalty, score.
+    const queue = feedbackQueueRef?.current;
+    if (queue && next.feedback) {
+      for (const ev of next.feedback) {
+        const slot = facade.slots[ev.slotIndex];
+        if (slot === undefined) continue;
+        let text = "";
+        let color = "#ffffff";
+        if (ev.livesDelta < 0) {
+          text = "-1 ♥";
+          color = "#ff6b6b";
+        } else if (ev.timeDelta > 0) {
+          text = `+${String(ev.timeDelta)}s`;
+          color = "#ffe08a";
+        } else if (ev.scoreDelta > 0) {
+          text = `+${String(ev.scoreDelta)}`;
+          color = "#bfffd0";
+        } else if (ev.scoreDelta < 0) {
+          text = String(ev.scoreDelta);
+          color = "#ff6b6b";
+        }
+        if (text !== "") {
+          queue.push({ x: slot.screenPosition.x, y: slot.screenPosition.y, text, color });
+        }
+      }
+    }
 
     const nextCrosshairLocal = crosshairToWorld(next.crosshair, viewW, viewH);
     const nextCrosshairWorld = {
