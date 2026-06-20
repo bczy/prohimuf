@@ -1,4 +1,5 @@
 import manifest from "./levelArt.json";
+import generatedZones from "./windowZones.generated.json";
 import type { WindowSlot } from "@game/types/map";
 
 export type LayerName = "sky" | "facade" | "street" | "foreground";
@@ -166,9 +167,39 @@ export function getWindowZones(id: string | undefined): WindowZone[] {
  * global x = (p + x) / panels, with width scaled by 1/panels.
  */
 export function tileZones(zones: readonly WindowZone[], panels: number = PANELS): WindowZone[] {
+  return tilePanelZones(Array.from({ length: panels }, () => zones));
+}
+
+/** Per-panel window zones derived from each facade panel's art (see
+ *  scripts/gen-window-zones.mjs), keyed by level id. */
+const GENERATED_ZONES = generatedZones as Readonly<
+  Record<string, readonly (readonly WindowZone[])[]>
+>;
+
+/**
+ * The window zones for each panel of a level, in panel order. Uses the
+ * art-derived zones (one set per facade panel) when available, so each panel's
+ * cops/railings line up with that panel's actual windows; otherwise repeats the
+ * level's single hand/grid zone set across every panel.
+ */
+export function getLevelPanelZones(id: string | undefined): readonly (readonly WindowZone[])[] {
+  const art = getLevelArt(id);
+  const gen = GENERATED_ZONES[art.id];
+  if (gen !== undefined && gen.length > 0) return gen;
+  const base = getWindowZones(art.id);
+  return Array.from({ length: PANELS }, () => base);
+}
+
+/**
+ * Lay per-panel zones (each normalized to its own panel) side by side and
+ * re-normalize to the full panels-wide facade. Panel `p`'s zone at local x
+ * becomes global x = (p + x) / panels, with width scaled by 1/panels.
+ */
+export function tilePanelZones(panelZones: readonly (readonly WindowZone[])[]): WindowZone[] {
+  const panels = panelZones.length;
   const out: WindowZone[] = [];
   for (let p = 0; p < panels; p++) {
-    for (const z of zones) {
+    for (const z of panelZones[p] ?? []) {
       out.push({ x: (p + z.x) / panels, y: z.y, w: z.w / panels, h: z.h });
     }
   }

@@ -6,9 +6,9 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import {
   computeSlotsFromZones,
   FACADE_ASPECT,
-  getWindowZones,
+  getLevelPanelZones,
   PANELS,
-  tileZones,
+  tilePanelZones,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
@@ -17,6 +17,7 @@ import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
+import { CourierSprite } from "./CourierSprite";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
@@ -49,13 +50,21 @@ export function GameScene({
   const panelW = WORLD_HEIGHT * FACADE_ASPECT;
   const fullW = panelW * PANELS;
 
-  // Base (single-panel) zones drive the per-panel foreground; tiled zones place
-  // the enemy slots across all panels of the wide street.
-  const baseZones = useMemo(() => getWindowZones(levelId), [levelId]);
+  // Each facade panel has its own art-derived window zones, so cops and railings
+  // line up with that panel's real windows. The per-panel zones drive the
+  // per-panel foreground; tiled together they place the enemy slots across the
+  // whole wide street.
+  const panelZones = useMemo(() => getLevelPanelZones(levelId), [levelId]);
   const mergedFacade = useMemo(() => {
-    const slots = computeSlotsFromZones(tileZones(baseZones, PANELS), fullW, facadeH);
+    const slots = computeSlotsFromZones(tilePanelZones(panelZones), fullW, facadeH);
     return { width: slots.length, height: 1, slots };
-  }, [baseZones, fullW, facadeH]);
+  }, [panelZones, fullW, facadeH]);
+
+  // Couriers ride the road below the windows, across the whole wide street.
+  const courierField = useMemo(
+    () => ({ halfWidth: fullW / 2, streetY: -facadeH * 0.4 }),
+    [fullW, facadeH],
+  );
 
   const feedbackRef = useRef<Floater[]>([]);
   const stateRef = useGameLoop(
@@ -66,6 +75,7 @@ export function GameScene({
     levelParams,
     paused,
     feedbackRef,
+    courierField,
   );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
@@ -124,11 +134,12 @@ export function GameScene({
           size={slot.size}
         />
       ))}
-      {Array.from({ length: PANELS }).map((_, p) => (
+      {panelZones.map((zones, p) => (
         <group key={`fg-${String(p)}`} position={[(p - (PANELS - 1) / 2) * panelW, 0, 0]}>
-          <ForegroundFrames zones={baseZones} facadeW={panelW} facadeH={facadeH} />
+          <ForegroundFrames zones={zones} facadeW={panelW} facadeH={facadeH} />
         </group>
       ))}
+      <CourierSprite stateRef={stateRef} />
       <BulletSprite stateRef={stateRef} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />

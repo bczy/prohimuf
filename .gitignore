@@ -33,3 +33,6 @@ coverage/
 # OS noise
 .DS_Store
 *.local
+
+# Debug overlays from scripts/gen-window-zones.mjs --debug
+scripts/.dbg-*.jpg

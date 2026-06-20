@@ -1,11 +1,21 @@
 import type { GameState } from "@game/types/gameState";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
+import type { Courier } from "@game/types/courier";
+import type { PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
 import { fireBullet, tickBullets, checkBulletHits, BULLET_SPEED } from "@game/systems/bulletSystem";
+import {
+  checkCourierHits,
+  courierSpawnInterval,
+  FIRST_COURIER_DELAY,
+  spawnCourier,
+  tickCouriers,
+} from "@game/systems/courierSystem";
+import type { CourierField } from "@game/systems/courierSystem";
 
 export const LEVEL_TIME_SECONDS = 90;
 export const ENEMIES_TO_WIN = 10;
@@ -13,6 +23,7 @@ export const ENEMIES_TO_WIN = 10;
 const PLAYER_HIT_RADIUS = 1.0;
 
 let _nextBulletId = 1;
+let _nextCourierId = 1;
 
 export interface LevelParams {
   lives: number;
@@ -41,6 +52,9 @@ export function createInitialState(
     lives: params.lives,
     timeRemaining: params.timeSeconds,
     wave: 1,
+    couriers: [],
+    courierTimer: FIRST_COURIER_DELAY,
+    couriersSpawned: 0,
   };
 }
 
@@ -55,6 +69,7 @@ export function tickGameState(
   viewW = 18,
   viewH = 12,
   enemiesToWin = ENEMIES_TO_WIN,
+  courierField?: CourierField,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     return state;
@@ -108,22 +123,49 @@ export function tickGameState(
 
   // 7. Player bullet hits on enemies
   const hitResult = checkBulletHits(movedBullets, activeEnemies, facade);
-  const newScore = Math.max(0, state.score + hitResult.scoreDelta);
+
+  // 7b. Street couriers (livreurs): move them along the road, spawn new ones on a
+  // timer, and resolve mistaken hits (shooting a courier costs a life + point).
+  let couriers: readonly Courier[] = state.couriers;
+  let courierTimer = state.courierTimer;
+  let couriersSpawned = state.couriersSpawned;
+  let courierBullets = hitResult.bullets;
+  let courierScoreDelta = 0;
+  let courierLivesDelta = 0;
+  let pointFeedback: readonly PointHitEvent[] = [];
+  if (courierField !== undefined) {
+    couriers = tickCouriers(couriers, delta, courierField);
+    courierTimer -= delta;
+    if (courierTimer <= 0) {
+      const dir: 1 | -1 = couriersSpawned % 2 === 0 ? 1 : -1;
+      couriers = [...couriers, spawnCourier(_nextCourierId++, dir, courierField)];
+      couriersSpawned += 1;
+      courierTimer = courierSpawnInterval(couriersSpawned);
+    }
+    const ch = checkCourierHits(courierBullets, couriers);
+    courierBullets = ch.bullets;
+    couriers = ch.couriers;
+    courierScoreDelta = ch.scoreDelta;
+    courierLivesDelta = ch.livesDelta;
+    pointFeedback = ch.events;
+  }
+
+  const newScore = Math.max(0, state.score + hitResult.scoreDelta + courierScoreDelta);
 
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
-  for (const b of hitResult.bullets) {
+  for (const b of courierBullets) {
     if (b.fromPlayer) continue;
     if (Math.sqrt(b.position.x * b.position.x + b.position.y * b.position.y) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
       playerHit = true;
     }
   }
-  const finalBullets = hitResult.bullets.filter((b) => !hitBulletIds.has(b.id));
+  const finalBullets = courierBullets.filter((b) => !hitBulletIds.has(b.id));
 
-  // Lives change from being shot AND from mistakes (shooting a civilian).
-  const newLives = state.lives - (playerHit ? 1 : 0) + hitResult.livesDelta;
+  // Lives change from being shot AND from mistakes (shooting a civilian courier).
+  const newLives = state.lives - (playerHit ? 1 : 0) + hitResult.livesDelta + courierLivesDelta;
 
   if (newLives <= 0) {
     return {
@@ -131,6 +173,10 @@ export function tickGameState(
       crosshair,
       enemies: hitResult.enemies,
       feedback: hitResult.events,
+      pointFeedback,
+      couriers,
+      courierTimer,
+      couriersSpawned,
       bullets: finalBullets,
       lives: 0,
       score: newScore,
@@ -147,6 +193,10 @@ export function tickGameState(
       crosshair,
       enemies: hitResult.enemies,
       feedback: hitResult.events,
+      pointFeedback,
+      couriers,
+      courierTimer,
+      couriersSpawned,
       bullets: finalBullets,
       lives: newLives,
       score: newScore,
@@ -162,6 +212,11 @@ export function tickGameState(
     phase: finalPhase,
     crosshair,
     enemies: hitResult.enemies,
+    feedback: hitResult.events,
+    pointFeedback,
+    couriers,
+    courierTimer,
+    couriersSpawned,
     bullets: finalBullets,
     score: newScore,
     lives: newLives,
