@@ -92,6 +92,118 @@ const LIGHT_VARIANTS: [string, string, string, string][] = [
   ["#1a1500", "rgba(255,240,100,1)", "rgba(200,180,10,0.55)", "rgba(180,160,0,0.08)"], // jaune fluo
 ];
 
+// ── Ferronnerie ────────────────────────────────────────────────────────────
+// Fonte parisienne : barreaux et volutes en métal sombre rehaussés d'un liséré
+// clair. Ce saut de luminance est ce que la normal map (Sobel) transforme en
+// relief — les grilles "sortent" alors du mur sous l'éclairage 3D.
+const IRON_DARK = "#0a0a12";
+const IRON_EDGE = "rgba(170,176,205,0.6)"; // reflet métal (haut/gauche)
+const IRON_SHADOW = "rgba(0,0,0,0.5)"; // ombre portée (bas/droite)
+
+/** Barreau plein (rail ou montant) avec reflet + ombre → relief. */
+function ironBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+  ctx.fillStyle = IRON_SHADOW;
+  ctx.fillRect(x + 1, y + 1, w, h); // ombre décalée
+  ctx.fillStyle = IRON_DARK;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = IRON_EDGE;
+  if (w >= h) ctx.fillRect(x, y, w, 1);
+  else ctx.fillRect(x, y, 1, h);
+}
+
+/** Volute / arc en fonte avec reflet → relief. */
+function ironCurve(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  a0: number,
+  a1: number,
+): void {
+  ctx.lineCap = "round";
+  ctx.strokeStyle = IRON_SHADOW;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx + 0.6, cy + 0.6, r, a0, a1);
+  ctx.stroke();
+  ctx.strokeStyle = IRON_DARK;
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, a0, a1);
+  ctx.stroke();
+  ctx.strokeStyle = IRON_EDGE;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy - 0.6, r, a0, a1);
+  ctx.stroke();
+}
+
+/**
+ * Garde-corps / balustrade en fonte remplissant le rectangle [x,y,w,h] :
+ * main courante, rails haut/bas, montants verticaux et un motif central choisi
+ * par `seed` (volutes en cœur, cercles entrelacés, ou lyre). Le tout en relief.
+ */
+function drawIronRailing(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  seed: number,
+): void {
+  // Main courante bombée + rails horizontaux
+  ironBar(ctx, x - 1, y - 2, w + 2, 3);
+  ironBar(ctx, x, y + 2, w, 2);
+  ironBar(ctx, x, y + h - 3, w, 3);
+
+  // Montants verticaux réguliers
+  const spacing = 7;
+  for (let bx = x + 2; bx <= x + w - 2; bx += spacing) {
+    ironBar(ctx, bx, y, 2, h);
+  }
+
+  // Motif central décoratif
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const r = Math.min(h * 0.32, w * 0.13);
+  const motif = ((seed % 3) + 3) % 3;
+  if (motif === 0) {
+    // Volutes en cœur — deux S affrontés
+    ironCurve(ctx, cx - r, cy, r, -Math.PI / 2, Math.PI / 2);
+    ironCurve(ctx, cx + r, cy, r, Math.PI / 2, (3 * Math.PI) / 2);
+  } else if (motif === 1) {
+    // Cercles entrelacés
+    ironCurve(ctx, cx - r * 0.85, cy, r, 0, Math.PI * 2);
+    ironCurve(ctx, cx + r * 0.85, cy, r, 0, Math.PI * 2);
+  } else {
+    // Lyre — deux volutes remontant vers une pointe centrale
+    ironCurve(ctx, cx - r * 0.6, cy + r * 0.3, r, -Math.PI / 2, Math.PI * 0.85);
+    ironCurve(ctx, cx + r * 0.6, cy + r * 0.3, r, Math.PI * 0.15, (3 * Math.PI) / 2);
+    ironBar(ctx, cx - 1, y + 2, 2, h - 4);
+  }
+}
+
+/** Croisillon multi-carreaux (2 colonnes × 3 rangées) avec liséré → relief. */
+function drawWindowMullions(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  ctx.fillRect(x + w / 2 - 1, y, 2, h); // meneau central
+  for (let k = 1; k <= 2; k++) {
+    ctx.fillRect(x, y + (h * k) / 3 - 1, w, 2); // traverses
+  }
+  // Reflet clair sur l'arête supérieure de chaque meneau (relief)
+  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  ctx.fillRect(x + w / 2 - 1, y, 1, h);
+  for (let k = 1; k <= 2; k++) {
+    ctx.fillRect(x, y + (h * k) / 3 - 1, w, 1);
+  }
+}
+
 function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
   const PX = 80; // pixels per tile — plus grand = plus de détail
   const W = map.cols * PX;
@@ -227,17 +339,12 @@ function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
         ctx.fillRect(tx - 4, ty + PX - 10, PX + 8, 2);
         ctx.fillStyle = "rgba(0,0,0,0.4)";
         ctx.fillRect(tx - 4, ty + PX - 1, PX + 8, 2);
-        // Balustrade en fer forgé — barreaux
-        const barCount = 5;
-        const barSpacing = PX / (barCount + 1);
-        ctx.fillStyle = "#4a4560";
-        for (let b = 1; b <= barCount; b++) {
-          const bx = tx + Math.floor(b * barSpacing);
-          ctx.fillRect(bx, ty + PX * 0.45, 2, PX * 0.45);
+        // Balustrade en fonte ouvragée (ferronnerie parisienne) avec relief
+        {
+          const railY = ty + PX * 0.42;
+          const railH = ty + PX - 10 - railY;
+          drawIronRailing(ctx, tx, railY, PX, railH, seed);
         }
-        // Rail horizontal
-        ctx.fillStyle = "#55507a";
-        ctx.fillRect(tx, ty + PX * 0.45, PX, 3);
         // Plante ou linge — 40% de chance
         const balV = seededRand(seed * 19);
         if (balV > 0.6) {
@@ -328,10 +435,8 @@ function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
           ctx.fillStyle = innerGrad;
           ctx.fillRect(tx + margin, ty + margin, pw, ph);
 
-          // Croisillon de fenêtre
-          ctx.fillStyle = "rgba(0,0,0,0.5)";
-          ctx.fillRect(cx - 1, ty + margin, 2, ph);
-          ctx.fillRect(tx + margin, cy2 - 1, pw, 2);
+          // Croisillon multi-carreaux
+          drawWindowMullions(ctx, tx + margin, ty + margin, pw, ph);
 
           // Reflet sur le bord supérieur du cadre
           ctx.fillStyle = "rgba(255,255,255,0.15)";
@@ -410,9 +515,15 @@ function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
             ctx.fillRect(tx + margin, ty + margin, pw, ph);
           }
           // Croisillon visible même dans le noir
-          ctx.fillStyle = "rgba(60,55,80,0.6)";
-          ctx.fillRect(cx - 1, ty + margin, 2, ph);
-          ctx.fillRect(tx + margin, cy2 - 1, pw, 2);
+          drawWindowMullions(ctx, tx + margin, ty + margin, pw, ph);
+        }
+
+        // Garde-corps en fonte devant le tiers inférieur (ferronnerie
+        // parisienne) — présent ~70% des fenêtres, varié par seed
+        if (seededRand(seed * 47) > 0.3) {
+          const railH = Math.round(ph * 0.4);
+          const railY = ty + margin + ph - railH;
+          drawIronRailing(ctx, tx + margin - 2, railY, pw + 4, railH, seed);
         }
         return;
       }
