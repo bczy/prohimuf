@@ -62,7 +62,7 @@ export function hitEnemy(enemy: Enemy): Enemy {
 }
 
 export function spawnWave(wave: number, facade: FacadeMap): readonly Enemy[] {
-  const count = Math.min(2 + wave, facade.slots.length);
+  const count = Math.min(1 + wave, facade.slots.length);
   // Shuffled slot indices using a deterministic seed per wave
   const indices = Array.from({ length: facade.slots.length }, (_, i) => i);
   // Simple deterministic shuffle (wave as seed)

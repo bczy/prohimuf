@@ -82,8 +82,12 @@ export function tickGameState(
     bullets = [...bullets, fireBullet(crosshair, true, _nextBulletId, cameraOffsetX, viewW, viewH)];
   }
 
-  // 5. SHOOTING enemies fire at player
-  const shootingEnemies = activeEnemies.filter((e) => e.state === "SHOOTING");
+  // 5. Enemies fire a SINGLE shot when they enter the SHOOTING state (not a
+  // per-frame stream — that was unfairly dense).
+  const wasShooting = new Set(state.enemies.filter((e) => e.state === "SHOOTING").map((e) => e.id));
+  const shootingEnemies = activeEnemies.filter(
+    (e) => e.state === "SHOOTING" && !wasShooting.has(e.id),
+  );
   for (const enemy of shootingEnemies) {
     const slot = facade.slots[enemy.slotIndex];
     if (slot === undefined) continue;
