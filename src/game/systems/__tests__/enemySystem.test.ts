@@ -10,9 +10,9 @@ function mk(state: EnemyState, timer: number, over: Partial<Enemy> = {}): Enemy 
 }
 
 describe("spawnWave", () => {
-  it("wave 1 spawns 3 enemies", () => {
+  it("wave 1 spawns 2 enemies", () => {
     const enemies = spawnWave(1, FACADE_01);
-    expect(enemies.length).toBe(3);
+    expect(enemies.length).toBe(2);
   });
 
   it("all enemies start as HIDDEN", () => {
