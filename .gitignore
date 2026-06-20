@@ -36,3 +36,6 @@ coverage/
 
 # Debug overlays from scripts/gen-window-zones.mjs --debug
 scripts/.dbg-*.jpg
+
+# CodeGraph local index (rebuilt per machine via `codegraph index`)
+.codegraph/
