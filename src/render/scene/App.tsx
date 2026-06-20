@@ -234,6 +234,7 @@ export function App(): JSX.Element {
     >
       <Canvas
         ref={canvasRef}
+        flat
         orthographic
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
         style={{ width: "100%", height: "100%", background: "#000000" }}
