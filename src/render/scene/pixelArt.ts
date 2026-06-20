@@ -7,17 +7,20 @@
  * the procedurally-drawn facade / street canvases into chunky, palette-banded
  * 16-bit pixel art so the whole scene reads as a single art direction.
  */
-import { CanvasTexture, NearestFilter } from "three";
+import { CanvasTexture, NearestFilter, SRGBColorSpace } from "three";
 import type { Texture } from "three";
 
 /**
  * Make a texture render as crisp pixels: nearest-neighbour sampling, no
- * mipmaps. Safe to call on both loaded PNG textures and canvas textures.
+ * mipmaps. Also tags it sRGB so the art keeps its true contrast and colour —
+ * untagged textures are sampled as linear and wash out to pastel.
+ * Safe to call on both loaded PNG textures and canvas textures.
  */
 export function applyPixelFilter<T extends Texture>(texture: T): T {
   texture.magFilter = NearestFilter;
   texture.minFilter = NearestFilter;
   texture.generateMipmaps = false;
+  texture.colorSpace = SRGBColorSpace;
   texture.needsUpdate = true;
   return texture;
 }
