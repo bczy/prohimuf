@@ -81,10 +81,16 @@ async function main() {
       console.log(`  [gen]  ${level.id}/${layer}.png`);
       try {
         const baseLayer = layer.startsWith("facade_") ? "facade" : layer;
-        const variety = layer.startsWith("facade_")
-          ? ", adjacent neighbouring building, continuous street, different window arrangement"
-          : "";
-        const prompt = `${level.prompts[baseLayer]}${variety}, ${level.label}`;
+        // All facade panels are sections of ONE continuous terrace so they abut
+        // seamlessly: force level/aligned floor lines + cornice and a flat,
+        // straight-on elevation. Different seeds keep each panel distinct.
+        const continuity =
+          ", one section of a single long continuous parisian haussmann terrace," +
+          " every horizontal floor line, balcony row and the top roof cornice perfectly level" +
+          " and aligned straight across, flat front elevation seen perfectly straight on, no" +
+          " perspective, the left and right edges continue seamlessly into the neighbouring buildings";
+        const suffix = baseLayer === "facade" ? continuity : "";
+        const prompt = `${level.prompts[baseLayer]}${suffix}, ${level.label}`;
         const buf = await generate(prompt, sizes[baseLayer]);
         fs.writeFileSync(file, buf);
         console.log(`  [ok]   ${level.id}/${layer}.png (${buf.length} bytes)`);
