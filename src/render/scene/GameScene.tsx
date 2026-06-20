@@ -4,9 +4,11 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
 import {
-  computeLevelSlots,
+  computeSlotsFromZones,
   FACADE_ASPECT,
   getWindowZones,
+  PANELS,
+  tileZones,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
@@ -44,13 +46,16 @@ export function GameScene({
   // The level is an image now: size the playfield from the facade art's native
   // aspect ratio, and place enemy windows from the level's hand-authored zones.
   const facadeH = WORLD_HEIGHT;
-  const facadeW = WORLD_HEIGHT * FACADE_ASPECT;
+  const panelW = WORLD_HEIGHT * FACADE_ASPECT;
+  const fullW = panelW * PANELS;
 
-  const zones = useMemo(() => getWindowZones(levelId), [levelId]);
+  // Base (single-panel) zones drive the per-panel foreground; tiled zones place
+  // the enemy slots across all panels of the wide street.
+  const baseZones = useMemo(() => getWindowZones(levelId), [levelId]);
   const mergedFacade = useMemo(() => {
-    const slots = computeLevelSlots(levelId, facadeW, facadeH);
+    const slots = computeSlotsFromZones(tileZones(baseZones, PANELS), fullW, facadeH);
     return { width: slots.length, height: 1, slots };
-  }, [facadeW, facadeH, levelId]);
+  }, [baseZones, fullW, facadeH]);
 
   const feedbackRef = useRef<Floater[]>([]);
   const stateRef = useGameLoop(
@@ -70,10 +75,12 @@ export function GameScene({
   // scrollable via the mouse edges. Centred at the origin.
   useEffect(() => {
     const ortho = camera as OrthographicCamera;
-    ortho.zoom = Math.max(size.width / facadeW, size.height / facadeH);
+    // Cover the viewport with ONE panel (same framing as before); the extra
+    // panels become horizontal scroll room.
+    ortho.zoom = Math.max(size.width / panelW, size.height / facadeH);
     ortho.position.set(0, 0, 100);
     ortho.updateProjectionMatrix();
-  }, [camera, size.height, size.width, facadeW, facadeH]);
+  }, [camera, size.height, size.width, panelW, facadeH]);
 
   useFrame((_state, delta) => {
     const { x: mouseX, y: mouseY } = mouseRef.current;
@@ -81,7 +88,7 @@ export function GameScene({
 
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
-    const rangeX = Math.max(0, (facadeW - viewW) / 2);
+    const rangeX = Math.max(0, (fullW - viewW) / 2);
     const rangeY = Math.max(0, (facadeH - viewH) / 2);
 
     let scrollX = 0;
@@ -107,7 +114,7 @@ export function GameScene({
 
   return (
     <>
-      <LevelBackdrop levelId={levelId} facadeW={facadeW} facadeH={facadeH} />
+      <LevelBackdrop levelId={levelId} panelW={panelW} facadeH={facadeH} panels={PANELS} />
       {mergedFacade.slots.map((slot, idx) => (
         <EnemySprite
           key={`slot-${String(idx)}`}
@@ -117,7 +124,11 @@ export function GameScene({
           size={slot.size}
         />
       ))}
-      <ForegroundFrames zones={zones} facadeW={facadeW} facadeH={facadeH} />
+      {Array.from({ length: PANELS }).map((_, p) => (
+        <group key={`fg-${String(p)}`} position={[(p - (PANELS - 1) / 2) * panelW, 0, 0]}>
+          <ForegroundFrames zones={baseZones} facadeW={panelW} facadeH={facadeH} />
+        </group>
+      ))}
       <BulletSprite stateRef={stateRef} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />

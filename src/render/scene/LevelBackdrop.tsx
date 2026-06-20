@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
-import { getLevelArt, levelLayerUrl } from "@game/levels/levelArt";
+import { getLevelArt, levelLayerUrl, facadePanelUrl } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 
 // Fallback solid colours shown until (or instead of) the generated art loads,
@@ -16,89 +16,127 @@ const FALLBACK = {
 
 interface Props {
   levelId: string | undefined;
-  /** Building/street width in world units (the facade plane width). */
-  facadeW: number;
-  /** Street height in world units (the facade plane height). */
+  /** Width of a single facade panel in world units. */
+  panelW: number;
+  /** Facade height in world units. */
   facadeH: number;
+  /** Number of facade panels placed side by side. */
+  panels: number;
 }
 
 /**
- * Renders a level as stacked, parallaxing image layers (sky / facade / street)
- * instead of procedural tiles. Each layer is a textured plane; horizontal
- * parallax is driven by the camera so far layers drift slower than the facade.
+ * Renders a level as a wide street: one parallaxing sky behind N distinct
+ * facade panels laid side by side (each its own image, world-locked so they
+ * tile seamlessly), with the street band repeated behind them.
  */
 export const LevelBackdrop = memo(function LevelBackdrop({
   levelId,
-  facadeW,
+  panelW,
   facadeH,
+  panels,
 }: Props): JSX.Element {
   const art = getLevelArt(levelId);
 
   const skyRef = useRef<Mesh>(null);
-  const facadeRef = useRef<Mesh>(null);
-  const streetRef = useRef<Mesh>(null);
+  const facadeRefs = useRef<(Mesh | null)[]>([]);
+  const streetRefs = useRef<(Mesh | null)[]>([]);
   const { camera } = useThree();
 
-  // Load the three layer textures; keep the fallback colour on error.
+  const fullW = panelW * panels;
+  const offsetX = (p: number): number => (p - (panels - 1) / 2) * panelW;
+
   useEffect(() => {
     const loader = new TextureLoader();
-    const targets: { ref: React.RefObject<Mesh | null>; layer: "sky" | "facade" | "street" }[] = [
-      { ref: skyRef, layer: "sky" },
-      { ref: facadeRef, layer: "facade" },
-      { ref: streetRef, layer: "street" },
-    ];
-    for (const { ref, layer } of targets) {
+    const assign = (ref: Mesh | null, texture: Texture): void => {
+      if (ref === null) return;
+      applyPixelFilter(texture);
+      const mat = ref.material as MeshBasicMaterial;
+      mat.map = texture;
+      mat.color.set("#ffffff");
+      mat.needsUpdate = true;
+    };
+
+    loader.load(
+      levelLayerUrl(art.id, "sky"),
+      (t) => {
+        assign(skyRef.current, t);
+      },
+      undefined,
+      () => undefined,
+    );
+
+    for (let p = 0; p < panels; p++) {
       loader.load(
-        levelLayerUrl(art.id, layer),
-        (texture: Texture) => {
-          applyPixelFilter(texture);
-          const mesh = ref.current;
-          if (mesh === null) return;
-          const mat = mesh.material as MeshBasicMaterial;
-          mat.map = texture;
-          mat.color.set("#ffffff");
-          mat.needsUpdate = true;
+        facadePanelUrl(art.id, p),
+        (t) => {
+          assign(facadeRefs.current[p] ?? null, t);
+        },
+        undefined,
+        // A missing panel (not generated yet) falls back to the first facade.
+        () => {
+          loader.load(
+            facadePanelUrl(art.id, 0),
+            (t) => {
+              assign(facadeRefs.current[p] ?? null, t);
+            },
+            undefined,
+            () => undefined,
+          );
+        },
+      );
+      loader.load(
+        levelLayerUrl(art.id, "street"),
+        (t) => {
+          assign(streetRefs.current[p] ?? null, t);
         },
         undefined,
         () => undefined,
       );
     }
-  }, [art.id]);
+  }, [art.id, panels]);
 
-  // Horizontal parallax: a layer with factor k sits at camera.x * k, so k=0
-  // is world-locked (the facade) and k→1 is pinned to the view (far sky).
+  // Only the sky parallaxes; facade/street panels are world-locked so they tile.
   useFrame(() => {
-    const cx = camera.position.x;
-    if (skyRef.current) skyRef.current.position.x = cx * art.parallax.sky;
-    if (facadeRef.current) facadeRef.current.position.x = cx * art.parallax.facade;
-    if (streetRef.current) streetRef.current.position.x = cx * art.parallax.street;
+    if (skyRef.current) skyRef.current.position.x = camera.position.x * art.parallax.sky;
   });
 
-  const skyW = facadeW * 1.8;
-  const skyH = facadeH * 1.4;
-  const streetW = facadeW * 1.8;
-  const streetH = facadeH * 0.9;
+  const panelIdx = Array.from({ length: panels }, (_, p) => p);
 
   return (
     <>
-      {/* Sky — farthest, drifts slowest */}
+      {/* Sky — one wide plane, farthest, drifts slowest */}
       <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]}>
-        <planeGeometry args={[skyW, skyH]} />
+        <planeGeometry args={[fullW * 1.3, facadeH * 1.4]} />
         <meshBasicMaterial color={FALLBACK.sky} />
       </mesh>
 
-      {/* Facade — world-locked, the main backdrop */}
-      <mesh ref={facadeRef} position={[0, 0, -1]}>
-        <planeGeometry args={[facadeW, facadeH]} />
-        <meshBasicMaterial color={FALLBACK.facade} />
-      </mesh>
+      {/* Street band — repeated behind the facade (only shows in gaps) */}
+      {panelIdx.map((p) => (
+        <mesh
+          key={`street-${String(p)}`}
+          ref={(m) => {
+            streetRefs.current[p] = m;
+          }}
+          position={[offsetX(p), -facadeH * 0.62, -2]}
+        >
+          <planeGeometry args={[panelW * 1.02, facadeH * 0.9]} />
+          <meshBasicMaterial color={FALLBACK.street} />
+        </mesh>
+      ))}
 
-      {/* Street — ground band; kept behind the facade so it only shows when the
-          facade does not fully cover the view */}
-      <mesh ref={streetRef} position={[0, -facadeH * 0.62, -2]}>
-        <planeGeometry args={[streetW, streetH]} />
-        <meshBasicMaterial color={FALLBACK.street} />
-      </mesh>
+      {/* Facade — N distinct panels side by side, world-locked */}
+      {panelIdx.map((p) => (
+        <mesh
+          key={`facade-${String(p)}`}
+          ref={(m) => {
+            facadeRefs.current[p] = m;
+          }}
+          position={[offsetX(p), 0, -1]}
+        >
+          <planeGeometry args={[panelW, facadeH]} />
+          <meshBasicMaterial color={FALLBACK.facade} />
+        </mesh>
+      ))}
     </>
   );
 });

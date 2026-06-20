@@ -13,8 +13,9 @@ on:
       - "screenshots/**"
       - "public/assets/levels/**"
 
+# TEMPORARY: write for dev screenshot+art commit (removed before merge).
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: preview-${{ github.ref }}
@@ -116,3 +117,13 @@ jobs:
           path: screenshots/
           retention-days: 14
           if-no-files-found: error
+
+      - name: Commit screenshots + generated art (dev preview)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f screenshots/ public/assets/levels/
+          if git diff --cached --quiet; then echo "Nothing to commit."; else
+            git commit -m "chore(preview): dev screenshots + level art panels"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
