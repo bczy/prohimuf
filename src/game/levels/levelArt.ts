@@ -9,6 +9,9 @@ export const FACADE_ASPECT = manifest.sizes.facade.width / manifest.sizes.facade
 /** Facade plane height in world units (width = height × aspect). */
 export const WORLD_HEIGHT = manifest.world.heightUnits;
 
+/** The level decor is this many facade panels placed side by side. */
+export const PANELS = 4;
+
 export interface WindowGrid {
   readonly cols: number;
   readonly rows: number;
@@ -114,6 +117,15 @@ export function levelLayerUrl(id: string, layer: LayerName): string {
   return `${import.meta.env.BASE_URL}assets/levels/${id}/${layer}.png`;
 }
 
+/**
+ * URL of facade panel `p` (0-based): panel 0 is `facade.png`, the rest are
+ * `facade_2.png` … `facade_4.png`.
+ */
+export function facadePanelUrl(id: string, panel: number): string {
+  const name = panel === 0 ? "facade" : `facade_${String(panel + 1)}`;
+  return `${import.meta.env.BASE_URL}assets/levels/${id}/${name}.png`;
+}
+
 /** Resolve a level's art, falling back to the first declared level. */
 export function getLevelArt(id: string | undefined): LevelArt {
   const found = id !== undefined ? LEVEL_ART[id] : undefined;
@@ -148,16 +160,40 @@ export function getWindowZones(id: string | undefined): WindowZone[] {
   return zones;
 }
 
+/**
+ * Repeat a panel's normalized zones across `panels` panels laid side by side,
+ * re-normalizing to the full (panels-wide) facade: a zone at local x becomes
+ * global x = (p + x) / panels, with width scaled by 1/panels.
+ */
+export function tileZones(zones: readonly WindowZone[], panels: number = PANELS): WindowZone[] {
+  const out: WindowZone[] = [];
+  for (let p = 0; p < panels; p++) {
+    for (const z of zones) {
+      out.push({ x: (p + z.x) / panels, y: z.y, w: z.w / panels, h: z.h });
+    }
+  }
+  return out;
+}
+
+/** Enemy slots in world space from zones normalized to a facade of width facadeW. */
+export function computeSlotsFromZones(
+  zones: readonly WindowZone[],
+  facadeW: number,
+  facadeH: number,
+): WindowSlot[] {
+  return zones.map((z, i) => ({
+    col: i,
+    row: 0,
+    screenPosition: { x: (z.x - 0.5) * facadeW, y: (0.5 - z.y) * facadeH },
+    size: { x: z.w * facadeW, y: z.h * facadeH },
+  }));
+}
+
 /** Enemy slots in world space, derived from the level's window zones. */
 export function computeLevelSlots(
   id: string | undefined,
   facadeW: number,
   facadeH: number,
 ): WindowSlot[] {
-  return getWindowZones(id).map((z, i) => ({
-    col: i,
-    row: 0,
-    screenPosition: { x: (z.x - 0.5) * facadeW, y: (0.5 - z.y) * facadeH },
-    size: { x: z.w * facadeW, y: z.h * facadeH },
-  }));
+  return computeSlotsFromZones(getWindowZones(id), facadeW, facadeH);
 }
