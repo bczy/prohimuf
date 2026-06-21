@@ -1,0 +1,86 @@
+name: Deploy branch preview
+
+# Builds the playable app for any non-main branch and publishes it under
+# preview/<branch>/ on the gh-pages branch, so you can try a branch live on
+# GitHub Pages WITHOUT merging to main.
+#
+#   https://bczy.github.io/prohimuf/preview/<sanitized-branch>/
+#
+# Requires Settings → Pages → Source: "Deploy from a branch" → gh-pages / root.
+
+on:
+  push:
+    branches-ignore: ["main", "gh-pages"]
+    paths-ignore:
+      - "screenshots/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build & publish branch preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sanitize branch name
+        id: slug
+        run: |
+          slug="${GITHUB_REF_NAME//\//-}"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "base=/prohimuf/preview/$slug/" >> "$GITHUB_OUTPUT"
+          echo "url=https://bczy.github.io/prohimuf/preview/$slug/" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build (sub-path base)
+        env:
+          VITE_BASE: ${{ steps.slug.outputs.base }}
+        run: yarn build
+
+      - name: Add SPA 404 fallback
+        run: cp dist/index.html dist/404.html
+
+      - name: Publish to gh-pages (preview/${{ steps.slug.outputs.slug }})
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          destination_dir: preview/${{ steps.slug.outputs.slug }}
+          # keep_files avoids peaceiris wiping the rest of the branch (main's
+          # root + other previews). Stale hashed assets in this subdir are
+          # harmless since index.html only references the current build.
+          keep_files: true
+          commit_message: "preview: ${{ github.ref_name }} (${{ github.sha }})"
+
+      - name: Summary
+        run: |
+          echo "### 🔍 Preview deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[$GITHUB_REF_NAME → ${{ steps.slug.outputs.url }}](${{ steps.slug.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"

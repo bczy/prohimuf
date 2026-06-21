@@ -5,18 +5,20 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+# Pushes the built site to the `gh-pages` branch. The Pages site must be
+# configured (Settings → Pages → Source: "Deploy from a branch" → gh-pages
+# / root) for this to be served. main goes to the root; branch previews live
+# under preview/<branch>/ on the same branch (see deploy-preview.yml).
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-deploy
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build
+  deploy:
+    name: Build & publish to gh-pages root
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,19 +45,16 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      # SPA fallback so deep links resolve on Pages.
+      - name: Add SPA 404 fallback
+        run: cp dist/index.html dist/404.html
 
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages (root)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          # Keep the preview/ subfolders that branch deploys created.
+          keep_files: true
+          commit_message: "deploy: main → / (${{ github.sha }})"
