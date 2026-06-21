@@ -102,9 +102,7 @@ function main() {
     process.exit(0);
   }
 
-  console.log(
-    `[test:affected] Running ${String(affectedTests.length)} affected test file(s):`,
-  );
+  console.log(`[test:affected] Running ${String(affectedTests.length)} affected test file(s):`);
   for (const t of affectedTests) {
     console.log(`  - ${t}`);
   }

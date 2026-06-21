@@ -14,6 +14,7 @@ Template:
 ---
 
 ### story-narrative-coverage
+
 - arch: Boundary verdict PASS. Lane A → `dev-gameplay` owns `src/game/**` (new file
   `src/game/systems/__tests__/narrativeSystem.test.ts`, pure-logic test, no React/Three deps —
   existing `narrativeSystem.ts` confirmed import-free, exports `PRE_LEVEL_NARRATIVE` +
@@ -25,7 +26,7 @@ Template:
 - release: Lane A + Lane B built CONCURRENTLY on disjoint paths; neither dev edited this
   log (serialization respected). Lane A (`dev-gameplay`) → new `src/game/systems/__tests__/narrativeSystem.test.ts`,
   5 tests covering A1–A4. Lane B (`dev-tooling-assets`) → new `scripts/test-affected.mjs`
-  + `package.json` `test:affected` script. (Amelia ×2)
+  - `package.json` `test:affected` script. (Amelia ×2)
 - review: PASS. Boundaries intact. Lane A executed for real (isolated vitest): 5/5 green.
   Lane B `node --check` OK; `codegraph affected src/game/systems/narrativeSystem.ts`
   correctly resolved the new test file — codegraph integration verified end-to-end.

@@ -22,20 +22,14 @@ describe("narrativeSystem data integrity", () => {
   });
 
   it("A3: no scene has an empty lines array", () => {
-    const scenes = [
-      ...Object.values(PRE_LEVEL_NARRATIVE),
-      ...Object.values(POST_LEVEL_NARRATIVE),
-    ];
+    const scenes = [...Object.values(PRE_LEVEL_NARRATIVE), ...Object.values(POST_LEVEL_NARRATIVE)];
     for (const scene of scenes) {
       expect(scene.lines.length).toBeGreaterThan(0);
     }
   });
 
   it("A4: every line has a non-empty (trimmed) speaker and text", () => {
-    const scenes = [
-      ...Object.values(PRE_LEVEL_NARRATIVE),
-      ...Object.values(POST_LEVEL_NARRATIVE),
-    ];
+    const scenes = [...Object.values(PRE_LEVEL_NARRATIVE), ...Object.values(POST_LEVEL_NARRATIVE)];
     for (const scene of scenes) {
       for (const line of scene.lines) {
         expect(line.speaker.trim().length).toBeGreaterThan(0);
