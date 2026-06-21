@@ -17,7 +17,10 @@ export default defineConfig({
     },
   },
 
-  base: "/prohimuf/",
+  // Pages serves the app under /prohimuf/. Branch previews are deployed to a
+  // sub-path (/prohimuf/preview/<branch>/), so the base is overridable via env
+  // at build time without touching this default for local dev or the main site.
+  base: process.env.VITE_BASE ?? "/prohimuf/",
 
   build: {
     target: "es2022",
