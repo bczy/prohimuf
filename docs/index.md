@@ -23,14 +23,9 @@ enemies,
 bullets,
 crosshair) |
 | [render-layer.md](./render-layer.md) | R3F scene,
-TiledFacade,
-StreetBackground,
+LevelBackdrop,
 sprites,
 HUD |
-| [tile-system.md](./tile-system.md) | TileMap types,
-FacadeMap conversion,
-rue_belliard map,
-tileset |
 | [audio-system.md](./audio-system.md) | Audio system (Howler.js,
 tension tiers,
 BGM/SFX) |
@@ -52,21 +47,17 @@ known gaps |
 | [diagrams/data-flow.md](./diagrams/data-flow.md)                     | [architecture.md](./architecture.md) |
 | [diagrams/enemy-state-machine.md](./diagrams/enemy-state-machine.md) | [game-systems.md](./game-systems.md) |
 | [diagrams/app-phase-flow.md](./diagrams/app-phase-flow.md)           | [render-layer.md](./render-layer.md) |
-| [diagrams/street-layout.md](./diagrams/street-layout.md)             | [tile-system.md](./tile-system.md)   |
 
 ---
 
 ## Quick Reference
 
-| Area       | Current state                 |
-| ---------- | ----------------------------- |
-| Active map | `rue_belliard` — 4 buildings, |
-
-50 units wide,
-18 rows tall |
-| Game mode | Shooting gallery (facade) |
-| Test count | 63 tests,
-all green |
-| Entry point | `src/main.tsx` → `App.tsx` |
-| Dev command | `yarn dev` |
-| Test command | `yarn test` |
+| Area         | Current state                                   |
+| ------------ | ----------------------------------------------- |
+| Active level | `belliard` — PNG art layers via `LevelBackdrop` |
+| Game mode    | Shooting gallery (facade)                       |
+| Test count   | 75 tests,                                       |
+| all green    |
+| Entry point  | `src/main.tsx` → `App.tsx`                      |
+| Dev command  | `yarn dev`                                      |
+| Test command | `yarn test`                                     |

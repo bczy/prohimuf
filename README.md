@@ -72,12 +72,12 @@ src/
 ├── game/        # Logique de jeu pure — zéro dépendance React/Three
 │   ├── types/   # Définitions de types partagées (GameState, Enemy, Bullet…)
 │   ├── systems/ # Fonctions pures (state-in / state-out) + tests Vitest
-│   ├── maps/    # Données de niveaux (tableaux TileMap)
-│   ├── levels/  # Définition des niveaux
+│   ├── maps/    # Fixtures de façade (FacadeMap) pour les tests
+│   ├── levels/  # Définition des niveaux (art PNG + zones de fenêtres)
 │   ├── entities/ & state/  # Fabriques d'entités et d'état
 ├── hooks/       # Hooks React — pont entre logique de jeu et R3F (useFrame)
 ├── render/
-│   ├── scene/   # Composants de scène R3F (App, GameScene, TiledFacade, sprites…)
+│   ├── scene/   # Composants de scène R3F (App, GameScene, LevelBackdrop, sprites…)
 │   └── ui/      # Overlays HTML (HUD, StartScreen, EndScreen…)
 ├── assets/      # Audio + sprites générés (PNG)
 └── main.tsx     # Point d'entrée
@@ -105,8 +105,7 @@ La documentation détaillée se trouve dans [`docs/`](./docs) :
 - [`overview.md`](./docs/overview.md) — vision, univers, boucle de gameplay
 - [`architecture.md`](./docs/architecture.md) — architecture, data flow, caméra, stack
 - [`game-systems.md`](./docs/game-systems.md) — systèmes de jeu (state machine, ennemis, balles, viseur)
-- [`render-layer.md`](./docs/render-layer.md) — scène R3F, façades procédurales, sprites, HUD
-- [`tile-system.md`](./docs/tile-system.md) — système de tuiles et conversion TileMap → FacadeMap
+- [`render-layer.md`](./docs/render-layer.md) — scène R3F, décor de niveau (LevelBackdrop), sprites, HUD
 - [`audio-system.md`](./docs/audio-system.md) — audio Howler.js, paliers de tension, BGM/SFX
 - [`asset-pipeline.md`](./docs/asset-pipeline.md) — génération d'assets (Pollinations.ai)
 - [`dev-guidelines.md`](./docs/dev-guidelines.md) — standards de code (TDD, YAGNI, DRY)
