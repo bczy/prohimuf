@@ -382,6 +382,19 @@ function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
         ctx.beginPath();
         ctx.ellipse(dx + dw / 2, dy + 2, dw / 2, 10, 0, Math.PI, 0);
         ctx.fill();
+        // Grille de porte cochère en fonte — montants + traverse + volutes
+        const grBars = 6;
+        for (let g = 1; g < grBars; g++) {
+          ironBar(ctx, dx + (dw * g) / grBars - 1, dy + 8, 2, dh - 12);
+        }
+        ironBar(ctx, dx, dy + dh * 0.5, dw, 2);
+        {
+          const gcx = dx + dw / 2;
+          const gcy = dy + dh * 0.5;
+          const gr = dw * 0.14;
+          ironCurve(ctx, gcx - gr, gcy, gr, -Math.PI / 2, Math.PI / 2);
+          ironCurve(ctx, gcx + gr, gcy, gr, Math.PI / 2, (3 * Math.PI) / 2);
+        }
         // Interphone
         ctx.fillStyle = "#ffe600";
         ctx.fillRect(dx + dw - 10, dy + 10, 5, 3);
@@ -603,29 +616,22 @@ function makeFacadeCanvas(map: TileMap): HTMLCanvasElement {
 
       // ── FIRE_ESCAPE : escalier métallique ──
       if (tileType === "FIRE_ESCAPE") {
-        // Fond mur normal (déjà dessiné) + structure métallique
+        // Fond mur normal (déjà dessiné) + structure métallique en relief
         // Montants verticaux
-        ctx.fillStyle = "#1a1828";
-        ctx.fillRect(tx + PX * 0.2, ty, 3, PX);
-        ctx.fillRect(tx + PX * 0.75, ty, 3, PX);
-        // Reflet
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
-        ctx.fillRect(tx + PX * 0.2, ty, 1, PX);
-        ctx.fillRect(tx + PX * 0.75, ty, 1, PX);
+        ironBar(ctx, tx + PX * 0.2, ty, 3, PX);
+        ironBar(ctx, tx + PX * 0.75, ty, 3, PX);
         // Palier horizontal au centre
-        ctx.fillStyle = "#252338";
-        ctx.fillRect(tx + PX * 0.15, ty + PX * 0.45, PX * 0.65, 5);
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(tx + PX * 0.15, ty + PX * 0.45 + 5, PX * 0.65, 2);
-        // Barreau diagonal — escalier
-        ctx.fillStyle = "#1e1c30";
+        ironBar(ctx, tx + PX * 0.15, ty + PX * 0.45, PX * 0.65, 5);
+        // Garde-corps ajouré en fonte au-dessus du palier
+        drawIronRailing(ctx, tx + PX * 0.15, ty + PX * 0.22, PX * 0.65, PX * 0.23, seed);
+        // Marches de l'escalier
         for (let step = 0; step < 4; step++) {
-          const sy3 = ty + PX * 0.05 + step * PX * 0.1;
-          ctx.fillRect(tx + PX * 0.2, sy3, PX * 0.55, 2);
+          const sy3 = ty + PX * 0.55 + step * PX * 0.1;
+          ironBar(ctx, tx + PX * 0.2, sy3, PX * 0.55, 2);
         }
         // Rouille / oxydation
-        ctx.fillStyle = "rgba(120,50,10,0.12)";
-        ctx.fillRect(tx + PX * 0.2, ty + PX * 0.6, 3, PX * 0.3);
+        ctx.fillStyle = "rgba(120,50,10,0.14)";
+        ctx.fillRect(tx + PX * 0.2, ty + PX * 0.62, 3, PX * 0.3);
         return;
       }
 
@@ -769,7 +775,7 @@ export const TiledFacade = memo(function TiledFacade({
     // Style B: collapse the finely-drawn facade into chunky 16-bit pixels and
     // band the palette. The normal map is derived from the pixelated canvas so
     // the relief stays aligned with the pixel grid.
-    pixelateCanvas(diffuseCanvas, 5, 8);
+    pixelateCanvas(diffuseCanvas, 4, 8);
     return {
       diffuse: applyPixelFilter(new CanvasTexture(diffuseCanvas)),
       normal: applyPixelFilter(makeNormalMap(diffuseCanvas)),
@@ -796,7 +802,7 @@ export const TiledFacade = memo(function TiledFacade({
         <meshStandardMaterial
           map={diffuse}
           normalMap={normal}
-          normalScale={[2.5, 2.5]}
+          normalScale={[3.2, 3.2]}
           roughness={0.6}
           metalness={0.0}
         />
