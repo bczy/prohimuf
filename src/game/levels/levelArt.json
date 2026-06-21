@@ -30,14 +30,24 @@
         "$comment": "Prior for scripts/gen-window-zones.mjs: cols/rows + extent of the lit-window band; the script snaps it to each panel's art.",
         "cols": 7,
         "rows": 3,
-        "left": 0.095,
-        "right": 0.905,
-        "top": 0.225,
-        "bottom": 0.605
+        "left": 0.085,
+        "right": 0.9,
+        "top": 0.19,
+        "bottom": 0.48
+      },
+      "windows": {
+        "$comment": "Tuned to the actual windows of facade.png (repeated on every panel). Re-tune if facade.png is regenerated.",
+        "w": 0.085,
+        "h": 0.16,
+        "rows": [
+          { "y": 0.19, "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9] },
+          { "y": 0.335, "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9] },
+          { "y": 0.48, "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9] }
+        ]
       },
       "prompts": {
         "sky": "parisian night sky with stars and distant haussmann rooftops silhouette, full moon haze",
-        "facade": "long parisian haussmann stone apartment facade at night, front elevation, many tall windows some glowing warm orange others dark with shutters, ornate wrought iron balconies, zinc roof, ground floor shops with neon signs",
+        "facade": "long parisian haussmann stone apartment facade at night, front elevation, strict regular grid of exactly 7 identical evenly spaced tall french windows per floor across 3 upper floors, every window and floor line perfectly aligned, some windows glowing warm orange others dark with shutters, elaborate ornate wrought iron balcony railings with scrollwork in front of every window, zinc roof, ground floor shops with neon signs, horizontally tileable seamless repeat",
         "street": "parisian night sidewalk and cobblestone street, wet asphalt reflections, neon glow, gutter, street level horizontal strip",
         "foreground": "row of ornate parisian wrought iron balcony railings and window guard bars, thick black ironwork silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no building, no wall, no sky"
       }

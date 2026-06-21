@@ -22,9 +22,9 @@ const OUT_ROOT = path.resolve(ROOT, "public/assets/levels");
 const MANIFEST = path.resolve(ROOT, "src/game/levels/levelArt.json");
 
 const FORCE = process.argv.includes("--force") || process.env.FORCE === "1";
-// The decor is 4 facade panels side by side (a wider street). facade is panel
-// 1; facade_2/3/4 are the extra panels (same prompt + variety, own seed).
-const LAYERS = ["sky", "facade", "facade_2", "facade_3", "facade_4", "street", "foreground"];
+// The decor repeats ONE facade image across all panels (so the window-zone grid
+// lines up everywhere), so only a single facade layer is generated per level.
+const LAYERS = ["sky", "facade", "street", "foreground"];
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
 const { style, sizes, levels } = manifest;

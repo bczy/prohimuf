@@ -118,15 +118,6 @@ export function levelLayerUrl(id: string, layer: LayerName): string {
   return `${import.meta.env.BASE_URL}assets/levels/${id}/${layer}.png`;
 }
 
-/**
- * URL of facade panel `p` (0-based): panel 0 is `facade.png`, the rest are
- * `facade_2.png` … `facade_4.png`.
- */
-export function facadePanelUrl(id: string, panel: number): string {
-  const name = panel === 0 ? "facade" : `facade_${String(panel + 1)}`;
-  return `${import.meta.env.BASE_URL}assets/levels/${id}/${name}.png`;
-}
-
 /** Resolve a level's art, falling back to the first declared level. */
 export function getLevelArt(id: string | undefined): LevelArt {
   const found = id !== undefined ? LEVEL_ART[id] : undefined;
