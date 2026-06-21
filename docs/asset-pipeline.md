@@ -51,36 +51,13 @@ crouch |
 crs,
 rg,
 informer |
-| UI backgrounds | `bg_*` | start*screen,
+| UI backgrounds | `bg_*` | start\*screen,
 end_screen |
-| Tile textures | `tile*\_`      | shop,
- fire_escape,
- arch     |
-| Items / cargo  |`item\_\_` | vinyl,
+| Items / cargo |`item\_\_` | vinyl,
 flyer,
 generator_key |
 | Audio | — | Manual,
 not generated |
-
----
-
-## Generated Tile Assets
-
-These were generated but are **not yet used** by the `TiledFacade` renderer (which draws tiles procedurally via Canvas2D):
-
-```
-tile_shop_boucherie / tabac / bar / pharmacie
-tile_fire_escape
-tile_arch_haussmann
-tile_rooftop_zinc / chimney / antenna
-tile_balcony_ironwork / plant / laundry
-tile_window_lit_orange / blue / neon_green
-tile_window_dark_shutters / curtain
-tile_door_main
-tile_wall_damp / clean / graffiti / poster / pipe
-```
-
-These assets have opaque backgrounds and do not match the procedural renderer's style. Integration would require a transparent sprite approach or a separate overlay pass.
 
 ---
 

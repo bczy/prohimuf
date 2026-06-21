@@ -5,14 +5,14 @@ flowchart TD
     subgraph L1["Layer 1 — src/game/ (Pure TypeScript)"]
         direction TB
         subgraph types["types/"]
-            T1[GameState] ~~~ T2[TopdownState] ~~~ T3[TileMap] ~~~ T4[Player] ~~~ T5[Enemy] ~~~ T6[Vec2]
+            T1[GameState] ~~~ T2[TopdownState] ~~~ T3[FacadeMap] ~~~ T4[Player] ~~~ T5[Enemy] ~~~ T6[Vec2]
         end
         subgraph systems["systems/"]
             S1[stateMachine] ~~~ S2[topdownStateMachine] ~~~ S3[enemySystem] ~~~ S4[bulletSystem]
-            S5[playerSystem] ~~~ S6[copSystem] ~~~ S7[tileMapSystem] ~~~ S8[audioSystem]
+            S5[playerSystem] ~~~ S6[copSystem] ~~~ S8[audioSystem]
         end
         subgraph maps["maps/"]
-            M1[rue_belliard] ~~~ M2[topdown_test] ~~~ M3[vitry_94]
+            M1[facade01]
         end
         types --> systems
         types --> maps
@@ -24,7 +24,7 @@ flowchart TD
 
     subgraph L3["Layer 3 — src/render/ (React Three Fiber + HTML)"]
         subgraph scene["scene/"]
-            R1[App] ~~~ R2[GameScene] ~~~ R3[TiledFacade] ~~~ R4[StreetBackground] ~~~ R5[EnemySprite]
+            R1[App] ~~~ R2[GameScene] ~~~ R3[LevelBackdrop] ~~~ R4[StreetBackground] ~~~ R5[EnemySprite]
         end
         subgraph ui["ui/"]
             U1[HUD] ~~~ U2[StartScreen] ~~~ U3[EndScreen]

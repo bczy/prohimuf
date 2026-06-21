@@ -8,9 +8,6 @@ src/
 │   ├── types/              # Shared type definitions (no functions)
 │   │   ├── gameState.ts    # GameState,
  Phase
-│   │   ├── tileMap.ts      # TileMap,
- TileType,
- Tileset
 │   │   ├── map.ts          # FacadeMap,
  WindowSlot
 │   │   ├── topdownState.ts # TopdownState,
@@ -32,18 +29,12 @@ src/
 │   │   ├── playerSystem.ts
 │   │   ├── copSystem.ts
 │   │   ├── deliverySystem.ts
-│   │   ├── tileMapSystem.ts        # TileMap → FacadeMap conversion
 │   │   ├── audioSystem.ts          # Howler.js wrapper
 │   │   ├── timer.ts
 │   │   ├── vec2.ts
 │   │   └── __tests__/      # Vitest unit tests
-│   ├── maps/               # Level data (TileMap arrays)
-│   │   ├── rue_belliard.ts # Active shooting gallery map (4 buildings)
-│   │   ├── stalingrad_19.ts
-│   │   ├── vitry_94.ts
-│   │   ├── topdown_test.ts
-│   │   ├── facade01.ts
-│   │   └── tileset_default.ts
+│   ├── maps/               # Façade fixtures (FacadeMap) for tests
+│   │   └── facade01.ts
 │   ├── entities/index.ts   # Entity factory helpers
 │   └── state/index.ts      # State factory helpers
 ├── hooks/                  # React hooks — bridge between game logic and R3F
@@ -58,7 +49,7 @@ src/
 │   │   ├── App.tsx              # Root: phase router + Canvas + lighting
 │   │   ├── GameScene.tsx        # Shooting gallery scene
 │   │   ├── TopdownScene.tsx     # Top-down scene (Sprint 3)
-│   │   ├── TiledFacade.tsx      # Procedural facade renderer
+│   │   ├── LevelBackdrop.tsx    # Level art renderer (sky + facade panels + street)
 │   │   ├── StreetBackground.tsx # Sky + pavement backdrop
 │   │   ├── FacadeBackground.tsx # Plain background fallback
 │   │   ├── EnemySprite.tsx

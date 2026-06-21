@@ -76,99 +76,41 @@ onCreated={({ camera,
 
 ## GameScene.tsx — Shooting Gallery
 
-Builds the multi-building street from `RUE_BELLIARD` (4 buildings,
-bottom-aligned).
+Builds the street from the active level's art (`getLevelArt(levelId)`),
+laid out as `PANELS` (4) facade panels placed side by side.
 
-**Data prep (module-level,
-runs once):**
+**Data prep:**
 
-- `buildingLayouts` — computes world `offsetX` and `FacadeMap` per building,
-  re-centred around x=0
-- `MERGED_FACADE` — all window slots merged for the game loop
-- `FACADE_W = 50`,
-  `FACADE_H = STREET_HEIGHT = 18`
-
-**Per-frame scroll (useFrame):**
-
-- Horizontal: mouse edge zones trigger X scroll,
-  clamped to `[-(FACADE_W-viewW)/2,
-+(FACADE_W-viewW)/2]`
-- Vertical: mouse edge zones trigger Y scroll,
-  clamped to include 4 extra road units below buildings
+- `panelW = WORLD_HEIGHT * FACADE_ASPECT`,
+  `fullW = panelW * PANELS`
+- Enemy slots from the level's hand-authored window zones:
+  `computeSlotsFromZones(tileZones(baseZones, PANELS), fullW, facadeH)`
 
 **Children:**
 
-- `StreetBackground` — sky + pavement behind buildings
-- `TiledFacade` × 4 — one per building
+- `LevelBackdrop` — sky + N facade panels + street (see below)
 - `EnemySprite` × N — one per window slot
+- `ForegroundFrames` × PANELS — per-panel window framing overlays
 - `BulletSprite` — renders all bullets from stateRef
 - `CrosshairSprite` — follows mouse in world space
 
 ---
 
-## TiledFacade.tsx — Procedural Facade
+## LevelBackdrop.tsx — Level Art
 
-Renders a `TileMap` as a Canvas2D texture with a normal map,
-**plus real 3D geometry** for architectural depth.
+Renders a level as a wide street from pre-generated PNG layers under
+`public/assets/levels/<id>/`:
 
-**Props:** `map: TileMap`,
-`worldOffsetX?: number`,
-`streetHeight?: number`
+- **sky** — one wide plane, farthest (`z = -3`), parallaxes slowest
+- **facade** — `PANELS` panels side by side (`facade.png`, `facade_2.png` …),
+  each its own world-locked plane (`z = -1`)
+- **street** — repeated band behind the facade (`z = -2`)
 
-### Texture pipeline
-
-1. `makeFacadeCanvas(map)` — draws all tiles procedurally on an `HTMLCanvasElement` (80px per tile)
-2. `makeNormalMap(diffuseCanvas)` — Sobel filter on luminance → RGB normal map (strength = 10)
-3. Main plane: `meshStandardMaterial` with `normalMap`,
-   `normalScale={[2.5,
-2.5]}`,
-   `roughness={0.6}`
-
-### 3D depth geometry (overlaid on the facade plane)
-
-Each building emits additional meshes that physically protrude from the facade:
-
-| Element                     | Geometry                         | Depth      | Purpose                                         |
-| --------------------------- | -------------------------------- | ---------- | ----------------------------------------------- |
-| Cornice bands               | `boxGeometry` per floor boundary | 0.22 units | Catches directional light,                      |
-| casts shadow on floor below |
-| Soubassement                | `boxGeometry` at building base   | 0.35 units | Heavier base mass,                              |
-| more prominent shadow       |
-| Right-edge shadow           | thin `planeGeometry`             | z -0.1     | Simulates shadow gap between adjacent buildings |
-| Top-edge dark band          | thin `planeGeometry`             | z -0.1     | Sky-meets-rooftop transition                    |
-
-Constants defined at module level: `CORNICE_DEPTH = 0.22`,
-`CORNICE_H = 0.12`,
-`BASE_DEPTH = 0.35`,
-`BASE_H = 0.18`.
-
-### Tile rendering — each `TileType` has a dedicated Canvas2D draw function:
-
-- `WALL` — stone blocks with Sobel-derived joint lines,
-  occasional graffiti / moisture stains / pipes / posters
-- `WINDOW_LIT` — glowing interior (10 warm/cool light variants),
-  radial gradient,
-  silhouette overlay (35% chance)
-- `WINDOW_DARK` — 5 dark variants: void,
-  half-open shutters,
-  night-sky reflection,
-  drawn curtain,
-  neon green reflection
-- `BALCONY` — wrought-iron railing,
-  random plant or laundry
-- `DOOR` — arched double door,
-  intercom,
-  floor light halo
-- `ROOFTOP` — zinc parapet,
-  random TV antenna (25%) or chimney (20%)
-- `SHOP` — commercial signage band
-- `FIRE_ESCAPE` — diagonal metal ladder on wall with rust patches
-- `ARCH` — Haussmannian decorative arch with keystones and pilasters
-
-### Bottom-alignment
-
-Building base sits at `y = -(streetHeight/2)` in world space regardless of building height.  
-Formula: `mesh_centre_y = yOffset = -((streetHeight - map.rows) * tileH) / 2`
+Adjacent facade panels overlap by `BLEND` (8%) and the front panel's left edge
+is alpha-feathered (`featherLeftTexture`) so the seam crossfades instead of
+showing a hard vertical line. All textures pass through `applyPixelFilter`
+(nearest-neighbour, sRGB) to keep the 16-bit look. Missing panels fall back to
+`facade.png`; missing layers fall back to flat colours.
 
 ---
 
