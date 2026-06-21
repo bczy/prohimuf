@@ -103,7 +103,7 @@ export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
   });
 
   return (
-    <mesh ref={meshRef} position={[0, 0, 1]} renderOrder={20}>
+    <mesh ref={meshRef} position={[0, 0, 1]} renderOrder={16384}>
       <planeGeometry args={[0.9, 0.9]} />
       <meshBasicMaterial transparent depthWrite={false} />
     </mesh>
