@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { TextureLoader, CanvasTexture } from "three";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
-import { getLevelArt, levelLayerUrl, facadePanelUrl } from "@game/levels/levelArt";
+import { getLevelArt, levelLayerUrl } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 
 // Fallback solid colours shown until (or instead of) the generated art loads,
@@ -112,23 +112,17 @@ export const LevelBackdrop = memo(function LevelBackdrop({
     );
 
     for (let p = 0; p < panels; p++) {
+      // All panels share the SAME facade image so the (single) window-zone grid
+      // — used for cop spawns and the foreground ironwork — lines up on every
+      // panel. A Haussmann terrace is repetitive, so the repeat reads naturally;
+      // the left-edge feather still crossfades each seam.
       loader.load(
-        facadePanelUrl(art.id, p),
+        levelLayerUrl(art.id, "facade"),
         (t) => {
           assignFacade(facadeRefs.current[p] ?? null, t, p);
         },
         undefined,
-        // A missing panel (not generated yet) falls back to the first facade.
-        () => {
-          loader.load(
-            facadePanelUrl(art.id, 0),
-            (t) => {
-              assignFacade(facadeRefs.current[p] ?? null, t, p);
-            },
-            undefined,
-            () => undefined,
-          );
-        },
+        () => undefined,
       );
       loader.load(
         levelLayerUrl(art.id, "street"),
