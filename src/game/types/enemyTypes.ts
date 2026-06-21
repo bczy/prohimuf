@@ -99,7 +99,10 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     livesDelta: -1,
     timeDelta: 0,
     countsAsTarget: false,
-    weight: 12,
+    // weight 0: the civilian (livreur) is no longer a window pop-up — it rides
+    // the street as a courier (see courierSystem). Kept here for its sprite and
+    // its shoot-penalty effects, which the courier reuses.
+    weight: 0,
     spriteBase: "enemy_civilian",
     variants: 1,
     tint: "#d8ffe2",

@@ -7,9 +7,12 @@ import {
 } from "../stateMachine";
 import { FACADE_01 } from "@game/maps/facade01";
 import type { GameState } from "@game/types/gameState";
+import type { CourierField } from "@game/systems/courierSystem";
+import { pickKind } from "@game/types/enemyTypes";
 
 const noFire = false;
 const fire = true;
+const FIELD: CourierField = { halfWidth: 40, streetY: -5 };
 
 describe("createInitialState", () => {
   it("creates PLAYING phase", () => {
@@ -116,5 +119,31 @@ describe("tickGameState — wave complete", () => {
     };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.phase).toBe("LEVEL_COMPLETE");
+  });
+});
+
+describe("tickGameState — street couriers", () => {
+  it("a courier eventually enters when a courier field is supplied", () => {
+    let state = createInitialState(FACADE_01);
+    for (let i = 0; i < 600 && state.couriers.length === 0; i++) {
+      state = tickGameState(state, noFire, 0.5, 0.5, 0.05, FACADE_01, 0, 18, 12, undefined, FIELD);
+    }
+    expect(state.couriers.length).toBeGreaterThan(0);
+  });
+
+  it("does not spawn couriers without a courier field", () => {
+    let state = createInitialState(FACADE_01);
+    for (let i = 0; i < 200; i++) {
+      state = tickGameState(state, noFire, 0.5, 0.5, 0.05, FACADE_01);
+    }
+    expect(state.couriers).toHaveLength(0);
+  });
+});
+
+describe("enemy spawn pool", () => {
+  it("never spawns a civilian in a window (couriers ride the street instead)", () => {
+    for (let seed = 0; seed < 500; seed++) {
+      expect(pickKind(seed)).not.toBe("civilian");
+    }
   });
 });

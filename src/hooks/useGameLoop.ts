@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { createInitialState, tickGameState } from "@game/systems/stateMachine";
 import type { LevelParams } from "@game/systems/stateMachine";
+import type { CourierField } from "@game/systems/courierSystem";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
 import type { GameState } from "@game/types/gameState";
@@ -60,6 +61,19 @@ function isSameIndicator(
   return a.up === b.up && a.down === b.down && a.left === b.left && a.right === b.right;
 }
 
+// Map a takedown's effect deltas to a floating label (text + colour), or null.
+function floaterFor(ev: {
+  scoreDelta: number;
+  livesDelta: number;
+  timeDelta: number;
+}): { text: string; color: string } | null {
+  if (ev.livesDelta < 0) return { text: "-1 ♥", color: "#ff6b6b" };
+  if (ev.timeDelta > 0) return { text: `+${String(ev.timeDelta)}s`, color: "#ffe08a" };
+  if (ev.scoreDelta > 0) return { text: `+${String(ev.scoreDelta)}`, color: "#bfffd0" };
+  if (ev.scoreDelta < 0) return { text: String(ev.scoreDelta), color: "#ff6b6b" };
+  return null;
+}
+
 export function useGameLoop(
   facade: FacadeMap,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -68,6 +82,7 @@ export function useGameLoop(
   levelParams?: LevelParams,
   paused = false,
   feedbackQueueRef?: React.RefObject<Floater[]>,
+  courierField?: CourierField,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -109,6 +124,7 @@ export function useGameLoop(
       viewW,
       viewH,
       levelParams?.enemiesToWin,
+      courierField,
     );
     // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
     // window so contact-sheet captures show cop-vs-window proportion across the
@@ -136,24 +152,15 @@ export function useGameLoop(
       for (const ev of next.feedback) {
         const slot = facade.slots[ev.slotIndex];
         if (slot === undefined) continue;
-        let text = "";
-        let color = "#ffffff";
-        if (ev.livesDelta < 0) {
-          text = "-1 ♥";
-          color = "#ff6b6b";
-        } else if (ev.timeDelta > 0) {
-          text = `+${String(ev.timeDelta)}s`;
-          color = "#ffe08a";
-        } else if (ev.scoreDelta > 0) {
-          text = `+${String(ev.scoreDelta)}`;
-          color = "#bfffd0";
-        } else if (ev.scoreDelta < 0) {
-          text = String(ev.scoreDelta);
-          color = "#ff6b6b";
-        }
-        if (text !== "") {
-          queue.push({ x: slot.screenPosition.x, y: slot.screenPosition.y, text, color });
-        }
+        const f = floaterFor(ev);
+        if (f) queue.push({ x: slot.screenPosition.x, y: slot.screenPosition.y, ...f });
+      }
+    }
+    // Courier-hit feedback is anchored to the courier's world position.
+    if (queue && next.pointFeedback) {
+      for (const ev of next.pointFeedback) {
+        const f = floaterFor(ev);
+        if (f) queue.push({ x: ev.x, y: ev.y, ...f });
       }
     }
 

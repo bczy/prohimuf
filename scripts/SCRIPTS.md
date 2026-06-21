@@ -573,3 +573,27 @@ To re-roll the AI art (random seed each run):
 - **All levels:** run the _Style B Preview_ workflow with `regenerate=true`
   (force), or delete `public/assets/levels/*` and push alongside any source
   change.
+
+---
+
+## gen-window-zones.mjs — Per-panel enemy window zones
+
+Derives the cop window zones from the facade **art**, one set per panel, so
+cops and the procedural balcony railings line up with the real lit windows of
+each (independently generated) facade panel.
+
+For each level the `windowGrid` in `levelArt.json` (cols/rows + the extent of
+the lit-window band) is the intended layout; the script only **snaps** each
+row/column line onto the warm window light of that panel's image, via separable
+warm-density centroids. So the slot **count** stays stable while positions
+track whatever art was generated.
+
+- **Output:** `src/game/levels/windowZones.generated.json`
+  (`{ "<levelId>": WindowZone[][] }`, outer index = panel). Committed; the app
+  imports it. Falls back to the level's grid when a level is missing.
+- **Run after regenerating facade art:** `node scripts/gen-window-zones.mjs`
+- **Verify:** `node scripts/gen-window-zones.mjs --debug` also writes
+  `scripts/.dbg-<level>-p<n>.jpg` overlays (gitignored) — open them to confirm
+  each grid box lands on a window.
+- **Requires:** the pure-JS JPEG decoder `jpeg-js` (`npm i --no-save jpeg-js`);
+  the facade panels are JPEG-encoded despite their `.png` names.
