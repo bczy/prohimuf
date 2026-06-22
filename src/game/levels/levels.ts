@@ -1,5 +1,18 @@
 import type { Prefs } from "@game/systems/prefsSystem";
 import type { DeliverySpec } from "@game/types/delivery";
+import type { EnemyKind } from "@game/types/enemy";
+
+// Per-level roster gate (ADR-0004, D2). Optional and additive: absence is
+// byte-for-byte identical to today's behaviour (default window pool +
+// courier-only street). Belliard-first rollout — only `belliard` opts in.
+export interface LevelRoster {
+  // Override map for the window spawn pool, merged as `{ ...defaults, ...windowWeights }`.
+  // A `weight: 0` entry removes that kind entirely.
+  readonly windowWeights?: Partial<Record<EnemyKind, number>>;
+  // The street entities active on this level. Absent ⇒ legacy courier-only.
+  // `[]` ⇒ a silent street.
+  readonly streetSpawns?: readonly ("courier" | "car" | "hostage_taker")[];
+}
 
 export interface LevelConfig {
   readonly id: string;
@@ -16,6 +29,7 @@ export interface LevelConfig {
    * reads `deliveries[0]`.
    */
   readonly deliveries: readonly DeliverySpec[];
+  readonly roster?: LevelRoster;
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -39,6 +53,10 @@ export const LEVELS: readonly LevelConfig[] = [
         stopPosition: { x: 0, y: -4 },
       },
     ],
+    // Belliard-first rollout gate (ADR-0004, D2). S1 ships the gate only:
+    // courier-only street (today's behaviour). S2/S3 extend this to
+    // `["courier", "car", "hostage_taker"]` + `windowWeights`.
+    roster: { streetSpawns: ["courier"] },
   },
   {
     id: "stalingrad",

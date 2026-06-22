@@ -48,8 +48,9 @@ the old one `Superseded by ADR-XXXX`.
 
 ## Index
 
-| ADR                                                    | Title                                                                 | Status   |
-| ------------------------------------------------------ | --------------------------------------------------------------------- | -------- |
-| [0001](./0001-github-pages-deployment.md)              | GitHub Pages deployment via `gh-pages` branch                         | Accepted |
-| [0002](./0002-cargo-delivery-core-loop-state.md)       | Cargo delivery in core game state                                     | Accepted |
-| [0003](./0003-mobile-touch-controls-and-camera-pan.md) | Mobile support: touch controls, forced landscape, inertial camera pan | Accepted |
+| ADR                                                    | Title                                                                                    | Status   |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------- |
+| [0001](./0001-github-pages-deployment.md)              | GitHub Pages deployment via `gh-pages` branch                                            | Accepted |
+| [0002](./0002-cargo-delivery-core-loop-state.md)       | Cargo delivery in core game state                                                        | Accepted |
+| [0003](./0003-mobile-touch-controls-and-camera-pan.md) | Mobile support: touch controls, forced landscape, inertial camera pan                    | Accepted |
+| [0004](./0004-enemies-car-hostage-taker.md)            | New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat | Accepted |

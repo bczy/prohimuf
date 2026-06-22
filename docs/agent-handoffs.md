@@ -99,3 +99,89 @@ Template:
 - verify: `tsc -p tsconfig.json --noEmit` clean (0 errors, whole tree incl. render);
   `eslint src/render` clean; `prettier --check` clean on all touched/created files.
   (Amelia — Render)
+
+---
+
+### epic-enemies-car-hostage — architecture sign-off (ADR-0004)
+
+- arch: Cross-cutting epic touching game + render + hooks + scripts. Boundary verdict PASS
+  (game stays pure, render stays logic-free, `useGameLoop.ts` is the only bridge,
+  `HUD.tsx` stays type-only). Two open decisions ACTED in `docs/adr/0004-enemies-car-hostage-taker.md`
+  (Status: Accepted): (1) `energy` — option **a**, a `readonly energy: number` 0–100 slice on
+  `GameState`, hostage is the sole V1 consumer, pure clamp in `energySystem.ts`, HUD read-only;
+  (2) car shooter-seat — bestiary §2.3 **confirmed** (shooter on the trailing seat per `dir`,
+  muzzle flash + bullet origin on the trailing side, sprite mirrored, driver never fires).
+  SHARED FILES requiring serialisation across S1/S2/S3: `stateMachine.ts`, `levels.ts`,
+  `enemy.ts`, `enemyTypes.ts`, `feedback.ts`, `useGameLoop.ts`. Sequence gate: **S1 must land
+  first** (it introduces the roster seam + `pickKindFor`); S2 and S3 then run in parallel on
+  disjoint *new* paths but coordinate their `stateMachine.ts` / `levels.ts` / `enemy.ts` edits
+  serially (merge-order, not concurrent edit). (Winston / Senior Architect)
+
+### story-level-roster-belliard (S1) — gate, must land first
+
+- arch: Single-lane → `dev-gameplay` only. No `src/render/**`, no asset script (pure scaffolding).
+  Claimed files: `src/game/levels/levels.ts` (add optional `roster` on `LevelConfig` +
+  `belliard.roster = { streetSpawns: ["courier"] }`), `src/game/types/enemyTypes.ts` (add
+  `buildWeighted` + `pickKindFor(seed, weights)` siblings — **do NOT mutate** `pickKind`/`WEIGHTED`),
+  `src/game/systems/enemySystem.ts` (`spawnWave` gains optional weights arg, defaults to `pickKind`),
+  `src/game/systems/stateMachine.ts` (thread `roster` via the level-params/options object into
+  step-7b street block + `spawnWave`; **owns the shared-file edit first**),
+  `src/hooks/useGameLoop.ts` (pass active level's `roster` into `tickGameState`),
+  new `src/game/systems/__tests__/levelRoster.test.ts` (AC1 byte-for-byte snapshot, AC2–AC4).
+  PARALLEL-SAFE: N/A (single lane, blocks S2/S3). Released: see below.
+- release: RELEASED (dev-gameplay / Amelia). TDD: 15 new tests written RED first, then GREEN.
+  AC1 (byte-for-byte) — `pickKindFor(seed, buildWeightedFrom(defaults)) === pickKind(seed)` over
+  500 seeds + `spawnWave` legacy-vs-default equality over 8 waves + frozen-sequence inline snapshot.
+  AC2 — override merges `{ ...defaults, ...windowWeights }`, `weight:0` drops the kind, no mutation
+  of `WEIGHTED`. AC3 — `streetSpawnsCourier(["courier" | ...])` / `undefined` ⇒ true. AC4 — `[]` /
+  courier-omitted ⇒ false, never throws. Files:
+  • `src/game/types/enemyTypes.ts` — `export WEIGHTED` + new `buildWeightedFrom` + `pickKindFor`
+    (`pickKind`/`WEIGHTED` logic unchanged; `EnemyKind` union untouched).
+  • `src/game/levels/levels.ts` — new `LevelRoster` interface + optional `roster?` on `LevelConfig`;
+    `belliard.roster = { streetSpawns: ["courier"] }`. `stalingrad`/`vitry` UNCHANGED (no roster).
+  • `src/game/systems/enemySystem.ts` — `spawnWave(wave, facade, weights?)`; absent ⇒ `pickKind`.
+  • `src/game/systems/courierSystem.ts` — new pure `streetSpawnsCourier(streetSpawns?)` gate.
+  • `src/game/systems/stateMachine.ts` — thread optional `roster` into `createInitialState` +
+    `tickGameState`; `windowPoolFor(roster)` feeds both `spawnWave` sites; courier spawn gated by
+    `streetSpawnsCourier(roster?.streetSpawns)`.
+  • `src/hooks/useGameLoop.ts` — optional `roster` param plumbed into the state machine (bridge seam).
+  • `src/render/scene/GameScene.tsx` — resolve `roster` from `levelId` via `LEVELS`, pass to hook.
+  • new `src/game/systems/__tests__/levelRoster.test.ts` — AC1–AC4, 15 tests.
+  Verification: `rtk vitest` 107 PASS / 0 FAIL · `rtk tsc` no errors · `rtk lint` no issues.
+  Boundary: zero React/Three under `src/game`. S2/S3 unblocked. (Amelia / dev-gameplay)
+
+### story-car-drive-by (S2) — requires S1
+
+- arch: Three lanes, disjoint on NEW paths; shared files coordinated post-S1.
+  `dev-gameplay`: new `src/game/types/car.ts`, new `src/game/systems/carSystem.ts`
+  (`spawnCar`/`tickCars`/`carSpawnInterval`/`checkCarHits`, pure, modelled on `courierSystem.ts`),
+  new `src/game/systems/__tests__/carSystem.test.ts`; SHARED-serial: `enemy.ts` (+`"car"`),
+  `enemyTypes.ts` (`ARCHETYPES.car`, excluded from `WEIGHTED`), `levels.ts`
+  (`belliard.roster.streetSpawns += "car"`), `stateMachine.ts` (add `cars` to `GameState` +
+  `createInitialState`, tick gated by `streetSpawns.includes("car")`).
+  `dev-r3f-render`: new `src/render/scene/CarSprite.tsx` (mirror on `dir`, muzzle flash on
+  trailing side per ADR table — logic-free); SHARED-serial seam: `useGameLoop.ts` (car field
+  plumb if needed). `dev-tooling-assets`: new `scripts/gen-car-enemies.mjs`,
+  `scripts/cutout-enemies.mjs` (extend), `src/render/scene/enemyTextures.ts` (register `car_*`).
+  PARALLEL-SAFE: YES across the three lanes on new paths; the five shared files are serialised
+  (S2 takes them after S1 releases). Render runs before assets exist (cop fallback). Released: pending.
+
+### story-hostage-taker (S3) — requires S1, independent of S2
+
+- arch: Three lanes. `dev-gameplay`: new `src/game/types/hostage.ts` (street entity +
+  double-hitbox shape), new `src/game/systems/energySystem.ts` (pure clamp), new
+  `src/game/systems/hostageSystem.ts` (window+street spawn, `EXECUTES` extension, hostage-precedence
+  resolver), new `__tests__/hostageSystem.test.ts` + `__tests__/energySystem.test.ts`;
+  SHARED-serial: `enemy.ts` (+`"hostage_taker"`, +`EXECUTES` state), `enemyTypes.ts`
+  (`ARCHETYPES.hostage_taker`), `feedback.ts` (optional `energyDelta`, default 0),
+  `enemySystem.ts` (timeout→`EXECUTES` route, other kinds byte-identical), `stateMachine.ts`
+  (`energy: 100` init + `hostageTakers` array + energy aggregation), `levels.ts`
+  (`belliard.roster` += windowWeights.hostage_taker≈8 + streetSpawns).
+  `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx` (kidnapper + foreground hostage,
+  rising-tension countdown, execution beat, mirror on `dir`); SHARED-serial: `src/render/ui/HUD.tsx`
+  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor` energy label +
+  `onHudUpdate` energy plumb — coordinate with S2 on this file). `dev-tooling-assets`: new
+  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs` (extend), `enemyTextures.ts`
+  (register `hostage_*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
+  **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.**
+  Released: pending.

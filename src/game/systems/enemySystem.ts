@@ -1,6 +1,6 @@
-import type { Enemy, EnemyState } from "@game/types/enemy";
+import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
-import { ARCHETYPES, pickKind } from "@game/types/enemyTypes";
+import { ARCHETYPES, pickKind, pickKindFor } from "@game/types/enemyTypes";
 
 const APPEARING_DURATION = 0.3;
 const SHOOTING_DURATION = 0.5;
@@ -61,7 +61,14 @@ export function hitEnemy(enemy: Enemy): Enemy {
   return { ...enemy, hp: enemy.hp - 1, state: "HIT", timer: HIT_DURATION };
 }
 
-export function spawnWave(wave: number, facade: FacadeMap): readonly Enemy[] {
+// `weights`: optional override pool built by `buildWeightedFrom` for the active
+// level's `roster.windowWeights`. Omitted ⇒ the frozen `pickKind` path (legacy
+// behaviour, byte-for-byte identical for the same seed).
+export function spawnWave(
+  wave: number,
+  facade: FacadeMap,
+  weights?: readonly EnemyKind[],
+): readonly Enemy[] {
   const count = Math.min(1 + wave, facade.slots.length);
   // Shuffled slot indices using a deterministic seed per wave
   const indices = Array.from({ length: facade.slots.length }, (_, i) => i);
@@ -77,7 +84,8 @@ export function spawnWave(wave: number, facade: FacadeMap): readonly Enemy[] {
   }
 
   return indices.slice(0, count).map((slotIndex, i) => {
-    const kind = pickKind(wave * 31 + i * 17 + slotIndex * 7);
+    const seed = wave * 31 + i * 17 + slotIndex * 7;
+    const kind = weights === undefined ? pickKind(seed) : pickKindFor(seed, weights);
     const archetype = ARCHETYPES[kind];
     return {
       id: wave * 100 + i,

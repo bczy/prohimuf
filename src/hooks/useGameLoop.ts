@@ -4,6 +4,7 @@ import type { OrthographicCamera } from "three";
 import { createInitialState, tickGameState } from "@game/systems/stateMachine";
 import type { LevelParams } from "@game/systems/stateMachine";
 import type { CourierField } from "@game/systems/courierSystem";
+import type { LevelRoster } from "@game/levels/levels";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
 import type { GameState } from "@game/types/gameState";
@@ -83,10 +84,11 @@ export function useGameLoop(
   paused = false,
   feedbackQueueRef?: React.RefObject<Floater[]>,
   courierField?: CourierField,
+  roster?: LevelRoster,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
-  const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams));
+  const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams, roster));
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -105,7 +107,7 @@ export function useGameLoop(
       (hasPendingShot || keyboardRef.current.restart)
     ) {
       mouseRef.current.pendingShots = 0;
-      gameStateRef.current = createInitialState(facade, levelParams);
+      gameStateRef.current = createInitialState(facade, levelParams, roster);
       return;
     }
 
@@ -125,6 +127,7 @@ export function useGameLoop(
       viewH,
       levelParams?.enemiesToWin,
       courierField,
+      roster,
     );
     // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
     // window so contact-sheet captures show cop-vs-window proportion across the

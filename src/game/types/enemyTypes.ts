@@ -110,7 +110,10 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   },
 };
 
-const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap((k) =>
+// The frozen default window pool: one entry per unit of `weight`, in archetype
+// declaration order. `pickKind` / `WEIGHTED` are the legacy default path and must
+// NOT change (window-spawn determinism is guaranteed against this constant).
+export const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap((k) =>
   Array.from({ length: ARCHETYPES[k].weight }, () => k),
 );
 
@@ -118,4 +121,25 @@ const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).
 export function pickKind(seed: number): EnemyKind {
   const idx = Math.abs(Math.floor(seed)) % WEIGHTED.length;
   return WEIGHTED[idx] ?? "normal";
+}
+
+// Build a weighted pool from an override map WITHOUT mutating `WEIGHTED`. Each
+// kind contributes `weight` copies in declaration order (so passing the default
+// weights reproduces `WEIGHTED` byte-for-byte); `weight: 0` drops the kind. Per
+// the level-roster gate, call sites merge `{ ...defaultWeights, ...override }`.
+export function buildWeightedFrom(
+  overrides: Partial<Record<EnemyKind, number>>,
+): readonly EnemyKind[] {
+  return (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap((k) => {
+    const weight = overrides[k] ?? ARCHETYPES[k].weight;
+    return Array.from({ length: Math.max(0, weight) }, () => k);
+  });
+}
+
+// Deterministic weighted pick over an explicit pool, mirroring `pickKind`'s
+// indexing exactly. With the default-built pool it is identical to `pickKind`.
+export function pickKindFor(seed: number, weights: readonly EnemyKind[]): EnemyKind {
+  if (weights.length === 0) return "normal";
+  const idx = Math.abs(Math.floor(seed)) % weights.length;
+  return weights[idx] ?? "normal";
 }
