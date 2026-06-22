@@ -32,10 +32,10 @@ directly, or serve a separate branch holding only the compiled output.
 - Source and build artifacts stay cleanly separated: `main` never contains
   `dist/`, `gh-pages` contains only built output + previews.
 - **Critical gotcha:** if the Pages source is ever set to `main`, the site serves
-  the *raw* source `index.html` (which references `/src/main.tsx`, resolved only
+  the _raw_ source `index.html` (which references `/src/main.tsx`, resolved only
   during a Vite build) and shows a black screen with a console error:
   `Loading module from ".../src/main.tsx" was blocked because of a disallowed
-  MIME type ("text/html")`. The code and workflows are fine in that case — only
+MIME type ("text/html")`. The code and workflows are fine in that case — only
   the source branch is wrong. This actually happened on 2026-06-22.
 - Changing the Pages source via the API does **not** auto-rebuild; a build must
   be triggered explicitly. Repair commands and verification steps are documented

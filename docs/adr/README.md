@@ -2,7 +2,7 @@
 
 This directory records **significant, hard-to-reverse decisions** about how muf
 is built: module boundaries, deployment, dependencies, the game/render/hooks
-contract. Each ADR captures *why* a choice was made so a future reader (human or
+contract. Each ADR captures _why_ a choice was made so a future reader (human or
 agent) doesn't re-litigate it or break it by accident.
 
 ## When to write one
@@ -31,12 +31,15 @@ style:
 - **Date:** YYYY-MM-DD
 
 ## Context
+
 What forces are at play — the problem, constraints, prior state.
 
 ## Decision
+
 What we decided to do.
 
 ## Consequences
+
 What follows — positive, negative, and any gotchas to watch for.
 ```
 
@@ -45,6 +48,6 @@ the old one `Superseded by ADR-XXXX`.
 
 ## Index
 
-| ADR | Title | Status |
-| --- | ----- | ------ |
+| ADR                                       | Title                                         | Status   |
+| ----------------------------------------- | --------------------------------------------- | -------- |
 | [0001](./0001-github-pages-deployment.md) | GitHub Pages deployment via `gh-pages` branch | Accepted |
