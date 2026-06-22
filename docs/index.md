@@ -32,6 +32,10 @@ BGM/SFX) |
 | [asset-pipeline.md](./asset-pipeline.md) | Asset generation scripts (Pollinations.ai,
 sprites,
 tiles) |
+| [ci.md](./ci.md) | CI/CD workflows,
+GitHub Pages deployment,
+branch previews |
+| [adr/README.md](./adr/README.md) | Architecture Decision Records (index + convention) |
 | [dev-guidelines.md](./dev-guidelines.md) | TDD,
 YAGNI,
 DRY — project coding standards |

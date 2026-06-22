@@ -83,3 +83,6 @@ independent dev lanes in a single message (parallel Task calls).
 - Adding a level = one entry in `src/game/levels/levelArt.json` + matching gameplay map
   (`HARNESS.md`). Art generation normally runs in CI, not the local sandbox.
 - Conventional Commits (commitlint enforced).
+- Record significant architecture decisions and changes as ADRs in `docs/adr/`
+  (see `docs/adr/README.md`). When a change alters module boundaries, deployment,
+  dependencies, or the game/render/hooks contract, add or update an ADR in the same PR.
