@@ -39,3 +39,6 @@ scripts/.dbg-*.jpg
 
 # CodeGraph local index (rebuilt per machine via `codegraph index`)
 .codegraph/
+
+# E2E home-screen smoke shot — regenerated each run, uploaded as a CI artifact
+screenshots/e2e-home.png
