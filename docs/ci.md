@@ -8,13 +8,13 @@ All workflows live in `.github/workflows/`. Asset-generation internals are in
 
 ## Workflows at a glance
 
-| Workflow                  | File                  | Trigger                          | What it does |
-| ------------------------- | --------------------- | -------------------------------- | ------------ |
-| **CI**                    | `ci.yml`              | push to `main`, every PR         | Typecheck · Lint · Format check · Tests + coverage |
-| **Deploy to GitHub Pages**| `deploy.yml`          | push to `main`, manual           | Builds the app and publishes it to `gh-pages` root → the live site |
-| **Deploy branch preview** | `deploy-preview.yml`  | manual only (`workflow_dispatch`)| Builds any branch and publishes it under `preview/<branch>/` on `gh-pages` |
-| **Style B Preview**       | `preview.yml`         | push to a specific style branch, manual | Generates level art, renders screenshots, uploads a contact sheet artifact |
-| **Generate enemy sprites**| `gen-sprites.yml`     | manual only                      | Regenerates missing enemy sprites and commits them |
+| Workflow                   | File                 | Trigger                                 | What it does                                                               |
+| -------------------------- | -------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| **CI**                     | `ci.yml`             | push to `main`, every PR                | Typecheck · Lint · Format check · Tests + coverage                         |
+| **Deploy to GitHub Pages** | `deploy.yml`         | push to `main`, manual                  | Builds the app and publishes it to `gh-pages` root → the live site         |
+| **Deploy branch preview**  | `deploy-preview.yml` | manual only (`workflow_dispatch`)       | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages` |
+| **Style B Preview**        | `preview.yml`        | push to a specific style branch, manual | Generates level art, renders screenshots, uploads a contact sheet artifact |
+| **Generate enemy sprites** | `gen-sprites.yml`    | manual only                             | Regenerates missing enemy sprites and commits them                         |
 
 `pages-build-deployment` also appears in the Actions tab — that one is
 **GitHub's own internal Pages build**, not a workflow in this repo. It runs
@@ -107,10 +107,10 @@ To try a branch live without merging to `main`:
 
 ## Quick reference
 
-| Need to…                         | Do this |
-| -------------------------------- | ------- |
-| Ship to the live site            | Push / merge to `main` (automatic) |
-| Preview a branch live            | Actions → Deploy branch preview → pick ref |
-| See why the live site is blank   | Check Pages source is `gh-pages` (above) |
-| Regenerate enemy sprites         | Actions → Generate enemy-type sprites |
-| Run checks locally before push   | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`) |
+| Need to…                       | Do this                                                       |
+| ------------------------------ | ------------------------------------------------------------- |
+| Ship to the live site          | Push / merge to `main` (automatic)                            |
+| Preview a branch live          | Actions → Deploy branch preview → pick ref                    |
+| See why the live site is blank | Check Pages source is `gh-pages` (above)                      |
+| Regenerate enemy sprites       | Actions → Generate enemy-type sprites                         |
+| Run checks locally before push | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`) |
