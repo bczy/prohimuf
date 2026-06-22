@@ -113,8 +113,8 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
 // The frozen default window pool: one entry per unit of `weight`, in archetype
 // declaration order. `pickKind` / `WEIGHTED` are the legacy default path and must
 // NOT change (window-spawn determinism is guaranteed against this constant).
-export const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap((k) =>
-  Array.from({ length: ARCHETYPES[k].weight }, () => k),
+export const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap(
+  (k) => Array.from({ length: ARCHETYPES[k].weight }, () => k),
 );
 
 // Deterministic weighted pick so spawns are reproducible per (wave, index).

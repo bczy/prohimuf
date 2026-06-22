@@ -19,18 +19,18 @@ The shooting-gallery prototype has two spawn modalities today:
 2. **Street entities** — the `Courier` (livreur), a mobile `{ x, y, dir, speed }` entity that
    enters from one edge, traverses, and is culled off-screen. It is spawned on a dedicated
    timer (`courierSpawnInterval`) **outside** `pickKind`, ticked in `stateMachine.ts`
-   step 7b, and is a *penalty-if-shot* (no window slot; uses `PointHitEvent` for
+   step 7b, and is a _penalty-if-shot_ (no window slot; uses `PointHitEvent` for
    world-anchored feedback). Its archetype carries `weight: 0`, which removes it from the
    weighted window pool.
 
 The bestiary (`enemy-bestiary.md`) introduces two new enemies plus a rollout constraint:
 
-- **`car`** — a *rewarded* street threat (drive-by). Two occupants; only the trailing-seat
+- **`car`** — a _rewarded_ street threat (drive-by). Two occupants; only the trailing-seat
   shooter fires. Tank-ier than a window cop (`hp=2`, `scoreDelta=+3`). Must read as a moving
   silhouette with a predictable muzzle-flash side.
 - **`hostage_taker`** — a precision-shot target with a **double hitbox** (reward = kidnapper,
-  penalty = hostage). Ships in **both** window and street modes. A timeout *executes* the
-  hostage. Magnitudes ("lose a lot" for a *bavure*, "lose a little" for a timeout) cannot be
+  penalty = hostage). Ships in **both** window and street modes. A timeout _executes_ the
+  hostage. Magnitudes ("lose a lot" for a _bavure_, "lose a little" for a timeout) cannot be
   expressed by the discrete 3-lives counter and motivate a new continuous stat.
 - **Belliard-first rollout** — the new mobs must be active on `belliard` only, never silently
   leaking into the validated `stalingrad` / `vitry` experiences.
@@ -61,7 +61,7 @@ New mobile, directional entities reuse the `Courier` primitive shape
 They are **spawned on dedicated street timers** (`carSpawnInterval`, hostage street timer)
 analogous to `courierSpawnInterval`, and they are **excluded from `pickKind` / `WEIGHTED`**.
 
-Rationale: a drive-by and a traversing kidnapper are *physically* street actors with entry/exit
+Rationale: a drive-by and a traversing kidnapper are _physically_ street actors with entry/exit
 and a travel direction — the window state machine (`HIDDEN/APPEARING/VISIBLE/...` keyed to a
 fixed facade `slotIndex`) cannot represent them without distortion. Reusing the courier model is
 DRY, keeps `pickKind` deterministic and unpolluted, and means each new street entity is an
@@ -69,7 +69,7 @@ additive `readonly` field on `GameState` plus its own pure system — no edit to
 or weighting logic. The archetypes for `car` and `hostage_taker` therefore do **not** rely on
 `weight` for street spawning (mirroring `civilian`'s `weight: 0` convention).
 
-The **window** `hostage_taker` is the exception that *does* use the state machine and *may*
+The **window** `hostage_taker` is the exception that _does_ use the state machine and _may_
 enter `WEIGHTED` — see D4 (it only enters when the level's roster opts it in).
 
 ### D2 — Per-level roster is an **optional** field on `LevelConfig`; absence = today's behaviour, byte-for-byte
@@ -85,8 +85,8 @@ readonly roster?: {
 Semantics (locked):
 
 - **Field absent** ⇒ identical to current behaviour. Window pool = the existing `WEIGHTED`;
-  street spawner = courier-only (today's hard-coded behaviour). This must hold *byte-for-byte
-  for the same seed* (asserted by a snapshot/property test, story S1 AC1).
+  street spawner = courier-only (today's hard-coded behaviour). This must hold _byte-for-byte
+  for the same seed_ (asserted by a snapshot/property test, story S1 AC1).
 - **`windowWeights` present** ⇒ the weighted window pool is built from
   `{ ...defaultWeights, ...windowWeights }`; an entry of `weight: 0` removes that kind entirely.
 - **`streetSpawns` present** ⇒ exactly the listed street entities are active. `[]` ⇒ a silent
@@ -97,7 +97,7 @@ Semantics (locked):
   experience.
 
 This gate is the rollout safety net. It honours the Cahier-des-Charges discipline (V1 enemies
-are a *conscious* extension; gating them per district lets us iterate on Belliard without
+are a _conscious_ extension; gating them per district lets us iterate on Belliard without
 regressing the other levels).
 
 ### D3 — `pickKind` is **not** mutated; add a sibling `pickKindFor(seed, weights)`
@@ -116,11 +116,11 @@ byte-for-byte guarantee trivially true and avoids breaking the four existing cal
 
 ### D4 — `hostage_taker` is dual-mode by **spawn path**, single by **archetype**
 
-One `ARCHETYPES.hostage_taker` entry (DRY). The *window* path uses the `enemySystem` machine
+One `ARCHETYPES.hostage_taker` entry (DRY). The _window_ path uses the `enemySystem` machine
 extended with one new terminal transition: on `visibleDuration` timeout, `hostage_taker` routes
 to a terminal **`EXECUTES`** path (hostage dies → timeout penalty) instead of looping back to
 `HIDDEN`. Every other kind's `nextState` / `durationFor` output stays byte-identical (asserted).
-The *street* path uses a `HostageTaker` courier-style entity with a **fixed-delay** timeout
+The _street_ path uses a `HostageTaker` courier-style entity with a **fixed-delay** timeout
 (bestiary §3.3); the off-screen cull applies the timeout penalty **once** as well, so an escape
 is never free and never double-charged (story S3 AC6).
 
@@ -128,12 +128,12 @@ The double hitbox resolves with **hostage-precedence**: when a single bullet cou
 zones in one frame, the foreground hostage zone wins — you cannot "shoot through" the hostage to
 claim the reward. This is the anti-bullshit-death guarantee and is unit-asserted (S3 AC7).
 
-### D5 — `energy` — **introduce `energy: number` (0–100) into `GameState`** (story S3 option *a*)
+### D5 — `energy` — **introduce `energy: number` (0–100) into `GameState`** (story S3 option _a_)
 
 We adopt **option a**: a single continuous `energy` slice, of which the hostage taker is the
 **first and only** consumer in V1. The discrete `lives` counter is left untouched and continues
 to own net-life losses. Rejected alternative (option b — map hostage penalties onto `lives`):
-it collapses the "lose a lot / lose a little" nuance that is the *entire design purpose* of the
+it collapses the "lose a lot / lose a little" nuance that is the _entire design purpose_ of the
 hostage taker; a half-life loss is not representable and the bestiary magnitudes (≈−25 vs ≈−10
 on 100) become meaningless.
 
@@ -143,7 +143,7 @@ Boundary & scope fences (locked, YAGNI):
   `createInitialState`. Arithmetic/clamping live in a pure helper `energySystem.ts`
   (`applyEnergy(current, delta) → clamp[0,100]`), unit-tested. **No game rule in render.**
 - The HUD reads it (`HudData.energy?`, rendered in `HUD.tsx`) and floats the delta — **read-only,
-  `src/render/ui/**` only**. The bridge is `useGameLoop.ts` (`onHudUpdate` + `floaterFor`), the
+  `src/render/ui/**`only**. The bridge is`useGameLoop.ts` (`onHudUpdate`+`floaterFor`), the
   single sanctioned game↔render seam.
 - `PointHitEvent` / `HitEvent` gain an **optional** `energyDelta` (default `0`, additive — no
   regression for existing emitters such as the courier).
@@ -200,7 +200,7 @@ parallel.
 
 - The off-screen cull and the fixed-delay timeout for the street hostage must apply the timeout
   penalty **exactly once** (S3 AC6). Whichever fires first wins; the other must be a no-op.
-- Hostage-precedence in the double-hitbox resolver is a *safety* property — assert it directly,
+- Hostage-precedence in the double-hitbox resolver is a _safety_ property — assert it directly,
   don't rely on z-order or iteration order.
 - The car's muzzle-flash side and bullet origin must match the **trailing seat** per `dir`
   (see car shooter-seat decision below); a mismatch reintroduces a bullshit death (bullet from
@@ -215,12 +215,12 @@ direction of travel (the trailing side); the driver leads (head of the vehicle) 
 fires**. The muzzle flash and the bullet spawn origin are on the **trailing side**, and the
 sprite is **mirrored on `dir`**:
 
-| `dir` | Travel | Driver seat (lead) | Shooter seat (trailing) | Muzzle flash / bullet origin |
-| ----- | ------ | ------------------ | ----------------------- | ---------------------------- |
-| `+1`  | → right | front-right | rear (or rear-left passenger) | **left** (trailing) side |
-| `-1`  | ← left  | front-left  | rear (or rear-right passenger) | **right** (trailing) side |
+| `dir` | Travel  | Driver seat (lead) | Shooter seat (trailing)        | Muzzle flash / bullet origin |
+| ----- | ------- | ------------------ | ------------------------------ | ---------------------------- |
+| `+1`  | → right | front-right        | rear (or rear-left passenger)  | **left** (trailing) side     |
+| `-1`  | ← left  | front-left         | rear (or rear-right passenger) | **right** (trailing) side    |
 
-Rationale: it keeps the line of fire unobstructed by the driver and makes the threat *legible*
+Rationale: it keeps the line of fire unobstructed by the driver and makes the threat _legible_
 (the player can always predict the bullet's side from the car's facing), satisfying the
 anti-bullshit-death rule. The bestiary's alternative ("front passenger leaning out of the
 window") is **declined for V1** because it puts the shooter ahead of/behind the driver

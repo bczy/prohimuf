@@ -114,7 +114,7 @@ Template:
   SHARED FILES requiring serialisation across S1/S2/S3: `stateMachine.ts`, `levels.ts`,
   `enemy.ts`, `enemyTypes.ts`, `feedback.ts`, `useGameLoop.ts`. Sequence gate: **S1 must land
   first** (it introduces the roster seam + `pickKindFor`); S2 and S3 then run in parallel on
-  disjoint *new* paths but coordinate their `stateMachine.ts` / `levels.ts` / `enemy.ts` edits
+  disjoint _new_ paths but coordinate their `stateMachine.ts` / `levels.ts` / `enemy.ts` edits
   serially (merge-order, not concurrent edit). (Winston / Senior Architect)
 
 ### story-level-roster-belliard (S1) — gate, must land first
@@ -136,14 +136,14 @@ Template:
   of `WEIGHTED`. AC3 — `streetSpawnsCourier(["courier" | ...])` / `undefined` ⇒ true. AC4 — `[]` /
   courier-omitted ⇒ false, never throws. Files:
   • `src/game/types/enemyTypes.ts` — `export WEIGHTED` + new `buildWeightedFrom` + `pickKindFor`
-    (`pickKind`/`WEIGHTED` logic unchanged; `EnemyKind` union untouched).
+  (`pickKind`/`WEIGHTED` logic unchanged; `EnemyKind` union untouched).
   • `src/game/levels/levels.ts` — new `LevelRoster` interface + optional `roster?` on `LevelConfig`;
-    `belliard.roster = { streetSpawns: ["courier"] }`. `stalingrad`/`vitry` UNCHANGED (no roster).
+  `belliard.roster = { streetSpawns: ["courier"] }`. `stalingrad`/`vitry` UNCHANGED (no roster).
   • `src/game/systems/enemySystem.ts` — `spawnWave(wave, facade, weights?)`; absent ⇒ `pickKind`.
   • `src/game/systems/courierSystem.ts` — new pure `streetSpawnsCourier(streetSpawns?)` gate.
   • `src/game/systems/stateMachine.ts` — thread optional `roster` into `createInitialState` +
-    `tickGameState`; `windowPoolFor(roster)` feeds both `spawnWave` sites; courier spawn gated by
-    `streetSpawnsCourier(roster?.streetSpawns)`.
+  `tickGameState`; `windowPoolFor(roster)` feeds both `spawnWave` sites; courier spawn gated by
+  `streetSpawnsCourier(roster?.streetSpawns)`.
   • `src/hooks/useGameLoop.ts` — optional `roster` param plumbed into the state machine (bridge seam).
   • `src/render/scene/GameScene.tsx` — resolve `roster` from `levelId` via `LEVELS`, pass to hook.
   • new `src/game/systems/__tests__/levelRoster.test.ts` — AC1–AC4, 15 tests.
@@ -176,12 +176,11 @@ Template:
   (`ARCHETYPES.hostage_taker`), `feedback.ts` (optional `energyDelta`, default 0),
   `enemySystem.ts` (timeout→`EXECUTES` route, other kinds byte-identical), `stateMachine.ts`
   (`energy: 100` init + `hostageTakers` array + energy aggregation), `levels.ts`
-  (`belliard.roster` += windowWeights.hostage_taker≈8 + streetSpawns).
-  `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx` (kidnapper + foreground hostage,
-  rising-tension countdown, execution beat, mirror on `dir`); SHARED-serial: `src/render/ui/HUD.tsx`
-  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor` energy label +
-  `onHudUpdate` energy plumb — coordinate with S2 on this file). `dev-tooling-assets`: new
-  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs` (extend), `enemyTextures.ts`
-  (register `hostage_*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
-  **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.**
+  (`belliard.roster` += windowWeights.hostage*taker≈8 + streetSpawns).
+  `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx`(kidnapper + foreground hostage,
+  rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
+  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
+ `onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
+  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts`  (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
+**`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
   Released: pending.
