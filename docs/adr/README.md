@@ -54,3 +54,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0002](./0002-cargo-delivery-core-loop-state.md)       | Cargo delivery in core game state                                                        | Accepted |
 | [0003](./0003-mobile-touch-controls-and-camera-pan.md) | Mobile support: touch controls, forced landscape, inertial camera pan                    | Accepted |
 | [0004](./0004-enemies-car-hostage-taker.md)            | New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat | Accepted |
+| [0005](./0005-dynamic-verification-harness.md)         | Dynamic & interactive verification harness (evolve the render farm)                      | Proposed |
+| [0006](./0006-directional-sprite-generation.md)        | Directional, mirrored multi-pose sprite generation for car & hostage entities            | Proposed |
+| [0007](./0007-shared-harness-library.md)               | Shared harness library, and rejection of a "harness that creates harnesses"              | Proposed |
