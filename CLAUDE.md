@@ -67,6 +67,19 @@ Flow: `pm` (what) → `senior-architect` (how + lane assignment) → the three d
 parallel on non-overlapping paths → `senior-architect` reviews → `pm` accepts. Launch
 independent dev lanes in a single message (parallel Task calls).
 
+### Default orchestration policy (Bertrand's standing preference)
+
+**For every non-trivial task, orchestrate this crew in parallel by default — do not work
+solo.** Open with `pm`, plan lanes with `senior-architect`, then fan out the dev lanes as
+concurrent Task calls on non-overlapping paths, and close with architect review + `pm`
+acceptance. A `UserPromptSubmit` hook (`.claude/hooks/bmad-crew-reminder.sh`) re-injects this
+on every prompt; the policy is here so it stays readable and versioned.
+
+**Non-trivial** = any feature, refactor, or bug that touches code/assets, or any design work.
+**Exceptions (act directly, no crew):** questions & explanations, read-only exploration,
+research, one-line/micro edits (typo, local rename), and one-off git/CI commands. When in
+doubt on a borderline task, prefer the crew. To pause it for a session: `export MUF_CREW_OFF=1`.
+
 ### Tooling for agents
 
 - **rtk** (Rust Token Killer) — CLI proxy that compresses `tsc`/`vitest`/`grep`/`git`
