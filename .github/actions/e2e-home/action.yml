@@ -1,0 +1,54 @@
+name: "E2E home-screen smoke"
+description: >
+  Serve the freshly built dist under its real deploy base and verify the home
+  screen renders without 404s. Guards against build and Pages base-path
+  regressions before publishing. Expects `yarn build` to have already run with
+  the same VITE_BASE.
+
+inputs:
+  base:
+    description: "Deploy base path, must match the build's VITE_BASE (e.g. /prohimuf/)."
+    required: true
+  port:
+    description: "Port for the local vite preview server."
+    required: false
+    default: "4173"
+
+runs:
+  using: "composite"
+  steps:
+    # Installed via npm --no-save so yarn.lock / PnP stay untouched (same
+    # convention as the screenshot render farm in preview.yml).
+    - name: Install Playwright + Chromium
+      shell: bash
+      run: |
+        npm install --no-save --legacy-peer-deps playwright@1.48.0
+        npx playwright install --with-deps chromium
+
+    - name: Serve build & run home-screen E2E
+      shell: bash
+      env:
+        VITE_BASE: ${{ inputs.base }}
+      run: |
+        # Call vite directly — the corepack `yarn` shim detaches unreliably when
+        # backgrounded (learned in the render-farm workflow).
+        node_modules/.bin/vite preview --host 127.0.0.1 --port "${{ inputs.port }}" --strictPort \
+          > /tmp/e2e-preview.log 2>&1 &
+        SERVER_PID=$!
+        echo "preview server pid=$SERVER_PID"
+        UP=0
+        for i in $(seq 1 60); do
+          if curl -sf "http://127.0.0.1:${{ inputs.port }}${{ inputs.base }}" >/dev/null; then UP=1; break; fi
+          sleep 1
+        done
+        if [ "$UP" != "1" ]; then
+          echo "::error::preview server failed to start"
+          cat /tmp/e2e-preview.log || true
+          exit 1
+        fi
+        echo "preview server is up"
+        PREVIEW_URL="http://127.0.0.1:${{ inputs.port }}${{ inputs.base }}" \
+          node scripts/e2e-home.mjs
+        STATUS=$?
+        kill "$SERVER_PID" 2>/dev/null || true
+        exit $STATUS

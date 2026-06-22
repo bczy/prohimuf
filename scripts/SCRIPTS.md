@@ -425,3 +425,23 @@ track whatever art was generated.
   each grid box lands on a window.
 - **Requires:** the pure-JS JPEG decoder `jpeg-js` (`npm i --no-save jpeg-js`);
   the facade panels are JPEG-encoded despite their `.png` names.
+
+---
+
+## e2e-home.mjs — Deploy smoke test (E2E)
+
+Playwright E2E that guards the **deployment** against build and base-path
+config regressions — the kind that once served a 404 instead of the game.
+
+Drives the production build in headless Chromium under its real deploy base and
+fails (exit 1) if the **home screen** (`MainMenu`) does not render or if any
+same-origin request 404s. The menu is pure DOM (no WebGL), so it is fast and
+deterministic. Writes `screenshots/e2e-home.png` (artifact, gitignored).
+
+- **Input:** `PREVIEW_URL` — a running server URL **including the base**
+  (e.g. `http://127.0.0.1:4173/prohimuf/` or `…/prohimuf/preview/<branch>/`).
+- **Local:** `yarn build && yarn preview` then `yarn e2e`
+  (Playwright is installed on demand: `npm i --no-save playwright`).
+- **CI:** runs in both deploy jobs via the `.github/actions/e2e-home`
+  composite action — **after build, before publish** — so a broken build or
+  wrong `VITE_BASE` never reaches GitHub Pages.
