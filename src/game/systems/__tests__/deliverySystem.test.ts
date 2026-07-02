@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  tickDelivery,
-  DELIVERY_RADIUS,
-  DELIVERY_BONUS,
-} from "@game/systems/deliverySystem";
+import { tickDelivery, DELIVERY_RADIUS, DELIVERY_BONUS } from "@game/systems/deliverySystem";
 import type { Cargo } from "@game/types/cargo";
 
 const PICKUP = { x: -6, y: -3 };

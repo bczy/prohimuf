@@ -98,7 +98,11 @@ export function CargoMarkers({ stateRef, onStatusChange }: Props): JSX.Element {
       const carrying = cargo.status === "CARRYING";
       depot.position.set(cargo.depot.x, cargo.depot.y, MARKER_Z);
       depot.scale.setScalar(carrying ? pulse : 0.8);
-      paint(depotGlowRef.current, carrying ? NEON_DEPOT : DECOR_GRAY, carrying ? 0.7 * pulse : 0.12);
+      paint(
+        depotGlowRef.current,
+        carrying ? NEON_DEPOT : DECOR_GRAY,
+        carrying ? 0.7 * pulse : 0.12,
+      );
       paint(depotRingRef.current, carrying ? NEON_DEPOT : DECOR_GRAY, carrying ? 1 : 0.4);
     }
   });
