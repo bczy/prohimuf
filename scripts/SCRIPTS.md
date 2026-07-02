@@ -445,3 +445,40 @@ deterministic. Writes `screenshots/e2e-home.png` (artifact, gitignored).
 - **CI:** runs in both deploy jobs via the `.github/actions/e2e-home`
   composite action — **after build, before publish** — so a broken build or
   wrong `VITE_BASE` never reaches GitHub Pages.
+
+---
+
+## e2e-ingame.mjs — In-game render gate (E2E)
+
+Playwright E2E that guards the **deployment** against in-game **render**
+regressions — the class of bug `e2e-home.mjs` is blind to. The home screen is
+pure DOM, so a scene that throws on mount, a canvas that never mounts, or a
+shader/asset load that crashes the game all pass the home smoke while the actual
+game is unplayable. This gate boots the production build, **enters one level for
+real** (belliard), and fails if the game scene does not render.
+
+Kept to a **single level** on purpose so it stays fast and deterministic — it is
+a gate, not the per-level contact-sheet farm (`screenshot-preview.mjs`). Runs
+headless Chromium with software WebGL (SwiftShader), since CI has no GPU.
+Determinism matches the other scripts: cops frozen
+(`window.__MUF_FREEZE_COPS__` via `addInitScript`) and audio muted (`muf_prefs`).
+Writes `screenshots/e2e-ingame.png` (artifact, gitignored).
+
+Hard gates (exit 1 on any):
+
+- the gameplay `<canvas>` mounts **and** has non-zero pixel dimensions (proves an
+  R3F Canvas + WebGL context, not an empty stub),
+- no uncaught runtime error (`pageerror`) fires while entering the game,
+- at least one screenshot is actually written to disk.
+
+Console errors are logged as a soft signal only.
+
+- **Input:** `PREVIEW_URL` — a running server URL **including the base**
+  (e.g. `http://127.0.0.1:4173/prohimuf/`). Optional `E2E_LEVEL_NAME` overrides
+  the level (default `Rue Belliard`, must match `levelArt.json`).
+- **Local:** `yarn build && yarn preview` then
+  `PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/e2e-ingame.mjs`
+  (Playwright installed on demand: `npm i --no-save playwright`).
+- **CI:** runs in `deploy.yml` via the `.github/actions/e2e-ingame` composite
+  action — **after build, before publish** — so a broken game scene never
+  reaches GitHub Pages.
