@@ -29,9 +29,10 @@ import type { CourierField } from "@game/systems/courierSystem";
 export const LEVEL_TIME_SECONDS = 90;
 export const ENEMIES_TO_WIN = 10;
 
-// MVP: the belliard cargo pickup/depot are hard-coded world positions, sized to
-// sit inside the crosshair's reachable area (see `crosshairToWorld`). Data-driven
-// per-level placement is out of scope for this slice.
+// Cargo pickup/depot are now data-driven per level (see `LevelConfig.cargoPickup`
+// / `cargoDepot` in `@game/levels/levels`). These belliard world positions remain
+// as the default fallback when a caller does not supply per-level positions — they
+// sit inside the crosshair's reachable area (see `crosshairToWorld`).
 export const BELLIARD_CARGO_PICKUP: Vec2 = { x: -6, y: -3 };
 export const BELLIARD_CARGO_DEPOT: Vec2 = { x: 6, y: -3 };
 
@@ -45,6 +46,10 @@ export interface LevelParams {
   timeSeconds: number;
   enemiesToWin: number;
   enemySpeedMultiplier: number;
+  /** World position where the delivery cargo is collected (from `LevelConfig`). */
+  cargoPickup?: Vec2;
+  /** World position where the collected cargo is dropped off (from `LevelConfig`). */
+  cargoDepot?: Vec2;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -52,6 +57,8 @@ export const DEFAULT_LEVEL_PARAMS: LevelParams = {
   timeSeconds: LEVEL_TIME_SECONDS,
   enemiesToWin: ENEMIES_TO_WIN,
   enemySpeedMultiplier: 1.0,
+  cargoPickup: BELLIARD_CARGO_PICKUP,
+  cargoDepot: BELLIARD_CARGO_DEPOT,
 };
 
 export function createInitialState(
@@ -72,8 +79,8 @@ export function createInitialState(
     couriersSpawned: 0,
     cargo: {
       status: "TO_PICKUP",
-      pickup: BELLIARD_CARGO_PICKUP,
-      depot: BELLIARD_CARGO_DEPOT,
+      pickup: params.cargoPickup ?? BELLIARD_CARGO_PICKUP,
+      depot: params.cargoDepot ?? BELLIARD_CARGO_DEPOT,
     },
   };
 }

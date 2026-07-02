@@ -44,6 +44,8 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     timeSeconds: level.timeSeconds,
     enemiesToWin: level.enemiesToWin,
     enemySpeedMultiplier: level.enemySpeedMultiplier * diffCfg.enemySpeedMult,
+    cargoPickup: level.cargoPickup,
+    cargoDepot: level.cargoDepot,
   };
 }
 
