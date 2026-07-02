@@ -51,3 +51,4 @@ the old one `Superseded by ADR-XXXX`.
 | ADR                                       | Title                                         | Status   |
 | ----------------------------------------- | --------------------------------------------- | -------- |
 | [0001](./0001-github-pages-deployment.md) | GitHub Pages deployment via `gh-pages` branch | Accepted |
+| [0002](./0002-cargo-delivery-core-loop-state.md) | Cargo delivery in core game state | Accepted |

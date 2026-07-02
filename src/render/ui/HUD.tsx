@@ -1,5 +1,7 @@
 import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
+// Single source of truth for the cargo status: the game type (no render-side dup).
+import type { CargoStatus } from "@game/types/cargo";
 
 export interface HudTargetIndicator {
   up: boolean;
@@ -17,6 +19,7 @@ export interface HudData {
   levelName?: string;
   isHighScore?: boolean;
   targetIndicator?: HudTargetIndicator | undefined;
+  cargoStatus?: CargoStatus | undefined;
 }
 
 // Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
@@ -24,6 +27,17 @@ const NEON_GREEN = "#39ff14";
 const NEON_YELLOW = "#ffe600";
 const NEON_PINK = "#ff2d9b";
 const NEON_ORANGE = "#ff6600";
+
+function cargoMessage(status: CargoStatus): { text: string; color: string } {
+  switch (status) {
+    case "TO_PICKUP":
+      return { text: "à récupérer", color: NEON_PINK };
+    case "CARRYING":
+      return { text: "en main → dépôt", color: NEON_GREEN };
+    case "DELIVERED":
+      return { text: "livré ✓", color: NEON_GREEN };
+  }
+}
 
 function phaseMessage(phase: Phase): { text: string; color: string } | null {
   switch (phase) {
@@ -159,6 +173,7 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
     data.timeRemaining < 20 ? NEON_PINK : data.timeRemaining < 40 ? NEON_ORANGE : NEON_GREEN;
   const livesColor = data.lives <= 1 ? NEON_PINK : NEON_YELLOW;
   const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
+  const cargo = data.cargoStatus !== undefined ? cargoMessage(data.cargoStatus) : null;
 
   return (
     <>
@@ -208,6 +223,21 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           <span style={labelStyle}>vies</span>
           <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
         </div>
+        {cargo !== null && (
+          <div style={itemStyle}>
+            <span style={labelStyle}>cargo</span>
+            <span
+              style={{
+                fontSize: "13px",
+                color: cargo.color,
+                lineHeight: 1,
+                textShadow: `0 0 8px ${cargo.color}`,
+              }}
+            >
+              {cargo.text}
+            </span>
+          </div>
+        )}
       </div>
 
       <div style={targetRingStyle}>

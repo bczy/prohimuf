@@ -246,11 +246,16 @@ export function App(): JSX.Element {
           <GameScene
             key={gameKey}
             onHudUpdate={(data) => {
-              setHudData({
+              setHudData((prev) => ({
                 ...data,
                 levelName: selectedLevel.name,
                 isHighScore: isHighScore(selectedLevel.id, data.score),
-              });
+                // Cargo status arrives on a separate channel; keep it across refreshes.
+                cargoStatus: prev.cargoStatus,
+              }));
+            }}
+            onCargoStatus={(status) => {
+              setHudData((prev) => ({ ...prev, cargoStatus: status }));
             }}
             canvasRef={canvasRef}
             playSfx={audio.playSfx}
