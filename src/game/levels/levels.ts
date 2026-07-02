@@ -1,4 +1,5 @@
 import type { Prefs } from "@game/systems/prefsSystem";
+import type { Vec2 } from "@game/types/vector";
 
 export interface LevelConfig {
   readonly id: string;
@@ -9,6 +10,16 @@ export interface LevelConfig {
   readonly enemiesToWin: number;
   readonly timeSeconds: number;
   readonly unlocked: boolean; // default state (can be overridden by progress)
+  /**
+   * World position (same space as bullets / crosshair, see `crosshairToWorld`)
+   * where the delivery cargo is collected. Ground level, screen-left.
+   */
+  readonly cargoPickup: Vec2;
+  /**
+   * World position where the collected cargo is dropped off. Ground level,
+   * screen-right. Read by the seed of `GameState.cargo.depot`.
+   */
+  readonly cargoDepot: Vec2;
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -21,6 +32,9 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 10,
     timeSeconds: 90,
     unlocked: true,
+    // Historical MVP values (previously the hard-coded BELLIARD_CARGO_* consts).
+    cargoPickup: { x: -6, y: -3 },
+    cargoDepot: { x: 6, y: -3 },
   },
   {
     id: "stalingrad",
@@ -31,6 +45,8 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 12,
     timeSeconds: 80,
     unlocked: false,
+    cargoPickup: { x: -7, y: -2.5 },
+    cargoDepot: { x: 7, y: -2.5 },
   },
   {
     id: "vitry",
@@ -41,6 +57,8 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 15,
     timeSeconds: 70,
     unlocked: false,
+    cargoPickup: { x: -5, y: -3.5 },
+    cargoDepot: { x: 8, y: -3.5 },
   },
 ];
 

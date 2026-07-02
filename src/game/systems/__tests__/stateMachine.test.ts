@@ -4,11 +4,34 @@ import {
   tickGameState,
   LEVEL_TIME_SECONDS,
   ENEMIES_TO_WIN,
+  BELLIARD_CARGO_PICKUP,
+  BELLIARD_CARGO_DEPOT,
 } from "../stateMachine";
+import type { LevelParams } from "../stateMachine";
 import { FACADE_01 } from "@game/maps/facade01";
+import { LEVELS } from "@game/levels/levels";
+import type { LevelConfig } from "@game/levels/levels";
 import type { GameState } from "@game/types/gameState";
 import type { CourierField } from "@game/systems/courierSystem";
 import { pickKind } from "@game/types/enemyTypes";
+
+/** Mirror of the render lane's LevelConfig -> LevelParams mapping for cargo. */
+function paramsForLevel(level: LevelConfig): LevelParams {
+  return {
+    lives: 3,
+    timeSeconds: level.timeSeconds,
+    enemiesToWin: level.enemiesToWin,
+    enemySpeedMultiplier: level.enemySpeedMultiplier,
+    cargoPickup: level.cargoPickup,
+    cargoDepot: level.cargoDepot,
+  };
+}
+
+function levelById(id: string): LevelConfig {
+  const level = LEVELS.find((l) => l.id === id);
+  if (level === undefined) throw new Error(`missing level ${id}`);
+  return level;
+}
 
 const noFire = false;
 const fire = true;
@@ -35,6 +58,53 @@ describe("createInitialState", () => {
   it("spawns initial enemies", () => {
     const state = createInitialState(FACADE_01);
     expect(state.enemies.length).toBeGreaterThan(0);
+  });
+
+  it("seeds cargo TO_PICKUP", () => {
+    const state = createInitialState(FACADE_01);
+    expect(state.cargo.status).toBe("TO_PICKUP");
+  });
+
+  it("defaults cargo to the belliard positions (no regression)", () => {
+    const state = createInitialState(FACADE_01);
+    expect(state.cargo.pickup).toEqual(BELLIARD_CARGO_PICKUP);
+    expect(state.cargo.depot).toEqual(BELLIARD_CARGO_DEPOT);
+    expect(state.cargo.pickup).toEqual({ x: -6, y: -3 });
+    expect(state.cargo.depot).toEqual({ x: 6, y: -3 });
+  });
+
+  it("seeds cargo positions from the supplied level params", () => {
+    const params = paramsForLevel(levelById("stalingrad"));
+    const state = createInitialState(FACADE_01, params);
+    expect(state.cargo.pickup).toEqual(params.cargoPickup);
+    expect(state.cargo.depot).toEqual(params.cargoDepot);
+  });
+
+  it("belliard params reproduce the historical cargo positions", () => {
+    const state = createInitialState(FACADE_01, paramsForLevel(levelById("belliard")));
+    expect(state.cargo.pickup).toEqual({ x: -6, y: -3 });
+    expect(state.cargo.depot).toEqual({ x: 6, y: -3 });
+  });
+
+  it("different levels produce different cargo positions", () => {
+    const belliard = createInitialState(FACADE_01, paramsForLevel(levelById("belliard")));
+    const stalingrad = createInitialState(FACADE_01, paramsForLevel(levelById("stalingrad")));
+    const vitry = createInitialState(FACADE_01, paramsForLevel(levelById("vitry")));
+
+    expect(stalingrad.cargo.pickup).not.toEqual(belliard.cargo.pickup);
+    expect(stalingrad.cargo.depot).not.toEqual(belliard.cargo.depot);
+    expect(vitry.cargo.pickup).not.toEqual(belliard.cargo.pickup);
+    expect(vitry.cargo.pickup).not.toEqual(stalingrad.cargo.pickup);
+  });
+
+  it("keeps cargo collect-left / drop-right at ground level for every level", () => {
+    for (const level of LEVELS) {
+      const state = createInitialState(FACADE_01, paramsForLevel(level));
+      expect(state.cargo.pickup.x).toBeLessThan(0); // collect on the left
+      expect(state.cargo.depot.x).toBeGreaterThan(0); // drop on the right
+      expect(state.cargo.pickup.y).toBeLessThan(0); // at ground level
+      expect(state.cargo.depot.y).toBeLessThan(0);
+    }
   });
 });
 
