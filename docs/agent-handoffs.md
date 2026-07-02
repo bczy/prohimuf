@@ -31,3 +31,17 @@ Template:
   Lane B `node --check` OK; `codegraph affected src/game/systems/narrativeSystem.ts`
   correctly resolved the new test file — codegraph integration verified end-to-end.
   Accepted vs story acceptance criteria. (Winston review + John acceptance)
+
+---
+
+### story-ingame-render-gate
+
+- release: `dev-tooling-assets` (tooling lane, `scripts/**` + `.github/**` only — no
+  `src/` touched). Added a CI "in-game smoke" gate that boots the prod build, enters one
+  level (belliard) for real, and blocks the gh-pages publish if the R3F/WebGL game scene
+  fails to render. Complements `e2e-home.mjs`, which is pure-DOM and cannot see a broken
+  game scene. File List: NEW `scripts/e2e-ingame.mjs`, NEW `.github/actions/e2e-ingame/action.yml`;
+  MOD `.github/workflows/deploy.yml` (gating step + artifact upload, before publish),
+  `scripts/SCRIPTS.md` (docs), `.gitignore` (`screenshots/e2e-ingame.png`). Verified with
+  `node --check` + YAML parse; Playwright itself runs in CI (browser mismatch locally).
+  (Amelia — Tooling & Assets)
