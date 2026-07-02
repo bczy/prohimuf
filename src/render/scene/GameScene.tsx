@@ -12,12 +12,14 @@ import {
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
 import type { HudData } from "@render/ui/HUD";
+import type { CargoStatus } from "@game/types/cargo";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { CourierSprite } from "./CourierSprite";
+import { CargoMarkers } from "./CargoMarkers";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
@@ -34,6 +36,8 @@ interface Props {
   levelParams?: LevelParams;
   levelId?: string;
   paused?: boolean;
+  /** Surfaces cargo status transitions to the DOM HUD (read from the state ref). */
+  onCargoStatus?: (status: CargoStatus) => void;
 }
 
 export function GameScene({
@@ -43,6 +47,7 @@ export function GameScene({
   levelParams,
   levelId,
   paused,
+  onCargoStatus,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art's native
   // aspect ratio, and place enemy windows from the level's hand-authored zones.
@@ -140,6 +145,7 @@ export function GameScene({
         </group>
       ))}
       <CourierSprite stateRef={stateRef} />
+      <CargoMarkers stateRef={stateRef} onStatusChange={onCargoStatus} />
       <BulletSprite stateRef={stateRef} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />

@@ -2,6 +2,7 @@ import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
+import type { Cargo } from "@game/types/cargo";
 import type { HitEvent, PointHitEvent } from "@game/types/feedback";
 
 export type Phase = "PLAYING" | "GAME_OVER" | "LEVEL_COMPLETE";
@@ -20,6 +21,8 @@ export interface GameState {
   readonly couriers: readonly Courier[];
   readonly courierTimer: number;
   readonly couriersSpawned: number;
+  // Core-loop delivery: the single cargo to récupérer → livrer this level.
+  readonly cargo: Cargo;
   // Takedown effects from the latest tick (transient; for floating feedback).
   readonly feedback?: readonly HitEvent[];
   // Courier-hit penalties this tick, anchored to world positions (transient).

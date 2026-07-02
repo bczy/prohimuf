@@ -2,12 +2,21 @@ import type { GameState } from "@game/types/gameState";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
+import type { Cargo } from "@game/types/cargo";
+import type { Vec2 } from "@game/types/vector";
 import type { PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import { fireBullet, tickBullets, checkBulletHits, BULLET_SPEED } from "@game/systems/bulletSystem";
+import {
+  fireBullet,
+  tickBullets,
+  checkBulletHits,
+  crosshairToWorld,
+  BULLET_SPEED,
+} from "@game/systems/bulletSystem";
+import { tickDelivery } from "@game/systems/deliverySystem";
 import {
   checkCourierHits,
   courierSpawnInterval,
@@ -19,6 +28,12 @@ import type { CourierField } from "@game/systems/courierSystem";
 
 export const LEVEL_TIME_SECONDS = 90;
 export const ENEMIES_TO_WIN = 10;
+
+// MVP: the belliard cargo pickup/depot are hard-coded world positions, sized to
+// sit inside the crosshair's reachable area (see `crosshairToWorld`). Data-driven
+// per-level placement is out of scope for this slice.
+export const BELLIARD_CARGO_PICKUP: Vec2 = { x: -6, y: -3 };
+export const BELLIARD_CARGO_DEPOT: Vec2 = { x: 6, y: -3 };
 
 const PLAYER_HIT_RADIUS = 1.0;
 
@@ -55,6 +70,11 @@ export function createInitialState(
     couriers: [],
     courierTimer: FIRST_COURIER_DELAY,
     couriersSpawned: 0,
+    cargo: {
+      status: "TO_PICKUP",
+      pickup: BELLIARD_CARGO_PICKUP,
+      depot: BELLIARD_CARGO_DEPOT,
+    },
   };
 }
 
@@ -81,6 +101,13 @@ export function tickGameState(
 
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
+
+  // 1b. Core-loop delivery: the crosshair-in-world position grabs the cargo at
+  // its pickup and drops it at the depot (same conversion as `fireBullet`).
+  const crosshairWorld = crosshairToWorld(crosshair, cameraOffsetX, viewW, viewH);
+  const delivery = tickDelivery(state.cargo, crosshairWorld);
+  const cargo: Cargo = delivery.cargo;
+  const deliveryEvents = delivery.events;
 
   // 2. Tick enemies
   const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta));
@@ -150,7 +177,15 @@ export function tickGameState(
     pointFeedback = ch.events;
   }
 
-  const newScore = Math.max(0, state.score + hitResult.scoreDelta + courierScoreDelta);
+  // Fold pickup/delivery feedback into the same world-anchored channel.
+  if (deliveryEvents.length > 0) {
+    pointFeedback = [...pointFeedback, ...deliveryEvents];
+  }
+
+  const newScore = Math.max(
+    0,
+    state.score + hitResult.scoreDelta + courierScoreDelta + delivery.scoreDelta,
+  );
 
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
@@ -177,6 +212,7 @@ export function tickGameState(
       couriers,
       courierTimer,
       couriersSpawned,
+      cargo,
       bullets: finalBullets,
       lives: 0,
       score: newScore,
@@ -197,6 +233,7 @@ export function tickGameState(
       couriers,
       courierTimer,
       couriersSpawned,
+      cargo,
       bullets: finalBullets,
       lives: newLives,
       score: newScore,
@@ -217,6 +254,7 @@ export function tickGameState(
     couriers,
     courierTimer,
     couriersSpawned,
+    cargo,
     bullets: finalBullets,
     score: newScore,
     lives: newLives,
