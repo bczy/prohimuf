@@ -11,6 +11,30 @@
     "$comment": "Facade plane height in world units. Width is derived from the facade image aspect ratio so the art shows at its native proportions.",
     "heightUnits": 12
   },
+  "vehicles": {
+    "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: photocopied fanzine B&W + acid neon, generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
+    "style": ", side profile view, photocopied fanzine black and white, high contrast, grainy halftone, acid neon glow outline, flat 2D game sprite, centered, whole vehicle in frame, solid pure flat black background, sharp silhouette edges, no text, no watermark, no people, no background scenery",
+    "types": {
+      "truck": {
+        "asset": "assets/vehicles/truck.png",
+        "size": { "width": 384, "height": 192 },
+        "neon": "orange",
+        "prompt": "a boxy 1990s delivery van truck seen from the side, tall cargo box body with a short cab, two big wheels, plain flat panel sides"
+      },
+      "car": {
+        "asset": "assets/vehicles/car.png",
+        "size": { "width": 320, "height": 160 },
+        "neon": "cyan",
+        "prompt": "a small 1990s parisian hatchback city car seen from the side, compact rounded silhouette, sloped roof, two wheels"
+      },
+      "moto": {
+        "asset": "assets/vehicles/moto.png",
+        "size": { "width": 256, "height": 160 },
+        "neon": "magenta",
+        "prompt": "a 1990s delivery motorbike scooter seen from the side, low crouched rider, two wheels, a courier top box on the back"
+      }
+    }
+  },
   "windowGrid": {
     "$comment": "Where cops pop up, as a normalized grid over the facade image (0..1, y down). Tuned to the upper lit-window floors of the generated facades.",
     "cols": 7,

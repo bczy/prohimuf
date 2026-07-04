@@ -1,0 +1,320 @@
+#!/usr/bin/env node
+/**
+ * Generate the delivery-vehicle sprites (truck / car / moto) for the scripted
+ * "protect the delivery" beat. Side-profile view — they roll horizontally down
+ * the street lane where the couriers run — in the house style: photocopied
+ * fanzine B&W + acid neon, on a PURE BLACK background that is then keyed to
+ * transparency (the exact same edge flood-fill as cutout-enemies.mjs, imported
+ * and reused here).
+ *
+ * Single source of truth: the `vehicles` block of
+ * src/game/levels/levelArt.json (prompts, sizes, neon accent, output path).
+ * Add/tune a vehicle there, never here.
+ *
+ * Naming contract (renderer + gameplay lanes align on this):
+ *   public/assets/vehicles/{truck,car,moto}.png   (vehicleType "truck"|"car"|"moto")
+ *
+ * Only MISSING files are generated, so re-runs are cheap; set FORCE=1 to
+ * regenerate everything. Network image generation (Pollinations/FLUX) is often
+ * blocked in the local sandbox, so this normally runs in CI. When the network
+ * is unavailable you can still fill the slots with dependency-free procedural
+ * placeholders (--placeholder / PLACEHOLDER=1) so the render is not empty.
+ *
+ * Usage:
+ *   node scripts/gen-vehicle-sprites.mjs                # generate missing (network FLUX)
+ *   FORCE=1 node scripts/gen-vehicle-sprites.mjs        # regenerate all (network FLUX)  [CI]
+ *   node scripts/gen-vehicle-sprites.mjs --placeholder  # write procedural placeholders (no network)
+ *   node scripts/gen-vehicle-sprites.mjs --asset truck  # one type only
+ *   node scripts/gen-vehicle-sprites.mjs --list         # list defined vehicles
+ */
+import fs from "fs";
+import path from "path";
+import https from "https";
+import zlib from "zlib";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+const OUT_DIR = path.resolve(ROOT, process.env.OUT_DIR ?? "public/assets/vehicles");
+const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
+const FORCE = process.env.FORCE === "1";
+
+// ── Load the vehicle definitions from levelArt.json (single source) ──────────
+function loadVehicles() {
+  const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
+  const block = json.vehicles;
+  if (!block || !block.types) {
+    throw new Error(`No "vehicles.types" block in ${path.relative(ROOT, LEVEL_ART)}`);
+  }
+  const styleSuffix = block.style ?? "";
+  return Object.entries(block.types).map(([type, def]) => ({
+    type,
+    prompt: `${def.prompt}, bright glowing ${def.neon} acid neon outline around the whole vehicle including the wheels${styleSuffix}`,
+    width: def.size?.width ?? 256,
+    height: def.size?.height ?? 160,
+    neon: def.neon ?? "cyan",
+  }));
+}
+
+// ── Pollinations / FLUX fetch (mirrors gen-enemy-types.mjs) ──────────────────
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function fetchImage(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          fetchImage(res.headers.location).then(resolve).catch(reject);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        const chunks = [];
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => resolve(Buffer.concat(chunks)));
+      })
+      .on("error", reject);
+  });
+}
+
+async function generate(v, retries = 5) {
+  const seed = Math.floor(Math.random() * 99999);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+    v.prompt,
+  )}?width=${v.width}&height=${v.height}&nologo=true&model=flux&seed=${seed}`;
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fetchImage(url);
+    } catch (e) {
+      if (i < retries - 1) {
+        const wait = (i + 1) * 8000;
+        console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
+        await sleep(wait);
+      } else throw e;
+    }
+  }
+}
+
+// ── Dependency-free PNG writer (8-bit RGBA) for procedural placeholders ───────
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length, 0);
+  const typeBuf = Buffer.from(type, "ascii");
+  const body = Buffer.concat([typeBuf, data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body), 0);
+  return Buffer.concat([len, body, crc]);
+}
+
+function encodePng(width, height, rgba) {
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // colour type: RGBA
+  const stride = width * 4;
+  const raw = Buffer.alloc(height * (stride + 1));
+  for (let y = 0; y < height; y++) {
+    raw[y * (stride + 1)] = 0; // filter: none
+    rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride);
+  }
+  const idat = zlib.deflateSync(raw, { level: 9 });
+  return Buffer.concat([
+    sig,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", idat),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+const NEON_RGB = {
+  orange: [255, 140, 20],
+  cyan: [40, 240, 255],
+  magenta: [255, 60, 220],
+  green: [120, 255, 60],
+};
+
+// Draw a recognisable side-profile placeholder: dark body + wheels with a
+// bright neon rim on a transparent background (already "cut out", no keying
+// needed). Distinct proportions per type read as truck / car / moto.
+function drawPlaceholder(v) {
+  const W = v.width;
+  const H = v.height;
+  const px = Buffer.alloc(W * H * 4); // transparent
+  const [nr, ng, nb] = NEON_RGB[v.neon] ?? NEON_RGB.cyan;
+  const BODY = [26, 26, 30];
+
+  const set = (x, y, r, g, b, a) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const o = (y * W + x) * 4;
+    px[o] = r;
+    px[o + 1] = g;
+    px[o + 2] = b;
+    px[o + 3] = a;
+  };
+  const fillRect = (x0, y0, x1, y1, r, g, b) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, r, g, b, 255);
+  };
+  const strokeRect = (x0, y0, x1, y1, r, g, b, t = 3) => {
+    fillRect(x0, y0, x1, y0 + t - 1, r, g, b);
+    fillRect(x0, y1 - t + 1, x1, y1, r, g, b);
+    fillRect(x0, y0, x0 + t - 1, y1, r, g, b);
+    fillRect(x1 - t + 1, y0, x1, y1, r, g, b);
+  };
+  const disc = (cx, cy, rad, r, g, b) => {
+    for (let y = -rad; y <= rad; y++)
+      for (let x = -rad; x <= rad; x++)
+        if (x * x + y * y <= rad * rad) set(cx + x, cy + y, r, g, b, 255);
+  };
+  const ring = (cx, cy, rad, r, g, b) => {
+    const inner = (rad - 3) * (rad - 3);
+    const outer = rad * rad;
+    for (let y = -rad; y <= rad; y++)
+      for (let x = -rad; x <= rad; x++) {
+        const d = x * x + y * y;
+        if (d <= outer && d >= inner) set(cx + x, cy + y, r, g, b, 255);
+      }
+  };
+
+  const wheelR = Math.round(H * 0.16);
+  const wheelY = H - wheelR - 4;
+  const wheel = (cx) => {
+    disc(cx, wheelY, wheelR, BODY[0], BODY[1], BODY[2]);
+    ring(cx, wheelY, wheelR, nr, ng, nb);
+  };
+
+  if (v.type === "truck") {
+    const bx0 = Math.round(W * 0.06);
+    const bx1 = Math.round(W * 0.94);
+    const boxTop = Math.round(H * 0.14);
+    const cabX = Math.round(W * 0.72);
+    // cargo box
+    fillRect(bx0, boxTop, cabX, wheelY, BODY[0], BODY[1], BODY[2]);
+    strokeRect(bx0, boxTop, cabX, wheelY, nr, ng, nb);
+    // cab (lower, to the right)
+    const cabTop = Math.round(H * 0.34);
+    fillRect(cabX, cabTop, bx1, wheelY, BODY[0], BODY[1], BODY[2]);
+    strokeRect(cabX, cabTop, bx1, wheelY, nr, ng, nb);
+    wheel(Math.round(W * 0.24));
+    wheel(Math.round(W * 0.82));
+  } else if (v.type === "car") {
+    const bx0 = Math.round(W * 0.06);
+    const bx1 = Math.round(W * 0.94);
+    const bodyTop = Math.round(H * 0.42);
+    const roofX0 = Math.round(W * 0.3);
+    const roofX1 = Math.round(W * 0.72);
+    const roofTop = Math.round(H * 0.2);
+    fillRect(bx0, bodyTop, bx1, wheelY, BODY[0], BODY[1], BODY[2]);
+    fillRect(roofX0, roofTop, roofX1, bodyTop, BODY[0], BODY[1], BODY[2]);
+    strokeRect(bx0, bodyTop, bx1, wheelY, nr, ng, nb);
+    strokeRect(roofX0, roofTop, roofX1, bodyTop + 2, nr, ng, nb);
+    wheel(Math.round(W * 0.26));
+    wheel(Math.round(W * 0.74));
+  } else {
+    // moto
+    const bodyTop = Math.round(H * 0.46);
+    const bx0 = Math.round(W * 0.16);
+    const bx1 = Math.round(W * 0.84);
+    fillRect(bx0, bodyTop, bx1, wheelY - wheelR, BODY[0], BODY[1], BODY[2]);
+    strokeRect(bx0, bodyTop, bx1, wheelY - wheelR, nr, ng, nb, 2);
+    // top box on the back
+    const boxTop = Math.round(H * 0.28);
+    fillRect(bx1 - Math.round(W * 0.14), boxTop, bx1, bodyTop, BODY[0], BODY[1], BODY[2]);
+    strokeRect(bx1 - Math.round(W * 0.14), boxTop, bx1, bodyTop, nr, ng, nb, 2);
+    wheel(Math.round(W * 0.22));
+    wheel(Math.round(W * 0.78));
+  }
+
+  return encodePng(W, H, px);
+}
+
+// ── Reuse the enemy edge flood-fill detour when possible ─────────────────────
+async function tryCutout(file, type) {
+  try {
+    const mod = await import("./cutout-enemies.mjs");
+    await mod.cutout(file);
+  } catch (e) {
+    console.log(`  [cutout-skip] ${type} — ${e.message} (chroma-key runs in CI)`);
+  }
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const vehicles = loadVehicles();
+
+  if (args.includes("--list")) {
+    console.log("Defined vehicles (from levelArt.json):");
+    vehicles.forEach((v) =>
+      console.log(`  ${v.type.padEnd(6)} ${v.width}x${v.height}  → assets/vehicles/${v.type}.png`),
+    );
+    return;
+  }
+
+  const placeholder = args.includes("--placeholder") || process.env.PLACEHOLDER === "1";
+  const ti = args.indexOf("--asset");
+  const target = ti !== -1 ? args[ti + 1] : null;
+  const todo = target ? vehicles.filter((v) => v.type === target) : vehicles;
+  if (target && todo.length === 0) {
+    console.error(`Vehicle "${target}" not found. Use --list.`);
+    process.exit(1);
+  }
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  console.log(
+    `Vehicle sprites → ${path.relative(ROOT, OUT_DIR)}${placeholder ? " (placeholder mode)" : ""}\n`,
+  );
+
+  for (const v of todo) {
+    const out = path.join(OUT_DIR, `${v.type}.png`);
+    if (!FORCE && fs.existsSync(out)) {
+      console.log(`  [skip] ${v.type} (exists)`);
+      continue;
+    }
+
+    if (placeholder) {
+      fs.writeFileSync(out, drawPlaceholder(v));
+      console.log(`  [ph]   ${v.type} — procedural placeholder written`);
+      continue;
+    }
+
+    console.log(`  [gen]  ${v.type}`);
+    try {
+      const buf = await generate(v);
+      fs.writeFileSync(out, buf);
+      console.log(`  [ok]   ${v.type} (${buf.length} bytes) — keying background`);
+      await tryCutout(out, v.type);
+    } catch (e) {
+      console.log(`  [fail] ${v.type} — ${e.message} (will be generated in CI)`);
+    }
+    await sleep(2000);
+  }
+
+  console.log("\nDone.");
+}
+
+main().catch((e) => {
+  console.error("Fatal:", e.message);
+  process.exit(1);
+});

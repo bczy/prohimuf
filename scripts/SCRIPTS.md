@@ -428,6 +428,64 @@ track whatever art was generated.
 
 ---
 
+## gen-vehicle-sprites.mjs — Delivery-vehicle sprites (truck / car / moto)
+
+Generates the side-profile delivery-vehicle sprites for the scripted "protect
+the delivery" beat, in the house style (photocopied fanzine B&W + acid neon) on
+a pure-black background that is then keyed to transparency — the **same edge
+flood-fill as `cutout-enemies.mjs`**, imported and reused (no duplicated detour).
+
+- **Single source of truth:** the `vehicles` block of
+  `src/game/levels/levelArt.json` (prompt, size, neon accent and output path per
+  type). Add or tune a vehicle **there**, never in the script.
+- **Naming contract (fixed — renderer + gameplay lanes align on it):**
+  `public/assets/vehicles/{truck,car,moto}.png`, `vehicleType` ∈
+  `"truck" | "car" | "moto"`.
+- **Output:** `public/assets/vehicles/<type>.png`, transparent (already cut out).
+
+### Commands
+
+```bash
+# Generate missing sprites via Pollinations/FLUX, then chroma-key (needs network)
+node scripts/gen-vehicle-sprites.mjs
+
+# Regenerate all (overwrite), used in CI
+FORCE=1 node scripts/gen-vehicle-sprites.mjs
+
+# No network? Write dependency-free procedural placeholders so render isn't empty
+node scripts/gen-vehicle-sprites.mjs --placeholder
+
+# One type only, or list the defined vehicles
+node scripts/gen-vehicle-sprites.mjs --asset truck
+node scripts/gen-vehicle-sprites.mjs --list
+```
+
+### Behaviour
+
+- **Skip**: existing files are not regenerated; `FORCE=1` regenerates.
+- **Placeholder mode** (`--placeholder` / `PLACEHOLDER=1`): writes small
+  procedural PNGs (dark silhouette + neon rim, transparent bg) using a built-in
+  zlib-only PNG writer — no `@napi-rs/canvas`, no network. Distinct proportions
+  read as truck / car / moto. Committed as a fallback so `yarn dev` shows a
+  vehicle even before CI runs.
+- **Cutout**: after a successful network generation, the black background is
+  keyed to transparency by importing `cutout(file)` from `cutout-enemies.mjs`.
+  If `@napi-rs/canvas` is missing it logs `[cutout-skip]` and continues (CI does
+  the keying).
+- **Retry / rate limit**: 5 attempts with backoff, 2s pause between types
+  (matches `gen-enemy-types.mjs`).
+
+### CI
+
+`.github/workflows/gen-vehicle-sprites.yml` (manual `workflow_dispatch`):
+installs `@napi-rs/canvas`, runs `FORCE=1 node scripts/gen-vehicle-sprites.mjs`
+(overwriting placeholders with real FLUX art + keying), and commits the three
+PNGs back to the branch — the same pattern as the enemy-sprite workflow. Network
+FLUX generation is normally blocked in the local sandbox, so real art is
+produced here.
+
+---
+
 ## e2e-home.mjs — Deploy smoke test (E2E)
 
 Playwright E2E that guards the **deployment** against build and base-path

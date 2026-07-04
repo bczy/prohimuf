@@ -1,0 +1,46 @@
+name: Generate vehicle sprites
+
+# Regenerates the delivery-vehicle sprites (truck / car / moto) from the
+# `vehicles` block of src/game/levels/levelArt.json with real FLUX art, keys
+# their black background to transparency, and commits them to the current
+# branch. Manual only (workflow_dispatch): the committed PNGs may be procedural
+# placeholders, so this is the tool that replaces them with generated art.
+# FORCE=1 so it overwrites the placeholders (not just missing files).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-vehicle-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate vehicle sprites (FLUX) and chroma-key to transparency
+        run: |
+          npm install --no-save --legacy-peer-deps @napi-rs/canvas
+          FORCE=1 node scripts/gen-vehicle-sprites.mjs
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f public/assets/vehicles/truck.png public/assets/vehicles/car.png public/assets/vehicles/moto.png
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate delivery-vehicle sprites (truck/car/moto)"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi

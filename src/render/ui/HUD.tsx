@@ -1,13 +1,20 @@
 import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
-// Single source of truth for the cargo status: the game type (no render-side dup).
-import type { CargoStatus } from "@game/types/cargo";
+// Single source of truth for the delivery phase: the game type (no render-side dup).
+import type { DeliveryPhase } from "@game/types/delivery";
 
 export interface HudTargetIndicator {
   up: boolean;
   down: boolean;
   left: boolean;
   right: boolean;
+}
+
+/** Delivery state surfaced to the DOM HUD (read from the state ref, not per frame). */
+export interface HudDelivery {
+  phase: DeliveryPhase;
+  integrity: number;
+  integrityMax: number;
 }
 
 export interface HudData {
@@ -19,7 +26,7 @@ export interface HudData {
   levelName?: string;
   isHighScore?: boolean;
   targetIndicator?: HudTargetIndicator | undefined;
-  cargoStatus?: CargoStatus | undefined;
+  delivery?: HudDelivery | undefined;
 }
 
 // Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
@@ -28,15 +35,11 @@ const NEON_YELLOW = "#ffe600";
 const NEON_PINK = "#ff2d9b";
 const NEON_ORANGE = "#ff6600";
 
-function cargoMessage(status: CargoStatus): { text: string; color: string } {
-  switch (status) {
-    case "TO_PICKUP":
-      return { text: "à récupérer", color: NEON_PINK };
-    case "CARRYING":
-      return { text: "en main → dépôt", color: NEON_GREEN };
-    case "DELIVERED":
-      return { text: "livré ✓", color: NEON_GREEN };
-  }
+// Integrity gauge colour shifts warm as the vehicle takes damage.
+function integrityColor(fill: number): string {
+  if (fill > 0.6) return NEON_GREEN;
+  if (fill > 0.3) return NEON_ORANGE;
+  return NEON_PINK;
 }
 
 function phaseMessage(phase: Phase): { text: string; color: string } | null {
@@ -173,7 +176,12 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
     data.timeRemaining < 20 ? NEON_PINK : data.timeRemaining < 40 ? NEON_ORANGE : NEON_GREEN;
   const livesColor = data.lives <= 1 ? NEON_PINK : NEON_YELLOW;
   const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
-  const cargo = data.cargoStatus !== undefined ? cargoMessage(data.cargoStatus) : null;
+  const delivery = data.delivery;
+  const deliveryPhase = delivery?.phase;
+  const deliveryFill =
+    delivery !== undefined && delivery.integrityMax > 0
+      ? Math.max(0, Math.min(1, delivery.integrity / delivery.integrityMax))
+      : 0;
 
   return (
     <>
@@ -223,22 +231,75 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           <span style={labelStyle}>vies</span>
           <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
         </div>
-        {cargo !== null && (
-          <div style={itemStyle}>
-            <span style={labelStyle}>cargo</span>
-            <span
-              style={{
-                fontSize: "13px",
-                color: cargo.color,
-                lineHeight: 1,
-                textShadow: `0 0 8px ${cargo.color}`,
-              }}
-            >
-              {cargo.text}
-            </span>
-          </div>
-        )}
       </div>
+
+      {deliveryPhase === "DELIVERING" && (
+        <div
+          style={{
+            position: "fixed",
+            top: 58,
+            left: "50%",
+            transform: "translateX(-50%)",
+            pointerEvents: "none",
+            userSelect: "none",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Impact', 'Arial Narrow', sans-serif",
+              fontSize: "18px",
+              letterSpacing: "0.1em",
+              color: NEON_YELLOW,
+              textShadow: `0 0 8px ${NEON_YELLOW}, 0 0 16px ${NEON_ORANGE}`,
+            }}
+          >
+            LIVRAISON — PROTÉGEZ LE VÉHICULE !
+          </span>
+          <div
+            style={{
+              width: 220,
+              height: 12,
+              border: `2px solid ${NEON_YELLOW}`,
+              background: "rgba(0,0,0,0.7)",
+              boxShadow: `0 0 8px ${NEON_YELLOW}`,
+            }}
+          >
+            <div
+              style={{
+                width: `${String(deliveryFill * 100)}%`,
+                height: "100%",
+                background: integrityColor(deliveryFill),
+                boxShadow: `0 0 8px ${integrityColor(deliveryFill)}`,
+                transition: "width 100ms linear",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {(deliveryPhase === "SUCCESS" || deliveryPhase === "FAILED") && (
+        <div
+          style={{
+            position: "fixed",
+            top: 64,
+            left: "50%",
+            transform: "translateX(-50%)",
+            pointerEvents: "none",
+            userSelect: "none",
+            fontFamily: "'Impact', 'Arial Narrow', sans-serif",
+            fontSize: "22px",
+            letterSpacing: "0.1em",
+            color: deliveryPhase === "SUCCESS" ? NEON_GREEN : NEON_PINK,
+            textShadow: `0 0 12px ${deliveryPhase === "SUCCESS" ? NEON_GREEN : NEON_PINK}`,
+          }}
+        >
+          {deliveryPhase === "SUCCESS" ? "LIVRAISON SÉCURISÉE" : "LIVRAISON PERDUE"}
+        </div>
+      )}
 
       <div style={targetRingStyle}>
         <span

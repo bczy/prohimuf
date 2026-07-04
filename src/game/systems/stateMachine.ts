@@ -2,21 +2,14 @@ import type { GameState } from "@game/types/gameState";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
-import type { Cargo } from "@game/types/cargo";
-import type { Vec2 } from "@game/types/vector";
+import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import {
-  fireBullet,
-  tickBullets,
-  checkBulletHits,
-  crosshairToWorld,
-  BULLET_SPEED,
-} from "@game/systems/bulletSystem";
-import { tickDelivery } from "@game/systems/deliverySystem";
+import { fireBullet, tickBullets, checkBulletHits, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
 import {
   checkCourierHits,
   courierSpawnInterval,
@@ -29,13 +22,6 @@ import type { CourierField } from "@game/systems/courierSystem";
 export const LEVEL_TIME_SECONDS = 90;
 export const ENEMIES_TO_WIN = 10;
 
-// Cargo pickup/depot are now data-driven per level (see `LevelConfig.cargoPickup`
-// / `cargoDepot` in `@game/levels/levels`). These belliard world positions remain
-// as the default fallback when a caller does not supply per-level positions — they
-// sit inside the crosshair's reachable area (see `crosshairToWorld`).
-export const BELLIARD_CARGO_PICKUP: Vec2 = { x: -6, y: -3 };
-export const BELLIARD_CARGO_DEPOT: Vec2 = { x: 6, y: -3 };
-
 const PLAYER_HIT_RADIUS = 1.0;
 
 let _nextBulletId = 1;
@@ -46,10 +32,11 @@ export interface LevelParams {
   timeSeconds: number;
   enemiesToWin: number;
   enemySpeedMultiplier: number;
-  /** World position where the delivery cargo is collected (from `LevelConfig`). */
-  cargoPickup?: Vec2;
-  /** World position where the collected cargo is dropped off (from `LevelConfig`). */
-  cargoDepot?: Vec2;
+  /**
+   * Scripted vehicle delivery for this level (from `LevelConfig.deliveries[0]`).
+   * Omitted / null = no delivery this level.
+   */
+  delivery?: DeliverySpec | null;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -57,14 +44,13 @@ export const DEFAULT_LEVEL_PARAMS: LevelParams = {
   timeSeconds: LEVEL_TIME_SECONDS,
   enemiesToWin: ENEMIES_TO_WIN,
   enemySpeedMultiplier: 1.0,
-  cargoPickup: BELLIARD_CARGO_PICKUP,
-  cargoDepot: BELLIARD_CARGO_DEPOT,
 };
 
 export function createInitialState(
   facade: FacadeMap,
   params: LevelParams = DEFAULT_LEVEL_PARAMS,
 ): GameState {
+  const deliverySpec = params.delivery ?? null;
   return {
     phase: "PLAYING",
     crosshair: { position: { x: 0.5, y: 0.5 } },
@@ -74,14 +60,13 @@ export function createInitialState(
     lives: params.lives,
     timeRemaining: params.timeSeconds,
     wave: 1,
+    elapsedSeconds: 0,
+    kills: 0,
     couriers: [],
     courierTimer: FIRST_COURIER_DELAY,
     couriersSpawned: 0,
-    cargo: {
-      status: "TO_PICKUP",
-      pickup: params.cargoPickup ?? BELLIARD_CARGO_PICKUP,
-      depot: params.cargoDepot ?? BELLIARD_CARGO_DEPOT,
-    },
+    deliverySpec,
+    deliveryVehicle: seedDeliveryVehicle(deliverySpec),
   };
 }
 
@@ -102,19 +87,17 @@ export function tickGameState(
     return state;
   }
 
-  if (state.score >= enemiesToWin) {
+  // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never
+  // on the score — so the delivery bonus can never trigger the level win.
+  if (state.kills >= enemiesToWin) {
     return { ...state, phase: "LEVEL_COMPLETE" };
   }
 
+  // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
+  const elapsedSeconds = state.elapsedSeconds + delta;
+
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
-
-  // 1b. Core-loop delivery: the crosshair-in-world position grabs the cargo at
-  // its pickup and drops it at the depot (same conversion as `fireBullet`).
-  const crosshairWorld = crosshairToWorld(crosshair, cameraOffsetX, viewW, viewH);
-  const delivery = tickDelivery(state.cargo, crosshairWorld);
-  const cargo: Cargo = delivery.cargo;
-  const deliveryEvents = delivery.events;
 
   // 2. Tick enemies
   const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta));
@@ -184,15 +167,32 @@ export function tickGameState(
     pointFeedback = ch.events;
   }
 
-  // Fold pickup/delivery feedback into the same world-anchored channel.
-  if (deliveryEvents.length > 0) {
-    pointFeedback = [...pointFeedback, ...deliveryEvents];
+  // 7c. Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
+  // Enemies currently in SHOOTING chip the vehicle's integrity during the
+  // window; surviving it awards a one-shot score bonus. Shares the courier
+  // street lane, so it only runs when a courier field is supplied.
+  let deliveryVehicle: DeliveryVehicle | null = state.deliveryVehicle;
+  let deliveryScoreDelta = 0;
+  if (state.deliverySpec !== null && deliveryVehicle !== null && courierField !== undefined) {
+    const shootingCount = activeEnemies.filter((e) => e.state === "SHOOTING").length;
+    const result = tickDelivery(
+      deliveryVehicle,
+      state.deliverySpec,
+      elapsedSeconds,
+      shootingCount,
+      courierField,
+      delta,
+    );
+    deliveryVehicle = result.vehicle;
+    deliveryScoreDelta = result.scoreDelta;
   }
 
+  // Score folds in the delivery bonus; the win gate below stays on kills only.
   const newScore = Math.max(
     0,
-    state.score + hitResult.scoreDelta + courierScoreDelta + delivery.scoreDelta,
+    state.score + hitResult.scoreDelta + courierScoreDelta + deliveryScoreDelta,
   );
+  const newKills = state.kills + hitResult.targetsDown;
 
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
@@ -219,7 +219,9 @@ export function tickGameState(
       couriers,
       courierTimer,
       couriersSpawned,
-      cargo,
+      deliveryVehicle,
+      elapsedSeconds,
+      kills: newKills,
       bullets: finalBullets,
       lives: 0,
       score: newScore,
@@ -240,7 +242,9 @@ export function tickGameState(
       couriers,
       courierTimer,
       couriersSpawned,
-      cargo,
+      deliveryVehicle,
+      elapsedSeconds,
+      kills: newKills,
       bullets: finalBullets,
       lives: newLives,
       score: newScore,
@@ -250,7 +254,7 @@ export function tickGameState(
     };
   }
 
-  const finalPhase = newScore >= enemiesToWin ? "LEVEL_COMPLETE" : "PLAYING";
+  const finalPhase = newKills >= enemiesToWin ? "LEVEL_COMPLETE" : "PLAYING";
 
   return {
     phase: finalPhase,
@@ -261,7 +265,10 @@ export function tickGameState(
     couriers,
     courierTimer,
     couriersSpawned,
-    cargo,
+    deliverySpec: state.deliverySpec,
+    deliveryVehicle,
+    elapsedSeconds,
+    kills: newKills,
     bullets: finalBullets,
     score: newScore,
     lives: newLives,

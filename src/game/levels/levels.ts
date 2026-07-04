@@ -1,5 +1,5 @@
 import type { Prefs } from "@game/systems/prefsSystem";
-import type { Vec2 } from "@game/types/vector";
+import type { DeliverySpec } from "@game/types/delivery";
 
 export interface LevelConfig {
   readonly id: string;
@@ -11,15 +11,11 @@ export interface LevelConfig {
   readonly timeSeconds: number;
   readonly unlocked: boolean; // default state (can be overridden by progress)
   /**
-   * World position (same space as bullets / crosshair, see `crosshairToWorld`)
-   * where the delivery cargo is collected. Ground level, screen-left.
+   * Scripted vehicle deliveries for this level (core loop `Livrer`). Extensible
+   * to several; MVP authors exactly one. The seed of `GameState.deliveryVehicle`
+   * reads `deliveries[0]`.
    */
-  readonly cargoPickup: Vec2;
-  /**
-   * World position where the collected cargo is dropped off. Ground level,
-   * screen-right. Read by the seed of `GameState.cargo.depot`.
-   */
-  readonly cargoDepot: Vec2;
+  readonly deliveries: readonly DeliverySpec[];
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -32,9 +28,17 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 10,
     timeSeconds: 90,
     unlocked: true,
-    // Historical MVP values (previously the hard-coded BELLIARD_CARGO_* consts).
-    cargoPickup: { x: -6, y: -3 },
-    cargoDepot: { x: 6, y: -3 },
+    deliveries: [
+      {
+        vehicleType: "truck",
+        triggerAtElapsedSeconds: 20,
+        integrity: 100,
+        windowSeconds: 8,
+        bonus: 500,
+        entrySide: "left",
+        stopPosition: { x: 0, y: -4 },
+      },
+    ],
   },
   {
     id: "stalingrad",
@@ -45,8 +49,17 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 12,
     timeSeconds: 80,
     unlocked: false,
-    cargoPickup: { x: -7, y: -2.5 },
-    cargoDepot: { x: 7, y: -2.5 },
+    deliveries: [
+      {
+        vehicleType: "car",
+        triggerAtElapsedSeconds: 25,
+        integrity: 80,
+        windowSeconds: 7,
+        bonus: 400,
+        entrySide: "right",
+        stopPosition: { x: -2, y: -4 },
+      },
+    ],
   },
   {
     id: "vitry",
@@ -57,8 +70,17 @@ export const LEVELS: readonly LevelConfig[] = [
     enemiesToWin: 15,
     timeSeconds: 70,
     unlocked: false,
-    cargoPickup: { x: -5, y: -3.5 },
-    cargoDepot: { x: 8, y: -3.5 },
+    deliveries: [
+      {
+        vehicleType: "moto",
+        triggerAtElapsedSeconds: 18,
+        integrity: 60,
+        windowSeconds: 6,
+        bonus: 300,
+        entrySide: "left",
+        stopPosition: { x: 2, y: -4 },
+      },
+    ],
   },
 ];
 
