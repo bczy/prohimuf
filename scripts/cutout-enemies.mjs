@@ -12,6 +12,7 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 
 const DIR = path.resolve(process.cwd(), "public/assets");
 const THRESHOLD_SQ = 24 * 24; // conservative: only near-identical background is cleared
@@ -99,7 +100,15 @@ async function main() {
   console.log("done.");
 }
 
-main().catch((e) => {
-  console.error("Fatal:", e.message);
-  process.exit(1);
-});
+// The edge flood-fill cutout is reused by sibling generators (e.g.
+// gen-vehicle-sprites.mjs), so expose it. Only run the enemy_*.png batch when
+// this file is invoked directly as a CLI, not when imported as a module.
+export { cutout };
+
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((e) => {
+    console.error("Fatal:", e.message);
+    process.exit(1);
+  });
+}

@@ -44,8 +44,8 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     timeSeconds: level.timeSeconds,
     enemiesToWin: level.enemiesToWin,
     enemySpeedMultiplier: level.enemySpeedMultiplier * diffCfg.enemySpeedMult,
-    cargoPickup: level.cargoPickup,
-    cargoDepot: level.cargoDepot,
+    // MVP authors exactly one scripted delivery per level; seed reads deliveries[0].
+    delivery: level.deliveries[0] ?? null,
   };
 }
 
@@ -252,12 +252,12 @@ export function App(): JSX.Element {
                 ...data,
                 levelName: selectedLevel.name,
                 isHighScore: isHighScore(selectedLevel.id, data.score),
-                // Cargo status arrives on a separate channel; keep it across refreshes.
-                cargoStatus: prev.cargoStatus,
+                // Delivery state arrives on a separate channel; keep it across refreshes.
+                delivery: prev.delivery,
               }));
             }}
-            onCargoStatus={(status) => {
-              setHudData((prev) => ({ ...prev, cargoStatus: status }));
+            onDelivery={(delivery) => {
+              setHudData((prev) => ({ ...prev, delivery }));
             }}
             canvasRef={canvasRef}
             playSfx={audio.playSfx}

@@ -4,26 +4,24 @@ import {
   tickGameState,
   LEVEL_TIME_SECONDS,
   ENEMIES_TO_WIN,
-  BELLIARD_CARGO_PICKUP,
-  BELLIARD_CARGO_DEPOT,
 } from "../stateMachine";
 import type { LevelParams } from "../stateMachine";
 import { FACADE_01 } from "@game/maps/facade01";
 import { LEVELS } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import type { GameState } from "@game/types/gameState";
+import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { CourierField } from "@game/systems/courierSystem";
 import { pickKind } from "@game/types/enemyTypes";
 
-/** Mirror of the render lane's LevelConfig -> LevelParams mapping for cargo. */
+/** Mirror of the render lane's LevelConfig -> LevelParams mapping. */
 function paramsForLevel(level: LevelConfig): LevelParams {
   return {
     lives: 3,
     timeSeconds: level.timeSeconds,
     enemiesToWin: level.enemiesToWin,
     enemySpeedMultiplier: level.enemySpeedMultiplier,
-    cargoPickup: level.cargoPickup,
-    cargoDepot: level.cargoDepot,
+    delivery: level.deliveries[0] ?? null,
   };
 }
 
@@ -50,9 +48,11 @@ describe("createInitialState", () => {
     expect(state.timeRemaining).toBe(LEVEL_TIME_SECONDS);
   });
 
-  it("wave starts at 1", () => {
+  it("wave starts at 1, kills and elapsedSeconds at 0", () => {
     const state = createInitialState(FACADE_01);
     expect(state.wave).toBe(1);
+    expect(state.kills).toBe(0);
+    expect(state.elapsedSeconds).toBe(0);
   });
 
   it("spawns initial enemies", () => {
@@ -60,50 +60,38 @@ describe("createInitialState", () => {
     expect(state.enemies.length).toBeGreaterThan(0);
   });
 
-  it("seeds cargo TO_PICKUP", () => {
+  it("has no delivery when none is supplied", () => {
     const state = createInitialState(FACADE_01);
-    expect(state.cargo.status).toBe("TO_PICKUP");
+    expect(state.deliverySpec).toBeNull();
+    expect(state.deliveryVehicle).toBeNull();
   });
 
-  it("defaults cargo to the belliard positions (no regression)", () => {
-    const state = createInitialState(FACADE_01);
-    expect(state.cargo.pickup).toEqual(BELLIARD_CARGO_PICKUP);
-    expect(state.cargo.depot).toEqual(BELLIARD_CARGO_DEPOT);
-    expect(state.cargo.pickup).toEqual({ x: -6, y: -3 });
-    expect(state.cargo.depot).toEqual({ x: 6, y: -3 });
-  });
-
-  it("seeds cargo positions from the supplied level params", () => {
-    const params = paramsForLevel(levelById("stalingrad"));
-    const state = createInitialState(FACADE_01, params);
-    expect(state.cargo.pickup).toEqual(params.cargoPickup);
-    expect(state.cargo.depot).toEqual(params.cargoDepot);
-  });
-
-  it("belliard params reproduce the historical cargo positions", () => {
+  it("seeds the delivery vehicle IDLE with a full gauge from level data", () => {
     const state = createInitialState(FACADE_01, paramsForLevel(levelById("belliard")));
-    expect(state.cargo.pickup).toEqual({ x: -6, y: -3 });
-    expect(state.cargo.depot).toEqual({ x: 6, y: -3 });
+    expect(state.deliverySpec).not.toBeNull();
+    expect(state.deliveryVehicle?.phase).toBe("IDLE");
+    expect(state.deliveryVehicle?.vehicleType).toBe("truck");
+    expect(state.deliveryVehicle?.integrity).toBe(100);
+    expect(state.deliveryVehicle?.integrityMax).toBe(100);
   });
 
-  it("different levels produce different cargo positions", () => {
+  it("each level ships a distinct vehicle type on the street", () => {
     const belliard = createInitialState(FACADE_01, paramsForLevel(levelById("belliard")));
     const stalingrad = createInitialState(FACADE_01, paramsForLevel(levelById("stalingrad")));
     const vitry = createInitialState(FACADE_01, paramsForLevel(levelById("vitry")));
-
-    expect(stalingrad.cargo.pickup).not.toEqual(belliard.cargo.pickup);
-    expect(stalingrad.cargo.depot).not.toEqual(belliard.cargo.depot);
-    expect(vitry.cargo.pickup).not.toEqual(belliard.cargo.pickup);
-    expect(vitry.cargo.pickup).not.toEqual(stalingrad.cargo.pickup);
+    expect(belliard.deliveryVehicle?.vehicleType).toBe("truck");
+    expect(stalingrad.deliveryVehicle?.vehicleType).toBe("car");
+    expect(vitry.deliveryVehicle?.vehicleType).toBe("moto");
   });
 
-  it("keeps cargo collect-left / drop-right at ground level for every level", () => {
+  it("every level parks its delivery stop at ground level on the street", () => {
     for (const level of LEVELS) {
-      const state = createInitialState(FACADE_01, paramsForLevel(level));
-      expect(state.cargo.pickup.x).toBeLessThan(0); // collect on the left
-      expect(state.cargo.depot.x).toBeGreaterThan(0); // drop on the right
-      expect(state.cargo.pickup.y).toBeLessThan(0); // at ground level
-      expect(state.cargo.depot.y).toBeLessThan(0);
+      expect(level.deliveries.length).toBeGreaterThan(0);
+      for (const d of level.deliveries) {
+        expect(d.stopPosition.y).toBeLessThan(0); // ground level
+        expect(d.triggerAtElapsedSeconds).toBeGreaterThan(0);
+        expect(d.bonus).toBeGreaterThan(0);
+      }
     }
   });
 });
@@ -122,11 +110,18 @@ describe("tickGameState — terminal phases", () => {
   });
 });
 
-describe("tickGameState — timer", () => {
+describe("tickGameState — timer + elapsed", () => {
   it("decrements timeRemaining", () => {
     const state = createInitialState(FACADE_01);
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
     expect(next.timeRemaining).toBeCloseTo(LEVEL_TIME_SECONDS - 0.1);
+  });
+
+  it("accumulates elapsedSeconds by delta", () => {
+    let state = createInitialState(FACADE_01);
+    state = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    state = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.elapsedSeconds).toBeCloseTo(0.2);
   });
 
   it("transitions to GAME_OVER when timeRemaining reaches 0", () => {
@@ -181,14 +176,192 @@ describe("tickGameState — enemy shot hits player", () => {
   });
 });
 
-describe("tickGameState — wave complete", () => {
-  it("score reaching ENEMIES_TO_WIN → LEVEL_COMPLETE", () => {
-    const state: GameState = {
-      ...createInitialState(FACADE_01),
-      score: ENEMIES_TO_WIN,
-    };
+describe("tickGameState — victory is gated on the kill-count, not the score", () => {
+  it("kills reaching ENEMIES_TO_WIN → LEVEL_COMPLETE", () => {
+    const state: GameState = { ...createInitialState(FACADE_01), kills: ENEMIES_TO_WIN };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.phase).toBe("LEVEL_COMPLETE");
+  });
+
+  it("a high score with too few kills does NOT win", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      score: ENEMIES_TO_WIN * 100,
+      kills: ENEMIES_TO_WIN - 1,
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.phase).toBe("PLAYING");
+  });
+});
+
+describe("tickGameState — scripted vehicle delivery", () => {
+  const SPEC: DeliverySpec = {
+    vehicleType: "truck",
+    triggerAtElapsedSeconds: 20,
+    integrity: 100,
+    windowSeconds: 8,
+    bonus: 500,
+    entrySide: "left",
+    stopPosition: { x: 0, y: -5 },
+  };
+
+  function withDelivery(vehicle: DeliveryVehicle, over: Partial<GameState> = {}): GameState {
+    return {
+      ...createInitialState(FACADE_01, {
+        lives: 3,
+        timeSeconds: LEVEL_TIME_SECONDS,
+        enemiesToWin: ENEMIES_TO_WIN,
+        enemySpeedMultiplier: 1,
+        delivery: SPEC,
+      }),
+      deliveryVehicle: vehicle,
+      ...over,
+    };
+  }
+
+  const idleVehicle: DeliveryVehicle = {
+    phase: "IDLE",
+    position: SPEC.stopPosition,
+    vehicleType: "truck",
+    integrity: 100,
+    integrityMax: 100,
+    windowRemaining: SPEC.windowSeconds,
+  };
+
+  it("does not trigger before the scripted instant", () => {
+    const state = withDelivery(idleVehicle, { elapsedSeconds: 10 });
+    const next = tickGameState(
+      state,
+      noFire,
+      0.5,
+      0.5,
+      0.1,
+      FACADE_01,
+      0,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.deliveryVehicle?.phase).toBe("IDLE");
+  });
+
+  it("triggers once elapsed crosses the scripted instant", () => {
+    const state = withDelivery(idleVehicle, { elapsedSeconds: SPEC.triggerAtElapsedSeconds });
+    const next = tickGameState(
+      state,
+      noFire,
+      0.5,
+      0.5,
+      0.1,
+      FACADE_01,
+      0,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.deliveryVehicle?.phase).toBe("INCOMING");
+  });
+
+  it("surviving the window folds the bonus into the score WITHOUT winning", () => {
+    const delivering: DeliveryVehicle = {
+      phase: "DELIVERING",
+      position: SPEC.stopPosition,
+      vehicleType: "truck",
+      integrity: 100,
+      integrityMax: 100,
+      windowRemaining: 0.05,
+    };
+    const state = withDelivery(delivering, { elapsedSeconds: 30, kills: 0, score: 0 });
+    const next = tickGameState(
+      state,
+      noFire,
+      0.5,
+      0.5,
+      0.1,
+      FACADE_01,
+      0,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.deliveryVehicle?.phase).toBe("SUCCESS");
+    expect(next.score).toBe(SPEC.bonus); // bonus folded into score
+    expect(next.kills).toBe(0); // kill-count untouched
+    expect(next.phase).toBe("PLAYING"); // bonus alone never wins
+  });
+
+  it("the bonus lands exactly once (SUCCESS then departs, no further score)", () => {
+    const success: DeliveryVehicle = {
+      phase: "SUCCESS",
+      position: SPEC.stopPosition,
+      vehicleType: "truck",
+      integrity: 60,
+      integrityMax: 100,
+      windowRemaining: 0,
+    };
+    const state = withDelivery(success, { elapsedSeconds: 31, score: SPEC.bonus });
+    const next = tickGameState(
+      state,
+      noFire,
+      0.5,
+      0.5,
+      0.1,
+      FACADE_01,
+      0,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.score).toBe(SPEC.bonus); // no double bonus
+  });
+
+  it("a failed delivery adds no score and no life penalty", () => {
+    const failing: DeliveryVehicle = {
+      phase: "DELIVERING",
+      position: SPEC.stopPosition,
+      vehicleType: "truck",
+      integrity: 1,
+      integrityMax: 100,
+      windowRemaining: 5,
+    };
+    const state = withDelivery(failing, { elapsedSeconds: 25, score: 7, lives: 3 });
+    // 5 enemies shooting for a full second drains the tiny gauge.
+    const shooters: GameState["enemies"] = Array.from({ length: 5 }, (_e, i) => ({
+      id: 1000 + i,
+      slotIndex: i,
+      state: "SHOOTING" as const,
+      timer: 5,
+      kind: "normal" as const,
+      hp: 1,
+    }));
+    const next = tickGameState(
+      { ...state, enemies: shooters },
+      noFire,
+      0.5,
+      0.5,
+      1,
+      FACADE_01,
+      0,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.deliveryVehicle?.phase).toBe("FAILED");
+    expect(next.score).toBe(7); // no bonus
+    expect(next.lives).toBe(3); // no malus
+  });
+
+  it("leaves the vehicle IDLE when no courier field is supplied", () => {
+    const state = withDelivery(idleVehicle, {
+      elapsedSeconds: SPEC.triggerAtElapsedSeconds + 5,
+    });
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(next.deliveryVehicle?.phase).toBe("IDLE");
   });
 });
 
