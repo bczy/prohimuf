@@ -1,3 +1,7 @@
+> **SUPERSEDED (2026-07-04)** par `story-vehicle-delivery.md` — la mécanique cargo abstraite
+> (colis + zone de dépôt par proximité) est remplacée par une livraison scénarisée par véhicule.
+> Ne pas implémenter cette story ; conservée pour historique.
+
 # Story: Boucle Core `Récupérer → Livrer → Éviter` — slice MVP cargaison
 
 **Type:** New gameplay (core loop) · **Scope guard:** ceci EST le core loop du cahier des
