@@ -263,7 +263,7 @@ Template:
   7. conditional sprite-prompt workshop — only if batch 2 fails the acceptance floor
      (neon glow on all three vehicles + car reads as a hatchback).
   8. revisit the branch-prefix allowlist on the first external contributor (Q1 trigger).
-- LANE-DOCS release: `docs/adr/0003-push-marker-workflow-dispatch.md` (canonical idiom,
+- LANE-DOCS release: `docs/adr/0004-push-marker-workflow-dispatch.md` (canonical idiom,
   `branches-ignore`, guard contract, marker-on-first-dispatch, preview.yml reword, new
   Consequences bullets + Security consequences subsection), `docs/ci.md` (dispatch
   section rewrite + quick-ref row `actions: write`), `docs/agent-handoffs.md` (this
