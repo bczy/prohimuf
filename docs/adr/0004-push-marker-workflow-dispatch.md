@@ -1,4 +1,4 @@
-# 0003 — Push-marker dispatch for manual workflows
+# 0004 — Push-marker dispatch for manual workflows
 
 - **Status:** Accepted
 - **Date:** 2026-07-10

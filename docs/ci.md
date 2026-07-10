@@ -102,7 +102,7 @@ the GitHub App integration used by AI coding sessions — get
 **`403 Resource not accessible by integration`**. That permission is set on
 the app installation, not in this repo.
 
-The workaround (see [ADR 0003](./adr/0003-push-marker-workflow-dispatch.md)):
+The workaround (see [ADR 0004](./adr/0004-push-marker-workflow-dispatch.md)):
 each manual workflow also triggers on a **push touching its marker file** in
 `.github/dispatch/` (with `main` excluded via `branches-ignore`). Any actor
 that can push can therefore dispatch:

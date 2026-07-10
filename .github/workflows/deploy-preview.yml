@@ -14,7 +14,7 @@ name: Deploy branch preview
 #   date > .github/dispatch/deploy-preview \
 #     && git add .github/dispatch/deploy-preview \
 #     && git commit -m "ci(dispatch): deploy-preview" && git push
-# (see docs/adr/0003).
+# (see docs/adr/0004).
 on:
   workflow_dispatch:
   push:
