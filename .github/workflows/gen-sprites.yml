@@ -1,12 +1,16 @@
 name: Generate enemy-type sprites
 
 # Generation of the extra enemy archetype sprites. Generates only MISSING
-# files, chroma-keys them, and commits them to the current branch. Manual only
-# (workflow_dispatch): the sprites are already committed, so this is just a
-# regeneration tool — running it on every push re-keyed existing sprites and
-# created noise.
+# files, chroma-keys them, and commits them to the current branch. Deliberate
+# runs only: manual (workflow_dispatch) or by touching the dispatch marker
+# .github/dispatch/gen-sprites (see docs/adr/0003). The sprites are already
+# committed, so this is just a regeneration tool — running it on every push
+# re-keyed existing sprites and created noise.
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/dispatch/gen-sprites"
 
 permissions:
   contents: write
