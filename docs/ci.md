@@ -104,19 +104,37 @@ the app installation, not in this repo.
 
 The workaround (see [ADR 0003](./adr/0003-push-marker-workflow-dispatch.md)):
 each manual workflow also triggers on a **push touching its marker file** in
-`.github/dispatch/`. Any actor that can push can therefore dispatch:
+`.github/dispatch/` (with `main` excluded via `branches-ignore`). Any actor
+that can push can therefore dispatch:
 
 ```bash
-date > .github/dispatch/gen-vehicle-sprites
-git add .github/dispatch/gen-vehicle-sprites
-git commit -m "ci(dispatch): run gen-vehicle-sprites"
-git push
+date > .github/dispatch/<name> && git add .github/dispatch/<name> && git commit -m "ci(dispatch): <name>" && git push
 ```
 
+For example, `<name>` = `gen-vehicle-sprites`. Two rules that make it work:
+
+- Write content (`date >`), **never bare `touch`** — `touch` only bumps the
+  mtime, produces no diff, and the `paths` filter never fires.
+- Keep the **`ci(dispatch):` commit-message prefix** — it is required, not
+  cosmetic. Each workflow guards on the head commit message, so only a real
+  `ci(dispatch):` commit runs it; merge, rebase, and deletion pushes that
+  happen to touch a marker path are skipped.
+
 The run executes **on the pushed branch**, exactly like picking that ref in
-the Actions UI. Markers exist for `gen-sprites`, `gen-vehicle-sprites` and
-`deploy-preview`. `preview.yml` has no marker: its `regenerate` input can't be
-passed through a push — use the Actions UI for that.
+the Actions UI. Marker files are **created on first dispatch** — they need not
+pre-exist (creating the file is itself the diff). Only
+`.github/dispatch/gen-vehicle-sprites` exists today; `gen-sprites` and
+`deploy-preview` appear the first time each is dispatched.
+
+`preview.yml` deliberately has **no marker** — it would be redundant, not
+impossible: `preview.yml` already has its own push trigger, so a plain push
+already runs its default (`regenerate=false`) path. Only `regenerate=true`, a
+full art regeneration, needs the boolean input a push can't carry — use the
+Actions UI for that one.
+
+When you both regenerate assets and deploy a preview, push the `gen-*` marker
+**first** and the `deploy-preview` marker in a **separate later push**: a
+single push touching both deploys the pre-generation SHA.
 
 ---
 
@@ -135,11 +153,11 @@ To try a branch live without merging to `main`:
 
 ## Quick reference
 
-| Need to…                            | Do this                                                       |
-| ----------------------------------- | ------------------------------------------------------------- |
-| Ship to the live site               | Push / merge to `main` (automatic)                            |
-| Preview a branch live               | Actions → Deploy branch preview → pick ref                    |
-| See why the live site is blank      | Check Pages source is `gh-pages` (above)                      |
-| Regenerate enemy sprites            | Actions → Generate enemy-type sprites                         |
-| Dispatch a workflow without a token | Touch its `.github/dispatch/<name>` marker, commit, push      |
-| Run checks locally before push      | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`) |
+| Need to…                                     | Do this                                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Ship to the live site                        | Push / merge to `main` (automatic)                                                                |
+| Preview a branch live                        | Actions → Deploy branch preview → pick ref                                                        |
+| See why the live site is blank               | Check Pages source is `gh-pages` (above)                                                          |
+| Regenerate enemy sprites                     | Actions → Generate enemy-type sprites                                                             |
+| Dispatch a workflow without `actions: write` | `date > .github/dispatch/<name> && git add … && git commit -m "ci(dispatch): <name>" && git push` |
+| Run checks locally before push               | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`)                                     |
