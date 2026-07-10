@@ -135,11 +135,11 @@ To try a branch live without merging to `main`:
 
 ## Quick reference
 
-| Need to…                            | Do this                                                        |
-| ----------------------------------- | -------------------------------------------------------------- |
-| Ship to the live site               | Push / merge to `main` (automatic)                             |
-| Preview a branch live               | Actions → Deploy branch preview → pick ref                     |
-| See why the live site is blank      | Check Pages source is `gh-pages` (above)                       |
-| Regenerate enemy sprites            | Actions → Generate enemy-type sprites                          |
-| Dispatch a workflow without a token | Touch its `.github/dispatch/<name>` marker, commit, push       |
-| Run checks locally before push      | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`)  |
+| Need to…                            | Do this                                                       |
+| ----------------------------------- | ------------------------------------------------------------- |
+| Ship to the live site               | Push / merge to `main` (automatic)                            |
+| Preview a branch live               | Actions → Deploy branch preview → pick ref                    |
+| See why the live site is blank      | Check Pages source is `gh-pages` (above)                      |
+| Regenerate enemy sprites            | Actions → Generate enemy-type sprites                         |
+| Dispatch a workflow without a token | Touch its `.github/dispatch/<name>` marker, commit, push      |
+| Run checks locally before push      | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`) |
