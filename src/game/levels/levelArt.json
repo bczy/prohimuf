@@ -25,7 +25,7 @@
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
-        "prompt": "a tiny short 1990s parisian three-door hatchback city car seen from the side, in the spirit of a renault twingo or citroen ax, very short wheelbase with the two wheels close together, tall roofline, stubby vertical cut-off rear hatch, short front overhang, minuscule stubby city car, definitely a tiny hatchback, absolutely not a limousine, not a sedan, not an estate wagon, not a stretched long car, not a long luxury car, not a sports coupe"
+        "prompt": "a tiny 1990s french one-box monospace city car like a renault twingo seen from the side, single rounded egg-shaped volume, very short and tall body, roof height more than half the car length, windshield flowing directly into a stubby nose, body ending in a flat vertical tail panel directly behind the rear wheel, no protruding boot, two wheels very close together, cute stubby microcar proportions"
       },
       "moto": {
         "asset": "assets/vehicles/moto.png",
