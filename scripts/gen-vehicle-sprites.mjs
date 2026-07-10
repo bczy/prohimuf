@@ -40,20 +40,45 @@ const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
 
 // ── Load the vehicle definitions from levelArt.json (single source) ──────────
+// Prompt assembly contract (owned by the concept-artist lane, see
+// docs/art-direction.md): `opening` (medium+view, front-loaded — FLUX weighs
+// early tokens most) + per-type `prompt` (subject/silhouette only) + the
+// shared `neonPhrase` template ({neon}/{hex} placeholders — hue is bound to
+// the type's `neon` field, hex-anchored) + the shared `style` block, verbatim
+// across the set for family consistency.
+const NEON_HEX = {
+  orange: "#FF8C14",
+  cyan: "#28F0FF",
+  magenta: "#FF3CDC",
+  green: "#78FF3C",
+};
+
 function loadVehicles() {
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
   const block = json.vehicles;
   if (!block || !block.types) {
     throw new Error(`No "vehicles.types" block in ${path.relative(ROOT, LEVEL_ART)}`);
   }
+  const opening = block.opening ?? "";
   const styleSuffix = block.style ?? "";
-  return Object.entries(block.types).map(([type, def]) => ({
-    type,
-    prompt: `${def.prompt}, bright glowing ${def.neon} acid neon outline around the whole vehicle including the wheels${styleSuffix}`,
-    width: def.size?.width ?? 256,
-    height: def.size?.height ?? 160,
-    neon: def.neon ?? "cyan",
-  }));
+  const neonPhrase =
+    block.neonPhrase ??
+    ", bright glowing {neon} acid neon outline around the whole vehicle including the wheels";
+  return Object.entries(block.types).map(([type, def]) => {
+    const neon = def.neon ?? "cyan";
+    const neonPart = neonPhrase
+      .replaceAll("{neon}", neon)
+      .replaceAll("{hex}", NEON_HEX[neon] ?? NEON_HEX.cyan);
+    return {
+      type,
+      prompt: `${opening}${def.prompt}${neonPart}${styleSuffix}`,
+      width: def.size?.width ?? 256,
+      height: def.size?.height ?? 160,
+      neon,
+      // Pinned seed → reproducible rolls, reviewable diffs (REROLL=1 ignores it).
+      seed: Number.isInteger(def.seed) && process.env.REROLL !== "1" ? def.seed : null,
+    };
+  });
 }
 
 // ── Pollinations / FLUX fetch (mirrors gen-enemy-types.mjs) ──────────────────
@@ -83,10 +108,14 @@ function fetchImage(url) {
 }
 
 async function generate(v, retries = 5) {
-  const seed = Math.floor(Math.random() * 99999);
+  const seed = v.seed ?? Math.floor(Math.random() * 99999);
+  console.log(`  [seed] ${v.type} seed=${seed}${v.seed != null ? " (pinned)" : ""}`);
+  // enhance=false is load-bearing: Pollinations' enhancer rewrites the prompt
+  // through an LLM and destroys the verbatim shared style block the set
+  // consistency depends on. private=true keeps assets out of the public feed.
   const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
     v.prompt,
-  )}?width=${v.width}&height=${v.height}&nologo=true&model=flux&seed=${seed}`;
+  )}?width=${v.width}&height=${v.height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
   for (let i = 0; i < retries; i++) {
     try {
       return await fetchImage(url);
