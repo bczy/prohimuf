@@ -47,6 +47,15 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           node scripts/cutout-enemies.mjs
 
+      # FOLLOW-UP: no automated style gate for enemy sprites yet. The pixel gate
+      # (scripts/check-sprite-style.mjs) is calibrated ONLY for the three vehicle
+      # sprites (per-type hue bands + silhouette-aspect bounds from the PM-accepted
+      # truck/car/moto PNGs). Enemy archetypes have different framing, hues and
+      # proportions, so applying the vehicle thresholds here would be meaningless —
+      # enemies are deliberately NOT blocked on the vehicle gate. A dedicated enemy
+      # gate (own thresholds, calibrated against the accepted enemy_*.png set) is a
+      # separate story before this workflow gets a pixel check.
+
       - name: Commit sprites
         run: |
           git config user.name "github-actions[bot]"

@@ -7,7 +7,9 @@ name: Generate vehicle sprites
 # dispatch marker .github/dispatch/gen-vehicle-sprites (see docs/adr/0004) —
 # the committed PNGs may be procedural placeholders, so this is the tool that
 # replaces them with generated art.
-# FORCE=1 so it overwrites the placeholders (not just missing files).
+# FORCE=1 so it overwrites the placeholders (not just missing files). Generated
+# art then passes the pixel style gate (scripts/check-sprite-style.mjs) — with a
+# bounded regen retry — before it is committed, so no off-style sprite lands.
 on:
   workflow_dispatch:
   push:
@@ -42,9 +44,41 @@ jobs:
           # Pinned exact version; --ignore-scripts skips postinstall since the
           # prebuilt native binary is fetched by the package resolution itself.
           # If --ignore-scripts ever breaks the prebuilt fetch, drop the flag but
-          # keep the pin.
+          # keep the pin. @napi-rs/canvas is needed both by the chroma-key detour
+          # (cutout-enemies.mjs) and by the pixel style gate below.
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           FORCE=1 node scripts/gen-vehicle-sprites.mjs
+
+      - name: Style gate (pixel check + bounded regen retry)
+        run: |
+          # ART GATE 2 — reject sprites that failed on a light ground (halo), lost
+          # their assigned neon rim, or came back with the wrong silhouette. On a
+          # FAIL we delete ONLY the offending PNG(s) and re-run the generator
+          # WITHOUT FORCE — it fills missing files only, so exactly the deleted
+          # sprites are regenerated (pinned seeds reproduce the reviewed art;
+          # transient network flakes that left a file missing get another fetch).
+          # Bounded to 2 extra attempts; still failing → the job fails and the
+          # if: failure() upload below preserves the outputs for lead-art review.
+          max_retries=2
+          attempt=0
+          fail_list="$RUNNER_TEMP/failing-vehicles.txt"
+          while true; do
+            if node scripts/check-sprite-style.mjs --fail-list "$fail_list"; then
+              echo "Style gate passed."
+              break
+            fi
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "::error::vehicle style gate still failing after $max_retries retries"
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            echo "Style gate failed — retry $attempt/$max_retries: regenerating only the failing sprites"
+            while IFS= read -r t; do
+              [ -n "$t" ] && rm -f "public/assets/vehicles/$t.png"
+            done <"$fail_list"
+            # No FORCE: regenerates only the just-deleted (now missing) sprites.
+            node scripts/gen-vehicle-sprites.mjs
+          done
 
       - name: Commit sprites
         run: |
