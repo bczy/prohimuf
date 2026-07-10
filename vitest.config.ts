@@ -7,7 +7,7 @@ export default defineConfig({
 
     environment: "happy-dom",
 
-    include: ["src/game/**/*.test.ts"],
+    include: ["src/game/**/*.test.ts", "src/utils/**/*.test.ts"],
 
     coverage: {
       provider: "v8",
@@ -34,6 +34,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@game": resolve(__dirname, "src/game"),
+
+      "@utils": resolve(__dirname, "src/utils"),
     },
   },
 });
