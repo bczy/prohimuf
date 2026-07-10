@@ -14,7 +14,7 @@ branches and reads Actions) but **not** `actions: write`, so every API dispatch
 fails with `403 Resource not accessible by integration`. That permission lives
 on the app installation — nothing in this repository can grant it.
 
-The same integration *can* push, and pushes made by it do trigger workflows
+The same integration _can_ push, and pushes made by it do trigger workflows
 (only `github-actions[bot]`'s own `GITHUB_TOKEN` pushes are suppressed by
 GitHub — the limitation already documented in `preview.yml`).
 
@@ -44,7 +44,7 @@ the Actions UI.
 - Any actor with `contents: write` can dispatch these workflows; runs stay
   deliberate (a marker touch is an explicit commit, never a side effect of
   normal pushes).
-- Runs are bound to the pushed branch — dispatching *on another ref* still
+- Runs are bound to the pushed branch — dispatching _on another ref_ still
   requires the Actions UI or an `actions: write` token.
 - `workflow_dispatch` inputs are not available via markers; workflows needing
   inputs keep the UI as their input-carrying path.
