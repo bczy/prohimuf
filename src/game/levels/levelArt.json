@@ -13,19 +13,19 @@
   },
   "vehicles": {
     "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: photocopied fanzine B&W + acid neon, generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
-    "style": ", side profile view, photocopied fanzine black and white, high contrast, grainy halftone, acid neon glow outline, flat 2D game sprite, centered, whole vehicle in frame, solid pure flat black background, sharp silhouette edges, no text, no watermark, no people, no background scenery",
+    "style": ", flat 2D side profile view, photocopied fanzine black and white halftone base, high contrast xerox photocopy grain, strong bright acid neon glow outline tracing the whole silhouette (in this game what glows is interactive), sharp clean cutout silhouette edges, solid pure flat black cutout background, centered, whole vehicle in frame, coherent matching art style across the whole vehicle set, not photoreal, not glossy, not a 3D product render, no text, no watermark, no people, no background scenery",
     "types": {
       "truck": {
         "asset": "assets/vehicles/truck.png",
         "size": { "width": 384, "height": 192 },
         "neon": "orange",
-        "prompt": "a boxy 1990s delivery van truck seen from the side, tall cargo box body with a short cab, two big wheels, plain flat panel sides"
+        "prompt": "a boxy 1990s delivery van truck seen from the side, tall flat cargo box body with a short cab, two big wheels, plain flat panel sides, drawn as a rough high-contrast photocopied fanzine illustration, not a photoreal render, not a glossy magazine product shot, not a shiny 3D model"
       },
       "car": {
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
-        "prompt": "a small 1990s parisian hatchback city car seen from the side, compact rounded silhouette, sloped roof, two wheels"
+        "prompt": "a small 1990s parisian compact two-box hatchback city car seen from the side, short wheelbase, stubby compact rounded silhouette, steeply sloped hatch roof, two wheels, definitely a tiny hatchback not a limousine, not a sedan, not a stretched long car, not a long luxury car"
       },
       "moto": {
         "asset": "assets/vehicles/moto.png",

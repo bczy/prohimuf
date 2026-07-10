@@ -80,6 +80,30 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      # (a) Full sweep: re-serve the build and enter EVERY level, not just one,
+      # so a single broken level blocks the deploy. Reuses the e2e-ingame action
+      # (it owns the serve/run/kill dance); all_levels=1 sets E2E_ALL_LEVELS,
+      # which the QA lane makes scripts/e2e-ingame.mjs honor.
+      - name: E2E all-levels sweep
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+          all_levels: "1"
+
+      # (b) Hard gate on the built assets themselves: fails on missing or
+      # undersized asset files in dist (no server needed — it inspects disk).
+      - name: E2E assets gate
+        run: node scripts/e2e-assets.mjs
+
+      # (c) Delivery-beat check, non-blocking for now. Promotion follow-up: soak
+      # one deploy cycle, then drop continue-on-error to make it a hard gate.
+      - name: E2E delivery check (soak, non-blocking)
+        continue-on-error: true
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+          script: scripts/e2e-delivery.mjs
+
       # SPA fallback so deep links resolve on Pages.
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html

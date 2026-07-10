@@ -1,9 +1,12 @@
 name: "E2E in-game smoke"
 description: >
-  Serve the freshly built dist under its real deploy base, enter one level for
-  real, and verify the game scene renders (R3F canvas + WebGL). Guards against
-  render regressions the home-screen smoke cannot see (the menu is pure DOM).
-  Expects `yarn build` to have already run with the same VITE_BASE.
+  Serve the freshly built dist under its real deploy base and run a Node E2E
+  script against it (default: enter one level and verify the R3F/WebGL scene
+  renders). Guards against render regressions the home-screen smoke cannot see
+  (the menu is pure DOM). The served build is reusable, so the same action also
+  drives the all-levels sweep and the delivery check via the `script` /
+  `all_levels` inputs. Expects `yarn build` to have already run with the same
+  VITE_BASE.
 
 inputs:
   base:
@@ -13,6 +16,14 @@ inputs:
     description: "Port for the local vite preview server."
     required: false
     default: "4174"
+  script:
+    description: "Node E2E script to run against the served build."
+    required: false
+    default: "scripts/e2e-ingame.mjs"
+  all_levels:
+    description: "Set to 1 to sweep every level (exported as E2E_ALL_LEVELS)."
+    required: false
+    default: "0"
 
 runs:
   using: "composite"
@@ -28,18 +39,24 @@ runs:
 
     - name: Serve build & run in-game E2E
       shell: bash
+      # Pass base/port through env, not ${{ }} interpolation into the shell, so
+      # inputs can never inject into the run block.
       env:
         VITE_BASE: ${{ inputs.base }}
+        BASE: ${{ inputs.base }}
+        PORT: ${{ inputs.port }}
+        SCRIPT: ${{ inputs.script }}
+        E2E_ALL_LEVELS: ${{ inputs.all_levels }}
       run: |
         # Call vite directly — the corepack `yarn` shim detaches unreliably when
         # backgrounded (learned in the render-farm workflow).
-        node_modules/.bin/vite preview --host 127.0.0.1 --port "${{ inputs.port }}" --strictPort \
+        node_modules/.bin/vite preview --host 127.0.0.1 --port "$PORT" --strictPort \
           > /tmp/e2e-ingame-preview.log 2>&1 &
         SERVER_PID=$!
         echo "preview server pid=$SERVER_PID"
         UP=0
         for i in $(seq 1 60); do
-          if curl -sf "http://127.0.0.1:${{ inputs.port }}${{ inputs.base }}" >/dev/null; then UP=1; break; fi
+          if curl -sf "http://127.0.0.1:${PORT}${BASE}" >/dev/null; then UP=1; break; fi
           sleep 1
         done
         if [ "$UP" != "1" ]; then
@@ -48,8 +65,8 @@ runs:
           exit 1
         fi
         echo "preview server is up"
-        PREVIEW_URL="http://127.0.0.1:${{ inputs.port }}${{ inputs.base }}" \
-          node scripts/e2e-ingame.mjs
+        PREVIEW_URL="http://127.0.0.1:${PORT}${BASE}" \
+          node "$SCRIPT"
         STATUS=$?
         kill "$SERVER_PID" 2>/dev/null || true
         exit $STATUS

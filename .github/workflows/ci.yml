@@ -53,3 +53,56 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
+
+  e2e:
+    name: E2E · home · in-game · assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Default base (/prohimuf/) — matches the base passed to the E2E actions.
+      - name: Build
+        run: yarn build
+
+      - name: E2E home-screen smoke
+        uses: ./.github/actions/e2e-home
+        with:
+          base: /prohimuf/
+
+      - name: E2E in-game smoke
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+
+      # Hard gate on the built assets (missing/undersized). Script provided by
+      # the QA lane in parallel — wired here.
+      - name: E2E assets gate
+        run: node scripts/e2e-assets.mjs
+
+      - name: Upload E2E screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: screenshots/
+          if-no-files-found: warn
+          retention-days: 14
