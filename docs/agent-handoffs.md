@@ -161,3 +161,34 @@ Template:
   section rewrite + quick-ref row `actions: write`), `docs/agent-handoffs.md` (this
   block). No `.github/**` or `scripts/**` touched — those are other lanes' live edits.
   (Winston / Senior Architect — DOCS lane)
+
+---
+
+### story-sprite-prompt-workshop (follow-up 7) — PROMPT GATE
+
+- gate: **PASS (with reservations)** on the `vehicles` prompt rework (Maud, drafts in
+  `docs/art-direction/prompt-drafts.md`). Assembled prompts obey the bible §3: **zero
+  negations** (the headline fix — old set carried 6-7), medium+view front-loaded (§3.2),
+  hex-bound colours (§3.5), one xerox primary style (§3.4), `neonPhrase` carries the law
+  of glow with hue from the `neon` field (§2.1, no hardcoded hues), shared `opening`/
+  `neonPhrase`/`style` are byte-identical by construction so family consistency (§2.2) is
+  structural. Car sedan-FAIL fix endorsed: "one-box monospace city car" + "hood and
+  windshield in one continuous slope" is the correct anchor — I REJECTED adding a
+  "hatchback" class noun (a hatchback is two-box, would fight the one-box slope; §3.7 trap).
+  No prompt clause needs rework; Maud does NOT iterate. (Nico / Lead-Art)
+- BLOCKER (not Maud's — `dev-tooling-assets`): `scripts/check-art-prompts.mjs` hard-fails
+  these correct prompts with 3 ERRORs and will red CI. It lints `STYLE_TOKENS` against the
+  `vehicles.style` field alone, but the §4 four-slot split legitimately moved side-view →
+  `opening` and neon → `neonPhrase`, and §3.1 forbade the anti-photoreal _negation_ the
+  linter still REQUIRES. Fix before merge: lint the ASSEMBLED prompt across all four slots,
+  and let the anti-photoreal token accept positive phrasing ("flat 2D video game sprite",
+  "photocopied fanzine illustration", "black and white") instead of demanding "not photoreal".
+- bible: amended §3.3 word ceiling 80 → 90 (assembled), reconciling the four-slot reality;
+  every added clause verified load-bearing, no filler found. (Nico / Lead-Art bible gate)
+- watch at ASSET gate: (1) xerox/halftone treatment sits at words ~56-89 (weak attention
+  tail) — verify it did not wash out; the set will drift _together_ so §2.2 holds even if
+  §1 fidelity softens. (2) "black and white except the neon" vs stray colour in the body
+  (toner-tint OK, full colour FAIL). (3) moto is a §5-verbatim chimera (Booster fat wheels +
+  103 exposed frame) — accept if it reads as skeletal moped + top-box; re-anchor to one bike
+  if it renders confused. (4) car "corner-mounted wheels" — if wheel placement reads wrong,
+  swap to §5 verbatim "wheels pushed to the corners" next iteration. (Nico / Lead-Art)
