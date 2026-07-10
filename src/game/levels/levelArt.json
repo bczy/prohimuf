@@ -19,13 +19,13 @@
         "asset": "assets/vehicles/truck.png",
         "size": { "width": 384, "height": 192 },
         "neon": "orange",
-        "prompt": "a boxy 1990s delivery van truck seen from the side, tall flat cargo box body with a short cab, two big wheels, plain flat panel sides, drawn as a rough high-contrast photocopied fanzine illustration, not a photoreal render, not a glossy magazine product shot, not a shiny 3D model"
+        "prompt": "a boxy 1990s delivery van truck seen from the side, tall flat cargo box body with a short cab, two big wheels, plain flat panel sides, dark near-black body panels lit only by a luminous glowing orange neon rim light tracing the whole silhouette, dark vehicle with glowing neon edges on a pure black night background, drawn as a rough high-contrast photocopied fanzine illustration, not a photoreal render, not a glossy magazine product shot, not a shiny 3D model, not a flat orange-filled drawing on white, no white background, no light background"
       },
       "car": {
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
-        "prompt": "a small 1990s parisian compact two-box hatchback city car seen from the side, short wheelbase, stubby compact rounded silhouette, steeply sloped hatch roof, two wheels, definitely a tiny hatchback not a limousine, not a sedan, not a stretched long car, not a long luxury car"
+        "prompt": "a tiny short 1990s parisian three-door hatchback city car seen from the side, in the spirit of a renault twingo or citroen ax, very short wheelbase with the two wheels close together, tall roofline, stubby vertical cut-off rear hatch, short front overhang, minuscule stubby city car, definitely a tiny hatchback, absolutely not a limousine, not a sedan, not an estate wagon, not a stretched long car, not a long luxury car, not a sports coupe"
       },
       "moto": {
         "asset": "assets/vehicles/moto.png",
