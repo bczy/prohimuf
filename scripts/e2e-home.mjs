@@ -14,15 +14,23 @@
  * e.g. http://127.0.0.1:4173/prohimuf/ or .../prohimuf/preview/<branch>/).
  *
  * Hard gates (exit 1 on failure):
- *   - the menu renders (title "MUF", tagline, "NIVEAUX" tab),
+ *   - the menu renders (title "MUF", tagline, tabs NIVEAUX/SCORES/OPTIONS),
+ *   - every level `name` from levelArt.json is visible in the list,
+ *   - the first level (default-unlocked) does NOT show the "VERROUILLÉ" marker,
+ *   - the SCORES tab renders its empty-state, the OPTIONS tab its settings,
  *   - no same-origin request 404s/5xxs (asset & base-path config guard).
  * Soft signal: console/page errors are logged but do not fail the deploy.
+ *
+ * Note: this run is intentionally NOT seeded (no muf_progress), so the default
+ * unlock state applies — only the first level is unlocked, which is exactly the
+ * state the lock-marker assertion checks.
  *
  * Output: screenshots/e2e-home.png (uploaded as a CI artifact for review).
  */
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { createFailedResponseCollector, loadLevelManifest } from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -33,16 +41,18 @@ const VIEWPORT = { width: 1280, height: 720 };
 const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
 
-// Requests we never treat as failures: the browser asks for /favicon.ico even
-// though the app declares none, and that 404 is not a regression.
-const IGNORED_PATHS = ["/favicon.ico"];
+const LOCKED_MARKER = "VERROUILLÉ"; // MainMenu.tsx LevelCard, shown only when !unlocked
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
+  const { levels } = loadLevelManifest(ROOT);
+  const firstLevel = levels[0];
+  if (firstLevel === undefined) throw new Error("levelArt.json declares no levels");
+
   const origin = new URL(PREVIEW_URL).origin;
   const consoleErrors = [];
-  const failedRequests = [];
+  const { failed: failedRequests, onResponse } = createFailedResponseCollector(origin);
 
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: VIEWPORT });
@@ -52,12 +62,7 @@ async function main() {
     if (msg.type() === "error") consoleErrors.push(msg.text());
   });
   page.on("pageerror", (err) => consoleErrors.push(err.message));
-  page.on("response", (res) => {
-    const url = res.url();
-    if (!url.startsWith(origin)) return; // ignore any third-party request
-    if (IGNORED_PATHS.some((p) => new URL(url).pathname.endsWith(p))) return;
-    if (res.status() >= 400) failedRequests.push(`${res.status()} ${url}`);
-  });
+  page.on("response", onResponse);
 
   let renderError = null;
   try {
@@ -67,8 +72,44 @@ async function main() {
     // The menu mounting proves the React app booted and its bundle resolved.
     await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
     await page.getByText("UNDERGROUND PARIS — 1998").first().waitFor({ timeout: RENDER_TIMEOUT });
-    await page.getByText("NIVEAUX").first().waitFor({ timeout: RENDER_TIMEOUT });
-    console.log("[e2e] home screen rendered (title + tagline + NIVEAUX tab)");
+
+    // All three tabs present.
+    for (const tab of ["NIVEAUX", "SCORES", "OPTIONS"]) {
+      await page.getByRole("button", { name: tab }).waitFor({ timeout: RENDER_TIMEOUT });
+    }
+    console.log("[e2e] home screen rendered (title + tagline + NIVEAUX/SCORES/OPTIONS)");
+
+    // Every level from the manifest appears as a card.
+    for (const level of levels) {
+      await page
+        .getByText(level.name, { exact: true })
+        .first()
+        .waitFor({ timeout: RENDER_TIMEOUT });
+    }
+    console.log(`[e2e] all ${String(levels.length)} level name(s) visible`);
+
+    // The first level is unlocked by default → its card must NOT show the lock
+    // marker. Scope the check to the card (ancestor of the level-name element).
+    const firstCard = page
+      .getByText(firstLevel.name, { exact: true })
+      .first()
+      .locator("xpath=ancestor::div[3]");
+    const firstCardText = await firstCard.innerText();
+    if (firstCardText.includes(LOCKED_MARKER)) {
+      throw new Error(`first level "${firstLevel.name}" is shown as ${LOCKED_MARKER}`);
+    }
+    console.log(`[e2e] first level "${firstLevel.name}" unlocked (no ${LOCKED_MARKER})`);
+
+    // SCORES tab renders its empty-state (fresh storage → no scores).
+    await page.getByRole("button", { name: "SCORES" }).click({ timeout: RENDER_TIMEOUT });
+    await page.getByText("AUCUN SCORE ENREGISTRÉ").first().waitFor({ timeout: RENDER_TIMEOUT });
+    console.log("[e2e] SCORES tab empty-state renders");
+
+    // OPTIONS tab renders its settings (volume + difficulty labels).
+    await page.getByRole("button", { name: "OPTIONS" }).click({ timeout: RENDER_TIMEOUT });
+    await page.getByText("VOLUME SFX").first().waitFor({ timeout: RENDER_TIMEOUT });
+    await page.getByText("DIFFICULTÉ").first().waitFor({ timeout: RENDER_TIMEOUT });
+    console.log("[e2e] OPTIONS tab settings render");
   } catch (e) {
     renderError = e;
   }
