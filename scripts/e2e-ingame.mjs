@@ -9,9 +9,10 @@
  * gate boots the production build, ENTERS a level for real, and fails if the
  * game scene does not render.
  *
- * Kept deliberately to ONE level (belliard) so it stays fast and deterministic
- * in CI. It is a gate, not a screenshot farm — the full per-level contact sheet
- * lives in scripts/screenshot-preview.mjs (preview.yml).
+ * By default it enters ONLY the first level (belliard) so it stays fast and
+ * deterministic in CI. Set E2E_ALL_LEVELS=1 to iterate EVERY level from
+ * levelArt.json (enter → gate → reload) — a broader smoke for release builds.
+ * The full per-level contact sheet still lives in scripts/screenshot-preview.mjs.
  *
  * Drives the built site in headless Chromium with WebGL via SwiftShader (no GPU
  * in CI). Expects a server already serving the production build at PREVIEW_URL
@@ -20,27 +21,34 @@
  * Hard gates (exit 1 on any):
  *   - the game <canvas> mounts AND has non-zero pixel dimensions (proves the R3F
  *     Canvas mounted and a WebGL context was acquired, not just an empty stub),
+ *   - the DOM HUD shows the score, lives and the level name,
  *   - no uncaught runtime error (pageerror) fires while entering the game,
+ *   - no same-origin request 404s/5xxs during the run (asset/base-path guard),
  *   - at least one screenshot is actually written to disk.
  * Soft signal: console errors are logged but do not, on their own, fail.
  *
  * Determinism: cops are frozen (window.__MUF_FREEZE_COPS__) and sound is muted
  * (muf_prefs), matching screenshot-preview.mjs.
  *
- * Output: screenshots/e2e-ingame.png (uploaded as a CI artifact for review).
+ * Output: screenshots/e2e-ingame.png (first level) [+ e2e-ingame-<id>.png each
+ * additional level in E2E_ALL_LEVELS mode]. Uploaded as CI artifacts.
  */
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import {
+  SWIFTSHADER_ARGS,
+  createFailedResponseCollector,
+  dismissNarrative,
+  loadLevelManifest,
+  seedDeterminism,
+  sleep,
+} from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
 const OUT_DIR = path.resolve(ROOT, "screenshots");
-const SHOT = path.join(OUT_DIR, "e2e-ingame.png");
-
-// One canonical level is enough to prove the render path is alive. Belliard is
-// the first/default-unlocked level; its display name must match levelArt.json.
-const LEVEL_NAME = process.env.E2E_LEVEL_NAME ?? "Rue Belliard";
+const SHOT = path.join(OUT_DIR, "e2e-ingame.png"); // canonical (first level)
 
 const VIEWPORT = { width: 1280, height: 720 };
 const DEVICE_SCALE = 1;
@@ -48,100 +56,112 @@ const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
 const SETTLE_MS = 2000; // let the scene draw a frame (and any mount error surface)
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const ALL_LEVELS = process.env.E2E_ALL_LEVELS === "1";
+const LIVES = 3; // seeded via muf_prefs in seedDeterminism
 
-// The pre-level narrative interstitial has a "Passer" (skip) button; clear it so
-// we reach the actual gameplay canvas. Mirrors screenshot-preview.mjs.
-async function dismissNarrative(page) {
-  for (let i = 0; i < 8; i++) {
-    const skip = page.getByRole("button", { name: "Passer" });
-    if (await skip.isVisible().catch(() => false)) {
-      await skip.click().catch(() => undefined);
-      await sleep(400);
-    } else {
-      break;
-    }
+// Per-level screenshot path: the first level keeps the canonical name so the CI
+// artifact contract is unchanged; extra levels get a suffixed file.
+function shotFor(index, id) {
+  return index === 0 ? SHOT : path.join(OUT_DIR, `e2e-ingame-${id}.png`);
+}
+
+/** Enter one level from the menu and run the canvas + HUD gates. */
+async function checkLevel(page, level, index) {
+  console.log(`[e2e-ingame] entering level "${level.name}"`);
+  await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
+
+  // Menu must mount first (same signal as e2e-home) before we can enter a level.
+  await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+
+  await page.getByText(level.name, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
+  await dismissNarrative(page);
+
+  // The gameplay <canvas> mounting proves the R3F scene booted.
+  const canvas = page.locator("canvas").first();
+  await canvas.waitFor({ timeout: RENDER_TIMEOUT });
+  await sleep(SETTLE_MS);
+
+  // A stub <canvas> can exist with zero size even if WebGL failed — require real
+  // pixels so a dead scene cannot slip through.
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox || canvasBox.width < 1 || canvasBox.height < 1) {
+    throw new Error(
+      `game canvas has no size (${canvasBox ? `${canvasBox.width}x${canvasBox.height}` : "null"})`,
+    );
   }
+  console.log(
+    `[e2e-ingame] "${level.name}" canvas rendered (${Math.round(canvasBox.width)}x${Math.round(canvasBox.height)})`,
+  );
+
+  // HUD gate: the DOM overlay must show the score, the lives, and the level name.
+  await page.getByText("score", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+  // Score seeds at 0, padded to 4 digits in the HUD.
+  await page.getByText("0000", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+  // Lives seeded to 3 → three hearts.
+  await page
+    .getByText("♥".repeat(LIVES), { exact: true })
+    .first()
+    .waitFor({ timeout: RENDER_TIMEOUT });
+  // Level name is surfaced to the HUD (App.tsx passes selectedLevel.name).
+  await page.getByText(level.name, { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+  console.log(`[e2e-ingame] "${level.name}" HUD ok (score + ${String(LIVES)} lives + level name)`);
+
+  const shot = shotFor(index, level.id);
+  await page.screenshot({ path: shot }).catch(() => undefined);
+  console.log(`[e2e-ingame] screenshot → ${path.relative(ROOT, shot)}`);
 }
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
+  const { levels, levelIds } = loadLevelManifest(ROOT);
+  const first = levels[0];
+  if (first === undefined) throw new Error("levelArt.json declares no levels");
+
+  // Default: first level only. Optional single-level override by display name.
+  // E2E_ALL_LEVELS=1: every level.
+  let targets;
+  if (ALL_LEVELS) {
+    targets = levels;
+  } else if (process.env.E2E_LEVEL_NAME !== undefined) {
+    const named = levels.find((l) => l.name === process.env.E2E_LEVEL_NAME);
+    targets = [named ?? first];
+  } else {
+    targets = [first];
+  }
+
+  const origin = new URL(PREVIEW_URL).origin;
   const consoleErrors = [];
   const pageErrors = [];
+  const { failed: failedRequests, onResponse } = createFailedResponseCollector(origin);
 
-  const browser = await chromium.launch({
-    // No GPU in CI — force software WebGL so the R3F canvas actually renders.
-    args: [
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-      "--ignore-gpu-blocklist",
-      "--enable-webgl",
-    ],
-  });
+  const browser = await chromium.launch({ args: SWIFTSHADER_ARGS });
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: DEVICE_SCALE,
   });
   const page = await context.newPage();
 
-  await page.addInitScript(() => {
-    // Freeze cops so the scene is static/deterministic for the shot.
-    window.__MUF_FREEZE_COPS__ = true;
-    try {
-      // Unlock levels and mute audio for a headless, deterministic run.
-      localStorage.setItem("muf_progress", JSON.stringify(["belliard", "stalingrad", "vitry"]));
-      localStorage.setItem(
-        "muf_prefs",
-        JSON.stringify({ soundVolume: 0, musicVolume: 0, lives: 3, difficulty: "normal" }),
-      );
-    } catch {
-      // ignore storage failures
-    }
-  });
+  // Unlock ids come from the manifest, never a hardcoded list.
+  await seedDeterminism(page, levelIds);
 
   page.on("console", (msg) => {
     if (msg.type() === "error") consoleErrors.push(msg.text());
   });
   page.on("pageerror", (err) => pageErrors.push(err.message));
+  page.on("response", onResponse);
 
   let renderError = null;
-  let canvasBox = null;
   try {
-    console.log(`[e2e-ingame] loading ${PREVIEW_URL}`);
-    await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
-
-    // Menu must mount first (same signal as e2e-home) before we can enter a level.
-    await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
-
-    console.log(`[e2e-ingame] entering level "${LEVEL_NAME}"`);
-    await page.getByText(LEVEL_NAME, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
-    await dismissNarrative(page);
-
-    // The gameplay <canvas> mounting proves the R3F scene booted.
-    const canvas = page.locator("canvas").first();
-    await canvas.waitFor({ timeout: RENDER_TIMEOUT });
-    await sleep(SETTLE_MS);
-
-    // A stub <canvas> can exist with zero size even if WebGL failed — require
-    // real pixels so a dead scene cannot slip through.
-    canvasBox = await canvas.boundingBox();
-    if (!canvasBox || canvasBox.width < 1 || canvasBox.height < 1) {
-      throw new Error(
-        `game canvas has no size (${canvasBox ? `${canvasBox.width}x${canvasBox.height}` : "null"})`,
-      );
+    console.log(`[e2e-ingame] loading ${PREVIEW_URL} (${String(targets.length)} level(s))`);
+    for (let i = 0; i < targets.length; i++) {
+      await checkLevel(page, targets[i], i);
     }
-    console.log(
-      `[e2e-ingame] game canvas rendered (${Math.round(canvasBox.width)}x${Math.round(canvasBox.height)})`,
-    );
   } catch (e) {
     renderError = e;
+    // Best-effort failure shot for the level we choked on.
+    await page.screenshot({ path: SHOT }).catch(() => undefined);
   }
-
-  // Always capture — a failure shot is the most useful artifact.
-  await page.screenshot({ path: SHOT }).catch(() => undefined);
-  console.log(`[e2e-ingame] screenshot → ${path.relative(ROOT, SHOT)}`);
 
   await browser.close();
 
@@ -157,6 +177,10 @@ async function main() {
   // An uncaught exception while entering the game is a hard render regression.
   if (pageErrors.length > 0) {
     problems.push(`runtime error(s) on game load:\n  ${pageErrors.join("\n  ")}`);
+  }
+  // A same-origin 4xx/5xx means a missing asset or a broken base path.
+  if (failedRequests.length > 0) {
+    problems.push(`failed same-origin request(s):\n  ${failedRequests.join("\n  ")}`);
   }
   // No screenshot on disk means the whole run collapsed — never pass silently.
   if (!fs.existsSync(SHOT) || fs.statSync(SHOT).size === 0) {
