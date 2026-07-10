@@ -3,9 +3,10 @@
 > Ces guidelines sont **non-négociables**. Toute décision technique ou de design doit être validée contre elles. En cas de doute,
  on revient à ces principes.
 
-**Version :** 1.0
+**Version :** 1.1
 **Date :** 2026-04-10
 **Session :** Brainstorming initial
+**Amendement :** 2026-07-10 — §8 Scope mobile (ADR-0003)
 
 ---
 
@@ -255,6 +256,7 @@ src/
 - Esthétique fanzine néon
 - Audio boom bap adaptatif
 - Niveau inversé RG (1 niveau sur 10)
+- Support mobile tactile (paysage forcé, swipe caméra + tir deux doigts — ADR-0003) ; le desktop reste prioritaire
 
 ### Ce qui N'EST PAS dans le scope
 
@@ -263,7 +265,7 @@ src/
 - Physics engine complexe
 - ECS framework (trop lourd pour ce gameplay)
 - Internationalisation
-- Mobile-first (desktop browser)
+- Mobile-first (le desktop reste la cible principale ; support mobile = cf. ADR-0003)
 - Backend / serveur / base de données
 
 ---
