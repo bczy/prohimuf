@@ -9,11 +9,17 @@ name: Deploy branch preview
 # Requires Settings → Pages → Source: "Deploy from a branch" → gh-pages / root.
 
 # Deliberate deploys only, not on every push: pick the branch in the Actions
-# UI (Run workflow → choose ref), or touch the dispatch marker
-# .github/dispatch/deploy-preview on the branch to deploy (see docs/adr/0003).
+# UI (Run workflow → choose ref), or commit the dispatch marker on the branch
+# to deploy — the commit MUST use the ci(dispatch): prefix (job guard below):
+#   date > .github/dispatch/deploy-preview \
+#     && git add .github/dispatch/deploy-preview \
+#     && git commit -m "ci(dispatch): deploy-preview" && git push
+# (see docs/adr/0003).
 on:
   workflow_dispatch:
   push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
     paths:
       - ".github/dispatch/deploy-preview"
 
@@ -21,13 +27,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: preview-${{ github.ref }}
+  group: deploy-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   preview:
     name: Build & publish branch preview
     runs-on: ubuntu-latest
+    # merge/rebase/revert pushes can match the paths filter; only explicit ci(dispatch): commits may fire it.
+    if: github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +43,11 @@ jobs:
       - name: Sanitize branch name
         id: slug
         run: |
-          slug="${GITHUB_REF_NAME//\//-}"
+          # Allowlist sanitize: map anything outside [a-zA-Z0-9._-] to '-' so a
+          # crafted ref name cannot inject into the path/url derivations below.
+          # (the '-' sits last in the set so GNU tr reads it literally, not as a
+          # range endpoint).
+          slug=$(printf '%s' "$GITHUB_REF_NAME" | tr -c 'a-zA-Z0-9._\n-' '-')
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "base=/prohimuf/preview/$slug/" >> "$GITHUB_OUTPUT"
           echo "url=https://bczy.github.io/prohimuf/preview/$slug/" >> "$GITHUB_OUTPUT"
@@ -79,8 +91,32 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      # Same in-game render gate as the main deploy: enter a level and confirm
+      # the R3F/WebGL scene mounts, under the preview sub-path base.
+      - name: E2E in-game smoke
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: ${{ steps.slug.outputs.base }}
+
+      - name: Upload in-game screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-ingame-preview-${{ steps.slug.outputs.slug }}
+          path: screenshots/e2e-ingame.png
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
+
+      # Previews must never be indexed by search engines — inject a robots
+      # noindex into the <head> of both the app entry and the SPA fallback.
+      - name: Add noindex meta to preview pages
+        run: |
+          for f in dist/index.html dist/404.html; do
+            sed -i 's#<head>#<head><meta name="robots" content="noindex">#' "$f"
+          done
 
       - name: Publish to gh-pages (preview/${{ steps.slug.outputs.slug }})
         uses: peaceiris/actions-gh-pages@v4
@@ -96,7 +132,12 @@ jobs:
           commit_message: "preview: ${{ github.ref_name }} (${{ github.sha }})"
 
       - name: Summary
+        # Pass the ref name and url through env, not ${{ }} interpolation into
+        # the shell, so a crafted branch name cannot inject into the run block.
+        env:
+          PREVIEW_REF: ${{ github.ref_name }}
+          PREVIEW_URL: ${{ steps.slug.outputs.url }}
         run: |
           echo "### 🔍 Preview deployed" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "[$GITHUB_REF_NAME → ${{ steps.slug.outputs.url }}](${{ steps.slug.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "[$PREVIEW_REF → $PREVIEW_URL]($PREVIEW_URL)" >> "$GITHUB_STEP_SUMMARY"

@@ -9,6 +9,8 @@ name: Generate enemy-type sprites
 on:
   workflow_dispatch:
   push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
     paths:
       - ".github/dispatch/gen-sprites"
 
@@ -22,6 +24,8 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # merge/rebase/revert pushes can match the paths filter; only explicit ci(dispatch): commits may fire it.
+    if: github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,17 +40,46 @@ jobs:
 
       - name: Chroma-key sprite backgrounds to transparency
         run: |
-          npm install --no-save --legacy-peer-deps @napi-rs/canvas
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          # If --ignore-scripts ever breaks the prebuilt fetch, drop the flag but
+          # keep the pin.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           node scripts/cutout-enemies.mjs
 
       - name: Commit sprites
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # paths are explicit and bounded; -f only bypasses the assets gitignore.
           git add -f public/assets/enemy_*.png
           if git diff --cached --quiet; then
             echo "No new sprites to commit."
           else
             git commit -m "chore(assets): generate enemy-type sprites (riot/biker/civilian/bonus)"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            # Bounded retry: another push may land while we generated; rebase and
+            # retry up to 3 times, then fail (the assets are preserved by the
+            # if: failure() upload below so no paid generation is lost).
+            pushed=0
+            for attempt in 1 2 3; do
+              git pull --rebase origin "$GITHUB_REF_NAME"
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — retrying"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
           fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enemy-sprites-unpushed
+          path: public/assets/enemy_*.png
+          if-no-files-found: warn
+          retention-days: 14
