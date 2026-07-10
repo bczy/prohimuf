@@ -28,7 +28,7 @@
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
-        "seed": 2077,
+        "seed": 42,
         "prompt": "one-box monospace city car, hood and windshield in one continuous slope, tall glasshouse, corner-mounted wheels, vertical tail flush behind the rear wheel"
       },
       "moto": {
