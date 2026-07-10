@@ -141,3 +141,10 @@ prompt channel) reads each of these as an invocation of the named thing (§3.1):
   description) — moved to the shared slots so the set is one printing run (§2 law 2).
 
 **Status:** drafts delivered — awaiting `lead-art` PROMPT GATE before any dispatch.
+
+## 2026-07-10 — car seed reroll 2077 → 42
+
+Mechanical gate result (run 29127398174): truck seed 1337 PASS (neon 37.3%),
+moto seed 8128 PASS (neon 3.2%), car seed 2077 deterministic FAIL — cyan rim
+0.325% < 0.75% threshold (rim too faint on that roll). Prompt unchanged (one
+variable per iteration); seed rerolled to 42. Batch 2 of this cycle.
