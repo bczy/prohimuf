@@ -56,17 +56,19 @@ jobs:
             echo "No new sprites to commit."
           else
             git commit -m "chore(assets): generate delivery-vehicle sprites (truck/car/moto)"
-            # Bounded retry: another push may land while we generated; rebase and
-            # retry up to 3 times, then fail (the assets are preserved by the
-            # if: failure() upload below so no paid generation is lost).
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash (the
+            # generation step can leave unstaged files that would abort a bare
+            # rebase) and retry, max 3 attempts. The if: failure() upload below
+            # preserves the assets so no paid generation is lost.
             pushed=0
             for attempt in 1 2 3; do
-              git pull --rebase origin "$GITHUB_REF_NAME"
               if git push origin "HEAD:$GITHUB_REF_NAME"; then
                 pushed=1
                 break
               fi
-              echo "push attempt $attempt rejected — retrying"
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
             done
             if [ "$pushed" != "1" ]; then
               echo "::error::push rejected after 3 attempts"
