@@ -54,3 +54,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0002](./0002-cargo-delivery-core-loop-state.md)       | Cargo delivery in core game state                                     | Accepted |
 | [0003](./0003-mobile-touch-controls-and-camera-pan.md) | Mobile support: touch controls, forced landscape, inertial camera pan | Accepted |
 | [0004](./0004-push-marker-workflow-dispatch.md)        | Push-marker dispatch for manual workflows                             | Accepted |
+| [0005](./0005-art-direction-pipeline.md)               | Art-direction pipeline: gated prompts, seeded generation, CI gates    | Accepted |

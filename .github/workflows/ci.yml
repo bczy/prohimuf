@@ -41,6 +41,13 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      # ART GATE 1 — static prompt-contract lint over levelArt.json (no network,
+      # <1s). Catches house-style/neon-field/negation/word-budget violations in
+      # the art prompts before any paid FLUX generation runs. Pure node, so it
+      # needs no browser or build.
+      - name: Art prompt contract lint
+        run: node scripts/check-art-prompts.mjs
+
       - name: Format check
         run: yarn format:check
 
