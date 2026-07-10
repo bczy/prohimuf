@@ -3,11 +3,16 @@ name: Generate vehicle sprites
 # Regenerates the delivery-vehicle sprites (truck / car / moto) from the
 # `vehicles` block of src/game/levels/levelArt.json with real FLUX art, keys
 # their black background to transparency, and commits them to the current
-# branch. Manual only (workflow_dispatch): the committed PNGs may be procedural
-# placeholders, so this is the tool that replaces them with generated art.
+# branch. Deliberate runs only: manual (workflow_dispatch) or by touching the
+# dispatch marker .github/dispatch/gen-vehicle-sprites (see docs/adr/0003) —
+# the committed PNGs may be procedural placeholders, so this is the tool that
+# replaces them with generated art.
 # FORCE=1 so it overwrites the placeholders (not just missing files).
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/dispatch/gen-vehicle-sprites"
 
 permissions:
   contents: write
