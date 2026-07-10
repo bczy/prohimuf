@@ -13,25 +13,30 @@
   },
   "vehicles": {
     "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: photocopied fanzine B&W + acid neon, generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
-    "style": ", flat 2D side profile view, photocopied fanzine black and white halftone base, high contrast xerox photocopy grain, strong bright acid neon glow outline tracing the whole silhouette (in this game what glows is interactive), sharp clean cutout silhouette edges, solid pure flat black cutout background, centered, whole vehicle in frame, coherent matching art style across the whole vehicle set, not photoreal, not glossy, not a 3D product render, no text, no watermark, no people, no background scenery",
+    "opening": "Flat 2D video game sprite, strict side view in orthographic projection, single vehicle centered and fully visible, ",
+    "neonPhrase": ", one luminous {neon} ({hex}) acid neon rim light glowing along the whole silhouette including the wheels",
+    "style": ", photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox toner texture, halftone dots, black and white except the neon, on a uniform matte black background (#000000), flat ambient lighting, crisp cutout edges",
     "types": {
       "truck": {
         "asset": "assets/vehicles/truck.png",
         "size": { "width": 384, "height": 192 },
         "neon": "orange",
-        "prompt": "a boxy 1990s delivery van truck seen from the side, tall flat cargo box body with a short cab, two big wheels, plain flat panel sides, dark near-black body panels lit only by a luminous glowing orange neon rim light tracing the whole silhouette, dark vehicle with glowing neon edges on a pure black night background, drawn as a rough high-contrast photocopied fanzine illustration, not a photoreal render, not a glossy magazine product shot, not a shiny 3D model, not a flat orange-filled drawing on white, no white background, no light background"
+        "seed": 1337,
+        "prompt": "flat-fronted forward-control 1980s French panel van, near-vertical windshield, boxy cargo body taller than the cab line, single flank crease, steel wheels"
       },
       "car": {
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
-        "prompt": "a tiny 1990s french one-box monospace city car like a renault twingo seen from the side, single rounded egg-shaped volume, very short and tall body, roof height more than half the car length, windshield flowing directly into a stubby nose, body ending in a flat vertical tail panel directly behind the rear wheel, no protruding boot, two wheels very close together, cute stubby microcar proportions"
+        "seed": 2077,
+        "prompt": "one-box monospace city car, hood and windshield in one continuous slope, tall glasshouse, corner-mounted wheels, vertical tail flush behind the rear wheel"
       },
       "moto": {
         "asset": "assets/vehicles/moto.png",
         "size": { "width": 256, "height": 160 },
         "neon": "magenta",
-        "prompt": "a 1990s delivery motorbike scooter seen from the side, low crouched rider, two wheels, a courier top box on the back"
+        "seed": 8128,
+        "prompt": "1990s delivery moped, fat small-diameter wheels, exposed tube frame, single round headlamp, top-box crate strapped over the rear rack, empty saddle"
       }
     }
   },
