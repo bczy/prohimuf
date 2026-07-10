@@ -7,6 +7,14 @@ import type { CourierField } from "@game/systems/courierSystem";
 import type { LevelRoster } from "@game/levels/levels";
 import { useKeyboard } from "@hooks/useKeyboard";
 import { useMouse } from "@hooks/useMouse";
+import type { TouchControlsState } from "@hooks/useTouchControls";
+import type { CameraPan } from "@game/types/cameraPan";
+import {
+  applyDrag,
+  createCameraPan,
+  releaseFlick,
+  tickCameraPan,
+} from "@game/systems/cameraPanSystem";
 import type { GameState } from "@game/types/gameState";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
@@ -75,6 +83,12 @@ function floaterFor(ev: {
   return null;
 }
 
+/** Mobile swipe controls (ADR-0003): gesture state + the pan clamp's level half-width. */
+export interface MobileControls {
+  touchRef: React.RefObject<TouchControlsState>;
+  halfWorldWidth: number;
+}
+
 export function useGameLoop(
   facade: FacadeMap,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -85,10 +99,14 @@ export function useGameLoop(
   feedbackQueueRef?: React.RefObject<Floater[]>,
   courierField?: CourierField,
   roster?: LevelRoster,
+  mobileControls?: MobileControls,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
   const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams, roster));
+  // Viewport state, not a game rule — lives in the bridge, not GameState (ADR-0003).
+  const panRef = useRef<CameraPan>(createCameraPan());
+  const aimRef = useRef({ x: 0.5, y: 0.5 });
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -100,13 +118,34 @@ export function useGameLoop(
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
 
-    const hasPendingShot = mouse.pendingShots > 0;
+    // Mobile (ADR-0003): consume swipe gestures — pan the camera with inertia
+    // (pure cameraPanSystem math) and dequeue at most one two-finger tap as a
+    // shot at its midpoint. Runs before the tick so cameraOffsetX is current.
+    const touch = mobileControls?.touchRef.current;
+    if (mobileControls !== undefined && touch !== undefined) {
+      const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
+      if (touch.panDeltaX !== 0) {
+        // Content follows the finger: dragging right moves the camera left.
+        panRef.current = applyDrag(panRef.current, -touch.panDeltaX * viewW, rangeX);
+        touch.panDeltaX = 0;
+      }
+      if (touch.flickVelocityX !== null) {
+        panRef.current = releaseFlick(panRef.current, -touch.flickVelocityX * viewW);
+        touch.flickVelocityX = null;
+      }
+      panRef.current = tickCameraPan(panRef.current, safeDelta, rangeX);
+      camera.position.x = panRef.current.x;
+    }
+
+    const pendingTap = touch?.pendingTaps.shift();
+    const hasPendingShot = mouse.pendingShots > 0 || pendingTap !== undefined;
 
     if (
       (prev.phase === "GAME_OVER" || prev.phase === "LEVEL_COMPLETE") &&
       (hasPendingShot || keyboardRef.current.restart)
     ) {
       mouseRef.current.pendingShots = 0;
+      if (touch !== undefined) touch.pendingTaps = [];
       gameStateRef.current = createInitialState(facade, levelParams, roster);
       return;
     }
@@ -115,11 +154,16 @@ export function useGameLoop(
     mouseRef.current.pendingShots = Math.max(0, mouse.pendingShots - 1);
     if (didFire) playSfx("shoot");
 
+    // On mobile the crosshair sits at the last tap; on desktop it tracks the mouse.
+    if (pendingTap !== undefined) aimRef.current = pendingTap;
+    const aimX = mobileControls !== undefined ? aimRef.current.x : mouse.x;
+    const aimY = mobileControls !== undefined ? aimRef.current.y : mouse.y;
+
     const next = tickGameState(
       prev,
       didFire,
-      mouse.x,
-      mouse.y,
+      aimX,
+      aimY,
       safeDelta,
       facade,
       camera.position.x,

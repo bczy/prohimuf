@@ -41,7 +41,9 @@
 
       "@assets/*": ["src/assets/*"],
 
-      "@hooks/*": ["src/hooks/*"]
+      "@hooks/*": ["src/hooks/*"],
+
+      "@utils/*": ["src/utils/*"]
     }
   },
 

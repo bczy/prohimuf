@@ -24,10 +24,14 @@ import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
 import { useMouse } from "@hooks/useMouse";
+import { useTouchControls } from "@hooks/useTouchControls";
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
 const SCROLL_SPEED = 6;
+// Mobile zooms in past the desktop cover framing so targets stay finger-sized;
+// the swipe pan (ADR-0003) reaches the overflow this creates.
+const MOBILE_ZOOM_FACTOR = 1.7;
 
 interface Props {
   onHudUpdate: (data: HudData) => void;
@@ -38,6 +42,8 @@ interface Props {
   paused?: boolean;
   /** Surfaces delivery HUD state (phase + integrity) to the DOM HUD. */
   onDelivery?: (delivery: HudDelivery) => void;
+  /** Mobile mode (ADR-0003): touch controls + stronger zoom; replaces edge-scroll. */
+  isMobile?: boolean;
 }
 
 export function GameScene({
@@ -48,6 +54,7 @@ export function GameScene({
   levelId,
   paused,
   onDelivery,
+  isMobile = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art's native
   // aspect ratio, and place enemy windows from the level's hand-authored zones.
@@ -76,6 +83,7 @@ export function GameScene({
   const roster = useMemo(() => LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
 
   const feedbackRef = useRef<Floater[]>([]);
+  const touchRef = useTouchControls(canvasRef, isMobile);
   const stateRef = useGameLoop(
     mergedFacade,
     canvasRef,
@@ -86,6 +94,7 @@ export function GameScene({
     feedbackRef,
     courierField,
     roster,
+    isMobile ? { touchRef, halfWorldWidth: fullW / 2 } : undefined,
   );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
@@ -97,12 +106,16 @@ export function GameScene({
     const ortho = camera as OrthographicCamera;
     // Cover the viewport with ONE panel (same framing as before); the extra
     // panels become horizontal scroll room.
-    ortho.zoom = Math.max(size.width / panelW, size.height / facadeH);
+    // Mobile zooms in further (bigger targets); the swipe pan covers the rest.
+    ortho.zoom =
+      Math.max(size.width / panelW, size.height / facadeH) * (isMobile ? MOBILE_ZOOM_FACTOR : 1);
     ortho.position.set(0, 0, 100);
     ortho.updateProjectionMatrix();
-  }, [camera, size.height, size.width, panelW, facadeH]);
+  }, [camera, size.height, size.width, panelW, facadeH, isMobile]);
 
   useFrame((_state, delta) => {
+    // On mobile the camera is driven by the inertial swipe pan in useGameLoop.
+    if (isMobile) return;
     const { x: mouseX, y: mouseY } = mouseRef.current;
     const ortho = camera as OrthographicCamera;
 

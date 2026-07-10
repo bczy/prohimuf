@@ -8,9 +8,12 @@ import { MainMenu } from "@render/ui/MainMenu";
 import { EndScreen } from "@render/ui/EndScreen";
 import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { PauseScreen } from "@render/ui/PauseScreen";
+import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { GameScene } from "./GameScene";
 
 import { useAudio } from "@hooks/useAudio";
+import { useOrientation } from "@hooks/useOrientation";
+import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { loadUnlockedLevels, unlockLevel, LEVELS } from "@game/levels/levels";
@@ -26,6 +29,21 @@ type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END";
 // so the screenshot tool can capture the front-end screens without playing.
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
+
+// Mobile mode is decided once at app load from the user agent (ADR-0003);
+// it never flips mid-session — devtools emulation needs a refresh.
+const IS_MOBILE = detectMobile();
+
+// The rotate overlay covers every app phase, menus included (ADR-0003).
+function withRotateGuard(content: JSX.Element, blocked: boolean): JSX.Element {
+  if (!blocked) return content;
+  return (
+    <>
+      {content}
+      <RotateOverlay />
+    </>
+  );
+}
 
 function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   return {
@@ -68,6 +86,8 @@ export function App(): JSX.Element {
   const [gameKey, setGameKey] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
+  const isPortrait = useOrientation();
+  const rotateBlocked = IS_MOBILE && isPortrait;
 
   // Red vignette flash whenever a life is lost (shot, or shooting a civilian).
   const prevLivesRef = useRef(hudData.lives);
@@ -97,12 +117,12 @@ export function App(): JSX.Element {
   }, [appPhase]);
 
   useEffect(() => {
-    if (appPhase === "PLAYING" && !paused) {
+    if (appPhase === "PLAYING" && !paused && !rotateBlocked) {
       playBgm();
     } else {
       stopBgm();
     }
-  }, [appPhase, paused, playBgm, stopBgm]);
+  }, [appPhase, paused, rotateBlocked, playBgm, stopBgm]);
 
   useEffect(() => {
     if (hudData.phase === "GAME_OVER") {
@@ -169,27 +189,29 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "MENU") {
-    return (
+    return withRotateGuard(
       <MainMenu
         unlockedLevels={unlockedLevels}
         prefs={prefs}
         onPlay={handlePlay}
         onSavePrefs={handleSavePrefs}
-      />
+      />,
+      rotateBlocked,
     );
   }
 
   if (appPhase === "NARRATIVE_PRE") {
     const scene = PRE_LEVEL_NARRATIVE[selectedLevel.id];
     if (scene !== undefined) {
-      return (
+      return withRotateGuard(
         <NarrativeScreen
           scene={scene}
           showSkipButton
           onDone={() => {
             setAppPhase("PLAYING");
           }}
-        />
+        />,
+        rotateBlocked,
       );
     }
   }
@@ -197,13 +219,14 @@ export function App(): JSX.Element {
   if (appPhase === "NARRATIVE_POST") {
     const scene = POST_LEVEL_NARRATIVE[selectedLevel.id];
     if (scene !== undefined) {
-      return (
+      return withRotateGuard(
         <NarrativeScreen
           scene={scene}
           onDone={() => {
             setAppPhase("END");
           }}
-        />
+        />,
+        rotateBlocked,
       );
     }
   }
@@ -213,25 +236,28 @@ export function App(): JSX.Element {
       hudData.phase === "GAME_OVER" || hudData.phase === "LEVEL_COMPLETE"
         ? hudData.phase
         : "GAME_OVER";
-    return (
+    return withRotateGuard(
       <EndScreen
         phase={endPhase}
         score={hudData.score}
         wave={hudData.wave}
         onRestart={handleBackToMenu}
-      />
+      />,
+      rotateBlocked,
     );
   }
 
   const levelParams = buildLevelParams(selectedLevel, prefs);
 
-  return (
+  return withRotateGuard(
     <div
       style={{
         position: "relative",
         width: "100vw",
         height: "100vh",
         cursor: paused ? "default" : "none",
+        // Keeps two-finger taps from becoming browser pinch/double-tap zoom.
+        touchAction: IS_MOBILE ? "none" : "auto",
       }}
     >
       <Canvas
@@ -263,7 +289,8 @@ export function App(): JSX.Element {
             playSfx={audio.playSfx}
             levelParams={levelParams}
             levelId={selectedLevel.id}
-            paused={paused}
+            paused={paused || rotateBlocked}
+            isMobile={IS_MOBILE}
           />
         </Suspense>
       </Canvas>
@@ -282,7 +309,7 @@ export function App(): JSX.Element {
         />
       )}
       <HUD data={hudData} />
-      {paused && (
+      {paused && !rotateBlocked && (
         <PauseScreen
           prefs={prefs}
           onResume={() => {
@@ -292,6 +319,7 @@ export function App(): JSX.Element {
           onSavePrefs={handleSavePrefs}
         />
       )}
-    </div>
+    </div>,
+    rotateBlocked,
   );
 }
