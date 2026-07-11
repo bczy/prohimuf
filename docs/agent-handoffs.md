@@ -702,3 +702,47 @@ preview a deux moitiés :`App.tsx:74-76`ET`scripts/screenshot-preview.mjs:167-16
   scope confirmé optionnel/skippable/non-bloquant/zéro-règle/cutscene-simple, aucune
   régression introduite par les amendements techniques. Statut ADR reste Proposed —
   acceptation finale = merge PR par Bertrand.
+
+---
+
+### story-tutorial-stage — implementation of ADR-0012 (3 parallel lanes, PR #34)
+
+Bertrand's "Go" = product green light to implement. Three dev lanes fanned out on disjoint
+path sets (PARALLEL-SAFE: YES — `src/game/**` / `src/render/**` + diagram / `scripts/**`),
+coded against a shared interface contract (`FIRST_PLAYABLE_LEVEL`, `TUTORIAL_NARRATIVE`,
+`LevelConfig.kind?`, `NarrativeLine.image?`).
+
+- release Lane A (`dev-gameplay`, `src/game/**`, TDD): `LevelConfig.kind?` +
+  complete tutorial entry prepended to `LEVELS` (diegetic `name/district/year`, inert
+  gameplay fields) ; `FIRST_PLAYABLE_LEVEL` non-undefined via module-load invariant (double
+  casts retired) ; `NarrativeLine.image?` additif ; `TUTORIAL_NARRATIVE` en constante
+  séparée, registre briefing DISPATCH/KENZA, 8 panneaux limités au livré ; tests
+  `stateMachine`/`levelArt.consistency` filtrés sur `kind`, NEW
+  `tutorialInvariants.test.ts` (index 0, belliard premier jouable, exclusion unlock,
+  isolation clés narratives, existence des sprites). vitest 175→180, eslint clean. (Amelia
+  — Gameplay)
+- release Lane B (`dev-r3f-render`, `src/render/**`): `AppPhase` + `"TUTORIAL"` ;
+  `handlePlay` branche sur `kind` en premier, sans `setSelectedLevel` (piège NaN du
+  diviseur de tension évité), fin/skip → MENU, rien d'écrit ; seeds/fallback via
+  `FIRST_PLAYABLE_LEVEL` ; `?preview=tutorial` ; badge statique `TUTORIEL` (néon jaune,
+  hors échelle de difficulté), stats/MEILLEUR masqués, Scores défaut premier jouable +
+  filtre défensif ; `NarrativeScreen` rend `image?` au-dessus du dialogue (BASE_URL) ;
+  `docs/diagrams/app-phase-flow.md` rafraîchi. tsc + eslint clean. (Amelia — Render)
+- release Lane C (`dev-tooling-assets`, `scripts/**`): capture explicite
+  `?preview=tutorial` → `02_tutorial.png` dans `screenshot-preview.mjs` + insertion contact
+  sheet (la boucle par niveau lit `levelArt.json` et n'atteint jamais le tutorial) ;
+  dégradation gracieuse si la phase manque. `node --check` OK. (Amelia — Tooling)
+- verify (orchestrateur): tsc clean, eslint clean, vitest **180/180**, prettier clean ;
+  navigateur headless (Playwright/Chromium) **8/8 PASS**, 0 pageerror — carte TUTORIEL
+  première du menu (Belliard garde badge FACILE et reste le défaut Scores), briefing rendu
+  avec sprite véhicule, clic carte → briefing, « Passer » → retour menu.
+- arch (Winston), integration sign-off: ADR-0012 tutorial integration **APPROVED**.
+  Boundary law + D1–D6 all PASS across the 3 lanes (game/render/scripts, non-overlapping).
+  NaN-tension trap avoided (no `setSelectedLevel` on tutorial branch), no `levelArt.json`
+  entry, no art gate. **ADR flipped to Accepted** ; PR #34 merge seals. No corrections
+  required.
+- pm (John) → PR #34, acceptance: **ACCEPTÉ** le tutoriel ADR-0012. D2/D4/D6 + guidelines
+  §1/§5/§8 conformes (registre briefing terse, contenu limité au livré, non-goals
+  respectés, zéro art généré, skippable un bouton). Follow-up cosmétique non-bloquant :
+  wording du district « Prise en main » (une variante plus diégétique façon flyer pourrait
+  coller mieux — à considérer plus tard).
