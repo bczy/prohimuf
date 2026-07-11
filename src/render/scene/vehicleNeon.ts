@@ -16,6 +16,7 @@ import { CanvasTexture } from "three";
 import type { VehicleType } from "@game/types/delivery";
 import levelArt from "@game/levels/levelArt.json";
 import { applyPixelFilter } from "./pixelArt";
+import { applyHaloFalloff } from "./haloFalloff";
 
 /**
  * Neon accent hues, keyed by the colour NAME authored in `levelArt.json`.
@@ -34,11 +35,24 @@ const NEON_HEX: Record<string, string> = {
 const DEFAULT_NEON_HEX = "#28F0FF"; // cyan
 
 /**
- * Source pixels whose alpha exceeds this (0..255) become solid neon; the rest
- * go fully transparent. The vehicle sprites have hard-binary alpha, so the
- * exact value only matters for stray anti-aliased fringe pixels.
+ * Neon rim thickness as a fraction of the sprite's *height*, in source pixels
+ * (loi du glow, ADR-0011). Single source of truth for both the CPU falloff bake
+ * (the canvas padding + gradient reach, here) and the rim mesh scale
+ * ({@link DeliveryVehicleSprite}). Vehicle canvases are 2:1 with equal
+ * world-per-pixel on both axes, so an equal pixel padding maps to an equal world
+ * margin on all four sides.
  */
-const ALPHA_THRESHOLD = 8;
+export const NEON_RIM_MARGIN_RATIO = 0.06; // tune at review
+
+/**
+ * Halo reach in source pixels for a sprite of the given size — the amount the
+ * bake canvas is padded on every side and the distance the falloff fades over.
+ * Both the silhouette bake and the rim mesh scale derive `marginPx` from this so
+ * the baked gradient zone and the world-space rim margin coincide exactly.
+ */
+export function computeHaloMarginPx(width: number, height: number): number {
+  return Math.max(0, Math.round(NEON_RIM_MARGIN_RATIO * height));
+}
 
 /** Anything drawable to a 2D canvas that we bake a silhouette from. */
 type SilhouetteSource = HTMLImageElement | HTMLCanvasElement | ImageBitmap;
@@ -69,34 +83,50 @@ function sourceSize(image: SilhouetteSource): { width: number; height: number } 
 }
 
 /**
- * Bake a neon silhouette of a loaded sprite: every source pixel above
- * {@link ALPHA_THRESHOLD} becomes the solid `hex` RGB at its source alpha,
- * everything else transparent. Run through the same nearest / sRGB pixel
- * filter as {@link makePixelCanvasTexture} so it keys crisply (ADR-0011).
+ * Bake a neon *glow* silhouette of a loaded sprite. The bake canvas is padded by
+ * {@link computeHaloMarginPx} on every side (so the glow is never cropped); the
+ * sprite is drawn centred and flooded with `hex` RGB. Alpha is the sprite's own
+ * alpha on opaque pixels plus a smooth outward gradient in the margin / interior
+ * transparent zones (via {@link applyHaloFalloff}) — a real light bleed, not the
+ * former binary-alpha sticker (ADR-0011, story-halo-alpha-composite-gate). Run
+ * through the same nearest / sRGB pixel filter as {@link makePixelCanvasTexture}
+ * so it keys crisply under `AdditiveBlending`.
  */
 export function buildNeonSilhouette(image: SilhouetteSource, hex: string): CanvasTexture {
   const { width, height } = sourceSize(image);
+  const marginPx = computeHaloMarginPx(width, height);
+  const paddedW = width + 2 * marginPx;
+  const paddedH = height + 2 * marginPx;
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = paddedW;
+  canvas.height = paddedH;
   const ctx = canvas.getContext("2d");
   if (ctx === null || width === 0 || height === 0) {
     return applyPixelFilter(new CanvasTexture(canvas));
   }
 
-  ctx.drawImage(image, 0, 0, width, height);
+  // Draw the sprite centred in the padded canvas, un-smoothed (pixel-art).
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(image, marginPx, marginPx, width, height);
+
   const rgb = hexToRgb(hex);
-  const img = ctx.getImageData(0, 0, width, height);
+  const img = ctx.getImageData(0, 0, paddedW, paddedH);
   const data = img.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3] ?? 0;
-    if (alpha > ALPHA_THRESHOLD) {
-      data[i] = rgb.r;
-      data[i + 1] = rgb.g;
-      data[i + 2] = rgb.b;
-    } else {
-      data[i + 3] = 0;
-    }
+  const pixels = paddedW * paddedH;
+
+  // Pull the raw alpha channel, run the DOM-free falloff, then flood hue RGB
+  // everywhere and write the gradient alpha back.
+  const srcAlpha = new Uint8ClampedArray(pixels);
+  for (let p = 0; p < pixels; p++) {
+    srcAlpha[p] = data[p * 4 + 3] ?? 0;
+  }
+  const halo = applyHaloFalloff(srcAlpha, paddedW, paddedH, marginPx);
+  for (let p = 0; p < pixels; p++) {
+    const i = p * 4;
+    data[i] = rgb.r;
+    data[i + 1] = rgb.g;
+    data[i + 2] = rgb.b;
+    data[i + 3] = halo[p] ?? 0;
   }
   ctx.putImageData(img, 0, 0);
 
