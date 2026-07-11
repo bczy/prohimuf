@@ -68,16 +68,40 @@ dispatch generation (marker push, see docs/ci.md) — the workflow runs
 scripts/check-sprite-style.mjs on each output and retries bad rolls (bounded)
      ↓
 game-graphist TECHNICAL PASS (real-size inspection, fringe/halo cleanup via
-                              documented scripts — filters what reaches lead-art)
+                              documented scripts — filters what reaches lead-art;
+                              for any runtime-composed visual the technical pass ALSO
+                              inspects the in-game COMPOSITE at real in-game size, not
+                              the source PNG alone — a glow's alpha falloff is only
+                              visible on the composite)
      ↓
 lead-art ASSET GATE (PASS/FAIL per sprite vs docs/art-direction.md;
                      mechanical gate passing does not bind the verdict)
+     ↓
+lead-art COMPOSITE GATE (Gate 4 — runtime-composed visuals only: neon rims, glows,
+                         additive/emissive effects. lead-art verdicts REAL in-game
+                         screenshots; an asset-gate PASS does NOT cover runtime
+                         composition. « un halo est un dégradé, jamais un aplat » —
+                         a binary-alpha glow with no falloff FAILs here)
      ↓
 FAIL → concept-artist iterates (one variable per roll, max 2 batches/cycle,
         then escalate options to Bertrand) · PASS → pm/product acceptance
 ```
 
 Every gate verdict is logged in `docs/agent-handoffs.md`.
+
+**Runtime-composed visuals (the composite gate wiring).** Some visuals are NOT present
+in the delivered PNGs — they are composed live in `src/render` (the ADR-0011 neon rim,
+glows, additive effects). These have no acceptance surface in the asset gate, which judges
+only the source sprite. So:
+
+- **`dev-r3f-render`** MUST deliver REAL in-game screenshots (via the e2e scripts / the
+  `verify` skill) alongside ANY change to a runtime-composed visual. A code diff is not a
+  deliverable here; the on-screen composite is.
+- **`game-graphist`**'s TECHNICAL pass inspects that composite at real in-game size — the
+  glow's alpha falloff and edge behaviour only exist on the composite, never on the PNG.
+- The **orchestrator** routes those screenshots to `lead-art` for the composite gate
+  (Gate 4) before merge. No screenshots reaching `lead-art` = the runtime visual is
+  ungated = it does not merge.
 
 ## Rules of engagement
 1. **No code before a story.** `pm` defines it; `senior-architect` makes it buildable and

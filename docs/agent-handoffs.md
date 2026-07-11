@@ -790,3 +790,42 @@ COLLABORATION.md §code-review panel, CLAUDE.md, le hook crew-reminder et le PR 
     justifiée. C4 — réfuté (voir ci-dessus), garde défensive non requise aujourd'hui.
 - verify (orchestrateur): `tsc` clean, `eslint` clean, `vitest` **180/180**, prettier
   clean. Zéro finding CONFIRMÉ bloquant/majeur restant → gate PASS, PR #34 mergeable.
+
+---
+
+### story-halo-alpha-composite-gate — INCIDENT + Gate 4 (Nico / Lead-Art)
+
+- incident: The ADR-0011 render-side vehicle neon rim shipped in the play-test build as a
+  **hard-edged solid neon plate — binary alpha, no falloff** (the runtime rim bake is
+  binary-alpha, scaled out ~6%). On-screen it reads as a flat neon aplat around the vehicle,
+  not a glow. Bertrand's play-test verdict: disappointing render.
+- why the chain missed it — **NOT a taste failure, a chain failure.** The neon rim exists
+  ONLY at render time (decoupled from the sprite, ADR-0011); the delivered PNGs are pure
+  B&W. My asset gate correctly judged the source sprites as pure B&W with the rim "coming
+  live in-game" (this log, final-decoupled-set verdict / follow-up 7). But NO gate —
+  mechanical or human — ever saw the in-game COMPOSITE: the asset gate judges the source
+  PNG, and the runtime rim was never part of any PNG. Runtime-composed visuals simply had
+  no acceptance surface. A binary-alpha rim could ship because nobody, by design, looked at
+  the composited result.
+- fix (three parts, parallel lanes): (1) RENDER — distance-based alpha-falloff bake so the
+  rim decreases from the sprite edge to zero at the outer margin (`src/render`, architect
+  amends ADR-0011 — not my lane). (2) MECHANICAL — a gradient check added to the e2e
+  delivery gate so a flat/binary-alpha glow trips automatically (`scripts/**` — not my lane).
+  (3) PROCESS — my lane, done this session:
+  - BIBLE (§2.1, loi du glow): added the measurable rule **« un halo est un dégradé, jamais
+    un aplat »** — every glow/halo, baked or render-side, MUST carry an alpha falloff
+    decreasing from the sprite edge to zero at the outer margin; alpha sampled edge→margin
+    must be monotonically non-increasing and terminate at 0; a flat binary-alpha glow is an
+    automatic FAIL.
+  - GATE 4 (`lead-art.md`): new **in-game composite gate** — any change to a runtime-composed
+    visual (rims, glows, additive/emissive effects, anything not fully in the delivered PNGs)
+    needs my verdict on REAL in-game screenshots before merge; an asset-gate PASS explicitly
+    does NOT cover runtime composition.
+  - FLOW (`COLLABORATION.md`): `dev-r3f-render` delivers in-game screenshots with any visual
+    change; `game-graphist`'s TECHNICAL pass inspects the composite at real in-game size; the
+    orchestrator routes those screenshots to me. No screenshots = ungated = no merge.
+- composite verdict on the new falloff-baked halo: **PENDING.** I have not yet seen the
+  preview screenshots from the render lane's fix — per Gate 4 I do not PASS a runtime visual
+  I cannot Read on a real in-game composite. Call me back with the e2e/`verify` screenshots
+  and I will verdict the falloff against « un halo est un dégradé, jamais un aplat ».
+  (Nico / Lead-Art — incident + bible/Gate 4)

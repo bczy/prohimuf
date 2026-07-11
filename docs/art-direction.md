@@ -38,6 +38,14 @@ Historical anchors (see LICENSES.md for sources):
    structurally impossible and lets the glow go live, responding to delivery phase). For
    the vehicle set the loi du glow is satisfied by the renderer, and the asset gate judges
    the sprite as pure B&W — a baked neon rim on a vehicle sprite is now itself off-spec.
+   **Un halo est un dégradé, jamais un aplat.** A glow is light, and light falls off:
+   every glow or halo — baked or render-side — MUST carry an alpha falloff that decreases
+   from the sprite edge outward, reaching zero at the outer margin. A flat, binary-alpha
+   glow (a hard-edged solid neon plate, opacity constant then cut to nothing) is not a
+   glow, it is a decal — **automatic FAIL**. Measurable: sample the rim from the sprite
+   edge to the outer margin; alpha must be monotonically non-increasing and terminate at 0,
+   never a single opaque step. This governs the on-screen composite, so it is checked on
+   real in-game screenshots at the composite gate (Gate 4), not on the delivered PNG alone.
 2. **Family consistency** — assets in a set are one printing run: byte-identical
    shared style block in prompts, same ground, same line weight, same treatment.
    One off-family asset fails the whole set.
