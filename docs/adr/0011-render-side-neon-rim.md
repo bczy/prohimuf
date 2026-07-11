@@ -162,14 +162,14 @@ What changed — render only, boundary and material choices unchanged:
 Consequences (amending the list above):
 
 - **The e2e delivery gate now mechanically enforces the gradient.** `scripts/e2e-delivery.mjs`
-  + `scripts/check-halo-gradient.mjs` diff a pre-trigger **baseline** frame against the
-  `DELIVERING` frame (static background cancels, cops frozen), measure only over dark-baseline
-  pixels, and **fail** when the rim shows no alpha-falloff gradient (intermediate-intensity
-  share below a 20% floor). Validated on real builds: the old binary bake scores 2.67% → FAIL,
-  the new gradient bake 69.95% → PASS; a synthetic plate on the real background scores 0.0%. A
-  binary-alpha aplat can no longer ship silently. The pixel decoder (`@napi-rs/canvas`) is
-  installed CI-only via `--no-save` on the same pin as the sprite-gen workflows — no addition
-  to `package.json` / the PnP lockfile.
+  - `scripts/check-halo-gradient.mjs` diff a pre-trigger **baseline** frame against the
+    `DELIVERING` frame (static background cancels, cops frozen), measure only over dark-baseline
+    pixels, and **fail** when the rim shows no alpha-falloff gradient (intermediate-intensity
+    share below a 20% floor). Validated on real builds: the old binary bake scores 2.67% → FAIL,
+    the new gradient bake 69.95% → PASS; a synthetic plate on the real background scores 0.0%. A
+    binary-alpha aplat can no longer ship silently. The pixel decoder (`@napi-rs/canvas`) is
+    installed CI-only via `--no-save` on the same pin as the sprite-gen workflows — no addition
+    to `package.json` / the PnP lockfile.
 - **Runtime-composed visuals now have an acceptance surface.** The incident's root cause was
   that no gate ever saw the in-game **composite** — the asset gate judges the delivered B&W
   PNG, and the runtime rim is in no PNG, so a binary-alpha rim could pass every gate. Lead-art's
