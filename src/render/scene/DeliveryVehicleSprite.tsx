@@ -6,7 +6,7 @@ import type { Texture, CanvasTexture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { DeliveryPhase, VehicleType } from "@game/types/delivery";
 import { applyPixelFilter } from "./pixelArt";
-import { buildNeonSilhouette, getVehicleNeonHex } from "./vehicleNeon";
+import { buildNeonSilhouette, computeHaloMarginPx, getVehicleNeonHex } from "./vehicleNeon";
 import type { HudDelivery } from "@render/ui/HUD";
 
 // World height of the vehicle sprite; width follows the fixed side-on aspect.
@@ -14,17 +14,28 @@ const VEHICLE_H = 2.4;
 const VEHICLE_ASPECT = 2.0;
 // Sits on the courier street lane, just in front of the couriers (z 0.7).
 const VEHICLE_Z = 0.72;
-// World-space rim thickness added on every side (loi du glow, ADR-0011). A fixed
-// fraction of the vehicle height so the rim stays proportional at any zoom.
-const NEON_RIM_MARGIN = 0.06 * VEHICLE_H; // tune at review
 
 // Lazily-loaded, cached vehicle textures keyed by type. Only ever one vehicle on
 // screen, but the archetype changes per level, so cache all three by path.
 const loader = new TextureLoader();
 const cache = new Map<VehicleType, Texture>();
 const requested = new Set<VehicleType>();
-// Neon rim silhouettes baked in the load callback, keyed like the texture cache.
-const silhouetteCache = new Map<VehicleType, CanvasTexture>();
+
+/**
+ * A baked neon rim plus the geometry needed to scale it so the padded glow
+ * texture lands exactly over the sprite. `srcW`/`srcH` are the un-padded source
+ * pixel dims; `marginPx` is the per-side padding the bake used. Vehicle canvases
+ * are 2:1 with equal world-per-pixel, so scaling by `(1 + 2·marginPx/src)` per
+ * axis reproduces the same absolute world margin on all four sides.
+ */
+interface NeonRim {
+  texture: CanvasTexture;
+  srcW: number;
+  srcH: number;
+  marginPx: number;
+}
+// Neon rims baked in the load callback, keyed like the texture cache.
+const silhouetteCache = new Map<VehicleType, NeonRim>();
 
 function getVehicleTexture(type: VehicleType): Texture | null {
   const cached = cache.get(type);
@@ -38,7 +49,14 @@ function getVehicleTexture(type: VehicleType): Texture | null {
         // Bake the neon rim silhouette from the same loaded image (ADR-0011).
         const source: unknown = t.image;
         if (source instanceof HTMLImageElement) {
-          silhouetteCache.set(type, buildNeonSilhouette(source, getVehicleNeonHex(type)));
+          const srcW = source.naturalWidth;
+          const srcH = source.naturalHeight;
+          silhouetteCache.set(type, {
+            texture: buildNeonSilhouette(source, getVehicleNeonHex(type)),
+            srcW,
+            srcH,
+            marginPx: computeHaloMarginPx(srcW, srcH),
+          });
         }
       },
       undefined,
@@ -48,7 +66,7 @@ function getVehicleTexture(type: VehicleType): Texture | null {
   return null;
 }
 
-function getVehicleSilhouette(type: VehicleType): CanvasTexture | null {
+function getVehicleSilhouette(type: VehicleType): NeonRim | null {
   return silhouetteCache.get(type) ?? null;
 }
 
@@ -124,29 +142,29 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
       mat.needsUpdate = true;
     }
 
-    // Neon rim (loi du glow, ADR-0011): a scaled additive silhouette drawn
-    // behind the sprite. World-unit margin added per-axis so the rim thickness
-    // is uniform on all four sides despite the 2:1 aspect. Baked async, so it
-    // only shows once its silhouette is ready.
+    // Neon rim (loi du glow, ADR-0011): a scaled additive glow drawn behind the
+    // sprite. The rim texture is padded by `marginPx` on every side and carries
+    // its alpha-gradient falloff baked in; scaling by `(1 + 2·marginPx/src)` per
+    // axis makes the padded gradient zone coincide exactly with an equal world
+    // margin on all four sides (equal world-per-pixel on the 2:1 canvas). Baked
+    // async, so it only shows once its silhouette is ready.
     if (rim !== null) {
-      const silhouette = getVehicleSilhouette(vehicle.vehicleType);
+      const neon = getVehicleSilhouette(vehicle.vehicleType);
       // onStage is provably true here (early-returns above) — visibility only
       // hinges on the async silhouette bake having landed.
-      rim.visible = silhouette !== null;
-      if (silhouette !== null) {
+      rim.visible = neon !== null;
+      if (neon !== null) {
         const rimMat = rim.material as MeshBasicMaterial;
-        if (rimMat.map !== silhouette) {
-          rimMat.map = silhouette;
+        if (rimMat.map !== neon.texture) {
+          rimMat.map = neon.texture;
           rimMat.needsUpdate = true;
         }
         const worldW = VEHICLE_ASPECT * VEHICLE_H;
         const worldH = VEHICLE_H;
+        const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
+        const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
         rim.position.set(vehicle.position.x, vehicle.position.y, VEHICLE_Z - 0.01);
-        rim.scale.set(
-          facingRef.current * (worldW + 2 * NEON_RIM_MARGIN),
-          worldH + 2 * NEON_RIM_MARGIN,
-          1,
-        );
+        rim.scale.set(facingRef.current * worldW * (1 + padX), worldH * (1 + padY), 1);
       }
     }
   });

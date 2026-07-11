@@ -7,7 +7,7 @@ export default defineConfig({
 
     environment: "happy-dom",
 
-    include: ["src/game/**/*.test.ts", "src/utils/**/*.test.ts"],
+    include: ["src/game/**/*.test.ts", "src/utils/**/*.test.ts", "src/render/**/*.test.ts"],
 
     coverage: {
       provider: "v8",
