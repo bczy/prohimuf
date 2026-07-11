@@ -1,6 +1,6 @@
 # 0012 — Optional scripted tutorial stage before Rue Belliard
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-11
 - **Supersedes:** —
 - **Related:** [ADR-0002](./0002-cargo-delivery-core-loop-state.md) (deliveries),
