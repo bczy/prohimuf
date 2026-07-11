@@ -4,8 +4,13 @@
  * "protect the delivery" beat. Side-profile view — they roll horizontally down
  * the street lane where the couriers run — in the house style: pure photocopied
  * fanzine B&W (the neon rim is drawn render-side per ADR 0006, no longer baked
- * into the sprite), on a PURE BLACK background that is then keyed to transparency
- * (the exact same edge flood-fill as cutout-enemies.mjs, imported and reused here).
+ * into the sprite), generated on a flat SATURATED CHROMA-KEY ground (bright
+ * magenta #FF3CDC, authored in levelArt.json `vehicles.style`) that is then keyed
+ * to transparency. Serge's keying switch off #000000: B&W-on-black gets
+ * flood-eaten; the saturated key keys cleanly. Keying reuses the corner-adaptive
+ * edge flood-fill in cutout-enemies.mjs (imported below) — it samples the ground
+ * colour from the corners, so it handles ANY flat ground (verified on magenta),
+ * and a pure-B&W body is maximally distant from magenta so it is never eaten.
  *
  * Single source of truth: the `vehicles` block of
  * src/game/levels/levelArt.json (prompts, sizes, neon accent, output path).

@@ -596,3 +596,68 @@ with `dev-tooling-assets` confirming the cutout keys it. Hold the PROMPT gate un
 clause changes.
 
 — Serge, PRE-PROD PASS (decouple)
+
+## 2026-07-11 — [S1] keying blocker: generation ground black → magenta chroma-key
+
+Serge's decouple pre-prod [S1] BLOCKER + Nico's PROMPT gate pre-authorization of the fix
+path (switch the generation ground to a bright chroma-key, mirroring the repo's proven
+foreground-rail pattern). One clause moved in `vehicles.style`; everything else stays.
+Seeds unchanged (1337 / 42 / 8128); subjects unchanged; `neonPhrase` stays retired (empty).
+
+### The blocker (Serge [S1])
+
+Pure B&W on `#000000` is unsafe for the near-black edge flood-fill key (`cutout-enemies.mjs`,
+reused by `gen-vehicle-sprites.mjs`): it clears every border-connected pixel within ~24 of
+the corner colour (pure black). With the baked rim gone, the black outer contour is no longer
+a bright separator, so the flood eats inward through the black keyline — shrinking the
+silhouette, eating thin black appendages whole (the moto's DEFINING "exposed tube frame" §5,
+mirror, headlamp stalk, exhaust, straps), and in the catastrophic dark-render case eating big
+chunks of a heavy-ink body. Since FLUX-schnell has no lever to steer away from a dark render
+(the very reason we decoupled), the key must be safe for ANY B&W render, not a lucky
+white-dominant one. [S2]: the render-side rim bakes from the sprite alpha, so a nibbled key
+also nibbles the rim — the blocker is upstream of BOTH deliverables.
+
+### The fix (one clause, `vehicles.style`)
+
+- **was:** `… coarse halftone dots, fully black and white, on a uniform matte black background
+(#000000), flat ambient lighting, crisp cutout edges`
+- **now:** `… coarse halftone dots, fully black and white, isolated on a solid flat uniform
+bright magenta (#FF3CDC) chroma-key background, fully magenta empty surroundings, flat
+ambient lighting, crisp cutout edges`
+
+| Decision                                                                                 | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ground `matte black (#000000)` → `bright magenta (#FF3CDC) chroma-key`                   | A key colour that CANNOT occur in a pure-B&W vehicle: both black ink AND white toner now survive the cutout, only the magenta ground is removed → full silhouette (outline, thin frame tubes, appendages) preserved, so the render-side rim bakes from a CORRECT alpha ([S1]/[S2]).                                                                                                                                                                                  |
+| lifted verbatim from the proven foreground-rail pattern (`levels[*].prompts.foreground`) | Not a novel ground — the repo already generates + keys magenta chroma-key for the balcony silhouettes, so the cutout path exists and is verified. Nico pre-authorized mirroring it.                                                                                                                                                                                                                                                                                  |
+| **magenta, not Serge's green alt**                                                       | Serge offered green `#78FF3C` "if the magenta/moto-neon overlap reads confusing" — but the neon is now RENDER-SIDE, so the sprite body is pure B&W with zero magenta in it; there is no overlap in the generated PNG. Magenta is the proven/verified key path; green is unproven. Went magenta.                                                                                                                                                                      |
+| kept `crisp cutout edges` tail, did NOT add the foreground's `sharp silhouette edges`    | Merge-clean per the brief — one edge clause, no duplication.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `fully black and white` untouched                                                        | Describes the VEHICLE body (still pure monochrome); scope was the ground clause only. Mild watch-item: "fully black and white" near a bright-magenta ground could tempt FLUX to desaturate the ground — but the proven foreground rails carry the same black-subject + magenta-ground structure and key fine; the doubled "bright magenta … chroma-key background, fully magenta empty surroundings" pins the ground colour. Flagging, not reworking (out of scope). |
+
+Zero negations added. Word counts (assembled, neonPhrase empty): truck **79**, car **90**,
+moto **79** — all inside the §3.3 30–90 band (lint reports no word-band warning).
+
+### Lint status — REPORTED MISMATCH, not fought (per brief + Serge [S1] tooling-lane flag)
+
+`node scripts/check-art-prompts.mjs` → **6 errors** (2 per type). Both classes are the
+lint-vs-data mismatch of the ADR-0006 / [S1] transition, NOT a defect in this data:
+
+1. **`missing required house concept: dark/black background term`** (×3) — the brief
+   explicitly anticipated this: the lint's `STYLE_TOKENS` "dark/black background" concept
+   still only accepts `black`/`matte black`/`#000000`; the [S1] chroma-key ground migration
+   needs it to also accept a bright chroma-key ground token (mirroring the foreground pattern).
+2. **`contains forbidden neon token(s) "magenta (hue)"`** (×3) — the tooling lane already
+   landed the ADR-0006 inverse rule (`FORBIDDEN_NEON`), which bans hue words anywhere in a
+   vehicle prompt to stop baked-neon flood. It does not yet EXEMPT the ground KEY colour —
+   here `magenta` names the chroma-key ground, not a baked accent, exactly as
+   `checkLevels` REQUIRES `magenta chroma-key` on the foreground rails. (Switching to green
+   would not help — `green` is also in `NEON_HUES`, so any key hue trips the same rule.)
+
+Both are for `dev-tooling-assets` to reconcile as the lint finishes its ADR-0006 / [S1]
+update: (a) accept a bright chroma-key ground in the background concept, and (b) exempt the
+ground key-colour hue from `FORBIDDEN_NEON` (a "magenta/green chroma-key background" ground
+token, the vehicle analogue of the foreground `MAGENTA_KEY_RE` allowance). Per the brief I
+report the mismatch rather than fighting it — I did NOT revert to a black ground or drop the
+key colour, since either would undo the [S1] fix. NO commits.
+
+**Status:** [S1] ground fix landed in `levelArt.json`; lint mismatch reported to the tooling
+lane; awaiting the parallel lint update + `lead-art` PROMPT re-gate on the chroma-key ground.
