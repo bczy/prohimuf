@@ -61,3 +61,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0004](./0009-push-marker-workflow-dispatch.md)        | Push-marker dispatch for manual workflows                                                | Accepted |
 | [0005](./0010-art-direction-pipeline.md)               | Art-direction pipeline: gated prompts, seeded generation, CI gates                       | Accepted |
 | [0006](./0011-render-side-neon-rim.md)                 | Render-side emissive neon rim for vehicles (decouple from baked art)                     | Accepted |
+| [0012](./0012-optional-scripted-tutorial-stage.md)     | Optional scripted tutorial stage before Rue Belliard                                     | Proposed |
