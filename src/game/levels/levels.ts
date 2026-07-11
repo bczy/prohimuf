@@ -16,6 +16,14 @@ export interface LevelRoster {
 
 export interface LevelConfig {
   readonly id: string;
+  /**
+   * Discriminates a playable level from the scripted onboarding stage (ADR-0012, D1).
+   * Absent ⇒ `"playable"`, so the three shipped levels stay byte-for-byte identical.
+   * A `"tutorial"` entry carries inert gameplay fields (never read — every consumer
+   * branches on `kind` first) and diegetic display fields (name/district/year, which
+   * do render on the menu card).
+   */
+  readonly kind?: "playable" | "tutorial";
   readonly name: string;
   readonly district: string;
   readonly year: string;
@@ -33,6 +41,22 @@ export interface LevelConfig {
 }
 
 export const LEVELS: readonly LevelConfig[] = [
+  // Optional, scripted, informative-only onboarding stage (ADR-0012). Prepended so it
+  // is the first menu card, ahead of Rue Belliard, without inventing a composite menu
+  // order. Gameplay fields are inert (never read — consumers branch on `kind` first);
+  // name/district/year are diegetic copy that renders on the card.
+  {
+    id: "tutorial",
+    kind: "tutorial",
+    name: "Tutoriel",
+    district: "Prise en main",
+    year: "1998",
+    enemySpeedMultiplier: 1,
+    enemiesToWin: 0,
+    timeSeconds: 0,
+    unlocked: true,
+    deliveries: [],
+  },
   {
     id: "belliard",
     name: "Rue Belliard",
@@ -101,6 +125,19 @@ export const LEVELS: readonly LevelConfig[] = [
     ],
   },
 ];
+
+/**
+ * The first playable (non-tutorial) level — Rue Belliard. Consumers that used to
+ * assume `LEVELS[0]` is the first playable level (menu default highlight, HUD/tension
+ * seeds, `handlePlay` fallback) must go through this instead, since `LEVELS[0]` is now
+ * the tutorial (ADR-0012, D1). Narrowed to a non-undefined `LevelConfig` via a
+ * module-load invariant so `noUncheckedIndexedAccess` sees no `| undefined`.
+ */
+const firstPlayable = LEVELS.find((l) => l.kind !== "tutorial");
+if (firstPlayable === undefined) {
+  throw new Error("Invariant: LEVELS must contain at least one playable level");
+}
+export const FIRST_PLAYABLE_LEVEL: LevelConfig = firstPlayable;
 
 export type Difficulty = Prefs["difficulty"];
 

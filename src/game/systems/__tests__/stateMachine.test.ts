@@ -85,7 +85,9 @@ describe("createInitialState", () => {
   });
 
   it("every level parks its delivery stop at ground level on the street", () => {
-    for (const level of LEVELS) {
+    // The tutorial stage (ADR-0012) carries `deliveries: []` and no gameplay — exclude it
+    // from this playable-level data-shape invariant.
+    for (const level of LEVELS.filter((l) => l.kind !== "tutorial")) {
       expect(level.deliveries.length).toBeGreaterThan(0);
       for (const d of level.deliveries) {
         expect(d.stopPosition.y).toBeLessThan(0); // ground level

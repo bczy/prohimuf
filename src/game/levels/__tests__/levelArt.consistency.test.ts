@@ -12,7 +12,12 @@ import manifest from "../levelArt.json";
  */
 describe("levelArt.json ↔ levels.ts ↔ narrative consistency", () => {
   it("declares the exact same level ids + names, in the same order", () => {
-    const codeLevels = LEVELS.map((l) => ({ id: l.id, name: l.name }));
+    // The tutorial stage (ADR-0012) has no backdrop art of its own — it is not in the
+    // manifest by design. Compare only playable levels.
+    const codeLevels = LEVELS.filter((l) => l.kind !== "tutorial").map((l) => ({
+      id: l.id,
+      name: l.name,
+    }));
     const artLevels = manifest.levels.map((l) => ({ id: l.id, name: l.name }));
     expect(codeLevels).toEqual(artLevels);
   });
