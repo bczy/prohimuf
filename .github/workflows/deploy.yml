@@ -97,6 +97,13 @@ jobs:
 
       # (c) Delivery-beat check, non-blocking for now. Promotion follow-up: soak
       # one deploy cycle, then drop continue-on-error to make it a hard gate.
+      # The delivery script also runs the HALO GRADIENT gate (AC4,
+      # scripts/check-halo-gradient.mjs) on its DELIVERING screenshot, which
+      # decodes pixels via @napi-rs/canvas — installed here (same pin/convention
+      # as gen-vehicle-sprites.yml). --no-save keeps yarn.lock / PnP untouched;
+      # node_modules persists for the composite-action step below in this job.
+      - name: Install @napi-rs/canvas for halo gradient check
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
       - name: E2E delivery check (soak, non-blocking)
         continue-on-error: true
         uses: ./.github/actions/e2e-ingame
