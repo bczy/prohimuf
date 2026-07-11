@@ -48,12 +48,16 @@ prompts, no LoRA** — everything is carried by prompt text + pinned seed.
 2. **Front-load medium + view.** Early tokens weigh most: the prompt opens with
    "Flat 2D video game sprite, strict side view in orthographic projection…" before
    any subject word.
-3. **Prose, 30-90 assembled words.** Natural language, no tag soup, no SD weight
-   syntax. The ceiling is the ASSEMBLED prompt (`opening` + subject + `neonPhrase` +
-   `style`, §4); the four-slot split runs longer than a single block, so every added
-   clause must be load-bearing silhouette/process detail, never filler. Medium, view
-   and silhouette must all land in the first ~40 words; the tail (style block) is the
-   weakest attention zone, so family-critical treatment there is watched at the asset gate.
+3. **Prose, 30-90 assembled words target; 120 hard ceiling** (`check-art-prompts.mjs`
+   errors above 120, warns above 90). Natural language, no tag soup, no SD weight
+   syntax. The count is the ASSEMBLED prompt (`opening` + subject + `neonPhrase` +
+   `style`, §4); the four-slot split runs longer than a single block, and per-asset
+   FAIL-fix clauses can push a prompt into the 90-120 warn band — tolerated ONLY when
+   every word past 90 is a load-bearing silhouette/process/fix clause justified in
+   `prompt-drafts.md`, never filler. The further past 90, the harder the asset gate
+   scrutinises the tail. Medium, view and silhouette must all land in the first ~40
+   words; the tail (style block + late fix-clauses) is the weakest attention zone, so
+   family-critical treatment there is watched at the asset gate.
 4. **One primary style**, stated as medium + era + process: "photocopied 1990s punk
    fanzine style: rough black ink linework, high-contrast xerox toner texture,
    halftone dots". Xerox is the law (not risograph, not grunge, not synthwave).
