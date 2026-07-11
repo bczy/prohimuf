@@ -8,11 +8,14 @@ name: Deploy branch preview
 #
 # Requires Settings → Pages → Source: "Deploy from a branch" → gh-pages / root.
 
-# Manual only: pick the branch in the Actions UI (Run workflow → choose ref)
-# and it deploys that branch's preview. Keeps deploys deliberate, not on
-# every push.
+# Auto-deploys on every push to claude/* branches (agent workflow: the preview
+# is the on-device test surface). Any other branch stays deliberate: pick it in
+# the Actions UI (Run workflow → choose ref).
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "claude/**"
 
 permissions:
   contents: write
