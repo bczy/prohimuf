@@ -107,7 +107,7 @@ The tutorial reuses `LevelCard` (`src/render/ui/MainMenu.tsx:82-168`) with
   reached from gameplay (`LEVEL_COMPLETE`), which the tutorial never enters; completing
   Belliard (now index 1) still unlocks Stalingrad (index 2) — the relative `+1` logic is
   unaffected. Add a regression test asserting the tutorial entry can never be the
-  *source* nor the *target* of an unlock.
+  _source_ nor the _target_ of an unlock.
 - Extend the preview harness (`?preview=tutorial`, `App.tsx:29-32`) so the render farm /
   `verify` skill can screenshot the tutorial without playing.
 
