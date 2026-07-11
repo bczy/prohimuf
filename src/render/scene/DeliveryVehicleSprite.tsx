@@ -130,7 +130,9 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
     // only shows once its silhouette is ready.
     if (rim !== null) {
       const silhouette = getVehicleSilhouette(vehicle.vehicleType);
-      rim.visible = onStage && silhouette !== null;
+      // onStage is provably true here (early-returns above) — visibility only
+      // hinges on the async silhouette bake having landed.
+      rim.visible = silhouette !== null;
       if (silhouette !== null) {
         const rimMat = rim.material as MeshBasicMaterial;
         if (rimMat.map !== silhouette) {
