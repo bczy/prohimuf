@@ -1,4 +1,4 @@
-# 0005 — Art-direction pipeline: gated prompts, seeded generation, CI style gates
+# 0010 — Art-direction pipeline: gated prompts, seeded generation, CI style gates
 
 - **Status:** Accepted
 - **Date:** 2026-07-10

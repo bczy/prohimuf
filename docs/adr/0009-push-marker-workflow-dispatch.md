@@ -1,6 +1,8 @@
-# 0004 — Push-marker dispatch for manual workflows
+# 0009 — Push-marker dispatch for manual workflows
 
-- **Status:** Accepted
+- **Status:** Accepted — deploy-preview portion superseded: since main's auto-deploy
+  (`claude/*` push trigger), `deploy-preview.yml` no longer uses a dispatch marker;
+  the mechanism remains for the gen-\* workflows
 - **Date:** 2026-07-10
 
 ## Context

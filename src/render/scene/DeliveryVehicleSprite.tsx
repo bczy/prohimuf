@@ -14,7 +14,7 @@ const VEHICLE_H = 2.4;
 const VEHICLE_ASPECT = 2.0;
 // Sits on the courier street lane, just in front of the couriers (z 0.7).
 const VEHICLE_Z = 0.72;
-// World-space rim thickness added on every side (loi du glow, ADR-0006). A fixed
+// World-space rim thickness added on every side (loi du glow, ADR-0011). A fixed
 // fraction of the vehicle height so the rim stays proportional at any zoom.
 const NEON_RIM_MARGIN = 0.06 * VEHICLE_H; // tune at review
 
@@ -35,7 +35,7 @@ function getVehicleTexture(type: VehicleType): Texture | null {
       `${import.meta.env.BASE_URL}assets/vehicles/${type}.png`,
       (t) => {
         cache.set(type, applyPixelFilter(t));
-        // Bake the neon rim silhouette from the same loaded image (ADR-0006).
+        // Bake the neon rim silhouette from the same loaded image (ADR-0011).
         const source: unknown = t.image;
         if (source instanceof HTMLImageElement) {
           silhouetteCache.set(type, buildNeonSilhouette(source, getVehicleNeonHex(type)));
@@ -124,7 +124,7 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
       mat.needsUpdate = true;
     }
 
-    // Neon rim (loi du glow, ADR-0006): a scaled additive silhouette drawn
+    // Neon rim (loi du glow, ADR-0011): a scaled additive silhouette drawn
     // behind the sprite. World-unit margin added per-axis so the rim thickness
     // is uniform on all four sides despite the 2:1 aspect. Baked async, so it
     // only shows once its silhouette is ready.

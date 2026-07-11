@@ -3,7 +3,7 @@
  * Generate the delivery-vehicle sprites (truck / car / moto) for the scripted
  * "protect the delivery" beat. Side-profile view — they roll horizontally down
  * the street lane where the couriers run — in the house style: pure photocopied
- * fanzine B&W (the neon rim is drawn render-side per ADR 0006, no longer baked
+ * fanzine B&W (the neon rim is drawn render-side per ADR 0011, no longer baked
  * into the sprite), generated on a flat SATURATED CHROMA-KEY ground (bright
  * magenta #FF3CDC, authored in levelArt.json `vehicles.style`) that is then keyed
  * to transparency. Serge's keying switch off #000000: B&W-on-black gets
@@ -51,7 +51,7 @@ const FORCE = process.env.FORCE === "1";
 // early tokens most) + per-type `prompt` (subject/silhouette only) + the
 // shared `style` block, verbatim across the set for family consistency.
 //
-// ADR 0006 (render-side neon rim): `neonPhrase` is RETIRED — baked neon flooded
+// ADR 0011 (render-side neon rim): `neonPhrase` is RETIRED — baked neon flooded
 // the FLUX body, so vehicles are generated PURE B&W and the rim is drawn at
 // runtime in src/render. The slot is now empty/absent and injects NOTHING. The
 // per-type `neon` field is kept as RENDER METADATA (name → hue for the runtime
@@ -74,7 +74,7 @@ function loadVehicles() {
   }
   const opening = block.opening ?? "";
   const styleSuffix = block.style ?? "";
-  // ADR 0006: default EMPTY (not a baked-neon phrase) when absent, and an empty
+  // ADR 0011: default EMPTY (not a baked-neon phrase) when absent, and an empty
   // string is honoured as-is → the assembled prompt injects no neon token.
   const neonPhrase = block.neonPhrase ?? "";
   return Object.entries(block.types).map(([type, def]) => {

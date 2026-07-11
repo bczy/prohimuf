@@ -18,7 +18,7 @@
  *       clean by the transparent branch, so no change is needed. A FAILED magenta
  *       key leaves a bright magenta (not near-black) opaque border → clean ratio
  *       collapses AND the flood-kill below fires — caught twice.
- *   (2) NEON — (ADR 0006, render-side neon rim) vehicles are now generated PURE
+ *   (2) NEON — (ADR 0011, render-side neon rim) vehicles are now generated PURE
  *       B&W (the neon rim is drawn at runtime in src/render), so the old LOWER
  *       bound ("a rim must exist") is dropped and INVERTED into a flood-kill
  *       UPPER bound: a baked FLUX colour flood (a whole body painted an accent
@@ -70,7 +70,7 @@ const NEON_MIN_VAL = 0.65; // value floor for a "neon"/flood pixel
 const BBOX_FILL_MIN_PCT = 45; // content must fill >= this % of its bounding box (solid body)
 const BBOX_WIDTH_MIN_PCT = 60; // bbox must span >= this % of canvas width (whole vehicle in frame)
 
-// ── Per-set NEON mode (ADR 0006 — render-side neon rim) ──────────────────────
+// ── Per-set NEON mode (ADR 0011 — render-side neon rim) ──────────────────────
 // The neon rim is now drawn at RUNTIME in src/render; vehicle sprites are pure
 // B&W xerox. So the old NEON LOWER bound ("a rim must exist, >= 0.75% of content
 // in the assigned hue band") would fail every correct B&W sprite and is DROPPED.
@@ -104,7 +104,7 @@ const HUE_BANDS = {
   magenta: [280, 330],
 };
 
-// Flood-kill hue bands (ADR 0006). These TILE the whole colour wheel so every
+// Flood-kill hue bands (ADR 0011). These TILE the whole colour wheel so every
 // saturated content pixel bins into exactly one band; the dominant band's share
 // is the flood metric, scanned across ALL hues (not just the assigned one) so a
 // flood in the WRONG accent (e.g. a cyan cabin on an orange truck) is still
@@ -259,7 +259,7 @@ function evaluate(type, neon, m) {
       got: `${m.borderCleanPct.toFixed(2)}%`,
       need: `>= ${GROUND_MIN_CLEAN_PCT}%`,
     },
-    // NEON flood-kill (ADR 0006) — the dominant saturated hue band must stay under
+    // NEON flood-kill (ADR 0011) — the dominant saturated hue band must stay under
     // the ceiling. Reports the offending band so a flood (e.g. "orange 37%") is
     // legible at a glance. Scans ALL hues, so a wrong-accent flood is caught too.
     {
@@ -400,7 +400,7 @@ main().catch((e) => {
 /*
  * CALIBRATION TABLE.
  *
- * ── NEON flood-kill (ADR 0006) — measured on the CURRENT on-disk PNGs ─────────
+ * ── NEON flood-kill (ADR 0011) — measured on the CURRENT on-disk PNGs ─────────
  *   These are still the pre-decouple BAKED set (regeneration as B&W is a CI
  *   follow-up). The dominant saturated hue band, scanned across all hues:
  *
@@ -410,7 +410,7 @@ main().catch((e) => {
  *   moto   magenta          3.25%   <= 18%    PASS
  *
  *   The truck FAIL is CORRECT, not a mis-tune: the on-disk truck is the 37%
- *   orange flood recorded in docs/agent-handoffs.md (the exact failure ADR 0006
+ *   orange flood recorded in docs/agent-handoffs.md (the exact failure ADR 0011
  *   decouples). The 18% ceiling sits above the clean set (car 4.3 / moto 3.2) and
  *   below the flood (37.6), so it kills floods while passing clean B&W sprites.
  *   Once the vehicles are regenerated pure B&W in CI, all three drop to near-zero
@@ -418,7 +418,7 @@ main().catch((e) => {
  *   — that would re-admit the flood the gate exists to catch.
  *
  * ── GROUND + SILHOUETTE — measured against the earlier PM-accepted PNGs ───────
- *   (These bounds are unchanged by ADR 0006; re-verify after the B&W re-roll.)
+ *   (These bounds are unchanged by ADR 0011; re-verify after the B&W re-roll.)
  *
  *   metric                 truck    car      moto     threshold        margin
  *   GROUND border clean    99.39%   91.70%   99.88%   >= 85%           car tightest (+6.7pp)

@@ -284,7 +284,7 @@ Template:
   7. conditional sprite-prompt workshop — only if batch 2 fails the acceptance floor
      (neon glow on all three vehicles + car reads as a hatchback).
   8. revisit the branch-prefix allowlist on the first external contributor (Q1 trigger).
-- LANE-DOCS release: `docs/adr/0004-push-marker-workflow-dispatch.md` (canonical idiom,
+- LANE-DOCS release: `docs/adr/0009-push-marker-workflow-dispatch.md` (canonical idiom,
   `branches-ignore`, guard contract, marker-on-first-dispatch, preview.yml reword, new
   Consequences bullets + Security consequences subsection), `docs/ci.md` (dispatch
   section rewrite + quick-ref row `actions: write`), `docs/agent-handoffs.md` (this
@@ -418,7 +418,7 @@ Template:
   AFTER the magenta key** in `gen-vehicle-sprites.mjs`. Key on the colour image first (clean
   silhouette, proven here), THEN desaturate the keyed sprite → neutralises the ground spill in
   the body while keeping the clean cut. This is the missing companion to my [S1] ground change
-  (flagged then as a coordinated tooling change). Rim bake (ADR 0006) is unaffected either way
+  (flagged then as a coordinated tooling change). Rim bake (ADR 0011) is unaffected either way
   (it reads alpha, not colour), but the visible sprite must be true B&W.
 - **GATE GAP (flag for tooling):** the bw-mode flood-kill counts only high-sat AND high-val
   pixels in ONE hue band (≤18%). The car reads **12.39% magenta → PASS** while being 54%
@@ -542,18 +542,18 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
 
 ---
 
-### story-sprite-prompt-workshop (follow-up 7) — PROMPT GATE, decoupled B&W (ADR 0006)
+### story-sprite-prompt-workshop (follow-up 7) — PROMPT GATE, decoupled B&W (ADR 0011)
 
 - verdict: **PASS — dispatch the B&W generation**, with ONE dispatch-ordering condition on
   the chroma-key ground (below). The flood era is over by construction, not by wording.
 - prompt contract (§3): **clean.** `neonPhrase` retired to `""` (no neon/glow token
-  anywhere — the ADR 0006 inverse rule); `style` = "…coarse halftone dots, fully black and
+  anywhere — the ADR 0011 inverse rule); `style` = "…coarse halftone dots, fully black and
   white, on a uniform matte black background (#000000)…" with my KEEP-clauses intact;
   subjects unchanged from 3b; 71/82/71 words (back inside the 30-90 band, so the §3.3
   tail-washout pressure is gone); zero negations; hex-bound ground (§3.5); shared style
   byte-identical (§2.2 structural). Nothing to rework in the contract.
 - §2.1 loi du glow: now satisfied by the RENDERER (additive emissive silhouette, hue from
-  the `neon` data field, flood impossible by construction per ADR 0006). BIBLE amended:
+  the `neon` data field, flood impossible by construction per ADR 0011). BIBLE amended:
   §2.1 now states the law governs the on-screen result not the method, vehicles carry a
   render-side rim and ship as pure B&W (a baked rim on a vehicle sprite is now itself
   off-spec); §6 pipeline/gate note updated (neon check flips to an upper-bound flood-kill
@@ -587,7 +587,7 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
   NOT block ship — it rides as a scoped follow-up. This set + the render-side rim is what
   ships. §1 satisfied on all three: fully B&W xerox, crimson cast gone (grayscale-after-key
   Rec.601 worked, meanSat 0.000) — the magenta-key detour + grayscale step was the right
-  call. Judged as pure B&W; the neon rim comes live in-game (§2.1 render-side, ADR 0006).
+  call. Judged as pure B&W; the neon rim comes live in-game (§2.1 render-side, ADR 0011).
 - truck (seed 1337): **PASS.** W1/[S5] resolved — the cargo body now reads clearly TALLER
   than the cab line (Serge 43% vs 38%), boxy tall-roof delivery volume, clean high-contrast
   xerox. Reads unambiguously as the truck class (§2.3) — biggest, boxiest, longest. Minor
@@ -616,9 +616,9 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
 
 ---
 
-### story-render-side-neon-rim — decouple vehicle glow from baked art (ADR-0006)
+### story-render-side-neon-rim — decouple vehicle glow from baked art (ADR-0011)
 
-- arch: Boundary verdict PASS. Decision recorded in `docs/adr/0006-render-side-neon-rim.md`
+- arch: Boundary verdict PASS. Decision recorded in `docs/adr/0011-render-side-neon-rim.md`
   (Accepted): vehicles generate PURE B&W; the loi du glow moves to `src/render` as a runtime
   emissive rim. Technique = CPU-baked neon silhouette (opaque pixels → assigned hue via source
   alpha) drawn behind the sprite with `AdditiveBlending`, scaled out by a uniform world-space

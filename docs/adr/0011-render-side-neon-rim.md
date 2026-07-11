@@ -1,4 +1,4 @@
-# 0006 — Render-side emissive neon rim for vehicles (decouple from baked art)
+# 0011 — Render-side emissive neon rim for vehicles (decouple from baked art)
 
 - **Status:** Accepted
 - **Date:** 2026-07-11

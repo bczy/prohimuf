@@ -1,5 +1,5 @@
 /**
- * Render-side neon rim for the delivery vehicles (ADR-0006).
+ * Render-side neon rim for the delivery vehicles (ADR-0011).
  *
  * The vehicle sprites ship as pure black-and-white xerox (FLUX floods the body
  * when a neon token is in the generation prompt). The *loi du glow* — «ce qui
@@ -72,7 +72,7 @@ function sourceSize(image: SilhouetteSource): { width: number; height: number } 
  * Bake a neon silhouette of a loaded sprite: every source pixel above
  * {@link ALPHA_THRESHOLD} becomes the solid `hex` RGB at its source alpha,
  * everything else transparent. Run through the same nearest / sRGB pixel
- * filter as {@link makePixelCanvasTexture} so it keys crisply (ADR-0006).
+ * filter as {@link makePixelCanvasTexture} so it keys crisply (ADR-0011).
  */
 export function buildNeonSilhouette(image: SilhouetteSource, hex: string): CanvasTexture {
   const { width, height } = sourceSize(image);
