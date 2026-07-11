@@ -58,7 +58,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0006](./0006-directional-sprite-generation.md)        | Directional, mirrored multi-pose sprite generation for car & hostage entities            | Proposed |
 | [0007](./0007-shared-harness-library.md)               | Shared harness library, and rejection of a "harness that creates harnesses"              | Proposed |
 | [0008](./0008-two-axis-pan-and-fullscreen.md)          | Two-axis swipe pan and fullscreen toggle                                                 | Accepted |
-| [0004](./0009-push-marker-workflow-dispatch.md)        | Push-marker dispatch for manual workflows                                                | Accepted |
-| [0005](./0010-art-direction-pipeline.md)               | Art-direction pipeline: gated prompts, seeded generation, CI gates                       | Accepted |
-| [0006](./0011-render-side-neon-rim.md)                 | Render-side emissive neon rim for vehicles (decouple from baked art)                     | Accepted |
+| [0009](./0009-push-marker-workflow-dispatch.md)        | Push-marker dispatch for manual workflows                                                | Accepted |
+| [0010](./0010-art-direction-pipeline.md)               | Art-direction pipeline: gated prompts, seeded generation, CI gates                       | Accepted |
+| [0011](./0011-render-side-neon-rim.md)                 | Render-side emissive neon rim for vehicles (decouple from baked art)                     | Accepted |
 | [0012](./0012-optional-scripted-tutorial-stage.md)     | Optional scripted tutorial stage before Rue Belliard                                     | Proposed |
