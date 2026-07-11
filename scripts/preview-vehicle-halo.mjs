@@ -43,6 +43,7 @@ import {
   dismissNarrative,
   loadLevelManifest,
   seedDeterminism,
+  sleep,
 } from "./e2e-lib.mjs";
 import { checkHaloGradient } from "./check-halo-gradient.mjs";
 
@@ -57,6 +58,9 @@ const RENDER_TIMEOUT = 20000;
 
 // HUD banner (src/render/ui/HUD.tsx) — proves the vehicle rolled in.
 const BANNER_DELIVERING = "LIVRAISON — PROTÉGEZ LE VÉHICULE !";
+
+// Settle before the baseline (pre-trigger) snapshot so the backdrop is painted.
+const BASELINE_SETTLE_MS = 2500;
 
 // (levelId, vehicleType) pairs — one per shipped vehicle. triggerAtElapsedSeconds
 // from src/game/levels/levels.ts drives the wait budget (trigger + 15s slack).
@@ -84,6 +88,12 @@ async function capturePair(context, manifest, level, pair) {
     await dismissNarrative(page);
     await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
 
+    // Baseline (pre-trigger) frame: lets the halo checker isolate the rim by
+    // diffing against the vehicle-present frame (same technique as e2e-delivery),
+    // so the crop locates the vehicle and not the facade's warm windows.
+    await sleep(BASELINE_SETTLE_MS);
+    const baselineBuf = await page.screenshot().catch(() => null);
+
     console.log(`[preview-halo] ${type} — waiting for delivery (trigger ~${pair.triggerS}s)`);
     await page.getByText(BANNER_DELIVERING).first().waitFor({ timeout: bannerTimeout });
 
@@ -91,7 +101,7 @@ async function capturePair(context, manifest, level, pair) {
     const buf = await page.screenshot({ path: fullShot });
     console.log(`[preview-halo] ${type} — full frame → ${path.relative(ROOT, fullShot)}`);
 
-    // Close-up: locate the rim cluster via the halo checker's bbox, else fall
+    // Close-up: locate the rim cluster via the halo checker's diff bbox, else fall
     // back to a generous fixed crop of the street lane (lower-centre band).
     let clip = {
       x: Math.round(VIEWPORT.width * 0.2),
@@ -100,7 +110,15 @@ async function capturePair(context, manifest, level, pair) {
       height: Math.round(VIEWPORT.height * 0.4),
     };
     try {
-      const { metrics } = await checkHaloGradient({ buffer: buf, neon, quiet: true });
+      const { metrics } =
+        baselineBuf === null
+          ? { metrics: { bbox: { located: false } } }
+          : await checkHaloGradient({
+              buffer: buf,
+              baselineBuffer: baselineBuf,
+              neon,
+              quiet: true,
+            });
       const b = metrics.bbox;
       if (b.located) {
         const x = Math.max(0, b.x0);
@@ -149,7 +167,9 @@ async function main() {
   for (const pair of PAIRS) {
     const level = levels.find((l) => l.id === pair.levelId);
     if (level === undefined) {
-      console.error(`[preview-halo] levelArt.json has no level "${pair.levelId}" — skipping ${pair.type}`);
+      console.error(
+        `[preview-halo] levelArt.json has no level "${pair.levelId}" — skipping ${pair.type}`,
+      );
       failures++;
       continue;
     }
@@ -163,7 +183,9 @@ async function main() {
     console.error(`\n[preview-halo] ${failures} vehicle preview(s) failed to reach delivery`);
     process.exit(1);
   }
-  console.log(`\n[preview-halo] done — ${PAIRS.length} vehicle halo previews captured in ${path.relative(ROOT, OUT_DIR)}`);
+  console.log(
+    `\n[preview-halo] done — ${PAIRS.length} vehicle halo previews captured in ${path.relative(ROOT, OUT_DIR)}`,
+  );
 }
 
 main().catch((e) => {
