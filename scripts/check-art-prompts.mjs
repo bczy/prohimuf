@@ -11,35 +11,46 @@
  * clotted with negations that FLUX ignores them, or a level foreground prompt
  * that forgot the magenta chroma-key phrase the cutout pipeline keys on.
  *
+ * B&W-vehicle contract — ADR 0006 (render-side neon rim). The loi du glow was
+ * DECOUPLED from the baked art: FLUX-schnell could not confine the neon token to
+ * the rim and flooded the whole body across three batches, so vehicles are now
+ * generated as PURE black-and-white xerox and the neon rim is drawn at runtime in
+ * `src/render` (hue from the type's `neon` field, which survives as render
+ * METADATA only). The consequence for this gate is that the old neon RULE INVERTS
+ * for the vehicles set: a neon/glow/acid/hue-name token in the assembled vehicle
+ * prompt is no longer required — it is now an ERROR, because that token is exactly
+ * what triggers the body flood.
+ *
  * Assembled-prompt contract (matches gen-vehicle-sprites.mjs and the art bible
- * docs/art-direction.md §3-4): the generator sends FLUX, per type, the four-slot
+ * docs/art-direction.md §3-4): the generator sends FLUX, per type, the
  * concatenation `vehicles.opening` (medium + view, front-loaded) + the type's
- * `prompt` (subject/silhouette only) + `vehicles.neonPhrase` ({neon}/{hex}
- * rim-light template, resolved from the type's `neon` field) + `vehicles.style`
- * (shared medium/texture/black-ground tail). The lint reconstructs that assembled
- * prompt per type and checks it — the five house concepts may live in any slot
- * (side-view in `opening`, the neon-glow in `neonPhrase`, black ground in
- * `style`); the concepts, not their location, are the contract.
+ * `prompt` (subject/silhouette only) + `vehicles.style` (shared medium/texture/
+ * black-ground tail). `vehicles.neonPhrase` is RETIRED (ADR 0006) — it must be
+ * empty or absent; a non-empty neonPhrase is an error. The lint reconstructs the
+ * assembled prompt per type and checks it — the house concepts may live in any
+ * slot (side-view in `opening`, black ground in `style`); the concepts, not their
+ * location, are the contract.
  *
  * Bible-critical rules enforced (§3): NEVER negate — FLUX reads "not photoreal"
  * as photoreal, so the anti-photoreal requirement is satisfied POSITIVELY by the
  * medium statement (flat 2D sprite / fanzine illustration / ink linework), and a
  * zero-negation prompt is the ideal (clean, no warning). Negation is only an
- * UPPER bound. Prose length is capped: 30-90 assembled words is the target.
+ * UPPER bound. Prose length is capped: 30-90 assembled words is the target (the
+ * assembled prompt is now shorter — the neonPhrase slot is gone).
  *
  * Severity model:
  *   ERROR (exit non-zero, gates CI):
- *     - a required vehicles slot missing/empty (`opening`, `neonPhrase`, `style`),
+ *     - a required vehicles slot missing/empty (`opening`, `style`),
+ *     - a non-empty `neonPhrase` (baked neon is retired — ADR 0006),
  *     - the assembled prompt missing a required house concept token,
- *     - `neonPhrase` hardcoding a hue instead of a {neon}/{hex} slot,
+ *     - a neon/glow/acid/hue-name token PRESENT in the assembled vehicle prompt
+ *       (inverse of the old rule — baked neon floods the body, ADR 0006),
  *     - a per-type prompt that is empty,
- *     - a per-type prompt naming a neon hue that CONTRADICTS its `neon` field,
  *     - >4 negations in an assembled prompt (§3.1 hard ceiling),
  *     - an assembled prompt over 120 words (§3.3 hard ceiling),
  *     - a level prompt that is empty,
  *     - a level foreground prompt missing the magenta chroma-key phrase.
  *   WARN (advisory, non-gating):
- *     - a per-type prompt restating its OWN assigned neon colour (redundant),
  *     - 3-4 negations (over the ≤2 budget but under the hard ceiling),
  *     - an assembled prompt outside the 30-90 word target band,
  *     - a per-type prompt describing environment/scenery, not the subject.
@@ -65,19 +76,26 @@ const LEVEL_ART = path.resolve(ROOT, process.env.LEVEL_ART ?? "src/game/levels/l
 // pinned to the contract spec exactly so the budget is measured consistently.
 const NEG_RE = /\bnot?( a| an)?\b|\bno \b/gi;
 
-// Neon hues we treat as "colour names" for the contradiction/redundancy check.
-// Restricted to the palette the `neon` field can take, so incidental words like
-// "white" (in "black and white") are NOT misread as a hardcoded neon hue.
+// Neon hues we treat as "colour names". Restricted to the palette the `neon`
+// field can take, so incidental words like "white" (in "black and white") are
+// NOT misread as a hue. In B&W mode (ADR 0006) ANY of these in the assembled
+// vehicle prompt is a flood trigger → error.
 const NEON_HUES = ["orange", "cyan", "magenta", "green"];
 
-// Hex anchors for the neon hues — mirrors NEON_HEX in gen-vehicle-sprites.mjs so
-// the lint resolves {hex} exactly as the generator does when assembling prompts.
-const NEON_HEX = {
-  orange: "#FF8C14",
-  cyan: "#28F0FF",
-  magenta: "#FF3CDC",
-  green: "#78FF3C",
-};
+// Forbidden-token set for the assembled VEHICLE prompt (ADR 0006, inverse rule).
+// Baked neon floods the FLUX-schnell body; the rim is now render-side, so no
+// neon/glow/acid/hue-name may appear in a vehicle prompt. `rim light` is matched
+// with an optional hyphen/space; bare "light" (e.g. "flat ambient lighting") is
+// intentionally NOT forbidden.
+const FORBIDDEN_NEON = [
+  { name: "neon", re: /\bneon\b/i },
+  { name: "acid", re: /\bacid\b/i },
+  { name: "glow", re: /\bglow(?:ing)?\b/i },
+  { name: "luminous", re: /\bluminous\b/i },
+  { name: "luminescent", re: /\bluminescent\b/i },
+  { name: "rim light", re: /\brim[- ]?light\b/i },
+  ...NEON_HUES.map((h) => ({ name: `${h} (hue)`, re: new RegExp(`\\b${h}\\b`, "i") })),
+];
 
 // Assembled-prompt word budget (art bible §3.3).
 const WORD_TARGET_MIN = 30;
@@ -110,11 +128,9 @@ const STYLE_TOKENS = [
     name: "fanzine/xerox/photocopy term",
     any: [/\bfanzine\b/i, /\bxerox\b/i, /\bphotocopy\b/i, /\bphotocopied\b/i, /\btoner\b/i],
   },
-  {
-    name: "neon-glow term",
-    any: [/\bneon\b/i],
-    also: [/\bglow\b/i, /\bglowing\b/i, /\bluminous\b/i, /\bluminescent\b/i, /\brim light\b/i],
-  },
+  // The neon-glow term is DELIBERATELY no longer a required house concept: the
+  // rim moved render-side (ADR 0006) and a neon token in a vehicle prompt now
+  // FLOODS the body. Its inverse is enforced below via FORBIDDEN_NEON.
   {
     name: "dark/black background term",
     any: [
@@ -150,21 +166,10 @@ const STYLE_TOKENS = [
   },
 ];
 
-// Resolve a neonPhrase template ({neon}/{hex}) for a given hue, exactly as the
-// generator does — so the assembled prompt the lint sees matches what FLUX gets.
-function resolveNeonPhrase(neonPhrase, neon) {
-  return neonPhrase.replaceAll("{neon}", neon).replaceAll("{hex}", NEON_HEX[neon] ?? "");
-}
-
 function wordCount(text) {
   const t = text.trim();
   return t ? t.split(/\s+/).length : 0;
 }
-
-// The shared neon phrase must bind the hue to the `neon` field via a {neon} or
-// {hex} placeholder, never hardcode a colour — that keeps the field the single
-// source of truth for every type's rim light.
-const NEON_SLOT_RE = /\{neon\}|\{hex\}/i;
 
 // The distinctive phrase the foreground cutout pipeline keys on.
 const MAGENTA_KEY_RE = /magenta chroma-key/i;
@@ -181,8 +186,9 @@ function countNegations(text) {
   return m ? m.length : 0;
 }
 
-function hardcodedHues(text) {
-  return NEON_HUES.filter((h) => new RegExp(`\\b${h}\\b`, "i").test(text));
+// Every forbidden neon/glow/acid/hue token present in the assembled prompt.
+function forbiddenNeonHits(text) {
+  return FORBIDDEN_NEON.filter((tok) => tok.re.test(text)).map((tok) => tok.name);
 }
 
 // ── Violation collection ─────────────────────────────────────────────────────
@@ -207,75 +213,63 @@ function checkVehicles(vehicles, rep) {
     return;
   }
 
-  // The generator now assembles every prompt from four slots; `opening` and
-  // `neonPhrase` are load-bearing (medium/view and the law-of-glow), so their
-  // absence is a hard error, not a silent fall-through to the old single-field
-  // shape.
+  // The generator assembles each prompt from `opening` (medium/view) + the type's
+  // subject `prompt` + the shared `style` tail. `opening` and `style` are
+  // load-bearing, so their absence is a hard error. `neonPhrase` is RETIRED
+  // (ADR 0006) — the neon rim moved render-side; a non-empty neonPhrase is now an
+  // error, not a required slot.
   const opening = vehicles.opening ?? "";
   const neonPhrase = vehicles.neonPhrase ?? "";
   const style = vehicles.style ?? "";
 
   if (!opening.trim()) rep.error("vehicles.opening", "missing/empty — required medium + view slot");
-  if (!neonPhrase.trim())
-    rep.error("vehicles.neonPhrase", "missing/empty — required law-of-glow rim-light slot");
   if (!style.trim()) rep.error("vehicles.style", "missing/empty — required shared style tail");
 
-  // neonPhrase must reference the neon field via {neon}/{hex}, never a hardcoded
-  // hue — that keeps the field the single source of truth for every type.
+  // neonPhrase may be empty or absent (no longer required). If it carries ANY
+  // content, the baked-neon rim is back — that is the flood trigger ADR 0006
+  // removed, so it is a hard error.
   if (neonPhrase.trim()) {
-    if (!NEON_SLOT_RE.test(neonPhrase)) {
-      rep.error(
-        "vehicles.neonPhrase",
-        "does not reference a {neon}/{hex} placeholder — the rim-light hue must be bound to each type's `neon` field",
-      );
-    }
-    const stray = hardcodedHues(neonPhrase);
-    if (stray.length > 0) {
-      rep.error(
-        "vehicles.neonPhrase",
-        `hardcodes neon hue(s) "${stray.join(", ")}" — use the {neon}/{hex} slot so the hue stays per-type`,
-      );
-    }
+    rep.error(
+      "vehicles.neonPhrase",
+      "baked neon is retired, see ADR 0006 — the neon rim is now drawn render-side; the vehicle sprite must be pure B&W, so `neonPhrase` must be empty or absent",
+    );
   }
 
   const types = vehicles.types ?? {};
   for (const [type, def] of Object.entries(types)) {
     const p = `vehicles.types.${type}.prompt`;
     const prompt = def.prompt ?? "";
-    const neon = def.neon ?? "";
 
     if (!prompt.trim()) {
       rep.error(p, "empty prompt");
       continue;
     }
 
-    // Reconstruct the ASSEMBLED prompt FLUX receives for this type (art bible §4):
-    // opening + subject + resolved neonPhrase + shared style.
-    const assembled = `${opening}${prompt}${resolveNeonPhrase(neonPhrase, neon)}${style}`;
+    // Reconstruct the ASSEMBLED prompt FLUX receives for this type (ADR 0006):
+    // opening + subject + shared style. The retired neonPhrase slot is excluded.
+    const assembled = `${opening}${prompt}${style}`;
     const ap = `vehicles.types.${type} (assembled)`;
 
     // House concepts must appear somewhere in the assembled prompt (side-view in
-    // `opening`, neon-glow in `neonPhrase`, black ground in `style`, …).
+    // `opening`, black ground in `style`, …). The neon-glow concept is no longer
+    // required — see the inverse forbidden-token check below.
     for (const tok of STYLE_TOKENS) {
       if (!tokenSatisfied(tok, assembled)) {
         rep.error(ap, `missing required house concept: ${tok.name}`);
       }
     }
 
-    // Hardcoded neon colour in the SUBJECT clause: contradicting the `neon` field
-    // is an ERROR; restating the assigned hue is a WARN (redundant).
-    for (const h of hardcodedHues(prompt)) {
-      if (h.toLowerCase() === neon.toLowerCase()) {
-        rep.warn(
-          p,
-          `restates its assigned neon colour "${h}" — redundant, the hue comes from the \`neon\` field`,
-        );
-      } else {
-        rep.error(
-          p,
-          `names neon hue "${h}" but its \`neon\` field is "${neon}" — the prompt contradicts the single source of truth`,
-        );
-      }
+    // INVERSE neon rule (ADR 0006): baked neon floods the FLUX body, so NO
+    // neon/glow/acid/hue-name token may appear in the assembled vehicle prompt.
+    // Its presence is a hard error. (The type's `neon` field is untouched — it is
+    // render metadata and never enters the assembled prompt.)
+    const forbidden = forbiddenNeonHits(assembled);
+    if (forbidden.length > 0) {
+      rep.error(
+        ap,
+        `contains forbidden neon token(s) "${forbidden.join(", ")}" — baked neon floods the body; ` +
+          `vehicles are pure B&W xerox and the rim is drawn render-side (ADR 0006)`,
+      );
     }
 
     // Negation budget over the assembled prompt (art bible §3.1): ≤2 clean,

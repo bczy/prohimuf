@@ -29,7 +29,15 @@ Historical anchors (see LICENSES.md for sources):
    (vehicles, enemies, crosshair, pickups, HUD alerts) carries a luminous neon rim in
    its assigned accent hue. Nothing decorative glows. Assigned hues live in data
    (`levelArt.json` `neon` fields), hex-anchored: orange `#FF8C14`, cyan `#28F0FF`,
-   magenta `#FF3CDC`, green `#78FF3C`.
+   magenta `#FF3CDC`, green `#78FF3C`. The law governs the on-screen **result**, not the
+   production method: the rim may be **baked** into the sprite OR **applied at render
+   time**. For the delivery **vehicles** the rim is render-side (ADR 0006) — an additive
+   emissive silhouette drawn in `src/render`, hue from the `neon` data field. Their
+   sprites are therefore generated **pure black-and-white with no neon token in the
+   prompt** (three baked-rim batches flooded the body; the runtime rim makes that
+   structurally impossible and lets the glow go live, responding to delivery phase). For
+   the vehicle set the loi du glow is satisfied by the renderer, and the asset gate judges
+   the sprite as pure B&W — a baked neon rim on a vehicle sprite is now itself off-spec.
 2. **Family consistency** — assets in a set are one printing run: byte-identical
    shared style block in prompts, same ground, same line weight, same treatment.
    One off-family asset fails the whole set.
@@ -111,12 +119,17 @@ art-advisor (references) → concept-artist (prompts)
   → game-graphist PRE-PROD PASS (readability at game size, keying soundness)
   → lead-art PROMPT GATE
   → generation (marker dispatch; seeds pinned; enhance=false)
-      → scripts/check-sprite-style.mjs (mechanical: dark ground, neon hue ≥ threshold,
-        silhouette aspect bounds) — bad rolls auto-retried, bounded
+      → scripts/check-sprite-style.mjs (mechanical: dark ground, silhouette aspect bounds,
+        + neon hue band: LOWER bound where the rim is baked; for the render-side-rim
+        VEHICLE set (ADR 0006) an UPPER-bound flood-kill instead — ≤~18% saturated hue,
+        near-zero expected, catches a FLUX colour flood) — bad rolls auto-retried, bounded
   → game-graphist TECHNICAL PASS (real-size inspection; documented scripted retouches)
   → lead-art ASSET GATE (taste; mechanical pass does not bind)
   → pm/product acceptance
 ```
+
+- Vehicles run a **B&W-only prompt** (ADR 0006): `check-art-prompts.mjs` FORBIDS any
+  neon/glow token in the assembled vehicle prompt; the neon rim is added render-side.
 
 - `scripts/check-art-prompts.mjs` runs in `ci.yml` on every PR (prompt contract lint).
 - `scripts/check-sprite-style.mjs` runs inside the gen workflows (auto-reject bad rolls).

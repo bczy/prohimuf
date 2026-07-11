@@ -2,10 +2,10 @@
 /**
  * Generate the delivery-vehicle sprites (truck / car / moto) for the scripted
  * "protect the delivery" beat. Side-profile view — they roll horizontally down
- * the street lane where the couriers run — in the house style: photocopied
- * fanzine B&W + acid neon, on a PURE BLACK background that is then keyed to
- * transparency (the exact same edge flood-fill as cutout-enemies.mjs, imported
- * and reused here).
+ * the street lane where the couriers run — in the house style: pure photocopied
+ * fanzine B&W (the neon rim is drawn render-side per ADR 0006, no longer baked
+ * into the sprite), on a PURE BLACK background that is then keyed to transparency
+ * (the exact same edge flood-fill as cutout-enemies.mjs, imported and reused here).
  *
  * Single source of truth: the `vehicles` block of
  * src/game/levels/levelArt.json (prompts, sizes, neon accent, output path).
@@ -43,9 +43,16 @@ const FORCE = process.env.FORCE === "1";
 // Prompt assembly contract (owned by the concept-artist lane, see
 // docs/art-direction.md): `opening` (medium+view, front-loaded — FLUX weighs
 // early tokens most) + per-type `prompt` (subject/silhouette only) + the
-// shared `neonPhrase` template ({neon}/{hex} placeholders — hue is bound to
-// the type's `neon` field, hex-anchored) + the shared `style` block, verbatim
-// across the set for family consistency.
+// shared `style` block, verbatim across the set for family consistency.
+//
+// ADR 0006 (render-side neon rim): `neonPhrase` is RETIRED — baked neon flooded
+// the FLUX body, so vehicles are generated PURE B&W and the rim is drawn at
+// runtime in src/render. The slot is now empty/absent and injects NOTHING. The
+// per-type `neon` field is kept as RENDER METADATA (name → hue for the runtime
+// rim); it is deliberately NOT concatenated into the prompt. If a future baked
+// pipeline is ever wired, a non-empty `neonPhrase` with a {neon}/{hex} template
+// would resolve here again — but the default when the slot is absent stays EMPTY
+// so we never silently re-inject the flood token.
 const NEON_HEX = {
   orange: "#FF8C14",
   cyan: "#28F0FF",
@@ -61,10 +68,12 @@ function loadVehicles() {
   }
   const opening = block.opening ?? "";
   const styleSuffix = block.style ?? "";
-  const neonPhrase =
-    block.neonPhrase ??
-    ", bright glowing {neon} acid neon outline around the whole vehicle including the wheels";
+  // ADR 0006: default EMPTY (not a baked-neon phrase) when absent, and an empty
+  // string is honoured as-is → the assembled prompt injects no neon token.
+  const neonPhrase = block.neonPhrase ?? "";
   return Object.entries(block.types).map(([type, def]) => {
+    // `neon` is render metadata only; when neonPhrase is empty this resolves to
+    // an empty string and nothing is added to the prompt.
     const neon = def.neon ?? "cyan";
     const neonPart = neonPhrase
       .replaceAll("{neon}", neon)

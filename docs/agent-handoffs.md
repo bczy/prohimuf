@@ -493,6 +493,45 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
 
 ---
 
+### story-sprite-prompt-workshop (follow-up 7) — PROMPT GATE, decoupled B&W (ADR 0006)
+
+- verdict: **PASS — dispatch the B&W generation**, with ONE dispatch-ordering condition on
+  the chroma-key ground (below). The flood era is over by construction, not by wording.
+- prompt contract (§3): **clean.** `neonPhrase` retired to `""` (no neon/glow token
+  anywhere — the ADR 0006 inverse rule); `style` = "…coarse halftone dots, fully black and
+  white, on a uniform matte black background (#000000)…" with my KEEP-clauses intact;
+  subjects unchanged from 3b; 71/82/71 words (back inside the 30-90 band, so the §3.3
+  tail-washout pressure is gone); zero negations; hex-bound ground (§3.5); shared style
+  byte-identical (§2.2 structural). Nothing to rework in the contract.
+- §2.1 loi du glow: now satisfied by the RENDERER (additive emissive silhouette, hue from
+  the `neon` data field, flood impossible by construction per ADR 0006). BIBLE amended:
+  §2.1 now states the law governs the on-screen result not the method, vehicles carry a
+  render-side rim and ship as pure B&W (a baked rim on a vehicle sprite is now itself
+  off-spec); §6 pipeline/gate note updated (neon check flips to an upper-bound flood-kill
+  for the vehicle set; prompt lint forbids neon tokens in vehicle prompts).
+- KEYING WATCH (Serge's parallel pre-prod concern — I SHARE it, but it is not a contract
+  rework): with the bright neon rim gone, the vehicle's dark ink OUTLINE now sits on the
+  #000000 ground; the cutout is `cutout-enemies.mjs`'s conservative border FLOOD-FILL
+  (threshold 24, preserves interior dark), NOT a global black key — so a mostly-light B&W
+  van is far safer than the `foreground` SOLID-black ironwork that needs a magenta key. The
+  only vulnerable pixels are contour ink within ~24 of pure black (high-contrast xerox can
+  push ink to true black → leak/nibble). CONDITION on dispatch: bind the ground to Serge's
+  parallel keying pass. If his metering shows a clean cut on #000000 (threshold/edge-
+  quantize handles it, his technical pass, no regen) → ship as-is. If the outline is
+  eaten/ragged and unrecoverable in retouch → switch the generation ground to a bright
+  chroma-key mirroring the in-file `foreground` magenta detour ("solid flat uniform bright
+  magenta chroma-key background") — that is a prompt change so it must land BEFORE the
+  generation, not after. Decide from Serge's result before committing the batch; do not
+  regenerate twice.
+- SILHOUETTE watch (unchanged subjects → carried to the asset gate, NOT blocking here): W1
+  truck [S5] low/generic van (§5 taller-than-cab); W3 car [S7] phone-booth over/under-read.
+  Removing the neon token changes the fixed-seed roll, so these may shift — measure at the
+  asset gate; if the truck still reads low, THEN strengthen its subject (a scoped, isolated
+  change), not now (keep subjects fixed to isolate the decouple variable).
+  (Nico / Lead-Art — prompt gate, decoupled B&W)
+
+---
+
 ### story-render-side-neon-rim — decouple vehicle glow from baked art (ADR-0006)
 
 - arch: Boundary verdict PASS. Decision recorded in `docs/adr/0006-render-side-neon-rim.md`

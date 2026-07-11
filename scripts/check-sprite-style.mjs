@@ -12,19 +12,25 @@
  *       Measured as: the outermost 2px border must be overwhelmingly transparent
  *       OR near-black (post-key and pre-key both acceptable). A failed key leaves
  *       a bright coloured border → the clean-border ratio collapses.
- *   (2) NEON — the assigned rim light (orange/cyan/magenta) is missing. Measured
- *       as: a minimum share of the non-transparent pixels sit inside the assigned
- *       hue band at high saturation & value — proof a luminous rim actually
- *       exists in the right colour.
+ *   (2) NEON — (ADR 0006, render-side neon rim) vehicles are now generated PURE
+ *       B&W (the neon rim is drawn at runtime in src/render), so the old LOWER
+ *       bound ("a rim must exist") is dropped and INVERTED into a flood-kill
+ *       UPPER bound: a baked FLUX colour flood (a whole body painted an accent
+ *       hue — the failure that killed three batches) is caught when the dominant
+ *       saturated hue band exceeds the ceiling. Scanned across ALL hues, not just
+ *       the assigned one, so a wrong-accent flood is caught too. Per-set mode
+ *       (SET_MODES): a future fully-baked pipeline can opt back into a lower bound
+ *       via SPRITE_SET=baked.
  *   (3) SILHOUETTE — wrong proportions (e.g. a long low sedan when a short tall
  *       one-box car was wanted, or a vehicle cropped out of frame). Measured from
  *       the content bounding box: aspect within per-type bounds, the box wide
  *       enough to hold the whole vehicle, and dense enough to be a solid body.
  *
- * Thresholds are CALIBRATED against the current PM-accepted PNGs (truck/car/moto)
- * — the gate must pass all three as-is. Each run prints the measured numbers so
- * future re-tuning (after a re-roll) is informed. See the calibration table at
- * the bottom for the measured values and the margins chosen.
+ * The GROUND + SILHOUETTE thresholds are calibrated against the on-disk PNGs; the
+ * NEON flood ceiling (18%) is deliberately set to KILL a flood while passing a
+ * clean B&W sprite. Each run prints the measured numbers so a re-tune (against the
+ * regenerated B&W PNGs — a CI follow-up) is informed. See the calibration table
+ * at the bottom for the measured values, the margins, and the on-disk flood note.
  *
  * Usage:
  *   node scripts/check-sprite-style.mjs                    # check all vehicle types
@@ -49,18 +55,62 @@ const ALPHA_CLEAR = 16; // alpha below this = keyed-out background
 const NEAR_BLACK_MAX = 24; // max(r,g,b) below this = near-black (pre-key bg / dark body)
 
 const GROUND_MIN_CLEAN_PCT = 85; // border must be >= this % transparent-or-near-black
-const NEON_MIN_PCT = 0.75; // >= this % of content pixels inside the assigned hue band
-const NEON_MIN_SAT = 0.55;
-const NEON_MIN_VAL = 0.65;
+const NEON_MIN_SAT = 0.55; // saturation floor for a "neon"/flood pixel
+const NEON_MIN_VAL = 0.65; // value floor for a "neon"/flood pixel
 const BBOX_FILL_MIN_PCT = 45; // content must fill >= this % of its bounding box (solid body)
 const BBOX_WIDTH_MIN_PCT = 60; // bbox must span >= this % of canvas width (whole vehicle in frame)
 
-// Assigned-hue bands (degrees) — a luminous rim of the wrong colour still fails.
+// ── Per-set NEON mode (ADR 0006 — render-side neon rim) ──────────────────────
+// The neon rim is now drawn at RUNTIME in src/render; vehicle sprites are pure
+// B&W xerox. So the old NEON LOWER bound ("a rim must exist, >= 0.75% of content
+// in the assigned hue band") would fail every correct B&W sprite and is DROPPED.
+// It is replaced by a flood-kill UPPER bound: a baked FLUX colour flood (the
+// failure that killed three batches — a whole body painted an accent hue) is
+// caught when the dominant saturated hue band exceeds NEON_FLOOD_MAX_PCT.
+//
+// Kept as a per-set structure so a FUTURE fully-baked pipeline can opt back into
+// a lower bound without a rewrite: SPRITE_SET=baked re-enables `neonMinPct`.
+//   bw    (default) — decoupled B&W vehicles: upper bound only, no lower bound.
+//   baked           — a baked-rim set: both a lower bound and the flood ceiling.
+const SET_MODES = {
+  bw: { neonMinPct: null, neonFloodMaxPct: 18 },
+  baked: { neonMinPct: 0.75, neonFloodMaxPct: 18 },
+};
+const ACTIVE_SET = process.env.SPRITE_SET === "baked" ? "baked" : "bw";
+const MODE = SET_MODES[ACTIVE_SET];
+
+// Assigned-hue bands (degrees) — used ONLY for the baked-set lower bound (a rim of
+// the wrong colour still misses). In bw mode the flood-kill scans ALL hues below.
 const HUE_BANDS = {
   orange: [20, 45],
   cyan: [165, 210],
   magenta: [280, 330],
 };
+
+// Flood-kill hue bands (ADR 0006). These TILE the whole colour wheel so every
+// saturated content pixel bins into exactly one band; the dominant band's share
+// is the flood metric, scanned across ALL hues (not just the assigned one) so a
+// flood in the WRONG accent (e.g. a cyan cabin on an orange truck) is still
+// caught. Bands are centred on the four accent hues (orange / green / cyan /
+// magenta) plus red/yellow/blue/purple catch-alls — wide enough to hold a single
+// flood, narrow enough not to merge two distinct hues. The two red ranges share
+// the "red" bucket (wrap-around at 360°).
+const FLOOD_HUE_BANDS = [
+  ["red", 345, 360],
+  ["red", 0, 20],
+  ["orange", 20, 50],
+  ["yellow", 50, 75],
+  ["green", 75, 160],
+  ["cyan", 160, 210],
+  ["blue", 210, 260],
+  ["purple", 260, 290],
+  ["magenta", 290, 345],
+];
+
+function floodBandOf(h) {
+  for (const [name, lo, hi] of FLOOD_HUE_BANDS) if (h >= lo && h < hi) return name;
+  return "red";
+}
 
 // Per-type content aspect (bbox width / height) bounds. Calibrated to the
 // PM-accepted art, which frames each vehicle edge-to-edge (so aspect trends high
@@ -112,12 +162,13 @@ function measure({ W, H, d }, neon) {
 
   // NEON + content bbox in one pass.
   let content = 0;
-  let neonPix = 0;
+  let neonPix = 0; // pixels in the ASSIGNED hue band (baked-set lower bound only)
   let minX = W;
   let minY = H;
   let maxX = -1;
   let maxY = -1;
   let filled = 0; // opaque pixels (== content), used for bbox density below
+  const floodCounts = {}; // saturated pixels binned by hue band → flood-kill metric
 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
@@ -138,7 +189,13 @@ function measure({ W, H, d }, neon) {
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
         const [h, s, v] = rgbToHsv(d[o], d[o + 1], d[o + 2]);
-        if (h >= hlo && h <= hhi && s >= NEON_MIN_SAT && v >= NEON_MIN_VAL) neonPix++;
+        if (s >= NEON_MIN_SAT && v >= NEON_MIN_VAL) {
+          // Flood-kill: bin every saturated pixel by hue across ALL bands.
+          const band = floodBandOf(h);
+          floodCounts[band] = (floodCounts[band] ?? 0) + 1;
+          // Assigned-hue tally (used only for the baked-set lower bound).
+          if (h >= hlo && h <= hhi) neonPix++;
+        }
       }
     }
   }
@@ -146,12 +203,24 @@ function measure({ W, H, d }, neon) {
   const bw = maxX >= minX ? maxX - minX + 1 : 0;
   const bh = maxY >= minY ? maxY - minY + 1 : 0;
 
+  // Dominant saturated hue band (the flood candidate).
+  let floodBand = "none";
+  let floodMax = 0;
+  for (const [band, n] of Object.entries(floodCounts)) {
+    if (n > floodMax) {
+      floodMax = n;
+      floodBand = band;
+    }
+  }
+
   return {
     W,
     H,
     borderCleanPct: borderTotal ? (borderClean / borderTotal) * 100 : 0,
     content,
     neonPct: content ? (neonPix / content) * 100 : 0,
+    floodBand,
+    floodPct: content ? (floodMax / content) * 100 : 0,
     bboxW: bw,
     bboxH: bh,
     aspect: bh ? bw / bh : 0,
@@ -170,12 +239,27 @@ function evaluate(type, neon, m) {
       got: `${m.borderCleanPct.toFixed(2)}%`,
       need: `>= ${GROUND_MIN_CLEAN_PCT}%`,
     },
+    // NEON flood-kill (ADR 0006) — the dominant saturated hue band must stay under
+    // the ceiling. Reports the offending band so a flood (e.g. "orange 37%") is
+    // legible at a glance. Scans ALL hues, so a wrong-accent flood is caught too.
     {
-      name: `NEON ${neon} rim`,
-      ok: m.neonPct >= NEON_MIN_PCT,
-      got: `${m.neonPct.toFixed(3)}%`,
-      need: `>= ${NEON_MIN_PCT}% of content`,
+      name: `NEON flood-kill (${m.floodBand})`,
+      ok: m.floodPct <= MODE.neonFloodMaxPct,
+      got: `${m.floodPct.toFixed(2)}% in ${m.floodBand}`,
+      need: `<= ${MODE.neonFloodMaxPct}% in any hue band`,
     },
+    // NEON lower bound — ONLY in baked mode (a baked rim must actually exist). In
+    // bw mode this is skipped: pure B&W vehicles are expected to be near-zero hue.
+    ...(MODE.neonMinPct != null
+      ? [
+          {
+            name: `NEON ${neon} rim`,
+            ok: m.neonPct >= MODE.neonMinPct,
+            got: `${m.neonPct.toFixed(3)}%`,
+            need: `>= ${MODE.neonMinPct}% of content`,
+          },
+        ]
+      : []),
     {
       name: "SILHOUETTE aspect",
       ok: m.aspect >= aLo && m.aspect <= aHi,
@@ -209,11 +293,11 @@ async function checkSprite(type, neon, file) {
 
   console.log(
     `\n[${type}] ${pass ? "PASS" : "FAIL"}  ${path.relative(ROOT, file)}  ` +
-      `(${m.W}x${m.H}, neon=${neon}, bbox ${m.bboxW}x${m.bboxH}, ` +
+      `(${m.W}x${m.H}, neon=${neon}, set=${ACTIVE_SET}, bbox ${m.bboxW}x${m.bboxH}, ` +
       `height ${m.bboxHeightPct.toFixed(1)}% of canvas)`,
   );
   for (const c of checks) {
-    console.log(`    ${c.ok ? "ok " : "XX "}${c.name.padEnd(22)} ${c.got}  (need ${c.need})`);
+    console.log(`    ${c.ok ? "ok " : "XX "}${c.name.padEnd(26)} ${c.got}  (need ${c.need})`);
   }
   return pass;
 }
@@ -281,14 +365,36 @@ main().catch((e) => {
 });
 
 /*
- * CALIBRATION TABLE — measured against the PM-accepted PNGs on disk:
+ * CALIBRATION TABLE.
+ *
+ * ── NEON flood-kill (ADR 0006) — measured on the CURRENT on-disk PNGs ─────────
+ *   These are still the pre-decouple BAKED set (regeneration as B&W is a CI
+ *   follow-up). The dominant saturated hue band, scanned across all hues:
+ *
+ *   type   dominant band   share    ceiling   verdict
+ *   truck  orange          37.64%   <= 18%    FAIL  ← the documented body flood
+ *   car    cyan             4.30%   <= 18%    PASS
+ *   moto   magenta          3.25%   <= 18%    PASS
+ *
+ *   The truck FAIL is CORRECT, not a mis-tune: the on-disk truck is the 37%
+ *   orange flood recorded in docs/agent-handoffs.md (the exact failure ADR 0006
+ *   decouples). The 18% ceiling sits above the clean set (car 4.3 / moto 3.2) and
+ *   below the flood (37.6), so it kills floods while passing clean B&W sprites.
+ *   Once the vehicles are regenerated pure B&W in CI, all three drop to near-zero
+ *   hue and pass. Do NOT raise the ceiling above ~18% to "pass" the current truck
+ *   — that would re-admit the flood the gate exists to catch.
+ *
+ * ── GROUND + SILHOUETTE — measured against the earlier PM-accepted PNGs ───────
+ *   (These bounds are unchanged by ADR 0006; re-verify after the B&W re-roll.)
  *
  *   metric                 truck    car      moto     threshold        margin
  *   GROUND border clean    99.39%   91.70%   99.88%   >= 85%           car tightest (+6.7pp)
- *   NEON hue-band share     8.66%   10.28%    2.02%   >= 0.75%         moto tightest (2.7x)
  *   SILHOUETTE aspect        4.19    3.17     2.13    per-type bounds  centred on measured
  *   SILHOUETTE bbox fill    80.1%   75.9%    61.8%   >= 45%           moto tightest (+16.8pp)
  *   SILHOUETTE frame width  99.2%  100.0%   91.4%   >= 60%           moto tightest (+31pp)
+ *
+ * The old NEON LOWER bound (>= 0.75% assigned-hue share) is retired in bw mode and
+ * preserved only under SPRITE_SET=baked for a future baked pipeline.
  *
  * Notes / tensions (reported to the lead):
  *  - GROUND: the task suggested >= 95%, but the PM-accepted car frames the vehicle
