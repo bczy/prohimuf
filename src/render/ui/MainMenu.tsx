@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { JSX } from "react";
-import { LEVELS } from "@game/levels/levels";
+import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { loadScores } from "@game/systems/highScoreSystem";
@@ -88,6 +88,7 @@ function LevelCard({
   unlocked: boolean;
   onPlay: () => void;
 }): JSX.Element {
+  const isTutorial = level.kind === "tutorial";
   const scores = loadScores(level.id);
   const best = scores[0];
 
@@ -125,7 +126,7 @@ function LevelCard({
         {!unlocked && (
           <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#555" }}>VERROUILLÉ</div>
         )}
-        {unlocked && best !== undefined && (
+        {unlocked && !isTutorial && best !== undefined && (
           <div style={{ textAlign: "right", fontFamily: "monospace" }}>
             <div style={{ fontSize: "10px", color: "#666" }}>MEILLEUR</div>
             <div style={{ fontSize: "18px", color: NEON_GREEN }}>{best.score}</div>
@@ -143,24 +144,33 @@ function LevelCard({
             color: "#555",
           }}
         >
-          <span>⏱ {level.timeSeconds}s</span>
-          <span>🎯 {level.enemiesToWin} cibles</span>
-          <span
-            style={{
-              color:
-                level.enemySpeedMultiplier > 1.2
-                  ? NEON_PINK
+          {isTutorial ? (
+            // Static, informational badge (ADR-0012, D2): no ⏱/🎯 stats, no score
+            // block — nothing to time or score. Neon-yellow reads as an optional
+            // affordance, distinct from the green/orange/pink difficulty scale.
+            <span style={{ color: NEON_YELLOW }}>TUTORIEL</span>
+          ) : (
+            <>
+              <span>⏱ {level.timeSeconds}s</span>
+              <span>🎯 {level.enemiesToWin} cibles</span>
+              <span
+                style={{
+                  color:
+                    level.enemySpeedMultiplier > 1.2
+                      ? NEON_PINK
+                      : level.enemySpeedMultiplier > 1.0
+                        ? NEON_ORANGE
+                        : NEON_GREEN,
+                }}
+              >
+                {level.enemySpeedMultiplier > 1.2
+                  ? "DIFFICILE"
                   : level.enemySpeedMultiplier > 1.0
-                    ? NEON_ORANGE
-                    : NEON_GREEN,
-            }}
-          >
-            {level.enemySpeedMultiplier > 1.2
-              ? "DIFFICILE"
-              : level.enemySpeedMultiplier > 1.0
-                ? "MOYEN"
-                : "FACILE"}
-          </span>
+                    ? "MOYEN"
+                    : "FACILE"}
+              </span>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -168,13 +178,13 @@ function LevelCard({
 }
 
 function ScoresTab({ unlockedLevels }: { unlockedLevels: ReadonlySet<string> }): JSX.Element {
-  const [selectedLevel, setSelectedLevel] = useState(LEVELS[0]?.id ?? "");
+  const [selectedLevel, setSelectedLevel] = useState(FIRST_PLAYABLE_LEVEL.id);
   const scores = loadScores(selectedLevel);
 
   return (
     <div style={{ padding: "16px" }}>
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-        {LEVELS.filter((l) => unlockedLevels.has(l.id)).map((l) => (
+        {LEVELS.filter((l) => l.kind !== "tutorial" && unlockedLevels.has(l.id)).map((l) => (
           <button
             key={l.id}
             onClick={() => {
@@ -429,7 +439,7 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
               <LevelCard
                 key={level.id}
                 level={level}
-                unlocked={unlockedLevels.has(level.id)}
+                unlocked={level.kind === "tutorial" || unlockedLevels.has(level.id)}
                 onPlay={() => {
                   onPlay(level.id);
                 }}
