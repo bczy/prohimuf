@@ -338,6 +338,39 @@ Template:
 
 ---
 
+### story-sprite-prompt-workshop (batch 3) — TECHNICAL PASS (Serge / game-graphist)
+
+- scope: metered the batch-3 PNGs (commit a20a2c5) at real in-game scale. Mechanical
+  `check-sprite-style.mjs` re-verified PASS 3/3 (but see flood note — the gate is blind to it).
+- alpha: **hard-binary on all three (0.00% semi-transparent)** — no soft feathered fringe,
+  nothing to alpha-harden. "crisp cutout edges" already holds on the alpha channel.
+- keyed edge (boundary-ring dark+saturated glow remnant, my [S4] metric): **truck 54%**
+  (dark-orange), **car 74%** (dark green-cyan), **moto 9%** (borderline-neutral → clean).
+  Hot isolated pixels (disconnected strays): truck 6px/5 islands, car 18px/14, moto 26px/17
+  — all <0.2% of opaque, trivial.
+- body treatment (the blocker, gate-blind): **truck ORANGE FLOOD** (neon-band 44% of content),
+  **moto MAGENTA FLOOD** (pink panels, band 8%) — both §1/§2.1, NOT B&W xerox + rim. **car**
+  black body + cyan rim is ON-DIRECTION but carries a large **connected** glowing cyan
+  cabin/cityscape mid-frame (§2.1 decorative glow / [S7] glasshouse over-read; it is part of
+  vehicle component #0, box spans it → NOT a removable stray). truck silhouette low (38%
+  canvas height) reads generic van, not tall-cargo ([S5] confirmed).
+- retouch decision: **NONE — deferred.** Every sprite is blocked by a DIRECTION failure
+  outside the retouch remit: body flood (repaint = artistic alteration) and the car's
+  connected cabin (content removal = artistic alteration) — both force **regeneration**. The
+  edge halo, though real, is invisible against the flooded bodies (truck orange-on-orange) or
+  dwarfed by the car cabin; retouching sprites that must be regenerated = gratuitous
+  processing. Retouch is deferred to the corrected (de-flooded) batch, where the edge shows
+  against a B&W body and will not be thrown away. Deterministic op spec recorded in
+  `prompt-drafts.md` (batch-3 technical-pass note) so it lands in one sitting next pass.
+- verdict: **0/3 technically shippable — NOT on edge hygiene (edges are sound) but on body
+  flood (truck/moto) + decorative cabin & low/long proportion (car).** The batch-3 "body
+  staying pure black-and-white xerox" prompt edit did not hold against FLUX. Recommend another
+  anti-flood iteration or the kontext hero-lock (§3.12) before any retouch pass. Nico's ASSET
+  GATE owns the taste verdict; my technical read (edges clean, flood/cabin are the blockers)
+  is advisory and his gate wins. (Serge — game-graphist, technical pass)
+
+---
+
 ### story-sprite-prompt-workshop (follow-up 7) — PROMPT re-GATE (batch 3b)
 
 - verdict: **PASS — dispatch batch 3b on `claude/art-pipeline-graphist`.** Both
