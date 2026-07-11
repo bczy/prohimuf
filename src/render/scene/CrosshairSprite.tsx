@@ -97,9 +97,15 @@ export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
     const { crosshair } = stateRef.current;
-    const local = crosshairToWorld(crosshair, viewW, viewH);
-    mesh.position.x = local.x + cameraRef.position.x;
-    mesh.position.y = local.y + cameraRef.position.y;
+    const world = crosshairToWorld(
+      crosshair,
+      cameraRef.position.x,
+      cameraRef.position.y,
+      viewW,
+      viewH,
+    );
+    mesh.position.x = world.x;
+    mesh.position.y = world.y;
   });
 
   return (

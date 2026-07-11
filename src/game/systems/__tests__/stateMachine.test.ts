@@ -153,6 +153,28 @@ describe("tickGameState — shooting", () => {
     const playerBullets = next.bullets.filter((b) => b.fromPlayer);
     expect(playerBullets.length).toBe(0);
   });
+
+  it("threads cameraOffsetY into the shot's world-Y exactly like cameraOffsetX into world-X", () => {
+    // After a vertical pan, a centre tap must land at the shifted world position
+    // (the ADR-0002 invariant: aiming/delivery share crosshairToWorld). Compare a
+    // shot fired with camera offsets against an un-panned reference, same delta.
+    const base = tickGameState(createInitialState(FACADE_01), fire, 0.5, 0.5, 0.016, FACADE_01);
+    const shifted = tickGameState(
+      createInitialState(FACADE_01),
+      fire,
+      0.5,
+      0.5,
+      0.016,
+      FACADE_01,
+      4, // cameraOffsetX
+      3, // cameraOffsetY
+    );
+    const b0 = base.bullets.find((b) => b.fromPlayer);
+    const b1 = shifted.bullets.find((b) => b.fromPlayer);
+    if (b0 === undefined || b1 === undefined) throw new Error("expected player bullets");
+    expect(b1.position.x - b0.position.x).toBeCloseTo(4);
+    expect(b1.position.y - b0.position.y).toBeCloseTo(3);
+  });
 });
 
 describe("tickGameState — enemy shot hits player", () => {
@@ -238,6 +260,7 @@ describe("tickGameState — scripted vehicle delivery", () => {
       0.1,
       FACADE_01,
       0,
+      0,
       18,
       12,
       undefined,
@@ -255,6 +278,7 @@ describe("tickGameState — scripted vehicle delivery", () => {
       0.5,
       0.1,
       FACADE_01,
+      0,
       0,
       18,
       12,
@@ -281,6 +305,7 @@ describe("tickGameState — scripted vehicle delivery", () => {
       0.5,
       0.1,
       FACADE_01,
+      0,
       0,
       18,
       12,
@@ -310,6 +335,7 @@ describe("tickGameState — scripted vehicle delivery", () => {
       0.5,
       0.1,
       FACADE_01,
+      0,
       0,
       18,
       12,
@@ -346,6 +372,7 @@ describe("tickGameState — scripted vehicle delivery", () => {
       1,
       FACADE_01,
       0,
+      0,
       18,
       12,
       undefined,
@@ -369,7 +396,20 @@ describe("tickGameState — street couriers", () => {
   it("a courier eventually enters when a courier field is supplied", () => {
     let state = createInitialState(FACADE_01);
     for (let i = 0; i < 600 && state.couriers.length === 0; i++) {
-      state = tickGameState(state, noFire, 0.5, 0.5, 0.05, FACADE_01, 0, 18, 12, undefined, FIELD);
+      state = tickGameState(
+        state,
+        noFire,
+        0.5,
+        0.5,
+        0.05,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        undefined,
+        FIELD,
+      );
     }
     expect(state.couriers.length).toBeGreaterThan(0);
   });

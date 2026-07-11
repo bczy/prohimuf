@@ -1,8 +1,8 @@
 import type { Bullet } from "@game/types/bullet";
 import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
-import type { Vec2 } from "@game/types/vector";
 import type { FacadeMap } from "@game/types/map";
+import { crosshairToWorld, VIEW_W, VIEW_H } from "@game/systems/crosshairSystem";
 import { hitEnemy } from "@game/systems/enemySystem";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HitEvent } from "@game/types/feedback";
@@ -25,34 +25,18 @@ const HIT_RADIUS = 0.8;
 const OUT_OF_BOUNDS_X = 60;
 const OUT_OF_BOUNDS_Y = 15;
 
-/**
- * Convert a normalised crosshair position (0..1 in each axis) into world space.
- * The single source of truth for aiming — used by `fireBullet` and by the
- * delivery system so pickup/drop proximity matches where shots land.
- */
-export function crosshairToWorld(
-  crosshair: Crosshair,
-  cameraOffsetX = 0,
-  viewW = 18,
-  viewH = 12,
-): Vec2 {
-  return {
-    x: (crosshair.position.x - 0.5) * viewW + cameraOffsetX,
-    y: -(crosshair.position.y - 0.5) * viewH,
-  };
-}
-
 export function fireBullet(
   crosshair: Crosshair,
   fromPlayer: boolean,
   nextId: number,
   cameraOffsetX = 0,
-  viewW = 18,
-  viewH = 12,
+  cameraOffsetY = 0,
+  viewW = VIEW_W,
+  viewH = VIEW_H,
 ): Bullet {
   return {
     id: nextId,
-    position: crosshairToWorld(crosshair, cameraOffsetX, viewW, viewH),
+    position: crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH),
     velocity: { x: 0, y: fromPlayer ? BULLET_SPEED : -BULLET_SPEED },
     fromPlayer,
   };

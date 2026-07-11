@@ -184,3 +184,26 @@ Template:
   `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts`  (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
 **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
   Released: pending.
+
+### mobile-two-axis-pan + fullscreen-toggle (WI-1 / WI-2, PR #29 `claude/mobile-landscape-adr-awjl8z`)
+
+- arch: TWO lanes, ZERO file overlap, both branches typecheck in isolation → fully parallel, no sequencing.
+  **Lane G (dev-gameplay)** owns the pan contract end-to-end: `src/game/types/cameraPan.ts`
+  (`{x,y,vx,vy}` flat), `src/game/systems/cameraPanSystem.ts` (2D signatures — see plan),
+  `src/game/systems/__tests__/cameraPanSystem.test.ts` (Y + cross-axis coverage, TDD),
+  `src/hooks/useTouchControls.ts` (+`panDeltaY`/`flickVelocityY` + `data-muf-ui` preventDefault
+  exemption), `src/hooks/useGameLoop.ts` (`MobileControls.halfWorldHeight`, 2-axis pan applied to
+  `camera.position.x`+`.y`), and the ONE render line `src/render/scene/GameScene.tsx`
+  (`halfWorldHeight: facadeH/2` added to the `mobileControls` object — moved into Lane G to keep
+  the interface + its call site in one branch and dodge the object-literal excess-property compile
+  hazard). **Lane R (dev-r3f-render)** owns fullscreen + shell: new `src/hooks/useFullscreen.ts`,
+  new `src/render/ui/FullscreenButton.tsx` (renders null when unsupported, `data-muf-ui`, zIndex 300),
+  `src/render/scene/App.tsx` (rename `withRotateGuard`→`renderAppShell`, append `<FullscreenButton/>`
+  to every branch), new `docs/adr/0008-two-axis-pan-and-fullscreen.md` + `docs/adr/README.md` index row.
+  Lane R does NOT touch GameScene or useGameLoop. PARALLEL-SAFE: YES (disjoint file sets).
+  ADR: new ADR-0008 (extends ADR-0003 D4 to Y; realizes the fullscreen item deferred in 0003) —
+  0003 stays immutable, NOT edited. HIGH RISK flagged to PM: vertical pan has no `cameraOffsetY`
+  in the shot path (`fireBullet`/`crosshairToWorld` ignore camera.y) → taps after a vertical pan
+  land at the wrong world-Y; pan-only scope leaves aiming broken on panned windows. Needs a PM
+  ruling (fast-follow WI-3 aim fix, or ship documented). (Winston / Senior Architect)
+- release: pending.

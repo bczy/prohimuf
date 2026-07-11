@@ -1,6 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { fireBullet, tickBullets, checkBulletHits, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import { FACADE_01 } from "@game/maps/facade01";
+
+describe("crosshairToWorld (single source of truth — ADR-0002)", () => {
+  it("adds cameraOffsetY on the Y axis exactly like cameraOffsetX on the X axis", () => {
+    // Centre aim → local (0,0); each camera offset shifts its own world axis.
+    const centre = { position: { x: 0.5, y: 0.5 } };
+    const w = crosshairToWorld(centre, 4, 3);
+    expect(w).toEqual({ x: 4, y: 3 });
+  });
+
+  it("keeps the two offsets independent (X offset never leaks into Y)", () => {
+    const centre = { position: { x: 0.5, y: 0.5 } };
+    expect(crosshairToWorld(centre, 5, 0)).toEqual({ x: 5, y: 0 });
+    expect(crosshairToWorld(centre, 0, 5)).toEqual({ x: 0, y: 5 });
+  });
+});
 
 describe("fireBullet", () => {
   it("creates a bullet at crosshair position in world", () => {
@@ -14,6 +30,14 @@ describe("fireBullet", () => {
     const crosshair = { position: { x: 0.5, y: 0.5 } };
     const b = fireBullet(crosshair, false, 2);
     expect(b.fromPlayer).toBe(false);
+  });
+
+  it("shifts the shot's world-Y by cameraOffsetY after a vertical pan", () => {
+    // A two-finger tap at screen centre after panning the camera up by 3 must
+    // land at world-Y 3 — matching where the HUD arrows point (they add camera.y).
+    const centre = { position: { x: 0.5, y: 0.5 } };
+    const b = fireBullet(centre, true, 3, 0, 3);
+    expect(b.position).toEqual({ x: 0, y: 3 });
   });
 });
 

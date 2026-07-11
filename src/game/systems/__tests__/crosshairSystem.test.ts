@@ -17,13 +17,19 @@ describe("moveCrosshair", () => {
 describe("crosshairToWorld", () => {
   it("maps center (0.5, 0.5) to world origin", () => {
     const c = moveCrosshair(0.5, 0.5);
-    const w = crosshairToWorld(c, 20, 10);
+    const w = crosshairToWorld(c, 0, 0, 20, 10);
     expect(w).toEqual({ x: 0, y: 0 });
   });
 
   it("maps (0, 0) to top-left world corner", () => {
     const c = moveCrosshair(0, 0);
-    const w = crosshairToWorld(c, 20, 10);
+    const w = crosshairToWorld(c, 0, 0, 20, 10);
     expect(w).toEqual({ x: -10, y: 5 });
+  });
+
+  it("shifts each axis by its camera offset (pan-aware aiming — ADR-0008)", () => {
+    const c = moveCrosshair(0.5, 0.5);
+    const w = crosshairToWorld(c, 7, -3, 20, 10);
+    expect(w).toEqual({ x: 7, y: -3 });
   });
 });

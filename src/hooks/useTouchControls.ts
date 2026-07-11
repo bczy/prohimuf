@@ -3,8 +3,12 @@ import { useEffect, useRef } from "react";
 export interface TouchControlsState {
   /** One-finger horizontal drag accumulated since last consume, as a fraction of canvas width. */
   panDeltaX: number;
+  /** One-finger vertical drag accumulated since last consume, as a fraction of canvas height. */
+  panDeltaY: number;
   /** Flick velocity captured at touch release (canvas widths / second). Consumed once. */
   flickVelocityX: number | null;
+  /** Flick velocity captured at touch release (canvas heights / second). Consumed once. */
+  flickVelocityY: number | null;
   /** Two-finger tap midpoints in normalized [0..1] canvas coords. Consumed one per frame. */
   pendingTaps: { x: number; y: number }[];
 }
@@ -28,7 +32,9 @@ export function useTouchControls(
 ): React.RefObject<TouchControlsState> {
   const stateRef = useRef<TouchControlsState>({
     panDeltaX: 0,
+    panDeltaY: 0,
     flickVelocityX: null,
+    flickVelocityY: null,
     pendingTaps: [],
   });
 
@@ -37,9 +43,16 @@ export function useTouchControls(
 
     let mode: "idle" | "pan" | "two" = "idle";
     let lastX = 0;
-    let history: { x: number; t: number }[] = [];
+    let lastY = 0;
+    let history: { x: number; y: number; t: number }[] = [];
     let twoStart: { t: number; midX: number; midY: number } | null = null;
     let twoDrifted = false;
+
+    // On-screen UI (fullscreen button, etc.) carries data-muf-ui: those touches
+    // belong to the DOM controls, so the gesture layer ignores them entirely and
+    // never calls preventDefault, letting the native tap/click through.
+    const isUiTarget = (e: TouchEvent): boolean =>
+      e.target instanceof Element && e.target.closest("[data-muf-ui]") !== null;
 
     const normalize = (clientX: number, clientY: number): { x: number; y: number } | null => {
       const canvas = canvasRef.current;
@@ -58,6 +71,7 @@ export function useTouchControls(
     };
 
     const onTouchStart = (e: TouchEvent): void => {
+      if (isUiTarget(e)) return;
       e.preventDefault();
       if (e.touches.length === 1) {
         const touch = e.touches[0];
@@ -66,7 +80,8 @@ export function useTouchControls(
         if (pos === null) return;
         mode = "pan";
         lastX = pos.x;
-        history = [{ x: pos.x, t: performance.now() }];
+        lastY = pos.y;
+        history = [{ x: pos.x, y: pos.y, t: performance.now() }];
       } else if (e.touches.length === 2) {
         const mid = midpoint(e.touches);
         if (mid === null) return;
@@ -79,6 +94,7 @@ export function useTouchControls(
     };
 
     const onTouchMove = (e: TouchEvent): void => {
+      if (isUiTarget(e)) return;
       e.preventDefault();
       if (mode === "pan" && e.touches.length === 1) {
         const touch = e.touches[0];
@@ -86,9 +102,11 @@ export function useTouchControls(
         const pos = normalize(touch.clientX, touch.clientY);
         if (pos === null) return;
         stateRef.current.panDeltaX += pos.x - lastX;
+        stateRef.current.panDeltaY += pos.y - lastY;
         lastX = pos.x;
+        lastY = pos.y;
         const now = performance.now();
-        history.push({ x: pos.x, t: now });
+        history.push({ x: pos.x, y: pos.y, t: now });
         history = history.filter((h) => now - h.t <= FLICK_WINDOW_MS);
       } else if (mode === "two" && twoStart !== null) {
         const mid = midpoint(e.touches);
@@ -99,6 +117,7 @@ export function useTouchControls(
     };
 
     const onTouchEnd = (e: TouchEvent): void => {
+      if (isUiTarget(e)) return;
       e.preventDefault();
       if (mode === "two" && twoStart !== null && e.touches.length < 2) {
         if (!twoDrifted && performance.now() - twoStart.t <= TAP_MAX_MS) {
@@ -111,10 +130,13 @@ export function useTouchControls(
         const newest = history[history.length - 1];
         const oldest = history[0];
         if (newest !== undefined && oldest !== undefined && newest.t > oldest.t) {
-          const velocity = ((newest.x - oldest.x) / (newest.t - oldest.t)) * 1000;
-          if (Math.abs(velocity) >= FLICK_MIN_VELOCITY) {
-            stateRef.current.flickVelocityX = velocity;
-          }
+          const dt = newest.t - oldest.t;
+          // Both axis velocities come from the SAME trailing window, each gated
+          // independently so a purely horizontal flick seeds no vertical inertia.
+          const vx = ((newest.x - oldest.x) / dt) * 1000;
+          const vy = ((newest.y - oldest.y) / dt) * 1000;
+          if (Math.abs(vx) >= FLICK_MIN_VELOCITY) stateRef.current.flickVelocityX = vx;
+          if (Math.abs(vy) >= FLICK_MIN_VELOCITY) stateRef.current.flickVelocityY = vy;
         }
         mode = "idle";
       } else if (e.touches.length === 0) {
@@ -126,6 +148,8 @@ export function useTouchControls(
       mode = "idle";
       twoStart = null;
       history = [];
+      stateRef.current.flickVelocityX = null;
+      stateRef.current.flickVelocityY = null;
     };
 
     window.addEventListener("touchstart", onTouchStart, { passive: false });
