@@ -103,10 +103,13 @@ structure/sizes/ids belong to `dev-tooling-assets`.
 ## 6. Pipeline & gates
 
 ```
-art-advisor (references) → concept-artist (prompts) → lead-art PROMPT GATE
+art-advisor (references) → concept-artist (prompts)
+  → game-graphist PRE-PROD PASS (readability at game size, keying soundness)
+  → lead-art PROMPT GATE
   → generation (marker dispatch; seeds pinned; enhance=false)
       → scripts/check-sprite-style.mjs (mechanical: dark ground, neon hue ≥ threshold,
         silhouette aspect bounds) — bad rolls auto-retried, bounded
+  → game-graphist TECHNICAL PASS (real-size inspection; documented scripted retouches)
   → lead-art ASSET GATE (taste; mechanical pass does not bind)
   → pm/product acceptance
 ```
