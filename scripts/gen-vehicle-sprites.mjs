@@ -30,6 +30,7 @@
  *   FORCE=1 node scripts/gen-vehicle-sprites.mjs        # regenerate all (network FLUX)  [CI]
  *   node scripts/gen-vehicle-sprites.mjs --placeholder  # write procedural placeholders (no network)
  *   node scripts/gen-vehicle-sprites.mjs --asset truck  # one type only
+ *   node scripts/gen-vehicle-sprites.mjs --reprocess    # desaturate existing PNGs in place (no regen)
  *   node scripts/gen-vehicle-sprites.mjs --list         # list defined vehicles
  */
 import fs from "fs";
@@ -303,6 +304,50 @@ async function tryCutout(file, type) {
   }
 }
 
+// ── Deterministic GRAYSCALE pass (companion to the magenta-key ground) ─────────
+// Serge's technical pass: the magenta cut is perfect, but the saturated ground
+// bled a crimson/magenta CAST into the monochrome interiors (violating "fully
+// black and white"). This kills that spill AT THE SOURCE, every run: after the
+// chroma-key, replace each remaining (non-transparent) pixel's RGB with its
+// luminance, preserving alpha. Formula = Rec.601 luma (Y = 0.299R + 0.587G +
+// 0.114B) — the standard perceptual grey for sRGB-ish content; the exact weights
+// are immaterial once R=G=B, what matters is that saturation collapses to 0.
+// Uses @napi-rs/canvas (already the pipeline's decoder, via cutout-enemies.mjs).
+async function desaturateFile(file) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(file);
+  const W = img.width;
+  const H = img.height;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  const image = ctx.getImageData(0, 0, W, H);
+  const d = image.data;
+  let touched = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue; // leave keyed-out (transparent) pixels alone
+    const y = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+    d[i] = y;
+    d[i + 1] = y;
+    d[i + 2] = y;
+    touched++;
+  }
+  ctx.putImageData(image, 0, 0);
+  fs.writeFileSync(file, canvas.toBuffer("image/png"));
+  return touched;
+}
+
+// Main-flow wrapper — skip gracefully when the decoder is unavailable in the
+// sandbox (mirrors tryCutout; the real pass runs in CI).
+async function tryDesaturate(file, type) {
+  try {
+    const n = await desaturateFile(file);
+    console.log(`  [gray] ${type} — desaturated ${n} px (Rec.601 luma)`);
+  } catch (e) {
+    console.log(`  [gray-skip] ${type} — ${e.message} (grayscale runs in CI)`);
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const vehicles = loadVehicles();
@@ -325,6 +370,27 @@ async function main() {
   }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  // --reprocess: apply the deterministic grayscale pass to the EXISTING committed
+  // PNGs in place, no regeneration. Pinned seeds make a CI regen produce identical
+  // art anyway, so reprocessing locally kills the magenta ground-cast without
+  // spending a paid FLUX batch. Requires the decoder (@napi-rs/canvas); errors
+  // loudly if the desaturation cannot run (unlike the main-flow soft-skip).
+  if (args.includes("--reprocess")) {
+    console.log(`Reprocess (grayscale) → ${path.relative(ROOT, OUT_DIR)}\n`);
+    for (const v of todo) {
+      const out = path.join(OUT_DIR, `${v.type}.png`);
+      if (!fs.existsSync(out)) {
+        console.log(`  [skip] ${v.type} (no PNG on disk)`);
+        continue;
+      }
+      const n = await desaturateFile(out);
+      console.log(`  [reproc] ${v.type} — desaturated ${n} px → ${path.relative(ROOT, out)}`);
+    }
+    console.log("\nDone (reprocess).");
+    return;
+  }
+
   console.log(
     `Vehicle sprites → ${path.relative(ROOT, OUT_DIR)}${placeholder ? " (placeholder mode)" : ""}\n`,
   );
@@ -348,6 +414,8 @@ async function main() {
       fs.writeFileSync(out, buf);
       console.log(`  [ok]   ${v.type} (${buf.length} bytes) — keying background`);
       await tryCutout(out, v.type);
+      // Kill the magenta ground-cast bled into the monochrome interiors.
+      await tryDesaturate(out, v.type);
     } catch (e) {
       console.log(`  [fail] ${v.type} — ${e.message} (will be generated in CI)`);
     }

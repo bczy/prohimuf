@@ -82,9 +82,16 @@ const BBOX_WIDTH_MIN_PCT = 60; // bbox must span >= this % of canvas width (whol
 // a lower bound without a rewrite: SPRITE_SET=baked re-enables `neonMinPct`.
 //   bw    (default) — decoupled B&W vehicles: upper bound only, no lower bound.
 //   baked           — a baked-rim set: both a lower bound and the flood ceiling.
+// meanSatMax (bw only) — MEAN saturation over all content pixels must stay low.
+// Closes Serge's gap: the magenta chroma-key ground bled a crimson CAST into the
+// monochrome interiors (his car: 54% strong-coloured, meanSat 0.41) without any
+// single hue band tripping the flood-kill. A properly desaturated B&W sprite has
+// R=G=B → saturation 0, so a low ceiling (0.10) fails a cast while passing the
+// grayscale set with huge margin. Disabled (null) in baked mode, where a baked
+// neon rim legitimately raises mean saturation.
 const SET_MODES = {
-  bw: { neonMinPct: null, neonFloodMaxPct: 18 },
-  baked: { neonMinPct: 0.75, neonFloodMaxPct: 18 },
+  bw: { neonMinPct: null, neonFloodMaxPct: 18, meanSatMax: 0.1 },
+  baked: { neonMinPct: 0.75, neonFloodMaxPct: 18, meanSatMax: null },
 };
 const ACTIVE_SET = process.env.SPRITE_SET === "baked" ? "baked" : "bw";
 const MODE = SET_MODES[ACTIVE_SET];
@@ -178,6 +185,7 @@ function measure({ W, H, d }, neon) {
   let maxX = -1;
   let maxY = -1;
   let filled = 0; // opaque pixels (== content), used for bbox density below
+  let satSum = 0; // sum of HSV saturation over content pixels → mean-sat ceiling
   const floodCounts = {}; // saturated pixels binned by hue band → flood-kill metric
 
   for (let y = 0; y < H; y++) {
@@ -199,6 +207,7 @@ function measure({ W, H, d }, neon) {
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
         const [h, s, v] = rgbToHsv(d[o], d[o + 1], d[o + 2]);
+        satSum += s;
         if (s >= NEON_MIN_SAT && v >= NEON_MIN_VAL) {
           // Flood-kill: bin every saturated pixel by hue across ALL bands.
           const band = floodBandOf(h);
@@ -229,6 +238,7 @@ function measure({ W, H, d }, neon) {
     borderCleanPct: borderTotal ? (borderClean / borderTotal) * 100 : 0,
     content,
     neonPct: content ? (neonPix / content) * 100 : 0,
+    meanSat: content ? satSum / content : 0,
     floodBand,
     floodPct: content ? (floodMax / content) * 100 : 0,
     bboxW: bw,
@@ -258,6 +268,19 @@ function evaluate(type, neon, m) {
       got: `${m.floodPct.toFixed(2)}% in ${m.floodBand}`,
       need: `<= ${MODE.neonFloodMaxPct}% in any hue band`,
     },
+    // MEAN-SATURATION ceiling (bw only) — catches a low-grade colour CAST spread
+    // across the whole sprite (e.g. magenta ground spill) that no single hue band
+    // concentrates enough to trip the flood-kill. Grayscale content → ~0.
+    ...(MODE.meanSatMax != null
+      ? [
+          {
+            name: "MEAN-SAT (B&W)",
+            ok: m.meanSat <= MODE.meanSatMax,
+            got: m.meanSat.toFixed(3),
+            need: `<= ${MODE.meanSatMax} mean sat`,
+          },
+        ]
+      : []),
     // NEON lower bound — ONLY in baked mode (a baked rim must actually exist). In
     // bw mode this is skipped: pure B&W vehicles are expected to be near-zero hue.
     ...(MODE.neonMinPct != null

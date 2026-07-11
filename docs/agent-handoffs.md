@@ -392,6 +392,55 @@ Template:
 
 ---
 
+### story-decoupled-bw-vehicles — TECHNICAL PASS (Serge / game-graphist)
+
+- scope: metered the first decoupled B&W batch (commit 42095d1, magenta chroma-key ground per
+  my [S1]). Mechanical `check-sprite-style.mjs` PASS 3/3 (bw mode) — but a FALSE pass on the
+  car, see gate gap.
+- **[S1] magenta-key VALIDATED (the silhouette half):** alpha hard-binary on all three
+  (0.00% semi), boundary ring ~0% magenta (truck 0 / moto 0 / car 12%), black ink linework
+  preserved, interior whites survived, and — my key concern — **the moto tube frame survived
+  intact** (black-on-black ground would have flood-eaten it; on magenta it keys clean). No
+  eaten contours. The eaten-silhouette risk of the decouple is solved.
+- **NEW defect — magenta COLOR CAST bleeds into the B&W render (deep interior, not fringe):**
+  strong-colored (S>0.40) share = truck 22% / moto 27% (+42% faint) / **car 54% (meanSat
+  0.41 — body-wide pink)**; hue is a consistent crimson/magenta 330-360° across all three
+  seeds → it is GROUND SPILL, not design. Violates §1 "fully black and white". The car is the
+  low-contrast render that soaked up the most. This is a GENERATION-pipeline contamination:
+  the pipeline keys the ground but never forces the sprite back to B&W.
+- **retouch decision: NONE.** The cast is a body-wide tonal problem, not edge hygiene — my
+  remit (fringe/halo/alpha/quantize) and my documented spec (stray + boundary-clamp + alpha)
+  do not cover a global desaturation, which would also be a tonal alteration and would leave
+  the low-contrast car muddy. Strays are trivial (truck 4px / car 46px / moto 37px). Cleaning
+  them now is throwaway: the set must be re-processed at source to kill the cast, which
+  regenerates every pixel. Alpha already hard-binary → nothing to harden.
+- **SOURCE FIX (dev-tooling-assets + Maud, not retouch):** add a **grayscale / force-B&W step
+  AFTER the magenta key** in `gen-vehicle-sprites.mjs`. Key on the colour image first (clean
+  silhouette, proven here), THEN desaturate the keyed sprite → neutralises the ground spill in
+  the body while keeping the clean cut. This is the missing companion to my [S1] ground change
+  (flagged then as a coordinated tooling change). Rim bake (ADR 0006) is unaffected either way
+  (it reads alpha, not colour), but the visible sprite must be true B&W.
+- **GATE GAP (flag for tooling):** the bw-mode flood-kill counts only high-sat AND high-val
+  pixels in ONE hue band (≤18%). The car reads **12.39% magenta → PASS** while being 54%
+  strong-coloured to the eye, because the pink cast is medium-value. The gate green-lights a
+  pink sprite. Recommend a mean-saturation ceiling or a medium-val saturated-pixel count so a
+  body-wide cast trips it.
+- silhouette reads at game size: **[S5] truck improved** — boxy tall-cargo roofline (43% canvas
+  height vs batch-3's 38% low van; front cab/hood steps down, cargo box tall), acceptable, final
+  taste to Nico. **[S7] car** — got the tall rear phone-booth glasshouse but overall reads long
+  wagon/estate (aspect 3.3), not the short tall one-box city car of §5; silhouette taste concern
+  for Nico on top of the cast. **moto** coherent skeletal moped + top-box, frame intact.
+- verdict: **0/3 technically clean — but for a NEW, narrower reason (magenta cast) and the
+  decouple's core risk (eaten silhouette / colour flood) is now SOLVED.** One source step
+  (grayscale-after-key) + a gate tightening away from a clean set; then a fringe/stray retouch
+  pass from me if needed. Per sprite: truck CLOSEST (cast mostly enclosed window crimson,
+  B&W-ish body) — likely clean after the source fix; moto coherent but pink-cast; car WORST
+  (severe body-wide cast + long-wagon silhouette + falsely gate-passed). Back to
+  dev-tooling-assets/Maud for the B&W step; Nico's asset gate owns the silhouette taste calls.
+  (Serge — game-graphist, technical pass)
+
+---
+
 ### story-sprite-prompt-workshop (follow-up 7) — PROMPT re-GATE (batch 3b)
 
 - verdict: **PASS — dispatch batch 3b on `claude/art-pipeline-graphist`.** Both
