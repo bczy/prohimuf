@@ -338,6 +338,50 @@ Everything except the rim clause is bon pour gate.
 
 — Serge, PRE-PROD PASS
 
+---
+
+## Graphiste notes (Serge) — batch 3 technical pass
+
+Metered the landed PNGs (commit a20a2c5) at real in-game scale. Full metrics + per-sprite
+verdicts are in `docs/agent-handoffs.md` (batch-3 TECHNICAL PASS). Summary for the art record:
+
+- **Alpha is hard-binary** (0.00% semi-transparent) on all three — no soft fringe to harden.
+- **Keyed edge halo** (boundary-ring dark+saturated glow remnant): truck 54% dark-orange,
+  car 74% dark green-cyan, moto 9% (clean). This is the [S4] halo, confirmed: an OPAQUE
+  dark-colored ring where the rim glow bled into black and beat the near-black key — not an
+  alpha artifact, so "crisp cutout edges" cannot touch it.
+- **Blockers are direction, not edge:** truck + moto bodies FLOOD with the accent (§1/§2.1 —
+  the batch-3 "body staying pure black-and-white xerox" clause did not hold against FLUX);
+  car body is correctly black + cyan rim but carries a large CONNECTED cyan cabin/cityscape
+  ([S7] glasshouse over-read / §2.1 decorative glow) that cannot be keyed or removed without
+  repainting. All three must be regenerated.
+
+**Retouch DEFERRED (no PNG changes this pass).** Cleaning a sub-2px colored fringe on sprites
+that must be regenerated for the flood/cabin is throwaway work. The halo clamp applies to the
+CORRECTED batch, once bodies are B&W and the edge actually reads.
+
+### Deferred retouch spec (for `scripts/retouch-sprites.mjs`, next pass)
+
+Deterministic, re-runnable, halo/fringe/alpha ONLY — no artistic alteration. Per-sprite,
+in place, same params across the set (§2.2):
+
+1. **Hot-pixel strays:** drop any 8-connected opaque component < 12px that is not the largest
+   component (the vehicle). Removes the 6/18/26px islands.
+2. **Colored-halo clamp:** for opaque pixels on the boundary ring (opaque with ≥1 transparent
+   4-neighbour), set alpha 0 iff luminance L<90 AND saturation S>0.22. This targets ONLY the
+   dark-saturated glow remnant — it spares the bright neon rim (L>120) and the neutral black
+   ink contour (S≤0.22). Run 2 passes max (re-evaluate boundary each pass) to peel a ~2px
+   halo; 2px on a 256-384px canvas is <1% erosion, negligible on silhouette.
+3. **Alpha harden:** snap alpha <128→0, ≥128→255 (idempotent safety; current art already
+   binary, so a no-op — kept so the op is self-contained on future soft-keyed rolls).
+
+Validation gate after running: `node scripts/check-sprite-style.mjs` must stay PASS 3/3.
+The clamp only removes dark (L<90) pixels, which are never in the NEON hue band (needs
+v≥0.65), so NEON% is preserved; clearing colored border pixels only raises GROUND clean%.
+Expected post-op edge metric: boundary-ring dark-saturated remnant → near 0% on all three.
+
+— Serge, TECHNICAL PASS
+
 ## 2026-07-11 — batch 3b, `neonPhrase` rim wording ([S1]/[S2] integration) + optional [S3]
 
 Serge's PRE-PROD flagged ONE clause: my `neonPhrase` over-corrected the flood into a
