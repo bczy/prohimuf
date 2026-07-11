@@ -300,3 +300,38 @@ Template:
   103 exposed frame) — accept if it reads as skeletal moped + top-box; re-anchor to one bike
   if it renders confused. (4) car "corner-mounted wheels" — if wheel placement reads wrong,
   swap to §5 verbatim "wheels pushed to the corners" next iteration. (Nico / Lead-Art)
+
+---
+
+### story-sprite-prompt-workshop (follow-up 7) — ASSET GATE
+
+- verdict: **ITERATE — 3/3 FAIL, set fails family (§2.2). Over the 2-batch cap
+  (seed-reroll was batch 2), so this is NOT a self-authorized reroll → options to
+  Bertrand.** Mechanical pre-check does not bind; taste FAILs where the machine passed.
+- truck (seed 1337): **FAIL** — §1 identity + §2.1. Body is a solid ORANGE fill, not
+  B&W xerox with an orange edge-rim (mechanical neon 37.3% confirms the flood). This is
+  exactly watch-item (2): full colour in body = FAIL. No high-contrast B&W read survives.
+- car (seed 42): **FAIL** — §2.1 (nothing decorative glows): a neon-cyan skyscraper
+  SKYLINE glows behind the car — decorative glow, and it breaks the §3.5 flat matte-black
+  ground the sprite is chroma-keyed on. Corner-sampling mechanical missed it (cityscape
+  sits inside the frame → "grounds 100% clean" is a false pass — textbook why the machine
+  doesn't bind). Secondary: reads low/long fastback, not the tall one-box glasshouse
+  city-car of §5 (proportion miss, not a class miss). NB body treatment (black + cyan
+  rim, glowing wheels per neonPhrase) is the ONLY on-direction one of the three.
+- moto (seed 8128): **FAIL** — §1 + §2.1, same body flood as truck (magenta panels, not
+  B&W + rim). Cleared watch-item (3): reads as a coherent skeletal moped + top-box, NOT a
+  chimera. Cleared (4): wheels read fine. Fails only on the colour flood.
+- root causes are TWO, not one → no single-variable reroll fixes the set: (a) truck+moto
+  body-flood traces to `neonPhrase` "glowing along the whole silhouette" — FLUX reads
+  "whole silhouette" as fill the body; (b) car has a decorative background + proportion.
+- vs previously PM-accepted set: mixed, not yet better to ship — WIN: right seeds, moto
+  chimera cleared, car finally shows the correct black-body + neon-rim treatment (the
+  actual direction). LOSS: two bodies regressed to full colour, car smuggled a glowing
+  skyline. Not a family-consistent, shippable run.
+- options for Bertrand (all exceed the 2-batch cap → your call): (1) spend batch 3 with
+  two coordinated prompt edits — reword `neonPhrase` to "thin outline edge-rim only, body
+  pure B&W xerox" (fixes truck+moto flood) + harden car ground/proportion; I re-gate the
+  prompts first. (2) kontext style-lock (§3.12/§7): fix the car, make its black-body+rim
+  the family hero, derive truck+moto image-to-image from it — strongest §2.2 guarantee,
+  no fresh prompt batches. (3) override + ship as-is (only you may override a FAIL).
+  (Nico / Lead-Art — asset gate)
