@@ -335,3 +335,48 @@ Template:
   the family hero, derive truck+moto image-to-image from it — strongest §2.2 guarantee,
   no fresh prompt batches. (3) override + ship as-is (only you may override a FAIL).
   (Nico / Lead-Art — asset gate)
+
+---
+
+### story-sprite-prompt-workshop (follow-up 7) — PROMPT re-GATE (batch 3b)
+
+- verdict: **PASS — dispatch batch 3b on `claude/art-pipeline-graphist`.** Both
+  Bertrand-authorised option-1 edits land correctly on the two root causes; Serge's one
+  blocker (rim over-correction) is resolved in 3b. New link Serge (game-graphist) noted.
+- neonPhrase rim ([S1]/[S2] fix): **PASS** — "a bright, crisp {neon} ({hex}) acid neon
+  rim light, a clean band a few pixels thick tracing only the outer edge and wheel rims,
+  body staying pure black-and-white xerox." Brightness-led + thickness FLOOR is the right
+  call (value survives the in-lane downscale, stroke-area doesn't); "only the outer edge"
+  keeps the anti-flood limiter that fixed my §1/§2.1 body-flood FAIL; positive B&W body in
+  the strong zone; {neon}/{hex} stay data-bound (§2.1); zero negations ("only"/"a few" are
+  limiters); "acid neon rim light" keeps the loi-du-glow lint token. Good.
+- car subject: **PASS** — "completely alone, empty surroundings" is the positive antidote
+  to the smuggled cyan skyline (§2.1/§3.5, no scenery negation); "tall upright phone-booth-
+  shaped glasshouse cabin" is proportion language with no class noun, the direct fix for
+  the low-fastback (§5); "wheels pushed to the corners" is §5-verbatim, clearing my old
+  reservation (4); my three endorsed anchors kept verbatim. Good.
+- coarse-halftone (shared `style`, §2.2 family change, [S3]): **PASS/approved** — byte-
+  identical across the set so family holds structurally; consistent with §1 "degraded
+  xerox halftone" / §3.4 (an intensification of the xerox law, not a drift); aids downscale
+  - edge-key. No bible change needed for it.
+- BIBLE GATE (mine): reconciled §3.3 — bible said "30-90 assembled words," the crew was
+  citing a 120 lint ceiling not in the bible. Amended §3.3 to "30-90 target; 120 hard
+  ceiling (lint errors >120, warns >90)," 90-120 tolerated ONLY for load-bearing FAIL-fix
+  clauses justified in prompt-drafts. 102/113/102 all fit; I verified no filler to cut —
+  every word past 90 fixes a specific asset-gate FAIL. The car's 113 is watched (below).
+- asset-gate watch list (mine, next gate): (W1) **truck [S5] — the live risk.** Serge
+  metered the reject at 36% canvas height, cargo roof ~level with cab = low/generic van,
+  NOT §5 "cargo body taller than the cab line"; the flood was masking it. Subject clause is
+  already §5-verbatim and the changed tail (neonPhrase+coarse-halftone) alters the fixed-
+  seed roll, so improvement is possible but NOT guaranteed. CONTINGENCY (pre-registered, so
+  we don't dither): if the truck reproduces low/generic, the remedy is a truck-subject step-
+  up-roofline strengthening (+ possible seed reroll) escalated to Bertrand as a scoped
+  follow-up — NOT folded in now (outside authorised option-1 scope; better to measure with
+  data than pile a speculative 3rd variable onto the one authorised shot). (W2) car [S6] —
+  "body staying pure B&W xerox" + "crisp cutout edges" sit at ~word 85-113 (weakest zone);
+  car was the one that did NOT flood, so lowest risk where deepest, but verify the B&W body
+  held. (W3) car [S7] — phone-booth clause must not over-read into a small van/box. (W4)
+  moto — smallest canvas (256), verify the "few pixels thick" rim floor didn't vanish and
+  chimera stays cleared. (W5) [S4] glow-halo boundary fringe (truck 39/car 64/moto 29% on
+  the reject) is Serge's TECHNICAL-pass retouch, not a prompt blocker — confirm cleaned.
+  (Nico / Lead-Art — prompt re-gate)
