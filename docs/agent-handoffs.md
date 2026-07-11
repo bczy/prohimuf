@@ -824,8 +824,38 @@ COLLABORATION.md §code-review panel, CLAUDE.md, le hook crew-reminder et le PR 
   - FLOW (`COLLABORATION.md`): `dev-r3f-render` delivers in-game screenshots with any visual
     change; `game-graphist`'s TECHNICAL pass inspects the composite at real in-game size; the
     orchestrator routes those screenshots to me. No screenshots = ungated = no merge.
-- composite verdict on the new falloff-baked halo: **PENDING.** I have not yet seen the
-  preview screenshots from the render lane's fix — per Gate 4 I do not PASS a runtime visual
-  I cannot Read on a real in-game composite. Call me back with the e2e/`verify` screenshots
-  and I will verdict the falloff against « un halo est un dégradé, jamais un aplat ».
-  (Nico / Lead-Art — incident + bible/Gate 4)
+- composite verdict on the new falloff-baked halo — **GATE 4, first real pass: PASS 3/3.**
+  Read on real in-game composites (`screenshots/preview-vehicle-{truck,car,moto}.png` +
+  `-closeup.png`), belliard/stalingrad/vitry. The incident condition (hard-edged binary-alpha
+  aplat) is GONE on all three: the chamfer-distance quadratic falloff (margin 0.06×sprite
+  height/side) now reads as a true halo — brightest at the sprite edge, monotonically fading
+  outward to zero at the outer margin, no opaque step, no cut edge. « Un halo est un dégradé,
+  jamais un aplat » (§2.1) is satisfied in the composite. Per vehicle:
+  - **truck (belliard, orange #FF8C14): PASS.** Falloff present and monotonic; hue correct;
+    rim thickness readable at game size. Weakest of the three on background contrast —
+    orange-rim-on-orange-storefront (belliard's warm shop lights) is the hardest read of the
+    set — but the vehicle sits against the darker shopfront band and the silhouette + glow
+    still read clearly. Not a FAIL; noted as the family's low-contrast case to watch if
+    belliard's palette ever warms further.
+  - **car (stalingrad, cyan #28F0FF): PASS (composite).** Best-reading glow of the set —
+    cyan against the cool dark-blue/red night street pops cleanly, falloff soft and correct,
+    hue correct. NB: the car's long-wagon/estate silhouette-archetype FAIL is the SEPARATE,
+    pre-existing asset-gate follow-up (final-decoupled-set verdict above) and is NOT reopened
+    here — Gate 4 judges the runtime composite (the glow/falloff), not the source silhouette.
+    The glow passes; the silhouette follow-up stands as previously logged.
+  - **moto (vitry, magenta #FF3CDC): PASS.** Falloff present and monotonic, hue correct,
+    reads strongly against vitry's cooler tower-block backdrop. Most prominent halo of the
+    three because the sprite is the smallest (256 canvas) so a per-side 0.06×height margin
+    is proportionally the most generous, and the top-box crate outline makes the wrap read
+    large — this is within family (identical falloff law + margin ratio across the set), not
+    a defect. If it ever reads as bloom rather than rim, tune the margin CONSTANT, not the
+    law.
+  - **family consistency (§2.2): PASS.** One treatment across all three — same quadratic
+    chamfer falloff, same 0.06×height margin ratio, hue-per-assignment from the `neon` data
+    field. The three read as one printing run with three accent inks. This is the loi du glow
+    working as designed, now live and gradient.
+  - PRECEDENT NOTE (this entry is the Gate 4 template): a runtime-composed visual is gated
+    ONLY on composites Read here; Gate 4 verdicts the composition (falloff/hue/read), while
+    silhouette/archetype/body defects remain the asset gate's jurisdiction and are not
+    re-litigated or absolved by a Gate 4 PASS. No bible/agent rule fix forced — the falloff
+    rule held on first contact with real screenshots. (Nico / Lead-Art — Gate 4, first pass)
