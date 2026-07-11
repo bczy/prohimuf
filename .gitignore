@@ -46,3 +46,4 @@ screenshots/e2e-ingame.png
 
 # Vehicle-halo preview shots — regenerated each run by scripts/preview-vehicle-halo.mjs
 screenshots/preview-vehicle-*.png
+screenshots/e2e-delivery.png
