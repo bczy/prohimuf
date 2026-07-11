@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Eight subagents work the muf project. They run **in parallel where paths don't overlap**,
+Nine subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -12,6 +12,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
+| `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
@@ -35,11 +36,17 @@ art-advisor (references, period grounding — advice)
      ↓
 concept-artist (drafts prompts, positive shape language, shared style block)
      ↓
+game-graphist PRE-PROD PASS (readability at game size, keying soundness —
+                             numbered annotations; concept-artist integrates)
+     ↓
 lead-art PROMPT GATE (PASS required before any levelArt.json prompt commit;
                       scripts/check-art-prompts.mjs must also pass — it runs in CI)
      ↓
 dispatch generation (marker push, see docs/ci.md) — the workflow runs
 scripts/check-sprite-style.mjs on each output and retries bad rolls (bounded)
+     ↓
+game-graphist TECHNICAL PASS (real-size inspection, fringe/halo cleanup via
+                              documented scripts — filters what reaches lead-art)
      ↓
 lead-art ASSET GATE (PASS/FAIL per sprite vs docs/art-direction.md;
                      mechanical gate passing does not bind the verdict)
