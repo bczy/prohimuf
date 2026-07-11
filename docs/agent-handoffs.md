@@ -581,6 +581,41 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
 
 ---
 
+### story-sprite-prompt-workshop (follow-up 7) — ASSET GATE, final decoupled set
+
+- verdict: **SHIP.** 2/3 clean PASS; the car FAILS the silhouette-archetype law but does
+  NOT block ship — it rides as a scoped follow-up. This set + the render-side rim is what
+  ships. §1 satisfied on all three: fully B&W xerox, crimson cast gone (grayscale-after-key
+  Rec.601 worked, meanSat 0.000) — the magenta-key detour + grayscale step was the right
+  call. Judged as pure B&W; the neon rim comes live in-game (§2.1 render-side, ADR 0006).
+- truck (seed 1337): **PASS.** W1/[S5] resolved — the cargo body now reads clearly TALLER
+  than the cab line (Serge 43% vs 38%), boxy tall-roof delivery volume, clean high-contrast
+  xerox. Reads unambiguously as the truck class (§2.3) — biggest, boxiest, longest. Minor
+  fidelity note (not a FAIL, optional future roll): it carries a long hood so it reads
+  estate/panel-wagon rather than flat-nosed forward-control (§5) — class is right, the nose
+  detail is soft. Ships.
+- moto (seed 8128): **PASS.** Coherent skeletal moped, exposed tube frame intact, fat small
+  wheels, round headlamp, top-box crate — the delivery read lands. Chimera stays cleared.
+  Cleanest B&W of the three. Ships.
+- car (seed 42): **FAIL (§2.3 / §5 archetype), ship-unblocking — scoped follow-up.** The
+  phone-booth clause over-read ([S7]): the tall glasshouse landed as a tall boxy volume
+  grafted onto the REAR of a low long body → reads "long wagon/estate/hearse," not the
+  short one-box city car (Twingo/AX charm). By the letter of the silhouette law that is a
+  FAIL. BUT it does not block ship: it still reads as a four-wheeled civilian CAR-class
+  vehicle (not moto, and distinguishable from the truck by its low front + overall
+  size), and the live cyan rim seals the class read in-lane. The delivery beat has been
+  blocked across four generation cycles; holding the whole feature on a proportion/charm
+  miss (right class, wrong archetype) is not worth it when truck+moto are clean and the car
+  is functional. FOLLOW-UP (scoped, one asset): iterate the car subject to a SHORT one-box —
+  the fix is to kill the long rear-box read, e.g. drop "phone-booth-shaped rear cabin"
+  language, steer "short overall length, minimal front and rear overhang, tall cabin set
+  well forward over a stubby body," reroll seed 42 if composition stays long. Not a blocker;
+  a polish pass.
+- overall: SHIP truck + moto + car now with the runtime rim; open a scoped follow-up story
+  for the car silhouette iteration. (Nico / Lead-Art — asset gate, final set)
+
+---
+
 ### story-render-side-neon-rim — decouple vehicle glow from baked art (ADR-0006)
 
 - arch: Boundary verdict PASS. Decision recorded in `docs/adr/0006-render-side-neon-rim.md`
