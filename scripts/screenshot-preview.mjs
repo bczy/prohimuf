@@ -106,6 +106,7 @@ async function buildContactSheet() {
   const shots = [
     "00_menu.png",
     "01_narrative.png",
+    "02_tutorial.png",
     ...LEVELS.map((l) => `level_${l.id}.png`),
     "09_end.png",
   ].filter((f) => fs.existsSync(path.join(OUT_DIR, f)));
@@ -165,6 +166,8 @@ async function main() {
 
   console.log("[screen] narrative");
   await captureScreen(context, "01_narrative.png", "?preview=narrative");
+  console.log("[screen] tutorial");
+  await captureScreen(context, "02_tutorial.png", "?preview=tutorial");
   console.log("[screen] end");
   await captureScreen(context, "09_end.png", "?preview=end");
 
