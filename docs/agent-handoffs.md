@@ -413,3 +413,59 @@ Template:
   chimera stays cleared. (W5) [S4] glow-halo boundary fringe (truck 39/car 64/moto 29% on
   the reject) is Serge's TECHNICAL-pass retouch, not a prompt blocker — confirm cleaned.
   (Nico / Lead-Art — prompt re-gate)
+
+---
+
+### story-sprite-prompt-workshop (follow-up 7) — ASSET GATE, batch 3 (commit a20a2c5)
+
+- verdict: **ITERATE — 0/3 FAIL. I concur with Serge's advisory read.** This was the
+  Bertrand-authorised shot; per instruction I do NOT self-authorise another batch —
+  options + recommendation below go to Bertrand. Prompt-only has now plateaued on the
+  flood across two batches — that is the §3.12 kontext trigger condition, stated in law.
+- truck (seed 1337): **FAIL, double** — §1/§2.1 the orange BODY FLOOD recurred (Serge
+  neon-band 44%, up from 37.3%) despite "body staying pure black-and-white xerox" + "black
+  and white except the neon"; the positive B&W clause did NOT overcome FLUX-schnell's fill
+  tendency. AND §2.3 silhouette: watch-item W1/[S5] confirmed — a long, LOW, stretched van,
+  cargo roof ~level with the cab, not "cargo body taller than the cab line" (§5). Worst of
+  the three.
+- car (seed 42): **FAIL** — §2.1 REGRESSED: last batch's cyan skyline was a detachable
+  background; now it is a CONNECTED glowing cyan cabin/greenhouse fused into the vehicle
+  blob (Serge component analysis: part of the sprite, not removable by retouch). "completely
+  alone / empty surroundings" did not starve it. §2.3: still low/long, the phone-booth clause
+  ([S7]) under-read. Body treatment no longer the clean hero it was in batch 2.
+- moto (seed 8128): **FAIL** — §1/§2.1 magenta panel flood recurred, same root as the truck.
+  Silhouette PASSES (coherent moped + top-box, chimera stays cleared); fails only on flood.
+- family §2.2: FAIL as a set — two flooded bodies + one fused-cyan car; not one printing run.
+- edges: Serge confirms technically sound (binary alpha; [S4] halo deferred to his pass) —
+  NOT the blocker. The blocker is generation content (flood + silhouette), not keying.
+- TOOLING FOLLOW-UP (for the record, `dev-tooling-assets`): `check-sprite-style.mjs` has no
+  NEON UPPER BOUND — it is flood-blind, passed truck at 37.3% (b2) and 44% (b3). Add a
+  ceiling (a body-flood FAIL above ~15-20% neon area) so a flood auto-rejects mechanically.
+
+**Options for Bertrand (I will not self-authorise a batch):**
+
+- **(A) Revert to the previously PM-accepted set** — safe, ships now, unblocks the delivery
+  beat. Known-good. Downside: off the current prompt direction, but on-screen and accepted.
+- **(B) Decouple neon from the body [MY RECOMMENDATION]** — the flood's root cause is the
+  neon token itself: FLUX-schnell reads "acid neon rim" on a monochrome vehicle as "paint
+  the vehicle neon," and two batches of positive B&W clauses cannot beat it. Fix: FLUX
+  generates the vehicles as PURE B&W xerox with NO neon token at all (removes the trigger →
+  no flood, and the low-van silhouette can then be fought on a clean plate), and the neon
+  rim becomes a RENDER-SIDE emissive outline in `src/render` keyed off the sprite alpha.
+  This is MORE on-direction, not a compromise: §2.1 "what glows is interactive" is better
+  served by a live glow than a baked one (it can respond/pulse as a real signal). Scope: pm
+  - senior-architect + dev-r3f-render (render effect, boundary-clean, needs an ADR).
+- **(C) kontext hero-lock (§3.12)** — the eventual fallback if a fully-baked pipeline is
+  mandated. Caveat: we have NO clean hero. The batch-2 car body was a good TREATMENT ref
+  but bad on silhouette+background; a clean B&W hero must be generated FIRST, then truck/
+  moto derived image-to-image. Real work, unproven pipeline (§7 follow-up, not yet wired).
+- **(D) One more same-lever prompt iteration — I REJECT this.** Prompt-only has plateaued
+  on the exact failure twice; a third word-tweak against the flood is low expected value and
+  burns the shot.
+
+**Recommendation: (A) now to unblock, (B) as the real fix.** Revert to the accepted set so
+the delivery beat is not held hostage to art, and commission the decouple (clean B&W sprite
+
+- render-side neon rim) as the correct long-term solution — it kills the flood at its source
+  and upgrades the loi du glow from baked to live. (C) only if product mandates fully-baked
+  sprites. (Nico / Lead-Art — asset gate, batch 3)
