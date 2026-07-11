@@ -653,3 +653,52 @@ silhouetteTex!==null`. No game/scripts edits.
 - serialization note: `levelArt.json` is written ONLY by concept-artist in this story (all edits
   are string content); tooling stays in `scripts/**`, render only READS the JSON. `docs/agent-handoffs.md`
   serialized by the orchestrator. (Winston / Senior Architect)
+
+---
+
+### adr-tutorial — crew adversarial review of ADR-0012 (optional scripted tutorial stage)
+
+Cycle: 4 parallel read-only review lanes → architect arbitration + in-place amendment →
+pm acceptance. ADR stays **Proposed**; final acceptance = Bertrand merging the PR. No `src/`
+changes in this cycle — the ADR is design-only; implementation is a separate story.
+
+- pm (John), scope lane: **GO-AVEC-AMENDEMENTS** — mécanisme scope-compliant
+  (optionnel/skippable/non-gating/additif, boucle intouchée), mais 2 MAJEURS avant PR : D4
+  enseigne des ennemis (car/hostage/`energy`) absents du seul niveau jouable Belliard
+  (courier-only, YAGNI), et la revendication « même registre narratif » est fausse et frôle
+  le §8 « dialogue élaboré » — plus 3 MINEURS (justification desktop gonflée → recentrer
+  mobile, friction première-carte vs UX §5.1, exactitude/sur-énumération contrôles).
+- dev-gameplay, `src/game` lane: **GO-AVEC-AMENDEMENTS** — 2 bloquants avant impl : (1)
+  `stateMachine.test.ts:87-96` itère tout `LEVELS` avec `deliveries.length>0` et cassera sur
+  l'entrée tutorial (test oublié par l'ADR, à filtrer sur `kind!=="tutorial"`) ; (2) l'entrée
+  inerte spécifiée ne type-check pas (`name/district/year/enemySpeedMultiplier` requis
+  manquants, et `name/district/year` affichés par `LevelCard` donc non inertes). Reste
+  (unlock id-based, citations de lignes, remèdes consistance, `kind?`/`image?` additifs)
+  confirmé exact.
+- dev-r3f-render, `src/render` lane: **GO-AVEC-AMENDEMENTS** — toutes citations render
+  exactes (App/MainMenu/NarrativeScreen). D2/D5 faisables sans refonte (branchement `kind`
+  interne à `LevelCard`, `NarrativeLine.image?` additif). Amender D3 : l'effet de tension
+  `App.tsx:136-139` divise par `selectedLevel.timeSeconds` sans garde de phase → la branche
+  tutorial ne doit pas `setSelectedLevel` sur l'entrée `timeSeconds:0` et le seed doit passer
+  par `FIRST_PLAYABLE_LEVEL`. Mineurs : filtre `kind` Scores redondant (défense en
+  profondeur) ; `GameScene.tsx:83` consommateur `LEVELS` non listé mais sûr (par id).
+- dev-tooling-assets, pipeline/CI lane: **GO-AVEC-AMENDEMENTS** — pipeline/CI/
+  `?preview=tutorial`/BASE*URL confirmés sans risque (aucun script n'itère le module
+  `LEVELS` ; tous lisent `levelArt.json` seul), mais D5 doit être amendé : sprites drive-by
+  `car*\_`et`hostage\_\_`+ assets HUD **non livrés**, donc « illustré avec les assets
+existants seulement » n'est vrai aujourd'hui que pour cops/livreur/bonus. Le harnais
+preview a deux moitiés :`App.tsx:74-76`ET`scripts/screenshot-preview.mjs:167-169`.
+- arch (Winston), arbitration: ADR-0012 — adversarial-review amendments arbitrated,
+  **16/16 findings ACCEPTED, 0 rejected**. ADR amended in place (Context + D1–D5 +
+  Consequences/Gotchas): scope descoped to shipped content (window cops + courier + loop +
+  base HUD; car/hostage/`energy` deferred to S2/S3 alongside the roster that introduces
+  them), `NaN`-divisor and `LEVELS[0]`-consumer hazards documented (`App.tsx:136-139`,
+  `stateMachine.test.ts:87-96`), asset claims corrected to the real `public/assets/`
+  inventory, distinct briefing register assumed (short of §8). README index labels
+  0009/0010/0011 fixed. Status stays **Proposed** — cleared for pm acceptance; devs must
+  not implement until Accepted.
+- pm (John) → Bertrand, acceptance: ADR-0012 amendé **accepté produit** (2e passe, lecture
+  seule). Les 5 points de la 1re review (2 MAJEURS, 3 MINEURS) sont tous traités et cités ;
+  scope confirmé optionnel/skippable/non-bloquant/zéro-règle/cutscene-simple, aucune
+  régression introduite par les amendements techniques. Statut ADR reste Proposed —
+  acceptation finale = merge PR par Bertrand.
