@@ -452,3 +452,147 @@ still owns final contour hygiene in his technical pass regardless.
 **Status:** edits landed in `levelArt.json` (`neonPhrase` rim wording + shared `style`
 coarse-halftone); lint 0 errors. Bon pour gate per Serge on everything but the rim clause,
 which this iteration addresses. Awaiting `lead-art` PROMPT re-gate before dispatch.
+
+---
+
+## Decoupled B&W prompts — ADR 0006
+
+**Date:** 2026-07-11
+**Scope:** retire the baked neon from the vehicle prompt system entirely. Trigger:
+`docs/adr/0006-render-side-neon-rim.md` (Accepted) + the `story-render-side-neon-rim`
+lane sign-off in `docs/agent-handoffs.md`. Branch `claude/art-pipeline-graphist`.
+
+### Why decouple (the rationale for the gate)
+
+Three FLUX batches (2, 3, 3b) fought the same failure: FLUX (Pollinations `flux`,
+schnell-class — no negative prompt, no mask, no weight syntax) reads a **neon token on a
+monochrome vehicle as an instruction to paint the whole vehicle neon**. The batch-3 body
+flood was 44% orange on the truck, magenta panels on the moto; the car smuggled a
+connected glowing cyan cabin/skyline. Every positive anti-flood clause ("only the outer
+edge", "body staying pure black-and-white xerox") spent attention budget in the weak tail
+zone (§3.3) without confining the colour — because the model has **no mechanism** to
+confine it. Nico's asset gate (batch 3) named the root cause as the neon token itself and
+recommended decouple as the real fix; Bertrand approved; Winston recorded ADR 0006.
+
+The loi du glow is **not abandoned** — it moves to `src/render` as a runtime emissive rim
+(CPU-baked silhouette behind the sprite, `AdditiveBlending`, hue from a render-side table
+anchored to bible §2.1). This is **more** on-direction, not a compromise: §2.1 "what glows
+is interactive" is better served by a live rim that can respond to `DeliveryPhase` than by
+a baked one. The `neon` NAME per type STAYS in `levelArt.json` as render metadata (the
+hue→asset assignment is still authored here); only the prompt TOKEN is retired.
+
+### What changed in `levelArt.json` (string fields only — sole writer this story)
+
+| Field                             | Was                                                                                                                                                                         | Now                                                                                              | Why                                                                                                                                                                                                                                                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vehicles.neonPhrase`             | `, a bright, crisp {neon} ({hex}) acid neon rim light, a clean band a few pixels thick tracing only the outer edge and wheel rims, body staying pure black-and-white xerox` | `""` (empty)                                                                                     | The neon token WAS the flood trigger — removing it removes the trigger. Slot kept structurally (four-slot assembly tolerates empty); retired from the prompt.                                                                                                                                                 |
+| `vehicles.style`                  | `… coarse halftone dots, black and white except the neon, on a uniform matte black background (#000000) …`                                                                  | `… coarse halftone dots, fully black and white, on a uniform matte black background (#000000) …` | "except the neon" carved an exception that no longer exists. "fully black and white" is the positive, unambiguous monochrome constraint. All KEEP-clauses (fanzine, ink linework, xerox toner, coarse halftone, matte-black #000000 key ground, flat ambient lighting, crisp cutout edges) retained verbatim. |
+| `vehicles.types.*.prompt`         | (batch-3b silhouette language)                                                                                                                                              | unchanged                                                                                        | Checked all three — clean of any glow/neon/acid token (the flood came from `neonPhrase`, never the subjects). Silhouette language survives untouched. Serge's [S5] truck-roofline concern stays a WATCH-ITEM — NOT reworked this pass (outside authorised scope).                                             |
+| `vehicles.types.*.neon` / `.seed` | —                                                                                                                                                                           | unchanged                                                                                        | `neon` is now render metadata (ADR 0006); seeds pinned (1337 / 42 / 8128).                                                                                                                                                                                                                                    |
+| `vehicles.$comment`               | "house style: photocopied fanzine B&W + acid neon …"                                                                                                                        | "pure photocopied fanzine B&W (the neon rim is render-side per ADR 0006 …)"                      | Accuracy fix (flagged in handoff report): the generation SSoT comment described the retired baked-neon mechanism; corrected so a downstream reader of `gen-vehicle-sprites.mjs` does not reintroduce the flood. Not a prompt/style string per se — flagged for session reconciliation.                        |
+
+Zero negations added anywhere. Word budgets **dropped naturally** with `neonPhrase` gone
+(no compensating verbiage added):
+
+| type  | neon (metadata) | seed | assembled words | was (3b) |
+| ----- | --------------- | ---- | --------------- | -------- |
+| truck | orange          | 1337 | **71**          | 102      |
+| car   | cyan            | 42   | **82**          | 113      |
+| moto  | magenta         | 8128 | **71**          | 102      |
+
+All three land inside the §3.3 30–90 target band (no WARN band overrun) — the four-slot
+assembly is now `opening` + subject + `""` + `style`.
+
+### Lint status (see report caveat)
+
+`scripts/check-art-prompts.mjs` is being updated IN PARALLEL by `dev-tooling-assets` to the
+B&W contract (ADR 0006: neonPhrase becomes optional, and the vehicles set must contain NO
+neon/glow token). The version on disk when these edits landed still enforces the OLD
+pre-decouple rules — it hard-errors an empty `neonPhrase` and demands a neon-glow concept
+in every assembled prompt. Running it against the decoupled data therefore reports the
+EXPECTED mismatch (empty-neonPhrase error + one missing-neon-glow-concept error per type),
+NOT a defect in this data. Per the brief, this is reported, not fought — the session
+reconciles once the tooling lane lands. When the new lint is in place the decoupled prompts
+pass by construction (no neon token to flag, all three within word band, zero negations).
+
+**Status:** edits landed in `levelArt.json`; awaiting the parallel tooling-lane lint update
+and `lead-art` PROMPT re-gate on the decoupled B&W set before dispatch. NO commits.
+
+---
+
+## Graphiste notes (Serge) — decoupled B&W pre-prod (ADR 0006)
+
+Fast pass on the keying soundness of the decouple. Read ADR 0006 and Maud's rationale. The
+decouple itself is the right move — you cannot confine a FLUX neon token, so retiring it is
+correct. But it opens ONE production hole, and it is the big one.
+
+**[S1] BLOCKER — "fully black and white" on a "matte black background (#000000)" is NOT
+safe for the near-black chroma-key. The vehicle's own black ink is indistinguishable from
+the ground, so the key EATS the silhouette.**
+The cutout (`cutout-enemies.mjs`, reused by `gen-vehicle-sprites.mjs`) is an edge flood-fill
+that clears every border-connected pixel within distance ~24 of the corner colour — here pure
+black. With the old baked neon rim, the outer contour was BRIGHT (distance ≫ 24), so the flood
+stopped at the rim: the rim WAS the separator. Remove it and go monochrome-on-black and the
+flood eats inward through the black outer contour until it hits the first bright toner pixel.
+Concretely at game size:
+
+- The crisp black keyline (the §1 cut-and-paste identity) is eaten, and the silhouette
+  shrinks 1–3px to the first white pixel.
+- **Thin black appendages on black ground are eaten whole** — moto side mirror, headlamp
+  stalk, exhaust, and worst of all the moto's "exposed tube frame" (its DEFINING silhouette,
+  §5): thin black tubes with black ground showing through the gaps → the flood floods through
+  the frame and removes it. Same hazard for the top-box straps and steel-wheel detail.
+- **Catastrophic mode:** high-contrast xerox can just as easily render a BLACK-DOMINANT body
+  (heavy ink van). A large connected black region touching the border gets flood-eaten inward
+  → big chunks or the whole vehicle vanish. We cannot steer FLUX away from this (schnell, no
+  negative prompt — the exact reason we decoupled), so the key must be safe for a dark render,
+  not just a lucky white-dominant one. A consistent SET (§2.2) cannot rest on that luck.
+  Fix (Maud rewrites): **change the generation GROUND off black to a bright chroma-key colour
+  that cannot occur in a B&W vehicle** — reuse the repo's own proven pattern from the foreground
+  rails (`levels[*].prompts.foreground`): "isolated on a solid flat uniform bright magenta
+  (#FF3CDC) chroma-key background, sharp silhouette edges" (green `#78FF3C` is the equally-valid
+  unused hue if the magenta/ moto-neon overlap reads confusing). On a key-colour ground, BOTH
+  black ink AND white toner survive; only the key colour is removed → the full silhouette
+  (outline, thin frame tubes, appendages) is preserved, and therefore the render-side rim bakes
+  from a CORRECT alpha. This is a COORDINATED change, not Maud-only: `dev-tooling-assets` must
+  confirm `gen-vehicle-sprites.mjs`'s corner-adaptive cutout keys the new ground (it averages
+  corners, so likely yes, but the distance-24 threshold and any FLUX ground-gradient/anti-alias
+  need a quick verify; the foreground rails already key magenta, so the path exists). Flagging
+  for the tooling lane.
+  Lighter fallback if the ground change is out of scope this cycle (I judge it weaker, present
+  for completeness): keep black ground, add "**bright white paper-tone body fill**" so the MASS
+  survives the key — but this does NOT save thin black appendages on black ground (the moto
+  frame still goes), so it is a partial mitigation, not a fix.
+
+**[S2] The rim now bakes from the sprite's alpha (ADR 0006) → keying integrity is doubly
+load-bearing.** A nibbled key does not just chip the sprite; it feeds a nibbled silhouette to
+`buildNeonSilhouette`, so the runtime rim traces the eaten shape too. ADR gotcha (1) already
+flags under-rimmed chassis concavities; if [S1] also eats the moto frame, the moto loses
+silhouette AND rim in the same place. This is why [S1] is a blocker, not a polish item — it
+is upstream of both deliverables.
+
+**[S3] "coarse halftone dots" — good, my batch-3 [S3] ask landed; and it reinforces the
+ground change.** Coarse (≥2px) dots survive the in-game downscale as intended texture rather
+than mushing to grey, and coarse edge dots key cleaner than a fine screen. Note on black
+ground, dark toner/halftone bleeding into the near-black margin gives BOTH a ragged eaten edge
+AND surviving mid-grey specks (mid-grey is >24 from black, so it is NOT keyed → a grey fringe).
+A key-colour ground ([S1]) removes the eaten-edge half of that; the residual toner specks are a
+routine fringe-cleanup for my TECHNICAL pass, not a gate issue.
+
+**[S4] Non-blocking:** word budgets 71/82/71 all sit inside the §3.3 band — no readability
+concern from length; the decouple bought that headroom cleanly. Subjects unchanged, so my
+[S5] truck-roofline watch (low/generic-van proportion) still stands as a watch-item for the
+asset gate — not this pass.
+
+### Call — NEEDS MAUD ITERATION (the ground clause), everything else bon
+
+The decouple is sound and the style edits ("fully black and white", coarse halftone, retired
+neonPhrase) are correct. But shipping generation on a MATTE BLACK ground for a now-monochrome
+vehicle walks straight into the near-black key eating the silhouette — the single production
+risk the decouple introduces, and it is severe (moto frame loss; catastrophic on a dark
+render; and it corrupts the render-side rim bake too). One coordinated edit fixes it: move the
+ground to a bright chroma-key colour (magenta/green, per the existing foreground-rail pattern),
+with `dev-tooling-assets` confirming the cutout keys it. Hold the PROMPT gate until the ground
+clause changes.
+
+— Serge, PRE-PROD PASS (decouple)
