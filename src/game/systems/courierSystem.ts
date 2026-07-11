@@ -21,6 +21,19 @@ export function courierSpawnInterval(spawnCount: number): number {
   return BASE_INTERVAL + (spawnCount % 3) * 1.5;
 }
 
+/**
+ * Per-level roster gate for the street courier spawn (pure, no state).
+ * - `undefined` (no `roster.streetSpawns`) ⇒ legacy courier-only behaviour → true.
+ * - present and includes `"courier"` ⇒ true.
+ * - present and omits `"courier"` (including `[]`) ⇒ false (silent street, no throw).
+ */
+export function streetSpawnsCourier(
+  streetSpawns?: readonly ("courier" | "car" | "hostage_taker")[],
+): boolean {
+  if (streetSpawns === undefined) return true;
+  return streetSpawns.includes("courier");
+}
+
 /** A courier entering from the edge it will ride away from. */
 export function spawnCourier(id: number, dir: 1 | -1, field: CourierField): Courier {
   const startX = dir === 1 ? -(field.halfWidth + MARGIN) : field.halfWidth + MARGIN;

@@ -13,6 +13,7 @@ import {
 } from "@game/levels/levelArt";
 import type { HudData, HudDelivery } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
+import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
@@ -70,6 +71,10 @@ export function GameScene({
     [fullW, facadeH],
   );
 
+  // Per-level roster gate (ADR-0004): drives the window pool + street spawns.
+  // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster).
+  const roster = useMemo(() => LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
+
   const feedbackRef = useRef<Floater[]>([]);
   const stateRef = useGameLoop(
     mergedFacade,
@@ -80,6 +85,7 @@ export function GameScene({
     paused,
     feedbackRef,
     courierField,
+    roster,
   );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();

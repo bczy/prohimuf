@@ -15,9 +15,24 @@ import {
   courierSpawnInterval,
   FIRST_COURIER_DELAY,
   spawnCourier,
+  streetSpawnsCourier,
   tickCouriers,
 } from "@game/systems/courierSystem";
 import type { CourierField } from "@game/systems/courierSystem";
+import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
+import type { LevelRoster } from "@game/levels/levels";
+import type { EnemyKind } from "@game/types/enemy";
+
+// Resolve the active window pool from a roster: absent `windowWeights` ⇒ the
+// frozen default path (spawnWave called without a pool), so AC1 holds.
+function windowPoolFor(roster?: LevelRoster): readonly EnemyKind[] | undefined {
+  const overrides = roster?.windowWeights;
+  if (overrides === undefined) return undefined;
+  const defaults = Object.fromEntries(
+    (Object.keys(ARCHETYPES) as EnemyKind[]).map((k) => [k, ARCHETYPES[k].weight]),
+  ) as Record<EnemyKind, number>;
+  return buildWeightedFrom({ ...defaults, ...overrides });
+}
 
 export const LEVEL_TIME_SECONDS = 90;
 export const ENEMIES_TO_WIN = 10;
@@ -49,12 +64,13 @@ export const DEFAULT_LEVEL_PARAMS: LevelParams = {
 export function createInitialState(
   facade: FacadeMap,
   params: LevelParams = DEFAULT_LEVEL_PARAMS,
+  roster?: LevelRoster,
 ): GameState {
   const deliverySpec = params.delivery ?? null;
   return {
     phase: "PLAYING",
     crosshair: { position: { x: 0.5, y: 0.5 } },
-    enemies: spawnWave(1, facade),
+    enemies: spawnWave(1, facade, windowPoolFor(roster)),
     bullets: [],
     score: 0,
     lives: params.lives,
@@ -82,6 +98,7 @@ export function tickGameState(
   viewH = 12,
   enemiesToWin = ENEMIES_TO_WIN,
   courierField?: CourierField,
+  roster?: LevelRoster,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     return state;
@@ -105,7 +122,9 @@ export function tickGameState(
   // 3. Spawn new wave if all enemies dead
   const allDead = tickedEnemies.every((e) => e.state === "DEAD");
   const newWave = allDead ? state.wave + 1 : state.wave;
-  const activeEnemies: readonly Enemy[] = allDead ? spawnWave(newWave, facade) : tickedEnemies;
+  const activeEnemies: readonly Enemy[] = allDead
+    ? spawnWave(newWave, facade, windowPoolFor(roster))
+    : tickedEnemies;
 
   // 4. Player fires bullet
   let bullets: readonly Bullet[] = state.bullets;
@@ -153,7 +172,9 @@ export function tickGameState(
   if (courierField !== undefined) {
     couriers = tickCouriers(couriers, delta, courierField);
     courierTimer -= delta;
-    if (courierTimer <= 0) {
+    // Per-level roster gate: only spawn couriers when this level's street roster
+    // includes "courier" (absent roster ⇒ legacy courier-only behaviour).
+    if (courierTimer <= 0 && streetSpawnsCourier(roster?.streetSpawns)) {
       const dir: 1 | -1 = couriersSpawned % 2 === 0 ? 1 : -1;
       couriers = [...couriers, spawnCourier(_nextCourierId++, dir, courierField)];
       couriersSpawned += 1;
