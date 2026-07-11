@@ -13,6 +13,27 @@ Template:
 
 ---
 
+### story-live-neon-rim
+
+- pm→arch: Story written (`_bmad-output/planning-artifacts/story-live-neon-rim.md`),
+  branch `claude/art-pipeline-graphist`. WHAT: decouple neon from FLUX generation — vehicles
+  ship as pure B&W xerox sprites, the loi du glow moves to `src/render` as an emissive
+  alpha-edge neon rim, hue from `levelArt.json.vehicles.types.*.neon`. WHY: kills the FLUX
+  body-flood at its source (the neon token), one shader/three hues makes family consistency
+  structural, and a live rim enables pulse/flicker as real signals (both follow-ups).
+  Scope test: conscious documented extension, already established by the bible's loi du glow —
+  no new scope surface, only relocates where the signal is produced. AC1–AC7: B&W sprites
+  load, rim renders in the type's hue (same hue→color as generation, no forked palette),
+  rim visible at game size in the delivery beat, ZERO `src/game/**` changes, e2e-delivery
+  green, art gates green, verified in-browser. OUT OF SCOPE: pulse/flicker animations,
+  enemies rim (all follow-ups). HANDOFF to `senior-architect` (cross-cutting: `src/render`
+  - shared hue source of truth + likely ADR): own lane partition, the boundary-clean
+    alpha-edge rim approach, and the single hue→color source-of-truth decision (name→hex map
+    currently lives ONLY in `scripts/gen-vehicle-sprites.mjs` `NEON_HEX` — do not fork it in
+    render). No commits made by pm. (John / PM)
+
+---
+
 ### story-narrative-coverage
 
 - arch: Boundary verdict PASS. Lane A → `dev-gameplay` owns `src/game/**` (new file
@@ -469,3 +490,43 @@ the delivery beat is not held hostage to art, and commission the decouple (clean
 - render-side neon rim) as the correct long-term solution — it kills the flood at its source
   and upgrades the loi du glow from baked to live. (C) only if product mandates fully-baked
   sprites. (Nico / Lead-Art — asset gate, batch 3)
+
+---
+
+### story-render-side-neon-rim — decouple vehicle glow from baked art (ADR-0006)
+
+- arch: Boundary verdict PASS. Decision recorded in `docs/adr/0006-render-side-neon-rim.md`
+  (Accepted): vehicles generate PURE B&W; the loi du glow moves to `src/render` as a runtime
+  emissive rim. Technique = CPU-baked neon silhouette (opaque pixels → assigned hue via source
+  alpha) drawn behind the sprite with `AdditiveBlending`, scaled out by a uniform world-space
+  margin. Rejected post-processing (SwiftShader/e2e cost + new dep) and a custom edge-detect
+  shader (overkill, GLSL risk on software GL). Chosen path adds ZERO new GL surface — stock
+  `MeshBasicMaterial`+`CanvasTexture`+`AdditiveBlending`, already exercised by `EnemySprite`.
+  Data contract: `GameState.deliveryVehicle.vehicleType` already reaches render; neon NAME
+  stays authored in `levelArt.json` `vehicles.types[*].neon`; name→hex is a render-side
+  constant anchored to art-direction §2.1. Game logic (`delivery.ts`, `deliverySystem.ts`,
+  `GameState`, `levelArt.ts` loader) UNTOUCHED — the hue never enters game state.
+- lanes (three disjoint path sets, PARALLEL-SAFE: YES):
+  - **dev-r3f-render** — `src/render/**` ONLY. NEW `src/render/scene/vehicleNeon.ts`
+    (`getVehicleNeonHex(type)` reading `levelArt.json` data + render-side `NEON_HEX` anchored
+    to §2.1; `buildNeonSilhouette(image, hex)` CanvasTexture bake, nearest filter). MOD
+    `DeliveryVehicleSprite.tsx`: cache a baked silhouette per type in the load callback; add a
+    second `rimRef` mesh (renderOrder 6, z = VEHICLE_Z − 0.01, MeshBasicMaterial transparent /
+    depthWrite:false / AdditiveBlending); per-frame same position, per-axis scale
+    `x=facing·(worldW+2T)`, `y=worldH+2T`, `T≈0.06·VEHICLE_H`; `rim.visible = onStage &&
+silhouetteTex!==null`. No game/scripts edits.
+  - **dev-tooling-assets** — `scripts/**` ONLY. `check-art-prompts.mjs`: inverse rule for the
+    vehicles set — assembled vehicle prompt must contain NO neon/glow token. `check-sprite-style.mjs`:
+    flip vehicle NEON check to UPPER-BOUND flood-kill (≤ ~15–20% of content in any saturated
+    hue band, all modes) and REMOVE the lower bound for B&W vehicles (expected-low); recalibrate
+    table against regenerated B&W PNGs. `gen-vehicle-sprites.mjs`: defensive only (assembly already
+    tolerates an empty `neonPhrase`). Keep the `neon` NAME field — it is now render metadata, not
+    a prompt token. No `levelArt.json` string edits, no `src/**`.
+  - **concept-artist** — `levelArt.json` STRING fields + `prompt-drafts.md` ONLY (sole writer of
+    levelArt.json here → no file overlap). Remove every neon/glow/acid/hue token from the vehicle
+    prompt: empty `neonPhrase`, rewrite `style` to pure B&W xerox (drop "except the neon" / "acid
+    neon"), keep matte-black bg for keying and all silhouette/medium/view language. Retain per-type
+    `neon` NAME. Document the decouple rationale (FLUX floods on the neon token) for the prompt gate.
+- serialization note: `levelArt.json` is written ONLY by concept-artist in this story (all edits
+  are string content); tooling stays in `scripts/**`, render only READS the JSON. `docs/agent-handoffs.md`
+  serialized by the orchestrator. (Winston / Senior Architect)
