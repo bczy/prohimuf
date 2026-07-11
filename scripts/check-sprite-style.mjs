@@ -11,16 +11,26 @@
  *       black→transparent chroma-key had nothing to key and left an opaque halo.
  *       Measured as: the outermost 2px border must be overwhelmingly transparent
  *       OR near-black (post-key and pre-key both acceptable). A failed key leaves
- *       a bright coloured border → the clean-border ratio collapses.
+ *       a bright coloured border → the clean-border ratio collapses. NOTE (Serge's
+ *       keying switch, verified): the vehicle GROUND flipped from #000000 to a
+ *       bright magenta (#FF3CDC) chroma key, but this check judges the POST-key
+ *       PNG — a successful key leaves the border TRANSPARENT (alpha 0), which is
+ *       clean by the transparent branch, so no change is needed. A FAILED magenta
+ *       key leaves a bright magenta (not near-black) opaque border → clean ratio
+ *       collapses AND the flood-kill below fires — caught twice.
  *   (2) NEON — (ADR 0006, render-side neon rim) vehicles are now generated PURE
  *       B&W (the neon rim is drawn at runtime in src/render), so the old LOWER
  *       bound ("a rim must exist") is dropped and INVERTED into a flood-kill
  *       UPPER bound: a baked FLUX colour flood (a whole body painted an accent
  *       hue — the failure that killed three batches) is caught when the dominant
  *       saturated hue band exceeds the ceiling. Scanned across ALL hues, not just
- *       the assigned one, so a wrong-accent flood is caught too. Per-set mode
- *       (SET_MODES): a future fully-baked pipeline can opt back into a lower bound
- *       via SPRITE_SET=baked.
+ *       the assigned one, so a wrong-accent flood is caught too. FEATURE (magenta
+ *       key): because this scans POST-key content, a leftover un-keyed magenta
+ *       ground would surface as a magenta flood > 18% and FAIL loudly — the gate
+ *       doubles as a chroma-key-failure detector, even though magenta is also
+ *       moto's render hue (a correctly keyed sprite has ~0% magenta content).
+ *       Per-set mode (SET_MODES): a future fully-baked pipeline can opt back into
+ *       a lower bound via SPRITE_SET=baked.
  *   (3) SILHOUETTE — wrong proportions (e.g. a long low sedan when a short tall
  *       one-box car was wanted, or a vehicle cropped out of frame). Measured from
  *       the content bounding box: aspect within per-type bounds, the box wide

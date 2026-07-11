@@ -15,7 +15,7 @@
     "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: pure photocopied fanzine B&W (the neon rim is render-side per ADR 0006, no longer baked into the sprite; the `neon` name below is render metadata), generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
     "opening": "Flat 2D video game sprite, strict side view in orthographic projection, single vehicle centered and fully visible, ",
     "neonPhrase": "",
-    "style": ", photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox toner texture, coarse halftone dots, fully black and white, on a uniform matte black background (#000000), flat ambient lighting, crisp cutout edges",
+    "style": ", photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox toner texture, coarse halftone dots, fully black and white, isolated on a solid flat uniform bright magenta (#FF3CDC) chroma-key background, fully magenta empty surroundings, flat ambient lighting, crisp cutout edges",
     "types": {
       "truck": {
         "asset": "assets/vehicles/truck.png",

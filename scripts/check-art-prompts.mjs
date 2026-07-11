@@ -28,8 +28,13 @@
  * black-ground tail). `vehicles.neonPhrase` is RETIRED (ADR 0006) — it must be
  * empty or absent; a non-empty neonPhrase is an error. The lint reconstructs the
  * assembled prompt per type and checks it — the house concepts may live in any
- * slot (side-view in `opening`, black ground in `style`); the concepts, not their
- * location, are the contract.
+ * slot (side-view in `opening`, chroma-key ground in `style`); the concepts, not their
+ * location, are the contract. The vehicle GROUND is a chroma key: it flipped from
+ * #000000 to a flat saturated magenta (#FF3CDC) / green (#78FF3C) — B&W-on-black
+ * gets flood-eaten, the saturated key does not — so `style` must now name that key
+ * ground. That ground phrase is whitelisted (stripped before the hue-name scan),
+ * so its key hue is exempt, but a hue name anywhere else still bakes a body and
+ * errors.
  *
  * Bible-critical rules enforced (§3): NEVER negate — FLUX reads "not photoreal"
  * as photoreal, so the anti-photoreal requirement is satisfied POSITIVELY by the
@@ -78,24 +83,50 @@ const NEG_RE = /\bnot?( a| an)?\b|\bno \b/gi;
 
 // Neon hues we treat as "colour names". Restricted to the palette the `neon`
 // field can take, so incidental words like "white" (in "black and white") are
-// NOT misread as a hue. In B&W mode (ADR 0006) ANY of these in the assembled
-// vehicle prompt is a flood trigger → error.
+// NOT misread as a hue.
 const NEON_HUES = ["orange", "cyan", "magenta", "green"];
 
-// Forbidden-token set for the assembled VEHICLE prompt (ADR 0006, inverse rule).
+// Forbidden EVERYWHERE in the assembled vehicle prompt (ADR 0006, inverse rule).
 // Baked neon floods the FLUX-schnell body; the rim is now render-side, so no
-// neon/glow/acid/hue-name may appear in a vehicle prompt. `rim light` is matched
-// with an optional hyphen/space; bare "light" (e.g. "flat ambient lighting") is
-// intentionally NOT forbidden.
-const FORBIDDEN_NEON = [
+// neon/glow/acid/rim-light may appear ANYWHERE in a vehicle prompt (subject or
+// style tail). `rim light` matches an optional hyphen/space; bare "light" (e.g.
+// "flat ambient lighting") is intentionally NOT forbidden.
+const FORBIDDEN_NEON_ANYWHERE = [
   { name: "neon", re: /\bneon\b/i },
   { name: "acid", re: /\bacid\b/i },
   { name: "glow", re: /\bglow(?:ing)?\b/i },
   { name: "luminous", re: /\bluminous\b/i },
   { name: "luminescent", re: /\bluminescent\b/i },
   { name: "rim light", re: /\brim[- ]?light\b/i },
-  ...NEON_HUES.map((h) => ({ name: `${h} (hue)`, re: new RegExp(`\\b${h}\\b`, "i") })),
 ];
+
+// Hue NAMES would bake a coloured body (the flood that killed three batches), so
+// they are forbidden — but scanned AFTER the chroma-key GROUND phrase is stripped
+// out (below), so the key hue is exempt while a hue word ANYWHERE else (subject or
+// a stray style word) still errors.
+const FORBIDDEN_HUE = NEON_HUES.map((h) => ({
+  name: `${h} (hue)`,
+  re: new RegExp(`\\b${h}\\b`, "i"),
+}));
+
+// Chroma-key GROUND phrase(s) — WHITELISTED. Serge's keying switch moved the
+// vehicle ground from #000000 to a flat saturated magenta (#FF3CDC) / green
+// (#78FF3C) key (B&W-on-black gets flood-eaten [S1]; the saturated key keys
+// cleanly, corner-adaptive flood-fill in cutout-enemies.mjs). The hue here NAMES
+// the key colour to be removed, not a baked accent — the vehicle analogue of the
+// `magenta chroma-key` phrase checkLevels REQUIRES on foreground rails. These
+// exact ground phrases are stripped from the prompt BEFORE the hue scan, so the
+// key hue is exempt but a hue word elsewhere still errors.
+const CHROMA_KEY_GROUND_RE = [
+  /\bbright (?:magenta|green) \(#[0-9A-Fa-f]{6}\) chroma-?key background\b/gi,
+  /\bfully (?:magenta|green) empty surroundings\b/gi,
+];
+
+function stripChromaKeyGround(text) {
+  let t = text;
+  for (const re of CHROMA_KEY_GROUND_RE) t = t.replace(re, " ");
+  return t;
+}
 
 // Assembled-prompt word budget (art bible §3.3).
 const WORD_TARGET_MIN = 30;
@@ -132,15 +163,19 @@ const STYLE_TOKENS = [
   // rim moved render-side (ADR 0006) and a neon token in a vehicle prompt now
   // FLOODS the body. Its inverse is enforced below via FORBIDDEN_NEON.
   {
-    name: "dark/black background term",
+    // CHROMA-KEY GROUND (Serge's keying switch). Vehicles used to be generated on
+    // #000000 and edge-flood-keyed, but B&W-on-black gets flood-eaten ([S1]); the
+    // ground is now a flat SATURATED magenta (#FF3CDC) or green (#78FF3C) chroma
+    // key, keyed to transparency (corner-adaptive flood-fill in cutout-enemies.mjs
+    // handles any flat ground colour). The prompt must name that key ground.
+    name: "chroma-key ground term (magenta/green key)",
     any: [
-      /\bblack background\b/i,
-      /\bblack cutout background\b/i,
-      /\bmatte black background\b/i,
-      /\bdark background\b/i,
-      /\bflat black\b/i,
-      /\bpure black\b/i,
-      /background \(#000000\)/i,
+      /\bchroma-?key\b/i,
+      /\bmagenta\b/i,
+      /#FF3CDC/i,
+      /\bgreen[- ]?screen\b/i,
+      /\bgreen\b/i,
+      /#78FF3C/i,
     ],
   },
   {
@@ -186,9 +221,16 @@ function countNegations(text) {
   return m ? m.length : 0;
 }
 
-// Every forbidden neon/glow/acid/hue token present in the assembled prompt.
-function forbiddenNeonHits(text) {
-  return FORBIDDEN_NEON.filter((tok) => tok.re.test(text)).map((tok) => tok.name);
+// Forbidden tokens: neon/glow/acid/rim-light anywhere in the assembled prompt,
+// plus hue NAMES scanned over the prompt with the chroma-key GROUND phrase(s)
+// stripped out — so the key colour in `style` is exempt but a hue word anywhere
+// else (a baked body colour) still errors.
+function forbiddenNeonHits(assembled) {
+  const deGround = stripChromaKeyGround(assembled);
+  return [
+    ...FORBIDDEN_NEON_ANYWHERE.filter((tok) => tok.re.test(assembled)),
+    ...FORBIDDEN_HUE.filter((tok) => tok.re.test(deGround)),
+  ].map((tok) => tok.name);
 }
 
 // ── Violation collection ─────────────────────────────────────────────────────
