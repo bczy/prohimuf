@@ -12,7 +12,7 @@ All workflows live in `.github/workflows/`. Asset-generation internals are in
 | ---------------------------- | ------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
 | **CI**                       | `ci.yml`                  | push to `main`, every PR                | Typecheck · Lint · Format check · Tests + coverage                         |
 | **Deploy to GitHub Pages**   | `deploy.yml`              | push to `main`, manual                  | Builds the app and publishes it to `gh-pages` root → the live site         |
-| **Deploy branch preview**    | `deploy-preview.yml`      | manual, or dispatch marker              | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages` |
+| **Deploy branch preview**    | `deploy-preview.yml`      | push to `claude/*` (auto), manual       | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages` |
 | **Style B Preview**          | `preview.yml`             | push to a specific style branch, manual | Generates level art, renders screenshots, uploads a contact sheet artifact |
 | **Generate enemy sprites**   | `gen-sprites.yml`         | manual, or dispatch marker              | Regenerates missing enemy sprites and commits them                         |
 | **Generate vehicle sprites** | `gen-vehicle-sprites.yml` | manual, or dispatch marker              | Regenerates truck/car/moto sprites (FORCE=1) and commits them              |
@@ -102,7 +102,7 @@ the GitHub App integration used by AI coding sessions — get
 **`403 Resource not accessible by integration`**. That permission is set on
 the app installation, not in this repo.
 
-The workaround (see [ADR 0004](./adr/0004-push-marker-workflow-dispatch.md)):
+The workaround (see [ADR 0009](./adr/0009-push-marker-workflow-dispatch.md)):
 each manual workflow also triggers on a **push touching its marker file** in
 `.github/dispatch/` (with `main` excluded via `branches-ignore`). Any actor
 that can push can therefore dispatch:
@@ -123,8 +123,10 @@ For example, `<name>` = `gen-vehicle-sprites`. Two rules that make it work:
 The run executes **on the pushed branch**, exactly like picking that ref in
 the Actions UI. Marker files are **created on first dispatch** — they need not
 pre-exist (creating the file is itself the diff). Only
-`.github/dispatch/gen-vehicle-sprites` exists today; `gen-sprites` and
-`deploy-preview` appear the first time each is dispatched.
+`.github/dispatch/gen-vehicle-sprites` exists today; `gen-sprites` appears the
+first time it is dispatched. `deploy-preview.yml` no longer uses a marker: it
+auto-deploys on every push to `claude/*` branches (other branches via the
+Actions UI).
 
 `preview.yml` deliberately has **no marker** — it would be redundant, not
 impossible: `preview.yml` already has its own push trigger, so a plain push
@@ -132,9 +134,10 @@ already runs its default (`regenerate=false`) path. Only `regenerate=true`, a
 full art regeneration, needs the boolean input a push can't carry — use the
 Actions UI for that one.
 
-When you both regenerate assets and deploy a preview, push the `gen-*` marker
-**first** and the `deploy-preview` marker in a **separate later push**: a
-single push touching both deploys the pre-generation SHA.
+When you both regenerate assets and want a fresh preview on a `claude/*`
+branch, push the `gen-*` marker first: the generation's bot commit-back does
+not retrigger workflows, so push any real commit afterwards to get the
+post-generation preview.
 
 ---
 

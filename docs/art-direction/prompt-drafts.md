@@ -455,11 +455,11 @@ which this iteration addresses. Awaiting `lead-art` PROMPT re-gate before dispat
 
 ---
 
-## Decoupled B&W prompts — ADR 0006
+## Decoupled B&W prompts — ADR 0011
 
 **Date:** 2026-07-11
 **Scope:** retire the baked neon from the vehicle prompt system entirely. Trigger:
-`docs/adr/0006-render-side-neon-rim.md` (Accepted) + the `story-render-side-neon-rim`
+`docs/adr/0011-render-side-neon-rim.md` (Accepted) + the `story-render-side-neon-rim`
 lane sign-off in `docs/agent-handoffs.md`. Branch `claude/art-pipeline-graphist`.
 
 ### Why decouple (the rationale for the gate)
@@ -472,7 +472,7 @@ connected glowing cyan cabin/skyline. Every positive anti-flood clause ("only th
 edge", "body staying pure black-and-white xerox") spent attention budget in the weak tail
 zone (§3.3) without confining the colour — because the model has **no mechanism** to
 confine it. Nico's asset gate (batch 3) named the root cause as the neon token itself and
-recommended decouple as the real fix; Bertrand approved; Winston recorded ADR 0006.
+recommended decouple as the real fix; Bertrand approved; Winston recorded ADR 0011.
 
 The loi du glow is **not abandoned** — it moves to `src/render` as a runtime emissive rim
 (CPU-baked silhouette behind the sprite, `AdditiveBlending`, hue from a render-side table
@@ -488,8 +488,8 @@ hue→asset assignment is still authored here); only the prompt TOKEN is retired
 | `vehicles.neonPhrase`             | `, a bright, crisp {neon} ({hex}) acid neon rim light, a clean band a few pixels thick tracing only the outer edge and wheel rims, body staying pure black-and-white xerox` | `""` (empty)                                                                                     | The neon token WAS the flood trigger — removing it removes the trigger. Slot kept structurally (four-slot assembly tolerates empty); retired from the prompt.                                                                                                                                                 |
 | `vehicles.style`                  | `… coarse halftone dots, black and white except the neon, on a uniform matte black background (#000000) …`                                                                  | `… coarse halftone dots, fully black and white, on a uniform matte black background (#000000) …` | "except the neon" carved an exception that no longer exists. "fully black and white" is the positive, unambiguous monochrome constraint. All KEEP-clauses (fanzine, ink linework, xerox toner, coarse halftone, matte-black #000000 key ground, flat ambient lighting, crisp cutout edges) retained verbatim. |
 | `vehicles.types.*.prompt`         | (batch-3b silhouette language)                                                                                                                                              | unchanged                                                                                        | Checked all three — clean of any glow/neon/acid token (the flood came from `neonPhrase`, never the subjects). Silhouette language survives untouched. Serge's [S5] truck-roofline concern stays a WATCH-ITEM — NOT reworked this pass (outside authorised scope).                                             |
-| `vehicles.types.*.neon` / `.seed` | —                                                                                                                                                                           | unchanged                                                                                        | `neon` is now render metadata (ADR 0006); seeds pinned (1337 / 42 / 8128).                                                                                                                                                                                                                                    |
-| `vehicles.$comment`               | "house style: photocopied fanzine B&W + acid neon …"                                                                                                                        | "pure photocopied fanzine B&W (the neon rim is render-side per ADR 0006 …)"                      | Accuracy fix (flagged in handoff report): the generation SSoT comment described the retired baked-neon mechanism; corrected so a downstream reader of `gen-vehicle-sprites.mjs` does not reintroduce the flood. Not a prompt/style string per se — flagged for session reconciliation.                        |
+| `vehicles.types.*.neon` / `.seed` | —                                                                                                                                                                           | unchanged                                                                                        | `neon` is now render metadata (ADR 0011); seeds pinned (1337 / 42 / 8128).                                                                                                                                                                                                                                    |
+| `vehicles.$comment`               | "house style: photocopied fanzine B&W + acid neon …"                                                                                                                        | "pure photocopied fanzine B&W (the neon rim is render-side per ADR 0011 …)"                      | Accuracy fix (flagged in handoff report): the generation SSoT comment described the retired baked-neon mechanism; corrected so a downstream reader of `gen-vehicle-sprites.mjs` does not reintroduce the flood. Not a prompt/style string per se — flagged for session reconciliation.                        |
 
 Zero negations added anywhere. Word budgets **dropped naturally** with `neonPhrase` gone
 (no compensating verbiage added):
@@ -506,7 +506,7 @@ assembly is now `opening` + subject + `""` + `style`.
 ### Lint status (see report caveat)
 
 `scripts/check-art-prompts.mjs` is being updated IN PARALLEL by `dev-tooling-assets` to the
-B&W contract (ADR 0006: neonPhrase becomes optional, and the vehicles set must contain NO
+B&W contract (ADR 0011: neonPhrase becomes optional, and the vehicles set must contain NO
 neon/glow token). The version on disk when these edits landed still enforces the OLD
 pre-decouple rules — it hard-errors an empty `neonPhrase` and demands a neon-glow concept
 in every assembled prompt. Running it against the decoupled data therefore reports the
@@ -520,9 +520,9 @@ and `lead-art` PROMPT re-gate on the decoupled B&W set before dispatch. NO commi
 
 ---
 
-## Graphiste notes (Serge) — decoupled B&W pre-prod (ADR 0006)
+## Graphiste notes (Serge) — decoupled B&W pre-prod (ADR 0011)
 
-Fast pass on the keying soundness of the decouple. Read ADR 0006 and Maud's rationale. The
+Fast pass on the keying soundness of the decouple. Read ADR 0011 and Maud's rationale. The
 decouple itself is the right move — you cannot confine a FLUX neon token, so retiring it is
 correct. But it opens ONE production hole, and it is the big one.
 
@@ -564,7 +564,7 @@ Concretely at game size:
   survives the key — but this does NOT save thin black appendages on black ground (the moto
   frame still goes), so it is a partial mitigation, not a fix.
 
-**[S2] The rim now bakes from the sprite's alpha (ADR 0006) → keying integrity is doubly
+**[S2] The rim now bakes from the sprite's alpha (ADR 0011) → keying integrity is doubly
 load-bearing.** A nibbled key does not just chip the sprite; it feeds a nibbled silhouette to
 `buildNeonSilhouette`, so the runtime rim traces the eaten shape too. ADR gotcha (1) already
 flags under-rimmed chassis concavities; if [S1] also eats the moto frame, the moto loses
@@ -639,20 +639,20 @@ moto **79** — all inside the §3.3 30–90 band (lint reports no word-band war
 ### Lint status — REPORTED MISMATCH, not fought (per brief + Serge [S1] tooling-lane flag)
 
 `node scripts/check-art-prompts.mjs` → **6 errors** (2 per type). Both classes are the
-lint-vs-data mismatch of the ADR-0006 / [S1] transition, NOT a defect in this data:
+lint-vs-data mismatch of the ADR-0011 / [S1] transition, NOT a defect in this data:
 
 1. **`missing required house concept: dark/black background term`** (×3) — the brief
    explicitly anticipated this: the lint's `STYLE_TOKENS` "dark/black background" concept
    still only accepts `black`/`matte black`/`#000000`; the [S1] chroma-key ground migration
    needs it to also accept a bright chroma-key ground token (mirroring the foreground pattern).
 2. **`contains forbidden neon token(s) "magenta (hue)"`** (×3) — the tooling lane already
-   landed the ADR-0006 inverse rule (`FORBIDDEN_NEON`), which bans hue words anywhere in a
+   landed the ADR-0011 inverse rule (`FORBIDDEN_NEON`), which bans hue words anywhere in a
    vehicle prompt to stop baked-neon flood. It does not yet EXEMPT the ground KEY colour —
    here `magenta` names the chroma-key ground, not a baked accent, exactly as
    `checkLevels` REQUIRES `magenta chroma-key` on the foreground rails. (Switching to green
    would not help — `green` is also in `NEON_HUES`, so any key hue trips the same rule.)
 
-Both are for `dev-tooling-assets` to reconcile as the lint finishes its ADR-0006 / [S1]
+Both are for `dev-tooling-assets` to reconcile as the lint finishes its ADR-0011 / [S1]
 update: (a) accept a bright chroma-key ground in the background concept, and (b) exempt the
 ground key-colour hue from `FORBIDDEN_NEON` (a "magenta/green chroma-key background" ground
 token, the vehicle analogue of the foreground `MAGENTA_KEY_RE` allowance). Per the brief I

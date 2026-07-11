@@ -31,7 +31,7 @@ Historical anchors (see LICENSES.md for sources):
    (`levelArt.json` `neon` fields), hex-anchored: orange `#FF8C14`, cyan `#28F0FF`,
    magenta `#FF3CDC`, green `#78FF3C`. The law governs the on-screen **result**, not the
    production method: the rim may be **baked** into the sprite OR **applied at render
-   time**. For the delivery **vehicles** the rim is render-side (ADR 0006) — an additive
+   time**. For the delivery **vehicles** the rim is render-side (ADR 0011) — an additive
    emissive silhouette drawn in `src/render`, hue from the `neon` data field. Their
    sprites are therefore generated **pure black-and-white with no neon token in the
    prompt** (three baked-rim batches flooded the body; the runtime rim makes that
@@ -121,14 +121,14 @@ art-advisor (references) → concept-artist (prompts)
   → generation (marker dispatch; seeds pinned; enhance=false)
       → scripts/check-sprite-style.mjs (mechanical: dark ground, silhouette aspect bounds,
         + neon hue band: LOWER bound where the rim is baked; for the render-side-rim
-        VEHICLE set (ADR 0006) an UPPER-bound flood-kill instead — ≤~18% saturated hue,
+        VEHICLE set (ADR 0011) an UPPER-bound flood-kill instead — ≤~18% saturated hue,
         near-zero expected, catches a FLUX colour flood) — bad rolls auto-retried, bounded
   → game-graphist TECHNICAL PASS (real-size inspection; documented scripted retouches)
   → lead-art ASSET GATE (taste; mechanical pass does not bind)
   → pm/product acceptance
 ```
 
-- Vehicles run a **B&W-only prompt** (ADR 0006): `check-art-prompts.mjs` FORBIDS any
+- Vehicles run a **B&W-only prompt** (ADR 0011): `check-art-prompts.mjs` FORBIDS any
   neon/glow token in the assembled vehicle prompt; the neon rim is added render-side.
 
 - `scripts/check-art-prompts.mjs` runs in `ci.yml` on every PR (prompt contract lint).
