@@ -60,3 +60,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0008](./0008-two-axis-pan-and-fullscreen.md)          | Two-axis swipe pan and fullscreen toggle                                                 | Accepted |
 | [0004](./0004-push-marker-workflow-dispatch.md)        | Push-marker dispatch for manual workflows                                                | Accepted |
 | [0005](./0005-art-direction-pipeline.md)               | Art-direction pipeline: gated prompts, seeded generation, CI gates                       | Accepted |
+| [0006](./0006-render-side-neon-rim.md)                 | Render-side emissive neon rim for vehicles (decouple from baked art)                     | Accepted |
