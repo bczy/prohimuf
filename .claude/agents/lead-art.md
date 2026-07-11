@@ -45,6 +45,18 @@ anchored in the bible.
    for the mechanical pre-check (background, neon hue, silhouette ratio) — but the
    mechanical gate passing does NOT bind you; taste is your jurisdiction.
 3. **Bible gate** — `docs/art-direction.md` changes only through you.
+4. **In-game composite gate** — ANY change to a runtime-composed visual (neon rims,
+   glows, additive/emissive effects, pulses — anything NOT fully present in the delivered
+   PNGs) requires your verdict on REAL in-game screenshots (produced by the e2e scripts /
+   the `verify` skill) before merge. An asset-gate PASS does NOT cover runtime composition:
+   the asset gate judges the source sprite, the composite gate judges what the player
+   actually sees on screen. If the composed visual never lands in a screenshot you can
+   Read, it has NOT been gated — withhold PASS until it does. Check the composite against
+   the loi du glow, in particular « un halo est un dégradé, jamais un aplat » (§2.1): a
+   binary-alpha glow with no falloff is an automatic FAIL here, even when the PNG passed
+   clean. This gate exists because the ADR-0011 runtime rim shipped hard-edged — the rim
+   lived only at render time, so no gate ever saw the in-game composite. That gap is closed
+   here: runtime visuals have an acceptance surface now, and it is you.
 
 ## Working with the crew (see `.claude/agents/COLLABORATION.md`)
 
