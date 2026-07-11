@@ -62,9 +62,12 @@ Why this shape:
   custom GLSL, no post-processing, so the render gate cannot regress on shader grounds.
 - **Reuses the codebase's own pattern.** The CPU canvas-texture bake mirrors
   `src/render/scene/pixelArt.ts` (`applyPixelFilter` / `makePixelCanvasTexture`).
-- **Baking from the true alpha channel** (not an RGB multiply) gives a _solid_ rim; a plain
-  tinted `map` would multiply the neon against B&W ink and leave the rim patchy/black on
-  linework.
+- **Baking from the true alpha channel** (not an RGB multiply) is what keeps the rim evenly
+  keyed; a plain tinted `map` would multiply the neon against B&W ink and leave the rim
+  patchy/black on linework. _(Amended 2026-07-11: the bake no longer emits a **solid** rim —
+  the source alpha is now run through a chamfer-distance quadratic falloff so it reads as a
+  gradient halo, never an aplat. Baking from alpha stays correct; the alpha is a gradient, not
+  a binary silhouette. See the Amendment below.)_
 - **The flood is solved by construction.** Painter order: silhouette (renderOrder 6,
   additive) draws first; the opaque B&W front sprite (renderOrder 7) draws over it. Where the
   body is opaque it fully covers the glow → body stays pure B&W; only the scaled-out margin
@@ -128,3 +131,55 @@ Specifics:
   of truth; a shared data file to unify them is a follow-up if a 4th copy appears. (3) One
   extra draw call and one small `CanvasTexture` per vehicle type (3 total) — negligible with a
   single vehicle on screen.
+
+## Amendment — 2026-07-11: gradient falloff, not a solid rim (story-halo-alpha-composite-gate)
+
+The first implementation of this decision baked a **binary-alpha** silhouette — every opaque
+source pixel became solid hue, everything else fully transparent — scaled out ~6% behind the
+sprite. In the play-test build that read as a hard-edged neon **plate** (an _aplat_), not a
+glow, and Bertrand rejected it. Root cause: the "_solid_ rim" this ADR argued for was the
+wrong target. _La loi du glow_ wants a **dégradé**, not an aplat — now the measurable bible
+rule (§2.1) « un halo est un dégradé, jamais un aplat ».
+
+What changed — render only, boundary and material choices unchanged:
+
+- The CPU bake now **pads** the silhouette canvas by the rim margin on every side
+  (`computeHaloMarginPx`, `NEON_RIM_MARGIN_RATIO = 0.06 · sprite height`) so the glow is never
+  cropped, and drives the alpha through a new **pure, DOM-free** module
+  `src/render/scene/haloFalloff.ts`: a two-pass chamfer 3-4 distance transform followed by a
+  quadratic ease-out `alpha(d) = 255 · (1 − d/marginPx)²`. Opaque pixels keep their own alpha;
+  each transparent pixel fades to zero at the margin edge. This supersedes the "solid rim"
+  language in the Decision above — baking from the true alpha channel is still right (it avoids
+  the patchy RGB-multiply artefact), but the alpha is a gradient, not a binary mask.
+- The rim mesh scale in `DeliveryVehicleSprite.tsx` derives from the **exact padded texture
+  dims**, so the baked gradient band and the world-space margin coincide with no crop or
+  stretch.
+- **Stock materials only, unchanged:** `MeshBasicMaterial` + `CanvasTexture` +
+  `AdditiveBlending`. No custom GLSL, no post-processing, no new dependency — the SwiftShader
+  render gate is still safe. Covered by 9 Vitest cases in
+  `src/render/scene/__tests__/haloFalloff.test.ts` (vitest `include` extended to `src/render/**`).
+
+Consequences (amending the list above):
+
+- **The e2e delivery gate now mechanically enforces the gradient.** `scripts/e2e-delivery.mjs`
+  + `scripts/check-halo-gradient.mjs` diff a pre-trigger **baseline** frame against the
+  `DELIVERING` frame (static background cancels, cops frozen), measure only over dark-baseline
+  pixels, and **fail** when the rim shows no alpha-falloff gradient (intermediate-intensity
+  share below a 20% floor). Validated on real builds: the old binary bake scores 2.67% → FAIL,
+  the new gradient bake 69.95% → PASS; a synthetic plate on the real background scores 0.0%. A
+  binary-alpha aplat can no longer ship silently. The pixel decoder (`@napi-rs/canvas`) is
+  installed CI-only via `--no-save` on the same pin as the sprite-gen workflows — no addition
+  to `package.json` / the PnP lockfile.
+- **Runtime-composed visuals now have an acceptance surface.** The incident's root cause was
+  that no gate ever saw the in-game **composite** — the asset gate judges the delivered B&W
+  PNG, and the runtime rim is in no PNG, so a binary-alpha rim could pass every gate. Lead-art's
+  new **Gate 4** (in-game composite review) closes that gap: any change to a runtime-composed
+  visual (rims, glows, additive/emissive effects — anything not fully in the delivered PNGs)
+  needs a lead-art verdict on **real in-game screenshots** before merge, and an asset-gate PASS
+  explicitly does not cover runtime composition. First Gate 4 pass on the new falloff bake:
+  **PASS 3/3** (truck/belliard orange, car/stalingrad cyan, moto/vitry magenta), logged in
+  `docs/agent-handoffs.md`.
+
+The Decision itself stands: a render-side rim decoupled from FLUX, stock materials, one hue
+table, no game-logic change. Only the bake's alpha profile — solid → gradient — and the gates
+that now guard it are amended.

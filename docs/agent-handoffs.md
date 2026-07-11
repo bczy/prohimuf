@@ -859,3 +859,18 @@ COLLABORATION.md §code-review panel, CLAUDE.md, le hook crew-reminder et le PR 
     silhouette/archetype/body defects remain the asset gate's jurisdiction and are not
     re-litigated or absolved by a Gate 4 PASS. No bible/agent rule fix forced — the falloff
     rule held on first contact with real screenshots. (Nico / Lead-Art — Gate 4, first pass)
+- arch review (PR #32, `claude/halo-alpha-transparency-review-uez37y`, 0a0cad0..85d581b):
+  **BOUNDARY + TECHNIQUE PASS.** Boundary law upheld: **zero `src/game/**` changes** (diff
+  empty), every `src/**` change confined to `src/render/**`. New `haloFalloff.ts` is pure and
+  DOM-free (no React/Three import); `vehicleNeon.ts` / `DeliveryVehicleSprite.tsx` hold no game
+  rules — they read `deliveryVehicle` phase/position/integrity from state and render, hue stays
+  render-side data and never enters `GameState`. **Stock materials only** (`MeshBasicMaterial`
+  + `CanvasTexture` + `AdditiveBlending`); no `ShaderMaterial` / `onBeforeCompile` /
+  `EffectComposer` / GLSL introduced → SwiftShader gate safe. **Scripts stay outside `src`**
+  (no script imports from `src`; only `playwright` + node built-ins + lazy CI-only
+  `@napi-rs/canvas`). **No new deps in `package.json`** (diff empty; `@napi-rs/canvas@1.0.2`
+  installed CI-only via `--no-save`, same pin as gen-sprites / gen-vehicle-sprites — PnP
+  lockfile untouched). Verified green here: `yarn typecheck` exit 0; `haloFalloff.test.ts`
+  9/9. ADR-0011 amended (Amendment 2026-07-11: solid rim → chamfer-distance quadratic gradient;
+  consequences updated for the frame-diff e2e gate + Gate 4 composite gate). No code changed by
+  the architect. (Winston / Senior Architect)
