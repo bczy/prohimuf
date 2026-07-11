@@ -540,3 +540,71 @@ Console errors are logged as a soft signal only.
 - **CI:** runs in `deploy.yml` via the `.github/actions/e2e-ingame` composite
   action — **after build, before publish** — so a broken game scene never
   reaches GitHub Pages.
+
+---
+
+## check-halo-gradient.mjs — Vehicle neon-halo gradient gate
+
+Mechanical regression lock (story-halo-alpha-composite-gate, AC4) for the
+runtime vehicle neon rim (ADR-0011, `src/render/scene/vehicleNeon.ts`). The rim
+is composed **only at runtime**, so the ASSET gate
+(`check-sprite-style.mjs`, which judges the pure-B&W source PNG) is blind to it —
+that blind spot let a hard **binary-alpha plate** (no falloff) ship. This gate
+analyses a real delivery-scene screenshot and **fails (exit 1)** if the halo
+shows no alpha-gradient falloff.
+
+- **Metric:** locate the rim by the vehicle's assigned neon hue band (read from
+  `levelArt.json` `vehicles.types[*].neon`; orange/cyan/magenta/green) using a
+  strict saturation floor, then measure the intensity spread of neon pixels
+  inside that bbox with a loose floor (so the faint outer-margin pixels of a real
+  gradient are counted). Intensities are normalised **relative** to the observed
+  neon min/max (AdditiveBlending composites over a varying street background). A
+  binary plate is bimodal (near-max only); a gradient has a **meaningful share of
+  intermediate-intensity pixels**. Gate: intermediate share `>= 20%` (the safe
+  low end of the 20–25% target). Every run prints the measured numbers +
+  histogram so the floor can be re-tuned; env `HALO_MIN_INTERMEDIATE` /
+  `HALO_MIN_NEON_PIXELS` override without a code change.
+- **Reusable:** exports `checkHaloGradient({ file|buffer|pixels, neon })` /
+  `analyzeHalo` / `evaluateHalo`; `e2e-delivery.mjs` calls it on its DELIVERING
+  screenshot buffer.
+- **Standalone CLI over any PNG:**
+
+  ```bash
+  node scripts/check-halo-gradient.mjs --file screenshots/e2e-delivery.png --neon orange
+  node scripts/check-halo-gradient.mjs --file shot.png --neon cyan --json
+  ```
+
+- **Requires:** `@napi-rs/canvas` (same dep as `check-sprite-style.mjs`),
+  imported lazily. Install on demand:
+  `npm i --no-save --legacy-peer-deps @napi-rs/canvas@1.0.2`.
+- **CI:** runs as part of the delivery gate — `e2e-delivery.mjs` invokes it, and
+  `deploy.yml` installs `@napi-rs/canvas` right before the delivery step.
+
+---
+
+## preview-vehicle-halo.mjs — Vehicle halo in-game composite preview
+
+Review tool (story-halo-alpha-composite-gate, AC5/AC6) that captures the
+**composed in-game neon halo** — the thing no delivered PNG contains — so
+lead-art can eyeball the alpha-gradient falloff. Boots the built game and plays
+each level's scripted delivery until the vehicle + rim are on screen, one pair
+per vehicle type: `belliard`/truck (orange), `stalingrad`/car (cyan),
+`vitry`/moto (magenta). `seedDeterminism` unlocks every level and freezes cops.
+
+For each type it writes:
+
+- `screenshots/preview-vehicle-<type>.png` — full 1280×720 frame,
+- `screenshots/preview-vehicle-<type>-closeup.png` — crop around the vehicle
+  (the neon-hue rim cluster located via `check-halo-gradient.mjs`, else a
+  generous street-lane crop).
+
+It is a **preview, not a gate** — it exits non-zero only if it cannot reach a
+delivery at all, never on a bad-looking halo. Outputs are gitignored
+(`screenshots/preview-vehicle-*.png`).
+
+- **Input:** `PREVIEW_URL` — a running server URL including the base
+  (e.g. `http://127.0.0.1:4173/prohimuf/`), same convention as `e2e-delivery.mjs`.
+- **Local:** `yarn build && yarn preview` then
+  `PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/preview-vehicle-halo.mjs`
+  (Playwright + `@napi-rs/canvas` installed on demand:
+  `npm i --no-save --legacy-peer-deps playwright @napi-rs/canvas@1.0.2`).

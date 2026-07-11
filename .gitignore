@@ -43,3 +43,6 @@ scripts/.dbg-*.jpg
 # E2E smoke shots — regenerated each run, uploaded as CI artifacts
 screenshots/e2e-home.png
 screenshots/e2e-ingame.png
+
+# Vehicle-halo preview shots — regenerated each run by scripts/preview-vehicle-halo.mjs
+screenshots/preview-vehicle-*.png

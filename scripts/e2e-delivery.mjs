@@ -22,6 +22,9 @@
  * Hard gates (exit 1 on any):
  *   - the DELIVERING banner appears within (trigger + 15s) of the scene mounting,
  *   - a 2xx same-origin response for the vehicle sprite asset is observed,
+ *   - the composed in-game neon HALO shows an alpha-gradient falloff, not a hard
+ *     binary plate (story-halo-alpha-composite-gate AC4 — analysed on the
+ *     DELIVERING frame via scripts/check-halo-gradient.mjs),
  *   - the SUCCESS banner appears after the delivery window,
  *   - zero uncaught runtime error (pageerror) during the run.
  *
@@ -39,6 +42,7 @@ import {
   loadLevelManifest,
   seedDeterminism,
 } from "./e2e-lib.mjs";
+import { checkHaloGradient } from "./check-halo-gradient.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -77,9 +81,15 @@ async function main() {
     throw new Error(`levelArt.json has no vehicles.types.${VEHICLE_TYPE}.asset`);
   }
 
+  // Assigned neon hue for this vehicle (truck→orange). Read from the manifest so
+  // the halo check tracks levelArt.json, never a hardcoded hue.
+  const vehicleNeon = manifest.vehicles?.types?.[VEHICLE_TYPE]?.neon ?? "cyan";
+
   const origin = new URL(PREVIEW_URL).origin;
   const pageErrors = [];
   let vehicleAssetOk = false; // observed a 2xx for the vehicle sprite
+  let haloResult = null; // halo gradient check result (AC4)
+  let haloError = null;
 
   const browser = await chromium.launch({ args: SWIFTSHADER_ARGS });
   const context = await browser.newContext({
@@ -116,8 +126,23 @@ async function main() {
     await page.getByText(BANNER_DELIVERING).first().waitFor({ timeout: BANNER_TIMEOUT });
     console.log("[e2e-delivery] DELIVERING banner shown");
 
-    // Snapshot the active delivery before it resolves.
-    await page.screenshot({ path: SHOT }).catch(() => undefined);
+    // Snapshot the active delivery before it resolves — the truck + composed neon
+    // rim are on-screen. Keep the buffer to analyse the halo (AC4).
+    const deliveringBuf = await page.screenshot({ path: SHOT }).catch(() => null);
+
+    // AC4 — the composed in-game halo must show an alpha-gradient falloff, not a
+    // hard binary plate. Analyse the DELIVERING frame in the vehicle's assigned
+    // neon hue. A thrown error (e.g. missing @napi-rs/canvas) is a gate failure:
+    // the check could not verify the halo.
+    if (deliveringBuf === null) {
+      haloError = new Error("could not capture the DELIVERING frame for halo analysis");
+    } else {
+      try {
+        haloResult = await checkHaloGradient({ buffer: deliveringBuf, neon: vehicleNeon });
+      } catch (e) {
+        haloError = e;
+      }
+    }
 
     // Frozen cops never shoot → full integrity → the window closes on SUCCESS.
     await page.getByText(BANNER_SUCCESS).first().waitFor({ timeout: SUCCESS_TIMEOUT });
@@ -139,6 +164,17 @@ async function main() {
   }
   if (!vehicleAssetOk) {
     problems.push(`no 2xx response observed for vehicle sprite (${vehicleAsset})`);
+  }
+  if (haloError !== null) {
+    problems.push(`halo gradient check could not run: ${haloError.message}`);
+  } else if (haloResult !== null && !haloResult.pass) {
+    const g = haloResult.metrics;
+    problems.push(
+      `halo shows no alpha-gradient falloff (binary plate): ` +
+        `intermediate share ${(g.intermediateShare * 100).toFixed(1)}% (${vehicleNeon} rim)`,
+    );
+  } else if (haloResult === null) {
+    problems.push("halo gradient check did not run (no DELIVERING frame)");
   }
   if (pageErrors.length > 0) {
     problems.push(`runtime error(s) during delivery:\n  ${pageErrors.join("\n  ")}`);
