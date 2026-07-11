@@ -550,28 +550,35 @@ runtime vehicle neon rim (ADR-0011, `src/render/scene/vehicleNeon.ts`). The rim
 is composed **only at runtime**, so the ASSET gate
 (`check-sprite-style.mjs`, which judges the pure-B&W source PNG) is blind to it —
 that blind spot let a hard **binary-alpha plate** (no falloff) ship. This gate
-analyses a real delivery-scene screenshot and **fails (exit 1)** if the halo
-shows no alpha-gradient falloff.
+**fails (exit 1)** if the composed in-game halo shows no alpha-gradient falloff.
 
-- **Metric:** locate the rim by the vehicle's assigned neon hue band (read from
-  `levelArt.json` `vehicles.types[*].neon`; orange/cyan/magenta/green) using a
-  strict saturation floor, then measure the intensity spread of neon pixels
-  inside that bbox with a loose floor (so the faint outer-margin pixels of a real
-  gradient are counted). Intensities are normalised **relative** to the observed
-  neon min/max (AdditiveBlending composites over a varying street background). A
-  binary plate is bimodal (near-max only); a gradient has a **meaningful share of
-  intermediate-intensity pixels**. Gate: intermediate share `>= 20%` (the safe
-  low end of the 20–25% target). Every run prints the measured numbers +
-  histogram so the floor can be re-tuned; env `HALO_MIN_INTERMEDIATE` /
-  `HALO_MIN_NEON_PIXELS` override without a code change.
-- **Reusable:** exports `checkHaloGradient({ file|buffer|pixels, neon })` /
-  `analyzeHalo` / `evaluateHalo`; `e2e-delivery.mjs` calls it on its DELIVERING
-  screenshot buffer.
-- **Standalone CLI over any PNG:**
+- **Why frame-diff:** a first cut measured the assigned neon hue on the single
+  DELIVERING frame — it was **invalidated on real builds** because belliard's
+  facade has "windows glowing warm orange" (`levelArt.json`) in the truck's
+  orange band, so it measured the level art (old plate 60.9% vs new gradient
+  65.1% — a 4pp non-signal). The gate now diffs **two** frames of the same level:
+  **A** (pre-trigger, vehicle absent) vs **B** (DELIVERING, vehicle + rim). Cops
+  are frozen and PNG is lossless, so the static facade cancels and only the
+  vehicle's added light `max(0, B−A)` remains.
+- **Metric:** keep added light in the assigned neon hue band (read from
+  `levelArt.json` `vehicles.types[*].neon`; orange/cyan/magenta/green), measured
+  **only over a dark baseline** (additive light clamps over bright backgrounds).
+  Recover alpha from the neon's non-clamping channel, `α = max_c(added_c/neon_c)`.
+  A binary plate recovers α≡1 (all top bin); a gradient spreads α across the
+  **intermediate** band. Gate: intermediate-alpha share `>= 20%`. Measured: OLD
+  plate (synthetic on real bg) **0.0% → FAIL**; NEW gradient **69.9% live /
+  31.9% synthetic → PASS**. Every run prints the histogram + shares; env
+  `HALO_MIN_INTERMEDIATE` / `HALO_MIN_NEON_PIXELS` override without a code change.
+- **Reusable:** exports
+  `checkHaloGradient({ file|buffer|pixels, against|baselineBuffer|baselinePixels, neon })`
+  / `analyzeHaloDiff` / `evaluateHalo`; `e2e-delivery.mjs` calls it with its
+  baseline + DELIVERING screenshot buffers.
+- **Standalone two-file CLI** (`--file` = DELIVERING/with-vehicle, `--against` =
+  pre-trigger baseline):
 
   ```bash
-  node scripts/check-halo-gradient.mjs --file screenshots/e2e-delivery.png --neon orange
-  node scripts/check-halo-gradient.mjs --file shot.png --neon cyan --json
+  node scripts/check-halo-gradient.mjs --file DELIVERING.png --against PRE.png --neon orange
+  node scripts/check-halo-gradient.mjs --file B.png --against A.png --neon cyan --json
   ```
 
 - **Requires:** `@napi-rs/canvas` (same dep as `check-sprite-style.mjs`),
@@ -608,3 +615,9 @@ delivery at all, never on a bad-looking halo. Outputs are gitignored
   `PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/preview-vehicle-halo.mjs`
   (Playwright + `@napi-rs/canvas` installed on demand:
   `npm i --no-save --legacy-peer-deps playwright @napi-rs/canvas@1.0.2`).
+- **Playwright version note:** the `playwright` npm version must match the
+  Chromium build already installed in the environment — a mismatched pin fails to
+  launch (e.g. `playwright@1.48` breaks against a chromium-1194 revision). Prefer
+  an **unpinned** `npm i --no-save playwright` locally so it resolves a compatible
+  browser; the CI composite actions pin deliberately and install the matching
+  browser via `npx playwright install`.

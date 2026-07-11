@@ -41,6 +41,7 @@ import {
   dismissNarrative,
   loadLevelManifest,
   seedDeterminism,
+  sleep,
 } from "./e2e-lib.mjs";
 import { checkHaloGradient } from "./check-halo-gradient.mjs";
 
@@ -68,6 +69,10 @@ const BANNER_SUCCESS = "LIVRAISON SÉCURISÉE";
 // (trigger + 15s) of the scene mounting; SUCCESS follows once the window closes.
 const BANNER_TIMEOUT = (TRIGGER_S + 15) * 1000;
 const SUCCESS_TIMEOUT = (WINDOW_S + 15) * 1000;
+
+// Settle before the baseline snapshot so the backdrop is fully painted. Well
+// under TRIGGER_S so the vehicle is still absent when the baseline is taken.
+const BASELINE_SETTLE_MS = 2500;
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -122,6 +127,15 @@ async function main() {
     await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
     console.log(`[e2e-delivery] scene mounted — waiting for delivery (trigger ~${TRIGGER_S}s)`);
 
+    // BASELINE frame (A) for the halo gate (AC4): the scene is up but the vehicle
+    // has NOT yet rolled in (trigger is ~TRIGGER_S away). Settle briefly so the
+    // backdrop is fully painted, then snapshot. Diffing this against the DELIVERING
+    // frame cancels the static facade (whose warm-orange windows share the truck's
+    // hue) so the metric sees only the vehicle's added neon rim — not the level art.
+    await sleep(BASELINE_SETTLE_MS);
+    const baselineBuf = await page.screenshot().catch(() => null);
+    console.log("[e2e-delivery] baseline (pre-trigger) frame captured");
+
     // The DELIVERING banner proves the vehicle rolled in and opened its window.
     await page.getByText(BANNER_DELIVERING).first().waitFor({ timeout: BANNER_TIMEOUT });
     console.log("[e2e-delivery] DELIVERING banner shown");
@@ -131,14 +145,18 @@ async function main() {
     const deliveringBuf = await page.screenshot({ path: SHOT }).catch(() => null);
 
     // AC4 — the composed in-game halo must show an alpha-gradient falloff, not a
-    // hard binary plate. Analyse the DELIVERING frame in the vehicle's assigned
-    // neon hue. A thrown error (e.g. missing @napi-rs/canvas) is a gate failure:
-    // the check could not verify the halo.
-    if (deliveringBuf === null) {
-      haloError = new Error("could not capture the DELIVERING frame for halo analysis");
+    // hard binary plate. Diff the DELIVERING frame against the baseline in the
+    // vehicle's assigned neon hue. A thrown error (e.g. missing @napi-rs/canvas) is
+    // a gate failure: the check could not verify the halo.
+    if (deliveringBuf === null || baselineBuf === null) {
+      haloError = new Error("could not capture both frames for halo analysis");
     } else {
       try {
-        haloResult = await checkHaloGradient({ buffer: deliveringBuf, neon: vehicleNeon });
+        haloResult = await checkHaloGradient({
+          buffer: deliveringBuf,
+          baselineBuffer: baselineBuf,
+          neon: vehicleNeon,
+        });
       } catch (e) {
         haloError = e;
       }
