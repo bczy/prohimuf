@@ -83,10 +83,11 @@ function floaterFor(ev: {
   return null;
 }
 
-/** Mobile swipe controls (ADR-0003): gesture state + the pan clamp's level half-width. */
+/** Mobile swipe controls (ADR-0003): gesture state + the pan clamp's level half-extents. */
 export interface MobileControls {
   touchRef: React.RefObject<TouchControlsState>;
   halfWorldWidth: number;
+  halfWorldHeight: number;
 }
 
 export function useGameLoop(
@@ -124,17 +125,30 @@ export function useGameLoop(
     const touch = mobileControls?.touchRef.current;
     if (mobileControls !== undefined && touch !== undefined) {
       const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
-      if (touch.panDeltaX !== 0) {
-        // Content follows the finger: dragging right moves the camera left.
-        panRef.current = applyDrag(panRef.current, -touch.panDeltaX * viewW, rangeX);
+      const rangeY = Math.max(0, mobileControls.halfWorldHeight - viewH / 2);
+      const range = { x: rangeX, y: rangeY };
+      if (touch.panDeltaX !== 0 || touch.panDeltaY !== 0) {
+        // X: content follows finger → drag right = camera left (−).
+        // Y: screen-y grows downward, world-y upward → sign OPPOSITE X: drag DOWN raises camera.y.
+        panRef.current = applyDrag(
+          panRef.current,
+          { x: -touch.panDeltaX * viewW, y: touch.panDeltaY * viewH },
+          range,
+        );
         touch.panDeltaX = 0;
+        touch.panDeltaY = 0;
       }
-      if (touch.flickVelocityX !== null) {
-        panRef.current = releaseFlick(panRef.current, -touch.flickVelocityX * viewW);
+      if (touch.flickVelocityX !== null || touch.flickVelocityY !== null) {
+        panRef.current = releaseFlick(panRef.current, {
+          x: -(touch.flickVelocityX ?? 0) * viewW,
+          y: (touch.flickVelocityY ?? 0) * viewH,
+        });
         touch.flickVelocityX = null;
+        touch.flickVelocityY = null;
       }
-      panRef.current = tickCameraPan(panRef.current, safeDelta, rangeX);
+      panRef.current = tickCameraPan(panRef.current, safeDelta, range);
       camera.position.x = panRef.current.x;
+      camera.position.y = panRef.current.y;
     }
 
     const pendingTap = touch?.pendingTaps.shift();
@@ -167,6 +181,7 @@ export function useGameLoop(
       safeDelta,
       facade,
       camera.position.x,
+      camera.position.y,
       viewW,
       viewH,
       levelParams?.enemiesToWin,
@@ -211,16 +226,20 @@ export function useGameLoop(
       }
     }
 
-    const nextCrosshairLocal = crosshairToWorld(next.crosshair, viewW, viewH);
-    const nextCrosshairWorld = {
-      x: nextCrosshairLocal.x + camera.position.x,
-      y: nextCrosshairLocal.y + camera.position.y,
-    };
-    const prevCrosshairLocal = crosshairToWorld(prev.crosshair, viewW, viewH);
-    const prevCrosshairWorld = {
-      x: prevCrosshairLocal.x + camera.position.x,
-      y: prevCrosshairLocal.y + camera.position.y,
-    };
+    const nextCrosshairWorld = crosshairToWorld(
+      next.crosshair,
+      camera.position.x,
+      camera.position.y,
+      viewW,
+      viewH,
+    );
+    const prevCrosshairWorld = crosshairToWorld(
+      prev.crosshair,
+      camera.position.x,
+      camera.position.y,
+      viewW,
+      viewH,
+    );
 
     const targetIndicator = computeTargetIndicator(next, facade, nextCrosshairWorld);
     const prevTargetIndicator = computeTargetIndicator(prev, facade, prevCrosshairWorld);

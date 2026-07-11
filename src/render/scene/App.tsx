@@ -9,6 +9,7 @@ import { EndScreen } from "@render/ui/EndScreen";
 import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
+import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { GameScene } from "./GameScene";
 
 import { useAudio } from "@hooks/useAudio";
@@ -35,12 +36,14 @@ const PREVIEW_SCREEN =
 const IS_MOBILE = detectMobile();
 
 // The rotate overlay covers every app phase, menus included (ADR-0003).
-function withRotateGuard(content: JSX.Element, blocked: boolean): JSX.Element {
-  if (!blocked) return content;
+// The fullscreen button (ADR-0008) is always appended; it self-hides when
+// element fullscreen is unsupported.
+function renderAppShell(content: JSX.Element, rotateBlocked: boolean): JSX.Element {
   return (
     <>
       {content}
-      <RotateOverlay />
+      {rotateBlocked && <RotateOverlay />}
+      <FullscreenButton />
     </>
   );
 }
@@ -189,7 +192,7 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "MENU") {
-    return withRotateGuard(
+    return renderAppShell(
       <MainMenu
         unlockedLevels={unlockedLevels}
         prefs={prefs}
@@ -203,7 +206,7 @@ export function App(): JSX.Element {
   if (appPhase === "NARRATIVE_PRE") {
     const scene = PRE_LEVEL_NARRATIVE[selectedLevel.id];
     if (scene !== undefined) {
-      return withRotateGuard(
+      return renderAppShell(
         <NarrativeScreen
           scene={scene}
           showSkipButton
@@ -219,7 +222,7 @@ export function App(): JSX.Element {
   if (appPhase === "NARRATIVE_POST") {
     const scene = POST_LEVEL_NARRATIVE[selectedLevel.id];
     if (scene !== undefined) {
-      return withRotateGuard(
+      return renderAppShell(
         <NarrativeScreen
           scene={scene}
           onDone={() => {
@@ -236,7 +239,7 @@ export function App(): JSX.Element {
       hudData.phase === "GAME_OVER" || hudData.phase === "LEVEL_COMPLETE"
         ? hudData.phase
         : "GAME_OVER";
-    return withRotateGuard(
+    return renderAppShell(
       <EndScreen
         phase={endPhase}
         score={hudData.score}
@@ -249,7 +252,7 @@ export function App(): JSX.Element {
 
   const levelParams = buildLevelParams(selectedLevel, prefs);
 
-  return withRotateGuard(
+  return renderAppShell(
     <div
       style={{
         position: "relative",

@@ -94,6 +94,7 @@ export function tickGameState(
   delta: number,
   facade: FacadeMap,
   cameraOffsetX = 0,
+  cameraOffsetY = 0,
   viewW = 18,
   viewH = 12,
   enemiesToWin = ENEMIES_TO_WIN,
@@ -130,7 +131,10 @@ export function tickGameState(
   let bullets: readonly Bullet[] = state.bullets;
   if (fire) {
     _nextBulletId++;
-    bullets = [...bullets, fireBullet(crosshair, true, _nextBulletId, cameraOffsetX, viewW, viewH)];
+    bullets = [
+      ...bullets,
+      fireBullet(crosshair, true, _nextBulletId, cameraOffsetX, cameraOffsetY, viewW, viewH),
+    ];
   }
 
   // 5. Enemies fire a SINGLE shot when they enter the SHOOTING state (not a

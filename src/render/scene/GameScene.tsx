@@ -94,7 +94,7 @@ export function GameScene({
     feedbackRef,
     courierField,
     roster,
-    isMobile ? { touchRef, halfWorldWidth: fullW / 2 } : undefined,
+    isMobile ? { touchRef, halfWorldWidth: fullW / 2, halfWorldHeight: facadeH / 2 } : undefined,
   );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
