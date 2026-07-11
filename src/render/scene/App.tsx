@@ -17,17 +17,21 @@ import { useOrientation } from "@hooks/useOrientation";
 import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { loadUnlockedLevels, unlockLevel, LEVELS } from "@game/levels/levels";
+import { loadUnlockedLevels, unlockLevel, LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import { saveScore, isHighScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
-import { PRE_LEVEL_NARRATIVE, POST_LEVEL_NARRATIVE } from "@game/systems/narrativeSystem";
+import {
+  PRE_LEVEL_NARRATIVE,
+  POST_LEVEL_NARRATIVE,
+  TUTORIAL_NARRATIVE,
+} from "@game/systems/narrativeSystem";
 
-type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END";
+type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END" | "TUTORIAL";
 
-// Preview harness hook: `?preview=narrative|end` boots straight into a screen
-// so the screenshot tool can capture the front-end screens without playing.
+// Preview harness hook: `?preview=narrative|end|tutorial` boots straight into a
+// screen so the screenshot tool can capture the front-end screens without playing.
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
 
@@ -72,16 +76,20 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
-    PREVIEW_SCREEN === "narrative" ? "NARRATIVE_PRE" : PREVIEW_SCREEN === "end" ? "END" : "MENU",
+    PREVIEW_SCREEN === "narrative"
+      ? "NARRATIVE_PRE"
+      : PREVIEW_SCREEN === "end"
+        ? "END"
+        : PREVIEW_SCREEN === "tutorial"
+          ? "TUTORIAL"
+          : "MENU",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [unlockedLevels, setUnlockedLevels] = useState<ReadonlySet<string>>(loadUnlockedLevels);
-  const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(
-    () => LEVELS[0] as unknown as LevelConfig,
-  );
+  const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(() => FIRST_PLAYABLE_LEVEL);
   const [hudData, setHudData] = useState<HudData>(() => {
-    const initial = buildHudInitial(LEVELS[0] as unknown as LevelConfig, loadPrefs());
+    const initial = buildHudInitial(FIRST_PLAYABLE_LEVEL, loadPrefs());
     return PREVIEW_SCREEN === "end"
       ? { ...initial, phase: "GAME_OVER", score: 4200, wave: 3 }
       : initial;
@@ -169,8 +177,14 @@ export function App(): JSX.Element {
   }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, unlockedLevels]);
 
   function handlePlay(levelId: string): void {
-    const level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0];
-    if (level === undefined) return;
+    const level = LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
+    // Scripted onboarding stage (ADR-0012, D3): no game state, no `setSelectedLevel`
+    // (keeps `selectedLevel` playable so the audio-tension divisor never sees a
+    // `timeSeconds: 0` and pushes NaN into tension). Finish or skip → MENU.
+    if (level.kind === "tutorial") {
+      setAppPhase("TUTORIAL");
+      return;
+    }
     setSelectedLevel(level);
     setHudData(buildHudInitial(level, prefs));
     setGameKey((k) => k + 1);
@@ -232,6 +246,15 @@ export function App(): JSX.Element {
         rotateBlocked,
       );
     }
+  }
+
+  if (appPhase === "TUTORIAL") {
+    // Optional, scripted, informative-only onboarding (ADR-0012, D3). Finish AND
+    // skip both return to MENU; nothing is written to muf_progress or high scores.
+    return renderAppShell(
+      <NarrativeScreen scene={TUTORIAL_NARRATIVE} showSkipButton onDone={handleBackToMenu} />,
+      rotateBlocked,
+    );
   }
 
   if (appPhase === "END") {

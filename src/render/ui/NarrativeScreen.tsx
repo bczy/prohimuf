@@ -162,6 +162,31 @@ export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props
         ))}
       </div>
 
+      {/* Optional illustrative sprite (ADR-0012, D5): only present on tutorial
+          panels that reference shipped art; other scenes render exactly as before.
+          Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
+      {currentLine?.image !== undefined && (
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            justifyContent: "center",
+            padding: "0 16px 12px",
+          }}
+        >
+          <img
+            src={`${import.meta.env.BASE_URL}${currentLine.image}`}
+            alt=""
+            style={{
+              maxHeight: "38vh",
+              maxWidth: "100%",
+              objectFit: "contain",
+              imageRendering: "pixelated",
+            }}
+          />
+        </div>
+      )}
+
       {/* Dialogue box */}
       <div
         style={{
