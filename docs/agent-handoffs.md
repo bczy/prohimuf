@@ -874,3 +874,37 @@ render-side data and never enters`GameState`. **Stock materials only** (`MeshBas
     9/9. ADR-0011 amended (Amendment 2026-07-11: solid rim → chamfer-distance quadratic gradient;
     consequences updated for the frame-diff e2e gate + Gate 4 composite gate). No code changed by
     the architect. (Winston / Senior Architect)
+- pm-accept (PR #32, `claude/halo-alpha-transparency-review-uez37y`, 0a0cad0..581750d):
+  **ACCEPTED vs story-halo-alpha-composite-gate AC1–AC7.** All three fixes Bertrand asked for
+  are closed:
+  - **AC1–AC3 render fix — PASS.** `src/render/scene/haloFalloff.ts` turns the old binary
+    silhouette into a real outward alpha gradient (chamfer 3-4 distance transform + quadratic
+    ease-out `(1−d/margin)²`); reads as light bleed under AdditiveBlending, not a sticker.
+    Pure/DOM-free, `src/render`-only, stock materials → SwiftShader-safe. Architect boundary
+    review: **zero `src/game/**` changes (empty diff)\*\*, no new deps. 9 unit tests, 184/184
+    green, tsc + lint green.
+  - **AC4 mechanical gate — PASS.** `scripts/check-halo-gradient.mjs` (frame-diff A=pre-trigger
+    vs B=DELIVERING, recovered-alpha intermediate share ≥ 20% floor), wired into
+    `scripts/e2e-delivery.mjs`. Discriminates plate (≈0%) from gradient (32%/70%) structurally.
+    I credit the team's HONESTY: the first hue-on-single-frame metric was invalidated by the
+    architect's own red-proof (belliard warm windows polluted it, plate scored 60.9% — would
+    have false-PASSED) and was reworked, documented candidly in the script's calibration block.
+  - **AC5–AC6 process fix — PASS.** Bible §2.1 measurable rule « un halo est un dégradé, jamais
+    un aplat »; lead-art **Gate 4 (in-game composite gate)** added to COLLABORATION.md +
+    `lead-art.md` — any runtime-composed visual (rims/glows/effects) now requires a lead-art
+    verdict on real in-game screenshots before merge. First Gate 4 pass: **PASS 3/3**
+    (truck/car/moto) on real composites, logged above. Precedent template set.
+  - **AC7 — PASS.** ADR-0011 amended; Bertrand received the 3 vehicle previews on real street
+    backgrounds; e2e-delivery SUCCESS end-to-end.
+  - **Bertrand's question answered in-story and confirmed true in the artifacts:** lead-art DID
+    review the delivered PNGs (asset gate) but had NO acceptance surface on the runtime
+    composite — that exact gap is what shipped the falloff-less halo, and Gate 4 now closes it.
+  - **One residual noted (not a blocker):** the AC4 RED proof is _synthetic by construction_ —
+    a binary plate composited onto a real dark-street crop (0.0% intermediate) rather than a
+    full end-to-end rerun of the old bake through paired frames, because only one old-bake
+    DELIVERING frame was ever saved. Honestly documented in the calibration table; the
+    plate-vs-gradient separation is structural, so intent (gate goes red on a plate) is met. If
+    a future regression ever wants belt-and-suspenders, capture a paired old-bake frame set once
+    and assert the gate red on it — logging as a nice-to-have, NOT reopening this story.
+    Scope guard holds: fidelity fix to an approved extension (ADR-0011) + pipeline hardening, no
+    new gameplay verb/input/rule, passes PROJECT_GUIDELINES. Story **DONE**. (John / PM)
