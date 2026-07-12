@@ -64,8 +64,16 @@ persona:
 | `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI    | `bmad-agent-dev` (Amelia)        |
 
 Flow: `pm` (what) → `senior-architect` (how + lane assignment) → the three devs build in
-parallel on non-overlapping paths → `senior-architect` reviews → `pm` accepts. Launch
-independent dev lanes in a single message (parallel Task calls).
+parallel on non-overlapping paths → `senior-architect` reviews → **code-review panel**
+(mandatory merge gate) → `pm` accepts. Launch independent dev lanes in a single message
+(parallel Task calls).
+
+**Mandatory merge gate:** before ANY merge to `main`, the full diff
+(`git diff origin/main...HEAD`) goes through a 4-reviewer panel run in parallel, each with
+a different skill — `code-review` (high), `bmad-code-review`,
+`bmad-review-edge-case-hunter`, `security-review` — findings adversarially verified, then
+triaged by `senior-architect`. No merge with an unresolved CONFIRMED blocking/major
+finding. Protocol: `.claude/agents/COLLABORATION.md` §"code-review panel".
 
 ### Default orchestration policy (Bertrand's standing preference)
 
