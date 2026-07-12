@@ -45,12 +45,12 @@ known gaps |
 
 ## Diagrams
 
-| Diagram                                                              | Incorporated in                      |
-| -------------------------------------------------------------------- | ------------------------------------ |
-| [diagrams/architecture-layers.md](./diagrams/architecture-layers.md) | [architecture.md](./architecture.md) |
-| [diagrams/data-flow.md](./diagrams/data-flow.md)                     | [architecture.md](./architecture.md) |
-| [diagrams/enemy-state-machine.md](./diagrams/enemy-state-machine.md) | [game-systems.md](./game-systems.md) |
-| [diagrams/app-phase-flow.md](./diagrams/app-phase-flow.md)           | [render-layer.md](./render-layer.md) |
+| Diagram                                                              | Incorporated in                                                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [diagrams/architecture-layers.md](./diagrams/architecture-layers.md) | [architecture.md](./architecture.md)                                    |
+| [diagrams/data-flow.md](./diagrams/data-flow.md)                     | [architecture.md](./architecture.md)                                    |
+| [diagrams/enemy-state-machine.md](./diagrams/enemy-state-machine.md) | [game-systems.md](./game-systems.md)                                    |
+| [diagrams/app-phase-flow.md](./diagrams/app-phase-flow.md)           | [render-layer.md](./render-layer.md)                                    |
 | [diagrams/agent-workflows.md](./diagrams/agent-workflows.md)         | [`.claude/agents/COLLABORATION.md`](../.claude/agents/COLLABORATION.md) |
 
 ---
