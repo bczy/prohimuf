@@ -26,8 +26,30 @@ Bertrand → pm (what/why, scoped story)
                 → dev-gameplay    ├─ build in parallel on non-overlapping paths
                 → dev-tooling     ┘
                 → senior-architect (review, integration sign-off)
+                → CODE-REVIEW PANEL (mandatory before any merge to main — see below)
             → pm (acceptance vs story + PROJECT_GUIDELINES)
 ```
+
+## The code-review panel (MANDATORY gate before merging to main)
+
+No branch merges to `main` without a multi-reviewer code review of the full diff
+(`git diff origin/main...HEAD`). The panel runs **in parallel** (one message, four Task
+calls), each reviewer applying a **different review skill** so the methods stay orthogonal:
+
+| Reviewer | Skill | Angle |
+| --- | --- | --- |
+| Architect A | `code-review` (effort high) | correctness bugs, reuse, simplification, efficiency |
+| Architect B | `bmad-code-review` | BMAD adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor vs the story/ADR criteria) |
+| Architect C | `bmad-review-edge-case-hunter` | every branch/boundary condition of the diff |
+| Architect D | `security-review` | attacker-controlled surface (URL params, localStorage, asset paths, scripts) |
+
+Protocol: reviewers are **read-only** and report findings as
+`[BLOQUANT|MAJEUR|MINEUR] + file:line + concrete failure scenario`. Every non-trivial
+finding is then **adversarially verified** (a skeptic agent tries to refute it against the
+real code); only CONFIRMED findings are acted on. `senior-architect` triages, applies or
+rejects-with-reason, re-runs `rtk tsc` + `rtk vitest` + `rtk lint`. The panel outcome
+(findings → verdict → action) is logged in `docs/agent-handoffs.md` and summarized in the
+PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
 
 ## The art flow (any generated asset — vehicles, enemies, level art)
 
@@ -75,6 +97,10 @@ Every gate verdict is logged in `docs/agent-handoffs.md`.
    `Récupérer → Livrer → Éviter`.
 7. **Language.** Communicate with Bertrand in the `communication_language` from
    `_bmad/bmm/config.yaml`.
+8. **Code-review panel is a merge gate.** Any branch headed for `main` goes through the
+   multi-skill panel above after the architect sign-off. No merge with an unresolved
+   CONFIRMED BLOQUANT/MAJEUR finding. (Hard enforcement on GitHub — branch protection /
+   required review — is a repo setting only Bertrand can flip.)
 
 ## How to launch them
 From the main session, launch agents with the Task tool. Independent lanes go in **one

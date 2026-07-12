@@ -17,6 +17,11 @@ du code/des assets, conception), orchestre le crew BMAD en parallèle plutôt qu
      → dev-gameplay   ├─ Task calls EN PARALLÈLE (un seul message) sur des chemins disjoints
      → dev-tooling    ┘
        → senior-architect (revue + sign-off intégration)
+       → PANEL DE CODE REVIEW — GATE OBLIGATOIRE avant tout merge sur main :
+         4 reviewers parallèles, skills distincts (code-review high, bmad-code-review,
+         bmad-review-edge-case-hunter, security-review) sur git diff origin/main...HEAD ;
+         findings contre-vérifiés adversarialement ; triage senior-architect. Aucun merge
+         avec un finding CONFIRMÉ bloquant/majeur non traité.
    → pm (acceptation vs story + PROJECT_GUIDELINES)
 Coordination : .claude/agents/COLLABORATION.md · journal : docs/agent-handoffs.md.
 EXCEPTIONS (agir en direct, sans crew) : questions/explications, lectures, recherches,
