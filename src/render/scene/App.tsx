@@ -252,7 +252,12 @@ export function App(): JSX.Element {
     // Optional, scripted, informative-only onboarding (ADR-0012, D3). Finish AND
     // skip both return to MENU; nothing is written to muf_progress or high scores.
     return renderAppShell(
-      <NarrativeScreen scene={TUTORIAL_NARRATIVE} showSkipButton onDone={handleBackToMenu} />,
+      <NarrativeScreen
+        scene={TUTORIAL_NARRATIVE}
+        showSkipButton
+        onDone={handleBackToMenu}
+        doneLabel="TERMINER"
+      />,
       rotateBlocked,
     );
   }

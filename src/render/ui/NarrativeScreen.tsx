@@ -6,20 +6,37 @@ interface Props {
   scene: NarrativeScene;
   onDone: () => void;
   showSkipButton?: boolean;
+  /**
+   * Label for the final "advance" hint shown when the scene is done. Defaults to
+   * "JOUER" (pre/post-level flow, where onDone starts/continues play). The tutorial
+   * passes "TERMINER" because its onDone returns to the MENU, not into a level.
+   */
+  doneLabel?: string;
 }
 
 const NEON_YELLOW = "#ffe600";
 const NEON_GREEN = "#39ff14";
 const CHAR_DELAY_MS = 28;
 
-export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props): JSX.Element {
+export function NarrativeScreen({
+  scene,
+  onDone,
+  showSkipButton = false,
+  doneLabel = "JOUER",
+}: Props): JSX.Element {
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [done, setDone] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const currentLine = scene.lines[lineIndex];
   const fullText = currentLine?.text ?? "";
   const isTyping = charIndex < fullText.length;
+
+  // Clear any previous sprite-load failure when the panel changes.
+  useEffect(() => {
+    setImageError(false);
+  }, [lineIndex]);
 
   // Typewriter effect
   useEffect(() => {
@@ -165,20 +182,34 @@ export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props
       {/* Optional illustrative sprite (ADR-0012, D5): only present on tutorial
           panels that reference shipped art; other scenes render exactly as before.
           Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
-      {currentLine?.image !== undefined && (
+      {currentLine?.image !== undefined && !imageError && (
         <div
           style={{
             position: "relative",
             display: "flex",
             justifyContent: "center",
             padding: "0 16px 12px",
+            // Shrinkable in a bottom-anchored `overflow: hidden` column so the
+            // sprite scales down in short landscape instead of being clipped at
+            // the top; the img's percentage box keeps aspect via objectFit.
+            minHeight: 0,
+            flexShrink: 1,
+            maxHeight: "38vh",
           }}
         >
           <img
+            // Force remount on sprite change so the previous sprite is never held
+            // on screen while the next one decodes (ADR-0012, C1).
+            key={currentLine.image}
             src={`${import.meta.env.BASE_URL}${currentLine.image}`}
-            alt=""
+            alt={currentLine.imageAlt ?? ""}
+            onError={() => {
+              // A missing/404 asset (e.g. bad deploy path) must not surface a broken
+              // image icon — hide the illustration and keep the dialogue readable.
+              setImageError(true);
+            }}
             style={{
-              maxHeight: "38vh",
+              maxHeight: "100%",
               maxWidth: "100%",
               objectFit: "contain",
               imageRendering: "pixelated",
@@ -249,7 +280,7 @@ export function NarrativeScreen({ scene, onDone, showSkipButton = false }: Props
               animation: "blink 1s step-start infinite",
             }}
           >
-            {done ? "[ JOUER ]" : "[ CONTINUER ]"}
+            {done ? `[ ${doneLabel} ]` : "[ CONTINUER ]"}
           </div>
         )}
       </div>

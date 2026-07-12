@@ -49,7 +49,7 @@ export const LEVELS: readonly LevelConfig[] = [
     id: "tutorial",
     kind: "tutorial",
     name: "Tutoriel",
-    district: "Prise en main",
+    district: "Repérage",
     year: "1998",
     enemySpeedMultiplier: 1,
     enemiesToWin: 0,
