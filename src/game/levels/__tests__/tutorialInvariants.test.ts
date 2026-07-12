@@ -31,8 +31,10 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     // therefore unreachable as an unlock target.
     for (let i = 0; i + 1 < LEVELS.length; i++) {
       expect(LEVELS[i + 1]?.kind).not.toBe("tutorial");
-      expect(i + 1).toBeGreaterThanOrEqual(1);
     }
+    // Equivalent, index-free invariant with real teeth: the tutorial exists at 0
+    // and no reachable `+1` position (i.e. any index ≥ 1) is a tutorial entry.
+    expect(LEVELS.slice(1).every((l) => l.kind !== "tutorial")).toBe(true);
     localStorage.clear();
     const unlocked = loadUnlockedLevels();
     expect(unlocked.has("tutorial")).toBe(false);

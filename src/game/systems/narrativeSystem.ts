@@ -9,6 +9,12 @@ export interface NarrativeLine {
    * existing narrative scenes render exactly as before.
    */
   readonly image?: string;
+  /**
+   * Optional alt text for `image` (ADR-0012, D5 — accessibility). Short French
+   * description of the informative sprite, consumed by the render lane as
+   * `currentLine.imageAlt ?? ""`. Only meaningful alongside `image`.
+   */
+  readonly imageAlt?: string;
 }
 
 export interface NarrativeScene {
@@ -37,6 +43,7 @@ export const TUTORIAL_NARRATIVE: NarrativeScene = {
       speaker: "DISPATCH",
       text: "Le colis arrive par le véhicule. Tu le couvres pendant la livraison, tu le laisses repartir intact.",
       image: "assets/vehicles/truck.png",
+      imageAlt: "Le camion de livraison",
     },
     {
       speaker: "KENZA",
@@ -50,11 +57,13 @@ export const TUTORIAL_NARRATIVE: NarrativeScene = {
       speaker: "KENZA",
       text: "Les flics aux fenêtres, c'est tes cibles. Ils dégainent avant toi si tu traînes.",
       image: "assets/enemy_shooting.png",
+      imageAlt: "Un flic qui dégaine à la fenêtre",
     },
     {
       speaker: "KENZA",
       text: "Le livreur dans la rue, lui, tu le touches JAMAIS. Un civil à terre et c'est fini pour nous.",
       image: "assets/enemy_civilian.png",
+      imageAlt: "Le livreur civil dans la rue",
     },
     {
       speaker: "DISPATCH",

@@ -746,3 +746,47 @@ coded against a shared interface contract (`FIRST_PLAYABLE_LEVEL`, `TUTORIAL_NAR
   respectés, zéro art généré, skippable un bouton). Follow-up cosmétique non-bloquant :
   wording du district « Prise en main » (une variante plus diégétique façon flyer pourrait
   coller mieux — à considérer plus tard).
+
+---
+
+### code-review panel — PR #34 (tutorial ADR-0012) — first run of the mandatory merge gate
+
+Demande de Bertrand : review de code par une équipe de plusieurs architectes aux skills de
+review distincts, désormais **gate obligatoire avant tout merge sur main** (encodé dans
+COLLABORATION.md §code-review panel, CLAUDE.md, le hook crew-reminder et le PR template).
+
+- Architecte A (`code-review`, effort high): 0 bloquant/majeur. 3 MINEURS — libellé
+  `[ JOUER ]` trompeur en fin de tutoriel ; `loadScores` lu inutilement pour la carte
+  tutorial ; assertion tautologique dans `tutorialInvariants.test.ts`.
+- Architecte B (`bmad-code-review`, couches Blind Hunter / Edge Case Hunter / Acceptance
+  Auditor): 0 bloquant/majeur. 4 MINEURS — `district: "Prise en main"` non diégétique
+  (viole D1/D4) ; `[ JOUER ]` (doublon A) ; `alt=""` sur des sprites informatifs (a11y) ;
+  rognage possible de l'image en paysage mobile court.
+- Architecte C (`bmad-review-edge-case-hunter`): 1 MAJEUR — `<img>` sans `key` React :
+  sur deux panneaux illustrés consécutifs (flic → livreur), le navigateur garde l'ancien
+  sprite affiché jusqu'au décodage du suivant (modèle current/pending request), donc le
+  sprite du FLIC peut rester visible pendant « le livreur, tu le touches JAMAIS ». 3
+  MINEURS — pas d'`onError` sur 404 ; pas de préchargement ; `findIndex === -1` →
+  `unlockLevel("tutorial")` théorique.
+- Architecte D (`security-review`): **aucun finding** — `image` non attaquant-contrôlé,
+  `?preview=` en égalités strictes jamais rendu au DOM, parsers localStorage durcis
+  (pas de merge d'objet → pas de prototype pollution), script preview sans entrée externe.
+- Vérification adversariale (skeptique): C1 (img sans key) **CONFIRMÉ** — séquence idx 4→5
+  de `TUTORIAL_NARRATIVE` vérifiée, comportement navigateur conforme spec, le typewriter
+  aggrave la fenêtre. C4 (unlock "tutorial") **RÉFUTÉ** — `currentIdx === -1` prouvé
+  inatteignable : toutes les écritures de `selectedLevel` sont contraintes à des membres
+  de `LEVELS` et la branche tutorial de `handlePlay` return avant `setSelectedLevel`.
+- Triage + correctifs (2 lanes parallèles, chemins disjoints):
+  - render: `key={currentLine.image}` (C1) ; `onError` + reset par ligne (C2) ;
+    `alt={currentLine.imageAlt ?? ""}` (B3) ; conteneur image rétrécissable
+    `minHeight:0/flexShrink:1/objectFit:contain` (B4) ; prop `doneLabel` (défaut
+    `"JOUER"`), la phase TUTORIAL passe `"TERMINER"` (A1/B2) ; `loadScores` gaté par
+    `!isTutorial` (A2).
+  - game: `NarrativeLine.imageAlt?` + 3 alts français authorés (B3) ;
+    `district: "Repérage"` (B1, suggestion pm) ; assertion tautologique remplacée par
+    `LEVELS.slice(1).every(l => l.kind !== "tutorial")` (A3).
+  - REJETÉ avec motif: C3 (préchargement des images) — avec le fix `key`, un bref blanc
+    pendant le décodage d'un asset local minuscule est acceptable ; complexité non
+    justifiée. C4 — réfuté (voir ci-dessus), garde défensive non requise aujourd'hui.
+- verify (orchestrateur): `tsc` clean, `eslint` clean, `vitest` **180/180**, prettier
+  clean. Zéro finding CONFIRMÉ bloquant/majeur restant → gate PASS, PR #34 mergeable.

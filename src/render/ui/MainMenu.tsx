@@ -89,8 +89,9 @@ function LevelCard({
   onPlay: () => void;
 }): JSX.Element {
   const isTutorial = level.kind === "tutorial";
-  const scores = loadScores(level.id);
-  const best = scores[0];
+  // Tutorial cards never show a best score, so skip the localStorage read entirely
+  // for them (ADR-0012, A2). Plain conditional read — not a hook — so it's safe.
+  const best = isTutorial ? undefined : loadScores(level.id)[0];
 
   return (
     <div
