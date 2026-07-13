@@ -95,15 +95,16 @@ export function getCourierTexture(layer: string, frame: number): Texture | null 
   return cache.get(frameFile) ?? cache.get(frame1File) ?? null;
 }
 
-// True only once frame 1 of BOTH layers is decoded and cached — the gate
-// CourierSprite uses to swap from the legacy single sprite to the two-plane
-// composite. Calling it also kicks off loading of both layers' frames. Note: a
-// 404 poisons the `failed` set for the whole session (same policy as
+// True only once the RIDER layer's frame 1 is decoded and cached — the gate
+// CourierSprite uses to swap from the legacy single sprite to the animated
+// full-cyclist sprite (the bike layer was retired from the composite; its art
+// stays committed as spare). Calling it also kicks off loading of the frames.
+// Note: a 404 poisons the `failed` set for the whole session (same policy as
 // enemyTextures), so a client loaded BEFORE the CI art landed keeps the legacy
 // sprite until the next page load — the swap is per-load, not live.
 export function courierArtReady(): boolean {
   let ready = true;
-  for (const layer of ["bike", "rider"]) {
+  for (const layer of ["rider"]) {
     const entry = LAYERS[layer];
     if (entry === undefined) {
       ready = false;

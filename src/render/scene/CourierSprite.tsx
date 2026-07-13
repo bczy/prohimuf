@@ -38,14 +38,16 @@ function setMap(mesh: Mesh, tex: Texture | null): void {
 }
 
 /**
- * Renders the street couriers (livreurs) as a two-plane composite: a BIKE plane
- * (wheel-rotation flipbook, z 0.70) under a RIDER plane (pedalling flipbook,
- * z 0.701), both flipped to face travel direction. Driven each frame from the
- * game state's `couriers` (world positions), like BulletSprite's pool.
+ * Renders the street couriers (livreurs). The RIDER layer is the complete
+ * cyclist sprite (FLUX base + wheel rotation stamped across its 6 frames by
+ * scripts/retouch-courier-spokes.mjs); the BIKE layer was retired from the
+ * composite after the art gate picked the full-cyclist sprite (its validated
+ * art stays committed as spare, and its mesh here only serves the pre-art
+ * fallback). Driven each frame from the game state's `couriers` (world
+ * positions), like BulletSprite's pool.
  *
- * Until BOTH layers' frame-1 art exists (generated later in CI), the composite
- * falls back to the legacy single civilian sprite on the bike plane so the game
- * is visually unchanged from before this feature.
+ * Until the rider frame-1 art exists (generated in CI), it falls back to the
+ * legacy single civilian sprite so the game is visually unchanged.
  */
 export function CourierSprite({ stateRef }: Props): JSX.Element {
   const bikeRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_COURIERS }, () => null));
@@ -83,13 +85,13 @@ export function CourierSprite({ stateRef }: Props): JSX.Element {
         continue;
       }
 
-      bike.visible = true;
+      // Bike layer retired from the composite (full-cyclist rider sprite won
+      // the art gate); its mesh is only the pre-art fallback above.
+      bike.visible = false;
       rider.visible = true;
       // id-derived phase (0.29 is a small irrational-ish offset) so couriers on
-      // screen at once don't pedal/roll in lockstep; both layers of one courier
-      // share this phase so wheels and legs stay in sync.
+      // screen at once don't roll in lockstep.
       const phase = courier.id * 0.29;
-      updateLayer(bike, "bike", courier, phase, clock.current, BIKE_Z);
       updateLayer(rider, "rider", courier, phase, clock.current, RIDER_Z);
     }
   });

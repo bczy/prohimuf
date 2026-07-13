@@ -798,17 +798,19 @@ delivery at all, never on a bad-looking halo. Outputs are gitignored
   browser; the CI composite actions pin deliberately and install the matching
   browser via `npx playwright install`.
 
-## retouch-bike-spokes.mjs — Courier bike spoke rotation (scripted retouch)
+## retouch-courier-spokes.mjs — Courier wheel rotation (scripted retouch)
 
-FLUX draws a consistent whole bicycle per frame (pinned seed) but refuses
-legible tri-spoke mag wheels and re-rolls small accessories between frames. This
-game-graphist pass derives **every** bike frame from the single FLUX base
-(`bike.png`): the two wheel discs are detected (dark-pixel centroids in two
-x-windows that exclude the frame-bag band) and three bold pale spokes are drawn
-per wheel, rotated 0°/40°/80° per frame — one full 120° spoke period across the
-3-frame flip, identical bike everywhere, zero flicker. Deterministic and
-idempotent; runs in CI right after generation + cutout.
+FLUX draws a consistent subject per frame (pinned seed) but refuses legible
+tri-spoke mag wheels and re-rolls small details between frames. This
+game-graphist pass derives **every** frame of each courier layer from its
+single FLUX base: the two wheel discs are detected (dark-pixel centroids in two
+x-windows) and three bold spokes are drawn per wheel, rotated per frame across
+a 120° period — identical sprite everywhere, zero flicker. Layers: **rider**
+(the shipped full-cyclist sprite, 6 frames at 20° steps, dark-outlined pale
+spokes) and **bike** (validated spare art, 3 frames at 40° steps). A layer with
+no base PNG on disk is skipped. Deterministic and idempotent; runs in CI right
+after generation + cutout.
 
 ```bash
-node scripts/retouch-bike-spokes.mjs   # requires @napi-rs/canvas
+node scripts/retouch-courier-spokes.mjs   # requires @napi-rs/canvas
 ```

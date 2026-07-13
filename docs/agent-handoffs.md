@@ -1356,3 +1356,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 - art ASSET GATE (bike): PASS par Bertrand — take 4 per-frame + retouche scriptée
   des bâtons (retouch-bike-spokes.mjs, 0/40/80°, base unique = zéro flicker).
   Rider: prochaine itération.
+- art ASSET GATE (courier final): PASS par Bertrand — sprite cycliste complet unique
+  (base FLUX seed 5220) + rotation de roues scriptée 6 frames/20° (retouch-courier-
+  spokes.mjs, bâtons à liseré). Layer vélo retiré du composite, art conservé en
+  réserve. Vérifié en jeu (burst headless, zéro erreur).

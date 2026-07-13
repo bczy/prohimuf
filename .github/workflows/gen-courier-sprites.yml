@@ -70,11 +70,11 @@ jobs:
         # rider.png base once its geometry is tuned at the art gate.
         run: FORCE=1 node scripts/gen-courier-sprites.mjs --layer rider
 
-      - name: Stamp rotating spokes on the bike frames (scripted retouch)
-        # Derives every bike frame from the single FLUX base with the tri-spoke
-        # Y drawn at 0/40/80 degrees — FLUX won't draw legible mag wheels, so
-        # the rotation is deterministic pipeline work (see the script header).
-        run: node scripts/retouch-bike-spokes.mjs
+      - name: Stamp rotating wheel spokes (scripted retouch)
+        # Derives every frame of each courier layer from its single FLUX base
+        # with a tri-spoke Y rotated per frame — FLUX won't draw legible mag
+        # wheels, so the rotation is deterministic pipeline work (script header).
+        run: node scripts/retouch-courier-spokes.mjs
 
       - name: Commit sprites
         run: |
