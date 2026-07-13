@@ -1131,3 +1131,63 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
 - **VERDICT: ACCEPTED.** All acceptance criteria satisfied, both art gates PASS, architect
   sign-off, no unresolved CONFIRMED blocking/major finding. Story **DONE**. No commit/push by
   PM — orchestrator owns the merge. (John / PM)
+
+---
+
+### story-enemy-sprite-flipbook (PR #37 draft, `claude/spline-three-fiber-integration-cm2hv4`)
+
+- pm→arch: WHAT — give the enemy sprites a minimal 2-frame flip (6 fps) per state so a
+  hostile shifts weight / recoils after firing, chosen AFTER evaluating a Spline/3D animated
+  model and rejecting it. WHY — the Prohibition-1987 shooting gallery reads as "poster, not
+  diorama" (`art-direction.md` §1); period sprites sell life with a tiny flip, not smooth
+  animation, and the flip must NOT break the flat 2D fanzine identity or the existing
+  generation → cutout → CI pipeline. Frames come from the existing Pollinations/FLUX pipeline
+  (kontext img2img as the primary consistency lock) and are consumed as separate `_f<N>` PNG
+  files. Scope test: conscious documented extension of the accepted enemy set, recorded in
+  ADR-0015. (John / PM intent)
+- arch: THREE lanes, disjoint paths, PARALLEL-SAFE. **Lane MANIFEST (dev-tooling-assets, data)**
+  → new top-level `enemies` block in `src/game/levels/levelArt.json` (flat keys per base sprite
+  file = asset root + legacy variant suffix, pinned integer seeds, `frames[0]==""` committed
+  frame 1, `frames[i>0]` pose-delta clause), the single source of truth for both script and
+  render. **Lane SCRIPT (dev-tooling-assets, tooling)** → `scripts/gen-enemy-types.mjs`
+  rewritten manifest-driven with the kontext-primary / matched-flux-pair fallback strategy;
+  `scripts/check-art-prompts.mjs` gains the `enemies` set; docs (`SCRIPTS.md`,
+  `asset-pipeline.md`, `art-direction.md` §4.1, `render-layer.md`, `gen-sprites.yml` header)
+  + ADR-0015. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
+  (`flipbookFrame`, DOM/Three-free) + `enemyTextures.ts` (frame param, per-frame preload,
+  frame→frame-1→global fallback chain, `frameCountFor`/`enemyAnimFps` reading the manifest) +
+  `EnemySprite.tsx` (per-state anim clock, HIT pins frame 1). The manifest↔ARCHETYPES key
+  contract is locked by a consistency test in `src/game/levels/__tests__` that mirrors the
+  `fileFor` key scheme (game may NOT import render, so the rule is duplicated, not shared).
+  Shared file `levelArt.json` is owned by the MANIFEST lane; render/test only READ it.
+  Boundary law upheld by design: game stays React/Three-free, flip timing is visual-only,
+  no new dependency. (Winston / Senior Architect — lane plan)
+- release: All three lanes landed. MANIFEST — `enemies` block, 12 types keyed to the exact
+  base filenames (normal ×3 variants idle+shooting, riot/biker idle+shooting, bonus/civilian
+  idle-only), pinned seeds 4801–4812, `fps:6`, `size:256²`. SCRIPT — `gen-enemy-types.mjs`
+  manifest-driven, kontext img2img primary from the committed frame 1 + matched-pair fallback,
+  skip-existing, per-asset try/catch; `check-art-prompts` `enemies` set + docs + ADR-0015.
+  RENDER — `flipbook.ts` (6 unit tests), `enemyTextures.ts` frame-aware fallback chain,
+  `EnemySprite.tsx` anim clock; `levelArt.consistency.test.ts` locks the manifest↔ARCHETYPES
+  contract. No `_f<N>` PNGs committed (generated in CI as designed). (Amelia ×3)
+- review: **SIGN-OFF (no blockers).** Boundary law PASS — `src/game` has zero React/Three
+  imports (only `levelArt.json` data + a read-only consistency test added), `flipbook.ts` is
+  import-free/pure, render holds only visual timing, no new dependency. Cross-lane contract
+  COHERENT — all 12 renderer-derivable keys present with no orphans (consistency test), the
+  `fileFor` key derivation, the consistency-test mirror, the generator's `${key}_f${i+1}`
+  filename construction and the ADR-0015 `_f<N>`-after-variant-suffix wording all agree; the
+  12 committed frame-1 PNGs match the manifest keys. Pipeline safety PASS — skip-existing per
+  file, kontext primary never touches frame 1, the loud fallback is the only frame-1 writer
+  besides `FORCE=1`, per-asset try/catch never crashes the run. Verified GREEN locally:
+  `yarn typecheck` 0 errors, `vitest` 200/200, `yarn lint` clean, `check-art-prompts --set
+  enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
+  Non-blocking observations logged for a fast-follow: (1) the consistency test duplicates the
+  `fileFor` root-derivation rule (boundary forces it — game can't import render); the pure
+  key-derivation depends only on `ARCHETYPES`, so extracting it into `src/game` and importing
+  it from both `enemyTextures.ts` and the test would make the contract structural instead of a
+  mirror (`enemyTextures.ts` `baseFileKey` ↔ `levelArt.consistency.test.ts` `root()`/`keysFor`).
+  (2) The fallback path in `gen-enemy-types.mjs` is non-atomic — it writes the regenerated
+  frame 1 before fetching frame 2, and because the committed art was made by the old
+  random-seed script the pinned-seed reroll won't reproduce it, so any fallback firing genuinely
+  mutates accepted art; this is exactly the risk ADR-0015 flags and is gated by the human art
+  review in the PR, acceptable as-is. No commit/push. (Winston / Senior Architect — review)
