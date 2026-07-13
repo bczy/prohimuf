@@ -25,7 +25,8 @@ import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import {
   PRE_LEVEL_NARRATIVE,
   POST_LEVEL_NARRATIVE,
-  TUTORIAL_NARRATIVE,
+  TUTORIAL_NARRATIVE_DESKTOP,
+  TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
 
 type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END" | "TUTORIAL";
@@ -38,6 +39,9 @@ const PREVIEW_SCREEN =
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
 const IS_MOBILE = detectMobile();
+
+// Device-forked tutorial script (ADR-0015): same once-at-load decision as IS_MOBILE.
+const TUTORIAL_SCENE = IS_MOBILE ? TUTORIAL_NARRATIVE_MOBILE : TUTORIAL_NARRATIVE_DESKTOP;
 
 // The rotate overlay covers every app phase, menus included (ADR-0003).
 // The fullscreen button (ADR-0008) is always appended; it self-hides when
@@ -249,11 +253,12 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "TUTORIAL") {
-    // Optional, scripted, informative-only onboarding (ADR-0012, D3). Finish AND
-    // skip both return to MENU; nothing is written to muf_progress or high scores.
+    // Optional, scripted, informative-only onboarding (ADR-0012, D3; device-forked
+    // per ADR-0015). Finish AND skip both return to MENU; nothing is written to
+    // muf_progress or high scores.
     return renderAppShell(
       <NarrativeScreen
-        scene={TUTORIAL_NARRATIVE}
+        scene={TUTORIAL_SCENE}
         showSkipButton
         onDone={handleBackToMenu}
         doneLabel="TERMINER"

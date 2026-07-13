@@ -106,7 +106,8 @@ async function buildContactSheet() {
   const shots = [
     "00_menu.png",
     "01_narrative.png",
-    "02_tutorial.png",
+    "02_tutorial_desktop.png",
+    "03_tutorial_mobile.png",
     ...LEVELS.map((l) => `level_${l.id}.png`),
     "09_end.png",
   ].filter((f) => fs.existsSync(path.join(OUT_DIR, f)));
@@ -166,10 +167,24 @@ async function main() {
 
   console.log("[screen] narrative");
   await captureScreen(context, "01_narrative.png", "?preview=narrative");
-  console.log("[screen] tutorial");
-  await captureScreen(context, "02_tutorial.png", "?preview=tutorial");
+  console.log("[screen] tutorial (desktop)");
+  await captureScreen(context, "02_tutorial_desktop.png", "?preview=tutorial");
   console.log("[screen] end");
   await captureScreen(context, "09_end.png", "?preview=end");
+
+  // The tutorial forks by device (ADR-0015); render the mobile script under a
+  // mobile UA so detectMobile() picks the phone variant. Landscape viewport
+  // keeps the RotateOverlay hidden.
+  console.log("[screen] tutorial (mobile)");
+  const mobileContext = await browser.newContext({
+    viewport: VIEWPORT, // landscape → the RotateOverlay stays hidden
+    deviceScaleFactor: DEVICE_SCALE,
+    hasTouch: true,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+  });
+  await captureScreen(mobileContext, "03_tutorial_mobile.png", "?preview=tutorial");
+  await mobileContext.close();
 
   await browser.close();
   await buildContactSheet();
