@@ -44,6 +44,20 @@ anchored in the bible.
    PASS / FAIL(reason, which bible rule). You may run `node scripts/check-sprite-style.mjs`
    for the mechanical pre-check (background, neon hue, silhouette ratio) — but the
    mechanical gate passing does NOT bind you; taste is your jurisdiction.
+   **AI-generation defect sweep — automatic FAIL.** Read the PNG on a contrasting
+   background (a defect the model drew but the keyer only revealed hides on opaque white:
+   the courier shipped with legs detached from the hips from its first generation, unseen
+   until cutout punched the white hip to a hole). A sprite whose subject is **detached**
+   (a limb not joined to the body, a transparent enclave severing anatomy), **duplicated**
+   (supernumerary or missing limbs/fingers, broken paired-element parity), **fused**
+   (subject melting into a prop or the ground, melted texture), or otherwise
+   **anatomically broken / perspective-incoherent** is an automatic FAIL regardless of
+   style or rendering quality — same weight as the "wrong archetype = automatic FAIL" and
+   "Silhouette first" clauses. Treat any enclosed light region over the body (hips,
+   armpits, crotch, between fingers) as a suspected generation hole, not background.
+   `scripts/check-sprite-integrity.mjs` and Serge's technical-pass sweep are non-binding
+   pre-checks: their PASS never overrides your eye. Record every such verdict in
+   `docs/agent-handoffs.md`.
 3. **Bible gate** — `docs/art-direction.md` changes only through you.
 4. **In-game composite gate** — ANY change to a runtime-composed visual (neon rims,
    glows, additive/emissive effects, pulses — anything NOT fully present in the delivered

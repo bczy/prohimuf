@@ -994,3 +994,140 @@ render-side data and never enters`GameState`. **Stock materials only** (`MeshBas
 - **VERDICT: ACCEPTED.** All seven ACs satisfied, no unresolved CONFIRMED blocking/major
   finding, both art gates PASS. Story **DONE**. No commit/push by PM — orchestrator owns
   the merge. (John / PM)
+
+## 2026-07-13 — dev-tooling-assets (docs/pipeline-agents lane) — AI-generation defect sweep
+
+Follow-up to the courier detached-legs bug (the transparency fix revealed a first-generation
+anatomical defect: both legs never joined the hips — the hip zone was white, keyed to a hole).
+Root cause = an AI-generation defect that was invisible on opaque white and slipped every gate.
+Closing the gap at the PIPELINE-AGENTS level (the machine-check wiring + asset retouch are
+laneTooling's disjoint section):
+
+- `.claude/agents/game-graphist.md` — TECHNICAL pass gains a mandatory **AI-generation defect
+  sweep** (4 items: anatomy/limb attachment, extremities & duplication, fused objects &
+  perspective, pre-key hole inventory), run on a contrasting background at game size, before
+  the lead-art asset gate. Names `scripts/check-sprite-integrity.mjs` as a non-binding
+  mechanical floor. A hit blocks the sprite from going up to Nico. Sweep also runs on any
+  scripted retouch, not only fresh generations.
+- `.claude/agents/lead-art.md` — Asset gate gains the same sweep as an **automatic FAIL**
+  (detached / duplicated / fused / anatomically-broken / perspective-incoherent subject),
+  aligned with the existing "wrong archetype = automatic FAIL" + "Silhouette first" clauses.
+- `docs/art-direction.md` — canonical rule added under law #3 (Silhouette first): AI-generation
+  defects are an automatic set FAIL; enclosed light over the body is a suspected hole, not
+  background.
+
+Prose/checklist only — no code, no scripts, no assets touched by this lane. Not committed
+(orchestrator owns the merge). (Serge-adjacent tooling pass / dev-tooling-assets)
+
+---
+
+## 2026-07-13 — Courier sprite integrity gate + hip retouch (TOOLING/ASSETS lane, dev-tooling-assets)
+
+Build log for the scripted deliverables (part A1 scripted check + part B retouch + CI wiring +
+ADR). Agent-checklist edits (A2) belong to the parallel agents-pipeline lane — NOT touched here.
+
+**Delivered (files):**
+
+- `scripts/check-sprite-integrity.mjs` (NEW) — pure `measureIntegrity`/`evaluateIntegrity` +
+  lazy-`@napi-rs/canvas` CLI, modelled on `check-halo-gradient.mjs`. HARD: dominance ≥ 0.97,
+  speckle budget ≤ 4 comps < 12px, binary alpha. SOFT (WARN-only, routed to art gates):
+  interior torso-zone enclave inventory (> 150px in upper 80% of a figure). 4-connectivity.
+- `scripts/retouch-sprites.mjs` (NEW) — deterministic, idempotent per-sprite geometry repair.
+  Hip bridge (local aplat sample ≈ (52,48,62), 4-way enclosure fill, iterated to a fixed point)
+  - speckle sweep. `RETOUCH_SPECS` documents every window/threshold per sprite.
+- `public/assets/enemy_civilian.png` — retouched in place (run once).
+- `.github/workflows/gen-sprites.yml` — new "Check sprite integrity" step after cutout, before
+  commit, scoped to `enemy_civilian.png` (no duplicate `@napi-rs/canvas` install).
+- `scripts/SCRIPTS.md`, `docs/adr/0014-*.md` (+ index) — documented.
+
+**Measured (enemy_civilian.png):** components 69 → 1 (dominant); hip enclaves 224/110/103px → 0;
+dominant 19469 → 20082px (+611 bridge + 2px absorbed speckles, fixed-point); silhouette bbox `[29,19,226,237]` UNCHANGED;
+semi-alpha 0 → 0; pngstats no new white / fringe 22 → 11. Idempotent: md5 identical across 3
+runs (`b272505…`).
+
+**Proof of detection (standalone CLI exit codes):**
+
+- `check-sprite-integrity.mjs --file public/assets/enemy_civilian.png` (repaired) → **PASS, exit 0**.
+- `check-sprite-integrity.mjs --file <pre-fix 69-comp state>` → **FAIL, exit 1** (speckle 68 > 4;
+  SOFT also flags the 224px hip anatomy hole at 60% down).
+
+**FINDING (flagged to senior-architect / for review):** the other 11 committed `enemy_*.png`
+carry PRE-EXISTING keying debris (22–220 non-dominant comps) and action-pose detached elements
+(dominance down to ~78%) — accepted art this cycle did not touch. The courier's 68 parasites is
+FEWER than several accepted sprites (137, 220), so no speckle budget separates the bug from the
+set. Hence the CI gate is scoped to `enemy_civilian.png`; a whole-set HARD gate needs a separate
+set-wide cleanup / recalibration story. Also: with `ENCLAVE_TORSO_FRAC=0.80` the repaired courier
+still emits 2 benign SOFT warns on legit bike see-through (~75% down); lowering to ~0.73 would make
+it warn-clean while still flagging the 58–70%-down hip holes — an architect call, documented in
+ADR-0014, not silently retuned.
+
+**Gates:** `yarn lint` / `yarn typecheck` / `yarn test` (189/189) all green. Mechanical
+`check-sprite-integrity` PASSES on the repaired sprite. Taste verdicts (Serge TECHNICAL /
+Nico asset gate) are the art lane's to record; the crop/vis evidence for their pass is in the
+tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-assets)
+
+## 2026-07-13 — pm — story-courier-cyclist-sprite-fix — ACCEPTANCE (John / PM)
+
+- **Two-lane cycle, one block.** Scoping I ruled on: (A) the scripted+agent "AI-generation
+  defect sweep" is a CONSCIOUS, DOCUMENTED extension — Prohibition Atari ST had no AI
+  generation, but it did ship anatomically-legible enemy sprites, so a gate that protects
+  legibility serves the faithfulness bar; explicitly requested by Bertrand. (B) the courier
+  hip retouch is a pure FAITHFULNESS bugfix (a first-generation FLUX pelvis hole exposed by
+  last cycle's keying) — cahier des charges PASS, core loop `Récupérer→Livrer→Éviter`
+  untouched. Lanes fanned out on disjoint paths: `tooling` (`scripts/**` + `.github/**` +
+  `public/assets/**` + `docs/adr/**`) and `agents-pipeline` (`.claude/agents/**` +
+  `docs/art-direction.md`). Gates: graphiste (Serge) PASS, lead-art (Nico) PASS. Merge panel
+  (4 reviewers) → `senior-architect` triage: 0 blocking, all 4 confirmed majors were
+  comment/doc-level falsehoods (incl. the real merge-stopper — `*.mjs` outside lint-staged's
+  prettier glob) and are FIXED in-tree; format:check green. CLEAR TO MERGE, architect sign-off.
+- **AC verification (I re-inspected the repo/artefacts myself; note: no shell in my context,
+  so I verified scripts + CI wiring + agent files + ADR by Read, and the visual gate by
+  reading the game-size composite and the hip magenta crops, and relied on the three
+  independent lane reports + triage + fixes for the executable exit-code/green-baseline
+  proofs):**
+  - **A1 (scripted gate) — PASS.** `scripts/check-sprite-integrity.mjs` is standalone
+    (`node … --file`), exit 0/1, documented header + calibration table, lazy
+    `@napi-rs/canvas@1.0.2` (`--no-save --ignore-scripts` pattern, no full-tree install).
+    HARD (dominance ≥ 0.97, `MAX_SPECKLE_COMPONENTS=4`/`SPECKLE_MAX_SIZE_PX=12`, binary alpha)
+    + SOFT torso-zone enclave inventory (`SUSPECT_ENCLAVE_MIN_PX=150`, `ENCLAVE_TORSO_FRAC=0.80`,
+    figure-scoped) — all named/commented constants, 4-connectivity, deterministic. Speckle
+    budget anchored below the original's ~47 sub-3px baseline. Wired into `gen-sprites.yml`
+    AFTER cutout (step "Check sprite integrity") and BEFORE the commit step, no duplicate
+    canvas install, step rationale documented. Proof-of-detection recorded: repaired courier
+    → PASS exit 0, pre-fix 69-comp state → FAIL exit 1 (speckle 68 > 4). PM-accepted scope
+    ruling: the CI gate is scoped to `enemy_civilian.png`, NOT the whole set — empirically
+    11/12 accepted sprites carry pre-existing debris (22–220 comps, dominance to ~78%) and the
+    courier's 68 is fewer than several accepted sprites, so no single budget separates the bug
+    from accepted art. Set-wide gate correctly deferred to a follow-up story (ADR-0014 §C).
+  - **A2 (agent sweeps) — PASS.** `game-graphist.md` TECHNICAL pass gains the mandatory
+    4-item sweep (ANATOMY / EXTREMITIES & DUPLICATION / FUSED OBJECTS & PERSPECTIVE / PRE-KEY
+    HOLE INVENTORY), run on a contrasting ground at game size, before Nico's gate, citing
+    `check-sprite-integrity.mjs` as a non-binding mechanical floor, re-running on scripted
+    retouches. `lead-art.md` asset gate gains the same sweep as an automatic FAIL, weighted
+    with "wrong archetype = automatic FAIL". Root cause captured in both files +
+    `art-direction.md` bible (law #3).
+  - **B (deterministic retouch) — PASS.** `scripts/retouch-sprites.mjs` repairs the courier
+    with a locally-SAMPLED aplat (≈(52,48,62), never hardcoded), 4-way enclosure fill iterated
+    to a fixed point (idempotent, byte-identical re-run, md5 `b272505…`), then a speckle sweep,
+    binary alpha. Defect coordinates documented in `RETOUCH_SPECS` (hip window x[118,190]
+    y[143,197]). I read the hip magenta crop (`z_fixed_lower` vs `z_main_lower`) and the
+    game-size composite (`civ_after_vis_g64`) myself: the crotch/upper-thigh now reads as one
+    continuous dark trouser mass rooting BOTH legs to the torso; magenta shows through only at
+    legit bike see-through (spokes, frame triangle). Measured 69 → 1 dominant comp, hip enclaves
+    224/110/103px → 0, bbox `[29,19,226,237]` unchanged, semi-alpha 0, fringe 22 → 11, no new
+    white. The 2 residual SOFT warns (367px/169px, ~75% down) are adjudicated by BOTH art gates
+    as legit bike-fork/wheel see-through — non-failing.
+  - **Baseline / boundary — PASS.** `yarn typecheck` / `yarn test` (189/189) / `yarn lint` /
+    `yarn format:check` green (triple-reported by tooling, verif, and fixes lanes). ZERO
+    `src/**` changes (verif lane traced the courier render path: flat texture map, no topology
+    coupling — the PNG retouch cannot alter render behaviour). Change surface = `scripts/**`,
+    `.github/workflows/**`, `public/assets/**`, `.claude/agents/**`, `docs/**` (ADR-0014 added
+    per the CLAUDE.md CI-contract rule).
+- **Follow-ups I'm logging (non-blocking, recommend a fast-follow tooling story):** (1) detached
+  ~12–600px limb-fragment blind window (assert `nonDominantComponents == 0` for the courier at
+  zero false-positive cost); (2) scope inversion — freshly generated/keyed sprites are
+  auto-committed ungated while the gate covers only the sprite least likely to change. Both are
+  deliberate + documented in ADR-0014 §C.
+- **VERDICT: ACCEPTED.** All acceptance criteria satisfied, both art gates PASS, architect
+  sign-off, no unresolved CONFIRMED blocking/major finding. Story **DONE**. No commit/push by
+  PM — orchestrator owns the merge. (John / PM)

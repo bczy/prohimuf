@@ -55,14 +55,48 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           node scripts/cutout-enemies.mjs
 
-      # FOLLOW-UP: no automated style gate for enemy sprites yet. The pixel gate
+      # FOLLOW-UP: no automated STYLE gate for enemy sprites yet. The pixel gate
       # (scripts/check-sprite-style.mjs) is calibrated ONLY for the three vehicle
       # sprites (per-type hue bands + silhouette-aspect bounds from the PM-accepted
       # truck/car/moto PNGs). Enemy archetypes have different framing, hues and
       # proportions, so applying the vehicle thresholds here would be meaningless —
       # enemies are deliberately NOT blocked on the vehicle gate. A dedicated enemy
-      # gate (own thresholds, calibrated against the accepted enemy_*.png set) is a
-      # separate story before this workflow gets a pixel check.
+      # STYLE gate (own thresholds, calibrated against the accepted enemy_*.png set)
+      # is a separate story before this workflow gets a pixel STYLE check.
+
+      - name: Check sprite integrity (post-cutout topology)
+        run: |
+          # Objective post-cutout integrity gate (story-courier-cyclist-sprite-fix):
+          # HARD-fails (exit 1) if the keyed courier sprite loses its single dominant
+          # opaque component, sprouts keying-debris speckles beyond budget, or gains
+          # semi-transparent alpha. It ALSO prints a SOFT inventory of interior
+          # transparent enclaves (WARN-only, never fails) so a suspicious anatomy hole
+          # in the torso/hip zone is routed to the human/agent art gates.
+          #
+          # SCOPED to enemy_civilian.png ON PURPOSE (not the whole enemy_*.png set):
+          # this cycle's retouch only cleaned the courier. The OTHER committed enemy
+          # sprites carry PRE-EXISTING keying debris (22..220 non-dominant components)
+          # and action-pose detached elements (muzzle flash / separated limbs → dominance
+          # down to ~78%) that this cycle did not touch and that are accepted art — a
+          # blanket HARD gate over the set would fail the job on that pre-existing state,
+          # and no single speckle budget separates the courier bug (68) from an accepted
+          # sprite (220). Extending this gate to the full set needs a separate set-wide
+          # cleanup (or per-sprite baselines / recalibration) story. Standalone, the
+          # script still inventories the whole set (run with no --file) for that work.
+          #
+          # This gate is what makes the retouch a one-time human fix safe: CI's no-args
+          # batch cutout SKIPS pre-keyed sprites (ADR-0013), so the committed courier
+          # bytes stay stable and this passes. NOTE the HARD gate guarantees only that a
+          # regen cannot reintroduce KEYING DEBRIS beyond budget / fragment the subject /
+          # break binary alpha — it does NOT catch a re-opened hip hole on its own
+          # (dominance still passes ~0.99, the legs hang on via the bike frame; the
+          # anatomy hole surfaces only as a SOFT/WARN line routed to the human/agent art
+          # gates). retouch-sprites.mjs is deliberately NOT wired into CI, so the gate
+          # stays a TRUE gate.
+          #
+          # @napi-rs/canvas is already installed by the preceding cutout step in this
+          # same job — no duplicate install needed.
+          node scripts/check-sprite-integrity.mjs --file public/assets/enemy_civilian.png
 
       - name: Commit sprites
         run: |

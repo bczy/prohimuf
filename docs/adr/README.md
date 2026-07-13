@@ -63,3 +63,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0011](./0011-render-side-neon-rim.md)                 | Render-side emissive neon rim for vehicles (decouple from baked art)                     | Accepted |
 | [0012](./0012-optional-scripted-tutorial-stage.md)     | Optional scripted tutorial stage before Rue Belliard                                     | Accepted |
 | [0013](./0013-enclosed-island-cutout-pass.md)          | Enclosed-island pass in the shared sprite keyer                                          | Accepted |
+| [0014](./0014-sprite-integrity-gate-and-retouch.md)    | Post-cutout sprite-integrity gate and deterministic per-sprite retouch                   | Accepted |

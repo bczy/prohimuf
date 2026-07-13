@@ -51,7 +51,16 @@ Historical anchors (see LICENSES.md for sources):
    One off-family asset fails the whole set.
 3. **Silhouette first** — every sprite identifiable by silhouette alone at game size.
    Wrong vehicle class / wrong archetype = automatic FAIL regardless of rendering
-   quality.
+   quality. **AI-generation defects are an automatic set FAIL**: FLUX is a fill tool,
+   not a draughtsman, and it will hand you detached, duplicated, fused or
+   perspective-incoherent anatomy (a leg not joined to the hip, a hand webbed into the
+   handlebar, a third pedal, melted texture). These read as broken at game size, so they
+   fail on the same footing as wrong archetype. Such a defect often only surfaces after
+   the keyer punches the background out: **an enclosed light region falling over the body
+   (hips, armpits, crotch, between fingers) is a suspected generation hole, not
+   background** — flag it, do not accept the auto-key. The sweep runs on every new
+   generated asset AND every scripted retouch, on a contrasting background at game size;
+   `scripts/check-sprite-integrity.mjs` is its mechanical floor, non-binding on taste.
 
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 

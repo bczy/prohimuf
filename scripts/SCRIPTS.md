@@ -589,6 +589,83 @@ that blind spot let a hard **binary-alpha plate** (no falloff) ship. This gate
 
 ---
 
+## check-sprite-integrity.mjs — Post-cutout topology / integrity gate (enemy sprites)
+
+Objective, ground-agnostic integrity gate for keyed enemy sprites
+(story-courier-cyclist-sprite-fix). Where `check-sprite-style.mjs` guards vehicle
+**hue/silhouette**, this guards **topology**: it catches the AI-generation anatomy
+defect the courier shipped with — FLUX never drew the pelvis (paper-white), the
+enclosed-island keying pass (ADR-0013) cleared it → an interior transparent hole
+severing both legs, plus 68 keying-debris parasites. A topology-only check missed
+it (the silhouette stayed one dominant component — the legs hang on via the bike
+frame), so this gate is two-layered.
+
+- **Design:** modelled on `check-halo-gradient.mjs` — a **pure** exported
+  `measureIntegrity({ W, H, d })` (+ `evaluateIntegrity`) with **no I/O**
+  (unit-testable) plus a thin CLI that decodes pixels via `@napi-rs/canvas`
+  (lazy import, so importing the module never throws).
+- **HARD checks** (exit 1 on any): (a) **dominance** — largest 4-conn opaque
+  component / total opaque ≥ 0.97; (b) **speckle budget** — ≤ 4 non-dominant
+  opaque components smaller than 12px (the clause that PROVES detection: courier
+  pre-fix = 68 → FAIL, post-retouch = 0 → PASS); (c) **binary alpha** — 0 pixels
+  with `0 < alpha < 255`. 4-**connectivity** is required (8-conn would merge the
+  diagonally-linked debris cluster under budget).
+- **SOFT layer** (printed WARN, **never** fails — routed to the human/agent art
+  gates): an inventory of interior transparent enclaves, flagging any > 150px whose
+  bbox-top sits in the upper 80% (torso/hip) of the figure — the layer that surfaces
+  a severed-limb / anatomy hole for a human glance. **Figure-only:** the torso
+  fraction assumes a standing human; pass `isFigure:false` for non-figure sprites.
+- **CI:** wired into `.github/workflows/gen-sprites.yml` **after** the cutout step
+  and **before** commit, **scoped to `enemy_civilian.png`** — the other committed
+  enemy sprites carry pre-existing keying debris / action-pose detached elements a
+  blanket gate would false-fail (extending to the whole set is a separate story).
+
+```bash
+node scripts/check-sprite-integrity.mjs                 # inventory ALL enemy_*.png
+node scripts/check-sprite-integrity.mjs --file a.png    # gate one sprite (exit 0/1)
+node scripts/check-sprite-integrity.mjs --json          # machine-readable
+```
+
+- **Requires:** `@napi-rs/canvas` (same dep as `check-sprite-style.mjs`), lazy.
+  Install on demand:
+  `npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2`.
+
+---
+
+## retouch-sprites.mjs — Deterministic per-sprite geometry retouch
+
+The sanctioned home (per `game-graphist.md`) for **scripted, re-runnable** sprite
+retouches Serge signs off — here, **post-key geometry repair** (distinct from the
+KEYING/flood logic, which stays in the shared `cutout-enemies.mjs`; ADR-0013
+rejected a standalone retouch only for the flood, not for geometry repair).
+
+Fixes the courier's severed legs deterministically, **no FLUX regeneration**:
+
+1. **Hip bridge** — samples the sprite's own dark trouser **aplat locally** (never a
+   hardcoded colour; measured ≈ (52,48,62)) and fills only the hip/crotch pixels
+   truly **enclosed** by opaque-dark body on all four sides (maxGap 30px), keeping
+   the bike-frame triangle and wheel spokes see-through. Flat aplat, binary alpha,
+   **iterated to a fixed point** so it is idempotent.
+2. **Speckle sweep** — after the bridge, drops non-dominant 4-conn opaque components
+   < 12px (matches `check-sprite-integrity.mjs`'s budget).
+
+Runs **in place** on `public/assets/<sprite>`, deterministic + idempotent
+(re-run = byte-identical). Every window/threshold is a **documented per-sprite**
+constant (`RETOUCH_SPECS`) tuned to one sprite's geometry — NOT a general filter.
+**Not wired into CI** on purpose: it is the explicit human-run fix, so
+`check-sprite-integrity.mjs` stays a true gate. The HARD gate catches reintroduced
+keying debris / subject fragmentation / non-binary alpha — a re-opened hip hole alone
+passes HARD and shows only as a SOFT WARN a human must act on (see ADR-0014 §C).
+
+```bash
+node scripts/retouch-sprites.mjs                    # retouch every known sprite
+node scripts/retouch-sprites.mjs enemy_civilian.png # one sprite by basename
+```
+
+- **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).
+
+---
+
 ## preview-vehicle-halo.mjs — Vehicle halo in-game composite preview
 
 Review tool (story-halo-alpha-composite-gate, AC5/AC6) that captures the
