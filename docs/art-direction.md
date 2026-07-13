@@ -138,6 +138,37 @@ never smooth animation. Data lives in the `enemies` block of `levelArt.json`
   a matched flux pair under the pinned seed is the fallback when kontext is
   unavailable.
 
+### 4.2 Courier layered flipbook family (`courier` block)
+
+The street courier (livreur) is a **2-layer composite** — a delivery **bike**
+(wheel rotation) drawn UNDER a **rider** (pedaling stride), stacked as two planes
+render-side (bike below rider, ADR 0016). Data lives in the `courier` block of
+`levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers` keyed
+`bike` / `rider`), read by `scripts/gen-courier-sprites.mjs`.
+
+- **Strip-and-slice, not per-frame.** Unlike the enemy flip, the courier has **no
+  protected frame 1** to `kontext`-lock onto — every cell is a distinct pose in one
+  continuous cycle. So each layer is generated as **one FLUX image**: a horizontal
+  strip of `frames.length` identical square cells (strip width = `size.width * N`,
+  always **derived**, never a manifest field), sliced on a fixed grid into the
+  per-frame PNGs and chroma-keyed per file. A layer is **atomic** — two cells only
+  match if they came from the same generation, so a single missing frame
+  regenerates the whole strip.
+- **Strip assembly.** The generator sends FLUX, per layer:
+  `opening` (medium + "a single horizontal row of identical square cells") +
+  `exactly ${N} cells, ` (derived from `frames.length`) + the layer `prompt`
+  (subject/silhouette) + the per-cell clauses `cell 1: …; cell 2: …; …` + the
+  shared `style` tail (verbatim, Family consistency §2 law 2).
+- **Per-cell pose-clause contract.** Every `frames[i]` is a **non-empty** pose
+  clause describing cell `i+1` — there is no `""` sentinel. Keep the clauses short
+  and phase-ordered (the bike's 3-phase spoke rotation, the rider's 6-phase pedal
+  stride).
+- **Positive rider phrasing rule (§3.1 restated for this family).** The rider layer
+  is described **positively** as a figure _in cycling posture_ — leaning torso,
+  arms reaching to grip height, legs in pedaling stride — **never** by negating the
+  bike (never "rider without a bike"; FLUX reads the negation as the thing). The
+  bike is a _separate layer_; the rider prompt simply describes riding posture.
+
 ## 5. Silhouette anchors (period truth — 1998 Paris)
 
 - **truck** — Renault Trafic mk1 / Citroën C25: "flat-fronted forward-control 80s

@@ -64,6 +64,7 @@
  *   node scripts/check-art-prompts.mjs                # lint everything
  *   node scripts/check-art-prompts.mjs --set vehicles # only the vehicles block
  *   node scripts/check-art-prompts.mjs --set enemies   # only the enemies block
+ *   node scripts/check-art-prompts.mjs --set courier   # only the courier layered-flipbook block
  *   node scripts/check-art-prompts.mjs --set levels    # only the levels block
  * Exit: 0 when there are no ERROR-level violations (WARNs allowed); 1 otherwise.
  */
@@ -238,6 +239,32 @@ function countNegations(text) {
   return m ? m.length : 0;
 }
 
+// Negation + word budgets over an assembled prompt (any set). Extracted to a
+// top-level pure helper (was nested in checkEnemies) so checkCourier can reuse the
+// exact same thresholds — behaviour is identical, only the closed-over `rep` is
+// now an explicit first parameter.
+function checkBudgets(rep, ap, assembled) {
+  const negs = countNegations(assembled);
+  if (negs > NEG_ERROR_OVER) {
+    rep.error(
+      ap,
+      `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
+    );
+  } else if (negs > NEG_WARN_OVER) {
+    rep.warn(
+      ap,
+      `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+    );
+  }
+
+  const words = wordCount(assembled);
+  if (words > WORD_HARD_MAX) {
+    rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
+  } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
+    rep.warn(ap, `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`);
+  }
+}
+
 // Forbidden tokens: neon/glow/acid/rim-light anywhere in the assembled prompt,
 // plus hue NAMES scanned over the prompt with the chroma-key GROUND phrase(s)
 // stripped out — so the key colour in `style` is exempt but a hue word anywhere
@@ -391,32 +418,6 @@ function checkEnemies(enemies, rep) {
     }
   }
 
-  // Negation + word budgets over an assembled prompt (any frame variant).
-  function checkBudgets(ap, assembled) {
-    const negs = countNegations(assembled);
-    if (negs > NEG_ERROR_OVER) {
-      rep.error(
-        ap,
-        `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
-      );
-    } else if (negs > NEG_WARN_OVER) {
-      rep.warn(
-        ap,
-        `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
-      );
-    }
-
-    const words = wordCount(assembled);
-    if (words > WORD_HARD_MAX) {
-      rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
-    } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
-      rep.warn(
-        ap,
-        `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`,
-      );
-    }
-  }
-
   const types = enemies.types ?? {};
   if (Object.keys(types).length === 0) {
     rep.error("enemies.types", "missing or empty `types` block");
@@ -455,18 +456,122 @@ function checkEnemies(enemies, rep) {
     // assembly, plus BOTH frame>=2 variants (kontext primary and matched-pair
     // fallback — see gen-enemy-types.mjs), which are longer than frame 1's.
     if (prompt.trim()) {
-      checkBudgets(`${p} (assembled)`, `${prompt}${style}`);
+      checkBudgets(rep, `${p} (assembled)`, `${prompt}${style}`);
 
       if (Array.isArray(frames)) {
         for (let i = 1; i < frames.length; i++) {
           const clause = typeof frames[i] === "string" ? frames[i] : "";
           if (!clause.trim()) continue; // shape error already reported above
           checkBudgets(
+            rep,
             `${p}.frames[${i}] (kontext assembled)`,
             `same character, same pixel art style, same framing and scale, ${clause}${style}`,
           );
-          checkBudgets(`${p}.frames[${i}] (pair assembled)`, `${prompt}, ${clause}${style}`);
+          checkBudgets(rep, `${p}.frames[${i}] (pair assembled)`, `${prompt}, ${clause}${style}`);
         }
+      }
+    }
+  }
+}
+
+// Courier LAYERED flipbook contract (story-layered-courier-flipbook, ADR 0016).
+// The generator (gen-courier-sprites.mjs) reads the `courier` block: shared
+// `opening` + `style`, and per LAYER (bike/rider) a pinned integer `seed`, a
+// non-empty subject `prompt`, a `frames` array of 2..8 NON-EMPTY pose clauses
+// (unlike enemies there is NO protected frame-1 `""`), and a unique `asset` under
+// `assets/courier/`. The shared `style` tail is the enemy-family black-ground
+// pixel style (ENEMY_STYLE_TOKENS): #000000 ground + pixel-art medium. The
+// vehicle-only neon-forbidden and scenery rules do NOT apply (the courier style
+// legitimately names "pale neon tones", same as enemies).
+function checkCourier(courier, rep) {
+  if (!courier) {
+    rep.error("courier", "missing `courier` block");
+    return;
+  }
+
+  const opening = courier.opening ?? "";
+  const style = courier.style ?? "";
+  if (!opening.trim()) {
+    rep.error("courier.opening", "missing/empty — required medium + strip-layout slot");
+  }
+  if (!style.trim()) {
+    rep.error("courier.style", "missing/empty — required shared style tail");
+  } else {
+    // Same black-ground + pixel-art contract as the enemy style (both are keyed
+    // off #000000 by cutout-enemies.mjs); reuse ENEMY_STYLE_TOKENS verbatim.
+    for (const tok of ENEMY_STYLE_TOKENS) {
+      if (!tok.any.some((re) => re.test(style))) {
+        rep.error("courier.style", `missing required token: ${tok.name}`);
+      }
+    }
+  }
+
+  const layers = courier.layers ?? {};
+  if (Object.keys(layers).length === 0) {
+    rep.error("courier.layers", "missing or empty `layers` block");
+  }
+
+  const seenAssets = new Map();
+  for (const [name, def] of Object.entries(layers)) {
+    const p = `courier.layers.${name}`;
+    if (def === null || typeof def !== "object" || Array.isArray(def)) {
+      rep.error(p, "entry must be an object");
+      continue;
+    }
+
+    const prompt = def.prompt ?? "";
+    if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
+    if (!Number.isInteger(def.seed) || def.seed <= 0) {
+      rep.error(`${p}.seed`, "seed must be a positive integer");
+    }
+
+    // asset: non-empty, prefixed assets/courier/, and unique across layers (two
+    // layers writing the same file would clobber each other at the art gate).
+    const asset = def.asset ?? "";
+    if (typeof asset !== "string" || !asset.trim()) {
+      rep.error(`${p}.asset`, "missing/empty asset path");
+    } else if (!asset.startsWith("assets/courier/")) {
+      rep.error(`${p}.asset`, 'asset must be under "assets/courier/"');
+    } else if (seenAssets.has(asset)) {
+      rep.error(`${p}.asset`, `duplicate asset "${asset}" (also ${seenAssets.get(asset)})`);
+    } else {
+      seenAssets.set(asset, p);
+    }
+
+    // frames: 2..8 non-empty pose clauses. Unlike enemies there is no protected
+    // frames[0] === "" — every cell is a distinct pose in the cycle.
+    const frames = def.frames;
+    if (!Array.isArray(frames) || frames.length < 2 || frames.length > 8) {
+      rep.error(`${p}.frames`, "must be an array of 2-8 pose clauses");
+    } else {
+      frames.forEach((c, i) => {
+        if (typeof c !== "string" || !c.trim()) {
+          rep.error(`${p}.frames[${i}]`, "pose clause must be a non-empty string");
+        }
+      });
+    }
+
+    // Budgets over the assembled STRIP prompt, reconstructed EXACTLY as
+    // gen-courier-sprites.mjs assembles the strip-variable segment:
+    //   `exactly ${N} cells, ` + prompt + ", " + cells.join("; ")
+    // where cells[i] = `cell ${i + 1}: ${frames[i]}`. The N-cell count is DERIVED
+    // from frames.length (never a manifest field), matching the generator.
+    //
+    // SCOPE NOTE (adapted courier set scope, not a manifest reword): the shared
+    // `opening` (~31 w) + `style` (~58 w) boilerplate is byte-identical across
+    // every layer and already vetted as the house tail; folding it into a
+    // multi-cell strip would push EVERY courier layer past the 120-word ceiling
+    // regardless of content, making the budget meaningless. So the per-layer
+    // budget is measured over the strip-VARIABLE content — the part that actually
+    // grows with cell count. The rider strip legitimately lands in the 90-120 word
+    // WARN band (six load-bearing pose clauses, one per pedaling phase); >120 stays
+    // a hard error. The bike strip sits comfortably in the 30-90 target band.
+    if (prompt.trim() && Array.isArray(frames) && frames.length >= 2) {
+      const okClauses = frames.every((c) => typeof c === "string" && c.trim());
+      if (okClauses) {
+        const N = frames.length;
+        const cells = frames.map((c, i) => `cell ${i + 1}: ${c}`).join("; ");
+        checkBudgets(rep, `${p} (assembled strip)`, `exactly ${N} cells, ${prompt}, ${cells}`);
       }
     }
   }
@@ -501,8 +606,8 @@ function main() {
   const args = process.argv.slice(2);
   const si = args.indexOf("--set");
   const set = si !== -1 ? args[si + 1] : "all";
-  if (!["all", "vehicles", "enemies", "levels"].includes(set)) {
-    console.error(`Unknown --set "${set}" (expected: vehicles | enemies | levels)`);
+  if (!["all", "vehicles", "enemies", "courier", "levels"].includes(set)) {
+    console.error(`Unknown --set "${set}" (expected: vehicles | enemies | courier | levels)`);
     process.exit(2);
   }
 
@@ -511,6 +616,7 @@ function main() {
 
   if (set === "all" || set === "vehicles") checkVehicles(json.vehicles, rep);
   if (set === "all" || set === "enemies") checkEnemies(json.enemies, rep);
+  if (set === "all" || set === "courier") checkCourier(json.courier, rep);
   if (set === "all" || set === "levels") checkLevels(json.levels, rep);
 
   const rel = path.relative(ROOT, LEVEL_ART);

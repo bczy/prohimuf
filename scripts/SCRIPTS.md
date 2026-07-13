@@ -526,6 +526,64 @@ produced here.
 
 ---
 
+## gen-courier-sprites.mjs — Layered courier flipbook (bike + rider)
+
+Generates the street-courier (livreur) as a **2-layer composite** — a delivery
+**bike** (wheel rotation) drawn under a **rider** (pedaling stride), composited as
+two stacked planes render-side (bike below rider, ADR 0016).
+
+- **Single source of truth:** the `courier` block of
+  `src/game/levels/levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers`
+  keyed `bike` / `rider` with `{ asset, seed, prompt, frames, scale, offsetY }`).
+  Add or tune a layer **there**, never in the script.
+- **Strip-and-slice (not per-frame).** Unlike the enemy flip, the courier has **no
+  protected frame 1**. Each layer is ONE FLUX image — a horizontal strip of
+  `frames.length` identical square cells (strip width = `size.width * N`, always
+  **derived**, never stored) — sliced in memory (`@napi-rs/canvas`) on a fixed grid
+  into the per-frame PNGs, then chroma-keyed per file by importing `cutout()` from
+  `cutout-enemies.mjs`.
+- **Atomic layer.** A layer is skipped only when **all** its frame files exist and
+  `FORCE !== 1`; if **any** frame is missing (or `FORCE=1`) the **whole strip
+  regenerates** and every frame is overwritten (loud `[regen-all]` log). All sliced
+  buffers are collected before any file is written — a failed fetch or slice never
+  leaves a half-written strip.
+- **Frame files:** frame 1 unsuffixed `<layer>.png`, frame N≥2 `<layer>_f<N>.png`,
+  under `public/assets/courier/`. Every `frames[i]` is a non-empty pose clause
+  (cell `i+1`); the strip prompt is `opening` + `exactly ${N} cells, ` + `prompt`
+  - the joined `cell i: clause` clauses + `style`.
+- **Output:** `public/assets/courier/{bike,rider}*.png`.
+
+### Commands
+
+```bash
+# Generate missing layers via Pollinations/FLUX, slice + chroma-key (needs network + canvas)
+node scripts/gen-courier-sprites.mjs
+
+# Regenerate ALL layers (overwrite), used in CI
+FORCE=1 node scripts/gen-courier-sprites.mjs
+
+# No network? Write dependency-free procedural placeholder frames (local testing only)
+node scripts/gen-courier-sprites.mjs --placeholder
+
+# List the defined layers + their frame files
+node scripts/gen-courier-sprites.mjs --list
+```
+
+### CI
+
+`.github/workflows/gen-courier-sprites.yml` (manual `workflow_dispatch` or the
+`.github/dispatch/gen-courier-sprites` marker) runs the prompt gate
+(`check-art-prompts.mjs --set courier`) **before** any paid FLUX, installs
+`@napi-rs/canvas` **before** the generator (slicing hard-requires the decoder,
+unlike the vehicle/enemy workflows), runs `FORCE=1 node
+scripts/gen-courier-sprites.mjs`, and commits `public/assets/courier/*.png` back to
+the branch. It is **separate** from `gen-sprites.yml` because the enemy's
+protected-frame-1 / missing-only semantics do not match the courier's atomic
+strips. Network FLUX is normally blocked in the local sandbox, so real art is
+produced here.
+
+---
+
 ## e2e-home.mjs — Deploy smoke test (E2E)
 
 Playwright E2E that guards the **deployment** against build and base-path

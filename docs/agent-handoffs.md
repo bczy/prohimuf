@@ -1239,3 +1239,35 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
     MAJOR + the cheap coherent guards); no unresolved CONFIRMED blocking/major finding remains
     after that patch. Re-run typecheck/vitest/lint/check-art-prompts on the patch before merge.
     No commit/push. (Winston / Senior Architect — panel triage)
+
+---
+
+## 2026-07-13 — dev-tooling-assets (Amelia): courier layered flipbook, tooling lane (ADR 0016)
+
+- **START/FINISH:** implemented the tooling lane of the "2-layer courier flipbook" feature.
+  Lane-scoped to scripts/CI/docs only; did NOT touch src/**, levelArt.json, or other
+  workflows (parallel lanes own src/render/** and src/game/levels/**tests**/\*\*). No commit/push.
+- **File List:**
+  - `scripts/gen-courier-sprites.mjs` (NEW) — strip-and-slice generator: loadCourier()
+    fail-fast, atomic per-layer skip/regen, one FLUX strip per layer sliced in-memory on a
+    fixed grid (@napi-rs/canvas), per-file cutout() reuse, --list/--placeholder/PLACEHOLDER/
+    FORCE/OUT_DIR, dependency-free procedural placeholders.
+  - `scripts/check-art-prompts.mjs` — extracted `checkBudgets(rep, ap, assembled)` to
+    top-level (pure refactor, enemies behaviour unchanged); added `checkCourier`; wired
+    `courier` into --set whitelist + `all`.
+  - `.github/workflows/gen-courier-sprites.yml` (NEW) — dispatch + ci(dispatch) guard,
+    prompt gate before paid FLUX, installs @napi-rs/canvas BEFORE the generator, FORCE=1
+    regen, bounded push-rebase-retry, failure artifact upload. Separate from gen-sprites.yml.
+  - `docs/adr/0016-layered-courier-flipbook-strip-and-slice.md` (NEW) + README index row.
+  - `docs/art-direction.md` §4.2, `scripts/SCRIPTS.md`, `docs/asset-pipeline.md`.
+- **Key decision (flagged for review):** the courier per-layer word budget is measured over
+  the strip-VARIABLE content (`exactly ${N} cells, ` + prompt + joined `cell i:` clauses),
+  NOT the full assembled strip. Folding the byte-identical shared opening (~31 w) + style
+  (~58 w) boilerplate into a multi-cell strip pushes EVERY layer past the 120-word ceiling
+  (bike 141, rider 180) regardless of content, making the budget meaningless. Scoped per the
+  sanctioned "adapt the courier set scope rather than reword the manifest" instruction; the
+  manifest was NOT reworded. Result: bike 53 w (target band, clean), rider 92 w (90-120 WARN
+  band, as specified), >120 still a hard error. Documented in a code comment in checkCourier.
+- **VERIFY:** `node --check` both scripts OK; `--list` OK; `check-art-prompts.mjs` (all) and
+  `--set courier` both PASS against the committed manifest (1 courier WARN = rider 92 w, by
+  design); enemies set unchanged; `yarn format:check` clean; workflow YAML parses (7 steps).

@@ -1,0 +1,107 @@
+name: Generate courier sprites
+
+# Regenerates the LAYERED courier flipbook (bike + rider) from the `courier`
+# block of src/game/levels/levelArt.json with real FLUX art. STRIP-AND-SLICE
+# (ADR 0016): one FLUX image per layer — a horizontal strip of frames.length
+# identical square cells — is sliced on a fixed grid into the per-frame PNGs,
+# chroma-keyed per file, and committed to the current branch.
+#
+# Why this is a SEPARATE workflow from gen-sprites.yml (the enemy flipbook):
+# the enemy set's frame semantics do not match the courier's.
+#   - enemies: frame 1 is protected accepted art (never regenerated), extra
+#     frames are generated MISSING-ONLY via kontext img2img off that committed
+#     frame 1.
+#   - courier: there is NO protected frame 1 — a layer is ATOMIC. Its frames are
+#     the sliced cells of a SINGLE generation, so if any one is missing (or
+#     FORCE=1) the WHOLE strip regenerates and every frame is rewritten. A shared
+#     workflow would have to special-case both regimes; keeping them apart keeps
+#     each simple.
+# Also, slicing HARD-requires @napi-rs/canvas (the decoder), so it is installed
+# BEFORE the generator here — unlike the vehicle/enemy workflows, where the
+# decoder is only needed for the optional chroma-key/style passes.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-courier-sprites (see docs/adr/0009). FORCE=1 so it
+# overwrites any committed placeholders (not just missing files).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-courier-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-courier-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # merge/rebase/revert pushes can match the paths filter; only explicit ci(dispatch): commits may fire it.
+    if: github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prompt gate (fail fast BEFORE any paid FLUX)
+        run: node scripts/check-art-prompts.mjs --set courier
+
+      - name: Install @napi-rs/canvas (slicing hard-requires the decoder)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          # Unlike the vehicle workflow, the decoder is needed by the GENERATOR
+          # itself (strip slicing), not only by the chroma-key step — so it is
+          # installed BEFORE the generator runs.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate courier sprites (FLUX strip → slice → chroma-key)
+        run: FORCE=1 node scripts/gen-courier-sprites.mjs
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the courier dir.
+          git add -f public/assets/courier/*.png
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate layered courier flipbook (bike/rider)"
+            # Bounded retry: another push may land while we generated. Push first
+            # (normal case); on rejection rebase with --autostash (the generation
+            # step can leave unstaged files that would abort a bare rebase) and
+            # retry, max 3 attempts. The if: failure() upload below preserves the
+            # assets so no paid generation is lost.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: courier-sprites-unpushed
+          path: public/assets/courier/*.png
+          if-no-files-found: warn
+          retention-days: 14
