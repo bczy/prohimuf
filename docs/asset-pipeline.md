@@ -68,6 +68,21 @@ but gitignored by default to avoid bloat.
 
 ---
 
+## Enemy sprite flipbook frames
+
+Enemy archetypes carry a minimal 2-frame flip (6 fps) as **separate PNG frame
+files** with an `_f<N>` suffix after the variant suffix (`enemy_shooting_2_f2.png`),
+defined in the `enemies` block of `src/game/levels/levelArt.json` (ADR 0015). The
+frame files flow through the pipeline unchanged: `scripts/gen-enemy-types.mjs`
+reads the manifest and generates only the missing `_f<N>` files (frame 1 is the
+committed accepted art, never regenerated) via kontext img2img from frame 1;
+`scripts/cutout-enemies.mjs` then chroma-keys them because they match its existing
+`enemy_*.png` glob; and `.github/workflows/gen-sprites.yml` commits them with **no
+structural change** (the glob already covers them, committed pre-keyed files stay
+skipped per ADR 0013).
+
+---
+
 ## Future: Level Editor Assets
 
 When the level editor is built,

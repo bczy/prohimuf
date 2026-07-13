@@ -63,6 +63,7 @@
  * Usage:
  *   node scripts/check-art-prompts.mjs                # lint everything
  *   node scripts/check-art-prompts.mjs --set vehicles # only the vehicles block
+ *   node scripts/check-art-prompts.mjs --set enemies   # only the enemies block
  *   node scripts/check-art-prompts.mjs --set levels    # only the levels block
  * Exit: 0 when there are no ERROR-level violations (WARNs allowed); 1 otherwise.
  */
@@ -198,6 +199,22 @@ const STYLE_TOKENS = [
       /\bnon-?photoreal\b/i,
       /\banti-?photoreal\b/i,
     ],
+  },
+];
+
+// Enemy flipbook `style` tail concepts (checked on `enemies.style`). Enemies are
+// baked-style pixel sprites keyed off a solid BLACK ground — the neon-forbidden
+// rule (ADR 0011) is VEHICLE-only and is deliberately NOT applied here (the enemy
+// style legitimately names "pale neon tones"). Only two concepts are contract:
+// the black chroma ground the cutout keys, and the pixel-art medium.
+const ENEMY_STYLE_TOKENS = [
+  {
+    name: "solid black background (#000000)",
+    any: [/#000000/i, /\bblack background\b/i, /\bmatte black\b/i],
+  },
+  {
+    name: "pixel-art medium",
+    any: [/\bpixel art\b/i, /\bsprite\b/i],
   },
 ];
 
@@ -348,6 +365,89 @@ function checkVehicles(vehicles, rep) {
   }
 }
 
+// Enemy flipbook contract (story-enemy-sprite-flipbook). The generator
+// (gen-enemy-types.mjs) reads the same `enemies` block: per type a pinned
+// integer `seed`, a non-empty subject `prompt`, and a `frames` array whose first
+// entry is "" (the committed frame-1 PNG, never a delta clause) and whose
+// i>0 entries are non-empty pose-delta clauses for the `_f<i+1>.png` frame files
+// (1..4 frames). The shared `style` tail must carry the black chroma ground the
+// cutout keys and the pixel-art medium. Reuses the negation + word budgets over
+// the assembled frame-1 prompt (base + style); the vehicle-only neon-forbidden
+// and scenery rules do NOT apply to enemies.
+function checkEnemies(enemies, rep) {
+  if (!enemies) {
+    rep.error("enemies", "missing `enemies` block");
+    return;
+  }
+
+  const style = enemies.style ?? "";
+  if (!style.trim()) {
+    rep.error("enemies.style", "missing/empty — required shared style tail");
+  } else {
+    for (const tok of ENEMY_STYLE_TOKENS) {
+      if (!tok.any.some((re) => re.test(style))) {
+        rep.error("enemies.style", `missing required token: ${tok.name}`);
+      }
+    }
+  }
+
+  const types = enemies.types ?? {};
+  for (const [key, def] of Object.entries(types)) {
+    const p = `enemies.types.${key}`;
+    const prompt = def.prompt ?? "";
+
+    if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
+    if (!Number.isInteger(def.seed)) rep.error(`${p}.seed`, "seed must be an integer");
+
+    const frames = def.frames;
+    if (!Array.isArray(frames) || frames.length < 1 || frames.length > 4) {
+      rep.error(`${p}.frames`, "must be an array of length 1-4");
+    } else {
+      if (frames[0] !== "") {
+        rep.error(
+          `${p}.frames[0]`,
+          'frame 1 must be an empty string "" (the committed unsuffixed PNG, never a delta clause)',
+        );
+      }
+      for (let i = 1; i < frames.length; i++) {
+        if (typeof frames[i] !== "string" || !frames[i].trim()) {
+          rep.error(`${p}.frames[${i}]`, "delta clause must be a non-empty string");
+        }
+      }
+    }
+
+    // Negation + word budgets over the assembled frame-1 prompt (base + style),
+    // the same helpers the vehicles set uses.
+    if (prompt.trim()) {
+      const assembled = `${prompt}${style}`;
+      const ap = `${p} (assembled)`;
+
+      const negs = countNegations(assembled);
+      if (negs > NEG_ERROR_OVER) {
+        rep.error(
+          ap,
+          `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
+        );
+      } else if (negs > NEG_WARN_OVER) {
+        rep.warn(
+          ap,
+          `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+        );
+      }
+
+      const words = wordCount(assembled);
+      if (words > WORD_HARD_MAX) {
+        rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
+      } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
+        rep.warn(
+          ap,
+          `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`,
+        );
+      }
+    }
+  }
+}
+
 function checkLevels(levels, rep) {
   if (!Array.isArray(levels)) {
     rep.error("levels", "missing or non-array `levels`");
@@ -377,8 +477,8 @@ function main() {
   const args = process.argv.slice(2);
   const si = args.indexOf("--set");
   const set = si !== -1 ? args[si + 1] : "all";
-  if (!["all", "vehicles", "levels"].includes(set)) {
-    console.error(`Unknown --set "${set}" (expected: vehicles | levels)`);
+  if (!["all", "vehicles", "enemies", "levels"].includes(set)) {
+    console.error(`Unknown --set "${set}" (expected: vehicles | enemies | levels)`);
     process.exit(2);
   }
 
@@ -386,6 +486,7 @@ function main() {
   const rep = makeReport();
 
   if (set === "all" || set === "vehicles") checkVehicles(json.vehicles, rep);
+  if (set === "all" || set === "enemies") checkEnemies(json.enemies, rep);
   if (set === "all" || set === "levels") checkLevels(json.levels, rep);
 
   const rel = path.relative(ROOT, LEVEL_ART);

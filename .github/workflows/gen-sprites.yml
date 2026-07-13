@@ -1,8 +1,13 @@
 name: Generate enemy-type sprites
 
-# Generation of the extra enemy archetype sprites. Generates only MISSING
-# files, chroma-keys them, and commits them to the current branch. Deliberate
-# runs only: manual (workflow_dispatch) or by touching the dispatch marker
+# Generation of the enemy archetype sprites AND their flipbook frames. Enemies
+# carry a minimal 2-frame flip (6 fps) as separate PNGs named `_f<N>` after the
+# variant suffix (enemy_shooting_2_f2.png), defined in the `enemies` block of
+# levelArt.json (ADR 0015). These frame files match the enemy_*.png glob below,
+# so cutout/commit need NO structural change. Generates only MISSING files (in
+# practice just the _f<N> frames — committed frame-1 art is never regenerated),
+# chroma-keys them, and commits them to the current branch. Deliberate runs only:
+# manual (workflow_dispatch) or by touching the dispatch marker
 # .github/dispatch/gen-sprites (see docs/adr/0009). The sprites are already
 # committed, so this is just a regeneration tool — running it on every push
 # re-keyed existing sprites and created noise.

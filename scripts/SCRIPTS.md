@@ -428,6 +428,46 @@ track whatever art was generated.
 
 ---
 
+## gen-enemy-types.mjs — Enemy sprite flipbook frames
+
+Generates the enemy archetype sprites (base cops + variants, riot/CRS,
+motorcycle cop, delivery civilian, bonus figure) as a **2-frame flipbook**
+(6 fps, Prohibition-1987 register) — light tones on a pure-black ground that
+`cutout-enemies.mjs` keys to transparency afterwards.
+
+- **Single source of truth:** the `enemies` block of
+  `src/game/levels/levelArt.json` (`style`, `fps`, `size`, and `types` keyed by
+  the exact base filename with `{ seed, prompt, frames }`). Add or tune an enemy
+  **there**, never in the script (mirrors `gen-vehicle-sprites.mjs`).
+- **Frame files:** `frames[0]` is always `""` → `<key>.png` (the committed
+  accepted frame 1, never regenerated); `frames[i>0]` is a pose-delta clause →
+  `<key>_f<i+1>.png`. The `_f` prefix sits **after** the legacy variant suffix so
+  `enemy_shooting_2_f2.png` = cop variant 2, shooting, frame 2 (ADR 0015).
+- **Frame ≥2 strategy (logged per file):** primary `kontext` img2img from the
+  committed frame 1 (`image=` set to its raw GitHub URL) so the extra frame is the
+  same character in a new pose; fallback = matched flux pair under the pinned seed
+  (regenerates frame 1 + frame 2, overwriting the accepted frame 1 → human art
+  gate in the PR).
+- **Output:** `public/assets/enemy_*.png`. Only MISSING files are generated
+  (`FORCE=1` overrides); in practice only the `_f2` files are produced.
+
+### Commands
+
+```bash
+# Generate missing frames via Pollinations, then chroma-key (CI usage)
+node scripts/gen-enemy-types.mjs && node scripts/cutout-enemies.mjs
+
+# Regenerate everything (overwrite committed frames)
+FORCE=1 node scripts/gen-enemy-types.mjs
+```
+
+A failed fetch is logged per-asset and never crashes the run (network FLUX is
+normally blocked in the local sandbox; real art is produced in CI via
+`.github/workflows/gen-sprites.yml`, whose `enemy_*.png` glob already covers the
+new frame files — no structural workflow change).
+
+---
+
 ## gen-vehicle-sprites.mjs — Delivery-vehicle sprites (truck / car / moto)
 
 Generates the side-profile delivery-vehicle sprites for the scripted "protect
