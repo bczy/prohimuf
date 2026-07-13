@@ -157,3 +157,91 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
     }
   });
 });
+
+/**
+ * Cross-lane contract: keep the courier flipbook manifest (levelArt.json
+ * `courier` block) in sync with the two-layer scheme the renderer composites in
+ * `src/render/scene/CourierSprite.tsx`. The renderer requests exactly the
+ * `bike` and `rider` layer keys, stacks them as two planes, and drives each as
+ * a strip-sliced flipbook (ADR 0016).
+ *
+ * These checks are deliberately LOOSE (vehicles-style register, not the
+ * ARCHETYPES-strict enemies register): they validate shape and bounds, not a
+ * closed key set — the courier is a single fixed entity, not an archetype
+ * table. The manifest is owned by another lane: these tests only *read* it. A
+ * failure here is a contract mismatch to report, not a manifest to "fix".
+ */
+interface CourierLayerEntry {
+  readonly asset: string;
+  readonly seed: number;
+  readonly prompt: string;
+  readonly frames: readonly string[];
+  readonly scale: number;
+  readonly offsetY: number;
+}
+
+describe("levelArt.json courier layered flipbook ↔ CourierSprite layer contract", () => {
+  const courier = manifest.courier;
+  const layers = courier.layers as Record<string, CourierLayerEntry>;
+  // The exact keys src/render/scene/CourierSprite.tsx requests (bike under rider).
+  const LAYER_KEYS = ["bike", "rider"] as const;
+
+  it("defines both the bike and rider layers the renderer composites", () => {
+    expect(layers.bike, 'missing courier layer "bike"').toBeDefined();
+    expect(layers.rider, 'missing courier layer "rider"').toBeDefined();
+  });
+
+  it("every layer has a positive-integer seed, non-empty prompt and a valid frames flipbook", () => {
+    for (const key of LAYER_KEYS) {
+      const layer = layers[key];
+      expect(layer, `missing courier layer "${key}"`).toBeDefined();
+      if (!layer) continue;
+
+      expect(Number.isInteger(layer.seed), `${key}.seed integer`).toBe(true);
+      expect(layer.seed, `${key}.seed positive`).toBeGreaterThan(0);
+      expect(layer.prompt.trim().length, `${key}.prompt non-empty`).toBeGreaterThan(0);
+
+      expect(Array.isArray(layer.frames), `${key}.frames array`).toBe(true);
+      expect(layer.frames.length, `${key}.frames >= 2`).toBeGreaterThanOrEqual(2);
+      expect(layer.frames.length, `${key}.frames <= 8`).toBeLessThanOrEqual(8);
+      // Deliberate difference from the enemies block, whose frames[0] === "" is a
+      // protected committed-base sentinel: EVERY courier frame is a real,
+      // non-empty pose clause (its own strip cell — see the manifest $comment).
+      for (const frame of layer.frames) {
+        expect(frame.trim().length, `${key} frame non-empty`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("every layer has render registration knobs: scale > 0 and finite offsetY", () => {
+    for (const key of LAYER_KEYS) {
+      const layer = layers[key];
+      expect(layer, `missing courier layer "${key}"`).toBeDefined();
+      if (!layer) continue;
+      expect(layer.scale, `${key}.scale > 0`).toBeGreaterThan(0);
+      expect(Number.isFinite(layer.offsetY), `${key}.offsetY finite`).toBe(true);
+    }
+  });
+
+  it("every layer asset path is non-empty, courier-scoped and unique across layers", () => {
+    const assets = LAYER_KEYS.map((key) => layers[key]?.asset ?? "");
+    for (const asset of assets) {
+      expect(asset.trim().length, "asset non-empty").toBeGreaterThan(0);
+      expect(asset.startsWith("assets/courier/"), `asset "${asset}" under assets/courier/`).toBe(
+        true,
+      );
+    }
+    expect(new Set(assets).size, "assets unique across layers").toBe(assets.length);
+  });
+
+  it("has sane block-level fps / size / opening / style metadata", () => {
+    expect(Number.isFinite(courier.fps)).toBe(true);
+    expect(courier.fps).toBeGreaterThan(0);
+    expect(Number.isInteger(courier.size.width)).toBe(true);
+    expect(courier.size.width).toBeGreaterThan(0);
+    expect(Number.isInteger(courier.size.height)).toBe(true);
+    expect(courier.size.height).toBeGreaterThan(0);
+    expect(courier.opening.trim().length).toBeGreaterThan(0);
+    expect(courier.style.trim().length).toBeGreaterThan(0);
+  });
+});
