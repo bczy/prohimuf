@@ -64,17 +64,26 @@
       "enemy_shooting": {
         "seed": 4804,
         "prompt": "a plainclothes french cop wearing a cap, aiming a handgun forward at the viewer, muzzle flash",
-        "frames": ["", "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"]
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
       },
       "enemy_shooting_2": {
         "seed": 4805,
         "prompt": "a plainclothes cop in a leather jacket aiming a handgun forward at the viewer, muzzle flash",
-        "frames": ["", "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"]
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
       },
       "enemy_shooting_3": {
         "seed": 4806,
         "prompt": "a plainclothes cop with sunglasses aiming a handgun forward at the viewer, muzzle flash",
-        "frames": ["", "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"]
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
       },
       "enemy_riot": {
         "seed": 4807,
