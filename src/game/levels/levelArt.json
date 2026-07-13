@@ -139,14 +139,14 @@
       "rider": {
         "asset": "assets/courier/rider.png",
         "seed": 5220,
-        "prompt": "a pale grey and white bicycle courier crouched low in cycling posture, torso leaning forward, arms reaching down to handlebar grip height, knees bent mid pedal stroke, bike helmet and insulated delivery backpack",
+        "prompt": "the upper body of a bicycle courier in side profile leaning forward in riding posture, arms reaching down to handlebar grip height, bike helmet, insulated delivery backpack, torso ending at hip height",
         "frames": [
-          "near leg pressed down, far leg lifted up",
-          "near leg down and forward, far leg up and back",
-          "near leg rising forward, far leg dropping back",
-          "near leg lifted up, far leg pressed down",
-          "near leg up and back, far leg down and forward",
-          "near leg dropping back, far leg rising forward"
+          "pedal stroke phase one of six",
+          "pedal stroke phase two of six",
+          "pedal stroke phase three of six",
+          "pedal stroke phase four of six",
+          "pedal stroke phase five of six",
+          "pedal stroke phase six of six"
         ],
         "scale": 1.05,
         "offsetY": 0.08

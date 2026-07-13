@@ -64,9 +64,11 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Generate courier sprites (one FLUX image per frame → chroma-key)
-        # --layer bike: Bertrand's sequencing — the bike layer is validated at
-        # the art gate first; drop the flag to regenerate the rider as well.
-        run: FORCE=1 node scripts/gen-courier-sprites.mjs --layer bike
+        # --layer rider: the bike layer passed the art gate and is committed —
+        # do not churn it. The rider frames >= 2 are FLUX throwaways: the legs
+        # retouch (like the bike spokes) will derive every frame from the
+        # rider.png base once its geometry is tuned at the art gate.
+        run: FORCE=1 node scripts/gen-courier-sprites.mjs --layer rider
 
       - name: Stamp rotating spokes on the bike frames (scripted retouch)
         # Derives every bike frame from the single FLUX base with the tri-spoke
