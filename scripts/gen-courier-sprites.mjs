@@ -4,16 +4,17 @@
  * BIKE (wheel rotation) drawn UNDER a RIDER (pedaling cycle), composited as two
  * stacked planes render-side (src/render/scene/CourierSprite.tsx, ADR 0015/0016).
  *
- * STRIP-AND-SLICE (ADR 0016). Unlike the enemy flipbook (gen-enemy-types.mjs),
- * the courier layers have NO protected committed frame 1 to kontext-lock onto:
- * every cell is a distinct pose in one continuous cycle, so a per-frame img2img
- * chain would drift. Instead each layer is ONE FLUX image — a horizontal strip of
- * `frames.length` identical square cells (strip width = size.width * N, always
- * DERIVED, never stored in the manifest) — that is sliced on a FIXED grid into the
- * per-frame PNGs and chroma-keyed per file (cutout-enemies.mjs cutout(), the same
- * black-ground keyer the enemies use). Because two cells only match if they came
- * from the SAME generation, a layer is ATOMIC: if ANY of its frame files is
- * missing (or FORCE=1), the WHOLE strip regenerates and every frame is rewritten.
+ * PER-FRAME GENERATION (ADR 0016, amended). Each frame is ONE dedicated FLUX
+ * image: the layer's base prompt + that frame's pose clause, under the layer's
+ * SINGLE pinned seed (same seed + near-identical prompt => stable composition
+ * for a rigid subject, so only the described delta moves). The whole subject
+ * appears in every image — nothing is ever sliced out of a larger picture.
+ * (The original strip-and-slice strategy was retired after two CI iterations:
+ * FLUX would not respect per-cell containment and subjects were cut across
+ * cells.) Each PNG is chroma-keyed per file (cutout-enemies.mjs cutout(), the
+ * same black-ground keyer the enemies use). Frame consistency depends on the
+ * shared seed, so a layer stays ATOMIC: if ANY of its frame files is missing
+ * (or FORCE=1), ALL its frames regenerate together.
  *
  * Single source of truth: the `courier` block of src/game/levels/levelArt.json
  * (opening, style, size, per-layer seed/prompt/frames/scale/offsetY). Add or tune
@@ -33,6 +34,7 @@
  * Usage:
  *   node scripts/gen-courier-sprites.mjs                 # generate missing layers (network FLUX)
  *   FORCE=1 node scripts/gen-courier-sprites.mjs         # regenerate ALL layers (network FLUX)  [CI]
+ *   node scripts/gen-courier-sprites.mjs --layer bike    # restrict to one layer (art-gate iteration)
  *   node scripts/gen-courier-sprites.mjs --placeholder   # write procedural placeholder frames (no network)
  *   node scripts/gen-courier-sprites.mjs --list          # list defined layers + frame files
  */
@@ -50,17 +52,12 @@ const FORCE = process.env.FORCE === "1";
 
 // ── Load the courier layer definitions from levelArt.json (single source) ─────
 // Fails fast on any contract violation so a malformed manifest never serializes
-// a broken FLUX URL or slices a wrong-sized grid (mirrors loadEnemies' fail-fast
-// seed guard). The per-frame `cell N` count is DERIVED from frames.length and is
-// deliberately NOT a manifest field.
+// a broken FLUX URL (mirrors loadEnemies' fail-fast seed guard).
 //
-// Strip prompt assembly (the exact string sent to FLUX per layer):
-//   opening
-//   + `exactly ${N} cells, `                       (N = frames.length, derived)
-//   + prompt                                        (the layer subject/silhouette)
-//   + ", "
-//   + frames.map((c, i) => `cell ${i + 1}: ${c}`).join("; ")   (one pose per cell)
-//   + style                                         (verbatim shared house tail)
+// Per-frame prompt assembly (the exact string sent to FLUX, one call per frame):
+//   opening + prompt + ", " + frames[i] + style
+// Every frame of a layer shares the SAME pinned seed so the composition stays
+// stable and only the pose clause moves.
 function loadCourier() {
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
   const block = json.courier;
@@ -100,15 +97,13 @@ function loadCourier() {
       }
     });
 
-    const N = frames.length;
     // Per-frame file list: frame 1 unsuffixed, frame N>=2 gets `_f<N>` inserted
     // before the extension (courier layer keys carry NO `enemy_` prefix, so the
     // enemy batch glob /^enemy_.*\.png$/ never touches these files).
     const files = frames.map((_, i) => (i === 0 ? `${name}.png` : `${name}_f${i + 1}.png`));
-    // The `exactly ${N} cells,` count is derived here — never stored in the
-    // manifest — so N and the actual cell clauses can never drift apart.
-    const cells = frames.map((c, i) => `cell ${i + 1}: ${c}`).join("; ");
-    const stripPrompt = `${opening}exactly ${N} cells, ${prompt}, ${cells}${style}`;
+    // One full prompt per frame: whole subject in every image, only the pose
+    // clause varies, seed shared across the layer.
+    const framePrompts = frames.map((clause) => `${opening}${prompt}, ${clause}${style}`);
 
     return {
       name,
@@ -120,10 +115,8 @@ function loadCourier() {
       offsetY: def.offsetY ?? 0.0,
       cellW,
       cellH,
-      stripW: cellW * N, // DERIVED strip width (768 for 3-cell bike, 1536 for 6-cell rider)
-      stripH: cellH,
       files,
-      stripPrompt,
+      framePrompts,
     };
   });
 
@@ -358,43 +351,47 @@ function drawPlaceholderCells(layer) {
 function regenReason(layer) {
   if (FORCE) return "FORCE=1";
   const missing = layer.files.find((f) => !fs.existsSync(path.join(OUT_DIR, f)));
-  return missing ? `${missing} missing; strip is atomic` : null;
+  return missing ? `${missing} missing; layer is atomic` : null;
 }
 
-// Slice the strip buffer into per-cell buffers on the FIXED grid. Collects ALL
-// cell buffers before returning so the caller can write them atomically — a slice
-// that throws leaves nothing half-written.
-async function sliceStrip(buf, layer) {
-  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
-  const img = await loadImage(buf);
-  // The fixed grid is only valid on a strip of the exact requested dimensions —
-  // a clamped/rescaled/fallback FLUX return would slice garbage silently.
-  if (img.width !== layer.stripW || img.height !== layer.stripH) {
-    throw new Error(
-      `strip is ${img.width}x${img.height}, expected ${layer.stripW}x${layer.stripH}`,
-    );
-  }
-  const { cellW, cellH } = layer;
+// Fetch every frame of a layer — one FLUX call per frame under the layer's
+// shared pinned seed, the whole subject in every image. Collects ALL buffers
+// before returning so the caller can write them atomically — a failed fetch
+// leaves nothing half-written.
+async function fetchLayerFrames(layer) {
   const cells = [];
-  for (let i = 0; i < layer.frames.length; i++) {
-    const canvas = createCanvas(cellW, cellH);
-    const ctx = canvas.getContext("2d");
-    // Fixed grid regardless of content: cell i is the i-th cellW-wide column.
-    ctx.drawImage(img, i * cellW, 0, cellW, cellH, 0, 0, cellW, cellH);
-    cells.push(canvas.toBuffer("image/png"));
+  for (let i = 0; i < layer.framePrompts.length; i++) {
+    console.log(
+      `  [gen]  ${layer.files[i]} — frame ${i + 1}/${layer.frames.length} (flux, seed=${layer.seed})`,
+    );
+    cells.push(
+      await fetchWithRetry(fluxUrl(layer.framePrompts[i], layer.seed, layer.cellW, layer.cellH)),
+    );
+    await sleep(2000);
   }
   return cells;
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const { layers } = loadCourier();
+  let { layers } = loadCourier();
+
+  // --layer <name>: restrict the run to one layer (art-gate iteration flow —
+  // e.g. rework the bike while the rider is on hold).
+  const layerFlag = args.indexOf("--layer");
+  if (layerFlag !== -1) {
+    const wanted = args[layerFlag + 1];
+    layers = layers.filter((l) => l.name === wanted);
+    if (layers.length === 0) {
+      throw new Error(`--layer ${wanted}: no such layer in courier.layers`);
+    }
+  }
 
   if (args.includes("--list")) {
     console.log("Defined courier layers (from levelArt.json):");
     for (const l of layers) {
       console.log(
-        `  ${l.name.padEnd(6)} ${l.frames.length} cells  strip ${l.stripW}x${l.stripH}  → ${l.files.join(", ")}`,
+        `  ${l.name.padEnd(6)} ${l.frames.length} frames ${l.cellW}x${l.cellH}  → ${l.files.join(", ")}`,
       );
     }
     return;
@@ -417,33 +414,15 @@ async function main() {
     }
     console.log(`  [regen-all] ${layer.name} — ${reason}`);
 
-    // Collect ALL frame buffers first, then write — never a half-written strip.
+    // Collect ALL frame buffers first, then write — never a half-written layer.
     let cells;
     if (placeholder) {
       cells = drawPlaceholderCells(layer);
     } else {
-      console.log(
-        `  [gen]  ${layer.name} — strip ${layer.stripW}x${layer.stripH} (flux, seed=${layer.seed})`,
-      );
-      let buf;
       try {
-        buf = await fetchWithRetry(
-          fluxUrl(layer.stripPrompt, layer.seed, layer.stripW, layer.stripH),
-        );
+        cells = await fetchLayerFrames(layer);
       } catch (e) {
-        console.log(`  [fail] ${layer.name} — strip fetch failed: ${e.message}`);
-        failures++;
-        continue;
-      }
-      console.log(
-        `  [ok]   ${layer.name} — strip ${buf.length} bytes; slicing ${layer.frames.length} cells`,
-      );
-      try {
-        // Slicing HARD-requires @napi-rs/canvas (unlike vehicles, where the decoder
-        // is only needed for the optional keying). Absent decoder → nothing written.
-        cells = await sliceStrip(buf, layer);
-      } catch (e) {
-        console.log(`  [fail] ${layer.name} — slice failed: ${e.message}; nothing written`);
+        console.log(`  [fail] ${layer.name} — frame fetch failed: ${e.message}; nothing written`);
         failures++;
         continue;
       }

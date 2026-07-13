@@ -579,45 +579,20 @@ function checkCourier(courier, rep) {
       });
     }
 
-    // Budgets over the assembled STRIP prompt, reconstructed EXACTLY as
-    // gen-courier-sprites.mjs assembles the strip-variable segment:
-    //   `exactly ${N} cells, ` + prompt + ", " + cells.join("; ")
-    // where cells[i] = `cell ${i + 1}: ${frames[i]}`. The N-cell count is DERIVED
-    // from frames.length (never a manifest field), matching the generator.
-    //
-    // SCOPE NOTE (adapted courier set scope, not a manifest reword): the shared
-    // `opening` (~31 w) + `style` (~58 w) boilerplate is byte-identical across
-    // every layer and already vetted as the house tail; folding it into a
-    // multi-cell strip would push EVERY courier layer past the 120-word ceiling
-    // regardless of content, making the budget meaningless. So the per-layer
-    // budget is measured over the strip-VARIABLE content — the part that actually
-    // grows with cell count. The rider strip legitimately lands in the 90-120 word
-    // WARN band (six load-bearing pose clauses, one per pedaling phase); >120 stays
-    // a hard error. The bike strip sits comfortably in the 30-90 target band.
+    // Budgets over each ASSEMBLED PER-FRAME prompt, reconstructed EXACTLY as
+    // gen-courier-sprites.mjs sends it (one FLUX call per frame, ADR 0016
+    // amended): opening + prompt + ", " + frames[i] + style. Per-frame prompts
+    // are short, so the FULL assembly is budgeted — negations included; the old
+    // strip-variable scoping was retired together with the strip strategy.
     if (prompt.trim() && Array.isArray(frames) && frames.length >= 2) {
-      const okClauses = frames.every((c) => typeof c === "string" && c.trim());
-      if (okClauses) {
-        const N = frames.length;
-        const cells = frames.map((c, i) => `cell ${i + 1}: ${c}`).join("; ");
-        const variable = `exactly ${N} cells, ${prompt}, ${cells}`;
-        checkBudgets(rep, `${p} (assembled strip)`, variable);
-        // Negations are ALSO scanned over the FULL assembly actually sent
-        // (opening + variable + style): the word budget legitimately excludes the
-        // byte-identical house tail (SCOPE NOTE above), but a stray negation in
-        // any slot must never escape the scan.
-        const fullNegs = countNegations(`${opening}${variable}${style}`);
-        if (fullNegs > NEG_ERROR_OVER) {
-          rep.error(
-            `${p} (full strip incl. house tail)`,
-            `${fullNegs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
-          );
-        } else if (fullNegs > NEG_WARN_OVER) {
-          rep.warn(
-            `${p} (full strip incl. house tail)`,
-            `${fullNegs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
-          );
-        }
-      }
+      frames.forEach((clause, i) => {
+        if (typeof clause !== "string" || !clause.trim()) return; // shape error reported above
+        checkBudgets(
+          rep,
+          `${p}.frames[${i}] (assembled)`,
+          `${opening}${prompt}, ${clause}${style}`,
+        );
+      });
     }
   }
 }

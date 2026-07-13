@@ -536,31 +536,32 @@ two stacked planes render-side (bike below rider, ADR 0016).
   `src/game/levels/levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers`
   keyed `bike` / `rider` with `{ asset, seed, prompt, frames, scale, offsetY }`).
   Add or tune a layer **there**, never in the script.
-- **Strip-and-slice (not per-frame).** Unlike the enemy flip, the courier has **no
-  protected frame 1**. Each layer is ONE FLUX image — a horizontal strip of
-  `frames.length` identical square cells (strip width = `size.width * N`, always
-  **derived**, never stored) — sliced in memory (`@napi-rs/canvas`) on a fixed grid
-  into the per-frame PNGs, then chroma-keyed per file by importing `cutout()` from
-  `cutout-enemies.mjs`.
+- **Per-frame generation (ADR 0016, amended — strips retired).** Unlike the enemy
+  flip, the courier has **no protected frame 1**. Every `frames[i]` pose clause
+  becomes ONE dedicated FLUX image (`opening` + `prompt` + `, ` + clause +
+  `style`) under the layer's **single pinned seed** — the whole subject appears
+  in every image, nothing is sliced out of a larger picture. Each PNG is then
+  chroma-keyed per file by importing `cutout()` from `cutout-enemies.mjs`.
 - **Atomic layer.** A layer is skipped only when **all** its frame files exist and
-  `FORCE !== 1`; if **any** frame is missing (or `FORCE=1`) the **whole strip
-  regenerates** and every frame is overwritten (loud `[regen-all]` log). All sliced
-  buffers are collected before any file is written — a failed fetch or slice never
-  leaves a half-written strip.
+  `FORCE !== 1`; if **any** frame is missing (or `FORCE=1`) **all** its frames
+  regenerate together (loud `[regen-all]` log — shared-seed consistency). All
+  frame buffers are collected before any file is written — a failed fetch never
+  leaves a half-written layer.
 - **Frame files:** frame 1 unsuffixed `<layer>.png`, frame N≥2 `<layer>_f<N>.png`,
-  under `public/assets/courier/`. Every `frames[i]` is a non-empty pose clause
-  (cell `i+1`); the strip prompt is `opening` + `exactly ${N} cells, ` + `prompt` +
-  the joined `cell i: clause` clauses + `style`.
+  under `public/assets/courier/`.
 - **Output:** `public/assets/courier/{bike,rider}*.png`.
 
 ### Commands
 
 ```bash
-# Generate missing layers via Pollinations/FLUX, slice + chroma-key (needs network + canvas)
+# Generate missing layers via Pollinations/FLUX + chroma-key (needs network + canvas)
 node scripts/gen-courier-sprites.mjs
 
 # Regenerate ALL layers (overwrite), used in CI
 FORCE=1 node scripts/gen-courier-sprites.mjs
+
+# Restrict to one layer (art-gate iteration, e.g. bike-first sequencing)
+FORCE=1 node scripts/gen-courier-sprites.mjs --layer bike
 
 # No network? Write dependency-free procedural placeholder frames (local testing only)
 node scripts/gen-courier-sprites.mjs --placeholder

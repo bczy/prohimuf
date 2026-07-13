@@ -118,16 +118,16 @@
     }
   },
   "courier": {
-    "$comment": "Street-courier (livreur) LAYERED flipbook: BIKE (wheel rotation) drawn under RIDER (pedaling cycle), composited as two stacked planes in src/render/scene/CourierSprite.tsx. Single source of truth for scripts/gen-courier-sprites.mjs. STRIP-AND-SLICE (ADR 0016): one FLUX image per layer — a horizontal strip of frames.length identical square cells (strip width = size.width * frames.length, always derived, never stored) — sliced into per-frame PNGs on a fixed grid and chroma-keyed per file (cutout-enemies.mjs cutout()). UNLIKE enemies, every frames[i] is a NON-EMPTY pose clause (cell i+1 of the strip); there is no protected committed frame 1 — if ANY frame file of a layer is missing, the WHOLE strip regenerates (frames from two generations are not the same character, so the layer is atomic). Files: public/assets/courier/<layer>.png + <layer>_f<N>.png (frame 1 unsuffixed). scale/offsetY are render-side registration knobs (relative to the courier plane, world units) tuned at the art gate; z-order (bike under rider) is fixed in code. The rider layer is described POSITIVELY as a figure in riding posture (art bible §3: never negate — never write 'without bike').",
+    "$comment": "Street-courier (livreur) LAYERED flipbook: BIKE (wheel rotation) drawn under RIDER (pedaling cycle), composited as two stacked planes in src/render/scene/CourierSprite.tsx. Single source of truth for scripts/gen-courier-sprites.mjs. PER-FRAME GENERATION (ADR 0016, amended — the strip-and-slice strategy was retired after two CI iterations cut subjects across cells): each frames[i] is a NON-EMPTY pose clause and becomes ONE dedicated FLUX image (opening + prompt + clause + style) under the layer's single pinned seed, so the whole subject appears in every image and only the described delta moves. Each PNG is chroma-keyed per file (cutout-enemies.mjs cutout()). No protected committed frame 1 — if ANY frame file of a layer is missing (or FORCE=1), ALL its frames regenerate together (shared-seed consistency makes the layer atomic). Files: public/assets/courier/<layer>.png + <layer>_f<N>.png (frame 1 unsuffixed). scale/offsetY are render-side registration knobs tuned at the art gate; z-order (bike under rider) is fixed in code. Sequencing (Bertrand): the BIKE layer is validated first (only the wheels turn, the whole bike visible in every frame); the RIDER layer follows once the bike passes the art gate. The rider is described POSITIVELY (art bible §3: never negate — never write 'without bike').",
     "fps": 6,
     "size": { "width": 256, "height": 256 },
-    "opening": "Flat 2D video game sprite sheet arranged as a filmstrip, strict side view, a single horizontal row of separate equal square cells side by side, each square cell holds one complete subject drawn small and whole and fully inside that cell, every subject identical and centered in its own cell, a thick solid black gutter separating each cell from the next, ",
-    "style": ", crisp clean pixel art game sprite, monochrome pale grey and off-white figure, desaturated greyscale fanzine photocopy tones, bold high-contrast shapes, on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat pure black filling every gap between cells and every gap between the figure's limbs, sharp cutout edges, clean plain artwork",
+    "opening": "Flat 2D video game sprite, strict side view in orthographic projection, one single complete subject centered and fully visible with black margin on every side, ",
+    "style": ", crisp clean pixel art game sprite, light grey white and pale tones figure, simple bold shapes, high contrast, on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every gap between the figure's parts, sharp cutout edges, clean plain artwork",
     "layers": {
       "bike": {
         "asset": "assets/courier/bike.png",
         "seed": 5210,
-        "prompt": "three separate identical complete small delivery bicycles in a row, one bike per cell, each empty bicycle in full side profile with both spoked wheels visible, step-through steel frame, rear cargo rack, bare saddle and bare pedals, each whole bike fitting inside its own square cell",
+        "prompt": "an empty delivery bicycle in full side profile, the whole bicycle fully visible inside the frame, both spoked wheels with three bold visible spokes, step-through steel frame, rear cargo rack, bare saddle and bare pedals",
         "frames": [
           "both wheel spokes upright in a Y",
           "both wheel spokes rotated one third of a turn",
@@ -139,7 +139,7 @@
       "rider": {
         "asset": "assets/courier/rider.png",
         "seed": 5220,
-        "prompt": "each cell one identical pale grey and white bicycle courier crouched low in cycling posture, torso leaning far forward, both arms reaching down to handlebar grip height, knees bent with feet on pedals, bike helmet and big insulated delivery backpack",
+        "prompt": "a pale grey and white bicycle courier crouched low in cycling posture, torso leaning forward, arms reaching down to handlebar grip height, knees bent mid pedal stroke, bike helmet and insulated delivery backpack",
         "frames": [
           "near leg pressed down, far leg lifted up",
           "near leg down and forward, far leg up and back",

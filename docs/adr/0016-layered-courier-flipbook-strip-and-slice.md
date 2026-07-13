@@ -1,6 +1,7 @@
 # 0016 — Layered courier flipbook: strip-and-slice generation
 
-- **Status:** Accepted
+- **Status:** Accepted — generation strategy amended the same day (see
+  "Amendment" below): strip-and-slice replaced by per-frame generation.
 - **Date:** 2026-07-13
 
 ## Context
@@ -101,3 +102,34 @@ The strip prompt is assembled as `opening` + `exactly ${N} cells, ` + `prompt` +
   Prohibition (Atari ST, 1987) cahier des charges, explicitly requested by
   Bertrand as a **pipeline stress test** of the layered strip-and-slice generation
   path — not a claim of period fidelity.
+
+## Amendment (2026-07-13) — per-frame generation replaces strip-and-slice
+
+Two CI iterations of strip-and-slice failed at the art gate: FLUX would not
+respect per-cell containment (take 1 drew one oversized bicycle across the
+whole strip and the fixed grid sliced it into fragments; take 2 still bled
+subjects across cell borders and baked in gutter bands), and the rider layer
+came out with a bicycle drawn into it. Bertrand's direction: **one dedicated
+FLUX image per frame — the whole subject appears in every image and no
+element of an animation frame is ever cut out of a larger picture** — with
+the **bike layer validated first** (only the wheels turn), the rider layer
+following once the bike passes the art gate.
+
+Consequences of the amendment:
+
+- `gen-courier-sprites.mjs` sends one FLUX call per frame: `opening + prompt +
+", " + frames[i] + style`, all frames of a layer under its **single pinned
+  seed** (same seed + near-identical prompt keeps a rigid subject's composition
+  stable, so only the described delta moves). Frame buffers are still collected
+  before any write, and the layer stays **atomic** (any missing frame, or
+  `FORCE=1`, regenerates all of it).
+- No slicing: `@napi-rs/canvas` is once again needed only for the per-file
+  chroma-key, like the vehicle pipeline.
+- The lint-scoping deviation recorded above is **retired**: per-frame prompts
+  are short, so `check-art-prompts --set courier` budgets the FULL assembled
+  prompt per frame (words and negations together).
+- `--layer <name>` on the generator (and temporarily in the workflow:
+  `--layer bike`) supports the bike-first sequencing.
+- Residual risk moves from cell containment to **seed stability across pose
+  deltas** (a clause change can still reroll composition) — judged at the art
+  gate, rerolled by seed if needed.

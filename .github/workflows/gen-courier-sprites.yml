@@ -1,24 +1,23 @@
 name: Generate courier sprites
 
 # Regenerates the LAYERED courier flipbook (bike + rider) from the `courier`
-# block of src/game/levels/levelArt.json with real FLUX art. STRIP-AND-SLICE
-# (ADR 0016): one FLUX image per layer — a horizontal strip of frames.length
-# identical square cells — is sliced on a fixed grid into the per-frame PNGs,
-# chroma-keyed per file, and committed to the current branch.
+# block of src/game/levels/levelArt.json with real FLUX art. PER-FRAME
+# GENERATION (ADR 0016, amended): every frame is one dedicated FLUX image
+# (whole subject in every image, shared per-layer seed, only the pose clause
+# varies), chroma-keyed per file, and committed to the current branch. The
+# original strip-and-slice strategy was retired after two CI iterations cut
+# subjects across cells.
 #
 # Why this is a SEPARATE workflow from gen-sprites.yml (the enemy flipbook):
 # the enemy set's frame semantics do not match the courier's.
 #   - enemies: frame 1 is protected accepted art (never regenerated), extra
 #     frames are generated MISSING-ONLY via kontext img2img off that committed
 #     frame 1.
-#   - courier: there is NO protected frame 1 — a layer is ATOMIC. Its frames are
-#     the sliced cells of a SINGLE generation, so if any one is missing (or
-#     FORCE=1) the WHOLE strip regenerates and every frame is rewritten. A shared
-#     workflow would have to special-case both regimes; keeping them apart keeps
-#     each simple.
-# Also, slicing HARD-requires @napi-rs/canvas (the decoder), so it is installed
-# BEFORE the generator here — unlike the vehicle/enemy workflows, where the
-# decoder is only needed for the optional chroma-key/style passes.
+#   - courier: there is NO protected frame 1 — a layer is ATOMIC (shared-seed
+#     consistency): if any frame is missing (or FORCE=1) ALL its frames
+#     regenerate together. A shared workflow would have to special-case both
+#     regimes; keeping them apart keeps each simple.
+# @napi-rs/canvas is installed before the generator for the per-file chroma-key.
 #
 # Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
 # marker .github/dispatch/gen-courier-sprites (see docs/adr/0009). FORCE=1 so it
@@ -58,17 +57,16 @@ jobs:
       - name: Prompt gate (fail fast BEFORE any paid FLUX)
         run: node scripts/check-art-prompts.mjs --set courier
 
-      - name: Install @napi-rs/canvas (slicing hard-requires the decoder)
+      - name: Install @napi-rs/canvas (per-file chroma-key)
         run: |
           # Pinned exact version; --ignore-scripts skips postinstall since the
           # prebuilt native binary is fetched by the package resolution itself.
-          # Unlike the vehicle workflow, the decoder is needed by the GENERATOR
-          # itself (strip slicing), not only by the chroma-key step — so it is
-          # installed BEFORE the generator runs.
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
-      - name: Generate courier sprites (FLUX strip → slice → chroma-key)
-        run: FORCE=1 node scripts/gen-courier-sprites.mjs
+      - name: Generate courier sprites (one FLUX image per frame → chroma-key)
+        # --layer bike: Bertrand's sequencing — the bike layer is validated at
+        # the art gate first; drop the flag to regenerate the rider as well.
+        run: FORCE=1 node scripts/gen-courier-sprites.mjs --layer bike
 
       - name: Commit sprites
         run: |
