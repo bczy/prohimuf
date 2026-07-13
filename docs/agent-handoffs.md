@@ -1188,6 +1188,54 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   mirror (`enemyTextures.ts` `baseFileKey` ↔ `levelArt.consistency.test.ts` `root()`/`keysFor`).
   (2) The fallback path in `gen-enemy-types.mjs` is non-atomic — it writes the regenerated
   frame 1 before fetching frame 2, and because the committed art was made by the old
-  random-seed script the pinned-seed reroll won't reproduce it, so any fallback firing genuinely
-  mutates accepted art; this is exactly the risk ADR-0015 flags and is gated by the human art
-  review in the PR, acceptable as-is. No commit/push. (Winston / Senior Architect — review)
+  random-seed script the pinned-seed reroll won't reproduce it, so any fallback firing
+  genuinely mutates accepted art; gated by the human art review in the PR, acceptable as-is.
+  No commit/push. (Winston / Senior Architect — review)
+- panel: 4-reviewer merge gate ran (all findings adversarially verified). #1 code-review
+  (high): 0 blocking/major, 3 minor, 2 info, 12 refuted. #2 bmad-code-review: 0 blocking/major,
+  5 minor, 4 info, 7 refuted. #3 edge-case hunter: 1 MAJOR, 2 minor, 2 low, 18 refuted. #4
+  security-review: 0 findings, 2 refuted. One MAJOR (the non-atomic fallback I flagged at
+  review) confirmed; no security findings. (panel)
+- triage (Winston / Senior Architect — respecting the scope guard, minimal change, no
+  speculative hardening):
+  - **PRE-MERGE (one small coherent patch, no boundary impact / no new dep / no `src/game`
+    logic change):**
+    1. Non-atomic fallback (MAJOR) — fetch BOTH buffers before writing either so a partial
+       failure can never orphan the committed frame 1 (ADR-0015 only sanctions the successful
+       art-gated pair). `gen-enemy-types.mjs` `generateExtraFrame`.
+    2. FORCE blast radius — simpler than the panel's `FORCE_ALL` proposal: `FORCE` gates only
+       `_f<N>` frames; frame 1 (`i===0`) is generated ONLY when missing, never under FORCE.
+       Restores the "committed art untouched" guarantee with ZERO new env surface (deliberate
+       reroll = delete the PNG and re-run). Prefer this over adding a flag.
+    3. Stale/absent kontext source — under fix #2 the only run that writes frame 1 is a
+       brand-new enemy, so: when frame 1 was just written this run, skip kontext → matched
+       pair (no valid committed source to img2img from).
+    4. `ensureLoaded` in-flight guard — the 3-line `pending` Set only (real duplicate-load
+       window amplified by the new per-frame preload loop). `enemyTextures.ts`.
+    5. Frame≥2 prompt lint gap — fold into the item-6 `checkEnemies` edit, reusing
+       `countNegations`/`wordCount`. Contract-completeness (low live risk: the short delta
+       clauses assemble to fewer words/negations than the already-linted frame 1).
+    6. Validation guards (code only) — null/shape guard + positive-seed check in
+       `checkEnemies`; `loadEnemies` throws on a non-integer seed (kills the null-entry
+       TypeError and the `seed=undefined`-in-URL defect). `check-art-prompts.mjs` +
+       `gen-enemy-types.mjs`.
+    7. Doc absolutes — re-qualify the "frame 1 never regenerated" wording in the
+       `gen-enemy-types.mjs` + `gen-sprites.yml` headers (mandatory: items 1–2 change that
+       behaviour in the same patch).
+       8a. `$comment` filename typo in `levelArt.json` (`enemy_<key>_f<N>` doubles the prefix →
+       `<key>_f<N>`).
+  - **FAST-FOLLOW:** wire `check-art-prompts` into `gen-sprites.yml` as a gate (CI-policy
+    change, split out of item 6); widen the integrity gate beyond `enemy_civilian.png` to
+    `_f<N>` frames (own story, consistent with ADR-0014's deliberately-scoped gate);
+    verify kontext output when its `image=` source is a transparent keyed PNG vs the
+    black-ground style tail (unverifiable locally — network blocked; art gate catches bad
+    output at first CI generation); tighten the vacuous single-frame scope-guard test.
+  - **ACCEPT / decline:** per-(kind,variant,shooting) path-array memoization — speculative,
+    per-frame small-string allocs are negligible (scope guard: no speculative hardening);
+    200-non-image body written to `.png` — pre-existing pattern shared with
+    `gen-vehicle-sprites.mjs`, not introduced here (scope guard §3: don't fix unrelated
+    pre-existing issues).
+  - Verdict: MERGE-GATE HELD — pre-merge patch required before merge (fixes the one CONFIRMED
+    MAJOR + the cheap coherent guards); no unresolved CONFIRMED blocking/major finding remains
+    after that patch. Re-run typecheck/vitest/lint/check-art-prompts on the patch before merge.
+    No commit/push. (Winston / Senior Architect — panel triage)

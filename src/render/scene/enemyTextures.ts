@@ -14,6 +14,9 @@ import levelArt from "@game/levels/levelArt.json";
 const loader = new TextureLoader();
 const cache = new Map<string, Texture>();
 const failed = new Set<string>();
+// In-flight loads: getEnemyTexture runs per rendered frame, so without this
+// guard every frame re-issues the same request until a callback lands.
+const pending = new Set<string>();
 
 const base = import.meta.env.BASE_URL;
 const FALLBACK_IDLE = `${base}assets/enemy_sprite.png`;
@@ -65,14 +68,17 @@ export function enemyAnimFps(): number {
 }
 
 function ensureLoaded(file: string, fallback: string): void {
-  if (cache.has(file) || failed.has(file)) return;
+  if (cache.has(file) || failed.has(file) || pending.has(file)) return;
+  pending.add(file);
   loader.load(
     file,
     (t) => {
+      pending.delete(file);
       cache.set(file, applyPixelFilter(t));
     },
     undefined,
     () => {
+      pending.delete(file);
       failed.add(file);
       if (!cache.has(fallback)) ensureLoaded(fallback, fallback);
     },

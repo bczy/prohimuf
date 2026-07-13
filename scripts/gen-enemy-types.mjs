@@ -14,8 +14,10 @@
  *   - Keys are the EXACT base filename (asset root + legacy variant suffix), e.g.
  *     `enemy_sprite_2` = normal cop VARIANT 2.
  *   - `frames[0]` is ALWAYS "" → target file `<key>.png`. That committed
- *     unsuffixed PNG is frame 1 and is the accepted hero; it is only ever
- *     touched by FORCE=1 or by the matched-pair fallback below.
+ *     unsuffixed PNG is frame 1 and is the accepted hero; it is regenerated
+ *     only when its file is MISSING on disk, or rewritten by the matched-pair
+ *     fallback below. FORCE=1 deliberately does NOT touch frame 1 — to reroll
+ *     an accepted hero, delete its PNG and re-run.
  *   - `frames[i>0]` is a short pose-delta clause → target file `<key>_f<i+1>.png`
  *     (the `_f` prefix disambiguates the frame index from the legacy `_2`/`_3`
  *     variant suffix, so `enemy_shooting_2_f2.png` = cop variant 2, shooting,
@@ -25,14 +27,18 @@
  * Frame ≥2 generation is two-tier (logged loudly per file):
  *   1. PRIMARY — `kontext` img2img (the style-lock tool, art bible §3.12): the
  *      committed frame-1 PNG is passed as the `image=` source so the extra frame
- *      is the SAME character in a new pose, not an independent roll.
+ *      is the SAME character in a new pose, not an independent roll. Skipped
+ *      when frame 1 was (re)written by THIS run — it isn't committed at the
+ *      checked-out SHA yet, so the raw URL would serve stale or missing art.
  *   2. FALLBACK — matched flux pair: if kontext fails (non-200 after retries),
  *      frame 1 AND frame 2 are generated as a consistent pair from the pinned
- *      seed (base prompt vs base prompt + delta clause). This OVERWRITES the old
- *      frame 1; the pair goes through the human art gate in the PR.
+ *      seed (base prompt vs base prompt + delta clause). Both buffers are
+ *      fetched BEFORE either file is written, so a partial failure never
+ *      destroys the accepted frame 1 without its matching frame 2. The pair
+ *      OVERWRITES the old frame 1 and goes through the human art gate in the PR.
  *
- * Only MISSING files are generated (FORCE=1 overrides), so accepted frame-1
- * sprites are never touched and re-runs are cheap. Existing frame-1 PNGs are all
+ * Only MISSING files are generated; FORCE=1 additionally regenerates the
+ * `_f<N>` frames but never frame 1 (see above). Existing frame-1 PNGs are all
  * committed, so in practice only the `_f2` files get generated. Network image
  * generation (Pollinations/FLUX) is normally blocked in the local sandbox, so a
  * failed fetch is logged per-asset and never crashes the run — real art is
@@ -72,16 +78,22 @@ function loadEnemies() {
   const styleSuffix = block.style ?? "";
   const width = block.size?.width ?? 256;
   const height = block.size?.height ?? 256;
-  return Object.entries(block.types).map(([key, def]) => ({
-    key,
+  return Object.entries(block.types).map(([key, def]) => {
     // Pinned seed → reproducible rolls, reviewable diffs (no Math.random()).
-    seed: def.seed,
-    prompt: def.prompt ?? "",
-    frames: Array.isArray(def.frames) ? def.frames : [""],
-    style: styleSuffix,
-    width,
-    height,
-  }));
+    // Fail fast rather than serialize `seed=undefined` into the URL.
+    if (!Number.isInteger(def?.seed) || def.seed <= 0) {
+      throw new Error(`enemies.types.${key}: missing or non-positive integer "seed"`);
+    }
+    return {
+      key,
+      seed: def.seed,
+      prompt: def.prompt ?? "",
+      frames: Array.isArray(def.frames) ? def.frames : [""],
+      style: styleSuffix,
+      width,
+      height,
+    };
+  });
 }
 
 // ── Pollinations fetch helpers (mirrors gen-vehicle-sprites.mjs) ──────────────
@@ -144,36 +156,44 @@ function kontextUrl(prompt, seed, width, height, imageUrl) {
 }
 
 // ── Frame ≥2: kontext primary → matched-flux-pair fallback ───────────────────
-async function generateExtraFrame(e, i, out) {
+async function generateExtraFrame(e, i, out, frame1Fresh) {
   const name = `${e.key}_f${i + 1}`;
   const clause = e.frames[i];
 
-  // PRIMARY: kontext img2img from the committed frame 1.
-  const kPrompt = `same character, same pixel art style, same framing and scale, ${clause}${e.style}`;
-  const kUrl = kontextUrl(kPrompt, e.seed, e.width, e.height, frame1RawUrl(e.key));
-  console.log(`  [gen]  ${name} — strategy=KONTEXT img2img (source ${e.key}.png)`);
-  try {
-    const buf = await fetchWithRetry(kUrl);
-    fs.writeFileSync(out, buf);
-    console.log(`  [ok]   ${name} via KONTEXT img2img (${buf.length} bytes)`);
-    return;
-  } catch (err) {
-    console.log(`  [kontext-fail] ${name} — ${err.message}; FALLING BACK to matched flux pair`);
+  if (frame1Fresh) {
+    // Frame 1 was (re)written by this run: the raw.githubusercontent URL still
+    // serves the OLD committed art (or 404s for a brand-new enemy), so kontext
+    // would lock onto the wrong source. Go straight to the matched pair.
+    console.log(`  [skip-kontext] ${name} — frame 1 not committed at ${SHA}; using matched pair`);
+  } else {
+    // PRIMARY: kontext img2img from the committed frame 1.
+    const kPrompt = `same character, same pixel art style, same framing and scale, ${clause}${e.style}`;
+    const kUrl = kontextUrl(kPrompt, e.seed, e.width, e.height, frame1RawUrl(e.key));
+    console.log(`  [gen]  ${name} — strategy=KONTEXT img2img (source ${e.key}.png)`);
+    try {
+      const buf = await fetchWithRetry(kUrl);
+      fs.writeFileSync(out, buf);
+      console.log(`  [ok]   ${name} via KONTEXT img2img (${buf.length} bytes)`);
+      return;
+    } catch (err) {
+      console.log(`  [kontext-fail] ${name} — ${err.message}; FALLING BACK to matched flux pair`);
+    }
   }
 
   // FALLBACK: matched flux pair under the pinned seed. Regenerates frame 1 too so
   // the pose delta is consistent; OVERWRITES the committed frame 1 (goes through
-  // the human art gate in the PR).
+  // the human art gate in the PR). Both buffers are fetched before either write:
+  // a partial failure must never destroy frame 1 without its matching frame 2.
   const frame1Out = path.join(OUT_DIR, `${e.key}.png`);
   try {
     console.log(`  [gen]  ${name} — strategy=MATCHED FLUX PAIR (also overwrites ${e.key}.png)`);
     const buf1 = await fetchWithRetry(fluxUrl(`${e.prompt}${e.style}`, e.seed, e.width, e.height));
+    const buf2 = await fetchWithRetry(
+      fluxUrl(`${e.prompt}, ${clause}${e.style}`, e.seed, e.width, e.height),
+    );
     fs.writeFileSync(frame1Out, buf1);
     console.log(
       `  [ok]   ${e.key} — frame 1 of matched pair (${buf1.length} bytes) — OVERWRITES committed art`,
-    );
-    const buf2 = await fetchWithRetry(
-      fluxUrl(`${e.prompt}, ${clause}${e.style}`, e.seed, e.width, e.height),
     );
     fs.writeFileSync(out, buf2);
     console.log(`  [ok]   ${name} — frame 2 of matched pair (${buf2.length} bytes)`);
@@ -188,18 +208,21 @@ async function main() {
   console.log(`Enemy-type flipbook sprites → ${OUT_DIR}\n`);
 
   for (const e of enemies) {
+    // Set when this run (re)writes frame 1: extra frames must then skip kontext
+    // (its image= source is the committed art, which no longer matches).
+    let frame1Fresh = false;
     for (let i = 0; i < e.frames.length; i++) {
       const name = i === 0 ? e.key : `${e.key}_f${i + 1}`;
       const out = path.join(OUT_DIR, `${name}.png`);
 
-      if (!FORCE && fs.existsSync(out)) {
-        console.log(`  [skip] ${name} (exists)`);
-        continue;
-      }
-
       if (i === 0) {
-        // Frame 1: plain text2img (base prompt + shared style). Committed for the
-        // whole set, so this only fires for a brand-new enemy or under FORCE=1.
+        // Frame 1: only ever generated when MISSING — FORCE=1 does not apply
+        // (the accepted hero is protected; delete the PNG to reroll it).
+        if (fs.existsSync(out)) {
+          console.log(`  [skip] ${name} (exists)`);
+          continue;
+        }
+        frame1Fresh = true;
         console.log(`  [gen]  ${name} — frame 1 (flux, seed=${e.seed})`);
         try {
           const buf = await fetchWithRetry(
@@ -211,7 +234,11 @@ async function main() {
           console.log(`  [fail] ${name} — ${err.message} (will be generated in CI)`);
         }
       } else {
-        await generateExtraFrame(e, i, out);
+        if (!FORCE && fs.existsSync(out)) {
+          console.log(`  [skip] ${name} (exists)`);
+          continue;
+        }
+        await generateExtraFrame(e, i, out, frame1Fresh);
       }
       await sleep(2000);
     }

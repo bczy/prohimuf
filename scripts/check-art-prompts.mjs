@@ -391,13 +391,48 @@ function checkEnemies(enemies, rep) {
     }
   }
 
+  // Negation + word budgets over an assembled prompt (any frame variant).
+  function checkBudgets(ap, assembled) {
+    const negs = countNegations(assembled);
+    if (negs > NEG_ERROR_OVER) {
+      rep.error(
+        ap,
+        `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
+      );
+    } else if (negs > NEG_WARN_OVER) {
+      rep.warn(
+        ap,
+        `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+      );
+    }
+
+    const words = wordCount(assembled);
+    if (words > WORD_HARD_MAX) {
+      rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
+    } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
+      rep.warn(
+        ap,
+        `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`,
+      );
+    }
+  }
+
   const types = enemies.types ?? {};
+  if (Object.keys(types).length === 0) {
+    rep.error("enemies.types", "missing or empty `types` block");
+  }
   for (const [key, def] of Object.entries(types)) {
     const p = `enemies.types.${key}`;
+    if (def === null || typeof def !== "object" || Array.isArray(def)) {
+      rep.error(p, "entry must be an object");
+      continue;
+    }
     const prompt = def.prompt ?? "";
 
     if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
-    if (!Number.isInteger(def.seed)) rep.error(`${p}.seed`, "seed must be an integer");
+    if (!Number.isInteger(def.seed) || def.seed <= 0) {
+      rep.error(`${p}.seed`, "seed must be a positive integer");
+    }
 
     const frames = def.frames;
     if (!Array.isArray(frames) || frames.length < 1 || frames.length > 4) {
@@ -416,33 +451,22 @@ function checkEnemies(enemies, rep) {
       }
     }
 
-    // Negation + word budgets over the assembled frame-1 prompt (base + style),
-    // the same helpers the vehicles set uses.
+    // Budgets over every prompt the generator actually sends: the frame-1
+    // assembly, plus BOTH frame>=2 variants (kontext primary and matched-pair
+    // fallback — see gen-enemy-types.mjs), which are longer than frame 1's.
     if (prompt.trim()) {
-      const assembled = `${prompt}${style}`;
-      const ap = `${p} (assembled)`;
+      checkBudgets(`${p} (assembled)`, `${prompt}${style}`);
 
-      const negs = countNegations(assembled);
-      if (negs > NEG_ERROR_OVER) {
-        rep.error(
-          ap,
-          `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
-        );
-      } else if (negs > NEG_WARN_OVER) {
-        rep.warn(
-          ap,
-          `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
-        );
-      }
-
-      const words = wordCount(assembled);
-      if (words > WORD_HARD_MAX) {
-        rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
-      } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
-        rep.warn(
-          ap,
-          `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`,
-        );
+      if (Array.isArray(frames)) {
+        for (let i = 1; i < frames.length; i++) {
+          const clause = typeof frames[i] === "string" ? frames[i] : "";
+          if (!clause.trim()) continue; // shape error already reported above
+          checkBudgets(
+            `${p}.frames[${i}] (kontext assembled)`,
+            `same character, same pixel art style, same framing and scale, ${clause}${style}`,
+          );
+          checkBudgets(`${p}.frames[${i}] (pair assembled)`, `${prompt}, ${clause}${style}`);
+        }
       }
     }
   }

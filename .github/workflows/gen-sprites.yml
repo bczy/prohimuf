@@ -5,7 +5,9 @@ name: Generate enemy-type sprites
 # variant suffix (enemy_shooting_2_f2.png), defined in the `enemies` block of
 # levelArt.json (ADR 0015). These frame files match the enemy_*.png glob below,
 # so cutout/commit need NO structural change. Generates only MISSING files (in
-# practice just the _f<N> frames — committed frame-1 art is never regenerated),
+# practice just the _f<N> frames — committed frame-1 art is regenerated ONLY by
+# the generator's matched-pair fallback when kontext img2img fails, a loudly
+# logged exception reviewed at the art gate; FORCE=1 never touches frame 1),
 # chroma-keys them, and commits them to the current branch. Deliberate runs only:
 # manual (workflow_dispatch) or by touching the dispatch marker
 # .github/dispatch/gen-sprites (see docs/adr/0009). The sprites are already
