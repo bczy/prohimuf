@@ -127,7 +127,7 @@
       "bike": {
         "asset": "assets/courier/bike.png",
         "seed": 5210,
-        "prompt": "an empty delivery bicycle in full side profile, the whole bicycle fully visible inside the frame, solid tri-spoke mag wheels with three thick spokes forming a bold Y, a dark frame bag inside the rear triangle, step-through steel frame, rear cargo rack, bare saddle and bare pedals",
+        "prompt": "an empty delivery bicycle in full side profile, solid tri-spoke mag wheels forming a bold Y, a dark frame bag in the rear triangle, step-through frame, rear cargo rack, bare saddle and pedals",
         "frames": [
           "the Y of both mag wheels upright",
           "the Y of both mag wheels rotated one third of a turn",
