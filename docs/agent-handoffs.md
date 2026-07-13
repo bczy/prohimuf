@@ -908,3 +908,17 @@ render-side data and never enters`GameState`. **Stock materials only** (`MeshBas
     and assert the gate red on it — logging as a nice-to-have, NOT reopening this story.
     Scope guard holds: fidelity fix to an approved extension (ADR-0011) + pipeline hardening, no
     new gameplay verb/input/rule, passes PROJECT_GUIDELINES. Story **DONE**. (John / PM)
+
+---
+
+## 2026-07-12 — dev-tooling-assets — Enclosed-island cutout pass (courier sprite white-speckle fix)
+
+- **Start.** Task from senior-architect: land generic enclosed-background-island handling in the SHARED keyer `scripts/cutout-enemies.mjs` (not a standalone retouch script), retouch `public/assets/enemy_civilian.png` in place, sweep the rest.
+- **Finish — DONE.** Lane: `scripts/cutout-enemies.mjs`, `public/assets/enemy_civilian.png`, `docs/adr/0013-*`, `.github/workflows/gen-sprites.yml` (comment only), this log.
+  - **Root cause:** the 4-corner flood in `cutout-enemies.mjs` can never reach ground walled in by the subject (bike-frame triangle, wheel interiors, arm/torso gap) → those enclaves stayed opaque white.
+  - **Fix:** added an additive enclosed-island pass after the flood — connected-component labelling of a loose ground-colour mask, clearing a component only when it is topologically enclosed (touches neither border nor an already-transparent pixel) AND its mean is within the tight ground band. Corner-adaptive (keyed to sampled corners), so it works for white/black/magenta grounds — NOT a hardcoded white key. Ground sampling ignores transparent (pre-keyed) corners with a documented light-ground fallback for in-place retouch of committed sprites.
+  - **In-place retouch:** new optional single-file CLI arg — `node scripts/cutout-enemies.mjs <path>` IS the deterministic retouch. Idempotent: re-run is byte-identical (0 px cleared).
+  - **Metrics (enemy_civilian.png):** opaque 22215 → 19580 (−2635, within the −900..−3000 window); visible pureWhite 939 → 149 (residual = legitimate helmet/jacket highlight); nearWhite 1774 → 360; semi-transparent 0 → 0 (binary alpha held); whiteFringeOnEdge 22 → 22 (silhouette border unchanged). Magenta composite (vis.mjs) confirms frame triangle + wheel interiors + arm/torso gap transparent with spokes/rims preserved; helmet, jacket, backpack, limbs, tubes intact — no punched holes.
+  - **AC6 sweep:** only `enemy_civilian.png` has the genuine defect. `vehicles/truck.png` (−3237) and `enemy_biker_shooting.png` (−474) would punch legitimate bright subject (white truck body / muzzle-flash core) under the pre-keyed white fallback → left untouched, documented for a separate per-sprite gated story; `enemy_shooting_3.png` and the low-white sprites show ~0 delta. CI path is unaffected for vehicles (raw truck gen has magenta corners → tight band keys magenta only, never the white body).
+  - **Contract note to dev-r3f-render:** asset contract UNCHANGED — same path/size/name (`enemy_civilian.png`, 256×256 RGBA), only interior alpha corrected. No renderer change needed.
+  - **Verification:** yarn typecheck OK, yarn test 189/189 OK, yarn lint OK. No `src/**` changes. ADR-0013 added. (Amelia / dev-tooling-assets)
