@@ -45,7 +45,7 @@ function dist2(a, b, c, r, g, bl) {
   return dr * dr + dg * dg + db * db;
 }
 
-async function cutout(file) {
+async function cutout(file, { lightFallback = false } = {}) {
   const img = await loadImage(file);
   const W = img.width;
   const H = img.height;
@@ -58,14 +58,17 @@ async function cutout(file) {
   // Ground colour = average of the four corners, but only over corners that are
   // still OPAQUE. On a raw generation all four are the flat ground (white, black
   // or the vehicles' magenta), so this stays fully corner-adaptive. On a sprite
-  // that was ALREADY keyed (a committed enemy_*.png being retouched in place),
-  // the PNG encoder has zeroed the RGB under every transparent pixel, so the
-  // corners report (0,0,0) and carry no ground info — those are skipped. When
-  // none survive, the image is pre-keyed: its exterior is gone but the enclosed
-  // islands the flood missed remain, and in this project every committed sprite
-  // was generated on a light ground, so the reference falls back to white. The
-  // live CI path never hits this fallback (it keys raw generations whose corners
-  // are opaque), so a future black-ground regen stays correctly corner-adaptive.
+  // that was ALREADY keyed (a committed enemy_*.png), the PNG encoder has zeroed
+  // the RGB under every transparent pixel, so the corners report (0,0,0) and
+  // carry no ground info — those are skipped, leaving nGround === 0.
+  //
+  // nGround === 0 means "pre-keyed sprite": its exterior is already gone and re-
+  // keying it against a GUESSED ground would punch legitimate bright interior
+  // subject (helmet/visor highlights, muzzle flash). So the light-ground fallback
+  // is reserved for the EXPLICIT single-file CLI retouch (lightFallback === true,
+  // set only in the args path of main()); in the no-args batch path — the one CI
+  // runs over the whole committed set — a pre-keyed sprite is SKIPPED, restoring
+  // the historical no-op on already-keyed files. See docs/adr/0013.
   const corners = [0, (W - 1) * 4, (H - 1) * W * 4, ((H - 1) * W + (W - 1)) * 4];
   let br = 0;
   let bg = 0;
@@ -82,8 +85,12 @@ async function cutout(file) {
     br /= nGround;
     bg /= nGround;
     bb /= nGround;
+  } else if (lightFallback) {
+    br = bg = bb = 255; // explicit single-file retouch of a pre-keyed committed sprite
   } else {
-    br = bg = bb = 255; // pre-keyed committed sprite: light-ground fallback
+    // Batch/imported path: never re-key a pre-keyed sprite (see comment above).
+    console.log(`  skip ${path.basename(file)} — pre-keyed (all corners transparent)`);
+    return;
   }
 
   const visited = new Uint8Array(W * H);
@@ -206,8 +213,12 @@ async function cutout(file) {
 
 async function main() {
   // With explicit path args, key only those files (surgical in-place retouch of
-  // a committed sprite). With none, key the whole enemy_*.png batch as in CI.
+  // a committed sprite): the light-ground fallback is enabled so a pre-keyed
+  // sprite can be re-processed on demand. With none, key the whole enemy_*.png
+  // batch as in CI: fallback OFF, so pre-keyed committed sprites are skipped and
+  // only freshly generated (opaque-corner) sprites are keyed.
   const args = process.argv.slice(2);
+  const lightFallback = args.length > 0;
   const files =
     args.length > 0
       ? args.map((f) => path.resolve(process.cwd(), f))
@@ -219,7 +230,7 @@ async function main() {
     console.log("no enemy_*.png found");
     return;
   }
-  for (const f of files) await cutout(f);
+  for (const f of files) await cutout(f, { lightFallback });
   console.log("done.");
 }
 

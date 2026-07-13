@@ -48,7 +48,10 @@ jobs:
           # flood-fill AND an enclosed-island pass that clears ground fully
           # walled in by the subject (bike-frame triangle, wheel interiors) —
           # keyed to the sampled corner colour, so it works whether FLUX returns
-          # the prompted black ground or a white one (see docs/adr/0013).
+          # the prompted black ground or a white one. This no-args batch keys
+          # ONLY freshly generated sprites (opaque corners); already-committed
+          # pre-keyed sprites are skipped, so a regen never re-keys accepted art
+          # (see docs/adr/0013).
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           node scripts/cutout-enemies.mjs
 

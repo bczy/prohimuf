@@ -52,17 +52,34 @@ prompted regen) and the vehicles' magenta alike.
 Ground sampling now ignores transparent corners. On a raw generation all four
 corners are opaque ground → fully corner-adaptive. On an **already-keyed**
 committed sprite the PNG encoder has zeroed the RGB under every transparent
-pixel, so the corners report `(0,0,0)` and are skipped; when none survive the
-reference falls back to white (every committed sprite in this project was
-generated on a light ground). The live CI path never hits this fallback — it
-keys raw generations whose corners are opaque — so a future black-ground regen
-stays correctly corner-adaptive.
+pixel, so the corners report `(0,0,0)` and are skipped, leaving `nGround === 0`.
+
+`nGround === 0` means the sprite is pre-keyed: its exterior is already gone and
+re-keying it against a _guessed_ ground would punch legitimate bright interior
+subject (helmet/visor highlights, a muzzle-flash core). The two invocation modes
+therefore diverge here, and this split is the safety guarantee of the change:
+
+- **Explicit single-file CLI arg** (`node scripts/cutout-enemies.mjs <path>`) —
+  `lightFallback` is on. When `nGround === 0` the reference falls back to white
+  (every committed sprite in this project was generated on a light ground). This
+  IS the deterministic in-place retouch used to fix `enemy_civilian.png`.
+- **No-args batch mode** (the CI path, and the `cutout` import used by
+  `gen-vehicle-sprites.mjs`) — `lightFallback` is off. A pre-keyed sprite
+  (`nGround === 0`) is **skipped with a log**, never re-keyed. Only freshly
+  generated sprites (opaque corners → `nGround > 0`) are keyed, corner-adaptive.
+
+This matters because CI's chroma-key step runs `cutout-enemies.mjs` with **no
+args over the whole committed `enemy_*.png` set** while the generation step
+creates only _missing_ files — so every already-committed sprite reaches the
+keyer pre-keyed. Without the batch skip, the white fallback + enclosed-island
+pass would clear enclosed bright subject in those sprites and the workflow's
+`git add -f && commit && push` would land the damage silently. The batch skip
+restores the historical no-op on pre-keyed files (verified: re-running the CI
+batch over all 12 committed sprites is byte-identical).
 
 The pass is purely additive (it can only clear pixels the flood should have
-reached), so alpha stays binary and the operation is idempotent: a re-run finds
-the enclaves already transparent and clears 0 px. Running
-`node scripts/cutout-enemies.mjs <path>` (a new optional single-file CLI arg) IS
-the deterministic in-place retouch — no separate script.
+reached), so alpha stays binary and the operation is idempotent: a re-run of the
+single-file retouch finds the enclaves already transparent and clears 0 px.
 
 ## Consequences
 
@@ -80,10 +97,12 @@ the deterministic in-place retouch — no separate script.
   (`vehicles/truck.png`) and the muzzle-flash highlight (`enemy_biker_shooting.png`),
   which are legitimate bright subject, not enclosed ground. Those sprites are
   left untouched; their light regions are subject, not the enclosed-island
-  defect. The live CI path is unaffected for them (a raw truck generation has
-  magenta corners, so the tight band keys magenta enclaves, never the white
-  body). Broadening the retouch to any other sprite is a separate, per-sprite
-  visually-gated story.
+  defect. They are protected on the CI path by the **batch skip** above: they are
+  pre-keyed (`nGround === 0`), so the no-args batch never re-keys them. (A raw
+  truck generation is separately safe — it has magenta corners, so the tight band
+  keys magenta enclaves, never the white body.) Broadening the retouch to any
+  other sprite is a separate, per-sprite visually-gated story that must run the
+  single-file CLI path with human review.
 - The band thresholds (`LOOSE_BAND=55`, `TIGHT_BAND=20`) are calibrated on this
   asset and documented at the constants; a perfectly-neutral, fully-enclosed
   legitimate subject region would be a theoretical risk, but the topology guard
