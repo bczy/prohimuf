@@ -20,7 +20,7 @@ const OUT_DIR = path.resolve(__dirname, "..", process.env.OUT_DIR ?? "public/ass
 const FORCE = process.env.FORCE === "1";
 
 const PIXEL_STYLE =
-  ", 16-bit pixel art game sprite, crisp clean pixels, light grey white and pale neon tones figure, simple bold shapes, centered, solid pure flat black background, high contrast, retro snes style, no text, no watermark";
+  ", 16-bit pixel art game sprite, crisp clean pixels, light grey white and pale neon tones figure, simple bold shapes, centered, the figure fully surrounded by a solid uniform matte black background (#000000) filling the entire frame, high contrast, retro snes style, no text, no watermark";
 
 const ASSETS = [
   // ── Riot police (CRS): helmet + visor + shield, takes two hits ───────────
