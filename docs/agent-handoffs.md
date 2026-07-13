@@ -1089,16 +1089,16 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
     (`node … --file`), exit 0/1, documented header + calibration table, lazy
     `@napi-rs/canvas@1.0.2` (`--no-save --ignore-scripts` pattern, no full-tree install).
     HARD (dominance ≥ 0.97, `MAX_SPECKLE_COMPONENTS=4`/`SPECKLE_MAX_SIZE_PX=12`, binary alpha)
-    + SOFT torso-zone enclave inventory (`SUSPECT_ENCLAVE_MIN_PX=150`, `ENCLAVE_TORSO_FRAC=0.80`,
-    figure-scoped) — all named/commented constants, 4-connectivity, deterministic. Speckle
-    budget anchored below the original's ~47 sub-3px baseline. Wired into `gen-sprites.yml`
-    AFTER cutout (step "Check sprite integrity") and BEFORE the commit step, no duplicate
-    canvas install, step rationale documented. Proof-of-detection recorded: repaired courier
-    → PASS exit 0, pre-fix 69-comp state → FAIL exit 1 (speckle 68 > 4). PM-accepted scope
-    ruling: the CI gate is scoped to `enemy_civilian.png`, NOT the whole set — empirically
-    11/12 accepted sprites carry pre-existing debris (22–220 comps, dominance to ~78%) and the
-    courier's 68 is fewer than several accepted sprites, so no single budget separates the bug
-    from accepted art. Set-wide gate correctly deferred to a follow-up story (ADR-0014 §C).
+    - SOFT torso-zone enclave inventory (`SUSPECT_ENCLAVE_MIN_PX=150`, `ENCLAVE_TORSO_FRAC=0.80`,
+      figure-scoped) — all named/commented constants, 4-connectivity, deterministic. Speckle
+      budget anchored below the original's ~47 sub-3px baseline. Wired into `gen-sprites.yml`
+      AFTER cutout (step "Check sprite integrity") and BEFORE the commit step, no duplicate
+      canvas install, step rationale documented. Proof-of-detection recorded: repaired courier
+      → PASS exit 0, pre-fix 69-comp state → FAIL exit 1 (speckle 68 > 4). PM-accepted scope
+      ruling: the CI gate is scoped to `enemy_civilian.png`, NOT the whole set — empirically
+      11/12 accepted sprites carry pre-existing debris (22–220 comps, dominance to ~78%) and the
+      courier's 68 is fewer than several accepted sprites, so no single budget separates the bug
+      from accepted art. Set-wide gate correctly deferred to a follow-up story (ADR-0014 §C).
   - **A2 (agent sweeps) — PASS.** `game-graphist.md` TECHNICAL pass gains the mandatory
     4-item sweep (ANATOMY / EXTREMITIES & DUPLICATION / FUSED OBJECTS & PERSPECTIVE / PRE-KEY
     HOLE INVENTORY), run on a contrasting ground at game size, before Nico's gate, citing
