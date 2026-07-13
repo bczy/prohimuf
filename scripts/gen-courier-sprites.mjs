@@ -69,6 +69,14 @@ function loadCourier() {
   }
   const opening = block.opening ?? "";
   const style = block.style ?? "";
+  if (typeof opening !== "string" || !opening.trim()) {
+    throw new Error(
+      "courier.opening: missing or empty — it is interpolated into every paid prompt",
+    );
+  }
+  if (typeof style !== "string" || !style.trim()) {
+    throw new Error("courier.style: missing or empty — it is interpolated into every paid prompt");
+  }
   const cellW = block.size?.width ?? 256;
   const cellH = block.size?.height ?? 256;
 
@@ -81,8 +89,10 @@ function loadCourier() {
       throw new Error(`courier.layers.${name}: missing or empty "prompt"`);
     }
     const frames = def.frames;
-    if (!Array.isArray(frames) || frames.length < 1) {
-      throw new Error(`courier.layers.${name}: "frames" must be a non-empty array`);
+    // Same 2..8 bound the prompt gate and the consistency test enforce — the
+    // three validators must agree on what a valid layer is.
+    if (!Array.isArray(frames) || frames.length < 2 || frames.length > 8) {
+      throw new Error(`courier.layers.${name}: "frames" must be an array of 2-8 pose clauses`);
     }
     frames.forEach((c, i) => {
       if (typeof c !== "string" || !c.trim()) {
@@ -125,24 +135,37 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function fetchImage(url) {
+// Bounded redirects + a socket timeout so a stalled Pollinations response can
+// never hang the paid CI job until the runner's 6h kill.
+function fetchImage(url, depth = 0) {
   return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          fetchImage(res.headers.location).then(resolve).catch(reject);
+    const req = https.get(url, (res) => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        res.resume();
+        if (depth >= 5) {
+          reject(new Error("too many redirects"));
           return;
         }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
+        if (!res.headers.location) {
+          reject(new Error(`HTTP ${res.statusCode} without a Location header`));
           return;
         }
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
-      })
-      .on("error", reject);
+        fetchImage(new URL(res.headers.location, url).href, depth + 1)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+      if (res.statusCode !== 200) {
+        res.resume();
+        reject(new Error(`HTTP ${res.statusCode}`));
+        return;
+      }
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+    req.on("error", reject);
+    req.setTimeout(120000, () => req.destroy(new Error("response timeout (120s)")));
   });
 }
 
@@ -179,7 +202,14 @@ async function tryCutout(file, name) {
     const mod = await import("./cutout-enemies.mjs");
     await mod.cutout(file);
   } catch (e) {
-    console.log(`  [cutout-skip] ${name} — ${e.message} (chroma-key runs in CI)`);
+    // Only an absent decoder is a benign skip (local sandbox). Any OTHER cutout
+    // failure means a sliced frame could not be keyed — rethrow so the run fails
+    // loudly instead of committing an un-keyed black-square frame.
+    if (e.code === "ERR_MODULE_NOT_FOUND") {
+      console.log(`  [cutout-skip] ${name} — decoder absent (chroma-key runs in CI)`);
+      return;
+    }
+    throw e;
   }
 }
 
@@ -337,6 +367,13 @@ function regenReason(layer) {
 async function sliceStrip(buf, layer) {
   const { createCanvas, loadImage } = await import("@napi-rs/canvas");
   const img = await loadImage(buf);
+  // The fixed grid is only valid on a strip of the exact requested dimensions —
+  // a clamped/rescaled/fallback FLUX return would slice garbage silently.
+  if (img.width !== layer.stripW || img.height !== layer.stripH) {
+    throw new Error(
+      `strip is ${img.width}x${img.height}, expected ${layer.stripW}x${layer.stripH}`,
+    );
+  }
   const { cellW, cellH } = layer;
   const cells = [];
   for (let i = 0; i < layer.frames.length; i++) {
@@ -369,6 +406,9 @@ async function main() {
     `Courier layered flipbook → ${path.relative(ROOT, OUT_DIR)}${placeholder ? " (placeholder mode)" : ""}\n`,
   );
 
+  // Track per-layer failures: CI is the ONLY place FLUX is reachable, so a
+  // swallowed failure here would commit a partial layer set with a green run.
+  let failures = 0;
   for (const layer of layers) {
     const reason = regenReason(layer);
     if (!reason) {
@@ -391,9 +431,8 @@ async function main() {
           fluxUrl(layer.stripPrompt, layer.seed, layer.stripW, layer.stripH),
         );
       } catch (e) {
-        console.log(
-          `  [fail] ${layer.name} — strip fetch failed: ${e.message} (will be generated in CI)`,
-        );
+        console.log(`  [fail] ${layer.name} — strip fetch failed: ${e.message}`);
+        failures++;
         continue;
       }
       console.log(
@@ -404,9 +443,8 @@ async function main() {
         // is only needed for the optional keying). Absent decoder → nothing written.
         cells = await sliceStrip(buf, layer);
       } catch (e) {
-        console.log(
-          `  [fail] ${layer.name} — slice needs @napi-rs/canvas: ${e.message}; nothing written`,
-        );
+        console.log(`  [fail] ${layer.name} — slice failed: ${e.message}; nothing written`);
+        failures++;
         continue;
       }
     }
@@ -426,6 +464,12 @@ async function main() {
   }
 
   console.log("\nDone.");
+  if (failures > 0) {
+    console.error(
+      `${failures} layer(s) failed to generate — exiting non-zero so a partial set can never commit green.`,
+    );
+    process.exit(1);
+  }
 }
 
 main().catch((e) => {

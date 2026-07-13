@@ -97,8 +97,10 @@ export function getCourierTexture(layer: string, frame: number): Texture | null 
 
 // True only once frame 1 of BOTH layers is decoded and cached — the gate
 // CourierSprite uses to swap from the legacy single sprite to the two-plane
-// composite. Calling it also kicks off loading of both layers' frames, so the
-// composite is ready the moment its art lands in CI.
+// composite. Calling it also kicks off loading of both layers' frames. Note: a
+// 404 poisons the `failed` set for the whole session (same policy as
+// enemyTextures), so a client loaded BEFORE the CI art landed keeps the legacy
+// sprite until the next page load — the swap is per-load, not live.
 export function courierArtReady(): boolean {
   let ready = true;
   for (const layer of ["bike", "rider"]) {

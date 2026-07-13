@@ -1271,3 +1271,80 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 - **VERIFY:** `node --check` both scripts OK; `--list` OK; `check-art-prompts.mjs` (all) and
   `--set courier` both PASS against the committed manifest (1 courier WARN = rider 92 w, by
   design); enemies set unchanged; `yarn format:check` clean; workflow YAML parses (7 steps).
+
+- panel (courier increment `7c2226d..HEAD`): 4-reviewer merge gate, all adversarially
+  verified. #1 code-review high: 2 major / 6 minor / 2 info, 8 refuted. #2 bmad-code-review:
+  3 major / 5 minor / 3 info, 6 refuted. #3 edge-case hunter: 2 major / 3 medium-low, 15
+  refuted. #4 security: 0 findings, 11 refuted. Zero CONFIRMED blocking. The three converged
+  MAJORs are all in the generation/gate path (dimension validation, exit-code, asset↔key
+  coupling) — load-bearing for the CI art run Bertrand fires next. (panel)
+- boundary verdict: **PASS.** `src/game` gains only `levelArt.json` data + the consistency
+  test (imports `vitest` / `@game/*` / manifest JSON only — no `src/render`); render
+  (`CourierSprite.tsx`, `courierTextures.ts`) is texture/composite only, reads manifest data,
+  holds no game rules; `@napi-rs/canvas` is CI-only (already used by the vehicle/enemy
+  generators), no new runtime dependency; the game↔render↔hooks contract is untouched.
+- triage (Winston / Senior Architect — scope guard: minimal change, no speculative hardening):
+  - **PRE-MERGE (one coherent patch: `gen-courier-sprites.mjs`, `gen-courier-sprites.yml`,
+    `check-art-prompts.mjs`, `courierTextures.ts` comment, `levelArt.json` bike prompt,
+    `levelArt.consistency.test.ts`, `render-layer.md`, `SCRIPTS.md`):**
+    1. sliceStrip dimension validation — throw when `img.width/height !== stripW/stripH`
+       after `loadImage`; a clamped/rescaled FLUX return would otherwise slice garbage on the
+       fixed grid and commit it green. LOAD-BEARING for the CI run. (If CI shows Pollinations
+       _proportionally_ rescaling, a derive-cellW-from-`img.width/N` tolerance is a fast-follow
+       — but throw is the correct minimal call for a gated pipeline.)
+    2. exit code — count per-layer fetch/slice failures and `process.exit(1)` at end so a
+       partial/total-failure run fails the job instead of committing a partial set green;
+       guard the workflow `git add` (`compgen -G` or add the directory) so a zero-file run
+       fails loudly, not with a misleading pathspec fatal. LOAD-BEARING.
+    3. asset↔key coupling — assert `asset === "assets/courier/<layerName>.png"` in both
+       `checkCourier` and the consistency test (also enforces the `.png` suffix that
+       `fileFor`'s `/\.png$/` replace silently no-ops on). Closes the renamed-asset →
+       permanent-silent-fallback footgun.
+    4. tryCutout — swallow only `ERR_MODULE_NOT_FOUND` (decoder absent), rethrow the rest, so
+       a real keying error can't commit un-keyed black frames.
+    5. bike prompt `"rider-free"` = hidden negation (forbidden by this diff's own
+       art-direction §4.2 and the manifest's own `$comment`); reword positively ("an empty
+       delivery bicycle, bare saddle, unoccupied pedals") and extend `NEG_RE` with
+       `\b\w+-free\b|\bwithout\b`. LOAD-BEARING (wasted paid run if FLUX paints a rider on the
+       bike layer).
+    6. loadCourier fail-fast — align to the lint/test/ADR contract: frames 2..8 (not >=1),
+       non-empty opening/style (not `?? ""`).
+    7. workflow_dispatch guard — add job-level `if: github.ref_name != 'main'` so a manual UI
+       run on `main` can't FORCE-push art past the merge gate. Scoped to THIS workflow; the
+       same latent gap in sibling workflows is FAST-FOLLOW (pre-existing, backstopped by the
+       merge-gate policy). Does not impede the branch run.
+    8. checkCourier hardening — numeric guards on `size.width/height`/`fps`, `typeof` guards
+       on `opening`/`style`/`prompt` (raw `.trim()` on a non-string currently crashes the
+       linter), and assert `size.width === size.height` (the square-cell assumption the
+       opening prompt + slicer + render plane all silently depend on).
+    9. correct the false "picked up the moment it lands in CI" wording in `courierTextures.ts`
+       - `render-layer.md` — the `failed` set is permanent for a running client; a reload is
+         required. Doc/comment only.
+    10. `fetchImage` (3rd copy) — minimal redirect-depth cap + socket timeout IN THE NEW
+        SCRIPT ONLY, so a redirect loop / hung socket can't ride to the 6h CI kill. Full
+        `scripts/lib` extraction of the shared flux/png helpers = FAST-FOLLOW.
+    11. SCRIPTS.md prompt-assembly formula corrupted by a `-` list item — trivial doc fix.
+  - **FAST-FOLLOW:** hot-path readiness latch + per-frame URL rebuild (perf, courierTextures);
+    one-time aspect pop at fallback→ready swap; `_f<N>` naming hand-rolled in 4 sites → shared
+    helper; flux/png helpers in 3 scripts → `scripts/lib` extraction (with the item-10 caps);
+    `@napi-rs/canvas` pin across 4 workflows → composite action; widen the sibling-workflow
+    dispatch guard (item 7).
+  - **ACCEPT:** none deferred to accept beyond the above — the 200-non-image-body-written-to-
+    `.png` pattern was refuted/pre-existing (shared with `gen-vehicle-sprites.mjs`), out of
+    scope per scope-guard §3.
+  - **lint-scoping deviation — SIGN-OFF (conditional).** Budgeting the strip-VARIABLE content
+    only (excluding the byte-identical ~89 w opening+style house tail) is a justified,
+    documented adaptation: folding the shared tail into a multi-cell strip makes the full-
+    assembly budget a constant meaningless FAIL (bike 141 / rider 180 regardless of content),
+    exactly the reasoning the vehicle four-slot split already established. It does not hide
+    authoring risk — negations/word-bloat in the authored prompt + cells ARE checked.
+    CONDITIONS: (a) item 5 lands (the `-free` slip is a NEG_RE gap, not a scoping gap — without
+    it the deviation + a blind NEG_RE is the exact hole that passed "rider-free"); (b) the
+    deviation stays recorded in ADR-0016. Optional refinement (not blocking): negation-scan the
+    FULL assembly while word-budgeting only the variable part, so a stray negation in the shared
+    tail can never slip.
+  - Verdict: **MERGE-GATE HELD** — the pre-merge patch (items 1-11) is required before merge
+    and before firing CI generation (1/2/5 are directly load-bearing for that run); after it,
+    no unresolved CONFIRMED blocking/major finding remains. Re-run `yarn typecheck` / `vitest`
+    / `yarn lint` / `check-art-prompts --set courier` + `node --check` on the patch. No
+    commit/push. (Winston / Senior Architect — panel triage)

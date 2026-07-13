@@ -88,6 +88,15 @@ The strip prompt is assembled as `opening` + `exactly ${N} cells, ` + `prompt` +
   slicing hard-requires `@napi-rs/canvas` (installed before the generator, unlike
   the vehicle/enemy workflows). Prompt lint (`--set courier`) fails fast before any
   paid FLUX.
+- **Lint scoping deviation (architect-signed):** the per-layer word budget in
+  `check-art-prompts --set courier` is measured over the strip-VARIABLE content
+  (`exactly N cells, ` + prompt + joined cell clauses) — the byte-identical
+  ~89-word `opening`+`style` house tail is excluded, because folding it into a
+  multi-cell strip pushes every layer past the 120-word hard ceiling regardless
+  of authored content, making the budget meaningless. Negations, however, are
+  scanned over the FULL assembly actually sent (with `NEG_RE` extended to
+  hyphenated `-free`/`without` forms), so a stray negation in any slot cannot
+  escape the gate.
 - **Scope-guard note:** a pedaling courier is a documented extension beyond the
   Prohibition (Atari ST, 1987) cahier des charges, explicitly requested by
   Bertrand as a **pipeline stress test** of the layered strip-and-slice generation

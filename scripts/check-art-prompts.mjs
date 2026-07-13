@@ -81,7 +81,9 @@ const LEVEL_ART = path.resolve(ROOT, process.env.LEVEL_ART ?? "src/game/levels/l
 // ── Negation detector (shared with the budget check) ─────────────────────────
 // "not", "not a", "not an", "no " — the forms FLUX tends to ignore. Pattern
 // pinned to the contract spec exactly so the budget is measured consistently.
-const NEG_RE = /\bnot?( a| an)?\b|\bno \b/gi;
+// Hyphenated "-free" and "without" are negations too — FLUX reads "rider-free"
+// as "rider" (the courier bike-layer slip that motivated adding them).
+const NEG_RE = /\bnot?( a| an)?\b|\bno \b|\b\w+-free\b|\bwithout\b/gi;
 
 // Neon hues we treat as "colour names". Restricted to the palette the `neon`
 // field can take, so incidental words like "white" (in "black and white") are
@@ -489,8 +491,10 @@ function checkCourier(courier, rep) {
     return;
   }
 
-  const opening = courier.opening ?? "";
-  const style = courier.style ?? "";
+  // typeof guards: a non-string manifest value must produce a named report line,
+  // not a raw TypeError out of .trim().
+  const opening = typeof courier.opening === "string" ? courier.opening : "";
+  const style = typeof courier.style === "string" ? courier.style : "";
   if (!opening.trim()) {
     rep.error("courier.opening", "missing/empty — required medium + strip-layout slot");
   }
@@ -506,6 +510,26 @@ function checkCourier(courier, rep) {
     }
   }
 
+  // The generator requests stripW = size.width * N and the fixed slice grid +
+  // square render plane assume square cells — fail fast before any paid FLUX.
+  const cw = courier.size?.width;
+  const ch = courier.size?.height;
+  if (!Number.isInteger(cw) || cw <= 0) {
+    rep.error("courier.size.width", "must be a positive integer (cell width in px)");
+  }
+  if (!Number.isInteger(ch) || ch <= 0) {
+    rep.error("courier.size.height", "must be a positive integer (cell height in px)");
+  }
+  if (Number.isInteger(cw) && Number.isInteger(ch) && cw > 0 && ch > 0 && cw !== ch) {
+    rep.error(
+      "courier.size",
+      "cells must be square (width === height): the opening prompt, the fixed slice grid and the square render plane all assume it",
+    );
+  }
+  if (!Number.isFinite(courier.fps) || courier.fps <= 0) {
+    rep.error("courier.fps", "must be a positive number");
+  }
+
   const layers = courier.layers ?? {};
   if (Object.keys(layers).length === 0) {
     rep.error("courier.layers", "missing or empty `layers` block");
@@ -519,19 +543,23 @@ function checkCourier(courier, rep) {
       continue;
     }
 
-    const prompt = def.prompt ?? "";
+    const prompt = typeof def.prompt === "string" ? def.prompt : "";
     if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
     if (!Number.isInteger(def.seed) || def.seed <= 0) {
       rep.error(`${p}.seed`, "seed must be a positive integer");
     }
 
-    // asset: non-empty, prefixed assets/courier/, and unique across layers (two
-    // layers writing the same file would clobber each other at the art gate).
+    // asset: EXACTLY "assets/courier/<layerKey>.png". The generator writes files
+    // derived from the layer KEY while the renderer loads the manifest `asset` —
+    // this equality is the only thing coupling the two; anything else generates
+    // art the renderer never finds (permanent silent legacy fallback).
     const asset = def.asset ?? "";
-    if (typeof asset !== "string" || !asset.trim()) {
-      rep.error(`${p}.asset`, "missing/empty asset path");
-    } else if (!asset.startsWith("assets/courier/")) {
-      rep.error(`${p}.asset`, 'asset must be under "assets/courier/"');
+    const expectedAsset = `assets/courier/${name}.png`;
+    if (typeof asset !== "string" || asset !== expectedAsset) {
+      rep.error(
+        `${p}.asset`,
+        `must be exactly "${expectedAsset}" (generator writes by layer key; renderer loads this path)`,
+      );
     } else if (seenAssets.has(asset)) {
       rep.error(`${p}.asset`, `duplicate asset "${asset}" (also ${seenAssets.get(asset)})`);
     } else {
@@ -571,7 +599,24 @@ function checkCourier(courier, rep) {
       if (okClauses) {
         const N = frames.length;
         const cells = frames.map((c, i) => `cell ${i + 1}: ${c}`).join("; ");
-        checkBudgets(rep, `${p} (assembled strip)`, `exactly ${N} cells, ${prompt}, ${cells}`);
+        const variable = `exactly ${N} cells, ${prompt}, ${cells}`;
+        checkBudgets(rep, `${p} (assembled strip)`, variable);
+        // Negations are ALSO scanned over the FULL assembly actually sent
+        // (opening + variable + style): the word budget legitimately excludes the
+        // byte-identical house tail (SCOPE NOTE above), but a stray negation in
+        // any slot must never escape the scan.
+        const fullNegs = countNegations(`${opening}${variable}${style}`);
+        if (fullNegs > NEG_ERROR_OVER) {
+          rep.error(
+            `${p} (full strip incl. house tail)`,
+            `${fullNegs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
+          );
+        } else if (fullNegs > NEG_WARN_OVER) {
+          rep.warn(
+            `${p} (full strip incl. house tail)`,
+            `${fullNegs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+          );
+        }
       }
     }
   }

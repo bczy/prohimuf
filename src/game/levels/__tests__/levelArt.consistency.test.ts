@@ -223,13 +223,13 @@ describe("levelArt.json courier layered flipbook ↔ CourierSprite layer contrac
     }
   });
 
-  it("every layer asset path is non-empty, courier-scoped and unique across layers", () => {
+  it("every layer asset is exactly assets/courier/<key>.png (the generator↔renderer coupling)", () => {
+    // The generator writes frame files derived from the layer KEY while the
+    // renderer loads the manifest `asset`; this equality is the only thing
+    // coupling the two — any other value generates art the renderer never finds.
     const assets = LAYER_KEYS.map((key) => layers[key]?.asset ?? "");
-    for (const asset of assets) {
-      expect(asset.trim().length, "asset non-empty").toBeGreaterThan(0);
-      expect(asset.startsWith("assets/courier/"), `asset "${asset}" under assets/courier/`).toBe(
-        true,
-      );
+    for (const key of LAYER_KEYS) {
+      expect(layers[key]?.asset, `${key}.asset exact coupling`).toBe(`assets/courier/${key}.png`);
     }
     expect(new Set(assets).size, "assets unique across layers").toBe(assets.length);
   });

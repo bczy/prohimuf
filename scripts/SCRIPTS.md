@@ -549,8 +549,8 @@ two stacked planes render-side (bike below rider, ADR 0016).
   leaves a half-written strip.
 - **Frame files:** frame 1 unsuffixed `<layer>.png`, frame N≥2 `<layer>_f<N>.png`,
   under `public/assets/courier/`. Every `frames[i]` is a non-empty pose clause
-  (cell `i+1`); the strip prompt is `opening` + `exactly ${N} cells, ` + `prompt`
-  - the joined `cell i: clause` clauses + `style`.
+  (cell `i+1`); the strip prompt is `opening` + `exactly ${N} cells, ` + `prompt` +
+  the joined `cell i: clause` clauses + `style`.
 - **Output:** `public/assets/courier/{bike,rider}*.png`.
 
 ### Commands

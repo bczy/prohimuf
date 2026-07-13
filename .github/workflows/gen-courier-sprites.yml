@@ -41,8 +41,11 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    # merge/rebase/revert pushes can match the paths filter; only explicit ci(dispatch): commits may fire it.
-    if: github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):')
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise FORCE-push art past the merge
+    # gate). For pushes, only explicit ci(dispatch): commits may fire it
+    # (merge/rebase/revert pushes can match the paths filter).
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,8 +74,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # -f only bypasses the assets gitignore; the glob is bounded to the courier dir.
-          git add -f public/assets/courier/*.png
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # courier dir. compgen guards the zero-file case (total generation
+          # failure already exits the generator step non-zero, but an unmatched
+          # glob must not die with a confusing pathspec fatal here).
+          if compgen -G "public/assets/courier/*.png" > /dev/null; then
+            git add -f public/assets/courier/*.png
+          fi
           if git diff --cached --quiet; then
             echo "No new sprites to commit."
           else

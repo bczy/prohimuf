@@ -127,7 +127,7 @@
       "bike": {
         "asset": "assets/courier/bike.png",
         "seed": 5201,
-        "prompt": "a rider-free delivery bicycle rolling in profile, step-through steel frame, rear cargo rack, fat spoked wheels with three bold visible spokes",
+        "prompt": "an empty delivery bicycle rolling in profile, bare saddle and bare pedals, step-through steel frame, rear cargo rack, fat spoked wheels with three bold visible spokes",
         "frames": [
           "wheel spokes upright in a Y arrangement",
           "wheel spokes rotated one third of a turn",
