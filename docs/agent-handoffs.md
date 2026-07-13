@@ -1348,3 +1348,8 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
     no unresolved CONFIRMED blocking/major finding remains. Re-run `yarn typecheck` / `vitest`
     / `yarn lint` / `check-art-prompts --set courier` + `node --check` on the patch. No
     commit/push. (Winston / Senior Architect — panel triage)
+- art PROMPT GATE: PASS — courier rework (opening per-cell containment + greyscale
+  register + crouch/3-spoke frames, seeds 5210/5220). Lint PASS, 1 sanctioned WARN
+  (rider 107w). Asset-gate watch items: rider phantom-bike risk from "feet on pedals";
+  bike "three" manifest coupling; enemy regen — watch "pale neon tones" color flood +
+  \_f2 pair identity. (lead-art)
