@@ -1153,15 +1153,15 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   rewritten manifest-driven with the kontext-primary / matched-flux-pair fallback strategy;
   `scripts/check-art-prompts.mjs` gains the `enemies` set; docs (`SCRIPTS.md`,
   `asset-pipeline.md`, `art-direction.md` §4.1, `render-layer.md`, `gen-sprites.yml` header)
-  + ADR-0015. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
-  (`flipbookFrame`, DOM/Three-free) + `enemyTextures.ts` (frame param, per-frame preload,
-  frame→frame-1→global fallback chain, `frameCountFor`/`enemyAnimFps` reading the manifest) +
-  `EnemySprite.tsx` (per-state anim clock, HIT pins frame 1). The manifest↔ARCHETYPES key
-  contract is locked by a consistency test in `src/game/levels/__tests__` that mirrors the
-  `fileFor` key scheme (game may NOT import render, so the rule is duplicated, not shared).
-  Shared file `levelArt.json` is owned by the MANIFEST lane; render/test only READ it.
-  Boundary law upheld by design: game stays React/Three-free, flip timing is visual-only,
-  no new dependency. (Winston / Senior Architect — lane plan)
+  - ADR-0015. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
+    (`flipbookFrame`, DOM/Three-free) + `enemyTextures.ts` (frame param, per-frame preload,
+    frame→frame-1→global fallback chain, `frameCountFor`/`enemyAnimFps` reading the manifest) +
+    `EnemySprite.tsx` (per-state anim clock, HIT pins frame 1). The manifest↔ARCHETYPES key
+    contract is locked by a consistency test in `src/game/levels/__tests__` that mirrors the
+    `fileFor` key scheme (game may NOT import render, so the rule is duplicated, not shared).
+    Shared file `levelArt.json` is owned by the MANIFEST lane; render/test only READ it.
+    Boundary law upheld by design: game stays React/Three-free, flip timing is visual-only,
+    no new dependency. (Winston / Senior Architect — lane plan)
 - release: All three lanes landed. MANIFEST — `enemies` block, 12 types keyed to the exact
   base filenames (normal ×3 variants idle+shooting, riot/biker idle+shooting, bonus/civilian
   idle-only), pinned seeds 4801–4812, `fps:6`, `size:256²`. SCRIPT — `gen-enemy-types.mjs`
@@ -1180,7 +1180,7 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   file, kontext primary never touches frame 1, the loud fallback is the only frame-1 writer
   besides `FORCE=1`, per-asset try/catch never crashes the run. Verified GREEN locally:
   `yarn typecheck` 0 errors, `vitest` 200/200, `yarn lint` clean, `check-art-prompts --set
-  enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
+enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   Non-blocking observations logged for a fast-follow: (1) the consistency test duplicates the
   `fileFor` root-derivation rule (boundary forces it — game can't import render); the pure
   key-derivation depends only on `ARCHETYPES`, so extracting it into `src/game` and importing
