@@ -922,3 +922,75 @@ render-side data and never enters`GameState`. **Stock materials only** (`MeshBas
   - **AC6 sweep:** only `enemy_civilian.png` has the genuine defect. `vehicles/truck.png` (−3237) and `enemy_biker_shooting.png` (−474) would punch legitimate bright subject (white truck body / muzzle-flash core) under the pre-keyed white fallback → left untouched, documented for a separate per-sprite gated story; `enemy_shooting_3.png` and the low-white sprites show ~0 delta. CI path is unaffected for vehicles (raw truck gen has magenta corners → tight band keys magenta only, never the white body).
   - **Contract note to dev-r3f-render:** asset contract UNCHANGED — same path/size/name (`enemy_civilian.png`, 256×256 RGBA), only interior alpha corrected. No renderer change needed.
   - **Verification:** yarn typecheck OK, yarn test 189/189 OK, yarn lint OK. No `src/**` changes. ADR-0013 added. (Amelia / dev-tooling-assets)
+
+---
+
+## 2026-07-13 — senior-architect — Merge-gate triage + CI-batch guard-rail (courier fix)
+
+- **Panel outcome.** 4-reviewer panel raised a CONFIRMED blocking defect against the above lane: the `nGround === 0` white fallback + enclosed-island pass is reached by the **no-args CI batch** (`gen-sprites.yml` runs `cutout-enemies.mjs` with no args over the whole committed `enemy_*.png` set, while generation only creates missing files). Re-simulated: the pre-fix branch script punched legitimate bright subject in 9/12 committed sprites (biker_shooting −474 muzzle-flash core, riot_shooting −124, sprite_2 −114, …), which the workflow's `git add -f && commit && push` would land silently. The three "live CI path never hits this fallback" claims (ADR-0013, script comment, workflow comment) were factually false.
+- **Fix landed (scripts/CI guard-rail — architect domain, `src/**`untouched):**`cutout(file, { lightFallback })`. Batch/imported mode (`lightFallback` off) **skips** pre-keyed sprites (`nGround === 0`) with a log — restoring the historical no-op; explicit single-file CLI mode (`lightFallback`on) keeps the white fallback for the deterministic retouch.`gen-vehicle-sprites.mjs`'s `cutout(file)`import is unaffected (raw vehicles have opaque magenta corners →`nGround > 0`).
+- **Re-verified:** CI no-args batch over all 12 committed sprites is now **byte-identical** (0 px changed); single-file retouch of `enemy_civilian.png` still idempotent (byte-identical). ADR-0013, the workflow comment, and the AC6 note below corrected to describe the actual guarantee.
+- **AC6 correction (superseding line above):** the "~0 delta" claim for non-civilian sprites was wrong — under the _unguarded_ white fallback the deltas were −25..−474, not ~0. The sprites are now protected by the batch skip, not by luck. `vehicles/truck.png` and `enemy_biker_shooting.png` remain untouched by construction.
+- **Boundary review:** diff is confined to `scripts/**`, `public/assets/**`, `.github/workflows/**`, `docs/**`. No React/Three in `src/game`, no game rules in `src/render`, no `src/hooks` change; `git diff origin/main...HEAD -- src` empty. Asset contract (path/size/name of `enemy_civilian.png`) unchanged. **Sign-off: cleared for merge once green re-verified.** (Winston / senior-architect)
+
+---
+
+## 2026-07-13 — pm — story-courier-sprite-transparency-fix — ACCEPTANCE (John / PM)
+
+- **Full crew cycle, one block.** Scoping: PM framed the courier ("livreur à vélo")
+  white-speckle bug as a FAITHFULNESS fix on a core-loop `Éviter` asset — Prohibition
+  Atari ST shipped clean street-enemy sprites, so a correct cutout is faithful
+  implementation, not an extension (cahier des charges test PASS, not a feature). WHY it
+  mattered: opaque white background enclaves broke the fanzine-cutout illusion and the
+  neon-is-interactive language. Hand-off to `senior-architect` for the one cross-cutting
+  call — generic enclosed-island handling in the SHARED keyer vs a standalone reprocess
+  step. Lanes fanned out: `dev-tooling-assets` (primary, `scripts/**` + `public/assets/**`),
+  `dev-r3f-render` + `dev-gameplay` (read-only non-regression audits), `concept-artist`
+  (defense-in-depth prompt hardening). Gates: graphiste PASS + lead-art PASS. Merge panel
+  (4 reviewers) → `senior-architect` triage caught + fixed the real landmine (CI no-args
+  batch re-keying committed sprites) with the `lightFallback` batch-skip guard; two items
+  routed back to PM/orchestrator.
+- **AC verification (I re-inspected the repo, not the reports):**
+  - **AC1 (islands keyed) — PASS with PM-ruled deviation.** I read the before/after magenta
+    composites myself: bike-frame triangle, arm/torso gap and BOTH wheel interiors go from
+    opaque → transparent, spokes/rims preserved. pureWhite 939→149, no contiguous opaque
+    near-white island >~50 px remains enclosed. **PM RULING: I accept the 149-vs-≤30 numeric
+    deviation.** The ≤30 literal target was MISCALIBRATED against the sprite's legitimate
+    whites — connected-component analysis and both art gates confirm the residual 149 px is
+    the courier's own helmet/jacket highlight (byte-identical to the origin/main subject),
+    NOT background. The substantive AC1 clause (enclosed islands keyed, no opaque white
+    island remains) is met. Driving pureWhite lower would require a global white key that
+    eats the helmet/jacket and violates AC2 — explicitly rejected.
+  - **AC2 (subject preserved) — PASS.** opaque 22215→19580 (−2635, inside the 900–3000 px
+    window); composite shows a single coherent silhouette, no punched holes in
+    helmet/jacket/limbs/bike tubes.
+  - **AC3 (alpha discipline) — PASS.** semi-transparent 0→0 (binary held), whiteFringeOnEdge
+    22→22 (no new speckle, silhouette border untouched).
+  - **AC4 (visual gate) — PASS.** I read `civ_before_vis.png` vs `civ_after_vis.png` via the
+    Read tool: the three enclosed regions render magenta (transparent) after; body intact,
+    no eaten contours; reads as a clean high-contrast fanzine B&W cutout at game size.
+  - **AC5 (root-cause / no CI regression) — PASS.** Fix landed GENERICALLY in the shared
+    `cutout-enemies.mjs` (enclosed-island pass, corner-adaptive, not a white key). Idempotent
+    (byte-identical re-run). The CI landmine is closed by the `lightFallback` batch-skip guard
+    (verified in the working tree, lines 48–94): no-args batch skips pre-keyed sprites, so a
+    future CI cutout/reprocess cannot reintroduce enclosed islands or re-key accepted art.
+    ADR-0013 corrected to match shipped code.
+  - **AC6 (generic sweep) — PASS.** Sweep documented in ADR-0013: only `enemy_civilian.png`
+    carries the genuine enclosed-ground defect; `vehicles/truck.png` and
+    `enemy_biker_shooting.png` bright regions are legitimate subject (white truck body /
+    muzzle-flash core) — correctly left untouched and protected by the batch skip.
+  - **AC7 (green baseline / boundary) — PASS.** typecheck / test 189/189 / lint green
+    (dev-gameplay + post-panel re-verify); `git diff --stat -- src/game src/render src/hooks`
+    EMPTY; CourierSprite.tsx + enemyTypes.ts civilian archetype untouched. Change surface =
+    `scripts/**` + `public/assets/**` (+ `docs/adr/**` and a non-functional workflow comment,
+    both mandated by the CLAUDE.md ADR rule and triaged benign — sanctioned widening).
+- **Open-item dispositions.** (1) AC1 numeric deviation → ACCEPTED above. (2) The uncommitted
+  `gen-enemy-types.mjs` PIXEL_STYLE hardening (matte-black ground front-loaded + "the same
+  flat black filling every space between the figure's limbs and gear") passed the lead-art
+  gate and fixes AC5's root cause at the prompt level — I recommend it SHIPS WITH this story;
+  the commit/drop mechanics are the orchestrator's call, not an acceptance blocker. Recorded
+  trade-off: PIXEL_STYLE is shared across all enemy archetypes, so a future FORCE=1 regen of
+  any accepted enemy sprite will differ from its pinned-seed original and need re-acceptance.
+- **VERDICT: ACCEPTED.** All seven ACs satisfied, no unresolved CONFIRMED blocking/major
+  finding, both art gates PASS. Story **DONE**. No commit/push by PM — orchestrator owns
+  the merge. (John / PM)
