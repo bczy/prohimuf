@@ -1353,3 +1353,6 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   (rider 107w). Asset-gate watch items: rider phantom-bike risk from "feet on pedals";
   bike "three" manifest coupling; enemy regen — watch "pale neon tones" color flood +
   \_f2 pair identity. (lead-art)
+- art ASSET GATE (bike): PASS par Bertrand — take 4 per-frame + retouche scriptée
+  des bâtons (retouch-bike-spokes.mjs, 0/40/80°, base unique = zéro flicker).
+  Rider: prochaine itération.

@@ -797,3 +797,18 @@ delivery at all, never on a bad-looking halo. Outputs are gitignored
   an **unpinned** `npm i --no-save playwright` locally so it resolves a compatible
   browser; the CI composite actions pin deliberately and install the matching
   browser via `npx playwright install`.
+
+## retouch-bike-spokes.mjs — Courier bike spoke rotation (scripted retouch)
+
+FLUX draws a consistent whole bicycle per frame (pinned seed) but refuses
+legible tri-spoke mag wheels and re-rolls small accessories between frames. This
+game-graphist pass derives **every** bike frame from the single FLUX base
+(`bike.png`): the two wheel discs are detected (dark-pixel centroids in two
+x-windows that exclude the frame-bag band) and three bold pale spokes are drawn
+per wheel, rotated 0°/40°/80° per frame — one full 120° spoke period across the
+3-frame flip, identical bike everywhere, zero flicker. Deterministic and
+idempotent; runs in CI right after generation + cutout.
+
+```bash
+node scripts/retouch-bike-spokes.mjs   # requires @napi-rs/canvas
+```

@@ -68,6 +68,12 @@ jobs:
         # the art gate first; drop the flag to regenerate the rider as well.
         run: FORCE=1 node scripts/gen-courier-sprites.mjs --layer bike
 
+      - name: Stamp rotating spokes on the bike frames (scripted retouch)
+        # Derives every bike frame from the single FLUX base with the tri-spoke
+        # Y drawn at 0/40/80 degrees — FLUX won't draw legible mag wheels, so
+        # the rotation is deterministic pipeline work (see the script header).
+        run: node scripts/retouch-bike-spokes.mjs
+
       - name: Commit sprites
         run: |
           git config user.name "github-actions[bot]"
