@@ -83,6 +83,19 @@ skipped per ADR 0013).
 
 ---
 
+## Enemy enclosed-hole fill + gate
+
+After cutout, `scripts/fill-sprite-holes.mjs` runs over every `public/assets/enemy_*.png`
+and surgically re-opaques any **enclosed transparency hole** the keying left inside a
+figure (interior `alpha < 16` regions fully walled by opaque body — e.g. a paper-white
+torso zone the enclosed-island pass cleared), painting each with its boundary-mean
+colour; edge/background transparency is untouched. `.github/workflows/gen-sprites.yml`
+runs this fill and then a `fill-sprite-holes.mjs --check` **hole gate** before the commit
+step, so the job fails if any enemy sprite still carries an enclosed hole — no enemy
+character may ship with a transparency hole.
+
+---
+
 ## Courier layered flipbook (strip-and-slice)
 
 The street courier is a **2-layer composite** — a delivery **bike** (wheel

@@ -199,10 +199,10 @@ Template:
   (`energy: 100` init + `hostageTakers` array + energy aggregation), `levels.ts`
   (`belliard.roster` += windowWeights.hostage*taker≈8 + streetSpawns).
   `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx`(kidnapper + foreground hostage,
-  rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
-  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
- `onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
-  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts`  (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
+rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
+(+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
+`onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
+`scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts` (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
 **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
   Released: pending.
 
@@ -1360,3 +1360,73 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   (base FLUX seed 5220) + rotation de roues scriptée 6 frames/20° (retouch-courier-
   spokes.mjs, bâtons à liseré). Layer vélo retiré du composite, art conservé en
   réserve. Vérifié en jeu (burst headless, zéro erreur).
+
+---
+
+### story-enemy-sprite-hole-fill — enclosed-transparency-hole fill + CI gate
+
+- audit baseline: the chroma-key cutout (enclosed-island pass, ADR-0013) left
+  transparency holes INSIDE some enemy figures — a hole audit found **20/22
+  enemy\_\*.png files** carrying enclosed holes, **2832 enclosed transparent px**
+  total (interior alpha<16 fully walled by opaque body — paper-white zones FLUX
+  never drew that the keying pass then cleared).
+- fill tool (game-graphist lane): `scripts/fill-sprite-holes.mjs` — surgical fill,
+  re-opaques ONLY enclosed alpha<16 pixels to the boundary-mean colour, never cuts,
+  deterministic + idempotent; `--check` writes nothing and exits 1 if any enemy
+  file still has an enclosed hole.
+- prevention wired (dev-tooling-assets lane, `.github/**` + docs only — no
+  `src/`/`scripts/`/`public/` touched): `.github/workflows/gen-sprites.yml` runs
+  `node scripts/fill-sprite-holes.mjs` after cutout (reuses the @napi-rs/canvas the
+  cutout step already installs) then a `--check` **hole gate** before commit, so the
+  job FAILS if any enclosed hole survives (Bertrand's condition: no enemy character
+  may ship with a transparency hole). Docs: `scripts/SCRIPTS.md` (new section),
+  `docs/asset-pipeline.md` (enclosed-hole fill + gate paragraph), this log. Verified
+  with a YAML parse + visual indentation check; prettier clean. No commit.
+  (Amelia — Tooling & Assets)
+
+### story-enemy-hole-fill (scripted retouch — game-graphist)
+
+- graphiste TECHNICAL pass (Serge): the chroma-key ("enclosed-island pass" in
+  cutout-enemies.mjs) ate DARK-clothing regions that matched the near-black key ground,
+  punching transparency HOLES _inside_ 19/22 enemy sprites (2832 enclosed px total; worst:
+  enemy_civilian 2087 = solid bike-wheel spoke-gaps + dark trousers, enemy_sprite_3 241 =
+  beanie crown, enemy_shooting 103 = uniform shoulder, enemy_sprite_2 102 = black belt).
+- FIX: authored `scripts/fill-sprite-holes.mjs` — surgical FILL ONLY. Border flood-fill
+  (4-conn, alpha<16) marks exterior; remaining transparent = enclosed holes; each region
+  filled with the MEAN colour of its alpha-255 opaque border (trouser-hole → trouser colour).
+  Built-in surgical self-check ABORTS the write if any previously-opaque (alpha>=16) pixel
+  changes or any non-enclosed pixel changes. `--check` mode = CI gate (exit 1 if any hole).
+- RESULT: all 2832 holes filled, every per-file self-check clean, `--check` exits 0 (zero
+  enclosed px on every enemy\_\*.png), idempotent (2nd run writes nothing). Independent PIL
+  byte-diff vs git HEAD on the 4 worst: opaque_pixels_changed=0, changed count == holes
+  filled, all changed pixels were previously transparent. Silhouettes untouched; fill colours
+  plausible. NOTE for Nico's taste gate: civilian's bicycle wheels go from spoked to SOLID
+  dark discs (the spoke-gaps were enclosed transparency per Bertrand's "everything solid"
+  mandate) — reads fine at game size, outer rim unchanged, but it is the one visible read
+  change worth a taste glance. NOT committed. (Serge — TECHNICAL pass, scripted retouch)
+
+### story-enemy-hole-fill — ITERATION 2 (SOLIDIFY pass, game-graphist)
+
+- Bertrand's gate rejected iter-1 ("encore trop de transparence"): the enclosed-only fill
+  left figures POROUS through BORDER-connected transparency (gaps opening to the outside;
+  waist-cut bust torsos draining out the bottom edge). Bertrand prototyped + applied a
+  SOLIDIFY pass to all 22 working-tree files (validated visually by his direction).
+- PORTED that pass into `scripts/fill-sprite-holes.mjs` as default behavior so CI reproduces
+  it. Two passes per file: PASS A — reconstruct the solid body mask (opaque + SELECTIVE
+  bottom-row seal [only frame-cut columns, opaque within 2px of the bottom edge — NOT the
+  whole x-extent, which would annex the background triangle between spread legs / slivers
+  under feet] → disk-10 binary_closing → binary_fill_holes → largest CC → disk-1 erode) and
+  fill every transparent px inside it with the dark-clothing tone (median RGB of opaque px
+  below the figure's median luminance); PASS B — the iter-1 enclosed-region mop-up. Pure
+  JS morphology (precomputed disk offsets), no scipy. Surgical self-check unchanged (aborts
+  if any originally-opaque px would change). `--check` = detect-only gate, exit 1 if either
+  pass would fill anything.
+- ACCEPTANCE (king): `node scripts/fill-sprite-holes.mjs` reports 0 px to fill on all 22
+  current files, `--check` exits 0, no PNG rewritten. CI-fidelity: run on the porous git-HEAD
+  originals fills 101,975 px, every self-check clean, re-check exits 0 (solid + idempotent);
+  regenerated figures composite fully solid over magenta with body intact. Selective-seal
+  vs ground-truth diff: orange=0 (NEVER over-annexes background); the only deltas are 1-3px
+  base/under-feet slivers the seal correctly leaves transparent.
+- Docs updated: script WHY header + SCRIPTS.md section + gen-sprites.yml two step comments
+  (was "enclosed only" → "solidify") + sprite-hole-audit skill. node --check + prettier
+  clean. NOT committed. (Serge — TECHNICAL pass, scripted retouch iter-2)

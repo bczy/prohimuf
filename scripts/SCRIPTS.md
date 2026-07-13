@@ -814,3 +814,45 @@ after generation + cutout.
 ```bash
 node scripts/retouch-courier-spokes.mjs   # requires @napi-rs/canvas
 ```
+
+## fill-sprite-holes.mjs — Enemy figure SOLIDIFY pass (scripted retouch + gate)
+
+The chroma-key cutout keys the background AND clears ground fully walled in by the
+subject (ADR-0013 enclosed-island pass). Where a character wears DARK clothing that
+matched the near-black key ground, the keyer ate those pixels and left the figure
+**POROUS** — see-through gaps in the legs/torso, speckles, a leg opening a window to
+the sky. Iteration 1 filled only fully-enclosed voids; Bertrand's direction gate
+("encore trop de transparence") rejected it because the porosity is also reachable
+through **border-connected** transparency (a gap that opens to the outside, or a bust
+sprite cut at the waist whose torso void drains through the bottom edge). Mandate:
+**"everything solid"** — the figure body ships opaque, no see-through.
+
+This game-graphist pass reconstructs and fills the body deterministically, **no FLUX
+regeneration**, in two passes on every `public/assets/enemy_*.png`:
+
+- **PASS A — solidify.** Build the solid body mask morphologically: `opaque = alpha>=16`
+  plus a **selective bottom-row seal** — sealed ONLY in columns where the figure is
+  genuinely frame-cut (opaque within 2px of the bottom edge, i.e. a bust sprite), NEVER
+  the whole x-extent (which would annex bottom-open background: the triangle between a
+  shooter's spread legs, the slivers under the feet). Then
+  `binary_fill_holes(binary_closing(sealed, DISK r=10))` (a **disk**
+  structuring element bridges the keyed-out gaps), keep the largest connected component,
+  erode by **DISK r=1** (anti-halo). Fill every transparent pixel inside that mask with
+  the **dark-clothing tone** = median RGB of the opaque pixels below the figure's median
+  luminance.
+- **PASS B — mop-up.** Re-run the iteration-1 enclosed-region fill (border flood; each
+  leftover enclosed region gets its opaque-boundary-mean colour) to catch small enclaves.
+
+**Cardinal rule — fill only, never reshape.** Both passes only turn transparent pixels
+(`alpha < 16`) opaque; a built-in self-check asserts every originally-opaque pixel
+(`alpha >= 16`) is **byte-identical** and ABORTS the write otherwise. Deterministic and
+idempotent (a second run fills 0 px). Runs in CI right after generation + cutout, before
+the commit — with a `--check` gate that FAILS the job if either pass would still fill
+anything (Bertrand's validation condition: no enemy character may ship porous).
+
+```bash
+node scripts/fill-sprite-holes.mjs          # solidify every enemy_*.png (PASS A + PASS B)
+node scripts/fill-sprite-holes.mjs --check  # gate: write nothing, exit 1 if any px would fill
+```
+
+- **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).

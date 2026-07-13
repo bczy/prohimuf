@@ -12,7 +12,9 @@ name: Generate enemy-type sprites
 # manual (workflow_dispatch) or by touching the dispatch marker
 # .github/dispatch/gen-sprites (see docs/adr/0009). The sprites are already
 # committed, so this is just a regeneration tool — running it on every push
-# re-keyed existing sprites and created noise.
+# re-keyed existing sprites and created noise. After cutout, fill-sprite-holes.mjs
+# SOLIDIFIES the figures (fills the porous body left where dark clothing matched the
+# key) and a --check gate FAILS the job if any survive — no enemy may ship porous.
 on:
   workflow_dispatch:
   push:
@@ -61,6 +63,28 @@ jobs:
           # (see docs/adr/0013).
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
           node scripts/cutout-enemies.mjs
+
+      - name: Solidify enemy sprite figures
+        run: |
+          # The chroma-key cutout leaves the figure POROUS where dark clothing
+          # matched the near-black key ground — see-through gaps in legs/torso,
+          # reachable through both enclosed AND border-connected transparency.
+          # fill-sprite-holes.mjs runs two passes: PASS A reconstructs the solid
+          # body (bottom-row seal + disk-10 closing + fill-holes + largest CC +
+          # disk-1 erode) and fills it with the dark-clothing tone; PASS B mops up
+          # any leftover enclosed enclave (boundary-mean colour). It only ever turns
+          # transparent px opaque — a self-check aborts if an opaque px would change.
+          # @napi-rs/canvas is already installed by the cutout step above (the
+          # decoder is shared) — no duplicate install needed.
+          node scripts/fill-sprite-holes.mjs
+
+      - name: Gate — no enemy figure may ship porous
+        run: |
+          # Bertrand's validation condition ("everything solid"): no enemy character
+          # may ship see-through. --check writes nothing and exits 1 if EITHER pass
+          # would still fill anything on ANY enemy_*.png after the solidify step,
+          # failing the job before commit.
+          node scripts/fill-sprite-holes.mjs --check
 
       # FOLLOW-UP: no automated STYLE gate for enemy sprites yet. The pixel gate
       # (scripts/check-sprite-style.mjs) is calibrated ONLY for the three vehicle
