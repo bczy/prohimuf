@@ -63,6 +63,39 @@ metrics — bbox height vs canvas, contrast of rim vs body). Judge:
   pixels, hot isolated pixels,
 - consistency of treatment across the set at their respective sizes.
 
+**AI-generation defect sweep** (mandatory, runs BEFORE the sprite goes up to Nico's
+asset gate). FLUX is a fill tool, not a draughtsman — it will happily hand you a
+figure with a leg that never joins the hip, a hand webbed into the handlebar, three
+pedals. On opaque white these lies hide; they only surface once the keyer punches the
+background out (the courier's legs were detached from the hips from the very first
+generation — the hip was white, keyed to a hole, and the break only became visible
+after cutout). So sweep **on a CONTRASTING background** — composite transparency to
+magenta (`vis.mjs`) and pull zoomed crops (`crop.mjs … m`) — and **at real in-game
+size**, then squint:
+
+1. **ANATOMY** — every limb physically rooted to the torso; no floating or detached
+   member; no transparent enclave severing a limb from the body (cross-check the
+   machine check's enclosed-region inventory against the crops); sane joint count and
+   head-to-body ratio.
+2. **EXTREMITIES & DUPLICATION** — finger count reads, no fused/webbed hands; no
+   supernumerary or missing limbs; paired-element parity holds (two shoes, two wheels,
+   two pedals, two headlights).
+3. **FUSED OBJECTS & PERSPECTIVE** — no subject/prop fusion (hand melting into the
+   handlebar, strap dissolving into the arm), no melted texture; wheels equal diameter
+   and both sitting on the baseline; coherent scale and projection across the figure.
+4. **PRE-KEY HOLE INVENTORY (root-cause guard)** — before you trust the keyer, treat
+   any enclosed light region falling OVER the body — hips, armpits, crotch, between
+   fingers — as a suspected GENERATION HOLE, not background. Flag it for review and
+   withhold the auto-key rather than accepting a punched hole where anatomy should be.
+
+`node scripts/check-sprite-integrity.mjs` is a MECHANICAL pre-check (dominant-component
+count, speckle budget, enclosed-region inventory): its PASS is a floor, it does NOT
+bind your craft verdict — same as Nico's `check-sprite-style` pre-check does not bind
+his taste. A single sweep hit BLOCKS the sprite from going up to Nico; log it in
+`docs/agent-handoffs.md` with the crop coordinates. This sweep also runs on **any
+scripted retouch** you make, not just fresh generations — a bridge or a clean pass can
+itself create a new anatomical break.
+
 You may **retouch via script only** (`scripts/retouch-sprites.mjs`, @napi-rs/canvas —
 same npm install pattern as the cutout scripts): fringe cleanup, halo clamp, alpha
 hardening, gentle quantization. Every retouch is deterministic, re-runnable,
