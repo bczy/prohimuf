@@ -140,6 +140,10 @@ All sprites are `<mesh position={[x,
 | `CopSprite`       | `TopdownState.cops[i]`              | 1       |
 | `DeliverySprite`  | `TopdownState.delivery`             | 1       |
 
+### Enemy flipbook
+
+`EnemySprite` plays a short 2-frame flip per state (idle sway, muzzle recoil). The pure, DOM-free helper `flipbook.ts` (`flipbookFrame(elapsed, frameCount, fps)`) maps a per-state clock to a 1-based frame index. Frame counts are manifest-driven: `enemyTextures.ts` reads `enemies.types[<baseFile>].frames.length` and the shared `enemies.fps` from `levelArt.json` (the base-file key is exactly what `fileFor` builds). Frame 1 is the committed unsuffixed PNG; extra frames are `<baseFile>_f<N>.png` (generated later in CI). A missing frame degrades to frame 1, then to the global cop fallback, so the sprite is never blank; `HIT` pins frame 1 while the white flash dominates.
+
 ---
 
 ## HUD

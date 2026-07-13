@@ -6,7 +6,8 @@ import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import { getEnemyTexture } from "./enemyTextures";
+import { getEnemyTexture, frameCountFor, enemyAnimFps } from "./enemyTextures";
+import { flipbookFrame } from "./flipbook";
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
 let glowTexture: Texture | null = null;
@@ -49,6 +50,9 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   const flashRef = useRef<Mesh>(null);
   // Track APPEARING phase start for unfold animation
   const unfoldTimerRef = useRef(0);
+  // Flipbook clock, reset on every state change so each state animates from
+  // frame 1 (see getEnemyTexture / flipbookFrame).
+  const animClockRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
 
   useFrame((_state, delta) => {
@@ -65,10 +69,14 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
 
     const archetype = ARCHETYPES[enemy.kind];
 
+    const stateChanged = prevStateRef.current !== enemy.state;
     // Reset unfold timer when entering APPEARING
     if (prevStateRef.current !== "APPEARING" && enemy.state === "APPEARING") {
       unfoldTimerRef.current = 0;
     }
+    // Restart the flipbook clock on any state change so each state's animation
+    // plays from frame 1.
+    if (stateChanged) animClockRef.current = 0;
     prevStateRef.current = enemy.state;
 
     mesh.visible = true;
@@ -90,10 +98,21 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
     const muzzleX = planeH * aspect * 0.45;
 
     // Texture for this kind/variant/state (shared cache; new-type sprites fall
-    // back to the normal cop until they exist).
+    // back to the normal cop until they exist). The flipbook advances via the
+    // per-state clock; HIT pins frame 1 since the white flash dominates and a
+    // missing `_f2` frame degrades to frame 1 inside getEnemyTexture.
     const variant = (slotIndex % archetype.variants) + 1;
     const shooting = enemy.state === "SHOOTING";
-    const tex = getEnemyTexture(enemy.kind, variant, shooting);
+    animClockRef.current += delta;
+    const frame =
+      enemy.state === "HIT"
+        ? 1
+        : flipbookFrame(
+            animClockRef.current,
+            frameCountFor(enemy.kind, variant, shooting),
+            enemyAnimFps(),
+          );
+    const tex = getEnemyTexture(enemy.kind, variant, shooting, frame);
     const mat = mesh.material as MeshBasicMaterial;
     if (tex !== null && mat.map !== tex) {
       mat.map = tex;
