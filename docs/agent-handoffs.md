@@ -1131,3 +1131,45 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
 - **VERDICT: ACCEPTED.** All acceptance criteria satisfied, both art gates PASS, architect
   sign-off, no unresolved CONFIRMED blocking/major finding. Story **DONE**. No commit/push by
   PM — orchestrator owns the merge. (John / PM)
+
+---
+
+## 2026-07-13 — cycle — story-tutorial-device-paths (PR #38, ADR-0015) — FULL CYCLE
+
+- **WHAT/WHY (Bertrand):** the scripted tutorial (ADR-0012) gets TWO paths — one detailing
+  desktop controls, one mobile controls — picked automatically from the device, plus the ADR
+  update. Bertrand ruled (AskUserQuestion): new **ADR-0015** amending ADR-0012 D4 §2, per the
+  README immutability convention. Bonus motivation surfaced in exploration: the mixed copy was
+  factually WRONG on both sides (mobile shooting is a TWO-finger tap, "clic ou tap" hid it;
+  desktop has no drag-pan, "bord ou glisser" described a control that does not exist).
+- arch: Boundary verdict PASS, four lanes on disjoint paths, fully parallel. Lane G
+  (`dev-gameplay`): `src/game/systems/narrativeSystem.ts` + `tutorialInvariants.test.ts` +
+  `narrativeSystem.test.ts`. Lane R (`dev-r3f-render`): `src/render/scene/App.tsx` only.
+  Lane T (`dev-tooling-assets`): `scripts/screenshot-preview.mjs` only. Lane A (architect):
+  `docs/adr/0015-device-forked-tutorial-script.md` + 0012 "Amended by" header line + README
+  index row. (Winston / Senior Architect)
+- release: all four lanes CONCURRENT, no file overlap, none edited this log (serialized by
+  the orchestrator). Lane G — `TUTORIAL_NARRATIVE` replaced by `TUTORIAL_NARRATIVE_DESKTOP` /
+  `TUTORIAL_NARRATIVE_MOBILE` (ids `tutorial_desktop`/`tutorial_mobile`), composed from four
+  private segments; the 6 shared panels are the SAME objects by reference, only the 2 control
+  panels fork; 8 panels per variant (progress-dot parity). TDD: 2 new invariants (fork limited
+  to control panels via `toBe` reference equality; device-accurate copy via regex — mobile
+  says "deux doigts" never "clic/souris", desktop the inverse). Lane R — module-scope
+  `TUTORIAL_SCENE = IS_MOBILE ? mobile : desktop` beside `IS_MOBILE` (once-at-load, ADR-0003
+  D1); `NarrativeScreen` untouched (device-agnostic). Lane T — `02_tutorial.png` →
+  `02_tutorial_desktop.png` + second Playwright context with a mobile UA capturing
+  `03_tutorial_mobile.png`; contact sheet updated. (Amelia ×3)
+- review: architect diff review **PASS** — boundary law clean (no device/navigator vocabulary
+  in `src/game`), scope exact, ADR-0015 statements verified item-by-item against the landed
+  code, zero CONFIRMED blocking/major findings. (Winston / Senior Architect)
+- verify: `yarn typecheck` / `yarn test` (191/191) / `yarn lint` green. End-to-end in a
+  headless browser against the prod build: `?preview=tutorial` under a desktop UA renders
+  "le viseur suit ta souris… Clic gauche" / "Pousse le curseur au bord", under a mobile UA
+  "tape à DEUX doigts" / "Un doigt pour balayer… pichenette" — fork confirmed live.
+- merge: PR #38 (draft → ready) **MERGED to main by Bertrand directly** (squash `1d4d341`).
+  NOTE for the record: the 4-reviewer code-review panel and the formal PM acceptance were
+  NOT run before this merge (only the architect sign-off was) — owner's prerogative,
+  logged so the gap is visible, not silent. This handoff entry lands as a follow-up commit.
+- follow-ups (non-blocking): (1) iPadOS desktop-UA limitation means iPads get the desktop
+  script (accepted, ADR-0003 D1); (2) control copy now lives in two places — the
+  device-accuracy regex test is the guard rail when a control scheme changes.
