@@ -82,6 +82,15 @@ dark ground it has drifted — automatic FAIL, not a taste note.**
   `filter: grayscale(1) contrast(~2.2) brightness(~1.1)` on the existing PNG, over a dot-
   screen overlay. Any surviving warm window-**glow** (partial desaturation) reintroduces glow
   on a menu = **FAIL**. `grayscale(1)` is mandatory, not `grayscale(.9)`.
+- **A sprite shown over a location décor is printed with it** — when a briefing illustration
+  slot sits on a halftone facade backdrop (ADR-0023), the sprite carries `filter: grayscale(1)`
+  (+ mild `contrast`) so it reads as **one printing** with that facade: stray sprite colour
+  (badge, uniform) is killed, no colour island floats over the B&W wash. Always the **bare** PNG,
+  never a neon-rimmed composite (the in-game rim is render-side, §2 law 1 — a menu has zero glow).
+  **No** heavy halftone dot-screen on the sprite: it would eat the silhouette (§2 law 3); the
+  `pixelated` raster already reads xerox-adjacent. Décor-less slots (the tutorial bestiary) keep
+  their own already-accepted treatment — the grayscale is the facade-coherence tell, not a blanket
+  rule. (ADR-0012 / ADR-0023.)
 - **State is hand-work, not light.** Hover = flyer pull / marker ring; focus = inked marker
   ellipse (always visible); selected = X-stamp / tick / tape corners. The only allowed
   "pulse" is the typewriter cursor blink (a répondeur/typewriter cursor, not a glow).

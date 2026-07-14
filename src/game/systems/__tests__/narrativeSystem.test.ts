@@ -52,4 +52,38 @@ describe("narrativeSystem data integrity", () => {
       }
     }
   });
+
+  it("A5: every PRE/POST scene carries a level-facade backdrop (ADR-0023)", () => {
+    for (const [key, scene] of [
+      ...Object.entries(PRE_LEVEL_NARRATIVE),
+      ...Object.entries(POST_LEVEL_NARRATIVE),
+    ]) {
+      // Scene-scoped location décor: a relative asset path (no leading slash) at the
+      // level's own facade, so the render lane can BASE_URL-prefix + halftone it.
+      expect(scene.backdrop).toBe(`assets/levels/${key}/facade.png`);
+      expect(scene.backdrop?.startsWith("/")).toBe(false);
+    }
+  });
+
+  it("A6: tutorial scenes carry no backdrop (byte-identical to pre-ADR-0023)", () => {
+    expect(TUTORIAL_NARRATIVE_DESKTOP.backdrop).toBeUndefined();
+    expect(TUTORIAL_NARRATIVE_MOBILE.backdrop).toBeUndefined();
+  });
+
+  it("A7: every line that sets `image` also sets a non-empty `imageAlt`", () => {
+    const scenes = [
+      ...Object.values(PRE_LEVEL_NARRATIVE),
+      ...Object.values(POST_LEVEL_NARRATIVE),
+      TUTORIAL_NARRATIVE_DESKTOP,
+      TUTORIAL_NARRATIVE_MOBILE,
+    ];
+    for (const scene of scenes) {
+      for (const line of scene.lines) {
+        if (line.image !== undefined) {
+          expect(line.image.startsWith("/")).toBe(false);
+          expect((line.imageAlt ?? "").trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
 });

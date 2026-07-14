@@ -41,7 +41,20 @@ export interface NarrativeLine {
 export interface NarrativeScene {
   readonly id: string;
   readonly lines: readonly NarrativeLine[];
+  /**
+   * Optional per-scene location décor (ADR-0023, amending ADR-0021 D5). A facade path
+   * under `public/assets/` WITHOUT a leading slash (e.g. `"assets/levels/belliard/facade.png"`).
+   * The render lane prefixes `import.meta.env.BASE_URL` and paints it as a full-bleed
+   * halftone-B&W wash BEHIND the (unchanged) transcript — grayscale via `HalftoneHero`,
+   * zero glow. Structural twin of `NarrativeLine.image`, lifted to scene scope. Absent ⇒ no
+   * décor; the panel renders exactly as before (both tutorial variants omit it).
+   */
+  readonly backdrop?: string;
 }
+
+/** Rider sprite = Muf the courier; alt kept constant everywhere it illustrates a MUF line. */
+const MUF_RIDER_IMAGE = "assets/courier/rider.png";
+const MUF_RIDER_ALT = "Muf, le coursier à moto";
 
 /**
  * Optional scripted onboarding stage (ADR-0012, D4). A SEPARATE constant — never keyed
@@ -157,31 +170,69 @@ export const TUTORIAL_NARRATIVE_MOBILE: NarrativeScene = {
 export const PRE_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
   belliard: {
     id: "belliard_pre",
+    backdrop: "assets/levels/belliard/facade.png",
     lines: [
-      { speaker: "DISPATCH", text: "Muf. T'as une livraison rue Belliard. 19e." },
-      { speaker: "MUF", text: "C'est chaud là-bas non ?" },
-      { speaker: "DISPATCH", text: "Les flics patrouillent depuis la manif. Reste sur les toits." },
+      {
+        speaker: "DISPATCH",
+        text: "Muf. T'as une livraison rue Belliard. 19e.",
+        image: "assets/vehicles/truck.png",
+        imageAlt: "Le camion de livraison",
+      },
+      {
+        speaker: "MUF",
+        text: "C'est chaud là-bas non ?",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
+      {
+        speaker: "DISPATCH",
+        text: "Les flics patrouillent depuis la manif. Reste sur les toits.",
+        image: "assets/enemy_shooting.png",
+        imageAlt: "Un flic qui dégaine à la fenêtre",
+      },
       { speaker: "MUF", text: "...t'as dit quoi ?" },
       { speaker: "DISPATCH", text: "Les fenêtres, Muf. Les fenêtres." },
     ],
   },
   stalingrad: {
     id: "stalingrad_pre",
+    backdrop: "assets/levels/stalingrad/facade.png",
     lines: [
       { speaker: "MUF", text: "Stalingrad. Le grand immeuble sur le canal." },
-      { speaker: "KENZA", text: "Fais gaffe aux RG. Ils ont des planques là-dedans depuis '95." },
-      { speaker: "MUF", text: "Combien de fenêtres ?" },
+      {
+        speaker: "KENZA",
+        text: "Fais gaffe aux RG. Ils ont des planques là-dedans depuis '95.",
+        image: "assets/enemy_shooting.png",
+        imageAlt: "Un RG en planque à la fenêtre",
+      },
+      {
+        speaker: "MUF",
+        text: "Combien de fenêtres ?",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "KENZA", text: "Trop. Tu peux pas toutes les surveiller." },
-      { speaker: "MUF", text: "On va voir." },
+      { speaker: "MUF", text: "On va voir.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
     ],
   },
   vitry: {
     id: "vitry_pre",
+    backdrop: "assets/levels/vitry/facade.png",
     lines: [
       { speaker: "KENZA", text: "Vitry. Le 94. Tu connais ?" },
-      { speaker: "MUF", text: "J'ai grandi là-bas." },
+      {
+        speaker: "MUF",
+        text: "J'ai grandi là-bas.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "KENZA", text: "Alors tu sais que les barres ont des yeux partout." },
-      { speaker: "MUF", text: "Ouais. Et les yeux ils me connaissent." },
+      {
+        speaker: "MUF",
+        text: "Ouais. Et les yeux ils me connaissent.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "KENZA", text: "Pas les nouveaux." },
     ],
   },
@@ -191,32 +242,57 @@ export const PRE_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
 export const POST_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
   belliard: {
     id: "belliard_post",
+    backdrop: "assets/levels/belliard/facade.png",
     lines: [
-      { speaker: "MUF", text: "Livraison faite. Rue Belliard." },
+      {
+        speaker: "MUF",
+        text: "Livraison faite. Rue Belliard.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "DISPATCH", text: "La rave commence dans deux heures. Stalingrad." },
-      { speaker: "MUF", text: "Ils changent pas." },
+      {
+        speaker: "MUF",
+        text: "Ils changent pas.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "DISPATCH", text: "C'est pour ça qu'on les aime." },
     ],
   },
   stalingrad: {
     id: "stalingrad_post",
+    backdrop: "assets/levels/stalingrad/facade.png",
     lines: [
-      { speaker: "MUF", text: "Canal propre. Personne a suivi." },
+      {
+        speaker: "MUF",
+        text: "Canal propre. Personne a suivi.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "KENZA", text: "Le son tient jusqu'à l'aube. Tu viens ?" },
-      { speaker: "MUF", text: "J'ai encore Vitry." },
+      {
+        speaker: "MUF",
+        text: "J'ai encore Vitry.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
       { speaker: "KENZA", text: "Après Vitry." },
       { speaker: "MUF", text: "Après Vitry." },
     ],
   },
   vitry: {
     id: "vitry_post",
+    backdrop: "assets/levels/vitry/facade.png",
     lines: [
+      // The Vitry grief monologue stays imageless — the barres facade carries it alone;
+      // only the closing "On rentre." reopens the loop with Muf back on the bike.
       { speaker: "MUF", text: "..." },
       { speaker: "MUF", text: "Les barres. L'odeur du béton chaud la nuit." },
       { speaker: "MUF", text: "Ma mère habitait au 9e. Fenêtre du coin." },
       { speaker: "MUF", text: "J'aurais pas dû revenir." },
       { speaker: "KENZA", text: "...Muf ?" },
-      { speaker: "MUF", text: "On rentre." },
+      { speaker: "MUF", text: "On rentre.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
     ],
   },
 };

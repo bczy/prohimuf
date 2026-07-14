@@ -2929,3 +2929,87 @@ paydown — ZERO behaviour change is the whole point.
   bible; two optional harmonizations applied: Impact letter-spacing 0.04→0.05em to match
   TitleScreen, and bar transition dropped under prefers-reduced-motion). Commits ce299a6 +
   3c43bd3. (Amelia / dev-r3f-render → lead-art gate)
+
+---
+
+## lead-art (Nico) — GATE: NarrativeScreen "illustrer + décor de lieu" (2026-07-14)
+
+Verdict on the pre/post-level briefing enrichment (facade halftone backdrop + per-line
+sprite illustrations). Prompt/asset gates N/A (no new generation — reuses existing level
+`facade.png` via CSS + existing enemy PNGs). This is a **runtime-composed visual → Gate 4
+(composite) applies**: direction PASSES below with constraints, final PASS withheld until I
+Read a real in-game screenshot (verify skill) of the composed halftone-behind-transcript.
+
+1. **Facade halftone backdrop — PASS-with-constraints.** Sanctioned by §2bis (facade photo
+   on a menu allowed ONLY rephotocopied to pure B&W, `grayscale(1)` mandatory) + precedent
+   (TitleScreen already runs `HalftoneHero` on `belliard/facade.png`). Constraints: reuse
+   `HalftoneHero` (guarantees grayscale(1) → kills the orange window-glow in the source PNG);
+   transcript box must stay ink-on-paper on SOLID newsprint (not `transparent` over dots);
+   facade strongest in the upper illustration band, faded to 0 before the transcript OR
+   full-bleed at opacity ≤0.20. Zero glow preserved.
+2. **ADR-0021 D5 — acceptable FRAME change, NOT a violation.** D5 freezes behaviour/scripts/
+   call-sites (typewriter, Passer, progress dots, advance, CHAR_DELAY_MS) and explicitly
+   permits the visual frame to join the print system ("paper ground + ink rule + halftone").
+   A backdrop behind unchanged content is a frame change, the permitted category. Guard-rails:
+   additive absolutely-positioned layer behind the existing column; no touch to transcript
+   content/typewriter/advance; no new generated asset (CSS filter over an existing PNG).
+   Record it — amend ADR-0021 (or new ADR) since it extends the frame beyond 0021's scope.
+3. **Sprite illustrations — PASS-with-constraint.** Keep `pixelated` + `objectFit:contain`.
+   ADD `grayscale(1)` (+ mild contrast) on the illustration `img` to match the facade
+   rephotocopy and kill stray badge color — la loi de l'imprimé (everything on a menu is
+   printed on paper). Do NOT mandate a heavy halftone dot-screen on the sprite (would muddy
+   the silhouette, §2 law 3). Show the BARE sprite — never a neon-rimmed composite (menu =
+   zero glow; the un-rimmed PNG is the correct one). New rule proposed for the bible (§2bis
+   gap: sprites shown inside a menu illustration slot get grayscale(1), no baked rim).
+4. **Backdrop spec:** `HalftoneHero` pitch 10; upper-band mask (top ~40% ~0.7 → 0 by ~60%
+   height via `maskImage` linear-gradient) so the transcript zone is clean newsprint; OR
+   full-bleed wrapper `opacity:0.20`. INK.black text on newsprint holds AAA only where it
+   sits on solid paper — enforce that.
+
+Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-art)
+
+- composite-gate→VERDICT (ADR-0023 illustrated briefings, Gate 4): **PASS-with-one-change.**
+  Read 3 real in-game captures (`?preview=narrative`, Belliard, 1024×720). Pixel-verified:
+  (a) NO surviving warm window-glow in the facade — `grayscale(1)` holds; the only warm
+  pixels (max sat 0.65) are the PASSER paper button chrome (x<160,y<60), legit menu paper,
+  not the facade. (b) Courier transcript text = 14.58:1 on solid `paper-newsprint` (#E9E3D2
+  measured as background mode, ink ≈#141210) — AAA, well past AA; facade gradient-mask
+  terminates ~y446, never touches the text band. (c) All 3 silhouettes intact — courier legs
+  JOIN the hips (no paper enclave in crotch, the historic detached-legs defect is absent),
+  cop's two arms reach the gun over a braced two-leg stance, estate clean on baseline. No
+  generation holes.
+  - Contested call 1 — **backdrop strength: PASS-with-change → opacity 0.5 ⇒ 0.30** (keep the
+    same mask). At 0.5 the facade top band sits at mean luma ~125 on ~230 paper = a continuous
+    mid-grey photographic wash. Breaks no hard §2bis clause (zero glow, text AAA, silhouettes
+    clean) but drifts from §2bis's governing idiom ("bright stock, black ink" high-contrast
+    xerox) toward a photo wash. 0.30 lifts the top-zone mean to ~165-170 = paper-dominant ghost,
+    present but printed-on-paper. Taste change within-bible, not a hard FAIL.
+  - Contested call 2 — **cop muzzle flash: PASS, keep `enemy_shooting.png`.** It is a printed
+    highlight, NOT a §2bis glow. Verified: pure neutral white (sat 0.00 — `grayscale(1)` makes
+    neon impossible), baked into the sprite cell, NO additive colored halo bleeding onto the
+    paper (paper right of the flash is uniform backdrop, no light bleed). §2bis glow = colored
+    light + alpha-falloff halo meaning interactive; the flash is none of those — it is the
+    fanzine-comic inked "BLAM" starburst, on-direction. NO reroute — a non-firing sprite would
+    over-correct and weaken the "les flics patrouillent" threat beat, and would break tutorial
+    consistency (same PNG ships there).
+  - Not escalating: within my jurisdiction, does not exceed the bible. Change owner:
+    `dev-r3f-render` — one value in `src/render/ui/NarrativeScreen.tsx` (backdrop opacity
+    0.5→0.30). No re-gate needed for a pure opacity knock-back (no new glow/composite element
+    introduced); re-shoot only if the mask geometry changes. (Nico / lead-art)
+
+- **Stage 8 — integration sign-off (senior-architect / Winston): SIGN-OFF, mergeable.**
+  Verified on the final post-triage diff: boundary intact (`backdrop?` is pure data in
+  `src/game`, halftone treatment lives in render); the `scene.backdrop !== undefined` predicate
+  is single-sourced across all three call sites (backdrop layer, sprite grayscale, transcript
+  ground) so "no backdrop ⇒ byte-identical" holds for the tutorial; ADR-0023 / README index /
+  §2bis match the shipped opacity (0.30) and flash decisions — no doc drift; no orphan imports;
+  tests A5/A6/A7 lock the game-layer invariants. `tsc` 0 · narrative 8/8.
+- **Stage 9 — product acceptance (pm / John): ACCEPTED. Ship it.**
+  Resolves Bertrand's complaint on both axes (« illustrer + décor de lieu »); core loop
+  Récupérer→Livrer→Éviter untouched; framing a mission with its location is period-faithful
+  presentation, booked as a documented extension in ADR-0023; tutorial byte-identical, dialogue
+  frozen, zero asset-pipeline cost. Backlog (fast-follow, NOT blockers): (1) per-line
+  illustration parity for stalingrad & vitry — but KEEP `vitry_post` imageless (deliberate
+  béton-grief monologue on the bare barres facade); (2) cinematic intro stays deferred;
+  (3) design-gate readback on the 0.30 halftone contrast — satisfied (re-shot at 0.30, text on
+  solid newsprint stays AAA).
