@@ -66,7 +66,7 @@ const MIN_COMPONENT_PX = 50;
 // Hand-authored FALLBACK anchors, keyed by frame FILE name. They apply only
 // when detection finds no flash (measureAnchor returns null): use them for
 // frames whose baked flash was deliberately erased by the retouch pass
-// (ADR-0018 iter-3) so the glow sits on the gun itself. A regenerated sprite
+// (ADR-0019 iter-3) so the glow sits on the gun itself. A regenerated sprite
 // with a real detectable flash always wins over the hand value — the fresh
 // measurement is the point of re-running this tool.
 //   enemy_shooting_3.png — floating flash star erased; anchor = pistol muzzle

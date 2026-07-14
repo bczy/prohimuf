@@ -4,7 +4,7 @@
  * The game-graphist scripted-retouch pass: documented, deterministic, re-runnable, ADD-BACK-ONLY.
  *
  * ── Why this exists ──────────────────────────────────────────────────────────
- * The iter-2/iter-3 halo cleanup (`retouch-flash-halos.mjs`, ADR-0018) removed real
+ * The iter-2/iter-3 halo cleanup (`retouch-flash-halos.mjs`, ADR-0019) removed real
  * BACKGROUND remnants (grey torn wings, dark flash rings, a detached floating star) — Bertrand
  * approved those disappearances. But the same tonal+zone rule also ate FIGURE pixels that share
  * the remnants' dark desaturated tone, and (on the riot pair) the warm dark-red SHADING that is
@@ -14,7 +14,7 @@
  *
  * ── What it restores (ADD-BACK-ONLY: alpha 0→255 + pristine RGB, never a delete) ─
  * Reference bytes = the PRE-ANY-RETOUCH commit (BASE_REF, default c79dfda — the solidified
- * cutout before ADR-0018 touched anything). A pixel is a candidate iff it is OPAQUE in the base
+ * cutout before ADR-0019 touched anything). A pixel is a candidate iff it is OPAQUE in the base
  * and TRANSPARENT now (a retouch deletion). Two regimes, per file:
  *
  * BUST / FIGURE regime (every file EXCEPT the riot pair). Bertrand's hard line since commit
@@ -43,7 +43,7 @@
  *
  * After this pass, run `fill-sprite-holes.mjs` to top-up any residual interior hole and then
  * `retouch-flash-halos.mjs --check` must report 0 would-delete on these bytes (the recalibrated
- * retouch treats the restored pixels as its fixpoint — see ADR-0018 iter-4).
+ * retouch treats the restored pixels as its fixpoint — see ADR-0019 iter-4).
  *
  * ADD-BACK-ONLY, surgical: the ONLY mutation is a transparent (alpha<16) base-opaque pixel
  * becoming its pristine base RGBA. No opaque pixel is ever changed; nothing is ever deleted.

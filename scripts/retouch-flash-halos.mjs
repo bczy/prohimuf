@@ -488,7 +488,7 @@ function solidBodyMask(opaque, W, H) {
  * against the figure, not the flash island" is intrinsic here for detached blasts. An ATTACHED
  * blast is one component with the figure, so its dark bits within the disk-10-closed silhouette
  * stay protected; that is the exact boundary that keeps fill-sprite-holes --check green, so the
- * fixpoint below is the MAXIMAL removal that never opens an interior hole (see ADR-0018 iter-3).
+ * fixpoint below is the MAXIMAL removal that never opens an interior hole (see ADR-0019 iter-3).
  */
 export function reconcileWithSolidify(data, W, H, del) {
   const N = W * H;

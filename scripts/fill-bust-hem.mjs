@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * FILL BUST HEM — iteration-5 of the ADR-0018 retouch chain (game-graphist pass).
+ * FILL BUST HEM — iteration-5 of the ADR-0019 retouch chain (game-graphist pass).
  *
  * ── Why this exists ──────────────────────────────────────────────────────────
  * Bertrand's art gate on enemy_shooting_3: "Je veux que tu remplisses encore un
