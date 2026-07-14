@@ -2281,6 +2281,7 @@ Landed the pure hitscan + the typed seam per `techplan-shot-flat-impact.md`. All
 files only (`src/game/**` + `src/hooks/useGameLoop.ts`); no `src/render/**` touched.
 
 **File List (changed):**
+
 - `src/game/types/feedback.ts` — added `ImpactEvent` (seam type).
 - `src/game/types/gameState.ts` — added transient `impactEvents?` field.
 - `src/game/systems/bulletSystem.ts` — added `PlayerShotResult` + `resolvePlayerShot`;
