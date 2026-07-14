@@ -111,7 +111,6 @@ const GESTURE_STYLES = `
 
 @media (prefers-reduced-motion: reduce) {
   .gi-anim { animation: none !important; }
-  .gi-rm-only { opacity: 1 !important; }
 }
 `;
 
@@ -443,18 +442,13 @@ function SwipePanIcon(): JSX.Element {
       />
       {/* static neon contact mark at the fingertip touch point — plain 2px stroke (reference idiom) */}
       <circle cx="50" cy="20" r="7" fill="none" stroke={NEON} strokeWidth="2" />
-      {/* direction arrow — reduced-motion frozen frame ONLY (the animated trail tells direction otherwise) */}
-      <g
-        className="gi-rm-only"
-        opacity="0"
-        stroke={NEON}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      >
-        <line x1="66" y1="20" x2="86" y2="20" />
-        <path d="M80 14 L86 20 L80 26" />
+      {/* left + right direction arrows flanking the contact ring (reference idiom: the ↔ tells
+          "you can move this way"); always visible, and they carry the reduced-motion frame too */}
+      <g stroke={NEON} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <line x1="61" y1="20" x2="78" y2="20" />
+        <path d="M72 14 L78 20 L72 26" />
+        <line x1="39" y1="20" x2="22" y2="20" />
+        <path d="M28 14 L22 20 L28 26" />
       </g>
       {/* RIGHT sweep (also the readable reduced-motion base frame: this group stays visible) */}
       <g className="gi-anim gi-sp-r">
