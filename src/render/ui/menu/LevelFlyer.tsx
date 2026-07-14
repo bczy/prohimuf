@@ -129,7 +129,9 @@ export function LevelFlyer({
     background: stock,
     color: INK.black,
     padding: "16px 18px",
-    marginBottom: "14px",
+    // Extra vertical gap so the tilted flyers' corners never crowd/overlap the
+    // neighbour's edge in the pile (lead-art Gate 4 note).
+    marginBottom: "22px",
     minHeight: "72px",
     outline: "none",
     cursor: unlocked ? "pointer" : "default",
