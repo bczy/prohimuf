@@ -67,8 +67,8 @@ each fronting a BMAD persona:
 | `dev-gameplay`       | `src/game` pure logic (TDD)          | `bmad-agent-dev` (Amelia)               |
 | `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI      | `bmad-agent-dev` (Amelia)               |
 
-(The art crew — `lead-art`, `art-advisor`, `concept-artist`, `game-graphist` — is
-documented in COLLABORATION.md.)
+(The art crew — `lead-art`, `art-advisor`, `concept-artist`, `game-graphist` — and the
+`sound-designer` are documented in COLLABORATION.md.)
 
 Flow — the production pipeline (stages 0-9, hand to hand; full protocol in
 COLLABORATION.md, mermaid diagram in `docs/diagrams/agent-workflows.md`): `pm` (what) →

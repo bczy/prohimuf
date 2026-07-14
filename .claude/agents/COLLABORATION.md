@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Thirteen subagents work the muf project. They run **in parallel where paths don't overlap**,
+Fourteen subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -17,6 +17,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
+| `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
@@ -41,6 +42,8 @@ skipped EXPLICITLY (say so in the log), never silently.
 4. BUILD      parallel, non-overlapping lanes:
                 · ART — advisor → concept-artist → game-graphist → lead-art
                   gates → CI generation (§art flow)
+                · AUDIO — sound-designer specs → sourcing/generation →
+                  AUDIO GATE (§audio flow)
                 · DEV — dev-gameplay (TDD) / dev-r3f-render / dev-tooling-assets
 5. VERIFY     the test stage, before any review:
                 · rtk tsc + rtk vitest (100%) + rtk lint — all green, no claims
@@ -162,6 +165,31 @@ only the source sprite. So:
 - The **orchestrator** routes those screenshots to `lead-art` for the composite gate
   (Gate 4) before merge. No screenshots reaching `lead-art` = the runtime visual is
   ungated = it does not merge.
+
+## The audio flow (any BGM/SFX asset or audible behaviour change)
+
+```
+game-designer (WHEN a cue fires + what it means — only if the cue is a gameplay signal)
+     ↓
+sound-designer SPEC (what it sounds like: character, tier mapping, function —
+                     "ce qui sonne informe": every cue is information)
+     ↓
+sourcing/generation (dev-tooling-assets mechanics, e.g. scripts/download-audio.mjs)
+     ↓
+sound-designer AUDIO GATE (PASS/FAIL per asset vs docs/audio-direction.md;
+                           mechanical pre-checks — format, loudness, loop points —
+                           never bind the verdict; what needs human ears is
+                           escalated to Bertrand with a shortlist, never passed blind)
+     ↓
+FAIL → iterate (max 2 batches/cycle, then escalate) · PASS → dev lanes wire it
+     ↓
+audible BEHAVIOUR changes (tension→tier mapping, crossfades, mix) get Malik's verdict
+on the spec BEFORE implementation and on the result at stage 5 (VERIFY)
+```
+
+`sound-designer` (Malik) owns `docs/audio-direction.md` (the sonic twin of the art
+bible) and is `lead-art`'s peer: one identity, two senses. Every gate verdict is logged
+in `docs/agent-handoffs.md`.
 
 ## Rules of engagement
 1. **No code before a story.** `pm` defines it; `senior-architect` makes it buildable and

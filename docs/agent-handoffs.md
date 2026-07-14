@@ -1495,3 +1495,10 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   escalation packets — no gate, no authorship; (3) `docs/diagrams/agent-workflows.md`
   rewritten as one mermaid flowchart of the full pipeline (syntax validated).
   (Orchestrator)
+- update 2: `sound-designer` (Malik 🎧) added — Bertrand spotted the gap: a game ABOUT
+  sound systems had nobody owning the sound. Malik owns `docs/audio-direction.md` (to be
+  drafted on first activation, sonic twin of the art bible), audio specs ("ce qui sonne
+  informe"), and the AUDIO GATE on BGM/SFX assets + audible behaviour changes; taste
+  calls needing human ears are escalated to Bertrand as shortlists, never passed blind.
+  Pipeline stage 4 gains an AUDIO lane (§audio flow in COLLABORATION.md); mermaid
+  diagram updated and re-validated. Roster: 14 agents. (Orchestrator)

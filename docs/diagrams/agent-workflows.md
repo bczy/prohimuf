@@ -2,9 +2,9 @@
 
 Visual companion to [`.claude/agents/COLLABORATION.md`](../../.claude/agents/COLLABORATION.md)
 (the normative protocol). One pipeline: every feature passes hand to hand through stages
-0-9 — product → design → tech plan → build (dev ∥ art) → verify → integrate → review →
-accept → merge — driven by the `producer`. Every gate verdict and hand-off is logged in
-[`agent-handoffs.md`](../agent-handoffs.md).
+0-9 — product → design → tech plan → build (dev ∥ art ∥ audio) → verify → integrate →
+review → accept → merge — driven by the `producer`. Every gate verdict and hand-off is
+logged in [`agent-handoffs.md`](../agent-handoffs.md).
 
 ```mermaid
 flowchart TB
@@ -62,12 +62,22 @@ flowchart TB
             TECH --> GATE2
             GATE2 -->|"FAIL · 1 variable/roll<br/>max 2 batches/cycle"| CONCEPT
         end
+        subgraph AUDL["audio lane — when the feature needs sound"]
+            direction TB
+            SD["sound-designer · Malik 🎧<br/>audio specs: BGM tiers, SFX<br/>(ce qui sonne informe)"]
+            SRC["sourcing / generation<br/>scripts/download-audio.mjs<br/>(dev-tooling-assets mechanics)"]
+            AGATE{"sound-designer · Malik 🎧<br/>AUDIO GATE<br/>PASS/FAIL vs audio-direction.md"}
+            SD --> SRC
+            SRC --> AGATE
+            AGATE -->|"FAIL · max 2 batches/cycle"| SD
+        end
     end
 
     ARCH --> R3F
     ARCH --> GAME
     ARCH --> TOOL
     ARCH -.->|"assets needed"| ADV
+    ARCH -.->|"sound needed"| SD
 
     subgraph P5["5. VERIFY — the test stage"]
         direction TB
@@ -84,6 +94,7 @@ flowchart TB
     GAME --> CHECKS
     TOOL --> CHECKS
     GATE2 -->|PASS| CHECKS
+    AGATE -->|PASS| CHECKS
 
     subgraph P67["6. INTEGRATE · 7. REVIEW"]
         direction TB
@@ -110,6 +121,7 @@ flowchart TB
     GATE1 -.-> LOG
     GATE2 -.-> LOG
     GATE4 -.-> LOG
+    AGATE -.-> LOG
     DACC -.-> LOG
     REVIEW -.-> LOG
 
@@ -117,13 +129,15 @@ flowchart TB
     classDef dev fill:#d4e9ff,stroke:#2b6cb0,color:#000
     classDef art fill:#ffd9ec,stroke:#b83280,color:#000
     classDef design fill:#d9f2d9,stroke:#2f855a,color:#000
+    classDef audio fill:#ffe4cc,stroke:#c05621,color:#000
     classDef ci fill:#e2e2e2,stroke:#666,color:#000
     classDef prod fill:#e9d8fd,stroke:#6b46c1,color:#000
-    class DGATE,GATE1,GATE2,GATE4,DACC gate
+    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC gate
     class R3F,GAME,TOOL dev
     class ADV,CONCEPT,PREPROD,TECH art
     class GD,ND,PLAY design
-    class GEN,LOG,CHECKS,PANEL ci
+    class SD audio
+    class GEN,SRC,LOG,CHECKS,PANEL ci
     class PROD prod
 ```
 
@@ -137,10 +151,15 @@ flowchart TB
   work in parallel on non-overlapping deliverables; `lead-game-designer` holds the
   blocking **design gate** (max 2 rework rounds, then escalation to Bertrand). No dev
   implements an ungated design.
-- **Build (blue + pink)**: `senior-architect` partitions parallel lanes on
+- **Build (blue + pink + orange)**: `senior-architect` partitions parallel lanes on
   non-overlapping paths. The dev lanes' only routinely shared seam is `src/hooks/**`
   (serialised, never co-edited). The art lane keeps its two production passes
   (`game-graphist`) bracketing CI generation and its two blocking gates (`lead-art`).
+  The audio lane mirrors it: `sound-designer` (Malik) specs every cue ("ce qui sonne
+  informe" — every audio cue is information), sourcing runs through the tooling
+  scripts, and his **audio gate** verdicts assets and audible behaviour changes vs
+  `docs/audio-direction.md`; what needs human ears is escalated to Bertrand as a
+  shortlist, never passed blind.
 - **Verify (stage 5) is the test stage**: mechanical checks (`rtk tsc`/`vitest`/`lint`,
   100% green) plus e2e/`verify` runs, the **composite gate** on real in-game screenshots
   for runtime-composed visuals, and the **design acceptance** leg — `game-designer`
