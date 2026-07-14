@@ -119,18 +119,17 @@ describe("fillHoles", () => {
   });
 });
 
-describe("largestComponent 4- vs 8-connectivity", () => {
-  it("splits a diagonal under 4-conn, merges it under 8-conn", () => {
+describe("largestComponent (4-connectivity only, by design)", () => {
+  it("splits a diagonal chain into isolated pixels (no diagonal annexation)", () => {
     const m = mask(4, 4, [
       [0, 0],
       [1, 1],
       [2, 2],
       [3, 3],
     ]);
-    expect(sum(largestComponent(m, 4, 4, 4))).toBe(1); // each pixel isolated
-    expect(sum(largestComponent(m, 4, 4, 8))).toBe(4); // one diagonal chain
+    expect(sum(largestComponent(m, 4, 4))).toBe(1); // each pixel isolated
   });
-  it("defaults to 4-connectivity", () => {
+  it("keeps the largest 4-conn component", () => {
     const m = mask(4, 4, [
       [0, 0],
       [1, 1],

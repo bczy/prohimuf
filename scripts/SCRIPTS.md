@@ -908,7 +908,7 @@ the lib never touches RGBA / alpha — callers build the opaque predicate / mask
 - **Exports:** `diskOffsets(r)`, `dilate(mask,W,H,offsets)`,
   `erode(mask,W,H,offsets,opts)` (with `opts.outsideBelowBottom` — the ONE geometric
   divergence, used only by `fill-bust-hem.mjs` for its frame-cut hem), `fillHoles(mask,W,H)`
-  (4-conn border-seeded), `largestComponent(mask,W,H,connectivity=4)`,
+  (4-conn border-seeded), `largestComponent(mask,W,H)` (4-conn only, by design),
   `labelComponents(W,H,keep,opts)` (`opts.connectivity` 4|8, `opts.collectPixels`) →
   `{size,bbox,touchesBorder,pixels?}[]` largest-first, `zoneMask(zones,W,H)` (array of
   normalized rects), `solidBodyMask(opaque,W,H)` (fill-sprite-holes PASS-A body

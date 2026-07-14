@@ -276,8 +276,10 @@ export function computeDeletions(data, W, H, zones, opts = {}) {
   }
   if (!any) return new Uint8Array(N);
 
-  // Exterior-connected filter: flood the border through transparent+candidate; keep only
-  // candidates the flood reaches (guarantees no interior hole is ever created).
+  // Exterior-connected filter: LOCAL border-seeded flood, deliberately NOT lib fillHoles.
+  // Its passability is unique to this pass (floods through transparent OR candidate pixels,
+  // walled by opaque non-candidates) while fillHoles floods only mask=0 — no shared source,
+  // no drift. Keeps only candidates the flood reaches, so no interior hole is ever created.
   const reach = new Uint8Array(N);
   const st = [];
   const push = (x, y) => {
@@ -321,6 +323,7 @@ export function computeIslandErase(data, W, H, zones) {
   const zone = zoneMask(zones, W, H);
   const opaque = new Uint8Array(N);
   for (let p = 0; p < N; p++) opaque[p] = data[p * 4 + 3] >= OPAQUE ? 1 : 0;
+  // 4-conn: the figure is one solid mass; 8-conn would annex diagonally-touching debris.
   const figure = largestComponent(opaque, W, H); // the dominant body — never erased
   for (let p = 0; p < N; p++) if (zone[p] && opaque[p] && !figure[p]) del[p] = 1;
   return del;
