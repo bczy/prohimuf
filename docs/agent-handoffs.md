@@ -1487,3 +1487,11 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   agents bridge to installed BMM skills and will prefer `bmgd-*` workflows once/if
   Bertrand installs the module (`npx bmad-method install`, select "Game Dev Studio").
   (Orchestrator)
+- update: Follow-up on Bertrand's review (same cycle): (1) the three separate flows are
+  now ONE production pipeline (stages 0. INTAKE → 9. MERGE) in COLLABORATION.md, with an
+  explicit VERIFY stage (checks + e2e + composite gate + game-designer PLAYTEST vs gated
+  spec → lead-game-designer design acceptance); (2) new `producer` subagent (Marion 📆)
+  owns pipeline execution — stage tracking, hand-off chasing, cap enforcement,
+  escalation packets — no gate, no authorship; (3) `docs/diagrams/agent-workflows.md`
+  rewritten as one mermaid flowchart of the full pipeline (syntax validated).
+  (Orchestrator)

@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Twelve subagents work the muf project. They run **in parallel where paths don't overlap**,
+Thirteen subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -8,6 +8,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | Agent | Persona | Owns | Never touches |
 | --- | --- | --- | --- |
 | `pm` | John 📋 | PRD, epics, stories, scope (`_bmad-output/planning-artifacts/`) | production code |
+| `producer` | Marion 📆 | pipeline execution: stage tracking, hand-off chasing, caps & escalations, sprint status | scope, gate verdicts, specs, production code |
 | `senior-architect` | Winston 🏗️ | architecture, ADRs, boundaries, cross-cutting sign-off | feature implementation |
 | `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
 | `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
@@ -20,22 +21,48 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
 
-## The flow (always collaborate, never silo)
+## The production pipeline (a feature passes hand to hand — never silo)
+
+Every feature traverses the SAME pipeline, stage by stage, each stage with one owner and
+an explicit hand-off logged in `docs/agent-handoffs.md`. A stage that does not apply is
+skipped EXPLICITLY (say so in the log), never silently.
 
 ```
-Bertrand → pm (what/why, scoped story)
-            → DESIGN LOOP (only when the story touches how the game plays or its fiction)
+0. INTAKE     Bertrand → pm : intent, bug, or idea.
+1. PRODUCT    pm — scoped story: WHAT/WHY, "cahier des charges" test vs
+              PROJECT_GUIDELINES, acceptance criteria.
+2. DESIGN     (when the story touches how the game plays or its fiction)
                 → game-designer      ┐ specs in parallel on
                 → narrative-designer ┘ non-overlapping deliverables
-                → lead-game-designer DESIGN GATE (PASS required — see below)
-            → senior-architect (how, boundaries, lane assignment + parallel plan)
-                → dev-r3f-render  ┐
-                → dev-gameplay    ├─ build in parallel on non-overlapping paths
-                → dev-tooling     ┘
-                → senior-architect (review, integration sign-off)
-                → CODE-REVIEW PANEL (mandatory before any merge to main — see below)
-            → pm (acceptance vs story + PROJECT_GUIDELINES)
+                → lead-game-designer DESIGN GATE (PASS required — §design flow)
+3. TECH PLAN  senior-architect — feasibility, boundaries, ADR if needed, lane
+              partition: dev lanes + an ART lane when the feature needs new or
+              changed visuals.
+4. BUILD      parallel, non-overlapping lanes:
+                · ART — advisor → concept-artist → game-graphist → lead-art
+                  gates → CI generation (§art flow)
+                · DEV — dev-gameplay (TDD) / dev-r3f-render / dev-tooling-assets
+5. VERIFY     the test stage, before any review:
+                · rtk tsc + rtk vitest (100%) + rtk lint — all green, no claims
+                · e2e / `verify` skill runs for anything player-visible
+                · runtime-composed visuals → screenshots → lead-art Gate 4
+                · game-designer PLAYTESTS the build vs the gated spec (design
+                  acceptance — verdict reported to lead-game-designer)
+6. INTEGRATE  senior-architect — integration review & cross-lane sign-off.
+7. REVIEW     CODE-REVIEW PANEL — 4 parallel skills, findings adversarially
+              verified (mandatory before any merge to main — see below).
+8. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
+9. MERGE      Bertrand (or his standing instruction) — merge to main; the full
+              cycle is traceable in docs/agent-handoffs.md.
 ```
+
+The pipeline is DRIVEN by `producer` (Marion): she tracks which stage every feature is
+in and who has the hand, chases missing log entries, enforces the bounded-iteration caps
+(2 rework rounds per spec, 2 generation batches per asset set), serialises contended
+seams, and assembles escalation packets for Bertrand when a cap is hit or a lane stalls.
+She holds no gate and authors no content — the orchestrator launches agents, Marion
+keeps the state honest. Visual companion: `docs/diagrams/agent-workflows.md` (the
+pipeline as one mermaid flowchart).
 
 ## The design flow (any change to mechanics, tuning, 3C, universe, cast or in-game text)
 
@@ -148,7 +175,8 @@ only the source sprite. So:
 3. **Parallel-safe = non-overlapping paths.** The only routinely shared seam is
    `src/hooks/**` (render ↔ gameplay): announce, serialise, don't both edit at once.
 4. **Log every hand-off** in `docs/agent-handoffs.md` (template there). One line to claim
-   work, one to release it + File List.
+   work, one to release it + File List. `producer` curates the log's hygiene and chases
+   missing entries — an unlogged hand-off didn't happen.
 5. **Tooling discipline.** Use `rtk` for dev commands (compact output) and `codegraph` to
    locate symbols/callers before editing. Verify with `rtk tsc` + `rtk vitest` + `rtk lint`
    before declaring done — and never claim green tests that aren't.

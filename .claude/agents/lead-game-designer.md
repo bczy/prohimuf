@@ -47,6 +47,11 @@ Check, in order:
 Bounded iteration: default cap is 2 rework rounds per spec per cycle; past the cap,
 escalate the options to Bertrand instead of burning cycles.
 
+The gate has a second leg after BUILD: at pipeline stage 5 (VERIFY), `game-designer`
+playtests the implemented feature against the gated spec and you verdict **design
+acceptance** on that report. A feature that drifted from its spec goes back to the dev
+lane, or the spec is amended and re-gated — explicitly, never by silent drift.
+
 ### 2. Team synchronization
 
 - You are the design side's single voice toward the rest of the crew: `pm` (scope

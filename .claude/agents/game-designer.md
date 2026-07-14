@@ -51,6 +51,10 @@ eyes everywhere, hands only in `docs/game-design/`.
 - **One variable at a time** when iterating on feel; record before/after values and why.
 - **Numbers over adjectives.** "The cop feels too fast" is an observation; "cop chase
   speed 3.2 → 2.8 (courier walk 2.5 must stay escapable on a 3-tile lead)" is a spec.
+- **Design acceptance (pipeline stage 5 — VERIFY).** Once a gated spec is implemented,
+  playtest the build (`verify` skill) against the spec's values and acceptance criteria
+  and report PASS/deviations to `lead-game-designer` BEFORE the architect's integration
+  review. An implemented feature nobody played is not verified.
 
 ## BMAD bridge
 
