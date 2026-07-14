@@ -1523,3 +1523,44 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   pre-existing, NOT fixed by this branch): scripts/download-audio.mjs labels its
   sources "public domain / CC" but its lists fetch copyrighted LukHash tracks —
   live IP risk on the public deploy. (Panel + Winston triage, orchestrator applied)
+
+---
+
+### fix-wheel-spin-and-vehicle-facing (PR #42, branch claude/bike-wheel-speed-nnh6wi)
+
+- intake: two visual bugs from Bertrand (2026-07-14): courier bike wheels spin far too
+  slowly vs road speed; delivery vehicle reads as driving in reverse. (Orchestrator)
+- diagnosis: (1) stamped-spoke flipbook played at fixed 6 fps regardless of
+  COURIER_SPEED=7 u/s — measured wheel ≈ 84px of the 256px cell ⇒ ~0.85 wu diameter ⇒
+  ~2.6 rev/s ⇒ ~940 deg/s ⇒ ~47 fps at the rider's 20°/frame step, rounded to 48;
+  (2) car.png/truck.png art faces LEFT while DeliveryVehicleSprite assumed right-facing
+  art (courier convention) — moto correct by accident. (Orchestrator)
+- dev lane (dev-r3f-render): per-type `facing` registration knob in levelArt.json
+  (car/truck=left, moto=right), artSign() combined with inferred travel direction,
+  applied to sprite mesh AND baked neon rim; consistency test requires the knob.
+- verify (qa-lead, headless run + screenshots): PASS both fixes — spokes advance fast
+  between captures; truck (→right) and car (→left) both point hood-first in travel
+  direction, rim aligned, no ghosting. tsc + 208 vitest + lint green. Known coverage
+  gap: `moto` (facing=right) never spawned by any level's delivery — logic+test only.
+- architect: APPROVE-WITH-NOTES → note folded (fps tuned to rider 20°/frame; spare bike
+  layer 40°/frame would need ~24 fps if re-composited). No ADR (registration/tuning
+  knobs, no boundary/contract change).
+- review-panel (4 parallel: code-review-high / bmad-code-review / edge-case-hunter /
+  security-review): ZERO blocking/major; security NO FINDINGS. Actionable minors fixed
+  in-branch: flipbook clock gated on `paused` (7121101); artSign direct closed-union
+  manifest indexing, Record widening dropped (bb9c4e8) — endorsed as strict improvement
+  (compile-time exhaustiveness: future vehicle type without `facing` fails tsc);
+  redundant $comment sentence deduped.
+- triage (Winston, final): APPROVE for merge. Deferred: wagon-wheel undersampling of the
+  48fps flipbook on sub-48Hz displays → game-designer PLAYTEST item; fps↔speed coupling
+  test → WON'T-FIX (would hardcode the eyeballed 84px estimate into a brittle oracle —
+  the $comment derivation is the right home); one-frame stale-facing flash at
+  IDLE→INCOMING → pre-existing, off-screen, pm backlog minor; `facing` staleness after a
+  FLUX reroll → art-gate checklist duty (documented in $comment), closed; rider layer
+  facing knob symmetry → backlog LOW (couriers travel one lane direction; speculative
+  generality today).
+- pm acceptance (John): ACCEPT — fidelity fixes to shipped features, scope test passes
+  with no cahier-des-charges question; core loop intact; DoD met (checks green,
+  browser-verified both directions, manifest test guards `facing`). Standing note: the
+  deferred minors/nits above are tracked follow-up debt (this entry is the log).
+  Clear to merge.

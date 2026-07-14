@@ -12,7 +12,7 @@
     "heightUnits": 12
   },
   "vehicles": {
-    "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: pure photocopied fanzine B&W (the neon rim is render-side per ADR 0011, no longer baked into the sprite; the `neon` name below is render metadata), generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
+    "$comment": "Delivery-vehicle sprites for the scripted 'protect the delivery' beat. Single source of truth for scripts/gen-vehicle-sprites.mjs. Side-profile (they roll horizontally down the street lane), house style: pure photocopied fanzine B&W (the neon rim is render-side per ADR 0011, no longer baked into the sprite; the `neon` name below is render metadata), generated on flat pure-black then chroma-keyed to transparent (same detour as scripts/cutout-enemies.mjs). vehicleType ('truck'|'car'|'moto') is the shared cross-lane key: gameplay picks it per delivery, the renderer loads `asset` below. `facing` = the direction the generated art actually looks ('left'|'right'), a render-side registration knob set at the art gate after each regeneration (FLUX doesn't obey orientation prompts reliably) so the renderer can mirror it to travel direction instead of re-rolling the seed. Contract: files live at public/assets/vehicles/{truck,car,moto}.png. Real FLUX art is generated in CI (network); committed PNGs may be procedural placeholders until regenerated with FORCE=1.",
     "opening": "Flat 2D video game sprite, strict side view in orthographic projection, single vehicle centered and fully visible, ",
     "neonPhrase": "",
     "style": ", photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox toner texture, coarse halftone dots, fully black and white, isolated on a solid flat uniform bright magenta (#FF3CDC) chroma-key background, fully magenta empty surroundings, flat ambient lighting, crisp cutout edges",
@@ -21,6 +21,7 @@
         "asset": "assets/vehicles/truck.png",
         "size": { "width": 384, "height": 192 },
         "neon": "orange",
+        "facing": "left",
         "seed": 1337,
         "prompt": "flat-fronted forward-control 1980s French panel van, near-vertical windshield, boxy cargo body taller than the cab line, single flank crease, steel wheels"
       },
@@ -28,6 +29,7 @@
         "asset": "assets/vehicles/car.png",
         "size": { "width": 320, "height": 160 },
         "neon": "cyan",
+        "facing": "left",
         "seed": 42,
         "prompt": "one-box monospace city car completely alone, empty surroundings, hood and windshield in one continuous slope, tall upright phone-booth-shaped glasshouse cabin, wheels pushed to the corners, vertical tail flush behind the rear wheel"
       },
@@ -35,6 +37,7 @@
         "asset": "assets/vehicles/moto.png",
         "size": { "width": 256, "height": 160 },
         "neon": "magenta",
+        "facing": "right",
         "seed": 8128,
         "prompt": "1990s delivery moped, fat small-diameter wheels, exposed tube frame, single round headlamp, top-box crate strapped over the rear rack, empty saddle"
       }
@@ -118,8 +121,8 @@
     }
   },
   "courier": {
-    "$comment": "Street-courier (livreur) flipbook. OUTCOME after the art gates: the RIDER layer is the shipped sprite — a complete cyclist (FLUX base, frame 1) whose 6 frames get rotating wheel spokes stamped by scripts/retouch-courier-spokes.mjs; the BIKE layer passed its gate but was retired from the composite (art kept as spare, its mesh only serves the pre-art fallback) — see src/render/scene/CourierSprite.tsx. Single source of truth for scripts/gen-courier-sprites.mjs. PER-FRAME GENERATION (ADR 0017, amended — the strip-and-slice strategy was retired after two CI iterations cut subjects across cells): each frames[i] is a NON-EMPTY pose clause and becomes ONE dedicated FLUX image (opening + prompt + clause + style) under the layer's single pinned seed, so the whole subject appears in every image and only the described delta moves. Each PNG is chroma-keyed per file (cutout-enemies.mjs cutout()). No protected committed frame 1 — if ANY frame file of a layer is missing (or FORCE=1), ALL its frames regenerate together (shared-seed consistency makes the layer atomic). Files: public/assets/courier/<layer>.png + <layer>_f<N>.png (frame 1 unsuffixed). scale/offsetY are render-side registration knobs tuned at the art gate; z-order (bike under rider) is fixed in code. Sequencing (Bertrand): the BIKE layer is validated first (only the wheels turn, the whole bike visible in every frame); the RIDER layer follows once the bike passes the art gate. The rider is described POSITIVELY (art bible §3: never negate — never write 'without bike').",
-    "fps": 6,
+    "$comment": "Street-courier (livreur) flipbook. OUTCOME after the art gates: the RIDER layer is the shipped sprite — a complete cyclist (FLUX base, frame 1) whose 6 frames get rotating wheel spokes stamped by scripts/retouch-courier-spokes.mjs; the BIKE layer passed its gate but was retired from the composite (art kept as spare, its mesh only serves the pre-art fallback) — see src/render/scene/CourierSprite.tsx. Single source of truth for scripts/gen-courier-sprites.mjs. PER-FRAME GENERATION (ADR 0017, amended — the strip-and-slice strategy was retired after two CI iterations cut subjects across cells): each frames[i] is a NON-EMPTY pose clause and becomes ONE dedicated FLUX image (opening + prompt + clause + style) under the layer's single pinned seed, so the whole subject appears in every image and only the described delta moves. Each PNG is chroma-keyed per file (cutout-enemies.mjs cutout()). No protected committed frame 1 — if ANY frame file of a layer is missing (or FORCE=1), ALL its frames regenerate together (shared-seed consistency makes the layer atomic). Files: public/assets/courier/<layer>.png + <layer>_f<N>.png (frame 1 unsuffixed). scale/offsetY are render-side registration knobs tuned at the art gate; z-order (bike under rider) is fixed in code. Sequencing (Bertrand): the BIKE layer is validated first (only the wheels turn, the whole bike visible in every frame); the RIDER layer follows once the bike passes the art gate. The rider is described POSITIVELY (art bible §3: never negate — never write 'without bike'). fps is tuned so the stamped spokes match the road speed: wheel ≈ 84px of the 256px cell ⇒ ~0.85 world units diameter (COURIER_H 2.6), so at COURIER_SPEED 7 u/s the wheel turns ~2.6 rev/s ≈ 940 deg/s; at the rider layer's 20-deg step that is ~47 frames/s, rounded to 48 (exactly 8 six-frame spoke cycles per second); the spare bike layer's 40-deg step would need ~24 fps if ever re-composited.",
+    "fps": 48,
     "size": { "width": 256, "height": 256 },
     "opening": "Flat 2D video game sprite, strict side view in orthographic projection, one single complete subject centered and fully visible with black margin on every side, ",
     "style": ", crisp clean pixel art game sprite, light grey white and pale tones figure, simple bold shapes, high contrast, on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every gap between the figure's parts, sharp cutout edges, clean plain artwork",

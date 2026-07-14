@@ -50,6 +50,14 @@ describe("levelArt.json ↔ levels.ts ↔ narrative consistency", () => {
     }
     expect(new Set(assets).size).toBe(assets.length);
   });
+
+  it("every vehicle type declares a facing knob ∈ {left, right}", () => {
+    // Render-side registration knob (DeliveryVehicleSprite): the direction the
+    // generated art looks, so the renderer can mirror it to travel direction.
+    for (const [type, entry] of Object.entries(manifest.vehicles.types)) {
+      expect(["left", "right"], `${type}.facing ∈ {left, right}`).toContain(entry.facing);
+    }
+  });
 });
 
 /**

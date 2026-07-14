@@ -25,6 +25,8 @@ const RIDER_Z = 0.701;
 
 interface Props {
   stateRef: React.RefObject<GameState>;
+  /** Freezes the wheel flipbook while the game loop is paused (Escape/rotate). */
+  paused?: boolean | undefined;
 }
 
 // Apply a texture to a mesh's material only when it actually changed — swapping
@@ -49,14 +51,17 @@ function setMap(mesh: Mesh, tex: Texture | null): void {
  * Until the rider frame-1 art exists (generated in CI), it falls back to the
  * legacy single civilian sprite so the game is visually unchanged.
  */
-export function CourierSprite({ stateRef }: Props): JSX.Element {
+export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element {
   const bikeRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_COURIERS }, () => null));
   const riderRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_COURIERS }, () => null));
   // Shared flipbook clock, accumulated from frame deltas.
   const clock = useRef(0);
 
   useFrame((_, delta) => {
-    clock.current += delta;
+    // Hold the flipbook with the game loop: useGameLoop freezes couriers on
+    // pause, and at 48 fps a still-rolling clock reads as wheels spinning in
+    // place on a frozen street.
+    if (!paused) clock.current += delta;
     const couriers = stateRef.current.couriers;
     const ready = courierArtReady();
 
