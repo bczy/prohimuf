@@ -81,16 +81,24 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
 /**
  * The pre-level narrative interstitial has a "Passer" (skip) button; clear it so
  * we reach the actual gameplay canvas. Mirrors screenshot-preview.mjs.
+ *
+ * The asset-preload loading screen (gate) can now sit between the level click and
+ * the narrative, so this polls a bounded window instead of deciding on the first
+ * frame (the old fixed-iteration loop broke the instant no "Passer" was visible —
+ * i.e. while the loader was still up — and never dismissed the narrative that
+ * appeared afterwards). It clicks "Passer" whenever it shows and stops as soon as
+ * the gameplay canvas has mounted (narrative dismissed, or the level has none).
  */
 export async function dismissNarrative(page) {
-  for (let i = 0; i < 8; i++) {
+  const canvas = page.locator("canvas").first();
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    if (await canvas.isVisible().catch(() => false)) return;
     const skip = page.getByRole("button", { name: "Passer" });
     if (await skip.isVisible().catch(() => false)) {
       await skip.click().catch(() => undefined);
-      await sleep(400);
-    } else {
-      break;
     }
+    await sleep(300);
   }
 }
 
