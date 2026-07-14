@@ -2133,3 +2133,117 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   animated <g> (lifts/sweeps with the hand); it is the ONLY interior stroke to add (the old
   knuckle/finger-split creases still get dropped). Did NOT edit GestureIcon.tsx.
   (Serge / game-graphist)
+
+---
+
+### story-instant-hit-player-shot
+
+> **Producer tracking block (Marion 📆).** First feature to run the FULL staffed pipeline
+> (stages 0-9) end to end. This is a tracking/state artifact only — no scope, no verdict,
+> no spec authored here. Owners fill their own hand-off + gate lines below as they take and
+> release the hand; Marion curates hygiene and chases any missing entry.
+
+- **story id:** `story-instant-hit-player-shot`
+- **working title:** Instant-hit player shot — flat trajectory, impact explosion, wall mark
+- **branch:** `claude/pensive-dirac-8oyzmp`
+- **opened (stage 0):** 2026-07-14 by Marion (producer), on Bertrand's INTAKE.
+- **cycle:** #1 (first pass). Only Marion declares a cycle reset; renaming/re-scoping never
+  silently resets a counter.
+
+**INTAKE (stage 0) — evidence recorded, verbatim from Bertrand:**
+
+- Player bullet currently RISES after firing. Confirmed in code:
+  `src/game/systems/bulletSystem.ts:40` → `velocity: { x: 0, y: fromPlayer ? BULLET_SPEED : -BULLET_SPEED }`
+  (`BULLET_SPEED = 20`, line 23). The +y on player shots is the reported rise. It should NOT rise.
+- Shot should arrive directly at the target level and hit exactly where the crosshair aims
+  (centre of target).
+- An explosion should appear under/at the target on impact.
+- If possible, a PERSISTENT mark left on the wall (facade) at the impact point.
+- Bertrand's mandates for this run: full pipeline; ALL 4 code reviews MANDATORY; the
+  lead-art artistic gate on ANY visual deliverable is MANDATORY; pm + producer oversee.
+
+**Stage checklist (0-9) — owner · status · next hand-off:**
+
+| #   | Stage                             | Owner                                                                                                                                                                                                                                  | Status                | Next hand-off                                                                                               |
+| --- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 0   | INTAKE                            | Bertrand → pm                                                                                                                                                                                                                          | **OPEN** (this block) | pm scopes the story (WHAT/WHY, cahier-des-charges test, ACs)                                                |
+| 1   | PRODUCT                           | `pm` (John)                                                                                                                                                                                                                            | pending               | → design loop (story touches how the shot plays AND adds visuals)                                           |
+| 2   | DESIGN loop                       | `game-designer` (Sacha) ∥ `narrative-designer` (Yasmine, likely SKIP — no player-facing text) → `lead-game-designer` (Karim) **DESIGN GATE ⛔**                                                                                        | pending               | GATE PASS → senior-architect. FAIL → designer iterates (cap 2 rework rounds/cycle)                          |
+| 3   | TECH PLAN                         | `senior-architect` (Winston)                                                                                                                                                                                                           | pending               | feasibility + boundary verdict + lane partition (+ ADR if boundary/contract shifts) + ART lane call → BUILD |
+| 4   | BUILD (parallel, non-overlapping) | `dev-gameplay` (`src/game`) ∥ `dev-r3f-render` (`src/render` + view hooks) ∥ ART lane (advisor→concept-artist→game-graphist→lead-art) for explosion + wall-mark visuals                                                                | pending               | lanes release → VERIFY                                                                                      |
+| 5   | VERIFY                            | `qa-lead` (Inès) **QUALITY GATE ⛔** — funnels: tsc+vitest(100%)+lint · e2e/`verify` skill · `game-designer` PLAYTEST vs gated spec · `lead-art` **COMPOSITE GATE (Gate 4) ⛔** on real in-game screenshots of the explosion/impact FX | pending               | PASS → integrate. FAIL → back to owning lane (cap 2 verify↔build rounds/cycle)                              |
+| 6   | INTEGRATE                         | `senior-architect` (Winston)                                                                                                                                                                                                           | pending               | integration + cross-lane sign-off → review panel                                                            |
+| 7   | REVIEW                            | **CODE-REVIEW PANEL ⛔ (4 parallel, MANDATORY)** → `senior-architect` adversarial triage                                                                                                                                               | pending               | no unresolved CONFIRMED BLOQUANT/MAJEUR → pm accept                                                         |
+| 8   | ACCEPT                            | `pm` (John)                                                                                                                                                                                                                            | pending               | acceptance vs story + PROJECT_GUIDELINES → merge                                                            |
+| 9   | MERGE                             | Bertrand (explicit)                                                                                                                                                                                                                    | pending               | merge to main; full cycle traceable in this log                                                             |
+
+**Mandatory gates for this run (⛔ = cannot be skipped — Bertrand's mandate):**
+
+1. **DESIGN GATE** (stage 2, `lead-game-designer`) — story touches shot trajectory/impact behaviour (gameplay). PASS required before architect assigns lanes.
+2. **QUALITY GATE** (stage 5, `qa-lead`) — the verify funnel; PASS required before integrate.
+3. **lead-art ASSET GATE** (stage 4, art flow) — MANDATORY on any generated visual (explosion sprite, wall-mark decal source if PNG-based). Per Bertrand: artistic review is mandatory on ANY visual deliverable.
+4. **lead-art COMPOSITE GATE / Gate 4** (stage 5) — MANDATORY: the impact explosion is a runtime-composed FX (additive/emissive, glow with falloff → « un halo est un dégradé, jamais un aplat »). Judged on REAL in-game screenshots of the integrated build, NOT the source PNG. `dev-r3f-render` MUST deliver those screenshots or the runtime visual is ungated and does not merge.
+5. **CODE-REVIEW PANEL** (stage 7) — MANDATORY 4 reviewers in parallel (`code-review` high · `bmad-code-review` · `bmad-review-edge-case-hunter` · `security-review`), findings adversarially verified, `senior-architect` triage. No merge with an unresolved CONFIRMED BLOQUANT/MAJEUR.
+
+**Explicit SKIP candidates (to be declared by the hand-holder, not assumed by Marion):**
+
+- `narrative-designer` (stage 2): likely SKIP — no player-facing text expected. The agent
+  holding the hand declares + logs the skip; Marion verifies it is explicit, never silent.
+- AUDIO flow (`sound-designer`): an impact explosion is a strong SFX candidate (audible
+  behaviour). Flag for pm/design to rule IN or OUT explicitly; if IN, the audio gate joins
+  stage 4/5. Not Marion's call — routed for a verdict.
+
+**Anticipated lanes (subject to pm scope + architect partition — NOT a Marion decision):**
+
+- **Design loop:** `game-designer` (flat-trajectory + instant-hit-at-target-level mechanic,
+  impact-FX timing/placement spec) → `lead-game-designer` design gate.
+- **Architecture:** `senior-architect` — feasibility, boundary verdict, lane split, ART-lane
+  call, ADR if the wall-mark persistence introduces new state/contract.
+- **Dev lanes (parallel, non-overlapping):**
+  - `dev-gameplay` — `src/game/**`: shot trajectory (kill the +y rise / arrival-at-target-level
+    behaviour in `bulletSystem.ts`), impact-event emission, any persistent-mark game state.
+  - `dev-r3f-render` — `src/render/**` + view-side `src/hooks/**`: explosion FX render,
+    wall-mark decal on the facade.
+  - ART lane (if generated assets needed): advisor → concept-artist → game-graphist → lead-art.
+- **Verify:** `qa-lead` quality gate + `game-designer` playtest + `lead-art` composite gate.
+- **Visual gate:** `lead-art` asset gate + composite gate (both mandatory).
+- **Review panel:** 4 reviewers + `senior-architect` triage.
+- **Acceptance:** `pm`.
+
+**Caps armed for this cycle (enforced by Marion):**
+
+- Design rework: max **2 rounds/cycle** (stage 2), then escalation packet to Bertrand.
+- Asset generation: max **2 batches/asset set** (stage 4 ART lane), then escalation.
+- Verify↔build rework: max **2 rounds/cycle** (stage 5↔4), then escalation.
+
+**Risks & contention flagged at stage 0 (for pm/architect to resolve, not for Marion to decide):**
+
+- **R1 — `src/hooks/**`shared seam (the one routinely contended path).**`dev-gameplay`(logic-side hooks: feeding impact events out of the game tick) and`dev-r3f-render`(view-side hooks: consuming those events to spawn FX) will both be drawn toward`src/hooks/**`, especially `useGameLoop.ts`. **Proposed seam rule (for architect ratification):\*\*
+  the impact/hit event is produced PURELY in `src/game` (`bulletSystem`/`stateMachine` — a new
+  read-only field on the tick result, e.g. an impacts list), and `src/hooks` is touched by
+  exactly ONE lane. Recommend `dev-gameplay` OWNS the hooks bridge edit (plumbing the new
+  game-state field through the loop) and RELEASES it before `dev-r3f-render` reads from it;
+  `dev-r3f-render` consumes the field render-side and does not edit the same hook file
+  concurrently. Marion will serialise: announce order (gameplay hooks edit → release →
+  render consumes), record it, and signal the orchestrator to hold the render-side hooks
+  edit until the gameplay-side releases. Precedent: ADR-0004 / two-axis-pan handling of
+  `useGameLoop.ts`.
+- **R2 — runtime-composed FX is ungated by the asset gate alone.** The explosion glow lives
+  in `src/render` (composed live), so an asset-gate PASS does NOT cover it. `dev-r3f-render`
+  must deliver real in-game screenshots → composite gate (Gate 4). Flagged so it is not
+  discovered at merge.
+- **R3 — wall-mark PERSISTENCE = potential new state/contract.** "Persistent mark on the
+  facade" may need new game or render state (decal list) and touch the game↔render↔hooks
+  contract → likely an ADR call for `senior-architect`. Also a scope-guard question for pm:
+  did Prohibition (Atari ST) have persistent bullet marks? (cahier-des-charges test) — if
+  not, it is a conscious documented extension. Bertrand already framed it as "if possible",
+  so it may be split to a fast-follow if it risks the core fix. pm's call, not Marion's.
+- **R4 — "hit exactly where the crosshair aims" interacts with camera pan.** The prior
+  two-axis-pan work (WI-1/WI-2 block above) flagged that the shot path historically ignored
+  `cameraOffsetY`. An instant-hit-at-crosshair requirement should be checked against that
+  open aim-vs-pan concern so the fix is coherent. Flag for `senior-architect`/`game-designer`.
+
+- **stage 0 status: OPEN.** Next hand-off: **→ `pm` (John)** to scope the story (stage 1):
+  WHAT/WHY, cahier-des-charges test vs PROJECT_GUIDELINES, acceptance criteria, and an
+  explicit ruling on the AUDIO-flow and wall-mark-persistence scope questions above. No
+  code, no design, no gate has run yet. (Marion / producer)
