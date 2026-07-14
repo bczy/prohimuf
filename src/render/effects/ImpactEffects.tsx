@@ -1,35 +1,46 @@
 import { useRef } from "react";
 import type { JSX } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, AdditiveBlending } from "three";
-import type { Texture, Mesh, MeshBasicMaterial, OrthographicCamera } from "three";
+import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 
-// Transient player-shot impact effects (ADR-0020): acid-neon explosion, inert
-// B&W wall marks, optional static tracer. Single consumer of the ImpactChannel
-// — mirrors the FeedbackLayer pooled-mesh pattern (no React churn per shot).
-// This layer reads the drained event queue; it never re-resolves a hit.
+// Transient player-shot impact effects (ADR-0020): acid-neon explosion over a
+// brief dark backing disc (so additive neon reads against a bright facade), a
+// categorical white HIT flash, and inert B&W wall marks. Single consumer of the
+// ImpactChannel — mirrors the FeedbackLayer pooled-mesh pattern (no React churn
+// per shot). This layer reads the drained event queue; it never re-resolves a hit.
 
-// --- Tuning constants (transcribed verbatim from spec §5) ---
+// --- Tuning constants (transcribed from spec §5 + stage-5→4 rework amendments) ---
 const EXPLOSION_DURATION = 250; // ms — impact burst life, hit and miss
 const EXPLOSION_SIZE_HIT = 1.4; // world diameter — full body burst
-const EXPLOSION_SIZE_MISS = 0.7; // world diameter — lesser wall spark
+const EXPLOSION_SIZE_MISS = 0.9; // world diameter — lesser wall spark (was 0.7)
 const TARGET_BASE_DROP = 0.45; // world — hit burst drop below slot centre
-const TRACER_DURATION = 50; // ms — static muzzle→impact flash life
-const TRACER_WIDTH = 0.06; // world — thin beam
 const WALL_MARK_CAP = 16; // FIFO bound — oldest evicted past this
 const WALL_MARK_SIZE = 0.35; // world diameter — small inert scuff
 
+// Dark backing disc: a brief NORMAL-blended dark radial ground painted UNDER each
+// burst so the additive neon has dark ground to read against on a lit facade.
+const BACKING_DURATION = 140; // ms — dark ground fade
+const BACKING_SIZE_FACTOR = 1.25; // disc diameter = burst diameter * 1.25
+
+// White HIT flash: a 1-frame high-luminance white punch at the burst centre on a
+// HIT only. Binary glance-read — white punch = hit, cyan spark = miss.
+const FLASH_DURATION = 33; // ms — ~1–2 frame categorical hit cue
+const FLASH_DIAMETER = 1.4; // world — high-luminance white core reads ≥ ~1.0 world
+
 // Pool sizes: comfortably absorb rapid fire within each effect's short life.
 const EXPLOSION_POOL = 12;
-const TRACER_POOL = 12;
+const BACKING_POOL = 12;
+const FLASH_POOL = 12;
 
 // renderOrder layering (all scene materials are depthWrite:false, so paint order
 // is governed by renderOrder). Backdrop panels 0..3, enemies 4, foreground 5,
 // courier/vehicle 6..7, crosshair 16384.
 const MARK_RENDER_ORDER = 3.5; // in front of facade panels, behind enemies
-const TRACER_RENDER_ORDER = 7.5; // in front of enemies, below the explosion
+const BACKING_RENDER_ORDER = 7.9; // just below the explosion — dark ground
 const EXPLOSION_RENDER_ORDER = 8; // frames/engulfs the target, above the scene
+const FLASH_RENDER_ORDER = 8.1; // above the explosion — hit-only white punch
 
 // Acid-neon burst: radial white-hot core → cyan (#28F0FF) → transparent. A true
 // dégradé (loi du glow — never an aplat); additive so it reads as light.
@@ -50,6 +61,49 @@ function getExplosionTexture(): Texture | null {
   g.fillRect(0, 0, 64, 64);
   explosionTex = new CanvasTexture(c);
   return explosionTex;
+}
+
+// Dark backing disc: NORMAL-blended dark radial ground (rgba(10,10,12,0.55) →
+// transparent). Peak alpha 0.55 is baked here; the per-frame material opacity
+// fades it 1→0 over BACKING_DURATION so additive neon always has dark ground.
+let backingTex: Texture | null = null;
+function getBackingTexture(): Texture | null {
+  if (backingTex !== null) return backingTex;
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext("2d");
+  if (g === null) return null;
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, "rgba(10,10,12,0.55)");
+  grad.addColorStop(0.5, "rgba(10,10,12,0.5)");
+  grad.addColorStop(1, "rgba(10,10,12,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  backingTex = new CanvasTexture(c);
+  return backingTex;
+}
+
+// White HIT flash: high-luminance white core → transparent. Additive, so it
+// punches as light; pure white reads categorically distinct from the cyan reticle.
+let flashTex: Texture | null = null;
+function getFlashTexture(): Texture | null {
+  if (flashTex !== null) return flashTex;
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext("2d");
+  if (g === null) return null;
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.42, "rgba(255,255,255,1)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  flashTex = new CanvasTexture(c);
+  return flashTex;
 }
 
 // Inert B&W scorch: dark toner centre softening to a transparent edge. Normal
@@ -73,27 +127,6 @@ function getWallMarkTexture(): Texture | null {
   return markTex;
 }
 
-// Soft-edged neon beam: transparent → bright core → transparent across the width
-// (a crack of light, not a hard bar). Additive.
-let tracerTex: Texture | null = null;
-function getTracerTexture(): Texture | null {
-  if (tracerTex !== null) return tracerTex;
-  if (typeof document === "undefined") return null;
-  const c = document.createElement("canvas");
-  c.width = 16;
-  c.height = 1;
-  const g = c.getContext("2d");
-  if (g === null) return null;
-  const grad = g.createLinearGradient(0, 0, 16, 0);
-  grad.addColorStop(0, "rgba(40,240,255,0)");
-  grad.addColorStop(0.5, "rgba(210,255,255,1)");
-  grad.addColorStop(1, "rgba(40,240,255,0)");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 16, 1);
-  tracerTex = new CanvasTexture(c);
-  return tracerTex;
-}
-
 interface Burst {
   active: boolean;
   born: number;
@@ -103,12 +136,19 @@ interface Burst {
   peak: number;
 }
 
-interface Tracer {
+interface Backing {
   active: boolean;
   born: number;
   x: number;
-  midY: number;
-  length: number;
+  y: number;
+  diameter: number;
+}
+
+interface Flash {
+  active: boolean;
+  born: number;
+  x: number;
+  y: number;
 }
 
 interface Mark {
@@ -122,8 +162,6 @@ export function ImpactEffects({
 }: {
   channelRef: React.RefObject<ImpactChannel>;
 }): JSX.Element {
-  const { camera, size } = useThree();
-
   const burstMeshes = useRef<(Mesh | null)[]>(Array.from({ length: EXPLOSION_POOL }, () => null));
   const bursts = useRef<Burst[]>(
     Array.from({ length: EXPLOSION_POOL }, () => ({
@@ -136,15 +174,20 @@ export function ImpactEffects({
     })),
   );
 
-  const tracerMeshes = useRef<(Mesh | null)[]>(Array.from({ length: TRACER_POOL }, () => null));
-  const tracers = useRef<Tracer[]>(
-    Array.from({ length: TRACER_POOL }, () => ({
+  const backingMeshes = useRef<(Mesh | null)[]>(Array.from({ length: BACKING_POOL }, () => null));
+  const backings = useRef<Backing[]>(
+    Array.from({ length: BACKING_POOL }, () => ({
       active: false,
       born: 0,
       x: 0,
-      midY: 0,
-      length: 0,
+      y: 0,
+      diameter: 0,
     })),
+  );
+
+  const flashMeshes = useRef<(Mesh | null)[]>(Array.from({ length: FLASH_POOL }, () => null));
+  const flashes = useRef<Flash[]>(
+    Array.from({ length: FLASH_POOL }, () => ({ active: false, born: 0, x: 0, y: 0 })),
   );
 
   const markMeshes = useRef<(Mesh | null)[]>(Array.from({ length: WALL_MARK_CAP }, () => null));
@@ -167,15 +210,10 @@ export function ImpactEffects({
       channel.queue.length = 0;
       for (const m of marks.current) m.active = false;
       for (const b of bursts.current) b.active = false;
-      for (const t of tracers.current) t.active = false;
+      for (const d of backings.current) d.active = false;
+      for (const f of flashes.current) f.active = false;
       markCursor.current = 0;
     }
-
-    // Muzzle origin Y — derived from the live viewport, never hardcoded (§4 note 2):
-    // the bottom edge of the current view so the tracer reads as fired up from street.
-    const ortho = camera as OrthographicCamera;
-    const viewH = size.height / ortho.zoom;
-    const muzzleY = ortho.position.y - viewH / 2;
 
     // Drain the per-frame queue (single consumer, like Floater[]).
     for (const ev of channel.queue.splice(0)) {
@@ -188,37 +226,45 @@ export function ImpactEffects({
         markCursor.current = (markCursor.current + 1) % WALL_MARK_CAP;
       }
 
-      // Explosion: HIT bursts at the target base; MISS puffs at the impact point.
+      // Explosion anchor + size: HIT bursts at the target base; MISS puffs at the
+      // impact point. Hit and miss both peak at 1.0 — the hierarchy is carried by
+      // the 1.55× larger hit diameter plus the hit-only white flash.
+      const isHit = ev.classification === "hit" && ev.hit !== undefined;
+      const ex = isHit ? ev.hit.slotPosition.x : ev.impactPoint.x;
+      const ey = isHit ? ev.hit.slotPosition.y - TARGET_BASE_DROP : ev.impactPoint.y;
+      const ediam = isHit ? EXPLOSION_SIZE_HIT : EXPLOSION_SIZE_MISS;
+
       const bi = bursts.current.findIndex((b) => !b.active);
       const burst = bi >= 0 ? bursts.current[bi] : undefined;
       if (burst !== undefined) {
         burst.active = true;
         burst.born = now;
-        if (ev.classification === "hit" && ev.hit !== undefined) {
-          burst.x = ev.hit.slotPosition.x;
-          burst.y = ev.hit.slotPosition.y - TARGET_BASE_DROP;
-          burst.diameter = EXPLOSION_SIZE_HIT;
-          burst.peak = 1;
-        } else {
-          burst.x = ev.impactPoint.x;
-          burst.y = ev.impactPoint.y;
-          burst.diameter = EXPLOSION_SIZE_MISS;
-          burst.peak = 0.7;
-        }
+        burst.x = ex;
+        burst.y = ey;
+        burst.diameter = ediam;
+        burst.peak = 1;
       }
 
-      // Tracer (optional, droppable at the art gate): a static vertical beam from
-      // the muzzle up to the impact point. Full length on frame 1, opacity-fade only.
-      const length = ev.impactPoint.y - muzzleY;
-      if (length > 0) {
-        const ti = tracers.current.findIndex((t) => !t.active);
-        const tracer = ti >= 0 ? tracers.current[ti] : undefined;
-        if (tracer !== undefined) {
-          tracer.active = true;
-          tracer.born = now;
-          tracer.x = ev.impactPoint.x;
-          tracer.midY = (ev.impactPoint.y + muzzleY) / 2;
-          tracer.length = length;
+      // Dark backing disc under the burst — dark ground for the additive neon.
+      const di = backings.current.findIndex((d) => !d.active);
+      const backing = di >= 0 ? backings.current[di] : undefined;
+      if (backing !== undefined) {
+        backing.active = true;
+        backing.born = now;
+        backing.x = ex;
+        backing.y = ey;
+        backing.diameter = ediam * BACKING_SIZE_FACTOR;
+      }
+
+      // White flash: HIT only — a categorical one-frame punch at the burst centre.
+      if (isHit) {
+        const fi = flashes.current.findIndex((f) => !f.active);
+        const flash = fi >= 0 ? flashes.current[fi] : undefined;
+        if (flash !== undefined) {
+          flash.active = true;
+          flash.born = now;
+          flash.x = ex;
+          flash.y = ey;
         }
       }
     }
@@ -235,7 +281,28 @@ export function ImpactEffects({
       mesh.position.set(m.x, m.y, -0.5);
     });
 
-    // Explosions: quick scale pop, opacity attack then fade over the burst life.
+    // Dark backing discs: fixed size, opacity fades 1→0 over BACKING_DURATION
+    // (the texture carries the 0.55 peak alpha).
+    backings.current.forEach((d, i) => {
+      const mesh = backingMeshes.current[i];
+      if (!mesh) return;
+      if (!d.active) {
+        mesh.visible = false;
+        return;
+      }
+      const t = (now - d.born) / BACKING_DURATION;
+      if (t >= 1) {
+        d.active = false;
+        mesh.visible = false;
+        return;
+      }
+      mesh.visible = true;
+      mesh.position.set(d.x, d.y, 0.78);
+      mesh.scale.set(d.diameter, d.diameter, 1);
+      (mesh.material as MeshBasicMaterial).opacity = 1 - t;
+    });
+
+    // Explosions: quick scale pop; opacity attack → wide plateau → decay over life.
     bursts.current.forEach((b, i) => {
       const mesh = burstMeshes.current[i];
       if (!mesh) return;
@@ -254,28 +321,27 @@ export function ImpactEffects({
       const scale = b.diameter * (0.6 + 0.4 * Math.min(1, t / 0.3));
       mesh.scale.set(scale, scale, 1);
       const mat = mesh.material as MeshBasicMaterial;
-      mat.opacity = b.peak * (t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85);
+      mat.opacity = b.peak * (t < 0.1 ? t / 0.1 : t < 0.4 ? 1 : 1 - (t - 0.4) / 0.6);
     });
 
-    // Tracers: geometry fixed for the whole life; only opacity fades out.
-    tracers.current.forEach((tr, i) => {
-      const mesh = tracerMeshes.current[i];
+    // White HIT flash: full-opacity punch for its ~1-frame life, then gone.
+    flashes.current.forEach((f, i) => {
+      const mesh = flashMeshes.current[i];
       if (!mesh) return;
-      if (!tr.active) {
+      if (!f.active) {
         mesh.visible = false;
         return;
       }
-      const t = (now - tr.born) / TRACER_DURATION;
+      const t = (now - f.born) / FLASH_DURATION;
       if (t >= 1) {
-        tr.active = false;
+        f.active = false;
         mesh.visible = false;
         return;
       }
       mesh.visible = true;
-      mesh.position.set(tr.x, tr.midY, 0.7);
-      mesh.scale.set(TRACER_WIDTH, tr.length, 1);
-      const mat = mesh.material as MeshBasicMaterial;
-      mat.opacity = 0.7 * (1 - t);
+      mesh.position.set(f.x, f.y, 0.82);
+      mesh.scale.set(FLASH_DIAMETER, FLASH_DIAMETER, 1);
+      (mesh.material as MeshBasicMaterial).opacity = 1;
     });
   });
 
@@ -293,6 +359,19 @@ export function ImpactEffects({
         >
           <planeGeometry args={[1, 1]} />
           <meshBasicMaterial map={getWallMarkTexture()} transparent depthWrite={false} />
+        </mesh>
+      ))}
+      {Array.from({ length: BACKING_POOL }).map((_, i) => (
+        <mesh
+          key={`backing-${String(i)}`}
+          ref={(m) => {
+            backingMeshes.current[i] = m;
+          }}
+          visible={false}
+          renderOrder={BACKING_RENDER_ORDER}
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial map={getBackingTexture()} transparent depthWrite={false} />
         </mesh>
       ))}
       {Array.from({ length: EXPLOSION_POOL }).map((_, i) => (
@@ -313,18 +392,18 @@ export function ImpactEffects({
           />
         </mesh>
       ))}
-      {Array.from({ length: TRACER_POOL }).map((_, i) => (
+      {Array.from({ length: FLASH_POOL }).map((_, i) => (
         <mesh
-          key={`tracer-${String(i)}`}
+          key={`flash-${String(i)}`}
           ref={(m) => {
-            tracerMeshes.current[i] = m;
+            flashMeshes.current[i] = m;
           }}
           visible={false}
-          renderOrder={TRACER_RENDER_ORDER}
+          renderOrder={FLASH_RENDER_ORDER}
         >
           <planeGeometry args={[1, 1]} />
           <meshBasicMaterial
-            map={getTracerTexture()}
+            map={getFlashTexture()}
             transparent
             blending={AdditiveBlending}
             depthWrite={false}
