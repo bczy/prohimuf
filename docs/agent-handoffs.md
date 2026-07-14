@@ -149,6 +149,105 @@ Template:
   `?preview=tutorial` via the `verify` skill — mobile landscape 844×390 panels 2/3 + desktop panel 3 —
   and confirmed on screenshots both hands read instantly as hands and the falloff is a gradient. No
   commit. (Amelia / dev-r3f-render)
+---
+
+### story-audio-licence-attribution
+
+- arch: Boundary verdict PASS — pure debt paydown, ZERO `src/**` touch, NO React/Three
+  boundary in play (game↔render↔hooks contract untouched; `audioSystem.ts`/`useAudio`/tier
+  wiring explicitly out of scope, no audible behaviour change). Stage-2 DESIGN correctly
+  skipped by pm (no gameplay/fiction). **Single lane → `dev-tooling-assets`** owns all three
+  work surfaces: `scripts/download-audio.mjs` (dead-code removal + header fix + per-track
+  provenance records), NEW `public/assets/audio/CREDITS.md` (shipped credits, MUST sit under
+  `public/` so Vite copies it into the build), `README.md` (attribution section). PARALLEL-SAFE:
+  **N/A — deliberately single-lane, NOT split.** AC3 (single source of truth, no drift) makes
+  splitting these three surfaces across lanes an anti-goal: the attribution strings
+  (title/author/source/licence/licence-URL) are shared content, so one agent must author the
+  canonical set in one pass to keep them coherent by construction. Fanning out would manufacture
+  the exact drift AC3 forbids. `shoot.wav` (AC7) is a separate un-scripted asset — NOT in
+  `download-audio.mjs` — so its provenance must be investigated independently (ID3/`ffprobe`/git
+  history); binary outcome only: traced record in CREDITS **or** explicit flag-for-replacement
+  with recorded FAIL rationale, no silent third path.
+  Dev constraints (must respect): (1) `node --check scripts/download-audio.mjs` after edit —
+  no syntax break (repo pattern); (2) after removing `TRACKS`/`IA_TRACKS`/`fallback` keys/
+  `FALLBACKS`/`getIAFiles` + the orphaned FALLBACKS branch in `main()`, the script still
+  downloads EXACTLY the five `CURATED` tracks — NO behaviour change beyond dead-code removal
+  (keep `download`/`sleep`/`downloadTrack`/both `http`+`https` imports — the proto switch uses
+  both); (3) `rtk lint` clean — zero unused imports/vars/functions post-removal (AC4);
+  (4) single source of truth (AC3) — identical attribution strings across the script's per-track
+  records, `CREDITS.md`, and README; README may point to `CREDITS.md` as canonical (AC2) to
+  shrink the drift surface; (5) verify the five titles against actual file/ID3 before writing,
+  do not trust the existing `CURATED` description comments (AC1); (6) do NOT edit this log
+  concurrently (orchestrator-serialized) and do NOT touch `src/**`.
+  Sequencing with gates: dev lane builds all three surfaces + resolves `shoot.wav` → `yarn build`
+  to prove `CREDITS.md` lands in `dist/` (deployed-surface check, AC1) → **`sound-designer`
+  (Malik) licence gate (AC8) FIRST** (every shipped file — 5 BGM + `shoot.wav` — must carry a
+  verified provenance record; unresolved AC7 blocks PASS) → **`qa-lead` quality gate (AC9)
+  AFTER** (`rtk tsc`+`rtk vitest`+`rtk lint` green, script runs clean over the five tracks,
+  strings render in CREDITS + README) → architect review → code-review panel → pm accept.
+  No new ADR required: the shipped-credits-file convention is a one-file docs surface, not a
+  boundary/dependency/contract change; ADR-0018 (audio gate) already governs the provenance
+  rule this satisfies — a back-reference in the story suffices. (Winston / Senior Architect)
+
+- release: dev-tooling-assets lane done (no commit by dev). File List: scripts/download-audio.mjs
+  (dead TRACKS/IA_TRACKS/FALLBACKS/getIAFiles removed, true CC-BY 4.0 header, per-track
+  provenance records), public/assets/audio/CREDITS.md (NEW, canonical credits — 5 BGM
+  records + explicit "UNKNOWN PROVENANCE — flagged for replacement" entry for shoot.wav
+  with evidence), README.md (§Audio credits pointing to CREDITS.md). ID3-verified titles:
+  Funky Chunk / Ouroboros / Sneaky Snitch / Darkest Child / Reformat, all Kevin MacLeod.
+  node --check OK, lint/tsc/test (208/208)/build green; CREDITS.md proven in dist/.
+  (Amelia, tooling lane)
+- AUDIO GATE (AC8, Malik 🎧, first activation): per-asset — 5 BGM PASS (ID3 spot-checked
+  himself, CC-BY 4.0 norm strings complete and identical across CREDITS/README/script);
+  shoot.wav FAIL (RIFF has no INFO/authorship chunks, no generator script, entered at
+  root commit 7db7d6b — provenance unknowable, automatic FAIL per gate-1 licence rule).
+  Composite gate outcome: FAIL surfaced honestly; remediation already recorded (flag in
+  CREDITS.md, AC7 second branch). ESCALATION to Bertrand: (1) replace SFX in follow-up
+  story [Malik recommends], (2) temporary waiver with the shipped flag, (3) remove SFX
+  (audible-behaviour change, would trip behaviour gate). Decision requested at merge.
+
+- QUALITY GATE (AC9, Inès 🧪): first run FAIL — sole failing case M4 `yarn format:check`
+  RED on public/assets/audio/CREDITS.md (table padding; merge-blocking, CI job + husky).
+  Routed to dev-tooling-assets; remedy applied as prescribed (`prettier --write`, padding
+  only, zero content change; orchestrator executed the one-command remedy on the lane's
+  behalf). Inès re-ran M4 herself → green; re-verdict PASS. Everything else held on first
+  run: tsc / vitest 208/208 / lint green; S1-S8 script integrity (dead code gone, both
+  http+https imports, no-op run [skip]×5, zero network); AC3 zero drift across the 3
+  surfaces; ID3 titles verified from bytes; CREDITS.md proven byte-identical in dist/;
+  AC7 explicit flag present; blast radius confined to the 3 dev surfaces. One named
+  CI-DEFERRED (non-blocking): fresh-dir download smoke over incompetech.com. Clear for
+  stage 6. (Inès, quality gate)
+
+- review-panel + arch triage (stages 6-7): 4 parallel reviewers (code-review-high /
+  acceptance-audit / edge-case-hunter / security) on the story diff. 10 consolidated
+  findings; Winston adversarial triage: the sole MAJEUR (download() open-redirect +
+  https→http downgrade, no checksum) REFUTED as introduced — byte-identical to main,
+  pre-existing, dev-tool-only → FOLLOW-UP TICKET "harden download-audio.mjs redirects:
+  https-only + hop cap". 6 minors CONFIRMED and fixed in the touch-up commit: Ouroboros
+  ID3 variant noted + "unmodified verbatim downloads" statement (CC-BY §3(a) complete),
+  QA-plan grep literal aligned to the shipped em-dash norm string, stale release line
+  dropped, script header "shipped with" wording, shoot.wav record now cites
+  docs/roadmap.md:65 ("generated and wired") and re-weights to "likely original
+  project work, unconfirmed". 2 REFUTED (no change): MUST-match wording, shoot.wav
+  reuse notice. FOLLOW-UP TICKET #2: in-game/footer link to CREDITS.md (conscious-
+  extension backlog). Integration sign-off: PASS, zero boundary risk, zero unresolved
+  CONFIRMED blocking/major. Escalation to Bertrand REFRAMED per the roadmap evidence:
+  confirm shoot.wav was generated in-project (→ PASS as original work) or order the
+  replacement story. (Panel + Winston; orchestrator applied the touch-up)
+
+- pm acceptance (John, stage 8): ACCEPT-WITH-NOTES. All 10 ACs verified from the
+  artifacts (AC8 = composite FAIL-escalated BY DESIGN, the story's contracted path).
+  Scope clean vs PROJECT_GUIDELINES (pure compliance, core loop untouched, out-of-scope
+  respected). Remaining stage-9 human decisions for Bertrand: (1) shoot.wav — confirm
+  in-project generation (flips record FAIL→PASS as original work) / order replacement
+  story / temporary waiver; (2) greenlight or backlog the two follow-up tickets
+  (downloader hardening; in-game credits link). Story shippable now. (John / PM)
+
+- stage 9 (Bertrand): MERGE authorized explicitly for PR #44 (squash on green CI).
+  shoot.wav decision: in-project generation NOT confirmable -> REPLACEMENT ORDERED
+  (follow-up story, sound-designer lane, per Malik's recommendation); decision recorded
+  in CREDITS.md. Follow-up tickets standing: downloader redirect hardening; in-game
+  credits link. (Bertrand via orchestrator)
 
 ---
 
@@ -1748,3 +1847,44 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   4-direction full sweep are noted faithful extensions per Lane B, not captured as
   single stills. No defects found. Hand to senior-architect (Winston) for integration
   review; game-designer (Sacha) design-conformity playtest runs in parallel. (Inès / qa-lead)
+
+---
+
+### fix-wheel-spin-and-vehicle-facing (PR #42, branch claude/bike-wheel-speed-nnh6wi)
+
+- intake: two visual bugs from Bertrand (2026-07-14): courier bike wheels spin far too
+  slowly vs road speed; delivery vehicle reads as driving in reverse. (Orchestrator)
+- diagnosis: (1) stamped-spoke flipbook played at fixed 6 fps regardless of
+  COURIER_SPEED=7 u/s — measured wheel ≈ 84px of the 256px cell ⇒ ~0.85 wu diameter ⇒
+  ~2.6 rev/s ⇒ ~940 deg/s ⇒ ~47 fps at the rider's 20°/frame step, rounded to 48;
+  (2) car.png/truck.png art faces LEFT while DeliveryVehicleSprite assumed right-facing
+  art (courier convention) — moto correct by accident. (Orchestrator)
+- dev lane (dev-r3f-render): per-type `facing` registration knob in levelArt.json
+  (car/truck=left, moto=right), artSign() combined with inferred travel direction,
+  applied to sprite mesh AND baked neon rim; consistency test requires the knob.
+- verify (qa-lead, headless run + screenshots): PASS both fixes — spokes advance fast
+  between captures; truck (→right) and car (→left) both point hood-first in travel
+  direction, rim aligned, no ghosting. tsc + 208 vitest + lint green. Known coverage
+  gap: `moto` (facing=right) never spawned by any level's delivery — logic+test only.
+- architect: APPROVE-WITH-NOTES → note folded (fps tuned to rider 20°/frame; spare bike
+  layer 40°/frame would need ~24 fps if re-composited). No ADR (registration/tuning
+  knobs, no boundary/contract change).
+- review-panel (4 parallel: code-review-high / bmad-code-review / edge-case-hunter /
+  security-review): ZERO blocking/major; security NO FINDINGS. Actionable minors fixed
+  in-branch: flipbook clock gated on `paused` (7121101); artSign direct closed-union
+  manifest indexing, Record widening dropped (bb9c4e8) — endorsed as strict improvement
+  (compile-time exhaustiveness: future vehicle type without `facing` fails tsc);
+  redundant $comment sentence deduped.
+- triage (Winston, final): APPROVE for merge. Deferred: wagon-wheel undersampling of the
+  48fps flipbook on sub-48Hz displays → game-designer PLAYTEST item; fps↔speed coupling
+  test → WON'T-FIX (would hardcode the eyeballed 84px estimate into a brittle oracle —
+  the $comment derivation is the right home); one-frame stale-facing flash at
+  IDLE→INCOMING → pre-existing, off-screen, pm backlog minor; `facing` staleness after a
+  FLUX reroll → art-gate checklist duty (documented in $comment), closed; rider layer
+  facing knob symmetry → backlog LOW (couriers travel one lane direction; speculative
+  generality today).
+- pm acceptance (John): ACCEPT — fidelity fixes to shipped features, scope test passes
+  with no cahier-des-charges question; core loop intact; DoD met (checks green,
+  browser-verified both directions, manifest test guards `facing`). Standing note: the
+  deferred minors/nits above are tracked follow-up debt (this entry is the log).
+  Clear to merge.
