@@ -2498,3 +2498,18 @@ classification stays `"miss"` on friendly fire.
   Story shippable now. (John / PM)
 - **Stage 9 MERGE: → Bertrand (explicit).** PR #46, ready-for-review, preview:
   https://bczy.github.io/prohimuf/preview/claude-pensive-dirac-8oyzmp/
+
+---
+
+### story-launch-menu-redesign (branch claude/launch-menu-redesign-vpph8v)
+
+- intake (producer): Total redesign of muf's pre-game experience — StartScreen, MainMenu,
+  NarrativeScreen (everything before gameplay). Bertrand's request (2026-07-14). Pipeline
+  planned: pm (story) → design loop (`game-designer` ∥ `narrative-designer` →
+  `lead-game-designer` gate, `art-advisor` counsel) → `senior-architect` (plan + lanes) →
+  dev lanes (`dev-r3f-render` primary; `dev-gameplay` only if state/prefs logic changes) →
+  `qa-lead` verify → `senior-architect` review → `pm` acceptance. STAGE: 1 (pm) IN PROGRESS,
+  running now in parallel with `art-advisor` counsel. Next hand-off: pm story +
+  art-advisor counsel → design loop. Blockers: none. Caps: fresh cycle, counters at 0.
+  Contention watch: `src/hooks/**` untouched so far (only if `dev-gameplay` joins on prefs
+  logic — serialise then). (Marion / Producer)
