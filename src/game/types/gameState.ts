@@ -39,6 +39,6 @@ export interface GameState {
   // Courier-hit penalties this tick, anchored to world positions (transient).
   readonly pointFeedback?: readonly PointHitEvent[];
   // Player-shot impacts from the latest tick (transient; drives render effects
-  // — explosion, tracer, wall marks). 0 or 1 element (one shot per tick).
+  // — explosion, wall marks). 0 or 1 element (one shot per tick).
   readonly impactEvents?: readonly ImpactEvent[];
 }

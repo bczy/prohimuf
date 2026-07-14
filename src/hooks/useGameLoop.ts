@@ -246,7 +246,7 @@ export function useGameLoop(
       }
     }
     // Player-shot impacts: drain onto the channel queue for the effects layer
-    // (explosion, tracer, wall marks). Single consumer splices it each frame.
+    // (explosion, wall marks). Single consumer splices it each frame.
     const impactChannel = impactChannelRef?.current;
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
