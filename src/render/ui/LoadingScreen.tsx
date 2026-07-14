@@ -41,6 +41,10 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
 
   return (
     <PaperSheet stock={STOCK.newsprint} style={{ userSelect: "none" }}>
+      {/* The bar's width tracks real progress; smooth it, but honour reduced-motion
+          (the rest of the print system forces its motion tokens to 0 there too). */}
+      <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}`}</style>
+
       {/* Masthead strip — printed ink bar (single-sourced running string). */}
       <div
         style={{
@@ -81,7 +85,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
             fontFamily: "Impact, 'Arial Narrow', sans-serif",
             fontSize: "clamp(44px, 8vw, 84px)",
             lineHeight: 0.9,
-            letterSpacing: "0.04em",
+            letterSpacing: "0.05em",
             color: INK.full,
             marginTop: "8px",
           }}
@@ -112,6 +116,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
           }}
         >
           <div
+            className="muf-load-fill"
             style={{
               position: "absolute",
               top: 0,
@@ -119,7 +124,6 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
               left: 0,
               width: `${String(pct)}%`,
               background: INK.black,
-              transition: "width 0.12s linear",
             }}
           />
         </div>
