@@ -50,7 +50,6 @@ Template:
   No new ADR required: the shipped-credits-file convention is a one-file docs surface, not a
   boundary/dependency/contract change; ADR-0018 (audio gate) already governs the provenance
   rule this satisfies — a back-reference in the story suffices. (Winston / Senior Architect)
-- release: pending.
 
 - release: dev-tooling-assets lane done (no commit by dev). File List: scripts/download-audio.mjs
   (dead TRACKS/IA_TRACKS/FALLBACKS/getIAFiles removed, true CC-BY 4.0 header, per-track
@@ -80,6 +79,31 @@ Template:
   AC7 explicit flag present; blast radius confined to the 3 dev surfaces. One named
   CI-DEFERRED (non-blocking): fresh-dir download smoke over incompetech.com. Clear for
   stage 6. (Inès, quality gate)
+
+- review-panel + arch triage (stages 6-7): 4 parallel reviewers (code-review-high /
+  acceptance-audit / edge-case-hunter / security) on the story diff. 10 consolidated
+  findings; Winston adversarial triage: the sole MAJEUR (download() open-redirect +
+  https→http downgrade, no checksum) REFUTED as introduced — byte-identical to main,
+  pre-existing, dev-tool-only → FOLLOW-UP TICKET "harden download-audio.mjs redirects:
+  https-only + hop cap". 6 minors CONFIRMED and fixed in the touch-up commit: Ouroboros
+  ID3 variant noted + "unmodified verbatim downloads" statement (CC-BY §3(a) complete),
+  QA-plan grep literal aligned to the shipped em-dash norm string, stale release line
+  dropped, script header "shipped with" wording, shoot.wav record now cites
+  docs/roadmap.md:65 ("generated and wired") and re-weights to "likely original
+  project work, unconfirmed". 2 REFUTED (no change): MUST-match wording, shoot.wav
+  reuse notice. FOLLOW-UP TICKET #2: in-game/footer link to CREDITS.md (conscious-
+  extension backlog). Integration sign-off: PASS, zero boundary risk, zero unresolved
+  CONFIRMED blocking/major. Escalation to Bertrand REFRAMED per the roadmap evidence:
+  confirm shoot.wav was generated in-project (→ PASS as original work) or order the
+  replacement story. (Panel + Winston; orchestrator applied the touch-up)
+
+- pm acceptance (John, stage 8): ACCEPT-WITH-NOTES. All 10 ACs verified from the
+  artifacts (AC8 = composite FAIL-escalated BY DESIGN, the story's contracted path).
+  Scope clean vs PROJECT_GUIDELINES (pure compliance, core loop untouched, out-of-scope
+  respected). Remaining stage-9 human decisions for Bertrand: (1) shoot.wav — confirm
+  in-project generation (flips record FAIL→PASS as original work) / order replacement
+  story / temporary waiver; (2) greenlight or backlog the two follow-up tickets
+  (downloader hardening; in-game credits link). Story shippable now. (John / PM)
 
 ---
 

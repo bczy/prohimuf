@@ -7,7 +7,10 @@ licences" section and the per-track records in `scripts/download-audio.mjs` must
 match it.
 
 Titles below were verified against the ID3 tags of the actual `.mp3` files on
-disk (`public/assets/audio/`).
+disk (`public/assets/audio/`). One variant to note: `bgm_loop2.mp3`'s embedded
+ID3 title reads "Ouroboros - Full Mix"; "Ouroboros" is the canonical incompetech
+work title used for attribution. All BGM files are unmodified, verbatim
+downloads from incompetech.com (no edits, cuts or re-encodes by this project).
 
 ## Background music (5 tracks) — Kevin MacLeod, CC-BY 4.0
 
@@ -46,13 +49,20 @@ Investigation evidence:
   or licence string is recorded inside the file.
 - **No generator script.** No script under `scripts/` produces or references
   `shoot.wav` (unlike the sprites and the BGM, which have generators). It was not
-  produced by this repo's asset pipeline.
+  produced by this repo's asset pipeline as it stands today.
 - **No meaningful git history.** `git log --follow` shows `shoot.wav` was
   introduced in the repository's **root commit** (`7db7d6b`, `max-parents=0`),
   bundled into a large initial import whose message ("chore(assets): generate
-  delivery-vehicle sprites") is unrelated to it. There is no earlier commit, PR,
-  or source note explaining where it came from.
+  delivery-vehicle sprites") is unrelated to it.
+- **One in-repo source note exists.** `docs/roadmap.md` line 65 records
+  "Shoot SFX: `shoot.wav` generated and wired" — consistent with the file's
+  shape (13 KB, 0.15 s mono burst, bare `fmt`/`data` chunks, typical of a
+  synthesized SFX). This points to the file being **generated in-project**,
+  but the tool/method is unreconstructed and no author confirmation exists yet.
 
-Conclusion: origin is unknowable from the repo. **Action required (out of scope
-for this story): replace `shoot.wav` with a track of known, compatible licence,
-then record it here.** Until then, this asset blocks the audio-gate PASS.
+Conclusion: **likely original project work (generated in-project per the roadmap
+note), unconfirmed.** Reuse status unknown — downstream consumers should not
+assume redistribution rights for this one file. **Action required (out of scope
+for this story): either the author confirms in-project generation (then this
+record becomes a PASS as original work) or the file is replaced with a track of
+known, compatible licence.** Until then, this asset blocks the audio-gate PASS.

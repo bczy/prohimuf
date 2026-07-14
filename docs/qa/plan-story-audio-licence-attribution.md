@@ -87,7 +87,7 @@ Run from repo root. All four must be green; any red = FAIL routed to `dev-toolin
 **Canonical norm string** (per AC1), one per track, exact literal:
 
 ```
-"<Title>" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0, https://creativecommons.org/licenses/by/4.0/
+"<Title>" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — https://creativecommons.org/licenses/by/4.0/
 ```
 
 **Title ↔ file map to enforce** (AC1 — titles must match the real files on disk, verified by
@@ -106,7 +106,7 @@ surfaces):
 audio section, `scripts/download-audio.mjs` `CURATED` records):
 
 1. **Exact-match the full norm string on the two prose surfaces.** For each of the 5 titles:
-   `grep -Fq '"<Title>" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0, https://creativecommons.org/licenses/by/4.0/' public/assets/audio/CREDITS.md`
+   `grep -Fq '"<Title>" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — https://creativecommons.org/licenses/by/4.0/' public/assets/audio/CREDITS.md`
    and the same against `README.md` (unless README unambiguously points to CREDITS.md as the
    single source of truth per AC2 — in which case README carries the pointer, and only CREDITS
    must carry all 5 literals). Each required `grep -F` returns exit 0 / ≥1 match. Any miss =

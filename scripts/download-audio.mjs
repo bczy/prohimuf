@@ -2,7 +2,7 @@
 /**
  * Audio downloader — Prohibition remake
  *
- * Downloads the five background-music tracks used by the game. ALL FIVE are
+ * Downloads the five background-music tracks shipped with the game. ALL FIVE are
  * Kevin MacLeod cuts from incompetech.com, licensed under Creative Commons:
  * By Attribution 4.0 (CC-BY 4.0). This licence is free to use BUT attribution
  * is MANDATORY — see `public/assets/audio/CREDITS.md` (the canonical, shipped
