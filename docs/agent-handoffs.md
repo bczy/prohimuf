@@ -1968,3 +1968,13 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   trail anchors to the new fingertips, all animation ids/classes preserved.
   tsc/lint/format green; in-context verify capture both mobile panels — hands read,
   anchors aligned. (Sam / game-graphist + Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / hand pose v4 (Bertrand's photo reference):
+  Bertrand supplied a photo of the real two-finger tap (side view, arched hand,
+  fingers descending diagonally to touch the surface, curled fingers under, wrist
+  exiting top-right). game-graphist redrew both HAND\_\* silhouettes in that pose
+  (screenshot-proven at 240/96/64, defect sweep clean); dev-r3f-render integrated,
+  retargeted tap halos (38,84)/(28,95) r8 + ripple (33,90) + swipe tip (34,87),
+  re-anchored the 4 directional trails, trimmed down/up sweep travel to keep the
+  low fingertip in frame. tsc/lint/format green; in-context frozen captures match
+  the photo pose. (Serge / game-graphist + Amelia / dev-r3f-render)
