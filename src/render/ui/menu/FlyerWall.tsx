@@ -99,6 +99,10 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
   return (
     <div
       ref={containerRef}
+      // Deterministic "the click-through lockout has elapsed" signal: reflects the
+      // `armed` state so automation can wait for a real actionable state instead of
+      // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
+      data-flyers-armed={armed ? "true" : "false"}
       onFocus={() => {
         setFocusWithin(true);
       }}
