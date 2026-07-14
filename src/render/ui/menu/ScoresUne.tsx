@@ -173,29 +173,38 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
             <span style={{ width: "96px" }}>NUIT DU</span>
           </div>
           {scores.map((s, i) => {
-            const row = (
+            const isTop = i === 0;
+            // rank-1 highlight WITHOUT an inline-block wrapper: the row stays a
+            // full-width block so every column aligns. The green is a keyline/accent
+            // only — an inset left rule (no layout shift) plus a circled rank NUMBER —
+            // never small body text on newsprint (2.40:1). Row text is INK.black.
+            return (
               <div
+                key={i}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   fontSize: "13px",
                   padding: "5px 0",
                   borderBottom: `1px solid rgba(20,18,16,0.25)`,
-                  color: i === 0 ? MARK.green : INK.black,
+                  color: INK.black,
+                  fontWeight: isTop ? 700 : 400,
+                  boxShadow: isTop ? `inset 3px 0 0 ${MARK.green}` : undefined,
                 }}
               >
-                <span style={{ width: "36px" }}>{i + 1}</span>
+                <span style={{ width: "36px" }}>
+                  {isTop ? (
+                    <MarkerCircle active ink={MARK.green}>
+                      <span>{i + 1}</span>
+                    </MarkerCircle>
+                  ) : (
+                    i + 1
+                  )}
+                </span>
                 <span style={{ flex: 1, fontSize: "16px" }}>{s.score}</span>
                 <span style={{ width: "72px" }}>{s.wave}</span>
                 <span style={{ width: "96px" }}>{s.date.slice(0, 10)}</span>
               </div>
-            );
-            return i === 0 ? (
-              <MarkerCircle key={i} active ink={MARK.green}>
-                {row}
-              </MarkerCircle>
-            ) : (
-              <div key={i}>{row}</div>
             );
           })}
         </>

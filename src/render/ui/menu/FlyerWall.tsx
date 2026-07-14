@@ -33,8 +33,21 @@ interface FlyerMeta {
 export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Element {
   const [focusWithin, setFocusWithin] = useState(false);
   const [shakeIndex, setShakeIndex] = useState<number | null>(null);
+  // Click-through guard: the title→menu transition can land a stray pointer/keydown
+  // on a freshly mounted flyer. Arm activations only after MOTION.titleToMenu ms.
+  // Deterministic (a plain mount timer), no Date.now in render.
+  const [armed, setArmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setArmed(true);
+    }, MOTION.titleToMenu);
+    return () => {
+      window.clearTimeout(t);
+    };
+  }, []);
 
   // Per-level derived presentation. Stock rotates rose/vert/orange by *playable*
   // index; the tutorial uses manila. Unlock predicate byte-identical to the shipped
@@ -54,6 +67,8 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
   });
 
   function activate(i: number): void {
+    // Ignore pointer + Enter/Space until the mount lockout elapses (click-through guard).
+    if (!armed) return;
     const entry = meta[i];
     const level = LEVELS[i];
     if (entry === undefined || level === undefined) return;

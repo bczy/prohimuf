@@ -2,22 +2,15 @@
  * Pure, render-side derivations for the NIVEAUX flyer wall.
  *
  * This is the guard that the fanzine reskin preserved the shipped `LevelCard`
- * difficulty derivation byte-for-byte. It is intentionally **pure and
- * print-token-free** (no `@render/ui/print` import): the difficulty inks are the
- * §2bis.1 marker anchors, colocated with the derivation logic so the helper stays
- * unit-testable in isolation (the Vitest config aliases only `@game`/`@utils`, and
- * the repo tests pure render helpers as `.test.ts`, e.g. `haloFalloff`, `muzzleFor`).
+ * difficulty derivation byte-for-byte. It stays **React-free** (a pure helper the repo
+ * tests as `.test.ts`, e.g. `haloFalloff`, `muzzleFor`) and reads the §2bis.1 marker
+ * inks from the single `print/tokens.ts` source via a relative import — tokens.ts holds
+ * no React, so it resolves fine under the Vitest config (AC3 dedup, no re-declared hexes).
  *
- * The three difficulty inks equal `MARK.green` / `MARK.orange` / `MARK.pink` in
- * `print/tokens.ts` (art-direction §2bis.1); consuming surfaces read the hex from
- * `difficultyMark().ink`, never re-declaring it.
+ * The three difficulty inks are `MARK.green` / `MARK.orange` / `MARK.pink`
+ * (art-direction §2bis.1); consuming surfaces read the hex from `difficultyMark().ink`.
  */
-
-// §2bis.1 marker inks — the semantic difficulty tells (always with an ink-black
-// keyline + distinct stamp shape on the flyer).
-const MARK_GREEN = "#2FA84F"; // FACILE
-const MARK_ORANGE = "#E8641E"; // NORMAL (middle tier)
-const MARK_PINK = "#D62A7A"; // DIFFICILE
+import { MARK } from "../print/tokens";
 
 export interface DifficultyMark {
   readonly label: "FACILE" | "NORMAL" | "DIFFICILE";
@@ -33,7 +26,7 @@ export interface DifficultyMark {
  * DIFFICILE (stalingrad `1.3`, vitry `1.6`) ever render; `NORMAL` is latent.
  */
 export function difficultyMark(enemySpeedMultiplier: number): DifficultyMark {
-  if (enemySpeedMultiplier > 1.2) return { label: "DIFFICILE", ink: MARK_PINK };
-  if (enemySpeedMultiplier > 1.0) return { label: "NORMAL", ink: MARK_ORANGE };
-  return { label: "FACILE", ink: MARK_GREEN };
+  if (enemySpeedMultiplier > 1.2) return { label: "DIFFICILE", ink: MARK.pink };
+  if (enemySpeedMultiplier > 1.0) return { label: "NORMAL", ink: MARK.orange };
+  return { label: "FACILE", ink: MARK.green };
 }
