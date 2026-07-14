@@ -1718,3 +1718,22 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   min 50 px) and writes per-frame `muzzle` arrays into levelArt.json for the 5 shooting
   entries. Visual preview: all 10 markers on the flash. tsc + vitest 213/213 + prettier
   green. Docs: asset-pipeline.md + SCRIPTS.md. Committed with this entry.
+
+### explosion-alignment-transparency — iter 3 (Bertrand's gate: 3 flagged sprites)
+
+- Bertrand flagged 3 sprites on the anchor preview: shooting_3 f1 (floating faint
+  flash star, detached from the pistol), riot_shooting f1 + f2 (torn dark wings
+  still around the blasts).
+- Serge (TECHNICAL pass, iter 3): new ERASE_ISLANDS lever removed the whole floating
+  star (532 px, a separate component — figure-safe by construction); riot splash
+  zones widened to the full island + SB relaxed to 0.85 under lum<88 (dark-red torn
+  material) — riot f1 −1472 px, riot f2 −1023 px. Figure-seed reconcile prototyped
+  and REJECTED (would open a 539 px interior hole in f2); the all-opaque reconcile
+  is the maximal safe removal. shooting_3_f2 judged fine and left byte-identical.
+  fill-holes --check PASS, retouch --check idempotent PASS, shooting_3 integrity
+  FAIL→PASS. Measured pistol muzzle tip for shooting_3 f1: n(0.77, 0.44).
+- Orchestrator: measure-muzzle-anchors.mjs gains a documented MANUAL_ANCHORS
+  override (frame file → anchor, precedence over detection) for erased-flash
+  frames; re-measured → levelArt.json shooting_3 f1 anchor now (0.77, 0.44), all
+  other anchors unchanged. Preview verified: marker on the barrel end. tsc +
+  vitest 213/213 + prettier + both asset gates green. Committed with this entry.
