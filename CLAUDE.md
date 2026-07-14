@@ -55,16 +55,16 @@ A crew of subagents (full roster & protocol: `.claude/agents/COLLABORATION.md`) 
 in parallel but always coordinates there and logs in `docs/agent-handoffs.md`. Core crew,
 each fronting a BMAD persona:
 
-| Subagent             | Role                                       | BMAD bridge                            |
-| -------------------- | ------------------------------------------ | -------------------------------------- |
-| `pm`                 | Product / PRD / stories / scope            | `bmad-agent-pm` (John)                 |
-| `senior-architect`   | Architecture, boundaries, sign-off         | `bmad-agent-architect` (Winston)       |
-| `lead-game-designer` | Design gate + design/art/dev sync          | — (Karim)                              |
-| `game-designer`      | Mechanics, tuning, 3C specs                | BMGD `gds` module when installed       |
-| `narrative-designer` | Universe, cast, in-game text scripts       | BMGD `bmgd-narrative` when installed   |
-| `dev-r3f-render`     | `src/render` + view hooks                  | `bmad-agent-dev` (Amelia)              |
-| `dev-gameplay`       | `src/game` pure logic (TDD)                | `bmad-agent-dev` (Amelia)              |
-| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI            | `bmad-agent-dev` (Amelia)              |
+| Subagent             | Role                                 | BMAD bridge                          |
+| -------------------- | ------------------------------------ | ------------------------------------ |
+| `pm`                 | Product / PRD / stories / scope      | `bmad-agent-pm` (John)               |
+| `senior-architect`   | Architecture, boundaries, sign-off   | `bmad-agent-architect` (Winston)     |
+| `lead-game-designer` | Design gate + design/art/dev sync    | — (Karim)                            |
+| `game-designer`      | Mechanics, tuning, 3C specs          | BMGD `gds` module when installed     |
+| `narrative-designer` | Universe, cast, in-game text scripts | BMGD `bmgd-narrative` when installed |
+| `dev-r3f-render`     | `src/render` + view hooks            | `bmad-agent-dev` (Amelia)            |
+| `dev-gameplay`       | `src/game` pure logic (TDD)          | `bmad-agent-dev` (Amelia)            |
+| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI      | `bmad-agent-dev` (Amelia)            |
 
 (The art crew — `lead-art`, `art-advisor`, `concept-artist`, `game-graphist` — is
 documented in COLLABORATION.md.)

@@ -6,14 +6,14 @@ single source of truth for what is designed, what is gated, and who owns what. P
 
 ## Ownership
 
-| Deliverable                              | Author               | Gate                 |
-| ---------------------------------------- | -------------------- | -------------------- |
-| `gdd.md` — game design document          | `game-designer`      | `lead-game-designer` |
+| Deliverable                               | Author               | Gate                 |
+| ----------------------------------------- | -------------------- | -------------------- |
+| `gdd.md` — game design document           | `game-designer`      | `lead-game-designer` |
 | `3c.md` — camera / character / controller | `game-designer`      | `lead-game-designer` |
 | `tuning.md` — gameplay values + rationale | `game-designer`      | `lead-game-designer` |
-| `narrative-bible.md` — universe & lore   | `narrative-designer` | `lead-game-designer` |
-| `characters.md` — cast sheets            | `narrative-designer` | `lead-game-designer` |
-| per-feature specs / per-scene scripts    | lane owner           | `lead-game-designer` |
+| `narrative-bible.md` — universe & lore    | `narrative-designer` | `lead-game-designer` |
+| `characters.md` — cast sheets             | `narrative-designer` | `lead-game-designer` |
+| per-feature specs / per-scene scripts     | lane owner           | `lead-game-designer` |
 
 Rules of the folder:
 
