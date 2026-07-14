@@ -3,7 +3,7 @@
 **Stage 5 · VERIFY** · QA lead (Inès) · **Date:** 2026-07-14
 **Branch:** `claude/launch-menu-redesign-vpph8v`
 **Story:** `_bmad-output/planning-artifacts/story-pre-game-experience-redesign.md` (AC1–AC8)
-**Spec:** `docs/game-design/pre-game-experience-ux.md` · **ADR:** `docs/adr/0020-pre-game-print-system-and-title-phase.md`
+**Spec:** `docs/game-design/pre-game-experience-ux.md` · **ADR:** `docs/adr/0021-pre-game-print-system-and-title-phase.md`
 
 ## Verdict: **PASS** (quality gate) — with two non-blocking findings routed to owning lanes
 
@@ -56,12 +56,12 @@ no failed same-origin requests during either run.
 | --- | ------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AC1 | Real title moment, wired; no orphan              | **PASS** | `TitleScreen` imported + rendered in `App.tsx:8,225`; cold load boots `TITLE`; one action → MENU (driven by e2e). `StartScreen.tsx` deleted, **zero** references in `src/` (grep). Title cover screenshot captured.         |
 | AC2 | Menu reads as fanzine artifact                   | **PASS** | Screenshots: zine cover (TITLE), flyer wall (NIVEAUX) with per-stock flyers + tape/stamps, PARIS-MINUIT UNE (SCORES), OURS colophon (OPTIONS). Renders without error. Full art/design conformity = design gate's verdict.   |
-| AC3 | One cohesive visual system, single palette       | **PASS** | Single-source `src/render/ui/print/tokens.ts` (STOCK/INK/MARK/MASTHEAD/MOTION), consumed by every surface (ADR-0020 D3). tsc/lint green. Screenshots show consistent Courier/Impact type + halftone, zero glow.             |
+| AC3 | One cohesive visual system, single palette       | **PASS** | Single-source `src/render/ui/print/tokens.ts` (STOCK/INK/MARK/MASTHEAD/MOTION), consumed by every surface (ADR-0021 D3). tsc/lint green. Screenshots show consistent Courier/Impact type + halftone, zero glow.             |
 | AC4 | Reskin not re-plumb; `src/game` untouched        | **PASS** | `git diff --stat origin/main...HEAD -- src/game/` is **EMPTY**. Full Vitest suite green (228) with no game-system test edits. `Prefs`/highScore/`levels.ts`/`stateMachine` byte-unchanged.                                  |
 | AC5 | UX non-negotiables (<10 s, one action, no trap)  | **PASS** | Title→gameplay for belliard = **3 actions** (title click → flyer click → narrative Passer/CONTINUER), each transition code-bounded ≤ 280 ms (`MOTION.titleToMenu`), no dwell on TITLE. e2e drives the path. _(See caveat.)_ |
 | AC6 | Mobile & overlays intact; RotateOverlay on TITLE | **PASS** | `TITLE` renders through `renderAppShell(content, rotateBlocked)` (`App.tsx:223–232`), so RotateOverlay + FullscreenButton wrap it exactly like MENU. RotateOverlay reskinned to print (no scanlines/emoji). _(See caveat.)_ |
 | AC7 | No new mechanics/systems/levels                  | **PASS** | Diff confined to `src/render/**` (+ `App.tsx`, docs, `scripts/screenshot-preview.mjs`). **Zero** new files under `src/game/systems/**` or `src/game/levels/**`. Core loop untouched.                                        |
-| AC8 | Verified green + screenshot-capturable           | **PASS** | tsc/vitest/lint/format green; `?preview=title` boots TITLE, `?preview=menu` boots MENU (both captured); existing `narrative` / `end` / `tutorial` previews intact. ADR-0020 recorded.                                       |
+| AC8 | Verified green + screenshot-capturable           | **PASS** | tsc/vitest/lint/format green; `?preview=title` boots TITLE, `?preview=menu` boots MENU (both captured); existing `narrative` / `end` / `tutorial` previews intact. ADR-0021 recorded.                                       |
 
 ### Caveats on the PASS verdicts (holes named, not hidden)
 

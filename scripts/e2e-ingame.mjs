@@ -71,7 +71,7 @@ async function checkLevel(page, level, index) {
   console.log(`[e2e-ingame] entering level "${level.name}"`);
   await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-  // Cold load lands on the TITLE cover (ADR-0020). Perform the single-action
+  // Cold load lands on the TITLE cover (ADR-0021). Perform the single-action
   // entry to reach the MENU before selecting a flyer — the "MUF" logo alone can't
   // distinguish TITLE from MENU (shared helper).
   await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });

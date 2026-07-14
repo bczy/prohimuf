@@ -49,14 +49,14 @@ export function loadLevelManifest(root = process.cwd()) {
   return { manifest, levels, levelIds: levels.map((l) => l.id) };
 }
 
-// Pre-game entry markers (ADR-0020). Cold load lands on the TITLE cover; a single
+// Pre-game entry markers (ADR-0021). Cold load lands on the TITLE cover; a single
 // action enters the MENU. The subtitle is title-only (both TITLE and MENU render
 // the "MUF" logo), so it disambiguates the two; the running masthead is menu-only.
 export const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // src/render/ui/TitleScreen.tsx
 export const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // print/tokens.ts MASTHEAD.running
 
 /**
- * Advance the new pre-game entry flow (ADR-0020): assert the TITLE cover is up,
+ * Advance the new pre-game entry flow (ADR-0021): assert the TITLE cover is up,
  * perform the single-action entry (click the cover, exercising the real pointer
  * handler), then wait for the MENU shell to mount. Every consumer that used to
  * treat the "MUF" logo as a menu signal MUST call this first — "MUF" now also

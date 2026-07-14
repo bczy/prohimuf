@@ -1,5 +1,5 @@
 /**
- * Pre-game print-token single source (AC3 / ADR-0020 D3 / art-direction §2bis.1).
+ * Pre-game print-token single source (AC3 / ADR-0021 D3 / art-direction §2bis.1).
  *
  * Presentation truth for the "loi de l'imprimé": paper stocks, ink, semantic marker
  * inks, masthead strings, deterministic flyer geometry and motion durations. Consumed

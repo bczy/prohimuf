@@ -1,6 +1,6 @@
 /**
  * Barrel for the pre-game print system. Surfaces import tokens + primitives from
- * `@render/ui/print` (ADR-0020 D3). Render-only: no `src/game` symbol, no game rule.
+ * `@render/ui/print` (ADR-0021 D3). Render-only: no `src/game` symbol, no game rule.
  */
 export * from "./tokens";
 
