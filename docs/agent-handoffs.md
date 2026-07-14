@@ -2897,3 +2897,24 @@ paydown — ZERO behaviour change is the whole point.
   out in parallel: dev-gameplay (assetManifest + tests) ∥ dev-r3f-render (LoadingScreen,
   hook, warmers, App gate) — only coupling is Lane B importing Lane A's frozen signatures.
   (John/pm → Winston/senior-architect → Amelia ×2)
+
+- story-asset-loading-gate / VERIFY + review panel + CI triage (Amelia ×2 lanes → QA):
+  independent gate green (tsc 0 / vitest 237 / lint) and headless-runtime proof (menu
+  backdrop painted before the menu; "CHARGEMENT… RUE BELLIARD" bar before the level;
+  zero untextured squares in-game). Mandatory merge-gate panel run in parallel:
+  security/regression = CLEAN (0 blocking/major); correctness/edge-case = 1 MAJOR
+  (delivery-vehicle loadVehicle had dropped its permanent failed-load guard → a missing
+  PNG re-issued loader.load ~60×/s via useFrame). CI (deploy-preview e2e-ingame) also
+  caught a regression the unit tests couldn't. All three fixed in commit 4c8d8a6:
+  (1) DeliveryVehicleSprite gains a `failed` Set (mirrors enemy/courierTextures);
+  (2) assetManifest.courierAssetPaths restricted to the rendered `rider` layer — it had
+  listed the retired `bike` layer whose PNGs are uncommitted, warming 3 phantom 404s that
+  tripped the e2e same-origin guard; (3) e2e-lib.dismissNarrative rewritten to poll until
+  the gameplay canvas mounts (the loading screen now sits between the level click and the
+  narrative, and the old first-frame check broke before "Passer" appeared). e2e-ingame
+  re-verified locally on the prod build for all three levels, zero same-origin 404s.
+  NOTE (infra, not this story): the branch-preview deploy also flaked once on a concurrent
+  gh-pages push race across sibling preview branches (peaceiris push rejected non-ff);
+  the per-ref `concurrency` group doesn't serialize cross-branch pushes to the shared
+  gh-pages ref. Left as-is (shared-CI concern, out of this story's scope) — re-deploy
+  once the concurrent runs clear. (Amelia / QA)
