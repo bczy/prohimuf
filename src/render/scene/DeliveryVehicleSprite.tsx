@@ -8,12 +8,29 @@ import type { DeliveryPhase, VehicleType } from "@game/types/delivery";
 import { applyPixelFilter } from "./pixelArt";
 import { buildNeonSilhouette, computeHaloMarginPx, getVehicleNeonHex } from "./vehicleNeon";
 import type { HudDelivery } from "@render/ui/HUD";
+import levelArt from "@game/levels/levelArt.json";
 
 // World height of the vehicle sprite; width follows the fixed side-on aspect.
 const VEHICLE_H = 2.4;
 const VEHICLE_ASPECT = 2.0;
 // Sits on the courier street lane, just in front of the couriers (z 0.7).
 const VEHICLE_Z = 0.72;
+
+// The direction the committed source art faces, per vehicle type (art-gate
+// registration knob in levelArt.json `vehicles.types.<type>.facing`). FLUX won't
+// obey orientation prompts, so we mirror in code: art that already looks right
+// needs no flip when travelling right (+1); left-facing art must be mirrored (-1);
+// a missing/unknown knob assumes right-facing (+1 — the prior, courier-style
+// convention). String-indexed record so the dynamic lookup is safe under
+// noUncheckedIndexedAccess without an `any` cast (same trick as courierTextures.ts).
+interface VehicleTypeEntry {
+  readonly facing?: string;
+}
+const VEHICLE_TYPES: Record<string, VehicleTypeEntry> = levelArt.vehicles.types;
+
+function artSign(type: VehicleType): 1 | -1 {
+  return VEHICLE_TYPES[type]?.facing === "left" ? -1 : 1;
+}
 
 // Lazily-loaded, cached vehicle textures keyed by type. Only ever one vehicle on
 // screen, but the archetype changes per level, so cache all three by path.
@@ -132,8 +149,12 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
     if (dx > 1e-4) facingRef.current = 1;
     else if (dx < -1e-4) facingRef.current = -1;
 
+    // Combine travel direction with the art's own facing so a left-drawn sprite
+    // reads correctly whichever way it rolls (bug fix: car/truck art faces left).
+    const flipX = facingRef.current * artSign(vehicle.vehicleType);
+
     mesh.position.set(vehicle.position.x, vehicle.position.y, VEHICLE_Z);
-    mesh.scale.set(facingRef.current * VEHICLE_ASPECT * VEHICLE_H, VEHICLE_H, 1);
+    mesh.scale.set(flipX * VEHICLE_ASPECT * VEHICLE_H, VEHICLE_H, 1);
 
     const tex = getVehicleTexture(vehicle.vehicleType);
     const mat = mesh.material as MeshBasicMaterial;
@@ -164,7 +185,7 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
         rim.position.set(vehicle.position.x, vehicle.position.y, VEHICLE_Z - 0.01);
-        rim.scale.set(facingRef.current * worldW * (1 + padX), worldH * (1 + padY), 1);
+        rim.scale.set(flipX * worldW * (1 + padX), worldH * (1 + padY), 1);
       }
     }
   });
