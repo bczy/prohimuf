@@ -23,6 +23,8 @@ import { DeliveryVehicleSprite } from "./DeliveryVehicleSprite";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
+import { ImpactEffects } from "@render/effects/ImpactEffects";
+import type { ImpactChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
 
@@ -83,6 +85,7 @@ export function GameScene({
   const roster = useMemo(() => LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
 
   const feedbackRef = useRef<Floater[]>([]);
+  const impactChannelRef = useRef<ImpactChannel>({ queue: [], resetNonce: 0 });
   const touchRef = useTouchControls(canvasRef, isMobile);
   const stateRef = useGameLoop(
     mergedFacade,
@@ -95,6 +98,7 @@ export function GameScene({
     courierField,
     roster,
     isMobile ? { touchRef, halfWorldWidth: fullW / 2, halfWorldHeight: facadeH / 2 } : undefined,
+    impactChannelRef,
   );
   const mouseRef = useMouse(canvasRef);
   const { camera, size } = useThree();
@@ -165,6 +169,7 @@ export function GameScene({
       <CourierSprite stateRef={stateRef} paused={paused} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
+      <ImpactEffects channelRef={impactChannelRef} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} />
     </>
