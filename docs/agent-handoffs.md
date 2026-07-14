@@ -2301,3 +2301,72 @@ files only (`src/game/**` + `src/hooks/useGameLoop.ts`); no `src/render/**` touc
 `@game/types/feedback`; `ImpactChannel` + the new `useGameLoop` optional trailing param
 `impactChannelRef?: React.RefObject<ImpactChannel>` from `@hooks/useGameLoop`. The new param
 is optional so `GameScene.tsx` compiles before wiring. (Amelia / dev-gameplay)
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stage 5 GATE 4 (composite / loi du glow) — PASS-WITH-REQUIRED-AMENDMENTS
+
+**Nico (lead-art) · 2026-07-14 · verdict on real in-game screenshots + `src/render/effects/ImpactEffects.tsx`.**
+
+No generated PNGs (runtime-composed FX), so the asset gate is n/a; this is the composite
+gate (Gate 4). Evidence: `docs/qa/shot-flat-impact/00..04c`. Measured cyan-lift vs facade
+noise (pngjs sampling): empty lit facade noise maxCyan≈29; hit burst maxCyan≈40 (and it sits
+on the green crosshair); miss puff maxCyan≈34 (= noise floor); tracer beam absent on every
+frame incl. 04a t40ms (within its 50ms life).
+
+- **Loi du glow / « un halo est un dégradé, jamais un aplat » — PASS.** All three textures
+  are radial/linear alpha gradients terminating at 0 (explosion white→cyan→0; mark toner→0;
+  tracer 0→core→0). No aplat, no binary-alpha decal. Wall mark inert, normal-blended, no
+  glow — correct (D4.4).
+- **Palette — PASS.** Burst cyan is exactly the house `#28F0FF`; toner marks neutral
+  near-black, non-glowing.
+- **Read strength — FAIL as composed (must-fix).** Additive cyan over the bright orange-lit
+  facade sits at/near ambient noise: the hit barely registers and coincides with the green
+  crosshair; the miss puff is invisible. Confirms QA.
+- **Tracer (D2.4 keep/drop, my call) — DROP (must-fix remove).** Never landed in evidence,
+  unverifiable, marginal value at 50ms static. Cannot PASS an FX that never appears.
+- **Hit-vs-miss distinguishability (D3.2)** — design ratio sound but currently moot (neither
+  reads); amendments must preserve hit > miss hierarchy.
+
+**Must-fix-before-merge (one pass, exact params):**
+
+1. **Dark backing disc (decisive lever).** Under each burst draw a brief NORMAL-blended dark
+   radial disc (rgba(10,10,12,0.55)→transparent), renderOrder `EXPLOSION_RENDER_ORDER - 0.1`,
+   diameter = burst.diameter × 1.25, opacity peak 0.55 decaying to 0 over ~140ms. Gives the
+   additive neon a dark ground so it reads as light-on-dark (« ce qui brille »).
+2. **Miss must register.** `EXPLOSION_SIZE_MISS` 0.7 → 0.9; miss `burst.peak` 0.7 → 1.0.
+   (Hit stays 1.4 / 1.0 → 1.55× larger; D3.2 hierarchy preserved.)
+3. **Widen the opacity plateau** (peak is a 37ms needle): replace the envelope with
+   `b.peak * (t < 0.1 ? t/0.1 : t < 0.4 ? 1 : 1 - (t-0.4)/0.6)`.
+4. **Remove the tracer** pool/texture/update path (D2.4 drop).
+
+Recommended-if-still-weak (not blocking): brighten the explosion core to opaque white before
+ceding to cyan (`stop 0 rgba(255,255,255,1); 0.22 rgba(220,255,255,0.9); 0.5 rgba(40,240,255,0.65); 1 rgba(40,240,255,0)`) — falloff stays monotonic, loi du glow intact.
+
+**Next-cycle (non-blocking, out of this story's scope):** the facade renders as full-colour
+photographic, not fanzine B&W — the impact FX are being judged against an off-bible backdrop.
+Raise the facade art pass with `pm` / lead-art separately.
+
+**PASS is withheld** until dev-r3f-render lands fresh in-game captures (hit AND miss, timed
+≈37–60ms post-impact) that visibly read; I re-gate the composite then. (Nico / lead-art)
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stage 5 PLAYTEST (vs gated spec) — PASS-WITH-AMENDMENTS
+
+**Sacha (game-designer) · 2026-07-14 · verdict on QA evidence + diff.**
+
+- Instant impact / no climb (04a–c) — PASS. Anchor-divergence read (01a/04a) — PASS.
+- One-shot-one-enemy + enemy telegraph unchanged — PASS (diff-confirmed pre-existing cadence).
+- Same-tick telegraph — RULED: KEEP (pre-tick snapshot; a loosed round is a committed
+  threat; suppression would trivialise Éviter). Ratified in spec §6.
+- **Hit-vs-miss read (D3.2/AC3) — FAIL → Amendment 1 (BLOCKING):** hit needs a 1-frame
+  white flash (categorical cue), high-luminance core distinct from the reticle, both
+  effects must read over the lit facade. Transcribed as spec **D3.5**; converges with the
+  composite gate's must-fix params. Re-verify with fresh A/B captures before AC3 sign-off.
+- Tuning transcription spec§5 ↔ code — CLEAN (muzzle derivation improvement noted).
+
+→ Rework round 1/2 (verify↔build cap) dispatched to dev-r3f-render with the merged
+amendment list (dark backing disc, white hit flash, miss 0.9/1.0, plateau envelope,
+tracer removed). Spec updated: D3.5 added, §5 amended, tracer DROPPED (D2.4), §6
+telegraph ruling recorded. (orchestrator, on behalf of the stage-5 verdicts)
