@@ -68,8 +68,13 @@ the address** — the exact street lives behind the info-line (revealed on the p
 briefing / in-game), never on the print. Fields map to the existing card slots
 (`level.name`, `level.district`, `level.year`) plus flyer flavor slots the redesign adds.
 
-**Difficulty tag** — `LevelCard` derives `FACILE / MOYEN / DIFFICILE` from
-`enemySpeedMultiplier`. Flyer flavor label sits alongside it (display only, data unchanged).
+**Difficulty tag** — `LevelCard` derives the stamp `FACILE / NORMAL / DIFFICILE` from
+`enemySpeedMultiplier` (standardized on **NORMAL** for the middle tier, gate f2). The shipped
+render label at `MainMenu.tsx:170` currently reads `MOYEN`; aligning it to `NORMAL` is a
+one-word, in-scope render change (no data touch) owned by the render dev. Flyer flavor label
+(AMBIANCE) sits alongside the stamp (display only, data unchanged). With shipped data only
+`FACILE` (belliard) and `DIFFICILE` (stalingrad, vitry) ever render — the middle tier is
+latent (see §2.3).
 
 ### 2.1 Tutoriel — `tutorial` (district `Repérage`, 1998)
 
@@ -102,7 +107,7 @@ ici". **This is the only flyer with no info-line** — you don't call, you're al
 
 Motifs: **spiral**, `23`, "no logo". `19` = arrondissement, `98` = year.
 
-### 2.3 Stalingrad — `stalingrad` (19e, 1998) · **MOYEN**
+### 2.3 Stalingrad — `stalingrad` (19e, 1998) · **DIFFICILE**
 
 | Slot                       | Copy (French)                 | Max     |
 | -------------------------- | ----------------------------- | ------- |
@@ -117,6 +122,14 @@ Motifs: **spiral**, `23`, "no logo". `19` = arrondissement, `98` = year.
 
 Motifs: **biohazard** (warehouse/industrial), spiral, `23`. Info-line `95` nods to KENZA's
 shipped line _"Ils ont des planques là-dedans depuis '95"_.
+
+> **Difficulty read (data-true).** With shipped `enemySpeedMultiplier`
+> (`>1.2 → DIFFICILE`), Stalingrad (`1.3`) stamps **DIFFICILE**, same as Vitry (`1.6`). The
+> two hard gigs are therefore **not** discriminated by the stamp — the felt difference is
+> carried by the **AMBIANCE gradient (`CHAUD` < `BRÛLANT`) + district**: Stalingrad is
+> `CHAUD` in the 19e, Vitry is `BRÛLANT` in the 94. No shipped level renders the middle
+> tier, so `NORMAL` never surfaces in-game (it exists only as a latent label). Re-tuning
+> `levels.ts` to force a middle-tier stamp is forbidden (AC4, byte-unchanged).
 
 ### 2.4 Vitry — 94 — `vitry` (Val-de-Marne, 1998) · **DIFFICILE**
 
@@ -266,6 +279,22 @@ in `narrativeSystem.ts` are **not** touched by this deck. The **only** frame-cop
 header strip string (`UNDERGROUND PARIS — FANZINE CLANDESTIN — 1998`) should adopt the §5.1
 running-masthead string so all three pre-game surfaces read as one printing. No script,
 speaker, or line changes.
+
+### 5.3 Index / sommaire labels (gate g2 — confirmed)
+
+The three index-tab labels the UX spec references (`[RUBRIQUE_NIVEAUX]`,
+`[RUBRIQUE_SCORES]`, `[RUBRIQUE_OPTIONS]`) **keep the shipped baseline** — this is the zine's
+_sommaire_, the navigation index, and is deliberately distinct from each surface's own
+masthead (flyer wall / `PARIS-MINUIT` / `OURS`):
+
+| UX slot              | Label (French) | Max     | Opens surface        |
+| -------------------- | -------------- | ------- | -------------------- |
+| `[RUBRIQUE_NIVEAUX]` | `NIVEAUX`      | 12 car. | flyer stack (§2)     |
+| `[RUBRIQUE_SCORES]`  | `SCORES`       | 12 car. | UNE — PARIS-MINUIT (§3) |
+| `[RUBRIQUE_OPTIONS]` | `OPTIONS`      | 12 car. | OURS / colophon (§4) |
+
+No change from shipped `NIVEAUX / SCORES / OPTIONS`: they are the plain, glanceable index;
+the flavour lives in the surfaces they open, not the tabs.
 
 ---
 
