@@ -86,6 +86,34 @@ jobs:
           # failing the job before commit.
           node scripts/fill-sprite-holes.mjs --check
 
+      - name: Gate — no background remnant may resurrect (ADR-0018)
+        run: |
+          # The committed shooting sprites were hand-retouched to delete the dark
+          # torn background halos around the baked muzzle flashes (ADR-0018,
+          # "rectangle visible autour des personnages"). The WRITE pass of
+          # retouch-flash-halos.mjs is deliberately NOT wired into CI — its
+          # CLEAR_ZONES/thresholds are calibrated against the accepted bytes, and
+          # auto-running it on freshly generated art could delete legitimate
+          # flash pixels (same principle as retouch-sprites.mjs above). --check is
+          # a TRUE gate: it writes nothing and exits 1 if any clear zone contains
+          # remnant pixels again — either a regeneration re-shipped the halo or a
+          # fill-sprite-holes morphology change re-opaqued cleared pixels. Both
+          # need a human recalibration pass, not an auto-commit.
+          node scripts/retouch-flash-halos.mjs --check
+
+      - name: Re-measure muzzle anchors against the shipped pixels
+        run: |
+          # The per-frame `muzzle` anchors in levelArt.json are measurements of
+          # the committed PNG bytes (flash-core centroid; see ADR-0016 and
+          # docs/asset-pipeline.md). Any regeneration moves the baked flash, so
+          # the anchors are re-measured in the same run and committed together
+          # with the sprites — otherwise the in-game glow silently renders at a
+          # stale position. Deterministic + idempotent: on a run that generated
+          # nothing, this writes nothing. prettier is the script's formatting
+          # normalizer (repo pin ^3.5.3); node_modules is otherwise absent here.
+          npm install --no-save --legacy-peer-deps --ignore-scripts prettier@3.5.3
+          node scripts/measure-muzzle-anchors.mjs
+
       # FOLLOW-UP: no automated STYLE gate for enemy sprites yet. The pixel gate
       # (scripts/check-sprite-style.mjs) is calibrated ONLY for the three vehicle
       # sprites (per-type hue bands + silhouette-aspect bounds from the PM-accepted
@@ -134,7 +162,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # paths are explicit and bounded; -f only bypasses the assets gitignore.
+          # levelArt.json rides along because the muzzle anchors are re-measured
+          # from the regenerated pixels in the step above.
           git add -f public/assets/enemy_*.png
+          git add src/game/levels/levelArt.json
           if git diff --cached --quiet; then
             echo "No new sprites to commit."
           else

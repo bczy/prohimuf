@@ -30,8 +30,10 @@ interface EnemyTypeEntry {
   readonly frames: readonly string[];
   // Optional per-frame muzzle-flash anchor, index-aligned with `frames`:
   // element i anchors frame i+1; `null` = no anchor for that frame. Normalized
-  // [0..1] texture coords from the PNG top-left. Only shooting entries carry it,
-  // and it may be absent entirely (levelArt.json has not shipped it yet).
+  // [0..1] texture coords from the PNG top-left. Only shooting entries carry it
+  // (written by scripts/measure-muzzle-anchors.mjs); it stays OPTIONAL so a
+  // regenerated asset whose anchors were not re-measured degrades to the
+  // renderer's fixed-offset fallback instead of crashing.
   readonly muzzle?: readonly ({ x: number; y: number } | null)[];
 }
 const ENEMY_TYPES: Record<string, EnemyTypeEntry> = levelArt.enemies.types;
@@ -66,19 +68,17 @@ export function frameCountFor(kind: EnemyKind, variant: number, shooting: boolea
   return entry !== undefined ? entry.frames.length : 1;
 }
 
-// Normalized [0..1] muzzle-flash anchor (from the PNG top-left) for this
-// kind/variant/state and 1-based frame, or null when there is nothing to anchor.
-// Returns null unless the enemy is shooting, its type entry declares a `muzzle`
-// array, and `muzzle[frame-1]` is a non-null object. Absent field, null element
-// and out-of-range frames all collapse to null so the caller falls back to its
-// fixed offset.
+// Normalized [0..1] muzzle-flash anchor (from the PNG top-left) of this
+// kind/variant's SHOOTING sprite for a 1-based frame, or null when there is
+// nothing to anchor. Absent field, null element and out-of-range frames all
+// collapse to null so the caller falls back to its fixed offset. Callers must
+// pass the frame of the texture ACTUALLY displayed (see resolveEnemyTexture),
+// not the requested one — anchors are pixel positions of a specific image.
 export function muzzleFor(
   kind: EnemyKind,
   variant: number,
-  shooting: boolean,
   frame: number,
 ): { x: number; y: number } | null {
-  if (!shooting) return null;
   const entry = ENEMY_TYPES[baseFileKey(kind, variant, true)];
   const anchors = entry?.muzzle;
   if (anchors === undefined) return null;
@@ -109,23 +109,43 @@ function ensureLoaded(file: string, fallback: string): void {
   );
 }
 
-// Returns the best available texture for this kind/variant/state and 1-based
-// frame, or null until something has loaded. Resolution order:
-// requested frame -> frame 1 of the same state -> global fallback. On first
-// request for a state every frame is queued so the first flip doesn't stall on
-// a texture upload.
+// The best available texture for this kind/variant/state and 1-based frame,
+// tagged with which flipbook frame it ACTUALLY shows: the requested frame,
+// frame 1 while the requested frame is still loading, or `frame: null` when
+// only the global fallback sprite (a different figure entirely) is available.
+// Consumers that derive pixel positions from the texture (muzzle anchors) must
+// use this resolved frame, never the requested one. On first request for a
+// state every frame is queued so the first flip doesn't stall on an upload.
+export interface ResolvedEnemyTexture {
+  readonly texture: Texture;
+  readonly frame: number | null;
+}
+export function resolveEnemyTexture(
+  kind: EnemyKind,
+  variant: number,
+  shooting: boolean,
+  frame = 1,
+): ResolvedEnemyTexture | null {
+  const fallback = shooting ? FALLBACK_SHOOT : FALLBACK_IDLE;
+  const count = frameCountFor(kind, variant, shooting);
+  for (let f = 1; f <= count; f++) {
+    ensureLoaded(fileFor(kind, variant, shooting, f), fallback);
+  }
+  const requested = cache.get(fileFor(kind, variant, shooting, frame));
+  if (requested !== undefined) return { texture: requested, frame };
+  const frame1 = cache.get(fileFor(kind, variant, shooting, 1));
+  if (frame1 !== undefined) return { texture: frame1, frame: 1 };
+  const fb = cache.get(fallback);
+  return fb !== undefined ? { texture: fb, frame: null } : null;
+}
+
+// Texture-only variant of resolveEnemyTexture (kept for callers that don't
+// care which frame resolved).
 export function getEnemyTexture(
   kind: EnemyKind,
   variant: number,
   shooting: boolean,
   frame = 1,
 ): Texture | null {
-  const fallback = shooting ? FALLBACK_SHOOT : FALLBACK_IDLE;
-  const count = frameCountFor(kind, variant, shooting);
-  for (let f = 1; f <= count; f++) {
-    ensureLoaded(fileFor(kind, variant, shooting, f), fallback);
-  }
-  const frameFile = fileFor(kind, variant, shooting, frame);
-  const frame1File = fileFor(kind, variant, shooting, 1);
-  return cache.get(frameFile) ?? cache.get(frame1File) ?? cache.get(fallback) ?? null;
+  return resolveEnemyTexture(kind, variant, shooting, frame)?.texture ?? null;
 }
