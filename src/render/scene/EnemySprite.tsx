@@ -6,7 +6,7 @@ import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import { getEnemyTexture, frameCountFor, enemyAnimFps } from "./enemyTextures";
+import { getEnemyTexture, frameCountFor, enemyAnimFps, muzzleFor } from "./enemyTextures";
 import { flipbookFrame } from "./flipbook";
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
@@ -128,7 +128,23 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
       const fmat = flash.material as MeshBasicMaterial;
       if (enemy.state === "SHOOTING") {
         flash.visible = true;
-        flash.position.set(screenPosition.x + muzzleX, bodyY + muzzleY, 0.6);
+        // Prefer the sprite's baked-in per-frame muzzle anchor (normalized
+        // top-left tex coords) so the additive glow lands on the gun regardless
+        // of which way this sprite aims; fall back to the fixed right-side offset
+        // when the frame has no anchor. Uses the SAME `frame` as the displayed
+        // texture. The flash is a world-space sibling centred on
+        // (screenPosition.x, bodyY); the body plane is a square planeH scaled by
+        // `aspect` on X.
+        const m = muzzleFor(enemy.kind, variant, true, frame);
+        if (m !== null) {
+          flash.position.set(
+            screenPosition.x + (m.x - 0.5) * planeH * aspect,
+            bodyY + (0.5 - m.y) * planeH,
+            0.6,
+          );
+        } else {
+          flash.position.set(screenPosition.x + muzzleX, bodyY + muzzleY, 0.6);
+        }
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);
         fmat.color.set("#ffd27a");

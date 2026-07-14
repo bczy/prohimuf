@@ -28,6 +28,11 @@ const FALLBACK_SHOOT = `${base}assets/enemy_shooting.png`;
 // noUncheckedIndexedAccess without an `any` cast; a missing key => 1 frame.
 interface EnemyTypeEntry {
   readonly frames: readonly string[];
+  // Optional per-frame muzzle-flash anchor, index-aligned with `frames`:
+  // element i anchors frame i+1; `null` = no anchor for that frame. Normalized
+  // [0..1] texture coords from the PNG top-left. Only shooting entries carry it,
+  // and it may be absent entirely (levelArt.json has not shipped it yet).
+  readonly muzzle?: readonly ({ x: number; y: number } | null)[];
 }
 const ENEMY_TYPES: Record<string, EnemyTypeEntry> = levelArt.enemies.types;
 
@@ -59,6 +64,25 @@ function fileFor(kind: EnemyKind, variant: number, shooting: boolean, frame: num
 export function frameCountFor(kind: EnemyKind, variant: number, shooting: boolean): number {
   const entry = ENEMY_TYPES[baseFileKey(kind, variant, shooting)];
   return entry !== undefined ? entry.frames.length : 1;
+}
+
+// Normalized [0..1] muzzle-flash anchor (from the PNG top-left) for this
+// kind/variant/state and 1-based frame, or null when there is nothing to anchor.
+// Returns null unless the enemy is shooting, its type entry declares a `muzzle`
+// array, and `muzzle[frame-1]` is a non-null object. Absent field, null element
+// and out-of-range frames all collapse to null so the caller falls back to its
+// fixed offset.
+export function muzzleFor(
+  kind: EnemyKind,
+  variant: number,
+  shooting: boolean,
+  frame: number,
+): { x: number; y: number } | null {
+  if (!shooting) return null;
+  const entry = ENEMY_TYPES[baseFileKey(kind, variant, true)];
+  const anchors = entry?.muzzle;
+  if (anchors === undefined) return null;
+  return anchors[frame - 1] ?? null;
 }
 
 // Shared flipbook rate for every enemy sprite. Safe default of 6.
