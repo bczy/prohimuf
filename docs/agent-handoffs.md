@@ -2713,3 +2713,97 @@ tokens.ts` consumed by every surface (ADR-0021 D3); MARK dedup landed so derivat
     affordance; (6) perf memoization (`loadScores` re-read, hoist per-flyer keyframes,
     `useRovingIndex` opts). These are elevation debt, not correctness or scope defects.
     **Merge authorized on the record.** (John / PM)
+
+---
+
+### story-shared-morphology-lib — pipeline tracking
+
+Follow-up story greenlit by Bertrand (2026-07-14), flagged by the PR #40 review panel:
+extract the duplicated image-morphology code from the asset scripts into ONE shared
+module `scripts/lib/morphology.mjs`. Branch `claude/explosion-alignment-transparency-fk5k59`
+(fresh from main). Single dev lane — all files under `scripts/`. Producer (Marion) owns
+this tracking block; agents append their own stage entries below.
+
+HARD ACCEPTANCE LINE (Bertrand's standing constraint, non-negotiable): behaviour
+byte-identical. Every `--check` gate stays green in FIXPOINT across all 22 enemy PNGs;
+`measure-muzzle-anchors` output byte-identical before vs after. This is a pure debt
+paydown — ZERO behaviour change is the whole point.
+
+- pipeline (planned, hand to hand):
+  - stage 0 INTAKE — done (this greenlight; review-panel finding from PR #40).
+  - stage 1 STORY — **John / pm** (IN FLIGHT). Scope, ACs, DoD. Must pin the
+    byte-identical AC and the fixpoint gate as the DoD oracle.
+  - stage 2 DESIGN — **SKIPPED (explicit)**: no gameplay, no fiction, no 3C, no art
+    asset. Tooling-only refactor. pm to record the skip explicitly in the story (skip
+    authority = pm), not silently.
+  - stage 3 ARCHITECTURE — **Winston / senior-architect** (IN FLIGHT). Module contract
+    for `scripts/lib/morphology.mjs`: the exported surface (dilate / erode /
+    largestComponent / labelComponents / edge-flood), signatures, connectivity
+    semantics (4- vs 8-connectivity per call site), offset handling. Boundary verdict
+    is trivial (scripts-only, no `src/**`, game↔render↔hooks contract untouched) but the
+    CONTRACT MUST reconcile the drifted copies — see RISK below. Hands off a single lane.
+  - stage 4 BUILD — **dev-tooling-assets (Amelia)**, SINGLE LANE (all files under
+    `scripts/`, no parallel split — serialise, no contention). Confirmed scope = **7
+    files**, not 5:
+    1. `scripts/fill-sprite-holes.mjs` — source of truth for PASS-A morphology
+       (dilate/erode/largestComponent).
+    2. `scripts/retouch-flash-halos.mjs` — ~135 duplicated lines + own flood loops
+       (dilate/erode/largestComponent).
+    3. `scripts/measure-muzzle-anchors.mjs` — own 8-connected CC labeling.
+    4. `scripts/check-sprite-integrity.mjs` — `labelComponents`.
+    5. `scripts/cutout-enemies.mjs` — edge flood (loose ground-mask CC).
+    6. `scripts/restore-figure-bites.mjs` — CARRIES COPIES (dilate/erode/
+       largestComponent) — CONFIRMED, in scope.
+    7. `scripts/fill-bust-hem.mjs` — CARRIES COPIES (dilate/erode) — CONFIRMED,
+       in scope.
+       Dev constraint: `node --check` each edited script (repo pattern); import from the
+       new lib, delete the local copies, no orphaned imports/helpers; `rtk lint` clean.
+  - stage 5 VERIFY — **Inès / qa-lead**. Verification spec + QUALITY GATE. The gate is
+    the byte-identical oracle: (a) run every `--check` to fixpoint on all 22 enemy PNGs,
+    green; (b) `measure-muzzle-anchors` output diffed byte-for-byte pre/post; (c) tsc +
+    vitest + lint green. No playtest/e2e (no runtime surface). Design-acceptance N/A
+    (stage 2 skipped).
+  - stage 6 ARCHITECT REVIEW — **Winston / senior-architect**. Confirms the contract
+    landed as specified; ADR only if the shared module changes a module boundary/
+    dependency contract (likely a small ADR for the new `scripts/lib/` shared surface —
+    architect's call).
+  - stage 7 CODE-REVIEW PANEL — 4 parallel reviewers on `git diff origin/main...HEAD`
+    (code-review high / bmad-code-review / bmad-review-edge-case-hunter / security-review),
+    adversarially verified, triaged by senior-architect. Mandatory merge gate.
+  - stage 8 pm ACCEPTANCE — **John / pm**. Scope test (debt paydown, no cahier-des-charges
+    question), DoD met, byte-identical proven.
+  - stage 9 MERGE / PR — open PR with branch-preview link, no unresolved CONFIRMED
+    blocking/major finding.
+
+- hand-off order: pm → senior-architect → dev-tooling-assets → qa-lead → architect
+  review → review panel → pm → PR. STORY and ARCHITECTURE are both IN FLIGHT in
+  parallel now; BUILD is BLOCKED until the module contract (stage 3) releases — a dev
+  cannot pick a canonical signature/connectivity without Winston's reconciliation.
+
+- caps in force (producer-enforced; a cap hit STOPS the loop → escalation packet to
+  Bertrand, no silent extra round):
+  - spec rework: **2 rounds** max (pm story ↔ challenge).
+  - verify↔build rework: **2 rounds** max. If the fixpoint gate FAILS on any of the 22
+    PNGs, or `measure-muzzle-anchors` output diverges by even one byte, that is one
+    rework round back to dev-tooling-assets. Two failed rounds ⇒ STOP, escalate.
+  - generation batches: **N/A** — no asset generation in this story.
+  - one cycle = one pass of THIS story through the pipeline. Only the producer declares a
+    cycle reset; re-scoping (e.g. the 5→7 file expansion below) does NOT reset counters.
+
+- RISK (producer flag, routed to pm + senior-architect, NOT decided by me):
+  - **R1 — scope is 7 files, not 5.** `restore-figure-bites.mjs` and `fill-bust-hem.mjs`
+    both carry their own dilate/erode (+ largestComponent in restore) copies — verified
+    at the source. pm should confirm they are in the story scope so the "no remaining
+    duplicate" DoD is honest; excluding them would leave the exact duplication the story
+    exists to kill.
+  - **R2 — the copies have DRIFTED, so "extract" is not a pure lift.** Signatures differ
+    (`fill-sprite-holes`/`retouch` use `(mask, W, H, off)`; `restore-figure-bites` uses
+    `(m, W, H, off)`), and the CC helpers are named differently (`largestComponent` vs
+    `labelComponents`) with potentially different connectivity (measure-muzzle uses
+    8-connected; others unverified). One shared implementation MUST reproduce each call
+    site's exact connectivity/offset behaviour or the byte-identical line breaks. This is
+    the primary threat to the hard acceptance line and the reason BUILD must wait on
+    Winston's contract. Owner of the reconciliation decision: senior-architect (stage 3);
+    proof owner: qa-lead (stage 5 fixpoint + byte-diff).
+  - Consequence for scheduling: BUILD stays BLOCKED on stage 3; I am holding the dev lane
+    until Winston releases the contract. (Marion / Producer)
