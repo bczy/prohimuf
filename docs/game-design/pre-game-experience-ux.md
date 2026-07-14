@@ -285,17 +285,62 @@ Halftone is **static** (no animation). Replaces the killed CRT scanline
 
 ### 4.1 Level flyer (NIVEAUX)
 
-| Existing datum                                             | Source                                                                             | Current widget                      | New slot on the flyer                                                             | Constraint                                                 |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `name`                                                     | `level.name`                                                                       | 22 px heading                       | flyer **headline** (ransom/display type)                                          | show full; ~20 chars                                       |
-| `district` + `year`                                        | `level.district`, `level.year`                                                     | mono sub-line                       | flyer **dateline / lieu** ("[district] — [year]")                                 | one line                                                   |
-| `timeSeconds`                                              | `level.timeSeconds`                                                                | `⏱ {n}s`                            | printed spec line, clock glyph or inked "⏱"→ `[TIME] s`                           | playable only                                              |
-| `enemiesToWin`                                             | `level.enemiesToWin`                                                               | `🎯 {n} cibles`                     | printed spec line, `[N] cibles`                                                   | playable only                                              |
-| **difficulty tell**                                        | derived: `>1.2 → DIFFICILE (pink)`, `>1.0 → MOYEN (orange)`, else `FACILE (green)` | colored word                        | **rubber-stamp** in the same 3 ink colors; **keep the exact thresholds & labels** | must be glanceable (3 distinct marks) — lead-art read spec |
-| **best score**                                             | `loadScores(id)[0].score`                                                          | "MEILLEUR / {score}" (green)        | **circled-in-green** record, corner of flyer                                      | hidden if no scores / tutorial                             |
-| `unlocked` (default ∪ progress)                            | `level.kind==='tutorial' \|\| unlockedLevels.has(id)`                              | border + `VERROUILLÉ` + opacity 0.4 | locked = grey + diagonal `[LOCKED_STAMP]`, no pull                                | keep exact unlock predicate                                |
-| tutorial badge                                             | `kind==='tutorial'`                                                                | `TUTORIEL` (yellow)                 | distinct _mode d'emploi_ stamp; **no** time/targets/difficulty/score              | keep the "no stats" rule                                   |
-| `id`, `deliveries`, `roster`, `enemySpeedMultiplier` (raw) | —                                                                                  | not shown                           | **still not shown** (internal)                                                    | do not surface                                             |
+**Two datum classes on one flyer.** The current admin card carries **4 data fields** (name,
+district/year, time, targets) + derived difficulty/best/lock. The redesign adds a set of
+**narrative flavour slots** (crew, slogan, date, zone, RV, info-line, flavour-difficulty)
+defined in the copy deck (`pregame-copy-deck.md` §2) so the surface reads as a _flyer_, not 4
+fields. Both classes are budgeted against §3.2's "no datum hidden" rule — the real flyer is
+**~8 lines**, not 4, and that is the box the art lane sizes and the stack must keep readable.
+Data-class fields are byte-sourced from `levels.ts`; flavour-class strings are narrative-owned
+copy (verbatim from the deck), **display only, zero data change**.
+
+**Data-class fields** (from `levels.ts` — the existing datum, nothing dropped):
+
+| Existing datum                                             | Source                                                                              | Current widget                      | New slot on the flyer                                                                                    | Constraint                                                            |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `name`                                                     | `level.name`                                                                        | 22 px heading                       | flyer **headline** (ransom/display type)                                                                 | show full; ~20 chars                                                  |
+| `district` + `year`                                        | `level.district`, `level.year`                                                      | mono sub-line                       | flyer **dateline / lieu** ("[district] — [year]")                                                        | one line                                                              |
+| `timeSeconds`                                              | `level.timeSeconds`                                                                 | `⏱ {n}s`                            | printed spec line, clock glyph or inked "⏱"→ `[TIME] s`                                                  | playable only                                                         |
+| `enemiesToWin`                                             | `level.enemiesToWin`                                                                | `🎯 {n} cibles`                     | printed spec line, `[N] cibles`                                                                          | playable only                                                         |
+| **difficulty tell**                                        | derived: `>1.2 → DIFFICILE (pink)`, `>1.0 → NORMAL (orange)`, else `FACILE (green)` | colored word                        | **rubber-stamp** in the same 3 ink colors; **keep the exact thresholds**; middle label = `NORMAL` (§4.6) | glanceable, but NOT a sole discriminator with shipped data — see §4.6 |
+| **best score**                                             | `loadScores(id)[0].score`                                                           | "MEILLEUR / {score}" (green)        | **circled-in-green** record, corner of flyer                                                             | hidden if no scores / tutorial                                        |
+| `unlocked` (default ∪ progress)                            | `level.kind==='tutorial' \|\| unlockedLevels.has(id)`                               | border + `VERROUILLÉ` + opacity 0.4 | locked = grey + diagonal `[LOCKED_STAMP]`, no pull                                                       | keep exact unlock predicate                                           |
+| tutorial badge                                             | `kind==='tutorial'`                                                                 | `TUTORIEL` (yellow)                 | distinct _mode d'emploi_ stamp; **no** time/targets/difficulty/score                                     | keep the "no stats" rule                                              |
+| `id`, `deliveries`, `roster`, `enemySpeedMultiplier` (raw) | —                                                                                   | not shown                           | **still not shown** (internal)                                                                           | do not surface                                                        |
+
+**Flavour-class slots** (narrative flyer copy — `pregame-copy-deck.md` §2; `[PLACEHOLDER]` =
+Yasmine's words, `car.` = the layout ceiling this spec fixes so §3.2's budget is real). Present
+on **playable** flyers; the tutorial flyer substitutes its own annotated set; locked flyers
+withhold most:
+
+| Flavour slot                  | Placeholder   | Max (car.) | Note                                                                                    |
+| ----------------------------- | ------------- | ---------- | --------------------------------------------------------------------------------------- |
+| Crew / sound system           | `[CREW_NAME]` | **16**     | flyer headline identity; per-level (SPIRALE 23 / KANAL SYSTEM / NADIR 94)               |
+| Slogan / teaser               | `[SLOGAN]`    | **32**     | one cryptic line; withholds                                                             |
+| Date line                     | `[DATE_LINE]` | **26**     | "SAM. → DIM. · 23H → ?" register                                                        |
+| Zone line                     | `[ZONE_LINE]` | **34**     | withholds the exact address; district-flavoured                                         |
+| RV line                       | `[RV_LINE]`   | **24**     | "RV : SUR L'INFO-LINE"                                                                  |
+| Info-line number              | `[INFO_LINE]` | **18**     | diegetic phone number; **absent on the tutorial flyer** (deck §2.1)                     |
+| Flavour-difficulty (AMBIANCE) | `[AMBIANCE]`  | **22**     | felt-difficulty read (ÇA ROULE < CHAUD < BRÛLANT) — carries what the stamp can't (§4.6) |
+
+Tutorial-flyer substitutions (deck §2.1) — same box, different slots: `[TUT_STAMP]` (≤12,
+over-title "REPÉRAGE"), `[TUT_HANDNOTE]` (≤34, DISPATCH's hand), `[TUT_CREW]` (≤28, "SANS
+SYSTÈME · AVANT LE SON"), `[TUT_RV]` (≤22), `[TUT_NOLINE]` (≤24, struck-out "pas besoin
+d'appeler"). No time/targets/difficulty/score/info-line — the "no stats" rule holds.
+
+Locked-flyer slots (deck §2.5) — most flavour withheld: `[LOCKED_STAMP]` (≤14, "LIGNE FERMÉE",
+replaces VERROUILLÉ), `[LOCKED_DATE]` (≤16), `[LOCKED_RV]` (≤18), `[LOCKED_INFO]` (≤30, dead
+line), `[LOCKED_OVERLAY]` (≤22), `[LOCKED_HELPER]` (≤48). Crew name **stays legible**; the rest
+is the tear. Longest at-risk string on this surface = `[LOCKED_HELPER]` (48 car.) — size the
+locked box to hold it or use the deck's `la ligne ouvre plus tard` fallback (deck §6).
+
+**§3.2 legibility-budget consequence (amends §3.2 / §3.4).** The flyer box is sized for the
+**playable ~8-line** layout, NOT 4 fields. The ±3° jittered stack (§3.2) must keep the
+glanceable discriminators — **crew name, level title, difficulty stamp, AMBIANCE** — legible
+**even at the rest angle in the pile**; the remaining lines may rely on the pull-to-front of
+the focused/hovered flyer to read in full. §3.4's flyer min-height is therefore no longer a
+flat 64 px: it is **whatever holds the 8-line flyer above the 44 px tap floor**, derived by the
+art lane and verified at design acceptance.
 
 ### 4.2 Journal _UNE_ (SCORES) — per selected level
 
@@ -330,12 +375,37 @@ Color currently _encodes_ meaning; the meaning must survive as **ink/marker**, n
 | Semantic                          | Current glow          | New ink expression                        |
 | --------------------------------- | --------------------- | ----------------------------------------- |
 | record / rank-1 / FACILE          | `#39ff14` green glow  | green **ink** stamp / green marker circle |
-| MOYEN                             | `#ff6600` orange      | orange ink stamp                          |
+| NORMAL (middle tier)              | `#ff6600` orange      | orange ink stamp                          |
 | DIFFICILE                         | `#ff2d9b` pink        | pink ink stamp                            |
 | interactive / selected / tutorial | `#ffe600` yellow glow | X-stamp / marker circle / cover stock     |
 
 Contrast of these inks on each fluo stock is a **lead-art** call; this spec fixes the READ
-(three difficulty marks distinguishable at a glance; record visibly circled).
+(the difficulty marks distinguishable at a glance; record visibly circled).
+
+> **Middle-tier label = `NORMAL` (design-gate condition f2).** The render currently prints the
+> middle tier as `MOYEN` (`MainMenu.tsx:170`) while `PrefsTab` / `Prefs` use `NORMAL`. Both
+> lanes standardize on **`NORMAL`**; the render label is aligned `MOYEN → NORMAL` (a one-word,
+> in-scope render change, **no data touch**, AC4-safe). See §4.6 — with shipped data no level
+> actually renders the middle tier, so this is latent cohesion, not a visible fix.
+
+### 4.6 Difficulty stamp is NOT a glanceable discriminator with shipped data (design-gate condition)
+
+Shipped `enemySpeedMultiplier`: **belliard `1.0` → FACILE**, **stalingrad `1.3` → DIFFICILE**,
+**vitry `1.6` → DIFFICILE**. Under the **preserved** `>1.2 → DIFFICILE / >1.0 → NORMAL / else
+FACILE` derivation (re-tuning `levels.ts` is forbidden — AC4, byte-unchanged):
+
+- **Both Stalingrad and Vitry stamp DIFFICILE (pink).** No shipped level renders the middle
+  (`NORMAL`) tier at all.
+- Therefore the **difficulty stamp alone cannot differentiate the two hard gigs** — two
+  playable flyers carry the identical pink DIFFICILE mark. It stays correct and glanceable as a
+  _tier_ read (this-is-a-hard-one), but it is not the discriminator between the two.
+- **What carries the felt difference between the two hard flyers:** the **AMBIANCE flavour
+  gradient** (`CHAUD` for Stalingrad `<` `BRÛLANT` for Vitry — deck §2.3/§2.4) **+ the district
+  line** (Stalingrad · bords du canal · 19e vs Vitry · Val-de-Marne · 94). The flyer layout
+  (§4.1) must give AMBIANCE and district enough hierarchy to read at a glance, since they —
+  not the stamp — do the discriminating work here.
+- Implication for the art lane: do **not** rely on three visually distinct difficulty stamps to
+  tell the hard levels apart; rely on AMBIANCE + district + the per-crew flyer identity.
 
 ### 4.5 Paper-stock assignment (one fluo per surface, art-advisor rule)
 
