@@ -162,7 +162,7 @@ export function GameScene({
           <ForegroundFrames zones={zones} facadeW={panelW} facadeH={facadeH} />
         </group>
       ))}
-      <CourierSprite stateRef={stateRef} />
+      <CourierSprite stateRef={stateRef} paused={paused} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <FeedbackLayer queueRef={feedbackRef} />
