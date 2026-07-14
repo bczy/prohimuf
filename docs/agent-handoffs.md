@@ -2929,3 +2929,41 @@ paydown — ZERO behaviour change is the whole point.
   bible; two optional harmonizations applied: Impact letter-spacing 0.04→0.05em to match
   TitleScreen, and bar transition dropped under prefers-reduced-motion). Commits ce299a6 +
   3c43bd3. (Amelia / dev-r3f-render → lead-art gate)
+
+---
+
+## lead-art (Nico) — GATE: NarrativeScreen "illustrer + décor de lieu" (2026-07-14)
+
+Verdict on the pre/post-level briefing enrichment (facade halftone backdrop + per-line
+sprite illustrations). Prompt/asset gates N/A (no new generation — reuses existing level
+`facade.png` via CSS + existing enemy PNGs). This is a **runtime-composed visual → Gate 4
+(composite) applies**: direction PASSES below with constraints, final PASS withheld until I
+Read a real in-game screenshot (verify skill) of the composed halftone-behind-transcript.
+
+1. **Facade halftone backdrop — PASS-with-constraints.** Sanctioned by §2bis (facade photo
+   on a menu allowed ONLY rephotocopied to pure B&W, `grayscale(1)` mandatory) + precedent
+   (TitleScreen already runs `HalftoneHero` on `belliard/facade.png`). Constraints: reuse
+   `HalftoneHero` (guarantees grayscale(1) → kills the orange window-glow in the source PNG);
+   transcript box must stay ink-on-paper on SOLID newsprint (not `transparent` over dots);
+   facade strongest in the upper illustration band, faded to 0 before the transcript OR
+   full-bleed at opacity ≤0.20. Zero glow preserved.
+2. **ADR-0021 D5 — acceptable FRAME change, NOT a violation.** D5 freezes behaviour/scripts/
+   call-sites (typewriter, Passer, progress dots, advance, CHAR_DELAY_MS) and explicitly
+   permits the visual frame to join the print system ("paper ground + ink rule + halftone").
+   A backdrop behind unchanged content is a frame change, the permitted category. Guard-rails:
+   additive absolutely-positioned layer behind the existing column; no touch to transcript
+   content/typewriter/advance; no new generated asset (CSS filter over an existing PNG).
+   Record it — amend ADR-0021 (or new ADR) since it extends the frame beyond 0021's scope.
+3. **Sprite illustrations — PASS-with-constraint.** Keep `pixelated` + `objectFit:contain`.
+   ADD `grayscale(1)` (+ mild contrast) on the illustration `img` to match the facade
+   rephotocopy and kill stray badge color — la loi de l'imprimé (everything on a menu is
+   printed on paper). Do NOT mandate a heavy halftone dot-screen on the sprite (would muddy
+   the silhouette, §2 law 3). Show the BARE sprite — never a neon-rimmed composite (menu =
+   zero glow; the un-rimmed PNG is the correct one). New rule proposed for the bible (§2bis
+   gap: sprites shown inside a menu illustration slot get grayscale(1), no baked rim).
+4. **Backdrop spec:** `HalftoneHero` pitch 10; upper-band mask (top ~40% ~0.7 → 0 by ~60%
+   height via `maskImage` linear-gradient) so the transcript zone is clean newsprint; OR
+   full-bleed wrapper `opacity:0.20`. INK.black text on newsprint holds AAA only where it
+   sits on solid paper — enforce that.
+
+Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-art)

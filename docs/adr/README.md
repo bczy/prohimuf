@@ -72,3 +72,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0020](./0020-code-drawn-gesture-icons.md)                 | Code-drawn animated gesture icons on the tutorial control panels (reopens ADR-0015 D3)   | Accepted |
 | [0021](./0021-pre-game-print-system-and-title-phase.md)    | Pre-game print system: render-layer TITLE phase + single-source print-token module       | Accepted |
 | [0022](./0022-asset-preloading-and-loading-gate.md)        | Asset preloading with a progressive loading gate                                         | Accepted |
+| [0022](./0022-narrative-scene-location-backdrop.md)        | Optional per-scene location décor (halftone facade) behind the NarrativeScreen transcript | Accepted |
