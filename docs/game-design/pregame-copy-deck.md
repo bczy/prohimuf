@@ -12,7 +12,7 @@ euros, `08 36` premium-rate infolines (authentic pattern, fictional numbers).
 
 Voice baseline is the **shipped** register in `src/game/systems/narrativeSystem.ts`
 (DISPATCH terse/imperative, KENZA field-savvy, MUF laconic). **Flyer/print copy is a
-different register from dialogue**: a free-party flyer *withholds* — cryptic, information-
+different register from dialogue**: a free-party flyer _withholds_ — cryptic, information-
 minimal, never ad copy. The current subtitle `Paris Rave Clandestin` reads like marketing
 and is **replaced** throughout.
 
@@ -20,17 +20,17 @@ and is **replaced** throughout.
 
 ## 0. Canonical naming decisions (quick reference)
 
-| Thing | Decision | Notes |
-| --- | --- | --- |
-| Fanzine (the UI world) | **UNDERGROUND PARIS** — *fanzine clandestin* | Already shipped in masthead; kept as canon. |
-| Entry action (replaces `[ CLIQUER POUR ENTRER ]`) | **`[ COMPOSE L'INFO-LINE ]`** | Diegetic: you call the répondeur for the point de RV. |
-| Cover info-line number | **08 36 23 98 23** | `23` motif + `98` year. Fictional, `08 36` period pattern. |
-| Belliard crew / sound system | **SPIRALE 23** | spiral + `23` motifs. |
-| Stalingrad crew | **KANAL SYSTEM** | canal warehouse; teuf `K` spelling. |
-| Vitry crew | **NADIR 94** | dark register (matches the haunted Vitry post-scene) + dept `94`. |
-| Tutorial | **no crew** — hand-annotated "première" flyer | The only flyer with **no** info-line (you're already there). |
-| Scores tabloid (the UNE) | **PARIS-MINUIT** | Fictional establishment night-tabloid — deliberate foil to the underground zine. |
-| Options screen | **OURS** (the print colophon) | Cast credited as the "rédaction". |
+| Thing                                             | Decision                                      | Notes                                                                            |
+| ------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| Fanzine (the UI world)                            | **UNDERGROUND PARIS** — _fanzine clandestin_  | Already shipped in masthead; kept as canon.                                      |
+| Entry action (replaces `[ CLIQUER POUR ENTRER ]`) | **`[ COMPOSE L'INFO-LINE ]`**                 | Diegetic: you call the répondeur for the point de RV.                            |
+| Cover info-line number                            | **08 36 23 98 23**                            | `23` motif + `98` year. Fictional, `08 36` period pattern.                       |
+| Belliard crew / sound system                      | **SPIRALE 23**                                | spiral + `23` motifs.                                                            |
+| Stalingrad crew                                   | **KANAL SYSTEM**                              | canal warehouse; teuf `K` spelling.                                              |
+| Vitry crew                                        | **NADIR 94**                                  | dark register (matches the haunted Vitry post-scene) + dept `94`.                |
+| Tutorial                                          | **no crew** — hand-annotated "première" flyer | The only flyer with **no** info-line (you're already there).                     |
+| Scores tabloid (the UNE)                          | **PARIS-MINUIT**                              | Fictional establishment night-tabloid — deliberate foil to the underground zine. |
+| Options screen                                    | **OURS** (the print colophon)                 | Cast credited as the "rédaction".                                                |
 
 **New canon flag:** the three crew names and `PARIS-MINUIT` are **net-new named entities**
 not in any shipped source. Conscious documented extension (ADR-0012 precedent). They belong
@@ -42,19 +42,19 @@ in a future `narrative-bible.md`; listed in §8 for Karim's PASS.
 
 Single entry action = **call the info-line**. Layout slots map to the current `StartScreen`.
 
-| Slot | Copy (French) | Max | Replaces |
-| --- | --- | --- | --- |
-| Masthead top strip | `UNDERGROUND PARIS · FANZINE CLANDESTIN · N°23 · NE SE VEND PAS` | 60 car. | `…— N°1 — GRATUIT` |
-| Issue label | `★ HIVER 1998 ★` | 20 car. | kept |
-| Main title | `MUF` | — | kept (fixed) |
-| **Subtitle** | `UN SON · UNE NUIT · PAS D'ADRESSE` | 34 car. | **`Paris Rave Clandestin`** (marketing → withheld) |
-| Year tag | `1998 · PÉRIPHÉRIE & ARRONDISSEMENTS` | 38 car. | `1998 — Banlieues & Arrondissements` |
-| Teaser line 1 | `► Les toits parlent. Les fenêtres tirent.` | 42 car. | `► Tireurs aux fenêtres : qui sont-ils ?` |
-| Teaser line 2 | `► Un colis. Une sono. Zéro adresse.` | 42 car. | `► Carte exclusive : Stalingrad — 19e` |
-| Teaser line 3 | `► Récupère · Livre · Esquive` | 42 car. | `► Survive. Livre. Esquive.` (aligns to the core loop) |
-| Info-line row | `☎ INFO-LINE · 08 36 23 98 23` | 30 car. | (new) |
-| **CTA (blinking)** | `[ COMPOSE L'INFO-LINE ]` | 26 car. | **`[ CLIQUER POUR ENTRER ]`** |
-| Micro-copy (optional, under CTA) | `le répondeur donne le point de RV` | 40 car. | (new) |
+| Slot                             | Copy (French)                                                    | Max     | Replaces                                               |
+| -------------------------------- | ---------------------------------------------------------------- | ------- | ------------------------------------------------------ |
+| Masthead top strip               | `UNDERGROUND PARIS · FANZINE CLANDESTIN · N°23 · NE SE VEND PAS` | 60 car. | `…— N°1 — GRATUIT`                                     |
+| Issue label                      | `★ HIVER 1998 ★`                                                 | 20 car. | kept                                                   |
+| Main title                       | `MUF`                                                            | —       | kept (fixed)                                           |
+| **Subtitle**                     | `UN SON · UNE NUIT · PAS D'ADRESSE`                              | 34 car. | **`Paris Rave Clandestin`** (marketing → withheld)     |
+| Year tag                         | `1998 · PÉRIPHÉRIE & ARRONDISSEMENTS`                            | 38 car. | `1998 — Banlieues & Arrondissements`                   |
+| Teaser line 1                    | `► Les toits parlent. Les fenêtres tirent.`                      | 42 car. | `► Tireurs aux fenêtres : qui sont-ils ?`              |
+| Teaser line 2                    | `► Un colis. Une sono. Zéro adresse.`                            | 42 car. | `► Carte exclusive : Stalingrad — 19e`                 |
+| Teaser line 3                    | `► Récupère · Livre · Esquive`                                   | 42 car. | `► Survive. Livre. Esquive.` (aligns to the core loop) |
+| Info-line row                    | `☎ INFO-LINE · 08 36 23 98 23`                                   | 30 car. | (new)                                                  |
+| **CTA (blinking)**               | `[ COMPOSE L'INFO-LINE ]`                                        | 26 car. | **`[ CLIQUER POUR ENTRER ]`**                          |
+| Micro-copy (optional, under CTA) | `le répondeur donne le point de RV`                              | 40 car. | (new)                                                  |
 
 Teaser bullets use `►` as shipped. Line 3 restates the core loop `Récupérer → Livrer →
 Éviter` in the imperative — the one place the loop is spelled out on the cover.
@@ -73,67 +73,67 @@ briefing / in-game), never on the print. Fields map to the existing card slots
 
 ### 2.1 Tutoriel — `tutorial` (district `Repérage`, 1998)
 
-In-fiction: **not a gig** — a photocopied *old* flyer that DISPATCH marked up by hand to
+In-fiction: **not a gig** — a photocopied _old_ flyer that DISPATCH marked up by hand to
 teach Muf. The margins carry handwriting; `23` is circled; an arrow points to "commence
 ici". **This is the only flyer with no info-line** — you don't call, you're already there.
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Title (`level.name`) | `Tutoriel` | (fixed by data) |
-| Stamp over the title | `REPÉRAGE` | 12 car. |
-| Handwritten note (DISPATCH's hand) | `ta première — lis tout — D.` | 34 car. |
-| Crew slot | `SANS SYSTÈME · AVANT LE SON` | 28 car. |
-| RV line | `RV : ici, maintenant` | 22 car. |
-| Info-line slot (struck out) | `pas besoin d'appeler` | 24 car. |
-| Menu badge (kept from ADR-0012) | `TUTORIEL` | 10 car. |
+| Slot                               | Copy (French)                 | Max             |
+| ---------------------------------- | ----------------------------- | --------------- |
+| Title (`level.name`)               | `Tutoriel`                    | (fixed by data) |
+| Stamp over the title               | `REPÉRAGE`                    | 12 car.         |
+| Handwritten note (DISPATCH's hand) | `ta première — lis tout — D.` | 34 car.         |
+| Crew slot                          | `SANS SYSTÈME · AVANT LE SON` | 28 car.         |
+| RV line                            | `RV : ici, maintenant`        | 22 car.         |
+| Info-line slot (struck out)        | `pas besoin d'appeler`        | 24 car.         |
+| Menu badge (kept from ADR-0012)    | `TUTORIEL`                    | 10 car.         |
 
 ### 2.2 Rue Belliard — `belliard` (19e, 1998) · **FACILE**
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Crew / sound system | `SPIRALE 23` | 16 car. |
-| Level title (`level.name`) | `Rue Belliard` | (fixed) |
-| Slogan / teaser | `LE SON MONTE PAR LES TOITS` | 30 car. |
-| Date line | `SAM. → DIM. · 23H → ?` | 24 car. |
-| Zone line | `QUELQUE PART DANS LE 19e` | 28 car. |
-| RV line | `RV : SUR L'INFO-LINE` | 24 car. |
-| Info-line | `08 36 23 19 98` | 18 car. |
-| Flavor difficulty | `AMBIANCE : ÇA ROULE` | 22 car. |
+| Slot                       | Copy (French)                | Max     |
+| -------------------------- | ---------------------------- | ------- |
+| Crew / sound system        | `SPIRALE 23`                 | 16 car. |
+| Level title (`level.name`) | `Rue Belliard`               | (fixed) |
+| Slogan / teaser            | `LE SON MONTE PAR LES TOITS` | 30 car. |
+| Date line                  | `SAM. → DIM. · 23H → ?`      | 24 car. |
+| Zone line                  | `QUELQUE PART DANS LE 19e`   | 28 car. |
+| RV line                    | `RV : SUR L'INFO-LINE`       | 24 car. |
+| Info-line                  | `08 36 23 19 98`             | 18 car. |
+| Flavor difficulty          | `AMBIANCE : ÇA ROULE`        | 22 car. |
 
 Motifs: **spiral**, `23`, "no logo". `19` = arrondissement, `98` = year.
 
 ### 2.3 Stalingrad — `stalingrad` (19e, 1998) · **MOYEN**
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Crew / sound system | `KANAL SYSTEM` | 16 car. |
-| Level title (`level.name`) | `Stalingrad` | (fixed) |
-| Slogan / teaser | `UN ENTREPÔT · UN MUR DE SON` | 30 car. |
-| Date line | `NUIT ENTIÈRE · 00H → AUBE` | 26 car. |
-| Zone line | `BORDS DU CANAL · 19e` | 24 car. |
-| RV line | `RV : SUR L'INFO-LINE` | 24 car. |
-| Info-line | `08 36 23 95 19` | 18 car. |
-| Flavor difficulty | `AMBIANCE : CHAUD` | 22 car. |
+| Slot                       | Copy (French)                 | Max     |
+| -------------------------- | ----------------------------- | ------- |
+| Crew / sound system        | `KANAL SYSTEM`                | 16 car. |
+| Level title (`level.name`) | `Stalingrad`                  | (fixed) |
+| Slogan / teaser            | `UN ENTREPÔT · UN MUR DE SON` | 30 car. |
+| Date line                  | `NUIT ENTIÈRE · 00H → AUBE`   | 26 car. |
+| Zone line                  | `BORDS DU CANAL · 19e`        | 24 car. |
+| RV line                    | `RV : SUR L'INFO-LINE`        | 24 car. |
+| Info-line                  | `08 36 23 95 19`              | 18 car. |
+| Flavor difficulty          | `AMBIANCE : CHAUD`            | 22 car. |
 
 Motifs: **biohazard** (warehouse/industrial), spiral, `23`. Info-line `95` nods to KENZA's
-shipped line *"Ils ont des planques là-dedans depuis '95"*.
+shipped line _"Ils ont des planques là-dedans depuis '95"_.
 
 ### 2.4 Vitry — 94 — `vitry` (Val-de-Marne, 1998) · **DIFFICILE**
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Crew / sound system | `NADIR 94` | 16 car. |
-| Level title (`level.name`) | `Vitry — 94` | (fixed) |
-| Slogan / teaser | `AU PIED DES BARRES · SON MAXIMAL` | 32 car. |
-| Date line | `JUSQU'AU LEVER DU JOUR` | 24 car. |
-| Zone line | `VAL-DE-MARNE · 94 · TU CONNAIS ?` | 34 car. |
-| RV line | `RV : SUR L'INFO-LINE` | 24 car. |
-| Info-line | `08 36 23 94 09` | 18 car. |
-| Flavor difficulty | `AMBIANCE : BRÛLANT` | 22 car. |
+| Slot                       | Copy (French)                      | Max     |
+| -------------------------- | ---------------------------------- | ------- |
+| Crew / sound system        | `NADIR 94`                         | 16 car. |
+| Level title (`level.name`) | `Vitry — 94`                       | (fixed) |
+| Slogan / teaser            | `AU PIED DES BARRES · SON MAXIMAL` | 32 car. |
+| Date line                  | `JUSQU'AU LEVER DU JOUR`           | 24 car. |
+| Zone line                  | `VAL-DE-MARNE · 94 · TU CONNAIS ?` | 34 car. |
+| RV line                    | `RV : SUR L'INFO-LINE`             | 24 car. |
+| Info-line                  | `08 36 23 94 09`                   | 18 car. |
+| Flavor difficulty          | `AMBIANCE : BRÛLANT`               | 22 car. |
 
 Motifs: **acid smiley** (euphoria over the melancholy), spiral, `23`. Zone line echoes
-KENZA/MUF's shipped exchange (*"Tu connais ?" / "J'ai grandi là-bas."*). Info-line ends
-`09` = the 9th floor of the shipped Vitry post-scene (*"Ma mère habitait au 9e"*) —
+KENZA/MUF's shipped exchange (_"Tu connais ?" / "J'ai grandi là-bas."_). Info-line ends
+`09` = the 9th floor of the shipped Vitry post-scene (_"Ma mère habitait au 9e"_) —
 **intentional deep-cut, not a typo** (§8).
 
 ### 2.5 Locked flyers (any `unlocked: false` gig)
@@ -142,17 +142,17 @@ Diegetic logic: a crew only **opens its line** once you're vouched for — i.e. 
 previous gig is bouclé. So a locked flyer shows the crew name (the player sees what's next)
 but the details are withheld: torn / face-down / line dead.
 
-| Slot | Copy (French) | Max | Replaces |
-| --- | --- | --- | --- |
-| Locked badge | `LIGNE FERMÉE` | 14 car. | `VERROUILLÉ` |
-| Date line | `DATE À VENIR` | 16 car. | — |
-| RV line | `RV : INCONNU` | 18 car. | — |
-| Info-line slot | `08 36 · · · · · — LIGNE MUETTE` | 30 car. | — |
-| Overlay stamp | `PAS ENCORE POUR TOI` | 22 car. | — |
-| Helper micro-copy | `la ligne ouvre quand la précédente est bouclée` | 48 car. | — |
+| Slot              | Copy (French)                                    | Max     | Replaces     |
+| ----------------- | ------------------------------------------------ | ------- | ------------ |
+| Locked badge      | `LIGNE FERMÉE`                                   | 14 car. | `VERROUILLÉ` |
+| Date line         | `DATE À VENIR`                                   | 16 car. | —            |
+| RV line           | `RV : INCONNU`                                   | 18 car. | —            |
+| Info-line slot    | `08 36 · · · · · — LIGNE MUETTE`                 | 30 car. | —            |
+| Overlay stamp     | `PAS ENCORE POUR TOI`                            | 22 car. | —            |
+| Helper micro-copy | `la ligne ouvre quand la précédente est bouclée` | 48 car. | —            |
 
 **Art suggestion (not a fait accompli — art flow owns it):** locked flyer rendered
-*torn or face-down* so only the crew name + `LIGNE FERMÉE` read. Crew name stays legible;
+_torn or face-down_ so only the crew name + `LIGNE FERMÉE` read. Crew name stays legible;
 everything else is the tear.
 
 ---
@@ -161,46 +161,46 @@ everything else is the tear.
 
 The high-score view is a **fictional establishment night-tabloid**, `PARIS-MINUIT` — the
 straight press horrified by the underground, a deliberate foil to the zine cover. Scores are
-**per-level** in code (`ScoresTab` selects one level), so the UNE is one *édition* per gig;
+**per-level** in code (`ScoresTab` selects one level), so the UNE is one _édition_ per gig;
 the headline reads off the **top entry** (`scores[0]`).
 
 ### 3.1 Masthead
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Title | `PARIS-MINUIT` | 16 car. |
-| Masthead line | `LE QUOTIDIEN QUI VEILLE · 1F50 · 1998` | 42 car. |
-| Kicker (per édition) | `RUBRIQUE FAITS DIVERS — {levelName}` | 40 car. |
+| Slot                 | Copy (French)                           | Max     |
+| -------------------- | --------------------------------------- | ------- |
+| Title                | `PARIS-MINUIT`                          | 16 car. |
+| Masthead line        | `LE QUOTIDIEN QUI VEILLE · 1F50 · 1998` | 42 car. |
+| Kicker (per édition) | `RUBRIQUE FAITS DIVERS — {levelName}`   | 40 car. |
 
 `1F50` = one franc fifty (francs, pre-euro — period-correct for 1998).
 
 ### 3.2 Lead story (built from `scores[0]`)
 
-| Slot | Formula (French) | Max | Placeholders |
-| --- | --- | --- | --- |
-| Over-kicker | `NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT` | 32 car. | — |
-| Headline | `NUIT BLANCHE : {score}` | 24 car. (big) | `{score}` |
-| Subhead | `{wave} vagues de bleus, et le son a tenu.` | 46 car. | `{wave}` |
+| Slot        | Formula (French)                            | Max           | Placeholders |
+| ----------- | ------------------------------------------- | ------------- | ------------ |
+| Over-kicker | `NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT`              | 32 car.       | —            |
+| Headline    | `NUIT BLANCHE : {score}`                    | 24 car. (big) | `{score}`    |
+| Subhead     | `{wave} vagues de bleus, et le son a tenu.` | 46 car.       | `{wave}`     |
 
 `{score}` and `{wave}` are the top row's fields. The tabloid reframes gameplay values as
-*faits divers*: the delivery-defense score becomes the sensational figure; `wave` becomes
+_faits divers_: the delivery-defense score becomes the sensational figure; `wave` becomes
 "vagues de bleus" (police assaults survived) — consistent with the loop, no data change.
 
 ### 3.3 Column headers (the records table)
 
-| Data column | Header (French) | Max |
-| --- | --- | --- |
-| `#` (rank) | `N°` | 4 car. |
-| `score` | `BUTIN` | 8 car. |
-| `wave` | `ASSAUTS` | 8 car. |
-| `date` | `NUIT DU` | 8 car. |
+| Data column | Header (French) | Max    |
+| ----------- | --------------- | ------ |
+| `#` (rank)  | `N°`            | 4 car. |
+| `score`     | `BUTIN`         | 8 car. |
+| `wave`      | `ASSAUTS`       | 8 car. |
+| `date`      | `NUIT DU`       | 8 car. |
 
 ### 3.4 Empty state (replaces `AUCUN SCORE ENREGISTRÉ`)
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Big line | `AUCUN MÉFAIT SIGNALÉ` | 24 car. |
-| Subline | `La rue a été calme. Pour l'instant.` | 40 car. |
+| Slot     | Copy (French)                         | Max     |
+| -------- | ------------------------------------- | ------- |
+| Big line | `AUCUN MÉFAIT SIGNALÉ`                | 24 car. |
+| Subline  | `La rue a été calme. Pour l'instant.` | 40 car. |
 
 The level-selector buttons (kept from `ScoresTab`) read as **choosing the édition** — no
 copy change needed beyond the surrounding masthead framing.
@@ -215,11 +215,11 @@ is the "rédaction" — ties the settings screen to the fiction without inventin
 
 ### 4.1 Colophon framing
 
-| Slot | Copy (French) | Max |
-| --- | --- | --- |
-| Section title | `OURS` | 10 car. |
-| Subtitle | `l'ours du fanzine · réglages` | 30 car. |
-| Colophon body (static block, ~5 short lines) | see below | 44 car./line |
+| Slot                                         | Copy (French)                  | Max          |
+| -------------------------------------------- | ------------------------------ | ------------ |
+| Section title                                | `OURS`                         | 10 car.      |
+| Subtitle                                     | `l'ours du fanzine · réglages` | 30 car.      |
+| Colophon body (static block, ~5 short lines) | see below                      | 44 car./line |
 
 ```
 UNDERGROUND PARIS — fanzine clandestin
@@ -231,15 +231,15 @@ Ni pub, ni logo, ni adresse.
 
 ### 4.2 Settings labels (map to `Prefs` — data byte-unchanged, AC4)
 
-| `Prefs` field | New label (French) | Sub-hint (French) | Replaces |
-| --- | --- | --- | --- |
-| `soundVolume` | `BRUITS DE RUE` | `tirs & sirènes` | `VOLUME SFX` |
-| `musicVolume` | `LA SONO` | `le son du système` | `VOLUME MUSIQUE` |
-| `lives` (1–5) | `VIES` | `combien de fois tu te relèves` | `VIES` (kept) |
-| `difficulty` | `PRESSION` | `à quel point les flics te collent` | `DIFFICULTÉ` |
+| `Prefs` field | New label (French) | Sub-hint (French)                   | Replaces         |
+| ------------- | ------------------ | ----------------------------------- | ---------------- |
+| `soundVolume` | `BRUITS DE RUE`    | `tirs & sirènes`                    | `VOLUME SFX`     |
+| `musicVolume` | `LA SONO`          | `le son du système`                 | `VOLUME MUSIQUE` |
+| `lives` (1–5) | `VIES`             | `combien de fois tu te relèves`     | `VIES` (kept)    |
+| `difficulty`  | `PRESSION`         | `à quel point les flics te collent` | `DIFFICULTÉ`     |
 
 `difficulty` values stay **`FACILE / NORMAL / DIFFICILE`** (the code's display strings) for
-instant readability. *Optional* flavored variant if art/GD wants more texture:
+instant readability. _Optional_ flavored variant if art/GD wants more texture:
 `PEINARD / RÉGLO / BRÛLANT` — **not recommended over the clear labels**; offered only as a
 fallback. Behavior/schema untouched either way.
 
@@ -303,7 +303,7 @@ are: masthead → drop `· N°23 · NE SE VEND PAS`; helper → `la ligne ouvre 
    level — **all out of scope here**; only the four shipped levels are covered.
 3. **Existing difficulty-label inconsistency (pre-existing, flag only)** — `LevelCard`
    renders the middle tier as `MOYEN`; `PrefsTab` and the `Prefs` value use `NORMAL`. This
-   deck standardizes new copy on `NORMAL`. `MOYEN` is the odd one out; a dev *may* align it,
+   deck standardizes new copy on `NORMAL`. `MOYEN` is the odd one out; a dev _may_ align it,
    but it is shipped copy — I flag, I do not rewrite it.
 4. **Tutorial breaks the info-line pattern on purpose** — it is the only flyer with no
    number ("you're already here"). Intentional; reinforces info-line = travel to a real gig.
