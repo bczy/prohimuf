@@ -6,6 +6,7 @@ import {
   FLYER_STOCK_BY_PLAYABLE_INDEX,
   FLYER_REST_ROTATION_DEG,
   FLYER_JITTER_PX,
+  MAX_TILT_DEG,
   MOTION,
   useRovingIndex,
 } from "@render/ui/print";
@@ -96,13 +97,19 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
       {LEVELS.map((level, i) => {
         const entry = meta[i];
         if (entry === undefined) return null;
+        // Clamp the deterministic rest angle to the ±3° spec ceiling (§3.2,
+        // MAX_TILT_DEG) so the effective rendered tilt can never exceed it.
+        const restRotationDeg = Math.max(
+          -MAX_TILT_DEG,
+          Math.min(MAX_TILT_DEG, FLYER_REST_ROTATION_DEG[i % FLYER_REST_ROTATION_DEG.length] ?? 0),
+        );
         return (
           <LevelFlyer
             key={level.id}
             level={level}
             unlocked={entry.unlocked}
             stock={entry.stock}
-            restRotationDeg={FLYER_REST_ROTATION_DEG[i % FLYER_REST_ROTATION_DEG.length] ?? 0}
+            restRotationDeg={restRotationDeg}
             jitterPx={FLYER_JITTER_PX[i % FLYER_JITTER_PX.length] ?? 0}
             focused={focusWithin && roving.index === i}
             shaking={shakeIndex === i}
