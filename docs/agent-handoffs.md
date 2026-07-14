@@ -2996,3 +2996,20 @@ Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-
     `dev-r3f-render` — one value in `src/render/ui/NarrativeScreen.tsx` (backdrop opacity
     0.5→0.30). No re-gate needed for a pure opacity knock-back (no new glow/composite element
     introduced); re-shoot only if the mask geometry changes. (Nico / lead-art)
+
+- **Stage 8 — integration sign-off (senior-architect / Winston): SIGN-OFF, mergeable.**
+  Verified on the final post-triage diff: boundary intact (`backdrop?` is pure data in
+  `src/game`, halftone treatment lives in render); the `scene.backdrop !== undefined` predicate
+  is single-sourced across all three call sites (backdrop layer, sprite grayscale, transcript
+  ground) so "no backdrop ⇒ byte-identical" holds for the tutorial; ADR-0022 / README index /
+  §2bis match the shipped opacity (0.30) and flash decisions — no doc drift; no orphan imports;
+  tests A5/A6/A7 lock the game-layer invariants. `tsc` 0 · narrative 8/8.
+- **Stage 9 — product acceptance (pm / John): ACCEPTED. Ship it.**
+  Resolves Bertrand's complaint on both axes (« illustrer + décor de lieu »); core loop
+  Récupérer→Livrer→Éviter untouched; framing a mission with its location is period-faithful
+  presentation, booked as a documented extension in ADR-0022; tutorial byte-identical, dialogue
+  frozen, zero asset-pipeline cost. Backlog (fast-follow, NOT blockers): (1) per-line
+  illustration parity for stalingrad & vitry — but KEEP `vitry_post` imageless (deliberate
+  béton-grief monologue on the bare barres facade); (2) cinematic intro stays deferred;
+  (3) design-gate readback on the 0.30 halftone contrast — satisfied (re-shot at 0.30, text on
+  solid newsprint stays AAA).
