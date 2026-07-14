@@ -2216,6 +2216,29 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 - Asset generation: max **2 batches/asset set** (stage 4 ART lane), then escalation.
 - Verify↔build rework: max **2 rounds/cycle** (stage 5↔4), then escalation.
 
+**Hand-off log (owners append on release):**
+
+- 2026-07-14 · **stage 1 DONE** — pm (John): story `STORY-SHOT-FLAT-IMPACT` written
+  (`_bmad-output/planning-artifacts/story-player-shot-flat-impact.md`), 7 ACs. Reframed the
+  fix as "hit where you aim" (root cause = +y velocity AND path-proximity hits). Scope OUT:
+  enemy fire stays a travelling telegraph. Wall-mark cap mandated. → design loop.
+- 2026-07-14 · **stage 2 DONE** — game-designer (Sacha): gated spec
+  `docs/game-design/spec-shot-flat-impact.md` (hitscan at fire time, 250 ms burst, cap 16
+  FIFO marks, tuning table §5). narrative-designer: **SKIP declared** (no player-facing
+  text; logged, not silent). **DESIGN GATE PASS** — lead-game-designer (Karim), no rework
+  round consumed; 4 non-blocking notes routed (QA one-shot-one-enemy delta, tracer muzzle
+  vs vertical pan, anchor-divergence playtest watch, spec status flip). → senior-architect.
+- 2026-07-14 · **stage 3 DONE** — senior-architect (Winston): Boundary verdict PASS.
+  Decal set = render-transient (**ADR-0020**, follows ADR-0003); `GameState` stays
+  rule-only, carries transient `impactEvents` facts only. Player shot → pure hitscan
+  `resolvePlayerShot` at fire time; enemy fire untouched. Two parallel lanes, disjoint
+  files, seam rule R1 ratified (gameplay lands `ImpactEvent`/`ImpactChannel`/`useGameLoop`
+  sig first, render consumes). Tech plan:
+  `docs/game-design/techplan-shot-flat-impact.md`. ART lane call: no generated PNG needed
+  (runtime-composed FX) → asset gate n/a, **composite gate (Gate 4) remains mandatory** on
+  real in-game screenshots. → BUILD (Lane A `dev-gameplay` first, release, then Lane B
+  `dev-r3f-render`).
+
 **Risks & contention flagged at stage 0 (for pm/architect to resolve, not for Marion to decide):**
 
 - **R1 — `src/hooks/**`shared seam (the one routinely contended path).**`dev-gameplay`(logic-side hooks: feeding impact events out of the game tick) and`dev-r3f-render`(view-side hooks: consuming those events to spawn FX) will both be drawn toward`src/hooks/**`, especially `useGameLoop.ts`. **Proposed seam rule (for architect ratification):\*\*
