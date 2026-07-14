@@ -35,12 +35,15 @@ const BODY = "#0b0916";
 const HAND_TWO_FINGER =
   "M40 28 C40 22 50 21 51 27 L52 46 C52 50 58 50 58 46 L58 24 C58 17 68 16 69 23 " +
   "L70 52 C73 47 80 47 81 55 C83 51 90 52 91 60 C95 71 93 93 84 105 C78 110 61 110 55 105 " +
-  "C49 99 47 93 47 87 C46 82 39 82 37 85 C34 87 34 82 38 80 C42 78 46 79 46 74 L40 28 Z";
+  "C50 104 40 99 37 91 C34 84 35 78 39 74 C42 71 45 72 46 74 L40 28 Z";
 // Same hand with ONLY the index extended straight up, the others curled into knuckle-bumps (swipe).
 const HAND_ONE_FINGER =
   "M45 24 C45 18 56 18 56 24 L57 52 C60 47 67 47 68 55 C70 50 77 51 78 59 " +
-  "C80 55 86 56 87 63 C91 73 90 93 82 105 C76 110 59 110 53 105 C48 99 46 93 46 87 " +
-  "C45 82 38 82 36 85 C33 87 33 82 37 80 C41 78 45 79 45 74 L45 24 Z";
+  "C80 55 86 56 87 63 C91 73 90 93 82 105 C76 110 59 110 53 105 " +
+  "C49 104 39 99 36 91 C33 84 34 78 38 74 C41 71 44 72 45 74 L45 24 Z";
+// Fold crease separating the folded thumb lobe from the palm (reference: thumb plié).
+const THUMB_CREASE_TWO = "M42 76 C45 84 47 92 49 100";
+const THUMB_CREASE_ONE = "M41 76 C44 84 46 92 48 100";
 
 const ICON_SVG_STYLE: CSSProperties = {
   height: "min(240px, 34vh)",
@@ -359,6 +362,14 @@ function TwoFingerTapIcon(): JSX.Element {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
+        {/* folded-thumb crease: the lobe reads "plié" against the palm */}
+        <path
+          d={THUMB_CREASE_TWO}
+          fill="none"
+          stroke={INK}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
         {/* both fingertip halos — the only lit elements (r≤8: past ~9 the pair merges) */}
         <circle
           className="gi-anim gi-tt-halo"
@@ -425,6 +436,14 @@ function SwipePanIcon(): JSX.Element {
             stroke={INK}
             strokeWidth="2.4"
             strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {/* folded-thumb crease: the lobe reads "plié" against the palm */}
+          <path
+            d={THUMB_CREASE_ONE}
+            fill="none"
+            stroke={INK}
+            strokeWidth="2.2"
             strokeLinecap="round"
           />
         </g>

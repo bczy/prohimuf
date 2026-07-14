@@ -2005,3 +2005,15 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   the now-top-anchored fingertip in frame. tsc/lint/format:check all green; mobile-UA/landscape
   captures (panels 2 & 3, one animated + one reduced-motion frame each) sit naturally next to the
   iStock reference. Not committed (per Bertrand). (Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / thumb fold fix v7 (Bertrand on v5: "le pouce doit être
+  PLIÉ, reprends la référence"): Serge/game-graphist reworked the LEFT/palm edge of both
+  HAND\_\* outlines ONLY — the open side-hook thumb replaced by a FOLDED thumb per iStock
+  r1c1/r1c4: a smooth rounded lobe hugging the palm front (convex outer edge from finger
+  base to wrist), plus one short interior fold-crease stroke (ONE_CREASE/TWO_CREASE)
+  separating the thumb lobe from the palm. Finger geometry, tips (45,23)/(63,17)/(50,19),
+  fist bottom and wrist all UNCHANGED. Screenshot-proven at 240/96/64 vs reference thumb
+  crops (v6 too-sharp notch → v7 smooth lobe). Render-dev note: keep the crease inside the
+  animated <g> (lifts/sweeps with the hand); it is the ONLY interior stroke to add (the old
+  knuckle/finger-split creases still get dropped). Did NOT edit GestureIcon.tsx.
+  (Serge / game-graphist)
