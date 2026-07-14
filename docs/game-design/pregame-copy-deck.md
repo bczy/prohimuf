@@ -287,11 +287,11 @@ The three index-tab labels the UX spec references (`[RUBRIQUE_NIVEAUX]`,
 _sommaire_, the navigation index, and is deliberately distinct from each surface's own
 masthead (flyer wall / `PARIS-MINUIT` / `OURS`):
 
-| UX slot              | Label (French) | Max     | Opens surface        |
-| -------------------- | -------------- | ------- | -------------------- |
-| `[RUBRIQUE_NIVEAUX]` | `NIVEAUX`      | 12 car. | flyer stack (§2)     |
+| UX slot              | Label (French) | Max     | Opens surface           |
+| -------------------- | -------------- | ------- | ----------------------- |
+| `[RUBRIQUE_NIVEAUX]` | `NIVEAUX`      | 12 car. | flyer stack (§2)        |
 | `[RUBRIQUE_SCORES]`  | `SCORES`       | 12 car. | UNE — PARIS-MINUIT (§3) |
-| `[RUBRIQUE_OPTIONS]` | `OPTIONS`      | 12 car. | OURS / colophon (§4) |
+| `[RUBRIQUE_OPTIONS]` | `OPTIONS`      | 12 car. | OURS / colophon (§4)    |
 
 No change from shipped `NIVEAUX / SCORES / OPTIONS`: they are the plain, glanceable index;
 the flavour lives in the surfaces they open, not the tabs.
@@ -330,10 +330,14 @@ are: masthead → drop `· N°23 · NE SE VEND PAS`; helper → `la ligne ouvre 
    `characters.md`, folding in these crews and the still-unbuilt guidelines §7 contacts
    (DJ Masta Klem, Faïza, Seb le Blond, Oxane, Karim "Le Mécano") + the final `31 déc 1999`
    level — **all out of scope here**; only the four shipped levels are covered.
-3. **Existing difficulty-label inconsistency (pre-existing, flag only)** — `LevelCard`
-   renders the middle tier as `MOYEN`; `PrefsTab` and the `Prefs` value use `NORMAL`. This
-   deck standardizes new copy on `NORMAL`. `MOYEN` is the odd one out; a dev _may_ align it,
-   but it is shipped copy — I flag, I do not rewrite it.
+3. **Middle-tier label standardized on `NORMAL` (gate f2, RESOLVED)** — the deck now uses
+   `NORMAL` deck-wide. Shipped `MainMenu.tsx:170` renders the middle tier as `MOYEN`; the gate
+   authorizes the one-word render alignment `MOYEN → NORMAL` (in-scope, no data touch, owned by
+   the render dev). With shipped `enemySpeedMultiplier` (belliard `1.0`, stalingrad `1.3`, vitry
+   `1.6`; `>1.2 → DIFFICILE`, `>1.0 → NORMAL`, else `FACILE`) **no shipped level renders the
+   middle tier** — Stalingrad and Vitry both stamp `DIFFICILE` (see §2.3). The two hard gigs are
+   differentiated by the **AMBIANCE gradient (`CHAUD` < `BRÛLANT`) + district**, not the stamp.
+   Re-tuning `levels.ts` to force a middle-tier stamp is forbidden (AC4).
 4. **Tutorial breaks the info-line pattern on purpose** — it is the only flyer with no
    number ("you're already here"). Intentional; reinforces info-line = travel to a real gig.
 5. **Vitry info-line `…94 09`** encodes the 9th-floor callback from the shipped Vitry
@@ -343,3 +347,39 @@ are: masthead → drop `· N°23 · NE SE VEND PAS`; helper → `la ligne ouvre 
    top `{score}`/`{wave}` to the headline/subhead slots.
 7. **`08 36` numbers are fictional** on the authentic 1998 French premium-rate pattern —
    legal-safe per the story brief (no real number, no trademark).
+
+---
+
+## 9. Gated canon — seed for `narrative-bible.md` (gate f1)
+
+Passed by the design gate as a **conscious, documented extension** (ADR-0012 precedent). No
+bible exists yet; this section is the authoritative seed so the names do not drift, and it
+is the record a future `narrative-bible.md` folds in. **Entity classes are kept separate on
+purpose — no collision:**
+
+- **Cast (handlers on the burner phone)** — MUF, DISPATCH, KENZA. The player's crew: they
+  brief and route Muf. Established in shipped `narrativeSystem.ts`; unchanged here.
+- **Sound systems (the collectives throwing the teufs Muf delivers to)** — a _different_
+  entity class from both the cast and the §7 recruitable contacts. A flyer must name
+  _something_ to read as a flyer; these are that something.
+- **Recruitable contacts (guidelines §7)** — individuals Muf recruits (DJ Masta Klem, Faïza
+  "La Logiste", Seb le Blond, Oxane, Karim "Le Mécano"). Not yet in-game; **out of scope**
+  here. Logged only so the bridge below prevents a future name clash.
+
+### 9.1 Crew ↔ §7-contact bridge (so a future bible does not collide)
+
+| Sound system     | Level / zone       | Related §7 contact (future)                               | Relationship (seed)                                                                                  |
+| ---------------- | ------------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **SPIRALE 23**   | Rue Belliard (19e) | _none_ — entry crew, no §7 anchor                         | The first gig; clean of any §7 individual, no collision risk.                                        |
+| **KANAL SYSTEM** | Stalingrad (19e)   | Faïza "La Logiste" (Organisation / Lieux, Stalingrad 19e) | Faïza books & hosts KANAL SYSTEM's canal warehouse — she is the _logiste_ of the crew, not the crew. |
+| **NADIR 94**     | Vitry — 94         | DJ Masta Klem (Sonorisateur, Vitry 94)                    | Masta Klem runs NADIR 94's sound — he is a member/soundman of the crew, not the crew.                |
+
+Rule for the future bible: a **crew** is a collective; a **contact** is an individual who
+belongs to or serves a crew. Never merge a crew name with a contact name.
+
+### 9.2 Owed follow-ups (not actioned in this deck)
+
+- Mirror this gated-canon list into `docs/game-design/README.md` (gate f1) — owed, and left
+  to the orchestrator/lead since this pass edits **only** the copy deck.
+- Open a story to seed `narrative-bible.md` + `characters.md`, folding in §9 plus the §7
+  contacts and the `31 déc 1999` final level. Out of scope here.
