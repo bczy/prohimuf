@@ -388,6 +388,15 @@ Contrast of these inks on each fluo stock is a **lead-art** call; this spec fixe
 > in-scope render change, **no data touch**, AC4-safe). See §4.6 — with shipped data no level
 > actually renders the middle tier, so this is latent cohesion, not a visible fix.
 
+### 4.5 Paper-stock assignment (one fluo per surface, art-advisor rule)
+
+| Surface            | Ground                                   | Single fluo             | Note                                                            |
+| ------------------ | ---------------------------------------- | ----------------------- | --------------------------------------------------------------- |
+| TITLE (cover)      | jaune fluo                               | — (it _is_ the stock)   | brightest = the hook                                            |
+| NIVEAUX flyers     | each flyer rotates the 4 stocks by index | per-flyer               | shell = neutral newsprint so flyers pop                         |
+| SCORES (_UNE_)     | **newsprint cream**                      | rose fuchsia (masthead) | see §7 flag: a UNE is faithfully printed on newsprint, not fluo |
+| OPTIONS (colophon) | orange brûlé                             | —                       | zine back-page stock                                            |
+
 ### 4.6 Difficulty stamp is NOT a glanceable discriminator with shipped data (design-gate condition)
 
 Shipped `enemySpeedMultiplier`: **belliard `1.0` → FACILE**, **stalingrad `1.3` → DIFFICILE**,
@@ -406,15 +415,6 @@ FACILE` derivation (re-tuning `levels.ts` is forbidden — AC4, byte-unchanged):
   not the stamp — do the discriminating work here.
 - Implication for the art lane: do **not** rely on three visually distinct difficulty stamps to
   tell the hard levels apart; rely on AMBIANCE + district + the per-crew flyer identity.
-
-### 4.5 Paper-stock assignment (one fluo per surface, art-advisor rule)
-
-| Surface            | Ground                                   | Single fluo             | Note                                                            |
-| ------------------ | ---------------------------------------- | ----------------------- | --------------------------------------------------------------- |
-| TITLE (cover)      | jaune fluo                               | — (it _is_ the stock)   | brightest = the hook                                            |
-| NIVEAUX flyers     | each flyer rotates the 4 stocks by index | per-flyer               | shell = neutral newsprint so flyers pop                         |
-| SCORES (_UNE_)     | **newsprint cream**                      | rose fuchsia (masthead) | see §7 flag: a UNE is faithfully printed on newsprint, not fluo |
-| OPTIONS (colophon) | orange brûlé                             | —                       | zine back-page stock                                            |
 
 ---
 
