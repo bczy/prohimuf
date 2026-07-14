@@ -197,18 +197,17 @@ describe("assetManifest — courier paths", () => {
     expect(courierAssetPath("assets/courier/bike.png", 3)).toBe("assets/courier/bike_f3.png");
   });
 
-  it("courierAssetPaths equals Σ frames over courier.layers", () => {
-    const expectedCount = Object.values(levelArt.courier.layers).reduce(
-      (sum, layer) => sum + layer.frames.length,
-      0,
-    );
+  it("covers the rider strip and excludes the retired bike layer", () => {
     const paths = courierAssetPaths();
-    expect(paths.length).toBe(expectedCount);
+    // Only the rendered `rider` layer is preloaded — the `bike` layer is retired
+    // from the composite and its PNGs are uncommitted, so warming it would 404.
+    expect(paths.length).toBe(levelArt.courier.layers.rider.frames.length);
     expect(new Set(paths).size).toBe(paths.length);
-    // Spot-check the rider layer's full strip is present.
     for (let f = 1; f <= levelArt.courier.layers.rider.frames.length; f++) {
       expect(paths).toContain(courierAssetPath(levelArt.courier.layers.rider.asset, f));
     }
+    // Regression guard: no bike frame may leak into the manifest.
+    expect(paths.some((p) => p.startsWith("assets/courier/bike"))).toBe(false);
   });
 });
 

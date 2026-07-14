@@ -36,6 +36,10 @@ const cache = new Map<VehicleType, Texture>();
 // vehicle share one load (and one silhouette bake). Doubles as the "already
 // requested" guard the previous `requested` set provided.
 const inflight = new Map<VehicleType, Promise<void>>();
+// Types whose load 404'd/errored, so the per-frame `getVehicleTexture` never
+// re-issues the request (it runs every frame while the vehicle is on stage).
+// Mirrors the `failed` sets in enemyTextures.ts / courierTextures.ts.
+const failed = new Set<VehicleType>();
 
 /**
  * A baked neon rim plus the geometry needed to scale it so the padded glow
@@ -58,7 +62,7 @@ const silhouetteCache = new Map<VehicleType, NeonRim>();
 // or 404) so the asset preloader can gate on it. Both the per-frame renderer and
 // the preloader funnel through here, so the neon-rim cache warms either way.
 function loadVehicle(type: VehicleType): Promise<void> {
-  if (cache.has(type)) return Promise.resolve();
+  if (cache.has(type) || failed.has(type)) return Promise.resolve();
   const existing = inflight.get(type);
   if (existing !== undefined) return existing;
   const p = new Promise<void>((resolve) => {
@@ -83,6 +87,7 @@ function loadVehicle(type: VehicleType): Promise<void> {
       },
       undefined,
       () => {
+        failed.add(type);
         inflight.delete(type);
         resolve();
       },

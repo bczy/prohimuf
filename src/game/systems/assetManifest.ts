@@ -161,11 +161,18 @@ export function courierAssetPath(asset: string, frame: number): string {
   return frame > 1 ? asset.replace(/\.png$/, `_f${String(frame)}.png`) : asset;
 }
 
-/** Every frame of every authored courier layer, de-duplicated, stably ordered. */
+// The courier layers CourierSprite actually draws. The `bike` layer was retired
+// from the composite — the full-cyclist `rider` sprite carries the whole figure
+// (see CourierSprite / courierArtReady, which likewise gates on `["rider"]`) and
+// bike.png is not committed — so warming it would only 404. Preload the rendered
+// set, `rider` only, so the manifest count matches what the scene loads.
+const RENDERED_COURIER_LAYERS = ["rider"] as const;
+
+/** Every frame of every RENDERED courier layer, de-duplicated, stably ordered. */
 export function courierAssetPaths(): readonly string[] {
   const layers: Record<string, CourierLayerEntry> = levelArt.courier.layers;
   const paths: string[] = [];
-  for (const key of Object.keys(layers)) {
+  for (const key of RENDERED_COURIER_LAYERS) {
     const layer = layers[key];
     if (layer === undefined) continue;
     for (let frame = 1; frame <= layer.frames.length; frame++) {
