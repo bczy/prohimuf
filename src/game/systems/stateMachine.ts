@@ -3,12 +3,13 @@ import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { PointHitEvent } from "@game/types/feedback";
+import type { ImpactEvent, PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import { fireBullet, tickBullets, checkBulletHits, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { resolvePlayerShot, tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
+import type { PlayerShotResult } from "@game/systems/bulletSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
 import {
   checkCourierHits,
@@ -127,18 +128,20 @@ export function tickGameState(
     ? spawnWave(newWave, facade, windowPoolFor(roster))
     : tickedEnemies;
 
-  // 4. Player fires bullet
-  let bullets: readonly Bullet[] = state.bullets;
-  if (fire) {
-    _nextBulletId++;
-    bullets = [
-      ...bullets,
-      fireBullet(crosshair, true, _nextBulletId, cameraOffsetX, cameraOffsetY, viewW, viewH),
-    ];
-  }
+  // 4. Player fires — instant hitscan resolved at the crosshair world point
+  // (ADR-0020). No travelling player projectile enters `bullets`; the shot yields
+  // one ImpactEvent plus the (byte-identical) reward math. Reads the pre-hit
+  // enemy snapshot, exactly like the enemy-fire step below.
+  const shot: PlayerShotResult | null = fire
+    ? resolvePlayerShot(crosshair, activeEnemies, facade, cameraOffsetX, cameraOffsetY, viewW, viewH)
+    : null;
+  const shotEnemies = shot ? shot.enemies : activeEnemies;
+  const impactEvents: readonly ImpactEvent[] = shot ? [shot.impact] : [];
 
   // 5. Enemies fire a SINGLE shot when they enter the SHOOTING state (not a
-  // per-frame stream — that was unfairly dense).
+  // per-frame stream — that was unfairly dense). Reads `activeEnemies` (the
+  // pre-hit snapshot), so a same-tick player kill does NOT suppress the telegraph.
+  let bullets: readonly Bullet[] = state.bullets;
   const wasShooting = new Set(state.enemies.filter((e) => e.state === "SHOOTING").map((e) => e.id));
   const shootingEnemies = activeEnemies.filter(
     (e) => e.state === "SHOOTING" && !wasShooting.has(e.id),
@@ -158,18 +161,15 @@ export function tickGameState(
     ];
   }
 
-  // 6. Tick bullets
+  // 6. Tick bullets (only enemy bullets travel now — the player shot is hitscan).
   const movedBullets = tickBullets(bullets, delta);
-
-  // 7. Player bullet hits on enemies
-  const hitResult = checkBulletHits(movedBullets, activeEnemies, facade);
 
   // 7b. Street couriers (livreurs): move them along the road, spawn new ones on a
   // timer, and resolve mistaken hits (shooting a courier costs a life + point).
   let couriers: readonly Courier[] = state.couriers;
   let courierTimer = state.courierTimer;
   let couriersSpawned = state.couriersSpawned;
-  let courierBullets = hitResult.bullets;
+  let courierBullets = movedBullets;
   let courierScoreDelta = 0;
   let courierLivesDelta = 0;
   let pointFeedback: readonly PointHitEvent[] = [];
@@ -213,11 +213,13 @@ export function tickGameState(
   }
 
   // Score folds in the delivery bonus; the win gate below stays on kills only.
+  const shotScoreDelta = shot ? shot.scoreDelta : 0;
+  const shotTargetsDown = shot ? shot.targetsDown : 0;
   const newScore = Math.max(
     0,
-    state.score + hitResult.scoreDelta + courierScoreDelta + deliveryScoreDelta,
+    state.score + shotScoreDelta + courierScoreDelta + deliveryScoreDelta,
   );
-  const newKills = state.kills + hitResult.targetsDown;
+  const newKills = state.kills + shotTargetsDown;
 
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
@@ -232,15 +234,18 @@ export function tickGameState(
   const finalBullets = courierBullets.filter((b) => !hitBulletIds.has(b.id));
 
   // Lives change from being shot AND from mistakes (shooting a civilian courier).
-  const newLives = state.lives - (playerHit ? 1 : 0) + hitResult.livesDelta + courierLivesDelta;
+  const shotLivesDelta = shot ? shot.livesDelta : 0;
+  const shotEvents = shot ? shot.events : [];
+  const newLives = state.lives - (playerHit ? 1 : 0) + shotLivesDelta + courierLivesDelta;
 
   if (newLives <= 0) {
     return {
       ...state,
       crosshair,
-      enemies: hitResult.enemies,
-      feedback: hitResult.events,
+      enemies: shotEnemies,
+      feedback: shotEvents,
       pointFeedback,
+      impactEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -256,14 +261,16 @@ export function tickGameState(
   }
 
   // 9. Tick timer (bonus enemies add seconds back)
-  const timeRemaining = tickTimer(state.timeRemaining, delta) + hitResult.timeDelta;
+  const shotTimeDelta = shot ? shot.timeDelta : 0;
+  const timeRemaining = tickTimer(state.timeRemaining, delta) + shotTimeDelta;
   if (timeRemaining <= 0) {
     return {
       ...state,
       crosshair,
-      enemies: hitResult.enemies,
-      feedback: hitResult.events,
+      enemies: shotEnemies,
+      feedback: shotEvents,
       pointFeedback,
+      impactEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -284,9 +291,10 @@ export function tickGameState(
   return {
     phase: finalPhase,
     crosshair,
-    enemies: hitResult.enemies,
-    feedback: hitResult.events,
+    enemies: shotEnemies,
+    feedback: shotEvents,
     pointFeedback,
+    impactEvents,
     couriers,
     courierTimer,
     couriersSpawned,
