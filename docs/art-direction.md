@@ -82,6 +82,12 @@ dark ground it has drifted — automatic FAIL, not a taste note.**
   `filter: grayscale(1) contrast(~2.2) brightness(~1.1)` on the existing PNG, over a dot-
   screen overlay. Any surviving warm window-**glow** (partial desaturation) reintroduces glow
   on a menu = **FAIL**. `grayscale(1)` is mandatory, not `grayscale(.9)`.
+- **An in-game sprite shown in a menu illustration slot is printed too** — same loi de
+  l'imprimé. It carries `filter: grayscale(1)` (+ mild `contrast`) to kill stray sprite colour
+  (badge, uniform) and read as one printing with the halftone facade. Show the **bare** PNG,
+  never a neon-rimmed composite (the in-game rim is render-side, §2 law 1 — a menu has zero
+  glow). **No** heavy halftone dot-screen on the sprite: it would eat the silhouette (§2 law 3);
+  the `pixelated` raster already reads xerox-adjacent. (Briefing illustrations, ADR-0012 / 0022.)
 - **State is hand-work, not light.** Hover = flyer pull / marker ring; focus = inked marker
   ellipse (always visible); selected = X-stamp / tick / tape corners. The only allowed
   "pulse" is the typewriter cursor blink (a répondeur/typewriter cursor, not a glow).
