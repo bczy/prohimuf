@@ -1664,3 +1664,26 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   browser-verified both directions, manifest test guards `facing`). Standing note: the
   deferred minors/nits above are tracked follow-up debt (this entry is the log).
   Clear to merge.
+### story-enemy-muzzle-and-blobs-fix (kickoff — pm + senior-architect)
+
+- Bertrand reported two in-game bugs: (1) code muzzle glow misaligned with the baked
+  flash/barrel (fixed +x offset in EnemySprite.tsx vs per-sprite flash positions, some
+  aiming LEFT), (2) dark opaque background blobs around figures (chroma-key remnants
+  locked opaque by the solidify pass) reading as rectangles in game.
+- pm (John): scoped story `_bmad-output/planning-artifacts/story-enemy-muzzle-and-blobs-fix.md`
+  — bug fix, cahier-des-charges FAITHFUL, AC1-AC7 incl. the 81a26ad hard line (figures
+  stay solid) and `fill-sprite-holes.mjs --check` still passing.
+- senior-architect (Winston) sign-off: `muzzle` anchors = OPTIONAL per-frame array
+  (`[{x,y}|null]`, normalized from PNG top-left, index-aligned with `frames`) in
+  levelArt.json enemies.types — asset metadata, no game/render boundary violation
+  (manifest already imported by enemyTextures.ts only). Plane math validated:
+  dx=(x−0.5)·planeH·aspect, dy=(0.5−y)·planeH. ADR: none for the anchor field
+  (extend asset-pipeline.md + ADR 0016 note); NEW ADR 0019 required for the
+  blob-removal retouch (destructive edit to committed art, cross-ref ADR 0014).
+- Lane partition: A = dev-r3f-render (enemyTextures.ts `muzzleFor` + EnemySprite
+  consumption, null → current fixed-offset fallback) ∥ B = game-graphist (scripted
+  blob removal OUTSIDE figures only, flashes preserved, --check green, ADR 0019);
+  C = dev-tooling-assets (scripts/measure-muzzle-anchors.mjs + levelArt.json data)
+  runs AFTER B so committed anchors are measured against shipped pixels.
+  levelArt.json written only by C; enemyTextures.ts/EnemySprite.tsx only by A;
+  PNGs only by B. (John + Winston, orchestrated)
