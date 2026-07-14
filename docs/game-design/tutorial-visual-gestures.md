@@ -1,6 +1,6 @@
 # Design spec — Tutorial: visual gesture icons + fuller bestiary
 
-**Feature:** make the optional tutorial stage teach by *showing*, not by prose —
+**Feature:** make the optional tutorial stage teach by _showing_, not by prose —
 four code-drawn gesture icons on the control panels + one bestiary panel per shipped enemy.
 **Story:** `_bmad-output/planning-artifacts/story-tutorial-visual-gestures.md`
 **Author:** `game-designer` (Sacha) · **Gate:** `lead-game-designer` (Karim) — UNGATED until PASS
@@ -14,7 +14,7 @@ four code-drawn gesture icons on the control panels + one bestiary panel per shi
 
 ## 0. Cahier des charges verdict
 
-*Did Prohibition (Atari ST, 1987) have a tutorial?* **No** — printed manual. The tutorial
+_Did Prohibition (Atari ST, 1987) have a tutorial?_ **No** — printed manual. The tutorial
 stage is the already-documented conscious extension (ADR-0012). This spec stays **inside**
 that envelope: **presentation only**, zero new mechanic, verb, input or rule. Every icon
 illustrates a control that already ships; every bestiary panel illustrates an enemy already
@@ -30,11 +30,11 @@ that exists; it does not widen it.
 - **Slot & size.** The icon occupies the **same slot `image` uses today** — centred above
   the dialogue box (`NarrativeScreen.tsx`, the `currentLine.image` block). Same
   `maxHeight: 38vh`, `objectFit: contain` envelope so it never crowds the copy.
-- **Medium.** Fanzine **B&W line art** (rough xerox stroke, high contrast) for the *inert*
+- **Medium.** Fanzine **B&W line art** (rough xerox stroke, high contrast) for the _inert_
   parts of the icon (the mouse body, the screen frame, the finger outlines, the glass).
   These parts **never glow** — they are décor (`loi du glow`, art-direction §2).
 - **La loi du glow — ce qui brille est interactif.** In each icon, exactly the element the
-  player *acts with* glows in one acid-neon accent: the clicked button, the touched edge,
+  player _acts with_ glows in one acid-neon accent: the clicked button, the touched edge,
   the tapping fingertips, the swiping trail. Nothing else glows.
 - **Un halo est un dégradé, jamais un aplat.** Every glow is an **alpha-falloff** gradient
   (radial for a point of contact, linear-tail for a motion trail) that decreases from the
@@ -55,7 +55,7 @@ that exists; it does not widen it.
   implies motion → the icons **animate** a single looped gesture. Loops are short and
   CSS/SVG-cheap; the gesture is legible on the first cycle.
 
-### 1.1 Desktop — mouse left-click  (`gesture: "mouse-click"`)
+### 1.1 Desktop — mouse left-click (`gesture: "mouse-click"`)
 
 - **Depicts.** A B&W line-art two-button computer mouse, slight three-quarter top view,
   scroll wheel + cable drawn. The **left button** is the only lit element.
@@ -64,10 +64,10 @@ that exists; it does not widen it.
   blooms from the button). · 0.15–0.35 s: a single **click-ripple** ring expands from the
   mouse and fades to alpha 0 (one ring, one click). · 0.35–1.20 s: button rests, glow at
   low idle. Repeat. Easing: fast-in on the press, ease-out on the ripple.
-- **Teaching point (exact).** *One **left**-click = one shot; a single discrete click, not a
-  hold, not the right button.* The lit left button IS the fire button.
+- **Teaching point (exact).** _One **left**-click = one shot; a single discrete click, not a
+  hold, not the right button._ The lit left button IS the fire button.
 
-### 1.2 Desktop — edge-scroll pan  (`gesture: "edge-scroll"`)
+### 1.2 Desktop — edge-scroll pan (`gesture: "edge-scroll"`)
 
 - **Depicts.** A fanzine-framed screen rectangle with the **cursor arrow pushed flat against
   one edge**; directional chevrons on that edge imply the view sliding. NOT a hand, NOT a
@@ -76,12 +76,12 @@ that exists; it does not widen it.
   0.0–0.6 s: cursor slides from centre to the **right** edge. · 0.6–1.4 s: the touched edge
   **lights up** (edge-band glow, falloff inward to 0) and 2–3 chevrons march outward in the
   pan direction (content implied scrolling). · 1.4–1.6 s: snap back to centre. · next cycle
-  runs the **left** edge (then may cycle top/bottom) to teach *"dans les deux sens", all
-  four directions*. No mouse button is held anywhere in the loop.
-- **Teaching point (exact).** *Push the cursor to the screen **edge** and the view scrolls
-  that way — edge-scroll, both senses / four directions. It is a push, not a drag.*
+  runs the **left** edge (then may cycle top/bottom) to teach _"dans les deux sens", all
+  four directions_. No mouse button is held anywhere in the loop.
+- **Teaching point (exact).** _Push the cursor to the screen **edge** and the view scrolls
+  that way — edge-scroll, both senses / four directions. It is a push, not a drag._
 
-### 1.3 Mobile — two-finger single tap  (`gesture: "two-finger-tap"`)
+### 1.3 Mobile — two-finger single tap (`gesture: "two-finger-tap"`)
 
 - **Depicts.** Two fingertips (index + middle, B&W line art) contacting glass **at the same
   instant**; the two contact points are the lit elements — two neon dots with falloff halos.
@@ -90,11 +90,11 @@ that exists; it does not widen it.
   and a **single** concentric ripple springs from the **midpoint between them**. · 0.2–0.4 s:
   ripple fades to alpha 0. · 0.4–0.7 s: fingers lift. · 0.7–1.4 s: **rest** — the inter-loop
   pause is deliberately long so the repeat never reads as a double-tap.
-- **Teaching point (exact).** *Two fingers, **ONE simultaneous tap** = shoot; the bullet
-  leaves from the **midpoint** between the fingers.* This is the ADR-0015 D1 gesture —
+- **Teaching point (exact).** _Two fingers, **ONE simultaneous tap** = shoot; the bullet
+  leaves from the **midpoint** between the fingers._ This is the ADR-0015 D1 gesture —
   **never a double-tap, never a one-finger tap.** (Corrects Bertrand's "double tap".)
 
-### 1.4 Mobile — one-finger swipe pan  (`gesture: "swipe-pan"`)
+### 1.4 Mobile — one-finger swipe pan (`gesture: "swipe-pan"`)
 
 - **Depicts.** A **single** fingertip dragging across glass, a **glow motion trail** streaking
   behind it (the trail IS the alpha-falloff demo — bright at the fingertip, fading to 0 at the
@@ -104,19 +104,19 @@ that exists; it does not widen it.
   0.5–0.7 s: finger **releases** mid-travel. · 0.7–1.2 s: the trail/content **keeps gliding**
   a short distance and eases to a stop — the **flick inertia** ("une pichenette, et ça glisse
   tout seul"). · 1.2–2.0 s: reset; next cycle sweeps a different direction (up, then left,
-  then down) to teach *all four*.
-- **Teaching point (exact).** *One finger **swipes** to pan in any of the four directions; a
-  flick keeps gliding on its own (inertia).* One finger + lateral travel + trail — visibly
+  then down) to teach _all four_.
+- **Teaching point (exact).** _One finger **swipes** to pan in any of the four directions; a
+  flick keeps gliding on its own (inertia)._ One finger + lateral travel + trail — visibly
   distinct from the two-finger static-dot shoot icon.
 
 ### 1.5 Icon animation tuning table
 
-| Icon | gesture value | Lit element (glows) | Loop | One-cycle beat | Must never read as |
-|------|---------------|---------------------|------|----------------|--------------------|
-| Mouse click | `mouse-click` | Left button + click-ripple | 1.2 s | press → 1 ripple → rest | a hold / right-click |
-| Edge-scroll | `edge-scroll` | Touched edge band + cursor tip | 2.4 s | slide → edge glow + chevrons → snap, alt. edge | a drag / grab-pan |
-| Two-finger tap | `two-finger-tap` | Both fingertips + midpoint ripple | 1.4 s | 1 simultaneous tap → long rest | a double-tap / one-finger |
-| Swipe pan | `swipe-pan` | Fingertip + fading motion trail | 2.0 s/dir | sweep → release → inertial glide | a two-finger gesture |
+| Icon           | gesture value    | Lit element (glows)               | Loop      | One-cycle beat                                 | Must never read as        |
+| -------------- | ---------------- | --------------------------------- | --------- | ---------------------------------------------- | ------------------------- |
+| Mouse click    | `mouse-click`    | Left button + click-ripple        | 1.2 s     | press → 1 ripple → rest                        | a hold / right-click      |
+| Edge-scroll    | `edge-scroll`    | Touched edge band + cursor tip    | 2.4 s     | slide → edge glow + chevrons → snap, alt. edge | a drag / grab-pan         |
+| Two-finger tap | `two-finger-tap` | Both fingertips + midpoint ripple | 1.4 s     | 1 simultaneous tap → long rest                 | a double-tap / one-finger |
+| Swipe pan      | `swipe-pan`      | Fingertip + fading motion trail   | 2.0 s/dir | sweep → release → inertial glide               | a two-finger gesture      |
 
 ---
 
@@ -138,25 +138,25 @@ Open Q2 ("more detailed" = enrich vs add) — **design-gate call, split by segme
 
 ### 2.1 Resulting panel list (both variants — 11 panels, parity held)
 
-| # | Segment | Speaker | Slot | Teaching intent |
-|---|---------|---------|------|-----------------|
-| 0 | opening *(shared)* | DISPATCH | — | Core loop: Récupérer → Livrer → Éviter |
-| 1 | opening *(shared)* | DISPATCH | `truck.png` | The delivery vehicle; cover it, let it leave intact |
-| 2 | control **(fork)** | KENZA | **gesture icon** | Shoot — `mouse-click` (desktop) / `two-finger-tap` (mobile) |
-| 3 | control **(fork)** | KENZA | **gesture icon** | Pan — `edge-scroll` (desktop) / `swipe-pan` (mobile) |
-| 4 | bestiary *(shared)* | KENZA | `enemy_shooting.png` | **Normal cop** — your target; it shoots back if you dawdle |
-| 5 | bestiary *(shared)* | KENZA | `enemy_riot_shooting.png` | **Riot cop** — takes **two** hits to go down |
-| 6 | bestiary *(shared)* | KENZA | `enemy_biker_shooting.png` | **Biker** — **flash** window, pops and vanishes fast |
-| 7 | bestiary *(shared)* | KENZA | `enemy_bonus.png` | **Bonus** — never shoots, **+time**, **not** a target |
-| 8 | bestiary *(shared)* | KENZA | `enemy_civilian.png` | **Courier civilian** — **NEVER** shoot the livreur |
-| 9 | field *(shared)* | DISPATCH | — | HUD: chrono, vies, score, compteur d'éliminations, fenêtre de livraison |
-| 10 | field *(shared)* | DISPATCH | — | Outro: "bouge, Rue Belliard t'attend" |
+| #   | Segment             | Speaker  | Slot                       | Teaching intent                                                         |
+| --- | ------------------- | -------- | -------------------------- | ----------------------------------------------------------------------- |
+| 0   | opening _(shared)_  | DISPATCH | —                          | Core loop: Récupérer → Livrer → Éviter                                  |
+| 1   | opening _(shared)_  | DISPATCH | `truck.png`                | The delivery vehicle; cover it, let it leave intact                     |
+| 2   | control **(fork)**  | KENZA    | **gesture icon**           | Shoot — `mouse-click` (desktop) / `two-finger-tap` (mobile)             |
+| 3   | control **(fork)**  | KENZA    | **gesture icon**           | Pan — `edge-scroll` (desktop) / `swipe-pan` (mobile)                    |
+| 4   | bestiary _(shared)_ | KENZA    | `enemy_shooting.png`       | **Normal cop** — your target; it shoots back if you dawdle              |
+| 5   | bestiary _(shared)_ | KENZA    | `enemy_riot_shooting.png`  | **Riot cop** — takes **two** hits to go down                            |
+| 6   | bestiary _(shared)_ | KENZA    | `enemy_biker_shooting.png` | **Biker** — **flash** window, pops and vanishes fast                    |
+| 7   | bestiary _(shared)_ | KENZA    | `enemy_bonus.png`          | **Bonus** — never shoots, **+time**, **not** a target                   |
+| 8   | bestiary _(shared)_ | KENZA    | `enemy_civilian.png`       | **Courier civilian** — **NEVER** shoot the livreur                      |
+| 9   | field _(shared)_    | DISPATCH | —                          | HUD: chrono, vies, score, compteur d'éliminations, fenêtre de livraison |
+| 10  | field _(shared)_    | DISPATCH | —                          | Outro: "bouge, Rue Belliard t'attend"                                   |
 
 - **Both `TUTORIAL_NARRATIVE_DESKTOP` and `_MOBILE`: 11 panels.** Shared-by-reference indices
   become **[0,1,4,5,6,7,8,9,10]**; the fork is **[2,3]** only. (Downstream: the
   `tutorialInvariants` reference-equality loop's index list widens accordingly — that's a
   dev/architect edit, flagged, not my lane.)
-- **Ordering rationale.** Learn to *shoot/pan* (2–3) **before** learning *what* to shoot /
+- **Ordering rationale.** Learn to _shoot/pan_ (2–3) **before** learning _what_ to shoot /
   never shoot (4–8): the danger targets first, the never-shoot courier as the emphatic close
   of the roster, then HUD, then go.
 
@@ -167,7 +167,7 @@ is **off** that path by construction — Belliard is the default menu highlight;
 an optional/secondary affordance (ADR-0012 D2). A hurried player never enters it; a player who
 opts in is asking to learn, and clarity beats brevity there. It stays **skippable at every
 panel** ("Passer", AC8) and writes nothing to progress. This is a conscious, documented trade,
-not a violation — the ethos protects the *default* first-play, which is untouched.
+not a violation — the ethos protects the _default_ first-play, which is untouched.
 
 ---
 
@@ -177,23 +177,23 @@ Open Q3 ruling: **each of the five shipped enemies gets its own panel and exactl
 must-teach fact.** All values sourced from `ARCHETYPES` (`enemyTypes.ts`) — the tutorial must
 not drift from live tuning.
 
-| Enemy | Sprite (slot) | ONE teaching point | Source value | Why it's must-teach |
-|-------|---------------|--------------------|--------------|---------------------|
-| Normal cop | `enemy_shooting.png` | Legitimate **target**; **shoots back** if you linger | `shoots:true, countsAsTarget:true, visibleDuration 3.2s` | The baseline threat + the kill-counter unit |
-| Riot cop | `enemy_riot_shooting.png` | Takes **two hits** to go down | `hp:2` | Changes behaviour — don't move on after one shot |
-| Biker | `enemy_biker_shooting.png` | **Flash** window — pops and vanishes fast | `visibleDuration 2.0s` (vs 3.2), `hiddenDuration 1.2s` | Sets reaction-speed expectation |
-| Bonus | `enemy_bonus.png` | **Never shoots**, gives **+5 s**, is **not** a target | `shoots:false, timeDelta:5, countsAsTarget:false` | Positive-but-optional; "not a target" stops kill-counter confusion |
-| Courier civilian | `enemy_civilian.png` | **NEVER** shoot — a downed livreur ends the run | `scoreDelta:-1, livesDelta:-1` (courier reuse) | The single most costly mistake in the game |
+| Enemy            | Sprite (slot)              | ONE teaching point                                    | Source value                                             | Why it's must-teach                                                |
+| ---------------- | -------------------------- | ----------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| Normal cop       | `enemy_shooting.png`       | Legitimate **target**; **shoots back** if you linger  | `shoots:true, countsAsTarget:true, visibleDuration 3.2s` | The baseline threat + the kill-counter unit                        |
+| Riot cop         | `enemy_riot_shooting.png`  | Takes **two hits** to go down                         | `hp:2`                                                   | Changes behaviour — don't move on after one shot                   |
+| Biker            | `enemy_biker_shooting.png` | **Flash** window — pops and vanishes fast             | `visibleDuration 2.0s` (vs 3.2), `hiddenDuration 1.2s`   | Sets reaction-speed expectation                                    |
+| Bonus            | `enemy_bonus.png`          | **Never shoots**, gives **+5 s**, is **not** a target | `shoots:false, timeDelta:5, countsAsTarget:false`        | Positive-but-optional; "not a target" stops kill-counter confusion |
+| Courier civilian | `enemy_civilian.png`       | **NEVER** shoot — a downed livreur ends the run       | `scoreDelta:-1, livesDelta:-1` (courier reuse)           | The single most costly mistake in the game                         |
 
 ### 3.1 Shooting-state sprites where the threat is the lesson (story point 3)
 
 - **Armed archetypes (normal / riot / biker) → SHOOTING-state sprite** (`enemy_shooting`,
   `enemy_riot_shooting`, `enemy_biker_shooting`). Rationale: the **SHOOTING pose is the
-  in-game danger tell** (`EnemyState "SHOOTING"`); illustrating it *teaches the tell the
-  player must read on sight* and reinforces "armed = shoot it". This upgrades panel 4 from
+  in-game danger tell** (`EnemyState "SHOOTING"`); illustrating it _teaches the tell the
+  player must read on sight_ and reinforces "armed = shoot it". This upgrades panel 4 from
   today's lone cop to a consistent "these three are armed threats" family read.
 - **Non-threat archetypes (bonus / civilian) → IDLE sprite** (`enemy_bonus`,
-  `enemy_civilian`). Their lesson is *"not a threat / never shoot"*, so an un-armed pose is
+  `enemy_civilian`). Their lesson is _"not a threat / never shoot"_, so an un-armed pose is
   the **correct read**; a drawn weapon on them would mis-teach.
 - All five files are confirmed on disk (`public/assets/`); **no new sprite, no FLUX, no CI
   render-farm, no lead-art asset gate** (story §5, AC6).
@@ -208,7 +208,7 @@ disk** yet — only `rider_f*.png` frames exist, so the composite can't be shown
 `rider.png` still is an **upper-body-only** frame (prompt: "torso ending at hip height") that
 in a static panel reads as a **floating headless torso** — worse teaching than a whole figure.
 `enemy_civilian.png` is a purpose-drawn, front-facing, unmistakable "friendly delivery courier,
-empty hands, no weapon" — the **clearest single-still read of *the livreur, never shoot him***,
+empty hands, no weapon" — the **clearest single-still read of _the livreur, never shoot him_**,
 which is the panel's only job. Accepted trade: the panel's front-facing courier ≠ the in-game
 side-profile rider silhouette, but both read instantly as "the livreur". **Revisit** once
 `courier/bike.png` ships and a composite still can be captured.
@@ -216,7 +216,7 @@ side-profile rider silhouette, but both read instantly as "the livreur". **Revis
 ### 3.2 In-scope only (AC6)
 
 No panel references the **drive-by car** or **hostage taker** — not shipped, roster-gated to
-S2/S3 (ADR-0012 D4). No `vehicles/car.png` repurposing (it's the *delivery* vehicle).
+S2/S3 (ADR-0012 D4). No `vehicles/car.png` repurposing (it's the _delivery_ vehicle).
 
 ---
 
@@ -227,9 +227,9 @@ The story's proposed direction: an **optional, pure-data** field on `NarrativeLi
 discrete `gesture` enum or a general `icon` field, and the ADR.
 
 1. **Enum of intent — four values:** `"mouse-click" | "edge-scroll" | "two-finger-tap" |
-   "swipe-pan"`. Each maps 1:1 to §1's icons in the render layer.
+"swipe-pan"`. Each maps 1:1 to §1's icons in the render layer.
 2. **Pure data, zero React/Three** — `narrativeSystem.ts` stays import-free (AC7). The value
-   is an *intent token*; all drawing lives in `src/render`.
+   is an _intent token_; all drawing lives in `src/render`.
 3. **Device-correctness is structural, not a runtime device read.** The gesture value lives
    in the **forked control segment**: the desktop segment carries `mouse-click`/`edge-scroll`,
    the mobile segment carries `two-finger-tap`/`swipe-pan`. The game layer never sees the
@@ -279,5 +279,5 @@ discrete `gesture` enum or a general `icon` field, and the ADR.
 - **`senior-architect` (Winston):** `NarrativeLine.gesture` field shape + the ADR-0015 D3
   amendment/new ADR; the value/semantics above are the design contract to encode.
 - **`lead-game-designer` (Karim):** gate this spec before any dev implements.
-</content>
-</invoke>
+  </content>
+  </invoke>

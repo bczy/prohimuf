@@ -69,31 +69,31 @@ Template:
 - design-gate→arch/art: **PASS — both deliverables gated** (`docs/game-design/tutorial-visual-gestures.md`,
   `docs/game-design/tutorial-script-visual-gestures.md`). Verdict per leg:
   · **Scope** — conscious documented extension inside the ADR-0012 envelope (optional/skippable/
-    informative-only, zero rule added); enemies limited to the shipped Belliard pool (ADR-0012 D4);
-    no new sprite/FLUX. ADR-0015 D3 reopening is DECLARED (not undeclared) → architect's lane (AC11).
+  informative-only, zero rule added); enemies limited to the shipped Belliard pool (ADR-0012 D4);
+  no new sprite/FLUX. ADR-0015 D3 reopening is DECLARED (not undeclared) → architect's lane (AC11).
   · **Core loop** — informative-only, serves `Récupérer→Livrer→Éviter`, dilutes nothing; the 3-5min
-    mission cap does not bind a skippable non-mission stage.
+  mission cap does not bind a skippable non-mission stage.
   · **Verifiability** — icon animation timings (1.2/2.4/1.4/2.0s), lit elements, teaching points and
-    sprite paths are all concrete; copy is verbatim; field-shape correctly deferred to architect.
+  sprite paths are all concrete; copy is verbatim; field-shape correctly deferred to architect.
   · **Coherence (both docs)** — panel indices MATCH (fork [2,3], shared [0,1,4,5,6,7,8,9,10], 11/11);
-    icon slots ↔ copy annotations MATCH (DC1/MC1=shoot p2, DC2/MC2=pan p3); sprite picks MATCH
-    (armed→`_shooting`, bonus/civilian idle). Sacha's §3.1 RESOLVES both of Yasmine's `[FLAG]`s.
+  icon slots ↔ copy annotations MATCH (DC1/MC1=shoot p2, DC2/MC2=pan p3); sprite picks MATCH
+  (armed→`_shooting`, bonus/civilian idle). Sacha's §3.1 RESOLVES both of Yasmine's `[FLAG]`s.
   · **Factual audit vs `ARCHETYPES`** — VERIFIED TRUE: normal hp1/shoots/+1/3.2s; riot hp2; biker
-    2.0s fast; bonus shoots:false/timeDelta5/countsAsTarget:false; civilian −1 vie/−1 point. All five
-    sprites + truck confirmed on disk. Mobile shoot correctly = single simultaneous two-finger tap
-    (not double-tap). ADR-0015 device-copy pins hold (mobile `deux doigts`, desktop `souris`/`clic`).
+  2.0s fast; bonus shoots:false/timeDelta5/countsAsTarget:false; civilian −1 vie/−1 point. All five
+  sprites + truck confirmed on disk. Mobile shoot correctly = single simultaneous two-finger tap
+  (not double-tap). ADR-0015 device-copy pins hold (mobile `deux doigts`, desktop `souris`/`clic`).
   · **Art-bible** — icon specs invoke loi du glow (only acted element glows) + halo=dégradé (alpha
-    falloff to 0, no aplat); hue and falloff-read correctly DEFERRED to `lead-art` at the composite
-    gate — no visual arbitration by me, no bible conflict flagged.
+  falloff to 0, no aplat); hue and falloff-read correctly DEFERRED to `lead-art` at the composite
+  gate — no visual arbitration by me, no bible conflict flagged.
   **PANEL-STRUCTURE DECISION (mine, explicit): KEEP 11, do NOT trim biker+bonus.** The <10s ethos
-  (guidelines §5 UX-1) governs the *default* launch→gameplay path; the tutorial is off it by
+  (guidelines §5 UX-1) governs the _default_ launch→gameplay path; the tutorial is off it by
   construction (optional secondary affordance, Belliard is the default highlight, ADR-0012 D2) and
   skippable at every panel. Bertrand asked for "encore plus détaillé"; biker (weight 15) and bonus
   (weight 11) are LIVE in Belliard's default pool, so trimming them under-teaches the shipped game —
   contra the story's own purpose. Conscious documented trade (spec §2.2), not a violation.
   **PROPOSED GUIDELINE RULE (guidelines silent here):** the <10s launch→gameplay budget binds the
   default first-play only; an optional stage that is not the default highlight and is skippable at
-  every step is budgeted on *clarity*, not brevity. Forwarded to `pm` for §5 codification.
+  every step is budgeted on _clarity_, not brevity. Forwarded to `pm` for §5 codification.
   No amendments needed to either doc — both were already coherent. DOWNSTREAM UNBLOCKED:
   `senior-architect` (field shape + ADR-0015 D3 amendment), `lead-art` (glow hue/falloff), then
   `dev-gameplay` transcribes; design ACCEPTANCE (stage 5) via `verify` on both `?preview=tutorial`
@@ -109,17 +109,15 @@ Template:
   type-enforced), lives ONLY on forked control panels (indices 2,3). Render imports `GestureKind` and
   builds an EXHAUSTIVE `Record<GestureKind,…>` (compile-time completeness). `GestureIcon` lives at
   NEW `src/render/ui/GestureIcon.tsx`.
-  **LANE A → `dev-gameplay` (`src/game/**` only):** `src/game/systems/narrativeSystem.ts` (add
-  `GestureKind` + the two fields; transcribe the gated 11-panel script VERBATIM from
-  `docs/game-design/tutorial-script-visual-gestures.md` — opening ×2 shared, desktop/mobile control
-  ×2 forked with `gesture` set + `image` unset, field ×7 shared; set `gestureAlt` from the script's
-  parenthetical labels); `src/game/levels/__tests__/tutorialInvariants.test.ts` (widen shared-ref
-  index list `[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
-  ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
-  both `image`&`gesture` · every `gesture` line has non-empty `gestureAlt`; keep device-copy regex +
-  shipped-sprite-exists checks green); `src/game/systems/__tests__/narrativeSystem.test.ts` (gesture
-  value ∈ enum integrity).
-  **LANE B → `dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
+  **LANE A → `dev-gameplay` (`src/game/**`only):**`src/game/systems/narrativeSystem.ts`(add`GestureKind`+ the two fields; transcribe the gated 11-panel script VERBATIM from`docs/game-design/tutorial-script-visual-gestures.md`— opening ×2 shared, desktop/mobile control
+×2 forked with`gesture`set +`image`unset, field ×7 shared; set`gestureAlt`from the script's
+parenthetical labels);`src/game/levels/**tests**/tutorialInvariants.test.ts`(widen shared-ref
+index list`[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
+ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
+both `image`&`gesture`· every`gesture`line has non-empty`gestureAlt`; keep device-copy regex +
+shipped-sprite-exists checks green); `src/game/systems/**tests**/narrativeSystem.test.ts`(gesture
+value ∈ enum integrity).
+**LANE B →`dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
   animated B&W-lineart+neon icons per `docs/game-design/tutorial-visual-gestures.md` §1, loi du glow
   = only the acted element glows w/ alpha falloff to 0, two-finger = ONE simultaneous tap + long
   rest, edge-scroll = PUSH not drag, swipe = 1 finger/4 dirs/inertia); MOD
@@ -149,6 +147,7 @@ Template:
   `?preview=tutorial` via the `verify` skill — mobile landscape 844×390 panels 2/3 + desktop panel 3 —
   and confirmed on screenshots both hands read instantly as hands and the falloff is a gradient. No
   commit. (Amelia / dev-r3f-render)
+
 ---
 
 ### story-audio-licence-attribution
@@ -1809,7 +1808,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   XOR image, gesture only on fork [2,3], device-correct values, shared-ref [0,1,4,5,6,7,8,9,10],
   11-panel parity, exhaustive `Record<GestureKind,…>` — all test-pinned (tutorialInvariants 13,
   narrativeSystem 6, both green). tsc EXIT=0 under `noUncheckedIndexedAccess` because the Record is
-  over a *closed literal union* (lookup is non-nullable, hence exhaustive). NarrativeScreen: gesture
+  over a _closed literal union_ (lookup is non-nullable, hence exhaustive). NarrativeScreen: gesture
   slot gated on `image===undefined && gesture!==undefined` → zero regression for pre/post-level
   scenes (no `gesture` field); a11y `role="img"`+`aria-label`, SVG `aria-hidden`; reduced-motion
   freeze via media query. All 5 bestiary sprites + truck confirmed on disk. Surgical: every changed
@@ -1827,7 +1826,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   drove all 11 panels — dotCount=11, litDots 1→11 monotonic, `Passer` present every
   panel. Panel 2 `mouse-click` (role=img aria "Souris : un clic gauche, un tir."),
   panel 3 `edge-scroll` (aria "Curseur poussé au bord…") — edge-PUSH glow band, not a
-  drag (DA1). Bestiary panels 4–8 render correct sprites+alts: enemy_shooting,
+  drag (DA1). Bestiary panels 4–8 render correct sprites+alts: enemy*shooting,
   enemy_riot_shooting, enemy_biker_shooting (all SHOOTING pose w/ muzzle flash),
   enemy_bonus + enemy_civilian (idle) (DA5). MOBILE (iPhone UA → detectMobile flips to
   TUTORIAL_NARRATIVE_MOBILE): panel 2 `two-finger-tap` (aria "Deux doigts, un seul tap
@@ -1840,7 +1839,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   loops running. Both variants 11 panels, dot parity (DA6). Optional/skippable/
   informative, TERMINER→menu, nothing written to progress (DA7). Icons render in the
   38vh slot, never a broken/empty slot (DA8). Evidence: 11 PNGs under qa scratchpad
-  (desktop_panel_{2,3,5,6,7}[_frameA/B], mobile_panel_{2,3}[_frameA/B]).
+  (desktop_panel*{2,3,5,6,7}[_frameA/B], mobile*panel*{2,3}[_frameA/B]).
   NOTES (informational, non-blocking): (i) mobile tutorial is only reachable in
   LANDSCAPE — portrait raises the ADR-0003 rotate overlay ("TOURNEZ VOTRE APPAREIL")
   by design; captures taken in 844×390. (ii) edge-scroll alt-edge (left) cycle + swipe

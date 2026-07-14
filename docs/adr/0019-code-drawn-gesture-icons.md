@@ -24,7 +24,7 @@ D3's text-only rule was chosen to guarantee the fork triggers **no art generatio
 FLUX/Pollinations, no CI render-farm, no `lead-art` asset gate) — the same "no generation"
 guarantee ADR-0012 **D5** rests on. That guarantee is the constraint to preserve; "text-only"
 was only the means. A **code-drawn** icon (SVG/CSS in the render layer) satisfies the ask
-*and* the guarantee: it is drawn by the browser at runtime, commissions no sprite, and never
+_and_ the guarantee: it is drawn by the browser at runtime, commissions no sprite, and never
 touches the asset pipeline.
 
 The design loop gated (Karim PASS, `docs/agent-handoffs.md`) a spec of **four** animated
@@ -42,7 +42,7 @@ Forces from reading the code:
 - The device fork is **structural, not a runtime device read** in the game layer: desktop and
   mobile control segments are distinct `NarrativeLine[]`s already (ADR-0015 D1); `App.tsx`
   picks the variant once at load (ADR-0015 D2). So a gesture value placed on a forked panel is
-  device-correct *by position* — the render layer needs no extra device branch.
+  device-correct _by position_ — the render layer needs no extra device branch.
 - The boundary law: `src/game` is pure data (zero React/Three); all drawing lives in
   `src/render`. `narrativeSystem.ts` is import-free and must stay so.
 
@@ -135,7 +135,7 @@ pixel lives in `src/render`.
   panels are unchanged; device-correctness stays structural (ADR-0015 D1/D2), no runtime device
   branch in either layer.
 - ADR-0012 D5's "no generation" guarantee is preserved verbatim — D3 is reopened on its
-  *means* (text-only), not its *end* (no asset pipeline).
+  _means_ (text-only), not its _end_ (no asset pipeline).
 
 **Negative / costs**
 
@@ -143,7 +143,7 @@ pixel lives in `src/render`.
   that implement them, the forked control copy (ADR-0015 cost), and now the icon drawings. The
   `tutorialInvariants` gesture pins are the guard rail.
 - A gesture icon is code, not data — a visual regression is caught by the `verify`/composite
-  gate on real screenshots, not by a unit test (only the *selection* is unit-testable).
+  gate on real screenshots, not by a unit test (only the _selection_ is unit-testable).
 
 **Gotchas to watch**
 
@@ -152,7 +152,7 @@ pixel lives in `src/render`.
 - **`gesture` lives only on the forked control panels (indices 2, 3).** A gesture value on a
   shared panel would break device-correctness (the same value would show on both variants). The
   invariant pins gesture to the fork indices.
-- **Panel count moved 8 → 11** (3 new bestiary panels, all in the *shared* field segment). The
+- **Panel count moved 8 → 11** (3 new bestiary panels, all in the _shared_ field segment). The
   `tutorialInvariants` reference-equality index list widens to `[0,1,4,5,6,7,8,9,10]`; the fork
   stays `[2,3]`. `scripts/screenshot-preview.mjs` is **unaffected** — it captures the tutorial's
   first (opening) panel, not a per-panel loop, and the progress dots render from

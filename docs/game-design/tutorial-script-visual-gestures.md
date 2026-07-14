@@ -36,10 +36,10 @@ in the **shared field segment** — never in a fork.
 
 ## Segment 1 — `TUTORIAL_OPENING_LINES` (shared, 2 panels)
 
-| # | Speaker | Text | Visual |
-|---|---------|------|--------|
-| O1 | DISPATCH | `Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.` | text-only |
-| O2 | DISPATCH | `Le colis arrive par le véhicule. Couvre-le pendant la livraison, puis laisse-le repartir intact.` | `assets/vehicles/truck.png` — alt: `Le camion de livraison` |
+| #   | Speaker  | Text                                                                                               | Visual                                                      |
+| --- | -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| O1  | DISPATCH | `Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.`                      | text-only                                                   |
+| O2  | DISPATCH | `Le colis arrive par le véhicule. Couvre-le pendant la livraison, puis laisse-le repartir intact.` | `assets/vehicles/truck.png` — alt: `Le camion de livraison` |
 
 O1 unchanged from shipped. O2 lightly tightened from shipped to name the "couvrir
 pendant la livraison" beat the story calls for (the delivery-window rule itself is
@@ -49,10 +49,10 @@ recalled in the HUD panel H1).
 
 ## Segment 2 — `DESKTOP_CONTROL_LINES` (forked, 2 panels)
 
-| # | Speaker | Text | Gesture icon slot | Visual |
-|---|---------|------|-------------------|--------|
-| DC1 | KENZA | `Pour tirer : le viseur suit ta souris. Clic gauche, un coup part — une seule action, rien de plus.` | `mouse-click` | gesture icon (souris + clic gauche) |
-| DC2 | KENZA | `La rue déborde de l'écran. Pousse le curseur au bord — la vue suit, dans les deux sens.` | `edge-scroll` | gesture icon (curseur poussé au bord) |
+| #   | Speaker | Text                                                                                                 | Gesture icon slot | Visual                                |
+| --- | ------- | ---------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------- |
+| DC1 | KENZA   | `Pour tirer : le viseur suit ta souris. Clic gauche, un coup part — une seule action, rien de plus.` | `mouse-click`     | gesture icon (souris + clic gauche)   |
+| DC2 | KENZA   | `La rue déborde de l'écran. Pousse le curseur au bord — la vue suit, dans les deux sens.`            | `edge-scroll`     | gesture icon (curseur poussé au bord) |
 
 DC1/DC2 = shipped copy, kept. Gesture-icon slot is the story's proposed
 `NarrativeLine.gesture` field. **NO drag** anywhere (edge-scroll only, ADR-0015). Copy
@@ -62,10 +62,10 @@ carries `souris` + `clic`, never `doigt`/`balay`.
 
 ## Segment 3 — `MOBILE_CONTROL_LINES` (forked, 2 panels)
 
-| # | Speaker | Text | Gesture icon slot | Visual |
-|---|---------|------|-------------------|--------|
-| MC1 | KENZA | `Pour tirer : tape à DEUX doigts en même temps, bref et net. La balle part pile entre tes doigts.` | `two-finger-tap` | gesture icon (deux doigts, UN tap) |
-| MC2 | KENZA | `La rue déborde de l'écran. Un doigt pour balayer — haut, bas, gauche, droite. Une pichenette, et ça glisse tout seul.` | `swipe-pan` | gesture icon (un doigt, balayage 4 sens) |
+| #   | Speaker | Text                                                                                                                    | Gesture icon slot | Visual                                   |
+| --- | ------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------- |
+| MC1 | KENZA   | `Pour tirer : tape à DEUX doigts en même temps, bref et net. La balle part pile entre tes doigts.`                      | `two-finger-tap`  | gesture icon (deux doigts, UN tap)       |
+| MC2 | KENZA   | `La rue déborde de l'écran. Un doigt pour balayer — haut, bas, gauche, droite. Une pichenette, et ça glisse tout seul.` | `swipe-pan`       | gesture icon (un doigt, balayage 4 sens) |
 
 MC1 adds **`en même temps`** to the shipped line — this is the load-bearing correction:
 the real gesture is a **single simultaneous two-finger tap**, NOT a double-tap (PM ruling
@@ -79,15 +79,15 @@ the real gesture is a **single simultaneous two-finger tap**, NOT a double-tap (
 Bestiary expanded to the full shipped Belliard pool (AC5). One line = one rule, TRUE to
 `ARCHETYPES` in `src/game/types/enemyTypes.ts`. KENZA reads the enemies; DISPATCH closes.
 
-| # | Speaker | Text | Visual | Archetype truth |
-|---|---------|------|--------|-----------------|
-| F1 | KENZA | `Le flic à la fenêtre, c'est ta cible. Une balle suffit — mais il dégaine avant toi si tu traînes.` | `assets/enemy_shooting.png` — alt: `Un flic qui dégaine à la fenêtre` | normal · hp 1 · shoots · +1 · target |
-| F2 | KENZA | `Le CRS en tenue anti-émeute encaisse DEUX balles. Un seul tir le fait pas tomber — insiste.` | `assets/enemy_riot_shooting.png` — alt: `Un CRS anti-émeute qui dégaine` | riot · hp 2 · shoots · +2 · target |
-| F3 | KENZA | `Le motard surgit vite et repart vite. Il reste jamais longtemps — vise dès qu'il paraît.` | `assets/enemy_biker_shooting.png` — alt: `Un motard qui dégaine à la fenêtre` | biker · hp 1 · shoots · fast (2.0s) · +1 · target |
-| F4 | KENZA | `Celui-là ne tire jamais. Descends-le pour +5 secondes au chrono — mais il compte pas dans ton quota d'éliminations.` | `assets/enemy_bonus.png` — alt: `Une cible bonus qui donne du temps` | bonus · never shoots · +5s · +1 · NOT a target |
-| F5 | KENZA | `Le livreur civil dans la rue, tu le touches JAMAIS. Un tir sur lui : une vie et un point en moins.` | `assets/enemy_civilian.png` — alt: `Le livreur civil dans la rue` | civilian · never shoots · -1 vie · -1 point |
-| H1 | DISPATCH | `En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.` | text-only | HUD |
-| F6 | DISPATCH | `Compris ? Alors bouge. Rue Belliard t'attend.` | text-only | outro |
+| #   | Speaker  | Text                                                                                                                  | Visual                                                                        | Archetype truth                                   |
+| --- | -------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| F1  | KENZA    | `Le flic à la fenêtre, c'est ta cible. Une balle suffit — mais il dégaine avant toi si tu traînes.`                   | `assets/enemy_shooting.png` — alt: `Un flic qui dégaine à la fenêtre`         | normal · hp 1 · shoots · +1 · target              |
+| F2  | KENZA    | `Le CRS en tenue anti-émeute encaisse DEUX balles. Un seul tir le fait pas tomber — insiste.`                         | `assets/enemy_riot_shooting.png` — alt: `Un CRS anti-émeute qui dégaine`      | riot · hp 2 · shoots · +2 · target                |
+| F3  | KENZA    | `Le motard surgit vite et repart vite. Il reste jamais longtemps — vise dès qu'il paraît.`                            | `assets/enemy_biker_shooting.png` — alt: `Un motard qui dégaine à la fenêtre` | biker · hp 1 · shoots · fast (2.0s) · +1 · target |
+| F4  | KENZA    | `Celui-là ne tire jamais. Descends-le pour +5 secondes au chrono — mais il compte pas dans ton quota d'éliminations.` | `assets/enemy_bonus.png` — alt: `Une cible bonus qui donne du temps`          | bonus · never shoots · +5s · +1 · NOT a target    |
+| F5  | KENZA    | `Le livreur civil dans la rue, tu le touches JAMAIS. Un tir sur lui : une vie et un point en moins.`                  | `assets/enemy_civilian.png` — alt: `Le livreur civil dans la rue`             | civilian · never shoots · -1 vie · -1 point       |
+| H1  | DISPATCH | `En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.`       | text-only                                                                     | HUD                                               |
+| F6  | DISPATCH | `Compris ? Alors bouge. Rue Belliard t'attend.`                                                                       | text-only                                                                     | outro                                             |
 
 ### Bestiary copy notes (TRUE-to-numbers audit)
 
@@ -113,12 +113,12 @@ Bestiary expanded to the full shipped Belliard pool (AC5). One line = one rule, 
 
 1. **`[FLAG]` shooter-pose sprite rule.** F1/F2/F3 all use the `_shooting` variant
    (`enemy_shooting`, `enemy_riot_shooting`, `enemy_biker_shooting`) so every armed enemy
-   is shown *dégainant* (consistent threat read); bonus/civilian shown neutral. If
+   is shown _dégainant_ (consistent threat read); bonus/civilian shown neutral. If
    `game-designer` prefers idle silhouettes for the armored/fast reads, the idle sprites
    also ship (`enemy_riot.png`, `enemy_biker.png`, `enemy_sprite.png`) — either is on disk,
    design's call. My copy works with either pose.
 2. **`[FLAG]` courier sprite mismatch.** F5 shows `enemy_civilian.png`, matching the
-   shipped tutorial. But the *live* courier rides the street as `courier/rider.png`
+   shipped tutorial. But the _live_ courier rides the street as `courier/rider.png`
    (`enemyTypes.ts` note + `courierSystem`). The player will meet the rider, not the
    window-civilian sprite. Consider `assets/courier/rider.png` for on-sight accuracy;
    `enemy_civilian.png` is the canonical "civilian" sprite and carries the shoot-penalty.
@@ -137,9 +137,9 @@ Bestiary expanded to the full shipped Belliard pool (AC5). One line = one rule, 
 ## Panel count per variant
 
 | Variant | Opening | Control (fork) | Field | **Total** |
-|---------|:---:|:---:|:---:|:---:|
-| Desktop | 2 | 2 | 7 | **11** |
-| Mobile  | 2 | 2 | 7 | **11** |
+| ------- | :-----: | :------------: | :---: | :-------: |
+| Desktop |    2    |       2        |   7   |  **11**   |
+| Mobile  |    2    |       2        |   7   |  **11**   |
 
 Parity holds (11 = 11). Shared segments (opening 2 + field 7 = 9 panels) are
 reference-identical across variants; only the 2 control panels differ — fork invariant

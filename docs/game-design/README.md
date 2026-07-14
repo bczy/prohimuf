@@ -27,10 +27,10 @@ Rules of the folder:
 
 **Gated:**
 
-| Deliverable | Author | Gated | Notes |
-| ----------- | ------ | ----- | ----- |
-| `tutorial-visual-gestures.md` — gesture-icon + bestiary spec | Sacha (`game-designer`) | 2026-07-14 · PASS | 11-panel structure ratified; downstream: `senior-architect` ADR-0015 D3 amendment (AC11), `lead-art` glow-hue + falloff at composite gate |
-| `tutorial-script-visual-gestures.md` — expanded French copy | Yasmine (`narrative-designer`) | 2026-07-14 · PASS | Copy TRUE to `ARCHETYPES`; device-accurate-copy pins hold; both `[FLAG]`s resolved by Sacha's spec |
+| Deliverable                                                  | Author                         | Gated             | Notes                                                                                                                                     |
+| ------------------------------------------------------------ | ------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `tutorial-visual-gestures.md` — gesture-icon + bestiary spec | Sacha (`game-designer`)        | 2026-07-14 · PASS | 11-panel structure ratified; downstream: `senior-architect` ADR-0015 D3 amendment (AC11), `lead-art` glow-hue + falloff at composite gate |
+| `tutorial-script-visual-gestures.md` — expanded French copy  | Yasmine (`narrative-designer`) | 2026-07-14 · PASS | Copy TRUE to `ARCHETYPES`; device-accurate-copy pins hold; both `[FLAG]`s resolved by Sacha's spec                                        |
 
 _The design lane opened on 2026-07-14. Existing de-facto design surfaces (shipped tuning
 values in `src/game/**`, narrative scenes in `src/game/systems/narrativeSystem.ts`,

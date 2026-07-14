@@ -113,8 +113,23 @@ function MouseClickIcon(): JSX.Element {
         </radialGradient>
       </defs>
       {/* cable + body + wheel: inert line art, never glows */}
-      <path d="M60 30 C60 18 70 14 80 12" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-      <rect x="40" y="30" width="40" height="62" rx="20" fill={BODY} stroke={INK} strokeWidth="2.5" />
+      <path
+        d="M60 30 C60 18 70 14 80 12"
+        fill="none"
+        stroke={INK}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <rect
+        x="40"
+        y="30"
+        width="40"
+        height="62"
+        rx="20"
+        fill={BODY}
+        stroke={INK}
+        strokeWidth="2.5"
+      />
       <line x1="60" y1="31" x2="60" y2="50" stroke={INK} strokeWidth="1.8" />
       <line x1="41" y1="50" x2="79" y2="50" stroke={INK} strokeWidth="1.4" opacity="0.55" />
       <rect x="57" y="37" width="6" height="12" rx="3" fill="none" stroke={INK} strokeWidth="1.4" />
@@ -131,8 +146,22 @@ function MouseClickIcon(): JSX.Element {
       />
       {/* the only lit element: LEFT button (presses 2px, glow spikes) */}
       <g className="gi-anim gi-mc-press">
-        <ellipse className="gi-anim gi-mc-halo" cx="50" cy="41" rx="19" ry="16" fill="url(#gi-mc-halo-grad)" opacity="0.4" />
-        <path d="M59 31 H47 A17 17 0 0 0 41 43 V50 H59 Z" fill={NEON} fillOpacity="0.14" stroke={NEON} strokeWidth="2" />
+        <ellipse
+          className="gi-anim gi-mc-halo"
+          cx="50"
+          cy="41"
+          rx="19"
+          ry="16"
+          fill="url(#gi-mc-halo-grad)"
+          opacity="0.4"
+        />
+        <path
+          d="M59 31 H47 A17 17 0 0 0 41 43 V50 H59 Z"
+          fill={NEON}
+          fillOpacity="0.14"
+          stroke={NEON}
+          strokeWidth="2"
+        />
       </g>
     </svg>
   );
@@ -158,22 +187,83 @@ function EdgeScrollIcon(): JSX.Element {
         </linearGradient>
       </defs>
       {/* framed mini-screen: inert */}
-      <rect x="10" y="20" width="100" height="80" rx="5" fill={BODY} stroke={INK} strokeWidth="2.5" />
+      <rect
+        x="10"
+        y="20"
+        width="100"
+        height="80"
+        rx="5"
+        fill={BODY}
+        stroke={INK}
+        strokeWidth="2.5"
+      />
       {/* edge bands: bright at the edge, falloff INWARD to 0 */}
-      <rect className="gi-anim gi-es-glow-r" x="90" y="22" width="18" height="76" fill="url(#gi-es-gr)" opacity="0.4" />
-      <rect className="gi-anim gi-es-glow-l" x="12" y="22" width="18" height="76" fill="url(#gi-es-gl)" opacity="0.4" />
+      <rect
+        className="gi-anim gi-es-glow-r"
+        x="90"
+        y="22"
+        width="18"
+        height="76"
+        fill="url(#gi-es-gr)"
+        opacity="0.4"
+      />
+      <rect
+        className="gi-anim gi-es-glow-l"
+        x="12"
+        y="22"
+        width="18"
+        height="76"
+        fill="url(#gi-es-gl)"
+        opacity="0.4"
+      />
       {/* chevrons marching outward with the pan */}
       <g className="gi-anim gi-es-chev-r" opacity="0">
-        <path d="M92 52 l6 8 l-6 8" fill="none" stroke={NEON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M100 52 l6 8 l-6 8" fill="none" stroke={NEON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+        <path
+          d="M92 52 l6 8 l-6 8"
+          fill="none"
+          stroke={NEON}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M100 52 l6 8 l-6 8"
+          fill="none"
+          stroke={NEON}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.55"
+        />
       </g>
       <g className="gi-anim gi-es-chev-l" opacity="0">
-        <path d="M28 52 l-6 8 l6 8" fill="none" stroke={NEON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M20 52 l-6 8 l6 8" fill="none" stroke={NEON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+        <path
+          d="M28 52 l-6 8 l6 8"
+          fill="none"
+          stroke={NEON}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M20 52 l-6 8 l6 8"
+          fill="none"
+          stroke={NEON}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.55"
+        />
       </g>
       {/* cursor pushed flat against the edge (inert arrow) */}
       <g className="gi-anim gi-es-cursor">
-        <path d="M60 48 v22 l5 -5 l4 8 l4 -2 l-4 -8 l7 0 z" fill={INK} stroke="#000" strokeWidth="0.6" strokeLinejoin="round" />
+        <path
+          d="M60 48 v22 l5 -5 l4 8 l4 -2 l-4 -8 l7 0 z"
+          fill={INK}
+          stroke="#000"
+          strokeWidth="0.6"
+          strokeLinejoin="round"
+        />
       </g>
     </svg>
   );
@@ -197,7 +287,17 @@ function TwoFingerTapIcon(): JSX.Element {
         </radialGradient>
       </defs>
       {/* phone frame: thin, low-contrast background context — never glows */}
-      <rect x="20" y="10" width="80" height="104" rx="10" fill="none" stroke={INK} strokeWidth="1.4" opacity="0.28" />
+      <rect
+        x="20"
+        y="10"
+        width="80"
+        height="104"
+        rx="10"
+        fill="none"
+        stroke={INK}
+        strokeWidth="1.4"
+        opacity="0.28"
+      />
       {/* single ripple from the midpoint between the two fingertips */}
       <circle
         className="gi-anim gi-tt-ripple"
@@ -212,14 +312,56 @@ function TwoFingerTapIcon(): JSX.Element {
       {/* the hand dips to touch, lifts, long rest; both fingertip halos share ONE class → sync flash */}
       <g className="gi-anim gi-tt-lift">
         {/* single continuous silhouette (fist + two extended fingers) */}
-        <path d={HAND_TWO_FINGER} fill={BODY} stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+        <path
+          d={HAND_TWO_FINGER}
+          fill={BODY}
+          stroke={INK}
+          strokeWidth="3"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
         {/* interior line-art detail: knuckle line + folded-finger tops + thumb crease */}
-        <path d="M44 61 C56 57 72 58 84 63" fill="none" stroke={INK} strokeWidth="1.8" opacity="0.55" strokeLinecap="round" />
-        <path d="M78 55 C79 60 79 64 78 68" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
-        <path d="M34 69 C38 72 40 76 40 80" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
+        <path
+          d="M44 61 C56 57 72 58 84 63"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.8"
+          opacity="0.55"
+          strokeLinecap="round"
+        />
+        <path
+          d="M78 55 C79 60 79 64 78 68"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.6"
+          opacity="0.45"
+          strokeLinecap="round"
+        />
+        <path
+          d="M34 69 C38 72 40 76 40 80"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.6"
+          opacity="0.45"
+          strokeLinecap="round"
+        />
         {/* both fingertip halos — the only lit elements */}
-        <circle className="gi-anim gi-tt-halo" cx="53" cy="32" r="9.5" fill="url(#gi-tt-halo-grad)" opacity="0.85" />
-        <circle className="gi-anim gi-tt-halo" cx="65" cy="32" r="9.5" fill="url(#gi-tt-halo-grad)" opacity="0.85" />
+        <circle
+          className="gi-anim gi-tt-halo"
+          cx="53"
+          cy="32"
+          r="9.5"
+          fill="url(#gi-tt-halo-grad)"
+          opacity="0.85"
+        />
+        <circle
+          className="gi-anim gi-tt-halo"
+          cx="65"
+          cy="32"
+          r="9.5"
+          fill="url(#gi-tt-halo-grad)"
+          opacity="0.85"
+        />
       </g>
     </svg>
   );
@@ -251,30 +393,126 @@ function SwipePanIcon(): JSX.Element {
         </radialGradient>
       </defs>
       {/* phone frame: thin, low-contrast background context — never glows */}
-      <rect x="14" y="12" width="92" height="100" rx="10" fill="none" stroke={INK} strokeWidth="1.4" opacity="0.28" />
+      <rect
+        x="14"
+        y="12"
+        width="92"
+        height="100"
+        rx="10"
+        fill="none"
+        stroke={INK}
+        strokeWidth="1.4"
+        opacity="0.28"
+      />
       {/* horizontal sweep: hand lifts mid-travel; fingertip + motion trail keep gliding (inertia) */}
       <g className="gi-anim gi-sp-h">
         <g className="gi-anim gi-sp-h-hand">
           {/* single continuous silhouette (fist + one extended index) */}
-          <path d={HAND_ONE_FINGER} fill={BODY} stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-          <path d="M47 55 C58 51 74 53 84 60" fill="none" stroke={INK} strokeWidth="1.8" opacity="0.55" strokeLinecap="round" />
-          <path d="M63 54 C64 58 64 61 63 64" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
-          <path d="M72 55 C73 59 73 62 72 65" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
-          <path d="M34 69 C38 72 40 76 40 80" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
+          <path
+            d={HAND_ONE_FINGER}
+            fill={BODY}
+            stroke={INK}
+            strokeWidth="3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            d="M47 55 C58 51 74 53 84 60"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.8"
+            opacity="0.55"
+            strokeLinecap="round"
+          />
+          <path
+            d="M63 54 C64 58 64 61 63 64"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
+          <path
+            d="M72 55 C73 59 73 62 72 65"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
+          <path
+            d="M34 69 C38 72 40 76 40 80"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
         </g>
-        <rect className="gi-anim gi-sp-h-trail" x="19" y="26" width="34" height="10" rx="5" fill="url(#gi-sp-trail-h)" />
+        <rect
+          className="gi-anim gi-sp-h-trail"
+          x="19"
+          y="26"
+          width="34"
+          height="10"
+          rx="5"
+          fill="url(#gi-sp-trail-h)"
+        />
         <circle className="gi-anim gi-sp-h-tip" cx="53" cy="31" r="9" fill="url(#gi-sp-tip-grad)" />
       </g>
       {/* vertical sweep (second half of the cycle → conveys pan in the other axis) */}
       <g className="gi-anim gi-sp-v" opacity="0">
         <g className="gi-anim gi-sp-v-hand">
-          <path d={HAND_ONE_FINGER} fill={BODY} stroke={INK} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-          <path d="M47 55 C58 51 74 53 84 60" fill="none" stroke={INK} strokeWidth="1.8" opacity="0.55" strokeLinecap="round" />
-          <path d="M63 54 C64 58 64 61 63 64" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
-          <path d="M72 55 C73 59 73 62 72 65" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
-          <path d="M34 69 C38 72 40 76 40 80" fill="none" stroke={INK} strokeWidth="1.6" opacity="0.45" strokeLinecap="round" />
+          <path
+            d={HAND_ONE_FINGER}
+            fill={BODY}
+            stroke={INK}
+            strokeWidth="3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            d="M47 55 C58 51 74 53 84 60"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.8"
+            opacity="0.55"
+            strokeLinecap="round"
+          />
+          <path
+            d="M63 54 C64 58 64 61 63 64"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
+          <path
+            d="M72 55 C73 59 73 62 72 65"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
+          <path
+            d="M34 69 C38 72 40 76 40 80"
+            fill="none"
+            stroke={INK}
+            strokeWidth="1.6"
+            opacity="0.45"
+            strokeLinecap="round"
+          />
         </g>
-        <rect className="gi-anim gi-sp-v-trail" x="48" y="-3" width="10" height="34" rx="5" fill="url(#gi-sp-trail-v)" />
+        <rect
+          className="gi-anim gi-sp-v-trail"
+          x="48"
+          y="-3"
+          width="10"
+          height="34"
+          rx="5"
+          fill="url(#gi-sp-trail-v)"
+        />
         <circle className="gi-anim gi-sp-v-tip" cx="53" cy="31" r="9" fill="url(#gi-sp-tip-grad)" />
       </g>
     </svg>
