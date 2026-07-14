@@ -131,14 +131,31 @@ All sprites are `<mesh position={[x,
  y,
  z]}><planeGeometry /><meshBasicMaterial /></mesh>` planes facing the camera.
 
-| Component         | Source data                         | Z depth |
-| ----------------- | ----------------------------------- | ------- |
-| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1       |
-| `BulletSprite`    | `stateRef.current.bullets`          | 2       |
-| `CrosshairSprite` | mouse position via camera unproject | 3       |
-| `PlayerSprite`    | `TopdownState.player`               | 1       |
-| `CopSprite`       | `TopdownState.cops[i]`              | 1       |
-| `DeliverySprite`  | `TopdownState.delivery`             | 1       |
+| Component         | Source data                         | Z depth    |
+| ----------------- | ----------------------------------- | ---------- |
+| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1          |
+| `BulletSprite`    | `stateRef.current.bullets`          | 2          |
+| `CrosshairSprite` | mouse position via camera unproject | 3          |
+| `PlayerSprite`    | `TopdownState.player`               | 1          |
+| `CopSprite`       | `TopdownState.cops[i]`              | 1          |
+| `DeliverySprite`  | `TopdownState.delivery`             | 1          |
+| `CourierSprite`   | `stateRef.current.couriers[i]`      | 0.70/0.701 |
+
+### Courier composite
+
+`CourierSprite` is a two-plane composite per pooled courier: a **bike** plane
+(wheel-rotation flipbook, z 0.70) under a **rider** plane (pedalling flipbook,
+z 0.701, still below `DeliveryVehicleSprite` at z 0.72). Frame counts, fps, and
+per-layer `scale`/`offsetY` registration knobs come from `courier.layers` in
+`levelArt.json` via `courierTextures.ts`; both layers share one id-phased clock
+so wheels and legs stay in sync. Until BOTH layers' frame-1 PNGs exist
+(generated later in CI, gated by `courierArtReady()`), it falls back to the
+legacy single civilian sprite on the bike plane — pixel-identical to before the
+feature.
+
+### Enemy flipbook
+
+`EnemySprite` plays a short 2-frame flip per state (idle sway, muzzle recoil). The pure, DOM-free helper `flipbook.ts` (`flipbookFrame(elapsed, frameCount, fps)`) maps a per-state clock to a 1-based frame index. Frame counts are manifest-driven: `enemyTextures.ts` reads `enemies.types[<baseFile>].frames.length` and the shared `enemies.fps` from `levelArt.json` (the base-file key is exactly what `fileFor` builds). Frame 1 is the committed unsuffixed PNG; extra frames are `<baseFile>_f<N>.png` (generated later in CI). A missing frame degrades to frame 1, then to the global cop fallback, so the sprite is never blank; `HIT` pins frame 1 while the white flash dominates.
 
 ---
 

@@ -199,10 +199,10 @@ Template:
   (`energy: 100` init + `hostageTakers` array + energy aggregation), `levels.ts`
   (`belliard.roster` += windowWeights.hostage*taker≈8 + streetSpawns).
   `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx`(kidnapper + foreground hostage,
-  rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
-  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
- `onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
-  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts`  (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
+rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
+(+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
+`onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
+`scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts` (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
 **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
   Released: pending.
 
@@ -1173,3 +1173,300 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
 - follow-ups (non-blocking): (1) iPadOS desktop-UA limitation means iPads get the desktop
   script (accepted, ADR-0003 D1); (2) control copy now lives in two places — the
   device-accuracy regex test is the guard rail when a control scheme changes.
+
+### story-enemy-sprite-flipbook (PR #37 draft, `claude/spline-three-fiber-integration-cm2hv4`)
+
+- pm→arch: WHAT — give the enemy sprites a minimal 2-frame flip (6 fps) per state so a
+  hostile shifts weight / recoils after firing, chosen AFTER evaluating a Spline/3D animated
+  model and rejecting it. WHY — the Prohibition-1987 shooting gallery reads as "poster, not
+  diorama" (`art-direction.md` §1); period sprites sell life with a tiny flip, not smooth
+  animation, and the flip must NOT break the flat 2D fanzine identity or the existing
+  generation → cutout → CI pipeline. Frames come from the existing Pollinations/FLUX pipeline
+  (kontext img2img as the primary consistency lock) and are consumed as separate `_f<N>` PNG
+  files. Scope test: conscious documented extension of the accepted enemy set, recorded in
+  ADR-0016. (John / PM intent)
+- arch: THREE lanes, disjoint paths, PARALLEL-SAFE. **Lane MANIFEST (dev-tooling-assets, data)**
+  → new top-level `enemies` block in `src/game/levels/levelArt.json` (flat keys per base sprite
+  file = asset root + legacy variant suffix, pinned integer seeds, `frames[0]==""` committed
+  frame 1, `frames[i>0]` pose-delta clause), the single source of truth for both script and
+  render. **Lane SCRIPT (dev-tooling-assets, tooling)** → `scripts/gen-enemy-types.mjs`
+  rewritten manifest-driven with the kontext-primary / matched-flux-pair fallback strategy;
+  `scripts/check-art-prompts.mjs` gains the `enemies` set; docs (`SCRIPTS.md`,
+  `asset-pipeline.md`, `art-direction.md` §4.1, `render-layer.md`, `gen-sprites.yml` header)
+  - ADR-0016. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
+    (`flipbookFrame`, DOM/Three-free) + `enemyTextures.ts` (frame param, per-frame preload,
+    frame→frame-1→global fallback chain, `frameCountFor`/`enemyAnimFps` reading the manifest) +
+    `EnemySprite.tsx` (per-state anim clock, HIT pins frame 1). The manifest↔ARCHETYPES key
+    contract is locked by a consistency test in `src/game/levels/__tests__` that mirrors the
+    `fileFor` key scheme (game may NOT import render, so the rule is duplicated, not shared).
+    Shared file `levelArt.json` is owned by the MANIFEST lane; render/test only READ it.
+    Boundary law upheld by design: game stays React/Three-free, flip timing is visual-only,
+    no new dependency. (Winston / Senior Architect — lane plan)
+- release: All three lanes landed. MANIFEST — `enemies` block, 12 types keyed to the exact
+  base filenames (normal ×3 variants idle+shooting, riot/biker idle+shooting, bonus/civilian
+  idle-only), pinned seeds 4801–4812, `fps:6`, `size:256²`. SCRIPT — `gen-enemy-types.mjs`
+  manifest-driven, kontext img2img primary from the committed frame 1 + matched-pair fallback,
+  skip-existing, per-asset try/catch; `check-art-prompts` `enemies` set + docs + ADR-0016.
+  RENDER — `flipbook.ts` (6 unit tests), `enemyTextures.ts` frame-aware fallback chain,
+  `EnemySprite.tsx` anim clock; `levelArt.consistency.test.ts` locks the manifest↔ARCHETYPES
+  contract. No `_f<N>` PNGs committed (generated in CI as designed). (Amelia ×3)
+- review: **SIGN-OFF (no blockers).** Boundary law PASS — `src/game` has zero React/Three
+  imports (only `levelArt.json` data + a read-only consistency test added), `flipbook.ts` is
+  import-free/pure, render holds only visual timing, no new dependency. Cross-lane contract
+  COHERENT — all 12 renderer-derivable keys present with no orphans (consistency test), the
+  `fileFor` key derivation, the consistency-test mirror, the generator's `${key}_f${i+1}`
+  filename construction and the ADR-0016 `_f<N>`-after-variant-suffix wording all agree; the
+  12 committed frame-1 PNGs match the manifest keys. Pipeline safety PASS — skip-existing per
+  file, kontext primary never touches frame 1, the loud fallback is the only frame-1 writer
+  besides `FORCE=1`, per-asset try/catch never crashes the run. Verified GREEN locally:
+  `yarn typecheck` 0 errors, `vitest` 200/200, `yarn lint` clean, `check-art-prompts --set
+enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
+  Non-blocking observations logged for a fast-follow: (1) the consistency test duplicates the
+  `fileFor` root-derivation rule (boundary forces it — game can't import render); the pure
+  key-derivation depends only on `ARCHETYPES`, so extracting it into `src/game` and importing
+  it from both `enemyTextures.ts` and the test would make the contract structural instead of a
+  mirror (`enemyTextures.ts` `baseFileKey` ↔ `levelArt.consistency.test.ts` `root()`/`keysFor`).
+  (2) The fallback path in `gen-enemy-types.mjs` is non-atomic — it writes the regenerated
+  frame 1 before fetching frame 2, and because the committed art was made by the old
+  random-seed script the pinned-seed reroll won't reproduce it, so any fallback firing
+  genuinely mutates accepted art; gated by the human art review in the PR, acceptable as-is.
+  No commit/push. (Winston / Senior Architect — review)
+- panel: 4-reviewer merge gate ran (all findings adversarially verified). #1 code-review
+  (high): 0 blocking/major, 3 minor, 2 info, 12 refuted. #2 bmad-code-review: 0 blocking/major,
+  5 minor, 4 info, 7 refuted. #3 edge-case hunter: 1 MAJOR, 2 minor, 2 low, 18 refuted. #4
+  security-review: 0 findings, 2 refuted. One MAJOR (the non-atomic fallback I flagged at
+  review) confirmed; no security findings. (panel)
+- triage (Winston / Senior Architect — respecting the scope guard, minimal change, no
+  speculative hardening):
+  - **PRE-MERGE (one small coherent patch, no boundary impact / no new dep / no `src/game`
+    logic change):**
+    1. Non-atomic fallback (MAJOR) — fetch BOTH buffers before writing either so a partial
+       failure can never orphan the committed frame 1 (ADR-0016 only sanctions the successful
+       art-gated pair). `gen-enemy-types.mjs` `generateExtraFrame`.
+    2. FORCE blast radius — simpler than the panel's `FORCE_ALL` proposal: `FORCE` gates only
+       `_f<N>` frames; frame 1 (`i===0`) is generated ONLY when missing, never under FORCE.
+       Restores the "committed art untouched" guarantee with ZERO new env surface (deliberate
+       reroll = delete the PNG and re-run). Prefer this over adding a flag.
+    3. Stale/absent kontext source — under fix #2 the only run that writes frame 1 is a
+       brand-new enemy, so: when frame 1 was just written this run, skip kontext → matched
+       pair (no valid committed source to img2img from).
+    4. `ensureLoaded` in-flight guard — the 3-line `pending` Set only (real duplicate-load
+       window amplified by the new per-frame preload loop). `enemyTextures.ts`.
+    5. Frame≥2 prompt lint gap — fold into the item-6 `checkEnemies` edit, reusing
+       `countNegations`/`wordCount`. Contract-completeness (low live risk: the short delta
+       clauses assemble to fewer words/negations than the already-linted frame 1).
+    6. Validation guards (code only) — null/shape guard + positive-seed check in
+       `checkEnemies`; `loadEnemies` throws on a non-integer seed (kills the null-entry
+       TypeError and the `seed=undefined`-in-URL defect). `check-art-prompts.mjs` +
+       `gen-enemy-types.mjs`.
+    7. Doc absolutes — re-qualify the "frame 1 never regenerated" wording in the
+       `gen-enemy-types.mjs` + `gen-sprites.yml` headers (mandatory: items 1–2 change that
+       behaviour in the same patch).
+       8a. `$comment` filename typo in `levelArt.json` (`enemy_<key>_f<N>` doubles the prefix →
+       `<key>_f<N>`).
+  - **FAST-FOLLOW:** wire `check-art-prompts` into `gen-sprites.yml` as a gate (CI-policy
+    change, split out of item 6); widen the integrity gate beyond `enemy_civilian.png` to
+    `_f<N>` frames (own story, consistent with ADR-0014's deliberately-scoped gate);
+    verify kontext output when its `image=` source is a transparent keyed PNG vs the
+    black-ground style tail (unverifiable locally — network blocked; art gate catches bad
+    output at first CI generation); tighten the vacuous single-frame scope-guard test.
+  - **ACCEPT / decline:** per-(kind,variant,shooting) path-array memoization — speculative,
+    per-frame small-string allocs are negligible (scope guard: no speculative hardening);
+    200-non-image body written to `.png` — pre-existing pattern shared with
+    `gen-vehicle-sprites.mjs`, not introduced here (scope guard §3: don't fix unrelated
+    pre-existing issues).
+  - Verdict: MERGE-GATE HELD — pre-merge patch required before merge (fixes the one CONFIRMED
+    MAJOR + the cheap coherent guards); no unresolved CONFIRMED blocking/major finding remains
+    after that patch. Re-run typecheck/vitest/lint/check-art-prompts on the patch before merge.
+    No commit/push. (Winston / Senior Architect — panel triage)
+
+---
+
+## 2026-07-13 — dev-tooling-assets (Amelia): courier layered flipbook, tooling lane (ADR 0017)
+
+- **START/FINISH:** implemented the tooling lane of the "2-layer courier flipbook" feature.
+  Lane-scoped to scripts/CI/docs only; did NOT touch src/**, levelArt.json, or other
+  workflows (parallel lanes own src/render/** and src/game/levels/**tests**/\*\*). No commit/push.
+- **File List:**
+  - `scripts/gen-courier-sprites.mjs` (NEW) — strip-and-slice generator: loadCourier()
+    fail-fast, atomic per-layer skip/regen, one FLUX strip per layer sliced in-memory on a
+    fixed grid (@napi-rs/canvas), per-file cutout() reuse, --list/--placeholder/PLACEHOLDER/
+    FORCE/OUT_DIR, dependency-free procedural placeholders.
+  - `scripts/check-art-prompts.mjs` — extracted `checkBudgets(rep, ap, assembled)` to
+    top-level (pure refactor, enemies behaviour unchanged); added `checkCourier`; wired
+    `courier` into --set whitelist + `all`.
+  - `.github/workflows/gen-courier-sprites.yml` (NEW) — dispatch + ci(dispatch) guard,
+    prompt gate before paid FLUX, installs @napi-rs/canvas BEFORE the generator, FORCE=1
+    regen, bounded push-rebase-retry, failure artifact upload. Separate from gen-sprites.yml.
+  - `docs/adr/0017-layered-courier-flipbook-strip-and-slice.md` (NEW) + README index row.
+  - `docs/art-direction.md` §4.2, `scripts/SCRIPTS.md`, `docs/asset-pipeline.md`.
+- **Key decision (flagged for review):** the courier per-layer word budget is measured over
+  the strip-VARIABLE content (`exactly ${N} cells, ` + prompt + joined `cell i:` clauses),
+  NOT the full assembled strip. Folding the byte-identical shared opening (~31 w) + style
+  (~58 w) boilerplate into a multi-cell strip pushes EVERY layer past the 120-word ceiling
+  (bike 141, rider 180) regardless of content, making the budget meaningless. Scoped per the
+  sanctioned "adapt the courier set scope rather than reword the manifest" instruction; the
+  manifest was NOT reworded. Result: bike 53 w (target band, clean), rider 92 w (90-120 WARN
+  band, as specified), >120 still a hard error. Documented in a code comment in checkCourier.
+- **VERIFY:** `node --check` both scripts OK; `--list` OK; `check-art-prompts.mjs` (all) and
+  `--set courier` both PASS against the committed manifest (1 courier WARN = rider 92 w, by
+  design); enemies set unchanged; `yarn format:check` clean; workflow YAML parses (7 steps).
+
+- panel (courier increment `7c2226d..HEAD`): 4-reviewer merge gate, all adversarially
+  verified. #1 code-review high: 2 major / 6 minor / 2 info, 8 refuted. #2 bmad-code-review:
+  3 major / 5 minor / 3 info, 6 refuted. #3 edge-case hunter: 2 major / 3 medium-low, 15
+  refuted. #4 security: 0 findings, 11 refuted. Zero CONFIRMED blocking. The three converged
+  MAJORs are all in the generation/gate path (dimension validation, exit-code, asset↔key
+  coupling) — load-bearing for the CI art run Bertrand fires next. (panel)
+- boundary verdict: **PASS.** `src/game` gains only `levelArt.json` data + the consistency
+  test (imports `vitest` / `@game/*` / manifest JSON only — no `src/render`); render
+  (`CourierSprite.tsx`, `courierTextures.ts`) is texture/composite only, reads manifest data,
+  holds no game rules; `@napi-rs/canvas` is CI-only (already used by the vehicle/enemy
+  generators), no new runtime dependency; the game↔render↔hooks contract is untouched.
+- triage (Winston / Senior Architect — scope guard: minimal change, no speculative hardening):
+  - **PRE-MERGE (one coherent patch: `gen-courier-sprites.mjs`, `gen-courier-sprites.yml`,
+    `check-art-prompts.mjs`, `courierTextures.ts` comment, `levelArt.json` bike prompt,
+    `levelArt.consistency.test.ts`, `render-layer.md`, `SCRIPTS.md`):**
+    1. sliceStrip dimension validation — throw when `img.width/height !== stripW/stripH`
+       after `loadImage`; a clamped/rescaled FLUX return would otherwise slice garbage on the
+       fixed grid and commit it green. LOAD-BEARING for the CI run. (If CI shows Pollinations
+       _proportionally_ rescaling, a derive-cellW-from-`img.width/N` tolerance is a fast-follow
+       — but throw is the correct minimal call for a gated pipeline.)
+    2. exit code — count per-layer fetch/slice failures and `process.exit(1)` at end so a
+       partial/total-failure run fails the job instead of committing a partial set green;
+       guard the workflow `git add` (`compgen -G` or add the directory) so a zero-file run
+       fails loudly, not with a misleading pathspec fatal. LOAD-BEARING.
+    3. asset↔key coupling — assert `asset === "assets/courier/<layerName>.png"` in both
+       `checkCourier` and the consistency test (also enforces the `.png` suffix that
+       `fileFor`'s `/\.png$/` replace silently no-ops on). Closes the renamed-asset →
+       permanent-silent-fallback footgun.
+    4. tryCutout — swallow only `ERR_MODULE_NOT_FOUND` (decoder absent), rethrow the rest, so
+       a real keying error can't commit un-keyed black frames.
+    5. bike prompt `"rider-free"` = hidden negation (forbidden by this diff's own
+       art-direction §4.2 and the manifest's own `$comment`); reword positively ("an empty
+       delivery bicycle, bare saddle, unoccupied pedals") and extend `NEG_RE` with
+       `\b\w+-free\b|\bwithout\b`. LOAD-BEARING (wasted paid run if FLUX paints a rider on the
+       bike layer).
+    6. loadCourier fail-fast — align to the lint/test/ADR contract: frames 2..8 (not >=1),
+       non-empty opening/style (not `?? ""`).
+    7. workflow_dispatch guard — add job-level `if: github.ref_name != 'main'` so a manual UI
+       run on `main` can't FORCE-push art past the merge gate. Scoped to THIS workflow; the
+       same latent gap in sibling workflows is FAST-FOLLOW (pre-existing, backstopped by the
+       merge-gate policy). Does not impede the branch run.
+    8. checkCourier hardening — numeric guards on `size.width/height`/`fps`, `typeof` guards
+       on `opening`/`style`/`prompt` (raw `.trim()` on a non-string currently crashes the
+       linter), and assert `size.width === size.height` (the square-cell assumption the
+       opening prompt + slicer + render plane all silently depend on).
+    9. correct the false "picked up the moment it lands in CI" wording in `courierTextures.ts`
+       - `render-layer.md` — the `failed` set is permanent for a running client; a reload is
+         required. Doc/comment only.
+    10. `fetchImage` (3rd copy) — minimal redirect-depth cap + socket timeout IN THE NEW
+        SCRIPT ONLY, so a redirect loop / hung socket can't ride to the 6h CI kill. Full
+        `scripts/lib` extraction of the shared flux/png helpers = FAST-FOLLOW.
+    11. SCRIPTS.md prompt-assembly formula corrupted by a `-` list item — trivial doc fix.
+  - **FAST-FOLLOW:** hot-path readiness latch + per-frame URL rebuild (perf, courierTextures);
+    one-time aspect pop at fallback→ready swap; `_f<N>` naming hand-rolled in 4 sites → shared
+    helper; flux/png helpers in 3 scripts → `scripts/lib` extraction (with the item-10 caps);
+    `@napi-rs/canvas` pin across 4 workflows → composite action; widen the sibling-workflow
+    dispatch guard (item 7).
+  - **ACCEPT:** none deferred to accept beyond the above — the 200-non-image-body-written-to-
+    `.png` pattern was refuted/pre-existing (shared with `gen-vehicle-sprites.mjs`), out of
+    scope per scope-guard §3.
+  - **lint-scoping deviation — SIGN-OFF (conditional).** Budgeting the strip-VARIABLE content
+    only (excluding the byte-identical ~89 w opening+style house tail) is a justified,
+    documented adaptation: folding the shared tail into a multi-cell strip makes the full-
+    assembly budget a constant meaningless FAIL (bike 141 / rider 180 regardless of content),
+    exactly the reasoning the vehicle four-slot split already established. It does not hide
+    authoring risk — negations/word-bloat in the authored prompt + cells ARE checked.
+    CONDITIONS: (a) item 5 lands (the `-free` slip is a NEG_RE gap, not a scoping gap — without
+    it the deviation + a blind NEG_RE is the exact hole that passed "rider-free"); (b) the
+    deviation stays recorded in ADR-0017. Optional refinement (not blocking): negation-scan the
+    FULL assembly while word-budgeting only the variable part, so a stray negation in the shared
+    tail can never slip.
+  - Verdict: **MERGE-GATE HELD** — the pre-merge patch (items 1-11) is required before merge
+    and before firing CI generation (1/2/5 are directly load-bearing for that run); after it,
+    no unresolved CONFIRMED blocking/major finding remains. Re-run `yarn typecheck` / `vitest`
+    / `yarn lint` / `check-art-prompts --set courier` + `node --check` on the patch. No
+    commit/push. (Winston / Senior Architect — panel triage)
+- art PROMPT GATE: PASS — courier rework (opening per-cell containment + greyscale
+  register + crouch/3-spoke frames, seeds 5210/5220). Lint PASS, 1 sanctioned WARN
+  (rider 107w). Asset-gate watch items: rider phantom-bike risk from "feet on pedals";
+  bike "three" manifest coupling; enemy regen — watch "pale neon tones" color flood +
+  \_f2 pair identity. (lead-art)
+- art ASSET GATE (bike): PASS par Bertrand — take 4 per-frame + retouche scriptée
+  des bâtons (retouch-bike-spokes.mjs, 0/40/80°, base unique = zéro flicker).
+  Rider: prochaine itération.
+- art ASSET GATE (courier final): PASS par Bertrand — sprite cycliste complet unique
+  (base FLUX seed 5220) + rotation de roues scriptée 6 frames/20° (retouch-courier-
+  spokes.mjs, bâtons à liseré). Layer vélo retiré du composite, art conservé en
+  réserve. Vérifié en jeu (burst headless, zéro erreur).
+
+---
+
+### story-enemy-sprite-hole-fill — enclosed-transparency-hole fill + CI gate
+
+- audit baseline: the chroma-key cutout (enclosed-island pass, ADR-0013) left
+  transparency holes INSIDE some enemy figures — a hole audit found **20/22
+  enemy\_\*.png files** carrying enclosed holes, **2832 enclosed transparent px**
+  total (interior alpha<16 fully walled by opaque body — paper-white zones FLUX
+  never drew that the keying pass then cleared).
+- fill tool (game-graphist lane): `scripts/fill-sprite-holes.mjs` — surgical fill,
+  re-opaques ONLY enclosed alpha<16 pixels to the boundary-mean colour, never cuts,
+  deterministic + idempotent; `--check` writes nothing and exits 1 if any enemy
+  file still has an enclosed hole.
+- prevention wired (dev-tooling-assets lane, `.github/**` + docs only — no
+  `src/`/`scripts/`/`public/` touched): `.github/workflows/gen-sprites.yml` runs
+  `node scripts/fill-sprite-holes.mjs` after cutout (reuses the @napi-rs/canvas the
+  cutout step already installs) then a `--check` **hole gate** before commit, so the
+  job FAILS if any enclosed hole survives (Bertrand's condition: no enemy character
+  may ship with a transparency hole). Docs: `scripts/SCRIPTS.md` (new section),
+  `docs/asset-pipeline.md` (enclosed-hole fill + gate paragraph), this log. Verified
+  with a YAML parse + visual indentation check; prettier clean. No commit.
+  (Amelia — Tooling & Assets)
+
+### story-enemy-hole-fill (scripted retouch — game-graphist)
+
+- graphiste TECHNICAL pass (Serge): the chroma-key ("enclosed-island pass" in
+  cutout-enemies.mjs) ate DARK-clothing regions that matched the near-black key ground,
+  punching transparency HOLES _inside_ 19/22 enemy sprites (2832 enclosed px total; worst:
+  enemy_civilian 2087 = solid bike-wheel spoke-gaps + dark trousers, enemy_sprite_3 241 =
+  beanie crown, enemy_shooting 103 = uniform shoulder, enemy_sprite_2 102 = black belt).
+- FIX: authored `scripts/fill-sprite-holes.mjs` — surgical FILL ONLY. Border flood-fill
+  (4-conn, alpha<16) marks exterior; remaining transparent = enclosed holes; each region
+  filled with the MEAN colour of its alpha-255 opaque border (trouser-hole → trouser colour).
+  Built-in surgical self-check ABORTS the write if any previously-opaque (alpha>=16) pixel
+  changes or any non-enclosed pixel changes. `--check` mode = CI gate (exit 1 if any hole).
+- RESULT: all 2832 holes filled, every per-file self-check clean, `--check` exits 0 (zero
+  enclosed px on every enemy\_\*.png), idempotent (2nd run writes nothing). Independent PIL
+  byte-diff vs git HEAD on the 4 worst: opaque_pixels_changed=0, changed count == holes
+  filled, all changed pixels were previously transparent. Silhouettes untouched; fill colours
+  plausible. NOTE for Nico's taste gate: civilian's bicycle wheels go from spoked to SOLID
+  dark discs (the spoke-gaps were enclosed transparency per Bertrand's "everything solid"
+  mandate) — reads fine at game size, outer rim unchanged, but it is the one visible read
+  change worth a taste glance. NOT committed. (Serge — TECHNICAL pass, scripted retouch)
+
+### story-enemy-hole-fill — ITERATION 2 (SOLIDIFY pass, game-graphist)
+
+- Bertrand's gate rejected iter-1 ("encore trop de transparence"): the enclosed-only fill
+  left figures POROUS through BORDER-connected transparency (gaps opening to the outside;
+  waist-cut bust torsos draining out the bottom edge). Bertrand prototyped + applied a
+  SOLIDIFY pass to all 22 working-tree files (validated visually by his direction).
+- PORTED that pass into `scripts/fill-sprite-holes.mjs` as default behavior so CI reproduces
+  it. Two passes per file: PASS A — reconstruct the solid body mask (opaque + SELECTIVE
+  bottom-row seal [only frame-cut columns, opaque within 2px of the bottom edge — NOT the
+  whole x-extent, which would annex the background triangle between spread legs / slivers
+  under feet] → disk-10 binary_closing → binary_fill_holes → largest CC → disk-1 erode) and
+  fill every transparent px inside it with the dark-clothing tone (median RGB of opaque px
+  below the figure's median luminance); PASS B — the iter-1 enclosed-region mop-up. Pure
+  JS morphology (precomputed disk offsets), no scipy. Surgical self-check unchanged (aborts
+  if any originally-opaque px would change). `--check` = detect-only gate, exit 1 if either
+  pass would fill anything.
+- ACCEPTANCE (king): `node scripts/fill-sprite-holes.mjs` reports 0 px to fill on all 22
+  current files, `--check` exits 0, no PNG rewritten. CI-fidelity: run on the porous git-HEAD
+  originals fills 101,975 px, every self-check clean, re-check exits 0 (solid + idempotent);
+  regenerated figures composite fully solid over magenta with body intact. Selective-seal
+  vs ground-truth diff: orange=0 (NEVER over-annexes background); the only deltas are 1-3px
+  base/under-feet slivers the seal correctly leaves transparent.
+- Docs updated: script WHY header + SCRIPTS.md section + gen-sprites.yml two step comments
+  (was "enclosed only" → "solidify") + sprite-hole-audit skill. node --check + prettier
+  clean. NOT committed. (Serge — TECHNICAL pass, scripted retouch iter-2)

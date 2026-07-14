@@ -63,6 +63,8 @@
  * Usage:
  *   node scripts/check-art-prompts.mjs                # lint everything
  *   node scripts/check-art-prompts.mjs --set vehicles # only the vehicles block
+ *   node scripts/check-art-prompts.mjs --set enemies   # only the enemies block
+ *   node scripts/check-art-prompts.mjs --set courier   # only the courier layered-flipbook block
  *   node scripts/check-art-prompts.mjs --set levels    # only the levels block
  * Exit: 0 when there are no ERROR-level violations (WARNs allowed); 1 otherwise.
  */
@@ -79,7 +81,9 @@ const LEVEL_ART = path.resolve(ROOT, process.env.LEVEL_ART ?? "src/game/levels/l
 // ── Negation detector (shared with the budget check) ─────────────────────────
 // "not", "not a", "not an", "no " — the forms FLUX tends to ignore. Pattern
 // pinned to the contract spec exactly so the budget is measured consistently.
-const NEG_RE = /\bnot?( a| an)?\b|\bno \b/gi;
+// Hyphenated "-free" and "without" are negations too — FLUX reads "rider-free"
+// as "rider" (the courier bike-layer slip that motivated adding them).
+const NEG_RE = /\bnot?( a| an)?\b|\bno \b|\b\w+-free\b|\bwithout\b/gi;
 
 // Neon hues we treat as "colour names". Restricted to the palette the `neon`
 // field can take, so incidental words like "white" (in "black and white") are
@@ -201,6 +205,22 @@ const STYLE_TOKENS = [
   },
 ];
 
+// Enemy flipbook `style` tail concepts (checked on `enemies.style`). Enemies are
+// baked-style pixel sprites keyed off a solid BLACK ground — the neon-forbidden
+// rule (ADR 0011) is VEHICLE-only and is deliberately NOT applied here (the enemy
+// style legitimately names "pale neon tones"). Only two concepts are contract:
+// the black chroma ground the cutout keys, and the pixel-art medium.
+const ENEMY_STYLE_TOKENS = [
+  {
+    name: "solid black background (#000000)",
+    any: [/#000000/i, /\bblack background\b/i, /\bmatte black\b/i],
+  },
+  {
+    name: "pixel-art medium",
+    any: [/\bpixel art\b/i, /\bsprite\b/i],
+  },
+];
+
 function wordCount(text) {
   const t = text.trim();
   return t ? t.split(/\s+/).length : 0;
@@ -219,6 +239,32 @@ function tokenSatisfied(tok, text) {
 function countNegations(text) {
   const m = text.match(NEG_RE);
   return m ? m.length : 0;
+}
+
+// Negation + word budgets over an assembled prompt (any set). Extracted to a
+// top-level pure helper (was nested in checkEnemies) so checkCourier can reuse the
+// exact same thresholds — behaviour is identical, only the closed-over `rep` is
+// now an explicit first parameter.
+function checkBudgets(rep, ap, assembled) {
+  const negs = countNegations(assembled);
+  if (negs > NEG_ERROR_OVER) {
+    rep.error(
+      ap,
+      `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; FLUX reads negation as affirmation, rewrite positively`,
+    );
+  } else if (negs > NEG_WARN_OVER) {
+    rep.warn(
+      ap,
+      `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+    );
+  }
+
+  const words = wordCount(assembled);
+  if (words > WORD_HARD_MAX) {
+    rep.error(ap, `${words} words — over the hard ceiling of ${WORD_HARD_MAX}`);
+  } else if (words < WORD_TARGET_MIN || words > WORD_TARGET_MAX) {
+    rep.warn(ap, `${words} words — outside the ${WORD_TARGET_MIN}-${WORD_TARGET_MAX} target band`);
+  }
 }
 
 // Forbidden tokens: neon/glow/acid/rim-light anywhere in the assembled prompt,
@@ -348,6 +394,209 @@ function checkVehicles(vehicles, rep) {
   }
 }
 
+// Enemy flipbook contract (story-enemy-sprite-flipbook). The generator
+// (gen-enemy-types.mjs) reads the same `enemies` block: per type a pinned
+// integer `seed`, a non-empty subject `prompt`, and a `frames` array whose first
+// entry is "" (the committed frame-1 PNG, never a delta clause) and whose
+// i>0 entries are non-empty pose-delta clauses for the `_f<i+1>.png` frame files
+// (1..4 frames). The shared `style` tail must carry the black chroma ground the
+// cutout keys and the pixel-art medium. Reuses the negation + word budgets over
+// the assembled frame-1 prompt (base + style); the vehicle-only neon-forbidden
+// and scenery rules do NOT apply to enemies.
+function checkEnemies(enemies, rep) {
+  if (!enemies) {
+    rep.error("enemies", "missing `enemies` block");
+    return;
+  }
+
+  const style = enemies.style ?? "";
+  if (!style.trim()) {
+    rep.error("enemies.style", "missing/empty — required shared style tail");
+  } else {
+    for (const tok of ENEMY_STYLE_TOKENS) {
+      if (!tok.any.some((re) => re.test(style))) {
+        rep.error("enemies.style", `missing required token: ${tok.name}`);
+      }
+    }
+  }
+
+  const types = enemies.types ?? {};
+  if (Object.keys(types).length === 0) {
+    rep.error("enemies.types", "missing or empty `types` block");
+  }
+  for (const [key, def] of Object.entries(types)) {
+    const p = `enemies.types.${key}`;
+    if (def === null || typeof def !== "object" || Array.isArray(def)) {
+      rep.error(p, "entry must be an object");
+      continue;
+    }
+    const prompt = def.prompt ?? "";
+
+    if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
+    if (!Number.isInteger(def.seed) || def.seed <= 0) {
+      rep.error(`${p}.seed`, "seed must be a positive integer");
+    }
+
+    const frames = def.frames;
+    if (!Array.isArray(frames) || frames.length < 1 || frames.length > 4) {
+      rep.error(`${p}.frames`, "must be an array of length 1-4");
+    } else {
+      if (frames[0] !== "") {
+        rep.error(
+          `${p}.frames[0]`,
+          'frame 1 must be an empty string "" (the committed unsuffixed PNG, never a delta clause)',
+        );
+      }
+      for (let i = 1; i < frames.length; i++) {
+        if (typeof frames[i] !== "string" || !frames[i].trim()) {
+          rep.error(`${p}.frames[${i}]`, "delta clause must be a non-empty string");
+        }
+      }
+    }
+
+    // Budgets over every prompt the generator actually sends: the frame-1
+    // assembly, plus BOTH frame>=2 variants (kontext primary and matched-pair
+    // fallback — see gen-enemy-types.mjs), which are longer than frame 1's.
+    if (prompt.trim()) {
+      checkBudgets(rep, `${p} (assembled)`, `${prompt}${style}`);
+
+      if (Array.isArray(frames)) {
+        for (let i = 1; i < frames.length; i++) {
+          const clause = typeof frames[i] === "string" ? frames[i] : "";
+          if (!clause.trim()) continue; // shape error already reported above
+          checkBudgets(
+            rep,
+            `${p}.frames[${i}] (kontext assembled)`,
+            `same character, same pixel art style, same framing and scale, ${clause}${style}`,
+          );
+          checkBudgets(rep, `${p}.frames[${i}] (pair assembled)`, `${prompt}, ${clause}${style}`);
+        }
+      }
+    }
+  }
+}
+
+// Courier LAYERED flipbook contract (story-layered-courier-flipbook, ADR 0017).
+// The generator (gen-courier-sprites.mjs) reads the `courier` block: shared
+// `opening` + `style`, and per LAYER (bike/rider) a pinned integer `seed`, a
+// non-empty subject `prompt`, a `frames` array of 2..8 NON-EMPTY pose clauses
+// (unlike enemies there is NO protected frame-1 `""`), and a unique `asset` under
+// `assets/courier/`. The shared `style` tail is the enemy-family black-ground
+// pixel style (ENEMY_STYLE_TOKENS): #000000 ground + pixel-art medium. The
+// vehicle-only neon-forbidden and scenery rules do NOT apply (the courier style
+// legitimately names "pale neon tones", same as enemies).
+function checkCourier(courier, rep) {
+  if (!courier) {
+    rep.error("courier", "missing `courier` block");
+    return;
+  }
+
+  // typeof guards: a non-string manifest value must produce a named report line,
+  // not a raw TypeError out of .trim().
+  const opening = typeof courier.opening === "string" ? courier.opening : "";
+  const style = typeof courier.style === "string" ? courier.style : "";
+  if (!opening.trim()) {
+    rep.error("courier.opening", "missing/empty — required medium + strip-layout slot");
+  }
+  if (!style.trim()) {
+    rep.error("courier.style", "missing/empty — required shared style tail");
+  } else {
+    // Same black-ground + pixel-art contract as the enemy style (both are keyed
+    // off #000000 by cutout-enemies.mjs); reuse ENEMY_STYLE_TOKENS verbatim.
+    for (const tok of ENEMY_STYLE_TOKENS) {
+      if (!tok.any.some((re) => re.test(style))) {
+        rep.error("courier.style", `missing required token: ${tok.name}`);
+      }
+    }
+  }
+
+  // The generator requests stripW = size.width * N and the fixed slice grid +
+  // square render plane assume square cells — fail fast before any paid FLUX.
+  const cw = courier.size?.width;
+  const ch = courier.size?.height;
+  if (!Number.isInteger(cw) || cw <= 0) {
+    rep.error("courier.size.width", "must be a positive integer (cell width in px)");
+  }
+  if (!Number.isInteger(ch) || ch <= 0) {
+    rep.error("courier.size.height", "must be a positive integer (cell height in px)");
+  }
+  if (Number.isInteger(cw) && Number.isInteger(ch) && cw > 0 && ch > 0 && cw !== ch) {
+    rep.error(
+      "courier.size",
+      "cells must be square (width === height): the opening prompt, the fixed slice grid and the square render plane all assume it",
+    );
+  }
+  if (!Number.isFinite(courier.fps) || courier.fps <= 0) {
+    rep.error("courier.fps", "must be a positive number");
+  }
+
+  const layers = courier.layers ?? {};
+  if (Object.keys(layers).length === 0) {
+    rep.error("courier.layers", "missing or empty `layers` block");
+  }
+
+  const seenAssets = new Map();
+  for (const [name, def] of Object.entries(layers)) {
+    const p = `courier.layers.${name}`;
+    if (def === null || typeof def !== "object" || Array.isArray(def)) {
+      rep.error(p, "entry must be an object");
+      continue;
+    }
+
+    const prompt = typeof def.prompt === "string" ? def.prompt : "";
+    if (!prompt.trim()) rep.error(`${p}.prompt`, "empty prompt");
+    if (!Number.isInteger(def.seed) || def.seed <= 0) {
+      rep.error(`${p}.seed`, "seed must be a positive integer");
+    }
+
+    // asset: EXACTLY "assets/courier/<layerKey>.png". The generator writes files
+    // derived from the layer KEY while the renderer loads the manifest `asset` —
+    // this equality is the only thing coupling the two; anything else generates
+    // art the renderer never finds (permanent silent legacy fallback).
+    const asset = def.asset ?? "";
+    const expectedAsset = `assets/courier/${name}.png`;
+    if (typeof asset !== "string" || asset !== expectedAsset) {
+      rep.error(
+        `${p}.asset`,
+        `must be exactly "${expectedAsset}" (generator writes by layer key; renderer loads this path)`,
+      );
+    } else if (seenAssets.has(asset)) {
+      rep.error(`${p}.asset`, `duplicate asset "${asset}" (also ${seenAssets.get(asset)})`);
+    } else {
+      seenAssets.set(asset, p);
+    }
+
+    // frames: 2..8 non-empty pose clauses. Unlike enemies there is no protected
+    // frames[0] === "" — every cell is a distinct pose in the cycle.
+    const frames = def.frames;
+    if (!Array.isArray(frames) || frames.length < 2 || frames.length > 8) {
+      rep.error(`${p}.frames`, "must be an array of 2-8 pose clauses");
+    } else {
+      frames.forEach((c, i) => {
+        if (typeof c !== "string" || !c.trim()) {
+          rep.error(`${p}.frames[${i}]`, "pose clause must be a non-empty string");
+        }
+      });
+    }
+
+    // Budgets over each ASSEMBLED PER-FRAME prompt, reconstructed EXACTLY as
+    // gen-courier-sprites.mjs sends it (one FLUX call per frame, ADR 0017
+    // amended): opening + prompt + ", " + frames[i] + style. Per-frame prompts
+    // are short, so the FULL assembly is budgeted — negations included; the old
+    // strip-variable scoping was retired together with the strip strategy.
+    if (prompt.trim() && Array.isArray(frames) && frames.length >= 2) {
+      frames.forEach((clause, i) => {
+        if (typeof clause !== "string" || !clause.trim()) return; // shape error reported above
+        checkBudgets(
+          rep,
+          `${p}.frames[${i}] (assembled)`,
+          `${opening}${prompt}, ${clause}${style}`,
+        );
+      });
+    }
+  }
+}
+
 function checkLevels(levels, rep) {
   if (!Array.isArray(levels)) {
     rep.error("levels", "missing or non-array `levels`");
@@ -377,8 +626,8 @@ function main() {
   const args = process.argv.slice(2);
   const si = args.indexOf("--set");
   const set = si !== -1 ? args[si + 1] : "all";
-  if (!["all", "vehicles", "levels"].includes(set)) {
-    console.error(`Unknown --set "${set}" (expected: vehicles | levels)`);
+  if (!["all", "vehicles", "enemies", "courier", "levels"].includes(set)) {
+    console.error(`Unknown --set "${set}" (expected: vehicles | enemies | courier | levels)`);
     process.exit(2);
   }
 
@@ -386,6 +635,8 @@ function main() {
   const rep = makeReport();
 
   if (set === "all" || set === "vehicles") checkVehicles(json.vehicles, rep);
+  if (set === "all" || set === "enemies") checkEnemies(json.enemies, rep);
+  if (set === "all" || set === "courier") checkCourier(json.courier, rep);
   if (set === "all" || set === "levels") checkLevels(json.levels, rep);
 
   const rel = path.relative(ROOT, LEVEL_ART);

@@ -428,6 +428,46 @@ track whatever art was generated.
 
 ---
 
+## gen-enemy-types.mjs — Enemy sprite flipbook frames
+
+Generates the enemy archetype sprites (base cops + variants, riot/CRS,
+motorcycle cop, delivery civilian, bonus figure) as a **2-frame flipbook**
+(6 fps, Prohibition-1987 register) — light tones on a pure-black ground that
+`cutout-enemies.mjs` keys to transparency afterwards.
+
+- **Single source of truth:** the `enemies` block of
+  `src/game/levels/levelArt.json` (`style`, `fps`, `size`, and `types` keyed by
+  the exact base filename with `{ seed, prompt, frames }`). Add or tune an enemy
+  **there**, never in the script (mirrors `gen-vehicle-sprites.mjs`).
+- **Frame files:** `frames[0]` is always `""` → `<key>.png` (the committed
+  accepted frame 1, never regenerated); `frames[i>0]` is a pose-delta clause →
+  `<key>_f<i+1>.png`. The `_f` prefix sits **after** the legacy variant suffix so
+  `enemy_shooting_2_f2.png` = cop variant 2, shooting, frame 2 (ADR 0016).
+- **Frame ≥2 strategy (logged per file):** primary `kontext` img2img from the
+  committed frame 1 (`image=` set to its raw GitHub URL) so the extra frame is the
+  same character in a new pose; fallback = matched flux pair under the pinned seed
+  (regenerates frame 1 + frame 2, overwriting the accepted frame 1 → human art
+  gate in the PR).
+- **Output:** `public/assets/enemy_*.png`. Only MISSING files are generated
+  (`FORCE=1` overrides); in practice only the `_f2` files are produced.
+
+### Commands
+
+```bash
+# Generate missing frames via Pollinations, then chroma-key (CI usage)
+node scripts/gen-enemy-types.mjs && node scripts/cutout-enemies.mjs
+
+# Regenerate everything (overwrite committed frames)
+FORCE=1 node scripts/gen-enemy-types.mjs
+```
+
+A failed fetch is logged per-asset and never crashes the run (network FLUX is
+normally blocked in the local sandbox; real art is produced in CI via
+`.github/workflows/gen-sprites.yml`, whose `enemy_*.png` glob already covers the
+new frame files — no structural workflow change).
+
+---
+
 ## gen-vehicle-sprites.mjs — Delivery-vehicle sprites (truck / car / moto)
 
 Generates the side-profile delivery-vehicle sprites for the scripted "protect
@@ -482,6 +522,65 @@ installs `@napi-rs/canvas`, runs `FORCE=1 node scripts/gen-vehicle-sprites.mjs`
 (overwriting placeholders with real FLUX art + keying), and commits the three
 PNGs back to the branch — the same pattern as the enemy-sprite workflow. Network
 FLUX generation is normally blocked in the local sandbox, so real art is
+produced here.
+
+---
+
+## gen-courier-sprites.mjs — Layered courier flipbook (bike + rider)
+
+Generates the street-courier (livreur) as a **2-layer composite** — a delivery
+**bike** (wheel rotation) drawn under a **rider** (pedaling stride), composited as
+two stacked planes render-side (bike below rider, ADR 0017).
+
+- **Single source of truth:** the `courier` block of
+  `src/game/levels/levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers`
+  keyed `bike` / `rider` with `{ asset, seed, prompt, frames, scale, offsetY }`).
+  Add or tune a layer **there**, never in the script.
+- **Per-frame generation (ADR 0017, amended — strips retired).** Unlike the enemy
+  flip, the courier has **no protected frame 1**. Every `frames[i]` pose clause
+  becomes ONE dedicated FLUX image (`opening` + `prompt` + `, ` + clause +
+  `style`) under the layer's **single pinned seed** — the whole subject appears
+  in every image, nothing is sliced out of a larger picture. Each PNG is then
+  chroma-keyed per file by importing `cutout()` from `cutout-enemies.mjs`.
+- **Atomic layer.** A layer is skipped only when **all** its frame files exist and
+  `FORCE !== 1`; if **any** frame is missing (or `FORCE=1`) **all** its frames
+  regenerate together (loud `[regen-all]` log — shared-seed consistency). All
+  frame buffers are collected before any file is written — a failed fetch never
+  leaves a half-written layer.
+- **Frame files:** frame 1 unsuffixed `<layer>.png`, frame N≥2 `<layer>_f<N>.png`,
+  under `public/assets/courier/`.
+- **Output:** `public/assets/courier/{bike,rider}*.png`.
+
+### Commands
+
+```bash
+# Generate missing layers via Pollinations/FLUX + chroma-key (needs network + canvas)
+node scripts/gen-courier-sprites.mjs
+
+# Regenerate ALL layers (overwrite), used in CI
+FORCE=1 node scripts/gen-courier-sprites.mjs
+
+# Restrict to one layer (art-gate iteration, e.g. bike-first sequencing)
+FORCE=1 node scripts/gen-courier-sprites.mjs --layer bike
+
+# No network? Write dependency-free procedural placeholder frames (local testing only)
+node scripts/gen-courier-sprites.mjs --placeholder
+
+# List the defined layers + their frame files
+node scripts/gen-courier-sprites.mjs --list
+```
+
+### CI
+
+`.github/workflows/gen-courier-sprites.yml` (manual `workflow_dispatch` or the
+`.github/dispatch/gen-courier-sprites` marker) runs the prompt gate
+(`check-art-prompts.mjs --set courier`) **before** any paid FLUX, installs
+`@napi-rs/canvas` **before** the generator (slicing hard-requires the decoder,
+unlike the vehicle/enemy workflows), runs `FORCE=1 node
+scripts/gen-courier-sprites.mjs`, and commits `public/assets/courier/*.png` back to
+the branch. It is **separate** from `gen-sprites.yml` because the enemy's
+protected-frame-1 / missing-only semantics do not match the courier's atomic
+strips. Network FLUX is normally blocked in the local sandbox, so real art is
 produced here.
 
 ---
@@ -698,3 +797,62 @@ delivery at all, never on a bad-looking halo. Outputs are gitignored
   an **unpinned** `npm i --no-save playwright` locally so it resolves a compatible
   browser; the CI composite actions pin deliberately and install the matching
   browser via `npx playwright install`.
+
+## retouch-courier-spokes.mjs — Courier wheel rotation (scripted retouch)
+
+FLUX draws a consistent subject per frame (pinned seed) but refuses legible
+tri-spoke mag wheels and re-rolls small details between frames. This
+game-graphist pass derives **every** frame of each courier layer from its
+single FLUX base: the two wheel discs are detected (dark-pixel centroids in two
+x-windows) and three bold spokes are drawn per wheel, rotated per frame across
+a 120° period — identical sprite everywhere, zero flicker. Layers: **rider**
+(the shipped full-cyclist sprite, 6 frames at 20° steps, dark-outlined pale
+spokes) and **bike** (validated spare art, 3 frames at 40° steps). A layer with
+no base PNG on disk is skipped. Deterministic and idempotent; runs in CI right
+after generation + cutout.
+
+```bash
+node scripts/retouch-courier-spokes.mjs   # requires @napi-rs/canvas
+```
+
+## fill-sprite-holes.mjs — Enemy figure SOLIDIFY pass (scripted retouch + gate)
+
+The chroma-key cutout keys the background AND clears ground fully walled in by the
+subject (ADR-0013 enclosed-island pass). Where a character wears DARK clothing that
+matched the near-black key ground, the keyer ate those pixels and left the figure
+**POROUS** — see-through gaps in the legs/torso, speckles, a leg opening a window to
+the sky. Iteration 1 filled only fully-enclosed voids; Bertrand's direction gate
+("encore trop de transparence") rejected it because the porosity is also reachable
+through **border-connected** transparency (a gap that opens to the outside, or a bust
+sprite cut at the waist whose torso void drains through the bottom edge). Mandate:
+**"everything solid"** — the figure body ships opaque, no see-through.
+
+This game-graphist pass reconstructs and fills the body deterministically, **no FLUX
+regeneration**, in two passes on every `public/assets/enemy_*.png`:
+
+- **PASS A — solidify.** Build the solid body mask morphologically: `opaque = alpha>=16`
+  plus a **selective bottom-row seal** — sealed ONLY in columns where the figure is
+  genuinely frame-cut (opaque within 2px of the bottom edge, i.e. a bust sprite), NEVER
+  the whole x-extent (which would annex bottom-open background: the triangle between a
+  shooter's spread legs, the slivers under the feet). Then
+  `binary_fill_holes(binary_closing(sealed, DISK r=10))` (a **disk**
+  structuring element bridges the keyed-out gaps), keep the largest connected component,
+  erode by **DISK r=1** (anti-halo). Fill every transparent pixel inside that mask with
+  the **dark-clothing tone** = median RGB of the opaque pixels below the figure's median
+  luminance.
+- **PASS B — mop-up.** Re-run the iteration-1 enclosed-region fill (border flood; each
+  leftover enclosed region gets its opaque-boundary-mean colour) to catch small enclaves.
+
+**Cardinal rule — fill only, never reshape.** Both passes only turn transparent pixels
+(`alpha < 16`) opaque; a built-in self-check asserts every originally-opaque pixel
+(`alpha >= 16`) is **byte-identical** and ABORTS the write otherwise. Deterministic and
+idempotent (a second run fills 0 px). Runs in CI right after generation + cutout, before
+the commit — with a `--check` gate that FAILS the job if either pass would still fill
+anything (Bertrand's validation condition: no enemy character may ship porous).
+
+```bash
+node scripts/fill-sprite-holes.mjs          # solidify every enemy_*.png (PASS A + PASS B)
+node scripts/fill-sprite-holes.mjs --check  # gate: write nothing, exit 1 if any px would fill
+```
+
+- **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).

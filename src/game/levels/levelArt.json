@@ -40,6 +40,119 @@
       }
     }
   },
+  "enemies": {
+    "$comment": "Enemy sprite flipbook frames (Prohibition-1987-style 2-frame flips). Single source of truth for scripts/gen-enemy-types.mjs. Keys are the exact base filename (asset root + legacy variant suffix) that fileFor() in src/render/scene/enemyTextures.ts computes: enemy_sprite_2 = normal cop VARIANT 2. frames[0] is ALWAYS '' (the committed unsuffixed PNG is frame 1 and is never regenerated); frames[i>0] is a short pose-delta clause for the extra frame file <key>_f<i+1>.png (keys already carry the enemy_ prefix), generated in CI via kontext img2img from the committed frame 1 (fallback: matched pair under the pinned seed). Only the pose clause varies between frames; `style` is appended verbatim to every prompt. fps drives the render-side flipbook (src/render/scene/flipbook.ts).",
+    "style": ", 16-bit pixel art game sprite on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every space between the figure's limbs and gear, crisp clean pixels, light grey white and pale neon tones figure, simple bold shapes, centered, high contrast, retro snes style, no text, no watermark",
+    "fps": 6,
+    "size": { "width": 256, "height": 256 },
+    "types": {
+      "enemy_sprite": {
+        "seed": 4801,
+        "prompt": "a menacing plainclothes french cop wearing a cap, standing facing forward, arms at sides",
+        "frames": ["", "weight shifted to the other leg, head turned slightly"]
+      },
+      "enemy_sprite_2": {
+        "seed": 4802,
+        "prompt": "a menacing plainclothes cop in a leather jacket, standing facing forward, broad shoulders",
+        "frames": ["", "weight shifted to the other leg, leather jacket swaying slightly"]
+      },
+      "enemy_sprite_3": {
+        "seed": 4803,
+        "prompt": "a menacing plainclothes cop wearing sunglasses and a hood, standing facing forward",
+        "frames": ["", "weight shifted to the other leg, hood swaying slightly"]
+      },
+      "enemy_shooting": {
+        "seed": 4804,
+        "prompt": "a plainclothes french cop wearing a cap, aiming a handgun forward at the viewer, muzzle flash",
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
+      },
+      "enemy_shooting_2": {
+        "seed": 4805,
+        "prompt": "a plainclothes cop in a leather jacket aiming a handgun forward at the viewer, muzzle flash",
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
+      },
+      "enemy_shooting_3": {
+        "seed": 4806,
+        "prompt": "a plainclothes cop with sunglasses aiming a handgun forward at the viewer, muzzle flash",
+        "frames": [
+          "",
+          "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ]
+      },
+      "enemy_riot": {
+        "seed": 4807,
+        "prompt": "a menacing french riot police officer CRS in a full helmet with visor and heavy body armor holding a riot shield, standing facing forward",
+        "frames": ["", "weight shifted to the other leg, riot shield tilted slightly lower"]
+      },
+      "enemy_riot_shooting": {
+        "seed": 4808,
+        "prompt": "a french riot police officer CRS in helmet and body armor aiming a handgun forward at the viewer, muzzle flash",
+        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"]
+      },
+      "enemy_biker": {
+        "seed": 4809,
+        "prompt": "a french motorcycle police officer wearing a full-face crash helmet and leather uniform with boots, standing facing forward",
+        "frames": ["", "weight shifted to the other leg, head turned slightly"]
+      },
+      "enemy_biker_shooting": {
+        "seed": 4810,
+        "prompt": "a french motorcycle police officer in a full-face helmet aiming a handgun forward at the viewer, muzzle flash",
+        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"]
+      },
+      "enemy_civilian": {
+        "seed": 4811,
+        "prompt": "a friendly young food delivery courier with a big insulated backpack and a bike helmet, ordinary civilian, empty hands, no weapon, standing facing forward",
+        "frames": [""]
+      },
+      "enemy_bonus": {
+        "seed": 4812,
+        "prompt": "a glowing radiant golden mysterious figure in a shining trench coat and fedora hat, sparkling aura, standing facing forward",
+        "frames": [""]
+      }
+    }
+  },
+  "courier": {
+    "$comment": "Street-courier (livreur) flipbook. OUTCOME after the art gates: the RIDER layer is the shipped sprite — a complete cyclist (FLUX base, frame 1) whose 6 frames get rotating wheel spokes stamped by scripts/retouch-courier-spokes.mjs; the BIKE layer passed its gate but was retired from the composite (art kept as spare, its mesh only serves the pre-art fallback) — see src/render/scene/CourierSprite.tsx. Single source of truth for scripts/gen-courier-sprites.mjs. PER-FRAME GENERATION (ADR 0017, amended — the strip-and-slice strategy was retired after two CI iterations cut subjects across cells): each frames[i] is a NON-EMPTY pose clause and becomes ONE dedicated FLUX image (opening + prompt + clause + style) under the layer's single pinned seed, so the whole subject appears in every image and only the described delta moves. Each PNG is chroma-keyed per file (cutout-enemies.mjs cutout()). No protected committed frame 1 — if ANY frame file of a layer is missing (or FORCE=1), ALL its frames regenerate together (shared-seed consistency makes the layer atomic). Files: public/assets/courier/<layer>.png + <layer>_f<N>.png (frame 1 unsuffixed). scale/offsetY are render-side registration knobs tuned at the art gate; z-order (bike under rider) is fixed in code. Sequencing (Bertrand): the BIKE layer is validated first (only the wheels turn, the whole bike visible in every frame); the RIDER layer follows once the bike passes the art gate. The rider is described POSITIVELY (art bible §3: never negate — never write 'without bike').",
+    "fps": 6,
+    "size": { "width": 256, "height": 256 },
+    "opening": "Flat 2D video game sprite, strict side view in orthographic projection, one single complete subject centered and fully visible with black margin on every side, ",
+    "style": ", crisp clean pixel art game sprite, light grey white and pale tones figure, simple bold shapes, high contrast, on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every gap between the figure's parts, sharp cutout edges, clean plain artwork",
+    "layers": {
+      "bike": {
+        "asset": "assets/courier/bike.png",
+        "seed": 5210,
+        "prompt": "an empty delivery bicycle in full side profile, solid tri-spoke mag wheels forming a bold Y, a dark frame bag in the rear triangle, step-through frame, rear cargo rack, bare saddle and pedals",
+        "frames": [
+          "the Y of both mag wheels upright",
+          "the Y of both mag wheels rotated one third of a turn",
+          "the Y of both mag wheels rotated two thirds of a turn"
+        ],
+        "scale": 1.0,
+        "offsetY": 0.0
+      },
+      "rider": {
+        "asset": "assets/courier/rider.png",
+        "seed": 5220,
+        "prompt": "the upper body of a bicycle courier in side profile leaning forward in riding posture, arms reaching down to handlebar grip height, bike helmet, insulated delivery backpack, torso ending at hip height",
+        "frames": [
+          "pedal stroke phase one of six",
+          "pedal stroke phase two of six",
+          "pedal stroke phase three of six",
+          "pedal stroke phase four of six",
+          "pedal stroke phase five of six",
+          "pedal stroke phase six of six"
+        ],
+        "scale": 1.0,
+        "offsetY": 0.0
+      }
+    }
+  },
   "windowGrid": {
     "$comment": "Where cops pop up, as a normalized grid over the facade image (0..1, y down). Tuned to the upper lit-window floors of the generated facades.",
     "cols": 7,
