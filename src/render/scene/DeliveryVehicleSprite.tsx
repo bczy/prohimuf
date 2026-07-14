@@ -19,17 +19,12 @@ const VEHICLE_Z = 0.72;
 // The direction the committed source art faces, per vehicle type (art-gate
 // registration knob in levelArt.json `vehicles.types.<type>.facing`). FLUX won't
 // obey orientation prompts, so we mirror in code: art that already looks right
-// needs no flip when travelling right (+1); left-facing art must be mirrored (-1);
-// a missing/unknown knob assumes right-facing (+1 — the prior, courier-style
-// convention). String-indexed record so the dynamic lookup is safe under
-// noUncheckedIndexedAccess without an `any` cast (same trick as courierTextures.ts).
-interface VehicleTypeEntry {
-  readonly facing?: string;
-}
-const VEHICLE_TYPES: Record<string, VehicleTypeEntry> = levelArt.vehicles.types;
-
+// needs no flip when travelling right (+1); left-facing art must be mirrored
+// (-1); any other value falls back to right-facing (the prior, courier-style
+// convention). Closed VehicleType union ⇒ direct manifest indexing, like
+// getVehicleNeonHex (vehicleNeon.ts).
 function artSign(type: VehicleType): 1 | -1 {
-  return VEHICLE_TYPES[type]?.facing === "left" ? -1 : 1;
+  return levelArt.vehicles.types[type].facing === "left" ? -1 : 1;
 }
 
 // Lazily-loaded, cached vehicle textures keyed by type. Only ever one vehicle on
