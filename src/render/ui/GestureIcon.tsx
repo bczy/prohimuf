@@ -41,9 +41,6 @@ const HAND_ONE_FINGER =
   "M45 24 C45 18 56 18 56 24 L57 52 C60 47 67 47 68 55 C70 50 77 51 78 59 " +
   "C80 55 86 56 87 63 C91 73 90 93 82 105 C76 110 59 110 53 105 " +
   "C49 104 39 99 36 91 C33 84 34 78 38 74 C41 71 44 72 45 74 L45 24 Z";
-// Fold crease separating the folded thumb lobe from the palm (reference: thumb plié).
-const THUMB_CREASE_TWO = "M42 76 C45 84 47 92 49 100";
-const THUMB_CREASE_ONE = "M41 76 C44 84 46 92 48 100";
 
 const ICON_SVG_STYLE: CSSProperties = {
   height: "min(240px, 34vh)",
@@ -362,14 +359,6 @@ function TwoFingerTapIcon(): JSX.Element {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {/* folded-thumb crease: the lobe reads "plié" against the palm */}
-        <path
-          d={THUMB_CREASE_TWO}
-          fill="none"
-          stroke={INK}
-          strokeWidth="2.2"
-          strokeLinecap="round"
-        />
         {/* both fingertip halos — the only lit elements (r≤8: past ~9 the pair merges) */}
         <circle
           className="gi-anim gi-tt-halo"
@@ -436,14 +425,6 @@ function SwipePanIcon(): JSX.Element {
             stroke={INK}
             strokeWidth="2.4"
             strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          {/* folded-thumb crease: the lobe reads "plié" against the palm */}
-          <path
-            d={THUMB_CREASE_ONE}
-            fill="none"
-            stroke={INK}
-            strokeWidth="2.2"
             strokeLinecap="round"
           />
         </g>
