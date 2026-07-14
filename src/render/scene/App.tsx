@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { HUD } from "@render/ui/HUD";
 import type { HudData } from "@render/ui/HUD";
 import { MainMenu } from "@render/ui/MainMenu";
+import { TitleScreen } from "@render/ui/TitleScreen";
 import { EndScreen } from "@render/ui/EndScreen";
 import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { PauseScreen } from "@render/ui/PauseScreen";
@@ -29,10 +30,17 @@ import {
   TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
 
-type AppPhase = "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END" | "TUTORIAL";
+type AppPhase =
+  | "TITLE"
+  | "MENU"
+  | "NARRATIVE_PRE"
+  | "PLAYING"
+  | "NARRATIVE_POST"
+  | "END"
+  | "TUTORIAL";
 
-// Preview harness hook: `?preview=narrative|end|tutorial` boots straight into a
-// screen so the screenshot tool can capture the front-end screens without playing.
+// Preview harness hook: `?preview=title|menu|narrative|end|tutorial` boots straight
+// into a screen so the screenshot tool can capture the front-end screens without playing.
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
 
@@ -86,7 +94,10 @@ export function App(): JSX.Element {
         ? "END"
         : PREVIEW_SCREEN === "tutorial"
           ? "TUTORIAL"
-          : "MENU",
+          : PREVIEW_SCREEN === "menu"
+            ? "MENU"
+            : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
+              "TITLE",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -207,6 +218,17 @@ export function App(): JSX.Element {
   function handleBackToMenu(): void {
     setPaused(false);
     setAppPhase("MENU");
+  }
+
+  if (appPhase === "TITLE") {
+    return renderAppShell(
+      <TitleScreen
+        onEnter={() => {
+          setAppPhase("MENU");
+        }}
+      />,
+      rotateBlocked,
+    );
   }
 
   if (appPhase === "MENU") {
