@@ -2656,3 +2656,60 @@ classification stays `"miss"` on friendly fire.
     `App.tsx` MENU-phase keydown effect; contrast-claim correction AA-not-AAA on the fluo stocks
   * the mark-ink-never-small-text rule). No other ADR touched. Clear to fan out A' ∥ B'.
     (Winston / Senior Architect)
+
+- PM FINAL ACCEPTANCE (stage 9, John / PM) — PR #47, branch claude/launch-menu-redesign-vpph8v,
+  post-rebase (ADR renumbered 0021). Ratifying the record, not re-running gates.
+  **Verdict: ACCEPT — clear to merge.**
+  **Scope ruling — PASS (faithful reskin + one gated extension).** Presentation/front-end
+  reskin of already-shipped pre-game surfaces (title/menu/scores/briefing): no new mechanic,
+  no new system, no new level, core loop `Récupérer → Livrer → Éviter` untouched. Cahier-des-
+  charges test: Prohibition Atari ST shipped a title screen, a level/menu front-end and a
+  score display → original feature surface, reskinned faithfully. `git diff --stat
+origin/main...HEAD -- src/game/` EMPTY (architect-confirmed byte-identical); diff confined to
+  `src/render/**` + `App.tsx` + docs + `scripts/**`. The net-new narrative canon (sound-system
+  crews SPIRALE 23 / KANAL SYSTEM / NADIR 94, tabloid PARIS-MINUIT, period infolines, NORMAL
+  tier word) is an ACCEPTABLE conscious extension: it is minimal presentation flavour required
+  for a flyer to read as a flyer, documented + gated (design gate condition f, ADR-0012
+  precedent), recorded as gated canon in the design README with a `narrative-bible.md` seed
+  follow-up, period-authentic, and non-colliding with the §7 recruitable contacts (different
+  entity class). Meets the "Non → extension consciente, documentée et justifiée" bar. Approved.
+  **Per-AC verdict (from the stage-5 verify report + design/art/architect gates):**
+  - AC1 (real title moment, wired; no orphan) — **PASS.** `TitleScreen` imported+rendered in
+    `App.tsx`; cold load boots `TITLE`; one action → MENU; `StartScreen.tsx` deleted, zero refs.
+  - AC2 (menu reads as fanzine artifact) — **PASS.** Zine-cover TITLE, flyer-wall NIVEAUX,
+    PARIS-MINUIT UNE, OURS colophon; art conformity closed by lead-art Gate 4 on real runtime
+    screenshots.
+  - AC3 (one cohesive system, single palette) — **PASS.** Single-source `src/render/ui/print/
+tokens.ts` consumed by every surface (ADR-0021 D3); MARK dedup landed so derivations import
+    the shared hexes.
+  - AC4 (reskin not re-plumb; `src/game` untouched) — **PASS.** src/game byte-identical;
+    Prefs/highScore/levels.ts/stateMachine unchanged; full vitest suite green with no game-
+    system test edits.
+  - AC5 (UX non-negotiables: <10 s, one action, no trap) — **PASS.** 3-action returning path,
+    transitions ≤280 ms, no-dwell TITLE, e2e-driven; design-acceptance timing checkpoint owned
+    and cleared by the finalized design gate. (Residual: no device-representative stopwatch
+    capture — architecturally bounded, non-blocking.)
+  - AC6 (mobile & overlays intact; RotateOverlay on TITLE) — **PASS.** TITLE routes through
+    `renderAppShell` so RotateOverlay + FullscreenButton wrap it; reskin screenshot-confirmed
+    landscape. (Residual: portrait mobile-UA overlay-over-TITLE verified by code inspection,
+    not a headless portrait capture — same wrapper as shipped MENU overlay, non-blocking;
+    tracked as follow-up 3, guard advance when `rotateBlocked`.)
+  - AC7 (no new mechanics/systems/levels) — **PASS.** Zero new files under
+    `src/game/systems/**` or `src/game/levels/**`; core loop untouched.
+  - AC8 (verified green + screenshot-capturable) — **PASS.** tsc + vitest (236/236) + lint +
+    format green post-rebase; `?preview=title|menu` capture; ADR-0021 recorded.
+    **DoD confirmed:** all gates green (design PASS-w/-conditions applied & finalized; lead-art
+    Gate 4 PASS / visual gate CLOSED on real runtime screenshots; QA quality gate PASS; 4-reviewer
+    code-review panel ran — security PASS zero findings, 5 MAJOR (M1 stamp-ink contrast, M2 Space
+    activation, M3 ScoresUne rank-1 alignment, M4 Escape→TITLE, M5 title double-click) all fixed
+    and pushed, minors fixed or logged); browser-verified; branch rebased, tree green. **No
+    unresolved CONFIRMED blocking/major finding.**
+    **Logged follow-up debt (tracked, NON-blocking, does not gate this merge):** (1) 4 dead
+    `MOTION` tokens + wire the spec'd 280/200 ms transitions (currently instant) + rose-flyer
+    tilt polish; (2) `PLAYABLE_COPY` hardcoded-per-level-id architecture debt — a future 4th
+    level needs a data-driven copy source + coverage to honour the "add a level = one
+    `levelArt.json` entry" contract; (3) TITLE keydown behind RotateOverlay guard (AC6 portrait
+    residual); (4) tabs a11y (`aria-controls`/`tabpanel`, Home/End); (5) locked-flyer mixed
+    affordance; (6) perf memoization (`loadScores` re-read, hoist per-flyer keyframes,
+    `useRovingIndex` opts). These are elevation debt, not correctness or scope defects.
+    **Merge authorized on the record.** (John / PM)
