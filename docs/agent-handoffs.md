@@ -2918,3 +2918,14 @@ paydown — ZERO behaviour change is the whole point.
   the per-ref `concurrency` group doesn't serialize cross-branch pushes to the shared
   gh-pages ref. Left as-is (shared-CI concern, out of this story's scope) — re-deploy
   once the concurrent runs clear. (Amelia / QA)
+
+- story-asset-loading-gate / loading screen restyle (Bertrand: "cet écran ne colle pas au
+  reste du design"): the loading screen still used the pre-redesign neon-yellow-on-dark
+  style, clashing with the print/fanzine system (ADR-0021 / art-direction §2bis). dev-r3f-render
+  rebuilt LoadingScreen.tsx on the print tokens — `PaperSheet` on `STOCK.newsprint`, single-
+  sourced `MASTHEAD.running` ink bar, "SOUS PRESSE" press-sheet metaphor (Impact "CHARGEMENT…"
+  in `INK.full`, Courier kicker/label, 2px ink rule, black-keyline bar the ink fills, Courier
+  folio), zero glow/text-shadow/scanline. lead-art gate = **PASS** (nothing deviates from the
+  bible; two optional harmonizations applied: Impact letter-spacing 0.04→0.05em to match
+  TitleScreen, and bar transition dropped under prefers-reduced-motion). Commits ce299a6 +
+  3c43bd3. (Amelia / dev-r3f-render → lead-art gate)
