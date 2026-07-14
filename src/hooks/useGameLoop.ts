@@ -100,9 +100,9 @@ export interface ImpactChannel {
   // Per-frame queue: the bridge pushes each tick's impactEvents; the effects
   // component splices it empty each frame (single consumer, like Floater[]).
   readonly queue: ImpactEvent[];
-  // Monotonic; the bridge bumps it on every createInitialState (mount + restart).
-  // The effects component clears its wall-mark FIFO + transient pools when it
-  // sees this change. This is how "cleared on level restart" (spec D4.3) lands.
+  // Monotonic; the bridge bumps it on level RESTART only (mount starts at 0 by
+  // design). The effects component clears its wall-mark FIFO + transient pools
+  // when it sees this change — how "cleared on level restart" (spec D4.3) lands.
   resetNonce: number;
 }
 

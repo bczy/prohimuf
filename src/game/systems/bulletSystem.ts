@@ -9,7 +9,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HitEvent, ImpactEvent } from "@game/types/feedback";
 
 // One resolved player shot. `enemies` is the enemy set after the (0-or-1) hit;
-// the deltas / events mirror the removed `checkBulletHits` byte-for-byte.
+// the per-hit reward math (deltas / events) matches the removed `checkBulletHits`.
 export interface PlayerShotResult {
   readonly enemies: readonly Enemy[];
   readonly scoreDelta: number;
@@ -67,7 +67,7 @@ export function resolvePlayerShot(
     const dx = impactPoint.x - slot.screenPosition.x;
     const dy = impactPoint.y - slot.screenPosition.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > HIT_RADIUS) continue;
+    if (!(dist <= HIT_RADIUS)) continue; // NaN-safe: a NaN distance never hits.
     if (
       best === null ||
       dist < best.dist ||

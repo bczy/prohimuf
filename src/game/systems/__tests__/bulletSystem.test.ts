@@ -163,6 +163,14 @@ describe("resolvePlayerShot — hittable states (D1.4)", () => {
     expect(result.impact.classification).toBe("miss");
     expect(result.enemies).toEqual([enemy]);
   });
+
+  it.each<EnemyState>(["VISIBLE", "SHOOTING", "APPEARING"])("DOES hit a %s enemy", (state) => {
+    const facade = facadeWithSlots([{ x: 0, y: 0 }]);
+    const enemy = enemyAt(0, { state });
+    const result = resolvePlayerShot(centre, [enemy], facade);
+    expect(result.impact.classification).toBe("hit");
+    expect(result.enemies[0]?.state).toBe("HIT");
+  });
 });
 
 describe("resolvePlayerShot — reward parity with checkBulletHits (AC5)", () => {

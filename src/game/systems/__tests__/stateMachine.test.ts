@@ -99,16 +99,28 @@ describe("createInitialState", () => {
 });
 
 describe("tickGameState — terminal phases", () => {
-  it("does nothing when phase is GAME_OVER", () => {
-    const state: GameState = { ...createInitialState(FACADE_01), phase: "GAME_OVER" };
+  it("does not advance play when phase is GAME_OVER (only clears transients)", () => {
+    const state: GameState = { ...createInitialState(FACADE_01), phase: "GAME_OVER", score: 42 };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
-    expect(next).toBe(state);
+    expect(next.phase).toBe("GAME_OVER");
+    expect(next.score).toBe(42);
+    expect(next.timeRemaining).toBe(state.timeRemaining);
+    expect(next.enemies).toBe(state.enemies);
+    expect(next.impactEvents).toEqual([]);
   });
 
-  it("does nothing when phase is LEVEL_COMPLETE", () => {
-    const state: GameState = { ...createInitialState(FACADE_01), phase: "LEVEL_COMPLETE" };
+  it("does not advance play when phase is LEVEL_COMPLETE (only clears transients)", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      phase: "LEVEL_COMPLETE",
+      score: 42,
+    };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
-    expect(next).toBe(state);
+    expect(next.phase).toBe("LEVEL_COMPLETE");
+    expect(next.score).toBe(42);
+    expect(next.timeRemaining).toBe(state.timeRemaining);
+    expect(next.enemies).toBe(state.enemies);
+    expect(next.impactEvents).toEqual([]);
   });
 });
 
@@ -429,6 +441,104 @@ describe("tickGameState — street couriers", () => {
     }
     expect(state.couriers).toHaveLength(0);
   });
+});
+
+describe("tickGameState — courier friendly fire under hitscan (B1)", () => {
+  it("a fired MISS at a courier costs a life + point and removes the courier", () => {
+    const courier = { id: 7, x: 0, y: -5, dir: 1 as const, speed: 7 };
+    // Aim (via camera offsets) at the street point (0,-5) — far below every window,
+    // so the window shot is a MISS and the courier resolver runs.
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      couriers: [courier],
+      lives: 3,
+      score: 5,
+    };
+    const next = tickGameState(
+      state,
+      fire,
+      0.5,
+      0.5,
+      0.016,
+      FACADE_01,
+      0, // cameraOffsetX
+      -5, // cameraOffsetY → impact point (0,-5) on the courier
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.impactEvents?.[0]?.classification).toBe("miss");
+    expect(next.couriers).toHaveLength(0);
+    expect(next.lives).toBe(2);
+    expect(next.score).toBe(4);
+    expect(next.pointFeedback).toHaveLength(1);
+  });
+
+  it("a window HIT consumes the shot — a courier at the same point is NOT struck", () => {
+    const slot = FACADE_01.slots[0];
+    if (slot === undefined) throw new Error("expected slot");
+    const enemy = {
+      id: 1,
+      slotIndex: 0,
+      state: "VISIBLE" as const,
+      timer: 5,
+      kind: "normal" as const,
+      hp: 1,
+    };
+    // Courier planted at the very slot the shot lands on: only spared because the
+    // window hit consumes the shot before the courier resolver can run.
+    const courier = {
+      id: 7,
+      x: slot.screenPosition.x,
+      y: slot.screenPosition.y,
+      dir: 1 as const,
+      speed: 7,
+    };
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      enemies: [enemy],
+      couriers: [courier],
+      lives: 3,
+    };
+    const next = tickGameState(
+      state,
+      fire,
+      0.5,
+      0.5,
+      0.016,
+      FACADE_01,
+      slot.screenPosition.x,
+      slot.screenPosition.y,
+      18,
+      12,
+      undefined,
+      FIELD,
+    );
+    expect(next.impactEvents?.[0]?.classification).toBe("hit");
+    expect(next.lives).toBe(3); // no friendly-fire penalty
+    expect(next.couriers).toHaveLength(1); // courier survives
+    expect(next.pointFeedback).toHaveLength(0);
+  });
+});
+
+describe("tickGameState — terminal ticks do not replay transient events (M1)", () => {
+  it.each(["GAME_OVER", "LEVEL_COMPLETE"] as const)(
+    "%s idle tick clears impactEvents/feedback/pointFeedback",
+    (phase) => {
+      const state: GameState = {
+        ...createInitialState(FACADE_01),
+        phase,
+        impactEvents: [{ classification: "miss", impactPoint: { x: 0, y: 0 } }],
+        feedback: [{ slotIndex: 0, scoreDelta: 1, livesDelta: 0, timeDelta: 0 }],
+        pointFeedback: [{ x: 0, y: 0, scoreDelta: -1, livesDelta: -1, timeDelta: 0 }],
+      };
+      const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+      expect(next.impactEvents).toEqual([]);
+      expect(next.feedback).toEqual([]);
+      expect(next.pointFeedback).toEqual([]);
+    },
+  );
 });
 
 describe("enemy spawn pool", () => {

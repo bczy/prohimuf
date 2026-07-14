@@ -1,6 +1,6 @@
 import type { Courier } from "@game/types/courier";
-import type { Bullet } from "@game/types/bullet";
 import type { PointHitEvent } from "@game/types/feedback";
+import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
 /** Where couriers live: the wide street's half-width and the road's world y. */
@@ -52,8 +52,7 @@ export function tickCouriers(
     .filter((c) => Math.abs(c.x) <= limit);
 }
 
-export interface CourierHitResult {
-  readonly bullets: readonly Bullet[];
+export interface CourierShotResult {
   readonly couriers: readonly Courier[];
   readonly scoreDelta: number;
   readonly livesDelta: number;
@@ -61,47 +60,42 @@ export interface CourierHitResult {
 }
 
 /**
- * Player bullets hitting couriers: a mistake. Each hit removes the courier and
- * the bullet and applies the civilian penalty (lose a life and a point).
+ * A player miss (no window hit) striking a courier: a mistake. Resolves the
+ * hitscan impact point against the couriers — the nearest single courier within
+ * COURIER_HIT_RADIUS is removed and the civilian penalty applies (lose a life and
+ * a point). One shot = one target (consistent with the D1.5 window rule).
  */
-export function checkCourierHits(
-  bullets: readonly Bullet[],
+export function resolveCourierShot(
+  impactPoint: Vec2,
   couriers: readonly Courier[],
-): CourierHitResult {
-  const hitBulletIds = new Set<number>();
-  const hitCourierIds = new Set<number>();
-  let scoreDelta = 0;
-  let livesDelta = 0;
-  const events: PointHitEvent[] = [];
-  const a = ARCHETYPES.civilian;
-
-  for (const bullet of bullets) {
-    if (!bullet.fromPlayer) continue;
-    for (const c of couriers) {
-      if (hitCourierIds.has(c.id)) continue;
-      const dx = bullet.position.x - c.x;
-      const dy = bullet.position.y - c.y;
-      if (Math.sqrt(dx * dx + dy * dy) <= COURIER_HIT_RADIUS) {
-        hitBulletIds.add(bullet.id);
-        hitCourierIds.add(c.id);
-        scoreDelta += a.scoreDelta;
-        livesDelta += a.livesDelta;
-        events.push({
-          x: c.x,
-          y: c.y,
-          scoreDelta: a.scoreDelta,
-          livesDelta: a.livesDelta,
-          timeDelta: a.timeDelta,
-        });
-      }
-    }
+): CourierShotResult {
+  let best: { courier: Courier; dist: number } | null = null;
+  for (const c of couriers) {
+    const dx = impactPoint.x - c.x;
+    const dy = impactPoint.y - c.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (!(dist <= COURIER_HIT_RADIUS)) continue;
+    if (best === null || dist < best.dist) best = { courier: c, dist };
   }
 
+  if (best === null) {
+    return { couriers, scoreDelta: 0, livesDelta: 0, events: [] };
+  }
+
+  const { courier } = best;
+  const a = ARCHETYPES.civilian;
   return {
-    bullets: bullets.filter((b) => !hitBulletIds.has(b.id)),
-    couriers: couriers.filter((c) => !hitCourierIds.has(c.id)),
-    scoreDelta,
-    livesDelta,
-    events,
+    couriers: couriers.filter((c) => c.id !== courier.id),
+    scoreDelta: a.scoreDelta,
+    livesDelta: a.livesDelta,
+    events: [
+      {
+        x: courier.x,
+        y: courier.y,
+        scoreDelta: a.scoreDelta,
+        livesDelta: a.livesDelta,
+        timeDelta: a.timeDelta,
+      },
+    ],
   };
 }
