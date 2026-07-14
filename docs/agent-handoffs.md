@@ -13,6 +13,200 @@ Template:
 
 ---
 
+### story-tutorial-visual-gestures
+
+- pm→arch: Story written (`_bmad-output/planning-artifacts/story-tutorial-visual-gestures.md`),
+  from Bertrand's 2026-07-14 tutorial feedback ("pas assez visuel"). WHAT: make the tutorial
+  show gestures + the shipped bestiary — four code-drawn (SVG/CSS) gesture icons on the control
+  panels (desktop mouse-click / desktop edge-scroll / mobile two-finger single-tap / mobile
+  one-finger swipe) via a new optional pure-data field on `NarrativeLine`, plus enemy panels for
+  the full shipped Belliard pool (normal/riot/biker/bonus/courier) reusing on-disk sprites. WHY:
+  the stage exists for control discoverability yet teaches motor skills as pure prose; only 3/8
+  panels are illustrated. PM RULINGS (fixed): teach the REAL mobile shoot = SINGLE two-finger tap
+  (Bertrand said "double tap" — wrong, corrected); car/hostage stay OUT (not shipped); NO
+  FLUX/CI/asset-gate (icons in code). HANDOFF to `senior-architect` (cross-cutting: `src/game`
+  data field ∥ `src/render` icon component): own lane partition, the boundary-clean animated-icon
+  approach, the `NarrativeLine.gesture` field shape, and — REQUIRED — the **ADR-0015 D3 amendment
+  or new ADR** (D3 locks control panels text-only; this story reopens it — icons are code-drawn so
+  ADR-0012 D5 "no generation" is preserved). Then DESIGN LOOP (`game-designer`+`narrative-designer`
+  → `lead-game-designer` gate): icon fidelity (animated vs static), new-panels-vs-enriched (8-panel
+  parity), bestiary copy depth. No commits made by pm. (John / PM)
+- narrative→design-gate: Expanded tutorial WORDS delivered
+  (`docs/game-design/tutorial-script-visual-gestures.md`). Full copy for all four
+  segment constants, paste-ready for `narrativeSystem.ts`: opening ×2 (shared), desktop
+  control ×2 + mobile control ×2 (forked, gesture-icon slots pinned per panel), field ×7
+  (shared) — bestiary expanded to the full shipped Belliard pool (normal/riot/biker/bonus/
+  courier) + HUD + outro. Panel count 11/11 (was 8/8), parity + fork-only-on-controls
+  invariant held; all copy TRUE to `ARCHETYPES` (bonus = +5 s reward, not "temps perdu";
+  riot = 2 shots; civilian = -1 vie/-1 point). ADR-0015 device pins verified (mobile:
+  `deux doigts`, no `clic`/`souris`; desktop: `souris`+`clic`, no `doigt`/`balay`; shared
+  panels clean). Corrected Bertrand's "double tap" to the real single simultaneous
+  two-finger tap (`en même temps` added to MC1). TWO `[FLAG]`s for the lead gate: (a)
+  shooter-pose vs idle sprite choice for F1/F2/F3; (b) F5 courier shows `enemy_civilian.png`
+  but the live courier renders `courier/rider.png` — accuracy call. TENSION: 11 panels
+  strains ADR-0012's <10s-to-gameplay ethos (skippable, but long) — biker/bonus depth is
+  the trim lever if the gate wants it shorter. Needs `game-designer` (panel structure /
+  icons) sync + `lead-game-designer` PASS before `dev-gameplay`. (Yasmine / Narrative)
+- design→gate: GAMEPLAY-TEACHING spec written (`docs/game-design/tutorial-visual-gestures.md`),
+  UNGATED (awaits Karim PASS). ALIGNED with Yasmine's copy (both landed 11/11 panels, fork on
+  [2,3], parity held). RULINGS: (1) four gesture icons ANIMATED (motion, not diagram); glow law
+  = only the acted element glows (left button / touched edge / two fingertips / fading swipe
+  trail) with alpha falloff to 0 (no aplat); two-finger icon = ONE simultaneous tap + long
+  inter-loop rest so it never reads as double-tap; edge-scroll = edge PUSH not drag; swipe = one
+  finger, 4 dirs, inertial glide. Per-icon animation tuning table (loop 1.2/2.4/1.4/2.0s) in §1.5.
+  (2) Panel structure = ENRICH controls (icon in image slot, fork stays 2) + ADD 3 bestiary →
+  11 panels; <10s ethos preserved (tutorial off default first-play, skippable every panel).
+  (3) RESOLVES Yasmine's two [FLAG]s: (a) armed types (normal/riot/biker) use SHOOTING sprite
+  (the danger tell IS the lesson), bonus/civilian idle; (b) courier stays `enemy_civilian.png`
+  NOT `courier/rider.png` — bike layer not on disk + lone rider still = floating torso; civilian
+  sprite is the clearest "livreur, never shoot" read (revisit when `courier/bike.png` ships).
+  (4) `gesture` = pure-data enum `mouse-click|edge-scroll|two-finger-tap|swipe-pan`, device-
+  correct via the forked control segment, mutually exclusive with `image`, degrades to text.
+  HAND-OFFS: `narrative-designer` (copy/labels — done, aligned); `lead-art` (final glow hue,
+  rec. #ffe600, + falloff read at composite gate); `senior-architect` (field shape + ADR-0015
+  D3 amendment). Design ACCEPTANCE (stage 5): playtest via `verify` on both `?preview=tutorial`
+  contexts vs §5 DA1–DA8 before architect integration review. (Sacha / Game Designer)
+- design-gate→arch/art: **PASS — both deliverables gated** (`docs/game-design/tutorial-visual-gestures.md`,
+  `docs/game-design/tutorial-script-visual-gestures.md`). Verdict per leg:
+  · **Scope** — conscious documented extension inside the ADR-0012 envelope (optional/skippable/
+  informative-only, zero rule added); enemies limited to the shipped Belliard pool (ADR-0012 D4);
+  no new sprite/FLUX. ADR-0015 D3 reopening is DECLARED (not undeclared) → architect's lane (AC11).
+  · **Core loop** — informative-only, serves `Récupérer→Livrer→Éviter`, dilutes nothing; the 3-5min
+  mission cap does not bind a skippable non-mission stage.
+  · **Verifiability** — icon animation timings (1.2/2.4/1.4/2.0s), lit elements, teaching points and
+  sprite paths are all concrete; copy is verbatim; field-shape correctly deferred to architect.
+  · **Coherence (both docs)** — panel indices MATCH (fork [2,3], shared [0,1,4,5,6,7,8,9,10], 11/11);
+  icon slots ↔ copy annotations MATCH (DC1/MC1=shoot p2, DC2/MC2=pan p3); sprite picks MATCH
+  (armed→`_shooting`, bonus/civilian idle). Sacha's §3.1 RESOLVES both of Yasmine's `[FLAG]`s.
+  · **Factual audit vs `ARCHETYPES`** — VERIFIED TRUE: normal hp1/shoots/+1/3.2s; riot hp2; biker
+  2.0s fast; bonus shoots:false/timeDelta5/countsAsTarget:false; civilian −1 vie/−1 point. All five
+  sprites + truck confirmed on disk. Mobile shoot correctly = single simultaneous two-finger tap
+  (not double-tap). ADR-0015 device-copy pins hold (mobile `deux doigts`, desktop `souris`/`clic`).
+  · **Art-bible** — icon specs invoke loi du glow (only acted element glows) + halo=dégradé (alpha
+  falloff to 0, no aplat); hue and falloff-read correctly DEFERRED to `lead-art` at the composite
+  gate — no visual arbitration by me, no bible conflict flagged.
+  **PANEL-STRUCTURE DECISION (mine, explicit): KEEP 11, do NOT trim biker+bonus.** The <10s ethos
+  (guidelines §5 UX-1) governs the _default_ launch→gameplay path; the tutorial is off it by
+  construction (optional secondary affordance, Belliard is the default highlight, ADR-0012 D2) and
+  skippable at every panel. Bertrand asked for "encore plus détaillé"; biker (weight 15) and bonus
+  (weight 11) are LIVE in Belliard's default pool, so trimming them under-teaches the shipped game —
+  contra the story's own purpose. Conscious documented trade (spec §2.2), not a violation.
+  **PROPOSED GUIDELINE RULE (guidelines silent here):** the <10s launch→gameplay budget binds the
+  default first-play only; an optional stage that is not the default highlight and is skippable at
+  every step is budgeted on _clarity_, not brevity. Forwarded to `pm` for §5 codification.
+  No amendments needed to either doc — both were already coherent. DOWNSTREAM UNBLOCKED:
+  `senior-architect` (field shape + ADR-0015 D3 amendment), `lead-art` (glow hue/falloff), then
+  `dev-gameplay` transcribes; design ACCEPTANCE (stage 5) via `verify` on both `?preview=tutorial`
+  contexts vs §5 DA1–DA8. (Karim / Lead Game Designer)
+- arch→devs: **Boundary verdict PASS. ADR-0020 written** (`docs/adr/0020-code-drawn-gesture-icons.md`,
+  Accepted) — reopens ADR-0015 D3 (control panels no longer text-only), extends ADR-0012 D5 (adds a
+  second optional illustration channel); ADR-0012 D5 "no generation" guarantee PRESERVED (icons are
+  code-drawn SVG/CSS, no FLUX/CI/asset-gate). Index + 0012/0015 cross-refs updated.
+  **FIELD CONTRACT (fixed — the ONLY shared knowledge between the two lanes):** new exported
+  `type GestureKind = "mouse-click" | "edge-scroll" | "two-finger-tap" | "swipe-pan";` in
+  `narrativeSystem.ts`; `NarrativeLine` gains `readonly gesture?: GestureKind` +
+  `readonly gestureAlt?: string`. `gesture` is MUTUALLY EXCLUSIVE with `image` (test-enforced, not
+  type-enforced), lives ONLY on forked control panels (indices 2,3). Render imports `GestureKind` and
+  builds an EXHAUSTIVE `Record<GestureKind,…>` (compile-time completeness). `GestureIcon` lives at
+  NEW `src/render/ui/GestureIcon.tsx`.
+  **LANE A → `dev-gameplay` (`src/game/**`only):**`src/game/systems/narrativeSystem.ts`(add`GestureKind`+ the two fields; transcribe the gated 11-panel script VERBATIM from`docs/game-design/tutorial-script-visual-gestures.md`— opening ×2 shared, desktop/mobile control
+×2 forked with`gesture`set +`image`unset, field ×7 shared; set`gestureAlt`from the script's
+parenthetical labels);`src/game/levels/**tests**/tutorialInvariants.test.ts`(widen shared-ref
+index list`[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
+ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
+both `image`&`gesture`· every`gesture`line has non-empty`gestureAlt`; keep device-copy regex +
+shipped-sprite-exists checks green); `src/game/systems/**tests**/narrativeSystem.test.ts`(gesture
+value ∈ enum integrity).
+**LANE B →`dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
+  animated B&W-lineart+neon icons per `docs/game-design/tutorial-visual-gestures.md` §1, loi du glow
+  = only the acted element glows w/ alpha falloff to 0, two-finger = ONE simultaneous tap + long
+  rest, edge-scroll = PUSH not drag, swipe = 1 finger/4 dirs/inertia); MOD
+  `src/render/ui/NarrativeScreen.tsx` (render `GestureIcon` in the existing image slot `:185-219`
+  when `gesture` present & `image` absent; degrade to text on unknown value).
+  **PARALLEL-SAFE: YES** — disjoint paths (`src/game/**` ⟂ `src/render/**`); the ONLY shared knowledge
+  is the field contract above (frozen here). `NarrativeScreen.tsx` is Lane B; `narrativeSystem.ts` is
+  Lane A — no file overlap. HARNESS: `scripts/screenshot-preview.mjs` UNAFFECTED (captures the
+  tutorial's opening panel, not a per-panel loop; dots render from `scene.lines.map`) → NO tooling
+  lane needed; icons+bestiary verified by driving panels via `verify` on both `?preview=tutorial`
+  contexts (ADR-0015 harness). `docs/agent-handoffs.md` shared/serialized — devs must not edit it
+  concurrently. (Winston / Senior Architect)
+- rework(dev-r3f-render): **Mobile gesture icons redesigned around a recognizable stylized HAND**
+  after Bertrand's "très très bof" on the shipped `two-finger-tap`/`swipe-pan` (old versions read as
+  paperclips/blobs — no hand). ONLY `src/render/ui/GestureIcon.tsx` touched. Both mobile hands are now
+  a SINGLE continuous fanzine B&W silhouette path (fist + extended finger(s), fill=BODY + INK 3px
+  stroke, wider palm, knuckle/thumb detail lines) so no stray finger shapes — new consts
+  `HAND_TWO_FINGER` (index+middle up) / `HAND_ONE_FINGER` (index only). `two-finger-tap`: both
+  fingertips touch glass, neon `#ffe600` halos flash in SYNC + one ripple from the midpoint; retimed
+  loop = dip-to-touch → flash → lift → long rest (never a double-tap). `swipe-pan`: index sweeps,
+  fingertip trails the alpha-falloff motion trail, hand lifts mid-travel (new `gi-sp-*-hand` fade) and
+  the trail glides to an eased stop; H→V direction cycling kept. Phone frame demoted to thin
+  low-contrast context (stroke 1.4 / opacity .28). Desktop `mouse-click` UNTOUCHED. Desktop
+  `edge-scroll` glow band given a steeper multi-stop inward falloff (0→.04→.22→.9) so it reads as a
+  halo, not an aplat (art-bible §2). prefers-reduced-motion still freezes on a readable frame (hand
+  touching, halos on). VERIFY: `corepack yarn typecheck` + `corepack yarn lint` green; drove
+  `?preview=tutorial` via the `verify` skill — mobile landscape 844×390 panels 2/3 + desktop panel 3 —
+  and confirmed on screenshots both hands read instantly as hands and the falloff is a gradient. No
+  commit. (Amelia / dev-r3f-render)
+- review-panel + arch triage (stages 6-7, PR #43 `claude/tutorial-visual-improvements-iiepue`):
+  4 parallel reviewers (`code-review` high / `bmad-code-review` / `bmad-review-edge-case-hunter` /
+  `security-review`) on `git diff origin/main...HEAD`. **No BLOQUANT, no MAJEUR on the shipped
+  happy path.** 11 findings CONFIRMED, 2 REFUTED. Winston adversarial triage + owning-lane split:
+  · **CONFIRMED → docs lane (applied by Winston in this pass, no production code):** (1) stripped
+  stray `</content>`/`</invoke>` tool-call artifact from `docs/game-design/tutorial-visual-gestures.md`;
+  (2a) ADR-0020 D2 reworded — the "graceful degradation / never a broken slot" promise is a
+  **compile-time** guarantee (closed `GestureKind` union + exhaustive `Record`), NOT a runtime
+  fallback (a rogue out-of-union value throws); "never a broken slot" traces to the caller's
+  absent-gesture gate. (2b) ADR-0020 D2 signature aligned to shipped `GestureIcon({ kind })` with
+  the accessible label on the caller's `role="img"` slot (`aria-label={gestureAlt ?? ""}`), not a
+  `label` prop. (8) narrativeSystem.ts module JSDoc "two shipped enemies" → five (comment only).
+  (9) ADR-0015 "Amended by" note: ADR-0020 also supersedes D1's "8 panels"/"field ×4" counts
+  (now 11 / ×7; structure unchanged). (10) story `Status: ready-for-arch` → `in-review`.
+  · **CONFIRMED → `dev-r3f-render` (Lane B, `src/render/**`):** (3) swipe-pan icon animates only
+  2 of the 4 gated directions — **DECISION: fix code, extend to the 4-dir cycle\*\* (spec §1.4/§1.5
+  - DA2 say four; cheaper than a design-gate re-entry), and dedupe the ~40-line verbatim hand group
+    into an SVG `<defs>`/`<use>` so the 4-dir cycle is cheap. (4) edge-scroll `prefers-reduced-motion`
+    frozen frame is unreadable (both bands glow at 0.4, cursor centred) → static attrs must encode a
+    readable base frame: cursor flat on the RIGHT edge, right band glowing, left band + chevrons at 0.
+    (5a) render guard: `role="img"` + empty `aria-label` when a future line lacks `gestureAlt`;
+    (5b) image+gesture line whose image 404s shows NO illustration (imageError hides img, gesture
+    stays suppressed) — add a fallback to the drawable icon in the degradation chain. (11) extract the
+    gesture-slot container style (verbatim copy of the image slot) into a shared const so the "same
+    slot" contract holds by construction. · **CONFIRMED → `dev-gameplay` (Lane A, `src/game/**`):**
+(5c) widen the XOR + `gestureAlt` invariant tests from the tutorial variants to ALL exported
+scenes (pre/post-level lines currently unguarded); (6) fix the HUD-panel copy (panel 9) — the real
+top bar (`src/render/ui/HUD.tsx`) renders score/niveau/vague/temps/vies (no elimination counter;
+delivery is a separate centered banner), corrected French in the briefing register, keeping the
+ADR-0015 device-token pins (no clic/souris/doigt/balay in shared panels); (7) test A5 in
+`narrativeSystem.test.ts`is tautological under strict TS (exhaustive Record already guards enum
+growth) — **derive-or-drop → DROP** (the compile-time guard is the real check). · **REFUTED
+(no action):** new sprite paths "lack existence assertions" (Blind Hunter) — the existing`existsSync` invariant already covers both variants (confirmed by 3 reviewers + acceptance
+auditor). "Stale QA PASS" (Blind Hunter major) — MITIGATED not refuted: the post-QA icon rework
+was dev-self-verified + orchestrator-reviewed on screenshots; a focused QA re-capture runs AFTER
+this fix batch (re-verifies reworked + newly-fixed icons in one pass). **VERDICT: no unresolved
+CONFIRMED blocking/major → clear to dispatch the fix batch.** Lanes A and B are path-disjoint
+(`src/game/**`⟂`src/render/**`) → dispatched in **parallel**; QA re-capture then re-review of
+    the fix diff, then pm accept. (Panel + Winston / Senior Architect)
+- pm acceptance (John, stage 8): **ACCEPT-WITH-NOTES.** All 12 ACs verified against the
+  shipped artifacts, not just the log: ADR-0020 landed (AC11); `GestureIcon.tsx` ships the four
+  icons incl. the 4-direction swipe cycle (AC1-AC4, panel finding #3 fixed); `NarrativeScreen.tsx`
+  carries the `role="img"`/`aria-label` a11y guard + image-404→gesture degradation chain (AC10);
+  `tutorialInvariants.test.ts` widened to the 11-panel shared set [0,1,4,5,6,7,8,9,10] with the
+  gesture-XOR-image, fork-only-[2,3], device-correct and non-empty-`gestureAlt` pins (AC9, AC7).
+  Scope CLEAN vs PROJECT_GUIDELINES: conscious documented extension inside the ADR-0012 envelope
+  (optional/skippable/informative-only, zero rule added), Belliard pool only, no car/hostage, no
+  FLUX (AC5/AC6/AC8). Mobile "très très bof" rejection was reworked around recognizable stylized
+  hands + orchestrator screenshot review; the panel's "stale QA" concern is mitigated (not
+  refuted) by the render lane's fresh `verify` self-check of the reworked+fixed icons on both
+  device contexts — good enough to accept, flagged for Bertrand. NOTES for stage 9 (Bertrand):
+  (1) merge only on GREEN final-commit CI (green on prior commit, re-running); (2) the 8→11 panel
+  growth is a conscious trade vs the <10s ethos — Karim's gate ruled KEEP 11 and forwarded a
+  PROPOSED §5 guidelines codification ("optional non-default skippable stages are budgeted on
+  clarity, not the <10s launch→gameplay brevity") awaiting a PM/Bertrand call; (3) no full QA
+  re-capture after the icon rework — dev self-verify + screenshot review stood in. Story
+  shippable now. (John / PM)
+
+---
+
 ### story-audio-licence-attribution
 
 - arch: Boundary verdict PASS — pure debt paydown, ZERO `src/**` touch, NO React/Three
@@ -1740,6 +1934,92 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   sources "public domain / CC" but its lists fetch copyrighted LukHash tracks —
   live IP risk on the public deploy. (Panel + Winston triage, orchestrator applied)
 
+- story-tutorial-visual-gestures / Lane A (dev-gameplay, Amelia): FINISH. Owned
+  `src/game/**` only (Lane B owns src/render, untouched). Added `GestureKind` union +
+  optional `gesture?`/`gestureAlt?` to `NarrativeLine` per ADR-0020 (D1, JSDoc verbatim,
+  pure data — narrativeSystem.ts stays import-free). Transcribed the gated 11-panel script
+  (`docs/game-design/tutorial-script-visual-gestures.md`): opening [0,1] shared (O2
+  tightened per gate), forked control panels [2,3] carry desktop `mouse-click`/`edge-scroll`
+  and mobile `two-finger-tap`/`swipe-pan` (no image), field [4..10] shared bestiary
+  (normal/riot/biker/bonus/civilian shooting-pose + HUD + outro). All 6 sprite paths
+  verified on disk. Panel count 8→11 both variants; shared indices [0,1,4,5,6,7,8,9,10]
+  reference-equal, fork [2,3]. Tests: extended tutorialInvariants (11-panel count, gesture
+  XOR image, gesture only on [2,3], device-correct values, gestureAlt-present, shared-panel
+  token cleanliness) + narrativeSystem A5 (gesture ∈ GestureKind). GREEN: tsc clean, lint
+  clean, 194/194 src/game tests (tutorialInvariants 13, narrativeSystem 6). NOT committed —
+  orchestrator commits after both lanes land. Hand-off to Lane B: `GestureKind` is exported
+  from `@game/systems/narrativeSystem` for the exhaustive `Record<GestureKind,…>` icon map.
+  (Amelia / dev-gameplay)
+
+- story-tutorial-visual-gestures / Lane B (dev-r3f-render, Amelia): FINISH. Owned
+  `src/render/**` only (Lane A's `src/game` untouched — its contract landed while I worked,
+  so tsc is green against the real `GestureKind` + `gesture?`/`gestureAlt?`, no shim needed).
+  NEW `src/render/ui/GestureIcon.tsx`: four inline-SVG + CSS-keyframe icons per
+  `docs/game-design/tutorial-visual-gestures.md` §1, one exhaustive `Record<GestureKind,…>`
+  (a 5th enum value fails the build). B&W line-art décor (INK) + ONE neon-yellow `#ffe600`
+  glow each, every glow a radial/linear alpha-falloff gradient to 0 (loi du glow / halo-dégradé).
+  `prefers-reduced-motion: reduce` freezes each on its readable base frame. Animations:
+  mouse-click (1.2s) left button presses 2px + glow spike → one click-ripple → rest;
+  edge-scroll (4.8s, alternates right then left edge) cursor slides to edge → edge band glows
+  inward + chevrons march → snap back (horizontal both-senses; top/bottom is the noted faithful
+  extension); two-finger-tap (1.4s) both fingertip halos flash in sync (shared class) → single
+  midpoint ripple → lift → long rest (never reads as double-tap); swipe-pan (4s) one fingertip
+  sweeps trailing a gradient motion-trail, lifts mid-travel, trail glides to an eased stop
+  (inertia), cycles horizontal then vertical (two dirs shown; full 4-way is the noted extension).
+  EDITED `src/render/ui/NarrativeScreen.tsx`: renders `<GestureIcon kind={…}/>` in the same
+  38vh/shrinkable slot as `image`, only when `image` absent & `gesture` set, wrapped
+  `role="img"` + `aria-label={gestureAlt ?? ""}` (SVG aria-hidden). Graceful degradation:
+  absent gesture → slot not rendered; unknown value impossible under the exhaustive Record.
+  GREEN: `yarn typecheck` clean, `yarn lint` clean. NOT committed. Runtime visual fidelity
+  (glow falloff, read-at-a-glance) is for the composite/`verify` gate on real screenshots.
+  (Amelia / dev-r3f-render)
+
+- devs→arch: **INTEGRATION REVIEW — APPROVE-with-fixes (fixes applied, no rework).** Both lanes
+  land clean against ADR-0020. CONTRACT: `GestureKind`/`gesture?`/`gestureAlt?` verbatim per D1;
+  boundary law upheld (`narrativeSystem.ts` zero imports = pure data; every pixel in
+  `src/render/ui/GestureIcon.tsx`; type-only cross-boundary import). GOTCHAS all honored: gesture
+  XOR image, gesture only on fork [2,3], device-correct values, shared-ref [0,1,4,5,6,7,8,9,10],
+  11-panel parity, exhaustive `Record<GestureKind,…>` — all test-pinned (tutorialInvariants 13,
+  narrativeSystem 6, both green). tsc EXIT=0 under `noUncheckedIndexedAccess` because the Record is
+  over a _closed literal union_ (lookup is non-nullable, hence exhaustive). NarrativeScreen: gesture
+  slot gated on `image===undefined && gesture!==undefined` → zero regression for pre/post-level
+  scenes (no `gesture` field); a11y `role="img"`+`aria-label`, SVG `aria-hidden`; reduced-motion
+  freeze via media query. All 5 bestiary sprites + truck confirmed on disk. Surgical: every changed
+  line traces to the gated script/spec. FIX APPLIED (mine, trivial, doc-only): the header JSDoc in
+  `GestureIcon.tsx` and the slot comment in `NarrativeScreen.tsx` claimed the "never a broken slot"
+  guarantee came from a runtime `… | undefined` lookup / `GestureIcon` returning null — factually
+  wrong (the closed union makes the lookup non-nullable; GestureIcon never returns null). Corrected
+  both to describe the real mechanism (closed union + exhaustive Record + caller's gate). No code
+  behavior changed; tsc+lint re-verified EXIT=0. VERDICT: cleared for the code-review panel / merge
+  gate. (Winston / Senior Architect)
+
+- story-tutorial-visual-gestures / Stage 5 VERIFY — QUALITY GATE: **PASS**
+  (qa-lead, Inès). Runtime capture via `verify` skill on `?preview=tutorial`, both
+  device forks, headless Chromium; 0 pageerrors either context. DESKTOP (default UA):
+  drove all 11 panels — dotCount=11, litDots 1→11 monotonic, `Passer` present every
+  panel. Panel 2 `mouse-click` (role=img aria "Souris : un clic gauche, un tir."),
+  panel 3 `edge-scroll` (aria "Curseur poussé au bord…") — edge-PUSH glow band, not a
+  drag (DA1). Bestiary panels 4–8 render correct sprites+alts: enemy*shooting,
+  enemy_riot_shooting, enemy_biker_shooting (all SHOOTING pose w/ muzzle flash),
+  enemy_bonus + enemy_civilian (idle) (DA5). MOBILE (iPhone UA → detectMobile flips to
+  TUTORIAL_NARRATIVE_MOBILE): panel 2 `two-finger-tap` (aria "Deux doigts, un seul tap
+  simultané…", two static glowing fingertips) + panel 3 `swipe-pan` (aria "Un doigt
+  balaye…", one fingertip + neon motion trail) — device-accurate copy, distinguishable
+  at a glance (DA2/DA4). GLOW (DA3): every lit element is a radial/linear alpha-falloff
+  gradient reaching 0 — mouse left-button bloom, edge-band bright→0 inward, fingertip
+  radial halos, swipe trail tip→tail — NO flat neon plate. ANIMATION: frameA vs frameB
+  1s apart differ on BOTH forks (desktop button glow spike→idle; mobile differs) —
+  loops running. Both variants 11 panels, dot parity (DA6). Optional/skippable/
+  informative, TERMINER→menu, nothing written to progress (DA7). Icons render in the
+  38vh slot, never a broken/empty slot (DA8). Evidence: 11 PNGs under qa scratchpad
+  (desktop_panel*{2,3,5,6,7}[_frameA/B], mobile*panel*{2,3}[_frameA/B]).
+  NOTES (informational, non-blocking): (i) mobile tutorial is only reachable in
+  LANDSCAPE — portrait raises the ADR-0003 rotate overlay ("TOURNEZ VOTRE APPAREIL")
+  by design; captures taken in 844×390. (ii) edge-scroll alt-edge (left) cycle + swipe
+  4-direction full sweep are noted faithful extensions per Lane B, not captured as
+  single stills. No defects found. Hand to senior-architect (Winston) for integration
+  review; game-designer (Sacha) design-conformity playtest runs in parallel. (Inès / qa-lead)
+
 ---
 
 ### fix-wheel-spin-and-vehicle-facing (PR #42, branch claude/bike-wheel-speed-nnh6wi)
@@ -1780,3 +2060,76 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   browser-verified both directions, manifest test guards `facing`). Standing note: the
   deferred minors/nits above are tracked follow-up debt (this entry is the log).
   Clear to merge.
+
+- story-tutorial-visual-gestures / panel fix batch (post-triage, two parallel lanes):
+  Lane A (dev-gameplay, Amelia): HUD panel copy corrected to match HUD.tsx reality
+  ("En haut : ton score, le niveau, la vague, le chrono et tes vies. Quand le colis
+  passe, la jauge de livraison s'affiche au centre — tiens-la au vert."), gesture/image
+  XOR + gestureAlt invariants widened to ALL exported scenes (tutorial variants +
+  PRE/POST_LEVEL_NARRATIVE), tautological test A5 dropped. 214/214 green.
+  Lane B (dev-r3f-render, Amelia): swipe-pan extended to the full 4-direction cycle
+  (2.0s/dir, 8s loop) with the hand deduped via SVG defs/use; edge-scroll reduced-motion
+  static base frame made readable (cursor on right edge, right band lit, left band +
+  chevrons 0); NarrativeScreen empty-gestureAlt guard (aria-hidden fallback), image-404
+  → gesture-icon degradation chain, shared ILLUSTRATION_SLOT_STYLE const. tsc/lint/
+  format green; visual self-check via verify skill both contexts, no pageerrors.
+  (Amelia ×2, logged by orchestrator per serialisation rule)
+
+- story-tutorial-visual-gestures / hand silhouettes v3 (post-merge-gate product
+  feedback, Bertrand: "on ne dirait pas du tout une main" on the live preview):
+  game-graphist authored new HAND_TWO_FINGER / HAND_ONE_FINGER silhouettes with the
+  three missing anatomy cues (thumb lobe, scalloped folded-knuckle ridge, unequal
+  leaning fingers) proven on screenshots at 240/96/64px (3 iterations);
+  dev-r3f-render integrated verbatim into GestureIcon.tsx, retargeted halo/ripple/
+  trail anchors to the new fingertips, all animation ids/classes preserved.
+  tsc/lint/format green; in-context verify capture both mobile panels — hands read,
+  anchors aligned. (Sam / game-graphist + Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / hand pose v4 (Bertrand's photo reference):
+  Bertrand supplied a photo of the real two-finger tap (side view, arched hand,
+  fingers descending diagonally to touch the surface, curled fingers under, wrist
+  exiting top-right). game-graphist redrew both HAND\_\* silhouettes in that pose
+  (screenshot-proven at 240/96/64, defect sweep clean); dev-r3f-render integrated,
+  retargeted tap halos (38,84)/(28,95) r8 + ripple (33,90) + swipe tip (34,87),
+  re-anchored the 4 directional trails, trimmed down/up sweep travel to keep the
+  low fingertip in frame. tsc/lint/format green; in-context frozen captures match
+  the photo pose. (Serge / game-graphist + Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / hand line-art v5 (Bertrand rejected v4 pose, then
+  supplied the iStock touch-gesture reference sheet): Serge/game-graphist redrew both
+  HAND\_\* as THIN uniform outline line-art (fill:none, INK stroke 2.4px, round caps/joins)
+  in the iStock idiom — extended finger(s) straight up, unused fingers as curled
+  knuckle-bumps, soft relaxed thumb lobe, short wrist. Neon (#ffe600) indicators are
+  SEPARATE paths: 3 concentric tap-rings for the two-finger tap, a tip-circle (+optional
+  direction arrow) for the swipe. Screenshot-proven at 240/96/64 on dark vs the reference
+  crops (5 iterations, /tmp scratchpad). Defect sweep clean (fingers rooted, parity 2-up
+  correct, thumb singular, no fused/detached parts). NOTE for render dev: this is a
+  vocabulary change — set fill="none" (not BODY), drop the old interior crease detail
+  paths, retarget halo/ripple/trail anchors to the new tips (below). Did NOT edit
+  GestureIcon.tsx — SVG + anchors handed to dev-r3f-render. (Serge / game-graphist)
+
+- story-tutorial-visual-gestures / hand line-art v5 INTEGRATED (PR #43): dev-r3f-render
+  applied the iStock vocabulary in src/render/ui/GestureIcon.tsx. Both HAND\_\* swapped to the
+  v5 outline paths (fill="none", INK stroke 2.4, round caps/joins); all interior crease/knuckle
+  sub-paths deleted on both hands. Two-finger tap: single ripple → 3 concentric neon rings
+  centered (55,17) r6/10/14 (2px, fill none), pulsed on the tap beat via gi-tt-ripple with
+  static opacity=1 = the reduced-motion frozen frame; fingertip halos retargeted to (45,23)/
+  (63,17). Swipe: 4 tip glows + 4 directional trails retargeted to the top tip (50,19), static
+  neon contact ring (50,20) r7 added, and a reduced-motion-ONLY direction arrow (66,20→86,20 +
+  head) revealed via a new .gi-rm-only rule in the reduced-motion media query (R-trail static
+  opacity=0 so the frozen frame stays clean). Down/up sweep translates re-tuned (-2→34) to keep
+  the now-top-anchored fingertip in frame. tsc/lint/format:check all green; mobile-UA/landscape
+  captures (panels 2 & 3, one animated + one reduced-motion frame each) sit naturally next to the
+  iStock reference. Not committed (per Bertrand). (Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / thumb fold fix v7 (Bertrand on v5: "le pouce doit être
+  PLIÉ, reprends la référence"): Serge/game-graphist reworked the LEFT/palm edge of both
+  HAND\_\* outlines ONLY — the open side-hook thumb replaced by a FOLDED thumb per iStock
+  r1c1/r1c4: a smooth rounded lobe hugging the palm front (convex outer edge from finger
+  base to wrist), plus one short interior fold-crease stroke (ONE_CREASE/TWO_CREASE)
+  separating the thumb lobe from the palm. Finger geometry, tips (45,23)/(63,17)/(50,19),
+  fist bottom and wrist all UNCHANGED. Screenshot-proven at 240/96/64 vs reference thumb
+  crops (v6 too-sharp notch → v7 smooth lobe). Render-dev note: keep the crease inside the
+  animated <g> (lifts/sweeps with the hand); it is the ONLY interior stroke to add (the old
+  knuckle/finger-split creases still get dropped). Did NOT edit GestureIcon.tsx.
+  (Serge / game-graphist)
