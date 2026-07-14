@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Nine subagents work the muf project. They run **in parallel where paths don't overlap**,
+Fifteen subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -8,27 +8,100 @@ but they **always coordinate** through this protocol. Read this before acting.
 | Agent | Persona | Owns | Never touches |
 | --- | --- | --- | --- |
 | `pm` | John 📋 | PRD, epics, stories, scope (`_bmad-output/planning-artifacts/`) | production code |
+| `producer` | Marion 📆 | pipeline execution: stage tracking, hand-off chasing, caps & escalations, sprint status | scope, gate verdicts, specs, production code |
 | `senior-architect` | Winston 🏗️ | architecture, ADRs, boundaries, cross-cutting sign-off | feature implementation |
+| `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
+| `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
+| `narrative-designer` | Yasmine ✒️ | universe, cast, every player-facing word — scripts in `docs/game-design/` | production code, mechanics, visuals |
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
+| `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
+| `qa-lead` | Inès 🧪 | stage 5 VERIFY: test plans (`docs/qa/`), e2e/regression specs, QUALITY GATE | production code, test implementation (spec only) |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
 
-## The flow (always collaborate, never silo)
+## The production pipeline (a feature passes hand to hand — never silo)
+
+Every feature traverses the SAME pipeline, stage by stage, each stage with one owner and
+an explicit hand-off logged in `docs/agent-handoffs.md`. A stage that does not apply is
+skipped EXPLICITLY (the agent holding the hand at that point declares the skip and logs
+it; `producer` verifies every skip is explicit), never silently.
 
 ```
-Bertrand → pm (what/why, scoped story)
-            → senior-architect (how, boundaries, lane assignment + parallel plan)
-                → dev-r3f-render  ┐
-                → dev-gameplay    ├─ build in parallel on non-overlapping paths
-                → dev-tooling     ┘
-                → senior-architect (review, integration sign-off)
-                → CODE-REVIEW PANEL (mandatory before any merge to main — see below)
-            → pm (acceptance vs story + PROJECT_GUIDELINES)
+0. INTAKE     Bertrand → pm : intent, bug, or idea.
+1. PRODUCT    pm — scoped story: WHAT/WHY, "cahier des charges" test vs
+              PROJECT_GUIDELINES, acceptance criteria.
+2. DESIGN     (when the story touches how the game plays or its fiction)
+                → game-designer      ┐ specs in parallel on
+                → narrative-designer ┘ non-overlapping deliverables
+                → lead-game-designer DESIGN GATE (PASS required — §design flow)
+3. TECH PLAN  senior-architect — feasibility, boundaries, ADR if needed, lane
+              partition: dev lanes + an ART lane when the feature needs new or
+              changed visuals.
+4. BUILD      parallel, non-overlapping lanes:
+                · ART — advisor → concept-artist → game-graphist → lead-art
+                  gates → CI generation (§art flow)
+                · AUDIO — sound-designer specs → sourcing/generation →
+                  AUDIO GATE (§audio flow)
+                · DEV — dev-gameplay (TDD) / dev-r3f-render / dev-tooling-assets
+5. VERIFY     the test stage, before any review — orchestrated by qa-lead
+              against her per-story test plan (docs/qa/):
+                · rtk tsc + rtk vitest (100%) + rtk lint — all green, no claims
+                · e2e / `verify` skill runs for anything player-visible
+                · runtime-composed visuals → screenshots → lead-art Gate 4
+                · audible behaviour changes → sound-designer behaviour verdict
+                · game-designer PLAYTESTS the build vs the gated spec (design
+                  acceptance — verdict reported to lead-game-designer)
+                · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
+                  (PASS required before stage 6; FAIL routes back to the
+                  owning lane with the failing case named)
+6. INTEGRATE  senior-architect — integration review & cross-lane sign-off.
+7. REVIEW     CODE-REVIEW PANEL — 4 parallel skills, findings adversarially
+              verified (mandatory before any merge to main — see below).
+8. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
+9. MERGE      Bertrand (or an EXPLICIT merge instruction from him for this
+              branch — a general standing preference is never merge authority) —
+              merge to main; the full cycle is traceable in docs/agent-handoffs.md.
 ```
+
+The pipeline is DRIVEN by `producer` (Marion): she tracks which stage every feature is
+in and who has the hand, chases missing log entries, enforces the bounded-iteration caps
+(2 rework rounds per spec, 2 generation batches per asset set, 2 verify↔build rework
+rounds per story; a "cycle" = one pass of a story through the pipeline, and only Marion
+declares a reset), serialises contended seams, and assembles escalation packets for
+Bertrand when a cap is hit or a lane stalls.
+She holds no gate and authors no content — the orchestrator launches agents, Marion
+keeps the state honest. Visual companion: `docs/diagrams/agent-workflows.md` (the
+pipeline as one mermaid flowchart).
+
+## The design flow (any change to mechanics, tuning, 3C, universe, cast or in-game text)
+
+```
+pm story (what/why)
+     ↓
+lead-game-designer splits & sequences the design work
+     ↓
+game-designer (mechanics, tuning tables,  ┐ parallel when deliverables
+               3C specs)                  │ don't overlap; they reconcile
+narrative-designer (bible, character      │ directly when fiction and
+                    sheets, scripts)      ┘ mechanics meet
+     ↓
+lead-game-designer DESIGN GATE — PASS/FAIL per deliverable vs PROJECT_GUIDELINES
+(cahier des charges test, core loop, verifiability, coherence with gated specs
+ and with the art bible). Max 2 rework rounds per cycle, then escalate to Bertrand.
+     ↓
+FAIL → designer iterates · PASS → senior-architect (lanes) → devs implement the spec
+```
+
+Design deliverables live under `docs/game-design/` (index: `docs/game-design/README.md`,
+kept by `lead-game-designer`). Designers write specs and scripts, never production code:
+`dev-gameplay` transcribes gated tuning values and narrative scripts into `src/game/**`.
+Character/asset VISUALS stay in the art flow — a character sheet feeds `concept-artist`,
+it never bypasses `lead-art`'s gates. Every gate verdict is logged in
+`docs/agent-handoffs.md`.
 
 ## The code-review panel (MANDATORY gate before merging to main)
 
@@ -46,8 +119,10 @@ calls), each reviewer applying a **different review skill** so the methods stay 
 Protocol: reviewers are **read-only** and report findings as
 `[BLOQUANT|MAJEUR|MINEUR] + file:line + concrete failure scenario`. Every non-trivial
 finding is then **adversarially verified** (a skeptic agent tries to refute it against the
-real code); only CONFIRMED findings are acted on. `senior-architect` triages, applies or
-rejects-with-reason, re-runs `rtk tsc` + `rtk vitest` + `rtk lint`. The panel outcome
+real code); only CONFIRMED findings are acted on. `senior-architect` triages and
+prescribes fixes or rejects-with-reason; the OWNING lane applies them (the architect
+never implements feature code himself); then `rtk tsc` + `rtk vitest` + `rtk lint`
+re-run, and the panel re-runs if the diff changed materially. The panel outcome
 (findings → verdict → action) is logged in `docs/agent-handoffs.md` and summarized in the
 PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
 
@@ -78,13 +153,18 @@ lead-art ASSET GATE (PASS/FAIL per sprite vs docs/art-direction.md;
                      mechanical gate passing does not bind the verdict)
      ↓
 lead-art COMPOSITE GATE (Gate 4 — runtime-composed visuals only: neon rims, glows,
-                         additive/emissive effects. lead-art verdicts REAL in-game
-                         screenshots; an asset-gate PASS does NOT cover runtime
-                         composition. « un halo est un dégradé, jamais un aplat » —
-                         a binary-alpha glow with no falloff FAILs here)
+                         additive/emissive effects. Runs at pipeline stage 5 (VERIFY),
+                         on REAL in-game screenshots of the INTEGRATED build — never
+                         inline in the stage-4 art lane. An asset-gate PASS does NOT
+                         cover runtime composition. « un halo est un dégradé, jamais
+                         un aplat » — a binary-alpha glow with no falloff FAILs here)
      ↓
-FAIL → concept-artist iterates (one variable per roll, max 2 batches/cycle,
-        then escalate options to Bertrand) · PASS → pm/product acceptance
+FAIL (prompt/asset gates) → concept-artist iterates (one variable per roll,
+        max 2 batches/cycle, then escalate options to Bertrand)
+FAIL (composite gate) → dev-r3f-render (the composed visual is src/render code;
+        it re-enters the art flow only if the defect is in the source sprite's alpha)
+PASS → stage 5 (VERIFY) funnels into qa-lead's QUALITY GATE, then the pipeline
+        continues (integrate → review → pm acceptance)
 ```
 
 Every gate verdict is logged in `docs/agent-handoffs.md`.
@@ -102,17 +182,51 @@ only the source sprite. So:
 - The **orchestrator** routes those screenshots to `lead-art` for the composite gate
   (Gate 4) before merge. No screenshots reaching `lead-art` = the runtime visual is
   ungated = it does not merge.
+- A composite-gate **FAIL routes to `dev-r3f-render`** (the visual is render code,
+  not a prompt — regenerating a PNG cannot fix a falloff computed in `src/render`);
+  it goes back to `concept-artist` only when the defect is in the source sprite
+  itself (e.g. its alpha channel).
+
+## The audio flow (any BGM/SFX asset or audible behaviour change)
+
+```
+game-designer (WHEN a cue fires + what it means — only if the cue is a gameplay signal)
+     ↓
+sound-designer SPEC (what it sounds like: character, tier mapping, function —
+                     "ce qui sonne informe": every cue is information)
+     ↓
+sourcing/generation (dev-tooling-assets mechanics, e.g. scripts/download-audio.mjs —
+                     each sourced asset carries a VERIFIED licence/provenance record)
+     ↓
+sound-designer AUDIO GATE (PASS/FAIL per asset vs docs/audio-direction.md;
+                           mechanical pre-checks — format, loudness, loop points —
+                           never bind the verdict; what needs human ears is
+                           escalated to Bertrand with a shortlist, never passed blind)
+     ↓
+FAIL → iterate (max 2 batches/cycle, then escalate) · PASS → dev lanes wire it
+     ↓
+audible BEHAVIOUR changes (tension→tier mapping, crossfades, mix) get Malik's verdict
+on the spec BEFORE implementation and on the result at stage 5 (VERIFY)
+```
+
+`sound-designer` (Malik) owns `docs/audio-direction.md` (the sonic twin of the art
+bible) and is `lead-art`'s peer: one identity, two senses. Every gate verdict is logged
+in `docs/agent-handoffs.md`.
 
 ## Rules of engagement
 1. **No code before a story.** `pm` defines it; `senior-architect` makes it buildable and
-   assigns lanes. Devs implement only assigned, scoped work.
+   assigns lanes. Devs implement only assigned, scoped work. When the story touches
+   gameplay (mechanics/tuning/3C) or fiction (universe/cast/in-game text), the design
+   loop runs first and no dev implements an ungated design: `lead-game-designer`'s
+   DESIGN GATE PASS is required before the architect assigns lanes.
 2. **Boundary rule is law.** `src/game` imports no React/Three; `src/render` holds no game
    rules; `src/hooks` is the only bridge. Any change crossing a lane → `senior-architect`
    sign-off, logged below.
 3. **Parallel-safe = non-overlapping paths.** The only routinely shared seam is
    `src/hooks/**` (render ↔ gameplay): announce, serialise, don't both edit at once.
 4. **Log every hand-off** in `docs/agent-handoffs.md` (template there). One line to claim
-   work, one to release it + File List.
+   work, one to release it + File List. `producer` curates the log's hygiene and chases
+   missing entries — an unlogged hand-off didn't happen.
 5. **Tooling discipline.** Use `rtk` for dev commands (compact output) and `codegraph` to
    locate symbols/callers before editing. Verify with `rtk tsc` + `rtk vitest` + `rtk lint`
    before declaring done — and never claim green tests that aren't.

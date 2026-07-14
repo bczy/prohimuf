@@ -36,6 +36,8 @@ tiles) |
 GitHub Pages deployment,
 branch previews |
 | [adr/README.md](./adr/README.md) | Architecture Decision Records (index + convention) |
+| [game-design/README.md](./game-design/README.md) | Game-design deliverables index (specs, scripts — kept by `lead-game-designer`) |
+| [qa/README.md](./qa/README.md) | QA index (test plans, regressions — kept by `qa-lead`) |
 | [dev-guidelines.md](./dev-guidelines.md) | TDD,
 YAGNI,
 DRY — project coding standards |

@@ -1470,3 +1470,56 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 - Docs updated: script WHY header + SCRIPTS.md section + gen-sprites.yml two step comments
   (was "enclosed only" → "solidify") + sprite-hole-audit skill. node --check + prettier
   clean. NOT committed. (Serge — TECHNICAL pass, scripted retouch iter-2)
+
+---
+
+### crew-game-design-lane
+
+- setup: Game-design lane added to the crew (Bertrand's request, 2026-07-14). Three new
+  subagents: `game-designer` (Sacha 🎮 — mechanics, tuning, 3C), `narrative-designer`
+  (Yasmine ✒️ — universe, cast, in-game text) and `lead-game-designer` (Karim 🧭 —
+  DESIGN GATE + design↔art↔dev sync). New flow section in
+  `.claude/agents/COLLABORATION.md` (§"The design flow"): designers write specs/scripts
+  under `docs/game-design/` (index README owned by Karim), gate PASS required before
+  `senior-architect` assigns lanes; devs implement gated specs only. Rule #1 amended
+  accordingly. BMAD side: the official BMGD module ("BMad Game Dev Studio", module code
+  `gds`, npm `bmad-game-dev-studio`) exists but is NOT installed in this repo; the new
+  agents bridge to installed BMM skills and will prefer `bmgd-*` workflows once/if
+  Bertrand installs the module (`npx bmad-method install`, select "Game Dev Studio").
+  (Orchestrator)
+- update: Follow-up on Bertrand's review (same cycle): (1) the three separate flows are
+  now ONE production pipeline (stages 0. INTAKE → 9. MERGE) in COLLABORATION.md, with an
+  explicit VERIFY stage (checks + e2e + composite gate + game-designer PLAYTEST vs gated
+  spec → lead-game-designer design acceptance); (2) new `producer` subagent (Marion 📆)
+  owns pipeline execution — stage tracking, hand-off chasing, cap enforcement,
+  escalation packets — no gate, no authorship; (3) `docs/diagrams/agent-workflows.md`
+  rewritten as one mermaid flowchart of the full pipeline (syntax validated).
+  (Orchestrator)
+- update 2: `sound-designer` (Malik 🎧) added — Bertrand spotted the gap: a game ABOUT
+  sound systems had nobody owning the sound. Malik owns `docs/audio-direction.md` (to be
+  drafted on first activation, sonic twin of the art bible), audio specs ("ce qui sonne
+  informe"), and the AUDIO GATE on BGM/SFX assets + audible behaviour changes; taste
+  calls needing human ears are escalated to Bertrand as shortlists, never passed blind.
+  Pipeline stage 4 gains an AUDIO lane (§audio flow in COLLABORATION.md); mermaid
+  diagram updated and re-validated. Roster: 14 agents. (Orchestrator)
+- update 3: `qa-lead` (Inès 🧪) added — owner of pipeline stage 5 (VERIFY): per-story
+  test plans under `docs/qa/` (index created, with the known e2e holes listed), e2e and
+  regression scenario SPECS (implementation stays in the dev lanes), and the QUALITY
+  GATE funnelling checks + composite/audio gates + design acceptance into one verdict
+  before INTEGRATE. Decision recorded as ADR-0018 (staffed production pipeline).
+  Roster: 15 agents. Mermaid diagram updated. (Orchestrator)
+- review-panel: 4 parallel reviewers (consistency/code-review-high, acceptance-audit/
+  bmad-code-review, edge-case-hunter, security-review) on the full branch diff;
+  24 consolidated findings triaged by senior-architect (adversarial verification
+  against the real files). Verdict: 3 CONFIRMED MAJEUR (blocking) — ADR-0018 missing
+  from the ADR index; COMPOSITE GATE had no viable FAIL route (routed to concept-artist
+  for a src/render defect); new AUDIO GATE had no licence/provenance criterion — plus
+  19 CONFIRMED MINEUR, 1 REFUTED (tool-grant premise wrong: pm has WebSearch),
+  1 OUT-OF-SCOPE (pre-existing prompt-gate cap behaviour). ALL confirmed findings
+  fixed in-branch (blocking set + minors batched: gate lists, FAIL/reject edges,
+  cap semantics + cycle definition, skip authority, QA waiver/dispute arbitration,
+  producer serialisation wording, merge-authority wording, docs/index.md rows,
+  lead-game-designer Bash dropped). ESCALATION to Bertrand/pm (separate ticket,
+  pre-existing, NOT fixed by this branch): scripts/download-audio.mjs labels its
+  sources "public domain / CC" but its lists fetch copyrighted LukHash tracks —
+  live IP risk on the public deploy. (Panel + Winston triage, orchestrator applied)

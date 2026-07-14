@@ -92,7 +92,10 @@ size**, then squint:
 count, speckle budget, enclosed-region inventory): its PASS is a floor, it does NOT
 bind your craft verdict — same as Nico's `check-sprite-style` pre-check does not bind
 his taste. A single sweep hit BLOCKS the sprite from going up to Nico; log it in
-`docs/agent-handoffs.md` with the crop coordinates. This sweep also runs on **any
+`docs/agent-handoffs.md` with the crop coordinates. A blocked sprite routes back to
+`concept-artist` (regeneration) or to your scripted retouch — whichever fits the
+defect — and the regeneration COUNTS against the 2-batches/cycle cap; a block is
+never a free re-roll. This sweep also runs on **any
 scripted retouch** you make, not just fresh generations — a bridge or a clean pass can
 itself create a new anatomical break.
 
