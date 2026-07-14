@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CSSProperties, JSX } from "react";
 import { INK, MASTHEAD, MOTION, STOCK } from "@render/ui/print";
-import { MarkerCircle, PaperSheet } from "@render/ui/print";
+import { HalftoneHero, MarkerCircle, PaperSheet } from "@render/ui/print";
 
 interface TitleScreenProps {
   onEnter: () => void;
@@ -123,6 +123,21 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
 
         <div style={infoStyle(INK.black, "clamp(13px, 2.2vw, 20px)", "0.18em", 8)}>{SUBTITLE}</div>
         <div style={infoStyle(INK.black, "12px", "0.2em", 6)}>{YEAR_TAG}</div>
+
+        {/* Central zine-cover hero — the belliard facade rephotocopied to pure B&W
+            halftone (UX §1). A pasted print photo framed by a black keyline. */}
+        <div
+          style={{
+            position: "relative",
+            width: "min(300px, 60%)",
+            height: "clamp(88px, 17vh, 150px)",
+            margin: "16px 0 2px",
+            border: `2px solid ${INK.black}`,
+            overflow: "hidden",
+          }}
+        >
+          <HalftoneHero src={`${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`} />
+        </div>
 
         <div
           style={{ width: "min(420px, 80%)", height: 2, background: INK.black, margin: "22px 0" }}
