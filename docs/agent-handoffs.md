@@ -1709,3 +1709,12 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   enclaves=0 on all, flashes preserved, figures intact. Accepted residual: shooting_3
   & riot_shooting flashes detach topologically (render identically at the muzzle).
   civilian + idles untouched. ADR-0018 added. Committed with this entry.
+
+### explosion-alignment-transparency — Lane C (muzzle anchor data)
+
+- Amelia (dev-tooling-assets): new scripts/measure-muzzle-anchors.mjs (deterministic,
+  idempotent via string-surgery + prettier; @napi-rs/canvas like the other asset
+  scripts) measures the baked-flash centroid (hot-pixel 8-connected largest component,
+  min 50 px) and writes per-frame `muzzle` arrays into levelArt.json for the 5 shooting
+  entries. Visual preview: all 10 markers on the flash. tsc + vitest 213/213 + prettier
+  green. Docs: asset-pipeline.md + SCRIPTS.md. Committed with this entry.
