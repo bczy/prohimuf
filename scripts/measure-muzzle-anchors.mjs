@@ -63,6 +63,15 @@ const HOT_B = 150;
 // Smallest largest-component that counts as a real flash; below this → null.
 const MIN_COMPONENT_PX = 50;
 
+// Hand-authored anchors, keyed by frame FILE name. They take precedence over
+// detection: use them for frames whose baked flash was deliberately erased by
+// the retouch pass (ADR-0018 iter-3) so the glow must sit on the gun itself.
+//   enemy_shooting_3.png — floating flash star erased; anchor = pistol muzzle
+//   tip measured on the gunmetal barrel end (graphist, iter-3).
+const MANUAL_ANCHORS = {
+  "enemy_shooting_3.png": { x: 0.77, y: 0.44 },
+};
+
 /** The frame file for a type entry: index 0 => `<key>.png`, i>0 => `<key>_f<i+1>.png`. */
 function frameFile(key, frameIndex) {
   return frameIndex === 0 ? `${key}.png` : `${key}_f${String(frameIndex + 1)}.png`;
@@ -233,7 +242,8 @@ async function main() {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, W, H).data;
-      const anchor = measureAnchor(data, W, H);
+      const manual = MANUAL_ANCHORS[name];
+      const anchor = manual ?? measureAnchor(data, W, H);
       anchors.push(anchor);
       rows.push([name, anchor]);
       if (preview) tiles.push({ name, img, W, H, anchor });

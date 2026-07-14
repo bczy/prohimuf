@@ -72,6 +72,38 @@ touched, no figure pixel moves/recolors, no pixel is made more opaque. A built-i
 self-check re-asserts this and **aborts the write** on any violation. `--check` is the
 detect-only gate.
 
+### Iteration 3 — Bertrand review of the committed iter-2 result
+
+Bertrand flagged 3 of the 10 sprites. Two per-file levers and one new pass were added; the
+other 7 sprites stay **byte-identical** (their `--check` would-delete is 0 under the new code).
+
+1. **Widened riot splash zones + relaxed SB.** The `enemy_riot_shooting{,_f2}` dark torn
+   "wings" reach the **far right of the frame** (measured to x≈0.97), beyond the old x1≈0.84
+   zone stop — so the wing tips were never candidates. The zones now span the full island
+   (x→1.0). Much of the torn material is **dark-RED** (sat 0.5–0.75), which the default SB=0.5
+   spared, so `THRESH_OVERRIDE` now also relaxes **SB→0.85** on those two files (only DARK
+   pixels, lum<88, are ever candidates, so the bright/warm fiery core + rays are never touched
+   — keep/strip stays a pure dark-vs-bright split). The existing all-opaque reconcile already
+   drops a **detached** flash island via its `largestComponent` step, so f1's wings (a separate
+   component) are freely removable — Bertrand's "reconcile against the figure's silhouette, not
+   flash islands" is **intrinsic** to the reconcile for detached blasts, no new exception
+   needed. For the **attached** f2 blast the reconcile keeps only the residual that hugs the
+   bright rays within the disk-10 closing; that residual is the exact boundary that keeps
+   `fill-sprite-holes.mjs --check` green. A **FIGURE-SEED reconcile** (seed the body from the
+   largest component of opaque-minus-flash) was prototyped to strip that residual too and
+   **REJECTED**: it deletes inside the fill-sprite-holes body and opened a **539px interior
+   hole** in f2 — it violates the hard "figures 100% solid" constraint. The all-opaque
+   reconcile is the **maximal removal that never opens an interior hole**.
+2. **ERASE_ISLANDS pass (delete-only, tone-agnostic).** `enemy_shooting_3` frame 1's baked
+   muzzle flash mis-rendered as a faint **star floating top-right, detached from everything**,
+   while the pistol actually aims **right** (muzzle tip ≈ 0.77, 0.44 normalized). The tone
+   guards would PRESERVE that bright star, so a new pass deletes every opaque pixel in a tight
+   zone that is **not part of the largest raw component** (the figure) — figure-safe by
+   construction, however wide the rect. The in-game glow is hand-anchored at the measured
+   muzzle tip via the manifest (separate lane). Frame 2 (`enemy_shooting_3_f2`) keeps its
+   flash: it is **one connected component** sitting at the recoiled gun and reads correct →
+   **not** erased.
+
 **Scope**: runs in place on the 10 shooting sprites that have zone entries.
 `enemy_civilian.png` (the bicycle courier) has no entry → never processed (non-combatant,
 no flash, courier lane, already ADR-0014-fixed). `retouch-flash-halos.mjs` is **not** wired
@@ -89,6 +121,16 @@ into CI (explicit human-run fix, like `retouch-sprites.mjs`).
   the full set: the failing set **shrank 16 → 9** — the speckle sweep took 8 previously
   failing shooting sprites to PASS (comps=1); no sprite regressed PASS → FAIL. Its
   CI-scoped target `enemy_civilian.png` still PASSES (untouched).
+- **Iter-3 result.** Deleted px: `enemy_riot_shooting_f2` 1023, `enemy_riot_shooting` 1472,
+  `enemy_shooting_3` 532 (the whole floating star); the other 7 sprites and
+  `enemy_shooting_3_f2` are byte-untouched. Both `--check` gates stay PASS after the edit.
+  Integrity: `enemy_shooting_3` improved **FAIL → PASS** (star erased → comps 2→1, 100%
+  dominant); `enemy_riot_shooting_f2` stays PASS; `enemy_riot_shooting` stays FAIL with its
+  figure component **unchanged** (dominant=12686 before and after) — the FAIL is solely the
+  bright flash island falling below the 97% dominance line, the same accepted topological
+  consequence as below, not a regression. Game-graphist verdict at 512px + 64px on light grey:
+  no floating star on shooting_3 f1, no dark torn wings around either riot blast, figures
+  intact; the anatomy defect sweep on magenta is clean (no detached limb, no punched hole).
 - **Detached muzzle flash (accepted consequence).** On `enemy_shooting_3` and
   `enemy_riot_shooting` the flash was attached to the figure ONLY through the dark remnant;
   removing the remnant leaves the bright flash as its own opaque island, so those two drop
