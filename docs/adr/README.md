@@ -68,3 +68,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0016](./0016-flipbook-frame-files.md)                     | Enemy sprite flipbook as separate `_f<N>` frame files + `enemies` manifest block         | Accepted |
 | [0017](./0017-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook (bike + rider), per-frame generation, atomic per layer          | Accepted |
 | [0018](./0018-staffed-production-pipeline.md)              | Staffed production pipeline: design, production, audio and QA lanes with blocking gates  | Accepted |
+| [0019](./0019-code-drawn-gesture-icons.md)                 | Code-drawn animated gesture icons on the tutorial control panels (reopens ADR-0015 D3)   | Accepted |

@@ -4,6 +4,7 @@ import {
   POST_LEVEL_NARRATIVE,
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
+  type GestureKind,
 } from "../narrativeSystem";
 
 describe("narrativeSystem data integrity", () => {
@@ -49,6 +50,22 @@ describe("narrativeSystem data integrity", () => {
       for (const line of scene.lines) {
         expect(line.speaker.trim().length).toBeGreaterThan(0);
         expect(line.text.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("A5: every gesture value is a member of GestureKind (ADR-0019)", () => {
+    const GESTURE_KINDS: readonly GestureKind[] = [
+      "mouse-click",
+      "edge-scroll",
+      "two-finger-tap",
+      "swipe-pan",
+    ];
+    for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
+      for (const line of scene.lines) {
+        if (line.gesture !== undefined) {
+          expect(GESTURE_KINDS).toContain(line.gesture);
+        }
       }
     }
   });

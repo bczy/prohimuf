@@ -13,6 +13,128 @@ Template:
 
 ---
 
+### story-tutorial-visual-gestures
+
+- pm→arch: Story written (`_bmad-output/planning-artifacts/story-tutorial-visual-gestures.md`),
+  from Bertrand's 2026-07-14 tutorial feedback ("pas assez visuel"). WHAT: make the tutorial
+  show gestures + the shipped bestiary — four code-drawn (SVG/CSS) gesture icons on the control
+  panels (desktop mouse-click / desktop edge-scroll / mobile two-finger single-tap / mobile
+  one-finger swipe) via a new optional pure-data field on `NarrativeLine`, plus enemy panels for
+  the full shipped Belliard pool (normal/riot/biker/bonus/courier) reusing on-disk sprites. WHY:
+  the stage exists for control discoverability yet teaches motor skills as pure prose; only 3/8
+  panels are illustrated. PM RULINGS (fixed): teach the REAL mobile shoot = SINGLE two-finger tap
+  (Bertrand said "double tap" — wrong, corrected); car/hostage stay OUT (not shipped); NO
+  FLUX/CI/asset-gate (icons in code). HANDOFF to `senior-architect` (cross-cutting: `src/game`
+  data field ∥ `src/render` icon component): own lane partition, the boundary-clean animated-icon
+  approach, the `NarrativeLine.gesture` field shape, and — REQUIRED — the **ADR-0015 D3 amendment
+  or new ADR** (D3 locks control panels text-only; this story reopens it — icons are code-drawn so
+  ADR-0012 D5 "no generation" is preserved). Then DESIGN LOOP (`game-designer`+`narrative-designer`
+  → `lead-game-designer` gate): icon fidelity (animated vs static), new-panels-vs-enriched (8-panel
+  parity), bestiary copy depth. No commits made by pm. (John / PM)
+- narrative→design-gate: Expanded tutorial WORDS delivered
+  (`docs/game-design/tutorial-script-visual-gestures.md`). Full copy for all four
+  segment constants, paste-ready for `narrativeSystem.ts`: opening ×2 (shared), desktop
+  control ×2 + mobile control ×2 (forked, gesture-icon slots pinned per panel), field ×7
+  (shared) — bestiary expanded to the full shipped Belliard pool (normal/riot/biker/bonus/
+  courier) + HUD + outro. Panel count 11/11 (was 8/8), parity + fork-only-on-controls
+  invariant held; all copy TRUE to `ARCHETYPES` (bonus = +5 s reward, not "temps perdu";
+  riot = 2 shots; civilian = -1 vie/-1 point). ADR-0015 device pins verified (mobile:
+  `deux doigts`, no `clic`/`souris`; desktop: `souris`+`clic`, no `doigt`/`balay`; shared
+  panels clean). Corrected Bertrand's "double tap" to the real single simultaneous
+  two-finger tap (`en même temps` added to MC1). TWO `[FLAG]`s for the lead gate: (a)
+  shooter-pose vs idle sprite choice for F1/F2/F3; (b) F5 courier shows `enemy_civilian.png`
+  but the live courier renders `courier/rider.png` — accuracy call. TENSION: 11 panels
+  strains ADR-0012's <10s-to-gameplay ethos (skippable, but long) — biker/bonus depth is
+  the trim lever if the gate wants it shorter. Needs `game-designer` (panel structure /
+  icons) sync + `lead-game-designer` PASS before `dev-gameplay`. (Yasmine / Narrative)
+- design→gate: GAMEPLAY-TEACHING spec written (`docs/game-design/tutorial-visual-gestures.md`),
+  UNGATED (awaits Karim PASS). ALIGNED with Yasmine's copy (both landed 11/11 panels, fork on
+  [2,3], parity held). RULINGS: (1) four gesture icons ANIMATED (motion, not diagram); glow law
+  = only the acted element glows (left button / touched edge / two fingertips / fading swipe
+  trail) with alpha falloff to 0 (no aplat); two-finger icon = ONE simultaneous tap + long
+  inter-loop rest so it never reads as double-tap; edge-scroll = edge PUSH not drag; swipe = one
+  finger, 4 dirs, inertial glide. Per-icon animation tuning table (loop 1.2/2.4/1.4/2.0s) in §1.5.
+  (2) Panel structure = ENRICH controls (icon in image slot, fork stays 2) + ADD 3 bestiary →
+  11 panels; <10s ethos preserved (tutorial off default first-play, skippable every panel).
+  (3) RESOLVES Yasmine's two [FLAG]s: (a) armed types (normal/riot/biker) use SHOOTING sprite
+  (the danger tell IS the lesson), bonus/civilian idle; (b) courier stays `enemy_civilian.png`
+  NOT `courier/rider.png` — bike layer not on disk + lone rider still = floating torso; civilian
+  sprite is the clearest "livreur, never shoot" read (revisit when `courier/bike.png` ships).
+  (4) `gesture` = pure-data enum `mouse-click|edge-scroll|two-finger-tap|swipe-pan`, device-
+  correct via the forked control segment, mutually exclusive with `image`, degrades to text.
+  HAND-OFFS: `narrative-designer` (copy/labels — done, aligned); `lead-art` (final glow hue,
+  rec. #ffe600, + falloff read at composite gate); `senior-architect` (field shape + ADR-0015
+  D3 amendment). Design ACCEPTANCE (stage 5): playtest via `verify` on both `?preview=tutorial`
+  contexts vs §5 DA1–DA8 before architect integration review. (Sacha / Game Designer)
+- design-gate→arch/art: **PASS — both deliverables gated** (`docs/game-design/tutorial-visual-gestures.md`,
+  `docs/game-design/tutorial-script-visual-gestures.md`). Verdict per leg:
+  · **Scope** — conscious documented extension inside the ADR-0012 envelope (optional/skippable/
+    informative-only, zero rule added); enemies limited to the shipped Belliard pool (ADR-0012 D4);
+    no new sprite/FLUX. ADR-0015 D3 reopening is DECLARED (not undeclared) → architect's lane (AC11).
+  · **Core loop** — informative-only, serves `Récupérer→Livrer→Éviter`, dilutes nothing; the 3-5min
+    mission cap does not bind a skippable non-mission stage.
+  · **Verifiability** — icon animation timings (1.2/2.4/1.4/2.0s), lit elements, teaching points and
+    sprite paths are all concrete; copy is verbatim; field-shape correctly deferred to architect.
+  · **Coherence (both docs)** — panel indices MATCH (fork [2,3], shared [0,1,4,5,6,7,8,9,10], 11/11);
+    icon slots ↔ copy annotations MATCH (DC1/MC1=shoot p2, DC2/MC2=pan p3); sprite picks MATCH
+    (armed→`_shooting`, bonus/civilian idle). Sacha's §3.1 RESOLVES both of Yasmine's `[FLAG]`s.
+  · **Factual audit vs `ARCHETYPES`** — VERIFIED TRUE: normal hp1/shoots/+1/3.2s; riot hp2; biker
+    2.0s fast; bonus shoots:false/timeDelta5/countsAsTarget:false; civilian −1 vie/−1 point. All five
+    sprites + truck confirmed on disk. Mobile shoot correctly = single simultaneous two-finger tap
+    (not double-tap). ADR-0015 device-copy pins hold (mobile `deux doigts`, desktop `souris`/`clic`).
+  · **Art-bible** — icon specs invoke loi du glow (only acted element glows) + halo=dégradé (alpha
+    falloff to 0, no aplat); hue and falloff-read correctly DEFERRED to `lead-art` at the composite
+    gate — no visual arbitration by me, no bible conflict flagged.
+  **PANEL-STRUCTURE DECISION (mine, explicit): KEEP 11, do NOT trim biker+bonus.** The <10s ethos
+  (guidelines §5 UX-1) governs the *default* launch→gameplay path; the tutorial is off it by
+  construction (optional secondary affordance, Belliard is the default highlight, ADR-0012 D2) and
+  skippable at every panel. Bertrand asked for "encore plus détaillé"; biker (weight 15) and bonus
+  (weight 11) are LIVE in Belliard's default pool, so trimming them under-teaches the shipped game —
+  contra the story's own purpose. Conscious documented trade (spec §2.2), not a violation.
+  **PROPOSED GUIDELINE RULE (guidelines silent here):** the <10s launch→gameplay budget binds the
+  default first-play only; an optional stage that is not the default highlight and is skippable at
+  every step is budgeted on *clarity*, not brevity. Forwarded to `pm` for §5 codification.
+  No amendments needed to either doc — both were already coherent. DOWNSTREAM UNBLOCKED:
+  `senior-architect` (field shape + ADR-0015 D3 amendment), `lead-art` (glow hue/falloff), then
+  `dev-gameplay` transcribes; design ACCEPTANCE (stage 5) via `verify` on both `?preview=tutorial`
+  contexts vs §5 DA1–DA8. (Karim / Lead Game Designer)
+- arch→devs: **Boundary verdict PASS. ADR-0019 written** (`docs/adr/0019-code-drawn-gesture-icons.md`,
+  Accepted) — reopens ADR-0015 D3 (control panels no longer text-only), extends ADR-0012 D5 (adds a
+  second optional illustration channel); ADR-0012 D5 "no generation" guarantee PRESERVED (icons are
+  code-drawn SVG/CSS, no FLUX/CI/asset-gate). Index + 0012/0015 cross-refs updated.
+  **FIELD CONTRACT (fixed — the ONLY shared knowledge between the two lanes):** new exported
+  `type GestureKind = "mouse-click" | "edge-scroll" | "two-finger-tap" | "swipe-pan";` in
+  `narrativeSystem.ts`; `NarrativeLine` gains `readonly gesture?: GestureKind` +
+  `readonly gestureAlt?: string`. `gesture` is MUTUALLY EXCLUSIVE with `image` (test-enforced, not
+  type-enforced), lives ONLY on forked control panels (indices 2,3). Render imports `GestureKind` and
+  builds an EXHAUSTIVE `Record<GestureKind,…>` (compile-time completeness). `GestureIcon` lives at
+  NEW `src/render/ui/GestureIcon.tsx`.
+  **LANE A → `dev-gameplay` (`src/game/**` only):** `src/game/systems/narrativeSystem.ts` (add
+  `GestureKind` + the two fields; transcribe the gated 11-panel script VERBATIM from
+  `docs/game-design/tutorial-script-visual-gestures.md` — opening ×2 shared, desktop/mobile control
+  ×2 forked with `gesture` set + `image` unset, field ×7 shared; set `gestureAlt` from the script's
+  parenthetical labels); `src/game/levels/__tests__/tutorialInvariants.test.ts` (widen shared-ref
+  index list `[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
+  ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
+  both `image`&`gesture` · every `gesture` line has non-empty `gestureAlt`; keep device-copy regex +
+  shipped-sprite-exists checks green); `src/game/systems/__tests__/narrativeSystem.test.ts` (gesture
+  value ∈ enum integrity).
+  **LANE B → `dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
+  animated B&W-lineart+neon icons per `docs/game-design/tutorial-visual-gestures.md` §1, loi du glow
+  = only the acted element glows w/ alpha falloff to 0, two-finger = ONE simultaneous tap + long
+  rest, edge-scroll = PUSH not drag, swipe = 1 finger/4 dirs/inertia); MOD
+  `src/render/ui/NarrativeScreen.tsx` (render `GestureIcon` in the existing image slot `:185-219`
+  when `gesture` present & `image` absent; degrade to text on unknown value).
+  **PARALLEL-SAFE: YES** — disjoint paths (`src/game/**` ⟂ `src/render/**`); the ONLY shared knowledge
+  is the field contract above (frozen here). `NarrativeScreen.tsx` is Lane B; `narrativeSystem.ts` is
+  Lane A — no file overlap. HARNESS: `scripts/screenshot-preview.mjs` UNAFFECTED (captures the
+  tutorial's opening panel, not a per-panel loop; dots render from `scene.lines.map`) → NO tooling
+  lane needed; icons+bestiary verified by driving panels via `verify` on both `?preview=tutorial`
+  contexts (ADR-0015 harness). `docs/agent-handoffs.md` shared/serialized — devs must not edit it
+  concurrently. (Winston / Senior Architect)
+
+---
+
 ### story-live-neon-rim
 
 - pm→arch: Story written (`_bmad-output/planning-artifacts/story-live-neon-rim.md`),
@@ -1523,3 +1645,89 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   pre-existing, NOT fixed by this branch): scripts/download-audio.mjs labels its
   sources "public domain / CC" but its lists fetch copyrighted LukHash tracks —
   live IP risk on the public deploy. (Panel + Winston triage, orchestrator applied)
+
+- story-tutorial-visual-gestures / Lane A (dev-gameplay, Amelia): FINISH. Owned
+  `src/game/**` only (Lane B owns src/render, untouched). Added `GestureKind` union +
+  optional `gesture?`/`gestureAlt?` to `NarrativeLine` per ADR-0019 (D1, JSDoc verbatim,
+  pure data — narrativeSystem.ts stays import-free). Transcribed the gated 11-panel script
+  (`docs/game-design/tutorial-script-visual-gestures.md`): opening [0,1] shared (O2
+  tightened per gate), forked control panels [2,3] carry desktop `mouse-click`/`edge-scroll`
+  and mobile `two-finger-tap`/`swipe-pan` (no image), field [4..10] shared bestiary
+  (normal/riot/biker/bonus/civilian shooting-pose + HUD + outro). All 6 sprite paths
+  verified on disk. Panel count 8→11 both variants; shared indices [0,1,4,5,6,7,8,9,10]
+  reference-equal, fork [2,3]. Tests: extended tutorialInvariants (11-panel count, gesture
+  XOR image, gesture only on [2,3], device-correct values, gestureAlt-present, shared-panel
+  token cleanliness) + narrativeSystem A5 (gesture ∈ GestureKind). GREEN: tsc clean, lint
+  clean, 194/194 src/game tests (tutorialInvariants 13, narrativeSystem 6). NOT committed —
+  orchestrator commits after both lanes land. Hand-off to Lane B: `GestureKind` is exported
+  from `@game/systems/narrativeSystem` for the exhaustive `Record<GestureKind,…>` icon map.
+  (Amelia / dev-gameplay)
+
+- story-tutorial-visual-gestures / Lane B (dev-r3f-render, Amelia): FINISH. Owned
+  `src/render/**` only (Lane A's `src/game` untouched — its contract landed while I worked,
+  so tsc is green against the real `GestureKind` + `gesture?`/`gestureAlt?`, no shim needed).
+  NEW `src/render/ui/GestureIcon.tsx`: four inline-SVG + CSS-keyframe icons per
+  `docs/game-design/tutorial-visual-gestures.md` §1, one exhaustive `Record<GestureKind,…>`
+  (a 5th enum value fails the build). B&W line-art décor (INK) + ONE neon-yellow `#ffe600`
+  glow each, every glow a radial/linear alpha-falloff gradient to 0 (loi du glow / halo-dégradé).
+  `prefers-reduced-motion: reduce` freezes each on its readable base frame. Animations:
+  mouse-click (1.2s) left button presses 2px + glow spike → one click-ripple → rest;
+  edge-scroll (4.8s, alternates right then left edge) cursor slides to edge → edge band glows
+  inward + chevrons march → snap back (horizontal both-senses; top/bottom is the noted faithful
+  extension); two-finger-tap (1.4s) both fingertip halos flash in sync (shared class) → single
+  midpoint ripple → lift → long rest (never reads as double-tap); swipe-pan (4s) one fingertip
+  sweeps trailing a gradient motion-trail, lifts mid-travel, trail glides to an eased stop
+  (inertia), cycles horizontal then vertical (two dirs shown; full 4-way is the noted extension).
+  EDITED `src/render/ui/NarrativeScreen.tsx`: renders `<GestureIcon kind={…}/>` in the same
+  38vh/shrinkable slot as `image`, only when `image` absent & `gesture` set, wrapped
+  `role="img"` + `aria-label={gestureAlt ?? ""}` (SVG aria-hidden). Graceful degradation:
+  absent gesture → slot not rendered; unknown value impossible under the exhaustive Record.
+  GREEN: `yarn typecheck` clean, `yarn lint` clean. NOT committed. Runtime visual fidelity
+  (glow falloff, read-at-a-glance) is for the composite/`verify` gate on real screenshots.
+  (Amelia / dev-r3f-render)
+
+- devs→arch: **INTEGRATION REVIEW — APPROVE-with-fixes (fixes applied, no rework).** Both lanes
+  land clean against ADR-0019. CONTRACT: `GestureKind`/`gesture?`/`gestureAlt?` verbatim per D1;
+  boundary law upheld (`narrativeSystem.ts` zero imports = pure data; every pixel in
+  `src/render/ui/GestureIcon.tsx`; type-only cross-boundary import). GOTCHAS all honored: gesture
+  XOR image, gesture only on fork [2,3], device-correct values, shared-ref [0,1,4,5,6,7,8,9,10],
+  11-panel parity, exhaustive `Record<GestureKind,…>` — all test-pinned (tutorialInvariants 13,
+  narrativeSystem 6, both green). tsc EXIT=0 under `noUncheckedIndexedAccess` because the Record is
+  over a *closed literal union* (lookup is non-nullable, hence exhaustive). NarrativeScreen: gesture
+  slot gated on `image===undefined && gesture!==undefined` → zero regression for pre/post-level
+  scenes (no `gesture` field); a11y `role="img"`+`aria-label`, SVG `aria-hidden`; reduced-motion
+  freeze via media query. All 5 bestiary sprites + truck confirmed on disk. Surgical: every changed
+  line traces to the gated script/spec. FIX APPLIED (mine, trivial, doc-only): the header JSDoc in
+  `GestureIcon.tsx` and the slot comment in `NarrativeScreen.tsx` claimed the "never a broken slot"
+  guarantee came from a runtime `… | undefined` lookup / `GestureIcon` returning null — factually
+  wrong (the closed union makes the lookup non-nullable; GestureIcon never returns null). Corrected
+  both to describe the real mechanism (closed union + exhaustive Record + caller's gate). No code
+  behavior changed; tsc+lint re-verified EXIT=0. VERDICT: cleared for the code-review panel / merge
+  gate. (Winston / Senior Architect)
+
+- story-tutorial-visual-gestures / Stage 5 VERIFY — QUALITY GATE: **PASS**
+  (qa-lead, Inès). Runtime capture via `verify` skill on `?preview=tutorial`, both
+  device forks, headless Chromium; 0 pageerrors either context. DESKTOP (default UA):
+  drove all 11 panels — dotCount=11, litDots 1→11 monotonic, `Passer` present every
+  panel. Panel 2 `mouse-click` (role=img aria "Souris : un clic gauche, un tir."),
+  panel 3 `edge-scroll` (aria "Curseur poussé au bord…") — edge-PUSH glow band, not a
+  drag (DA1). Bestiary panels 4–8 render correct sprites+alts: enemy_shooting,
+  enemy_riot_shooting, enemy_biker_shooting (all SHOOTING pose w/ muzzle flash),
+  enemy_bonus + enemy_civilian (idle) (DA5). MOBILE (iPhone UA → detectMobile flips to
+  TUTORIAL_NARRATIVE_MOBILE): panel 2 `two-finger-tap` (aria "Deux doigts, un seul tap
+  simultané…", two static glowing fingertips) + panel 3 `swipe-pan` (aria "Un doigt
+  balaye…", one fingertip + neon motion trail) — device-accurate copy, distinguishable
+  at a glance (DA2/DA4). GLOW (DA3): every lit element is a radial/linear alpha-falloff
+  gradient reaching 0 — mouse left-button bloom, edge-band bright→0 inward, fingertip
+  radial halos, swipe trail tip→tail — NO flat neon plate. ANIMATION: frameA vs frameB
+  1s apart differ on BOTH forks (desktop button glow spike→idle; mobile differs) —
+  loops running. Both variants 11 panels, dot parity (DA6). Optional/skippable/
+  informative, TERMINER→menu, nothing written to progress (DA7). Icons render in the
+  38vh slot, never a broken/empty slot (DA8). Evidence: 11 PNGs under qa scratchpad
+  (desktop_panel_{2,3,5,6,7}[_frameA/B], mobile_panel_{2,3}[_frameA/B]).
+  NOTES (informational, non-blocking): (i) mobile tutorial is only reachable in
+  LANDSCAPE — portrait raises the ADR-0003 rotate overlay ("TOURNEZ VOTRE APPAREIL")
+  by design; captures taken in 844×390. (ii) edge-scroll alt-edge (left) cycle + swipe
+  4-direction full sweep are noted faithful extensions per Lane B, not captured as
+  single stills. No defects found. Hand to senior-architect (Winston) for integration
+  review; game-designer (Sacha) design-conformity playtest runs in parallel. (Inès / qa-lead)

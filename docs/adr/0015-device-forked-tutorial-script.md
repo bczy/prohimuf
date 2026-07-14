@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Amends:** [ADR-0012](./0012-optional-scripted-tutorial-stage.md) (D4 §2 — controls panel)
+- **Amended by:** [ADR-0019](./0019-code-drawn-gesture-icons.md) (D3 — control panels gain code-drawn gesture icons; no longer text-only)
 - **Related:** [ADR-0003](./0003-mobile-touch-controls-and-camera-pan.md) (UA detection,
   touch model), [ADR-0008](./0008-two-axis-pan-and-fullscreen.md) (two-axis swipe pan).
 

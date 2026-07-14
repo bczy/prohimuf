@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
+import { GestureIcon } from "./GestureIcon";
 
 interface Props {
   scene: NarrativeScene;
@@ -215,6 +216,30 @@ export function NarrativeScreen({
               imageRendering: "pixelated",
             }}
           />
+        </div>
+      )}
+
+      {/* Optional code-drawn animated gesture icon (ADR-0019): shown on the forked control
+          panels in the SAME slot `image` uses, and only when no `image` is set (the two
+          channels are mutually exclusive — Lane A guarantees exclusivity). The slot carries
+          the accessible label; the SVG itself is aria-hidden. `GestureKind` is a closed union
+          with an exhaustive icon map, so every value draws; an absent gesture skips this slot
+          (the `gesture !== undefined` gate) and the panel degrades to text — never a broken slot. */}
+      {currentLine?.image === undefined && currentLine?.gesture !== undefined && (
+        <div
+          role="img"
+          aria-label={currentLine.gestureAlt ?? ""}
+          style={{
+            position: "relative",
+            display: "flex",
+            justifyContent: "center",
+            padding: "0 16px 12px",
+            minHeight: 0,
+            flexShrink: 1,
+            maxHeight: "38vh",
+          }}
+        >
+          <GestureIcon kind={currentLine.gesture} />
         </div>
       )}
 

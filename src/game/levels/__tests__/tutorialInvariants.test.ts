@@ -68,13 +68,20 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
+  it("keeps both variants at the expanded 11-panel count (ADR-0019)", () => {
+    for (const variant of VARIANTS) {
+      expect(variant.lines).toHaveLength(11);
+    }
+  });
+
   it("forks only the control panels between device variants", () => {
     const desktop = TUTORIAL_NARRATIVE_DESKTOP;
     const mobile = TUTORIAL_NARRATIVE_MOBILE;
     // Progress-dot parity: both variants have the same panel count.
     expect(desktop.lines.length).toBe(mobile.lines.length);
-    // Shared segments are the SAME objects by reference — zero copy duplication.
-    for (const i of [0, 1, 4, 5, 6, 7]) {
+    // Shared segments are the SAME objects by reference — zero copy duplication
+    // (opening [0,1] + expanded field [4..10], ADR-0019).
+    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10]) {
       expect(desktop.lines[i]).toBe(mobile.lines[i]);
     }
     // The two control panels (indices 2 and 3) diverge between devices.
@@ -94,5 +101,51 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     expect(desktopControls).toMatch(/souris/i);
     expect(desktopControls).toMatch(/clic/i);
     expect(desktopControls).not.toMatch(/doigt|balay/i);
+  });
+
+  it("keeps the shared segments free of device-specific control tokens (ADR-0015)", () => {
+    // Shared panels must carry none of the four fork tokens, or a shared panel would
+    // leak device-specific copy onto the wrong variant.
+    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10]) {
+      const text = TUTORIAL_NARRATIVE_DESKTOP.lines[i]?.text ?? "";
+      expect(text).not.toMatch(/clic|souris|doigt|balay/i);
+    }
+  });
+
+  it("sets gesture and image as mutually exclusive on every line (ADR-0019)", () => {
+    for (const variant of VARIANTS) {
+      for (const line of variant.lines) {
+        expect(line.gesture !== undefined && line.image !== undefined).toBe(false);
+      }
+    }
+  });
+
+  it("carries gestures only on the forked control panels [2,3] (ADR-0019)", () => {
+    for (const variant of VARIANTS) {
+      variant.lines.forEach((line, i) => {
+        if (i === 2 || i === 3) {
+          expect(line.gesture).toBeDefined();
+        } else {
+          expect(line.gesture).toBeUndefined();
+        }
+      });
+    }
+  });
+
+  it("selects device-correct gesture values per variant (ADR-0019)", () => {
+    expect(TUTORIAL_NARRATIVE_DESKTOP.lines[2]?.gesture).toBe("mouse-click");
+    expect(TUTORIAL_NARRATIVE_DESKTOP.lines[3]?.gesture).toBe("edge-scroll");
+    expect(TUTORIAL_NARRATIVE_MOBILE.lines[2]?.gesture).toBe("two-finger-tap");
+    expect(TUTORIAL_NARRATIVE_MOBILE.lines[3]?.gesture).toBe("swipe-pan");
+  });
+
+  it("provides an accessible gestureAlt wherever a gesture is set (ADR-0019)", () => {
+    for (const variant of VARIANTS) {
+      for (const line of variant.lines) {
+        if (line.gesture !== undefined) {
+          expect((line.gestureAlt ?? "").trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });
