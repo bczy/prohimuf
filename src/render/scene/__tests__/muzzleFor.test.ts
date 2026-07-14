@@ -15,24 +15,32 @@ import { describe, it, expect, vi } from "vitest";
  * normal cop variant 1 shooting => "enemy_shooting"; biker variant 1 shooting
  * => "enemy_biker_shooting".
  */
-vi.mock("@game/levels/levelArt.json", () => ({
-  default: {
-    enemies: {
-      fps: 6,
-      types: {
-        // Field present: frame 1 anchored, frame 2 explicitly null.
-        enemy_shooting: {
-          frames: ["", "recoil"],
-          muzzle: [{ x: 0.63, y: 0.41 }, null],
-        },
-        // Field absent: shooting entry with no `muzzle` key at all.
-        enemy_biker_shooting: {
-          frames: ["", "recoil"],
+// Keep the real manifest for every other key (sizes / world / levels / courier)
+// so the modules enemyTextures now transitively pulls in — levelArt.ts and
+// assetManifest — still evaluate; override ONLY the enemy roster with the
+// synthetic muzzle fixture.
+vi.mock("@game/levels/levelArt.json", async (importOriginal) => {
+  const actual = await importOriginal<{ default: Record<string, unknown> }>();
+  return {
+    default: {
+      ...actual.default,
+      enemies: {
+        fps: 6,
+        types: {
+          // Field present: frame 1 anchored, frame 2 explicitly null.
+          enemy_shooting: {
+            frames: ["", "recoil"],
+            muzzle: [{ x: 0.63, y: 0.41 }, null],
+          },
+          // Field absent: shooting entry with no `muzzle` key at all.
+          enemy_biker_shooting: {
+            frames: ["", "recoil"],
+          },
         },
       },
     },
-  },
-}));
+  };
+});
 
 const { muzzleFor } = await import("../enemyTextures");
 

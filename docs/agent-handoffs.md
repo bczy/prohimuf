@@ -2882,3 +2882,18 @@ paydown — ZERO behaviour change is the whole point.
   stated), core loop untouched, diff confined to `scripts/**` + `vitest.config.ts` +
   `docs/**` + `_bmad-output/**` (QA B1/B2: zero `src/game`/`src/render`/`src/hooks` byte,
   zero PNG/levelArt churn). Story shippable — clear to stage 9 (merge). (John / PM)
+- story-asset-loading-gate / pipeline opened (Bertrand: "un loader d'assets — un pour le
+  menu, un pour chaque niveau; les sprites apparaissent en carrés, pas acceptable; écran
+  de loading progressif, 100% = tous les assets du menu ou du niveau sélectionné, tutoriel
+  compris"): pm scoped a 1-story feature (loading screen + progress HUD; failures count as
+  settled — never hang; narrative lane ruled OUT, copy = "CHARGEMENT…" + target name).
+  senior-architect design signed off: pure manifest `src/game/systems/assetManifest.ts`
+  (single source of truth for paths + total; enemy/courier/vehicle URL builders MOVE here,
+  render getters import them so warmed cache keys can't drift), generic
+  `useAssetPreloader(paths, warm)` hook, render-side `warmAssets.ts` warms the EXISTING
+  module caches (that's what kills the squares), loading GATE in App (no new AppPhase;
+  level manifest loads at selection, before NARRATIVE_PRE; ?preview= bypasses; loaded
+  targets remembered). Audio explicitly out of scope v1. ADR-0022 committed. Lanes fanned
+  out in parallel: dev-gameplay (assetManifest + tests) ∥ dev-r3f-render (LoadingScreen,
+  hook, warmers, App gate) — only coupling is Lane B importing Lane A's frozen signatures.
+  (John/pm → Winston/senior-architect → Amelia ×2)
