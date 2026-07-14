@@ -18,6 +18,14 @@ import {
  * two control panels; these invariants cover both variants.
  */
 const VARIANTS = [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE] as const;
+// Every exported scene: both tutorial variants + all pre/post-level narrative. The
+// gesture/image invariants below sweep this so a future pre/post-level line that pairs a
+// gesture with an image, or sets a gesture without an alt, fails CI (ADR-0019).
+const ALL_SCENES = [
+  ...VARIANTS,
+  ...Object.values(PRE_LEVEL_NARRATIVE),
+  ...Object.values(POST_LEVEL_NARRATIVE),
+] as const;
 describe("tutorial stage invariants (ADR-0012)", () => {
   it("places the tutorial at index 0 as the only tutorial-kind entry", () => {
     expect(LEVELS[0]?.kind).toBe("tutorial");
@@ -113,8 +121,8 @@ describe("tutorial stage invariants (ADR-0012)", () => {
   });
 
   it("sets gesture and image as mutually exclusive on every line (ADR-0019)", () => {
-    for (const variant of VARIANTS) {
-      for (const line of variant.lines) {
+    for (const scene of ALL_SCENES) {
+      for (const line of scene.lines) {
         expect(line.gesture !== undefined && line.image !== undefined).toBe(false);
       }
     }
@@ -140,8 +148,8 @@ describe("tutorial stage invariants (ADR-0012)", () => {
   });
 
   it("provides an accessible gestureAlt wherever a gesture is set (ADR-0019)", () => {
-    for (const variant of VARIANTS) {
-      for (const line of variant.lines) {
+    for (const scene of ALL_SCENES) {
+      for (const line of scene.lines) {
         if (line.gesture !== undefined) {
           expect((line.gestureAlt ?? "").trim().length).toBeGreaterThan(0);
         }

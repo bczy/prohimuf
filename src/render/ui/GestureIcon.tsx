@@ -78,22 +78,34 @@ const GESTURE_STYLES = `
 @keyframes gi-tt-halo { 0%{opacity:.18} 10%{opacity:1} 24%{opacity:1} 40%{opacity:.18} 100%{opacity:.18} }
 @keyframes gi-tt-ripple { 0%{opacity:0;transform:scale(.3)} 10%{opacity:0;transform:scale(.35)} 15%{opacity:.85;transform:scale(.55)} 34%{opacity:0;transform:scale(1.3)} 100%{opacity:0;transform:scale(1.3)} }
 
-.gi-sp-h       { animation: gi-sp-h 4s ease-out infinite; }
-.gi-sp-h-hand  { animation: gi-sp-h-hand 4s ease-out infinite; }
-.gi-sp-h-tip   { animation: gi-sp-h-tip 4s linear infinite; }
-.gi-sp-h-trail { animation: gi-sp-h-trail 4s ease-out infinite; }
-.gi-sp-v       { animation: gi-sp-v 4s ease-out infinite; }
-.gi-sp-v-hand  { animation: gi-sp-v-hand 4s ease-out infinite; }
-.gi-sp-v-tip   { animation: gi-sp-v-tip 4s linear infinite; }
-.gi-sp-v-trail { animation: gi-sp-v-trail 4s ease-out infinite; }
-@keyframes gi-sp-h-hand { 0%{opacity:1} 14%{opacity:1} 22%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-v-hand { 0%{opacity:0} 50%{opacity:1} 64%{opacity:1} 72%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-h { 0%{transform:translate(-34px,0);opacity:1} 12%{transform:translate(6px,0);opacity:1} 28%{transform:translate(30px,0);opacity:1} 46%{transform:translate(30px,0);opacity:1} 50%{transform:translate(30px,0);opacity:0} 98%{transform:translate(-34px,0);opacity:0} 100%{transform:translate(-34px,0);opacity:1} }
-@keyframes gi-sp-h-tip { 0%{opacity:1} 10%{opacity:1} 15%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-h-trail { 0%{opacity:.95} 28%{opacity:.95} 40%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-v { 0%{transform:translate(0,-34px);opacity:0} 48%{transform:translate(0,-34px);opacity:0} 50%{transform:translate(0,-34px);opacity:1} 62%{transform:translate(0,6px);opacity:1} 78%{transform:translate(0,30px);opacity:1} 96%{transform:translate(0,30px);opacity:1} 100%{transform:translate(0,30px);opacity:0} }
-@keyframes gi-sp-v-tip { 0%{opacity:0} 50%{opacity:1} 60%{opacity:1} 65%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-v-trail { 0%{opacity:0} 50%{opacity:.95} 78%{opacity:.95} 90%{opacity:0} 100%{opacity:0} }
+/* Swipe pan: ONE finger, FULL 4-direction cycle (right → down → left → up), 2.0s per
+   direction / 8s loop (spec §1.4/§1.5). Each direction sweeps, the finger lifts mid-travel
+   (shared -lift fade on the hand <use> + fingertip glow), and the motion trail keeps gliding
+   to an eased stop (inertia). Groups outside their 25% window are held at opacity 0. */
+.gi-sp-r       { animation: gi-sp-r 8s ease-out infinite; }
+.gi-sp-r-lift  { animation: gi-sp-r-lift 8s ease-out infinite; }
+.gi-sp-r-trail { animation: gi-sp-r-trail 8s ease-out infinite; }
+.gi-sp-d       { animation: gi-sp-d 8s ease-out infinite; }
+.gi-sp-d-lift  { animation: gi-sp-d-lift 8s ease-out infinite; }
+.gi-sp-d-trail { animation: gi-sp-d-trail 8s ease-out infinite; }
+.gi-sp-l       { animation: gi-sp-l 8s ease-out infinite; }
+.gi-sp-l-lift  { animation: gi-sp-l-lift 8s ease-out infinite; }
+.gi-sp-l-trail { animation: gi-sp-l-trail 8s ease-out infinite; }
+.gi-sp-u       { animation: gi-sp-u 8s ease-out infinite; }
+.gi-sp-u-lift  { animation: gi-sp-u-lift 8s ease-out infinite; }
+.gi-sp-u-trail { animation: gi-sp-u-trail 8s ease-out infinite; }
+@keyframes gi-sp-r { 0%{transform:translate(-34px,0);opacity:1} 6%{transform:translate(6px,0)} 15%{transform:translate(30px,0)} 23%{transform:translate(30px,0);opacity:1} 25%{transform:translate(30px,0);opacity:0} 100%{transform:translate(-34px,0);opacity:0} }
+@keyframes gi-sp-r-lift { 0%{opacity:1} 8%{opacity:1} 12%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-r-trail { 0%{opacity:.9} 15%{opacity:.9} 20%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-d { 0%{transform:translate(0,-34px);opacity:0} 24%{transform:translate(0,-34px);opacity:0} 25%{transform:translate(0,-34px);opacity:1} 31%{transform:translate(0,6px)} 40%{transform:translate(0,30px)} 48%{transform:translate(0,30px);opacity:1} 50%{transform:translate(0,30px);opacity:0} 100%{transform:translate(0,30px);opacity:0} }
+@keyframes gi-sp-d-lift { 0%,25%{opacity:1} 33%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-d-trail { 0%,25%{opacity:.9} 40%{opacity:.9} 45%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-l { 0%{transform:translate(34px,0);opacity:0} 49%{transform:translate(34px,0);opacity:0} 50%{transform:translate(34px,0);opacity:1} 56%{transform:translate(-6px,0)} 65%{transform:translate(-30px,0)} 73%{transform:translate(-30px,0);opacity:1} 75%{transform:translate(-30px,0);opacity:0} 100%{transform:translate(-30px,0);opacity:0} }
+@keyframes gi-sp-l-lift { 0%,50%{opacity:1} 58%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-l-trail { 0%,50%{opacity:.9} 65%{opacity:.9} 70%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-u { 0%{transform:translate(0,34px);opacity:0} 74%{transform:translate(0,34px);opacity:0} 75%{transform:translate(0,34px);opacity:1} 81%{transform:translate(0,-6px)} 90%{transform:translate(0,-30px)} 98%{transform:translate(0,-30px);opacity:1} 100%{transform:translate(0,-30px);opacity:0} }
+@keyframes gi-sp-u-lift { 0%,75%{opacity:1} 83%{opacity:0} 100%{opacity:0} }
+@keyframes gi-sp-u-trail { 0%,75%{opacity:.9} 90%{opacity:.9} 95%{opacity:0} 100%{opacity:0} }
 
 @media (prefers-reduced-motion: reduce) {
   .gi-anim { animation: none !important; }
@@ -197,7 +209,8 @@ function EdgeScrollIcon(): JSX.Element {
         stroke={INK}
         strokeWidth="2.5"
       />
-      {/* edge bands: bright at the edge, falloff INWARD to 0 */}
+      {/* edge bands: bright at the edge, falloff INWARD to 0. Static values encode the readable
+          reduced-motion base frame — RIGHT band lit, LEFT band off; animation overrides both. */}
       <rect
         className="gi-anim gi-es-glow-r"
         x="90"
@@ -205,7 +218,7 @@ function EdgeScrollIcon(): JSX.Element {
         width="18"
         height="76"
         fill="url(#gi-es-gr)"
-        opacity="0.4"
+        opacity="1"
       />
       <rect
         className="gi-anim gi-es-glow-l"
@@ -214,7 +227,7 @@ function EdgeScrollIcon(): JSX.Element {
         width="18"
         height="76"
         fill="url(#gi-es-gl)"
-        opacity="0.4"
+        opacity="0"
       />
       {/* chevrons marching outward with the pan */}
       <g className="gi-anim gi-es-chev-r" opacity="0">
@@ -255,8 +268,9 @@ function EdgeScrollIcon(): JSX.Element {
           opacity="0.55"
         />
       </g>
-      {/* cursor pushed flat against the edge (inert arrow) */}
-      <g className="gi-anim gi-es-cursor">
+      {/* cursor pushed flat against the edge (inert arrow). Static transform parks it on the RIGHT
+          edge for the readable reduced-motion base frame; the CSS animation overrides transform. */}
+      <g className="gi-anim gi-es-cursor" transform="translate(38 0)">
         <path
           d="M60 48 v22 l5 -5 l4 8 l4 -2 l-4 -8 l7 0 z"
           fill={INK}
@@ -371,18 +385,29 @@ function TwoFingerTapIcon(): JSX.Element {
  * Mobile — ONE finger swipes to pan, trail keeps gliding (inertia) (§1.4).
  * Same hand vocabulary with ONLY the index extended; the hand sweeps across, the fingertip
  * trails an alpha-falloff motion trail (bright at tip → 0 at tail), the hand lifts mid-travel
- * and the trail glides to an eased stop (flick inertia). Direction cycles horizontal → vertical.
+ * and the trail glides to an eased stop (flick inertia). The FULL cycle sweeps all four
+ * directions (right → down → left → up), 2.0s each (§1.4/§1.5). The hand silhouette is defined
+ * ONCE in `<defs>` and `<use>`d per direction so the four-way cycle stays cheap (no duplication).
  */
 function SwipePanIcon(): JSX.Element {
   return (
     <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
-        <linearGradient id="gi-sp-trail-h" x1="0" y1="0" x2="1" y2="0">
+        {/* one alpha-falloff motion trail per axis-sense: bright at the fingertip → 0 at the tail */}
+        <linearGradient id="gi-sp-tr-r" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={NEON} stopOpacity="0" />
           <stop offset="100%" stopColor={NEON} stopOpacity="0.85" />
         </linearGradient>
-        <linearGradient id="gi-sp-trail-v" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="gi-sp-tr-l" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0%" stopColor={NEON} stopOpacity="0" />
+          <stop offset="100%" stopColor={NEON} stopOpacity="0.85" />
+        </linearGradient>
+        <linearGradient id="gi-sp-tr-d" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={NEON} stopOpacity="0" />
+          <stop offset="100%" stopColor={NEON} stopOpacity="0.85" />
+        </linearGradient>
+        <linearGradient id="gi-sp-tr-u" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={NEON} stopOpacity="0" />
           <stop offset="100%" stopColor={NEON} stopOpacity="0.85" />
         </linearGradient>
@@ -391,22 +416,8 @@ function SwipePanIcon(): JSX.Element {
           <stop offset="60%" stopColor={NEON} stopOpacity="0.35" />
           <stop offset="100%" stopColor={NEON} stopOpacity="0" />
         </radialGradient>
-      </defs>
-      {/* phone frame: thin, low-contrast background context — never glows */}
-      <rect
-        x="14"
-        y="12"
-        width="92"
-        height="100"
-        rx="10"
-        fill="none"
-        stroke={INK}
-        strokeWidth="1.4"
-        opacity="0.28"
-      />
-      {/* horizontal sweep: hand lifts mid-travel; fingertip + motion trail keep gliding (inertia) */}
-      <g className="gi-anim gi-sp-h">
-        <g className="gi-anim gi-sp-h-hand">
+        {/* the hand silhouette + interior line-art detail, defined ONCE, <use>d per direction */}
+        <g id="gi-sp-hand">
           {/* single continuous silhouette (fist + one extended index) */}
           <path
             d={HAND_ONE_FINGER}
@@ -449,71 +460,98 @@ function SwipePanIcon(): JSX.Element {
             strokeLinecap="round"
           />
         </g>
+      </defs>
+      {/* phone frame: thin, low-contrast background context — never glows */}
+      <rect
+        x="14"
+        y="12"
+        width="92"
+        height="100"
+        rx="10"
+        fill="none"
+        stroke={INK}
+        strokeWidth="1.4"
+        opacity="0.28"
+      />
+      {/* RIGHT sweep (also the readable reduced-motion base frame: this group stays visible) */}
+      <g className="gi-anim gi-sp-r">
         <rect
-          className="gi-anim gi-sp-h-trail"
+          className="gi-anim gi-sp-r-trail"
           x="19"
           y="26"
           width="34"
           height="10"
           rx="5"
-          fill="url(#gi-sp-trail-h)"
+          fill="url(#gi-sp-tr-r)"
         />
-        <circle className="gi-anim gi-sp-h-tip" cx="53" cy="31" r="9" fill="url(#gi-sp-tip-grad)" />
+        <use className="gi-anim gi-sp-r-lift" href="#gi-sp-hand" />
+        <circle
+          className="gi-anim gi-sp-r-lift"
+          cx="53"
+          cy="31"
+          r="9"
+          fill="url(#gi-sp-tip-grad)"
+        />
       </g>
-      {/* vertical sweep (second half of the cycle → conveys pan in the other axis) */}
-      <g className="gi-anim gi-sp-v" opacity="0">
-        <g className="gi-anim gi-sp-v-hand">
-          <path
-            d={HAND_ONE_FINGER}
-            fill={BODY}
-            stroke={INK}
-            strokeWidth="3"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          <path
-            d="M47 55 C58 51 74 53 84 60"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.8"
-            opacity="0.55"
-            strokeLinecap="round"
-          />
-          <path
-            d="M63 54 C64 58 64 61 63 64"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
-            strokeLinecap="round"
-          />
-          <path
-            d="M72 55 C73 59 73 62 72 65"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
-            strokeLinecap="round"
-          />
-          <path
-            d="M34 69 C38 72 40 76 40 80"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
-            strokeLinecap="round"
-          />
-        </g>
+      {/* DOWN sweep */}
+      <g className="gi-anim gi-sp-d" opacity="0">
         <rect
-          className="gi-anim gi-sp-v-trail"
+          className="gi-anim gi-sp-d-trail"
           x="48"
           y="-3"
           width="10"
           height="34"
           rx="5"
-          fill="url(#gi-sp-trail-v)"
+          fill="url(#gi-sp-tr-d)"
         />
-        <circle className="gi-anim gi-sp-v-tip" cx="53" cy="31" r="9" fill="url(#gi-sp-tip-grad)" />
+        <use className="gi-anim gi-sp-d-lift" href="#gi-sp-hand" />
+        <circle
+          className="gi-anim gi-sp-d-lift"
+          cx="53"
+          cy="31"
+          r="9"
+          fill="url(#gi-sp-tip-grad)"
+        />
+      </g>
+      {/* LEFT sweep */}
+      <g className="gi-anim gi-sp-l" opacity="0">
+        <rect
+          className="gi-anim gi-sp-l-trail"
+          x="53"
+          y="26"
+          width="34"
+          height="10"
+          rx="5"
+          fill="url(#gi-sp-tr-l)"
+        />
+        <use className="gi-anim gi-sp-l-lift" href="#gi-sp-hand" />
+        <circle
+          className="gi-anim gi-sp-l-lift"
+          cx="53"
+          cy="31"
+          r="9"
+          fill="url(#gi-sp-tip-grad)"
+        />
+      </g>
+      {/* UP sweep */}
+      <g className="gi-anim gi-sp-u" opacity="0">
+        <rect
+          className="gi-anim gi-sp-u-trail"
+          x="48"
+          y="31"
+          width="10"
+          height="34"
+          rx="5"
+          fill="url(#gi-sp-tr-u)"
+        />
+        <use className="gi-anim gi-sp-u-lift" href="#gi-sp-hand" />
+        <circle
+          className="gi-anim gi-sp-u-lift"
+          cx="53"
+          cy="31"
+          r="9"
+          fill="url(#gi-sp-tip-grad)"
+        />
       </g>
     </svg>
   );

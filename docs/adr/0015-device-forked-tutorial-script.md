@@ -3,7 +3,12 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Amends:** [ADR-0012](./0012-optional-scripted-tutorial-stage.md) (D4 §2 — controls panel)
-- **Amended by:** [ADR-0019](./0019-code-drawn-gesture-icons.md) (D3 — control panels gain code-drawn gesture icons; no longer text-only)
+- **Amended by:** [ADR-0019](./0019-code-drawn-gesture-icons.md) (D3 — control panels gain
+  code-drawn gesture icons; no longer text-only). NOTE: ADR-0019 also supersedes the
+  **panel-count facts** stated in D1 below — the tutorial now runs **11 panels** per variant
+  (not "8"), and the field segment is **×7** (not "×4"), after the bestiary grew from 2 to 5
+  illustrated enemies. The reference-sharing / fork-only-on-controls **structure** D1 describes
+  still holds; only the counts moved (shared indices `[0,1,4,5,6,7,8,9,10]`, fork `[2,3]`).
 - **Related:** [ADR-0003](./0003-mobile-touch-controls-and-camera-pan.md) (UA detection,
   touch model), [ADR-0008](./0008-two-axis-pan-and-fullscreen.md) (two-axis swipe pan).
 

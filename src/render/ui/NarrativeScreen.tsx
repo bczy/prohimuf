@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
 
@@ -18,6 +18,23 @@ interface Props {
 const NEON_YELLOW = "#ffe600";
 const NEON_GREEN = "#39ff14";
 const CHAR_DELAY_MS = 28;
+
+/**
+ * The single illustration slot above the dialogue box — shared verbatim by the `image` channel
+ * and the code-drawn `gesture` channel so the "same slot" contract holds by construction.
+ * Shrinkable in the bottom-anchored `overflow: hidden` column (`minHeight: 0` + `flexShrink: 1`)
+ * so the illustration scales down in short landscape instead of clipping at the top; the child's
+ * percentage box keeps aspect via `objectFit`/the SVG's `maxHeight`.
+ */
+const ILLUSTRATION_SLOT_STYLE: CSSProperties = {
+  position: "relative",
+  display: "flex",
+  justifyContent: "center",
+  padding: "0 16px 12px",
+  minHeight: 0,
+  flexShrink: 1,
+  maxHeight: "38vh",
+};
 
 export function NarrativeScreen({
   scene,
@@ -184,20 +201,7 @@ export function NarrativeScreen({
           panels that reference shipped art; other scenes render exactly as before.
           Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
       {currentLine?.image !== undefined && !imageError && (
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            padding: "0 16px 12px",
-            // Shrinkable in a bottom-anchored `overflow: hidden` column so the
-            // sprite scales down in short landscape instead of being clipped at
-            // the top; the img's percentage box keeps aspect via objectFit.
-            minHeight: 0,
-            flexShrink: 1,
-            maxHeight: "38vh",
-          }}
-        >
+        <div style={ILLUSTRATION_SLOT_STYLE}>
           <img
             // Force remount on sprite change so the previous sprite is never held
             // on screen while the next one decodes (ADR-0012, C1).
@@ -220,28 +224,24 @@ export function NarrativeScreen({
       )}
 
       {/* Optional code-drawn animated gesture icon (ADR-0019): shown on the forked control
-          panels in the SAME slot `image` uses, and only when no `image` is set (the two
-          channels are mutually exclusive — Lane A guarantees exclusivity). The slot carries
-          the accessible label; the SVG itself is aria-hidden. `GestureKind` is a closed union
-          with an exhaustive icon map, so every value draws; an absent gesture skips this slot
-          (the `gesture !== undefined` gate) and the panel degrades to text — never a broken slot. */}
-      {currentLine?.image === undefined && currentLine?.gesture !== undefined && (
-        <div
-          role="img"
-          aria-label={currentLine.gestureAlt ?? ""}
-          style={{
-            position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            padding: "0 16px 12px",
-            minHeight: 0,
-            flexShrink: 1,
-            maxHeight: "38vh",
-          }}
-        >
-          <GestureIcon kind={currentLine.gesture} />
-        </div>
-      )}
+          panels in the SAME slot `image` uses. The two channels are normally mutually exclusive
+          (Lane A guarantees it), but the gate also acts as the image degradation fallback: if a
+          panel carries BOTH and the image 404s (`imageError`), the drawable gesture is rendered
+          instead of nothing. `GestureKind` is a closed union with an exhaustive icon map, so every
+          value draws; an absent gesture skips this slot and the panel degrades to text. When the
+          label is missing/empty the slot drops `role="img"` (no empty-labelled image node) and is
+          marked `aria-hidden` instead. */}
+      {currentLine?.gesture !== undefined &&
+        (currentLine.image === undefined || imageError) &&
+        ((currentLine.gestureAlt ?? "") !== "" ? (
+          <div role="img" aria-label={currentLine.gestureAlt} style={ILLUSTRATION_SLOT_STYLE}>
+            <GestureIcon kind={currentLine.gesture} />
+          </div>
+        ) : (
+          <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
+            <GestureIcon kind={currentLine.gesture} />
+          </div>
+        ))}
 
       {/* Dialogue box */}
       <div

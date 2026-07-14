@@ -147,6 +147,45 @@ value ∈ enum integrity).
   `?preview=tutorial` via the `verify` skill — mobile landscape 844×390 panels 2/3 + desktop panel 3 —
   and confirmed on screenshots both hands read instantly as hands and the falloff is a gradient. No
   commit. (Amelia / dev-r3f-render)
+- review-panel + arch triage (stages 6-7, PR #43 `claude/tutorial-visual-improvements-iiepue`):
+  4 parallel reviewers (`code-review` high / `bmad-code-review` / `bmad-review-edge-case-hunter` /
+  `security-review`) on `git diff origin/main...HEAD`. **No BLOQUANT, no MAJEUR on the shipped
+  happy path.** 11 findings CONFIRMED, 2 REFUTED. Winston adversarial triage + owning-lane split:
+  · **CONFIRMED → docs lane (applied by Winston in this pass, no production code):** (1) stripped
+  stray `</content>`/`</invoke>` tool-call artifact from `docs/game-design/tutorial-visual-gestures.md`;
+  (2a) ADR-0019 D2 reworded — the "graceful degradation / never a broken slot" promise is a
+  **compile-time** guarantee (closed `GestureKind` union + exhaustive `Record`), NOT a runtime
+  fallback (a rogue out-of-union value throws); "never a broken slot" traces to the caller's
+  absent-gesture gate. (2b) ADR-0019 D2 signature aligned to shipped `GestureIcon({ kind })` with
+  the accessible label on the caller's `role="img"` slot (`aria-label={gestureAlt ?? ""}`), not a
+  `label` prop. (8) narrativeSystem.ts module JSDoc "two shipped enemies" → five (comment only).
+  (9) ADR-0015 "Amended by" note: ADR-0019 also supersedes D1's "8 panels"/"field ×4" counts
+  (now 11 / ×7; structure unchanged). (10) story `Status: ready-for-arch` → `in-review`.
+  · **CONFIRMED → `dev-r3f-render` (Lane B, `src/render/**`):** (3) swipe-pan icon animates only
+  2 of the 4 gated directions — **DECISION: fix code, extend to the 4-dir cycle\*\* (spec §1.4/§1.5
+  - DA2 say four; cheaper than a design-gate re-entry), and dedupe the ~40-line verbatim hand group
+    into an SVG `<defs>`/`<use>` so the 4-dir cycle is cheap. (4) edge-scroll `prefers-reduced-motion`
+    frozen frame is unreadable (both bands glow at 0.4, cursor centred) → static attrs must encode a
+    readable base frame: cursor flat on the RIGHT edge, right band glowing, left band + chevrons at 0.
+    (5a) render guard: `role="img"` + empty `aria-label` when a future line lacks `gestureAlt`;
+    (5b) image+gesture line whose image 404s shows NO illustration (imageError hides img, gesture
+    stays suppressed) — add a fallback to the drawable icon in the degradation chain. (11) extract the
+    gesture-slot container style (verbatim copy of the image slot) into a shared const so the "same
+    slot" contract holds by construction. · **CONFIRMED → `dev-gameplay` (Lane A, `src/game/**`):**
+(5c) widen the XOR + `gestureAlt` invariant tests from the tutorial variants to ALL exported
+scenes (pre/post-level lines currently unguarded); (6) fix the HUD-panel copy (panel 9) — the real
+top bar (`src/render/ui/HUD.tsx`) renders score/niveau/vague/temps/vies (no elimination counter;
+delivery is a separate centered banner), corrected French in the briefing register, keeping the
+ADR-0015 device-token pins (no clic/souris/doigt/balay in shared panels); (7) test A5 in
+`narrativeSystem.test.ts`is tautological under strict TS (exhaustive Record already guards enum
+growth) — **derive-or-drop → DROP** (the compile-time guard is the real check). · **REFUTED
+(no action):** new sprite paths "lack existence assertions" (Blind Hunter) — the existing`existsSync` invariant already covers both variants (confirmed by 3 reviewers + acceptance
+auditor). "Stale QA PASS" (Blind Hunter major) — MITIGATED not refuted: the post-QA icon rework
+was dev-self-verified + orchestrator-reviewed on screenshots; a focused QA re-capture runs AFTER
+this fix batch (re-verifies reworked + newly-fixed icons in one pass). **VERDICT: no unresolved
+CONFIRMED blocking/major → clear to dispatch the fix batch.** Lanes A and B are path-disjoint
+(`src/game/**`⟂`src/render/**`) → dispatched in **parallel**; QA re-capture then re-review of
+    the fix diff, then pm accept. (Panel + Winston / Senior Architect)
 
 ---
 
@@ -1887,3 +1926,17 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   browser-verified both directions, manifest test guards `facing`). Standing note: the
   deferred minors/nits above are tracked follow-up debt (this entry is the log).
   Clear to merge.
+
+- story-tutorial-visual-gestures / panel fix batch (post-triage, two parallel lanes):
+  Lane A (dev-gameplay, Amelia): HUD panel copy corrected to match HUD.tsx reality
+  ("En haut : ton score, le niveau, la vague, le chrono et tes vies. Quand le colis
+  passe, la jauge de livraison s'affiche au centre — tiens-la au vert."), gesture/image
+  XOR + gestureAlt invariants widened to ALL exported scenes (tutorial variants +
+  PRE/POST_LEVEL_NARRATIVE), tautological test A5 dropped. 214/214 green.
+  Lane B (dev-r3f-render, Amelia): swipe-pan extended to the full 4-direction cycle
+  (2.0s/dir, 8s loop) with the hand deduped via SVG defs/use; edge-scroll reduced-motion
+  static base frame made readable (cursor on right edge, right band lit, left band +
+  chevrons 0); NarrativeScreen empty-gestureAlt guard (aria-hidden fallback), image-404
+  → gesture-icon degradation chain, shared ILLUSTRATION_SLOT_STYLE const. tsc/lint/
+  format green; visual self-check via verify skill both contexts, no pageerrors.
+  (Amelia ×2, logged by orchestrator per serialisation rule)

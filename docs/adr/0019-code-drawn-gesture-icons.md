@@ -105,14 +105,24 @@ rejection of a discriminated union for the `kind?` field).
 A new `src/render/ui/GestureIcon.tsx` (sibling to `NarrativeScreen.tsx`) owns **all** pixels:
 the four animated B&W-line-art + acid-neon icons per `docs/game-design/tutorial-visual-gestures.md`
 §1 (mouse-click, edge-scroll, two-finger-tap, swipe-pan). It exposes
-`GestureIcon({ gesture: GestureKind, label: string })` and selects the drawing via an exhaustive
-`Record<GestureKind, …>` (or `switch` with a `never` default).
+`GestureIcon({ kind: GestureKind })` and selects the drawing via an exhaustive
+`Record<GestureKind, …>` (or `switch` with a `never` default). The accessible **label is not a
+prop of `GestureIcon`**: the caller (`NarrativeScreen`) owns the slot semantics, wrapping the
+icon in a `role="img"` element carrying `aria-label={currentLine.gestureAlt ?? ""}`, so the
+component draws only pixels and the label stays with the panel data.
 
 `NarrativeScreen.tsx` renders `GestureIcon` in the **same illustration slot** `image` uses
 today (`:185-219`), when `currentLine.gesture` is present and `image` is absent — one slot, one
-of the two channels. An unknown/unsupported gesture renders **no icon** and the panel shows its
-text only (graceful degradation, mirrors the `image` `onError` fallback — never a broken slot).
-`NarrativeScreen` stays device-agnostic (ADR-0015 D2): it draws whatever line it is handed.
+of the two channels. Completeness is guaranteed at **compile time**, not by a runtime fallback:
+`GestureKind` is a **closed** string-literal union and the render map is an exhaustive
+`Record<GestureKind, …>`, so every value the type permits already resolves to an icon (adding a
+fifth value fails the render build until its icon exists). The "never a broken slot" property
+comes from the caller's **absent-gesture** gate (`gesture === undefined` → text-only panel), not
+from degrading an _unknown_ value: because the union is closed, no unknown value can reach the map
+through the type. A rogue out-of-union value forced past the type at runtime would throw rather
+than render silently — an accepted trade for the compile-time completeness guarantee (the type is
+the guard). `NarrativeScreen` stays device-agnostic (ADR-0015 D2): it draws whatever line it is
+handed.
 
 ### D3 — No generation; boundary law upheld
 

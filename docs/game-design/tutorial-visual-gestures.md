@@ -279,5 +279,3 @@ discrete `gesture` enum or a general `icon` field, and the ADR.
 - **`senior-architect` (Winston):** `NarrativeLine.gesture` field shape + the ADR-0015 D3
   amendment/new ADR; the value/semantics above are the design contract to encode.
 - **`lead-game-designer` (Karim):** gate this spec before any dev implements.
-  </content>
-  </invoke>

@@ -48,9 +48,10 @@ export interface NarrativeScene {
  * into `PRE_/POST_LEVEL_NARRATIVE` (whose keys must stay ⊆ level ids, and whose entries
  * drive the pre/post-level flow). Briefing register: DISPATCH/KENZA brief Muf directly,
  * short imperative lines, informative but fanzine — not the oblique intro voice. Covers
- * only mechanics live in a launchable level today (window cops + street courier): the
- * core loop, the controls, the two shipped enemies, and the HUD. Panels are illustrated
- * only where a sprite already ships; the HUD panel is text-only (no HUD art asset exists).
+ * only mechanics live in a launchable level today: the core loop, the controls, the five
+ * shipped Belliard enemies (normal cop / riot cop / biker / bonus / civilian courier), and
+ * the HUD. Bestiary panels are illustrated by already-shipped sprites; the two control panels
+ * by code-drawn gesture icons (ADR-0019); the HUD panel is text-only (no HUD art asset exists).
  *
  * Per ADR-0015 (amending ADR-0012 D4) the stage forks into two variants —
  * `TUTORIAL_NARRATIVE_DESKTOP` and `TUTORIAL_NARRATIVE_MOBILE` — that differ ONLY on the
@@ -134,7 +135,7 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   },
   {
     speaker: "DISPATCH",
-    text: "En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.",
+    text: "En haut : ton score, le niveau, la vague, le chrono et tes vies. Quand le colis passe, la jauge de livraison s'affiche au centre — tiens-la au vert.",
   },
   {
     speaker: "DISPATCH",

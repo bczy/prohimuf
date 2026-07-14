@@ -1,8 +1,8 @@
 # Story: Make the tutorial visual — gesture icons + fuller enemy roster
 
 **Type:** Onboarding clarity (informative-only, no gameplay rule added) ·
-**Status:** ready-for-arch (awaits lane assignment + ADR amendment from `senior-architect`,
-design-loop validation of the icon approach) ·
+**Status:** in-review (design loop gated by Karim, ADR-0019 written, both dev lanes shipped;
+in the code-review merge gate — post-panel fix batch dispatched) ·
 **Date:** 2026-07-14 · **PM:** John ·
 **Extends:** ADR-0012 (optional scripted tutorial), ADR-0015 (device-forked script) ·
 **Requires an ADR amendment:** ADR-0015 **D3** ("control panels stay text-only, no
