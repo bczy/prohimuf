@@ -119,14 +119,31 @@ authoring passes were applied.
    (no `--check`), each against the scratch working copies.
 3. Byte-compare to HEAD: `git diff --stat HEAD -- public/assets/enemy_*.png`.
 
-| #   | Check                              | PASS criteria                                                                                                                                                                                                            |
-| --- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| R1  | Pipeline reconstructs HEAD         | After step 3, `git diff HEAD -- public/assets/enemy_*.png` is **empty** — the replayed bytes are byte-identical to the committed HEAD PNGs.                                                                              |
-| R2  | Real work was actually driven      | The write-mode runs report **non-zero** px changed on the c79dfda source (fills/restores/deletes > 0) — proof the lib's transform paths executed, not no-ops.                                                            |
-| R3  | Fixtures cover the transformed set | Every PNG the pipeline authors between c79dfda and HEAD is present in the replay; PNGs added _after_ c79dfda that the pipeline does not touch are noted, not silently dropped (their identity is already covered by §1). |
-| R4  | Clean teardown                     | `git checkout HEAD -- public/assets/enemy_*.png` restores the tree; `git status --porcelain` empty before the gate closes.                                                                                               |
+| #   | Check                                                   | PASS criteria                                                                                                                                                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ~~Pipeline reconstructs HEAD~~ **→ AMENDED (see note)** | ~~`git diff HEAD` empty.~~ **SUPERSEDED by R1′** — unsatisfiable as written and did not test the refactor.                                                                                                                                                                                                                                            |
+| R1′ | Old-code replay ≡ new-code replay                       | Replay the same c79dfda source through the **pre-refactor** scripts (isolated via `git stash`) and the **landed** scripts; the two output sets are **byte-identical across all 22 PNGs** (`diff -rq` exit 0 / identical sha256 rollup). The true behaviour-frozen proof: the extraction changes zero output bytes on genuine, non-trivial transforms. |
+| R2  | Real work was actually driven                           | The write-mode runs report **non-zero** px changed on the c79dfda source (fills/restores/deletes > 0) — proof the lib's transform paths executed, not no-ops.                                                                                                                                                                                         |
+| R3  | Fixtures cover the transformed set                      | Every PNG the pipeline authors between c79dfda and HEAD is present in the replay; PNGs added _after_ c79dfda that the pipeline does not touch are noted, not silently dropped (their identity is already covered by §1).                                                                                                                              |
+| R4  | Clean teardown                                          | `git checkout HEAD -- public/assets/enemy_*.png` restores the tree; `git status --porcelain` empty before the gate closes.                                                                                                                                                                                                                            |
 
-> If R1 diverges by even one byte, that is the byte-oracle firing on the reconciliation of
+> **SPEC AMENDMENT — R1 (Inès, `qa-lead`, 2026-07-14, logged in `docs/agent-handoffs.md`).**
+> On execution the original R1 ("replay reproduces committed HEAD bytes") was FALSE — and FALSE
+> BEFORE the refactor too. A clean single-pass replay from c79dfda diverges from HEAD on 7 of the
+> 10 shooting sprites (`enemy_shooting`, `_shooting_f2`, `_shooting_2_f2`, `biker_shooting`,
+> `biker_shooting_f2`, `riot_shooting`, `riot_shooting_f2`) under BOTH the pre-refactor code and
+> the landed code, byte-for-byte identically. Root cause (grounded in ADR-0019 iterations 1–4):
+> the committed HEAD PNGs are the product of an **iterated human production sequence** — hand-tuned
+> masks, multiple Bertrand review passes, over-delete-then-restore cycles — not a single
+> deterministic pipeline pass. R1's "diff empty vs HEAD" was therefore unsatisfiable _as a property
+> of the committed bytes_, independent of this story; enforcing it would measure production history,
+> not the extraction. The refactor's frozen-behaviour is instead proven by **R1′: old-code-replay ≡
+> new-code-replay** (`diff -rq` exit 0, identical sha256 rollup `0de0d20c…`, and each of the 7
+> HEAD-divergent sprites matches old↔new per-file). This is a criterion amendment, not a waiver —
+> R1′ is a _stronger_ isolation of "the extraction changed no behaviour" than the original. R2/R3/R4
+> stand unchanged.
+>
+> If R1′ diverged by even one byte, that would be the byte-oracle firing on the reconciliation of
 > the drifted copies (R2 in the tracking block) — the primary threat this whole gate exists
 > to catch. Named line-for-line and routed to dev-tooling-assets (see §9). The dev lane
 > supplies its exact replay recipe in its report; I reproduce it independently and only
@@ -292,3 +309,112 @@ Evidence: <22-PNG glob count · git diff exits · hashes · grep patterns+exits 
 FAIL names the specific failing case and routes it to the owning lane via `producer`.
 Green is a verdict given only when every row above is checked, at the boundaries, and every
 number was READ from output — never taken from the dev's word.
+
+---
+
+## VERDICT — executed against the landed (uncommitted) build, 2026-07-14 (Inès, `qa-lead`)
+
+Round 0: FAIL (§6 D1). Round 1: dev-tooling-assets fix landed → **RE-GATED PASS** (round 1
+of 2 consumed, resolved). Verdict below reflects the round-1 re-verification; the round-0
+FAIL detail is retained in the FAILING ROW section for the audit trail.
+
+```
+QUALITY GATE (AC6 + byte-identity) — story-shared-morphology-lib — PASS (round 1)
+  (round 0 FAILed on §6 D1; RESOLVED in round 1 and re-verified by me. All rows PASS.
+   HARD ACCEPTANCE LINE — behaviour byte-identical — HOLDS throughout; the round-0 defect
+   was an AC1 completeness miss, never a behaviour regression.)
+  (rtk unavailable → yarn fallbacks per CLAUDE.md. @napi-rs/canvas importable → NO CI-DEFERRED.)
+
+  §1 fixpoint ....... PASS
+     F1 fill --check exit 0 "every enemy_*.png fully solid — PASS" ·
+     F2 retouch --check exit 0 "no background remnant — PASS" ·
+     F3 restore --check exit 0 "no figure bite to restore — PASS" ·
+     F4 hem --check exit 0 "bust hems at fixpoint — PASS" ·
+     F5 all four run write-mode → git status public/assets/ EMPTY (zero PNG bytes written)
+  §2 replay oracle .. PASS (via amended R1′)
+     R1  (as-written) EXPECTED-FAIL — 7/10 shooting sprites diverge from HEAD; ADJUDICATED as a
+         pre-existing property of the committed bytes (iterated human production, ADR-0019 iters
+         1-4), NOT caused by the refactor → criterion amended to R1′, logged as spec amendment.
+     R1′ old-code-replay ≡ new-code-replay: diff -rq exit 0, identical sha256 rollup 0de0d20c…,
+         all 22 PNGs byte-identical; the 7 HEAD-divergent sprites match old↔new per-file. PASS.
+     R2  real work driven (retouch −9620px, fill +1659px on shooting_3_f2, etc., > 0) · PASS
+     R3  fixtures 22/22 enemy PNGs present at c79dfda · PASS
+     R4  teardown: HEAD PNGs restored, tree clean, no leftover stash · PASS
+  §3 measure-muzzle . PASS
+     A2 write-mode run → levelArt.json git hash-object identical (5a4beb15… pre==post), diff empty ·
+     A3 dry-run anchor table byte-identical old↔new
+  §4 integrity ...... PASS
+     C3 check-sprite-integrity --json pre vs post → diff exit 0 (metrics byte-identical, 22 PNGs) ·
+     C4 exit-code parity pre=1 post=1 (baseline gate disposition unchanged; parity is the oracle)
+  §5 unit suite ..... PASS
+     U1 scripts/lib/__tests__/morphology.test.mjs exists, imports the lib primitives ·
+     U2 SAME `yarn test` run: 21 files / 235 tests green (was 208; +27), morphology suite = 21 tests ·
+     U3 coverage include still exactly ["src/game/**/*.ts"]; test:coverage exit 0, All files
+        96.9%/89.22%/96.15%/96.9% (stmts/branch/funcs/lines) ≥ 80 thresholds — UNAFFECTED ·
+     U4 both connectivities EXPLICIT (largestComponent 4- vs 8-conn cases, lines 122-138) +
+        diskOffsets/dilate/erode/fillHoles/labelComponents/zoneMask/solidBodyMask covered
+  §6 static ......... PASS (D1 was FAIL in round 0; RESOLVED in round 1 — re-verified below)
+     D1 PASS — definition-scoped grep across all scripts (excl scripts/lib/) →
+        NO_PRIMITIVE_DEFINITIONS_OUTSIDE_LIB. The round-0 local `zoneMask` in
+        retouch-flash-halos.mjs is DELETED; retouch now imports zoneMask from the lib
+        (line 116) with call sites unchanged (259 & 321). No surviving copy of any listed
+        primitive (dilate/erode/diskOffsets/fillHoles/largestComponent/labelComponents/
+        solidBodyMask/zoneMask) outside the lib. cutout-enemies architect-exempt (documented).
+     D2 imports PASS — all 6 consumers import ./lib/morphology.mjs: fill-sprite-holes,
+        retouch-flash-halos (now incl. zoneMask), measure-muzzle, check-integrity, restore, hem.
+     D3 Re-sync directive gone PASS — the imperative "Re-sync if that script's morphology changes"
+        comment is deleted; remaining "re-sync" hits are explanatory prose about its REMOVAL
+        (morphology.mjs:11, SCRIPTS.md:903, retouch:335 "IMPOSSIBLE BY CONSTRUCTION"), not a directive.
+     D4 connectivity comments PASS — measure-muzzle {connectivity:8} DELIBERATE (diagonal flash
+        merge), check-sprite-integrity {connectivity:4} DELIBERATE — each explained at the call site.
+     D5 SCRIPTS.md PASS — new "lib/morphology.mjs" section + consumer list.
+  §7 sweep .......... PASS
+     M1 yarn typecheck exit 0 · M2 yarn test 235 green (read; morphology suite 21 tests present) ·
+     M3 yarn lint exit 0 (0 warnings) ·
+     M4 prettier --check touched files "All matched files use Prettier code style!" ·
+     B1 git diff HEAD -- src/** EMPTY (no game/render/hooks byte) ·
+     B2 no PNG / levelArt churn in the refactor diff (git status clean).
+  CI-DEFERRED: none (canvas available; every row ran locally).
+
+  ROUND-0 FAILING ROW + ROUND-1 RESOLUTION (per §9):
+    §6 D1 (round 0) — surviving live duplicate `zoneMask` in scripts/retouch-flash-halos.mjs (def
+    lines ~250-262, calls 272 & 334) → routed to dev-tooling-assets, round 1 of 2.
+    ROUND-1 FIX LANDED + RE-VERIFIED BY ME (not on the dev's word): retouch now imports zoneMask
+    from ./lib/morphology.mjs (line 116), local def deleted, call sites intact (259 & 321).
+    Re-ran the fix-touched rows myself: §6 D1 grep NO_PRIMITIVE_DEFINITIONS_OUTSIDE_LIB · D2 all 6
+    consumers import the lib · D3 no directive (only "IMPOSSIBLE BY CONSTRUCTION" prose, retouch:335) ·
+    §1 F2 retouch --check exit 0 · §1 F5 retouch write-mode → 0 PNG · prettier clean · vitest 235
+    green (morphology 21 tests). Behaviour still byte-frozen (deleted local zoneMask body was
+    identical to the lib's, and F2/F5 confirm the fixpoint). ROUND 1 CONSUMED, RESOLVED. Cap not hit.
+
+Evidence: 22 enemy PNGs confirmed (git ls-files count = 22, all present at c79dfda). Tree restored
+byte-exact after every stash/checkout experiment (landed-hashes + landed-status diff clean, stash
+list empty). All numbers READ from command output; the dev's deviation claim was reproduced
+independently (own stash isolation), not taken on faith. Iron rule kept: zero writes under scripts/;
+temporary git checkout/stash used only to RUN old code for measurement, fully reverted.
+```
+
+### Adjudication of the dev's flagged deviation (verified, not accepted on faith)
+
+- **§2 replay divergence vs HEAD — dev CORRECT.** Independently reproduced: 7/10 shooting sprites
+  diverge from committed HEAD after a clean single-pass replay, and the divergence is **identical
+  under pre-refactor and landed code** (old↔new byte-identical, sha256 rollup match). The committed
+  bytes are iterated human production (ADR-0019), so the original R1 was unsatisfiable independent
+  of the refactor. **R1 amended to the old-vs-new oracle (R1′), dated + logged as a spec amendment,
+  not silently passed.** R1′ PASSES.
+- **eslint ignores `scripts/**`+ config — dev CORRECT.** Verified:`yarn lint`is clean AND the
+local`zoneMask`in retouch is live-and-referenced, so`no-unused-vars` would not fire regardless;
+  lint structurally cannot catch the D1 duplication (it is a DRY/AC1 defect, not a lint defect). This
+  is why the static grep in §6 D1 exists as a separate gate — the dev's point is a correct
+  explanation of why lint stayed green, not a dodge of D1.
+
+### Bottom line for the coordinator
+
+**QUALITY GATE = PASS (round 1).** Behaviour is **fully frozen** — every byte-oracle row (fixpoint
+§1, replay §2 via R1′, levelArt §3, integrity §4) is green and stayed green across the round-1 fix;
+the HARD ACCEPTANCE LINE holds throughout. The round-0 FAIL (§6 D1 — `retouch-flash-halos.mjs`
+carrying its own `zoneMask` copy) was the story's headline deliverable being incomplete; the
+round-1 fix (import from the lib, delete the local def) landed and I re-verified the fix-touched
+rows myself — D1 grep clean, all 6 consumers import the lib, F2/F5 fixpoint green, vitest 235. The
+single source of truth is now complete. Round 1 of 2 consumed; cap not hit. I did not fix it — I
+verdicted it. Clear to proceed to stage 6 (architect review) / stage 7 (code-review panel).

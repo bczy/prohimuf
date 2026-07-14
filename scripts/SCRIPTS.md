@@ -893,3 +893,39 @@ PREVIEW_DIR=/tmp node scripts/measure-muzzle-anchors.mjs --preview  # override s
 ```
 
 - **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).
+
+---
+
+## lib/morphology.mjs — Shared binary-image morphology primitives
+
+The ONE source of truth for the geometric mask primitives the sprite-retouch pipeline
+shares (extracted per ADR-0014 / ADR-0019 to kill the hand-copied duplicates and the
+"re-sync if that script's morphology changes" desync class). Pure functions over a mask
+= `Uint8Array` of length `W*H`, row-major (`idx = y*W + x`), values `0|1` (not bit-packed);
+the lib never touches RGBA / alpha — callers build the opaque predicate / mask. No I/O, no
+`@napi-rs/canvas` dependency, so it imports cleanly into a Vitest suite.
+
+- **Exports:** `diskOffsets(r)`, `dilate(mask,W,H,offsets)`,
+  `erode(mask,W,H,offsets,opts)` (with `opts.outsideBelowBottom` — the ONE geometric
+  divergence, used only by `fill-bust-hem.mjs` for its frame-cut hem), `fillHoles(mask,W,H)`
+  (4-conn border-seeded), `largestComponent(mask,W,H,connectivity=4)`,
+  `labelComponents(W,H,keep,opts)` (`opts.connectivity` 4|8, `opts.collectPixels`) →
+  `{size,bbox,touchesBorder,pixels?}[]` largest-first, `zoneMask(zones,W,H)` (array of
+  normalized rects), `solidBodyMask(opaque,W,H)` (fill-sprite-holes PASS-A body
+  reconstruction), and the read-only constants `CLOSE_R` / `ERODE_R` / `SEAL_MARGIN`.
+- **Consumers:** `fill-sprite-holes.mjs` (reference — owns `solidBodyMask`'s caller loop),
+  `retouch-flash-halos.mjs` (its whole mirrored PASS-A block is gone — it now imports the
+  same `solidBodyMask`, so the two can no longer drift), `restore-figure-bites.mjs`,
+  `fill-bust-hem.mjs`, `check-sprite-integrity.mjs` (4-conn labelling, deliberate),
+  `measure-muzzle-anchors.mjs` (8-conn labelling, deliberate). `cutout-enemies.mjs` keeps
+  its flood LOCAL on purpose — it is fused with per-component colour sampling and does not
+  map onto the pure mask primitives.
+- **Connectivity is explicit at every call site** (no hidden default that masks intent),
+  each with a comment stating 4 vs 8 and why.
+- **Behaviour is FROZEN.** The primitives are verbatim lifts; any change rewrites committed
+  sprite bytes. The binding oracle is the `--check` fixpoint of every retouch script on the
+  22 enemy PNGs plus the `measure-muzzle-anchors` levelArt.json byte-diff — never edit this
+  module without re-proving them.
+- **Tests:** `scripts/lib/__tests__/morphology.test.mjs`, wired into `yarn test` via
+  `test.include` in `vitest.config.ts` (`scripts/lib/**/*.test.mjs`). `coverage.include`
+  stays scoped to `src/game/**`, so this module does not affect coverage thresholds.

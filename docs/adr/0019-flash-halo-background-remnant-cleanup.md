@@ -209,11 +209,32 @@ pristine base, so no new anatomy was authored.
   the riot flash tips) — removing them would break `--check`; they read as flash, not a
   rectangle. Idle-sprite feet contact shadows are untouched (no zone).
 - **Coupling / recalibration gotchas.** The reconcile mirrors `fill-sprite-holes.mjs`
-  PASS-A; re-sync if that morphology changes (the binding oracle is its `--check`, run
-  after applying). Zones/thresholds are measured on the current committed bytes; if a sprite
+  PASS-A; ~~re-sync if that morphology changes~~ — see the extraction note below: the mirror
+  is gone. Zones/thresholds are measured on the current committed bytes; if a sprite
   is force-regenerated they must be re-measured (same caveat as ADR-0014's `RETOUCH_SPECS`),
   and any regen must still clear the integrity gate, the game-graphist AI-defect sweep, the
   lead-art asset gate and the merge panel before shipping.
+
+## Shared-morphology extraction (2026-07-14) — the re-sync hazard is retired
+
+story-shared-morphology-lib (PR #40 review-panel follow-up, greenlit by Bertrand): the
+geometric primitives (`diskOffsets` / `dilate` / `erode` / `fillHoles` / `largestComponent`
+/ `labelComponents` / `zoneMask`) **and** `solidBodyMask` were extracted **verbatim** to
+`scripts/lib/morphology.mjs`; **behaviour frozen** (zero PNG byte and zero `levelArt.json`
+byte changed). `retouch-flash-halos.mjs`'s ~135-line **mirrored PASS-A block was deleted** —
+it now imports the SAME `solidBodyMask` as `fill-sprite-holes.mjs`, so the "re-sync if that
+script's morphology changes" hazard called out above is **impossible by construction**:
+there is one implementation and it cannot drift. The single geometric divergence
+(`fill-bust-hem.mjs`'s `ny>=H` frame-cut erosion) is preserved behind an explicit
+`erode(..., { outsideBelowBottom: true })` flag, never unified. Consumers: `fill-sprite-holes`,
+`retouch-flash-halos`, `restore-figure-bites`, `fill-bust-hem`, `check-sprite-integrity`
+(4-conn), `measure-muzzle-anchors` (8-conn); `cutout-enemies.mjs` keeps its colour-fused
+flood local by design. Proven byte-identical: all four `--check` gates green in fixpoint on
+the 22 enemy PNGs; write-mode changes 0 PNG; `measure-muzzle-anchors` leaves `levelArt.json`
+byte-identical; `check-sprite-integrity` verdicts unchanged; and a full-chain replay from
+`c79dfda` produces bytes identical to the pre-refactor code. Unit tests:
+`scripts/lib/__tests__/morphology.test.mjs`. See `scripts/SCRIPTS.md` → _lib/morphology.mjs_.
+
 - Cross-references: ADR-0013 (shared keyer / enclosed-island flood), ADR-0014
   (sprite-integrity gate + deterministic per-sprite retouch precedent + the solidify pass
   this reconciles with).

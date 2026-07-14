@@ -62,6 +62,7 @@ import fs from "fs";
 import path from "path";
 import { execFileSync } from "child_process";
 import { fileURLToPath, pathToFileURL } from "url";
+import { diskOffsets, dilate, erode, largestComponent, zoneMask } from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -114,93 +115,10 @@ const FLASH_EXCLUDE = {
   "enemy_biker_shooting_f2.png": [[0.0, 0.0, 0.33, 0.29]],
 };
 
+// diskOffsets / dilate / erode / largestComponent / zoneMask are imported from
+// scripts/lib/morphology.mjs (shared, behaviour-frozen). The opening below stays composed
+// in-caller (erode → dilate). erode uses the default out-of-bounds=empty semantics.
 const lum = (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b;
-function diskOffsets(r) {
-  const o = [];
-  for (let dy = -r; dy <= r; dy++)
-    for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) o.push([dx, dy]);
-  return o;
-}
-function dilate(m, W, H, off) {
-  const o = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      if (!m[y * W + x]) continue;
-      for (const [dx, dy] of off) {
-        const nx = x + dx,
-          ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < W && ny < H) o[ny * W + nx] = 1;
-      }
-    }
-  return o;
-}
-function erode(m, W, H, off) {
-  const o = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      let a = 1;
-      for (const [dx, dy] of off) {
-        const nx = x + dx,
-          ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H || !m[ny * W + nx]) {
-          a = 0;
-          break;
-        }
-      }
-      o[y * W + x] = a;
-    }
-  return o;
-}
-function largestComponent(m, W, H) {
-  const N = W * H;
-  const seen = new Uint8Array(N);
-  let best = null,
-    bs = 0;
-  for (let i = 0; i < N; i++) {
-    if (!m[i] || seen[i]) continue;
-    const comp = [];
-    const q = [i];
-    seen[i] = 1;
-    while (q.length) {
-      const j = q.pop();
-      comp.push(j);
-      const x = j % W,
-        y = (j / W) | 0;
-      for (const [nx, ny] of [
-        [x - 1, y],
-        [x + 1, y],
-        [x, y - 1],
-        [x, y + 1],
-      ]) {
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        const k = ny * W + nx;
-        if (m[k] && !seen[k]) {
-          seen[k] = 1;
-          q.push(k);
-        }
-      }
-    }
-    if (comp.length > bs) {
-      bs = comp.length;
-      best = comp;
-    }
-  }
-  const o = new Uint8Array(N);
-  if (best) for (const j of best) o[j] = 1;
-  return o;
-}
-function zoneMask(zones, W, H) {
-  const m = new Uint8Array(W * H);
-  if (!zones) return m;
-  for (const [a, b, c, d] of zones) {
-    const x0 = Math.max(0, Math.floor(a * W)),
-      y0 = Math.max(0, Math.floor(b * H));
-    const x1 = Math.min(W - 1, Math.ceil(c * W)),
-      y1 = Math.min(H - 1, Math.ceil(d * H));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m[y * W + x] = 1;
-  }
-  return m;
-}
 
 const DISK_OPEN = diskOffsets(R_OPEN);
 const DISK_D = diskOffsets(D_BRIGHT);

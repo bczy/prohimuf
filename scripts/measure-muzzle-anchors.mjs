@@ -49,6 +49,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { execFileSync } from "child_process";
+import { labelComponents } from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -97,42 +98,23 @@ export function measureAnchor(data, W, H) {
       hot[p] = 1;
     }
   }
-  const seen = new Uint8Array(N);
-  let best = null;
-  for (let s = 0; s < N; s++) {
-    if (!hot[s] || seen[s]) continue;
-    const comp = [s];
-    seen[s] = 1;
-    const stack = [s];
-    while (stack.length) {
-      const p = stack.pop();
-      const x = p % W;
-      const y = (p / W) | 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-          const np = ny * W + nx;
-          if (hot[np] && !seen[np]) {
-            seen[np] = 1;
-            comp.push(np);
-            stack.push(np);
-          }
-        }
-      }
-    }
-    if (best === null || comp.length > best.length) best = comp;
-  }
-  if (best === null || best.length < MIN_COMPONENT_PX) return null;
+  // 8-connectivity is DELIBERATE: it merges diagonally-touching hot pixels into ONE flash
+  // component (a 4-conn label would split a diagonal flash into slivers, each possibly below
+  // MIN_COMPONENT_PX, and drop a real flash to null). labelComponents returns largest-first,
+  // so comps[0] is the flash core; the centroid reducer stays local.
+  const comps = labelComponents(W, H, (p) => hot[p] === 1, {
+    connectivity: 8,
+    collectPixels: true,
+  });
+  const best = comps[0] ?? null;
+  if (best === null || best.size < MIN_COMPONENT_PX) return null;
   let sx = 0;
   let sy = 0;
-  for (const p of best) {
+  for (const p of best.pixels) {
     sx += p % W;
     sy += (p / W) | 0;
   }
-  const round3 = (v) => Math.round((v / best.length) * 1000) / 1000;
+  const round3 = (v) => Math.round((v / best.size) * 1000) / 1000;
   return { x: round3(sx / W), y: round3(sy / H) };
 }
 

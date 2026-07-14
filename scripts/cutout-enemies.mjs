@@ -17,6 +17,11 @@
  *
  * Operates in place on public/assets/enemy_*.png, or on the file paths passed
  * as CLI args (single-file in-place retouch of a committed sprite).
+ *
+ * NOTE: the flood/connected-component logic here is DELIBERATELY kept local — it is fused
+ * with per-component colour sampling (mean-colour erase tests keyed to the sampled ground)
+ * and does not map cleanly onto the pure mask primitives in scripts/lib/morphology.mjs.
+ * Refactoring it to reuse the shared lib is possible future work, not done here.
  */
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import fs from "fs";
