@@ -74,8 +74,10 @@ carries **no** colored luminous rim, **no** `text-shadow`/`box-shadow`-as-glow, 
 dark ground it has drifted — automatic FAIL, not a taste note.**
 
 - **One fluo stock per surface** (guidelines §5). Stocks are **paper**, not glow: they are
-  the desaturated/lightened cousins of the in-game neon palette, chosen so **black ink reads
-  at ≥ 7:1 on every stock**. Do not reuse the §2 glow hexes as a menu ground.
+  the desaturated/lightened cousins of the in-game neon palette, chosen so **black ink clears
+  WCAG AA (≥ 4.5:1) on every stock** — the fluo cards sit at AA, not AAA (rose 6.14:1, orange
+  6.68:1), while ≥ 7:1 (AAA) holds only on newsprint/manila. Do not reuse the §2 glow hexes as
+  a menu ground.
 - **The facade photo on a menu is allowed only rephotocopied to pure B&W** —
   `filter: grayscale(1) contrast(~2.2) brightness(~1.1)` on the existing PNG, over a dot-
   screen overlay. Any surviving warm window-**glow** (partial desaturation) reintroduces glow
@@ -116,7 +118,7 @@ Marker / stamp inks (semantic — always with `ink-black` keyline + distinct sha
 | Token         | Hex       | Meaning                         |
 | ------------- | --------- | ------------------------------- |
 | `mark-green`  | `#2FA84F` | FACILE · record / rank-1 circle |
-| `mark-orange` | `#E8641E` | MOYEN                           |
+| `mark-orange` | `#E8641E` | NORMAL                          |
 | `mark-pink`   | `#D62A7A` | DIFFICILE                       |
 
 Texture (all CSS/inline-SVG — **no generated PNG**): uniform dot-screen overlay

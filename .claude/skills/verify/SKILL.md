@@ -36,7 +36,8 @@ from a **CommonJS** script (ESM ignores NODE_PATH). Launch with
 
 ## Flows worth driving
 
-- Menu → tap/click the level card (text `BELLIARD`) → narrative screen →
+- TITLE cover (cold load) → a single action (click, or press `Enter`) enters the
+  MENU → tap/click the level flyer (text `BELLIARD`) → narrative screen →
   `Passer` button → PLAYING canvas (wait ~2.5s for Suspense/art).
 - Overlay assertion: `page.getByText("TOURNEZ VOTRE APPAREIL")`.
 - Pan/inertia evidence: screenshot before drag, right after `touchEnd`, and

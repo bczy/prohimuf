@@ -78,7 +78,7 @@ src/
 ├── hooks/       # Hooks React — pont entre logique de jeu et R3F (useFrame)
 ├── render/
 │   ├── scene/   # Composants de scène R3F (App, GameScene, LevelBackdrop, sprites…)
-│   └── ui/      # Overlays HTML (HUD, StartScreen, EndScreen…)
+│   └── ui/      # Overlays HTML (HUD, TitleScreen, EndScreen…)
 ├── assets/      # Audio + sprites générés (PNG)
 └── main.tsx     # Point d'entrée
 ```

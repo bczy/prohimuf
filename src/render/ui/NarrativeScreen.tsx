@@ -298,7 +298,9 @@ export function NarrativeScreen({
               )}
             </div>
 
-            {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse) */}
+            {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse).
+                On the final panel the "done" tell is a black-keylined green box accent, not
+                green text: mark ink never carries small text (art-direction §2bis). */}
             {!isTyping && (
               <div
                 style={{
@@ -306,9 +308,16 @@ export function NarrativeScreen({
                   bottom: 16,
                   right: 24,
                   fontSize: "11px",
-                  color: done ? MARK.green : INK.black,
+                  color: INK.black,
                   letterSpacing: "0.15em",
                   animation: "blink 1s step-start infinite",
+                  ...(done
+                    ? {
+                        background: MARK.green,
+                        border: `1px solid ${INK.black}`,
+                        padding: "1px 6px",
+                      }
+                    : {}),
                 }}
               >
                 {done ? `[ ${doneLabel} ]` : "[ CONTINUER ]"}

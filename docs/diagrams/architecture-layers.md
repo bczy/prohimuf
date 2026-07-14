@@ -27,7 +27,7 @@ flowchart TD
             R1[App] ~~~ R2[GameScene] ~~~ R3[LevelBackdrop] ~~~ R4[StreetBackground] ~~~ R5[EnemySprite]
         end
         subgraph ui["ui/"]
-            U1[HUD] ~~~ U2[StartScreen] ~~~ U3[EndScreen]
+            U1[HUD] ~~~ U2[TitleScreen] ~~~ U3[EndScreen]
         end
     end
 

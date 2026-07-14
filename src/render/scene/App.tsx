@@ -137,6 +137,18 @@ export function App(): JSX.Element {
     };
   }, [appPhase]);
 
+  // Escape backs the MENU out to the TITLE cover — only while on the menu
+  useEffect(() => {
+    if (appPhase !== "MENU") return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") setAppPhase("TITLE");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [appPhase]);
+
   // Reset pause when leaving PLAYING phase
   useEffect(() => {
     if (appPhase !== "PLAYING") setPaused(false);

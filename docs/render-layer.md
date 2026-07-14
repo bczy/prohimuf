@@ -33,7 +33,7 @@ stateDiagram-v2
     END --> PLAYING : handleRestart()\nReset hudData + gameKey\nBGM redémarre
 ```
 
-- `StartScreen` / `EndScreen` are plain HTML overlays (no R3F)
+- `TitleScreen` / `EndScreen` are plain HTML overlays (no R3F)
 - `Canvas` wraps the R3F scene with orthographic camera
 - Lighting is set here and applies globally
 - Audio lifecycle: BGM starts on PLAYING,

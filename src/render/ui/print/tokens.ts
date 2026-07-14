@@ -8,7 +8,9 @@
  * pre-game surface may re-declare a stock/ink/marker hex or a masthead string.
  */
 
-// Paper stocks — fluo copier card + newsprint grounds. Black ink reads >=7:1 on each.
+// Paper stocks — fluo copier card + newsprint grounds. Black ink clears WCAG AA
+// (>=4.5:1) on every stock; the fluo cards sit at AA, not AAA (rose 6.14:1, orange
+// 6.68:1), while >=7:1 (AAA) holds only on newsprint/manila.
 export const STOCK = {
   jaune: "#F1EC1F", // TITLE cover only
   rose: "#FF4FA3", // flyer Belliard (playable idx 0); UNE masthead accent
