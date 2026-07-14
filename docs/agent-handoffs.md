@@ -2352,6 +2352,44 @@ Raise the facade art pass with `pm` / lead-art separately.
 
 ---
 
+### STORY-SHOT-FLAT-IMPACT — Stage 5 GATE 4 re-gate (round 2 of 2) — **COMPOSITE GATE PASS**
+
+**Nico (lead-art) · 2026-07-14 · verdict on fresh in-game screenshots + re-read of `ImpactEffects.tsx`.**
+
+Evidence: `05a-regate-hit.png`, `05b-regate-miss.png` (miss fired at the exact central-pillar
+spot where `02` showed nothing). Pixel sampling (pngjs, vs `00` baseline noise):
+
+- **Hit (05a):** white core reads at min-channel 255 / maxB 255 — an unmistakable blown-white
+  punch bloom, soft radial falloff to transparent (dégradé, not aplat).
+- **Miss (05b):** cyan-lift maxCyan **146** vs facade noise floor **27** — 5.4× the ambient
+  floor; the cyan puff reads clearly and stays cyan (categorical white=hit / cyan=miss holds).
+
+Gate criteria:
+
+- **Loi du glow / dégradé — PASS.** White flash (white 1.0 core → 0), cyan burst, backing
+  disc and toner mark are all monotonic alpha gradients terminating at 0. No aplat.
+- **Palette — PASS.** Cyan `#28F0FF` preserved; white is a high-energy impact flash (the hit
+  cue), not a neon-hue violation; marks neutral non-glowing.
+- **Read strength — PASS (was the FAIL).** Dark backing disc supplies dark ground on any
+  backdrop; both hit and miss now read strongly. QA's faint-read defect resolved.
+- **Hit-vs-miss distinguishability (D3.2) — PASS.** Categorical white bloom = hit vs cyan
+  spark = miss, reinforced by 1.55× size and target-base anchor.
+- **Tracer — confirmed removed** (D2.4 drop): no pool/texture/constants/muzzle-math/JSX.
+
+Code sanity-check vs my prescription: backing disc rgba(10,10,12,.55)→0, RO 7.9, ×1.25, 140ms,
+hit+miss ✓ · miss size 0.9, both peaks 1.0 with hierarchy via size+flash ✓ · plateau envelope
+`t<0.1?t/0.1:t<0.4?1:1-(t-0.4)/0.6` verbatim ✓ · white flash hit-only 33ms/1.4 additive,
+RO 8.1 ✓. Amendment 6 (brighter core) correctly skipped — non-blocking and unnecessary now.
+
+Non-blocking watch (next-cycle, not a condition): in live play confirm the 1-frame white bloom
+(FLASH_DIAMETER 1.4) doesn't feel oversized over the target; trim toward ~1.0 only if it
+washes the read. And the facade-is-photographic-not-B&W flag from the round-1 entry still
+stands for a separate art pass — not this story.
+
+**COMPOSITE GATE (Gate 4): PASS.** Runtime impact FX cleared for merge. (Nico / lead-art)
+
+---
+
 ### STORY-SHOT-FLAT-IMPACT — Stage 5 PLAYTEST (vs gated spec) — PASS-WITH-AMENDMENTS
 
 **Sacha (game-designer) · 2026-07-14 · verdict on QA evidence + diff.**
@@ -2370,3 +2408,20 @@ Raise the facade art pass with `pm` / lead-art separately.
 amendment list (dark backing disc, white hit flash, miss 0.9/1.0, plateau envelope,
 tracer removed). Spec updated: D3.5 added, §5 amended, tracer DROPPED (D2.4), §6
 telegraph ruling recorded. (orchestrator, on behalf of the stage-5 verdicts)
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stage 5 CLOSED — ALL GATES PASS
+
+**2026-07-14 · orchestrator, on the round-2 verdicts.**
+
+- QUALITY GATE (Inès/qa-lead): PASS (2 minor CI-DEFERRED e2e holes routed to
+  dev-tooling-assets: FIFO-cap assertion, restart-clear assertion).
+- PLAYTEST (Sacha/game-designer): **PASS full** — AC3 signed off on the re-gate pair
+  (white punch = hit / cyan ring = miss, D3.5 satisfied). Transcription reviewed CLEAN.
+- COMPOSITE GATE / Gate 4 (Nico/lead-art): **PASS round 2/2** — miss puff maxCyan 146 vs
+  noise floor 27 (5.4×); loi du glow, palette, hit/miss language all PASS; tracer drop
+  confirmed. Non-blocking next-cycle: watch FLASH_DIAMETER 1.4 in live play; facade B&W
+  fanzine pass raised separately.
+
+→ Stage 6 INTEGRATE (senior-architect), then stage 7 REVIEW PANEL (4 reviewers, mandatory).
