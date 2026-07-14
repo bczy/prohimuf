@@ -51,22 +51,30 @@ artifacts in `_bmad-output/`). BMAD config: `_bmad/bmm/config.yaml`
 
 ### Subagent team (`.claude/agents/`)
 
-A 5-agent crew that runs in parallel but always coordinates via
-`.claude/agents/COLLABORATION.md` and logs in `docs/agent-handoffs.md`. Each fronts a BMAD
-persona:
+A crew of subagents (full roster & protocol: `.claude/agents/COLLABORATION.md`) that runs
+in parallel but always coordinates there and logs in `docs/agent-handoffs.md`. Core crew,
+each fronting a BMAD persona:
 
-| Subagent             | Role                               | BMAD bridge                      |
-| -------------------- | ---------------------------------- | -------------------------------- |
-| `pm`                 | Product / PRD / stories / scope    | `bmad-agent-pm` (John)           |
-| `senior-architect`   | Architecture, boundaries, sign-off | `bmad-agent-architect` (Winston) |
-| `dev-r3f-render`     | `src/render` + view hooks          | `bmad-agent-dev` (Amelia)        |
-| `dev-gameplay`       | `src/game` pure logic (TDD)        | `bmad-agent-dev` (Amelia)        |
-| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI    | `bmad-agent-dev` (Amelia)        |
+| Subagent             | Role                                       | BMAD bridge                            |
+| -------------------- | ------------------------------------------ | -------------------------------------- |
+| `pm`                 | Product / PRD / stories / scope            | `bmad-agent-pm` (John)                 |
+| `senior-architect`   | Architecture, boundaries, sign-off         | `bmad-agent-architect` (Winston)       |
+| `lead-game-designer` | Design gate + design/art/dev sync          | — (Karim)                              |
+| `game-designer`      | Mechanics, tuning, 3C specs                | BMGD `gds` module when installed       |
+| `narrative-designer` | Universe, cast, in-game text scripts       | BMGD `bmgd-narrative` when installed   |
+| `dev-r3f-render`     | `src/render` + view hooks                  | `bmad-agent-dev` (Amelia)              |
+| `dev-gameplay`       | `src/game` pure logic (TDD)                | `bmad-agent-dev` (Amelia)              |
+| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI            | `bmad-agent-dev` (Amelia)              |
 
-Flow: `pm` (what) → `senior-architect` (how + lane assignment) → the three devs build in
-parallel on non-overlapping paths → `senior-architect` reviews → **code-review panel**
-(mandatory merge gate) → `pm` accepts. Launch independent dev lanes in a single message
-(parallel Task calls).
+(The art crew — `lead-art`, `art-advisor`, `concept-artist`, `game-graphist` — is
+documented in COLLABORATION.md.)
+
+Flow: `pm` (what) → **design loop** when the story touches gameplay or fiction
+(`game-designer` + `narrative-designer` in parallel → `lead-game-designer` design gate) →
+`senior-architect` (how + lane assignment) → the three devs build in parallel on
+non-overlapping paths → `senior-architect` reviews → **code-review panel** (mandatory
+merge gate) → `pm` accepts. Launch independent dev lanes in a single message (parallel
+Task calls).
 
 **Mandatory merge gate:** before ANY merge to `main`, the full diff
 (`git diff origin/main...HEAD`) goes through a 4-reviewer panel run in parallel, each with

@@ -1470,3 +1470,20 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 - Docs updated: script WHY header + SCRIPTS.md section + gen-sprites.yml two step comments
   (was "enclosed only" → "solidify") + sprite-hole-audit skill. node --check + prettier
   clean. NOT committed. (Serge — TECHNICAL pass, scripted retouch iter-2)
+
+---
+
+### crew-game-design-lane
+
+- setup: Game-design lane added to the crew (Bertrand's request, 2026-07-14). Three new
+  subagents: `game-designer` (Sacha 🎮 — mechanics, tuning, 3C), `narrative-designer`
+  (Yasmine ✒️ — universe, cast, in-game text) and `lead-game-designer` (Karim 🧭 —
+  DESIGN GATE + design↔art↔dev sync). New flow section in
+  `.claude/agents/COLLABORATION.md` (§"The design flow"): designers write specs/scripts
+  under `docs/game-design/` (index README owned by Karim), gate PASS required before
+  `senior-architect` assigns lanes; devs implement gated specs only. Rule #1 amended
+  accordingly. BMAD side: the official BMGD module ("BMad Game Dev Studio", module code
+  `gds`, npm `bmad-game-dev-studio`) exists but is NOT installed in this repo; the new
+  agents bridge to installed BMM skills and will prefer `bmgd-*` workflows once/if
+  Bertrand installs the module (`npx bmad-method install`, select "Game Dev Studio").
+  (Orchestrator)

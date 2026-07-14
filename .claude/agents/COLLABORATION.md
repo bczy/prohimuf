@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Nine subagents work the muf project. They run **in parallel where paths don't overlap**,
+Twelve subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -9,6 +9,9 @@ but they **always coordinate** through this protocol. Read this before acting.
 | --- | --- | --- | --- |
 | `pm` | John 📋 | PRD, epics, stories, scope (`_bmad-output/planning-artifacts/`) | production code |
 | `senior-architect` | Winston 🏗️ | architecture, ADRs, boundaries, cross-cutting sign-off | feature implementation |
+| `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
+| `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
+| `narrative-designer` | Yasmine ✒️ | universe, cast, every player-facing word — scripts in `docs/game-design/` | production code, mechanics, visuals |
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
@@ -21,6 +24,10 @@ but they **always coordinate** through this protocol. Read this before acting.
 
 ```
 Bertrand → pm (what/why, scoped story)
+            → DESIGN LOOP (only when the story touches how the game plays or its fiction)
+                → game-designer      ┐ specs in parallel on
+                → narrative-designer ┘ non-overlapping deliverables
+                → lead-game-designer DESIGN GATE (PASS required — see below)
             → senior-architect (how, boundaries, lane assignment + parallel plan)
                 → dev-r3f-render  ┐
                 → dev-gameplay    ├─ build in parallel on non-overlapping paths
@@ -29,6 +36,32 @@ Bertrand → pm (what/why, scoped story)
                 → CODE-REVIEW PANEL (mandatory before any merge to main — see below)
             → pm (acceptance vs story + PROJECT_GUIDELINES)
 ```
+
+## The design flow (any change to mechanics, tuning, 3C, universe, cast or in-game text)
+
+```
+pm story (what/why)
+     ↓
+lead-game-designer splits & sequences the design work
+     ↓
+game-designer (mechanics, tuning tables,  ┐ parallel when deliverables
+               3C specs)                  │ don't overlap; they reconcile
+narrative-designer (bible, character      │ directly when fiction and
+                    sheets, scripts)      ┘ mechanics meet
+     ↓
+lead-game-designer DESIGN GATE — PASS/FAIL per deliverable vs PROJECT_GUIDELINES
+(cahier des charges test, core loop, verifiability, coherence with gated specs
+ and with the art bible). Max 2 rework rounds per cycle, then escalate to Bertrand.
+     ↓
+FAIL → designer iterates · PASS → senior-architect (lanes) → devs implement the spec
+```
+
+Design deliverables live under `docs/game-design/` (index: `docs/game-design/README.md`,
+kept by `lead-game-designer`). Designers write specs and scripts, never production code:
+`dev-gameplay` transcribes gated tuning values and narrative scripts into `src/game/**`.
+Character/asset VISUALS stay in the art flow — a character sheet feeds `concept-artist`,
+it never bypasses `lead-art`'s gates. Every gate verdict is logged in
+`docs/agent-handoffs.md`.
 
 ## The code-review panel (MANDATORY gate before merging to main)
 
@@ -105,7 +138,10 @@ only the source sprite. So:
 
 ## Rules of engagement
 1. **No code before a story.** `pm` defines it; `senior-architect` makes it buildable and
-   assigns lanes. Devs implement only assigned, scoped work.
+   assigns lanes. Devs implement only assigned, scoped work. When the story touches
+   gameplay (mechanics/tuning/3C) or fiction (universe/cast/in-game text), the design
+   loop runs first and no dev implements an ungated design: `lead-game-designer`'s
+   DESIGN GATE PASS is required before the architect assigns lanes.
 2. **Boundary rule is law.** `src/game` imports no React/Three; `src/render` holds no game
    rules; `src/hooks` is the only bridge. Any change crossing a lane → `senior-architect`
    sign-off, logged below.
