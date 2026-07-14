@@ -1958,3 +1958,13 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   → gesture-icon degradation chain, shared ILLUSTRATION_SLOT_STYLE const. tsc/lint/
   format green; visual self-check via verify skill both contexts, no pageerrors.
   (Amelia ×2, logged by orchestrator per serialisation rule)
+
+- story-tutorial-visual-gestures / hand silhouettes v3 (post-merge-gate product
+  feedback, Bertrand: "on ne dirait pas du tout une main" on the live preview):
+  game-graphist authored new HAND_TWO_FINGER / HAND_ONE_FINGER silhouettes with the
+  three missing anatomy cues (thumb lobe, scalloped folded-knuckle ridge, unequal
+  leaning fingers) proven on screenshots at 240/96/64px (3 iterations);
+  dev-r3f-render integrated verbatim into GestureIcon.tsx, retargeted halo/ripple/
+  trail anchors to the new fingertips, all animation ids/classes preserved.
+  tsc/lint/format green; in-context verify capture both mobile panels — hands read,
+  anchors aligned. (Sam / game-graphist + Amelia / dev-r3f-render)

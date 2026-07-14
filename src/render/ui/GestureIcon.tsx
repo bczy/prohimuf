@@ -25,20 +25,21 @@ const BODY = "#0b0916";
  * Hand silhouettes for the two mobile icons, each ONE continuous fill path (fist + extended
  * finger(s) traced as a single outline) so nothing reads as a stray "paperclip" shape. Fingers
  * point up; the wrist runs off the bottom edge so the hand dominates the frame. Fingertips sit
- * near y≈31 (index tip x≈52 for one-finger, midpoint x≈59 for two). Draw with fill=BODY +
- * INK stroke, matching the mouse icon's line-art weight.
+ * high (index tip x≈51 y≈35 for one-finger; the two tips at ≈(50,35) and ≈(65,27), midpoint
+ * ≈(58,31) for two). Draw with fill=BODY + INK stroke, matching the mouse icon's line-art weight.
  */
 // Back-of-hand, index + middle extended PARALLEL side by side (thin separation, no V-spread),
 // ring/pinky/thumb folded into a tall palm/fist (two-finger tap).
 const HAND_TWO_FINGER =
-  "M42 120 L39 98 C37 90 36 84 38 78 C32 77 30 72 33 67 C35 63 39 61 44 59 " +
-  "L47 47 L48 33 A5 5 0 0 1 58 33 L58 44 C59 47 59 47 60 44 L60 33 " +
-  "A5 5 0 0 1 70 33 L71 49 C79 48 86 52 86 62 C87 79 85 95 81 106 L79 120 Z";
+  "M45 120 L41 96 C39 88 38 84 38 79 C34 78 30 77 28 73 C26 68 30 64 37 63 " +
+  "C40 59 42 51 43 45 C43 39 46 35 50 35 C54 35 55 40 54 46 C55 49 56 49 57 46 " +
+  "C58 42 58 36 59 32 C59 28 62 27 65 27 C69 27 70 33 69 41 C69 45 70 48 72 51 " +
+  "C75 50 78 51 80 55 C81 58 80 61 80 63 C82 65 85 67 86 72 C87 79 85 90 79 104 L73 120 Z";
 // Same fist with ONLY the index extended, the other fingers folded into the knuckle mass (swipe).
 const HAND_ONE_FINGER =
-  "M42 120 L39 98 C37 90 36 84 38 78 C32 77 30 72 33 67 C35 63 39 62 43 60 " +
-  "L46 46 L47 34 A6 6 0 0 1 59 34 L60 54 C68 53 78 55 84 58 C87 62 87 66 86 70 " +
-  "C87 82 85 96 81 106 L79 120 Z";
+  "M45 120 L41 96 C39 88 38 84 38 79 C34 78 30 77 28 73 C26 68 30 64 37 63 " +
+  "C40 59 42 51 44 45 C44 39 47 35 51 35 C55 35 56 40 56 47 C57 50 60 50 64 49 " +
+  "C68 48 72 49 75 52 C77 54 77 57 76 59 C78 61 82 63 84 68 C87 75 85 90 79 104 L73 120 Z";
 
 const ICON_SVG_STYLE: CSSProperties = {
   height: "min(240px, 34vh)",
@@ -315,8 +316,8 @@ function TwoFingerTapIcon(): JSX.Element {
       {/* single ripple from the midpoint between the two fingertips */}
       <circle
         className="gi-anim gi-tt-ripple"
-        cx="59"
-        cy="32"
+        cx="58"
+        cy="31"
         r="13"
         fill="none"
         stroke={NEON}
@@ -334,9 +335,9 @@ function TwoFingerTapIcon(): JSX.Element {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {/* interior line-art detail: knuckle line + folded-finger tops + thumb crease */}
+        {/* interior line-art detail: knuckle line + finger split + thumb crease + folded creases */}
         <path
-          d="M44 61 C56 57 72 58 84 63"
+          d="M44 64 C57 60 73 61 85 68"
           fill="none"
           stroke={INK}
           strokeWidth="1.8"
@@ -344,7 +345,7 @@ function TwoFingerTapIcon(): JSX.Element {
           strokeLinecap="round"
         />
         <path
-          d="M78 55 C79 60 79 64 78 68"
+          d="M56 47 L56 35"
           fill="none"
           stroke={INK}
           strokeWidth="1.6"
@@ -352,7 +353,23 @@ function TwoFingerTapIcon(): JSX.Element {
           strokeLinecap="round"
         />
         <path
-          d="M34 69 C38 72 40 76 40 80"
+          d="M38 79 C42 77 45 75 47 72"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.6"
+          opacity="0.45"
+          strokeLinecap="round"
+        />
+        <path
+          d="M76 55 c1.5 3 1.5 5 0 7"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.6"
+          opacity="0.45"
+          strokeLinecap="round"
+        />
+        <path
+          d="M82 63 c1.5 3 1.5 5 0 7"
           fill="none"
           stroke={INK}
           strokeWidth="1.6"
@@ -362,8 +379,8 @@ function TwoFingerTapIcon(): JSX.Element {
         {/* both fingertip halos — the only lit elements */}
         <circle
           className="gi-anim gi-tt-halo"
-          cx="53"
-          cy="32"
+          cx="50"
+          cy="35"
           r="9.5"
           fill="url(#gi-tt-halo-grad)"
           opacity="0.85"
@@ -371,7 +388,7 @@ function TwoFingerTapIcon(): JSX.Element {
         <circle
           className="gi-anim gi-tt-halo"
           cx="65"
-          cy="32"
+          cy="27"
           r="9.5"
           fill="url(#gi-tt-halo-grad)"
           opacity="0.85"
@@ -428,7 +445,7 @@ function SwipePanIcon(): JSX.Element {
             strokeLinecap="round"
           />
           <path
-            d="M47 55 C58 51 74 53 84 60"
+            d="M46 56 C58 52 74 54 84 61"
             fill="none"
             stroke={INK}
             strokeWidth="1.8"
@@ -436,7 +453,7 @@ function SwipePanIcon(): JSX.Element {
             strokeLinecap="round"
           />
           <path
-            d="M63 54 C64 58 64 61 63 64"
+            d="M64 54 c1.5 4 1.5 7 0 10"
             fill="none"
             stroke={INK}
             strokeWidth="1.6"
@@ -444,7 +461,7 @@ function SwipePanIcon(): JSX.Element {
             strokeLinecap="round"
           />
           <path
-            d="M72 55 C73 59 73 62 72 65"
+            d="M73 56 c1.5 4 1.5 7 0 10"
             fill="none"
             stroke={INK}
             strokeWidth="1.6"
@@ -452,7 +469,7 @@ function SwipePanIcon(): JSX.Element {
             strokeLinecap="round"
           />
           <path
-            d="M34 69 C38 72 40 76 40 80"
+            d="M38 79 C42 77 45 75 47 72"
             fill="none"
             stroke={INK}
             strokeWidth="1.6"
@@ -477,8 +494,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-r">
         <rect
           className="gi-anim gi-sp-r-trail"
-          x="19"
-          y="26"
+          x="17"
+          y="30"
           width="34"
           height="10"
           rx="5"
@@ -487,8 +504,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-r-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-r-lift"
-          cx="53"
-          cy="31"
+          cx="51"
+          cy="35"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -497,8 +514,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-d" opacity="0">
         <rect
           className="gi-anim gi-sp-d-trail"
-          x="48"
-          y="-3"
+          x="46"
+          y="1"
           width="10"
           height="34"
           rx="5"
@@ -507,8 +524,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-d-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-d-lift"
-          cx="53"
-          cy="31"
+          cx="51"
+          cy="35"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -517,8 +534,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-l" opacity="0">
         <rect
           className="gi-anim gi-sp-l-trail"
-          x="53"
-          y="26"
+          x="51"
+          y="30"
           width="34"
           height="10"
           rx="5"
@@ -527,8 +544,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-l-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-l-lift"
-          cx="53"
-          cy="31"
+          cx="51"
+          cy="35"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -537,8 +554,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-u" opacity="0">
         <rect
           className="gi-anim gi-sp-u-trail"
-          x="48"
-          y="31"
+          x="46"
+          y="35"
           width="10"
           height="34"
           rx="5"
@@ -547,8 +564,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-u-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-u-lift"
-          cx="53"
-          cy="31"
+          cx="51"
+          cy="35"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
