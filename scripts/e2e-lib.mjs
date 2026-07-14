@@ -8,6 +8,7 @@
  * same-origin failure gate, the SwiftShader launch args) stays identical and is
  * defined once:
  *
+ *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
  *   - seedDeterminism(page, ids)      — addInitScript: freeze cops + mute + unlock.
  *   - loadLevelManifest(root)         — level list/ids from levelArt.json (SoT).
@@ -46,6 +47,29 @@ export function loadLevelManifest(root = process.cwd()) {
   const manifest = JSON.parse(fs.readFileSync(path.resolve(root, LEVEL_ART_PATH), "utf8"));
   const levels = manifest.levels.map((l) => ({ id: l.id, name: l.name }));
   return { manifest, levels, levelIds: levels.map((l) => l.id) };
+}
+
+// Pre-game entry markers (ADR-0020). Cold load lands on the TITLE cover; a single
+// action enters the MENU. The subtitle is title-only (both TITLE and MENU render
+// the "MUF" logo), so it disambiguates the two; the running masthead is menu-only.
+export const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // src/render/ui/TitleScreen.tsx
+export const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // print/tokens.ts MASTHEAD.running
+
+/**
+ * Advance the new pre-game entry flow (ADR-0020): assert the TITLE cover is up,
+ * perform the single-action entry (click the cover, exercising the real pointer
+ * handler), then wait for the MENU shell to mount. Every consumer that used to
+ * treat the "MUF" logo as a menu signal MUST call this first — "MUF" now also
+ * renders on the TITLE cover, so waiting on it alone leaves the app sitting on the
+ * cover while a subsequent level-name click times out. Clicks the title-only
+ * subtitle, which lives inside the interactive surface and clear of the
+ * FullscreenButton chrome (`[data-muf-ui]`).
+ */
+export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
+  const subtitle = page.getByText(TITLE_SUBTITLE, { exact: true }).first();
+  await subtitle.waitFor({ timeout });
+  await subtitle.click({ timeout });
+  await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout });
 }
 
 /**

@@ -128,3 +128,46 @@ flagged for design/art polish (offset the stamp or lighten the label under it).
 - **Device-representative timing (AC5)** and **portrait mobile-UA overlay capture (AC6)** —
   see caveats above; recommended for the design-acceptance session, not a sandbox-only path.
 - **Real-FLUX asset generation** — CI-only per project rules; unchanged by this story.
+
+---
+
+## Correction 1 (2026-07-14) — code-review panel caught a MISSED script; F1 resolved
+
+The code-review panel flagged a script my first stage-5 pass missed: **`scripts/e2e-delivery.mjs`**
+— a **hard CI gate in `.github/workflows/deploy.yml`** (post-merge deploy). It still did
+`goto → wait "MUF" → click level name`. Because `"MUF"` now renders on the new TITLE cover too,
+the wait would pass while the app sat on TITLE and the level-name click would time out →
+**post-merge deploys would have failed.** This was a real escape in my first pass — logged here
+per the "every escaped bug becomes a regression test spec" rule.
+
+**Fix (scripts scope only):**
+
+1. Factored the title→menu entry into **`scripts/e2e-lib.mjs`** as
+   `enterMenuFromTitle(page, { timeout })`, which owns the marker strings (`TITLE_SUBTITLE`,
+   `MENU_MASTHEAD`, both also exported) and the assert-subtitle → single-action entry →
+   wait-masthead sequence. One source of truth for the entry step, alongside
+   `dismissNarrative` / `seedDeterminism`.
+2. Switched **all four consumers** to it, deleting three copy-pasted inline versions and
+   fixing the missing one: `e2e-home.mjs`, `e2e-ingame.mjs`, **`e2e-delivery.mjs`** (the miss),
+   and `screenshot-preview.mjs`. Using it in `screenshot-preview.mjs` also **resolves finding
+   F1** — the render-farm `captureLevel` cold-boot path is no longer broken; the reused helper
+   is exactly the fix F1 called for. F1 is therefore **CLOSED** by this correction.
+
+**Marker-string check (tree was mid-edit by a dev lane on `TitleScreen.tsx` / `Stamp.tsx`):**
+`SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"` (`TitleScreen.tsx:12`) and
+`running: "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"` (`print/tokens.ts:38`) both still
+match the helper's markers — proceeded per the coordinator's guidance.
+
+**Re-run evidence:**
+
+| Check                           | Result                                                                       |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `node --check` on all 5 scripts | **PASS** (e2e-lib, e2e-home, e2e-ingame, e2e-delivery, screenshot-preview)   |
+| `yarn format:check` (full repo) | **PASS**                                                                     |
+| `scripts/e2e-home.mjs`          | **PASS** (against local `vite preview`, base `/prohimuf/`)                   |
+| `scripts/e2e-ingame.mjs`        | **PASS** (canvas + HUD on belliard)                                          |
+| `scripts/e2e-delivery.mjs`      | **PASS** — DELIVERING → SUCCESS on belliard; halo AC4 gradient share 70.9% ✓ |
+
+Build (`VITE_BASE=/prohimuf/ vite build`) succeeded on the mid-edit tree. All three e2e scripts
+were re-run green against the served build via the shared helper. **The `deploy.yml` delivery
+gate is now safe.**

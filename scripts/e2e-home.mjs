@@ -38,7 +38,11 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
-import { createFailedResponseCollector, loadLevelManifest } from "./e2e-lib.mjs";
+import {
+  createFailedResponseCollector,
+  enterMenuFromTitle,
+  loadLevelManifest,
+} from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -49,12 +53,8 @@ const VIEWPORT = { width: 1280, height: 720 };
 const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
 
-// TITLE cover markers (TitleScreen.tsx) — subtitle is title-only, distinguishes
-// TITLE from MENU (both show the "MUF" logo).
-const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE";
-// MENU running masthead (print/tokens.ts MASTHEAD.running) — menu-only.
-const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998";
 // Locked-flyer stamp (menu/LevelFlyer.tsx LOCKED_COPY.badge), shown only when !unlocked.
+// The TITLE_SUBTITLE / MENU_MASTHEAD markers live in e2e-lib.mjs (enterMenuFromTitle).
 const LOCKED_MARKER = "LIGNE FERMÉE";
 
 async function main() {
@@ -83,33 +83,20 @@ async function main() {
     console.log(`[e2e] loading ${PREVIEW_URL}`);
     await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-    // Cold load lands on the TITLE cover (ADR-0020). Its mounting proves the
-    // React app booted and its bundle resolved. The subtitle is title-only, so
-    // it confirms we are on TITLE and not already past it.
+    // Cold load lands on the TITLE cover (ADR-0020); the "MUF" logo proves the
+    // React app booted and its bundle resolved.
     await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
-    await page
-      .getByText(TITLE_SUBTITLE, { exact: true })
-      .first()
-      .waitFor({ timeout: RENDER_TIMEOUT });
-    console.log("[e2e] TITLE cover rendered (MUF logo + subtitle)");
 
-    // Single-action entry: click the cover → MENU. Click the subtitle (inside the
-    // interactive surface, clear of the FullscreenButton chrome) to exercise the
-    // real pointer handler.
-    await page
-      .getByText(TITLE_SUBTITLE, { exact: true })
-      .first()
-      .click({ timeout: RENDER_TIMEOUT });
+    // TITLE cover → single-action entry → MENU shell (shared helper owns the
+    // assert-subtitle → click → wait-masthead sequence and its marker strings).
+    await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });
+    console.log("[e2e] TITLE cover entered → MENU shell mounted");
 
-    // The MENU shell mounts: running masthead (menu-only) + the three rubriques.
-    await page
-      .getByText(MENU_MASTHEAD, { exact: true })
-      .first()
-      .waitFor({ timeout: RENDER_TIMEOUT });
+    // The three rubriques are present in the shell.
     for (const rubrique of ["NIVEAUX", "SCORES", "OPTIONS"]) {
       await page.getByRole("tab", { name: rubrique }).waitFor({ timeout: RENDER_TIMEOUT });
     }
-    console.log("[e2e] MENU shell rendered (masthead + NIVEAUX/SCORES/OPTIONS)");
+    console.log("[e2e] MENU rubriques rendered (NIVEAUX/SCORES/OPTIONS)");
 
     // Every level from the manifest appears as a flyer (playable or locked).
     for (const level of levels) {
