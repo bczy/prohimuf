@@ -19,6 +19,7 @@ import type { GameState } from "@game/types/gameState";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
+import type { ImpactEvent } from "@game/types/feedback";
 import type { Floater } from "@render/scene/FeedbackLayer";
 
 const MAX_DELTA = 0.1;
@@ -90,6 +91,21 @@ export interface MobileControls {
   halfWorldHeight: number;
 }
 
+/**
+ * Bridge→render transport for player-shot impacts (ADR-0020). Carries the
+ * per-frame event queue AND the level-scope reset signal in one ref, so the
+ * effects component clears its persistent wall-mark FIFO deterministically.
+ */
+export interface ImpactChannel {
+  // Per-frame queue: the bridge pushes each tick's impactEvents; the effects
+  // component splices it empty each frame (single consumer, like Floater[]).
+  readonly queue: ImpactEvent[];
+  // Monotonic; the bridge bumps it on every createInitialState (mount + restart).
+  // The effects component clears its wall-mark FIFO + transient pools when it
+  // sees this change. This is how "cleared on level restart" (spec D4.3) lands.
+  resetNonce: number;
+}
+
 export function useGameLoop(
   facade: FacadeMap,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -101,6 +117,7 @@ export function useGameLoop(
   courierField?: CourierField,
   roster?: LevelRoster,
   mobileControls?: MobileControls,
+  impactChannelRef?: React.RefObject<ImpactChannel>,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -160,6 +177,9 @@ export function useGameLoop(
     ) {
       mouseRef.current.pendingShots = 0;
       if (touch !== undefined) touch.pendingTaps = [];
+      // Level restart: bump the reset signal so the effects layer clears its
+      // persistent wall-mark FIFO on a clean facade (spec D4.3).
+      if (impactChannelRef?.current) impactChannelRef.current.resetNonce += 1;
       gameStateRef.current = createInitialState(facade, levelParams, roster);
       return;
     }
@@ -224,6 +244,12 @@ export function useGameLoop(
         const f = floaterFor(ev);
         if (f) queue.push({ x: ev.x, y: ev.y, ...f });
       }
+    }
+    // Player-shot impacts: drain onto the channel queue for the effects layer
+    // (explosion, tracer, wall marks). Single consumer splices it each frame.
+    const impactChannel = impactChannelRef?.current;
+    if (impactChannel && next.impactEvents) {
+      for (const ev of next.impactEvents) impactChannel.queue.push(ev);
     }
 
     const nextCrosshairWorld = crosshairToWorld(

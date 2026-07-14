@@ -2270,3 +2270,33 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   WHAT/WHY, cahier-des-charges test vs PROJECT_GUIDELINES, acceptance criteria, and an
   explicit ruling on the AUDIO-flow and wall-mark-persistence scope questions above. No
   code, no design, no gate has run yet. (Marion / producer)
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stage 4 BUILD, Lane A (`dev-gameplay`) — RELEASED
+
+**Amelia (Gameplay) · 2026-07-14 · seam R1 satisfied → Lane B (`dev-r3f-render`) unblocked.**
+
+Landed the pure hitscan + the typed seam per `techplan-shot-flat-impact.md`. All in-lane
+files only (`src/game/**` + `src/hooks/useGameLoop.ts`); no `src/render/**` touched.
+
+**File List (changed):**
+- `src/game/types/feedback.ts` — added `ImpactEvent` (seam type).
+- `src/game/types/gameState.ts` — added transient `impactEvents?` field.
+- `src/game/systems/bulletSystem.ts` — added `PlayerShotResult` + `resolvePlayerShot`;
+  removed `fireBullet`, `checkBulletHits`, `HitResult`; kept `tickBullets`, `BULLET_SPEED`.
+- `src/game/systems/stateMachine.ts` — fire step rewired to `resolvePlayerShot` (player shot
+  never enters `state.bullets`); enemy fire cadence unchanged (reads pre-shot snapshot);
+  `impactEvents` added to all returns.
+- `src/hooks/useGameLoop.ts` — exported `ImpactChannel`; added optional trailing param
+  `impactChannelRef?`; bump `resetNonce` on restart; drain `next.impactEvents` into the queue.
+- Tests: `bulletSystem.test.ts` (dropped fireBullet/checkBulletHits suites, added
+  `resolvePlayerShot` suite → 19 tests); `stateMachine.test.ts` (updated shooting suite for
+  hitscan/AC1 → 31 tests).
+
+**Verify:** `yarn typecheck` PASS · `yarn test` 223 passed · `yarn lint` PASS.
+
+**Seam for Lane B (consume, do not edit my files):** `ImpactEvent` from
+`@game/types/feedback`; `ImpactChannel` + the new `useGameLoop` optional trailing param
+`impactChannelRef?: React.RefObject<ImpactChannel>` from `@hooks/useGameLoop`. The new param
+is optional so `GameScene.tsx` compiles before wiring. (Amelia / dev-gameplay)

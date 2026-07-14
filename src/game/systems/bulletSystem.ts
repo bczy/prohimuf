@@ -2,45 +2,31 @@ import type { Bullet } from "@game/types/bullet";
 import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
+import type { Vec2 } from "@game/types/vector";
 import { crosshairToWorld, VIEW_W, VIEW_H } from "@game/systems/crosshairSystem";
 import { hitEnemy } from "@game/systems/enemySystem";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import type { HitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent } from "@game/types/feedback";
 
-export interface HitResult {
-  readonly bullets: readonly Bullet[];
+// One resolved player shot. `enemies` is the enemy set after the (0-or-1) hit;
+// the deltas / events mirror the removed `checkBulletHits` byte-for-byte.
+export interface PlayerShotResult {
   readonly enemies: readonly Enemy[];
-  // Net effects of this tick's player hits.
   readonly scoreDelta: number;
   readonly livesDelta: number;
   readonly timeDelta: number;
-  // Targets that count toward the level win (cops only), neutralised this tick.
+  // Targets that count toward the level win (cops only), neutralised this shot.
   readonly targetsDown: number;
   // Per-takedown events (for floating feedback).
   readonly events: readonly HitEvent[];
+  // Exactly one impact per shot (hit or miss) — drives render effects (ADR-0020).
+  readonly impact: ImpactEvent;
 }
 
 export const BULLET_SPEED = 20;
 const HIT_RADIUS = 0.8;
 const OUT_OF_BOUNDS_X = 60;
 const OUT_OF_BOUNDS_Y = 15;
-
-export function fireBullet(
-  crosshair: Crosshair,
-  fromPlayer: boolean,
-  nextId: number,
-  cameraOffsetX = 0,
-  cameraOffsetY = 0,
-  viewW = VIEW_W,
-  viewH = VIEW_H,
-): Bullet {
-  return {
-    id: nextId,
-    position: crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH),
-    velocity: { x: 0, y: fromPlayer ? BULLET_SPEED : -BULLET_SPEED },
-    fromPlayer,
-  };
-}
 
 export function tickBullets(bullets: readonly Bullet[], delta: number): readonly Bullet[] {
   return bullets
@@ -56,58 +42,89 @@ export function tickBullets(bullets: readonly Bullet[], delta: number): readonly
     );
 }
 
-export function checkBulletHits(
-  bullets: readonly Bullet[],
+// Resolve a player shot as an instant hitscan at fire time (ADR-0020, spec §1).
+// The impact point is the aiming SoT (`crosshairToWorld`); the shot hits the
+// nearest eligible enemy within HIT_RADIUS (tie → lowest slotIndex), applying the
+// exact same reward math as the removed travelling-bullet `checkBulletHits`.
+export function resolvePlayerShot(
+  crosshair: Crosshair,
   enemies: readonly Enemy[],
   facade: FacadeMap,
-): HitResult {
-  const hitBulletIds = new Set<number>();
-  const hitEnemyIds = new Set<number>();
+  cameraOffsetX = 0,
+  cameraOffsetY = 0,
+  viewW = VIEW_W,
+  viewH = VIEW_H,
+): PlayerShotResult {
+  const impactPoint = crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH);
+
+  // Nearest eligible enemy within the hit disc; exact-distance tie → lowest
+  // slotIndex (D1.5). At most one enemy hit per shot.
+  let best: { enemy: Enemy; slotPosition: Vec2; dist: number } | null = null;
+  for (const enemy of enemies) {
+    if (enemy.state === "DEAD" || enemy.state === "HIT" || enemy.state === "HIDDEN") continue;
+    const slot = facade.slots[enemy.slotIndex];
+    if (slot === undefined) continue;
+    const dx = impactPoint.x - slot.screenPosition.x;
+    const dy = impactPoint.y - slot.screenPosition.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > HIT_RADIUS) continue;
+    if (
+      best === null ||
+      dist < best.dist ||
+      (dist === best.dist && enemy.slotIndex < best.enemy.slotIndex)
+    ) {
+      best = { enemy, slotPosition: slot.screenPosition, dist };
+    }
+  }
+
+  if (best === null) {
+    return {
+      enemies,
+      scoreDelta: 0,
+      livesDelta: 0,
+      timeDelta: 0,
+      targetsDown: 0,
+      events: [],
+      impact: { classification: "miss", impactPoint },
+    };
+  }
+
+  const { enemy, slotPosition } = best;
   let scoreDelta = 0;
   let livesDelta = 0;
   let timeDelta = 0;
   let targetsDown = 0;
   const events: HitEvent[] = [];
-
-  for (const bullet of bullets) {
-    if (!bullet.fromPlayer) continue;
-    for (const enemy of enemies) {
-      if (enemy.state === "DEAD" || enemy.state === "HIT" || enemy.state === "HIDDEN") continue;
-      if (hitEnemyIds.has(enemy.id)) continue;
-
-      const slot = facade.slots[enemy.slotIndex];
-      if (slot === undefined) continue;
-
-      const dx = bullet.position.x - slot.screenPosition.x;
-      const dy = bullet.position.y - slot.screenPosition.y;
-      if (Math.sqrt(dx * dx + dy * dy) <= HIT_RADIUS) {
-        hitBulletIds.add(bullet.id);
-        hitEnemyIds.add(enemy.id);
-        // Effects only land when this hit takes the enemy down (hp -> 0).
-        if (enemy.hp - 1 <= 0) {
-          const a = ARCHETYPES[enemy.kind];
-          scoreDelta += a.scoreDelta;
-          livesDelta += a.livesDelta;
-          timeDelta += a.timeDelta;
-          if (a.countsAsTarget) targetsDown++;
-          events.push({
-            slotIndex: enemy.slotIndex,
-            scoreDelta: a.scoreDelta,
-            livesDelta: a.livesDelta,
-            timeDelta: a.timeDelta,
-          });
-        }
-      }
-    }
+  // Effects only land when this hit takes the enemy down (hp -> 0).
+  if (enemy.hp - 1 <= 0) {
+    const a = ARCHETYPES[enemy.kind];
+    scoreDelta += a.scoreDelta;
+    livesDelta += a.livesDelta;
+    timeDelta += a.timeDelta;
+    if (a.countsAsTarget) targetsDown++;
+    events.push({
+      slotIndex: enemy.slotIndex,
+      scoreDelta: a.scoreDelta,
+      livesDelta: a.livesDelta,
+      timeDelta: a.timeDelta,
+    });
   }
 
   return {
-    bullets: bullets.filter((b) => !hitBulletIds.has(b.id)),
-    enemies: enemies.map((e) => (hitEnemyIds.has(e.id) ? hitEnemy(e) : e)),
+    enemies: enemies.map((e) => (e.id === enemy.id ? hitEnemy(e) : e)),
     scoreDelta,
     livesDelta,
     timeDelta,
     targetsDown,
     events,
+    impact: {
+      classification: "hit",
+      impactPoint,
+      hit: {
+        enemyId: enemy.id,
+        slotIndex: enemy.slotIndex,
+        slotPosition,
+      },
+    },
   };
 }

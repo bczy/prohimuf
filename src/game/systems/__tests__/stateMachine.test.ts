@@ -141,23 +141,29 @@ describe("tickGameState — crosshair", () => {
   });
 });
 
-describe("tickGameState — shooting", () => {
-  it("fire key creates a player bullet", () => {
+describe("tickGameState — shooting (hitscan, ADR-0020)", () => {
+  it("firing adds NO player bullet to state.bullets (AC1 — no travelling player shot)", () => {
     const state = createInitialState(FACADE_01);
     const next = tickGameState(state, fire, 0.5, 0.5, 0.016, FACADE_01);
-    const playerBullets = next.bullets.filter((b) => b.fromPlayer);
-    expect(playerBullets.length).toBeGreaterThan(0);
-  });
-
-  it("no bullet when fire key is not pressed", () => {
-    const state = createInitialState(FACADE_01);
-    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     const playerBullets = next.bullets.filter((b) => b.fromPlayer);
     expect(playerBullets.length).toBe(0);
   });
 
-  it("threads cameraOffsetY into the shot's world-Y exactly like cameraOffsetX into world-X", () => {
-    // After a vertical pan, a centre tap must land at the shifted world position
+  it("firing surfaces exactly one impact event", () => {
+    const state = createInitialState(FACADE_01);
+    const next = tickGameState(state, fire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.impactEvents).toHaveLength(1);
+  });
+
+  it("no fire ⇒ no impact event and no player bullet", () => {
+    const state = createInitialState(FACADE_01);
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.impactEvents).toHaveLength(0);
+    expect(next.bullets.filter((b) => b.fromPlayer).length).toBe(0);
+  });
+
+  it("threads cameraOffsetY into the impact point exactly like cameraOffsetX into world-X", () => {
+    // After a vertical pan, a centre tap must resolve at the shifted world point
     // (the ADR-0002 invariant: aiming/delivery share crosshairToWorld). Compare a
     // shot fired with camera offsets against an un-panned reference, same delta.
     const base = tickGameState(createInitialState(FACADE_01), fire, 0.5, 0.5, 0.016, FACADE_01);
@@ -171,11 +177,11 @@ describe("tickGameState — shooting", () => {
       4, // cameraOffsetX
       3, // cameraOffsetY
     );
-    const b0 = base.bullets.find((b) => b.fromPlayer);
-    const b1 = shifted.bullets.find((b) => b.fromPlayer);
-    if (b0 === undefined || b1 === undefined) throw new Error("expected player bullets");
-    expect(b1.position.x - b0.position.x).toBeCloseTo(4);
-    expect(b1.position.y - b0.position.y).toBeCloseTo(3);
+    const p0 = base.impactEvents?.[0]?.impactPoint;
+    const p1 = shifted.impactEvents?.[0]?.impactPoint;
+    if (p0 === undefined || p1 === undefined) throw new Error("expected impact points");
+    expect(p1.x - p0.x).toBeCloseTo(4);
+    expect(p1.y - p0.y).toBeCloseTo(3);
   });
 });
 

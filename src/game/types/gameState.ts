@@ -3,7 +3,7 @@ import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { HitEvent, PointHitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
 
 export type Phase = "PLAYING" | "GAME_OVER" | "LEVEL_COMPLETE";
 
@@ -38,4 +38,7 @@ export interface GameState {
   readonly feedback?: readonly HitEvent[];
   // Courier-hit penalties this tick, anchored to world positions (transient).
   readonly pointFeedback?: readonly PointHitEvent[];
+  // Player-shot impacts from the latest tick (transient; drives render effects
+  // — explosion, tracer, wall marks). 0 or 1 element (one shot per tick).
+  readonly impactEvents?: readonly ImpactEvent[];
 }
