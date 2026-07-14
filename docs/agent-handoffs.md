@@ -1571,6 +1571,122 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   (was "enclosed only" → "solidify") + sprite-hole-audit skill. node --check + prettier
   clean. NOT committed. (Serge — TECHNICAL pass, scripted retouch iter-2)
 
+### story-enemy-muzzle-and-blobs-fix (kickoff — pm + senior-architect)
+
+- Bertrand reported two in-game bugs: (1) code muzzle glow misaligned with the baked
+  flash/barrel (fixed +x offset in EnemySprite.tsx vs per-sprite flash positions, some
+  aiming LEFT), (2) dark opaque background blobs around figures (chroma-key remnants
+  locked opaque by the solidify pass) reading as rectangles in game.
+- pm (John): scoped story `_bmad-output/planning-artifacts/story-enemy-muzzle-and-blobs-fix.md`
+  — bug fix, cahier-des-charges FAITHFUL, AC1-AC7 incl. the 81a26ad hard line (figures
+  stay solid) and `fill-sprite-holes.mjs --check` still passing.
+- senior-architect (Winston) sign-off: `muzzle` anchors = OPTIONAL per-frame array
+  (`[{x,y}|null]`, normalized from PNG top-left, index-aligned with `frames`) in
+  levelArt.json enemies.types — asset metadata, no game/render boundary violation
+  (manifest already imported by enemyTextures.ts only). Plane math validated:
+  dx=(x−0.5)·planeH·aspect, dy=(0.5−y)·planeH. ADR: none for the anchor field
+  (extend asset-pipeline.md + ADR 0016 note); NEW ADR 0019 required for the
+  blob-removal retouch (destructive edit to committed art, cross-ref ADR 0014).
+- Lane partition: A = dev-r3f-render (enemyTextures.ts `muzzleFor` + EnemySprite
+  consumption, null → current fixed-offset fallback) ∥ B = game-graphist (scripted
+  blob removal OUTSIDE figures only, flashes preserved, --check green, ADR 0019);
+  C = dev-tooling-assets (scripts/measure-muzzle-anchors.mjs + levelArt.json data)
+  runs AFTER B so committed anchors are measured against shipped pixels.
+  levelArt.json written only by C; enemyTextures.ts/EnemySprite.tsx only by A;
+  PNGs only by B. (John + Winston, orchestrated)
+
+### explosion-alignment-transparency — Lane A (render muzzle anchors)
+
+- Amelia (dev-r3f-render): enemyTextures.ts gains optional per-frame `muzzle` manifest
+  field + `muzzleFor()` (null-safe under noUncheckedIndexedAccess); EnemySprite.tsx
+  SHOOTING branch anchors the additive glow at the per-frame anchor (same `frame` as
+  the displayed texture), fallback to the legacy fixed offset when null. HIT burst
+  unchanged. 6 new unit tests (muzzleFor.test.ts). tsc + vitest (213) + eslint green.
+  Committed as edee686.
+
+### explosion-alignment-transparency — Lane B (enemy sprite blob cleanup, iter 2)
+
+- Serge (TECHNICAL pass): iter 1 (flash-scoped auto guards, 1,874 px) rejected at the
+  visual gate — torn rings/wings still read on light bg. Iter 2 reworked
+  scripts/retouch-flash-halos.mjs to per-file CLEAR_ZONES + THRESH_OVERRIDE +
+  exterior-connected + solidify-reconcile + speckle-sweep, run to a fixpoint
+  (delete-outside-only, alpha 255→0, RGB frozen). Removed the torn flash rings/wings
+  on 10 shooting sprites (23,353 px). fill-sprite-holes --check PASS, retouch --check
+  idempotent PASS, integrity failing set 16→9 (8 sprites now PASS, no regressions),
+  enclaves=0 on all, flashes preserved, figures intact. Accepted residual: shooting_3
+  & riot_shooting flashes detach topologically (render identically at the muzzle).
+  civilian + idles untouched. ADR-0019 added. Committed with this entry.
+
+### explosion-alignment-transparency — Lane C (muzzle anchor data)
+
+- Amelia (dev-tooling-assets): new scripts/measure-muzzle-anchors.mjs (deterministic,
+  idempotent via string-surgery + prettier; @napi-rs/canvas like the other asset
+  scripts) measures the baked-flash centroid (hot-pixel 8-connected largest component,
+  min 50 px) and writes per-frame `muzzle` arrays into levelArt.json for the 5 shooting
+  entries. Visual preview: all 10 markers on the flash. tsc + vitest 213/213 + prettier
+  green. Docs: asset-pipeline.md + SCRIPTS.md. Committed with this entry.
+
+### explosion-alignment-transparency — iter 3 (Bertrand's gate: 3 flagged sprites)
+
+- Bertrand flagged 3 sprites on the anchor preview: shooting_3 f1 (floating faint
+  flash star, detached from the pistol), riot_shooting f1 + f2 (torn dark wings
+  still around the blasts).
+- Serge (TECHNICAL pass, iter 3): new ERASE_ISLANDS lever removed the whole floating
+  star (532 px, a separate component — figure-safe by construction); riot splash
+  zones widened to the full island + SB relaxed to 0.85 under lum<88 (dark-red torn
+  material) — riot f1 −1472 px, riot f2 −1023 px. Figure-seed reconcile prototyped
+  and REJECTED (would open a 539 px interior hole in f2); the all-opaque reconcile
+  is the maximal safe removal. shooting_3_f2 judged fine and left byte-identical.
+  fill-holes --check PASS, retouch --check idempotent PASS, shooting_3 integrity
+  FAIL→PASS. Measured pistol muzzle tip for shooting_3 f1: n(0.77, 0.44).
+- Orchestrator: measure-muzzle-anchors.mjs gains a documented MANUAL_ANCHORS
+  override (frame file → anchor, precedence over detection) for erased-flash
+  frames; re-measured → levelArt.json shooting_3 f1 anchor now (0.77, 0.44), all
+  other anchors unchanged. Preview verified: marker on the barrel end. tsc +
+  vitest 213/213 + prettier + both asset gates green. Committed with this entry.
+
+### explosion-alignment-transparency — iter 4 (Bertrand: "tu as fait des trous")
+
+- Bertrand flagged the pushed iter-3 sprites: over-deletion punched holes — big
+  chest/under-bust hole on shooting_3, ragged bites all along the bust bottoms
+  (shooting_2{,\_f2}, shooting_3{,\_f2}), lacy riot blasts + left-foot bites. Root
+  cause: the zone+tone rule can't separate dark FIGURE from dark remnant, and once a
+  whole figure region in a zone is deleted the solidify reconcile can no longer
+  reconstruct it as body → keyed hole.
+- Serge (TECHNICAL pass, iter 4): NEW `scripts/restore-figure-bites.mjs`
+  (ADD-BACK-ONLY, self-checked; reference = pre-retouch base c79dfda). Bust/figure
+  regime restores the whole figure component minus the flash-exclude zone (entire
+  bust bottom + chest solid, "prefer oversized to any hole"); riot regime restores
+  figure body (opening∖bright-halo) ∪ warm blast interior (r−b>20), grey wings stay
+  deleted. Restored px: shooting_3 6004, shooting_3_f2 2986, riot 1328, riot_f2 745,
+  shooting_2 725, shooting_2_f2 600; shooting{,\_f2} + biker{,\_f2} = 0 (audited
+  clean). Then fill-sprite-holes topped riot interiors (A=1221 / A=575).
+- Recalibrated `retouch-flash-halos.mjs` to a FIXPOINT: removed all figure-covering
+  zones + retired both riot files from the zone table (wings already gone, a splash
+  zone only re-laced the finished blast); added global WARM_GUARD (r−b>15 never a
+  candidate); review-panel fixes — self-check now asserts α≥OPAQUE→0 (was 255→0),
+  speckle-sweep global scope documented as deliberate; THRESH_OVERRIDE emptied.
+- Gates all green: retouch --check = 0 (idempotent, no re-punch), fill --check PASS,
+  restore --check = 0 (idempotent), border-flood = 0 enclosed transparent px anywhere
+  incl. blast islands; check-sprite-integrity all 6 PASS (busts comps=1, star gone).
+  Anatomy sweep on magenta clean (limbs rooted, both boots solid, no floating member,
+  no punched hole). Visual at 512/256/64 grey+magenta: bust bottoms continuous, chest
+  solid, blasts full (no lace), wings/star gone. ADR-0019 updated (iter-4 section).
+  6 PNGs + 2 scripts changed; NOT committed (per Bertrand's request). Files:
+  shooting_2{,\_f2}, shooting_3{,\_f2}, riot_shooting{,\_f2}.
+
+### explosion-alignment-transparency — iter 5 (bust-hem fill, Bertrand live gate)
+
+- Bertrand: "remplis encore un peu plus le buste" (enemy_shooting_3), then
+  approved frame 2 at the closing-only result ("pour lui c'est ok"). The
+  raggedness was the ORIGINAL torn hem (border-open bays — no retouch bite
+  left). New scripts/fill-bust-hem.mjs authors fill: disk-22 closing in the
+  lower half + frame-cut extendDown on f1 (columns whose hem mass reaches the
+  bottom band fill to the frame bottom, matching approved f2); median local
+  clothing tone; add-only + self-check; joint fixpoint with fill-sprite-holes
+  (6 residual px). f1 +6,283 px, f2 +1,659 px. All four gates PASS, anchors
+  unchanged, 213 tests green. (orchestrator, graphist lane)
+
 ---
 
 ### crew-game-design-lane
@@ -1664,118 +1780,3 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   browser-verified both directions, manifest test guards `facing`). Standing note: the
   deferred minors/nits above are tracked follow-up debt (this entry is the log).
   Clear to merge.
-### story-enemy-muzzle-and-blobs-fix (kickoff — pm + senior-architect)
-
-- Bertrand reported two in-game bugs: (1) code muzzle glow misaligned with the baked
-  flash/barrel (fixed +x offset in EnemySprite.tsx vs per-sprite flash positions, some
-  aiming LEFT), (2) dark opaque background blobs around figures (chroma-key remnants
-  locked opaque by the solidify pass) reading as rectangles in game.
-- pm (John): scoped story `_bmad-output/planning-artifacts/story-enemy-muzzle-and-blobs-fix.md`
-  — bug fix, cahier-des-charges FAITHFUL, AC1-AC7 incl. the 81a26ad hard line (figures
-  stay solid) and `fill-sprite-holes.mjs --check` still passing.
-- senior-architect (Winston) sign-off: `muzzle` anchors = OPTIONAL per-frame array
-  (`[{x,y}|null]`, normalized from PNG top-left, index-aligned with `frames`) in
-  levelArt.json enemies.types — asset metadata, no game/render boundary violation
-  (manifest already imported by enemyTextures.ts only). Plane math validated:
-  dx=(x−0.5)·planeH·aspect, dy=(0.5−y)·planeH. ADR: none for the anchor field
-  (extend asset-pipeline.md + ADR 0016 note); NEW ADR 0019 required for the
-  blob-removal retouch (destructive edit to committed art, cross-ref ADR 0014).
-- Lane partition: A = dev-r3f-render (enemyTextures.ts `muzzleFor` + EnemySprite
-  consumption, null → current fixed-offset fallback) ∥ B = game-graphist (scripted
-  blob removal OUTSIDE figures only, flashes preserved, --check green, ADR 0019);
-  C = dev-tooling-assets (scripts/measure-muzzle-anchors.mjs + levelArt.json data)
-  runs AFTER B so committed anchors are measured against shipped pixels.
-  levelArt.json written only by C; enemyTextures.ts/EnemySprite.tsx only by A;
-  PNGs only by B. (John + Winston, orchestrated)
-
-### explosion-alignment-transparency — Lane A (render muzzle anchors)
-
-- Amelia (dev-r3f-render): enemyTextures.ts gains optional per-frame `muzzle` manifest
-  field + `muzzleFor()` (null-safe under noUncheckedIndexedAccess); EnemySprite.tsx
-  SHOOTING branch anchors the additive glow at the per-frame anchor (same `frame` as
-  the displayed texture), fallback to the legacy fixed offset when null. HIT burst
-  unchanged. 6 new unit tests (muzzleFor.test.ts). tsc + vitest (213) + eslint green.
-  Committed as edee686.
-
-### explosion-alignment-transparency — Lane B (enemy sprite blob cleanup, iter 2)
-
-- Serge (TECHNICAL pass): iter 1 (flash-scoped auto guards, 1,874 px) rejected at the
-  visual gate — torn rings/wings still read on light bg. Iter 2 reworked
-  scripts/retouch-flash-halos.mjs to per-file CLEAR_ZONES + THRESH_OVERRIDE +
-  exterior-connected + solidify-reconcile + speckle-sweep, run to a fixpoint
-  (delete-outside-only, alpha 255→0, RGB frozen). Removed the torn flash rings/wings
-  on 10 shooting sprites (23,353 px). fill-sprite-holes --check PASS, retouch --check
-  idempotent PASS, integrity failing set 16→9 (8 sprites now PASS, no regressions),
-  enclaves=0 on all, flashes preserved, figures intact. Accepted residual: shooting_3
-  & riot_shooting flashes detach topologically (render identically at the muzzle).
-  civilian + idles untouched. ADR-0018 added. Committed with this entry.
-
-### explosion-alignment-transparency — Lane C (muzzle anchor data)
-
-- Amelia (dev-tooling-assets): new scripts/measure-muzzle-anchors.mjs (deterministic,
-  idempotent via string-surgery + prettier; @napi-rs/canvas like the other asset
-  scripts) measures the baked-flash centroid (hot-pixel 8-connected largest component,
-  min 50 px) and writes per-frame `muzzle` arrays into levelArt.json for the 5 shooting
-  entries. Visual preview: all 10 markers on the flash. tsc + vitest 213/213 + prettier
-  green. Docs: asset-pipeline.md + SCRIPTS.md. Committed with this entry.
-
-### explosion-alignment-transparency — iter 3 (Bertrand's gate: 3 flagged sprites)
-
-- Bertrand flagged 3 sprites on the anchor preview: shooting_3 f1 (floating faint
-  flash star, detached from the pistol), riot_shooting f1 + f2 (torn dark wings
-  still around the blasts).
-- Serge (TECHNICAL pass, iter 3): new ERASE_ISLANDS lever removed the whole floating
-  star (532 px, a separate component — figure-safe by construction); riot splash
-  zones widened to the full island + SB relaxed to 0.85 under lum<88 (dark-red torn
-  material) — riot f1 −1472 px, riot f2 −1023 px. Figure-seed reconcile prototyped
-  and REJECTED (would open a 539 px interior hole in f2); the all-opaque reconcile
-  is the maximal safe removal. shooting_3_f2 judged fine and left byte-identical.
-  fill-holes --check PASS, retouch --check idempotent PASS, shooting_3 integrity
-  FAIL→PASS. Measured pistol muzzle tip for shooting_3 f1: n(0.77, 0.44).
-- Orchestrator: measure-muzzle-anchors.mjs gains a documented MANUAL_ANCHORS
-  override (frame file → anchor, precedence over detection) for erased-flash
-  frames; re-measured → levelArt.json shooting_3 f1 anchor now (0.77, 0.44), all
-  other anchors unchanged. Preview verified: marker on the barrel end. tsc +
-  vitest 213/213 + prettier + both asset gates green. Committed with this entry.
-
-### explosion-alignment-transparency — iter 4 (Bertrand: "tu as fait des trous")
-
-- Bertrand flagged the pushed iter-3 sprites: over-deletion punched holes — big
-  chest/under-bust hole on shooting_3, ragged bites all along the bust bottoms
-  (shooting_2{,\_f2}, shooting_3{,\_f2}), lacy riot blasts + left-foot bites. Root
-  cause: the zone+tone rule can't separate dark FIGURE from dark remnant, and once a
-  whole figure region in a zone is deleted the solidify reconcile can no longer
-  reconstruct it as body → keyed hole.
-- Serge (TECHNICAL pass, iter 4): NEW `scripts/restore-figure-bites.mjs`
-  (ADD-BACK-ONLY, self-checked; reference = pre-retouch base c79dfda). Bust/figure
-  regime restores the whole figure component minus the flash-exclude zone (entire
-  bust bottom + chest solid, "prefer oversized to any hole"); riot regime restores
-  figure body (opening∖bright-halo) ∪ warm blast interior (r−b>20), grey wings stay
-  deleted. Restored px: shooting_3 6004, shooting_3_f2 2986, riot 1328, riot_f2 745,
-  shooting_2 725, shooting_2_f2 600; shooting{,\_f2} + biker{,\_f2} = 0 (audited
-  clean). Then fill-sprite-holes topped riot interiors (A=1221 / A=575).
-- Recalibrated `retouch-flash-halos.mjs` to a FIXPOINT: removed all figure-covering
-  zones + retired both riot files from the zone table (wings already gone, a splash
-  zone only re-laced the finished blast); added global WARM_GUARD (r−b>15 never a
-  candidate); review-panel fixes — self-check now asserts α≥OPAQUE→0 (was 255→0),
-  speckle-sweep global scope documented as deliberate; THRESH_OVERRIDE emptied.
-- Gates all green: retouch --check = 0 (idempotent, no re-punch), fill --check PASS,
-  restore --check = 0 (idempotent), border-flood = 0 enclosed transparent px anywhere
-  incl. blast islands; check-sprite-integrity all 6 PASS (busts comps=1, star gone).
-  Anatomy sweep on magenta clean (limbs rooted, both boots solid, no floating member,
-  no punched hole). Visual at 512/256/64 grey+magenta: bust bottoms continuous, chest
-  solid, blasts full (no lace), wings/star gone. ADR-0018 updated (iter-4 section).
-  6 PNGs + 2 scripts changed; NOT committed (per Bertrand's request). Files:
-  shooting_2{,\_f2}, shooting_3{,\_f2}, riot_shooting{,\_f2}.
-
-### explosion-alignment-transparency — iter 5 (bust-hem fill, Bertrand live gate)
-
-- Bertrand: "remplis encore un peu plus le buste" (enemy_shooting_3), then
-  approved frame 2 at the closing-only result ("pour lui c'est ok"). The
-  raggedness was the ORIGINAL torn hem (border-open bays — no retouch bite
-  left). New scripts/fill-bust-hem.mjs authors fill: disk-22 closing in the
-  lower half + frame-cut extendDown on f1 (columns whose hem mass reaches the
-  bottom band fill to the frame bottom, matching approved f2); median local
-  clothing tone; add-only + self-check; joint fixpoint with fill-sprite-holes
-  (6 residual px). f1 +6,283 px, f2 +1,659 px. All four gates PASS, anchors
-  unchanged, 213 tests green. (orchestrator, graphist lane)

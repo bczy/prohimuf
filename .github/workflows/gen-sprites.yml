@@ -86,10 +86,10 @@ jobs:
           # failing the job before commit.
           node scripts/fill-sprite-holes.mjs --check
 
-      - name: Gate — no background remnant may resurrect (ADR-0018)
+      - name: Gate — no background remnant may resurrect (ADR-0019)
         run: |
           # The committed shooting sprites were hand-retouched to delete the dark
-          # torn background halos around the baked muzzle flashes (ADR-0018,
+          # torn background halos around the baked muzzle flashes (ADR-0019,
           # "rectangle visible autour des personnages"). The WRITE pass of
           # retouch-flash-halos.mjs is deliberately NOT wired into CI — its
           # CLEAR_ZONES/thresholds are calibrated against the accepted bytes, and
