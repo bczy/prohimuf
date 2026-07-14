@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Fourteen subagents work the muf project. They run **in parallel where paths don't overlap**,
+Fifteen subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -18,6 +18,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
 | `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
+| `qa-lead` | Inès 🧪 | stage 5 VERIFY: test plans (`docs/qa/`), e2e/regression specs, QUALITY GATE | production code, test implementation (spec only) |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
@@ -45,12 +46,17 @@ skipped EXPLICITLY (say so in the log), never silently.
                 · AUDIO — sound-designer specs → sourcing/generation →
                   AUDIO GATE (§audio flow)
                 · DEV — dev-gameplay (TDD) / dev-r3f-render / dev-tooling-assets
-5. VERIFY     the test stage, before any review:
+5. VERIFY     the test stage, before any review — orchestrated by qa-lead
+              against her per-story test plan (docs/qa/):
                 · rtk tsc + rtk vitest (100%) + rtk lint — all green, no claims
                 · e2e / `verify` skill runs for anything player-visible
                 · runtime-composed visuals → screenshots → lead-art Gate 4
+                · audible behaviour changes → sound-designer behaviour verdict
                 · game-designer PLAYTESTS the build vs the gated spec (design
                   acceptance — verdict reported to lead-game-designer)
+                · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
+                  (PASS required before stage 6; FAIL routes back to the
+                  owning lane with the failing case named)
 6. INTEGRATE  senior-architect — integration review & cross-lane sign-off.
 7. REVIEW     CODE-REVIEW PANEL — 4 parallel skills, findings adversarially
               verified (mandatory before any merge to main — see below).

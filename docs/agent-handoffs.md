@@ -1502,3 +1502,9 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   calls needing human ears are escalated to Bertrand as shortlists, never passed blind.
   Pipeline stage 4 gains an AUDIO lane (§audio flow in COLLABORATION.md); mermaid
   diagram updated and re-validated. Roster: 14 agents. (Orchestrator)
+- update 3: `qa-lead` (Inès 🧪) added — owner of pipeline stage 5 (VERIFY): per-story
+  test plans under `docs/qa/` (index created, with the known e2e holes listed), e2e and
+  regression scenario SPECS (implementation stays in the dev lanes), and the QUALITY
+  GATE funnelling checks + composite/audio gates + design acceptance into one verdict
+  before INTEGRATE. Decision recorded as ADR-0018 (staffed production pipeline).
+  Roster: 15 agents. Mermaid diagram updated. (Orchestrator)

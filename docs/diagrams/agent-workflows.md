@@ -8,7 +8,7 @@ logged in [`agent-handoffs.md`](../agent-handoffs.md).
 
 ```mermaid
 flowchart TB
-    B(("Bertrand<br/>(product owner)"))
+    B(("Bertrand<br/>(CEO)"))
     PROD["producer · Marion 📆<br/>pipeline state, hand-off chasing,<br/>caps &amp; escalations, sprint status"]
 
     B -->|"0. INTAKE — intent, bug, idea"| PM
@@ -79,15 +79,19 @@ flowchart TB
     ARCH -.->|"assets needed"| ADV
     ARCH -.->|"sound needed"| SD
 
-    subgraph P5["5. VERIFY — the test stage"]
+    subgraph P5["5. VERIFY — the test stage, orchestrated by qa-lead"]
         direction TB
-        CHECKS["rtk tsc · rtk vitest (100%) · rtk lint<br/>+ e2e / verify runs (player-visible changes)"]
+        CHECKS["rtk tsc · rtk vitest (100%) · rtk lint<br/>+ e2e / verify runs (player-visible changes)<br/>per qa-lead's test plan (docs/qa/)"]
         GATE4{"lead-art · Nico 🎯<br/>COMPOSITE GATE (Gate 4)<br/>runtime visuals on REAL screenshots"}
         PLAY["game-designer · Sacha 🎮<br/>PLAYTEST vs the gated spec"]
         DACC{"lead-game-designer · Karim 🧭<br/>DESIGN ACCEPTANCE"}
+        QGATE{"qa-lead · Inès 🧪<br/>QUALITY GATE<br/>plan ran and held"}
         CHECKS --> GATE4
         CHECKS --> PLAY
         PLAY --> DACC
+        CHECKS --> QGATE
+        GATE4 -->|PASS| QGATE
+        DACC -->|PASS| QGATE
     end
 
     R3F --> CHECKS
@@ -103,8 +107,8 @@ flowchart TB
         REVIEW --> PANEL
     end
 
-    GATE4 -->|PASS| REVIEW
-    DACC -->|PASS| REVIEW
+    QGATE -->|PASS| REVIEW
+    QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
     DACC -->|"FAIL → back to dev lane,<br/>or spec amended &amp; re-gated"| ARCH
 
     subgraph P8["8. ACCEPT"]
@@ -123,6 +127,7 @@ flowchart TB
     GATE4 -.-> LOG
     AGATE -.-> LOG
     DACC -.-> LOG
+    QGATE -.-> LOG
     REVIEW -.-> LOG
 
     classDef gate fill:#ffe9a8,stroke:#b8860b,color:#000
@@ -132,7 +137,7 @@ flowchart TB
     classDef audio fill:#ffe4cc,stroke:#c05621,color:#000
     classDef ci fill:#e2e2e2,stroke:#666,color:#000
     classDef prod fill:#e9d8fd,stroke:#6b46c1,color:#000
-    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC gate
+    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE gate
     class R3F,GAME,TOOL dev
     class ADV,CONCEPT,PREPROD,TECH art
     class GD,ND,PLAY design
@@ -160,11 +165,14 @@ flowchart TB
   scripts, and his **audio gate** verdicts assets and audible behaviour changes vs
   `docs/audio-direction.md`; what needs human ears is escalated to Bertrand as a
   shortlist, never passed blind.
-- **Verify (stage 5) is the test stage**: mechanical checks (`rtk tsc`/`vitest`/`lint`,
+- **Verify (stage 5) is the test stage**, orchestrated by `qa-lead` (Inès) against her
+  per-story test plan (`docs/qa/`): mechanical checks (`rtk tsc`/`vitest`/`lint`,
   100% green) plus e2e/`verify` runs, the **composite gate** on real in-game screenshots
   for runtime-composed visuals, and the **design acceptance** leg — `game-designer`
   playtests the build against the gated spec and `lead-game-designer` verdicts; drift
-  goes back to the dev lane or the spec is re-gated, never absorbed silently.
+  goes back to the dev lane or the spec is re-gated, never absorbed silently. Everything
+  funnels into Inès's **quality gate**: PASS required before integration, FAIL routes
+  back to the owning lane with the failing case named.
 - **Review (stages 6-7)**: architect integration sign-off, then the mandatory
   **code-review panel** (4 parallel skills, findings adversarially verified) before any
   merge to `main`.
