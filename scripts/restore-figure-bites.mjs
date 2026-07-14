@@ -131,6 +131,7 @@ export function computeRestore(base, cur, W, H, name) {
   const N = W * H;
   const op = new Uint8Array(N);
   for (let p = 0; p < N; p++) op[p] = base[p * 4 + 3] >= OPAQUE ? 1 : 0;
+  // 4-conn: the figure is one solid mass; 8-conn would annex diagonally-touching debris.
   const fig = largestComponent(op, W, H); // the figure mass (detached fragments excluded)
   const res = new Uint8Array(N);
 

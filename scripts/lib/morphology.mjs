@@ -148,11 +148,16 @@ export function fillHoles(mask, W, H) {
   return out;
 }
 
-/** Keep only the largest connected component of a binary mask (4-conn default). */
-export function largestComponent(mask, W, H, connectivity = 4) {
+/**
+ * Keep only the largest connected component of a binary mask. 4-connectivity
+ * only, deliberately: every production consumer treats the figure as one solid
+ * 4-conn mass (8-conn would annex diagonally-touching keying debris). Use
+ * labelComponents({ connectivity: 8 }) when diagonal merging is wanted.
+ */
+export function largestComponent(mask, W, H) {
   const N = W * H;
   const seen = new Uint8Array(N);
-  const nb = connectivity === 8 ? N8 : N4;
+  const nb = N4;
   let best = null;
   let bestSize = 0;
   for (let i = 0; i < N; i++) {

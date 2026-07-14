@@ -2838,3 +2838,23 @@ paydown — ZERO behaviour change is the whole point.
     isolation of "extraction changed no behaviour"; not a waiver. Dev's flagged deviation +
     eslint-ignore note both independently verified CORRECT (own stash isolation, not on faith).
     (Inès / qa-lead)
+
+### story-shared-morphology-lib — stages 6-8 (panel + triage + fixes)
+
+- Code-review panel (4 parallel reviewers): correctness-high proved PARITY by
+  differential fuzzing (60 random masks, every primitive old-vs-new incl. the
+  outsideBelowBottom corner case) — zero bugs; edge-case hunter — zero reachable
+  unhandled edges; security — zero findings (pure functions, no I/O, no workflow
+  change). Acceptance auditor: 4 findings, all AC-text vs shipped-code divergence.
+- senior-architect triage (Winston): 5 CONFIRMED-minor / 2 REJECTED with grounds —
+  computeDeletions' candidate-aware exterior flood duplicates NO lib function
+  (passability transparent-OR-candidate ≠ fillHoles' mask=0) so it stays local
+  with a why-comment instead of a forced generic floodFromBorder; fillHoles gains
+  no speculative connectivity param. Applied: story AC1 records the cutout-enemies
+  exemption + AC3 reworded to match the shipped API; largestComponent's unused
+  connectivity=8 option TRIMMED (4-conn only, by design, documented); explicit
+  4-conn why-comments at the two production call sites; SCRIPTS.md signature
+  updated so its "explicit at every call site" claim is now true.
+- Post-fix gate: vitest 235 green, all four --check fixpoints PASS, zero PNG byte,
+  tsc + prettier clean. No CONFIRMED blocker remains — cleared for merge gate.
+  (Orchestrator applying Winston's exact fix list)
