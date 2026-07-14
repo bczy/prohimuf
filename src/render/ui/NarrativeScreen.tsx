@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
-import { PaperSheet, STOCK, INK, MARK, MASTHEAD } from "@render/ui/print";
+import { PaperSheet, HalftoneHero, STOCK, INK, MARK, MASTHEAD } from "@render/ui/print";
 
 interface Props {
   scene: NarrativeScene;
@@ -17,6 +17,15 @@ interface Props {
 }
 
 const CHAR_DELAY_MS = 28;
+
+/**
+ * Location décor mask (ADR-0022): the halftone facade reads in the upper "letterhead" band
+ * and fades to nothing before the transcript, so the briefing text always sits on clean
+ * newsprint (lead-art constraint — ink-on-paper, ≥AA). Knocked back via `opacity` so it
+ * establishes place without drowning the sprite/text above it. Zero glow (art-direction §2bis).
+ */
+const BACKDROP_MASK = "linear-gradient(to bottom, #000 0%, #000 38%, transparent 62%)";
+const BACKDROP_OPACITY = 0.5;
 
 /**
  * The single illustration slot above the dialogue box — shared verbatim by the `image` channel
@@ -135,6 +144,24 @@ export function NarrativeScreen({
             overflow: "hidden",
           }}
         >
+          {/* Location décor (ADR-0022): the level facade rephotocopied to halftone B&W as a
+              full-bleed wash BEHIND everything. First child + no z-index, so the masthead,
+              illustration slot and transcript (all positioned) paint on top by DOM order.
+              `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
+              (§2bis). A CSS background-image internally, so a 404 shows nothing (no broken-image
+              glyph, no coupling to the per-line `imageError`). Absent on tutorial scenes. */}
+          {scene.backdrop !== undefined && (
+            <HalftoneHero
+              src={`${import.meta.env.BASE_URL}${scene.backdrop}`}
+              pitch={10}
+              style={{
+                opacity: BACKDROP_OPACITY,
+                maskImage: BACKDROP_MASK,
+                WebkitMaskImage: BACKDROP_MASK,
+              }}
+            />
+          )}
+
           {/* Running masthead — one printing across the pre-game surfaces */}
           <div
             style={{
@@ -223,6 +250,11 @@ export function NarrativeScreen({
                   maxWidth: "100%",
                   objectFit: "contain",
                   imageRendering: "pixelated",
+                  // La loi de l'imprimé (lead-art gate): a menu illustration is printed on
+                  // paper — grayscale kills stray sprite colour (badge, uniform) so it reads as
+                  // one printing with the halftone facade. No dot-screen (would eat the
+                  // silhouette), no neon rim (menu = zero glow, §2bis).
+                  filter: "grayscale(1) contrast(1.05)",
                 }}
               />
             </div>
@@ -248,14 +280,17 @@ export function NarrativeScreen({
               </div>
             ))}
 
-          {/* Transcript box — the fax/répondeur note, ink on paper */}
+          {/* Transcript box — the fax/répondeur note, ink on paper. On a backdrop scene the
+              ground is forced to SOLID newsprint (lead-art constraint) so the ink text never
+              rides over the halftone facade; backdrop-less scenes (tutorial) keep `transparent`
+              and are byte-identical to before. */}
           <div
             style={{
               position: "relative",
               margin: "0 0 0 0",
               padding: "24px 32px 48px",
               borderTop: `2px solid ${INK.black}`,
-              background: "transparent",
+              background: scene.backdrop !== undefined ? STOCK.newsprint : "transparent",
               minHeight: 160,
             }}
           >
