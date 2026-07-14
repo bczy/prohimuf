@@ -173,11 +173,28 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
 
   return (
     <>
-      <mesh ref={meshRef} position={[screenPosition.x, bodyY, 0]} visible={false}>
+      {/* renderOrder 4: above every backdrop panel (renderOrder 0..PANELS-1,
+          drawn with depthWrite off) and below the foreground ironwork (5) and
+          courier (6). depthWrite must stay OFF like every other transparent
+          quad in the scene — with the default depthWrite the sprite's
+          transparent pixels write z=0 and punch a quad-sized hole in any
+          backdrop panel drawn after it (panel p>=1), exposing the overlapped
+          neighbour panel as a visible rectangle around the enemy. */}
+      <mesh
+        ref={meshRef}
+        position={[screenPosition.x, bodyY, 0]}
+        visible={false}
+        renderOrder={4}
+      >
         <planeGeometry args={[planeH, planeH]} />
-        <meshBasicMaterial color="#ff3030" transparent />
+        <meshBasicMaterial color="#ff3030" transparent depthWrite={false} />
       </mesh>
-      <mesh ref={flashRef} position={[screenPosition.x, bodyY, 0.6]} visible={false}>
+      <mesh
+        ref={flashRef}
+        position={[screenPosition.x, bodyY, 0.6]}
+        visible={false}
+        renderOrder={4}
+      >
         <planeGeometry args={[0.8, 0.8]} />
         <meshBasicMaterial
           map={getGlowTexture()}
