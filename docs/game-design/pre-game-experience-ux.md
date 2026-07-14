@@ -504,8 +504,14 @@ A dev-implemented build PASSES design acceptance when:
 - [ ] No menu surface glows on a dark ground; no CRT scanlines, no `backdrop-filter: blur`, no
       `text-shadow` glow, no neon corner brackets anywhere in the pre-game screens (art-advisor
       kill-list; grep the diff).
-- [ ] Every datum in §4 is present on its new artifact; none added. Difficulty thresholds and
-      labels match `MainMenu` exactly; best-score & unlock predicates unchanged.
+- [ ] Every datum in §4 is present on its new artifact; none added. Difficulty **thresholds**
+      match `MainMenu` exactly; the middle-tier **label reads `NORMAL`** (render aligned
+      `MOYEN → NORMAL`, no data touch — §4.6); best-score & unlock predicates unchanged.
+- [ ] Each playable flyer holds its **~8-line** layout (data + flavour slots §4.1) with crew
+      name, level title, difficulty stamp, and AMBIANCE legible **in the pile**; no slot
+      overflows its `car.` ceiling; tutorial & locked flyers use their substitution slot sets.
+- [ ] Stalingrad and Vitry both stamp **DIFFICILE** (expected — §4.6) and are told apart by
+      **AMBIANCE (CHAUD vs BRÛLANT) + district**, not by the stamp.
 - [ ] Keyboard nav (§2) works on every surface with an always-visible marker-circle focus; no
       screen traps the player (Escape always has an exit).
 - [ ] 3-tap returning-player path (title → flyer → Passer) completes **< 10 s** with transitions
