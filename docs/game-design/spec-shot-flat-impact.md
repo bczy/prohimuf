@@ -2,7 +2,7 @@
 
 **Feature:** the player's shot in the shooting-gallery phase.
 **Author:** `game-designer` (Sacha) · **Date:** 2026-07-14
-**Status:** DRAFT — pending `lead-game-designer` (Karim) design gate, then `senior-architect`.
+**Status:** GATED (design) 2026-07-14 — `lead-game-designer` (Karim) PASS; pending `senior-architect`.
 **Story:** `_bmad-output/planning-artifacts/story-player-shot-flat-impact.md`
 **Scope guard:** PROJECT_GUIDELINES §1 (cahier des charges) — FAITHFUL FIX + RESTORATION,
 no new verb. Core loop `Récupérer → Livrer → Éviter` untouched.
