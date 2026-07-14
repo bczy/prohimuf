@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextRovingIndex } from "../useRovingIndex";
+import { nextRovingIndex, isActivateKey } from "../useRovingIndex";
 
 /**
  * Pure reducer-style coverage of the roving-focus transition (the DOM-free core of
@@ -46,8 +46,9 @@ describe("nextRovingIndex", () => {
     });
   });
 
-  it("Enter and other non-movement keys are a no-op on the index", () => {
+  it("Enter, Space and other non-movement keys are a no-op on the index", () => {
     expect(nextRovingIndex(1, "Enter", 4)).toBe(1);
+    expect(nextRovingIndex(1, " ", 4)).toBe(1);
     expect(nextRovingIndex(1, "a", 4)).toBe(1);
     expect(nextRovingIndex(1, "Tab", 4)).toBe(1);
   });
@@ -55,5 +56,28 @@ describe("nextRovingIndex", () => {
   it("guards non-positive counts", () => {
     expect(nextRovingIndex(0, "ArrowDown", 0)).toBe(0);
     expect(nextRovingIndex(0, "ArrowUp", -1)).toBe(0);
+  });
+});
+
+/**
+ * Activation predicate — the pure branch the hook's `onKeyDown` uses to fire
+ * `onActivate`. Space must activate like Enter (WAI-ARIA), and movement / other keys
+ * must not, so the flyer wall can be triggered from the keyboard without a mouse.
+ */
+describe("isActivateKey", () => {
+  it("activates on Enter and Space", () => {
+    expect(isActivateKey("Enter")).toBe(true);
+    expect(isActivateKey(" ")).toBe(true);
+  });
+
+  it("does not activate on arrows or other keys", () => {
+    expect(isActivateKey("ArrowDown")).toBe(false);
+    expect(isActivateKey("ArrowUp")).toBe(false);
+    expect(isActivateKey("ArrowLeft")).toBe(false);
+    expect(isActivateKey("ArrowRight")).toBe(false);
+    expect(isActivateKey("Tab")).toBe(false);
+    expect(isActivateKey("Escape")).toBe(false);
+    expect(isActivateKey("a")).toBe(false);
+    expect(isActivateKey("Spacebar")).toBe(false);
   });
 });

@@ -66,7 +66,7 @@ and must be eliminated before the timer runs out.
 
 - **Facade:** Haussmann building rendered procedurally on a Canvas2D texture mapped to a Three.js plane
 - **Sprites:** Flat 2D planes (meshBasicMaterial) facing camera — Paper Mario style
-- **UI:** Fanzine-style screens (StartScreen,
+- **UI:** Fanzine-style screens (TitleScreen,
   HUD,
   EndScreen)
 - **Camera:** Orthographic,

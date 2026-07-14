@@ -83,6 +83,8 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           letterSpacing: "0.28em",
           textAlign: "center",
           zIndex: 2,
+          // Let clicks fall through to the cover below so the whole surface stays the hit target.
+          pointerEvents: "none",
         }}
       >
         {MASTHEAD.full}

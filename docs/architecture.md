@@ -60,7 +60,7 @@ src/
 │   │   └── DeliverySprite.tsx
 │   └── ui/                 # HTML overlay components (not R3F)
 │       ├── HUD.tsx
-│       ├── StartScreen.tsx
+│       ├── TitleScreen.tsx
 │       └── EndScreen.tsx
 ├── assets/
 │   ├── audio/              # bgm_loop.mp3,

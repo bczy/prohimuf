@@ -14,11 +14,13 @@ export interface StampProps {
 }
 
 /**
- * A rubber-stamp / ballot mark. The keyline (border) is ALWAYS `INK.black` so the
- * mark reads on any stock even when its hue nears the flyer ground (art-direction
- * §2bis: every stamp carries a toner-black keyline regardless of ink — critical for
- * e.g. pink-on-orange). The mark colour `ink` lives in the label text (and the
- * diagonal strike). Zero glow. A slight fixed rotation gives the stamped feel.
+ * A rubber-stamp / ballot mark. The keyline (border) is ALWAYS `INK.black` and the
+ * LABEL text is ALWAYS `INK.black` so the mark reads on any stock even when its hue
+ * nears the flyer ground (art-direction §2bis: every stamp carries a toner-black
+ * keyline regardless of ink — critical for e.g. pink-on-orange — and mark ink never
+ * carries small text). The mark colour `ink` is the hue tell only: a slim inner rule
+ * (and, for `diagonal`, the strike). Shapes (box/oval/diagonal) are the redundant,
+ * per-difficulty tell. Zero glow. A slight fixed rotation gives the stamped feel.
  */
 export function Stamp({ label, ink, shape = "box", struck = false }: StampProps): JSX.Element {
   const box: CSSProperties = {
@@ -27,7 +29,7 @@ export function Stamp({ label, ink, shape = "box", struck = false }: StampProps)
     padding: "3px 9px",
     border: `2px solid ${INK.black}`,
     borderRadius: shape === "oval" ? "50%" : "1px",
-    color: ink,
+    color: INK.black,
     fontFamily: "'Courier New', Courier, monospace",
     fontSize: "11px",
     fontWeight: 700,
@@ -39,6 +41,19 @@ export function Stamp({ label, ink, shape = "box", struck = false }: StampProps)
   return (
     <span style={box}>
       {label}
+      {/* Hue tell: a slim inner rule in the mark ink — no text rides the colour. */}
+      <span
+        aria-hidden={true}
+        style={{
+          position: "absolute",
+          left: "12%",
+          right: "12%",
+          bottom: "1.5px",
+          height: "1.5px",
+          background: ink,
+          pointerEvents: "none",
+        }}
+      />
       {shape === "diagonal" && (
         <span
           aria-hidden={true}

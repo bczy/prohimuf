@@ -28,6 +28,14 @@ const PREV_KEY: Record<RovingAxis, string> = {
 };
 
 /**
+ * Keys that activate the focused item (WAI-ARIA: Enter AND Space). Pure so the
+ * activation branch of {@link useRovingIndex} is unit-testable without a DOM.
+ */
+export function isActivateKey(key: string): boolean {
+  return key === "Enter" || key === " ";
+}
+
+/**
  * Pure roving-focus transition: the next focused index for a key press, clamped or
  * wrapped. Movement keys are the axis arrows; any other key returns `current`. This
  * is the unit-tested core of {@link useRovingIndex}.
@@ -58,8 +66,9 @@ export function useRovingIndex(count: number, opts?: RovingOptions): RovingIndex
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent): void => {
-      if (e.key === "Enter") {
+      if (isActivateKey(e.key)) {
         if (opts?.onActivate !== undefined) {
+          // preventDefault also stops Space from scrolling the page.
           e.preventDefault();
           opts.onActivate(index);
         }
