@@ -1,34 +1,20 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
-import { TextureLoader } from "three";
-import type { Texture, Mesh, MeshBasicMaterial } from "three";
+import type { Mesh } from "three";
 import type { GameState } from "@game/types/gameState";
-import { applyPixelFilter } from "./pixelArt";
 
 const MAX_BULLETS = 20;
-const PLAYER_BULLET_COLOR = "#ffff00";
 const ENEMY_BULLET_COLOR = "#ff4444";
 
 interface Props {
   stateRef: React.RefObject<GameState>;
 }
 
+// Renders enemy return fire only. Player shots are instant hitscan (ADR-0020)
+// and never enter state.bullets, so every bullet here is an enemy projectile.
 export function BulletSprite({ stateRef }: Props): JSX.Element {
   const meshRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_BULLETS }, () => null));
-  const playerTexRef = useRef<Texture | null>(null);
-
-  useEffect(() => {
-    const loader = new TextureLoader();
-    loader.load(
-      `${import.meta.env.BASE_URL}assets/bullet_player.png`,
-      (t) => {
-        playerTexRef.current = applyPixelFilter(t);
-      },
-      undefined,
-      () => undefined,
-    );
-  }, []);
 
   useFrame(() => {
     const bullets = stateRef.current.bullets;
@@ -43,19 +29,6 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       mesh.visible = true;
       mesh.position.x = bullet.position.x;
       mesh.position.y = bullet.position.y;
-      const mat = mesh.material as MeshBasicMaterial;
-      if (bullet.fromPlayer && playerTexRef.current !== null) {
-        if (mat.map !== playerTexRef.current) {
-          mat.map = playerTexRef.current;
-          mat.needsUpdate = true;
-        }
-      } else {
-        if (mat.map !== null) {
-          mat.map = null;
-          mat.needsUpdate = true;
-        }
-        mat.color.set(bullet.fromPlayer ? PLAYER_BULLET_COLOR : ENEMY_BULLET_COLOR);
-      }
     }
   });
 
@@ -70,7 +43,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
           visible={false}
         >
           <circleGeometry args={[0.1, 8]} />
-          <meshBasicMaterial color={PLAYER_BULLET_COLOR} transparent />
+          <meshBasicMaterial color={ENEMY_BULLET_COLOR} transparent />
         </mesh>
       ))}
     </>
