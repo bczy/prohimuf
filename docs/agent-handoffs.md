@@ -69,6 +69,18 @@ Template:
   story [Malik recommends], (2) temporary waiver with the shipped flag, (3) remove SFX
   (audible-behaviour change, would trip behaviour gate). Decision requested at merge.
 
+- QUALITY GATE (AC9, Inès 🧪): first run FAIL — sole failing case M4 `yarn format:check`
+  RED on public/assets/audio/CREDITS.md (table padding; merge-blocking, CI job + husky).
+  Routed to dev-tooling-assets; remedy applied as prescribed (`prettier --write`, padding
+  only, zero content change; orchestrator executed the one-command remedy on the lane's
+  behalf). Inès re-ran M4 herself → green; re-verdict PASS. Everything else held on first
+  run: tsc / vitest 208/208 / lint green; S1-S8 script integrity (dead code gone, both
+  http+https imports, no-op run [skip]×5, zero network); AC3 zero drift across the 3
+  surfaces; ID3 titles verified from bytes; CREDITS.md proven byte-identical in dist/;
+  AC7 explicit flag present; blast radius confined to the 3 dev surfaces. One named
+  CI-DEFERRED (non-blocking): fresh-dir download smoke over incompetech.com. Clear for
+  stage 6. (Inès, quality gate)
+
 ---
 
 ### story-live-neon-rim

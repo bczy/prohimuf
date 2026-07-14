@@ -14,8 +14,8 @@ disk (`public/assets/audio/`).
 All five BGM tracks are by **Kevin MacLeod** (incompetech.com), licensed under
 **Creative Commons: By Attribution 4.0 (CC-BY 4.0)**. Attribution is mandatory.
 
-| File            | Title         | Author        | Source              | Licence   | Licence URL                                    |
-| --------------- | ------------- | ------------- | ------------------- | --------- | ---------------------------------------------- |
+| File              | Title         | Author        | Source                   | Licence   | Licence URL                                  |
+| ----------------- | ------------- | ------------- | ------------------------ | --------- | -------------------------------------------- |
 | `bgm_loop.mp3`    | Funky Chunk   | Kevin MacLeod | https://incompetech.com/ | CC-BY 4.0 | https://creativecommons.org/licenses/by/4.0/ |
 | `bgm_loop2.mp3`   | Ouroboros     | Kevin MacLeod | https://incompetech.com/ | CC-BY 4.0 | https://creativecommons.org/licenses/by/4.0/ |
 | `bgm_tension.mp3` | Sneaky Snitch | Kevin MacLeod | https://incompetech.com/ | CC-BY 4.0 | https://creativecommons.org/licenses/by/4.0/ |
