@@ -104,6 +104,7 @@ async function buildContactSheet() {
   const { createCanvas, loadImage } = canvasMod;
 
   const shots = [
+    "00_title.png",
     "00_menu.png",
     "01_narrative.png",
     "02_tutorial_desktop.png",
@@ -164,6 +165,14 @@ async function main() {
       console.error(`  failed ${LEVELS[i].id}: ${e.message}`);
     }
   }
+
+  // Pre-game surfaces booted directly via the preview hook (deterministic —
+  // the ?preview=menu shot is the authoritative menu capture, replacing the
+  // flaky cold-load one grabbed during the level loop).
+  console.log("[screen] title");
+  await captureScreen(context, "00_title.png", "?preview=title");
+  console.log("[screen] menu");
+  await captureScreen(context, "00_menu.png", "?preview=menu");
 
   console.log("[screen] narrative");
   await captureScreen(context, "01_narrative.png", "?preview=narrative");
