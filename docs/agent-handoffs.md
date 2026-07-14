@@ -132,6 +132,23 @@ Template:
   lane needed; icons+bestiary verified by driving panels via `verify` on both `?preview=tutorial`
   contexts (ADR-0015 harness). `docs/agent-handoffs.md` shared/serialized — devs must not edit it
   concurrently. (Winston / Senior Architect)
+- rework(dev-r3f-render): **Mobile gesture icons redesigned around a recognizable stylized HAND**
+  after Bertrand's "très très bof" on the shipped `two-finger-tap`/`swipe-pan` (old versions read as
+  paperclips/blobs — no hand). ONLY `src/render/ui/GestureIcon.tsx` touched. Both mobile hands are now
+  a SINGLE continuous fanzine B&W silhouette path (fist + extended finger(s), fill=BODY + INK 3px
+  stroke, wider palm, knuckle/thumb detail lines) so no stray finger shapes — new consts
+  `HAND_TWO_FINGER` (index+middle up) / `HAND_ONE_FINGER` (index only). `two-finger-tap`: both
+  fingertips touch glass, neon `#ffe600` halos flash in SYNC + one ripple from the midpoint; retimed
+  loop = dip-to-touch → flash → lift → long rest (never a double-tap). `swipe-pan`: index sweeps,
+  fingertip trails the alpha-falloff motion trail, hand lifts mid-travel (new `gi-sp-*-hand` fade) and
+  the trail glides to an eased stop; H→V direction cycling kept. Phone frame demoted to thin
+  low-contrast context (stroke 1.4 / opacity .28). Desktop `mouse-click` UNTOUCHED. Desktop
+  `edge-scroll` glow band given a steeper multi-stop inward falloff (0→.04→.22→.9) so it reads as a
+  halo, not an aplat (art-bible §2). prefers-reduced-motion still freezes on a readable frame (hand
+  touching, halos on). VERIFY: `corepack yarn typecheck` + `corepack yarn lint` green; drove
+  `?preview=tutorial` via the `verify` skill — mobile landscape 844×390 panels 2/3 + desktop panel 3 —
+  and confirmed on screenshots both hands read instantly as hands and the falloff is a gradient. No
+  commit. (Amelia / dev-r3f-render)
 
 ---
 
