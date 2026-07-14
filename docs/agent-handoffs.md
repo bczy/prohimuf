@@ -1767,3 +1767,15 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   solid, blasts full (no lace), wings/star gone. ADR-0018 updated (iter-4 section).
   6 PNGs + 2 scripts changed; NOT committed (per Bertrand's request). Files:
   shooting_2{,\_f2}, shooting_3{,\_f2}, riot_shooting{,\_f2}.
+
+### explosion-alignment-transparency — iter 5 (bust-hem fill, Bertrand live gate)
+
+- Bertrand: "remplis encore un peu plus le buste" (enemy_shooting_3), then
+  approved frame 2 at the closing-only result ("pour lui c'est ok"). The
+  raggedness was the ORIGINAL torn hem (border-open bays — no retouch bite
+  left). New scripts/fill-bust-hem.mjs authors fill: disk-22 closing in the
+  lower half + frame-cut extendDown on f1 (columns whose hem mass reaches the
+  bottom band fill to the frame bottom, matching approved f2); median local
+  clothing tone; add-only + self-check; joint fixpoint with fill-sprite-holes
+  (6 residual px). f1 +6,283 px, f2 +1,659 px. All four gates PASS, anchors
+  unchanged, 213 tests green. (orchestrator, graphist lane)

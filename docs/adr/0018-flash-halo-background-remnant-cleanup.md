@@ -217,3 +217,19 @@ pristine base, so no new anatomy was authored.
 - Cross-references: ADR-0013 (shared keyer / enclosed-island flood), ADR-0014
   (sprite-integrity gate + deterministic per-sprite retouch precedent + the solidify pass
   this reconciles with).
+
+## Iteration 5 (2026-07-14) — authored bust-hem fill on enemy_shooting_3
+
+Bertrand's art gate, after the iter-4 restore: "Je veux que tu remplisses encore
+un peu plus le buste de cet ennemi" (enemy_shooting_3). The remaining raggedness
+was the ORIGINAL art's torn hem — concave bays whose mouths open on the frame's
+bottom border, unreachable by any closing radius and invisible to the enclosed-
+hole gates. New `scripts/fill-bust-hem.mjs` AUTHORS fill (the first pass in this
+chain allowed to go beyond the pristine base): per-file bounded closing
+(disk-22, lower-half region) plus, on frame 1, a frame-cut extension (columns
+whose hem mass reaches the bottom band are filled to the frame bottom, matching
+the frame-2 silhouette Bertrand approved: "pour lui c'est ok"). New pixels take
+the median nearby dark-clothing tone. Add-only with a self-check, iterated to a
+fixpoint, `--check` CI-gateable. Run to a JOINT fixpoint with
+`fill-sprite-holes.mjs` (the extension can enclose lateral pockets the solidify
+then fills). Result: f1 +6,283 px, f2 +1,659 px, all four asset gates green.
