@@ -20,8 +20,8 @@ export interface PointHitEvent {
 }
 
 // One resolved player shot, surfaced for transient render effects (explosion,
-// optional tracer, wall mark). Cosmetic-only: carries facts, no rule. At most
-// one per tick. Consumed per-frame by the hooks bridge — never persisted.
+// wall mark). Cosmetic-only: carries facts, no rule. At most one per tick.
+// Consumed per-frame by the hooks bridge — never persisted.
 export interface ImpactEvent {
   readonly classification: "hit" | "miss";
   // World point the shot struck (IMPACT_POINT). Wall-mark anchor for BOTH

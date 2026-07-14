@@ -85,3 +85,18 @@ rule lives in the bridge/render, not in `GameState`.
   handle its own unmount, or marks could leak across a level change that reuses the scene.
 - The tracer muzzle origin must be derived from `cameraOffsetY − viewH/2` (live viewport),
   **not** the spec's illustrative `MUZZLE_ORIGIN_Y = −6`, so it tracks vertical pan.
+
+## Amendment (2026-07-14 — Stage 6 integration)
+
+The tracer (always framed here as _optional / if shipped_) was **dropped** at the composite
+gate per spec D2.4: it read as noise against the lit facade and added nothing over the
+explosion + wall mark. **Nothing shipped for it** — no `TRACER_*` constants, no `useThree`
+muzzle derivation in `ImpactEffects.tsx`, so the muzzle-origin gotcha above is now moot.
+
+In its place, a **read-strength rework** shipped, all render-transient and rule-free (same
+boundary decision as above): a brief NORMAL-blended **dark backing disc** under each burst
+(so the additive neon reads on a bright facade), a **hit-only white flash** as the
+categorical hit/miss cue, miss explosion diameter raised `0.7 → 0.9`, and a plateau opacity
+envelope on the burst. Each transient runs a capped pool (12) alongside the `WALL_MARK_CAP =
+16` FIFO. These are cosmetic constants owned entirely by `src/render/effects/**`; the game
+seam (`ImpactEvent` = classification + `impactPoint` + optional `hit`) is unchanged.
