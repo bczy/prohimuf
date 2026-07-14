@@ -61,7 +61,7 @@ async function captureLevel(context, level, withMenu) {
 
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
 
-  // Cold load lands on the TITLE cover (ADR-0020); enter the MENU before the
+  // Cold load lands on the TITLE cover (ADR-0021); enter the MENU before the
   // withMenu capture / level click — "MUF" alone no longer means "on the menu"
   // (shared helper, in sync with the e2e gates).
   await enterMenuFromTitle(page);

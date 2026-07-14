@@ -51,7 +51,7 @@ export function nextRovingIndex(
 /**
  * Roving keyboard focus for one list surface (arrows move focus, Enter activates).
  * Render-layer view interaction only — NOT a game↔R3F bridge, so it lives in
- * `src/render/ui/print/`, not `src/hooks/` (ADR-0020 D4).
+ * `src/render/ui/print/`, not `src/hooks/` (ADR-0021 D4).
  */
 export function useRovingIndex(count: number, opts?: RovingOptions): RovingIndex {
   const [index, setIndex] = useState(0);

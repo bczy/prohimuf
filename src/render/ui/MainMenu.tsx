@@ -7,7 +7,7 @@ import { ScoresUne } from "./menu/ScoresUne";
 import { OptionsColophon } from "./menu/OptionsColophon";
 
 /**
- * MENU — the zine interior shell (ADR-0020, UX §2.2). A running masthead + a
+ * MENU — the zine interior shell (ADR-0021, UX §2.2). A running masthead + a
  * hand-inked *sommaire* (replacing the glowing yellow TabBar) over three rubrique
  * surfaces: NIVEAUX (flyer wall), SCORES (PARIS-MINUIT UNE), OPTIONS (OURS colophon).
  * Zero glow; paper-shell ground so the flyers pop (§4.5). Props are unchanged so the

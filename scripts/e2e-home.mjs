@@ -13,7 +13,7 @@
  * the production build at PREVIEW_URL (the URL must include the deploy base,
  * e.g. http://127.0.0.1:4173/prohimuf/ or .../prohimuf/preview/<branch>/).
  *
- * Since the pre-game redesign (ADR-0020) a cold load lands on the new TITLE
+ * Since the pre-game redesign (ADR-0021) a cold load lands on the new TITLE
  * zine-cover, and a single action enters the MENU (the zine interior with the
  * NIVEAUX flyer wall / SCORES UNE / OPTIONS colophon). This script drives that
  * new flow: assert the title renders, perform the single-action entry, then
@@ -83,7 +83,7 @@ async function main() {
     console.log(`[e2e] loading ${PREVIEW_URL}`);
     await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-    // Cold load lands on the TITLE cover (ADR-0020); the "MUF" logo proves the
+    // Cold load lands on the TITLE cover (ADR-0021); the "MUF" logo proves the
     // React app booted and its bundle resolved.
     await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
 

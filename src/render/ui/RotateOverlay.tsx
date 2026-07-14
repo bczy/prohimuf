@@ -4,7 +4,7 @@ import { PaperSheet, STOCK, INK } from "@render/ui/print";
 /**
  * Full-screen blocker shown on mobile while the device is in portrait
  * (ADR-0003). The game underneath is paused; rotating to landscape resumes.
- * Reskinned into the print system (ADR-0020): paper ground + black ink, an inked
+ * Reskinned into the print system (ADR-0021): paper ground + black ink, an inked
  * phone/rotate glyph instead of the 📱 emoji, no scanlines, zero glow. Behaviour
  * (portrait-only, pauses underneath) is unchanged.
  */

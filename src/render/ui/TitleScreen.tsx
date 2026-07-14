@@ -23,7 +23,7 @@ const MICROCOPY = "le répondeur donne le point de RV";
 const mono = "'Courier New', Courier, monospace";
 
 /**
- * TITLE surface (ADR-0020 D1) — the zine cover on `STOCK.jaune`. Single-action entry:
+ * TITLE surface (ADR-0021 D1) — the zine cover on `STOCK.jaune`. Single-action entry:
  * the whole surface is the hit target; a click / tap / printable key / Enter / Space /
  * Escape fires `onEnter()` immediately (no dwell, AC5). Events whose target is inside
  * `[data-muf-ui]` are excluded so tapping / activating the FullscreenButton never skips

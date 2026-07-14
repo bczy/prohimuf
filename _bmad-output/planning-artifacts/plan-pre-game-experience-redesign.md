@@ -8,7 +8,7 @@ assignment.
 **Inputs:** UX spec `docs/game-design/pre-game-experience-ux.md` · copy deck
 `docs/game-design/pregame-copy-deck.md` · art law + tokens `docs/art-direction.md`
 §2bis / §2bis.1 · current code `src/render/ui/*`, `src/render/scene/App.tsx`.
-**ADR:** `docs/adr/0020-pre-game-print-system-and-title-phase.md` (written with this plan).
+**ADR:** `docs/adr/0021-pre-game-print-system-and-title-phase.md` (written with this plan).
 
 > **This is the HOW.** It turns the gated design into a buildable, boundary-safe,
 > parallel-partitioned dev plan. It invents no mechanic, changes no game data, and confines
@@ -450,7 +450,7 @@ sign-off required and recorded. Sign-off conditions, all satisfied by this plan:
 - Shared tokens live in `src/render/ui/print/`, imported only by render. ✅
 - Menu-nav hook stays out of `src/hooks/` (that folder = game↔R3F bridge only). ✅
 - No new generated asset / font / CI render-farm run / lead-art gate. ✅
-- ADR-0020 records the phase + token-source + boundary rulings. ✅
+- ADR-0021 records the phase + token-source + boundary rulings. ✅
 
 Hand-off to `producer` for lane dispatch; the cross-cutting sign-off is logged in
 `docs/agent-handoffs.md` by the producer/architect (not edited here — parallel writers).

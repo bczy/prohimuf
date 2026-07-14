@@ -119,7 +119,7 @@ async function main() {
     console.log(`[e2e-delivery] loading ${PREVIEW_URL}`);
     await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-    // Cold load lands on the TITLE cover (ADR-0020). Perform the single-action
+    // Cold load lands on the TITLE cover (ADR-0021). Perform the single-action
     // entry to reach the MENU before selecting a flyer — "MUF" now also renders on
     // the TITLE cover, so waiting on it alone would leave the app on the cover and
     // the level-name click would time out (shared helper).
