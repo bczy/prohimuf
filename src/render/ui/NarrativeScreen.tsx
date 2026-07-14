@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
+import { PaperSheet, STOCK, INK, MARK, MASTHEAD } from "@render/ui/print";
 
 interface Props {
   scene: NarrativeScene;
@@ -15,8 +16,6 @@ interface Props {
   doneLabel?: string;
 }
 
-const NEON_YELLOW = "#ffe600";
-const NEON_GREEN = "#39ff14";
 const CHAR_DELAY_MS = 28;
 
 /**
@@ -36,6 +35,14 @@ const ILLUSTRATION_SLOT_STYLE: CSSProperties = {
   maxHeight: "38vh",
 };
 
+/**
+ * Pre/post-level briefing. Behaviour, scripts, three call sites, typewriter and
+ * `Passer`/progress logic are FROZEN (ADR-0021 D5). Only the **visual frame** joins
+ * the print system: the dark facade wash → a newsprint répondeur/fax transcript
+ * ground (lead-art ruling), scanlines → the paper dot-screen, the neon `#ffe600`
+ * rule → an `ink-black` keyline, the glowing hint → an inked hint with a typewriter
+ * cursor. Zero glow (art-direction §2bis).
+ */
 export function NarrativeScreen({
   scene,
   onDone,
@@ -110,205 +117,206 @@ export function NarrativeScreen({
       style={{
         position: "fixed",
         inset: 0,
-        background: `linear-gradient(rgba(8,6,20,0.5), rgba(8,6,20,0.96)), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
-        imageRendering: "pixelated",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
         cursor: "pointer",
         userSelect: "none",
-        overflow: "hidden",
-        fontFamily: "'Courier New', Courier, monospace",
       }}
     >
-      {/* Scanlines overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Fanzine header */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          background: NEON_YELLOW,
-          padding: "3px 12px",
-          fontSize: "9px",
-          letterSpacing: "0.3em",
-          color: "#000",
-          textAlign: "center",
-        }}
+      <PaperSheet
+        stock={STOCK.newsprint}
+        style={{ fontFamily: "'Courier New', Courier, monospace" }}
       >
-        UNDERGROUND PARIS — FANZINE CLANDESTIN — 1998
-      </div>
-
-      {showSkipButton && (
-        <button
-          type="button"
-          onClick={handleSkip}
-          style={{
-            position: "absolute",
-            top: 30,
-            left: 16,
-            border: `2px solid ${NEON_YELLOW}`,
-            background: "rgba(0,0,0,0.88)",
-            color: NEON_YELLOW,
-            padding: "6px 12px",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            fontFamily: "inherit",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            pointerEvents: "auto",
-          }}
-        >
-          Passer
-        </button>
-      )}
-
-      {/* Progress dots */}
-      <div
-        style={{
-          position: "absolute",
-          top: 24,
-          right: 16,
-          display: "flex",
-          gap: 6,
-        }}
-      >
-        {scene.lines.map((_, i) => (
-          <div
-            key={i}
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: i <= lineIndex ? NEON_YELLOW : "#333",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Optional illustrative sprite (ADR-0012, D5): only present on tutorial
-          panels that reference shipped art; other scenes render exactly as before.
-          Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
-      {currentLine?.image !== undefined && !imageError && (
-        <div style={ILLUSTRATION_SLOT_STYLE}>
-          <img
-            // Force remount on sprite change so the previous sprite is never held
-            // on screen while the next one decodes (ADR-0012, C1).
-            key={currentLine.image}
-            src={`${import.meta.env.BASE_URL}${currentLine.image}`}
-            alt={currentLine.imageAlt ?? ""}
-            onError={() => {
-              // A missing/404 asset (e.g. bad deploy path) must not surface a broken
-              // image icon — hide the illustration and keep the dialogue readable.
-              setImageError(true);
-            }}
-            style={{
-              maxHeight: "100%",
-              maxWidth: "100%",
-              objectFit: "contain",
-              imageRendering: "pixelated",
-            }}
-          />
-        </div>
-      )}
-
-      {/* Optional code-drawn animated gesture icon (ADR-0020): shown on the forked control
-          panels in the SAME slot `image` uses. The two channels are normally mutually exclusive
-          (Lane A guarantees it), but the gate also acts as the image degradation fallback: if a
-          panel carries BOTH and the image 404s (`imageError`), the drawable gesture is rendered
-          instead of nothing. `GestureKind` is a closed union with an exhaustive icon map, so every
-          value draws; an absent gesture skips this slot and the panel degrades to text. When the
-          label is missing/empty the slot drops `role="img"` (no empty-labelled image node) and is
-          marked `aria-hidden` instead. */}
-      {currentLine?.gesture !== undefined &&
-        (currentLine.image === undefined || imageError) &&
-        ((currentLine.gestureAlt ?? "") !== "" ? (
-          <div role="img" aria-label={currentLine.gestureAlt} style={ILLUSTRATION_SLOT_STYLE}>
-            <GestureIcon kind={currentLine.gesture} />
-          </div>
-        ) : (
-          <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
-            <GestureIcon kind={currentLine.gesture} />
-          </div>
-        ))}
-
-      {/* Dialogue box */}
-      <div
-        style={{
-          position: "relative",
-          margin: "0 0 0 0",
-          padding: "24px 32px 48px",
-          borderTop: `2px solid ${NEON_YELLOW}`,
-          background: "rgba(0,0,0,0.95)",
-          minHeight: 160,
-        }}
-      >
-        {/* Speaker name */}
         <div
           style={{
-            fontSize: "11px",
-            letterSpacing: "0.3em",
-            color: NEON_YELLOW,
-            marginBottom: 10,
+            position: "relative",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            overflow: "hidden",
           }}
         >
-          {currentLine?.speaker ?? ""}
-        </div>
-
-        {/* Text */}
-        <div
-          style={{
-            fontSize: "18px",
-            lineHeight: 1.55,
-            color: "#fff",
-            minHeight: 60,
-            letterSpacing: "0.02em",
-          }}
-        >
-          {displayedText}
-          {isTyping && (
-            <span
-              style={{
-                display: "inline-block",
-                width: 2,
-                height: "1em",
-                background: "#fff",
-                marginLeft: 2,
-                verticalAlign: "text-bottom",
-                animation: "blink 0.7s step-start infinite",
-              }}
-            />
-          )}
-        </div>
-
-        {/* Continue hint */}
-        {!isTyping && (
+          {/* Running masthead — one printing across the pre-game surfaces */}
           <div
             style={{
               position: "absolute",
-              bottom: 16,
-              right: 24,
-              fontSize: "11px",
-              color: done ? NEON_GREEN : "#555",
-              letterSpacing: "0.15em",
-              animation: "blink 1s step-start infinite",
+              top: 0,
+              left: 0,
+              right: 0,
+              background: "transparent",
+              borderBottom: `1px solid ${INK.black}`,
+              padding: "4px 12px",
+              fontSize: "9px",
+              letterSpacing: "0.3em",
+              color: INK.black,
+              textAlign: "center",
             }}
           >
-            {done ? `[ ${doneLabel} ]` : "[ CONTINUER ]"}
+            {MASTHEAD.running}
           </div>
-        )}
-      </div>
+
+          {showSkipButton && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              style={{
+                position: "absolute",
+                top: 30,
+                left: 16,
+                border: `2px solid ${INK.black}`,
+                background: STOCK.newsprint,
+                color: INK.black,
+                padding: "6px 12px",
+                fontSize: "11px",
+                letterSpacing: "0.18em",
+                fontFamily: "inherit",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                pointerEvents: "auto",
+              }}
+            >
+              Passer
+            </button>
+          )}
+
+          {/* Progress dots — inked, not neon */}
+          <div
+            style={{
+              position: "absolute",
+              top: 24,
+              right: 16,
+              display: "flex",
+              gap: 6,
+            }}
+          >
+            {scene.lines.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: i <= lineIndex ? INK.black : "transparent",
+                  border: `1px solid ${INK.black}`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Optional illustrative sprite (ADR-0012, D5): only present on tutorial
+            panels that reference shipped art; other scenes render exactly as before.
+            Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
+          {currentLine?.image !== undefined && !imageError && (
+            <div style={ILLUSTRATION_SLOT_STYLE}>
+              <img
+                // Force remount on sprite change so the previous sprite is never held
+                // on screen while the next one decodes (ADR-0012, C1).
+                key={currentLine.image}
+                src={`${import.meta.env.BASE_URL}${currentLine.image}`}
+                alt={currentLine.imageAlt ?? ""}
+                onError={() => {
+                  // A missing/404 asset (e.g. bad deploy path) must not surface a broken
+                  // image icon — hide the illustration and keep the dialogue readable.
+                  setImageError(true);
+                }}
+                style={{
+                  maxHeight: "100%",
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  imageRendering: "pixelated",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Optional code-drawn animated gesture icon (ADR-0020): shown on the forked control
+              panels in the SAME slot `image` uses. The two channels are normally mutually exclusive
+              (Lane A guarantees it), but the gate also acts as the image degradation fallback: if a
+              panel carries BOTH and the image 404s (`imageError`), the drawable gesture is rendered
+              instead of nothing. `GestureKind` is a closed union with an exhaustive icon map, so every
+              value draws; an absent gesture skips this slot and the panel degrades to text. When the
+              label is missing/empty the slot drops `role="img"` (no empty-labelled image node) and is
+              marked `aria-hidden` instead. */}
+          {currentLine?.gesture !== undefined &&
+            (currentLine.image === undefined || imageError) &&
+            ((currentLine.gestureAlt ?? "") !== "" ? (
+              <div role="img" aria-label={currentLine.gestureAlt} style={ILLUSTRATION_SLOT_STYLE}>
+                <GestureIcon kind={currentLine.gesture} />
+              </div>
+            ) : (
+              <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
+                <GestureIcon kind={currentLine.gesture} />
+              </div>
+            ))}
+
+          {/* Transcript box — the fax/répondeur note, ink on paper */}
+          <div
+            style={{
+              position: "relative",
+              margin: "0 0 0 0",
+              padding: "24px 32px 48px",
+              borderTop: `2px solid ${INK.black}`,
+              background: "transparent",
+              minHeight: 160,
+            }}
+          >
+            {/* Speaker name */}
+            <div
+              style={{
+                fontSize: "11px",
+                letterSpacing: "0.3em",
+                color: INK.black,
+                fontWeight: 700,
+                marginBottom: 10,
+              }}
+            >
+              {currentLine?.speaker ?? ""}
+            </div>
+
+            {/* Text */}
+            <div
+              style={{
+                fontSize: "18px",
+                lineHeight: 1.55,
+                color: INK.black,
+                minHeight: 60,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {displayedText}
+              {isTyping && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 2,
+                    height: "1em",
+                    background: INK.black,
+                    marginLeft: 2,
+                    verticalAlign: "text-bottom",
+                    animation: "blink 0.7s step-start infinite",
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse) */}
+            {!isTyping && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 16,
+                  right: 24,
+                  fontSize: "11px",
+                  color: done ? MARK.green : INK.black,
+                  letterSpacing: "0.15em",
+                  animation: "blink 1s step-start infinite",
+                }}
+              >
+                {done ? `[ ${doneLabel} ]` : "[ CONTINUER ]"}
+              </div>
+            )}
+          </div>
+        </div>
+      </PaperSheet>
 
       <style>{`
         @keyframes blink {
