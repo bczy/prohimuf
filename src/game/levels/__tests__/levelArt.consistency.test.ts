@@ -76,6 +76,10 @@ interface EnemyFlipbookEntry {
   readonly seed: number;
   readonly prompt: string;
   readonly frames: readonly string[];
+  // Optional per-frame muzzle-flash anchor (shooting entries only), written by
+  // scripts/measure-muzzle-anchors.mjs and consumed by muzzleFor() in
+  // src/render/scene/enemyTextures.ts.
+  readonly muzzle?: readonly ({ readonly x: number; readonly y: number } | null)[];
 }
 
 // Mirror of enemyTextures.ts `fileFor()` root computation (kept in the render
@@ -139,6 +143,26 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
       expect(entry.frames[0], `${key}.frames[0] is the committed unsuffixed base`).toBe("");
       for (const frame of entry.frames.slice(1)) {
         expect(frame.trim().length, `${key} extra frame non-empty`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("every muzzle anchor array is frames-aligned with null-or-normalized elements", () => {
+    for (const [key, entry] of Object.entries(types)) {
+      if (entry.muzzle === undefined) continue;
+      // The anchor is a pixel position on a SHOOTING sprite; idle entries must
+      // not carry one.
+      expect(key.includes("shooting"), `${key}.muzzle only on shooting entries`).toBe(true);
+      expect(
+        entry.muzzle.length,
+        `${key}.muzzle index-aligned with frames (element i anchors frame i+1)`,
+      ).toBe(entry.frames.length);
+      for (const [i, anchor] of entry.muzzle.entries()) {
+        if (anchor === null) continue;
+        expect(anchor.x, `${key}.muzzle[${String(i)}].x in [0,1]`).toBeGreaterThanOrEqual(0);
+        expect(anchor.x, `${key}.muzzle[${String(i)}].x in [0,1]`).toBeLessThanOrEqual(1);
+        expect(anchor.y, `${key}.muzzle[${String(i)}].y in [0,1]`).toBeGreaterThanOrEqual(0);
+        expect(anchor.y, `${key}.muzzle[${String(i)}].y in [0,1]`).toBeLessThanOrEqual(1);
       }
     }
   });

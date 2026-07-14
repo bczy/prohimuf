@@ -6,6 +6,16 @@
 
 <!-- Résumé du changement et de la story/ADR qui le motive. -->
 
+## Preview
+
+<!-- OBLIGATOIRE : lien vers la preview de branche (déployée par
+     deploy-preview.yml sur chaque push d'une branche claude/**).
+     URL : https://bczy.github.io/prohimuf/preview/<slug>/ où <slug> est le
+     nom de la branche avec tout caractère hors [a-zA-Z0-9._-] remplacé
+     par '-' (ex. claude/foo-bar → claude-foo-bar). -->
+
+🔍 [Preview de la branche](https://bczy.github.io/prohimuf/preview/REMPLACER-PAR-LE-SLUG/)
+
 ## Vérifications
 
 - [ ] `rtk tsc` / `yarn typecheck` vert

@@ -96,6 +96,32 @@ character may ship with a transparency hole.
 
 ---
 
+## Enemy muzzle-flash anchors
+
+Each shooting enemy fires a different way (the flash sits top-left on one sprite,
+top-right on the next, and shifts again on the recoil frame), so the render-side
+additive muzzle glow can't use one fixed offset. `scripts/measure-muzzle-anchors.mjs`
+detects the baked flash and writes a per-frame **`muzzle`** array into every
+`enemies.types.<key>` whose key contains `shooting`, in `src/game/levels/levelArt.json`:
+
+```jsonc
+"muzzle": [{ "x": 0.829, "y": 0.251 }, { "x": 0.8, "y": 0.217 }]
+```
+
+The array is **index-aligned with `frames`** (element _i_ anchors frame _i+1_ — file
+`<key>.png`, then `<key>_f2.png`, …), each anchor is normalized `[0..1]` of the PNG
+width/height from the **top-left** corner (rounded to 3 decimals), and a `null` element
+means no flash was detectable in that frame. The field is **optional**: `muzzleFor()` in
+`src/render/scene/enemyTextures.ts` returns the anchor when present and falls back to a
+fixed right-side offset otherwise (lane A of the explosion-alignment fix). Detection keys
+the near-white-hot flash core (`alpha>100, r>235, g>220, b>150`), takes the largest
+8-connected component (`>= 50 px`, else `null`) and uses its unweighted centroid. The
+edit is surgical (string insertion + `prettier --write`, so no unrelated literal moves)
+and idempotent (a re-run is byte-identical). Re-run it whenever a shooting sprite is
+regenerated. See `scripts/SCRIPTS.md`.
+
+---
+
 ## Courier layered flipbook (strip-and-slice)
 
 The street courier is a **2-layer composite** — a delivery **bike** (wheel

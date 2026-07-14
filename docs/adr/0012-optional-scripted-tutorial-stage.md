@@ -4,7 +4,7 @@
 - **Date:** 2026-07-11
 - **Supersedes:** —
 - **Amended by:** [ADR-0015](./0015-device-forked-tutorial-script.md) (D4 §2 — device-forked control panels),
-  [ADR-0019](./0019-code-drawn-gesture-icons.md) (D5 — additive `gesture` illustration channel; "no generation" guarantee preserved)
+  [ADR-0020](./0020-code-drawn-gesture-icons.md) (D5 — additive `gesture` illustration channel; "no generation" guarantee preserved)
 - **Related:** [ADR-0002](./0002-cargo-delivery-core-loop-state.md) (deliveries),
   [ADR-0004](./0004-enemies-car-hostage-taker.md) (roster, unlock gate, `energy`),
   `docs/architecture.md`, `docs/diagrams/app-phase-flow.md`,

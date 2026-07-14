@@ -60,7 +60,7 @@ optional fields:
 
 ```ts
 /**
- * Intent token for a code-drawn animated gesture illustration (ADR-0019). Pure data:
+ * Intent token for a code-drawn animated gesture illustration (ADR-0020). Pure data:
  * the four values map 1:1 to render-side icons in `src/render/ui/GestureIcon.tsx`. The
  * game layer never draws — it only names the gesture. Device-correctness is STRUCTURAL:
  * `mouse-click`/`edge-scroll` live only on the desktop control segment, `two-finger-tap`/
@@ -73,7 +73,7 @@ added to `NarrativeLine`:
 
 ```ts
   /**
-   * Optional code-drawn gesture icon shown in the same slot as `image` (ADR-0019).
+   * Optional code-drawn gesture icon shown in the same slot as `image` (ADR-0020).
    * MUTUALLY EXCLUSIVE with `image` — a panel sets one or the other, never both. The
    * render layer draws the matching animated SVG/CSS icon; no sprite is referenced, so
    * this triggers no asset generation (ADR-0012 D5 guarantee preserved).

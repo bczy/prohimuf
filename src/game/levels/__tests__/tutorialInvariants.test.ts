@@ -20,7 +20,7 @@ import {
 const VARIANTS = [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE] as const;
 // Every exported scene: both tutorial variants + all pre/post-level narrative. The
 // gesture/image invariants below sweep this so a future pre/post-level line that pairs a
-// gesture with an image, or sets a gesture without an alt, fails CI (ADR-0019).
+// gesture with an image, or sets a gesture without an alt, fails CI (ADR-0020).
 const ALL_SCENES = [
   ...VARIANTS,
   ...Object.values(PRE_LEVEL_NARRATIVE),
@@ -76,7 +76,7 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
-  it("keeps both variants at the expanded 11-panel count (ADR-0019)", () => {
+  it("keeps both variants at the expanded 11-panel count (ADR-0020)", () => {
     for (const variant of VARIANTS) {
       expect(variant.lines).toHaveLength(11);
     }
@@ -88,7 +88,7 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     // Progress-dot parity: both variants have the same panel count.
     expect(desktop.lines.length).toBe(mobile.lines.length);
     // Shared segments are the SAME objects by reference — zero copy duplication
-    // (opening [0,1] + expanded field [4..10], ADR-0019).
+    // (opening [0,1] + expanded field [4..10], ADR-0020).
     for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10]) {
       expect(desktop.lines[i]).toBe(mobile.lines[i]);
     }
@@ -120,7 +120,7 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
-  it("sets gesture and image as mutually exclusive on every line (ADR-0019)", () => {
+  it("sets gesture and image as mutually exclusive on every line (ADR-0020)", () => {
     for (const scene of ALL_SCENES) {
       for (const line of scene.lines) {
         expect(line.gesture !== undefined && line.image !== undefined).toBe(false);
@@ -128,7 +128,7 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
-  it("carries gestures only on the forked control panels [2,3] (ADR-0019)", () => {
+  it("carries gestures only on the forked control panels [2,3] (ADR-0020)", () => {
     for (const variant of VARIANTS) {
       variant.lines.forEach((line, i) => {
         if (i === 2 || i === 3) {
@@ -140,14 +140,14 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
-  it("selects device-correct gesture values per variant (ADR-0019)", () => {
+  it("selects device-correct gesture values per variant (ADR-0020)", () => {
     expect(TUTORIAL_NARRATIVE_DESKTOP.lines[2]?.gesture).toBe("mouse-click");
     expect(TUTORIAL_NARRATIVE_DESKTOP.lines[3]?.gesture).toBe("edge-scroll");
     expect(TUTORIAL_NARRATIVE_MOBILE.lines[2]?.gesture).toBe("two-finger-tap");
     expect(TUTORIAL_NARRATIVE_MOBILE.lines[3]?.gesture).toBe("swipe-pan");
   });
 
-  it("provides an accessible gestureAlt wherever a gesture is set (ADR-0019)", () => {
+  it("provides an accessible gestureAlt wherever a gesture is set (ADR-0020)", () => {
     for (const scene of ALL_SCENES) {
       for (const line of scene.lines) {
         if (line.gesture !== undefined) {

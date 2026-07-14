@@ -223,7 +223,7 @@ export function NarrativeScreen({
         </div>
       )}
 
-      {/* Optional code-drawn animated gesture icon (ADR-0019): shown on the forked control
+      {/* Optional code-drawn animated gesture icon (ADR-0020): shown on the forked control
           panels in the SAME slot `image` uses. The two channels are normally mutually exclusive
           (Lane A guarantees it), but the gate also acts as the image degradation fallback: if a
           panel carries BOTH and the image 404s (`imageError`), the drawable gesture is rendered

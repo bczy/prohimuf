@@ -2,7 +2,7 @@ import type { CSSProperties, JSX } from "react";
 import type { GestureKind } from "@game/systems/narrativeSystem";
 
 /**
- * Code-drawn, animated gesture icons for the tutorial control panels (ADR-0019).
+ * Code-drawn, animated gesture icons for the tutorial control panels (ADR-0020).
  *
  * Every pixel lives here in the render layer — no sprite, no asset generation. Each icon is
  * fanzine B&W line art (inert décor) plus exactly ONE acid-neon element that glows (the part
@@ -14,7 +14,7 @@ import type { GestureKind } from "@game/systems/narrativeSystem";
  * The `Record<GestureKind, …>` is exhaustive over the closed `GestureKind` union: every value
  * resolves to an icon (a fifth `GestureKind` fails the render build until its icon exists), so no
  * unknown value can reach here through the type. The absent-gesture (text-only) case is the
- * caller's `gesture !== undefined` gate — never a broken slot (ADR-0019).
+ * caller's `gesture !== undefined` gate — never a broken slot (ADR-0020).
  */
 
 const NEON = "#ffe600";
@@ -545,7 +545,7 @@ const ICONS: Record<GestureKind, () => JSX.Element> = {
 /**
  * Renders the animated code-drawn icon for `kind`. The `ICONS` map is exhaustive over
  * `GestureKind`, so every value resolves to an icon (a fifth value would fail the build) —
- * the "never a broken slot" guarantee (ADR-0019) is upheld at compile time here, and the
+ * the "never a broken slot" guarantee (ADR-0020) is upheld at compile time here, and the
  * absent-gesture text-only fallback is handled by the caller's `gesture !== undefined` gate.
  * The caller owns the accessible slot (`role="img"` + label); the SVG itself is `aria-hidden`.
  */
