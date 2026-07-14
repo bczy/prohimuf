@@ -47,7 +47,7 @@
  */
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { execFileSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,9 +63,12 @@ const HOT_B = 150;
 // Smallest largest-component that counts as a real flash; below this → null.
 const MIN_COMPONENT_PX = 50;
 
-// Hand-authored anchors, keyed by frame FILE name. They take precedence over
-// detection: use them for frames whose baked flash was deliberately erased by
-// the retouch pass (ADR-0018 iter-3) so the glow must sit on the gun itself.
+// Hand-authored FALLBACK anchors, keyed by frame FILE name. They apply only
+// when detection finds no flash (measureAnchor returns null): use them for
+// frames whose baked flash was deliberately erased by the retouch pass
+// (ADR-0018 iter-3) so the glow sits on the gun itself. A regenerated sprite
+// with a real detectable flash always wins over the hand value — the fresh
+// measurement is the point of re-running this tool.
 //   enemy_shooting_3.png — floating flash star erased; anchor = pistol muzzle
 //   tip measured on the gunmetal barrel end (graphist, iter-3).
 const MANUAL_ANCHORS = {
@@ -242,8 +245,7 @@ async function main() {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, W, H).data;
-      const manual = MANUAL_ANCHORS[name];
-      const anchor = manual ?? measureAnchor(data, W, H);
+      const anchor = measureAnchor(data, W, H) ?? MANUAL_ANCHORS[name] ?? null;
       anchors.push(anchor);
       rows.push([name, anchor]);
       if (preview) tiles.push({ name, img, W, H, anchor });
@@ -295,7 +297,13 @@ async function main() {
   console.log(`\n[write] updated ${path.relative(ROOT, LEVEL_ART)} (prettier-normalized)`);
 }
 
-main().catch((e) => {
-  console.error("[measure-muzzle-anchors] Fatal:", e.message);
-  process.exit(1);
-});
+// Only run the CLI when executed directly — the file exports measureAnchor()
+// for tests/tooling, and importing it must never rewrite levelArt.json.
+const isMain =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((e) => {
+    console.error("[measure-muzzle-anchors] Fatal:", e.message);
+    process.exit(1);
+  });
+}

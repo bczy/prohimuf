@@ -6,7 +6,7 @@ import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import { getEnemyTexture, frameCountFor, enemyAnimFps, muzzleFor } from "./enemyTextures";
+import { resolveEnemyTexture, frameCountFor, enemyAnimFps, muzzleFor } from "./enemyTextures";
 import { flipbookFrame } from "./flipbook";
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
@@ -95,12 +95,10 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
       mesh.scale.set(aspect, 1, 1);
     }
 
-    const muzzleX = planeH * aspect * 0.45;
-
     // Texture for this kind/variant/state (shared cache; new-type sprites fall
     // back to the normal cop until they exist). The flipbook advances via the
     // per-state clock; HIT pins frame 1 since the white flash dominates and a
-    // missing `_f2` frame degrades to frame 1 inside getEnemyTexture.
+    // missing `_f2` frame degrades to frame 1 inside resolveEnemyTexture.
     const variant = (slotIndex % archetype.variants) + 1;
     const shooting = enemy.state === "SHOOTING";
     animClockRef.current += delta;
@@ -112,10 +110,10 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
             frameCountFor(enemy.kind, variant, shooting),
             enemyAnimFps(),
           );
-    const tex = getEnemyTexture(enemy.kind, variant, shooting, frame);
+    const resolved = resolveEnemyTexture(enemy.kind, variant, shooting, frame);
     const mat = mesh.material as MeshBasicMaterial;
-    if (tex !== null && mat.map !== tex) {
-      mat.map = tex;
+    if (resolved !== null && mat.map !== resolved.texture) {
+      mat.map = resolved.texture;
       mat.needsUpdate = true;
     }
 
@@ -130,12 +128,17 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
         flash.visible = true;
         // Prefer the sprite's baked-in per-frame muzzle anchor (normalized
         // top-left tex coords) so the additive glow lands on the gun regardless
-        // of which way this sprite aims; fall back to the fixed right-side offset
-        // when the frame has no anchor. Uses the SAME `frame` as the displayed
-        // texture. The flash is a world-space sibling centred on
-        // (screenPosition.x, bodyY); the body plane is a square planeH scaled by
-        // `aspect` on X.
-        const m = muzzleFor(enemy.kind, variant, true, frame);
+        // of which way this sprite aims. The anchor is a pixel position of a
+        // specific image, so it is keyed to the frame the texture ACTUALLY
+        // displays (resolved.frame) — while a `_f2` file is still loading the
+        // frame-1 anchor is used, and the global fallback sprite (a different
+        // figure) gets the legacy fixed right-side offset instead. The flash is
+        // a world-space sibling centred on (screenPosition.x, bodyY); the body
+        // plane is a square planeH scaled by `aspect` on X.
+        const m =
+          resolved !== null && resolved.frame !== null
+            ? muzzleFor(enemy.kind, variant, resolved.frame)
+            : null;
         if (m !== null) {
           flash.position.set(
             screenPosition.x + (m.x - 0.5) * planeH * aspect,
@@ -143,7 +146,14 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
             0.6,
           );
         } else {
-          flash.position.set(screenPosition.x + muzzleX, bodyY + muzzleY, 0.6);
+          // Fixed-offset fallback: only reachable when the anchor data or the
+          // sprite itself is missing (regenerated asset without re-measured
+          // anchors, or the global fallback figure).
+          flash.position.set(
+            screenPosition.x + planeH * aspect * 0.45,
+            bodyY + muzzleY,
+            0.6,
+          );
         }
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);

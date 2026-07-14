@@ -74,3 +74,17 @@ img2img** from the committed frame 1 as the primary consistency lock, with a
 - **Consistency risk on the fallback path:** when kontext is unavailable the
   matched-pair fallback overwrites the accepted frame 1; that pair is routed
   through the human art gate in the PR before it can land.
+
+## Amendment (2026-07-14) — per-frame `muzzle` anchors
+
+Shooting entries in the `enemies` manifest block carry an OPTIONAL `muzzle`
+array, index-aligned with `frames` (element i anchors frame i+1):
+`"muzzle": [ { "x": 0.829, "y": 0.251 }, null ]` — normalized [0..1] texture
+coordinates from the PNG top-left, `null` = no anchor for that frame. They are
+MEASUREMENTS of the committed pixels (baked flash-core centroid), written by
+`scripts/measure-muzzle-anchors.mjs` (re-run by `gen-sprites.yml` after any
+regeneration) and consumed by `muzzleFor()` in
+`src/render/scene/enemyTextures.ts` to place the additive muzzle glow;
+`EnemySprite` keys the anchor to the frame the texture cache ACTUALLY resolved
+(frame-N → frame-1 → fixed-offset fallback), mirroring the fallback chain
+above. See `docs/asset-pipeline.md` § Enemy muzzle-flash anchors.
