@@ -125,6 +125,30 @@ cp .env.example .env
 
 ---
 
+## Audio credits / licences
+
+Les cinq pistes de musique (BGM) sont de **Kevin MacLeod** (incompetech.com),
+sous licence **Creative Commons: By Attribution 4.0 (CC-BY 4.0)** — l'attribution
+est obligatoire. La source de vérité est le fichier livré avec le build :
+[`public/assets/audio/CREDITS.md`](./public/assets/audio/CREDITS.md).
+
+| Fichier           | Titre         | Auteur        | Licence   |
+| ----------------- | ------------- | ------------- | --------- |
+| `bgm_loop.mp3`    | Funky Chunk   | Kevin MacLeod | CC-BY 4.0 |
+| `bgm_loop2.mp3`   | Ouroboros     | Kevin MacLeod | CC-BY 4.0 |
+| `bgm_tension.mp3` | Sneaky Snitch | Kevin MacLeod | CC-BY 4.0 |
+| `bgm_danger.mp3`  | Darkest Child | Kevin MacLeod | CC-BY 4.0 |
+| `bgm_win.mp3`     | Reformat      | Kevin MacLeod | CC-BY 4.0 |
+
+Attribution (norme CC-BY 4.0), ex. : `"Funky Chunk" Kevin MacLeod
+(incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 —
+https://creativecommons.org/licenses/by/4.0/`
+
+`shoot.wav` est de **provenance inconnue** et signalé pour remplacement — voir
+[`CREDITS.md`](./public/assets/audio/CREDITS.md) pour le détail de l'enquête.
+
+---
+
 ## Licence
 
 Projet personnel / prototype — voir le dépôt pour les détails.

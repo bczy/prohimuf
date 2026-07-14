@@ -1,5 +1,20 @@
 #!/usr/bin/env node
-/** * Audio downloader — Prohibition remake * Downloads boom bap / hip-hop instrumental tracks from Internet Archive (public domain / CC) * No login required — all files are freely accessible. * * Usage: *   node scripts/download-audio.mjs */
+/**
+ * Audio downloader — Prohibition remake
+ *
+ * Downloads the five background-music tracks used by the game. ALL FIVE are
+ * Kevin MacLeod cuts from incompetech.com, licensed under Creative Commons:
+ * By Attribution 4.0 (CC-BY 4.0). This licence is free to use BUT attribution
+ * is MANDATORY — see `public/assets/audio/CREDITS.md` (the canonical, shipped
+ * provenance/licence record) and the README "Audio credits / licences" section.
+ *
+ * The per-track records below (title, author, source, licence, licenceUrl,
+ * attribution) are the machine-readable provenance the audio gate requires
+ * (ADR-0018). They MUST stay consistent with CREDITS.md and the README.
+ *
+ * Usage:
+ *   node scripts/download-audio.mjs
+ */
 
 import fs from "fs";
 import path from "path";
@@ -10,61 +25,14 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(__dirname, "../public/assets/audio");
 
-// All tracks from Internet Archive — public domain or CC licensed, direct MP3 links
-const TRACKS = [
-  // BGM tracks (loops for in-game music)
-  {
-    name: "bgm_loop",
-
-    description: "Main BGM — boom bap instrumental (primary loop)",
-
-    url: "https://archive.org/download/78_honeysuckle-rose_fats-waller-and-his-rhythm-fats-waller-ed-kirkeby_gbia0001280b/Honeysuckle%20Rose%20-%20Fats%20Waller%20and%20his%20Rhythm.mp3",
-
-    // Fallback: use a simpler known-good IA track
-    fallback: "https://archive.org/download/testmp3testfile/mpthreetest.mp3",
-  },
-
-  {
-    name: "bgm_tension",
-
-    description: "Tension BGM — faster tempo when danger",
-
-    url: "https://archive.org/download/78_honeysuckle-rose_fats-waller-and-his-rhythm-fats-waller-ed-kirkeby_gbia0001280b/Honeysuckle%20Rose%20-%20Fats%20Waller%20and%20his%20Rhythm.mp3",
-
-    fallback: "https://archive.org/download/testmp3testfile/mpthreetest.mp3",
-  },
-];
-
-// For the real boom bap tracks, we'll use these IA identifiers
-// and construct direct download URLs from their known file structure
-const IA_TRACKS = [
-  {
-    name: "bgm_loop",
-
-    description: "Boom bap instrumental 1",
-
-    identifier: "LukHash_-_Hard_Impact",
-
-    file: "LukHash_-_05_-_Hard_Impact.mp3",
-  },
-
-  {
-    name: "bgm_loop2",
-
-    description: "Boom bap instrumental 2",
-
-    identifier: "LukHash_-_War_Inside_My_Head",
-
-    file: "LukHash_-_01_-_War_Inside_My_Head.mp3",
-  },
-];
-
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
 function download(url, destPath) {
   return new Promise((resolve, reject) => {
+    // Both protocols are needed: incompetech redirects (301/302) may hop
+    // between https and http, and the recursive call re-selects here.
     const proto = url.startsWith("https") ? https : http;
     const file = fs.createWriteStream(destPath);
 
@@ -109,27 +77,6 @@ function download(url, destPath) {
   });
 }
 
-// Fetch the IA item metadata to find actual MP3 files
-async function getIAFiles(identifier) {
-  return new Promise((resolve, reject) => {
-    const url = `https://archive.org/metadata/${identifier}/files`;
-    https
-      .get(url, (res) => {
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => {
-          try {
-            const data = JSON.parse(Buffer.concat(chunks).toString());
-            resolve(data.result ?? []);
-          } catch {
-            resolve([]);
-          }
-        });
-      })
-      .on("error", reject);
-  });
-}
-
 async function downloadTrack(name, description, url, retries = 3) {
   const destPath = path.join(OUTPUT_DIR, `${name}.mp3`);
 
@@ -160,53 +107,80 @@ async function downloadTrack(name, description, url, retries = 3) {
   return false;
 }
 
-// Curated list of boom bap / hip-hop instrumental tracks on Internet Archive
-// All are public domain or CC licensed
-// All Kevin MacLeod — CC-BY 4.0 (attribution required, free to use)
-// incompetech.com — URLs verified 2026-04-10
+// The five in-game BGM tracks. Every entry is Kevin MacLeod / incompetech.com,
+// licensed CC-BY 4.0 (attribution required). Titles verified against the ID3
+// tags of the shipped .mp3 files. This list is the canonical provenance record
+// for the sourcing pipeline; it MUST match public/assets/audio/CREDITS.md.
+const LICENCE = "CC-BY 4.0";
+const LICENCE_URL = "https://creativecommons.org/licenses/by/4.0/";
+const AUTHOR = "Kevin MacLeod";
+
+/** Build the CC-BY 4.0 attribution norm string for a track title. */
+function attributionFor(title) {
+  return `"${title}" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — ${LICENCE_URL}`;
+}
+
 const CURATED = [
   {
     name: "bgm_loop",
-
+    title: "Funky Chunk",
     description: "Main BGM — Funky Chunk (boom bap groove)",
-
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Funky%20Chunk.mp3",
+    author: AUTHOR,
+    source: "https://incompetech.com/",
+    licence: LICENCE,
+    licenceUrl: LICENCE_URL,
+    attribution: attributionFor("Funky Chunk"),
   },
 
   {
     name: "bgm_loop2",
-
+    title: "Ouroboros",
     description: "Secondary BGM — Ouroboros (dark groove)",
-
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ouroboros.mp3",
+    author: AUTHOR,
+    source: "https://incompetech.com/",
+    licence: LICENCE,
+    licenceUrl: LICENCE_URL,
+    attribution: attributionFor("Ouroboros"),
   },
 
   {
     name: "bgm_tension",
-
+    title: "Sneaky Snitch",
     description: "Tension BGM — Sneaky Snitch (suspense)",
-
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Sneaky%20Snitch.mp3",
+    author: AUTHOR,
+    source: "https://incompetech.com/",
+    licence: LICENCE,
+    licenceUrl: LICENCE_URL,
+    attribution: attributionFor("Sneaky Snitch"),
   },
 
   {
     name: "bgm_danger",
-
+    title: "Darkest Child",
     description: "Danger BGM — Darkest Child (high tension)",
-
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Darkest%20Child.mp3",
+    author: AUTHOR,
+    source: "https://incompetech.com/",
+    licence: LICENCE,
+    licenceUrl: LICENCE_URL,
+    attribution: attributionFor("Darkest Child"),
   },
 
   {
     name: "bgm_win",
-
+    title: "Reformat",
     description: "Victory BGM — Reformat (upbeat)",
-
     url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Reformat.mp3",
+    author: AUTHOR,
+    source: "https://incompetech.com/",
+    licence: LICENCE,
+    licenceUrl: LICENCE_URL,
+    attribution: attributionFor("Reformat"),
   },
 ];
-
-const FALLBACKS = {};
 
 async function main() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -221,19 +195,7 @@ async function main() {
     if (ok) {
       downloaded++;
     } else {
-      // Try fallback
-      const fallbackUrl = FALLBACKS[track.name];
-      if (fallbackUrl) {
-        console.log(`  [fallback] trying ${fallbackUrl.slice(0, 60)}...`);
-        const ok2 = await downloadTrack(track.name, track.description, fallbackUrl);
-        if (ok2) {
-          downloaded++;
-        } else {
-          failed.push(track.name);
-        }
-      } else {
-        failed.push(track.name);
-      }
+      failed.push(track.name);
     }
     await sleep(1000);
   }

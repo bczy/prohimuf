@@ -52,6 +52,23 @@ Template:
   rule this satisfies — a back-reference in the story suffices. (Winston / Senior Architect)
 - release: pending.
 
+- release: dev-tooling-assets lane done (no commit by dev). File List: scripts/download-audio.mjs
+  (dead TRACKS/IA_TRACKS/FALLBACKS/getIAFiles removed, true CC-BY 4.0 header, per-track
+  provenance records), public/assets/audio/CREDITS.md (NEW, canonical credits — 5 BGM
+  records + explicit "UNKNOWN PROVENANCE — flagged for replacement" entry for shoot.wav
+  with evidence), README.md (§Audio credits pointing to CREDITS.md). ID3-verified titles:
+  Funky Chunk / Ouroboros / Sneaky Snitch / Darkest Child / Reformat, all Kevin MacLeod.
+  node --check OK, lint/tsc/test (208/208)/build green; CREDITS.md proven in dist/.
+  (Amelia, tooling lane)
+- AUDIO GATE (AC8, Malik 🎧, first activation): per-asset — 5 BGM PASS (ID3 spot-checked
+  himself, CC-BY 4.0 norm strings complete and identical across CREDITS/README/script);
+  shoot.wav FAIL (RIFF has no INFO/authorship chunks, no generator script, entered at
+  root commit 7db7d6b — provenance unknowable, automatic FAIL per gate-1 licence rule).
+  Composite gate outcome: FAIL surfaced honestly; remediation already recorded (flag in
+  CREDITS.md, AC7 second branch). ESCALATION to Bertrand: (1) replace SFX in follow-up
+  story [Malik recommends], (2) temporary waiver with the shipped flag, (3) remove SFX
+  (audible-behaviour change, would trip behaviour gate). Decision requested at merge.
+
 ---
 
 ### story-live-neon-rim
