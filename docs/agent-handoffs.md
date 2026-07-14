@@ -2858,3 +2858,27 @@ paydown — ZERO behaviour change is the whole point.
 - Post-fix gate: vitest 235 green, all four --check fixpoints PASS, zero PNG byte,
   tsc + prettier clean. No CONFIRMED blocker remains — cleared for merge gate.
   (Orchestrator applying Winston's exact fix list)
+- pm acceptance (John, stage 8): **ACCEPTED.** All 7 ACs verified from the shipped
+  artifacts (not on the crew's word): AC1 — `scripts/lib/morphology.mjs` is the single
+  implementation (8 exported primitives), the 6 in-scope consumers import it, definition-
+  scoped grep finds ZERO surviving primitive defs outside the lib (QA D1 clean after the
+  round-1 zoneMask fix), cutout-enemies exempt with the pointer comment + computeDeletions
+  local flood both recorded in AC1. AC2 — QA quality gate PASS, HARD ACCEPTANCE LINE holds
+  (fixpoints §1, replay §2, levelArt §3, integrity §4 all byte-frozen). R1→R1′ amendment
+  reviewed and judged a legitimate criterion CORRECTION, not a softening: the original R1
+  was proven unsatisfiable independent of the refactor (identical HEAD divergence under
+  pre-refactor AND landed code — it measured ADR-0019 hand-authored production history,
+  not pipeline behaviour); R1′ (old-code-replay ≡ new-code-replay on the same c79dfda
+  input, with R2 proving non-zero real transforms ran) is a STRONGER isolation of "the
+  extraction changed no behaviour", dated + logged in two places, dev's flag independently
+  reproduced. AC3 — matches shipped API (labelComponents carries the explicit 4|8 option,
+  largestComponent/fillHoles 4-conn-only by design + documented at call sites) after the
+  panel-triage rewording. AC4 — `scripts/lib/__tests__/morphology.test.mjs` wired into the
+  single vitest run via `vitest.config.ts` (235 green, was 208), coverage include still
+  exactly `src/game/**/*.ts` so the src/game gate is unweakened. AC5 — SCRIPTS.md §lib/
+  morphology.mjs present, Re-sync directive removed. AC6 — tsc/vitest/lint/prettier green.
+  AC7 — 4-reviewer panel passed, Winston triage left zero CONFIRMED blocker. Scope clean
+  vs PROJECT_GUIDELINES: pure §2 DRY debt paydown, cahier-des-charges N/A (correctly
+  stated), core loop untouched, diff confined to `scripts/**` + `vitest.config.ts` +
+  `docs/**` + `_bmad-output/**` (QA B1/B2: zero `src/game`/`src/render`/`src/hooks` byte,
+  zero PNG/levelArt churn). Story shippable — clear to stage 9 (merge). (John / PM)
