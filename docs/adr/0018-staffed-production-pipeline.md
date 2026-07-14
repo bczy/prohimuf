@@ -50,9 +50,9 @@ on. The BMAD side stays on installed BMM skills; the agents prefer the official 
 
 ## Consequences
 
-- A feature now has ONE path, hand to hand, with five blocking gates (design, prompt,
-  asset, composite+audio, quality) plus the architect sign-off and the 4-skill
-  code-review panel; nothing merges on an author's word alone.
+- A feature now has ONE path, hand to hand, with six blocking gates (design, prompt,
+  asset, composite, audio, quality) plus the design-acceptance verdict, the architect
+  sign-off and the 4-skill code-review panel; nothing merges on an author's word alone.
 - More process per feature: for gameplay/fiction stories, two design deliverables and
   two extra verdicts (design gate, design acceptance) precede and follow the build.
   The explicit-skip rule keeps pure tooling changes lightweight.

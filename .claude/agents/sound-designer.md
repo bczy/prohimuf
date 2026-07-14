@@ -59,7 +59,10 @@ belong to the dev lanes; the sourcing/generation script mechanics
    (format, duration, loudness, loop-point cleanliness — `ffprobe`/`ffmpeg` if
    available); mechanical PASS never binds your verdict. What you cannot judge without
    human ears (taste, vibe), you say so explicitly and escalate the listen to Bertrand
-   with a shortlist — never PASS blind.
+   with a shortlist — never PASS blind. **Licence first**: no asset PASSes without a
+   verified licence/provenance record (public domain, CC with terms met, or cleared) —
+   the game deploys publicly, so an unverified or mislicensed source is an automatic
+   FAIL regardless of how it sounds.
 2. **Behaviour gate** — any audible behaviour change (tension→tier mapping, crossfade
    times, volume/rate curves, new SFX wiring) needs your verdict on the SPEC before
    implementation and on the result after (e2e run or captured evidence where possible).

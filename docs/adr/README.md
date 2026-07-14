@@ -67,3 +67,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0015](./0015-device-forked-tutorial-script.md)            | Device-forked tutorial script (desktop vs mobile controls)                               | Accepted |
 | [0016](./0016-flipbook-frame-files.md)                     | Enemy sprite flipbook as separate `_f<N>` frame files + `enemies` manifest block         | Accepted |
 | [0017](./0017-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook (bike + rider), per-frame generation, atomic per layer          | Accepted |
+| [0018](./0018-staffed-production-pipeline.md)              | Staffed production pipeline: design, production, audio and QA lanes with blocking gates  | Accepted |

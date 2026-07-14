@@ -1508,3 +1508,18 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   GATE funnelling checks + composite/audio gates + design acceptance into one verdict
   before INTEGRATE. Decision recorded as ADR-0018 (staffed production pipeline).
   Roster: 15 agents. Mermaid diagram updated. (Orchestrator)
+- review-panel: 4 parallel reviewers (consistency/code-review-high, acceptance-audit/
+  bmad-code-review, edge-case-hunter, security-review) on the full branch diff;
+  24 consolidated findings triaged by senior-architect (adversarial verification
+  against the real files). Verdict: 3 CONFIRMED MAJEUR (blocking) — ADR-0018 missing
+  from the ADR index; COMPOSITE GATE had no viable FAIL route (routed to concept-artist
+  for a src/render defect); new AUDIO GATE had no licence/provenance criterion — plus
+  19 CONFIRMED MINEUR, 1 REFUTED (tool-grant premise wrong: pm has WebSearch),
+  1 OUT-OF-SCOPE (pre-existing prompt-gate cap behaviour). ALL confirmed findings
+  fixed in-branch (blocking set + minors batched: gate lists, FAIL/reject edges,
+  cap semantics + cycle definition, skip authority, QA waiver/dispute arbitration,
+  producer serialisation wording, merge-authority wording, docs/index.md rows,
+  lead-game-designer Bash dropped). ESCALATION to Bertrand/pm (separate ticket,
+  pre-existing, NOT fixed by this branch): scripts/download-audio.mjs labels its
+  sources "public domain / CC" but its lists fetch copyrighted LukHash tracks —
+  live IP risk on the public deploy. (Panel + Winston triage, orchestrator applied)

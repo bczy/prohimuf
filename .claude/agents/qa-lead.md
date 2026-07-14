@@ -81,4 +81,8 @@ prefer its QA workflows (`test-design`, `playtest-plan`, `test-review`). Load
 On activation: read the story, the gated design spec, `docs/qa/README.md` and the
 relevant test plan (or write it), then run the plan and verdict. If the plan cannot
 run in the sandbox (CI-only path), say exactly what remains unverified — an unrun
-check is a hole in the verdict, never a PASS.
+check is a hole in the verdict, never a PASS. A hole that CANNOT run in the sandbox
+is named as CI-DEFERRED and escalated via `producer`; only Bertrand may waive it —
+the gate does not deadlock, it escalates. If a dev lane disputes a test spec's
+feasibility (e.g. "this scenario is unautomatable"), `senior-architect` arbitrates
+and Bertrand tie-breaks.

@@ -27,7 +27,8 @@ but they **always coordinate** through this protocol. Read this before acting.
 
 Every feature traverses the SAME pipeline, stage by stage, each stage with one owner and
 an explicit hand-off logged in `docs/agent-handoffs.md`. A stage that does not apply is
-skipped EXPLICITLY (say so in the log), never silently.
+skipped EXPLICITLY (the agent holding the hand at that point declares the skip and logs
+it; `producer` verifies every skip is explicit), never silently.
 
 ```
 0. INTAKE     Bertrand → pm : intent, bug, or idea.
@@ -61,14 +62,17 @@ skipped EXPLICITLY (say so in the log), never silently.
 7. REVIEW     CODE-REVIEW PANEL — 4 parallel skills, findings adversarially
               verified (mandatory before any merge to main — see below).
 8. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
-9. MERGE      Bertrand (or his standing instruction) — merge to main; the full
-              cycle is traceable in docs/agent-handoffs.md.
+9. MERGE      Bertrand (or an EXPLICIT merge instruction from him for this
+              branch — a general standing preference is never merge authority) —
+              merge to main; the full cycle is traceable in docs/agent-handoffs.md.
 ```
 
 The pipeline is DRIVEN by `producer` (Marion): she tracks which stage every feature is
 in and who has the hand, chases missing log entries, enforces the bounded-iteration caps
-(2 rework rounds per spec, 2 generation batches per asset set), serialises contended
-seams, and assembles escalation packets for Bertrand when a cap is hit or a lane stalls.
+(2 rework rounds per spec, 2 generation batches per asset set, 2 verify↔build rework
+rounds per story; a "cycle" = one pass of a story through the pipeline, and only Marion
+declares a reset), serialises contended seams, and assembles escalation packets for
+Bertrand when a cap is hit or a lane stalls.
 She holds no gate and authors no content — the orchestrator launches agents, Marion
 keeps the state honest. Visual companion: `docs/diagrams/agent-workflows.md` (the
 pipeline as one mermaid flowchart).
@@ -115,8 +119,10 @@ calls), each reviewer applying a **different review skill** so the methods stay 
 Protocol: reviewers are **read-only** and report findings as
 `[BLOQUANT|MAJEUR|MINEUR] + file:line + concrete failure scenario`. Every non-trivial
 finding is then **adversarially verified** (a skeptic agent tries to refute it against the
-real code); only CONFIRMED findings are acted on. `senior-architect` triages, applies or
-rejects-with-reason, re-runs `rtk tsc` + `rtk vitest` + `rtk lint`. The panel outcome
+real code); only CONFIRMED findings are acted on. `senior-architect` triages and
+prescribes fixes or rejects-with-reason; the OWNING lane applies them (the architect
+never implements feature code himself); then `rtk tsc` + `rtk vitest` + `rtk lint`
+re-run, and the panel re-runs if the diff changed materially. The panel outcome
 (findings → verdict → action) is logged in `docs/agent-handoffs.md` and summarized in the
 PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
 
@@ -147,13 +153,18 @@ lead-art ASSET GATE (PASS/FAIL per sprite vs docs/art-direction.md;
                      mechanical gate passing does not bind the verdict)
      ↓
 lead-art COMPOSITE GATE (Gate 4 — runtime-composed visuals only: neon rims, glows,
-                         additive/emissive effects. lead-art verdicts REAL in-game
-                         screenshots; an asset-gate PASS does NOT cover runtime
-                         composition. « un halo est un dégradé, jamais un aplat » —
-                         a binary-alpha glow with no falloff FAILs here)
+                         additive/emissive effects. Runs at pipeline stage 5 (VERIFY),
+                         on REAL in-game screenshots of the INTEGRATED build — never
+                         inline in the stage-4 art lane. An asset-gate PASS does NOT
+                         cover runtime composition. « un halo est un dégradé, jamais
+                         un aplat » — a binary-alpha glow with no falloff FAILs here)
      ↓
-FAIL → concept-artist iterates (one variable per roll, max 2 batches/cycle,
-        then escalate options to Bertrand) · PASS → pm/product acceptance
+FAIL (prompt/asset gates) → concept-artist iterates (one variable per roll,
+        max 2 batches/cycle, then escalate options to Bertrand)
+FAIL (composite gate) → dev-r3f-render (the composed visual is src/render code;
+        it re-enters the art flow only if the defect is in the source sprite's alpha)
+PASS → stage 5 (VERIFY) funnels into qa-lead's QUALITY GATE, then the pipeline
+        continues (integrate → review → pm acceptance)
 ```
 
 Every gate verdict is logged in `docs/agent-handoffs.md`.
@@ -171,6 +182,10 @@ only the source sprite. So:
 - The **orchestrator** routes those screenshots to `lead-art` for the composite gate
   (Gate 4) before merge. No screenshots reaching `lead-art` = the runtime visual is
   ungated = it does not merge.
+- A composite-gate **FAIL routes to `dev-r3f-render`** (the visual is render code,
+  not a prompt — regenerating a PNG cannot fix a falloff computed in `src/render`);
+  it goes back to `concept-artist` only when the defect is in the source sprite
+  itself (e.g. its alpha channel).
 
 ## The audio flow (any BGM/SFX asset or audible behaviour change)
 
@@ -180,7 +195,8 @@ game-designer (WHEN a cue fires + what it means — only if the cue is a gamepla
 sound-designer SPEC (what it sounds like: character, tier mapping, function —
                      "ce qui sonne informe": every cue is information)
      ↓
-sourcing/generation (dev-tooling-assets mechanics, e.g. scripts/download-audio.mjs)
+sourcing/generation (dev-tooling-assets mechanics, e.g. scripts/download-audio.mjs —
+                     each sourced asset carries a VERIFIED licence/provenance record)
      ↓
 sound-designer AUDIO GATE (PASS/FAIL per asset vs docs/audio-direction.md;
                            mechanical pre-checks — format, loudness, loop points —

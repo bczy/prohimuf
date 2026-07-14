@@ -28,9 +28,9 @@ flowchart TB
         DGATE -->|"FAIL"| ND
     end
 
-    PM -->|"story touches gameplay/fiction"| GD
-    PM -->|"story touches gameplay/fiction"| ND
-    PM -->|"pure tech / tooling story"| ARCH
+    PM -->|"gameplay/fiction story —<br/>Karim splits &amp; sequences first"| GD
+    PM -->|"gameplay/fiction story —<br/>Karim splits &amp; sequences first"| ND
+    PM -->|"no gameplay/fiction change<br/>(tech / tooling / art / audio only)"| ARCH
     DGATE -->|PASS| ARCH
 
     subgraph P3["3. TECH PLAN"]
@@ -85,12 +85,15 @@ flowchart TB
         GATE4{"lead-art · Nico 🎯<br/>COMPOSITE GATE (Gate 4)<br/>runtime visuals on REAL screenshots"}
         PLAY["game-designer · Sacha 🎮<br/>PLAYTEST vs the gated spec"]
         DACC{"lead-game-designer · Karim 🧭<br/>DESIGN ACCEPTANCE"}
+        SDV{"sound-designer · Malik 🎧<br/>behaviour verdict<br/>(audible changes)"}
         QGATE{"qa-lead · Inès 🧪<br/>QUALITY GATE<br/>plan ran and held"}
         CHECKS --> GATE4
+        CHECKS --> SDV
         CHECKS --> PLAY
         PLAY --> DACC
         CHECKS --> QGATE
         GATE4 -->|PASS| QGATE
+        SDV -->|PASS| QGATE
         DACC -->|PASS| QGATE
     end
 
@@ -109,7 +112,10 @@ flowchart TB
 
     QGATE -->|PASS| REVIEW
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
-    DACC -->|"FAIL → back to dev lane,<br/>or spec amended &amp; re-gated"| ARCH
+    GATE4 -->|"FAIL → dev-r3f-render<br/>(the composite is render code)"| ARCH
+    SDV -->|"FAIL → owning dev lane,<br/>or spec re-gated via Malik"| ARCH
+    DACC -->|"FAIL → back to dev lane"| ARCH
+    DACC -->|"spec amended &amp; re-gated"| DGATE
 
     subgraph P8["8. ACCEPT"]
         ACCEPT["pm · John 📋<br/>acceptance vs story<br/>+ PROJECT_GUIDELINES"]
@@ -117,6 +123,7 @@ flowchart TB
 
     PANEL -->|"zero CONFIRMED blocking/major"| ACCEPT
     ACCEPT -->|"9. MERGE to main"| B
+    ACCEPT -->|"reject → owning lane"| ARCH
 
     LOG[("docs/agent-handoffs.md<br/>every hand-off + gate verdict")]
     PROD -.->|"tracks stages, chases missing entries,<br/>enforces caps, serialises shared seams"| LOG
@@ -137,7 +144,7 @@ flowchart TB
     classDef audio fill:#ffe4cc,stroke:#c05621,color:#000
     classDef ci fill:#e2e2e2,stroke:#666,color:#000
     classDef prod fill:#e9d8fd,stroke:#6b46c1,color:#000
-    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE gate
+    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE,SDV gate
     class R3F,GAME,TOOL dev
     class ADV,CONCEPT,PREPROD,TECH art
     class GD,ND,PLAY design
