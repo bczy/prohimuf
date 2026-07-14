@@ -1,0 +1,25 @@
+{
+  "info": {
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 800
+    },
+    "texts": [
+      "score",
+      "0000",
+      "niveau",
+      "Rue Belliard",
+      "vague",
+      "1",
+      "temps",
+      "90s",
+      "vies",
+      "♥♥♥"
+    ]
+  },
+  "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}
