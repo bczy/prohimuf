@@ -110,6 +110,14 @@ serves, **not** in `src/hooks/`. Putting it in `src/hooks/` would dilute that fo
 defined purpose (the game↔R3F bridge). This follows the shipped grain: `NarrativeScreen`
 already owns its own `window` keydown listener as render-local state.
 
+> **Amendment (PR #47 merge-gate triage, 2026-07-14).** "Escape-to-title" above is decided
+> here but was not realized in the first pass. It is implemented as an **`App.tsx` MENU-phase
+> `window` keydown effect** (`appPhase === "MENU"` → `setAppPhase("TITLE")`), mirroring the
+> existing PLAYING Escape effect — **not** inside `MainMenu` or `useRovingIndex`. This keeps
+> `MainMenu`'s Props frozen and stays render-layer, satisfying D4's intent while realizing the
+> transition where the phase lives. Recorded so a reader looking for "Escape-to-title" finds it
+> in `App.tsx`, not the nav hook.
+
 ### D5 — What this ADR does **not** change
 
 - `NarrativeScreen` **behaviour, scripts and three call sites are frozen** (typewriter,
@@ -162,3 +170,14 @@ already owns its own `window` keydown listener as render-local state.
   automatic FAIL against §2bis — grep the diff at the design-acceptance gate.
 - `FullscreenButton` must stay neutral — reskinning it to ink would break its correctness over
   the glowing game world (ADR-0008).
+- **Contrast claim (amended, PR #47 triage).** Black ink on the **fluo** stocks is **AA
+  (≥ 4.5:1), not AAA ≥ 7:1** — rose `#FF4FA3` = 6.14:1, orange `#F5762A` = 6.68:1; the ≥ 7:1
+  figure holds only on the newsprint / manila grounds. Any "≥ 7:1 on each stock" claim in
+  `tokens.ts` / `art-direction.md` §2bis.1 is corrected accordingly.
+- **Mark inks are keyline/shape tells, never small text on a same-hue stock (amended, PR #47
+  triage).** A marker/stamp ink (`MARK.*`) used as small label or score text on a print stock
+  of the same family is effectively invisible (FACILE green on rose = 1.01:1; DIFFICILE pink on
+  orange = 1.68:1). The hue must live in the **keyline / stamp shape / `MarkerCircle` stroke**;
+  the text stays `INK.black`/`INK.full` (or reversed on a filled chip). The black keyline alone
+  does not rescue mark-ink _text_. Grep new pre-game surfaces for `color: MARK.` on a stock
+  ground at the design-acceptance gate.
