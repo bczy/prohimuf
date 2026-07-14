@@ -197,11 +197,11 @@ enemy set carried forward.
 | `HIT_RADIUS`          | 0.8   | **game** (rule — hit disc)      | `src/game/systems/bulletSystem.ts` (exists) |
 | `EXPLOSION_DURATION`  | 250ms | render                          | `src/render/effects/**`                     |
 | `EXPLOSION_SIZE_HIT`  | 1.4   | render (world diam)             | `src/render/effects/**`                     |
-| `EXPLOSION_SIZE_MISS` | 0.7   | render (world diam)             | `src/render/effects/**`                     |
+| `EXPLOSION_SIZE_MISS` | 0.9   | render (world diam)             | `src/render/effects/**` (0.7→0.9 per D3.5)  |
 | `TARGET_BASE_DROP`    | 0.45  | render (hit explosion drop)     | `src/render/effects/**`                     |
-| `TRACER_DURATION`     | 50ms  | render                          | `src/render/effects/**`                     |
-| `TRACER_WIDTH`        | 0.06  | render (world)                  | `src/render/effects/**`                     |
-| `MUZZLE_ORIGIN_Y`     | −6\*  | render — **DERIVE** (see below) | `src/render/effects/**`                     |
+| `TRACER_DURATION`     | 50ms  | render                          | **DROPPED** at composite gate (D2.4)        |
+| `TRACER_WIDTH`        | 0.06  | render (world)                  | **DROPPED** at composite gate (D2.4)        |
+| `MUZZLE_ORIGIN_Y`     | −6\*  | render — **DERIVE** (see below) | **DROPPED** with the tracer (D2.4)          |
 | `WALL_MARK_CAP`       | 16    | render (FIFO bound)             | `src/render/effects/**`                     |
 | `WALL_MARK_SIZE`      | 0.35  | render (world diam)             | `src/render/effects/**`                     |
 
