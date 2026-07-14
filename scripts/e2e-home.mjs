@@ -13,11 +13,19 @@
  * the production build at PREVIEW_URL (the URL must include the deploy base,
  * e.g. http://127.0.0.1:4173/prohimuf/ or .../prohimuf/preview/<branch>/).
  *
+ * Since the pre-game redesign (ADR-0020) a cold load lands on the new TITLE
+ * zine-cover, and a single action enters the MENU (the zine interior with the
+ * NIVEAUX flyer wall / SCORES UNE / OPTIONS colophon). This script drives that
+ * new flow: assert the title renders, perform the single-action entry, then
+ * assert the menu shell renders.
+ *
  * Hard gates (exit 1 on failure):
- *   - the menu renders (title "MUF", tagline, tabs NIVEAUX/SCORES/OPTIONS),
- *   - every level `name` from levelArt.json is visible in the list,
- *   - the first level (default-unlocked) does NOT show the "VERROUILLÉ" marker,
- *   - the SCORES tab renders its empty-state, the OPTIONS tab its settings,
+ *   - the TITLE cover renders (the "MUF" logo + the subtitle tagline),
+ *   - a single action (click on the cover) advances to the MENU,
+ *   - the MENU shell renders (running masthead + NIVEAUX/SCORES/OPTIONS rubriques),
+ *   - every level `name` from levelArt.json is visible as a flyer,
+ *   - the first level (default-unlocked) does NOT show the "LIGNE FERMÉE" marker,
+ *   - the SCORES rubrique renders its empty-state, the OPTIONS rubrique its settings,
  *   - no same-origin request 404s/5xxs (asset & base-path config guard).
  * Soft signal: console/page errors are logged but do not fail the deploy.
  *
@@ -41,7 +49,13 @@ const VIEWPORT = { width: 1280, height: 720 };
 const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
 
-const LOCKED_MARKER = "VERROUILLÉ"; // MainMenu.tsx LevelCard, shown only when !unlocked
+// TITLE cover markers (TitleScreen.tsx) — subtitle is title-only, distinguishes
+// TITLE from MENU (both show the "MUF" logo).
+const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE";
+// MENU running masthead (print/tokens.ts MASTHEAD.running) — menu-only.
+const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998";
+// Locked-flyer stamp (menu/LevelFlyer.tsx LOCKED_COPY.badge), shown only when !unlocked.
+const LOCKED_MARKER = "LIGNE FERMÉE";
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -69,17 +83,35 @@ async function main() {
     console.log(`[e2e] loading ${PREVIEW_URL}`);
     await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-    // The menu mounting proves the React app booted and its bundle resolved.
+    // Cold load lands on the TITLE cover (ADR-0020). Its mounting proves the
+    // React app booted and its bundle resolved. The subtitle is title-only, so
+    // it confirms we are on TITLE and not already past it.
     await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
-    await page.getByText("UNDERGROUND PARIS — 1998").first().waitFor({ timeout: RENDER_TIMEOUT });
+    await page
+      .getByText(TITLE_SUBTITLE, { exact: true })
+      .first()
+      .waitFor({ timeout: RENDER_TIMEOUT });
+    console.log("[e2e] TITLE cover rendered (MUF logo + subtitle)");
 
-    // All three tabs present.
-    for (const tab of ["NIVEAUX", "SCORES", "OPTIONS"]) {
-      await page.getByRole("button", { name: tab }).waitFor({ timeout: RENDER_TIMEOUT });
+    // Single-action entry: click the cover → MENU. Click the subtitle (inside the
+    // interactive surface, clear of the FullscreenButton chrome) to exercise the
+    // real pointer handler.
+    await page
+      .getByText(TITLE_SUBTITLE, { exact: true })
+      .first()
+      .click({ timeout: RENDER_TIMEOUT });
+
+    // The MENU shell mounts: running masthead (menu-only) + the three rubriques.
+    await page
+      .getByText(MENU_MASTHEAD, { exact: true })
+      .first()
+      .waitFor({ timeout: RENDER_TIMEOUT });
+    for (const rubrique of ["NIVEAUX", "SCORES", "OPTIONS"]) {
+      await page.getByRole("tab", { name: rubrique }).waitFor({ timeout: RENDER_TIMEOUT });
     }
-    console.log("[e2e] home screen rendered (title + tagline + NIVEAUX/SCORES/OPTIONS)");
+    console.log("[e2e] MENU shell rendered (masthead + NIVEAUX/SCORES/OPTIONS)");
 
-    // Every level from the manifest appears as a card.
+    // Every level from the manifest appears as a flyer (playable or locked).
     for (const level of levels) {
       await page
         .getByText(level.name, { exact: true })
@@ -88,28 +120,26 @@ async function main() {
     }
     console.log(`[e2e] all ${String(levels.length)} level name(s) visible`);
 
-    // The first level is unlocked by default → its card must NOT show the lock
-    // marker. Scope the check to the card (ancestor of the level-name element).
-    const firstCard = page
-      .getByText(firstLevel.name, { exact: true })
-      .first()
-      .locator("xpath=ancestor::div[3]");
-    const firstCardText = await firstCard.innerText();
-    if (firstCardText.includes(LOCKED_MARKER)) {
+    // The first level is unlocked by default → its flyer must NOT carry the
+    // locked stamp. Scope the check to the flyer (the role=button that holds the
+    // level name).
+    const firstFlyer = page.getByRole("button").filter({ hasText: firstLevel.name }).first();
+    const firstFlyerText = await firstFlyer.innerText();
+    if (firstFlyerText.includes(LOCKED_MARKER)) {
       throw new Error(`first level "${firstLevel.name}" is shown as ${LOCKED_MARKER}`);
     }
     console.log(`[e2e] first level "${firstLevel.name}" unlocked (no ${LOCKED_MARKER})`);
 
-    // SCORES tab renders its empty-state (fresh storage → no scores).
-    await page.getByRole("button", { name: "SCORES" }).click({ timeout: RENDER_TIMEOUT });
-    await page.getByText("AUCUN SCORE ENREGISTRÉ").first().waitFor({ timeout: RENDER_TIMEOUT });
-    console.log("[e2e] SCORES tab empty-state renders");
+    // SCORES rubrique renders its journal empty-state (fresh storage → no scores).
+    await page.getByRole("tab", { name: "SCORES" }).click({ timeout: RENDER_TIMEOUT });
+    await page.getByText("AUCUN MÉFAIT SIGNALÉ").first().waitFor({ timeout: RENDER_TIMEOUT });
+    console.log("[e2e] SCORES rubrique empty-state renders");
 
-    // OPTIONS tab renders its settings (volume + difficulty labels).
-    await page.getByRole("button", { name: "OPTIONS" }).click({ timeout: RENDER_TIMEOUT });
-    await page.getByText("VOLUME SFX").first().waitFor({ timeout: RENDER_TIMEOUT });
-    await page.getByText("DIFFICULTÉ").first().waitFor({ timeout: RENDER_TIMEOUT });
-    console.log("[e2e] OPTIONS tab settings render");
+    // OPTIONS rubrique renders its colophon settings (masthead + difficulty row).
+    await page.getByRole("tab", { name: "OPTIONS" }).click({ timeout: RENDER_TIMEOUT });
+    await page.getByText("OURS", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+    await page.getByText("PRESSION", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+    console.log("[e2e] OPTIONS rubrique settings render");
   } catch (e) {
     renderError = e;
   }

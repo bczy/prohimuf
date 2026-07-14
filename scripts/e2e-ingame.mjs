@@ -59,6 +59,12 @@ const SETTLE_MS = 2000; // let the scene draw a frame (and any mount error surfa
 const ALL_LEVELS = process.env.E2E_ALL_LEVELS === "1";
 const LIVES = 3; // seeded via muf_prefs in seedDeterminism
 
+// Pre-game flow markers (ADR-0020): cold load lands on the TITLE cover; a single
+// action enters the MENU flyer wall. The subtitle is title-only (both TITLE and
+// MENU show the "MUF" logo); the masthead is menu-only.
+const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // TitleScreen.tsx
+const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // MASTHEAD.running
+
 // Per-level screenshot path: the first level keeps the canonical name so the CI
 // artifact contract is unchanged; extra levels get a suffixed file.
 function shotFor(index, id) {
@@ -70,9 +76,18 @@ async function checkLevel(page, level, index) {
   console.log(`[e2e-ingame] entering level "${level.name}"`);
   await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
 
-  // Menu must mount first (same signal as e2e-home) before we can enter a level.
-  await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
+  // Cold load lands on the TITLE cover (ADR-0020). Perform the single-action
+  // entry (click the cover) to reach the MENU, then wait for the menu-only
+  // masthead before selecting a flyer — the "MUF" logo alone can't distinguish
+  // TITLE from MENU.
+  await page
+    .getByText(TITLE_SUBTITLE, { exact: true })
+    .first()
+    .waitFor({ timeout: RENDER_TIMEOUT });
+  await page.getByText(TITLE_SUBTITLE, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
+  await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout: RENDER_TIMEOUT });
 
+  // Activate the level's flyer → play (through the pre-level narrative if any).
   await page.getByText(level.name, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
   await dismissNarrative(page);
 
