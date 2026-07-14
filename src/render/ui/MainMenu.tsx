@@ -43,11 +43,29 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
     }
   }, [roving.index]);
 
+  // Mount-only: land keyboard focus on the active rubrique tab so the marker ring is
+  // visible without a blind Tab. Empty deps keep it from stealing focus on switches;
+  // the initial roving.index is the deterministic default (0 → NIVEAUX).
+  const mountFocusRef = useRef(false);
+  useEffect(() => {
+    if (mountFocusRef.current) return;
+    mountFocusRef.current = true;
+    itemRefs.current[roving.index]?.focus();
+  }, [roving.index]);
+
   const active = RUBRIQUES[roving.index]?.key ?? "levels";
 
   return (
     <PaperSheet stock={STOCK.shell}>
-      <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div
+        style={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          userSelect: "none",
+        }}
+      >
         {/* Running masthead */}
         <div
           style={{

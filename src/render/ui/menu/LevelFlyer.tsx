@@ -260,7 +260,7 @@ function PlayableBody({
           <MarkerCircle active ink={MARK.green}>
             <div style={{ fontFamily: BODY_FONT, textAlign: "center", padding: "2px 6px" }}>
               <div style={{ fontSize: "9px", color: INK.black }}>RECORD</div>
-              <div style={{ fontSize: "18px", color: MARK.green }}>{best}</div>
+              <div style={{ fontSize: "18px", color: INK.black }}>{best}</div>
             </div>
           </MarkerCircle>
         )}
