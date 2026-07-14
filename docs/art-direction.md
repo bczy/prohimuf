@@ -62,6 +62,72 @@ Historical anchors (see LICENSES.md for sources):
    generated asset AND every scripted retouch, on a contrasting background at game size;
    `scripts/check-sprite-integrity.mjs` is its mechanical floor, non-binding on taste.
 
+## 2bis. La loi de l'imprimé — surfaces UI / menus (menu-side complement of the loi du glow)
+
+Inserted (not a restructure) as the print-side pair of §2 law 1. Every **pre-game / menu
+surface** (title, flyer wall, scores UNE, options colophon, rotate overlay, narrative /
+briefing frame) is an **artifact of the fanzine world, printed on paper** — bright stock,
+black ink, xerox texture. **Zero glow in menus.** Glow is colored light with alpha falloff
+and it means _interactive_ — it is reserved for the in-game world (§2 law 1). A menu surface
+carries **no** colored luminous rim, **no** `text-shadow`/`box-shadow`-as-glow, **no**
+`backdrop-filter: blur`, **no** CRT scanline, **no** RGB-split. **If a menu screen glows on a
+dark ground it has drifted — automatic FAIL, not a taste note.**
+
+- **One fluo stock per surface** (guidelines §5). Stocks are **paper**, not glow: they are
+  the desaturated/lightened cousins of the in-game neon palette, chosen so **black ink reads
+  at ≥ 7:1 on every stock**. Do not reuse the §2 glow hexes as a menu ground.
+- **The facade photo on a menu is allowed only rephotocopied to pure B&W** —
+  `filter: grayscale(1) contrast(~2.2) brightness(~1.1)` on the existing PNG, over a dot-
+  screen overlay. Any surviving warm window-**glow** (partial desaturation) reintroduces glow
+  on a menu = **FAIL**. `grayscale(1)` is mandatory, not `grayscale(.9)`.
+- **State is hand-work, not light.** Hover = flyer pull / marker ring; focus = inked marker
+  ellipse (always visible); selected = X-stamp / tick / tape corners. The only allowed
+  "pulse" is the typewriter cursor blink (a répondeur/typewriter cursor, not a glow).
+- **Semantic colour survives as ink, never glow.** The three difficulty tells stay green /
+  orange / pink as **felt-tip marker/stamp inks**, reinforced by a **distinct stamp shape**
+  and a **toner-black keyline** so the mark reads even when its hue nears the flyer's own
+  stock. The old "interactive yellow" does **not** become a yellow ink (invisible on light
+  stock): interactivity/selection reads as **black selection marks** (X-stamp, marker circle,
+  tape) plus the **jaune cover stock**.
+
+### 2bis.1 Print token anchors (source of truth for `dev-r3f-render`)
+
+Paper stocks — fluo copier card, black-ink grounds:
+
+| Token             | Hex       | Surface                                                        |
+| ----------------- | --------- | -------------------------------------------------------------- |
+| `stock-jaune`     | `#F1EC1F` | TITLE cover **only** (brightest = the hook; not in rotation)   |
+| `stock-rose`      | `#FF4FA3` | flyer — Belliard (playable idx 0); UNE masthead accent         |
+| `stock-vert`      | `#B7F32B` | flyer — Stalingrad (playable idx 1)                            |
+| `stock-orange`    | `#F5762A` | flyer — Vitry (playable idx 2); OPTIONS colophon               |
+| `stock-manila`    | `#ECE7DA` | tutorial "mode d'emploi" sheet (not a fluo — a marked-up copy) |
+| `paper-newsprint` | `#E9E3D2` | SCORES _UNE_ ground; narrative/briefing transcript ground      |
+| `paper-shell`     | `#D7D2C6` | NIVEAUX flyer-wall backing (cool grey, so flyers pop)          |
+
+Ink:
+
+| Token       | Hex       | Use                                        |
+| ----------- | --------- | ------------------------------------------ |
+| `ink-black` | `#141210` | body, Courier info blocks, rules, keylines |
+| `ink-full`  | `#000000` | display / ransom headlines + stamp fills   |
+
+Marker / stamp inks (semantic — always with `ink-black` keyline + distinct shape):
+
+| Token         | Hex       | Meaning                         |
+| ------------- | --------- | ------------------------------- |
+| `mark-green`  | `#2FA84F` | FACILE · record / rank-1 circle |
+| `mark-orange` | `#E8641E` | MOYEN                           |
+| `mark-pink`   | `#D62A7A` | DIFFICILE                       |
+
+Texture (all CSS/inline-SVG — **no generated PNG**): uniform dot-screen overlay
+(`radial-gradient` tile, 3–4 px body / 8–12 px hero) stands in for value-modulated halftone;
+toner speckle via inline-SVG `feTurbulence` data-URI; fold streaks via diagonal
+`linear-gradient`; marker-ellipse / rubber-stamp distress via inline-SVG
+`feTurbulence`+`feDisplacementMap` (a plain geometric CSS border is an accepted-but-weaker
+fallback). Ransom/Letraset display type approximated by per-letter jitter on the bundled
+Impact until a display webfont lands; handwriting annotations are the weakest CSS gap (accept
+`cursive`/italic-Courier for v1, a small handwriting webfont is the fast-follow).
+
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 
 Pollinations' `flux` is a FLUX.1 [schnell]-class distilled model: **no negative
