@@ -1,14 +1,20 @@
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
+import { INK, MASTHEAD, STOCK } from "@render/ui/print";
+import { PaperSheet } from "@render/ui/print";
 
 /**
  * Progressive loading screen shown while a screen's asset manifest warms
  * (story-asset-preloading). Presentational only — all progress logic lives in
- * `useAssetPreloader` / `App`. House style mirrors MainMenu: neon-yellow on a
- * dark ground, Impact/monospace, scanline overlay.
+ * `useAssetPreloader` / `App`.
+ *
+ * House style = the pre-game print system (ADR-0021 / art-direction §2bis): a
+ * newsprint `PaperSheet` with the running masthead, Courier/Impact ink type, and
+ * a "SOUS PRESSE" press-sheet metaphor — the bar is a black-keyline rule the ink
+ * fills as the tirage is pulled. Zero glow / text-shadow / scanline (banned by
+ * §2bis; PaperSheet supplies the dot-screen + toner texture).
  */
 
-const NEON_YELLOW = "#ffe600";
-const NEON_GREEN = "#39ff14";
+const mono = "'Courier New', Courier, monospace";
 
 interface Props {
   /** What is loading — e.g. "MENU", a level name, or "Tutoriel". */
@@ -17,79 +23,119 @@ interface Props {
   progress: number;
 }
 
-const root: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "linear-gradient(rgba(10,7,26,0.9) 0%, rgba(10,6,24,1) 100%), #05030f",
-  color: "#fff",
-  fontFamily: "'Impact', 'Arial Narrow', sans-serif",
-  userSelect: "none",
-  overflow: "hidden",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "18px",
-};
-
-const scanlines: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px)",
-  pointerEvents: "none",
-};
+function infoStyle(fontSize: string, letterSpacing: string, marginTop = 0): CSSProperties {
+  return {
+    fontFamily: mono,
+    fontSize,
+    letterSpacing,
+    color: INK.black,
+    marginTop,
+    textTransform: "uppercase",
+  };
+}
 
 export function LoadingScreen({ label, progress }: Props): JSX.Element {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+  // Zero-padded press-run counter reads as a printed folio (e.g. "042 %").
+  const folio = String(pct).padStart(3, "0");
 
   return (
-    <div style={root}>
-      <div style={scanlines} />
-
+    <PaperSheet stock={STOCK.newsprint} style={{ userSelect: "none" }}>
+      {/* Masthead strip — printed ink bar (single-sourced running string). */}
       <div
         style={{
-          fontSize: "40px",
-          letterSpacing: "0.08em",
-          textShadow: `2px 2px 0 ${NEON_YELLOW}`,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          background: INK.full,
+          color: STOCK.newsprint,
+          padding: "4px 12px",
+          fontFamily: mono,
+          fontSize: "10px",
+          letterSpacing: "0.28em",
+          textAlign: "center",
+          zIndex: 2,
+          pointerEvents: "none",
         }}
       >
-        CHARGEMENT…
+        {MASTHEAD.running}
       </div>
 
       <div
         style={{
-          fontFamily: "monospace",
-          fontSize: "13px",
-          letterSpacing: "0.3em",
-          color: NEON_YELLOW,
-          textTransform: "uppercase",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          padding: "48px 40px",
+          boxSizing: "border-box",
         }}
       >
-        {label}
-      </div>
+        <div style={infoStyle("11px", "0.4em")}>★ SOUS PRESSE ★</div>
 
-      <div
-        style={{
-          width: "min(60vw, 420px)",
-          height: "14px",
-          border: `1px solid ${NEON_YELLOW}`,
-          background: "rgba(6,4,16,0.62)",
-          position: "relative",
-        }}
-      >
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            width: `${String(pct)}%`,
-            background: NEON_YELLOW,
-            transition: "width 0.15s linear",
+            fontFamily: "Impact, 'Arial Narrow', sans-serif",
+            fontSize: "clamp(44px, 8vw, 84px)",
+            lineHeight: 0.9,
+            letterSpacing: "0.04em",
+            color: INK.full,
+            marginTop: "8px",
           }}
-        />
-      </div>
+        >
+          CHARGEMENT…
+        </div>
 
-      <div style={{ fontFamily: "monospace", fontSize: "16px", color: NEON_GREEN }}>{pct}%</div>
-    </div>
+        {/* The edition being pulled — target name under an ink rule. */}
+        <div style={infoStyle("clamp(12px, 1.8vw, 16px)", "0.22em", 10)}>{label}</div>
+        <div
+          style={{ width: "min(420px, 80%)", height: 2, background: INK.black, margin: "18px 0" }}
+        />
+
+        {/* Press bar — black keyline the ink fills as the tirage is pulled. */}
+        <div
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Chargement ${label}`}
+          style={{
+            width: "min(60vw, 420px)",
+            height: "16px",
+            border: `2px solid ${INK.black}`,
+            background: STOCK.newsprint,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: `${String(pct)}%`,
+              background: INK.black,
+              transition: "width 0.12s linear",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: "20px",
+            letterSpacing: "0.18em",
+            color: INK.black,
+            marginTop: 14,
+          }}
+        >
+          {folio} %
+        </div>
+      </div>
+    </PaperSheet>
   );
 }
