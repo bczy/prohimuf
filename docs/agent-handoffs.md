@@ -1687,3 +1687,25 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   runs AFTER B so committed anchors are measured against shipped pixels.
   levelArt.json written only by C; enemyTextures.ts/EnemySprite.tsx only by A;
   PNGs only by B. (John + Winston, orchestrated)
+
+### explosion-alignment-transparency — Lane A (render muzzle anchors)
+
+- Amelia (dev-r3f-render): enemyTextures.ts gains optional per-frame `muzzle` manifest
+  field + `muzzleFor()` (null-safe under noUncheckedIndexedAccess); EnemySprite.tsx
+  SHOOTING branch anchors the additive glow at the per-frame anchor (same `frame` as
+  the displayed texture), fallback to the legacy fixed offset when null. HIT burst
+  unchanged. 6 new unit tests (muzzleFor.test.ts). tsc + vitest (213) + eslint green.
+  Committed as edee686.
+
+### explosion-alignment-transparency — Lane B (enemy sprite blob cleanup, iter 2)
+
+- Serge (TECHNICAL pass): iter 1 (flash-scoped auto guards, 1,874 px) rejected at the
+  visual gate — torn rings/wings still read on light bg. Iter 2 reworked
+  scripts/retouch-flash-halos.mjs to per-file CLEAR_ZONES + THRESH_OVERRIDE +
+  exterior-connected + solidify-reconcile + speckle-sweep, run to a fixpoint
+  (delete-outside-only, alpha 255→0, RGB frozen). Removed the torn flash rings/wings
+  on 10 shooting sprites (23,353 px). fill-sprite-holes --check PASS, retouch --check
+  idempotent PASS, integrity failing set 16→9 (8 sprites now PASS, no regressions),
+  enclaves=0 on all, flashes preserved, figures intact. Accepted residual: shooting_3
+  & riot_shooting flashes detach topologically (render identically at the muzzle).
+  civilian + idles untouched. ADR-0018 added. Committed with this entry.
