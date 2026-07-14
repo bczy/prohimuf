@@ -46,6 +46,22 @@
  *     pixel in a tight zone that is NOT the largest raw component (figure-safe by construction).
  *     Frame 2's flash is one component at the recoiled gun and reads correct → left untouched.
  *
+ * ── Iteration 4 (Bertrand: "Relance un remplissage, tu as fait des trous") ─────
+ * Iter-2/iter-3 OVER-DELETED. The reconcile can only protect a region it can still reconstruct
+ * as body; once a whole dark FIGURE region (chest/cape/hem/feet) inside a zone is deleted, the
+ * body mask collapses around the hole and the reconcile no longer reverts it → a keyed hole. So:
+ *   • restore-figure-bites.mjs adds the eaten figure mass + the riot blast's warm interior back
+ *     from the pre-retouch base (c79dfda); fill-sprite-holes.mjs re-solidifies the interior.
+ *   • Here the FIGURE-COVERING zones are removed (shooting_3 under-bust + left fringe, shooting_3_f2
+ *     bust-bottom + left fringe, shooting_2{,_f2} jacket-bottom, both riot FEET bands) and the two
+ *     riot files are retired from the zone table entirely (their wings were already gone and a
+ *     splash zone only re-laced the finished blast). What remains per file is the pure flash-area
+ *     remnant (rings / gun halo), safely clear of the body.
+ *   • A global WARM_GUARD (r−b>15 ⇒ never a candidate) protects fiery/dark-red blast shading in
+ *     any surviving zone, so a re-run is a FIXPOINT on the restored bytes (--check = 0, no re-punch).
+ *   • Two review-panel fixes: the surgical self-check now allows the real invariant α≥OPAQUE→0
+ *     (not only 255→0); the speckle sweep's global scope is documented as deliberate (see below).
+ *
  * ── What keeps figures safe (three independent guards) ───────────────────────
  *   1. TONE          — only dark (lum<LB) desaturated (sat<SB) pixels are candidates, so
  *                      the bright muzzle-flash STAR and its warm rays are never removed
@@ -102,6 +118,14 @@ const OPAQUE = 16;
 // Candidate remnant tone: dark AND desaturated.
 const LB = 125;
 const SB = 0.5;
+// ITER-4 WARMTH GUARD (root-cause guard for the over-deletion Bertrand flagged: "tu as fait
+// des trous"). A pixel whose red channel leads blue by more than this is WARM — muzzle-blast
+// fire / dark-red shading, the flash's own body, NEVER a background remnant. It is unconditionally
+// protected (never a deletion candidate) so the recalibrated retouch is a FIXPOINT on the
+// restored riot blasts (restore-figure-bites.mjs put the warm blast interior back with r−b>20;
+// this guard at >15 keeps every one of those protected). Grey desaturated wings (r−b≈0) are
+// unaffected → still removable. Applies to every file; skin/warm cloth were never in a flash zone.
+const WARM_GUARD = 15;
 // Extra padding (px) on the solidify body mask during reconcile — protects the true
 // figure silhouette edge (+ a 1px collar of any remnant hugging it: err on keeping).
 const RECONCILE_PAD = 1;
@@ -119,17 +143,17 @@ const SPECKLE_MAX_SIZE_PX = 12;
  * entry (idle sprites, the courier) is never touched. Re-measure if a sprite is regenerated.
  */
 const CLEAR_ZONES = {
-  // Flash top-right in a torn dark RING; torn fringe left of the cap; two torn "wings"
-  // hanging under the bust bottom.
+  // Flash top-right in a torn dark RING. ITER-4: the former "torn fringe left of the cap" and
+  // "torn wings below the bust" zones were REMOVED — Bertrand's review ("tu as fait des trous",
+  // then the zoomed crop "tu vois pas un gros trou là") established that those regions were the
+  // figure's own dark jacket / cape / chest, NOT background, and the tonal+zone rule ate them and
+  // keyed a hole under the bust. Only the flash-ring zone (safely up in the muzzle-flash area,
+  // clear of the body) remains; the chest/cape is restored by restore-figure-bites.mjs.
   "enemy_shooting_3.png": [
     [0.55, 0.0, 1.0, 0.37], // dark ring around the muzzle-flash star
-    [0.0, 0.22, 0.16, 0.56], // torn fringe left of the cap / shoulder
-    [0.0, 0.62, 0.72, 1.0], // torn wings hanging below the bust
   ],
   "enemy_shooting_3_f2.png": [
     [0.46, 0.0, 1.0, 0.4], // dark ring around the big starburst (top-right)
-    [0.0, 0.26, 0.15, 0.64], // torn fringe left of the cap / shoulder
-    [0.0, 0.8, 0.44, 1.0], // torn remnants below the bust
   ],
   // Dark "bat-wings" floating ABOVE the gun/flash on the left; the star + gun sit below.
   "enemy_biker_shooting.png": [[0.0, 0.0, 0.33, 0.29]],
@@ -141,23 +165,24 @@ const CLEAR_ZONES = {
   // the FIGURE-SEED reconcile + relaxed SB (THRESH_OVERRIDE) to strip ALL the dark torn
   // material while keeping the bright/warm fiery core + rays. The figure body is still
   // protected by the reconcile, so the wide zone cannot eat the cop.
-  "enemy_riot_shooting.png": [
-    [0.5, 0.02, 1.0, 0.66], // whole torn splash/island — strip dark wings, keep fiery blast
-    [0.28, 0.85, 0.82, 1.0], // stray dark specks under the feet line
-  ],
-  "enemy_riot_shooting_f2.png": [
-    [0.5, 0.03, 1.0, 0.72], // whole torn splash/island — strip dark wings, keep fiery blast
-    [0.28, 0.85, 0.66, 1.0], // stray dark speck bottom
-  ],
-  // Small flash halo top-left behind the gun; torn bottom fused to the flat-black jacket
-  // (the reconcile makes the boundary cut at the solid silhouette — err small here).
+  // ITER-4: the two riot files are RETIRED from the zone table entirely. Their grey torn wings
+  // were already removed in the committed history (iter-2/iter-3, Bertrand-approved) and the
+  // fiery blast — with its dark-red AND dark-NEUTRAL shading between the bright rays — is the
+  // approved final art (restored full by restore-figure-bites.mjs). A splash zone kept re-eating
+  // the blast's NON-warm dark shading (the WARM_GUARD only spares r−b>15, not the neutral smoke),
+  // re-lacing exactly the blast Bertrand wanted full. With no remnant left to remove, the zone did
+  // only harm, so it is dropped; retouch now leaves the riot blasts untouched (--check = 0). The
+  // WARM_GUARD stays globally as a safety net for any warm pixel that lands in another file's zone.
+  //   (was: enemy_riot_shooting [0.5,0.02,1.0,0.66] + feet [0.28,0.85,0.82,1.0];
+  //         enemy_riot_shooting_f2 [0.5,0.03,1.0,0.72] + feet [0.28,0.85,0.66,1.0])
+  // Small flash halo top-left behind the gun. ITER-4: the "torn jacket-bottom remnant" zone was
+  // REMOVED — Bertrand's foot/hem review showed it overlapped the figure's own jacket hem; the
+  // hem is restored by restore-figure-bites.mjs. Only the flash halo behind the gun remains.
   "enemy_shooting_2.png": [
     [0.0, 0.0, 0.18, 0.31], // halo behind the gun / around the flash
-    [0.18, 0.86, 0.68, 1.0], // torn jacket-bottom remnant beyond the silhouette
   ],
   "enemy_shooting_2_f2.png": [
     [0.0, 0.0, 0.2, 0.31], // halo behind the gun / around the flash
-    [0.18, 0.88, 0.72, 1.0], // torn jacket-bottom remnant beyond the silhouette
   ],
   // Flash star (right) in a torn dark ring.
   "enemy_shooting.png": [[0.6, 0.05, 1.0, 0.43]],
@@ -177,11 +202,12 @@ const CLEAR_ZONES = {
  * bright/warm fiery CORE + rays survive because only DARK pixels (lum < 88) are ever
  * candidates — keep/strip is a pure dark-vs-bright split, the bright core is never a candidate.
  * Only the two riot files relax SB; every other sprite keeps SB=0.5 (protects skin).
+ *
+ * ITER-4: emptied. The riot files were retired from CLEAR_ZONES (see there), so their overrides
+ * are dead. The relaxed SB=0.85 combined with a widened zone was itself part of what over-ate the
+ * blast interior; it is not reinstated. No file currently overrides the default LB/SB.
  */
-const THRESH_OVERRIDE = {
-  "enemy_riot_shooting.png": { LB: 88, SB: 0.85 },
-  "enemy_riot_shooting_f2.png": { LB: 88, SB: 0.85 },
-};
+const THRESH_OVERRIDE = {};
 
 /**
  * ERASE-ISLAND zones (ITER-3, delete-only). Inside these normalized rects, EVERY opaque pixel
@@ -244,8 +270,11 @@ export function computeDeletions(data, W, H, zones, opts = {}) {
   let any = 0;
   for (let p = 0; p < N; p++) {
     if (!zone[p] || !isOpaque(p)) continue;
-    const L = lum(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]);
-    const S = sat(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]);
+    const r = data[p * 4];
+    const b = data[p * 4 + 2];
+    if (r - b > WARM_GUARD) continue; // ITER-4: never delete warm (blast fire / dark-red shading)
+    const L = lum(r, data[p * 4 + 1], b);
+    const S = sat(r, data[p * 4 + 1], b);
     if (L < lb && S < sb) {
       cand[p] = 1;
       any = 1;
@@ -488,6 +517,14 @@ export function reconcileWithSolidify(data, W, H, del) {
  * opaque component of (opaque AND NOT del) — orphans the petal removal left behind. Never
  * the dominant figure nor a legit detached flash STAR (both far larger). Pure over `del`.
  * Returns the number of speckle pixels added.
+ *
+ * SCOPE (ITER-4, review-panel clarification): this sweep is DELIBERATELY GLOBAL — it scans the
+ * whole image, NOT only the clear zones. Zone-scoping was considered and rejected: a petal
+ * removal can orphan a speckle just OUTSIDE the zone boundary, and the goal is a clean keyed
+ * cutout everywhere, so a <12px non-dominant island anywhere is swept. It cannot touch the figure
+ * (dominant component) or a real detached blast/star (both far larger than the 12px budget), so
+ * the global scope is safe. Only the per-pixel DELETION candidacy in computeDeletions is
+ * zone-confined; the speckle sweep and the solidify reconcile are intentionally image-wide.
  */
 export function sweepSpeckle(data, W, H, del) {
   const N = W * H;
@@ -623,7 +660,13 @@ async function main() {
       continue;
     }
 
-    // ---- SURGICAL SELF-CHECK: only alpha 255→0 may change; RGB frozen; never more opaque ----
+    // ---- SURGICAL SELF-CHECK: only an opaque→transparent cut may change; RGB frozen; never
+    // more opaque ----
+    // ITER-4 (review-panel fix): computeDeletions selects ANY candidate with alpha >= OPAQUE (16),
+    // not only fully-opaque 255. So the surgical invariant we assert is "a deleted pixel went from
+    // alpha >= OPAQUE to alpha 0" — allow a0 >= OPAQUE && a1 === 0 (was a0 === 255 && a1 === 0,
+    // which would have falsely flagged a legitimate deletion of a semi-opaque α∈[16,254] remnant
+    // pixel and aborted the write). RGB is still frozen and no pixel may become more opaque.
     let violations = 0;
     for (let p = 0; p < N; p++) {
       const rgbChanged =
@@ -632,7 +675,7 @@ async function main() {
         data[p * 4 + 2] !== before[p * 4 + 2];
       const a0 = before[p * 4 + 3];
       const a1 = data[p * 4 + 3];
-      const alphaBad = a1 !== a0 && !(a0 === 255 && a1 === 0);
+      const alphaBad = a1 !== a0 && !(a0 >= OPAQUE && a1 === 0);
       if (rgbChanged || alphaBad) {
         if (violations < 5) {
           const x = p % W;

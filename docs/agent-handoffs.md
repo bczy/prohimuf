@@ -1737,3 +1737,33 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   frames; re-measured → levelArt.json shooting_3 f1 anchor now (0.77, 0.44), all
   other anchors unchanged. Preview verified: marker on the barrel end. tsc +
   vitest 213/213 + prettier + both asset gates green. Committed with this entry.
+
+### explosion-alignment-transparency — iter 4 (Bertrand: "tu as fait des trous")
+
+- Bertrand flagged the pushed iter-3 sprites: over-deletion punched holes — big
+  chest/under-bust hole on shooting_3, ragged bites all along the bust bottoms
+  (shooting_2{,\_f2}, shooting_3{,\_f2}), lacy riot blasts + left-foot bites. Root
+  cause: the zone+tone rule can't separate dark FIGURE from dark remnant, and once a
+  whole figure region in a zone is deleted the solidify reconcile can no longer
+  reconstruct it as body → keyed hole.
+- Serge (TECHNICAL pass, iter 4): NEW `scripts/restore-figure-bites.mjs`
+  (ADD-BACK-ONLY, self-checked; reference = pre-retouch base c79dfda). Bust/figure
+  regime restores the whole figure component minus the flash-exclude zone (entire
+  bust bottom + chest solid, "prefer oversized to any hole"); riot regime restores
+  figure body (opening∖bright-halo) ∪ warm blast interior (r−b>20), grey wings stay
+  deleted. Restored px: shooting_3 6004, shooting_3_f2 2986, riot 1328, riot_f2 745,
+  shooting_2 725, shooting_2_f2 600; shooting{,\_f2} + biker{,\_f2} = 0 (audited
+  clean). Then fill-sprite-holes topped riot interiors (A=1221 / A=575).
+- Recalibrated `retouch-flash-halos.mjs` to a FIXPOINT: removed all figure-covering
+  zones + retired both riot files from the zone table (wings already gone, a splash
+  zone only re-laced the finished blast); added global WARM_GUARD (r−b>15 never a
+  candidate); review-panel fixes — self-check now asserts α≥OPAQUE→0 (was 255→0),
+  speckle-sweep global scope documented as deliberate; THRESH_OVERRIDE emptied.
+- Gates all green: retouch --check = 0 (idempotent, no re-punch), fill --check PASS,
+  restore --check = 0 (idempotent), border-flood = 0 enclosed transparent px anywhere
+  incl. blast islands; check-sprite-integrity all 6 PASS (busts comps=1, star gone).
+  Anatomy sweep on magenta clean (limbs rooted, both boots solid, no floating member,
+  no punched hole). Visual at 512/256/64 grey+magenta: bust bottoms continuous, chest
+  solid, blasts full (no lace), wings/star gone. ADR-0018 updated (iter-4 section).
+  6 PNGs + 2 scripts changed; NOT committed (per Bertrand's request). Files:
+  shooting_2{,\_f2}, shooting_3{,\_f2}, riot_shooting{,\_f2}.

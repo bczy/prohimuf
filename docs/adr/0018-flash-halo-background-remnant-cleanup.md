@@ -109,6 +109,72 @@ other 7 sprites stay **byte-identical** (their `--check` would-delete is 0 under
 no flash, courier lane, already ADR-0014-fixed). `retouch-flash-halos.mjs` is **not** wired
 into CI (explicit human-run fix, like `retouch-sprites.mjs`).
 
+### Iteration 4 — Bertrand review: "Relance un remplissage, tu as fait des trous"
+
+Iter-2/iter-3 **over-deleted**. The zone+tone rule cannot tell a dark FIGURE region from a
+dark background remnant, and the solidify reconcile can only protect a region it can still
+_reconstruct as body_: once a whole dark figure region inside a zone is deleted, the body mask
+collapses around the hole and the reconcile stops reverting it — so the deletion becomes a keyed
+hole. Three concrete failures, surfaced only once composited off opaque white / keyed to
+transparency:
+
+- **`enemy_shooting_3` chest/cape** — the "torn wings under the bust" zone was the figure's own
+  dark jacket/cape; keyed out it left a big hole under the extended arms ("tu vois pas un gros
+  trou là").
+- **Bust bottoms** (`enemy_shooting_2{,_f2}`, `enemy_shooting_3{,_f2}`) — the "torn jacket-bottom
+  remnant" zones chewed ragged bites all along the lower bust silhouette ("beaucoup de trous sur
+  tout le bas du buste").
+- **Riot blasts + feet** — relaxing SB→0.85 over the widened splash zone ate the blast's own
+  dark-red/neutral shading between the bright rays (blast went **lacy/holed**), and the
+  under-feet zones bit the boots/ground contact ("pied gauche aussi").
+
+**Fix — restore first, then recalibrate to a fixpoint.**
+
+1. **`scripts/restore-figure-bites.mjs`** (new, ADD-BACK-ONLY; the inverse surgical guarantee of
+   the retouch: only `alpha 0→255` + pristine RGB, never a delete; self-check aborts on any
+   opaque-pixel change). Reference bytes = the pre-any-retouch commit **c79dfda**. Two regimes:
+   - **Bust/figure regime** (every file except the riot pair): restore every deleted pixel that
+     belongs to the base **figure** (largest connected component of base-opaque — connected to /
+     enclosed by the figure mass) and is **not** inside the file's flash-exclude zone (the
+     muzzle-flash area the retouch owns). This restores the _entire_ bust bottom and the chest
+     with no morphological trimming — Bertrand's hard line "everything solid, prefer a slightly
+     oversized solid bust to any hole" (commit 81a26ad). Truly **detached** fragments (their own
+     base component — the floating star, separated torn paper) are excluded → stay deleted.
+   - **Riot regime**: `RF` = figure body `opening(largestComponent, disk-4)` minus a 12px
+     bright-halo dilation (chunky body/feet, thin wing-spikes opened away); `R2` = **warm**
+     (`r−b>20`) pixels inside the blast zone (the dark-red shading that makes the blast read full).
+     Grey (`r−b≤20`) torn wings stay deleted.
+2. **`scripts/fill-sprite-holes.mjs`** re-run to top up interior holes (riot figures only:
+   A=1221 / A=575; the aggressive bust restore left the busts already solid).
+3. **`scripts/retouch-flash-halos.mjs` recalibrated to a FIXPOINT** on the restored bytes:
+   - **Removed** every figure-covering zone (`enemy_shooting_3` under-bust + left fringe,
+     `enemy_shooting_3_f2` bust-bottom + left fringe, `enemy_shooting_2{,_f2}` jacket-bottom, both
+     riot **feet** bands) and **retired the two riot files from the zone table entirely** — their
+     wings were already gone and a splash zone only re-laced the finished blast (the WARM_GUARD
+     alone can't protect the blast's non-warm neutral smoke). `THRESH_OVERRIDE` emptied.
+   - Added a global **WARM_GUARD** (`r−b>15` ⇒ never a deletion candidate) protecting fiery /
+     dark-red shading in any surviving zone.
+   - **Review-panel fixes**: the surgical self-check now asserts the real invariant
+     `α≥OPAQUE→0` (was `255→0`, which would falsely abort on a legit semi-opaque deletion); the
+     speckle sweep's **global** (not zone-scoped) scope is documented as deliberate — the sweep
+     and the solidify reconcile are intentionally image-wide, only per-pixel deletion candidacy is
+     zone-confined.
+
+**Iter-4 result** (restored px / then interior-fill): `enemy_shooting_3` 6004, `enemy_shooting_3_f2`
+2986, `enemy_riot_shooting` 1328 (+1221 fill), `enemy_riot_shooting_f2` 745 (+575 fill),
+`enemy_shooting_2` 725, `enemy_shooting_2_f2` 600. `enemy_shooting{,_f2}` and
+`enemy_biker_shooting{,_f2}` restore 0 (audited clean — no hidden figure bite). All four gates green
+on the result: `retouch-flash-halos --check` = 0 (idempotent — no re-punch), `fill-sprite-holes
+--check` PASS, `restore-figure-bites --check` = 0 (idempotent — restore/retouch no longer fight over
+the flash ring), and a 4-connected border flood finds **zero enclosed transparent px anywhere,
+including inside the blast islands**. `check-sprite-integrity` on the six: all **PASS** — the busts
+are now a single solid component (`comps=1`), `enemy_shooting_3`'s star-erased figure is
+`comps=1`, both riot figures stay dominant. Game-graphist read at 512/256/64 on light grey **and**
+magenta: bust bottoms continuous and hole-free, `enemy_shooting_3` chest solid, riot blasts read
+full (no lace) with wings gone, both boots solid; the AI-defect anatomy sweep on magenta is clean
+(limbs rooted, feet attached, no floating member, no punched hole). Restoration is add-back from
+pristine base, so no new anatomy was authored.
+
 ## Consequences
 
 - 10 shooting sprites retouched in place (deleted px): `enemy_shooting_3` 7483,
