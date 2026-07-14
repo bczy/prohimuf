@@ -231,12 +231,20 @@ function BallotRow({
                   aria-hidden="true"
                   style={{
                     position: "absolute",
-                    inset: 0,
+                    top: "-8px",
+                    right: "-8px",
+                    width: "18px",
+                    height: "18px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "26px",
+                    fontSize: "13px",
+                    lineHeight: 1,
                     color: INK.full,
+                    background: STOCK.orange,
+                    border: `1.5px solid ${INK.black}`,
+                    borderRadius: "1px",
+                    transform: "rotate(-8deg)",
                     pointerEvents: "none",
                   }}
                 >
