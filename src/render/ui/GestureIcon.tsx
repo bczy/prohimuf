@@ -22,26 +22,25 @@ const INK = "#ededed";
 const BODY = "#0b0916";
 
 /**
- * Hand silhouettes for the two mobile icons, each ONE continuous fill path (fist + extended
- * finger(s) traced as a single outline) so nothing reads as a stray "paperclip" shape. V4 photo
- * pose (side-view arched tap): the forearm exits the TOP-RIGHT corner, the back-of-hand arches
- * over the knuckles, and the extended finger(s) descend diagonally down-left to touch the glass at
- * their tips in the lower-left third (two tips ≈(38,84) and ≈(28,95); one-finger index tip
- * ≈(34,87)). Draw with fill=BODY + INK stroke, matching the mouse icon's line-art weight.
+ * Hand silhouettes for the two mobile icons — v5 iStock touch-pictogram vocabulary. Each is ONE
+ * continuous THIN outline (fill=none, INK stroke 2.4, round caps/joins): the extended finger(s)
+ * point straight UP with their tips near the top edge, the unused fingers read as curled
+ * knuckle-bumps, a soft thumb lobe, and a short wrist at the bottom. The outline draws its own
+ * curled knuckles, so there are NO interior crease sub-paths. Neon (#ffe600) contact indicators
+ * live as SEPARATE paths in each icon (tap rings / swipe tip-circle), never on the hand itself.
+ * Fingertip anchors: two-finger tips ≈(45,23) and ≈(63,17); one-finger index tip ≈(50,19).
  */
-// Back-of-hand, index + middle extended, descending down-left to touch tips at lower-left; curled
-// fingers scallop under the palm, thumb tucked, wrist off the top-right corner (two-finger tap).
+// Index + middle extended straight up (tips top-centre), remaining fingers curled as knuckle-bumps,
+// soft thumb lobe on the left, short wrist at the bottom (two-finger tap).
 const HAND_TWO_FINGER =
-  "M120 12 C110 17 100 24 93 30 C86 35 80 33 74 35 C67 38 62 45 58 53 " +
-  "C51 61 43 73 39 82 C37 85 35 87 34 89 C33 90 32 88 31 90 C29 94 26 96 27 94 " +
-  "C30 89 46 80 58 78 C64 84 66 90 72 88 C77 86 79 90 84 87 C88 84 90 78 91 70 " +
-  "C99 54 110 42 120 34 Z";
-// Same arched hand with ONLY the index extended, the others curled into scallops under the palm (swipe).
+  "M40 28 C40 22 50 21 51 27 L52 46 C52 50 58 50 58 46 L58 24 C58 17 68 16 69 23 " +
+  "L70 52 C73 47 80 47 81 55 C83 51 90 52 91 60 C95 71 93 93 84 105 C78 110 61 110 55 105 " +
+  "C49 99 47 93 47 87 C46 82 39 82 37 85 C34 87 34 82 38 80 C42 78 46 79 46 74 L40 28 Z";
+// Same hand with ONLY the index extended straight up, the others curled into knuckle-bumps (swipe).
 const HAND_ONE_FINGER =
-  "M120 12 C110 17 100 24 93 30 C86 35 80 33 74 35 C67 38 62 45 58 53 " +
-  "C52 62 44 75 39 83 C36 87 33 89 33 87 C34 90 37 89 41 86 C44 83 47 80 50 77 " +
-  "C55 73 60 76 65 82 C70 87 75 87 80 84 C86 81 90 76 91 70 " +
-  "C99 54 110 42 120 34 Z";
+  "M45 24 C45 18 56 18 56 24 L57 52 C60 47 67 47 68 55 C70 50 77 51 78 59 " +
+  "C80 55 86 56 87 63 C91 73 90 93 82 105 C76 110 59 110 53 105 C48 99 46 93 46 87 " +
+  "C45 82 38 82 36 85 C33 87 33 82 37 80 C41 78 45 79 45 74 L45 24 Z";
 
 const ICON_SVG_STYLE: CSSProperties = {
   height: "min(240px, 34vh)",
@@ -100,18 +99,19 @@ const GESTURE_STYLES = `
 @keyframes gi-sp-r { 0%{transform:translate(-34px,0);opacity:1} 6%{transform:translate(6px,0)} 15%{transform:translate(30px,0)} 23%{transform:translate(30px,0);opacity:1} 25%{transform:translate(30px,0);opacity:0} 100%{transform:translate(-34px,0);opacity:0} }
 @keyframes gi-sp-r-lift { 0%{opacity:1} 8%{opacity:1} 12%{opacity:0} 100%{opacity:0} }
 @keyframes gi-sp-r-trail { 0%{opacity:.9} 15%{opacity:.9} 20%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-d { 0%{transform:translate(0,-26px);opacity:0} 24%{transform:translate(0,-26px);opacity:0} 25%{transform:translate(0,-26px);opacity:1} 31%{transform:translate(0,4px)} 40%{transform:translate(0,20px)} 48%{transform:translate(0,20px);opacity:1} 50%{transform:translate(0,20px);opacity:0} 100%{transform:translate(0,20px);opacity:0} }
+@keyframes gi-sp-d { 0%{transform:translate(0,-2px);opacity:0} 24%{transform:translate(0,-2px);opacity:0} 25%{transform:translate(0,-2px);opacity:1} 31%{transform:translate(0,16px)} 40%{transform:translate(0,34px)} 48%{transform:translate(0,34px);opacity:1} 50%{transform:translate(0,34px);opacity:0} 100%{transform:translate(0,34px);opacity:0} }
 @keyframes gi-sp-d-lift { 0%,25%{opacity:1} 33%{opacity:0} 100%{opacity:0} }
 @keyframes gi-sp-d-trail { 0%,25%{opacity:.9} 40%{opacity:.9} 45%{opacity:0} 100%{opacity:0} }
 @keyframes gi-sp-l { 0%{transform:translate(34px,0);opacity:0} 49%{transform:translate(34px,0);opacity:0} 50%{transform:translate(34px,0);opacity:1} 56%{transform:translate(-6px,0)} 65%{transform:translate(-30px,0)} 73%{transform:translate(-30px,0);opacity:1} 75%{transform:translate(-30px,0);opacity:0} 100%{transform:translate(-30px,0);opacity:0} }
 @keyframes gi-sp-l-lift { 0%,50%{opacity:1} 58%{opacity:0} 100%{opacity:0} }
 @keyframes gi-sp-l-trail { 0%,50%{opacity:.9} 65%{opacity:.9} 70%{opacity:0} 100%{opacity:0} }
-@keyframes gi-sp-u { 0%{transform:translate(0,20px);opacity:0} 74%{transform:translate(0,20px);opacity:0} 75%{transform:translate(0,20px);opacity:1} 81%{transform:translate(0,-2px)} 90%{transform:translate(0,-26px)} 98%{transform:translate(0,-26px);opacity:1} 100%{transform:translate(0,-26px);opacity:0} }
+@keyframes gi-sp-u { 0%{transform:translate(0,34px);opacity:0} 74%{transform:translate(0,34px);opacity:0} 75%{transform:translate(0,34px);opacity:1} 81%{transform:translate(0,16px)} 90%{transform:translate(0,-2px)} 98%{transform:translate(0,-2px);opacity:1} 100%{transform:translate(0,-2px);opacity:0} }
 @keyframes gi-sp-u-lift { 0%,75%{opacity:1} 83%{opacity:0} 100%{opacity:0} }
 @keyframes gi-sp-u-trail { 0%,75%{opacity:.9} 90%{opacity:.9} 95%{opacity:0} 100%{opacity:0} }
 
 @media (prefers-reduced-motion: reduce) {
   .gi-anim { animation: none !important; }
+  .gi-rm-only { opacity: 1 !important; }
 }
 `;
 
@@ -288,9 +288,10 @@ function EdgeScrollIcon(): JSX.Element {
 
 /**
  * Mobile — ONE simultaneous two-finger tap = shoot, bullet from the midpoint (§1.3).
- * A stylized back-of-hand (index + middle extended, rest folded) traced as one silhouette; both
- * fingertips touch the glass and their neon halos flash in sync while a single ripple springs
- * from the midpoint between them. The phone frame is thin, low-contrast background context.
+ * A thin outline hand (index + middle extended straight up, rest curled) with both fingertips at
+ * the top; their neon halos flash in sync while three concentric neon rings pulse from the contact
+ * midpoint (55,17) on the tap beat. Reduced motion freezes the three rings static (the reference's
+ * resting look). The phone frame is thin, low-contrast background context.
  */
 function TwoFingerTapIcon(): JSX.Element {
   return (
@@ -315,74 +316,62 @@ function TwoFingerTapIcon(): JSX.Element {
         strokeWidth="1.4"
         opacity="0.28"
       />
-      {/* single ripple from the midpoint between the two fingertips (lower-left contact) */}
+      {/* concentric contact rings from the fingertip midpoint — plain 2px neon strokes that pulse
+          on the tap beat; static opacity=1 encodes the reduced-motion frozen frame (three rings) */}
       <circle
         className="gi-anim gi-tt-ripple"
-        cx="33"
-        cy="90"
-        r="13"
+        cx="55"
+        cy="17"
+        r="6"
         fill="none"
         stroke={NEON}
         strokeWidth="2"
-        opacity="0"
+        opacity="1"
+      />
+      <circle
+        className="gi-anim gi-tt-ripple"
+        cx="55"
+        cy="17"
+        r="10"
+        fill="none"
+        stroke={NEON}
+        strokeWidth="2"
+        opacity="1"
+      />
+      <circle
+        className="gi-anim gi-tt-ripple"
+        cx="55"
+        cy="17"
+        r="14"
+        fill="none"
+        stroke={NEON}
+        strokeWidth="2"
+        opacity="1"
       />
       {/* the hand dips to touch, lifts, long rest; both fingertip halos share ONE class → sync flash */}
       <g className="gi-anim gi-tt-lift">
-        {/* single continuous silhouette (fist + two extended fingers) */}
+        {/* single continuous outline (fist + two extended fingers), fill=none — draws its own knuckles */}
         <path
           d={HAND_TWO_FINGER}
-          fill={BODY}
+          fill="none"
           stroke={INK}
-          strokeWidth="3"
+          strokeWidth="2.4"
           strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        {/* interior line-art detail: knuckle ridge + finger split crease + curled scallop creases */}
-        <path
-          d="M60 50 C70 46 80 42 91 36"
-          fill="none"
-          stroke={INK}
-          strokeWidth="1.8"
-          opacity="0.55"
-          strokeLinecap="round"
-        />
-        <path
-          d="M54 57 C48 66 42 76 36 84"
-          fill="none"
-          stroke={INK}
-          strokeWidth="1.6"
-          opacity="0.45"
-          strokeLinecap="round"
-        />
-        <path
-          d="M70 86 c1 -3 3 -4 4 -1"
-          fill="none"
-          stroke={INK}
-          strokeWidth="1.6"
-          opacity="0.45"
-          strokeLinecap="round"
-        />
-        <path
-          d="M81 87 c1 -3 3 -4 4 -1"
-          fill="none"
-          stroke={INK}
-          strokeWidth="1.6"
-          opacity="0.45"
           strokeLinecap="round"
         />
         {/* both fingertip halos — the only lit elements (r≤8: past ~9 the pair merges) */}
         <circle
           className="gi-anim gi-tt-halo"
-          cx="38"
-          cy="84"
+          cx="45"
+          cy="23"
           r="8"
           fill="url(#gi-tt-halo-grad)"
           opacity="0.85"
         />
         <circle
           className="gi-anim gi-tt-halo"
-          cx="28"
-          cy="95"
+          cx="63"
+          cy="17"
           r="8"
           fill="url(#gi-tt-halo-grad)"
           opacity="0.85"
@@ -394,11 +383,12 @@ function TwoFingerTapIcon(): JSX.Element {
 
 /**
  * Mobile — ONE finger swipes to pan, trail keeps gliding (inertia) (§1.4).
- * Same hand vocabulary with ONLY the index extended; the hand sweeps across, the fingertip
- * trails an alpha-falloff motion trail (bright at tip → 0 at tail), the hand lifts mid-travel
- * and the trail glides to an eased stop (flick inertia). The FULL cycle sweeps all four
- * directions (right → down → left → up), 2.0s each (§1.4/§1.5). The hand silhouette is defined
- * ONCE in `<defs>` and `<use>`d per direction so the four-way cycle stays cheap (no duplication).
+ * Same outline vocabulary with ONLY the index extended (tip at ≈(50,19)); the hand sweeps across,
+ * the fingertip trails an alpha-falloff motion trail (bright at tip → 0 at tail), the hand lifts
+ * mid-travel and the trail glides to an eased stop (flick inertia). The FULL cycle sweeps all four
+ * directions (right → down → left → up), 2.0s each (§1.4/§1.5). A static neon contact ring marks
+ * the touch point; the reduced-motion frozen frame swaps the animated trail for a direction arrow.
+ * The hand outline is defined ONCE in `<defs>` and `<use>`d per direction (no duplication).
  */
 function SwipePanIcon(): JSX.Element {
   return (
@@ -427,47 +417,14 @@ function SwipePanIcon(): JSX.Element {
           <stop offset="60%" stopColor={NEON} stopOpacity="0.35" />
           <stop offset="100%" stopColor={NEON} stopOpacity="0" />
         </radialGradient>
-        {/* the hand silhouette + interior line-art detail, defined ONCE, <use>d per direction */}
+        {/* the hand outline, defined ONCE, <use>d per direction — fill=none, draws its own knuckles */}
         <g id="gi-sp-hand">
-          {/* single continuous silhouette (fist + one extended index) */}
           <path
             d={HAND_ONE_FINGER}
-            fill={BODY}
+            fill="none"
             stroke={INK}
-            strokeWidth="3"
+            strokeWidth="2.4"
             strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          <path
-            d="M60 50 C70 46 80 42 91 36"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.8"
-            opacity="0.55"
-            strokeLinecap="round"
-          />
-          <path
-            d="M54 56 C48 64 43 72 39 82"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
-            strokeLinecap="round"
-          />
-          <path
-            d="M63 80 c1 -3 3 -4 4 -1"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
-            strokeLinecap="round"
-          />
-          <path
-            d="M74 82 c1 -3 3 -4 4 -1"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            opacity="0.45"
             strokeLinecap="round"
           />
         </g>
@@ -484,22 +441,38 @@ function SwipePanIcon(): JSX.Element {
         strokeWidth="1.4"
         opacity="0.28"
       />
+      {/* static neon contact mark at the fingertip touch point — plain 2px stroke (reference idiom) */}
+      <circle cx="50" cy="20" r="7" fill="none" stroke={NEON} strokeWidth="2" />
+      {/* direction arrow — reduced-motion frozen frame ONLY (the animated trail tells direction otherwise) */}
+      <g
+        className="gi-rm-only"
+        opacity="0"
+        stroke={NEON}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      >
+        <line x1="66" y1="20" x2="86" y2="20" />
+        <path d="M80 14 L86 20 L80 26" />
+      </g>
       {/* RIGHT sweep (also the readable reduced-motion base frame: this group stays visible) */}
       <g className="gi-anim gi-sp-r">
         <rect
           className="gi-anim gi-sp-r-trail"
-          x="0"
-          y="82"
+          x="16"
+          y="14"
           width="34"
           height="10"
           rx="5"
           fill="url(#gi-sp-tr-r)"
+          opacity="0"
         />
         <use className="gi-anim gi-sp-r-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-r-lift"
-          cx="34"
-          cy="87"
+          cx="50"
+          cy="19"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -508,8 +481,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-d" opacity="0">
         <rect
           className="gi-anim gi-sp-d-trail"
-          x="29"
-          y="53"
+          x="45"
+          y="-15"
           width="10"
           height="34"
           rx="5"
@@ -518,8 +491,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-d-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-d-lift"
-          cx="34"
-          cy="87"
+          cx="50"
+          cy="19"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -528,8 +501,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-l" opacity="0">
         <rect
           className="gi-anim gi-sp-l-trail"
-          x="34"
-          y="82"
+          x="50"
+          y="14"
           width="34"
           height="10"
           rx="5"
@@ -538,8 +511,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-l-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-l-lift"
-          cx="34"
-          cy="87"
+          cx="50"
+          cy="19"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />
@@ -548,8 +521,8 @@ function SwipePanIcon(): JSX.Element {
       <g className="gi-anim gi-sp-u" opacity="0">
         <rect
           className="gi-anim gi-sp-u-trail"
-          x="29"
-          y="87"
+          x="45"
+          y="19"
           width="10"
           height="34"
           rx="5"
@@ -558,8 +531,8 @@ function SwipePanIcon(): JSX.Element {
         <use className="gi-anim gi-sp-u-lift" href="#gi-sp-hand" />
         <circle
           className="gi-anim gi-sp-u-lift"
-          cx="34"
-          cy="87"
+          cx="50"
+          cy="19"
           r="9"
           fill="url(#gi-sp-tip-grad)"
         />

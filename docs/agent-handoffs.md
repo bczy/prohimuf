@@ -1978,3 +1978,30 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   re-anchored the 4 directional trails, trimmed down/up sweep travel to keep the
   low fingertip in frame. tsc/lint/format green; in-context frozen captures match
   the photo pose. (Serge / game-graphist + Amelia / dev-r3f-render)
+
+- story-tutorial-visual-gestures / hand line-art v5 (Bertrand rejected v4 pose, then
+  supplied the iStock touch-gesture reference sheet): Serge/game-graphist redrew both
+  HAND\_\* as THIN uniform outline line-art (fill:none, INK stroke 2.4px, round caps/joins)
+  in the iStock idiom — extended finger(s) straight up, unused fingers as curled
+  knuckle-bumps, soft relaxed thumb lobe, short wrist. Neon (#ffe600) indicators are
+  SEPARATE paths: 3 concentric tap-rings for the two-finger tap, a tip-circle (+optional
+  direction arrow) for the swipe. Screenshot-proven at 240/96/64 on dark vs the reference
+  crops (5 iterations, /tmp scratchpad). Defect sweep clean (fingers rooted, parity 2-up
+  correct, thumb singular, no fused/detached parts). NOTE for render dev: this is a
+  vocabulary change — set fill="none" (not BODY), drop the old interior crease detail
+  paths, retarget halo/ripple/trail anchors to the new tips (below). Did NOT edit
+  GestureIcon.tsx — SVG + anchors handed to dev-r3f-render. (Serge / game-graphist)
+
+- story-tutorial-visual-gestures / hand line-art v5 INTEGRATED (PR #43): dev-r3f-render
+  applied the iStock vocabulary in src/render/ui/GestureIcon.tsx. Both HAND\_\* swapped to the
+  v5 outline paths (fill="none", INK stroke 2.4, round caps/joins); all interior crease/knuckle
+  sub-paths deleted on both hands. Two-finger tap: single ripple → 3 concentric neon rings
+  centered (55,17) r6/10/14 (2px, fill none), pulsed on the tap beat via gi-tt-ripple with
+  static opacity=1 = the reduced-motion frozen frame; fingertip halos retargeted to (45,23)/
+  (63,17). Swipe: 4 tip glows + 4 directional trails retargeted to the top tip (50,19), static
+  neon contact ring (50,20) r7 added, and a reduced-motion-ONLY direction arrow (66,20→86,20 +
+  head) revealed via a new .gi-rm-only rule in the reduced-motion media query (R-trail static
+  opacity=0 so the frozen frame stays clean). Down/up sweep translates re-tuned (-2→34) to keep
+  the now-top-anchored fingertip in frame. tsc/lint/format:check all green; mobile-UA/landscape
+  captures (panels 2 & 3, one animated + one reduced-motion frame each) sit naturally next to the
+  iStock reference. Not committed (per Bertrand). (Amelia / dev-r3f-render)
