@@ -442,7 +442,7 @@ motorcycle cop, delivery civilian, bonus figure) as a **2-frame flipbook**
 - **Frame files:** `frames[0]` is always `""` → `<key>.png` (the committed
   accepted frame 1, never regenerated); `frames[i>0]` is a pose-delta clause →
   `<key>_f<i+1>.png`. The `_f` prefix sits **after** the legacy variant suffix so
-  `enemy_shooting_2_f2.png` = cop variant 2, shooting, frame 2 (ADR 0015).
+  `enemy_shooting_2_f2.png` = cop variant 2, shooting, frame 2 (ADR 0016).
 - **Frame ≥2 strategy (logged per file):** primary `kontext` img2img from the
   committed frame 1 (`image=` set to its raw GitHub URL) so the extra frame is the
   same character in a new pose; fallback = matched flux pair under the pinned seed
@@ -530,13 +530,13 @@ produced here.
 
 Generates the street-courier (livreur) as a **2-layer composite** — a delivery
 **bike** (wheel rotation) drawn under a **rider** (pedaling stride), composited as
-two stacked planes render-side (bike below rider, ADR 0016).
+two stacked planes render-side (bike below rider, ADR 0017).
 
 - **Single source of truth:** the `courier` block of
   `src/game/levels/levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers`
   keyed `bike` / `rider` with `{ asset, seed, prompt, frames, scale, offsetY }`).
   Add or tune a layer **there**, never in the script.
-- **Per-frame generation (ADR 0016, amended — strips retired).** Unlike the enemy
+- **Per-frame generation (ADR 0017, amended — strips retired).** Unlike the enemy
   flip, the courier has **no protected frame 1**. Every `frames[i]` pose clause
   becomes ONE dedicated FLUX image (`opening` + `prompt` + `, ` + clause +
   `style`) under the layer's **single pinned seed** — the whole subject appears

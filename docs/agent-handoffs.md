@@ -1134,6 +1134,46 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
 
 ---
 
+## 2026-07-13 — cycle — story-tutorial-device-paths (PR #38, ADR-0015) — FULL CYCLE
+
+- **WHAT/WHY (Bertrand):** the scripted tutorial (ADR-0012) gets TWO paths — one detailing
+  desktop controls, one mobile controls — picked automatically from the device, plus the ADR
+  update. Bertrand ruled (AskUserQuestion): new **ADR-0015** amending ADR-0012 D4 §2, per the
+  README immutability convention. Bonus motivation surfaced in exploration: the mixed copy was
+  factually WRONG on both sides (mobile shooting is a TWO-finger tap, "clic ou tap" hid it;
+  desktop has no drag-pan, "bord ou glisser" described a control that does not exist).
+- arch: Boundary verdict PASS, four lanes on disjoint paths, fully parallel. Lane G
+  (`dev-gameplay`): `src/game/systems/narrativeSystem.ts` + `tutorialInvariants.test.ts` +
+  `narrativeSystem.test.ts`. Lane R (`dev-r3f-render`): `src/render/scene/App.tsx` only.
+  Lane T (`dev-tooling-assets`): `scripts/screenshot-preview.mjs` only. Lane A (architect):
+  `docs/adr/0015-device-forked-tutorial-script.md` + 0012 "Amended by" header line + README
+  index row. (Winston / Senior Architect)
+- release: all four lanes CONCURRENT, no file overlap, none edited this log (serialized by
+  the orchestrator). Lane G — `TUTORIAL_NARRATIVE` replaced by `TUTORIAL_NARRATIVE_DESKTOP` /
+  `TUTORIAL_NARRATIVE_MOBILE` (ids `tutorial_desktop`/`tutorial_mobile`), composed from four
+  private segments; the 6 shared panels are the SAME objects by reference, only the 2 control
+  panels fork; 8 panels per variant (progress-dot parity). TDD: 2 new invariants (fork limited
+  to control panels via `toBe` reference equality; device-accurate copy via regex — mobile
+  says "deux doigts" never "clic/souris", desktop the inverse). Lane R — module-scope
+  `TUTORIAL_SCENE = IS_MOBILE ? mobile : desktop` beside `IS_MOBILE` (once-at-load, ADR-0003
+  D1); `NarrativeScreen` untouched (device-agnostic). Lane T — `02_tutorial.png` →
+  `02_tutorial_desktop.png` + second Playwright context with a mobile UA capturing
+  `03_tutorial_mobile.png`; contact sheet updated. (Amelia ×3)
+- review: architect diff review **PASS** — boundary law clean (no device/navigator vocabulary
+  in `src/game`), scope exact, ADR-0015 statements verified item-by-item against the landed
+  code, zero CONFIRMED blocking/major findings. (Winston / Senior Architect)
+- verify: `yarn typecheck` / `yarn test` (191/191) / `yarn lint` green. End-to-end in a
+  headless browser against the prod build: `?preview=tutorial` under a desktop UA renders
+  "le viseur suit ta souris… Clic gauche" / "Pousse le curseur au bord", under a mobile UA
+  "tape à DEUX doigts" / "Un doigt pour balayer… pichenette" — fork confirmed live.
+- merge: PR #38 (draft → ready) **MERGED to main by Bertrand directly** (squash `1d4d341`).
+  NOTE for the record: the 4-reviewer code-review panel and the formal PM acceptance were
+  NOT run before this merge (only the architect sign-off was) — owner's prerogative,
+  logged so the gap is visible, not silent. This handoff entry lands as a follow-up commit.
+- follow-ups (non-blocking): (1) iPadOS desktop-UA limitation means iPads get the desktop
+  script (accepted, ADR-0003 D1); (2) control copy now lives in two places — the
+  device-accuracy regex test is the guard rail when a control scheme changes.
+
 ### story-enemy-sprite-flipbook (PR #37 draft, `claude/spline-three-fiber-integration-cm2hv4`)
 
 - pm→arch: WHAT — give the enemy sprites a minimal 2-frame flip (6 fps) per state so a
@@ -1144,7 +1184,7 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   generation → cutout → CI pipeline. Frames come from the existing Pollinations/FLUX pipeline
   (kontext img2img as the primary consistency lock) and are consumed as separate `_f<N>` PNG
   files. Scope test: conscious documented extension of the accepted enemy set, recorded in
-  ADR-0015. (John / PM intent)
+  ADR-0016. (John / PM intent)
 - arch: THREE lanes, disjoint paths, PARALLEL-SAFE. **Lane MANIFEST (dev-tooling-assets, data)**
   → new top-level `enemies` block in `src/game/levels/levelArt.json` (flat keys per base sprite
   file = asset root + legacy variant suffix, pinned integer seeds, `frames[0]==""` committed
@@ -1153,7 +1193,7 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   rewritten manifest-driven with the kontext-primary / matched-flux-pair fallback strategy;
   `scripts/check-art-prompts.mjs` gains the `enemies` set; docs (`SCRIPTS.md`,
   `asset-pipeline.md`, `art-direction.md` §4.1, `render-layer.md`, `gen-sprites.yml` header)
-  - ADR-0015. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
+  - ADR-0016. **Lane RENDER (dev-r3f-render)** → new pure `src/render/scene/flipbook.ts`
     (`flipbookFrame`, DOM/Three-free) + `enemyTextures.ts` (frame param, per-frame preload,
     frame→frame-1→global fallback chain, `frameCountFor`/`enemyAnimFps` reading the manifest) +
     `EnemySprite.tsx` (per-state anim clock, HIT pins frame 1). The manifest↔ARCHETYPES key
@@ -1166,7 +1206,7 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   base filenames (normal ×3 variants idle+shooting, riot/biker idle+shooting, bonus/civilian
   idle-only), pinned seeds 4801–4812, `fps:6`, `size:256²`. SCRIPT — `gen-enemy-types.mjs`
   manifest-driven, kontext img2img primary from the committed frame 1 + matched-pair fallback,
-  skip-existing, per-asset try/catch; `check-art-prompts` `enemies` set + docs + ADR-0015.
+  skip-existing, per-asset try/catch; `check-art-prompts` `enemies` set + docs + ADR-0016.
   RENDER — `flipbook.ts` (6 unit tests), `enemyTextures.ts` frame-aware fallback chain,
   `EnemySprite.tsx` anim clock; `levelArt.consistency.test.ts` locks the manifest↔ARCHETYPES
   contract. No `_f<N>` PNGs committed (generated in CI as designed). (Amelia ×3)
@@ -1175,7 +1215,7 @@ tooling scratchpad. Not committed (orchestrator owns the merge). (dev-tooling-as
   import-free/pure, render holds only visual timing, no new dependency. Cross-lane contract
   COHERENT — all 12 renderer-derivable keys present with no orphans (consistency test), the
   `fileFor` key derivation, the consistency-test mirror, the generator's `${key}_f${i+1}`
-  filename construction and the ADR-0015 `_f<N>`-after-variant-suffix wording all agree; the
+  filename construction and the ADR-0016 `_f<N>`-after-variant-suffix wording all agree; the
   12 committed frame-1 PNGs match the manifest keys. Pipeline safety PASS — skip-existing per
   file, kontext primary never touches frame 1, the loud fallback is the only frame-1 writer
   besides `FORCE=1`, per-asset try/catch never crashes the run. Verified GREEN locally:
@@ -1201,7 +1241,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   - **PRE-MERGE (one small coherent patch, no boundary impact / no new dep / no `src/game`
     logic change):**
     1. Non-atomic fallback (MAJOR) — fetch BOTH buffers before writing either so a partial
-       failure can never orphan the committed frame 1 (ADR-0015 only sanctions the successful
+       failure can never orphan the committed frame 1 (ADR-0016 only sanctions the successful
        art-gated pair). `gen-enemy-types.mjs` `generateExtraFrame`.
     2. FORCE blast radius — simpler than the panel's `FORCE_ALL` proposal: `FORCE` gates only
        `_f<N>` frames; frame 1 (`i===0`) is generated ONLY when missing, never under FORCE.
@@ -1242,7 +1282,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
 
 ---
 
-## 2026-07-13 — dev-tooling-assets (Amelia): courier layered flipbook, tooling lane (ADR 0016)
+## 2026-07-13 — dev-tooling-assets (Amelia): courier layered flipbook, tooling lane (ADR 0017)
 
 - **START/FINISH:** implemented the tooling lane of the "2-layer courier flipbook" feature.
   Lane-scoped to scripts/CI/docs only; did NOT touch src/**, levelArt.json, or other
@@ -1258,7 +1298,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
   - `.github/workflows/gen-courier-sprites.yml` (NEW) — dispatch + ci(dispatch) guard,
     prompt gate before paid FLUX, installs @napi-rs/canvas BEFORE the generator, FORCE=1
     regen, bounded push-rebase-retry, failure artifact upload. Separate from gen-sprites.yml.
-  - `docs/adr/0016-layered-courier-flipbook-strip-and-slice.md` (NEW) + README index row.
+  - `docs/adr/0017-layered-courier-flipbook-strip-and-slice.md` (NEW) + README index row.
   - `docs/art-direction.md` §4.2, `scripts/SCRIPTS.md`, `docs/asset-pipeline.md`.
 - **Key decision (flagged for review):** the courier per-layer word budget is measured over
   the strip-VARIABLE content (`exactly ${N} cells, ` + prompt + joined `cell i:` clauses),
@@ -1340,7 +1380,7 @@ enemies` PASS (1 pre-existing non-blocking WARN on the civilian prompt).
     authoring risk — negations/word-bloat in the authored prompt + cells ARE checked.
     CONDITIONS: (a) item 5 lands (the `-free` slip is a NEG_RE gap, not a scoping gap — without
     it the deviation + a blind NEG_RE is the exact hole that passed "rider-free"); (b) the
-    deviation stays recorded in ADR-0016. Optional refinement (not blocking): negation-scan the
+    deviation stays recorded in ADR-0017. Optional refinement (not blocking): negation-scan the
     FULL assembly while word-budgeting only the variable part, so a stray negation in the shared
     tail can never slip.
   - Verdict: **MERGE-GATE HELD** — the pre-merge patch (items 1-11) is required before merge

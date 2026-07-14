@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-07-11
 - **Supersedes:** —
+- **Amended by:** [ADR-0015](./0015-device-forked-tutorial-script.md) (D4 §2 — device-forked control panels)
 - **Related:** [ADR-0002](./0002-cargo-delivery-core-loop-state.md) (deliveries),
   [ADR-0004](./0004-enemies-car-hostage-taker.md) (roster, unlock gate, `energy`),
   `docs/architecture.md`, `docs/diagrams/app-phase-flow.md`,

@@ -163,7 +163,7 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
  * `courier` block) in sync with the two-layer scheme the renderer composites in
  * `src/render/scene/CourierSprite.tsx`. The renderer requests exactly the
  * `bike` and `rider` layer keys, stacks them as two planes, and drives each as
- * a strip-sliced flipbook (ADR 0016).
+ * a strip-sliced flipbook (ADR 0017).
  *
  * These checks are deliberately LOOSE (vehicles-style register, not the
  * ARCHETYPES-strict enemies register): they validate shape and bounds, not a

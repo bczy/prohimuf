@@ -4,7 +4,7 @@
  * game-graphist scripted-retouch pass (documented, deterministic).
  *
  * WHY: FLUX reliably draws a consistent subject under a pinned seed (per-frame
- * strategy, ADR 0016 amendment) but refuses legible tri-spoke mag wheels and
+ * strategy, ADR 0017 amendment) but refuses legible tri-spoke mag wheels and
  * re-rolls small details between frames. So the pipeline is: FLUX provides the
  * subject ONCE (frame 1 = the base), and this script derives EVERY frame from
  * that single base image — identical sprite on all frames (zero flicker), with

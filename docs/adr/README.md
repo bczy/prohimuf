@@ -64,5 +64,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0012](./0012-optional-scripted-tutorial-stage.md)         | Optional scripted tutorial stage before Rue Belliard                                     | Accepted |
 | [0013](./0013-enclosed-island-cutout-pass.md)              | Enclosed-island pass in the shared sprite keyer                                          | Accepted |
 | [0014](./0014-sprite-integrity-gate-and-retouch.md)        | Post-cutout sprite-integrity gate and deterministic per-sprite retouch                   | Accepted |
-| [0015](./0015-flipbook-frame-files.md)                     | Enemy sprite flipbook as separate `_f<N>` frame files + `enemies` manifest block         | Accepted |
-| [0016](./0016-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook (bike + rider) generated strip-and-slice, atomic per layer      | Accepted |
+| [0015](./0015-device-forked-tutorial-script.md)            | Device-forked tutorial script (desktop vs mobile controls)                               | Accepted |
+| [0016](./0016-flipbook-frame-files.md)                     | Enemy sprite flipbook as separate `_f<N>` frame files + `enemies` manifest block         | Accepted |
+| [0017](./0017-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook (bike + rider), per-frame generation, atomic per layer          | Accepted |

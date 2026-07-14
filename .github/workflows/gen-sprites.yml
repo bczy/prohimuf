@@ -3,7 +3,7 @@ name: Generate enemy-type sprites
 # Generation of the enemy archetype sprites AND their flipbook frames. Enemies
 # carry a minimal 2-frame flip (6 fps) as separate PNGs named `_f<N>` after the
 # variant suffix (enemy_shooting_2_f2.png), defined in the `enemies` block of
-# levelArt.json (ADR 0015). These frame files match the enemy_*.png glob below,
+# levelArt.json (ADR 0016). These frame files match the enemy_*.png glob below,
 # so cutout/commit need NO structural change. Generates only MISSING files (in
 # practice just the _f<N> frames — committed frame-1 art is regenerated ONLY by
 # the generator's matched-pair fallback when kontext img2img fails, a loudly

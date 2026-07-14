@@ -476,7 +476,7 @@ function checkEnemies(enemies, rep) {
   }
 }
 
-// Courier LAYERED flipbook contract (story-layered-courier-flipbook, ADR 0016).
+// Courier LAYERED flipbook contract (story-layered-courier-flipbook, ADR 0017).
 // The generator (gen-courier-sprites.mjs) reads the `courier` block: shared
 // `opening` + `style`, and per LAYER (bike/rider) a pinned integer `seed`, a
 // non-empty subject `prompt`, a `frames` array of 2..8 NON-EMPTY pose clauses
@@ -580,7 +580,7 @@ function checkCourier(courier, rep) {
     }
 
     // Budgets over each ASSEMBLED PER-FRAME prompt, reconstructed EXACTLY as
-    // gen-courier-sprites.mjs sends it (one FLUX call per frame, ADR 0016
+    // gen-courier-sprites.mjs sends it (one FLUX call per frame, ADR 0017
     // amended): opening + prompt + ", " + frames[i] + style. Per-frame prompts
     // are short, so the FULL assembly is budgeted — negations included; the old
     // strip-variable scoping was retired together with the strip strategy.

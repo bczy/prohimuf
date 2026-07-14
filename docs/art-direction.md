@@ -126,7 +126,7 @@ never smooth animation. Data lives in the `enemies` block of `levelArt.json`
 - **Frame files:** each extra frame is a **separate PNG** named `_f<N>` **after**
   the legacy variant suffix — `enemy_shooting_2_f2.png` = normal cop variant 2,
   shooting, frame 2. The `_f` prefix keeps the frame index distinct from the
-  `_2`/`_3` variant suffix (ADR 0015).
+  `_2`/`_3` variant suffix (ADR 0016).
 - **Frame 1 is accepted art, never regenerated.** `frames[0]` is always `""`: the
   committed unsuffixed PNG is frame 1 and stays byte-stable (only `FORCE=1` or the
   matched-pair fallback ever touches it). `frames[i>0]` is a short **pose-delta
@@ -142,7 +142,7 @@ never smooth animation. Data lives in the `enemies` block of `levelArt.json`
 
 The street courier (livreur) is a **2-layer composite** — a delivery **bike**
 (wheel rotation) drawn UNDER a **rider** (pedaling stride), stacked as two planes
-render-side (bike below rider, ADR 0016). Data lives in the `courier` block of
+render-side (bike below rider, ADR 0017). Data lives in the `courier` block of
 `levelArt.json` (`opening`, `style`, `fps`, `size`, and `layers` keyed
 `bike` / `rider`), read by `scripts/gen-courier-sprites.mjs`.
 

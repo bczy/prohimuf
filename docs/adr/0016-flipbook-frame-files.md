@@ -1,4 +1,4 @@
-# 0015 — Enemy sprite flipbook as separate frame files
+# 0016 — Enemy sprite flipbook as separate frame files
 
 - **Status:** Accepted
 - **Date:** 2026-07-13

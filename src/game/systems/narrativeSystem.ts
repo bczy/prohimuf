@@ -28,52 +28,81 @@ export interface NarrativeScene {
  * drive the pre/post-level flow). Briefing register: DISPATCH/KENZA brief Muf directly,
  * short imperative lines, informative but fanzine — not the oblique intro voice. Covers
  * only mechanics live in a launchable level today (window cops + street courier): the
- * core loop, the controls (with the mobile two-axis swipe this stage exists for), the
- * two shipped enemies, and the HUD. Panels are illustrated only where a sprite already
- * ships; the HUD panel is text-only (no HUD art asset exists).
+ * core loop, the controls, the two shipped enemies, and the HUD. Panels are illustrated
+ * only where a sprite already ships; the HUD panel is text-only (no HUD art asset exists).
+ *
+ * Per ADR-0015 (amending ADR-0012 D4) the stage forks into two variants —
+ * `TUTORIAL_NARRATIVE_DESKTOP` and `TUTORIAL_NARRATIVE_MOBILE` — that differ ONLY on the
+ * two control panels; every other segment is composed from the same shared objects by
+ * reference, so opening/field copy stays authored once. The render layer picks the
+ * variant once at load via `IS_MOBILE`; the game layer never sees the device.
  */
-export const TUTORIAL_NARRATIVE: NarrativeScene = {
-  id: "tutorial",
-  lines: [
-    {
-      speaker: "DISPATCH",
-      text: "Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.",
-    },
-    {
-      speaker: "DISPATCH",
-      text: "Le colis arrive par le véhicule. Tu le couvres pendant la livraison, tu le laisses repartir intact.",
-      image: "assets/vehicles/truck.png",
-      imageAlt: "Le camion de livraison",
-    },
-    {
-      speaker: "KENZA",
-      text: "Pour tirer : clic ou tap sur la fenêtre. Une seule action, rien de plus.",
-    },
-    {
-      speaker: "KENZA",
-      text: "La rue déborde de l'écran. Au bureau, bord ou glisser ; sur mobile, tu balaies — haut, bas, gauche, droite.",
-    },
-    {
-      speaker: "KENZA",
-      text: "Les flics aux fenêtres, c'est tes cibles. Ils dégainent avant toi si tu traînes.",
-      image: "assets/enemy_shooting.png",
-      imageAlt: "Un flic qui dégaine à la fenêtre",
-    },
-    {
-      speaker: "KENZA",
-      text: "Le livreur dans la rue, lui, tu le touches JAMAIS. Un civil à terre et c'est fini pour nous.",
-      image: "assets/enemy_civilian.png",
-      imageAlt: "Le livreur civil dans la rue",
-    },
-    {
-      speaker: "DISPATCH",
-      text: "En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.",
-    },
-    {
-      speaker: "DISPATCH",
-      text: "Compris ? Alors bouge. Rue Belliard t'attend.",
-    },
-  ],
+const TUTORIAL_OPENING_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "DISPATCH",
+    text: "Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Le colis arrive par le véhicule. Tu le couvres pendant la livraison, tu le laisses repartir intact.",
+    image: "assets/vehicles/truck.png",
+    imageAlt: "Le camion de livraison",
+  },
+];
+
+const DESKTOP_CONTROL_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "KENZA",
+    text: "Pour tirer : le viseur suit ta souris. Clic gauche, un coup part. Une seule action, rien de plus.",
+  },
+  {
+    speaker: "KENZA",
+    text: "La rue déborde de l'écran. Pousse le curseur au bord — la vue suit, dans les deux sens.",
+  },
+];
+
+const MOBILE_CONTROL_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "KENZA",
+    text: "Pour tirer : tape à DEUX doigts, bref et net. La balle part pile entre tes doigts.",
+  },
+  {
+    speaker: "KENZA",
+    text: "La rue déborde de l'écran. Un doigt pour balayer — haut, bas, gauche, droite. Une pichenette, et ça glisse tout seul.",
+  },
+];
+
+const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "KENZA",
+    text: "Les flics aux fenêtres, c'est tes cibles. Ils dégainent avant toi si tu traînes.",
+    image: "assets/enemy_shooting.png",
+    imageAlt: "Un flic qui dégaine à la fenêtre",
+  },
+  {
+    speaker: "KENZA",
+    text: "Le livreur dans la rue, lui, tu le touches JAMAIS. Un civil à terre et c'est fini pour nous.",
+    image: "assets/enemy_civilian.png",
+    imageAlt: "Le livreur civil dans la rue",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Compris ? Alors bouge. Rue Belliard t'attend.",
+  },
+];
+
+export const TUTORIAL_NARRATIVE_DESKTOP: NarrativeScene = {
+  id: "tutorial_desktop",
+  lines: [...TUTORIAL_OPENING_LINES, ...DESKTOP_CONTROL_LINES, ...TUTORIAL_FIELD_LINES],
+};
+
+export const TUTORIAL_NARRATIVE_MOBILE: NarrativeScene = {
+  id: "tutorial_mobile",
+  lines: [...TUTORIAL_OPENING_LINES, ...MOBILE_CONTROL_LINES, ...TUTORIAL_FIELD_LINES],
 };
 
 /** Dialogue shown BEFORE a level starts */

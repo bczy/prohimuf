@@ -2,9 +2,9 @@
 /**
  * Generate the street-courier (livreur) LAYERED flipbook sprites — a delivery
  * BIKE (wheel rotation) drawn UNDER a RIDER (pedaling cycle), composited as two
- * stacked planes render-side (src/render/scene/CourierSprite.tsx, ADR 0015/0016).
+ * stacked planes render-side (src/render/scene/CourierSprite.tsx, ADR 0016/0017).
  *
- * PER-FRAME GENERATION (ADR 0016, amended). Each frame is ONE dedicated FLUX
+ * PER-FRAME GENERATION (ADR 0017, amended). Each frame is ONE dedicated FLUX
  * image: the layer's base prompt + that frame's pose clause, under the layer's
  * SINGLE pinned seed (same seed + near-identical prompt => stable composition
  * for a rigid subject, so only the described delta moves). The whole subject

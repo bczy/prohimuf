@@ -1,4 +1,4 @@
-# 0016 — Layered courier flipbook: strip-and-slice generation
+# 0017 — Layered courier flipbook: strip-and-slice generation
 
 - **Status:** Accepted — generation strategy amended the same day (see
   "Amendment" below): strip-and-slice replaced by per-frame generation.
@@ -12,7 +12,7 @@ crosses the street, not a static cut-out. Two motions are involved and they have
 cycle reads as rolling) while the rider's legs run a 6-phase pedaling stride. A
 single sprite cannot carry both without one motion looking wrong.
 
-The enemy flipbook (ADR 0015) is the closest prior art, but its generation model
+The enemy flipbook (ADR 0016) is the closest prior art, but its generation model
 does not fit the courier:
 
 - Enemy extra frames are generated **missing-only** via `kontext` img2img locked
@@ -60,7 +60,7 @@ The strip prompt is assembled as `opening` + `exactly ${N} cells, ` + `prompt` +
   frame 1 to lock onto, and chaining 6 sequential img2img hops accumulates drift,
   so the character mutates across the cycle. Rejected.
 - **Runtime sprite sheet** (all frames in one texture, UV-scrolled at render
-  time) — already rejected for the enemy set in ADR 0015: it breaks the per-PNG
+  time) — already rejected for the enemy set in ADR 0016: it breaks the per-PNG
   chroma-key and integrity gates and the ADR-0013 pre-keyed-skip idempotency.
   Same objection here. (Strip-and-slice differs: the sheet exists only transiently
   in the generator and is sliced into ordinary per-frame PNGs before it ever
