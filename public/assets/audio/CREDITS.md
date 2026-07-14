@@ -66,3 +66,7 @@ assume redistribution rights for this one file. **Action required (out of scope
 for this story): either the author confirms in-project generation (then this
 record becomes a PASS as original work) or the file is replaced with a track of
 known, compatible licence.** Until then, this asset blocks the audio-gate PASS.
+
+**Decision (Bertrand, 2026-07-14): replacement ordered** — the author could not
+confirm in-project generation, so `shoot.wav` will be replaced with a
+known-licence SFX in a dedicated follow-up story (sound-designer lane).

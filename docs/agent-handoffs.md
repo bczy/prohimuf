@@ -105,6 +105,12 @@ Template:
   story / temporary waiver; (2) greenlight or backlog the two follow-up tickets
   (downloader hardening; in-game credits link). Story shippable now. (John / PM)
 
+- stage 9 (Bertrand): MERGE authorized explicitly for PR #44 (squash on green CI).
+  shoot.wav decision: in-project generation NOT confirmable -> REPLACEMENT ORDERED
+  (follow-up story, sound-designer lane, per Malik's recommendation); decision recorded
+  in CREDITS.md. Follow-up tickets standing: downloader redirect hardening; in-game
+  credits link. (Bertrand via orchestrator)
+
 ---
 
 ### story-live-neon-rim
