@@ -186,6 +186,24 @@ this fix batch (re-verifies reworked + newly-fixed icons in one pass). **VERDICT
 CONFIRMED blocking/major → clear to dispatch the fix batch.** Lanes A and B are path-disjoint
 (`src/game/**`⟂`src/render/**`) → dispatched in **parallel**; QA re-capture then re-review of
     the fix diff, then pm accept. (Panel + Winston / Senior Architect)
+- pm acceptance (John, stage 8): **ACCEPT-WITH-NOTES.** All 12 ACs verified against the
+  shipped artifacts, not just the log: ADR-0019 landed (AC11); `GestureIcon.tsx` ships the four
+  icons incl. the 4-direction swipe cycle (AC1-AC4, panel finding #3 fixed); `NarrativeScreen.tsx`
+  carries the `role="img"`/`aria-label` a11y guard + image-404→gesture degradation chain (AC10);
+  `tutorialInvariants.test.ts` widened to the 11-panel shared set [0,1,4,5,6,7,8,9,10] with the
+  gesture-XOR-image, fork-only-[2,3], device-correct and non-empty-`gestureAlt` pins (AC9, AC7).
+  Scope CLEAN vs PROJECT_GUIDELINES: conscious documented extension inside the ADR-0012 envelope
+  (optional/skippable/informative-only, zero rule added), Belliard pool only, no car/hostage, no
+  FLUX (AC5/AC6/AC8). Mobile "très très bof" rejection was reworked around recognizable stylized
+  hands + orchestrator screenshot review; the panel's "stale QA" concern is mitigated (not
+  refuted) by the render lane's fresh `verify` self-check of the reworked+fixed icons on both
+  device contexts — good enough to accept, flagged for Bertrand. NOTES for stage 9 (Bertrand):
+  (1) merge only on GREEN final-commit CI (green on prior commit, re-running); (2) the 8→11 panel
+  growth is a conscious trade vs the <10s ethos — Karim's gate ruled KEEP 11 and forwarded a
+  PROPOSED §5 guidelines codification ("optional non-default skippable stages are budgeted on
+  clarity, not the <10s launch→gameplay brevity") awaiting a PM/Bertrand call; (3) no full QA
+  re-capture after the icon rework — dev self-verify + screenshot review stood in. Story
+  shippable now. (John / PM)
 
 ---
 
