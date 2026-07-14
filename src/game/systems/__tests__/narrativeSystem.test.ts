@@ -53,7 +53,7 @@ describe("narrativeSystem data integrity", () => {
     }
   });
 
-  it("A5: every PRE/POST scene carries a level-facade backdrop (ADR-0022)", () => {
+  it("A5: every PRE/POST scene carries a level-facade backdrop (ADR-0023)", () => {
     for (const [key, scene] of [
       ...Object.entries(PRE_LEVEL_NARRATIVE),
       ...Object.entries(POST_LEVEL_NARRATIVE),
@@ -65,7 +65,7 @@ describe("narrativeSystem data integrity", () => {
     }
   });
 
-  it("A6: tutorial scenes carry no backdrop (byte-identical to pre-ADR-0022)", () => {
+  it("A6: tutorial scenes carry no backdrop (byte-identical to pre-ADR-0023)", () => {
     expect(TUTORIAL_NARRATIVE_DESKTOP.backdrop).toBeUndefined();
     expect(TUTORIAL_NARRATIVE_MOBILE.backdrop).toBeUndefined();
   });

@@ -1,4 +1,4 @@
-# 0022 — Optional per-scene location décor behind the NarrativeScreen transcript
+# 0023 — Optional per-scene location décor behind the NarrativeScreen transcript
 
 - **Status:** Accepted
 - **Date:** 2026-07-14

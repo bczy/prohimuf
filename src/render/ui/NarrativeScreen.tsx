@@ -19,11 +19,11 @@ interface Props {
 const CHAR_DELAY_MS = 28;
 
 /**
- * Location décor mask (ADR-0022): the halftone facade reads in the upper "letterhead" band
+ * Location décor mask (ADR-0023): the halftone facade reads in the upper "letterhead" band
  * and fades to nothing before the transcript, so the briefing text always sits on clean
  * newsprint (lead-art constraint — ink-on-paper, ≥AA). Knocked back via `opacity` so it
  * establishes place without drowning the sprite/text above it. Zero glow (art-direction §2bis).
- * Opacity 0.30 is the lead-art composite-gate number (ADR-0022): a paper-dominant printed ghost,
+ * Opacity 0.30 is the lead-art composite-gate number (ADR-0023): a paper-dominant printed ghost,
  * not a photographic wash — measured to keep the transcript ink at AAA on solid newsprint.
  */
 const BACKDROP_MASK = "linear-gradient(to bottom, #000 0%, #000 38%, transparent 62%)";
@@ -146,7 +146,7 @@ export function NarrativeScreen({
             overflow: "hidden",
           }}
         >
-          {/* Location décor (ADR-0022): the level facade rephotocopied to halftone B&W as a
+          {/* Location décor (ADR-0023): the level facade rephotocopied to halftone B&W as a
               full-bleed wash BEHIND everything. First child + no z-index, so the masthead,
               illustration slot and transcript (all positioned) paint on top by DOM order.
               `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
@@ -233,7 +233,7 @@ export function NarrativeScreen({
           </div>
 
           {/* Optional illustrative sprite (ADR-0012, D5): the tutorial bestiary panels and the
-            illustrated pre/post briefings (ADR-0022). Same BASE_URL interpolation as the backdrop,
+            illustrated pre/post briefings (ADR-0023). Same BASE_URL interpolation as the backdrop,
             pixelated like in-game sprites. */}
           {currentLine?.image !== undefined && !imageError && (
             <div style={ILLUSTRATION_SLOT_STYLE}>
@@ -253,7 +253,7 @@ export function NarrativeScreen({
                   maxWidth: "100%",
                   objectFit: "contain",
                   imageRendering: "pixelated",
-                  // La loi de l'imprimé (lead-art gate, ADR-0022): on a briefing that carries a
+                  // La loi de l'imprimé (lead-art gate, ADR-0023): on a briefing that carries a
                   // location décor, grayscale the sprite so it reads as ONE printing with the
                   // halftone facade (kills stray badge/uniform colour, no dot-screen that would
                   // eat the silhouette, no neon rim — §2bis). Gated on `scene.backdrop` so the

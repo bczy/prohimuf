@@ -42,7 +42,7 @@ export interface NarrativeScene {
   readonly id: string;
   readonly lines: readonly NarrativeLine[];
   /**
-   * Optional per-scene location décor (ADR-0022, amending ADR-0021 D5). A facade path
+   * Optional per-scene location décor (ADR-0023, amending ADR-0021 D5). A facade path
    * under `public/assets/` WITHOUT a leading slash (e.g. `"assets/levels/belliard/facade.png"`).
    * The render lane prefixes `import.meta.env.BASE_URL` and paints it as a full-bleed
    * halftone-B&W wash BEHIND the (unchanged) transcript — grayscale via `HalftoneHero`,

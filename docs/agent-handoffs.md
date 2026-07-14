@@ -2968,7 +2968,7 @@ Read a real in-game screenshot (verify skill) of the composed halftone-behind-tr
 
 Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-art)
 
-- composite-gate→VERDICT (ADR-0022 illustrated briefings, Gate 4): **PASS-with-one-change.**
+- composite-gate→VERDICT (ADR-0023 illustrated briefings, Gate 4): **PASS-with-one-change.**
   Read 3 real in-game captures (`?preview=narrative`, Belliard, 1024×720). Pixel-verified:
   (a) NO surviving warm window-glow in the facade — `grayscale(1)` holds; the only warm
   pixels (max sat 0.65) are the PASSER paper button chrome (x<160,y<60), legit menu paper,
@@ -3001,13 +3001,13 @@ Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-
   Verified on the final post-triage diff: boundary intact (`backdrop?` is pure data in
   `src/game`, halftone treatment lives in render); the `scene.backdrop !== undefined` predicate
   is single-sourced across all three call sites (backdrop layer, sprite grayscale, transcript
-  ground) so "no backdrop ⇒ byte-identical" holds for the tutorial; ADR-0022 / README index /
+  ground) so "no backdrop ⇒ byte-identical" holds for the tutorial; ADR-0023 / README index /
   §2bis match the shipped opacity (0.30) and flash decisions — no doc drift; no orphan imports;
   tests A5/A6/A7 lock the game-layer invariants. `tsc` 0 · narrative 8/8.
 - **Stage 9 — product acceptance (pm / John): ACCEPTED. Ship it.**
   Resolves Bertrand's complaint on both axes (« illustrer + décor de lieu »); core loop
   Récupérer→Livrer→Éviter untouched; framing a mission with its location is period-faithful
-  presentation, booked as a documented extension in ADR-0022; tutorial byte-identical, dialogue
+  presentation, booked as a documented extension in ADR-0023; tutorial byte-identical, dialogue
   frozen, zero asset-pipeline cost. Backlog (fast-follow, NOT blockers): (1) per-line
   illustration parity for stalingrad & vitry — but KEEP `vitry_post` imageless (deliberate
   béton-grief monologue on the bare barres facade); (2) cinematic intro stays deferred;
