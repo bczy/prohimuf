@@ -2454,3 +2454,47 @@ classification stays `"miss"` on friendly fire.
 
 **Verify:** `yarn typecheck` PASS · `yarn test` 234 passed · `yarn lint` PASS ·
 `yarn format:check` PASS. Not committed. (Amelia / dev-gameplay)
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stages 6-8 CLOSED — PANEL CLEAR, PM ACCEPT
+
+**2026-07-14 · orchestrator, serial log of the closing verdicts.**
+
+- **Stage 6 INTEGRATE (Winston):** sign-off PASS — boundary law holds (game pure, render
+  rule-free, hooks single seam), contracts conform, stale tracer comments tidied,
+  ADR-0020 amended (tracer drop + shipped read-strength rework recorded).
+- **Stage 7 REVIEW PANEL (mandatory, 4 reviewers in parallel):**
+  `code-review` (high): 1 BLOCKING + 1 MAJOR + 8 minors · `bmad-code-review`:
+  NOT-mergeable verdict, same blocking/major + AC4 acceptance gap · edge-case-hunter:
+  same 2 + 4 minors · `security-review`: CLEAN (zero findings). Cross-verified at source
+  by 3 reviewers independently. Architect triage: HOLD → fix specs issued.
+  - B1 BLOCKING: courier friendly-fire penalty silently dead under hitscan →
+    **RESTORED** (`resolveCourierShot`, window-hit priority, nearest courier within 1.2,
+    civilian deltas; tested through real `tickGameState`).
+  - M1 MAJOR: terminal-phase replay of impactEvents/feedback/pointFeedback → **FIXED**
+    (early returns zero all transients; pre-existing floater replay folded in).
+  - M2 MAJOR (AC4 gap): wall-mark cap now unit-asserted (`markRing.ts` pure helper +
+    tests). Minors: NaN hit-gate guard, comment accuracy, hittable-states tests,
+    techplan doc sync. Routed follow-ups: D4.1 off-facade-mark design clarification,
+    `bullet_player.png` script cleanup, 2 e2e specs (FIFO cap / restart clear), facade
+    B&W fanzine pass. Waived: pause-gate on FX lifetimes, pool-comment wording, HMR
+    texture cache. **RE-GATE: HOLD LIFTED** — no unresolved CONFIRMED blocking/major.
+- **Rebase:** branch rebased on main (tutorial story #43), one additive conflict in this
+  log resolved; 240/240 tests green post-rebase.
+- pm acceptance (John, stage 8): **ACCEPT.** All 7 story ACs verified against shipped
+  artifacts on `claude/pensive-dirac-8oyzmp`, not just the gate log: player shot is now
+  instant hitscan `resolvePlayerShot` — no upward travel (AC1), hits only the enemy under
+  the crosshair incl. enemy-above-aim miss (AC2); one cosmetic `ImpactEvent`/shot drives
+  the explosion (AC3); `markRing.ts` FIFO cap = pool size, unit-tested (AC4); reward math
+  byte-preserved and the courier civilian penalty RESTORED via `resolveCourierShot` after
+  the panel caught its silent deletion, terminal-tick impactEvents cleared (AC5); pure
+  game / render-effects split, ADR-0020 (AC6); 240 tests + tsc/lint/format/CI green
+  (AC7). Cahier des charges CLEAN — faithful flat-shot restoration + faithful
+  impact/marks, core loop/weapon/enemy-fire/scoring untouched (scope OUT respected).
+  NOTES for stage 9 (Bertrand): (1) merge only on GREEN final-commit CI; (2) follow-ups
+  standing, not blockers — D4.1 off-facade-mark design clarification, `bullet_player.png`
+  dead-texture cleanup, 2 e2e specs (FIFO/restart), separate facade B&W fanzine art pass.
+  Story shippable now. (John / PM)
+- **Stage 9 MERGE: → Bertrand (explicit).** PR #46, ready-for-review, preview:
+  https://bczy.github.io/prohimuf/preview/claude-pensive-dirac-8oyzmp/
