@@ -145,3 +145,7 @@ CLI still inventories the whole set (run with no `--file`) for that future work.
 - **Follow-up:** a set-wide enemy-sprite speckle cleanup (or a recalibrated /
   per-sprite-baselined integrity gate) is needed before the HARD gate can cover the
   whole `enemy_*.png` set; tracked as a separate story.
+- **Shared morphology (2026-07-14, story-shared-morphology-lib).** This script's hand-rolled
+  connected-component labeler was extracted verbatim to `scripts/lib/morphology.mjs`
+  (`labelComponents`, called here with explicit 4-connectivity) — behaviour frozen, verdicts
+  byte-identical. See ADR-0019 → _Shared-morphology extraction_.

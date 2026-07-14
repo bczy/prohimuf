@@ -51,6 +51,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { labelComponents } from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -88,61 +89,11 @@ const ENCLAVE_TORSO_FRAC = 0.8;
 // Alpha is binary after keying; treat anything non-zero as opaque content.
 const OPAQUE_ALPHA_MIN = 1;
 
-// 4-CONNECTIVITY neighbour order (matches components.mjs / cutout-enemies.mjs /
-// retouch-sprites.mjs). 4-conn is REQUIRED: an 8-conn labelling would merge the
-// diagonally-linked keying-debris cluster (near x199-206 on the courier) into one
-// larger component that slips under the < 12px speckle budget and escapes detection.
-const NEIGHBOURS4 = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-];
-
-/**
- * Label the 4-connected components of a pixel predicate. Pure. Returns an array of
- * { size, bbox:[x0,y0,x1,y1], touchesBorder } sorted largest-first.
- */
-function labelComponents(W, H, keep) {
-  const label = new Int32Array(W * H).fill(-1);
-  const comps = [];
-  for (let start = 0; start < W * H; start++) {
-    if (label[start] !== -1 || !keep(start)) continue;
-    const id = comps.length;
-    const stack = [start];
-    label[start] = id;
-    let size = 0;
-    let x0 = W;
-    let y0 = H;
-    let x1 = 0;
-    let y1 = 0;
-    let touchesBorder = false;
-    while (stack.length) {
-      const p = stack.pop();
-      size++;
-      const x = p % W;
-      const y = (p / W) | 0;
-      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) touchesBorder = true;
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
-      if (y < y0) y0 = y;
-      if (y > y1) y1 = y;
-      for (const [dx, dy] of NEIGHBOURS4) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        const np = ny * W + nx;
-        if (label[np] === -1 && keep(np)) {
-          label[np] = id;
-          stack.push(np);
-        }
-      }
-    }
-    comps.push({ size, bbox: [x0, y0, x1, y1], touchesBorder });
-  }
-  comps.sort((a, b) => b.size - a.size);
-  return comps;
-}
+// labelComponents is imported from scripts/lib/morphology.mjs. Both call sites below pass
+// { connectivity: 4 } DELIBERATELY (matches components.mjs / cutout-enemies.mjs /
+// retouch-sprites.mjs): an 8-conn labelling would merge the diagonally-linked keying-debris
+// cluster (near x199-206 on the courier) into one larger component that slips under the
+// < 12px speckle budget and escapes detection.
 
 /**
  * Measure the topology / integrity of one keyed sprite. Pure (no I/O), so it is
@@ -152,8 +103,8 @@ export function measureIntegrity({ W, H, d }) {
   const isOpaque = (p) => d[p * 4 + 3] >= OPAQUE_ALPHA_MIN;
   const isTransparent = (p) => d[p * 4 + 3] === 0;
 
-  // Opaque components: dominant subject + speckle parasites.
-  const opaque = labelComponents(W, H, isOpaque);
+  // Opaque components: dominant subject + speckle parasites. 4-conn (see note above).
+  const opaque = labelComponents(W, H, isOpaque, { connectivity: 4 });
   const totalOpaque = opaque.reduce((s, c) => s + c.size, 0);
   const dominant = opaque[0] ?? { size: 0, bbox: [0, 0, 0, 0], touchesBorder: false };
   const dominanceRatio = totalOpaque > 0 ? dominant.size / totalOpaque : 0;
@@ -167,8 +118,8 @@ export function measureIntegrity({ W, H, d }) {
     if (a > 0 && a < 255) semiAlpha++;
   }
 
-  // Interior transparent enclaves = transparent components not touching the border.
-  const transparent = labelComponents(W, H, isTransparent);
+  // Interior transparent enclaves = transparent components not touching the border. 4-conn.
+  const transparent = labelComponents(W, H, isTransparent, { connectivity: 4 });
   const enclaves = transparent
     .filter((c) => !c.touchesBorder)
     .map((c) => ({ size: c.size, bbox: c.bbox }));

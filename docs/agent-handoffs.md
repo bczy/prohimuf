@@ -2807,3 +2807,34 @@ paydown — ZERO behaviour change is the whole point.
     proof owner: qa-lead (stage 5 fixpoint + byte-diff).
   - Consequence for scheduling: BUILD stays BLOCKED on stage 3; I am holding the dev lane
     until Winston releases the contract. (Marion / Producer)
+
+- stage 5 VERIFY — **Inès / qa-lead** — QUALITY GATE = **PASS (round 1)**, ran against the
+  landed uncommitted build 2026-07-14. Plan + filled verdict:
+  `docs/qa/plan-story-shared-morphology-lib.md`. Behaviour is fully byte-frozen — every
+  byte-oracle row green (fixpoint §1 all four --check + write-mode clean; replay §2 old↔new
+  byte-identical; levelArt §3 hash-identical; integrity §4 metrics-identical; tsc/vitest
+  235-green/lint/prettier/coverage 96.9% all green). The HARD ACCEPTANCE LINE holds throughout.
+  - **ROUND 0 = FAIL on §6 D1 (AC1 completeness):** `scripts/retouch-flash-halos.mjs:251` still
+    defined and USED a local `zoneMask` (calls L272 & L334) byte-identical to the lib's exported
+    `zoneMask` — retouch imported 5 other primitives from `./lib/morphology.mjs` but not this
+    one. A surviving hand-rolled copy of a listed primitive, in the very script the story's
+    "Why" names as the motivating desync case → re-created the desync class the story exists
+    to kill. Behaviour-neutral (identical bodies), lint cannot catch it (copy was live).
+    → routed to **dev-tooling-assets**, **round 1 of 2** (producer cap: 2 then STOP+escalate).
+  - **ROUND 1 = RESOLVED + RE-GATED PASS:** dev fix landed — retouch now imports `zoneMask` from
+    the lib (L116), local def deleted, call sites unchanged (L259 & L321). I re-ran the
+    fix-touched rows myself (not on the dev's word): §6 D1 definition-scoped grep clean
+    (NO_PRIMITIVE_DEFINITIONS_OUTSIDE_LIB), D2 all 6 consumers import the lib, D3 no directive
+    (only "IMPOSSIBLE BY CONSTRUCTION" prose), §1 F2 retouch --check exit 0, §1 F5 write-mode
+    0 PNG, prettier clean, vitest 235 green (morphology 21 tests). Single source of truth now
+    complete; behaviour still byte-frozen. **Round 1 consumed, cap not hit. GATE PASS.** Clear
+    to stage 6 (architect review) → stage 7 (code-review panel). I verdicted, did not fix.
+  - **SPEC AMENDMENT — R1 (byte-diff oracle).** The planned R1 ("c79dfda replay == committed
+    HEAD bytes") was unsatisfiable AND did not test the refactor: a clean single-pass replay
+    diverges from HEAD on 7/10 shooting sprites — identically under pre-refactor and landed
+    code. Committed HEAD is iterated human production (ADR-0019 iters 1-4), not a single clean
+    pass. Amended to **R1′: old-code-replay ≡ new-code-replay** (proven: `diff -rq` exit 0,
+    identical sha256 rollup, 7 HEAD-divergent sprites match old↔new per-file). Stronger
+    isolation of "extraction changed no behaviour"; not a waiver. Dev's flagged deviation +
+    eslint-ignore note both independently verified CORRECT (own stash isolation, not on faith).
+    (Inès / qa-lead)

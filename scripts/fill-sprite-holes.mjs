@@ -53,14 +53,12 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { solidBodyMask } from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const ASSET_DIR = path.resolve(ROOT, process.env.ASSET_DIR ?? "public/assets");
 const OPAQUE = 16; // alpha >= OPAQUE counts as figure (opaque); < OPAQUE is transparent
-const CLOSE_R = 10; // disk radius for the body-reconstruction closing
-const ERODE_R = 1; // disk radius for the anti-halo erosion after fill-holes
-const SEAL_MARGIN = 2; // a column is "frame-cut" if it has opaque within this many px of the bottom edge
 
 /** List the default targets: every public/assets/enemy_*.png. */
 function defaultTargets() {
@@ -69,173 +67,6 @@ function defaultTargets() {
     .filter((f) => /^enemy_.*\.png$/.test(f))
     .sort()
     .map((f) => path.join(ASSET_DIR, f));
-}
-
-/** Precompute the (dx,dy) offsets of a disk structuring element of the given radius. */
-function diskOffsets(r) {
-  const o = [];
-  for (let dy = -r; dy <= r; dy++) {
-    for (let dx = -r; dx <= r; dx++) {
-      if (dx * dx + dy * dy <= r * r) o.push([dx, dy]);
-    }
-  }
-  return o;
-}
-
-/** Binary dilation by a structuring element (precomputed offsets). */
-function dilate(mask, W, H, off) {
-  const out = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (!mask[y * W + x]) continue;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < W && ny < H) out[ny * W + nx] = 1;
-      }
-    }
-  }
-  return out;
-}
-
-/** Binary erosion by a structuring element (precomputed offsets). Out-of-bounds = empty. */
-function erode(mask, W, H, off) {
-  const out = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      let all = 1;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H || !mask[ny * W + nx]) {
-          all = 0;
-          break;
-        }
-      }
-      out[y * W + x] = all;
-    }
-  }
-  return out;
-}
-
-/**
- * binary_fill_holes: flood the INVERSE mask from the image border (4-connectivity);
- * any inverse pixel the flood never reaches is an interior hole → set it in the mask.
- */
-function fillHoles(mask, W, H) {
-  const N = W * H;
-  const reach = new Uint8Array(N);
-  const st = [];
-  const push = (x, y) => {
-    if (x < 0 || y < 0 || x >= W || y >= H) return;
-    const i = y * W + x;
-    if (reach[i] || mask[i]) return;
-    reach[i] = 1;
-    st.push(i);
-  };
-  for (let x = 0; x < W; x++) {
-    push(x, 0);
-    push(x, H - 1);
-  }
-  for (let y = 0; y < H; y++) {
-    push(0, y);
-    push(W - 1, y);
-  }
-  while (st.length) {
-    const i = st.pop();
-    const x = i % W;
-    const y = (i / W) | 0;
-    push(x - 1, y);
-    push(x + 1, y);
-    push(x, y - 1);
-    push(x, y + 1);
-  }
-  const out = new Uint8Array(N);
-  for (let i = 0; i < N; i++) out[i] = mask[i] || !reach[i] ? 1 : 0;
-  return out;
-}
-
-/** Keep only the largest 4-connected component of a binary mask. */
-function largestComponent(mask, W, H) {
-  const N = W * H;
-  const seen = new Uint8Array(N);
-  let best = null;
-  let bestSize = 0;
-  for (let i = 0; i < N; i++) {
-    if (!mask[i] || seen[i]) continue;
-    const comp = [];
-    const q = [i];
-    seen[i] = 1;
-    while (q.length) {
-      const j = q.pop();
-      comp.push(j);
-      const x = j % W;
-      const y = (j / W) | 0;
-      const nb = [
-        [x - 1, y],
-        [x + 1, y],
-        [x, y - 1],
-        [x, y + 1],
-      ];
-      for (const [nx, ny] of nb) {
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        const k = ny * W + nx;
-        if (mask[k] && !seen[k]) {
-          seen[k] = 1;
-          q.push(k);
-        }
-      }
-    }
-    if (comp.length > bestSize) {
-      bestSize = comp.length;
-      best = comp;
-    }
-  }
-  const out = new Uint8Array(N);
-  if (best) for (const j of best) out[j] = 1;
-  return out;
-}
-
-const DISK_CLOSE = diskOffsets(CLOSE_R);
-const DISK_ERODE = diskOffsets(ERODE_R);
-
-/** Reconstruct the figure's solid body mask (PASS A steps 1-3). */
-function solidBodyMask(data, W, H) {
-  const N = W * H;
-  const opaque = new Uint8Array(N);
-  let minX = W;
-  let maxX = -1;
-  for (let i = 0; i < N; i++) {
-    if (data[i * 4 + 3] >= OPAQUE) {
-      opaque[i] = 1;
-      const x = i % W;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-    }
-  }
-  if (maxX < minX) return opaque; // no figure — nothing to solidify
-  // SELECTIVE bottom-row seal: seal the bottom row ONLY in columns where the figure is
-  // genuinely CUT by the frame — an opaque pixel within SEAL_MARGIN px of the bottom edge
-  // (a bust sprite, whose torso void drains out the bottom and must count as interior).
-  // Sealing the WHOLE x-extent would over-annex bottom-open BACKGROUND — the triangle
-  // between a shooter's spread legs, slivers under the feet — as interior; a column of
-  // pure background (no opaque near the bottom) is left OPEN so that gap stays transparent.
-  const sealed = Uint8Array.from(opaque);
-  const yCut = H - 1 - SEAL_MARGIN;
-  for (let x = minX; x <= maxX; x++) {
-    for (let y = H - 1; y >= yCut; y--) {
-      if (opaque[y * W + x]) {
-        sealed[(H - 1) * W + x] = 1;
-        break;
-      }
-    }
-  }
-  let solid = dilate(sealed, W, H, DISK_CLOSE);
-  solid = erode(solid, W, H, DISK_CLOSE); // closing
-  solid = fillHoles(solid, W, H);
-  solid = largestComponent(solid, W, H);
-  solid = erode(solid, W, H, DISK_ERODE); // anti-halo
-  return solid;
 }
 
 /**
@@ -389,8 +220,12 @@ function boundaryMean(region, data, W, H, file) {
  * Returns { passA, passB } counts. Only ever writes alpha<16 pixels.
  */
 function solidify(data, W, H, file) {
-  // PASS A — solidify.
-  const solid = solidBodyMask(data, W, H);
+  // PASS A — solidify. Build the opaque mask (alpha>=OPAQUE) here, then reconstruct the
+  // solid body via the shared morphology lib (formerly this script's local solidBodyMask).
+  const N = W * H;
+  const opaque = new Uint8Array(N);
+  for (let i = 0; i < N; i++) if (data[i * 4 + 3] >= OPAQUE) opaque[i] = 1;
+  const solid = solidBodyMask(opaque, W, H);
   const [dr, dg, db] = darkClothingTone(data, W, H);
   let passA = 0;
   for (let i = 0; i < W * H; i++) {

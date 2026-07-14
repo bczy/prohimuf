@@ -29,6 +29,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { diskOffsets, dilate, erode, zoneMask } from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -54,61 +55,12 @@ const HEM_FILL = {
   "enemy_shooting_3_f2.png": { region: [0.0, 0.5, 1.0, 1.0], radius: 22 },
 };
 
+// diskOffsets / dilate / erode / zoneMask are imported from scripts/lib/morphology.mjs
+// (shared, behaviour-frozen). This script's erode passes { outsideBelowBottom: true } — the
+// ONE geometric divergence from the other consumers: neighbours below the bottom edge count
+// as FILLED because the bust is frame-cut there (see the lib erode doc). zoneMask takes an
+// ARRAY of rects, so the single region rect is wrapped in [region].
 const lum = (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b;
-
-function diskOffsets(r) {
-  const o = [];
-  for (let dy = -r; dy <= r; dy++)
-    for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) o.push([dx, dy]);
-  return o;
-}
-
-function dilate(m, W, H, off) {
-  const o = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      if (!m[y * W + x]) continue;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < W && ny < H) o[ny * W + nx] = 1;
-      }
-    }
-  return o;
-}
-
-function erode(m, W, H, off) {
-  const o = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      let keep = 1;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        // Pixels outside the frame count as background for the erosion, EXCEPT
-        // below the bottom edge: the bust is frame-cut there, and treating the
-        // outside as background would erode the hem we are trying to grow.
-        const v = ny >= H ? 1 : nx < 0 || ny < 0 || nx >= W ? 0 : m[ny * W + nx];
-        if (!v) {
-          keep = 0;
-          break;
-        }
-      }
-      o[y * W + x] = keep;
-    }
-  return o;
-}
-
-function zoneMask(zone, W, H) {
-  const m = new Uint8Array(W * H);
-  const [a, b, c, d] = zone;
-  const x0 = Math.max(0, Math.floor(a * W));
-  const y0 = Math.max(0, Math.floor(b * H));
-  const x1 = Math.min(W - 1, Math.ceil(c * W));
-  const y1 = Math.min(H - 1, Math.ceil(d * H));
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m[y * W + x] = 1;
-  return m;
-}
 
 /**
  * One closing pass restricted to the region: returns the mask of NEW pixels
@@ -116,8 +68,8 @@ function zoneMask(zone, W, H) {
  */
 export function hemFillMask(alphaMask, W, H, region, radius, extendDown = null) {
   const off = diskOffsets(radius);
-  const closed = erode(dilate(alphaMask, W, H, off), W, H, off);
-  const rz = zoneMask(region, W, H);
+  const closed = erode(dilate(alphaMask, W, H, off), W, H, off, { outsideBelowBottom: true });
+  const rz = zoneMask([region], W, H);
   const out = new Uint8Array(W * H);
   for (let p = 0; p < W * H; p++) {
     if (closed[p] && !alphaMask[p] && rz[p]) out[p] = 1;

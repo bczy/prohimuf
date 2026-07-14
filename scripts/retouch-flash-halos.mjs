@@ -108,6 +108,14 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import {
+  diskOffsets,
+  dilate,
+  largestComponent,
+  labelComponents,
+  zoneMask,
+  solidBodyMask,
+} from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -240,20 +248,6 @@ const N4 = [
   [0, -1],
 ];
 
-/** Build the in-zone mask for a file from its normalized rects. Pure. */
-function zoneMask(zones, W, H) {
-  const m = new Uint8Array(W * H);
-  if (!zones) return m;
-  for (const [nx0, ny0, nx1, ny1] of zones) {
-    const x0 = Math.max(0, Math.floor(nx0 * W));
-    const y0 = Math.max(0, Math.floor(ny0 * H));
-    const x1 = Math.min(W - 1, Math.ceil(nx1 * W));
-    const y1 = Math.min(H - 1, Math.ceil(ny1 * H));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m[y * W + x] = 1;
-  }
-  return m;
-}
-
 /**
  * Compute the set of remnant pixels to delete: opaque + dark + desaturated + in a zone +
  * exterior-connected. Pure. Returns a Uint8Array del mask (del[p]=1 → alpha 255→0).
@@ -333,149 +327,15 @@ export function computeIslandErase(data, W, H, zones) {
 }
 
 // ── SOLIDIFY-COMPATIBILITY RECONCILE ────────────────────────────────────────────────
-// Mirrors fill-sprite-holes.mjs PASS-A body reconstruction so we can revert any deletion
+// The body reconstruction (disk-10 closing → fill-holes → largest component → disk-1 erode
+// + selective bottom seal) mirrors fill-sprite-holes.mjs PASS-A so we can revert any deletion
 // that falls inside the accepted solid body (the figure stays 100% solid — Bertrand's line,
-// commit 81a26ad / ADR-0014 — and fill-sprite-holes.mjs --check stays green). Re-sync if
-// that script's morphology changes; the binding oracle is its --check, run after applying.
-const CLOSE_R = 10;
-const ERODE_R = 1;
-const SEAL_MARGIN = 2;
-
-function diskOffsets(r) {
-  const o = [];
-  for (let dy = -r; dy <= r; dy++)
-    for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) o.push([dx, dy]);
-  return o;
-}
-function dilate(mask, W, H, off) {
-  const out = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      if (!mask[y * W + x]) continue;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < W && ny < H) out[ny * W + nx] = 1;
-      }
-    }
-  return out;
-}
-function erode(mask, W, H, off) {
-  const out = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      let all = 1;
-      for (const [dx, dy] of off) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H || !mask[ny * W + nx]) {
-          all = 0;
-          break;
-        }
-      }
-      out[y * W + x] = all;
-    }
-  return out;
-}
-function fillHoles(mask, W, H) {
-  const Nn = W * H;
-  const reach = new Uint8Array(Nn);
-  const st = [];
-  const push = (x, y) => {
-    if (x < 0 || y < 0 || x >= W || y >= H) return;
-    const i = y * W + x;
-    if (reach[i] || mask[i]) return;
-    reach[i] = 1;
-    st.push(i);
-  };
-  for (let x = 0; x < W; x++) {
-    push(x, 0);
-    push(x, H - 1);
-  }
-  for (let y = 0; y < H; y++) {
-    push(0, y);
-    push(W - 1, y);
-  }
-  while (st.length) {
-    const i = st.pop();
-    push((i % W) - 1, (i / W) | 0);
-    push((i % W) + 1, (i / W) | 0);
-    push(i % W, ((i / W) | 0) - 1);
-    push(i % W, ((i / W) | 0) + 1);
-  }
-  const out = new Uint8Array(Nn);
-  for (let i = 0; i < Nn; i++) out[i] = mask[i] || !reach[i] ? 1 : 0;
-  return out;
-}
-function largestComponent(mask, W, H) {
-  const Nn = W * H;
-  const seen = new Uint8Array(Nn);
-  let best = null;
-  let bestSize = 0;
-  for (let i = 0; i < Nn; i++) {
-    if (!mask[i] || seen[i]) continue;
-    const comp = [];
-    const q = [i];
-    seen[i] = 1;
-    while (q.length) {
-      const j = q.pop();
-      comp.push(j);
-      const x = j % W;
-      const y = (j / W) | 0;
-      for (const [nx, ny] of [
-        [x - 1, y],
-        [x + 1, y],
-        [x, y - 1],
-        [x, y + 1],
-      ]) {
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        const k = ny * W + nx;
-        if (mask[k] && !seen[k]) {
-          seen[k] = 1;
-          q.push(k);
-        }
-      }
-    }
-    if (comp.length > bestSize) {
-      bestSize = comp.length;
-      best = comp;
-    }
-  }
-  const out = new Uint8Array(Nn);
-  if (best) for (const j of best) out[j] = 1;
-  return out;
-}
-const DISK_CLOSE = diskOffsets(CLOSE_R);
-const DISK_ERODE = diskOffsets(ERODE_R);
+// commit 81a26ad / ADR-0014 — and fill-sprite-holes.mjs --check stays green). It is now the
+// SAME `solidBodyMask` both scripts import from scripts/lib/morphology.mjs, so the old
+// "re-sync if that script's morphology changes" hazard is IMPOSSIBLE BY CONSTRUCTION — there
+// is one implementation and it cannot drift. The disk-1 reconcile pad stays local (it is this
+// script's own lever, not part of the solidify body).
 const DISK_PAD = RECONCILE_PAD > 0 ? diskOffsets(RECONCILE_PAD) : null;
-
-/** Reconstruct the solidify "solid body mask" from an opaque predicate. Mirrors PASS A. */
-function solidBodyMask(opaque, W, H) {
-  const N = W * H;
-  let minX = W;
-  let maxX = -1;
-  for (let i = 0; i < N; i++)
-    if (opaque[i]) {
-      const x = i % W;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-    }
-  if (maxX < minX) return opaque;
-  const sealed = Uint8Array.from(opaque);
-  const yCut = H - 1 - SEAL_MARGIN;
-  for (let x = minX; x <= maxX; x++)
-    for (let y = H - 1; y >= yCut; y--)
-      if (opaque[y * W + x]) {
-        sealed[(H - 1) * W + x] = 1;
-        break;
-      }
-  let solid = dilate(sealed, W, H, DISK_CLOSE);
-  solid = erode(solid, W, H, DISK_CLOSE);
-  solid = fillHoles(solid, W, H);
-  solid = largestComponent(solid, W, H);
-  solid = erode(solid, W, H, DISK_ERODE);
-  return solid;
-}
 
 /**
  * Clear (revert) any deletion inside the padded solidify body mask, to a fixpoint.
@@ -527,38 +387,13 @@ export function reconcileWithSolidify(data, W, H, del) {
  * zone-confined; the speckle sweep and the solidify reconcile are intentionally image-wide.
  */
 export function sweepSpeckle(data, W, H, del) {
-  const N = W * H;
   const alive = (p) => data[p * 4 + 3] >= OPAQUE && !del[p];
-  const lab = new Int32Array(N).fill(-1);
-  const comps = [];
-  for (let s = 0; s < N; s++) {
-    if (lab[s] !== -1 || !alive(s)) continue;
-    const stack = [s];
-    lab[s] = comps.length;
-    const px = [];
-    while (stack.length) {
-      const p = stack.pop();
-      px.push(p);
-      const x = p % W;
-      const y = (p / W) | 0;
-      for (const [dx, dy] of N4) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        const np = ny * W + nx;
-        if (lab[np] === -1 && alive(np)) {
-          lab[np] = lab[s];
-          stack.push(np);
-        }
-      }
-    }
-    comps.push(px);
-  }
-  comps.sort((a, b) => b.length - a.length); // [0] = dominant figure
+  // 4-conn CC over the alive-opaque set, largest-first (comps[0] = dominant figure).
+  const comps = labelComponents(W, H, alive, { connectivity: 4, collectPixels: true });
   let added = 0;
   for (let c = 1; c < comps.length; c++) {
-    if (comps[c].length < SPECKLE_MAX_SIZE_PX) {
-      for (const p of comps[c]) {
+    if (comps[c].size < SPECKLE_MAX_SIZE_PX) {
+      for (const p of comps[c].pixels) {
         if (!del[p]) {
           del[p] = 1;
           added++;
