@@ -13,6 +13,47 @@ Template:
 
 ---
 
+### story-audio-licence-attribution
+
+- arch: Boundary verdict PASS — pure debt paydown, ZERO `src/**` touch, NO React/Three
+  boundary in play (game↔render↔hooks contract untouched; `audioSystem.ts`/`useAudio`/tier
+  wiring explicitly out of scope, no audible behaviour change). Stage-2 DESIGN correctly
+  skipped by pm (no gameplay/fiction). **Single lane → `dev-tooling-assets`** owns all three
+  work surfaces: `scripts/download-audio.mjs` (dead-code removal + header fix + per-track
+  provenance records), NEW `public/assets/audio/CREDITS.md` (shipped credits, MUST sit under
+  `public/` so Vite copies it into the build), `README.md` (attribution section). PARALLEL-SAFE:
+  **N/A — deliberately single-lane, NOT split.** AC3 (single source of truth, no drift) makes
+  splitting these three surfaces across lanes an anti-goal: the attribution strings
+  (title/author/source/licence/licence-URL) are shared content, so one agent must author the
+  canonical set in one pass to keep them coherent by construction. Fanning out would manufacture
+  the exact drift AC3 forbids. `shoot.wav` (AC7) is a separate un-scripted asset — NOT in
+  `download-audio.mjs` — so its provenance must be investigated independently (ID3/`ffprobe`/git
+  history); binary outcome only: traced record in CREDITS **or** explicit flag-for-replacement
+  with recorded FAIL rationale, no silent third path.
+  Dev constraints (must respect): (1) `node --check scripts/download-audio.mjs` after edit —
+  no syntax break (repo pattern); (2) after removing `TRACKS`/`IA_TRACKS`/`fallback` keys/
+  `FALLBACKS`/`getIAFiles` + the orphaned FALLBACKS branch in `main()`, the script still
+  downloads EXACTLY the five `CURATED` tracks — NO behaviour change beyond dead-code removal
+  (keep `download`/`sleep`/`downloadTrack`/both `http`+`https` imports — the proto switch uses
+  both); (3) `rtk lint` clean — zero unused imports/vars/functions post-removal (AC4);
+  (4) single source of truth (AC3) — identical attribution strings across the script's per-track
+  records, `CREDITS.md`, and README; README may point to `CREDITS.md` as canonical (AC2) to
+  shrink the drift surface; (5) verify the five titles against actual file/ID3 before writing,
+  do not trust the existing `CURATED` description comments (AC1); (6) do NOT edit this log
+  concurrently (orchestrator-serialized) and do NOT touch `src/**`.
+  Sequencing with gates: dev lane builds all three surfaces + resolves `shoot.wav` → `yarn build`
+  to prove `CREDITS.md` lands in `dist/` (deployed-surface check, AC1) → **`sound-designer`
+  (Malik) licence gate (AC8) FIRST** (every shipped file — 5 BGM + `shoot.wav` — must carry a
+  verified provenance record; unresolved AC7 blocks PASS) → **`qa-lead` quality gate (AC9)
+  AFTER** (`rtk tsc`+`rtk vitest`+`rtk lint` green, script runs clean over the five tracks,
+  strings render in CREDITS + README) → architect review → code-review panel → pm accept.
+  No new ADR required: the shipped-credits-file convention is a one-file docs surface, not a
+  boundary/dependency/contract change; ADR-0018 (audio gate) already governs the provenance
+  rule this satisfies — a back-reference in the story suffices. (Winston / Senior Architect)
+- release: pending.
+
+---
+
 ### story-live-neon-rim
 
 - pm→arch: Story written (`_bmad-output/planning-artifacts/story-live-neon-rim.md`),
