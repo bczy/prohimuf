@@ -72,6 +72,7 @@ juice — while being structurally incapable of reintroducing the climbing bug, 
 advances a position and never exists as a `Bullet`.
 
 **D2.2 — Hard constraints (non-negotiable).**
+
 - The tracer **does not resolve or gate the hit** — the hit is already resolved at fire time
   (§1). The tracer is cosmetic only.
 - It **never climbs / never animates its endpoints.** Its geometry is fixed for its lifetime;
@@ -102,6 +103,7 @@ glance**. This is a read requirement, not a style call: a HIT connecting with a 
 on hit-vs-wall, not on kill. The visual language (fanzine B&W + acid neon) is `lead-art`'s.
 
 **D3.3 — Timing and size.**
+
 - Duration: `EXPLOSION_DURATION = 250 ms` (both hit and miss) — ≈15 frames at 60fps, enough to
   read as a flipbook burst, short enough not to smear under fast clicking.
 - Hit size: `EXPLOSION_SIZE_HIT = 1.4 world units` (diameter) ≈ 1.05× the enemy sprite height
@@ -110,6 +112,7 @@ on hit-vs-wall, not on kill. The visual language (fanzine B&W + acid neon) is `l
   clearly lesser.
 
 **D3.4 — Position ("under the target").**
+
 - On a **HIT**, the explosion anchors to the **base of the downed/struck target**, not to the
   raw click: centre = `(slot.screenPosition.x, slot.screenPosition.y − TARGET_BASE_DROP)` with
   `TARGET_BASE_DROP = 0.45 world units`. This drops the burst to the torso/sill so it blooms up
@@ -156,18 +159,18 @@ game logic, and (b) the decal set is bounded (D4.2) and level-scoped (D4.3).
 
 ## 5. Tuning table (all magic numbers)
 
-| Constant             | Value | Unit          | Meaning / rationale                                                    |
-| -------------------- | ----- | ------------- | --------------------------------------------------------------------- |
-| `HIT_RADIUS`         | 0.8   | world (radius)| Hit disc around slot centre. **Unchanged** — fair target (§1.3).       |
-| `EXPLOSION_DURATION` | 250   | ms            | Impact burst life, hit and miss (§3.3).                                |
-| `EXPLOSION_SIZE_HIT` | 1.4   | world (diam)  | ≈1.05× enemy sprite height; frames the target (§3.3).                  |
-| `EXPLOSION_SIZE_MISS`| 0.7   | world (diam)  | ≈0.5× hit; lesser wall spark, distinct hit/miss read (§3.2–3.3).       |
-| `TARGET_BASE_DROP`   | 0.45  | world         | Hit explosion drop below slot centre → "under the target" (§3.4).      |
-| `TRACER_DURATION`    | 50    | ms            | Static muzzle-to-impact flash life (§2). Fades opacity only.           |
-| `TRACER_WIDTH`       | 0.06  | world         | Thin beam — a crack, not a bar (§2).                                   |
-| `MUZZLE_ORIGIN_Y`    | −6    | world         | Bottom edge of view (≈ −VIEW_H/2); tracer fired up from street (§2.3). |
-| `WALL_MARK_CAP`      | 16    | count         | Max live facade marks; FIFO evict (§4.2).                              |
-| `WALL_MARK_SIZE`     | 0.35  | world (diam)  | Small inert B&W scuff; does not glow (§4.4).                           |
+| Constant              | Value | Unit           | Meaning / rationale                                                    |
+| --------------------- | ----- | -------------- | ---------------------------------------------------------------------- |
+| `HIT_RADIUS`          | 0.8   | world (radius) | Hit disc around slot centre. **Unchanged** — fair target (§1.3).       |
+| `EXPLOSION_DURATION`  | 250   | ms             | Impact burst life, hit and miss (§3.3).                                |
+| `EXPLOSION_SIZE_HIT`  | 1.4   | world (diam)   | ≈1.05× enemy sprite height; frames the target (§3.3).                  |
+| `EXPLOSION_SIZE_MISS` | 0.7   | world (diam)   | ≈0.5× hit; lesser wall spark, distinct hit/miss read (§3.2–3.3).       |
+| `TARGET_BASE_DROP`    | 0.45  | world          | Hit explosion drop below slot centre → "under the target" (§3.4).      |
+| `TRACER_DURATION`     | 50    | ms             | Static muzzle-to-impact flash life (§2). Fades opacity only.           |
+| `TRACER_WIDTH`        | 0.06  | world          | Thin beam — a crack, not a bar (§2).                                   |
+| `MUZZLE_ORIGIN_Y`     | −6    | world          | Bottom edge of view (≈ −VIEW_H/2); tracer fired up from street (§2.3). |
+| `WALL_MARK_CAP`       | 16    | count          | Max live facade marks; FIFO evict (§4.2).                              |
+| `WALL_MARK_SIZE`      | 0.35  | world (diam)   | Small inert B&W scuff; does not glow (§4.4).                           |
 
 No projectile speed for the player shot — it is hitscan (there is no travel).
 
