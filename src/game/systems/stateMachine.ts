@@ -133,7 +133,15 @@ export function tickGameState(
   // one ImpactEvent plus the (byte-identical) reward math. Reads the pre-hit
   // enemy snapshot, exactly like the enemy-fire step below.
   const shot: PlayerShotResult | null = fire
-    ? resolvePlayerShot(crosshair, activeEnemies, facade, cameraOffsetX, cameraOffsetY, viewW, viewH)
+    ? resolvePlayerShot(
+        crosshair,
+        activeEnemies,
+        facade,
+        cameraOffsetX,
+        cameraOffsetY,
+        viewW,
+        viewH,
+      )
     : null;
   const shotEnemies = shot ? shot.enemies : activeEnemies;
   const impactEvents: readonly ImpactEvent[] = shot ? [shot.impact] : [];

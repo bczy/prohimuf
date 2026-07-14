@@ -65,10 +65,7 @@ function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
   };
 }
 
-function enemyAt(
-  slotIndex: number,
-  overrides: Partial<Enemy> = {},
-): Enemy {
+function enemyAt(slotIndex: number, overrides: Partial<Enemy> = {}): Enemy {
   return {
     id: slotIndex + 1,
     slotIndex,
