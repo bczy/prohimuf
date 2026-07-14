@@ -122,6 +122,22 @@ on hit-vs-wall, not on kill. The visual language (fanzine B&W + acid neon) is `l
 - On a **MISS**, the puff anchors **exactly at `IMPACT_POINT`** — it is a wall strike, it
   belongs where the shot struck.
 
+**D3.5 — Read contract (amendment, stage-5 playtest + composite gate, 2026-07-14).** The
+first composite read failed D3.2 (burst near-isochromatic with the reticle, miss puff at
+ambient noise over the lit facade). Binding read requirements — the LOOK stays `lead-art`'s:
+
+- **(a)** The hit burst must separate from the crosshair: high-luminance (white-hot) core,
+  clearly larger than the reticle (core ≥ ~1.0 world), never the reticle's own hue alone.
+- **(b)** Hit vs miss must differ on a channel beyond diameter: **HIT = a 1-frame
+  (~16–33 ms) white flash** at full opacity at the burst centre; **MISS = no flash** (cyan
+  spark only). Binary glance-read.
+- **(c)** Both must read over the brightest lit window; a NORMAL-blended dark backing disc
+  under the burst (≈1.25× diameter, peak 0.55 fading over ~140 ms) grounds the additive
+  neon. `EXPLOSION_SIZE_MISS` raised 0.7 → **0.9**, miss peak opacity 0.7 → **1.0** (hit
+  stays 1.4 — hierarchy preserved). Opacity envelope holds a plateau (attack 10% / hold to
+  40% / release to 100% of the 250 ms life) instead of a needle peak.
+- Re-verified with a fresh hit/miss A/B capture pair before AC3 sign-off.
+
 ---
 
 ## 4. Wall marks (persistent facade decals)
@@ -159,18 +175,19 @@ game logic, and (b) the decal set is bounded (D4.2) and level-scoped (D4.3).
 
 ## 5. Tuning table (all magic numbers)
 
-| Constant              | Value | Unit           | Meaning / rationale                                                    |
-| --------------------- | ----- | -------------- | ---------------------------------------------------------------------- |
-| `HIT_RADIUS`          | 0.8   | world (radius) | Hit disc around slot centre. **Unchanged** — fair target (§1.3).       |
-| `EXPLOSION_DURATION`  | 250   | ms             | Impact burst life, hit and miss (§3.3).                                |
-| `EXPLOSION_SIZE_HIT`  | 1.4   | world (diam)   | ≈1.05× enemy sprite height; frames the target (§3.3).                  |
-| `EXPLOSION_SIZE_MISS` | 0.7   | world (diam)   | ≈0.5× hit; lesser wall spark, distinct hit/miss read (§3.2–3.3).       |
-| `TARGET_BASE_DROP`    | 0.45  | world          | Hit explosion drop below slot centre → "under the target" (§3.4).      |
-| `TRACER_DURATION`     | 50    | ms             | Static muzzle-to-impact flash life (§2). Fades opacity only.           |
-| `TRACER_WIDTH`        | 0.06  | world          | Thin beam — a crack, not a bar (§2).                                   |
-| `MUZZLE_ORIGIN_Y`     | −6    | world          | Bottom edge of view (≈ −VIEW_H/2); tracer fired up from street (§2.3). |
-| `WALL_MARK_CAP`       | 16    | count          | Max live facade marks; FIFO evict (§4.2).                              |
-| `WALL_MARK_SIZE`      | 0.35  | world (diam)   | Small inert B&W scuff; does not glow (§4.4).                           |
+| Constant              | Value | Unit           | Meaning / rationale                                                     |
+| --------------------- | ----- | -------------- | ----------------------------------------------------------------------- |
+| `HIT_RADIUS`          | 0.8   | world (radius) | Hit disc around slot centre. **Unchanged** — fair target (§1.3).        |
+| `EXPLOSION_DURATION`  | 250   | ms             | Impact burst life, hit and miss (§3.3).                                 |
+| `EXPLOSION_SIZE_HIT`  | 1.4   | world (diam)   | ≈1.05× enemy sprite height; frames the target (§3.3).                   |
+| `EXPLOSION_SIZE_MISS` | 0.9   | world (diam)   | Lesser wall spark, distinct hit/miss read (§3.2–3.3; 0.7→0.9 per D3.5). |
+| `TARGET_BASE_DROP`    | 0.45  | world          | Hit explosion drop below slot centre → "under the target" (§3.4).       |
+
+Tracer (`TRACER_DURATION` 50 ms / `TRACER_WIDTH` 0.06 / `MUZZLE_ORIGIN_Y` −6): **DROPPED**
+at the composite gate per D2.4 (never landed in any evidence frame; `lead-art` keep/drop
+call, 2026-07-14). The instant impact is the contract; no tracer ships.
+| `WALL_MARK_CAP` | 16 | count | Max live facade marks; FIFO evict (§4.2). |
+| `WALL_MARK_SIZE` | 0.35 | world (diam) | Small inert B&W scuff; does not glow (§4.4). |
 
 No projectile speed for the player shot — it is hitscan (there is no travel).
 
@@ -194,6 +211,10 @@ No projectile speed for the player shot — it is hitscan (there is no travel).
   crosshair sprite are consumed as-is; movement, buffering, mobile tap-to-shoot (ADR-0015) are
   untouched.
 - **`HIT_RADIUS = 0.8`** itself — the value is kept (§1.3).
+- **Same-tick telegraph (ratified at stage-5 playtest, 2026-07-14).** A same-tick player
+  kill does **not** suppress the enemy's committed shot (both act on the pre-tick
+  snapshot). Intended: the loosed round is a committed threat; suppression would
+  trivialise `Éviter`.
 
 ---
 
