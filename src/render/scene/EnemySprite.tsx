@@ -149,11 +149,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
           // Fixed-offset fallback: only reachable when the anchor data or the
           // sprite itself is missing (regenerated asset without re-measured
           // anchors, or the global fallback figure).
-          flash.position.set(
-            screenPosition.x + planeH * aspect * 0.45,
-            bodyY + muzzleY,
-            0.6,
-          );
+          flash.position.set(screenPosition.x + planeH * aspect * 0.45, bodyY + muzzleY, 0.6);
         }
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);
@@ -180,12 +176,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
           transparent pixels write z=0 and punch a quad-sized hole in any
           backdrop panel drawn after it (panel p>=1), exposing the overlapped
           neighbour panel as a visible rectangle around the enemy. */}
-      <mesh
-        ref={meshRef}
-        position={[screenPosition.x, bodyY, 0]}
-        visible={false}
-        renderOrder={4}
-      >
+      <mesh ref={meshRef} position={[screenPosition.x, bodyY, 0]} visible={false} renderOrder={4}>
         <planeGeometry args={[planeH, planeH]} />
         <meshBasicMaterial color="#ff3030" transparent depthWrite={false} />
       </mesh>
