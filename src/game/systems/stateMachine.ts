@@ -12,7 +12,7 @@ import { resolvePlayerShot, tickBullets, BULLET_SPEED } from "@game/systems/bull
 import type { PlayerShotResult } from "@game/systems/bulletSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
 import {
-  checkCourierHits,
+  resolveCourierShot,
   courierSpawnInterval,
   FIRST_COURIER_DELAY,
   spawnCourier,
@@ -103,13 +103,15 @@ export function tickGameState(
   roster?: LevelRoster,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
-    return state;
+    // Idle terminal ticks must not replay last tick's transient events (they are
+    // consumed once by the bridge; the transition tick already emitted its burst).
+    return { ...state, impactEvents: [], feedback: [], pointFeedback: [] };
   }
 
   // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never
   // on the score — so the delivery bonus can never trigger the level win.
   if (state.kills >= enemiesToWin) {
-    return { ...state, phase: "LEVEL_COMPLETE" };
+    return { ...state, phase: "LEVEL_COMPLETE", impactEvents: [], feedback: [], pointFeedback: [] };
   }
 
   // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
@@ -130,8 +132,8 @@ export function tickGameState(
 
   // 4. Player fires — instant hitscan resolved at the crosshair world point
   // (ADR-0020). No travelling player projectile enters `bullets`; the shot yields
-  // one ImpactEvent plus the (byte-identical) reward math. Reads the pre-hit
-  // enemy snapshot, exactly like the enemy-fire step below.
+  // one ImpactEvent plus the per-hit reward math. Reads the pre-hit enemy
+  // snapshot, exactly like the enemy-fire step below.
   const shot: PlayerShotResult | null = fire
     ? resolvePlayerShot(
         crosshair,
@@ -173,11 +175,12 @@ export function tickGameState(
   const movedBullets = tickBullets(bullets, delta);
 
   // 7b. Street couriers (livreurs): move them along the road, spawn new ones on a
-  // timer, and resolve mistaken hits (shooting a courier costs a life + point).
+  // timer, and resolve friendly fire. Under hitscan, a window hit takes priority
+  // and consumes the shot; only a MISS (no enemy struck) can hit a courier — the
+  // nearest single one within COURIER_HIT_RADIUS (one shot = one target, D1.5).
   let couriers: readonly Courier[] = state.couriers;
   let courierTimer = state.courierTimer;
   let couriersSpawned = state.couriersSpawned;
-  let courierBullets = movedBullets;
   let courierScoreDelta = 0;
   let courierLivesDelta = 0;
   let pointFeedback: readonly PointHitEvent[] = [];
@@ -192,12 +195,13 @@ export function tickGameState(
       couriersSpawned += 1;
       courierTimer = courierSpawnInterval(couriersSpawned);
     }
-    const ch = checkCourierHits(courierBullets, couriers);
-    courierBullets = ch.bullets;
-    couriers = ch.couriers;
-    courierScoreDelta = ch.scoreDelta;
-    courierLivesDelta = ch.livesDelta;
-    pointFeedback = ch.events;
+    if (shot !== null && shot.impact.classification === "miss") {
+      const cs = resolveCourierShot(shot.impact.impactPoint, couriers);
+      couriers = cs.couriers;
+      courierScoreDelta = cs.scoreDelta;
+      courierLivesDelta = cs.livesDelta;
+      pointFeedback = cs.events;
+    }
   }
 
   // 7c. Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
@@ -232,14 +236,14 @@ export function tickGameState(
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
-  for (const b of courierBullets) {
+  for (const b of movedBullets) {
     if (b.fromPlayer) continue;
     if (Math.sqrt(b.position.x * b.position.x + b.position.y * b.position.y) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
       playerHit = true;
     }
   }
-  const finalBullets = courierBullets.filter((b) => !hitBulletIds.has(b.id));
+  const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
 
   // Lives change from being shot AND from mistakes (shooting a civilian courier).
   const shotLivesDelta = shot ? shot.livesDelta : 0;

@@ -1,13 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  checkCourierHits,
+  resolveCourierShot,
   courierSpawnInterval,
   spawnCourier,
   tickCouriers,
   COURIER_SPEED,
 } from "@game/systems/courierSystem";
 import type { CourierField } from "@game/systems/courierSystem";
-import type { Bullet } from "@game/types/bullet";
 
 const FIELD: CourierField = { halfWidth: 40, streetY: -5 };
 
@@ -51,42 +50,33 @@ describe("tickCouriers", () => {
   });
 });
 
-describe("checkCourierHits", () => {
+describe("resolveCourierShot (friendly fire under hitscan)", () => {
   const courier = { id: 7, x: 0, y: -5, dir: 1 as const, speed: COURIER_SPEED };
-  const playerBulletAt = (x: number, y: number): Bullet => ({
-    id: 1,
-    position: { x, y },
-    velocity: { x: 0, y: 1 },
-    fromPlayer: true,
-  });
 
-  it("a player bullet on the courier removes it and applies the civilian penalty", () => {
-    const res = checkCourierHits([playerBulletAt(0, -5)], [courier]);
+  it("an impact point on the courier (within 1.2) removes it and applies the civilian penalty", () => {
+    const res = resolveCourierShot({ x: 0, y: -5 }, [courier]);
     expect(res.couriers).toHaveLength(0);
-    expect(res.bullets).toHaveLength(0);
     expect(res.scoreDelta).toBe(-1);
     expect(res.livesDelta).toBe(-1);
     expect(res.events).toHaveLength(1);
     expect(res.events[0]).toMatchObject({ x: 0, y: -5, livesDelta: -1 });
   });
 
-  it("a bullet that misses leaves the courier untouched", () => {
-    const res = checkCourierHits([playerBulletAt(20, -5)], [courier]);
+  it("an impact point outside 1.2 leaves the courier untouched", () => {
+    const res = resolveCourierShot({ x: 20, y: -5 }, [courier]);
     expect(res.couriers).toHaveLength(1);
-    expect(res.bullets).toHaveLength(1);
     expect(res.scoreDelta).toBe(0);
     expect(res.livesDelta).toBe(0);
+    expect(res.events).toHaveLength(0);
   });
 
-  it("enemy bullets never hit couriers", () => {
-    const enemyBullet: Bullet = {
-      id: 2,
-      position: { x: 0, y: -5 },
-      velocity: { x: 0, y: -1 },
-      fromPlayer: false,
-    };
-    const res = checkCourierHits([enemyBullet], [courier]);
+  it("two couriers in range ⇒ only the nearest is struck (one shot = one target)", () => {
+    const near = { id: 1, x: 0.3, y: -5, dir: 1 as const, speed: COURIER_SPEED };
+    const far = { id: 2, x: -0.9, y: -5, dir: 1 as const, speed: COURIER_SPEED };
+    const res = resolveCourierShot({ x: 0, y: -5 }, [far, near]);
     expect(res.couriers).toHaveLength(1);
+    expect(res.couriers[0]?.id).toBe(2); // the far one survives
+    expect(res.events[0]).toMatchObject({ x: 0.3, y: -5 });
   });
 });
 

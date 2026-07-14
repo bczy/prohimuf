@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, AdditiveBlending } from "three";
 import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { ImpactChannel } from "@hooks/useGameLoop";
+import { writeMarkRing } from "./markRing";
 
 // Transient player-shot impact effects (ADR-0020): acid-neon explosion over a
 // brief dark backing disc (so additive neon reads against a bright facade), a
@@ -151,8 +152,7 @@ interface Flash {
   y: number;
 }
 
-interface Mark {
-  active: boolean;
+interface MarkPos {
   x: number;
   y: number;
 }
@@ -191,11 +191,12 @@ export function ImpactEffects({
   );
 
   const markMeshes = useRef<(Mesh | null)[]>(Array.from({ length: WALL_MARK_CAP }, () => null));
-  const marks = useRef<Mark[]>(
-    Array.from({ length: WALL_MARK_CAP }, () => ({ active: false, x: 0, y: 0 })),
+  // Persistent wall-mark decal set as a pure FIFO ring (spec D4.2 / AC4): each
+  // impact writes at markCursor and advances; past the cap the oldest is evicted.
+  // The ring math lives in markRing.ts so the cap invariant is unit-asserted.
+  const markSlots = useRef<readonly (MarkPos | null)[]>(
+    Array.from({ length: WALL_MARK_CAP }, () => null),
   );
-  // FIFO write cursor: overwriting marks[markCursor] then advancing evicts the
-  // oldest mark once the ring is full (spec D4.2).
   const markCursor = useRef(0);
   const lastNonce = useRef(0);
 
@@ -208,7 +209,7 @@ export function ImpactEffects({
     if (channel.resetNonce !== lastNonce.current) {
       lastNonce.current = channel.resetNonce;
       channel.queue.length = 0;
-      for (const m of marks.current) m.active = false;
+      markSlots.current = Array.from({ length: WALL_MARK_CAP }, () => null);
       for (const b of bursts.current) b.active = false;
       for (const d of backings.current) d.active = false;
       for (const f of flashes.current) f.active = false;
@@ -217,14 +218,14 @@ export function ImpactEffects({
 
     // Drain the per-frame queue (single consumer, like Floater[]).
     for (const ev of channel.queue.splice(0)) {
-      // Wall mark: at the struck point for BOTH hit and miss (spec D4.1).
-      const mark = marks.current[markCursor.current];
-      if (mark !== undefined) {
-        mark.active = true;
-        mark.x = ev.impactPoint.x;
-        mark.y = ev.impactPoint.y;
-        markCursor.current = (markCursor.current + 1) % WALL_MARK_CAP;
-      }
+      // Wall mark: at the struck point for BOTH hit and miss (spec D4.1). One
+      // FIFO write into the bounded ring (helper keeps live marks ≤ cap).
+      const written = writeMarkRing(markSlots.current, markCursor.current, {
+        x: ev.impactPoint.x,
+        y: ev.impactPoint.y,
+      });
+      markSlots.current = written.slots;
+      markCursor.current = written.cursor;
 
       // Explosion anchor + size: HIT bursts at the target base; MISS puffs at the
       // impact point. Hit and miss both peak at 1.0 — the hierarchy is carried by
@@ -270,15 +271,15 @@ export function ImpactEffects({
     }
 
     // Wall marks: static, no fade — position only.
-    marks.current.forEach((m, i) => {
+    markSlots.current.forEach((pos, i) => {
       const mesh = markMeshes.current[i];
       if (!mesh) return;
-      if (!m.active) {
+      if (pos === null) {
         mesh.visible = false;
         return;
       }
       mesh.visible = true;
-      mesh.position.set(m.x, m.y, -0.5);
+      mesh.position.set(pos.x, pos.y, -0.5);
     });
 
     // Dark backing discs: fixed size, opacity fades 1→0 over BACKING_DURATION

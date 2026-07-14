@@ -2425,3 +2425,32 @@ telegraph ruling recorded. (orchestrator, on behalf of the stage-5 verdicts)
   fanzine pass raised separately.
 
 → Stage 6 INTEGRATE (senior-architect), then stage 7 REVIEW PANEL (4 reviewers, mandatory).
+
+---
+
+### STORY-SHOT-FLAT-IMPACT — Stage 7 MERGE-GATE FIX PASS, Lane A (`dev-gameplay`) — DONE
+
+**Amelia (Gameplay) · 2026-07-14 · panel findings triaged by senior-architect, all applied.**
+
+- **B1 (BLOCKING) — courier friendly fire restored under hitscan.** `courierSystem.ts`:
+  replaced `checkCourierHits`/`CourierHitResult` (orphaned — no other caller) with pure
+  `resolveCourierShot(impactPoint, couriers) → CourierShotResult` (nearest single courier
+  within `COURIER_HIT_RADIUS` 1.2, civilian deltas, one `PointHitEvent`); dropped the unused
+  `Bullet` import. `stateMachine.ts` step 7b now calls it only when the player fired AND the
+  window shot was a MISS (window hit takes priority and consumes the shot); `courierBullets`
+  collapsed to `movedBullets`.
+- **M1 (MAJOR) — no stale transient replay in terminal ticks.** Both terminal early-returns
+  now emit `{ ...state, impactEvents: [], feedback: [], pointFeedback: [] }` (folded in the
+  pre-existing feedback/pointFeedback replay fix, same site).
+- **D-min1** NaN-safe hit gate (`!(dist <= HIT_RADIUS)`); **D-min4** reworded the
+  "byte-for-byte" comment to per-hit reward parity + `resetNonce` comment to "restart only";
+  **D-min6** miss test asserts `impactPoint`, added SHOOTING/APPEARING-are-hittable case.
+
+**Files changed:** `src/game/systems/courierSystem.ts`, `src/game/systems/stateMachine.ts`,
+`src/game/systems/bulletSystem.ts`, `src/hooks/useGameLoop.ts` (comment only), tests
+`courierSystem.test.ts` / `bulletSystem.test.ts` / `stateMachine.test.ts`. No render seam
+change (`ImpactEvent`/`ImpactChannel`/`useGameLoop` signature untouched); impact
+classification stays `"miss"` on friendly fire.
+
+**Verify:** `yarn typecheck` PASS · `yarn test` 234 passed · `yarn lint` PASS ·
+`yarn format:check` PASS. Not committed. (Amelia / dev-gameplay)
