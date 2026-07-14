@@ -23,6 +23,13 @@ const VIEWPORT = { width: 1920, height: 1080 };
 const DEVICE_SCALE = 2;
 const ENEMY_WAIT_MS = 4000; // cops are frozen VISIBLE (see addInitScript), so a short settle is enough
 
+// Pre-game flow markers (ADR-0020), kept in sync with scripts/e2e-ingame.mjs:
+// cold load lands on the TITLE cover; a single action enters the MENU flyer wall.
+// The "MUF" logo shows on BOTH screens, so it cannot gate title→menu entry; the
+// subtitle is title-only and the masthead is menu-only.
+const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // TitleScreen.tsx
+const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // MASTHEAD.running
+
 const manifest = JSON.parse(
   fs.readFileSync(path.resolve(ROOT, "src/game/levels/levelArt.json"), "utf8"),
 );
@@ -59,7 +66,14 @@ async function captureLevel(context, level, withMenu) {
   });
 
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
-  await page.getByText("MUF", { exact: true }).first().waitFor({ timeout: 20000 });
+
+  // Cold load lands on the TITLE cover (ADR-0020). Assert the title-only subtitle,
+  // perform the single-action entry (click the cover) to reach the MENU, then wait
+  // for the menu-only masthead before the flyer is present — the "MUF" logo alone
+  // cannot distinguish TITLE from MENU, so the old wait let the level click time out.
+  await page.getByText(TITLE_SUBTITLE, { exact: true }).first().waitFor({ timeout: 20000 });
+  await page.getByText(TITLE_SUBTITLE, { exact: true }).first().click({ timeout: 20000 });
+  await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout: 20000 });
 
   if (withMenu) {
     await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
@@ -167,8 +181,8 @@ async function main() {
   }
 
   // Pre-game surfaces booted directly via the preview hook (deterministic —
-  // the ?preview=menu shot is the authoritative menu capture, replacing the
-  // flaky cold-load one grabbed during the level loop).
+  // the ?preview=menu shot is the authoritative menu capture and overwrites the
+  // one grabbed while driving through the UI during the level loop).
   console.log("[screen] title");
   await captureScreen(context, "00_title.png", "?preview=title");
   console.log("[screen] menu");
