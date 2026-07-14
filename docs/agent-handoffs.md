@@ -2575,3 +2575,84 @@ classification stays `"miss"` on friendly fire.
   amendments, no re-architecture — clear to hand to `senior-architect` for lane partition +
   ADR in parallel; re-verify amendments at stage-5 design acceptance. Round 1/2.
   c/d/e also flagged to `lead-art` for the visual gate. (Karim / Lead Game Designer)
+
+- MERGE-GATE TRIAGE (stages 6-7, Winston / Senior Architect) — PR #47, post-rebase onto
+  origin/main (8c533c9); ADR renumbered 0020→**0021** (main took 0020 for gesture-icons #43).
+  Delivery-gate blocker (e2e-delivery.mjs missed) already FIXED (eb928d2). Security PASS,
+  zero findings.
+  **Integration sign-off: PASS.** Boundary held — panel confirmed `src/game/**` byte-identical;
+  every change is render-only (`src/render/**`) + docs + `scripts/**`. `useRovingIndex` correctly
+  in `src/render/ui/print/`, NOT `src/hooks/` (ADR-0021 D4); the M4 fix stays render-layer.
+  **Per-MAJOR rulings:**
+  - **M1** (stamp label + RECORD score in mark ink invisible on same-hue stock: FACILE green
+    on rose 1.01:1, DIFFICILE pink on orange 1.68:1; keyline fix only blackened the border) —
+    **FIX-BEFORE-MERGE.** Central rule (both lanes apply to their own files, `tokens.ts`
+    UNTOUCHED so no shared-file coupling, no art-law recolor): _mark/marker ink never carries
+    small text on a print stock; the hue lives in the keyline / stamp shape / MarkerCircle
+    stroke; text is `INK.black`/`INK.full` (or reversed on a filled chip)._ §2bis already makes
+    the shape the redundant tell → no design-gate needed. Stamp label → Lane A' (`Stamp.tsx`);
+    RECORD/score → Lane B' (`LevelFlyer.tsx`).
+  - **M2** (Space doesn't activate `role="button"` flyers; `useRovingIndex.ts:61` handles Enter
+    only, no preventDefault → wall scroll-jumps) — **FIX-BEFORE-MERGE.** Add Space→`onActivate`
+    - `preventDefault` alongside Enter; cover in the existing test. Lane A'
+      (`useRovingIndex.ts` + `__tests__/useRovingIndex.test.ts`).
+  - **M3** (`ScoresUne.tsx` rank-1 row wrapped in MarkerCircle inline-block span shrink-wraps →
+    columns misalign whenever a score exists) — **FIX-BEFORE-MERGE.** Apply rank-1 highlight
+    without an inline-block layout wrapper (row background / keyline / weight, or wrap cell
+    content not the `<tr>`). Lane B' (`ScoresUne.tsx`).
+  - **M4** (Escape→TITLE from MENU: mandated by gated UX spec §1.2/§2.2/§8 AND decided in
+    ADR-0021 D4 "Escape-to-title", not implemented; MainMenu Props frozen) — **FIX-NOW, NO
+    WAIVER.** This is a conformance gap, not a new decision, so no lead-game-designer sign-off
+    is required; deferring would ship an ADR whose D4 is false on merge. Implementation is
+    render-local and small: an `App.tsx` window-keydown effect gated to `appPhase === "MENU"`
+    → `setAppPhase("TITLE")`, mirroring the existing PLAYING Escape effect (`App.tsx:129-138`).
+    Keeps MainMenu Props frozen (no unfreeze, no cross-lane coupling). Lane A' (`App.tsx` only).
+  - **M5** (double-click on TITLE cover: 2nd click lands on the just-mounted flyer wall,
+    belliard center-screen, and can launch a level directly; `MOTION.titleToMenu` 280 ms exists
+    but no input-dampening uses it) — **FIX-BEFORE-MERGE.** Self-contained fix at the
+    fall-through target: on mount, `FlyerWall` arms an input lockout for `MOTION.titleToMenu`
+    ms (reading the token is not an edit → no lane conflict); also covers mobile double-tap.
+    Lane B' (`FlyerWall.tsx`).
+    **LANE PARTITION (both `src/render/**`, disjoint file sets → two parallel `dev-r3f-render`instances; PARALLEL-SAFE: YES, zero overlap —`tokens.ts` edited only by A', read-only by B'):\*\*
+  - **Lane A' (print + shell + narrative + docs):** `src/render/ui/print/Stamp.tsx` (M1),
+    `src/render/ui/print/useRovingIndex.ts` + `__tests__/useRovingIndex.test.ts` (M2),
+    `src/render/scene/App.tsx` (M4), `src/render/ui/print/tokens.ts` (MINOR: false "≥7:1 on
+    each stock" comment fix), `src/render/ui/NarrativeScreen.tsx` (MINOR: green-on-newsprint
+    done-hint → legible; behaviour/`CHAR_DELAY_MS` stay frozen per D5),
+    `src/render/ui/TitleScreen.tsx` (MINOR: masthead strip `pointerEvents:none`). Docs ride
+    A' (no menu overlap): `docs/art-direction.md` (§2bis.1 contrast correction + `mark-orange`
+    MOYEN→NORMAL at :119), stale `StartScreen` refs in `docs/architecture.md`,
+    `docs/render-layer.md`, `README.md:81`, `docs/diagrams/architecture-layers.md`,
+    `docs/overview.md`, and verify skill `SKILL.md:39` (old cold-load flow — gate integrity).
+  - **Lane B' (menu):** `src/render/ui/menu/LevelFlyer.tsx` (M1),
+    `src/render/ui/menu/ScoresUne.tsx` (M3 + green-on-newsprint rank-1 MINOR),
+    `src/render/ui/menu/FlyerWall.tsx` (M5),
+    `src/render/ui/menu/derivations.ts` + `__tests__/derivations.test.ts` (MINOR: MARK dedup,
+    AC3 single-source — import the 3 hexes from `../print/tokens`; React-free so the relative
+    import resolves in Vitest without an alias), `src/render/ui/MainMenu.tsx` (MINOR: restore
+    `userSelect:none`; focus first flyer on menu mount so the marker ring shows without a Tab).
+    **PRE-MERGE MINORs (ride the lanes above):** MARK dedup/AC3 (B'); TitleScreen masthead
+    `pointerEvents:none` (A'); green-on-newsprint 2.40:1 in both spots — ScoresUne rank-1 (B') +
+    NarrativeScreen done-hint (A'); focus-drop TITLE→MENU (B'); `tokens.ts` ≥7:1 false-claim +
+    `art-direction.md` §2bis.1 numeric correction (rose 6.14:1 / orange 6.68:1 = AA not AAA) (A');
+    `art-direction.md:119` MOYEN→NORMAL (A'); `userSelect:none` restore in MainMenu (B'); verify
+    `SKILL.md:39` old cold-load flow (A', gate integrity).
+    **FOLLOW-UPS (logged, not merge-blocking):** (1) 4 dead `MOTION` tokens + wire spec'd
+    280/200 ms transitions (currently instant cuts) + NarrativeScreen `CHAR_DELAY_MS`
+    single-source — bundled under a D5-aware ticket (NarrativeScreen behaviour frozen by D5).
+    (2) **Architecture debt (flagged):** `PLAYABLE_COPY` hardcoded per level id violates the
+    "add a level = one `levelArt.json` entry" contract — a 4th level falls back to bare district
+    with no test; add coverage + a data-driven copy source. (3) TITLE window keydown fires behind
+    RotateOverlay (portrait + HW keyboard skips title invisibly) — guard advance when
+    `rotateBlocked`. (4) tabs pattern half-done (no `aria-controls`/`tabpanel`, no Home/End).
+    (5) locked flyers still hover-pull/scale (mixed affordance). (6) perf: `loadScores` re-read
+    per render (memoize), per-flyer duplicated `<style>` keyframes (hoist), `useRovingIndex`
+    fresh `opts` per render (needs callers to memoize — cross-lane). (7) NITs: unmanaged shake
+    timeout (`FlyerWall.tsx:60-67`), shake keyframes clobber inline transform, Escape-on-TITLE
+    double-fire in fullscreen, fragile e2e substring matching, low diagonal strike, TitleScreen
+    `aria-label` masking cover content, off-token rgba inks, double import line, `HalftoneHero`
+    `pitch<=0` guard.
+    **ADR-0021 amendment: YES (light) — applied this pass** (Escape→TITLE realized as an
+    `App.tsx` MENU-phase keydown effect; contrast-claim correction AA-not-AAA on the fluo stocks
+  * the mark-ink-never-small-text rule). No other ADR touched. Clear to fan out A' ∥ B'.
+    (Winston / Senior Architect)
