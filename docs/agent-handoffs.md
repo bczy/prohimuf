@@ -2967,3 +2967,32 @@ Read a real in-game screenshot (verify skill) of the composed halftone-behind-tr
    sits on solid paper — enforce that.
 
 Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-art)
+
+- composite-gate→VERDICT (ADR-0022 illustrated briefings, Gate 4): **PASS-with-one-change.**
+  Read 3 real in-game captures (`?preview=narrative`, Belliard, 1024×720). Pixel-verified:
+  (a) NO surviving warm window-glow in the facade — `grayscale(1)` holds; the only warm
+  pixels (max sat 0.65) are the PASSER paper button chrome (x<160,y<60), legit menu paper,
+  not the facade. (b) Courier transcript text = 14.58:1 on solid `paper-newsprint` (#E9E3D2
+  measured as background mode, ink ≈#141210) — AAA, well past AA; facade gradient-mask
+  terminates ~y446, never touches the text band. (c) All 3 silhouettes intact — courier legs
+  JOIN the hips (no paper enclave in crotch, the historic detached-legs defect is absent),
+  cop's two arms reach the gun over a braced two-leg stance, estate clean on baseline. No
+  generation holes.
+  - Contested call 1 — **backdrop strength: PASS-with-change → opacity 0.5 ⇒ 0.30** (keep the
+    same mask). At 0.5 the facade top band sits at mean luma ~125 on ~230 paper = a continuous
+    mid-grey photographic wash. Breaks no hard §2bis clause (zero glow, text AAA, silhouettes
+    clean) but drifts from §2bis's governing idiom ("bright stock, black ink" high-contrast
+    xerox) toward a photo wash. 0.30 lifts the top-zone mean to ~165-170 = paper-dominant ghost,
+    present but printed-on-paper. Taste change within-bible, not a hard FAIL.
+  - Contested call 2 — **cop muzzle flash: PASS, keep `enemy_shooting.png`.** It is a printed
+    highlight, NOT a §2bis glow. Verified: pure neutral white (sat 0.00 — `grayscale(1)` makes
+    neon impossible), baked into the sprite cell, NO additive colored halo bleeding onto the
+    paper (paper right of the flash is uniform backdrop, no light bleed). §2bis glow = colored
+    light + alpha-falloff halo meaning interactive; the flash is none of those — it is the
+    fanzine-comic inked "BLAM" starburst, on-direction. NO reroute — a non-firing sprite would
+    over-correct and weaken the "les flics patrouillent" threat beat, and would break tutorial
+    consistency (same PNG ships there).
+  - Not escalating: within my jurisdiction, does not exceed the bible. Change owner:
+    `dev-r3f-render` — one value in `src/render/ui/NarrativeScreen.tsx` (backdrop opacity
+    0.5→0.30). No re-gate needed for a pure opacity knock-back (no new glow/composite element
+    introduced); re-shoot only if the mask geometry changes. (Nico / lead-art)

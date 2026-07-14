@@ -23,9 +23,11 @@ const CHAR_DELAY_MS = 28;
  * and fades to nothing before the transcript, so the briefing text always sits on clean
  * newsprint (lead-art constraint — ink-on-paper, ≥AA). Knocked back via `opacity` so it
  * establishes place without drowning the sprite/text above it. Zero glow (art-direction §2bis).
+ * Opacity 0.30 is the lead-art composite-gate number (ADR-0022): a paper-dominant printed ghost,
+ * not a photographic wash — measured to keep the transcript ink at AAA on solid newsprint.
  */
 const BACKDROP_MASK = "linear-gradient(to bottom, #000 0%, #000 38%, transparent 62%)";
-const BACKDROP_OPACITY = 0.5;
+const BACKDROP_OPACITY = 0.3;
 
 /**
  * The single illustration slot above the dialogue box — shared verbatim by the `image` channel
@@ -148,8 +150,9 @@ export function NarrativeScreen({
               full-bleed wash BEHIND everything. First child + no z-index, so the masthead,
               illustration slot and transcript (all positioned) paint on top by DOM order.
               `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
-              (§2bis). A CSS background-image internally, so a 404 shows nothing (no broken-image
-              glyph, no coupling to the per-line `imageError`). Absent on tutorial scenes. */}
+              (§2bis). Its facade layer is a CSS background-image, so a 404 leaves at most the
+              faint dot-screen grain — never a broken-image glyph, and no coupling to the per-line
+              `imageError`. Absent on tutorial scenes. */}
           {scene.backdrop !== undefined && (
             <HalftoneHero
               src={`${import.meta.env.BASE_URL}${scene.backdrop}`}
@@ -229,9 +232,9 @@ export function NarrativeScreen({
             ))}
           </div>
 
-          {/* Optional illustrative sprite (ADR-0012, D5): only present on tutorial
-            panels that reference shipped art; other scenes render exactly as before.
-            Same BASE_URL interpolation as the backdrop, pixelated like in-game sprites. */}
+          {/* Optional illustrative sprite (ADR-0012, D5): the tutorial bestiary panels and the
+            illustrated pre/post briefings (ADR-0022). Same BASE_URL interpolation as the backdrop,
+            pixelated like in-game sprites. */}
           {currentLine?.image !== undefined && !imageError && (
             <div style={ILLUSTRATION_SLOT_STYLE}>
               <img
@@ -250,11 +253,12 @@ export function NarrativeScreen({
                   maxWidth: "100%",
                   objectFit: "contain",
                   imageRendering: "pixelated",
-                  // La loi de l'imprimé (lead-art gate): a menu illustration is printed on
-                  // paper — grayscale kills stray sprite colour (badge, uniform) so it reads as
-                  // one printing with the halftone facade. No dot-screen (would eat the
-                  // silhouette), no neon rim (menu = zero glow, §2bis).
-                  filter: "grayscale(1) contrast(1.05)",
+                  // La loi de l'imprimé (lead-art gate, ADR-0022): on a briefing that carries a
+                  // location décor, grayscale the sprite so it reads as ONE printing with the
+                  // halftone facade (kills stray badge/uniform colour, no dot-screen that would
+                  // eat the silhouette, no neon rim — §2bis). Gated on `scene.backdrop` so the
+                  // décor-less tutorial keeps its sprites byte-identical to before.
+                  filter: scene.backdrop !== undefined ? "grayscale(1) contrast(1.05)" : undefined,
                 }}
               />
             </div>

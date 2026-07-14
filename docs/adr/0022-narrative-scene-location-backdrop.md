@@ -23,7 +23,7 @@ line scope.
 
 Two forces shape the decision:
 
-1. **ADR-0021 D5 froze the `NarrativeScreen` frame**, allowing only its *visual frame* to
+1. **ADR-0021 D5 froze the `NarrativeScreen` frame**, allowing only its _visual frame_ to
    join the print system. A full-bleed background is a visual-frame change and crosses the
    game↔render contract (a new field on a `src/game` type consumed by render), so it must be
    recorded rather than slipped in under the freeze.
@@ -64,13 +64,20 @@ treatment already delivers.
 ### D3 — What this ADR does **not** change
 
 The ADR-0021 D5 freeze otherwise holds: the transcript content, typewriter (`CHAR_DELAY_MS`),
-`advance`, progress dots, `Passer`, the `image`/`gesture` illustration slot, and the three
-call sites are **untouched**. The décor is strictly a new layer **behind** existing content;
-remove `backdrop` from a scene and the panel is byte-identical to before.
+`advance`, progress dots, `Passer`, and the three call sites are **untouched**. The décor is
+strictly a new layer **behind** existing content; remove `backdrop` from a scene and the panel
+is byte-identical to before — which is exactly why the **décor-less tutorial is unchanged**.
+
+Note: this PR _does_ touch the illustration slot in one scoped way — on a scene that carries a
+`backdrop`, the illustration `<img>` is grayscaled so it reads as one printing with the halftone
+facade (art-direction §2bis, gated on `scene.backdrop`). That filter is **not** applied on
+décor-less scenes, so the tutorial's illustration slot stays byte-identical. The sprite-grayscale
+rule lives in the art bible, not here; this ADR governs only the backdrop mechanism.
 
 ## Consequences
 
 **Positive**
+
 - Boundary preserved: game owns a path string (pure data); render owns the halftone. No React/
   Three leaks into `src/game`; no game rule enters render.
 - Purely additive & optional — like `kind?` / `image?` before it. Every existing scene, the
@@ -78,20 +85,22 @@ remove `backdrop` from a scene and the panel is byte-identical to before.
 - Zero asset-pipeline cost: no generation, no art gate (D2).
 
 **Negative / costs**
+
 - Colour facade art shown desaturated is a compromise vs. a purpose-drawn B&W facade; revisit
   only if the CSS halftone reads poorly at the design gate.
 - One more presentation concern layered on `NarrativeScreen`; contrast must be re-checked (see
   Gotchas).
 
 **Gotchas to watch**
+
 - **Z-order.** The backdrop must be the **first child** of the transcript column, absolutely
   positioned (`inset: 0`), painted **behind** the masthead, progress dots, illustration slot
   and transcript (all already positioned, so DOM order alone puts them on top — do not give the
   backdrop a `z-index` that lifts it over content).
 - **Do not reuse `imageError`.** That state is per-line for `NarrativeLine.image`; the backdrop
-  is decorative and scene-scoped. Prefer a CSS `background-image` (a 404 shows nothing, never a
-  broken-image glyph and no coupling to `imageError`); if an `<img>` is used instead, give it
-  its **own** error state.
+  is decorative and scene-scoped. Prefer a CSS `background-image` (a 404 leaves at most the faint
+  dot-screen grain — `HalftoneHero`'s overlay layer still paints — never a broken-image glyph, and
+  no coupling to `imageError`); if an `<img>` is used instead, give it its **own** error state.
 - **Readability / §2bis.** The halftone wash must stay low-contrast enough that `INK.black`
   transcript text keeps ≥ AA on the newsprint ground (ADR-0021 contrast law), and must carry
   **zero glow** — grep the render diff for `text-shadow`/`box-shadow`-as-glow at the design

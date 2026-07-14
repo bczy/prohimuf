@@ -71,7 +71,12 @@ describe("narrativeSystem data integrity", () => {
   });
 
   it("A7: every line that sets `image` also sets a non-empty `imageAlt`", () => {
-    const scenes = [...Object.values(PRE_LEVEL_NARRATIVE), ...Object.values(POST_LEVEL_NARRATIVE)];
+    const scenes = [
+      ...Object.values(PRE_LEVEL_NARRATIVE),
+      ...Object.values(POST_LEVEL_NARRATIVE),
+      TUTORIAL_NARRATIVE_DESKTOP,
+      TUTORIAL_NARRATIVE_MOBILE,
+    ];
     for (const scene of scenes) {
       for (const line of scene.lines) {
         if (line.image !== undefined) {
