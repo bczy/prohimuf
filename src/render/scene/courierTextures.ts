@@ -1,6 +1,7 @@
 import { TextureLoader } from "three";
 import type { Texture } from "three";
 import { applyPixelFilter } from "./pixelArt";
+import { courierAssetPath } from "@game/systems/assetManifest";
 import levelArt from "@game/levels/levelArt.json";
 
 // Shared, lazily-loaded cache of street-courier (livreur) sprite textures, keyed
@@ -34,11 +35,11 @@ interface CourierLayerEntry {
 // a missing key => a null/1-frame default at each call site.
 const LAYERS: Record<string, CourierLayerEntry> = levelArt.courier.layers;
 
-// Full asset URL for a layer and 1-based flipbook frame. The `_f<N>` frame
-// suffix is inserted before the ".png" extension; frame 1 is the unsuffixed PNG.
+// Full asset URL for a layer and 1-based flipbook frame. Path construction lives
+// in @game/systems/assetManifest (shared with the preloader); BASE_URL prefixing
+// stays local so the cache keys remain the full URLs the loader fetches.
 function fileFor(asset: string, frame: number): string {
-  const url = `${base}${asset}`;
-  return frame > 1 ? url.replace(/\.png$/, `_f${String(frame)}.png`) : url;
+  return `${base}${courierAssetPath(asset, frame)}`;
 }
 
 function ensureLoaded(file: string): void {
@@ -56,6 +57,41 @@ function ensureLoaded(file: string): void {
       failed.add(file);
     },
   );
+}
+
+// In-flight preload promises, keyed by full URL, so warming the same courier
+// frame twice shares one load and one settle.
+const warming = new Map<string, Promise<void>>();
+
+// Preload a single courier-sprite URL into the shared `cache` ahead of the scene
+// mounting, so getCourierTexture / courierArtReady hit a warm cache. Loads via
+// the same pipeline (applyPixelFilter) and keys as the lazy path, updating the
+// same pending/failed sets. ALWAYS resolves so the loading gate can complete.
+export function warmCourierTexture(url: string): Promise<void> {
+  if (cache.has(url) || failed.has(url)) return Promise.resolve();
+  const existing = warming.get(url);
+  if (existing !== undefined) return existing;
+  const p = new Promise<void>((resolve) => {
+    pending.add(url);
+    loader.load(
+      url,
+      (t) => {
+        pending.delete(url);
+        cache.set(url, applyPixelFilter(t));
+        warming.delete(url);
+        resolve();
+      },
+      undefined,
+      () => {
+        pending.delete(url);
+        failed.add(url);
+        warming.delete(url);
+        resolve();
+      },
+    );
+  });
+  warming.set(url, p);
+  return p;
 }
 
 // Number of flipbook frames authored for this layer. Safe default of 1 (manifest

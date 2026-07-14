@@ -1,7 +1,7 @@
 import { TextureLoader } from "three";
 import type { Texture } from "three";
 import { applyPixelFilter } from "./pixelArt";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { enemyBaseFileKey, enemyAssetPath } from "@game/systems/assetManifest";
 import type { EnemyKind } from "@game/types/enemy";
 import levelArt from "@game/levels/levelArt.json";
 
@@ -38,33 +38,18 @@ interface EnemyTypeEntry {
 }
 const ENEMY_TYPES: Record<string, EnemyTypeEntry> = levelArt.enemies.types;
 
-// The base filename (no path, no `_f<N>` frame suffix, no extension) shared by
-// fileFor() and frameCountFor() so the file path and its manifest key can't
-// drift. Keeps the enemy_sprite -> enemy_shooting irregular root rule.
-function baseFileKey(kind: EnemyKind, variant: number, shooting: boolean): string {
-  const a = ARCHETYPES[kind];
-  // enemy_sprite -> enemy_shooting; enemy_riot -> enemy_riot_shooting; etc.
-  const root = shooting
-    ? a.spriteBase === "enemy_sprite"
-      ? "enemy_shooting"
-      : `${a.spriteBase}_shooting`
-    : a.spriteBase;
-  const suffix = variant > 1 ? `_${String(variant)}` : "";
-  return `${root}${suffix}`;
-}
-
-// Full asset URL for a given kind/variant/state and 1-based flipbook frame. The
-// `_f<N>` frame suffix is appended AFTER the variant suffix; frame 1 is the
-// unsuffixed committed PNG.
+// Full asset URL for a given kind/variant/state and 1-based flipbook frame.
+// Path construction lives in @game/systems/assetManifest (single source of truth
+// shared with the preloader); BASE_URL prefixing stays local so the cache keys
+// remain the full URLs the loader fetches.
 function fileFor(kind: EnemyKind, variant: number, shooting: boolean, frame: number): string {
-  const frameSuffix = frame > 1 ? `_f${String(frame)}` : "";
-  return `${base}assets/${baseFileKey(kind, variant, shooting)}${frameSuffix}.png`;
+  return `${base}${enemyAssetPath(kind, variant, shooting, frame)}`;
 }
 
 // Number of flipbook frames authored for this kind/variant/state. Safe default
 // of 1 (idle-only / manifest miss).
 export function frameCountFor(kind: EnemyKind, variant: number, shooting: boolean): number {
-  const entry = ENEMY_TYPES[baseFileKey(kind, variant, shooting)];
+  const entry = ENEMY_TYPES[enemyBaseFileKey(kind, variant, shooting)];
   return entry !== undefined ? entry.frames.length : 1;
 }
 
@@ -79,7 +64,7 @@ export function muzzleFor(
   variant: number,
   frame: number,
 ): { x: number; y: number } | null {
-  const entry = ENEMY_TYPES[baseFileKey(kind, variant, true)];
+  const entry = ENEMY_TYPES[enemyBaseFileKey(kind, variant, true)];
   const anchors = entry?.muzzle;
   if (anchors === undefined) return null;
   return anchors[frame - 1] ?? null;
@@ -107,6 +92,43 @@ function ensureLoaded(file: string, fallback: string): void {
       if (!cache.has(fallback)) ensureLoaded(fallback, fallback);
     },
   );
+}
+
+// In-flight preload promises, keyed by full URL, so warming the same sprite
+// twice (e.g. a path listed by two manifests) shares one load and one settle.
+const warming = new Map<string, Promise<void>>();
+
+// Preload a single enemy-sprite URL into the shared `cache` ahead of the scene
+// mounting, so resolveEnemyTexture hits a warm cache and never flashes an
+// untextured square. Loads via the same pipeline (applyPixelFilter) and keys as
+// the lazy path, and updates the same pending/failed sets. ALWAYS resolves:
+// success and 404 both settle so the loading gate can complete. Preloading is
+// standalone (no fallback chaining) — the manifest lists real committed paths.
+export function warmEnemyTexture(url: string): Promise<void> {
+  if (cache.has(url) || failed.has(url)) return Promise.resolve();
+  const existing = warming.get(url);
+  if (existing !== undefined) return existing;
+  const p = new Promise<void>((resolve) => {
+    pending.add(url);
+    loader.load(
+      url,
+      (t) => {
+        pending.delete(url);
+        cache.set(url, applyPixelFilter(t));
+        warming.delete(url);
+        resolve();
+      },
+      undefined,
+      () => {
+        pending.delete(url);
+        failed.add(url);
+        warming.delete(url);
+        resolve();
+      },
+    );
+  });
+  warming.set(url, p);
+  return p;
 }
 
 // The best available texture for this kind/variant/state and 1-based frame,

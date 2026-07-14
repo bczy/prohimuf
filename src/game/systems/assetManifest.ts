@@ -1,0 +1,273 @@
+import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
+import type { EnemyKind } from "@game/types/enemy";
+import type { VehicleType } from "@game/types/delivery";
+import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import type { LevelConfig } from "@game/levels/levels";
+import { streetSpawnsCourier } from "@game/systems/courierSystem";
+import {
+  TUTORIAL_NARRATIVE_DESKTOP,
+  TUTORIAL_NARRATIVE_MOBILE,
+  PRE_LEVEL_NARRATIVE,
+  POST_LEVEL_NARRATIVE,
+} from "@game/systems/narrativeSystem";
+import type { NarrativeScene } from "@game/systems/narrativeSystem";
+import levelArt from "@game/levels/levelArt.json";
+
+/**
+ * Pure, deterministic asset manifest for the progressive loading screen. Builds
+ * de-duplicated, stably-ordered BASE-RELATIVE asset paths (e.g.
+ * `"assets/enemy_shooting_f2.png"`) — NO `import.meta.env.BASE_URL`, no leading
+ * slash. The render lane prefixes `BASE_URL` at load time.
+ *
+ * The path builders here mirror the private builders in
+ * `src/render/scene/enemyTextures.ts` and `src/render/scene/courierTextures.ts`
+ * byte-for-byte minus the `BASE_URL` prefix; Lane B refactors those to import
+ * these, so parity is load-bearing (pinned in the spec).
+ *
+ * Zero React / Three imports — this module stays in the pure game core.
+ */
+
+export type ManifestTarget = "menu" | "tutorial" | (string & {});
+
+// The three backdrop layers a level preloads, in draw order. Mirrors `LAYER_NAMES`
+// in levelArt.ts (and what LevelBackdrop actually loads) — duplicated as a local
+// literal rather than imported so this module carries NO import-time dependency on
+// levelArt.ts, whose module body eagerly reads `levelArt.json` fields (a partial
+// JSON mock in a unit test must not have to satisfy them just to import us).
+const BACKDROP_LAYERS = ["sky", "facade", "street"] as const;
+
+// Flipbook frame counts, keyed by the exact base filename the enemy path builder
+// produces (asset root + variant suffix). Same shape as enemyTextures.ts.
+interface FrameEntry {
+  readonly frames: readonly string[];
+}
+
+// One courier layer as authored in levelArt.json (`courier.layers.<layer>`). Same
+// shape as courierTextures.ts (extra fields are ignored here).
+interface CourierLayerEntry {
+  readonly asset: string;
+  readonly frames: readonly string[];
+}
+
+// Global enemy fallbacks the renderer swaps in when a kind/variant sprite is
+// missing (still generating in CI); always preloaded so no window is ever blank.
+const ENEMY_FALLBACKS: readonly string[] = ["assets/enemy_sprite.png", "assets/enemy_shooting.png"];
+
+// All `levelArt.json` reads are LAZY (inside functions) so that importing this
+// module has no side effects — it never touches the JSON at load time.
+
+/** De-duplicate preserving first-occurrence order. */
+function dedupe(paths: readonly string[]): readonly string[] {
+  return [...new Set(paths)];
+}
+
+/**
+ * The base filename (no path, no `_f<N>` frame suffix, no extension) for an
+ * enemy kind/variant/state. Mirrors `baseFileKey` in enemyTextures.ts: the
+ * `enemy_sprite` root becomes `enemy_shooting` when shooting (the others append
+ * `_shooting`), and a variant > 1 appends `_<variant>`.
+ */
+export function enemyBaseFileKey(kind: EnemyKind, variant: number, shooting: boolean): string {
+  const a = ARCHETYPES[kind];
+  const root = shooting
+    ? a.spriteBase === "enemy_sprite"
+      ? "enemy_shooting"
+      : `${a.spriteBase}_shooting`
+    : a.spriteBase;
+  const suffix = variant > 1 ? `_${String(variant)}` : "";
+  return `${root}${suffix}`;
+}
+
+/**
+ * Base-relative asset path for an enemy kind/variant/state and 1-based flipbook
+ * frame. Mirrors `fileFor` in enemyTextures.ts: the `_f<N>` frame suffix is
+ * appended AFTER the variant suffix; frame 1 is the unsuffixed committed PNG.
+ */
+export function enemyAssetPath(
+  kind: EnemyKind,
+  variant: number,
+  shooting: boolean,
+  frame: number,
+): string {
+  const frameSuffix = frame > 1 ? `_f${String(frame)}` : "";
+  return `assets/${enemyBaseFileKey(kind, variant, shooting)}${frameSuffix}.png`;
+}
+
+// Flipbook frames authored for a base key (safe default of 1 — idle-only or a
+// manifest miss). Mirrors frameCountFor in enemyTextures.ts.
+function frameCountForKey(key: string): number {
+  const types: Record<string, FrameEntry> = levelArt.enemies.types;
+  const entry = types[key];
+  return entry !== undefined ? entry.frames.length : 1;
+}
+
+// Every idle + (if the archetype shoots) shooting path for one enemy kind, across
+// all its variants and each state's authored frame count.
+function enemyKindPaths(kind: EnemyKind): string[] {
+  const a = ARCHETYPES[kind];
+  const states: boolean[] = a.shoots ? [false, true] : [false];
+  const paths: string[] = [];
+  for (let variant = 1; variant <= a.variants; variant++) {
+    for (const shooting of states) {
+      const frames = frameCountForKey(enemyBaseFileKey(kind, variant, shooting));
+      for (let frame = 1; frame <= frames; frame++) {
+        paths.push(enemyAssetPath(kind, variant, shooting, frame));
+      }
+    }
+  }
+  return paths;
+}
+
+function levelConfigFor(levelId: string): LevelConfig {
+  return LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
+}
+
+// Unique enemy kinds actually spawned in a level's windows, mirroring
+// stateMachine.windowPoolFor: `buildWeightedFrom({ ...defaults, ...override })`
+// (weight 0 removes a kind), de-duplicated to archetype declaration order.
+function windowPoolKinds(level: LevelConfig): EnemyKind[] {
+  const overrides = level.roster?.windowWeights;
+  const defaults = Object.fromEntries(
+    (Object.keys(ARCHETYPES) as EnemyKind[]).map((k) => [k, ARCHETYPES[k].weight]),
+  ) as Record<EnemyKind, number>;
+  const pool = buildWeightedFrom({ ...defaults, ...overrides });
+  return [...new Set(pool)];
+}
+
+/**
+ * Every enemy sprite path a level needs: its window-spawn pool kinds, PLUS the
+ * civilian sprite when the street runs couriers (the courier's pre-art fallback
+ * is enemy-rendered via `getEnemyTexture("civilian", ...)` in CourierSprite),
+ * PLUS the two global fallbacks. De-duplicated, stably ordered.
+ */
+export function enemyAssetPathsFor(levelId: string): readonly string[] {
+  const level = levelConfigFor(levelId);
+  const kinds = windowPoolKinds(level);
+  // The civilian rides the street as a courier (window weight 0), but its sprite
+  // is drawn as the courier's pre-art fallback, so preload it when couriers run.
+  if (streetSpawnsCourier(level.roster?.streetSpawns) && !kinds.includes("civilian")) {
+    kinds.push("civilian");
+  }
+  return dedupe([...kinds.flatMap(enemyKindPaths), ...ENEMY_FALLBACKS]);
+}
+
+/**
+ * Base-relative asset path for a courier layer `asset` (already
+ * `"assets/courier/<layer>.png"` in levelArt.json) and 1-based flipbook frame.
+ * Mirrors `fileFor` in courierTextures.ts: `_f<N>` is inserted before `.png`;
+ * frame 1 is unsuffixed.
+ */
+export function courierAssetPath(asset: string, frame: number): string {
+  return frame > 1 ? asset.replace(/\.png$/, `_f${String(frame)}.png`) : asset;
+}
+
+/** Every frame of every authored courier layer, de-duplicated, stably ordered. */
+export function courierAssetPaths(): readonly string[] {
+  const layers: Record<string, CourierLayerEntry> = levelArt.courier.layers;
+  const paths: string[] = [];
+  for (const key of Object.keys(layers)) {
+    const layer = layers[key];
+    if (layer === undefined) continue;
+    for (let frame = 1; frame <= layer.frames.length; frame++) {
+      paths.push(courierAssetPath(layer.asset, frame));
+    }
+  }
+  return dedupe(paths);
+}
+
+/** Base-relative delivery-vehicle sprite path (mirrors DeliveryVehicleSprite). */
+export function vehicleAssetPath(type: VehicleType): string {
+  return `assets/vehicles/${type}.png`;
+}
+
+/** Base-relative player-bullet sprite path (mirrors BulletSprite). */
+export function bulletAssetPath(): string {
+  return "assets/bullet_player.png";
+}
+
+// The level-art id to build layer paths from: the requested level when it has
+// art, else the first declared level — same fallback as `getLevelArt`, but read
+// straight from the JSON so we avoid levelArt.ts's import-time side effects.
+function resolveLevelArtId(levelId: string): string {
+  const first = levelArt.levels[0];
+  const found = levelArt.levels.find((l) => l.id === levelId) ?? first;
+  return found?.id ?? levelId;
+}
+
+/**
+ * The three backdrop layers (sky / facade / street) for a level, base-relative.
+ * Mirrors `levelLayerUrl` for the backdrop-layer set; an unknown id resolves to
+ * the first declared level (same fallback as `getLevelArt`).
+ *
+ * The optional `foreground.png` décor layer (ForegroundImage) is intentionally
+ * EXCLUDED: it has a guaranteed code-drawn fallback (ForegroundFrames /
+ * drawForegroundIronwork) and stays hidden if the PNG is absent, so it is not
+ * required for a complete playable frame and need not gate the loading screen.
+ */
+export function levelLayerPaths(levelId: string): readonly string[] {
+  const id = resolveLevelArtId(levelId);
+  return BACKDROP_LAYERS.map((layer) => `assets/levels/${id}/${layer}.png`);
+}
+
+/** Base-relative facade backdrop (mirrors FacadeBackground). */
+export function facadeBackdropPath(): string {
+  return "assets/facade_bg.png";
+}
+
+/** Base-relative menu / start / end / narrative-screen backdrop. */
+export function menuBackdropPath(): string {
+  return "assets/levels/belliard/facade.png";
+}
+
+/**
+ * The illustration sprites a narrative scene references, base-relative and
+ * de-duplicated. Scene `image` fields are already stored base-relative (the
+ * render lane prefixes BASE_URL), so no normalization is needed here.
+ */
+export function narrativeImagePaths(scene: NarrativeScene): readonly string[] {
+  const paths: string[] = [];
+  for (const line of scene.lines) {
+    if (line.image !== undefined) paths.push(line.image);
+  }
+  return dedupe(paths);
+}
+
+/**
+ * The full de-duplicated, stably-ordered manifest to preload for a target:
+ * - `"menu"` — just the menu backdrop.
+ * - `"tutorial"` — the menu backdrop plus BOTH tutorial forks' illustrations
+ *   (desktop + mobile), so either device path is covered deterministically.
+ * - any other string is treated as a level id — its backdrop layers, enemy
+ *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops and its
+ *   pre/post-level narrative illustrations. Unknown ids fall back to the first
+ *   playable level.
+ */
+export function manifestFor(target: ManifestTarget): readonly string[] {
+  if (target === "menu") {
+    return dedupe([menuBackdropPath()]);
+  }
+  if (target === "tutorial") {
+    return dedupe([
+      menuBackdropPath(),
+      ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
+      ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
+    ]);
+  }
+
+  const level = levelConfigFor(target);
+  const paths: string[] = [
+    ...levelLayerPaths(target),
+    ...enemyAssetPathsFor(target),
+    ...courierAssetPaths(),
+  ];
+  const delivery = level.deliveries[0];
+  if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));
+  paths.push(bulletAssetPath(), facadeBackdropPath(), menuBackdropPath());
+
+  const pre = PRE_LEVEL_NARRATIVE[level.id];
+  if (pre !== undefined) paths.push(...narrativeImagePaths(pre));
+  const post = POST_LEVEL_NARRATIVE[level.id];
+  if (post !== undefined) paths.push(...narrativeImagePaths(post));
+
+  return dedupe(paths);
+}

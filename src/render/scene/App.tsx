@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import type { JSX } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
@@ -11,10 +11,15 @@ import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
+import { LoadingScreen } from "@render/ui/LoadingScreen";
 import { GameScene } from "./GameScene";
+import { warm } from "./warmAssets";
 
 import { useAudio } from "@hooks/useAudio";
+import { useAssetPreloader } from "@hooks/useAssetPreloader";
 import { useOrientation } from "@hooks/useOrientation";
+import { manifestFor } from "@game/systems/assetManifest";
+import type { ManifestTarget } from "@game/systems/assetManifest";
 import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
@@ -50,6 +55,10 @@ const IS_MOBILE = detectMobile();
 
 // Device-forked tutorial script (ADR-0015): same once-at-load decision as IS_MOBILE.
 const TUTORIAL_SCENE = IS_MOBILE ? TUTORIAL_NARRATIVE_MOBILE : TUTORIAL_NARRATIVE_DESKTOP;
+
+// Stable empty manifest: reused when a target needs no warming (preview bypass or
+// already-loaded) so `useAssetPreloader`'s `paths` identity doesn't churn.
+const NO_PATHS: readonly string[] = [];
 
 // The rotate overlay covers every app phase, menus included (ADR-0003).
 // The fullscreen button (ADR-0008) is always appended; it self-hides when
@@ -232,6 +241,40 @@ export function App(): JSX.Element {
     setAppPhase("MENU");
   }
 
+  // Asset-preload gate (story-asset-preloading). Warm the module caches for the
+  // screen about to render and hold a LoadingScreen until its manifest is 100%
+  // settled — killing the untextured-square pop-in. On the TITLE cover we warm
+  // the "menu" target in the background so the title→menu step is seamless; the
+  // cover itself is never gated (it renders immediately, below). A level's assets
+  // warm at selection (target = selectedLevel.id), and the same target covers
+  // NARRATIVE_PRE + PLAYING (+ END) so the gate is shown at most once per level
+  // per session. END is never gated on its own: by the time it shows, its level
+  // target is already in loadedTargets. These hooks run unconditionally, ahead of
+  // every early return below (Rules of Hooks).
+  const target: ManifestTarget =
+    appPhase === "MENU" || appPhase === "TITLE"
+      ? "menu"
+      : appPhase === "TUTORIAL"
+        ? "tutorial"
+        : selectedLevel.id;
+  // Targets warmed this session — a target skips its manifest once settled so
+  // revisiting it (or advancing TITLE→MENU→level→END) never re-shows the loader.
+  const loadedTargets = useRef<Set<string>>(new Set());
+  // Memoised per target so the array identity is stable across renders (the hook
+  // restarts on identity change). The ?preview= harness bypasses warming to keep
+  // its boot behaviour byte-for-byte.
+  const paths = useMemo<readonly string[]>(
+    () =>
+      PREVIEW_SCREEN !== null || loadedTargets.current.has(target) ? NO_PATHS : manifestFor(target),
+    [target],
+  );
+  const { loaded, total, done } = useAssetPreloader(paths, warm);
+  useEffect(() => {
+    if (done) loadedTargets.current.add(target);
+  }, [done, target]);
+
+  // The TITLE cover shows immediately (cold load / ?preview=title); the menu
+  // manifest warms behind it via the gate above.
   if (appPhase === "TITLE") {
     return renderAppShell(
       <TitleScreen
@@ -239,6 +282,15 @@ export function App(): JSX.Element {
           setAppPhase("MENU");
         }}
       />,
+      rotateBlocked,
+    );
+  }
+
+  if (!done) {
+    const label =
+      target === "menu" ? "MENU" : target === "tutorial" ? "Tutoriel" : selectedLevel.name;
+    return renderAppShell(
+      <LoadingScreen label={label} progress={total ? loaded / total : 1} />,
       rotateBlocked,
     );
   }

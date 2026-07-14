@@ -7,6 +7,7 @@ import type { GameState } from "@game/types/gameState";
 import type { DeliveryPhase, VehicleType } from "@game/types/delivery";
 import { applyPixelFilter } from "./pixelArt";
 import { buildNeonSilhouette, computeHaloMarginPx, getVehicleNeonHex } from "./vehicleNeon";
+import { vehicleAssetPath } from "@game/systems/assetManifest";
 import type { HudDelivery } from "@render/ui/HUD";
 import levelArt from "@game/levels/levelArt.json";
 
@@ -31,7 +32,10 @@ function artSign(type: VehicleType): 1 | -1 {
 // screen, but the archetype changes per level, so cache all three by path.
 const loader = new TextureLoader();
 const cache = new Map<VehicleType, Texture>();
-const requested = new Set<VehicleType>();
+// In-flight loads keyed by type, so a preload and a render request for the same
+// vehicle share one load (and one silhouette bake). Doubles as the "already
+// requested" guard the previous `requested` set provided.
+const inflight = new Map<VehicleType, Promise<void>>();
 
 /**
  * A baked neon rim plus the geometry needed to scale it so the padded glow
@@ -49,13 +53,17 @@ interface NeonRim {
 // Neon rims baked in the load callback, keyed like the texture cache.
 const silhouetteCache = new Map<VehicleType, NeonRim>();
 
-function getVehicleTexture(type: VehicleType): Texture | null {
-  const cached = cache.get(type);
-  if (cached !== undefined) return cached;
-  if (!requested.has(type)) {
-    requested.add(type);
+// Drive the texture load (and its silhouette bake) for a vehicle type exactly
+// once, returning a promise that ALWAYS resolves once the load settles (success
+// or 404) so the asset preloader can gate on it. Both the per-frame renderer and
+// the preloader funnel through here, so the neon-rim cache warms either way.
+function loadVehicle(type: VehicleType): Promise<void> {
+  if (cache.has(type)) return Promise.resolve();
+  const existing = inflight.get(type);
+  if (existing !== undefined) return existing;
+  const p = new Promise<void>((resolve) => {
     loader.load(
-      `${import.meta.env.BASE_URL}assets/vehicles/${type}.png`,
+      `${import.meta.env.BASE_URL}${vehicleAssetPath(type)}`,
       (t) => {
         cache.set(type, applyPixelFilter(t));
         // Bake the neon rim silhouette from the same loaded image (ADR-0011).
@@ -70,16 +78,39 @@ function getVehicleTexture(type: VehicleType): Texture | null {
             marginPx: computeHaloMarginPx(srcW, srcH),
           });
         }
+        inflight.delete(type);
+        resolve();
       },
       undefined,
-      () => undefined,
+      () => {
+        inflight.delete(type);
+        resolve();
+      },
     );
-  }
+  });
+  inflight.set(type, p);
+  return p;
+}
+
+function getVehicleTexture(type: VehicleType): Texture | null {
+  const cached = cache.get(type);
+  if (cached !== undefined) return cached;
+  void loadVehicle(type);
   return null;
 }
 
 function getVehicleSilhouette(type: VehicleType): NeonRim | null {
   return silhouetteCache.get(type) ?? null;
+}
+
+// Preload a vehicle (texture + neon-rim silhouette) ahead of the scene mounting,
+// resolving the full URL back to its VehicleType so the existing per-type caches
+// warm. Unknown URLs settle immediately. ALWAYS resolves.
+export function preloadVehicle(url: string): Promise<void> {
+  for (const type of Object.keys(levelArt.vehicles.types) as VehicleType[]) {
+    if (url.endsWith(vehicleAssetPath(type))) return loadVehicle(type);
+  }
+  return Promise.resolve();
 }
 
 interface Props {
