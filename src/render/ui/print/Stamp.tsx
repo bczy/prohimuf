@@ -14,18 +14,18 @@ export interface StampProps {
 }
 
 /**
- * A rubber-stamp / ballot mark. The mark colour is `ink`; a toner-black keyline
- * (outline) rings it so the mark reads even when its hue nears the flyer stock
- * (art-direction §2bis). Zero glow. A slight fixed rotation gives the stamped feel.
+ * A rubber-stamp / ballot mark. The keyline (border) is ALWAYS `INK.black` so the
+ * mark reads on any stock even when its hue nears the flyer ground (art-direction
+ * §2bis: every stamp carries a toner-black keyline regardless of ink — critical for
+ * e.g. pink-on-orange). The mark colour `ink` lives in the label text (and the
+ * diagonal strike). Zero glow. A slight fixed rotation gives the stamped feel.
  */
 export function Stamp({ label, ink, shape = "box", struck = false }: StampProps): JSX.Element {
   const box: CSSProperties = {
     position: "relative",
     display: "inline-block",
     padding: "3px 9px",
-    border: `2px solid ${ink}`,
-    outline: `1px solid ${INK.black}`,
-    outlineOffset: "1px",
+    border: `2px solid ${INK.black}`,
     borderRadius: shape === "oval" ? "50%" : "1px",
     color: ink,
     fontFamily: "'Courier New', Courier, monospace",
