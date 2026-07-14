@@ -13,6 +13,7 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { enterMenuFromTitle } from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const BASE_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -22,13 +23,6 @@ const OUT_DIR = path.resolve(ROOT, "screenshots");
 const VIEWPORT = { width: 1920, height: 1080 };
 const DEVICE_SCALE = 2;
 const ENEMY_WAIT_MS = 4000; // cops are frozen VISIBLE (see addInitScript), so a short settle is enough
-
-// Pre-game flow markers (ADR-0020), kept in sync with scripts/e2e-ingame.mjs:
-// cold load lands on the TITLE cover; a single action enters the MENU flyer wall.
-// The "MUF" logo shows on BOTH screens, so it cannot gate title→menu entry; the
-// subtitle is title-only and the masthead is menu-only.
-const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // TitleScreen.tsx
-const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // MASTHEAD.running
 
 const manifest = JSON.parse(
   fs.readFileSync(path.resolve(ROOT, "src/game/levels/levelArt.json"), "utf8"),
@@ -67,13 +61,10 @@ async function captureLevel(context, level, withMenu) {
 
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
 
-  // Cold load lands on the TITLE cover (ADR-0020). Assert the title-only subtitle,
-  // perform the single-action entry (click the cover) to reach the MENU, then wait
-  // for the menu-only masthead before the flyer is present — the "MUF" logo alone
-  // cannot distinguish TITLE from MENU, so the old wait let the level click time out.
-  await page.getByText(TITLE_SUBTITLE, { exact: true }).first().waitFor({ timeout: 20000 });
-  await page.getByText(TITLE_SUBTITLE, { exact: true }).first().click({ timeout: 20000 });
-  await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout: 20000 });
+  // Cold load lands on the TITLE cover (ADR-0020); enter the MENU before the
+  // withMenu capture / level click — "MUF" alone no longer means "on the menu"
+  // (shared helper, in sync with the e2e gates).
+  await enterMenuFromTitle(page);
 
   if (withMenu) {
     await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
