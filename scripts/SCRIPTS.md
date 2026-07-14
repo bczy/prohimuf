@@ -856,3 +856,40 @@ node scripts/fill-sprite-holes.mjs --check  # gate: write nothing, exit 1 if any
 ```
 
 - **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).
+
+---
+
+## measure-muzzle-anchors.mjs — Per-frame muzzle-flash anchors (levelArt.json data)
+
+Measures where the baked muzzle flash sits on each **shooting** enemy sprite and
+writes a per-frame `muzzle` anchor into the `enemies` manifest, so the render-side
+additive glow lands on the gun barrel regardless of which way the sprite aims (the
+flash flips left/right between archetypes and shifts on the recoil frame). The
+renderer reads it via `muzzleFor()` in `src/render/scene/enemyTextures.ts` and falls
+back to a fixed right-side offset when a frame has no anchor.
+
+- **Data written:** for every `enemies.types.<key>` whose key contains `shooting`,
+  an OPTIONAL `"muzzle": [ { "x": .., "y": .. } | null, … ]` array in
+  `src/game/levels/levelArt.json`, **index-aligned with `frames`** (element _i_
+  anchors frame _i+1_ — file `<key>.png`, then `<key>_f2.png`, …). Anchors are
+  normalized `[0..1]` of the PNG width/height from the **top-left** corner, rounded
+  to 3 decimals; `null` = no detectable flash for that frame. Array length always
+  equals the entry's `frames` length. Non-shooting entries are never touched.
+- **Detection:** hot pixels = the near-white-hot flash core
+  (`alpha>100 AND r>235 AND g>220 AND b>150`); take the LARGEST 8-connected
+  component (`>= 50 px`, else emit `null`); anchor = its unweighted centroid / (W,H).
+- **Surgical + idempotent:** the JSON is edited by string insertion of just the
+  `muzzle` property (a full `JSON.parse`→`stringify` round-trip would rewrite
+  unrelated literals like `"scale": 1.0`), then `prettier --write` normalizes it — so
+  a re-run is byte-identical. Deterministic detection makes it re-runnable.
+- **Human-run, not a CI gate** (like `retouch-sprites.mjs` / `retouch-flash-halos.mjs`):
+  re-run it after regenerating any shooting sprite, then commit the JSON.
+
+```bash
+node scripts/measure-muzzle-anchors.mjs            # measure + write muzzle arrays in place
+node scripts/measure-muzzle-anchors.mjs --dry-run  # print the anchor table, write nothing
+node scripts/measure-muzzle-anchors.mjs --preview  # also write a marked verification sheet
+PREVIEW_DIR=/tmp node scripts/measure-muzzle-anchors.mjs --preview  # override sheet output dir
+```
+
+- **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).

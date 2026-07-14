@@ -70,6 +70,10 @@
         "frames": [
           "",
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ],
+        "muzzle": [
+          { "x": 0.829, "y": 0.251 },
+          { "x": 0.8, "y": 0.217 }
         ]
       },
       "enemy_shooting_2": {
@@ -78,6 +82,10 @@
         "frames": [
           "",
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ],
+        "muzzle": [
+          { "x": 0.106, "y": 0.181 },
+          { "x": 0.088, "y": 0.143 }
         ]
       },
       "enemy_shooting_3": {
@@ -86,6 +94,10 @@
         "frames": [
           "",
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
+        ],
+        "muzzle": [
+          { "x": 0.779, "y": 0.2 },
+          { "x": 0.709, "y": 0.19 }
         ]
       },
       "enemy_riot": {
@@ -96,7 +108,11 @@
       "enemy_riot_shooting": {
         "seed": 4808,
         "prompt": "a french riot police officer CRS in helmet and body armor aiming a handgun forward at the viewer, muzzle flash",
-        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"]
+        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
+        "muzzle": [
+          { "x": 0.808, "y": 0.34 },
+          { "x": 0.763, "y": 0.347 }
+        ]
       },
       "enemy_biker": {
         "seed": 4809,
@@ -106,7 +122,11 @@
       "enemy_biker_shooting": {
         "seed": 4810,
         "prompt": "a french motorcycle police officer in a full-face helmet aiming a handgun forward at the viewer, muzzle flash",
-        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"]
+        "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
+        "muzzle": [
+          { "x": 0.182, "y": 0.267 },
+          { "x": 0.225, "y": 0.271 }
+        ]
       },
       "enemy_civilian": {
         "seed": 4811,
