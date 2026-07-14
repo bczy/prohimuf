@@ -2513,3 +2513,65 @@ classification stays `"miss"` on friendly fire.
   art-advisor counsel → design loop. Blockers: none. Caps: fresh cycle, counters at 0.
   Contention watch: `src/hooks/**` untouched so far (only if `dev-gameplay` joins on prefs
   logic — serialise then). (Marion / Producer)
+- lead-art VISUAL-SYSTEM REVIEW (Nico, advisory to design gate, stage 3) — 2026-07-14:
+  **PASS with conditions.** Direction (menus = print, zero glow, one fluo stock/surface,
+  xerox not scanlines) is on-bible; recorded as law in `art-direction.md` §2bis (+ token
+  anchors §2bis.1). Verdicts:
+  (1) **Stock map PASS (refined).** jaune `#F1EC1F` = TITLE cover ONLY (reserved, keeps
+  "brightest = the hook" unique — do NOT put jaune in the flyer rotation). Playable flyers
+  rotate rose `#FF4FA3`(Belliard) → vert `#B7F32B`(Stalingrad) → orange `#F5762A`(Vitry) by
+  levels.ts playable index (3 shipped = one each, no repeat). Tutorial = manila `#ECE7DA`
+  mode-d'emploi sheet, NOT a fluo. OPTIONS = orange brûlé `#F5762A`. Flyer-wall shell = cool
+  newsprint grey `#D7D2C6` (distinct from the UNE cream so surfaces don't blur). Stock is
+  orthogonal to difficulty (variety vs meaning) — correct, keep decoupled.
+  (2) **Journal UNE newsprint exception APPROVED.** newsprint cream `#E9E3D2` + rose
+  `#FF4FA3` accent (masthead + rank-1 circle) ONLY; classement body = black ink on cream, no
+  other fluo. Strengthens direction: drab establishment newsprint vs fluo underground zine is
+  diegetic characterisation.
+  (3) **NarrativeScreen frame: PRINT, glow FAILED (my call under loi du glow).** Briefing is
+  read-matter with no interactive diegetic object → no glow; répondeur/fax motif makes a
+  transcript-on-paper on-direction. Reskin: `paper-newsprint` ground, KILL facade dark wash +
+  scanlines + `#ffe600` borders + `#39ff14` glowing hint + text-shadow; ink hairline/dashed
+  fax rule; inked `[ CONTINUER ]`/`[ JOUER ]` keeping ONLY the typewriter-cursor blink;
+  speaker in ink not neon. Dialogue/typewriter behaviour frozen (unchanged). Karim owns the
+  design-gate sign-off; this is the art ruling he can adopt.
+  (4) **CSS-only feasibility PASS — nothing secretly needs a generated PNG.** Facade hero =
+  existing `facade.png` with `grayscale(1) contrast(~2.2) brightness(~1.1)` + CSS dot-screen;
+  `grayscale(1)` MANDATORY (the photo has warm glowing orange windows — partial desat would
+  leave glow on a menu = FAIL). Flags (all CSS/inline-SVG, no PNG): true value-modulated
+  halftone → uniform dot-screen approximation accepted; toner speckle → inline-SVG
+  `feTurbulence` data-URI; marker-ring/stamp distress → inline-SVG
+  `feTurbulence`+`feDisplacementMap` (geometric CSS border = weaker accepted fallback);
+  ransom/Letraset → per-letter jitter on bundled Impact (no new font in scope); handwriting
+  annotations = weakest gap → `cursive`/italic-Courier v1, small handwriting webfont is the
+  fast-follow (flag to pm — a font is not a generated sprite but is out of this no-asset line).
+  (5) **§4.4 glow→ink resolved:** difficulty = felt-tip inks `mark-green #2FA84F` /
+  `mark-orange #E8641E` / `mark-pink #D62A7A`, each with a `#141210` keyline AND a distinct
+  stamp SHAPE (so it reads even when hue nears the flyer stock — watch pink-on-orange on the
+  Vitry flyer at asset/composite gate). "Interactive yellow" is NOT a yellow ink (invisible on
+  light stock) → black selection marks (X-stamp / marker circle / tape) + jaune cover stock.
+  **Composite gate (Gate 4) still owed:** every "no menu glows on dark ground" claim is
+  verified on REAL `?preview=title|menu|narrative` screenshots before merge — an asset/spec
+  PASS does not pre-clear the runtime composite. (Nico / lead-art)
+
+- DESIGN GATE (stage 3, Karim / lead-game-designer): both deliverables
+  **PASS WITH CONDITIONS** — `pre-game-experience-ux.md` (Sacha) + `pregame-copy-deck.md`
+  (Yasmine). Verdicts in `docs/game-design/pre-game-design-gate.md`. Scope PASS (faithful
+  front-end reskin, core loop untouched), verifiable, coherent. Rulings on the escalations:
+  (a) TITLE vs 10 s — PASS, playtest must time the 3-tap path (stage-5 checkpoint);
+  (b) AppPhase≠stateMachine — PASS, render-only, ADR is architect's call;
+  (c) UNE newsprint-cream stock — PASS, flagged to lead-art to confirm vs art bible;
+  (d) NarrativeScreen frame — **ruling: PRINT** (fax/répondeur transcript, pre-play side of
+  the loi du glow); (e) flyer jittered ±3° stack — PASS (legibility over literal fan);
+  (f) net-new canon (SPIRALE 23 / KANAL SYSTEM / NADIR 94 / PARIS-MINUIT / infolines) —
+  PASS as conscious extension, recorded as gated canon in the design README, seed
+  `narrative-bible.md` follow-up; standardize middle tier on NORMAL; (g) slot fit — PASS,
+  UX must add the flyer flavour slots (crew/slogan/date/zone/RV/infoline) with max lengths,
+  deck confirms the 3 rubrique labels.
+  **Found in review (required fix):** shipped `enemySpeedMultiplier` (belliard 1.0 /
+  stalingrad 1.3 / vitry 1.6) + `MainMenu.tsx` derivation → **Stalingrad stamps DIFFICILE,
+  not MOYEN**; re-tuning is forbidden (AC4). Deck corrects the premise; both hard flyers
+  read via AMBIANCE + district, not the (identical) stamp. Conditions are additive spec
+  amendments, no re-architecture — clear to hand to `senior-architect` for lane partition +
+  ADR in parallel; re-verify amendments at stage-5 design acceptance. Round 1/2.
+  c/d/e also flagged to `lead-art` for the visual gate. (Karim / Lead Game Designer)
