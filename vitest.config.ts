@@ -11,6 +11,7 @@ export default defineConfig({
       "src/game/**/*.test.ts",
       "src/utils/**/*.test.ts",
       "src/render/**/*.test.ts",
+      "src/hooks/**/*.test.ts",
       "scripts/lib/**/*.test.mjs",
     ],
 
@@ -41,6 +42,8 @@ export default defineConfig({
       "@game": resolve(__dirname, "src/game"),
 
       "@utils": resolve(__dirname, "src/utils"),
+
+      "@hooks": resolve(__dirname, "src/hooks"),
     },
   },
 });
