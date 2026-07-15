@@ -18,6 +18,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "node scripts/e2e-home.mjs",
+    "align:belliard": "node scripts/align-belliard-windows.mjs",
+    "align:belliard:check": "node scripts/align-belliard-windows.mjs --check",
     "prepare": "husky"
   },
   "dependencies": {
