@@ -40,6 +40,13 @@ export const MASTHEAD = {
   running: "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998", // menu/narrative header
 } as const;
 
+// Short-landscape breakpoint (ADR-0024). Catches phones on their side (viewport
+// height 360–430px); never laptops/tablets (>=640px tall). Height — not width — is
+// the constraint, so the query gates on `max-height`. `(pointer: coarse)` scopes the
+// reflow to touch devices so a mouse desktop stays byte-identical by construction.
+export const SHORT_LANDSCAPE_MAX_H = 480;
+export const SHORT_LANDSCAPE_MEDIA = `(orientation: landscape) and (max-height: ${SHORT_LANDSCAPE_MAX_H.toString()}px) and (pointer: coarse)`;
+
 // Flyer stock rotation by PLAYABLE index (tutorial uses STOCK.manila, not this rotation).
 export const FLYER_STOCK_BY_PLAYABLE_INDEX = [STOCK.rose, STOCK.vert, STOCK.orange] as const;
 

@@ -3013,3 +3013,39 @@ Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-
   béton-grief monologue on the bare barres facade); (2) cinematic intro stays deferred;
   (3) design-gate readback on the 0.30 halftone contrast — satisfied (re-shot at 0.30, text on
   solid newsprint stays AAA).
+
+---
+
+## 2026-07-15 · Pre-game mobile-landscape layout (ADR-0024)
+
+Trigger (Bertrand): the pre-game accueil + level-select are _surchargé_ in mobile landscape;
+"on ne dirait pas un écran d'accueil de jeu vidéo"; the top bar's utility is in doubt; "on sent
+que c'est une SPA". Two real landscape screenshots supplied.
+
+- **Diagnosis / capture.** Mobile landscape is unblocked (`App.tsx:125` blocks only portrait), so
+  the tall vertical zine layouts of TITLE + MENU overflow a ~360–430px viewport. Baseline shots
+  confirmed: MUF wordmark clipped behind the masthead, hero + CTA below the fold; MENU chrome
+  (masthead + tabs) > 50% of height, one flyer visible.
+- **Stage 0 — pm (John): story + 9 ACs** → `_bmad-output/planning-artifacts/story-pregame-landscape-layout.md`.
+- **Stage 1 — game-designer (Sacha): landscape UX spec** → `docs/game-design/pregame-landscape-ux.md`
+  (two-column TITLE cover; collapsed MENU chrome + horizontal flyer rack; `SHORT_LANDSCAPE`
+  breakpoint). **Design gate (lead-game-designer / Karim): PASS-WITH-NOTES** — one blocking fix
+  (spec §2.1 wrongly CUT both 1998 carriers; `MASTHEAD.full` has no year, so the era anchor would
+  vanish) → keep `ISSUE_LABEL "★ HIVER 1998 ★"`. **Narrative (Yasmine): all copy-hides PASS**,
+  `ISSUE_LABEL` flagged load-bearing (kept visible). Spec §2.1 corrected.
+- **Stage 2 — senior-architect (Winston): ADR-0024** (`docs/adr/0024-pregame-landscape-layout.md`,
+  Proposed). Mechanism: **CSS-first**, no new JS/hook — inline styles authored as CSS custom
+  properties with the current value as the `var()` fallback; a scoped `@media (orientation:
+landscape) and (max-height: 480px) and (pointer: coarse)` block redefines them only on
+  short-landscape touch. Desktop/portrait byte-stable by construction. Single `dev-r3f-render`
+  lane; `src/game` + `src/hooks` untouched.
+- **Stage 3 — implementation (dev-r3f-render lane; carried by orchestrator after two sub-agent
+  API timeouts).** `tokens.ts` (breakpoint token), `TitleScreen.tsx` (two-column reflow, 1998
+  anchor kept), `MainMenu.tsx` (masthead collapses into the tab strip via a compact MUF mark),
+  `FlyerWall.tsx` (horizontal scroll-snap rack; roving axis kept vertical — reflow is `pointer:
+coarse` only, justified in a comment).
+- **Stage 5 — verify.** `tsc` 0 · `vitest` 297/297 · lint 0 (source). Landscape captures at
+  667/844/915: MUF unclipped, CTA fully visible, 1998 anchor present, chrome ~15%, 2–3 flyers
+  visible, no page scroll. Portrait (390×844) + desktop (1280×800) captures: shipped layout intact.
+- **Open (merge gate):** 4-reviewer code-review panel + architect integration sign-off + pm
+  acceptance still owed before merge. PR #52 (draft).
