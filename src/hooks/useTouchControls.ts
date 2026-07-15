@@ -21,6 +21,12 @@ export interface TouchControlsState {
    * tap queues its midpoint; a one-finger double-tap queues its second tap's point.
    */
   pendingTaps: { x: number; y: number }[];
+  /**
+   * Committed pinch-zoom fraction of the base (max) zoom, persisted across
+   * gestures. 1 = base framing (most zoomed in); MIN_ZOOM_FRACTION = zoomed
+   * fully out. Read every frame by the loop, never consumed.
+   */
+  zoom: number;
 }
 
 // Tap classification (short + still) and the double-tap pairing rule are pure game logic
@@ -28,6 +34,28 @@ export interface TouchControlsState {
 // Flick velocity is measured over the trailing window of the drag.
 const FLICK_WINDOW_MS = 100;
 const FLICK_MIN_VELOCITY = 0.05;
+
+// Pinch-zoom bounds: base framing is the most zoomed-in (max), and the pinch
+// can back out to 2× (half the base zoom). A pinch only engages — and cancels
+// the two-finger tap — once the spread changes by more than this (normalized).
+export const MAX_ZOOM_FRACTION = 1;
+export const MIN_ZOOM_FRACTION = 0.5;
+const PINCH_MIN_DELTA = 0.02;
+
+/**
+ * Map a live two-finger spread to a clamped zoom fraction: the committed zoom
+ * scaled by how much the fingers have spread (apart ⇒ in, together ⇒ out),
+ * bounded to [MIN_ZOOM_FRACTION, MAX_ZOOM_FRACTION]. Pure — unit-tested.
+ */
+export function nextZoomFraction(
+  committed: number,
+  startDist: number,
+  currentDist: number,
+): number {
+  if (startDist <= 0) return committed;
+  const raw = committed * (currentDist / startDist);
+  return Math.max(MIN_ZOOM_FRACTION, Math.min(MAX_ZOOM_FRACTION, raw));
+}
 
 /**
  * Mobile gesture bridge (ADR-0003): one finger pans; a two-finger tap OR a one-finger
@@ -45,6 +73,7 @@ export function useTouchControls(
     flickVelocityX: null,
     flickVelocityY: null,
     pendingTaps: [],
+    zoom: MAX_ZOOM_FRACTION,
   });
 
   useEffect(() => {
@@ -61,6 +90,10 @@ export function useTouchControls(
     let oneStart: { t: number; x: number; y: number } | null = null;
     let oneDrift = 0;
     let lastTap: Tap | null = null;
+    // Spread (normalized finger distance) + committed zoom captured when the
+    // two-finger gesture began; a pinch scales that committed zoom.
+    let pinchStartDist = 0;
+    let pinchStartZoom = MAX_ZOOM_FRACTION;
 
     // On-screen UI (fullscreen button, etc.) carries data-muf-ui: those touches
     // belong to the DOM controls, so the gesture layer ignores them entirely and
@@ -82,6 +115,16 @@ export function useTouchControls(
       const [a, b] = [touches[0], touches[1]];
       if (a === undefined || b === undefined) return null;
       return normalize((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+    };
+
+    // Normalized distance between the two fingers (drives the pinch zoom).
+    const spread = (touches: TouchList): number | null => {
+      const [a, b] = [touches[0], touches[1]];
+      if (a === undefined || b === undefined) return null;
+      const pa = normalize(a.clientX, a.clientY);
+      const pb = normalize(b.clientX, b.clientY);
+      if (pa === null || pb === null) return null;
+      return Math.hypot(pa.x - pb.x, pa.y - pb.y);
     };
 
     const onTouchStart = (e: TouchEvent): void => {
@@ -107,6 +150,8 @@ export function useTouchControls(
         twoDrifted = false;
         // A two-finger gesture breaks any pending one-finger double-tap.
         lastTap = null;
+        pinchStartDist = spread(e.touches) ?? 0;
+        pinchStartZoom = stateRef.current.zoom;
       } else {
         mode = "idle";
       }
@@ -135,6 +180,13 @@ export function useTouchControls(
         if (mid === null) return;
         const drift = Math.hypot(mid.x - twoStart.midX, mid.y - twoStart.midY);
         if (drift > TAP_MAX_DRIFT) twoDrifted = true;
+        // A spread change past the dead-zone is a pinch: drive the zoom and
+        // disqualify the tap so a zoom gesture never also fires a shot.
+        const dist = spread(e.touches);
+        if (dist !== null && Math.abs(dist - pinchStartDist) > PINCH_MIN_DELTA) {
+          twoDrifted = true;
+          stateRef.current.zoom = nextZoomFraction(pinchStartZoom, pinchStartDist, dist);
+        }
       }
     };
 

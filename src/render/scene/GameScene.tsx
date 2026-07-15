@@ -86,6 +86,14 @@ export function GameScene({
 
   const feedbackRef = useRef<Floater[]>([]);
   const impactChannelRef = useRef<ImpactChannel>({ queue: [], resetNonce: 0 });
+  const { camera, size } = useThree();
+
+  // Cover framing: fill the wider axis with ONE panel, letting the other
+  // overflow a little. Mobile zooms in further (bigger, finger-sized targets)
+  // and this is the *max* zoom — the pinch gesture backs out from here.
+  const baseZoom =
+    Math.max(size.width / panelW, size.height / facadeH) * (isMobile ? MOBILE_ZOOM_FACTOR : 1);
+
   const touchRef = useTouchControls(canvasRef, isMobile);
   const stateRef = useGameLoop(
     mergedFacade,
@@ -97,25 +105,22 @@ export function GameScene({
     feedbackRef,
     courierField,
     roster,
-    isMobile ? { touchRef, halfWorldWidth: fullW / 2, halfWorldHeight: facadeH / 2 } : undefined,
+    isMobile
+      ? { touchRef, halfWorldWidth: fullW / 2, halfWorldHeight: facadeH / 2, baseZoom }
+      : undefined,
     impactChannelRef,
   );
   const mouseRef = useMouse(canvasRef);
-  const { camera, size } = useThree();
 
-  // Frame the facade to *cover* the viewport (no background bars on the sides):
-  // fill the wider axis, letting the other overflow a little — that overflow is
-  // scrollable via the mouse edges. Centred at the origin.
+  // Frame the facade to *cover* the viewport (no background bars on the sides).
+  // On mobile the loop re-applies zoom each frame (base × pinch fraction); this
+  // sets the initial framing and drives the desktop static zoom. Centred at origin.
   useEffect(() => {
     const ortho = camera as OrthographicCamera;
-    // Cover the viewport with ONE panel (same framing as before); the extra
-    // panels become horizontal scroll room.
-    // Mobile zooms in further (bigger targets); the swipe pan covers the rest.
-    ortho.zoom =
-      Math.max(size.width / panelW, size.height / facadeH) * (isMobile ? MOBILE_ZOOM_FACTOR : 1);
+    ortho.zoom = baseZoom;
     ortho.position.set(0, 0, 100);
     ortho.updateProjectionMatrix();
-  }, [camera, size.height, size.width, panelW, facadeH, isMobile]);
+  }, [camera, baseZoom]);
 
   useFrame((_state, delta) => {
     // On mobile the camera is driven by the inertial swipe pan in useGameLoop.

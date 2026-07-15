@@ -89,6 +89,8 @@ export interface MobileControls {
   touchRef: React.RefObject<TouchControlsState>;
   halfWorldWidth: number;
   halfWorldHeight: number;
+  /** Base (max) orthographic zoom; the pinch fraction scales this down to zoom out. */
+  baseZoom: number;
 }
 
 /**
@@ -133,13 +135,25 @@ export function useGameLoop(
     const prev = gameStateRef.current;
     const mouse = mouseRef.current;
     const ortho = camera as OrthographicCamera;
+
+    // Mobile pinch-zoom (ADR-0003): apply the committed zoom fraction BEFORE
+    // deriving the view extents, so the pan clamp below reflects the current
+    // framing (zooming out widens the view and shrinks the pan range).
+    const touch = mobileControls?.touchRef.current;
+    if (mobileControls !== undefined && touch !== undefined) {
+      const zoom = mobileControls.baseZoom * touch.zoom;
+      if (ortho.zoom !== zoom) {
+        ortho.zoom = zoom;
+        ortho.updateProjectionMatrix();
+      }
+    }
+
     const viewW = size.width / ortho.zoom;
     const viewH = size.height / ortho.zoom;
 
     // Mobile (ADR-0003): consume swipe gestures — pan the camera with inertia
     // (pure cameraPanSystem math) and dequeue at most one two-finger tap as a
     // shot at its midpoint. Runs before the tick so cameraOffsetX is current.
-    const touch = mobileControls?.touchRef.current;
     if (mobileControls !== undefined && touch !== undefined) {
       const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
       const rangeY = Math.max(0, mobileControls.halfWorldHeight - viewH / 2);
@@ -163,7 +177,15 @@ export function useGameLoop(
         touch.flickVelocityX = null;
         touch.flickVelocityY = null;
       }
-      panRef.current = tickCameraPan(panRef.current, safeDelta, range);
+      const ticked = tickCameraPan(panRef.current, safeDelta, range);
+      // Re-clamp against range every frame: a pinch-out this frame can shrink
+      // the pan range, so a resting camera must be pulled back inside bounds
+      // (tickCameraPan only clamps while a glide is active).
+      panRef.current = {
+        ...ticked,
+        x: Math.max(-range.x, Math.min(range.x, ticked.x)),
+        y: Math.max(-range.y, Math.min(range.y, ticked.y)),
+      };
       camera.position.x = panRef.current.x;
       camera.position.y = panRef.current.y;
     }
