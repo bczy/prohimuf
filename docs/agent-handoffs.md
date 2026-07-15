@@ -3013,3 +3013,36 @@ Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-
   béton-grief monologue on the bare barres facade); (2) cinematic intro stays deferred;
   (3) design-gate readback on the 0.30 halftone contrast — satisfied (re-shot at 0.30, text on
   solid newsprint stays AAA).
+
+---
+
+## Gate DA — spike évaluation modèles image (courier.rider, THROWAWAY, aucun art de prod visé) — lead-art (Nico)
+
+Question Bertrand : « depuis la création du jeu, meilleur modèle que FLUX ? ». Régénération
+du flipbook `courier.rider` (6 frames) sur plusieurs modèles Pollinations. Verdicts sur pièces
+(`spike-out/rider/**`), jugés contre la bible (fanzine B&W photocopié + néon acide, silhouette-first).
+
+- **Piste A — t2i seed-pinné (flux, = zimage = qwen-image, bytes identiques : l'API GET anon a
+  ignoré `model` et servi FLUX 3×). Sur cette voie API, PAS d'alternative t2i réelle ce run.**
+  Verdict DA : **PASS.** Gris/blanc contrasté, aplat propre sur noir mat, zéro photoréalisme,
+  silhouette courier-sur-vélo lisible (casque, sacoche, cadre). Sur-direction. Réserve NON-DA :
+  les 6 cellules sont quasi la même pose (stride de pédalage inexistant) — défaut d'animation
+  flipbook, pas de DA ; hors périmètre de ce gate.
+- **Piste B — img2img (nanobanana-pro) depuis frame 1 committée.** Verdict : **FAIL.**
+  frame1 = copie de la réf. frames 2-6 : personnage NON préservé — vélo supprimé, sacoche
+  supprimée, casque réduit à une cagoule ; dérive stylistique vers un pixel-art blanc fantôme
+  sur noir (ni xerox, ni B&W fanzine). Silhouette = coureur générique en fente = **mauvais
+  archétype = FAIL automatique** (§2 loi 3), doublé d'une rupture de style (§1) et d'anatomie
+  incohérente (jambes/hanches). Disqualifié.
+
+Décision modèle (base = ce seul run) :
+- **flux/zimage/qwen-image : PASS — rien ne justifie de quitter FLUX** (les trois SONT FLUX ici ;
+  résultat sur-direction).
+- **nanobanana-pro : FAIL — ne conserve pas le personnage et casse la DA.** Non retenu.
+
+Reco de suite : **rester sur FLUX pour le courier.** Re-tester **`kontext`** proprement (il a
+sauté sur un HTTP 500 transitoire, non testé ce run) : c'est la voie img2img déjà en prod pour
+les ennemis et le vrai candidat cohérence-de-frames — le spike ne tranche PAS kontext, il tranche
+nanobanana-pro. **Aucun ADR** : spike throwaway, ni bible ni pipeline modifiés. ADR seulement si
+un modèle bat réellement FLUX sur un run propre (kontext inclus). Rien à escalader à Bertrand :
+verdict dans le périmètre de la bible.
