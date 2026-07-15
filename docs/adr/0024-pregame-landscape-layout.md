@@ -15,12 +15,12 @@
 
 ADR-0003 D2 blocks only **portrait** on mobile: `rotateBlocked = IS_MOBILE && isPortrait`
 (`src/render/scene/App.tsx:125`) mounts `RotateOverlay` when `useOrientation()` reports
-portrait. Mobile **landscape** is intentionally *not* blocked — the game facade is a wide
+portrait. Mobile **landscape** is intentionally _not_ blocked — the game facade is a wide
 horizontal surface and landscape is the intended play orientation (ADR-0003 forces users
 toward it). But the pre-game print surfaces built in ADR-0021 were laid out for a tall
 desktop viewport and never re-checked against a **short** landscape viewport (phone landscape
 is typically ~320–430 px tall). ADR-0003 itself flagged this: its "Not in this ADR" list
-names *"Responsive HUD/menu layout for small landscape screens"* as a deferred follow-up.
+names _"Responsive HUD/menu layout for small landscape screens"_ as a deferred follow-up.
 This ADR is that follow-up for the pre-game screens.
 
 Confirmed on real device screenshots:
@@ -31,11 +31,11 @@ Confirmed on real device screenshots:
   rule → teasers → info-line → CTA → microcopy). On a short viewport the centred column is
   taller than the frame, so it overflows **both** ends: the absolutely-positioned masthead
   ink strip (`top:0`) **clips the `MUF` wordmark**, and the primary CTA (`[ COMPOSE
-  L'INFO-LINE ]`) falls **below the fold and is invisible** — the one affordance the whole
+L'INFO-LINE ]`) falls **below the fold and is invisible** — the one affordance the whole
   screen exists to present.
 - **MENU** (`src/render/ui/MainMenu.tsx`) — a flex column of three `flexShrink: 0` chrome
-  bands (running masthead with a 32 px `MUF`, then the *sommaire* tab row with `minHeight:
-  44px` tabs) above a `flex: 1` rubrique surface. On a short viewport the two fixed chrome
+  bands (running masthead with a 32 px `MUF`, then the _sommaire_ tab row with `minHeight:
+44px` tabs) above a `flex: 1` rubrique surface. On a short viewport the two fixed chrome
   bands eat **>50 % of height**, leaving only a sliver of the first level flyer
   (`menu/FlyerWall.tsx`) visible even though that surface already has `overflowY: auto`.
 
@@ -43,16 +43,16 @@ Forces from the code and the boundary law:
 
 - The pre-game surfaces are **inline-styled** React (`style={{…}}`), not stylesheets. Two of
   them already inject a scoped `<style>` block for keyframes (`TitleScreen.tsx` `@keyframes
-  mufTitleBlink`; `App.tsx` `mufRedFlash`) and `PaperSheet` composes background layers in CSS
+mufTitleBlink`; `App.tsx` `mufRedFlash`) and `PaperSheet` composes background layers in CSS
   — so **injecting a scoped `<style>` block with a media query is an established, boundary-local
   pattern**, not a new capability.
-- CLAUDE.md law: `src/hooks/**` is *the only* game ↔ R3F bridge. ADR-0021 D4 already ruled
+- CLAUDE.md law: `src/hooks/**` is _the only_ game ↔ R3F bridge. ADR-0021 D4 already ruled
   that **pure view state does not belong in `src/hooks/`** (it kept the menu-nav hook in the
   render layer for exactly this reason). "The viewport is short" is pure view state that
   bridges nothing to game logic.
 - `useOrientation` exists (ADR-0003) because the portrait case drives a **conditional mount**
   (`RotateOverlay` appears/disappears) — React genuinely must know. A short-landscape reflow
-  is **not** a mount/unmount; it is the *same* DOM tree needing different spacing and sizes.
+  is **not** a mount/unmount; it is the _same_ DOM tree needing different spacing and sizes.
   CSS reflows that for free; React does not need to know.
 - Inline `style=` declarations beat plain stylesheet rules in the cascade, so a media-query
   rule that merely names a class will **not** override an existing inline property — the
@@ -76,10 +76,10 @@ behind:
 ```
 
 - `orientation: landscape` + `max-height` is the actual condition that causes overflow
-  (a short *landscape* viewport), expressed in the one language that already models it.
+  (a short _landscape_ viewport), expressed in the one language that already models it.
 - `pointer: coarse` scopes the query to touch devices, which makes the **desktop
   byte-stable guarantee (D3) hold by construction** — a mouse desktop never matches
-  regardless of window size — without any UA sniffing. This is a deliberately *different*
+  regardless of window size — without any UA sniffing. This is a deliberately _different_
   signal from `App.tsx`'s `IS_MOBILE` (UA-based, ADR-0003): the reflow is a pure presentation
   concern that CSS media features describe more robustly and honestly than a UA regex, and the
   two signals are allowed to be independent because they answer different questions ("do we
@@ -88,7 +88,7 @@ behind:
 **Rejected alternatives:**
 
 - **(a) A JS `useViewport`/`useLayout` hook exposing `{isPortrait, isLandscape, isShort,
-  isMobile}`.** Rejected. It adds a `resize`/`matchMedia` listener and re-renders on every
+isMobile}`.** Rejected. It adds a `resize`/`matchMedia` listener and re-renders on every
   breakpoint crossing to do what CSS does for free with zero JS. It also has nowhere clean to
   live: `src/hooks/` is the game↔R3F bridge and this bridges nothing (CLAUDE.md law; ADR-0021
   D4), and putting it there would re-blur the bridge folder. If a hook were ever genuinely
@@ -106,11 +106,11 @@ boundary — so it is the recommended and chosen approach.
 All new code is confined to `src/render/ui/**`. `src/game/**` and `src/hooks/**` are
 **byte-untouched** — the boundary law holds trivially because nothing outside render changes.
 
-Because inline `style=` beats plain stylesheet rules, the media query does not try to *name*
+Because inline `style=` beats plain stylesheet rules, the media query does not try to _name_
 and override inline properties. Instead each responsive property is authored as a **CSS custom
 property with the current value as its `var()` fallback**, e.g. the wordmark becomes
 `fontSize: "var(--muf-title-wordmark, clamp(80px, 14vw, 160px))"`, and the scoped `<style>`
-block *declares* the override custom property on the surface's **container class** only inside
+block _declares_ the override custom property on the surface's **container class** only inside
 the short-landscape media query. Delivery then works with the cascade instead of against it:
 
 - **Desktop / portrait / tall landscape:** the media query does not match, the container never
@@ -121,7 +121,7 @@ the short-landscape media query. Delivery then works with the cascade instead of
   rhythm, a shorter hero, compacted MENU chrome (thinner masthead, hidden running-string,
   shorter tabs) so the CTA and the first flyer come back above the fold.
 
-This avoids `!important` and any specificity fight; the inline base style *is* the fallback,
+This avoids `!important` and any specificity fight; the inline base style _is_ the fallback,
 so it cannot drift from the desktop truth. The **single-source breakpoint** threshold
 `SHORT_LANDSCAPE_MAX_H` is added to `src/render/ui/print/tokens.ts` (ADR-0021 D3's render-only
 style source — it holds no React and no game rule, and a breakpoint is presentation truth of
@@ -133,7 +133,7 @@ owned by `docs/game-design/pregame-landscape-ux.md`**, not by this ADR.
 ### D3 — Regression guard: desktop, portrait, and tall landscape are byte-stable; the ADR-0003 block is untouched
 
 - The media query is gated on `(orientation: landscape) and (max-height: …) and (pointer:
-  coarse)`; nothing else in the render tree changes, so any viewport that does not match all
+coarse)`; nothing else in the render tree changes, so any viewport that does not match all
   three predicates renders **byte-for-byte as today** — including every desktop window and
   every portrait phone. The `var(…, fallback)` delivery (D2) guarantees the unmatched path
   equals the current inline value.
@@ -142,7 +142,7 @@ owned by `docs/game-design/pregame-landscape-ux.md`**, not by this ADR.
   change and is left exactly as written**. This ADR does **not** block landscape and does
   **not** touch `useOrientation`, `rotateBlocked`, `RotateOverlay`, or `IS_MOBILE`.
 - Because `pointer: coarse` (not a height threshold alone) scopes the reflow, a rare short
-  desktop *mouse* window keeps the current layout, satisfying "desktop byte-stable" strictly.
+  desktop _mouse_ window keeps the current layout, satisfying "desktop byte-stable" strictly.
   A touchscreen laptop dragged to a short landscape window would reflow — that is correct,
   harmless, and preserves the fanzine identity (spacing only).
 
@@ -182,7 +182,7 @@ proceeds after the game-designer's `pregame-landscape-ux.md` pins the pixel valu
   contract holds trivially. CSS models "short landscape" in its native language.
 - The `var(…, fallback)` delivery makes the desktop/portrait/tall-landscape paths **byte-stable
   by construction** — the regression guard is satisfied structurally, not by review vigilance,
-  because the base inline style literally *is* the fallback and cannot drift.
+  because the base inline style literally _is_ the fallback and cannot drift.
 - The breakpoint is single-sourced in `tokens.ts`, extending ADR-0021 D3's one-source
   discipline; TITLE and MENU cannot disagree on where "short" begins.
 - `pointer: coarse` gives a clean, UA-sniff-free guarantee that mouse desktops never reflow.
@@ -216,5 +216,5 @@ proceeds after the game-designer's `pregame-landscape-ux.md` pins the pixel valu
 - **Loi du glow:** grep the diff for any `text-shadow`/`box-shadow`-as-glow or `backdrop-filter`
   reintroduced while compacting chrome (ADR-0021 §2bis gate).
 - **Verify on device, both axes:** the fix must be checked in real phone landscape (CTA and
-  first flyer above the fold) *and* re-checked in phone portrait + desktop (unchanged), since
+  first flyer above the fold) _and_ re-checked in phone portrait + desktop (unchanged), since
   the whole value of the change is that only the matched viewport moves.
