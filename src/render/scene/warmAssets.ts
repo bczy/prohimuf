@@ -31,9 +31,11 @@ function warmImage(url: string): Promise<void> {
 function warmAudio(url: string): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
+    let timer: ReturnType<typeof setTimeout>;
     const done = (): void => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
       resolve();
     };
     const howl = new Howl({ src: [url], preload: true });
@@ -41,7 +43,7 @@ function warmAudio(url: string): Promise<void> {
     howl.once("loaderror", done);
     // Headless / no-audio-device browsers may fire neither event; resolve anyway
     // after a grace period so the preloader gate can never stall on audio.
-    setTimeout(done, 10_000);
+    timer = setTimeout(done, 10_000);
   });
 }
 
