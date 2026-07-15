@@ -59,7 +59,7 @@ would have registered as a shot. Any zoom scheme has to coexist with that.
 - **Fixed-width enemy neon rim.** The heat-rim (ADR-0025) is a world-space band,
   so on a zoom-out it would shrink with the sprite and fade to a hairline.
   `EnemySprite` now grows the rim's world margin by `baseZoom / camZoom`
-  (`rimZoomCompensation`, pure + unit-tested) so the *projected* rim thickness
+  (`rimZoomCompensation`, pure + unit-tested) so the _projected_ rim thickness
   stays constant across the zoom range. The factor is 1 at the base (max) zoom
   and on desktop's static zoom (clamped ≥ 1 — the rim only ever grows out), so
   neither look regresses; `GameScene` passes `baseZoom` down to `EnemySprite`.
