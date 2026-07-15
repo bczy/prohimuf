@@ -113,6 +113,19 @@ La documentation détaillée se trouve dans [`docs/`](./docs) :
 
 ---
 
+## L'équipe d'agents
+
+Le projet est développé par un **équipage de sous-agents** (chacun incarnant une
+persona BMAD) qui travaillent en parallèle et se coordonnent via
+[`docs/agent-handoffs.md`](./docs/agent-handoffs.md). Protocole complet :
+[`.claude/agents/COLLABORATION.md`](./.claude/agents/COLLABORATION.md).
+
+![L'équipage muf — 15 agents en pixel art](./docs/muf-crew.png)
+
+> Bitmap généré par [`docs/muf-crew-bitmap.py`](./docs/muf-crew-bitmap.py).
+
+---
+
 ## Génération d'assets
 
 Les sprites sont générés via `scripts/generate-assets.mjs` (API Pollinations.ai,
