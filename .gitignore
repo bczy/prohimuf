@@ -51,3 +51,6 @@ screenshots/verify/
 # Vehicle-halo preview shots — regenerated each run by scripts/preview-vehicle-halo.mjs
 screenshots/preview-vehicle-*.png
 screenshots/e2e-delivery.png
+
+# session-local screenshots / throwaway capture scripts (never commit)
+scratchpad/
