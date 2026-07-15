@@ -3046,3 +3046,27 @@ les ennemis et le vrai candidat cohérence-de-frames — le spike ne tranche PAS
 nanobanana-pro. **Aucun ADR** : spike throwaway, ni bible ni pipeline modifiés. ADR seulement si
 un modèle bat réellement FLUX sur un run propre (kontext inclus). Rien à escalader à Bertrand :
 verdict dans le périmètre de la bible.
+
+---
+
+### Spike model A/B — courier rider — RUN PROPRE (verdict final)
+
+Run #3 (commit `af65890` → sortie `066ce1e`) : harnais corrigé (PNG ré-encodés via
+@napi-rs/canvas, set `flux,kontext,nanobanana-pro`). Résultats mesurés :
+
+- **flux** : 6/6, vrais PNG, cohérence perso excellente. Baseline solide.
+- **nanobanana-pro** (img2img) : 6/6 sur PNG propre → **FAIL confirmé** : perd vélo/sacoche/casque
+  dès frame 2 (coureur générique). Le nettoyage JPEG ne change rien : perte de perso intrinsèque.
+- **kontext** (img2img) : **HTTP 500 SYSTÉMATIQUE** sur chaque appel (frames 2-6, 3 retries
+  chacune) — PAS transitoire. L'endpoint kontext img2img de Pollinations est indisponible
+  actuellement. Non testable ; ce n'est pas un bug du spike (URL identique à la prod ennemis).
+
+**Verdict final : rester sur FLUX pour le courier.** Aucun candidat testable ne le bat.
+- t2i alternatifs (zimage/qwen) : l'API GET anonyme sert FLUX → non A/B-ables sans voie POST/auth.
+- kontext : verdict impossible tant que Pollinations 500 ; le harnais est propre et réutilisable
+  (bump `.github/dispatch/spike-model-ab` quand l'endpoint revient).
+- **Aucun ADR** (rien de changé). **Aucun art de prod touché.**
+
+⚠️ Heads-up prod (hors spike) : la génération d'ennemis utilise la MÊME voie kontext img2img.
+Si le 500 persiste, elle bascule sur son fallback matched-flux-pair (dégradation silencieuse) —
+à vérifier séparément si la cohérence des sprites ennemis compte.
