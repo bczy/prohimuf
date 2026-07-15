@@ -53,7 +53,11 @@ const LIST_ONLY = process.argv.includes("--list");
 // qwen-image (linework/text candidate) · kontext + nanobanana-pro (the two
 // reference-conditioned hypotheses). `flux.2` is intentionally absent — it is
 // not a Pollinations model ID; add it via MODELS= to watch it get probe-skipped.
-const MODELS = (process.env.MODELS ?? "flux,zimage,qwen-image,kontext,nanobanana-pro")
+// A push-triggered run passes MODELS="" (workflow_dispatch inputs are empty on
+// push), so treat an empty/whitespace env as UNSET and let this default win —
+// `?? ` alone would keep the empty string and generate zero models.
+const DEFAULT_MODELS = "flux,zimage,qwen-image,kontext,nanobanana-pro";
+const MODELS = (process.env.MODELS?.trim() ? process.env.MODELS : DEFAULT_MODELS)
   .split(",")
   .map((m) => m.trim())
   .filter(Boolean);
