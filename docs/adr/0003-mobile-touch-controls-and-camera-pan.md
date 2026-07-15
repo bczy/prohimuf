@@ -1,6 +1,6 @@
 # 0003 — Mobile support: touch controls, forced landscape, inertial camera pan
 
-- **Status:** Accepted
+- **Status:** Accepted (amended 2026-07-15 — see D7)
 - **Date:** 2026-07-10
 
 ## Context
@@ -195,3 +195,27 @@ Not in this ADR (follow-up stories):
 - E2E touch tests (Playwright mobile emulation) and on-device QA checklist.
 - Optional progressive enhancement: fullscreen + `screen.orientation.lock()`
   where supported (rejected as the primary mechanism).
+
+## Amendment — 2026-07-15
+
+- **D7 — One-finger double-tap as a second shoot input.** The two-finger tap
+  (D3/D5) stays the primary mobile fire gesture, but a **one-finger
+  double-tap** now also fires — two short, still one-finger taps close together
+  in time **and** space queue one entry into the same `pendingTaps` channel, so
+  the shot lands at the second tap's point through the unchanged D5 pipeline. It
+  is more playable one-handed (no two-finger reach). This **narrows** the D3
+  "one-finger touch never fires" rule: a lone tap still fires nothing (it only
+  ever pairs into a double-tap); only a genuine second tap shoots. A real drag
+  breaks a pending pair, so pan is unaffected.
+  - **Pure rules in the game layer.** The two decisions — _is this touch a tap?_
+    (short + still) and _do two taps pair into a double-tap?_ (time + distance) —
+    live in `src/game/systems/tapGestureSystem.ts` (`isTapGesture`, `isDoubleTap`,
+    tuned constants), unit-tested; `useTouchControls` (bridge) feeds raw touch
+    timing/positions through them. This keeps the boundary law: the input _rule_
+    is pure game logic, the DOM plumbing stays in the hook. The tap thresholds
+    (`TAP_MAX_MS`/`TAP_MAX_DRIFT`) that also gate the two-finger tap move to that
+    module and are imported back into the hook — single source of truth.
+  - **Tutorial.** The mobile shoot panel copy (`narrativeSystem.ts`) teaches the
+    double-tap alongside the two-finger tap; no new panel and no fifth
+    `GestureKind`, so the ADR-0020 11-panel parity and the invariant suite hold.
+    The illustrated gesture icon stays `two-finger-tap` (the canonical gesture).
