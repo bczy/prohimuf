@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
@@ -11,6 +11,8 @@ import {
   tilePanelZones,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
+import type { WindowZone } from "@game/levels/levelArt";
+import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HudData, HudDelivery } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { LEVELS } from "@game/levels/levels";
@@ -27,6 +29,38 @@ import { ImpactEffects } from "@render/effects/ImpactEffects";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
+
+/**
+ * Dev-only window-alignment harness surface (driven by scripts/, a separate
+ * lane; NEVER set in production — same precedent as window.__MUF_FREEZE_COPS__
+ * in useGameLoop). The harness boots belliard headless, pushes candidate window
+ * zones, and reads back where each enemy sprite renders to check the invariant
+ * "sprite plane box ⊆ window opening".
+ */
+interface HarnessWindow extends Window {
+  /** Per-panel WindowZone arrays that override the level's own zones. */
+  __MUF_ZONES__?: readonly (readonly WindowZone[])[];
+  /** Force the scene to re-read __MUF_ZONES__ without a full remount. */
+  __MUF_APPLY_ZONES__?: () => void;
+  /**
+   * Each current slot's rendered sprite box, in PER-PANEL facade-normalized
+   * coords: x,y = box CENTRE, w,h = box SIZE, all 0..1 within one panel — the
+   * exact coordinate space of a WindowZone, so the harness can test containment.
+   */
+  __MUF_SLOT_RECTS__?: () => {
+    panel: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }[];
+}
+
+// Widest sprite aspect across all archetypes. The harness box reports this
+// conservative worst case (if the widest occupant fits the opening, every kind
+// fits); __MUF_FREEZE_COPS__ cycles every kind — incl. the wide civilian —
+// through the windows.
+const WIDEST_ASPECT = Math.max(...Object.values(ARCHETYPES).map((a) => a.aspect));
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
@@ -64,15 +98,78 @@ export function GameScene({
   const panelW = WORLD_HEIGHT * FACADE_ASPECT;
   const fullW = panelW * PANELS;
 
+  // Dev harness override for the level's window zones (never set in production).
+  // The harness pushes candidate zones into window.__MUF_ZONES__ then calls
+  // window.__MUF_APPLY_ZONES__() (registered below) to fold them into state so
+  // the scene re-derives its slots live, no remount required.
+  const [zoneOverride, setZoneOverride] = useState<readonly (readonly WindowZone[])[] | null>(null);
+
   // Each facade panel has its own art-derived window zones, so cops and railings
   // line up with that panel's real windows. The per-panel zones drive the
   // per-panel foreground; tiled together they place the enemy slots across the
   // whole wide street.
-  const panelZones = useMemo(() => getLevelPanelZones(levelId), [levelId]);
+  const panelZones = useMemo(
+    () => zoneOverride ?? getLevelPanelZones(levelId),
+    [zoneOverride, levelId],
+  );
   const mergedFacade = useMemo(() => {
     const slots = computeSlotsFromZones(tilePanelZones(panelZones), fullW, facadeH);
     return { width: slots.length, height: 1, slots };
   }, [panelZones, fullW, facadeH]);
+
+  // Register the harness apply hook: read the current __MUF_ZONES__ global into
+  // React state (bumping a render). Also picks up zones set BEFORE mount.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as HarnessWindow;
+    const apply = (): void => {
+      setZoneOverride(w.__MUF_ZONES__ ?? null);
+    };
+    w.__MUF_APPLY_ZONES__ = apply;
+    apply();
+    return () => {
+      if (w.__MUF_APPLY_ZONES__ === apply) delete w.__MUF_APPLY_ZONES__;
+    };
+  }, []);
+
+  // Register the harness slot-rects reader. For each current slot it reports the
+  // enemy sprite's rendered plane box in PER-PANEL facade-normalized coords,
+  // mirroring EnemySprite's world layout:
+  //   planeH    = size.y * 0.8            (window-height plane, grid-only ⇒ 1.3)
+  //   planeW    = planeH * WIDEST_ASPECT  (square plane scaled on X)
+  //   centreX   = slot.screenPosition.x   (mesh.position.x)
+  //   centreY   = slot.screenPosition.y - planeH * 0.28  (bodyY: feet at sill)
+  // World → global-normalized (inverse of computeSlotsFromZones):
+  //   globalXNorm = centreX / fullW + 0.5          (x∈[-fullW/2,fullW/2], x-right)
+  //   yNorm       = 0.5 - centreY / facadeH        (facade y is top-down)
+  // Then split the global x into panel + local (panels tile horizontally only):
+  //   panel  = floor(globalXNorm * PANELS)
+  //   localX = globalXNorm * PANELS - panel
+  //   w(local) = planeW / panelW  (global-norm width × PANELS; y/h unaffected)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as HarnessWindow;
+    const panelW = fullW / PANELS;
+    const reader = (): { panel: number; x: number; y: number; w: number; h: number }[] =>
+      mergedFacade.slots.map((slot) => {
+        const planeH = slot.size !== undefined ? slot.size.y * 0.8 : 1.3;
+        const planeW = planeH * WIDEST_ASPECT;
+        const bodyY = slot.screenPosition.y - planeH * 0.28;
+        const globalXNorm = slot.screenPosition.x / fullW + 0.5;
+        const panel = Math.floor(globalXNorm * PANELS);
+        return {
+          panel,
+          x: globalXNorm * PANELS - panel,
+          y: 0.5 - bodyY / facadeH,
+          w: planeW / panelW,
+          h: planeH / facadeH,
+        };
+      });
+    w.__MUF_SLOT_RECTS__ = reader;
+    return () => {
+      if (w.__MUF_SLOT_RECTS__ === reader) delete w.__MUF_SLOT_RECTS__;
+    };
+  }, [mergedFacade, fullW, facadeH]);
 
   // Couriers ride the road below the windows, across the whole wide street.
   const courierField = useMemo(
