@@ -137,8 +137,8 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
             scroll-snap-type: x mandatory;
           }
           .muf-flyerwall > .muf-flyer-slot{
-            flex: 0 0 clamp(230px, 72vw, 280px);
-            width: clamp(230px, 72vw, 280px);
+            flex: 0 0 280px;
+            width: 280px;
             scroll-snap-align: start;
           }
         }
