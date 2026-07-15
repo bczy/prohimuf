@@ -428,6 +428,77 @@ track whatever art was generated.
 
 ---
 
+## align-belliard-windows.mjs — Window-alignment harness (belliard)
+
+Detect-and-correct harness that keeps the `belliard` cop window zones lined up
+with the real windows of its facade art. The shipped zones were a regular 7×3
+grid, but the AI facade is **not** a clean grid — so cops overflowed their window
+openings and some slots sat on bare wall while lit windows had no cop (Bertrand:
+_"plein de sprites dépassent des fenêtres; des fois il n'y a rien devant les
+fenêtres"_).
+
+Unlike `gen-window-zones.mjs` (which _snaps_ a fixed grid onto warm light and can
+still land between real windows), this harness **detects the real windows** from
+the art, then drives the **live production render** to place one non-overflowing
+cop in each, looping on measured defects until zero.
+
+- **Detection** (`public/assets/levels/belliard/facade.png`, JPEG despite `.png`):
+  warm-lit mask over the residential band → 3 floor row-centroids → per-row warm
+  column-density peaks = the lit french windows (twin panes merged, wide runs
+  split by pitch). One opening per real, **visible** window; dark/ambiguous
+  windows are intentionally not invented (a zone on unlit wall is itself a defect).
+- **Correction loop:** boot a served prod build headless (reusing `e2e-lib.mjs` —
+  SwiftShader, `seedDeterminism` freezes one static cop per slot), push candidate
+  zones via `window.__MUF_ZONES__` + `__MUF_APPLY_ZONES__()`, read each rendered
+  sprite box via `__MUF_SLOT_RECTS__()`, and tune each zone's **h** (sprite size,
+  ~88% of the opening height) and **y** (centre the down-shifted box), 1:1 with the
+  openings. `zone.w` = the opening width (frames the foreground railing). The
+  h→(size,y) map is **calibrated from the first render**, so it stays correct if
+  the render layout changes. Converges in one pass.
+- **Output:** overwrites the `belliard` key of
+  `src/game/levels/windowZones.generated.json` (4 identical panels — the facade is
+  one image tiled ×4); `stalingrad` / `vitry` are left untouched. Each iteration
+  writes a proof overlay `scripts/.dbg-belliard-align-*.jpg` (gitignored; detected
+  openings green, rendered slot rects magenta, overflow red) — open it to confirm
+  every opening is a real window and every sprite frames inside.
+
+### Modes
+
+```bash
+# --fix (default): detect → correct → write zones + proof overlays, exit 0 on success
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/align-belliard-windows.mjs
+yarn align:belliard
+
+# --check: measure the committed zones only, write nothing, exit 1 on any defect (CI gate)
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/align-belliard-windows.mjs --check
+yarn align:belliard:check
+```
+
+### Defects it detects & the success condition
+
+- **OVERFLOW** — a rendered sprite box not contained (`⊆`, +τ=0.01) in its window.
+- **COUNT** — a panel's zone count ≠ its detected window count.
+- **EMPTY** — a detected window with no zone centre in it.
+- **WALL** — a zone centre on bare wall (low local warm-density, no opening nearby).
+
+SUCCESS = 0 defects across all 4 panels. Exit non-zero while any defect remains.
+
+### Setup
+
+- Expects a server already serving the production build at `PREVIEW_URL`
+  (`node_modules/.bin/vite build` then `node_modules/.bin/vite preview --port 4173
+--strictPort`). Because the zones JSON is bundled at **build time**, rebuild
+  before `--check` reads the committed zones live.
+- **Requires:** `jpeg-js` (`npm i --no-save --legacy-peer-deps jpeg-js`) and
+  `playwright` (`ln -s /opt/node22/lib/node_modules/playwright node_modules/playwright`)
+  — same install pattern as the other e2e scripts.
+
+> **Slot-count note (game-designer sign-off):** belliard went from **21 zones/panel**
+> (7×3 grid) to **17** (5/5/7 — one per visible lit window). Fewer, but every cop now
+> frames a real window; dark windows are left empty by design.
+
+---
+
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
 
 Generates the enemy archetype sprites (base cops + variants, riot/CRS,
