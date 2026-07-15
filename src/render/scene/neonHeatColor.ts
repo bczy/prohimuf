@@ -52,15 +52,16 @@ function clamp01(v: number): number {
   return v;
 }
 
+/** Per-channel linear interpolation between two colour stops (fresh tuple). */
+function lerp(a: Rgb, b: Rgb, f: number): Rgb {
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+
 /**
  * Map a 0..1 progress to a neon heat colour (normalized RGB): green → orange
  * (held) → red, piecewise-linear between {@link STOPS}. Progress is clamped, so
  * out-of-range inputs pin to the green/red ends.
  */
-function lerp(a: Rgb, b: Rgb, f: number): Rgb {
-  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
-}
-
 export function heatColor(progress: number): Rgb {
   const t = clamp01(progress);
   for (let i = 0; i < STOPS.length - 1; i++) {
@@ -73,9 +74,10 @@ export function heatColor(progress: number): Rgb {
     }
   }
   // t is clamped to [0,1] and STOPS spans 0..1, so a bracket always matches;
-  // the last stop is the exhaustive fallback for the unreachable tail.
+  // the last stop is the exhaustive fallback for the unreachable tail. Return a
+  // copy so the module-level stop colour can never be mutated by a caller.
   const last = STOPS[STOPS.length - 1];
-  return last === undefined ? [1, 1, 1] : last.rgb;
+  return last === undefined ? [1, 1, 1] : [last.rgb[0], last.rgb[1], last.rgb[2]];
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, AdditiveBlending } from "three";
@@ -59,6 +59,14 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   const rimRef = useRef<Mesh>(null);
   // One rim shader per sprite instance; uniforms are mutated in useFrame.
   const rimMat = useMemo(() => createEnemyRimMaterial(), []);
+  // R3F does not auto-dispose a material passed to <primitive object={…}>, so
+  // release its GL program when the sprite unmounts (e.g. a game restart).
+  useEffect(
+    () => () => {
+      rimMat.material.dispose();
+    },
+    [rimMat],
+  );
   // Track APPEARING phase start for unfold animation
   const unfoldTimerRef = useRef(0);
   // Flipbook clock, reset on every state change so each state animates from
