@@ -177,6 +177,11 @@ export interface EnemyRim {
 }
 const silhouettes = new WeakMap<Texture, EnemyRim>();
 
+// Enemy rims are drawn thicker than the vehicle rim so hostiles read clearly
+// against the busy facade. This doubles the shared vehicle margin
+// (NEON_RIM_MARGIN_RATIO) for enemies only — the vehicle bake is untouched.
+const ENEMY_RIM_THICKNESS_SCALE = 2;
+
 // The baked white silhouette for a loaded enemy texture, or null when the source
 // image isn't a decoded bitmap yet (never triggers a load — resolveEnemyTexture
 // drives the loader). Reuses the vehicle neon bake (white RGB → gradient alpha
@@ -189,11 +194,12 @@ export function getSilhouetteFor(texture: Texture): EnemyRim | null {
   const srcW = source.naturalWidth;
   const srcH = source.naturalHeight;
   if (srcW === 0 || srcH === 0) return null;
+  const marginPx = computeHaloMarginPx(srcW, srcH) * ENEMY_RIM_THICKNESS_SCALE;
   const rim: EnemyRim = {
-    texture: buildNeonSilhouette(source, "#ffffff"),
+    texture: buildNeonSilhouette(source, "#ffffff", marginPx),
     srcW,
     srcH,
-    marginPx: computeHaloMarginPx(srcW, srcH),
+    marginPx,
   };
   silhouettes.set(texture, rim);
   return rim;
