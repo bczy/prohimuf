@@ -1,7 +1,10 @@
 import type { JSX } from "react";
 import { useFullscreen } from "@hooks/useFullscreen";
 
-const GLYPH_SHADOW = "drop-shadow(0 0 4px rgba(0,0,0,0.9))";
+// Inked glyph on a light halo — reads on the grey pre-game grounds (STOCK.shell)
+// and keeps presence over the darker in-game canvas via the halo.
+const GLYPH_STROKE = "#141210";
+const GLYPH_SHADOW = "drop-shadow(0 0 4px rgba(255,255,255,0.9))";
 
 /**
  * Fullscreen toggle affordance (ADR-0008). Support-gated: renders nothing when
@@ -48,7 +51,7 @@ export function FullscreenButton(): JSX.Element | null {
           height="22"
           viewBox="0 0 22 22"
           fill="none"
-          stroke="#fff"
+          stroke={GLYPH_STROKE}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"

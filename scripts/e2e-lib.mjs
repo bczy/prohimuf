@@ -50,9 +50,9 @@ export function loadLevelManifest(root = process.cwd()) {
 }
 
 // Pre-game entry markers (ADR-0021). Cold load lands on the TITLE cover; a single
-// action enters the MENU. The subtitle is title-only (both TITLE and MENU render
+// action enters the MENU. The issue label is title-only (both TITLE and MENU render
 // the "MUF" logo), so it disambiguates the two; the running masthead is menu-only.
-export const TITLE_SUBTITLE = "UN SON · UNE NUIT · PAS D'ADRESSE"; // src/render/ui/TitleScreen.tsx
+export const TITLE_MARKER = "★ HIVER 1998 ★"; // src/render/ui/TitleScreen.tsx ISSUE_LABEL
 export const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; // print/tokens.ts MASTHEAD.running
 
 /**
@@ -62,7 +62,7 @@ export const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; 
  * treat the "MUF" logo as a menu signal MUST call this first — "MUF" now also
  * renders on the TITLE cover, so waiting on it alone leaves the app sitting on the
  * cover while a subsequent level-name click times out. Clicks the title-only
- * subtitle, which lives inside the interactive surface and clear of the
+ * issue label, which lives inside the interactive surface and clear of the
  * FullscreenButton chrome (`[data-muf-ui]`).
  *
  * The NIVEAUX flyer wall arms a brief click-through lockout on mount (the guard
@@ -71,9 +71,9 @@ export const MENU_MASTHEAD = "UNDERGROUND PARIS · FANZINE CLANDESTIN · 1998"; 
  * actually honoured instead of being swallowed by that lockout.
  */
 export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
-  const subtitle = page.getByText(TITLE_SUBTITLE, { exact: true }).first();
-  await subtitle.waitFor({ timeout });
-  await subtitle.click({ timeout });
+  const marker = page.getByText(TITLE_MARKER, { exact: true }).first();
+  await marker.waitFor({ timeout });
+  await marker.click({ timeout });
   await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout });
   await page.locator('[data-flyers-armed="true"]').first().waitFor({ timeout });
 }
