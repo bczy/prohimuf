@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { STOCK, INK } from "@render/ui/print";
 
 interface EndScreenProps {
   phase: "GAME_OVER" | "LEVEL_COMPLETE";
@@ -13,19 +14,13 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
   const label = isGameOver ? "— UNE —" : "— SUCCÈS —";
   const title = isGameOver ? "LE LIVREUR DU 19ÈME INTERPELLÉ" : "LA RAVE A EU LIEU";
 
-  // Phase-tinted facade backdrop: cold red on defeat, warm green on success.
-  const overlay = isGameOver
-    ? "rgba(22,4,8,0.78), rgba(8,4,12,0.95)"
-    : "rgba(6,18,10,0.72), rgba(8,6,18,0.94)";
-
   return (
     <div
       onClick={onRestart}
       style={{
         position: "fixed",
         inset: 0,
-        background: `linear-gradient(${overlay}), url('${import.meta.env.BASE_URL}assets/levels/belliard/facade.png') center/cover no-repeat`,
-        imageRendering: "pixelated",
+        background: STOCK.shell,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -40,7 +35,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
           position: "absolute",
           inset: 0,
           background:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 2px)",
+            "repeating-linear-gradient(0deg, rgba(20,18,16,0.04) 0px, rgba(20,18,16,0.04) 1px, transparent 1px, transparent 2px)",
           pointerEvents: "none",
         }}
       />
@@ -50,7 +45,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
           style={{
             fontFamily: "monospace",
             fontSize: "14px",
-            color: "#ffffff",
+            color: INK.black,
             letterSpacing: "0.2em",
             marginBottom: "16px",
           }}
@@ -62,7 +57,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
           style={{
             fontFamily: "Impact, sans-serif",
             fontSize: "64px",
-            color: "#ffffff",
+            color: INK.full,
             lineHeight: 1,
             letterSpacing: "0.03em",
             maxWidth: "700px",
@@ -75,7 +70,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
           style={{
             fontFamily: "monospace",
             fontSize: "16px",
-            color: "#ffdd00",
+            color: INK.black,
             marginTop: "24px",
             letterSpacing: "0.1em",
           }}
@@ -87,7 +82,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
           style={{
             fontFamily: "monospace",
             fontSize: "14px",
-            color: "#39ff14",
+            color: INK.full,
             marginTop: "48px",
             animation: "blink 1s step-start infinite",
           }}

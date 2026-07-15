@@ -54,7 +54,7 @@ const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
 
 // Locked-flyer stamp (menu/LevelFlyer.tsx LOCKED_COPY.badge), shown only when !unlocked.
-// The TITLE_SUBTITLE / MENU_MASTHEAD markers live in e2e-lib.mjs (enterMenuFromTitle).
+// The TITLE_MARKER / MENU_MASTHEAD markers live in e2e-lib.mjs (enterMenuFromTitle).
 const LOCKED_MARKER = "LIGNE FERMÉE";
 
 async function main() {

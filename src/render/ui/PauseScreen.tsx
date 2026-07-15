@@ -1,9 +1,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-
-const NEON_YELLOW = "#ffe600";
-const NEON_GREEN = "#39ff14";
+import { STOCK, INK } from "@render/ui/print";
 
 interface Props {
   prefs: Prefs;
@@ -27,7 +25,7 @@ function Slider({
         style={{
           fontFamily: "monospace",
           fontSize: "10px",
-          color: "#888",
+          color: "#555",
           marginBottom: "4px",
           letterSpacing: "0.15em",
         }}
@@ -42,7 +40,7 @@ function Slider({
         onChange={(e) => {
           onChange(Number(e.target.value) / 100);
         }}
-        style={{ width: "100%", accentColor: NEON_YELLOW }}
+        style={{ width: "100%", accentColor: INK.black }}
       />
     </div>
   );
@@ -62,7 +60,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.82)",
+        background: "rgba(215,210,198,0.90)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -72,10 +70,10 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
     >
       <div
         style={{
-          border: `2px solid ${NEON_YELLOW}`,
+          border: `2px solid ${INK.black}`,
           padding: "32px",
           width: "min(420px, 90vw)",
-          background: "#000",
+          background: STOCK.shell,
           position: "relative",
         }}
       >
@@ -85,7 +83,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
             position: "absolute",
             inset: 0,
             background:
-              "repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px)",
+              "repeating-linear-gradient(0deg, rgba(20,18,16,0.03) 0px, rgba(20,18,16,0.03) 1px, transparent 1px, transparent 3px)",
             pointerEvents: "none",
           }}
         />
@@ -96,7 +94,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
             style={{
               fontFamily: "Impact, sans-serif",
               fontSize: "36px",
-              color: NEON_YELLOW,
+              color: INK.full,
               letterSpacing: "0.1em",
               marginBottom: "24px",
             }}
@@ -121,7 +119,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
           />
 
           {/* Separator */}
-          <div style={{ height: 1, background: "#222", margin: "20px 0" }} />
+          <div style={{ height: 1, background: "rgba(20,18,16,0.25)", margin: "20px 0" }} />
 
           {/* Action buttons */}
           <button
@@ -131,8 +129,8 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
               width: "100%",
               padding: "12px",
               marginBottom: "10px",
-              background: NEON_YELLOW,
-              color: "#000",
+              background: INK.full,
+              color: STOCK.shell,
               border: "none",
               cursor: "pointer",
               fontFamily: "monospace",
@@ -149,8 +147,8 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
               width: "100%",
               padding: "12px",
               background: "transparent",
-              color: NEON_GREEN,
-              border: `1px solid ${NEON_GREEN}`,
+              color: INK.black,
+              border: `1px solid ${INK.black}`,
               cursor: "pointer",
               fontFamily: "monospace",
               fontSize: "13px",
@@ -166,7 +164,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
               marginTop: "16px",
               fontFamily: "monospace",
               fontSize: "10px",
-              color: "#444",
+              color: "#555",
               textAlign: "center",
               letterSpacing: "0.15em",
             }}

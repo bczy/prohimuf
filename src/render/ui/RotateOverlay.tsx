@@ -10,7 +10,7 @@ import { PaperSheet, STOCK, INK } from "@render/ui/print";
  */
 export function RotateOverlay(): JSX.Element {
   return (
-    <PaperSheet stock={STOCK.newsprint} style={{ zIndex: 200 }}>
+    <PaperSheet stock={STOCK.shell} style={{ zIndex: 200 }}>
       <div
         style={{
           height: "100%",
