@@ -103,9 +103,9 @@ const DESKTOP_CONTROL_LINES: readonly NarrativeLine[] = [
 const MOBILE_CONTROL_LINES: readonly NarrativeLine[] = [
   {
     speaker: "KENZA",
-    text: "Pour tirer : tape à DEUX doigts en même temps, bref et net. La balle part pile entre tes doigts.",
+    text: "Pour tirer : tape à DEUX doigts en même temps, bref et net — la balle part pile entre tes doigts. Ou tape deux fois d'un seul doigt, un double-tap, là où tu vises.",
     gesture: "two-finger-tap",
-    gestureAlt: "Deux doigts, un seul tap simultané, pour tirer.",
+    gestureAlt: "Deux doigts en un tap simultané, ou un double-tap d'un seul doigt, pour tirer.",
   },
   {
     speaker: "KENZA",
