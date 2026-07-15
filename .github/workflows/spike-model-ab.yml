@@ -5,8 +5,10 @@ name: Spike model A/B
 # (the current strategy) vs reference-conditioned img2img off the committed
 # rider.png — and commits the RAW outputs under spike-out/ for the art gate
 # (lead-art + game-graphist) to judge. Pollinations is only reachable from CI, so
-# this is the only place the spike can actually spend. Manual-only: it must never
-# fire on ordinary branch pushes.
+# this is the only place the spike can actually spend. Deliberate runs only:
+# manual (workflow_dispatch) OR an explicit ci(dispatch): commit touching the marker
+# .github/dispatch/spike-model-ab (mirrors gen-courier-sprites.yml — the dispatch API
+# needs actions:write the bot token lacks). Never on ordinary branch pushes.
 on:
   workflow_dispatch:
     inputs:
@@ -18,6 +20,10 @@ on:
         description: "Frames per model (max 6)"
         required: false
         default: "6"
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/spike-model-ab"
 
 permissions:
   contents: write
@@ -29,8 +35,9 @@ concurrency:
 jobs:
   spike:
     runs-on: ubuntu-latest
-    # Never on main: this force-adds generated binaries to the branch.
-    if: github.ref_name != 'main'
+    # Never on main; for pushes, only an explicit ci(dispatch): commit fires it
+    # (a merge/rebase push could otherwise match the marker paths filter).
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
