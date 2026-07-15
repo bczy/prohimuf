@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { PaperSheet, STOCK, INK, MASTHEAD, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import {
+  PaperSheet,
+  STOCK,
+  INK,
+  MASTHEAD,
+  MarkerCircle,
+  useRovingIndex,
+  SHORT_LANDSCAPE_MEDIA,
+} from "@render/ui/print";
 import { FlyerWall } from "./menu/FlyerWall";
 import { ScoresUne } from "./menu/ScoresUne";
 import { OptionsColophon } from "./menu/OptionsColophon";
@@ -57,7 +65,20 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
 
   return (
     <PaperSheet stock={STOCK.shell}>
+      <style>{`
+        /* Short-landscape (ADR-0024): the standalone running-masthead band is the
+           "SPA header" one tap after the cover — hide it and surface a compact MUF
+           mark inside the sommaire strip, so the flyers own the height. Portrait /
+           desktop keep the full masthead via the var() fallbacks. */
+        @media ${SHORT_LANDSCAPE_MEDIA}{
+          .muf-menu-shell{
+            --muf-menu-masthead-display: none;
+            --muf-menu-mark-display: inline-block;
+          }
+        }
+      `}</style>
       <div
+        className="muf-menu-shell"
         style={{
           height: "100%",
           display: "flex",
@@ -66,12 +87,12 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
           userSelect: "none",
         }}
       >
-        {/* Running masthead */}
+        {/* Running masthead (hidden in short-landscape; the MUF mark below stands in) */}
         <div
           style={{
             padding: "12px 16px 8px",
             borderBottom: `1px solid ${INK.black}`,
-            display: "flex",
+            display: "var(--muf-menu-masthead-display, flex)",
             alignItems: "center",
             gap: "16px",
             flexShrink: 0,
@@ -119,6 +140,22 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
             flexShrink: 0,
           }}
         >
+          {/* Compact identity mark — only shown in short-landscape, where the full
+              masthead band above is collapsed. Decorative (Escape → TITLE still works). */}
+          <span
+            aria-hidden={true}
+            style={{
+              display: "var(--muf-menu-mark-display, none)",
+              alignSelf: "center",
+              marginRight: "4px",
+              fontFamily: DISPLAY_FONT,
+              fontSize: "20px",
+              color: INK.full,
+              letterSpacing: "0.04em",
+            }}
+          >
+            MUF
+          </span>
           {RUBRIQUES.map((r, i) => {
             const isActive = active === r.key;
             return (

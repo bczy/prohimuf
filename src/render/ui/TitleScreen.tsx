@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CSSProperties, JSX } from "react";
-import { INK, MASTHEAD, MOTION, STOCK } from "@render/ui/print";
+import { INK, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import { HalftoneHero, MarkerCircle, PaperSheet } from "@render/ui/print";
 
 interface TitleScreenProps {
@@ -66,7 +66,29 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
 
   return (
     <PaperSheet stock={STOCK.jaune} style={{ userSelect: "none" }}>
-      <style>{`@keyframes mufTitleBlink{0%,100%{opacity:1}50%{opacity:0}}`}</style>
+      <style>{`
+        @keyframes mufTitleBlink{0%,100%{opacity:1}50%{opacity:0}}
+        /* Short-landscape (ADR-0024): two-column cover so the CTA is never below the
+           fold and MUF never sits under the masthead. Overrides are custom-property
+           redefinitions on the surface class; unmatched viewports use the var()
+           fallbacks and stay byte-identical to the shipped portrait cover. */
+        @media ${SHORT_LANDSCAPE_MEDIA}{
+          .muf-title-surface{
+            --muf-title-dir: row;
+            --muf-title-gap: 24px;
+            --muf-title-pad: 26px 40px;
+            --muf-identity-flex: 0 1 56%;
+            --muf-action-flex: 0 1 44%;
+            --muf-action-justify: center;
+            --muf-wordmark-size: clamp(48px, 11vh, 84px);
+            --muf-hero-h: clamp(72px, 26vh, 130px);
+            --muf-yeartag-display: none;
+            --muf-divider-display: none;
+            --muf-teasers-display: none;
+            --muf-microcopy-display: none;
+          }
+        }
+      `}</style>
 
       {/* Masthead strip — printed ink bar (single-sourced string). */}
       <div
@@ -90,112 +112,163 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
         {MASTHEAD.full}
       </div>
 
-      {/* Interactive surface: whole cover is the hit target. */}
+      {/* Interactive surface: whole cover is the hit target. In short-landscape the
+          flex axis flips to a row (identity left, action right) via `--muf-title-dir`
+          so the single CTA lives in its own always-visible column (ADR-0024). */}
       <div
         role="button"
         aria-label={CTA}
         tabIndex={-1}
         onClick={handlePointer}
+        className="muf-title-surface"
         style={{
           height: "100%",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "var(--muf-title-dir, column)" as CSSProperties["flexDirection"],
           alignItems: "center",
           justifyContent: "center",
+          gap: "var(--muf-title-gap, 0px)",
           textAlign: "center",
-          padding: "48px 40px",
+          padding: "var(--muf-title-pad, 48px 40px)",
           cursor: "pointer",
           boxSizing: "border-box",
         }}
       >
-        <div style={infoStyle(INK.black, "11px", "0.4em")}>{ISSUE_LABEL}</div>
-
+        {/* Identity column (top in portrait, left in short-landscape). */}
         <div
           style={{
-            fontFamily: "Impact, 'Arial Narrow', sans-serif",
-            fontSize: "clamp(80px, 14vw, 160px)",
-            lineHeight: 0.9,
-            letterSpacing: "0.05em",
-            color: INK.full,
-            marginTop: "8px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            flex: "var(--muf-identity-flex, 0 1 auto)",
+            minWidth: 0,
           }}
         >
-          MUF
+          <div style={infoStyle(INK.black, "11px", "0.4em")}>{ISSUE_LABEL}</div>
+
+          <div
+            style={{
+              fontFamily: "Impact, 'Arial Narrow', sans-serif",
+              fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
+              lineHeight: 0.9,
+              letterSpacing: "0.05em",
+              color: INK.full,
+              marginTop: "8px",
+            }}
+          >
+            MUF
+          </div>
+
+          <div style={infoStyle(INK.black, "clamp(13px, 2.2vw, 20px)", "0.18em", 8)}>
+            {SUBTITLE}
+          </div>
+          <div
+            style={{
+              ...infoStyle(INK.black, "12px", "0.2em", 6),
+              display: "var(--muf-yeartag-display, block)",
+            }}
+          >
+            {YEAR_TAG}
+          </div>
+
+          {/* Central zine-cover hero — the belliard facade rephotocopied to pure B&W
+              halftone (UX §1). A pasted print photo framed by a black keyline. */}
+          <div
+            style={{
+              position: "relative",
+              width: "min(300px, 60%)",
+              height: "var(--muf-hero-h, clamp(88px, 17vh, 150px))",
+              margin: "16px 0 2px",
+              border: `2px solid ${INK.black}`,
+              overflow: "hidden",
+            }}
+          >
+            <HalftoneHero src={`${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`} />
+          </div>
+
+          <div
+            style={{
+              width: "min(420px, 80%)",
+              height: 2,
+              background: INK.black,
+              margin: "22px 0",
+              display: "var(--muf-divider-display, block)",
+            }}
+          />
+
+          <div
+            style={{
+              fontFamily: mono,
+              fontSize: "12px",
+              lineHeight: 1.9,
+              letterSpacing: "0.04em",
+              color: INK.black,
+              textAlign: "left",
+              display: "var(--muf-teasers-display, block)",
+            }}
+          >
+            {TEASERS.map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
         </div>
 
-        <div style={infoStyle(INK.black, "clamp(13px, 2.2vw, 20px)", "0.18em", 8)}>{SUBTITLE}</div>
-        <div style={infoStyle(INK.black, "12px", "0.2em", 6)}>{YEAR_TAG}</div>
-
-        {/* Central zine-cover hero — the belliard facade rephotocopied to pure B&W
-            halftone (UX §1). A pasted print photo framed by a black keyline. */}
+        {/* Action column (bottom in portrait, right in short-landscape) — the single
+            visible affordance; vertically centered so it is never below the fold. */}
         <div
           style={{
-            position: "relative",
-            width: "min(300px, 60%)",
-            height: "clamp(88px, 17vh, 150px)",
-            margin: "16px 0 2px",
-            border: `2px solid ${INK.black}`,
-            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "var(--muf-action-justify, flex-start)",
+            flex: "var(--muf-action-flex, 0 1 auto)",
+            minWidth: 0,
           }}
         >
-          <HalftoneHero src={`${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`} />
-        </div>
+          <div style={infoStyle(INK.black, "13px", "0.14em", 28)}>{INFOLINE_ROW}</div>
 
-        <div
-          style={{ width: "min(420px, 80%)", height: 2, background: INK.black, margin: "22px 0" }}
-        />
-
-        <div
-          style={{
-            fontFamily: mono,
-            fontSize: "12px",
-            lineHeight: 1.9,
-            letterSpacing: "0.04em",
-            color: INK.black,
-            textAlign: "left",
-          }}
-        >
-          {TEASERS.map((line) => (
-            <div key={line}>{line}</div>
-          ))}
-        </div>
-
-        <div style={infoStyle(INK.black, "13px", "0.14em", 28)}>{INFOLINE_ROW}</div>
-
-        {/* Infoline CTA — the visible affordance + focus target + typewriter cursor. */}
-        <div style={{ marginTop: 20 }}>
-          <MarkerCircle active={true}>
-            <div
-              ref={ctaRef}
-              tabIndex={0}
-              style={{
-                fontFamily: mono,
-                fontSize: "15px",
-                letterSpacing: "0.16em",
-                color: INK.black,
-                padding: "8px 14px",
-                outline: "none",
-                cursor: "pointer",
-              }}
-            >
-              {CTA}
-              <span
-                aria-hidden={true}
+          {/* Infoline CTA — the visible affordance + focus target + typewriter cursor. */}
+          <div style={{ marginTop: 20 }}>
+            <MarkerCircle active={true}>
+              <div
+                ref={ctaRef}
+                tabIndex={0}
                 style={{
-                  display: "inline-block",
-                  width: 9,
-                  height: "1em",
-                  marginLeft: 4,
-                  background: INK.black,
-                  verticalAlign: "text-bottom",
-                  animation: `mufTitleBlink ${MOTION.cursorBlinkMs.toString()}ms step-start infinite`,
+                  fontFamily: mono,
+                  fontSize: "15px",
+                  letterSpacing: "0.16em",
+                  color: INK.black,
+                  padding: "8px 14px",
+                  outline: "none",
+                  cursor: "pointer",
                 }}
-              />
-            </div>
-          </MarkerCircle>
-        </div>
+              >
+                {CTA}
+                <span
+                  aria-hidden={true}
+                  style={{
+                    display: "inline-block",
+                    width: 9,
+                    height: "1em",
+                    marginLeft: 4,
+                    background: INK.black,
+                    verticalAlign: "text-bottom",
+                    animation: `mufTitleBlink ${MOTION.cursorBlinkMs.toString()}ms step-start infinite`,
+                  }}
+                />
+              </div>
+            </MarkerCircle>
+          </div>
 
-        <div style={infoStyle(INK.black, "11px", "0.08em", 14)}>{MICROCOPY}</div>
+          <div
+            style={{
+              ...infoStyle(INK.black, "11px", "0.08em", 14),
+              display: "var(--muf-microcopy-display, block)",
+            }}
+          >
+            {MICROCOPY}
+          </div>
+        </div>
       </div>
     </PaperSheet>
   );
