@@ -3049,3 +3049,20 @@ coarse` only, justified in a comment).
   visible, no page scroll. Portrait (390×844) + desktop (1280×800) captures: shipped layout intact.
 - **Open (merge gate):** 4-reviewer code-review panel + architect integration sign-off + pm
   acceptance still owed before merge. PR #52 (draft).
+
+- story-window-alignment-harness + audio-in-loader (Bertrand: "plein de sprites dépassent
+  des fenêtres; des fois il n'y a rien devant les fenêtres — pas bon" + "dans la barre de
+  progression nous n'avons pas inclus le son! bruitages et musique"): PR #59. senior-architect
+  designed both; lanes fanned out non-overlapping. HARNESS (dev-tooling-assets):
+  scripts/align-belliard-windows.mjs detects real windows in facade.png (warm floor-rows ×
+  column peaks), drives the live render via dev-only hooks **MUF_ZONES**/**MUF_SLOT_RECTS**
+  (dev-r3f-render, GameScene) + reuses **MUF_FREEZE_COPS**, loops on measured defects
+  (overflow/count/empty/wall) to 0; --check gates CI, --fix writes windowZones.generated.json.
+  belliard 21→17 zones/panel (rows 5/5/7), each framing a real lit window. AUDIO (dev-gameplay
+  manifest + dev-r3f-render warm): level loaders preload 3 BGM + shoot.wav via a Howler
+  preload warmer (settle-on-error + 10s timeout, never hangs); hit/death/win.mp3 excluded
+  (uncommitted — pre-existing gap, would 404). Verified: 0 defects (--fix & --check), gameplay
+  screenshot shows cops framed in windows, tsc/vitest(312)/lint/format green. GATES: game-designer
+  density 21→17 = PASS (wave cap inert at 68 slots, target read improved, faithful to the gallery);
+  senior-architect design signed; ADR-0026 (harness) + ADR-0027 (audio) added. lead-art (framing)
+  - code-review panel in flight. (Winston → Amelia ×3 → Karim/game-designer PASS)
