@@ -6,12 +6,15 @@
  * keeping the SAME character consistent across the 6 pedal-stroke frames?
  *
  * It regenerates the exact `courier.rider` set from src/game/levels/levelArt.json
- * across several models, two comparison tracks, and drops the raw outputs under
+ * across several models, two comparison tracks, and drops the outputs under
  * spike-out/ for the art gate (lead-art + game-graphist) to judge at real
  * in-game size. Nothing here is chroma-keyed or committed as game art: keying is
  * identical model-agnostic downstream work, so the honest model comparison is the
- * RAW output. The matte-black background is already asked for in the style block,
- * so the raw frames read fine side by side.
+ * un-keyed frame. Pollinations serves JPEG, so each fetched buffer is decoded and
+ * re-encoded to a TRUE lossless PNG (@napi-rs/canvas, the production keyer's
+ * decoder) — run #2 shipped mislabeled JPEG-as-.png whose 4:2:0 fringe polluted
+ * the read. The matte-black background is asked for in the style block, so the
+ * frames read fine side by side.
  *
  * Two tracks (a model is classified by REF_MODELS below):
  *   A. TEXT-TO-IMAGE, seed-pinned — an EXACT mirror of production
@@ -26,14 +29,14 @@
  *      praying on a pinned seed.
  *
  * Network image generation (Pollinations) is BLOCKED in the local sandbox, so
- * this only does real work in CI (.github/workflows/spike-model-ab.yml). Every
- * model is PROBED with one cheap 64px call before any full-size spend; a model
- * whose ID Pollinations does not serve (e.g. `flux.2`, which is not a Pollinations
- * ID) 404s the probe and is SKIPPED, never failing the whole run.
+ * this only does real work in CI (.github/workflows/spike-model-ab.yml, which
+ * installs @napi-rs/canvas first for the re-encode). t2i models are PROBED with one
+ * cheap 64px call before any full-size spend (an unserved ID 404s and is SKIPPED);
+ * img2img models skip the probe (a tiny img2img probe 500'd unreliably in run #2).
  *
  * Usage (CI, workflow_dispatch):
  *   node scripts/spike-model-ab.mjs
- *   MODELS=flux,zimage,qwen-image,kontext,nanobanana-pro node scripts/spike-model-ab.mjs
+ *   MODELS=flux,kontext,nanobanana-pro node scripts/spike-model-ab.mjs
  *   FRAMES=4 node scripts/spike-model-ab.mjs        # cap frames per model (cost)
  * Local (no network):
  *   node scripts/spike-model-ab.mjs --list          # print the plan, spend nothing
@@ -49,14 +52,15 @@ const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const OUT_ROOT = path.resolve(ROOT, "spike-out", "rider");
 const LIST_ONLY = process.argv.includes("--list");
 
-// Default set: FLUX baseline · zimage (the current Pollinations default) ·
-// qwen-image (linework/text candidate) · kontext + nanobanana-pro (the two
-// reference-conditioned hypotheses). `flux.2` is intentionally absent — it is
-// not a Pollinations model ID; add it via MODELS= to watch it get probe-skipped.
+// Default set: FLUX baseline + the two reference-conditioned (img2img) candidates.
+// `zimage`/`qwen-image` were dropped after run #2 proved Pollinations' anonymous
+// GET API ignores `model` for them and serves byte-identical FLUX (testing a real
+// t2i alternative needs the POST/authenticated path) — add them back via MODELS=
+// if that path is ever wired. `flux.2` is not a Pollinations ID either.
 // A push-triggered run passes MODELS="" (workflow_dispatch inputs are empty on
 // push), so treat an empty/whitespace env as UNSET and let this default win —
 // `?? ` alone would keep the empty string and generate zero models.
-const DEFAULT_MODELS = "flux,zimage,qwen-image,kontext,nanobanana-pro";
+const DEFAULT_MODELS = "flux,kontext,nanobanana-pro";
 const MODELS = (process.env.MODELS?.trim() ? process.env.MODELS : DEFAULT_MODELS)
   .split(",")
   .map((m) => m.trim())
@@ -155,6 +159,29 @@ function imgUrl({ prompt, model, seed, width, height, imageUrl }) {
   return u;
 }
 
+// Pollinations serves JPEG bytes; saving them under a `.png` name yields a
+// mislabeled file (JPEG magic FFD8) and 4:2:0 chroma fringe that contaminates any
+// fine consistency/keying read. Decode + re-encode to a TRUE lossless PNG with
+// @napi-rs/canvas — the exact decoder the production keyer (cutout-enemies.mjs)
+// uses, so this matches the pipeline's pre-key format. The dep is installed in CI
+// before this script; locally it is absent but generation never runs locally
+// anyway (no network), so fall back to the raw buffer rather than crash.
+let _canvasMod;
+async function reencodePng(buf) {
+  if (_canvasMod === undefined) {
+    try {
+      _canvasMod = await import("@napi-rs/canvas");
+    } catch {
+      _canvasMod = null;
+    }
+  }
+  if (!_canvasMod) return buf;
+  const img = await _canvasMod.loadImage(buf);
+  const c = _canvasMod.createCanvas(img.width, img.height);
+  c.getContext("2d").drawImage(img, 0, 0);
+  return c.toBuffer("image/png");
+}
+
 // ── Per-model generation ──────────────────────────────────────────────────────
 async function runModel(model, R) {
   const isRef = REF_MODELS.has(model);
@@ -163,22 +190,20 @@ async function runModel(model, R) {
   const track = isRef ? "B:ref-conditioned(img2img)" : "A:t2i seed-pinned";
   console.log(`\n=== ${model}  [${track}] ===`);
 
-  // PROBE: one cheap 64px call. A model ID Pollinations doesn't serve 404s here,
-  // and we skip it instead of burning full-size spend / failing the run.
-  try {
-    const probe = imgUrl({
-      prompt: "probe",
-      model,
-      seed: R.seed,
-      width: 64,
-      height: 64,
-      imageUrl: isRef ? RIDER_REF_URL : undefined,
-    });
-    await fetchWithRetry(probe, 2);
-    console.log(`  [probe-ok] ${model} is served`);
-  } catch (e) {
-    console.log(`  [probe-skip] ${model} — ${e.message} (model not served; skipping)`);
-    return { model, track, skipped: true, reason: e.message, frames: [] };
+  // PROBE (t2i only): one cheap 64px call to skip a model ID Pollinations does not
+  // serve (404) without burning full-size spend. REF models skip the probe — a
+  // 64px img2img call against a 256px reference 500'd for kontext in run #2 while
+  // nanobanana passed, so the tiny probe is an unreliable gate for img2img; their
+  // per-frame calls retry and fail gracefully on their own.
+  if (!isRef) {
+    try {
+      const probe = imgUrl({ prompt: "probe", model, seed: R.seed, width: 64, height: 64 });
+      await fetchWithRetry(probe, 2);
+      console.log(`  [probe-ok] ${model} is served`);
+    } catch (e) {
+      console.log(`  [probe-skip] ${model} — ${e.message} (model not served; skipping)`);
+      return { model, track, skipped: true, reason: e.message, frames: [] };
+    }
   }
 
   const written = [];
@@ -200,9 +225,9 @@ async function runModel(model, R) {
       imageUrl: isRef ? RIDER_REF_URL : undefined,
     });
     try {
-      const buf = await fetchWithRetry(url);
-      fs.writeFileSync(out, buf);
-      console.log(`  [ok]   frame${i + 1} (${buf.length} bytes)`);
+      const png = await reencodePng(await fetchWithRetry(url));
+      fs.writeFileSync(out, png);
+      console.log(`  [ok]   frame${i + 1} (${png.length} bytes, re-encoded PNG)`);
       written.push(`frame${i + 1}.png`);
     } catch (e) {
       console.log(`  [fail] frame${i + 1} — ${e.message}`);

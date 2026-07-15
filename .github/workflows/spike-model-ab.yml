@@ -15,7 +15,7 @@ on:
       models:
         description: "Comma-separated Pollinations model IDs"
         required: false
-        default: "flux,zimage,qwen-image,kontext,nanobanana-pro"
+        default: "flux,kontext,nanobanana-pro"
       frames:
         description: "Frames per model (max 6)"
         required: false
@@ -47,7 +47,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate spike outputs (raw, per model, no keying)
+      - name: Install @napi-rs/canvas (decode Pollinations JPEG → re-encode PNG)
+        run: |
+          # Same pinned version/flags as gen-courier-sprites.yml; the prebuilt
+          # native binary is fetched by resolution, so --ignore-scripts is safe.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Clean prior spike outputs (stale model dirs from earlier runs)
+        run: rm -rf spike-out/rider
+
+      - name: Generate spike outputs (per model, re-encoded to PNG, no keying)
         env:
           MODELS: ${{ github.event.inputs.models }}
           FRAMES: ${{ github.event.inputs.frames }}
@@ -58,7 +67,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if compgen -G "spike-out/rider/*/*.png" > /dev/null; then
-            git add spike-out
+            git add -A spike-out
           else
             echo "::error::no spike outputs generated"
             exit 1
