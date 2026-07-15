@@ -14,7 +14,7 @@ import {
   getSilhouetteFor,
 } from "./enemyTextures";
 import { flipbookFrame } from "./flipbook";
-import { createEnemyRimMaterial } from "./enemyRimMaterial";
+import { createEnemyRimMaterial, rimZoomCompensation } from "./enemyRimMaterial";
 import { heatColor, heatProgress } from "./neonHeatColor";
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
@@ -43,9 +43,17 @@ interface Props {
   screenPosition: Vec2;
   /** World-space window size; the cop is sized to stand in it. */
   size?: Vec2 | undefined;
+  /** Base (max) orthographic zoom; keeps the neon rim a fixed on-screen width. */
+  baseZoom: number;
 }
 
-export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props): JSX.Element {
+export function EnemySprite({
+  stateRef,
+  slotIndex,
+  screenPosition,
+  size,
+  baseZoom,
+}: Props): JSX.Element {
   // Square base plane sized to the window height; per-kind width is applied via
   // scale.x each frame (the courier-on-a-bike is wider than the portrait cops),
   // since the occupant's kind changes every wave. Fallback for grid-only levels.
@@ -74,7 +82,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   const animClockRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
 
@@ -154,10 +162,18 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
         rimMat.uniforms.uMap.value = neon.texture;
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
+        // Fixed on-screen rim width (ADR-0026): grow the world margin as the
+        // camera zooms out so the projected band stays constant instead of
+        // fading to a hairline. 1 at base/desktop zoom → no regression there.
+        const zoomComp = rimZoomCompensation(baseZoom, state.camera.zoom);
         // Mirror the body's per-frame scale (aspect + Paper-Mario unfold) so the
-        // rim unfolds with it, then expand by the padded-texture ratio so the
-        // baked gradient band maps to an equal world margin (as the vehicle rim).
-        rim.scale.set(mesh.scale.x * (1 + padX), mesh.scale.y * (1 + padY), 1);
+        // rim unfolds with it, then expand by the (zoom-compensated) padded-texture
+        // ratio so the baked gradient band maps to a fixed on-screen margin.
+        rim.scale.set(
+          mesh.scale.x * (1 + padX * zoomComp),
+          mesh.scale.y * (1 + padY * zoomComp),
+          1,
+        );
         const [r, g, b] = heatColor(
           heatProgress(enemy.state, enemy.timer, archetype.visibleDuration),
         );

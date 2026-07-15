@@ -164,6 +164,7 @@ export function GameScene({
           slotIndex={idx}
           screenPosition={slot.screenPosition}
           size={slot.size}
+          baseZoom={baseZoom}
         />
       ))}
       {panelZones.map((zones, p) => (

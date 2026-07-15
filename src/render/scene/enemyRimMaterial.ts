@@ -49,6 +49,19 @@ export interface EnemyRimMaterial {
 }
 
 /**
+ * Fixed on-screen rim width (ADR-0026): the rim is a world-space band, so on the
+ * mobile pinch-zoom it would shrink with the sprite and fade to a hairline. This
+ * factor grows the world margin by `baseZoom / camZoom` so the *projected* rim
+ * thickness stays constant across the zoom range. It is 1 at the base (max) zoom
+ * and on desktop's static zoom (never below 1 — the rim only ever grows out),
+ * so neither look regresses.
+ */
+export function rimZoomCompensation(baseZoom: number, camZoom: number): number {
+  if (camZoom <= 0) return 1;
+  return Math.max(1, baseZoom / camZoom);
+}
+
+/**
  * Fresh rim material (one per {@link EnemySprite} instance). `uColor` is updated
  * per frame from the heat ramp; `uMap` is swapped to the current flipbook frame's
  * baked white silhouette. `uIntensity` is the brightness lever (bump it if the
