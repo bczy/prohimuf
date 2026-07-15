@@ -12,6 +12,7 @@ import {
   facadeBackdropPath,
   menuBackdropPath,
   narrativeImagePaths,
+  audioAssetPaths,
 } from "@game/systems/assetManifest";
 import {
   TUTORIAL_NARRATIVE_DESKTOP,
@@ -21,7 +22,7 @@ import {
 } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
 
-const ASSET_RE = /^assets\/.+\.(png|jpg|webp)$/;
+const ASSET_RE = /^assets\/.+\.(png|jpg|webp|mp3|wav)$/;
 
 // Every level id we build a full manifest for, plus the two special targets.
 const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
@@ -208,6 +209,42 @@ describe("assetManifest — courier paths", () => {
     }
     // Regression guard: no bike frame may leak into the manifest.
     expect(paths.some((p) => p.startsWith("assets/courier/bike"))).toBe(false);
+  });
+});
+
+describe("assetManifest — gameplay audio in level manifests", () => {
+  it("audioAssetPaths() is exactly the 4 committed files, BGM tiers then shoot SFX", () => {
+    // Pins the committed set and excludes the uncommitted hit/death/win SFX that
+    // audioSystem.ts references but which are not under public/assets/audio/.
+    expect(audioAssetPaths()).toEqual([
+      "assets/audio/bgm_loop.mp3",
+      "assets/audio/bgm_tension.mp3",
+      "assets/audio/bgm_danger.mp3",
+      "assets/audio/shoot.wav",
+    ]);
+  });
+
+  it("every level manifest contains all 4 audio paths", () => {
+    for (const id of LEVEL_IDS) {
+      const m = manifestFor(id);
+      for (const audio of audioAssetPaths()) expect(m).toContain(audio);
+    }
+  });
+
+  it("menu and tutorial manifests contain NONE of the audio paths", () => {
+    for (const t of ["menu", "tutorial"] as const) {
+      const m = manifestFor(t);
+      for (const audio of audioAssetPaths()) expect(m).not.toContain(audio);
+    }
+  });
+
+  it("never leaks the uncommitted hit/death/win SFX", () => {
+    for (const id of LEVEL_IDS) {
+      const m = manifestFor(id);
+      expect(m).not.toContain("assets/audio/hit.mp3");
+      expect(m).not.toContain("assets/audio/death.mp3");
+      expect(m).not.toContain("assets/audio/win.mp3");
+    }
   });
 });
 
