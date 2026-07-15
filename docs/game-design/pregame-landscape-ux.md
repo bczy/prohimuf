@@ -5,10 +5,10 @@
 **Scope anchor:** amends `docs/game-design/pre-game-experience-ux.md` §5 (Mobile landscape) with a concrete
 short-height layout. `PROJECT_GUIDELINES.md` + ADR-0021 remain law. **Layout only** — no new mechanic,
 no new copy, no data touch, no change to `AppPhase`, `Prefs`, `levels.ts`, or the print-token module's
-*values* (a new landscape breakpoint token is additive).
+_values_ (a new landscape breakpoint token is additive).
 **Date:** 2026-07-15 · **Status:** DRAFT — awaiting design gate
 
-> **What this fixes (Bertrand, verbatim):** the accueil + level-select are *surchargé* in mobile
+> **What this fixes (Bertrand, verbatim):** the accueil + level-select are _surchargé_ in mobile
 > landscape; "on ne dirait pas un écran d'accueil de jeu vidéo"; the top bar's usefulness is in doubt;
 > "on sent que c'est une SPA"; even fullscreen there is no room. This spec is the answer, element by
 > element.
@@ -23,16 +23,16 @@ isPortrait`). So TITLE and MENU render at a viewport height of **~360–430 px**
 **TITLE** is a centered vertical stack of ~11 elements inside `PaperSheet`, which is
 `overflow: hidden` (`PaperSheet.tsx:51`). Summing the shipped `TitleScreen.tsx` at ~360 px height:
 
-| Block | Approx height |
-| --- | --- |
-| content padding (48 px ×2) | 96 |
-| MUF wordmark `clamp(80,14vw,160)` | ~81 |
-| issue label + subtitle + year tag | ~50 |
-| hero image `clamp(88,17vh,150)` (floors at 88) + margins | ~106 |
-| divider + margins | ~46 |
-| 3 teaser lines @ 1.9 line-height | ~68 |
-| infoline row + CTA + microcopy + margins | ~120 |
-| **total** | **≈ 567 px** |
+| Block                                                    | Approx height |
+| -------------------------------------------------------- | ------------- |
+| content padding (48 px ×2)                               | 96            |
+| MUF wordmark `clamp(80,14vw,160)`                        | ~81           |
+| issue label + subtitle + year tag                        | ~50           |
+| hero image `clamp(88,17vh,150)` (floors at 88) + margins | ~106          |
+| divider + margins                                        | ~46           |
+| 3 teaser lines @ 1.9 line-height                         | ~68           |
+| infoline row + CTA + microcopy + margins                 | ~120          |
+| **total**                                                | **≈ 567 px**  |
 
 **≈ 567 px of content in a ≈ 360 px hidden-overflow frame ⇒ the bottom ~200 px is clipped — and the
 bottom is where the CTA `[ COMPOSE L'INFO-LINE ]` and its cursor live.** The single load-bearing action
@@ -45,7 +45,7 @@ viewport**. The remaining ~250 px must hold `FlyerWall`, whose flyers are `minHe
 `marginBottom: 22px` ≈ 130 px each ⇒ **fewer than two flyers visible**, the rest reached by vertical
 page-scroll. Chrome dominates; the choosable content is a scrolling column. That is the SPA feel.
 
-**Design verdict:** the pre-game screens were authored for a **tall** viewport and merely *survive*
+**Design verdict:** the pre-game screens were authored for a **tall** viewport and merely _survive_
 landscape by scrolling/clipping. Landscape needs its own composition — a horizontal one — not a
 squeezed portrait. This spec authors it.
 
@@ -70,7 +70,7 @@ SHORT-LANDSCAPE  ⇔  @media (orientation: landscape) and (max-height: 480px)
   (`SHORT_LANDSCAPE = "(orientation: landscape) and (max-height: 480px)"`) so both surfaces read one
   source of truth (mirrors ADR-0021 D3's single-source discipline). Consumed via a small render-local
   `useMediaQuery`-style hook or a CSS `@media` block — **`dev-r3f-render`'s implementation call**; this
-  spec fixes the *breakpoint and the layout*, not the mechanism.
+  spec fixes the _breakpoint and the layout_, not the mechanism.
 
 ### 1.2 What must NOT regress (everything above the breakpoint)
 
@@ -84,7 +84,7 @@ the tall layouts are visually unchanged.
 
 ## 2. TITLE in short-landscape — two-column cover (identity left, action right)
 
-**Decision: two-column, not compressed single-column.** Landscape is *wide*; a horizontal split uses
+**Decision: two-column, not compressed single-column.** Landscape is _wide_; a horizontal split uses
 the aspect ratio natively and lets the one action live in its own always-visible zone. A compressed
 single column would still be a top-to-bottom stack — the same SPA gesture, just shorter. Two columns
 read as a **poster with a "press start"**: cover identity on the left, the single call-to-action framed
@@ -110,12 +110,12 @@ on the right, both fully on-screen with zero scroll.
 
 ### 2.0 Ground-truth failures this layout must kill (from real landscape screenshots)
 
-| Observed failure (landscape) | Root cause in shipped `TitleScreen.tsx` | Fix in this layout |
-| --- | --- | --- |
+| Observed failure (landscape)                                 | Root cause in shipped `TitleScreen.tsx`                                                                                          | Fix in this layout                                                                                                                                          |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | MUF wordmark **clipped behind the top black masthead strip** | masthead is `position: absolute; top:0` **overlaying** a `justify-content:center` column, so at short height MUF slides under it | In short-landscape the masthead is a **normal-flow row** (not an absolute overlay); the two columns start **below** it — MUF can never sit under the strip. |
-| Hero halftone **entirely off-screen** | column overflows the hidden-overflow sheet | Hero moves into the **left column**, shrunk to `clamp(72px,26vh,130px)`, inside the ~248 px budget — always on-screen. |
-| CTA + microcopy **below the fold** | ~567 px stack in a ~360 px frame; CTA is last | CTA moves to the **right column, vertically centered** — first-class, never below a fold. |
-| **Dead empty band** mid-screen (divider → teasers) | fixed 44 px divider margins + `justify-content:center` gaps stretch open at short height | Divider **CUT**, teasers **CUT**, two-column framing removes the vertical dead band entirely. |
+| Hero halftone **entirely off-screen**                        | column overflows the hidden-overflow sheet                                                                                       | Hero moves into the **left column**, shrunk to `clamp(72px,26vh,130px)`, inside the ~248 px budget — always on-screen.                                      |
+| CTA + microcopy **below the fold**                           | ~567 px stack in a ~360 px frame; CTA is last                                                                                    | CTA moves to the **right column, vertically centered** — first-class, never below a fold.                                                                   |
+| **Dead empty band** mid-screen (divider → teasers)           | fixed 44 px divider margins + `justify-content:center` gaps stretch open at short height                                         | Divider **CUT**, teasers **CUT**, two-column framing removes the vertical dead band entirely.                                                               |
 
 **Explicit teaser/hero verdict for short-landscape:** **teasers CUT, hero KEPT (shrunk).** The hero is
 the "this is a game" image and earns its space; the teasers are the scrollable article bulk that creates
@@ -123,25 +123,25 @@ the dead band — they go.
 
 ### 2.1 Element fate table (short-landscape only)
 
-| Element (shipped `TitleScreen.tsx`) | Fate | Landscape treatment / rationale |
-| --- | --- | --- |
-| Masthead strip (`MASTHEAD.full`) | **KEEP + DE-OVERLAY** | Thin full-width ink bar at top, ~16 px, **in normal flow** (not `position:absolute`) so the columns start below it and **MUF is never clipped behind it**. Carries N°23 identity — the one masthead line that earns its height. |
-| `MUF` wordmark | **KEEP + SHRINK** | Left column anchor. `clamp(80,14vw,160)` → **`clamp(48px, 11vh, 84px)`** — height-driven so it can never blow the budget. Still the biggest type on screen. |
-| `SUBTITLE` "UN SON · UNE NUIT · PAS D'ADRESSE" | **KEEP** | The load-bearing tagline; one line under the wordmark. |
-| Hero image (belliard halftone) | **KEEP + SHRINK** | Left column, under the tagline. Height **`clamp(72px, 26vh, 130px)`**, remove the `min` floor that forces 88 px. This is the "this is a game, not a form" visual — never cut. |
-| `ISSUE_LABEL` "★ HIVER 1998 ★" | **CUT** | Issue flavour, non-load-bearing; N°23 already lives in the masthead. |
-| `YEAR_TAG` "1998 · PÉRIPHÉRIE…" | **CUT** | Redundant with masthead + subtitle at short height. |
-| Divider rule (2 px, 44 px margins) | **CUT** | Pure vertical spend; the column gap does its job. |
-| 3 teaser lines (`► …`) | **CUT** | This is the bulk that makes the cover read as a scrolling article. Gone in landscape. **(copy-hide — flag to narrative, §5)** |
-| `INFOLINE_ROW` "☎ 08 36 23 98 23" | **KEEP + REFLOW** | Moves to the **right column**, directly above the CTA — the number you "call" sits with the action it labels. |
-| CTA `[ COMPOSE L'INFO-LINE ]` + cursor | **KEEP + REFLOW** | **Right column, vertically centered — the guaranteed-visible primary action.** Marker circle + blinking cursor unchanged. Mount focus stays here. |
-| `MICROCOPY` "le répondeur donne le point de RV" | **CUT** | Nice-to-have; the CTA + number + cursor already say "act here". **(copy-hide — flag to narrative, §5)** |
+| Element (shipped `TitleScreen.tsx`)             | Fate                  | Landscape treatment / rationale                                                                                                                                                                                                 |
+| ----------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Masthead strip (`MASTHEAD.full`)                | **KEEP + DE-OVERLAY** | Thin full-width ink bar at top, ~16 px, **in normal flow** (not `position:absolute`) so the columns start below it and **MUF is never clipped behind it**. Carries N°23 identity — the one masthead line that earns its height. |
+| `MUF` wordmark                                  | **KEEP + SHRINK**     | Left column anchor. `clamp(80,14vw,160)` → **`clamp(48px, 11vh, 84px)`** — height-driven so it can never blow the budget. Still the biggest type on screen.                                                                     |
+| `SUBTITLE` "UN SON · UNE NUIT · PAS D'ADRESSE"  | **KEEP**              | The load-bearing tagline; one line under the wordmark.                                                                                                                                                                          |
+| Hero image (belliard halftone)                  | **KEEP + SHRINK**     | Left column, under the tagline. Height **`clamp(72px, 26vh, 130px)`**, remove the `min` floor that forces 88 px. This is the "this is a game, not a form" visual — never cut.                                                   |
+| `ISSUE_LABEL` "★ HIVER 1998 ★"                  | **CUT**               | Issue flavour, non-load-bearing; N°23 already lives in the masthead.                                                                                                                                                            |
+| `YEAR_TAG` "1998 · PÉRIPHÉRIE…"                 | **CUT**               | Redundant with masthead + subtitle at short height.                                                                                                                                                                             |
+| Divider rule (2 px, 44 px margins)              | **CUT**               | Pure vertical spend; the column gap does its job.                                                                                                                                                                               |
+| 3 teaser lines (`► …`)                          | **CUT**               | This is the bulk that makes the cover read as a scrolling article. Gone in landscape. **(copy-hide — flag to narrative, §5)**                                                                                                   |
+| `INFOLINE_ROW` "☎ 08 36 23 98 23"               | **KEEP + REFLOW**     | Moves to the **right column**, directly above the CTA — the number you "call" sits with the action it labels.                                                                                                                   |
+| CTA `[ COMPOSE L'INFO-LINE ]` + cursor          | **KEEP + REFLOW**     | **Right column, vertically centered — the guaranteed-visible primary action.** Marker circle + blinking cursor unchanged. Mount focus stays here.                                                                               |
+| `MICROCOPY` "le répondeur donne le point de RV" | **CUT**               | Nice-to-have; the CTA + number + cursor already say "act here". **(copy-hide — flag to narrative, §5)**                                                                                                                         |
 
 ### 2.2 Behaviour preserved
 
 - **Whole surface stays the single hit target** (ADR-0021 D1) — the two columns are visual framing, not
   two buttons. Click/tap/key anywhere → `onEnter()`, excluding `[data-muf-ui]`. The right-column CTA is
-  the *visible affordance*, exactly as today.
+  the _visible affordance_, exactly as today.
 - **Mount focus** rests on the CTA so the marker ring shows the one action.
 - **Height budget check (target 360 px):** masthead 16 + padding ~24 + MUF ~72 + subtitle ~16 + hero
   ~120 = **≈ 248 px** in the left column; the right column (number ~16 + CTA ~48, centered) fits in the
@@ -155,11 +155,11 @@ the dead band — they go.
 
 ### 3.0 Ground-truth failures this layout must kill (from real landscape screenshots)
 
-| Observed failure (landscape) | Root cause | Fix in this layout |
-| --- | --- | --- |
-| Masthead band + tab band together **eat > 50 % of height** | two stacked full-width chrome rows (~106 px) on a ~360 px viewport | Collapse to **one ~44 px strip** (§3.1): `MUF` mark + three tabs share one row; the descriptive masthead string is dropped. Chrome ~30 % → ~12 %. |
-| Only a **sliver of the first flyer (Tutoriel)** visible; rest off-screen | vertical stack, each flyer ~130 px, under 106 px of chrome | Horizontal **flyer rack** (§3.2): flyer cards fill the ~300 px content band, **2–3 fully visible at once**, remainder one horizontal scroll-snap. |
-| "Top bar is useless" | descriptive masthead string is pure decoration one tap after the title | The string is **CUT**; only a functional `MUF` home/Escape-back mark survives. |
+| Observed failure (landscape)                                             | Root cause                                                             | Fix in this layout                                                                                                                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Masthead band + tab band together **eat > 50 % of height**               | two stacked full-width chrome rows (~106 px) on a ~360 px viewport     | Collapse to **one ~44 px strip** (§3.1): `MUF` mark + three tabs share one row; the descriptive masthead string is dropped. Chrome ~30 % → ~12 %. |
+| Only a **sliver of the first flyer (Tutoriel)** visible; rest off-screen | vertical stack, each flyer ~130 px, under 106 px of chrome             | Horizontal **flyer rack** (§3.2): flyer cards fill the ~300 px content band, **2–3 fully visible at once**, remainder one horizontal scroll-snap. |
+| "Top bar is useless"                                                     | descriptive masthead string is pure decoration one tap after the title | The string is **CUT**; only a functional `MUF` home/Escape-back mark survives.                                                                    |
 
 ### 3.1 The top bar (Bertrand's doubt, adjudicated)
 
@@ -168,7 +168,7 @@ masthead string (`MASTHEAD.running` — "UNDERGROUND PARIS · FANZINE CLANDESTIN
 "SPA header" that triggers the complaint, and it is **redundant** one tap after the title cover. In
 short-landscape:
 
-- **CUT** the standalone masthead *row* and its descriptive string.
+- **CUT** the standalone masthead _row_ and its descriptive string.
 - **KEEP** a single small **`MUF`** wordmark (~20 px) as the home/identity anchor and the visual "back
   to cover" cue (Escape → TITLE still works, `App.tsx:150`).
 - **MERGE** that `MUF` mark into the **same strip** as the sommaire tabs.
@@ -202,24 +202,24 @@ content. Chrome drops from ~30 % of the viewport to ~12 %.
    not a web page. Vertical scrolling is the single strongest SPA tell; kill it here.
 2. It is **more faithful to §5's "wall of taped-up rave flyers"** — a wall is horizontal. This is a
    conscious reading of the existing (already-extension-approved) flyer-wall spec, not a new mechanic;
-   the *read* §5 asks for is better served side-by-side.
+   the _read_ §5 asks for is better served side-by-side.
 3. With 4 flyers (tutorial + belliard + stalingrad + vitry), **2–3 fit across** a landscape width at
    once; the remainder is one horizontal scroll-snap gesture — a deliberate rack slide, not a page.
 
 ### 3.3 Element fate table (MENU, short-landscape only)
 
-| Element (shipped `MainMenu.tsx` / `FlyerWall.tsx`) | Fate | Landscape treatment / rationale |
-| --- | --- | --- |
-| Running-masthead row + `MASTHEAD.running` string | **CUT** | The SPA header; redundant after the title. **(copy-hide — flag to narrative, §5)** |
-| `MUF` wordmark (header) | **KEEP + SHRINK + MERGE** | ~20 px, left end of the single chrome strip; identity + Escape-back cue. |
-| Sommaire tablist (NIVEAUX/SCORES/OPTIONS) | **KEEP + MERGE** | Same 44 px strip, right of the MUF mark. Active rubrique marker-circled as today; tabs stay ≥ 44 px tall (touch floor, UX §3.4). |
-| `FlyerWall` container | **REFLOW** | `flexDirection: column` → **`row`** with `overflow-x: auto` + CSS scroll-snap (`scroll-snap-type: x mandatory`, each flyer `scroll-snap-align: start`). Remove vertical `overflow-y`. |
-| Each `LevelFlyer` | **RESHAPE** | Fixed-width card **~240–280 px wide**, height **fills the content band (~300 px of a 360 px viewport, `height: calc(100% - gap)`)**. At this size the full ~8-line flyer (UX §4.1) reads at rest — pull-to-front becomes an emphasis, not a requirement to read data. |
-| Flyer rest rotation / jitter / tape / pull | **KEEP** | Unchanged tokens (`FLYER_REST_ROTATION_DEG`, `FLYER_JITTER_PX`, ±3° cap, `flyerPull`). A rack of slightly-tilted taped flyers is the intended read in either orientation. |
-| Roving keyboard focus | **REFLOW** | `useRovingIndex` axis `vertical` → **`horizontal`** in short-landscape (arrows `←/→` move across the rack). Wrap stays `false`. Enter/locked-shake unchanged. |
-| Mount focus | **KEEP** | Lands on the first flyer so the marker ring shows "this is choosable", not a document. |
-| SCORES (`ScoresUne`) | **KEEP + GUARD** | Under the collapsed chrome it has ~62 px more room. The classement may scroll *within its own column* (reads as reading an article, acceptable) — but the masthead + top entry must be above the fold. If it still overflows at 360 px, reflow to two columns (masthead/lead left, classement right). Detailed pass owed only if acceptance flags it. |
-| OPTIONS (`OptionsColophon`) | **KEEP + GUARD** | Original spec (UX §5) says it fits without scroll at mobile height; the collapsed chrome only helps. Verify at 360 px; if the colophon block + controls overflow, drop the static 5-line colophon body to a 2-line credit in short-landscape (**copy-hide — flag to narrative**) rather than scroll. |
+| Element (shipped `MainMenu.tsx` / `FlyerWall.tsx`) | Fate                      | Landscape treatment / rationale                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Running-masthead row + `MASTHEAD.running` string   | **CUT**                   | The SPA header; redundant after the title. **(copy-hide — flag to narrative, §5)**                                                                                                                                                                                                                                                                    |
+| `MUF` wordmark (header)                            | **KEEP + SHRINK + MERGE** | ~20 px, left end of the single chrome strip; identity + Escape-back cue.                                                                                                                                                                                                                                                                              |
+| Sommaire tablist (NIVEAUX/SCORES/OPTIONS)          | **KEEP + MERGE**          | Same 44 px strip, right of the MUF mark. Active rubrique marker-circled as today; tabs stay ≥ 44 px tall (touch floor, UX §3.4).                                                                                                                                                                                                                      |
+| `FlyerWall` container                              | **REFLOW**                | `flexDirection: column` → **`row`** with `overflow-x: auto` + CSS scroll-snap (`scroll-snap-type: x mandatory`, each flyer `scroll-snap-align: start`). Remove vertical `overflow-y`.                                                                                                                                                                 |
+| Each `LevelFlyer`                                  | **RESHAPE**               | Fixed-width card **~240–280 px wide**, height **fills the content band (~300 px of a 360 px viewport, `height: calc(100% - gap)`)**. At this size the full ~8-line flyer (UX §4.1) reads at rest — pull-to-front becomes an emphasis, not a requirement to read data.                                                                                 |
+| Flyer rest rotation / jitter / tape / pull         | **KEEP**                  | Unchanged tokens (`FLYER_REST_ROTATION_DEG`, `FLYER_JITTER_PX`, ±3° cap, `flyerPull`). A rack of slightly-tilted taped flyers is the intended read in either orientation.                                                                                                                                                                             |
+| Roving keyboard focus                              | **REFLOW**                | `useRovingIndex` axis `vertical` → **`horizontal`** in short-landscape (arrows `←/→` move across the rack). Wrap stays `false`. Enter/locked-shake unchanged.                                                                                                                                                                                         |
+| Mount focus                                        | **KEEP**                  | Lands on the first flyer so the marker ring shows "this is choosable", not a document.                                                                                                                                                                                                                                                                |
+| SCORES (`ScoresUne`)                               | **KEEP + GUARD**          | Under the collapsed chrome it has ~62 px more room. The classement may scroll _within its own column_ (reads as reading an article, acceptable) — but the masthead + top entry must be above the fold. If it still overflows at 360 px, reflow to two columns (masthead/lead left, classement right). Detailed pass owed only if acceptance flags it. |
+| OPTIONS (`OptionsColophon`)                        | **KEEP + GUARD**          | Original spec (UX §5) says it fits without scroll at mobile height; the collapsed chrome only helps. Verify at 360 px; if the colophon block + controls overflow, drop the static 5-line colophon body to a 2-line credit in short-landscape (**copy-hide — flag to narrative**) rather than scroll.                                                  |
 
 ### 3.4 Height budget check (MENU, target 360 px)
 
@@ -233,7 +233,7 @@ vertical page scroll.** The only scroll is the horizontal rack slide when a 4th 
 A short-landscape build reads as a game front-end when **all** hold (each is verifiable at 360 px
 height):
 
-1. **One frame, no page scroll.** Neither TITLE nor MENU scrolls vertically. The *only* permitted scroll
+1. **One frame, no page scroll.** Neither TITLE nor MENU scrolls vertically. The _only_ permitted scroll
    is the horizontal flyer rack (a deliberate gallery gesture). No element is clipped by
    `PaperSheet`'s `overflow: hidden`.
 2. **The one action is always on-screen.** TITLE's CTA sits in the right column, never below a fold;
@@ -253,14 +253,14 @@ height):
 
 ## 5. Hand-offs & flags
 
-- **`narrative-designer` (Yasmine) — copy-hides to confirm.** Short-landscape *hides* (does not delete
+- **`narrative-designer` (Yasmine) — copy-hides to confirm.** Short-landscape _hides_ (does not delete
   from canon) these player-facing strings: TITLE teaser lines ×3, `YEAR_TAG`, `ISSUE_LABEL`, `MICROCOPY`;
   MENU `MASTHEAD.running` descriptive string; (conditional) OPTIONS 5-line colophon body → 2-line credit.
   I have **not** rewritten any word — these are visibility cuts at one breakpoint. Please confirm the
   cover still reads with subtitle-only, and the menu with a bare `MUF` mark. If any of these must stay
   visible for fiction reasons, that is your call and I reflow around it.
 - **`lead-art` (Nico) — the READ, not the style.** In short-landscape the flyer must read as an ~8-line
-  taped flyer at ~240–280 px wide / ~300 px tall *at rest* (crew, title, difficulty stamp, AMBIANCE
+  taped flyer at ~240–280 px wide / ~300 px tall _at rest_ (crew, title, difficulty stamp, AMBIANCE
   glanceable without pull-to-front). Two-column TITLE hero at `clamp(72,26vh,130)` must still read as a
   degraded xerox facade. No new asset implied.
 - **`senior-architect` (Winston).** The `SHORT_LANDSCAPE` media-query token is additive in
@@ -281,6 +281,6 @@ height):
 
 Prohibition (Atari ST, 1987) had no mobile-landscape entry flow — the whole pre-game fanzine experience
 is an already-approved, documented extension (ADR-0021, UX spec). This spec adds **no mechanic and no
-copy**: it is a responsive *layout* of that approved extension for a viewport the original never faced.
+copy**: it is a responsive _layout_ of that approved extension for a viewport the original never faced.
 The horizontal flyer rack is a layout reading of §5's "wall of flyers", not a new system. Core loop
 `Récupérer → Livrer → Éviter` untouched.
