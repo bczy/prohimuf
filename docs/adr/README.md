@@ -73,3 +73,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0021](./0021-pre-game-print-system-and-title-phase.md)    | Pre-game print system: render-layer TITLE phase + single-source print-token module        | Accepted |
 | [0022](./0022-asset-preloading-and-loading-gate.md)        | Asset preloading with a progressive loading gate                                          | Accepted |
 | [0023](./0023-narrative-scene-location-backdrop.md)        | Optional per-scene location décor (halftone facade) behind the NarrativeScreen transcript | Accepted |
+| [0024](./0024-pregame-landscape-layout.md)                 | Responsive pre-game layout for mobile landscape (CSS-first short-height reflow)           | Proposed |
