@@ -3064,5 +3064,5 @@ coarse` only, justified in a comment).
   (uncommitted — pre-existing gap, would 404). Verified: 0 defects (--fix & --check), gameplay
   screenshot shows cops framed in windows, tsc/vitest(312)/lint/format green. GATES: game-designer
   density 21→17 = PASS (wave cap inert at 68 slots, target read improved, faithful to the gallery);
-  senior-architect design signed; ADR-0026 (harness) + ADR-0027 (audio) added. lead-art (framing)
+  senior-architect design signed; ADR-0028 (harness) + ADR-0027 (audio) added. lead-art (framing)
   - code-review panel in flight. (Winston → Amelia ×3 → Karim/game-designer PASS)
