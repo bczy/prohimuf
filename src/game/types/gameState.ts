@@ -2,6 +2,7 @@ import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
+import type { HostageQte, QteSpec } from "@game/types/hostageQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
 
@@ -28,6 +29,15 @@ export interface GameState {
   readonly couriers: readonly Courier[];
   readonly courierTimer: number;
   readonly couriersSpawned: number;
+  // Continuous energy stat (0–100), init 100 (ADR-0004 D5 / ADR-0030). The hostage
+  // QTE moves it in V1; reaching 0 has no special effect (pure clamp).
+  readonly energy: number;
+  // Hostage-taker cinematic QTE (ADR-0030). `qteSpec` is the authored per-level
+  // data (null = no QTE this level); `qte` is the runtime sub-record (null until
+  // triggered, then persists through DONE so it fires exactly once). While the QTE
+  // is active the general sim is frozen (see stateMachine).
+  readonly qteSpec: QteSpec | null;
+  readonly qte: HostageQte | null;
   // Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
   // `deliverySpec` is the authored data for this level (null = no delivery);
   // `deliveryVehicle` is its runtime state the render lane draws (phase,

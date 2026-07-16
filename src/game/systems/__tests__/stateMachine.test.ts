@@ -548,3 +548,86 @@ describe("enemy spawn pool", () => {
     }
   });
 });
+
+describe("hostage-taker QTE — trigger, partial freeze & wiring (ADR-0030)", () => {
+  // Scripted QTE spec: triggers immediately (elapsed 0), 2 s zoom, 5 s window.
+  const SPEC = {
+    triggerAtElapsedSeconds: 0,
+    captorHp: 4,
+    hostageHp: 3,
+    zoomSeconds: 2,
+    windowSeconds: 5,
+    bonusScore: 8,
+    bonusEnergy: 15,
+    anchor: { x: 0, y: 2 },
+  };
+  function qteState(): GameState {
+    return createInitialState(FACADE_01, {
+      lives: 3,
+      timeSeconds: 90,
+      enemiesToWin: 10,
+      enemySpeedMultiplier: 1,
+      hostageQte: SPEC,
+    });
+  }
+
+  it("initialises energy at 100, qte null, and carries the authored spec", () => {
+    const s = qteState();
+    expect(s.energy).toBe(100);
+    expect(s.qte).toBeNull();
+    expect(s.qteSpec).toEqual(SPEC);
+  });
+
+  it("triggers into ZOOMING and FREEZES the rest of the scene", () => {
+    const s0 = qteState();
+    const s1 = tickGameState(s0, noFire, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    expect(s1.qte?.phase).toBe("ZOOMING");
+    // Frozen: the general sim state is carried through unchanged.
+    expect(s1.enemies).toBe(s0.enemies);
+    expect(s1.wave).toBe(s0.wave);
+    expect(s1.timeRemaining).toBe(s0.timeRemaining);
+    expect(s1.elapsedSeconds).toBe(s0.elapsedSeconds);
+    expect(s1.couriers).toBe(s0.couriers);
+  });
+
+  it("opens the shootable window after the zoom, then a head shot WINS (side objective)", () => {
+    let s = tickGameState(qteState(), noFire, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    // End the 2 s zoom.
+    s = tickGameState(s, noFire, 0.5, 0.5, 2.0, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    expect(s.qte?.phase).toBe("ACTIVE");
+    // Crosshair (0.5, 0.25) maps to world (0, 3) = anchor + (0, +1): the head band.
+    s = tickGameState(s, fire, 0.5, 0.25, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    expect(s.qte?.phase).toBe("WON");
+    expect(s.score).toBe(8); // bonus
+    expect(s.energy).toBe(100); // +15 clamped
+    expect(s.kills).toBe(0); // rescue never advances the win quota
+  });
+
+  it("a stray hit on the hostage drains energy INSIDE the frozen tick (sim still frozen)", () => {
+    let s = tickGameState(qteState(), noFire, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    s = tickGameState(s, noFire, 0.5, 0.5, 2.0, FACADE_01, 0, 0, 18, 12, 10, FIELD); // → ACTIVE
+    const before = s;
+    // Crosshair (0.5, 0.375) maps to world (0, 1.5) = anchor + (0, −0.5): the hostage band.
+    const after = tickGameState(s, fire, 0.5, 0.375, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    expect(after.qte?.hostageHp).toBe(2);
+    expect(after.energy).toBe(75); // −25 bavure
+    expect(after.score).toBe(0); // −3 clamped at the floor
+    // Still frozen despite the shot.
+    expect(after.enemies).toBe(before.enemies);
+    expect(after.timeRemaining).toBe(before.timeRemaining);
+  });
+
+  it("the frozen QTE tick clears the transient event channels", () => {
+    const s = tickGameState(qteState(), fire, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    expect(s.feedback).toEqual([]);
+    expect(s.pointFeedback).toEqual([]);
+    expect(s.impactEvents).toEqual([]);
+  });
+
+  it("a QTE-less level ticks normally (elapsed advances, qte stays null)", () => {
+    const s1 = tickGameState(createInitialState(FACADE_01), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(s1.qte).toBeNull();
+    expect(s1.qteSpec).toBeNull();
+    expect(s1.elapsedSeconds).toBeCloseTo(0.1);
+  });
+});

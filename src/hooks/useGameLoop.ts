@@ -19,8 +19,17 @@ import type { GameState } from "@game/types/gameState";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
+import { isQteActive } from "@game/systems/qteSystem";
 import type { ImpactEvent } from "@game/types/feedback";
 import type { Floater } from "@render/scene/FeedbackLayer";
+import { energyFloater } from "@render/scene/hostageCue";
+import type { CamPose } from "@render/scene/qteCamera";
+import {
+  QTE_RESTORE_SECONDS,
+  qtePose,
+  qteRestorePose,
+  qteZoomInProgress,
+} from "@render/scene/qteCamera";
 
 const MAX_DELTA = 0.1;
 const DIRECTION_DEAD_ZONE = 0.2;
@@ -129,6 +138,10 @@ export function useGameLoop(
   // Viewport state, not a game rule — lives in the bridge, not GameState (ADR-0003).
   const panRef = useRef<CameraPan>(createCameraPan());
   const aimRef = useRef({ x: 0.5, y: 0.5 });
+  // QTE cinematic camera (ADR-0030): the pre-QTE pose captured once when the QTE
+  // fires (restored to EXACTLY on the way out), and the in-flight restore lerp.
+  const qteBaseRef = useRef<CamPose | null>(null);
+  const qteRestoreRef = useRef<{ from: CamPose; t: number } | null>(null);
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -142,7 +155,10 @@ export function useGameLoop(
     // deriving the view extents, so the pan clamp below reflects the current
     // framing (zooming out widens the view and shrinks the pan range).
     const touch = mobileControls?.touchRef.current;
-    if (mobileControls !== undefined && touch !== undefined) {
+    // While the QTE cinematic runs, its zoom driver (below) owns ortho.zoom —
+    // applying the pinch zoom here would desync the aim mapping (viewW/viewH
+    // derive from ortho.zoom before the tick) from the displayed framing.
+    if (mobileControls !== undefined && touch !== undefined && !isQteActive(prev.qte)) {
       const zoom = mobileControls.baseZoom * touch.zoom;
       if (ortho.zoom !== zoom) {
         ortho.zoom = zoom;
@@ -156,7 +172,10 @@ export function useGameLoop(
     // Mobile (ADR-0003): consume swipe gestures — pan the camera with inertia
     // (pure cameraPanSystem math) and dequeue at most one two-finger tap as a
     // shot at its midpoint. Runs before the tick so cameraOffsetX is current.
-    if (mobileControls !== undefined && touch !== undefined) {
+    // While the QTE holds the scene frozen the cinematic zoom below owns the
+    // camera; skip the inertial pan so the two don't fight over its position
+    // (taps are still dequeued below as QTE shots).
+    if (mobileControls !== undefined && touch !== undefined && !isQteActive(prev.qte)) {
       const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
       const rangeY = Math.max(0, mobileControls.halfWorldHeight - viewH / 2);
       const range = { x: rangeX, y: rangeY };
@@ -252,7 +271,49 @@ export function useGameLoop(
         }
       : next;
 
+    // QTE cinematic camera (ADR-0030): while the QTE is active, capture the
+    // pre-QTE pose ONCE, then progressively zoom onto the captor's anchor
+    // (eased over ZOOMING, pinned once ACTIVE). When it ends, ease back to the
+    // captured base over QTE_RESTORE_SECONDS and restore it EXACTLY. Runs after
+    // the tick so it reads this frame's fresh phase/timers.
+    const qte = gameStateRef.current.qte;
+    if (isQteActive(qte) && qte !== null) {
+      qteBaseRef.current ??= { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y };
+      qteRestoreRef.current = null;
+      const p = qteZoomInProgress(qte.phase, qte.zoomRemaining, qte.zoomSeconds);
+      const pose = qtePose(qteBaseRef.current, qte.anchor, p);
+      ortho.zoom = pose.zoom;
+      camera.position.x = pose.x;
+      camera.position.y = pose.y;
+      ortho.updateProjectionMatrix();
+    } else if (qteBaseRef.current !== null) {
+      const base = qteBaseRef.current;
+      qteRestoreRef.current ??= {
+        from: { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y },
+        t: 0,
+      };
+      const restore = qteRestoreRef.current;
+      restore.t = Math.min(1, restore.t + safeDelta / QTE_RESTORE_SECONDS);
+      if (restore.t >= 1) {
+        ortho.zoom = base.zoom;
+        camera.position.x = base.x;
+        camera.position.y = base.y;
+        qteBaseRef.current = null;
+        qteRestoreRef.current = null;
+      } else {
+        const pose = qteRestorePose(restore.from, base, restore.t);
+        ortho.zoom = pose.zoom;
+        camera.position.x = pose.x;
+        camera.position.y = pose.y;
+      }
+      ortho.updateProjectionMatrix();
+    }
+
     // Floating feedback for each takedown: bonus time, civilian penalty, score.
+    // A non-zero energyDelta floats a second "⚡" label just above, so both the
+    // score and the energy hit are read. (During the hostage QTE the frozen tick
+    // emits no feedback events — its energy swings are read on the HUD gauge and
+    // the result chip instead, ADR-0030.)
     const queue = feedbackQueueRef?.current;
     if (queue && next.feedback) {
       for (const ev of next.feedback) {
@@ -260,13 +321,17 @@ export function useGameLoop(
         if (slot === undefined) continue;
         const f = floaterFor(ev);
         if (f) queue.push({ x: slot.screenPosition.x, y: slot.screenPosition.y, ...f });
+        const e = energyFloater(ev.energyDelta);
+        if (e) queue.push({ x: slot.screenPosition.x, y: slot.screenPosition.y + 0.7, ...e });
       }
     }
-    // Courier-hit feedback is anchored to the courier's world position.
+    // Courier-hit feedback is anchored to its world position.
     if (queue && next.pointFeedback) {
       for (const ev of next.pointFeedback) {
         const f = floaterFor(ev);
         if (f) queue.push({ x: ev.x, y: ev.y, ...f });
+        const e = energyFloater(ev.energyDelta);
+        if (e) queue.push({ x: ev.x, y: ev.y + 0.7, ...e });
       }
     }
     // Player-shot impacts: drain onto the channel queue for the effects layer
@@ -300,6 +365,7 @@ export function useGameLoop(
       Math.floor(next.timeRemaining) !== Math.floor(prev.timeRemaining) ||
       next.phase !== prev.phase ||
       next.wave !== prev.wave ||
+      next.energy !== prev.energy ||
       !isSameIndicator(prevTargetIndicator, targetIndicator)
     ) {
       onHudUpdate({
@@ -308,6 +374,7 @@ export function useGameLoop(
         timeRemaining: next.timeRemaining,
         phase: next.phase,
         wave: next.wave,
+        energy: next.energy,
         targetIndicator,
       });
     }

@@ -554,6 +554,43 @@ new frame files — no structural workflow change).
 
 ---
 
+## gen-hostage-sprites.mjs — QTE hostage figures (the `girl`)
+
+Generates the hostage figures of the cinematic QTE (ADR-0030) — today the
+single `girl`, the cartel boss's daughter the captor holds in front of him —
+in the enemies' black-ground pixel style, then keys the flat `#000000` ground
+to transparency via the **shared `cutout()` of `cutout-enemies.mjs`**.
+
+- **Single source of truth:** the `hostages` block of
+  `src/game/levels/levelArt.json` (prompt, pinned seed, size, output path per
+  key). Add or tune a figure **there**, never in the script. The block lives
+  BESIDE `enemies` on purpose: its keys must not enter the ARCHETYPES-derived
+  `enemies.types` register (levelArt.consistency gate) — the hostage is not a
+  shootable window archetype.
+- **Naming contract (renderer aligns on it):**
+  `public/assets/hostage/<key>.png`, loaded by
+  `src/render/scene/hostageTextures.ts` (civilian-sprite fallback until the art
+  lands). The `hostage/` subdirectory keeps these files out of the `enemy_*`
+  batch globs (cutout/solidify).
+- **CI:** `.github/workflows/gen-hostage-sprites.yml` (manual dispatch or the
+  `.github/dispatch/gen-hostage-sprites` push marker + `ci(dispatch):` message)
+  — generates with `FORCE=1`, solidifies (`fill-sprite-holes.mjs` + `--check`),
+  gates topology (`check-sprite-integrity.mjs --file`), commits to the branch.
+
+### Commands
+
+```bash
+# Generate missing figures via Pollinations/FLUX, then chroma-key (needs network)
+node scripts/gen-hostage-sprites.mjs
+
+# Regenerate all (overwrite), used in CI
+FORCE=1 node scripts/gen-hostage-sprites.mjs
+
+# One figure only, or list the defined figures
+node scripts/gen-hostage-sprites.mjs --asset girl
+node scripts/gen-hostage-sprites.mjs --list
+```
+
 ## gen-vehicle-sprites.mjs — Delivery-vehicle sprites (truck / car / moto)
 
 Generates the side-profile delivery-vehicle sprites for the scripted "protect

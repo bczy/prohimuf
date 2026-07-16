@@ -14,14 +14,16 @@ import {
 } from "@game/levels/levelArt";
 import type { WindowZone } from "@game/levels/levelArt";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import type { HudData, HudDelivery } from "@render/ui/HUD";
+import type { HudData, HudDelivery, HudHostageQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
+import { isQteActive } from "@game/systems/qteSystem";
 import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { CourierSprite } from "./CourierSprite";
+import { HostageQteSprite } from "./HostageQteSprite";
 import { DeliveryVehicleSprite } from "./DeliveryVehicleSprite";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
@@ -85,6 +87,8 @@ interface Props {
   paused?: boolean;
   /** Surfaces delivery HUD state (phase + integrity) to the DOM HUD. */
   onDelivery?: (delivery: HudDelivery) => void;
+  /** Surfaces hostage-taker QTE HUD state (gauges + warning) to the DOM HUD. */
+  onHostageQte?: (qte: HudHostageQte | null) => void;
   /** Mobile mode (ADR-0003): touch controls + stronger zoom; replaces edge-scroll. */
   isMobile?: boolean;
 }
@@ -97,6 +101,7 @@ export function GameScene({
   levelId,
   paused,
   onDelivery,
+  onHostageQte,
   isMobile = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art's native
@@ -239,6 +244,9 @@ export function GameScene({
     // On pause the whole scene freezes (game loop, couriers, flipbooks) — the
     // camera must not keep edge-scrolling or gliding behind the pause sheet.
     if (isMobile || paused === true) return;
+    // While the QTE holds the scene frozen the cinematic zoom (useGameLoop) owns
+    // the camera; skip edge-scroll so the two don't fight over its position.
+    if (isQteActive(stateRef.current.qte)) return;
     const { x: mouseX, y: mouseY } = mouseRef.current;
     const ortho = camera as OrthographicCamera;
 
@@ -282,6 +290,7 @@ export function GameScene({
         </group>
       ))}
       <CourierSprite stateRef={stateRef} paused={paused} />
+      <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />

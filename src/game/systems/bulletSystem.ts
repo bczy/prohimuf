@@ -15,6 +15,10 @@ export interface PlayerShotResult {
   readonly scoreDelta: number;
   readonly livesDelta: number;
   readonly timeDelta: number;
+  // Continuous-energy change from this shot. Always 0 now (the hostage QTE owns
+  // all energy changes — see qteSystem); kept on the result for the tick's
+  // uniform fold-in. Folded into GameState.energy by the tick.
+  readonly energyDelta: number;
   // Targets that count toward the level win (cops only), neutralised this shot.
   readonly targetsDown: number;
   // Per-takedown events (for floating feedback).
@@ -83,6 +87,7 @@ export function resolvePlayerShot(
       scoreDelta: 0,
       livesDelta: 0,
       timeDelta: 0,
+      energyDelta: 0,
       targetsDown: 0,
       events: [],
       impact: { classification: "miss", impactPoint },
@@ -93,6 +98,7 @@ export function resolvePlayerShot(
   let scoreDelta = 0;
   let livesDelta = 0;
   let timeDelta = 0;
+  const energyDelta = 0;
   let targetsDown = 0;
   const events: HitEvent[] = [];
   // Effects only land when this hit takes the enemy down (hp -> 0).
@@ -115,6 +121,7 @@ export function resolvePlayerShot(
     scoreDelta,
     livesDelta,
     timeDelta,
+    energyDelta,
     targetsDown,
     events,
     impact: {

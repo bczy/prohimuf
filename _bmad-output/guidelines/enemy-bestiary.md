@@ -70,6 +70,15 @@ Le conducteur occupe toujours le siège **en tête** dans le sens de la marche (
 
 ## 3. Nouveau — Preneur d'otage
 
+> **MISE À JOUR (ADR-0030) — le preneur d'otage est désormais un QTE cinématique**, pas un
+> pop-up double-hitbox. Quand il se déclenche, la scène se fige, la caméra zoome (2 s) sur le
+> ravisseur avec un warning « OTAGE », puis 5 s pour tirer sur ses **parties du corps**
+> (tête/torse/bras/jambes, létalité variable) et vider sa **jauge de vie** avant qu'il n'exécute
+> **l'otage — la fille d'un boss de cartel** (petite jauge de vie ; la toucher/la perdre draine
+> beaucoup d'énergie). Sauvetage = objectif annexe (bonus, ne compte pas dans le quota), 1×/niveau.
+> Les §3.1–3.5 ci-dessous décrivent le design double-hitbox **remplacé** — conservés pour l'histoire ;
+> la source de vérité est ADR-0030 + `src/game/systems/qteSystem.ts`.
+
 ### 3.1 Nature & placements
 Un **ravisseur** apparaît en tenant un **otage** devant lui (bouclier humain partiel). Deux modes de spawn (même archétype, DRY) :
 - **Fenêtre** (V1, priorité) — pop-up dans une fenêtre, machine à états type `enemySystem`.

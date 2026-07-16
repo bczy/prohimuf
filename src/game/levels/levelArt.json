@@ -132,6 +132,11 @@
         "seed": 4812,
         "prompt": "a glowing radiant golden mysterious figure in a shining trench coat and fedora hat, sparkling aura, standing facing forward",
         "frames": [""]
+      },
+      "enemy_hostage": {
+        "seed": 4813,
+        "prompt": "a menacing kidnapper in a dark jacket, one arm wrapped forward around empty space at chest height as if gripping a captive in front of him, the other hand pressing a pistol forward, threatening hunched posture, standing facing forward",
+        "frames": [""]
       }
     }
   },
@@ -168,6 +173,18 @@
         ],
         "scale": 1.0,
         "offsetY": 0.0
+      }
+    }
+  },
+  "hostages": {
+    "$comment": "QTE hostage figures (ADR-0030). Single source of truth for scripts/gen-hostage-sprites.mjs. NOT an enemy archetype — this block lives beside `enemies` because its keys must not enter the ARCHETYPES-derived enemies.types register (levelArt.consistency gate). Same black-ground pixel style as the enemies block; generated on flat #000000 then chroma-keyed (cutout-enemies.mjs cutout()). Files live at public/assets/hostage/<key>.png — outside the enemy_ batch on purpose. The `girl` is the cartel boss's daughter the QTE captor holds in front of him (rendered by src/render/scene/HostageQteSprite.tsx via hostageTextures.ts, with the enemy_civilian sprite as pre-art fallback).",
+    "style": ", 16-bit pixel art game sprite on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every space between the figure's limbs and hair, crisp clean pixels, light grey white and pale neon tones figure, simple bold shapes, centered, high contrast, retro snes style, no text, no watermark",
+    "size": { "width": 256, "height": 256 },
+    "types": {
+      "girl": {
+        "asset": "assets/hostage/girl.png",
+        "seed": 4814,
+        "prompt": "a frightened young woman kneeling on the ground with both knees down and sitting back on her heels, long dark ponytail, cropped leather jacket over a short slip dress, gold hoop earrings and a thin choker, hands raised defensively at chest height, captive posture, ordinary civilian, no weapon, facing forward"
       }
     }
   },

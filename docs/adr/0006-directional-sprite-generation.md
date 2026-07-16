@@ -1,6 +1,7 @@
 # 0006 — Directional, mirrored multi-pose sprite generation for car & hostage entities
 
-- **Status:** Proposed
+- **Status:** Superseded by [ADR-0030](./0030-hostage-taker-feature-and-sprite.md) (hostage
+  portion) — car portion **withdrawn** (deferred, not implemented). See ADR-0030 §D1.
 - **Date:** 2026-06-22
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md) (D1 street entities, D4 dual-mode
   hostage, the car shooter-seat / muzzle-flash table), [ADR-0005](./0005-dynamic-verification-harness.md)

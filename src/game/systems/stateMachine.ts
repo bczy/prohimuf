@@ -2,11 +2,12 @@ import type { GameState } from "@game/types/gameState";
 import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
+import type { QteSpec } from "@game/types/hostageQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { ImpactEvent, PointHitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
-import { moveCrosshair } from "@game/systems/crosshairSystem";
+import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
 import { resolvePlayerShot, tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
 import type { PlayerShotResult } from "@game/systems/bulletSystem";
@@ -20,6 +21,8 @@ import {
   tickCouriers,
 } from "@game/systems/courierSystem";
 import type { CourierField } from "@game/systems/courierSystem";
+import { isQteActive, shouldTriggerQte, createQte, tickQte } from "@game/systems/qteSystem";
+import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
 import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
 import type { EnemyKind } from "@game/types/enemy";
@@ -53,6 +56,11 @@ export interface LevelParams {
    * Omitted / null = no delivery this level.
    */
   delivery?: DeliverySpec | null;
+  /**
+   * Scripted hostage-taker QTE for this level (from `LevelConfig.hostageQte`).
+   * Omitted / null = no QTE this level.
+   */
+  hostageQte?: QteSpec | null;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -82,6 +90,9 @@ export function createInitialState(
     couriers: [],
     courierTimer: FIRST_COURIER_DELAY,
     couriersSpawned: 0,
+    energy: ENERGY_INITIAL,
+    qteSpec: params.hostageQte ?? null,
+    qte: null,
     deliverySpec,
     deliveryVehicle: seedDeliveryVehicle(deliverySpec),
   };
@@ -119,6 +130,34 @@ export function tickGameState(
 
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
+
+  // 1b. Hostage-taker cinematic QTE (ADR-0030). When its scripted trigger fires,
+  // the REST OF THE SCENE FREEZES: only the crosshair, the two QTE timers and the
+  // player shot vs the captor's body parts advance. Everything else (enemies,
+  // waves, spawns, bullets, couriers, delivery, the level clock) is carried
+  // unchanged via `...state`, so a QTE-less level (`qteSpec === null`) skips this
+  // block entirely and stays byte-for-byte deterministic.
+  let qte = state.qte;
+  if (shouldTriggerQte(state.qteSpec, qte, elapsedSeconds) && state.qteSpec !== null) {
+    qte = createQte(state.qteSpec);
+  }
+  if (isQteActive(qte) && qte !== null) {
+    const impactPoint = crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH);
+    const r = tickQte(qte, fire, impactPoint, delta);
+    return {
+      ...state,
+      crosshair,
+      // The clock is frozen — the cinematic beat is "outside time" (so the
+      // delivery script and the level timer are not perturbed by it).
+      elapsedSeconds: state.elapsedSeconds,
+      qte: r.qte,
+      score: Math.max(0, state.score + r.scoreDelta),
+      energy: applyEnergy(state.energy, r.energyDelta),
+      impactEvents: [],
+      feedback: [],
+      pointFeedback: [],
+    };
+  }
 
   // 2. Tick enemies
   const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta));
@@ -195,6 +234,9 @@ export function tickGameState(
       couriersSpawned += 1;
       courierTimer = courierSpawnInterval(couriersSpawned);
     }
+
+    // A player MISS (no window enemy struck) can hit one courier — the nearest
+    // single one within COURIER_HIT_RADIUS (one shot = one target, D1.5).
     if (shot !== null && shot.impact.classification === "miss") {
       const cs = resolveCourierShot(shot.impact.impactPoint, couriers);
       couriers = cs.couriers;
@@ -233,6 +275,10 @@ export function tickGameState(
   );
   const newKills = state.kills + shotTargetsDown;
 
+  // Continuous energy is moved only by the hostage QTE (handled in the frozen QTE
+  // branch above); the normal tick leaves it unchanged.
+  const newEnergy = state.energy;
+
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
@@ -247,7 +293,7 @@ export function tickGameState(
 
   // Lives change from being shot AND from mistakes (shooting a civilian courier).
   const shotLivesDelta = shot ? shot.livesDelta : 0;
-  const shotEvents = shot ? shot.events : [];
+  const feedbackEvents: readonly HitEvent[] = shot ? shot.events : [];
   const newLives = state.lives - (playerHit ? 1 : 0) + shotLivesDelta + courierLivesDelta;
 
   if (newLives <= 0) {
@@ -255,12 +301,15 @@ export function tickGameState(
       ...state,
       crosshair,
       enemies: shotEnemies,
-      feedback: shotEvents,
+      feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
       couriers,
       courierTimer,
       couriersSpawned,
+      energy: newEnergy,
+      qteSpec: state.qteSpec,
+      qte,
       deliveryVehicle,
       elapsedSeconds,
       kills: newKills,
@@ -280,12 +329,15 @@ export function tickGameState(
       ...state,
       crosshair,
       enemies: shotEnemies,
-      feedback: shotEvents,
+      feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
       couriers,
       courierTimer,
       couriersSpawned,
+      energy: newEnergy,
+      qteSpec: state.qteSpec,
+      qte,
       deliveryVehicle,
       elapsedSeconds,
       kills: newKills,
@@ -304,12 +356,15 @@ export function tickGameState(
     phase: finalPhase,
     crosshair,
     enemies: shotEnemies,
-    feedback: shotEvents,
+    feedback: feedbackEvents,
     pointFeedback,
     impactEvents,
     couriers,
     courierTimer,
     couriersSpawned,
+    energy: newEnergy,
+    qteSpec: state.qteSpec,
+    qte,
     deliverySpec: state.deliverySpec,
     deliveryVehicle,
     elapsedSeconds,
