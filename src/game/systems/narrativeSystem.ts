@@ -12,7 +12,7 @@ export interface NarrativeLine {
   readonly text: string;
   /**
    * Optional illustration shown above the dialogue box (ADR-0012, D5). Path is
-   * relative to `public/assets/` WITHOUT a leading slash (e.g. `"assets/enemy_civilian.png"`);
+   * relative to `public/assets/` WITHOUT a leading slash (e.g. `"assets/enemy_bonus.png"`);
    * the render lane prefixes `import.meta.env.BASE_URL` for GitHub Pages. Only sprites
    * already shipped in `public/assets/` are referenced; text-only panels omit it, so
    * existing narrative scenes render exactly as before.
@@ -143,7 +143,10 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   {
     speaker: "KENZA",
     text: "Le livreur civil dans la rue, tu le touches JAMAIS. Un tir sur lui : une vie et un point en moins.",
-    image: "assets/enemy_civilian.png",
+    // Same rider art as the Muf panels, but a different diegetic subject — keep
+    // the civilian alt (the retired enemy_civilian.png sprite was replaced by the
+    // shipped rider flipbook frame 1).
+    image: MUF_RIDER_IMAGE,
     imageAlt: "Le livreur civil dans la rue",
   },
   {

@@ -800,10 +800,13 @@ frame), so this gate is two-layered.
   bbox-top sits in the upper 80% (torso/hip) of the figure — the layer that surfaces
   a severed-limb / anatomy hole for a human glance. **Figure-only:** the torso
   fraction assumes a standing human; pass `isFigure:false` for non-figure sprites.
-- **CI:** wired into `.github/workflows/gen-sprites.yml` **after** the cutout step
-  and **before** commit, **scoped to `enemy_civilian.png`** — the other committed
-  enemy sprites carry pre-existing keying debris / action-pose detached elements a
-  blanket gate would false-fail (extending to the whole set is a separate story).
+- **CI:** the `gen-sprites.yml` gate step was **removed** (ADR-0029). It was
+  **scoped to `enemy_civilian.png`**, which has since been **retired** (the courier
+  renders from the committed rider flipbook), so the step would only fail on the
+  missing file. The script is kept as generic infrastructure — re-wire the gate only
+  after calibrating it against a new target (extending to the whole set is a separate
+  story: the other committed enemy sprites carry accepted keying debris a blanket gate
+  would false-fail).
 
 ```bash
 node scripts/check-sprite-integrity.mjs                 # inventory ALL enemy_*.png
@@ -842,9 +845,14 @@ constant (`RETOUCH_SPECS`) tuned to one sprite's geometry — NOT a general filt
 keying debris / subject fragmentation / non-binary alpha — a re-opened hip hole alone
 passes HARD and shows only as a SOFT WARN a human must act on (see ADR-0014 §C).
 
+> **Note (ADR-0029):** this script's original target, `enemy_civilian.png`, was
+> retired (the courier now renders from the committed rider flipbook). The script is
+> kept as generic per-sprite retouch infrastructure; calibrate a new `RETOUCH_SPECS`
+> spec before running it against a new sprite.
+
 ```bash
-node scripts/retouch-sprites.mjs                    # retouch every known sprite
-node scripts/retouch-sprites.mjs enemy_civilian.png # one sprite by basename
+node scripts/retouch-sprites.mjs                 # retouch every known sprite
+node scripts/retouch-sprites.mjs <sprite>.png    # one sprite by basename
 ```
 
 - **Requires:** `@napi-rs/canvas` (same install pattern as `cutout-enemies.mjs`).

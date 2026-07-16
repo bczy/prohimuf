@@ -128,11 +128,6 @@
           { "x": 0.225, "y": 0.271 }
         ]
       },
-      "enemy_civilian": {
-        "seed": 4811,
-        "prompt": "a friendly young food delivery courier with a big insulated backpack and a bike helmet, ordinary civilian, empty hands, no weapon, standing facing forward",
-        "frames": [""]
-      },
       "enemy_bonus": {
         "seed": 4812,
         "prompt": "a glowing radiant golden mysterious figure in a shining trench coat and fedora hat, sparkling aura, standing facing forward",

@@ -3080,3 +3080,23 @@ coarse` only, justified in a comment).
   pool, not difficulty) + 2 non-blocking playtest flags (vitry reachability @ speed 1.6; active-cop
   read on the busy HLM background -> lead-art). tsc/vitest(331)/lint/format green.
   (Amelia / dev-tooling-assets -> Karim PASS)
+
+- story-visibility-and-feel-fixes (Bertrand 2026-07-16: tutorial shows the OLD livreur sprite —
+  swap to the new one and delete the old from the repo; edge-of-screen enemy arrows invisible in
+  black (critical on mobile) — make them yellow; "Passer" buttons far too small on tutorial +
+  narrative phases; desktop edge scrolling should ramp with pointer depth in the zone + glide with
+  inertia on exit): 3 lanes fanned out non-overlapping. LANE A (dev-gameplay, TDD):
+  `cameraPanSystem` gains `edgeScrollRamp` (linear -1..+1 across the edge zones) +
+  `driveEdgeScroll` (direct-control velocity while driven, tickCameraPan-identical exponential
+  glide on release; glide factored into shared `glideAxis`, tickCameraPan behaviour unchanged),
+  +21 tests (43/43). LANE B (dev-r3f-render): HUD off-screen arrows redrawn as one SVG polygon —
+  acid-yellow #FFE600 fill + ink-black keyline (CSS triangles can't take an outline), inactive
+  opacity 0.28→0.35; NarrativeScreen "Passer" enlarged to a ≥44px tap target (10px/20px, 15px);
+  GameScene desktop block rewired to ramp+glide via panRef (EDGE_SCROLL_MAX_SPEED 8 at the edge ≈
+  old average feel, midpoint 4). LANE C (dev-tooling-assets): tutorial livreur panel →
+  `assets/courier/rider.png` (alt kept diegetic); `enemy_civilian.png` DELETED with full sweep —
+  CourierSprite pre-art fallback + bike mesh removed, manifest civilian push removed,
+  levelArt.json entry removed (no CI regen), gen-sprites integrity-gate step retired (its one
+  calibrated target is gone; script kept as infra), SCRIPTS.md/test updates, ADR-0029. Verified
+  serially by the orchestrator: tsc / vitest 351(29 files) / lint all green.
+  (Amelia ×3 ∥ → orchestrator verify)

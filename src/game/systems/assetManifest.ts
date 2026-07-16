@@ -3,7 +3,6 @@ import type { EnemyKind } from "@game/types/enemy";
 import type { VehicleType } from "@game/types/delivery";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
-import { streetSpawnsCourier } from "@game/systems/courierSystem";
 import {
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
@@ -135,19 +134,17 @@ function windowPoolKinds(level: LevelConfig): EnemyKind[] {
 }
 
 /**
- * Every enemy sprite path a level needs: its window-spawn pool kinds, PLUS the
- * civilian sprite when the street runs couriers (the courier's pre-art fallback
- * is enemy-rendered via `getEnemyTexture("civilian", ...)` in CourierSprite),
- * PLUS the two global fallbacks. De-duplicated, stably ordered.
+ * Every enemy sprite path a level needs: its window-spawn pool kinds PLUS the
+ * two global fallbacks. De-duplicated, stably ordered.
+ *
+ * The street courier (livreur) is NOT pulled in here: it is drawn from the
+ * courier flipbook (see `courierAssetPaths`), not from an enemy sprite. Its
+ * legacy `enemy_civilian.png` pre-art fallback was retired with that sprite (see
+ * ADR-0029), so `civilian` (window weight 0) never contributes an enemy path.
  */
 export function enemyAssetPathsFor(levelId: string): readonly string[] {
   const level = levelConfigFor(levelId);
   const kinds = windowPoolKinds(level);
-  // The civilian rides the street as a courier (window weight 0), but its sprite
-  // is drawn as the courier's pre-art fallback, so preload it when couriers run.
-  if (streetSpawnsCourier(level.roster?.streetSpawns) && !kinds.includes("civilian")) {
-    kinds.push("civilian");
-  }
   return dedupe([...kinds.flatMap(enemyKindPaths), ...ENEMY_FALLBACKS]);
 }
 
