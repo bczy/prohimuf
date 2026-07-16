@@ -146,7 +146,8 @@ describe("assetManifest — enemy path parity pins", () => {
 
 describe("assetManifest — enemy coverage for belliard", () => {
   // Belliard uses the default window pool (normal/riot/biker/bonus — civilian is
-  // weight 0) plus the civilian sprite (courier fallback) plus the two globals.
+  // weight 0 and its retired sprite is no longer pulled in as a courier fallback)
+  // plus the two globals.
   const EXPECTED = [
     "assets/enemy_sprite.png",
     "assets/enemy_sprite_f2.png",
@@ -169,7 +170,6 @@ describe("assetManifest — enemy coverage for belliard", () => {
     "assets/enemy_biker_shooting.png",
     "assets/enemy_biker_shooting_f2.png",
     "assets/enemy_bonus.png",
-    "assets/enemy_civilian.png",
   ];
 
   it("enumerates exactly the expected enemy sprites (frame/variant coverage)", () => {
@@ -177,8 +177,8 @@ describe("assetManifest — enemy coverage for belliard", () => {
   });
 
   it("covers frame counts declared in levelArt.json for each variant/state", () => {
-    // enemy_sprite has 2 frames, enemy_bonus/enemy_civilian have 1 — assert the
-    // manifest reflects those authored counts.
+    // enemy_sprite has 2 frames, enemy_bonus has 1 — assert the manifest reflects
+    // those authored counts.
     const paths = enemyAssetPathsFor("belliard");
     const normalFrames = levelArt.enemies.types.enemy_sprite.frames.length;
     const shootingFrames = levelArt.enemies.types.enemy_shooting.frames.length;

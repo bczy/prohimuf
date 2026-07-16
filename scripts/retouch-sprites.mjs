@@ -42,9 +42,16 @@
  * that WARN and re-run this retouch. CI's no-args batch cutout SKIPS pre-keyed sprites
  * (ADR-0013), so the committed bytes stay stable after this runs once.
  *
+ * NOTE (ADR-0029): this script's original calibration target — enemy_civilian.png,
+ * the courier's legacy single-frame sprite — was RETIRED (the courier now renders
+ * from the committed rider flipbook, and enemy_civilian.png was deleted). The script
+ * is kept as generic per-sprite retouch infrastructure; `RETOUCH_SPECS` still carries
+ * that sprite's (now historical) constants. Re-run it against a NEW target only after
+ * calibrating a spec for it.
+ *
  * Usage:
  *   node scripts/retouch-sprites.mjs                 # retouch every known sprite
- *   node scripts/retouch-sprites.mjs enemy_civilian.png   # one sprite by basename
+ *   node scripts/retouch-sprites.mjs <sprite>.png    # one sprite by basename
  * Requires @napi-rs/canvas (same dep + install pattern as cutout-enemies.mjs):
  *   npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
  * Exit: 0 on success; 1 on a fatal error or a wheel-leak assertion failure.

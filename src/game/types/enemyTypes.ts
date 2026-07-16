@@ -100,9 +100,13 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     timeDelta: 0,
     countsAsTarget: false,
     // weight 0: the civilian (livreur) is no longer a window pop-up — it rides
-    // the street as a courier (see courierSystem). Kept here for its sprite and
-    // its shoot-penalty effects, which the courier reuses.
+    // the street as a courier (see courierSystem). Kept here for its shoot-penalty
+    // effects, which the courier reuses.
     weight: 0,
+    // Art retired (ADR-0029): enemy_civilian.png was deleted — the courier renders
+    // from the rider flipbook. This spriteBase remains only because the field is
+    // structurally required; no preload/load path builds an enemy_civilian path
+    // anymore (weight 0 ⇒ windowPoolKinds/enemyAssetPathsFor never emit it).
     spriteBase: "enemy_civilian",
     variants: 1,
     tint: "#d8ffe2",

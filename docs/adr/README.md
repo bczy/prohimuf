@@ -78,3 +78,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0026](./0026-mobile-pinch-zoom-out.md)                    | Mobile pinch-to-zoom-out (two-finger spread controls the framing)                         | Proposed |
 | [0027](./0027-audio-in-loading-gate.md)                    | Audio (BGM + SFX) warmed in the level loading gate                                        | Accepted |
 | [0028](./0028-window-alignment-harness.md)                 | Rendered-scene window-alignment harness for belliard (detect real windows, gate to 0)     | Accepted |
+| [0029](./0029-retire-enemy-civilian-sprite.md)             | Retire the legacy `enemy_civilian.png` courier sprite (tutorial + fallback swept)         | Accepted |

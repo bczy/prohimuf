@@ -13,6 +13,14 @@
  * that decodes pixels via @napi-rs/canvas (lazy import, so importing this module
  * never throws).
  *
+ * ── NOTE (ADR-0029): calibration target retired ──────────────────────────────
+ * This gate's one calibrated CI target — `enemy_civilian.png`, the courier's legacy
+ * single-frame sprite — was RETIRED (the courier now renders from the committed rider
+ * flipbook, and enemy_civilian.png was deleted). The gate step in gen-sprites.yml was
+ * removed; this script is kept as generic, reusable integrity-check infrastructure.
+ * The calibration table below is historical (the pre/post numbers were measured on the
+ * deleted sprite). Re-wire the gate only after calibrating it against a new target.
+ *
  * ── What class of bug it catches ─────────────────────────────────────────────
  * The delivery courier (`enemy_civilian.png`) shipped with an AI-generation anatomy
  * defect: FLUX never drew the pelvis (rendered it paper-white), the enclosed-island

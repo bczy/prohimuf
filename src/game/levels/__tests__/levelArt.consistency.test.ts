@@ -101,10 +101,17 @@ function keysFor(kind: EnemyKind, shooting: boolean): string[] {
   return keys;
 }
 
+// Enemy kinds whose sprite art was retired (ADR-0029): they stay in ARCHETYPES
+// for gameplay (weight 0, shoot-penalty reused by the street courier) but no
+// longer ship an enemy_*.png and the renderer never requests one — the courier
+// draws from the rider flipbook. Excluded from the expected manifest key set, so
+// their absence from levelArt.json is correct and a re-added key would be flagged.
+const ART_RETIRED_KINDS = new Set<EnemyKind>(["civilian"]);
+
 // Every legal base filename the renderer can request: idle for every variant,
 // plus shooting for every variant of archetypes that shoot.
 function allExpectedKeys(): string[] {
-  const kinds = Object.keys(ARCHETYPES) as EnemyKind[];
+  const kinds = (Object.keys(ARCHETYPES) as EnemyKind[]).filter((k) => !ART_RETIRED_KINDS.has(k));
   return kinds.flatMap((kind) => {
     const keys = keysFor(kind, false);
     if (ARCHETYPES[kind].shoots) keys.push(...keysFor(kind, true));
@@ -178,9 +185,10 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
   });
 
   it("permits single-frame flipbooks for non-shooting idle sprites (no hardcoded 2)", () => {
-    // Scope guard: civilian/bonus are static poses; a 1-frame flipbook is valid
-    // and completeness must NOT demand a second frame for them.
-    for (const kind of ["civilian", "bonus"] as EnemyKind[]) {
+    // Scope guard: bonus is a static pose; a 1-frame flipbook is valid and
+    // completeness must NOT demand a second frame for it. (civilian's sprite was
+    // retired — ADR-0029 — so it no longer appears in the manifest.)
+    for (const kind of ["bonus"] as EnemyKind[]) {
       const key = root(kind, false); // variant 1, idle
       const entry = types[key];
       expect(entry, `missing idle sprite for ${kind}`).toBeDefined();
