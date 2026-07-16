@@ -64,6 +64,9 @@ export interface LevelArtParallax {
   readonly street: number;
 }
 
+/** Code-drawn foreground ironwork style, matched to each level's architecture. */
+export type IronworkStyle = "haussmann" | "plain" | "hlm";
+
 /** A single hand-placed window, normalized to the facade image (centre + size, y-down). */
 export interface WindowZone {
   readonly x: number;
@@ -84,6 +87,8 @@ export interface LevelArt {
   readonly name: string;
   readonly label: string;
   readonly parallax: LevelArtParallax;
+  /** Which code-drawn foreground ironwork to render; defaults to "haussmann". */
+  readonly ironwork?: IronworkStyle;
   readonly prompts: Record<LayerName, string>;
   /** Per-level override of the enemy window grid; falls back to WINDOW_GRID. */
   readonly windowGrid?: WindowGrid;
@@ -127,6 +132,11 @@ export function getLevelArt(id: string | undefined): LevelArt {
 /** The enemy window grid for a level (per-level override or the default). */
 export function getWindowGrid(id: string | undefined): WindowGrid {
   return getLevelArt(id).windowGrid ?? WINDOW_GRID;
+}
+
+/** The code-drawn foreground ironwork style for a level (defaults to "haussmann"). */
+export function getIronworkStyle(id: string | undefined): IronworkStyle {
+  return getLevelArt(id).ironwork ?? "haussmann";
 }
 
 /**
