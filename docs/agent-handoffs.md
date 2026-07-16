@@ -3176,3 +3176,24 @@ coarse` only, justified in a comment).
   scroll until the bound (pre-existing, arguably intended); two CameraPan authorities
   desktop/mobile (future-facing refactor); driven-reentry velocity snap (designer playtest item,
   with EDGE_SCROLL_MAX_SPEED tuning). (panel ×4 → Winston triage)
+
+- bar-types-v2 / CODE-REVIEW PANEL (PR #64, mandatory merge gate): 4 parallel reviewers —
+  `code-review` high, `bmad-code-review`, `bmad-review-edge-case-hunter`, `security-review`.
+  Verdicts: PASS ×1 (security, zero findings) + findings ×3; 3 MAJEUR candidates
+  adversarially verified against real windowZones.generated.json data + real DPR-1 headless
+  captures. CONFIRMED & FIXED — (1) 2560 overlay MINIFIED on DPR-1 desktops under
+  NearestFilter/no-mipmaps → uneven bar widths (mipmapped LinearMipmapLinear minFilter,
+  Nearest mag kept); (2) CanvasTexture never disposed, ×4 cost at 2× (~63 MB/rebuild) →
+  dispose-on-change/unmount effect; (3) vitry hlm slab bit up to 28% into the window art of
+  the row below (tight generated rows 0.071 < h 0.079) → per-zone clamp to the next
+  overlapping window top, floored at the sprite's feet (1.13·hh) — REFUTED sub-claim: the
+  lower cop's head/rail are NOT covered (anchor math + skeptic agent both concur). Also
+  fixed from MINEURs: stalingrad grille shortfall (feet at 1.124·hh floated below the
+  1.08·hh grille → 1.14·hh), absolute-px second lisse now proportional, drip-height clamp,
+  degenerate-zone skip, shadow offsets scaled to the draw resolution (belliard relief
+  matches the 1× original). REJECTED with reason: haussmann fallback for unknown style (by
+  design, documented default), plain/haussmann bar-loop dedup (premature for 2 variants),
+  glow sliver at max mobile pinch-out (arbitrated against slab overlap; known limit).
+  Root-cause follow-up logged: vitry generated rows are tighter than the window height —
+  gen-window-zones lane. Verified: tsc / vitest 354(29) / lint / prettier green + v3
+  headless captures of all 3 levels. (panel ×4 + skeptic → orchestrator-as-Winston triage)

@@ -45,23 +45,24 @@ interface ZoneGeometry {
   readonly railRight: number;
 }
 
-/** Rail horizontal en fonte avec ombre + reflet. */
+/** Rail horizontal en fonte avec ombre + reflet. `so` = décalage d'ombre (px). */
 function drawRail(
   g: CanvasRenderingContext2D,
   railLeft: number,
   railW: number,
   y: number,
   h: number,
+  so: number,
 ): void {
   g.fillStyle = SHADOW;
-  g.fillRect(railLeft, y + 1, railW, h);
+  g.fillRect(railLeft, y + so, railW, h);
   g.fillStyle = IRON;
   g.fillRect(railLeft, y, railW, h);
   g.fillStyle = HILIGHT;
   g.fillRect(railLeft, y, railW, Math.max(1, h * 0.35));
 }
 
-/** Arc/volute en fonte avec ombre + reflet → relief. */
+/** Arc/volute en fonte avec ombre + reflet → relief. `so` = décalage d'ombre (px). */
 function ironCurve(
   g: CanvasRenderingContext2D,
   cx: number,
@@ -70,12 +71,13 @@ function ironCurve(
   a0: number,
   a1: number,
   width: number,
+  so: number,
 ): void {
   g.lineCap = "round";
   g.strokeStyle = SHADOW;
   g.lineWidth = width + 1.5;
   g.beginPath();
-  g.arc(cx + 1, cy + 1, r, a0, a1);
+  g.arc(cx + so, cy + so, r, a0, a1);
   g.stroke();
   g.strokeStyle = IRON;
   g.lineWidth = width;
@@ -85,7 +87,7 @@ function ironCurve(
   g.strokeStyle = HILIGHT;
   g.lineWidth = Math.max(1, width * 0.45);
   g.beginPath();
-  g.arc(cx, cy - 1, r, a0, a1);
+  g.arc(cx, cy - so, r, a0, a1);
   g.stroke();
 }
 
@@ -100,13 +102,14 @@ function drawHaussmannZone(
   lw: number,
   texW: number,
   idx: number,
+  so: number,
 ): void {
   const { railLeft, railW, railTop, railBottom, midY, railRight } = geo;
 
   // Rails horizontaux (haut / médian / bas) avec ombre + reflet
-  drawRail(g, railLeft, railW, railTop, lw * 1.5); // main courante
-  drawRail(g, railLeft, railW, midY - lw * 0.4, lw * 0.9); // rail médian
-  drawRail(g, railLeft, railW, railBottom - lw, lw); // rail bas
+  drawRail(g, railLeft, railW, railTop, lw * 1.5, so); // main courante
+  drawRail(g, railLeft, railW, midY - lw * 0.4, lw * 0.9, so); // rail médian
+  drawRail(g, railLeft, railW, railBottom - lw, lw, so); // rail bas
 
   // Barreaux fins à pointe de lance
   const balusters = Math.max(6, Math.round(railW / (texW * 0.018)));
@@ -129,15 +132,24 @@ function drawHaussmannZone(
     const sy = (midY + railBottom) / 2;
     if (motif === 0) {
       // Volutes en cœur (deux C affrontés)
-      ironCurve(g, bx, sy, scrollR, Math.PI * 0.5, Math.PI * 1.5, lw * 0.7);
-      ironCurve(g, bx + cw, sy, scrollR, -Math.PI * 0.5, Math.PI * 0.5, lw * 0.7);
+      ironCurve(g, bx, sy, scrollR, Math.PI * 0.5, Math.PI * 1.5, lw * 0.7, so);
+      ironCurve(g, bx + cw, sy, scrollR, -Math.PI * 0.5, Math.PI * 0.5, lw * 0.7, so);
     } else if (motif === 1) {
       // Cercles
-      ironCurve(g, bx + cw * 0.5, sy, scrollR, 0, Math.PI * 2, lw * 0.6);
+      ironCurve(g, bx + cw * 0.5, sy, scrollR, 0, Math.PI * 2, lw * 0.6, so);
     } else {
       // S-scrolls (rinceaux)
-      ironCurve(g, bx, sy - scrollR * 0.5, scrollR, Math.PI * 0.4, Math.PI * 1.4, lw * 0.7);
-      ironCurve(g, bx + cw, sy + scrollR * 0.5, scrollR, -Math.PI * 0.6, Math.PI * 0.4, lw * 0.7);
+      ironCurve(g, bx, sy - scrollR * 0.5, scrollR, Math.PI * 0.4, Math.PI * 1.4, lw * 0.7, so);
+      ironCurve(
+        g,
+        bx + cw,
+        sy + scrollR * 0.5,
+        scrollR,
+        -Math.PI * 0.6,
+        Math.PI * 0.4,
+        lw * 0.7,
+        so,
+      );
     }
   }
 }
@@ -164,20 +176,27 @@ function zoneHash(idx: number, salt: number): number {
  * fenêtre (peu de débord) pour rester à la hauteur des ferronneries peintes
  * dans l'art de la façade.
  */
-function drawPlainZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, texW: number): void {
+function drawPlainZone(
+  g: CanvasRenderingContext2D,
+  box: ZoneBox,
+  lw: number,
+  texW: number,
+  so: number,
+): void {
   const { left, top, ww, hh, cy } = box;
   const railLeft = left - ww * 0.02;
   const railW = ww * 1.04;
   const railTop = cy + hh * 0.18;
-  const railBottom = top + hh + hh * 0.08;
+  // Descend jusque sous les pieds du sprite (ancrés à ~1.124·hh, cf. EnemySprite).
+  const railBottom = top + hh * 1.14;
 
   // Métal légèrement moins opaque que la fonte Haussmann : la grille se fond
   // dans la nuit comme les ferronneries peintes de la façade.
   g.globalAlpha = 0.85;
 
-  drawRail(g, railLeft, railW, railTop, lw * 0.7); // main courante
-  drawRail(g, railLeft, railW, railTop + lw * 1.9, lw * 0.35); // seconde lisse
-  drawRail(g, railLeft, railW, railBottom - lw * 0.55, lw * 0.55); // lisse basse
+  drawRail(g, railLeft, railW, railTop, lw * 0.7, so); // main courante
+  drawRail(g, railLeft, railW, railTop + (railBottom - railTop) * 0.2, lw * 0.35, so); // seconde lisse
+  drawRail(g, railLeft, railW, railBottom - lw * 0.55, lw * 0.55, so); // lisse basse
 
   // Barreaux fins et serrés (≈ moitié du pas Haussmann, quart de l'épaisseur)
   const bars = Math.max(10, Math.round(railW / (texW * 0.0085)));
@@ -185,7 +204,7 @@ function drawPlainZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, te
   for (let i = 0; i <= bars; i++) {
     const bx = railLeft + railW * (i / bars);
     g.fillStyle = SHADOW;
-    g.fillRect(bx - bw / 2 + 1, railTop + 1, bw, railBottom - railTop);
+    g.fillRect(bx - bw / 2 + so, railTop + so, bw, railBottom - railTop);
     g.fillStyle = IRON;
     g.fillRect(bx - bw / 2, railTop, bw, railBottom - railTop);
     g.fillStyle = HILIGHT;
@@ -202,13 +221,22 @@ function drawPlainZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, te
  * coulures de pluie — surmontée d'une main courante fine sur montants. La
  * moitié haute reste ouverte, donc le flic reste visible.
  */
-function drawHlmZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, idx: number): void {
+function drawHlmZone(
+  g: CanvasRenderingContext2D,
+  box: ZoneBox,
+  lw: number,
+  idx: number,
+  so: number,
+  nextWinTop: number,
+): void {
   const { left, top, ww, hh } = box;
   const railLeft = left - ww * 0.03;
   const railW = ww * 1.06;
   const railTop = top + hh * 0.56; // la rambarde respire au-dessus de la dalle
   const slabTop = top + hh * 0.78;
-  const slabBottom = top + hh * 1.18; // couvre les pieds du flic (et son halo)
+  // Couvre les pieds du flic (ancrés à ~1.124·hh) mais s'arrête à la fenêtre de
+  // la rangée du dessous quand les rangées générées sont serrées (Vitry).
+  const slabBottom = Math.min(top + hh * 1.18, Math.max(nextWinTop, top + hh * 1.13));
   const slabH = slabBottom - slabTop;
 
   // Ombre décalée sous la dalle
@@ -236,12 +264,12 @@ function drawHlmZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, idx:
   const drips = 3 + Math.floor(zoneHash(idx, 7) * 3);
   for (let d = 0; d < drips; d++) {
     const dx = railLeft + railW * (0.08 + 0.84 * zoneHash(idx, 13 + d));
-    const dh = slabH * (0.3 + 0.55 * zoneHash(idx, 29 + d));
+    const dh = Math.min(slabH * (0.3 + 0.55 * zoneHash(idx, 29 + d)), slabH - capH);
     g.fillRect(dx, slabTop + capH, Math.max(1, lw * 0.3), dh);
   }
 
   // Main courante tubulaire fine au-dessus de la dalle
-  drawRail(g, railLeft, railW, railTop, lw * 0.8);
+  drawRail(g, railLeft, railW, railTop, lw * 0.8, so);
 
   // Fins montants verticaux entre la main courante et la dalle
   const posts = 5;
@@ -269,8 +297,12 @@ export function drawForegroundIronwork(
 ): void {
   g.clearRect(0, 0, texW, texH);
   const lw = Math.max(2, texW * 0.0045);
+  // Décalage d'ombre : 1 px à la résolution native de l'art (1280), suit la
+  // résolution de dessin pour garder le même relief qu'au 1×.
+  const so = Math.max(1, Math.round(texW / 1280));
 
   zones.forEach((z, idx) => {
+    if (z.w <= 0 || z.h <= 0) return; // zone dégénérée : rien à dessiner
     const ww = z.w * texW;
     const hh = z.h * texH;
     const left = z.x * texW - ww / 2;
@@ -279,9 +311,19 @@ export function drawForegroundIronwork(
     const box: ZoneBox = { left, top, ww, hh, cy };
 
     if (style === "plain") {
-      drawPlainZone(g, box, lw, texW);
+      drawPlainZone(g, box, lw, texW, so);
     } else if (style === "hlm") {
-      drawHlmZone(g, box, lw, idx);
+      // Fenêtre la plus proche EN DESSOUS qui chevauche horizontalement — la
+      // dalle s'y arrête pour ne pas mordre sur l'art de l'étage inférieur.
+      let nextWinTop = Number.POSITIVE_INFINITY;
+      for (const o of zones) {
+        if (o === z || o.w <= 0 || o.h <= 0) continue;
+        const oTop = (o.y - o.h / 2) * texH;
+        if (oTop <= cy) continue;
+        if (Math.abs(o.x - z.x) * texW >= (ww + o.w * texW) / 2) continue;
+        nextWinTop = Math.min(nextWinTop, oTop);
+      }
+      drawHlmZone(g, box, lw, idx, so, nextWinTop);
     } else {
       // Gabarit Haussmann historique (inchangé) : garde-corps en travers du
       // bas de la fenêtre (devant le bas du flic), avec débord latéral.
@@ -292,7 +334,7 @@ export function drawForegroundIronwork(
       const midY = (railTop + railBottom) / 2;
       const railRight = railLeft + railW;
       const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };
-      drawHaussmannZone(g, geo, lw, texW, idx);
+      drawHaussmannZone(g, geo, lw, texW, idx, so);
     }
   });
 }
