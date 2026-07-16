@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
+import { STOCK, INK, MARK } from "@render/ui/print";
 
 export interface HudTargetIndicator {
   up: boolean;
@@ -29,25 +30,29 @@ export interface HudData {
   delivery?: HudDelivery | undefined;
 }
 
-// Neon accent colors (guidelines: jaune fluo, rose fuchsia, vert acide, orange brûlé)
-const NEON_GREEN = "#39ff14";
-const NEON_YELLOW = "#ffe600";
-const NEON_PINK = "#ff2d9b";
-const NEON_ORANGE = "#ff6600";
+/**
+ * In-game HUD — the print system carried into gameplay (ADR-0021 / art-direction §2bis).
+ * A solid paper ticker strip in ink, no neon and ZERO glow (no text-shadow, box-shadow
+ * or drop-shadow). Urgency is spoken with the semantic marker inks (MARK.*), never light;
+ * transient call-outs are stamped paper chips so they read over any scene without a halo.
+ */
 
-// Integrity gauge colour shifts warm as the vehicle takes damage.
+const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
+const MONO_FONT = "'Courier New', Courier, monospace";
+
+// Integrity gauge: print marker inks shift warm as the vehicle takes damage (no glow).
 function integrityColor(fill: number): string {
-  if (fill > 0.6) return NEON_GREEN;
-  if (fill > 0.3) return NEON_ORANGE;
-  return NEON_PINK;
+  if (fill > 0.6) return MARK.green;
+  if (fill > 0.3) return MARK.orange;
+  return MARK.pink;
 }
 
 function phaseMessage(phase: Phase): { text: string; color: string } | null {
   switch (phase) {
     case "GAME_OVER":
-      return { text: "— INTERPELLÉ —", color: NEON_PINK };
+      return { text: "— INTERPELLÉ —", color: MARK.pink };
     case "LEVEL_COMPLETE":
-      return { text: "— LA RAVE A EU LIEU —", color: NEON_GREEN };
+      return { text: "— LA RAVE A EU LIEU —", color: MARK.green };
     default:
       return null;
   }
@@ -64,9 +69,9 @@ const hudStyle: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "flex-start",
   padding: "6px 12px",
-  background: "rgba(0,0,0,0.85)",
-  borderBottom: `2px solid ${NEON_YELLOW}`,
-  fontFamily: "'Impact', 'Arial Narrow', sans-serif",
+  background: STOCK.shell,
+  borderBottom: `2px solid ${INK.black}`,
+  fontFamily: DISPLAY_FONT,
   letterSpacing: "0.08em",
 };
 
@@ -78,10 +83,11 @@ const itemStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontSize: "9px",
-  color: "#888",
+  color: INK.black,
+  opacity: 0.7,
   letterSpacing: "0.2em",
   textTransform: "uppercase",
-  fontFamily: "monospace",
+  fontFamily: MONO_FONT,
 };
 
 const valueStyle = (color: string): React.CSSProperties => ({
@@ -89,6 +95,14 @@ const valueStyle = (color: string): React.CSSProperties => ({
   color,
   lineHeight: 1,
 });
+
+// A stamped paper chip for transient call-outs — reads over any scene, zero glow.
+const chipStyle: React.CSSProperties = {
+  background: STOCK.shell,
+  border: `2px solid ${INK.black}`,
+  padding: "6px 12px",
+  fontFamily: DISPLAY_FONT,
+};
 
 const targetRingStyle: React.CSSProperties = {
   position: "fixed",
@@ -109,14 +123,12 @@ const arrowCoreStyle: React.CSSProperties = {
   position: "relative",
   width: 34,
   height: 34,
-  opacity: 0.3,
-  filter: "none",
-  transition: "opacity 120ms ease, filter 120ms ease",
+  opacity: 0.28,
+  transition: "opacity 120ms ease, transform 120ms ease",
 };
 
 const activeArrowStyle: React.CSSProperties = {
   opacity: 1,
-  filter: `drop-shadow(0 0 6px ${NEON_YELLOW}) drop-shadow(0 0 12px ${NEON_ORANGE})`,
 };
 
 function ArrowIndicator({
@@ -137,7 +149,7 @@ function ArrowIndicator({
     <span
       style={{
         ...arrowCoreStyle,
-        transform: rotation,
+        transform: `${rotation}${active ? " scale(1.12)" : ""}`,
         ...(active ? activeArrowStyle : null),
       }}
     >
@@ -149,7 +161,7 @@ function ArrowIndicator({
           width: 19,
           height: 8,
           transform: "translateY(-50%)",
-          background: NEON_YELLOW,
+          background: INK.full,
           borderRadius: 999,
         }}
       />
@@ -163,7 +175,7 @@ function ArrowIndicator({
           transform: "translateY(-50%)",
           borderTop: "10px solid transparent",
           borderBottom: "10px solid transparent",
-          borderLeft: `16px solid ${NEON_YELLOW}`,
+          borderLeft: `16px solid ${INK.full}`,
         }}
       />
     </span>
@@ -173,8 +185,8 @@ function ArrowIndicator({
 export function HUD({ data }: { data: HudData }): JSX.Element {
   const msg = phaseMessage(data.phase);
   const timeColor =
-    data.timeRemaining < 20 ? NEON_PINK : data.timeRemaining < 40 ? NEON_ORANGE : NEON_GREEN;
-  const livesColor = data.lives <= 1 ? NEON_PINK : NEON_YELLOW;
+    data.timeRemaining < 20 ? MARK.pink : data.timeRemaining < 40 ? MARK.orange : INK.full;
+  const livesColor = data.lives <= 1 ? MARK.pink : INK.full;
   const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
   const delivery = data.delivery;
   const deliveryPhase = delivery?.phase;
@@ -189,13 +201,13 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <div style={itemStyle}>
           <span style={labelStyle}>score</span>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={valueStyle(NEON_YELLOW)}>{String(data.score).padStart(4, "0")}</span>
+            <span style={valueStyle(INK.full)}>{String(data.score).padStart(4, "0")}</span>
             {data.isHighScore === true && (
               <span
                 style={{
                   fontSize: "9px",
-                  color: NEON_GREEN,
-                  fontFamily: "monospace",
+                  color: MARK.green,
+                  fontFamily: MONO_FONT,
                   letterSpacing: "0.1em",
                 }}
               >
@@ -210,8 +222,8 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
             <span
               style={{
                 fontSize: "12px",
-                color: "#aaa",
-                fontFamily: "monospace",
+                color: INK.black,
+                fontFamily: MONO_FONT,
                 letterSpacing: "0.05em",
               }}
             >
@@ -221,7 +233,7 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         )}
         <div style={itemStyle}>
           <span style={labelStyle}>vague</span>
-          <span style={valueStyle(NEON_GREEN)}>{data.wave}</span>
+          <span style={valueStyle(INK.full)}>{data.wave}</span>
         </div>
         <div style={itemStyle}>
           <span style={labelStyle}>temps</span>
@@ -250,11 +262,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         >
           <span
             style={{
-              fontFamily: "'Impact', 'Arial Narrow', sans-serif",
-              fontSize: "18px",
+              ...chipStyle,
+              fontSize: "16px",
               letterSpacing: "0.1em",
-              color: NEON_YELLOW,
-              textShadow: `0 0 8px ${NEON_YELLOW}, 0 0 16px ${NEON_ORANGE}`,
+              color: INK.full,
             }}
           >
             LIVRAISON — PROTÉGEZ LE VÉHICULE !
@@ -263,9 +274,8 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
             style={{
               width: 220,
               height: 12,
-              border: `2px solid ${NEON_YELLOW}`,
-              background: "rgba(0,0,0,0.7)",
-              boxShadow: `0 0 8px ${NEON_YELLOW}`,
+              border: `2px solid ${INK.black}`,
+              background: STOCK.shell,
             }}
           >
             <div
@@ -273,7 +283,6 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
                 width: `${String(deliveryFill * 100)}%`,
                 height: "100%",
                 background: integrityColor(deliveryFill),
-                boxShadow: `0 0 8px ${integrityColor(deliveryFill)}`,
                 transition: "width 100ms linear",
               }}
             />
@@ -290,11 +299,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
             transform: "translateX(-50%)",
             pointerEvents: "none",
             userSelect: "none",
-            fontFamily: "'Impact', 'Arial Narrow', sans-serif",
-            fontSize: "22px",
+            ...chipStyle,
+            fontSize: "20px",
             letterSpacing: "0.1em",
-            color: deliveryPhase === "SUCCESS" ? NEON_GREEN : NEON_PINK,
-            textShadow: `0 0 12px ${deliveryPhase === "SUCCESS" ? NEON_GREEN : NEON_PINK}`,
+            color: deliveryPhase === "SUCCESS" ? MARK.green : MARK.pink,
           }}
         >
           {deliveryPhase === "SUCCESS" ? "LIVRAISON SÉCURISÉE" : "LIVRAISON PERDUE"}
@@ -357,11 +365,12 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         >
           <div
             style={{
-              fontFamily: "'Impact', sans-serif",
-              fontSize: "72px",
+              ...chipStyle,
+              padding: "14px 28px",
+              border: `3px solid ${INK.black}`,
+              fontSize: "56px",
               color: msg.color,
               letterSpacing: "0.1em",
-              textShadow: `0 0 20px ${msg.color}, 0 0 40px ${msg.color}`,
               transform: "rotate(-3deg)",
             }}
           >

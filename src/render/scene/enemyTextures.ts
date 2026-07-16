@@ -1,6 +1,7 @@
 import { TextureLoader } from "three";
-import type { Texture } from "three";
+import type { Texture, CanvasTexture } from "three";
 import { applyPixelFilter } from "./pixelArt";
+import { buildNeonSilhouette, computeHaloMarginPx } from "./vehicleNeon";
 import { enemyBaseFileKey, enemyAssetPath } from "@game/systems/assetManifest";
 import type { EnemyKind } from "@game/types/enemy";
 import levelArt from "@game/levels/levelArt.json";
@@ -159,6 +160,49 @@ export function resolveEnemyTexture(
   if (frame1 !== undefined) return { texture: frame1, frame: 1 };
   const fb = cache.get(fallback);
   return fb !== undefined ? { texture: fb, frame: null } : null;
+}
+
+// --- Neon rim silhouettes (ADR-0025) --------------------------------------
+// A white-flooded, gradient-alpha silhouette of an enemy frame, baked once per
+// unique loaded Texture and recoloured live by the rim shader. Keyed by the
+// Texture object (not the URL) so the rim always traces the figure ACTUALLY
+// shown — including the fallback sprite — and is dropped automatically when the
+// texture is GC'd. Baked lazily on first request: EnemySprite only asks for
+// hostiles, so civilian/bonus frames never bake.
+export interface EnemyRim {
+  readonly texture: CanvasTexture;
+  readonly srcW: number;
+  readonly srcH: number;
+  readonly marginPx: number;
+}
+const silhouettes = new WeakMap<Texture, EnemyRim>();
+
+// Enemy rims are drawn thicker than the vehicle rim so hostiles read clearly
+// against the busy facade. This doubles the shared vehicle margin
+// (NEON_RIM_MARGIN_RATIO) for enemies only — the vehicle bake is untouched.
+const ENEMY_RIM_THICKNESS_SCALE = 2;
+
+// The baked white silhouette for a loaded enemy texture, or null when the source
+// image isn't a decoded bitmap yet (never triggers a load — resolveEnemyTexture
+// drives the loader). Reuses the vehicle neon bake (white RGB → gradient alpha
+// via haloFalloff), so the rim reads as a dégradé, never an aplat (bible §2.1).
+export function getSilhouetteFor(texture: Texture): EnemyRim | null {
+  const cached = silhouettes.get(texture);
+  if (cached !== undefined) return cached;
+  const source: unknown = texture.image;
+  if (!(source instanceof HTMLImageElement)) return null;
+  const srcW = source.naturalWidth;
+  const srcH = source.naturalHeight;
+  if (srcW === 0 || srcH === 0) return null;
+  const marginPx = computeHaloMarginPx(srcW, srcH) * ENEMY_RIM_THICKNESS_SCALE;
+  const rim: EnemyRim = {
+    texture: buildNeonSilhouette(source, "#ffffff", marginPx),
+    srcW,
+    srcH,
+    marginPx,
+  };
+  silhouettes.set(texture, rim);
+  return rim;
 }
 
 // Texture-only variant of resolveEnemyTexture (kept for callers that don't

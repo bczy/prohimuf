@@ -91,12 +91,21 @@ function sourceSize(image: SilhouetteSource): { width: number; height: number } 
  * former binary-alpha sticker (ADR-0011, story-halo-alpha-composite-gate). Run
  * through the same nearest / sRGB pixel filter as {@link makePixelCanvasTexture}
  * so it keys crisply under `AdditiveBlending`.
+ *
+ * `marginPx` overrides the halo reach / canvas padding in source pixels; when
+ * omitted it defaults to {@link computeHaloMarginPx} (the vehicle thickness).
+ * Callers that pass it MUST scale their rim mesh by the same value so the baked
+ * gradient band still maps to an equal world margin.
  */
-export function buildNeonSilhouette(image: SilhouetteSource, hex: string): CanvasTexture {
+export function buildNeonSilhouette(
+  image: SilhouetteSource,
+  hex: string,
+  marginPx?: number,
+): CanvasTexture {
   const { width, height } = sourceSize(image);
-  const marginPx = computeHaloMarginPx(width, height);
-  const paddedW = width + 2 * marginPx;
-  const paddedH = height + 2 * marginPx;
+  const margin = marginPx ?? computeHaloMarginPx(width, height);
+  const paddedW = width + 2 * margin;
+  const paddedH = height + 2 * margin;
   const canvas = document.createElement("canvas");
   canvas.width = paddedW;
   canvas.height = paddedH;
@@ -107,7 +116,7 @@ export function buildNeonSilhouette(image: SilhouetteSource, hex: string): Canva
 
   // Draw the sprite centred in the padded canvas, un-smoothed (pixel-art).
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image, marginPx, marginPx, width, height);
+  ctx.drawImage(image, margin, margin, width, height);
 
   const rgb = hexToRgb(hex);
   const img = ctx.getImageData(0, 0, paddedW, paddedH);
@@ -120,7 +129,7 @@ export function buildNeonSilhouette(image: SilhouetteSource, hex: string): Canva
   for (let p = 0; p < pixels; p++) {
     srcAlpha[p] = data[p * 4 + 3] ?? 0;
   }
-  const halo = applyHaloFalloff(srcAlpha, paddedW, paddedH, marginPx);
+  const halo = applyHaloFalloff(srcAlpha, paddedW, paddedH, margin);
   for (let p = 0; p < pixels; p++) {
     const i = p * 4;
     data[i] = rgb.r;

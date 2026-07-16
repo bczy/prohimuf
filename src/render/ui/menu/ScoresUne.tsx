@@ -47,7 +47,7 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
 
   return (
     <PaperSheet
-      stock={STOCK.newsprint}
+      stock={STOCK.shell}
       fullBleed={false}
       style={{ padding: "18px 20px", fontFamily: BODY_FONT, color: INK.black }}
     >

@@ -221,6 +221,20 @@ export function facadeBackdropPath(): string {
   return "assets/facade_bg.png";
 }
 
+/** Base-relative gameplay audio warmed by the level loader. ONLY committed files:
+ *  the 3 BGM tiers + the shoot SFX. audioSystem.ts also references hit/death/win
+ *  SFX, but those .mp3 are not committed (would 404) — add them here once they land.
+ *  A local literal, NOT imported from audioSystem.ts (which pulls Howler +
+ *  import.meta and would poison this pure module). */
+export function audioAssetPaths(): readonly string[] {
+  return [
+    "assets/audio/bgm_loop.mp3",
+    "assets/audio/bgm_tension.mp3",
+    "assets/audio/bgm_danger.mp3",
+    "assets/audio/shoot.wav",
+  ];
+}
+
 /** Base-relative menu / start / end / narrative-screen backdrop. */
 export function menuBackdropPath(): string {
   return "assets/levels/belliard/facade.png";
@@ -270,6 +284,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));
   paths.push(bulletAssetPath(), facadeBackdropPath(), menuBackdropPath());
+  paths.push(...audioAssetPaths());
 
   const pre = PRE_LEVEL_NARRATIVE[level.id];
   if (pre !== undefined) paths.push(...narrativeImagePaths(pre));

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, AdditiveBlending } from "three";
@@ -6,8 +6,16 @@ import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import { resolveEnemyTexture, frameCountFor, enemyAnimFps, muzzleFor } from "./enemyTextures";
+import {
+  resolveEnemyTexture,
+  frameCountFor,
+  enemyAnimFps,
+  muzzleFor,
+  getSilhouetteFor,
+} from "./enemyTextures";
 import { flipbookFrame } from "./flipbook";
+import { createEnemyRimMaterial, rimZoomCompensation } from "./enemyRimMaterial";
+import { heatColor, heatProgress } from "./neonHeatColor";
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
 let glowTexture: Texture | null = null;
@@ -35,9 +43,17 @@ interface Props {
   screenPosition: Vec2;
   /** World-space window size; the cop is sized to stand in it. */
   size?: Vec2 | undefined;
+  /** Base (max) orthographic zoom; keeps the neon rim a fixed on-screen width. */
+  baseZoom: number;
 }
 
-export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props): JSX.Element {
+export function EnemySprite({
+  stateRef,
+  slotIndex,
+  screenPosition,
+  size,
+  baseZoom,
+}: Props): JSX.Element {
   // Square base plane sized to the window height; per-kind width is applied via
   // scale.x each frame (the courier-on-a-bike is wider than the portrait cops),
   // since the occupant's kind changes every wave. Fallback for grid-only levels.
@@ -48,6 +64,17 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
   const flashRef = useRef<Mesh>(null);
+  const rimRef = useRef<Mesh>(null);
+  // One rim shader per sprite instance; uniforms are mutated in useFrame.
+  const rimMat = useMemo(() => createEnemyRimMaterial(), []);
+  // R3F does not auto-dispose a material passed to <primitive object={…}>, so
+  // release its GL program when the sprite unmounts (e.g. a game restart).
+  useEffect(
+    () => () => {
+      rimMat.material.dispose();
+    },
+    [rimMat],
+  );
   // Track APPEARING phase start for unfold animation
   const unfoldTimerRef = useRef(0);
   // Flipbook clock, reset on every state change so each state animates from
@@ -55,7 +82,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
   const animClockRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
 
@@ -63,6 +90,7 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
     if (enemy === undefined || enemy.state === "HIDDEN" || enemy.state === "DEAD") {
       mesh.visible = false;
       if (flashRef.current !== null) flashRef.current.visible = false;
+      if (rimRef.current !== null) rimRef.current.visible = false;
       prevStateRef.current = enemy?.state ?? "HIDDEN";
       return;
     }
@@ -120,6 +148,42 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
     // Per-kind neon tint (multiplied over the sprite); white flash on hit.
     mat.color.set(enemy.state === "HIT" ? "#ffffff" : archetype.tint);
 
+    // Neon heat rim (ADR-0025): a shader-recoloured silhouette drawn behind the
+    // body. Hostiles only — the green→orange→red ramp warns the player their
+    // window to shoot is closing; a red civilian would wrongly read "tire-moi".
+    // Same renderOrder as the body but nudged behind it in z, so the opaque body
+    // covers the interior glow and only the scaled-out margin shows as a rim.
+    const rim = rimRef.current;
+    if (rim !== null) {
+      const neon =
+        archetype.shoots && resolved !== null ? getSilhouetteFor(resolved.texture) : null;
+      rim.visible = neon !== null;
+      if (neon !== null) {
+        rimMat.uniforms.uMap.value = neon.texture;
+        const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
+        const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
+        // Fixed on-screen rim width (ADR-0026): grow the world margin as the
+        // camera zooms out so the projected band stays constant instead of
+        // fading to a hairline. 1 at base/desktop zoom → no regression there.
+        const zoomComp = rimZoomCompensation(baseZoom, state.camera.zoom);
+        // Mirror the body's per-frame scale (aspect + Paper-Mario unfold) so the
+        // rim unfolds with it, then expand by the (zoom-compensated) padded-texture
+        // ratio so the baked gradient band maps to a fixed on-screen margin.
+        rim.scale.set(
+          mesh.scale.x * (1 + padX * zoomComp),
+          mesh.scale.y * (1 + padY * zoomComp),
+          1,
+        );
+        const [r, g, b] = heatColor(
+          heatProgress(enemy.state, enemy.timer, archetype.visibleDuration),
+        );
+        const col = rimMat.uniforms.uColor.value;
+        col.r = r;
+        col.g = g;
+        col.b = b;
+      }
+    }
+
     // Muzzle flash at the gun while shooting; bright impact burst on hit.
     const flash = flashRef.current;
     if (flash !== null) {
@@ -169,6 +233,20 @@ export function EnemySprite({ stateRef, slotIndex, screenPosition, size }: Props
 
   return (
     <>
+      {/* Neon heat rim (ADR-0025): shares the enemy renderOrder (4) — one below
+          it (3) would collide with backdrop panel 3 (PANELS=4) — and is nudged
+          to z=-0.01 so the transparent z-sort draws it behind the body at z=0.
+          The body's opaque pixels cover the interior glow; only the scaled-out
+          margin shows. depthWrite off like every other transparent quad. */}
+      <mesh
+        ref={rimRef}
+        position={[screenPosition.x, bodyY, -0.01]}
+        visible={false}
+        renderOrder={4}
+      >
+        <planeGeometry args={[planeH, planeH]} />
+        <primitive object={rimMat.material} attach="material" />
+      </mesh>
       {/* renderOrder 4: above every backdrop panel (renderOrder 0..PANELS-1,
           drawn with depthWrite off) and below the foreground ironwork (5) and
           courier (6). depthWrite must stay OFF like every other transparent

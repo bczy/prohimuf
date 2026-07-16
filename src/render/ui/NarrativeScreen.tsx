@@ -132,10 +132,7 @@ export function NarrativeScreen({
         userSelect: "none",
       }}
     >
-      <PaperSheet
-        stock={STOCK.newsprint}
-        style={{ fontFamily: "'Courier New', Courier, monospace" }}
-      >
+      <PaperSheet stock={STOCK.shell} style={{ fontFamily: "'Courier New', Courier, monospace" }}>
         <div
           style={{
             position: "relative",
@@ -193,7 +190,7 @@ export function NarrativeScreen({
                 top: 30,
                 left: 16,
                 border: `2px solid ${INK.black}`,
-                background: STOCK.newsprint,
+                background: STOCK.shell,
                 color: INK.black,
                 padding: "6px 12px",
                 fontSize: "11px",
@@ -294,7 +291,7 @@ export function NarrativeScreen({
               margin: "0 0 0 0",
               padding: "24px 32px 48px",
               borderTop: `2px solid ${INK.black}`,
-              background: scene.backdrop !== undefined ? STOCK.newsprint : "transparent",
+              background: scene.backdrop !== undefined ? STOCK.shell : "transparent",
               minHeight: 160,
             }}
           >

@@ -58,6 +58,26 @@ with WebGL, which the local sandbox does not:
 Trigger it by pushing to the branch, or from the Actions tab via
 **Run workflow → regenerate = true** to roll fresh art variants.
 
+## Aligning cop windows to the art
+
+Enemy cops render in per-panel **window zones**
+(`src/game/levels/windowZones.generated.json`). Because the AI facades are not a
+clean grid, a fixed grid of zones makes cops overflow their windows or sit on bare
+wall. Two tools keep the zones honest:
+
+- `scripts/gen-window-zones.mjs` — snaps a level's grid onto each panel's warm
+  window light (all levels).
+- `scripts/align-windows.mjs` — **detect-and-correct harness for any level**
+  (`belliard`, `stalingrad`, `vitry`; ids as args, default all): detects the real
+  lit windows from each facade art — `belliard` keeps its equal-thirds floors,
+  every other level uses **run-based** floor detection over `windowGrid.top/bottom`
+  (robust to any floor count) — then drives the live production render
+  (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`) to place one non-overflowing cop per
+  window, looping until 0 defects, with proof overlays. It writes only the target
+  level's key of `windowZones.generated.json`. `--check` is a CI gate (measure
+  only, exit non-zero on any defect). `yarn align` / `yarn align:check` run all
+  levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
+
 ## Local dev
 
 `yarn dev` works without any art: `LevelBackdrop` falls back to flat colours

@@ -105,6 +105,8 @@ describe("tutorial stage invariants (ADR-0012)", () => {
       (TUTORIAL_NARRATIVE_MOBILE.lines[2]?.text ?? "") +
       (TUTORIAL_NARRATIVE_MOBILE.lines[3]?.text ?? "");
     expect(mobileControls).toMatch(/deux doigts/i);
+    // The mobile shoot panel also teaches the one-finger double-tap shoot input.
+    expect(mobileControls).toMatch(/double-tap/i);
     expect(mobileControls).not.toMatch(/clic|souris/i);
     expect(desktopControls).toMatch(/souris/i);
     expect(desktopControls).toMatch(/clic/i);

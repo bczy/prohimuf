@@ -40,7 +40,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
   const folio = String(pct).padStart(3, "0");
 
   return (
-    <PaperSheet stock={STOCK.newsprint} style={{ userSelect: "none" }}>
+    <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
       {/* The bar's width tracks real progress; smooth it, but honour reduced-motion
           (the rest of the print system forces its motion tokens to 0 there too). */}
       <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}`}</style>
@@ -53,7 +53,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
           left: 0,
           right: 0,
           background: INK.full,
-          color: STOCK.newsprint,
+          color: STOCK.shell,
           padding: "4px 12px",
           fontFamily: mono,
           fontSize: "10px",
@@ -110,7 +110,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
             width: "min(60vw, 420px)",
             height: "16px",
             border: `2px solid ${INK.black}`,
-            background: STOCK.newsprint,
+            background: STOCK.shell,
             position: "relative",
             overflow: "hidden",
           }}

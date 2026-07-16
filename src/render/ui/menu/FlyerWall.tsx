@@ -9,7 +9,9 @@ import {
   MAX_TILT_DEG,
   MOTION,
   useRovingIndex,
+  SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
+import type { CSSProperties } from "react";
 import { LevelFlyer } from "./LevelFlyer";
 
 /**
@@ -89,7 +91,9 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
   });
 
   // Move DOM focus with the roving index — but only while the wall already holds
-  // focus, so we never steal focus on mount or on a rubrique switch.
+  // focus, so we never steal focus on mount or on a rubrique switch. In short-landscape
+  // the rack scrolls horizontally; the browser scrolls the newly-focused flyer into
+  // view by default, so no manual scroll wiring is needed.
   useEffect(() => {
     if (containerRef.current?.contains(document.activeElement)) {
       itemRefs.current[roving.index]?.focus();
@@ -99,6 +103,7 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
   return (
     <div
       ref={containerRef}
+      className="muf-flyerwall"
       // Deterministic "the click-through lockout has elapsed" signal: reflects the
       // `armed` state so automation can wait for a real actionable state instead of
       // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
@@ -111,8 +116,33 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
           setFocusWithin(false);
         }
       }}
-      style={{ padding: "16px", display: "flex", flexDirection: "column" }}
+      // In short-landscape (ADR-0024) the class rules below flip this to a horizontal
+      // scroll-snap rack; the roving axis stays vertical because the reflow only
+      // triggers on `pointer: coarse` (touch) where arrow-key nav is not the input,
+      // and Up/Down still moves focus across all flyers, scrolling each into view.
+      style={{
+        padding: "16px",
+        display: "flex",
+        flexDirection: "var(--muf-flyerwall-dir, column)" as CSSProperties["flexDirection"],
+      }}
     >
+      <style>{`
+        @media ${SHORT_LANDSCAPE_MEDIA}{
+          .muf-flyerwall{
+            --muf-flyerwall-dir: row;
+            gap: 16px;
+            align-items: flex-start;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+          }
+          .muf-flyerwall > .muf-flyer-slot{
+            flex: 0 0 280px;
+            width: 280px;
+            scroll-snap-align: start;
+          }
+        }
+      `}</style>
       {LEVELS.map((level, i) => {
         const entry = meta[i];
         if (entry === undefined) return null;
@@ -122,28 +152,36 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
           -MAX_TILT_DEG,
           Math.min(MAX_TILT_DEG, FLYER_REST_ROTATION_DEG[i % FLYER_REST_ROTATION_DEG.length] ?? 0),
         );
+        // Slot wrapper: `display:flex` so the inline-block flyer stretches to the slot
+        // width in both the portrait column (full width) and the landscape rack (fixed
+        // card width, set by the `.muf-flyer-slot` class rule above).
         return (
-          <LevelFlyer
+          <div
             key={level.id}
-            level={level}
-            unlocked={entry.unlocked}
-            stock={entry.stock}
-            restRotationDeg={restRotationDeg}
-            jitterPx={FLYER_JITTER_PX[i % FLYER_JITTER_PX.length] ?? 0}
-            focused={focusWithin && roving.index === i}
-            shaking={shakeIndex === i}
-            tabIndex={roving.index === i ? 0 : -1}
-            onSelect={() => {
-              activate(i);
-            }}
-            onKeyDown={roving.onKeyDown}
-            onFocus={() => {
-              roving.setIndex(i);
-            }}
-            registerRef={(el) => {
-              itemRefs.current[i] = el;
-            }}
-          />
+            className="muf-flyer-slot"
+            style={{ display: "flex", flexDirection: "column" }}
+          >
+            <LevelFlyer
+              level={level}
+              unlocked={entry.unlocked}
+              stock={entry.stock}
+              restRotationDeg={restRotationDeg}
+              jitterPx={FLYER_JITTER_PX[i % FLYER_JITTER_PX.length] ?? 0}
+              focused={focusWithin && roving.index === i}
+              shaking={shakeIndex === i}
+              tabIndex={roving.index === i ? 0 : -1}
+              onSelect={() => {
+                activate(i);
+              }}
+              onKeyDown={roving.onKeyDown}
+              onFocus={() => {
+                roving.setIndex(i);
+              }}
+              registerRef={(el) => {
+                itemRefs.current[i] = el;
+              }}
+            />
+          </div>
         );
       })}
     </div>

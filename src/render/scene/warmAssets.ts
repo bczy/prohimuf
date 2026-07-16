@@ -8,6 +8,7 @@
  * pop-in. Every branch resolves (success OR failure) so the preloader can always
  * settle and open the gate.
  */
+import { Howl } from "howler";
 import { warmEnemyTexture } from "./enemyTextures";
 import { warmCourierTexture } from "./courierTextures";
 import { preloadVehicle } from "./DeliveryVehicleSprite";
@@ -25,6 +26,28 @@ function warmImage(url: string): Promise<void> {
   );
 }
 
+// Audio: preloading primes the same HTTP/AudioBuffer cache createAudioSystem's
+// Howls hit; a load failure counts as settled so the gate never hangs.
+function warmAudio(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve();
+    };
+    const howl = new Howl({ src: [url], preload: true });
+    howl.once("load", done);
+    howl.once("loaderror", done);
+    // Headless / no-audio-device browsers may fire neither event; resolve anyway
+    // after a grace period so the preloader gate can never stall on audio.
+    // `done` only ever runs asynchronously (Howl events / this timer), never
+    // before `timer` is assigned below, so the closure read is safe.
+    const timer = setTimeout(done, 10_000);
+  });
+}
+
 // Warm one asset, dispatched by its base-relative path. Vehicle and courier live
 // under their own subdirectories, so they are matched before the generic enemy
 // prefix. ALWAYS resolves.
@@ -33,5 +56,6 @@ export function warm(path: string): Promise<void> {
   if (path.startsWith("assets/vehicles/")) return preloadVehicle(url);
   if (path.startsWith("assets/courier/")) return warmCourierTexture(url);
   if (path.startsWith("assets/enemy")) return warmEnemyTexture(url);
+  if (path.startsWith("assets/audio/")) return warmAudio(url);
   return warmImage(url);
 }
