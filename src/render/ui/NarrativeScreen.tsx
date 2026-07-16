@@ -187,13 +187,14 @@ export function NarrativeScreen({
               onClick={handleSkip}
               style={{
                 position: "absolute",
-                top: 30,
+                top: 32,
                 left: 16,
+                minHeight: 44,
                 border: `2px solid ${INK.black}`,
                 background: STOCK.shell,
                 color: INK.black,
-                padding: "6px 12px",
-                fontSize: "11px",
+                padding: "10px 20px",
+                fontSize: "15px",
                 letterSpacing: "0.18em",
                 fontFamily: "inherit",
                 textTransform: "uppercase",
