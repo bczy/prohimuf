@@ -191,6 +191,7 @@
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
       "parallax": { "sky": 0.88, "facade": 0.0, "street": 0.04 },
+      "ironwork": "haussmann",
       "windowGrid": {
         "$comment": "Prior for scripts/gen-window-zones.mjs: cols/rows + extent of the lit-window band; the script snaps it to each panel's art.",
         "cols": 7,
@@ -222,6 +223,7 @@
       "name": "Stalingrad",
       "label": "Stalingrad, Paris 19e, 1998",
       "parallax": { "sky": 0.9, "facade": 0.0, "street": 0.05 },
+      "ironwork": "plain",
       "windowGrid": {
         "cols": 7,
         "rows": 3,
@@ -242,6 +244,7 @@
       "name": "Vitry — 94",
       "label": "Vitry-sur-Seine, Val-de-Marne 94, 1998",
       "parallax": { "sky": 0.92, "facade": 0.0, "street": 0.06 },
+      "ironwork": "hlm",
       "windowGrid": {
         "cols": 5,
         "rows": 4,

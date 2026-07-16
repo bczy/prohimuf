@@ -6,6 +6,7 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import {
   computeSlotsFromZones,
   FACADE_ASPECT,
+  getIronworkStyle,
   getLevelPanelZones,
   PANELS,
   tilePanelZones,
@@ -112,6 +113,8 @@ export function GameScene({
     () => zoneOverride ?? getLevelPanelZones(levelId),
     [zoneOverride, levelId],
   );
+  // Code-drawn foreground style matched to the level's architecture.
+  const ironworkStyle = useMemo(() => getIronworkStyle(levelId), [levelId]);
   const mergedFacade = useMemo(() => {
     const slots = computeSlotsFromZones(tilePanelZones(panelZones), fullW, facadeH);
     return { width: slots.length, height: 1, slots };
@@ -266,7 +269,12 @@ export function GameScene({
       ))}
       {panelZones.map((zones, p) => (
         <group key={`fg-${String(p)}`} position={[(p - (PANELS - 1) / 2) * panelW, 0, 0]}>
-          <ForegroundFrames zones={zones} facadeW={panelW} facadeH={facadeH} />
+          <ForegroundFrames
+            zones={zones}
+            facadeW={panelW}
+            facadeH={facadeH}
+            style={ironworkStyle}
+          />
         </group>
       ))}
       <CourierSprite stateRef={stateRef} paused={paused} />
