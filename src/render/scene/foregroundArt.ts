@@ -164,12 +164,7 @@ function zoneHash(idx: number, salt: number): number {
  * fenêtre (peu de débord) pour rester à la hauteur des ferronneries peintes
  * dans l'art de la façade.
  */
-function drawPlainZone(
-  g: CanvasRenderingContext2D,
-  box: ZoneBox,
-  lw: number,
-  texW: number,
-): void {
+function drawPlainZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, texW: number): void {
   const { left, top, ww, hh, cy } = box;
   const railLeft = left - ww * 0.02;
   const railW = ww * 1.04;
