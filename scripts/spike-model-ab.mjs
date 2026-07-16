@@ -88,7 +88,11 @@ function loadRider() {
   const style = c.style ?? "";
   const cellW = c.size?.width ?? 256;
   const cellH = c.size?.height ?? 256;
-  const cap = Number(process.env.FRAMES) || r.frames.length;
+  // FRAMES caps frames per model (documented max = the layer's own count). Clamp
+  // to a positive integer in [1, N]; any junk (empty, 0, negative, NaN) → all N.
+  const capRaw = Number(process.env.FRAMES);
+  const cap =
+    Number.isInteger(capRaw) && capRaw > 0 ? Math.min(capRaw, r.frames.length) : r.frames.length;
   const frames = r.frames.slice(0, cap);
   return {
     seed: r.seed,
@@ -201,11 +205,19 @@ async function runModel(model, R) {
       await fetchWithRetry(probe, 2);
       console.log(`  [probe-ok] ${model} is served`);
     } catch (e) {
-      console.log(`  [probe-skip] ${model} — ${e.message} (model not served; skipping)`);
-      return { model, track, skipped: true, reason: e.message, frames: [] };
+      // Only a 404 means the model ID is not served — then skip. Any other error
+      // (500/timeout) may be a transient blip; do NOT drop the model on it — above
+      // all the FLUX baseline the whole spike compares against — fall through and
+      // let the per-frame calls (4 retries each) decide.
+      if (/\b404\b/.test(e.message)) {
+        console.log(`  [probe-skip] ${model} — ${e.message} (model not served; skipping)`);
+        return { model, track, skipped: true, reason: e.message, frames: [], generated: 0 };
+      }
+      console.log(`  [probe-warn] ${model} — ${e.message} (transient? proceeding to generation)`);
     }
   }
 
+  let generated = 0; // real fetched frames (excludes the copied ref frame1)
   const written = [];
   for (let i = 0; i < R.frames.length; i++) {
     const out = path.join(outDir, `frame${i + 1}.png`);
@@ -229,11 +241,12 @@ async function runModel(model, R) {
       fs.writeFileSync(out, png);
       console.log(`  [ok]   frame${i + 1} (${png.length} bytes, re-encoded PNG)`);
       written.push(`frame${i + 1}.png`);
+      generated++;
     } catch (e) {
       console.log(`  [fail] frame${i + 1} — ${e.message}`);
     }
   }
-  return { model, track, skipped: false, frames: written };
+  return { model, track, skipped: false, frames: written, generated };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -263,22 +276,32 @@ async function main() {
       results.push(await runModel(model, R));
     } catch (e) {
       console.log(`  [model-error] ${model} — ${e.message}`);
-      results.push({ model, track: "?", skipped: true, reason: e.message, frames: [] });
+      results.push({
+        model,
+        track: "?",
+        skipped: true,
+        reason: e.message,
+        frames: [],
+        generated: 0,
+      });
     }
   }
 
-  // Text manifest so the outcome is reviewable without opening every PNG.
+  // Text manifest so the outcome is reviewable without opening every PNG. The
+  // "Generated" column counts frames actually fetched from the model — NOT the
+  // copied ref frame1 — so a track-B model that produced nothing real reads as
+  // 0/N, not a misleading 1/N.
   const lines = [
     "# Spike — image-model A/B (courier rider flipbook)",
     "",
     `Subject: \`courier.rider\` · ${R.frames.length} frames · seed \`${R.seed}\``,
     `Reference (track B): \`${RIDER_REF_URL}\``,
     "",
-    "| Model | Track | Result | Frames |",
-    "| ----- | ----- | ------ | ------ |",
+    "| Model | Track | Result | Generated |",
+    "| ----- | ----- | ------ | --------- |",
     ...results.map(
       (r) =>
-        `| \`${r.model}\` | ${r.track} | ${r.skipped ? `skipped (${r.reason})` : "generated"} | ${r.frames.length}/${R.frames.length} |`,
+        `| \`${r.model}\` | ${r.track} | ${r.skipped ? `skipped (${r.reason})` : "generated"} | ${r.generated}/${R.frames.length} |`,
     ),
     "",
     "Raw model output (NOT chroma-keyed, NOT production art). Judge character",
@@ -287,9 +310,19 @@ async function main() {
     "",
   ];
   fs.writeFileSync(path.join(ROOT, "spike-out", "SPIKE.md"), lines.join("\n"));
-  console.log(
-    `\nWrote spike-out/SPIKE.md (${results.filter((r) => !r.skipped).length} models generated)`,
-  );
+
+  // Guard against a misleading "green" run: the workflow commit gate matches any
+  // PNG under spike-out/, which a track-B model satisfies with just its copied
+  // ref frame1 even when every real generation failed. If NOTHING was actually
+  // generated across all models, fail loudly instead of committing only copies.
+  const totalGenerated = results.reduce((s, r) => s + r.generated, 0);
+  console.log(`\nWrote spike-out/SPIKE.md (${totalGenerated} frames generated across all models)`);
+  if (totalGenerated === 0) {
+    console.error(
+      "No model produced a single generated frame — nothing to compare; failing the run.",
+    );
+    process.exit(1);
+  }
 }
 
 main().catch((e) => {
