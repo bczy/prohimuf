@@ -67,12 +67,16 @@ wall. Two tools keep the zones honest:
 
 - `scripts/gen-window-zones.mjs` — snaps a level's grid onto each panel's warm
   window light (all levels).
-- `scripts/align-belliard-windows.mjs` — **detect-and-correct harness for
-  `belliard`**: detects the real lit windows from the facade art, then drives the
-  live production render (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`) to place one
-  non-overflowing cop per window, looping until 0 defects, with proof overlays.
-  `--check` is a CI gate (measure only, exit non-zero on any defect). See
-  `scripts/SCRIPTS.md`.
+- `scripts/align-windows.mjs` — **detect-and-correct harness for any level**
+  (`belliard`, `stalingrad`, `vitry`; ids as args, default all): detects the real
+  lit windows from each facade art — `belliard` keeps its equal-thirds floors,
+  every other level uses **run-based** floor detection over `windowGrid.top/bottom`
+  (robust to any floor count) — then drives the live production render
+  (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`) to place one non-overflowing cop per
+  window, looping until 0 defects, with proof overlays. It writes only the target
+  level's key of `windowZones.generated.json`. `--check` is a CI gate (measure
+  only, exit non-zero on any defect). `yarn align` / `yarn align:check` run all
+  levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
 
 ## Local dev
 
