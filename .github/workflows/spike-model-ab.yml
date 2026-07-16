@@ -1,0 +1,101 @@
+name: Spike model A/B
+
+# THROWAWAY EVAL (not production art). Regenerates the courier `rider` flipbook
+# across several Pollinations image models — two tracks: text-to-image seed-pinned
+# (the current strategy) vs reference-conditioned img2img off the committed
+# rider.png — and commits the RAW outputs under spike-out/ for the art gate
+# (lead-art + game-graphist) to judge. Pollinations is only reachable from CI, so
+# this is the only place the spike can actually spend. Deliberate runs only:
+# manual (workflow_dispatch) OR an explicit ci(dispatch): commit touching the marker
+# .github/dispatch/spike-model-ab (mirrors gen-courier-sprites.yml — the dispatch API
+# needs actions:write the bot token lacks). Never on ordinary branch pushes.
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: "Comma-separated Pollinations model IDs"
+        required: false
+        default: "flux,kontext,nanobanana-pro"
+      frames:
+        description: "Frames per model (max 6)"
+        required: false
+        default: "6"
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/spike-model-ab"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spike-model-ab-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    # Never on main; for pushes, only an explicit ci(dispatch): commit fires it
+    # (a merge/rebase push could otherwise match the marker paths filter).
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @napi-rs/canvas (decode Pollinations JPEG → re-encode PNG)
+        run: |
+          # Same pinned version/flags as gen-courier-sprites.yml; the prebuilt
+          # native binary is fetched by resolution, so --ignore-scripts is safe.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Clean prior spike outputs (stale model dirs from earlier runs)
+        run: rm -rf spike-out/rider
+
+      - name: Generate spike outputs (per model, re-encoded to PNG, no keying)
+        env:
+          MODELS: ${{ github.event.inputs.models }}
+          FRAMES: ${{ github.event.inputs.frames }}
+        run: node scripts/spike-model-ab.mjs
+
+      - name: Commit spike outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "spike-out/rider/*/*.png" > /dev/null; then
+            git add -A spike-out
+          else
+            echo "::error::no spike outputs generated"
+            exit 1
+          fi
+          if git diff --cached --quiet; then
+            echo "No spike outputs to commit."
+          else
+            git commit -m "chore(spike): image-model A/B outputs for courier rider"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload spike outputs (belt-and-braces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spike-model-ab
+          path: spike-out/**
+          if-no-files-found: warn
+          retention-days: 14

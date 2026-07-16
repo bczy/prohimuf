@@ -3016,6 +3016,65 @@ Withhold final composite PASS until an in-game screenshot is Read. (Nico / lead-
 
 ---
 
+## Gate DA — spike évaluation modèles image (courier.rider, THROWAWAY, aucun art de prod visé) — lead-art (Nico)
+
+Question Bertrand : « depuis la création du jeu, meilleur modèle que FLUX ? ». Régénération
+du flipbook `courier.rider` (6 frames) sur plusieurs modèles Pollinations. Verdicts sur pièces
+(`spike-out/rider/**`), jugés contre la bible (fanzine B&W photocopié + néon acide, silhouette-first).
+
+- **Piste A — t2i seed-pinné (flux, = zimage = qwen-image, bytes identiques : l'API GET anon a
+  ignoré `model` et servi FLUX 3×). Sur cette voie API, PAS d'alternative t2i réelle ce run.**
+  Verdict DA : **PASS.** Gris/blanc contrasté, aplat propre sur noir mat, zéro photoréalisme,
+  silhouette courier-sur-vélo lisible (casque, sacoche, cadre). Sur-direction. Réserve NON-DA :
+  les 6 cellules sont quasi la même pose (stride de pédalage inexistant) — défaut d'animation
+  flipbook, pas de DA ; hors périmètre de ce gate.
+- **Piste B — img2img (nanobanana-pro) depuis frame 1 committée.** Verdict : **FAIL.**
+  frame1 = copie de la réf. frames 2-6 : personnage NON préservé — vélo supprimé, sacoche
+  supprimée, casque réduit à une cagoule ; dérive stylistique vers un pixel-art blanc fantôme
+  sur noir (ni xerox, ni B&W fanzine). Silhouette = coureur générique en fente = **mauvais
+  archétype = FAIL automatique** (§2 loi 3), doublé d'une rupture de style (§1) et d'anatomie
+  incohérente (jambes/hanches). Disqualifié.
+
+Décision modèle (base = ce seul run) :
+
+- **flux/zimage/qwen-image : PASS — rien ne justifie de quitter FLUX** (les trois SONT FLUX ici ;
+  résultat sur-direction).
+- **nanobanana-pro : FAIL — ne conserve pas le personnage et casse la DA.** Non retenu.
+
+Reco de suite : **rester sur FLUX pour le courier.** Re-tester **`kontext`** proprement (il a
+sauté sur un HTTP 500 transitoire, non testé ce run) : c'est la voie img2img déjà en prod pour
+les ennemis et le vrai candidat cohérence-de-frames — le spike ne tranche PAS kontext, il tranche
+nanobanana-pro. **Aucun ADR** : spike throwaway, ni bible ni pipeline modifiés. ADR seulement si
+un modèle bat réellement FLUX sur un run propre (kontext inclus). Rien à escalader à Bertrand :
+verdict dans le périmètre de la bible.
+
+---
+
+### Spike model A/B — courier rider — RUN PROPRE (verdict final)
+
+Run #3 (commit `af65890` → sortie `066ce1e`) : harnais corrigé (PNG ré-encodés via
+@napi-rs/canvas, set `flux,kontext,nanobanana-pro`). Résultats mesurés :
+
+- **flux** : 6/6, vrais PNG, cohérence perso excellente. Baseline solide.
+- **nanobanana-pro** (img2img) : 6/6 sur PNG propre → **FAIL confirmé** : perd vélo/sacoche/casque
+  dès frame 2 (coureur générique). Le nettoyage JPEG ne change rien : perte de perso intrinsèque.
+- **kontext** (img2img) : **HTTP 500 SYSTÉMATIQUE** sur chaque appel (frames 2-6, 3 retries
+  chacune) — PAS transitoire. L'endpoint kontext img2img de Pollinations est indisponible
+  actuellement. Non testable ; ce n'est pas un bug du spike (URL identique à la prod ennemis).
+
+**Verdict final : rester sur FLUX pour le courier.** Aucun candidat testable ne le bat.
+
+- t2i alternatifs (zimage/qwen) : l'API GET anonyme sert FLUX → non A/B-ables sans voie POST/auth.
+- kontext : verdict impossible tant que Pollinations 500 ; le harnais est propre et réutilisable
+  (bump `.github/dispatch/spike-model-ab` quand l'endpoint revient).
+- **Aucun ADR** (rien de changé). **Aucun art de prod touché.**
+
+⚠️ Heads-up prod (hors spike) : la génération d'ennemis utilise la MÊME voie kontext img2img.
+Si le 500 persiste, elle bascule sur son fallback matched-flux-pair (dégradation silencieuse) —
+à vérifier séparément si la cohérence des sprites ennemis compte.
+
+---
+
 ## 2026-07-15 · Pre-game mobile-landscape layout (ADR-0024)
 
 Trigger (Bertrand): the pre-game accueil + level-select are _surchargé_ in mobile landscape;

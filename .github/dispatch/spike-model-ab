@@ -1,0 +1,3 @@
+Spike image-model A/B — courier rider flipbook.
+Bump this file in a ci(dispatch): commit to (re)run .github/workflows/spike-model-ab.yml.
+run: 3 — PNG re-encode + kontext retest (drop FLUX-aliased t2i)
