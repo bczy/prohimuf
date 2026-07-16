@@ -236,6 +236,8 @@
       "label": "Stalingrad, Paris 19e, 1998",
       "parallax": { "sky": 0.9, "facade": 0.0, "street": 0.05 },
       "ironwork": "plain",
+      "ironworkSillOffset": 0.34,
+      "$commentIronworkSillOffset": "This art has tall spandrels under the glazing: the detected zones (ADR-0028) frame the lit opening, so the grille base needs an extra drop (fraction of zone height) to sit on the painted floor line. 0.34 = measured median of the painted floor lines relative to the plain template's 1.14*h base (middle row ~1.49*h, bottom ~1.54*h, top ~1.23*h — the top row's overshoot is masked by its painted balcony).",
       "windowGrid": {
         "cols": 7,
         "rows": 3,

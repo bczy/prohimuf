@@ -182,13 +182,15 @@ function drawPlainZone(
   lw: number,
   texW: number,
   so: number,
+  sillOffset: number,
 ): void {
   const { left, top, ww, hh, cy } = box;
   const railLeft = left - ww * 0.02;
   const railW = ww * 1.04;
   const railTop = cy + hh * 0.18;
-  // Descend jusque sous les pieds du sprite (ancrés à ~1.124·hh, cf. EnemySprite).
-  const railBottom = top + hh * 1.14;
+  // Descend jusque sous les pieds du sprite (ancrés à ~1.124·hh, cf. EnemySprite),
+  // plus l'appui par niveau quand l'art a une allège haute sous le vitrage.
+  const railBottom = top + hh * (1.14 + sillOffset);
 
   // Métal légèrement moins opaque que la fonte Haussmann : la grille se fond
   // dans la nuit comme les ferronneries peintes de la façade.
@@ -228,6 +230,7 @@ function drawHlmZone(
   idx: number,
   so: number,
   nextWinTop: number,
+  sillOffset: number,
 ): void {
   const { left, top, ww, hh } = box;
   const railLeft = left - ww * 0.03;
@@ -235,8 +238,12 @@ function drawHlmZone(
   const railTop = top + hh * 0.56; // la rambarde respire au-dessus de la dalle
   const slabTop = top + hh * 0.78;
   // Couvre les pieds du flic (ancrés à ~1.124·hh) mais s'arrête à la fenêtre de
-  // la rangée du dessous quand les rangées générées sont serrées (Vitry).
-  const slabBottom = Math.min(top + hh * 1.18, Math.max(nextWinTop, top + hh * 1.13));
+  // la rangée du dessous quand les rangées générées sont serrées (Vitry). Le
+  // knob d'appui par niveau descend la cible avant ce clamp.
+  const slabBottom = Math.min(
+    top + hh * (1.18 + sillOffset),
+    Math.max(nextWinTop, top + hh * 1.13),
+  );
   const slabH = slabBottom - slabTop;
 
   // Ombre décalée sous la dalle
@@ -287,6 +294,11 @@ function drawHlmZone(
  * Dessine, pour chaque zone, la ferronnerie de premier plan dans le style du
  * niveau (`haussmann` / `plain` / `hlm`). Dessine en espace image (texW × texH),
  * aligné sur les zones des fenêtres.
+ *
+ * Les zones (harness ADR-0028) encadrent l'OUVERTURE lumineuse, pas l'appui :
+ * `sillOffset` (fraction de la hauteur de zone, par niveau, défaut 0) descend
+ * la base de la ferronnerie jusqu'à la ligne de plancher quand l'art a une
+ * allège haute sous le vitrage.
  */
 export function drawForegroundIronwork(
   g: CanvasRenderingContext2D,
@@ -294,6 +306,7 @@ export function drawForegroundIronwork(
   texW: number,
   texH: number,
   style: IronworkStyle,
+  sillOffset = 0,
 ): void {
   g.clearRect(0, 0, texW, texH);
   const lw = Math.max(2, texW * 0.0045);
@@ -311,7 +324,7 @@ export function drawForegroundIronwork(
     const box: ZoneBox = { left, top, ww, hh, cy };
 
     if (style === "plain") {
-      drawPlainZone(g, box, lw, texW, so);
+      drawPlainZone(g, box, lw, texW, so, sillOffset);
     } else if (style === "hlm") {
       // Fenêtre la plus proche EN DESSOUS qui chevauche horizontalement — la
       // dalle s'y arrête pour ne pas mordre sur l'art de l'étage inférieur.
@@ -323,14 +336,14 @@ export function drawForegroundIronwork(
         if (Math.abs(o.x - z.x) * texW >= (ww + o.w * texW) / 2) continue;
         nextWinTop = Math.min(nextWinTop, oTop);
       }
-      drawHlmZone(g, box, lw, idx, so, nextWinTop);
+      drawHlmZone(g, box, lw, idx, so, nextWinTop, sillOffset);
     } else {
       // Gabarit Haussmann historique (inchangé) : garde-corps en travers du
       // bas de la fenêtre (devant le bas du flic), avec débord latéral.
       const railLeft = left - ww * 0.05;
       const railW = ww * 1.1;
       const railTop = cy + hh * 0.2;
-      const railBottom = top + hh + hh * 0.22;
+      const railBottom = top + hh + hh * (0.22 + sillOffset);
       const midY = (railTop + railBottom) / 2;
       const railRight = railLeft + railW;
       const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };

@@ -89,6 +89,13 @@ export interface LevelArt {
   readonly parallax: LevelArtParallax;
   /** Which code-drawn foreground ironwork to render; defaults to "haussmann". */
   readonly ironwork?: IronworkStyle;
+  /**
+   * Extra drop of the railing base, as a fraction of the window-zone height.
+   * The detected zones frame the LIT opening, not the sill: levels whose art
+   * has a tall spandrel under the glazing set this so the railing sits on the
+   * floor line. Defaults to 0 (base pinned just under the opening).
+   */
+  readonly ironworkSillOffset?: number;
   readonly prompts: Record<LayerName, string>;
   /** Per-level override of the enemy window grid; falls back to WINDOW_GRID. */
   readonly windowGrid?: WindowGrid;
@@ -137,6 +144,16 @@ export function getWindowGrid(id: string | undefined): WindowGrid {
 /** The code-drawn foreground ironwork style for a level (defaults to "haussmann"). */
 export function getIronworkStyle(id: string | undefined): IronworkStyle {
   return getLevelArt(id).ironwork ?? "haussmann";
+}
+
+/**
+ * Per-level drop of the railing base below the detected window opening, as a
+ * fraction of the zone height (see {@link LevelArt.ironworkSillOffset}).
+ * Clamped to [0, 0.6]; defaults to 0.
+ */
+export function getIronworkSillOffset(id: string | undefined): number {
+  const raw = getLevelArt(id).ironworkSillOffset ?? 0;
+  return Math.min(0.6, Math.max(0, raw));
 }
 
 /**

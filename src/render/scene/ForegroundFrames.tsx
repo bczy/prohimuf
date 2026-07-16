@@ -21,6 +21,7 @@ const TEX_H = 1536;
 function buildFrameTexture(
   zones: readonly WindowZone[],
   style: IronworkStyle,
+  sillOffset: number,
 ): CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
@@ -29,7 +30,7 @@ function buildFrameTexture(
   const g = canvas.getContext("2d");
   if (g === null) return null;
 
-  drawForegroundIronwork(g, zones, TEX_W, TEX_H, style);
+  drawForegroundIronwork(g, zones, TEX_W, TEX_H, style, sillOffset);
 
   const tex = new CanvasTexture(canvas);
   applyPixelFilter(tex);
@@ -48,14 +49,25 @@ interface Props {
   facadeW: number;
   facadeH: number;
   style: IronworkStyle;
+  /** Per-level drop of the railing base below the opening (fraction of zone height). */
+  sillOffset: number;
 }
 
 /**
  * Foreground décor layer: window bars and iron railings rendered in front of
  * the cops (z above the enemies), so they read as standing behind the windows.
  */
-export function ForegroundFrames({ zones, facadeW, facadeH, style }: Props): JSX.Element | null {
-  const texture = useMemo(() => buildFrameTexture(zones, style), [zones, style]);
+export function ForegroundFrames({
+  zones,
+  facadeW,
+  facadeH,
+  style,
+  sillOffset,
+}: Props): JSX.Element | null {
+  const texture = useMemo(
+    () => buildFrameTexture(zones, style, sillOffset),
+    [zones, style, sillOffset],
+  );
   // Free the GPU texture (~16 MB per panel at 2×) when zones/style change or
   // the scene unmounts — R3F does not dispose prop-passed textures.
   useEffect(() => {
