@@ -123,7 +123,9 @@ const arrowCoreStyle: React.CSSProperties = {
   position: "relative",
   width: 34,
   height: 34,
-  opacity: 0.28,
+  // Raised from 0.28: off-screen arrows overlay the 3D scene and visibility was
+  // the complaint. Acid-yellow fill + black keyline reads on dark and light facades.
+  opacity: 0.35,
   transition: "opacity 120ms ease, transform 120ms ease",
 };
 
@@ -145,6 +147,9 @@ function ArrowIndicator({
     up: "rotate(270deg)",
   }[direction];
 
+  // Single inline SVG (not the old shaft-span + CSS-border-triangle pair): a CSS
+  // triangle can't take an outline, and these arrows need a black keyline to read
+  // over the scene. Acid-yellow fill, black keyline — flat, NO blur/glow/shadow.
   return (
     <span
       style={{
@@ -153,31 +158,15 @@ function ArrowIndicator({
         ...(active ? activeArrowStyle : null),
       }}
     >
-      <span
-        style={{
-          position: "absolute",
-          left: 2,
-          top: "50%",
-          width: 19,
-          height: 8,
-          transform: "translateY(-50%)",
-          background: INK.full,
-          borderRadius: 999,
-        }}
-      />
-      <span
-        style={{
-          position: "absolute",
-          right: 0,
-          top: "50%",
-          width: 0,
-          height: 0,
-          transform: "translateY(-50%)",
-          borderTop: "10px solid transparent",
-          borderBottom: "10px solid transparent",
-          borderLeft: `16px solid ${INK.full}`,
-        }}
-      />
+      <svg width={34} height={34} viewBox="0 0 34 34" aria-hidden="true">
+        <polygon
+          points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
+          fill="#FFE600"
+          stroke={INK.black}
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+      </svg>
     </span>
   );
 }
