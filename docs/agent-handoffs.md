@@ -3036,6 +3036,7 @@ du flipbook `courier.rider` (6 frames) sur plusieurs modèles Pollinations. Verd
   incohérente (jambes/hanches). Disqualifié.
 
 Décision modèle (base = ce seul run) :
+
 - **flux/zimage/qwen-image : PASS — rien ne justifie de quitter FLUX** (les trois SONT FLUX ici ;
   résultat sur-direction).
 - **nanobanana-pro : FAIL — ne conserve pas le personnage et casse la DA.** Non retenu.
@@ -3062,6 +3063,7 @@ Run #3 (commit `af65890` → sortie `066ce1e`) : harnais corrigé (PNG ré-encod
   actuellement. Non testable ; ce n'est pas un bug du spike (URL identique à la prod ennemis).
 
 **Verdict final : rester sur FLUX pour le courier.** Aucun candidat testable ne le bat.
+
 - t2i alternatifs (zimage/qwen) : l'API GET anonyme sert FLUX → non A/B-ables sans voie POST/auth.
 - kontext : verdict impossible tant que Pollinations 500 ; le harnais est propre et réutilisable
   (bump `.github/dispatch/spike-model-ab` quand l'endpoint revient).
