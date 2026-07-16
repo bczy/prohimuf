@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
+import type { QtePhase } from "@game/types/hostageQte";
 import { STOCK, INK, MARK, ACID } from "@render/ui/print";
 
 export interface HudTargetIndicator {
@@ -18,16 +19,32 @@ export interface HudDelivery {
   integrityMax: number;
 }
 
+/** Hostage-taker QTE state surfaced to the DOM HUD (ADR-0030), read from the state ref. */
+export interface HudHostageQte {
+  phase: QtePhase;
+  captorHp: number;
+  captorHpMax: number;
+  hostageHp: number;
+  hostageHpMax: number;
+  windowRemaining: number;
+  windowSeconds: number;
+  warning: boolean;
+}
+
 export interface HudData {
   score: number;
   lives: number;
   timeRemaining: number;
   phase: Phase;
   wave: number;
+  // Continuous energy stat 0–100 (ADR-0030 D5): the hostage taker's bavure /
+  // timeout penalties drain it. Read-only view value; the game owns the rule.
+  energy: number;
   levelName?: string;
   isHighScore?: boolean;
   targetIndicator?: HudTargetIndicator | undefined;
   delivery?: HudDelivery | undefined;
+  hostageQte?: HudHostageQte | undefined;
 }
 
 /**
@@ -44,6 +61,14 @@ const MONO_FONT = "'Courier New', Courier, monospace";
 function integrityColor(fill: number): string {
   if (fill > 0.6) return MARK.green;
   if (fill > 0.3) return MARK.orange;
+  return MARK.pink;
+}
+
+// Energy gauge (0–100): print marker inks shift warm as the hostage penalties
+// drain it (same semantic ink ramp as the integrity gauge — no neon, no glow).
+function energyColor(energy: number): string {
+  if (energy > 60) return MARK.green;
+  if (energy > 30) return MARK.orange;
   return MARK.pink;
 }
 
@@ -185,11 +210,26 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
     data.timeRemaining < 20 ? MARK.pink : data.timeRemaining < 40 ? MARK.orange : INK.full;
   const livesColor = data.lives <= 1 ? MARK.pink : INK.full;
   const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
+  const energyFill = Math.max(0, Math.min(100, data.energy));
+  const energyHue = energyColor(energyFill);
   const delivery = data.delivery;
   const deliveryPhase = delivery?.phase;
   const deliveryFill =
     delivery !== undefined && delivery.integrityMax > 0
       ? Math.max(0, Math.min(1, delivery.integrity / delivery.integrityMax))
+      : 0;
+
+  const qte = data.hostageQte;
+  const qtePhase = qte?.phase;
+  const qteVisible =
+    qtePhase === "ZOOMING" || qtePhase === "ACTIVE" || qtePhase === "WON" || qtePhase === "LOST";
+  const captorFill =
+    qte !== undefined && qte.captorHpMax > 0
+      ? Math.max(0, Math.min(1, qte.captorHp / qte.captorHpMax))
+      : 0;
+  const countdownFill =
+    qte !== undefined && qte.windowSeconds > 0
+      ? Math.max(0, Math.min(1, qte.windowRemaining / qte.windowSeconds))
       : 0;
 
   return (
@@ -239,6 +279,31 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <div style={itemStyle}>
           <span style={labelStyle}>vies</span>
           <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
+        </div>
+        <div style={itemStyle}>
+          <span style={labelStyle}>énergie</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <span style={{ ...valueStyle(energyHue), fontSize: "18px" }}>
+              ⚡{Math.round(energyFill)}
+            </span>
+            <div
+              style={{
+                width: 46,
+                height: 5,
+                border: `1px solid ${INK.black}`,
+                background: STOCK.shell,
+              }}
+            >
+              <div
+                style={{
+                  width: `${String(energyFill)}%`,
+                  height: "100%",
+                  background: energyHue,
+                  transition: "width 120ms linear",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -304,6 +369,147 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         >
           {deliveryPhase === "SUCCESS" ? "LIVRAISON SÉCURISÉE" : "LIVRAISON PERDUE"}
         </div>
+      )}
+
+      {qteVisible && qte !== undefined && (
+        <>
+          {/* Dim wash over the frozen scene — a soft vignette that keeps the
+              centred, zoomed captor readable (transparent core). */}
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              pointerEvents: "none",
+              background:
+                "radial-gradient(ellipse at center, rgba(20,18,16,0) 42%, rgba(20,18,16,0.5) 100%)",
+            }}
+          />
+          {/* Gauges: captor health + shoot-window countdown + hostage-hp pips. */}
+          <div
+            style={{
+              position: "fixed",
+              bottom: 24,
+              left: "50%",
+              transform: "translateX(-50%)",
+              pointerEvents: "none",
+              userSelect: "none",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>preneur</span>
+              <div
+                style={{
+                  width: 240,
+                  height: 12,
+                  border: `2px solid ${INK.black}`,
+                  background: STOCK.shell,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${String(captorFill * 100)}%`,
+                    height: "100%",
+                    background: integrityColor(captorFill),
+                    transition: "width 100ms linear",
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>
+                compte à rebours
+              </span>
+              <div
+                style={{
+                  width: 240,
+                  height: 10,
+                  border: `2px solid ${INK.black}`,
+                  background: STOCK.shell,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${String(countdownFill * 100)}%`,
+                    height: "100%",
+                    background: integrityColor(countdownFill),
+                    transition: "width 100ms linear",
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>otage</span>
+              <span style={{ fontSize: "18px", color: MARK.pink, letterSpacing: "0.1em" }}>
+                {"♥".repeat(Math.max(0, qte.hostageHp))}
+                <span style={{ color: INK.black, opacity: 0.3 }}>
+                  {"♡".repeat(Math.max(0, qte.hostageHpMax - qte.hostageHp))}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          {qte.warning && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  ...chipStyle,
+                  padding: "10px 22px",
+                  border: `3px solid ${INK.black}`,
+                  fontSize: "44px",
+                  color: MARK.pink,
+                  letterSpacing: "0.12em",
+                  transform: "rotate(-4deg)",
+                }}
+              >
+                OTAGE
+              </div>
+            </div>
+          )}
+
+          {(qtePhase === "WON" || qtePhase === "LOST") && (
+            // The verdict is the payoff of the whole set-piece: a big centred
+            // stamp (same register as the OTAGE warning / end-of-level message)
+            // over the zoomed tableau, not a small ticker chip nobody reads.
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            >
+              <div
+                style={{
+                  ...chipStyle,
+                  padding: "12px 26px",
+                  border: `3px solid ${INK.black}`,
+                  fontSize: "48px",
+                  letterSpacing: "0.12em",
+                  transform: "rotate(-4deg)",
+                  color: qtePhase === "WON" ? MARK.green : MARK.pink,
+                }}
+              >
+                {qtePhase === "WON" ? "OTAGE SAUVÉE" : "OTAGE PERDUE"}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div style={targetRingStyle}>

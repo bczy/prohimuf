@@ -7,6 +7,10 @@ export interface HitEvent {
   readonly scoreDelta: number;
   readonly livesDelta: number;
   readonly timeDelta: number;
+  // Continuous-energy change for this takedown (ADR-0004 D5 / ADR-0030). Optional
+  // and additive: absent ⇒ 0, so every existing emitter (cops, bonus) is
+  // unchanged. Only the hostage-taker outcomes set it.
+  readonly energyDelta?: number;
 }
 
 // Like HitEvent but anchored to an explicit world position rather than a window
@@ -17,6 +21,10 @@ export interface PointHitEvent {
   readonly scoreDelta: number;
   readonly livesDelta: number;
   readonly timeDelta: number;
+  // Continuous-energy change, anchored to a world position (street hostage
+  // outcomes). Optional and additive: absent ⇒ 0, so the courier emitter is
+  // unchanged. See HitEvent.energyDelta.
+  readonly energyDelta?: number;
 }
 
 // One resolved player shot, surfaced for transient render effects (explosion,

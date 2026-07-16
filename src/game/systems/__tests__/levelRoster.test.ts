@@ -19,6 +19,7 @@ const DEFAULT_WEIGHTS: Record<EnemyKind, number> = {
   biker: ARCHETYPES.biker.weight,
   bonus: ARCHETYPES.bonus.weight,
   civilian: ARCHETYPES.civilian.weight,
+  hostage_taker: ARCHETYPES.hostage_taker.weight,
 };
 
 describe("AC1 — no roster ⇒ byte-for-byte identical window distribution", () => {

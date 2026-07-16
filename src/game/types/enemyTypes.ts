@@ -118,6 +118,30 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     aspect: 0.95,
     artRetired: true,
   },
+  // Hostage taker (ADR-0030). NOT a window pop-up anymore: it drives the
+  // cinematic QTE, whose rules and magnitudes live entirely in `qteSystem`. This
+  // entry is kept as a weight-0 ART DESCRIPTOR only (spriteBase/tint/aspect key
+  // the `enemy_hostage` texture the QTE captor renders with) — the exact
+  // precedent set by `civilian` above ("kept here for its sprite"). The gameplay
+  // fields are inert: weight 0 keeps it out of every window pool, so the generic
+  // shot path never reads them. Declared LAST so the frozen `WEIGHTED` order
+  // (and thus `pickKind` determinism) holds.
+  hostage_taker: {
+    kind: "hostage_taker",
+    hp: 1,
+    hiddenDuration: 1.6,
+    visibleDuration: 3.5,
+    shoots: false,
+    scoreDelta: 0,
+    livesDelta: 0,
+    timeDelta: 0,
+    countsAsTarget: false,
+    weight: 0,
+    spriteBase: "enemy_hostage",
+    variants: 1,
+    tint: "#ff8ad8",
+    aspect: 0.7,
+  },
 };
 
 // The frozen default window pool: one entry per unit of `weight`, in archetype

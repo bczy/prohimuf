@@ -145,8 +145,14 @@ export function EnemySprite({
       mat.needsUpdate = true;
     }
 
-    // Per-kind neon tint (multiplied over the sprite); white flash on hit.
-    mat.color.set(enemy.state === "HIT" ? "#ffffff" : archetype.tint);
+    // Per-kind neon tint (multiplied over the sprite); white flash on hit. (The
+    // hostage taker is no longer a window pop-up — it drives the cinematic QTE,
+    // ADR-0030 — so no per-state tint override is needed here.)
+    if (enemy.state === "HIT") {
+      mat.color.set("#ffffff");
+    } else {
+      mat.color.set(archetype.tint);
+    }
 
     // Neon heat rim (ADR-0025): a shader-recoloured silhouette drawn behind the
     // body. Hostiles only — the green→orange→red ramp warns the player their

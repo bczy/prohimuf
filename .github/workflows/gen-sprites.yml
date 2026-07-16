@@ -110,8 +110,12 @@ jobs:
           # with the sprites — otherwise the in-game glow silently renders at a
           # stale position. Deterministic + idempotent: on a run that generated
           # nothing, this writes nothing. prettier is the script's formatting
-          # normalizer (repo pin ^3.5.3); node_modules is otherwise absent here.
-          npm install --no-save --legacy-peer-deps --ignore-scripts prettier@3.5.3
+          # normalizer (repo pin ^3.5.3). @napi-rs/canvas MUST be re-declared in
+          # this install: npm reconciles node_modules against package.json on
+          # every install, so a bare prettier install REMOVES the canvas package
+          # the cutout step added with --no-save (that exact prune broke this
+          # step: "Cannot find package '@napi-rs/canvas'").
+          npm install --no-save --legacy-peer-deps --ignore-scripts prettier@3.5.3 @napi-rs/canvas@1.0.2
           node scripts/measure-muzzle-anchors.mjs
 
       # FOLLOW-UP: no automated STYLE gate for enemy sprites yet. The pixel gate

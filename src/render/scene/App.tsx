@@ -80,6 +80,8 @@ function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
     timeRemaining: level.timeSeconds,
     phase: "PLAYING",
     wave: 1,
+    // Energy init 100 (ADR-0030 D5), mirrors createInitialState.
+    energy: 100,
   };
 }
 
@@ -92,6 +94,8 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     enemySpeedMultiplier: level.enemySpeedMultiplier * diffCfg.enemySpeedMult,
     // MVP authors exactly one scripted delivery per level; seed reads deliveries[0].
     delivery: level.deliveries[0] ?? null,
+    // Scripted hostage-taker QTE for this level (ADR-0030), if authored.
+    hostageQte: level.hostageQte ?? null,
   };
 }
 
@@ -400,12 +404,16 @@ export function App(): JSX.Element {
                 ...data,
                 levelName: selectedLevel.name,
                 isHighScore: isHighScore(selectedLevel.id, data.score),
-                // Delivery state arrives on a separate channel; keep it across refreshes.
+                // Delivery / QTE state arrive on separate channels; keep across refreshes.
                 delivery: prev.delivery,
+                hostageQte: prev.hostageQte,
               }));
             }}
             onDelivery={(delivery) => {
               setHudData((prev) => ({ ...prev, delivery }));
+            }}
+            onHostageQte={(hostageQte) => {
+              setHudData((prev) => ({ ...prev, hostageQte: hostageQte ?? undefined }));
             }}
             canvasRef={canvasRef}
             playSfx={audio.playSfx}

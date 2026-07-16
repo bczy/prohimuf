@@ -167,7 +167,8 @@ describe("assetManifest — enemy path parity pins", () => {
 describe("assetManifest — enemy coverage for belliard", () => {
   // Belliard uses the default window pool (normal/riot/biker/bonus — civilian is
   // weight 0 and its retired sprite is no longer pulled in as a courier fallback)
-  // plus the two globals.
+  // plus the two globals. The hostage taker is not rostered either — it drives
+  // the cinematic QTE (ADR-0030), whose art is not an enemy path.
   const EXPECTED = [
     "assets/enemy_sprite.png",
     "assets/enemy_sprite_f2.png",

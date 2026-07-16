@@ -1,5 +1,6 @@
 import type { Prefs } from "@game/systems/prefsSystem";
 import type { DeliverySpec } from "@game/types/delivery";
+import type { QteSpec } from "@game/types/hostageQte";
 import type { EnemyKind } from "@game/types/enemy";
 
 // Per-level roster gate (ADR-0004, D2). Optional and additive: absence is
@@ -38,6 +39,11 @@ export interface LevelConfig {
    */
   readonly deliveries: readonly DeliverySpec[];
   readonly roster?: LevelRoster;
+  /**
+   * Scripted hostage-taker cinematic QTE (ADR-0030). Absent ⇒ no QTE this level.
+   * The seed of `GameState.qteSpec` reads this. Belliard-first.
+   */
+  readonly hostageQte?: QteSpec;
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -77,10 +83,25 @@ export const LEVELS: readonly LevelConfig[] = [
         stopPosition: { x: 0, y: -4 },
       },
     ],
-    // Belliard-first rollout gate (ADR-0004, D2). S1 ships the gate only:
-    // courier-only street (today's behaviour). S2/S3 extend this to
-    // `["courier", "car", "hostage_taker"]` + `windowWeights`.
+    // Belliard-first rollout gate (ADR-0004 D2). Courier street only; the hostage
+    // taker is no longer a window/street pop-up — it triggers the cinematic QTE
+    // below (ADR-0030). The car remains withdrawn.
     roster: { streetSpawns: ["courier"] },
+    // Hostage-taker QTE (ADR-0030): scripted set-piece, once per level. Values are
+    // game-designer defaults (tunable). `anchor` is the captor's world position the
+    // camera zooms onto — ON THE SIDEWALK, in the street lane where couriers ride
+    // (courierField.streetY = −0.4 × worldHeight 12 = −4.8): centre −5 puts the
+    // 2.0-tall tableau's feet on the ground line at −6, beside the road.
+    hostageQte: {
+      triggerAtElapsedSeconds: 12,
+      captorHp: 4,
+      hostageHp: 3,
+      zoomSeconds: 2,
+      windowSeconds: 5,
+      bonusScore: 8,
+      bonusEnergy: 15,
+      anchor: { x: 0, y: -5 },
+    },
   },
   {
     id: "stalingrad",

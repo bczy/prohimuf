@@ -1,0 +1,104 @@
+name: Generate hostage sprites
+
+# Regenerates the QTE hostage figures (ADR-0030 — today the single `girl`, the
+# cartel boss's daughter) from the `hostages` block of
+# src/game/levels/levelArt.json with real FLUX art, chroma-keys them on the
+# shared black-ground detour, solidifies + gates the figure, and commits the
+# PNG(s) to the current branch.
+#
+# Why this is a SEPARATE workflow from gen-sprites.yml (the enemy set): the
+# hostage is NOT an enemy archetype — her spec deliberately lives outside
+# enemies.types (the levelArt.consistency gate closes that register to
+# ARCHETYPES-derived keys), so the enemy generator never produces her. Same
+# reasoning as the courier's own workflow.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-hostage-sprites (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-hostage-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-hostage-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @napi-rs/canvas (chroma-key + solidify)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate hostage sprites (FLUX → chroma-key)
+        # FORCE=1 so a re-dispatch overwrites a rejected roll (the seed is
+        # pinned in levelArt.json; bump it there to re-roll deterministically).
+        run: FORCE=1 node scripts/gen-hostage-sprites.mjs
+
+      - name: Solidify figures (fill chroma-key holes)
+        run: |
+          node scripts/fill-sprite-holes.mjs public/assets/hostage/girl.png
+          node scripts/fill-sprite-holes.mjs --check public/assets/hostage/girl.png
+
+      - name: Sprite integrity gate (figure topology)
+        run: node scripts/check-sprite-integrity.mjs --file public/assets/hostage/girl.png
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # hostage dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/hostage/*.png" > /dev/null; then
+            git add -f public/assets/hostage/*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate QTE hostage girl sprite"
+            # Bounded retry: another push may land while we generated. Push first
+            # (normal case); on rejection rebase with --autostash and retry.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostage-sprites-unpushed
+          path: public/assets/hostage/*.png
+          if-no-files-found: warn
+          retention-days: 14
