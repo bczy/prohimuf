@@ -29,8 +29,11 @@ const IRON = "rgba(9,7,18,0.92)";
 const HILIGHT = "rgba(165,168,198,0.36)";
 const SHADOW = "rgba(0,0,0,0.4)";
 // Béton du parapet HLM : gris froid opaque, liséré clair en arête haute.
-const CONCRETE = "rgba(52,52,64,0.95)";
-const CONCRETE_EDGE = "rgba(150,152,170,0.30)";
+const CONCRETE = "rgba(34,36,48,0.96)";
+const CONCRETE_EDGE = "rgba(140,144,168,0.55)";
+const CONCRETE_LIGHT = "rgba(96,100,124,0.35)";
+const CONCRETE_JOINT = "rgba(0,0,0,0.4)";
+const CONCRETE_STAIN = "rgba(0,0,0,0.22)";
 
 /** Géométrie du garde-corps d'une zone, en espace image (px). */
 interface ZoneGeometry {
@@ -139,69 +142,121 @@ function drawHaussmannZone(
   }
 }
 
-/**
- * Simples barreaux métalliques (Stalingrad) : même gabarit de rail que le
- * Haussmann (le flic se lit bien derrière la grille), mais uniquement un rail
- * haut et un rail bas, des barreaux droits un peu plus épais, à sommet plat
- * (sans pointe de lance) et sans volute.
- */
-function drawPlainZone(
-  g: CanvasRenderingContext2D,
-  geo: ZoneGeometry,
-  lw: number,
-  texW: number,
-): void {
-  const { railLeft, railW, railTop, railBottom } = geo;
+/** Boîte brute d'une zone de fenêtre en espace image (px), avant gabarit. */
+interface ZoneBox {
+  readonly left: number;
+  readonly top: number;
+  readonly ww: number;
+  readonly hh: number;
+  readonly cy: number;
+}
 
-  drawRail(g, railLeft, railW, railTop, lw * 1.5); // rail haut
-  drawRail(g, railLeft, railW, railBottom - lw, lw); // rail bas
-
-  const bars = Math.max(6, Math.round(railW / (texW * 0.018)));
-  const bw = lw * 0.7; // un peu plus épais que les barreaux Haussmann
-  for (let i = 0; i <= bars; i++) {
-    const bx = railLeft + railW * (i / bars);
-    g.fillStyle = IRON;
-    g.fillRect(bx - bw / 2, railTop, bw, railBottom - railTop);
-    g.fillStyle = HILIGHT;
-    g.fillRect(bx - bw / 2, railTop, Math.max(1, bw * 0.34), railBottom - railTop);
-  }
+/** Petit hash déterministe par zone (variations sans Math.random). */
+function zoneHash(idx: number, salt: number): number {
+  const h = Math.sin(idx * 127.1 + salt * 311.7) * 43758.5453;
+  return h - Math.floor(h);
 }
 
 /**
- * Parapet de balcon en béton + main courante tubulaire (Vitry, HLM 1970) : dans
- * la moitié basse du gabarit (de midY à railBottom) une dalle de béton pleine et
- * opaque, surmontée d'une simple main courante métallique portée par quelques
- * fins montants verticaux (ni pointe, ni volute). La moitié haute reste ouverte,
- * donc le flic reste visible — seul le bas de son corps est masqué, comme avec
- * les garde-corps.
+ * Simples barreaux métalliques (Stalingrad) : grille de protection fine au bas
+ * de la fenêtre — double lisse haute, lisse basse, barreaux droits serrés et
+ * minces à sommet plat (ni pointe de lance, ni volute). Gabarit resserré sur la
+ * fenêtre (peu de débord) pour rester à la hauteur des ferronneries peintes
+ * dans l'art de la façade.
  */
-function drawHlmZone(g: CanvasRenderingContext2D, geo: ZoneGeometry, lw: number): void {
-  const { railLeft, railW, railTop, railBottom, midY } = geo;
-  const slabTop = midY;
-  const slabH = railBottom - midY;
+function drawPlainZone(
+  g: CanvasRenderingContext2D,
+  box: ZoneBox,
+  lw: number,
+  texW: number,
+): void {
+  const { left, top, ww, hh, cy } = box;
+  const railLeft = left - ww * 0.02;
+  const railW = ww * 1.04;
+  const railTop = cy + hh * 0.18;
+  const railBottom = top + hh + hh * 0.08;
+
+  // Métal légèrement moins opaque que la fonte Haussmann : la grille se fond
+  // dans la nuit comme les ferronneries peintes de la façade.
+  g.globalAlpha = 0.85;
+
+  drawRail(g, railLeft, railW, railTop, lw * 0.7); // main courante
+  drawRail(g, railLeft, railW, railTop + lw * 1.9, lw * 0.35); // seconde lisse
+  drawRail(g, railLeft, railW, railBottom - lw * 0.55, lw * 0.55); // lisse basse
+
+  // Barreaux fins et serrés (≈ moitié du pas Haussmann, quart de l'épaisseur)
+  const bars = Math.max(10, Math.round(railW / (texW * 0.0085)));
+  const bw = Math.max(1.2, lw * 0.24);
+  for (let i = 0; i <= bars; i++) {
+    const bx = railLeft + railW * (i / bars);
+    g.fillStyle = SHADOW;
+    g.fillRect(bx - bw / 2 + 1, railTop + 1, bw, railBottom - railTop);
+    g.fillStyle = IRON;
+    g.fillRect(bx - bw / 2, railTop, bw, railBottom - railTop);
+    g.fillStyle = HILIGHT;
+    g.fillRect(bx - bw / 2, railTop, Math.max(1, bw * 0.4), railBottom - railTop);
+  }
+
+  g.globalAlpha = 1;
+}
+
+/**
+ * Parapet de balcon en béton + main courante tubulaire (Vitry, HLM 1970) : une
+ * dalle de béton courte et sombre calée sur l'appui de la fenêtre (elle ne pend
+ * plus dessous), avec matière — arête d'acrotère claire, joints de panneaux,
+ * coulures de pluie — surmontée d'une main courante fine sur montants. La
+ * moitié haute reste ouverte, donc le flic reste visible.
+ */
+function drawHlmZone(g: CanvasRenderingContext2D, box: ZoneBox, lw: number, idx: number): void {
+  const { left, top, ww, hh } = box;
+  const railLeft = left - ww * 0.03;
+  const railW = ww * 1.06;
+  const railTop = top + hh * 0.56; // la rambarde respire au-dessus de la dalle
+  const slabTop = top + hh * 0.78;
+  const slabBottom = top + hh * 1.18; // couvre les pieds du flic (et son halo)
+  const slabH = slabBottom - slabTop;
 
   // Ombre décalée sous la dalle
   g.fillStyle = SHADOW;
-  g.fillRect(railLeft, slabTop + 1, railW, slabH);
-  // Dalle de béton pleine
+  g.fillRect(railLeft + 2, slabTop + 2, railW, slabH);
+  // Dalle de béton pleine, sombre (palette nuit)
   g.fillStyle = CONCRETE;
   g.fillRect(railLeft, slabTop, railW, slabH);
-  // Liséré clair en arête haute (1px)
+  // Arête d'acrotère : couvertine claire sur toute la largeur
+  const capH = Math.max(2, lw * 0.45);
   g.fillStyle = CONCRETE_EDGE;
-  g.fillRect(railLeft, slabTop, railW, 1);
+  g.fillRect(railLeft, slabTop, railW, capH);
+  // Face légèrement éclairée sous la couvertine, qui s'assombrit vers le bas
+  g.fillStyle = CONCRETE_LIGHT;
+  g.fillRect(railLeft, slabTop + capH, railW, slabH * 0.28);
 
-  // Main courante tubulaire au-dessus de la dalle
-  drawRail(g, railLeft, railW, railTop, lw * 1.2);
+  // Joints de panneaux préfabriqués (2 joints verticaux sombres)
+  g.fillStyle = CONCRETE_JOINT;
+  for (let j = 1; j <= 2; j++) {
+    const jx = railLeft + (railW * j) / 3 + (zoneHash(idx, j) - 0.5) * lw * 2;
+    g.fillRect(jx, slabTop + capH, Math.max(1, lw * 0.22), slabH - capH);
+  }
+  // Coulures de pluie sous la couvertine (déterministes par zone)
+  g.fillStyle = CONCRETE_STAIN;
+  const drips = 3 + Math.floor(zoneHash(idx, 7) * 3);
+  for (let d = 0; d < drips; d++) {
+    const dx = railLeft + railW * (0.08 + 0.84 * zoneHash(idx, 13 + d));
+    const dh = slabH * (0.3 + 0.55 * zoneHash(idx, 29 + d));
+    g.fillRect(dx, slabTop + capH, Math.max(1, lw * 0.3), dh);
+  }
 
-  // Quelques fins montants verticaux entre la main courante et la dalle
-  const posts = 4; // ⇒ 5 montants, bords compris
-  const pw = lw * 0.5;
+  // Main courante tubulaire fine au-dessus de la dalle
+  drawRail(g, railLeft, railW, railTop, lw * 0.8);
+
+  // Fins montants verticaux entre la main courante et la dalle
+  const posts = 5;
+  const pw = Math.max(1.5, lw * 0.32);
   for (let i = 0; i <= posts; i++) {
     const px = railLeft + railW * (i / posts);
     g.fillStyle = IRON;
-    g.fillRect(px - pw / 2, railTop, pw, slabTop - railTop);
+    g.fillRect(px - pw / 2, railTop, pw, slabTop - railTop + capH);
     g.fillStyle = HILIGHT;
-    g.fillRect(px - pw / 2, railTop, Math.max(1, pw * 0.34), slabTop - railTop);
+    g.fillRect(px - pw / 2, railTop, Math.max(1, pw * 0.4), slabTop - railTop);
   }
 }
 
@@ -226,21 +281,22 @@ export function drawForegroundIronwork(
     const left = z.x * texW - ww / 2;
     const top = z.y * texH - hh / 2;
     const cy = z.y * texH;
-
-    // Garde-corps en travers du bas de la fenêtre (devant le bas du flic).
-    const railLeft = left - ww * 0.05;
-    const railW = ww * 1.1;
-    const railTop = cy + hh * 0.2;
-    const railBottom = top + hh + hh * 0.22;
-    const midY = (railTop + railBottom) / 2;
-    const railRight = railLeft + railW;
-    const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };
+    const box: ZoneBox = { left, top, ww, hh, cy };
 
     if (style === "plain") {
-      drawPlainZone(g, geo, lw, texW);
+      drawPlainZone(g, box, lw, texW);
     } else if (style === "hlm") {
-      drawHlmZone(g, geo, lw);
+      drawHlmZone(g, box, lw, idx);
     } else {
+      // Gabarit Haussmann historique (inchangé) : garde-corps en travers du
+      // bas de la fenêtre (devant le bas du flic), avec débord latéral.
+      const railLeft = left - ww * 0.05;
+      const railW = ww * 1.1;
+      const railTop = cy + hh * 0.2;
+      const railBottom = top + hh + hh * 0.22;
+      const midY = (railTop + railBottom) / 2;
+      const railRight = railLeft + railW;
+      const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };
       drawHaussmannZone(g, geo, lw, texW, idx);
     }
   });

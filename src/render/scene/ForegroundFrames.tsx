@@ -5,9 +5,11 @@ import type { IronworkStyle, WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { drawForegroundIronwork } from "./foregroundArt";
 
-// Native facade resolution to draw the frame texture at (matches the art).
-const TEX_W = 1280;
-const TEX_H = 768;
+// Frame texture resolution: 2× the native facade art (1280×768) so the
+// code-drawn ironwork stays crisp once the panel is magnified on screen
+// (NearestFilter upscaling of a 1× texture read as chunky pixels).
+const TEX_W = 2560;
+const TEX_H = 1536;
 
 /**
  * Build a transparent overlay texture: for each window zone, the level's
