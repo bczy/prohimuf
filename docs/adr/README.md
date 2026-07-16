@@ -75,5 +75,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0023](./0023-narrative-scene-location-backdrop.md)        | Optional per-scene location décor (halftone facade) behind the NarrativeScreen transcript | Accepted |
 | [0024](./0024-pregame-landscape-layout.md)                 | Responsive pre-game layout for mobile landscape (CSS-first short-height reflow)           | Proposed |
 | [0025](./0025-live-hue-enemy-neon-rim-shader.md)           | Live-hue enemy neon rim via a 1-tap ShaderMaterial (heat feedback, hostiles only)         | Accepted |
-| [0026](./0026-window-alignment-harness.md)                 | Rendered-scene window-alignment harness for belliard (detect real windows, gate to 0)     | Accepted |
+| [0026](./0026-mobile-pinch-zoom-out.md)                    | Mobile pinch-to-zoom-out (two-finger spread controls the framing)                         | Proposed |
 | [0027](./0027-audio-in-loading-gate.md)                    | Audio (BGM + SFX) warmed in the level loading gate                                        | Accepted |
+| [0028](./0028-window-alignment-harness.md)                 | Rendered-scene window-alignment harness for belliard (detect real windows, gate to 0)     | Accepted |

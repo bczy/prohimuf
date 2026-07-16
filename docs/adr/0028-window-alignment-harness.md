@@ -1,4 +1,4 @@
-# 0026 — Rendered-scene window-alignment harness for belliard
+# 0028 — Rendered-scene window-alignment harness for belliard
 
 - **Status:** Accepted
 - **Date:** 2026-07-15
