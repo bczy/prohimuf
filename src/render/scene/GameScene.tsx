@@ -6,6 +6,7 @@ import { useGameLoop } from "@hooks/useGameLoop";
 import {
   computeSlotsFromZones,
   FACADE_ASPECT,
+  getIronworkSillOffset,
   getIronworkStyle,
   getLevelPanelZones,
   PANELS,
@@ -126,6 +127,7 @@ export function GameScene({
   );
   // Code-drawn foreground style matched to the level's architecture.
   const ironworkStyle = useMemo(() => getIronworkStyle(levelId), [levelId]);
+  const ironworkSillOffset = useMemo(() => getIronworkSillOffset(levelId), [levelId]);
   const mergedFacade = useMemo(() => {
     const slots = computeSlotsFromZones(tilePanelZones(panelZones), fullW, facadeH);
     return { width: slots.length, height: 1, slots };
@@ -286,6 +288,7 @@ export function GameScene({
             facadeW={panelW}
             facadeH={facadeH}
             style={ironworkStyle}
+            sillOffset={ironworkSillOffset}
           />
         </group>
       ))}
