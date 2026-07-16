@@ -3066,3 +3066,17 @@ coarse` only, justified in a comment).
   density 21→17 = PASS (wave cap inert at 68 slots, target read improved, faithful to the gallery);
   senior-architect design signed; ADR-0028 (harness) + ADR-0027 (audio) added. lead-art (framing)
   - code-review panel in flight. (Winston → Amelia ×3 → Karim/game-designer PASS)
+
+- story-window-alignment-harness / EXTEND to stalingrad + vitry (Bertrand: "lance le harness
+  et corrige tous ces pbs d'alignement de fenêtre"): dev-tooling-assets generalized the belliard
+  harness to `scripts/align-windows.mjs` (any level). belliard keeps its equal-thirds path (17
+  unchanged, byte-identical); other facades use run-based floor detection (per-row warm-density →
+  top-hat detrended rolling-min → contiguous runs = floors) handling stalingrad's dim top floor +
+  vitry's ~8 dense HLM floors where no global threshold works. Re-derived zones, each on a real lit
+  window, 0 defects (--fix & --check, all 3): stalingrad 21→12/panel (3/5/4), vitry 20→36/panel
+  (~8 floors). Rebased onto main (68b9303, mobile pinch-zoom) — ADR collision resolved (harness ADR
+  0026→0028, audio 0027, main's 0026-pinch index row restored). GATES: game-designer stalingrad+vitry
+  density = PASS (wave cap 1+wave is the limiter; 48/144 slots >> ~5-6 simultaneous at peak; position
+  pool, not difficulty) + 2 non-blocking playtest flags (vitry reachability @ speed 1.6; active-cop
+  read on the busy HLM background -> lead-art). tsc/vitest(331)/lint/format green.
+  (Amelia / dev-tooling-assets -> Karim PASS)
