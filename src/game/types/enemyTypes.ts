@@ -21,6 +21,11 @@ export interface Archetype {
   readonly variants: number; // number of visual variants (suffixes _2.._N)
   readonly tint: string; // neon color-multiply tint
   readonly aspect: number; // sprite plane width relative to its height
+  // The kind's window sprite files were deleted from the repo (ADR-0029): its
+  // spriteBase must never reach a load path again. Guarded by tests (a level
+  // roster resurrecting the kind fails CI), not filtered at runtime — the
+  // manifest must keep mirroring the real spawn pool.
+  readonly artRetired?: boolean;
 }
 
 export const ARCHETYPES: Record<EnemyKind, Archetype> = {
@@ -111,6 +116,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     variants: 1,
     tint: "#d8ffe2",
     aspect: 0.95,
+    artRetired: true,
   },
 };
 

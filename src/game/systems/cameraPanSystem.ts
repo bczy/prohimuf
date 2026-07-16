@@ -97,6 +97,12 @@ function driveAxis(
  * edge glides from the current speed). Axis with ramp === 0: glide exactly like
  * tickCameraPan (exponential decay with PAN_DAMPING, PAN_REST_EPSILON snap-to-rest,
  * hitting the clamp kills only that axis's velocity). Axes are independent.
+ *
+ * At full rest (no intent, no velocity, position within ±range) the same pan
+ * object is returned, like tickCameraPan: the caller runs this every rendered
+ * frame and the dominant state (pointer mid-screen, camera still) must not
+ * allocate. A rest position pushed out of bounds by a range change (resize)
+ * fails the in-range check and re-clamps through the glide branch.
  */
 export function driveEdgeScroll(
   pan: CameraPan,
@@ -105,6 +111,16 @@ export function driveEdgeScroll(
   dt: number,
   range: { x: number; y: number },
 ): CameraPan {
+  if (
+    ramp.x === 0 &&
+    ramp.y === 0 &&
+    pan.vx === 0 &&
+    pan.vy === 0 &&
+    Math.abs(pan.x) <= range.x &&
+    Math.abs(pan.y) <= range.y
+  ) {
+    return pan;
+  }
   const x =
     ramp.x !== 0
       ? driveAxis(pan.x, ramp.x, maxSpeed, dt, range.x)

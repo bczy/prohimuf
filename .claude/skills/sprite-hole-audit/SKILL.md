@@ -39,7 +39,7 @@ node scripts/fill-sprite-holes.mjs --check   # per-file would-fill count, exit 1
 
 ```
 node scripts/fill-sprite-holes.mjs
-node scripts/fill-sprite-holes.mjs public/assets/enemy_civilian.png
+node scripts/fill-sprite-holes.mjs public/assets/enemy_riot.png
 ASSET_DIR=some/dir node scripts/fill-sprite-holes.mjs   # override target dir
 ```
 

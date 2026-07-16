@@ -3148,7 +3148,7 @@ coarse` only, justified in a comment).
   `cameraPanSystem` gains `edgeScrollRamp` (linear -1..+1 across the edge zones) +
   `driveEdgeScroll` (direct-control velocity while driven, tickCameraPan-identical exponential
   glide on release; glide factored into shared `glideAxis`, tickCameraPan behaviour unchanged),
-  +21 tests (43/43). LANE B (dev-r3f-render): HUD off-screen arrows redrawn as one SVG polygon —
+  +20 tests (43/43). LANE B (dev-r3f-render): HUD off-screen arrows redrawn as one SVG polygon —
   acid-yellow #FFE600 fill + ink-black keyline (CSS triangles can't take an outline), inactive
   opacity 0.28→0.35; NarrativeScreen "Passer" enlarged to a ≥44px tap target (10px/20px, 15px);
   GameScene desktop block rewired to ramp+glide via panRef (EDGE_SCROLL_MAX_SPEED 8 at the edge ≈
@@ -3159,3 +3159,20 @@ coarse` only, justified in a comment).
   calibrated target is gone; script kept as infra), SCRIPTS.md/test updates, ADR-0029. Verified
   serially by the orchestrator: tsc / vitest 351(29 files) / lint all green.
   (Amelia ×3 ∥ → orchestrator verify)
+
+- story-visibility-and-feel-fixes / CODE-REVIEW PANEL (PR #62, mandatory merge gate): 4 parallel
+  reviewers — `code-review` high, `bmad-code-review`, `bmad-review-edge-case-hunter`,
+  `security-review`. Verdicts: PASS ×1 (security, zero findings) + PASS-with-minors ×3; ZERO
+  blocking/major. Cross-reviewer dedup → triage (orchestrator as senior-architect): FIXED —
+  FREEZE_KINDS still cycled the retired civilian (dev-harness 404, flagged by 3 reviewers);
+  edge-scroll/glide ran while paused (gate added, matches the frozen scene); resize recenter was
+  overridden by the stale panRef (pan reset with the re-frame); driveEdgeScroll allocated at rest
+  (identity early-return + out-of-range re-clamp, 2 new tests → 45); #FFE600 promoted to
+  `ACID.yellow` token; SVG baseline offset (display:block); CourierSprite/courierTextures stale
+  comments + dead "bike" union; resurrection guard — `artRetired` flag on the archetype consumed
+  by a new manifest test and the consistency test's retired set. ACCEPTED (documented, not fixed):
+  invisible-but-lethal courier on persistent rider load failure (no fallback file exists anymore —
+  comment now states it; revisit only if seen in the wild); pointer-leaves-window keeps max edge
+  scroll until the bound (pre-existing, arguably intended); two CameraPan authorities
+  desktop/mobile (future-facing refactor); driven-reentry velocity snap (designer playtest item,
+  with EDGE_SCROLL_MAX_SPEED tuning). (panel ×4 → Winston triage)

@@ -21,6 +21,7 @@ import {
   POST_LEVEL_NARRATIVE,
 } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
+import { ARCHETYPES } from "@game/types/enemyTypes";
 
 const ASSET_RE = /^assets\/.+\.(png|jpg|webp|mp3|wav)$/;
 
@@ -49,6 +50,25 @@ describe("assetManifest — global invariants", () => {
         expect(path.startsWith("/")).toBe(false);
         expect(path).not.toContain("://");
         expect(path).not.toContain("import.meta");
+      }
+    }
+  });
+
+  // Resurrection guard (ADR-0029): an archetype whose window art was deleted
+  // must never re-enter any level's manifest. A future roster giving such a
+  // kind a window weight fails HERE, forcing a conscious re-generation of the
+  // art before the kind can ship (the manifest mirrors the real spawn pool, so
+  // a runtime filter would only hide the 404 — this is the true gate).
+  it("no manifest ever references an art-retired archetype's sprite files", () => {
+    const retiredBases = Object.values(ARCHETYPES)
+      .filter((a) => a.artRetired === true)
+      .map((a) => a.spriteBase);
+    expect(retiredBases).toContain("enemy_civilian"); // the guard actually guards
+    for (const t of ALL_TARGETS) {
+      for (const path of manifestFor(t)) {
+        for (const base of retiredBases) {
+          expect(path).not.toContain(base);
+        }
       }
     }
   });
