@@ -30,6 +30,8 @@ import { ImpactEffects } from "@render/effects/ImpactEffects";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
+import { createCameraPan, driveEdgeScroll, edgeScrollRamp } from "@game/systems/cameraPanSystem";
+import type { CameraPan } from "@game/types/cameraPan";
 
 /**
  * Dev-only window-alignment harness surface (driven by scripts/, a separate
@@ -65,7 +67,12 @@ const WIDEST_ASPECT = Math.max(...Object.values(ARCHETYPES).map((a) => a.aspect)
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
-const SCROLL_SPEED = 6;
+// Max speed reached at the very screen edge. The edge scroll now ramps linearly
+// across the zone (0 at the inner boundary → full at the edge), so the zone's
+// midpoint scrolls at 4 — matching the old constant 6 felt slow at the edge and
+// too abrupt at the boundary; 8-at-the-edge / 4-at-mid restores that average feel
+// while adding progressive control and an inertial glide on exit.
+const EDGE_SCROLL_MAX_SPEED = 8;
 // Mobile zooms in past the desktop cover framing so targets stay finger-sized;
 // the swipe pan (ADR-0003) reaches the overflow this creates.
 const MOBILE_ZOOM_FACTOR = 1.7;
@@ -211,6 +218,9 @@ export function GameScene({
     impactChannelRef,
   );
   const mouseRef = useMouse(canvasRef);
+  // Desktop edge-scroll pan carried across frames so the camera can glide to rest
+  // (inertial exit) after the pointer leaves the edge zone.
+  const panRef = useRef<CameraPan>(createCameraPan());
 
   // Frame the facade to *cover* the viewport (no background bars on the sides).
   // On mobile the loop re-applies zoom each frame (base × pinch fraction); this
@@ -233,25 +243,15 @@ export function GameScene({
     const rangeX = Math.max(0, (fullW - viewW) / 2);
     const rangeY = Math.max(0, (facadeH - viewH) / 2);
 
-    let scrollX = 0;
-    if (mouseX < EDGE_ZONE) scrollX = -1;
-    else if (mouseX > 1 - EDGE_ZONE) scrollX = 1;
-    if (scrollX !== 0 && rangeX > 0) {
-      camera.position.x = Math.max(
-        -rangeX,
-        Math.min(rangeX, camera.position.x + scrollX * SCROLL_SPEED * delta),
-      );
-    }
-
-    let scrollY = 0;
-    if (mouseY < EDGE_ZONE) scrollY = 1;
-    else if (mouseY > 1 - EDGE_ZONE) scrollY = -1;
-    if (scrollY !== 0 && rangeY > 0) {
-      camera.position.y = Math.max(
-        -rangeY,
-        Math.min(rangeY, camera.position.y + scrollY * SCROLL_SPEED * delta),
-      );
-    }
+    // Screen y grows down, world y grows up — negate the y ramp to keep the old
+    // sign convention (pointer at top scrolls the camera up).
+    const ramp = { x: edgeScrollRamp(mouseX, EDGE_ZONE), y: -edgeScrollRamp(mouseY, EDGE_ZONE) };
+    panRef.current = driveEdgeScroll(panRef.current, ramp, EDGE_SCROLL_MAX_SPEED, delta, {
+      x: rangeX,
+      y: rangeY,
+    });
+    camera.position.x = panRef.current.x;
+    camera.position.y = panRef.current.y;
   });
 
   return (

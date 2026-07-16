@@ -9,6 +9,20 @@ function clampAxis(v: number, range: number): number {
   return Math.max(-range, Math.min(range, v));
 }
 
+/**
+ * One axis of the exponential glide shared by `tickCameraPan` and the released
+ * axes of `driveEdgeScroll`. `v' = v·e^(−λ·dt)` keeps decay frame-rate
+ * independent; hitting the clamp OR dropping below the rest epsilon zeroes this
+ * axis's velocity so it settles deterministically without rubbing the bound.
+ */
+function glideAxis(p: number, v: number, dt: number, range: number): { p: number; v: number } {
+  let vel = v * Math.exp(-PAN_DAMPING * dt);
+  const unclamped = p + vel * dt;
+  const clamped = clampAxis(unclamped, range);
+  if (clamped !== unclamped || Math.abs(vel) < PAN_REST_EPSILON) vel = 0;
+  return { p: clamped, v: vel };
+}
+
 export function createCameraPan(): CameraPan {
   return { x: 0, y: 0, vx: 0, vy: 0 };
 }
@@ -44,17 +58,60 @@ export function tickCameraPan(
   range: { x: number; y: number },
 ): CameraPan {
   if (pan.vx === 0 && pan.vy === 0) return pan;
-  const decay = Math.exp(-PAN_DAMPING * dt);
+  const x = glideAxis(pan.x, pan.vx, dt, range.x);
+  const y = glideAxis(pan.y, pan.vy, dt, range.y);
+  return { x: x.p, y: y.p, vx: x.v, vy: y.v };
+}
 
-  let vx = pan.vx * decay;
-  const unclampedX = pan.x + vx * dt;
-  const x = clampAxis(unclampedX, range.x);
-  if (x !== unclampedX || Math.abs(vx) < PAN_REST_EPSILON) vx = 0;
+/**
+ * Normalised edge-scroll intent for one axis. `pos` is the pointer position in [0,1]
+ * (0 = left/top edge). Returns 0 outside the edge zones; inside a zone the magnitude
+ * ramps linearly from 0 at the inner boundary to 1 at the screen edge. Sign: negative
+ * in the pos < edgeZone zone, positive in the pos > 1 - edgeZone zone. Result clamped
+ * to [-1, 1] (pos may land exactly on 0/1 or slightly outside from clamped input).
+ */
+export function edgeScrollRamp(pos: number, edgeZone: number): number {
+  if (pos < edgeZone) return clampAxis((pos - edgeZone) / edgeZone, 1);
+  if (pos > 1 - edgeZone) return clampAxis((pos - (1 - edgeZone)) / edgeZone, 1);
+  return 0;
+}
 
-  let vy = pan.vy * decay;
-  const unclampedY = pan.y + vy * dt;
-  const y = clampAxis(unclampedY, range.y);
-  if (y !== unclampedY || Math.abs(vy) < PAN_REST_EPSILON) vy = 0;
+/** Direct edge-scroll control for one axis: velocity is the raw ramp intent scaled
+ * to `maxSpeed`, kept as-is even at the clamp so releasing the edge glides from the
+ * current speed; only the integrated position is bounded to ±range. */
+function driveAxis(
+  p: number,
+  ramp: number,
+  maxSpeed: number,
+  dt: number,
+  range: number,
+): { p: number; v: number } {
+  const v = ramp * maxSpeed;
+  return { p: clampAxis(p + v * dt, range), v };
+}
 
-  return { x, y, vx, vy };
+/**
+ * Advance a CameraPan one frame from a per-axis ramp intent (each in [-1,1], from
+ * edgeScrollRamp). Axis with ramp !== 0: direct control — velocity = ramp * maxSpeed,
+ * position integrates by dt and clamps to ±range (velocity is KEPT so releasing the
+ * edge glides from the current speed). Axis with ramp === 0: glide exactly like
+ * tickCameraPan (exponential decay with PAN_DAMPING, PAN_REST_EPSILON snap-to-rest,
+ * hitting the clamp kills only that axis's velocity). Axes are independent.
+ */
+export function driveEdgeScroll(
+  pan: CameraPan,
+  ramp: { x: number; y: number },
+  maxSpeed: number,
+  dt: number,
+  range: { x: number; y: number },
+): CameraPan {
+  const x =
+    ramp.x !== 0
+      ? driveAxis(pan.x, ramp.x, maxSpeed, dt, range.x)
+      : glideAxis(pan.x, pan.vx, dt, range.x);
+  const y =
+    ramp.y !== 0
+      ? driveAxis(pan.y, ramp.y, maxSpeed, dt, range.y)
+      : glideAxis(pan.y, pan.vy, dt, range.y);
+  return { x: x.p, y: y.p, vx: x.v, vy: y.v };
 }
