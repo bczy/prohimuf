@@ -34,6 +34,13 @@ export const MARK = {
   pink: "#D62A7A", // DIFFICILE
 } as const;
 
+// In-game HUD accent — NOT a print marker ink: the acid neon of the game world,
+// drawn OVER the 3D scene only (never on a pre-game paper surface), always with
+// an ink-black keyline, flat fill, zero glow (§2bis).
+export const ACID = {
+  yellow: "#FFE600", // off-screen target arrows
+} as const;
+
 // Masthead strings (copy-deck §5.1) — single-sourced; kills the divergent per-file mastheads.
 export const MASTHEAD = {
   full: "UNDERGROUND PARIS · FANZINE CLANDESTIN · N°23 · NE SE VEND PAS", // cover

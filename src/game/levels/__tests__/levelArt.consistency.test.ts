@@ -106,7 +106,10 @@ function keysFor(kind: EnemyKind, shooting: boolean): string[] {
 // longer ship an enemy_*.png and the renderer never requests one — the courier
 // draws from the rider flipbook. Excluded from the expected manifest key set, so
 // their absence from levelArt.json is correct and a re-added key would be flagged.
-const ART_RETIRED_KINDS = new Set<EnemyKind>(["civilian"]);
+// Derived from the archetype's own `artRetired` flag — the single source of truth.
+const ART_RETIRED_KINDS = new Set<EnemyKind>(
+  (Object.keys(ARCHETYPES) as EnemyKind[]).filter((k) => ARCHETYPES[k].artRetired === true),
+);
 
 // Every legal base filename the renderer can request: idle for every variant,
 // plus shooting for every variant of archetypes that shoot.

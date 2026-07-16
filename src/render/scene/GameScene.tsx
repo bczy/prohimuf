@@ -60,17 +60,16 @@ interface HarnessWindow extends Window {
 
 // Widest sprite aspect across all archetypes. The harness box reports this
 // conservative worst case (if the widest occupant fits the opening, every kind
-// fits); __MUF_FREEZE_COPS__ cycles every kind — incl. the wide civilian —
-// through the windows.
+// fits); __MUF_FREEZE_COPS__ cycles every window kind through the windows
+// (civilian excluded since its window art was retired — ADR-0029).
 const WIDEST_ASPECT = Math.max(...Object.values(ARCHETYPES).map((a) => a.aspect));
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
-// Max speed reached at the very screen edge. The edge scroll now ramps linearly
-// across the zone (0 at the inner boundary → full at the edge), so the zone's
-// midpoint scrolls at 4 — matching the old constant 6 felt slow at the edge and
-// too abrupt at the boundary; 8-at-the-edge / 4-at-mid restores that average feel
-// while adding progressive control and an inertial glide on exit.
+// Max speed reached at the very screen edge. The edge scroll ramps linearly
+// across the zone (0 at the inner boundary → full at the edge): slower than the
+// old constant 6 in the inner half, faster at the edge — traded for progressive
+// control and the inertial glide on exit. Tuning value for the designer playtest.
 const EDGE_SCROLL_MAX_SPEED = 8;
 // Mobile zooms in past the desktop cover framing so targets stay finger-sized;
 // the swipe pan (ADR-0003) reaches the overflow this creates.
@@ -227,11 +226,16 @@ export function GameScene({
     ortho.zoom = baseZoom;
     ortho.position.set(0, 0, 100);
     ortho.updateProjectionMatrix();
+    // The desktop frame loop writes camera x/y from panRef every frame, so the
+    // recenter above only sticks if the pan resets with it (resize = re-frame).
+    panRef.current = createCameraPan();
   }, [camera, baseZoom]);
 
   useFrame((_state, delta) => {
     // On mobile the camera is driven by the inertial swipe pan in useGameLoop.
-    if (isMobile) return;
+    // On pause the whole scene freezes (game loop, couriers, flipbooks) — the
+    // camera must not keep edge-scrolling or gliding behind the pause sheet.
+    if (isMobile || paused === true) return;
     const { x: mouseX, y: mouseY } = mouseRef.current;
     const ortho = camera as OrthographicCamera;
 

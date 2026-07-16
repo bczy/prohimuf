@@ -25,7 +25,9 @@ import type { Floater } from "@render/scene/FeedbackLayer";
 const MAX_DELTA = 0.1;
 const DIRECTION_DEAD_ZONE = 0.2;
 // Order used by the dev freeze hook to show every enemy type on the contact sheet.
-const FREEZE_KINDS = ["normal", "riot", "biker", "civilian", "bonus"] as const;
+// No "civilian": its window art was retired (ADR-0029) — cycling it would 404 on
+// the deleted enemy_civilian.png and draw the fallback cop tinted civilian-green.
+const FREEZE_KINDS = ["normal", "riot", "biker", "bonus"] as const;
 
 function computeTargetIndicator(
   state: GameState,

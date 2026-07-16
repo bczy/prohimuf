@@ -15,7 +15,7 @@ import { flipbookFrame } from "./flipbook";
 
 // Couriers never overlap by much; a small reusable pool is plenty.
 const MAX_COURIERS = 4;
-// World height of the cyclist sprite (bike + rider); square flipbook cells.
+// World height of the cyclist sprite; square flipbook cells.
 const COURIER_H = 2.6;
 // Depth of the rider sprite: under the DeliveryVehicle sprite (VEHICLE_Z = 0.72
 // in DeliveryVehicleSprite.tsx).
@@ -45,9 +45,12 @@ function setMap(mesh: Mesh, tex: Texture | null): void {
  * art stays committed as spare). Driven each frame from the game state's
  * `couriers` (world positions), like BulletSprite's pool.
  *
- * The rider frames are committed and preloaded, so courierArtReady() is
- * effectively always true; the brief pre-ready window simply hides the rider
- * (the legacy enemy_civilian.png fallback was retired with that sprite).
+ * The rider frames are committed and preloaded, so on the happy path
+ * courierArtReady() turns true within a frame or two and the pre-ready window
+ * just hides the rider. If frame 1 ever FAILS to load (bad network after the
+ * loading gate settles), the failure is session-poisoned (courierTextures) and
+ * couriers stay hidden while gameplay still runs them — an accepted degraded
+ * mode since the legacy enemy_civilian.png fallback was retired (ADR-0029).
  */
 export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element {
   const riderRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_COURIERS }, () => null));
@@ -101,12 +104,12 @@ export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element 
   );
 }
 
-// Position/scale/texture one composite layer for a courier. `entry.scale` and
+// Position/scale/texture the rider plane for a courier. `entry.scale` and
 // `entry.offsetY` are render-side registration knobs (world units) tuned at the
 // art gate; square cells mean the plane aspect is 1.
 function updateLayer(
   mesh: Mesh,
-  layer: "bike" | "rider",
+  layer: "rider",
   courier: GameState["couriers"][number],
   phase: number,
   clock: number,
@@ -121,6 +124,6 @@ function updateLayer(
   mesh.position.set(courier.x, courier.y + entry.offsetY, z);
   mesh.scale.set(courier.dir * entry.scale, entry.scale, 1);
   setMap(mesh, getCourierTexture(layer, frame));
-  // Civilian tint on BOTH layers = gameplay "don't shoot" colour-code.
+  // Civilian tint = gameplay "don't shoot" colour-code.
   (mesh.material as MeshBasicMaterial).color.set(ARCHETYPES.civilian.tint);
 }

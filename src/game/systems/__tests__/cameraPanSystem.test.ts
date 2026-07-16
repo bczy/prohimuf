@@ -205,6 +205,18 @@ describe("edgeScrollRamp", () => {
 describe("driveEdgeScroll", () => {
   const RANGE = { x: 100, y: 100 };
 
+  it("returns the same pan object at full rest (no intent, no velocity — no per-frame allocation)", () => {
+    const pan = { x: 3, y: -2, vx: 0, vy: 0 };
+    expect(driveEdgeScroll(pan, { x: 0, y: 0 }, 10, 0.016, RANGE)).toBe(pan);
+  });
+
+  it("re-clamps a rest position pushed out of bounds by a range shrink (resize)", () => {
+    const pan = { x: 50, y: 0, vx: 0, vy: 0 };
+    const next = driveEdgeScroll(pan, { x: 0, y: 0 }, 10, 0.016, { x: 20, y: 100 });
+    expect(next.x).toBe(20);
+    expect(next.vx).toBe(0);
+  });
+
   it("drives X velocity to ramp * maxSpeed under direct control", () => {
     const pan = driveEdgeScroll(createCameraPan(), { x: 0.5, y: 0 }, 10, 0.016, RANGE);
     expect(pan.vx).toBe(5);

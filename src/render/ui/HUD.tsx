@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
-import { STOCK, INK, MARK } from "@render/ui/print";
+import { STOCK, INK, MARK, ACID } from "@render/ui/print";
 
 export interface HudTargetIndicator {
   up: boolean;
@@ -158,10 +158,18 @@ function ArrowIndicator({
         ...(active ? activeArrowStyle : null),
       }}
     >
-      <svg width={34} height={34} viewBox="0 0 34 34" aria-hidden="true">
+      {/* display:block — an inline svg sits on the text baseline and drifts off
+          the span's geometric centre, which is also the rotation origin. */}
+      <svg
+        width={34}
+        height={34}
+        viewBox="0 0 34 34"
+        aria-hidden="true"
+        style={{ display: "block" }}
+      >
         <polygon
           points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
-          fill="#FFE600"
+          fill={ACID.yellow}
           stroke={INK.black}
           strokeWidth={2}
           strokeLinejoin="round"

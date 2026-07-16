@@ -117,8 +117,8 @@ export function courierLayer(layer: string): CourierLayerEntry | null {
 // something has loaded. On first request every frame of the layer is queued so
 // the first flip doesn't stall on a texture upload. Resolution order:
 // requested frame -> frame 1 of the same layer -> null. There is NO global
-// fallback file: a courier with no art simply doesn't draw (CourierSprite keeps
-// the legacy single sprite up until courierArtReady()).
+// fallback file: a courier with no art simply doesn't draw (CourierSprite hides
+// the rider plane until courierArtReady()).
 export function getCourierTexture(layer: string, frame: number): Texture | null {
   const entry = LAYERS[layer];
   if (entry === undefined) return null;
@@ -132,12 +132,12 @@ export function getCourierTexture(layer: string, frame: number): Texture | null 
 }
 
 // True only once the RIDER layer's frame 1 is decoded and cached — the gate
-// CourierSprite uses to swap from the legacy single sprite to the animated
-// full-cyclist sprite (the bike layer was retired from the composite; its art
-// stays committed as spare). Calling it also kicks off loading of the frames.
-// Note: a 404 poisons the `failed` set for the whole session (same policy as
-// enemyTextures), so a client loaded BEFORE the CI art landed keeps the legacy
-// sprite until the next page load — the swap is per-load, not live.
+// CourierSprite uses to show the animated full-cyclist sprite (the bike layer
+// was retired from the composite; its art stays committed as spare). Calling it
+// also kicks off loading of the frames. Note: a 404/failure poisons the `failed`
+// set for the whole session (same policy as enemyTextures), so this then stays
+// false until the next page load and couriers stay hidden — the accepted
+// degraded mode since the legacy fallback sprite was retired (ADR-0029).
 export function courierArtReady(): boolean {
   let ready = true;
   for (const layer of ["rider"]) {
