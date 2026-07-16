@@ -4,6 +4,8 @@ import {
   applyDrag,
   releaseFlick,
   tickCameraPan,
+  edgeScrollRamp,
+  driveEdgeScroll,
   PAN_DAMPING,
   PAN_REST_EPSILON,
 } from "@game/systems/cameraPanSystem";
@@ -159,5 +161,124 @@ describe("tickCameraPan", () => {
     const pan = tickCameraPan({ x: 0, y: 4.9, vx: 10, vy: 100 }, 0.1, { x: 100, y: 5 });
     expect(pan.vy).toBe(0);
     expect(pan.vx).not.toBe(0);
+  });
+});
+
+describe("edgeScrollRamp", () => {
+  it("is neutral in the middle of the screen", () => {
+    expect(edgeScrollRamp(0.5, 0.1)).toBe(0);
+  });
+
+  it("is neutral exactly on the left inner boundary (pos === edgeZone)", () => {
+    expect(edgeScrollRamp(0.1, 0.1)).toBe(0);
+  });
+
+  it("is neutral exactly on the right inner boundary (pos === 1 - edgeZone)", () => {
+    expect(edgeScrollRamp(0.9, 0.1)).toBe(0);
+  });
+
+  it("ramps linearly to -0.5 halfway into the left edge zone", () => {
+    expect(edgeScrollRamp(0.05, 0.1)).toBeCloseTo(-0.5, 10);
+  });
+
+  it("ramps linearly to +0.5 halfway into the right edge zone", () => {
+    expect(edgeScrollRamp(0.95, 0.1)).toBeCloseTo(0.5, 10);
+  });
+
+  it("reaches -1 at the left screen edge (pos = 0)", () => {
+    expect(edgeScrollRamp(0, 0.1)).toBeCloseTo(-1, 10);
+  });
+
+  it("reaches +1 at the right screen edge (pos = 1)", () => {
+    expect(edgeScrollRamp(1, 0.1)).toBeCloseTo(1, 10);
+  });
+
+  it("clamps to -1 for pointer positions past the left edge", () => {
+    expect(edgeScrollRamp(-0.05, 0.1)).toBe(-1);
+  });
+
+  it("clamps to +1 for pointer positions past the right edge", () => {
+    expect(edgeScrollRamp(1.05, 0.1)).toBe(1);
+  });
+});
+
+describe("driveEdgeScroll", () => {
+  const RANGE = { x: 100, y: 100 };
+
+  it("drives X velocity to ramp * maxSpeed under direct control", () => {
+    const pan = driveEdgeScroll(createCameraPan(), { x: 0.5, y: 0 }, 10, 0.016, RANGE);
+    expect(pan.vx).toBe(5);
+  });
+
+  it("drives Y velocity to ramp * maxSpeed under direct control", () => {
+    const pan = driveEdgeScroll(createCameraPan(), { x: 0, y: -1 }, 10, 0.016, RANGE);
+    expect(pan.vy).toBe(-10);
+  });
+
+  it("integrates X position by dt while driving", () => {
+    const pan = driveEdgeScroll(createCameraPan(), { x: 1, y: 0 }, 10, 0.5, RANGE);
+    expect(pan.x).toBeCloseTo(5, 10); // 1 * 10 * 0.5
+  });
+
+  it("integrates Y position by dt while driving", () => {
+    const pan = driveEdgeScroll(createCameraPan(), { x: 0, y: 1 }, 10, 0.5, RANGE);
+    expect(pan.y).toBeCloseTo(5, 10);
+  });
+
+  it("clamps X to +range while driving but KEEPS velocity for a later glide", () => {
+    const pan = driveEdgeScroll({ x: 99, y: 0, vx: 0, vy: 0 }, { x: 1, y: 0 }, 10, 1, RANGE);
+    expect(pan.x).toBe(100);
+    expect(pan.vx).toBe(10);
+  });
+
+  it("clamps X to -range while driving but KEEPS velocity for a later glide", () => {
+    const pan = driveEdgeScroll({ x: -99, y: 0, vx: 0, vy: 0 }, { x: -1, y: 0 }, 10, 1, RANGE);
+    expect(pan.x).toBe(-100);
+    expect(pan.vx).toBe(-10);
+  });
+
+  it("glides a released axis exactly like tickCameraPan", () => {
+    const start = { x: 0, y: 0, vx: 10, vy: 0 };
+    const drive = driveEdgeScroll(start, { x: 0, y: 0 }, 10, 0.016, RANGE);
+    const tick = tickCameraPan(start, 0.016, RANGE);
+    expect(drive).toEqual(tick);
+  });
+
+  it("decays a released X axis independently of dt slicing", () => {
+    const start = { x: 0, y: 0, vx: 10, vy: 0 };
+    const whole = driveEdgeScroll(start, { x: 0, y: 0 }, 10, 0.2, RANGE);
+    let sliced = driveEdgeScroll(start, { x: 0, y: 0 }, 10, 0.1, RANGE);
+    sliced = driveEdgeScroll(sliced, { x: 0, y: 0 }, 10, 0.1, RANGE);
+    expect(sliced.vx).toBeCloseTo(whole.vx, 6);
+  });
+
+  it("snaps a released X axis to rest below the epsilon threshold", () => {
+    const pan = driveEdgeScroll(
+      { x: 0, y: 0, vx: PAN_REST_EPSILON, vy: 0 },
+      { x: 0, y: 0 },
+      10,
+      0.016,
+      { x: 10, y: 10 },
+    );
+    expect(pan.vx).toBe(0);
+  });
+
+  it("drives one axis under direct control while the other glides, independently", () => {
+    const start = { x: 0, y: 0, vx: 0, vy: 10 };
+    const pan = driveEdgeScroll(start, { x: 1, y: 0 }, 8, 0.016, RANGE);
+    expect(pan.vx).toBe(8); // driven axis
+    expect(pan.vy).toBeGreaterThan(0); // gliding axis still moving
+    expect(pan.vy).toBeLessThan(10); // ...but decaying
+  });
+
+  it("a released axis clamp kills only that axis's velocity while the driven axis stays live", () => {
+    // Y is gliding into its bound (kills vy); X is driven and must stay under direct control.
+    const pan = driveEdgeScroll({ x: 0, y: 4.9, vx: 0, vy: 100 }, { x: 1, y: 0 }, 8, 0.1, {
+      x: 100,
+      y: 5,
+    });
+    expect(pan.y).toBe(5);
+    expect(pan.vy).toBe(0);
+    expect(pan.vx).toBe(8);
   });
 });
