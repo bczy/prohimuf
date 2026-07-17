@@ -189,9 +189,14 @@ function runsAbove(arr, lo, hi, thr) {
 }
 
 const centroid = (arr, a, b) => {
+  // Clamp indices into the array: a pitch-split segment's x1 can reach W (a+w for the
+  // last segment), and reading arr[W] returns undefined → NaN accumulation → a silent
+  // midpoint fallback. Clamp to [0, len-1] so the real warm centroid is always computed.
+  const lo = Math.max(0, Math.round(a));
+  const hi = Math.min(arr.length - 1, Math.round(b));
   let num = 0;
   let den = 0;
-  for (let i = Math.round(a); i <= Math.round(b); i++) {
+  for (let i = lo; i <= hi; i++) {
     num += i * arr[i];
     den += arr[i];
   }
@@ -236,7 +241,8 @@ function detectColumns(det, cfg, cy) {
     const n = Math.max(1, Math.round(w / (cfg.splitPitch * W)));
     for (let s = 0; s < n; s++) {
       const x0 = a + (w * s) / n;
-      const x1 = a + (w * (s + 1)) / n;
+      // last segment's x1 is a+w = b+1, which can reach W; clamp the stored bound to W-1
+      const x1 = Math.min(W - 1, a + (w * (s + 1)) / n);
       wins.push({ cx: centroid(sm, x0, x1), x0, x1 });
     }
   }
@@ -358,11 +364,23 @@ function detectOpenings(levelId, band) {
       // fall back to the seed only for degenerate bounds (zero warm mass / too thin)
       const runWpx = x1 - x0;
       const degenerate = !(runWpx > 0) || runWpx < cfg.minRunW * W;
-      const w = degenerate
-        ? cfg.openingW
-        : Math.min(Math.max(runWpx / W, 0.55 * cfg.openingW), 1.6 * cfg.openingW);
+      const measured = runWpx / W;
+      const floor = 0.55 * cfg.openingW;
+      const ceil = 1.6 * cfg.openingW;
+      const w = degenerate ? cfg.openingW : Math.min(Math.max(measured, floor), ceil);
+      // Frame centre = geometric MIDPOINT of the measured run bounds, NOT the warm
+      // centroid cx: an asymmetric glow biases cx off-centre, so a cx-centred frame
+      // [x−w/2,x+w/2] would overhang bare wall while MISALIGN's per-edge check still
+      // reads 0. cx is kept only for the ordering / min-pitch de-dup inside detectColumns.
+      const midX = degenerate ? cx / W : (x0 + x1) / 2 / W;
+      if (!degenerate && (measured < floor || measured > ceil)) {
+        // saturated "measurement" — surface it so a clamped width is never silent
+        console.warn(
+          `[align:${levelId}] clamped run @x=${midX.toFixed(3)} measured=${measured.toFixed(3)} → w=${w.toFixed(3)}`,
+        );
+      }
       openings.push({
-        x: +(cx / W).toFixed(4),
+        x: +midX.toFixed(4),
         y: +(cy / H).toFixed(4),
         w: +w.toFixed(4),
         h: cfg.openingH,
@@ -401,11 +419,11 @@ function zonesFromOpenings(openings, cal) {
  * defects: OVERFLOW (slot ⊄ opening+τ), COUNT (#zones ≠ #openings), EMPTY (opening
  * with no zone), WALL (zone centre on bare wall), and MISALIGN (the applied railing
  * frame `zone.x`/`zone.w` off its measured opening beyond `ALIGN_TOL`).
- * `warmDensity(x,y)` samples the facade for the bare-wall check. `zones` is the
- * APPLIED panel-0 zone array (committed zones in `--check`, `panelZones` in `--fix`);
- * omit it to skip the MISALIGN pass.
+ * `warmDensity(x,y)` samples the facade for the bare-wall check. `zonesByPanel` is the
+ * APPLIED per-panel zone arrays (the committed 4 panels in `--check`, the 4 identical
+ * `panelZones` in `--fix`); omit it to skip the MISALIGN pass.
  */
-function measure(slotRects, openings, warmDensity, zones) {
+function measure(slotRects, openings, warmDensity, zonesByPanel) {
   const defects = [];
   const bySlot = [];
   for (let p = 0; p < PANELS; p++) {
@@ -456,31 +474,30 @@ function measure(slotRects, openings, warmDensity, zones) {
       defects.push(`panel ${p}: EMPTY opening@(${op.x.toFixed(3)},${op.y.toFixed(3)}) has no zone`);
     }
   }
-  // MISALIGN — the applied railing frame (zone.x/zone.w) vs its measured opening.
-  // Panel-independent (every panel gets the same zone array), so scored once by the
-  // same greedy nearest-centre match used for slots.
-  if (zones) {
-    const usedO = new Set();
-    for (const z of zones) {
-      let best = -1;
-      let bd = Infinity;
-      for (let o = 0; o < openings.length; o++) {
-        if (usedO.has(o)) continue;
-        const d = Math.hypot(z.x - openings[o].x, z.y - openings[o].y);
-        if (d < bd) {
-          bd = d;
-          best = o;
-        }
-      }
-      if (best < 0) continue;
-      usedO.add(best);
-      const o = openings[best];
-      const reason = misaligned(z, o, ALIGN_TOL);
-      if (reason) {
+  // MISALIGN — the applied railing frame (zone.x/zone.w) vs its measured opening, per
+  // panel. Zones and openings share one construction order (row-major, x ascending), so
+  // they pair 1:1 BY INDEX (zones[i] ↔ openings[i]) — no greedy nearest-centre match,
+  // which could mis-pair when frames drift. A count mismatch is its own defect.
+  if (zonesByPanel) {
+    for (let p = 0; p < PANELS; p++) {
+      const zones = zonesByPanel[p];
+      if (!zones) continue;
+      if (zones.length !== openings.length) {
         defects.push(
-          `MISALIGN(${reason}) frame@(x=${z.x.toFixed(3)},w=${z.w.toFixed(3)}) ⊄ ` +
-            `opening@(x=${o.x.toFixed(3)},w=${o.w.toFixed(3)})`,
+          `panel ${p}: MISALIGN(count) ${zones.length} zones ≠ ${openings.length} openings`,
         );
+        continue;
+      }
+      for (let i = 0; i < zones.length; i++) {
+        const z = zones[i];
+        const o = openings[i];
+        const reason = misaligned(z, o, ALIGN_TOL);
+        if (reason) {
+          defects.push(
+            `panel ${p}: MISALIGN(${reason}) frame@(x=${z.x.toFixed(3)},w=${z.w.toFixed(3)}) ⊄ ` +
+              `opening@(x=${o.x.toFixed(3)},w=${o.w.toFixed(3)})`,
+          );
+        }
       }
     }
   }
@@ -600,7 +617,9 @@ async function checkLevel(page, level, band) {
   await applyAndRead(page, committed);
   await sleep(300);
   const slots = await readSlots(page);
-  const { defects, bySlot } = measure(slots, det.openings, warmDensity, committed[0]);
+  // MISALIGN over EVERY committed panel (all 4), not just panel 0 — each is checked
+  // against the shared detected openings, so a single drifted panel is still caught.
+  const { defects, bySlot } = measure(slots, det.openings, warmDensity, committed);
   const overlay = writeOverlay(det, level.id, slots, bySlot, 0, "check");
   if (defects.length > 0) {
     console.error(`[align:${level.id}] CHECK FAILED — ${defects.length} defect(s):`);
@@ -657,15 +676,15 @@ async function fixLevel(page, level, band) {
   let panelZones = zonesFromOpenings(det.openings, cal);
   let converged = false;
   let lastSlots = [];
+  let lastDefects = [];
   let overlay = "";
   for (let iter = 1; iter <= MAX_ITERS; iter++) {
-    await applyAndRead(
-      page,
-      Array.from({ length: PANELS }, () => panelZones),
-    );
+    const applied = Array.from({ length: PANELS }, () => panelZones);
+    await applyAndRead(page, applied);
     await sleep(300);
     lastSlots = await readSlots(page);
-    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity, panelZones);
+    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity, applied);
+    lastDefects = defects; // measured against THIS iteration's applied zones (see below)
     overlay = writeOverlay(det, level.id, lastSlots, bySlot, iter, "fix");
     console.log(
       `[align:${level.id}] iter ${iter}: ${defects.length} defect(s) → ${path.relative(ROOT, overlay)}`,
@@ -681,20 +700,17 @@ async function fixLevel(page, level, band) {
         const idx = det.openings.indexOf(bs.opening);
         if (idx >= 0) overflowByIdx.add(idx);
       });
-    // Correction (panelZones[i] is 1:1 with openings[i]): snap a horizontally
-    // misaligned railing frame to the measured opening edges (deterministic), then
-    // shrink any overflowing sprite by height and re-centre.
+    // Correction (panelZones[i] is 1:1 with openings[i]): shrink any overflowing sprite
+    // by height and re-centre. No MISALIGN snap needed — zonesFromOpenings builds x/w
+    // straight from the openings and the shrink only touches h/y, so --fix frames are
+    // aligned by construction; MISALIGN is a --check-time gate against drifted committed data.
     panelZones = panelZones.map((z, i) => {
       const o = det.openings[i];
-      let nz = z;
-      if (misaligned(nz, o, ALIGN_TOL)) {
-        nz = { ...nz, x: +o.x.toFixed(4), w: +o.w.toFixed(4) };
-      }
       if (overflowByIdx.has(i)) {
-        const zh = +(nz.h * 0.94).toFixed(4);
-        nz = { x: nz.x, y: +(o.y - cal.b * zh).toFixed(4), w: nz.w, h: zh };
+        const zh = +(z.h * 0.94).toFixed(4);
+        return { x: z.x, y: +(o.y - cal.b * zh).toFixed(4), w: z.w, h: zh };
       }
-      return nz;
+      return z;
     });
   }
 
@@ -709,13 +725,14 @@ async function fixLevel(page, level, band) {
     );
     return 0;
   }
-  const { defects } = measure(lastSlots, det.openings, warmDensity, panelZones);
+  // Report the LAST measured iteration's defects (stored above) — re-measuring the stale
+  // lastSlots against the now-corrected panelZones would score two mismatched states.
   console.error(
-    `[align:${level.id}] FIX did NOT converge (${defects.length} defect(s)) — NOT writing.`,
+    `[align:${level.id}] FIX did NOT converge (${lastDefects.length} defect(s)) — NOT writing.`,
   );
-  for (const d of defects.slice(0, 24)) console.error(`  ✗ ${d}`);
+  for (const d of lastDefects.slice(0, 24)) console.error(`  ✗ ${d}`);
   console.error(`[align:${level.id}] last overlay: ${path.relative(ROOT, overlay)}`);
-  return defects.length;
+  return lastDefects.length;
 }
 
 async function main() {
