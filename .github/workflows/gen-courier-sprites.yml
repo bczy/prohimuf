@@ -52,7 +52,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Prompt gate (fail fast BEFORE any paid FLUX)
         run: node scripts/check-art-prompts.mjs --set courier

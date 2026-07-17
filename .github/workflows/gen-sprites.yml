@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Generate missing enemy-type sprites
         run: node scripts/gen-enemy-types.mjs
