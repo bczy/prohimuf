@@ -49,6 +49,10 @@ describe what IS there so completely that X has no room to appear.
 
 ## The loop you live in
 
+Author or repair prompts with the **`flux-prompt`** skill — it packages this exact method
+(silhouette-first, subject-only, colour/orientation as render metadata, one-variable
+iteration) into a gate-ready output block.
+
 concept-artist (you) draft → `art-advisor` grounding (as needed) → **`lead-art` PASS
 required** → `dev-tooling-assets`/session commits and dispatches generation →
 `lead-art` verdicts the output → you iterate on FAILs (bounded by the batch cap).

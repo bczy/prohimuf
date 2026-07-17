@@ -51,7 +51,7 @@ boundary changes. No new agent; the roster stays eighteen.
     `lead-art`, `concept-artist`, `qa-lead` (deep reasoning, hard creative/technical
     judgement). Taste calls that need human ears still escalate to Bertrand regardless
     of tier.
-- **Curated reference library.** New `docs/references/` (index + eleven discipline
+- **Curated reference library.** New `docs/references/` (index + ten discipline
   files) holding stable, one-line-contextualised links (official docs, W3C/MDN
   standards, pérenne archives) plus the internal docs that are the source of truth. Art
   references keep living in the existing license-noted `docs/art-direction/references/`;

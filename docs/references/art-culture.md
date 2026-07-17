@@ -12,8 +12,7 @@ Pour `art-advisor`, `concept-artist`, `lead-art`, `game-graphist`. Style maison 
 
 ## Références externes (ancrage, pas dump — la curation vit dans le dossier interne)
 
-- [Prohibition (1987) — MobyGames](https://www.mobygames.com/game/prohibition/) — la source : façade fixe, le jeu lit comme une affiche, pas un diorama.
-- [MyAbandonware — Prohibition](https://www.myabandonware.com/) — captures d'écran d'époque de l'Atari ST.
+- [Prohibition (1987) — MobyGames](https://www.mobygames.com/game/prohibition/) — la source : façade fixe, le jeu lit comme une affiche, pas un diorama (captures d'écran d'époque Atari ST incluses).
 - [Black Forest Labs — FLUX](https://github.com/black-forest-labs/flux) — comportement du modèle qui exécute les prompts (silhouette-first, positivement décrit).
 
 ## Repères période (à valider par `art-advisor`)
@@ -24,5 +23,6 @@ Pour `art-advisor`, `concept-artist`, `lead-art`, `game-graphist`. Style maison 
 ## MCP / Skills à utiliser
 
 - **Context7** (concept/graphist si besoin d'un point technique image).
+- `flux-prompt` (concept-artist) — écrire/réparer un prompt FLUX gate-ready (silhouette-first, style maison).
 - `sprite-hole-audit` — gate d'intégrité : aucun cutout poreux ne sort.
 - `verify` — juger un visuel composé au runtime sur de vrais screenshots in-game.
