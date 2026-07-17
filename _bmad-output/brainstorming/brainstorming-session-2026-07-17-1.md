@@ -272,7 +272,7 @@ Bertrand asked whether the 10 kept ideas overlapped or conflicted. Four intersec
 2. Rest of the level **freezes** (as today); the QTE tableau alone is alive.
 3. Captor retreats toward a porte cochère dragging the hostage (#21) — the street is the **sole clock**; reaching the door = she's gone (fail).
 4. Human shield (#1): `COVERED` while dragging; brief telegraphed `PEEKING` exposures during which **he shoots at you** (#9, −energy if unanswered).
-5. **Head-only** (#18): the rescue is one clean headshot during a peek; hitting her = heavy penalty; anything else does nothing.
+5. **Head-only** (#18, refined): the rescue is one clean headshot during a peek. Hitting the captor's **body drains the player's energy** (small penalty — reckless spray bleeds you); hitting the hostage = heavy penalty. Sanction hierarchy: body = small cost, hostage = big cost, head-during-peek = win. Nothing else counts.
 6. Energy = outcome currency only: rescue refill (#16), panic shot (#17), hostage hits. No passive drain (#6 demoted).
 7. Per-level curve (#12): retreat speed, peek frequency/length (floors G2/G5); accomplice (#8) in late levels, replacing captor counter-fire.
 
