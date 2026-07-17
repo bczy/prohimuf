@@ -39,5 +39,6 @@ Prose context goes below the line, never inside it.
 | [story-crew-extension](./handoffs/story-crew-extension.md)                             | closed  | +3 agents Tony/Ben/Otis (ADR-0037)      |
 | [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)   | closed  | pipeline poster + freshness gate (#74)  |
 | [story-harness-infographics](./handoffs/story-harness-infographics.md)                 | open    | 4 harness posters + freshness gate      |
+| [story-harness-railing-alignment](./handoffs/story-harness-railing-alignment.md)       | open    | railing↔window align (ADR-0028, PR #68) |
 | [fixes](./handoffs/fixes.md)                                                           | rolling | fix-lane one-liners                     |
 | [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)   | closed  | remote provisioning hook (ADR-0033)     |
