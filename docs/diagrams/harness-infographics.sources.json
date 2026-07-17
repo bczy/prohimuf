@@ -1,8 +1,8 @@
 {
-  "HARNESS.md": "c6e0ffc6d54b5d12bdd9890bd47c0da47da20e72feaf9398076f56685ca7e508",
+  "HARNESS.md": "19c6a1ef5fb3605652fccfc64064307c2967b2cb5e1eaabf4a284253e4b341eb",
   "docs/adr/0005-dynamic-verification-harness.md": "c1253debffbf25d7083d734da5951c9f6f001f8f1053e83018f495a9d8b446f3",
   "docs/adr/0007-shared-harness-library.md": "0d0ee1776b928c570ff225e8747578f57cb5edc367b2c8b487119e7d2335bfb2",
-  "docs/adr/0028-window-alignment-harness.md": "1029467cb2dca0e5b87185681a5df15fd1eb3eee8782d5982343fc823487f383",
+  "docs/adr/0028-window-alignment-harness.md": "2300811791559390510dcb897d5e3a4fec161e5849b0e63a7b679128b72d7d3b",
   "docs/asset-pipeline.md": "4b85f111e26731393f3926469f217324c8f84fa8bcf7e84f1152fe90b2f9b2c0",
   "docs/ci.md": "f6958b3b1d68d41596562f2da8131ffd9ab1e989364eed310a4f29d30a5a34a5",
   "docs/diagrams/build-harness-infographics.py": "b2ffddf65c53fc869b2ea053514e62bdd947ae59e10269823f8e427b6d59e491"
