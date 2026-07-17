@@ -36,6 +36,14 @@ jobs:
       - name: Harness infographics freshness
         run: node scripts/check-harness-infographics.mjs
 
+      # ADR REGISTRY FRESHNESS — the README index and the deployed ADR page
+      # (public/adr/index.html) are generated from docs/adr/NNNN-*.md. A PR that
+      # adds/edits/renames an ADR (even a Proposed draft) must regenerate them in
+      # the same PR; also hard-fails on a duplicate ADR number. Pure node, runs
+      # before install to fail fast. Fix: node scripts/gen-adr-index.mjs --write
+      - name: ADR registry freshness
+        run: node scripts/gen-adr-index.mjs --check
+
       - name: Cache yarn
         uses: actions/cache@v4
         with:
