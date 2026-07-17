@@ -36,6 +36,8 @@ coverage/
 
 # Debug overlays from scripts/gen-window-zones.mjs --debug
 scripts/.dbg-*.jpg
+# Per-window crop evidence from the align-windows harness verification
+scripts/.dbg-crops/
 
 # CodeGraph local index (rebuilt per machine via `codegraph index`)
 .codegraph/

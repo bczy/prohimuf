@@ -112,3 +112,75 @@ comparison is a pure helper (`misaligned(zone, opening, τ) → "left"|"right"|"
 just-inside pass / just-outside fail on **both** the left and right edges, negative offsets,
 the non-finite guard, and the strict-`>` contract (a delta exactly `== τ` passes). Do not
 over-engineer — detection stays integration-tested via the `--check` gate, not unit-mocked.
+
+## Amendment 2026-07-17 (Iteration 2) — hysteresis expansion, valley split + `UNDERCOVER`/`OVERCOVER`
+
+**Problem.** Iteration 1's `MISALIGN` gates the applied frame against the **detected**
+opening, so any detection MIS-measurement converges green while visually wrong. Two such
+classes shipped on belliard's DOUBLE (two-pane) french windows: (a) a dim second pane fell
+below `colThresh`, the run measured **one pane**, the width clamped to the floor, and the
+midpoint frame centred on that single pane (half-covered window); (b) two adjacent windows +
+the wall between them merged into one run that `n = round(w/(splitPitch·W))` rounded to 1, so
+pitch-split left it whole and the frame straddled both windows and the wall. `MISALIGN`
+cannot catch either — the zone equals the mis-measured opening.
+
+**Decision (scripts-only; no `src/render`/`src/game`).**
+
+1. **Hysteresis run expansion** in `detectColumns()`: high-threshold runs
+   (`thr = bandH·colThresh`) are grown outward while `sm >= HYST_LOW·thr`
+   (`HYST_LOW = 0.45`, `cfg.hystLow`), bounded by the neighbour's original edge, a hard cap
+   of `splitPitch·W` per window, and a density-minimum split if two expanded runs meet — BEFORE
+   twin-merge, so a dim pane rejoins its bright twin by expansion or the existing twin-merge.
+2. **Valley split** in `detectColumns()` (after twin-merge, before pitch-split): a run holding
+   two+ density peaks separated by a valley `< VALLEY_FRAC·min(peakL,peakR)`
+   (`VALLEY_FRAC = 0.4`, `cfg.valleyFrac`) splits at that valley, recursively — but only when
+   each sub-run is `>= minRunW·W` AND the sub-run midpoints are `>= minPitch·W` apart (the
+   mullion guard: two panes of ONE french window are close and stay merged; two windows split).
+   Pitch-split remains as a fallback.
+3. **`UNDERCOVER` / `OVERCOVER` — detection-INDEPENDENT gates measured from the ART**
+   (`scripts/lib/coverage.mjs`), so a half-covered or wall-straddling window can never converge
+   green again. Per frame edge, sample warm density (rectangular sampler `warmRect`, not the
+   0.03×0.05 point sampler the WALL check keeps) in an **exterior** strip just outside the edge
+   (`UNDERCOVER` when `>= UNDERCOVER_DENS = 0.28` ⇒ the window continues past the edge) and an
+   **interior** strip just inside it (`OVERCOVER` when `< OVERCOVER_DENS = 0.07` ⇒ the edge sits
+   on wall). Exterior strips are bounded by neighbouring frames in the same row so they never
+   read an adjacent window. `OVERCOVER` is **suppressed at the floor width** (a railing pinned
+   at its minimum size legitimately overhangs a sub-floor window — by-design, never a straddle,
+   which is always well above floor width). The math is two pure helpers — `coverStrips`
+   (rectangle geometry incl. neighbour bounding) and `coverDefects` (verdict from precomputed
+   strip densities) — unit-tested in `scripts/lib/__tests__/coverage.test.mjs`; the pixel
+   sampling stays impure in the harness. Wired into `measure()` for both `--fix` and `--check`.
+4. **Correction path = post-detection COVERAGE AUDIT (design choice).** Because
+   `zonesFromOpenings()` builds each frame's x/w straight from the opening, an
+   UNDERCOVER/OVERCOVER means the **opening** is mis-measured, so a zone-side nudge in the
+   fixLevel() loop has nothing to push against — the fix belongs on the opening, BEFORE zones
+   exist. `auditCoverage()` (run inside `detectOpenings()`, so both `--fix` and `--check` see
+   the same corrected openings) re-derives a flagged window's bounds directly off the art in the
+   opening's own vertical band (`deriveWindowBounds`, trim-to-warm: union the lit runs the frame
+   overlaps, dropping edge-wall / pulling in a dim adjacent pane), accepting the change ONLY when
+   it strictly reduces that opening's defect count (never worsens, always terminates; neighbour
+   strip bounds are frozen from the initial detection to stop cascade/oscillation). Because the
+   audit and the `measure()` gate read the same y-band with the same thresholds and the same
+   floor suppression, a corrected opening satisfies the gate by construction.
+
+**Rationale.** `MISALIGN` gates **zone-vs-detection**; `UNDERCOVER`/`OVERCOVER` gate
+**detection-vs-art** — the missing axis that let a green-but-wrong frame ship.
+
+**Outcome.** Floor-clamp warnings: **stalingrad 5→3, vitry 12→9** (dropped as intended);
+**belliard 2→4** (ROSE — honestly reported): the two original belliard clamps were narrow lit
+windows all along, and the audit's shrink of over-extended frames onto their true (narrow) lit
+windows plus the over-merge split produced two more genuinely sub-floor windows, each now framed
+at the minimum railing width. A floor clamp is **informational, not a defect** — it means a lit
+window is narrower than the seed and framed at the minimum size. Ceiling clamps stay ~0 (the one
+belliard straddle was under the ceiling anyway; it is now trimmed/split). Detection counts:
+**belliard 17→18** (5-5-7 → 5-6-7 — one over-merged pair became two windows), **stalingrad 12**
+(3-5-4, unchanged), **vitry 36→38**. `--fix` converges to **0 defects** across all seven classes
+(OVERFLOW/COUNT/EMPTY/WALL/MISALIGN/UNDERCOVER/OVERCOVER) on all three levels; `--check` exits 0.
+The clearly-double belliard windows (row1 x0.70/x0.82, row2 x0.24) now span **both** panes; the
+narrow single-pane windows (row1 x0.28/x0.54) are genuine single lit panes in the art (peak
+luminance ≈115 vs shadowed facade ≈55–75, no dim twin), correctly framed at minimum width. The
+v0 "belliard byte-for-byte" promise is (again, intentionally) further relaxed for x/w — that is
+the point. **Known residual:** belliard row0's central lit group (`w1`) is 2–3 warm blobs
+separated by thin mullions closer than `minPitch`; it is framed as one tight railing over the lit
+extent (no wall overhang, all gates pass) rather than split — reliably splitting it would risk
+over-splitting real double-pane windows elsewhere.

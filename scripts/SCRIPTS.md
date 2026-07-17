@@ -452,19 +452,32 @@ ids (default = every playable level: `belliard`, `stalingrad`, `vitry`).
     floor still splits from a bright shallow valley below it), thresholded into
     contiguous warm **runs** whose centroids are the floor centres. Robust to
     however many floors a facade has (stalingrad ~3, vitry ~8 — never assumed).
-  - **Windows per row.** A warm column-density profile whose above-threshold runs
-    (twin panes merged, wide runs split by pitch) are the lit windows. One opening
-    per real, **visible** window; dark/ambiguous windows are intentionally not
-    invented (a zone on unlit wall is itself a defect). Each opening carries a
-    **measured centre + width** from its run bounds — `w = (x1−x0)/W` and
-    `x = (x0+x1)/2/W`, the geometric **MIDPOINT** of the bounds (NOT the warm centroid
-    `cx`, which an asymmetric glow biases off-centre and would push the frame onto bare
-    wall) — clamped to `[0.55, 1.6]·openingW` around the per-level seed. `openingW` is
-    only a **fallback seed** — the clamp band, and the width used when a run degenerates
-    (zero warm mass / thinner than `minRunW·W`). When the clamp saturates (floor or
-    ceiling), a `[align:<id>] clamped run …` warning is printed so a saturated width is
-    never silent. This is what lets the foreground railing frame the real window instead
-    of a fixed-width guess.
+  - **Windows per row.** A warm column-density profile whose above-threshold runs are
+    the lit windows, refined in four steps: **(1) hysteresis expansion** — each
+    high-threshold run grows outward while the profile stays on a LOW shoulder
+    (`sm ≥ HYST_LOW·thr`, `HYST_LOW = 0.45`, `cfg.hystLow`), bounded by the neighbour and
+    a `splitPitch·W` cap, so a dim second pane below `colThresh` rejoins its bright twin;
+    **(2) twin-merge** of adjacent panes; **(3) valley split** — a run holding two+ density
+    peaks separated by a valley `< VALLEY_FRAC·min(peaks)` (`VALLEY_FRAC = 0.4`,
+    `cfg.valleyFrac`) splits at the valley (recursively), UNLESS the two sub-runs are
+    narrower than `minRunW·W` or their midpoints are closer than `minPitch·W` (the mullion
+    guard — two panes of one french window stay merged); **(4) pitch-split** of any still
+    over-wide run as a fallback. One opening per real, **visible** window; dark/ambiguous
+    windows are intentionally not invented (a zone on unlit wall is itself a defect). Each
+    opening carries a **measured centre + width** from its run bounds — `w = (x1−x0)/W`,
+    `x = (x0+x1)/2/W`, the geometric **MIDPOINT** (NOT the glow-biased centroid) — clamped
+    to `[0.55, 1.6]·openingW` around the per-level seed. `openingW` is only a **fallback
+    seed** (the clamp band, and the width when a run has zero warm mass). When the width
+    clamps to the floor, a `[align:<id>] clamped run …` warning prints — this is
+    **informational** (a lit window narrower than the seed, framed at the railing minimum),
+    not a defect.
+  - **Coverage audit (detection-vs-art).** Before zones are built, each opening is checked
+    against the **art** (not the detected run) via exterior/interior warm-density strips
+    (see UNDERCOVER/OVERCOVER below); a flagged opening is re-derived directly off the
+    facade in its own vertical band (trim-to-warm: union the lit runs the frame overlaps,
+    dropping edge-wall / pulling in a dim adjacent pane), accepted only when it strictly
+    reduces the opening's defect count. This is the correction path — the fix is on the
+    opening, since `zone.x`/`zone.w` are built straight from it.
 - **Correction loop:** boot a served prod build headless (reusing `e2e-lib.mjs` —
   SwiftShader, `seedDeterminism` freezes one static cop per slot), push candidate
   zones via `window.__MUF_ZONES__` + `__MUF_APPLY_ZONES__()`, read each rendered
@@ -513,6 +526,23 @@ yarn align:belliard:check
   line is prefixed `panel N:`. The pure per-edge check lives in
   `scripts/lib/alignment.mjs` (`misaligned`), unit-tested in
   `scripts/lib/__tests__/alignment.test.mjs`.
+- **UNDERCOVER / OVERCOVER** — the applied frame measured against the **ART** itself, not
+  the detected opening (the axis `MISALIGN` is blind to: a detection MIS-measurement leaves
+  zone == opening, so it converges green while visually wrong). For each frame edge, warm
+  density is sampled in an **exterior** strip just outside the edge and an **interior** strip
+  just inside it (rectangular sampler; the WALL check keeps its 0.03×0.05 point sampler).
+  `UNDERCOVER(left|right)` when the exterior strip `≥ UNDERCOVER_DENS = 0.28` (the lit window
+  continues past the edge — the frame covers too little, e.g. one pane of a double);
+  `OVERCOVER(left|right)` when the interior strip `< OVERCOVER_DENS = 0.07` (the edge sits on
+  unlit wall — the frame is too wide / straddles a gap). Exterior strips are bounded by the
+  neighbouring frame in the same row so they never read an adjacent window; `OVERCOVER` is
+  **suppressed at the floor width** (a minimum-size railing legitimately overhangs a
+  sub-floor window — never a straddle, which is always well above floor width; the haussmann
+  railing template's fixed ~5% overhang is outside `zone.w` and so outside the interior
+  strip). Pure helpers `coverStrips` (geometry + neighbour bounding) and `coverDefects`
+  (verdict from precomputed strip densities) live in `scripts/lib/coverage.mjs`, unit-tested
+  in `scripts/lib/__tests__/coverage.test.mjs`. Checked over all 4 panels in `--check`,
+  prefixed `panel N:`.
 
 SUCCESS = 0 defects across all 4 panels of every requested level. Exit non-zero
 while any defect remains.
@@ -528,10 +558,11 @@ while any defect remains.
   — same install pattern as the other e2e scripts.
 
 > **Slot-count note (game-designer / lead-art sign-off):** detecting the real lit
-> windows changed the per-panel slot counts — **belliard 21→17** (5/5/7),
-> **stalingrad 21→12** (3/5/4 over 3 floors), **vitry 20→36** (over the ~8 dense
-> HLM floors). Fewer or more, but every cop now frames a real window; dark windows
-> are left empty by design.
+> windows changed the per-panel slot counts — **belliard 21→18** (5/6/7 after the
+> iteration-2 valley split turned one over-merged pair into two windows; was 17/5-5-7),
+> **stalingrad 21→12** (3/5/4 over 3 floors), **vitry 20→38** (8/3/7/3/4/5/4/4 over
+> the 8 dense HLM floors). Fewer or more, but every cop now frames a real window; dark
+> windows are left empty by design.
 
 ---
 
