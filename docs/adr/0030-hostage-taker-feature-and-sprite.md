@@ -1,6 +1,10 @@
 # 0030 — Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting)
 
-- **Status:** Accepted
+- **Status:** Accepted (partially superseded by
+  [ADR-0031](./0031-hostage-qte-duel-porte-cochere.md) — the static frozen tableau, the
+  `windowSeconds` clock, and the `PART_DAMAGE` body-part table + captor health bar are
+  reworked into "Le duel de la porte cochère"; the freeze-the-rest-of-the-level mechanism,
+  the scripted trigger, the "OTAGE" banner, the 2 s zoom, and the side-objective rule stay)
 - **Date:** 2026-07-16
 - **Supersedes:** [ADR-0006](./0006-directional-sprite-generation.md) (hostage portion; car
   portion withdrawn). Also replaces this ADR's own earlier (never-merged) double-hitbox
