@@ -104,3 +104,9 @@ absent, budgets proposed to Bertrand for ratification), `docs/render-layer.md`, 
 relevant ADRs and the story; then analyse or verdict. If a budget doesn't exist for
 what you're asked to judge, propose the budget line FIRST — a verdict against no budget
 is an opinion.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/performance-gpu.md`](../../docs/references/performance-gpu.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

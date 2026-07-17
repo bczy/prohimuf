@@ -87,3 +87,9 @@ anchored in the bible.
 On activation: read `docs/art-direction.md` and its `references/`, then the assets or
 prompts under review, then verdict. If the bible is silent on the point at hand, propose
 the missing rule as part of your verdict.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/art-culture.md`](../../docs/references/art-culture.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

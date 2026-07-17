@@ -80,3 +80,9 @@ On activation: read `PROJECT_GUIDELINES.md`, `docs/game-design/` (if present), t
 shipped scenes in `src/game/systems/narrativeSystem.ts`, and the relevant story; then
 write. If a narrative need exceeds the guidelines, flag it to `lead-game-designer` and
 `pm` instead of deciding alone.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/narrative-1998-paris.md`](../../docs/references/narrative-1998-paris.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

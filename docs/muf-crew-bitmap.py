@@ -13,7 +13,8 @@ CW, CH = 22, 20     # cell size in sprite pixels
 COLS, ROWS = 6, 3
 M = 30              # outer margin
 GAP_X, GAP_Y = 14, 16
-TS = 3              # label font scale
+TS = 3              # label font scale (role + persona)
+MS = 2              # model tag font scale (smaller third line)
 
 BG = (31, 31, 29)
 PANEL = (44, 44, 41)
@@ -36,6 +37,31 @@ PAL = {
     'F': (238, 190, 152),  # skin (human)
     'H': (82, 56, 36),     # hair (human)
 }
+
+# Which model backs each agent (shown as the third label line on the poster).
+# Tiering rationale lives in docs/adr/0038-agent-capability-upgrade.md.
+MODELS = {
+    "pm": "SONNET 5",
+    "producer": "HAIKU 4.5",
+    "senior-architect": "OPUS 4.8",
+    "lead-game-designer": "OPUS 4.8",
+    "game-designer": "OPUS 4.8",
+    "narrative-designer": "OPUS 4.8",
+    "ux-designer": "SONNET 5",
+    "qa-lead": "OPUS 4.8",
+    "dev-gameplay": "OPUS 4.8",
+    "dev-r3f-render": "OPUS 4.8",
+    "dev-tooling-assets": "SONNET 5",
+    "lead-art": "OPUS 4.8",
+    "art-advisor": "SONNET 5",
+    "concept-artist": "OPUS 4.8",
+    "game-graphist": "SONNET 5",
+    "gpu-specialist": "OPUS 4.8",
+    "tech-writer": "SONNET 5",
+    "sound-designer": "SONNET 5",
+}
+# Tier -> palette key for the model tag color.
+MODEL_COLOR = {"OPUS": 'G', "SONNET": 'C', "HAIKU": 'Y', "HUMAIN": 'F'}
 
 BASE = [
     "..BB......BB..",
@@ -197,10 +223,12 @@ FONT = {
     'Y': ["101", "101", "010", "010", "010"],
     'Z': ["111", "001", "010", "100", "111"],
     '1': ["010", "110", "010", "010", "111"],
+    '4': ["101", "101", "111", "001", "001"],
     '5': ["111", "100", "110", "001", "110"],
     '8': ["111", "101", "111", "101", "111"],
     ' ': ["000", "000", "000", "000", "000"],
     '-': ["000", "000", "111", "000", "000"],
+    '.': ["000", "000", "000", "000", "010"],
 }
 
 # ---------- canvas helpers ----------
@@ -249,7 +277,7 @@ def build_cell(base, overlays):
 
 cell_w = CW * SCALE
 cell_h = CH * SCALE
-label_h = 2 * (5 * TS + 5) + 6
+label_h = 2 * (5 * TS + 5) + (5 * MS + 5) + 6
 block_h = cell_h + label_h
 top_h = block_h + 24     # top band: title + CEO panel
 
@@ -273,7 +301,7 @@ if "--singles" not in sys.argv:  # poster mode (default)
 
     GOLD_EDGE = (150, 120, 30)
 
-    def draw_block(bx, by, role, persona, base, overlays, edge):
+    def draw_block(bx, by, role, persona, model, base, overlays, edge):
         rect(canvas, W, H, bx - 2, by - 2, cell_w + 4, block_h + 4, edge)
         rect(canvas, W, H, bx, by, cell_w, block_h, PANEL)
         cell = build_cell(base, overlays)
@@ -289,6 +317,11 @@ if "--singles" not in sys.argv:  # poster mode (default)
             pw_ = text_width(persona, TS)
             draw_text(canvas, W, H, bx + (cell_w - pw_) // 2, ly + 5 * TS + 5,
                       persona, PAL['B'], TS)
+        if model:
+            mcol = PAL[MODEL_COLOR.get(model.split()[0], 'S')]
+            mw_ = text_width(model, MS)
+            draw_text(canvas, W, H, bx + (cell_w - mw_) // 2, ly + 2 * (5 * TS + 5),
+                      model, mcol, MS)
 
     # title, vertically centered in the top band
     title = "MUF CREW"
@@ -299,15 +332,25 @@ if "--singles" not in sys.argv:  # poster mode (default)
     sw = text_width(sub, TS)
     draw_text(canvas, W, H, (img_w - sw) // 2, ty + 5 * 6 + 12, sub, PAL['G'], TS)
 
+    # model legend (color -> tier), so the third label line reads at a glance
+    legend = [("OPUS 4.8", 'G'), ("SONNET 5", 'C'), ("HAIKU 4.5", 'Y')]
+    gap_l = 5 * MS
+    total_l = sum(text_width(t, MS) for t, _ in legend) + gap_l * (len(legend) - 1)
+    lx = (img_w - total_l) // 2
+    ly_l = ty + 5 * 6 + 12 + 5 * TS + 8
+    for t, c in legend:
+        draw_text(canvas, W, H, lx, ly_l, t, PAL[c], MS)
+        lx += text_width(t, MS) + gap_l
+
     # the boss, top right — the one human in the crew
     role, persona, overlays = CEO
-    draw_block(img_w - M - cell_w, M, role, persona, HUMAN, overlays, GOLD_EDGE)
+    draw_block(img_w - M - cell_w, M, role, persona, "HUMAIN", HUMAN, overlays, GOLD_EDGE)
 
-    for i, (_slug, role, persona, overlays) in enumerate(AGENTS):
+    for i, (slug, role, persona, overlays) in enumerate(AGENTS):
         col, row = i % COLS, i // COLS
         bx = M + col * (cell_w + GAP_X)
         by = M + top_h + row * (block_h + GAP_Y)
-        draw_block(bx, by, role, persona, BASE, overlays, PANEL_EDGE)
+        draw_block(bx, by, role, persona, MODELS[slug], BASE, overlays, PANEL_EDGE)
 
 
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "muf-crew.png")

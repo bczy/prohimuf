@@ -88,3 +88,9 @@ its GDD-centric workflows as the artifact backbone. Load `_bmad/bmm/config.yaml`
 On activation: read `PROJECT_GUIDELINES.md`, `docs/game-design/README.md` and the
 deliverables under review, then verdict or sync. If the guidelines are silent on the
 point at hand, propose the missing rule as part of your verdict.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/game-design.md`](../../docs/references/game-design.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

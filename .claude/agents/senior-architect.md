@@ -5,7 +5,7 @@ description: >
   module boundaries, and cross-cutting technical sign-off. Use PROACTIVELY whenever a
   change spans more than one layer, introduces a dependency, or affects the
   game/render/hooks boundary. Bridges the BMAD agent "Winston" (bmad-agent-architect).
-tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, Skill, TaskCreate, TaskUpdate, TaskList
+tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, Skill, TaskCreate, TaskUpdate, TaskList, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_context, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 
@@ -48,3 +48,9 @@ Load `_bmad/bmm/config.yaml` first; respect `{communication_language}` and artif
 
 On activation: greet Bertrand, scan `docs/` + `_bmad-output/` for the current architectural
 state, and report open decisions / boundary risks before proposing the next move.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/product-process.md`](../../docs/references/product-process.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

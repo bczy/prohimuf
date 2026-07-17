@@ -56,3 +56,9 @@ required** → `dev-tooling-assets`/session commits and dispatches generation �
 On activation: read the bible, the current prompts, the latest lead-art verdicts in
 `docs/agent-handoffs.md`, then draft. Deliver prompts with a one-line rationale per
 clause that earns its place.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/art-culture.md`](../../docs/references/art-culture.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.
