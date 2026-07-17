@@ -176,3 +176,48 @@ reconciliation (they are quoted at the tail of the old monolith).
   collisions, README row, index-row note). Three renumbers in one story: rule #9 must
   be applied as "allocate at story opening AND re-check at merge" — Marion to confirm
   0037 is free at the moment Bertrand merges.
+
+## 6g. FINAL INTEGRATION RE-TRIAGE — senior-architect (Winston 🏗️) — 2026-07-17
+
+- claim: bounded stage-6 re-check per my Ruling 2 — verify the §6e fixes are faithful to
+  re-check C, the 0037 renumber is complete, and the branch merges clean against
+  `origin/main` as of NOW (re-fetched: `origin/main` = `baebdd9`, HEAD = `63e3973`).
+  Read-only except this entry. Five surfaces read in full: COLLABORATION.md (stage 5
+  L63-89 + §fix lane L114-145), diagram PERF edge + P2 title, ADR-0037, gpu-specialist.md,
+  CLAUDE.md.
+- release — verified:
+  - **§6e MAJEUR (open-PR OVER dead end)** faithfully expressed on all four surfaces:
+    COLLABORATION.md L73-76, diagram PERF FAIL edge, ADR-0037 L50-53, charter L88-91 —
+    PR open ⇒ DEFERRED REVOKED ⇒ stage-5 FAIL, same branch via architect. Consistent.
+  - **§6e MAJEUR (fix-lane never closes + Ben absent from reclaim list)** closed:
+    `gpu-specialist` now named in the fix-lane reclaim list (COLLABORATION.md L139) and
+    the OVER-item fix-lane cycle is closed ONLY by Ben's PERF re-verdict (L142-145,
+    ADR-0037 L53-56, charter L92-94). Consistent.
+  - **§6e MINEUR x3** all landed: correct-course routes to pm/architect never a dev lane
+    (COLLABORATION.md L78-81, diagram edge, charter L94-95); Ben's charter defines all
+    three outcomes UNDER/OVER-open/OVER-merged + design-trade route; "accessibility"
+    restored in the design-loop trigger (CLAUDE.md L80, diagram P2 title L23 + prose).
+  - **C1 holds**: bypass edge reads "no gameplay/fiction/UX change (tech/tooling/art/
+    audio only)".
+  - **0037 renumber complete**: file/title/README L93/index row (agent-handoffs.md L39)
+    all read 0037; header records all three collisions. Grep for `003[4-7]-crew|
+crew-extension` returns the single 0037 row — no dangling crew reference. Residual
+    "ADR-0034" strings are all legitimate: the hostage-QTE ADR-0034 (0030/0035/0036/
+    README) and this shard's quoted allocation history.
+  - **Merge clean as of NOW**: `git merge-tree --write-tree origin/main HEAD` reports no
+    conflict. `origin/main` (`baebdd9`) tops the ADR series at 0036 — **0037 is FREE on
+    main**; main did NOT move again to take it during this re-triage.
+- defects: one MINEUR log-accuracy residue — §6e's inline "ADR-0034, Ben's charter" /
+  "ADR-0034, charter" references (this shard) were written before the §6f 0034→0037
+  renumber and now name the hostage-QTE ADR, not the crew ADR. Same class as the
+  re-check-B §6c defect. NON-BLOCKING: superseded by §6f which documents the renumber
+  globally, and every merged artifact (ADR-0037 + the five surfaces) carries the correct
+  number. Log hygiene, not a merge blocker.
+- VERDICT: PASS — integration sign-off / stage-6 REVIEW (senior-architect). Prior FAIL
+  (§6) FLIPS to PASS. All 12 triage prescriptions landed; re-check B (12/12 acceptance)
+  and re-check C (2 MAJEUR + 3 MINEUR) fully applied and confirmed faithful; no
+  boundary-law violation; gates/caps untouched; branch mergeable. **Stage 6 is COMPLETE —
+  the story may proceed to stage 7 (pm acceptance).** Outstanding merge-time action:
+  Marion re-confirms 0037 is still free at the moment Bertrand merges (rule #9 —
+  allocate at opening, RE-CHECK AT MERGE; three collisions on this story make the
+  re-check mandatory, not optional).
