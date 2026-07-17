@@ -184,3 +184,101 @@ the point. **Known residual:** belliard row0's central lit group (`w1`) is 2–3
 separated by thin mullions closer than `minPitch`; it is framed as one tight railing over the lit
 extent (no wall overhang, all gates pass) rather than split — reliably splitting it would risk
 over-splitting real double-pane windows elsewhere.
+
+## Amendment cycle 3 (2026-07-17) — render-side stretch parity + end-to-end SCREEN gate
+
+**Problem — the harness was blind to a render-side divergence.** Iterations 1–2 verify
+everything in **art-normalized space** (file pixels vs zone data) and are green, yet the
+_rendered_ railings drift on screen: perfect at each panel centre, up to **~4% of panel
+width** off toward the panel edges, both directions. Cause: `LevelBackdrop.tsx` draws each
+facade panel plane at `panelDrawW = panelW·(1 + BLEND)` (`BLEND = 0.08`, the seam-crossfade
+overlap), so an image point at panel-local `u` lands at world `offsetX(p) + (u−0.5)·panelW·
+(1+BLEND)`. But `ForegroundFrames.tsx` draws the railing overlay on a plane of width exactly
+`panelW`, and enemy slots map at exact `panelW` pitch (`tilePanelZones` +
+`computeSlotsFromZones`, consumed at `GameScene.tsx:132`; the `__MUF_SLOT_RECTS__` inverse at
+`GameScene.tsx:165` also assumes exact pitch). Divergence `= (u−0.5)·BLEND·panelW`, i.e.
+`±0.04·panelW` at the edges. The ADR-0028 harness compares zone data to file pixels and never
+looks at the composited frame, so it cannot see this class of bug ("data right, screen wrong").
+
+**Decision A — render fix (lane `dev-r3f-render`, `src/render/**`only;`src/game` stays
+pure and byte-identical).\*\*
+
+1. **Shared render-layer constant module** `src/render/scene/facadeLayout.ts` exports
+   `BLEND = 0.08` and `FACADE_DRAW_SCALE = 1 + BLEND`. `LevelBackdrop` imports `BLEND` from it
+   (removing its local copy — single source of truth for the intra-panel stretch).
+2. **Railings.** `ForegroundFrames`' plane width becomes `facadeW · FACADE_DRAW_SCALE` (the
+   multiply lives inside `ForegroundFrames`, so `GameScene` keeps passing `facadeW = panelW`
+   and the per-panel `<group position={[offsetX(p),0,0]}>` is unchanged). The overlay texture
+   (zone → texture-x) is untouched; the plane simply scales `1+BLEND` about `offsetX(p)`,
+   exactly as the facade image does. Railings now track the facade pixel-for-pixel.
+3. **Enemy slots.** `computeSlotsFromZones` / `tilePanelZones` (`src/game`) stay **byte-
+   identical**. The stretch is a pure render-side remap: `facadeLayout.ts` also exports
+   `applyFacadeStretchX(exactWorldX, panelW, panels, scale)` and its exact inverse
+   `invertFacadeStretchX`. In `GameScene`, each slot's `screenPosition.x` from
+   `computeSlotsFromZones` is passed through `applyFacadeStretchX` — recover `globalXNorm =
+x/fullW + 0.5`, `p = floor(globalXNorm·P)`, `u = globalXNorm·P − p`, return
+   `(p−(P−1)/2)·panelW + (u−0.5)·panelW·FACADE_DRAW_SCALE`. **Only `x` moves; sprite width
+   (`planeH·aspect`) is untouched** — we realign the slot centre with the stretched window,
+   we do not stretch the sprite art. The remap helper lives in the render util (not inline in
+   `GameScene`) so the SCREEN hook and the slot remap share one code path.
+4. **Harness space stays art-normalized.** `__MUF_SLOT_RECTS__` reads post-remap (stretched)
+   world x, so it first calls `invertFacadeStretchX` to recover the exact pitch, then runs the
+   existing inverse unchanged → panel/local are reported in art-normalized coords exactly as
+   before. Iterations 1–2 gates keep passing untouched.
+
+**Edge effect (assessed, accepted).** With the wider overlay planes, adjacent panels' overlays
+now overlap by 8% in world space (like the facade planes). The seam overlap maps to texture
+`u ∈ [0.926, 1.0]` on panel `p` and `u ∈ [0, 0.074]` on panel `p+1`. Against the committed zone
+ranges (`belliard` right-edge ≤ 0.855 / left-edge ≥ 0.0; `stalingrad` 0.112–0.758; `vitry`
+0.036–0.863), **at most one side carries railing content in any overlap band**, so there is no
+meaningful double-draw or misregistration today. Since both overlays carry the same crossfaded
+facade content, this needs **no edge suppression now**. Tracked risk (below) if future zones
+populate both edge bands.
+
+**Decision B — end-to-end SCREEN gate (lane `dev-tooling-assets`, `scripts/**` only).\*\* Close
+the "data right, screen wrong" blind spot with a production-mapped projection, not duplicated
+math:
+
+1. **`__MUF_PROJECT__(panel, x, y)` dev hook** registered in `GameScene` (inert in production,
+   same precedent as the other `__MUF_*` hooks). It projects an art-normalized facade point to
+   CSS pixels through the **production path**: world x via `applyFacadeStretchX` (the same
+   render helper), world y `= (0.5−y)·facadeH`, then `camera.project()` + canvas `size`. No math
+   beyond calling the shared helper + the live camera.
+2. **`align-windows.mjs` SCREEN pass** (both `--fix` and `--check`): screenshot the viewport;
+   for each visible opening, project its left/right edges via `__MUF_PROJECT__`, then reuse
+   `scripts/lib/coverage.mjs` pure logic (`coverStrips` / `coverDefects`) in **screen-pixel
+   space** — warm-pixel density in an interior strip just inside each edge vs an exterior strip
+   just outside — and push `SCREEN_MISALIGN` defects.
+3. **Thresholds (reuse, no new magic numbers).** Mirror the art-space coverage constants:
+   `SCREEN_MISALIGN(under)` when exterior warm density `≥ UNDERCOVER_DENS = 0.28` (window
+   continues past the edge on screen); `SCREEN_MISALIGN(over)` when interior warm density
+   `< OVERCOVER_DENS = 0.07` (edge sits on wall on screen); floor-width openings are suppressed
+   as in Iteration 2. Strip width `≈ 1.5%` of the projected panel width; per-edge, per-panel,
+   prefixed `panel N:` like the other classes.
+
+**Lane plan + file ownership (two parallel, non-overlapping lanes).**
+
+- **Lane 1 `dev-r3f-render` — `src/render/**`only.** Owns **all** of`GameScene.tsx`for this
+cycle: the slot remap, the`**MUF_SLOT_RECTS**`inverse update, **and** the`**MUF_PROJECT**`hook, plus new`src/render/scene/facadeLayout.ts`, `ForegroundFrames.tsx`, `LevelBackdrop.tsx`.
+- **Lane 2 `dev-tooling-assets` — `scripts/**`only.** The SCREEN pass in`align-windows.mjs`,
+screen-space reuse of `scripts/lib/coverage.mjs`, `SCRIPTS.md`/`HARNESS.md`. It only
+**consumes** `**MUF_PROJECT**`— it never touches`GameScene`. **No file overlap.**
+- **Sequencing.** The hook contract (`__MUF_PROJECT__` signature + thresholds) is fully
+  specified here, so both lanes develop in parallel against it; Lane 2's SCREEN `--check`
+  **integration verify runs after Lane 1's hook lands**.
+
+**Verify sequence (art-space overlays are proven insufficient — real render is the evidence).**
+`rtk tsc` + `rtk vitest` (unit tests for `applyFacadeStretchX`/`invertFacadeStretchX` round-trip
+and the screen-strip helper boundaries) + `rtk lint` → rebuild → `align-windows.mjs --fix` all
+levels (recalibration through the new SCREEN pass) → `--check` exits 0 across all classes incl.
+`SCREEN_MISALIGN` → **zoomed per-window screen crops of the REAL composited render** as final
+acceptance, at panel centre AND panel edges (where the 4% drift lived).
+
+**Risks tracked.** (a) Every committed zone centre sits outside the 8% overlap sliver
+(`u ∈ [0.044, 0.841]` across all levels; ambiguous band is `u < 0.037` / `u > 0.963`), so nominal
+panel classification in `invertFacadeStretchX` is exact — but `belliard`'s `minCx = 0.044` has
+only ~0.007 headroom; if a future level pushes a window centre past `u = 0.96`, add an explicit
+panel index carried on the slot instead of geometric recovery. (b) Overlay double-draw is benign
+only for current zone ranges; a level populating **both** edge bands (`u < 0.074` and `u > 0.926`)
+would double-draw edge railings misregistered by up to `~0.04·panelW` — mitigation (left-feather
+or clip the overlay to `[featherFrac, 1]`) is deferred until such a level exists.
