@@ -4,6 +4,7 @@ import { CanvasTexture, LinearMipmapLinearFilter } from "three";
 import type { IronworkStyle, WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { drawForegroundIronwork } from "./foregroundArt";
+import { FACADE_DRAW_SCALE } from "./facadeLayout";
 
 // Frame texture resolution: 2× the native facade art (1280×768) so the
 // code-drawn ironwork stays crisp once the panel is magnified on screen
@@ -78,8 +79,11 @@ export function ForegroundFrames({
   }, [texture]);
   if (texture === null) return null;
   return (
+    // Scale the overlay plane by FACADE_DRAW_SCALE about the panel-group origin
+    // so the railings track the facade image (drawn at the same 1+BLEND stretch)
+    // pixel-for-pixel; the texture content (zone → texture-x) is untouched.
     <mesh position={[0, 0, 0.5]} renderOrder={5}>
-      <planeGeometry args={[facadeW, facadeH]} />
+      <planeGeometry args={[facadeW * FACADE_DRAW_SCALE, facadeH]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
   );
