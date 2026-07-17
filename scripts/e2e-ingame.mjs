@@ -28,7 +28,10 @@
  * Soft signal: console errors are logged but do not, on their own, fail.
  *
  * Determinism: cops are frozen (window.__MUF_FREEZE_COPS__) and sound is muted
- * (muf_prefs), matching screenshot-preview.mjs.
+ * (muf_prefs), matching screenshot-preview.mjs. Unlike the capture gates, this
+ * smoke seeds crt:true on purpose — it is the retained path that boots the CRT
+ * post-process under SwiftShader so the ADR-0031 publish guard still exercises
+ * the CRT shaders in CI.
  *
  * Output: screenshots/e2e-ingame.png (first level) [+ e2e-ingame-<id>.png each
  * additional level in E2E_ALL_LEVELS mode]. Uploaded as CI artifacts.
@@ -147,7 +150,10 @@ async function main() {
   const page = await context.newPage();
 
   // Unlock ids come from the manifest, never a hardcoded list.
-  await seedDeterminism(page, levelIds);
+  // crt: true — this smoke is the retained CRT-on path: it is the one gate that
+  // must boot the CrtPass under SwiftShader so the ADR-0031 publish guard keeps
+  // compiling+exercising the CRT shaders in CI (the capture gates seed crt:false).
+  await seedDeterminism(page, levelIds, { crt: true });
 
   page.on("console", (msg) => {
     if (msg.type() === "error") consoleErrors.push(msg.text());

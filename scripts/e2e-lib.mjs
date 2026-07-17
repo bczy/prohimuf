@@ -10,7 +10,7 @@
  *
  *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
- *   - seedDeterminism(page, ids)      — addInitScript: freeze cops + mute + unlock.
+ *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default).
  *   - loadLevelManifest(root)         — level list/ids from levelArt.json (SoT).
  *   - createFailedResponseCollector() — same-origin >=400 response collector.
  *   - SWIFTSHADER_ARGS                — software-WebGL chromium launch args (no GPU).
@@ -106,24 +106,36 @@ export async function dismissNarrative(page) {
  * Seed a deterministic, headless-friendly run BEFORE the app boots:
  *   - freeze cops VISIBLE (never SHOOTING) so scenes are static & no damage,
  *   - mute audio, force 3 lives / normal difficulty,
- *   - unlock every level so any level can be entered directly.
+ *   - unlock every level so any level can be entered directly,
+ *   - pin the CRT post-process (`prefs.crt`) explicitly.
  * `levelIds` comes from loadLevelManifest so the unlock set stays in sync with
  * levelArt.json (never a hardcoded list).
+ *
+ * `crt` defaults to **false**: the app default (prefsSystem `DEFAULT_PREFS.crt`)
+ * is true, but the CRT pass is animated grain/flicker + a multiplicative scanline
+ * comb + bloom (ADR-0031) — inherently non-deterministic and, over a capture, it
+ * masks constant-alpha-plate regressions and drives the pixel gates with noise.
+ * A deterministic/static seed therefore turns it OFF by default. The one flow
+ * that must still compile+exercise the CRT shaders under SwiftShader (e2e-ingame,
+ * the ADR-0031 publish guard) opts back in with `{ crt: true }`.
  */
-export async function seedDeterminism(page, levelIds) {
-  await page.addInitScript((ids) => {
-    // Freeze cops so the scene is static/deterministic (matches screenshot-preview).
-    window.__MUF_FREEZE_COPS__ = true;
-    try {
-      localStorage.setItem("muf_progress", JSON.stringify(ids));
-      localStorage.setItem(
-        "muf_prefs",
-        JSON.stringify({ soundVolume: 0, musicVolume: 0, lives: 3, difficulty: "normal" }),
-      );
-    } catch {
-      // ignore storage failures
-    }
-  }, levelIds);
+export async function seedDeterminism(page, levelIds, { crt = false } = {}) {
+  await page.addInitScript(
+    ({ ids, crt }) => {
+      // Freeze cops so the scene is static/deterministic (matches screenshot-preview).
+      window.__MUF_FREEZE_COPS__ = true;
+      try {
+        localStorage.setItem("muf_progress", JSON.stringify(ids));
+        localStorage.setItem(
+          "muf_prefs",
+          JSON.stringify({ soundVolume: 0, musicVolume: 0, lives: 3, difficulty: "normal", crt }),
+        );
+      } catch {
+        // ignore storage failures
+      }
+    },
+    { ids: levelIds, crt },
+  );
 }
 
 /**
