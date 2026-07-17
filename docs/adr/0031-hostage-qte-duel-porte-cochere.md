@@ -79,24 +79,24 @@ into the system, not data conventions.
 
 **During `PEEKING` the captor fires at the player.** If the player does not answer the
 exposure (no clean head hit during it), the captor's shot lands and **drains player
-energy**. This is the breakthrough of the design: the *only* moment the captor is
-vulnerable is also the *only* moment he is dangerous — bidirectional danger restores the
+energy**. This is the breakthrough of the design: the _only_ moment the captor is
+vulnerable is also the _only_ moment he is dangerous — bidirectional danger restores the
 original's "he's about to act" pressure. (This is the sole active incoming-fire source; the
 rest of the level is frozen. In late levels the accomplice — [ADR-0033](./0033-hostage-qte-accomplice.md)
-— *replaces* this counter-fire rather than stacking on it, per the coherence pass.)
+— _replaces_ this counter-fire rather than stacking on it, per the coherence pass.)
 
 ### D4 — Shot rules (F2 — la règle du tir): head-during-peek is the sole kill route
 
 The body-part damage simulation is replaced by one readable timing test. A shot resolves to
 exactly one of:
 
-| Shot | Result |
-| --- | --- |
-| **Head, during `PEEKING`** | **Win** — clean rescue. The *sole* kill route. |
-| **Captor body** (any time) | **Small player-energy drain** — reckless spray bleeds you. |
-| **Hostage** | **Heavy energy penalty.** |
+| Shot                          | Result                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| **Head, during `PEEKING`**    | **Win** — clean rescue. The _sole_ kill route.                                 |
+| **Captor body** (any time)    | **Small player-energy drain** — reckless spray bleeds you.                     |
+| **Hostage**                   | **Heavy energy penalty.**                                                      |
 | **Fired during the 2 s zoom** | **Penalized panic shot** — the zoom teaches "don't shoot what you can't read". |
-| **Clean rescue** | **Big energy refill** — the QTE is the level's fuel station. |
+| **Clean rescue**              | **Big energy refill** — the QTE is the level's fuel station.                   |
 
 Sanction hierarchy (locked): **body = small cost, hostage = big cost,
 head-during-peek = win.** Nothing else counts. The captor no longer has a health bar: the
@@ -110,7 +110,7 @@ panic shot = penalty, hostage hit = heavy penalty, captor-body hit = small drain
 peek = drain. There is **explicitly no passive per-second tick drain** during the QTE
 (the "energy leak" idea was demoted in the coherence pass — the door already makes waiting
 costly; a second disguised clock would violate the single-clock decision). Waiting patiently
-for a clean peek must remain viable; energy moves only on *outcomes*, never on the passage
+for a clean peek must remain viable; energy moves only on _outcomes_, never on the passage
 of time.
 
 Score is **not** the stake (score-based multipliers and magnified-failure ideas were
@@ -128,7 +128,7 @@ rejected). The ADR-0030 D4 rule stands: a rescue never advances the kill quota.
   counter-fire resolution, and a head-only / body / hostage zone classifier with **clean
   spatial separation** between the peeking head and the hostage silhouette (G6).
 - **Kept:** the scripted trigger, the `ZOOMING → … → DONE` forward-only phase machine, the
-  brief WON/LOST result hold (the post-verdict breather was *kept* — idea #19 rejected), the
+  brief WON/LOST result hold (the post-verdict breather was _kept_ — idea #19 rejected), the
   `anchor`, and the "OTAGE" `warning`.
 
 All of this stays **pure `src/game`** (zero React/Three, unit-tested). The render lane reads
@@ -160,7 +160,7 @@ the art lane**; cop fallback until they land, per ADR-0030). The zoom driver in
   anchor** and restore base framing exactly on `DONE` — a camera that follows a retreat is
   harder to keep gated across the mobile-pan / edge-scroll writers.
 - New sprite work (drag walk, covered, peeking-with-gun-raised) is a hard art-lane
-  dependency for the phase to read; the cop fallback will look wrong for a *moving* captor.
+  dependency for the phase to read; the cop fallback will look wrong for a _moving_ captor.
 
 **Gotchas**
 
@@ -170,7 +170,7 @@ the art lane**; cop fallback until they land, per ADR-0030). The zoom driver in
   code against level data, do not trust the authored `QteSpec` to respect them
   (see [ADR-0032](./0032-hostage-qte-difficulty-curve.md)).
 - G6 spatial separation (peeking head clear of the hostage silhouette) is a fairness
-  property under a *moving* tableau — assert it directly rather than relying on draw order,
+  property under a _moving_ tableau — assert it directly rather than relying on draw order,
   and tune it against the new art.
 - Unanswered-peek energy drain must be charged **once per closed exposure**, not per tick,
   or a long peek over-bills the player.
