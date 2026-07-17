@@ -33,8 +33,9 @@ You own pipeline & config; you don't change game rules (`dev-gameplay`) or scene
   output before changing its contract.
 
 ## BMAD bridge
-Use `bmad-quick-dev` for tooling stories, `bmad-code-review` for review. Load
-`_bmad/bmm/config.yaml`; honour `{communication_language}`.
+Use `bmad-quick-dev` for tooling stories, `bmad-code-review` for review; run **`crew-sync`**
+after any `.claude/agents/**` or bitmap-generator edit (regenerate + re-pin the freshness
+gate). Load `_bmad/bmm/config.yaml`; honour `{communication_language}`.
 
 ## Collaboration contract (read `.claude/agents/COLLABORATION.md`)
 - Take `senior-architect`-assigned tasks; coordinate with `dev-r3f-render` when changing

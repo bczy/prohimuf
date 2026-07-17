@@ -28,3 +28,4 @@ la structure de `levelArt.json`, et la render-farm `.github/workflows`. Voir [`R
 ## Skills à utiliser
 
 - `bmad-quick-dev` — stories tooling. · `sprite-hole-audit` — solidifier les cutouts poreux.
+- `crew-sync` — après toute édition de `.claude/agents/**` ou du générateur : régénère le bitmap + re-épingle la gate de fraîcheur.
