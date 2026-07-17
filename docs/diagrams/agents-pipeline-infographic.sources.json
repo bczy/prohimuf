@@ -4,7 +4,7 @@
   ".claude/agents/concept-artist.md": "3fafea74f410344056bae292642fe5fe3d56673229133c853fc160fb1e7e317a",
   ".claude/agents/dev-gameplay.md": "62d54a2ab8adde532a85fcae657ef7d2935db1216f0c12f5b293d2fff03517ec",
   ".claude/agents/dev-r3f-render.md": "595ad2a9d47c2a5486db4a17b402fa2eeca8a2163f6c77ac85d2c91d421acd83",
-  ".claude/agents/dev-tooling-assets.md": "3ec0463a4ef55fc62cd98ff1d9e2530d50fd07f336df5601c7516ffb9476febc",
+  ".claude/agents/dev-tooling-assets.md": "9c4d9020d325b7717af9ded846ab52aaafafab5e193d6d5269a45ce97c5f4d48",
   ".claude/agents/game-designer.md": "c82ad58ee8e7966890857f528fc35f8f4d8df563f2ebad1a14dc8018c62ee2b2",
   ".claude/agents/game-graphist.md": "fceff4afea486822d615788794259843f4d5d95f04c89115e7fe496fb64a097a",
   ".claude/agents/gpu-specialist.md": "1bf11441140045d793727d207e802b0e904187c1461937a3202b56b59b275632",
@@ -16,7 +16,7 @@
   ".claude/agents/qa-lead.md": "d963e045dd344019c95ac641e5b2740cc802dbac3c4bb29394210936fc5a15a0",
   ".claude/agents/senior-architect.md": "fa6de1f5701e4cf4105bf537cb62b1b29eeb540c08763ea752fac0abdeacbe6e",
   ".claude/agents/sound-designer.md": "7418f37abdee9d5f8f6fbb4047473d17265cdf6cd0aa5d307d5e7761d5bd4ecd",
-  ".claude/agents/tech-writer.md": "40c1cc20cbcbb4ae302f22dd0e78f8434db6de0f6afe571e1b1fd4347e128129",
+  ".claude/agents/tech-writer.md": "17959ca235e51bed7cddc2f1fd1127a12dbae3c37e1d711506acc4a75283b92b",
   ".claude/agents/ux-designer.md": "c266d4a5564c438e18202c916f7a8c64c6adaa3293c6aaeffef1e395c0ffa4b1",
   "docs/diagrams/agent-workflows.md": "ee893e0d6aa3f177dae178e2fc6db0d1de773c36861d351ba590b0e26319b407",
   "docs/muf-crew-bitmap.py": "041385e73e14f22805a60ec2c440d968c0654062cfb10c49f1dc62f941aced61"

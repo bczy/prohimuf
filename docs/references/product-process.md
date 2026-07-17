@@ -27,5 +27,5 @@ et le quality gate. Voir [`README.md`](README.md).
 - `pm` : `bmad-create-prd`, `bmad-validate-prd`, `bmad-create-epics-and-stories`, `bmad-correct-course`.
 - `producer` : `bmad-sprint-planning`, `bmad-sprint-status`, `bmad-retrospective`.
 - `senior-architect` : `review-panel` (merge gate stage 6), `bmad-create-architecture`, `bmad-check-implementation-readiness`.
-- `tech-writer` : `bmad-agent-tech-writer`, `bmad-index-docs`, `bmad-document-project`.
+- `tech-writer` : `adr-new` (scaffold ADR + numéro collision-safe), `bmad-agent-tech-writer`, `bmad-index-docs`, `bmad-document-project`.
 - `qa-lead` : `bmad-qa-generate-e2e-tests`, `bmad-review-edge-case-hunter`, `verify`.
