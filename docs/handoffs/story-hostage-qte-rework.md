@@ -3,6 +3,7 @@
 Story shard opened by `ux-designer` (Tony). `producer` (Marion): please reconcile the index row.
 
 ## 2. DESIGN — ux-designer (Tony) — 2026-07-17
+
 - claim: HUD & feedback readability for the ADR-0034 QTE rework (bounded — mechanic decided in
   the ADR; UX owns how the player READS it: HUD hierarchy, peek-tell legibility, head-vs-hostage
   spatial fairness, accessibility).

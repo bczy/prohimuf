@@ -43,12 +43,14 @@ counter-fire moment. Reaching the door = the hostage is gone. That is the whole 
 ## Contract changes (pure `src/game` — `qteSystem.ts`, `types/hostageQte.ts`)
 
 ### Removed (leave the contract entirely)
+
 - `captorHp`, `captorHpMax`, `CAPTOR_HP_MAX`, `PART_DAMAGE`, `QteBodyPart`.
 - `hostageHp`, `hostageHpMax`, `HOSTAGE_HP_MAX` (health-bar model → the duel is binary).
 - `windowSeconds` / `windowRemaining` / `QTE_WINDOW_SECONDS` and the **timeout-loss branch** in `tickQte`.
 - The `QteSpec` fields `captorHp`, `hostageHp`, `windowSeconds` (and the Belliard-level values feeding them).
 
 ### Added
+
 - **Captor sub-state** on `HostageQte`: `COVERED | PEEKING` (with a telegraph flag/timer feeding the
   COVERED→PEEKING transition — the readable pre-peek tell, G4).
 - **Moving anchor:** the captor's live `{x, y}`, advanced each tick during the frozen QTE by a retreat
@@ -64,6 +66,7 @@ counter-fire moment. Reaching the door = the hostage is gone. That is the whole 
   unanswered-peek drain.
 
 ### Kept (do NOT touch)
+
 - Scripted once-per-level trigger `shouldTriggerQte` / `triggerAtElapsedSeconds`.
 - Forward-only phase machine `ZOOMING → … → (WON | LOST) → DONE`; the brief WON/LOST result hold
   (`QTE_RESULT_HOLD`).

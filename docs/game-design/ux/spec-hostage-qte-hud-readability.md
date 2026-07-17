@@ -36,7 +36,7 @@ distance-to-door. The bottom-centre gauge stack is **empty** during the QTE. The
 IS the timer (D1.4). Adding any HUD surrogate for it re-introduces the two-clock problem.
 
 **D1.4 — The clock is in-world; both endpoints must be on-screen to be readable.** A diegetic
-timer only reads if the player can see *both* the moving captor AND the goal line. Readability
+timer only reads if the player can see _both_ the moving captor AND the goal line. Readability
 requirement for the scene/camera lane: the **porte cochère** (the door the captor retreats toward)
 must be **visible in-frame** whenever the QTE is `ACTIVE`, and the captor→door gap must stay
 legible as the camera tracks the moving anchor (ADR-0034 §Consequences: the zoom driver follows
@@ -57,6 +57,7 @@ regardless; a hostage hit is already read in-world (D3.4 stray-hit flash). **FLA
 the pip row is removed from the HUD. I do not decide the contract.
 
 **Acceptance (D1):**
+
 - A1. Screenshot at desktop AND mobile-landscape during `ACTIVE`: no bar or pip is drawn in the
   bottom-centre region; the region is empty. (both device classes)
 - A2. Screenshot during `ZOOMING`: OTAGE banner present; no captor bar, no countdown bar.
@@ -75,7 +76,7 @@ that true. These are **readability requirements** on the render lane; the exact 
 **D2.1 — The tell precedes the peek (anticipation, not reaction-only).** The pre-peek cue must
 **begin before** the `COVERED → PEEKING` transition, giving the eye a wind-up. The tell is the
 warning; the peek is the answerable window (G5 floor ≥ 0.5 s). The render lane must key the tell off
-a game-provided pre-peek signal, not off the peek itself (a tell that starts *with* the exposure
+a game-provided pre-peek signal, not off the peek itself (a tell that starts _with_ the exposure
 gives zero anticipation and fails P3). The lead-time value is authored per level (ADR-0035) with a
 system floor; render must render whatever lead the state exposes without swallowing it.
 
@@ -96,6 +97,7 @@ a wind-up motion (shoulder/gun-barrel rise), a localised shape/outline that appe
 brightness/scale pulse at the head point. Colour may reinforce but must never be the sole carrier.
 
 **Acceptance (D2):**
+
 - A5. Frame-sequence (or slowed capture) shows the tell visible **before** the head is exposed,
   co-located with where the head appears.
 - A6. Grayscale screenshot of a mid-tell frame: the tell is still perceptible (form/position/
@@ -117,7 +119,7 @@ classifier (ADR-0034 D6) and the **visible** exposed-head region must coincide. 
 scores as a winning headshot must sit fully inside the pixels the player reads as head, and the
 hostage silhouette must sit fully outside it. No invisible head hitbox extending over her; no visible
 head pixels that score as body/miss. (Today the tableau is authored so hit bands match the sprite —
-`HostageQteSprite.tsx` L14–34; under a *moving* peek this alignment must be re-verified against the
+`HostageQteSprite.tsx` L14–34; under a _moving_ peek this alignment must be re-verified against the
 new art, per ADR-0034 Gotchas.)
 
 **D3.3 — This is a joint art×game×UX property.** The exact separation distance and the head/hostage
@@ -130,6 +132,7 @@ Reconcile at the composite gate against the real peeking-head + hostage sprites.
 (D1.6). A hostage hit must be unmistakable in the moment so the player learns the boundary.
 
 **Acceptance (D3):**
+
 - A8. Screenshot of a `PEEKING` frame at min and max tracked zoom, both DPRs: a visible gap between
   head silhouette and hostage silhouette; neither overlaps.
 - A9. Overlay/debug capture (or code assertion, per ADR-0034 Gotchas) shows the head hit-zone fully
@@ -142,8 +145,8 @@ peek tell and any alarm/execution flash (`hostageColor(..., alarm=true)`, `Hosta
 L144/L170–172) must **not** flash faster than ~3 Hz (WCAG 2.3.1 seizure floor) and should degrade to
 a **steady, non-strobing** form: a static appearing outline/glow that switches on for the tell/peek
 and holds, rather than a pulsing strobe. Crucially, the tell must **remain perceivable** in this
-mode — reduced-motion means "don't flash", not "don't warn". Degrade the *animation*, keep the
-*signal*.
+mode — reduced-motion means "don't flash", not "don't warn". Degrade the _animation_, keep the
+_signal_.
 
 **D4.2 — Not colour alone (reinforces D2.4/D3.2).** COVERED vs PEEKING, and the tell, must each be
 distinguishable without hue: by silhouette/pose change (head absent vs exposed) and by
@@ -153,9 +156,10 @@ peek and pick the head.
 **D4.3 — Contrast as function.** The exposed head must meet a legibility contrast against whatever
 sits directly behind it (facade/door) so it reads at arm's length on a phone; if the neon tint would
 sink the head into the background at some retreat positions, the head keeps a form/outline read
-independent of tint. (Hue/treatment is Nico's; the *legible-at-arm's-length* bar is UX's.)
+independent of tint. (Hue/treatment is Nico's; the _legible-at-arm's-length_ bar is UX's.)
 
 **Acceptance (D4):**
+
 - A10. e2e with emulated `prefers-reduced-motion: reduce`: capture during a peek/alarm shows a steady
   cue (no mid-strobe frame); assert the render path selects the non-strobing branch (no >3 Hz flash).
 - A11. Grayscale capture of COVERED vs PEEKING: the two states are distinguishable by form alone.
