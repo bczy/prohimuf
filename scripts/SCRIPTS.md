@@ -455,15 +455,21 @@ ids (default = every playable level: `belliard`, `stalingrad`, `vitry`).
   - **Windows per row.** A warm column-density profile whose above-threshold runs
     (twin panes merged, wide runs split by pitch) are the lit windows. One opening
     per real, **visible** window; dark/ambiguous windows are intentionally not
-    invented (a zone on unlit wall is itself a defect).
+    invented (a zone on unlit wall is itself a defect). Each opening carries a
+    **measured left edge + width** from its run bounds (`x = cx/W`,
+    `w = (x1−x0)/W`), clamped to `[0.55, 1.6]·openingW` around the per-level seed.
+    `openingW` is only a **fallback seed** — the clamp band, and the width used when
+    a run degenerates (zero warm mass / thinner than `minRunW·W`). This is what lets
+    the foreground railing frame the real window instead of a fixed-width guess.
 - **Correction loop:** boot a served prod build headless (reusing `e2e-lib.mjs` —
   SwiftShader, `seedDeterminism` freezes one static cop per slot), push candidate
   zones via `window.__MUF_ZONES__` + `__MUF_APPLY_ZONES__()`, read each rendered
   sprite box via `__MUF_SLOT_RECTS__()`, and tune each zone's **h** (sprite size,
   ~88% of the opening height) and **y** (centre the down-shifted box), 1:1 with the
-  openings. `zone.w` = the opening width (frames the foreground railing). The
-  h→(size,y) map is **calibrated from the first render**, so it stays correct if
-  the render layout changes.
+  openings. `zone.x`/`zone.w` are seeded from the **measured** opening edges (frame
+  the foreground railing) and snapped back to them on any `MISALIGN`. The h→(size,y)
+  map is **calibrated from the first render**, so it stays correct if the render
+  layout changes.
 - **Output:** overwrites **only the target level's key** of
   `src/game/levels/windowZones.generated.json` (4 identical panels — each facade is
   one image tiled ×4); the other levels are left byte-identical. Each iteration
@@ -492,6 +498,10 @@ yarn align:belliard:check
 - **COUNT** — a panel's zone count ≠ its detected window count.
 - **EMPTY** — a detected window with no zone centre in it.
 - **WALL** — a zone centre on bare wall (low local warm-density, no opening nearby).
+- **MISALIGN** — the applied railing frame (`zone.x`/`zone.w`) off its measured
+  opening beyond `ALIGN_TOL = 0.012` (normalized ≈ 15 px on 1280) in centre (`x`) or
+  width (`w`). The pure boundary check lives in `scripts/lib/alignment.mjs`
+  (`misaligned`), unit-tested in `scripts/lib/__tests__/alignment.test.mjs`.
 
 SUCCESS = 0 defects across all 4 panels of every requested level. Exit non-zero
 while any defect remains.
