@@ -32,13 +32,13 @@ Prose context goes below the line, never inside it.
 
 ## Index
 
-| Story shard                                                                            | Status  | Notes                                           |
-| -------------------------------------------------------------------------------------- | ------- | ----------------------------------------------- |
-| [archive-2026-07](./handoffs/archive-2026-07.md)                                       | closed  | all pre-shard history (52 story blocks)         |
-| [story-agent-team-flow-optimization](./handoffs/story-agent-team-flow-optimization.md) | open    | process amendments (ADR-0032)                   |
-| [story-crew-extension](./handoffs/story-crew-extension.md)                             | closed  | +3 agents Tony/Ben/Otis (ADR-0037)              |
-| [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)   | closed  | pipeline poster + freshness gate (#74)          |
-| [story-harness-infographics](./handoffs/story-harness-infographics.md)                 | open    | 4 harness posters + freshness gate              |
-| [story-hostage-qte-duel](./handoffs/story-hostage-qte-duel.md)                         | open    | QTE rework "duel porte cochère" (ADR-0034/0035) |
-| [fixes](./handoffs/fixes.md)                                                           | rolling | fix-lane one-liners                             |
-| [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)   | closed  | remote provisioning hook (ADR-0033)             |
+| Story shard                                                                            | Status  | Notes                                                                                                               |
+| -------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| [archive-2026-07](./handoffs/archive-2026-07.md)                                       | closed  | all pre-shard history (52 story blocks)                                                                             |
+| [story-agent-team-flow-optimization](./handoffs/story-agent-team-flow-optimization.md) | open    | process amendments (ADR-0032)                                                                                       |
+| [story-crew-extension](./handoffs/story-crew-extension.md)                             | closed  | +3 agents Tony/Ben/Otis (ADR-0037)                                                                                  |
+| [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)   | closed  | pipeline poster + freshness gate (#74)                                                                              |
+| [story-harness-infographics](./handoffs/story-harness-infographics.md)                 | open    | 4 harness posters + freshness gate                                                                                  |
+| [story-hostage-qte-duel](./handoffs/story-hostage-qte-duel.md)                         | open    | QTE rework "duel porte cochère" (ADR-0034/0035); merged story-hostage-qte-rework.md in; implementation DONE, PR #79 |
+| [fixes](./handoffs/fixes.md)                                                           | rolling | fix-lane one-liners                                                                                                 |
+| [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)   | closed  | remote provisioning hook (ADR-0033)                                                                                 |

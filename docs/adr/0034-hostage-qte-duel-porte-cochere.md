@@ -121,7 +121,8 @@ rejected). The ADR-0030 D4 rule stands: a rescue never advances the kill quota.
 `qteSystem.ts` / `types/hostageQte.ts` are reworked:
 
 - **Removed:** `captorHp` / `captorHpMax`, `PART_DAMAGE`, `QteBodyPart`, the
-  `windowSeconds` / `windowRemaining` fields and the timeout-loss branch.
+  `windowSeconds` / `windowRemaining` fields and the timeout-loss branch, and `hostageHp` /
+  `hostageHpMax`.
 - **Added:** the captor sub-state (`COVERED | PEEKING`) with a peek timer, a **moving
   anchor** (the captor's live position, advanced each tick during the frozen QTE), a
   **spatial fail condition** (anchor reaches the porte-cochère world point), captor
@@ -130,6 +131,13 @@ rejected). The ADR-0030 D4 rule stands: a rescue never advances the kill quota.
 - **Kept:** the scripted trigger, the `ZOOMING → … → DONE` forward-only phase machine, the
   brief WON/LOST result hold (the post-verdict breather was _kept_ — idea #19 rejected), the
   `anchor`, and the "OTAGE" `warning`.
+
+> **Amendment (2026-07-17, lead-game-designer design gate, finding D-1).** The Removed list
+> above now names `hostageHp` / `hostageHpMax` explicitly; the original text left them out,
+> which read as an open seam even though D4 already makes the duel binary and a hostage hit
+> a flat energy penalty (not an HP drain, not a loss route). No decision changes — this
+> closes an incompleteness the gate flagged, ratifying what D3/D4 and the frozen
+> `src/game/types/hostageQte.ts` contract already do.
 
 All of this stays **pure `src/game`** (zero React/Three, unit-tested). The render lane reads
 the new state and draws the moving tableau (drag / peek / firing poses — **new sprites via

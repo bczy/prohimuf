@@ -32,8 +32,17 @@ depict, and a draining bar would lie about a chip-damage model that no longer ex
 it is diegetic; a HUD countdown is the second clock the ADR explicitly deletes.
 
 **D1.3 — Nothing replaces them on the HUD.** No new bar, ring, or numeric timer is added for
-distance-to-door. The bottom-centre gauge stack is **empty** during the QTE. The retreat distance
-IS the timer (D1.4). Adding any HUD surrogate for it re-introduces the two-clock problem.
+distance-to-door. The bottom-centre gauge stack is **empty of the two removed QTE bars**
+(captor-HP + countdown) during the QTE. The retreat distance IS the timer (D1.4). Adding any
+HUD surrogate for it re-introduces the two-clock problem.
+
+**D1.3bis — The standing global energy readout stays visible (design gate condition U-1).**
+D1.3's "empty" applies **only** to the two removed QTE-specific bars. The **standing global
+energy readout is NOT part of that removal and must remain visible during the QTE**: energy is
+the sole stake of the duel (ADR-0034 D4/D5, P1), and hiding it along with the removed bars would
+make the stake invisible in the exact moment it is being spent. `HudHostageQte` may slim to
+`{ phase, warning }` (nothing QTE-specific to show beyond that), but the pre-existing energy stat
+element is untouched by this spec and keeps rendering through `ACTIVE`.
 
 **D1.4 — The clock is in-world; both endpoints must be on-screen to be readable.** A diegetic
 timer only reads if the player can see _both_ the moving captor AND the goal line. Readability
@@ -58,8 +67,10 @@ the pip row is removed from the HUD. I do not decide the contract.
 
 **Acceptance (D1):**
 
-- A1. Screenshot at desktop AND mobile-landscape during `ACTIVE`: no bar or pip is drawn in the
-  bottom-centre region; the region is empty. (both device classes)
+- A1. Screenshot at desktop AND mobile-landscape during `ACTIVE`: no captor-HP bar, countdown
+  bar, or pip is drawn in the bottom-centre region — that region is empty of the two removed QTE
+  bars. The standing global energy readout (D1.3bis) is untouched and still visible. (both device
+  classes)
 - A2. Screenshot during `ZOOMING`: OTAGE banner present; no captor bar, no countdown bar.
 - A3. Screenshot during `ACTIVE`: the porte-cochère door is visible in-frame alongside the captor.
 - A4. Screenshot on WON and on LOST: the verdict stamp renders as today.
