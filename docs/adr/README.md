@@ -52,44 +52,50 @@ the old one `Superseded by ADR-XXXX`.
 
 ## Index
 
-| ADR                                                        | Title                                                                                     | Status                                                                              |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [0001](./0001-github-pages-deployment.md)                  | GitHub Pages deployment via `gh-pages` branch                                             | Accepted                                                                            |
-| [0002](./0002-cargo-delivery-core-loop-state.md)           | Cargo delivery in core game state                                                         | Accepted                                                                            |
-| [0003](./0003-mobile-touch-controls-and-camera-pan.md)     | Mobile support: touch controls, forced landscape, inertial camera pan                     | Accepted                                                                            |
-| [0004](./0004-enemies-car-hostage-taker.md)                | New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat  | Accepted                                                                            |
-| [0005](./0005-dynamic-verification-harness.md)             | Dynamic & interactive verification harness (evolve the render farm)                       | Proposed                                                                            |
-| [0006](./0006-directional-sprite-generation.md)            | Directional, mirrored multi-pose sprite generation for car & hostage entities             | Superseded by [0030](./0030-hostage-taker-feature-and-sprite.md) (car withdrawn)    |
-| [0007](./0007-shared-harness-library.md)                   | Shared harness library, and rejection of a "harness that creates harnesses"               | Proposed                                                                            |
-| [0008](./0008-two-axis-pan-and-fullscreen.md)              | Two-axis swipe pan and fullscreen toggle                                                  | Accepted                                                                            |
-| [0009](./0009-push-marker-workflow-dispatch.md)            | Push-marker dispatch for manual workflows                                                 | Accepted                                                                            |
-| [0010](./0010-art-direction-pipeline.md)                   | Art-direction pipeline: gated prompts, seeded generation, CI gates                        | Accepted                                                                            |
-| [0011](./0011-render-side-neon-rim.md)                     | Render-side emissive neon rim for vehicles (decouple from baked art)                      | Accepted                                                                            |
-| [0012](./0012-optional-scripted-tutorial-stage.md)         | Optional scripted tutorial stage before Rue Belliard                                      | Accepted                                                                            |
-| [0013](./0013-enclosed-island-cutout-pass.md)              | Enclosed-island pass in the shared sprite keyer                                           | Accepted                                                                            |
-| [0014](./0014-sprite-integrity-gate-and-retouch.md)        | Post-cutout sprite-integrity gate and deterministic per-sprite retouch                    | Accepted                                                                            |
-| [0015](./0015-device-forked-tutorial-script.md)            | Device-forked tutorial script (desktop vs mobile controls)                                | Accepted                                                                            |
-| [0016](./0016-flipbook-frame-files.md)                     | Enemy sprite flipbook as separate `_f<N>` frame files + `enemies` manifest block          | Accepted                                                                            |
-| [0017](./0017-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook (bike + rider), per-frame generation, atomic per layer           | Accepted                                                                            |
-| [0018](./0018-staffed-production-pipeline.md)              | Staffed production pipeline: design, production, audio and QA lanes with blocking gates   | Accepted                                                                            |
-| [0019](./0019-flash-halo-background-remnant-cleanup.md)    | Flash-halo background-remnant cleanup on the enemy shooting sprites                       | Accepted                                                                            |
-| [0020](./0020-code-drawn-gesture-icons.md)                 | Code-drawn animated gesture icons on the tutorial control panels (reopens ADR-0015 D3)    | Accepted                                                                            |
-| [0021](./0021-pre-game-print-system-and-title-phase.md)    | Pre-game print system: render-layer TITLE phase + single-source print-token module        | Accepted                                                                            |
-| [0022](./0022-asset-preloading-and-loading-gate.md)        | Asset preloading with a progressive loading gate                                          | Accepted                                                                            |
-| [0023](./0023-narrative-scene-location-backdrop.md)        | Optional per-scene location décor (halftone facade) behind the NarrativeScreen transcript | Accepted                                                                            |
-| [0024](./0024-pregame-landscape-layout.md)                 | Responsive pre-game layout for mobile landscape (CSS-first short-height reflow)           | Proposed                                                                            |
-| [0025](./0025-live-hue-enemy-neon-rim-shader.md)           | Live-hue enemy neon rim via a 1-tap ShaderMaterial (heat feedback, hostiles only)         | Accepted                                                                            |
-| [0026](./0026-mobile-pinch-zoom-out.md)                    | Mobile pinch-to-zoom-out (two-finger spread controls the framing)                         | Proposed                                                                            |
-| [0027](./0027-audio-in-loading-gate.md)                    | Audio (BGM + SFX) warmed in the level loading gate                                        | Accepted                                                                            |
-| [0028](./0028-window-alignment-harness.md)                 | Rendered-scene window-alignment harness for belliard (detect real windows, gate to 0)     | Accepted                                                                            |
-| [0029](./0029-retire-enemy-civilian-sprite.md)             | Retire the legacy `enemy_civilian.png` courier sprite (tutorial + fallback swept)         | Accepted                                                                            |
-| [0030](./0030-hostage-taker-feature-and-sprite.md)         | Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting)              | Accepted (partially superseded by [0034](./0034-hostage-qte-duel-porte-cochere.md)) |
-| [0031](./0031-crt-post-process-composite-pass.md)          | CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep)            | Accepted                                                                            |
-| [0032](./0032-two-tier-pipeline-and-process-amendments.md) | Two-tier pipeline (fix lane), merged review stage, sharded handoffs log, ADR allocation   | Accepted                                                                            |
-| [0033](./0033-remote-session-provisioning.md)              | Remote session provisioning via SessionStart hook (pinned rtk + codegraph)                | Accepted                                                                            |
-| [0034](./0034-hostage-qte-duel-porte-cochere.md)           | Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)           | Accepted                                                                            |
-| [0035](./0035-hostage-qte-difficulty-curve.md)             | Hostage QTE per-level difficulty curve for the duel                                       | Accepted                                                                            |
-| [0036](./0036-hostage-qte-accomplice.md)                   | Hostage QTE: the accomplice (second shooter)                                              | Proposed                                                                            |
-| [0037](./0037-crew-extension-ux-gpu-docs.md)               | Crew extension: UX design lane, GPU/perf verdict, staffed DOCS lane                       | Accepted                                                                            |
-| [0038](./0038-agent-capability-upgrade.md)                 | Agent capability upgrade: MCP toolsets, per-agent models, curated references              | Accepted                                                                            |
-| [0039](./0039-maison-skills-backlog.md)                    | "Maison" skills backlog: repeated procedures to package as skills                         | Proposed                                                                            |
+<!-- ADR-INDEX:START — generated by scripts/gen-adr-index.mjs; do not edit by hand -->
+
+| ADR | Title | Status |
+| --- | --- | --- |
+| [0001](./0001-github-pages-deployment.md) | GitHub Pages deployment via `gh-pages` branch | Accepted |
+| [0002](./0002-cargo-delivery-core-loop-state.md) | Cargo delivery in core game state | Accepted |
+| [0003](./0003-mobile-touch-controls-and-camera-pan.md) | Mobile support: touch controls, forced landscape, inertial camera pan | Accepted (amended) |
+| [0004](./0004-enemies-car-hostage-taker.md) | New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat | Accepted |
+| [0005](./0005-dynamic-verification-harness.md) | Dynamic & interactive verification harness (evolve the render farm) | Proposed |
+| [0006](./0006-directional-sprite-generation.md) | Directional, mirrored multi-pose sprite generation for car & hostage entities | Superseded by 0030 |
+| [0007](./0007-shared-harness-library.md) | Shared harness library, and rejection of a "harness that creates harnesses" | Proposed |
+| [0008](./0008-two-axis-pan-and-fullscreen.md) | Two-axis swipe pan and fullscreen toggle | Accepted |
+| [0009](./0009-push-marker-workflow-dispatch.md) | Push-marker dispatch for manual workflows | Accepted |
+| [0010](./0010-art-direction-pipeline.md) | Art-direction pipeline: gated prompts, seeded generation, CI style gates | Accepted |
+| [0011](./0011-render-side-neon-rim.md) | Render-side emissive neon rim for vehicles (decouple from baked art) | Accepted |
+| [0012](./0012-optional-scripted-tutorial-stage.md) | Optional scripted tutorial stage before Rue Belliard | Accepted |
+| [0013](./0013-enclosed-island-cutout-pass.md) | Enclosed-island pass in the shared sprite keyer | Accepted |
+| [0014](./0014-sprite-integrity-gate-and-retouch.md) | Post-cutout sprite-integrity gate and deterministic per-sprite retouch | Accepted |
+| [0015](./0015-device-forked-tutorial-script.md) | Device-forked tutorial script (desktop vs mobile controls) | Accepted |
+| [0016](./0016-flipbook-frame-files.md) | Enemy sprite flipbook as separate frame files | Accepted |
+| [0017](./0017-layered-courier-flipbook-strip-and-slice.md) | Layered courier flipbook: strip-and-slice generation | Accepted (amended) |
+| [0018](./0018-staffed-production-pipeline.md) | Staffed production pipeline: design, production, audio and QA lanes with blocking gates | Accepted |
+| [0019](./0019-flash-halo-background-remnant-cleanup.md) | Flash-halo background-remnant cleanup on the enemy shooting sprites | Accepted |
+| [0020](./0020-code-drawn-gesture-icons.md) | Code-drawn animated gesture icons on the tutorial control panels | Accepted |
+| [0021](./0021-pre-game-print-system-and-title-phase.md) | Pre-game print system: a render-layer TITLE phase and a single-source print-token module | Accepted |
+| [0022](./0022-asset-preloading-and-loading-gate.md) | Asset preloading with a progressive loading gate | Accepted |
+| [0023](./0023-narrative-scene-location-backdrop.md) | Optional per-scene location décor behind the NarrativeScreen transcript | Accepted |
+| [0024](./0024-pregame-landscape-layout.md) | Responsive pre-game layout for mobile landscape (short-height reflow) | Proposed |
+| [0025](./0025-live-hue-enemy-neon-rim-shader.md) | Live-hue enemy neon rim via a 1-tap ShaderMaterial | Accepted |
+| [0026](./0026-mobile-pinch-zoom-out.md) | Mobile pinch-to-zoom-out (two-finger spread controls the framing) | Proposed |
+| [0027](./0027-audio-in-loading-gate.md) | Audio in the level loading gate | Accepted |
+| [0028](./0028-window-alignment-harness.md) | Rendered-scene window-alignment harness for belliard | Accepted |
+| [0029](./0029-retire-enemy-civilian-sprite.md) | Retire the legacy `enemy_civilian.png` courier sprite | Accepted |
+| [0030](./0030-hostage-taker-feature-and-sprite.md) | Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting) | Accepted (partially superseded) |
+| [0031](./0031-crt-post-process-composite-pass.md) | CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep) | Accepted |
+| [0032](./0032-two-tier-pipeline-and-process-amendments.md) | Two-tier pipeline, merged review stage, sharded handoffs log, producer-allocated ADR numbers | Accepted |
+| [0033](./0033-remote-session-provisioning.md) | Remote session provisioning via SessionStart hook (pinned rtk + codegraph) | Accepted |
+| [0034](./0034-hostage-qte-duel-porte-cochere.md) | Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules) | Accepted |
+| [0035](./0035-hostage-qte-difficulty-curve.md) | Hostage QTE per-level difficulty curve for the duel (F3) | Accepted |
+| [0036](./0036-hostage-qte-accomplice.md) | Hostage QTE: the accomplice (second shooter) (F4) | Proposed |
+| [0037](./0037-crew-extension-ux-gpu-docs.md) | Crew extension: UX design lane, GPU/perf verdict, staffed DOCS lane | Accepted |
+| [0038](./0038-agent-capability-upgrade.md) | Agent capability upgrade: MCP toolsets, per-agent models, curated references | Accepted |
+| [0039](./0039-maison-skills-backlog.md) | "Maison" skills backlog: repeated procedures to package as skills | Proposed |
+| [0040](./0040-render-transient-impact-effects.md) | Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks) | Accepted |
+| [0041](./0041-generated-adr-registry.md) | Generated ADR registry with a CI freshness gate | Accepted |
+
+<!-- ADR-INDEX:END -->
