@@ -9,6 +9,13 @@ dev lane → mechanical checks → ONE `code-review` (high) reviewer → merge. 
 verdict and hand-off is logged in the story's shard under
 [`docs/handoffs/`](../handoffs/) (index: [`agent-handoffs.md`](../agent-handoffs.md)).
 
+A styled poster version of this pipeline lives at
+[`agents-pipeline-infographic.html`](./agents-pipeline-infographic.html) (standalone
+HTML, crew sprites from `docs/muf-crew-bitmap.py --singles`). It is kept fresh by
+`scripts/check-agents-infographic.mjs` (runs in CI): any PR touching this file,
+`.claude/agents/*.md`, or the crew bitmap script must update the infographic and
+re-pin its manifest with `node scripts/check-agents-infographic.mjs --update`.
+
 ```mermaid
 flowchart TB
     B(("Bertrand<br/>(CEO)"))

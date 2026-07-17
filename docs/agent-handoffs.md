@@ -37,5 +37,6 @@ Prose context goes below the line, never inside it.
 | [archive-2026-07](./handoffs/archive-2026-07.md)                                       | closed  | all pre-shard history (52 story blocks) |
 | [story-agent-team-flow-optimization](./handoffs/story-agent-team-flow-optimization.md) | open    | process amendments (ADR-0032)           |
 | [story-crew-extension](./handoffs/story-crew-extension.md)                             | closed  | +3 agents Tony/Ben/Otis (ADR-0037)      |
+| [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)   | open    | pipeline poster + freshness gate        |
 | [fixes](./handoffs/fixes.md)                                                           | rolling | fix-lane one-liners                     |
 | [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)   | closed  | remote provisioning hook (ADR-0033)     |
