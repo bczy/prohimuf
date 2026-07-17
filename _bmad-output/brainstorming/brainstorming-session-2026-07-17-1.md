@@ -116,4 +116,52 @@ _Novelty_: Two-beat set-piece; the rescue isn't over when the shot lands.
 _Concept_: Captor fakes an execution (shoulder twitch) to make you crack; firing during the feint makes the hostage panic and move — zones shift.
 _Novelty_: Punishes nervous trigger, not aim; readable tell keeps it fair (P3).
 
-_Session paused for Bertrand's reactions before M/P/E/R lenses and Reverse Brainstorming._
+**Bertrand's reactions (S/C/A batch):** #1 COOL · #2 COOL · #3 COOL · #4 NON · #5 NON · #6 COOL · #7 BOF · #8 COOL · #9 COOL · #10 NON · #11 NON.
+
+**Emerging pattern:** keep everything that makes the danger *alive and readable* (human shield, poses, slow-mo, counter-fire, accomplice) and the **energy** economy as the stake; reject erratic-motion gimmicks (struggle, feint, escape run) and score-based stakes. Emerging system: *a duel of patience against an adversary who actively threatens you, paid in energy.*
+
+**[Modify #12]**: Per-Level Curve
+_Concept_: `QteSpec` is already per level — shorter/rarer PEEKING openings and tighter total window each level. Belliard teaches, later levels punish.
+_Novelty_: Difficulty progression using existing data plumbing, zero new architecture.
+
+**[Modify #13]**: Magnify Failure
+_Concept_: Hostage executed = heavy energy hit (−50, not −15), consistent with the all-energy economy Bertrand chose via #6.
+_Novelty_: Makes failure genuinely feared without touching score systems.
+
+**[Modify #14]**: The Wounded Get Angry
+_Concept_: Each non-lethal hit (arm/leg) shortens his subsequent exposures and speeds up his pose countdown.
+_Novelty_: Chip damage becomes a real risk/reward choice instead of a consolation prize.
+
+**[Modify #15]**: Shooter's Breath
+_Concept_: Slight impact-point sway during the QTE (heartbeat) that settles if you hold fire for ~1 s. Pure logic: offset as a function of time.
+_Novelty_: Mechanically rewards sang-froid itself.
+
+**[Put-to-other-uses #16]**: The QTE as Fuel Station
+_Concept_: With energy leaking during the QTE (#6) and all outcomes priced in energy, a fast clean rescue becomes THE big refill of the level.
+_Novelty_: Elevates the QTE from side bonus to strategic survival decision.
+
+**[Put-to-other-uses #17]**: Make the Zoom Earn Its Keep
+_Concept_: Firing during the 2 s zoom = penalized panic shot. The zoom teaches the core reflex: don't shoot what you can't read.
+_Novelty_: Dead time becomes the tutorial for the phase's core skill.
+
+**[Eliminate #18]**: Eliminate the Body as Target
+_Concept_: Only the head (during PEEKING) wounds the captor; torso/arms/legs merely anger him (#14). Radicalizes the 1+2+9 trio into a pure timing duel.
+_Novelty_: Removes the damage-table simulation in favor of one readable skill test.
+
+**[Eliminate #19]**: Eliminate the Post-Verdict Breather
+_Concept_: Scene resumes instantly after WON/LOST, window cops already mid-aim (consistent with slow-mo #3).
+_Novelty_: No free breathing room — the rescue lives inside the level, not beside it.
+
+**[Eliminate #20]**: Eliminate the "OTAGE" Banner
+_Concept_: Replace the UI warning with a diegetic cue (off-screen scream + the tableau sliding into frame). Info stays readable (P3) but stops being a defusing announcement.
+_Novelty_: Preserves surprise without sacrificing fairness.
+
+**[Reverse #21]**: The Tableau Moves
+_Concept_: The captor backs away dragging the hostage toward a porte cochère for the whole QTE (existing `Courier` movement model). Reaching the door = gone with her (fail). The street itself is the timer.
+_Novelty_: Spatializes the countdown; tracking + waiting compound.
+
+**[Reverse #22]**: Reverse the Trigger
+_Concept_: No fixed `triggerAtElapsedSeconds` — the taker first appears as a street silhouette crossing with his victim; if you fail to neutralize him before he entrenches, THEN the QTE fires. The player causes the event; runs differ.
+_Novelty_: Converts a scripted cutscene into a consequence of play.
+
+_Awaiting Bertrand's reactions on #12–22 before Reverse Brainstorming._
