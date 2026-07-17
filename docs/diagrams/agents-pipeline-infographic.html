@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      muf — infographie du pipeline des agents (poster HTML autonome).
+      Sources normatives, règle de maintenance et boucle de re-pin : voir l'en-tête
+      de scripts/check-agents-infographic.mjs (le check tourne en CI).
+      Sprites : python3 docs/muf-crew-bitmap.py --singles → ./crew/*.png.
+      Zéro dépendance : ouvrable en local dans un navigateur (chemins relatifs).
+    -->
+    <title>muf — Pipeline des agents</title>
+    <style>
+      :root {
+        --paper: #f2efe8;
+        --paper-2: #e9e5da;
+        --ink: #17150f;
+        --ink-soft: #4a4738;
+        --line: #17150f;
+        --acid: #b6ff00;
+        --acid-ink: #5f7a00;
+        --design: #1f7a3d;
+        --design-bg: #dff0d9;
+        --art: #c4006b;
+        --art-bg: #fadbeb;
+        --dev: #0e6e91;
+        --dev-bg: #d8ecf4;
+        --audio: #b54a00;
+        --audio-bg: #fbe4d2;
+        --prod: #5b3fb0;
+        --prod-bg: #e6def7;
+        --gate: #8a6d00;
+        --gate-bg: #fff3c4;
+        --card: #faf8f3;
+        --shadow: rgba(23, 21, 15, 0.85);
+        --noise: rgba(23, 21, 15, 0.05);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #101013;
+          --paper-2: #17171b;
+          --ink: #ececdf;
+          --ink-soft: #a5a293;
+          --line: #ececdf;
+          --acid: #b6ff00;
+          --acid-ink: #b6ff00;
+          --design: #4fd07d;
+          --design-bg: #10271a;
+          --art: #ff4fa8;
+          --art-bg: #2c0f1f;
+          --dev: #3fc3e8;
+          --dev-bg: #0d2530;
+          --audio: #ff9a4d;
+          --audio-bg: #2b1a0c;
+          --prod: #a98cf5;
+          --prod-bg: #1e1730;
+          --gate: #ffd94d;
+          --gate-bg: #292109;
+          --card: #17171b;
+          --shadow: rgba(182, 255, 0, 0.28);
+          --noise: rgba(236, 236, 223, 0.04);
+        }
+      }
+      /* Les blocs [data-theme] ne sont PAS du code mort : le viewer d'artifact
+         claude.ai stampe data-theme sur <html> via son toggle de thème, et il
+         doit gagner dans les deux sens. Garder ces deux blocs en copie exacte
+         des deux palettes ci-dessus. */
+      :root[data-theme="light"] {
+        --paper: #f2efe8;
+        --paper-2: #e9e5da;
+        --ink: #17150f;
+        --ink-soft: #4a4738;
+        --line: #17150f;
+        --acid: #b6ff00;
+        --acid-ink: #5f7a00;
+        --design: #1f7a3d;
+        --design-bg: #dff0d9;
+        --art: #c4006b;
+        --art-bg: #fadbeb;
+        --dev: #0e6e91;
+        --dev-bg: #d8ecf4;
+        --audio: #b54a00;
+        --audio-bg: #fbe4d2;
+        --prod: #5b3fb0;
+        --prod-bg: #e6def7;
+        --gate: #8a6d00;
+        --gate-bg: #fff3c4;
+        --card: #faf8f3;
+        --shadow: rgba(23, 21, 15, 0.85);
+        --noise: rgba(23, 21, 15, 0.05);
+      }
+      :root[data-theme="dark"] {
+        --paper: #101013;
+        --paper-2: #17171b;
+        --ink: #ececdf;
+        --ink-soft: #a5a293;
+        --line: #ececdf;
+        --acid: #b6ff00;
+        --acid-ink: #b6ff00;
+        --design: #4fd07d;
+        --design-bg: #10271a;
+        --art: #ff4fa8;
+        --art-bg: #2c0f1f;
+        --dev: #3fc3e8;
+        --dev-bg: #0d2530;
+        --audio: #ff9a4d;
+        --audio-bg: #2b1a0c;
+        --prod: #a98cf5;
+        --prod-bg: #1e1730;
+        --gate: #ffd94d;
+        --gate-bg: #292109;
+        --card: #17171b;
+        --shadow: rgba(182, 255, 0, 0.28);
+        --noise: rgba(236, 236, 223, 0.04);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background:
+          repeating-linear-gradient(0deg, transparent 0 3px, var(--noise) 3px 4px), var(--paper);
+        color: var(--ink);
+        font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        margin: 0;
+      }
+      .wrap {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 32px 20px 80px;
+      }
+
+      .display {
+        font-family: Haettenschweiler, "Arial Narrow", Impact, "Franklin Gothic Medium", sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.88em;
+      }
+
+      /* ---------- hero ---------- */
+      header {
+        border: 3px solid var(--line);
+        padding: 26px 26px 22px;
+        margin-bottom: 14px;
+        position: relative;
+        background: var(--card);
+        box-shadow: 8px 8px 0 var(--shadow);
+      }
+      .eyebrow {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin: 0 0 6px;
+      }
+      h1 {
+        font-size: clamp(44px, 8vw, 84px);
+        line-height: 0.92;
+        margin: 0;
+        text-wrap: balance;
+      }
+      h1 .neon {
+        background: var(--acid);
+        color: #17150f;
+        padding: 0 10px;
+        display: inline-block;
+        transform: rotate(-1.2deg);
+      }
+      .lede {
+        max-width: 62ch;
+        color: var(--ink-soft);
+        margin: 14px 0 0;
+      }
+      .lede strong {
+        color: var(--ink);
+      }
+      .hero-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin-top: 18px;
+        border: 2px solid var(--line);
+      }
+      .hero-stats > div {
+        flex: 1 1 120px;
+        padding: 8px 14px;
+        border-right: 2px solid var(--line);
+      }
+      .hero-stats > div:last-child {
+        border-right: none;
+      }
+      .hero-stats b {
+        display: block;
+        font-size: 26px;
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
+        font-weight: 400;
+      }
+      .hero-stats span {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      /* ---------- sprites pixel-art du crew (muf-crew-bitmap.py) ---------- */
+      .sprite {
+        display: inline-block;
+        vertical-align: middle;
+        background: #2c2c29;
+        border: 1.5px solid var(--line);
+        padding: 3px 4px;
+        line-height: 0;
+        margin-right: 8px;
+      }
+      .sprite img {
+        width: 33px;
+        height: 30px;
+        image-rendering: pixelated;
+        display: block;
+      }
+      .sprite.big img {
+        width: 66px;
+        height: 60px;
+      }
+      .sprite.sm img {
+        width: 22px;
+        height: 20px;
+      }
+      .sprite.fr {
+        float: right;
+        margin: 0 0 6px 10px;
+      }
+      .steps .sprite {
+        float: left;
+        margin: 2px 8px 2px 0;
+      }
+      .steps li {
+        display: flow-root;
+      }
+
+      /* ---------- producer rail ---------- */
+      .marion {
+        border: 2px dashed var(--prod);
+        background: var(--prod-bg);
+        color: var(--ink);
+        padding: 12px 16px;
+        margin: 0 0 26px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .marion .tag {
+        background: var(--prod);
+        color: #fff;
+      }
+      .marion p {
+        margin: 0;
+        flex: 1 1 380px;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+      }
+      .marion p strong {
+        color: var(--ink);
+      }
+
+      /* ---------- pipeline ---------- */
+      .pipeline {
+        position: relative;
+        padding-left: 58px;
+      }
+      .pipeline::before {
+        content: "";
+        position: absolute;
+        left: 21px;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: repeating-linear-gradient(180deg, var(--line) 0 14px, transparent 14px 22px);
+      }
+      .stage {
+        position: relative;
+        margin-bottom: 30px;
+      }
+      .stage-num {
+        position: absolute;
+        left: -58px;
+        top: -4px;
+        width: 46px;
+        height: 46px;
+        border: 3px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
+        font-size: 26px;
+        z-index: 1;
+      }
+      .stage-num.hot {
+        background: var(--acid);
+        color: #17150f;
+        border-color: var(--line);
+      }
+      .stage-title {
+        font-size: 27px;
+        margin: 0 0 2px;
+      }
+      .stage-sub {
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin: 0 0 10px;
+      }
+
+      .card {
+        border: 2px solid var(--line);
+        background: var(--card);
+        padding: 12px 15px;
+        box-shadow: 5px 5px 0 var(--shadow);
+      }
+      .card p {
+        margin: 6px 0 0;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+      }
+      .card p strong {
+        color: var(--ink);
+      }
+
+      .tag {
+        display: inline-block;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border: 1.5px solid currentColor;
+        text-transform: none;
+      }
+      .tag.fill {
+        border: none;
+      }
+      .persona {
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        margin-left: 6px;
+        white-space: nowrap;
+      }
+
+      .t-pm,
+      .t-neutral {
+        color: var(--ink);
+      }
+      .t-design {
+        color: var(--design);
+      }
+      .t-art {
+        color: var(--art);
+      }
+      .t-dev {
+        color: var(--dev);
+      }
+      .t-audio {
+        color: var(--audio);
+      }
+      .t-prod {
+        color: var(--prod);
+      }
+      .t-qa {
+        color: var(--gate);
+      }
+
+      /* stamp gates */
+      .stamp {
+        display: inline-block;
+        border: 3px double var(--gate);
+        color: var(--gate);
+        background: var(--gate-bg);
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
+        font-size: 17px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 3px 12px 2px;
+        transform: rotate(-2deg);
+        white-space: nowrap;
+      }
+      .stamp small {
+        display: block;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.12em;
+        transform: none;
+      }
+
+      .loopback {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+        border-left: 3px solid var(--gate);
+        padding: 2px 8px;
+        margin-top: 8px;
+      }
+
+      /* parallel columns */
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 14px;
+        align-items: start;
+      }
+      .lane {
+        border: 2px solid;
+        padding: 12px 14px;
+        background: var(--card);
+        box-shadow: 5px 5px 0 var(--shadow);
+      }
+      .lane h4 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .lane.l-dev {
+        border-color: var(--dev);
+      }
+      .lane.l-art {
+        border-color: var(--art);
+      }
+      .lane.l-audio {
+        border-color: var(--audio);
+      }
+      .lane .cond {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+      }
+      .l-art .cond {
+        background: var(--art-bg);
+        color: var(--art);
+      }
+      .l-audio .cond {
+        background: var(--audio-bg);
+        color: var(--audio);
+      }
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .steps li {
+        padding: 7px 0;
+        border-top: 1.5px dashed var(--paper-2);
+        font-size: 13px;
+      }
+      .steps li:first-child {
+        border-top: none;
+      }
+      .steps .who {
+        display: block;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+      .steps .what {
+        color: var(--ink-soft);
+      }
+      .steps li.gated {
+        background: var(--gate-bg);
+        border: 1.5px solid var(--gate);
+        padding: 6px 8px;
+        margin: 4px 0;
+      }
+      .steps li.gated .who {
+        color: var(--gate);
+      }
+      .l-dev .who {
+        color: var(--dev);
+      }
+      .l-art .who {
+        color: var(--art);
+      }
+      .l-audio .who {
+        color: var(--audio);
+      }
+
+      .duo {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .duo .card {
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+
+      .gate-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .gate-note {
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        flex: 1 1 260px;
+        margin: 0;
+      }
+
+      /* verify checklist */
+      .verify-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .verify-grid .card {
+        box-shadow: 3px 3px 0 var(--shadow);
+        font-size: 13px;
+      }
+      .verify-grid .card b {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      /* review panel */
+      .panel-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .panel-grid .card {
+        box-shadow: 3px 3px 0 var(--shadow);
+        font-size: 12.5px;
+      }
+      .panel-grid .card b {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 12px;
+      }
+      .review-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      /* fix lane */
+      .fixlane {
+        border: 3px dashed var(--line);
+        padding: 16px 18px;
+        margin: 40px 0 34px;
+        background: var(--paper-2);
+        position: relative;
+      }
+      .fixlane h3 {
+        margin: 0 0 4px;
+        font-size: 26px;
+      }
+      .fixlane h3 .neon {
+        background: var(--acid);
+        color: #17150f;
+        padding: 0 8px;
+        transform: rotate(1deg);
+        display: inline-block;
+      }
+      .fix-steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+        font-size: 13px;
+      }
+      .fix-steps .step {
+        border: 2px solid var(--line);
+        background: var(--card);
+        padding: 6px 10px;
+      }
+      .fix-steps .sep {
+        color: var(--ink-soft);
+        font-weight: 700;
+      }
+      .fixlane p {
+        font-size: 13px;
+        color: var(--ink-soft);
+        margin: 8px 0 0;
+      }
+      .fixlane p strong {
+        color: var(--ink);
+      }
+
+      /* rules / caps */
+      .rules h2 {
+        font-size: 34px;
+        margin: 44px 0 4px;
+      }
+      .rules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .rules-grid .card {
+        font-size: 13px;
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .rules-grid b.rule-t {
+        display: block;
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
+        font-weight: 400;
+        font-size: 19px;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }
+      .rules-grid .n {
+        color: var(--acid-ink);
+      }
+
+      footer {
+        margin-top: 44px;
+        font-size: 12px;
+        color: var(--ink-soft);
+        border-top: 2px solid var(--line);
+        padding-top: 12px;
+      }
+      footer code {
+        font-size: 11.5px;
+      }
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="eyebrow">muf · prohibition remake · rave clandestine, paris 1998</p>
+        <span class="sprite big fr"><img src="crew/trambz.png" alt="trambz (CEO)" /></span>
+        <h1 class="display">Le pipeline<br /><span class="neon">des agents</span></h1>
+        <p class="lede">
+          Dix-huit subagents, <strong>une seule chaîne de production</strong> : chaque feature passe
+          de main en main, étape 0 à 8, jamais en silo. Les lanes tournent en parallèle sur des
+          chemins disjoints, les <strong>gates bloquent</strong>, et chaque passage de main est
+          loggé dans <code>docs/handoffs/</code>.
+        </p>
+        <div class="hero-stats display">
+          <div><b>18</b><span>agents</span></div>
+          <div><b>9</b><span>étapes (0–8)</span></div>
+          <div><b>9</b><span>gates bloquants</span></div>
+          <div><b>3</b><span>lanes build ∥</span></div>
+          <div><b>2</b><span>tiers (pipeline / fix)</span></div>
+        </div>
+      </header>
+
+      <div class="marion">
+        <span class="sprite"><img src="crew/producer.png" alt="Marion" /></span>
+        <span class="tag fill t-prod">producer</span>
+        <span class="persona">Marion 📆 — conduit le pipeline, ne tient aucun gate</span>
+        <p>
+          <strong>Elle suit l'étape de chaque feature</strong>, chasse les hand-offs manquants, fait
+          respecter les caps d'itération, sérialise les seams contendus (<code>src/hooks/**</code>),
+          alloue les numéros d'ADR, et prépare les paquets d'escalade pour Bertrand. Un hand-off non
+          loggé n'a pas eu lieu.
+        </p>
+      </div>
+
+      <div class="pipeline">
+        <!-- 0 INTAKE -->
+        <section class="stage">
+          <div class="stage-num display">0</div>
+          <h3 class="stage-title display">Intake</h3>
+          <p class="stage-sub">Bertrand (CEO) → pm</p>
+          <div class="card">
+            <span class="sprite fr"><img src="crew/trambz.png" alt="trambz (CEO)" /></span>
+            Une intention, un bug ou une idée entre dans le circuit. Rien ne se code sans story.
+          </div>
+        </section>
+
+        <!-- 1 PRODUCT -->
+        <section class="stage">
+          <div class="stage-num display">1</div>
+          <h3 class="stage-title display">Product</h3>
+          <p class="stage-sub">le quoi &amp; le pourquoi</p>
+          <div class="card">
+            <span class="sprite"><img src="crew/pm.png" alt="John" /></span>
+            <span class="tag t-pm">pm</span><span class="persona">John 📋</span>
+            <p>
+              <strong>Story scopée</strong> : WHAT/WHY, critères d'acceptation, et le test « cahier
+              des charges » — <em>Prohibition (Atari ST, 1987) l'avait-il ?</em> — contre
+              <code>PROJECT_GUIDELINES.md</code>. Cœur de boucle : Récupérer → Livrer → Éviter.
+            </p>
+          </div>
+        </section>
+
+        <!-- 2 DESIGN -->
+        <section class="stage">
+          <div class="stage-num display">2</div>
+          <h3 class="stage-title display">Design</h3>
+          <p class="stage-sub">
+            si la story touche le gameplay, la fiction ou les écrans/flows/accessibilité
+          </p>
+          <div class="duo">
+            <div class="card">
+              <span class="sprite fr"><img src="crew/game-designer.png" alt="Sacha" /></span>
+              <span class="tag t-design">game-designer</span><span class="persona">Sacha 🎮</span>
+              <p>
+                Mécaniques, valeurs de tuning, 3C — specs dans <code>docs/game-design/</code>.
+                Jamais de code.
+              </p>
+            </div>
+            <div class="card">
+              <span class="sprite fr"><img src="crew/narrative-designer.png" alt="Yasmine" /></span>
+              <span class="tag t-design">narrative-designer</span
+              ><span class="persona">Yasmine ✒️</span>
+              <p>
+                Univers, cast (Muf, DISPATCH, KENZA…), chaque mot visible par le joueur. Livrables
+                disjoints, en parallèle.
+              </p>
+            </div>
+            <div class="card">
+              <span class="sprite fr"><img src="crew/ux-designer.png" alt="Tony" /></span>
+              <span class="tag t-design">ux-designer</span><span class="persona">Tony 🖱️</span>
+              <p>
+                Écrans, flows, ergonomie du HUD, accessibilité — specs UX dans
+                <code>docs/game-design/ux/</code>.
+              </p>
+            </div>
+          </div>
+          <div class="gate-row">
+            <span class="sprite"><img src="crew/lead-game-designer.png" alt="Karim" /></span>
+            <span class="stamp">Design gate<small>lead-game-designer · Karim 🧭</small></span>
+            <p class="gate-note">
+              PASS/FAIL par livrable : scope, cœur de boucle, vérifiabilité, cohérence avec les
+              specs gatées et la bible art. Aucun dev n'implémente un design non gaté.
+            </p>
+          </div>
+          <div class="loopback">
+            FAIL → le designer itère · max 2 rounds de rework, puis escalade Bertrand
+          </div>
+        </section>
+
+        <!-- 3 TECH PLAN -->
+        <section class="stage">
+          <div class="stage-num display">3</div>
+          <h3 class="stage-title display">Tech plan</h3>
+          <p class="stage-sub">le comment</p>
+          <div class="card">
+            <span class="sprite"><img src="crew/senior-architect.png" alt="Winston" /></span>
+            <span class="tag t-neutral">senior-architect</span
+            ><span class="persona">Winston 🏗️</span>
+            <p>
+              Faisabilité, frontières (<strong>la loi</strong> : <code>src/game</code> sans
+              React/Three, <code>src/render</code> sans règles de jeu, <code>src/hooks</code>
+              seul pont), ADR si besoin (numéro alloué par Marion), et
+              <strong>partition des lanes</strong> — dev + art + audio, chemins disjoints.
+            </p>
+            <p>
+              <span class="sprite sm"><img src="crew/gpu-specialist.png" alt="Ben" /></span>
+              Changement perf-sensible (particules, render targets, draw calls) ?
+              <strong>Analyse de coût GPU</strong> par <span class="tag t-qa">gpu-specialist</span
+              ><span class="persona">Ben 🏍️</span> dès le tech plan.
+            </p>
+          </div>
+        </section>
+
+        <!-- 4 BUILD -->
+        <section class="stage">
+          <div class="stage-num hot display">4</div>
+          <h3 class="stage-title display">Build — lanes parallèles</h3>
+          <p class="stage-sub">lancées en un seul message, chemins non chevauchants</p>
+          <div class="cols">
+            <div class="lane l-dev">
+              <h4 class="display t-dev">Dev</h4>
+              <ul class="steps">
+                <li>
+                  <span class="sprite sm"
+                    ><img src="crew/dev-gameplay.png" alt="Amelia (gameplay)"
+                  /></span>
+                  <span class="who">dev-gameplay · Amelia 🧠</span>
+                  <span class="what"
+                    ><code>src/game/**</code> pur, TDD Vitest, hooks côté logique</span
+                  >
+                </li>
+                <li>
+                  <span class="sprite sm"
+                    ><img src="crew/dev-r3f-render.png" alt="Amelia (render)"
+                  /></span>
+                  <span class="who">dev-r3f-render · Amelia 🎨</span>
+                  <span class="what"
+                    ><code>src/render/**</code> R3F, hooks côté vue — livre des screenshots réels
+                    pour tout visuel composé au runtime</span
+                  >
+                </li>
+                <li>
+                  <span class="sprite sm"
+                    ><img src="crew/dev-tooling-assets.png" alt="Amelia (tooling)"
+                  /></span>
+                  <span class="who">dev-tooling-assets · Amelia 🛠️</span>
+                  <span class="what"
+                    ><code>scripts/</code>, structure de <code>levelArt.json</code>, CI</span
+                  >
+                </li>
+                <li>
+                  <span class="what"
+                    >Seul seam partagé : <code>src/hooks/**</code> — annoncé, sérialisé, jamais
+                    co-édité.</span
+                  >
+                </li>
+              </ul>
+            </div>
+
+            <div class="lane l-art">
+              <h4 class="display t-art">Art <span class="cond">si visuels requis</span></h4>
+              <ul class="steps">
+                <li>
+                  <span class="sprite sm"><img src="crew/art-advisor.png" alt="Estelle" /></span>
+                  <span class="who">art-advisor · Estelle 📼</span>
+                  <span class="what">références, ancrage culturel (conseil, lecture seule)</span>
+                </li>
+                <li>
+                  <span class="sprite sm"><img src="crew/concept-artist.png" alt="Maud" /></span>
+                  <span class="who">concept-artist · Maud ✍️</span>
+                  <span class="what">prompts FLUX dans <code>levelArt.json</code></span>
+                </li>
+                <li>
+                  <span class="sprite sm"><img src="crew/game-graphist.png" alt="Serge" /></span>
+                  <span class="who">game-graphist · Serge 🕹️</span>
+                  <span class="what">passe PRÉ-PROD : lisibilité à la taille jeu, keying</span>
+                </li>
+                <li class="gated">
+                  <span class="sprite sm"><img src="crew/lead-art.png" alt="Nico" /></span>
+                  <span class="who">lead-art · Nico 🎯 — PROMPT GATE</span>
+                  <span class="what">+ <code>check-art-prompts.mjs</code> en CI</span>
+                </li>
+                <li>
+                  <span class="who">Génération CI</span>
+                  <span class="what">marker push → render farm, retries bornés</span>
+                </li>
+                <li>
+                  <span class="sprite sm"><img src="crew/game-graphist.png" alt="Serge" /></span>
+                  <span class="who">game-graphist · Serge 🕹️</span>
+                  <span class="what"
+                    >passe TECHNIQUE : inspection taille réelle, nettoyage franges</span
+                  >
+                </li>
+                <li class="gated">
+                  <span class="sprite sm"><img src="crew/lead-art.png" alt="Nico" /></span>
+                  <span class="who">lead-art · Nico 🎯 — ASSET GATE</span>
+                  <span class="what">PASS/FAIL vs <code>docs/art-direction.md</code></span>
+                </li>
+              </ul>
+              <div class="loopback">
+                FAIL → Maud itère · 1 variable par roll, max 2 batches/cycle
+              </div>
+            </div>
+
+            <div class="lane l-audio">
+              <h4 class="display t-audio">Audio <span class="cond">si son requis</span></h4>
+              <ul class="steps">
+                <li>
+                  <span class="sprite sm"><img src="crew/sound-designer.png" alt="Malik" /></span>
+                  <span class="who">sound-designer · Malik 🎧</span>
+                  <span class="what"
+                    >spec : caractère, tiers BGM, fonction — « ce qui sonne informe »</span
+                  >
+                </li>
+                <li>
+                  <span class="who">sourcing / génération</span>
+                  <span class="what"
+                    >mécanique <code>dev-tooling-assets</code>, licence vérifiée par asset</span
+                  >
+                </li>
+                <li class="gated">
+                  <span class="sprite sm"><img src="crew/sound-designer.png" alt="Malik" /></span>
+                  <span class="who">sound-designer · Malik 🎧 — AUDIO GATE</span>
+                  <span class="what"
+                    >PASS/FAIL vs <code>docs/audio-direction.md</code> ; ce qui exige des oreilles
+                    humaines part en shortlist chez Bertrand</span
+                  >
+                </li>
+              </ul>
+              <div class="loopback">FAIL → itération · max 2 batches/cycle, puis escalade</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5 VERIFY -->
+        <section class="stage">
+          <div class="stage-num display">5</div>
+          <h3 class="stage-title display">Verify</h3>
+          <p class="stage-sub">
+            l'étape de test, orchestrée par qa-lead · Inès 🧪 — plan par story dans
+            <code>docs/qa/</code>
+          </p>
+          <div class="verify-grid">
+            <div class="card">
+              <b>Checks mécaniques</b><code>rtk tsc</code> · <code>rtk vitest</code> (100%) ·
+              <code>rtk lint</code> — tout vert, sans triche.
+            </div>
+            <div class="card">
+              <b>E2E / skill <code>verify</code></b
+              >Pour tout changement visible par le joueur, preuves par screenshots.
+            </div>
+            <div class="card">
+              <span class="sprite sm fr"><img src="crew/lead-art.png" alt="Nico" /></span>
+              <b class="t-art">Composite gate (Gate 4) — lead-art</b>Visuels composés au runtime
+              (rims néon, glows) jugés sur de <strong>vrais screenshots in-game</strong> — « un halo
+              est un dégradé, jamais un aplat ».
+            </div>
+            <div class="card">
+              <span class="sprite sm fr"><img src="crew/game-designer.png" alt="Sacha" /></span>
+              <b class="t-design">Playtest — game-designer</b>Sacha joue le build contre la spec
+              gatée ; verdict d'acceptation design rendu à Karim.
+            </div>
+            <div class="card">
+              <span class="sprite sm fr"><img src="crew/ux-designer.png" alt="Tony" /></span>
+              <b class="t-design">Revue UX — ux-designer</b>Tony revoit les écrans/flows construits
+              contre sa spec UX gatée, sur vrais screenshots, les deux devices.
+            </div>
+            <div class="card">
+              <span class="sprite sm fr"><img src="crew/sound-designer.png" alt="Malik" /></span>
+              <b class="t-audio">Verdict comportement — sound-designer</b>Tout changement audible
+              (mapping tension→tier, crossfades, mix) passe chez Malik.
+            </div>
+            <div class="card">
+              <span class="sprite sm fr"><img src="crew/gpu-specialist.png" alt="Ben" /></span>
+              <b class="t-qa">Perf verdict — gpu-specialist</b>Changements perf-sensibles jugés vs
+              <code>docs/perf-budget.md</code> ; ce que CI ne mesure pas part en protocole on-target
+              (DEFERRED tracé, chassé par Marion).
+            </div>
+          </div>
+          <div class="gate-row">
+            <span class="sprite"><img src="crew/qa-lead.png" alt="Inès" /></span>
+            <span class="stamp">Quality gate<small>qa-lead · Inès 🧪</small></span>
+            <p class="gate-note">
+              Le verdict entonnoir : « le plan a tourné et a tenu ». PASS requis avant l'étape 6 ;
+              FAIL renvoie à la lane propriétaire, avec le cas défaillant nommé.
+            </p>
+          </div>
+          <div class="loopback">
+            FAIL composite → dev-r3f-render (le composite, c'est du code render) · dérive de
+            design/UX → retour lane dev ou spec re-gatée chez Karim · perf OVER on-target → lane
+            propriétaire
+          </div>
+        </section>
+
+        <!-- 6 REVIEW -->
+        <section class="stage">
+          <div class="stage-num display">6</div>
+          <h3 class="stage-title display">Review — panel + triage</h3>
+          <p class="stage-sub">
+            merge gate obligatoire · 4 reviewers en parallèle sur
+            <code>git diff origin/main...HEAD</code>
+          </p>
+          <div class="panel-grid">
+            <div class="card">
+              <b>code-review (high)</b><br />bugs de correction, réutilisation, simplification,
+              efficacité
+            </div>
+            <div class="card">
+              <b>bmad-code-review</b><br />couches adverses BMAD : Blind Hunter, Edge Case Hunter,
+              Acceptance Auditor
+            </div>
+            <div class="card">
+              <b>bmad-review-edge-case-hunter</b><br />chaque branche et condition limite du diff
+            </div>
+            <div class="card">
+              <b>security-review</b><br />surface contrôlée par l'attaquant : URL params,
+              localStorage, chemins d'assets
+            </div>
+          </div>
+          <div class="review-stack">
+            <div class="card">
+              <span class="sprite"><img src="crew/senior-architect.png" alt="Winston" /></span>
+              <span class="tag t-neutral">senior-architect</span
+              ><span class="persona"
+                >Winston 🏗️ — triage + revue d'intégration, une seule lecture</span
+              >
+              <p>
+                Chaque finding non trivial est <strong>vérifié de façon adverse</strong> (un
+                sceptique tente de le réfuter contre le vrai code) ; seuls les CONFIRMED comptent.
+                Winston triage et prescrit — la lane propriétaire applique les fixes, jamais lui.
+                <strong>Aucun merge avec un finding CONFIRMED bloquant/majeur non résolu.</strong>
+              </p>
+            </div>
+            <div class="card">
+              <span class="sprite"><img src="crew/tech-writer.png" alt="Otis" /></span>
+              <span class="tag t-neutral">tech-writer</span
+              ><span class="persona">Otis 📚 — lane DOCS</span>
+              <p>
+                Les findings documentaires du triage (ADR, bibles, README, JSDoc) lui sont routés :
+                rédaction d'ADR (les décisions restent à Winston), réalignements de doc, cohérence
+                doc↔code.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7 ACCEPT -->
+        <section class="stage">
+          <div class="stage-num display">7</div>
+          <h3 class="stage-title display">Accept</h3>
+          <p class="stage-sub">retour au produit</p>
+          <div class="card">
+            <span class="sprite"><img src="crew/pm.png" alt="John" /></span>
+            <span class="tag t-pm">pm</span><span class="persona">John 📋</span>
+            <p>
+              Acceptation contre la story et <code>PROJECT_GUIDELINES</code>. Rejet → retour à la
+              lane propriétaire.
+            </p>
+          </div>
+        </section>
+
+        <!-- 8 MERGE -->
+        <section class="stage">
+          <div class="stage-num hot display">8</div>
+          <h3 class="stage-title display">Merge</h3>
+          <p class="stage-sub">Bertrand — ou son instruction explicite pour cette branche</p>
+          <div class="card">
+            <span class="sprite fr"><img src="crew/trambz.png" alt="trambz (CEO)" /></span>
+            Merge vers <code>main</code>. Le cycle complet est traçable dans le shard de la story
+            (<code>docs/handoffs/story-&lt;slug&gt;.md</code>). Une préférence générale n'est jamais
+            une autorité de merge.
+          </div>
+        </section>
+      </div>
+
+      <!-- FIX LANE -->
+      <section class="fixlane">
+        <h3 class="display">La <span class="neon">fix lane</span> — voie de contournement</h3>
+        <p style="margin-top: 2px">
+          Le pipeline complet existe pour les <strong>features</strong>. Un petit fix ne se déguise
+          pas en feature : une seule lane propriétaire, pas de surface design, ni asset, ni
+          architecture, un diff tenable en une lecture.
+        </p>
+        <div class="fix-steps mono">
+          <span class="step">lane dev propriétaire</span><span class="sep">→</span>
+          <span class="step">rtk tsc · vitest · lint</span><span class="sep">→</span>
+          <span class="step">+ verify si visible joueur</span><span class="sep">→</span>
+          <span class="step">UN reviewer code-review (high)</span><span class="sep">→</span>
+          <span class="step">Bertrand merge</span>
+        </div>
+        <p>
+          Loggée en <strong>une ligne</strong> dans <code>docs/handoffs/fixes.md</code>. Un critère
+          cassé en route ⇒ escalade vers le pipeline complet à l'étape violée. Doute ⇒ pipeline
+          complet. Tout gate owner (Nico, Karim, Malik, Ben, Winston) peut réclamer un fix qui
+          touche sa surface.
+        </p>
+      </section>
+
+      <!-- RULES -->
+      <section class="rules">
+        <h2 class="display">Les règles qui tiennent tout</h2>
+        <div class="rules-grid">
+          <div class="card">
+            <b class="rule-t">Caps d'itération <span class="n">— bornés</span></b>
+            <span class="n mono">2</span> rounds de rework par spec ·
+            <span class="n mono">2</span> batches de génération par set d'assets ·
+            <span class="n mono">2</span> rounds verify↔build par story. Cap atteint ⇒ paquet
+            d'escalade Marion → Bertrand.
+          </div>
+          <div class="card">
+            <b class="rule-t">La frontière est la loi</b>
+            <code>src/game</code> n'importe jamais React/Three ; <code>src/render</code> ne porte
+            aucune règle de jeu ; <code>src/hooks</code> est l'unique pont. Toute traversée ⇒
+            sign-off Winston.
+          </div>
+          <div class="card">
+            <b class="rule-t">Tout se logge</b>
+            Une ligne pour prendre la main, une pour la rendre + File List, verdicts au format
+            <code>VERDICT: PASS|FAIL</code> — dans
+            <code>docs/handoffs/story-&lt;slug&gt;.md</code> (index
+            <code>docs/agent-handoffs.md</code>). Non loggé = pas arrivé.
+          </div>
+          <div class="card">
+            <b class="rule-t">Skip explicite</b>
+            Une étape qui ne s'applique pas (pas de design sur une story tooling, pas de lane art
+            sans visuel) est sautée <strong>explicitement</strong> et loggée — jamais en silence.
+            Marion vérifie chaque skip.
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Sources : <code>.claude/agents/COLLABORATION.md</code> (protocole normatif) ·
+        <code>docs/diagrams/agent-workflows.md</code> (flowchart mermaid). Direction visuelle
+        empruntée au jeu lui-même : fanzine photocopié N&amp;B + néon acide, Paris 1998. Sprites du
+        crew générés par <code>docs/muf-crew-bitmap.py --singles</code>.
+      </footer>
+    </div>
+  </body>
+</html>

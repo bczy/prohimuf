@@ -1,5 +1,12 @@
-"""Generate the muf crew bitmap: 18 pixel-art Claudes, one per project agent."""
-import os, zlib, struct
+"""Generate the muf crew bitmap: 18 pixel-art Claudes, one per project agent.
+
+Default run writes the group poster (docs/muf-crew.png). `--singles` skips the
+poster and writes one transparent RGBA sprite per crew member (1 sprite px =
+1 image px) to docs/diagrams/crew/<slug>.png (override with $CREW_OUTDIR) —
+consumed by docs/diagrams/agents-pipeline-infographic.html, which upscales
+them with `image-rendering: pixelated`.
+"""
+import os, sys, zlib, struct
 
 SCALE = 10          # sprite pixel -> image px
 CW, CH = 22, 20     # cell size in sprite pixels
@@ -46,92 +53,92 @@ BASE = [
 ]
 SPRITE_OX, SPRITE_OY = 4, 5
 
-# (role label, persona label, overlays=[(patch, ox, oy), ...])
+# (slug = crew/<slug>.png filename, role label, persona label, overlays)
 AGENTS = [
-    ("PM", "JOHN", [
+    ("pm", "PM", "JOHN", [
         (["W..W"], 9, 10),                                             # collar
         (["RR", "RR", "RR", "RR"], 10, 11),                            # tie
         ([".SS.", "WWWW", "WKKW", "WWWW", "WKKW", "WWWW"], 18, 7),      # clipboard
     ]),
-    ("PRODUCER", "MARION", [
+    ("producer", "PRODUCER", "MARION", [
         (["SSSSSSSSSS"], 6, 4),                                        # headset band
         (["SS", "SS"], 4, 8), (["SS", "SS"], 16, 8),                   # ear cups
         (["S.", "S.", "SO"], 3, 10),                                   # mic
         (["SSSS", "SRYS", "SGYS", "SSSS"], 0, 8),                      # kanban board
     ]),
-    ("ARCHITECT", "WINSTON", [
+    ("senior-architect", "ARCHITECT", "WINSTON", [
         (["KKKK", "K..K", "KKKK"], 6, 8),                              # glasses L
         (["KKKK", "K..K", "KKKK"], 12, 8),                             # glasses R
         (["KK"], 10, 9),                                               # bridge
         (["UUUU", "UWWU", "UUWU", "UUUU"], 18, 8),                     # blueprint
     ]),
-    ("LEAD GAME DESIGN", "KARIM", [
+    ("lead-game-designer", "LEAD GAME DESIGN", "KARIM", [
         (["GGGGGGGGGG"], 6, 4),                                        # sweatband
         (["N", "N", "N", "N", "N", "N", "N", "N"], 18, 5),             # flag pole
         (["GGG", "GGG"], 19, 5),                                       # design-gate flag
     ]),
-    ("GAME DESIGNER", "SACHA", [
+    ("game-designer", "GAME DESIGNER", "SACHA", [
         (["SSSSSS", "SKSGRS"], 8, 14),                                 # gamepad
         (["WWW", "WKW", "WWW"], 0, 13),                                # die
     ]),
-    ("NARRATIVE", "YASMINE", [
+    ("narrative-designer", "NARRATIVE", "YASMINE", [
         (["...W", "..WW", ".WW.", "YW.."], 17, 1),                     # quill
         (["PPPP", "PWWP", "PWWP", "PPPP"], 0, 9),                      # lore book
     ]),
-    ("UX DESIGN", "TONY", [
+    ("ux-designer", "UX DESIGN", "TONY", [
         (["KKKK", "KCCK", "KCCK", "KCCK", "KKKK"], 0, 8),              # phone
         (["W....", "WW...", "WWW..", "WWWW.", "..W..", "..WW."], 17, 4),  # pointer
         (["GG"], 18, 12), (["SS"], 20, 12),                            # toggle ON
     ]),
-    ("QA LEAD", "INES", [
+    ("qa-lead", "QA LEAD", "INES", [
         ([".SS.", "SCCS", "SCCS", ".SS."], 17, 5),                     # magnifier
         (["S"], 20, 9), (["S"], 21, 10),                               # handle
         ([".G.", "GGG", "G.G"], 0, 14),                                # the bug
     ]),
-    ("DEV GAMEPLAY", "AMELIA", [
+    ("dev-gameplay", "DEV GAMEPLAY", "AMELIA", [
         (["....G", "...GG", "G.GG.", "GGG..", ".G..."], 8, 10),        # TDD check
         (["KKKK", "KG.K", "K..K", "KKKK"], 18, 8),                     # terminal
         (["R"], 18, 6), (["G"], 20, 6),                                # red/green tests
     ]),
-    ("DEV RENDER", "AMELIA", [
+    ("dev-r3f-render", "DEV RENDER", "AMELIA", [
         (["CCCCCCCCCC", "CCCCCCCCCC"], 6, 8),                          # neon visor
         (["K", "K"], 5, 8), (["K", "K"], 16, 8),                       # visor edges
         (["PPPP", "P..P", "P..P", "PPPP"], 17, 3),                     # 3D wire cube
     ]),
-    ("DEV TOOLING", "AMELIA", [
+    ("dev-tooling-assets", "DEV TOOLING", "AMELIA", [
         (["UUUUUUUUUU"], 6, 3),                                        # backwards cap
         (["UUUUUUUUUUUU"], 4, 4),                                      # cap + brim behind
         (["S.S", "SSS", ".S.", ".S.", ".S.", ".S."], 18, 6),           # wrench
     ]),
-    ("LEAD ART", "NICO", [
+    ("lead-art", "LEAD ART", "NICO", [
         ([".KKKKKK."], 6, 3), (["KKKKKKKK"], 6, 4), (["K"], 9, 2),     # beret
         (["N", "N", "N", "N", "S", "P", "P"], 19, 6),                  # brush
         (["P"], 19, 14),                                               # paint drip
     ]),
-    ("ART ADVISOR", "ESTELLE", [
+    ("art-advisor", "ART ADVISOR", "ESTELLE", [
         (["YYYY", "Y..Y", "YYYY"], 12, 8),                             # monocle
         (["Y"], 16, 11), (["Y"], 17, 12), (["Y"], 17, 13),             # chain
         (["KKKK", "KPPK", "KPPK", "KKKK"], 0, 8),                      # 90s rave vinyl
     ]),
-    ("CONCEPT ARTIST", "MAUD", [
+    ("concept-artist", "CONCEPT ARTIST", "MAUD", [
         (["Y"], 11, 1), (["Y"], 9, 2), (["Y"], 13, 2), (["W"], 11, 2), # idea sparks
         (["PP", "YY", "YY", "YY", "YY", "NN", ".K"], 19, 5),           # pencil
     ]),
-    ("GAME GRAPHIST", "SERGE", [
+    ("game-graphist", "GAME GRAPHIST", "SERGE", [
         (["SSSSSSSS"], 7, 3), (["SSSSSSSSSSS"], 6, 4),                 # flat cap (ST era)
         (["W....", "WW...", "WWW..", "WWWW.", "WWWWW", "..W..", "..WW."], 17, 6),  # cursor
     ]),
-    ("GPU PERF", "BEN", [
+    ("gpu-specialist", "GPU PERF", "BEN", [
         (["....S.", ".RRRS.", "RRRRR.", "K...K.", "K...K."], 0, 12),   # the moto
         (["KKKK", "KGGK", "KKKK"], 18, 5),                             # GPU chip
         (["G"], 18, 9), (["G"], 19, 10), (["G"], 20, 9),               # frame graph
     ]),
-    ("TECH WRITER", "OTIS", [
+    ("tech-writer", "TECH WRITER", "OTIS", [
         ([".SS.", "WWWW", "WKKW", "WWWW", "WKKW", "WWWW"], 0, 7),      # the doc
         (["PP", "YY", "YY", "YY", "NN", ".K"], 19, 4),                 # pen
         (["KKKKKKKK"], 7, 9),                                          # reading shades
     ]),
-    ("SOUND DESIGNER", "MALIK", [
+    ("sound-designer", "SOUND DESIGNER", "MALIK", [
         (["UUUUUU"], 8, 3), (["UU"], 6, 4), (["UU"], 14, 4),           # headphone band
         (["UU", "UU", "UU"], 3, 8), (["UU", "UU", "UU"], 17, 8),       # big cups
         ([".G", ".G", ".G", "GG"], 19, 2),                             # note R
@@ -249,59 +256,82 @@ top_h = block_h + 24     # top band: title + CEO panel
 img_w = 2 * M + COLS * cell_w + (COLS - 1) * GAP_X
 img_h = 2 * M + top_h + ROWS * block_h + (ROWS - 1) * GAP_Y
 
-canvas, W, H = make_canvas(img_w, img_h, BG)
-
-GOLD_EDGE = (150, 120, 30)
-
-def draw_block(bx, by, role, persona, base, overlays, edge):
-    rect(canvas, W, H, bx - 2, by - 2, cell_w + 4, block_h + 4, edge)
-    rect(canvas, W, H, bx, by, cell_w, block_h, PANEL)
-    cell = build_cell(base, overlays)
-    for cy in range(CH):
-        for cx in range(CW):
-            key = cell[cy][cx]
-            if key:
-                rect(canvas, W, H, bx + cx * SCALE, by + cy * SCALE, SCALE, SCALE, PAL[key])
-    ly = by + cell_h + 4
-    rw_ = text_width(role, TS)
-    draw_text(canvas, W, H, bx + (cell_w - rw_) // 2, ly, role, PAL['W'], TS)
-    if persona:
-        pw_ = text_width(persona, TS)
-        draw_text(canvas, W, H, bx + (cell_w - pw_) // 2, ly + 5 * TS + 5,
-                  persona, PAL['B'], TS)
-
-# title, vertically centered in the top band
-title = "MUF CREW"
-sub = "LES 18 CLAUDES DU PROJET"
-ty = M + (block_h - (5 * 6 + 12 + 5 * TS)) // 2
-tw = text_width(title, 6)
-draw_text(canvas, W, H, (img_w - tw) // 2, ty, title, PAL['B'], 6)
-sw = text_width(sub, TS)
-draw_text(canvas, W, H, (img_w - sw) // 2, ty + 5 * 6 + 12, sub, PAL['G'], TS)
-
-# the boss, top right — the one human in the crew
-role, persona, overlays = CEO
-draw_block(img_w - M - cell_w, M, role, persona, HUMAN, overlays, GOLD_EDGE)
-
-for i, (role, persona, overlays) in enumerate(AGENTS):
-    col, row = i % COLS, i // COLS
-    bx = M + col * (cell_w + GAP_X)
-    by = M + top_h + row * (block_h + GAP_Y)
-    draw_block(bx, by, role, persona, BASE, overlays, PANEL_EDGE)
-
-# ---------- write png ----------
-
-def write_png(path, canvas, w, h):
-    raw = b''.join(b'\x00' + bytes(row) for row in canvas)
+# color_type 2 = RGB (poster), 6 = RGBA (transparent single sprites)
+def write_png(path, rows, w, h, color_type=2):
+    raw = b''.join(b'\x00' + bytes(row) for row in rows)
     def chunk(tag, data):
         c = struct.pack('>I', len(data)) + tag + data
         return c + struct.pack('>I', zlib.crc32(tag + data))
     with open(path, 'wb') as f:
         f.write(b'\x89PNG\r\n\x1a\n')
-        f.write(chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)))
+        f.write(chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, color_type, 0, 0, 0)))
         f.write(chunk(b'IDAT', zlib.compress(raw, 9)))
         f.write(chunk(b'IEND', b''))
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "muf-crew.png")
-write_png(out, canvas, W, H)
-print(f"wrote {out} ({W}x{H})")
+if "--singles" not in sys.argv:  # poster mode (default)
+    canvas, W, H = make_canvas(img_w, img_h, BG)
+
+    GOLD_EDGE = (150, 120, 30)
+
+    def draw_block(bx, by, role, persona, base, overlays, edge):
+        rect(canvas, W, H, bx - 2, by - 2, cell_w + 4, block_h + 4, edge)
+        rect(canvas, W, H, bx, by, cell_w, block_h, PANEL)
+        cell = build_cell(base, overlays)
+        for cy in range(CH):
+            for cx in range(CW):
+                key = cell[cy][cx]
+                if key:
+                    rect(canvas, W, H, bx + cx * SCALE, by + cy * SCALE, SCALE, SCALE, PAL[key])
+        ly = by + cell_h + 4
+        rw_ = text_width(role, TS)
+        draw_text(canvas, W, H, bx + (cell_w - rw_) // 2, ly, role, PAL['W'], TS)
+        if persona:
+            pw_ = text_width(persona, TS)
+            draw_text(canvas, W, H, bx + (cell_w - pw_) // 2, ly + 5 * TS + 5,
+                      persona, PAL['B'], TS)
+
+    # title, vertically centered in the top band
+    title = "MUF CREW"
+    sub = "LES 18 CLAUDES DU PROJET"
+    ty = M + (block_h - (5 * 6 + 12 + 5 * TS)) // 2
+    tw = text_width(title, 6)
+    draw_text(canvas, W, H, (img_w - tw) // 2, ty, title, PAL['B'], 6)
+    sw = text_width(sub, TS)
+    draw_text(canvas, W, H, (img_w - sw) // 2, ty + 5 * 6 + 12, sub, PAL['G'], TS)
+
+    # the boss, top right — the one human in the crew
+    role, persona, overlays = CEO
+    draw_block(img_w - M - cell_w, M, role, persona, HUMAN, overlays, GOLD_EDGE)
+
+    for i, (_slug, role, persona, overlays) in enumerate(AGENTS):
+        col, row = i % COLS, i // COLS
+        bx = M + col * (cell_w + GAP_X)
+        by = M + top_h + row * (block_h + GAP_Y)
+        draw_block(bx, by, role, persona, BASE, overlays, PANEL_EDGE)
+
+
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "muf-crew.png")
+    write_png(out, canvas, W, H)
+    print(f"wrote {out} ({W}x{H})")
+
+# ---------- singles mode (one transparent sprite per crew member) ----------
+
+def write_single(path, base, overlays):
+    cell = build_cell(base, overlays)
+    rows = []
+    for cy in range(CH):
+        row = bytearray()
+        for cx in range(CW):
+            key = cell[cy][cx]
+            row += (bytes(PAL[key]) + b'\xff') if key else b'\x00\x00\x00\x00'
+        rows.append(row)
+    write_png(path, rows, CW, CH, color_type=6)
+
+if "--singles" in sys.argv:
+    outdir = os.environ.get("CREW_OUTDIR") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "diagrams", "crew")
+    os.makedirs(outdir, exist_ok=True)
+    for slug, _role, _persona, overlays in AGENTS:
+        write_single(os.path.join(outdir, f"{slug}.png"), BASE, overlays)
+    write_single(os.path.join(outdir, "trambz.png"), HUMAN, CEO[2])
+    print(f"wrote {len(AGENTS) + 1} sprites to {outdir}")
