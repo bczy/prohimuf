@@ -309,8 +309,8 @@ lanes that matter: Sacha §4 already lists `hostageHp` among Belliard-removed fi
 Winston's frozen contract + ADR-note #1 lock it removed. It is coherent with D4's sanction
 hierarchy ("hostage = big cost, nothing else counts" — a _cost_, not a death/loss route),
 with D1 (single clock, single fail), and it is _actively more_ coherent with
-PROJECT_GUIDELINES §5.6 "jamais de mort bullshit" than an instant one-stray-bullet
-hostage-death would be. The only laggard is ADR-0034 D6's removed-fields _prose_, which
+PROJECT*GUIDELINES §5.6 "jamais de mort bullshit" than an instant one-stray-bullet
+hostage-death would be. The only laggard is ADR-0034 D6's removed-fields \_prose*, which
 omits `hostageHp` (an incompleteness, resolved by D4's flat-penalty rule) — see D-1.
 Per the orchestrator's steer I do NOT silently override: I confirm the design as coherent
 AND raise **F-1** so pm/Bertrand consciously ratify that ADR-0030's hostage-death loss
