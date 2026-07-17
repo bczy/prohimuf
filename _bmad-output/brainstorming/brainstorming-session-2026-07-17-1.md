@@ -277,3 +277,21 @@ Bertrand asked whether the 10 kept ideas overlapped or conflicted. Four intersec
 7. Per-level curve (#12): retreat speed, peek frequency/length (floors G2/G5); accomplice (#8) in late levels, replacing captor counter-fire.
 
 **Final kept set:** #1, #8, #9, #12, #16, #17, #18, #21 (with #6 demoted to outcome-only, #2 and #3 removed).
+
+## Feature Grouping (delivery-ready)
+
+**F1 — Le tableau vivant** _(core, largest)_
+Captor as an animated adversary: retreat toward the porte cochère as sole clock (#21, `windowSeconds` removed), `COVERED ↔ PEEKING` state machine behind the hostage (#1), counter-fire during exposures (#9, −energy if unanswered).
+Scope: `qteSystem` rework + types, moving anchor, spatial fail condition. Parallel art lane: drag / peek / firing sprites.
+
+**F2 — La règle du tir** _(rules, medium — depends on F1)_
+Impact economy: head-during-peek = win; captor body = player energy drain (spray bleeds); hostage = heavy penalty (#18 refined); panic shot during zoom penalized (#17); clean rescue = big refill (#16).
+Scope: pure rules on zones + tuning constants + HUD feedback.
+
+**F3 — La courbe de difficulté** _(small, data — depends on F1+F2)_
+Per-level `QteSpec` extension: retreat speed, peek cadence/duration (#12), hard anti-frustration floors baked in (exposure ≥ 0.5 s, readable tells — G2/G4/G5). Belliard-first rollout.
+
+**F4 — Le complice** _(deferred, late levels)_
+Second shooter (#8) that REPLACES captor counter-fire (captor on hostage, accomplice on you). New entity + sprite. Only after F1–F3 pass playtest.
+
+**Delivery order:** F1 → F2 → F3 (F1+F2 = first playable lot: the duel), F4 later.
