@@ -168,3 +168,54 @@ pm/producer confirmation, reversible if Bertrand disagrees:
 3. **Energy prices are system constants, not `QteSpec` fields** — they are economy/anti-
    frustration invariants, not the per-level difficulty knobs ADR-0035 enumerates
    (retreat speed / peek cadence / peek duration). `bonusScore`/`bonusEnergy` leave `QteSpec`.
+
+## 4. DEV (render lane) — dev-r3f-render (Amelia) — 2026-07-17
+
+- claim: implement the RENDER + view-hook side of ADR-0034 F1+F2 against the FROZEN
+  `hostageQte.ts` contract — moving-tableau draw, following camera, discrete peek tell,
+  HUD gauge removal, reduced-motion a11y. No `src/game/**` touched.
+- release: File List below. Verified by manual type/field review against the frozen
+  contract (local toolchain unavailable — no `node_modules`, corepack/yarn download is
+  proxy-blocked, so `tsc`/`vitest`/`lint` could not be run here; final integrated run is
+  at merge, per architect note).
+
+### File List (render + view-hook lane only)
+
+- `src/hooks/useGameLoop.ts` — zoom driver now FOLLOWS the moving `qte.anchor`; framing
+  target biased toward the door via `qteFollowTarget` so the diegetic captor→door clock
+  stays in-frame (UX D1.4). Restore path unchanged ⇒ exact base-framing restore on DONE
+  preserved; pinch/edge-scroll `isQteActive` gating unchanged.
+- `src/render/scene/qteCamera.ts` — added `qteFollowTarget(anchor, porteCochere)` +
+  `QTE_DOOR_LEAD` / `QTE_DOOR_LEAD_MAX`. `qteZoomInProgress` / `qtePose` unchanged
+  (ACTIVE/WON/LOST still pinned at progress=1 while the camera pans with the anchor).
+- `src/render/scene/HostageQteSprite.tsx` — draws the MOVING tableau at `qte.anchor`
+  (captor + dragged hostage + peek cue). COVERED↔PEEKING by FORM (peek cue absent/present)
+  keyed off `stance`; pre-peek tell keyed off `telegraphActive` (anticipation). Removed all
+  `captorHp`/`hostageHp`/`window*` reads. Stance→texture indirection (`resolveCaptorTexture`)
+  keeps the cop fallback behind a key so real drag/covered/peeking art is a later data swap.
+- `src/render/scene/hostageCue.ts` — removed the `windowRemaining`-driven `hostageTension`
+  ramp + `hostageColor`; added discrete `peekTellVisual` (step-change NOW, motion/shape
+  carried, colour never sole), `captorTint`, `hostageAlarmColor` (steady under reduced
+  motion). `energyFloater` kept (still used by `useGameLoop`).
+- `src/render/ui/HUD.tsx` — removed the `preneur` (captor-HP), `compte à rebours`
+  (countdown) gauges and the `otage ♥` pip row; `HudHostageQte` slimmed to `{ phase,
+warning }`. Kept OTAGE banner + WON/LOST verdict + dim wash.
+- `src/render/scene/__tests__/hostageCue.test.ts`,
+  `src/render/scene/__tests__/qteCamera.test.ts` — rewritten/extended for the new API.
+
+### Contract gaps flagged to dev-gameplay / senior-architect
+
+- **No hostage-hit signal on `HostageQte`.** UX spec D3.4 wants the localised in-world
+  "you hit HER" white flash KEPT, but the frozen contract exposes no per-shot outcome
+  (no `hostageHp`, no `lastShotZone`/`hostageHitNonce`, and the frozen tick emits no
+  feedback events). I dropped the white flash cleanly. To restore D3.4, the gameplay lane
+  would need a transient hostage-hit signal (nonce or last-resolved-`QteZone`) on the
+  runtime record, or a QTE feedback event surfaced through the frozen-tick path.
+- **Head-zone vs visible-head alignment (G6 / UX D3.2) not yet reconcilable.** I placed the
+  peek cue front-left of the captor (anchor + (−0.5, +0.7)), clear of the hostage
+  (anchor + (+0.32, −0.3)). The new stance-aware `qteZoneAt` head band coords live in the
+  gameplay lane; the visible-head-vs-hit-zone match must be reconciled at the composite
+  gate against the real peeking art (ADR-0034 Gotchas). Constants are placeholders.
+- **Art dependency (lead-art):** cop fallback reads wrong for a MOVING captor; drag /
+  covered / peeking-with-gun-raised sprites land later via CI, swapped in at
+  `resolveCaptorTexture`.

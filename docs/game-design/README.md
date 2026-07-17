@@ -38,10 +38,12 @@ ADR-0012/0015 decisions) are grandfathered: they change only through this flow f
 
 ### In flight / gated
 
-| Deliverable                 | Owner                | Gate verdict                                                  |
-| --------------------------- | -------------------- | ------------------------------------------------------------- |
-| `pre-game-experience-ux.md` | `game-designer`      | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`) |
-| `pregame-copy-deck.md`      | `narrative-designer` | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`) |
+| Deliverable                                                      | Owner                | Gate verdict                                                                                                                                     |
+| ---------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pre-game-experience-ux.md`                                      | `game-designer`      | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`)                                                                                    |
+| `pregame-copy-deck.md`                                           | `narrative-designer` | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`)                                                                                    |
+| `spec-hostage-qte-duel-porte-cochere.md` (ADR-0034 F1+F2 tuning) | `game-designer`      | **PASS w/ corrections** 2026-07-17 — apply G-1 (remove +8 rescue score bonus; energy = sole currency, D5). Log: `story-hostage-qte-rework.md` §4 |
+| `ux/spec-hostage-qte-hud-readability.md` (ADR-0034 F1+F2 HUD)    | `ux-designer`        | **PASS w/ conditions** 2026-07-17 — apply U-1 (global energy readout stays visible during QTE). Log: `story-hostage-qte-rework.md` §4            |
 
 ### Gated canon (pending `narrative-bible.md`)
 

@@ -17,6 +17,22 @@ export const QTE_ZOOM_FACTOR = 2.4;
 /** Seconds the camera takes to ease back to its pre-QTE framing once the QTE ends. */
 export const QTE_RESTORE_SECONDS = 0.6;
 
+/**
+ * Fraction of the captor→door gap the follow camera LEADS by (ADR-0034 D1, UX
+ * spec D1.4): the diegetic clock only reads if the porte-cochère stays in frame
+ * beside the retreating captor, so the framing point is nudged off the captor
+ * toward the door — enough to keep the goal line on-screen without de-centring
+ * the captor the player is aiming at.
+ */
+export const QTE_DOOR_LEAD = 0.35;
+
+/**
+ * World-unit cap on that lead so a distant door at the start of the retreat can
+ * never push the captor to the frame edge. The door slides fully into view as
+ * the captor closes the gap (the lead is a fraction of a shrinking distance).
+ */
+export const QTE_DOOR_LEAD_MAX = 1.4;
+
 /** An orthographic-camera pose: zoom + centre (world x/y). */
 export interface CamPose {
   readonly zoom: number;
@@ -65,6 +81,27 @@ export function qtePose(base: CamPose, anchor: { x: number; y: number }, p: numb
     x: lerp(base.x, anchor.x, k),
     y: lerp(base.y, anchor.y, k),
   };
+}
+
+/**
+ * The world point the follow camera frames during the QTE (ADR-0034 D1): the
+ * live captor `anchor` nudged toward the `porteCochere` by `QTE_DOOR_LEAD` of
+ * the gap, capped at `QTE_DOOR_LEAD_MAX` world units per axis, so BOTH the
+ * moving captor and the goal line stay legible as the tableau retreats. Feed the
+ * result as the `qtePose` target (base→here across the zoom; pinned here while
+ * ACTIVE), so the camera tracks the anchor for free and the door never leaves
+ * frame. Pure: the render bridge applies it, this only computes the point.
+ */
+export function qteFollowTarget(
+  anchor: { x: number; y: number },
+  porteCochere: { x: number; y: number },
+): { x: number; y: number } {
+  const lead = (from: number, to: number): number => {
+    const nudge = (to - from) * QTE_DOOR_LEAD;
+    const capped = Math.max(-QTE_DOOR_LEAD_MAX, Math.min(QTE_DOOR_LEAD_MAX, nudge));
+    return from + capped;
+  };
+  return { x: lead(anchor.x, porteCochere.x), y: lead(anchor.y, porteCochere.y) };
 }
 
 /**

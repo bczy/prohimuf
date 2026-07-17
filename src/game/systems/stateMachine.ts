@@ -131,12 +131,14 @@ export function tickGameState(
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
 
-  // 1b. Hostage-taker cinematic QTE (ADR-0030). When its scripted trigger fires,
-  // the REST OF THE SCENE FREEZES: only the crosshair, the two QTE timers and the
-  // player shot vs the captor's body parts advance. Everything else (enemies,
+  // 1b. Hostage-taker cinematic QTE — "Le duel de la porte cochère" (ADR-0034).
+  // When its scripted trigger fires, the REST OF THE SCENE FREEZES: only the
+  // crosshair and the QTE's own live simulation advance (the retreating captor, his
+  // COVERED↔PEEKING sub-machine and the player's shot). Everything else (enemies,
   // waves, spawns, bullets, couriers, delivery, the level clock) is carried
   // unchanged via `...state`, so a QTE-less level (`qteSpec === null`) skips this
-  // block entirely and stays byte-for-byte deterministic.
+  // block entirely and stays byte-for-byte deterministic. Energy is the outcome
+  // currency (D5); score folds only the clean-rescue side bonus.
   let qte = state.qte;
   if (shouldTriggerQte(state.qteSpec, qte, elapsedSeconds) && state.qteSpec !== null) {
     qte = createQte(state.qteSpec);
@@ -151,7 +153,7 @@ export function tickGameState(
       // delivery script and the level timer are not perturbed by it).
       elapsedSeconds: state.elapsedSeconds,
       qte: r.qte,
-      score: Math.max(0, state.score + r.scoreDelta),
+      // Energy is the QTE's sole outcome currency (ADR-0034 D5); score is untouched.
       energy: applyEnergy(state.energy, r.energyDelta),
       impactEvents: [],
       feedback: [],
