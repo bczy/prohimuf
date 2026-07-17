@@ -70,11 +70,11 @@ AGENTS = [
         (["N", "N", "N", "N", "N", "N", "N", "N"], 18, 5),             # flag pole
         (["GGG", "GGG"], 19, 5),                                       # design-gate flag
     ]),
-    ("GAME DESIGNER", "", [
+    ("GAME DESIGNER", "SACHA", [
         (["SSSSSS", "SKSGRS"], 8, 14),                                 # gamepad
         (["WWW", "WKW", "WWW"], 0, 13),                                # die
     ]),
-    ("NARRATIVE", "", [
+    ("NARRATIVE", "YASMINE", [
         (["...W", "..WW", ".WW.", "YW.."], 17, 1),                     # quill
         (["PPPP", "PWWP", "PWWP", "PPPP"], 0, 9),                      # lore book
     ]),
@@ -98,25 +98,25 @@ AGENTS = [
         (["UUUUUUUUUUUU"], 4, 4),                                      # cap + brim behind
         (["S.S", "SSS", ".S.", ".S.", ".S.", ".S."], 18, 6),           # wrench
     ]),
-    ("LEAD ART", "", [
+    ("LEAD ART", "NICO", [
         ([".KKKKKK."], 6, 3), (["KKKKKKKK"], 6, 4), (["K"], 9, 2),     # beret
         (["N", "N", "N", "N", "S", "P", "P"], 19, 6),                  # brush
         (["P"], 19, 14),                                               # paint drip
     ]),
-    ("ART ADVISOR", "", [
+    ("ART ADVISOR", "ESTELLE", [
         (["YYYY", "Y..Y", "YYYY"], 12, 8),                             # monocle
         (["Y"], 16, 11), (["Y"], 17, 12), (["Y"], 17, 13),             # chain
         (["KKKK", "KPPK", "KPPK", "KKKK"], 0, 8),                      # 90s rave vinyl
     ]),
-    ("CONCEPT ARTIST", "", [
+    ("CONCEPT ARTIST", "MAUD", [
         (["Y"], 11, 1), (["Y"], 9, 2), (["Y"], 13, 2), (["W"], 11, 2), # idea sparks
         (["PP", "YY", "YY", "YY", "YY", "NN", ".K"], 19, 5),           # pencil
     ]),
-    ("GAME GRAPHIST", "", [
+    ("GAME GRAPHIST", "SERGE", [
         (["SSSSSSSS"], 7, 3), (["SSSSSSSSSSS"], 6, 4),                 # flat cap (ST era)
         (["W....", "WW...", "WWW..", "WWWW.", "WWWWW", "..W..", "..WW."], 17, 6),  # cursor
     ]),
-    ("SOUND DESIGNER", "", [
+    ("SOUND DESIGNER", "MALIK", [
         (["UUUUUU"], 8, 3), (["UU"], 6, 4), (["UU"], 14, 4),           # headphone band
         (["UU", "UU", "UU"], 3, 8), (["UU", "UU", "UU"], 17, 8),       # big cups
         ([".G", ".G", ".G", "GG"], 19, 2),                             # note R
