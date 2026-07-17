@@ -13,6 +13,49 @@ Template:
 
 ---
 
+### story-crt-post-process
+
+- pm→design/arch: Story written (`_bmad-output/planning-artifacts/story-crt-post-process.md`)
+  from Bertrand's 2026-07-16 request ("a post process to simulate a CRT TV screen"). WHAT: a
+  CRT tube treatment (scanlines + vignette + subtle curvature min.) on the in-game `<Canvas>`
+  render during PLAYING, toggled by a new persisted `crt` boolean pref surfaced in PauseScreen.
+  WHY: period-authentic presentation (1998 CRT) reinforcing the fanzine/neon identity — a
+  look-and-feel bet validated on the screen the player actually plays. PM RULINGS (fixed):
+  (1) MVP = game scene ONLY, HTML overlay screens OUT (different technique, follow-up);
+  (2) toggle REQUIRED, single boolean, persisted, default ON (UX §5 readability escape hatch);
+  (3) NO intensity/per-effect controls, no animated tube theatrics, no CRT audio; only `crt`
+  pref added to `src/game`. Cahier des charges: CONSCIOUS DOCUMENTED EXTENSION (period CRT
+  presentation) — no verb/input/rule/scoring change. HANDOFF to `senior-architect` (cross-
+  cutting — adds a postprocessing dep and/or wraps the render pipeline): own build-vs-dep,
+  boundary-clean pass wiring, mobile perf policy, and a **REQUIRED ADR** (render-contract
+  change). DESIGN GATE first (`game-designer`/`lead-game-designer`): confirm default-ON vs
+  OFF and the curvature-vs-crosshair-aim safety (AC4). No commits made by pm. (John / PM)
+- arch→dev: ADR-0030 written (`docs/adr/0030-crt-post-process-composite-pass.md`). DECISION:
+  **hand-roll a fullscreen CRT composite in raw three — NO `postprocessing`/`@react-three/
+postprocessing` dep.** Only bloom is non-trivial and the required halo is 1–2px (bright-pass +
+  one small blur, not a mip pyramid), so the lib's value is unneeded while its peer-dep/version
+  surface is real; matches ADR-0011/0025 minimal-dep precedent. RENDER GRAPH: `<CrtPass>` takes
+  over R3F auto-render (`useFrame(..,1)`); world (layer 0) → `sceneRT` → bright-pass (key on
+  **SATURATION, not luminance** — paper is highest-luma, a luma key blooms paper = P3 FAIL) →
+  half-res separable blur → composite (bloom + scanline + vignette + grain + flicker) to screen;
+  crosshair on `CRT_OVERLAY_LAYER` drawn flat ABOVE with `autoClear=false` (P4, curvature OUT so
+  no aim warp). BYPASS: `<CrtPass>` conditionally mounted on the `crt` pref — OFF = byte-equal to
+  today (AC3). MOBILE: pref default is device-agnostic (`crt:true`); quality tier decided render-
+  side from `IS_MOBILE` (desktop full / mobile lite = quarter-res bloom or bloom off) (AC6).
+  REDUCED-MOTION (P6): `prefers-reduced-motion` freezes grain+flicker render-side, not a pref.
+  LANES (non-overlapping paths, parallel-safe):
+  (A) **dev-gameplay** — `src/game/systems/prefsSystem.ts` + its `__tests__`: add pure
+  `crt: boolean` (default true, parse/clamp, TDD). No Three.
+  (B) **dev-r3f-render** — `src/render/effects/{CrtPass.tsx,crtShaders.ts,crtParams.ts}` +
+  `effects/__tests__/crtParams.test.ts` (pure param/reduced-motion math, mirrors `markRing.ts`
+  precedent); wire `crt` prop `App→GameScene→CrtPass`+`CrosshairSprite` (layer); add the single
+  toggle to `PauseScreen.tsx`.
+  SERIALISE: the `crt` field on the `Prefs` TYPE is the only ordering constraint — lane A lands
+  the field first (or B stubs the agreed interface) so lane B typechecks; files are otherwise
+  disjoint. SwiftShader e2e gate is the GLSL guard — verify the graph renders on software GL
+  EARLY, RTs `RGBA8` (HalfFloat only on a checked capability if banding). Gate-4 (`verify`
+  screenshots) owns P1–P7; QA owns pref unit tests + shooting-smoke unaffected. (Winston / Architect)
+
 ### story-tutorial-visual-gestures
 
 - pm→arch: Story written (`_bmad-output/planning-artifacts/story-tutorial-visual-gestures.md`),
@@ -3197,3 +3240,135 @@ coarse` only, justified in a comment).
   Root-cause follow-up logged: vitry generated rows are tighter than the window height —
   gen-window-zones lane. Verified: tsc / vitest 354(29) / lint / prettier green + v3
   headless captures of all 3 levels. (panel ×4 + skeptic → orchestrator-as-Winston triage)
+
+- story-crt-post-process / STAGE 5 VERIFY — QUALITY GATE: **PASS** (Inès / qa-lead).
+  Runtime verification of ADR-0030 CRT composite pass, branch claude/crt-screen-postprocess-9elt6w.
+  Static gates already green (tsc 0, vitest 348/348, lint 0). Runtime driven headless via
+  `verify` skill (Playwright + SwiftShader, corepack yarn + vite :5173, desktop 1280×800).
+  CRITICAL CHECK — the pass takes over rendering, so a broken shader = black canvas: boots to
+  PLAYING with CRT ON, full correct frame (NOT black), zero pageerrors, zero GL errors, zero
+  shader compile/link warnings on SwiftShader. Timer ticked 89s→86s across frames + animated
+  grain shifted = live continuous render through the pass, not frozen. Evidence in
+  docs/qa/evidence/crt-post-process/:
+  · 03/04-playing-crt-on(-later).png — CRT ON: toner grain + soft neon bloom halos + gentle
+  vignette darkening, world fully readable, green crosshair razor-sharp above the composite (P4).
+  · 05-playing-crt-on-crop.png — zoom confirms grain speckle + neon bloom + crosshair unblurred.
+  · 02-menu-no-crt.png — HTML menu flat, ZERO CRT artifacts (P1 — pass confined to the canvas).
+  · 03/05-playing-crt-off\*.png — crt=false via localStorage muf_prefs (persisted+honored): crisp,
+  no grain, no bloom, NO leftover darkening = byte-equivalent pre-CRT pipeline (AC3, pass unmounted).
+  ONE OBSERVATION (non-blocking, not a defect): under CRT-on the SwiftShader driver emits a
+  throttled Performance advisory "GPU stall due to ReadPixels" (fires ~4× then silenced). App
+  source has ZERO readPixels calls (grep clean) — it originates in Chromium's software-GL
+  present/composite path and, being a SwiftShader-specific message, cannot occur on a real GPU.
+  Not a Three.js warning, GL error, or shader fault; logged for the render lane as an FYI only.
+  Intermittent 404 seen once = the CI-generated narrative facade backdrop absent in the local
+  sandbox (HalftoneHero degrades gracefully); unrelated to the pass. CI-DEFERRED: AC6 sustained
+  frame-budget/perf on real desktop+mobile GPUs is not measurable under SwiftShader — escalate to
+  producer for the perf-on-target check. Verdict funnels to senior-architect integration review;
+  game-designer design-conformity playtest (AC2 art identity) is Sacha's separate stage-5 gate.
+  (Inès / qa-lead -> senior-architect)
+
+- story-crt-post-process / CODE-REVIEW PANEL TRIAGE (PR #63, branch claude/crt-screen-postprocess-9elt6w,
+  senior-architect / Winston). 4 reviewers, deduped 12 findings (A–L). Static gates green (tsc,
+  423/423, lint). Owner override on record: Bertrand retuned scanlines to 0.55 trough / 4px CSS
+  pitch (repeated explicit request) — NOT reverted; docs realign to the value. VERDICTS:
+  · A [halo/preview seeds omit crt:false → default-ON CRT contaminates the frame-diff halo gate
+  (grain/flicker break DIFF_NOISE over dark asphalt; scanline comb + bloom falloff manufacture a
+  fake alpha spread that MASKS the constant-alpha-plate regression the gate exists for) and
+  CRT-processes art-review shots] — CONFIRMED, BLOCKING. Verified: prefsSystem default crt:true +
+  parse fills missing→true; seedDeterminism (e2e-lib.mjs) & screenshot-preview.mjs write muf_prefs
+  with no crt. FIX-IN-PR (tooling). NUANCE: seedDeterminism is shared with e2e-ingame (the
+  ADR-mandated SwiftShader CRT publish guard) — do NOT blanket crt:false there; parametrize it,
+  force crt:false for delivery/halo + preview, KEEP a crt:true SwiftShader smoke.
+  · B [sceneRT RGBA8/UnsignedByte stores LINEAR light → dark sRGB codes 1–12 unreachable →
+  posterized night facades; falsifies the "byte-identical pass-through" claim] — CONFIRMED, major.
+  SPLIT: B-doc (correct the false claim in crtShaders.ts header + ADR-0031 "byte-equivalent"
+  consequence) FIX-IN-PR; B-fix (HalfFloatType sceneRT + capability check) FOLLOW-UP P1 — the
+  ADR pre-authorized this escalation; it needs its own SwiftShader re-gate, bundle with E.
+  · C [ADR/§8.2 say scanlines ≤10–15% but code ships 0.55; crtParams JSDoc says "~45%"; spec
+  asserts "§8.2 ranges" 0.05–0.6; missing lead-art P1–P7 verdict (P7 req)] — CONFIRMED, major.
+  DOC AMEND in-PR (record owner value + rationale in §8.2 + ADR-0031, fix crtParams JSDoc + test
+  comment) + log/schedule lead-art re-gate vs v5 evidence (16/17-crt-v5-\*).
+  · D [resize effect deps miss dpr] — CONFIRMED but severity MINOR (premise "setDpr changes buffer"
+  does NOT apply: grep shows muf never calls setDpr / no adaptive-dpr; only cross-DPI-monitor drag
+  without CSS resize triggers it). FIX-IN-PR (render), cheap dep add.
+  · E [MSAA lost: sceneRT no samples vs canvas antialias:true] — CONFIRMED (factual), MINOR
+  (reviewer-1 right: flat axis-aligned sprites; only rotated bullet octagon aliases). FOLLOW-UP,
+  bundle with B-fix (both touch sceneRT ctor + SwiftShader gate).
+  · F [CrtPass ignores paused → 6 draws/frame + grain crawls behind pause sheet] — CONFIRMED, minor.
+  FIX-IN-PR (render): pass paused, freeze timeRef + early-return (last frame persists; matches
+  GameScene's own paused edge-scroll gate; pause UI is HTML overlay).
+  · G [uTime unbounded fp32 decay] — CONFIRMED, minor. FIX-IN-PR (render), wrap at a multiple of the
+  flicker period.
+  · H [first frame after mount/toggle can render into 1×1 RTs (passive resize vs RAF)] — CONFIRMED,
+  minor. FIX-IN-PR (render): in-frame size validation.
+  · I [CrosshairSprite layer swap in passive useEffect → one mis-layered frame on toggle] —
+  CONFIRMED, minor. FIX-IN-PR (render): useLayoutEffect.
+  · J [lite resScale 0.25 single-tap bright-pass undersamples 4× → mobile bloom shimmer] —
+  CONFIRMED, minor. FOLLOW-UP (mobile polish).
+  · K [grain added in linear pre-encode → ~19× stronger on darks] — CONFIRMED, minor. FOLLOW-UP tied
+  to lead-art re-gate (may be on-aesthetic toner-in-shadows; defer to art call).
+  · L nits: camera.layers.set(0) vs saved mask (no live bug, cheap render hardening); matchMedia no
+  legacy addListener (WONT-FIX, modern-browser target); PauseScreen button type/aria; ultrawide
+  vignette stretch; overlay-pass O(n) worldScene walk; bloomRadiusPx naming; ADR deviations
+  UNDOCUMENTED (bright-pass sat×brightness vs ADR "saturation only"; reduced-motion ZEROES grain
+  vs ADR/shader "freezes uTime → static grain") — DOC AMEND in-PR; §8.1 small-sprite scanline
+  roll-off unimplemented (FOLLOW-UP, design call); commitlint merge-commit (informational →
+  producer). ALSO caught in triage: code comments cite "ADR-0030" but the ADR file is 0031 —
+  reconcile in doc lane. REFUTED (agree w/ reviewer-1): no try/finally needed (three r175
+  render() no-ops on context loss).
+  LANES (non-overlapping, parallel-safe): (1) RENDER dev-r3f-render — CrtPass.tsx (D,F,G,H + L
+  layers-mask), CrosshairSprite.tsx (I), crtShaders.ts comment (B-doc). (2) TOOLING
+  dev-tooling-assets — e2e-lib.mjs/screenshot-preview.mjs (+ delivery/ingame) (A). (3) DOCS —
+  art-direction.md §8.2, ADR-0031, agent-handoffs.md, crtParams.ts JSDoc + crtParams spec comment
+  (C + L doc bits + ADR-0030→0031). crtParams.ts is DOC-lane only (no logic touch) so it never
+  collides with the render lane. SIGN-OFF: CONDITIONALLY SIGNED — blocked-to-merge until A (gate
+  integrity), C (doc realign + lead-art re-gate logged), and B-doc land in-PR; B-fix+E+J+K deferred
+  to fast-follow P1 issues. (Winston / senior-architect triage — panel ×4 → Winston)
+
+## lead-art (Nico) — GATE 4 (composite) RE-GATE: CRT post-process v5, PR #63 (2026-07-16)
+
+Re-gate demanded by triage finding C (docs shipped self-contradictory: §8.2 said ≤10–15%,
+code ships 0.55). §8.2 + ADR-0031 amended first (owner override, architect-ratified: docs
+realign to code). **This verdict judges the v5 composite against the AMENDED §8.2** — the
+owner-tuned intensities (0.55 trough / 4-px squared comb × dpr, grain 0.03, sat×brightness
+bloom, vignette 0.12) ARE the spec now; a legible-in-a-still CRT is the intended target, not
+a defect.
+
+Evidence Read (docs/qa/evidence/crt-post-process/): 16-crt-v5-dpr1.png, 16-crt-v5-dpr2.png,
+17-crt-v5-dpr1-crop.png, 17-crt-v5-dpr2-crop.png (CRT-on, both dpr), 02-menu-no-crt.png
+(menu boundary), 03-playing-crt-off.png (crt-off baseline).
+
+- **P1 — in-game only.** PASS. 02 menu is flat print — zero scanline/grain/bloom (the pink
+  flyer aplat is a print surface, legal, §2bis). 16 in-game carries the full CRT at BOTH
+  dpr1 and dpr2. Boundary intact.
+- **P2 — zero added hue on B&W.** PASS. HUD text/beige paper bar and the black wrought-iron
+  railings/linework stay neutral; no rainbow shadow-mask, no RGB-split fringe on linework or
+  crosshair. The blue/orange in the facade is source level-art (present already in the crt-off
+  baseline 03) — the pass adds none.
+- **P3 — only saturated+bright blooms, dégradé not aplat.** PASS. Lit window cores and neon
+  shopfronts bloom with soft monotonic falloff to zero (§2.1); the blue facade mid-tones and
+  the paper HUD do NOT bloom. The as-shipped saturation × brightness gate reads correct — it
+  is exactly what stopped the whole facade hazing. Halo is a dégradé, not an aplat.
+- **P4 — crosshair sharp / aim 1:1.** PASS. Reticle razor-sharp and centered at both dpr;
+  frame edges, HUD bar and vertical railings stay straight ⇒ no barrel curvature ⇒ aim maps
+  1:1. The green halo around the reticle is the crosshair's own interactive rim glow (ADR-0025
+  family, "ce qui brille est interactif"), NOT composite bloom softening the aim point — the
+  cross center stays pixel-precise.
+- **P5 — small-sprite legibility.** PASS (with note). Directional edge arrows and facade
+  detail stay readable under the tuned comb + grain. Grain sits at its deliberate 0.03 ceiling
+  and the crops are noisy, but the silhouette-legibility floor holds and it did NOT move with
+  the intensity bump. NOTE: no enemy/courier sprite is in-frame in this evidence set — an
+  actual enemy silhouette over this busier CRT should be spot-checked on the next
+  enemy-in-frame shot; on the evidence provided, P5 passes.
+- **P6 — no strobe / reduced-motion path.** PASS (code-verified). `deriveCrtParams(tier,true)`
+  zeroes `grainOpacity` + `flickerAmplitude` (vitest-asserted); flicker 0.03 is single-digit,
+  non-rhythmic (no strobe); the `crt` toggle off path is shown crisp and playable in 03.
+- **P7 — recorded.** This entry.
+
+**VERDICT: PASS** against the amended §8.2. The v5 composite reads as a television frozen on
+screen (the revised, intended rule of thumb) while holding every hard floor — aim (P4),
+zero-hue (P2), silhouette legibility (P5). The owner-tuned 0.55/4-px squared comb survives dpr
+scaling cleanly (dpr2 comb is present, not moiré). No FAIL under the new spec. One carried
+watch-item (non-blocking): re-confirm P5 the first time an enemy sprite is composited in-frame.
+(Nico / lead-art — Gate 4 composite re-gate, v5 evidence)
