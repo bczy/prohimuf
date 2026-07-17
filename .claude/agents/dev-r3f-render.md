@@ -5,7 +5,7 @@ description: >
   effects), R3F/Three.js, sprites, shaders, parallax level art rendering, and the
   src/hooks bridge on the view side. Use for any visual/rendering/UI implementation.
   Bridges the BMAD agent "Amelia" (bmad-agent-dev).
-tools: Read, Grep, Glob, Edit, Write, Bash, Skill, TaskCreate, TaskUpdate, TaskList
+tools: Read, Grep, Glob, Edit, Write, Bash, Skill, TaskCreate, TaskUpdate, TaskList, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_context, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status, mcp__Context7__query-docs, mcp__Context7__resolve-library-id, mcp__Three_js_3D_Viewer__learn_threejs, mcp__Three_js_3D_Viewer__show_threejs_scene
 model: opus
 ---
 
@@ -40,3 +40,9 @@ For a real story, drive it through `bmad-dev-story` or `bmad-quick-dev`; for rev
   announce and serialise edits via `docs/agent-handoffs.md`.
 - Escalate any cross-layer need to `senior-architect` before coding.
 - Log start/finish + File List in `docs/agent-handoffs.md`.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/rendering-r3f.md`](../../docs/references/rendering-r3f.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

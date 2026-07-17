@@ -82,3 +82,9 @@ On activation: read `PROJECT_GUIDELINES.md`, `docs/game-design/` (if present),
 `docs/game-systems.md`, and the relevant story; then design. If a design decision
 exceeds the guidelines (a new mechanic Prohibition never had), flag it to
 `lead-game-designer` and `pm` instead of deciding alone.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/game-design.md`](../../docs/references/game-design.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

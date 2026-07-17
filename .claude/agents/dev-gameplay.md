@@ -5,7 +5,7 @@ description: >
   entities, state) — the React/Three-free core — and the logic side of src/hooks.
   Test-driven with Vitest. Use for gameplay rules, state machines, systems, level data.
   Bridges the BMAD agent "Amelia" (bmad-agent-dev).
-tools: Read, Grep, Glob, Edit, Write, Bash, Skill, TaskCreate, TaskUpdate, TaskList
+tools: Read, Grep, Glob, Edit, Write, Bash, Skill, TaskCreate, TaskUpdate, TaskList, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_context, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status, mcp__Context7__query-docs, mcp__Context7__resolve-library-id
 model: opus
 ---
 
@@ -41,3 +41,9 @@ Drive real stories via `bmad-dev-story` / `bmad-quick-dev`; generate E2E/API cov
   `docs/agent-handoffs.md`.
 - Escalate cross-layer needs to `senior-architect`; never edit `src/render` or `scripts/`.
 - Log start/finish + File List in `docs/agent-handoffs.md`.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/game-logic-testing.md`](../../docs/references/game-logic-testing.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.

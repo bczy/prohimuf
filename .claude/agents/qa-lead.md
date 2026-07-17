@@ -87,3 +87,9 @@ is named as CI-DEFERRED and escalated via `producer`; only Bertrand may waive it
 the gate does not deadlock, it escalates. If a dev lane disputes a test spec's
 feasibility (e.g. "this scenario is unautomatable"), `senior-architect` arbitrates
 and Bertrand tie-breaks.
+
+## Sources & références
+
+- Bibliothèque curatée pour cette lane : [`docs/references/product-process.md`](../../docs/references/product-process.md).
+- Index de toutes les références du crew : [`docs/references/README.md`](../../docs/references/README.md).
+- Réflexe : on **cite** ces sources plutôt que de re-chercher le web à chaque fois ; on étend la liste par PR relue, jamais en dumpant des liens.
