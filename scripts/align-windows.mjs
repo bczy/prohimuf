@@ -64,6 +64,7 @@ import {
   seedDeterminism,
   sleep,
 } from "./e2e-lib.mjs";
+import { misaligned, ALIGN_TOL } from "./lib/alignment.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
@@ -198,9 +199,12 @@ const centroid = (arr, a, b) => {
 };
 
 /**
- * Per-row window-column centres (facade px). A warm column-density profile of the
- * row's scan band → smoothed → above-threshold runs (twin panes merged, wide runs
- * split by pitch, min-pitch enforced). Shared by both row-detection strategies.
+ * Per-row window columns (facade px). A warm column-density profile of the row's
+ * scan band → smoothed → above-threshold runs (twin panes merged, wide runs split
+ * by pitch, min-pitch enforced). Returns one `{ cx, x0, x1 }` per window — the warm
+ * centroid AND the measured run bounds — so `detectOpenings` can size each opening
+ * to its real horizontal extent, not a fixed width. Shared by both row-detection
+ * strategies.
  */
 function detectColumns(det, cfg, cy) {
   const { W, H, warmAt } = det;
@@ -223,7 +227,8 @@ function detectColumns(det, cfg, cy) {
     if (last && r[0] - last[1] <= cfg.twinMerge * W) last[1] = r[1];
     else merged.push([r[0], r[1]]);
   }
-  // runs → window centres (split abnormally wide runs by pitch)
+  // runs → windows (split abnormally wide runs by pitch; each segment keeps its
+  // own [x0,x1] bounds and a centroid computed WITHIN that segment)
   const wins = [];
   for (const [a, b] of merged) {
     const w = b - a + 1;
@@ -232,16 +237,22 @@ function detectColumns(det, cfg, cy) {
     for (let s = 0; s < n; s++) {
       const x0 = a + (w * s) / n;
       const x1 = a + (w * (s + 1)) / n;
-      wins.push(centroid(sm, x0, x1));
+      wins.push({ cx: centroid(sm, x0, x1), x0, x1 });
     }
   }
-  // enforce min pitch
-  wins.sort((p, q) => p - q);
+  // enforce min pitch: collapse near-coincident centres, UNIONing their bounds and
+  // recomputing the centroid over the unioned span
+  wins.sort((p, q) => p.cx - q.cx);
   const out = [];
-  for (const cx of wins) {
+  for (const win of wins) {
     const last = out[out.length - 1];
-    if (last !== undefined && cx - last < cfg.minPitch * W) out[out.length - 1] = (last + cx) / 2;
-    else out.push(cx);
+    if (last !== undefined && win.cx - last.cx < cfg.minPitch * W) {
+      const x0 = Math.min(last.x0, win.x0);
+      const x1 = Math.max(last.x1, win.x1);
+      out[out.length - 1] = { cx: centroid(sm, x0, x1), x0, x1 };
+    } else {
+      out.push(win);
+    }
   }
   return out;
 }
@@ -342,11 +353,18 @@ function detectOpenings(levelId, band) {
 
   const openings = [];
   rowCenters.forEach((cy, row) => {
-    for (const cx of detectColumns(det, cfg, cy)) {
+    for (const { cx, x0, x1 } of detectColumns(det, cfg, cy)) {
+      // measured width from the run bounds, clamped to a sane band around the seed;
+      // fall back to the seed only for degenerate bounds (zero warm mass / too thin)
+      const runWpx = x1 - x0;
+      const degenerate = !(runWpx > 0) || runWpx < cfg.minRunW * W;
+      const w = degenerate
+        ? cfg.openingW
+        : Math.min(Math.max(runWpx / W, 0.55 * cfg.openingW), 1.6 * cfg.openingW);
       openings.push({
         x: +(cx / W).toFixed(4),
         y: +(cy / H).toFixed(4),
-        w: cfg.openingW,
+        w: +w.toFixed(4),
         h: cfg.openingH,
         row,
       });
@@ -381,10 +399,13 @@ function zonesFromOpenings(openings, cal) {
 /**
  * Match each panel's slot rects to the openings (1:1 by nearest), then classify
  * defects: OVERFLOW (slot ⊄ opening+τ), COUNT (#zones ≠ #openings), EMPTY (opening
- * with no zone), WALL (zone centre on bare wall). `warmDensity(x,y)` samples the
- * facade for the bare-wall check.
+ * with no zone), WALL (zone centre on bare wall), and MISALIGN (the applied railing
+ * frame `zone.x`/`zone.w` off its measured opening beyond `ALIGN_TOL`).
+ * `warmDensity(x,y)` samples the facade for the bare-wall check. `zones` is the
+ * APPLIED panel-0 zone array (committed zones in `--check`, `panelZones` in `--fix`);
+ * omit it to skip the MISALIGN pass.
  */
-function measure(slotRects, openings, warmDensity) {
+function measure(slotRects, openings, warmDensity, zones) {
   const defects = [];
   const bySlot = [];
   for (let p = 0; p < PANELS; p++) {
@@ -433,6 +454,34 @@ function measure(slotRects, openings, warmDensity) {
       if (used.has(o)) continue;
       const op = openings[o];
       defects.push(`panel ${p}: EMPTY opening@(${op.x.toFixed(3)},${op.y.toFixed(3)}) has no zone`);
+    }
+  }
+  // MISALIGN — the applied railing frame (zone.x/zone.w) vs its measured opening.
+  // Panel-independent (every panel gets the same zone array), so scored once by the
+  // same greedy nearest-centre match used for slots.
+  if (zones) {
+    const usedO = new Set();
+    for (const z of zones) {
+      let best = -1;
+      let bd = Infinity;
+      for (let o = 0; o < openings.length; o++) {
+        if (usedO.has(o)) continue;
+        const d = Math.hypot(z.x - openings[o].x, z.y - openings[o].y);
+        if (d < bd) {
+          bd = d;
+          best = o;
+        }
+      }
+      if (best < 0) continue;
+      usedO.add(best);
+      const o = openings[best];
+      const reason = misaligned(z, o, ALIGN_TOL);
+      if (reason) {
+        defects.push(
+          `MISALIGN(${reason}) frame@(x=${z.x.toFixed(3)},w=${z.w.toFixed(3)}) ⊄ ` +
+            `opening@(x=${o.x.toFixed(3)},w=${o.w.toFixed(3)})`,
+        );
+      }
     }
   }
   return { defects, bySlot };
@@ -551,7 +600,7 @@ async function checkLevel(page, level, band) {
   await applyAndRead(page, committed);
   await sleep(300);
   const slots = await readSlots(page);
-  const { defects, bySlot } = measure(slots, det.openings, warmDensity);
+  const { defects, bySlot } = measure(slots, det.openings, warmDensity, committed[0]);
   const overlay = writeOverlay(det, level.id, slots, bySlot, 0, "check");
   if (defects.length > 0) {
     console.error(`[align:${level.id}] CHECK FAILED — ${defects.length} defect(s):`);
@@ -616,7 +665,7 @@ async function fixLevel(page, level, band) {
     );
     await sleep(300);
     lastSlots = await readSlots(page);
-    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity);
+    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity, panelZones);
     overlay = writeOverlay(det, level.id, lastSlots, bySlot, iter, "fix");
     console.log(
       `[align:${level.id}] iter ${iter}: ${defects.length} defect(s) → ${path.relative(ROOT, overlay)}`,
@@ -632,11 +681,20 @@ async function fixLevel(page, level, band) {
         const idx = det.openings.indexOf(bs.opening);
         if (idx >= 0) overflowByIdx.add(idx);
       });
+    // Correction (panelZones[i] is 1:1 with openings[i]): snap a horizontally
+    // misaligned railing frame to the measured opening edges (deterministic), then
+    // shrink any overflowing sprite by height and re-centre.
     panelZones = panelZones.map((z, i) => {
-      if (!overflowByIdx.has(i)) return z;
       const o = det.openings[i];
-      const zh = +(z.h * 0.94).toFixed(4);
-      return { x: z.x, y: +(o.y - cal.b * zh).toFixed(4), w: z.w, h: zh };
+      let nz = z;
+      if (misaligned(nz, o, ALIGN_TOL)) {
+        nz = { ...nz, x: +o.x.toFixed(4), w: +o.w.toFixed(4) };
+      }
+      if (overflowByIdx.has(i)) {
+        const zh = +(nz.h * 0.94).toFixed(4);
+        nz = { x: nz.x, y: +(o.y - cal.b * zh).toFixed(4), w: nz.w, h: zh };
+      }
+      return nz;
     });
   }
 
@@ -651,7 +709,7 @@ async function fixLevel(page, level, band) {
     );
     return 0;
   }
-  const { defects } = measure(lastSlots, det.openings, warmDensity);
+  const { defects } = measure(lastSlots, det.openings, warmDensity, panelZones);
   console.error(
     `[align:${level.id}] FIX did NOT converge (${defects.length} defect(s)) — NOT writing.`,
   );
