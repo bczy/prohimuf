@@ -11,7 +11,7 @@ interface Props {
   stateRef: React.RefObject<GameState>;
 }
 
-// Renders enemy return fire only. Player shots are instant hitscan (ADR-0020)
+// Renders enemy return fire only. Player shots are instant hitscan (ADR-0040)
 // and never enter state.bullets, so every bullet here is an enemy projectile.
 export function BulletSprite({ stateRef }: Props): JSX.Element {
   const meshRefs = useRef<(Mesh | null)[]>(Array.from({ length: MAX_BULLETS }, () => null));

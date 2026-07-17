@@ -153,7 +153,7 @@ describe("tickGameState — crosshair", () => {
   });
 });
 
-describe("tickGameState — shooting (hitscan, ADR-0020)", () => {
+describe("tickGameState — shooting (hitscan, ADR-0040)", () => {
   it("firing adds NO player bullet to state.bullets (AC1 — no travelling player shot)", () => {
     const state = createInitialState(FACADE_01);
     const next = tickGameState(state, fire, 0.5, 0.5, 0.016, FACADE_01);

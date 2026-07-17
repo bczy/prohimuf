@@ -49,7 +49,7 @@ describe("tickBullets", () => {
   });
 });
 
-// --- resolvePlayerShot (hitscan at fire time — ADR-0020, spec §1) --------------
+// --- resolvePlayerShot (hitscan at fire time — ADR-0040, spec §1) --------------
 //
 // Crosshair centre (0.5,0.5) with the default offsets maps to world (0,0), so a
 // slot placed at a given screenPosition is exactly `distance(0, slotPos)` from the

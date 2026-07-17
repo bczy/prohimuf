@@ -23,7 +23,7 @@ export interface PlayerShotResult {
   readonly targetsDown: number;
   // Per-takedown events (for floating feedback).
   readonly events: readonly HitEvent[];
-  // Exactly one impact per shot (hit or miss) — drives render effects (ADR-0020).
+  // Exactly one impact per shot (hit or miss) — drives render effects (ADR-0040).
   readonly impact: ImpactEvent;
 }
 
@@ -46,7 +46,7 @@ export function tickBullets(bullets: readonly Bullet[], delta: number): readonly
     );
 }
 
-// Resolve a player shot as an instant hitscan at fire time (ADR-0020, spec §1).
+// Resolve a player shot as an instant hitscan at fire time (ADR-0040, spec §1).
 // The impact point is the aiming SoT (`crosshairToWorld`); the shot hits the
 // nearest eligible enemy within HIT_RADIUS (tie → lowest slotIndex), applying the
 // exact same reward math as the removed travelling-bullet `checkBulletHits`.

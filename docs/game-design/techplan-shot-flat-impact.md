@@ -3,7 +3,7 @@
 **Stage 3 (TECH PLAN).** Author: `senior-architect` (Winston) · Date: 2026-07-14
 **Inputs:** gated spec `docs/game-design/spec-shot-flat-impact.md` (design gate PASS),
 story `_bmad-output/planning-artifacts/story-player-shot-flat-impact.md`.
-**Decision record:** `docs/adr/0020-render-transient-impact-effects.md`.
+**Decision record:** `docs/adr/0040-render-transient-impact-effects.md`.
 **Status:** APPROVED for build — two parallel lanes, one typed seam.
 
 This plan freezes the exact contracts (types, signatures, file-by-file change list) so
@@ -14,7 +14,7 @@ files. All tuning values are transcribed from spec §5 with their owning layer.
 
 ## 1. Headline decisions
 
-**D-A — Decal-set ownership (ADR-0020): ENDORSE render-transient.** Wall marks, explosion,
+**D-A — Decal-set ownership (ADR-0040): ENDORSE render-transient.** Wall marks, explosion,
 and tracer are cosmetic and rule-free (spec D4.4), so they live in `src/render/effects/**`,
 **not** in `GameState`. This follows ADR-0003 verbatim (viewport/cosmetic state lives in the
 bridge, not the rule state — see `useGameLoop.ts:108`). The pure game produces only the
