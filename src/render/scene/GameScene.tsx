@@ -30,6 +30,7 @@ import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
 import { ImpactEffects } from "@render/effects/ImpactEffects";
+import { CrtPass } from "@render/effects/CrtPass";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
@@ -92,6 +93,9 @@ interface Props {
   onHostageQte?: (qte: HudHostageQte | null) => void;
   /** Mobile mode (ADR-0003): touch controls + stronger zoom; replaces edge-scroll. */
   isMobile?: boolean;
+  /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
+   *  and moves the crosshair to the flat overlay layer (ADR-0031). */
+  crt?: boolean;
 }
 
 export function GameScene({
@@ -104,6 +108,7 @@ export function GameScene({
   onDelivery,
   onHostageQte,
   isMobile = false,
+  crt = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art's native
   // aspect ratio, and place enemy windows from the level's hand-authored zones.
@@ -298,7 +303,8 @@ export function GameScene({
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />
       <FeedbackLayer queueRef={feedbackRef} />
-      <CrosshairSprite stateRef={stateRef} cameraRef={camera} />
+      <CrosshairSprite stateRef={stateRef} cameraRef={camera} crtEnabled={crt} />
+      {crt && <CrtPass tier={isMobile ? "lite" : "full"} paused={paused === true} />}
     </>
   );
 }
