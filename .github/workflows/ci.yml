@@ -31,6 +31,11 @@ jobs:
       - name: Agents infographic freshness
         run: node scripts/check-agents-infographic.mjs
 
+      # DOC FRESHNESS — the harness infographics must be kept in sync with the
+      # harness docs/ADRs they visualise (see the script header for the loop).
+      - name: Harness infographics freshness
+        run: node scripts/check-harness-infographics.mjs
+
       - name: Cache yarn
         uses: actions/cache@v4
         with:

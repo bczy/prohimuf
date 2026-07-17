@@ -1,5 +1,11 @@
 # Level-art harness
 
+> **Poster** — a one-page visual of this harness lives at
+> [`docs/diagrams/harness-level-art-infographic.html`](docs/diagrams/harness-level-art-infographic.html),
+> part of the muf harness infographic series (window-alignment, dynamic-verify,
+> shared-lib), emitted by `docs/diagrams/build-harness-infographics.py` and kept
+> fresh in CI by `scripts/check-harness-infographics.mjs`.
+
 How to develop the image-based levels (Style B pixel art). Levels are
 **data-driven**: sky / facade / street are big AI-generated images composited
 as parallaxing layers, and gameplay (enemy windows) still comes from the tile
