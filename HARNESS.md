@@ -77,17 +77,20 @@ wall. Two tools keep the zones honest:
   (`belliard`, `stalingrad`, `vitry`; ids as args, default all): detects the real
   lit windows from each facade art — `belliard` keeps its equal-thirds floors,
   every other level uses **run-based** floor detection over `windowGrid.top/bottom`
-  (robust to any floor count) — measuring each window's **left edge + width** from
-  its warm run bounds (per-level `openingW` is only a fallback seed for the clamp
-  band / degenerate runs), then drives the live production render (`__MUF_ZONES__` /
-  `__MUF_SLOT_RECTS__`) to place one non-overflowing cop per window whose `zone.x`/
-  `zone.w` frame the real opening for the foreground railing, looping until 0
-  defects, with proof overlays. Beyond OVERFLOW/COUNT/EMPTY/WALL it also gates
-  **MISALIGN** — the railing frame off its measured opening beyond
-  `ALIGN_TOL = 0.012` (normalized ≈ 15 px on 1280), in centre or width (pure check
-  in `scripts/lib/alignment.mjs`, unit-tested). It writes only the target level's
-  key of `windowZones.generated.json`. `--check` is a CI gate (measure only, exit
-  non-zero on any defect). `yarn align` / `yarn align:check` run all levels;
+  (robust to any floor count) — measuring each window's **centre + width** from
+  its warm run bounds (the centre is the geometric MIDPOINT of the bounds, not the
+  glow-biased centroid; per-level `openingW` is only a fallback seed for the clamp
+  band / degenerate runs, and a clamp warning prints when it saturates), then drives
+  the live production render (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`) to place one
+  non-overflowing cop per window whose `zone.x`/`zone.w` frame the real opening for
+  the foreground railing, looping until 0 defects, with proof overlays. Beyond
+  OVERFLOW/COUNT/EMPTY/WALL it also gates **MISALIGN** — the railing frame's left
+  (`x−w/2`) and right (`x+w/2`) edges each off its measured opening edge beyond
+  `ALIGN_TOL = 0.012` (normalized ≈ 15 px on 1280); reasons
+  `left`/`right`/`left+right`/`nan`/`count`, checked over **all 4** committed panels
+  (pure per-edge check in `scripts/lib/alignment.mjs`, unit-tested). It writes only
+  the target level's key of `windowZones.generated.json`. `--check` is a CI gate
+  (measure only, exit non-zero on any defect). `yarn align` / `yarn align:check` run all levels;
   `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
 
 ## Local dev

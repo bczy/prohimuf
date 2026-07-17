@@ -13,17 +13,29 @@
 export const ALIGN_TOL = 0.012;
 
 /**
- * Compare a zone's railing frame (`zone.x` centre, `zone.w` width) against a measured
- * opening (`opening.x`, `opening.w`). Returns the FIRST failing reason — `"x"` for a
- * shifted centre, `"w"` for a width mismatch — or `null` when both sit within `tol`.
+ * Compare a zone's railing frame (`zone.x` CENTRE, `zone.w` width) against a measured
+ * opening (`opening.x` CENTRE, `opening.w` width) by PER-EDGE deltas (story AC 2): the
+ * frame's left edge (`x − w/2`) and right edge (`x + w/2`) must each sit within `tol` of
+ * the opening's corresponding edge. Misaligned iff `|Δleft| > tol` OR `|Δright| > tol`
+ * (strict — a delta exactly equal to `tol` passes). Returns the failing edge(s) —
+ * `"left"`, `"right"`, or `"left+right"` when both fail — `"nan"` when any input is
+ * non-finite (a defect, never silently `null`), or `null` when both edges are within `tol`.
  *
- * @param {{ x: number, w: number }} zone     applied railing frame (normalized)
- * @param {{ x: number, w: number }} opening  measured window opening (normalized)
+ * Per-edge (not centre+width) is what actually gates the railing: an asymmetric glow can
+ * shift a centroid without moving either measured edge, and a centre-only check would let a
+ * frame overhang bare wall on one side while `Δx` stays under tolerance.
+ *
+ * @param {{ x: number, w: number }} zone     applied railing frame (normalized, centre form)
+ * @param {{ x: number, w: number }} opening  measured window opening (normalized, centre form)
  * @param {number} tol                        tolerance, normalized (see ALIGN_TOL)
- * @returns {"x" | "w" | null}
+ * @returns {"left" | "right" | "left+right" | "nan" | null}
  */
 export function misaligned(zone, opening, tol) {
-  if (Math.abs(zone.x - opening.x) > tol) return "x";
-  if (Math.abs(zone.w - opening.w) > tol) return "w";
+  if (![zone.x, zone.w, opening.x, opening.w].every(Number.isFinite)) return "nan";
+  const left = Math.abs(zone.x - zone.w / 2 - (opening.x - opening.w / 2)) > tol;
+  const right = Math.abs(zone.x + zone.w / 2 - (opening.x + opening.w / 2)) > tol;
+  if (left && right) return "left+right";
+  if (left) return "left";
+  if (right) return "right";
   return null;
 }
