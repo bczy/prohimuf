@@ -1,19 +1,19 @@
-# 0034 — Hostage QTE per-level difficulty curve for the duel (F3)
+# 0035 — Hostage QTE per-level difficulty curve for the duel (F3)
 
 - **Status:** Accepted
 - **Date:** 2026-07-17
-- **Depends on:** [ADR-0033](./0033-hostage-qte-duel-porte-cochere.md) (the duel this curve
+- **Depends on:** [ADR-0034](./0034-hostage-qte-duel-porte-cochere.md) (the duel this curve
   tunes — retreat, `COVERED ↔ PEEKING`, counter-fire, head-only shot rules).
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md) (D2 the Belliard-first
   rollout via an optional per-level field — the precedent this ADR follows),
-  [ADR-0035](./0035-hostage-qte-accomplice.md) (F4, a further late-level escalation lever),
+  [ADR-0036](./0036-hostage-qte-accomplice.md) (F4, a further late-level escalation lever),
   the brainstorming session
   [`brainstorming-session-2026-07-17-1.md`](../../_bmad-output/brainstorming/brainstorming-session-2026-07-17-1.md)
   (F3, guardrails G2/G4/G5), `src/game/types/hostageQte.ts` (`QteSpec`).
 
 ## Context
 
-ADR-0033 makes the hostage QTE a live duel but leaves its intensity as fixed defaults.
+ADR-0034 makes the hostage QTE a live duel but leaves its intensity as fixed defaults.
 `QteSpec` is already an authored per-level record (ADR-0030), so difficulty progression
 needs **no new architecture** — only new authored fields and a rollout gate (session Theme
 D, idea #12). Belliard teaches the phase; later levels punish.
@@ -34,7 +34,7 @@ drop the telegraph, silently breaking P3.
 
 ### D1 — Extend `QteSpec` with the duel's tuning knobs
 
-`QteSpec` gains the per-level difficulty fields for the ADR-0033 duel:
+`QteSpec` gains the per-level difficulty fields for the ADR-0034 duel:
 
 - **retreat speed** — how fast the captor drags the hostage toward the porte cochère (the
   sole clock; faster = less time to seize an opening).

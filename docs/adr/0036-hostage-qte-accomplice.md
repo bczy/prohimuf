@@ -1,10 +1,10 @@
-# 0035 — Hostage QTE: the accomplice (second shooter) (F4)
+# 0036 — Hostage QTE: the accomplice (second shooter) (F4)
 
 - **Status:** Proposed (deferred until F1–F3 pass playtest)
 - **Date:** 2026-07-17
-- **Depends on:** [ADR-0033](./0033-hostage-qte-duel-porte-cochere.md) (the duel and its
+- **Depends on:** [ADR-0034](./0034-hostage-qte-duel-porte-cochere.md) (the duel and its
   counter-fire role, which this accomplice **replaces**),
-  [ADR-0034](./0034-hostage-qte-difficulty-curve.md) (the per-level curve this rides).
+  [ADR-0035](./0035-hostage-qte-difficulty-curve.md) (the per-level curve this rides).
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md) (the `Courier`-model /
   additive-entity precedent for a new tableau actor), the brainstorming session
   [`brainstorming-session-2026-07-17-1.md`](../../_bmad-output/brainstorming/brainstorming-session-2026-07-17-1.md)
@@ -30,7 +30,7 @@ are designed without foreclosing it, but the go/no-go waits on the duel's playte
 
 Add an **accomplice**: a second entity in the QTE tableau that **fires at the player**. It
 appears only in advanced levels, gated through the same per-level authoring the difficulty
-curve uses ([ADR-0034](./0034-hostage-qte-difficulty-curve.md)).
+curve uses ([ADR-0035](./0035-hostage-qte-difficulty-curve.md)).
 
 ### D2 — Role division: the accomplice _replaces_ the captor's counter-fire
 
@@ -64,7 +64,7 @@ pattern of ADR-0030/0031.
 - A new tableau entity and sprite set — the reason it is deferred. Not worth the lane until
   the core duel proves fun.
 - The counter-fire _ownership handoff_ (captor → accomplice when present) is a branch in the
-  ADR-0033 counter-fire logic; F1 should keep that logic factored so the handoff is a clean
+  ADR-0034 counter-fire logic; F1 should keep that logic factored so the handoff is a clean
   swap, not a rewrite.
 
 **Gotchas**
