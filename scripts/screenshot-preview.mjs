@@ -50,9 +50,18 @@ async function captureLevel(context, level, withMenu) {
     window.__MUF_FREEZE_COPS__ = true;
     try {
       localStorage.setItem("muf_progress", JSON.stringify(["belliard", "stalingrad", "vitry"]));
+      // crt:false — the CRT post-process (animated grain/flicker + scanline comb +
+      // bloom, ADR-0031) would contaminate every art artifact in the contact sheet;
+      // captures must show the flat scene, not the CRT overlay.
       localStorage.setItem(
         "muf_prefs",
-        JSON.stringify({ soundVolume: 0, musicVolume: 0, lives: 3, difficulty: "normal" }),
+        JSON.stringify({
+          soundVolume: 0,
+          musicVolume: 0,
+          lives: 3,
+          difficulty: "normal",
+          crt: false,
+        }),
       );
     } catch {
       // ignore storage failures

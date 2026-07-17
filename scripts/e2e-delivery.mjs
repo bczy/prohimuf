@@ -104,7 +104,11 @@ async function main() {
   });
   const page = await context.newPage();
 
-  await seedDeterminism(page, levelIds);
+  // crt:false — the halo-gradient gate diffs a clean pre-trigger plate against the
+  // DELIVERING frame; the CRT comb/bloom/grain would drive that gate with noise and
+  // mask the constant-alpha-plate regression it exists to catch (explicit, though
+  // it is also the seedDeterminism default).
+  await seedDeterminism(page, levelIds, { crt: false });
 
   page.on("pageerror", (err) => pageErrors.push(err.message));
   page.on("response", (res) => {
