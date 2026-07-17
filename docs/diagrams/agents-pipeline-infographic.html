@@ -212,28 +212,27 @@
       }
 
       /* ---------- sprites pixel-art du crew (muf-crew-bitmap.py) ---------- */
+      /* Pas d'encadré : le personnage est posé nu sur la carte, l'image remplit
+         toute sa boîte (aucun fond, bord ni padding). */
       .sprite {
         display: inline-block;
         vertical-align: middle;
-        background: #2c2c29;
-        border: 1.5px solid var(--line);
-        padding: 3px 4px;
         line-height: 0;
         margin-right: 8px;
       }
       .sprite img {
-        width: 33px;
-        height: 30px;
+        width: 44px;
+        height: 40px;
         image-rendering: pixelated;
         display: block;
       }
       .sprite.big img {
-        width: 66px;
-        height: 60px;
+        width: 88px;
+        height: 80px;
       }
       .sprite.sm img {
-        width: 22px;
-        height: 20px;
+        width: 33px;
+        height: 30px;
       }
       .sprite.fr {
         float: right;
