@@ -105,7 +105,7 @@ export interface MobileControls {
 }
 
 /**
- * Bridge→render transport for player-shot impacts (ADR-0020). Carries the
+ * Bridge→render transport for player-shot impacts (ADR-0040). Carries the
  * per-frame event queue AND the level-scope reset signal in one ref, so the
  * effects component clears its persistent wall-mark FIFO deterministically.
  */

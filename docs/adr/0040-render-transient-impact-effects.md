@@ -1,4 +1,4 @@
-# 0020 — Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks)
+# 0040 — Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks)
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
