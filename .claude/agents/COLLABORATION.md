@@ -8,14 +8,14 @@ but they **always coordinate** through this protocol. Read this before acting.
 | Agent | Persona | Owns | Never touches |
 | --- | --- | --- | --- |
 | `pm` | John 📋 | PRD, epics, stories, scope (`_bmad-output/planning-artifacts/`) | production code |
-| `producer` | Marion 📆 | pipeline execution: stage tracking, hand-off chasing, caps & escalations, sprint status | scope, gate verdicts, specs, production code |
+| `producer` | Marion 📆 | pipeline execution: stage tracking, hand-off chasing, caps & escalations, sprint status, ADR number allocation, handoffs-shard opening | scope, gate verdicts, specs, production code |
 | `senior-architect` | Winston 🏗️ | architecture, ADRs, boundaries, cross-cutting sign-off | feature implementation |
 | `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
 | `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
 | `narrative-designer` | Yasmine ✒️ | universe, cast, every player-facing word — scripts in `docs/game-design/` | production code, mechanics, visuals |
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
-| `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts.md` | sizes/ids/paths/structure, workflows |
+| `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts/` (one shard per family, index at `prompt-drafts.md`) | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
 | `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
 | `qa-lead` | Inès 🧪 | stage 5 VERIFY: test plans (`docs/qa/`), e2e/regression specs, QUALITY GATE | production code, test implementation (spec only) |
@@ -26,9 +26,15 @@ but they **always coordinate** through this protocol. Read this before acting.
 ## The production pipeline (a feature passes hand to hand — never silo)
 
 Every feature traverses the SAME pipeline, stage by stage, each stage with one owner and
-an explicit hand-off logged in `docs/agent-handoffs.md`. A stage that does not apply is
+an explicit hand-off logged in the story's shard under `docs/handoffs/`
+(`docs/agent-handoffs.md` is the index — read it for the template and the
+machine-parsable `VERDICT:` line format). A stage that does not apply is
 skipped EXPLICITLY (the agent holding the hand at that point declares the skip and logs
 it; `producer` verifies every skip is explicit), never silently.
+
+Small, single-lane changes take the **fix lane** instead (§fix lane below) — the full
+pipeline is for features; paying full ceremony on a one-lane bug fix is waste, and
+bending the pipeline silently is worse.
 
 ```
 0. INTAKE     Bertrand → pm : intent, bug, or idea.
@@ -58,13 +64,16 @@ it; `producer` verifies every skip is explicit), never silently.
                 · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
                   (PASS required before stage 6; FAIL routes back to the
                   owning lane with the failing case named)
-6. INTEGRATE  senior-architect — integration review & cross-lane sign-off.
-7. REVIEW     CODE-REVIEW PANEL — 4 parallel skills, findings adversarially
-              verified (mandatory before any merge to main — see below).
-8. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
-9. MERGE      Bertrand (or an EXPLICIT merge instruction from him for this
+6. REVIEW     CODE-REVIEW PANEL + INTEGRATION TRIAGE — 4 parallel skills, findings
+              adversarially verified, then senior-architect TRIAGES the findings AND
+              delivers his integration review & cross-lane sign-off in the SAME pass
+              (he already reads the full diff to triage — one stage, one read;
+              mandatory before any merge to main — see below).
+7. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
+8. MERGE      Bertrand (or an EXPLICIT merge instruction from him for this
               branch — a general standing preference is never merge authority) —
-              merge to main; the full cycle is traceable in docs/agent-handoffs.md.
+              merge to main; the full cycle is traceable in the story's
+              handoffs shard.
 ```
 
 The pipeline is DRIVEN by `producer` (Marion): she tracks which stage every feature is
@@ -72,10 +81,40 @@ in and who has the hand, chases missing log entries, enforces the bounded-iterat
 (2 rework rounds per spec, 2 generation batches per asset set, 2 verify↔build rework
 rounds per story; a "cycle" = one pass of a story through the pipeline, and only Marion
 declares a reset), serialises contended seams, and assembles escalation packets for
-Bertrand when a cap is hit or a lane stalls.
+Bertrand when a cap is hit or a lane stalls. At story opening she also **allocates the
+ADR number** if the tech plan will need one (see §rules of engagement #9) and opens the
+story's handoffs shard (`docs/handoffs/story-<slug>.md`).
 She holds no gate and authors no content — the orchestrator launches agents, Marion
 keeps the state honest. Visual companion: `docs/diagrams/agent-workflows.md` (the
 pipeline as one mermaid flowchart).
+
+## The fix lane (small, single-lane changes — the two-tier rule)
+
+The full pipeline exists for FEATURES. A small fix does not impersonate one. A change
+qualifies for the fix lane when ALL of these hold:
+
+- **One owning lane** — the diff touches only paths owned by a single dev lane
+  (`dev-gameplay`, `dev-r3f-render` or `dev-tooling-assets`), `src/hooks/**` included
+  only on that lane's side; no cross-boundary change.
+- **No design surface** — no change to how the game plays (mechanics, tuning values,
+  3C) and no player-facing words; polish/bug-fix of an ALREADY-GATED behaviour only.
+- **No asset surface** — no new or changed prompt, sprite, or audio asset.
+- **No architecture surface** — no new dependency, no boundary or contract change,
+  nothing ADR-worthy.
+- **Small** — a diff the single reviewer can hold in one read (rule of thumb: a bug
+  fix, a copy-size tweak, a tap-target enlargement — not a feature in disguise).
+
+Route: owning dev lane implements → `rtk tsc` + `rtk vitest` + `rtk lint` all green
+(+ `verify`/e2e screenshots when the change is player-visible) → **ONE reviewer**
+running `code-review` (effort high) on `git diff origin/main...HEAD`, findings fixed
+or refuted → Bertrand merges. No pm story, no design gate, no architect stage, no
+4-reviewer panel. The cycle is logged as ONE line in `docs/handoffs/fixes.md`.
+
+Tiering: the orchestrator proposes the tier; `producer` records it and challenges
+abuse (a "fix" that fails a criterion mid-flight ESCALATES to the full pipeline at the
+stage it violated — it never continues in the fix lane). When in doubt, full pipeline.
+A gate owner (lead-art, lead-game-designer, sound-designer, senior-architect) can
+reclaim any fix touching their surface — one call from them re-routes it.
 
 ## The design flow (any change to mechanics, tuning, 3C, universe, cast or in-game text)
 
@@ -101,12 +140,13 @@ kept by `lead-game-designer`). Designers write specs and scripts, never producti
 `dev-gameplay` transcribes gated tuning values and narrative scripts into `src/game/**`.
 Character/asset VISUALS stay in the art flow — a character sheet feeds `concept-artist`,
 it never bypasses `lead-art`'s gates. Every gate verdict is logged in
-`docs/agent-handoffs.md`.
+the story's handoffs shard (index: `docs/agent-handoffs.md`).
 
-## The code-review panel (MANDATORY gate before merging to main)
+## The code-review panel (MANDATORY gate before merging to main — pipeline stage 6)
 
 No branch merges to `main` without a multi-reviewer code review of the full diff
-(`git diff origin/main...HEAD`). The panel runs **in parallel** (one message, four Task
+(`git diff origin/main...HEAD`). (Fix-lane branches use the single-reviewer route of
+§fix lane instead.) The panel runs **in parallel** (one message, four Task
 calls), each reviewer applying a **different review skill** so the methods stay orthogonal:
 
 | Reviewer | Skill | Angle |
@@ -120,11 +160,14 @@ Protocol: reviewers are **read-only** and report findings as
 `[BLOQUANT|MAJEUR|MINEUR] + file:line + concrete failure scenario`. Every non-trivial
 finding is then **adversarially verified** (a skeptic agent tries to refute it against the
 real code); only CONFIRMED findings are acted on. `senior-architect` triages and
-prescribes fixes or rejects-with-reason; the OWNING lane applies them (the architect
-never implements feature code himself); then `rtk tsc` + `rtk vitest` + `rtk lint`
+prescribes fixes or rejects-with-reason — and delivers his INTEGRATION REVIEW
+(cross-lane sign-off, boundary law) in the same triage pass: he is reading the full
+diff anyway, so integration and triage are ONE stage, not two serial reads. The OWNING
+lane applies the fixes (the architect never implements feature code himself); then
+`rtk tsc` + `rtk vitest` + `rtk lint`
 re-run, and the panel re-runs if the diff changed materially. The panel outcome
-(findings → verdict → action) is logged in `docs/agent-handoffs.md` and summarized in the
-PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
+(findings → verdict → action) is logged in the story's handoffs shard and summarized in
+the PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
 
 ## The art flow (any generated asset — vehicles, enemies, level art)
 
@@ -164,10 +207,10 @@ FAIL (prompt/asset gates) → concept-artist iterates (one variable per roll,
 FAIL (composite gate) → dev-r3f-render (the composed visual is src/render code;
         it re-enters the art flow only if the defect is in the source sprite's alpha)
 PASS → stage 5 (VERIFY) funnels into qa-lead's QUALITY GATE, then the pipeline
-        continues (integrate → review → pm acceptance)
+        continues (review + integration triage → pm acceptance)
 ```
 
-Every gate verdict is logged in `docs/agent-handoffs.md`.
+Every gate verdict is logged in the story's handoffs shard (index: `docs/agent-handoffs.md`).
 
 **Runtime-composed visuals (the composite gate wiring).** Some visuals are NOT present
 in the delivered PNGs — they are composed live in `src/render` (the ADR-0011 neon rim,
@@ -211,7 +254,7 @@ on the spec BEFORE implementation and on the result at stage 5 (VERIFY)
 
 `sound-designer` (Malik) owns `docs/audio-direction.md` (the sonic twin of the art
 bible) and is `lead-art`'s peer: one identity, two senses. Every gate verdict is logged
-in `docs/agent-handoffs.md`.
+in the story's handoffs shard (index: `docs/agent-handoffs.md`).
 
 ## Rules of engagement
 1. **No code before a story.** `pm` defines it; `senior-architect` makes it buildable and
@@ -224,9 +267,15 @@ in `docs/agent-handoffs.md`.
    sign-off, logged below.
 3. **Parallel-safe = non-overlapping paths.** The only routinely shared seam is
    `src/hooks/**` (render ↔ gameplay): announce, serialise, don't both edit at once.
-4. **Log every hand-off** in `docs/agent-handoffs.md` (template there). One line to claim
-   work, one to release it + File List. `producer` curates the log's hygiene and chases
-   missing entries — an unlogged hand-off didn't happen.
+4. **Log every hand-off** in the story's shard `docs/handoffs/story-<slug>.md`
+   (`docs/agent-handoffs.md` is the index — template and the machine-parsable
+   `VERDICT: PASS|FAIL — <gate> (<agent>)` line format live there; fix-lane cycles log
+   one line in `docs/handoffs/fixes.md`). One line to claim work, one to release it +
+   File List. `producer` curates the log's hygiene and chases missing entries — an
+   unlogged hand-off didn't happen. **Shard rule (general):** any shared, append-style
+   doc approaching the point where an agent can no longer read it in one pass
+   (~100 KB) gets sharded by its owner — per story, per family, or per period — with a
+   small index at the old path so references keep resolving.
 5. **Tooling discipline.** Use `rtk` for dev commands (compact output) and `codegraph` to
    locate symbols/callers before editing. Verify with `rtk tsc` + `rtk vitest` + `rtk lint`
    before declaring done — and never claim green tests that aren't.
@@ -236,9 +285,15 @@ in `docs/agent-handoffs.md`.
 7. **Language.** Communicate with Bertrand in the `communication_language` from
    `_bmad/bmm/config.yaml`.
 8. **Code-review panel is a merge gate.** Any branch headed for `main` goes through the
-   multi-skill panel above after the architect sign-off. No merge with an unresolved
-   CONFIRMED BLOQUANT/MAJEUR finding. (Hard enforcement on GitHub — branch protection /
-   required review — is a repo setting only Bertrand can flip.)
+   multi-skill panel above (which carries the architect's integration sign-off in its
+   triage). No merge with an unresolved CONFIRMED BLOQUANT/MAJEUR finding. Fix-lane
+   branches substitute the single `code-review` (high) reviewer of §fix lane. (Hard
+   enforcement on GitHub — branch protection / required review — is a repo setting only
+   Bertrand can flip.)
+9. **ADR numbers are allocated by `producer`.** Nobody self-allocates an ADR number:
+   Marion hands out the next free `NNNN` at story opening (or on request mid-story) and
+   records it in the story shard. Parallel lanes numbering their own ADRs is how the
+   repo got two ADR-0020s and a 0026→0028 rebase renumber — never again.
 
 ## How to launch them
 From the main session, launch agents with the Task tool. Independent lanes go in **one

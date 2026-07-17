@@ -2,9 +2,12 @@
 
 Visual companion to [`.claude/agents/COLLABORATION.md`](../../.claude/agents/COLLABORATION.md)
 (the normative protocol). One pipeline: every feature passes hand to hand through stages
-0-9 — product → design → tech plan → build (dev ∥ art ∥ audio) → verify → integrate →
-review → accept → merge — driven by the `producer`. Every gate verdict and hand-off is
-logged in [`agent-handoffs.md`](../agent-handoffs.md).
+0-8 — product → design → tech plan → build (dev ∥ art ∥ audio) → verify → review
+(panel + integration triage) → accept → merge — driven by the `producer`. Small
+single-lane fixes take the **fix lane** instead (COLLABORATION.md §fix lane): owning
+dev lane → mechanical checks → ONE `code-review` (high) reviewer → merge. Every gate
+verdict and hand-off is logged in the story's shard under
+[`docs/handoffs/`](../handoffs/) (index: [`agent-handoffs.md`](../agent-handoffs.md)).
 
 ```mermaid
 flowchart TB
@@ -103,29 +106,29 @@ flowchart TB
     GATE2 -->|PASS| CHECKS
     AGATE -->|PASS| CHECKS
 
-    subgraph P67["6. INTEGRATE · 7. REVIEW"]
+    subgraph P6["6. REVIEW — panel + integration triage (one stage)"]
         direction TB
-        REVIEW["senior-architect · Winston 🏗️<br/>integration review + sign-off"]
-        PANEL["CODE-REVIEW PANEL (merge gate)<br/>4 parallel skills: code-review (high) ·<br/>bmad-code-review · edge-case-hunter ·<br/>security-review — findings adversarially<br/>verified, architect triage"]
-        REVIEW --> PANEL
+        PANEL["CODE-REVIEW PANEL (merge gate)<br/>4 parallel skills: code-review (high) ·<br/>bmad-code-review · edge-case-hunter ·<br/>security-review — findings<br/>adversarially verified"]
+        TRIAGE["senior-architect · Winston 🏗️<br/>finding triage + INTEGRATION REVIEW<br/>cross-lane sign-off — one pass over the diff"]
+        PANEL --> TRIAGE
     end
 
-    QGATE -->|PASS| REVIEW
+    QGATE -->|PASS| PANEL
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
     GATE4 -->|"FAIL → dev-r3f-render<br/>(the composite is render code)"| ARCH
     SDV -->|"FAIL → owning dev lane,<br/>or spec re-gated via Malik"| ARCH
     DACC -->|"FAIL → back to dev lane"| ARCH
     DACC -->|"spec amended &amp; re-gated"| DGATE
 
-    subgraph P8["8. ACCEPT"]
+    subgraph P7["7. ACCEPT"]
         ACCEPT["pm · John 📋<br/>acceptance vs story<br/>+ PROJECT_GUIDELINES"]
     end
 
-    PANEL -->|"zero CONFIRMED blocking/major"| ACCEPT
-    ACCEPT -->|"9. MERGE to main"| B
+    TRIAGE -->|"zero CONFIRMED blocking/major"| ACCEPT
+    ACCEPT -->|"8. MERGE to main"| B
     ACCEPT -->|"reject → owning lane"| ARCH
 
-    LOG[("docs/agent-handoffs.md<br/>every hand-off + gate verdict")]
+    LOG[("docs/handoffs/story-&lt;slug&gt;.md<br/>every hand-off + gate verdict<br/>(index: agent-handoffs.md)")]
     PROD -.->|"tracks stages, chases missing entries,<br/>enforces caps, serialises shared seams"| LOG
     PROD -.->|"escalation packets<br/>(caps hit, blockers)"| B
     DGATE -.-> LOG
@@ -135,7 +138,7 @@ flowchart TB
     AGATE -.-> LOG
     DACC -.-> LOG
     QGATE -.-> LOG
-    REVIEW -.-> LOG
+    TRIAGE -.-> LOG
 
     classDef gate fill:#ffe9a8,stroke:#b8860b,color:#000
     classDef dev fill:#d4e9ff,stroke:#2b6cb0,color:#000
@@ -180,9 +183,14 @@ flowchart TB
   goes back to the dev lane or the spec is re-gated, never absorbed silently. Everything
   funnels into Inès's **quality gate**: PASS required before integration, FAIL routes
   back to the owning lane with the failing case named.
-- **Review (stages 6-7)**: architect integration sign-off, then the mandatory
-  **code-review panel** (4 parallel skills, findings adversarially verified) before any
-  merge to `main`.
+- **Review (stage 6)**: the mandatory **code-review panel** (4 parallel skills,
+  findings adversarially verified), triaged by `senior-architect` — his triage pass IS
+  the integration review and cross-lane sign-off (he reads the full diff once, not
+  twice) — before any merge to `main`.
+- **The fix lane** bypasses the pipeline for small single-lane changes (no design, no
+  asset, no dependency/boundary surface): owning dev lane → `rtk tsc`/`vitest`/`lint`
+  (+ `verify` if player-visible) → a single `code-review` (high) reviewer → merge,
+  logged as one line in `docs/handoffs/fixes.md`. Doubt ⇒ full pipeline.
 - **Producer (purple)**: `producer` (Marion) drives the pipeline itself — she tracks
   which stage every feature is in, chases missing hand-offs in the log, enforces the
   bounded-iteration caps, serialises contended seams, and assembles escalation packets

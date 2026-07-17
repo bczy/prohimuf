@@ -22,13 +22,23 @@
 - [ ] `rtk vitest` / `yarn test` vert (100 %)
 - [ ] `rtk lint` / `yarn lint` vert
 
-## Gates crew (obligatoires avant merge sur main)
+## Voie (cocher UNE des deux — COLLABORATION.md §fix lane)
 
-- [ ] Sign-off d'intégration `senior-architect` (frontière game/render/hooks)
-- [ ] **Panel de code review multi-skills passé** — 4 reviewers parallèles
+### Pipeline complet (feature / refactor / design)
+
+- [ ] **Panel de code review multi-skills passé (stage 6)** — 4 reviewers parallèles
       (`code-review` high, `bmad-code-review`, `bmad-review-edge-case-hunter`,
-      `security-review`), findings contre-vérifiés, triage architecte :
+      `security-review`), findings contre-vérifiés, **triage `senior-architect`
+      valant sign-off d'intégration** (frontière game/render/hooks) :
       **zéro finding CONFIRMÉ bloquant/majeur non traité**
 - [ ] Acceptation `pm` vs story + `PROJECT_GUIDELINES`
-- [ ] Cycle tracé dans `docs/agent-handoffs.md`
-- [ ] Si frontières/dépendances/déploiement changent : ADR ajouté ou mis à jour dans la PR
+- [ ] Cycle tracé dans `docs/handoffs/story-<slug>.md` (index : `docs/agent-handoffs.md`)
+- [ ] Si frontières/dépendances/déploiement changent : ADR ajouté ou mis à jour dans la
+      PR (numéro alloué par `producer`)
+
+### Voie FIX (petit diff mono-lane : zéro design, zéro asset, zéro dépendance/frontière)
+
+- [ ] Un seul lane dev propriétaire, comportement DÉJÀ gaté (bug fix / polish)
+- [ ] **Un reviewer `code-review` (effort high)** sur `git diff origin/main...HEAD` —
+      findings traités ou réfutés
+- [ ] Une ligne tracée dans `docs/handoffs/fixes.md`
