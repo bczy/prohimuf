@@ -46,6 +46,51 @@ function Slider({
   );
 }
 
+function Toggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}): JSX.Element {
+  return (
+    <div style={{ marginBottom: "14px" }}>
+      <div
+        style={{
+          fontFamily: "monospace",
+          fontSize: "10px",
+          color: "#555",
+          marginBottom: "4px",
+          letterSpacing: "0.15em",
+        }}
+      >
+        {label} — {value ? "ON" : "OFF"}
+      </div>
+      <button
+        onClick={() => {
+          onChange(!value);
+        }}
+        style={{
+          display: "block",
+          width: "100%",
+          padding: "8px",
+          background: value ? INK.full : "transparent",
+          color: value ? STOCK.shell : INK.black,
+          border: `1px solid ${INK.black}`,
+          cursor: "pointer",
+          fontFamily: "monospace",
+          fontSize: "11px",
+          letterSpacing: "0.2em",
+        }}
+      >
+        {value ? "◉ ACTIVÉ" : "○ DÉSACTIVÉ"}
+      </button>
+    </div>
+  );
+}
+
 export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JSX.Element {
   const [local, setLocal] = useState(prefs);
 
@@ -115,6 +160,13 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
             value={local.musicVolume}
             onChange={(v) => {
               update({ musicVolume: v });
+            }}
+          />
+          <Toggle
+            label="ÉCRAN CATHODIQUE"
+            value={local.crt}
+            onChange={(v) => {
+              update({ crt: v });
             }}
           />
 

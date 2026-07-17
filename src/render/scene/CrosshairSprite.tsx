@@ -1,10 +1,11 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useLayoutEffect } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CanvasTexture } from "three";
 import type { Mesh, MeshBasicMaterial, Camera, OrthographicCamera } from "three";
 import type { GameState } from "@game/types/gameState";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
+import { CRT_OVERLAY_LAYER } from "@render/effects/crtLayers";
 
 function makeCrosshairTexture(): CanvasTexture {
   const size = 128;
@@ -78,12 +79,24 @@ function makeCrosshairTexture(): CanvasTexture {
 interface Props {
   stateRef: React.RefObject<GameState>;
   cameraRef: Camera;
+  /** When the CRT pass is active, the crosshair moves to CRT_OVERLAY_LAYER so it
+   *  is excluded from the composite and drawn flat/sharp above it (P4). */
+  crtEnabled?: boolean;
 }
 
-export function CrosshairSprite({ stateRef, cameraRef }: Props): JSX.Element {
+export function CrosshairSprite({ stateRef, cameraRef, crtEnabled = false }: Props): JSX.Element {
   const meshRef = useRef<Mesh>(null);
   const texture = useMemo(() => makeCrosshairTexture(), []);
   const { size } = useThree();
+
+  // Park the crosshair on the overlay layer while CRT is on (so the world pass,
+  // which renders layer 0, skips it), and back on layer 0 when off (so the
+  // untouched auto-render draws it as before).
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (mesh === null) return;
+    mesh.layers.set(crtEnabled ? CRT_OVERLAY_LAYER : 0);
+  }, [crtEnabled]);
 
   useFrame(() => {
     const mesh = meshRef.current;

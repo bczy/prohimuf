@@ -421,6 +421,7 @@ export function App(): JSX.Element {
             levelId={selectedLevel.id}
             paused={paused || rotateBlocked}
             isMobile={IS_MOBILE}
+            crt={prefs.crt}
           />
         </Suspense>
       </Canvas>
