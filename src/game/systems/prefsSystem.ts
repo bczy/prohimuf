@@ -3,6 +3,7 @@ export interface Prefs {
   readonly musicVolume: number; // 0.0–1.0
   readonly lives: number; // 1–5
   readonly difficulty: "easy" | "normal" | "hard";
+  readonly crt: boolean;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -10,6 +11,7 @@ export const DEFAULT_PREFS: Prefs = {
   musicVolume: 0.5,
   lives: 3,
   difficulty: "normal",
+  crt: true,
 };
 
 const STORAGE_KEY = "muf_prefs";
@@ -26,6 +28,7 @@ export function loadPrefs(): Prefs {
       difficulty: isValidDifficulty(parsed.difficulty)
         ? parsed.difficulty
         : DEFAULT_PREFS.difficulty,
+      crt: typeof parsed.crt === "boolean" ? parsed.crt : DEFAULT_PREFS.crt,
     };
   } catch {
     return DEFAULT_PREFS;
