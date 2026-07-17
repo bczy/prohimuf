@@ -164,4 +164,33 @@ _Novelty_: Spatializes the countdown; tracking + waiting compound.
 _Concept_: No fixed `triggerAtElapsedSeconds` — the taker first appears as a street silhouette crossing with his victim; if you fail to neutralize him before he entrenches, THEN the QTE fires. The player causes the event; runs differ.
 _Novelty_: Converts a scripted cutscene into a consequence of play.
 
-_Awaiting Bertrand's reactions on #12–22 before Reverse Brainstorming._
+**Bertrand's reactions (M/P/E/R batch):** #12 OK · #13 NON · #14 NON · #15 NON · #16 OK · #17 OK · #18 NON · #19 NON · #20 NON · #21 OK · #22 NON.
+
+**Kept overall:** #1, #2, #3, #6, #8, #9, #12, #16, #17, #21. **Rejected:** everything that complicates internal rules (per-limb meta, anger escalation, aim sway) or breaks readability/framing (banner removal, breather removal, dynamic trigger). Direction: *a readable, classic duel deepened from the inside — not a reframe.*
+
+### Phase 3 — Reverse Brainstorming (anti-goals → guardrails)
+
+**"How would we make it MORE boring?"**
+
+- Waiting at no cost → **G1:** energy leak (#6) + porte-cochère timer (#21) make waiting never free — THE anti-triviality lock.
+- Exposures long enough to aim comfortably → **G2:** peeks shorter than comfortable-aim time (~0.8–1.2 s), tuned per level (#12).
+- Identical script every run → **G3 (accepted):** arcade light-gun memorability IS genre fidelity; variety comes from the per-level curve, not randomness (consistent with rejecting #22).
+
+**"How would we make it unfairly frustrating?"**
+
+- Random peeks with no tell → **G4:** every exposure telegraphed by the preceding pose (#2); player must always conclude "I cracked", never "unreadable" (P3).
+- Peeks below human reaction time → **G5:** hard floor ≈ 0.5 s exposure, even at max difficulty.
+- Hostage hitbox overlapping the peek zone → **G6:** clean spatial separation between peeking head and hostage silhouette, especially with the retreating tableau (#21).
+- Slow-mo ambient fire killing the patient player → **G7:** ambient slow-mo shots are pressure, capped; the real active threat is the accomplice (#8) / captor counter-fire (#9), readable and answerable.
+- Energy drain punishing clean waiting → **G8:** drain rate must allow waiting ~2 full peek cycles without endangering the gauge.
+
+### Emerging synthesis — "Le duel de la porte cochère"
+
+1. Scripted trigger + OTAGE banner + 2 s zoom unchanged; firing during zoom = penalized panic shot (#17).
+2. Scene drops to slow-motion instead of freezing (#3).
+3. Captor retreats toward a porte cochère dragging the hostage — reaching it = she's gone (fail). The street is the timer (#21), replacing the abstract bar.
+4. He hides behind her (#1), exposing himself only in pose-telegraphed bursts (#2); his peek is also his shot at you (#9): the opportunity window IS the danger window.
+5. Everything is priced in energy: drain during the QTE (#6), clean rescue = big refill (#16).
+6. Per-level curve (#12): retreat speed, peek length/frequency; the accomplice (#8) only appears in advanced levels.
+
+**Open question:** with the door as spatial timer, keep `windowSeconds` as belt-and-braces or make distance the only clock? Facilitator's lean: distance only — two clocks is one too many to read.
