@@ -1,11 +1,13 @@
 ---
-stepsCompleted: [1, 2]
+stepsCompleted: [1, 2, 3, 4]
+workflow_completed: true
+session_active: false
 inputDocuments: []
 session_topic: "Making the hostage-rescue QTE (ADR-0030) more interesting and less easy"
 session_goals: "Generate gameplay mechanics and tuning ideas that raise the challenge and tension of the hostage QTE while staying faithful to Prohibition (Atari ST 1987), the project scope guard, and the pure-logic src/game architecture"
 selected_approach: "ai-recommended"
 techniques_used: ["First Principles Thinking", "SCAMPER Method", "Reverse Brainstorming"]
-ideas_generated: []
+ideas_generated: [22]
 context_file: ""
 ---
 
@@ -194,3 +196,59 @@ _Novelty_: Converts a scripted cutscene into a consequence of play.
 6. Per-level curve (#12): retreat speed, peek length/frequency; the accomplice (#8) only appears in advanced levels.
 
 **Open question:** with the door as spatial timer, keep `windowSeconds` as belt-and-braces or make distance the only clock? Facilitator's lean: distance only — two clocks is one too many to read.
+
+**DECIDED (Bertrand):** distance only. The porte cochère is the single clock; `windowSeconds` leaves the active design.
+
+## Idea Organization and Prioritization
+
+**Thematic Organization (kept ideas only):**
+
+**Theme A — The Living Duel** _(captor behaviour)_
+- **#1 Living Human Shield:** `COVERED ↔ PEEKING` states; head one-shot only during openings.
+- **#2 Diegetic Countdown:** telegraphed poses replace abstract timing; every exposure is announced (G4).
+- **#9 His Peek Is His Shot:** the captor's exposure is also his attack on you — opportunity window = danger window.
+- _Pattern:_ the difficulty lives in READING the adversary, not in hitbox size.
+
+**Theme B — Spatial Pressure** _(the street as clock)_
+- **#21 Retreat to the Porte Cochère:** the captor drags the hostage backward; reaching the door = failure. Sole clock (decided).
+- **#3 Slow-Motion Instead of Freeze:** the level keeps living at ~20%; ambient threat capped (G7).
+- _Pattern:_ time pressure is diegetic and spatial, never a UI bar.
+
+**Theme C — Energy Economy** _(the stakes)_
+- **#6 Energy Leaks During the QTE:** waiting is never free (G1), but drain allows ~2 peek cycles (G8).
+- **#16 Fuel Station:** clean rescue = the level's big energy refill — strategic, not cosmetic.
+- **#17 Panic Shot:** firing during the zoom is penalized — the zoom teaches the core reflex.
+- _Pattern:_ every QTE beat priced in the continuous stat Bertrand chose as THE currency.
+
+**Theme D — Progression** _(difficulty curve)_
+- **#12 Per-Level Curve:** retreat speed, peek length/frequency tuned per `QteSpec` (floors: G2, G5).
+- **#8 The Accomplice:** second shooter, advanced levels only.
+- _Pattern:_ escalation through existing per-level data, no new architecture.
+
+**Prioritization Results:**
+
+- **Top priority (the core rework):** Themes A + B together — they are one mechanic (the duel) and replace the static tableau + abstract timer.
+- **Quick wins:** #17 (panic shot: small rule, immediate flavor), #16/#6 (retune existing energy constants).
+- **Breakthrough concept:** #21+#9 fusion — the street as clock combined with bidirectional danger is what turns "aim once" into "hold your nerve".
+- **Deferred:** #8 accomplice (needs new entity + sprite lane; ship the duel first).
+
+**Action Planning (BMAD pipeline):**
+
+1. **`game-designer`** — spec "Le duel de la porte cochère" in `docs/game-design/`: state machine (COVERED/PEEKING/pose telegraphs), retreat path & speed, peek cadence with floors (≥0.5 s exposure, 0.8–1.2 s target), energy table (drain rate sized for 2 peek cycles, rescue refill, panic-shot & hostage-hit penalties), per-level tuning table, guardrails G1–G8 as acceptance criteria. → **`lead-game-designer`** gate.
+2. **`senior-architect`** — ADR superseding the frozen-scene/`windowSeconds` parts of ADR-0030 (slow-mo tick contract, moving anchor, distance clock); lane assignment.
+3. **Dev lanes (parallel):** `dev-gameplay` (qteSystem rework, TDD in `src/game/systems/__tests__/`) ∥ `dev-r3f-render` (slow-mo, retreating tableau, pose rendering) ∥ art lane (captor pose sprites: covered / peeking / gun-raised, drag walk) via `concept-artist` → `lead-art` gate.
+4. **`qa-lead`** verify → code-review panel → `pm` acceptance.
+
+**Success metrics:** a first-try player fails the rescue more often than not but can always name why; a skilled player saves her with 1–2 headshots during peeks; ignoring the QTE is clearly costly (energy economy); zero "unreadable" complaints in playtest (P3).
+
+## Session Summary and Insights
+
+**Key Achievements:**
+
+- 22 ideas across 3 techniques; 10 kept by explicit votes; 8 anti-frustration guardrails; 1 coherent synthesized system ("Le duel de la porte cochère") with its open question resolved (distance-only clock).
+
+**Session Reflections:**
+
+- First Principles unlocked the session: naming "stakes first / motion breeds sang-froid / no punitive RNG" made every later vote fast and consistent.
+- Bertrand's votes drew a sharp line: deepen the duel *inside* the existing framing (keep banner, keep scripted trigger, keep body zones) — reject rule complexity and frame-breaking. The rejected ideas (#4, #11, #13–15, #18–20, #22) are documented as consciously out of scope.
+- Reverse Brainstorming earned its place: G1 (waiting is never free) is the single lock that prevents the new design from regressing into "wait for the obvious peek, shoot once".
