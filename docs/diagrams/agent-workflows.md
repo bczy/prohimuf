@@ -20,20 +20,24 @@ flowchart TB
         PM["pm · John 📋<br/>scoped story, scope guard,<br/>acceptance criteria"]
     end
 
-    subgraph P2["2. DESIGN — only when gameplay or fiction is touched"]
+    subgraph P2["2. DESIGN — only when gameplay, fiction or screens/flows/accessibility are touched"]
         direction TB
         GD["game-designer · Sacha 🎮<br/>mechanics, tuning values, 3C specs"]
         ND["narrative-designer · Yasmine ✒️<br/>universe, cast, scripts"]
+        UXD["ux-designer · Tony 🖱️<br/>screens/flows, HUD ergonomics,<br/>accessibility specs"]
         DGATE{"lead-game-designer · Karim 🧭<br/>DESIGN GATE<br/>scope · core loop · verifiability · coherence"}
         GD --> DGATE
         ND --> DGATE
+        UXD --> DGATE
         DGATE -->|"FAIL · max 2 rework rounds"| GD
         DGATE -->|"FAIL"| ND
+        DGATE -->|"FAIL"| UXD
     end
 
     PM -->|"gameplay/fiction story —<br/>Karim splits &amp; sequences first"| GD
     PM -->|"gameplay/fiction story —<br/>Karim splits &amp; sequences first"| ND
-    PM -->|"no gameplay/fiction change<br/>(tech / tooling / art / audio only)"| ARCH
+    PM -->|"screens/flows/accessibility story —<br/>Karim splits &amp; sequences first"| UXD
+    PM -->|"no gameplay/fiction/UX change<br/>(tech / tooling / art / audio only)"| ARCH
     DGATE -->|PASS| ARCH
 
     subgraph P3["3. TECH PLAN"]
@@ -87,16 +91,22 @@ flowchart TB
         CHECKS["rtk tsc · rtk vitest (100%) · rtk lint<br/>+ e2e / verify runs (player-visible changes)<br/>per qa-lead's test plan (docs/qa/)"]
         GATE4{"lead-art · Nico 🎯<br/>COMPOSITE GATE (Gate 4)<br/>runtime visuals on REAL screenshots"}
         PLAY["game-designer · Sacha 🎮<br/>PLAYTEST vs the gated spec"]
+        UXR["ux-designer · Tony 🖱️<br/>UX REVIEW vs gated spec<br/>(real screenshots, both devices)"]
         DACC{"lead-game-designer · Karim 🧭<br/>DESIGN ACCEPTANCE"}
         SDV{"sound-designer · Malik 🎧<br/>behaviour verdict<br/>(audible changes)"}
+        PERF{"gpu-specialist · Ben 🏍️<br/>PERF VERDICT vs perf-budget.md<br/>(perf-sensitive changes; on-target<br/>runs escalated as ready protocols)"}
         QGATE{"qa-lead · Inès 🧪<br/>QUALITY GATE<br/>plan ran and held"}
         CHECKS --> GATE4
         CHECKS --> SDV
+        CHECKS --> PERF
         CHECKS --> PLAY
+        CHECKS --> UXR
         PLAY --> DACC
+        UXR --> DACC
         CHECKS --> QGATE
         GATE4 -->|PASS| QGATE
         SDV -->|PASS| QGATE
+        PERF -->|"PASS / DEFERRED-ON-TARGET<br/>(logged, chased by producer)"| QGATE
         DACC -->|PASS| QGATE
     end
 
@@ -110,13 +120,18 @@ flowchart TB
         direction TB
         PANEL["CODE-REVIEW PANEL (merge gate)<br/>4 parallel skills: code-review (high) ·<br/>bmad-code-review · edge-case-hunter ·<br/>security-review — findings<br/>adversarially verified"]
         TRIAGE["senior-architect · Winston 🏗️<br/>finding triage + INTEGRATION REVIEW<br/>cross-lane sign-off — one pass over the diff"]
+        TW["tech-writer · Otis 📚<br/>DOCS lane: ADR drafting,<br/>doc realignments, doc↔code coherence"]
         PANEL --> TRIAGE
+        TRIAGE -.->|"doc findings<br/>(ADR/bible/README/JSDoc)"| TW
     end
+
+    ARCH -.->|"perf-sensitive:<br/>GPU-cost analysis at TECH PLAN"| PERF
 
     QGATE -->|PASS| PANEL
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
     GATE4 -->|"FAIL → dev-r3f-render<br/>(the composite is render code)"| ARCH
     SDV -->|"FAIL → owning dev lane,<br/>or spec re-gated via Malik"| ARCH
+    PERF -->|"FAIL → owning dev lane<br/>(on-target OVER, PR open: DEFERRED revoked,<br/>stage-5 FAIL, same branch · post-merge:<br/>fix lane + Ben's re-verdict, or correct-course<br/>at pm/arch if the remedy trades design)"| ARCH
     DACC -->|"FAIL → back to dev lane"| ARCH
     DACC -->|"spec amended &amp; re-gated"| DGATE
 
@@ -137,8 +152,10 @@ flowchart TB
     GATE4 -.-> LOG
     AGATE -.-> LOG
     DACC -.-> LOG
+    PERF -.-> LOG
     QGATE -.-> LOG
     TRIAGE -.-> LOG
+    TW -.-> LOG
 
     classDef gate fill:#ffe9a8,stroke:#b8860b,color:#000
     classDef dev fill:#d4e9ff,stroke:#2b6cb0,color:#000
@@ -147,12 +164,12 @@ flowchart TB
     classDef audio fill:#ffe4cc,stroke:#c05621,color:#000
     classDef ci fill:#e2e2e2,stroke:#666,color:#000
     classDef prod fill:#e9d8fd,stroke:#6b46c1,color:#000
-    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE,SDV gate
+    class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE,SDV,PERF gate
     class R3F,GAME,TOOL dev
     class ADV,CONCEPT,PREPROD,TECH art
-    class GD,ND,PLAY design
+    class GD,ND,UXD,PLAY,UXR design
     class SD audio
-    class GEN,SRC,LOG,CHECKS,PANEL ci
+    class GEN,SRC,LOG,CHECKS,PANEL,TW ci
     class PROD prod
 ```
 
@@ -161,8 +178,9 @@ flowchart TB
 - **The pipeline is one line, hand to hand.** A feature never skips a stage silently:
   a stage that does not apply (e.g. no DESIGN on a pure tooling story, no art lane when
   no visual changes) is skipped explicitly and the skip is logged.
-- **Design loop (green)**: when a story touches how the game plays or its fiction,
-  `game-designer` (mechanics/tuning/3C) and `narrative-designer` (universe/cast/scripts)
+- **Design loop (green)**: when a story touches how the game plays, its fiction, or its
+  screens/flows/accessibility, `game-designer` (mechanics/tuning/3C), `narrative-designer`
+  (universe/cast/scripts) and `ux-designer` (screens/flows/HUD ergonomics/accessibility)
   work in parallel on non-overlapping deliverables; `lead-game-designer` holds the
   blocking **design gate** (max 2 rework rounds, then escalation to Bertrand). No dev
   implements an ungated design.
@@ -178,15 +196,26 @@ flowchart TB
 - **Verify (stage 5) is the test stage**, orchestrated by `qa-lead` (Inès) against her
   per-story test plan (`docs/qa/`): mechanical checks (`rtk tsc`/`vitest`/`lint`,
   100% green) plus e2e/`verify` runs, the **composite gate** on real in-game screenshots
-  for runtime-composed visuals, and the **design acceptance** leg — `game-designer`
-  playtests the build against the gated spec and `lead-game-designer` verdicts; drift
+  for runtime-composed visuals, the **perf verdict** leg — `gpu-specialist` (Ben)
+  verdicts perf-sensitive changes against `docs/perf-budget.md`, packaging what CI's
+  SwiftShader cannot measure as ready-to-run on-target protocols escalated to Bertrand
+  (DEFERRED-ON-TARGET, logged and chased by `producer`; an on-target result returning
+  OVER budget while the PR is open revokes the DEFERRED pass — stage-5 FAIL, same
+  branch — and after merge re-enters via the fix lane closed only by Ben's PERF
+  re-verdict, or as a correct-course story at pm/architect when the remedy trades
+  design) — and the **design
+  acceptance** leg — `game-designer` playtests the build against the gated spec
+  (`ux-designer` reviews built screens/flows on both device classes) and
+  `lead-game-designer` verdicts; drift
   goes back to the dev lane or the spec is re-gated, never absorbed silently. Everything
   funnels into Inès's **quality gate**: PASS required before integration, FAIL routes
   back to the owning lane with the failing case named.
 - **Review (stage 6)**: the mandatory **code-review panel** (4 parallel skills,
   findings adversarially verified), triaged by `senior-architect` — his triage pass IS
   the integration review and cross-lane sign-off (he reads the full diff once, not
-  twice) — before any merge to `main`.
+  twice) — before any merge to `main`. DOC findings from the triage
+  (ADR/bible/README/JSDoc realignments) route to `tech-writer` (Otis), the standing
+  DOCS-lane owner.
 - **The fix lane** bypasses the pipeline for small single-lane changes (no design, no
   asset, no dependency/boundary surface): owning dev lane → `rtk tsc`/`vitest`/`lint`
   (+ `verify` if player-visible) → a single `code-review` (high) reviewer → merge,

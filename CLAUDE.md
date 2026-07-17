@@ -64,7 +64,10 @@ each fronting a BMAD persona:
 | `lead-game-designer` | Design gate + design/art/dev sync     | — (Karim)                               |
 | `game-designer`      | Mechanics, tuning, 3C specs           | BMGD `gds` module when installed        |
 | `narrative-designer` | Universe, cast, in-game text scripts  | BMGD `bmgd-narrative` when installed    |
+| `ux-designer`        | Screens/flows/HUD UX + accessibility  | `bmad-agent-ux-designer` (Tony)         |
 | `qa-lead`            | Test plans, regressions, quality gate | `bmad-qa-generate-e2e-tests` (Inès)     |
+| `gpu-specialist`     | Frame budget, perf verdicts (GPU)     | — (Ben)                                 |
+| `tech-writer`        | DOCS lane: ADRs, doc↔code coherence   | `bmad-agent-tech-writer` (Otis)         |
 | `dev-r3f-render`     | `src/render` + view hooks             | `bmad-agent-dev` (Amelia)               |
 | `dev-gameplay`       | `src/game` pure logic (TDD)           | `bmad-agent-dev` (Amelia)               |
 | `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI       | `bmad-agent-dev` (Amelia)               |
@@ -74,12 +77,15 @@ each fronting a BMAD persona:
 
 Flow — the production pipeline (stages 0-8, hand to hand; full protocol in
 COLLABORATION.md, mermaid diagram in `docs/diagrams/agent-workflows.md`): `pm` (what) →
-**design loop** when the story touches gameplay or fiction (`game-designer` +
-`narrative-designer` in parallel → `lead-game-designer` design gate) →
+**design loop** when the story touches gameplay, fiction or screens/flows/accessibility
+(`game-designer` + `narrative-designer` + `ux-designer` in parallel →
+`lead-game-designer` design gate) →
 `senior-architect` (how + lane assignment) → dev lanes in parallel on non-overlapping
 paths (∥ art lane when assets are needed) → **verify** (orchestrated by `qa-lead`:
-tsc/vitest/lint + e2e + `game-designer` playtest vs spec, composite gate for runtime
-visuals — all funnelled into the quality gate) →
+tsc/vitest/lint + e2e + `game-designer` playtest vs spec, `ux-designer` review of built
+screens/flows on both device classes, composite gate for runtime visuals,
+`gpu-specialist` perf verdict for perf-sensitive changes — all funnelled into the
+quality gate) →
 **code-review panel** (mandatory merge gate) whose triage by `senior-architect` IS his
 integration review (one stage, one read) → `pm` accepts. `producer` drives the pipeline
 itself (stage tracking, tier calls, hand-off chasing, caps, escalations, ADR number

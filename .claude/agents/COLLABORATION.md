@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Fifteen subagents work the muf project. They run **in parallel where paths don't overlap**,
+Eighteen subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -13,12 +13,15 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
 | `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
 | `narrative-designer` | Yasmine ✒️ | universe, cast, every player-facing word — scripts in `docs/game-design/` | production code, mechanics, visuals |
+| `ux-designer` | Tony 🖱️ | screens/flows/HUD ergonomics + accessibility — UX specs in `docs/game-design/ux/` | production code, visual style, 3C/mechanics |
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts/` (one shard per family, index at `prompt-drafts.md`) | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
 | `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
 | `qa-lead` | Inès 🧪 | stage 5 VERIFY: test plans (`docs/qa/`), e2e/regression specs, QUALITY GATE | production code, test implementation (spec only) |
+| `gpu-specialist` | Ben 🏍️ | frame budget (`docs/perf-budget.md`), GPU-cost analysis, PERF VERDICT (stage 5) + on-target protocols | production code, visual/design verdicts |
+| `tech-writer` | Otis 📚 | DOCS lane: ADR drafting (decisions stay Winston's), doc realignments, `docs/index.md`, doc↔code coherence (incl. JSDoc wording) | code logic, gate verdicts, gated content decisions |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
@@ -40,13 +43,17 @@ bending the pipeline silently is worse.
 0. INTAKE     Bertrand → pm : intent, bug, or idea.
 1. PRODUCT    pm — scoped story: WHAT/WHY, "cahier des charges" test vs
               PROJECT_GUIDELINES, acceptance criteria.
-2. DESIGN     (when the story touches how the game plays or its fiction)
+2. DESIGN     (when the story touches how the game plays, its fiction, or its
+              screens/flows/accessibility)
                 → game-designer      ┐ specs in parallel on
-                → narrative-designer ┘ non-overlapping deliverables
+                → narrative-designer │ non-overlapping deliverables
+                → ux-designer        ┘
                 → lead-game-designer DESIGN GATE (PASS required — §design flow)
 3. TECH PLAN  senior-architect — feasibility, boundaries, ADR if needed, lane
               partition: dev lanes + an ART lane when the feature needs new or
-              changed visuals.
+              changed visuals. Perf-sensitive features (post-processing, shaders,
+              particles, render targets, draw-call growth) → gpu-specialist
+              GPU-cost analysis BEFORE lanes are cut.
 4. BUILD      parallel, non-overlapping lanes:
                 · ART — advisor → concept-artist → game-graphist → lead-art
                   gates → CI generation (§art flow)
@@ -59,8 +66,24 @@ bending the pipeline silently is worse.
                 · e2e / `verify` skill runs for anything player-visible
                 · runtime-composed visuals → screenshots → lead-art Gate 4
                 · audible behaviour changes → sound-designer behaviour verdict
+                · perf-sensitive changes → gpu-specialist PERF VERDICT vs
+                  docs/perf-budget.md (what CI/SwiftShader cannot measure ships
+                  as a ready-to-run on-target protocol, escalated to Bertrand —
+                  DEFERRED-ON-TARGET is logged and chased by producer, never
+                  silently dropped. An on-target result returning OVER budget:
+                  PR still open → the DEFERRED pass is REVOKED, it is a stage-5
+                  FAIL routed to the owning dev lane on the same branch via the
+                  architect; already merged → a fix-lane cycle on the owning dev
+                  lane, closed ONLY by gpu-specialist's PERF re-verdict (the
+                  on-target protocol re-run) — or, when the remedy has a
+                  design/asset surface (a cheaper technique that changes look or
+                  feel), a correct-course story re-entering at pm/architect, not
+                  at a dev lane)
                 · game-designer PLAYTESTS the build vs the gated spec (design
                   acceptance — verdict reported to lead-game-designer)
+                · ux-designer reviews built screens/flows vs his gated UX spec
+                  on real screenshots, both device classes (verdict to
+                  lead-game-designer)
                 · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
                   (PASS required before stage 6; FAIL routes back to the
                   owning lane with the failing case named)
@@ -113,10 +136,15 @@ or refuted → Bertrand merges. No pm story, no design gate, no architect stage,
 Tiering: the orchestrator proposes the tier; `producer` records it and challenges
 abuse (a "fix" that fails a criterion mid-flight ESCALATES to the full pipeline at the
 stage it violated — it never continues in the fix lane). When in doubt, full pipeline.
-A gate owner (lead-art, lead-game-designer, sound-designer, senior-architect) can
-reclaim any fix touching their surface — one call from them re-routes it.
+A gate owner (lead-art, lead-game-designer, sound-designer, gpu-specialist,
+senior-architect) can
+reclaim any fix touching their surface — one call from them re-routes it. A fix-lane
+cycle that exists to close an OVER-budget on-target item (stage-5 §perf re-entry) is
+NOT closed by the code reviewer's approval alone: `gpu-specialist`'s PERF re-verdict
+(the on-target protocol re-run) is required before merge — a perf fix nobody measured
+is not a fix.
 
-## The design flow (any change to mechanics, tuning, 3C, universe, cast or in-game text)
+## The design flow (any change to mechanics, tuning, 3C, universe, cast, in-game text, screens/flows or accessibility)
 
 ```
 pm story (what/why)
@@ -125,8 +153,10 @@ lead-game-designer splits & sequences the design work
      ↓
 game-designer (mechanics, tuning tables,  ┐ parallel when deliverables
                3C specs)                  │ don't overlap; they reconcile
-narrative-designer (bible, character      │ directly when fiction and
-                    sheets, scripts)      ┘ mechanics meet
+narrative-designer (bible, character      │ directly when fiction, mechanics
+                    sheets, scripts)      │ and surfaces meet (seams logged)
+ux-designer (screens/flows, HUD           │
+             ergonomics, accessibility)   ┘
      ↓
 lead-game-designer DESIGN GATE — PASS/FAIL per deliverable vs PROJECT_GUIDELINES
 (cahier des charges test, core loop, verifiability, coherence with gated specs
@@ -136,8 +166,13 @@ FAIL → designer iterates · PASS → senior-architect (lanes) → devs impleme
 ```
 
 Design deliverables live under `docs/game-design/` (index: `docs/game-design/README.md`,
-kept by `lead-game-designer`). Designers write specs and scripts, never production code:
-`dev-gameplay` transcribes gated tuning values and narrative scripts into `src/game/**`.
+kept by `lead-game-designer`; UX specs under `docs/game-design/ux/`). Designers write
+specs and scripts, never production code:
+`dev-gameplay` transcribes gated tuning values and narrative scripts into `src/game/**`;
+`dev-r3f-render` implements gated UX specs in `src/render/**`. The 3C seam is explicit:
+`game-designer` owns what inputs DO in gameplay, `ux-designer` owns the surrounding
+surfaces (menus, HUD arrangement, flows, accessibility); on the seam they reconcile
+directly and log it.
 Character/asset VISUALS stay in the art flow — a character sheet feeds `concept-artist`,
 it never bypasses `lead-art`'s gates. Every gate verdict is logged in
 the story's handoffs shard (index: `docs/agent-handoffs.md`).
@@ -163,7 +198,9 @@ real code); only CONFIRMED findings are acted on. `senior-architect` triages and
 prescribes fixes or rejects-with-reason — and delivers his INTEGRATION REVIEW
 (cross-lane sign-off, boundary law) in the same triage pass: he is reading the full
 diff anyway, so integration and triage are ONE stage, not two serial reads. The OWNING
-lane applies the fixes (the architect never implements feature code himself); then
+lane applies the fixes (the architect never implements feature code himself — and DOC
+findings (ADR/bible/README/JSDoc realignments) route to `tech-writer` as the standing
+DOCS-lane owner, so the architect stops absorbing them in his triage); then
 `rtk tsc` + `rtk vitest` + `rtk lint`
 re-run, and the panel re-runs if the diff changed materially. The panel outcome
 (findings → verdict → action) is logged in the story's handoffs shard and summarized in
@@ -265,8 +302,10 @@ in the story's handoffs shard (index: `docs/agent-handoffs.md`).
 2. **Boundary rule is law.** `src/game` imports no React/Three; `src/render` holds no game
    rules; `src/hooks` is the only bridge. Any change crossing a lane → `senior-architect`
    sign-off, logged below.
-3. **Parallel-safe = non-overlapping paths.** The only routinely shared seam is
-   `src/hooks/**` (render ↔ gameplay): announce, serialise, don't both edit at once.
+3. **Parallel-safe = non-overlapping paths.** Two routinely shared seams: `src/hooks/**`
+   (render ↔ gameplay) and doc-comment/JSDoc WORDING inside `src/**` (`tech-writer` ↔
+   the owning dev lane — wording only, never logic; a doc fix needing a logic change is
+   a finding for the dev lane). Both: announce, serialise, don't both edit at once.
 4. **Log every hand-off** in the story's shard `docs/handoffs/story-<slug>.md`
    (`docs/agent-handoffs.md` is the index — template and the machine-parsable
    `VERDICT: PASS|FAIL — <gate> (<agent>)` line format live there; fix-lane cycles log
