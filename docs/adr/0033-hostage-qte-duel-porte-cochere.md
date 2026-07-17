@@ -1,4 +1,4 @@
-# 0031 — Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)
+# 0033 — Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)
 
 - **Status:** Accepted
 - **Date:** 2026-07-17
@@ -11,8 +11,8 @@
   never-advances-the-kill-quota** rule (D4), the `energy` stat, and the boundary law (D6).
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md) (D5 the continuous `energy`
   stat, reused as the QTE's outcome currency; Belliard-first rollout precedent),
-  [ADR-0032](./0032-hostage-qte-difficulty-curve.md) (F3, the per-level curve that depends
-  on this rework), [ADR-0033](./0033-hostage-qte-accomplice.md) (F4, the deferred second
+  [ADR-0034](./0034-hostage-qte-difficulty-curve.md) (F3, the per-level curve that depends
+  on this rework), [ADR-0035](./0035-hostage-qte-accomplice.md) (F4, the deferred second
   shooter), the brainstorming session
   [`brainstorming-session-2026-07-17-1.md`](../../_bmad-output/brainstorming/brainstorming-session-2026-07-17-1.md)
   (the validated product decision this ADR encodes — final system v2 and feature grouping
@@ -72,7 +72,7 @@ Exposures are **brief and telegraphed** (G4: every peek preceded by a readable t
 minimal pre-peek cue, not the deleted pose-countdown mechanic). Exposure duration has a
 **hard floor of ≥ 0.5 s even at maximum difficulty** (G5), so a peek is always answerable
 within human reaction time. Cadence and duration are authored per level — see
-[ADR-0032](./0032-hostage-qte-difficulty-curve.md) — but the floors are invariants baked
+[ADR-0034](./0034-hostage-qte-difficulty-curve.md) — but the floors are invariants baked
 into the system, not data conventions.
 
 ### D3 — The peek is the captor's shot: the opportunity window is the danger window
@@ -82,7 +82,7 @@ exposure (no clean head hit during it), the captor's shot lands and **drains pla
 energy**. This is the breakthrough of the design: the _only_ moment the captor is
 vulnerable is also the _only_ moment he is dangerous — bidirectional danger restores the
 original's "he's about to act" pressure. (This is the sole active incoming-fire source; the
-rest of the level is frozen. In late levels the accomplice — [ADR-0033](./0033-hostage-qte-accomplice.md)
+rest of the level is frozen. In late levels the accomplice — [ADR-0035](./0035-hostage-qte-accomplice.md)
 — _replaces_ this counter-fire rather than stacking on it, per the coherence pass.)
 
 ### D4 — Shot rules (F2 — la règle du tir): head-during-peek is the sole kill route
@@ -168,7 +168,7 @@ the art lane**; cop fallback until they land, per ADR-0030). The zoom driver in
   deterministically — the shot should win (mirror the ADR-0030 kill-vs-timeout precedent).
 - G5's ≥ 0.5 s exposure floor and G4's telegraph are **safety invariants** — assert them in
   code against level data, do not trust the authored `QteSpec` to respect them
-  (see [ADR-0032](./0032-hostage-qte-difficulty-curve.md)).
+  (see [ADR-0034](./0034-hostage-qte-difficulty-curve.md)).
 - G6 spatial separation (peeking head clear of the hostage silhouette) is a fairness
   property under a _moving_ tableau — assert it directly rather than relying on draw order,
   and tune it against the new art.
