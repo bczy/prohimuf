@@ -292,3 +292,131 @@ art-advisor (references) → concept-artist (prompts)
 - Enemy-sprite thresholds for `check-sprite-style.mjs` (only vehicles calibrated).
 - Sample CC0 neon-on-dark packs (Kenney Space Shooter Redux, OGA Neon Node/Town)
   as mood references.
+
+## 8. Le grain cathodique — CRT post-process (in-game world ONLY)
+
+A CRT-monitor post-process over the **in-game shooting-gallery world**. Direction, not
+implementation: the effect must sell "1998, a broadcast/VHS twin of the fanzine, watched
+on a squat's TV in the dark" **without adding a second colour to a B&W world and without
+touching aim precision.** The fanzine is a xerox; the CRT is its degraded broadcast — same
+generational-decay identity as §1, one medium further down the dub chain. It is a runtime
+composite, so it lives under the composite gate (Gate 4) and the §2.1 falloff law.
+
+**Hard scope: the CRT is the in-game world's skin. It is BANNED on every pre-game / menu
+surface** — §2bis already forbids CRT scanlines, RGB-split, glow and blur on menus. Menus
+stay flat print (paper, not a screen). No exceptions. A scanline on the title = FAIL.
+
+### 8.1 Ingredients — IN / OUT
+
+**IN (these serve the style):**
+
+- **Phosphor bloom on the neon — the headline ingredient.** Acid neon must **BLOOM, not
+  shift hue.** Threshold-gated **above paper-white luminance** so only the saturated accent
+  hues (§2.1 rims, pickups, HUD alerts) bloom; **paper and B&W linework never bloom.**
+  Hue-preserving: the halo keeps the rim's hue and saturation, no rainbow separation. This
+  amplifies « ce qui brille est interactif » — the bloom is colored light, the one legal
+  colour. Its halo obeys §2.1: a dégradé to zero, jamais un aplat.
+- **Scanlines** — horizontal luminance darkening, **barely there.** They read as the CRT
+  tell and echo the xerox line-screen, but must not comb the linework. Roll off / disappear
+  at small-sprite scale so they never alias against sprite detail.
+- **Vignette** — gentle corner darkening. Sells the night-time, clandestine, dark-room read
+  (§1). Feathered deep, no hard ring, corners only. Must not crush the HUD-bearing corners.
+- **Analog grain + sub-perceptual flicker** — fine animated toner-speckle grain (the
+  in-motion cousin of the menu `feTurbulence` speckle, §2bis.1) and a slow luminance
+  _breathe_. On-identity generational decay. **No strobe** (see constraints).
+
+**OUT (these fight the style):**
+
+- **Slot / aperture-grille RGB shadow-mask — OUT.** A shadow mask tints white paper into
+  RGB triads → rainbow fringing on the pure B&W linework → introduces colour where §1/§2.1
+  reserve colour for neon alone. The scanline already gives the CRT read; the mask only
+  muddies it. (Automatic FAIL if white pixels sample non-neutral.)
+- **Global chromatic aberration / colour bleed — OUT.** RGB-split fringes the B&W linework
+  red/cyan and softens the crosshair → breaks « la seule couleur c'est le néon » AND
+  precision aiming. The _only_ colour bleed permitted is the neon bloom halo (colored light,
+  already legal). No global split, none on the crosshair/HUD.
+- **Barrel curvature — OUT as anything that warps aim, at most a cosmetic whisper.** Heavy
+  curvature moves screen-space positions so the crosshair no longer maps 1:1 to world aim —
+  fatal for precision aiming. Either ≤~2 % overscan-corner cue with the crosshair/HUD drawn
+  **flat, above** the warp, or off entirely. Default recommendation: **off** — a flat frame
+  is honest to the "poster, not a diorama" identity (§1).
+
+### 8.2 Intensity — owner-tuned to a legible CRT identity
+
+The world must stay readable: small sprites silhouette-identifiable (§2 law 3), crosshair
+pixel-precise. Target intensities in plain words:
+
+- **Scanlines — the load-bearing CRT tell, tuned _up_ to be legible.** Shipped values:
+  **0.55 darkening on the comb trough**, **4 CSS-px pitch (× devicePixelRatio)**, a **crisp,
+  squared comb** (hard on/off lines, not a soft sine roll). This is deliberately far past the
+  old "barely there / ~10–15 %" target. **Amendment (2026-07-16, Bertrand's explicit call,
+  three playtest rounds):** the original "vibe, not a filter" subtlety doctrine _lost_ to the
+  readability of the CRT identity on modern hidpi displays — at ~45 % / soft comb the tell
+  was invisible on a Retina panel and the whole ingredient stopped earning its place. Owner
+  override on record (architect-ratified: docs realign to the code, not the reverse). The
+  comb is squared and pitched wide precisely so it survives dpr scaling and stays a
+  television, not a moiré haze. It does still roll off at small-sprite scale (§8.1) so it
+  reads as a screen, not a grille stamped onto the linework.
+- **Bloom** — neon / lit-window cores gain a soft halo one to two sprite-pixels wide, gated
+  on saturation × brightness (§8.4.3). Paper never blooms. If the linework glows, the gate is
+  too low — pull it up. Halo obeys §2.1: a dégradé to zero, jamais un aplat.
+- **Vignette** — corners maybe 10–15 % darker, feathered far into frame. You should not be
+  able to point to where it starts.
+- **Flicker** — a slow breathe, not a per-frame stutter. Amplitude tiny (single-digit %),
+  never rhythmic enough to read as a strobe.
+- **Grain** — fine toner speckle, opacity ~0.03 (the tuned ceiling: above it the speckle
+  perceptually drowns the scanline comb even when both are measurably present). Like the
+  xerox speckle already on the menus; texture you feel, edging toward snow you watch, held at
+  the line where the comb still reads.
+
+Rule of thumb (**revised by the same amendment**): **the CRT is now meant to be legible in a
+still — this is deliberate.** The old "kill the effect and the frame looks almost the same"
+test is retired: at the owner-tuned 0.55 trough / 4-px squared comb, a CRT-on still is
+unmistakably a television and a CRT-off still is crisp print, and that gap is the point. The
+effect is still _felt_ hardest in motion and in the dark, but it must also **read as a CRT
+frozen on screen** — if a static screenshot could pass for the raw pipeline, the scanlines
+have regressed below spec. What must NOT change: aim precision (§8.4.2/P4), zero added hue on
+the B&W layer (§8.4.4/P2), and small-sprite silhouette legibility (§2 law 3 / P5) — the
+intensity went up, the readability floor did not move.
+
+### 8.3 References (period truth)
+
+Late-90s consumer **Sony Trinitron** in a squat; a **third-generation dubbed VHS** of a
+free-party / rave documentary projected on a wall; the flyer's broadcast twin. Decay from
+dubbing, not from a fancy emulator preset.
+
+### 8.4 Hard constraints for the dev
+
+1. **In-game world layer ONLY.** Zero CRT on any pre-game / menu surface (§2bis). Screenshot
+   both to prove the boundary.
+2. **Crosshair + HUD render flat, in a layer ABOVE the CRT pass** — never curved, never
+   split, never bloomed into illegibility. Aim maps 1:1 to screen space at every position,
+   corners included.
+3. **Bloom is hue-preserving and threshold-gated above paper-white.** Paper/linework do NOT
+   bloom; only saturated neon does. No hue shift on the accent.
+4. **No hue added to the B&W layer.** No RGB mask, no global chromatic aberration. White
+   pixels stay neutral. The only colour the effect adds is the neon bloom halo.
+5. **No strobe.** Flicker amplitude/rate respects photosensitivity. Ship a
+   reduced-motion / effect-off path (accessibility + mobile/low-end perf); the game must be
+   fully playable with the CRT disabled.
+6. **Runtime composite ⇒ Gate 4.** Judged on real in-game screenshots (verify skill) before
+   merge; the bloom halo is checked against §2.1 (dégradé, jamais un aplat).
+
+### 8.5 Gate — CRT post-process (lead-art PASS conditions)
+
+The implementation earns PASS only when, on **real in-game screenshots**:
+
+- **P1** CRT present in-game, absent on every menu/pre-game surface.
+- **P2** B&W layer carries zero added hue — sampled white/paper pixels stay neutral, no
+  rainbow mask, no RGB-split fringe on linework or crosshair.
+- **P3** Only saturated neon blooms; the halo shows monotonic alpha falloff to zero (§2.1),
+  no aplat; paper does not bloom.
+- **P4** Crosshair + HUD undistorted; aim 1:1 at all screen positions including corners.
+- **P5** At game size, small enemy sprites stay silhouette-identifiable (§2 law 3) and the
+  crosshair stays pixel-precise — scanlines / grain / vignette obscure neither.
+- **P6** No strobe; a reduced-motion / effect-off path exists and the game is playable with
+  it off.
+- **P7** Verdict recorded in `docs/agent-handoffs.md` against the screenshots.
+
+Any of P1–P4 failing is an **automatic FAIL**, same footing as a menu that glows (§2bis) or
+a halo that is an aplat (§2.1). P5–P6 failing is FAIL-with-rework.
