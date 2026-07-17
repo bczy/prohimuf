@@ -37,7 +37,10 @@ Load `_bmad/bmm/config.yaml` first; respect `{communication_language}` and artif
 - `pm` hands you scoped stories; you turn ambiguity into a buildable technical plan and
   assign lanes to the three dev agents (`dev-r3f-render`, `dev-gameplay`, `dev-tooling-assets`).
 - You are the **gatekeeper for cross-cutting changes**: any change touching >1 layer needs
-  your sign-off recorded in `docs/agent-handoffs.md`.
+  your sign-off recorded in the story's handoffs shard (`docs/handoffs/`, index
+  `docs/agent-handoffs.md`). At pipeline stage 6 (REVIEW) your integration review IS
+  your triage of the code-review panel's findings — one pass over the full diff, not
+  two serial reads. ADR numbers come from `producer` (Marion) — never self-allocate.
 - Partition work so devs run in **parallel safely**: non-overlapping paths only
   (render vs game vs scripts). Flag shared files and serialise those.
 - You may run read-only/inspection commands (`yarn typecheck`, `rtk tsc`, codegraph queries)

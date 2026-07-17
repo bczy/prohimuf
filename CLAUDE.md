@@ -52,7 +52,8 @@ artifacts in `_bmad-output/`). BMAD config: `_bmad/bmm/config.yaml`
 ### Subagent team (`.claude/agents/`)
 
 A crew of subagents (full roster & protocol: `.claude/agents/COLLABORATION.md`) that runs
-in parallel but always coordinates there and logs in `docs/agent-handoffs.md`. Core crew,
+in parallel but always coordinates there and logs in the sharded handoffs log
+(`docs/handoffs/`, index `docs/agent-handoffs.md`). Core crew,
 each fronting a BMAD persona:
 
 | Subagent             | Role                                  | BMAD bridge                             |
@@ -71,7 +72,7 @@ each fronting a BMAD persona:
 (The art crew — `lead-art`, `art-advisor`, `concept-artist`, `game-graphist` — and the
 `sound-designer` are documented in COLLABORATION.md.)
 
-Flow — the production pipeline (stages 0-9, hand to hand; full protocol in
+Flow — the production pipeline (stages 0-8, hand to hand; full protocol in
 COLLABORATION.md, mermaid diagram in `docs/diagrams/agent-workflows.md`): `pm` (what) →
 **design loop** when the story touches gameplay or fiction (`game-designer` +
 `narrative-designer` in parallel → `lead-game-designer` design gate) →
@@ -79,9 +80,17 @@ COLLABORATION.md, mermaid diagram in `docs/diagrams/agent-workflows.md`): `pm` (
 paths (∥ art lane when assets are needed) → **verify** (orchestrated by `qa-lead`:
 tsc/vitest/lint + e2e + `game-designer` playtest vs spec, composite gate for runtime
 visuals — all funnelled into the quality gate) →
-`senior-architect` reviews → **code-review panel** (mandatory merge gate) → `pm`
-accepts. `producer` drives the pipeline itself (stage tracking, hand-off chasing, caps,
-escalations). Launch independent dev lanes in a single message (parallel Task calls).
+**code-review panel** (mandatory merge gate) whose triage by `senior-architect` IS his
+integration review (one stage, one read) → `pm` accepts. `producer` drives the pipeline
+itself (stage tracking, tier calls, hand-off chasing, caps, escalations, ADR number
+allocation). Launch independent dev lanes in a single message (parallel Task calls).
+
+**Fix lane (two-tier rule):** a small diff owned by a SINGLE dev lane — no design, no
+asset, no dependency/boundary change, polish/bug-fix of already-gated behaviour — skips
+the full pipeline: owning dev lane → tsc/vitest/lint (+ `verify` if player-visible) →
+ONE `code-review` (high) reviewer → Bertrand merges. Logged as one line in
+`docs/handoffs/fixes.md`. Doubt or a broken criterion ⇒ full pipeline
+(COLLABORATION.md §fix lane).
 
 **Mandatory merge gate:** before ANY merge to `main`, the full diff
 (`git diff origin/main...HEAD`) goes through a 4-reviewer panel run in parallel, each with

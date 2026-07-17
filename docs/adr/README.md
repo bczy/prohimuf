@@ -21,6 +21,10 @@ Trivial or easily-reversed choices don't need one.
 ## Format
 
 One file per decision, named `NNNN-kebab-title.md` (zero-padded, incrementing).
+**The `NNNN` is allocated by `producer` (Marion) at story opening** — never
+self-allocated; parallel lanes numbering their own ADRs produced duplicate numbers
+(two ADR-0020s) and rebase renumbers (0026→0028). The allocation is recorded in the
+story's handoffs shard (COLLABORATION.md §rules of engagement #9).
 Lightweight [Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
 style:
 
@@ -81,3 +85,4 @@ the old one `Superseded by ADR-XXXX`.
 | [0029](./0029-retire-enemy-civilian-sprite.md)             | Retire the legacy `enemy_civilian.png` courier sprite (tutorial + fallback swept)         | Accepted                                                                         |
 | [0030](./0030-hostage-taker-feature-and-sprite.md)         | Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting)              | Accepted                                                                         |
 | [0031](./0031-crt-post-process-composite-pass.md)          | CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep)            | Accepted                                                                         |
+| [0032](./0032-two-tier-pipeline-and-process-amendments.md) | Two-tier pipeline (fix lane), merged review stage, sharded handoffs log, ADR allocation   | Accepted                                                                         |

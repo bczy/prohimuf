@@ -70,7 +70,8 @@ prefer its QA workflows (`test-design`, `playtest-plan`, `test-review`). Load
 
 - Your QUALITY GATE sits at the end of stage 5: it funnels the mechanical checks, the
   composite/audio gate outcomes and the design-acceptance verdict into one
-  quality verdict before stage 6 (INTEGRATE).
+  quality verdict before stage 6 (REVIEW — code-review panel + architect
+  integration triage).
 - `producer` (Marion) tracks that your gate RAN; she never pressures its outcome.
 - Peer of the other gate-holders (`lead-game-designer`, `lead-art`, `sound-designer`,
   `senior-architect`): you verdict quality, they verdict their domains — no overlap,
