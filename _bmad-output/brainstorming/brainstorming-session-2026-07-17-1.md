@@ -252,3 +252,28 @@ _Novelty_: Converts a scripted cutscene into a consequence of play.
 - First Principles unlocked the session: naming "stakes first / motion breeds sang-froid / no punitive RNG" made every later vote fast and consistent.
 - Bertrand's votes drew a sharp line: deepen the duel *inside* the existing framing (keep banner, keep scripted trigger, keep body zones) — reject rule complexity and frame-breaking. The rejected ideas (#4, #11, #13–15, #18–20, #22) are documented as consciously out of scope.
 - Reverse Brainstorming earned its place: G1 (waiting is never free) is the single lock that prevents the new design from regressing into "wait for the obvious peek, shoot once".
+
+## Post-Session Coherence Pass (redundancies & conflicts)
+
+Bertrand asked whether the 10 kept ideas overlapped or conflicted. Four intersections were identified and ruled on:
+
+1. **#6 (energy drain) vs #21 (door clock) — redundant waiting costs.** The drain was a second, disguised clock; the door already makes waiting costly.
+   **DECIDED: #6 demoted.** No tick tax. Energy remains the *outcome* currency only: rescue refill (#16), panic shot (#17), hostage-hit penalty.
+2. **#2 (pose countdown) vs #21 — original meaning gone.** With the door as sole clock, there is no execution countdown for the poses to express.
+   **DECIDED: #2 deleted.** No pose-countdown system. (G4 still requires each peek to be readable — the tell becomes a minimal pre-peek cue, spec detail, not a countdown mechanic.)
+3. **#9 + #8 + #3 — up to three sources of incoming fire.** Stacked, they become noise and violate P3.
+   **DECIDED: #3 deleted.** Back to full freeze of the rest of the level; the QTE tableau alone is alive. #9 is THE active threat; #8 (accomplice, late levels) *replaces* the captor's counter-fire role rather than adding to it (role division: captor on hostage, accomplice on you).
+4. **#1 (human shield) vs earlier rejection of #18 — safe-DPS loophole.** If the torso stays shootable while COVERED, impatient chip damage bypasses the wait-duel entirely.
+   **DECIDED: #18 adopted after all.** Head-only damage, valid only during PEEKING. The body-part damage table leaves the design; the duel is binary — one clean headshot during an opening, or nothing.
+
+### Final system — "Le duel de la porte cochère" (v2, post-coherence)
+
+1. Scripted trigger + OTAGE banner + 2 s zoom unchanged; firing during zoom = penalized panic shot (#17).
+2. Rest of the level **freezes** (as today); the QTE tableau alone is alive.
+3. Captor retreats toward a porte cochère dragging the hostage (#21) — the street is the **sole clock**; reaching the door = she's gone (fail).
+4. Human shield (#1): `COVERED` while dragging; brief telegraphed `PEEKING` exposures during which **he shoots at you** (#9, −energy if unanswered).
+5. **Head-only** (#18): the rescue is one clean headshot during a peek; hitting her = heavy penalty; anything else does nothing.
+6. Energy = outcome currency only: rescue refill (#16), panic shot (#17), hostage hits. No passive drain (#6 demoted).
+7. Per-level curve (#12): retreat speed, peek frequency/length (floors G2/G5); accomplice (#8) in late levels, replacing captor counter-fire.
+
+**Final kept set:** #1, #8, #9, #12, #16, #17, #18, #21 (with #6 demoted to outcome-only, #2 and #3 removed).
