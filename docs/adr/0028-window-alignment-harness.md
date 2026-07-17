@@ -46,7 +46,7 @@ self-correcting, verified against the actually-rendered scene (not just the imag
 
 ## Amendment 2026-07-17 — measured per-window edges + `MISALIGN` defect
 
-**Problem.** The v0 harness fixed sprite *overflow* (height/centre) but left the
+**Problem.** The v0 harness fixed sprite _overflow_ (height/centre) but left the
 foreground railing (`drawForegroundIronwork`, drawn on `zone.x`/`zone.w`) horizontally
 offset from the real windows on belliard: `detectColumns()` returns only warm centroids
 and `detectOpenings()` stamps a fixed `cfg.openingW` on every opening, so per-window
@@ -59,11 +59,11 @@ converges with railings on bare wall.
    (normalized) instead of a bare centre. Per-opening `w = (x1 - x0)/W`, clamped to a sane
    band around the seed: `w ∈ [0.55·openingW, 1.6·openingW]`. When a wide run is
    pitch-split, each sub-window's `[x0,x1]` are the split segment's bounds and `cx` is the
-   warm centroid *within that segment* (already computed by the split loop — now returned,
+   warm centroid _within that segment_ (already computed by the split loop — now returned,
    not discarded). The trailing min-pitch merge unions the bounds of the two collapsed
    centres and recomputes `cx`. `detectOpenings()` writes this measured `w` (and refined
    `x`) onto each opening.
-2. **Fallback (answers PM's open question).** Dark/unlit windows are *never* zoned by
+2. **Fallback (answers PM's open question).** Dark/unlit windows are _never_ zoned by
    design, so every zoned opening sits on a lit warm run and has real bounds. `openingW` is
    therefore demoted to a **fallback seed only**: used for the clamp band above, and as the
    width when a run degenerates (zero warm mass / `x1-x0 < minRunW·W` after split/merge) —
