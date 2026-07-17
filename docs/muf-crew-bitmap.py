@@ -1,9 +1,9 @@
-"""Generate the muf crew bitmap: 15 pixel-art Claudes, one per project agent."""
+"""Generate the muf crew bitmap: 18 pixel-art Claudes, one per project agent."""
 import os, zlib, struct
 
 SCALE = 10          # sprite pixel -> image px
 CW, CH = 22, 20     # cell size in sprite pixels
-COLS, ROWS = 5, 3
+COLS, ROWS = 6, 3
 M = 30              # outer margin
 GAP_X, GAP_Y = 14, 16
 TS = 3              # label font scale
@@ -78,6 +78,11 @@ AGENTS = [
         (["...W", "..WW", ".WW.", "YW.."], 17, 1),                     # quill
         (["PPPP", "PWWP", "PWWP", "PPPP"], 0, 9),                      # lore book
     ]),
+    ("UX DESIGN", "TONY", [
+        (["KKKK", "KCCK", "KCCK", "KCCK", "KKKK"], 0, 8),              # phone
+        (["W....", "WW...", "WWW..", "WWWW.", "..W..", "..WW."], 17, 4),  # pointer
+        (["GG"], 18, 12), (["SS"], 20, 12),                            # toggle ON
+    ]),
     ("QA LEAD", "INES", [
         ([".SS.", "SCCS", "SCCS", ".SS."], 17, 5),                     # magnifier
         (["S"], 20, 9), (["S"], 21, 10),                               # handle
@@ -115,6 +120,16 @@ AGENTS = [
     ("GAME GRAPHIST", "SERGE", [
         (["SSSSSSSS"], 7, 3), (["SSSSSSSSSSS"], 6, 4),                 # flat cap (ST era)
         (["W....", "WW...", "WWW..", "WWWW.", "WWWWW", "..W..", "..WW."], 17, 6),  # cursor
+    ]),
+    ("GPU PERF", "BEN", [
+        (["....S.", ".RRRS.", "RRRRR.", "K...K.", "K...K."], 0, 12),   # the moto
+        (["KKKK", "KGGK", "KKKK"], 18, 5),                             # GPU chip
+        (["G"], 18, 9), (["G"], 19, 10), (["G"], 20, 9),               # frame graph
+    ]),
+    ("TECH WRITER", "OTIS", [
+        ([".SS.", "WWWW", "WKKW", "WWWW", "WKKW", "WWWW"], 0, 7),      # the doc
+        (["PP", "YY", "YY", "YY", "NN", ".K"], 19, 4),                 # pen
+        (["KKKKKKKK"], 7, 9),                                          # reading shades
     ]),
     ("SOUND DESIGNER", "MALIK", [
         (["UUUUUU"], 8, 3), (["UU"], 6, 4), (["UU"], 14, 4),           # headphone band
@@ -176,6 +191,7 @@ FONT = {
     'Z': ["111", "001", "010", "100", "111"],
     '1': ["010", "110", "010", "010", "111"],
     '5': ["111", "100", "110", "001", "110"],
+    '8': ["111", "101", "111", "101", "111"],
     ' ': ["000", "000", "000", "000", "000"],
     '-': ["000", "000", "111", "000", "000"],
 }
@@ -256,7 +272,7 @@ def draw_block(bx, by, role, persona, base, overlays, edge):
 
 # title, vertically centered in the top band
 title = "MUF CREW"
-sub = "LES 15 CLAUDES DU PROJET"
+sub = "LES 18 CLAUDES DU PROJET"
 ty = M + (block_h - (5 * 6 + 12 + 5 * TS)) // 2
 tw = text_width(title, 6)
 draw_text(canvas, W, H, (img_w - tw) // 2, ty, title, PAL['B'], 6)
