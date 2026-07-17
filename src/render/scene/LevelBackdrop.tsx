@@ -5,6 +5,7 @@ import { TextureLoader, CanvasTexture } from "three";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
 import { getLevelArt, levelLayerUrl } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
+import { BLEND } from "./facadeLayout";
 
 // Fallback solid colours shown until (or instead of) the generated art loads,
 // so the game still renders during local dev before any AI assets exist.
@@ -13,11 +14,6 @@ const FALLBACK = {
   facade: "#2a2840",
   street: "#14121f",
 } as const;
-
-// Adjacent facade panels overlap by this fraction of a panel, and the front
-// panel's left edge is alpha-feathered, so the seam between two facades
-// crossfades away instead of showing a hard vertical line.
-const BLEND = 0.08;
 
 // Copy an image to a canvas and ramp its left-edge alpha from 0→1 over `frac`
 // of the width, returning a pixel-filtered texture (null in non-DOM contexts).
