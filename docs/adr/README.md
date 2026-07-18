@@ -62,7 +62,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0004](./0004-enemies-car-hostage-taker.md) | New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat | Accepted |
 | [0005](./0005-dynamic-verification-harness.md) | Dynamic & interactive verification harness (evolve the render farm) | Proposed |
 | [0006](./0006-directional-sprite-generation.md) | Directional, mirrored multi-pose sprite generation for car & hostage entities | Superseded by 0030 |
-| [0007](./0007-shared-harness-library.md) | Shared harness library, and rejection of a "harness that creates harnesses" | Proposed |
+| [0007](./0007-shared-harness-library.md) | Shared harness library, and rejection of a "harness that creates harnesses" | Accepted |
 | [0008](./0008-two-axis-pan-and-fullscreen.md) | Two-axis swipe pan and fullscreen toggle | Accepted |
 | [0009](./0009-push-marker-workflow-dispatch.md) | Push-marker dispatch for manual workflows | Accepted |
 | [0010](./0010-art-direction-pipeline.md) | Art-direction pipeline: gated prompts, seeded generation, CI style gates | Accepted |
@@ -79,9 +79,9 @@ the old one `Superseded by ADR-XXXX`.
 | [0021](./0021-pre-game-print-system-and-title-phase.md) | Pre-game print system: a render-layer TITLE phase and a single-source print-token module | Accepted |
 | [0022](./0022-asset-preloading-and-loading-gate.md) | Asset preloading with a progressive loading gate | Accepted |
 | [0023](./0023-narrative-scene-location-backdrop.md) | Optional per-scene location décor behind the NarrativeScreen transcript | Accepted |
-| [0024](./0024-pregame-landscape-layout.md) | Responsive pre-game layout for mobile landscape (short-height reflow) | Proposed |
+| [0024](./0024-pregame-landscape-layout.md) | Responsive pre-game layout for mobile landscape (short-height reflow) | Accepted |
 | [0025](./0025-live-hue-enemy-neon-rim-shader.md) | Live-hue enemy neon rim via a 1-tap ShaderMaterial | Accepted |
-| [0026](./0026-mobile-pinch-zoom-out.md) | Mobile pinch-to-zoom-out (two-finger spread controls the framing) | Proposed |
+| [0026](./0026-mobile-pinch-zoom-out.md) | Mobile pinch-to-zoom-out (two-finger spread controls the framing) | Accepted |
 | [0027](./0027-audio-in-loading-gate.md) | Audio in the level loading gate | Accepted |
 | [0028](./0028-window-alignment-harness.md) | Rendered-scene window-alignment harness for belliard | Accepted (amended) |
 | [0029](./0029-retire-enemy-civilian-sprite.md) | Retire the legacy `enemy_civilian.png` courier sprite | Accepted |
@@ -91,14 +91,14 @@ the old one `Superseded by ADR-XXXX`.
 | [0033](./0033-remote-session-provisioning.md) | Remote session provisioning via SessionStart hook (pinned rtk + codegraph) | Accepted |
 | [0034](./0034-hostage-qte-duel-porte-cochere.md) | Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules) | Accepted (amended) |
 | [0035](./0035-hostage-qte-difficulty-curve.md) | Hostage QTE per-level difficulty curve for the duel (F3) | Accepted |
-| [0036](./0036-hostage-qte-accomplice.md) | Hostage QTE: the accomplice (second shooter) (F4) | Proposed |
+| [0036](./0036-hostage-qte-accomplice.md) | Hostage QTE: the accomplice (second shooter) (F4) | Accepted |
 | [0037](./0037-crew-extension-ux-gpu-docs.md) | Crew extension: UX design lane, GPU/perf verdict, staffed DOCS lane | Accepted |
 | [0038](./0038-agent-capability-upgrade.md) | Agent capability upgrade: MCP toolsets, per-agent models, curated references | Accepted |
-| [0039](./0039-maison-skills-backlog.md) | "Maison" skills backlog: repeated procedures to package as skills | Proposed |
+| [0039](./0039-maison-skills-backlog.md) | "Maison" skills backlog: repeated procedures to package as skills | Accepted |
 | [0040](./0040-render-transient-impact-effects.md) | Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks) | Accepted |
 | [0041](./0041-generated-adr-registry.md) | Generated ADR registry with a CI freshness gate | Accepted |
 | [0042](./0042-crew-extension-tech-scout-recon-lane.md) | Crew extension: tech-scout technical-reconnaissance / feasibility lane (Nadia) | Accepted |
-| [0043](./0043-validated-reference-promotion-loop.md) | Validated-reference promotion loop (internal hero → style-lock family derivation) | Proposed |
-| [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Proposed |
+| [0043](./0043-validated-reference-promotion-loop.md) | Validated-reference promotion loop (internal hero → style-lock family derivation) | Accepted |
+| [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Accepted |
 
 <!-- ADR-INDEX:END -->
