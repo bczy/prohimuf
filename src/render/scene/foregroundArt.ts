@@ -631,6 +631,14 @@ export function drawForegroundIronwork(
  */
 const TRONCON_RAIL_W_SCALE = 0.74;
 
+/**
+ * Décalage vertical du garde-corps tracé, en fraction de la hauteur de zone
+ * (tronçons uniquement). Les zones encadrent le vitrage ; l'art des tronçons
+ * peint son balcon SOUS la fenêtre — la balustrade descend s'y poser au lieu
+ * de flotter sur la vitre (retour Bertrand).
+ */
+const TRONCON_RAIL_Y_SHIFT = 0.45;
+
 export function drawForegroundIronworkPerBuilding(
   g: CanvasRenderingContext2D,
   zones: readonly IronZone[],
@@ -648,7 +656,7 @@ export function drawForegroundIronworkPerBuilding(
     for (const idx of indices) {
       const z = zones[idx];
       if (z === undefined) continue;
-      const nz = { ...z, w: z.w * TRONCON_RAIL_W_SCALE };
+      const nz = { ...z, w: z.w * TRONCON_RAIL_W_SCALE, y: z.y + z.h * TRONCON_RAIL_Y_SHIFT };
       drawZone(g, nz, idx, zones, texW, texH, style, sillOffset, lw, so);
     }
   });
