@@ -101,7 +101,11 @@ export const LEVELS: readonly LevelConfig[] = [
       anchor: { x: 0, y: -5 },
       maxBlownPeeks: 4,
       peekCadenceSeconds: 1.5,
-      peekDurationSeconds: 1.2,
+      // Rebalanced 1.2 → 1.4 for the moving head kill-zone (the target now wanders during
+      // the peek, so the exposure gets slightly longer to stay fairly answerable).
+      peekDurationSeconds: 1.4,
+      // Fixed authored seed for the deterministic, replay-safe head wander (F3 may curve it).
+      targetSeed: 20260718,
     },
   },
   {

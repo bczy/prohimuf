@@ -13,10 +13,16 @@ import {
   QTE_RESULT_HOLD,
   PEEK_EXPOSURE_FLOOR,
   TELEGRAPH_LEAD_SECONDS,
-  HEAD_DX_MAX,
-  HEAD_DY_MIN,
-  HOSTAGE_DX_MIN,
   HOSTAGE_DY_MAX,
+  wander,
+  clampTargetOffsetG6,
+  HEAD_NEUTRAL,
+  HEAD_HALF_W,
+  HEAD_HALF_H,
+  WANDER_AMP_X,
+  WANDER_AMP_Y,
+  G6_MARGIN,
+  LEG_DURATION,
 } from "@game/systems/qteSystem";
 import type { HostageQte, QteSpec } from "@game/types/hostageQte";
 import { LEVELS } from "@game/levels/levels";
@@ -29,7 +35,8 @@ const SPEC: QteSpec = {
   anchor: { x: 0, y: 0 },
   maxBlownPeeks: 4,
   peekCadenceSeconds: 1.5,
-  peekDurationSeconds: 1.2,
+  peekDurationSeconds: 1.4,
+  targetSeed: 20260718,
 };
 
 /** A fresh QTE already in the ACTIVE phase (zoom skipped), COVERED at t=0. */
@@ -48,40 +55,112 @@ const HEAD_PT = { x: -0.3, y: 0.8 };
 const BODY_PT = { x: 0.5, y: 0.4 };
 const HOSTAGE_PT = { x: 0.4, y: -0.5 };
 
-describe("qteZoneAt — stance-aware bands (ADR-0034 D4/D6)", () => {
+describe("qteZoneAt — stance-aware bands, head centred on targetOffset", () => {
   it("returns head ONLY while PEEKING (the sole kill route)", () => {
-    expect(qteZoneAt(HEAD_PT.x, HEAD_PT.y, "PEEKING")).toBe("head");
+    expect(qteZoneAt(HEAD_PT.x, HEAD_PT.y, "PEEKING", HEAD_NEUTRAL)).toBe("head");
     // Same point while COVERED is never a kill zone → body or miss, never head.
-    expect(qteZoneAt(HEAD_PT.x, HEAD_PT.y, "COVERED")).not.toBe("head");
+    expect(qteZoneAt(HEAD_PT.x, HEAD_PT.y, "COVERED", HEAD_NEUTRAL)).not.toBe("head");
   });
 
-  it("classifies body, hostage and miss regardless of stance", () => {
+  it("classifies body, hostage and miss regardless of stance (offset moves only the head)", () => {
     for (const stance of ["COVERED", "PEEKING"] as const) {
-      expect(qteZoneAt(BODY_PT.x, BODY_PT.y, stance)).toBe("body");
-      expect(qteZoneAt(HOSTAGE_PT.x, HOSTAGE_PT.y, stance)).toBe("hostage");
-      expect(qteZoneAt(3, 3, stance)).toBe("miss");
-      expect(qteZoneAt(0, 2.0, stance)).toBe("miss");
+      expect(qteZoneAt(BODY_PT.x, BODY_PT.y, stance, HEAD_NEUTRAL)).toBe("body");
+      expect(qteZoneAt(HOSTAGE_PT.x, HOSTAGE_PT.y, stance, HEAD_NEUTRAL)).toBe("hostage");
+      expect(qteZoneAt(3, 3, stance, HEAD_NEUTRAL)).toBe("miss");
+      expect(qteZoneAt(0, 2.0, stance, HEAD_NEUTRAL)).toBe("miss");
     }
   });
 
   it("gives the hostage silhouette precedence over the captor body", () => {
     // A point inside both the hostage band and the body band resolves to hostage.
-    expect(qteZoneAt(0.3, -0.4, "PEEKING")).toBe("hostage");
+    expect(qteZoneAt(0.3, -0.4, "PEEKING", HEAD_NEUTRAL)).toBe("hostage");
   });
 
-  // G6 — the peeking head band and the hostage band are spatially DISJOINT with a
-  // non-zero gap, asserted directly (never via draw order). No (dx,dy) is both.
-  it("G6: no offset maps to both head and hostage (non-zero gap)", () => {
-    // Band-constant gap: the head band is strictly left of and above the hostage.
-    expect(HEAD_DX_MAX).toBeLessThan(HOSTAGE_DX_MIN); // x-gap
-    expect(HEAD_DY_MIN).toBeGreaterThan(HOSTAGE_DY_MAX); // y-gap
-    // Dense grid scan: never head-under-PEEKING and hostage at the same offset, and
-    // every head point sits clear of every hostage point.
+  it("the head band FOLLOWS targetOffset — a fixed point is head at one offset, not another", () => {
+    // The band is centred on the supplied offset: the neutral centre is a head hit when the
+    // target sits at neutral, and NOT a head hit when the target has slid a head-width away.
+    const shifted = { x: HEAD_NEUTRAL.x + 2 * HEAD_HALF_W + 0.1, y: HEAD_NEUTRAL.y };
+    expect(qteZoneAt(HEAD_NEUTRAL.x, HEAD_NEUTRAL.y, "PEEKING", HEAD_NEUTRAL)).toBe("head");
+    expect(qteZoneAt(HEAD_NEUTRAL.x, HEAD_NEUTRAL.y, "PEEKING", shifted)).not.toBe("head");
+  });
+});
+
+describe("wander — pure, deterministic, replay-safe head drift", () => {
+  const SEED = SPEC.targetSeed;
+
+  it("is a pure function: same (seed, peekIndex, t) → identical Vec2", () => {
+    for (const t of [0, 0.13, LEG_DURATION, 0.7, 1.1, 1.4]) {
+      expect(wander(SEED, 0, t)).toEqual(wander(SEED, 0, t));
+    }
+  });
+
+  it("stays within the wander amplitude box for all t (convex blend of in-box waypoints)", () => {
+    for (let t = 0; t <= 2; t += 0.017) {
+      const w = wander(SEED, 1, t);
+      expect(Math.abs(w.x)).toBeLessThanOrEqual(WANDER_AMP_X + 1e-9);
+      expect(Math.abs(w.y)).toBeLessThanOrEqual(WANDER_AMP_Y + 1e-9);
+    }
+  });
+
+  it("actually moves: differs across peek ordinals and across legs", () => {
+    expect(wander(SEED, 0, 0)).not.toEqual(wander(SEED, 1, 0));
+    // Two waypoints a full leg apart differ — the min-leg anti-jitter guarantees travel.
+    expect(wander(SEED, 0, 0)).not.toEqual(wander(SEED, 0, LEG_DURATION));
+  });
+
+  it("framerate-independent: the same total elapsed re-chunked yields the SAME offset", () => {
+    // The replay-safety property: wander is a function of `t` alone, never of delta chunking.
+    let acc = 0;
+    for (const d of [0.1, 0.05, 0.2, 0.03, 0.12, 0.4]) acc += d; // = 0.9
+    const oneShot = wander(SEED, 2, 0.9);
+    const chunked = wander(SEED, 2, acc);
+    expect(chunked.x).toBeCloseTo(oneShot.x, 12);
+    expect(chunked.y).toBeCloseTo(oneShot.y, 12);
+  });
+
+  it("tickQte: reaching the same peek-elapsed via different delta chunks → same targetOffset", () => {
+    const base = active({ stance: "PEEKING", stanceRemaining: SPEC.peekDurationSeconds });
+    // Path A: one 0.3 s tick. Path B: three 0.1 s ticks — same total peek-elapsed.
+    const a = tickQte(base, false, NO_HIT, 0.3);
+    let q = base;
+    for (let i = 0; i < 3; i++) q = tickQte(q, false, NO_HIT, 0.1).qte;
+    expect(a.qte.stance).toBe("PEEKING");
+    expect(q.stance).toBe("PEEKING");
+    expect(q.targetOffset.x).toBeCloseTo(a.qte.targetOffset.x, 12);
+    expect(q.targetOffset.y).toBeCloseTo(a.qte.targetOffset.y, 12);
+  });
+});
+
+describe("G6 — head band stays clear of the hostage band (asserted clamp, not trusted)", () => {
+  it("clampTargetOffsetG6 forces the centre above the hostage top by the margin, x untouched", () => {
+    const lifted = clampTargetOffsetG6({ x: -0.4, y: -5 });
+    expect(lifted.y).toBe(HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H);
+    expect(lifted.x).toBe(-0.4);
+    // An already-clear offset passes through unchanged.
+    expect(clampTargetOffsetG6({ x: 0.1, y: 0.9 })).toEqual({ x: 0.1, y: 0.9 });
+  });
+
+  it("across the FULL wander amplitude box the head band never intersects the hostage band", () => {
+    // Every reachable offset, densely sampled: the head band's bottom stays strictly above
+    // the hostage band's top → the two rectangles are disjoint on Y (hence disjoint) for ANY x.
+    let minGap = Infinity;
+    for (let ox = -WANDER_AMP_X; ox <= WANDER_AMP_X + 1e-9; ox += WANDER_AMP_X / 24) {
+      for (let oy = -WANDER_AMP_Y; oy <= WANDER_AMP_Y + 1e-9; oy += WANDER_AMP_Y / 24) {
+        const off = clampTargetOffsetG6({ x: HEAD_NEUTRAL.x + ox, y: HEAD_NEUTRAL.y + oy });
+        minGap = Math.min(minGap, off.y - HEAD_HALF_H - HOSTAGE_DY_MAX);
+      }
+    }
+    expect(minGap).toBeGreaterThan(0);
+  });
+
+  it("classifier scan at the worst-case (lowest) offset: head and hostage stay disjoint", () => {
+    // The lowest the head band can sit after clamping — the tightest G6 case.
+    const off = clampTargetOffsetG6({ x: HEAD_NEUTRAL.x, y: HEAD_NEUTRAL.y - WANDER_AMP_Y });
     const headPts: [number, number][] = [];
     const hostagePts: [number, number][] = [];
     for (let dx = -1.5; dx <= 1.5; dx += 0.05) {
       for (let dy = -1.5; dy <= 1.5; dy += 0.05) {
-        const z = qteZoneAt(dx, dy, "PEEKING");
+        const z = qteZoneAt(dx, dy, "PEEKING", off);
         if (z === "head") headPts.push([dx, dy]);
         if (z === "hostage") hostagePts.push([dx, dy]);
       }
@@ -95,6 +174,86 @@ describe("qteZoneAt — stance-aware bands (ADR-0034 D4/D6)", () => {
       }
     }
     expect(minGap).toBeGreaterThan(0);
+  });
+});
+
+describe("moving target — aim-honesty & the wandering peek", () => {
+  const SEED = SPEC.targetSeed;
+
+  it("a shot at HEAD_NEUTRAL + wander hits head only while PEEKING and only when aligned", () => {
+    const w = wander(SEED, 0, 0.2);
+    const target = clampTargetOffsetG6({ x: HEAD_NEUTRAL.x + w.x, y: HEAD_NEUTRAL.y + w.y });
+    // Aligned shot (shoot exactly where the head is) during PEEKING → head.
+    expect(qteZoneAt(target.x, target.y, "PEEKING", target)).toBe("head");
+    // Same aligned shot while COVERED is never a kill zone.
+    expect(qteZoneAt(target.x, target.y, "COVERED", target)).not.toBe("head");
+  });
+
+  it("a fixed aim MISSES the head once the target has wandered a head-width away", () => {
+    // Find two peek positions (over the duel's peeks) whose x differs by more than a head
+    // width — proof the target genuinely leaves the aim behind (difficulty is MOTION).
+    let ta = { x: 0, y: 0 };
+    let tb = { x: 0, y: 0 };
+    let found = false;
+    for (let pi = 0; pi <= SPEC.maxBlownPeeks && !found; pi++) {
+      const offsets: { x: number; y: number }[] = [];
+      for (let t = 0; t <= SPEC.peekDurationSeconds + 1e-9; t += 0.02) {
+        const w = wander(SEED, pi, t);
+        offsets.push(clampTargetOffsetG6({ x: HEAD_NEUTRAL.x + w.x, y: HEAD_NEUTRAL.y + w.y }));
+      }
+      for (let i = 0; i < offsets.length && !found; i++) {
+        const oi = offsets[i];
+        if (oi === undefined) continue;
+        for (let j = i + 1; j < offsets.length; j++) {
+          const oj = offsets[j];
+          if (oj === undefined) continue;
+          if (Math.abs(oi.x - oj.x) > HEAD_HALF_W + 1e-3) {
+            ta = oi;
+            tb = oj;
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+    expect(found).toBe(true); // the head wanders more than a head-width across the duel
+    // Aim locked on where the head WAS (ta): a hit then, a miss after it moved to tb.
+    expect(qteZoneAt(ta.x, ta.y, "PEEKING", ta)).toBe("head");
+    expect(qteZoneAt(ta.x, ta.y, "PEEKING", tb)).not.toBe("head");
+  });
+});
+
+describe("targetOffset resting position (COVERED / ZOOMING) & wander during PEEKING", () => {
+  it("rests at HEAD_NEUTRAL when seeded (ZOOMING) and through a ZOOMING/COVERED tick", () => {
+    const seeded = createQte(SPEC);
+    expect(seeded.targetOffset).toEqual(HEAD_NEUTRAL);
+    expect(tickQte(seeded, false, NO_HIT, 0.1).qte.targetOffset).toEqual(HEAD_NEUTRAL);
+    const covered = tickQte(
+      active({ stance: "COVERED", stanceRemaining: 1.0 }),
+      false,
+      NO_HIT,
+      0.1,
+    );
+    expect(covered.qte.stance).toBe("COVERED");
+    expect(covered.qte.targetOffset).toEqual(HEAD_NEUTRAL);
+  });
+
+  it("a peek CLOSE resets the head zone to HEAD_NEUTRAL", () => {
+    const r = tickQte(active({ stance: "PEEKING", stanceRemaining: 0.05 }), false, NO_HIT, 0.1);
+    expect(r.qte.stance).toBe("COVERED");
+    expect(r.qte.targetOffset).toEqual(HEAD_NEUTRAL);
+  });
+
+  it("during PEEKING the head zone wanders off neutral but stays G6-clear of the hostage", () => {
+    const r = tickQte(
+      active({ stance: "PEEKING", stanceRemaining: SPEC.peekDurationSeconds }),
+      false,
+      NO_HIT,
+      0.3,
+    );
+    expect(r.qte.stance).toBe("PEEKING");
+    // Clear of the hostage band top at all times (G6), for any x.
+    expect(r.qte.targetOffset.y - HEAD_HALF_H).toBeGreaterThan(HOSTAGE_DY_MAX);
   });
 });
 
@@ -138,7 +297,7 @@ describe("createQte — seeding + safety invariants (asserted in code)", () => {
     const q = createQte({ ...SPEC, peekDurationSeconds: 0.3 });
     expect(q.peekDurationSeconds).toBe(PEEK_EXPOSURE_FLOOR);
     // Belliard's authored exposure is already above the floor and passes through.
-    expect(createQte(SPEC).peekDurationSeconds).toBe(1.2);
+    expect(createQte(SPEC).peekDurationSeconds).toBe(1.4);
   });
 
   // AC4 / G4 — every peek must be telegraphed; the cadence must leave STRICT room for
@@ -378,14 +537,15 @@ describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)
   // C1 — a delta larger than a stance segment must not silently swallow the skipped
   // peeks: the sub-machine consumes the FULL delta, charging each CLOSED peek once.
   it("C1: a large delta spanning ≥2 stance boundaries charges each closed peek once", () => {
-    // COVERED with 0.1 s left, then a single 4.2 s delta. Boundaries crossed:
+    // COVERED with 0.1 s left, then a single 4.6 s delta. Boundaries crossed
+    // (peekDuration 1.4, cadence 1.5):
     //   0.1  COVERED→PEEKING (open, free)
-    //   +1.2 PEEKING→COVERED (close #1, −8, blown 1)
+    //   +1.4 PEEKING→COVERED (close #1, −8, blown 1)
     //   +1.5 COVERED→PEEKING (open, free)
-    //   +1.2 PEEKING→COVERED (close #2, −8, blown 2)   [t = 4.0]
+    //   +1.4 PEEKING→COVERED (close #2, −8, blown 2)   [t = 4.4]
     // → lands 0.2 s into a fresh COVERED beat. blown 2 < cap 4 → still ACTIVE.
     const q = active({ stance: "COVERED", stanceRemaining: 0.1 });
-    const r = tickQte(q, false, NO_HIT, 4.2);
+    const r = tickQte(q, false, NO_HIT, 4.6);
     expect(r.qte.phase).toBe("ACTIVE");
     expect(r.qte.stance).toBe("COVERED");
     expect(r.qte.blownPeeks).toBe(2);
@@ -427,9 +587,18 @@ describe("real level data honours the safety floors (B1 / AC3)", () => {
       expect(s.peekCadenceSeconds).toBeGreaterThan(TELEGRAPH_LEAD_SECONDS);
       expect(Number.isInteger(s.maxBlownPeeks)).toBe(true);
       expect(s.maxBlownPeeks).toBeGreaterThanOrEqual(1);
+      // The wander seed must be finite (C6) so the pure wander never emits NaN.
+      expect(Number.isFinite(s.targetSeed)).toBe(true);
       // And the authored spec seeds without tripping any invariant (C6/G4/G5/count).
       expect(() => createQte(s)).not.toThrow();
     }
+  });
+
+  it("belliard pins: a finite targetSeed and the rebalanced 1.4 s peek exposure", () => {
+    const belliard = LEVELS.find((l) => l.id === "belliard")?.hostageQte;
+    expect(belliard).toBeDefined();
+    expect(Number.isFinite(belliard?.targetSeed)).toBe(true);
+    expect(belliard?.peekDurationSeconds).toBe(1.4);
   });
 });
 

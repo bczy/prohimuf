@@ -1,6 +1,7 @@
 # 0034 — Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)
 
-- **Status:** Accepted (amended 2026-07-18 — D1 reversed, see Revision 2)
+- **Status:** Accepted (amended 2026-07-18 — D1 reversed, see Revision 2; further amended
+  2026-07-18 — wandering peek target + seeded-pure-PRNG precedent, see Revision 3)
 - **Date:** 2026-07-17
 - **Partially supersedes:** [ADR-0030](./0030-hostage-taker-feature-and-sprite.md) — the
   **static frozen tableau**, the **`windowSeconds` clock**, and the **`PART_DAMAGE`
@@ -257,3 +258,100 @@ with §5.6, not a violation of it.
 Full frozen delta (types, `qteSystem.ts`, render/camera driver) lives in
 `senior-architect`'s story shard §9, `docs/handoffs/story-hostage-qte-duel.md` — this ADR
 section is the decision record, not the code contract.
+
+## Revision 3 — 2026-07-18: wandering peek target
+
+Bertrand steered a further tweak on the accepted static duel (PR #79), verbatim: « il faudrait
+faire bouger le rond dans lequel il faut tirer / cela doit être des mouvements aléatoires. »
+Design source
+[`spec-hostage-qte-static-duel.md`](../game-design/spec-hostage-qte-static-duel.md) §8
+(`game-designer`, Sacha), gated PASS-WITH-CORRECTIONS by `lead-game-designer` (Karim, gate
+verdict in the story shard's §15). The frozen code contract is `senior-architect`'s story
+shard §14, `docs/handoffs/story-hostage-qte-duel.md`.
+
+### The head kill-zone moves — a deliberate, localised re-introduction of motion
+
+Revision 2 removed the captor's motion entirely (static duel). This revision **re-introduces
+motion, but LOCALISED to the head kill-zone** — the shootable `"head"` band and its reticle
+ring — turning aiming during `PEEKING` into a **moving-target tracking test**. The **captor
+stays static** (Revision 2 holds unchanged: no drag, no floor-slide, no camera follow); only
+the head zone wanders, and only while `PEEKING` (`COVERED`/`ZOOMING` show the zone at its
+neutral, non-wandering resting position, not the wander origin). The wander region is bounded
+G6-clear of the hostage silhouette on both axes at every offset (see contract delta below) —
+no peek position ever forces the player to risk the hostage to reach the head.
+
+### The wander model — closed-form hashed waypoint, ruled over the illustrative sum-of-sines
+
+`senior-architect`'s frozen determinism LAW (below) requires a pure function of elapsed peek
+time, illustrated in the freeze with a sum-of-sines sketch. `lead-game-designer`'s gate
+**ruled** the shipped internal shape instead: a **closed-form hashed-waypoint wander** —
+`waypoint[k] = hash(targetSeed, peekIndex, k)` mapped into the wander-region box,
+`k = floor(t / legDuration)`, smoothstep-eased between consecutive waypoints — over the
+sum-of-sines sketch, because the deceleration into each waypoint is a load-bearing fairness
+affordance (a legible "it's arriving, shoot now" window every leg) and a low-term
+sum-of-sines reads as a learnable, quasi-periodic loop against Bertrand's "mouvements
+aléatoires" intent. The waypoint model is signature- and determinism-identical to the frozen
+`wander(targetSeed, peekIndex, t): Vec2` shape — it fills an internal the architect
+deliberately left open to design/dev, it does not reopen his frozen contract.
+
+### Contract delta
+
+- **`QteSpec`** — gains `readonly targetSeed: number` (integer, per-level, seeds the
+  closed-form hash — the sole determinism input; finite, asserted in `createQte`). Wander
+  amplitude/speed (Belliard `wanderSpeed` ≈ 1.2 u/s) are **system constants** in
+  `qteSystem.ts`, not `QteSpec` fields, for this rollout — promoting them to `QteSpec`
+  (`wanderAmplitude`, `wanderSpeed`) is an additive seam reserved for when
+  [ADR-0035](./0035-hostage-qte-difficulty-curve.md)'s (F3) per-level curve needs them.
+- **`HostageQte` runtime** — gains `readonly targetOffset: Vec2` (anchor-relative, the live
+  head-zone centre). This is a **derived cache only**, recomputed every tick from the closed
+  form — carrying **no `rngState` field and no waypoint-cursor field**: the two inputs the
+  closed form needs (the peek ordinal, the peek-elapsed time) are both already deterministic
+  sim state, not new bookkeeping (see the precedent below). `targetOffset` sits at the head
+  zone's neutral centre outside `PEEKING`.
+- **`qteZoneAt` gains a parameter** — frozen signature
+  `qteZoneAt(dx: number, dy: number, stance: CaptorStance, targetOffset: Vec2): QteZone`. The
+  `"head"` band is now tested centred on `targetOffset` instead of a fixed offset; the
+  `hostage`/`body`/`miss` bands stay anchor-relative and byte-for-byte unchanged. Precedence
+  unchanged: `hostage` first, then offset `head` (PEEKING only), then `body`, then `miss`.
+- **Belliard rebalance** — `peekDurationSeconds` **1.2 → 1.4 s** (the acquire-track-fire
+  cushion a moving reticle needs, still ≫ the G5 0.5 s floor); `maxBlownPeeks` (N = 4) and
+  `peekCadenceSeconds` (1.5 s) unchanged. Passive-ignore tempo moves from ≈ 10.8 s to ≈ 11.6 s
+  of `ACTIVE`, a disclosed, within-tolerance delta; the −32 passive-ignore energy figure is
+  unchanged.
+- **G6 — asserted, not trusted from tuning.** The wander bounds keep the head band disjoint
+  from the hostage band on both axes at every wander offset: a runtime clamp
+  (`clampTargetOffsetG6`) forces the head-zone centre's Y to stay above the hostage's top by a
+  non-zero margin **regardless of X** (Y-disjoint ⇒ disjoint for any X), belt-and-suspenders
+  with a full-amplitude-box unit test. No bavure is ever required to reach the head.
+
+Full frozen delta (types, `qteSystem.ts`, render) lives in `senior-architect`'s story shard
+§14, `docs/handoffs/story-hostage-qte-duel.md` — this ADR section is the decision record, not
+the code contract.
+
+### New precedent — a seeded, pure PRNG is permitted in `src/game`
+
+This is the first deliberate deterministic-pseudo-random source inside the pure game layer.
+The decision recorded here is the SHAPE future randomness-flavoured mechanics should follow,
+not just this QTE's wander:
+
+- **Permitted:** an authored seed (here `targetSeed`) plus a **pure function of already-
+  deterministic simulation state** — for this wander, the peek ordinal (`peekIndex =
+blownPeeks`) and the peek-elapsed time (`t = peekDurationSeconds − stanceRemaining`, both
+  derived, not new fields). No `Math.random`, no `Date.now`, no wall-clock read anywhere in
+  `src/game`.
+- **Forbidden:** a per-tick stepped PRNG cursor (draw-and-advance, carried as mutable state on
+  the runtime record). A per-tick step is frame-count-dependent — a different `delta`
+  chunking produces a different result — a replay-determinism landmine the stage-6
+  code-review panel's "no randomness in `src/game`" check exists to catch. A pure closed-form
+  function of `t` is framerate-independent and re-derivable from any deterministic sim
+  snapshot.
+- **Why this preserves the boundary law and replay-determinism:** a deterministic function is
+  not randomness — same seed, same tick sequence ⇒ byte-identical path, exactly like every
+  other pure `src/game` system. The stored `targetOffset` is a derived cache (render reads it,
+  `fire` classifies against it), never a source of truth the way a carried PRNG cursor would
+  be.
+- **Precedent for future work:** any future randomness-flavoured mechanic in `src/game`
+  (weighted spawns, procedural variation, etc.) should follow this shape — authored seed +
+  pure function of accumulated, already-deterministic sim state — rather than a stepped
+  generator. A deviation from this shape is an architecture question to raise before
+  shipping, not a call to make silently in a dev lane.

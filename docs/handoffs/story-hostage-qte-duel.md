@@ -1047,3 +1047,190 @@ becomes a tracking-a-moving-target test. Captor stays static; §§1–7 inherite
 - **Status:** DRAFT — **needs `lead-game-designer` (Karim) PASS** before `senior-architect`
   and any dev. Flags to gate: §8.7 (ADR-0034 superseder touch; model choice; ring-follows read
   → lead-art/composite gate).
+
+## 15. DESIGN GATE — wandering peek target — lead-game-designer (Karim) — 2026-07-18
+
+Gating the `game-designer` (Sacha) wander addendum
+`docs/game-design/spec-hostage-qte-static-duel.md` **§8** (D-W1…D-W4, AC8–AC11), the
+deliverable triggered by Bertrand's steer _"faire bouger le rond dans lequel il faut tirer /
+cela doit être des mouvements aléatoires."_ Checked against the architect's FROZEN contract
+delta §14 above (Winston, LAW), ADR-0034 (D2–D6, P1–P4, G4–G6, Revision 2 static duel),
+PROJECT_GUIDELINES (scope guard, §5.6 no-bullshit-death, §6 no stress bar, single core loop),
+and the prior gates (§5, §10) this layers on.
+
+**Scope / core loop / verifiability:** all PASS. Conscious, documented extension layered on
+the already-extension QTE (§8 declares it explicitly); deepens the `Éviter`/aim-under-pressure
+axis, adds **no new loop verb**. Core loop untouched — still a scripted once-per-level side
+beat that never advances the kill quota (D4 inherited). ~11.6 s ACTIVE inside the 3–5 min
+envelope. AC8–AC11 carry numbers, bounds, named code asserts and a `verify` playtest gate — a
+dev can implement without guessing. This is product-owner-driven iteration (Revision 3), not
+undeclared creep; the ADR record is routed (Flag Y).
+
+### THE WANDER-MODEL RULING (the crux — explicit, so dev implements exactly one)
+
+**RULING: the WAYPOINT model ships** — a seeded, eased **hashed-waypoint** wander — **NOT**
+the architect's illustrative sum-of-sines. **Under the non-negotiable constraint it MUST be a
+pure closed-form function of `t`** (Winston §14 determinism LAW stands, unchanged): the
+waypoint model is written as `waypoint[k] = hash(targetSeed, peekIndex, k)` mapped into the
+bounds box, `k = floor(tSincePeekOpen / legDuration)`, smoothstep-eased between `waypoint[k]`
+and `waypoint[k+1]`. This is **signature-identical** to Winston's frozen
+`wander(targetSeed, peekIndex, t): Vec2` (pure, bounded, framerate-independent, hash-derived
+phases, wrapped by `clampTargetOffsetG6`) — so the ruling **fills the one internal Winston left
+to design/dev, it does NOT reopen his frozen contract.** Sum-of-sines was his illustrative
+sketch ("dev finalises"), not contractual.
+
+Three design reasons the waypoint model wins on the axis that is mine (feel/coherence);
+determinism is satisfied either way:
+
+1. **Serves Bertrand's verbatim intent best.** _"cela doit être des mouvements aléatoires."_
+   A bounded sum-of-sines with few terms is quasi-periodic → visibly a smooth looping figure →
+   **learnable**. Sacha's rejection of Lissajous (§8.2, D-W2) is sound and anchored directly to
+   the steer. Hashed, decorrelated-per-peek legs read as genuinely erratic.
+2. **The deceleration-into-waypoint is a load-bearing FAIRNESS affordance (P3).** Ease-in/out
+   per leg gives an explicit "the target is arriving and slowing → shoot NOW" window every leg —
+   a designed firing opportunity that serves P3 ("always 'I cracked', never unreadable") and
+   G5-fairness under motion. Sum-of-sines has velocity minima too, but at muddier phase points
+   with no discrete "heading there" read.
+3. **The tuning and the model are coherent only as a SET under waypoints.** Sacha's §8.4
+   rebalance (peek 1.2→1.4 s, `wanderSpeed` 1.2 u/s) was computed **assuming the
+   deceleration-into-waypoint firing windows exist** (§8.2: "the deceleration at each waypoint
+   is the fairness feature"). Shipping waypoints keeps that assumption valid. Shipping
+   sum-of-sines would silently invalidate the fairness budget the 1.4 s cushion was sized
+   against — a coherence break. Decisive.
+
+The stateful part of Sacha's §8.2 is the only thing that FAILS — see W-1: his "PRNG state lives
+in the runtime and is advanced in `tickQte`" + "on arrival, draw the next" is exactly the
+per-tick stepped cursor Winston §14 forbids. That is an implementation realignment (the FEEL is
+unchanged), not a design reversal.
+
+### The three sub-validations
+
+- **Difficulty / fairness (peek 1.2→1.4 s, N=4, 0.5-wide zone, 1.2 u/s): PASS.** +0.2 s to
+  acquire→track→fire a moving reticle, still ≫ G5 floor 0.5 s; reaction ~0.3–0.5 s leaves
+  ~0.9 s tracking + a waypoint ease as a firing window. 1.2 u/s over the small 0.35×0.25 region
+  is followable, not a coin-flip. **Clean single-variable discipline:** difficulty comes from
+  motion (zone stays 0.5), and the 1.4 s is the _compensating rebalance_ for it, not a stacked
+  second difficulty lever — disclosed. N=4 keeps the four-honest-chances tempo and the −32
+  passive-ignore economy intact; ≈11.6 s vs 10.8 s is a disclosed, within-tolerance delta.
+  Belliard sits at the gentle end of every knob (level-1 approachable). The human-trackability
+  claim is correctly deferred to the stage-5 `verify` playtest (AC11) — the right place to
+  confirm it empirically.
+- **G6 (bounds box vs hostage): PASS, coherent.** Sacha's box keeps the head-box disjoint on
+  BOTH axes (dx margin ≥0.10 with the right edge pinned at today's `HEAD_DX_MAX` −0.10; dy
+  margin ≥0.20). Winston §14 enforces the SAFETY net on the **Y axis** (`clampTargetOffsetG6`:
+  head bottom ≥ `HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H`, disjoint for ANY x) plus a
+  full-amp-box unit test. These are consistent and the clamp is a _superset_ of Sacha's design
+  (Y-disjoint ⇒ disjoint regardless of x). One clarification for dev (not a defect): **the
+  asserted-in-code G6 net is Winston's Y clamp**; Sacha's dx right-edge margin is a feel /
+  on-frame / no-bavure bound and a second test-verified margin. AC9 asserting BOTH margins via
+  the box test is fine and stricter. No bavure is ever required to reach the head. Holds.
+- **Scope: PASS.** Conscious extension, side objective, core loop intact (see above). The
+  seeded-PRNG-in-`src/game` first (Winston §14 ADR-impact #2) is an architecture record, his
+  lane, coherent with the boundary law (pure function, deterministic) — not a design blocker.
+
+### Corrections (realignments to the frozen contract — apply, no re-gate unless a VALUE moves)
+
+- **W-1 (blocks a clean PASS — the crux realignment → `game-designer` / `tech-writer`).**
+  Re-express §8.2 and §8.5 to the **pure closed-form waypoint** model above: DROP "the wander
+  state (…, current waypoint, PRNG state) lives in the `HostageQte` runtime and is advanced in
+  `tickQte`" and "on arrival, draw the next" — these violate Winston §14 LAW #1/#2. Replace with
+  `waypoint[k] = hash(targetSeed, peekIndex, k)` in-bounds, `k = floor(tSincePeekOpen /
+legDuration)`, smoothstep-eased; runtime stores **only** the DERIVED `targetOffset` cache —
+  **no `rngState`, no waypoint-cursor field** (`peekIndex = blownPeeks`,
+  `tSincePeekOpen = peekDurationSeconds − stanceRemaining`, per §14). The `wanderSpeed = 1.2 u/s`
+  peak is PRESERVED as the feel target, realized via `legDuration` tuned against the bounds box.
+  The §8.2 min-leg 0.15 u anti-jitter floor is a KEPT design intent — dev honours it inside the
+  closed form (min-distance constraint on the hash mapping / re-hash). This is a
+  spec-vs-frozen-contract realignment (like G-1/C-1 before), the FEEL is unchanged, not a
+  redesign.
+- **W-2 (doc reconcile → `game-designer` / `tech-writer`).** Rename to the frozen field names:
+  `wanderSeed` → **`targetSeed`**, `peekTargetOffset` → **`targetOffset`** throughout §8 (§8.2,
+  §8.3, §8.5, §8.6, AC10). And reconcile the `wanderSpeed`/amplitude PLACEMENT with §14: for
+  **Belliard-first they are system constants in `qteSystem.ts`**, NOT `QteSpec` fields (§14).
+  Sacha's §8.4 F3 note (later districts curve `wanderSpeed`/region) is a genuine future need →
+  it is the **additive `QteSpec` promotion seam** Winston pre-authorized (`wanderAmplitude`,
+  `wanderSpeed` on `QteSpec`) — flag to `senior-architect` to land additively **when F3
+  arrives**, not now. No value change; only `targetSeed` enters `QteSpec` for Belliard.
+
+### Flags routed (not blocks)
+
+- **Flag X (→ `senior-architect` Winston, sync — low risk).** Confirm the eased-hashed-waypoint
+  internal is accepted within your frozen `wander(targetSeed, peekIndex, t): Vec2` signature — it
+  is signature- and determinism-identical to your sum-of-sines sketch, wrapped by the same
+  `clampTargetOffsetG6`. Your LAW is unchanged; only the internal shape is now specified (the
+  design lane's call on feel). Expected: rubber-stamp; raise only if the hash/leg scheme has a
+  determinism wrinkle I've missed.
+- **Flag Y (→ `producer` / `tech-writer`).** ADR record: the further ADR-0034 amendment (target
+  MOVES — localised to the head zone, captor still static) + the seeded-PRNG-in-`src/game`
+  precedent (§14 ADR-impact). This gate RATIFIES the decision content as coherent; number from
+  `producer`, record by `tech-writer`. Note the model ruling (waypoint, closed-form) so the ADR
+  reflects what ships, not the sines sketch.
+- **Flag Z (→ `ux-designer` Tony / `lead-art` Nico, composite gate — condition on stage-5, not
+  a block on this deliverable).** §8.7 #6 ring-follows-target read: confirm the moving ring still
+  reads as "shoot HERE" and its alignment to the (now-recentred) kill-box holds across the
+  wander. Reinforced by §14: the ring now draws at exactly the scored `targetOffset` centre —
+  this CLOSES the long-standing visible-head-vs-scored-zone aim-honesty seam. Reconcile at the
+  composite gate against the real peeking art. This nests with the still-open **Flag B** (peek
+  distress-escalation read) from §10.
+
+Rework rounds used: 0 of 2. W-1/W-2 are realignments of spec prose to Winston's already-frozen
+§14 contract + a field rename — apply and proceed to dev; **no re-gate** unless a tuning VALUE
+(peek 1.4 s, N=4, `wanderSpeed` 1.2 u/s, the bounds box) moves. Stage-5 design acceptance
+re-verdicts Sacha's `verify` playtest vs AC8–AC11 (plus inherited AC1–AC7) post-BUILD, with the
+AC11 trackability claim and Flag Z read as the load-bearing checks.
+
+- VERDICT: **PASS-WITH-CORRECTIONS.** Wander-model ruling: **the closed-form hashed-WAYPOINT
+  model ships** (NOT sum-of-sines), as a pure function of `t` per Winston §14 (his determinism
+  LAW unchanged). Apply W-1 (waypoint→closed-form realignment) + W-2 (field-name/placement
+  reconcile); route Flag X (architect sync), Flag Y (ADR), Flag Z (art/UX composite). Difficulty,
+  G6 and scope all PASS. Cleared to `senior-architect` / dev once W-1/W-2 are applied.
+
+## 16. DOCS — tech-writer (Otis) — 2026-07-18
+
+- claim: apply the two doc-lane corrections routed by the §15 design gate — **W-1**
+  (closed-form waypoint model realignment) and **W-2** (field-name/placement reconcile) — to
+  `docs/game-design/spec-hostage-qte-static-duel.md` §8, plus record **Flag Y** (the ADR
+  amendment: the target moves + the seeded-pure-PRNG-in-`src/game` precedent).
+- release:
+  - **W-1 applied** — §8.2 re-expressed from the stateful draft ("the wander state
+    (`peekTargetOffset`, current waypoint, PRNG state) lives in the `HostageQte` runtime and
+    is advanced in `tickQte`" + "on arrival, draw the next" — exactly the per-tick stepped
+    cursor `senior-architect` §14 LAW #1/#2 forbids) to the gated **closed-form hashed-
+    waypoint model, a PURE function of `t`**: `waypoint[k] = hash(targetSeed, peekIndex, k)`
+    mapped into the wander region, `k = floor(t / legDuration)`, smoothstep-eased between
+    consecutive waypoints. The runtime stores ONLY the derived `targetOffset` cache — no
+    `rngState` field, no waypoint-cursor field (`peekIndex`/`t` are both already-derived sim
+    state, per §14). Feel targets preserved **verbatim** (`wanderSpeed` ≈ 1.2 u/s peak
+    realised via `legDuration`; the 0.15 u min-leg anti-jitter floor enforced as a
+    min-distance constraint on the hash mapping; deceleration-into-waypoint = the fairness
+    firing window). No tuning value changed — realignment, not a redesign.
+  - **W-2 applied** — renamed `wanderSeed` → `targetSeed` and `peekTargetOffset` →
+    `targetOffset` throughout §8 (§8.1, §8.2, §8.5, §8.6, §8.7 — draft names kept, in
+    prose, only where citing "was X in the draft" for traceability). §8.2/§8.4/§8.5 now
+    state `wanderSpeed` and the wander amplitude are Belliard-first **SYSTEM CONSTANTS** in
+    `qteSystem.ts`, NOT `QteSpec` fields — only `targetSeed` enters `QteSpec` today; the
+    per-level promotion of speed/amplitude is flagged as the additive `QteSpec` seam that
+    lands **when F3/ADR-0035 arrives**, not now. §8's own Status line flipped from DRAFT to
+    PASS-WITH-CORRECTIONS (corrections applied, cleared to `senior-architect`/dev per §15's
+    verdict).
+  - **Flag Y applied** — `docs/adr/0034-hostage-qte-duel-porte-cochere.md` gets a new
+    **"Revision 3 — 2026-07-18: wandering peek target"** section recording: the head
+    kill-zone / reticle now **MOVES** during `PEEKING` (a moving-target tracking test) while
+    the **captor stays static** — a deliberate, localised re-introduction of motion; the
+    closed-form hashed-waypoint model ruling (over the illustrative sum-of-sines sketch);
+    the contract delta (`QteSpec.targetSeed`, `HostageQte.targetOffset`, `qteZoneAt` gains a
+    `targetOffset` arg, Belliard `peekDurationSeconds` 1.2 → 1.4 s); and a new **architecture
+    precedent** — a seeded **PURE** PRNG (an authored seed + a pure function of deterministic
+    sim state — peek ordinal + peek-elapsed `t` — no `Math.random`/`Date.now`, no per-tick
+    stepped cursor) is **PERMITTED** in `src/game` and preserves replay-determinism + the
+    boundary law; future randomness-flavoured mechanics follow this shape. Status line's
+    amendment note updated to name Revision 3 (no other Status-line change). ADR number NOT
+    reallocated — a further dated amendment to ADR-0034, per the story's own §14 "ADR impact"
+    note (`producer` was not asked for a standalone superseder number for this pass).
+  - **Registry regenerated**: `node scripts/gen-adr-index.mjs --write` then `--check` —
+    fresh (41 ADR; ADR-0034's registry row still reads `Accepted (amended)`, the normalized
+    label is unaffected by the added Revision-3 clause in the Status line).
+- verify: `npx --yes prettier@3.8.2 --check` on every markdown file touched (this shard, the
+  ADR, the spec) — clean (see below). No code or tuning numbers touched.
+- VERDICT: not a gate — doc realignment, traced to §15 findings **W-1**, **W-2**, and
+  **Flag Y**.

@@ -59,11 +59,41 @@ export const HOSTAGE_DX_MIN = 0.0;
 export const HOSTAGE_DX_MAX = 0.75;
 export const HOSTAGE_DY_MIN = -1.05;
 export const HOSTAGE_DY_MAX = 0.15;
-// Peeking head band (over his far shoulder, up-left, clear of the hostage — G6 gap).
-export const HEAD_DX_MIN = -0.6;
-export const HEAD_DX_MAX = -0.1;
-export const HEAD_DY_MIN = 0.5;
-export const HEAD_DY_MAX = 1.0;
+// Peeking head kill-zone — a FIXED-SIZE box (half-extents below) that no longer sits at
+// absolute coords: during PEEKING it is centred on the live, wandering `targetOffset`
+// (see `wander`); during COVERED/ZOOMING it rests at `HEAD_NEUTRAL`. Difficulty comes from
+// the MOTION, not from shrinking the zone — the box keeps today's 0.5-wide, 0.5-tall size.
+export const HEAD_HALF_W = 0.25;
+export const HEAD_HALF_H = 0.25;
+/**
+ * Resting centre of the head kill-zone (anchor-relative) — the centre of the game-designer
+ * head-zone bounds box dx −0.70..−0.35 / dy +0.60..+0.85. `targetOffset` rests here while
+ * COVERED/ZOOMING and wanders around it (± the amplitudes below) while PEEKING.
+ */
+export const HEAD_NEUTRAL: Vec2 = { x: -0.525, y: 0.725 };
+/**
+ * Half-extents of the wander amplitude box, anchored on `HEAD_NEUTRAL`. Reproduces the
+ * game-designer bounds box exactly (−0.525 ± 0.175 = [−0.70, −0.35]; 0.725 ± 0.125 =
+ * [0.60, 0.85]). SYSTEM constants — only the seed is authored (F3 may promote these).
+ */
+export const WANDER_AMP_X = 0.175;
+export const WANDER_AMP_Y = 0.125;
+/**
+ * One wander leg (waypoint→waypoint) lasts this long. Chosen so a typical leg's peak speed
+ * — smoothstep peaks at 1.5× the average mid-leg — lands near the game-designer feel target
+ * of ≈ 1.2 world u/s: a representative ~0.28 u leg ⇒ 0.28 × 1.5 / 0.35 ≈ 1.2 u/s.
+ */
+export const LEG_DURATION = 0.35;
+/**
+ * Anti-jitter floor: consecutive waypoints are nudged at least this far apart, so the head
+ * never quivers in place (a degenerate near-zero leg reads as a stutter, not a peek).
+ */
+export const MIN_LEG_DISPLACEMENT = 0.15;
+/**
+ * G6 safety margin — the ASSERTED minimum vertical gap `clampTargetOffsetG6` forces between
+ * the head band's bottom and the hostage band's top, for ANY x. Not trusted from tuning.
+ */
+export const G6_MARGIN = 0.1;
 // Captor body silhouette (the covered mass; kill-safe by itself).
 export const BODY_DX_MIN = -0.85;
 export const BODY_DX_MAX = 0.85;
@@ -83,22 +113,136 @@ function inBand(
 
 /**
  * Which zone a shot at anchor-relative offset (dx, dy) strikes — STANCE-AWARE
- * (ADR-0034 D4/D6). `"head"` is returned ONLY while `PEEKING`, so head-during-peek
- * is the sole kill route by construction; during `COVERED` the head band yields
- * `"body"` or `"miss"` (no kill zone). The hostage silhouette takes precedence, and
- * the head band is spatially disjoint from the hostage band with a non-zero gap (G6).
+ * (ADR-0034 D4/D6). `"head"` is the fixed-size box (HEAD_HALF_W/H) centred on the live
+ * `targetOffset` and is returned ONLY while `PEEKING`, so head-during-peek is the sole kill
+ * route by construction; during `COVERED` the head region yields `"body"` or `"miss"` (no
+ * kill zone). `hostage`/`body`/`miss` stay ANCHOR-relative — `targetOffset` moves only the
+ * head band. The hostage silhouette takes precedence, and the G6 clamp keeps the head band
+ * spatially disjoint from the hostage band with a non-zero gap for any offset.
  */
-export function qteZoneAt(dx: number, dy: number, stance: CaptorStance): QteZone {
+export function qteZoneAt(
+  dx: number,
+  dy: number,
+  stance: CaptorStance,
+  targetOffset: Vec2,
+): QteZone {
   if (inBand(dx, dy, HOSTAGE_DX_MIN, HOSTAGE_DX_MAX, HOSTAGE_DY_MIN, HOSTAGE_DY_MAX)) {
     return "hostage";
   }
-  if (stance === "PEEKING" && inBand(dx, dy, HEAD_DX_MIN, HEAD_DX_MAX, HEAD_DY_MIN, HEAD_DY_MAX)) {
+  if (
+    stance === "PEEKING" &&
+    Math.abs(dx - targetOffset.x) <= HEAD_HALF_W &&
+    Math.abs(dy - targetOffset.y) <= HEAD_HALF_H
+  ) {
     return "head";
   }
   if (inBand(dx, dy, BODY_DX_MIN, BODY_DX_MAX, BODY_DY_MIN, BODY_DY_MAX)) {
     return "body";
   }
   return "miss";
+}
+
+// --- Seeded head wander — a PURE closed-form function of accumulated peek-time -----------
+// While PEEKING the head kill-zone drifts between hashed WAYPOINTS. Waypoint[k] is a cheap
+// integer hash of (targetSeed, peekIndex, k) mapped uniformly into the amplitude box; the
+// head eases (smoothstep) from waypoint[k] to waypoint[k+1] over LEG_DURATION, where
+// k = floor(t / LEG_DURATION) and `t` is the peek-elapsed seconds. Smoothstep decelerates
+// to ZERO velocity AT each waypoint — that momentary stillness is the intended fair firing
+// window. Because the result is a function of `t` ALONE (never a per-tick stepped PRNG),
+// re-chunking the same total elapsed yields the SAME offset: replay-deterministic and
+// framerate-independent. NO Math.random / Date.now anywhere.
+
+/** Cheap 32-bit integer hash (FNV-1a mix + avalanche) of three integers → uint32. */
+function hash32(a: number, b: number, c: number): number {
+  let h = 2166136261 >>> 0;
+  h = Math.imul(h ^ (a >>> 0), 16777619);
+  h = Math.imul(h ^ (b >>> 0), 16777619);
+  h = Math.imul(h ^ (c >>> 0), 16777619);
+  h ^= h >>> 13;
+  h = Math.imul(h, 2246822507);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+
+/** Raw waypoint k: the hash split into two 16-bit halves, each mapped uniformly onto the
+ *  amplitude box [−AMP, +AMP]. Absolute (uncoupled); anti-jitter refines it in `wander`. */
+function rawWaypoint(targetSeed: number, peekIndex: number, k: number): Vec2 {
+  const h = hash32(targetSeed, peekIndex, k);
+  const ux = (h >>> 16) / 0x10000; // [0, 1)
+  const uy = (h & 0xffff) / 0x10000; // [0, 1)
+  return { x: (ux * 2 - 1) * WANDER_AMP_X, y: (uy * 2 - 1) * WANDER_AMP_Y };
+}
+
+function clampToRange(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+/** Anti-jitter: if `raw` sits within MIN_LEG_DISPLACEMENT of the previous waypoint, push it
+ *  out to that floor (inward-biased when degenerate) and clamp back into the box, so every
+ *  leg has perceptible travel. Uses only the two adjacent waypoints → bounded, no recursion. */
+function antiJitter(raw: Vec2, prev: Vec2): Vec2 {
+  const dx = raw.x - prev.x;
+  const dy = raw.y - prev.y;
+  const d = Math.hypot(dx, dy);
+  if (d >= MIN_LEG_DISPLACEMENT) return raw;
+  let ux: number;
+  let uy: number;
+  if (d > 1e-6) {
+    ux = dx / d;
+    uy = dy / d;
+  } else {
+    // Degenerate coincident waypoints: step toward the box centre (guaranteed headroom).
+    ux = prev.x <= 0 ? 1 : -1;
+    uy = 0;
+  }
+  return {
+    x: clampToRange(prev.x + ux * MIN_LEG_DISPLACEMENT, -WANDER_AMP_X, WANDER_AMP_X),
+    y: clampToRange(prev.y + uy * MIN_LEG_DISPLACEMENT, -WANDER_AMP_Y, WANDER_AMP_Y),
+  };
+}
+
+/** Smoothstep 3u²−2u³ (zero velocity at u=0 and u=1 → the deceleration firing window). */
+function smoothstep(u: number): number {
+  return u * u * (3 - 2 * u);
+}
+
+/**
+ * The seeded head-wander offset (relative to HEAD_NEUTRAL) at peek-elapsed `t` seconds.
+ * PURE and closed-form in (targetSeed, peekIndex, t): waypoints are hashed, coupled only by
+ * a bounded anti-jitter forward pass (a peek is a few legs, so `k` is tiny), and the eased
+ * result is a convex blend of two in-box waypoints, so it stays within the amplitude box.
+ * Framerate-independent: a function of `t` alone (re-chunking delta gives the same result).
+ */
+export function wander(targetSeed: number, peekIndex: number, t: number): Vec2 {
+  const leg = Math.max(0, t) / LEG_DURATION;
+  const k = Math.floor(leg);
+  const s = smoothstep(leg - k);
+  // Forward pass building canonical waypoints 0..k+1 (shared endpoints ⇒ C0-continuous).
+  let prev = rawWaypoint(targetSeed, peekIndex, 0);
+  let wpK = prev; // canonical waypoint[k]
+  let wpK1 = prev; // canonical waypoint[k+1]
+  for (let i = 1; i <= k + 1; i++) {
+    const next = antiJitter(rawWaypoint(targetSeed, peekIndex, i), prev);
+    if (i === k) wpK = next;
+    if (i === k + 1) wpK1 = next;
+    prev = next;
+  }
+  return {
+    x: wpK.x + (wpK1.x - wpK.x) * s,
+    y: wpK.y + (wpK1.y - wpK.y) * s,
+  };
+}
+
+/**
+ * G6 safety net — ASSERTED, never trusted from tuning. Force the head-zone centre high
+ * enough that the head band's bottom (`centre.y − HEAD_HALF_H`) stays clear of the hostage
+ * band's top (`HOSTAGE_DY_MAX`) by `G6_MARGIN`, for ANY x. Two rectangles disjoint on the Y
+ * axis are disjoint everywhere, so the head kill-zone can never overlap the hostage band.
+ * The x coordinate is untouched. Applied to EVERY computed `targetOffset`.
+ */
+export function clampTargetOffsetG6(offset: Vec2): Vec2 {
+  const minY = HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H;
+  return { x: offset.x, y: offset.y < minY ? minY : offset.y };
 }
 
 /** True while the QTE holds the scene frozen (ZOOMING…LOST); DONE/null resume the sim. */
@@ -144,6 +288,7 @@ export function createQte(spec: QteSpec): HostageQte {
     spec.peekCadenceSeconds,
     spec.peekDurationSeconds,
     spec.maxBlownPeeks,
+    spec.targetSeed,
   ];
   if (!numerics.every((n) => Number.isFinite(n))) {
     throw new Error(
@@ -170,6 +315,10 @@ export function createQte(spec: QteSpec): HostageQte {
     telegraphActive: false,
     stanceRemaining: spec.peekCadenceSeconds,
     anchor: spec.anchor,
+    // The head kill-zone rests at HEAD_NEUTRAL until the first PEEKING wander; the seed is
+    // mirrored onto the runtime so the tick can compute the pure wander offset.
+    targetOffset: HEAD_NEUTRAL,
+    targetSeed: spec.targetSeed,
     blownPeeks: 0,
     maxBlownPeeks: spec.maxBlownPeeks,
     peekCadenceSeconds: spec.peekCadenceSeconds,
@@ -242,13 +391,15 @@ export function tickQte(
       let energyDelta = 0;
 
       // (1) Resolve the player's shot FIRST — a winning head-shot beats a same-tick
-      // fatal peek close (tie-break: the shot wins). The anchor is static, so the
-      // classifier reads the fixed anchor-relative offset.
+      // fatal peek close (tie-break: the shot wins). Aim-honesty: the head band is centred
+      // on `qte.targetOffset` — the offset the render drew LAST frame — so the player shoots
+      // exactly what they saw. The anchor is static; only the head zone has moved.
       if (fire) {
         const zone = qteZoneAt(
           impactPoint.x - qte.anchor.x,
           impactPoint.y - qte.anchor.y,
           qte.stance,
+          qte.targetOffset,
         );
         if (zone === "head") {
           return {
@@ -302,6 +453,8 @@ export function tickQte(
                 stanceRemaining,
                 blownPeeks,
                 telegraphActive: false,
+                // The fatal close is a PEEKING→COVERED close → the head zone resets to rest.
+                targetOffset: HEAD_NEUTRAL,
               },
               energyDelta,
             };
@@ -315,8 +468,25 @@ export function tickQte(
       // The G4 tell shows in the last TELEGRAPH_LEAD_SECONDS of a COVERED beat.
       const telegraphActive = stance === "COVERED" && stanceRemaining <= TELEGRAPH_LEAD_SECONDS;
 
+      // (3) Compute the OUTGOING head-zone offset for the RESULTING stance. During PEEKING it
+      // wanders (seeded, pure) around HEAD_NEUTRAL as a function of the peek-elapsed time,
+      // G6-clamped clear of the hostage; during COVERED it rests at HEAD_NEUTRAL. `peekIndex`
+      // is the resulting `blownPeeks` (0-based peek ordinal — it increments only on close),
+      // and `t` is the peek-elapsed seconds (peekDuration − stanceRemaining, clamped ≥ 0).
+      let targetOffset: Vec2;
+      if (stance === "PEEKING") {
+        const t = Math.max(0, qte.peekDurationSeconds - stanceRemaining);
+        const w = wander(qte.targetSeed, blownPeeks, t);
+        targetOffset = clampTargetOffsetG6({
+          x: HEAD_NEUTRAL.x + w.x,
+          y: HEAD_NEUTRAL.y + w.y,
+        });
+      } else {
+        targetOffset = HEAD_NEUTRAL;
+      }
+
       return {
-        qte: { ...qte, stance, stanceRemaining, blownPeeks, telegraphActive },
+        qte: { ...qte, stance, stanceRemaining, blownPeeks, telegraphActive, targetOffset },
         energyDelta,
       };
     }

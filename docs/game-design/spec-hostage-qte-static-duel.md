@@ -230,8 +230,11 @@ PASS/deviations to `lead-game-designer` before the architect's integration revie
 
 ## 8. Addendum — the head kill-zone WANDERS during peeks (Bertrand steer)
 
-**Author:** `game-designer` (Sacha) · **Date:** 2026-07-18 · **Status:** DRAFT — **needs
-`lead-game-designer` (Karim) PASS**.
+**Author:** `game-designer` (Sacha) · **Date:** 2026-07-18 · **Status:**
+PASS-WITH-CORRECTIONS (`lead-game-designer` design gate,
+`docs/handoffs/story-hostage-qte-duel.md` §15) — corrections **W-1** (closed-form waypoint
+realignment) and **W-2** (field-name/placement reconcile) applied below by `tech-writer`,
+2026-07-18. Cleared to `senior-architect` / dev.
 **Steer (verbatim):** _"il faudrait faire bouger le rond dans lequel il faut tirer / cela
 doit être des mouvements aléatoires."_
 
@@ -249,40 +252,60 @@ existing `Éviter`/skill axis (aim under pressure) without adding a new loop ver
 
 1. The head kill-zone is a **fixed-size box** — **0.5 × 0.5** world units (half-extents
    0.25, **unchanged** from today's HEAD band) — whose **centre** is `anchor +
-peekTargetOffset`, where `peekTargetOffset` is an anchor-relative wander vector.
+targetOffset`, where `targetOffset` is an anchor-relative wander vector (frozen name,
+   was `peekTargetOffset` in this addendum's draft — see **W-2**).
    Difficulty comes from **motion, not shrink** (one variable at a time).
 2. **`PEEKING` only.** `COVERED` has **no target**: no head zone, no ring (as today). The
    wander exists only while the exposure is open.
-3. **Per-peek reset.** At each `COVERED → PEEKING` open the wander (re)initialises: a seeded
-   start point **in-bounds** (§8.3), then it moves for that peek's duration. Peeks do not
-   carry momentum across a `COVERED` beat — each opening is a fresh track.
-4. The render's reticle ring **follows** `peekTargetOffset` (it no longer sits at the fixed
+3. **Per-peek reset.** Each `COVERED → PEEKING` open starts a fresh track: the peek-elapsed
+   clock `t` (derived, not stored — `peekDurationSeconds − stanceRemaining`) resets to 0,
+   and the peek ordinal (`peekIndex`, the closed-peek count so far) selects a fresh
+   hash-derived waypoint sequence off `targetSeed` (§8.2 — **W-1**). Peeks do not carry
+   momentum across a `COVERED` beat — each opening is a genuinely fresh, decorrelated path.
+4. The render's reticle ring **follows** `targetOffset` (it no longer sits at the fixed
    `CUE_DX/CUE_DY`). Ring-visual vs kill-box alignment is reconciled at the **composite
    gate**, exactly as the fixed cue is today (ADR-0034 gotcha) — the ring FRAMES the box.
 
 ### 8.2 D-W2 — Movement feel: seeded, deterministic, erratic-but-trackable
 
-**Hard invariant (non-negotiable).** `src/game` must stay **replay-deterministic**: **no
-`Math.random`, no `Date.now`, no wall-clock**. The motion is a **seeded pseudo-random
-wander** — a per-QTE authored seed feeds a pure PRNG (dev's choice: mulberry32/xorshift32,
-pure function of state) advanced by the fixed-timestep tick. Same seed + same tick sequence
-⇒ **byte-identical path** (ADR-0035 D2 discipline).
+**Hard invariant (non-negotiable, `senior-architect` §14 LAW).** `src/game` stays
+**replay-deterministic**: **no `Math.random`, no `Date.now`, no wall-clock, no per-tick
+stepped PRNG cursor.** The motion is a **seeded, PURE closed-form function of elapsed peek
+time `t`** — a per-QTE authored seed (`targetSeed`) plus a hash, not a mutable PRNG drawn
+and advanced tick-by-tick. Same seed + same `t` ⇒ **byte-identical offset**, independent of
+framerate/delta chunking (ADR-0035 D2 discipline, sharpened by §14's determinism LAW).
 
-**Recommended model — SEEDED-WAYPOINT WANDER (not Lissajous).**
+**Model — CLOSED-FORM HASHED-WAYPOINT WANDER (not Lissajous, not a stepped PRNG). Ruling:
+`lead-game-designer`, `docs/handoffs/story-hostage-qte-duel.md` §15 — realigns this
+addendum's original stateful draft, below, to `senior-architect`'s §14 determinism LAW
+(correction **W-1**).**
 
-| Decision                 | Value / rule                                                                                                 | Rationale                                                                                                                                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Path generator           | PRNG draws a **waypoint** uniformly in the wander region; target eases toward it; on arrival, draw the next. | Bertrand asked for _"mouvements aléatoires"_. A **Lissajous/sine** loop is periodic → **learnable** → defeats the intent. Seeded waypoints read as genuinely erratic yet stay deterministic. |
-| Motion between waypoints | **Ease-in / ease-out** (smoothstep) per leg — decelerate INTO each waypoint, accelerate OUT.                 | The target is **trackable, never teleporting**. The deceleration at each waypoint is the **fairness feature**: a natural "lead point" / firing window every leg.                             |
-| Speed cap (Belliard)     | **`wanderSpeed` = 1.2 world u/s** (peak, mid-leg).                                                           | The 0.5-wide zone crosses its own width in ~0.42 s; over a peek the target stays within the small region and bounces — followable by a human, not a coin-flip.                               |
-| Min leg length           | **0.15 u**                                                                                                   | Below this the target jitters in place (reads as a glitch, untrackable). Forces visible, coherent legs.                                                                                      |
-| Drift vs waypoints       | **Waypoints**, not continuous noise-drift.                                                                   | Discrete legs with eases give clear "it's heading there" reads; value-noise drift is an acceptable alt but muddier to lead.                                                                  |
+`waypoint[k] = hash(targetSeed, peekIndex, k)` mapped into the wander region (§8.3);
+`k = floor(t / legDuration)`; the offset smoothstep-eases between `waypoint[k]` and
+`waypoint[k+1]` as `t` advances within leg `k`. `peekIndex` and `t` are both DERIVED from
+already-deterministic sim state (§8.1 point 3 — `peekIndex = blownPeeks`,
+`t = peekDurationSeconds − stanceRemaining`) — no stored cursor, no drawn-and-advanced PRNG.
 
-The wander state (`peekTargetOffset`, current waypoint, PRNG state) lives in the
-`HostageQte` runtime and is advanced in `tickQte`. **WYSIWYG classify order:** the head band
-is classified against the wander position **at the tick's start** (the frame the player
-aimed at), `fire` resolved FIRST (§5 tie-break unchanged), **then** the wander advances — so
-a hit registers against the reticle the player actually saw.
+| Decision                 | Value / rule                                                                                                                               | Rationale                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Path generator           | Hash-derived waypoints in the wander region, indexed by `k = floor(t / legDuration)`; smoothstep-eased between consecutive waypoints.      | Bertrand asked for _"mouvements aléatoires"_. A **Lissajous/sine** loop is periodic → **learnable** → defeats the intent. Hashed, per-peek-decorrelated waypoints read as genuinely erratic yet stay a pure function of `t`. |
+| Motion between waypoints | **Ease-in / ease-out** (smoothstep) per leg — decelerate INTO each waypoint, accelerate OUT.                                               | The target is **trackable, never teleporting**. The deceleration at each waypoint is the **fairness feature**: a natural "lead point" / firing window every leg.                                                             |
+| Speed cap (Belliard)     | **`wanderSpeed` ≈ 1.2 world u/s** (peak, mid-leg) — realised via `legDuration` tuned against the wander-region box, not a stored velocity. | The 0.5-wide zone crosses its own width in ~0.42 s; over a peek the target stays within the small region and bounces — followable by a human, not a coin-flip.                                                               |
+| Min leg length           | **0.15 u** — enforced as a min-distance constraint on the hash-to-waypoint mapping (re-hash on collision), not a runtime clamp.            | Below this the target jitters in place (reads as a glitch, untrackable). Forces visible, coherent legs.                                                                                                                      |
+| Drift vs waypoints       | **Waypoints**, not continuous noise-drift.                                                                                                 | Discrete legs with eases give clear "it's heading there" reads; value-noise drift is an acceptable alt but muddier to lead.                                                                                                  |
+
+**`wanderSpeed` (and the wander-region amplitude) are Belliard-first SYSTEM CONSTANTS in
+`qteSystem.ts`, not `QteSpec` fields** — see §8.5 (**W-2**).
+
+`HostageQte.targetOffset` stores ONLY the DERIVED result of the closed form above — the
+current head-zone centre, recomputed each tick from `t`. **No `rngState` field, no
+current-waypoint cursor field** on the runtime record: `k` and the two bracketing waypoints
+are recomputed from `t` every tick, never carried forward (frozen field name `targetOffset`,
+was `peekTargetOffset` in the original draft — **W-2**). **WYSIWYG classify order (unchanged
+by the model realignment):** `fire` resolves FIRST against the STORED `targetOffset` — the
+offset the render drew last frame, i.e. what the player actually aimed at (§5 tie-break
+unchanged) — **then** the OUTGOING `targetOffset` for next frame is recomputed via the
+closed form above.
 
 ### 8.3 D-W3 — Wander bounds (load-bearing: G6 + on-frame + reach)
 
@@ -327,47 +350,65 @@ and it preserves the ~4-opening tempo); keep speed modest and the zone full-size
 | Field                 | Old (§2.1) | **New (Belliard)**    | Rationale                                                                                                                                                                  |
 | --------------------- | ---------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `peekDurationSeconds` | 1.2 s      | **1.4 s**             | +0.2 s cushion to **acquire → track → fire** a moving reticle; still ≫ G5 floor 0.5 s. Reaction ~0.3–0.5 s leaves ~0.9 s of tracking + a waypoint ease as a firing window. |
-| `wanderSpeed`         | —          | **1.2 u/s**           | Peak mid-leg; followable (§8.2).                                                                                                                                           |
+| `wanderSpeed`\*       | —          | **1.2 u/s**           | Peak mid-leg; followable (§8.2).                                                                                                                                           |
 | `maxBlownPeeks` (N)   | 4          | **4** (unchanged)     | Keeps the four-honest-chances tempo; energy economy (−32 full ignore) undisturbed.                                                                                         |
 | `peekCadenceSeconds`  | 1.5 s      | **1.5 s** (unchanged) | COVERED beat + G4 tell unchanged.                                                                                                                                          |
+
+\* `wanderSpeed` here is the Belliard-tuned VALUE of a **system constant** in `qteSystem.ts`
+— not a `QteSpec` field (**W-2**, §8.5). Only `targetSeed` is per-level today.
 
 **Tempo check.** Cycle 1.5 + 1.4 = **2.9 s**; passive loss (N = 4) ≈ **11.6 s** of ACTIVE
 (4×1.4 peeks + 4×1.5 covered) — within cadence tolerance of the §3 ≈ 10.8 s duel, a touch
 longer, appropriate for the added skill demand. Energy ledger unchanged.
 
-**F3 / ADR-0035 curve note.** `wanderSpeed`, the wander-region extents, N, and the cadence
-are the per-level difficulty knobs. Later districts **raise `wanderSpeed`** (guidance: cap
-~2.0 u/s so it stays human-trackable), **widen the region** (always re-clamped so the
-head-box right edge stays `< 0` and the dy margin `≥ 0.15` — **G6 is invariant, never
-curved away**), and/or lower N / tighten cadence toward the floors. Belliard sits at the
-gentle end of every knob.
+**F3 / ADR-0035 curve note.** For Belliard, `wanderSpeed` and the wander-region amplitude are
+**system constants** in `qteSystem.ts` — only `targetSeed` is a per-level `QteSpec` field
+today. `N` and the cadence remain authored `QteSpec` fields (unchanged from §3.1/§2.1). When
+a later district needs to curve `wanderSpeed` / the region per level (guidance: cap
+`wanderSpeed` ~2.0 u/s so it stays human-trackable; widen the region always re-clamped so the
+head-box right edge stays `< 0` and the dy margin `≥ 0.15` — **G6 is invariant, never curved
+away**), `senior-architect` promotes them to `QteSpec` (`wanderAmplitude: Vec2`,
+`wanderSpeed: number`) as an ADDITIVE change in the same dev-gameplay pass — the seam
+Winston pre-authorized (§14), not a redesign. Belliard sits at the gentle end of every knob,
+today as constants.
 
 ### 8.5 Contract delta (design intent for `senior-architect` + `dev-gameplay`)
 
-Pure `src/game`; boundary law preserved. Additive — nothing from §5 leaves.
+Pure `src/game`; boundary law preserved. Additive — nothing from §5 leaves. Realigned to the
+frozen closed-form model per **W-1**/**W-2**
+(`docs/handoffs/story-hostage-qte-duel.md` §14/§15) — field names below are the frozen ones,
+not this addendum's original draft names.
 
 **Enters the contract:**
 
-- `QteSpec`: `wanderSeed: number` (integer, per-level, drives the PRNG — determinism);
-  `wanderSpeed: number` (u/s, per-level, F3-curvable). Region extents as module constants
-  (`WANDER_DX_MIN/MAX`, `WANDER_DY_MIN/MAX`) mirroring the band constants.
-- `HostageQte` runtime: `peekTargetOffset: Vec2` (anchor-relative, the live head-zone
-  centre) + the wander bookkeeping the tick needs (current waypoint, PRNG state). Reset on
-  each peek open; meaningful only while `stance === "PEEKING"`.
+- `QteSpec`: `targetSeed: number` (integer, per-level, seeds the closed-form hash — the
+  determinism input; frozen name, was `wanderSeed` in the draft). **`wanderSpeed` and the
+  wander-region amplitude are Belliard-first SYSTEM CONSTANTS in `qteSystem.ts`
+  (`WANDER_AMP_X/Y`, wander leg speed), NOT `QteSpec` fields** — only `targetSeed` enters
+  `QteSpec` today. Region extents live as module constants (`WANDER_DX_MIN/MAX`,
+  `WANDER_DY_MIN/MAX`) mirroring the band constants. Promoting `wanderSpeed`/amplitude to
+  `QteSpec` is the ADDITIVE seam that lands **when F3/ADR-0035 arrives** (§8.4), not now.
+- `HostageQte` runtime: `targetOffset: Vec2` (anchor-relative, the live head-zone centre —
+  frozen name, was `peekTargetOffset` in the draft). This is a **DERIVED CACHE ONLY**,
+  recomputed each tick from the closed form (§8.2) — **no `rngState` field, no
+  waypoint-cursor field.** Reset to the neutral head-zone centre on each peek close;
+  meaningful (wandering) only while `stance === "PEEKING"`.
 - `qteZoneAt`: the `"head"` test becomes a fixed-size box (half-extents 0.25) centred on
-  `peekTargetOffset` instead of the fixed HEAD\_\* band. Precedence unchanged (hostage wins;
-  head only while PEEKING). All other bands byte-for-byte unchanged.
-- `createQte`: assert `wanderSeed` finite integer; `wanderSpeed` finite `> 0`; the region↔G6
-  disjointness asserted against constants (§8.3).
+  `targetOffset` instead of the fixed HEAD\_\* band — frozen signature
+  `qteZoneAt(dx, dy, stance, targetOffset)`. Precedence unchanged (hostage wins; head only
+  while PEEKING). All other bands byte-for-byte unchanged.
+- `createQte`: assert `targetSeed` finite (integer); the region↔G6 disjointness asserted
+  against constants (§8.3). (No per-level `wanderSpeed` assert — it is a constant, not
+  authored data.)
 
 **Render note (spec the read, not the code — `dev-r3f-render` owns it):** the reticle ring
-reads `peekTargetOffset` from the runtime each frame and positions itself at `anchor +
-peekTargetOffset` (replacing the fixed `CUE_DX/CUE_DY`). Ring size/opacity two-beat tell
+reads `targetOffset` from the runtime each frame and positions itself at `anchor +
+targetOffset` (replacing the fixed `CUE_DX/CUE_DY`). Ring size/opacity two-beat tell
 (§ HostageQteSprite) unchanged; only its centre now tracks.
 
 ### 8.6 Updated acceptance criteria (append to §6)
 
-- **AC8 — Moves only during PEEKING.** `peekTargetOffset` changes across ticks **only while
+- **AC8 — Moves only during PEEKING.** `targetOffset` changes across ticks **only while
   `stance === "PEEKING"`**; during `COVERED` there is no target and no ring. Verified in the
   built QTE (`verify`): the ring visibly wanders while open, absent while covered.
 - **AC9 — In-bounds / G6-clear always.** For every tick of every peek, the head-box (centre
@@ -375,9 +416,9 @@ peekTargetOffset` (replacing the fixed `CUE_DX/CUE_DY`). Ring size/opacity two-b
   (dx margin ≥ 0.10, dy margin ≥ 0.20). Unit test samples the wander across a full peek and
   asserts no head-box position enters or abuts the hostage band. No bavure is ever required
   to reach the head.
-- **AC10 — Deterministic.** Same `wanderSeed` + same tick sequence ⇒ identical
-  `peekTargetOffset` path (unit test on two runs). No `Math.random`/`Date.now` in the wander
-  (lint/grep asserted). `wanderSeed`-absent / `qteSpec === null` levels unaffected (AC7).
+- **AC10 — Deterministic.** Same `targetSeed` + same tick sequence ⇒ identical
+  `targetOffset` path (unit test on two runs). No `Math.random`/`Date.now` in the wander
+  (lint/grep asserted). `targetSeed`-absent / `qteSpec === null` levels unaffected (AC7).
 - **AC11 — Trackable & fair on Belliard.** In playtest (`verify`), a human can acquire and
   headshot the moving target within a Belliard peek: `wanderSpeed = 1.2 u/s`,
   `peekDurationSeconds = 1.4 s`, zone 0.5 × 0.5, region 0.35 × 0.25 — the target never
@@ -389,12 +430,16 @@ reports PASS/deviations to `lead-game-designer` before the architect's integrati
 
 ### 8.7 Open flags for the gate (append to §7)
 
-4. **ADR touch.** The wander adds `wanderSeed`/`wanderSpeed` to the QteSpec contract and a
-   PRNG to the pure tick — worth a line in the same ADR-0034 superseder (§7.1): "head
-   kill-zone wanders on a per-QTE seed; G6 invariant across the wander region."
-5. **Model choice.** Seeded-waypoint recommended over Lissajous (§8.2). If the gate prefers
-   smoother value-noise drift, only the generator swaps — bounds (§8.3), determinism, and the
-   Belliard tuning (§8.4) are model-agnostic.
+4. **ADR touch — applied.** The wander adds `targetSeed` to the `QteSpec` contract
+   (`wanderSpeed`/amplitude stay system constants, not `QteSpec` fields — §8.5, **W-2**) and
+   a seeded pure hash function to the pure tick — recorded in ADR-0034's Revision 3
+   (`tech-writer`, per Flag Y, `docs/handoffs/story-hostage-qte-duel.md` §14/§15): "head
+   kill-zone wanders on a per-QTE seed via a closed-form hashed-waypoint function; G6
+   invariant across the wander region."
+5. **Model choice — RULED.** Closed-form hashed-waypoint ships
+   (`lead-game-designer` §15 ruling, over this addendum's illustrative stateful draft and the
+   architect's sum-of-sines sketch — see §8.2, **W-1**). Bounds (§8.3), determinism, and the
+   Belliard tuning (§8.4) are unaffected by the internal generator shape.
 6. **Ring-follows-target read.** Handed to `lead-art` / composite gate: confirm the moving
    ring still reads as "shoot HERE" and its alignment to the kill-box holds across the wander
    (the fixed-cue reconciliation, now over a moving centre).

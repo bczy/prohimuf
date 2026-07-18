@@ -69,6 +69,15 @@ export interface QteSpec {
    * at runtime so a peek is always answerable even at max difficulty (G5).
    */
   readonly peekDurationSeconds: number;
+  /**
+   * Authored seed for the head-target wander (deterministic, replay-safe). During
+   * `PEEKING` the head kill-zone / reticle wanders as a PURE function of this seed,
+   * the peek ordinal and the peek-elapsed time — never `Math.random`/`Date.now`.
+   * Must be finite (asserted in `createQte`). Wander amplitude/speed are system
+   * constants (`qteSystem.ts`); only the seed is authored per level (F3 may promote
+   * the others to additive fields later).
+   */
+  readonly targetSeed: number;
 }
 
 /**
@@ -92,6 +101,21 @@ export interface HostageQte {
    * never mutated; the camera zooms onto it and holds (no follow).
    */
   readonly anchor: Vec2;
+  /**
+   * Current head kill-zone centre, ANCHOR-RELATIVE — the point the render draws the
+   * reticle at and that `qteZoneAt` centres the `head` band on. During `PEEKING` it
+   * wanders (bounded, G6-clamped clear of the hostage) via the seeded pure wander;
+   * during `COVERED`/`ZOOMING` it rests at the neutral head point. Not literal
+   * `(0,0)` — it is the head's resting spot so the wind-up tell draws at the head.
+   */
+  readonly targetOffset: Vec2;
+  /**
+   * Authored head-wander seed — the runtime mirror of `QteSpec.targetSeed` (copied once at
+   * `createQte`, exactly as the peek durations / cap are). The tick has ONLY the runtime
+   * record, so it needs the seed here to compute the pure `wander` offset each peek tick.
+   * Finite (asserted in `createQte`, C6).
+   */
+  readonly targetSeed: number;
   /**
    * Blown peeks so far (a `PEEKING` that closed without a winning headshot).
    * Starts 0, +1 per such close. Reaching `maxBlownPeeks` loses the QTE

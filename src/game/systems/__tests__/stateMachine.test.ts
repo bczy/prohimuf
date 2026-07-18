@@ -560,6 +560,7 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     maxBlownPeeks: 4,
     peekCadenceSeconds: 1.5,
     peekDurationSeconds: 1.2,
+    targetSeed: 12345,
   };
   function qteState(): GameState {
     return createInitialState(FACADE_01, {
@@ -609,12 +610,14 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     s = tick(s, noFire, 0, 0, 2.0); // end the 2 s zoom → ACTIVE, COVERED
     expect(s.qte?.phase).toBe("ACTIVE");
     expect(s.qte?.stance).toBe("COVERED");
-    // Cross into a PEEKING exposure (cadence 1.5 s). The anchor is static — no drift.
+    // Cross into a PEEKING exposure (cadence 1.5 s). The anchor is static, but the head
+    // kill-zone now WANDERS (seeded) around HEAD_NEUTRAL during the peek.
     s = tick(s, noFire, 0, 0, 1.5);
     expect(s.qte?.stance).toBe("PEEKING");
     expect(s.qte?.anchor).toEqual({ x: 0, y: 0 });
-    // Fire at the head band relative to the STATIC anchor.
-    s = tick(s, fire, -0.3, 0.8, 0.1);
+    // Aim at the head zone the render drew LAST frame (anchor is origin ⇒ world == offset).
+    const target = s.qte?.targetOffset ?? { x: 0, y: 0 };
+    s = tick(s, fire, target.x, target.y, 0.1);
     expect(s.qte?.phase).toBe("WON");
     expect(s.score).toBe(0); // energy is the sole QTE currency (G-1); score untouched
     expect(s.energy).toBe(100); // +40 clamped at the 100 cap

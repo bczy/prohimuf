@@ -48,8 +48,12 @@ const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 // a FORM change — legible without hue (a11y §4.2), colour only reinforces (TELL →
 // ALARM). Exact alignment vs `qteZoneAt`'s head band is reconciled at the
 // composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
-const CUE_DX = -0.5;
-const CUE_DY = 0.7;
+// The ring's XY now FOLLOWS the live `qte.targetOffset` (anchor-relative head-zone
+// centre): it wanders during PEEKING and rests at the neutral head point
+// (≈ {x:-0.525, y:0.725}, front-left of the captor — where the fixed CUE_DX/CUE_DY
+// used to place it) during COVERED/ZOOMING. The render only READS the offset (the
+// wander is computed by the game lane); this closes the aim-honesty seam — the drawn
+// ring sits exactly on the scored `head` band.
 const CUE_Z = 0.55;
 // World outer radius of the reticle ring at neutral scale; intensity scales it so
 // the open PEEKING window reads clearly larger than the COVERED wind-up.
@@ -102,10 +106,11 @@ function hudSliceKey(slice: HudHostageQte | null): string {
  * holding the hostage as a living shield, drawn at the FIXED `qte.anchor` the
  * camera zooms onto and holds. Three pooled meshes (world space, same axes as
  * bullets / crosshair): the captor, the hostage shield, and the peek cue
- * (wind-up tell + open-window marker). Their positions are set ONCE from the
- * static anchor on activation (no per-tick moving-anchor writes); only tints and
- * the cue's pulse update each frame. Visible only while the QTE holds the scene
- * frozen (`isQteActive`).
+ * (wind-up tell + open-window marker). The captor and hostage are positioned ONCE
+ * from the static anchor on activation (no per-tick moving-anchor writes); the peek
+ * ring instead FOLLOWS the live `qte.targetOffset` each frame (the wandering
+ * head-zone centre) alongside its tint/scale/opacity pulse. Visible only while the
+ * QTE holds the scene frozen (`isQteActive`).
  *
  * COVERED ↔ PEEKING reads by FORM (peek cue absent vs present) and pose, not hue;
  * the pre-peek cue is keyed off the game's `telegraphActive` (anticipation, not
@@ -173,15 +178,15 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     }
 
     // ── Static placement (once per activation) ────────────────────────────────
-    // The captor never moves (the static duel): place the three meshes ONCE from
-    // the fixed `qte.anchor` — no per-tick moving-anchor writes. Only tints and
-    // the cue's pulse/scale update each frame below.
+    // The captor and hostage never move (the static duel): place those two meshes
+    // ONCE from the fixed `qte.anchor` — no per-tick moving-anchor writes. The peek
+    // ring's XY is NOT static — it follows the live `qte.targetOffset` each frame
+    // below (in addition to its tint/scale/opacity pulse).
     if (!positionedRef.current) {
       captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
       captor.scale.set(QTE_W, QTE_H, 1);
       hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
       hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
-      peekCue.position.set(qte.anchor.x + CUE_DX, qte.anchor.y + CUE_DY, CUE_Z);
       positionedRef.current = true;
     }
 
@@ -245,6 +250,13 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     const cue = peekTellVisual(qte.telegraphActive, qte.stance, pulse01, reducedMotion);
     peekCue.visible = cue.active && qte.phase === "ACTIVE";
     if (peekCue.visible) {
+      // Follow the live head-zone centre: anchor + the (wandering) targetOffset,
+      // so the drawn ring sits exactly on the scored `head` band (aim-honesty seam).
+      peekCue.position.set(
+        qte.anchor.x + qte.targetOffset.x,
+        qte.anchor.y + qte.targetOffset.y,
+        CUE_Z,
+      );
       const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity);
       peekCue.scale.set(r, r, 1);
       const cueMat = peekCue.material as MeshBasicMaterial;
