@@ -157,8 +157,10 @@ function keyAndDown(buf) {
     for (let i = 0; i < W * H; i++) {
       if (bg[i]) d[i * 4 + 3] = 0;
       else {
-        const L = Math.round(0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]);
-        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = L;
+        if (!args.keepcolor) {
+          const L = Math.round(0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]);
+          d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = L;
+        }
         d[i * 4 + 3] = 255;
         op++;
       }
