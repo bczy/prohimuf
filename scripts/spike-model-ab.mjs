@@ -43,8 +43,8 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
 import { fileURLToPath } from "url";
+import { fetchImage, modelUrl } from "./lib/pollinations.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -111,32 +111,9 @@ function loadRider() {
   };
 }
 
-// ── Pollinations fetch (mirrors gen-enemy-types.mjs: bounded redirects/retry) ──
+// ── Pollinations fetch (fetchImage from the shared lib; retry/backoff stay local) ──
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
-}
-function fetchImage(url, depth = 0) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        res.resume();
-        if (depth >= 5) return reject(new Error("too many redirects"));
-        if (!res.headers.location) return reject(new Error(`HTTP ${res.statusCode} no Location`));
-        return fetchImage(new URL(res.headers.location, url).href, depth + 1)
-          .then(resolve)
-          .catch(reject);
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      const chunks = [];
-      res.on("data", (c) => chunks.push(c));
-      res.on("end", () => resolve(Buffer.concat(chunks)));
-    });
-    req.on("error", reject);
-    req.setTimeout(120000, () => req.destroy(new Error("response timeout (120s)")));
-  });
 }
 async function fetchWithRetry(url, retries = 4) {
   for (let i = 0; i < retries; i++) {
@@ -150,17 +127,6 @@ async function fetchWithRetry(url, retries = 4) {
       } else throw e;
     }
   }
-}
-
-// enhance=false + private=true: same load-bearing flags as production (art bible
-// §3.11) so the verbatim style block is not rewritten by Pollinations' enhancer.
-function imgUrl({ prompt, model, seed, width, height, imageUrl }) {
-  let u =
-    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
-    `?width=${width}&height=${height}&nologo=true&model=${encodeURIComponent(model)}` +
-    `&seed=${seed}&enhance=false&private=true`;
-  if (imageUrl) u += `&image=${encodeURIComponent(imageUrl)}`;
-  return u;
 }
 
 // Pollinations serves JPEG bytes; saving them under a `.png` name yields a
@@ -201,7 +167,7 @@ async function runModel(model, R) {
   // per-frame calls retry and fail gracefully on their own.
   if (!isRef) {
     try {
-      const probe = imgUrl({ prompt: "probe", model, seed: R.seed, width: 64, height: 64 });
+      const probe = modelUrl({ prompt: "probe", model, seed: R.seed, width: 64, height: 64 });
       await fetchWithRetry(probe, 2);
       console.log(`  [probe-ok] ${model} is served`);
     } catch (e) {
@@ -228,7 +194,7 @@ async function runModel(model, R) {
       written.push("frame1.png");
       continue;
     }
-    const url = imgUrl({
+    const url = modelUrl({
       prompt: isRef ? R.refPrompts[i] : R.t2iPrompts[i],
       model,
       seed: R.seed,

@@ -30,6 +30,21 @@ no API key).
 > anonymous, the default behaviour. In CI it is wired as the `POLLINATIONS_TOKEN`
 > repo secret at the job level of every `gen-*.yml` generation workflow.
 
+> **Legacy debt — four generators are non-canonical (ADR-0044 consolidation).**
+> `generate-assets.mjs`, `generate-game-assets.mjs`, `regen-pixel-sprites.mjs`, and
+> `generate-style-demo.mjs` each still build their own local Pollinations URL
+> (pre-dating `scripts/lib/pollinations.mjs`) and carry **none** of `enhance=false` /
+> `private=true` / `safe=false` — running one today yields an off-house-style
+> (enhancer-rewritten prompt), PUBLIC-feed, safe-filter-ON image, unlike every
+> current generator. None is wired to a CI workflow, none is referenced from
+> `package.json`, and none ships art the game uses today — they are retirement
+> candidates, kept only as historical reference; do not extend them. The canonical
+> path is the shared lib, `scripts/lib/pollinations.mjs`. `POLLINATIONS_TOKEN` (see
+> above) covers every generator that imports it: the active family generators
+> (`gen-enemy-types.mjs`, `gen-from-reference.mjs`, `gen-vehicle-sprites.mjs`,
+> `gen-level-art.mjs`, `gen-hostage-sprites.mjs`, `gen-courier-sprites.mjs`) plus the
+> `spike-model-ab.mjs` diagnostic — the four legacy scripts above are NOT among them.
+
 ---
 
 ## generate-assets.mjs — Character & UI Sprites

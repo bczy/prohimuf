@@ -72,20 +72,25 @@ export async function fetchWithRetry(url, retries = 5) {
 // safe=false is pinned explicitly (not left to the server default): the house
 // register — clandestine-rave / police / raw-fanzine subject matter — must not
 // be silently rejected if Pollinations ever flips its NSFW-filter default.
+//
+// generic model-agnostic builder; flux/kontext delegate to it. `model` required.
+export function modelUrl({ prompt, seed, width, height, model, imageUrl }) {
+  let u =
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
+    `?width=${width}&height=${height}&nologo=true&model=${encodeURIComponent(model)}` +
+    `&seed=${seed}&enhance=false&private=true&safe=false`;
+  if (imageUrl) u += `&image=${encodeURIComponent(imageUrl)}`;
+  return u;
+}
+
 export function fluxUrl(prompt, seed, width, height) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true&safe=false`;
+  return modelUrl({ prompt, seed, width, height, model: "flux" });
 }
 
 // kontext img2img (art bible §3.12, style-lock): same query plus `image=` set to
 // the committed frame-1 raw URL so the new pose stays the SAME character.
 export function kontextUrl(prompt, seed, width, height, imageUrl) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=kontext&seed=${seed}&enhance=false&private=true&safe=false&image=${encodeURIComponent(
-    imageUrl,
-  )}`;
+  return modelUrl({ prompt, seed, width, height, model: "kontext", imageUrl });
 }
 
 // THE single "hero ⇒ image=" decision point (ADR-0043 §2): every caller that

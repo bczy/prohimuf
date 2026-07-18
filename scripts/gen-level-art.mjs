@@ -15,7 +15,7 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
+import { fluxUrl, fetchWithRetry } from "./lib/pollinations.mjs";
 
 const ROOT = process.cwd();
 const OUT_ROOT = path.resolve(ROOT, "public/assets/levels");
@@ -31,44 +31,15 @@ const { style, sizes, levels } = manifest;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function fetchImage(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          fetchImage(res.headers.location).then(resolve).catch(reject);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
-          return;
-        }
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
-      })
-      .on("error", reject);
-  });
-}
-
-async function generate(prompt, size, retries = 5) {
+// Pollinations/FLUX fetch (URL build + retry) now shared via
+// scripts/lib/pollinations.mjs. private=true keeps the backdrops out of the
+// public Pollinations feed; enhance=false is load-bearing (art bible §3.11) —
+// the enhancer's LLM rewrite destroys the verbatim style block; safe=false
+// pins the NSFW filter off so the house register is never silently rejected
+// if the server default flips (all baked into fluxUrl).
+function generate(prompt, size) {
   const seed = Math.floor(Math.random() * 99999);
-  // private=true keeps the backdrops out of the public Pollinations feed;
-  // enhance=false is load-bearing (art bible §3.11) — the enhancer's LLM rewrite
-  // destroys the verbatim style block; safe=false pins the NSFW filter off so the
-  // house register is never silently rejected if the server default flips.
-  const url =
-    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", " + style)}` +
-    `?width=${size.width}&height=${size.height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true&safe=false`;
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fetchImage(url);
-    } catch (e) {
-      if (i < retries - 1) await sleep((i + 1) * 8000);
-      else throw e;
-    }
-  }
+  return fetchWithRetry(fluxUrl(prompt + ", " + style, seed, size.width, size.height));
 }
 
 async function main() {

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("https", () => ({ default: { get: vi.fn() } }));
 
 import https from "https";
-import { fluxUrl, kontextUrl, fetchImage } from "../pollinations.mjs";
+import { fluxUrl, kontextUrl, modelUrl, fetchImage } from "../pollinations.mjs";
 
 // A minimal stand-in for the http.ClientRequest chain fetchImage relies on:
 // `https.get(url, cb).on("error", reject)`, then `req.setTimeout(...)`.
@@ -52,6 +52,61 @@ describe("kontextUrl", () => {
   it("encodes the image= param with encodeURIComponent", () => {
     const url = kontextUrl("same character", 1, 256, 256, imageUrl);
     expect(url).toContain(`image=${encodeURIComponent(imageUrl)}`);
+  });
+});
+
+describe("modelUrl", () => {
+  const imageUrl = "https://raw.githubusercontent.com/bczy/prohimuf/main/references/x.png";
+
+  it("emits the given model and the shared params, no image= by default", () => {
+    const url = modelUrl({
+      prompt: "a truck",
+      seed: 12345,
+      width: 256,
+      height: 160,
+      model: "nanobanana-pro",
+    });
+    expect(url).toContain("model=nanobanana-pro");
+    expect(url).toContain("seed=12345");
+    expect(url).toContain("width=256");
+    expect(url).toContain("height=160");
+    expect(url).toContain("enhance=false");
+    expect(url).toContain("private=true");
+    expect(url).toContain("safe=false");
+    expect(url).not.toContain("image=");
+  });
+
+  it("appends image= only when imageUrl is passed", () => {
+    const url = modelUrl({
+      prompt: "same character",
+      seed: 1,
+      width: 256,
+      height: 256,
+      model: "kontext",
+      imageUrl,
+    });
+    expect(url).toContain(`image=${encodeURIComponent(imageUrl)}`);
+  });
+});
+
+// REGRESSION LOCK: fluxUrl/kontextUrl now delegate to modelUrl — assert their
+// output is byte-identical to the pre-refactor literal template strings, so any
+// future edit to modelUrl that shifts param order/spelling/casing is caught here
+// rather than silently changing the production request contract.
+describe("fluxUrl / kontextUrl — byte-identical to pre-refactor literals", () => {
+  it("fluxUrl matches the pre-refactor literal exactly", () => {
+    const url = fluxUrl("a truck", 12345, 256, 160);
+    expect(url).toBe(
+      "https://image.pollinations.ai/prompt/a%20truck?width=256&height=160&nologo=true&model=flux&seed=12345&enhance=false&private=true&safe=false",
+    );
+  });
+
+  it("kontextUrl matches the pre-refactor literal exactly", () => {
+    const imageUrl = "https://raw.githubusercontent.com/bczy/prohimuf/main/references/x.png";
+    const url = kontextUrl("same character", 1, 256, 256, imageUrl);
+    expect(url).toBe(
+      "https://image.pollinations.ai/prompt/same%20character?width=256&height=256&nologo=true&model=kontext&seed=1&enhance=false&private=true&safe=false&image=https%3A%2F%2Fraw.githubusercontent.com%2Fbczy%2Fprohimuf%2Fmain%2Freferences%2Fx.png",
+    );
   });
 });
 
