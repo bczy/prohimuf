@@ -637,7 +637,7 @@ const TRONCON_RAIL_W_SCALE = 0.74;
  * peint son balcon SOUS la fenêtre — la balustrade descend s'y poser au lieu
  * de flotter sur la vitre (retour Bertrand).
  */
-const TRONCON_RAIL_Y_SHIFT = 0.45;
+const TRONCON_RAIL_Y_SHIFT = 0.58;
 
 export function drawForegroundIronworkPerBuilding(
   g: CanvasRenderingContext2D,
