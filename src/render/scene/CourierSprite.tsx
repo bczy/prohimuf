@@ -12,6 +12,22 @@ import {
   getCourierTexture,
 } from "./courierTextures";
 import { flipbookFrame } from "./flipbook";
+import { wheelAngle } from "./deform";
+
+// SPIKE (animation-2d-pipeline): procedural courier motion, additive over the
+// baked 6-frame flipbook. Flip to false to fall back to the pure flipbook baseline
+// (no regression). DOWNSCOPED from a wheel sub-region UV rotation to a whole-plane
+// bob/lean — see the spike finding: the rider's wheel spin is already baked across
+// its frames, and isolating the wheel would need authored per-sprite wheel-centre
+// anchors + a custom circular-mask shader (and would double up with the baked
+// spin). The bob keeps the motion inside a clean affine whole-plane transform,
+// which is what deform.ts models; wheelAngle drives its cadence phase.
+const DEFORM_BOB_ENABLED = true as boolean;
+// Pedal-cadence bob: ~1 cycle per baked wheel-ish loop. Small world-unit amplitude
+// and a few degrees of lean so it reads as a living cyclist, not a bouncing decal.
+const BOB_CADENCE = 2; // cycles per second
+const BOB_AMP = 0.04; // world-unit vertical bob
+const BOB_LEAN = 0.05; // radians of body lean at the extremes
 
 // Couriers never overlap by much; a small reusable pool is plenty.
 const MAX_COURIERS = 4;
@@ -121,8 +137,23 @@ function updateLayer(
     return;
   }
   const frame = flipbookFrame(clock + phase, courierFrameCount(layer), courierAnimFps());
-  mesh.position.set(courier.x, courier.y + entry.offsetY, z);
+  // Whole-plane bob/lean (downscoped spike motion). `clock` is frozen on pause by
+  // the caller, so the bob freezes with the street — no extra pause plumbing. A
+  // frozen clock also yields a constant angle → identity-ish rest pose.
+  let bobY = 0;
+  let lean = 0;
+  if (DEFORM_BOB_ENABLED) {
+    const angle = wheelAngle(clock + phase, BOB_CADENCE);
+    const s = Math.sin(angle);
+    bobY = s * BOB_AMP;
+    lean = s * BOB_LEAN;
+  }
+  mesh.position.set(courier.x, courier.y + entry.offsetY + bobY, z);
   mesh.scale.set(courier.dir * entry.scale, entry.scale, 1);
+  // Scale by dir so the lean reads the same way relative to travel: the sprite is
+  // mirrored via negative scale.x, which would otherwise flip the visual tilt for
+  // left-bound couriers.
+  mesh.rotation.z = courier.dir * lean;
   setMap(mesh, getCourierTexture(layer, frame));
   // Civilian tint = gameplay "don't shoot" colour-code.
   (mesh.material as MeshBasicMaterial).color.set(ARCHETYPES.civilian.tint);

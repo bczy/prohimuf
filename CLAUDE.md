@@ -61,6 +61,7 @@ each fronting a BMAD persona:
 | `pm`                 | Product / PRD / stories / scope       | `bmad-agent-pm` (John)                  |
 | `producer`           | Pipeline execution, sprint status     | `bmad-sprint-planning/-status` (Marion) |
 | `senior-architect`   | Architecture, boundaries, sign-off    | `bmad-agent-architect` (Winston)        |
+| `tech-scout`         | Technical recon / feasibility (R&D)   | `bmad-agent-analyst` (Nadia/Mary)       |
 | `lead-game-designer` | Design gate + design/art/dev sync     | — (Karim)                               |
 | `game-designer`      | Mechanics, tuning, 3C specs           | BMGD `gds` module when installed        |
 | `narrative-designer` | Universe, cast, in-game text scripts  | BMGD `bmgd-narrative` when installed    |
@@ -81,7 +82,9 @@ COLLABORATION.md, mermaid diagram in `docs/diagrams/agent-workflows.md`): `pm` (
 **design loop** when the story touches gameplay, fiction or screens/flows/accessibility
 (`game-designer` + `narrative-designer` + `ux-designer` in parallel →
 `lead-game-designer` design gate) →
-`senior-architect` (how + lane assignment) → dev lanes in parallel on non-overlapping
+`senior-architect` (how + lane assignment; pulls in `tech-scout` for a sourced feasibility
+report when the story rests on an unproven technique or unfamiliar model/API/dependency) →
+dev lanes in parallel on non-overlapping
 paths (∥ art lane when assets are needed) → **verify** (orchestrated by `qa-lead`:
 tsc/vitest/lint + e2e + `game-designer` playtest vs spec, `ux-designer` review of built
 screens/flows on both device classes, composite gate for runtime visuals,
