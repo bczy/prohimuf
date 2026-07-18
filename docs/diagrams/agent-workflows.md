@@ -60,6 +60,7 @@ flowchart TB
         end
         subgraph ARTL["art lane — when the feature needs new/changed visuals"]
             direction TB
+            REFS["graphic-references · Ray 🗽<br/>reference hunt (optional):<br/>interview → web propositions →<br/>Bertrand verdicts → refine (max 3)"]
             ADV["art-advisor · Estelle 📼<br/>references, cultural grounding<br/>(advice only)"]
             CONCEPT["concept-artist · Maud ✍️<br/>FLUX prompts (levelArt.json)"]
             PREPROD["game-graphist · Serge 🕹️<br/>PRE-PROD PASS<br/>game-size readability, keying"]
@@ -67,6 +68,7 @@ flowchart TB
             GEN["CI generation<br/>marker push → render farm<br/>check-sprite-style.mjs + retries"]
             TECH["game-graphist · Serge 🕹️<br/>TECHNICAL PASS<br/>real-size inspection, cleanup"]
             GATE2{"lead-art · Nico 🎯<br/>ASSET GATE<br/>PASS/FAIL vs art-direction.md"}
+            REFS -->|"validated board<br/>(curated by lead-art)"| ADV
             ADV --> CONCEPT
             CONCEPT --> PREPROD
             PREPROD -->|annotations integrated| GATE1
@@ -91,6 +93,8 @@ flowchart TB
     ARCH --> GAME
     ARCH --> TOOL
     ARCH -.->|"assets needed"| ADV
+    ARCH -.->|"references missing"| REFS
+    B <-.->|"interview & verdicts<br/>(relayed rounds)"| REFS
     ARCH -.->|"sound needed"| SD
 
     subgraph P5["5. VERIFY — the test stage, orchestrated by qa-lead"]
@@ -173,7 +177,7 @@ flowchart TB
     classDef prod fill:#e9d8fd,stroke:#6b46c1,color:#000
     class DGATE,GATE1,GATE2,GATE4,AGATE,DACC,QGATE,SDV,PERF gate
     class R3F,GAME,TOOL dev
-    class ADV,CONCEPT,PREPROD,TECH art
+    class REFS,ADV,CONCEPT,PREPROD,TECH art
     class GD,ND,UXD,PLAY,UXR design
     class SD audio
     class GEN,SRC,LOG,CHECKS,PANEL,TW ci
@@ -195,6 +199,11 @@ flowchart TB
   non-overlapping paths. The dev lanes' only routinely shared seam is `src/hooks/**`
   (serialised, never co-edited). The art lane keeps its two production passes
   (`game-graphist`) bracketing CI generation and its two blocking gates (`lead-art`).
+  When a family lacks references (or Bertrand asks for a hunt), the lane opens with an
+  interactive reference hunt: `graphic-references` (Ray) interviews Bertrand, proposes
+  web-sourced directions, and refines on his KEEP/DROP/DIG verdicts (max 3 refine
+  rounds, then escalation); the validated board lands in
+  `docs/art-direction/references/boards/` and `lead-art` curates it into the library.
   The audio lane mirrors it: `sound-designer` (Malik) specs every cue ("ce qui sonne
   informe" — every audio cue is information), sourcing runs through the tooling
   scripts, and his **audio gate** verdicts assets and audible behaviour changes vs

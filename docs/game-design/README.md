@@ -46,6 +46,16 @@ ADR-0012/0015 decisions) are grandfathered: they change only through this flow f
 | `ux/spec-hostage-qte-hud-readability.md` (ADR-0034 F1+F2 HUD)                             | `ux-designer`        | **PASS w/ conditions** 2026-07-17 — applied U-1 (global energy readout stays visible during QTE). Log: `story-hostage-qte-duel.md` §5                                                                                                                                                                                          |
 | `spec-hostage-qte-static-duel.md` (static duel + blown-peeks clock, reverses ADR-0034 D1) | `game-designer`      | **PASS w/ corrections** 2026-07-18 — static captor / N=4 / single diegetic clock / F-1 reversal CONFIRMED; C-1 applied (`blownPeeksToLose`→`maxBlownPeeks`, `tech-writer`); Flag A ADR record applied (ADR-0034 Revision 2, `tech-writer`); Flag B blown-peeks read → ux/lead-art (open). Log: `story-hostage-qte-duel.md` §10 |
 
+### Recherche / veille (pre-gate — non gaté)
+
+Livrables d'idéation produits par la veille concurrentielle du 2026-07-18. **Non gatés** :
+matière d'entrée pour de futures specs, à passer au design gate avant toute implémentation.
+
+| Deliverable                          | Author          | Statut                                           |
+| ------------------------------------ | --------------- | ------------------------------------------------ |
+| `veille-concurrentielle-shooters.md` | `game-designer` | **Pre-gate** — features candidates (tiers S/A/B) |
+| `pre-spec-weapons.md`                | `game-designer` | **Pre-gate** — modèle multi-armes par pickup     |
+
 ### Gated canon (pending `narrative-bible.md`)
 
 Net-new named entities PASSed as conscious extension (gate 2026-07-14, condition f1) —

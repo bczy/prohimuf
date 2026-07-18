@@ -1,4 +1,4 @@
-"""Generate the muf crew bitmap: 18 pixel-art Claudes, one per project agent.
+"""Generate the muf crew bitmap: 19 pixel-art Claudes, one per project agent.
 
 Default run writes the group poster (docs/muf-crew.png). `--singles` skips the
 poster and writes one transparent RGBA sprite per crew member (1 sprite px =
@@ -10,7 +10,7 @@ import os, sys, zlib, struct
 
 SCALE = 10          # sprite pixel -> image px
 CW, CH = 22, 20     # cell size in sprite pixels
-COLS, ROWS = 6, 3
+COLS, ROWS = 5, 4
 M = 30              # outer margin
 GAP_X, GAP_Y = 14, 16
 TS = 3              # label font scale (role + persona)
@@ -54,6 +54,7 @@ MODELS = {
     "dev-tooling-assets": "SONNET 5",
     "lead-art": "OPUS 4.8",
     "art-advisor": "SONNET 5",
+    "graphic-references": "SONNET 5",
     "concept-artist": "OPUS 4.8",
     "game-graphist": "SONNET 5",
     "gpu-specialist": "OPUS 4.8",
@@ -146,6 +147,12 @@ AGENTS = [
         (["Y"], 16, 11), (["Y"], 17, 12), (["Y"], 17, 13),             # chain
         (["KKKK", "KPPK", "KPPK", "KKKK"], 0, 8),                      # 90s rave vinyl
     ]),
+    ("graphic-references", "GRAPHIC REFS", "RAY", [
+        (["KKKKKKKKKK"], 6, 3), (["KKKKKKKKKK"], 6, 4),                # beanie
+        (["Y......Y", ".YYYYYY."], 8, 12),                             # gold chain
+        ([".W.", "WWW", "PPP", "PPP", "PPP", "PPP"], 18, 6),           # spray can
+        (["G"], 17, 5), (["G"], 16, 4), (["G"], 15, 3),                # spray mist
+    ]),
     ("concept-artist", "CONCEPT ARTIST", "MAUD", [
         (["Y"], 11, 1), (["Y"], 9, 2), (["Y"], 13, 2), (["W"], 11, 2), # idea sparks
         (["PP", "YY", "YY", "YY", "YY", "NN", ".K"], 19, 5),           # pencil
@@ -226,6 +233,7 @@ FONT = {
     '4': ["101", "101", "111", "001", "001"],
     '5': ["111", "100", "110", "001", "110"],
     '8': ["111", "101", "111", "101", "111"],
+    '9': ["111", "101", "111", "001", "111"],
     ' ': ["000", "000", "000", "000", "000"],
     '-': ["000", "000", "111", "000", "000"],
     '.': ["000", "000", "000", "000", "010"],
@@ -325,7 +333,7 @@ if "--singles" not in sys.argv:  # poster mode (default)
 
     # title, vertically centered in the top band
     title = "MUF CREW"
-    sub = "LES 18 CLAUDES DU PROJET"
+    sub = "LES 19 CLAUDES DU PROJET"
     ty = M + (block_h - (5 * 6 + 12 + 5 * TS)) // 2
     tw = text_width(title, 6)
     draw_text(canvas, W, H, (img_w - tw) // 2, ty, title, PAL['B'], 6)
