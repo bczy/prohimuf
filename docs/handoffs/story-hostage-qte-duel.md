@@ -1234,3 +1234,243 @@ AC11 trackability claim and Flag Z read as the load-bearing checks.
   ADR, the spec) — clean (see below). No code or tuning numbers touched.
 - VERDICT: not a gate — doc realignment, traced to §15 findings **W-1**, **W-2**, and
   **Flag Y**.
+
+## 17. REVISION — captor HP + colour-timed ring damage — senior-architect (Winston) — 2026-07-18
+
+**Bertrand's confirmed product call REVERSES ADR-0034 D4** (the binary "one headshot = kill,
+no captor HP"). New resolution model for the hostage-QTE:
+
+- the captor has an **HP bar** again;
+- the wandering peek ring **CYCLES rouge→jaune→vert** as a timing meter;
+- a `head` shot aligned with the ring removes captor HP **by colour**: green = big, yellow =
+  small, red = 0 (wasted);
+- **depleting captor HP → `WON`**;
+- **loss is UNCHANGED**: the execution-after-N-blown-peeks clock (`blownPeeks >= maxBlownPeeks`
+  → `LOST`) stays the sole failure route;
+- the wander becomes **WIDER + FASTER**.
+
+`game-designer` (Sacha) writes the numbers (captorHp default, cycle period, per-colour damage,
+the wider/faster wander constants) in parallel; the architect owns the CODE contract + the
+determinism below. This section is FROZEN LAW both lanes rebuild against; it supersedes the
+binary-kill wording of prior sections wherever they conflict.
+
+### HARD CONSTRAINTS (unchanged, restated as they bind this delta)
+
+- `src/game/**` stays **React/Three-free AND replay-deterministic** — no `Math.random`, no
+  `Date.now`.
+- The colour cycle, **like the wander**, is a **PURE function of the peek-elapsed `t`**
+  (`t = peekDurationSeconds − stanceRemaining`, clamped ≥ 0 — the SAME `t` the wander uses).
+  No per-tick stepped/mutated state; re-chunking the same total `t` yields the same colour →
+  framerate-independent, replay-deterministic.
+
+### Frozen delta — `src/game/types/hostageQte.ts`
+
+**`QteSpec` — ADD**
+
+- `readonly captorHp: number;` — authored per-level captor health. **Integer ≥ 1** (asserted in
+  `createQte`, and added to the C6 finiteness list). DEFAULT VALUE is game-designer's; the
+  field name/type is LAW. **F3 seam:** only `captorHp` is authored — the cycle period and the
+  per-colour damage amounts stay **SYSTEM CONSTANTS** in `qteSystem.ts` (Belliard-first, same
+  precedent as the wander amplitudes / energy prices); ADR-0035/F3 may promote them to additive
+  `QteSpec` fields later, not now.
+- **UNCHANGED:** `targetSeed`, `maxBlownPeeks`, `peekCadenceSeconds`, `peekDurationSeconds`,
+  `triggerAtElapsedSeconds`, `zoomSeconds`, `anchor`.
+
+**`HostageQte` (runtime) — ADD**
+
+- `readonly captorHp: number;` — CURRENT captor health. Copied from `spec.captorHp` at
+  `createQte` (starts = spec value, same mirror pattern as `maxBlownPeeks`). Decremented by
+  colour-timed head hits; never below 0.
+- `readonly ringPhase: number;` — **DERIVED cache**, `[0,1)`, `= cyclePhase(t)` — the ring's
+  cycle position for the **last-drawn** peek state. **FROZEN CHOICE: store it** (do NOT let
+  render recompute). Rationale: this is the exact analogue of `targetOffset` — a derived value
+  cached on the runtime so (a) render reads the colour band without recomputing, and (b) the
+  tick resolves a shot against the **last-drawn** colour by reading one canonical field, closing
+  the colour-honesty seam the same way `targetOffset` closed the aim-honesty seam. Computed at
+  the END of each ACTIVE tick alongside `targetOffset`, from the **identical** `t`, so colour
+  and position always describe the same drawn frame. Rests at `0` while COVERED/ZOOMING.
+- **UNCHANGED:** `targetOffset`, `targetSeed`, `blownPeeks`, `maxBlownPeeks`, `stance`,
+  `telegraphActive`, `stanceRemaining`, `anchor` (static), `peekCadenceSeconds`,
+  `peekDurationSeconds`, `zoomRemaining`, `zoomSeconds`, `resultRemaining`, `warning`.
+
+### Colour cycle — the pure determinism shape (LAW)
+
+Pure functions in `qteSystem.ts`, functions of `t` ALONE (no seed, no peekIndex — the cycle
+restarts at red at each peek open because `t` resets per peek; simpler than the wander):
+
+```ts
+export type RingColour = "red" | "yellow" | "green";
+
+// System constants (game-designer's values):
+export const RING_CYCLE_SECONDS: number; // one full rouge→jaune→vert period, > 0
+// Three CONTIGUOUS slices over [0,1), in cycle order red → yellow → green, summing to 1.
+// Expressed as two cumulative phase thresholds (game-designer picks the split):
+export const RING_RED_UNTIL: number; // 0 < RING_RED_UNTIL <= RING_YELLOW_UNTIL < 1
+export const RING_YELLOW_UNTIL: number; // green = [RING_YELLOW_UNTIL, 1)
+// Integer captor damage per colour (keeps captorHp integer under subtraction):
+export const CAPTOR_DAMAGE_GREEN: number; // big,  integer >= 1
+export const CAPTOR_DAMAGE_YELLOW: number; // small, integer >= 1
+// red damage is 0 (implicit — a wasted, no-HP-removed head hit).
+
+/** Pure cycle position [0,1) of the ring at peek-elapsed t. (t % P)/P — framerate-free. */
+export function cyclePhase(t: number): number {
+  return (Math.max(0, t) % RING_CYCLE_SECONDS) / RING_CYCLE_SECONDS;
+}
+
+/** The colour band for a phase in [0,1): ordered red → yellow → green. */
+export function ringBandOfPhase(phase: number): RingColour {
+  if (phase < RING_RED_UNTIL) return "red";
+  if (phase < RING_YELLOW_UNTIL) return "yellow";
+  return "green";
+}
+
+/** Convenience: the ring colour at peek-elapsed t (pure). */
+export function ringColourAt(t: number): RingColour {
+  return ringBandOfPhase(cyclePhase(t));
+}
+
+/** Captor HP removed by a head hit landed on colour c (red → 0). */
+export function colourDamage(c: RingColour): number {
+  return c === "green" ? CAPTOR_DAMAGE_GREEN : c === "yellow" ? CAPTOR_DAMAGE_YELLOW : 0;
+}
+```
+
+Render consumes the SAME `ringBandOfPhase(qte.ringPhase)` (or maps the phase to its own colour
+constants) — one shared band function, no divergence between the drawn colour and the scored
+colour.
+
+### Frozen delta — `src/game/systems/qteSystem.ts` (dev-gameplay)
+
+- **`createQte`:** add `spec.captorHp` to the C6 finiteness numerics list; assert
+  `Number.isInteger(spec.captorHp) && spec.captorHp >= 1` (a win must be reachable). Seed
+  `captorHp: spec.captorHp`, `ringPhase: 0`. Everything else (G5 clamp, G4 assert,
+  `maxBlownPeeks` assert, `blownPeeks: 0`, static `anchor`) UNCHANGED.
+
+- **`tickQte` ACTIVE — resolution rework (ORDER STILL MATTERS):**
+  1. **Resolve `fire` FIRST** (preserves the deterministic tie-break). Classify with today's
+     stance-aware `qteZoneAt(impact − anchor, qte.stance, qte.targetOffset)` — aim resolved
+     against the **last-drawn** `qte.targetOffset` (unchanged). On `zone === "head"`:
+     - `const dmg = colourDamage(ringBandOfPhase(qte.ringPhase));` — colour resolved against the
+       **last-drawn** `qte.ringPhase` (colour-honesty: the player is judged on the colour the
+       ring showed when they fired, exactly as the aim is judged on the offset they saw). A red
+       ring ⇒ `dmg = 0` (wasted, no HP removed).
+     - `const captorHp = qte.captorHp - dmg;`
+     - if `captorHp <= 0` → **return `WON`** (`{ ...qte, phase: "WON", captorHp: 0 }`,
+       `energyDelta: QTE_RESCUE_REFILL`) — this is the SAME early-return the binary head-kill
+       used, now gated on depletion.
+     - else (a chip that did not kill): **record `captorHp` and FALL THROUGH** to the
+       sub-machine (do NOT early-return — the captor is alive, the peek must keep ticking).
+     - `zone === "body"` → `+= QTE_BODY_HIT`, `zone === "hostage"` → `+= QTE_HOSTAGE_HIT`,
+       `miss` → nothing. **Body/hostage/miss deal NO captor damage** (unchanged energy penalties).
+  2. **Sub-machine loop UNCHANGED in structure.** On each PEEKING→COVERED **close** while the
+     captor is still alive (we only reach a close if fire did not deplete HP): `blownPeeks += 1`
+     and `energyDelta += QTE_UNANSWERED_PEEK`, exactly as today (these remain the same single
+     event); then `blownPeeks >= maxBlownPeeks` → **`LOST`** (execution; no extra charge; HALT at
+     the fatal close, bounded loop preserved — each iteration subtracts a strictly-positive
+     stance duration).
+  3. **Compute the OUTGOING `targetOffset` AND `ringPhase` from the same `t`:**
+     ```ts
+     if (stance === "PEEKING") {
+       const t = Math.max(0, qte.peekDurationSeconds - stanceRemaining);
+       targetOffset = clampTargetOffsetG6({ x: HEAD_NEUTRAL.x + wander(...).x, y: ... });
+       ringPhase = cyclePhase(t);          // SAME t as the wander
+     } else {
+       targetOffset = HEAD_NEUTRAL;
+       ringPhase = 0;
+     }
+     ```
+     Carry `captorHp` (post-chip) and `ringPhase` on every returned record.
+
+- **Tie-break preserved:** fire is resolved before the loss check, so a head hit that **depletes
+  HP** on the fatal peek → `WON`; a head hit that only **chips** on the fatal peek does NOT save
+  the run — the loop reaches the fatal close → `LOST` (only a KILLING shot wins the tie).
+
+- **UNCHANGED:** `qteZoneAt` and all hitbox bands (offsets anchor-relative, static anchor,
+  G6 holds); the energy constants; the ZOOMING panic charge; the WON/LOST → DONE hold; the
+  `tickQte(qte, fire, impactPoint, delta)` signature and `{ qte, energyDelta }` result — so
+  `stateMachine.ts` needs **no logic edit** (verify: no reference to removed fields).
+
+- **`levels.ts` (belliard `QteSpec`):** add `captorHp` (game-designer's value); update the
+  wander-tuning comment for the wider/faster amplitudes. No other field changes.
+
+### Wander — WIDER + FASTER (system constants; dev-gameplay)
+
+- `WANDER_AMP_X` / `WANDER_AMP_Y` (bigger box) and the peak-speed knob (`LEG_DURATION` smaller
+  and/or bigger amplitude) take **game-designer's new values** — these are the existing SYSTEM
+  CONSTANTS, so a **pure value change**, no type-contract change.
+- **G6 stays.** `clampTargetOffsetG6` is a **Y-axis floor** (head-band bottom ≥
+  `HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H`), which makes the two bands Y-disjoint ⇒ disjoint
+  for ANY x — so it **still holds for a wider box, unchanged**. Action: the G6 property test
+  MUST be re-swept over the NEW wider amplitude box.
+- **If the design needs an ASYMMETRIC box** ("right edge pinned at the hostage-clear edge; only
+  left/up grow"): a symmetric `WANDER_AMP_X` increase grows the box rightward too. Keeping the
+  right edge pinned is a wander-**internal** change to `rawWaypoint`'s mapping (map the hash into
+  per-edge bounds `[loX,hiX]×[loY,hiY]` instead of `[−AMP,+AMP]²`) — still pure, still seeded,
+  still `clampTargetOffsetG6`-wrapped, **no TYPE-contract field change**. Confirmed:
+  `clampTargetOffsetG6` needs no edit either way (Y-disjointness is box-shape-independent);
+  only the G6 test sweep updates. dev-gameplay picks symmetric-value vs asymmetric-mapping to
+  match Sacha's box.
+
+### Frozen delta — render + view-hook (dev-r3f-render)
+
+- **`HostageQteSprite.tsx`:** the peek ring's colour now reflects `ringBandOfPhase(qte.ringPhase)`
+  — the rouge→jaune→vert cycle — **replacing** the old stance-tell tint (`peekTellVisual`'s
+  `TELL`/`ALARM` colour on the ring). The ring's FORM two-beat signal (radius/opacity for
+  COVERED wind-up vs PEEKING open window, reduced-motion steady degrade) is KEPT — colour is
+  the new timing channel layered on the same form, still never the SOLE channel (a11y). The ring
+  still FOLLOWS `qte.targetOffset` (aim-honesty). ADD a minimal captor-HP read (pips?) — form/
+  placement is **ux-designer/game-designer's call**; DEFAULT is an **in-world** read on the
+  captor sprite, NOT a HUD bar.
+- **`hostageCue.ts`:** may gain a phase→ring-colour helper (or import `ringBandOfPhase` +ring
+  colour constants) so the colour maths stays unit-testable off-canvas. `captorTint` (the captor
+  SPRITE tint) and `hostageAlarmColor`/`energyFloater` unchanged.
+- **`HUD.tsx`:** UNCHANGED by default. `HudHostageQte = { phase, warning }` stays; the captor-HP
+  read is in-world. **FLAG:** re-introducing captor HP reverses the ADR-0034 U-1 "no captor-HP
+  HUD bar" — if ux-designer rules a HUD element returns, that touches `HudHostageQte` + `HUD.tsx`
+  and must be logged here before either lane builds it.
+- **`qteCamera.ts` / `useGameLoop.ts`:** UNCHANGED (static zoom).
+
+### Lane assignment — non-overlapping paths
+
+| Lane               | Owns (writes)                                                                                                                                                                                                                                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **dev-gameplay**   | `src/game/types/hostageQte.ts` (`captorHp` + `ringPhase`), `src/game/systems/qteSystem.ts` (`captorHp`/`ringPhase`/`cyclePhase`/`ringBandOfPhase`/`ringColourAt`/`colourDamage` + damage resolution + wider/faster wander constants), `src/game/levels/levels.ts` (belliard `captorHp`), `src/game/systems/__tests__/` |
+| **dev-r3f-render** | `src/render/scene/HostageQteSprite.tsx` (ring colour = `ringPhase` cycle + captor-HP read), `src/render/scene/hostageCue.ts` (phase→colour helper), `src/render/scene/__tests__/` — and `src/render/ui/HUD.tsx` ONLY if a HUD captor-HP read is approved (flagged above)                                               |
+
+**No shared-file contention.** `ringBandOfPhase` is game-owned (pure, in `qteSystem.ts`); render
+imports it read-only or mirrors the band with its own colour constants. `tickQte` is called from
+`stateMachine.ts` (game lane); render only READS `qte.captorHp`/`qte.ringPhase`/`qte.targetOffset`.
+**Sequencing:** (1) dev-gameplay lands the FROZEN types (interface only, `captorHp` + `ringPhase`)
+first → handoff. (2) Both lanes fan out in parallel on the non-overlapping paths above.
+
+### ADR impact — ADR-0034 D4 REVERSED (→ tech-writer / producer)
+
+`producer` (Marion) allocates the ADR number — I do NOT self-allocate. **tech-writer** records a
+new dated amendment to ADR-0034 — **Revision 4 — 2026-07-18: captor HP + colour-timed ring
+damage** — capturing:
+
+- (a) **D4 is REVERSED** — the duel is no longer binary "one headshot = kill"; the captor has
+  graded HP (`QteSpec.captorHp` / `HostageQte.captorHp`) depleted by **colour-timed head
+  damage** (green big / yellow small / red 0), and depleting it is the `WON` route;
+- (b) the **loss route is UNCHANGED** — `blownPeeks >= maxBlownPeeks` execution stays the sole
+  `LOST`; `QTE_UNANSWERED_PEEK` still does double duty (energy drain + blown-peeks increment);
+- (c) the **colour cycle joins the wander under the seeded/deterministic-pure-fn precedent**
+  (Revision 3 / §14): the ring colour is a PURE function of peek-elapsed `t` (`cyclePhase(t)`),
+  no `Math.random`/`Date.now`, no per-tick stepped state — same architecture precedent;
+- (d) `captorHp` is the newly-authored per-level knob; the cycle period + per-colour damage are
+  Belliard-first SYSTEM CONSTANTS (F3 promotion seam), matching the wander-amplitude precedent.
+
+### Open questions routed to game-designer (numbers, not contract)
+
+- **Energy-economy interaction:** does a peek on which the player LANDED damaging head HP (but
+  did not kill) still charge the −8 `QTE_UNANSWERED_PEEK` on close? **Frozen structural
+  DEFAULT = YES, unchanged** (blownPeeks++ and −8 remain the same close event; the HP chip is an
+  independent effect). Waiving the −8 on a "damaged this peek" would need a per-peek `damaged`
+  flag (new state) — additive, game-designer's call; do NOT build without their ruling.
+- captorHp value, RING_CYCLE_SECONDS, RING_RED_UNTIL / RING_YELLOW_UNTIL split, CAPTOR_DAMAGE_GREEN
+  / CAPTOR_DAMAGE_YELLOW, and the wider/faster wander numbers — all game-designer's (integers for
+  captorHp + damages, so HP arithmetic stays integer).
+
+- VERDICT: **CONTRACT FROZEN.** dev-gameplay → types file first (`captorHp` + `ringPhase`); then
+  both lanes parallel on the non-overlapping paths. tech-writer to record ADR-0034 **Revision 4**
+  (number/form from producer). Awaiting game-designer's captorHp / cycle / damage / wander values.
