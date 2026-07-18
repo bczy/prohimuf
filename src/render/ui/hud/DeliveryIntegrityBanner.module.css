@@ -21,6 +21,8 @@
 }
 
 .chipDelivering {
+  padding: var(--space-sm) var(--space-lg);
+  border: var(--keyline-width) solid var(--ink-black);
   font-size: var(--font-size-base);
   letter-spacing: 0.1em;
   color: var(--ink-full);
@@ -47,6 +49,8 @@
   transform: translateX(-50%);
   pointer-events: none;
   user-select: none;
+  padding: var(--space-sm) var(--space-lg);
+  border: var(--keyline-width) solid var(--ink-black);
   font-size: var(--font-size-xl);
   letter-spacing: 0.1em;
 }

@@ -34,11 +34,14 @@
   font-weight: 600;
 }
 
-/* Stamped paper chip — reads over any scene, zero glow. */
+/* Stamped paper chip — reads over any scene, zero glow. Holds only the declarations
+   common to EVERY chip; `padding`/`border` are NOT set here because the set-piece
+   stamps override them at equal specificity, and a composed base sharing a property
+   with its modifiers makes the winner depend on CSS emit order. Each consumer states
+   its own padding/border explicitly (default 6×12 / 2px, or a stamp's own), so the
+   result is deterministic regardless of module import/emit order. */
 .chip {
   background: var(--stock-shell);
-  border: var(--keyline-width) solid var(--ink-black);
-  padding: var(--space-sm) var(--space-lg);
   font-family: var(--font-display);
 }
 
