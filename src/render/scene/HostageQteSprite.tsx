@@ -52,7 +52,8 @@ const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 // spatial-colour model: `ringZoneColour(qte.ringZone)` — GREEN over a vital zone
 // ("shoot now" payoff), YELLOW over a limb, RED over empty space — paired with
 // `ringZoneEmphasis` so the vital/limb/off read survives in grayscale (green
-// brightens/enlarges, red dims/thins). The game owns the zone; the render owns the
+// brightens, red dims — via opacity, the ring size is constant). The game owns the
+// zone; the render owns the
 // colour map. Exact alignment vs `qteZoneAt`'s head band is reconciled at the
 // composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
 // The ring's XY now FOLLOWS the live `qte.targetOffset` (anchor-relative head-zone
@@ -128,7 +129,7 @@ function hudSliceKey(slice: HudHostageQte | null): string {
  * (wind-up tell + open-window marker). The captor and hostage are positioned ONCE
  * from the static anchor on activation (no per-tick moving-anchor writes); the peek
  * ring instead FOLLOWS the live `qte.targetOffset` each frame (the wandering
- * head-zone centre) alongside its tint/scale/opacity pulse. Visible only while the
+ * head-zone centre) alongside its tint/opacity pulse. Visible only while the
  * QTE holds the scene frozen (`isQteActive`).
  *
  * COVERED ↔ PEEKING reads by FORM (peek cue absent vs present) and pose, not hue;
@@ -205,7 +206,7 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     // The captor and hostage never move (the static duel): place those two meshes
     // ONCE from the fixed `qte.anchor` — no per-tick moving-anchor writes. The peek
     // ring's XY is NOT static — it follows the live `qte.targetOffset` each frame
-    // below (in addition to its tint/scale/opacity pulse).
+    // below (in addition to its tint/opacity pulse).
     if (!positionedRef.current) {
       captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
       captor.scale.set(QTE_W, QTE_H, 1);
@@ -275,10 +276,11 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     );
 
     // ── Peek cue (reticle ring that FRAMES the head point — never covers it) ──
-    // Radius + opacity carry the two beats as a FORM change (bigger/brighter for
-    // the open PEEKING window than the COVERED wind-up); the open centre keeps the
-    // head-shot kill-zone visible. Opacity is hard-capped so it reads as a subtle
-    // tell, not a solid block.
+    // The ring is a CONSTANT size (it no longer grows during the peek); OPACITY
+    // alone carries the two beats as a brightness change (brighter for the open
+    // PEEKING window than the COVERED wind-up); the open centre keeps the head-shot
+    // kill-zone visible. Opacity is hard-capped so it reads as a subtle tell, not a
+    // solid block.
     // The cue is a DANGER/ACTIVE marker: only during ACTIVE. Hidden through both
     // result holds (WON: the tick keeps stance PEEKING but the danger is over;
     // LOST: the execution reads instead), so no danger ring lingers over a win.
@@ -297,8 +299,11 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       // dim/thin — so the payoff/wasted read survives without hue. `cue.intensity`
       // still carries the two-beat wind-up→open peek FORM on top of it.
       const emphasis = ringZoneEmphasis(qte.ringZone);
-      const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity) * (0.7 + 0.3 * emphasis);
-      peekCue.scale.set(r, r, 1);
+      // Fixed radius — the reticle no longer GROWS during the peek (Bertrand
+      // playtest: "la cible ne devrait pas grossir"). Its size is CONSTANT so the
+      // wander reads as MOVEMENT, not a zoom; the wind-up→open tell and the
+      // vital/limb/off a11y read ride OPACITY/brightness below (never size).
+      peekCue.scale.set(CUE_RADIUS, CUE_RADIUS, 1);
       const cueMat = peekCue.material as MeshBasicMaterial;
       cueMat.color.set(ringZoneColour(qte.ringZone));
       cueMat.opacity = Math.min(

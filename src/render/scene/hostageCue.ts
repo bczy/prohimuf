@@ -153,10 +153,11 @@ export function ringZoneColour(zone: RingZone): string {
 
 /**
  * The NON-colour channel paired with `ringZoneColour` (a11y): a [0,1] emphasis the
- * render lane maps to the ring's brightness/opacity, radius and thickness. `vital`
- * reads brightest/largest (the payoff brightens/pulses), `off` dim/thin (a wasted
- * shot barely registers), `limb` between — so the vital/limb/off read is legible in
- * grayscale, colour only reinforcing it. Total over the closed `RingZone` union.
+ * render lane maps to the ring's brightness/opacity (NOT its size — the ring radius
+ * is constant so it never "grows"). `vital` reads brightest (the payoff), `off`
+ * dimmest (a wasted shot barely registers), `limb` between — so the vital/limb/off
+ * read is legible in grayscale, colour only reinforcing it. Total over the closed
+ * `RingZone` union.
  */
 export function ringZoneEmphasis(zone: RingZone): number {
   switch (zone) {
