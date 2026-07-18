@@ -600,14 +600,19 @@ function drawBollard(g: CanvasRenderingContext2D, w: number, h: number): void {
 /** Scooter / mobylette parked side-on, with a top-box. */
 function drawScooter(g: CanvasRenderingContext2D, w: number, h: number): void {
   const gy = h * 0.84;
+  // Wheel radius bounded by the space under the ground line: the scooter canvas
+  // is wider than tall (aspect 1.5), so a width-proportional radius (w*0.12)
+  // would rasterize the wheel bottoms past the canvas edge (flat-bottomed
+  // wheels, no ground contact).
+  const wr = Math.min(w * 0.12, h - gy - Math.max(3, w * 0.03));
   baseShadow(g, w, h, 0.42);
   g.strokeStyle = BODY;
   g.lineWidth = Math.max(3, w * 0.03);
   g.lineCap = "round";
   g.beginPath();
-  g.arc(w * 0.28, gy, w * 0.12, 0, TAU);
-  g.moveTo(w * 0.72 + w * 0.12, gy);
-  g.arc(w * 0.72, gy, w * 0.12, 0, TAU);
+  g.arc(w * 0.28, gy, wr, 0, TAU);
+  g.moveTo(w * 0.72 + wr, gy);
+  g.arc(w * 0.72, gy, wr, 0, TAU);
   g.stroke();
   g.lineWidth = Math.max(4, w * 0.045);
   g.beginPath();

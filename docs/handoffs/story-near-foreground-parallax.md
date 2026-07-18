@@ -134,3 +134,38 @@ Story: [`_bmad-output/planning-artifacts/story-near-foreground-parallax.md`](../
   `dev-r3f-render` (∥ `lead-art` on the grey band silhouettes under C1/C2). C3 to be pinned before
   transcription. Caps unchanged (≤2 spec-rework rounds — none consumed).
 - VERDICT: PASS — design gate (lead-game-designer)
+
+## Stage-6 panel — 2026-07-18 (PR #76, tronçon décor + near-fg layer)
+
+4 reviewers in parallel (code-review high / bmad-code-review / edge-case-hunter /
+security-review), findings adversarially verified. CONFIRMED & FIXED before merge:
+
+- [BLOQUANT] windowZones.generated.json — regeneration had clobbered
+  stalingrad/vitry (12→21 / 38→20 zones/panel); restored byte-for-byte from
+  origin/main.
+- [BLOQUANT] NearForeground bandTop read the legacy per-panel zones while cops
+  spawn from tronçon zones → props could mask lower cop windows; band now
+  derives from getBackdropLayout (same source as the cops, both modes).
+- [MAJEUR] preloader warmed sky/facade/street on belliard but never the
+  rendered troncon-a/b/c + ground → pop-in; levelLayerPaths now returns the
+  tronçon set for troncon-sequence levels (single-facade unchanged, tested).
+- [MAJEUR] single-facade street band had lost its street.png texture (zebra
+  fix over-reach) → restored for single-facade; tronçon keeps the ground strip.
+- [MAJEUR→doc] factor clamp doc drift ([-0.30,-0.15] documented vs [-0.5,-0.1]
+  shipped & visually gated) → JSDoc + manifest $comments + ADR-0045 realigned
+  to the shipped band.
+- [MINEUR] gen-window-zones rerun would silently clobber the hand-calibrated
+  belliard/troncon-\* zones → guard added (preserved unless FORCE_TRONCON=1);
+  pngjs declared as devDependency (was transitive); scooter wheel radius no
+  longer rasterizes past the canvas; non-finite nearForeground.x dropped.
+
+Accepted-deferred (non-blocking, logged for follow-up): ADR-0045/0046 prose
+drift cluster (tile count/aspects, renderOrder numbers, locked object set,
+density cap wording), unused computeBackdropSlots production caller, fallback
+test exercising the generated path, ground repeat 1.02 squeeze, belliard fullW
++9% without enemiesToWin retune (playtest verdict pending), pre-existing 80 MiB
+railing texture footprint (gpu-specialist DEFERRED-ON-TARGET, protocol ready).
+
+GPU verdict: PASS-WITH-NOTES (delta neutral). Security: no objection.
+Verdict: MERGE (all CONFIRMED BLOQUANT/MAJEUR resolved; Bertrand ordered the
+rebase+merge).

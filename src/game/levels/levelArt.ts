@@ -242,10 +242,10 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
  * yields null.
  *
  * Data is hardened at the source (the manifest is untyped JSON): `factor` is
- * clamped to [-0.30, -0.15] — a non-finite value first falls back to a safe
+ * clamped to [-0.5, -0.1] — a non-finite value first falls back to a safe
  * default so `NaN` cannot leak through the clamp. Objects with an unknown `kind`
- * are dropped; an object whose `scale` is present but non-positive or non-finite
- * is normalized to `1`.
+ * or a non-finite `x` are dropped; an object whose `scale` is present but
+ * non-positive or non-finite is normalized to `1`.
  */
 export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
   const art = id !== undefined ? LEVEL_ART[id] : undefined;
@@ -259,7 +259,7 @@ export function getNearForeground(id: string | undefined): NearForegroundLayer |
   );
 
   const objects = layer.objects
-    .filter((obj) => isNearForegroundKind(obj.kind))
+    .filter((obj) => isNearForegroundKind(obj.kind) && Number.isFinite(obj.x))
     .map((obj) =>
       obj.scale === undefined || (Number.isFinite(obj.scale) && obj.scale > 0)
         ? obj

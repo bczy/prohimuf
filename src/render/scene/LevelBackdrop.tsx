@@ -147,11 +147,13 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
         () => undefined,
       );
     });
-    // Tronçon mode: load the continuous ground strip (trottoir+road) and tile it
-    // horizontally across the whole street so the road reads unbroken under the
-    // between-building sky gaps. Single-facade keeps the plain dark band (its
-    // FALLBACK colour) — its opaque panels hide it, and street.png's centred zebra
-    // crossing is the QTE overhead road, not this backdrop band.
+    // Street band texture, per mode. Tronçon: the continuous ground strip
+    // (trottoir+road), tiled horizontally so the road reads unbroken under the
+    // between-building sky gaps — NOT street.png, whose centred zebra crossing
+    // (belliard's QTE overhead road) would peek through the gap at world x=0.
+    // Single-facade: the classic per-level street.png backdrop art, exactly as
+    // before ADR-0046 (stalingrad/vitry's street art is genuine backdrop, not a
+    // QTE view — dropping it flattened their pavement band to a dark rectangle).
     if (isTroncon) {
       loader.load(
         tileUrl(art.id, "ground"),
@@ -165,6 +167,15 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
           mat.map = t;
           mat.color.set("#ffffff");
           mat.needsUpdate = true;
+        },
+        undefined,
+        () => undefined,
+      );
+    } else {
+      loader.load(
+        levelLayerUrl(art.id, "street"),
+        (t) => {
+          assignPlain(streetRef.current, t);
         },
         undefined,
         () => undefined,

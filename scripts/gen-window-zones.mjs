@@ -413,17 +413,33 @@ function main() {
 
   // Pass 2 — tronçon-sequence levels (ADR-0046): detect real window openings
   // per distinct tronçon file, keyed `${levelId}/${file}`.
+  //
+  // GUARD: existing `${id}/${file}` keys are HAND-CALIBRATED (Bertrand rejected
+  // this detector's output and the zones were re-placed one-by-one on the art —
+  // see the story shard). A plain rerun must never clobber them: they are
+  // preserved verbatim unless FORCE_TRONCON=1 is set, in which case the
+  // detector output overwrites them (and must be re-gated by a human).
+  const existing = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, "utf8")) : {};
+  const forceTroncon = process.env.FORCE_TRONCON === "1";
   for (const level of manifest.levels) {
     if (level.backdrop?.mode !== "troncon-sequence") continue;
     const files = Array.from(new Set(level.backdrop.tiles.map((t) => t.file)));
     for (const file of files) {
+      const key = `${level.id}/${file}`;
+      if (!forceTroncon && existing[key] !== undefined) {
+        result[key] = existing[key];
+        console.log(
+          `${key}: hand-calibrated, preserved (${existing[key].length} zones) — FORCE_TRONCON=1 to regenerate`,
+        );
+        continue;
+      }
       const png = path.join(LEVELS_DIR, level.id, `${file}.png`);
       if (!fs.existsSync(png)) {
         console.warn(`${level.id}/${file}: missing ${path.relative(ROOT, png)}, skipped`);
         continue;
       }
       const { zones, floorBands } = detectTronconZones(png);
-      result[`${level.id}/${file}`] = zones;
+      result[key] = zones;
       console.log(
         `${level.id}/${file}: ${zones.length} zones across ${floorBands.length} floor band(s) ` +
           `y≈[${floorBands.map(([a, b]) => `${a}-${b}`).join(", ")}]`,

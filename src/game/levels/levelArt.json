@@ -279,7 +279,7 @@
       },
       "ironwork": "haussmann",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0045). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.30,-0.15] in getNearForeground. x is a full-street normalized anchor (0=left,1=right); ~1 prop per 0.5 screen width, capped at 4.",
+        "$comment": "Near-foreground parallax props (ADR-0045). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right).",
         "factor": -0.34,
         "objects": [
           {
@@ -420,7 +420,7 @@
       },
       "ironwork": "plain",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0045). factor NEGATIVE, clamped to [-0.30,-0.15]. x full-street normalized (0..1), ~1 prop per 0.5 screen width, capped at 4.",
+        "$comment": "Near-foreground parallax props (ADR-0045). factor NEGATIVE, clamped to [-0.5,-0.1]. x full-street normalized (0..1).",
         "factor": -0.38,
         "objects": [
           {

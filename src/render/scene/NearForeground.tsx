@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
-import { getLevelPanelZones, getNearForeground, tilePanelZones } from "@game/levels/levelArt";
+import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
 import { NEAR_KIND_SPECS } from "./nearForegroundArt";
@@ -148,10 +148,14 @@ export function NearForeground({
   const layer = getNearForeground(levelId);
   const hasTrafficLight = layer?.objects.some((o) => o.kind === "trafficLight") ?? false;
 
-  // Bottom-band top edge from the level's own window zones (the same source that
-  // places the cops), so confinement tracks the real windows, not a constant.
+  // Bottom-band top edge from the level's own window zones — read through
+  // getBackdropLayout so it is the SAME source that places the cops in BOTH
+  // modes (tronçon tiles carry per-tronçon zones; the legacy per-panel path
+  // used here before ADR-0046 diverged on belliard and let props rise into
+  // the lower cop windows). Zone y/h are image-normalized in every mode, which
+  // is all nearForegroundBandTop reads.
   const bandTop = useMemo(
-    () => nearForegroundBandTop(tilePanelZones(getLevelPanelZones(levelId))),
+    () => nearForegroundBandTop(getBackdropLayout(levelId).tiles.flatMap((t) => t.zones)),
     [levelId],
   );
 

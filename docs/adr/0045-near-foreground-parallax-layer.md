@@ -53,7 +53,7 @@ zero new infrastructure.
 `nearForeground` layer: a negative engine `factor` plus a list of placed objects
 (`kind` + normalized street-x + optional scale). **Opt-out = field absent** (Vitry omits it
 entirely — its ~0.12 facade strip is a sliver at mobile zoom 1.7 and cannot hold a safe
-band; UX D9.5). Belliard + Stalingrad carry the layer. Factor is clamped to `[-0.30, -0.15]`
+band; UX D9.5). Belliard + Stalingrad carry the layer. Factor is clamped to `[-0.5, -0.1]` (widened from the originally gated `[-0.30, -0.15]` during the visual tuning passes Bertrand validated on the built layer — the shipped factors −0.34/−0.38 sit in the widened band)
 (S 1.15–1.30) by the accessor; default target `-0.20` (S 1.20).
 
 **3. Application + rendering (`src/render`).** A new `NearForeground.tsx` component places

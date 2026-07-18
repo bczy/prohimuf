@@ -210,6 +210,20 @@ function resolveLevelArtId(levelId: string): string {
  */
 export function levelLayerPaths(levelId: string): readonly string[] {
   const id = resolveLevelArtId(levelId);
+  const lvl = levelArt.levels.find((l) => l.id === id) as
+    | { backdrop?: { mode?: string; tiles?: readonly { file: string }[] } }
+    | undefined;
+  // Tronçon-sequence levels (ADR-0046) render their tile PNGs + the continuous
+  // ground strip — warm THOSE, not the sky/facade/street trio the tronçon path
+  // never draws (which would let the gate open onto fallback-colour planes and
+  // the whole street pop in mid-play on a slow connection).
+  if (lvl?.backdrop?.mode === "troncon-sequence") {
+    const tiles = lvl.backdrop.tiles ?? [];
+    return dedupe([
+      ...tiles.map((t) => `assets/levels/${id}/${t.file}.png`),
+      `assets/levels/${id}/ground.png`,
+    ]);
+  }
   return BACKDROP_LAYERS.map((layer) => `assets/levels/${id}/${layer}.png`);
 }
 
