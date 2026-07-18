@@ -12,602 +12,195 @@
     <title>muf — Shared harness library</title>
     <style>
       :root {
-        --paper: #f2efe8;
-        --paper-2: #e9e5da;
-        --ink: #17150f;
-        --ink-soft: #4a4738;
-        --line: #17150f;
-        --acid: #b6ff00;
-        --acid-ink: #5f7a00;
-        --a1: #0e6e91;
-        --a1-bg: #d8ecf4; /* bleu — tooling/CI */
-        --a2: #c4006b;
-        --a2-bg: #fadbeb; /* magenta — art/render */
-        --a3: #1f7a3d;
-        --a3-bg: #dff0d9; /* vert — data/manifeste */
-        --a4: #b54a00;
-        --a4-bg: #fbe4d2; /* orange — CI/farm */
-        --gate: #8a6d00;
-        --gate-bg: #fff3c4;
-        --warn: #a3341a;
-        --warn-bg: #fbe0d8;
-        --card: #faf8f3;
-        --shadow: rgba(23, 21, 15, 0.85);
-        --noise: rgba(23, 21, 15, 0.05);
+        --paper: #f2efe8; --paper-2: #e9e5da; --ink: #17150f; --ink-soft: #4a4738;
+        --line: #17150f; --acid: #b6ff00; --acid-ink: #5f7a00;
+        --a1: #0e6e91; --a1-bg: #d8ecf4;   /* bleu — tooling/CI */
+        --a2: #c4006b; --a2-bg: #fadbeb;   /* magenta — art/render */
+        --a3: #1f7a3d; --a3-bg: #dff0d9;   /* vert — data/manifeste */
+        --a4: #b54a00; --a4-bg: #fbe4d2;   /* orange — CI/farm */
+        --gate: #8a6d00; --gate-bg: #fff3c4;
+        --warn: #a3341a; --warn-bg: #fbe0d8;
+        --card: #faf8f3; --shadow: rgba(23, 21, 15, 0.85); --noise: rgba(23, 21, 15, 0.05);
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --paper: #101013;
-          --paper-2: #17171b;
-          --ink: #ececdf;
-          --ink-soft: #a5a293;
-          --line: #ececdf;
-          --acid: #b6ff00;
-          --acid-ink: #b6ff00;
-          --a1: #3fc3e8;
-          --a1-bg: #0d2530;
-          --a2: #ff4fa8;
-          --a2-bg: #2c0f1f;
-          --a3: #4fd07d;
-          --a3-bg: #10271a;
-          --a4: #ff9a4d;
-          --a4-bg: #2b1a0c;
-          --gate: #ffd94d;
-          --gate-bg: #292109;
-          --warn: #ff8a66;
-          --warn-bg: #2c1109;
-          --card: #17171b;
-          --shadow: rgba(182, 255, 0, 0.28);
-          --noise: rgba(236, 236, 223, 0.04);
+          --paper: #101013; --paper-2: #17171b; --ink: #ececdf; --ink-soft: #a5a293;
+          --line: #ececdf; --acid: #b6ff00; --acid-ink: #b6ff00;
+          --a1: #3fc3e8; --a1-bg: #0d2530;
+          --a2: #ff4fa8; --a2-bg: #2c0f1f;
+          --a3: #4fd07d; --a3-bg: #10271a;
+          --a4: #ff9a4d; --a4-bg: #2b1a0c;
+          --gate: #ffd94d; --gate-bg: #292109;
+          --warn: #ff8a66; --warn-bg: #2c1109;
+          --card: #17171b; --shadow: rgba(182, 255, 0, 0.28); --noise: rgba(236, 236, 223, 0.04);
         }
       }
       :root[data-theme="light"] {
-        --paper: #f2efe8;
-        --paper-2: #e9e5da;
-        --ink: #17150f;
-        --ink-soft: #4a4738;
-        --line: #17150f;
-        --acid: #b6ff00;
-        --acid-ink: #5f7a00;
-        --a1: #0e6e91;
-        --a1-bg: #d8ecf4;
-        --a2: #c4006b;
-        --a2-bg: #fadbeb;
-        --a3: #1f7a3d;
-        --a3-bg: #dff0d9;
-        --a4: #b54a00;
-        --a4-bg: #fbe4d2;
-        --gate: #8a6d00;
-        --gate-bg: #fff3c4;
-        --warn: #a3341a;
-        --warn-bg: #fbe0d8;
-        --card: #faf8f3;
-        --shadow: rgba(23, 21, 15, 0.85);
-        --noise: rgba(23, 21, 15, 0.05);
+        --paper: #f2efe8; --paper-2: #e9e5da; --ink: #17150f; --ink-soft: #4a4738;
+        --line: #17150f; --acid: #b6ff00; --acid-ink: #5f7a00;
+        --a1: #0e6e91; --a1-bg: #d8ecf4; --a2: #c4006b; --a2-bg: #fadbeb;
+        --a3: #1f7a3d; --a3-bg: #dff0d9; --a4: #b54a00; --a4-bg: #fbe4d2;
+        --gate: #8a6d00; --gate-bg: #fff3c4; --warn: #a3341a; --warn-bg: #fbe0d8;
+        --card: #faf8f3; --shadow: rgba(23, 21, 15, 0.85); --noise: rgba(23, 21, 15, 0.05);
       }
       :root[data-theme="dark"] {
-        --paper: #101013;
-        --paper-2: #17171b;
-        --ink: #ececdf;
-        --ink-soft: #a5a293;
-        --line: #ececdf;
-        --acid: #b6ff00;
-        --acid-ink: #b6ff00;
-        --a1: #3fc3e8;
-        --a1-bg: #0d2530;
-        --a2: #ff4fa8;
-        --a2-bg: #2c0f1f;
-        --a3: #4fd07d;
-        --a3-bg: #10271a;
-        --a4: #ff9a4d;
-        --a4-bg: #2b1a0c;
-        --gate: #ffd94d;
-        --gate-bg: #292109;
-        --warn: #ff8a66;
-        --warn-bg: #2c1109;
-        --card: #17171b;
-        --shadow: rgba(182, 255, 0, 0.28);
-        --noise: rgba(236, 236, 223, 0.04);
+        --paper: #101013; --paper-2: #17171b; --ink: #ececdf; --ink-soft: #a5a293;
+        --line: #ececdf; --acid: #b6ff00; --acid-ink: #b6ff00;
+        --a1: #3fc3e8; --a1-bg: #0d2530; --a2: #ff4fa8; --a2-bg: #2c0f1f;
+        --a3: #4fd07d; --a3-bg: #10271a; --a4: #ff9a4d; --a4-bg: #2b1a0c;
+        --gate: #ffd94d; --gate-bg: #292109; --warn: #ff8a66; --warn-bg: #2c1109;
+        --card: #17171b; --shadow: rgba(182, 255, 0, 0.28); --noise: rgba(236, 236, 223, 0.04);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
-        background:
-          repeating-linear-gradient(0deg, transparent 0 3px, var(--noise) 3px 4px), var(--paper);
+        background: repeating-linear-gradient(0deg, transparent 0 3px, var(--noise) 3px 4px), var(--paper);
         color: var(--ink);
         font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-        font-size: 15px;
-        line-height: 1.5;
-        margin: 0;
+        font-size: 15px; line-height: 1.5; margin: 0;
       }
-      .wrap {
-        max-width: 1040px;
-        margin: 0 auto;
-        padding: 32px 20px 80px;
-      }
+      .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 20px 80px; }
       .display {
         font-family: Haettenschweiler, "Arial Narrow", Impact, "Franklin Gothic Medium", sans-serif;
-        font-weight: 400;
-        letter-spacing: 0.01em;
-        text-transform: uppercase;
+        font-weight: 400; letter-spacing: 0.01em; text-transform: uppercase;
       }
-      code,
-      .mono {
-        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-        font-size: 0.88em;
-      }
+      code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; }
 
       /* series nav */
-      .series {
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 11px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--ink-soft);
-        margin: 0 0 12px;
-      }
-      .series b {
-        color: var(--ink);
-      }
+      .series { font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; }
+      .series b { color: var(--ink); }
 
       /* hero */
-      header {
-        border: 3px solid var(--line);
-        padding: 24px 26px 20px;
-        margin-bottom: 14px;
-        position: relative;
-        background: var(--card);
-        box-shadow: 8px 8px 0 var(--shadow);
-      }
-      .eyebrow {
-        font-family: ui-monospace, Menlo, Consolas, monospace;
-        font-size: 12px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--ink-soft);
-        margin: 0 0 6px;
-      }
-      h1 {
-        font-size: clamp(40px, 7vw, 74px);
-        line-height: 0.92;
-        margin: 0;
-        text-wrap: balance;
-      }
-      h1 .neon {
-        background: var(--acid);
-        color: #17150f;
-        padding: 0 10px;
-        display: inline-block;
-        transform: rotate(-1.2deg);
-      }
-      .lede {
-        max-width: 64ch;
-        color: var(--ink-soft);
-        margin: 14px 0 0;
-      }
-      .lede strong {
-        color: var(--ink);
-      }
-      .hero-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0;
-        margin-top: 18px;
-        border: 2px solid var(--line);
-      }
-      .hero-stats > div {
-        flex: 1 1 110px;
-        padding: 8px 14px;
-        border-right: 2px solid var(--line);
-      }
-      .hero-stats > div:last-child {
-        border-right: none;
-      }
-      .hero-stats b {
-        display: block;
-        font-size: 24px;
-        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
-        font-weight: 400;
-      }
-      .hero-stats span {
-        font-size: 10.5px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--ink-soft);
-      }
+      header { border: 3px solid var(--line); padding: 24px 26px 20px; margin-bottom: 14px;
+        position: relative; background: var(--card); box-shadow: 8px 8px 0 var(--shadow); }
+      .eyebrow { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+        letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+      h1 { font-size: clamp(40px, 7vw, 74px); line-height: 0.92; margin: 0; text-wrap: balance; }
+      h1 .neon { background: var(--acid); color: #17150f; padding: 0 10px; display: inline-block; transform: rotate(-1.2deg); }
+      .lede { max-width: 64ch; color: var(--ink-soft); margin: 14px 0 0; }
+      .lede strong { color: var(--ink); }
+      .hero-stats { display: flex; flex-wrap: wrap; gap: 0; margin-top: 18px; border: 2px solid var(--line); }
+      .hero-stats > div { flex: 1 1 110px; padding: 8px 14px; border-right: 2px solid var(--line); }
+      .hero-stats > div:last-child { border-right: none; }
+      .hero-stats b { display: block; font-size: 24px;
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif; font-weight: 400; }
+      .hero-stats span { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
 
       /* status banner (Proposed ADRs / repo divergence) */
-      .status {
-        border: 2px dashed var(--warn);
-        background: var(--warn-bg);
-        color: var(--ink);
-        padding: 10px 14px;
-        margin: 14px 0 0;
-        font-size: 12.5px;
-        display: flex;
-        gap: 10px;
-        align-items: baseline;
-      }
-      .status b {
-        color: var(--warn);
-        font-family: ui-monospace, Menlo, monospace;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
+      .status { border: 2px dashed var(--warn); background: var(--warn-bg); color: var(--ink);
+        padding: 10px 14px; margin: 14px 0 0; font-size: 12.5px; display: flex; gap: 10px; align-items: baseline; }
+      .status b { color: var(--warn); font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.06em;
+        text-transform: uppercase; white-space: nowrap; }
 
       /* frameless pixel sprites */
-      .sprite {
-        display: inline-block;
-        vertical-align: middle;
-        line-height: 0;
-        margin-right: 8px;
-      }
-      .sprite img {
-        width: 44px;
-        height: 40px;
-        image-rendering: pixelated;
-        display: block;
-      }
-      .sprite.big img {
-        width: 88px;
-        height: 80px;
-      }
-      .sprite.sm img {
-        width: 33px;
-        height: 30px;
-      }
-      .sprite.fr {
-        float: right;
-        margin: 0 0 6px 12px;
-      }
+      .sprite { display: inline-block; vertical-align: middle; line-height: 0; margin-right: 8px; }
+      .sprite img { width: 44px; height: 40px; image-rendering: pixelated; display: block; }
+      .sprite.big img { width: 88px; height: 80px; }
+      .sprite.sm img { width: 33px; height: 30px; }
+      .sprite.fr { float: right; margin: 0 0 6px 12px; }
 
       /* section scaffold */
-      h2.sec {
-        font-size: 30px;
-        margin: 40px 0 2px;
-      }
-      .sub {
-        font-size: 12px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--ink-soft);
-        margin: 0 0 12px;
-      }
+      h2.sec { font-size: 30px; margin: 40px 0 2px; }
+      .sub { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; }
 
-      .card {
-        border: 2px solid var(--line);
-        background: var(--card);
-        padding: 12px 15px;
-        box-shadow: 5px 5px 0 var(--shadow);
-      }
-      .card p {
-        margin: 6px 0 0;
-        font-size: 13.5px;
-        color: var(--ink-soft);
-      }
-      .card p strong {
-        color: var(--ink);
-      }
-      .card h4 {
-        margin: 0;
-        font-size: 18px;
-      }
+      .card { border: 2px solid var(--line); background: var(--card); padding: 12px 15px; box-shadow: 5px 5px 0 var(--shadow); }
+      .card p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+      .card p strong { color: var(--ink); }
+      .card h4 { margin: 0; font-size: 18px; }
 
-      .tag {
-        display: inline-block;
-        font-family: ui-monospace, Menlo, Consolas, monospace;
-        font-size: 11.5px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        padding: 2px 8px;
-        border: 1.5px solid currentColor;
-      }
-      .t-1 {
-        color: var(--a1);
-      }
-      .t-2 {
-        color: var(--a2);
-      }
-      .t-3 {
-        color: var(--a3);
-      }
-      .t-4 {
-        color: var(--a4);
-      }
-      .t-x {
-        color: var(--ink);
-      }
-      .persona {
-        font-size: 12.5px;
-        color: var(--ink-soft);
-        margin-left: 6px;
-      }
+      .tag { display: inline-block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px;
+        font-weight: 700; letter-spacing: 0.04em; padding: 2px 8px; border: 1.5px solid currentColor; }
+      .t-1 { color: var(--a1); } .t-2 { color: var(--a2); } .t-3 { color: var(--a3); }
+      .t-4 { color: var(--a4); } .t-x { color: var(--ink); }
+      .persona { font-size: 12.5px; color: var(--ink-soft); margin-left: 6px; }
 
       /* numbered flow (render farm loop, detect-correct loop) */
-      .flow {
-        position: relative;
-        padding-left: 52px;
-      }
-      .flow::before {
-        content: "";
-        position: absolute;
-        left: 19px;
-        top: 4px;
-        bottom: 4px;
-        width: 4px;
-        background: repeating-linear-gradient(180deg, var(--line) 0 13px, transparent 13px 21px);
-      }
-      .step {
-        position: relative;
-        margin-bottom: 14px;
-      }
-      .step .n {
-        position: absolute;
-        left: -52px;
-        top: -2px;
-        width: 40px;
-        height: 40px;
-        border: 3px solid var(--line);
-        background: var(--paper);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
-        font-size: 22px;
-        z-index: 1;
-      }
-      .step .n.hot {
-        background: var(--acid);
-        color: #17150f;
-      }
-      .step .card {
-        box-shadow: 4px 4px 0 var(--shadow);
-      }
+      .flow { position: relative; padding-left: 52px; }
+      .flow::before { content: ""; position: absolute; left: 19px; top: 4px; bottom: 4px; width: 4px;
+        background: repeating-linear-gradient(180deg, var(--line) 0 13px, transparent 13px 21px); }
+      .step { position: relative; margin-bottom: 14px; }
+      .step .n { position: absolute; left: -52px; top: -2px; width: 40px; height: 40px; border: 3px solid var(--line);
+        background: var(--paper); display: flex; align-items: center; justify-content: center;
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif; font-size: 22px; z-index: 1; }
+      .step .n.hot { background: var(--acid); color: #17150f; }
+      .step .card { box-shadow: 4px 4px 0 var(--shadow); }
 
       /* stamp gate */
-      .stamp {
-        display: inline-block;
-        border: 3px double var(--gate);
-        color: var(--gate);
-        background: var(--gate-bg);
-        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
-        font-size: 16px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        padding: 3px 12px 2px;
-        transform: rotate(-2deg);
-        white-space: nowrap;
-      }
-      .stamp small {
-        display: block;
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        transform: none;
-      }
-      .gate-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin: 12px 0;
-      }
-      .gate-note {
-        font-size: 12.5px;
-        color: var(--ink-soft);
-        flex: 1 1 260px;
-        margin: 0;
-      }
-      .loopback {
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 11px;
-        color: var(--ink-soft);
-        border-left: 3px solid var(--gate);
-        padding: 2px 8px;
-        margin-top: 8px;
-      }
+      .stamp { display: inline-block; border: 3px double var(--gate); color: var(--gate); background: var(--gate-bg);
+        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif; font-size: 16px; letter-spacing: 0.06em;
+        text-transform: uppercase; padding: 3px 12px 2px; transform: rotate(-2deg); white-space: nowrap; }
+      .stamp small { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 9px;
+        letter-spacing: 0.1em; transform: none; }
+      .gate-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 12px 0; }
+      .gate-note { font-size: 12.5px; color: var(--ink-soft); flex: 1 1 260px; margin: 0; }
+      .loopback { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-soft);
+        border-left: 3px solid var(--gate); padding: 2px 8px; margin-top: 8px; }
 
       /* generic grids */
-      .grid2 {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 12px;
-      }
-      .grid3 {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 10px;
-      }
-      .grid2 .card,
-      .grid3 .card {
-        box-shadow: 3px 3px 0 var(--shadow);
-        font-size: 13px;
-      }
-      .grid3 .card b,
-      .grid2 .card b {
-        display: block;
-        margin-bottom: 3px;
-      }
-      .mini {
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 11px;
-        color: var(--ink-soft);
-      }
+      .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+      .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+      .grid2 .card, .grid3 .card { box-shadow: 3px 3px 0 var(--shadow); font-size: 13px; }
+      .grid3 .card b, .grid2 .card b { display: block; margin-bottom: 3px; }
+      .mini { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-soft); }
 
       /* parallax layer stack (level-art hero) */
-      .layers {
-        display: grid;
-        gap: 6px;
-        margin-top: 6px;
-      }
-      .layers .lyr {
-        border: 2px solid var(--line);
-        padding: 8px 12px;
-        font-size: 13px;
-        position: relative;
-        overflow: hidden;
-      }
-      .layers .lyr b {
-        font-family: ui-monospace, Menlo, monospace;
-      }
-      .layers .sky {
-        background: var(--a3-bg);
-      }
-      .layers .facade {
-        background: var(--a2-bg);
-      }
-      .layers .street {
-        background: var(--a4-bg);
-      }
-      .layers .k {
-        float: right;
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 11px;
-        color: var(--ink-soft);
-      }
+      .layers { display: grid; gap: 6px; margin-top: 6px; }
+      .layers .lyr { border: 2px solid var(--line); padding: 8px 12px; font-size: 13px; position: relative; overflow: hidden; }
+      .layers .lyr b { font-family: ui-monospace, Menlo, monospace; }
+      .layers .sky { background: var(--a3-bg); }
+      .layers .facade { background: var(--a2-bg); }
+      .layers .street { background: var(--a4-bg); }
+      .layers .k { float: right; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-soft); }
 
       /* defect chips */
-      .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-      }
-      .chip {
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 11px;
-        border: 1.5px solid var(--warn);
-        color: var(--warn);
-        padding: 1px 7px;
-      }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+      .chip { font-family: ui-monospace, Menlo, monospace; font-size: 11px; border: 1.5px solid var(--warn);
+        color: var(--warn); padding: 1px 7px; }
 
       /* mode cards D1/D2/D3 */
-      .modes {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 12px;
-      }
-      .mode {
-        border: 2px solid var(--a2);
-        background: var(--card);
-        padding: 12px 14px;
-        box-shadow: 4px 4px 0 var(--shadow);
-      }
-      .mode .k {
-        font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif;
-        font-size: 26px;
-        color: var(--a2);
-        line-height: 1;
-      }
-      .mode h4 {
-        margin: 2px 0 4px;
-        font-size: 16px;
-      }
-      .mode p {
-        margin: 0;
-        font-size: 12.5px;
-        color: var(--ink-soft);
-      }
-      .mode .saw {
-        display: block;
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 10.5px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--a2);
-        margin-bottom: 4px;
-      }
+      .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+      .mode { border: 2px solid var(--a2); background: var(--card); padding: 12px 14px; box-shadow: 4px 4px 0 var(--shadow); }
+      .mode .k { font-family: Haettenschweiler, "Arial Narrow", Impact, sans-serif; font-size: 26px; color: var(--a2); line-height: 1; }
+      .mode h4 { margin: 2px 0 4px; font-size: 16px; }
+      .mode p { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+      .mode .saw { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px;
+        letter-spacing: 0.06em; text-transform: uppercase; color: var(--a2); margin-bottom: 4px; }
 
       /* source-of-truth callout */
-      .truth {
-        border: 3px solid var(--a3);
-        background: var(--a3-bg);
-        padding: 14px 16px;
-        box-shadow: 6px 6px 0 var(--shadow);
-      }
-      .truth h4 {
-        margin: 0 0 4px;
-        font-size: 20px;
-      }
-      .truth code {
-        color: var(--ink);
-      }
-      .truth .who {
-        float: right;
-      }
+      .truth { border: 3px solid var(--a3); background: var(--a3-bg); padding: 14px 16px; box-shadow: 6px 6px 0 var(--shadow); }
+      .truth h4 { margin: 0 0 4px; font-size: 20px; }
+      .truth code { color: var(--ink); }
+      .truth .who { float: right; }
 
       /* two-column reads */
-      .io {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      @media (max-width: 560px) {
-        .io,
-        .modes,
-        .grid2 {
-          grid-template-columns: 1fr;
-        }
-      }
+      .io { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 560px) { .io, .modes, .grid2 { grid-template-columns: 1fr; } }
 
       /* crew strip */
-      .crew {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 12px;
-      }
-      .crew .m {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        border: 2px solid var(--line);
-        background: var(--card);
-        padding: 6px 10px 6px 6px;
-        font-size: 12.5px;
-        box-shadow: 3px 3px 0 var(--shadow);
-      }
-      .crew .m .role {
-        font-family: ui-monospace, Menlo, monospace;
-        font-weight: 700;
-      }
-      .crew .m .why {
-        color: var(--ink-soft);
-      }
+      .crew { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+      .crew .m { display: flex; align-items: center; gap: 6px; border: 2px solid var(--line); background: var(--card);
+        padding: 6px 10px 6px 6px; font-size: 12.5px; box-shadow: 3px 3px 0 var(--shadow); }
+      .crew .m .role { font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+      .crew .m .why { color: var(--ink-soft); }
 
-      footer {
-        margin-top: 44px;
-        font-size: 12px;
-        color: var(--ink-soft);
-        border-top: 2px solid var(--line);
-        padding-top: 12px;
-      }
-      footer code {
-        font-size: 11.5px;
-      }
-      a {
-        color: inherit;
-      }
+      footer { margin-top: 44px; font-size: 12px; color: var(--ink-soft); border-top: 2px solid var(--line); padding-top: 12px; }
+      footer code { font-size: 11.5px; }
+      a { color: inherit; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <p class="series">
-        Les harness de muf · Level-art · Window-align · Vérif. dynamique · <b>Lib partagée</b>
-      </p>
+<p class="series">Les harness de muf · Level-art · Window-align · Vérif. dynamique · <b>Lib partagée</b></p>
       <header>
         <p class="eyebrow">muf · harness #4 · ADR-0007</p>
         <span class="sprite big fr"><img src="crew/senior-architect.png" alt="Winston" /></span>
         <h1 class="display">Lib de harness<br /><span class="neon">partagée</span></h1>
         <p class="lede">
-          Six générateurs <code>.mjs</code> réimplémentent chacun les mêmes blocs (fetch+retry,
-          garde idempotente, parsing CLI, cutout). L'ADR-0007 tranche : une
-          <strong>lib de petites primitives pures</strong> sous <code>scripts/lib/</code> — et un
-          <strong>refus explicite du méta-harness</strong>, ce « générateur de générateurs » qui
-          multiplierait le boilerplate au lieu de le supprimer.
+          Six générateurs <code>.mjs</code> réimplémentent chacun les mêmes blocs (fetch+retry, garde idempotente,
+          parsing CLI, cutout). L'ADR-0007 tranche : une <strong>lib de petites primitives pures</strong> sous
+          <code>scripts/lib/</code> — et un <strong>refus explicite du méta-harness</strong>, ce « générateur de
+          générateurs » qui multiplierait le boilerplate au lieu de le supprimer.
         </p>
         <div class="hero-stats display">
           <div><b>~4</b><span>blocs dupliqués</span></div>
@@ -615,140 +208,71 @@
           <div><b>13</b><span>consommateurs réels</span></div>
           <div><b>0</b><span>méta-harness</span></div>
         </div>
-        <div class="status">
-          <b>ADR Accepted</b
-          ><span
-            >Statut accepté (2026-07-18). Les primitives pures sont extraites et testées :
-            <code>pollinations.mjs</code>, <code>idempotent.mjs</code>, <code>cli.mjs</code>,
-            <code>cutout.mjs</code> (chromaKey prouvé byte-identique sur les 22 PNG enemy) et
-            <code>contact-sheet.mjs</code>, plus le <code>_template.mjs</code> copiable. Adoption
-            bornée aux générateurs canoniques ; les scripts legacy sont laissés en
-            candidats-retrait.</span
-          >
-        </div>
+        <div class="status"><b>ADR Accepted</b><span>Statut accepté (2026-07-18). Les primitives pures sont extraites et
+          testées : <code>pollinations.mjs</code>, <code>idempotent.mjs</code>, <code>cli.mjs</code>, <code>cutout.mjs</code>
+          (chromaKey prouvé byte-identique sur les 22 PNG enemy) et <code>contact-sheet.mjs</code>, plus le
+          <code>_template.mjs</code> copiable. Adoption bornée aux générateurs canoniques ; les scripts legacy sont laissés
+          en candidats-retrait.</span></div>
       </header>
 
       <h2 class="sec display">La décision : refuser le méta-harness</h2>
       <div class="card" style="border-color: var(--warn)">
         <span class="sprite fr"><img src="crew/senior-architect.png" alt="Winston" /></span>
-        <p style="margin-top: 0">
-          <strong>On ne construit pas un « harness qui génère des harness ».</strong> Le mot d'ordre
-          de l'ADR :
-        </p>
-        <p style="font-size: 15px; color: var(--ink)">
-          <em
-            >« Une couche qui émet du code ne supprime pas le boilerplate — elle le multiplie plus
-            vite et le cache derrière un template. »</em
-          >
-        </p>
-        <p>
-          Abstraction prématurée (anti-YAGNI) <strong>et</strong> fuyante (anti-SOLID) : figée sur
-          la forme d'aujourd'hui (« fetch un PNG statique depuis Pollinations »), elle induirait en
-          erreur le prochain harness qui ne partage pas cette forme. À la place : des primitives
-          pures importées à la carte, + au plus une <em>anatomie de harness</em> documentée et un
-          <code>_template.mjs</code> copié à la main. « Un checklist guide, un générateur ossifie. »
-        </p>
+        <p style="margin-top:0"><strong>On ne construit pas un « harness qui génère des harness ».</strong>
+          Le mot d'ordre de l'ADR :</p>
+        <p style="font-size:15px; color:var(--ink)"><em>« Une couche qui émet du code ne supprime pas le boilerplate —
+          elle le multiplie plus vite et le cache derrière un template. »</em></p>
+        <p>Abstraction prématurée (anti-YAGNI) <strong>et</strong> fuyante (anti-SOLID) : figée sur la forme d'aujourd'hui
+          (« fetch un PNG statique depuis Pollinations »), elle induirait en erreur le prochain harness qui ne partage pas
+          cette forme. À la place : des primitives pures importées à la carte, + au plus une <em>anatomie de harness</em>
+          documentée et un <code>_template.mjs</code> copié à la main. « Un checklist guide, un générateur ossifie. »</p>
       </div>
 
       <h2 class="sec display">Les primitives</h2>
       <div class="grid2">
-        <div class="card">
-          <b class="t-3">Extrait &amp; testé</b> <code>pollinations.mjs</code> fetchWithRetry ·
-          <code>idempotent.mjs</code> skipIfExists · <code>cli.mjs</code> parseAssetArgs ·
-          <code>cutout.mjs</code> chromaKey (pur, byte-identique dans
-          <code>cutout-enemies.mjs</code>) · <code>morphology.mjs</code> (morphologie binaire pure)
-          · <code>_template.mjs</code> (copié à la main, jamais exécuté).
-        </div>
-        <div class="card">
-          <b class="t-4">Laissé local à dessein</b> Le flood enclosed-island + l'échantillonnage
-          couleur par composant restent dans <code>cutout-enemies.mjs</code> (fusionnés, ne se
-          réduisent pas à une primitive pure) · le keyage ratio <code>isMagenta</code> de
-          <code>cutout-foreground.mjs</code> (primitive différente, divergerait sur art frais) ·
-          <code>e2e-lib.mjs</code> reste la lib E2E de facto (seedPlay/readState,
-          <code>stitchLabeledStrip</code>). Le <code>contact-sheet.mjs</code> projeté n'est pas
-          construit (YAGNI : un seul consommateur).
-        </div>
+        <div class="card"><b class="t-3">Extrait &amp; testé</b>
+          <code>pollinations.mjs</code> fetchWithRetry · <code>idempotent.mjs</code> skipIfExists ·
+          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey (pur, byte-identique dans
+          <code>cutout-enemies.mjs</code>) · <code>morphology.mjs</code> (morphologie binaire pure) ·
+          <code>_template.mjs</code> (copié à la main, jamais exécuté).</div>
+        <div class="card"><b class="t-4">Laissé local à dessein</b>
+          Le flood enclosed-island + l'échantillonnage couleur par composant restent dans <code>cutout-enemies.mjs</code>
+          (fusionnés, ne se réduisent pas à une primitive pure) · le keyage ratio <code>isMagenta</code> de
+          <code>cutout-foreground.mjs</code> (primitive différente, divergerait sur art frais) · <code>e2e-lib.mjs</code>
+          reste la lib E2E de facto (seedPlay/readState, <code>stitchLabeledStrip</code>). Le
+          <code>contact-sheet.mjs</code> projeté n'est pas construit (YAGNI : un seul consommateur).</div>
       </div>
 
       <h2 class="sec display">Le principe</h2>
       <div class="grid3">
-        <div class="card">
-          <b>DRY mesuré à la source</b>Le doublon EST le problème ; le correctif
-          <strong>supprime</strong> du code. Un méta-harness ré-émet des copies fraîches — DRY
-          empire.
-        </div>
-        <div class="card">
-          <b>SOLID</b>Chaque harness importe <strong>à la carte</strong> les pièces qu'il partage
-          vraiment (SRP), dépend de l'abstraction (DIP), s'étend en important (OCP) — pas un
-          squelette figé.
-        </div>
-        <div class="card">
-          <b>TDD</b>Extraire des primitives <strong>pures</strong> rend la tooling testable ; tests
-          écrits en premier (rouge) pour chromaKey, skipIfExists, fetchWithRetry.
-        </div>
+        <div class="card"><b>DRY mesuré à la source</b>Le doublon EST le problème ; le correctif <strong>supprime</strong>
+          du code. Un méta-harness ré-émet des copies fraîches — DRY empire.</div>
+        <div class="card"><b>SOLID</b>Chaque harness importe <strong>à la carte</strong> les pièces qu'il partage
+          vraiment (SRP), dépend de l'abstraction (DIP), s'étend en important (OCP) — pas un squelette figé.</div>
+        <div class="card"><b>TDD</b>Extraire des primitives <strong>pures</strong> rend la tooling testable ;
+          tests écrits en premier (rouge) pour chromaKey, skipIfExists, fetchWithRetry.</div>
       </div>
 
       <h2 class="sec display">Qui consomme la lib</h2>
       <div class="io">
-        <div class="card">
-          <b class="t-1">Aujourd'hui (13)</b>
-          <span class="mini"
-            >morphology.mjs (6) : fill-sprite-holes, retouch-flash-halos, restore-figure-bites,
-            fill-bust-hem, check-sprite-integrity, measure-muzzle-anchors · e2e-lib.mjs (7) :
-            e2e-home, e2e-ingame, e2e-delivery, e2e-assets, screenshot-preview,
-            preview-vehicle-halo, align-windows</span
-          >
-        </div>
-        <div class="card">
-          <b class="t-2">Adoption livrée</b>
-          <span class="mini"
-            >générateurs canoniques (gen-enemy-types, gen-vehicle-sprites, gen-courier-sprites,
-            gen-level-art) importent idempotent/cli ; <code>cutout-enemies.mjs</code> importe
-            cutout. Legacy (generate-assets, generate-game-assets, regen-pixel-sprites,
-            generate-style-demo) laissés en candidats-retrait. Le harness de vérif (ADR-0005)
-            stitche via <code>e2e-lib.mjs</code>.</span
-          >
-        </div>
+        <div class="card"><b class="t-1">Aujourd'hui (13)</b>
+          <span class="mini">morphology.mjs (6) : fill-sprite-holes, retouch-flash-halos, restore-figure-bites,
+          fill-bust-hem, check-sprite-integrity, measure-muzzle-anchors · e2e-lib.mjs (7) : e2e-home, e2e-ingame,
+          e2e-delivery, e2e-assets, screenshot-preview, preview-vehicle-halo, align-windows</span></div>
+        <div class="card"><b class="t-2">Adoption livrée</b>
+          <span class="mini">générateurs canoniques (gen-enemy-types, gen-vehicle-sprites, gen-courier-sprites,
+          gen-level-art) importent idempotent/cli ; <code>cutout-enemies.mjs</code> importe cutout. Legacy
+          (generate-assets, generate-game-assets, regen-pixel-sprites, generate-style-demo) laissés en
+          candidats-retrait. Le harness de vérif (ADR-0005) stitche via <code>e2e-lib.mjs</code>.</span></div>
       </div>
 
       <h2 class="sec display">Le crew sur ce harness</h2>
-      <div class="crew">
-        <div class="m">
-          <span class="sprite"><img src="crew/senior-architect.png" alt="senior-architect" /></span
-          ><span
-            ><span class="role">senior-architect</span> <span class="persona">Winston 🏗️</span
-            ><br /><span class="why"
-              >propriétaire de la décision : arbitrage méta-harness, 4 principes</span
-            ></span
-          >
-        </div>
-        <div class="m">
-          <span class="sprite"
-            ><img src="crew/dev-tooling-assets.png" alt="dev-tooling-assets" /></span
-          ><span
-            ><span class="role">dev-tooling-assets</span> <span class="persona">Amelia 🛠️</span
-            ><br /><span class="why"
-              >exécutante : extraction des primitives, refactor, tests TDD</span
-            ></span
-          >
-        </div>
-        <div class="m">
-          <span class="sprite"><img src="crew/dev-r3f-render.png" alt="dev-r3f-render" /></span
-          ><span
-            ><span class="role">dev-r3f-render</span> <span class="persona">Amelia 🎨</span
-            ><br /><span class="why"
-              >consommateur aval : le harness de vérif prouve pourquoi le squelette figé serait
-              mauvais</span
-            ></span
-          >
-        </div>
-      </div>
+      <div class="crew"><div class="m"><span class="sprite"><img src="crew/senior-architect.png" alt="senior-architect" /></span><span><span class="role">senior-architect</span> <span class="persona">Winston 🏗️</span><br /><span class="why">propriétaire de la décision : arbitrage méta-harness, 4 principes</span></span></div><div class="m"><span class="sprite"><img src="crew/dev-tooling-assets.png" alt="dev-tooling-assets" /></span><span><span class="role">dev-tooling-assets</span> <span class="persona">Amelia 🛠️</span><br /><span class="why">exécutante : extraction des primitives, refactor, tests TDD</span></span></div><div class="m"><span class="sprite"><img src="crew/dev-r3f-render.png" alt="dev-r3f-render" /></span><span><span class="role">dev-r3f-render</span> <span class="persona">Amelia 🎨</span><br /><span class="why">consommateur aval : le harness de vérif prouve pourquoi le squelette figé serait mauvais</span></span></div></div>
 
       <footer>
-        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Accepted) ·
-        <code>scripts/lib/cutout.mjs</code> · <code>scripts/lib/idempotent.mjs</code> ·
-        <code>scripts/lib/cli.mjs</code>. Un poster de la série des harness de muf. Sprites :
-        <code>docs/muf-crew-bitmap.py --singles</code>.
+        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Accepted) · <code>scripts/lib/cutout.mjs</code> ·
+        <code>scripts/lib/idempotent.mjs</code> · <code>scripts/lib/cli.mjs</code>. Un poster de la série des harness de muf.
+        Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
       </footer>
     </div>
   </body>
