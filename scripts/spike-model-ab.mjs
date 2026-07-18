@@ -112,6 +112,10 @@ function loadRider() {
 }
 
 // ── Pollinations fetch (fetchImage from the shared lib; retry/backoff stay local) ──
+// DELIBERATELY NOT the lib's fetchWithRetry: this diagnostic uses a shorter,
+// tighter schedule (4 attempts, (i+1)*6000ms) than the production 5×8000ms so an
+// A/B sweep across many models fails fast. Do NOT mechanically dedup this onto
+// the lib helper — it would change the spike's timing.
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }

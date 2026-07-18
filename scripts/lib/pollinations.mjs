@@ -17,15 +17,30 @@ export function sleep(ms) {
 // actually honoured (anonymous nologo is no longer guaranteed post-2025-03).
 // Kept in the header, NOT the URL, so it never leaks into the URLs the
 // generators log. Anonymous (no token) stays the default and is unchanged.
-function authHeaders() {
+//
+// The credential is attached ONLY when the request host is Pollinations itself
+// — never replayed to a redirect target on another host (fetchImage follows up
+// to 5 hops, and a cross-host Location must not receive the account token). A
+// whitespace-only token is treated as unset (honours the "empty → anonymous"
+// contract).
+function authHeaders(url) {
   const token = process.env.POLLINATIONS_TOKEN;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (!token || !token.trim()) return {};
+  try {
+    const host = new URL(url).hostname;
+    if (host === "pollinations.ai" || host.endsWith(".pollinations.ai")) {
+      return { Authorization: `Bearer ${token.trim()}` };
+    }
+  } catch {
+    // unparseable URL — attach nothing
+  }
+  return {};
 }
 
 export function fetchImage(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const req = https
-      .get(url, { headers: authHeaders() }, (res) => {
+      .get(url, { headers: authHeaders(url) }, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
           if (redirects >= 5 || !res.headers.location) {
             res.resume();

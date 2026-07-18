@@ -24,6 +24,12 @@ jobs:
   preview:
     name: Generate art · render levels · contact sheet
     runs-on: ubuntu-latest
+    env:
+      # Pollinations account tier (optional): gen-level-art.mjs imports the shared
+      # lib, so the POLLINATIONS_TOKEN repo secret gives its backdrop generation a
+      # faster rate limit + honoured `nologo`. Unset/empty → anonymous fallback
+      # (unchanged), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

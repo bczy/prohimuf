@@ -90,10 +90,11 @@ describe("modelUrl", () => {
 });
 
 // REGRESSION LOCK: fluxUrl/kontextUrl now delegate to modelUrl — assert their
-// output is byte-identical to the pre-refactor literal template strings, so any
-// future edit to modelUrl that shifts param order/spelling/casing is caught here
-// rather than silently changing the production request contract.
-describe("fluxUrl / kontextUrl — byte-identical to pre-refactor literals", () => {
+// output is byte-identical to the pre-delegation literal template strings (which
+// already carried safe=false, added earlier in this PR before the delegation
+// commit), so any future edit to modelUrl that shifts param order/spelling/casing
+// is caught here rather than silently changing the production request contract.
+describe("fluxUrl / kontextUrl — byte-identical to pre-delegation literals", () => {
   it("fluxUrl matches the pre-refactor literal exactly", () => {
     const url = fluxUrl("a truck", 12345, 256, 160);
     expect(url).toBe(
@@ -148,26 +149,40 @@ describe("fetchImage authentication", () => {
     delete process.env.POLLINATIONS_TOKEN;
   });
 
-  it("sends no Authorization header when POLLINATIONS_TOKEN is unset", async () => {
+  function captureOpts() {
     let seenOpts;
     https.get.mockImplementation((url, opts, cb) => {
       seenOpts = opts;
       cb(okResponse());
       return fakeRequest();
     });
-    await fetchImage("https://example.com/img");
-    expect(seenOpts.headers.Authorization).toBeUndefined();
+    return () => seenOpts;
+  }
+
+  it("sends no Authorization header when POLLINATIONS_TOKEN is unset", async () => {
+    const opts = captureOpts();
+    await fetchImage("https://image.pollinations.ai/img");
+    expect(opts().headers.Authorization).toBeUndefined();
   });
 
-  it("sends a Bearer header when POLLINATIONS_TOKEN is set", async () => {
+  it("sends a Bearer header to a pollinations.ai host when the token is set", async () => {
     process.env.POLLINATIONS_TOKEN = "tok_abc";
-    let seenOpts;
-    https.get.mockImplementation((url, opts, cb) => {
-      seenOpts = opts;
-      cb(okResponse());
-      return fakeRequest();
-    });
-    await fetchImage("https://example.com/img");
-    expect(seenOpts.headers.Authorization).toBe("Bearer tok_abc");
+    const opts = captureOpts();
+    await fetchImage("https://image.pollinations.ai/img");
+    expect(opts().headers.Authorization).toBe("Bearer tok_abc");
+  });
+
+  it("does NOT send the token to a non-pollinations host (cross-host redirect guard)", async () => {
+    process.env.POLLINATIONS_TOKEN = "tok_abc";
+    const opts = captureOpts();
+    await fetchImage("https://evil.example/img");
+    expect(opts().headers.Authorization).toBeUndefined();
+  });
+
+  it("treats a whitespace-only token as anonymous", async () => {
+    process.env.POLLINATIONS_TOKEN = "   ";
+    const opts = captureOpts();
+    await fetchImage("https://image.pollinations.ai/img");
+    expect(opts().headers.Authorization).toBeUndefined();
   });
 });
