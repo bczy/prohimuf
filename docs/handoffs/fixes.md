@@ -8,6 +8,18 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/screen-edge-arrows-size-jlnmix · dev-r3f-render · double the
+  off-screen target edge arrows (Bertrand: too small) — svg glyph 34→68 via
+  CSS-owned size (.arrowCore 68px, svg width/height 100%, single owner), .arrowWrap
+  80px; anchors unchanged (tips keep hugging the edges, verified) · checks:
+  tsc/vitest(637)/lint · review: code-review(high, 8-angle) — 2 CONFIRMED fixed
+  (up-arrow overprinted the LIVRAISON banner track → indicator now renders BEFORE
+  the banner so delivery readout paints on top; size literal triplicated across
+  tsx+css → svg 100%), 1 PLAUSIBLE accepted (keyline scales to ~4px with the glyph —
+  proportional ratio kept, literal reading of "double la taille"), 4 REFUTED
+  (scale-1.12 clipping, short-landscape collision, repaint cost, fill swallowed
+  at tip)
+
 - 2026-07-18 · claude/preview-deletion-after-merge-dt20co (PR #101) · dev-tooling-assets ·
   add `cleanup-preview.yml`: remove `preview/<slug>/` from gh-pages on branch delete /
   PR merge (+ manual dispatch for orphaned previews) by publishing an EMPTY dir through

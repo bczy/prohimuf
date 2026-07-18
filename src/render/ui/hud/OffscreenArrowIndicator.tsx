@@ -34,9 +34,11 @@ function ArrowIndicator({
     >
       {/* display:block — an inline svg sits on the text baseline and drifts off
           the span's geometric centre, which is also the rotation origin. */}
+      {/* width/height 100%: .arrowCore (CSS module) is the single owner of the
+          rendered size; the viewBox scales the glyph to fill it. */}
       <svg
-        width={68}
-        height={68}
+        width="100%"
+        height="100%"
         viewBox="0 0 34 34"
         aria-hidden="true"
         style={{ display: "block" }}

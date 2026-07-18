@@ -44,11 +44,14 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <EnergyGauge energy={data.energy} />
       </div>
 
+      {/* Rendered before the delivery banner: both are center-anchored fixed
+          siblings near y=58, and the 68px up-arrow overlaps the banner's track —
+          the delivery readout must paint on top of the direction cue. */}
+      <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+
       <DeliveryIntegrityBanner delivery={data.delivery} />
 
       <HostageQteOverlay hostageQte={data.hostageQte} />
-
-      <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
 
       <PhaseMessageBanner phase={data.phase} />
     </>
