@@ -1,4 +1,11 @@
-Copyright 2015 The Rubik Project Authors (mail@hubertfischer.com)
+Copyright 2013-2015 Philipp Hubert & Sebastian Fischer (The Rubik Project Authors) (mail@hubertfischer.com)
+Copyright 2015 The Courier Prime Project Authors (https://github.com/quoteunquoteapps/CourierPrime)
+Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)
+Copyright 2017 IBM Corp. (https://github.com/IBM/plex) with Reserved Font Name "IBM Plex"
+
+The four families bundled in this folder (Rubik Mono One, Courier Prime, Caveat, IBM Plex
+Mono) are each licensed under the SIL Open Font License, Version 1.1, whose shared body
+follows. Per-family credits: CREDITS.md.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
