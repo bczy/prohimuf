@@ -10,9 +10,42 @@ L'identité visuelle est celle d'un **fanzine photocopié noir & blanc** rehauss
 de **néons acides** — des sprites 2D plats façon _Paper Mario_ dans un monde 3D
 React Three Fiber.
 
+[![CI](https://github.com/bczy/prohimuf/actions/workflows/ci.yml/badge.svg)](https://github.com/bczy/prohimuf/actions/workflows/ci.yml)
+[![Jouer en ligne](https://img.shields.io/badge/jouer-en%20ligne-e6ff00?style=flat)](https://bczy.github.io/prohimuf/)
+[![React 19](https://img.shields.io/badge/React-19-61dafb?style=flat)](https://react.dev)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat)](https://www.typescriptlang.org)
+
+**▶️ [Jouer en ligne](https://bczy.github.io/prohimuf/)**
+
+![muf — la phase de tir, Rue Belliard](./screenshots/level_belliard.png)
+
 > **État actuel :** le prototype implémente la **phase de tir** (_shooting
-> gallery_) : des cibles apparaissent aux fenêtres des façades, ripostent, et
-> doivent être éliminées avant la fin du chrono.
+> gallery_) : des cibles apparaissent aux fenêtres et sur les balcons des
+> façades, ripostent, et doivent être éliminées avant la fin du chrono — tout en
+> épargnant les civils.
+
+---
+
+## Comment jouer
+
+| Action            | Commande                                       |
+| ----------------- | ---------------------------------------------- |
+| Viser             | Déplacer la souris (le viseur suit)            |
+| Tirer             | Clic gauche                                    |
+| Balayer la façade | `W A S D` ou les flèches directionnelles       |
+| Recommencer       | `R`                                            |
+| Tactile (mobile)  | Toucher pour viser/tirer, glisser pour balayer |
+
+Trois niveaux jouables : **Rue Belliard** (facile), **Stalingrad** (difficile) et
+**Vitry — 94** (difficile). Chrono, vagues et vies s'affichent dans le HUD.
+
+---
+
+## Captures
+
+|                      Menu                       |                           Fin de partie                           |
+| :---------------------------------------------: | :---------------------------------------------------------------: |
+| ![Menu de sélection](./screenshots/00_menu.png) | ![Écran de fin façon coupure de presse](./screenshots/09_end.png) |
 
 ---
 
@@ -65,7 +98,9 @@ Ouvrez ensuite l'URL affichée par Vite (par défaut `http://localhost:5173`).
 
 ## Architecture
 
-Le projet impose une **séparation stricte entre logique de jeu et rendu**.
+Le projet impose une **séparation stricte entre logique de jeu et rendu** : la
+logique de jeu n'importe jamais React/Three, et le rendu ne détient jamais de
+règle. Les hooks React sont l'unique pont entre les deux.
 
 ```
 src/
@@ -92,9 +127,9 @@ src/
 - **TDD / YAGNI / DRY :** tests écrits avant les fonctions système ; pas de
   fonctionnalité ni d'abstraction prématurée.
 
-Les hooks React (`src/hooks/`) sont l'unique pont : ils s'abonnent à la boucle
-`useFrame` de R3F, appellent les fonctions système pures, puis mettent à jour
-des refs lues par les composants de rendu (sans déclencher de re-render).
+Les hooks React (`src/hooks/`) s'abonnent à la boucle `useFrame` de R3F,
+appellent les fonctions système pures, puis mettent à jour des refs lues par les
+composants de rendu (sans déclencher de re-render).
 
 ---
 
