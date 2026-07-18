@@ -262,6 +262,16 @@
       "id": "belliard",
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
+      "backdrop": {
+        "$comment": "Tronçon-sequence backdrop (ADR-0046): a FIXED deterministic sequence of distinct variable-width transparent tronçon PNGs laid side by side over the parallax sky (which shows through the between-building gaps). file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (drives world width = world.heightUnits * aspect). Absent on a level ⇒ single-facade mode. Sequence sums to ~79.5 world units (≈ the single-facade PANELS*panelW≈80).",
+        "mode": "troncon-sequence",
+        "tiles": [
+          { "file": "troncon-a", "aspect": 1.4992 },
+          { "file": "troncon-c", "aspect": 1.75 },
+          { "file": "troncon-b", "aspect": 1.6262 },
+          { "file": "troncon-c", "aspect": 1.75 }
+        ]
+      },
       "parallax": {
         "sky": 0.88,
         "facade": 0.0,
