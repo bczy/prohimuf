@@ -26,7 +26,7 @@ React Three Fiber.
 | Build / dev             | Vite                                   |
 | Tests                   | Vitest                                 |
 | Audio                   | Howler.js                              |
-| Gestionnaire de paquets | Yarn 4 (Plug'n'Play)                   |
+| Gestionnaire de paquets | Yarn 4 (node-modules linker)           |
 | Génération d'assets     | Pollinations.ai (modèle FLUX, gratuit) |
 
 ---

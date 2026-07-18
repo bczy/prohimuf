@@ -11,7 +11,7 @@ React Three Fiber world. Current prototype = the shooting-gallery phase. See `RE
 ## Stack
 
 React 19 · React Three Fiber + Three.js · TypeScript (strict) · Vite · Vitest ·
-Howler.js (audio) · Yarn 4 (Plug'n'Play) · asset gen via Pollinations.ai (FLUX).
+Howler.js (audio) · Yarn 4 (node-modules linker) · asset gen via Pollinations.ai (FLUX).
 
 ## Commands
 

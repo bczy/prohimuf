@@ -26,10 +26,6 @@ dist/
 # Test coverage
 coverage/
 
-# PnP (switching to node-modules linker)
-/.pnp.cjs
-/.pnp.loader.mjs
-
 # OS noise
 .DS_Store
 *.local
