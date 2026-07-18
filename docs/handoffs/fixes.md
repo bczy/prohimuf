@@ -10,10 +10,12 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 - 2026-07-18 · claude/screen-edge-arrows-size-jlnmix · dev-r3f-render · enlarge the
   off-screen target edge arrows ×4 (Bertrand: too small, then "double again") — svg
-  glyph 34→68→136 via CSS-owned size (.arrowCore 136px, svg width/height 100%, single
-  owner), .arrowWrap 160px; keyline held at 2px across both bumps (strokeWidth
-  2→1→0.5 viewBox units); golden baselines regenerated twice (ADR-0005 flow,
-  eyeballed); anchors unchanged (tips keep hugging the edges, verified) · checks:
+  glyph 34→68→136 desktop, 68 on short-landscape phones (ADR-0024
+  SHORT_LANDSCAPE_MEDIA scoped-style + var() fallbacks, CSS-owned size: .arrowCore
+  136px/68px, svg width/height 100%, .arrowWrap 160px/80px); keyline held at 2px at
+  every size via vector-effect non-scaling-stroke; golden baselines regenerated
+  twice (ADR-0005 flow, eyeballed desktop + coarse-pointer 800×360 capture);
+  anchors unchanged (tips keep hugging the edges, verified) · checks:
   tsc/vitest(637)/lint · review: code-review(high, 8-angle) — 2 CONFIRMED fixed
   (up-arrow overprinted the LIVRAISON banner track → indicator now renders BEFORE
   the banner so delivery readout paints on top; size literal triplicated across

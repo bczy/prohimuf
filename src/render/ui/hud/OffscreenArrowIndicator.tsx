@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { HudTargetIndicator } from "./types";
-import { INK, ACID } from "@render/ui/print";
+import { INK, ACID, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import styles from "./OffscreenArrowIndicator.module.css";
 
 function ArrowIndicator({
@@ -47,9 +47,11 @@ function ArrowIndicator({
           points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
           fill={ACID.yellow}
           stroke={INK.black}
-          // 0.5 viewBox units ≈ 2 device px at the 136px render size: keeps the
-          // keyline at the HUD's 2px ink-rule weight (Bertrand: don't scale it).
-          strokeWidth={0.5}
+          // non-scaling-stroke: strokeWidth is device px, so the keyline holds
+          // the HUD's 2px ink-rule weight at both the desktop (136px) and
+          // short-landscape (68px) render sizes (Bertrand: don't scale it).
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
           strokeLinejoin="round"
         />
       </svg>
@@ -70,6 +72,17 @@ export function OffscreenArrowIndicator({
 
   return (
     <div className={styles.targetRing}>
+      {/* ADR-0024 pattern (TitleScreen/MainMenu): the short-landscape device class
+          drops the arrows to 2x original (68px glyph) instead of the desktop 4x;
+          unmatched viewports keep the CSS-module var() fallbacks. */}
+      <style>{`
+        @media ${SHORT_LANDSCAPE_MEDIA}{
+          .${styles.targetRing ?? ""}{
+            --muf-arrow-wrap-size: 80px;
+            --muf-arrow-core-size: 68px;
+          }
+        }
+      `}</style>
       <span
         className={styles.arrowWrap}
         style={{ top: 52, left: "50%", transform: "translateX(-50%)" }}
