@@ -1,6 +1,6 @@
 # 0024 — Responsive pre-game layout for mobile landscape (short-height reflow)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18)
 - **Date:** 2026-07-15
 - **Related:** [ADR-0021](./0021-pre-game-print-system-and-title-phase.md) (the TITLE/MENU
   print surfaces this reflows, the `src/render/ui/print/tokens.ts` single-source, and D4's
@@ -218,3 +218,14 @@ proceeds after the game-designer's `pregame-landscape-ux.md` pins the pixel valu
 - **Verify on device, both axes:** the fix must be checked in real phone landscape (CTA and
   first flyer above the fold) _and_ re-checked in phone portrait + desktop (unchanged), since
   the whole value of the change is that only the matched viewport moves.
+
+## Acceptance note (2026-07-18)
+
+Accepted with the mechanism merged and locked: the single-source breakpoint
+(`SHORT_LANDSCAPE_MAX_H` / `SHORT_LANDSCAPE_MEDIA` in `src/render/ui/print/tokens.ts`) and
+the scoped `@media` reflow blocks in `TitleScreen`/`MainMenu`/`FlyerWall` are in place, and
+`src/render/ui/print/__tests__/tokens.test.ts` pins the threshold + query string against
+drift. The **on-device pass remains a manual follow-up** (not gated by CI): confirm on a real
+short-landscape phone that the CTA and first flyer sit above the fold, and re-confirm phone
+portrait + desktop are visually unchanged (per the "Verify on device, both axes" gotcha and
+the D3 byte-stable guarantee).

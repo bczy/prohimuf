@@ -1,0 +1,28 @@
+/* Score readout (ADR-0046) — .item/.label/.value are shared (composed from
+   shared.module.css); only the score-row layout and the ★HI flag are local. */
+
+.item {
+  composes: item from "./shared.module.css";
+}
+
+.label {
+  composes: label from "./shared.module.css";
+}
+
+/* Ticker value — mono digits, semibold for punch; default ink is full-black. */
+.value {
+  composes: value from "./shared.module.css";
+}
+
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.hiFlag {
+  font-size: var(--font-size-sm);
+  color: var(--mark-green);
+  font-family: var(--font-hud-mono);
+  letter-spacing: 0.1em;
+}

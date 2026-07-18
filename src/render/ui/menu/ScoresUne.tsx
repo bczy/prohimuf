@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { PaperSheet, STOCK, INK, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, INK, FONT, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
 
 /**
  * SCORES — the PARIS-MINUIT journal UNE (UX §2.4). The per-level high-score view is
@@ -16,8 +16,8 @@ interface ScoresUneProps {
   unlockedLevels: ReadonlySet<string>;
 }
 
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
+const BODY_FONT = FONT.mono;
+const DISPLAY_FONT = FONT.display;
 const ROSE = STOCK.rose;
 
 export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {

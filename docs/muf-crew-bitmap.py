@@ -1,4 +1,4 @@
-"""Generate the muf crew bitmap: 19 pixel-art Claudes, one per project agent.
+"""Generate the muf crew bitmap: 20 pixel-art Claudes, one per project agent.
 
 Default run writes the group poster (docs/muf-crew.png). `--singles` skips the
 poster and writes one transparent RGBA sprite per crew member (1 sprite px =
@@ -238,7 +238,9 @@ FONT = {
     'X': ["101", "101", "010", "101", "101"],
     'Y': ["101", "101", "010", "010", "010"],
     'Z': ["111", "001", "010", "100", "111"],
+    '0': ["111", "101", "101", "101", "111"],
     '1': ["010", "110", "010", "010", "111"],
+    '2': ["111", "001", "111", "100", "111"],
     '4': ["101", "101", "111", "001", "001"],
     '5': ["111", "100", "110", "001", "110"],
     '8': ["111", "101", "111", "101", "111"],
@@ -342,7 +344,7 @@ if "--singles" not in sys.argv:  # poster mode (default)
 
     # title, vertically centered in the top band
     title = "MUF CREW"
-    sub = "LES 19 CLAUDES DU PROJET"
+    sub = f"LES {len(AGENTS)} CLAUDES DU PROJET"
     ty = M + (block_h - (5 * 6 + 12 + 5 * TS)) // 2
     tw = text_width(title, 6)
     draw_text(canvas, W, H, (img_w - tw) // 2, ty, title, PAL['B'], 6)

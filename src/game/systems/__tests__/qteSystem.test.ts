@@ -15,6 +15,8 @@ import {
   QTE_RESULT_HOLD,
   PEEK_EXPOSURE_FLOOR,
   TELEGRAPH_LEAD_SECONDS,
+  ACCOMPLICE_SHOT_DAMAGE,
+  ACCOMPLICE_TELL_SECONDS,
   RING_HIT_RADIUS,
   CAPTOR_DAMAGE_VITAL,
   CAPTOR_DAMAGE_LIMB,
@@ -53,6 +55,20 @@ const SPEC: QteSpec = {
 function active(overrides: Partial<HostageQte> = {}): HostageQte {
   return {
     ...createQte(SPEC),
+    phase: "ACTIVE",
+    warning: false,
+    zoomRemaining: 0,
+    ...overrides,
+  };
+}
+
+// The Belliard-shaped duel with the F4 accomplice as its single escalation (spec §D5).
+const ACC_SPEC: QteSpec = { ...SPEC, accomplice: { fireIntervalSeconds: 2.8 } };
+
+/** An ACTIVE QTE seeded from an arbitrary spec (so the accomplice runtime is well-formed). */
+function activeFrom(spec: QteSpec, overrides: Partial<HostageQte> = {}): HostageQte {
+  return {
+    ...createQte(spec),
     phase: "ACTIVE",
     warning: false,
     zoomRemaining: 0,
@@ -689,6 +705,234 @@ describe("K-5 — the pinned belliard seed presents ≥1 on-captor decel window 
       expect(onCaptor, `peek ${String(pi)} has no on-captor decel window`).toBeGreaterThanOrEqual(
         1,
       );
+    }
+  });
+});
+
+describe("createQte — accomplice (F4 / ADR-0036) seeding + validation", () => {
+  it("absent accomplice ⇒ accomplice is null (byte-identical to today)", () => {
+    expect(createQte(SPEC).accomplice).toBeNull();
+  });
+
+  it("present accomplice ⇒ mirrors interval, seeds cooldown = interval, tell off", () => {
+    const q = createQte(ACC_SPEC);
+    expect(q.accomplice).toEqual({
+      fireIntervalSeconds: 2.8,
+      fireCooldownRemaining: 2.8,
+      telegraphActive: false,
+    });
+  });
+
+  it("C6: throws on a non-finite accomplice.fireIntervalSeconds", () => {
+    expect(() => createQte({ ...SPEC, accomplice: { fireIntervalSeconds: NaN } })).toThrow(/C6/);
+    expect(() => createQte({ ...SPEC, accomplice: { fireIntervalSeconds: Infinity } })).toThrow(
+      /C6/,
+    );
+  });
+
+  it("throws unless fireIntervalSeconds is STRICTLY > ACCOMPLICE_TELL_SECONDS (discrete tell)", () => {
+    expect(() =>
+      createQte({ ...SPEC, accomplice: { fireIntervalSeconds: ACCOMPLICE_TELL_SECONDS } }),
+    ).toThrow(/ACCOMPLICE_TELL_SECONDS/);
+    expect(() => createQte({ ...SPEC, accomplice: { fireIntervalSeconds: 0.1 } })).toThrow(
+      /ACCOMPLICE_TELL_SECONDS/,
+    );
+    expect(ACC_SPEC.accomplice?.fireIntervalSeconds).toBeGreaterThan(ACCOMPLICE_TELL_SECONDS);
+  });
+});
+
+describe("P3-ACC — single-active-threat: exactly one player-directed fire channel is armed", () => {
+  it("ACCOMPLICE_SHOT_DAMAGE is the QTE_UNANSWERED_PEEK magnitude (net-neutral replacement)", () => {
+    expect(ACCOMPLICE_SHOT_DAMAGE).toBe(QTE_UNANSWERED_PEEK);
+    expect(ACCOMPLICE_TELL_SECONDS).toBe(0.35);
+  });
+
+  it("#1 accomplice present ⇒ a blown-peek close charges ZERO captor counter-fire (Channel C silent)", () => {
+    // Cooldown 2.8 will NOT elapse in this 0.1 s tick, so the ONLY possible drain would be the
+    // captor's −8 unanswered-peek — asserting 0 proves it is suppressed when an accomplice is present.
+    const q = activeFrom(ACC_SPEC, {
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 2.8, telegraphActive: false },
+    });
+    const r = tickQte(q, false, NO_HIT, 0.1);
+    expect(r.qte.stance).toBe("COVERED");
+    expect(r.qte.blownPeeks).toBe(1); // the execution clock still increments
+    expect(r.energyDelta).toBe(0); // Channel C is silent; the accomplice did not fire this tick
+  });
+
+  it("#1 (contrast) accomplice absent ⇒ the SAME close charges the captor's −8 counter-fire", () => {
+    const q = active({ stance: "PEEKING", stanceRemaining: 0.05 });
+    const r = tickQte(q, false, NO_HIT, 0.1);
+    expect(r.qte.blownPeeks).toBe(1);
+    expect(r.energyDelta).toBe(QTE_UNANSWERED_PEEK);
+  });
+
+  it("#1 accomplice present ⇒ blownPeeks still reaches LOST at maxBlownPeeks (execution clock unchanged)", () => {
+    let q = activeFrom(ACC_SPEC);
+    let closes = 0;
+    const dt = 1 / 60;
+    for (let i = 0; i < 60 * 60 && q.phase === "ACTIVE"; i++) {
+      const prev = q.stance;
+      const r = tickQte(q, false, NO_HIT, dt);
+      if (prev === "PEEKING" && r.qte.stance === "COVERED") closes++;
+      q = r.qte;
+    }
+    expect(q.phase).toBe("LOST");
+    expect(closes).toBe(ACC_SPEC.maxBlownPeeks);
+    expect(q.blownPeeks).toBe(ACC_SPEC.maxBlownPeeks);
+  });
+
+  it("Channel A: the accomplice fires on its own cadence during ACTIVE, independent of stance", () => {
+    // COVERED with a huge stanceRemaining ⇒ no peek closes this tick; the ONLY drain is the accomplice.
+    const q = activeFrom(ACC_SPEC, {
+      stance: "COVERED",
+      stanceRemaining: 1000,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 0.1, telegraphActive: true },
+    });
+    const r = tickQte(q, false, NO_HIT, 0.2); // cooldown 0.1 elapses → exactly one shot
+    expect(r.qte.stance).toBe("COVERED");
+    expect(r.qte.blownPeeks).toBe(0);
+    expect(r.energyDelta).toBe(ACCOMPLICE_SHOT_DAMAGE);
+    // cd: 0.1 → fire → reset 2.8 → minus remaining 0.1 = 2.7; 2.7 > tell ⇒ tell off.
+    expect(r.qte.accomplice?.fireCooldownRemaining).toBeCloseTo(2.7);
+    expect(r.qte.accomplice?.telegraphActive).toBe(false);
+  });
+
+  it("the accomplice tell arms in the last ACCOMPLICE_TELL_SECONDS before a shot", () => {
+    const q = activeFrom(ACC_SPEC, {
+      stance: "COVERED",
+      stanceRemaining: 1000,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 0.5, telegraphActive: false },
+    });
+    const r = tickQte(q, false, NO_HIT, 0.2); // cd 0.5 → 0.3 ≤ 0.35 ⇒ tell on, no shot yet
+    expect(r.energyDelta).toBe(0);
+    expect(r.qte.accomplice?.fireCooldownRemaining).toBeCloseTo(0.3);
+    expect(r.qte.accomplice?.telegraphActive).toBe(true);
+  });
+
+  it("#3 no single tick charges BOTH the unanswered peek AND an accomplice shot", () => {
+    // A peek closes (blown) AND the accomplice cooldown elapses in the same tick ⇒ exactly −8, never −16.
+    const q = activeFrom(ACC_SPEC, {
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      blownPeeks: 0,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 0.02, telegraphActive: true },
+    });
+    const r = tickQte(q, false, NO_HIT, 0.1);
+    expect(r.qte.phase).toBe("ACTIVE");
+    expect(r.qte.blownPeeks).toBe(1);
+    expect(r.energyDelta).toBe(ACCOMPLICE_SHOT_DAMAGE); // one accomplice shot, captor counter-fire suppressed
+  });
+
+  it("correctness: on the fatal blown-peek LOST, the ticked accomplice cooldown is carried (no desync)", () => {
+    const q = activeFrom(ACC_SPEC, {
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      blownPeeks: ACC_SPEC.maxBlownPeeks - 1,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 0.02, telegraphActive: true },
+    });
+    const r = tickQte(q, false, NO_HIT, 0.1); // accomplice fires, then the peek blows fatally → LOST
+    expect(r.qte.phase).toBe("LOST");
+    expect(r.qte.blownPeeks).toBe(ACC_SPEC.maxBlownPeeks);
+    expect(r.energyDelta).toBe(ACCOMPLICE_SHOT_DAMAGE); // ONLY the accomplice shot (Channel C suppressed)
+    // cd: 0.02 → fire → reset 2.8 → minus remaining (0.1 − 0.02 = 0.08) = 2.72; carried into LOST.
+    expect(r.qte.accomplice).not.toBeNull();
+    expect(r.qte.accomplice?.fireCooldownRemaining).toBeCloseTo(2.72);
+  });
+
+  it("a depleting ring hit wins the tick ⇒ NO accomplice shot is charged (duel over)", () => {
+    const q = activeFrom(ACC_SPEC, {
+      stance: "PEEKING",
+      captorHp: 2,
+      ringZone: "vital",
+      targetOffset: REST,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 0.001, telegraphActive: true },
+    });
+    const r = tickQte(q, true, REST, 0.1); // WON via the ring hit, resolved first
+    expect(r.qte.phase).toBe("WON");
+    expect(r.energyDelta).toBe(QTE_RESCUE_REFILL); // only the refill — no accomplice −8 folded in
+  });
+
+  it("the accomplice does NOT fire during ZOOMING (don't shoot what you can't read)", () => {
+    const zooming = createQte(ACC_SPEC); // ZOOMING, cooldown seeded to the interval
+    const r = tickQte(zooming, false, NO_HIT, 1.0);
+    expect(r.qte.phase).toBe("ZOOMING");
+    expect(r.energyDelta).toBe(0);
+    // Cooldown untouched by the zoom — it only counts down over ACTIVE time.
+    expect(r.qte.accomplice?.fireCooldownRemaining).toBe(2.8);
+  });
+});
+
+describe("P3-ACC #4 — deterministic accomplice cadence (framerate independence)", () => {
+  it("the same ACTIVE timeline chunked into different deltas charges the identical shot count", () => {
+    const base = (): HostageQte =>
+      activeFrom(ACC_SPEC, {
+        stance: "COVERED",
+        stanceRemaining: 100000, // no peek ever closes ⇒ the accomplice is the sole drain
+        accomplice: {
+          fireIntervalSeconds: 2.8,
+          fireCooldownRemaining: 2.8,
+          telegraphActive: false,
+        },
+      });
+
+    // One big delta.
+    const big = tickQte(base(), false, NO_HIT, 10);
+
+    // The same 10 s re-chunked into uneven pieces.
+    let q = base();
+    let drain = 0;
+    for (const d of [0.1, 0.9, 0.05, 1.2, 0.3, 2.0, 0.4, 1.05, 0.5, 3.0, 0.5]) {
+      const r = tickQte(q, false, NO_HIT, d);
+      drain += r.energyDelta;
+      q = r.qte;
+    }
+    expect(big.energyDelta).toBe(-24); // 3 shots over 10 s at a 2.8 s cadence
+    expect(drain).toBe(big.energyDelta);
+    // The landing cooldown agrees too (pure countdown over accumulated ACTIVE time).
+    expect(q.accomplice?.fireCooldownRemaining).toBeCloseTo(
+      big.qte.accomplice?.fireCooldownRemaining ?? -1,
+      9,
+    );
+  });
+
+  it("a large delta never swallows a shot — whole intervals are consumed one at a time", () => {
+    const q = activeFrom(ACC_SPEC, {
+      stance: "COVERED",
+      stanceRemaining: 100000,
+      accomplice: { fireIntervalSeconds: 2.8, fireCooldownRemaining: 2.8, telegraphActive: false },
+    });
+    const r = tickQte(q, false, NO_HIT, 100); // floor(100/2.8) after the first 2.8 = many shots
+    // Shots land at cumulative 2.8, 5.6, … ≤ 100 ⇒ floor(100/2.8) = 35 shots.
+    expect(r.energyDelta).toBe(35 * ACCOMPLICE_SHOT_DAMAGE);
+  });
+});
+
+describe("K-5 — the pinned VITRY seed presents ≥1 on-captor decel window per peek", () => {
+  const vitry = LEVELS.find((l) => l.id === "vitry")?.hostageQte;
+
+  it("vitry authors an accomplice duel (fireIntervalSeconds 2.8)", () => {
+    expect(vitry).toBeDefined();
+    expect(vitry?.accomplice?.fireIntervalSeconds).toBe(2.8);
+  });
+
+  it("each of vitry's peeks has a vital∪limb decelerating waypoint (fair firing window)", () => {
+    expect(vitry).toBeDefined();
+    if (vitry === undefined) return;
+    const seed = vitry.targetSeed;
+    const maxLeg = Math.floor((vitry.peekDurationSeconds - 1e-9) / LEG_DURATION);
+    for (let pi = 0; pi < vitry.maxBlownPeeks; pi++) {
+      let onCaptor = 0;
+      for (let k = 0; k <= maxLeg; k++) {
+        const w = wander(seed, pi, k * LEG_DURATION);
+        const centre = clampTargetOffsetG6({ x: WANDER_CENTRE.x + w.x, y: WANDER_CENTRE.y + w.y });
+        if (ringZoneAt(centre) !== "off") onCaptor++;
+      }
+      expect(
+        onCaptor,
+        `vitry peek ${String(pi)} has no on-captor decel window`,
+      ).toBeGreaterThanOrEqual(1);
     }
   });
 });

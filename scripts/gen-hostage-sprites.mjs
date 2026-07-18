@@ -39,6 +39,34 @@ const ROOT = path.resolve(__dirname, "..");
 const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
 
+// ── Supplemental in-script families (temporary render-lane bridge) ───────────
+// The ACCOMPLICE — the second armed figure in the peak-difficulty QTE (F4 /
+// ADR-0036, dev-r3f-render lane) — needs its own sprite family so a CI art run
+// can generate it. Its dedicated art BELONGS in the `hostages` block of
+// levelArt.json beside `girl` (the single source of truth), but that file is
+// owned by the dev-tooling-assets lane and this render-lane change cannot edit
+// it. So the family is defined HERE as a TEMPORARY bridge until dev-tooling-
+// assets promotes it into levelArt.json hostages.types (this list then goes
+// away — a key already present in levelArt.json wins and the in-script copy is
+// skipped, so there is never a duplicate). Two poses mirror the enemy
+// idle/shooting split the renderer falls back on (accompliceTextures.ts): a
+// gun-lowered IDLE and a gun-raised AIM. Prompts are PLACEHOLDERS pending the
+// narrative-designer's answer to "who is the second armed figure in Vitry".
+const SUPPLEMENTAL_FAMILIES = {
+  accomplice: {
+    asset: "assets/hostage/accomplice.png",
+    seed: 5127,
+    prompt:
+      "a menacing armed man standing guard, long dark coat over a dark turtleneck, shaved head, a pistol held down at his side pointed at the floor, cold watchful stance, facing forward",
+  },
+  accomplice_aim: {
+    asset: "assets/hostage/accomplice_aim.png",
+    seed: 5128,
+    prompt:
+      "a menacing armed man raising a pistol to aim straight ahead at the viewer, arm extended, long dark coat over a dark turtleneck, shaved head, muzzle raised, tense firing stance, facing forward",
+  },
+};
+
 // ── Load the hostage definitions from levelArt.json (single source) ──────────
 function loadHostages() {
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
@@ -49,12 +77,12 @@ function loadHostages() {
   const styleSuffix = block.style ?? "";
   const width = block.size?.width ?? 256;
   const height = block.size?.height ?? 256;
-  return Object.entries(block.types).map(([key, def]) => {
+  const toFamily = (key, def, source) => {
     if (!Number.isInteger(def.seed) || def.seed <= 0) {
-      throw new Error(`hostages.types.${key}: "seed" must be a positive integer (pinned rolls)`);
+      throw new Error(`${source}.${key}: "seed" must be a positive integer (pinned rolls)`);
     }
     if (typeof def.asset !== "string" || def.asset.trim() === "") {
-      throw new Error(`hostages.types.${key}: "asset" must be a non-empty path`);
+      throw new Error(`${source}.${key}: "asset" must be a non-empty path`);
     }
     return {
       key,
@@ -66,7 +94,17 @@ function loadHostages() {
       seed: def.seed,
       outFile: path.resolve(ROOT, "public", def.asset),
     };
-  });
+  };
+  const fromLevelArt = Object.entries(block.types).map(([key, def]) =>
+    toFamily(key, def, "hostages.types"),
+  );
+  // Append the supplemental families whose key levelArt.json does NOT already
+  // define (once promoted there, the in-script copy drops out — no duplicate).
+  const known = new Set(Object.keys(block.types));
+  const supplemental = Object.entries(SUPPLEMENTAL_FAMILIES)
+    .filter(([key]) => !known.has(key))
+    .map(([key, def]) => toFamily(key, def, "supplemental"));
+  return [...fromLevelArt, ...supplemental];
 }
 
 // ── Pollinations / FLUX fetch now shared via scripts/lib/pollinations.mjs ────

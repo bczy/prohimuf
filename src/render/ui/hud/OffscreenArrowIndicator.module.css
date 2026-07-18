@@ -1,0 +1,25 @@
+/* Off-screen target arrows (ADR-0046) — static box only; the anchor coords, rotation,
+   opacity and transition stay inline in OffscreenArrowIndicator.tsx (state-driven). */
+
+.targetRing {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arrowWrap {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arrow core — opacity/transform (rotation + active scale) and the transition
+   stay inline (state-driven / motion literal). */
+.arrowCore {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}

@@ -40,3 +40,18 @@ MIME type ("text/html")`. The code and workflows are fine in that case — only
 - Changing the Pages source via the API does **not** auto-rebuild; a build must
   be triggered explicitly. Repair commands and verification steps are documented
   in [../ci.md](../ci.md#-critical-setting-pages-must-serve-gh-pages-not-main).
+
+## Amendment — rebase-retry publish (2026-07-18)
+
+The original publishes used `peaceiris/actions-gh-pages@v4` with a plain
+`git push`. With several `claude/**` branch previews and the `main` deploy all
+writing the single `gh-pages` ref, the loser of a concurrent push got
+`! [rejected] (fetch first)` and the deploy failed (observed repeatedly on the
+branch-preview farm). Both workflows now publish through the in-repo composite
+action **`.github/actions/gh-pages-publish`**: each attempt re-clones
+`gh-pages` fresh, applies only its own target (root overlay for `main`,
+clean-replace of `preview/<slug>/` for branch previews — the rest of the branch
+is always preserved, and `.nojekyll` is re-created on root publishes), then
+pushes; a rejected push re-clones and retries with backoff + jitter. This
+removes the `peaceiris/actions-gh-pages` dependency; everything else above
+(branch layout, Pages source, sub-path bases, SPA fallback) is unchanged.

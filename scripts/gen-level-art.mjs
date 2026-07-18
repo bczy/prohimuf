@@ -12,16 +12,22 @@
  * --force (or FORCE=1) to regenerate everything.
  *
  * Output: public/assets/levels/<id>/{sky,facade,street}.png
+ *
+ * node scripts/gen-level-art.mjs --list          # list level ids + their layer files (no network)
+ * node scripts/gen-level-art.mjs --asset <id>    # restrict the run to one level id
  */
 import fs from "fs";
 import path from "path";
 import { fluxUrl, fetchWithRetry } from "./lib/pollinations.mjs";
+import { skip } from "./lib/idempotent.mjs";
+import { parseAssetArgs } from "./lib/cli.mjs";
 
 const ROOT = process.cwd();
 const OUT_ROOT = path.resolve(ROOT, "public/assets/levels");
 const MANIFEST = path.resolve(ROOT, "src/game/levels/levelArt.json");
 
-const FORCE = process.argv.includes("--force") || process.env.FORCE === "1";
+const ARGV = process.argv.slice(2);
+const FORCE = ARGV.includes("--force") || process.env.FORCE === "1";
 // The decor repeats ONE facade image across all panels (so the window-zone grid
 // lines up everywhere), so only a single facade layer is generated per level.
 const LAYERS = ["sky", "facade", "street", "foreground"];
@@ -43,13 +49,31 @@ function generate(prompt, size) {
 }
 
 async function main() {
+  const { list, target } = parseAssetArgs(ARGV);
+
+  if (list) {
+    console.log("Defined levels (from levelArt.json):");
+    for (const level of levels) {
+      console.log(
+        `  ${level.id.padEnd(12)} → ${LAYERS.map((l) => `${level.id}/${l}.png`).join(", ")}`,
+      );
+    }
+    return;
+  }
+
+  const todo = target ? levels.filter((l) => l.id === target) : levels;
+  if (target && todo.length === 0) {
+    console.error(`Level "${target}" not found. Use --list.`);
+    process.exit(1);
+  }
+
   console.log(`Generating level art → ${OUT_ROOT}${FORCE ? " (force)" : ""}\n`);
-  for (const level of levels) {
+  for (const level of todo) {
     const dir = path.join(OUT_ROOT, level.id);
     fs.mkdirSync(dir, { recursive: true });
     for (const layer of LAYERS) {
       const file = path.join(dir, `${layer}.png`);
-      if (!FORCE && fs.existsSync(file)) {
+      if (skip(file, { force: FORCE, existsSync: fs.existsSync })) {
         console.log(`  [skip] ${level.id}/${layer}.png (exists)`);
         continue;
       }

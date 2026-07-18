@@ -127,6 +127,29 @@ jobs:
         with:
           base: /prohimuf/
 
+      # ADR-0005 dynamic-verification harness (D1/D2/D3) — REQUIRED checks (the
+      # merge-gate-policy decision recorded in docs/ci.md): a red harness now
+      # blocks merge instead of failing invisibly in an artifact-only preview.
+      # Reuses the same "serve dist + run a node script" composite action as the
+      # smoke above, so the served build and browser-launch args stay identical.
+      - name: E2E QTE assertions (D2)
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+          script: scripts/harness-assert.mjs
+
+      - name: E2E golden regression (D3)
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+          script: scripts/harness-golden.mjs
+
+      - name: E2E motion strip (D1)
+        uses: ./.github/actions/e2e-ingame
+        with:
+          base: /prohimuf/
+          script: scripts/harness-motion.mjs
+
       # Hard gate on the built assets (missing/undersized). Script provided by
       # the QA lane in parallel — wired here.
       - name: E2E assets gate

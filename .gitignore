@@ -22,6 +22,7 @@ node_modules
 
 # Production build
 dist/
+dist-catalog/
 
 # Test coverage
 coverage/
@@ -49,6 +50,11 @@ screenshots/verify/
 # Vehicle-halo preview shots — regenerated each run by scripts/preview-vehicle-halo.mjs
 screenshots/preview-vehicle-*.png
 screenshots/e2e-delivery.png
+
+# ADR-0005 dynamic-verification harness — regenerated each run, uploaded as CI
+# artifacts. screenshots/golden/ is NOT ignored — those baselines are committed.
+screenshots/motion-belliard.png
+screenshots/golden-candidate-*.png
 
 # session-local screenshots / throwaway capture scripts (never commit)
 scratchpad/

@@ -1,5 +1,7 @@
 /**
- * Shared helpers for the E2E smoke gates (e2e-home / e2e-ingame / e2e-delivery).
+ * Shared helpers for the E2E smoke gates (e2e-home / e2e-ingame / e2e-delivery)
+ * and the ADR-0005 dynamic-verification harness (harness-motion / harness-assert
+ * / harness-golden).
  *
  * These scripts drive the PRODUCTION build in headless Chromium via raw
  * playwright (NOT @playwright/test) so they can run as plain `node` scripts in
@@ -11,8 +13,14 @@
  *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
  *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default).
+ *   - seedPlay(page, ids, o)          — ADR-0005 "play" mode: __MUF_PLAY__ + mute + unlock (never __MUF_FREEZE_COPS__).
+ *   - readState(page)                 — one window.__MUF_STATE__() read (null if the seam isn't installed yet).
+ *   - pollState(page, predicate, o)   — poll readState() until predicate(state) or timeout.
  *   - loadLevelManifest(root)         — level list/ids from levelArt.json (SoT).
  *   - createFailedResponseCollector() — same-origin >=400 response collector.
+ *   - decodePng(source)               — @napi-rs/canvas decode to {W,H,data} RGBA.
+ *   - diffPixelFraction(a, b, o)      — per-channel-tolerant pixel-diff fraction (D3 golden).
+ *   - stitchLabeledStrip(frames, o)   — labelled contact-sheet strip (D1 motion).
  *   - SWIFTSHADER_ARGS                — software-WebGL chromium launch args (no GPU).
  *   - IGNORED_PATHS                   — requests never treated as failures.
  */
@@ -152,4 +160,155 @@ export function createFailedResponseCollector(origin) {
     if (res.status() >= 400) failed.push(`${res.status()} ${url}`);
   };
   return { failed, onResponse };
+}
+
+/**
+ * ADR-0005 "play" mode seed: leaves the real tick UN-FROZEN (couriers move, the
+ * QTE simulates) instead of the `__MUF_FREEZE_COPS__` synthetic-enemies path.
+ * NEVER sets `__MUF_FREEZE_COPS__` — the two flags are mutually exclusive
+ * (enforced with a hard throw in `useGameLoop.ts`); the harness must pick
+ * exactly one. Reuses the same audio-mute / lives / difficulty prefs seed as
+ * `seedDeterminism` (no new mute path); `crt` defaults to **false** for the same
+ * reason (the animated CRT pass is non-deterministic noise the harness gains
+ * nothing from). `levelIds` comes from `loadLevelManifest` so every level stays
+ * reachable, same convention as `seedDeterminism`.
+ */
+export async function seedPlay(page, levelIds, { crt = false } = {}) {
+  await page.addInitScript(
+    ({ ids, crt }) => {
+      window.__MUF_PLAY__ = true;
+      try {
+        localStorage.setItem("muf_progress", JSON.stringify(ids));
+        localStorage.setItem(
+          "muf_prefs",
+          JSON.stringify({ soundVolume: 0, musicVolume: 0, lives: 3, difficulty: "normal", crt }),
+        );
+      } catch {
+        // ignore storage failures
+      }
+    },
+    { ids: levelIds, crt },
+  );
+}
+
+/**
+ * Read the ADR-0005 state seam (`window.__MUF_STATE__()`) once. Returns `null`
+ * until the seam is installed (the first `__MUF_PLAY__` tick has run) — callers
+ * that need to wait for a condition should use `pollState` below rather than
+ * retrying this by hand. The returned value is a plain, JSON-serialisable clone
+ * (Playwright already structured-clones the `page.evaluate` return value), never
+ * a live handle into the page.
+ */
+export async function readState(page) {
+  return page.evaluate(() => {
+    const w = /** @type {{ __MUF_STATE__?: () => unknown }} */ (window);
+    if (typeof w.__MUF_STATE__ !== "function") return null;
+    return w.__MUF_STATE__();
+  });
+}
+
+/**
+ * Poll `readState(page)` until `predicate(state)` is true or `timeout` elapses.
+ * Returns the passing snapshot; throws (with the last-seen snapshot, if any) on
+ * timeout, so a caller's failure message is never a bare "timed out".
+ */
+export async function pollState(page, predicate, { timeout = 30000, interval = 150 } = {}) {
+  const deadline = Date.now() + timeout;
+  let last = null;
+  while (Date.now() < deadline) {
+    last = await readState(page);
+    if (last !== null && predicate(last)) return last;
+    await sleep(interval);
+  }
+  throw new Error(
+    `pollState: timed out after ${String(timeout)}ms waiting for predicate` +
+      (last === null
+        ? " (window.__MUF_STATE__ never appeared — is __MUF_PLAY__ seeded?)"
+        : ` (last snapshot: ${JSON.stringify(last)})`),
+  );
+}
+
+/**
+ * Decode a PNG (file path, Buffer, or any @napi-rs/canvas `loadImage` source)
+ * into `{ W, H, data }` where `data` is the raw RGBA `Uint8ClampedArray`. Shared
+ * decode primitive for the pixel-level checks (D3 golden diff); mirrors the
+ * lazy-import pattern of `check-halo-gradient.mjs` / `check-sprite-integrity.mjs`
+ * so importing this module never throws when @napi-rs/canvas is unavailable.
+ */
+export async function decodePng(source) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(source);
+  const W = img.width;
+  const H = img.height;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  return { W, H, data: ctx.getImageData(0, 0, W, H).data };
+}
+
+/**
+ * Fraction of pixels that differ between two same-size decoded frames (see
+ * `decodePng`), where a pixel counts as differing only if ANY channel's
+ * absolute delta exceeds `channelTolerance` (default 2 — absorbs SwiftShader's
+ * run-to-run AA/rounding jitter without hiding a real regression). Pure, no I/O
+ * — the D3 golden gate's whole decision surface, unit-testable in isolation.
+ * Throws on a frame-size mismatch (a resized viewport is a config error, not a
+ * pixel diff to report).
+ */
+export function diffPixelFraction(a, b, { channelTolerance = 2 } = {}) {
+  if (a.W !== b.W || a.H !== b.H) {
+    throw new Error(
+      `frame size mismatch: ${String(a.W)}x${String(a.H)} vs ${String(b.W)}x${String(b.H)}`,
+    );
+  }
+  const total = a.W * a.H;
+  let diffCount = 0;
+  for (let i = 0; i < a.data.length; i += 4) {
+    if (
+      Math.abs(a.data[i] - b.data[i]) > channelTolerance ||
+      Math.abs(a.data[i + 1] - b.data[i + 1]) > channelTolerance ||
+      Math.abs(a.data[i + 2] - b.data[i + 2]) > channelTolerance ||
+      Math.abs(a.data[i + 3] - b.data[i + 3]) > channelTolerance
+    ) {
+      diffCount++;
+    }
+  }
+  return diffCount / total;
+}
+
+/**
+ * Stitch a list of `{ buffer, label }` PNG buffers into one labelled contact-
+ * sheet strip (same visual idiom as `screenshot-preview.mjs`'s `buildContactSheet`,
+ * generalised into a reusable primitive per the ADR-0007 D3 "anatomy of a
+ * harness" — this is the contact-sheet consumer that ADR-0007 deferred building
+ * ahead of, now that ADR-0005 is the real consumer). Returns a PNG Buffer; the
+ * caller writes it to disk.
+ */
+export async function stitchLabeledStrip(
+  frames,
+  { cols = 4, cellW = 480, cellH = 270, pad = 16, labelH = 26 } = {},
+) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const rows = Math.max(1, Math.ceil(frames.length / cols));
+  const W = cols * cellW + (cols + 1) * pad;
+  const H = rows * (cellH + labelH) + (rows + 1) * pad;
+
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#0a0a12";
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < frames.length; i++) {
+    const img = await loadImage(frames[i].buffer);
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const x = pad + c * (cellW + pad);
+    const y = pad + r * (cellH + labelH + pad);
+    ctx.fillStyle = "#ffe600";
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillText(frames[i].label, x, y + 20);
+    ctx.drawImage(img, x, y + labelH, cellW, cellH);
+  }
+
+  return canvas.toBuffer("image/png");
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { JSX } from "react";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { Stamp, MarkerCircle, TapeCorner, INK, MARK, MOTION } from "@render/ui/print";
+import { Stamp, MarkerCircle, TapeCorner, INK, FONT, MARK, MOTION } from "@render/ui/print";
 import { difficultyMark } from "./derivations";
 
 /**
@@ -73,8 +73,8 @@ const LOCKED_COPY = {
   helper: "la ligne ouvre quand la précédente est bouclée",
 } as const;
 
-const HEADLINE_FONT = "'Impact', 'Arial Narrow', sans-serif";
-const BODY_FONT = "'Courier New', Courier, monospace";
+const HEADLINE_FONT = FONT.display;
+const BODY_FONT = FONT.mono;
 
 interface LevelFlyerProps {
   level: LevelConfig;
@@ -182,7 +182,7 @@ export function LevelFlyer({
             </div>
             <div
               style={{
-                fontFamily: "cursive, 'Courier New', monospace",
+                fontFamily: FONT.hand,
                 fontStyle: "italic",
                 fontSize: "13px",
                 margin: "6px 0",

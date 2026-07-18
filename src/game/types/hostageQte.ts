@@ -57,6 +57,22 @@ export type RingZone = "vital" | "limb" | "off";
  * per-level difficulty CURVE across levels is ADR-0035 (F3); this contract only
  * carries the fields, the invariant floors that clamp them live in `qteSystem.ts`.
  */
+/**
+ * A second shooter that OWNS the player-directed fire in advanced levels (F4 /
+ * ADR-0036). Absent on `QteSpec` ⇒ the captor keeps his own counter-fire
+ * (`QTE_UNANSWERED_PEEK`) exactly as today (byte-identical). Only the cadence is
+ * authored; the shot damage and the wind-up tell lead are system constants in
+ * `qteSystem.ts` (a shot is a shot on every level).
+ */
+export interface QteAccompliceSpec {
+  /**
+   * Seconds between accomplice shots during `ACTIVE`. The F3 difficulty lever
+   * (shorter = more pressure). Finite and STRICTLY > `ACCOMPLICE_TELL_SECONDS`
+   * (both asserted in `createQte`) so the wind-up tell is always a discrete beat.
+   */
+  readonly fireIntervalSeconds: number;
+}
+
 export interface QteSpec {
   /** When the level's elapsed seconds cross this, the QTE fires (once). */
   readonly triggerAtElapsedSeconds: number;
@@ -97,6 +113,34 @@ export interface QteSpec {
    * constants (`qteSystem.ts`); only the HP total is authored per level (F3 seam).
    */
   readonly captorHp: number;
+  /**
+   * A second shooter that OWNS the player-directed fire (F4 / ADR-0036). Optional
+   * and additive: ABSENT ⇒ no accomplice ⇒ the captor keeps his own counter-fire and
+   * the level is behaviourally byte-identical to today. Advanced/peak-difficulty
+   * levels only (Vitry-first).
+   */
+  readonly accomplice?: QteAccompliceSpec;
+}
+
+/**
+ * Runtime state of the active accomplice (F4 / ADR-0036), or `null` when the level
+ * has none (the null-guard IS the byte-identity with today). All `readonly`.
+ */
+export interface HostageAccomplice {
+  /** Runtime mirror of `QteAccompliceSpec.fireIntervalSeconds` (copied once at `createQte`). */
+  readonly fireIntervalSeconds: number;
+  /**
+   * Counts down over `ACTIVE` delta; on ≤ 0 a shot lands and it resets to the
+   * interval. Seeded to `fireIntervalSeconds` at `createQte` — the first shot lands
+   * one full interval into `ACTIVE`, a natural grace so the duel never opens on an
+   * instant hit. It counts down over ACTIVE time ALONE (not ZOOMING/WON/LOST/DONE).
+   */
+  readonly fireCooldownRemaining: number;
+  /**
+   * True during the last `ACCOMPLICE_TELL_SECONDS` before a shot — the render draws
+   * the aim/muzzle wind-up. Mirrors the captor's G4 `telegraphActive` discipline.
+   */
+  readonly telegraphActive: boolean;
 }
 
 /**
@@ -181,4 +225,12 @@ export interface HostageQte {
   readonly resultRemaining: number;
   /** The "OTAGE" warning is shown (true during ZOOMING). */
   readonly warning: boolean;
+  /**
+   * The active accomplice (F4 / ADR-0036), or `null` when this level has none. When
+   * `null` the tick's accomplice branch is skipped and the captor charges
+   * `QTE_UNANSWERED_PEEK` on a blown peek exactly as today (byte-identical). When
+   * present the captor's counter-fire is suppressed and the accomplice owns the
+   * player-directed drain (INVARIANT P3-ACC).
+   */
+  readonly accomplice: HostageAccomplice | null;
 }
