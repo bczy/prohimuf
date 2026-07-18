@@ -172,7 +172,7 @@ export function tickGameState(
     : tickedEnemies;
 
   // 4. Player fires — instant hitscan resolved at the crosshair world point
-  // (ADR-0020). No travelling player projectile enters `bullets`; the shot yields
+  // (ADR-0040). No travelling player projectile enters `bullets`; the shot yields
   // one ImpactEvent plus the per-hit reward math. Reads the pre-hit enemy
   // snapshot, exactly like the enemy-fire step below.
   const shot: PlayerShotResult | null = fire

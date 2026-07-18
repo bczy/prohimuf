@@ -64,6 +64,8 @@ import {
   seedDeterminism,
   sleep,
 } from "./e2e-lib.mjs";
+import { misaligned, ALIGN_TOL } from "./lib/alignment.mjs";
+import { coverStrips, coverDefects } from "./lib/coverage.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
@@ -83,6 +85,24 @@ const TAU = 0.01;
 const FILL = 0.88;
 // Extra safety margin (beyond τ) kept between the sprite box and the opening edge.
 const MARGIN = 0.006;
+
+// Coverage-audit tuning (ADR-0028 iteration 2). The UNDERCOVER/OVERCOVER audit and
+// the measure()-side gate share these so the corrected openings always satisfy the
+// gate by construction.
+// Hysteresis LOW shoulder as a fraction of the high column threshold (per-level
+// override: cfg.hystLow).
+const HYST_LOW = 0.45;
+// A density valley splits a run only when it drops below this fraction of the LOWER
+// flanking peak (per-level override: cfg.valleyFrac).
+const VALLEY_FRAC = 0.4;
+// Normalized gap kept between a coverage strip and a neighbouring opening's edge.
+const COVER_NB_GAP = 0.008;
+// Per-column warm-density threshold that bounds a lit window in the coverage-audit
+// re-derivation (between OVERCOVER_DENS and UNDERCOVER_DENS; per-level override:
+// cfg.coverBnd).
+const COVER_BND = 0.18;
+// Cap on the post-detection coverage-audit re-derivation loop.
+const MAX_AUDIT_ITERS = 8;
 
 const DEFAULT_WARM = (r, g, b) => r > 78 && r - b > 12 && r + g + b > 120;
 
@@ -188,9 +208,14 @@ function runsAbove(arr, lo, hi, thr) {
 }
 
 const centroid = (arr, a, b) => {
+  // Clamp indices into the array: a pitch-split segment's x1 can reach W (a+w for the
+  // last segment), and reading arr[W] returns undefined → NaN accumulation → a silent
+  // midpoint fallback. Clamp to [0, len-1] so the real warm centroid is always computed.
+  const lo = Math.max(0, Math.round(a));
+  const hi = Math.min(arr.length - 1, Math.round(b));
   let num = 0;
   let den = 0;
-  for (let i = Math.round(a); i <= Math.round(b); i++) {
+  for (let i = lo; i <= hi; i++) {
     num += i * arr[i];
     den += arr[i];
   }
@@ -198,9 +223,67 @@ const centroid = (arr, a, b) => {
 };
 
 /**
- * Per-row window-column centres (facade px). A warm column-density profile of the
- * row's scan band → smoothed → above-threshold runs (twin panes merged, wide runs
- * split by pitch, min-pitch enforced). Shared by both row-detection strategies.
+ * Split a run `[a,b]` at every DENSITY VALLEY that separates two distinct window
+ * peaks, appending the final sub-runs to `out`. Fires regardless of the pitch
+ * heuristic — it catches two adjacent windows (plus the wall between them) merged
+ * into one run: `n = round(w/(splitPitch·W))` can round such a pair to 1 so
+ * pitch-split leaves it whole and the frame straddles both windows + the wall.
+ *
+ * A valley qualifies only when: (a) its density `< VALLEY_FRAC · min(leftPeak,
+ * rightPeak)` (deep relative to the LOWER flanking peak, so a dim window still
+ * splits from a bright one), AND (b) each resulting sub-run is `>= minRunW·W` wide,
+ * AND (c) the two sub-run midpoints are `>= minPitch·W` apart. (b)+(c) are the
+ * mullion guard: the two panes of ONE french window are separated by a thin, often
+ * deep valley too, but their sub-runs are narrow and their centres sit closer than
+ * one window pitch — so we do NOT split them (that stays the job of twinMerge). We
+ * recurse so a run holding three+ windows splits at every qualifying valley.
+ */
+function valleySplit([a, b], sm, cfg, W, out) {
+  const minRunWpx = cfg.minRunW * W;
+  const minPitchPx = cfg.minPitch * W;
+  const valleyFrac = cfg.valleyFrac ?? VALLEY_FRAC;
+  // Only look for a valley where BOTH sub-runs could still clear minRunW.
+  const loX = Math.ceil(a + minRunWpx);
+  const hiX = Math.floor(b - minRunWpx);
+  let vx = -1;
+  let vv = Infinity;
+  for (let x = loX; x <= hiX; x++) {
+    if (sm[x] < vv) {
+      vv = sm[x];
+      vx = x;
+    }
+  }
+  if (vx < 0) {
+    out.push([a, b]);
+    return;
+  }
+  let peakL = 0;
+  for (let x = a; x <= vx; x++) peakL = Math.max(peakL, sm[x]);
+  let peakR = 0;
+  for (let x = vx; x <= b; x++) peakR = Math.max(peakR, sm[x]);
+  const midL = (a + vx) / 2;
+  const midR = (vx + 1 + b) / 2;
+  const qualifies =
+    vv < valleyFrac * Math.min(peakL, peakR) &&
+    vx - a + 1 >= minRunWpx &&
+    b - vx >= minRunWpx &&
+    midR - midL >= minPitchPx;
+  if (!qualifies) {
+    out.push([a, b]);
+    return;
+  }
+  valleySplit([a, vx], sm, cfg, W, out);
+  valleySplit([vx + 1, b], sm, cfg, W, out);
+}
+
+/**
+ * Per-row window columns (facade px). A warm column-density profile of the row's
+ * scan band → smoothed → high-threshold runs → HYSTERESIS-expanded down a LOW
+ * shoulder → twin panes merged → VALLEY-split → wide runs pitch-split → min-pitch
+ * enforced. Returns `{ wins, sm, thr, low }` where each win is `{ cx, x0, x1 }` —
+ * the warm centroid AND the measured run bounds — plus the row's smoothed profile
+ * and thresholds so the coverage audit can re-derive a bound locally. Shared by both
+ * row-detection strategies.
  */
 function detectColumns(det, cfg, cy) {
   const { W, H, warmAt } = det;
@@ -215,35 +298,82 @@ function detectColumns(det, cfg, cy) {
   const sm = smooth1d(col, 0, W - 1, cfg.colSmooth);
   const bandH = hi - lo + 1;
   const thr = bandH * cfg.colThresh;
+  const low = (cfg.hystLow ?? HYST_LOW) * thr;
   const runs = runsAbove(sm, 0, W - 1, thr);
-  // merge twin panes of one french window
+
+  // HYSTERESIS EXPANSION — grow each high-threshold run outward while the profile
+  // stays on the LOW shoulder (`sm >= low`), so a dim second pane whose peak fell
+  // below `thr` rejoins its bright twin. Each side is bounded by the ORIGINAL edge
+  // of the neighbouring run and by a hard cap of `splitPitch·W` total width so one
+  // window can never annex a whole neighbour. Runs are disjoint & x-ascending.
+  const cap = Math.round(cfg.splitPitch * W);
+  const exp = runs.map(([a, b]) => [a, b]);
+  for (let k = 0; k < exp.length; k++) {
+    let [a, b] = exp[k];
+    const leftBound = k > 0 ? runs[k - 1][1] + 1 : 0;
+    const rightBound = k < runs.length - 1 ? runs[k + 1][0] - 1 : W - 1;
+    while (a - 1 >= leftBound && sm[a - 1] >= low && b - (a - 1) + 1 <= cap) a--;
+    while (b + 1 <= rightBound && sm[b + 1] >= low && b + 1 - a + 1 <= cap) b++;
+    exp[k] = [a, b];
+  }
+  // If two expanded runs met in the gap between their cores, cut at the density
+  // MINIMUM of that gap (the true valley separating the two windows).
+  for (let k = 0; k + 1 < exp.length; k++) {
+    if (exp[k][1] >= exp[k + 1][0]) {
+      const gLo = runs[k][1] + 1;
+      const gHi = runs[k + 1][0] - 1;
+      let minX = gLo;
+      let minV = Infinity;
+      for (let x = gLo; x <= gHi; x++) {
+        if (sm[x] < minV) {
+          minV = sm[x];
+          minX = x;
+        }
+      }
+      exp[k][1] = minX;
+      exp[k + 1][0] = minX + 1;
+    }
+  }
+
+  // merge twin panes of one french window (a dim pane not reached by expansion)
   const merged = [];
-  for (const r of runs) {
+  for (const r of exp) {
     const last = merged[merged.length - 1];
     if (last && r[0] - last[1] <= cfg.twinMerge * W) last[1] = r[1];
     else merged.push([r[0], r[1]]);
   }
-  // runs → window centres (split abnormally wide runs by pitch)
+  // VALLEY-split any run holding two+ distinct window peaks (over-merged pair),
+  // THEN pitch-split any still-abnormally-wide run as a fallback. Each segment keeps
+  // its own [x0,x1] bounds and a centroid computed WITHIN that segment.
+  const split = [];
+  for (const run of merged) valleySplit(run, sm, cfg, W, split);
   const wins = [];
-  for (const [a, b] of merged) {
+  for (const [a, b] of split) {
     const w = b - a + 1;
     if (w < cfg.minRunW * W) continue;
     const n = Math.max(1, Math.round(w / (cfg.splitPitch * W)));
     for (let s = 0; s < n; s++) {
       const x0 = a + (w * s) / n;
-      const x1 = a + (w * (s + 1)) / n;
-      wins.push(centroid(sm, x0, x1));
+      // last segment's x1 is a+w = b+1, which can reach W; clamp the stored bound to W-1
+      const x1 = Math.min(W - 1, a + (w * (s + 1)) / n);
+      wins.push({ cx: centroid(sm, x0, x1), x0, x1 });
     }
   }
-  // enforce min pitch
-  wins.sort((p, q) => p - q);
+  // enforce min pitch: collapse near-coincident centres, UNIONing their bounds and
+  // recomputing the centroid over the unioned span
+  wins.sort((p, q) => p.cx - q.cx);
   const out = [];
-  for (const cx of wins) {
+  for (const win of wins) {
     const last = out[out.length - 1];
-    if (last !== undefined && cx - last < cfg.minPitch * W) out[out.length - 1] = (last + cx) / 2;
-    else out.push(cx);
+    if (last !== undefined && win.cx - last.cx < cfg.minPitch * W) {
+      const x0 = Math.min(last.x0, win.x0);
+      const x1 = Math.max(last.x1, win.x1);
+      out[out.length - 1] = { cx: centroid(sm, x0, x1), x0, x1 };
+    } else {
+      out.push(win);
+    }
   }
-  return out;
+  return { wins: out, sm, thr, low };
 }
 
 /** belliard's proven equal-thirds floor rows: each third's warm centroid. */
@@ -321,39 +451,247 @@ function rowsRuns(det, cfg) {
   return runs.map(([a, b]) => centroid(sm, a, b));
 }
 
+/** Rectangular-region warm-density sampler (normalized `[x0,x1]×[y0,y1]` → warm
+ * fraction). The coverage audit and the UNDERCOVER/OVERCOVER gate use this, unlike
+ * the fixed 0.03×0.05 point sampler (`makeWarmDensity`) that the WALL check keeps.
+ * An empty span (x1<=x0 or y1<=y0, e.g. a neighbour-clamped strip) returns 0. */
+function makeWarmRect(W, H, data, warm) {
+  return (nx0, nx1, ny0, ny1) => {
+    // A reversed span (nx1 <= nx0) means a neighbour bound clamped the strip past the
+    // frame edge — no room for the window to continue there, so it reads EMPTY (0).
+    // Do NOT min/max-swap: that would sample the absolute range and pull in the
+    // neighbouring window as a false UNDERCOVER.
+    if (nx1 <= nx0 || ny1 <= ny0) return 0;
+    const x0 = Math.max(0, Math.round(nx0 * W));
+    const x1 = Math.min(W - 1, Math.round(nx1 * W));
+    const y0 = Math.max(0, Math.round(ny0 * H));
+    const y1 = Math.min(H - 1, Math.round(ny1 * H));
+    if (x1 < x0 || y1 < y0) return 0;
+    let hit = 0;
+    let total = 0;
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const i = (y * W + x) * 4;
+        if (warm(data[i], data[i + 1], data[i + 2])) hit++;
+        total++;
+      }
+    }
+    return total > 0 ? hit / total : 0;
+  };
+}
+
+/** Convert measured pixel run bounds to a normalized frame {x,w}, applying the
+ * fallback-seed clamp (`w ∈ [0.55,1.6]·openingW`). `x` is the geometric MIDPOINT of
+ * the bounds (NOT the glow-biased centroid `cx`, which would overhang bare wall). Only
+ * a truly EMPTY run (`x1<=x0`, zero warm mass) falls back to `openingW` centred on
+ * `cx`; a positive-but-narrow run (below `minRunW`, e.g. a tiny lit window the coverage
+ * audit re-derived) is floor-clamped and centred on its MIDPOINT — not blown up to the
+ * wide seed, which would overhang wall. */
+function boundsToFrame(x0px, x1px, cx, cfg, W) {
+  const runWpx = x1px - x0px;
+  const degenerate = !(runWpx > 0);
+  const measured = runWpx / W;
+  const floor = 0.55 * cfg.openingW;
+  const ceil = 1.6 * cfg.openingW;
+  const w = degenerate ? cfg.openingW : Math.min(Math.max(measured, floor), ceil);
+  const x = degenerate ? cx / W : (x0px + x1px) / 2 / W;
+  return {
+    x,
+    w,
+    degenerate,
+    measured,
+    saturated: !degenerate && (measured < floor || measured > ceil),
+  };
+}
+
+/**
+ * Re-derive a window's warm bounds `[x0px,x1px]` directly off the art in the
+ * opening's vertical band (`y0..y1`), searched only within `[lbPx,rbPx]` (the
+ * neighbour-bounded window). A per-column warm-density profile at the GATE's own
+ * vertical resolution → smoothed → runs above `coverBnd`. The frame is TRIMMED-to-warm:
+ * the returned span is the union of every lit run the current frame `[flPx,frPx]`
+ * overlaps (or lies within `twinMerge·W` of), so wall is trimmed off the EDGES
+ * (fixes OVERCOVER) and an adjacent dim pane just outside is pulled in (fixes
+ * UNDERCOVER) without changing which windows the frame covers. When the frame sits
+ * entirely on wall between runs, it snaps to the nearest run. Returns `null` for a
+ * lit-run-free band. Because this and the measure()-side gate both read warm density
+ * in the SAME opening y-band, a bound re-derived here satisfies the gate by
+ * construction (unlike the row column profile, whose narrower scan band can disagree).
+ */
+function deriveWindowBounds(flPx, frPx, lbPx, rbPx, y0, y1, warmRect, cfg, W) {
+  const bnd = cfg.coverBnd ?? COVER_BND;
+  const lb = Math.max(0, Math.floor(lbPx));
+  const rb = Math.min(W - 1, Math.ceil(rbPx));
+  if (rb - lb < 1) return null;
+  const wc = new Float64Array(W);
+  for (let x = lb; x <= rb; x++) wc[x] = warmRect(x / W, (x + 1) / W, y0, y1);
+  const sm = smooth1d(wc, lb, rb, 2);
+  const runs = runsAbove(sm, lb, rb, bnd);
+  if (runs.length === 0) return null;
+  const mergeGap = Math.round(cfg.twinMerge * W);
+  const sel = runs.filter(([a, b]) => b >= flPx - mergeGap && a <= frPx + mergeGap);
+  if (sel.length === 0) {
+    let best = runs[0];
+    let bd = Infinity;
+    const c = (flPx + frPx) / 2;
+    for (const run of runs) {
+      const d = Math.abs((run[0] + run[1]) / 2 - c);
+      if (d < bd) {
+        bd = d;
+        best = run;
+      }
+    }
+    return best;
+  }
+  return [sel[0][0], sel[sel.length - 1][1]];
+}
+
+/**
+ * Post-detection COVERAGE AUDIT (ADR-0028 iteration 2) — the detection-side
+ * correction path for UNDERCOVER / OVERCOVER, run BEFORE zones are built. The
+ * DESIGN CHOICE (over an in-loop fixLevel() zone correction): because
+ * `zonesFromOpenings()` builds each frame's x/w straight from the opening, an
+ * UNDERCOVER/OVERCOVER means the OPENING is mis-measured — a zone-side nudge has
+ * nothing to push against, so the fix belongs on the opening, before zones exist.
+ *
+ * For each opening it samples the SAME exterior/interior strips the measure()-side
+ * gate uses (off the art); when any fire, it RE-DERIVES the window bounds directly
+ * from the art in the opening's own y-band (`deriveWindowBounds`) — the widen
+ * (UNDERCOVER: the run extends past the frame) and the shrink/re-centre (OVERCOVER:
+ * the run is narrower/offset, and boundsToFrame re-centres the floor-clamped frame on
+ * the run midpoint) fall out of that single re-measurement. The change is accepted
+ * ONLY when it strictly reduces that opening's defect count, so the audit can never
+ * make an opening worse and always terminates. Re-run until stable; MAX_AUDIT_ITERS
+ * guards runaway. Mutates `raw[i].{x0px,x1px}` in place.
+ */
+function auditCoverage(raw, cfg, warmRect, W, H, rowCenters) {
+  const openingH = cfg.openingH;
+  const floorW = 0.55 * cfg.openingW;
+  const byRow = {};
+  raw.forEach((r, i) => (byRow[r.row] ??= []).push(i));
+  for (const row of Object.keys(byRow)) byRow[row].sort((i, j) => raw[i].x0px - raw[j].x0px);
+
+  // Freeze each opening's neighbour STRIP bounds from the INITIAL detection. Using
+  // live neighbour positions would let one re-derivation shift a neighbour's bound,
+  // flag a previously-clean window, and cascade/oscillate; windows barely move, so
+  // the initial bounds are stable and the audit only ever touches truly-flagged
+  // openings. Bounds are keyed by raw index.
+  const bound = {};
+  for (const row of Object.keys(byRow)) {
+    const idxs = byRow[row];
+    for (let p = 0; p < idxs.length; p++) {
+      const leftNb = p > 0 ? raw[idxs[p - 1]] : null;
+      const rightNb = p < idxs.length - 1 ? raw[idxs[p + 1]] : null;
+      const lnf = leftNb && boundsToFrame(leftNb.x0px, leftNb.x1px, leftNb.cx, cfg, W);
+      const rnf = rightNb && boundsToFrame(rightNb.x0px, rightNb.x1px, rightNb.cx, cfg, W);
+      bound[idxs[p]] = {
+        left: lnf ? lnf.x + lnf.w / 2 + COVER_NB_GAP : 0,
+        right: rnf ? rnf.x - rnf.w / 2 - COVER_NB_GAP : 1,
+      };
+    }
+  }
+
+  // Cover-defect count for one opening's frame (OVERCOVER suppressed at floor width).
+  const scoreOf = (x0px, x1px, cx, leftBound, rightBound, y0, y1) => {
+    const frame = boundsToFrame(x0px, x1px, cx, cfg, W);
+    const st = coverStrips(frame, leftBound, rightBound);
+    return coverDefects(
+      {
+        extLeft: warmRect(st.extLeft[0], st.extLeft[1], y0, y1),
+        extRight: warmRect(st.extRight[0], st.extRight[1], y0, y1),
+        intLeft: warmRect(st.intLeft[0], st.intLeft[1], y0, y1),
+        intRight: warmRect(st.intRight[0], st.intRight[1], y0, y1),
+      },
+      { underDens: cfg.underDens, overDens: cfg.overDens, suppressOver: frame.w <= floorW * 1.05 },
+    ).length;
+  };
+
+  for (let it = 0; it < MAX_AUDIT_ITERS; it++) {
+    let changed = false;
+    for (const row of Object.keys(byRow)) {
+      const idxs = byRow[row];
+      const cy = rowCenters[Number(row)];
+      const y0 = cy / H - openingH / 2;
+      const y1 = cy / H + openingH / 2;
+      for (const idx of idxs) {
+        const r = raw[idx];
+        const { left: leftBound, right: rightBound } = bound[idx];
+        const before = scoreOf(r.x0px, r.x1px, r.cx, leftBound, rightBound, y0, y1);
+        if (before === 0) continue;
+        const nb = deriveWindowBounds(
+          r.x0px,
+          r.x1px,
+          leftBound * W,
+          rightBound * W,
+          y0,
+          y1,
+          warmRect,
+          cfg,
+          W,
+        );
+        if (!nb) continue;
+        const cx = (nb[0] + nb[1]) / 2;
+        const after = scoreOf(nb[0], nb[1], cx, leftBound, rightBound, y0, y1);
+        if (after < before) {
+          r.x0px = nb[0];
+          r.x1px = nb[1];
+          r.cx = cx;
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+}
+
 /**
  * Detect the real lit windows from a level's facade. Returns openings in per-panel
- * facade-normalized coords (x,y = CENTRE, w,h = SIZE, y-down), the image data, and
- * the detected row centres (normalized).
+ * facade-normalized coords (x,y = CENTRE, w,h = SIZE, y-down), the image data, a
+ * rectangular warm-density sampler, and the detected row centres (normalized).
  */
 function detectOpenings(levelId, band) {
   const cfg = { ...LEVEL_CFG[levelId] };
   if (cfg.band === null) cfg.band = band;
-  const raw = jpeg.decode(fs.readFileSync(facadeFile(levelId)), { useTArray: true });
-  const { width: W, height: H, data } = raw;
+  const decoded = jpeg.decode(fs.readFileSync(facadeFile(levelId)), { useTArray: true });
+  const { width: W, height: H, data } = decoded;
   const warm = cfg.warm;
   const warmAt = (x, y) => {
     const i = (y * W + x) * 4;
     return warm(data[i], data[i + 1], data[i + 2]) ? 1 : 0;
   };
   const det = { W, H, data, warmAt };
+  const warmRect = makeWarmRect(W, H, data, warm);
 
   const rowCenters = cfg.rowMode === "thirds" ? rowsThirds(det, cfg) : rowsRuns(det, cfg);
 
-  const openings = [];
+  // Detect raw windows (pixel bounds) per row.
+  const raw = [];
   rowCenters.forEach((cy, row) => {
-    for (const cx of detectColumns(det, cfg, cy)) {
-      openings.push({
-        x: +(cx / W).toFixed(4),
-        y: +(cy / H).toFixed(4),
-        w: cfg.openingW,
-        h: cfg.openingH,
-        row,
-      });
+    const { wins } = detectColumns(det, cfg, cy);
+    for (const { cx, x0, x1 } of wins) raw.push({ row, cx, x0px: x0, x1px: x1 });
+  });
+
+  // Coverage audit widens/shrinks/re-centres bounds to the ART before zones are built.
+  auditCoverage(raw, cfg, warmRect, W, H, rowCenters);
+
+  const openings = raw.map((r) => {
+    const f = boundsToFrame(r.x0px, r.x1px, r.cx, cfg, W);
+    if (f.saturated) {
+      // saturated "measurement" — surface it so a clamped width is never silent
+      console.warn(
+        `[align:${levelId}] clamped run @x=${f.x.toFixed(3)} measured=${f.measured.toFixed(3)} → w=${f.w.toFixed(3)}`,
+      );
     }
+    return {
+      x: +f.x.toFixed(4),
+      y: +(rowCenters[r.row] / H).toFixed(4),
+      w: +f.w.toFixed(4),
+      h: cfg.openingH,
+      row: r.row,
+    };
   });
   openings.sort((p, q) => p.row - q.row || p.x - q.x);
-  return { openings, cfg, W, H, data, warmAt, rowCenters: rowCenters.map((c) => c / H) };
+  return { openings, cfg, W, H, data, warmAt, warmRect, rowCenters: rowCenters.map((c) => c / H) };
 }
 
 /**
@@ -381,10 +719,19 @@ function zonesFromOpenings(openings, cal) {
 /**
  * Match each panel's slot rects to the openings (1:1 by nearest), then classify
  * defects: OVERFLOW (slot ⊄ opening+τ), COUNT (#zones ≠ #openings), EMPTY (opening
- * with no zone), WALL (zone centre on bare wall). `warmDensity(x,y)` samples the
- * facade for the bare-wall check.
+ * with no zone), WALL (zone centre on bare wall), and MISALIGN (the applied railing
+ * frame `zone.x`/`zone.w` off its measured opening beyond `ALIGN_TOL`), and
+ * UNDERCOVER/OVERCOVER (the frame edge measured against the ART, not the detected
+ * opening — see `lib/coverage.mjs`). `warmDensity(x,y)` is the point sampler for the
+ * bare-wall check; `warmRect(x0,x1,y0,y1)` is the rectangular sampler for the
+ * coverage strips (OVERCOVER is suppressed for a frame at the floor width `cover.floorW`).
+ * `cover` = `{ warmRect, floorW }` (omit to skip the coverage pass). `zonesByPanel` is
+ * the APPLIED per-panel zone arrays (the committed 4 panels in `--check`, the 4 identical
+ * `panelZones` in `--fix`); omit it to skip the MISALIGN + coverage pass.
  */
-function measure(slotRects, openings, warmDensity) {
+function measure(slotRects, openings, warmDensity, cover, zonesByPanel) {
+  const warmRect = cover?.warmRect;
+  const floorW = cover?.floorW ?? 0;
   const defects = [];
   const bySlot = [];
   for (let p = 0; p < PANELS; p++) {
@@ -433,6 +780,78 @@ function measure(slotRects, openings, warmDensity) {
       if (used.has(o)) continue;
       const op = openings[o];
       defects.push(`panel ${p}: EMPTY opening@(${op.x.toFixed(3)},${op.y.toFixed(3)}) has no zone`);
+    }
+  }
+  // MISALIGN — the applied railing frame (zone.x/zone.w) vs its measured opening, per
+  // panel. Zones and openings share one construction order (row-major, x ascending), so
+  // they pair 1:1 BY INDEX (zones[i] ↔ openings[i]) — no greedy nearest-centre match,
+  // which could mis-pair when frames drift. A count mismatch is its own defect.
+  if (zonesByPanel) {
+    for (let p = 0; p < PANELS; p++) {
+      const zones = zonesByPanel[p];
+      if (!zones) continue;
+      if (zones.length !== openings.length) {
+        defects.push(
+          `panel ${p}: MISALIGN(count) ${zones.length} zones ≠ ${openings.length} openings`,
+        );
+        continue;
+      }
+      for (let i = 0; i < zones.length; i++) {
+        const z = zones[i];
+        const o = openings[i];
+        const reason = misaligned(z, o, ALIGN_TOL);
+        if (reason) {
+          defects.push(
+            `panel ${p}: MISALIGN(${reason}) frame@(x=${z.x.toFixed(3)},w=${z.w.toFixed(3)}) ⊄ ` +
+              `opening@(x=${o.x.toFixed(3)},w=${o.w.toFixed(3)})`,
+          );
+        }
+      }
+      // UNDERCOVER / OVERCOVER — the applied frame measured against the ART (not the
+      // detected opening, which MISALIGN already covers). Exterior strips test whether
+      // the lit window continues past a frame edge (frame too narrow); interior strips
+      // test whether a frame edge sits on unlit wall (frame too wide / straddling the
+      // gap). Strips are bounded by the neighbouring FRAME in the same row so they never
+      // reach into an adjacent window. Frames pair 1:1 with openings by index; group by
+      // openings[i].row so neighbour lookup is intra-row.
+      if (warmRect) {
+        const byRow = {};
+        for (let i = 0; i < zones.length; i++) (byRow[openings[i].row] ??= []).push(i);
+        for (const row of Object.keys(byRow)) {
+          const ids = byRow[row].sort((i, j) => zones[i].x - zones[j].x);
+          for (let q = 0; q < ids.length; q++) {
+            const z = zones[ids[q]];
+            const o = openings[ids[q]];
+            const ln = q > 0 ? zones[ids[q - 1]] : null;
+            const rn = q < ids.length - 1 ? zones[ids[q + 1]] : null;
+            const leftBound = ln ? ln.x + ln.w / 2 + COVER_NB_GAP : 0;
+            const rightBound = rn ? rn.x - rn.w / 2 - COVER_NB_GAP : 1;
+            const st = coverStrips(z, leftBound, rightBound);
+            const y0 = o.y - o.h / 2;
+            const y1 = o.y + o.h / 2;
+            const reasons = coverDefects(
+              {
+                extLeft: warmRect(st.extLeft[0], st.extLeft[1], y0, y1),
+                extRight: warmRect(st.extRight[0], st.extRight[1], y0, y1),
+                intLeft: warmRect(st.intLeft[0], st.intLeft[1], y0, y1),
+                intRight: warmRect(st.intRight[0], st.intRight[1], y0, y1),
+              },
+              // No per-level threshold override wired ⇒ module defaults; the audit uses
+              // the same defaults + the same floor suppression, so a corrected opening
+              // satisfies this gate by construction. OVERCOVER is a by-design overhang at
+              // the railing's minimum (floor) width, so it is suppressed there.
+              { suppressOver: z.w <= floorW * 1.05 },
+            );
+            for (const reason of reasons) {
+              defects.push(
+                `panel ${p}: ${reason === "nan" ? "COVER(nan)" : reason} ` +
+                  `frame@(x=${z.x.toFixed(3)},y=${z.y.toFixed(3)},w=${z.w.toFixed(3)}) ` +
+                  `opening@(x=${o.x.toFixed(3)},w=${o.w.toFixed(3)})`,
+              );
+            }
+          }
+        }
+      }
     }
   }
   return { defects, bySlot };
@@ -551,7 +970,10 @@ async function checkLevel(page, level, band) {
   await applyAndRead(page, committed);
   await sleep(300);
   const slots = await readSlots(page);
-  const { defects, bySlot } = measure(slots, det.openings, warmDensity);
+  // MISALIGN over EVERY committed panel (all 4), not just panel 0 — each is checked
+  // against the shared detected openings, so a single drifted panel is still caught.
+  const cover = { warmRect: det.warmRect, floorW: 0.55 * det.cfg.openingW };
+  const { defects, bySlot } = measure(slots, det.openings, warmDensity, cover, committed);
   const overlay = writeOverlay(det, level.id, slots, bySlot, 0, "check");
   if (defects.length > 0) {
     console.error(`[align:${level.id}] CHECK FAILED — ${defects.length} defect(s):`);
@@ -567,6 +989,7 @@ async function checkLevel(page, level, band) {
 async function fixLevel(page, level, band) {
   const det = detectOpenings(level.id, band);
   const warmDensity = makeWarmDensity(det);
+  const cover = { warmRect: det.warmRect, floorW: 0.55 * det.cfg.openingW };
   const perRow = {};
   det.openings.forEach((o) => (perRow[o.row] = (perRow[o.row] ?? 0) + 1));
   console.log(
@@ -608,15 +1031,15 @@ async function fixLevel(page, level, band) {
   let panelZones = zonesFromOpenings(det.openings, cal);
   let converged = false;
   let lastSlots = [];
+  let lastDefects = [];
   let overlay = "";
   for (let iter = 1; iter <= MAX_ITERS; iter++) {
-    await applyAndRead(
-      page,
-      Array.from({ length: PANELS }, () => panelZones),
-    );
+    const applied = Array.from({ length: PANELS }, () => panelZones);
+    await applyAndRead(page, applied);
     await sleep(300);
     lastSlots = await readSlots(page);
-    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity);
+    const { defects, bySlot } = measure(lastSlots, det.openings, warmDensity, cover, applied);
+    lastDefects = defects; // measured against THIS iteration's applied zones (see below)
     overlay = writeOverlay(det, level.id, lastSlots, bySlot, iter, "fix");
     console.log(
       `[align:${level.id}] iter ${iter}: ${defects.length} defect(s) → ${path.relative(ROOT, overlay)}`,
@@ -632,11 +1055,17 @@ async function fixLevel(page, level, band) {
         const idx = det.openings.indexOf(bs.opening);
         if (idx >= 0) overflowByIdx.add(idx);
       });
+    // Correction (panelZones[i] is 1:1 with openings[i]): shrink any overflowing sprite
+    // by height and re-centre. No MISALIGN snap needed — zonesFromOpenings builds x/w
+    // straight from the openings and the shrink only touches h/y, so --fix frames are
+    // aligned by construction; MISALIGN is a --check-time gate against drifted committed data.
     panelZones = panelZones.map((z, i) => {
-      if (!overflowByIdx.has(i)) return z;
       const o = det.openings[i];
-      const zh = +(z.h * 0.94).toFixed(4);
-      return { x: z.x, y: +(o.y - cal.b * zh).toFixed(4), w: z.w, h: zh };
+      if (overflowByIdx.has(i)) {
+        const zh = +(z.h * 0.94).toFixed(4);
+        return { x: z.x, y: +(o.y - cal.b * zh).toFixed(4), w: z.w, h: zh };
+      }
+      return z;
     });
   }
 
@@ -651,13 +1080,14 @@ async function fixLevel(page, level, band) {
     );
     return 0;
   }
-  const { defects } = measure(lastSlots, det.openings, warmDensity);
+  // Report the LAST measured iteration's defects (stored above) — re-measuring the stale
+  // lastSlots against the now-corrected panelZones would score two mismatched states.
   console.error(
-    `[align:${level.id}] FIX did NOT converge (${defects.length} defect(s)) — NOT writing.`,
+    `[align:${level.id}] FIX did NOT converge (${lastDefects.length} defect(s)) — NOT writing.`,
   );
-  for (const d of defects.slice(0, 24)) console.error(`  ✗ ${d}`);
+  for (const d of lastDefects.slice(0, 24)) console.error(`  ✗ ${d}`);
   console.error(`[align:${level.id}] last overlay: ${path.relative(ROOT, overlay)}`);
-  return defects.length;
+  return lastDefects.length;
 }
 
 async function main() {

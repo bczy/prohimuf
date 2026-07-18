@@ -6,7 +6,7 @@ import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { writeMarkRing } from "./markRing";
 
-// Transient player-shot impact effects (ADR-0020): acid-neon explosion over a
+// Transient player-shot impact effects (ADR-0040): acid-neon explosion over a
 // brief dark backing disc (so additive neon reads against a bright facade), a
 // categorical white HIT flash, and inert B&W wall marks. Single consumer of the
 // ImpactChannel — mirrors the FeedbackLayer pooled-mesh pattern (no React churn

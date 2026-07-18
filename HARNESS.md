@@ -77,12 +77,32 @@ wall. Two tools keep the zones honest:
   (`belliard`, `stalingrad`, `vitry`; ids as args, default all): detects the real
   lit windows from each facade art — `belliard` keeps its equal-thirds floors,
   every other level uses **run-based** floor detection over `windowGrid.top/bottom`
-  (robust to any floor count) — then drives the live production render
-  (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`) to place one non-overflowing cop per
-  window, looping until 0 defects, with proof overlays. It writes only the target
-  level's key of `windowZones.generated.json`. `--check` is a CI gate (measure
-  only, exit non-zero on any defect). `yarn align` / `yarn align:check` run all
-  levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
+  (robust to any floor count) — measuring each window's **centre + width** from
+  its warm run bounds. Column runs are refined by **hysteresis expansion** (a dim
+  second pane below `colThresh` rejoins its bright twin down a LOW shoulder) and a
+  **valley split** (two windows over-merged into one run split at the density valley
+  between them, with a mullion guard so a real double-pane window stays whole). The
+  centre is the geometric MIDPOINT of the bounds (not the glow-biased centroid);
+  per-level `openingW` is only a fallback seed, and a floor-clamp warning (a lit
+  window narrower than the seed, framed at the railing minimum) prints as info. The
+  harness then drives the live production render (`__MUF_ZONES__` / `__MUF_SLOT_RECTS__`)
+  to place one non-overflowing cop per window whose `zone.x`/`zone.w` frame the real
+  opening for the foreground railing, looping until 0 defects, with proof overlays.
+  Beyond OVERFLOW/COUNT/EMPTY/WALL it gates **MISALIGN** (the railing frame's left
+  `x−w/2` and right `x+w/2` edges each off its measured opening edge beyond
+  `ALIGN_TOL = 0.012`; reasons `left`/`right`/`left+right`/`nan`/`count`) and — the
+  detection-INDEPENDENT axis measured from the ART — **UNDERCOVER** (an exterior strip
+  just outside a frame edge still warm `≥ 0.28` ⇒ the lit window continues past the
+  edge) and **OVERCOVER** (an interior strip just inside a frame edge dark `< 0.07` ⇒
+  the edge sits on wall; suppressed at the floor width). MISALIGN gates
+  **zone-vs-detection**, UNDERCOVER/OVERCOVER gate **detection-vs-art** — so a
+  half-covered or wall-straddling window can no longer converge green. A post-detection
+  **coverage audit** re-derives a flagged opening's bounds off the art before zones are
+  built (the correction path). All are checked over **all 4** committed panels; pure
+  per-edge / coverage helpers in `scripts/lib/{alignment,coverage}.mjs`, unit-tested.
+  It writes only the target level's key of `windowZones.generated.json`. `--check` is a
+  CI gate (measure only, exit non-zero on any defect). `yarn align` / `yarn align:check`
+  run all levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
 
 ## Local dev
 
