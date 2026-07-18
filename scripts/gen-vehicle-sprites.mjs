@@ -19,6 +19,11 @@
  * Naming contract (renderer + gameplay lanes align on this):
  *   public/assets/vehicles/{truck,car,moto}.png   (vehicleType "truck"|"car"|"moto")
  *
+ * Hero lock (ADR-0043): when `references/approved/heroes.json` has a reigning
+ * hero for a vehicle type, generation switches from flux to `kontext` img2img
+ * conditioned on that frozen reference (same-slot STRONG lock) — see
+ * `resolveHeroImageUrl` below. No hero declared ⇒ exactly today's behaviour.
+ *
  * Only MISSING files are generated, so re-runs are cheap; set FORCE=1 to
  * regenerate everything. Network image generation (Pollinations/FLUX) is often
  * blocked in the local sandbox, so this normally runs in CI. When the network
@@ -35,9 +40,10 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
 import zlib from "zlib";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
+import { sleep, fetchWithRetry, buildRequestUrl } from "./lib/pollinations.mjs";
+import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -96,52 +102,76 @@ function loadVehicles() {
   });
 }
 
-// ── Pollinations / FLUX fetch (mirrors gen-enemy-types.mjs) ──────────────────
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+// ── Pollinations / FLUX fetch — via the shared lib (ADR-0043), no private copy ──
+// sleep/fetchImage/fetchWithRetry used to be duplicated here (drifted from
+// gen-enemy-types.mjs's copies); both generators now share one implementation.
+
+// Hero resolution (ADR-0043 §2, same-slot STRONG kontext lock). ALWAYS
+// hero-locked when a hero is declared — the REROLL=1 "ignore the reigning
+// hero" bypass lives ONLY in `generate()`'s wrapper below (MINEUR-3), so this
+// shared resolver (and `planVehicleRequest`, which is also the guard's
+// planning path) stays env-independent.
+function resolveHeroImageUrl(type, registry, repo, sha) {
+  const hero = heroForSlot(registry, "vehicles", type);
+  return hero ? heroRawUrl(hero.approved, { repo, sha }) : undefined;
 }
 
-function fetchImage(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          fetchImage(res.headers.location).then(resolve).catch(reject);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
-          return;
-        }
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
-      })
-      .on("error", reject);
+// One per-vehicle descriptor builder — `planRequests` AND `generate()` both
+// consume this SAME function, so scripts/check-hero-wiring.mjs (ADR-0043
+// Layer B) verifies the EXECUTED request a real run sends, not a parallel
+// reconstruction (MAJEUR-2). `seed` is threaded in by the caller
+// (`planRequests`'s planning seed vs `generate()`'s runtime seed) — it never
+// changes `image=` (seed-independent, see loadVehicles above).
+function planVehicleRequest(v, { repo, sha, registry, seed }) {
+  const imageUrl = resolveHeroImageUrl(v.type, registry, repo, sha);
+  return {
+    type: v.type,
+    imageUrl,
+    url: buildRequestUrl({ prompt: v.prompt, seed, width: v.width, height: v.height, imageUrl }),
+  };
+}
+
+// Pure, network-free: the exact per-vehicle request URL `generate()` below
+// would send, so scripts/check-hero-wiring.mjs (ADR-0043 Layer B) can assert a
+// declared hero really reaches `image=` WITHOUT spending a network call.
+// Generation and the guard both go through buildRequestUrl — they cannot
+// diverge.
+export function planRequests({ repo, sha, registry } = {}) {
+  const resolved = resolveRepoSha({ repo, sha });
+  const reg = registry ?? loadHeroRegistry(ROOT);
+  return loadVehicles().map((v) => {
+    // Planning-only seed substitute — a real run picks a fresh random seed
+    // when unpinned; harmless because `image=` never depends on seed.
+    const seed = v.seed ?? 1;
+    return planVehicleRequest(v, { repo: resolved.repo, sha: resolved.sha, registry: reg, seed });
   });
 }
 
-async function generate(v, retries = 5) {
+async function generate(v) {
+  const registry = loadHeroRegistry(ROOT);
+  const { repo, sha } = resolveRepoSha();
   const seed = v.seed ?? Math.floor(Math.random() * 99999);
-  console.log(`  [seed] ${v.type} seed=${seed}${v.seed != null ? " (pinned)" : ""}`);
+  // REROLL=1 intentionally ignores the reigning hero for THIS exploration
+  // run — locking a fresh design attempt onto the OLD hero via kontext would
+  // defeat the point (the whole reason to reroll). This is the ONLY place
+  // that bypass exists; `planVehicleRequest` above always returns the
+  // hero-locked plan, so the guard's wiring check stays env-independent.
+  //
   // enhance=false is load-bearing: Pollinations' enhancer rewrites the prompt
   // through an LLM and destroys the verbatim shared style block the set
   // consistency depends on. private=true keeps assets out of the public feed.
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    v.prompt,
-  )}?width=${v.width}&height=${v.height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fetchImage(url);
-    } catch (e) {
-      if (i < retries - 1) {
-        const wait = (i + 1) * 8000;
-        console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
-        await sleep(wait);
-      } else throw e;
-    }
-  }
+  const { imageUrl, url } =
+    process.env.REROLL === "1"
+      ? {
+          imageUrl: undefined,
+          url: buildRequestUrl({ prompt: v.prompt, seed, width: v.width, height: v.height }),
+        }
+      : planVehicleRequest(v, { repo, sha, registry, seed });
+  console.log(
+    `  [seed] ${v.type} seed=${seed}${v.seed != null ? " (pinned)" : ""}` +
+      (imageUrl ? " — hero-locked (KONTEXT)" : ""),
+  );
+  return fetchWithRetry(url);
 }
 
 // ── Dependency-free PNG writer (8-bit RGBA) for procedural placeholders ───────
@@ -313,7 +343,7 @@ async function tryCutout(file, type) {
 // 0.114B) — the standard perceptual grey for sRGB-ish content; the exact weights
 // are immaterial once R=G=B, what matters is that saturation collapses to 0.
 // Uses @napi-rs/canvas (already the pipeline's decoder, via cutout-enemies.mjs).
-async function desaturateFile(file) {
+export async function desaturateFile(file) {
   const { createCanvas, loadImage } = await import("@napi-rs/canvas");
   const img = await loadImage(file);
   const W = img.width;
@@ -425,7 +455,10 @@ async function main() {
   console.log("\nDone.");
 }
 
-main().catch((e) => {
-  console.error("Fatal:", e.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((e) => {
+    console.error("Fatal:", e.message);
+    process.exit(1);
+  });
+}

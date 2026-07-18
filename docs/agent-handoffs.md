@@ -32,14 +32,16 @@ Prose context goes below the line, never inside it.
 
 ## Index
 
-| Story shard                                                                            | Status  | Notes                                   |
-| -------------------------------------------------------------------------------------- | ------- | --------------------------------------- |
-| [archive-2026-07](./handoffs/archive-2026-07.md)                                       | closed  | all pre-shard history (52 story blocks) |
-| [story-agent-team-flow-optimization](./handoffs/story-agent-team-flow-optimization.md) | open    | process amendments (ADR-0032)           |
-| [story-crew-extension](./handoffs/story-crew-extension.md)                             | closed  | +3 agents Tony/Ben/Otis (ADR-0037)      |
-| [story-tech-scout-lane](./handoffs/story-tech-scout-lane.md)                           | open    | +1 agent Nadia 🔭 recon (ADR-0042)      |
-| [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)   | closed  | pipeline poster + freshness gate (#74)  |
-| [story-harness-infographics](./handoffs/story-harness-infographics.md)                 | open    | 4 harness posters + freshness gate      |
-| [story-harness-railing-alignment](./handoffs/story-harness-railing-alignment.md)       | open    | railing↔window align (ADR-0028, PR #68) |
-| [fixes](./handoffs/fixes.md)                                                           | rolling | fix-lane one-liners                     |
-| [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)   | closed  | remote provisioning hook (ADR-0033)     |
+| Story shard                                                                              | Status  | Notes                                    |
+| ---------------------------------------------------------------------------------------- | ------- | ---------------------------------------- |
+| [archive-2026-07](./handoffs/archive-2026-07.md)                                         | closed  | all pre-shard history (52 story blocks)  |
+| [story-agent-team-flow-optimization](./handoffs/story-agent-team-flow-optimization.md)   | open    | process amendments (ADR-0032)            |
+| [story-crew-extension](./handoffs/story-crew-extension.md)                               | closed  | +3 agents Tony/Ben/Otis (ADR-0037)       |
+| [story-tech-scout-lane](./handoffs/story-tech-scout-lane.md)                             | open    | +1 agent Nadia 🔭 recon (ADR-0042)       |
+| [story-agents-pipeline-infographic](./handoffs/story-agents-pipeline-infographic.md)     | closed  | pipeline poster + freshness gate (#74)   |
+| [story-harness-infographics](./handoffs/story-harness-infographics.md)                   | open    | 4 harness posters + freshness gate       |
+| [story-harness-railing-alignment](./handoffs/story-harness-railing-alignment.md)         | open    | railing↔window align (ADR-0028, PR #68)  |
+| [fixes](./handoffs/fixes.md)                                                             | rolling | fix-lane one-liners                      |
+| [story-remote-session-provisioning](./handoffs/story-remote-session-provisioning.md)     | closed  | remote provisioning hook (ADR-0033)      |
+| [story-adhoc-reference-iteration](./handoffs/story-adhoc-reference-iteration.md)         | open    | ad-hoc kontext reference gen (ADR-0044)  |
+| [story-validated-reference-promotion](./handoffs/story-validated-reference-promotion.md) | open    | validated-hero promotion loop (ADR-0043) |

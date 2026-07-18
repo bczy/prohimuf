@@ -9,6 +9,32 @@ Pour `art-advisor`, `concept-artist`, `lead-art`, `game-graphist`. Style maison 
 - [`docs/art-direction/references/`](../art-direction/references/) — références curatées et **license-noté** (le vrai dépôt : on étend là, via `lead-art`).
 - `docs/art-direction/prompt-drafts.md` — brouillons de prompts en cours.
 - ADR `docs/adr/0010`, `0013`, `0014`, `0019` — pipeline art, cutout, intégrité sprite, cleanup halo.
+- ADR `docs/adr/0044` (kontext ad-hoc) et `docs/adr/0043` (boucle de promotion
+  validée) — pipeline de référence kontext.
+
+## Une bibliothèque, deux voies d'entrée (ADR-0043 §1 et §"Coexistence")
+
+La bibliothèque de références se lit comme **une seule bibliothèque avec deux
+intakes**, toutes deux curatées par `lead-art` :
+
+- **Externe** — les boards validés de `graphic-references` (Ray) sous
+  [`docs/art-direction/references/boards/`](../art-direction/references/boards/)
+  (mood/culture/époque/technique) : informent **comment une famille doit lire**
+  avant qu'un seul pixel n'existe. `lead-art` les curate ici même, dans ce fichier.
+- **Interne** — [`references/approved/`](../../references/approved/) : un pixel
+  **déjà généré et déjà validé** (verdict `PROMOTE` du gate `lead-art`), promu en
+  **hero** qui style-locke ses siblings à la génération suivante via `kontext`
+  `image=`. Registre humain : [`HEROES.md`](../../references/approved/HEROES.md) ;
+  registre machine (le seul lu par les générateurs) :
+  [`heroes.json`](../../references/approved/heroes.json) ; mécanique de promotion
+  network-free : `scripts/promote-hero.mjs` ; garde-fou CI permanent :
+  `scripts/check-hero-wiring.mjs`. Voir
+  [`references/README.md`](../../references/README.md) pour la distinction
+  scratch (`references/`, éphémère) vs `approved/` (permanent, superseded jamais
+  supprimé).
+
+Un lecteur de l'un des deux doit pouvoir retrouver l'autre — pas deux registres
+concurrents.
 
 ## Références externes (ancrage, pas dump — la curation vit dans le dossier interne)
 
