@@ -2121,3 +2121,27 @@ X-disjoint clause of the Revision-4 spatial-colour section). ADR number/label fr
   on-captor windows); `tech-writer` ADR Revision 5 + docstring; `producer` ADR number.
 - VERDICT: FROZEN geometry delta — clamp FORM + determinism + contract stability are LAW; band/roam
   VALUES are Sacha's, to be authored within the reachable region above.
+
+## §N — game-designer (Sacha) — anatomy RE-MAP values delivered — 2026-07-18
+
+- claim: the anatomy-band + roam-box VALUES the architect's box-disjoint note is waiting on
+  (Bertrand's HITBOX DIAGRAM: head=green/vital/2, torso+shoulders=yellow/limb/1, arms+legs=
+  red/off/0 — REVERSES the earlier torso=vital mapping).
+- release: `docs/game-design/spec-hostage-qte-static-duel.md` **§11** (new addendum, supersedes
+  §10.A anatomy + §10.B roam). Final values:
+  - VITAL (head): dx[-0.20,+0.20] dy[+0.58,+1.00].
+  - LIMB (torso+shoulders): TORSO dx[-0.32,+0.32] dy[-0.05,+0.58] ∪ L/R_SHOULDER dx[∓0.58,∓0.20]
+    dy[+0.46,+0.80]. (arms+legs fall through to OFF — no explicit band.)
+  - ROAM: WANDER_CENTRE (-0.20,+0.60), AMP_X 0.78, AMP_Y 0.40 (box dx[-0.98,+0.58] dy[+0.20,+1.00]);
+    LEG_DURATION/MIN/MAX/RING_HIT_RADIUS kept → peak ~1.8 u/s.
+  - Damage/HP KEPT: vital 2 / limb 1 / off 0, captorHp 3, N 4. Loss + energy unchanged.
+  - Authored to the architect's BOX-disjoint clamp (reachable ⟺ centre.x ≤ -0.40 OR centre.y ≥ +0.55);
+    over-hostage wedge auto-excluded. G6 assert supplied (§11.C).
+- FLAGs: needs `lead-game-designer` (Karim) PASS. (16) front-facing captor READ → `lead-art`.
+  (17) STRONG on-frame flag — ring extent dx[-1.28,+0.88] dy[-0.10,+1.30] exceeds the plane;
+  composite gate MUST confirm framing, fallback AMP_Y→0.35/AMP_X→0.70. (18) K-5 blocking:
+  pinned `targetSeed` INVALID under new bands+roam — `dev-gameplay` re-verify/re-pin so each of
+  the 4 peeks shows ≥1 on-captor (vital∪limb) decel window (AC18). (19) green scarcity (head-only)
+  ruled, flag for confirm.
+- next: `lead-game-designer` gate → `senior-architect` (adopt band/roam values into the frozen
+  box-disjoint delta) → `dev-gameplay` (re-tune constants + K-5 re-pin, TDD) → Sacha playtest AC.

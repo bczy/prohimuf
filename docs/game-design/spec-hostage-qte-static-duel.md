@@ -1044,3 +1044,317 @@ RING_HIT_RADIUS` during PEEKING), resolved in `tickQte`.
     fallback). **This must be resolved before dev-gameplay implements the wander/clamp.**
 
 ---
+
+## 11. Addendum — ANATOMY RE-MAP from Bertrand's HITBOX DIAGRAM (front-facing captor, tiers REVERSED)
+
+**Author:** `game-designer` (Sacha) · **Date:** 2026-07-18 · **Status:** DRAFT — **needs
+`lead-game-designer` (Karim) PASS** before `senior-architect` and any dev implements it.
+**Supersedes:** §10.A (`D-S1`, the anatomy bands `VITAL/ARM/LEG`), §10.B (`D-S2`, the roam
+box + `WANDER_CENTRE`/`WANDER_AMP_*`), and the §10.C clamp DISCUSSION (see below). **Inherits
+verbatim** from §§1–10 (unchanged): static captor (§1), seeded **PURE closed-form** wander
+determinism — no `Math.random`/`Date.now`/stored PRNG cursor (§8.2), the blown-peeks loss
+clock (§3/§9.5), captor HP + the D4 reversal (§9.1), the spatial-colour SHOT-RESOLUTION model
+(§10.D: hit the ring → take the ring's zone-colour), the energy ledger (§9.5), and the
+**pips/stagger diegetic HP read — NO HUD bar (U-1)**. The damage AMOUNTS (vital 2 / limb 1 /
+off 0) and `captorHp = 3` are **KEPT** (§11.C confirms them under the reversed tiers).
+
+**Bertrand's HITBOX DIAGRAM (front-facing captor silhouette, PR #79).** Colour → damage tier
+re-mapped onto the captor's front anatomy:
+
+- **GREEN = head/face** (top-centre box) → **VITAL**, the biggest chip.
+- **YELLOW = torso** (large centre box) **+ the two shoulders** (small boxes flanking the head
+  at shoulder height) → **LIMB**, medium chip.
+- **RED = both arms** (left extended gun-arm + right arm) **+ the legs** (bottom box) → **OFF**,
+  zero chip.
+
+**This REVERSES §10.A.** §10 had `torso = VITAL` (green, big) and `arm/leg = LIMB` (yellow).
+Now **head = VITAL**, **torso + shoulders = LIMB**, and **arms + legs = OFF (0 damage)**. The
+captor is re-read as a **front-facing figure standing over the kneeling hostage** (she is
+front-RIGHT, `HOSTAGE_DX 0.0…0.75`, `HOSTAGE_DY −1.05…0.15`), not the earlier left-flank
+peeking-over-a-shoulder read. His **head and shoulders sit ABOVE her**; his **gun-arm extends
+LEFT** (clear of her); his **legs and right arm sit behind her** (unreachable — and RED/0
+anyway, so their unreachability costs nothing).
+
+**Clamp context (architect, in parallel).** §10.C's Y-floor-vs-X-disjoint question is resolved
+by the architect reshaping `clampTargetOffsetG6` to **BOX-disjoint**, so the ring can reach the
+captor's head/torso/shoulders **ABOVE** the hostage as well as his gun-arm to her **LEFT**. This
+addendum is authored to that box-disjoint clamp (§11.C). I supply the values + the intent; the
+clamp FORMULA stays the architect's LAW.
+
+**Cahier des charges.** Unchanged from §10 — still the conscious, documented **extension** on
+the already-extension QTE (no new loop verb; `Récupérer → Livrer → Éviter` untouched). This is
+a re-mapping of an existing spatial-anatomy classifier to match Bertrand's diagram, not a new
+mechanic.
+
+### 11.A — D-A1 — New anatomy bands (`ringZoneAt(centre): RingZone`, precedence VITAL > LIMB > OFF)
+
+Anchor-relative, classify the ring **CENTRE** (a point). Precedence **VITAL > LIMB > OFF**.
+The captor spans the 2.0-world square `dx∈[−1.0,+1.0]`, `dy∈[−1.0,+1.0]` centred on the anchor.
+
+**VITAL — head/face (→ green, biggest chip):**
+
+| Const          | Value |
+| -------------- | ----- |
+| `VITAL_DX_MIN` | −0.20 |
+| `VITAL_DX_MAX` | +0.20 |
+| `VITAL_DY_MIN` | +0.58 |
+| `VITAL_DY_MAX` | +1.00 |
+
+A narrow top-centre column (0.40 wide × 0.42 tall, centre `(0, +0.79)`). Sits wholly above the
+hostage and above the box-disjoint clamp line (§11.C) → fully reachable. It is the **narrow,
+precise** target — the reward.
+
+**LIMB — torso + two shoulders (→ yellow, medium chip):** union of THREE boxes.
+
+| Box          | dx            | dy            |
+| ------------ | ------------- | ------------- |
+| `TORSO`      | −0.32 … +0.32 | −0.05 … +0.58 |
+| `L_SHOULDER` | −0.58 … −0.20 | +0.46 … +0.80 |
+| `R_SHOULDER` | +0.20 … +0.58 | +0.46 … +0.80 |
+
+The two shoulders flank the head at shoulder height (dx |0.20…0.58|), giving a **broad
+horizontal yellow band** just below/beside the green head — this width is what makes yellow the
+**reliable chip** (a horizontally-sweeping ring crosses it often), even though its reachable
+area (~0.20 u²) only slightly exceeds the head's (~0.17 u²). The `TORSO` box is the chest column
+below; its lower two-thirds sit over/behind the hostage and are **auto-excluded by the clamp**
+(never visited — §11.C), so in practice yellow is delivered by the **shoulder band + head-base
+row**. That is intended: the reachable yellow is the shoulders.
+
+**OFF — arms + legs + empty air (→ red, ZERO chip):** the classifier returns `"off"` for
+**anything not VITAL and not LIMB**, so these need **no explicit band** in `ringZoneAt` — they
+fall through. They are documented here for the render sprite-read and the roam design:
+
+| Region      | dx               | dy               | Reachable?                                                                   |
+| ----------- | ---------------- | ---------------- | ---------------------------------------------------------------------------- |
+| `L_GUN_ARM` | −0.98 … −0.58    | +0.18 … +0.50    | YES (left of hostage) — a genuine RED-on-captor zone: "don't shoot the arm". |
+| `R_ARM`     | +0.45 … +0.80    | −0.05 … +0.42    | No (behind hostage) — clamped out; RED/0 anyway.                             |
+| `LEGS`      | −0.32 … +0.32    | −1.00 … −0.05    | No (behind hostage) — clamped out; RED/0 anyway.                             |
+| air         | rest of roam box | rest of roam box | YES — "don't shoot air".                                                     |
+
+**Classifier (design intent — the dev owns the code):**
+
+```
+ringZoneAt(centre):
+  if centre ∈ VITAL(head)                          → "vital"
+  if centre ∈ (TORSO ∪ L_SHOULDER ∪ R_SHOULDER)    → "limb"
+  else                                             → "off"     // arms, legs, air
+```
+
+- **Seams (precedence VITAL > LIMB > OFF):** at `dy = +0.58` the head bottom (dx |≤0.20|) meets
+  the torso top (dx |≤0.32|) and the shoulders — VITAL wins the head column; the flanks
+  (dx 0.20…0.58) are LIMB. `L_GUN_ARM` right edge (−0.58) **abuts** `L_SHOULDER` left edge
+  (−0.58) with no overlap → a clean red/yellow seam at the shoulder socket.
+- **Area split within the ROAM box (§11.B), reachable-only (rough):** VITAL ≈ 22 %, LIMB ≈ 24 %,
+  OFF ≈ 54 %. Red is the majority ("wait — don't shoot air/arm"); green and yellow are the ~20 %
+  windows you track for, green narrow-precise, yellow wide-reliable. F3 may shrink VITAL for
+  later districts; Belliard sits at the generous end.
+
+### 11.B — D-A2 — Roam box: wander the reachable UPPER body (head + torso + shoulders + gun-arm)
+
+Reshaped from §10.B's **low-left column** (centre `(−0.825, +0.30)`) to a **high/centre band**
+that reaches the **head** (green — the payoff), sweeps the **shoulders/upper torso** (yellow),
+and dips left over the **gun-arm** (red). The over-hostage lower-right is auto-excluded by the
+box-disjoint clamp (§11.C).
+
+| Constant               | §10.B value     | **§11 (Belliard)**  | Note                                                                        |
+| ---------------------- | --------------- | ------------------- | --------------------------------------------------------------------------- |
+| Roam box **dx**        | −1.20 … −0.45   | **−0.98 … +0.58**   | Centre-shifted right & widened to reach the head (dx 0) and both shoulders. |
+| Roam box **dy**        | −0.50 … +1.10   | **+0.20 … +1.00**   | Raised to the upper body: head top +1.00 down to the gun-arm at +0.20.      |
+| `WANDER_CENTRE`        | (−0.825, +0.30) | **(−0.20, +0.60)**  | New roam centre (also the COVERED rest point; `ringZone` forced off there). |
+| `WANDER_AMP_X`         | 0.375           | **0.78**            | half-extent (box dx spans −0.98 … +0.58).                                   |
+| `WANDER_AMP_Y`         | 0.80            | **0.40**            | half-extent (box dy spans +0.20 … +1.00).                                   |
+| Peak `wanderSpeed`     | ~1.8 u/s        | **~1.8 u/s** (kept) | Human-trackable; bounded by `MAX_LEG_DISPLACEMENT`, not by box size.        |
+| `LEG_DURATION`         | 0.38 s          | **0.38 s** (kept)   | Peak ≈ 0.45 × 1.5 (smoothstep) / 0.38 ≈ 1.78 u/s.                           |
+| `MIN_LEG_DISPLACEMENT` | 0.15 u          | **0.15 u** (kept)   | anti-jitter floor unchanged.                                                |
+| `MAX_LEG_DISPLACEMENT` | 0.45 u          | **0.45 u** (kept)   | speed cap — bounds peak regardless of the (now wider-x) box.                |
+
+- **Reaches the head (the payoff):** ring centre `(0, +0.79)` ∈ VITAL and is clamp-reachable
+  (`cy ≥ clamp line`) → a green window exists every peek the ring visits the top-centre.
+- **Passes over torso/shoulders (yellow):** centres across `dx |0.20…0.58|, dy 0.55…0.80` →
+  LIMB, reachable — the broad reliable band.
+- **Dips over the gun-arm (red-on-captor):** centres `dx −0.98…−0.58, dy 0.20…0.50` → OFF,
+  reachable via the clamp's left (X-disjoint) side — teaches "don't shoot the arm".
+- **Speed unchanged (kept ~1.8 u/s):** Bertrand's steer was a re-MAP of anatomy, not a speed
+  change; `LEG_DURATION` / `MAX_LEG_DISPLACEMENT` hold, so the ring stays trackable.
+- **On-frame flag (composite gate):** ring VISUAL extent (centre ± `RING_HIT_RADIUS` 0.30)
+  reaches dx `[−1.28, +0.88]`, dy `[−0.10, +1.30]`. Top +1.30 / left −1.28 exceed the ~2.0
+  plane's `[−1.0, +1.0]`. **Composite gate MUST confirm framing at the QTE zoom.** Fallback if
+  it clips: tighten `WANDER_AMP_Y → 0.35` (dy top +0.95) and/or `WANDER_AMP_X → 0.70` (dx left
+  −0.90, right +0.50 — still reaches both shoulders) — the **right-edge / G6 pin is never
+  touched** (§11.C). I could not playtest the new box (unbuilt); highest-risk value here.
+
+### 11.C — D-A3 — G6 under the BOX-disjoint clamp: the ring is NEVER over the hostage
+
+The architect's box-disjoint `clampTargetOffsetG6` keeps the ring's **box** (centre ±
+`RING_HIT_RADIUS` 0.30) disjoint from the hostage **box** (`dx 0.0…0.75`, `dy −1.05…0.15`). A
+centre is **reachable** iff the ring box clears the hostage box on **either** axis:
+
+```
+reachable(centre) ⟺  centre.x + RING_HIT_RADIUS + G6_MARGIN ≤ HOSTAGE_DX_MIN     (ring fully LEFT)
+                 OR  centre.y − RING_HIT_RADIUS − G6_MARGIN ≥ HOSTAGE_DY_MAX     (ring fully ABOVE)
+   i.e. (with RING_HIT_RADIUS 0.30, G6_MARGIN 0.10):  centre.x ≤ −0.40   OR   centre.y ≥ +0.55
+```
+
+- **Head + shoulder + head-base yellow are reachable ABOVE her:** every VITAL centre has
+  `dy ≥ 0.58 ≥ 0.55`; the yellow shoulder band's used rows are `dy ≥ 0.55`. Ring fully above the
+  hostage → **Y-disjoint**, no bavure.
+- **Gun-arm is reachable LEFT of her:** `L_GUN_ARM` and the left shoulder edge have
+  `dx ≤ −0.58 ≤ −0.40`. Ring fully left → **X-disjoint**, no bavure.
+- **The over-hostage wedge is auto-excluded:** the lower-centre/right of the roam
+  (`centre.x > −0.40` AND `centre.y < +0.55`) — which is the lower chest, the right arm and the
+  legs, all sitting over/behind the hostage — is **clamped out**, so the ring CENTRE never lands
+  there. The classifier therefore never classifies a centre that is physically over the hostage;
+  the low chest being labelled `TORSO`(limb) is harmless because that region is never visited.
+- **Belliard satisfies it:** roam right edge `+0.58` is reachable only where `cy ≥ 0.55`
+  (Y-disjoint); roam left `−0.98` is reachable at any dy (X-disjoint). Both belt-and-suspenders.
+
+**Assert in `createQte` (against constants, never trusted):** the roam box's over-hostage wedge
+is fully clamp-covered — i.e. for every roam centre, `reachable(clamp(centre))` holds. Concretely
+the two boundary asserts: `ROAM_DX_MAX (= WANDER_CENTRE.x + WANDER_AMP_X = +0.58)` is only
+admitted above the hostage, and the clamp's left ceiling `−(RING_HIT_RADIUS + G6_MARGIN) = −0.40`
+and Y-floor `HOSTAGE_DY_MAX + RING_HIT_RADIUS + G6_MARGIN = +0.55` match the constants. G6 is
+asserted, never data-trusted (ADR-0035 discipline). Same treatment the peek floors get.
+
+### 11.D — D-A4 — Damage / balance (amounts + `captorHp` KEPT; re-justified under the reversal)
+
+The reversal changes **which anatomy earns which tier**, not the tier VALUES. Kept:
+
+| Field                   | Value | Kind                                             |
+| ----------------------- | ----- | ------------------------------------------------ |
+| `CAPTOR_DAMAGE_VITAL`   | **2** | SYSTEM constant (head = the biggest chip).       |
+| `CAPTOR_DAMAGE_LIMB`    | **1** | SYSTEM constant (torso/shoulders = medium chip). |
+| `colourDamage("off")`   | **0** | arms/legs/air = wasted shot.                     |
+| `captorHp`              | **3** | `QteSpec`, integer ≥ 1, F3-curvable.             |
+| `maxBlownPeeks` (**N**) | **4** | `QteSpec` — unchanged; four openings.            |
+
+**Why these still balance under the reversal (Belliard):**
+
+- **Reliable path = yellow (shoulders).** Yellow is now the **broad** band (shoulders span
+  dx |0.20…0.58|), so a horizontally-sweeping ring is over yellow often → the honest chip.
+  Three yellow hits (1 dmg each) across N = 4 openings deplete `captorHp 3` with **one opening to
+  spare**. This is the level-1 safety path — and it is the tier Bertrand named "un peu".
+- **Reward path = green (head).** The head is now the **narrow** target (dx 0.40), harder to
+  hold the ring on — so green (2 dmg) is the earned shortcut: **two greens** ⇒ win by peek 2, or
+  **green + yellow** ⇒ win on the first opening you catch both. "Beaucoup", correctly the scarce
+  precise reward.
+- **Red is a true waste** (0 dmg, 0 energy): firing with the ring over the **gun-arm or air**
+  spends your aligned shot for nothing, and the peek still closes → ticks the loss clock. The
+  teaching pressure toward "wait until the ring is on his head or shoulders".
+- **Net difficulty vs §10:** green got HARDER (head-only, was head+torso) but yellow got EASIER
+  and more reliable (broad shoulder band, was awkward arm+leg). The reliable yellow-only route
+  carries a level-1 player, green rewards precision — Belliard stays **approachable**. `captorHp`
+  stays **3**; F3 raises it for tougher captors later.
+
+**Loss (UNCHANGED, §9.5).** A blown peek = a `PEEKING` exposure that CLOSES with `captorHp > 0`;
+the **N-th** such close (N = 4) with the captor alive ⇒ captor **executes the hostage → LOST**.
+A same-tick depleting ring hit ⇒ **WON** (`fire` resolves first). Blown peeks are the **sole**
+fail route. **Energy ledger UNCHANGED:** +40 WON, −30 hostage, −8 per closed peek (captor alive),
+−6 panic (zoom), −5 body; chips and misses cost 0 energy; passive ignore = −32 **and** LOST.
+
+### 11.E — D-A5 — K-5: the pinned `targetSeed` MUST be re-verified (flag to dev-gameplay)
+
+The anatomy bands **and** the roam geometry (`WANDER_CENTRE`, `WANDER_AMP_X/Y`) both changed, so
+the closed-form `wander(targetSeed, peekIndex, t)` now produces **different** offsets **and** the
+new `ringZoneAt` classifies them differently. **The previously pinned `targetSeed` is therefore
+INVALID until re-checked.**
+
+**Requirement (K-5, inherited invariant, re-asserted under the new bands+roam).** For the pinned
+Belliard `targetSeed`, **each** of the N = 4 peeks must present **≥ 1 on-captor (`vital ∪ limb`)
+DECELERATING window** — i.e. at least one waypoint (a smoothstep leg boundary, where velocity → 0
+= the fair firing "lead point") whose **clamped** centre classifies `vital` or `limb`. This
+guarantees every opening has a fair, catchable chip on the captor (not a peek that only ever
+shows red).
+
+- **dev-gameplay re-checks** the current pin against the §11 constants and **re-pins** if any of
+  the 4 peeks fails; ships a unit test that samples each peek's waypoint centres and asserts the
+  ≥ 1 `vital ∪ limb` decel window per peek (AC below). I cannot compute the hash here; this is a
+  dev re-pin task, flagged, **must pass before ship**.
+- Likelihood is favourable — `WANDER_CENTRE (−0.20, +0.60)` itself classifies on/near the
+  head/left-shoulder seam, so most waypoints land on-captor — but it is **asserted, never
+  assumed**.
+
+### 11.F — Updated acceptance criteria (REPLACE AC13′/AC14′; refine AC12′; add AC18)
+
+- **AC13″ — Anatomy re-mapped (supersedes AC13′).** `ringZoneAt(centre): RingZone` classifies
+  the ring CENTRE, precedence VITAL > LIMB > OFF, as a PURE function of position (no time,
+  no `Math.random`/`Date.now`): `"vital"` iff in the **head** box `dx[−0.20,+0.20]
+dy[+0.58,+1.00]`; else `"limb"` iff in **torso** `dx[−0.32,+0.32] dy[−0.05,+0.58]` ∪ **L/R
+  shoulder** `dx[∓0.58,∓0.20] dy[+0.46,+0.80]`; else `"off"` (arms, legs, air). Unit test:
+  head-box centre → vital; shoulder centre → limb; gun-arm centre `(−0.75,+0.35)` → off; a
+  head/torso-seam centre `(0,+0.58)` → **vital** (precedence). The green/yellow/red tiers match
+  Bertrand's diagram (head=green, torso+shoulders=yellow, arms+legs=red).
+- **AC14″ — High/centre roam, G6 box-disjoint intact (supersedes AC14′).** Belliard roam box
+  dx **−0.98…+0.58** / dy **+0.20…+1.00** (`WANDER_CENTRE (−0.20,+0.60)`, `AMP 0.78/0.40`), peak
+  **~1.8 u/s**, `RING_HIT_RADIUS` 0.30. For every tick of every peek the **clamped** ring box is
+  disjoint from the hostage box on ≥ 1 axis (`centre.x ≤ −0.40` OR `centre.y ≥ +0.55`) ⇒ **no
+  bavure is ever required to reach the head or shoulders.** Unit test samples a full peek and
+  asserts no clamped ring extent enters the hostage band. The roam visibly reaches the **head**
+  (green) and sweeps the **shoulders** (yellow) and **gun-arm** (red) in playtest.
+- **AC12″ — HP chips by the re-mapped zone (refines AC12′).** A ring hit during PEEKING subtracts
+  `colourDamage(ringZoneAt(targetOffset))` — **head 2 / torso+shoulder 1 / arm+leg+air 0** — from
+  `captorHp`; WON only when `captorHp ≤ 0` (depleting shot pays +40). Belliard `captorHp = 3`.
+  Unit tests: 2× head ⇒ WON; 3× shoulder ⇒ WON; gun-arm/air hits never reduce HP; a shot outside
+  `RING_HIT_RADIUS` never reduces HP.
+- **AC18 — Every peek offers an on-captor decel window (K-5).** For the pinned Belliard
+  `targetSeed`, each of the N = 4 peeks presents ≥ 1 waypoint whose clamped centre classifies
+  `vital ∪ limb`. Unit test over the 4 peeks' waypoint centres; **dev re-pins the seed if it
+  fails** under the §11 bands+roam.
+- **AC15 / AC16 (inherited, unchanged).** Loss = N openings with the captor alive; energy ledger
+  as §9.5. **AC17″ (inherited, restated):** a human depletes `captorHp = 3` within N = 4 openings
+  — the yellow-only (shoulder) path makes quota, a 2-green (head) path wins by peek 2; the ring
+  never teleports, decelerates into each waypoint, and stays on-frame at the zoom.
+
+Sacha playtests the built §11 integration against **AC12″/AC13″/AC14″/AC17″/AC18** (plus
+inherited AC1–AC11, AC15, AC16) and reports PASS/deviations to `lead-game-designer` before the
+architect's integration review.
+
+### 11.G — Contract delta (design intent for `senior-architect` + `dev-gameplay`)
+
+Pure `src/game`; boundary law preserved. **Values-and-bands only** — the frozen spatial-colour
+CONTRACT (`RingZone`, `ringZoneAt(centre)`, `colourDamage`, `RING_HIT_RADIUS`, `"head"` retired
+from `QteZone`, the box-disjoint `clampTargetOffsetG6`) is untouched by this addendum. No new
+authored `QteSpec` field (`captorHp`, `targetSeed`, `maxBlownPeeks` already exist).
+
+- **`qteSystem.ts` anatomy constants RE-TUNED (values only):** `VITAL_DX_MIN/MAX −0.20/+0.20`,
+  `VITAL_DY_MIN/MAX +0.58/+1.00`; **new** `TORSO_DX_MIN/MAX −0.32/+0.32`, `TORSO_DY_MIN/MAX
+−0.05/+0.58`, `L_SHOULDER_*`/`R_SHOULDER_*` (`dx ∓0.58/∓0.20`, `dy +0.46/+0.80`). The old
+  `ARM_*`/`LEG_*` VITAL/LIMB bands are REMOVED — arms and legs now fall through to `off`, so
+  `ringZoneAt` tests VITAL then (TORSO ∪ L_SHOULDER ∪ R_SHOULDER), else off.
+- **`qteSystem.ts` roam constants RE-TUNED (values only):** `WANDER_CENTRE (−0.825,+0.30) →
+(−0.20,+0.60)`, `WANDER_AMP_X 0.375 → 0.78`, `WANDER_AMP_Y 0.80 → 0.40`. `LEG_DURATION 0.38`,
+  `MIN/MAX_LEG_DISPLACEMENT 0.15/0.45`, `RING_HIT_RADIUS 0.30` **kept**.
+- **Damage / HP:** `CAPTOR_DAMAGE_VITAL 2`, `CAPTOR_DAMAGE_LIMB 1`, `captorHp 3`, `N 4` **all
+  KEPT** — the reversal moves anatomy between tiers, not the tier values (§11.D).
+- **`createQte` assert:** the G6 box-disjoint boundary asserted against the constants (§11.C).
+- **`ringZoneAt` docstring** re-describes the front-facing anatomy (head/torso+shoulders/arms+
+  legs) so it matches Bertrand's diagram — the tick logic (`tickQte`) is **unchanged** (it reads
+  `ringZoneAt` and `colourDamage` exactly as today).
+- **K-5:** dev re-verifies / re-pins the Belliard `targetSeed` (§11.E, AC18).
+
+**Render note (spec the READ, not the code — `dev-r3f-render` + `lead-art`):** the sprite must
+read as a **front-facing captor over a kneeling hostage** — head top-centre, shoulders flanking,
+gun-arm to HIS side (screen-left), legs/right-arm behind her. The player must identify **head vs
+shoulders vs arm at a glance** so the ring's rouge/jaune/vert tint (render maps `qte.ringZone`)
+matches what they see. Composite-gate the anatomy↔zone↔colour↔damage alignment over the moving
+ring. HP read stays pips/stagger, NO HUD bar (U-1).
+
+### 11.H — Open flags for the gate (append to §7 / §8.7 / §9.9 / §10.H)
+
+16. **Anatomy read → `lead-art` (front-facing captor).** The re-map assumes a front-facing
+    silhouette (head top-centre, shoulders flanking, gun-arm screen-left, hostage kneeling
+    front-right). The sprite must make head/shoulder/arm **legible at the zoom** so green/yellow/
+    red map to what the player sees. Hand the READ to `lead-art`; spec, not style.
+17. **On-frame (STRONG flag, unplayable).** Roam ring extent reaches dx `[−1.28,+0.88]`, dy
+    `[−0.10,+1.30]` — top/left exceed the ~2.0 plane. **Composite gate MUST confirm framing at
+    the zoom before ship**; fallback tighten `WANDER_AMP_Y→0.35` / `WANDER_AMP_X→0.70` (G6 pin
+    untouched). I could not playtest the new box (unbuilt) — highest-risk value in the re-map.
+18. **K-5 re-pin (blocking).** The pinned `targetSeed` is INVALID under the new bands+roam;
+    dev-gameplay MUST re-verify/re-pin so each of the 4 peeks shows ≥ 1 on-captor decel window
+    (§11.E, AC18) **before ship**.
+19. **Green scarcity (head-only) — RULED, flag for confirm.** Head-only VITAL (was head+torso)
+    makes green scarcer/harder; the broad shoulder yellow is the reliable fallback that keeps
+    Belliard approachable at `captorHp 3`. If the gate wants green easier, widen `VITAL_DX` (the
+    head box) — the G6 pins are on the hostage side (dx > 0 above her), unaffected by widening
+    the head symmetrically. Flag a preference.
+
+---
