@@ -111,10 +111,10 @@ jobs:
           done
 
       # Rebase-retry publish (see .github/actions/gh-pages-publish): re-clones
-      # gh-pages each attempt and replaces only preview/<slug>, so concurrent
-      # branch deploys never lose a plain-push race. The rest of the branch
-      # (main's root + other previews) is preserved. Stale hashed assets in this
-      # subdir are harmless since index.html only references the current build.
+      # gh-pages each attempt and clean-replaces only preview/<slug> (so this
+      # subdir never accumulates stale hashed assets), preserving the rest of
+      # the branch (main's root + other previews). Concurrent branch deploys
+      # never lose a plain-push race.
       - name: Publish to gh-pages (preview/${{ steps.slug.outputs.slug }})
         uses: ./.github/actions/gh-pages-publish
         with:

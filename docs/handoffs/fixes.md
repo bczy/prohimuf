@@ -53,3 +53,18 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   re-triage (PASS — written moments after Bertrand's merge, hence this follow-up),
   flip the story index row to closed. Docs-only, one shard + index. (orchestrator →
   single code-review waived by fix-lane tier: log-only diff; Marion may challenge.)
+
+- 2026-07-18 · claude/fix-gh-pages-deploy-race · dev-tooling-assets · replace the
+  plain-push peaceiris gh-pages publishes (deploy-preview.yml + deploy.yml) with a
+  shared rebase-retry composite action (.github/actions/gh-pages-publish): re-clone
+  per attempt, subtree clean-replace / root overlay (previews preserved, .nojekyll
+  re-created), backoff+jitter on rejection — ends the cross-branch
+  '! [rejected] (fetch first)' deploy races (runs 475/476/480). ADR-0001 amended
+  (deployment mechanism + dependency removal). · checks: YAML+bash -n, empirical
+  git harness (subtree isolation, root overlay, orphan init, simulated mid-publish
+  race, shallow push, ls-remote rc 0/2/128, dest-guard cases); tsc/vitest N/A (no
+  src) · review: code-review(high) — 1 MAJEUR + 4 MINEUR + 4 NIT, ALL fixed
+  (ls-remote branch-existence gate + retryable clones, stderr surfaced on final
+  failure, .nojekyll parity, ADR-0001 amendment, ci.md + workflow comment refresh,
+  dest guard hardened vs ./.git, no post-final-attempt sleep, max_attempts
+  validated)

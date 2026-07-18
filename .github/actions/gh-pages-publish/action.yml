@@ -49,24 +49,58 @@ runs:
         fi
         src="$(cd "$PUBLISH_DIR" && pwd)"
 
-        # Reject a destination_dir that would escape the branch root.
+        # Reject a destination_dir that would escape the branch root or target
+        # git metadata ('.', '.git', '.git/…').
         case "$DEST_DIR" in
-          /*|*..*) echo "::error::invalid destination_dir '$DEST_DIR'"; exit 1 ;;
+          /*|*..*|.|./*|.git|.git/*) echo "::error::invalid destination_dir '$DEST_DIR'"; exit 1 ;;
         esac
         dest="${DEST_DIR#/}"; dest="${dest%/}"
 
+        case "$MAX_ATTEMPTS" in
+          ''|*[!0-9]*|0) echo "::error::max_attempts must be a positive integer, got '$MAX_ATTEMPTS'"; exit 1 ;;
+        esac
+
         remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        errlog="$(mktemp)"
 
         attempt=1
         while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
           work="$(mktemp -d)"
-          # Fresh shallow clone of gh-pages each attempt so we always rebase on
-          # the latest remote state (this is what beats the push race). If the
-          # branch does not exist yet, start an orphan.
-          if git clone --quiet --depth 1 --branch gh-pages "$remote" "$work" 2>/dev/null; then
-            :
+
+          # Distinguish "gh-pages missing" from "transient clone failure": only
+          # orphan-init when the branch genuinely does not exist (ls-remote
+          # --exit-code returns 2 for "no matching refs"); treat every other
+          # failure as retryable so the loop absorbs transient flakes too.
+          rc=0
+          git ls-remote --exit-code --heads "$remote" gh-pages >/dev/null 2>>"$errlog" || rc="$?"
+          if [ "$rc" -eq 0 ]; then
+            branch_exists=1
+          elif [ "$rc" -eq 2 ]; then
+            branch_exists=0
           else
-            git clone --quiet --depth 1 "$remote" "$work"
+            echo "::warning::ls-remote failed rc=$rc (attempt $attempt/$MAX_ATTEMPTS) — retrying."
+            rm -rf "$work"
+            sleep "$(( attempt * 3 + RANDOM % 5 ))"
+            attempt="$(( attempt + 1 ))"; continue
+          fi
+
+          if [ "$branch_exists" -eq 1 ]; then
+            # Fresh shallow clone of gh-pages each attempt so we always rebase
+            # on the latest remote state (this is what beats the push race).
+            if ! git clone --quiet --depth 1 --branch gh-pages "$remote" "$work" 2>>"$errlog"; then
+              echo "::warning::clone of gh-pages failed (attempt $attempt/$MAX_ATTEMPTS) — retrying."
+              rm -rf "$work"
+              sleep "$(( attempt * 3 + RANDOM % 5 ))"
+              attempt="$(( attempt + 1 ))"; continue
+            fi
+          else
+            # Branch does not exist yet — bootstrap it as an orphan.
+            if ! git clone --quiet --depth 1 "$remote" "$work" 2>>"$errlog"; then
+              echo "::warning::bootstrap clone failed (attempt $attempt/$MAX_ATTEMPTS) — retrying."
+              rm -rf "$work"
+              sleep "$(( attempt * 3 + RANDOM % 5 ))"
+              attempt="$(( attempt + 1 ))"; continue
+            fi
             git -C "$work" checkout --orphan gh-pages
             git -C "$work" rm -rq --cached -r . 2>/dev/null || true
             find "$work" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
@@ -83,6 +117,10 @@ runs:
           else
             # Root publish: overlay onto root, preserving sub-folders (previews).
             cp -R "$src/." "$work/"
+            # peaceiris parity: GitHub Pages must not run Jekyll over the site
+            # (underscore-prefixed asset paths would 404). Recreate the marker
+            # so an orphan re-bootstrap can never silently lose it.
+            touch "$work/.nojekyll"
           fi
 
           git -C "$work" add -A
@@ -92,17 +130,24 @@ runs:
           fi
 
           git -C "$work" commit --quiet -m "$COMMIT_MESSAGE"
-          if git -C "$work" push --quiet origin gh-pages 2>/dev/null; then
+          if git -C "$work" push --quiet origin gh-pages 2>>"$errlog"; then
             echo "Published to gh-pages${dest:+/$dest} on attempt $attempt."
             rm -rf "$work"; exit 0
           fi
 
           echo "::warning::gh-pages push rejected (attempt $attempt/$MAX_ATTEMPTS) — re-cloning and retrying."
           rm -rf "$work"
-          # Backoff with jitter so simultaneous losers don't collide again.
-          sleep "$(( attempt * 3 + RANDOM % 5 ))"
+          if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+            # Backoff with jitter so simultaneous losers don't collide again.
+            sleep "$(( attempt * 3 + RANDOM % 5 ))"
+          fi
           attempt="$(( attempt + 1 ))"
         done
 
         echo "::error::failed to publish to gh-pages after $MAX_ATTEMPTS attempts"
+        # Surface the real git errors (Actions masks the token in logs).
+        if [ -s "$errlog" ]; then
+          echo "--- accumulated git stderr ---"
+          cat "$errlog"
+        fi
         exit 1
