@@ -10,7 +10,7 @@ import os, sys, zlib, struct
 
 SCALE = 10          # sprite pixel -> image px
 CW, CH = 22, 20     # cell size in sprite pixels
-COLS, ROWS = 5, 4
+COLS, ROWS = 5, 4   # 20 agents fill all 20 cells
 M = 30              # outer margin
 GAP_X, GAP_Y = 14, 16
 TS = 3              # label font scale (role + persona)
@@ -60,6 +60,7 @@ MODELS = {
     "gpu-specialist": "OPUS 4.8",
     "tech-writer": "SONNET 5",
     "sound-designer": "SONNET 5",
+    "tech-scout": "OPUS 4.8",
 }
 # Tier -> palette key for the model tag color.
 MODEL_COLOR = {"OPUS": 'G', "SONNET": 'C', "HAIKU": 'Y', "HUMAIN": 'F'}
@@ -176,6 +177,14 @@ AGENTS = [
         (["UU", "UU", "UU"], 3, 8), (["UU", "UU", "UU"], 17, 8),       # big cups
         ([".G", ".G", ".G", "GG"], 19, 2),                             # note R
         ([".W", ".W", "WW"], 0, 4),                                    # note L
+    ]),
+    ("tech-scout", "TECH SCOUT", "NADIA", [
+        (["KKKK", "KCCK", "KCCK", "KKKK"], 4, 8),                      # binocular barrel L
+        (["KKKK", "KCCK", "KCCK", "KKKK"], 11, 8),                     # binocular barrel R
+        (["KK"], 9, 9),                                                # bridge
+        (["S"], 3, 10), (["S"], 2, 11),                                # strap L
+        (["S"], 15, 10), (["S"], 16, 11),                              # strap R
+        (["C"], 19, 2), (["S"], 19, 3), (["S"], 19, 4), (["K"], 19, 5), # spyglass
     ]),
 ]
 
