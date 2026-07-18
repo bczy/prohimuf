@@ -109,11 +109,30 @@ export interface NearForegroundLayer {
   readonly objects: readonly NearForegroundObject[];
 }
 
+/** One tile of a tronçon-sequence backdrop: an image basename + its native
+ *  aspect (image width/height), which drives the tile's world width. */
+export interface BackdropTileSpec {
+  readonly file: string;
+  readonly aspect: number;
+}
+
+/**
+ * How a level composes its backdrop (ADR-0046). Absent on a level ⇒
+ * `single-facade`: the classic {@link PANELS} equal-width `facade.png` panels.
+ * `troncon-sequence`: a fixed, deterministic sequence of distinct
+ * variable-width tronçon images laid side by side.
+ */
+export type BackdropDescriptor =
+  | { readonly mode: "single-facade" }
+  | { readonly mode: "troncon-sequence"; readonly tiles: readonly BackdropTileSpec[] };
+
 export interface LevelArt {
   readonly id: string;
   readonly name: string;
   readonly label: string;
   readonly parallax: LevelArtParallax;
+  /** How the backdrop is composed (ADR-0046); absent ⇒ single-facade. */
+  readonly backdrop?: BackdropDescriptor;
   /** Which code-drawn foreground ironwork to render; defaults to "haussmann". */
   readonly ironwork?: IronworkStyle;
   /**
@@ -334,4 +353,107 @@ export function computeLevelSlots(
   facadeH: number,
 ): WindowSlot[] {
   return computeSlotsFromZones(getWindowZones(id), facadeW, facadeH);
+}
+
+/** World width of one single-facade panel (height × facade aspect). */
+const PANEL_WIDTH = WORLD_HEIGHT * FACADE_ASPECT;
+
+/**
+ * Per-tronçon generated window zones (troncon-sequence, ADR-0046), keyed
+ * `${levelId}/${tile.file}`. This is a FLAT view of the same generated map as
+ * {@link GENERATED_ZONES} (double-cast through `unknown`: the per-tronçon
+ * entries are a single zone list, not the per-panel array-of-arrays of the
+ * legacy level-id keys, and the two key namespaces never collide — level-id
+ * keys carry no `/`). Phase-1 these keys are ABSENT (the generator adds them
+ * later); {@link getBackdropLayout} then falls back to {@link getWindowZones}.
+ */
+const GENERATED_TRONCON_ZONES = generatedZones as unknown as Readonly<
+  Record<string, readonly WindowZone[]>
+>;
+
+/** One composed backdrop tile: an image, its world width and centre, plus the
+ *  window zones normalized to THIS tile's own width (0..1, y-down). */
+export interface BackdropTile {
+  readonly file: string;
+  readonly width: number;
+  readonly centreX: number;
+  readonly zones: readonly WindowZone[];
+}
+
+/** The pure geometric composition of a level's backdrop (ADR-0046). Contains
+ *  NO draw-scale / feather / blend — those stay render-side, applied per mode. */
+export interface BackdropLayout {
+  readonly mode: "single-facade" | "troncon-sequence";
+  readonly fullW: number;
+  readonly tiles: readonly BackdropTile[];
+}
+
+/** Compose a troncon-sequence backdrop: variable-width tiles butted left→right,
+ *  centred on the origin, each carrying its own (per-tronçon or fallback) zones. */
+function buildTronconLayout(id: string, tiles: readonly BackdropTileSpec[]): BackdropLayout {
+  const fullW = tiles.reduce((sum, t) => sum + WORLD_HEIGHT * t.aspect, 0);
+  const fallbackZones = getWindowZones(id);
+  const out: BackdropTile[] = [];
+  let cursor = -fullW / 2;
+  for (const tile of tiles) {
+    const width = WORLD_HEIGHT * tile.aspect;
+    const centreX = cursor + width / 2;
+    cursor += width;
+    const zones = GENERATED_TRONCON_ZONES[`${id}/${tile.file}`] ?? fallbackZones;
+    out.push({ file: tile.file, width, centreX, zones });
+  }
+  return { mode: "troncon-sequence", fullW, tiles: out };
+}
+
+/**
+ * The pure, deterministic backdrop layout for a level (ADR-0046). Single grid
+ * abstraction for both modes:
+ * - single-facade (default): {@link PANELS} equal-width `facade` tiles of width
+ *   {@link PANEL_WIDTH}, centred on the origin, each carrying its panel's zones
+ *   ({@link getLevelPanelZones}). Provably byte-identical to the legacy
+ *   `tilePanelZones → computeSlotsFromZones` slots (see backdropLayout tests).
+ * - troncon-sequence: the manifest's fixed variable-width tiles (see
+ *   {@link buildTronconLayout}).
+ */
+export function getBackdropLayout(id: string | undefined): BackdropLayout {
+  const art = getLevelArt(id);
+  const backdrop = art.backdrop;
+  if (backdrop?.mode === "troncon-sequence") {
+    return buildTronconLayout(art.id, backdrop.tiles);
+  }
+  const panelZones = getLevelPanelZones(art.id);
+  const tiles: BackdropTile[] = [];
+  for (let p = 0; p < PANELS; p++) {
+    tiles.push({
+      file: "facade",
+      width: PANEL_WIDTH,
+      centreX: (p - (PANELS - 1) / 2) * PANEL_WIDTH,
+      zones: panelZones[p] ?? [],
+    });
+  }
+  return { mode: "single-facade", fullW: PANEL_WIDTH * PANELS, tiles };
+}
+
+/**
+ * Enemy window slots in world space, derived from {@link getBackdropLayout}.
+ * Each tile-local zone `(x,y,w,h)` maps to world
+ * `x = centreX + (x−0.5)·width`, `y = (0.5−y)·facadeH`,
+ * `size = (w·width, h·facadeH)`. Replaces the
+ * `tilePanelZones → computeSlotsFromZones` chain for callers.
+ */
+export function computeBackdropSlots(id: string | undefined, facadeH: number): WindowSlot[] {
+  const layout = getBackdropLayout(id);
+  const slots: WindowSlot[] = [];
+  let col = 0;
+  for (const tile of layout.tiles) {
+    for (const z of tile.zones) {
+      slots.push({
+        col: col++,
+        row: 0,
+        screenPosition: { x: tile.centreX + (z.x - 0.5) * tile.width, y: (0.5 - z.y) * facadeH },
+        size: { x: z.w * tile.width, y: z.h * facadeH },
+      });
+    }
+  }
+  return slots;
 }
