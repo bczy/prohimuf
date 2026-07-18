@@ -832,7 +832,7 @@ fixed size (difficulty from motion + reading anatomy, not from shrinking the ret
   the fair "lead point" / firing window); never teleports. `MAX_LEG_DISPLACEMENT` bounds the
   peak. Verified in playtest (AC); tighten if it reads as a coin-flip.
 - **On-frame flag (composite gate).** Ring visual extent now reaches left −1.50, top +1.40,
-  bottom −0.80 (centre ± `RING_HALF` 0.30). This exceeds the §8.3 safe occupancy — **flag to
+  bottom −0.80 (centre ± `RING_HIT_RADIUS` 0.30). This exceeds the §8.3 safe occupancy — **flag to
   the composite gate**: confirm the ring stays framed at the QTE zoom. **Fallback if it
   clips:** tighten `WANDER_AMP_Y` to 0.65 (dy top +0.95) and/or `WANDER_AMP_X` to 0.325 (dx
   left −1.15) — **the right-edge / G6 pin is never touched** (§10.C).
@@ -840,27 +840,45 @@ fixed size (difficulty from motion + reading anatomy, not from shrinking the ret
 ### 10.C — D-S3 — G6 SAFETY (load-bearing): the ring is NEVER over the hostage
 
 The whole point of Bertrand's rule: **the player must never be lured into a bavure by
-tracking the ring.** The roam is clamped so the ring — centre **plus reticle radius** — never
-overlaps the hostage silhouette (front-right). "Red/off" space exists **only** on the
-non-hostage side (left / above / below).
+tracking the ring.** Bertrand framed G6 spatially — _"'red/off' space is only on the
+**non-hostage side**"_ — and the hostage is **front-RIGHT** (dx 0.0…0.75). So G6 here is
+**X-disjointness**: the ring — centre **plus reticle radius** — stays entirely **LEFT** of
+the hostage, for **any dy**. This is what lets a **low** limb (the LEG, dy < the hostage top)
+be a valid yellow zone without ever risking her.
 
 **Asserted bound (in `createQte`, against constants — never trusted from data):**
 
 ```
-ROAM_DX_MAX + RING_HALF_W + G6_MARGIN  ≤  HOSTAGE_DX_MIN
-   −0.45    +    0.30     +   0.10     =  −0.05   ≤   0.0     ✓
+ROAM_DX_MAX + RING_HIT_RADIUS + G6_MARGIN  ≤  HOSTAGE_DX_MIN
+   −0.45    +     0.30        +   0.10     =  −0.05   ≤   0.0     ✓
 ```
 
-- Ring's **rightmost extent** = `ROAM_DX_MAX + RING_HALF_W` = −0.45 + 0.30 = **−0.15**.
+- Ring's **rightmost extent** = `ROAM_DX_MAX + RING_HIT_RADIUS` = −0.45 + 0.30 = **−0.15**.
 - Hostage's **left edge** = `HOSTAGE_DX_MIN` = **0.0**.
-- ⇒ Gap = **0.15 u ≥ G6_MARGIN 0.10.** The ring rectangle is **disjoint from the hostage on
-  the X axis alone** — and two rectangles disjoint on one axis are disjoint everywhere,
-  **for every dy** (so the ring dipping to the leg at dy −0.45 is still clear of the hostage).
+- ⇒ Gap = **0.15 u ≥ G6_MARGIN 0.10.** The ring disc is **disjoint from the hostage on the X
+  axis alone** — and shapes disjoint on one axis are disjoint everywhere, **for every dy** (so
+  the ring dipping to the leg at dy −0.45 is still clear of the hostage).
 - No VITAL / LIMB / roam band ever has dx > −0.45; no ring extent ever has dx > −0.15. **The
-  ring is never drawn over, and a green/yellow classification never sits over, the hostage.**
-- The §8.3 Y-axis `clampTargetOffsetG6` net stays as belt-and-suspenders but is **inert** here
-  (G6 already holds on X). Assert the X bound above at `createQte`; the convex-blend wander
-  keeps the centre inside `[ROAM_DX_MIN, ROAM_DX_MAX]` by construction.
+  ring is never drawn over, and a vital/limb classification never sits over, the hostage.**
+
+> **⚠ ARCHITECTURE RECONCILE — routed to `senior-architect` (this is his call, not mine).**
+> His §18 freeze made `clampTargetOffsetG6` a **Y-FLOOR** (`minY = HOSTAGE_DY_MAX + G6_MARGIN
+>
+> - RING_HIT_RADIUS = 0.55`) — which keeps the ring **above** the hostage. That was correct
+for the earlier **leg-less, high-head** wander, but it is **incompatible with a LOW LEG
+zone**: a Y-floor of 0.55 would flatten the entire lower half of this roam (dy < 0.55),
+making the leg unreachable. Bertrand's leg-inclusive brief + his "non-hostage side" framing
+require the **X-disjoint clamp** — the **§17 asymmetric / hostage-facing-edge** variant the
+architect himself noted "still applies" (pin `centre.x ≤ ROAM_DX_MAX`inside the seeded`rawWaypoint`edge-mapping, pure,`clampTargetOffsetG6`-wrapped, no type change). **I am
+>   asking the architect to adopt the X-disjoint clamp IN PLACE OF the §18 Y-floor for this
+>   spatial-colour build.** The clamp FORMULA is his LAW to set; I supply the values + the
+>   intent (a low leg must be reachable) that select the X variant.
+>
+> **Fallback if he KEEPS the Y-floor:** drop the LEG entirely; `LIMB` = the **ARM only**,
+> raised so the whole roam sits at **dy ≥ 0.55** (e.g. roam dy **+0.55…+1.15**, VITAL dy
+> +0.65…+1.10, ARM dy +0.55…+0.75). This ships on his frozen Y-floor unchanged, at the cost
+> of Bertrand's leg and of vertical "ampleur". I recommend the **X-disjoint** variant; this
+> fallback is the safe degrade.
 
 ### 10.D — D-S4 — Shot resolution: hit the ring, take the ring's colour-damage
 
@@ -869,21 +887,25 @@ zone-colour._ Two orthogonal tests at a `fire` during `PEEKING` (resolved agains
 `targetOffset` the render drew **last frame** — the aim-honesty tie-break of §5/§8.2, `fire`
 first, then advance the machine):
 
-1. **Did the shot hit the RING?** `qteZoneAt(...) === "ring"` ⇔ the shot is within
-   `RING_HALF_W/H` of the ring-centre `targetOffset` AND `stance === "PEEKING"`. (This is
-   today's "head" band, renamed for clarity — same box, now centred on the roaming ring.)
-2. **If yes — how much?** `colour = ringColourAt(qte.targetOffset)`; `captorHp −=
-captorDamageFor(colour)` — **GREEN −2, YELLOW −1, RED 0 (wasted shot).**
+1. **Did the shot hit the RING?** A separate **circular** test (architect freeze — `"head"`
+   is RETIRED from `qteZoneAt`): the shot is within **`RING_HIT_RADIUS`** (0.30) of the
+   ring-centre `targetOffset` AND `stance === "PEEKING"`. Resolved in `tickQte`, not in
+   `qteZoneAt`.
+2. **If yes — how much?** `zone = ringZoneAt(qte.targetOffset)`; `captorHp −=
+colourDamage(zone)` — **VITAL −2 (`CAPTOR_DAMAGE_VITAL`), LIMB −1 (`CAPTOR_DAMAGE_LIMB`), OFF
+   0 (wasted shot).**
+3. **If no ring hit** → fall through to `qteZoneAt(dx, dy)` → **body / hostage / miss** (the
+   retired-`"head"` classifier), keeping today's band penalties.
 
-| Shot outcome (during `PEEKING`)                     | Captor HP                    | Energy                           |
-| --------------------------------------------------- | ---------------------------- | -------------------------------- |
-| Hit ring, ring over **VITAL** (vert)                | **−2** (`CAPTOR_DMG_GREEN`)  | 0 (chip is the reward)           |
-| Hit ring, ring over **LIMB** (jaune)                | **−1** (`CAPTOR_DMG_YELLOW`) | 0                                |
-| Hit ring, ring over **OFF** (rouge)                 | **0** (`CAPTOR_DMG_RED`)     | 0 — wasted; the peek still blows |
-| Depleting hit (`captorHp` reaches ≤ 0)              | → **WON**                    | **+40** (`QTE_RESCUE_REFILL`)    |
-| Shot **misses the ring**, hits **body**             | 0                            | **−5** (`QTE_BODY_HIT`)          |
-| Shot **misses the ring**, hits **hostage** (bavure) | 0                            | **−30** (`QTE_HOSTAGE_HIT`)      |
-| Shot misses everything                              | 0                            | 0                                |
+| Shot outcome (during `PEEKING`)            | Captor HP                      | Energy                           |
+| ------------------------------------------ | ------------------------------ | -------------------------------- |
+| Hit ring, ring over **VITAL** (vert)       | **−2** (`CAPTOR_DAMAGE_VITAL`) | 0 (chip is the reward)           |
+| Hit ring, ring over **LIMB** (jaune)       | **−1** (`CAPTOR_DAMAGE_LIMB`)  | 0                                |
+| Hit ring, ring over **OFF** (rouge)        | **0** (`colourDamage("off")`)  | 0 — wasted; the peek still blows |
+| Depleting hit (`captorHp` reaches ≤ 0)     | → **WON**                      | **+40** (`QTE_RESCUE_REFILL`)    |
+| **No ring hit**, hits **body**             | 0                              | **−5** (`QTE_BODY_HIT`)          |
+| **No ring hit**, hits **hostage** (bavure) | 0                              | **−30** (`QTE_HOSTAGE_HIT`)      |
+| No ring hit, misses everything             | 0                              | 0                                |
 
 - The colour is a property of the **RING** (its centre's anatomy), not of where inside the
   ring you land — the ring is drawn as **one** colour and you shoot that colour. WYSIWYG.
@@ -903,11 +925,11 @@ yellow-only grinder still makes quota with a spare opening.
 | Field                    | Value                               | Rationale                                                                                                                     |
 | ------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `captorHp`               | **3**                               | green 2 / yellow 1 ⇒ "2 greens, or 3 yellows"; yellow-only path wins by peek 3, one opening to spare. `QteSpec`, integer ≥ 1. |
-| Damage green/yellow/red  | **2 / 1 / 0**                       | SYSTEM constants (`CAPTOR_DMG_*`). Red = wasted.                                                                              |
-| Roam box                 | **dx −1.20…−0.45 / dy −0.50…+1.10** | ~1.20 u², ~5.7× wider (§10.B). Right/bottom-of-hostage pin held (G6).                                                         |
+| Damage vital/limb/off    | **2 / 1 / 0**                       | SYSTEM constants (`CAPTOR_DAMAGE_VITAL/LIMB`; off = 0). Off/red = wasted.                                                     |
+| Roam box                 | **dx −1.20…−0.45 / dy −0.50…+1.10** | ~1.20 u², ~5.7× wider (§10.B). Right-of-hostage pin held (G6).                                                                |
 | Peak `wanderSpeed`       | **~1.8 u/s**                        | kept from §9; box grew, not speed (§10.B).                                                                                    |
-| VITAL / LIMB / OFF split | **~25 % / ~28 % / ~47 %**           | green smallest (payoff), red largest ("don't shoot air") — the spatial analogue of the old temporal 40/35/25 (§10.A).         |
-| `RING_HALF_W/H`          | **0.30**                            | catch tolerance for the wider/faster ring (fairness knob).                                                                    |
+| VITAL / LIMB / OFF split | **~25 % / ~28 % / ~47 %**           | vital smallest (payoff), off largest ("don't shoot air") — the spatial analogue of the old temporal 40/35/25 (§10.A).         |
+| `RING_HIT_RADIUS`        | **0.30**                            | circular catch tolerance for the wider ring (fairness knob).                                                                  |
 | `peekDurationSeconds`    | **1.5 s**                           | roomy for tracking + reading colour; ≫ G5 floor 0.5 s. Unchanged from §9.6.                                                   |
 | `maxBlownPeeks` (**N**)  | **4**                               | four openings; passive-ignore economy = 4 × −8 = **−32** (unchanged).                                                         |
 | `peekCadenceSeconds`     | **1.5 s**                           | COVERED beat + G4 tell unchanged.                                                                                             |
@@ -923,31 +945,31 @@ body. Green/yellow/red chips and misses cost 0 energy. Severity order holds; pas
 = −32 **and** LOST.
 
 **On-screen read (E) — flag to `ux-designer` + `lead-art`.** (1) **Ring colour** is diegetic
-on the reticle (rouge/jaune/vert), tinted each frame by `ringColourAt(targetOffset)` — the
-same offset the render already positions the ring at; composite-gate the colour↔anatomy↔damage
-alignment. (2) **Captor HP (3)** stays a minimal **diegetic** read — pips / escalating
-flinch, **NOT a HUD bar** (U-1 holds). `ux` rules the form.
+on the reticle (render maps `qte.ringZone` → rouge/jaune/vert) — the same `targetOffset` the
+render already positions the ring at; composite-gate the zone↔colour↔damage alignment.
+(2) **Captor HP (3)** stays a minimal **diegetic** read — pips / escalating flinch, **NOT a
+HUD bar** (U-1 holds). `ux` rules the form.
 
 ### 10.F — Updated acceptance criteria (REPLACE AC13/AC14; append the rest)
 
-- **AC13′ — Colour is SPATIAL (supersedes AC13).** `ringColourAt(ringCentre)` is a PURE
-  function of the ring-**centre** offset: green iff in VITAL, else yellow iff in LIMB, else
-  red — **precedence VITAL > LIMB > OFF**, no dependence on time/`t`. No
+- **AC13′ — Zone is SPATIAL (supersedes AC13).** `ringZoneAt(ringCentre): RingZone` is a PURE
+  function of the ring-**centre** offset: `"vital"` iff in VITAL, else `"limb"` iff in LIMB,
+  else `"off"` — **precedence VITAL > LIMB > OFF**, no dependence on time/`t`. No
   `Math.random`/`Date.now` (lint/grep asserted). The rendered ring colour on any frame equals
-  the colour the classifier applies to a `fire` on that frame (WYSIWYG — composite gate).
-  Unit test: sample centres in each band → expected colour; a vital/leg-seam centre → green.
+  the zone the classifier applies to a `fire` on that frame (WYSIWYG — composite gate). Unit
+  test: sample centres in each band → expected zone; a vital/leg-seam centre → `"vital"`.
 - **AC14′ — Wider roam, G6 intact (supersedes AC14).** Belliard roam box dx **−1.20…−0.45** /
-  dy **−0.50…+1.10** (~1.20 u², ~5.7× §9), peak **~1.8 u/s**, reticle 0.30 half. For every
-  tick of every peek, the ring's right extent (`centre.x + 0.30`) stays **≤ −0.15** ⇒ **≥ 0.15
-  u** clear of the hostage left edge (0.0) on the X axis ⇒ **disjoint from the hostage for all
-  dy — no bavure is ever required.** Unit test samples a full peek and asserts no ring extent
-  reaches the hostage band. `createQte` asserts `ROAM_DX_MAX + RING_HALF_W + G6_MARGIN ≤
-HOSTAGE_DX_MIN`.
-- **AC12′ — HP chips by the ring's colour (refines AC12).** A ring hit during PEEKING
-  subtracts `captorDamageFor(ringColourAt(targetOffset))` (green 2 / yellow 1 / red 0) from
-  `captorHp`; WON only when `captorHp ≤ 0` (depleting shot pays +40). Belliard `captorHp = 3`.
-  Unit tests: green×2 ⇒ WON; yellow×3 ⇒ WON; red hits never reduce HP; a shot that misses the
-  ring never reduces HP.
+  dy **−0.50…+1.10** (~1.20 u², ~5.7× §9), peak **~1.8 u/s**, `RING_HIT_RADIUS` 0.30. For
+  every tick of every peek, the ring's right extent (`centre.x + 0.30`) stays **≤ −0.15** ⇒
+  **≥ 0.15 u** clear of the hostage left edge (0.0) on the X axis ⇒ **disjoint from the
+  hostage for all dy — no bavure is ever required.** Unit test samples a full peek and asserts
+  no ring extent reaches the hostage band. `createQte` asserts `ROAM_DX_MAX + RING_HIT_RADIUS +
+G6_MARGIN ≤ HOSTAGE_DX_MIN`.
+- **AC12′ — HP chips by the ring's zone (refines AC12).** A ring hit during PEEKING subtracts
+  `colourDamage(ringZoneAt(targetOffset))` (vital 2 / limb 1 / off 0) from `captorHp`; WON only
+  when `captorHp ≤ 0` (depleting shot pays +40). Belliard `captorHp = 3`. Unit tests: vital×2
+  ⇒ WON; limb×3 ⇒ WON; off hits never reduce HP; a shot outside `RING_HIT_RADIUS` never
+  reduces HP.
 - **AC15 (inherited, restated).** Every `PEEKING` close with `captorHp > 0` increments
   `blownPeeks`; the N-th (N = 4) with the captor alive ⇒ LOST; a same-tick depleting ring hit
   ⇒ WON. Passive ignore ⇒ 4 blown peeks, −32 energy, LOST.
@@ -966,26 +988,35 @@ architect's integration review.
 
 ### 10.G — Contract delta (design intent for `senior-architect` + `dev-gameplay`)
 
-Pure `src/game`; boundary law preserved. **Additive + one function-body swap** — the wander
-model, seed, determinism, `qteZoneAt` shape, HP field, and energy all stay; only the colour
-source changes from temporal to spatial and the wander constants grow.
+Pure `src/game`; boundary law preserved. **Aligns to the architect's FROZEN spatial-colour
+contract** (`docs/handoffs/story-hostage-qte-duel.md`): `RingZone`, `ringZoneAt`,
+`colourDamage`, `RING_HIT_RADIUS`, and `"head"` retired from `QteZone`. This section supplies
+only the **numbers** he is waiting on; the field NAMES below are his, not mine.
 
-- **`ringColourAt` signature/body SWAP (the core change):** was (dead §9.2)
-  `ringColourAt(t, peekDurationSeconds)`; **now `ringColourAt(centre: Vec2): "green"|"yellow"|"red"`**
-  — a pure spatial classify against the anatomy bands (VITAL > LIMB > OFF). `captorDamageFor`
-  unchanged.
+- **`ringZoneAt(centre: Vec2): RingZone` (`"vital"|"limb"|"off"`)** — the pure spatial
+  classify against the anatomy bands (VITAL > LIMB > OFF). Replaces the dead temporal
+  `ringColourAt(t, …)` of §9.2. `colourDamage(zone): number` → vital 2 / limb 1 / off 0.
 - **New SYSTEM CONSTANTS (`qteSystem.ts`):** anatomy bands `VITAL_DX/DY_*`, `ARM_DX/DY_*`,
-  `LEG_DX/DY_*`; `RING_HALF_W/H = 0.30`; `MAX_LEG_DISPLACEMENT = 0.45`. Re-tuned wander
-  constants: `WANDER_AMP_X 0.30→0.375`, `WANDER_AMP_Y 0.175→0.80`, `HEAD_NEUTRAL →
-(−0.825, +0.30)` (roam centre), `LEG_DURATION 0.28→0.38`. (`ROAM_DX_MAX = HEAD_NEUTRAL.x +
-WANDER_AMP_X = −0.45`; assert the G6 X-bound against `HOSTAGE_DX_MIN`.)
-- **`tickQte` ACTIVE step (1):** on a ring hit (`qteZoneAt === "head"/"ring"`), compute
-  `colour = ringColourAt(qte.targetOffset)` **(spatial — pass the offset, not `t`)**, subtract
-  `captorDamageFor(colour)` from `captorHp`; `captorHp ≤ 0 → WON +40`, else stay ACTIVE. Body /
-  hostage / miss branches unchanged. Step (2) loss test unchanged (§9.5).
-- **`QteSpec` / `HostageQte`:** unchanged from §9.7 (`captorHp` already enters there;
-  `targetSeed` from §8.5). No new authored field — the anatomy map and reticle are system
-  constants (F3 promotes VITAL amplitude / `RING_HALF` later, like `wanderSpeed`).
+  `LEG_DX/DY_*`; **`RING_HIT_RADIUS = 0.30`**; `CAPTOR_DAMAGE_VITAL = 2`,
+  `CAPTOR_DAMAGE_LIMB = 1` (off = 0); `MAX_LEG_DISPLACEMENT = 0.45`. Re-tuned wander constants:
+  `WANDER_AMP_X 0.30→0.375`, `WANDER_AMP_Y 0.175→0.80`, `HEAD_NEUTRAL → (−0.825, +0.30)` (roam
+  centre), `LEG_DURATION 0.28→0.38`. (`ROAM_DX_MAX = HEAD_NEUTRAL.x + WANDER_AMP_X = −0.45`;
+  assert `ROAM_DX_MAX + RING_HIT_RADIUS + G6_MARGIN ≤ HOSTAGE_DX_MIN`.)
+- **`qteZoneAt` — `"head"` RETIRED:** it now returns only `body | hostage | miss` from
+  `(dx, dy)`. The ring hit is a SEPARATE circular test (`|impact − targetOffset| ≤
+RING_HIT_RADIUS` during PEEKING), resolved in `tickQte`.
+- **`clampTargetOffsetG6` — X-disjoint variant REQUESTED (architect's ruling, §10.C flag):**
+  enforce the X ceiling `centre.x ≤ ROAM_DX_MAX` (his §17 asymmetric option) so G6 holds by
+  X-disjointness — this REPLACES his §18 Y-floor, which would flatten the low leg. If he keeps
+  the Y-floor, the §10.C fallback (drop the leg, raise the roam to dy ≥ 0.55) applies instead.
+- **`tickQte` ACTIVE step (1):** on a ring hit, `zone = ringZoneAt(qte.targetOffset)`,
+  `captorHp −= colourDamage(zone)`; `captorHp ≤ 0 → WON +40`, else stay ACTIVE. Non-ring shots
+  fall to `qteZoneAt` → body / hostage / miss (unchanged). Step (2) loss test unchanged (§9.5).
+- **`QteSpec` / `HostageQte`:** `captorHp` enters (§9.7); runtime adds **`ringZone: RingZone`**
+  (the render reads it for the tint) recomputed each PEEKING tick from `targetOffset`;
+  `targetSeed` from §8.5. No new authored field beyond `captorHp` — anatomy map, reticle,
+  damages are system constants (F3 promotes VITAL amplitude / `RING_HIT_RADIUS` later, like
+  `wanderSpeed`).
 
 ### 10.H — Open flags for the gate (append to §7 / §8.7 / §9.9)
 
@@ -1005,6 +1036,12 @@ WANDER_AMP_X = −0.45`; assert the G6 X-bound against `HOSTAGE_DX_MIN`.)
 14. **Reads to `ux` + `lead-art`.** Ring-colour tint (rouge/jaune/vert on the reticle) and the
     captor-HP pips/stagger (NO HUD bar, U-1) — `ux` rules the HP form; composite gate confirms
     colour↔anatomy↔damage alignment over the moving ring.
+15. **G6 CLAMP MECHANISM — architect's ruling needed (§10.C, HIGHEST-PRIORITY flag).** The
+    frozen §18 clamp is a **Y-floor** (ring stays above the hostage); Bertrand's **leg** (a low
+    zone) + his "non-hostage side" framing require the **X-disjoint** clamp (his §17 asymmetric
+    variant). I am requesting the X variant IN PLACE OF the Y-floor for this build. If the
+    architect keeps the Y-floor, the leg is dropped and the roam raises to dy ≥ 0.55 (§10.C
+    fallback). **This must be resolved before dev-gameplay implements the wander/clamp.**
 
 ---
 

@@ -1655,31 +1655,43 @@ loop reaches the fatal close → **LOST**. Only a KILLING shot wins the tie.
 - **`stateMachine.ts`:** `tickQte(qte, fire, impactPoint, delta)` signature and `{ qte, energyDelta }`
   result UNCHANGED → no logic edit (verify: no reference to the retired `"head"` zone anywhere).
 
-### Wander WIDER + the G6 CLAMP reshape (dev-gameplay) — LOAD-BEARING
+### Wander WIDER + the G6 CLAMP reshape (dev-gameplay) — RULED: X-DISJOINT
 
-- The roam box (`WANDER_AMP_X`/`WANDER_AMP_Y`, `HEAD_NEUTRAL`, `LEG_DURATION`) takes **game-designer's
-  bigger/faster values** — SYSTEM CONSTANTS, a pure value change, no type-contract change. The roam box
-  is on the captor's **exposed (non-hostage) side**.
-- **G6 CLAMP is now RESHAPED and genuinely load-bearing.** The object to keep clear of the hostage is no
-  longer the head BOX (half-height `HEAD_HALF_H`) — it is the **ring CIRCLE** (centre ± `RING_HIT_RADIUS`).
-  `clampTargetOffsetG6` becomes a Y-floor with the **ring radius** as the margin:
+**RULING (2026-07-18, addressing game-designer §10/§19 + coordinator flag).** Replace the Y-floor I
+first froze with an **X-DISJOINT (hostage-facing-edge) clamp** — the asymmetric variant §17 flagged as
+"still applies." The Y-floor was **wrong for the FULL-anatomy spatial model.** It presumed vertical
+stacking (head band ABOVE the hostage) — true in the old head-only model, FALSE now: the anatomy has a
+LOW `limb` (leg) zone (dy down ≈ −0.45) and the roam box spans **dy [−0.50, +1.10]**, which overlaps the
+hostage's vertical span. A Y-floor at `minY ≈ 0.55` would flatten the ENTIRE lower half of the intended
+roam (the leg zone + the low `off`/red air), deleting a zone Bertrand's model requires. The correct
+separation is on **X**: the hostage is the front-RIGHT shield; the ring roams the captor's exposed LEFT
+side; keep the whole ring circle LEFT of her.
+
+- The roam box + speed take **game-designer's bigger values** — SYSTEM CONSTANTS, pure value change, no
+  type-contract change. The box lives on the captor's **exposed (non-hostage) LEFT side**.
+- **`clampTargetOffsetG6` becomes an X-CEILING** — clamp the ring centre's x down so the ring's right
+  extent stays left of the hostage by `G6_MARGIN`; **y untouched** (the low leg survives):
   ```
-  minY = HOSTAGE_DY_MAX + G6_MARGIN + RING_HIT_RADIUS
+  clampTargetOffsetG6(offset).x = Math.min(offset.x, HOSTAGE_DX_MIN − RING_HIT_RADIUS − G6_MARGIN)
+  clampTargetOffsetG6(offset).y = offset.y
   ```
-  A circle whose lowest point (`centre.y − RING_HIT_RADIUS`) is above the hostage band top is disjoint from
-  that (axis-aligned) band for ANY x — so the clamp still **provably** keeps `anchor + targetOffset`
-  (± `RING_HIT_RADIUS`) disjoint from the hostage silhouette, for the bigger box. **Assert it; re-sweep the
-  G6 property test over the NEW wider box with the ring-radius margin.** (Asymmetric-box option from §17
-  still applies: pin the hostage-facing edge inside `rawWaypoint`'s per-edge mapping — pure, seeded,
-  `clampTargetOffsetG6`-wrapped, no type change.)
-- **RECONCILE (→ game-designer + composite gate):** `RING_HIT_RADIUS` is bigger than the old
-  `HEAD_HALF_H`, so the clamp will **actively lift** the ring unless
-  `roam_box_dy_min − RING_HIT_RADIUS >= HOSTAGE_DY_MAX + G6_MARGIN`. With Sacha's draft box
-  (`dy_min 0.60`) and a `RING_HIT_RADIUS ≈ 0.46`: `0.60 − 0.46 = 0.14 < 0.15 + 0.10 = 0.25` → the clamp
-  eats the bottom of the intended roam. Resolve by ONE of: raise `dy_min`, shrink `RING_HIT_RADIUS`, or
-  lower the hostage band top — game-designer's tuning call. **The clamp FORMULA is LAW; the VALUES must
-  satisfy it without distorting the felt roam.** `RING_HIT_RADIUS` must also match the drawn PEEKING ring
-  radius (aim/colour-honesty seam) — reconciled at the composite gate, same as before.
+- **Disjoint on X for ANY y (confirmed).** A circle whose rightmost point (`centre.x + RING_HIT_RADIUS`)
+  lies left of the vertical line `x = HOSTAGE_DX_MIN − G6_MARGIN` is disjoint from the hostage band
+  (which occupies `x ≥ HOSTAGE_DX_MIN`) **regardless of dy** — X-separation ⇒ disjoint everywhere,
+  independent of y. The low leg zone is preserved.
+- game-designer's values: `HOSTAGE_DX_MIN 0.0`, `RING_HIT_RADIUS 0.30`, `G6_MARGIN 0.10` → ceiling
+  **−0.40**; roam `dx_max −0.45 ≤ −0.40`, so **the authored box already satisfies the clamp** — the clamp
+  is the **asserted SAFETY NET**, not an active distorter (ring right extent ≤ −0.15 ⇒ ≥ 0.15 u gap to
+  the hostage for any dy, leg included). The earlier Y-floor "clamp eats the roam" reconciliation is
+  **RETIRED** — resolved by moving the separation to X. (`RING_HIT_RADIUS` is now 0.30, not the ≈0.46 I
+  guessed; it must still match the drawn PEEKING ring radius — aim/colour-honesty seam, reconciled at the
+  composite gate.)
+- **Assert it; the G6 property test MUST re-sweep the NEW wider box under THIS X-disjoint clamp** — no
+  (dx, dy) in the clamped roam maps within `RING_HIT_RADIUS + G6_MARGIN` of the hostage band, for ANY y.
+- **Fallback if the X-clamp is ever rejected** (recorded, NOT chosen): game-designer's Y-floor fallback =
+  drop the leg zone and raise the roam to dy ≥ 0.55. I do NOT take it — it deletes an anatomy zone
+  Bertrand's model calls for; the X-disjoint clamp keeps the full anatomy at zero cost (the authored box
+  already satisfies it).
 
 ### Render + view-hook (dev-r3f-render)
 
@@ -1740,3 +1752,202 @@ non-overlapping paths above.
   retire `"head"`); then both lanes parallel on the non-overlapping paths. tech-writer to fold **SPATIAL
   colour** into the ADR-0034 amendment (superseding the temporal Revision 4; number/form from producer).
   Awaiting game-designer's anatomy bands / damage / `RING_HIT_RADIUS` / captorHp / roam-box values.
+
+## 19. VALUES — spatial-colour anatomy + roam + balance — game-designer (Sacha) — 2026-07-18
+
+- claim: Bertrand's reframe (colour = anatomy under the wandering ring; "plus d'ampleur"). / release:
+  respec landed as **§10** of `docs/game-design/spec-hostage-qte-static-duel.md` (§9's colour TIME-ramp
+  marked SUPERSEDED; §9.1 HP / §9.3 damages / §9.5 loss+energy carry forward). Names aligned to Winston's
+  §18 frozen contract (`RingZone`, `ringZoneAt`, `colourDamage`, `RING_HIT_RADIUS`, `"head"` retired).
+  **Needs `lead-game-designer` (Karim) PASS.**
+
+**The numbers Winston is waiting on (§19 answers the §18 open questions):**
+
+| Knob                                    | Value                                                                                         | Where   |
+| --------------------------------------- | --------------------------------------------------------------------------------------------- | ------- |
+| `captorHp` (belliard `QteSpec`)         | **3**                                                                                         | §10.E   |
+| `CAPTOR_DAMAGE_VITAL` / `_LIMB` / off   | **2 / 1 / 0**                                                                                 | §10.A/D |
+| `RING_HIT_RADIUS`                       | **0.30**                                                                                      | §10.B   |
+| VITAL band (green, ring-centre)         | dx **[−0.80, −0.45]**, dy **[+0.05, +0.90]**                                                  | §10.A   |
+| LIMB `ARM` (yellow)                     | dx **[−1.20, −0.80]**, dy **[+0.25, +0.65]**                                                  | §10.A   |
+| LIMB `LEG` (yellow)                     | dx **[−0.80, −0.45]**, dy **[−0.45, +0.05]**                                                  | §10.A   |
+| OFF (red)                               | roam − vital − limb (≈47 % of roam)                                                           | §10.A   |
+| Roam box (`WANDER_AMP`/`HEAD_NEUTRAL`)  | dx **[−1.20, −0.45]**, dy **[−0.50, +1.10]**; AMP_X 0.375, AMP_Y 0.80, centre (−0.825, +0.30) | §10.B   |
+| `LEG_DURATION` / `MAX_LEG_DISPLACEMENT` | **0.38 / 0.45** (peak ≈1.8 u/s; box grew, speed held)                                         | §10.B   |
+| Split vital / limb / off                | **~25 % / ~28 % / ~47 %** (vital = scarce payoff)                                             | §10.A   |
+| N, peekDuration, cadence                | **4 / 1.5 s / 1.5 s** (unchanged; HP carries the difficulty)                                  | §10.E   |
+
+Precedence VITAL > LIMB > OFF. `-8` on a damaged-but-not-killed peek: I **accept Winston's frozen
+default (YES, unchanged)** — no `damaged` flag. Zone split mirrors the dead temporal 40/35/25 in spirit
+(red largest, green smallest). Approachable: yellow-only path (fire while ring is on him) wins by peek 3;
+2-green path wins by peek 2; N=4 gives a spare.
+
+**⚠ BLOCKING — G6 CLAMP MECHANISM (→ senior-architect, before dev-gameplay builds the wander/clamp):**
+Your §18 clamp is a **Y-floor** (`minY = HOSTAGE_DY_MAX + G6_MARGIN + RING_HIT_RADIUS = 0.55`). Bertrand's
+brief adds a **LEG** (a LOW zone, dy −0.45…+0.05) and frames G6 as "off is on the **non-hostage side**"
+(the hostage is front-RIGHT ⇒ keep the ring **LEFT**). A Y-floor of 0.55 would flatten the whole lower
+roam and make the leg unreachable. **I'm requesting your §17 X-disjoint / hostage-facing-edge clamp
+variant IN PLACE OF the §18 Y-floor** — pin `centre.x ≤ ROAM_DX_MAX (−0.45)`; asserted bound
+`ROAM_DX_MAX + RING_HIT_RADIUS + G6_MARGIN = −0.45 + 0.30 + 0.10 = −0.05 ≤ HOSTAGE_DX_MIN (0.0)`
+⇒ ring right extent −0.15, a 0.15 u X-gap from the hostage for **any** dy. **Fallback if you keep the
+Y-floor:** drop the leg, `LIMB` = arm only, raise the roam to dy ≥ 0.55 (§10.C) — ships on your frozen
+clamp but loses Bertrand's leg + vertical ampleur. The clamp FORMULA is your LAW; I supply the values +
+the intent (a low leg must be reachable) that select the X variant. **Please rule.**
+
+**Flags routed (§10.H):** (12) on-frame — the ~5.7× box reaches ring extents left −1.50 / top +1.40 /
+bottom −0.80, beyond §8.3 safe occupancy → **composite gate MUST confirm framing at the zoom** (fallback
+tighten AMP_Y→0.65 / AMP_X→0.325; unbuilt, my highest-risk value). (14) ring-colour tint + captor-HP
+pips (NO HUD bar, U-1) → `ux` + `lead-art`.
+
+- VERDICT: **VALUES DELIVERED — awaiting `lead-game-designer` PASS**, then `senior-architect` to rule the
+  G6 clamp mechanism (X-disjoint requested vs Y-floor fallback) before dev-gameplay lands the wander/clamp.
+  Not a gate verdict (design values); the design gate is Karim's next.
+
+## 20. DESIGN GATE — spatial-colour reframe — lead-game-designer (Karim) — 2026-07-18
+
+Gating the game-designer (Sacha) respec `docs/game-design/spec-hostage-qte-static-duel.md`
+**§10** (colour = anatomy under the wandering ring; roam ~5.7× wider), triggered by
+Bertrand's confirmed reframe (RED = ring over empty space / YELLOW = non-lethal limb /
+GREEN = lethal vital; a ring hit chips captor HP by that colour; deplete HP → WON; ring
+roams WIDER). Checked against the architect's **§18** FROZEN spatial-colour contract (LAW),
+the §19 values, ADR-0034 D1–D6 + P1–P4 / G4–G6, PROJECT_GUIDELINES (scope guard, §5.6
+no-bullshit-death, single core loop, §6 no stress bar), and the prior gates (§10, §15) it
+supersedes in part.
+
+### Scope / core loop / verifiability — all PASS
+
+Conscious documented extension layered on the already-extension QTE (Prohibition ST had no
+hostage duel / roaming reticle / anatomy colour) — declared in the spec's cahier-des-charges
+paragraph and carried into the ADR revisions. No new loop verb; `Récupérer → Livrer →
+Éviter` untouched; ~11–12 s ACTIVE, once per level, freezing the rest — inside the 3–5 min
+envelope; the rescue still never advances the kill quota (side objective). AC12′–AC17′ carry
+explicit values, bands, tolerances and named unit/`verify` asserts — a dev implements
+without guessing. **The load-bearing numbers reconcile** (independently recomputed): roam
+1.20 u² (5.7×); VITAL 24.8 % / LIMB 27.9 % / OFF 47.3 %; G6 X-gap 0.15 u for any dy; peak
+1.78 u/s; floor = 3 limbs with a spare opening; ceiling = 2 vitals → win peek 1–2. Verifiable.
+
+### The four sub-verdicts asked of the gate
+
+1. **Fairness / approachable on level 1 — PASS.** captorHp 3 with vital −2 / limb −1 over
+   N = 4 telegraphed (G4) ≥ 1.5 s (≫ G5) openings gives a clean gradient: the **floor**
+   (limb-only path, 3× −1) makes quota with one opening to spare, and the **ceiling** (2
+   vitals, or two vital chips in one peek → win on peek 1) is genuinely rewarding — finish in
+   1–2 openings AND eat fewer −8 counter-fire charges (double reward). VITAL only ~25 % of the
+   roam means you must both track the ring AND wait for it to cross a lethal zone — the
+   intended skill demand, with yellow (≥ 1 dmg available ~53 % of positions) as the
+   approachable fallback. Multi-shot-per-peek (chip falls through, peek keeps ticking) is
+   intended, not a loophole — it is the mastery ceiling; AC17′ playtests it is not TOO easy.
+   **This PASS is contingent on the leg surviving** — see K-2.
+
+2. **Coherence with the guidelines — PASS.** No "mort bullshit" (§5.6): the hostage is
+   killable ONLY via the legible, telegraphed N-blown-peeks execution clock; a hostage-band
+   hit stays a flat non-fatal −30 energy bavure (no `hostageHp`, no stray-bullet death) —
+   unchanged from the gated Rev-2 model. Core loop + side-objective rule intact. Energy ledger
+   unchanged (+40 / −30 / −8 / −6 / −5; chips & misses 0; passive ignore −32 → LOST). Captor
+   HP returns as **diegetic pips, NO HUD bar** (holds U-1 and §6 "pas de barre de stress");
+   the blown-peeks clock stays diegetic. Coherent with the §18 frozen contract (names aligned:
+   `RingZone` / `ringZoneAt` / `colourDamage` / `RING_HIT_RADIUS`; `"head"` retired) — no
+   C-1-style rename needed this round. **Watch-item (not a block):** HP + roam + anatomy colour
+   - blown-peeks + energy ledger is a lot of systems on one 12 s beat — stage-5 must confirm it
+     still READS as one legible duel (KISS/P3). Mitigant: spatial colour is inherently simpler to
+     parse than the dead §9.2 temporal ramp (you SEE the ring leave his body and go red).
+
+3. **WYSIWYG / readability (P3) — PASS, stronger than §9.** The ring shows where it is
+   (position = `targetOffset`, render draws it there); its single colour = the anatomy under
+   the centre (`ringZone` stored, drawn colour == scored colour via the last-drawn zone). You
+   see it, you shoot that colour, you are judged on that colour. Tying colour to VISIBLE
+   position over the visible captor is more readable than a hidden time ramp — a net P3
+   improvement. The one subtlety (colour keyed to the centre while the 0.30 catch disc may
+   straddle a band edge) is honest: the ring is drawn as ONE colour and you shoot that colour
+   (§10.D) — WYSIWYG holds.
+
+4. **Wander framing (~5.7× box) — STAGE-5 / composite watch-item WITH a committed fallback,
+   NOT a smaller box now.** See K-1. Deferring costs nothing (the fallback is a constant tweak
+   that never touches the G6 X-pin); shrinking pre-emptively would under-deliver Bertrand's
+   "plus d'ampleur" with no evidence it clips. But framing is load-bearing for P3 (you cannot
+   fairly track a ring you cannot see), so it is a HARD pre-ship condition, not a soft flag.
+
+### G6 clamp — the two DESIGN needs the architect's parallel ruling depends on (K-3)
+
+I do NOT rule the clamp form (Y-floor vs X-disjoint) — that is `senior-architect`'s §18/§17
+call, in flight. I CONFIRM the two design facts that select it:
+
+- **(a) The design genuinely NEEDS the low LEG zone.** Bertrand's verbatim reframe names
+  "jambe" as a yellow zone and "plus d'ampleur" explicitly wants the vertical range; the LEG
+  (dy −0.45…+0.05) is the low-dy limb a Y-floor of 0.55 would obliterate. So the clamp must
+  NOT be a Y-floor that flattens dy < 0.55. Design preference: the **X-disjoint** variant.
+- **(b) OFF/red is entirely on the non-hostage (LEFT) side.** Ring right extent ≤ −0.15,
+  ≥ 0.15 u clear of the hostage for any dy — every OFF/limb/vital cell is left of her, so
+  **tracking the ring can never induce a bavure** (the only way to hit her is a deliberate
+  off-ring shot right, into her band — the −30 energy path). This is exactly Bertrand's
+  "never risk a bavure" rule and it holds. Confirmed.
+
+The formula is the architect's LAW; the design need selects X-disjoint. The Y-floor fallback
+(drop the leg, arm-only LIMB, raise roam to dy ≥ 0.55) is a safe degrade — but it costs the
+leg + vertical ampleur AND shifts LIMB ~28 % → ~18 %, which changes the floor → triggers K-2.
+
+### Corrections / conditions
+
+- **K-1 (condition on ship — → `lead-art` / composite gate + stage-5 `verify`; HIGHEST
+  RISK).** The roam reaches ring extents left −1.50 / top +1.40 / bottom −0.80 (centre ±
+  0.30), well beyond §8.3's proven safe occupancy. On-frame framing at the QTE zoom is
+  UNVERIFIED (box unbuilt). Hard pre-ship gate: the composite gate + stage-5 MUST confirm the
+  ring stays framed and trackable at the zoom on both device classes. If it clips, apply
+  Sacha's defined fallback (`WANDER_AMP_Y → 0.65`, dy top +0.95; and/or `WANDER_AMP_X →
+0.325`, dx left −1.15) — a value tweak that never touches the G6 X-pin. I do not arbitrate
+  the visual; routed to Nico's lane.
+
+- **K-2 (spec-coherence correction — → `game-designer`, one-line).** §10.E / §10.A present
+  the 25 / 28 / 47 split and the "yellow-only wins by peek 3" floor as final, but they are
+  contingent on the LEG surviving (i.e. on the architect adopting the X-disjoint clamp).
+  Condition the shipped balance in the spec: **if the §18 Y-floor is kept and the §10.C
+  arm-only fallback ships, LIMB drops ~28 % → ~18 %, the floor (limb-only path) hardens, and
+  Sacha MUST re-tune the arm-only bands and re-verify the floor before build** — a named
+  dependency, not a silent drift. Single-line note; not a redesign.
+
+- **K-3 (design confirmation — → `senior-architect`).** The two design needs above (leg
+  required; off/red non-hostage-side) — supplied so the parallel clamp ruling can land.
+
+- **K-4 (reads — → `ux-designer` + `lead-art`, composite gate).** Ring colour tint
+  (vital → vert / limb → jaune / off → rouge) and captor-HP pips (diegetic, NO HUD bar — U-1
+  holds; form is `ux`'s call). Composite gate confirms zone ↔ colour ↔ damage alignment over
+  the moving ring, AND that `RING_HIT_RADIUS 0.30` matches the drawn PEEKING ring radius (the
+  aim/colour-honesty seam, per §18). Not my arbitration.
+
+- **K-5 (fairness verifiability correction — → `game-designer`; the one real hole).** The
+  balance (§10.E "yellow-only wins by peek 3") ASSUMES each of the N = 4 openings presents a
+  landable limb-or-better window. But the wander only visits ~4–5 hash-derived waypoints per
+  1.5 s peek (`LEG_DURATION 0.38`) — it does NOT sweep the 1.20 u² box, and VITAL + LIMB is
+  only ~53 % of it. Nothing in §10 guarantees a given peek's waypoint path DECELERATES over a
+  lethal/limb cell — the "deceleration-into-waypoint = the fair firing window" affordance
+  (§8.2, the whole reason the model was chosen over sines) only pays off when a waypoint lands
+  ON the captor; a peek whose waypoints all fall in OFF offers only fast mid-leg crossings (a
+  coin-flip shot), which is exactly the "unreadable, I didn't crack — it never gave me a shot"
+  outcome P3 forbids. Two things the spec must nail before this is verifiably fair on level 1:
+  (a) **pin the Belliard `targetSeed`** — §10/§19 leave it unspecified, yet it deterministically
+  authors every peek's path and thus the entire played experience; and (b) **assert or
+  playtest-confirm a minimum on-captor decelerating window per peek** for that seed (a
+  structural constraint on the hash-to-waypoint mapping — e.g. ≥ 1 waypoint per peek inside
+  VITAL∪LIMB — or an empirical AC17′ check with the pinned seed). Without (a)+(b) the "floor"
+  is an assumption, not a guarantee. This does not block the concept — it is a named
+  verifiability gap the stage-5 `verify` MUST close with the real seed; flag a preference on
+  the structural-assert vs playtest-pin route.
+
+### VERDICT
+
+- **Game-design spec §10 (Sacha): PASS-WITH-CORRECTIONS.** Scope, core loop, verifiability,
+  fairness (floor + ceiling), coherence (§5.6 / §6 / U-1) and WYSIWYG/P3 all PASS; the numbers
+  reconcile. Apply **K-2** (condition the balance on the clamp ruling) and **K-5** (pin the
+  Belliard `targetSeed` + guarantee a per-peek on-captor window — the one real fairness hole);
+  satisfy **K-1** (on-frame framing) at the composite gate / stage-5 before ship with the
+  defined fallback; route **K-3** (design confirmation for the architect's clamp ruling) and
+  **K-4** (art/UX reads). Cleared to `senior-architect`: rule the G6 clamp (X-disjoint
+  requested — the leg is a confirmed design need), then dev-gameplay lands the wander/clamp.
+- Rework rounds used: **1 of 2** (K-2 + K-5 are spec applies). K-2 is a one-line conditioning
+  note; K-5 is a value-pin + one assert/AC; K-1/K-3/K-4 are routed conditions/confirmations,
+  not redesigns. No re-gate unless a tuning value moves OR the architect forces the arm-only
+  fallback (then Sacha re-verifies the floor per K-2). K-5's seed-pin + per-peek-window
+  guarantee is the load-bearing item stage-5 must close with the real build.
+- Stage-5 design acceptance re-verdicts Sacha's `verify` playtest vs AC12′–AC17′ (+ inherited
+  AC1–AC11, AC15/16) post-BUILD — the AC17′ approachability claim, the AC14′ G6/no-bavure
+  sweep, and the K-1 framing check are the load-bearing checks.
