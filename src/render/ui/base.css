@@ -5,14 +5,19 @@
  * already shipped (LevelFlyer/RotateOverlay/GestureIcon @media blocks, CRT/QTE
  * JS gates). The typewriter char cadence (--motion-char-delay-ms) is preserved,
  * matching tokens.ts ("all forced to 0 ... except the typewriter").
+ *
+ * `!important` is REQUIRED: applyPrintTokens() writes --motion-* as inline styles
+ * on document.documentElement (`root.style.setProperty`), and an inline declaration
+ * outranks a stylesheet :root rule of equal importance. Only a stylesheet !important
+ * beats a non-important inline declaration — without it this override is a no-op.
  */
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --motion-title-to-menu: 0ms;
-    --motion-flyer-pull: 0ms;
-    --motion-rubrique-switch: 0ms;
-    --motion-marker-draw: 0ms;
-    --motion-cursor-blink-ms: 0ms;
-    --motion-locked-shake-ms: 0ms;
+    --motion-title-to-menu: 0ms !important;
+    --motion-flyer-pull: 0ms !important;
+    --motion-rubrique-switch: 0ms !important;
+    --motion-marker-draw: 0ms !important;
+    --motion-cursor-blink-ms: 0ms !important;
+    --motion-locked-shake-ms: 0ms !important;
   }
 }

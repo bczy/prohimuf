@@ -148,12 +148,14 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
     data.timeRemaining < 20 ? MARK.pink : data.timeRemaining < 40 ? MARK.orange : INK.full;
   const livesColor = data.lives <= 1 ? MARK.pink : INK.full;
   const indicator = data.targetIndicator ?? { up: false, down: false, left: false, right: false };
-  const energyFill = Math.max(0, Math.min(100, data.energy));
+  // Clamp AND guard non-finite: a NaN stat would make the gauge width `NaN%`, an
+  // invalid CSS value the browser silently drops (gauge renders empty).
+  const energyFill = Number.isFinite(data.energy) ? Math.max(0, Math.min(100, data.energy)) : 0;
   const energyHue = energyColor(energyFill);
   const delivery = data.delivery;
   const deliveryPhase = delivery?.phase;
   const deliveryFill =
-    delivery !== undefined && delivery.integrityMax > 0
+    delivery !== undefined && delivery.integrityMax > 0 && Number.isFinite(delivery.integrity)
       ? Math.max(0, Math.min(1, delivery.integrity / delivery.integrityMax))
       : 0;
 
