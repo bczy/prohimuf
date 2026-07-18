@@ -101,5 +101,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0043](./0043-validated-reference-promotion-loop.md) | Validated-reference promotion loop (internal hero → style-lock family derivation) | Proposed |
 | [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Proposed |
 | [0045](./0045-near-foreground-parallax-layer.md) | Near-foreground differential-parallax décor layer | Proposed |
+| [0046](./0046-troncon-sequence-backdrop-mode.md) | Per-level tronçon-sequence backdrop mode (Rue Belliard décor v2) | Proposed |
 
 <!-- ADR-INDEX:END -->
