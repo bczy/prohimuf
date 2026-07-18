@@ -413,3 +413,84 @@ review vs A1–A12 post-BUILD.
   - **(b) NIT** — `TELEGRAPH_LEAD_SECONDS` is a global constant, not a per-level `QteSpec`
     field; ADR-0035/F3 will need a contract note if it wants to curve the tell toward the
     0.25 s floor (see this shard §3, "Telegraph lead" reconcile note).
+
+## 8. PM ACCEPTANCE — pm (John) — 2026-07-18
+
+- claim: final pipeline stage — accept or reject ADR-0034 F1+F2 (PR #79,
+  `claude/harness-1er-adr-otages-rcay2h`) against scope, the story's AC1–AC16, and rule on
+  flag **F-1**. Not a re-review: leaning on the stage-6 panel's MERGE verdict and the
+  runtime-verify evidence already gathered.
+
+### 1. Scope (cahier des charges)
+
+**HOLDS.** The cinematic hostage QTE itself was already gated as a conscious, documented
+extension under ADR-0030 (Prohibition Atari ST had no such set-piece); ADR-0034 does not
+reopen that gate, it reworks the tuning of an already-accepted extension (static tableau →
+duel of patience). Checked against every guardrail:
+
+- **Core loop untouched.** `Récupérer → Livrer → Éviter` — the QTE is a scripted,
+  once-per-level side beat that freezes the rest of the level; it doesn't touch delivery,
+  recruitment, or the base récupérer/livrer/éviter mechanics.
+- **Side objective, never advances the kill quota.** Confirmed unchanged (AC4, D4) — a
+  rescue pays `energy` only; `kills` is untouched.
+- **Mission length.** No change to the 3–5 min mission envelope (§2 KISS budget); the QTE
+  is a ≤ ~14 s beat inside a level, not a new mode.
+- **"Jamais de mort bullshit" (guideline §5.6).** The rework is a net improvement on this
+  guardrail, not a risk — see F-1 below.
+
+Design gate (`lead-game-designer`) independently confirmed conscious-extension + scope +
+core-loop + verifiability as PASS. No open scope question.
+
+### 2. Acceptance criteria
+
+Leaning on the stage-6 panel's audit (§7) and the runtime-verify evidence in the brief, not
+re-deriving: AC1–AC16 (story) map 1:1 to the frozen contract and are unit-tested (451
+vitest green, including the fix-lane AC3 real-level-data test added post-panel); `tsc` +
+`eslint` + `prettier` clean; boundary law holds (`qteSystem.ts`/`types/hostageQte.ts` zero
+React/Three). Runtime evidence (headless browser) matches the spec's behavioural claims:
+trigger at ~12 s, freeze+zoom+OTAGE banner, dragged-hostage tableau, HUD stripped of
+captor-HP/countdown bars with only the global energy readout left (per UX gate condition
+U-1 — the stake stays visible), duel resolves, energy drains as the sole outcome currency
+(100→10 on a LOST run matches the ledger in spec §3: four unanswered peeks ≈ −32). No
+pageerrors. **AC1–AC16: MET.**
+
+### 3. F-1 — ratify retiring ADR-0030's hostage-death loss route
+
+**Recommendation: RATIFY.** The hostage should stay non-killable; the sole LOST route
+should remain the captor reaching the porte cochère. Reasoning, for Bertrand's one-line
+accept:
+
+- **Guideline §5.6 alignment, not violation.** "Jamais de mort bullshit — les règles des
+  flics sont visibles et cohérentes" reads AGAINST an instant hostage-death-on-stray-bullet
+  route, not for it: in a fast QTE with a moving target and counter-fire pressure, one bad
+  bullet ending the run on a hidden HP pool is exactly the kind of arbitrary-feeling failure
+  the guideline warns off. A flat, heavy, non-fatal `-30` penalty (the sharpest atomic cost
+  in the ledger) keeps the stake severe and legible without a coin-flip death.
+- **Stakes are preserved, not softened.** Spec §3's stake check stands: full clean rescue
+  vs. full ignore-to-door is a 72-point energy swing on a 100 scale, and a single bavure
+  (−30) is the worst single mistake in the level. P1 ("stakes first") is satisfied by the
+  energy ledger alone; a second, HP-based death route would be a redundant clock stacked on
+  top of the single-clock decision (D1), which the ADR explicitly rejected doing with
+  `windowSeconds`.
+- **One failure condition reads cleaner than two.** A single spatial LOST condition (door
+  reached) is easier for the player to model than "door reached OR hostage HP depleted" —
+  directly serves P3 ("always 'I cracked', never unreadable").
+- **Already the shipped, tested, panel-cleared reality.** The frozen contract, the spec, and
+  code have had `hostageHp` removed since the types freeze; retiring it is formalizing
+  what's already built and gated, not proposing new work. Reverting would be net-new scope
+  (re-adding an HP pool, a health-bar HUD element already removed per U-1, and a second
+  failure branch) with no design or player-value case in this brief for doing so.
+- **Reversibility preserved.** Both `senior-architect` and `lead-game-designer` explicitly
+  flagged this as reversible if Bertrand disagrees — nothing forecloses reopening it later
+  as a separate change if playtesting surfaces a reason to.
+
+**pm recommends Bertrand ratify F-1 as written: hostage non-killable, sole LOST = door
+reached.**
+
+### VERDICT: **ACCEPT-WITH-NOTES**
+
+- Scope: HOLDS (conscious extension, core loop intact, side-objective rule intact).
+- AC1–AC16: MET (per panel audit + runtime verify).
+- Note (non-blocking, per design gate's own "not a block" framing): **F-1 awaits
+  Bertrand's one-line ratification** — pm recommends RATIFY (see rationale above). Story is
+  otherwise accepted for merge; no further pm-lane rework required.
