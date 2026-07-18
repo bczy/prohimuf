@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSize, resolveRefUrl, resolveOutFile } from "../gen-from-reference.mjs";
+import { parseSize, resolveRefUrl, resolveOutFile, isCI } from "../gen-from-reference.mjs";
 
 describe("parseSize", () => {
   it("accepts a valid WxH", () => {
@@ -32,6 +32,23 @@ describe("resolveRefUrl", () => {
     expect(url).toContain("https://raw.githubusercontent.com/");
     expect(url).toContain("/httpfoo.png");
   });
+});
+
+describe("isCI", () => {
+  it("is true when CI=true", () => {
+    expect(isCI({ CI: "true" })).toBe(true);
+  });
+
+  it("is true when GITHUB_ACTIONS=true", () => {
+    expect(isCI({ GITHUB_ACTIONS: "true" })).toBe(true);
+  });
+
+  it.each([{}, { CI: "false" }, { CI: "1" }, { GITHUB_ACTIONS: "false" }])(
+    "is false for %o (soft-skip stays sandbox-only)",
+    (env) => {
+      expect(isCI(env)).toBe(false);
+    },
+  );
 });
 
 describe("resolveOutFile", () => {

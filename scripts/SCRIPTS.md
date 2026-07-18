@@ -738,12 +738,14 @@ node scripts/gen-from-reference.mjs \
   --family vehicles --seed 12345 [--size 256x160] [--style ", extra style tail"]
 ```
 
-A failed fetch is logged per-asset (`[fail] … (will be generated in CI)`) and
-never crashes the run — network Pollinations is normally blocked in the local
-sandbox; real generation runs via `.github/workflows/gen-from-reference.yml`
-(manual `workflow_dispatch`, seven inputs mirroring the CLI). No style gate —
-this path is exploratory; the human reviews the output in the PR/branch
-preview.
+In the local sandbox a failed fetch is a soft-skip (`[skip] … network
+blocked`) — network Pollinations is normally blocked there and the real
+generation runs via `.github/workflows/gen-from-reference.yml` (manual
+`workflow_dispatch`, seven inputs mirroring the CLI). **In CI that generation
+is the job, so a failed fetch is fatal** (`::error::` annotation + exit 1) —
+the run fails red instead of reporting a green check that produced nothing. No
+style gate — this path is exploratory; the human reviews the output in the
+PR/branch preview.
 
 ---
 

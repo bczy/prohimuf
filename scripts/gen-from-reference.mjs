@@ -21,8 +21,10 @@
  *   - levels   → none (full-bleed backdrops).
  *
  * Network image generation (Pollinations) is normally blocked in the local
- * sandbox, so a failed fetch is logged per-asset and never crashes the run —
- * real generation runs in CI via .github/workflows/gen-from-reference.yml.
+ * sandbox, so a failed fetch there is a soft-skip — the real generation runs
+ * in CI via .github/workflows/gen-from-reference.yml. In CI, however, that
+ * generation IS the job: a failed fetch is FATAL (exit 1) so the run never
+ * reports a green check having produced nothing (see isCI below).
  *
  * Usage:
  *   node scripts/gen-from-reference.mjs \
@@ -41,6 +43,14 @@ const ROOT = path.resolve(__dirname, "..");
 
 const REPO = process.env.GITHUB_REPOSITORY ?? "bczy/prohimuf";
 const SHA = process.env.GITHUB_SHA ?? "main";
+
+// True when running under CI (GitHub Actions sets both). The soft-skip on a
+// failed fetch only makes sense in the local sandbox, where the network is
+// blocked and CI does the real generation; in CI a failed fetch must fail the
+// run, not soft-return into a green check that generated nothing.
+export function isCI(env = process.env) {
+  return env.CI === "true" || env.GITHUB_ACTIONS === "true";
+}
 
 // A repo-relative path becomes a raw.githubusercontent.com URL at the checked-out
 // SHA (mirrors frame1RawUrl in gen-enemy-types.mjs); a full https:// URL passes
@@ -170,7 +180,15 @@ async function main() {
   try {
     buf = await fetchWithRetry(url);
   } catch (err) {
-    console.log(`  [fail] ${out} — ${err.message} (will be generated in CI)`);
+    // In CI this generation is the whole job: a failed fetch must fail the run
+    // (::error:: annotation + exit 1) so a green check never lies about having
+    // produced an asset. Only the local sandbox — where the network is blocked
+    // and CI does the real pass — soft-skips.
+    if (isCI()) {
+      console.error(`::error::gen-from-reference failed for ${out} — ${err.message}`);
+      process.exit(1);
+    }
+    console.log(`  [skip] ${out} — ${err.message} (network blocked; real generation runs in CI)`);
     return;
   }
 
