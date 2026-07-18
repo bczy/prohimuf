@@ -5,9 +5,22 @@ foreground prop / set dressing** for the side-scroller shooting-gallery world; t
 covers **the single traffic-light mast** only (vehicle head + pedestrian head), replacing
 the current code-drawn prop with a reference-conditioned generated asset.
 
-**Status: DRAFT — awaiting Bertrand's KEEP / DROP / DIG per axis.** Not yet curated into
-`docs/references/art-culture.md` (that step is `lead-art`'s, post-validation, per
-`docs/references/README.md`).
+**Status: CURATED by Bertrand 2026-07-18.** His verdict:
+
+- **KEEP** — Axis 2 face-on feu piéton: [File:Pedestrian_signal_in_Paris.JPG](https://commons.wikimedia.org/wiki/File:Pedestrian_signal_in_Paris.JPG).
+- **DROP** — MSR25 carrefour fiche: its vehicle heads are shown FACE-ON, which is the
+  opposite of what we want (vehicle head must be strict PROFILE). Do not use.
+- **DROP** — kbrhorse.net visor history: not useful, forget it.
+- **ADD (key profile reference)** — Bertrand supplied a photo and the
+  [feu-routier.fr actualités page (gallery-6)](https://www.feu-routier.fr/actualites.html#gallery-6):
+  a single mast with the **vehicle 3-lens hooded heads on each side seen strictly in
+  PROFILE** (the black casquette hoods jut out sideways, the lens faces are edge-on and
+  NOT visible) and the **pedestrian head centred, FACE-ON** (green walking man pictogram
+  readable). This IS the target geometry — profile vehicle + face pedestrian on one mast.
+  (French pre-LED models named on that page: Nixea, Alumix, Aluxe, Géronimo.)
+
+Not yet curated into `docs/references/art-culture.md` (that step is `lead-art`'s,
+post-validation, per `docs/references/README.md`).
 
 ## Hunt context (brief supplied by the orchestrator on Bertrand's behalf)
 
