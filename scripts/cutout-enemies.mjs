@@ -8,7 +8,10 @@
  *
  *   1. Edge flood-fill — clears background pixels CONNECTED to an image edge.
  *      Dark pixels *inside* the cop (uniform, boots) are preserved because the
- *      fill can only reach the outer background.
+ *      fill can only reach the outer background. Bottom-edge seeding is GROUND-
+ *      ADAPTIVE (near-black ground: top+sides only, historical feet guard;
+ *      bright/saturated ground e.g. magenta #FF3CDC: all four edges, safe because
+ *      the seeding itself is colour-gated — see the seedBottom comment below).
  *   2. Enclosed-island pass — clears flat background regions that are fully
  *      ENCLOSED by the subject (a bike-frame triangle, an arm/torso gap, a
  *      wheel interior). A 4-corner flood can never reach these, so without this
@@ -112,11 +115,23 @@ async function cutout(file, { lightFallback = false } = {}) {
     }
   };
 
-  // Seed from top + sides only (not the bottom): the cop's dark trousers are
-  // close to the background colour, so seeding the bottom edge would leak the
-  // fill up between the legs and eat them. A small shadow at the feet remains.
+  // Seed from top + sides always; bottom is GROUND-ADAPTIVE (2026-07-18, black→magenta
+  // chroma migration, docs/handoffs/story-enemy-chroma-migration.md). On a near-black
+  // ground the cop's dark trousers sit close to the background colour, so seeding the
+  // bottom edge would leak the fill up between the legs and eat them — historical
+  // behaviour, preserved exactly for any black-ground caller (courier, older families).
+  // On a bright/saturated ground (magenta #FF3CDC) that hazard is gone: this seeding is
+  // COLOUR-GATED (pushIf tests dist2-to-sampled-ground before ever accepting a border
+  // pixel — unlike a blind geometric inset), so a genuinely-magenta gap between the legs
+  // that happens to touch the bottom edge gets correctly keyed, while a dark boot/trouser
+  // pixel at that same edge fails the colour test and is never seeded. Threshold: ground
+  // luminance < 60 reads "near-black" (pure black ≈0, the old near-black rolls measured
+  // ≈40-50); #FF3CDC's luminance is ≈136 — comfortably on the "seed the bottom too" side.
+  const groundLum = 0.3 * br + 0.59 * bg + 0.11 * bb;
+  const seedBottom = groundLum >= 60;
   for (let x = 0; x < W; x++) {
     pushIf(x, 0);
+    if (seedBottom) pushIf(x, H - 1);
   }
   for (let y = 0; y < H; y++) {
     pushIf(0, y);
