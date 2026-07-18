@@ -8,6 +8,14 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/rtk-graph-savings-report-2a6t8o · dev-tooling-assets · add
+  `scripts/setup-tooling.sh`: one-command, idempotent local (by-hand) provisioning of
+  rtk + codegraph, mirroring the SessionStart hook's install/index logic (which is
+  remote-only). Pins cross-referenced in both files to prevent drift; CLAUDE.md tooling
+  section points to it. Standalone by design — session-start.sh behaviour untouched.
+  · checks: `bash -n` clean; logic mirrors the proven hook (installs not run locally) ·
+  review: pending
+
 - 2026-07-18 · claude/rtk-graph-savings-report-2a6t8o · dev-tooling-assets · add the
   PreToolUse(Bash) hook CLAUDE.md already promises: `rewrite-rtk.sh` transparently
   rewrites the exact raw fallbacks (`yarn test`→`rtk vitest`, `yarn typecheck`→`rtk tsc`,

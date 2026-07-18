@@ -128,6 +128,9 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
   output. A PreToolUse hook rewrites bash commands automatically once installed.
 - **codegraph** — local code knowledge graph over MCP (see `.mcp.json`): query symbols,
   imports and call chains instead of grepping. Use it to find callers before editing.
+- **Local setup:** remote web sessions auto-provision both tools via the SessionStart
+  hook; on a local machine run `scripts/setup-tooling.sh` once (idempotent) to install
+  rtk + codegraph by hand.
 
 ## Working rules
 

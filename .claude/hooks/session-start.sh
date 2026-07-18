@@ -27,7 +27,8 @@ yarn install >&2 2>&1 || warn "yarn install failed; run 'yarn install' before te
 # --- rtk (Rust Token Killer) — compressed tsc/vitest/grep/git output ---------
 # The remote proxy 403s GitHub release downloads, so build from source via git
 # (slow once, then cached with the container state). Pinned to the validated
-# commit (v0.42.4); bump deliberately via PR.
+# commit (v0.42.4); bump deliberately via PR — and keep the pin in sync with
+# scripts/setup-tooling.sh (the local by-hand equivalent of this block).
 if ! command -v rtk >/dev/null 2>&1; then
   cargo install --git https://github.com/rtk-ai/rtk \
     --rev 5d32d0736f686b69d1e8b9dc45c007d4eb77a0a2 >&2 2>&1 \
