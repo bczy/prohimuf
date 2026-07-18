@@ -20,15 +20,15 @@ piéton** (Bertrand: _"it lacks of passage piéton"_) — a faded zebra crossing
 else. Muted, DARK, matched to the facade's near-black ground strip so the two are
 continuous.
 
-**Final prompt** (seed committed: 3303 — PIN it, see reroll risk below):
+**Final prompt** (seed committed: 5502 — PIN it, see reroll risk below):
 
 ```
 flat overhead top-down view of a very dark wet parisian asphalt road surface seen
 straight from directly above, near-black bitumen colour #0E1418 filling the whole
 frame edge to edge, low-key dim night lighting deep in shadow, smooth fine grain
 with only a few sparse faint reflections, a faded white pedestrian crossing of
-several evenly spaced parallel horizontal white zebra stripes painted flat across
-the road near the top, flat level ground plane, no horizon
+several evenly spaced parallel upright vertical white zebra stripes running top to
+bottom across the road, flat level ground plane, no horizon
 ```
 
 Rationale (clause → the failure it locks down):
@@ -42,16 +42,19 @@ Rationale (clause → the failure it locks down):
 - `low-key dim night lighting deep in shadow … only a few sparse faint reflections` →
   counters the shared `style` tail's "warm orange + magenta cyan neon accents" that
   otherwise brightens the surface into a lighter, busier band than the facade base.
-- `a faded white pedestrian crossing of several evenly spaced parallel horizontal white
-zebra stripes … near the top` → the requested marking; "horizontal" + "near the top"
-  place the crossing inside the ~37–51% band the QTE actually reveals (stripes parallel
-  to the road = geometrically correct for a crossing over the facade-parallel street).
+- `a faded white pedestrian crossing of several evenly spaced parallel upright vertical
+white zebra stripes running top to bottom across the road` → the requested marking.
+  Bertrand's call after seeing it in-game: the bars run VERTICAL (kerb-to-kerb across the
+  facade-parallel street), the way a passage piéton reads to the player. Vertical bars
+  are also more robust to the crop — they span the full image height, so they stay
+  visible whatever their position in the thin ~37–51% band the QTE reveals (the earlier
+  horizontal bars only showed when they happened to land inside that slice).
 - `flat level ground plane, no horizon` → reinforces the overhead read (the sole
   negation, within the ≤2 bible budget).
 
 **Reroll risk (lead-art watch-item).** `gen-level-art.mjs` picks a RANDOM seed; the
 edge rooftops FLUX leaves at ~0–8% / 92–100% of the frame are only harmless because
-they crop OUTSIDE the QTE-visible band at seed 3303. A different seed can land a
+they crop OUTSIDE the QTE-visible band at seed 5502. A different seed can land a
 building row inside the band and reintroduce the "miroir de l'immeuble" failure — so
 regenerate this backdrop ONLY with the pinned seed, never a random reroll.
 
@@ -63,6 +66,9 @@ regenerate this backdrop ONLY with the pinned seed, never a random reroll.
 - Dashed-line dark version (`dark_9204`): PASSED the lead-art gate, but Bertrand asked
   for a passage piéton instead → swapped the marking clause only (dashed line → zebra
   crossing) and folded in the gate's hex-anchor note in the same pass.
+- Horizontal crossing (`pp_3303`, merged in #80): correct crossing but the bars ran
+  HORIZONTAL; Bertrand wanted them vertical → swapped "horizontal … near the top" →
+  "upright vertical … running top to bottom" (one variable), committed as seed 5502.
 - Early full-scene neon roads (`road_*`, `final_*`): clean roads but saturated
   neon-noir, wrong palette, occasional corner buildings — rejected on integration.
 
