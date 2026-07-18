@@ -1,5 +1,5 @@
 {
-  ".claude/agents/COLLABORATION.md": "b320a8f30a140adc13a89809afd400932967ee19c0c0b38a6824ebf2b924cf6e",
+  ".claude/agents/COLLABORATION.md": "c270e01555867a0f8042f88a98aebd45e11f3343f00fe61b41e7d65e317b0a26",
   ".claude/agents/art-advisor.md": "ac9fc4f5b22d813ff713fd90cee8216ebc26672391ae58f4f353c14db0444496",
   ".claude/agents/concept-artist.md": "3fafea74f410344056bae292642fe5fe3d56673229133c853fc160fb1e7e317a",
   ".claude/agents/dev-gameplay.md": "62d54a2ab8adde532a85fcae657ef7d2935db1216f0c12f5b293d2fff03517ec",
@@ -16,8 +16,9 @@
   ".claude/agents/qa-lead.md": "d963e045dd344019c95ac641e5b2740cc802dbac3c4bb29394210936fc5a15a0",
   ".claude/agents/senior-architect.md": "fa6de1f5701e4cf4105bf537cb62b1b29eeb540c08763ea752fac0abdeacbe6e",
   ".claude/agents/sound-designer.md": "7418f37abdee9d5f8f6fbb4047473d17265cdf6cd0aa5d307d5e7761d5bd4ecd",
+  ".claude/agents/tech-scout.md": "436fd5d5a13b54c6d997cda41cddffd71f0648edcc38422b96ffb8c510cf7d90",
   ".claude/agents/tech-writer.md": "17959ca235e51bed7cddc2f1fd1127a12dbae3c37e1d711506acc4a75283b92b",
   ".claude/agents/ux-designer.md": "c266d4a5564c438e18202c916f7a8c64c6adaa3293c6aaeffef1e395c0ffa4b1",
-  "docs/diagrams/agent-workflows.md": "ee893e0d6aa3f177dae178e2fc6db0d1de773c36861d351ba590b0e26319b407",
-  "docs/muf-crew-bitmap.py": "041385e73e14f22805a60ec2c440d968c0654062cfb10c49f1dc62f941aced61"
+  "docs/diagrams/agent-workflows.md": "d13247f7ed6cff7f27f472197b8f31c8ebf17c1272a1e8daf29a5a712488c80c",
+  "docs/muf-crew-bitmap.py": "6e1dc693272dc69d8d6d39c6747072877b69f03cc19e46ca138df9747a4ad46d"
 }
