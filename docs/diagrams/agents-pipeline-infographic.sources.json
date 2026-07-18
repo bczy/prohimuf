@@ -1,5 +1,5 @@
 {
-  ".claude/agents/COLLABORATION.md": "c270e01555867a0f8042f88a98aebd45e11f3343f00fe61b41e7d65e317b0a26",
+  ".claude/agents/COLLABORATION.md": "fa140263e2e8fe0af3697555fe4b8b67a9ebd2dd3158abdeb1c9399001220dd6",
   ".claude/agents/art-advisor.md": "ac9fc4f5b22d813ff713fd90cee8216ebc26672391ae58f4f353c14db0444496",
   ".claude/agents/concept-artist.md": "3fafea74f410344056bae292642fe5fe3d56673229133c853fc160fb1e7e317a",
   ".claude/agents/dev-gameplay.md": "62d54a2ab8adde532a85fcae657ef7d2935db1216f0c12f5b293d2fff03517ec",
@@ -8,6 +8,7 @@
   ".claude/agents/game-designer.md": "c82ad58ee8e7966890857f528fc35f8f4d8df563f2ebad1a14dc8018c62ee2b2",
   ".claude/agents/game-graphist.md": "fceff4afea486822d615788794259843f4d5d95f04c89115e7fe496fb64a097a",
   ".claude/agents/gpu-specialist.md": "1bf11441140045d793727d207e802b0e904187c1461937a3202b56b59b275632",
+  ".claude/agents/graphic-references.md": "7e6b0ff0d9f8a634a4bf1f19defbcdf022b652fa7c1fba4e402323c3040d0b0b",
   ".claude/agents/lead-art.md": "58429beac0b29a807a623c465517b53105e2fc60c95a9aea2b095fabd8d9957b",
   ".claude/agents/lead-game-designer.md": "de1dbfc410b1e816afdb97c478d3dc8fb9e96212ed0c986bf56eef17a3ce3d20",
   ".claude/agents/narrative-designer.md": "00f99b63244cac01adb5a5a0c30099e2fc450f3b8276031f322a97b71d0d7a2d",
@@ -19,6 +20,6 @@
   ".claude/agents/tech-scout.md": "436fd5d5a13b54c6d997cda41cddffd71f0648edcc38422b96ffb8c510cf7d90",
   ".claude/agents/tech-writer.md": "17959ca235e51bed7cddc2f1fd1127a12dbae3c37e1d711506acc4a75283b92b",
   ".claude/agents/ux-designer.md": "c266d4a5564c438e18202c916f7a8c64c6adaa3293c6aaeffef1e395c0ffa4b1",
-  "docs/diagrams/agent-workflows.md": "d13247f7ed6cff7f27f472197b8f31c8ebf17c1272a1e8daf29a5a712488c80c",
-  "docs/muf-crew-bitmap.py": "6e1dc693272dc69d8d6d39c6747072877b69f03cc19e46ca138df9747a4ad46d"
+  "docs/diagrams/agent-workflows.md": "57a69169abb030197e1dbc7d7ec8f951a165bcb6679062a566a22467ce757925",
+  "docs/muf-crew-bitmap.py": "507761e8de4898680bbb62fc93daf281bf65a4ae3c72050e34f3d4e391ecfde7"
 }

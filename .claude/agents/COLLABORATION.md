@@ -1,6 +1,6 @@
 # Agent collaboration protocol — muf
 
-Nineteen subagents work the muf project. They run **in parallel where paths don't overlap**,
+Twenty subagents work the muf project. They run **in parallel where paths don't overlap**,
 but they **always coordinate** through this protocol. Read this before acting.
 
 ## Roster & ownership
@@ -17,6 +17,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `ux-designer` | Tony 🖱️ | screens/flows/HUD ergonomics + accessibility — UX specs in `docs/game-design/ux/` | production code, visual style, 3C/mechanics |
 | `lead-art` | Nico 🎯 | `docs/art-direction.md` + references, visual acceptance gate (prompts & generated assets) | pipeline mechanics, first-draft prompts |
 | `art-advisor` | Estelle 📼 | references & cultural grounding (advice only, read-only) | any file except via lead-art |
+| `graphic-references` | Ray 🗽 | interactive reference hunts with Bertrand (interview → web propositions → verdicts → refine), boards in `docs/art-direction/references/boards/` | gate verdicts, prompts, production code, the curated library (lead-art curates) |
 | `concept-artist` | Maud ✍️ | prompt/style strings in `levelArt.json`, `docs/art-direction/prompt-drafts/` (one shard per family, index at `prompt-drafts.md`) | sizes/ids/paths/structure, workflows |
 | `game-graphist` | Serge 🕹️ | production passes (readability/keying annotations, `scripts/retouch-sprites.mjs`) | direction verdicts, prompt authorship, CI workflows |
 | `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
@@ -61,8 +62,9 @@ bending the pipeline silently is worse.
               harness) BEFORE lanes are cut, so the architect partitions against
               evidence, not a guess.
 4. BUILD      parallel, non-overlapping lanes:
-                · ART — advisor → concept-artist → game-graphist → lead-art
-                  gates → CI generation (§art flow)
+                · ART — (reference hunt: graphic-references ↔ Bertrand, when the
+                  family lacks references) → advisor → concept-artist →
+                  game-graphist → lead-art gates → CI generation (§art flow)
                 · AUDIO — sound-designer specs → sourcing/generation →
                   AUDIO GATE (§audio flow)
                 · DEV — dev-gameplay (TDD) / dev-r3f-render / dev-tooling-assets
@@ -215,6 +217,12 @@ the PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be me
 ## The art flow (any generated asset — vehicles, enemies, level art)
 
 ```
+graphic-references (OPTIONAL — when the family lacks references or Bertrand asks
+     for a hunt: INTERVIEW (questions relayed to Bertrand) → web PROPOSITIONS →
+     Bertrand verdicts KEEP/DROP/DIG per direction → REFINE, max 3 rounds then
+     escalate. Validated board lands in docs/art-direction/references/boards/;
+     lead-art curates it into the reference library)
+     ↓
 art-advisor (references, period grounding — advice)
      ↓
 concept-artist (drafts prompts, positive shape language, shared style block)
