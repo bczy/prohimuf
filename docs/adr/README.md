@@ -97,5 +97,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0039](./0039-maison-skills-backlog.md) | "Maison" skills backlog: repeated procedures to package as skills | Proposed |
 | [0040](./0040-render-transient-impact-effects.md) | Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks) | Accepted |
 | [0041](./0041-generated-adr-registry.md) | Generated ADR registry with a CI freshness gate | Accepted |
+| [0042](./0042-crew-extension-tech-scout-recon-lane.md) | Crew extension: tech-scout technical-reconnaissance / feasibility lane (Nadia) | Accepted |
 
 <!-- ADR-INDEX:END -->

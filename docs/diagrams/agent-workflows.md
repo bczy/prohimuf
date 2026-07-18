@@ -49,6 +49,7 @@ flowchart TB
 
     subgraph P3["3. TECH PLAN"]
         ARCH["senior-architect · Winston 🏗️<br/>boundaries, ADR if needed,<br/>lane partition (dev + art)"]
+        SCOUT["tech-scout · Nadia 🔭<br/>prior-art / feasibility recon<br/>(deep-research; sourced report, no gate)"]
     end
 
     subgraph P4["4. BUILD — parallel, non-overlapping lanes"]
@@ -133,6 +134,7 @@ flowchart TB
     end
 
     ARCH -.->|"perf-sensitive:<br/>GPU-cost analysis at TECH PLAN"| PERF
+    ARCH -.->|"unproven technique / model /<br/>API / dep: feasibility recon"| SCOUT
 
     QGATE -->|PASS| PANEL
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
