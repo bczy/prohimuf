@@ -1,8 +1,4 @@
 import type { JSX } from "react";
-import type { Phase } from "@game/types/gameState";
-// Single source of truth for the delivery phase: the game type (no render-side dup).
-import type { DeliveryPhase } from "@game/types/delivery";
-import type { QtePhase } from "@game/types/hostageQte";
 import styles from "./HUD.module.css";
 import { ScoreReadout } from "./hud/ScoreReadout";
 import { WaveReadout } from "./hud/WaveReadout";
@@ -14,48 +10,11 @@ import { HostageQteOverlay } from "./hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "./hud/PhaseMessageBanner";
 
-export interface HudTargetIndicator {
-  up: boolean;
-  down: boolean;
-  left: boolean;
-  right: boolean;
-}
-
-/** Delivery state surfaced to the DOM HUD (read from the state ref, not per frame). */
-export interface HudDelivery {
-  phase: DeliveryPhase;
-  integrity: number;
-  integrityMax: number;
-}
-
-/**
- * Hostage-taker QTE state surfaced to the DOM HUD (the static duel), read from the
- * state ref. Only the two set-piece stamps remain on the HUD — the "OTAGE" zoom
- * banner (`warning`) and the WON/LOST verdict (`phase`). The captor-HP, countdown
- * and hostage-HP gauges left the screen (UX spec §1): the duel is binary and the
- * sole clock is the blown-peeks count, surfaced diegetically in-world (Flag B),
- * never as a HUD bar.
- */
-export interface HudHostageQte {
-  phase: QtePhase;
-  warning: boolean;
-}
-
-export interface HudData {
-  score: number;
-  lives: number;
-  timeRemaining: number;
-  phase: Phase;
-  wave: number;
-  // Continuous energy stat 0–100 (ADR-0030 D5): the hostage taker's bavure /
-  // timeout penalties drain it. Read-only view value; the game owns the rule.
-  energy: number;
-  levelName?: string;
-  isHighScore?: boolean;
-  targetIndicator?: HudTargetIndicator | undefined;
-  delivery?: HudDelivery | undefined;
-  hostageQte?: HudHostageQte | undefined;
-}
+// HUD view types now live in ./hud/types (drops the type-only import cycle: widgets
+// import the shapes from there, not from this component). Re-exported so external
+// consumers keep importing them from `@render/ui/HUD` unchanged.
+export type { HudData, HudDelivery, HudHostageQte, HudTargetIndicator } from "./hud/types";
+import type { HudData } from "./hud/types";
 
 /**
  * In-game HUD — the print system carried into gameplay (ADR-0021 / art-direction §2bis).

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { HudHostageQte } from "@render/ui/HUD";
+import type { HudHostageQte } from "./types";
 import { MARK } from "@render/ui/print";
 import { cx } from "./cx";
 import styles from "./HostageQteOverlay.module.css";
