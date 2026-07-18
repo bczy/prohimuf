@@ -183,8 +183,10 @@ post-generation preview.
 To try a branch live without merging to `main`:
 
 - **Playable preview** — run **Deploy branch preview** manually (Actions → pick
-  the ref). Lands at `https://bczy.github.io/prohimuf/preview/<branch>/`. It uses
-  `keep_files: true` so it never wipes `main`'s root or other previews.
+  the ref). Lands at `https://bczy.github.io/prohimuf/preview/<branch>/`. The
+  publish (`.github/actions/gh-pages-publish`) clean-replaces only its own
+  `preview/<slug>/` subtree and never wipes `main`'s root or other previews;
+  it re-clones + retries on a concurrent-push race instead of failing.
 - **Visual contact sheet** — **Style B Preview** renders level screenshots and
   uploads them as a downloadable artifact (`style-b-screenshots`), not committed
   back to the branch.

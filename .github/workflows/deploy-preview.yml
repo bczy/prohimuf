@@ -110,17 +110,17 @@ jobs:
             sed -i 's#<head>#<head><meta name="robots" content="noindex">#' "$f"
           done
 
+      # Rebase-retry publish (see .github/actions/gh-pages-publish): re-clones
+      # gh-pages each attempt and clean-replaces only preview/<slug> (so this
+      # subdir never accumulates stale hashed assets), preserving the rest of
+      # the branch (main's root + other previews). Concurrent branch deploys
+      # never lose a plain-push race.
       - name: Publish to gh-pages (preview/${{ steps.slug.outputs.slug }})
-        uses: peaceiris/actions-gh-pages@v4
+        uses: ./.github/actions/gh-pages-publish
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          publish_branch: gh-pages
           destination_dir: preview/${{ steps.slug.outputs.slug }}
-          # keep_files avoids peaceiris wiping the rest of the branch (main's
-          # root + other previews). Stale hashed assets in this subdir are
-          # harmless since index.html only references the current build.
-          keep_files: true
           commit_message: "preview: ${{ github.ref_name }} (${{ github.sha }})"
 
       - name: Summary
