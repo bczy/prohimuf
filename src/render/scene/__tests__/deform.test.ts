@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  recoilTransform,
-  wheelAngle,
-  identityTransform,
-  type RecoilParams,
-} from "../deform";
+import { recoilTransform, wheelAngle, identityTransform, type RecoilParams } from "../deform";
 
 /**
  * Pure, DOM-free coverage of the procedural deformation helper (SPIKE

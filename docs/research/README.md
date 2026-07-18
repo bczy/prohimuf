@@ -15,6 +15,6 @@ pipeline (TECH PLAN, stage 3) in
 
 ## Index
 
-| Report | Question | Date | Confidence |
-| --- | --- | --- | --- |
+| Report                                                            | Question                                                                                          | Date       | Confidence                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------- |
 | [research-2d-sprite-animation](./research-2d-sprite-animation.md) | Proven ways to generate coherent 2D sprite animation by AI, fitting muf's free/no-GPU/CI pipeline | 2026-07-18 | Mixed (14 claims 3-vote confirmed; synthesis by hand) |

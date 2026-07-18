@@ -12,8 +12,8 @@ had no owner for **prior-art surveys and feasibility spikes**. When a story rest
 unproven technique — a new model/API/service, a rendering or animation approach not
 already in `src/render`, a build/CI path of unknown blast radius — the reconnaissance
 was absorbed by `senior-architect` himself, folded into TECH PLAN. That mixes two
-different jobs: *finding out what already exists and what it costs* (research) versus
-*deciding how muf will build it* (architecture). The architect was doing both, under
+different jobs: _finding out what already exists and what it costs_ (research) versus
+_deciding how muf will build it_ (architecture). The architect was doing both, under
 pipeline pressure, with no dedicated read-only lane and no sourced, verifiable artefact
 to point back at.
 
@@ -26,7 +26,7 @@ The reconnaissance a scout serves is muf-specific, so its load-bearing constrain
 be named every time: budget ≈ 0€, no local GPU, CI on GitHub Actions, a fanzine-B&W +
 acid-neon (non-pixel-art) house style, and the existing Pollinations/FLUX asset baseline
 (no key). A generic "what's the best tool" answer is worthless here; the useful answer is
-"what fits *these* constraints, sourced".
+"what fits _these_ constraints, sourced".
 
 Precedent: ADR-0037 added three advisory/gate lanes the same way (UX design, GPU perf
 verdict, staffed DOCS) — an additive crew extension leaving the pipeline stages, existing
@@ -46,7 +46,7 @@ game/render/hooks boundary are unchanged.
   and the residual risks the architect must weigh.
 - **When pulled in.** By `senior-architect` at **TECH PLAN (stage 3)**, exactly the way
   `gpu-specialist` is pulled in for perf-sensitive work — whenever a story rests on a
-  technique/model/API/dependency the team has not proven yet, *before* lanes are cut so
+  technique/model/API/dependency the team has not proven yet, _before_ lanes are cut so
   the architect partitions work against evidence rather than a guess.
 - **Harness.** Drives `deep-research` (fan-out web search → fetch → adversarial
   verification → cited synthesis), falling back to `WebSearch`/`WebFetch` with per-claim
@@ -57,7 +57,7 @@ game/render/hooks boundary are unchanged.
 - **Model:** `opus`. **Bridges** the BMAD analyst `bmad-agent-analyst` (Mary) and the
   `bmad-technical-research` module.
 - **Explicitly NOT a decision-maker.** It holds **no gate** and decides nothing. It
-  *informs*; the architect decides. The resulting ADR is the **architect's** — the scout
+  _informs_; the architect decides. The resulting ADR is the **architect's** — the scout
   feeds it, never authors it. A confident wrong answer is worse than a flagged
   uncertainty, so thin/contradictory evidence is reported as such.
 
