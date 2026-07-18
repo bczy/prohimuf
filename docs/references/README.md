@@ -34,7 +34,7 @@ relue et citée** — un agent ouvre sa fiche de références au lieu de redéco
 | [`audio.md`](audio.md)                               | `sound-designer`                                               |
 | [`game-design.md`](game-design.md)                   | `game-designer`, `lead-game-designer`                          |
 | [`narrative-1998-paris.md`](narrative-1998-paris.md) | `narrative-designer`                                           |
-| [`art-culture.md`](art-culture.md)                   | `art-advisor`, `concept-artist`, `lead-art`, `game-graphist`   |
+| [`art-culture.md`](art-culture.md)                   | `art-advisor`, `graphic-references`, `concept-artist`, `lead-art`, `game-graphist` |
 | [`product-process.md`](product-process.md)           | `pm`, `producer`, `senior-architect`, `tech-writer`, `qa-lead` |
 
 > L'art dispose déjà d'un dépôt de références dédié et license-noté sous
