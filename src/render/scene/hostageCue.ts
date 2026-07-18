@@ -22,6 +22,15 @@ const ALARM = "#ff1e2d";
 const TELL = "#fff27a";
 const WHITE = "#ffffff";
 
+/**
+ * The captor's tint during the WON hold: a resolved acid-green, NOT the PEEKING
+ * danger red (the tick keeps `stance: "PEEKING"` through the win, so the render
+ * lane must not read it as an open danger window). Steady — reduced-motion-safe by
+ * construction — and green-leaning so it echoes the "OTAGE SAUVÉE" verdict, clearly
+ * disjoint from the ALARM red of the LOST strobe.
+ */
+export const CAPTOR_WON_TINT = "#7dffb0";
+
 /** Clamp to the unit interval. */
 export function clamp01(x: number): number {
   return x < 0 ? 0 : x > 1 ? 1 : x;

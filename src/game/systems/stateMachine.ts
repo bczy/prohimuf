@@ -137,8 +137,8 @@ export function tickGameState(
   // COVERED↔PEEKING sub-machine and the player's shot). Everything else (enemies,
   // waves, spawns, bullets, couriers, delivery, the level clock) is carried
   // unchanged via `...state`, so a QTE-less level (`qteSpec === null`) skips this
-  // block entirely and stays byte-for-byte deterministic. Energy is the outcome
-  // currency (D5); score folds only the clean-rescue side bonus.
+  // block entirely and stays byte-for-byte deterministic. Energy is the QTE's
+  // SOLE outcome currency (D5); score is never moved by the QTE.
   let qte = state.qte;
   if (shouldTriggerQte(state.qteSpec, qte, elapsedSeconds) && state.qteSpec !== null) {
     qte = createQte(state.qteSpec);

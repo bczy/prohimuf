@@ -10,6 +10,7 @@ import { getHostageGirlTexture } from "./hostageTextures";
 import {
   blownPeeksProximity,
   captorTint,
+  CAPTOR_WON_TINT,
   hostageAlarmColor,
   hostageDistressTint,
   peekTellVisual,
@@ -187,6 +188,7 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     const reducedMotion = reducedMotionRef.current;
     const pulse01 = reducedMotion ? 0 : (Math.sin(nowMs * PULSE_SPEED) + 1) / 2;
     const lost = qte.phase === "LOST";
+    const won = qte.phase === "WON";
     const peeking = qte.stance === "PEEKING";
     // Flag B: how close the captor is to executing the hostage (blown peeks / cap).
     const proximity = blownPeeksProximity(qte.blownPeeks, qte.maxBlownPeeks);
@@ -199,10 +201,15 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       captorMat.map = captorTex.texture;
       captorMat.needsUpdate = true;
     }
+    // On LOST he strobes the alarm (the execution); on WON he reads the resolved
+    // win green — NOT the PEEKING danger red the tick leaves his stance in through
+    // the win hold. Otherwise the live COVERED/PEEKING reinforcement tint.
     captorMat.color.set(
       lost
         ? hostageAlarmColor(pulse01, reducedMotion)
-        : captorTint(qte.stance, qte.telegraphActive),
+        : won
+          ? CAPTOR_WON_TINT
+          : captorTint(qte.stance, qte.telegraphActive),
     );
 
     // ── Hostage (the daughter, held in front as a shield) ─────────────────────
@@ -232,8 +239,11 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     // the open PEEKING window than the COVERED wind-up); the open centre keeps the
     // head-shot kill-zone visible. Opacity is hard-capped so it reads as a subtle
     // tell, not a solid block.
+    // The cue is a DANGER/ACTIVE marker: only during ACTIVE. Hidden through both
+    // result holds (WON: the tick keeps stance PEEKING but the danger is over;
+    // LOST: the execution reads instead), so no danger ring lingers over a win.
     const cue = peekTellVisual(qte.telegraphActive, qte.stance, pulse01, reducedMotion);
-    peekCue.visible = cue.active && !lost;
+    peekCue.visible = cue.active && qte.phase === "ACTIVE";
     if (peekCue.visible) {
       const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity);
       peekCue.scale.set(r, r, 1);

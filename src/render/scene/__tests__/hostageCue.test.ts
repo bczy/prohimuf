@@ -8,6 +8,7 @@ import {
   energyFloater,
   blownPeeksProximity,
   hostageDistressTint,
+  CAPTOR_WON_TINT,
 } from "../hostageCue";
 
 describe("clamp01", () => {
@@ -139,6 +140,20 @@ describe("hostageDistressTint", () => {
     // At full proximity it is only 70% of the way to ALARM (#ff1e2d), never past it.
     const g = (hex: string): number => parseInt(hex.slice(3, 5), 16);
     expect(g(hostageDistressTint(1))).toBeGreaterThan(g("#ff1e2d"));
+  });
+});
+
+describe("CAPTOR_WON_TINT", () => {
+  it("is a green-leaning win tint, clearly disjoint from the alarm red", () => {
+    const [r, g, b] = [
+      parseInt(CAPTOR_WON_TINT.slice(1, 3), 16),
+      parseInt(CAPTOR_WON_TINT.slice(3, 5), 16),
+      parseInt(CAPTOR_WON_TINT.slice(5, 7), 16),
+    ];
+    // Green dominant → reads as resolved/win, never the red-dominant PEEKING danger.
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
+    expect(CAPTOR_WON_TINT).not.toBe("#ff1e2d");
   });
 });
 
