@@ -86,21 +86,31 @@ function checkCourierTraversal(trace) {
   return { ok: false };
 }
 
-/** (ii) A COVERED(telegraphActive) sample immediately followed by PEEKING. */
+/**
+ * (ii) Two independent facts, each robust to the sampling cadence: a
+ * COVERED→PEEKING transition (1.5s-scale, safe at any sane poll rate) and the
+ * G4 tell observed armed at least once. Requiring the tell on the exact sample
+ * BEFORE the peek would make the guard a coin flip — the telegraph window is
+ * only 0.35s of game time, narrower than a slow CI sampling interval.
+ */
 function checkTelegraphPeek(trace) {
-  for (let i = 1; i < trace.length; i++) {
-    const prevQte = trace[i - 1].game.qte;
+  let transitionAtMs = null;
+  let tellAtMs = null;
+  for (let i = 0; i < trace.length; i++) {
     const curQte = trace[i].game.qte;
-    if (prevQte === null || curQte === null) continue;
-    if (
-      prevQte.stance === "COVERED" &&
-      prevQte.telegraphActive === true &&
-      curQte.stance === "PEEKING"
-    ) {
-      return { ok: true, atMs: trace[i].tMs };
+    if (curQte === null) continue;
+    if (tellAtMs === null && curQte.telegraphActive === true) tellAtMs = trace[i].tMs;
+    if (transitionAtMs === null && i > 0) {
+      const prevQte = trace[i - 1].game.qte;
+      if (prevQte !== null && prevQte.stance === "COVERED" && curQte.stance === "PEEKING") {
+        transitionAtMs = trace[i].tMs;
+      }
     }
   }
-  return { ok: false };
+  if (transitionAtMs !== null && tellAtMs !== null) {
+    return { ok: true, atMs: transitionAtMs, tellAtMs };
+  }
+  return { ok: false, transitionAtMs, tellAtMs };
 }
 
 async function main() {
@@ -127,23 +137,40 @@ async function main() {
   );
   const trace = [];
   const frames = [];
+  const framePromises = [];
   const start = Date.now();
   let lastShotAt = -Infinity;
   let gameElapsed = 0;
+  let shotInFlight = false;
   while (gameElapsed < RUN_GAME_SECONDS && Date.now() - start < RUN_WALL_CAP_MS) {
     const tMs = Date.now() - start;
     const snap = await readState(page);
     if (snap !== null) gameElapsed = snap.game.elapsedSeconds;
     if (snap !== null) trace.push({ tMs, game: snap.game });
-    if (tMs - lastShotAt >= SHOT_INTERVAL_MS) {
-      const buffer = await page.screenshot();
+    // Fire-and-forget screenshots: a SwiftShader full-page capture takes ~2s,
+    // and awaiting it inline starved the state poll below the 0.35s G4 tell
+    // window (34 samples over 74s, observed on CI). State sampling must keep
+    // its own cadence; frames are collected after the loop.
+    if (!shotInFlight && tMs - lastShotAt >= SHOT_INTERVAL_MS) {
+      shotInFlight = true;
+      lastShotAt = tMs;
       const qte = snap?.game.qte ?? null;
       const label = `t=${(tMs / 1000).toFixed(1)}s${qte ? ` ${qte.phase}/${qte.stance}` : ""}`;
-      frames.push({ buffer, label });
-      lastShotAt = tMs;
+      framePromises.push(
+        page
+          .screenshot()
+          .then((buffer) => {
+            frames.push({ buffer, label });
+          })
+          .catch(() => {})
+          .finally(() => {
+            shotInFlight = false;
+          }),
+      );
     }
     await sleep(STATE_POLL_MS);
   }
+  await Promise.all(framePromises);
 
   await browser.close();
 
@@ -163,8 +190,9 @@ async function main() {
   console.log(
     `[harness-motion] (ii) G4 telegraph→PEEK: ${
       telegraph.ok
-        ? `PASS (@${String(telegraph.atMs)}ms)`
-        : "FAIL — no COVERED(telegraphActive)→PEEKING transition observed in the trace"
+        ? `PASS (transition @${String(telegraph.atMs)}ms, tell @${String(telegraph.tellAtMs)}ms)`
+        : `FAIL — transition ${telegraph.transitionAtMs === null ? "NOT observed" : `@${String(telegraph.transitionAtMs)}ms`}, ` +
+          `tell ${telegraph.tellAtMs === null ? "NOT observed" : `@${String(telegraph.tellAtMs)}ms`}`
     }`,
   );
 
