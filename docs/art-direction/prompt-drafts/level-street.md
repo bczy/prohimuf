@@ -20,15 +20,16 @@ piéton** (Bertrand: _"it lacks of passage piéton"_) — a faded zebra crossing
 else. Muted, DARK, matched to the facade's near-black ground strip so the two are
 continuous.
 
-**Final prompt** (seed committed: 5502 — PIN it, see reroll risk below):
+**Final prompt** (seed committed: 6601 — PIN it, see reroll risk below):
 
 ```
 flat overhead top-down view of a very dark wet parisian asphalt road surface seen
 straight from directly above, near-black bitumen colour #0E1418 filling the whole
 frame edge to edge, low-key dim night lighting deep in shadow, smooth fine grain
-with only a few sparse faint reflections, a faded white pedestrian crossing of
-several evenly spaced parallel upright vertical white zebra stripes running top to
-bottom across the road, flat level ground plane, no horizon
+with only a few sparse faint reflections, a full-width pedestrian crossing of
+several bold horizontal white zebra stripes each spanning the entire width from the
+far left edge to the far right edge of the frame, evenly stacked and covering the
+whole road, flat level ground plane, no horizon
 ```
 
 Rationale (clause → the failure it locks down):
@@ -42,19 +43,19 @@ Rationale (clause → the failure it locks down):
 - `low-key dim night lighting deep in shadow … only a few sparse faint reflections` →
   counters the shared `style` tail's "warm orange + magenta cyan neon accents" that
   otherwise brightens the surface into a lighter, busier band than the facade base.
-- `a faded white pedestrian crossing of several evenly spaced parallel upright vertical
-white zebra stripes running top to bottom across the road` → the requested marking.
-  Bertrand's call after seeing it in-game: the bars run VERTICAL (kerb-to-kerb across the
-  facade-parallel street), the way a passage piéton reads to the player. Vertical bars
-  are also more robust to the crop — they span the full image height, so they stay
-  visible whatever their position in the thin ~37–51% band the QTE reveals (the earlier
-  horizontal bars only showed when they happened to land inside that slice).
+- `a full-width pedestrian crossing of several bold horizontal white zebra stripes each
+spanning the entire width from the far left edge to the far right edge … covering the
+  whole road` → the requested marking, final form. Bertrand's call after two in-game
+  looks: the bars run HORIZONTAL and, crucially, span the FULL WIDTH of the road edge to
+  edge — the crossing must not stop mid-road as the earlier centred blocks did. "each
+  spanning the entire width … far left edge to far right edge" is the load-bearing clause
+  that stops FLUX centring the marking into a floating patch.
 - `flat level ground plane, no horizon` → reinforces the overhead read (the sole
   negation, within the ≤2 bible budget).
 
 **Reroll risk (lead-art watch-item).** `gen-level-art.mjs` picks a RANDOM seed; the
 edge rooftops FLUX leaves at ~0–8% / 92–100% of the frame are only harmless because
-they crop OUTSIDE the QTE-visible band at seed 5502. A different seed can land a
+they crop OUTSIDE the QTE-visible band at seed 6601. A different seed can land a
 building row inside the band and reintroduce the "miroir de l'immeuble" failure — so
 regenerate this backdrop ONLY with the pinned seed, never a random reroll.
 
@@ -66,9 +67,12 @@ regenerate this backdrop ONLY with the pinned seed, never a random reroll.
 - Dashed-line dark version (`dark_9204`): PASSED the lead-art gate, but Bertrand asked
   for a passage piéton instead → swapped the marking clause only (dashed line → zebra
   crossing) and folded in the gate's hex-anchor note in the same pass.
-- Horizontal crossing (`pp_3303`, merged in #80): correct crossing but the bars ran
-  HORIZONTAL; Bertrand wanted them vertical → swapped "horizontal … near the top" →
-  "upright vertical … running top to bottom" (one variable), committed as seed 5502.
+- Horizontal centred crossing (`pp_3303`, merged in #80): correct crossing but a centred
+  block that stopped mid-road.
+- Vertical crossing (`vpp_5502`, PR #83 draft): bars turned vertical, but Bertrand then
+  clarified he wants HORIZONTAL bars spanning the FULL road width (the crossing must not
+  stop in the middle) → final clause `each spanning the entire width … far left to far
+right edge`, committed as seed 6601.
 - Early full-scene neon roads (`road_*`, `final_*`): clean roads but saturated
   neon-noir, wrong palette, occasional corner buildings — rejected on integration.
 
