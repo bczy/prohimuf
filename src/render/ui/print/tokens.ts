@@ -24,8 +24,11 @@ export const STOCK = {
 // Typography — embedded self-hosted webfonts (OFL 1.1, see `src/assets/fonts/`, registered
 // by `fonts.css` imported in `main.tsx`). Each stack leads with the bundled face and falls
 // back to the former system stack so text renders before `font-display: swap` resolves and
-// on a load failure. Single source: no UI surface may re-declare a font stack (art-direction
-// §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed).
+// on a load failure. Single source: no DOM UI surface may re-declare a font stack (art-direction
+// §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed). The
+// one exception is `src/render/scene/FeedbackLayer.tsx`, which paints score/combo numerals on a
+// 2D canvas where a `font-display: swap` webfont can't be used without `document.fonts.ready`
+// orchestration; it keeps a system-font stack by design (scene layer, not DOM UI).
 export const FONT = {
   display: "'Rubik Mono One', Impact, 'Arial Narrow', sans-serif", // techno-flyer headlines
   mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + pre-game
