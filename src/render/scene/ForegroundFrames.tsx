@@ -52,6 +52,12 @@ interface Props {
   style: IronworkStyle;
   /** Per-level drop of the railing base below the opening (fraction of zone height). */
   sillOffset: number;
+  /**
+   * Horizontal draw-scale of the facade plane this overlay tracks (ADR-0046).
+   * Defaults to {@link FACADE_DRAW_SCALE} (the single-facade panel stretch);
+   * tronçon tiles pass 1 (drawn at native width, no feather/stretch).
+   */
+  drawScale?: number;
 }
 
 /**
@@ -64,6 +70,7 @@ export function ForegroundFrames({
   facadeH,
   style,
   sillOffset,
+  drawScale = FACADE_DRAW_SCALE,
 }: Props): JSX.Element | null {
   const texture = useMemo(
     () => buildFrameTexture(zones, style, sillOffset),
@@ -79,11 +86,12 @@ export function ForegroundFrames({
   }, [texture]);
   if (texture === null) return null;
   return (
-    // Scale the overlay plane by FACADE_DRAW_SCALE about the panel-group origin
-    // so the railings track the facade image (drawn at the same 1+BLEND stretch)
-    // pixel-for-pixel; the texture content (zone → texture-x) is untouched.
+    // Scale the overlay plane by `drawScale` about the tile-group origin so the
+    // railings track the facade image (drawn at the same stretch) pixel-for-pixel;
+    // the texture content (zone → texture-x) is untouched. Single-facade panels
+    // stretch by 1+BLEND; tronçon tiles pass 1 (native width, no feather).
     <mesh position={[0, 0, 0.5]} renderOrder={5}>
-      <planeGeometry args={[facadeW * FACADE_DRAW_SCALE, facadeH]} />
+      <planeGeometry args={[facadeW * drawScale, facadeH]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
   );

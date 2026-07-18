@@ -5,15 +5,14 @@ import { Vector3 } from "three";
 import type { OrthographicCamera } from "three";
 import { useGameLoop } from "@hooks/useGameLoop";
 import {
-  computeSlotsFromZones,
   FACADE_ASPECT,
+  getBackdropLayout,
   getIronworkSillOffset,
   getIronworkStyle,
-  getLevelPanelZones,
   PANELS,
-  tilePanelZones,
   WORLD_HEIGHT,
 } from "@game/levels/levelArt";
+import type { WindowSlot } from "@game/types/map";
 import type { WindowZone } from "@game/levels/levelArt";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HudData, HudDelivery, HudHostageQte } from "@render/ui/HUD";
@@ -23,7 +22,7 @@ import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { NearForeground } from "./NearForeground";
-import { applyFacadeStretchX, invertFacadeStretchX } from "./facadeLayout";
+import { facadeDrawScale, stretchAboutCentre } from "./facadeLayout";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
 import { CourierSprite } from "./CourierSprite";
@@ -129,16 +128,26 @@ export function GameScene({
   isMobile = false,
   crt = false,
 }: Props): JSX.Element {
-  // The level is an image now: size the playfield from the facade art's native
-  // aspect ratio, and place enemy windows from the level's hand-authored zones.
+  // The level is an image now: size the playfield from the facade art. The
+  // backdrop composition (ADR-0046) is the single grid abstraction — enemy slots,
+  // railings and the harness all derive from it, in either mode.
   const facadeH = WORLD_HEIGHT;
+  const layout = useMemo(() => getBackdropLayout(levelId), [levelId]);
+  const fullW = layout.fullW;
+  // Camera-framing unit only (baseZoom below): the "typical building block" width
+  // — one single-facade panel — so the on-screen target size is mode-independent
+  // (a tronçon street sums to ≈ the same fullW, so the zoom/pan feel is unchanged).
   const panelW = WORLD_HEIGHT * FACADE_ASPECT;
-  const fullW = panelW * PANELS;
+  // Facade horizontal draw-scale: single-facade panels stretch by 1+BLEND (the
+  // feathered overlap); tronçon tiles draw at native width (1) — the seam is a
+  // real transparent gap, so there is nothing to stretch (ADR-0046).
+  const drawScale = useMemo(() => facadeDrawScale(layout.mode), [layout.mode]);
 
   // Dev harness override for the level's window zones (never set in production).
   // The harness pushes candidate zones into window.__MUF_ZONES__ then calls
   // window.__MUF_APPLY_ZONES__() (registered below) to fold them into state so
-  // the scene re-derives its slots live, no remount required.
+  // the scene re-derives its slots live, no remount required. One entry per
+  // backdrop tile (single-facade panel or tronçon), in tile order.
   const [zoneOverride, setZoneOverride] = useState<readonly (readonly WindowZone[])[] | null>(null);
 
   // Dev harness override to hide the foreground railings (never set in
@@ -148,31 +157,63 @@ export function GameScene({
   // remount).
   const [hideRailings, setHideRailings] = useState(false);
 
-  // Each facade panel has its own art-derived window zones, so cops and railings
-  // line up with that panel's real windows. The per-panel zones drive the
-  // per-panel foreground; tiled together they place the enemy slots across the
-  // whole wide street.
-  const panelZones = useMemo(
-    () => zoneOverride ?? getLevelPanelZones(levelId),
-    [zoneOverride, levelId],
+  // Each backdrop tile carries its own window zones (per-tronçon or, for the
+  // fixed levels, per-panel), so cops and railings line up with that tile's real
+  // windows. The harness override replaces zones tile-by-tile.
+  const tiles = useMemo(
+    () =>
+      layout.tiles.map((tile, i) => ({
+        centreX: tile.centreX,
+        width: tile.width,
+        zones: zoneOverride?.[i] ?? tile.zones,
+      })),
+    [layout, zoneOverride],
   );
   // Code-drawn foreground style matched to the level's architecture.
   const ironworkStyle = useMemo(() => getIronworkStyle(levelId), [levelId]);
   const ironworkSillOffset = useMemo(() => getIronworkSillOffset(levelId), [levelId]);
-  const mergedFacade = useMemo(() => {
-    // Remap each slot centre through the facade intra-panel stretch so cops and
-    // railings re-seat into the windows as the facade image draws them (perfect
-    // at panel centre, +BLEND toward the edges). ONLY x moves — the sprite width
-    // (planeH·aspect) is untouched: the openings move, the sprites follow.
-    const slots = computeSlotsFromZones(tilePanelZones(panelZones), fullW, facadeH).map((slot) => ({
-      ...slot,
-      screenPosition: {
-        ...slot.screenPosition,
-        x: applyFacadeStretchX(slot.screenPosition.x, panelW, PANELS),
-      },
-    }));
-    return { width: slots.length, height: 1, slots };
-  }, [panelZones, fullW, facadeH, panelW]);
+  // Compose enemy slots + the harness slot-rects from the tiles in one pass. Each
+  // tile-local zone (x,y,w,h) maps to world space at the tile's centre/width and
+  // is remapped through the facade stretch (identity in tronçon mode) so cops and
+  // railings re-seat into the windows as the facade image draws them. ONLY x
+  // moves — the sprite width is untouched: the openings move, the sprites follow.
+  const facade = useMemo(() => {
+    const slots: WindowSlot[] = [];
+    // Per-slot harness rect, in tile-local facade-normalized coords: x,y = box
+    // CENTRE, w,h = box SIZE, all 0..1 within one tile (a WindowZone's space), so
+    // the alignment harness can test containment. Mirrors EnemySprite's layout.
+    const rects: { panel: number; x: number; y: number; w: number; h: number }[] = [];
+    let col = 0;
+    tiles.forEach((tile, i) => {
+      for (const z of tile.zones) {
+        const exactX = tile.centreX + (z.x - 0.5) * tile.width;
+        const worldX = stretchAboutCentre(exactX, tile.centreX, drawScale);
+        const worldY = (0.5 - z.y) * facadeH;
+        const sizeY = z.h * facadeH;
+        slots.push({
+          col: col++,
+          row: 0,
+          screenPosition: { x: worldX, y: worldY },
+          size: { x: z.w * tile.width, y: sizeY },
+        });
+        const planeH = sizeY * 0.8; // window-height plane (EnemySprite)
+        const planeW = planeH * WIDEST_ASPECT; // square plane scaled on X
+        const bodyY = worldY - planeH * 0.28; // feet at sill
+        rects.push({
+          panel: i,
+          x: z.x,
+          y: 0.5 - bodyY / facadeH,
+          w: planeW / tile.width,
+          h: planeH / facadeH,
+        });
+      }
+    });
+    return { slots, rects };
+  }, [tiles, drawScale, facadeH]);
+  const mergedFacade = useMemo(
+    () => ({ width: facade.slots.length, height: 1, slots: facade.slots }),
+    [facade],
+  );
 
   // Register the harness apply hook: read the current __MUF_ZONES__ global into
   // React state (bumping a render). Also picks up zones set BEFORE mount.
@@ -204,49 +245,22 @@ export function GameScene({
     };
   }, []);
 
-  // Register the harness slot-rects reader. For each current slot it reports the
-  // enemy sprite's rendered plane box in PER-PANEL facade-normalized coords,
-  // mirroring EnemySprite's world layout:
-  //   planeH    = size.y * 0.8            (window-height plane, grid-only ⇒ 1.3)
-  //   planeW    = planeH * WIDEST_ASPECT  (square plane scaled on X)
-  //   centreX   = slot.screenPosition.x   (mesh.position.x)
-  //   centreY   = slot.screenPosition.y - planeH * 0.28  (bodyY: feet at sill)
-  // World → global-normalized (inverse of computeSlotsFromZones + the render
-  // stretch): centreX is post-stretch, so un-stretch it first, then
-  //   globalXNorm = invertFacadeStretchX(centreX) / fullW + 0.5   (x-right)
-  //   yNorm       = 0.5 - centreY / facadeH        (facade y is top-down)
-  // Then split the global x into panel + local (panels tile horizontally only):
-  //   panel  = floor(globalXNorm * PANELS)
-  //   localX = globalXNorm * PANELS - panel
-  //   w(local) = planeW / panelW  (global-norm width × PANELS; y/h unaffected)
+  // Register the harness slot-rects reader. Each slot's rendered sprite box is
+  // pre-computed alongside the slots (see `facade.rects`) in TILE-local facade-
+  // normalized coords, so the reader is a pass-through. ADR-0046: `panel` is now
+  // the backdrop-tile index (located by cumulative offset during composition, not
+  // `floor(x·PANELS)`), so this generalizes to the variable-width tronçon layout
+  // while staying byte-identical for the fixed equal-width panels.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const w = window as HarnessWindow;
-    const panelW = fullW / PANELS;
     const reader = (): { panel: number; x: number; y: number; w: number; h: number }[] =>
-      mergedFacade.slots.map((slot) => {
-        const planeH = slot.size !== undefined ? slot.size.y * 0.8 : 1.3;
-        const planeW = planeH * WIDEST_ASPECT;
-        const bodyY = slot.screenPosition.y - planeH * 0.28;
-        // slot.screenPosition.x is post-stretch; recover the exact pitch first so
-        // the harness continues to report art-normalized coords (ADR-0028 iter
-        // 1-2 gates stay identical).
-        const exactX = invertFacadeStretchX(slot.screenPosition.x, panelW, PANELS);
-        const globalXNorm = exactX / fullW + 0.5;
-        const panel = Math.floor(globalXNorm * PANELS);
-        return {
-          panel,
-          x: globalXNorm * PANELS - panel,
-          y: 0.5 - bodyY / facadeH,
-          w: planeW / panelW,
-          h: planeH / facadeH,
-        };
-      });
+      facade.rects.map((r) => ({ ...r }));
     w.__MUF_SLOT_RECTS__ = reader;
     return () => {
       if (w.__MUF_SLOT_RECTS__ === reader) delete w.__MUF_SLOT_RECTS__;
     };
-  }, [mergedFacade, fullW, facadeH]);
+  }, [facade]);
 
   // Couriers ride the road below the windows, across the whole wide street.
   const courierField = useMemo(
@@ -263,17 +277,20 @@ export function GameScene({
   const { camera, size } = useThree();
 
   // Register the harness screen-projection hook (never set in production). It
-  // maps an art-normalized per-panel facade point to CSS pixels through the SAME
-  // production path the railings/slots use: exact-pitch world x = offsetX(panel)
-  // + (x-0.5)·panelW, stretched by the shared applyFacadeStretchX, world y =
-  // (0.5-y)·facadeH, then camera.project() → NDC → CSS px (y-down). Lets the
-  // scripts/ SCREEN pass gate on-screen railing alignment, not just art pixels.
+  // maps a tile-local facade point to CSS pixels through the SAME production path
+  // the railings/slots use: the addressed tile (ADR-0046 — located by index, not
+  // by fixed pitch) gives world x = tile.centreX + (x-0.5)·tile.width, remapped by
+  // the shared stretch (identity in tronçon mode), world y = (0.5-y)·facadeH, then
+  // camera.project() → NDC → CSS px (y-down). Lets the scripts/ SCREEN pass gate
+  // on-screen railing alignment, not just art pixels. Out-of-range tile ⇒ (0,0).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const w = window as HarnessWindow;
     const project = (panel: number, x: number, y: number): { sx: number; sy: number } => {
-      const exactX = (panel - (PANELS - 1) / 2) * panelW + (x - 0.5) * panelW;
-      const worldX = applyFacadeStretchX(exactX, panelW, PANELS);
+      const tile = tiles[panel];
+      if (tile === undefined) return { sx: 0, sy: 0 };
+      const exactX = tile.centreX + (x - 0.5) * tile.width;
+      const worldX = stretchAboutCentre(exactX, tile.centreX, drawScale);
       const worldY = (0.5 - y) * facadeH;
       const ndc = new Vector3(worldX, worldY, 0).project(camera);
       return {
@@ -285,7 +302,7 @@ export function GameScene({
     return () => {
       if (w.__MUF_PROJECT__ === project) delete w.__MUF_PROJECT__;
     };
-  }, [camera, size, panelW, facadeH]);
+  }, [camera, size, tiles, drawScale, facadeH]);
 
   // Cover framing: fill the wider axis with ONE panel, letting the other
   // overflow a little. Mobile zooms in further (bigger, finger-sized targets)
@@ -356,7 +373,7 @@ export function GameScene({
 
   return (
     <>
-      <LevelBackdrop levelId={levelId} panelW={panelW} facadeH={facadeH} panels={PANELS} />
+      <LevelBackdrop levelId={levelId} facadeH={facadeH} />
       {mergedFacade.slots.map((slot, idx) => (
         <EnemySprite
           key={`slot-${String(idx)}`}
@@ -368,23 +385,24 @@ export function GameScene({
         />
       ))}
       {!hideRailings &&
-        panelZones.map((zones, p) => (
-          <group key={`fg-${String(p)}`} position={[(p - (PANELS - 1) / 2) * panelW, 0, 0]}>
+        tiles.map((tile, i) => (
+          <group key={`fg-${String(i)}`} position={[tile.centreX, 0, 0]}>
             <ForegroundFrames
-              zones={zones}
-              facadeW={panelW}
+              zones={tile.zones}
+              facadeW={tile.width}
               facadeH={facadeH}
               style={ironworkStyle}
               sillOffset={ironworkSillOffset}
+              drawScale={drawScale}
             />
           </group>
         ))}
       <NearForeground
         levelId={levelId}
         isMobile={isMobile}
-        facadeW={panelW}
+        facadeW={layout.mode === "single-facade" ? panelW : fullW}
         facadeH={facadeH}
-        panels={PANELS}
+        panels={layout.mode === "single-facade" ? PANELS : 1}
       />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
