@@ -193,7 +193,7 @@ To try a branch live without merging to `main`:
   back to the branch.
 - **Cleanup** — **Cleanup branch preview** (`cleanup-preview.yml`) removes
   `preview/<slug>/` when the branch is deleted or its PR merges, by publishing
-  an *empty* directory through the same `gh-pages-publish` clean-replace (git
+  an _empty_ directory through the same `gh-pages-publish` clean-replace (git
   keeps no empty dirs, so the subtree disappears — same rebase-retry loop, no
   race with in-flight deploys). Previews orphaned before this workflow existed
   can be pruned manually (Actions → Cleanup branch preview → branch name).

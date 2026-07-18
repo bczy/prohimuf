@@ -65,5 +65,7 @@ dispatch prunes previews orphaned before the workflow existed). It reuses
 `gh-pages-publish` unchanged: clean-replacing `preview/<slug>/` with an
 **empty** publish dir deletes the subtree (git tracks no empty directories),
 through the same rebase-retry loop — and it shares the branch's
-`deploy-preview-*` concurrency group so a cleanup queues behind, never
-interleaves with, an in-flight deploy of the same ref.
+`deploy-preview-*` concurrency group so a cleanup queues behind an in-flight
+deploy of the same ref instead of interleaving with it. (One asymmetry: a new
+push-deploy of a branch kept alive after merge may cancel a pending cleanup —
+that branch's eventual delete event re-fires it.)
