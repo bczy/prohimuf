@@ -448,6 +448,16 @@ reports PASS/deviations to `lead-game-designer` before the architect's integrati
 
 ## 9. Addendum — captor HP + colour-timing meter, and a WIDER/FASTER wander (Bertrand steer, PR #79)
 
+> **⚠ SUPERSEDED IN PART by §10 (Bertrand reframe, 2026-07-18).** The **colour model of
+> this section is DEAD.** §9.2 (`D-C2`, the rouge→jaune→vert **TIME ramp**) is **entirely
+> superseded** — colour is no longer a function of peek-elapsed time; it is now a function
+> of **what captor anatomy the wandering ring is over** (spatial). The wander **box/speed**
+> of §9.4 (`D-C4`) is superseded by the **wider** roam box of §10.B. **What CARRIES FORWARD
+> from §9:** captor HP (§9.1 `D-C1`, HP = 3), the damage amounts (§9.3 `D-C3`, green 2 /
+> yellow 1 / red 0), the loss-clock + energy reconcile (§9.5 `D-C5`), and the D4 reversal
+> (captor killable by HP). Read §9.1/§9.3/§9.5 as still live; read §9.2/§9.4 through §10.
+> **Implement §10, not §9's colour/wander.**
+
 **Author:** `game-designer` (Sacha) · **Date:** 2026-07-18 · **Status:** DRAFT — **needs
 `lead-game-designer` (Karim) PASS** before `senior-architect` and any dev implements it.
 **Supersedes within §8 (values only, model untouched):** the wander box (§8.3), the wander
@@ -497,6 +507,10 @@ for tougher captors. The **damage amounts and colour model are SYSTEM CONSTANTS*
 Belliard-first; F3/ADR-0035 may promote them, like `wanderSpeed` (§8.4).
 
 ### 9.2 D-C2 — The colour cycle is a deterministic ripening meter (rouge→jaune→vert)
+
+> **⚠ THIS SUB-DECISION IS SUPERSEDED BY §10.A/§10.D.** Colour is no longer temporal. Kept
+> below only as the record of the reframed design. `ringColourAt(t, peekDuration)` is
+> replaced by the spatial `ringColourAt(ringCentre)` of §10. Do not implement the time ramp.
 
 The ring's colour is a **PURE function of peek-progress** — same determinism law as the
 wander (no `Math.random`, no `Date.now`, no stored PRNG cursor). Let
@@ -738,5 +752,261 @@ reports PASS/deviations to `lead-game-designer` before the architect's integrati
 10. **On-frame check.** The wider box (head-box top 1.20 / left −1.20) modestly exceeds §8.3's
     safe occupancy; composite gate confirms framing at the zoom, else tighten `WANDER_AMP_X`
     to 0.25 (§9.4) — G6 pin unaffected.
+
+---
+
+## 10. Addendum — the ring's colour is SPATIAL: it is WHAT ANATOMY the wandering ring is over (Bertrand reframe, PR #79)
+
+**Author:** `game-designer` (Sacha) · **Date:** 2026-07-18 · **Status:** DRAFT — **needs
+`lead-game-designer` (Karim) PASS** before `senior-architect` and any dev implements it.
+**Supersedes:** §9.2 (`D-C2`, the colour **TIME ramp**) in full, and the wander **box/speed**
+values of §9.4 (`D-C4`). **Inherits verbatim** from §§1–9 (unchanged): static captor (§1),
+seeded **PURE closed-form** wander determinism — no `Math.random`/`Date.now`/stored PRNG
+cursor (§8.2), the G6 never-a-bavure law (§8.3), the blown-peeks loss clock (§3/§9.5),
+captor HP + damage amounts + the D4 reversal (§9.1/§9.3), and the energy ledger (§9.5).
+**The diegetic captor-HP read stays pips / stagger — NO HUD bar (U-1, §9.5).**
+
+**Bertrand's reframe (verbatim).** _"Rouge = le rond n'est pas sur le preneur (sur du
+vide). Jaune = le rond est sur une partie non létale (bras, jambe…). Vert = le rond est sur
+une zone létale (torse, visage). Plus d'ampleur dans le mouvement."_ The colour is now
+**WHERE THE RING IS**, not **WHEN in the peek** it is. You track the roaming ring and fire
+when it is over a lethal zone (green).
+
+**Cahier des charges.** Prohibition ST had no hostage duel, no roaming reticle, no
+anatomy-coloured target — still a **conscious, documented extension** on the already-
+extension QTE. It deepens the `Éviter`/skill axis (track + read anatomy under pressure); no
+new loop verb; `Récupérer → Livrer → Éviter` untouched.
+
+### 10.A — D-S1 — Captor anatomy map (`ringZoneAt(ringCentre): RingZone`)
+
+> **Names are the architect's FROZEN contract** (`docs/handoffs/story-hostage-qte-duel.md`,
+> spatial-colour freeze): the pure game layer returns an ANATOMY **zone** — `RingZone =
+"vital" | "limb" | "off"` — from **`ringZoneAt(centre)`**; the **render** maps that zone to
+> the diegetic **colour** (vital → **vert**, limb → **jaune**, off → **rouge**). Game owns
+> _lethality_, render owns _hue_. Below, "colour" is shorthand for the render's mapping.
+
+The ring's zone is a **PURE function of the ring-CENTRE offset** against a static anatomy
+map of the captor at the anchor. Same determinism law as the wander (no time, no
+`Math.random`). Anatomy bands are anchor-relative, on the ~2.0-tall static captor with the
+hostage kneeling as a shield **front-RIGHT** (`HOSTAGE_DX 0.0…0.75`) — so his **exposed**
+silhouette (head, left/upper torso, gun arm, a leg) is all **LEFT of the hostage** (dx < 0).
+The ring roams over that exposed silhouette **plus surrounding empty air**.
+
+`ringZoneAt(centre)` → `RingZone`, **precedence VITAL > LIMB > OFF**:
+
+| `RingZone` (render colour) | Anatomy = lethality   | Band(s) (anchor-relative, classify the ring **centre**)                                                              |
+| -------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **`"vital"`** (→ vert)     | LETHAL — face + torso | `VITAL`: dx **[−0.80, −0.45]**, dy **[+0.05, +0.90]** (face = top dy +0.50…+0.90; chest below).                      |
+| **`"limb"`** (→ jaune)     | NON-lethal limb       | `ARM`: dx **[−1.20, −0.80]**, dy **[+0.25, +0.65]** · `LEG`: dx **[−0.80, −0.45]**, dy **[−0.45, +0.05]**.           |
+| **`"off"`** (→ rouge)      | OFF — empty space     | Anywhere in the roam box that is **not** VITAL and **not** LIMB (far-left air, above the head, below the leg, gaps). |
+
+This is the _worth_ of the ring. `qteZoneAt` (with `"head"` RETIRED — §10.D / architect
+freeze) answers **where a NON-ring shot landed** (hostage / body / miss); `ringZoneAt`
+answers **what the ring is worth** — the two are orthogonal (10.D). VITAL wins ties with LIMB
+(a centre on the vital/leg seam dy = +0.05 is `"vital"`). Areas within the roam box (§10.B):
+VITAL ≈ 0.30 u² (**~25 %**), LIMB ≈ 0.335 u² (**~28 %**), OFF ≈ 0.565 u² (**~47 %**) — red
+largest ("don't shoot air"), green smallest ("the payoff"). F3 shrinks VITAL for later
+districts; Belliard sits at the generous end.
+
+### 10.B — D-S2 — The ring ROAMS WIDER over/around the captor ("plus d'ampleur")
+
+The wander box (the region the ring **centre** travels) now spans the exposed silhouette
+**plus** the surrounding air, so red/yellow/green all occur as it moves. It grows LEFT / UP /
+DOWN from the §9 box; the **right edge stays pinned** (G6, §10.C). Ring reticle stays a
+fixed size (difficulty from motion + reading anatomy, not from shrinking the reticle).
+
+| Constant                    | §9.4 value         | **§10 (Belliard)**  | Note                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ------------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Roam box **dx**             | −0.95 … −0.35      | **−1.20 … −0.45**   | Extended left to −1.20 (far-left air + gun arm); **right pinned −0.45** (G6-critical).                                                                                                                                                                                                                                                                                                       |
+| Roam box **dy**             | +0.60 … +0.95      | **−0.50 … +1.10**   | Extended down (leg) and up (air above head); range 1.60 vs §9's 0.35.                                                                                                                                                                                                                                                                                                                        |
+| `WANDER_AMP_X`              | 0.30               | **0.375**           | half-extent (centre −0.825).                                                                                                                                                                                                                                                                                                                                                                 |
+| `WANDER_AMP_Y`              | 0.175              | **0.80**            | half-extent (centre +0.30).                                                                                                                                                                                                                                                                                                                                                                  |
+| `RING_HIT_RADIUS` (reticle) | 0.25 (`HEAD_HALF`) | **0.30**            | circular catch tolerance of the roaming ring (architect-frozen name); +0.05 keeps a wider/faster ring fair on level 1.                                                                                                                                                                                                                                                                       |
+| Peak `wanderSpeed`          | ~1.8 u/s           | **~1.8 u/s** (kept) | Bertrand asked WIDER, not faster; the box grew, speed held → the ring visibly ranges more.                                                                                                                                                                                                                                                                                                   |
+| `LEG_DURATION`              | 0.28 s             | **0.38 s**          | with `MAX_LEG_DISPLACEMENT` (below) realises the ~1.8 u/s peak over the bigger box.                                                                                                                                                                                                                                                                                                          |
+| `MIN_LEG_DISPLACEMENT`      | 0.15 u             | **0.15 u** (kept)   | anti-jitter floor unchanged.                                                                                                                                                                                                                                                                                                                                                                 |
+| `MAX_LEG_DISPLACEMENT`      | — (none)           | **0.45 u** (NEW)    | Caps a single leg's length so a much wider box can NOT spawn a teleport-fast leg. Without it, a diagonal leg (~1.7 u) at LEG_DURATION would peak ≫ trackable. Peak ≈ 0.45 × 1.5 (smoothstep) / 0.38 ≈ **1.8 u/s**. Enforced as a re-hash/clamp on the hash-to-waypoint mapping (mirrors `MIN_LEG_DISPLACEMENT`), not a runtime velocity clamp — the closed-form purity of §8.2 is preserved. |
+
+- **Area:** 0.75 × 1.60 = **1.20 u²** vs §9's 0.21 u² → **~5.7× wider**. "Plus d'ampleur."
+- **Human-trackable:** still smoothstep waypoint eases (decelerate to zero at each waypoint =
+  the fair "lead point" / firing window); never teleports. `MAX_LEG_DISPLACEMENT` bounds the
+  peak. Verified in playtest (AC); tighten if it reads as a coin-flip.
+- **On-frame flag (composite gate).** Ring visual extent now reaches left −1.50, top +1.40,
+  bottom −0.80 (centre ± `RING_HALF` 0.30). This exceeds the §8.3 safe occupancy — **flag to
+  the composite gate**: confirm the ring stays framed at the QTE zoom. **Fallback if it
+  clips:** tighten `WANDER_AMP_Y` to 0.65 (dy top +0.95) and/or `WANDER_AMP_X` to 0.325 (dx
+  left −1.15) — **the right-edge / G6 pin is never touched** (§10.C).
+
+### 10.C — D-S3 — G6 SAFETY (load-bearing): the ring is NEVER over the hostage
+
+The whole point of Bertrand's rule: **the player must never be lured into a bavure by
+tracking the ring.** The roam is clamped so the ring — centre **plus reticle radius** — never
+overlaps the hostage silhouette (front-right). "Red/off" space exists **only** on the
+non-hostage side (left / above / below).
+
+**Asserted bound (in `createQte`, against constants — never trusted from data):**
+
+```
+ROAM_DX_MAX + RING_HALF_W + G6_MARGIN  ≤  HOSTAGE_DX_MIN
+   −0.45    +    0.30     +   0.10     =  −0.05   ≤   0.0     ✓
+```
+
+- Ring's **rightmost extent** = `ROAM_DX_MAX + RING_HALF_W` = −0.45 + 0.30 = **−0.15**.
+- Hostage's **left edge** = `HOSTAGE_DX_MIN` = **0.0**.
+- ⇒ Gap = **0.15 u ≥ G6_MARGIN 0.10.** The ring rectangle is **disjoint from the hostage on
+  the X axis alone** — and two rectangles disjoint on one axis are disjoint everywhere,
+  **for every dy** (so the ring dipping to the leg at dy −0.45 is still clear of the hostage).
+- No VITAL / LIMB / roam band ever has dx > −0.45; no ring extent ever has dx > −0.15. **The
+  ring is never drawn over, and a green/yellow classification never sits over, the hostage.**
+- The §8.3 Y-axis `clampTargetOffsetG6` net stays as belt-and-suspenders but is **inert** here
+  (G6 already holds on X). Assert the X bound above at `createQte`; the convex-blend wander
+  keeps the centre inside `[ROAM_DX_MIN, ROAM_DX_MAX]` by construction.
+
+### 10.D — D-S4 — Shot resolution: hit the ring, take the ring's colour-damage
+
+**Confirmed model:** _the shot must hit the ring reticle, and the damage is the ring's
+zone-colour._ Two orthogonal tests at a `fire` during `PEEKING` (resolved against the
+`targetOffset` the render drew **last frame** — the aim-honesty tie-break of §5/§8.2, `fire`
+first, then advance the machine):
+
+1. **Did the shot hit the RING?** `qteZoneAt(...) === "ring"` ⇔ the shot is within
+   `RING_HALF_W/H` of the ring-centre `targetOffset` AND `stance === "PEEKING"`. (This is
+   today's "head" band, renamed for clarity — same box, now centred on the roaming ring.)
+2. **If yes — how much?** `colour = ringColourAt(qte.targetOffset)`; `captorHp −=
+captorDamageFor(colour)` — **GREEN −2, YELLOW −1, RED 0 (wasted shot).**
+
+| Shot outcome (during `PEEKING`)                     | Captor HP                    | Energy                           |
+| --------------------------------------------------- | ---------------------------- | -------------------------------- |
+| Hit ring, ring over **VITAL** (vert)                | **−2** (`CAPTOR_DMG_GREEN`)  | 0 (chip is the reward)           |
+| Hit ring, ring over **LIMB** (jaune)                | **−1** (`CAPTOR_DMG_YELLOW`) | 0                                |
+| Hit ring, ring over **OFF** (rouge)                 | **0** (`CAPTOR_DMG_RED`)     | 0 — wasted; the peek still blows |
+| Depleting hit (`captorHp` reaches ≤ 0)              | → **WON**                    | **+40** (`QTE_RESCUE_REFILL`)    |
+| Shot **misses the ring**, hits **body**             | 0                            | **−5** (`QTE_BODY_HIT`)          |
+| Shot **misses the ring**, hits **hostage** (bavure) | 0                            | **−30** (`QTE_HOSTAGE_HIT`)      |
+| Shot misses everything                              | 0                            | 0                                |
+
+- The colour is a property of the **RING** (its centre's anatomy), not of where inside the
+  ring you land — the ring is drawn as **one** colour and you shoot that colour. WYSIWYG.
+- A shot **not aligned with the ring** is not a ring hit → **no captor damage**; it keeps
+  today's band penalties (body −5, hostage −30, miss 0). Firing when the ring is **red**
+  (over air) is a genuine waste (0 dmg, 0 energy) and the peek still closes → ticks the loss
+  clock (§10.E): the teaching pressure toward "wait until the ring is on him (yellow/green)."
+- Deplete `captorHp` → **WON** (the depleting shot pays +40). Loss unchanged (§10.E).
+
+### 10.E — D-S5 — Balance for Belliard (level 1 approachable)
+
+Colour is now available **whenever the ring is over vital** (not only the last 25 % of a peek
+as the dead §9.2 ramp had it), so the _timing_ is easier — the difficulty now lives in
+**tracking the wider/faster-ranging ring and reading the anatomy under it.** Tuned so a
+yellow-only grinder still makes quota with a spare opening.
+
+| Field                    | Value                               | Rationale                                                                                                                     |
+| ------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `captorHp`               | **3**                               | green 2 / yellow 1 ⇒ "2 greens, or 3 yellows"; yellow-only path wins by peek 3, one opening to spare. `QteSpec`, integer ≥ 1. |
+| Damage green/yellow/red  | **2 / 1 / 0**                       | SYSTEM constants (`CAPTOR_DMG_*`). Red = wasted.                                                                              |
+| Roam box                 | **dx −1.20…−0.45 / dy −0.50…+1.10** | ~1.20 u², ~5.7× wider (§10.B). Right/bottom-of-hostage pin held (G6).                                                         |
+| Peak `wanderSpeed`       | **~1.8 u/s**                        | kept from §9; box grew, not speed (§10.B).                                                                                    |
+| VITAL / LIMB / OFF split | **~25 % / ~28 % / ~47 %**           | green smallest (payoff), red largest ("don't shoot air") — the spatial analogue of the old temporal 40/35/25 (§10.A).         |
+| `RING_HALF_W/H`          | **0.30**                            | catch tolerance for the wider/faster ring (fairness knob).                                                                    |
+| `peekDurationSeconds`    | **1.5 s**                           | roomy for tracking + reading colour; ≫ G5 floor 0.5 s. Unchanged from §9.6.                                                   |
+| `maxBlownPeeks` (**N**)  | **4**                               | four openings; passive-ignore economy = 4 × −8 = **−32** (unchanged).                                                         |
+| `peekCadenceSeconds`     | **1.5 s**                           | COVERED beat + G4 tell unchanged.                                                                                             |
+
+**Loss (unchanged, §9.5).** A **blown peek** = a `PEEKING` exposure that CLOSES with
+`captorHp > 0`. The **N-th** such close (N = 4) with the captor alive ⇒ captor **executes the
+hostage → LOST**. A same-tick depleting ring hit ⇒ **WON** (`fire` resolves first). Blown
+peeks are the **sole** fail route (no door, no second clock — §4 holds).
+
+**Energy (unchanged, kept orthogonal to HP).** `+40` WON (depleting shot), `−30` hostage,
+`−8` per closed peek while the captor is alive (his counter-fire), `−6` panic (zoom), `−5`
+body. Green/yellow/red chips and misses cost 0 energy. Severity order holds; passive ignore
+= −32 **and** LOST.
+
+**On-screen read (E) — flag to `ux-designer` + `lead-art`.** (1) **Ring colour** is diegetic
+on the reticle (rouge/jaune/vert), tinted each frame by `ringColourAt(targetOffset)` — the
+same offset the render already positions the ring at; composite-gate the colour↔anatomy↔damage
+alignment. (2) **Captor HP (3)** stays a minimal **diegetic** read — pips / escalating
+flinch, **NOT a HUD bar** (U-1 holds). `ux` rules the form.
+
+### 10.F — Updated acceptance criteria (REPLACE AC13/AC14; append the rest)
+
+- **AC13′ — Colour is SPATIAL (supersedes AC13).** `ringColourAt(ringCentre)` is a PURE
+  function of the ring-**centre** offset: green iff in VITAL, else yellow iff in LIMB, else
+  red — **precedence VITAL > LIMB > OFF**, no dependence on time/`t`. No
+  `Math.random`/`Date.now` (lint/grep asserted). The rendered ring colour on any frame equals
+  the colour the classifier applies to a `fire` on that frame (WYSIWYG — composite gate).
+  Unit test: sample centres in each band → expected colour; a vital/leg-seam centre → green.
+- **AC14′ — Wider roam, G6 intact (supersedes AC14).** Belliard roam box dx **−1.20…−0.45** /
+  dy **−0.50…+1.10** (~1.20 u², ~5.7× §9), peak **~1.8 u/s**, reticle 0.30 half. For every
+  tick of every peek, the ring's right extent (`centre.x + 0.30`) stays **≤ −0.15** ⇒ **≥ 0.15
+  u** clear of the hostage left edge (0.0) on the X axis ⇒ **disjoint from the hostage for all
+  dy — no bavure is ever required.** Unit test samples a full peek and asserts no ring extent
+  reaches the hostage band. `createQte` asserts `ROAM_DX_MAX + RING_HALF_W + G6_MARGIN ≤
+HOSTAGE_DX_MIN`.
+- **AC12′ — HP chips by the ring's colour (refines AC12).** A ring hit during PEEKING
+  subtracts `captorDamageFor(ringColourAt(targetOffset))` (green 2 / yellow 1 / red 0) from
+  `captorHp`; WON only when `captorHp ≤ 0` (depleting shot pays +40). Belliard `captorHp = 3`.
+  Unit tests: green×2 ⇒ WON; yellow×3 ⇒ WON; red hits never reduce HP; a shot that misses the
+  ring never reduces HP.
+- **AC15 (inherited, restated).** Every `PEEKING` close with `captorHp > 0` increments
+  `blownPeeks`; the N-th (N = 4) with the captor alive ⇒ LOST; a same-tick depleting ring hit
+  ⇒ WON. Passive ignore ⇒ 4 blown peeks, −32 energy, LOST.
+- **AC16 (inherited).** Energy ledger unchanged: +40 WON, −30 hostage, −8/closed peek, −6
+  panic, −5 body; chips and misses cost 0 energy.
+- **AC17′ — Approachable on Belliard (combined spatial test).** In playtest (`verify`), a
+  human can deplete `captorHp = 3` within N = 4 openings against the wider ring + spatial
+  colour: the yellow-or-better path (fire while the ring is on him) makes quota, and a 2-green
+  path (fire only when the ring is over VITAL) wins by peek 2. The ring never teleports,
+  decelerates into each waypoint, and stays on-frame at the zoom. `createQte` asserts
+  `captorHp` integer ≥ 1 and the G6 X-bound (AC14′).
+
+Sacha playtests the built §10 integration against **AC12′/AC13′/AC14′/AC17′** (plus inherited
+AC1–AC11, AC15, AC16) and reports PASS/deviations to `lead-game-designer` before the
+architect's integration review.
+
+### 10.G — Contract delta (design intent for `senior-architect` + `dev-gameplay`)
+
+Pure `src/game`; boundary law preserved. **Additive + one function-body swap** — the wander
+model, seed, determinism, `qteZoneAt` shape, HP field, and energy all stay; only the colour
+source changes from temporal to spatial and the wander constants grow.
+
+- **`ringColourAt` signature/body SWAP (the core change):** was (dead §9.2)
+  `ringColourAt(t, peekDurationSeconds)`; **now `ringColourAt(centre: Vec2): "green"|"yellow"|"red"`**
+  — a pure spatial classify against the anatomy bands (VITAL > LIMB > OFF). `captorDamageFor`
+  unchanged.
+- **New SYSTEM CONSTANTS (`qteSystem.ts`):** anatomy bands `VITAL_DX/DY_*`, `ARM_DX/DY_*`,
+  `LEG_DX/DY_*`; `RING_HALF_W/H = 0.30`; `MAX_LEG_DISPLACEMENT = 0.45`. Re-tuned wander
+  constants: `WANDER_AMP_X 0.30→0.375`, `WANDER_AMP_Y 0.175→0.80`, `HEAD_NEUTRAL →
+(−0.825, +0.30)` (roam centre), `LEG_DURATION 0.28→0.38`. (`ROAM_DX_MAX = HEAD_NEUTRAL.x +
+WANDER_AMP_X = −0.45`; assert the G6 X-bound against `HOSTAGE_DX_MIN`.)
+- **`tickQte` ACTIVE step (1):** on a ring hit (`qteZoneAt === "head"/"ring"`), compute
+  `colour = ringColourAt(qte.targetOffset)` **(spatial — pass the offset, not `t`)**, subtract
+  `captorDamageFor(colour)` from `captorHp`; `captorHp ≤ 0 → WON +40`, else stay ACTIVE. Body /
+  hostage / miss branches unchanged. Step (2) loss test unchanged (§9.5).
+- **`QteSpec` / `HostageQte`:** unchanged from §9.7 (`captorHp` already enters there;
+  `targetSeed` from §8.5). No new authored field — the anatomy map and reticle are system
+  constants (F3 promotes VITAL amplitude / `RING_HALF` later, like `wanderSpeed`).
+
+### 10.H — Open flags for the gate (append to §7 / §8.7 / §9.9)
+
+11. **ADR touch (colour model change).** The colour source moves from temporal to spatial and
+    the wander box widens (~5.7×). Fold into the same ADR-0034 revision already flagged
+    (§9.9.7) — `tech-writer`/`producer` allocate; the decision content is the gate's. This
+    spec is the input.
+12. **On-frame (STRONG flag).** The ~5.7× box reaches ring extents left −1.50 / top +1.40 /
+    bottom −0.80 — well beyond §8.3's proven safe occupancy. **Composite gate MUST confirm
+    framing at the zoom before this ships**; fallback tighten `WANDER_AMP_Y→0.65` and/or
+    `WANDER_AMP_X→0.325` (§10.B) — G6 X-pin never touched. I could not playtest the new box
+    (unbuilt); this is the highest-risk value in the respec.
+13. **Green size (25 %) — RULED, flag for confirm.** VITAL ≈ 25 % of the roam keeps green the
+    scarce payoff while the yellow fallback (≈ 28 %, so ≥ 1 dmg is available ~53 % of the time)
+    keeps level 1 approachable. If the gate wants green scarcer/richer, shrink/grow `VITAL_DX/DY`
+    (right/bottom pins on the hostage side stay fixed). Flag a preference.
+14. **Reads to `ux` + `lead-art`.** Ring-colour tint (rouge/jaune/vert on the reticle) and the
+    captor-HP pips/stagger (NO HUD bar, U-1) — `ux` rules the HP form; composite gate confirms
+    colour↔anatomy↔damage alignment over the moving ring.
+
+---
+
     </content>
     </invoke>
