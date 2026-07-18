@@ -47,12 +47,17 @@
  * Usage (CI): node scripts/gen-enemy-types.mjs && node scripts/cutout-enemies.mjs
  *   The cutout step runs after: the new `_f2` files match its `enemy_*.png` glob
  *   and get keyed; committed pre-keyed frame-1 files stay skipped (ADR 0013).
+ *
+ * node scripts/gen-enemy-types.mjs --list           # list defined enemy keys (no network)
+ * node scripts/gen-enemy-types.mjs --asset <key>    # restrict the run to one enemy key
  */
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { sleep, fetchWithRetry, fluxUrl, buildRequestUrl } from "./lib/pollinations.mjs";
 import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
+import { skip } from "./lib/idempotent.mjs";
+import { parseAssetArgs } from "./lib/cli.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -204,8 +209,27 @@ async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  const { list, target } = parseAssetArgs(args);
+  let enemies = loadEnemies();
+
+  if (list) {
+    console.log("Defined enemy keys (from levelArt.json):");
+    enemies.forEach((e) =>
+      console.log(`  ${e.key.padEnd(24)} ${e.frames.length} frame(s) ${e.width}x${e.height}`),
+    );
+    return;
+  }
+
+  if (target) {
+    enemies = enemies.filter((e) => e.key === target);
+    if (enemies.length === 0) {
+      console.error(`Enemy "${target}" not found. Use --list.`);
+      process.exit(1);
+    }
+  }
+
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const enemies = loadEnemies();
   const registry = loadHeroRegistry(ROOT);
   console.log(`Enemy-type flipbook sprites → ${OUT_DIR}\n`);
 
@@ -219,8 +243,9 @@ async function main() {
 
       if (i === 0) {
         // Frame 1: only ever generated when MISSING — FORCE=1 does not apply
-        // (the accepted hero is protected; delete the PNG to reroll it).
-        if (fs.existsSync(out)) {
+        // (the accepted hero is protected; delete the PNG to reroll it), hence
+        // force is hard-pinned false here regardless of the FORCE env var.
+        if (skip(out, { force: false, existsSync: fs.existsSync })) {
           console.log(`  [skip] ${name} (exists)`);
           continue;
         }
@@ -236,7 +261,7 @@ async function main() {
           console.log(`  [fail] ${name} — ${err.message} (will be generated in CI)`);
         }
       } else {
-        if (!FORCE && fs.existsSync(out)) {
+        if (skip(out, { force: FORCE, existsSync: fs.existsSync })) {
           console.log(`  [skip] ${name} (exists)`);
           continue;
         }

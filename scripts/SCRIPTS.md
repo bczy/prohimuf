@@ -1183,3 +1183,83 @@ the lib never touches RGBA / alpha — callers build the opaque predicate / mask
 - **Tests:** `scripts/lib/__tests__/morphology.test.mjs`, wired into `yarn test` via
   `test.include` in `vitest.config.ts` (`scripts/lib/**/*.test.mjs`). `coverage.include`
   stays scoped to `src/game/**`, so this module does not affect coverage thresholds.
+
+---
+
+## lib/idempotent.mjs, lib/cli.mjs, lib/cutout.mjs — Shared generator harness lib (ADR-0007)
+
+Extracted per [ADR-0007](../docs/adr/0007-shared-harness-library.md) to kill the
+boilerplate that used to be copy-pasted across every generator (the "skip if exists"
+guard, the `--list`/`--asset` parser, the chroma-key pixel test). Each module is a
+small, **pure**, single-responsibility primitive — no hidden fs/network state — so it
+is unit-tested in isolation (`scripts/lib/__tests__/{idempotent,cli,cutout}.test.mjs`).
+
+- **`idempotent.mjs`** — `skipIfExists({ exists }, force)` is the pure boolean decision
+  (`!force && exists`); `skip(filePath, { force, existsSync })` is the one-line edge
+  wrapper a generator calls, with `existsSync` **injected** (never `fs` imported here —
+  the ADR's "inject at the edge" rule). Replaces every generator's inline
+  `if (!FORCE && fs.existsSync(out)) { skip }` guard.
+- **`cli.mjs`** — `parseAssetArgs(argv, { targetFlag = "--asset" }) -> { list?, target? }`
+  replaces the duplicated `--list` / `--asset` parser. Pass `{ targetFlag: "--layer" }`
+  for a generator whose CLI names the same "restrict to one item" concept differently
+  (`gen-courier-sprites.mjs`'s `--layer`) without changing its documented flag.
+- **`cutout.mjs`** — `dist2`, `isBackgroundPixel`, `cornerAverageKey`, and the pure pixel
+  **decision** `chromaKey(imageData, key, thresholdSq)` (clears every currently-opaque
+  pixel within `thresholdSq` of `key`, globally, with **no connectivity/topology
+  reasoning**). `cutout-foreground.mjs` (flat magenta ground, no legitimate near-key
+  subject pixel to protect) calls `chromaKey` directly. `cutout-enemies.mjs`'s
+  border-flood-fill and enclosed-island passes stay **local** on purpose — they must
+  preserve dark subject regions the flood cannot reach, which is a connectivity
+  decision `chromaKey`'s global apply does not make — but reuse `cornerAverageKey` /
+  `isBackgroundPixel` for the ground colour and the per-pixel test inside their own
+  traversal, so the maths is shared even though the control flow is not. Both
+  integrations were verified **byte-identical** against the committed art before
+  merging (see the ADR's "Consequences" / the PR that shipped this).
+- **Consumers:** the four canonical generators (`gen-enemy-types.mjs`,
+  `gen-vehicle-sprites.mjs`, `gen-courier-sprites.mjs`, `gen-level-art.mjs`) import
+  `idempotent.mjs` + `cli.mjs`; `cutout-enemies.mjs` and `cutout-foreground.mjs` import
+  `cutout.mjs`. The four **legacy, non-canonical** generators noted at the top of this
+  file (`generate-assets.mjs`, `generate-game-assets.mjs`, `regen-pixel-sprites.mjs`,
+  `generate-style-demo.mjs`) are **deliberately NOT migrated** — ADR-0044 already marks
+  them retirement candidates, unwired from any CI workflow and shipping no art the game
+  uses today; adopting the shared lib there would be polishing code on its way out. This
+  is the resolution of the apparent ADR-0007-vs-this-file conflict: ADR-0007's "six
+  existing generators" scope is **amended** by the later ADR-0044 consolidation to the
+  canonical set only.
+
+## Anatomy of a harness (ADR-0007 D3)
+
+In place of a meta-harness (rejected — see the ADR), a new asset generator is a
+**human-copied, human-edited** file. Copy `scripts/lib/_template.mjs` to
+`scripts/gen-<thing>.mjs`, delete its header, and fill in the blanks:
+
+1. **Descriptor shape.** Add a `<thing>` block to `src/game/levels/levelArt.json`
+   (mirrors `enemies` / `vehicles` / `courier`): a `types` (or `layers`) map keyed by
+   asset id, each entry `{ seed, prompt, size? }` at minimum. The manifest is the single
+   source of truth — never hardcode a prompt/seed table in the script itself.
+2. **Which lib modules to import** — pick only what this harness actually needs (à la
+   carte, per the ADR's OCP argument):
+   - `./lib/pollinations.mjs` — `fetchWithRetry` / `fluxUrl` / `buildRequestUrl` for any
+     harness that fetches an image (skip entirely for a harness like ADR-0005's dynamic
+     verification runner, which drives the live app and fetches no PNG).
+   - `./lib/idempotent.mjs` — `skip()` for the missing-only regeneration guard.
+   - `./lib/cli.mjs` — `parseAssetArgs()` for `--list` / `--asset` (or a custom
+     `targetFlag`).
+   - `./lib/cutout.mjs` — only if the harness generates on a flat, keyable background
+     with no legitimate near-key subject colour (reuse `chromaKey` directly); if the
+     background can plausibly abut subject colours needing connectivity protection,
+     write a **local** flood (see `cutout-enemies.mjs`) reusing only `cornerAverageKey`/
+     `isBackgroundPixel`, never force `chromaKey`'s global apply.
+   - `./lib/heroes.mjs` — only if the family is hero-wired (ADR-0043; today `vehicles`
+     and `enemies` — check `WIRED_FAMILIES` before adding a new family here).
+3. **Standard `main()` skeleton:** parse args (`parseAssetArgs`) → handle `--list` (must
+   run with **zero network calls** — the offline soft-skip every CI/local check relies
+   on) → filter by `--asset`/target if given → `fs.mkdirSync(OUT_DIR, {recursive:true})`
+   → loop items, `skip()`-guard each, fetch-and-write with a per-item try/catch that logs
+   and continues (never crash the whole run on one failed fetch — real generation is a CI
+   concern, the local sandbox is expected to fail every fetch) → `sleep()` between items
+   to respect the rate limit.
+4. **The meta-harness-rejection note.** If you find yourself templating THIS file to
+   auto-generate the next one, stop — re-read ADR-0007 D1. The checklist above is meant
+   to be read and adapted with judgement each time, not executed. A generator that emits
+   generators is the exact anti-pattern the ADR forbids.

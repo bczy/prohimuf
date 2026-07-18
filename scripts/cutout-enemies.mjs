@@ -18,15 +18,20 @@
  * Operates in place on public/assets/enemy_*.png, or on the file paths passed
  * as CLI args (single-file in-place retouch of a committed sprite).
  *
- * NOTE: the flood/connected-component logic here is DELIBERATELY kept local — it is fused
- * with per-component colour sampling (mean-colour erase tests keyed to the sampled ground)
- * and does not map cleanly onto the pure mask primitives in scripts/lib/morphology.mjs.
- * Refactoring it to reuse the shared lib is possible future work, not done here.
+ * NOTE (ADR-0007): the ground colour (corner average) and the per-pixel "is this
+ * background" test are shared pure primitives from scripts/lib/cutout.mjs
+ * (`cornerAverageKey` / `isBackgroundPixel`). The FLOOD/connected-component
+ * CONTROL FLOW itself (both passes) is DELIBERATELY kept local — it is fused
+ * with per-component colour sampling (mean-colour erase tests keyed to the
+ * sampled ground) and does not map cleanly onto a pure primitive (nor onto the
+ * mask primitives in scripts/lib/morphology.mjs). Refactoring the traversal
+ * itself to reuse a shared lib is possible future work, not done here.
  */
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { isBackgroundPixel, cornerAverageKey } from "./lib/cutout.mjs";
 
 const DIR = path.resolve(process.cwd(), "public/assets");
 const THRESHOLD_SQ = 24 * 24; // conservative: only near-identical background is cleared
@@ -42,13 +47,6 @@ const THRESHOLD_SQ = 24 * 24; // conservative: only near-identical background is
 //     regions (skin, warm-lit jacket) fall outside it.
 const LOOSE_BAND = 55;
 const TIGHT_BAND = 20;
-
-function dist2(a, b, c, r, g, bl) {
-  const dr = a - r;
-  const dg = b - g;
-  const db = c - bl;
-  return dr * dr + dg * dg + db * db;
-}
 
 async function cutout(file, { lightFallback = false } = {}) {
   const img = await loadImage(file);
@@ -74,22 +72,16 @@ async function cutout(file, { lightFallback = false } = {}) {
   // set only in the args path of main()); in the no-args batch path — the one CI
   // runs over the whole committed set — a pre-keyed sprite is SKIPPED, restoring
   // the historical no-op on already-keyed files. See docs/adr/0013.
-  const corners = [0, (W - 1) * 4, (H - 1) * W * 4, ((H - 1) * W + (W - 1)) * 4];
-  let br = 0;
-  let bg = 0;
-  let bb = 0;
-  let nGround = 0;
-  for (const o of corners) {
-    if (d[o + 3] === 0) continue; // transparent corner: prior key wiped its RGB
-    br += d[o];
-    bg += d[o + 1];
-    bb += d[o + 2];
-    nGround++;
-  }
-  if (nGround > 0) {
-    br /= nGround;
-    bg /= nGround;
-    bb /= nGround;
+  // Corner-average key colour — shared primitive (scripts/lib/cutout.mjs),
+  // same mean-of-opaque-corners math as before (see the comment above); only
+  // the null-vs-fallback branching stays local since it is this script's own
+  // lightFallback/skip policy, not part of the pure primitive.
+  const key = cornerAverageKey({ width: W, height: H, data: d });
+  let br;
+  let bg;
+  let bb;
+  if (key) {
+    ({ r: br, g: bg, b: bb } = key);
   } else if (lightFallback) {
     br = bg = bb = 255; // explicit single-file retouch of a pre-keyed committed sprite
   } else {
@@ -106,7 +98,7 @@ async function cutout(file, { lightFallback = false } = {}) {
     if (visited[p]) return;
     visited[p] = 1;
     const o = p * 4;
-    if (dist2(d[o], d[o + 1], d[o + 2], br, bg, bb) <= THRESHOLD_SQ) {
+    if (isBackgroundPixel(d, o, { r: br, g: bg, b: bb }, THRESHOLD_SQ)) {
       d[o + 3] = 0; // clear alpha
       stack.push(p);
     }

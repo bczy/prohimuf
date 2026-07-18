@@ -1,7 +1,7 @@
 # 0007 — Shared harness library, and rejection of a "harness that creates harnesses"
 
-- **Status:** Proposed
-- **Date:** 2026-06-22
+- **Status:** Accepted
+- **Date:** 2026-06-22 (accepted 2026-07-18)
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md),
   [ADR-0005](./0005-dynamic-verification-harness.md) (consumes the contact-sheet / canvas
   primitive from this lib),
@@ -177,3 +177,60 @@ ossifies.
   generators vs `* 8000` in `gen-*`). Consolidating onto one `fetchWithRetry` forces a deliberate
   choice of schedule; pick one, encode it as the default, and let callers override via options —
   do not silently change a script's rate-limit behaviour in the refactor.
+
+## Implementation note (2026-07-18) — what shipped, what was deliberately deferred
+
+`pollinations.mjs`/`fetchWithRetry` already existed and was already the ADR-0044-consolidated
+fetch/URL contract for the active generators (see that ADR's "Consolidation follow-through" this
+ADR's Consequences already cross-reference). This pass added the remaining D2 modules and closed
+the loop:
+
+- **`idempotent.mjs`** — `skipIfExists({ exists }, force)` (pure decision) + `skip(filePath,
+  { force, existsSync })` (the injectable-`existsSync` edge wrapper, per the "inject at the edge"
+  gotcha above). Adopted in the four **canonical** generators (see amendment below), replacing
+  their inline `!FORCE && fs.existsSync(...)` guards.
+- **`cli.mjs`** — `parseAssetArgs(argv, { targetFlag })` replaces the duplicated `--list`/`--asset`
+  parser; `targetFlag` generalizes it to `gen-courier-sprites.mjs`'s `--layer` without renaming
+  that generator's documented flag.
+- **`cutout.mjs`** — `dist2` / `isBackgroundPixel` / `cornerAverageKey` / `chromaKey` (the pure,
+  connectivity-free pixel decision). Adopted directly (global apply) in `cutout-foreground.mjs`
+  (flat magenta ground, no legitimate near-key subject pixel); adopted as the shared per-pixel
+  test and corner-average computation **inside** `cutout-enemies.mjs`'s own border-flood, whose
+  BFS control flow — and its separate enclosed-island pass — stays local exactly as D-TDD's
+  `chromaKey` clause anticipated ("fused with per-component colour sampling... does not map onto
+  a pure primitive"). Both integrations were verified **byte-identical**: re-running each script
+  over the committed `enemy_*.png` set and the three committed `foreground.png` files changed
+  **zero PNG bytes** (`git status --porcelain -- public/assets/` empty), corroborated by an
+  equivalence run of the old vs. new algorithm over a synthetic fresh (non-pre-keyed) sprite and
+  a synthetic magenta-ground image, both byte-for-byte identical outputs.
+- **`_template.mjs` + "Anatomy of a harness"** (`scripts/SCRIPTS.md`) — the D3 checklist +
+  copyable skeleton, never executable (no descriptor-driven code generation — that would re-open
+  D1).
+- **`scripts/__tests__/check-hero-wiring.test.mjs`** — a black-box subprocess exercise of the
+  real, unmodified `check-hero-wiring.mjs` (ADR-0043 Layer B) over disposable fixtures, covering
+  every documented failure path (deferred/unrecognised family, malformed entry, non-canonical
+  path, missing frozen file, missing/non-REIGNING/duplicate-REIGNING HEROES.md entry, the license
+  firewall, both last-mile wiring failures, and the reverse-wiring check) plus the empty-registry
+  and fully-wired PASS cases.
+
+**Amendment — adoption scope is the ADR-0044-canonical generator set, not "all six".** This ADR's
+original Context/Consequences text scoped the refactor to "the six existing generators" (naming
+`generate-assets.mjs`, `generate-game-assets.mjs`, `generate-style-demo.mjs`,
+`regen-pixel-sprites.mjs` among them). By the time of implementation, ADR-0044's consolidation had
+already re-classified those four as **non-canonical retirement candidates** — see
+`scripts/SCRIPTS.md`'s "Legacy debt" note: unwired from any CI workflow, shipping no art the game
+uses today, already missing `enhance=false`/`private=true`/`safe=false`. Migrating them onto this
+lib would be polishing code on its way out and was **deliberately not done**; D2 adoption is scoped
+to the four generators ADR-0044 kept canonical — `gen-enemy-types.mjs`, `gen-vehicle-sprites.mjs`,
+`gen-courier-sprites.mjs`, `gen-level-art.mjs` — plus the two `cutout-*.mjs` scripts for
+`cutout.mjs`. This resolves the apparent conflict between this ADR's original text and
+`scripts/SCRIPTS.md`'s later ADR-0044 note: the later, more specific consolidation amends the
+earlier, broader scope statement.
+
+**YAGNI-deferred, not shipped: `contact-sheet.mjs`.** The D2 table above lists a fifth module,
+`contact-sheet.mjs` ("canvas stitch of generated assets into one sheet"), for ADR-0005's dynamic
+verification harness to consume. ADR-0005 itself is still **Proposed** (unimplemented) at the time
+of this acceptance — there is no consumer to build it against yet, and building it speculatively
+ahead of that consumer's real shape would be exactly the premature-generality this ADR's own YAGNI
+argument warns against. Deferred to when ADR-0005 (or an equivalent contact-sheet consumer) is
+actually implemented; tracked there, not here.
