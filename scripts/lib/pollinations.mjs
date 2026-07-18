@@ -11,10 +11,36 @@ export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Optional authentication (Pollinations tiers): when POLLINATIONS_TOKEN is set
+// (CI secret), send it as a Bearer header so the request runs on the account's
+// tier — faster rate limit (down from the anonymous 1 req / 15s) and `nologo`
+// actually honoured (anonymous nologo is no longer guaranteed post-2025-03).
+// Kept in the header, NOT the URL, so it never leaks into the URLs the
+// generators log. Anonymous (no token) stays the default and is unchanged.
+//
+// The credential is attached ONLY when the request host is Pollinations itself
+// — never replayed to a redirect target on another host (fetchImage follows up
+// to 5 hops, and a cross-host Location must not receive the account token). A
+// whitespace-only token is treated as unset (honours the "empty → anonymous"
+// contract).
+function authHeaders(url) {
+  const token = process.env.POLLINATIONS_TOKEN;
+  if (!token || !token.trim()) return {};
+  try {
+    const host = new URL(url).hostname;
+    if (host === "pollinations.ai" || host.endsWith(".pollinations.ai")) {
+      return { Authorization: `Bearer ${token.trim()}` };
+    }
+  } catch {
+    // unparseable URL — attach nothing
+  }
+  return {};
+}
+
 export function fetchImage(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const req = https
-      .get(url, (res) => {
+      .get(url, { headers: authHeaders(url) }, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
           if (redirects >= 5 || !res.headers.location) {
             res.resume();
@@ -58,20 +84,28 @@ export async function fetchWithRetry(url, retries = 5) {
 // enhance=false is load-bearing (art bible §3.11): Pollinations' enhancer
 // rewrites the prompt through an LLM and destroys the verbatim style block the
 // set consistency depends on. private=true keeps assets out of the public feed.
+// safe=false is pinned explicitly (not left to the server default): the house
+// register — clandestine-rave / police / raw-fanzine subject matter — must not
+// be silently rejected if Pollinations ever flips its NSFW-filter default.
+//
+// generic model-agnostic builder; flux/kontext delegate to it. `model` required.
+export function modelUrl({ prompt, seed, width, height, model, imageUrl }) {
+  let u =
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
+    `?width=${width}&height=${height}&nologo=true&model=${encodeURIComponent(model)}` +
+    `&seed=${seed}&enhance=false&private=true&safe=false`;
+  if (imageUrl) u += `&image=${encodeURIComponent(imageUrl)}`;
+  return u;
+}
+
 export function fluxUrl(prompt, seed, width, height) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
+  return modelUrl({ prompt, seed, width, height, model: "flux" });
 }
 
 // kontext img2img (art bible §3.12, style-lock): same query plus `image=` set to
 // the committed frame-1 raw URL so the new pose stays the SAME character.
 export function kontextUrl(prompt, seed, width, height, imageUrl) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=kontext&seed=${seed}&enhance=false&private=true&image=${encodeURIComponent(
-    imageUrl,
-  )}`;
+  return modelUrl({ prompt, seed, width, height, model: "kontext", imageUrl });
 }
 
 // THE single "hero ⇒ image=" decision point (ADR-0043 §2): every caller that

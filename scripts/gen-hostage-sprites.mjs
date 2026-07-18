@@ -31,8 +31,8 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
 import { fileURLToPath } from "url";
+import { fluxUrl, fetchWithRetry } from "./lib/pollinations.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -69,51 +69,10 @@ function loadHostages() {
   });
 }
 
-// ── Pollinations / FLUX fetch (mirrors gen-enemy-types.mjs) ──────────────────
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function fetchImage(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          fetchImage(res.headers.location).then(resolve).catch(reject);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
-          return;
-        }
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
-      })
-      .on("error", reject);
-  });
-}
-
-async function generate(h, retries = 5) {
+// ── Pollinations / FLUX fetch now shared via scripts/lib/pollinations.mjs ────
+function generate(h) {
   console.log(`  [seed] ${h.key} seed=${h.seed} (pinned)`);
-  // enhance=false is load-bearing: Pollinations' enhancer rewrites the prompt
-  // through an LLM and destroys the verbatim shared style tail the family
-  // consistency depends on. private=true keeps assets out of the public feed.
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    h.prompt,
-  )}?width=${h.width}&height=${h.height}&nologo=true&model=flux&seed=${h.seed}&enhance=false&private=true`;
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fetchImage(url);
-    } catch (e) {
-      if (i < retries - 1) {
-        const wait = (i + 1) * 8000;
-        console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
-        await sleep(wait);
-      } else throw e;
-    }
-  }
+  return fetchWithRetry(fluxUrl(h.prompt, h.seed, h.width, h.height));
 }
 
 // ── Reuse the enemy edge flood-fill detour (black-ground key) ─────────────────

@@ -36,6 +36,12 @@ jobs:
     # workflow_dispatch on main would otherwise push art past the merge gate).
     # For pushes, only explicit ci(dispatch): commits may fire it.
     if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
+      # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
+      # for a faster rate limit + honoured `nologo`. Unset/empty → anonymous
+      # fallback (unchanged behaviour), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

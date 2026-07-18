@@ -148,6 +148,10 @@ ossifies.
   harness consumes `contact-sheet.mjs` for the stitched preview; ADR-0006's directional-sprite
   generation imports the `pollinations.mjs` / `cutout.mjs` primitives. Each takes only what it
   shares (à-la-carte, not a frozen skeleton).
+- **D2 realized further by the ADR-0044 consolidation:** `gen-level-art.mjs`,
+  `gen-hostage-sprites.mjs`, `gen-courier-sprites.mjs`, and the `spike-model-ab.mjs` diagnostic
+  are refactored to import `scripts/lib/pollinations.mjs` instead of each carrying its own
+  fetch/URL-builder copy (see that ADR's "Consolidation follow-through").
 - Boundary law untouched: `scripts/**` remains tooling; nothing here adds a runtime dep or touches
   the `src/game ↔ src/render ↔ src/hooks` contract.
 

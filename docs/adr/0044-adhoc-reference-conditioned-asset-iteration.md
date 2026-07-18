@@ -124,3 +124,37 @@ Add an exploratory, single-lane (`dev-tooling-assets`) capability living entirel
   path while iterating.
 - `references/` accumulates throwaway inputs; periodic pruning is a manual follow-up (they
   are outside the deploy bundle, so this is housekeeping, not a shipping concern).
+
+## Consolidation follow-through
+
+The "available to retire the `gen-vehicle-sprites.mjs` copy later — deliberately out of
+scope here" deferral above (Consequences, positive) is now executed, and the lib gained one
+extension beyond the original scope:
+
+- **More generators migrated onto `scripts/lib/pollinations.mjs`.** Beyond the original
+  `gen-enemy-types.mjs` / `gen-from-reference.mjs` / `gen-vehicle-sprites.mjs`, three more
+  callers now import `fluxUrl` / `fetchWithRetry` (and, for `spike-model-ab.mjs`,
+  `fetchImage` / `modelUrl` directly) instead of carrying their own copy:
+  `gen-level-art.mjs`, `gen-hostage-sprites.mjs`, `gen-courier-sprites.mjs`, and the
+  `spike-model-ab.mjs` diagnostic. Each local `fetchImage`/`generate`/URL-builder duplicate
+  is deleted, not kept alongside the import.
+- **New generic builder: `modelUrl({prompt, seed, width, height, model, imageUrl?})`.**
+  `fluxUrl` and `kontextUrl` are now both thin wrappers that delegate to it (`model: "flux"`
+  / `"kontext"` respectively) instead of each holding its own template-literal URL — one
+  query-string contract, not two kept in sync by hand.
+  `spike-model-ab.mjs`'s own local `imgUrl` helper is retired in favour of importing this
+  same `modelUrl`, and in the process **gains `safe=false`**: its hand-rolled version had
+  carried `enhance=false&private=true` but had silently dropped `safe=false`, an undetected
+  drift this consolidation closes.
+- **Auth header is now single-sourced.** `fetchImage` in the shared lib sends an optional
+  `Authorization: Bearer ${POLLINATIONS_TOKEN}` header (CI secret; see `scripts/SCRIPTS.md`
+  "Optional — account tier"). Every generator that imports the lib inherits it automatically
+  — no per-script wiring — including the three newly migrated above and the spike.
+- **Four legacy generators are deliberately left unmigrated: documented debt.**
+  `generate-assets.mjs`, `generate-game-assets.mjs`, `regen-pixel-sprites.mjs`, and
+  `generate-style-demo.mjs` keep their own pre-lib Pollinations URL construction. Reason: none
+  has a CI workflow, none is referenced from `package.json`, none ships art the game uses
+  today, and migrating them would force reconciling their divergent 15s-step retry backoff
+  (`attempt × 15000`) against the lib's `attempt × 8000` default rather than a mechanical
+  import swap. Recorded as non-canonical in `scripts/SCRIPTS.md`; retirement candidates, not
+  touched by this consolidation.

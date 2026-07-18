@@ -40,9 +40,9 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
 import zlib from "zlib";
 import { fileURLToPath } from "url";
+import { fluxUrl, fetchWithRetry, sleep } from "./lib/pollinations.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -123,67 +123,8 @@ function loadCourier() {
   return { opening, style, layers };
 }
 
-// ── Pollinations / FLUX fetch helpers (mirror gen-enemy-types.mjs) ────────────
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-// Bounded redirects + a socket timeout so a stalled Pollinations response can
-// never hang the paid CI job until the runner's 6h kill.
-function fetchImage(url, depth = 0) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        res.resume();
-        if (depth >= 5) {
-          reject(new Error("too many redirects"));
-          return;
-        }
-        if (!res.headers.location) {
-          reject(new Error(`HTTP ${res.statusCode} without a Location header`));
-          return;
-        }
-        fetchImage(new URL(res.headers.location, url).href, depth + 1)
-          .then(resolve)
-          .catch(reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      res.on("data", (c) => chunks.push(c));
-      res.on("end", () => resolve(Buffer.concat(chunks)));
-    });
-    req.on("error", reject);
-    req.setTimeout(120000, () => req.destroy(new Error("response timeout (120s)")));
-  });
-}
-
-async function fetchWithRetry(url, retries = 5) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fetchImage(url);
-    } catch (e) {
-      if (i < retries - 1) {
-        const wait = (i + 1) * 8000;
-        console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
-        await sleep(wait);
-      } else throw e;
-    }
-  }
-}
-
-// enhance=false is load-bearing (art bible §3.11): Pollinations' enhancer rewrites
-// the prompt through an LLM and destroys the verbatim style block the set
-// consistency depends on. private=true keeps assets out of the public feed.
-function fluxUrl(prompt, seed, width, height) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
-}
+// ── Pollinations / FLUX fetch helpers now shared via scripts/lib/pollinations.mjs
+// (fluxUrl/fetchWithRetry/sleep imported above) ────────────────────────────────
 
 // ── Reuse the enemy edge flood-fill keyer per sliced frame ────────────────────
 // The strip is generated on the shared black ground, so each sliced cell is keyed
