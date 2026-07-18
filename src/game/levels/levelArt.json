@@ -37,7 +37,7 @@
         "asset": "assets/vehicles/moto.png",
         "size": { "width": 256, "height": 160 },
         "neon": "magenta",
-        "facing": "right",
+        "facing": "left",
         "seed": 8128,
         "prompt": "1990s delivery moped, fat small-diameter wheels, exposed tube frame, single round headlamp, top-box crate strapped over the rear rack, empty saddle"
       }
@@ -72,8 +72,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          { "x": 0.829, "y": 0.251 },
-          { "x": 0.8, "y": 0.217 }
+          { "x": 0.39, "y": 0.14 },
+          { "x": 0.387, "y": 0.083 }
         ]
       },
       "enemy_shooting_2": {
@@ -84,8 +84,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          { "x": 0.106, "y": 0.181 },
-          { "x": 0.088, "y": 0.143 }
+          { "x": 0.492, "y": 0.352 },
+          { "x": 0.381, "y": 0.091 }
         ]
       },
       "enemy_shooting_3": {
@@ -96,8 +96,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          { "x": 0.77, "y": 0.44 },
-          { "x": 0.709, "y": 0.19 }
+          { "x": 0.503, "y": 0.329 },
+          { "x": 0.406, "y": 0.086 }
         ]
       },
       "enemy_riot": {
@@ -110,8 +110,8 @@
         "prompt": "a french riot police officer CRS in helmet and body armor aiming a handgun forward at the viewer, muzzle flash",
         "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
         "muzzle": [
-          { "x": 0.808, "y": 0.34 },
-          { "x": 0.763, "y": 0.347 }
+          { "x": 0.496, "y": 0.159 },
+          { "x": 0.322, "y": 0.087 }
         ]
       },
       "enemy_biker": {
@@ -124,8 +124,8 @@
         "prompt": "a french motorcycle police officer in a full-face helmet aiming a handgun forward at the viewer, muzzle flash",
         "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
         "muzzle": [
-          { "x": 0.182, "y": 0.267 },
-          { "x": 0.225, "y": 0.271 }
+          { "x": 0.491, "y": 0.074 },
+          { "x": 0.344, "y": 0.1 }
         ]
       },
       "enemy_bonus": {
