@@ -80,7 +80,12 @@ export const LEVELS: readonly LevelConfig[] = [
         windowSeconds: 8,
         bonus: 500,
         entrySide: "left",
-        stopPosition: { x: 0, y: -4 },
+        // y: as low as the default 16:9 cover framing allows while keeping the whole
+        // vehicle (and its neon rim) on screen. The facade art's road strip sits below
+        // the 16:9 bottom edge, so the vehicle rides the curb line just under the
+        // shopfronts — going lower (toward -4.6) clips its wheels off frame. Was -4,
+        // which floated it up onto the sidewalk.
+        stopPosition: { x: 0, y: -4.5 },
       },
     ],
     // Belliard-first rollout gate (ADR-0004 D2). Courier street only; the hostage
@@ -131,7 +136,7 @@ export const LEVELS: readonly LevelConfig[] = [
         windowSeconds: 7,
         bonus: 400,
         entrySide: "right",
-        stopPosition: { x: -2, y: -4 },
+        stopPosition: { x: -2, y: -4.5 },
       },
     ],
   },
@@ -152,7 +157,7 @@ export const LEVELS: readonly LevelConfig[] = [
         windowSeconds: 6,
         bonus: 300,
         entrySide: "left",
-        stopPosition: { x: 2, y: -4 },
+        stopPosition: { x: 2, y: -4.5 },
       },
     ],
   },
