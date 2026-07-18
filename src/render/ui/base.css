@@ -1,0 +1,18 @@
+/*
+ * Global render-layer base sheet (ADR-0046 D4). Under prefers-reduced-motion,
+ * zero the injected --motion-* durations so any consumer of var(--motion-*)
+ * freezes — behaviour-equivalent to the per-surface reduced-motion handling
+ * already shipped (LevelFlyer/RotateOverlay/GestureIcon @media blocks, CRT/QTE
+ * JS gates). The typewriter char cadence (--motion-char-delay-ms) is preserved,
+ * matching tokens.ts ("all forced to 0 ... except the typewriter").
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-title-to-menu: 0ms;
+    --motion-flyer-pull: 0ms;
+    --motion-rubrique-switch: 0ms;
+    --motion-marker-draw: 0ms;
+    --motion-cursor-blink-ms: 0ms;
+    --motion-locked-shake-ms: 0ms;
+  }
+}

@@ -3,7 +3,13 @@ import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
 import type { QtePhase } from "@game/types/hostageQte";
-import { STOCK, INK, MARK, ACID, FONT } from "@render/ui/print";
+import { INK, MARK, ACID } from "@render/ui/print";
+import styles from "./HUD.module.css";
+
+// Join CSS-module class names. Under `noUncheckedIndexedAccess` a `styles.*` lookup
+// is `string | undefined`, so filter before joining (avoids template-literal lint).
+const cx = (...names: (string | undefined)[]): string =>
+  names.filter((n): n is string => n !== undefined).join(" ");
 
 export interface HudTargetIndicator {
   up: boolean;
@@ -53,10 +59,12 @@ export interface HudData {
  * A solid paper ticker strip in ink, no neon and ZERO glow (no text-shadow, box-shadow
  * or drop-shadow). Urgency is spoken with the semantic marker inks (MARK.*), never light;
  * transient call-outs are stamped paper chips so they read over any scene without a halo.
+ *
+ * Styling: static structure/typography lives in HUD.module.css referencing the injected
+ * print-token CSS vars (ADR-0046). Runtime-computed values (gauge fill %, state-driven
+ * inks, arrow rotation, transition durations) stay inline below. The ramp functions are
+ * render-side view mapping and stay in TS.
  */
-
-const DISPLAY_FONT = FONT.display;
-const MONO_FONT = FONT.mono;
 
 // Integrity gauge: print marker inks shift warm as the vehicle takes damage (no glow).
 function integrityColor(fill: number): string {
@@ -84,81 +92,6 @@ function phaseMessage(phase: Phase): { text: string; color: string } | null {
   }
 }
 
-const hudStyle: React.CSSProperties = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  pointerEvents: "none",
-  userSelect: "none",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  padding: "6px 12px",
-  background: STOCK.shell,
-  borderBottom: `2px solid ${INK.black}`,
-  fontFamily: DISPLAY_FONT,
-  letterSpacing: "0.08em",
-};
-
-const itemStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "9px",
-  color: INK.black,
-  opacity: 0.7,
-  letterSpacing: "0.2em",
-  textTransform: "uppercase",
-  fontFamily: MONO_FONT,
-};
-
-const valueStyle = (color: string): React.CSSProperties => ({
-  fontSize: "22px",
-  color,
-  lineHeight: 1,
-});
-
-// A stamped paper chip for transient call-outs — reads over any scene, zero glow.
-const chipStyle: React.CSSProperties = {
-  background: STOCK.shell,
-  border: `2px solid ${INK.black}`,
-  padding: "6px 12px",
-  fontFamily: DISPLAY_FONT,
-};
-
-const targetRingStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  pointerEvents: "none",
-};
-
-const arrowWrapStyle: React.CSSProperties = {
-  position: "fixed",
-  width: 40,
-  height: 40,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const arrowCoreStyle: React.CSSProperties = {
-  position: "relative",
-  width: 34,
-  height: 34,
-  // Raised from 0.28: off-screen arrows overlay the 3D scene and visibility was
-  // the complaint. Acid-yellow fill + black keyline reads on dark and light facades.
-  opacity: 0.35,
-  transition: "opacity 120ms ease, transform 120ms ease",
-};
-
-const activeArrowStyle: React.CSSProperties = {
-  opacity: 1,
-};
-
 function ArrowIndicator({
   direction,
   active,
@@ -178,10 +111,14 @@ function ArrowIndicator({
   // over the scene. Acid-yellow fill, black keyline — flat, NO blur/glow/shadow.
   return (
     <span
+      className={styles.arrowCore}
       style={{
-        ...arrowCoreStyle,
+        // Raised opacity from 0.28: off-screen arrows overlay the 3D scene and
+        // visibility was the complaint. Acid-yellow fill + black keyline reads on
+        // dark and light facades.
         transform: `${rotation}${active ? " scale(1.12)" : ""}`,
-        ...(active ? activeArrowStyle : null),
+        opacity: active ? 1 : 0.35,
+        transition: "opacity 120ms ease, transform 120ms ease",
       }}
     >
       {/* display:block — an inline svg sits on the text baseline and drifts off
@@ -227,73 +164,52 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
 
   return (
     <>
-      <div style={hudStyle}>
-        <div style={itemStyle}>
-          <span style={labelStyle}>score</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={valueStyle(INK.full)}>{String(data.score).padStart(4, "0")}</span>
-            {data.isHighScore === true && (
-              <span
-                style={{
-                  fontSize: "9px",
-                  color: MARK.green,
-                  fontFamily: MONO_FONT,
-                  letterSpacing: "0.1em",
-                }}
-              >
-                ★HI
-              </span>
-            )}
+      <div className={styles.hud}>
+        <div className={styles.item}>
+          <span className={styles.label}>score</span>
+          <div className={styles.scoreRow}>
+            <span className={styles.value}>{String(data.score).padStart(4, "0")}</span>
+            {data.isHighScore === true && <span className={styles.hiFlag}>★HI</span>}
           </div>
         </div>
         {data.levelName !== undefined && (
-          <div style={itemStyle}>
-            <span style={labelStyle}>niveau</span>
-            <span
-              style={{
-                fontSize: "12px",
-                color: INK.black,
-                fontFamily: MONO_FONT,
-                letterSpacing: "0.05em",
-              }}
-            >
-              {data.levelName}
-            </span>
+          <div className={styles.item}>
+            <span className={styles.label}>niveau</span>
+            <span className={styles.levelName}>{data.levelName}</span>
           </div>
         )}
-        <div style={itemStyle}>
-          <span style={labelStyle}>vague</span>
-          <span style={valueStyle(INK.full)}>{data.wave}</span>
+        <div className={styles.item}>
+          <span className={styles.label}>vague</span>
+          <span className={styles.value}>{data.wave}</span>
         </div>
-        <div style={itemStyle}>
-          <span style={labelStyle}>temps</span>
-          <span style={valueStyle(timeColor)}>{Math.ceil(data.timeRemaining)}s</span>
+        <div className={styles.item}>
+          <span className={styles.label}>temps</span>
+          <span className={styles.value} style={{ color: timeColor }}>
+            {Math.ceil(data.timeRemaining)}s
+          </span>
         </div>
-        <div style={itemStyle}>
-          <span style={labelStyle}>vies</span>
-          <span style={valueStyle(livesColor)}>{"♥".repeat(Math.max(0, data.lives))}</span>
+        <div className={styles.item}>
+          <span className={styles.label}>vies</span>
+          <span className={styles.value} style={{ color: livesColor }}>
+            {"♥".repeat(Math.max(0, data.lives))}
+          </span>
         </div>
-        <div style={itemStyle}>
-          <span style={labelStyle}>énergie</span>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <span style={{ ...valueStyle(energyHue), fontSize: "18px" }}>
+        <div className={styles.item}>
+          <span className={styles.label}>énergie</span>
+          <div className={styles.energyWrap}>
+            <span className={styles.energyValue} style={{ color: energyHue }}>
               ⚡{Math.round(energyFill)}
             </span>
-            <div
-              style={{
-                width: 46,
-                height: 5,
-                border: `1px solid ${INK.black}`,
-                background: STOCK.shell,
-              }}
-            >
+            <div className={styles.energyTrack}>
               <div
-                style={{
-                  width: `${String(energyFill)}%`,
-                  height: "100%",
-                  background: energyHue,
-                  transition: "width 120ms linear",
-                }}
+                className={styles.gaugeFill}
+                style={
+                  {
+                    "--gauge-fill": `${String(energyFill)}%`,
+                    "--gauge-hue": energyHue,
+                    transition: "width 120ms linear",
+                  } as React.CSSProperties
+                }
               />
             </div>
           </div>
@@ -301,45 +217,20 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       </div>
 
       {deliveryPhase === "DELIVERING" && (
-        <div
-          style={{
-            position: "fixed",
-            top: 58,
-            left: "50%",
-            transform: "translateX(-50%)",
-            pointerEvents: "none",
-            userSelect: "none",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <span
-            style={{
-              ...chipStyle,
-              fontSize: "16px",
-              letterSpacing: "0.1em",
-              color: INK.full,
-            }}
-          >
+        <div className={styles.deliveryBanner}>
+          <span className={cx(styles.chip, styles.chipDelivering)}>
             LIVRAISON — PROTÉGEZ LE VÉHICULE !
           </span>
-          <div
-            style={{
-              width: 220,
-              height: 12,
-              border: `2px solid ${INK.black}`,
-              background: STOCK.shell,
-            }}
-          >
+          <div className={styles.deliveryTrack}>
             <div
-              style={{
-                width: `${String(deliveryFill * 100)}%`,
-                height: "100%",
-                background: integrityColor(deliveryFill),
-                transition: "width 100ms linear",
-              }}
+              className={styles.gaugeFill}
+              style={
+                {
+                  "--gauge-fill": `${String(deliveryFill * 100)}%`,
+                  "--gauge-hue": integrityColor(deliveryFill),
+                  transition: "width 100ms linear",
+                } as React.CSSProperties
+              }
             />
           </div>
         </div>
@@ -347,18 +238,8 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
 
       {(deliveryPhase === "SUCCESS" || deliveryPhase === "FAILED") && (
         <div
-          style={{
-            position: "fixed",
-            top: 64,
-            left: "50%",
-            transform: "translateX(-50%)",
-            pointerEvents: "none",
-            userSelect: "none",
-            ...chipStyle,
-            fontSize: "20px",
-            letterSpacing: "0.1em",
-            color: deliveryPhase === "SUCCESS" ? MARK.green : MARK.pink,
-          }}
+          className={cx(styles.chip, styles.deliveryVerdict)}
+          style={{ color: deliveryPhase === "SUCCESS" ? MARK.green : MARK.pink }}
         >
           {deliveryPhase === "SUCCESS" ? "LIVRAISON SÉCURISÉE" : "LIVRAISON PERDUE"}
         </div>
@@ -370,7 +251,8 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
               centred, zoomed captor readable (transparent core). The bottom-centre
               gauge stack is intentionally GONE (UX spec §1): the sole clock is the
               blown-peeks count, read diegetically in-world (Flag B), no HUD
-              surrogate. */}
+              surrogate. The rgba is INK-black at partial alpha — a gradient literal
+              with no clean token, so it stays inline (not re-declared in CSS). */}
           <div
             style={{
               position: "fixed",
@@ -382,29 +264,8 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           />
 
           {qte.warning && (
-            <div
-              style={{
-                position: "fixed",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                pointerEvents: "none",
-              }}
-            >
-              <div
-                style={{
-                  ...chipStyle,
-                  padding: "10px 22px",
-                  border: `3px solid ${INK.black}`,
-                  fontSize: "44px",
-                  color: MARK.pink,
-                  letterSpacing: "0.12em",
-                  transform: "rotate(-4deg)",
-                }}
-              >
-                OTAGE
-              </div>
+            <div className={styles.centerOverlay}>
+              <div className={cx(styles.chip, styles.chipOtage)}>OTAGE</div>
             </div>
           )}
 
@@ -412,27 +273,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
             // The verdict is the payoff of the whole set-piece: a big centred
             // stamp (same register as the OTAGE warning / end-of-level message)
             // over the zoomed tableau, not a small ticker chip nobody reads.
-            <div
-              style={{
-                position: "fixed",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
-            >
+            <div className={styles.centerOverlay}>
               <div
-                style={{
-                  ...chipStyle,
-                  padding: "12px 26px",
-                  border: `3px solid ${INK.black}`,
-                  fontSize: "48px",
-                  letterSpacing: "0.12em",
-                  transform: "rotate(-4deg)",
-                  color: qtePhase === "WON" ? MARK.green : MARK.pink,
-                }}
+                className={cx(styles.chip, styles.chipVerdict)}
+                style={{ color: qtePhase === "WON" ? MARK.green : MARK.pink }}
               >
                 {qtePhase === "WON" ? "OTAGE SAUVÉE" : "OTAGE PERDUE"}
               </div>
@@ -441,71 +285,36 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         </>
       )}
 
-      <div style={targetRingStyle}>
+      <div className={styles.targetRing}>
         <span
-          style={{
-            ...arrowWrapStyle,
-            top: 52,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
+          className={styles.arrowWrap}
+          style={{ top: 52, left: "50%", transform: "translateX(-50%)" }}
         >
           <ArrowIndicator direction="up" active={indicator.up} />
         </span>
         <span
-          style={{
-            ...arrowWrapStyle,
-            bottom: 8,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
+          className={styles.arrowWrap}
+          style={{ bottom: 8, left: "50%", transform: "translateX(-50%)" }}
         >
           <ArrowIndicator direction="down" active={indicator.down} />
         </span>
         <span
-          style={{
-            ...arrowWrapStyle,
-            top: "50%",
-            left: 8,
-            transform: "translateY(-50%)",
-          }}
+          className={styles.arrowWrap}
+          style={{ top: "50%", left: 8, transform: "translateY(-50%)" }}
         >
           <ArrowIndicator direction="left" active={indicator.left} />
         </span>
         <span
-          style={{
-            ...arrowWrapStyle,
-            top: "50%",
-            right: 8,
-            transform: "translateY(-50%)",
-          }}
+          className={styles.arrowWrap}
+          style={{ top: "50%", right: 8, transform: "translateY(-50%)" }}
         >
           <ArrowIndicator direction="right" active={indicator.right} />
         </span>
       </div>
 
       {msg !== null && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            style={{
-              ...chipStyle,
-              padding: "14px 28px",
-              border: `3px solid ${INK.black}`,
-              fontSize: "56px",
-              color: msg.color,
-              letterSpacing: "0.1em",
-              transform: "rotate(-3deg)",
-            }}
-          >
+        <div className={styles.centerOverlay}>
+          <div className={cx(styles.chip, styles.chipMessage)} style={{ color: msg.color }}>
             {msg.text}
           </div>
         </div>
