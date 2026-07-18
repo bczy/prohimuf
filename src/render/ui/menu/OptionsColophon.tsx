@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { PaperSheet, STOCK, INK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, INK, FONT, MarkerCircle, useRovingIndex } from "@render/ui/print";
 
 /**
  * OPTIONS — the OURS / colophon (UX §2.5, deck §4). The zine back page: sliders are
@@ -15,8 +15,8 @@ interface OptionsColophonProps {
   onSave: (prefs: Prefs) => void;
 }
 
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
+const BODY_FONT = FONT.mono;
+const DISPLAY_FONT = FONT.display;
 
 const COLOPHON_LINES = [
   "UNDERGROUND PARIS — fanzine clandestin",

@@ -135,9 +135,14 @@ Texture (all CSS/inline-SVG — **no generated PNG**): uniform dot-screen overla
 toner speckle via inline-SVG `feTurbulence` data-URI; fold streaks via diagonal
 `linear-gradient`; marker-ellipse / rubber-stamp distress via inline-SVG
 `feTurbulence`+`feDisplacementMap` (a plain geometric CSS border is an accepted-but-weaker
-fallback). Ransom/Letraset display type approximated by per-letter jitter on the bundled
-Impact until a display webfont lands; handwriting annotations are the weakest CSS gap (accept
-`cursive`/italic-Courier for v1, a small handwriting webfont is the fast-follow).
+fallback). Ransom/Letraset display type = per-letter jitter over the embedded **Rubik Mono
+One** display webfont (techno-flyer block); Courier info blocks use embedded **Courier
+Prime** (typewriter face) and
+handwriting annotations the embedded **Caveat** marker hand. All three are self-hosted
+OFL 1.1 woff2 in `src/assets/fonts/` (no CDN, offline-safe), registered by `fonts.css`
+and single-sourced via the `FONT` token in `src/render/ui/print/tokens.ts` (ADR-0045);
+the former system stacks (Impact / Courier New / cursive) remain as fallbacks. This closes
+the display-webfont and handwriting-webfont fast-follows.
 
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 

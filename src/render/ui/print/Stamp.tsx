@@ -1,5 +1,5 @@
 import type { CSSProperties, JSX } from "react";
-import { INK } from "./tokens";
+import { INK, FONT } from "./tokens";
 
 export type StampShape = "box" | "oval" | "diagonal";
 
@@ -30,7 +30,7 @@ export function Stamp({ label, ink, shape = "box", struck = false }: StampProps)
     border: `2px solid ${INK.black}`,
     borderRadius: shape === "oval" ? "50%" : "1px",
     color: INK.black,
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: FONT.mono,
     fontSize: "11px",
     fontWeight: 700,
     letterSpacing: "0.16em",
