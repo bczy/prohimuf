@@ -3,7 +3,7 @@ import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
 import type { QtePhase } from "@game/types/hostageQte";
-import { STOCK, INK, MARK, ACID } from "@render/ui/print";
+import { STOCK, INK, MARK, ACID, FONT } from "@render/ui/print";
 
 export interface HudTargetIndicator {
   up: boolean;
@@ -55,8 +55,8 @@ export interface HudData {
  * transient call-outs are stamped paper chips so they read over any scene without a halo.
  */
 
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
-const MONO_FONT = "'Courier New', Courier, monospace";
+const DISPLAY_FONT = FONT.display;
+const MONO_FONT = FONT.mono;
 
 // Integrity gauge: print marker inks shift warm as the vehicle takes damage (no glow).
 function integrityColor(fill: number): string {

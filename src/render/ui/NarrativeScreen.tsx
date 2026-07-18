@@ -3,7 +3,7 @@ import type { CSSProperties, JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
 import { DiagramIcon } from "./DiagramIcon";
-import { PaperSheet, HalftoneHero, STOCK, INK, MARK, MASTHEAD } from "@render/ui/print";
+import { PaperSheet, HalftoneHero, STOCK, INK, FONT, MARK, MASTHEAD } from "@render/ui/print";
 
 interface Props {
   scene: NarrativeScene;
@@ -133,7 +133,7 @@ export function NarrativeScreen({
         userSelect: "none",
       }}
     >
-      <PaperSheet stock={STOCK.shell} style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+      <PaperSheet stock={STOCK.shell} style={{ fontFamily: FONT.mono }}>
         <div
           style={{
             position: "relative",

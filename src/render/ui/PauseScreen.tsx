@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { STOCK, INK } from "@render/ui/print";
+import { STOCK, INK, FONT } from "@render/ui/print";
 
 interface Props {
   prefs: Prefs;
@@ -23,7 +23,7 @@ function Slider({
     <div style={{ marginBottom: "14px" }}>
       <div
         style={{
-          fontFamily: "monospace",
+          fontFamily: FONT.mono,
           fontSize: "10px",
           color: "#555",
           marginBottom: "4px",
@@ -59,7 +59,7 @@ function Toggle({
     <div style={{ marginBottom: "14px" }}>
       <div
         style={{
-          fontFamily: "monospace",
+          fontFamily: FONT.mono,
           fontSize: "10px",
           color: "#555",
           marginBottom: "4px",
@@ -80,7 +80,7 @@ function Toggle({
           color: value ? STOCK.shell : INK.black,
           border: `1px solid ${INK.black}`,
           cursor: "pointer",
-          fontFamily: "monospace",
+          fontFamily: FONT.mono,
           fontSize: "11px",
           letterSpacing: "0.2em",
         }}
@@ -137,7 +137,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
           {/* Title */}
           <div
             style={{
-              fontFamily: "Impact, sans-serif",
+              fontFamily: FONT.display,
               fontSize: "36px",
               color: INK.full,
               letterSpacing: "0.1em",
@@ -185,7 +185,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
               color: STOCK.shell,
               border: "none",
               cursor: "pointer",
-              fontFamily: "monospace",
+              fontFamily: FONT.mono,
               fontSize: "13px",
               letterSpacing: "0.2em",
             }}
@@ -202,7 +202,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
               color: INK.black,
               border: `1px solid ${INK.black}`,
               cursor: "pointer",
-              fontFamily: "monospace",
+              fontFamily: FONT.mono,
               fontSize: "13px",
               letterSpacing: "0.2em",
             }}
@@ -214,7 +214,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
           <div
             style={{
               marginTop: "16px",
-              fontFamily: "monospace",
+              fontFamily: FONT.mono,
               fontSize: "10px",
               color: "#555",
               textAlign: "center",

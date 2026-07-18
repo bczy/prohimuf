@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { PaperSheet, STOCK, INK } from "@render/ui/print";
+import { PaperSheet, STOCK, INK, FONT } from "@render/ui/print";
 
 /**
  * Full-screen blocker shown on mobile while the device is in portrait
@@ -50,7 +50,7 @@ export function RotateOverlay(): JSX.Element {
         </svg>
         <div
           style={{
-            fontFamily: "Impact, sans-serif",
+            fontFamily: FONT.display,
             fontSize: "32px",
             color: INK.full,
             letterSpacing: "0.1em",
@@ -62,7 +62,7 @@ export function RotateOverlay(): JSX.Element {
         </div>
         <div
           style={{
-            fontFamily: "monospace",
+            fontFamily: FONT.mono,
             fontSize: "12px",
             color: INK.black,
             letterSpacing: "0.15em",

@@ -21,6 +21,17 @@ export const STOCK = {
   shell: "#D7D2C6", // NIVEAUX flyer-wall backing
 } as const;
 
+// Typography — embedded self-hosted webfonts (OFL 1.1, see `src/assets/fonts/`, registered
+// by `fonts.css` imported in `main.tsx`). Each stack leads with the bundled face and falls
+// back to the former system stack so text renders before `font-display: swap` resolves and
+// on a load failure. Single source: no UI surface may re-declare a font stack (art-direction
+// §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed).
+export const FONT = {
+  display: "'Anton', Impact, 'Arial Narrow', sans-serif", // ransom-note / flyer headlines
+  mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + HUD
+  hand: "'Caveat', cursive", // felt-tip flyer annotations
+} as const;
+
 // Ink.
 export const INK = {
   black: "#141210", // body, Courier blocks, rules, keylines

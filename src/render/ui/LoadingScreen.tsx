@@ -1,5 +1,5 @@
 import type { CSSProperties, JSX } from "react";
-import { INK, MASTHEAD, STOCK } from "@render/ui/print";
+import { INK, FONT, MASTHEAD, STOCK } from "@render/ui/print";
 import { PaperSheet } from "@render/ui/print";
 
 /**
@@ -14,7 +14,7 @@ import { PaperSheet } from "@render/ui/print";
  * §2bis; PaperSheet supplies the dot-screen + toner texture).
  */
 
-const mono = "'Courier New', Courier, monospace";
+const mono = FONT.mono;
 
 interface Props {
   /** What is loading — e.g. "MENU", a level name, or "Tutoriel". */
@@ -82,7 +82,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
 
         <div
           style={{
-            fontFamily: "Impact, 'Arial Narrow', sans-serif",
+            fontFamily: FONT.display,
             fontSize: "clamp(44px, 8vw, 84px)",
             lineHeight: 0.9,
             letterSpacing: "0.05em",

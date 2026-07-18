@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { STOCK, INK } from "@render/ui/print";
+import { STOCK, INK, FONT } from "@render/ui/print";
 
 interface EndScreenProps {
   phase: "GAME_OVER" | "LEVEL_COMPLETE";
@@ -43,7 +43,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
       <div style={{ position: "relative", textAlign: "center" }}>
         <div
           style={{
-            fontFamily: "monospace",
+            fontFamily: FONT.mono,
             fontSize: "14px",
             color: INK.black,
             letterSpacing: "0.2em",
@@ -55,7 +55,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
 
         <div
           style={{
-            fontFamily: "Impact, sans-serif",
+            fontFamily: FONT.display,
             fontSize: "64px",
             color: INK.full,
             lineHeight: 1,
@@ -68,7 +68,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
 
         <div
           style={{
-            fontFamily: "monospace",
+            fontFamily: FONT.mono,
             fontSize: "16px",
             color: INK.black,
             marginTop: "24px",
@@ -80,7 +80,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
 
         <div
           style={{
-            fontFamily: "monospace",
+            fontFamily: FONT.mono,
             fontSize: "14px",
             color: INK.full,
             marginTop: "48px",

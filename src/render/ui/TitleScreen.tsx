@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CSSProperties, JSX } from "react";
-import { INK, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { INK, FONT, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
 
 interface TitleScreenProps {
@@ -19,7 +19,7 @@ const INFOLINE_ROW = "☎ INFO-LINE · 08 36 23 98 23";
 const CTA = "[ COMPOSE L'INFO-LINE ]";
 const MICROCOPY = "le répondeur donne le point de RV";
 
-const mono = "'Courier New', Courier, monospace";
+const mono = FONT.mono;
 
 /**
  * TITLE surface (ADR-0021 D1) — the zine cover on `STOCK.shell`. Single-action entry:
@@ -130,7 +130,7 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
 
         <div
           style={{
-            fontFamily: "Impact, 'Arial Narrow', sans-serif",
+            fontFamily: FONT.display,
             fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
             lineHeight: 0.9,
             letterSpacing: "0.05em",
