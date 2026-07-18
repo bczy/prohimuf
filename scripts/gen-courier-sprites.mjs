@@ -43,6 +43,8 @@ import path from "path";
 import zlib from "zlib";
 import { fileURLToPath } from "url";
 import { fluxUrl, fetchWithRetry, sleep } from "./lib/pollinations.mjs";
+import { parseAssetArgs } from "./lib/cli.mjs";
+import { skipIfExists } from "./lib/idempotent.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -291,7 +293,14 @@ function drawPlaceholderCells(layer) {
 // Returns null when the layer can be skipped, otherwise the loud reason string.
 function regenReason(layer) {
   if (FORCE) return "FORCE=1";
-  const missing = layer.files.find((f) => !fs.existsSync(path.join(OUT_DIR, f)));
+  // Per-file "does this one need generating" reuses skipIfExists (force is
+  // already handled above, so this reduces to "does it exist"); the atomic
+  // "ANY missing file regenerates the whole layer" aggregation stays local —
+  // it is this generator's own shared-seed-consistency policy, not part of
+  // the shared primitive.
+  const missing = layer.files.find(
+    (f) => !skipIfExists({ exists: fs.existsSync(path.join(OUT_DIR, f)) }, FORCE),
+  );
   return missing ? `${missing} missing; layer is atomic` : null;
 }
 
@@ -316,19 +325,18 @@ async function fetchLayerFrames(layer) {
 async function main() {
   const args = process.argv.slice(2);
   let { layers } = loadCourier();
+  const { list, target: wanted } = parseAssetArgs(args, { targetFlag: "--layer" });
 
   // --layer <name>: restrict the run to one layer (art-gate iteration flow —
   // e.g. rework the bike while the rider is on hold).
-  const layerFlag = args.indexOf("--layer");
-  if (layerFlag !== -1) {
-    const wanted = args[layerFlag + 1];
+  if (wanted != null) {
     layers = layers.filter((l) => l.name === wanted);
     if (layers.length === 0) {
       throw new Error(`--layer ${wanted}: no such layer in courier.layers`);
     }
   }
 
-  if (args.includes("--list")) {
+  if (list) {
     console.log("Defined courier layers (from levelArt.json):");
     for (const l of layers) {
       console.log(

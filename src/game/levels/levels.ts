@@ -160,6 +160,31 @@ export const LEVELS: readonly LevelConfig[] = [
         stopPosition: { x: 2, y: -4.5 },
       },
     ],
+    // Hostage-taker QTE — the peak-difficulty escalation (F4 / ADR-0036): the shipped
+    // static duel with an ACCOMPLICE (a second shooter) as its SINGLE distinguishing
+    // variable. The duel body is held ≈ Belliard (one-variable-at-a-time) — the accomplice
+    // owns the player-directed fire, so the captor's own counter-fire is suppressed and the
+    // ~−32 passive-ignore drain simply arrives on the accomplice's separately-telegraphed
+    // clock instead of the peek clock (net-neutral). Vitry-only (advanced level; not the
+    // Belliard teaching duel).
+    hostageQte: {
+      triggerAtElapsedSeconds: 10,
+      zoomSeconds: 2,
+      anchor: { x: 0, y: -5 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      peekDurationSeconds: 1.5,
+      captorHp: 3,
+      // K-5 PIN (re-verified, dev-gameplay/stage-5): with peekDuration 1.5 / LEG_DURATION
+      // 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
+      // decelerating window in EVERY one of the 4 peeks (accomplice does not affect the
+      // wander — Belliard's pinning logic transfers). Re-pinned from the 19940714 placeholder,
+      // which failed peek 1 (0 on-captor windows).
+      targetSeed: 19940715,
+      // The escalation: a second gun firing every 2.8 s (≈4 shots over the ~11–12 s to reach
+      // maxBlownPeeks ⇒ ≈−32, matching the preserved passive-ignore figure).
+      accomplice: { fireIntervalSeconds: 2.8 },
+    },
   },
 ];
 

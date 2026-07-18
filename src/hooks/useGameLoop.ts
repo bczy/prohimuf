@@ -38,6 +38,48 @@ const DIRECTION_DEAD_ZONE = 0.2;
 // the deleted enemy_civilian.png and draw the fallback cop tinted civilian-green.
 const FREEZE_KINDS = ["normal", "riot", "biker", "bonus"] as const;
 
+/**
+ * Harness window shape (ADR-0005). Both flags are injected by the verification
+ * harness before boot and are NEVER set in production, so the getter and the
+ * `play` branch cost nothing on the shipped path. `__MUF_STATE__` is the sole
+ * sanctioned read seam — a snapshot getter, never a live handle or a setter.
+ */
+interface HarnessWindow {
+  __MUF_FREEZE_COPS__?: boolean;
+  __MUF_PLAY__?: boolean;
+  __MUF_STATE__?: () => StateSnapshot;
+}
+
+/** Read-only state seam payload (ADR-0005): a frozen game + last-HUD snapshot. */
+export interface StateSnapshot {
+  readonly game: GameState;
+  readonly hud: HudData | null;
+}
+
+/** Recursively freeze a plain-data value in place (returns the same reference). */
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      deepFreeze((value as Record<string, unknown>)[key]);
+    }
+    Object.freeze(value);
+  }
+  return value;
+}
+
+/**
+ * Build the read-only state seam payload (ADR-0005): a deep-frozen structuredClone
+ * of the live game state plus the last emitted HudData. Pure and side-effect-free —
+ * it COPIES data, it moves no rule. GameState/HudData are plain data (no functions),
+ * so the clone is total and the harness can never mutate the live refs.
+ */
+export function frozenSnapshot(game: GameState, hud: HudData | null): StateSnapshot {
+  return Object.freeze({
+    game: deepFreeze(structuredClone(game)),
+    hud: hud === null ? null : deepFreeze(structuredClone(hud)),
+  });
+}
+
 function computeTargetIndicator(
   state: GameState,
   facade: FacadeMap,
@@ -142,6 +184,9 @@ export function useGameLoop(
   // fires (restored to EXACTLY on the way out), and the in-flight restore lerp.
   const qteBaseRef = useRef<CamPose | null>(null);
   const qteRestoreRef = useRef<{ from: CamPose; t: number } | null>(null);
+  // Last HudData emitted to onHudUpdate — read (never mutated) by the __MUF_STATE__
+  // seam so the harness reads the same view value the HUD renders (ADR-0005).
+  const lastHudRef = useRef<HudData | null>(null);
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -254,9 +299,23 @@ export function useGameLoop(
     // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
     // window so contact-sheet captures show cop-vs-window proportion across the
     // whole facade. Never set in production.
-    const frozen =
-      typeof window !== "undefined" &&
-      (window as unknown as { __MUF_FREEZE_COPS__?: boolean }).__MUF_FREEZE_COPS__ === true;
+    const harness =
+      typeof window !== "undefined" ? (window as unknown as HarnessWindow) : undefined;
+    const frozen = harness?.__MUF_FREEZE_COPS__ === true;
+    // ADR-0005 un-frozen "play" mode: the real tick advances untouched (couriers
+    // move, the QTE simulates). Mutually exclusive with the freeze hook — fail
+    // loud rather than silently pick one. When play is set, `frozen` is false, so
+    // the freeze branch below is byte-identical to the shipped path.
+    const play = harness?.__MUF_PLAY__ === true;
+    if (play && frozen) {
+      throw new Error("__MUF_PLAY__ and __MUF_FREEZE_COPS__ are mutually exclusive");
+    }
+    // Install the read-only state seam once, only under the harness play flag, so
+    // production carries no getter. The closure reads the live refs at call time
+    // and returns a frozen snapshot — a copy, never a live handle (ADR-0005).
+    if (harness !== undefined && play && harness.__MUF_STATE__ === undefined) {
+      harness.__MUF_STATE__ = () => frozenSnapshot(gameStateRef.current, lastHudRef.current);
+    }
     gameStateRef.current = frozen
       ? {
           ...next,
@@ -371,7 +430,7 @@ export function useGameLoop(
       next.energy !== prev.energy ||
       !isSameIndicator(prevTargetIndicator, targetIndicator)
     ) {
-      onHudUpdate({
+      const hudData: HudData = {
         score: next.score,
         lives: next.lives,
         timeRemaining: next.timeRemaining,
@@ -379,7 +438,10 @@ export function useGameLoop(
         wave: next.wave,
         energy: next.energy,
         targetIndicator,
-      });
+      };
+      // Cache for the __MUF_STATE__ read seam (ADR-0005) before handing it out.
+      lastHudRef.current = hudData;
+      onHudUpdate(hudData);
     }
   });
 

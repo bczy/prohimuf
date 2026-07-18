@@ -616,12 +616,14 @@
           <div><b>0</b><span>méta-harness</span></div>
         </div>
         <div class="status">
-          <b>ADR Proposed</b
+          <b>ADR Accepted</b
           ><span
-            >Statut proposé (2026-06-22). Le dépôt <strong>diverge</strong> : les 5 modules projetés
-            ne sont pas encore extraits. Présents aujourd'hui :
-            <code>scripts/lib/morphology.mjs</code> + la lib de facto
-            <code>scripts/e2e-lib.mjs</code>.</span
+            >Statut accepté (2026-07-18). Les primitives pures sont extraites et testées :
+            <code>pollinations.mjs</code>, <code>idempotent.mjs</code>, <code>cli.mjs</code>,
+            <code>cutout.mjs</code> (chromaKey prouvé byte-identique sur les 22 PNG enemy) et
+            <code>contact-sheet.mjs</code>, plus le <code>_template.mjs</code> copiable. Adoption
+            bornée aux générateurs canoniques ; les scripts legacy sont laissés en
+            candidats-retrait.</span
           >
         </div>
       </header>
@@ -651,18 +653,20 @@
       <h2 class="sec display">Les primitives</h2>
       <div class="grid2">
         <div class="card">
-          <b class="t-3">Réellement présent</b> <code>scripts/lib/morphology.mjs</code> —
-          morphologie binaire pure (disk/dilate/erode/closing, hole-fill, labelling,
-          largestComponent, zoneMask, solidBodyMask). Sans I/O.<br />
-          <code>scripts/e2e-lib.mjs</code> — lib harness E2E de facto : enterMenu, dismissNarrative,
-          seedDeterminism, loadLevelManifest (le level set), SWIFTSHADER_ARGS.
+          <b class="t-3">Extrait &amp; testé</b> <code>pollinations.mjs</code> fetchWithRetry ·
+          <code>idempotent.mjs</code> skipIfExists · <code>cli.mjs</code> parseAssetArgs ·
+          <code>cutout.mjs</code> chromaKey (pur, byte-identique dans
+          <code>cutout-enemies.mjs</code>) · <code>morphology.mjs</code> (morphologie binaire pure)
+          · <code>_template.mjs</code> (copié à la main, jamais exécuté).
         </div>
         <div class="card">
-          <b class="t-4">Projeté par l'ADR (à extraire)</b>
-          <code>pollinations.mjs</code> fetchWithRetry · <code>idempotent.mjs</code> skipIfExists ·
-          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey ·
-          <code>contact-sheet.mjs</code> (aussi consommé par le harness de vérif) ·
-          <code>_template.mjs</code> (copié à la main, jamais exécuté).
+          <b class="t-4">Laissé local à dessein</b> Le flood enclosed-island + l'échantillonnage
+          couleur par composant restent dans <code>cutout-enemies.mjs</code> (fusionnés, ne se
+          réduisent pas à une primitive pure) · le keyage ratio <code>isMagenta</code> de
+          <code>cutout-foreground.mjs</code> (primitive différente, divergerait sur art frais) ·
+          <code>e2e-lib.mjs</code> reste la lib E2E de facto (seedPlay/readState,
+          <code>stitchLabeledStrip</code>). Le <code>contact-sheet.mjs</code> projeté n'est pas
+          construit (YAGNI : un seul consommateur).
         </div>
       </div>
 
@@ -696,11 +700,13 @@
           >
         </div>
         <div class="card">
-          <b class="t-2">Cible du refactor</b>
+          <b class="t-2">Adoption livrée</b>
           <span class="mini"
-            >generate-assets (744 LOC), generate-game-assets (491 LOC), gen-enemy-types,
-            gen-level-art, generate-style-demo, regen-pixel-sprites + les cutout-* → importent la
-            lib. Le harness de vérif (ADR-0005) consomme contact-sheet.mjs.</span
+            >générateurs canoniques (gen-enemy-types, gen-vehicle-sprites, gen-courier-sprites,
+            gen-level-art) importent idempotent/cli ; <code>cutout-enemies.mjs</code> importe
+            cutout. Legacy (generate-assets, generate-game-assets, regen-pixel-sprites,
+            generate-style-demo) laissés en candidats-retrait. Le harness de vérif (ADR-0005)
+            stitche via <code>e2e-lib.mjs</code>.</span
           >
         </div>
       </div>
@@ -739,9 +745,10 @@
       </div>
 
       <footer>
-        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Proposed) ·
-        <code>scripts/lib/morphology.mjs</code> · <code>scripts/e2e-lib.mjs</code>. Un poster de la
-        série des harness de muf. Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
+        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Accepted) ·
+        <code>scripts/lib/cutout.mjs</code> · <code>scripts/lib/idempotent.mjs</code> ·
+        <code>scripts/lib/cli.mjs</code>. Un poster de la série des harness de muf. Sprites :
+        <code>docs/muf-crew-bitmap.py --singles</code>.
       </footer>
     </div>
   </body>

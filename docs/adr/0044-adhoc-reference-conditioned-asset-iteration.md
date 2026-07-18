@@ -1,6 +1,6 @@
 # 0044 — Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18)
 - **Date:** 2026-07-18
 - **Number:** 0044, **self-allocated** by `senior-architect` (no `producer` in the loop
   for this design session; Bertrand directed the scaffold via the `adr-new` skill).
@@ -92,6 +92,14 @@ Add an exploratory, single-lane (`dev-tooling-assets`) capability living entirel
    The accompanying prompt should still respect §3 (no-negation, 30–90 word budget), but
    that stays a documented author responsibility — hard-gating an exploratory one-shot adds
    friction for little payoff, and the human judges the output image directly.
+
+## Acceptance note
+
+Accepted 2026-07-18: implemented in full, including the consolidation follow-through
+below (`scripts/lib/pollinations.mjs`, `gen-from-reference.mjs`, the
+`gen-from-reference.yml` workflow, and the six generators migrated onto the shared lib).
+Live kontext generation itself is only exercised in CI/branch-preview runs (network
+egress is unavailable in the dev sandbox — see Context); it is not validated locally.
 
 ## Consequences
 

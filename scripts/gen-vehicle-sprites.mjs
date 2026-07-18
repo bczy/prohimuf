@@ -44,6 +44,8 @@ import zlib from "zlib";
 import { fileURLToPath, pathToFileURL } from "url";
 import { sleep, fetchWithRetry, buildRequestUrl } from "./lib/pollinations.mjs";
 import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
+import { skip } from "./lib/idempotent.mjs";
+import { parseAssetArgs } from "./lib/cli.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -381,8 +383,9 @@ async function tryDesaturate(file, type) {
 async function main() {
   const args = process.argv.slice(2);
   const vehicles = loadVehicles();
+  const { list, target } = parseAssetArgs(args);
 
-  if (args.includes("--list")) {
+  if (list) {
     console.log("Defined vehicles (from levelArt.json):");
     vehicles.forEach((v) =>
       console.log(`  ${v.type.padEnd(6)} ${v.width}x${v.height}  → assets/vehicles/${v.type}.png`),
@@ -391,8 +394,6 @@ async function main() {
   }
 
   const placeholder = args.includes("--placeholder") || process.env.PLACEHOLDER === "1";
-  const ti = args.indexOf("--asset");
-  const target = ti !== -1 ? args[ti + 1] : null;
   const todo = target ? vehicles.filter((v) => v.type === target) : vehicles;
   if (target && todo.length === 0) {
     console.error(`Vehicle "${target}" not found. Use --list.`);
@@ -427,7 +428,7 @@ async function main() {
 
   for (const v of todo) {
     const out = path.join(OUT_DIR, `${v.type}.png`);
-    if (!FORCE && fs.existsSync(out)) {
+    if (skip(out, { force: FORCE, existsSync: fs.existsSync })) {
       console.log(`  [skip] ${v.type} (exists)`);
       continue;
     }

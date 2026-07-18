@@ -1,6 +1,6 @@
 # 0039 — "Maison" skills backlog: repeated procedures to package as skills
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18)
 - **Date:** 2026-07-17
 - **Number:** 0039, allocated directly at Bertrand's request alongside ADR-0038
   (out-of-band, re-checked against the index). Normal flow allocates via `producer`.

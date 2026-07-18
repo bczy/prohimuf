@@ -1,4 +1,11 @@
-import type { HostageQte, QteSpec, QteZone, RingZone, CaptorStance } from "@game/types/hostageQte";
+import type {
+  HostageQte,
+  HostageAccomplice,
+  QteSpec,
+  QteZone,
+  RingZone,
+  CaptorStance,
+} from "@game/types/hostageQte";
 import type { Vec2 } from "@game/types/vector";
 
 // Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034 after playtest).
@@ -45,6 +52,21 @@ export const QTE_UNANSWERED_PEEK = -8;
 export const QTE_PANIC_SHOT = -6;
 /** A captor-body hit (any time) — reckless spray bleeds you. Per body-zone hit. */
 export const QTE_BODY_HIT = -5;
+
+// --- Accomplice (second shooter) — F4 / ADR-0036 ---------------------------------
+// When a level authors an accomplice, it OWNS the player-directed fire: the captor's
+// own counter-fire (`QTE_UNANSWERED_PEEK` on a blown peek) is SUPPRESSED and the
+// accomplice fires on its own deterministic cadence instead (INVARIANT P3-ACC —
+// exactly one player-directed fire channel armed, selected by accomplice presence).
+/** A landed accomplice shot drains this — deliberately the SAME magnitude as
+ *  `QTE_UNANSWERED_PEEK` so replacing the captor's counter-fire is net-neutral and the
+ *  severity ordering (body −5 < panic −6 < accomplice/peek −8 ≪ hostage −30 ≪ +40) holds. */
+export const ACCOMPLICE_SHOT_DAMAGE = -8;
+/** Wind-up lead before an accomplice shot — its OWN named constant (NOT aliased to
+ *  `TELEGRAPH_LEAD_SECONDS`; separate names so a future edit to one doesn't silently move
+ *  the other). `fireIntervalSeconds` must be STRICTLY > this (asserted in `createQte`) so
+ *  the tell is a discrete wind-up beat, never the whole cadence. */
+export const ACCOMPLICE_TELL_SECONDS = 0.35;
 
 // --- Spatial-colour ring model (spatial-colour revision of ADR-0034) -------------
 // A shot that HITS the wandering reticle ring (within RING_HIT_RADIUS of its centre)
@@ -407,6 +429,29 @@ export function createQte(spec: QteSpec): HostageQte {
   }
   // G5: clamp the runtime exposure so the tick can never see a sub-floor peek.
   const peekDurationSeconds = Math.max(PEEK_EXPOSURE_FLOOR, spec.peekDurationSeconds);
+  // F4 (ADR-0036): seed the accomplice when authored. ABSENT ⇒ null ⇒ byte-identical to
+  // today (the null-guard IS the byte-identity). The cadence gets the same C6 finite guard
+  // as every other authored numeric, plus a discrete-tell floor mirroring the G4 assert.
+  let accomplice: HostageAccomplice | null = null;
+  if (spec.accomplice !== undefined) {
+    if (!Number.isFinite(spec.accomplice.fireIntervalSeconds)) {
+      throw new Error(
+        "QteSpec invariant (C6): accomplice.fireIntervalSeconds must be finite (no NaN/Infinity)",
+      );
+    }
+    if (spec.accomplice.fireIntervalSeconds <= ACCOMPLICE_TELL_SECONDS) {
+      throw new Error(
+        "QteSpec invariant: accomplice.fireIntervalSeconds must be > ACCOMPLICE_TELL_SECONDS so a discrete wind-up tell fits",
+      );
+    }
+    // Seed the cooldown to a FULL interval so the first shot lands one interval into ACTIVE
+    // (grace — the duel never opens on an instant hit).
+    accomplice = {
+      fireIntervalSeconds: spec.accomplice.fireIntervalSeconds,
+      fireCooldownRemaining: spec.accomplice.fireIntervalSeconds,
+      telegraphActive: false,
+    };
+  }
   return {
     phase: "ZOOMING",
     stance: "COVERED",
@@ -428,6 +473,7 @@ export function createQte(spec: QteSpec): HostageQte {
     zoomSeconds: spec.zoomSeconds,
     resultRemaining: QTE_RESULT_HOLD,
     warning: true,
+    accomplice,
   };
 }
 
@@ -526,6 +572,28 @@ export function tickQte(
         }
       }
 
+      // (1b) Tick the accomplice (F4 / ADR-0036). Runs AFTER the fire-resolves-first WON
+      // check (a depleting ring hit ends the duel above, so NO accomplice shot is charged
+      // that tick) and BEFORE the stance loop, so the ticked `acc` is folded into BOTH the
+      // LOST early-return and the normal return. CORRECTNESS: `acc` MUST be written into
+      // every non-WON ACTIVE exit or the cooldown desyncs. Pure countdown accumulator over
+      // ACTIVE time: consume whole intervals so a large delta never swallows a shot (each
+      // iteration subtracts a strictly-positive interval > ACCOMPLICE_TELL_SECONDS > 0 ⇒
+      // bounded/terminating), and re-chunking `delta` yields the identical shot count
+      // (framerate-independent, replay-safe — no Math.random / Date.now).
+      let acc = qte.accomplice;
+      if (acc !== null) {
+        let cd = acc.fireCooldownRemaining;
+        let rem = delta;
+        while (rem >= cd) {
+          rem -= cd;
+          energyDelta += ACCOMPLICE_SHOT_DAMAGE;
+          cd = acc.fireIntervalSeconds;
+        }
+        cd -= rem;
+        acc = { ...acc, fireCooldownRemaining: cd, telegraphActive: cd <= ACCOMPLICE_TELL_SECONDS };
+      }
+
       // (2) Tick the COVERED↔PEEKING sub-machine over the FULL delta (C1). A delta
       // larger than the current segment must not silently swallow the skipped peeks:
       // consume whole segments one at a time, charging each CLOSED exposure. Each
@@ -558,7 +626,12 @@ export function tickQte(
           stanceRemaining = qte.peekCadenceSeconds;
           if (captorHp > 0) {
             blownPeeks += 1;
-            energyDelta += QTE_UNANSWERED_PEEK;
+            // P3-ACC: the captor's own counter-fire is armed ONLY when there is no
+            // accomplice. When one is present it OWNS the player-directed drain (Channel A
+            // ticked above), so the captor stops firing at the player and keeps only the
+            // execution clock (`blownPeeks`). Never both, never neither (a tautology on the
+            // null-guard). Absent ⇒ charge exactly as today (byte-identical).
+            if (qte.accomplice === null) energyDelta += QTE_UNANSWERED_PEEK;
             // The blown-peeks clock reaching the cap = the captor executes the hostage.
             // HALT at this fatal close (no extra energy charge, no overshoot past it).
             if (blownPeeks >= qte.maxBlownPeeks) {
@@ -574,6 +647,8 @@ export function tickQte(
                   // The fatal close is a PEEKING→COVERED close → the ring resets to rest, OFF.
                   targetOffset: WANDER_CENTRE,
                   ringZone: "off",
+                  // Carry the ticked accomplice — else its cooldown desyncs on the loss tick.
+                  accomplice: acc,
                 },
                 energyDelta,
               };
@@ -620,6 +695,8 @@ export function tickQte(
           telegraphActive,
           targetOffset,
           ringZone,
+          // The ticked accomplice (unchanged `qte.accomplice` when this level has none).
+          accomplice: acc,
         },
         energyDelta,
       };

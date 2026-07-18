@@ -51,5 +51,10 @@ screenshots/verify/
 screenshots/preview-vehicle-*.png
 screenshots/e2e-delivery.png
 
+# ADR-0005 dynamic-verification harness — regenerated each run, uploaded as CI
+# artifacts. screenshots/golden/ is NOT ignored — those baselines are committed.
+screenshots/motion-belliard.png
+screenshots/golden-candidate-*.png
+
 # session-local screenshots / throwaway capture scripts (never commit)
 scratchpad/
