@@ -35,8 +35,8 @@ function ArrowIndicator({
       {/* display:block — an inline svg sits on the text baseline and drifts off
           the span's geometric centre, which is also the rotation origin. */}
       <svg
-        width={34}
-        height={34}
+        width={68}
+        height={68}
         viewBox="0 0 34 34"
         aria-hidden="true"
         style={{ display: "block" }}
