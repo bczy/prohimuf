@@ -131,9 +131,9 @@ export function tickGameState(
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
 
-  // 1b. Hostage-taker cinematic QTE — "Le duel de la porte cochère" (ADR-0034).
+  // 1b. Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034).
   // When its scripted trigger fires, the REST OF THE SCENE FREEZES: only the
-  // crosshair and the QTE's own live simulation advance (the retreating captor, his
+  // crosshair and the QTE's own live simulation advance (the static captor, his
   // COVERED↔PEEKING sub-machine and the player's shot). Everything else (enemies,
   // waves, spawns, bullets, couriers, delivery, the level clock) is carried
   // unchanged via `...state`, so a QTE-less level (`qteSpec === null`) skips this

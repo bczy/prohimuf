@@ -620,3 +620,123 @@ does double duty (energy drain AND the loss counter's increment event).
 - VERDICT: **CONTRACT FROZEN.** dev-gameplay → types file first; then both lanes parallel.
   tech-writer to revise ADR-0034 D1 (number from producer). Awaiting game-designer's `maxBlownPeeks`
   default + any cadence retune.
+
+## 10. DESIGN GATE — static-duel revision — lead-game-designer (Karim) — 2026-07-18
+
+Gating the game-designer (Sacha) revision spec
+`docs/game-design/spec-hostage-qte-static-duel.md` — the deliverable triggered by
+Bertrand's playtest rejection of ADR-0034 D1 (captor retreat / sliding-on-the-floor /
+pointless porte-cochère envolée). Checked against the frozen contract delta in §9 above
+(Winston, LAW), ADR-0034 D1–D6 + P1–P4/G4–G6, PROJECT_GUIDELINES (scope guard, §5.6
+no-bullshit-death, single core loop, §6 no stress bar), and the prior gate (§5) it
+partially supersedes.
+
+**Scope / core loop / verifiability:** all PASS. The revision REDUCES scope (removes the
+moving-captor mechanic + its art dependency, reverts to the ADR-0030 static-tableau
+precedent) — no new undeclared extension. ~10.8 s ACTIVE inside a once-per-level side beat
+that never advances the kill quota; core loop untouched; fits the 3–5 min envelope.
+AC1–AC7 carry numbers, tolerances and named code asserts — a dev can implement without
+guessing.
+
+### The five gated decisions
+
+1. **Static captor (zoom-and-hold). CONFIRM.** Kills both defects Bertrand named: nothing
+   advances the anchor (no floor-slide), no door (no envolée). Coherent with P1–P3: P2
+   ("motion breeds sang-froid — passing openings, temptation to fire too early") is served
+   in **substance** by the KEPT COVERED↔PEEKING peek cadence — the "motion" that generates
+   sang-froid is the head appearing/vanishing in the opening, NOT the lateral drag. The
+   retreat was only ever the CLOCK, never the source of the temptation-to-fire; removing it
+   does not dilute P2. Peek-duel, `qteZoneAt` hitbox bands and the energy ledger kept
+   verbatim; G6 spatial disjointness now holds trivially on a fixed anchor. PASS.
+
+2. **N = 4 blown peeks → execution → LOST (Belliard default, F3-curvable). CONFIRM.**
+   Readable and fair (P3): each of the 4 openings is telegraphed (G4, 0.35 s ≥ 0.25 s) and
+   ≥ 0.5 s exposed (G5) — every failure reads "I cracked", never "unreadable". N = 4 is the
+   right default: it reproduces the old ≈ 4-clean-peek door budget (10.8 s vs old 12.0 s —
+   a disclosed, negligible tempo delta) and 4 × −8 = −32 leaves the passive-ignore energy
+   figure identical, so the economy is undisturbed. Heavier LOST consequence (death vs
+   door-escape) raises P1 stakes without touching P3 readability. Enforced integer ≥ 1,
+   authoring guidance N ≥ 2 (no single-blown-peek execution) — sound.
+
+3. **No second clock / no HUD bar — `blownPeeks` (0→N) sole diegetic clock. CONFIRM.**
+   Honours the single-clock decision ADR-0034 D1 fought for (now a static clock instead of
+   a spatial one) and PROJECT*GUIDELINES §6 ("pas de barre de stress"). The counter advances
+   only on a discrete, already-telegraphed event; gameplay exposes only `blownPeeks`/N. PASS
+   — subject to Flag B (the \_read* has no committed owner-answer yet).
+
+4. **F-1 reversal — hostage killable again (execution at N blown peeks = sole LOST route).
+   CONFIRM coherence (product call, not re-litigated).** This supersedes the §5 gate's F-1
+   "hostage non-killable" AND pm John's §8 ratify-recommendation — both were tied to the
+   now-deleted door and are overridden by Bertrand's product decision. Coherent with
+   §5.6 "jamais de mort bullshit": the death is NOT a stray-bullet HP death (a hostage-band
+   hit stays a flat −30 energy penalty, non-fatal, no `hostageHp`) — it is a legible,
+   telegraphed patience clock (miss 4 readable openings → she is executed). That is exactly
+   the _visible, coherent cop rule_ §5.6 demands, and it sharpens P1. Recorded as F-1
+   **superseded**, matching §9's "F-1 REVERSAL".
+
+5. **Field-name reconciliation. CORRECTION C-1 (doc, not design).** The architect owns the
+   frozen contract (§9) → `maxBlownPeeks` is LAW. The spec's `blownPeeksToLose` (§3.1 table,
+   §5 "Enters the contract") must read `maxBlownPeeks` for consistency. Single-line rename,
+   zero design change — routed to `tech-writer`/`game-designer`, not a re-gate.
+
+### Corrections & routed flags
+
+- **C-1 (doc → tech-writer / game-designer, blocking a clean PASS only as a rename):**
+  `blownPeeksToLose` → `maxBlownPeeks` throughout `spec-hostage-qte-static-duel.md` to match
+  the frozen contract. No value or design changes.
+- **Flag A (→ producer / tech-writer):** the ADR record. ADR-0034 D1 is REVERSED
+  (static duel + blown-peeks clock) and F-1 is reversed (hostage killable via execution
+  clock). This gate RATIFIES that decision content as coherent; `producer` allocates the
+  number, `tech-writer` writes the superseder/amendment (already scoped in §9 "ADR impact"
+  and spec open-flag #1). ADR-0035's F3 curve lane must retune its enumerated knob:
+  `maxBlownPeeks` replaces `retreatSpeed`/`porteCochere`.
+- **Flag B (→ ux-designer Tony + lead-art Nico, condition on the stage-5 read, NOT a block
+  on this gameplay deliverable):** the diegetic read of "how close is the captor to
+  executing her" is an unresolved _distress-escalation vs discrete-pips_ OR with no
+  committed owner-answer. "Player must sense proximity to execution" is load-bearing for
+  P1/P3, and the existing `ux/spec-hostage-qte-hud-readability.md` was authored for the
+  now-deleted distance clock — it needs a delta for the blown-peeks read. Gameplay exposes
+  `blownPeeks`/N (verifiable); the _read_ is UX+art's to specify. No HUD bar (single-clock,
+  §6). Must be closed before the stage-5 design-acceptance verdict.
+
+Rework rounds used: 0 of 2. C-1 is a single-line rename, not a redesign — apply and
+proceed to `senior-architect`/dev; no re-gate needed unless a value moves. Design
+acceptance (stage 5) re-verdicts Sacha's playtest vs AC1–AC7 (and Flag B's resolved read)
+post-BUILD.
+
+- VERDICT: **PASS-WITH-CORRECTIONS** (design substance PASSES · apply C-1 field rename ·
+  route Flag A ADR record to producer/tech-writer · route Flag B blown-peeks read to
+  ux-designer/lead-art). Static captor, N = 4, single diegetic clock and the F-1 reversal
+  are all CONFIRMED coherent. Cleared to `senior-architect` / dev once C-1 is applied.
+
+## 11. DOCS — tech-writer (Otis) — 2026-07-18
+
+- claim: apply the two doc-lane corrections routed by the §10 design gate — **C-1** (field
+  rename) and **Flag A** (ADR record) — plus keep the indexes coherent with the revision.
+- release:
+  - **C-1 applied** — `blownPeeksToLose` → `maxBlownPeeks` throughout
+    `docs/game-design/spec-hostage-qte-static-duel.md` (§3.1 table, §5 contract delta, and
+    the matching AC5 reference in §6 — same field, left in sync). No value or design change.
+  - **Flag A applied** — `docs/adr/0034-hostage-qte-duel-porte-cochere.md` gets a new
+    **"Revision 2 — 2026-07-18: static duel (D1 reversed)"** section recording: D1 reversed
+    (static captor, zoom-and-hold, per §9's frozen delta and Bertrand's verbatim playtest
+    rejection); the blown-peeks execution clock replacing the door clock; the F-1 reversal
+    (hostage killable again via the telegraphed execution clock, not a stray-bullet HP
+    death); and the full `QteSpec`/`HostageQte` contract delta. Status line updated to
+    `Accepted (amended 2026-07-18 — D1 reversed, see Revision 2)` per the ADR-0003/0028
+    dated-amendment convention (no other Status-line change). ADR number NOT reallocated —
+    per the story's own §9 "ADR impact" note, this is a dated amendment to ADR-0034, not a
+    new ADR (`producer` was not asked to allocate a number for this pass; flag if a
+    standalone superseder ADR is wanted instead).
+  - **Registry regenerated**: `node scripts/gen-adr-index.mjs --write` then `--check` —
+    fresh (41 ADR; ADR-0034's registry row now reads `Accepted (amended)`).
+  - **Indexes kept coherent**: `docs/agent-handoffs.md` index row flipped from
+    `pm-accepted` to `open` (the story is back in-flight on the revision; PR #79's original
+    §8 pm ACCEPT-WITH-NOTES was for the retreat/porte-cochère build, now superseded) and
+    reworded to name the static-duel revision and the F-1 reversal.
+    `docs/game-design/README.md`'s `spec-hostage-qte-static-duel.md` row updated to mark
+    C-1 and Flag A **applied** (was "route to tech-writer"); Flag B (blown-peeks read, →
+    ux-designer/lead-art) is left open — not a docs-lane edit.
+- verify: `npx --yes prettier@3.8.2 --check` on every markdown file touched — clean (see
+  below). No code or tuning numbers touched.
+- VERDICT: not a gate — doc realignment, traced to §10 findings C-1 and Flag A.

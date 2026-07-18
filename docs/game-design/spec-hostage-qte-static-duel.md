@@ -95,9 +95,9 @@ This is now the **sole fail route**. There is no door, no timeout, no second con
 
 ### 3.1 N — how many blown peeks kill her
 
-| Field                      | Belliard default | Kind                             |
-| -------------------------- | ---------------- | -------------------------------- |
-| `blownPeeksToLose` (**N**) | **4**            | new per-level knob (F3-curvable) |
+| Field                   | Belliard default | Kind                             |
+| ----------------------- | ---------------- | -------------------------------- |
+| `maxBlownPeeks` (**N**) | **4**            | new per-level knob (F3-curvable) |
 
 **Rationale for N = 4.** The old door budget (12.0 s at 0.6 u/s) produced **≈ 4 clean
 peeks** before failure. Setting N = 4 reproduces that exact tempo without any movement: a
@@ -168,11 +168,11 @@ the code.
 
 **Enters the contract:**
 
-- `QteSpec`: `blownPeeksToLose: number` (N; integer ≥ 1, asserted).
+- `QteSpec`: `maxBlownPeeks: number` (N; integer ≥ 1, asserted).
 - `HostageQte` runtime: `blownPeeks: number` (accumulator, 0 → N).
 - `qteSystem.ts`: on each closed peek (the existing `PEEKING → COVERED` crossing that charges
   `QTE_UNANSWERED_PEEK`), **also** increment `blownPeeks`; when it reaches N, transition
-  `ACTIVE → LOST`. Assert `blownPeeksToLose` is a finite integer ≥ 1 in `createQte`.
+  `ACTIVE → LOST`. Assert `maxBlownPeeks` is a finite integer ≥ 1 in `createQte`.
 
 **Unchanged energy constants** (`qteSystem.ts`): `QTE_RESCUE_REFILL +40`,
 `QTE_HOSTAGE_HIT −30`, `QTE_UNANSWERED_PEEK −8`, `QTE_PANIC_SHOT −6`, `QTE_BODY_HIT −5`,
@@ -201,7 +201,7 @@ Mirrors the current AC set; movement/door ACs replaced by static/blown-peeks ACs
   during zoom = −6; each body hit = −5. Severity order holds. Full passive ignore = −32
   **and** `LOST`.
 - **AC5 — Floors asserted.** Belliard exposure ≥ 1.0 s in playtest; code asserts any authored
-  exposure ≥ 0.5 s (G5) and any tell ≥ 0.25 s (G4); code asserts `blownPeeksToLose` is an
+  exposure ≥ 0.5 s (G5) and any tell ≥ 0.25 s (G4); code asserts `maxBlownPeeks` is an
   integer ≥ 1. Unit tests on level data.
 - **AC6 — Hitboxes unchanged.** `qteZoneAt` head/body/hostage/miss bands match the current
   values exactly (regression: same band asserts as before).

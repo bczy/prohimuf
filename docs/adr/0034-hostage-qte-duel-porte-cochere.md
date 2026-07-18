@@ -1,6 +1,6 @@
 # 0034 — Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)
 
-- **Status:** Accepted
+- **Status:** Accepted (amended 2026-07-18 — D1 reversed, see Revision 2)
 - **Date:** 2026-07-17
 - **Partially supersedes:** [ADR-0030](./0030-hostage-taker-feature-and-sprite.md) — the
   **static frozen tableau**, the **`windowSeconds` clock**, and the **`PART_DAMAGE`
@@ -182,3 +182,78 @@ the art lane**; cop fallback until they land, per ADR-0030). The zoom driver in
   and tune it against the new art.
 - Unanswered-peek energy drain must be charged **once per closed exposure**, not per tick,
   or a long peek over-bills the player.
+
+## Revision 2 — 2026-07-18: static duel (D1 reversed)
+
+Bertrand playtested the ADR-0034 build (PR #79) and **rejected D1** (the distance-to-door
+retreat clock). Verbatim:
+
+- « je ne vois pas l'intérêt de faire décaler le preneur d'otage de gauche à droite »
+- « l'otage et son preneur glissent sur le sol, c'est très bizarre en mode rendu »
+- « cette envolée vers la porte cochère est clairement foireuse »
+
+He kept liking the `qteZoneAt` hitboxes. Product-owner decision, gated PASS by
+`lead-game-designer` (Karim, design source
+[`spec-hostage-qte-static-duel.md`](../game-design/spec-hostage-qte-static-duel.md), gate
+verdict in the story shard's §10): the duel goes **static**, and the door clock is replaced
+by a **blown-peeks execution clock**. The frozen code contract is `senior-architect`'s story
+shard §9 (`docs/handoffs/story-hostage-qte-duel.md`).
+
+### D1 reversed — static captor, camera zooms-and-holds
+
+The captor no longer retreats toward the porte cochère. He is **STATIC at the zoom anchor**
+for the whole QTE — the ADR-0030 frozen-tableau shape: the camera zooms to `anchor` and
+**holds** (no follow, no lead). `porteCochere` and `retreatSpeed` leave `QteSpec`; `dir`,
+`speed`, `porteCochere`, and the moving-anchor advance leave the `HostageQte` runtime —
+`anchor` becomes a **constant**, copied once at `createQte` and never mutated by the tick.
+
+Reason: in playtest the moving cop-fallback tableau read as "sliding on the floor" (the
+drag-walk art was a deferred CI dependency, so the cop fallback dragged visibly wrong), and
+the door envolée had no perceived point — a spatial fail condition the player never actually
+watched land. Removing the retreat kills both defects at the source rather than patching the
+fallback art or the door framing.
+
+### The clock is now blown peeks, not distance
+
+A `PEEKING` exposure that **closes** (`PEEKING → COVERED`) without a clean headshot during
+it is a **blown peek** — the same event D3 already calls an "unanswered peek". It now does
+double duty: it still drains `QTE_UNANSWERED_PEEK` (−8, unchanged, charged once per closed
+exposure), **and** it increments a `blownPeeks` counter. When `blownPeeks` reaches the
+per-level `maxBlownPeeks`, the captor **executes the hostage → `LOST`**. This is the **sole**
+failure route — no door, no timeout, no second condition. The tie-break is preserved: `fire`
+resolves before the loss check, so a same-tick winning head-shot beats a same-tick fatal
+blown peek → `WON` (mirrors the ADR-0030 kill-vs-timeout precedent D1 originally reused).
+
+`maxBlownPeeks` **replaces `retreatSpeed`/`porteCochere` as the per-level difficulty knob**
+— [ADR-0035](./0035-hostage-qte-difficulty-curve.md) (F3) must retune its enumerated knobs
+around it (Belliard default N = 4, integer ≥ 1 asserted in code, authoring guidance N ≥ 2 so
+no level executes her on a single blown opening).
+
+### F-1 reversed — the hostage is killable again
+
+D4's "hostage = flat −30, non-fatal" penalty **stays** — a hostage-band hit is still not a
+death route. But the execution on the Nth blown peek makes the hostage **killable again**,
+which **reverses F-1**: the design-gate finding that ruled her non-killable and `pm`'s
+(John) ratify-recommendation that this ADR retire ADR-0030's hostage-death loss route were
+both tied to the now-deleted door, and are **superseded** by this revision. What guideline
+§5.6 ("jamais de mort bullshit") actually cares about still holds: this is not a
+stray-bullet HP death (there is still no `hostageHp`, no per-bullet death) — it is a
+**legible, telegraphed patience clock** (miss `maxBlownPeeks` readable, G4/G5-fair openings
+→ she is executed). `lead-game-designer`'s revision gate confirmed this reading as coherent
+with §5.6, not a violation of it.
+
+### Contract delta
+
+- **`QteSpec`** — loses `porteCochere`, `retreatSpeed`; gains `readonly maxBlownPeeks: number`
+  (integer ≥ 1, asserted — the per-level execution cap).
+- **`HostageQte` runtime** — loses `dir`, `speed`, `porteCochere`, and the moving-anchor
+  advance (`anchor` becomes static); gains `readonly blownPeeks: number` (counter, 0 →
+  `maxBlownPeeks`) and a runtime mirror `readonly maxBlownPeeks: number`.
+- **Kept verbatim:** the peek-duel (`COVERED ↔ PEEKING`, D2), G4's telegraph and G5's
+  exposure floor, D3 (the peek is the captor's shot), D4's head-during-peek = the sole win
+  route, the energy ledger (D5, unchanged magnitudes), and the `qteZoneAt` hitbox bands (G6
+  spatial separation now holds trivially on a fixed anchor).
+
+Full frozen delta (types, `qteSystem.ts`, render/camera driver) lives in
+`senior-architect`'s story shard §9, `docs/handoffs/story-hostage-qte-duel.md` — this ADR
+section is the decision record, not the code contract.

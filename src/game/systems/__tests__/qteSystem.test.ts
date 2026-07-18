@@ -21,13 +21,13 @@ import {
 import type { HostageQte, QteSpec } from "@game/types/hostageQte";
 import { LEVELS } from "@game/levels/levels";
 
-// Belliard default (spec §5). Anchor at origin ⇒ impactPoint IS the (dx, dy) offset.
+// Belliard default (spec §5), the static duel. Anchor at origin ⇒ impactPoint IS the
+// (dx, dy) offset. `maxBlownPeeks` is now the sole failure clock (no retreat/door).
 const SPEC: QteSpec = {
   triggerAtElapsedSeconds: 12,
   zoomSeconds: 2,
   anchor: { x: 0, y: 0 },
-  porteCochere: { x: 7.2, y: 0 },
-  retreatSpeed: 0.6,
+  maxBlownPeeks: 4,
   peekCadenceSeconds: 1.5,
   peekDurationSeconds: 1.2,
 };
@@ -117,24 +117,19 @@ describe("isQteActive / shouldTriggerQte", () => {
 });
 
 describe("createQte — seeding + safety invariants (asserted in code)", () => {
-  it("seeds ZOOMING, COVERED, the retreat kinematics and the warning up", () => {
+  it("seeds ZOOMING, COVERED, the STATIC anchor, a zeroed blown-peeks clock and the warning up", () => {
     const q = createQte(SPEC);
     expect(q.phase).toBe("ZOOMING");
     expect(q.stance).toBe("COVERED");
     expect(q.telegraphActive).toBe(false);
     expect(q.stanceRemaining).toBe(SPEC.peekCadenceSeconds);
     expect(q.anchor).toEqual({ x: 0, y: 0 });
-    expect(q.dir).toBe(1); // door is toward +x
-    expect(q.speed).toBe(0.6);
-    expect(q.porteCochere).toEqual({ x: 7.2, y: 0 });
+    expect(q.blownPeeks).toBe(0);
+    expect(q.maxBlownPeeks).toBe(SPEC.maxBlownPeeks); // runtime mirror of the cap
+    expect(q.peekCadenceSeconds).toBe(SPEC.peekCadenceSeconds);
     expect(q.zoomRemaining).toBe(2);
     expect(q.resultRemaining).toBe(QTE_RESULT_HOLD);
     expect(q.warning).toBe(true);
-  });
-
-  it("derives dir from the door side (sign of door − start)", () => {
-    const left = createQte({ ...SPEC, anchor: { x: 0, y: 0 }, porteCochere: { x: -5, y: 0 } });
-    expect(left.dir).toBe(-1);
   });
 
   // AC3 / G5 — the runtime exposure is clamped UP to the floor; assert the RUNTIME
@@ -156,22 +151,20 @@ describe("createQte — seeding + safety invariants (asserted in code)", () => {
     expect(SPEC.peekCadenceSeconds).toBeGreaterThan(TELEGRAPH_LEAD_SECONDS);
   });
 
-  it("D1: throws if the door is not strictly ahead or the retreat is non-positive", () => {
-    expect(() => createQte({ ...SPEC, porteCochere: { x: 0, y: 0 } })).toThrow(/D1/);
-    expect(() => createQte({ ...SPEC, retreatSpeed: 0 })).toThrow(/D1/);
+  it("throws unless maxBlownPeeks is an integer ≥ 1 (the failure clock must count)", () => {
+    expect(() => createQte({ ...SPEC, maxBlownPeeks: 0 })).toThrow(/maxBlownPeeks/);
+    expect(() => createQte({ ...SPEC, maxBlownPeeks: -1 })).toThrow(/maxBlownPeeks/);
+    expect(() => createQte({ ...SPEC, maxBlownPeeks: 2.5 })).toThrow(/maxBlownPeeks/);
+    // A whole, positive count passes.
+    expect(() => createQte({ ...SPEC, maxBlownPeeks: 1 })).not.toThrow();
   });
 
-  // C3 — movement freezes y and the door test is x-only; a door off the anchor's
-  // street would "arrive" on x while the camera leads toward a y never reached.
-  it("C3: throws if the door is off the anchor's street (porteCochere.y !== anchor.y)", () => {
-    expect(() => createQte({ ...SPEC, porteCochere: { x: 7.2, y: 1 } })).toThrow(/C3/);
-  });
-
-  // C6 — non-finite authored numerics slip past `=== 0`/`Math.max` and can wedge the
-  // peek sub-machine open forever; they are rejected at seed time.
+  // C6 — non-finite authored numerics slip past the integer/`Math.max` guards and can
+  // wedge the peek sub-machine open forever; they are rejected at seed time.
   it("C6: throws on a non-finite authored numeric (NaN/Infinity)", () => {
-    expect(() => createQte({ ...SPEC, retreatSpeed: NaN })).toThrow(/C6/);
-    expect(() => createQte({ ...SPEC, porteCochere: { x: Infinity, y: 0 } })).toThrow(/C6/);
+    expect(() => createQte({ ...SPEC, maxBlownPeeks: NaN })).toThrow(/C6/);
+    expect(() => createQte({ ...SPEC, anchor: { x: Infinity, y: 0 } })).toThrow(/C6/);
+    expect(() => createQte({ ...SPEC, peekCadenceSeconds: NaN })).toThrow(/C6/);
   });
 });
 
@@ -188,14 +181,14 @@ describe("tickQte — ZOOMING", () => {
     expect(r).toMatchObject({ energyDelta: 0 });
   });
 
-  it("opens the duel when the zoom elapses (ACTIVE, COVERED, retreat clock at start)", () => {
+  it("opens the duel when the zoom elapses (ACTIVE, COVERED, static anchor held)", () => {
     const r = tickQte({ ...createQte(SPEC), zoomRemaining: 0.05 }, false, NO_HIT, 0.1);
     expect(r.qte.phase).toBe("ACTIVE");
     expect(r.qte.stance).toBe("COVERED");
     expect(r.qte.stanceRemaining).toBe(SPEC.peekCadenceSeconds);
     expect(r.qte.telegraphActive).toBe(false);
     expect(r.qte.warning).toBe(false);
-    expect(r.qte.anchor.x).toBe(0); // retreat has not advanced yet
+    expect(r.qte.anchor).toEqual({ x: 0, y: 0 }); // static — nothing moves
   });
 
   it("still penalises a panic shot on the tick the zoom elapses", () => {
@@ -244,48 +237,96 @@ describe("tickQte — the binary duel (AC6)", () => {
   });
 });
 
-describe("tickQte — retreat budget & tie-break (AC1)", () => {
-  it("with no fire, the captor reaches the door in ~12 s of ACTIVE time → LOST", () => {
+describe("tickQte — the blown-peeks execution clock & tie-break (AC1)", () => {
+  it("N (=maxBlownPeeks) blown peeks with no fire → LOST at exactly the Nth close", () => {
     let q = active();
-    let t = 0;
+    let closes = 0;
+    let drain = 0;
     const dt = 1 / 60;
-    while (q.phase === "ACTIVE" && t < 30) {
+    for (let i = 0; i < 60 * 60 && q.phase === "ACTIVE"; i++) {
+      const prevStance = q.stance;
       const r = tickQte(q, false, NO_HIT, dt);
+      if (prevStance === "PEEKING" && r.qte.stance === "COVERED") closes++;
+      drain += r.energyDelta;
       q = r.qte;
-      if (q.phase === "ACTIVE") t += dt;
-      else t += dt; // the tick that crosses the door still consumed dt of ACTIVE time
     }
     expect(q.phase).toBe("LOST");
-    // 7.2 / 0.6 = 12.0 s answerable budget.
-    expect(t).toBeGreaterThan(11.8);
-    expect(t).toBeLessThan(12.2);
+    expect(closes).toBe(SPEC.maxBlownPeeks); // 4 — not before
+    expect(q.blownPeeks).toBe(SPEC.maxBlownPeeks);
+    // Charge-once per blown peek: N × −8 over the whole run, nothing more.
+    expect(drain).toBe(SPEC.maxBlownPeeks * QTE_UNANSWERED_PEEK);
   });
 
-  it("reaching the door charges NO extra energy (the cost was paid peek-by-peek)", () => {
-    // Anchor one sub-tick short of the door, COVERED so no peek closes this tick.
-    const q = active({ anchor: { x: 7.15, y: 0 }, stance: "COVERED", stanceRemaining: 1.0 });
-    const r = tickQte(q, false, NO_HIT, 0.1); // advances 0.06 → 7.21 ≥ 7.2
+  it("a large delta HALTS at exactly the Nth (fatal) close — no overshoot", () => {
+    // COVERED with 0.1 s left, then a single huge delta. It crosses many boundaries but
+    // must stop dead at the 4th PEEKING→COVERED close (the execution), never past it.
+    const q = active({ stance: "COVERED", stanceRemaining: 0.1 });
+    const r = tickQte(q, false, NO_HIT, 100);
     expect(r.qte.phase).toBe("LOST");
-    expect(r).toMatchObject({ energyDelta: 0 });
+    expect(r.qte.stance).toBe("COVERED");
+    expect(r.qte.blownPeeks).toBe(SPEC.maxBlownPeeks);
+    // Exactly N unanswered-peek charges accrued before the halt — no extra loss charge.
+    expect(r.energyDelta).toBe(SPEC.maxBlownPeeks * QTE_UNANSWERED_PEEK);
   });
 
-  it("tie-break: a winning headshot beats the door reached on the SAME tick → WON", () => {
-    // This tick's retreat WOULD reach the door, but fire is resolved first. Aim at
-    // the head band relative to the LIVE anchor (7.15 + HEAD_PT offset).
-    const q = active({ anchor: { x: 7.15, y: 0 }, stance: "PEEKING", stanceRemaining: 1.0 });
-    const r = tickQte(q, true, { x: 7.15 + HEAD_PT.x, y: HEAD_PT.y }, 0.1);
+  it("a close short of the cap stays ACTIVE (only the Nth close loses)", () => {
+    const q = active({
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      blownPeeks: SPEC.maxBlownPeeks - 2,
+    });
+    const r = tickQte(q, false, NO_HIT, 0.1);
+    expect(r.qte.phase).toBe("ACTIVE");
+    expect(r.qte.blownPeeks).toBe(SPEC.maxBlownPeeks - 1);
+    expect(r.energyDelta).toBe(QTE_UNANSWERED_PEEK);
+  });
+
+  it("the Nth close executes the hostage → LOST, charging that close once (no extra)", () => {
+    const q = active({
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      blownPeeks: SPEC.maxBlownPeeks - 1,
+    });
+    const r = tickQte(q, false, NO_HIT, 0.1);
+    expect(r.qte.phase).toBe("LOST");
+    expect(r.qte.blownPeeks).toBe(SPEC.maxBlownPeeks);
+    expect(r.energyDelta).toBe(QTE_UNANSWERED_PEEK); // the fatal close, once — no extra charge
+  });
+
+  it("tie-break: a winning headshot on the fatal peek tick → WON, not LOST", () => {
+    // The peek WOULD close fatally this tick (blownPeeks one shy of the cap), but the
+    // head hit is resolved FIRST and wins before the execution can fire.
+    const q = active({
+      stance: "PEEKING",
+      stanceRemaining: 0.05,
+      blownPeeks: SPEC.maxBlownPeeks - 1,
+    });
+    const r = tickQte(q, true, HEAD_PT, 0.1);
     expect(r.qte.phase).toBe("WON");
     expect(r.energyDelta).toBe(QTE_RESCUE_REFILL);
+    expect(r.qte.blownPeeks).toBe(SPEC.maxBlownPeeks - 1); // never incremented — the shot won first
+  });
+
+  it("the anchor never mutates across ticks (static duel)", () => {
+    let q = active();
+    const anchor0 = q.anchor;
+    const dt = 1 / 60;
+    for (let i = 0; i < 300 && q.phase === "ACTIVE"; i++) {
+      const r = tickQte(q, false, NO_HIT, dt);
+      expect(r.qte.anchor).toEqual({ x: 0, y: 0 });
+      expect(r.qte.anchor).toBe(anchor0); // copied once, never rebuilt — same reference
+      q = r.qte;
+    }
   });
 });
 
 describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)", () => {
-  it("AC2: a passive run surfaces ≥ 4 fully-closed exposures before the door", () => {
+  it("AC2: a passive run surfaces exactly maxBlownPeeks fully-closed exposures before the loss", () => {
     let q = active();
     let closes = 0;
     let peekDrain = 0;
     const dt = 1 / 60;
-    for (let i = 0; i < 60 * 30 && q.phase === "ACTIVE"; i++) {
+    for (let i = 0; i < 60 * 60 && q.phase === "ACTIVE"; i++) {
       const prevStance = q.stance;
       const r = tickQte(q, false, NO_HIT, dt);
       if (prevStance === "PEEKING" && r.qte.stance === "COVERED") closes++;
@@ -293,8 +334,8 @@ describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)
       q = r.qte;
     }
     expect(q.phase).toBe("LOST");
-    expect(closes).toBeGreaterThanOrEqual(4);
-    // AC5: each closed exposure charged exactly once → 4 × −8 = −32 over the run.
+    expect(closes).toBe(SPEC.maxBlownPeeks);
+    // AC5: each closed exposure charged exactly once.
     expect(peekDrain).toBe(closes * QTE_UNANSWERED_PEEK);
   });
 
@@ -313,22 +354,25 @@ describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)
     expect(r.qte.stanceRemaining).toBe(Math.max(SPEC.peekDurationSeconds, PEEK_EXPOSURE_FLOOR));
     expect(r.qte.telegraphActive).toBe(false);
     expect(r.energyDelta).toBe(0); // opening a peek is free
+    expect(r.qte.blownPeeks).toBe(0); // an OPEN is not a blown peek
   });
 
-  it("AC5: a PEEKING→COVERED close charges the unanswered-peek drain ONCE", () => {
+  it("AC5: a PEEKING→COVERED close charges the unanswered-peek drain ONCE and counts one blown peek", () => {
     const q = active({ stance: "PEEKING", stanceRemaining: 0.05 });
     const r = tickQte(q, false, NO_HIT, 0.1);
     expect(r.qte.stance).toBe("COVERED");
     expect(r.qte.stanceRemaining).toBe(SPEC.peekCadenceSeconds);
+    expect(r.qte.blownPeeks).toBe(1);
     expect(r.energyDelta).toBe(QTE_UNANSWERED_PEEK);
   });
 
   it("a long exposure is NOT over-billed — the drain fires only on the close tick", () => {
-    // Mid-peek ticks that do not close charge nothing.
+    // Mid-peek ticks that do not close charge nothing and blow no peek.
     const mid = active({ stance: "PEEKING", stanceRemaining: 1.0 });
     const r = tickQte(mid, false, NO_HIT, 0.1);
     expect(r.qte.stance).toBe("PEEKING");
     expect(r.energyDelta).toBe(0);
+    expect(r.qte.blownPeeks).toBe(0);
   });
 
   // C1 — a delta larger than a stance segment must not silently swallow the skipped
@@ -336,14 +380,15 @@ describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)
   it("C1: a large delta spanning ≥2 stance boundaries charges each closed peek once", () => {
     // COVERED with 0.1 s left, then a single 4.2 s delta. Boundaries crossed:
     //   0.1  COVERED→PEEKING (open, free)
-    //   +1.2 PEEKING→COVERED (close #1, −8)
+    //   +1.2 PEEKING→COVERED (close #1, −8, blown 1)
     //   +1.5 COVERED→PEEKING (open, free)
-    //   +1.2 PEEKING→COVERED (close #2, −8)   [t = 4.0]
-    // → lands 0.2 s into a fresh COVERED beat. Retreat 0.6 × 4.2 = 2.52 u < 7.2 → ACTIVE.
+    //   +1.2 PEEKING→COVERED (close #2, −8, blown 2)   [t = 4.0]
+    // → lands 0.2 s into a fresh COVERED beat. blown 2 < cap 4 → still ACTIVE.
     const q = active({ stance: "COVERED", stanceRemaining: 0.1 });
     const r = tickQte(q, false, NO_HIT, 4.2);
     expect(r.qte.phase).toBe("ACTIVE");
     expect(r.qte.stance).toBe("COVERED");
+    expect(r.qte.blownPeeks).toBe(2);
     // Two full exposures closed within the tick → charged exactly twice, not once.
     expect(r.energyDelta).toBe(2 * QTE_UNANSWERED_PEEK);
   });
@@ -372,7 +417,7 @@ describe("tickQte — result hold → DONE (once per level)", () => {
 });
 
 describe("real level data honours the safety floors (B1 / AC3)", () => {
-  it("every authored hostageQte clears the exposure floor and telegraph lead", () => {
+  it("every authored hostageQte clears the exposure floor, telegraph lead and blown-peeks clock", () => {
     const specs = LEVELS.map((l) => l.hostageQte).filter((s): s is QteSpec => s !== undefined);
     expect(specs.length).toBeGreaterThan(0); // Belliard opts in — the test has teeth.
     for (const s of specs) {
@@ -380,7 +425,9 @@ describe("real level data honours the safety floors (B1 / AC3)", () => {
       // authoring regression in levels.ts surfaces here.
       expect(s.peekDurationSeconds).toBeGreaterThanOrEqual(PEEK_EXPOSURE_FLOOR);
       expect(s.peekCadenceSeconds).toBeGreaterThan(TELEGRAPH_LEAD_SECONDS);
-      // And the authored spec seeds without tripping any invariant (D1/C3/C6/G4).
+      expect(Number.isInteger(s.maxBlownPeeks)).toBe(true);
+      expect(s.maxBlownPeeks).toBeGreaterThanOrEqual(1);
+      // And the authored spec seeds without tripping any invariant (C6/G4/G5/count).
       expect(() => createQte(s)).not.toThrow();
     }
   });

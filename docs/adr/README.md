@@ -89,7 +89,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0031](./0031-crt-post-process-composite-pass.md) | CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep) | Accepted |
 | [0032](./0032-two-tier-pipeline-and-process-amendments.md) | Two-tier pipeline, merged review stage, sharded handoffs log, producer-allocated ADR numbers | Accepted |
 | [0033](./0033-remote-session-provisioning.md) | Remote session provisioning via SessionStart hook (pinned rtk + codegraph) | Accepted |
-| [0034](./0034-hostage-qte-duel-porte-cochere.md) | Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules) | Accepted |
+| [0034](./0034-hostage-qte-duel-porte-cochere.md) | Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules) | Accepted (amended) |
 | [0035](./0035-hostage-qte-difficulty-curve.md) | Hostage QTE per-level difficulty curve for the duel (F3) | Accepted |
 | [0036](./0036-hostage-qte-accomplice.md) | Hostage QTE: the accomplice (second shooter) (F4) | Proposed |
 | [0037](./0037-crew-extension-ux-gpu-docs.md) | Crew extension: UX design lane, GPU/perf verdict, staffed DOCS lane | Accepted |

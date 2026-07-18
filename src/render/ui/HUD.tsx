@@ -20,11 +20,12 @@ export interface HudDelivery {
 }
 
 /**
- * Hostage-taker QTE state surfaced to the DOM HUD (ADR-0034), read from the state
- * ref. Only the two set-piece stamps remain on the HUD — the "OTAGE" zoom banner
- * (`warning`) and the WON/LOST verdict (`phase`). The captor-HP, countdown and
- * hostage-HP gauges left the screen (ADR-0034 D1/D4, UX spec §1): the duel is
- * binary and the sole clock is the diegetic captor→door distance drawn in-world.
+ * Hostage-taker QTE state surfaced to the DOM HUD (the static duel), read from the
+ * state ref. Only the two set-piece stamps remain on the HUD — the "OTAGE" zoom
+ * banner (`warning`) and the WON/LOST verdict (`phase`). The captor-HP, countdown
+ * and hostage-HP gauges left the screen (UX spec §1): the duel is binary and the
+ * sole clock is the blown-peeks count, surfaced diegetically in-world (Flag B),
+ * never as a HUD bar.
  */
 export interface HudHostageQte {
   phase: QtePhase;
@@ -367,8 +368,9 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <>
           {/* Dim wash over the frozen scene — a soft vignette that keeps the
               centred, zoomed captor readable (transparent core). The bottom-centre
-              gauge stack is intentionally GONE (ADR-0034 D1/D4, UX spec §1): the
-              sole clock is the in-world captor→door distance, no HUD surrogate. */}
+              gauge stack is intentionally GONE (UX spec §1): the sole clock is the
+              blown-peeks count, read diegetically in-world (Flag B), no HUD
+              surrogate. */}
           <div
             style={{
               position: "fixed",

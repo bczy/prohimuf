@@ -7,14 +7,21 @@ import { isQteActive } from "@game/systems/qteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
-import { captorTint, hostageAlarmColor, peekTellVisual } from "./hostageCue";
+import {
+  blownPeeksProximity,
+  captorTint,
+  hostageAlarmColor,
+  hostageDistressTint,
+  peekTellVisual,
+} from "./hostageCue";
 import type { HudHostageQte } from "@render/ui/HUD";
 
 // The captor: a SQUARE plane (his texture is 256×256, figure centred — no aspect
-// distortion) drawn at the LIVE `qte.anchor` as he retreats toward the door
-// (ADR-0034 D1). His drag / covered / peeking poses ship later via the CI art
-// lane; until then a stance→texture-key indirection (resolveCaptorTexture)
-// resolves the cop fallback, so landing the real art is a pure data swap here.
+// distortion) drawn at the STATIC `qte.anchor` where he stands holding the
+// hostage (the static duel — he never moves). His covered / peeking poses ship
+// later via the CI art lane; until then a stance→texture-key indirection
+// (resolveCaptorTexture) resolves the cop fallback, so landing the real art is a
+// pure data swap here.
 const QTE_W = 2.0;
 const QTE_H = 2.0;
 const QTE_Z = 0.5;
@@ -45,9 +52,6 @@ const CUE_DX = -0.5;
 const CUE_DY = 0.7;
 const CUE_Z = 0.55;
 
-// The girl's art reads untinted (white multiplies to identity).
-const GIRL_TINT = "#ffffff";
-
 // Pulse speed (rad/ms) for the peek-cue brightness pulse / LOST execution strobe.
 const PULSE_SPEED = 0.006;
 
@@ -58,7 +62,7 @@ type CaptorTexKey = "covered" | "peeking";
  * peeking-with-gun-raised captor sprites ship later via the CI art lane; until
  * then every key resolves to the cop fallback, so landing the art is a pure data
  * swap at THIS seam (no component logic change). Flagged to `lead-art`: the cop
- * fallback reads wrong for a MOVING captor — acceptable placeholder.
+ * fallback is a placeholder for the real static captor pose.
  */
 function resolveCaptorTexture(_key: CaptorTexKey): ResolvedEnemyTexture | null {
   return resolveEnemyTexture("hostage_taker", 1, false, 1);
@@ -83,24 +87,32 @@ function hudSliceKey(slice: HudHostageQte | null): string {
 }
 
 /**
- * The hostage-taker QTE tableau (ADR-0034 "duel de la porte cochère"): the captor
- * dragging the hostage as a living shield, drawn at the LIVE moving `qte.anchor`
- * as he retreats. Three pooled meshes driven each frame from `GameState.qte`
- * (world space, same axes as bullets / crosshair): the captor, the hostage
- * shield, and the peek cue (wind-up tell + open-window marker). Visible only
- * while the QTE holds the scene frozen (`isQteActive`).
+ * The hostage-taker QTE tableau (the static duel): the captor standing STILL,
+ * holding the hostage as a living shield, drawn at the FIXED `qte.anchor` the
+ * camera zooms onto and holds. Three pooled meshes (world space, same axes as
+ * bullets / crosshair): the captor, the hostage shield, and the peek cue
+ * (wind-up tell + open-window marker). Their positions are set ONCE from the
+ * static anchor on activation (no per-tick moving-anchor writes); only tints and
+ * the cue's pulse update each frame. Visible only while the QTE holds the scene
+ * frozen (`isQteActive`).
  *
  * COVERED ↔ PEEKING reads by FORM (peek cue absent vs present) and pose, not hue;
  * the pre-peek cue is keyed off the game's `telegraphActive` (anticipation, not
- * reaction). Under `prefers-reduced-motion` the cue and the LOST execution flash
- * degrade from a pulse/strobe to a STEADY appearing cue (signal preserved, no
- * >3 Hz flash — WCAG 2.3.1 / UX spec §4).
+ * reaction). The blown-peeks proximity is surfaced diegetically (Flag B): the
+ * hostage's distress tint warms toward alarm as `blownPeeks` nears `maxBlownPeeks`
+ * — no HUD bar. Under `prefers-reduced-motion` the cue and the LOST execution
+ * flash degrade from a pulse/strobe to a STEADY appearing cue, and the distress
+ * tint is steady by construction (signal preserved, no >3 Hz flash — WCAG 2.3.1 /
+ * UX spec §4).
  */
 export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element {
   const captorRef = useRef<Mesh>(null);
   const hostageRef = useRef<Mesh>(null);
   const peekCueRef = useRef<Mesh>(null);
   const lastKeyRef = useRef<string>("none");
+  // The static tableau is positioned ONCE per activation (the captor never moves);
+  // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
+  const positionedRef = useRef(false);
   // Render-side reduced-motion detection (UX spec §4.1): degrades the peek cue /
   // execution flash to a steady, strobe-free form. Mirrors CrtPass's live query.
   const reducedMotionRef = useRef(
@@ -145,18 +157,32 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       captor.visible = false;
       hostage.visible = false;
       peekCue.visible = false;
+      positionedRef.current = false;
       return;
+    }
+
+    // ── Static placement (once per activation) ────────────────────────────────
+    // The captor never moves (the static duel): place the three meshes ONCE from
+    // the fixed `qte.anchor` — no per-tick moving-anchor writes. Only tints and
+    // the cue's pulse/scale update each frame below.
+    if (!positionedRef.current) {
+      captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
+      captor.scale.set(QTE_W, QTE_H, 1);
+      hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
+      hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
+      peekCue.position.set(qte.anchor.x + CUE_DX, qte.anchor.y + CUE_DY, CUE_Z);
+      positionedRef.current = true;
     }
 
     const reducedMotion = reducedMotionRef.current;
     const pulse01 = reducedMotion ? 0 : (Math.sin(nowMs * PULSE_SPEED) + 1) / 2;
     const lost = qte.phase === "LOST";
     const peeking = qte.stance === "PEEKING";
+    // Flag B: how close the captor is to executing the hostage (blown peeks / cap).
+    const proximity = blownPeeksProximity(qte.blownPeeks, qte.maxBlownPeeks);
 
-    // ── Captor (moving tableau; pose via stance→texture indirection) ──────────
+    // ── Captor (static tableau; pose via stance→texture indirection) ──────────
     captor.visible = true;
-    captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
-    captor.scale.set(QTE_W, QTE_H, 1);
     const captorTex = resolveCaptorTexture(peeking ? "peeking" : "covered");
     const captorMat = captor.material as MeshBasicMaterial;
     if (captorTex !== null && captorMat.map !== captorTex.texture) {
@@ -169,10 +195,8 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         : captorTint(qte.stance, qte.telegraphActive),
     );
 
-    // ── Hostage (the daughter, dragged in front as a shield) ──────────────────
+    // ── Hostage (the daughter, held in front as a shield) ─────────────────────
     hostage.visible = true;
-    hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
-    hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
     // Her dedicated art (committed). No figure fallback: the enemy cache's cop
     // fallback would make her read as a hostile — so she stays hidden the beat
     // her PNG loads (getHostageGirlTexture returns null until then).
@@ -184,17 +208,20 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       hostageMat.map = girlTex;
       hostageMat.needsUpdate = true;
     }
-    // She strobes with the alarm on LOST (she is the one being executed),
-    // otherwise reads untinted. No stray-hit white flash: ADR-0034 D4 makes a
-    // hostage hit a flat energy penalty with no per-hit signal on the contract.
-    hostageMat.color.set(lost ? hostageAlarmColor(pulse01, reducedMotion) : GIRL_TINT);
+    // Flag B (diegetic, no HUD bar): her distress tint warms toward alarm as the
+    // blown peeks approach the execution cap — the "he's about to do it" read. On
+    // LOST she strobes the alarm (she is the one being executed). Steady
+    // escalation ⇒ reduced-motion-safe. No stray-hit white flash: a hostage hit
+    // is a flat energy penalty with no per-hit signal on the contract.
+    hostageMat.color.set(
+      lost ? hostageAlarmColor(pulse01, reducedMotion) : hostageDistressTint(proximity),
+    );
 
     // ── Peek cue (wind-up tell + open-window marker at the head point) ────────
     const cue = peekTellVisual(qte.telegraphActive, qte.stance, pulse01, reducedMotion);
     peekCue.visible = cue.active && !lost;
     if (peekCue.visible) {
       const s = 0.7 + 0.6 * cue.intensity;
-      peekCue.position.set(qte.anchor.x + CUE_DX, qte.anchor.y + CUE_DY, CUE_Z);
       peekCue.scale.set(CUE_W * s, CUE_H * s, 1);
       const cueMat = peekCue.material as MeshBasicMaterial;
       cueMat.color.set(cue.color);

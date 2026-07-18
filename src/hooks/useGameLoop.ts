@@ -26,7 +26,6 @@ import { energyFloater } from "@render/scene/hostageCue";
 import type { CamPose } from "@render/scene/qteCamera";
 import {
   QTE_RESTORE_SECONDS,
-  qteFollowTarget,
   qtePose,
   qteRestorePose,
   qteZoomInProgress,
@@ -272,23 +271,19 @@ export function useGameLoop(
         }
       : next;
 
-    // QTE cinematic camera (ADR-0034): while the QTE is active, capture the
-    // pre-QTE pose ONCE, then progressively zoom onto the captor and FOLLOW him
-    // as he retreats toward the porte cochère. The framing target is the live
-    // anchor nudged toward the door (qteFollowTarget) so the diegetic clock — the
-    // captor→door gap — stays readable in-frame (UX spec D1.4); because `qte.anchor`
-    // advances each tick and progress is pinned at 1 during ACTIVE, the camera
-    // tracks the retreat for free. When it ends, ease back to the captured base
-    // over QTE_RESTORE_SECONDS and restore it EXACTLY (the restore path is
-    // independent of the follow target, so exact-restore is preserved). Runs
-    // after the tick so it reads this frame's fresh phase/anchor/timers.
+    // QTE cinematic camera (ADR-0030, the static duel): while the QTE is active,
+    // capture the pre-QTE pose ONCE, then progressively zoom onto the captor's
+    // STATIC `anchor` and HOLD there (no follow — the captor never moves). The
+    // zoom eases in during ZOOMING and pins fully in during ACTIVE / WON / LOST.
+    // When it ends, ease back to the captured base over QTE_RESTORE_SECONDS and
+    // restore it EXACTLY. Runs after the tick so it reads this frame's fresh
+    // phase/timers.
     const qte = gameStateRef.current.qte;
     if (isQteActive(qte) && qte !== null) {
       qteBaseRef.current ??= { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y };
       qteRestoreRef.current = null;
       const p = qteZoomInProgress(qte.phase, qte.zoomRemaining, qte.zoomSeconds);
-      const target = qteFollowTarget(qte.anchor, qte.porteCochere);
-      const pose = qtePose(qteBaseRef.current, target, p);
+      const pose = qtePose(qteBaseRef.current, qte.anchor, p);
       ortho.zoom = pose.zoom;
       camera.position.x = pose.x;
       camera.position.y = pose.y;

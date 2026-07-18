@@ -549,16 +549,15 @@ describe("enemy spawn pool", () => {
   });
 });
 
-describe("hostage-taker QTE — trigger, partial freeze & wiring (ADR-0034)", () => {
+describe("hostage-taker QTE — trigger, partial freeze & wiring (the static duel)", () => {
   // Scripted spec: triggers immediately (elapsed 0), 2 s zoom, anchor at origin so a
-  // world point IS the anchor-relative offset. Far door so the retreat never fails
-  // during these wiring ticks.
+  // world point IS the anchor-relative offset. A high blown-peeks cap so the execution
+  // clock never trips during these wiring ticks.
   const SPEC = {
     triggerAtElapsedSeconds: 0,
     zoomSeconds: 2,
     anchor: { x: 0, y: 0 },
-    porteCochere: { x: 100, y: 0 },
-    retreatSpeed: 0.6,
+    maxBlownPeeks: 4,
     peekCadenceSeconds: 1.5,
     peekDurationSeconds: 1.2,
   };
@@ -610,12 +609,12 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (ADR-0034)", ()
     s = tick(s, noFire, 0, 0, 2.0); // end the 2 s zoom → ACTIVE, COVERED
     expect(s.qte?.phase).toBe("ACTIVE");
     expect(s.qte?.stance).toBe("COVERED");
-    // Cross into a PEEKING exposure (cadence 1.5 s). Retreat advances the anchor.
+    // Cross into a PEEKING exposure (cadence 1.5 s). The anchor is static — no drift.
     s = tick(s, noFire, 0, 0, 1.5);
     expect(s.qte?.stance).toBe("PEEKING");
-    const anchorX = s.qte?.anchor.x ?? 0;
-    // Fire at the head band relative to the LIVE (moved) anchor.
-    s = tick(s, fire, anchorX - 0.3, 0.8, 0.1);
+    expect(s.qte?.anchor).toEqual({ x: 0, y: 0 });
+    // Fire at the head band relative to the STATIC anchor.
+    s = tick(s, fire, -0.3, 0.8, 0.1);
     expect(s.qte?.phase).toBe("WON");
     expect(s.score).toBe(0); // energy is the sole QTE currency (G-1); score untouched
     expect(s.energy).toBe(100); // +40 clamped at the 100 cap
@@ -626,9 +625,8 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (ADR-0034)", ()
     let s = tick(qteState(), noFire, 0, 0, 0.1);
     s = tick(s, noFire, 0, 0, 2.0); // → ACTIVE
     const before = s;
-    const anchorX = s.qte?.anchor.x ?? 0;
-    // Hostage band relative to the anchor: (0.4, −0.5).
-    const after = tick(s, fire, anchorX + 0.4, -0.5, 0.1);
+    // Hostage band relative to the static anchor: (0.4, −0.5).
+    const after = tick(s, fire, 0.4, -0.5, 0.1);
     expect(after.energy).toBe(70); // −30 bavure
     expect(after.score).toBe(0); // energy carries the sanction; no score penalty
     // Still frozen despite the shot.

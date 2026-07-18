@@ -6,6 +6,8 @@ import {
   captorTint,
   hostageAlarmColor,
   energyFloater,
+  blownPeeksProximity,
+  hostageDistressTint,
 } from "../hostageCue";
 
 describe("clamp01", () => {
@@ -96,6 +98,47 @@ describe("hostageAlarmColor", () => {
   it("degrades to a STEADY alarm red under reduced motion (no strobe)", () => {
     expect(hostageAlarmColor(0, true)).toBe("#ff1e2d");
     expect(hostageAlarmColor(1, true)).toBe("#ff1e2d");
+  });
+});
+
+describe("blownPeeksProximity", () => {
+  it("is 0 at no blown peeks and 1 at the cap", () => {
+    expect(blownPeeksProximity(0, 3)).toBe(0);
+    expect(blownPeeksProximity(3, 3)).toBe(1);
+  });
+
+  it("rises monotonically with each blown peek toward the cap", () => {
+    const a = blownPeeksProximity(1, 4);
+    const b = blownPeeksProximity(2, 4);
+    const c = blownPeeksProximity(3, 4);
+    expect(a).toBeLessThan(b);
+    expect(b).toBeLessThan(c);
+  });
+
+  it("clamps past the cap and guards a non-positive cap (total render)", () => {
+    expect(blownPeeksProximity(5, 3)).toBe(1);
+    expect(blownPeeksProximity(1, 0)).toBe(0);
+  });
+});
+
+describe("hostageDistressTint", () => {
+  it("reads untinted white with no blown peeks (art as authored)", () => {
+    expect(hostageDistressTint(0)).toBe("#ffffff");
+  });
+
+  it("warms toward alarm red as the execution nears (green channel drops)", () => {
+    const g = (hex: string): number => parseInt(hex.slice(3, 5), 16);
+    const calm = hostageDistressTint(0);
+    const mid = hostageDistressTint(0.5);
+    const near = hostageDistressTint(1);
+    expect(g(mid)).toBeLessThan(g(calm));
+    expect(g(near)).toBeLessThan(g(mid));
+  });
+
+  it("stops short of full alarm so the LOST execution strobe stays a distinct step", () => {
+    // At full proximity it is only 70% of the way to ALARM (#ff1e2d), never past it.
+    const g = (hex: string): number => parseInt(hex.slice(3, 5), 16);
+    expect(g(hostageDistressTint(1))).toBeGreaterThan(g("#ff1e2d"));
   });
 });
 

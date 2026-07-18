@@ -1,13 +1,17 @@
 import type { HostageQte, QteSpec, QteZone, CaptorStance } from "@game/types/hostageQte";
 import type { Vec2 } from "@game/types/vector";
 
-// Hostage-taker cinematic QTE — "Le duel de la porte cochère" (ADR-0034, F1+F2).
-// Pure logic: zero React/Three, unit-tested. When the scripted trigger fires the
-// rest of the scene freezes and the camera zooms; then the captor RETREATS toward
-// a porte cochère dragging the hostage. The distance to the door is the SOLE clock
-// (reaching it = failure). He alternates COVERED (human shield, unshootable) and
-// brief telegraphed PEEKING exposures — during which he ALSO fires at the player.
-// The only kill route is a head hit during a peek; energy is the outcome currency.
+// Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034 after playtest).
+// Pure logic: zero React/Three, unit-tested. When the scripted trigger fires the rest
+// of the scene freezes and the camera zooms onto the captor, who then stands STILL,
+// holding the hostage as a shield (the retreat toward a porte cochère read as "sliding
+// on the floor" in play and is removed — the anchor is now a fixed point). He alternates
+// COVERED (human shield, unshootable) and brief telegraphed PEEKING exposures — during
+// which he ALSO fires at the player. The only kill route is a head hit during a peek.
+// Every peek that closes WITHOUT a clean headshot is a "blown" opening: it drains energy
+// and counts toward the captor executing the hostage. After `maxBlownPeeks` blown peeks
+// he kills her (the sole failure) — the blown-peeks count is the SOLE clock (it replaces
+// the removed retreat/distance clock). Energy is the outcome currency.
 //
 // Reworks the ADR-0030 static tableau: the captor health bar, the PART_DAMAGE
 // body-part table and the windowSeconds countdown all left the contract (D6).
@@ -43,10 +47,10 @@ export const QTE_PANIC_SHOT = -6;
 export const QTE_BODY_HIT = -5;
 
 // --- Shot classifier bands (anchor-relative world offsets, y up) -----------------
-// Traced against the moving tableau the render lane draws: the captor ≈1.9 u tall
-// on a 2.0 plane centred on the (moving) anchor, using the kneeling hostage held
-// front-right as a living shield. Offsets are anchor-relative so G6 (below) holds
-// under the moving tableau. The hostage silhouette takes precedence over the
+// Traced against the tableau the render lane draws: the captor ≈1.9 u tall on a 2.0
+// plane centred on the (static) anchor, using the kneeling hostage held front-right as
+// a living shield. Offsets are anchor-relative so G6 (below) holds; the anchor is
+// static, so nothing here moves. The hostage silhouette takes precedence over the
 // captor's body; the peeking head pops over his far shoulder — up and to the left,
 // clear of her silhouette with a non-zero gap (G6).
 //
@@ -121,54 +125,43 @@ export function shouldTriggerQte(
 }
 
 /**
- * Seed a fresh QTE in the ZOOMING phase. Copies the retreat kinematics from the
- * spec (`dir` = sign(door − start), `speed`, `porteCochere`) and the peek cadence
- * / exposure into the runtime record — the tick has only the runtime and needs
- * them. The SAFETY INVARIANTS are enforced HERE, against the authored data (not
- * trusted): the G5 exposure floor is clamped up, and the G4 telegraph fit + D1
- * "door strictly ahead, non-zero retreat" are asserted (ADR-0034 gotchas).
+ * Seed a fresh QTE in the ZOOMING phase. Copies the STATIC anchor, the peek cadence /
+ * exposure and the blown-peeks cap into the runtime record — the tick has only the
+ * runtime and needs them. The SAFETY INVARIANTS are enforced HERE, against the authored
+ * data (not trusted): non-finite numerics are rejected (C6), `maxBlownPeeks` must be a
+ * positive integer (the failure clock must count), the G5 exposure floor is clamped up,
+ * and the G4 telegraph fit is asserted (ADR-0034 gotchas).
  */
 export function createQte(spec: QteSpec): HostageQte {
   // C6: reject non-finite authored numerics up front — NaN/Infinity slips past the
-  // `=== 0` guard and past `Math.max`, and can wedge the peek sub-machine open
-  // forever. Guard every scalar the tick reads before any of them is used.
+  // integer/`Math.max` guards and can wedge the peek sub-machine open forever. Guard
+  // every scalar the tick reads before any of them is used.
   const numerics: readonly number[] = [
     spec.triggerAtElapsedSeconds,
     spec.zoomSeconds,
     spec.anchor.x,
     spec.anchor.y,
-    spec.porteCochere.x,
-    spec.porteCochere.y,
-    spec.retreatSpeed,
     spec.peekCadenceSeconds,
     spec.peekDurationSeconds,
+    spec.maxBlownPeeks,
   ];
   if (!numerics.every((n) => Number.isFinite(n))) {
     throw new Error(
       "QteSpec invariant (C6): all authored numerics must be finite (no NaN/Infinity)",
     );
   }
-  const dx = spec.porteCochere.x - spec.anchor.x;
-  if (dx === 0) {
-    throw new Error("QteSpec invariant (D1): porteCochere must be strictly ahead of anchor");
-  }
-  // C3: the retreat freezes y (movement is x-only) and the door test is x-only, so a
-  // door authored off the anchor's street would "arrive" on x alone while the camera
-  // leads toward a y never reached. Require the door on the SAME horizontal street.
-  if (spec.porteCochere.y !== spec.anchor.y) {
+  // The blown-peeks count is the sole failure clock — it must be a whole, ≥ 1 count,
+  // or the loss can never arrive (or arrives fractionally).
+  if (!Number.isInteger(spec.maxBlownPeeks) || spec.maxBlownPeeks < 1) {
     throw new Error(
-      "QteSpec invariant (C3): porteCochere.y must equal anchor.y — the retreat is x-only (same street)",
+      "QteSpec invariant: maxBlownPeeks must be an integer ≥ 1 — the failure clock must count",
     );
-  }
-  if (spec.retreatSpeed <= 0) {
-    throw new Error("QteSpec invariant (D1): retreatSpeed must be > 0 — the clock must run");
   }
   if (spec.peekCadenceSeconds <= TELEGRAPH_LEAD_SECONDS) {
     throw new Error(
       "QteSpec invariant (G4): peekCadenceSeconds must be > TELEGRAPH_LEAD_SECONDS so a discrete tell fits",
     );
   }
-  const dir: 1 | -1 = dx > 0 ? 1 : -1;
   // G5: clamp the runtime exposure so the tick can never see a sub-floor peek.
   const peekDurationSeconds = Math.max(PEEK_EXPOSURE_FLOOR, spec.peekDurationSeconds);
   return {
@@ -177,9 +170,8 @@ export function createQte(spec: QteSpec): HostageQte {
     telegraphActive: false,
     stanceRemaining: spec.peekCadenceSeconds,
     anchor: spec.anchor,
-    dir,
-    speed: spec.retreatSpeed,
-    porteCochere: spec.porteCochere,
+    blownPeeks: 0,
+    maxBlownPeeks: spec.maxBlownPeeks,
     peekCadenceSeconds: spec.peekCadenceSeconds,
     peekDurationSeconds,
     zoomRemaining: spec.zoomSeconds,
@@ -205,14 +197,16 @@ const NO_DELTA = { energyDelta: 0 } as const;
  * Advance the QTE one tick.
  *
  * - ZOOMING: counts the zoom down; a `fire` this beat is a PANIC shot (energy −).
- *   When the zoom elapses → ACTIVE, COVERED, the retreat clock starts.
+ *   When the zoom elapses → ACTIVE, COVERED, warning off.
  * - ACTIVE (ORDER MATTERS — deterministic tie-break, ADR-0034 gotcha): (1) resolve
  *   `fire` FIRST via the stance-aware classifier — a head-during-peek WINS; body /
- *   hostage bleed energy; miss does nothing. (2) If not won, advance the retreat and
- *   check the door — reaching it → LOST (no extra charge, the loss was paid
- *   peek-by-peek). (3) Otherwise tick the COVERED↔PEEKING sub-machine over the FULL
- *   delta (a large delta may cross several segments), set the G4 tell, and charge the
- *   unanswered-peek drain ONCE per PEEKING→COVERED close crossed.
+ *   hostage bleed energy; miss does nothing. (2) If not won, advance the COVERED↔PEEKING
+ *   sub-machine over the FULL delta (a large delta may cross several segments), set the
+ *   G4 tell, and charge the unanswered-peek drain ONCE per PEEKING→COVERED close crossed.
+ *   Each such close also increments `blownPeeks`; reaching `maxBlownPeeks` executes the
+ *   hostage → LOST (no extra charge, the cost was paid peek-by-peek) and HALTS the loop
+ *   at the fatal close (a large delta must not overshoot past the execution). A same-tick
+ *   winning headshot, resolved first, beats the fatal peek → WON.
  * - WON/LOST: hold briefly, then DONE. DONE/default are no-ops.
  */
 export function tickQte(
@@ -230,7 +224,7 @@ export function tickQte(
       if (zoomRemaining > 0) {
         return { qte: { ...qte, zoomRemaining }, energyDelta };
       }
-      // Zoom finished → open the duel: ACTIVE, COVERED, retreat clock starts now.
+      // Zoom finished → open the duel: ACTIVE, COVERED.
       return {
         qte: {
           ...qte,
@@ -248,7 +242,8 @@ export function tickQte(
       let energyDelta = 0;
 
       // (1) Resolve the player's shot FIRST — a winning head-shot beats a same-tick
-      // door-reached (tie-break: the shot wins).
+      // fatal peek close (tie-break: the shot wins). The anchor is static, so the
+      // classifier reads the fixed anchor-relative offset.
       if (fire) {
         const zone = qteZoneAt(
           impactPoint.x - qte.anchor.x,
@@ -266,14 +261,7 @@ export function tickQte(
         // "miss": nothing.
       }
 
-      // (2) Advance the retreat, then check the door — reaching it loses the QTE
-      // with NO extra energy charge (the cost was already paid peek-by-peek).
-      const anchor: Vec2 = { x: qte.anchor.x + qte.dir * qte.speed * delta, y: qte.anchor.y };
-      if (qte.dir * (anchor.x - qte.porteCochere.x) >= 0) {
-        return { qte: { ...qte, phase: "LOST", anchor }, energyDelta };
-      }
-
-      // (3) Tick the COVERED↔PEEKING sub-machine over the FULL delta (C1). A delta
+      // (2) Tick the COVERED↔PEEKING sub-machine over the FULL delta (C1). A delta
       // larger than the current segment must not silently swallow the skipped peeks:
       // consume whole segments one at a time, charging each CLOSED exposure. Each
       // iteration subtracts a strictly-positive stance duration (peekCadence >
@@ -282,6 +270,7 @@ export function tickQte(
       // Small deltas cross ≤ 1 boundary → identical to the prior single toggle.
       let stance: CaptorStance = qte.stance;
       let stanceRemaining = qte.stanceRemaining;
+      let blownPeeks = qte.blownPeeks;
       let remaining = delta;
       let crossed = false;
       while (remaining >= stanceRemaining) {
@@ -293,13 +282,30 @@ export function tickQte(
           stanceRemaining = Math.max(qte.peekDurationSeconds, PEEK_EXPOSURE_FLOOR);
         } else {
           // Close an exposure. A peek that CLOSES was by definition unanswered (a
-          // head hit during it would have WON), so charge the counter-fire ONCE.
+          // head hit during it would have WON), so charge the counter-fire ONCE and
+          // count the blown opening.
           // C2: a body/hostage/miss shot fired during this closing peek is charged on
           // BOTH axes — the shot drain resolved above AND this close drain — by design
           // (reckless spray AND a non-answer to the opening; INTENDED, do not net).
           stance = "COVERED";
           stanceRemaining = qte.peekCadenceSeconds;
+          blownPeeks += 1;
           energyDelta += QTE_UNANSWERED_PEEK;
+          // The blown-peeks clock reaching the cap = the captor executes the hostage.
+          // HALT at this fatal close (no extra energy charge, no overshoot past it).
+          if (blownPeeks >= qte.maxBlownPeeks) {
+            return {
+              qte: {
+                ...qte,
+                phase: "LOST",
+                stance,
+                stanceRemaining,
+                blownPeeks,
+                telegraphActive: false,
+              },
+              energyDelta,
+            };
+          }
         }
       }
       // Advance within the landed segment. On a boundary crossing the current segment
@@ -310,7 +316,7 @@ export function tickQte(
       const telegraphActive = stance === "COVERED" && stanceRemaining <= TELEGRAPH_LEAD_SECONDS;
 
       return {
-        qte: { ...qte, anchor, stance, stanceRemaining, telegraphActive },
+        qte: { ...qte, stance, stanceRemaining, blownPeeks, telegraphActive },
         energyDelta,
       };
     }

@@ -1,14 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  QTE_ZOOM_FACTOR,
-  QTE_DOOR_LEAD,
-  QTE_DOOR_LEAD_MAX,
-  qteEase,
-  qteZoomInProgress,
-  qtePose,
-  qteRestorePose,
-  qteFollowTarget,
-} from "../qteCamera";
+import { QTE_ZOOM_FACTOR, qteEase, qteZoomInProgress, qtePose, qteRestorePose } from "../qteCamera";
 
 const BASE = { zoom: 50, x: -3, y: 1 } as const;
 const ANCHOR = { x: 0, y: 2 } as const;
@@ -67,7 +58,7 @@ describe("qtePose", () => {
     expect(qtePose(BASE, ANCHOR, 0)).toEqual({ zoom: BASE.zoom, x: BASE.x, y: BASE.y });
   });
 
-  it("returns the fully-zoomed pose on the anchor at p=1", () => {
+  it("returns the fully-zoomed pose on the static anchor at p=1", () => {
     expect(qtePose(BASE, ANCHOR, 1)).toEqual({
       zoom: BASE.zoom * QTE_ZOOM_FACTOR,
       x: ANCHOR.x,
@@ -80,35 +71,6 @@ describe("qtePose", () => {
     expect(mid.zoom).toBeCloseTo((BASE.zoom + BASE.zoom * QTE_ZOOM_FACTOR) / 2, 5);
     expect(mid.x).toBeCloseTo((BASE.x + ANCHOR.x) / 2, 5);
     expect(qtePose(BASE, ANCHOR, 2)).toEqual(qtePose(BASE, ANCHOR, 1));
-  });
-});
-
-describe("qteFollowTarget", () => {
-  it("leaves the point on the anchor when the door coincides with it", () => {
-    expect(qteFollowTarget({ x: 2, y: 1 }, { x: 2, y: 1 })).toEqual({ x: 2, y: 1 });
-  });
-
-  it("nudges the framing off the anchor TOWARD the door (keeps the goal in frame)", () => {
-    const anchor = { x: 0, y: 0 };
-    const door = { x: 2, y: 0 }; // gap 2 → lead 0.35*2 = 0.7 < cap
-    const t = qteFollowTarget(anchor, door);
-    expect(t.x).toBeCloseTo(anchor.x + 2 * QTE_DOOR_LEAD, 5);
-    expect(t.y).toBe(0);
-    // Biased toward the door but never past the captor→door midpoint.
-    expect(t.x).toBeGreaterThan(anchor.x);
-    expect(t.x).toBeLessThan((anchor.x + door.x) / 2);
-  });
-
-  it("caps the lead so a distant door never de-centres the captor", () => {
-    const anchor = { x: 0, y: 0 };
-    const far = { x: 100, y: 0 }; // 0.35*100 = 35 world units, must clamp to the cap
-    const t = qteFollowTarget(anchor, far);
-    expect(t.x).toBeCloseTo(anchor.x + QTE_DOOR_LEAD_MAX, 5);
-  });
-
-  it("leads toward a door on the opposite side too (negative direction)", () => {
-    const t = qteFollowTarget({ x: 0, y: 0 }, { x: -100, y: 0 });
-    expect(t.x).toBeCloseTo(-QTE_DOOR_LEAD_MAX, 5);
   });
 });
 

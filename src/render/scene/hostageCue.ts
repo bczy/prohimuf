@@ -4,11 +4,14 @@
 // peek TELL and the execution flash LOOK. Kept out of the R3F components so the
 // colour/intensity maths is unit-testable without a canvas.
 //
-// Rework note (ADR-0034 D1/D6): the old continuous rising-tension tint was
-// driven by the deleted `windowRemaining` countdown. With distance-as-clock the
-// countdown is gone, so the tell is now a DISCRETE "NOW" event keyed off the
-// game's `telegraphActive` / `stance` (UX spec §2.3): a step-change the eye can
-// time, carried by motion/shape/brightness — colour never the sole channel.
+// Rework note (the static duel, revises ADR-0034 D1/D6): the old continuous
+// rising-tension tint was driven by the deleted `windowRemaining` countdown.
+// With the blown-peeks count as the clock the countdown is gone, so the tell is
+// now a DISCRETE "NOW" event keyed off the game's `telegraphActive` / `stance`
+// (UX spec §2.3): a step-change the eye can time, carried by motion/shape/
+// brightness — colour never the sole channel. The blown-peeks proximity is
+// surfaced diegetically (Flag B) via `blownPeeksProximity`/`hostageDistressTint`
+// below, NOT a HUD bar.
 
 import type { CaptorStance } from "@game/types/hostageQte";
 
@@ -86,6 +89,30 @@ export function peekTellVisual(
   const p = clamp01(pulse01);
   const intensity = peeking ? 0.7 + 0.3 * p : 0.35 + 0.35 * p;
   return { active: true, intensity, color };
+}
+
+/**
+ * Flag B — the diegetic blown-peeks proximity in [0,1] (replaces the removed HUD
+ * clock). As `blownPeeks` climbs toward `maxBlownPeeks` the captor nears executing
+ * the hostage; the render lane uses this to escalate an in-world menace/distress
+ * read so the player FEELS "he's about to do it" without a HUD bar. `maxBlownPeeks`
+ * is asserted ≥ 1 in the game, but guarded here (≤ 0 ⇒ 0) so the render is total.
+ */
+export function blownPeeksProximity(blownPeeks: number, maxBlownPeeks: number): number {
+  if (maxBlownPeeks <= 0) return 0;
+  return clamp01(blownPeeks / maxBlownPeeks);
+}
+
+/**
+ * Flag B — the hostage's distress tint given the blown-peeks `proximity`: untinted
+ * white at 0 (art reads as authored), warming toward alarm red as the execution
+ * nears. A STEADY escalation (no strobe, no pulse), so it is reduced-motion-safe
+ * by construction — the tint IS the escalation channel, no motion required. Blends
+ * only 70% of the way to full alarm so the LOST execution strobe still reads as a
+ * distinct step beyond the build-up.
+ */
+export function hostageDistressTint(proximity: number): string {
+  return lerpHex(WHITE, ALARM, clamp01(proximity) * 0.7);
 }
 
 /**

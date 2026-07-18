@@ -87,20 +87,19 @@ export const LEVELS: readonly LevelConfig[] = [
     // taker is no longer a window/street pop-up — it triggers the cinematic QTE
     // below (ADR-0030). The car remains withdrawn.
     roster: { streetSpawns: ["courier"] },
-    // Hostage-taker QTE — "Le duel de la porte cochère" (ADR-0034 F1+F2, tuning per
-    // spec-hostage-qte-duel-porte-cochere §5). Scripted set-piece, once per level.
-    // Values are game-designer defaults (tunable; F3/ADR-0035 curves them across
-    // levels). `anchor` is the captor's START world position the camera establishes
-    // on — ON THE SIDEWALK, in the street lane where couriers ride (streetY = −0.4 ×
-    // worldHeight 12 = −4.8): centre −5 puts the 2.0-tall tableau's feet on the ground
-    // line at −6. He then drags the hostage toward `porteCochere` at `retreatSpeed`:
-    // 7.2 u / 0.6 u·s⁻¹ = a 12 s answerable duel budget (the sole clock, D1).
+    // Hostage-taker QTE — "the static duel" (revises ADR-0034 after playtest; tuning
+    // per spec-hostage-qte §5). Scripted set-piece, once per level. Values are
+    // game-designer defaults (tunable; F3/ADR-0035 curves them across levels). `anchor`
+    // is the captor's STATIC world position the camera zooms onto and holds — ON THE
+    // SIDEWALK, in the street lane where couriers ride (streetY = −0.4 × worldHeight
+    // 12 = −4.8): centre −5 puts the 2.0-tall tableau's feet on the ground line at −6.
+    // He stands still; the sole clock is `maxBlownPeeks` blown openings before the
+    // execution (the retreat/distance clock is removed).
     hostageQte: {
       triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,
       anchor: { x: 0, y: -5 },
-      porteCochere: { x: 7.2, y: -5 },
-      retreatSpeed: 0.6,
+      maxBlownPeeks: 4,
       peekCadenceSeconds: 1.5,
       peekDurationSeconds: 1.2,
     },
