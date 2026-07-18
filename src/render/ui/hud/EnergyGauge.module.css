@@ -1,0 +1,47 @@
+/* Energy gauge (ADR-0046) — static structure/typography only; the fill %/hue and the
+   value ink arrive as inline custom properties / inline style from EnergyGauge.tsx. */
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  color: var(--ink-black);
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: var(--font-hud-mono);
+  font-weight: 400;
+}
+
+.energyWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Energy value — mono, semibold; ink is the state-driven energy hue (inline). */
+.energyValue {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  font-weight: 600;
+}
+
+.energyTrack {
+  width: 46px;
+  height: 5px;
+  border: 1px solid var(--ink-black);
+  background: var(--stock-shell);
+}
+
+/* Shared gauge fill: width % and hue arrive as inline custom properties; the
+   transition duration stays inline (per-gauge, not a token). */
+.gaugeFill {
+  height: 100%;
+  width: var(--gauge-fill);
+  background: var(--gauge-hue);
+}

@@ -1,0 +1,57 @@
+/* Delivery banner + verdict (ADR-0046) — static structure/typography only; the gauge
+   fill %/hue and the verdict ink arrive inline from DeliveryIntegrityBanner.tsx. */
+
+/* Stamped paper chip — reads over any scene, zero glow. */
+.chip {
+  background: var(--stock-shell);
+  border: var(--keyline-width) solid var(--ink-black);
+  padding: var(--space-sm) var(--space-lg);
+  font-family: var(--font-display);
+}
+
+/* Delivery call-out banner (centred, top). */
+.deliveryBanner {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.chipDelivering {
+  font-size: var(--font-size-base);
+  letter-spacing: 0.1em;
+  color: var(--ink-full);
+}
+
+.deliveryTrack {
+  width: 220px;
+  height: 12px;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+}
+
+/* Shared gauge fill: width % and hue arrive as inline custom properties; the
+   transition duration stays inline (per-gauge, not a token). */
+.gaugeFill {
+  height: 100%;
+  width: var(--gauge-fill);
+  background: var(--gauge-hue);
+}
+
+/* Delivery verdict stamp (SUCCESS / FAILED) — combined with .chip; ink inline. */
+.deliveryVerdict {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.1em;
+}
