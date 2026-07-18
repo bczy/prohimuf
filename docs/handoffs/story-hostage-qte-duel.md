@@ -1497,3 +1497,246 @@ Answers the frozen contract's open numbers:
   "peek closes with captorHp > 0". Energy layer kept, not folded.
 - Flags: D4 reversal → ADR-0034 revision; captor-HP read (pips/stagger) → `ux`; ring-colour + on-frame
   → `lead-art`/composite gate.
+
+## 18. REVISION — SPATIAL colour (ring-over-anatomy) — SUPERSEDES Revision 4 — senior-architect (Winston) — 2026-07-18
+
+**Bertrand REFRAMED the colour from TEMPORAL to SPATIAL.** Revision 4 (§17) made the ring
+cycle rouge→jaune→vert over TIME (`cyclePhase(t)`/`ringPhase`). That is **superseded and
+withdrawn.** The ring's colour is now a function of the **anatomy under the ring centre**:
+
+- **RED** = ring over **empty space** (not the captor) — `off`;
+- **YELLOW** = over a **non-lethal part** (arm/leg) — `limb`;
+- **GREEN** = over a **lethal zone** (torso/face) — `vital`.
+
+A shot that **hits the ring** chips captor HP by that colour (**green big / yellow small /
+red none**); depleting captor HP → **WON**. The ring roams **WIDER** over/around the captor.
+`captorHp` STAYS (as in Rev 4); ADR-0034 **D4 is still reversed** (graded HP, not binary
+one-headshot-kill). The loss route is **UNCHANGED** (execution after N blown peeks).
+
+This section is FROZEN LAW. It supersedes §17 wherever they conflict; the KEEP list from §14
+(wander) still holds. **Baseline for the dev lanes is the COMMITTED Rev-3 code** — Rev 4 was a
+draft only, never committed (verified: `git`-clean `src/` has no `ringPhase`/`cyclePhase`/
+`RingColour`/`captorHp`). So there is **no temporal-colour code to unwind** — the SPATIAL model
+is added directly onto the committed wander code.
+
+`game-designer` (Sacha) owns the anatomy bands / roam box / balance numbers (in parallel); the
+architect owns the CODE contract + determinism below.
+
+### HARD CONSTRAINTS (unchanged, restated)
+
+- `src/game/**` stays **React/Three-free AND replay-deterministic** — no `Math.random`, no `Date.now`.
+- The wander stays the **seeded pure fn of `t`** (§14, unchanged). The colour is now **SPATIAL**:
+  `ringZone = ringZoneAt(targetOffset)`, a PURE function of the ring position. Since the position is
+  itself a pure fn of `t` (the wander), the colour remains transitively a deterministic pure fn of `t`
+  — but expressed as position, so **drawn colour == scored colour == ring position**. No temporal
+  seed/period, no `ringPhase`, no `cyclePhase`, no per-tick stepped state.
+
+### Frozen delta — `src/game/types/hostageQte.ts`
+
+**NEW type**
+
+- `export type RingZone = "vital" | "limb" | "off";` — the anatomy under the ring centre. This is a
+  **semantic zone owned by the game lane**; the render lane maps it to a COLOUR (`vital`→green,
+  `limb`→yellow, `off`→red). Cleaner boundary than Rev 4's `RingColour` — the game never names a colour.
+
+**`QteZone` — RETIRE `"head"`**
+
+- `export type QteZone = "body" | "hostage" | "miss";` — the `"head"` kill-zone member is REMOVED.
+  Captor damage no longer flows through a head band; it flows through the ring hit (below). `qteZoneAt`
+  now classifies the **ENERGY** layer only (bavure / body drain / miss). A returned zone that no longer
+  kills would be a footgun — retire it.
+
+**`QteSpec` — ADD** (identical to Rev 4)
+
+- `readonly captorHp: number;` — authored per-level captor health. **Integer ≥ 1** (asserted in
+  `createQte`; added to the C6 finiteness list). Default is game-designer's; field name/type is LAW.
+  **F3 seam:** only `captorHp` is authored; the anatomy bands + per-zone damage amounts stay **SYSTEM
+  CONSTANTS** in `qteSystem.ts` (Belliard-first, same precedent as wander amplitudes / energy prices).
+- **UNCHANGED:** `targetSeed`, `maxBlownPeeks`, `peekCadenceSeconds`, `peekDurationSeconds`,
+  `triggerAtElapsedSeconds`, `zoomSeconds`, `anchor`. **NO temporal `RING_CYCLE_SECONDS` field.**
+
+**`HostageQte` (runtime) — ADD**
+
+- `readonly captorHp: number;` — CURRENT captor health. Copied from `spec.captorHp` at `createQte`
+  (mirror pattern). Decremented by ring-hit chips; never below 0.
+- `readonly ringZone: RingZone;` — **FROZEN CHOICE: STORE it** (do NOT let render recompute). It is the
+  exact analogue of `targetOffset`: a **DERIVED value cached on the runtime**, computed at the END of
+  each ACTIVE tick as `ringZoneAt(targetOffset)` from the **same last-drawn `targetOffset`**. Two payoffs,
+  both the same guarantees `targetOffset` already gives:
+  (a) render reads one canonical field for the ring colour — no recompute, no divergence;
+  (b) the tick scores a shot against the **last-drawn** `ringZone`, closing the **colour-honesty** seam
+  exactly as `targetOffset` closed the aim-honesty seam — the player is judged on the colour the ring
+  showed when they fired. **NO temporal `ringPhase`.** Rests at `ringZoneAt(HEAD_NEUTRAL)` while
+  COVERED/ZOOMING (never scored there — ring-hit damage is PEEKING-gated).
+- **UNCHANGED:** `targetOffset`, `targetSeed`, `blownPeeks`, `maxBlownPeeks`, `stance`, `telegraphActive`,
+  `stanceRemaining`, `anchor` (static), `peekCadenceSeconds`, `peekDurationSeconds`, `zoomRemaining`,
+  `zoomSeconds`, `resultRemaining`, `warning`.
+
+### Anatomy classifier + damage — the pure shapes (LAW), `qteSystem.ts`
+
+Pure, deterministic, functions of position ALONE (no `t`, no seed, no cycle):
+
+```ts
+// System constants (game-designer's anatomy bands — vital = head+torso box, limb = arm/leg boxes;
+// anchor-relative offsets, authored disjoint; classified by the RING CENTRE):
+export const VITAL_* / LIMB_* : number;          // band bounds (game-designer's values)
+// Integer captor damage per zone (keeps captorHp integer under subtraction):
+export const CAPTOR_DAMAGE_VITAL: number;        // big,   integer >= 1
+export const CAPTOR_DAMAGE_LIMB: number;         // small, integer >= 1
+// off (empty space / red) damage is 0 — implicit, a wasted ring hit.
+// The reticle hit radius — a shot must land within this of the ring centre to be a ring hit:
+export const RING_HIT_RADIUS: number;            // > 0 (see reconciliation note)
+
+/** The anatomy under the ring CENTRE (anchor-relative). Precedence: vital box, then limb boxes,
+ *  else off. Pure. `offset` is the ring centre (= the stored targetOffset). */
+export function ringZoneAt(offset: Vec2): RingZone {
+  if (inVitalBand(offset.x, offset.y)) return "vital";
+  if (inLimbBand(offset.x, offset.y)) return "limb";
+  return "off";
+}
+
+/** Captor HP removed by a ring hit whose ring centre sits over zone z (off → 0). */
+export function colourDamage(z: RingZone): number {
+  return z === "vital" ? CAPTOR_DAMAGE_VITAL : z === "limb" ? CAPTOR_DAMAGE_LIMB : 0;
+}
+```
+
+Render maps `qte.ringZone` → its own colour constants (`vital`→green, `limb`→yellow, `off`→red). The
+game lane never imports a colour; the render lane never imports the anatomy bands. Clean boundary.
+
+### Shot resolution in `tickQte` ACTIVE — the ring-hit path (LAW)
+
+**Resolve `fire` FIRST** (preserves the deterministic tie-break), in this order:
+
+1. **RING HIT test (the CAPTOR-DAMAGE path):** a ring hit is
+   `stance === "PEEKING"` **AND** `Math.hypot(impact.x − (anchor.x + qte.targetOffset.x),
+impact.y − (anchor.y + qte.targetOffset.y)) <= RING_HIT_RADIUS`.
+   (The ring only exists / is shootable during PEEKING — the exposure; COVERED shows only a faint
+   wind-up tell and deals no damage.) On a ring hit:
+   - `const dmg = colourDamage(qte.ringZone);` — the **last-drawn** zone (colour-honesty). An `off`/red
+     ring ⇒ `dmg = 0` (wasted, no HP removed).
+   - `const captorHp = qte.captorHp - dmg;`
+   - `captorHp <= 0` → **return `WON`** (`{ ...qte, phase: "WON", captorHp: 0 }`,
+     `energyDelta: QTE_RESCUE_REFILL` +40) — same early-return the head-kill used, now gated on depletion.
+   - else (a chip that did not kill, or a red 0-chip): **record `captorHp` (post-chip), charge NO energy,
+     do NOT classify further, FALL THROUGH** to the sub-machine (the captor is alive; the peek keeps
+     ticking). A ring hit **consumes** the shot's captor-damage semantics; it never also incurs a
+     body/hostage energy penalty (the G6 reshape below guarantees a ring hit can never overlap the hostage).
+2. **NOT a ring hit → the ENERGY path** via `qteZoneAt(impact.x − anchor.x, impact.y − anchor.y)`:
+   `hostage` → `+= QTE_HOSTAGE_HIT` (−30 **bavure kept**, so direct hostage shots stay punished);
+   `body` → `+= QTE_BODY_HIT` (−5); `miss` → nothing. **No captor damage on this path.**
+3. **Sub-machine loop UNCHANGED** (§9/§14): each PEEKING→COVERED **close** while the captor is alive →
+   `blownPeeks += 1`, `energyDelta += QTE_UNANSWERED_PEEK` (−8); `blownPeeks >= maxBlownPeeks` → **`LOST`**
+   (execution; no extra charge; HALT at the fatal close; bounded loop preserved).
+4. **Compute the outgoing `targetOffset` (wander, G6-clamped) AND `ringZone`** from the same state:
+   ```ts
+   if (stance === "PEEKING") {
+     const t = Math.max(0, qte.peekDurationSeconds - stanceRemaining);
+     targetOffset = clampTargetOffsetG6({ x: HEAD_NEUTRAL.x + wander(...).x, y: HEAD_NEUTRAL.y + wander(...).y });
+   } else {
+     targetOffset = HEAD_NEUTRAL;
+   }
+   const ringZone = ringZoneAt(targetOffset);   // SAME last-drawn offset → drawn colour == scored colour
+   ```
+   Carry `captorHp` (post-chip) and `ringZone` on every returned record.
+
+**Tie-break (LAW, preserved):** fire is resolved before the loss check, so a ring hit that **depletes HP**
+on the fatal peek → **WON**; a ring hit that only **chips** on the fatal peek does NOT save the run — the
+loop reaches the fatal close → **LOST**. Only a KILLING shot wins the tie.
+
+### `createQte` + `levels.ts` (dev-gameplay)
+
+- **`createQte`:** add `spec.captorHp` to the C6 finiteness list; assert
+  `Number.isInteger(spec.captorHp) && spec.captorHp >= 1` (a win must be reachable). Seed
+  `captorHp: spec.captorHp`, `ringZone: ringZoneAt(HEAD_NEUTRAL)`. G5 clamp, G4 assert, `maxBlownPeeks`
+  assert, `blownPeeks: 0`, static `anchor` all UNCHANGED.
+- **`levels.ts` (belliard `QteSpec`):** add `captorHp` (game-designer's value); update the wander-tuning
+  comment for the wider roam box. **No `RING_CYCLE_SECONDS`** (it never existed in code).
+- **`stateMachine.ts`:** `tickQte(qte, fire, impactPoint, delta)` signature and `{ qte, energyDelta }`
+  result UNCHANGED → no logic edit (verify: no reference to the retired `"head"` zone anywhere).
+
+### Wander WIDER + the G6 CLAMP reshape (dev-gameplay) — LOAD-BEARING
+
+- The roam box (`WANDER_AMP_X`/`WANDER_AMP_Y`, `HEAD_NEUTRAL`, `LEG_DURATION`) takes **game-designer's
+  bigger/faster values** — SYSTEM CONSTANTS, a pure value change, no type-contract change. The roam box
+  is on the captor's **exposed (non-hostage) side**.
+- **G6 CLAMP is now RESHAPED and genuinely load-bearing.** The object to keep clear of the hostage is no
+  longer the head BOX (half-height `HEAD_HALF_H`) — it is the **ring CIRCLE** (centre ± `RING_HIT_RADIUS`).
+  `clampTargetOffsetG6` becomes a Y-floor with the **ring radius** as the margin:
+  ```
+  minY = HOSTAGE_DY_MAX + G6_MARGIN + RING_HIT_RADIUS
+  ```
+  A circle whose lowest point (`centre.y − RING_HIT_RADIUS`) is above the hostage band top is disjoint from
+  that (axis-aligned) band for ANY x — so the clamp still **provably** keeps `anchor + targetOffset`
+  (± `RING_HIT_RADIUS`) disjoint from the hostage silhouette, for the bigger box. **Assert it; re-sweep the
+  G6 property test over the NEW wider box with the ring-radius margin.** (Asymmetric-box option from §17
+  still applies: pin the hostage-facing edge inside `rawWaypoint`'s per-edge mapping — pure, seeded,
+  `clampTargetOffsetG6`-wrapped, no type change.)
+- **RECONCILE (→ game-designer + composite gate):** `RING_HIT_RADIUS` is bigger than the old
+  `HEAD_HALF_H`, so the clamp will **actively lift** the ring unless
+  `roam_box_dy_min − RING_HIT_RADIUS >= HOSTAGE_DY_MAX + G6_MARGIN`. With Sacha's draft box
+  (`dy_min 0.60`) and a `RING_HIT_RADIUS ≈ 0.46`: `0.60 − 0.46 = 0.14 < 0.15 + 0.10 = 0.25` → the clamp
+  eats the bottom of the intended roam. Resolve by ONE of: raise `dy_min`, shrink `RING_HIT_RADIUS`, or
+  lower the hostage band top — game-designer's tuning call. **The clamp FORMULA is LAW; the VALUES must
+  satisfy it without distorting the felt roam.** `RING_HIT_RADIUS` must also match the drawn PEEKING ring
+  radius (aim/colour-honesty seam) — reconciled at the composite gate, same as before.
+
+### Render + view-hook (dev-r3f-render)
+
+- **`HostageQteSprite.tsx`:** the peek ring's colour = the game band for `qte.ringZone`
+  (`vital`→green, `limb`→yellow, `off`→red), **replacing** the stance-tell tint on the ring. The ring's
+  two-beat FORM signal (radius/opacity: COVERED wind-up vs PEEKING open window; reduced-motion steady
+  degrade) is KEPT — colour is the new SPATIAL channel layered on the same form, never the SOLE channel
+  (a11y). The ring still FOLLOWS `anchor + qte.targetOffset` (aim-honesty). ADD **diegetic captor-HP pips**
+  — an **in-world** read on/near the captor sprite, **NO HUD bar** (holds ADR-0034 U-1). Form/placement of
+  the pips is ux-designer/game-designer's call.
+- **`hostageCue.ts`:** gains a `RingZone → colour` helper (render-owned colour constants) so the colour
+  map stays unit-testable off-canvas. `captorTint`/`hostageAlarmColor`/`energyFloater` unchanged.
+- **`HUD.tsx`:** UNCHANGED. `HudHostageQte = { phase, warning }` stays; captor HP is in-world (pips), not a
+  HUD bar. If ux-designer later rules a HUD element returns, that reverses U-1 and must be logged here first.
+- **`qteCamera.ts` / `useGameLoop.ts`:** UNCHANGED (static zoom-and-hold).
+
+### Lane assignment — non-overlapping paths
+
+| Lane               | Owns (writes)                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **dev-gameplay**   | `src/game/types/hostageQte.ts` (`captorHp` + `ringZone`; add `RingZone`; RETIRE `"head"` from `QteZone`), `src/game/systems/qteSystem.ts` (`ringZoneAt`/`colourDamage`/`RING_HIT_RADIUS` + anatomy-band consts, ring-hit resolution, `captorHp`, reshaped `clampTargetOffsetG6`, wider wander consts, `qteZoneAt` → `(dx,dy) => body/hostage/miss`), `src/game/levels/levels.ts` (belliard `captorHp`), `src/game/systems/__tests__/` |
+| **dev-r3f-render** | `src/render/scene/HostageQteSprite.tsx` (ring colour from `qte.ringZone` + HP pips), `src/render/scene/hostageCue.ts` (`RingZone`→colour helper), `src/render/scene/__tests__/` — **`HUD.tsx` untouched** unless a HUD captor-HP read is separately approved                                                                                                                                                                          |
+
+**No shared-file contention.** `RingZone`/`ringZoneAt`/`colourDamage` are game-owned (pure, in
+`qteSystem.ts`); render imports the enum read-only and maps it to its own colour constants. `tickQte` is
+called from `stateMachine.ts` (game lane); render only READS `qte.captorHp`/`qte.ringZone`/`qte.targetOffset`.
+`qteCamera.ts`/`useGameLoop.ts` are both render-lane and UNCHANGED.
+
+**Sequencing:** (1) dev-gameplay lands the FROZEN types first (interface only — `captorHp` + `ringZone` +
+`RingZone`, and the `QteZone` `"head"` retirement) → handoff. (2) Both lanes then fan out in parallel on the
+non-overlapping paths above.
+
+### ADR impact — SUPERSEDES the temporal Revision 4 (→ tech-writer / producer)
+
+`producer` (Marion) allocates the ADR number — I do NOT self-allocate. **tech-writer** must fold the
+**SPATIAL colour** into the ADR-0034 amendment **in place of the time-ramp** Revision 4:
+
+- **Revision 4 (temporal `cyclePhase(t)`/`ringPhase` colour) is WITHDRAWN and superseded** before it
+  shipped (it was a draft only — never committed).
+- The colour is **SPATIAL** — `ringZone = ringZoneAt(ring centre)`, red/off, yellow/limb, green/vital.
+- **`captorHp` STAYS**; ADR-0034 **D4 remains reversed** (graded HP depleted by ring hits; depletion → WON).
+- The **loss route is UNCHANGED** — `blownPeeks >= maxBlownPeeks` execution stays the sole `LOST`;
+  `QTE_UNANSWERED_PEEK` still does double duty (energy drain + blown-peeks increment).
+- `captorHp` is the newly-authored per-level knob; anatomy bands + per-zone damage + `RING_HIT_RADIUS`
+  are Belliard-first SYSTEM CONSTANTS (F3 promotion seam), matching the wander-amplitude precedent.
+
+### Open questions routed to game-designer (numbers, not contract)
+
+- `captorHp` value; the vital/limb anatomy band bounds; `CAPTOR_DAMAGE_VITAL`/`CAPTOR_DAMAGE_LIMB`
+  (integers); `RING_HIT_RADIUS`; the wider roam-box values — all game-designer's, subject to the G6
+  clamp-satisfaction constraint above. Keep the vital/limb anatomy coherent with `qteZoneAt`'s body band
+  (the anatomy sits over the captor silhouette) — reconciled with the real art at the composite gate.
+- **−8 on a peek the player DAMAGED (chip, no kill):** frozen structural DEFAULT = **YES, unchanged** (the
+  close still charges −8 and increments `blownPeeks`; the HP chip is an independent effect). Waiving it
+  would need a per-peek `damaged` flag (new state) — additive, game-designer's call; do NOT build without it.
+
+- VERDICT: **CONTRACT FROZEN.** dev-gameplay → types file first (`captorHp` + `ringZone` + `RingZone`;
+  retire `"head"`); then both lanes parallel on the non-overlapping paths. tech-writer to fold **SPATIAL
+  colour** into the ADR-0034 amendment (superseding the temporal Revision 4; number/form from producer).
+  Awaiting game-designer's anatomy bands / damage / `RING_HIT_RADIUS` / captorHp / roam-box values.
