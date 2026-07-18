@@ -14,8 +14,22 @@ import {
   getSilhouetteFor,
 } from "./enemyTextures";
 import { flipbookFrame } from "./flipbook";
+import { recoilTransform, type RecoilParams } from "./deform";
 import { createEnemyRimMaterial, rimZoomCompensation } from "./enemyRimMaterial";
 import { heatColor, heatProgress } from "./neonHeatColor";
+
+// SPIKE (animation-2d-pipeline): procedural recoil deformation, additive over the
+// baked flipbook. Flip to false to disable the whole-plane kick and fall back to
+// the pure flipbook baseline (no regression).
+const DEFORM_RECOIL_ENABLED = true as boolean;
+// One-shot kick tuned in world units for the window-sized cop plane (planeH≈1).
+const RECOIL: RecoilParams = {
+  duration: 0.22,
+  kick: 0.06,
+  lift: 0.05,
+  tilt: 0.09,
+  squash: 0.07,
+};
 
 // Lazily-built radial glow used for muzzle flash / hit burst (additive blend).
 let glowTexture: Texture | null = null;
@@ -154,6 +168,35 @@ export function EnemySprite({
       mat.color.set(archetype.tint);
     }
 
+    // Baked-in per-frame muzzle anchor (normalized tex coords), keyed to the frame
+    // the texture ACTUALLY displays. Hoisted here so the recoil kick can read the
+    // aim direction from it; the flash below reuses the same lookup.
+    const muzzle =
+      resolved !== null && resolved.frame !== null
+        ? muzzleFor(enemy.kind, variant, resolved.frame)
+        : null;
+
+    // SPIKE recoil (animation-2d-pipeline): additive whole-plane kick while
+    // SHOOTING, driven off the per-state anim clock (0 on entering SHOOTING → eased
+    // idle→action→idle). Aim direction comes from the muzzle anchor side; the kick
+    // is opposite. Applied to mesh.position/scale HERE so the rim block below (which
+    // mirrors mesh.scale) and the flash block (which reuses recoilDX/DY) stay locked
+    // to the body — no gap opens between body, neon rim and muzzle flash.
+    let recoilDX = 0;
+    let recoilDY = 0;
+    if (DEFORM_RECOIL_ENABLED && enemy.state === "SHOOTING") {
+      const aimDirX = muzzle !== null ? muzzle.x - 0.5 : 1;
+      const kick = recoilTransform(animClockRef.current, aimDirX, RECOIL);
+      recoilDX = kick.offsetX;
+      recoilDY = kick.offsetY;
+      mesh.position.x += recoilDX;
+      mesh.position.y += recoilDY;
+      mesh.rotation.z = kick.rotate;
+      mesh.scale.y *= kick.scaleY;
+    } else {
+      mesh.rotation.z = 0;
+    }
+
     // Neon heat rim (ADR-0025): a shader-recoloured silhouette drawn behind the
     // body. Hostiles only — the green→orange→red ramp warns the player their
     // window to shoot is closing; a red civilian would wrongly read "tire-moi".
@@ -165,6 +208,8 @@ export function EnemySprite({
         archetype.shoots && resolved !== null ? getSilhouetteFor(resolved.texture) : null;
       rim.visible = neon !== null;
       if (neon !== null) {
+        // Follow the body's recoil nudge so the rim stays flush behind it.
+        rim.position.set(screenPosition.x + recoilDX, bodyY + recoilDY, -0.01);
         rimMat.uniforms.uMap.value = neon.texture;
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
@@ -204,22 +249,24 @@ export function EnemySprite({
         // frame-1 anchor is used, and the global fallback sprite (a different
         // figure) gets the legacy fixed right-side offset instead. The flash is
         // a world-space sibling centred on (screenPosition.x, bodyY); the body
-        // plane is a square planeH scaled by `aspect` on X.
-        const m =
-          resolved !== null && resolved.frame !== null
-            ? muzzleFor(enemy.kind, variant, resolved.frame)
-            : null;
+        // plane is a square planeH scaled by `aspect` on X. The recoil nudge
+        // (recoilDX/DY) is added so the flash tracks the gun as it kicks back.
+        const m = muzzle;
         if (m !== null) {
           flash.position.set(
-            screenPosition.x + (m.x - 0.5) * planeH * aspect,
-            bodyY + (0.5 - m.y) * planeH,
+            screenPosition.x + recoilDX + (m.x - 0.5) * planeH * aspect,
+            bodyY + recoilDY + (0.5 - m.y) * planeH,
             0.6,
           );
         } else {
           // Fixed-offset fallback: only reachable when the anchor data or the
           // sprite itself is missing (regenerated asset without re-measured
           // anchors, or the global fallback figure).
-          flash.position.set(screenPosition.x + planeH * aspect * 0.45, bodyY + muzzleY, 0.6);
+          flash.position.set(
+            screenPosition.x + recoilDX + planeH * aspect * 0.45,
+            bodyY + recoilDY + muzzleY,
+            0.6,
+          );
         }
         const pulse = 0.7 + Math.sin(performance.now() * 0.04) * 0.25;
         flash.scale.setScalar(pulse);
