@@ -48,10 +48,10 @@ ADR-0012/0015 decisions) are grandfathered: they change only through this flow f
 Livrables d'idéation produits par la veille concurrentielle du 2026-07-18. **Non gatés** :
 matière d'entrée pour de futures specs, à passer au design gate avant toute implémentation.
 
-| Deliverable                              | Author          | Statut                                        |
-| ---------------------------------------- | --------------- | --------------------------------------------- |
-| `veille-concurrentielle-shooters.md`     | `game-designer` | **Pre-gate** — features candidates (tiers S/A/B) |
-| `pre-spec-weapons.md`                    | `game-designer` | **Pre-gate** — modèle multi-armes par pickup  |
+| Deliverable                          | Author          | Statut                                           |
+| ------------------------------------ | --------------- | ------------------------------------------------ |
+| `veille-concurrentielle-shooters.md` | `game-designer` | **Pre-gate** — features candidates (tiers S/A/B) |
+| `pre-spec-weapons.md`                | `game-designer` | **Pre-gate** — modèle multi-armes par pickup     |
 
 ### Gated canon (pending `narrative-bible.md`)
 
