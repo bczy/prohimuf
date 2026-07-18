@@ -1,4 +1,4 @@
-# 0046 — Per-level tronçon-sequence backdrop mode (Rue Belliard décor v2)
+# 0046 — Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2)
 
 - **Status:** Proposed
 - **Date:** 2026-07-18
@@ -12,137 +12,165 @@
 Rue Belliard's backdrop today is one repeating `facade.png` laid as **N = 4 identical
 fixed-width panels** by `LevelBackdrop.tsx`, with the left edge of every panel after the
 first alpha-feathered (`facadeLayout.ts` `BLEND = 0.08`) to crossfade the seams, over a
-single slow-parallax sky. Art direction has validated a remake
+single slow-parallax sky. Art direction validated a remake
 (`docs/art-direction/prompt-drafts/level-belliard-decor-v2.md`): the facade becomes **3
 distinct, variable-width, transparent-background "tronçon" images** (2–3 faubourg buildings
-each, a gap beat — sky sliver / mur-pignon / passage — at each end), meant to tile
-side-by-side over a **separate parallax sky that shows through both the above-roofline area
-and the thin between-building sky slivers** (real transparency, not a crossfade). Each
-tronçon bakes its own far-side trottoir band into its bottom ~20–25 %.
+each, a gap beat — sky sliver / mur-pignon / passage — at each end), tiling side-by-side over
+a **separate parallax sky that shows through both the above-roofline area and the thin
+between-building sky slivers** (real transparency, not a crossfade). Each tronçon bakes its
+own far-side trottoir band. The finalized keyed PNGs land as
+`public/assets/levels/belliard/troncon-a|b|c.png`, aspects **A 1.499, B 1.626, C 1.750**
+(height fixed at `WORLD_HEIGHT`).
 
-This retires three assumptions welded into the current render + gameplay coupling:
+**Scope ruling (Bertrand, 2026-07-18):** the full integration ships in **this** PR (#76) —
+backdrop **and** gameplay. Nothing is deferred. The earlier draft of this ADR proposed a
+visual-only slice with a frozen spawn grid; that deferral is **overridden**. Belliard is a
+**fully playable level** (`enemiesToWin: 10`, `timeSeconds: 90`, courier street, hostage QTE,
+scripted delivery — `src/game/levels/levels.ts`), so this ADR now covers moving the load-bearing
+spawn harness onto the new art.
 
-- **Same image × N, fixed pitch.** `LevelBackdrop` loads `facade` once and repeats it across
-  `PANELS = 4` panels of width `panelW = WORLD_HEIGHT * FACADE_ASPECT` (the shared manifest
-  facade aspect). Distinct tronçons of variable width break both the single-image and the
-  fixed-pitch assumption.
-- **Edge-feather crossfade.** The left-edge alpha ramp (`featherLeftTexture`, `BLEND`) exists
-  to hide the seam between two copies of the same opaque image. With transparent tronçons the
-  seam is a **real sky-sliver gap** the parallax sky must show through — feathering it would
-  fade a building into transparency over the gap, wrong. The tronçon mode must **not** feather.
-- **The window-alignment spawn harness (ADR-0028) is load-bearing for belliard.** Belliard is
-  a **fully playable level** (`enemiesToWin: 10`, `timeSeconds: 90`, courier street, hostage
-  QTE, scripted delivery). Cops pop from **art-derived window zones** (`windowZones.generated.json`,
-  belliard = 4 panels × 18 zones) that also position the code-drawn `ForegroundFrames` ironwork;
-  `GameScene.tsx` remaps every slot through `applyFacadeStretchX(slot.x, panelW, PANELS)` off
-  the fixed panel pitch and a single facade's 7-window grid. Distinct varied buildings retire
-  the "exactly 7 identical windows per panel" spine; re-deriving those zones from the new art
-  **moves where cops pop and where the player aims** — a gameplay change, not a visual one.
+This retires four assumptions welded into the current render + gameplay coupling:
 
-Forces:
+- **Same image × N, fixed pitch.** `GameScene.tsx:134-136` derives `panelW = WORLD_HEIGHT *
+FACADE_ASPECT` (shared manifest facade aspect) and `fullW = panelW * PANELS` with the global
+  `PANELS = 4`. Variable-width tronçons break both the single-image and the fixed-pitch basis.
+- **Equal-panel zone tiling.** `tilePanelZones` (`levelArt.ts:305`) maps a panel-local zone to
+  global by `x = (p + z.x)/panels, w = z.w/panels` — hard-codes equal panel widths.
+- **Per-panel feather-stretch remap.** `applyFacadeStretchX`/`invertFacadeStretchX`
+  (`facadeLayout.ts`) exist ONLY to compensate the `FACADE_DRAW_SCALE = 1.08` overlap the
+  feather needs. Tronçons draw at native width with **no** feather/stretch (the seam is a real
+  transparent gap the sky shows through), so that remap must not apply to belliard.
+- **Uniform 7-window grid.** `windowZones.generated.json` (belliard = 4 panels × 18 zones) and
+  the manifest `windowGrid`/`windows` encode one repeating 7-window facade. The 3 tronçons have
+  **their own irregular window positions per building** (different counts/heights) — cop-pop
+  zones and the `ForegroundFrames` ironwork must be **re-derived from each tronçon image**.
 
-- **Boundary law.** `src/game` holds no React/Three; `src/render` holds no game rules;
-  `src/hooks` is the only bridge. The backdrop is pure rendering; the spawn grid is game data.
-- **Do not regress the three shipped single-facade levels.** stalingrad and vitry (and belliard
-  until flipped) must stay byte-for-byte on the existing path — their spawn harness untouched.
-- **Smallest correct slice.** The brief asks for a visible, non-regressing parallax Belliard
-  street. Coupling the visual swap to a gameplay-affecting spawn-grid re-derivation would drag
-  in a playtest re-gate and a QTE cross-section re-check — larger than needed to get the street
-  on screen.
+Forces: the **boundary law** (`src/game` no React/Three; `src/render` no rules; `src/hooks` the
+only bridge); **stalingrad and vitry must stay byte-for-byte** on the fixed path; **spawn
+positions must be deterministic** (replay-safe); the change **moves where cops pop and where the
+player aims**, so it needs a design/QA re-gate.
 
 ## Decision
 
-**1. Introduce a per-level backdrop _mode_ to the level-art contract.** `LevelArt` gains an
-optional discriminated `backdrop` descriptor:
+**1. A per-level `BackdropLayout` becomes the single grid abstraction (game data).** Add a
+derived `getBackdropLayout(levelId)` in `src/game/levels/levelArt.ts` (pure, no React/Three)
+returning:
 
-- absent / `{ mode: "single-facade" }` → **today's path, unchanged** (stalingrad, vitry, and
-  any level that does not opt in). Byte-for-byte identical: same `facade.png × PANELS`, same
-  feather, same sky.
-- `{ mode: "troncon-sequence", tiles: [{ file, aspect }, …] }` → the new render path.
+```
+{ fullW, tiles: [ { width, centreX, drawScale, zones } … ] }   // tiles in fixed sequence order
+```
 
-**2. Tronçon-sequence render path (`dev-r3f-render`, in `LevelBackdrop.tsx`).** Given the
-ordered `tiles`, lay each as its **own world-locked plane** at its **native width**
-`WORLD_HEIGHT * aspect` (height fixed at `WORLD_HEIGHT`), butted left-to-right and **repeated
-in sequence order** to cover the full street width, starting at `-fullW/2`. **No left-edge
-feather** — the transparent PNGs let the parallax sky (unchanged `sky` layer, `parallax.sky`)
-show through the above-roofline area **and** the between-building slivers. The `street`/road
-band and the near-foreground (ADR-0045) are unchanged. This path is additive; the single-facade
-path is left intact.
+where `width_i = WORLD_HEIGHT * aspect_i`, `centreX_i = -fullW/2 + Σ_{j<i} width_j + width_i/2`,
+`fullW = Σ width_i`, and `zones` are that tile's window zones normalized within its own width.
+This replaces the `panelW × PANELS` + `tilePanelZones` + `computeSlotsFromZones(_, fullW, _)`
+pipeline with one world-space composition: a tile-local zone `(x,y,w,h)` → world
+`screenPosition.x = centreX_i + (x−0.5)·width_i`, `y = (0.5−y)·facadeH`, `size.x = w·width_i`.
 
-**3. Freeze belliard's spawn harness in this slice (the deferral).** Flipping belliard's
-backdrop to `troncon-sequence` is a **visual-only** change here. `PANELS`, `panelW`, `fullW`,
-the window zones (`windowZones.generated.json`), enemy slots, `ForegroundFrames` ironwork, the
-`applyFacadeStretchX` remap, the hostage QTE anchor and the delivery stop are **untouched** —
-belliard's gameplay stays byte-for-byte. The backdrop renders independently to fill the same
-`fullW`.
+**2. Backdrop mode discriminates the two layouts; single-facade is reproduced exactly.**
+`LevelArt` gains `backdrop`:
 
-**4. Gate condition on the deferral (non-negotiable).** The freeze is only correct if the
-frozen ironwork + cop pops still read as windows over the new art. At the **composite gate**,
-validate at the play camera that the frozen railing/cop rows still land on the tronçons' painted
-window band (the v2 prompt places "clean upper floors carrying regular rows of tall shuttered
-french windows" — the same upper-mid band as the current grid at y ≈ 0.19–0.48). **If they
-clash** (double-windows, railings on blank wall), the window re-derivation is **not** deferrable
-and this stops being a fix-lane visual slice — it escalates to the full pipeline as a
-gameplay change. Doubt ⇒ full pipeline.
+- absent / `{ mode: "single-facade" }` → `getBackdropLayout` emits **`PANELS` equal-width tiles**
+  with `drawScale = FACADE_DRAW_SCALE (1.08)` and the level's repeated zones, computed to be
+  **numerically identical** to today's slots (unit-tested byte-for-byte for stalingrad/vitry).
+  The fixed path is a special case of the general one — one downstream consumer, provable
+  non-regression.
+- `{ mode: "troncon-sequence", tiles: [{ file, aspect }, …] }` → the variable-width tiles above,
+  `drawScale = 1.0` (identity — no feather remap). The `tiles` array is the **fixed, explicit,
+  deterministic** sequence (art/design freezes the validated shuffle into the manifest; it is
+  NOT randomized at runtime, so spawn positions are stable). `fullW` derives from the sum.
 
-**5. Asset contract (`dev-tooling-assets`).** The 3 validated tronçon PNGs land under
-`public/assets/levels/belliard/` at the sizes pinned in the v2 draft §0 (A `1536×1024`,
-B `1920×1024`, C `1792×1024`; height fixed 1024, variable width). **Variable width is declared
-as `aspect` (= w/h) per tile in the `backdrop.tiles` list in `levelArt.json`** — not inferred
-at load, so the world footprint is deterministic offline. Generation bypasses two off-register
-clauses of `gen-level-art.mjs` (the pixel-art manifest `style` and the fused-terrace
-`continuity` suffix — v2 §0). Keying is a **region-mask cut** (above rooflines + inside sky
-slivers only), **not** a global near-black chroma-key, so the deep-night grimy walls are not
-eaten (sprite-hole-audit failure mode; v2 §6.4).
+**3. Render consumes the layout (`src/render`), no rules added.** `LevelBackdrop.tsx` branches
+on mode: single-facade keeps its exact current path; troncon-sequence draws each tile as its own
+world-locked plane at native `width`, butted at `centreX`, **no left-edge feather**, letting the
+unchanged parallax `sky` show through rooflines and slivers, plus the `street`/road band and the
+near-foreground (ADR-0045). `GameScene.tsx` reads slots from `getBackdropLayout` (drops the local
+`panelW`/`PANELS` math); `ForegroundFrames` is placed per tile at `centreX_i` with `facadeW =
+width_i` and that tile's zones (replacing the `(p−(PANELS−1)/2)·panelW` group placement). The
+`applyFacadeStretchX` remap is applied with each tile's `drawScale`, so it is identity for
+belliard and unchanged for the fixed levels.
+
+**4. Window zones re-derived from the tronçon art (`scripts/gen-window-zones.mjs`).** The script
+is reworked from "snap one `windowGrid` across 4 equal panels of `facade.png`" to **detect each
+tronçon's real window openings** (per building, irregular count) in `troncon-a|b|c.png` and emit
+per-tronçon normalized zones; `windowZones.generated.json` for belliard is keyed to the tile
+sequence (per-tronçon zone sets, expanded to the sequence by `getBackdropLayout`). Alignment is
+validated through the **layout-aware** dev harness (below). Cops therefore pop on real painted
+windows and railings sit on real balconies.
+
+**5. The ADR-0028 dev harness generalizes to the layout.** `__MUF_SLOT_RECTS__`,
+`__MUF_PROJECT__`, `__MUF_ZONES__` (`GameScene.tsx`) drop `panelW = fullW/PANELS` +
+`floor(globalXNorm·PANELS)` and instead locate a world-X's tile by cumulative offsets, reporting
+tile index + tile-local coords. This keeps `gen-window-zones`' SCREEN validation pass working on
+the variable layout (round-trip identity unit-tested).
+
+**6. Near-side trottoir on the `street` layer (v2 §4).** The far-side trottoir is baked in each
+tronçon; the near-side band is added to the `street`-layer prompt (`level-street.md`) as its own
+single-clause iteration **with a seed re-pin**, generated in CI. The ×2.4 hostage-QTE zoom reads
+the overhead `street` patch — with the baked far-trottoir + the new near-trottoir the QTE
+cross-section is re-confirmed at the composite gate (v2 §6.3).
+
+**Keying (v2 §6.4):** a **region-mask cut** (above rooflines + inside sky slivers only), NOT a
+global near-black chroma-key, so the deep-night grimy walls survive (sprite-hole-audit risk).
 
 ## Consequences
 
 **Positive**
 
-- A visible, non-regressing parallax Belliard street ships in the smallest slice: a pure
-  rendering capability plus an art swap, gameplay frozen and re-gate-free.
-- The other levels are provably untouched (single-facade mode is the default path).
-- The backdrop mode is a clean seam for future levels that want a distinct-building street.
+- One world-space slot pipeline for both layouts; enemies, couriers, QTE and delivery "just
+  work" off correct world slots (`EnemySprite`/`useGameLoop` unchanged).
+- The fixed levels are provably untouched (single-facade is a special case, byte-identical test).
+- Deterministic tile sequence keeps spawns replay-safe; variable widths are a clean seam for
+  future distinct-building streets.
+- Boundary law intact: tile geometry + zones are game data in `src/game`; the render only draws
+  them; the generated zones are a build artifact.
 
-**Negative / deferred (explicitly out of scope — follow-up story)**
+**Negative / cost**
 
-- **Window-zone re-derivation from the tronçon art** (`gen-window-zones.mjs` snap), **retiring
-  the 7-identical-windows-per-panel spine** (v2 §6.2), and any **enemy-grid pitch retune** — a
-  `dev-tooling-assets` + `dev-gameplay` change gated by a `game-designer` playtest.
-- **Variable-width _gameplay_ grid** (enemy slots following tronçon boundaries instead of the
-  fixed 4-panel pitch) — deferred; the spawn grid stays on its own coordinate system this slice.
-- **QTE `street` cross-section reconciliation** (v2 §6.3): the ×2.4 hostage-QTE zoom reads the
-  overhead `street` patch; with the baked far-trottoir + the near-trottoir `street`-layer tweak,
-  confirm the band still reads. Deferred with the street-layer §4 iteration.
-- **Companion `street`-layer near-trottoir tweak** (v2 §4) is a separate `level-street.md`
-  iteration (seed re-pin) — not folded into this PR.
+- Touches all four coupling sites in one PR (backdrop render, slot pipeline, harness, generator)
+  plus a gameplay re-gate — a genuine cross-layer change (this ADR is the sign-off).
+- `fullW` for belliard becomes `Σ tile widths` rather than the current `80`. If it deviates
+  materially, spawn density / camera-pan range / `enemiesToWin` / `timeSeconds` shift — a
+  `game-designer` tuning call. The validated sequence should sum near the current width to
+  minimize retune.
 
-**Risk register**
+## Risk register (biggest first)
 
-- Deferral risk: frozen grid vs new painted windows (mitigated by the §4 composite gate above).
-- Total-width mismatch: the tronçon sequence must cover `fullW` by repetition; the tiling math
-  is unit-tested render-side so couriers/camera-pan/QTE span the same world width they do today.
+1. **Window misalignment** — mis-detected zones ⇒ cops pop off-window / railings on blank wall.
+   Verify: layout-aware SCREEN harness (`gen-window-zones` gate) + composite-gate screenshot +
+   `game-designer` playtest.
+2. **stalingrad/vitry regression** from unifying the slot pipeline. Verify: unit test that
+   `getBackdropLayout` reproduces today's slots byte-for-byte for both fixed levels.
+3. **Difficulty drift** from the changed `fullW`. Verify: `game-designer` playtest vs
+   `spec-*`; tune `enemiesToWin`/`timeSeconds` if needed.
+4. **Harness coordinate bug** (tile-by-offset lookup vs `floor(x·PANELS)`) breaks the generator.
+   Verify: round-trip identity unit test on the layout apply/invert.
+5. **QTE / delivery cross-section read** with the new trottoir baking. Verify: composite gate +
+   `game-designer`.
+6. **Transparent overdraw perf** (tronçon planes + sky through gaps + near-foreground). Verify:
+   `gpu-specialist` frame-budget verdict.
 
 ## Alternatives considered
 
-- **Couple the visual swap to the spawn-grid re-derivation in one PR.** Rejected as the first
-  slice: pulls in a playtest re-gate + QTE re-check for a change whose goal is to get the street
-  on screen. Sequenced as the follow-up instead.
-- **Bake the full both-side road cross-section into each tronçon.** Rejected upstream (v2 §5):
-  overloads FLUX and duplicates the `street` layer. Far-trottoir in the tronçon, near-trottoir
-  on the `street` layer.
-- **Keep the feather / crossfade for the tronçon seams.** Rejected: the seam is now a real
-  transparent sky gap the parallax sky shows through; feathering would dissolve buildings.
-- **Make `PANELS`/`panelW` per-level to model variable tronçon widths in gameplay now.**
-  Deferred: it reworks the load-bearing ADR-0028 harness and every `fullW`-keyed consumer —
-  out of the smallest slice.
+- **Visual-only slice, freeze the spawn grid, defer re-derivation** (the prior draft of this
+  ADR). Overridden by Bertrand — full integration this PR.
+- **Two divergent code paths (keep the fixed pipeline, bolt a separate variable one).** Rejected:
+  two slot pipelines to keep in sync. Chose one general path with the fixed layout as a tested
+  special case.
+- **Runtime-shuffled tronçon order.** Rejected: non-deterministic spawns. The sequence is frozen
+  in the manifest.
+- **Keep feather/stretch for tronçon seams.** Rejected: the seam is a real transparent sky gap;
+  feathering would dissolve buildings and occlude the parallax sky.
+- **Make `PANELS`/`panelW` per-level but still equal-width.** Rejected: can't model variable
+  tronçon widths; the layout abstraction is needed regardless.
 
 ## References
 
-- `docs/art-direction/prompt-drafts/level-belliard-decor-v2.md` (§0 transparency ruling, §3
-  sky, §4 near-trottoir, §6 open integration questions)
-- ADR-0028 (window-alignment harness), ADR-0004 (per-level roster), ADR-0045 (near-foreground
-  parallax layer)
+- `docs/art-direction/prompt-drafts/level-belliard-decor-v2.md` (§0 transparency, §3 sky, §4
+  near-trottoir, §6 open questions)
+- ADR-0028 (window-alignment harness), ADR-0004 (per-level roster), ADR-0045 (near-foreground)
 - `src/render/scene/LevelBackdrop.tsx`, `src/render/scene/facadeLayout.ts`,
-  `src/render/scene/GameScene.tsx`, `src/game/levels/levelArt.ts`,
-  `src/game/levels/levelArt.json`, `src/game/levels/windowZones.generated.json`
+  `src/render/scene/ForegroundFrames.tsx`, `src/render/scene/GameScene.tsx`,
+  `src/game/levels/levelArt.ts` (`tilePanelZones`, `computeSlotsFromZones`,
+  `getLevelPanelZones`), `src/game/levels/levelArt.json`,
+  `src/game/levels/windowZones.generated.json`, `src/game/levels/levels.ts`,
+  `scripts/gen-window-zones.mjs`
