@@ -494,3 +494,129 @@ reached.**
 - Note (non-blocking, per design gate's own "not a block" framing): **F-1 awaits
   Bertrand's one-line ratification** — pm recommends RATIFY (see rationale above). Story is
   otherwise accepted for merge; no further pm-lane rework required.
+
+## 9. REVISION — static duel + blown-peeks loss clock — senior-architect (Winston) — 2026-07-18
+
+**Bertrand REJECTED ADR-0034 D1** (captor retreating to the porte cochère; distance-as-clock).
+Product-owner decision: the duel is now **STATIC** (no captor movement) and the distance clock
+is replaced by a **"blown-peeks" loss clock** — the captor executes the hostage after N
+closed-without-headshot peeks. The peek-duel, the stance-aware hitboxes, and the energy economy
+are KEPT. This section is the FROZEN contract delta both lanes rebuild against; it supersedes
+§3's moving-anchor contract wherever they conflict.
+
+`game-designer` (Sacha) writes the tuning spec (the `maxBlownPeeks` default and any peek-cadence
+retune) in parallel; the architect owns the CODE contract (field names/types) below.
+
+### Frozen delta — `src/game/types/hostageQte.ts`
+
+**`QteSpec`**
+
+- **REMOVE:** `porteCochere`, `retreatSpeed`.
+- **KEEP:** `triggerAtElapsedSeconds`, `zoomSeconds`, `anchor` (NOW a static establishing
+  point — the captor never leaves it), `peekCadenceSeconds`, `peekDurationSeconds`.
+- **ADD:** `readonly maxBlownPeeks: number;` — per-level cap: the count of closed-without-headshot
+  peeks that triggers the execution (→ `LOST`). Integer ≥ 1 (asserted; must be reachable).
+  DEFAULT VALUE is game-designer's; the field name/type is LAW.
+
+**`HostageQte` (runtime)**
+
+- **REMOVE:** `dir`, `speed`, `porteCochere`, and the moving-anchor advance. `anchor` becomes
+  STATIC — copied once at `createQte` from `spec.anchor` and NEVER mutated by the tick.
+- **ADD:** `readonly blownPeeks: number;` — counter, starts 0, increments once per PEEKING→COVERED
+  close that was NOT a win.
+- **ADD (runtime mirror):** `readonly maxBlownPeeks: number;` — copied from spec at `createQte`
+  (same pattern as the `peekCadenceSeconds`/`peekDurationSeconds` mirrors: the tick reads only
+  the runtime record and needs the cap to compare `blownPeeks`).
+- **KEEP:** `phase`, `stance`, `telegraphActive`, `stanceRemaining`, `anchor` (static),
+  `peekCadenceSeconds`, `peekDurationSeconds`, `zoomRemaining`, `zoomSeconds`, `resultRemaining`,
+  `warning`.
+
+### Frozen delta — `src/game/systems/qteSystem.ts` (dev-gameplay)
+
+- **`createQte`:** drop the retreat kinematics (`dir = sign(door−start)`, `speed`, `porteCochere`)
+  and the D1 asserts (`porteCochere.y === anchor.y` (C3), `porteCochere.x !== anchor.x`,
+  `retreatSpeed > 0`). Remove `porteCochere.{x,y}` and `retreatSpeed` from the C6 finiteness list;
+  ADD `maxBlownPeeks` to it. ADD an assert `maxBlownPeeks >= 1` (integer, positive — a loss must be
+  reachable). Seed `anchor: spec.anchor` (static), `blownPeeks: 0`, `maxBlownPeeks`. KEEP the G5
+  exposure-floor clamp and the G4 `peekCadenceSeconds > TELEGRAPH_LEAD_SECONDS` assert.
+- **`tickQte` ACTIVE — DROP the retreat/door-reached branch entirely** (no anchor advance, no
+  `dir*(anchor.x − porteCochere.x) >= 0` loss check). The new loss route lives INSIDE the
+  COVERED↔PEEKING sub-machine loop: on each PEEKING→COVERED **close** that stayed ACTIVE, increment
+  `blownPeeks` AND charge `QTE_UNANSWERED_PEEK` (−8) exactly as today; then if
+  `blownPeeks >= maxBlownPeeks` the captor executes her → return `LOST` (carry the energy
+  accumulated so far this tick, including that close's −8; the execution adds NO extra charge). The
+  loop stays bounded (each iteration subtracts a strictly-positive stance duration); a large delta
+  crossing several closes must stop at the FATAL close, not overshoot past `LOST`.
+- **KEEP:** fire resolved FIRST via the stance-aware classifier; head-during-PEEKING → `WON`;
+  `body`/`hostage`/`panic` energy penalties; unanswered-peek −8 on close; G4/G5 asserts; the
+  `qteSpec === null` skip; the WON/LOST → DONE hold.
+- **Deterministic tie-break preserved:** `fire` is resolved before the loss check, so a same-tick
+  winning head-shot beats a same-tick fatal blown-peek → `WON`. (Reuses the existing "fire first"
+  ordering; the door-reached tie-break is simply replaced by the cap-reached tie-break.)
+- The stance-aware classifier (`qteZoneAt`) and the hitbox bands are UNCHANGED — offsets are
+  anchor-relative and G6 still holds; they now apply to a static anchor, which only makes them
+  more stable. Energy constants UNCHANGED.
+- **`stateMachine.ts`:** the `tickQte(qte, fire, impactPoint, delta)` signature and the
+  `{ qte, energyDelta }` result are UNCHANGED, so the call site needs no logic edit. (Verify: no
+  reference to removed fields.)
+- **`levels.ts` (belliard `QteSpec`):** delete `porteCochere`/`retreatSpeed`, add `maxBlownPeeks`
+  (game-designer's value). Update the authoring comment (no more "7.2 u / 0.6 u·s⁻¹ = 12 s" retreat
+  budget; the budget is now `maxBlownPeeks × peekCadence`).
+
+**F-1 REVERSAL (record for pm/tech-writer):** this reverses the prior F-1 ruling. The hostage is
+**killable again** — the captor executing her on the Nth blown peek is now the **sole** LOST route.
+The ADR-0030 "hostage-death loss route" that F-1 retired is effectively reinstated, but re-keyed:
+loss is not a stray-bullet HP death (still no `hostageHp`, no per-bullet death — guideline §5.6
+holds), it is a _legible, telegraphed patience clock_ (miss N peeks → she dies). A hostage-band
+hit stays a flat −30 energy penalty, NOT a loss.
+
+### Frozen delta — render + view-hook (dev-r3f-render)
+
+- **`qteCamera.ts`:** REMOVE `qteFollowTarget`, `QTE_DOOR_LEAD`, `QTE_DOOR_LEAD_MAX`. Revert to the
+  ADR-0030 static-zoom shape: `qtePose(base, anchor, p)` targets the STATIC `qte.anchor` directly;
+  `qteZoomInProgress`, `qtePose`, `qteRestorePose` otherwise unchanged.
+- **`useGameLoop.ts`** (QTE driver ~L274–317): zoom to the static point — `qtePose(base, qte.anchor, p)`
+  (drop the `qteFollowTarget(qte.anchor, qte.porteCochere)` lead). Restore-on-DONE path unchanged
+  (simpler than the follow version). Pinch/edge-scroll `isQteActive` gating unchanged.
+- **`HostageQteSprite.tsx`:** draw a STATIC tableau at the fixed `qte.anchor` (no moving-captor
+  framing/comments). KEEP the peek tell + hitbox-aligned zones (captor/hostage/cue offsets). The
+  LOST strobe now reads as the execution-on-blown-peeks; wording of comments updated off "retreat".
+- **`hostageCue.ts`:** keeps the discrete peek tell + `captorTint` + `hostageAlarmColor` +
+  `energyFloater`. Logic unchanged; drop any residual "retreat/distance-clock" prose.
+- **`HUD.tsx`:** UNCHANGED. Still no captor-HP/countdown bars; `HudHostageQte = { phase, warning }`
+  stays. `blownPeeks` is **diegetic** (read in-world via the tell/execution), NOT a HUD bar. OPEN
+  QUESTION routed to `game-designer`/`ux-designer`: whether any minimal read of "peeks left before
+  she's shot" is warranted (e.g. a subtle in-world tally) — do NOT add a HUD bar without their call;
+  default is diegetic-only.
+
+### Lane assignment — non-overlapping paths
+
+| Lane               | Owns (writes)                                                                                                                                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **dev-gameplay**   | `src/game/types/hostageQte.ts`, `src/game/systems/qteSystem.ts`, `src/game/levels/levels.ts` (belliard `QteSpec`), `src/game/systems/__tests__/` (+ `stateMachine.ts` only if a removed-field reference surfaces — expected none) |
+| **dev-r3f-render** | `src/render/scene/qteCamera.ts`, `src/render/scene/HostageQteSprite.tsx`, `src/render/scene/hostageCue.ts`, `src/render/ui/HUD.tsx`, **`src/hooks/useGameLoop.ts`**, `src/render/scene/__tests__/`                                |
+
+**No shared-file contention.** `qteCamera.ts` and its `useGameLoop.ts` importer are BOTH in the
+render lane. `tickQte` is called from `stateMachine.ts` (game lane); `useGameLoop.ts` only _reads_
+`gameStateRef.current.qte`. The two lanes never both write a file.
+
+**Sequencing:** (1) dev-gameplay lands the FROZEN `hostageQte.ts` types file first (interface only,
+no logic) → handoff. (2) Both lanes then fan out in parallel as concurrent Task calls on the
+non-overlapping paths above. Render's `qteCamera.ts` edit (deleting `qteFollowTarget`) and its
+`useGameLoop.ts` consumer must land together in the same lane pass so no dangling import.
+
+### ADR impact — ADR-0034 D1 REVERSED (→ tech-writer / producer)
+
+`producer` (Marion) allocates the ADR number — I do not self-allocate. **tech-writer** must
+supersede/amend ADR-0034: its **D1** (distance-as-sole-clock / retreat to porte cochère) is
+REVERSED by the product owner. Record the new decision — **static duel + blown-peeks loss clock**
+— either as a NEW ADR that supersedes ADR-0034 D1, or as a dated amendment to ADR-0034 (Marion's
+call on number/form). The record must also note: (a) `maxBlownPeeks` replaces
+`retreatSpeed`/`porteCochere` as the per-level difficulty knob (ADR-0035 curve lane must retune
+its enumerated knobs); (b) **F-1 is reversed** — the hostage is killable again via the execution
+clock; the sole LOST route is `blownPeeks >= maxBlownPeeks`; (c) D5's `QTE_UNANSWERED_PEEK` now
+does double duty (energy drain AND the loss counter's increment event).
+
+- VERDICT: **CONTRACT FROZEN.** dev-gameplay → types file first; then both lanes parallel.
+  tech-writer to revise ADR-0034 D1 (number from producer). Awaiting game-designer's `maxBlownPeeks`
+  default + any cadence retune.
