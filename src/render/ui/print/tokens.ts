@@ -27,7 +27,7 @@ export const STOCK = {
 // on a load failure. Single source: no UI surface may re-declare a font stack (art-direction
 // §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed).
 export const FONT = {
-  display: "'Anton', Impact, 'Arial Narrow', sans-serif", // ransom-note / flyer headlines
+  display: "'Rubik Mono One', Impact, 'Arial Narrow', sans-serif", // techno-flyer headlines
   mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + HUD
   hand: "'Caveat', cursive", // felt-tip flyer annotations
 } as const;

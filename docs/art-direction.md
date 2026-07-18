@@ -135,8 +135,9 @@ Texture (all CSS/inline-SVG — **no generated PNG**): uniform dot-screen overla
 toner speckle via inline-SVG `feTurbulence` data-URI; fold streaks via diagonal
 `linear-gradient`; marker-ellipse / rubber-stamp distress via inline-SVG
 `feTurbulence`+`feDisplacementMap` (a plain geometric CSS border is an accepted-but-weaker
-fallback). Ransom/Letraset display type = per-letter jitter over the embedded **Anton**
-display webfont; Courier info blocks use embedded **Courier Prime** (typewriter face) and
+fallback). Ransom/Letraset display type = per-letter jitter over the embedded **Rubik Mono
+One** display webfont (techno-flyer block); Courier info blocks use embedded **Courier
+Prime** (typewriter face) and
 handwriting annotations the embedded **Caveat** marker hand. All three are self-hosted
 OFL 1.1 woff2 in `src/assets/fonts/` (no CDN, offline-safe), registered by `fonts.css`
 and single-sourced via the `FONT` token in `src/render/ui/print/tokens.ts` (ADR-0045);

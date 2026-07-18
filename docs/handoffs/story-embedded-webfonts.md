@@ -43,6 +43,16 @@ system-font stopgaps (Impact / Courier New / cursive) and close the two `docs/ar
   zero pageerrors, no layout breakage.
   VERDICT: PASS — implementation + runtime verify.
 
+## DISPLAY SWAP — Bertrand (owner) — 2026-07-18
+
+- claim: on the first build Bertrand found the Anton title "barely different" (near-Impact by
+  design). Presented an 8-face OFL comparison board rendered on the real "MUF" title.
+- release: Bertrand selected **Rubik Mono One** (geometric mono block, techno-flyer character)
+  for the display role — owner override of lead-art's Anton pick. Anton removed; Rubik Mono One
+  woff2 embedded (latin + latin-ext), `FONT.display` + `fonts.css` + `OFL.txt` + `CREDITS.md` +
+  art-direction §Typographie + ADR-0045 updated. Mono (Courier Prime) and hand (Caveat) unchanged.
+  VERDICT: owner decision (no gate — Bertrand's direct call supersedes the art gate here).
+
 ## OUTSTANDING (merge gate)
 
 - Stage-6 review panel not yet run (draft PR). At merge: re-check ADR number; **Gate-4 mobile/CRT
