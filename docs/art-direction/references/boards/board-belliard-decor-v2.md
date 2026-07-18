@@ -56,7 +56,7 @@ floors stay comparatively calmer (period signage, shutter paint wear) so the eye
 reads architecture above head height — the density lives where hands could actually
 reach.
 
-- [Karim Boukercha, Yves Marchand & Romain Meffre — *Graffiti Général* (Éditions
+- [Karim Boukercha, Yves Marchand & Romain Meffre — _Graffiti Général_ (Éditions
   Dominique Carré, 2013), publisher page](https://www.editionscarre.com/livres/graffiti-general/) —
   the reference for wall-competition density itself: photo-documents Paris's derelict
   building sites and rail edges (Belleville, la Villette, **Petite Ceinture**,
@@ -83,7 +83,7 @@ reach.
   generic spray-can poster look; and must not silently reintroduce anachronistic
   post-1998 styles (wildstyle pieces from 2000s+ bombing culture look different from
   late-80s/90s hand-tags — keep the letterforms period-correct per Paris Tonkar, D1).
-- _Licence:_ *Graffiti Général* is an in-print, copyrighted book — reference/study
+- _Licence:_ _Graffiti Général_ is an in-print, copyrighted book — reference/study
   only, never scan-and-paste (same regime as D1's Paris Tonkar); drips.fr photos are
   third-party-sourced per the site's own credit line, reference only; Autour de
   Paris / hipopen.net / Not Only Hip Hop are editorial blog content, citable as
@@ -157,7 +157,7 @@ pavement band, not dropped straight onto the asphalt), each with a granite kerb
   the base cross-section reference: trottoirs (established citywide by 1846 rules
   under Rambuteau), granite kerbs (bordures, 10–15cm high) separating pavement from
   chaussée, paved/asphalt roadway — the structural template for "sidewalk both sides
-  + kerb + road" that this axis needs.
+  - kerb + road" that this axis needs.
 - [L'Association des Professionnels du Pavage (APP) — "Petite histoire du pavage
   parisien"](https://www.assopaveurs.fr/petite-histoire-du-pavage-parisien-2/) —
   materials reference for the chaussée surface itself (grès/granite pavés, standard
