@@ -35,12 +35,15 @@ case "$trimmed" in
   *) exit 0 ;;  # not an exact raw-fallback form ⇒ leave it alone
 esac
 
-# Emit the rewrite. `updatedInput` replaces tool_input; the rewritten command is
-# itself allowlisted, so normal permissions still apply to it.
-jq -n --arg cmd "$rtk_cmd" '{
+# Emit the rewrite. updatedInput keeps every original tool_input field
+# (description/timeout/run_in_background) and overrides only `command`, so nothing
+# the caller set is dropped — this holds whether the harness treats updatedInput as
+# a merge or a full replacement. The rewritten command is itself allowlisted, so
+# normal permissions still apply to it.
+printf '%s' "$payload" | jq --arg cmd "$rtk_cmd" '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
-    updatedInput: { command: $cmd },
+    updatedInput: (.tool_input + { command: $cmd }),
     permissionDecisionReason: ("rtk-rewrite: token-compressed proxy → " + $cmd)
   }
 }'

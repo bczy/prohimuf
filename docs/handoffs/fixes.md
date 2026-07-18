@@ -16,7 +16,7 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   403 no longer leaves rtk/codegraph missing for the whole session. (True cross-session
   binary caching needs a persistent volume — out of repo scope; retry is the honest fix.)
   · checks: `bash -n` clean on both scripts, retry helper unit-tested (success + fail
-  paths) · review: pending
+  paths) · review: code-review(high) — 2 findings, 1 fixed (updatedInput preserves original Bash fields), 1 accepted (retry worst-case latency, low-risk)
 
 - 2026-07-18 · claude/rtk-graph-savings-report-2a6t8o · dev-tooling-assets · add
   `scripts/setup-tooling.sh`: one-command, idempotent local (by-hand) provisioning of
@@ -33,7 +33,7 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   guarded by `command -v rtk` (rtk absent ⇒ passthrough, fallback preserved) and
   exact-match-only (never `test:coverage`/`lint:fix`/flagged/chained). Config-only, no
   src touched. · checks: hook behavioural suite 12/12 (rewrite + passthrough), settings.json
-  structure verified; tsc/vitest/lint N/A (no TS/source changed) · review: pending
+  structure verified; tsc/vitest/lint N/A (no TS/source changed) · review: code-review(high) — 2 findings, 1 fixed (updatedInput preserves original Bash fields), 1 accepted (retry worst-case latency, low-risk)
 
 - 2026-07-17 — story-crew-extension log closure: append Winston's §6g integration
   re-triage (PASS — written moments after Bertrand's merge, hence this follow-up),
