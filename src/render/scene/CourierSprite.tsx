@@ -138,8 +138,8 @@ function updateLayer(
   }
   const frame = flipbookFrame(clock + phase, courierFrameCount(layer), courierAnimFps());
   // Whole-plane bob/lean (downscoped spike motion). `clock` is frozen on pause by
-  // the caller, so the bob freezes with the street — no extra pause plumbing. A
-  // frozen clock also yields a constant angle → identity-ish rest pose.
+  // the caller, so the bob freezes with the street — no extra pause plumbing (it
+  // holds at whatever phase it was mid-cadence, not necessarily the rest pose).
   let bobY = 0;
   let lean = 0;
   if (DEFORM_BOB_ENABLED) {

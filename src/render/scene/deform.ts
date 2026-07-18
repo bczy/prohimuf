@@ -88,7 +88,7 @@ export function recoilTransform(
 ): DeformTransform {
   if (!Number.isFinite(elapsed) || elapsed < 0) return identityTransform();
   if (!Number.isFinite(aimDirX)) return identityTransform();
-  if (params.duration <= 0) return identityTransform();
+  if (!Number.isFinite(params.duration) || params.duration <= 0) return identityTransform();
 
   const env = recoilEnvelope(elapsed / params.duration);
   if (env === 0) return identityTransform();

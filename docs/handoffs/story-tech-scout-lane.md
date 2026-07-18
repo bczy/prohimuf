@@ -96,3 +96,18 @@ subagent owning prior-art / feasibility spikes; the architect absorbed it. ADR-0
     `files:` override for `.py`/`.html`/`.json`), and every file I touched is one of
     those non-JS/TS types plus two binary PNGs, so none are ESLint targets.
   VERDICT: PASS — freshness gate (dev-tooling-assets)
+
+## 6. REVIEW — code-review panel (stage-6 merge gate) — 2026-07-18
+- claim: mandatory 4-reviewer panel on `git diff origin/main...HEAD` (PR #85) —
+  code-review(high) · bmad-code-review · bmad-review-edge-case-hunter · security-review,
+  findings adversarially verified, senior-architect triage = integration review.
+- release: no CONFIRMED BLOQUANT/MAJEUR. Findings (all non-blocking):
+  MINEUR recoilTransform NaN-duration guard gap → FIXED (guard + test);
+  MINEUR muzzle flash tracks recoil translation not rotation → ACCEPTED (sub-visual on
+  the soft radial glow), comment corrected; NITs (overclaiming comments → fixed;
+  toggles ship ON = conscious spike-visible choice; fiche tools: unscoped = precedent-
+  consistent). Integration: boundary law intact (deform.ts pure, no @game/@hooks from
+  render), no-regression-when-off verified, freshness gate FRESH, tsc + deform 12/12 green.
+  File List: src/render/scene/deform.ts, src/render/scene/__tests__/deform.test.ts,
+  src/render/scene/EnemySprite.tsx, src/render/scene/CourierSprite.tsx.
+- VERDICT: PASS — code-review panel (senior-architect)

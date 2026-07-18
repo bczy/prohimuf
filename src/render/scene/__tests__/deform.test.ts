@@ -75,6 +75,7 @@ describe("recoilTransform", () => {
     expect(recoilTransform(0.05, NaN, RECOIL)).toEqual(identityTransform());
     expect(recoilTransform(0.05, 1, { ...RECOIL, duration: 0 })).toEqual(identityTransform());
     expect(recoilTransform(0.05, 1, { ...RECOIL, duration: -1 })).toEqual(identityTransform());
+    expect(recoilTransform(0.05, 1, { ...RECOIL, duration: NaN })).toEqual(identityTransform());
   });
 });
 

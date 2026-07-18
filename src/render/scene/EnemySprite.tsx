@@ -180,8 +180,9 @@ export function EnemySprite({
     // SHOOTING, driven off the per-state anim clock (0 on entering SHOOTING → eased
     // idle→action→idle). Aim direction comes from the muzzle anchor side; the kick
     // is opposite. Applied to mesh.position/scale HERE so the rim block below (which
-    // mirrors mesh.scale) and the flash block (which reuses recoilDX/DY) stay locked
-    // to the body — no gap opens between body, neon rim and muzzle flash.
+    // mirrors mesh.scale, position AND rotation) stays flush behind the body. The
+    // flash block reuses recoilDX/DY for the translation only — its rotation offset
+    // is sub-visual on a soft radial glow, so it is deliberately not rotated.
     let recoilDX = 0;
     let recoilDY = 0;
     if (DEFORM_RECOIL_ENABLED && enemy.state === "SHOOTING") {
