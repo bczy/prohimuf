@@ -12,7 +12,7 @@ export default defineConfig({
       "src/utils/**/*.test.ts",
       "src/render/**/*.test.ts",
       "src/hooks/**/*.test.ts",
-      "scripts/lib/**/*.test.mjs",
+      "scripts/**/*.test.mjs",
     ],
 
     coverage: {

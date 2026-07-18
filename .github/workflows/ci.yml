@@ -67,6 +67,14 @@ jobs:
       - name: Art prompt contract lint
         run: node scripts/check-art-prompts.mjs
 
+      # ART GATE — hero wiring guard (ADR-0043). Loads references/approved/
+      # heroes.json (empty ⇒ PASS) and, for every declared hero, asserts the
+      # wired generator's own planRequests() really threads it into image=
+      # (same buildRequestUrl the runtime generator uses) plus heroes.json ↔
+      # HEROES.md ↔ frozen-file coherence. Pure node, no network.
+      - name: Hero wiring guard
+        run: node scripts/check-hero-wiring.mjs
+
       - name: Format check
         run: yarn format:check
 

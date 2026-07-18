@@ -701,6 +701,52 @@ produced here.
 
 ---
 
+## gen-from-reference.mjs — Ad-hoc kontext reference-conditioned iteration
+
+Exploratory one-shot CLI (ADR-0044): drop a graphic reference, run a single
+`kontext` img2img generation of a target asset **conditioned on it**, iterate.
+Not a manifest-driven family generator — no `levelArt.json` entry required.
+
+- **Reference:** `--ref` is a repo-relative path (turned into a
+  `raw.githubusercontent.com` URL at `GITHUB_SHA` — Pollinations fetches it
+  SERVER-SIDE, so the reference must already be **committed and pushed**) or a
+  full `http(s)` URL, passed through unchanged. Convention: drop it in
+  `references/` (repo root, outside `public/`, so throwaway inputs never ship
+  in the deployed bundle) — see `references/README.md`.
+- **Post-processing by `--family`** reuses the existing pipeline, never
+  reinvented: `vehicles` → chroma-key cutout (`cutout-enemies.mjs`) then
+  Rec.601 desaturation (`gen-vehicle-sprites.mjs`); `enemies` → cutout only;
+  `levels` → none (full-bleed backdrops). Both post-processing steps soft-skip
+  (`[cutout-skip]` / `[gray-skip]`) when `@napi-rs/canvas` is unavailable —
+  the real pass runs in CI.
+- **kontext fidelity is variable** against an arbitrary reference — it nudges
+  style/pose, it is not a deterministic transform. Expect to iterate
+  seed/prompt; some references will not lock. See `references/README.md` and
+  ADR-0044 for the full caveat.
+- **Network helpers** (`fluxUrl`, `kontextUrl`, `fetchImage`, `fetchWithRetry`)
+  live in `scripts/lib/pollinations.mjs`, unit-tested in
+  `scripts/lib/__tests__/pollinations.test.mjs` — the single source of the
+  kontext URL contract, also imported by `gen-enemy-types.mjs`.
+
+### Commands
+
+```bash
+node scripts/gen-from-reference.mjs \
+  --ref references/moto-photo.jpg \
+  --prompt "same silhouette, side profile, pixel art" \
+  --out public/assets/vehicles/moto.png \
+  --family vehicles --seed 12345 [--size 256x160] [--style ", extra style tail"]
+```
+
+A failed fetch is logged per-asset (`[fail] … (will be generated in CI)`) and
+never crashes the run — network Pollinations is normally blocked in the local
+sandbox; real generation runs via `.github/workflows/gen-from-reference.yml`
+(manual `workflow_dispatch`, seven inputs mirroring the CLI). No style gate —
+this path is exploratory; the human reviews the output in the PR/branch
+preview.
+
+---
+
 ## gen-courier-sprites.mjs — Layered courier flipbook (bike + rider)
 
 Generates the street-courier (livreur) as a **2-layer composite** — a delivery

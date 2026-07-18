@@ -50,8 +50,9 @@
  */
 import fs from "fs";
 import path from "path";
-import https from "https";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
+import { sleep, fetchWithRetry, fluxUrl, buildRequestUrl } from "./lib/pollinations.mjs";
+import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -59,13 +60,15 @@ const OUT_DIR = path.resolve(ROOT, process.env.OUT_DIR ?? "public/assets");
 const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
 
-// Raw URL of a committed frame-1 PNG — the kontext img2img `image=` source. In
-// CI these resolve to the exact checked-out commit; locally they fall back to
-// the repo default branch (harmless — the local sandbox has no network anyway).
-const REPO = process.env.GITHUB_REPOSITORY ?? "bczy/prohimuf";
-const SHA = process.env.GITHUB_SHA ?? "main";
-function frame1RawUrl(key) {
-  return `https://raw.githubusercontent.com/${REPO}/${SHA}/public/assets/${key}.png`;
+// Raw URL of a committed frame-1 PNG — the kontext img2img `image=` source when
+// the slot has no promoted hero (ADR-0043). In CI these resolve to the exact
+// checked-out commit; locally they fall back to the repo default branch
+// (harmless — the local sandbox has no network anyway). Built via the shared
+// heroRawUrl (scripts/lib/heroes.mjs), the same builder a promoted hero's URL
+// goes through, so the two paths can never diverge on URL shape.
+const { repo: REPO, sha: SHA } = resolveRepoSha();
+function frame1RawUrl(key, repo = REPO, sha = SHA) {
+  return heroRawUrl(`public/assets/${key}.png`, { repo, sha });
 }
 
 // ── Load the enemy definitions from levelArt.json (single source) ────────────
@@ -96,80 +99,78 @@ function loadEnemies() {
   });
 }
 
-// ── Pollinations fetch helpers (mirrors gen-vehicle-sprites.mjs) ──────────────
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+// The frame ≥2 kontext prompt — shared with planRequests so the guard checks
+// the EXACT prompt (and therefore URL) a real run would send.
+function extraFrameKontextPrompt(clause, style) {
+  return `same character, same pixel art style, same framing and scale, ${clause}${style}`;
 }
 
-function fetchImage(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          fetchImage(res.headers.location).then(resolve).catch(reject);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
-          return;
-        }
-        const chunks = [];
-        res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
-      })
-      .on("error", reject);
+// The frame ≥2 img2img SOURCE for a slot: the frozen promoted hero when one is
+// declared (ADR-0043) — immutable and always already committed, so it carries
+// none of frame1RawUrl's staleness risk — else the committed frame-1 PNG
+// (today's behaviour, unchanged when no hero exists).
+function extraFrameImageSource(e, registry, repo, sha) {
+  const hero = heroForSlot(registry, "enemies", e.key);
+  return hero ? heroRawUrl(hero.approved, { repo, sha }) : frame1RawUrl(e.key, repo, sha);
+}
+
+// One per-frame descriptor builder — `planRequests` below AND
+// `generateExtraFrame`'s PRIMARY (kontext) branch both consume this SAME
+// function, so scripts/check-hero-wiring.mjs (ADR-0043 Layer B) verifies the
+// EXECUTED request a real run sends, not a parallel reconstruction that could
+// silently drift from it (MAJEUR-2).
+function planFrameRequest(e, i, registry, repo, sha) {
+  const imageUrl = extraFrameImageSource(e, registry, repo, sha);
+  const url = buildRequestUrl({
+    prompt: extraFrameKontextPrompt(e.frames[i], e.style),
+    seed: e.seed,
+    width: e.width,
+    height: e.height,
+    imageUrl,
   });
+  return { key: e.key, frame: i + 1, imageUrl, url };
 }
 
-async function fetchWithRetry(url, retries = 5) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fetchImage(url);
-    } catch (e) {
-      if (i < retries - 1) {
-        const wait = (i + 1) * 8000;
-        console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
-        await sleep(wait);
-      } else throw e;
+// Pure, network-free: the exact per-frame KONTEXT request `generateExtraFrame`
+// below would send for every enemy key's frame ≥2 (the PRIMARY strategy; the
+// matched-flux-pair FALLBACK is a runtime failure path with no fixed URL to
+// plan against). Lets scripts/check-hero-wiring.mjs (ADR-0043 Layer B) assert
+// a declared hero really reaches `image=` WITHOUT a network call — generation
+// and the guard both go through buildRequestUrl, so they cannot diverge.
+export function planRequests({ repo, sha, registry } = {}) {
+  const resolved = resolveRepoSha({ repo, sha });
+  const reg = registry ?? loadHeroRegistry(ROOT);
+  const requests = [];
+  for (const e of loadEnemies()) {
+    for (let i = 1; i < e.frames.length; i++) {
+      requests.push(planFrameRequest(e, i, reg, resolved.repo, resolved.sha));
     }
   }
-}
-
-// enhance=false is load-bearing (art bible §3.11): Pollinations' enhancer
-// rewrites the prompt through an LLM and destroys the verbatim style block the
-// set consistency depends on. private=true keeps assets out of the public feed.
-function fluxUrl(prompt, seed, width, height) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
-}
-
-// kontext img2img (art bible §3.12, style-lock): same query plus `image=` set to
-// the committed frame-1 raw URL so the new pose stays the SAME character.
-function kontextUrl(prompt, seed, width, height, imageUrl) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
-    prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=kontext&seed=${seed}&enhance=false&private=true&image=${encodeURIComponent(
-    imageUrl,
-  )}`;
+  return requests;
 }
 
 // ── Frame ≥2: kontext primary → matched-flux-pair fallback ───────────────────
-async function generateExtraFrame(e, i, out, frame1Fresh) {
+async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
   const name = `${e.key}_f${i + 1}`;
   const clause = e.frames[i];
+  const hero = heroForSlot(registry, "enemies", e.key);
 
-  if (frame1Fresh) {
-    // Frame 1 was (re)written by this run: the raw.githubusercontent URL still
-    // serves the OLD committed art (or 404s for a brand-new enemy), so kontext
-    // would lock onto the wrong source. Go straight to the matched pair.
-    console.log(`  [skip-kontext] ${name} — frame 1 not committed at ${SHA}; using matched pair`);
+  if (!hero && frame1Fresh) {
+    // No promoted hero for this slot, and frame 1 was (re)written by THIS run:
+    // the raw.githubusercontent URL still serves the OLD committed art (or
+    // 404s for a brand-new enemy), so kontext would lock onto the wrong
+    // source. Go straight to the matched pair. A promoted hero's frozen copy
+    // is immutable and always already committed (promote-hero.mjs never runs
+    // during generation), so this staleness risk does not apply once a slot
+    // has a hero (ADR-0043) — hence the `!hero` guard removing the fragility.
+    console.log(`  [skip-kontext] ${name} — frame 1 not committed at ${sha}; using matched pair`);
   } else {
-    // PRIMARY: kontext img2img from the committed frame 1.
-    const kPrompt = `same character, same pixel art style, same framing and scale, ${clause}${e.style}`;
-    const kUrl = kontextUrl(kPrompt, e.seed, e.width, e.height, frame1RawUrl(e.key));
-    console.log(`  [gen]  ${name} — strategy=KONTEXT img2img (source ${e.key}.png)`);
+    // PRIMARY: kontext img2img — frozen hero when declared, else committed frame 1.
+    // Same per-frame descriptor `planRequests()` emits (planFrameRequest) — the
+    // guard verifies THIS executed path, not a parallel reconstruction.
+    const { imageUrl, url: kUrl } = planFrameRequest(e, i, registry, repo, sha);
+    const sourceLabel = hero ? `hero "${hero.slug}"` : `${e.key}.png`;
+    console.log(`  [gen]  ${name} — strategy=KONTEXT img2img (source ${sourceLabel})`);
     try {
       const buf = await fetchWithRetry(kUrl);
       fs.writeFileSync(out, buf);
@@ -205,6 +206,7 @@ async function generateExtraFrame(e, i, out, frame1Fresh) {
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const enemies = loadEnemies();
+  const registry = loadHeroRegistry(ROOT);
   console.log(`Enemy-type flipbook sprites → ${OUT_DIR}\n`);
 
   for (const e of enemies) {
@@ -238,7 +240,7 @@ async function main() {
           console.log(`  [skip] ${name} (exists)`);
           continue;
         }
-        await generateExtraFrame(e, i, out, frame1Fresh);
+        await generateExtraFrame(e, i, out, frame1Fresh, registry, REPO, SHA);
       }
       await sleep(2000);
     }
@@ -247,7 +249,10 @@ async function main() {
   console.log("\nDone.");
 }
 
-main().catch((e) => {
-  console.error("Fatal:", e.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((e) => {
+    console.error("Fatal:", e.message);
+    process.exit(1);
+  });
+}
