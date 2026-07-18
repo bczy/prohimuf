@@ -2002,3 +2002,122 @@ leg + vertical ampleur AND shifts LIMB ~28 % → ~18 %, which changes the floor 
 - VERDICT: not a gate — doc realignment, traced to §18 (contract + X-disjoint clamp ruling),
   §19 (values), §20 (PASS-WITH-CORRECTIONS, K-1/K-4/K-5), and the `game-designer`-flagged EOF
   artifact.
+
+## 22. REVISION — BOX-disjoint clamp + anatomy hitbox map — senior-architect (Winston) — 2026-07-18
+
+**Bertrand supplied a HITBOX DIAGRAM on the captor sprite; it changes the geometry and
+SUPERSEDES the X-disjoint clamp of §18/§20.** The ring must roam the captor's UPPER BODY and
+colour by anatomy: GREEN = head/face, YELLOW = torso + shoulders, RED = arms + legs (+ empty
+air). Head (GREEN) and torso (YELLOW) are CENTRE — over the hostage's x-span — so the ring MUST
+be able to reach the captor's centre/upper region ABOVE the kneeling hostage. The §18 X-disjoint
+clamp (`offset.x ≤ HOSTAGE_DX_MIN − RING_HIT_RADIUS − G6_MARGIN` = ≤ −0.40) confines the ring to
+his LEFT flank (arm + empty), so head/torso are unreachable and GREEN wrongly fires over his arm.
+That X-only law is the bug. Replace it with a BOX-disjoint push-out.
+
+- claim: own the CLAMP MECHANISM + determinism (the load-bearing change). `game-designer` (Sacha)
+  sets the anatomy band VALUES + roam box VALUES in parallel (§19-style); I freeze the clamp form,
+  confirm bounds/determinism, and confirm the type contract stays stable.
+- release: FROZEN box-disjoint clamp below + lane plan + the reachability constraint the bands
+  must respect. Supersedes the §18 X-disjoint `clampTargetOffsetG6`.
+
+### FROZEN — box-disjoint `clampTargetOffsetG6` (LAW; body is dev-gameplay's, FORM is mine)
+
+Keep the whole ring CIRCLE (centre ± `RING_HIT_RADIUS`) OUT of the hostage AABB by `G6_MARGIN`,
+but ALLOW the centre-top region ABOVE the hostage (so the head is reachable). Model it as a
+POINT-vs-INFLATED-BOX push-out: inflate the hostage box by `RING_HIT_RADIUS + G6_MARGIN` on every
+side; if the ring centre lands inside that forbidden box, push it to the nearest hostage-CLEARING
+edge — LEFT (off his flank) or UP (above her head) — whichever is the minimal move.
+
+```ts
+/** Inflation pad: the ring circle stays this far off the hostage AABB on every side.
+ *  = RING_HIT_RADIUS + G6_MARGIN = 0.40. Point-vs-(box⊕pad) is a CONSERVATIVE superset of
+ *  circle-vs-(box⊕disk): outside the padded BOX ⇒ outside the rounded rect ⇒ centre-to-box
+ *  distance ≥ pad ⇒ ring circle disjoint from the hostage box with gap ≥ G6_MARGIN. */
+export const G6_PAD = RING_HIT_RADIUS + G6_MARGIN;
+
+export function clampTargetOffsetG6(offset: Vec2): Vec2 {
+  const fxMin = HOSTAGE_DX_MIN - G6_PAD; // -0.40  left edge of the forbidden box
+  const fxMax = HOSTAGE_DX_MAX + G6_PAD; //  1.15
+  const fyMin = HOSTAGE_DY_MIN - G6_PAD; // -1.45
+  const fyMax = HOSTAGE_DY_MAX + G6_PAD; //  0.55  top edge of the forbidden box
+  const inside = offset.x > fxMin && offset.x < fxMax && offset.y > fyMin && offset.y < fyMax;
+  if (!inside) return offset; // already clear (idempotent on its own output)
+  // Two hostage-CLEARING escapes only: LEFT (off his flank) or UP (above her head).
+  // Minimal move wins; each lands the centre ON the forbidden-box boundary → provably out.
+  const costLeft = offset.x - fxMin; // > 0
+  const costUp = fyMax - offset.y; // > 0
+  return costLeft <= costUp ? { x: fxMin, y: offset.y } : { x: offset.x, y: fyMax };
+}
+```
+
+**Why it is provably safe (the G6 invariant, for EVERY offset).** After the clamp the centre is
+outside the OPEN forbidden box, i.e. `x ≤ fxMin ∨ x ≥ fxMax ∨ y ≤ fyMin ∨ y ≥ fyMax`. The set of
+points within `pad` of the hostage box (Minkowski ⊕ disk of radius `pad`, a rounded rectangle) is a
+SUBSET of the forbidden (⊕ box) region, so "outside forbidden box" ⇒ "distance to hostage box ≥
+`pad` = `RING_HIT_RADIUS + G6_MARGIN`" ⇒ the ring circle (radius `RING_HIT_RADIUS`) is disjoint
+from the hostage box with a gap ≥ `G6_MARGIN`. LEFT push → x = −0.40, horizontal gap to her left
+edge (0.0) is 0.40 for ANY y; UP push → y = 0.55, vertical gap to her top (0.15) is 0.40 for ANY x.
+Pure, deterministic (function of `offset` alone — no `Math.random`/`Date.now`), idempotent.
+
+**Reachability (what the bands/roam must respect — hands to `game-designer` K-5).** The reachable
+region is "everything except the forbidden box": the LEFT flank column `x ≤ −0.40` at ANY y (the
+gun-arm), AND the centre-top strip `y ≥ 0.55` across the whole width (head, then torso just below
+head). CONSEQUENCE Sacha must design within: to hit a CENTRE band (over the hostage's x-span), the
+ring centre must be at `y ≥ 0.55` — the captor's centre body is only exposed ABOVE her head, which
+is the honest sprite truth (she kneels at his waist, front-right). Anatomy bands (per Bertrand's
+hitbox map): GREEN/`vital` = head only (centre-top); YELLOW/`limb` = torso + shoulders (centre just
+below head + flank shoulders, all in the reachable region); RED/`off` = arms + legs + empty. Band
+VALUES are Sacha's; they must lie in the reachable region to fire on-captor windows.
+
+**Continuity caveat (flag → `game-designer` + `dev-r3f-render`).** The safe region is L-shaped, so
+nearest-edge projection is discontinuous along the reentrant diagonal from the interior corner
+`(−0.40, 0.55)` (where `costLeft == costUp`): a wander path that crosses DEEP into the forbidden box
+can snap between the left wall and the top wall. SAFETY is invariant; C1-continuity across that seam
+is NOT. Mitigation (recommended, mirrors §18's "authored box already satisfies the clamp"): Sacha
+authors the roam box to live MOSTLY in the reachable region so the clamp is a rarely-firing asserted
+floor and any snap is shallow. The render already eases the drawn reticle. No clamp change needed.
+
+### Contract — STABLE, dev-gameplay does NOT touch `hostageQte.ts` (structural)
+
+- `QteSpec` / `HostageQte` fields UNCHANGED: `targetOffset: Vec2`, `ringZone: RingZone`,
+  `captorHp: number` all stay. No field added/removed/retyped.
+- `RingZone` stays the 3-value enum `"vital" | "limb" | "off"` — it SUFFICES (3 damage tiers).
+  The mapping is RE-LABELLED, not widened: `vital`(GREEN)=head=big, `limb`(YELLOW)=torso+shoulders=
+  medium, `off`(RED)=arms+legs+empty=0. Arms/legs move from `limb` to `off` (now 0 chip); torso
+  moves from `vital` to `limb`. This is entirely inside `ringZoneAt`'s BANDS (in `qteSystem.ts`) —
+  the enum VALUES and `colourDamage`'s SHAPE (`vital`→VITAL, `limb`→LIMB, `off`→0) are unchanged.
+- ONE doc-coherence item: the `RingZone` DOCSTRING in `hostageQte.ts` ("vital = head/face + torso;
+  limb = arm/leg") becomes stale under the remap. To keep dev-gameplay OFF the type file entirely,
+  the docstring refresh is assigned to `tech-writer` in the Revision-5 ADR-doc PR (DOCS lane owns
+  doc↔code coherence). Structural contract stays frozen.
+
+### Lane plan
+
+- **dev-gameplay (Amelia)** — `src/game/systems/qteSystem.ts` + `__tests__/qteSystem.test.ts` ONLY:
+  (1) swap `clampTargetOffsetG6` to the box-disjoint FORM above (add `G6_PAD`); (2) re-band
+  `ringZoneAt` to Sacha's §NEXT anatomy VALUES (vital=head, limb=torso+shoulders, off=arms+legs+
+  empty); (3) reshape `WANDER_CENTRE`/`WANDER_AMP_*` to Sacha's roam box; (4) damage constants keep
+  their shape (VITAL/LIMB magnitudes are Sacha's tuning); (5) UPDATE the G6 property test — it
+  already computes true closest-point circle-vs-AABB distance (test lines ~250-270), so RE-SWEEP the
+  NEW roam under the NEW clamp and assert min gap ≥ `G6_MARGIN` for every swept centre AND a dense
+  raw-offset grid; RETIRE the X-only assertions (`clamped.x === cap`, `y untouched`,
+  `targetOffset.x + RING_HIT_RADIUS < HOSTAGE_DX_MIN`) and replace with the box-disjoint + head-
+  reachable assertions (a centre-top offset like `{x:0, y:0.8}` passes UNCLAMPED). Determinism tests
+  unchanged. TDD, 100% green.
+- **dev-r3f-render (Amelia)** — NO change required. It already colours by `ringZone` (vital→green,
+  limb→yellow, off→red) and follows `targetOffset`; the ring simply roams a different region and
+  arms/legs now read RED via `off` — all driven by the game-owned zone. Confirm no render edit.
+- **dev-tooling-assets** — not in this delta.
+
+### ADR impact (→ tech-writer / producer)
+
+Refines the spatial-colour amendment: **box-disjoint clamp REPLACES the X-disjoint clamp**, and
+**anatomy = head / torso / shoulders / arms / legs per Bertrand's hitbox map** (head=big, torso=
+medium, arms+legs=0). This is the next dated amendment to ADR-0034 (Revision 5 — supersedes the
+X-disjoint clause of the Revision-4 spatial-colour section). ADR number/label from `producer`
+(Marion) — NOT self-allocated. `tech-writer` records it + refreshes the `RingZone` docstring.
+
+- NEEDS: `game-designer` (Sacha) anatomy-band + roam-box VALUES in the reachable region (K-5
+  on-captor windows); `tech-writer` ADR Revision 5 + docstring; `producer` ADR number.
+- VERDICT: FROZEN geometry delta — clamp FORM + determinism + contract stability are LAW; band/roam
+  VALUES are Sacha's, to be authored within the reachable region above.
