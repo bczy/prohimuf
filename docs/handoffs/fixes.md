@@ -15,8 +15,8 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   tsc/vitest(637)/lint · review: code-review(high, 8-angle) — 2 CONFIRMED fixed
   (up-arrow overprinted the LIVRAISON banner track → indicator now renders BEFORE
   the banner so delivery readout paints on top; size literal triplicated across
-  tsx+css → svg 100%), 1 PLAUSIBLE accepted (keyline scales to ~4px with the glyph —
-  proportional ratio kept, literal reading of "double la taille"), 4 REFUTED
+  tsx+css → svg 100%), 1 PLAUSIBLE fixed on Bertrand's call (keyline kept at the 2px
+  ink-rule weight: strokeWidth 2→1 viewBox units under the ×2 scale), 4 REFUTED
   (scale-1.12 clipping, short-landscape collision, repaint cost, fill swallowed
   at tip)
 

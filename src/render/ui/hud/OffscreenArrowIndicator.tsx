@@ -47,7 +47,9 @@ function ArrowIndicator({
           points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
           fill={ACID.yellow}
           stroke={INK.black}
-          strokeWidth={2}
+          // 1 viewBox unit ≈ 2 device px at the 68px render size: keeps the
+          // keyline at the HUD's 2px ink-rule weight (Bertrand: don't scale it).
+          strokeWidth={1}
           strokeLinejoin="round"
         />
       </svg>
