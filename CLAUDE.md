@@ -128,6 +128,9 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
   output. A PreToolUse hook rewrites bash commands automatically once installed.
 - **codegraph** — local code knowledge graph over MCP (see `.mcp.json`): query symbols,
   imports and call chains instead of grepping. Use it to find callers before editing.
+- **Local setup:** remote web sessions auto-provision both tools via the SessionStart
+  hook; on a local machine run `scripts/setup-tooling.sh` once (idempotent) to install
+  rtk + codegraph by hand.
 
 ## Working rules
 
@@ -135,6 +138,10 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
 - TDD for `src/game`: tests in `src/game/systems/__tests__/` must pass 100%.
 - Verify before claiming done: `rtk tsc` + `rtk vitest` + `rtk lint`. Never report green
   tests that aren't.
+- Navigating code — who calls `X`, the impact of changing `Y`, where a symbol is defined —
+  query **codegraph** first (`codegraph_callers/_callees/_impact/_search`): it returns a
+  compact structured answer instead of grep/Read dumping whole files into context. Fall
+  back to grep/Read only when codegraph can't answer (e.g. non-code text, comments).
 - Adding a level = one entry in `src/game/levels/levelArt.json` + matching gameplay map
   (`HARNESS.md`). Art generation normally runs in CI, not the local sandbox.
 - Conventional Commits (commitlint enforced).
