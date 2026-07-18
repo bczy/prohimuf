@@ -98,5 +98,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0040](./0040-render-transient-impact-effects.md) | Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks) | Accepted |
 | [0041](./0041-generated-adr-registry.md) | Generated ADR registry with a CI freshness gate | Accepted |
 | [0042](./0042-crew-extension-tech-scout-recon-lane.md) | Crew extension: tech-scout technical-reconnaissance / feasibility lane (Nadia) | Accepted |
+| [0043](./0043-validated-reference-promotion-loop.md) | Validated-reference promotion loop (internal hero → style-lock family derivation) | Proposed |
+| [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Proposed |
 
 <!-- ADR-INDEX:END -->

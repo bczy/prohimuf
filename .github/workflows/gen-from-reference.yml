@@ -1,0 +1,127 @@
+name: Generate from reference (ad-hoc kontext)
+
+# Ad-hoc kontext reference-conditioned asset iteration (ADR-0044). Runs ONE
+# kontext img2img generation of `out` conditioned on `ref` (a committed
+# reference image or an external URL), post-processes it per `family`, and
+# commits the single output file back to the branch. Exploratory — NO style
+# gate; the human reviews the result in the PR/branch preview. Manual only:
+# the reference must already be committed and pushed on this branch so its
+# raw.githubusercontent.com URL resolves at GITHUB_SHA.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Reference image: repo-relative path (e.g. references/x.png) or full URL"
+        required: true
+      prompt:
+        description: "Prompt sent verbatim to kontext (no enhancer)"
+        required: true
+      out:
+        description: "Target PNG, repo-relative (e.g. public/assets/vehicles/moto.png)"
+        required: true
+      family:
+        description: "Post-processing family"
+        required: true
+        type: choice
+        options:
+          - vehicles
+          - enemies
+          - levels
+      seed:
+        description: "Positive integer seed (reproducible roll)"
+        required: true
+      size:
+        description: "WxH"
+        required: false
+        default: "256x256"
+      style:
+        description: "Optional style tail, appended verbatim to the prompt"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-from-reference-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main — this is an exploratory branch tool, not a production gate.
+    if: github.ref_name != 'main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (cutout / desaturate post-processing)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate from reference (kontext img2img) + post-process
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          REF: ${{ github.event.inputs.ref }}
+          PROMPT: ${{ github.event.inputs.prompt }}
+          OUT: ${{ github.event.inputs.out }}
+          FAMILY: ${{ github.event.inputs.family }}
+          SEED: ${{ github.event.inputs.seed }}
+          SIZE: ${{ github.event.inputs.size }}
+          STYLE: ${{ github.event.inputs.style }}
+        run: |
+          node scripts/gen-from-reference.mjs \
+            --ref "$REF" \
+            --prompt "$PROMPT" \
+            --out "$OUT" \
+            --family "$FAMILY" \
+            --seed "$SEED" \
+            --size "$SIZE" \
+            --style "$STYLE"
+
+      - name: Commit output
+        env:
+          OUT: ${{ github.event.inputs.out }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; path is exactly the one file.
+          git add -f "$OUT"
+          if git diff --cached --quiet; then
+            echo "No new asset to commit."
+          else
+            git commit -m "chore(assets): gen-from-reference $OUT (ADR-0044)"
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash and
+            # retry, max 3 attempts.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated asset (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gen-from-reference-unpushed
+          path: ${{ github.event.inputs.out }}
+          if-no-files-found: warn
+          retention-days: 14

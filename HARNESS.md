@@ -104,6 +104,27 @@ wall. Two tools keep the zones honest:
   CI gate (measure only, exit non-zero on any defect). `yarn align` / `yarn align:check`
   run all levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
 
+## Ad-hoc reference-conditioned iteration (ADR-0044)
+
+Outside the curated manifest loop above, `scripts/gen-from-reference.mjs`
+covers a different need: "make this vehicle/enemy/backdrop look like _this_
+reference I found" without authoring a `levelArt.json` entry. Drop a
+reference image in `references/` (repo root, outside `public/`, so it never
+ships in the deployed bundle — see `references/README.md`), commit and push
+it, then run one `kontext` img2img generation conditioned on it:
+
+```bash
+node scripts/gen-from-reference.mjs --ref references/x.png --prompt "…" \
+  --out public/assets/vehicles/moto.png --family vehicles --seed 12345
+```
+
+Real generation runs via `.github/workflows/gen-from-reference.yml` (manual
+`workflow_dispatch`) — same no-network-in-sandbox rule as everything else
+here. **kontext fidelity against an arbitrary reference is variable** (it
+nudges style/pose, not a deterministic transform) — expect seed/prompt
+iteration; no style gate, the human judges the output directly. See
+`scripts/SCRIPTS.md` and ADR-0044 for the full contract.
+
 ## Local dev
 
 `yarn dev` works without any art: `LevelBackdrop` falls back to flat colours
