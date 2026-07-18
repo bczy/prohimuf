@@ -43,7 +43,7 @@ Rationale (clause → the failure it locks down):
   counters the shared `style` tail's "warm orange + magenta cyan neon accents" that
   otherwise brightens the surface into a lighter, busier band than the facade base.
 - `a faded white pedestrian crossing of several evenly spaced parallel horizontal white
-  zebra stripes … near the top` → the requested marking; "horizontal" + "near the top"
+zebra stripes … near the top` → the requested marking; "horizontal" + "near the top"
   place the crossing inside the ~37–51% band the QTE actually reveals (stripes parallel
   to the road = geometrically correct for a crossing over the facade-parallel street).
 - `flat level ground plane, no horizon` → reinforces the overhead read (the sole
