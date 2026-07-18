@@ -150,14 +150,44 @@ La documentation détaillée se trouve dans [`docs/`](./docs) :
 
 ## L'équipe d'agents
 
-Le projet est développé par un **équipage de sous-agents** (chacun incarnant une
-persona BMAD) qui travaillent en parallèle et se coordonnent via
-[`docs/agent-handoffs.md`](./docs/agent-handoffs.md). Protocole complet :
-[`.claude/agents/COLLABORATION.md`](./.claude/agents/COLLABORATION.md).
+muf est développé par un **équipage de 20 sous-agents** (chacun incarnant une
+persona BMAD) qui travaillent en parallèle sur des chemins disjoints et se
+coordonnent via [`docs/agent-handoffs.md`](./docs/agent-handoffs.md). Chaque
+fiche vit dans [`.claude/agents/`](./.claude/agents) ; le protocole complet est
+dans [`COLLABORATION.md`](./.claude/agents/COLLABORATION.md).
 
-![L'équipage muf — 15 agents en pixel art](./docs/muf-crew.png)
+![L'équipage muf — 20 agents en pixel art](./docs/muf-crew.png)
 
 > Bitmap généré par [`docs/muf-crew-bitmap.py`](./docs/muf-crew-bitmap.py).
+
+### Le roster
+
+| Pôle                   | Agents                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| **Produit & pilotage** | `pm` · `producer`                                                                      |
+| **Architecture & R&D** | `senior-architect` · `tech-scout`                                                      |
+| **Design**             | `lead-game-designer` · `game-designer` · `narrative-designer` · `ux-designer`          |
+| **Développement**      | `dev-gameplay` · `dev-r3f-render` · `dev-tooling-assets`                               |
+| **Art**                | `lead-art` · `art-advisor` · `graphic-references` · `concept-artist` · `game-graphist` |
+| **Audio**              | `sound-designer`                                                                       |
+| **Qualité & docs**     | `qa-lead` · `gpu-specialist` · `tech-writer`                                           |
+
+### Le pipeline
+
+Chaque story descend une chaîne de production hand-to-hand (le détail, avec le
+diagramme mermaid, est dans
+[`docs/diagrams/agent-workflows.md`](./docs/diagrams/agent-workflows.md)) :
+
+```
+pm (quoi)  →  boucle de design (game + narrative + ux → gate lead-game-designer)
+           →  senior-architect (comment + découpe des lanes)
+           →  lanes dev ∥ lane art  →  verify (qa-lead : tsc/vitest/lint + e2e + playtest)
+           →  panel code-review (4 reviewers, merge gate)  →  pm accepte
+```
+
+Un petit correctif mono-lane suit une **voie FIX** allégée (dev → tsc/vitest/lint
+→ un seul reviewer → merge). Le garde-fou de périmètre est
+toujours le même : _« Prohibition Atari ST 1987 avait-il cette fonctionnalité ? »_
 
 ---
 
