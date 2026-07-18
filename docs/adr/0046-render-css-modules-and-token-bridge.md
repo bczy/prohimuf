@@ -42,7 +42,7 @@ and tokens.ts must remain the single source of every hex/font.
 5. **A `hud-css` skill** (owner lane `dev-r3f-render`), not a new agent, packages the
    migration procedure and conventions. `dev-r3f-render` already owns `src/render/**`;
    this is a technique inside an existing lane, so it does not warrant a crew extension
-   (contrast ADR-0037/0042, which staffed *unowned* lanes).
+   (contrast ADR-0037/0042, which staffed _unowned_ lanes).
 
 ## Consequences
 
