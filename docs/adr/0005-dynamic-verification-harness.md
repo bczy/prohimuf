@@ -1,7 +1,7 @@
 # 0005 — Dynamic & interactive verification harness (evolve the render farm)
 
-- **Status:** Proposed
-- **Date:** 2026-06-22
+- **Status:** Accepted (amended)
+- **Date:** 2026-06-22 (accepted 2026-07-18)
 - **Related:** [ADR-0004](./0004-enemies-car-hostage-taker.md), [docs/ci.md](../ci.md),
   [HARNESS.md](../../HARNESS.md), `scripts/screenshot-preview.mjs`,
   `_bmad-output/planning-artifacts/story-car-drive-by.md`,
@@ -10,6 +10,36 @@
   canvas primitive this harness draws on),
   [ADR-0006](./0006-directional-sprite-generation.md) (the directional `car_*` / `hostage_*` sprites
   whose generation this harness's D1 motion mode exercises and reviews).
+
+## Amendment (re-scope) — 2026-07-18
+
+The original D1/D2 acceptance criteria below target features that have since been **withdrawn or
+superseded**. This amendment re-points them at SHIPPED reality; the D1/D2/D3 **structure, the four
+principles, and the seam/boundary rules are unchanged** — only the concrete entities they assert
+against move. Status stays **Proposed** (the tooling lane flips it last).
+
+- **The drive-by `car` is withdrawn.** `belliard`'s roster is `streetSpawns: ["courier"]`
+  (`src/game/levels/levels.ts`). No `car` traverses any level. Every D1/D2 clause that named the
+  car's trailing-side muzzle flash / `dir` mirror (`story-car-drive-by.md` AC5/AC6) is **void**.
+- **The street `hostage_taker` became the cinematic QTE.** ADR-0004's double-hitbox street-hostage
+  was replaced by the ADR-0030 → ADR-0034 → ADR-0036 **static-duel QTE** (`src/game/systems/qteSystem.ts`,
+  authored per-level via `LevelConfig.hostageQte`). There is no traversing street hostage_taker and no
+  street-vs-hostage double-hitbox precedence; the "execution countdown cue" (`story-hostage-taker.md`
+  AC8) is now the QTE's **G4 telegraph tell** before each PEEKING exposure.
+- **Re-pointed D1 (motion).** The surviving mobile street entity is the **courier**; the surviving
+  "motion to review by eye" is the **QTE cinematic** (the ZOOMING camera push onto the static
+  `anchor`, and the COVERED→PEEKING telegraphed cadence with the wandering ring). The motion strip
+  proves those, on `belliard`, in play mode.
+- **Re-pointed D2 (assertions).** The hostage-precedence / timeout-once clauses are void (no
+  traversing street hostage). The concrete shipped deltas asserted through the seam are instead:
+  (a) `belliard` **PANIC shot** — a `fire` during `qte.phase === "ZOOMING"` drains
+  `energy` by `QTE_PANIC_SHOT` (−6), aim-independent; (b) `vitry` **accomplice** (ADR-0036, the
+  just-shipped second shooter) — with zero player fire in `ACTIVE`, `qte.accomplice !== null` and
+  `energy` drops in exact steps of `ACCOMPLICE_SHOT_DAMAGE` (−8) on the authored 2.8 s cadence while
+  `qte.captorHp` stays 3. `energy` remains the sole outcome currency (score never moves).
+- **D3 (golden) unchanged in intent**, with one caveat: `vitry` now carries a `hostageQte` that
+  fires at elapsed 10 s, so its golden is explicitly the **pre-QTE static frame** — the freeze-mode
+  settle stays well under 10 s (today's 4 s), so the QTE never triggers and the frame is deterministic.
 
 ## Context
 

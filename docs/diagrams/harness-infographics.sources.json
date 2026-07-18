@@ -1,9 +1,9 @@
 {
   "HARNESS.md": "f1db30b3bcbc957b5e8b046c9d12c88542678242f29d8554fc6040d397c3e002",
-  "docs/adr/0005-dynamic-verification-harness.md": "c1253debffbf25d7083d734da5951c9f6f001f8f1053e83018f495a9d8b446f3",
-  "docs/adr/0007-shared-harness-library.md": "754a1f020969c2de288682a131bedb58b0c1ab3cb8f8b5a697b562e06aabc8a6",
+  "docs/adr/0005-dynamic-verification-harness.md": "6d438471acc1955b2aecb8a38a92f0b823ecd463c806c98c062358fc0151d933",
+  "docs/adr/0007-shared-harness-library.md": "97809153d796b84c0ef30fca0deafd1fcaa083e9ddba0a1fc42e7f897fe12821",
   "docs/adr/0028-window-alignment-harness.md": "2300811791559390510dcb897d5e3a4fec161e5849b0e63a7b679128b72d7d3b",
   "docs/asset-pipeline.md": "4b85f111e26731393f3926469f217324c8f84fa8bcf7e84f1152fe90b2f9b2c0",
-  "docs/ci.md": "f6958b3b1d68d41596562f2da8131ffd9ab1e989364eed310a4f29d30a5a34a5",
-  "docs/diagrams/build-harness-infographics.py": "b2ffddf65c53fc869b2ea053514e62bdd947ae59e10269823f8e427b6d59e491"
+  "docs/ci.md": "aaf328978f73dbbc411055abca2db09fb2083facfe46c8fac80e6e07b5ed711d",
+  "docs/diagrams/build-harness-infographics.py": "28d0309fc85e61b432f735c1161819f9233f7729201cd604b427ed60dc9831e5"
 }

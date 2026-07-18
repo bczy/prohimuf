@@ -1263,3 +1263,121 @@ In place of a meta-harness (rejected — see the ADR), a new asset generator is 
    auto-generate the next one, stop — re-read ADR-0007 D1. The checklist above is meant
    to be read and adapted with judgement each time, not executed. A generator that emits
    generators is the exact anti-pattern the ADR forbids.
+
+---
+
+## Dynamic verification harness (ADR-0005) — D1/D2/D3
+
+Three additive capture modes extending the static render farm past a single
+frozen frame per level, wired as **REQUIRED** checks in `ci.yml`'s `e2e` job
+(see [`docs/ci.md`](../docs/ci.md)'s merge-gate-policy section) — unlike the
+decorative, artifact-only `preview.yml` contact-sheet farm, a red run here
+blocks merge. All three share `scripts/e2e-lib.mjs`'s Playwright bootstrap,
+navigation helpers, and the SwiftShader launch args, exactly like the other
+`e2e-*.mjs` gates.
+
+### The seam contract they all depend on (`src/hooks/useGameLoop.ts`, dev-r3f-render lane)
+
+- **`window.__MUF_PLAY__`** (boolean, set via `addInitScript` before boot):
+  un-frozen "play" mode — the real tick advances untouched (couriers move, the
+  QTE simulates), as opposed to `window.__MUF_FREEZE_COPS__`'s synthetic
+  always-visible-cops path. The two flags are **mutually exclusive** (a hard
+  throw in the hook if both are set); `scripts/e2e-lib.mjs`'s `seedPlay()` sets
+  only `__MUF_PLAY__` (plus the same audio-mute / unlock-all-levels seed as
+  `seedDeterminism()`), so the harness can never trip that guard.
+- **`window.__MUF_STATE__()`** — installed ONLY under `__MUF_PLAY__`, so
+  production ships no getter. Returns a deep-frozen `structuredClone` snapshot
+  `{ game: GameState, hud: HudData | null }` — a copy, never a live handle, and
+  the harness's ONLY way to read game state (asserting against render
+  internals or importing a game system would break the boundary rule). Read it
+  with `scripts/e2e-lib.mjs`'s `readState(page)` / `pollState(page, predicate,
+opts)` (poll until a predicate holds, or throw with the last snapshot on
+  timeout).
+
+### D1 — `harness-motion.mjs` (motion capture)
+
+Boots `belliard` in play mode and records a short frame strip
+(`screenshots/motion-belliard.png`, a `stitchLabeledStrip()` contact sheet —
+the `contact-sheet.mjs` primitive ADR-0007 deferred building, now lifted into
+`e2e-lib.mjs` since ADR-0005 is its real consumer) of the two surviving
+"motion to review by eye" beats: the courier traversing the street, and the QTE
+cinematic (ZOOMING camera push + the COVERED↔PEEKING telegraphed cadence). It
+is a by-eye artifact but made **non-vacuous** by a fine-cadence
+`window.__MUF_STATE__()` trace polled _between_ the coarser screenshots: the
+run hard-fails unless the trace shows (i) some courier's world `x` advancing
+monotonically in its own travel direction between two samples, AND (ii) a
+`COVERED` sample with `telegraphActive === true` immediately followed by a
+`PEEKING` sample (the G4 telegraph tell firing right before the exposure it
+warns of — the re-pointed `story-hostage-taker` AC8 "execution countdown cue").
+The withdrawn `car`'s trailing-muzzle-flash / `dir`-mirror clauses
+(`story-car-drive-by` AC5/AC6) are dropped per the ADR-0005 amendment.
+
+```bash
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/harness-motion.mjs
+```
+
+### D2 — `harness-assert.mjs` (scripted play-through assertions)
+
+Drives real canvas input (a single `page.mouse.click`) through belliard/vitry
+in play mode and asserts exact `energy`/`score` deltas read through the seam —
+no tolerance needed, since `energy` starts at 100 and is moved ONLY by the
+hostage QTE (`src/game/systems/stateMachine.ts`):
+
+- **D2-A (belliard PANIC)** — poll to `qte.phase === "ZOOMING"`, fire ONE
+  click (aim is irrelevant — `tickQte` charges `QTE_PANIC_SHOT` regardless of
+  where it lands), assert `energy` dropped by exactly `-6` on both `game` and
+  `hud`, and `score` is unchanged. Control: `qte.accomplice === null`
+  (belliard authors none).
+- **D2-B (vitry ACCOMPLICE, ADR-0036)** — poll to `qte.phase === "ACTIVE"`,
+  fire NOTHING, poll until `energy` moves; assert the drop is a strictly
+  positive multiple of `ACCOMPLICE_SHOT_DAMAGE` (`-8`) and `qte.captorHp`
+  stayed at its seeded `3` (no ring hit is possible without firing) — proving
+  the accomplice, not the captor's own suppressed counter-fire, owns the
+  player-directed drain (INVARIANT P3-ACC).
+
+```bash
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/harness-assert.mjs
+```
+
+### D3 — `harness-golden.mjs` (golden-screenshot visual regression)
+
+Pixel-diffs the FROZEN `stalingrad` / `vitry` frames (same
+`window.__MUF_FREEZE_COPS__` static path as `screenshot-preview.mjs` /
+`e2e-ingame.mjs`) against committed baselines
+(`screenshots/golden/level_stalingrad.png`, `screenshots/golden/level_vitry.png`),
+enforcing ADR-0004 D2's "byte-for-byte unchanged for the same seed" at the
+**visual** layer (the logic layer is already covered by
+`levelRoster.test.ts`). **Caveat:** vitry now carries a `hostageQte` firing at
+elapsed 10s, so its golden is explicitly the PRE-QTE frame — the frozen-mode
+settle (4s) stays well under that on purpose.
+
+- **Decode/diff primitive:** `scripts/e2e-lib.mjs`'s `decodePng()` /
+  `diffPixelFraction()` — a hand-rolled `@napi-rs/canvas` decode + per-channel-
+  tolerant pixel count (no new dependency; `@napi-rs/canvas` is already a
+  direct devDependency and already used this way by `check-halo-gradient.mjs`
+  / `check-sprite-integrity.mjs`).
+- **Tolerance (env-tunable, `GOLDEN_CHANNEL_TOLERANCE` / `GOLDEN_MAX_DIFF_FRACTION`):**
+  a per-channel delta ≤2 is AA/rounding jitter (ignored); the run reds once the
+  differing-pixel fraction clears **3%**. That floor is _measured_, not
+  guessed: the frozen path is deterministic SwiftShader-wise, but every
+  synthetic cop keeps playing its 2-frame idle flipbook off its own real-time
+  clock even under `__MUF_FREEZE_COPS__` (freeze only pins `state`/`kind`/
+  `timer`, never that render-local animation clock), so a screenshot lands on
+  an arbitrary flipbook phase each run — calibrated ceiling ≈1.31% across
+  repeated captures. 3% keeps ~2× headroom above that ambient noise while
+  staying far below what an actual regression (missing facade layer, shifted
+  layout, broken texture) would move.
+- **Regen workflow (deliberate, never a rubber-stamp):**
+  `UPDATE_GOLDEN=1 node scripts/harness-golden.mjs` rewrites the baselines —
+  the diff MUST be eyeballed in the PR.
+
+```bash
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/harness-golden.mjs
+UPDATE_GOLDEN=1 PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/harness-golden.mjs   # regen baselines
+```
+
+- **Requires:** `@napi-rs/canvas` (already a direct devDependency), same
+  install pattern as the other canvas-based gates.
+- **CI:** all three scripts run as steps in `ci.yml`'s `e2e` job via the
+  reusable `.github/actions/e2e-ingame` composite action (`script:` input) —
+  see `docs/ci.md`.

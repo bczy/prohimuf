@@ -10,8 +10,8 @@ paths) written to docs/diagrams/harness-<slug>-infographic.html:
 
   - level-art          — HARNESS.md : génération IA des fonds + render farm
   - window-alignment   — align-windows.mjs / ADR-0028
-  - dynamic-verify     — ADR-0005 (Proposed)
-  - shared-lib         — ADR-0007 (Proposed)
+  - dynamic-verify     — ADR-0005 (Accepted (amended))
+  - shared-lib         — ADR-0007 (Accepted)
 
 Run: python3 docs/diagrams/build-harness-infographics.py
 """
@@ -442,7 +442,7 @@ PAGES.append(("harness-window-alignment-infographic.html", "muf — Window-align
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 3. DYNAMIC VERIFICATION HARNESS (ADR-0005, Proposed)
+# 3. DYNAMIC VERIFICATION HARNESS (ADR-0005, Accepted (amended))
 # ══════════════════════════════════════════════════════════════════════════════
 dynamic = f"""{series_nav("dynamic-verify")}
       <header>
@@ -461,9 +461,10 @@ dynamic = f"""{series_nav("dynamic-verify")}
           <div><b>0</b><span>règle de jeu dans le harness</span></div>
           <div><b>3840²</b><span>px par shot</span></div>
         </div>
-        <div class="status"><b>ADR Proposed</b><span>Statut proposé (2026-06-22) : <code>preview.yml</code> est épinglé à
-          une branche non-courante, donc sur une branche feature le harness <strong>ne tourne pas encore</strong> —
-          le gate reste décoratif tant que le pin n'est pas élargi.</span></div>
+        <div class="status"><b>ADR Accepted (amended)</b><span>Statut accepté (2026-07-18) : le pin de <code>preview.yml</code>
+          a été élargi (le harness tourne désormais sur <code>claude/**</code> + PR), les trois modes sont livrés et câblés
+          en <strong>required check</strong> dans <code>ci.yml</code>. Amendement : D1/D2 re-scopés sur le réel livré
+          (la voiture drive-by est retirée, le hostage_taker de rue est devenu le QTE cinématique).</span></div>
       </header>
 
       <h2 class="sec display">Les trois modes de capture</h2>
@@ -471,13 +472,15 @@ dynamic = f"""{series_nav("dynamic-verify")}
       <div class="modes">
         <div class="mode"><div class="k display">D1</div><span class="saw">voyait pas : le mouvement</span>
           <h4>Motion capture</h4>
-          <p>Séquence multi-frames (strip / WebM) des entités de rue. Exerce le muzzle flash du drive-by, le miroir
-            <code>dir</code> de la sprite directionnelle, le cue de décompte du hostage_taker. Mode « play » dégelé
-            (<code>__MUF_PLAY__</code>), audio muet, seed épinglé.</p></div>
+          <p>Séquence multi-frames (strip) des entités de rue livrées : la traversée du livreur (courier) et le QTE
+            cinématique — le push de zoom sur l'ancre, puis le tell G4 <code>COVERED→PEEKING</code>. Mode « play »
+            dégelé (<code>__MUF_PLAY__</code>), audio muet, seed épinglé ; garde de seam non-vacuité via
+            <code>__MUF_STATE__</code>.</p></div>
         <div class="mode"><div class="k display">D2</div><span class="saw">voyait pas : la boucle interactive</span>
           <h4>Play-through scripté</h4>
-          <p>Injecte un vrai input dans le canvas, lit l'état LIVE via le seam, assert des deltas :
-            hostage-precedence, timeout chargé une seule fois, énergie décrémentée et affichée au HUD.
+          <p>Injecte un vrai input dans le canvas, lit l'état LIVE via le seam, assert des deltas exacts :
+            belliard PANIC (un tir en ZOOMING → énergie −6, score inchangé) et vitry ACCOMPLICE (sans tirer,
+            drain −8 par tir de l'accomplice, <code>captorHp</code> intact — invariant P3-ACC).
             La boucle complète <code>input → render → state → HUD</code>.</p></div>
         <div class="mode"><div class="k display">D3</div><span class="saw">voyait pas : les régressions gelées</span>
           <h4>Golden-screenshot</h4>
@@ -494,8 +497,8 @@ dynamic = f"""{series_nav("dynamic-verify")}
           <code>src/hooks/useGameLoop.ts</code>.</p>
         <p><strong>Boundary rule + DIP</strong> : le harness dépend de l'abstraction, jamais d'un import d'un système de
           jeu (<code>src/game/**</code>) ni des internals de rendu (<code>src/render/**</code>) ; il porte zéro règle de jeu.
-          <strong>TDD</strong> : les assertions viennent d'abord et sont <strong>rouges</strong> aujourd'hui ; un harness
-          rouge <strong>bloque le merge</strong>.</p>
+          <strong>TDD</strong> : les assertions D2 sont écrites en premier, vérifiées à vide, puis vertes contre le build ;
+          un harness rouge <strong>bloque le merge</strong>.</p>
       </div>
 
       <h2 class="sec display">Entrées / sorties</h2>
@@ -525,8 +528,9 @@ dynamic = f"""{series_nav("dynamic-verify")}
       ])}
 
       <footer>
-        Source : <code>docs/adr/0005-dynamic-verification-harness.md</code> (Proposed) ·
-        <code>scripts/screenshot-preview.mjs</code> · <code>scripts/e2e-lib.mjs</code>.
+        Source : <code>docs/adr/0005-dynamic-verification-harness.md</code> (Accepted (amended)) ·
+        <code>scripts/harness-motion.mjs</code> · <code>scripts/harness-assert.mjs</code> ·
+        <code>scripts/harness-golden.mjs</code> · <code>scripts/e2e-lib.mjs</code>.
         Un poster de la série des harness de muf. Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
       </footer>
 """
@@ -534,7 +538,7 @@ PAGES.append(("harness-dynamic-verify-infographic.html", "muf — Dynamic verifi
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 4. SHARED HARNESS LIBRARY (ADR-0007, Proposed)
+# 4. SHARED HARNESS LIBRARY (ADR-0007, Accepted)
 # ══════════════════════════════════════════════════════════════════════════════
 shared = f"""{series_nav("shared-lib")}
       <header>
@@ -553,9 +557,11 @@ shared = f"""{series_nav("shared-lib")}
           <div><b>13</b><span>consommateurs réels</span></div>
           <div><b>0</b><span>méta-harness</span></div>
         </div>
-        <div class="status"><b>ADR Proposed</b><span>Statut proposé (2026-06-22). Le dépôt <strong>diverge</strong> :
-          les 5 modules projetés ne sont pas encore extraits. Présents aujourd'hui : <code>scripts/lib/morphology.mjs</code>
-          + la lib de facto <code>scripts/e2e-lib.mjs</code>.</span></div>
+        <div class="status"><b>ADR Accepted</b><span>Statut accepté (2026-07-18). Les primitives pures sont extraites et
+          testées : <code>pollinations.mjs</code>, <code>idempotent.mjs</code>, <code>cli.mjs</code>, <code>cutout.mjs</code>
+          (chromaKey prouvé byte-identique sur les 22 PNG enemy) et <code>contact-sheet.mjs</code>, plus le
+          <code>_template.mjs</code> copiable. Adoption bornée aux générateurs canoniques ; les scripts legacy sont laissés
+          en candidats-retrait.</span></div>
       </header>
 
       <h2 class="sec display">La décision : refuser le méta-harness</h2>
@@ -573,15 +579,15 @@ shared = f"""{series_nav("shared-lib")}
 
       <h2 class="sec display">Les primitives</h2>
       <div class="grid2">
-        <div class="card"><b class="t-3">Réellement présent</b>
-          <code>scripts/lib/morphology.mjs</code> — morphologie binaire pure (disk/dilate/erode/closing, hole-fill,
-          labelling, largestComponent, zoneMask, solidBodyMask). Sans I/O.<br />
-          <code>scripts/e2e-lib.mjs</code> — lib harness E2E de facto : enterMenu, dismissNarrative, seedDeterminism,
-          loadLevelManifest (le level set), SWIFTSHADER_ARGS.</div>
-        <div class="card"><b class="t-4">Projeté par l'ADR (à extraire)</b>
+        <div class="card"><b class="t-3">Extrait &amp; testé</b>
           <code>pollinations.mjs</code> fetchWithRetry · <code>idempotent.mjs</code> skipIfExists ·
-          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey · <code>contact-sheet.mjs</code>
-          (aussi consommé par le harness de vérif) · <code>_template.mjs</code> (copié à la main, jamais exécuté).</div>
+          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey (pur, byte-identique) ·
+          <code>contact-sheet.mjs</code> (consommé par le harness de vérif ADR-0005) · <code>morphology.mjs</code>
+          (morphologie binaire pure) · <code>_template.mjs</code> (copié à la main, jamais exécuté).</div>
+        <div class="card"><b class="t-4">Laissé local à dessein</b>
+          Le flood enclosed-island + l'échantillonnage couleur par composant restent dans <code>cutout-enemies.mjs</code>
+          (fusionnés, ne se réduisent pas à une primitive pure) · <code>scripts/e2e-lib.mjs</code> reste la lib E2E de
+          facto (enterMenu, seedDeterminism, SWIFTSHADER_ARGS, seedPlay/readState).</div>
       </div>
 
       <h2 class="sec display">Le principe</h2>
@@ -600,9 +606,10 @@ shared = f"""{series_nav("shared-lib")}
           <span class="mini">morphology.mjs (6) : fill-sprite-holes, retouch-flash-halos, restore-figure-bites,
           fill-bust-hem, check-sprite-integrity, measure-muzzle-anchors · e2e-lib.mjs (7) : e2e-home, e2e-ingame,
           e2e-delivery, e2e-assets, screenshot-preview, preview-vehicle-halo, align-windows</span></div>
-        <div class="card"><b class="t-2">Cible du refactor</b>
-          <span class="mini">generate-assets (744 LOC), generate-game-assets (491 LOC), gen-enemy-types,
-          gen-level-art, generate-style-demo, regen-pixel-sprites + les cutout-* → importent la lib.
+        <div class="card"><b class="t-2">Adoption livrée</b>
+          <span class="mini">générateurs canoniques (gen-enemy-types, gen-vehicle-sprites, gen-courier-sprites,
+          gen-level-art) + les cutout-* importent idempotent/cli/cutout. Legacy (generate-assets,
+          generate-game-assets, regen-pixel-sprites, generate-style-demo) laissés en candidats-retrait.
           Le harness de vérif (ADR-0005) consomme contact-sheet.mjs.</span></div>
       </div>
 
@@ -614,8 +621,8 @@ shared = f"""{series_nav("shared-lib")}
       ])}
 
       <footer>
-        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Proposed) · <code>scripts/lib/morphology.mjs</code> ·
-        <code>scripts/e2e-lib.mjs</code>. Un poster de la série des harness de muf.
+        Source : <code>docs/adr/0007-shared-harness-library.md</code> (Accepted) · <code>scripts/lib/cutout.mjs</code> ·
+        <code>scripts/lib/idempotent.mjs</code> · <code>scripts/lib/cli.mjs</code>. Un poster de la série des harness de muf.
         Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
       </footer>
 """

@@ -8,7 +8,11 @@ on:
         type: boolean
         default: false
   push:
-    branches: ["claude/graphics-change-conversation-279ooc"]
+    # ADR-0005: was pinned to a single stale branch (dead — the harness never ran
+    # on any real feature branch); widened to main + every claude/** branch so
+    # this contact-sheet farm actually runs. Still artifact-only / decorative
+    # (see docs/ci.md) — the merge gate lives in ci.yml's e2e job, not here.
+    branches: ["main", "claude/**"]
     paths-ignore:
       - "screenshots/**"
       - "public/assets/levels/**"
