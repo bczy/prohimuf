@@ -11,9 +11,15 @@ import { vehicleAssetPath } from "@game/systems/assetManifest";
 import type { HudDelivery } from "@render/ui/HUD";
 import levelArt from "@game/levels/levelArt.json";
 
-// World height of the vehicle sprite; width follows the fixed side-on aspect.
+// World height of the vehicle sprite; width follows each type's DECLARED art
+// aspect (levelArt `vehicles.types.<type>.size`) so non-2:1 art (the 256×160
+// moto) is never stretched onto a fixed-ratio plane. Same direct manifest
+// indexing precedent as artSign below.
 const VEHICLE_H = 2.4;
-const VEHICLE_ASPECT = 2.0;
+function vehicleAspect(type: VehicleType): number {
+  const s = levelArt.vehicles.types[type].size;
+  return s.width / s.height;
+}
 // Sits on the courier street lane, just in front of the couriers (z 0.7).
 const VEHICLE_Z = 0.72;
 
@@ -185,7 +191,7 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
     const flipX = facingRef.current * artSign(vehicle.vehicleType);
 
     mesh.position.set(vehicle.position.x, vehicle.position.y, VEHICLE_Z);
-    mesh.scale.set(flipX * VEHICLE_ASPECT * VEHICLE_H, VEHICLE_H, 1);
+    mesh.scale.set(flipX * vehicleAspect(vehicle.vehicleType) * VEHICLE_H, VEHICLE_H, 1);
 
     const tex = getVehicleTexture(vehicle.vehicleType);
     const mat = mesh.material as MeshBasicMaterial;
@@ -211,7 +217,7 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
           rimMat.map = neon.texture;
           rimMat.needsUpdate = true;
         }
-        const worldW = VEHICLE_ASPECT * VEHICLE_H;
+        const worldW = vehicleAspect(vehicle.vehicleType) * VEHICLE_H;
         const worldH = VEHICLE_H;
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;

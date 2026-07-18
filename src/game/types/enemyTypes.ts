@@ -20,7 +20,7 @@ export interface Archetype {
   readonly spriteBase: string; // e.g. "enemy_sprite", "enemy_riot"
   readonly variants: number; // number of visual variants (suffixes _2.._N)
   readonly tint: string; // neon color-multiply tint
-  readonly aspect: number; // sprite plane width relative to its height
+  readonly aspect: number; // sprite plane width relative to its height (1 = the square gptimage textures render undistorted; pre-gptimage art used tuned sub-1 squashes)
   // The kind's window sprite files were deleted from the repo (ADR-0029): its
   // spriteBase must never reach a load path again. Guarded by tests (a level
   // roster resurrecting the kind fails CI), not filtered at runtime — the
@@ -43,7 +43,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_sprite",
     variants: 3,
     tint: "#ffffff",
-    aspect: 0.5,
+    aspect: 1,
   },
   riot: {
     kind: "riot",
@@ -59,7 +59,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_riot",
     variants: 1,
     tint: "#dbe9ff",
-    aspect: 0.62,
+    aspect: 1,
   },
   biker: {
     kind: "biker",
@@ -75,7 +75,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_biker",
     variants: 1,
     tint: "#fff7e0",
-    aspect: 0.5,
+    aspect: 1,
   },
   bonus: {
     kind: "bonus",
@@ -91,7 +91,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_bonus",
     variants: 1,
     tint: "#ffe9a8",
-    aspect: 0.52,
+    aspect: 1,
   },
   civilian: {
     kind: "civilian",
@@ -115,7 +115,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_civilian",
     variants: 1,
     tint: "#d8ffe2",
-    aspect: 0.95,
+    aspect: 1,
     artRetired: true,
   },
   // Hostage taker (ADR-0030). NOT a window pop-up anymore: it drives the
@@ -140,7 +140,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
     spriteBase: "enemy_hostage",
     variants: 1,
     tint: "#ff8ad8",
-    aspect: 0.7,
+    aspect: 1,
   },
 };
 
