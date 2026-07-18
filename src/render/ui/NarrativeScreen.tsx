@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
 import { DiagramIcon } from "./DiagramIcon";
-import { PaperSheet, HalftoneHero, STOCK, INK, FONT, MARK, MASTHEAD } from "@render/ui/print";
+import { PaperSheet, HalftoneHero, STOCK, FONT, MASTHEAD } from "@render/ui/print";
+import { cx } from "./controls/cx";
+import styles from "./NarrativeScreen.module.css";
 
 interface Props {
   scene: NarrativeScene;
@@ -32,20 +34,12 @@ const BACKDROP_OPACITY = 0.3;
 
 /**
  * The single illustration slot above the dialogue box — shared verbatim by the `image` channel
- * and the code-drawn `gesture` channel so the "same slot" contract holds by construction.
- * Shrinkable in the bottom-anchored `overflow: hidden` column (`minHeight: 0` + `flexShrink: 1`)
- * so the illustration scales down in short landscape instead of clipping at the top; the child's
- * percentage box keeps aspect via `objectFit`/the SVG's `maxHeight`.
+ * and the code-drawn `gesture` channel so the "same slot" contract holds by construction
+ * (now `styles.illustrationSlot`). Shrinkable in the bottom-anchored `overflow: hidden` column
+ * (`min-height: 0` + `flex-shrink: 1`) so the illustration scales down in short landscape instead
+ * of clipping at the top; the child's percentage box keeps aspect via `object-fit`/the SVG's
+ * `max-height`.
  */
-const ILLUSTRATION_SLOT_STYLE: CSSProperties = {
-  position: "relative",
-  display: "flex",
-  justifyContent: "center",
-  padding: "0 16px 12px",
-  minHeight: 0,
-  flexShrink: 1,
-  maxHeight: "38vh",
-};
 
 /**
  * Pre/post-level briefing. Behaviour, scripts, three call sites, typewriter and
@@ -124,26 +118,9 @@ export function NarrativeScreen({
   }
 
   return (
-    <div
-      onClick={advance}
-      style={{
-        position: "fixed",
-        inset: 0,
-        cursor: "pointer",
-        userSelect: "none",
-      }}
-    >
+    <div onClick={advance} className={styles.root}>
       <PaperSheet stock={STOCK.shell} style={{ fontFamily: FONT.mono }}>
-        <div
-          style={{
-            position: "relative",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            overflow: "hidden",
-          }}
-        >
+        <div className={styles.column}>
           {/* Location décor (ADR-0023): the level facade rephotocopied to halftone B&W as a
               full-bleed wash BEHIND everything. First child + no z-index, so the masthead,
               illustration slot and transcript (all positioned) paint on top by DOM order.
@@ -164,70 +141,18 @@ export function NarrativeScreen({
           )}
 
           {/* Running masthead — one printing across the pre-game surfaces */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              background: "transparent",
-              borderBottom: `1px solid ${INK.black}`,
-              padding: "4px 12px",
-              fontSize: "9px",
-              letterSpacing: "0.3em",
-              color: INK.black,
-              textAlign: "center",
-            }}
-          >
-            {MASTHEAD.running}
-          </div>
+          <div className={styles.masthead}>{MASTHEAD.running}</div>
 
           {showSkipButton && (
-            <button
-              type="button"
-              onClick={handleSkip}
-              style={{
-                position: "absolute",
-                top: 32,
-                left: 16,
-                minHeight: 44,
-                border: `2px solid ${INK.black}`,
-                background: STOCK.shell,
-                color: INK.black,
-                padding: "10px 20px",
-                fontSize: "15px",
-                letterSpacing: "0.18em",
-                fontFamily: "inherit",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                pointerEvents: "auto",
-              }}
-            >
+            <button type="button" onClick={handleSkip} className={styles.skip}>
               Passer
             </button>
           )}
 
           {/* Progress dots — inked, not neon */}
-          <div
-            style={{
-              position: "absolute",
-              top: 24,
-              right: 16,
-              display: "flex",
-              gap: 6,
-            }}
-          >
+          <div className={styles.dots}>
             {scene.lines.map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: i <= lineIndex ? INK.black : "transparent",
-                  border: `1px solid ${INK.black}`,
-                }}
-              />
+              <div key={i} className={cx(styles.dot, i <= lineIndex && styles.dotFilled)} />
             ))}
           </div>
 
@@ -235,7 +160,7 @@ export function NarrativeScreen({
             illustrated pre/post briefings (ADR-0023). Same BASE_URL interpolation as the backdrop,
             pixelated like in-game sprites. */}
           {currentLine?.image !== undefined && !imageError && (
-            <div style={ILLUSTRATION_SLOT_STYLE}>
+            <div className={styles.illustrationSlot}>
               <img
                 // Force remount on sprite change so the previous sprite is never held
                 // on screen while the next one decodes (ADR-0012, C1).
@@ -247,11 +172,8 @@ export function NarrativeScreen({
                   // image icon — hide the illustration and keep the dialogue readable.
                   setImageError(true);
                 }}
+                className={styles.sprite}
                 style={{
-                  maxHeight: "100%",
-                  maxWidth: "100%",
-                  objectFit: "contain",
-                  imageRendering: "pixelated",
                   // La loi de l'imprimé (lead-art gate, ADR-0023): on a briefing that carries a
                   // location décor, grayscale the sprite so it reads as ONE printing with the
                   // halftone facade (kills stray badge/uniform colour, no dot-screen that would
@@ -274,11 +196,15 @@ export function NarrativeScreen({
           {currentLine?.gesture !== undefined &&
             (currentLine.image === undefined || imageError) &&
             ((currentLine.gestureAlt ?? "") !== "" ? (
-              <div role="img" aria-label={currentLine.gestureAlt} style={ILLUSTRATION_SLOT_STYLE}>
+              <div
+                role="img"
+                aria-label={currentLine.gestureAlt}
+                className={styles.illustrationSlot}
+              >
                 <GestureIcon kind={currentLine.gesture} />
               </div>
             ) : (
-              <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
+              <div aria-hidden={true} className={styles.illustrationSlot}>
                 <GestureIcon kind={currentLine.gesture} />
               </div>
             ))}
@@ -291,11 +217,15 @@ export function NarrativeScreen({
             currentLine.image === undefined &&
             currentLine.gesture === undefined &&
             ((currentLine.diagramAlt ?? "") !== "" ? (
-              <div role="img" aria-label={currentLine.diagramAlt} style={ILLUSTRATION_SLOT_STYLE}>
+              <div
+                role="img"
+                aria-label={currentLine.diagramAlt}
+                className={styles.illustrationSlot}
+              >
                 <DiagramIcon kind={currentLine.diagram} />
               </div>
             ) : (
-              <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
+              <div aria-hidden={true} className={styles.illustrationSlot}>
                 <DiagramIcon kind={currentLine.diagram} />
               </div>
             ))}
@@ -305,89 +235,29 @@ export function NarrativeScreen({
               rides over the halftone facade; backdrop-less scenes (tutorial) keep `transparent`
               and are byte-identical to before. */}
           <div
-            style={{
-              position: "relative",
-              margin: "0 0 0 0",
-              padding: "24px 32px 48px",
-              borderTop: `2px solid ${INK.black}`,
-              background: scene.backdrop !== undefined ? STOCK.shell : "transparent",
-              minHeight: 160,
-            }}
+            className={styles.transcript}
+            style={{ background: scene.backdrop !== undefined ? STOCK.shell : "transparent" }}
           >
             {/* Speaker name */}
-            <div
-              style={{
-                fontSize: "11px",
-                letterSpacing: "0.3em",
-                color: INK.black,
-                fontWeight: 700,
-                marginBottom: 10,
-              }}
-            >
-              {currentLine?.speaker ?? ""}
-            </div>
+            <div className={styles.speaker}>{currentLine?.speaker ?? ""}</div>
 
             {/* Text */}
-            <div
-              style={{
-                fontSize: "18px",
-                lineHeight: 1.55,
-                color: INK.black,
-                minHeight: 60,
-                letterSpacing: "0.02em",
-              }}
-            >
+            <div className={styles.text}>
               {displayedText}
-              {isTyping && (
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: 2,
-                    height: "1em",
-                    background: INK.black,
-                    marginLeft: 2,
-                    verticalAlign: "text-bottom",
-                    animation: "blink 0.7s step-start infinite",
-                  }}
-                />
-              )}
+              {isTyping && <span className={styles.caret} />}
             </div>
 
             {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse).
                 On the final panel the "done" tell is a black-keylined green box accent, not
                 green text: mark ink never carries small text (art-direction §2bis). */}
             {!isTyping && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 16,
-                  right: 24,
-                  fontSize: "11px",
-                  color: INK.black,
-                  letterSpacing: "0.15em",
-                  animation: "blink 1s step-start infinite",
-                  ...(done
-                    ? {
-                        background: MARK.green,
-                        border: `1px solid ${INK.black}`,
-                        padding: "1px 6px",
-                      }
-                    : {}),
-                }}
-              >
+              <div className={cx(styles.hint, done && styles.hintDone)}>
                 {done ? `[ ${doneLabel} ]` : "[ CONTINUER ]"}
               </div>
             )}
           </div>
         </div>
       </PaperSheet>
-
-      <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,0 +1,61 @@
+/*
+ * EndScreen (ADR-0046) — static structure/typography only. The full-screen frame
+ * composes the shared Overlay; the grain layer (rgba gradient with no clean token)
+ * stays inline in the component. The blink keyframe is scoped here (moved from the
+ * old inline <style>; observable result identical). Colours/fonts/sizes via var(--…).
+ */
+.screen {
+  composes: overlay from "./controls/Overlay.module.css";
+  flex-direction: column;
+  background: var(--stock-shell);
+  cursor: pointer;
+  user-select: none;
+}
+
+.content {
+  position: relative;
+  text-align: center;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink-black);
+  letter-spacing: 0.2em;
+  margin-bottom: var(--space-xl);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 64px;
+  color: var(--ink-full);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  max-width: 700px;
+}
+
+.score {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  color: var(--ink-black);
+  margin-top: var(--space-xxl);
+  letter-spacing: 0.1em;
+}
+
+.prompt {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink-full);
+  margin-top: 48px;
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}

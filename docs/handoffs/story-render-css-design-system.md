@@ -96,7 +96,34 @@ design-system foundation. ADR-0046. Branch `claude/render-css-design-system` (st
 
 ## OUTSTANDING
 
-- Menu-screen migration to CSS Modules + shared primitives (Button/Toggle/Overlay/SelectableListItem):
-  the menu surfaces still use inline `style={{}}` (tokenised via `FONT`, but not CSS Modules).
 - P3 Figma (Menu/Pause/End screens + Code Connect) blocked on the Figma Starter-plan MCP tool-call
   limit — deferred. Tokens + Composants + TITLE screen were built before the cap.
+
+## MENU-SCREEN MIGRATION — dev-r3f-render — 2026-07-18
+
+- All 10 pre-game/menu surfaces migrated inline → co-located CSS Modules (Title, MainMenu, Loading,
+  End, Rotate, Narrative, Pause + menu/LevelFlyer, ScoresUne, OptionsColophon). Net −663. Shared
+  primitives extracted to `src/render/ui/controls/`: `Overlay` (Pause+End) + `SelectableListItem`
+  (Menu tabs / Scores éditions / Options ballots). Button/Toggle left local (single-use). `INK.mute`
+  token added (auto-bridged). PR #102, branch `claude/render-css-menus`.
+- Pixel-identity PASS per surface (headless byte-diff, animations frozen). tsc + 575 tests + lint +
+  build + build:catalog + format:check green.
+
+## MENU-SCREEN MIGRATION — STAGE-6 REVIEW PANEL — 2026-07-18
+
+- 4 reviewers on `git diff origin/main...HEAD` (28 files): code-review MERGE · bmad MERGE ·
+  edge-case-hunter clean · security clean. The #98 cascade lesson held — every `composes`/modifier
+  pair verified **property-disjoint** (order-independent, no regression). Pixel-identity confirmed
+  value-by-value across all 10 surfaces; boundary intact; strict TS.
+- No CONFIRMED BLOQUANT/MAJEUR. Cosmetic NITs only (optional follow-ups): `Overlay` catalog specimen
+  escapes its cell (dev-doc); size-token consistency (some literals where a `FONT_SIZE`/`SPACE` token
+  exists — zero pixel impact, ADR mandate "no hex/font/motion" satisfied); `SelectableListItem`
+  docstring imprecision; `OverlayProps.children` stricter than needed.
+- VERDICT: **MERGE**.
+
+## DONE
+
+- Design-system render layer complete: fonts (ADR-0045) + CSS Modules + token→CSS-var bridge + HUD
+  (migrated, legible, widgetised, consolidated) + all menu screens + HTML component catalog (ADR-0046).
+- Figma « muf — Design System » (Tokens + Composants + TITLE) built to the Starter-plan cap; Figma
+  Menu/Pause/End screens + Code Connect remain, blocked by that external limit.

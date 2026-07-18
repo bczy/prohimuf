@@ -44,6 +44,7 @@ export const FONT = {
 export const INK = {
   black: "#141210", // body, Courier blocks, rules, keylines
   full: "#000000", // display/ransom headlines + stamp fills
+  mute: "#555555", // muted caption grey — Pause slider/toggle labels + ESC hint
 } as const;
 
 // Marker / stamp inks (semantic — always with an ink-black keyline + distinct shape).

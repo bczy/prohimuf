@@ -1,0 +1,109 @@
+/*
+ * PauseScreen (ADR-0046) — static structure/typography only. The modal frame composes
+ * the shared Overlay; the translucent stock backdrop, the scanline layer and the hair
+ * separator are rgba literals with no clean token, so they stay inline. Toggle/action
+ * state colours live in mutually-exclusive modifiers (no shared property, the #98
+ * lesson). Every colour/font references a var(--…) injected from tokens.ts.
+ */
+
+/* Composed overlay backdrop; the translucent stock ground stays inline. */
+.backdrop {
+  composes: overlay from "./controls/Overlay.module.css";
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.card {
+  border: var(--keyline-width) solid var(--ink-black);
+  padding: 32px;
+  width: min(420px, 90vw);
+  background: var(--stock-shell);
+  position: relative;
+}
+
+.inner {
+  position: relative;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  color: var(--ink-full);
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+}
+
+/* Slider / Toggle field wrapper + caption. */
+.field {
+  margin-bottom: 14px;
+}
+
+.fieldLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  margin-bottom: 4px;
+  letter-spacing: 0.15em;
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--ink-black);
+}
+
+/* CRT toggle — shared box; the on/off ground+ink live in the mutually-exclusive
+   .toggleOn / .toggleOff (never both), so no property collides across rules. */
+.toggle {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--ink-black);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.2em;
+}
+
+.toggleOn {
+  background: var(--ink-full);
+  color: var(--stock-shell);
+}
+
+.toggleOff {
+  background: transparent;
+  color: var(--ink-black);
+}
+
+/* Action buttons — shared box; primary/secondary set their own ground/ink/border/
+   margin (no property shared with the base). */
+.action {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.actionPrimary {
+  margin-bottom: 10px;
+  background: var(--ink-full);
+  color: var(--stock-shell);
+  border: none;
+}
+
+.actionSecondary {
+  background: transparent;
+  color: var(--ink-black);
+  border: 1px solid var(--ink-black);
+}
+
+.escHint {
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  text-align: center;
+  letter-spacing: 0.15em;
+}

@@ -1,0 +1,84 @@
+/*
+ * LoadingScreen (ADR-0046) — static structure/typography only. The press-bar fill
+ * width tracks real progress (inline runtime %), and its smoothing transition +
+ * reduced-motion @media stay in the component's <style> block. Every colour/font
+ * references a var(--…) injected from tokens.ts.
+ */
+
+/* Printed masthead ink bar pinned to the top edge. */
+.masthead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--ink-full);
+  color: var(--stock-shell);
+  padding: var(--space-xs) var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 40px;
+  box-sizing: border-box;
+}
+
+/* Uppercase mono info line; per-line font-size/letter-spacing/margin-top stay inline. */
+.info {
+  font-family: var(--font-mono);
+  color: var(--ink-black);
+  text-transform: uppercase;
+}
+
+/* "CHARGEMENT…" wordmark; the clamp() font-size stays inline (responsive). */
+.wordmark {
+  font-family: var(--font-display);
+  line-height: 0.9;
+  letter-spacing: 0.05em;
+  color: var(--ink-full);
+  margin-top: var(--space-md);
+}
+
+.rule {
+  width: min(420px, 80%);
+  height: 2px;
+  background: var(--ink-black);
+  margin: 18px 0;
+}
+
+.bar {
+  width: min(60vw, 420px);
+  height: 16px;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Static box of the ink fill; runtime width stays inline, global .muf-load-fill
+   (in the component <style>) carries the smoothing transition. */
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--ink-black);
+}
+
+.folio {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.18em;
+  color: var(--ink-black);
+  margin-top: 14px;
+}
