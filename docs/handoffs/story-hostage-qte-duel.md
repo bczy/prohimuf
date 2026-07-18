@@ -2145,3 +2145,52 @@ X-disjoint clause of the Revision-4 spatial-colour section). ADR number/label fr
   ruled, flag for confirm.
 - next: `lead-game-designer` gate → `senior-architect` (adopt band/roam values into the frozen
   box-disjoint delta) → `dev-gameplay` (re-tune constants + K-5 re-pin, TDD) → Sacha playtest AC.
+
+## 23. DOCS — tech-writer (Otis) — 2026-07-18
+
+- claim: record the box-disjoint G6 clamp + hitbox-map anatomy re-map as ADR-0034
+  **Revision 5**, traced to `senior-architect`'s §22 FROZEN clamp ruling (LAW: clamp form,
+  determinism, contract stability) and `game-designer`'s §22 follow-up values entry (spec
+  §11). Not a gate — doc realignment; the anatomy VALUES portion is explicitly flagged as
+  proposed/pending, not ratified, per the note below.
+- release:
+  - **ADR-0034 amended** — new **"Revision 5 — 2026-07-18: box-disjoint clamp + hitbox-map
+    anatomy"** section in `docs/adr/0034-hostage-qte-duel-porte-cochere.md`, recording: the
+    G6 clamp reshaped from Revision 4's X-disjoint form (which confined the ring to the
+    captor's left flank, making head/torso unreachable and scoring GREEN over his arm) to a
+    **BOX-disjoint push-out** — ring circle kept clear of the hostage AABB inflated by
+    `G6_PAD = RING_HIT_RADIUS + G6_MARGIN` (0.40), pushed LEFT (`x = −0.40`) or UP
+    (`y = +0.55`) whichever is minimal, admitting the centre-top strip (`y ≥ +0.55`) so the
+    ring can reach the head above the kneeling hostage; the anatomy re-map per Bertrand's
+    hitbox diagram (VITAL/green = head only, LIMB/yellow = torso + shoulders, OFF/red = arms
+    - legs + empty air — torso moves vital→limb, arms/legs move limb→off vs Revision 4); the
+      `RingZone` enum **unchanged** (still 3-tier `vital|limb|off`, re-labelled not widened);
+      the roam recentred high/centre; `captorHp = 3` / `maxBlownPeeks (N) = 4` and the energy
+      ledger/loss route unchanged; captor-HP read stays diegetic pips (no HUD bar, K-4/U-1
+      unchanged); the two open pre-ship conditions carried forward — on-frame framing
+      (composite gate/stage-5, fallback `WANDER_AMP_Y → 0.35` / `WANDER_AMP_X → 0.70`) and the
+      **K-5 seed re-pin** (`dev-gameplay`, blocking, before ship). Added an explicit
+      "decided vs. proposed" note: the clamp FORM/determinism/contract-stability is
+      `senior-architect`'s FROZEN §22 ruling (LAW); the anatomy-band/roam-box numeric VALUES are
+      `game-designer`'s (Sacha) proposal against that clamp, **still awaiting
+      `lead-game-designer` gate PASS** as of this amendment — a future gate correction to the
+      values is a follow-up amendment to this Revision, not a reopening of the clamp mechanism.
+      Status line updated to note Revision 5 (no other Status-line change); no new ADR number
+      (a further dated amendment, per the story's own §22 "ADR impact" note — `producer` not
+      asked for a standalone superseder this pass).
+  - **`RingZone` docstring refreshed** (architect-assigned, §22: "to keep dev-gameplay OFF
+    the type file entirely, the docstring refresh is assigned to `tech-writer`") — in
+    `src/game/types/hostageQte.ts`, the stale "vital = head/face + torso; limb = arm/leg"
+    wording is now "vital = head/face … ; limb = torso + shoulders … ; off = arms + legs +
+    empty space …", matching the Revision-5 anatomy. Comment-only — no type/interface
+    change; `dev-gameplay`'s parallel edit to `qteSystem.ts` is untouched, no contention.
+  - **Registry regenerated**: `node scripts/gen-adr-index.mjs --write` then `--check` — fresh
+    (41 ADR; ADR-0034's registry row still reads `Accepted (amended)`, unaffected by the
+    added Revision-5 clause in the Status line).
+- verify: `node_modules/.bin/tsc -p tsconfig.json --noEmit` clean; `node_modules/.bin/eslint
+src/game/types/hostageQte.ts` clean; `npx --yes prettier@3.8.2 --write` then `--check` on
+  every touched markdown file (this shard, the ADR, `docs/adr/README.md`) and on
+  `src/game/types/hostageQte.ts` — clean. No tuning numbers or game/render logic touched;
+  the `qteSystem.ts`/roam/anatomy-constant edits stay `dev-gameplay`'s per the §22 lane plan.
+- VERDICT: not a gate — doc realignment, traced to §22 (clamp ruling, LAW) and the
+  §22 game-designer values entry (proposed, pending `lead-game-designer` gate).

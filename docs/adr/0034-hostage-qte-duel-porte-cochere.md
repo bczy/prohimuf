@@ -2,7 +2,8 @@
 
 - **Status:** Accepted (amended 2026-07-18 — D1 reversed, see Revision 2; further amended
   2026-07-18 — wandering peek target + seeded-pure-PRNG precedent, see Revision 3; further
-  amended 2026-07-18 — graded captor HP + spatial-colour reticle, see Revision 4)
+  amended 2026-07-18 — graded captor HP + spatial-colour reticle, see Revision 4; further
+  amended 2026-07-18 — box-disjoint G6 clamp + hitbox-map anatomy re-map, see Revision 5)
 - **Date:** 2026-07-17
 - **Partially supersedes:** [ADR-0030](./0030-hostage-taker-feature-and-sprite.md) — the
   **static frozen tableau**, the **`windowSeconds` clock**, and the **`PART_DAMAGE`
@@ -511,4 +512,120 @@ Two conditions the design gate left open, not resolved by this amendment:
   pinned (left unspecified as of this amendment), and (b) either a structural assert (≥ 1
   waypoint per peek lands inside vital∪limb) or an empirical `verify`-playtest confirmation
   with the pinned seed must close the gap. Tracked as a stage-5 pre-ship item, not a merge
+  blocker for the contract itself.
+
+## Revision 5 — 2026-07-18: box-disjoint clamp + hitbox-map anatomy
+
+Bertrand supplied a **hitbox diagram drawn on the captor sprite** (PR #79), which corrects both
+the G6 clamp geometry and the anatomy↔tier mapping Revision 4 shipped. Design source
+[`spec-hostage-qte-static-duel.md`](../game-design/spec-hostage-qte-static-duel.md) §11
+(`game-designer`, Sacha — anatomy-band + roam-box values). The frozen code contract is
+`senior-architect`'s story shard §22, `docs/handoffs/story-hostage-qte-duel.md`.
+
+### The G6 clamp is reshaped again — X-disjoint → BOX-disjoint
+
+Revision 4's `clampTargetOffsetG6` kept the ring circle entirely LEFT of the hostage
+(X-disjoint only), which confined the roam to the captor's left flank — his head and torso
+were unreachable there, and a ring drawn over his gun-arm scored GREEN by construction. That
+was the bug, not a tuning gap: the diagram places VITAL (head) and LIMB (torso/shoulders)
+**centred, above** the hostage, not to her left.
+
+The clamp is reshaped to a **BOX-disjoint push-out**: the ring circle (centre ±
+`RING_HIT_RADIUS`) is kept clear of the hostage AABB inflated by a pad `G6_PAD =
+RING_HIT_RADIUS + G6_MARGIN` (Belliard 0.40) on every side. If the ring centre lands inside
+that inflated forbidden box, it is pushed to the nearest hostage-clearing edge — **LEFT**
+(`x = −0.40`, off his gun-arm flank) or **UP** (`y = +0.55`, above her head) — whichever move
+is minimal. This is a conservative superset of true circle-vs-box disjointness (point outside
+the padded box ⇒ centre-to-box distance ≥ pad ⇒ the ring circle clears the hostage box by ≥
+`G6_MARGIN`), so G6 holds for every offset, not just the authored roam. Unlike the X-disjoint
+form, this clamp **admits the centre-top strip** (`y ≥ +0.55`) as reachable across the whole
+width — so the ring can validly sit over the captor's head or torso, directly above the
+kneeling hostage, exactly as the diagram requires. `qteZoneAt`/`ringZoneAt` are unaffected —
+only the clamp that bounds where the ring's centre is ever allowed to land changes shape.
+
+### Anatomy re-mapped from Revision 4's read to Bertrand's diagram
+
+Revision 4's spatial-colour bands read the captor **left-flank-on**: `vital` (green) covered
+head + torso, `limb` (yellow) covered arm/leg. Bertrand's diagram reads him **front-facing,
+standing over the kneeling hostage**, and re-tiers the same three anatomy groups:
+
+| Tier              | Revision 4 (left-flank read) | **Revision 5 (Bertrand's diagram)** |
+| ----------------- | ---------------------------- | ----------------------------------- |
+| **VITAL** (green) | head/face **+ torso**        | **head/face only**                  |
+| **LIMB** (yellow) | arm/leg                      | **torso + both shoulders**          |
+| **OFF** (red)     | empty air                    | **arms + legs + empty air**         |
+
+Torso moves from `vital` → `limb`; arms/legs move from `limb` → `off` (now a genuine zero-chip
+zone, not merely absent). The `RingZone` **enum itself is unchanged** — still the 3-tier
+`"vital" | "limb" | "off"` (it suffices; this is a re-label of which world-space band each tier
+covers, not a widening of the type). Damage magnitudes are unchanged: vital `CAPTOR_DAMAGE_VITAL
+= 2`, limb `CAPTOR_DAMAGE_LIMB = 1`, off `= 0`; `captorHp = 3` and `maxBlownPeeks (N) = 4` stay
+Belliard defaults. The energy ledger, the loss route (`blownPeeks ≥ maxBlownPeeks` → execution,
+sole `LOST`), and the WON/LOST → DONE hold are all unchanged by this amendment.
+
+The roam box is recentred **high/centre** (head + shoulders + upper torso, dipping left over
+the gun-arm) instead of Revision 4's low-left column, so the wander actually visits the
+diagram's VITAL/LIMB anatomy rather than mostly OFF space. Reachability under the new clamp:
+`centre.x ≤ −0.40` (left of her, the gun-arm) **OR** `centre.y ≥ +0.55` (above her, head +
+shoulders + upper torso) — the over-hostage wedge (lower-centre/right) is excluded by
+construction, so the classifier never scores a centre that would physically sit on top of the
+hostage.
+
+### Captor-HP read stays diegetic pips — unchanged
+
+Revision 4's diegetic-pips-not-a-HUD-bar read (K-4, holding Revision 2's U-1) is untouched by
+this amendment; no HUD element is added.
+
+### Contract delta
+
+- **`QteSpec` / `HostageQte`** — **structurally unchanged.** No field added, removed, or
+  retyped. `targetOffset: Vec2`, `ringZone: RingZone`, `captorHp: number` all stay as Revision
+  4 shipped them.
+- **`qteSystem.ts`** (values + clamp form only, inside the already-frozen spatial-colour
+  contract):
+  - `clampTargetOffsetG6` reimplemented as the box-disjoint push-out above (new constant
+    `G6_PAD = RING_HIT_RADIUS + G6_MARGIN`), replacing Revision 4's X-only min-clamp.
+  - `ringZoneAt`'s anatomy constants re-tuned to the diagram's bands: `VITAL_DX/DY` narrowed to
+    a top-centre head box; new `TORSO_DX/DY` and `L_SHOULDER_*`/`R_SHOULDER_*` constants added
+    under `limb`; the old arm/leg `limb` bands are removed (arms and legs now fall through to
+    `off` by construction, needing no explicit band).
+  - `WANDER_CENTRE`/`WANDER_AMP_X`/`WANDER_AMP_Y` reshaped to the high/centre roam box (design
+    values: centre `(−0.20, +0.60)`, `AMP_X 0.78`, `AMP_Y 0.40`).
+  - `createQte`'s G6 assert re-targets the box-disjoint boundary (the clamp's left ceiling
+    `−0.40` and Y-floor `+0.55` against the constants), same discipline as every prior G6
+    assert — asserted, never trusted from data.
+- **`ringZoneAt` docstring** (the only doc-lane touch inside source, this pass) re-describes the
+  front-facing anatomy read (head / torso+shoulders / arms+legs) so the comment matches the
+  shipped bands — `tickQte`'s logic is unchanged; it reads `ringZoneAt`/`colourDamage` exactly
+  as Revision 4 left them.
+- **dev-r3f-render** — no change required. The render already colours by `ringZone`
+  (vital → vert, limb → jaune, off → rouge) and follows `targetOffset`; only the region the ring
+  roams and the world-space meaning of each tier change, both game-owned.
+
+Full frozen delta (clamp form, determinism, lane plan) lives in `senior-architect`'s story
+shard §22, `docs/handoffs/story-hostage-qte-duel.md`; the anatomy-band and roam-box VALUES are
+`game-designer`'s in the same shard's follow-up entry — this ADR section is the decision
+record, not the code contract.
+
+**What is decided vs. proposed as of this amendment.** The clamp FORM (box-disjoint push-out),
+its determinism, and the contract stability (no field change) are `senior-architect`'s FROZEN
+ruling (§22 — LAW). The specific anatomy-band and roam-box numeric VALUES quoted above are
+`game-designer`'s (Sacha) proposal against that frozen clamp, delivered in the shard's §22
+follow-up entry and **still awaiting `lead-game-designer` (Karim) gate PASS** as of this
+amendment — recorded here as the authored input the clamp reasons about, not yet a
+gate-ratified figure. A gate correction to the values, if any, is a follow-up amendment to this
+Revision, not a reopening of the clamp mechanism.
+
+### Open pre-ship conditions carried forward from Revision 4, restated under Revision 5's values
+
+- **On-frame framing (composite gate / stage-5 `verify`).** The high/centre roam's ring VISUAL
+  extent (centre ± `RING_HIT_RADIUS`) reaches beyond the previously-proven-safe occupancy at the
+  QTE zoom — unverified pending the built box. Defined fallback if it clips: tighten
+  `WANDER_AMP_Y → 0.35` and/or `WANDER_AMP_X → 0.70` — the right-edge / G6 pin is never touched
+  by either fallback value.
+- **K-5 re-pin (dev-gameplay, blocking).** The anatomy bands **and** the roam geometry both
+  changed under this amendment, so the previously-pinned Belliard `targetSeed` is **invalid**
+  until re-verified: each of the `maxBlownPeeks` (N = 4) peeks must present ≥ 1 on-captor
+  (`vital ∪ limb`) decelerating waypoint window. `dev-gameplay` re-checks and re-pins the seed
+  against the Revision 5 constants before ship; tracked as a stage-5 pre-ship item, not a merge
   blocker for the contract itself.

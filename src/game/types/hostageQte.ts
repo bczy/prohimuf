@@ -43,10 +43,11 @@ export type QteZone = "body" | "hostage" | "miss";
 
 /**
  * The captor anatomy under the wandering reticle ring's centre (spatial-colour
- * model). `vital` = head/face + torso (a ring hit here chips the most HP → drawn
- * GREEN); `limb` = arm/leg (chips less → YELLOW); `off` = the ring is over empty
- * space, not the captor (a ring hit does 0 → RED). The GAME owns this semantic
- * zone; the render lane maps it to a colour — the game never names a colour.
+ * model, Bertrand's hitbox diagram). `vital` = head/face (a ring hit here chips
+ * the most HP → drawn GREEN); `limb` = torso + shoulders (chips less → YELLOW);
+ * `off` = arms + legs + empty space, not vital/limb anatomy (a ring hit does 0 →
+ * RED). The GAME owns this semantic zone; the render lane maps it to a colour —
+ * the game never names a colour.
  */
 export type RingZone = "vital" | "limb" | "off";
 

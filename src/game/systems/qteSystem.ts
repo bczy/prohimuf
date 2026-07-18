@@ -85,15 +85,16 @@ export const HOSTAGE_DY_MAX = 0.15;
  * amplitudes below) while PEEKING. Replaces the retired head-band `HEAD_NEUTRAL` — the ring
  * roams the captor's anatomy (`ringZoneAt`) rather than centring a fixed head kill-box.
  */
-export const WANDER_CENTRE: Vec2 = { x: -0.825, y: 0.3 };
+export const WANDER_CENTRE: Vec2 = { x: -0.2, y: 0.6 };
 /**
- * Half-extents of the wander amplitude box, anchored on `WANDER_CENTRE` (spatial-colour,
- * WIDER roam so the ring visits arm/leg/torso). Reproduces the authored roam box
- * (−0.825 ± 0.375 = [−1.20, −0.45]; 0.30 ± 0.80 = [−0.50, +1.10]). SYSTEM constants — only
- * the seed is authored (F3 may promote these; K-1 fallback 0.325/0.65 if it clips at zoom).
+ * Half-extents of the wander amplitude box, anchored on `WANDER_CENTRE` (spatial-colour
+ * hitbox-diagram roam so the ring visits the torso, both shoulders and the head). Reproduces
+ * the authored roam box (−0.20 ± 0.78 = [−0.98, +0.58]; 0.60 ± 0.40 = [+0.20, +1.00]). SYSTEM
+ * constants — only the seed is authored (F3 may promote these; fallback 0.70/0.35 if it clips
+ * at zoom). The over-hostage wedge is auto-excluded by the box-disjoint G6 clamp.
  */
-export const WANDER_AMP_X = 0.375;
-export const WANDER_AMP_Y = 0.8;
+export const WANDER_AMP_X = 0.78;
+export const WANDER_AMP_Y = 0.4;
 /**
  * One wander leg (waypoint→waypoint) lasts this long. Chosen with `MAX_LEG_DISPLACEMENT` so
  * a capped leg's peak speed — smoothstep peaks at 1.5× the average mid-leg — lands near the
@@ -111,10 +112,15 @@ export const MIN_LEG_DISPLACEMENT = 0.15;
  */
 export const MAX_LEG_DISPLACEMENT = 0.45;
 /**
- * G6 safety margin — the ASSERTED minimum horizontal gap `clampTargetOffsetG6` forces between
- * the ring's right edge and the hostage band's left edge, for ANY dy. Not trusted from tuning.
+ * G6 safety margin — the ASSERTED minimum gap `clampTargetOffsetG6` forces between the ring's
+ * circle and the hostage AABB, on every side. Not trusted from tuning.
  */
 export const G6_MARGIN = 0.1;
+/**
+ * G6 dilation pad — the hostage AABB is inflated by this on every side to form the forbidden
+ * region for the ring CENTRE (`RING_HIT_RADIUS` clears the band, `+ G6_MARGIN` is the gap).
+ */
+export const G6_PAD = RING_HIT_RADIUS + G6_MARGIN; // 0.30 + 0.10 = 0.40
 // Captor body silhouette (the covered mass; kill-safe by itself).
 export const BODY_DX_MIN = -0.85;
 export const BODY_DX_MAX = 0.85;
@@ -122,22 +128,28 @@ export const BODY_DY_MIN = -1.0;
 export const BODY_DY_MAX = 0.95;
 
 // --- Captor anatomy bands for the ring centre (spatial-colour, anchor-relative) --------
-// The wandering ring centre is classified against the captor's anatomy: VITAL (head/torso),
-// LIMB (arm OR leg), else OFF. VITAL takes precedence over LIMB where the bands abut. These
-// live left of the hostage silhouette (all dx ≤ −0.45 < HOSTAGE_DX_MIN) so the on-captor
-// zones and the bavure band never share space.
-export const VITAL_DX_MIN = -0.8;
-export const VITAL_DX_MAX = -0.45;
-export const VITAL_DY_MIN = 0.05;
-export const VITAL_DY_MAX = 0.9;
-export const ARM_DX_MIN = -1.2;
-export const ARM_DX_MAX = -0.8;
-export const ARM_DY_MIN = 0.25;
-export const ARM_DY_MAX = 0.65;
-export const LEG_DX_MIN = -0.8;
-export const LEG_DX_MAX = -0.45;
-export const LEG_DY_MIN = -0.45;
-export const LEG_DY_MAX = 0.05;
+// The wandering ring centre is classified against the captor's anatomy per the game-designer's
+// hitbox diagram: VITAL (the head, popped over the hostage), LIMB (the torso + the two
+// shoulders), else OFF (the gun-arm, the legs, the free right arm and empty air all fall
+// through). VITAL takes precedence over LIMB where the head abuts the torso/shoulders. The
+// head strip sits ABOVE the hostage silhouette (dy ≥ +0.58 > HOSTAGE_DY_MAX +0.15), so the
+// reachable kill zone and the bavure band never share space.
+export const VITAL_DX_MIN = -0.2;
+export const VITAL_DX_MAX = 0.2;
+export const VITAL_DY_MIN = 0.58;
+export const VITAL_DY_MAX = 1.0;
+export const TORSO_DX_MIN = -0.32;
+export const TORSO_DX_MAX = 0.32;
+export const TORSO_DY_MIN = -0.05;
+export const TORSO_DY_MAX = 0.58;
+export const L_SHOULDER_DX_MIN = -0.58;
+export const L_SHOULDER_DX_MAX = -0.2;
+export const L_SHOULDER_DY_MIN = 0.46;
+export const L_SHOULDER_DY_MAX = 0.8;
+export const R_SHOULDER_DX_MIN = 0.2;
+export const R_SHOULDER_DX_MAX = 0.58;
+export const R_SHOULDER_DY_MIN = 0.46;
+export const R_SHOULDER_DY_MAX = 0.8;
 
 function inBand(
   dx: number,
@@ -152,16 +164,32 @@ function inBand(
 
 /**
  * Which anatomy zone the wandering RING CENTRE (anchor-relative offset) sits over
- * (spatial-colour model). Precedence VITAL > LIMB > OFF: a VITAL centre chips the most HP,
- * a LIMB (arm OR leg) chips less, an OFF centre chips nothing. Pure geometry — no stance,
+ * (spatial-colour model, hitbox-diagram bands). Precedence VITAL > LIMB > OFF: a VITAL centre
+ * (the head) chips the most HP, a LIMB centre (torso OR either shoulder) chips less, an OFF
+ * centre (gun-arm / legs / right arm / empty air) chips nothing. Pure geometry — no stance,
  * no HP; the tick reads the LAST-DRAWN cache `qte.ringZone` (colour-honesty) for scoring.
  */
 export function ringZoneAt(offset: Vec2): RingZone {
   const { x, y } = offset;
   if (inBand(x, y, VITAL_DX_MIN, VITAL_DX_MAX, VITAL_DY_MIN, VITAL_DY_MAX)) return "vital";
-  const arm = inBand(x, y, ARM_DX_MIN, ARM_DX_MAX, ARM_DY_MIN, ARM_DY_MAX);
-  const leg = inBand(x, y, LEG_DX_MIN, LEG_DX_MAX, LEG_DY_MIN, LEG_DY_MAX);
-  if (arm || leg) return "limb";
+  const torso = inBand(x, y, TORSO_DX_MIN, TORSO_DX_MAX, TORSO_DY_MIN, TORSO_DY_MAX);
+  const lShoulder = inBand(
+    x,
+    y,
+    L_SHOULDER_DX_MIN,
+    L_SHOULDER_DX_MAX,
+    L_SHOULDER_DY_MIN,
+    L_SHOULDER_DY_MAX,
+  );
+  const rShoulder = inBand(
+    x,
+    y,
+    R_SHOULDER_DX_MIN,
+    R_SHOULDER_DX_MAX,
+    R_SHOULDER_DY_MIN,
+    R_SHOULDER_DY_MAX,
+  );
+  if (torso || lShoulder || rShoulder) return "limb";
   return "off";
 }
 
@@ -286,17 +314,25 @@ export function wander(targetSeed: number, peekIndex: number, t: number): Vec2 {
 }
 
 /**
- * G6 safety net — ASSERTED, never trusted from tuning (architect ruling: X-disjoint,
- * replacing the old Y-floor). Force the ring centre far enough LEFT that the ring's right
- * edge (`centre.x + RING_HIT_RADIUS`) stays clear of the hostage band's left edge
- * (`HOSTAGE_DX_MIN`) by `G6_MARGIN`, for ANY y. Two shapes disjoint on the X axis are
- * disjoint everywhere, so the ring circle can never intersect the hostage band — and the
- * low leg (small y) survives untouched. The authored roam box (dx_max −0.45 ≤ this cap
- * −0.40) already satisfies it; the clamp is the asserted floor. Applied to EVERY offset.
+ * G6 safety net — ASSERTED, never trusted from tuning (architect ruling §22: BOX-disjoint,
+ * replacing the old X-disjoint form). The hostage AABB, dilated by `G6_PAD` on every side,
+ * is the forbidden region for the ring CENTRE: keeping the centre out of it keeps the ring
+ * circle (radius `RING_HIT_RADIUS`) clear of the hostage band by ≥ `G6_MARGIN`. A centre
+ * inside the forbidden box is pushed out by the cheaper of two escapes — LEFT off his flank
+ * (to the box's left edge) or UP above her head (to the box's top edge). Pushing UP (not
+ * DOWN) keeps the centre-top strip (dy ≥ +0.55) reachable, so the head kill zone stays
+ * shootable. Pure, deterministic and idempotent. Applied to EVERY offset.
  */
 export function clampTargetOffsetG6(offset: Vec2): Vec2 {
-  const maxX = HOSTAGE_DX_MIN - RING_HIT_RADIUS - G6_MARGIN;
-  return { x: offset.x > maxX ? maxX : offset.x, y: offset.y };
+  const fxMin = HOSTAGE_DX_MIN - G6_PAD; // -0.40
+  const fxMax = HOSTAGE_DX_MAX + G6_PAD; //  1.15
+  const fyMin = HOSTAGE_DY_MIN - G6_PAD; // -1.45
+  const fyMax = HOSTAGE_DY_MAX + G6_PAD; //  0.55
+  const inside = offset.x > fxMin && offset.x < fxMax && offset.y > fyMin && offset.y < fyMax;
+  if (!inside) return offset;
+  const costLeft = offset.x - fxMin; // push off his flank
+  const costUp = fyMax - offset.y; // push above her head
+  return costLeft <= costUp ? { x: fxMin, y: offset.y } : { x: offset.x, y: fyMax };
 }
 
 /** True while the QTE holds the scene frozen (ZOOMING…LOST); DONE/null resume the sim. */

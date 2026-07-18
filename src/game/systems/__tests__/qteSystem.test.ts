@@ -29,6 +29,8 @@ import {
   WANDER_AMP_Y,
   MAX_LEG_DISPLACEMENT,
   LEG_DURATION,
+  G6_MARGIN,
+  G6_PAD,
 } from "@game/systems/qteSystem";
 import type { HostageQte, QteSpec, RingZone } from "@game/types/hostageQte";
 import { LEVELS } from "@game/levels/levels";
@@ -64,45 +66,58 @@ const HOSTAGE_PT = { x: 0.4, y: -0.5 };
 // The ring centre when the ring rests (COVERED/ZOOMING) — the wander centre.
 const REST = WANDER_CENTRE;
 
-describe("ringZoneAt — captor anatomy under the ring centre (precedence VITAL > LIMB > OFF)", () => {
-  it("classifies each zone in its interior", () => {
-    expect(ringZoneAt({ x: -0.6, y: 0.5 })).toBe("vital"); // head/torso
-    expect(ringZoneAt({ x: -1.0, y: 0.45 })).toBe("limb"); // arm
-    expect(ringZoneAt({ x: -0.6, y: -0.2 })).toBe("limb"); // leg
-    expect(ringZoneAt({ x: 0, y: 0 })).toBe("off"); // empty space
-    expect(ringZoneAt({ x: -2, y: 2 })).toBe("off");
+describe("ringZoneAt — captor anatomy under the ring centre (hitbox diagram; VITAL > LIMB > OFF)", () => {
+  it("classifies each anatomy zone in its interior", () => {
+    // VITAL = the head strip dx [−0.20,+0.20] × dy [+0.58,+1.00].
+    expect(ringZoneAt({ x: 0, y: 0.8 })).toBe("vital");
+    // LIMB = torso + two shoulders.
+    expect(ringZoneAt({ x: 0, y: 0.2 })).toBe("limb"); // torso
+    expect(ringZoneAt({ x: -0.4, y: 0.6 })).toBe("limb"); // left shoulder
+    expect(ringZoneAt({ x: 0.4, y: 0.6 })).toBe("limb"); // right shoulder
+    // OFF = the gun-arm, the legs, the free right arm and empty air.
+    expect(ringZoneAt({ x: -0.9, y: 0.3 })).toBe("off"); // gun-arm
+    expect(ringZoneAt({ x: 0, y: -0.6 })).toBe("off"); // legs (below the torso)
+    expect(ringZoneAt({ x: 0.9, y: 0.5 })).toBe("off"); // free right arm
+    expect(ringZoneAt({ x: -2, y: 2 })).toBe("off"); // empty air
   });
 
-  it("VITAL band edges are inclusive; just outside falls out of VITAL", () => {
-    // Corners of dx [−0.80,−0.45] × dy [+0.05,+0.90].
-    expect(ringZoneAt({ x: -0.8, y: 0.05 })).toBe("vital");
-    expect(ringZoneAt({ x: -0.45, y: 0.9 })).toBe("vital");
-    expect(ringZoneAt({ x: -0.45, y: 0.05 })).toBe("vital");
-    expect(ringZoneAt({ x: -0.8, y: 0.9 })).toBe("vital");
-    // Just right of the vital band (dx > −0.45), clear of every band → OFF.
-    expect(ringZoneAt({ x: -0.44, y: 0.5 })).toBe("off");
-    // Just above the vital band (dy > 0.90), clear of every band → OFF.
-    expect(ringZoneAt({ x: -0.6, y: 0.91 })).toBe("off");
+  it("VITAL (head) band edges are inclusive; just outside the head is not VITAL", () => {
+    // Corners of dx [−0.20,+0.20] × dy [+0.58,+1.00].
+    expect(ringZoneAt({ x: -0.2, y: 0.58 })).toBe("vital");
+    expect(ringZoneAt({ x: 0.2, y: 1.0 })).toBe("vital");
+    expect(ringZoneAt({ x: 0.2, y: 0.58 })).toBe("vital");
+    expect(ringZoneAt({ x: -0.2, y: 1.0 })).toBe("vital");
+    // Just above the head (dy > 1.00), clear of every band → OFF.
+    expect(ringZoneAt({ x: 0, y: 1.01 })).toBe("off");
   });
 
-  it("LIMB arm/leg band edges are inclusive", () => {
-    // Arm dx [−1.20,−0.80] × dy [+0.25,+0.65].
-    expect(ringZoneAt({ x: -1.2, y: 0.25 })).toBe("limb");
-    expect(ringZoneAt({ x: -1.2, y: 0.65 })).toBe("limb");
-    // Leg dx [−0.80,−0.45] × dy [−0.45,+0.05].
-    expect(ringZoneAt({ x: -0.8, y: -0.45 })).toBe("limb");
-    expect(ringZoneAt({ x: -0.6, y: -0.45 })).toBe("limb");
-    // Just left of the arm band (dx < −1.20) → OFF.
-    expect(ringZoneAt({ x: -1.21, y: 0.45 })).toBe("off");
+  it("LIMB torso/shoulder band edges are inclusive", () => {
+    // Torso dx [−0.32,+0.32] × dy [−0.05,+0.58].
+    expect(ringZoneAt({ x: -0.32, y: -0.05 })).toBe("limb");
+    expect(ringZoneAt({ x: 0.32, y: -0.05 })).toBe("limb");
+    // Left shoulder dx [−0.58,−0.20] × dy [+0.46,+0.80].
+    expect(ringZoneAt({ x: -0.58, y: 0.46 })).toBe("limb");
+    expect(ringZoneAt({ x: -0.58, y: 0.8 })).toBe("limb");
+    // Right shoulder dx [+0.20,+0.58] × dy [+0.46,+0.80].
+    expect(ringZoneAt({ x: 0.58, y: 0.8 })).toBe("limb");
+    // Just left of the left shoulder (dx < −0.58) → OFF.
+    expect(ringZoneAt({ x: -0.59, y: 0.6 })).toBe("off");
+    // Just below the torso (dy < −0.05) → OFF (the legs).
+    expect(ringZoneAt({ x: 0, y: -0.06 })).toBe("off");
   });
 
-  it("VITAL wins where it abuts LIMB (precedence, not first-match by position)", () => {
-    // dx = −0.80 sits in BOTH the arm band and the vital band; dy in the overlap → VITAL.
-    expect(ringZoneAt({ x: -0.8, y: 0.5 })).toBe("vital");
-    // dy = +0.05 sits in BOTH the leg band and the vital band; dx in the overlap → VITAL.
-    expect(ringZoneAt({ x: -0.6, y: 0.05 })).toBe("vital");
-    // dx = −0.45 / dy = +0.05: leg's top-right corner is also the vital corner → VITAL.
-    expect(ringZoneAt({ x: -0.45, y: 0.05 })).toBe("vital");
+  it("VITAL wins where the head abuts the torso/shoulders (precedence, not position)", () => {
+    // dy = +0.58 sits in BOTH the torso (top edge) and the head (bottom edge) → VITAL.
+    expect(ringZoneAt({ x: 0, y: 0.58 })).toBe("vital");
+    // dx = −0.20 / dy = +0.60 sits in BOTH the left shoulder and the head → VITAL.
+    expect(ringZoneAt({ x: -0.2, y: 0.6 })).toBe("vital");
+    // dx = +0.20 / dy = +0.60 sits in BOTH the right shoulder and the head → VITAL.
+    expect(ringZoneAt({ x: 0.2, y: 0.6 })).toBe("vital");
+  });
+
+  it("a point just below the head (dy +0.57) drops to the torso LIMB, not the head", () => {
+    // dy +0.57 is out of the head [+0.58,…] but inside the torso [−0.05,+0.58] → LIMB.
+    expect(ringZoneAt({ x: 0, y: 0.57 })).toBe("limb");
   });
 });
 
@@ -211,9 +226,9 @@ describe("wander — pure, deterministic, replay-safe ring drift (wider box + sp
       expect(Math.abs(w.x)).toBeLessThanOrEqual(WANDER_AMP_X + 1e-9);
       expect(Math.abs(w.y)).toBeLessThanOrEqual(WANDER_AMP_Y + 1e-9);
     }
-    // The box is genuinely wider than the retired head box (0.175 / 0.125).
-    expect(WANDER_AMP_X).toBeCloseTo(0.375);
-    expect(WANDER_AMP_Y).toBeCloseTo(0.8);
+    // The hitbox-diagram roam box: wide across the shoulders, short in height.
+    expect(WANDER_AMP_X).toBeCloseTo(0.78);
+    expect(WANDER_AMP_Y).toBeCloseTo(0.4);
   });
 
   it("MAX_LEG_DISPLACEMENT caps each leg: adjacent decel waypoints are ≤ the cap apart", () => {
@@ -247,30 +262,75 @@ describe("wander — pure, deterministic, replay-safe ring drift (wider box + sp
   });
 });
 
-describe("G6 — X-disjoint: the ring circle never touches the hostage band (asserted clamp)", () => {
-  it("clampTargetOffsetG6 forces x left of the disjoint cap, y untouched", () => {
-    const cap = HOSTAGE_DX_MIN - RING_HIT_RADIUS - 0.1; // −0.40
-    const clamped = clampTargetOffsetG6({ x: 0.5, y: -5 });
-    expect(clamped.x).toBe(cap);
-    expect(clamped.y).toBe(-5); // the low leg survives — y is never lifted
-    // An already-clear offset (x ≤ cap) passes through unchanged, low y and all.
-    expect(clampTargetOffsetG6({ x: -0.6, y: -0.5 })).toEqual({ x: -0.6, y: -0.5 });
+describe("G6 — box-disjoint: the ring circle never touches the hostage AABB (asserted clamp)", () => {
+  // The dilated hostage box (forbidden region for the ring CENTRE).
+  const fxMin = HOSTAGE_DX_MIN - G6_PAD; // −0.40
+  const fyMax = HOSTAGE_DY_MAX + G6_PAD; //  0.55
+
+  it("G6_PAD is RING_HIT_RADIUS + G6_MARGIN", () => {
+    expect(G6_PAD).toBeCloseTo(RING_HIT_RADIUS + G6_MARGIN);
+    expect(G6_PAD).toBeCloseTo(0.4);
   });
 
-  it("dense sweep of the FULL roam box: the ring circle stays clear of the hostage band for ANY dy", () => {
-    // Roam box: dx [−1.20,−0.45], dy [−0.50,+1.10] — INCLUDING the low leg (small dy). Plus a
-    // strip past the authored box on the right to exercise the clamp net itself.
+  it("a centre inside the forbidden box is pushed LEFT off his flank when that is cheaper", () => {
+    // {0, −0.5}: closer to the left edge (cost 0.40) than the top edge (cost 1.05) → push left.
+    const clamped = clampTargetOffsetG6({ x: 0, y: -0.5 });
+    expect(clamped.x).toBeCloseTo(fxMin);
+    expect(clamped.y).toBe(-0.5); // y untouched on a left push
+  });
+
+  it("a centre inside the forbidden box is pushed UP above her head when that is cheaper", () => {
+    // {0.5, 0.5}: closer to the top edge (cost 0.05) than the left edge (cost 0.90) → push up.
+    const clamped = clampTargetOffsetG6({ x: 0.5, y: 0.5 });
+    expect(clamped.y).toBeCloseTo(fyMax);
+    expect(clamped.x).toBe(0.5); // x untouched on an up push
+  });
+
+  it("the centre-top strip is head-reachable: clampTargetOffsetG6({x:0,y:0.8}) is UNCLAMPED", () => {
+    // The head kill zone sits ABOVE the forbidden box (y > fyMax) → passes through untouched.
+    expect(clampTargetOffsetG6({ x: 0, y: 0.8 })).toEqual({ x: 0, y: 0.8 });
+    // An already-clear offset off his left flank (x < fxMin) also passes through.
+    expect(clampTargetOffsetG6({ x: -0.6, y: 0.6 })).toEqual({ x: -0.6, y: 0.6 });
+  });
+
+  it("is idempotent — clamping a clamped centre is a no-op", () => {
+    for (const p of [
+      { x: 0, y: -0.5 },
+      { x: 0.5, y: 0.5 },
+      { x: 0.9, y: 0.1 },
+    ]) {
+      const once = clampTargetOffsetG6(p);
+      expect(clampTargetOffsetG6(once)).toEqual(once);
+    }
+  });
+
+  it("dense raw-offset grid: the clamped ring circle stays clear of the hostage AABB (gap ≥ margin)", () => {
+    // A dense grid well beyond the roam box exercises the clamp net on every side.
     let minDist = Infinity;
-    for (let x = -1.2; x <= 0.5 + 1e-9; x += 0.02) {
-      for (let y = -0.5; y <= 1.1 + 1e-9; y += 0.02) {
+    for (let x = -1.5; x <= 1.5 + 1e-9; x += 0.01) {
+      for (let y = -1.8; y <= 1.4 + 1e-9; y += 0.01) {
         const c = clampTargetOffsetG6({ x, y });
-        // Closest point of the hostage rectangle to the (clamped) ring centre.
         const cx = Math.min(Math.max(c.x, HOSTAGE_DX_MIN), HOSTAGE_DX_MAX);
         const cy = Math.min(Math.max(c.y, HOSTAGE_DY_MIN), HOSTAGE_DY_MAX);
         minDist = Math.min(minDist, Math.hypot(c.x - cx, c.y - cy));
       }
     }
-    // The circle of radius RING_HIT_RADIUS around the centre never reaches the band.
+    // The circle of radius RING_HIT_RADIUS never reaches the band, with the G6_MARGIN gap.
+    expect(minDist).toBeGreaterThan(RING_HIT_RADIUS);
+    expect(minDist).toBeGreaterThanOrEqual(RING_HIT_RADIUS + G6_MARGIN - 1e-9);
+  });
+
+  it("dense sweep of the FULL new roam box: clamped wander centres stay clear of the hostage AABB", () => {
+    // Roam box: dx [−0.98,+0.58], dy [+0.20,+1.00]. The over-hostage wedge is clamped out.
+    let minDist = Infinity;
+    for (let x = -0.98; x <= 0.58 + 1e-9; x += 0.01) {
+      for (let y = 0.2; y <= 1.0 + 1e-9; y += 0.01) {
+        const c = clampTargetOffsetG6({ x, y });
+        const cx = Math.min(Math.max(c.x, HOSTAGE_DX_MIN), HOSTAGE_DX_MAX);
+        const cy = Math.min(Math.max(c.y, HOSTAGE_DY_MIN), HOSTAGE_DY_MAX);
+        minDist = Math.min(minDist, Math.hypot(c.x - cx, c.y - cy));
+      }
+    }
     expect(minDist).toBeGreaterThan(RING_HIT_RADIUS);
   });
 });
@@ -313,8 +373,11 @@ describe("targetOffset & ringZone — rest OFF when covered, wander/classify whe
     );
     expect(r.qte.stance).toBe("PEEKING");
     expect(r.qte.ringZone).toBe(ringZoneAt(r.qte.targetOffset));
-    // Clear of the hostage band on X for any y (G6).
-    expect(r.qte.targetOffset.x + RING_HIT_RADIUS).toBeLessThan(HOSTAGE_DX_MIN);
+    // The ring circle stays clear of the hostage AABB (box-disjoint G6).
+    const c = r.qte.targetOffset;
+    const cx = Math.min(Math.max(c.x, HOSTAGE_DX_MIN), HOSTAGE_DX_MAX);
+    const cy = Math.min(Math.max(c.y, HOSTAGE_DY_MIN), HOSTAGE_DY_MAX);
+    expect(Math.hypot(c.x - cx, c.y - cy)).toBeGreaterThan(RING_HIT_RADIUS);
   });
 });
 

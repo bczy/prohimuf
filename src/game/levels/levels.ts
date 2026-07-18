@@ -108,8 +108,9 @@ export const LEVELS: readonly LevelConfig[] = [
       // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
       captorHp: 3,
       // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
-      // K-5 PIN: with peekDuration 1.5 / LEG_DURATION 0.38 this seed presents ≥1 on-captor
-      // (vital∪limb) decelerating window in EVERY one of the 4 peeks (per-peek counts 3/1/3/3).
+      // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
+      // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
+      // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
       targetSeed: 20260718,
     },
   },
