@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { CSSProperties, JSX } from "react";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { GestureIcon } from "./GestureIcon";
+import { DiagramIcon } from "./DiagramIcon";
 import { PaperSheet, HalftoneHero, STOCK, INK, MARK, MASTHEAD } from "@render/ui/print";
 
 interface Props {
@@ -279,6 +280,23 @@ export function NarrativeScreen({
             ) : (
               <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
                 <GestureIcon kind={currentLine.gesture} />
+              </div>
+            ))}
+
+          {/* Optional code-drawn animated MECHANIC diagram (sibling of `gesture`): teaches a game
+              rule that has no shipped sprite (e.g. the hostage-QTE colour ring). Same slot, same
+              mutual-exclusivity as the other channels (only rendered when neither `image` nor
+              `gesture` is set). Labelled slot when `diagramAlt` is present, else `aria-hidden`. */}
+          {currentLine?.diagram !== undefined &&
+            currentLine.image === undefined &&
+            currentLine.gesture === undefined &&
+            ((currentLine.diagramAlt ?? "") !== "" ? (
+              <div role="img" aria-label={currentLine.diagramAlt} style={ILLUSTRATION_SLOT_STYLE}>
+                <DiagramIcon kind={currentLine.diagram} />
+              </div>
+            ) : (
+              <div aria-hidden={true} style={ILLUSTRATION_SLOT_STYLE}>
+                <DiagramIcon kind={currentLine.diagram} />
               </div>
             ))}
 

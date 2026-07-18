@@ -7,6 +7,17 @@
  */
 export type GestureKind = "mouse-click" | "edge-scroll" | "two-finger-tap" | "swipe-pan";
 
+/**
+ * Intent token for a code-drawn animated MECHANIC diagram (distinct from the control
+ * `GestureKind`: a diagram teaches a game rule, not a device input, so it is NOT
+ * device-forked). Pure data: each value maps 1:1 to a render-side illustration in
+ * `src/render/ui/DiagramIcon.tsx`; the game layer only NAMES it, never draws. `hostage-ring`
+ * = the spatial-colour reticle of the hostage QTE (the ring sweeps the captor and changes
+ * colour by the anatomy under it — vital/limb/off); the render lane draws it in the exact
+ * `hostageCue` hues so the tutorial teaches the true in-game colours.
+ */
+export type DiagramKind = "hostage-ring";
+
 export interface NarrativeLine {
   readonly speaker: string; // character name
   readonly text: string;
@@ -36,6 +47,18 @@ export interface NarrativeLine {
    * the render lane as `gestureAlt ?? ""`. Only meaningful alongside `gesture`.
    */
   readonly gestureAlt?: string;
+  /**
+   * Optional code-drawn animated MECHANIC diagram shown in the SAME slot as `image`/`gesture`.
+   * MUTUALLY EXCLUSIVE with them — a panel sets at most one illustration channel. The render
+   * layer draws the matching animated SVG; no sprite is referenced (no asset generation). Used
+   * to teach a rule that has no shipped sprite (e.g. the hostage-QTE colour ring).
+   */
+  readonly diagram?: DiagramKind;
+  /**
+   * Accessible French label for `diagram`, parallel to `gestureAlt`. Consumed by the render
+   * lane as `diagramAlt ?? ""`. Only meaningful alongside `diagram`.
+   */
+  readonly diagramAlt?: string;
 }
 
 export interface NarrativeScene {
@@ -148,6 +171,13 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     // shipped rider flipbook frame 1).
     image: MUF_RIDER_IMAGE,
     imageAlt: "Le livreur civil dans la rue",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Parfois, un preneur d'otage se planque derrière sa prise. Un anneau balaie son corps et vire de couleur : ROUGE à côté, JAUNE sur un membre, VERT sur la tête. Aligne ta cible sur l'anneau et tire quand il passe au VERT.",
+    diagram: "hostage-ring",
+    diagramAlt:
+      "Un anneau de visée balaie le preneur d'otage et cycle du rouge (à côté de lui) au jaune (un bras, une jambe) au vert (la tête) ; on tire quand il est vert.",
   },
   {
     speaker: "DISPATCH",
