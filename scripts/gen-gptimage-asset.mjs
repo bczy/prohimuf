@@ -34,13 +34,17 @@ if (!PROMPT || !OUT) {
   process.exit(2);
 }
 const TOKEN = fs
-  .readFileSync("/tmp/claude-0/-home-user-prohimuf/496e8a6c-5e8b-5774-8095-5d6c7e7af504/scratchpad/.pollinations_token", "utf8")
+  .readFileSync(
+    "/tmp/claude-0/-home-user-prohimuf/496e8a6c-5e8b-5774-8095-5d6c7e7af504/scratchpad/.pollinations_token",
+    "utf8",
+  )
   .trim();
 
 // House "clean comic" treatment tail + flat magenta chroma ground + hard no-text
 // + no ground shadow (killed at source, avoids a post-matte).
-const STYLE =
+const FIGURE_TAIL =
   ", clean bold comic book ink illustration, three-tone cel shading grey black and white, thick clean black outline, flat evenly filled shapes, full body figure fully visible and centered, floating isolated on a perfectly flat solid uniform bright magenta #FF3CDC background, empty flat magenta backdrop, no ground, no floor, no cast shadow, no drop shadow, no text, no letters, no logo, no writing, no signature, blank plain clothing with no markings";
+const STYLE = args.tail ? ", " + args.tail : FIGURE_TAIL;
 
 function genUrl(prompt, seed) {
   return (
@@ -52,7 +56,9 @@ function fetchImg(url, redir = 0) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { Authorization: `Bearer ${TOKEN}` } }, (res) => {
       if ([301, 302].includes(res.statusCode) && res.headers.location && redir < 5) {
-        fetchImg(new URL(res.headers.location, url).toString(), redir + 1).then(resolve).catch(reject);
+        fetchImg(new URL(res.headers.location, url).toString(), redir + 1)
+          .then(resolve)
+          .catch(reject);
         return;
       }
       if (res.statusCode !== 200) {
@@ -95,7 +101,12 @@ function keyAndDown(buf) {
       cg = 0,
       cb = 0,
       n = 0;
-    for (const [x0, y0] of [[0, 0], [W - 10, 0], [0, H - 10], [W - 10, H - 10]])
+    for (const [x0, y0] of [
+      [0, 0],
+      [W - 10, 0],
+      [0, H - 10],
+      [W - 10, H - 10],
+    ])
       for (let a = 0; a < 10; a++)
         for (let b = 0; b < 10; b++) {
           const i = ((y0 + b) * W + (x0 + a)) * 4;
