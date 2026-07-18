@@ -1,0 +1,91 @@
+name: Cleanup branch preview
+
+# Removes preview/<slug>/ from gh-pages once a branch preview is obsolete —
+# the counterpart of deploy-preview.yml, so previews stop accumulating forever:
+#
+#   - delete:        the branch itself was deleted (incl. auto-delete on merge)
+#   - pull_request:  the branch's PR was merged (covers branches kept after merge)
+#   - workflow_dispatch: manual cleanup of one branch's preview (retroactive
+#     pruning of previews orphaned before this workflow existed)
+#
+# NOTE: delete / pull_request-closed events only run the workflow version on
+# the default branch, so this file is inert until it lands on main.
+
+on:
+  delete:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch whose preview/<slug>/ should be removed from gh-pages"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# Same concurrency group as deploy-preview.yml for the same branch
+# (deploy-preview-refs/heads/<branch>), so a cleanup queues behind an in-flight
+# deploy of that ref instead of interleaving with it. cancel-in-progress stays
+# false: a cleanup must never kill a deploy it should simply outlast.
+concurrency:
+  group: deploy-preview-refs/heads/${{ github.event.ref || github.event.pull_request.head.ref || inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Remove branch preview from gh-pages
+    runs-on: ubuntu-latest
+    # Tag deletions have no preview; an unmerged-closed PR keeps its preview
+    # (the branch still exists — the delete event will clean up later).
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    steps:
+      # Only needed for the local composite action below.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sanitize branch name
+        id: slug
+        # Pass the branch through env, not ${{ }} interpolation into the run
+        # block, so a crafted branch name cannot inject (same rule as
+        # deploy-preview.yml). Delete events carry it in event.ref, merged PRs
+        # in the head ref, manual runs in the input.
+        env:
+          BRANCH_NAME: ${{ github.event.ref || github.event.pull_request.head.ref || inputs.branch }}
+        run: |
+          # Same allowlist sanitize as deploy-preview.yml, so the slug always
+          # matches what the deploy published.
+          slug=$(printf '%s' "$BRANCH_NAME" | tr -c 'a-zA-Z0-9._\n-' '-')
+          if [ -z "$slug" ]; then
+            echo "::error::empty branch name — refusing (destination would be preview/ itself)"
+            exit 1
+          fi
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Create empty publish dir
+        run: mkdir -p "$RUNNER_TEMP/empty-preview"
+
+      # gh-pages-publish clean-replaces destination_dir with publish_dir and
+      # git tracks no empty directories — so publishing an EMPTY dir deletes
+      # the preview/<slug> subtree, reusing the exact rebase-retry loop the
+      # deploys use (no race with concurrent publishes). Exits 0 as a no-op
+      # when the preview was never deployed or is already gone.
+      - name: Remove preview/<slug> from gh-pages
+        uses: ./.github/actions/gh-pages-publish
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ runner.temp }}/empty-preview
+          destination_dir: preview/${{ steps.slug.outputs.slug }}
+          commit_message: "preview: remove ${{ steps.slug.outputs.slug }} (${{ github.event_name }})"
+
+      - name: Summary
+        env:
+          PREVIEW_SLUG: ${{ steps.slug.outputs.slug }}
+        run: |
+          echo "### 🧹 Preview removed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`preview/$PREVIEW_SLUG/\` removed from gh-pages (no-op if never deployed)." >> "$GITHUB_STEP_SUMMARY"
