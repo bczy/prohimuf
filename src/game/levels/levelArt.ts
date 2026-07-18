@@ -298,7 +298,7 @@ export function tileZones(zones: readonly WindowZone[], panels: number = PANELS)
 
 /** Per-panel window zones derived from each facade panel's art (see
  *  scripts/gen-window-zones.mjs), keyed by level id. */
-const GENERATED_ZONES = generatedZones as Readonly<
+const GENERATED_ZONES = generatedZones as unknown as Readonly<
   Record<string, readonly (readonly WindowZone[])[]>
 >;
 
@@ -388,17 +388,30 @@ export interface BackdropLayout {
   readonly tiles: readonly BackdropTile[];
 }
 
-/** Compose a troncon-sequence backdrop: variable-width tiles butted left→right,
- *  centred on the origin, each carrying its own (per-tronçon or fallback) zones. */
+/**
+ * World-unit gap of parallax sky left BETWEEN adjacent tronçons (ADR-0046).
+ * The tronçon PNGs fill their own frame edge-to-edge (their outer edges are
+ * building walls), so butting them abutted two different buildings' walls into
+ * a hard vertical seam. A gap restores the validated read — distinct buildings
+ * separated by a sliver of sky, through which the parallax sky (and the street
+ * band below) shows — instead of a fused seam. Applied only between tiles, never
+ * before the first or after the last.
+ */
+export const TRONCON_GAP = 1.8;
+
+/** Compose a troncon-sequence backdrop: variable-width tiles laid left→right
+ *  with a {@link TRONCON_GAP} sky gap between neighbours, centred on the origin,
+ *  each carrying its own (per-tronçon or fallback) zones. */
 function buildTronconLayout(id: string, tiles: readonly BackdropTileSpec[]): BackdropLayout {
-  const fullW = tiles.reduce((sum, t) => sum + WORLD_HEIGHT * t.aspect, 0);
+  const widthsSum = tiles.reduce((sum, t) => sum + WORLD_HEIGHT * t.aspect, 0);
+  const fullW = widthsSum + TRONCON_GAP * Math.max(0, tiles.length - 1);
   const fallbackZones = getWindowZones(id);
   const out: BackdropTile[] = [];
   let cursor = -fullW / 2;
   for (const tile of tiles) {
     const width = WORLD_HEIGHT * tile.aspect;
     const centreX = cursor + width / 2;
-    cursor += width;
+    cursor += width + TRONCON_GAP;
     const zones = GENERATED_TRONCON_ZONES[`${id}/${tile.file}`] ?? fallbackZones;
     out.push({ file: tile.file, width, centreX, zones });
   }

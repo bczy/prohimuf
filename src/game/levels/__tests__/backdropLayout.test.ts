@@ -3,6 +3,7 @@ import {
   FACADE_ASPECT,
   PANELS,
   WORLD_HEIGHT,
+  TRONCON_GAP,
   getBackdropLayout,
   getLevelPanelZones,
   getWindowZones,
@@ -72,7 +73,9 @@ describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
   // Manifest sequence: troncon-a, troncon-c, troncon-b, troncon-c.
   const ASPECTS = [1.4992, 1.75, 1.6262, 1.75];
   const WIDTHS = ASPECTS.map((a) => WORLD_HEIGHT * a);
-  const FULL_W = WIDTHS.reduce((s, w) => s + w, 0);
+  const WIDTHS_SUM = WIDTHS.reduce((s, w) => s + w, 0);
+  // fullW includes a TRONCON_GAP sky gap between each adjacent pair (n-1 gaps).
+  const FULL_W = WIDTHS_SUM + TRONCON_GAP * (WIDTHS.length - 1);
 
   it("emits 4 variable-width tiles with the declared file sequence", () => {
     const layout = getBackdropLayout("belliard");
@@ -86,10 +89,11 @@ describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
     expect(layout.tiles.map((t) => t.width)).toEqual(WIDTHS);
   });
 
-  it("sums tile widths to fullW ≈ 79.5048", () => {
+  it("sums tile widths + inter-tile gaps to fullW", () => {
     const layout = getBackdropLayout("belliard");
     expect(layout.fullW).toBeCloseTo(FULL_W, 12);
-    expect(layout.fullW).toBeCloseTo(79.5048, 6);
+    // widths 79.5048 + 3 gaps of TRONCON_GAP
+    expect(layout.fullW).toBeCloseTo(79.5048 + TRONCON_GAP * 3, 6);
   });
 
   it("places centreX cumulatively and symmetrically about the origin", () => {
@@ -105,14 +109,15 @@ describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
     expect(first.centreX - first.width / 2).toBeCloseTo(-FULL_W / 2, 12);
     expect(last.centreX + last.width / 2).toBeCloseTo(FULL_W / 2, 12);
 
-    // Tiles butt exactly: tile_i right edge == tile_{i+1} left edge.
+    // Tiles are separated by exactly one TRONCON_GAP of sky:
+    // tile_{i+1} left edge − tile_i right edge == TRONCON_GAP.
     for (let i = 0; i < tiles.length - 1; i++) {
       const cur = tiles[i];
       const next = tiles[i + 1];
       if (cur === undefined || next === undefined) continue;
       const rightEdge = cur.centreX + cur.width / 2;
       const leftEdge = next.centreX - next.width / 2;
-      expect(Math.abs(rightEdge - leftEdge)).toBeLessThanOrEqual(EPS);
+      expect(Math.abs(leftEdge - rightEdge - TRONCON_GAP)).toBeLessThanOrEqual(EPS);
     }
   });
 
