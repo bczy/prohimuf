@@ -121,14 +121,21 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
       mat.needsUpdate = true;
     };
 
-    loader.load(
-      levelLayerUrl(art.id, "sky"),
-      (t) => {
-        assignPlain(skyRef.current, t);
-      },
-      undefined,
-      () => undefined,
-    );
+    // Sky layer: single-facade loads its sky.png; tronçon mode leaves the sky
+    // layer EMPTY (no image) on purpose — the mesh + parallax are kept so an
+    // owner-supplied sky can be dropped in later, but nothing is drawn now, so
+    // the between-building gaps and the area above the rooflines show through to
+    // the canvas background (ADR-0046).
+    if (!isTroncon) {
+      loader.load(
+        levelLayerUrl(art.id, "sky"),
+        (t) => {
+          assignPlain(skyRef.current, t);
+        },
+        undefined,
+        () => undefined,
+      );
+    }
 
     panes.forEach((pane, i) => {
       loader.load(
@@ -172,9 +179,10 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
 
   return (
     <>
-      {/* Sky — one wide plane, farthest, drifts slowest. Shows through the
-          tronçon rooflines / sky slivers (real transparency, no crossfade). */}
-      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]}>
+      {/* Sky — one wide plane, farthest, drifts slowest. Single-facade shows its
+          sky.png; tronçon mode keeps this layer but draws NOTHING (empty, owner
+          fills it later), so the gaps and above-roofline show the canvas behind. */}
+      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]} visible={!isTroncon}>
         <planeGeometry args={[fullW * 1.3, facadeH * 1.4]} />
         <meshBasicMaterial color={FALLBACK.sky} />
       </mesh>
