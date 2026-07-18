@@ -7,6 +7,7 @@ import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
+import { getAccompliceTexture } from "./accompliceTextures";
 import {
   blownPeeksProximity,
   captorHpPipLit,
@@ -93,6 +94,43 @@ const PIP_DY = 1.18; // above his head (captor half-height ≈ QTE_H / 2 = 1.0)
 const PIP_Z = 0.56;
 const PIP_COLOUR = "#f7f7f7"; // bone white — a neutral vitality read, not a zone hue
 
+// ── The accomplice: the SECOND armed figure (F4 / ADR-0036) ──────────────────
+// Drawn iff `qte.accomplice !== null` while ACTIVE, spatially DISTINCT from the
+// captor (screen-LEFT via ACCOMPLICE_OFFSET) so the player never confuses the
+// shootable captor (ring target) with this UNSHOOTABLE second gun. Same square
+// plane as the captor; its pose swaps between a gun-lowered IDLE and a gun-raised
+// AIM on the game's `accomplice.telegraphActive` wind-up (the fallback cop
+// carries the muzzle-raise via its shooting frame). The accomplice carries NO
+// ring — it is not a kill target. The render READS the accomplice's presence /
+// wind-up from game state only; its world placement is a render constant (the
+// game layer carries no accomplice position — boundary law preserved).
+const ACCOMPLICE_W = 2.0;
+const ACCOMPLICE_H = 2.0;
+const ACCOMPLICE_Z = 0.5;
+// Anchor-relative placement — screen-LEFT, well clear of the ring's roam (the
+// ring reaches ≈ anchor −0.98 in x) and of the front-right hostage. If a stage-5
+// framing check finds it off-frame at the QTE zoom, pull x toward the captor
+// (e.g. −2.0) — a constant tweak that touches no game logic (K-1 analogue).
+const ACCOMPLICE_OFFSET = { x: -2.4, y: 0.0 };
+// Muzzle flash: a brief bright bloom at the raised gun when a shot lands. Parked
+// toward the duel side of the figure (screen-right of the accomplice), at gun
+// height. The −8 energy drain itself reads through the EXISTING energyFloater
+// wired in useGameLoop from energyDelta; this is only the on-figure report.
+const ACCOMPLICE_MUZZLE_DX = 0.55;
+const ACCOMPLICE_MUZZLE_DY = 0.08;
+const ACCOMPLICE_MUZZLE_SIZE = 0.5;
+const ACCOMPLICE_MUZZLE_Z = 0.57;
+const ACCOMPLICE_MUZZLE_COLOUR = "#fff2b0"; // warm muzzle bloom — never ring green/yellow
+// How long the muzzle flash stays lit after a shot lands (ms). A single brief
+// bloom per shot, never a repeating strobe ⇒ reduced-motion-safe by construction.
+const ACCOMPLICE_FLASH_MS = 140;
+const ACCOMPLICE_FLASH_OPACITY = 0.9;
+// Reinforcing tint: a cold steel read while idle, warming to a warning as the gun
+// raises. Deliberately NOT the ring palette (green/yellow) so the accomplice is
+// never mistaken for a kill target (exact hue: lead-art).
+const ACCOMPLICE_TINT_IDLE = "#9fb8cc";
+const ACCOMPLICE_TINT_AIM = "#ff6a4d";
+
 type CaptorTexKey = "covered" | "peeking";
 
 /**
@@ -127,9 +165,11 @@ function hudSliceKey(slice: HudHostageQte | null): string {
 /**
  * The hostage-taker QTE tableau (the static duel): the captor standing STILL,
  * holding the hostage as a living shield, drawn at the FIXED `qte.anchor` the
- * camera zooms onto and holds. Three pooled meshes (world space, same axes as
- * bullets / crosshair): the captor, the hostage shield, and the peek cue
- * (wind-up tell + open-window marker). The captor and hostage are positioned ONCE
+ * camera zooms onto and holds. Pooled meshes (world space, same axes as
+ * bullets / crosshair): the captor, the hostage shield, the peek cue (wind-up
+ * tell + open-window marker), and — on peak-difficulty levels that authored one
+ * (`qte.accomplice !== null`, F4 / ADR-0036) — the second armed figure and its
+ * muzzle flash. The captor and hostage are positioned ONCE
  * from the static anchor on activation (no per-tick moving-anchor writes); the peek
  * ring instead FOLLOWS the live `qte.targetOffset` each frame (the wandering
  * head-zone centre) alongside its tint/opacity pulse. Visible only while the
@@ -148,6 +188,14 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
   const captorRef = useRef<Mesh>(null);
   const hostageRef = useRef<Mesh>(null);
   const peekCueRef = useRef<Mesh>(null);
+  const accompliceRef = useRef<Mesh>(null);
+  const muzzleRef = useRef<Mesh>(null);
+  // Falling-edge detector for the accomplice wind-up: `telegraphActive` goes
+  // true→false exactly when a shot fires (the cooldown resets to a full
+  // interval), so that transition is the render-side "shot landed" signal
+  // (presentation only — no game rule). Drives the brief muzzle flash.
+  const accompliceTellRef = useRef(false);
+  const muzzleFlashUntilRef = useRef(0);
   // Fixed pool of captor-HP pips (diegetic HP read); populated by the JSX ref cbs.
   const pipRefs = useRef<(Mesh | null)[]>([]);
   const lastKeyRef = useRef<string>("none");
@@ -178,7 +226,16 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     const captor = captorRef.current;
     const hostage = hostageRef.current;
     const peekCue = peekCueRef.current;
-    if (captor === null || hostage === null || peekCue === null) return;
+    const accomplice = accompliceRef.current;
+    const muzzle = muzzleRef.current;
+    if (
+      captor === null ||
+      hostage === null ||
+      peekCue === null ||
+      accomplice === null ||
+      muzzle === null
+    )
+      return;
 
     const nowMs = performance.now();
     const qte = stateRef.current.qte;
@@ -198,6 +255,10 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       captor.visible = false;
       hostage.visible = false;
       peekCue.visible = false;
+      accomplice.visible = false;
+      muzzle.visible = false;
+      accompliceTellRef.current = false;
+      muzzleFlashUntilRef.current = 0;
       for (const pip of pipRefs.current) {
         if (pip !== null) pip.visible = false;
       }
@@ -226,6 +287,24 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         pip.scale.set(PIP_SIZE, PIP_SIZE, 1);
         (pip.material as MeshBasicMaterial).color.set(PIP_COLOUR);
       }
+      // The accomplice (if this level authored one) stands screen-LEFT of the
+      // captor — placed ONCE like the captor (it never moves); only its pose /
+      // tint and the muzzle flash change per frame. The muzzle quad is parked at
+      // the raised gun. Placement is unconditional (harmless when there is no
+      // accomplice: the mesh stays `visible = false` every frame below).
+      accomplice.position.set(
+        qte.anchor.x + ACCOMPLICE_OFFSET.x,
+        qte.anchor.y + ACCOMPLICE_OFFSET.y,
+        ACCOMPLICE_Z,
+      );
+      accomplice.scale.set(ACCOMPLICE_W, ACCOMPLICE_H, 1);
+      muzzle.position.set(
+        qte.anchor.x + ACCOMPLICE_OFFSET.x + ACCOMPLICE_MUZZLE_DX,
+        qte.anchor.y + ACCOMPLICE_OFFSET.y + ACCOMPLICE_MUZZLE_DY,
+        ACCOMPLICE_MUZZLE_Z,
+      );
+      muzzle.scale.set(ACCOMPLICE_MUZZLE_SIZE, ACCOMPLICE_MUZZLE_SIZE, 1);
+      (muzzle.material as MeshBasicMaterial).color.set(ACCOMPLICE_MUZZLE_COLOUR);
       positionedRef.current = true;
     }
 
@@ -315,6 +394,52 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       );
     }
 
+    // ── Accomplice (the SECOND gun; F4 / ADR-0036) ────────────────────────────
+    // Present iff this level authored one (`qte.accomplice !== null` — the
+    // null-guard IS the byte-identity with pre-F4 levels). Drawn only through
+    // ACTIVE: like the captor tableau it belongs to the live duel, gone on the
+    // WON/LOST result holds. Its pose swaps to the gun-raised AIM during the
+    // game's `telegraphActive` wind-up (a readable danger held ≥ ACCOMPLICE_TELL
+    // seconds by the game), so the shot is seen coming before it lands (P3).
+    const acc = qte.accomplice;
+    const accompliceOn = acc !== null && qte.phase === "ACTIVE";
+    accomplice.visible = accompliceOn;
+    if (accompliceOn) {
+      const aiming = acc.telegraphActive;
+      const accTex = getAccompliceTexture(aiming);
+      const accMat = accomplice.material as MeshBasicMaterial;
+      if (accTex !== null && accMat.map !== accTex) {
+        accMat.map = accTex;
+        accMat.needsUpdate = true;
+      }
+      // Cold steel idle, warming to a warning as the gun raises — NEVER the ring
+      // palette (green/yellow), so the accomplice never reads as a kill target.
+      accMat.color.set(aiming ? ACCOMPLICE_TINT_AIM : ACCOMPLICE_TINT_IDLE);
+      // Falling edge of the wind-up (`telegraphActive` true→false) = a shot just
+      // landed (the game reset the cooldown to a full interval). Light the flash;
+      // the −8 drain itself reads through the energyFloater in useGameLoop.
+      if (accompliceTellRef.current && !aiming) {
+        muzzleFlashUntilRef.current = nowMs + ACCOMPLICE_FLASH_MS;
+      }
+      accompliceTellRef.current = aiming;
+    } else {
+      accompliceTellRef.current = false;
+      muzzleFlashUntilRef.current = 0;
+    }
+
+    // Muzzle flash — one brief bloom after each shot (never a repeating strobe ⇒
+    // reduced-motion-safe): it fades over ACCOMPLICE_FLASH_MS under motion and
+    // holds steady for the same brief window under reduced motion.
+    const flashRemaining = muzzleFlashUntilRef.current - nowMs;
+    const flashing = accompliceOn && flashRemaining > 0;
+    muzzle.visible = flashing;
+    if (flashing) {
+      const k = flashRemaining / ACCOMPLICE_FLASH_MS; // 1 → 0 over the window
+      (muzzle.material as MeshBasicMaterial).opacity = reducedMotion
+        ? ACCOMPLICE_FLASH_OPACITY
+        : ACCOMPLICE_FLASH_OPACITY * k;
+    }
+
     // ── Captor HP pips (diegetic, no HUD bar) ─────────────────────────────────
     // Light one pip per remaining HP; they deplete as the captor is chipped. Only
     // during ACTIVE — on WON he is dead (HP 0) / the verdict reads, on LOST the
@@ -342,6 +467,17 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       </mesh>
       <mesh ref={peekCueRef} renderOrder={8} visible={false}>
         <ringGeometry args={[CUE_RING_INNER, CUE_RING_OUTER, CUE_RING_SEGMENTS]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      {/* The accomplice (second gun, F4 / ADR-0036) — renderOrder 6 like the
+          captor (a street-actor figure); its muzzle flash (8) sits on top. Both
+          stay hidden unless this level authored `qte.accomplice`. */}
+      <mesh ref={accompliceRef} renderOrder={6} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      <mesh ref={muzzleRef} renderOrder={8} visible={false}>
+        <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       {/* Diegetic captor-HP pips (renderOrder 8, over the tableau). One per HP
