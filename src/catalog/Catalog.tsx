@@ -20,6 +20,7 @@ import { DeliveryIntegrityBanner } from "@render/ui/hud/DeliveryIntegrityBanner"
 import { HostageQteOverlay } from "@render/ui/hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "@render/ui/hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "@render/ui/hud/PhaseMessageBanner";
+import { Overlay, SelectableListItem } from "@render/ui/controls";
 
 /*
  * muf component catalog — the design-system's living doc (P2 step 2). A standalone,
@@ -347,6 +348,48 @@ export function Catalog(): JSX.Element {
           <PhaseMessageBanner phase="LEVEL_COMPLETE" />
         </Stage>
       </Section>
+
+      <Section title="Controls — menu primitives">
+        <Stage label="Overlay (fixed inset-0 flex-centre frame)">
+          <Overlay style={{ background: "rgba(215,210,198,0.9)" }}>
+            <div
+              style={{
+                border: `2px solid ${INK.black}`,
+                background: STOCK.shell,
+                padding: "12px 18px",
+                fontFamily: FONT.mono,
+                fontSize: "12px",
+              }}
+            >
+              centred child
+            </div>
+          </Overlay>
+        </Stage>
+
+        <Cell label="SelectableListItem (active / idle)">
+          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+            <SelectableListItem active={true} style={SELECTABLE_DEMO}>
+              NIVEAUX
+            </SelectableListItem>
+            <SelectableListItem active={false} style={SELECTABLE_DEMO}>
+              SCORES
+            </SelectableListItem>
+          </div>
+        </Cell>
+      </Section>
     </main>
   );
 }
+
+// Demo-only styling for the SelectableListItem specimens (each real surface supplies
+// its own tab/édition/ballot class; the primitive itself carries no visual).
+const SELECTABLE_DEMO: CSSProperties = {
+  padding: "8px 14px",
+  background: "transparent",
+  border: `1px solid ${INK.black}`,
+  color: INK.black,
+  fontFamily: FONT.mono,
+  fontSize: "13px",
+  letterSpacing: "0.2em",
+  cursor: "pointer",
+};

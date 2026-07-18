@@ -2,8 +2,10 @@ import { useState } from "react";
 import type { JSX } from "react";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { Stamp, MarkerCircle, TapeCorner, INK, FONT, MARK, MOTION } from "@render/ui/print";
+import { Stamp, MarkerCircle, TapeCorner, INK, MARK, MOTION } from "@render/ui/print";
+import { cx } from "../controls";
 import { difficultyMark } from "./derivations";
+import styles from "./LevelFlyer.module.css";
 
 /**
  * One rave flyer per level (NIVEAUX). Three artifact modes — playable, tutorial
@@ -73,9 +75,6 @@ const LOCKED_COPY = {
   helper: "la ligne ouvre quand la précédente est bouclée",
 } as const;
 
-const HEADLINE_FONT = FONT.display;
-const BODY_FONT = FONT.mono;
-
 interface LevelFlyerProps {
   level: LevelConfig;
   unlocked: boolean;
@@ -92,11 +91,7 @@ interface LevelFlyerProps {
 }
 
 function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
-  return (
-    <div style={{ fontFamily: BODY_FONT, fontSize: "11px", color: INK.black, lineHeight: 1.5 }}>
-      {children}
-    </div>
-  );
+  return <div className={styles.infoRow}>{children}</div>;
 }
 
 export function LevelFlyer({
@@ -124,22 +119,15 @@ export function LevelFlyer({
   const rotation = pulled || !unlocked ? 0 : restRotationDeg;
   const translateX = pulled ? 0 : jitterPx;
 
-  const outer: React.CSSProperties = {
-    position: "relative",
+  // Runtime-driven only; static box/typography live in styles.flyer.
+  const dynamic: React.CSSProperties = {
     background: stock,
-    color: INK.black,
-    padding: "16px 18px",
-    // Extra vertical gap so the tilted flyers' corners never crowd/overlap the
-    // neighbour's edge in the pile (lead-art Gate 4 note).
-    marginBottom: "22px",
-    minHeight: "72px",
-    outline: "none",
     cursor: unlocked ? "pointer" : "default",
     transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -4 : 0)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
-    transformOrigin: "center",
     transition: `transform ${String(MOTION.flyerPull)}ms ease-out`,
-    boxShadow: "none",
     animation: shaking ? `mufLockedShake ${String(MOTION.lockedShakeMs)}ms ease-in-out` : undefined,
+    opacity: unlocked ? 1 : 0.85,
+    filter: unlocked ? "none" : "grayscale(1)",
   };
 
   return (
@@ -158,52 +146,20 @@ export function LevelFlyer({
         onMouseLeave={() => {
           setHovered(false);
         }}
-        style={{
-          ...outer,
-          opacity: unlocked ? 1 : 0.85,
-          filter: unlocked ? "none" : "grayscale(1)",
-        }}
-        className="muf-anim"
+        style={dynamic}
+        className={cx("muf-anim", styles.flyer)}
       >
         {pulled && unlocked && <TapeCorner />}
 
         {isTutorial ? (
           <>
             <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
-            <div
-              style={{
-                fontFamily: HEADLINE_FONT,
-                fontSize: "26px",
-                letterSpacing: "0.04em",
-                marginTop: "6px",
-              }}
-            >
-              {level.name}
-            </div>
-            <div
-              style={{
-                fontFamily: FONT.hand,
-                fontStyle: "italic",
-                fontSize: "13px",
-                margin: "6px 0",
-              }}
-            >
-              {TUTORIAL_COPY.handNote}
-            </div>
+            <div className={styles.tutorialName}>{level.name}</div>
+            <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
             <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
             <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
-            <div
-              style={{
-                fontFamily: BODY_FONT,
-                fontSize: "11px",
-                color: INK.black,
-                textDecoration: "line-through",
-                marginTop: "2px",
-              }}
-            >
-              {TUTORIAL_COPY.noLine}
-            </div>
-            <div style={{ marginTop: "8px" }}>
+            <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
+            <div className={styles.markTop}>
               <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
             </div>
           </>
@@ -240,48 +196,29 @@ function PlayableBody({
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div className={styles.playableHead}>
         <div>
-          <div style={{ fontFamily: HEADLINE_FONT, fontSize: "20px", letterSpacing: "0.06em" }}>
-            {copy?.crew ?? level.district}
-          </div>
-          <div
-            style={{
-              fontFamily: HEADLINE_FONT,
-              fontSize: "26px",
-              letterSpacing: "0.03em",
-              marginTop: "2px",
-            }}
-          >
-            {level.name}
-          </div>
+          <div className={styles.crew}>{copy?.crew ?? level.district}</div>
+          <div className={styles.name}>{level.name}</div>
         </div>
         {best !== undefined && (
           <MarkerCircle active ink={MARK.green}>
-            <div style={{ fontFamily: BODY_FONT, textAlign: "center", padding: "2px 6px" }}>
-              <div style={{ fontSize: "9px", color: INK.black }}>RECORD</div>
-              <div style={{ fontSize: "18px", color: INK.black }}>{best}</div>
+            <div className={styles.record}>
+              <div className={styles.recordLabel}>RECORD</div>
+              <div className={styles.recordValue}>{best}</div>
             </div>
           </MarkerCircle>
         )}
       </div>
 
-      <div style={{ display: "flex", gap: "10px", alignItems: "center", margin: "8px 0" }}>
+      <div className={styles.diffRow}>
         <Stamp label={mark.label} ink={mark.ink} shape="box" />
-        {copy !== undefined && (
-          <span style={{ fontFamily: BODY_FONT, fontSize: "12px", fontWeight: 700 }}>
-            {copy.ambiance}
-          </span>
-        )}
+        {copy !== undefined && <span className={styles.ambiance}>{copy.ambiance}</span>}
       </div>
 
       {copy !== undefined && (
         <>
-          <div
-            style={{ fontFamily: BODY_FONT, fontSize: "12px", fontWeight: 700, margin: "4px 0" }}
-          >
-            {copy.slogan}
-          </div>
+          <div className={styles.slogan}>{copy.slogan}</div>
           <InfoRow>{copy.dateLine}</InfoRow>
           <InfoRow>{copy.zoneLine}</InfoRow>
           <InfoRow>{copy.rvLine}</InfoRow>
@@ -289,15 +226,7 @@ function PlayableBody({
         </>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          marginTop: "8px",
-          fontFamily: BODY_FONT,
-          fontSize: "11px",
-        }}
-      >
+      <div className={styles.stats}>
         <span>⏱ {level.timeSeconds} s</span>
         <span>{level.enemiesToWin} cibles</span>
       </div>
@@ -311,31 +240,18 @@ function LockedBody({ level }: { level: LevelConfig }): JSX.Element {
   return (
     <>
       {/* Crew name stays legible; the rest is the tear (deck §2.5). */}
-      <div style={{ fontFamily: HEADLINE_FONT, fontSize: "20px", letterSpacing: "0.06em" }}>
-        {copy?.crew ?? level.district}
-      </div>
-      <div
-        style={{
-          fontFamily: HEADLINE_FONT,
-          fontSize: "24px",
-          letterSpacing: "0.03em",
-          marginTop: "2px",
-        }}
-      >
-        {level.name}
-      </div>
-      <div style={{ margin: "8px 0" }}>
+      <div className={styles.crew}>{copy?.crew ?? level.district}</div>
+      <div className={styles.nameLocked}>{level.name}</div>
+      <div className={styles.stampBlock}>
         <Stamp label={LOCKED_COPY.badge} ink={INK.black} shape="diagonal" struck />
       </div>
       <InfoRow>{LOCKED_COPY.dateLine}</InfoRow>
       <InfoRow>{LOCKED_COPY.rvLine}</InfoRow>
       <InfoRow>☎ {LOCKED_COPY.infoLine}</InfoRow>
-      <div style={{ marginTop: "8px" }}>
+      <div className={styles.markTop}>
         <Stamp label={LOCKED_COPY.overlay} ink={INK.full} shape="diagonal" />
       </div>
-      <div style={{ fontFamily: BODY_FONT, fontSize: "10px", color: INK.black, marginTop: "6px" }}>
-        {LOCKED_COPY.helper}
-      </div>
+      <div className={styles.helper}>{LOCKED_COPY.helper}</div>
     </>
   );
 }

@@ -11,7 +11,11 @@ inputs:
     description: "GITHUB_TOKEN with contents:write on this repo."
     required: true
   publish_dir:
-    description: "Directory whose contents are published."
+    description: >
+      Directory whose contents are published. CONTRACT: an EMPTY directory
+      with a non-empty destination_dir deletes that subtree from gh-pages
+      (clean-replace with nothing; git tracks no empty dirs) —
+      cleanup-preview.yml relies on this to remove stale previews.
     required: false
     default: "./dist"
   destination_dir:

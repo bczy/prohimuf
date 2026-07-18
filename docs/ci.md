@@ -13,6 +13,7 @@ All workflows live in `.github/workflows/`. Asset-generation internals are in
 | **CI**                       | `ci.yml`                  | push to `main`, every PR           | Typecheck · Lint · Format check · Tests + coverage, **plus** the E2E job (home/in-game smoke, ADR-0005 D1/D2/D3 harness, assets gate) |
 | **Deploy to GitHub Pages**   | `deploy.yml`              | push to `main`, manual             | Builds the app and publishes it to `gh-pages` root → the live site                                                                    |
 | **Deploy branch preview**    | `deploy-preview.yml`      | push to `claude/*` (auto), manual  | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages`                                                            |
+| **Cleanup branch preview**   | `cleanup-preview.yml`     | branch delete, PR merge, manual    | Removes `preview/<branch>/` from `gh-pages` once the branch is merged/deleted                                                         |
 | **Style B Preview**          | `preview.yml`             | push to `main`/`claude/**`, manual | Generates level art, renders screenshots, uploads a contact sheet artifact (decorative — see the harness section below)               |
 | **Generate enemy sprites**   | `gen-sprites.yml`         | manual, or dispatch marker         | Regenerates missing enemy sprites and commits them                                                                                    |
 | **Generate vehicle sprites** | `gen-vehicle-sprites.yml` | manual, or dispatch marker         | Regenerates truck/car/moto sprites (FORCE=1) and commits them                                                                         |
@@ -190,6 +191,12 @@ To try a branch live without merging to `main`:
 - **Visual contact sheet** — **Style B Preview** renders level screenshots and
   uploads them as a downloadable artifact (`style-b-screenshots`), not committed
   back to the branch.
+- **Cleanup** — **Cleanup branch preview** (`cleanup-preview.yml`) removes
+  `preview/<slug>/` when the branch is deleted or its PR merges, by publishing
+  an _empty_ directory through the same `gh-pages-publish` clean-replace (git
+  keeps no empty dirs, so the subtree disappears — same rebase-retry loop, no
+  race with in-flight deploys). Previews orphaned before this workflow existed
+  can be pruned manually (Actions → Cleanup branch preview → branch name).
 
 ---
 
@@ -199,6 +206,7 @@ To try a branch live without merging to `main`:
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Ship to the live site                        | Push / merge to `main` (automatic)                                                                |
 | Preview a branch live                        | Actions → Deploy branch preview → pick ref                                                        |
+| Remove a stale branch preview                | Actions → Cleanup branch preview → branch name (automatic on branch delete / PR merge)            |
 | See why the live site is blank               | Check Pages source is `gh-pages` (above)                                                          |
 | Regenerate enemy sprites                     | Actions → Generate enemy-type sprites                                                             |
 | Dispatch a workflow without `actions: write` | `date > .github/dispatch/<name> && git add … && git commit -m "ci(dispatch): <name>" && git push` |

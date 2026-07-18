@@ -55,3 +55,17 @@ is always preserved, and `.nojekyll` is re-created on root publishes), then
 pushes; a rejected push re-clones and retries with backoff + jitter. This
 removes the `peaceiris/actions-gh-pages` dependency; everything else above
 (branch layout, Pages source, sub-path bases, SPA fallback) is unchanged.
+
+## Amendment — preview lifecycle cleanup (2026-07-18)
+
+Branch previews had no end of life: `preview/<slug>/` subtrees accumulated on
+`gh-pages` forever after their branches merged. **`cleanup-preview.yml`** now
+removes a branch's preview when the branch is deleted or its PR merges (manual
+dispatch prunes previews orphaned before the workflow existed). It reuses
+`gh-pages-publish` unchanged: clean-replacing `preview/<slug>/` with an
+**empty** publish dir deletes the subtree (git tracks no empty directories),
+through the same rebase-retry loop — and it shares the branch's
+`deploy-preview-*` concurrency group so a cleanup queues behind an in-flight
+deploy of the same ref instead of interleaving with it. (One asymmetry: a new
+push-deploy of a branch kept alive after merge may cancel a pending cleanup —
+that branch's eventual delete event re-fires it.)
