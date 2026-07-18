@@ -507,8 +507,8 @@ dynamic = f"""{series_nav("dynamic-verify")}
           jeu buildé servi à <code>PREVIEW_URL</code> · points de capture <code>?preview=title|menu|narrative|tutorial|end</code> ·
           liste des niveaux depuis <code>levelArt.json</code> · input scripté (D2) · goldens committés (D3).</div>
         <div class="card"><b class="t-1">Sorties</b>
-          <code>screenshots/*.png</code> + <code>overview.png</code> (contact sheet 2 colonnes, primitive de la lib partagée) ·
-          strips/WebM (D1) · verdict d'assertions (D2) · diff pixel (D3).</div>
+          <code>screenshots/golden/*.png</code> (baselines D3) · strip de frames labellisées via
+          <code>stitchLabeledStrip</code> (D1) · verdict d'assertions live (D2) · diff pixel (D3).</div>
       </div>
 
       <div class="gate-row">
@@ -581,13 +581,15 @@ shared = f"""{series_nav("shared-lib")}
       <div class="grid2">
         <div class="card"><b class="t-3">Extrait &amp; testé</b>
           <code>pollinations.mjs</code> fetchWithRetry · <code>idempotent.mjs</code> skipIfExists ·
-          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey (pur, byte-identique) ·
-          <code>contact-sheet.mjs</code> (consommé par le harness de vérif ADR-0005) · <code>morphology.mjs</code>
-          (morphologie binaire pure) · <code>_template.mjs</code> (copié à la main, jamais exécuté).</div>
+          <code>cli.mjs</code> parseAssetArgs · <code>cutout.mjs</code> chromaKey (pur, byte-identique dans
+          <code>cutout-enemies.mjs</code>) · <code>morphology.mjs</code> (morphologie binaire pure) ·
+          <code>_template.mjs</code> (copié à la main, jamais exécuté).</div>
         <div class="card"><b class="t-4">Laissé local à dessein</b>
           Le flood enclosed-island + l'échantillonnage couleur par composant restent dans <code>cutout-enemies.mjs</code>
-          (fusionnés, ne se réduisent pas à une primitive pure) · <code>scripts/e2e-lib.mjs</code> reste la lib E2E de
-          facto (enterMenu, seedDeterminism, SWIFTSHADER_ARGS, seedPlay/readState).</div>
+          (fusionnés, ne se réduisent pas à une primitive pure) · le keyage ratio <code>isMagenta</code> de
+          <code>cutout-foreground.mjs</code> (primitive différente, divergerait sur art frais) · <code>e2e-lib.mjs</code>
+          reste la lib E2E de facto (seedPlay/readState, <code>stitchLabeledStrip</code>). Le
+          <code>contact-sheet.mjs</code> projeté n'est pas construit (YAGNI : un seul consommateur).</div>
       </div>
 
       <h2 class="sec display">Le principe</h2>
@@ -608,9 +610,9 @@ shared = f"""{series_nav("shared-lib")}
           e2e-delivery, e2e-assets, screenshot-preview, preview-vehicle-halo, align-windows</span></div>
         <div class="card"><b class="t-2">Adoption livrée</b>
           <span class="mini">générateurs canoniques (gen-enemy-types, gen-vehicle-sprites, gen-courier-sprites,
-          gen-level-art) + les cutout-* importent idempotent/cli/cutout. Legacy (generate-assets,
-          generate-game-assets, regen-pixel-sprites, generate-style-demo) laissés en candidats-retrait.
-          Le harness de vérif (ADR-0005) consomme contact-sheet.mjs.</span></div>
+          gen-level-art) importent idempotent/cli ; <code>cutout-enemies.mjs</code> importe cutout. Legacy
+          (generate-assets, generate-game-assets, regen-pixel-sprites, generate-style-demo) laissés en
+          candidats-retrait. Le harness de vérif (ADR-0005) stitche via <code>e2e-lib.mjs</code>.</span></div>
       </div>
 
       <h2 class="sec display">Le crew sur ce harness</h2>

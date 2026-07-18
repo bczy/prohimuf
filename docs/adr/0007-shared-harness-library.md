@@ -193,16 +193,19 @@ the loop:
   parser; `targetFlag` generalizes it to `gen-courier-sprites.mjs`'s `--layer` without renaming
   that generator's documented flag.
 - **`cutout.mjs`** — `dist2` / `isBackgroundPixel` / `cornerAverageKey` / `chromaKey` (the pure,
-  connectivity-free pixel decision). Adopted directly (global apply) in `cutout-foreground.mjs`
-  (flat magenta ground, no legitimate near-key subject pixel); adopted as the shared per-pixel
-  test and corner-average computation **inside** `cutout-enemies.mjs`'s own border-flood, whose
-  BFS control flow — and its separate enclosed-island pass — stays local exactly as D-TDD's
-  `chromaKey` clause anticipated ("fused with per-component colour sampling... does not map onto
-  a pure primitive"). Both integrations were verified **byte-identical**: re-running each script
-  over the committed `enemy_*.png` set and the three committed `foreground.png` files changed
-  **zero PNG bytes** (`git status --porcelain -- public/assets/` empty), corroborated by an
-  equivalence run of the old vs. new algorithm over a synthetic fresh (non-pre-keyed) sprite and
-  a synthetic magenta-ground image, both byte-for-byte identical outputs.
+  connectivity-free pixel decision). Adopted as the shared per-pixel test and corner-average
+  computation **inside** `cutout-enemies.mjs`'s own border-flood, whose BFS control flow — and its
+  separate enclosed-island pass — stays local exactly as D-TDD's `chromaKey` clause anticipated
+  ("fused with per-component colour sampling... does not map onto a pure primitive"). This
+  integration was verified **byte-identical**: re-running the script over the committed
+  `enemy_*.png` set changed **zero PNG bytes** (`git status --porcelain -- public/assets/` empty),
+  corroborated by an equivalence run of the old vs. new algorithm over a synthetic fresh
+  (non-pre-keyed) sprite, byte-for-byte identical.
+  `cutout-foreground.mjs`'s keying is **kept local** on purpose: its `isMagenta` ratio test
+  (`r>110 && b>110 && g < min(r,b)*0.62`) is a different primitive from the distance-sphere
+  `chromaKey`, and while both clear the committed flat-magenta grounds identically, they diverge on
+  fresh anti-aliased FLUX art — so migrating it would be a behaviour change, not a faithful
+  extraction, and stays out of scope (same discipline as the enclosed-island flood).
 - **`_template.mjs` + "Anatomy of a harness"** (`scripts/SCRIPTS.md`) — the D3 checklist +
   copyable skeleton, never executable (no descriptor-driven code generation — that would re-open
   D1).
@@ -229,8 +232,9 @@ earlier, broader scope statement.
 
 **YAGNI-deferred, not shipped: `contact-sheet.mjs`.** The D2 table above lists a fifth module,
 `contact-sheet.mjs` ("canvas stitch of generated assets into one sheet"), for ADR-0005's dynamic
-verification harness to consume. ADR-0005 itself is still **Proposed** (unimplemented) at the time
-of this acceptance — there is no consumer to build it against yet, and building it speculatively
-ahead of that consumer's real shape would be exactly the premature-generality this ADR's own YAGNI
-argument warns against. Deferred to when ADR-0005 (or an equivalent contact-sheet consumer) is
-actually implemented; tracked there, not here.
+verification harness to consume. When ADR-0005 was implemented (same PR), its motion mode needed a
+frame-strip stitch — but the real consumer's shape was a labelled frame strip, so the helper landed
+as `stitchLabeledStrip` in `scripts/e2e-lib.mjs` (the de-facto E2E lib) rather than as a speculative
+generic `scripts/lib/contact-sheet.mjs`. A single motion-mode consumer does not yet justify
+promoting it to a standalone shared primitive; it stays in `e2e-lib.mjs` until a second consumer
+appears. The speculative fifth `lib/` module remains deliberately unbuilt.

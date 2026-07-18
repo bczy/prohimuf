@@ -16,7 +16,8 @@
 The original D1/D2 acceptance criteria below target features that have since been **withdrawn or
 superseded**. This amendment re-points them at SHIPPED reality; the D1/D2/D3 **structure, the four
 principles, and the seam/boundary rules are unchanged** — only the concrete entities they assert
-against move. Status stays **Proposed** (the tooling lane flips it last).
+against move. Status is **Accepted (amended)** — the three modes, the seam and the required CI gate
+shipped in this PR.
 
 - **The drive-by `car` is withdrawn.** `belliard`'s roster is `streetSpawns: ["courier"]`
   (`src/game/levels/levels.ts`). No `car` traverses any level. Every D1/D2 clause that named the
@@ -141,10 +142,12 @@ is already covered by `levelRoster.test.ts`; D3 closes the render-side gap. Gold
   recording framework, **no** per-frame animation-diffing engine, **no** golden coverage of the
   animated `belliard` mob (motion is reviewed by eye in D1; only the _frozen_ levels get pixel
   goldens in D3). The play-mode flag is a boolean, not a scripting DSL.
-- **DRY.** All three modes reuse `screenshot-preview.mjs`'s Playwright bootstrap
-  (`:144-155`), its narrative-dismiss / level-navigation helpers (`:33-78`), and the freeze-hook
-  injection point. The canvas / contact-sheet primitive (`:96-142`) is lifted into the shared lib
-  per ADR-0007 and consumed by all modes rather than copied.
+- **DRY.** All three modes reuse the shared `scripts/e2e-lib.mjs` bootstrap — `seedPlay`/
+  `seedDeterminism`, the narrative-dismiss / level-navigation helpers, `SWIFTSHADER_ARGS`, and the
+  new `readState`/`pollState` seam readers and `diffPixelFraction` — rather than copying. The
+  motion mode's frame-strip stitch (`stitchLabeledStrip`) also lives in `e2e-lib.mjs`; the
+  speculative `scripts/lib/contact-sheet.mjs` proposed by ADR-0007 was **not** built (a single
+  motion-mode consumer does not yet justify a standalone shared primitive — see ADR-0007).
 
 ## Consequences
 
