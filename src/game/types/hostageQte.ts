@@ -121,11 +121,11 @@ export interface HostageQte {
    */
   readonly anchor: Vec2;
   /**
-   * Current head kill-zone centre, ANCHOR-RELATIVE — the point the render draws the
-   * reticle at and that `qteZoneAt` centres the `head` band on. During `PEEKING` it
-   * wanders (bounded, G6-clamped clear of the hostage) via the seeded pure wander;
-   * during `COVERED`/`ZOOMING` it rests at the neutral head point. Not literal
-   * `(0,0)` — it is the head's resting spot so the wind-up tell draws at the head.
+   * Current reticle-RING centre, ANCHOR-RELATIVE — the point the render draws the ring at
+   * and that `ringZoneAt` classifies for the spatial-colour read (the retired `head` band no
+   * longer exists in `qteZoneAt`). During `PEEKING` it wanders (bounded, G6-clamped clear of
+   * the hostage) via the seeded pure wander; during `COVERED`/`ZOOMING` it rests at
+   * `WANDER_CENTRE` with the ring forced `off`. Not literal `(0,0)`.
    */
   readonly targetOffset: Vec2;
   /**

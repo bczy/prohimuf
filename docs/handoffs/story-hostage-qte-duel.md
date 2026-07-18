@@ -2194,3 +2194,16 @@ src/game/types/hostageQte.ts` clean; `npx --yes prettier@3.8.2 --write` then `--
   the `qteSystem.ts`/roam/anatomy-constant edits stay `dev-gameplay`'s per the §22 lane plan.
 - VERDICT: not a gate — doc realignment, traced to §22 (clamp ruling, LAW) and the
   §22 game-designer values entry (proposed, pending `lead-game-designer` gate).
+
+## 24. MERGE GATE — code-review panel (4 reviewers) — senior-architect triage — 2026-07-18
+
+- claim: run the mandatory stage-6 panel on `git diff origin/main...HEAD` before merging PR #79 to main (Bertrand: "rebase, merge"). Surface = full hostage-QTE story + the tutorial colour-ring explainer + the ring-freeze/box-disjoint iterations.
+- Reviewers (parallel, orthogonal skills): A `code-review` (high) · B `bmad-code-review` · C `bmad-review-edge-case-hunter` · D `security-review`. Each adversarially self-verified.
+- release / findings (adversarially verified):
+  - **A (correctness) — 1 MINEUR CONFIRMED (FIXED):** the drawn reticle ring's visible annulus (inner 0.359 / outer 0.46) lay OUTSIDE the `RING_HIT_RADIUS` 0.30 hit disk, so a shot on the ring band read as `body`, contradicting the "shoot what you see" invariant AND the new tutorial copy. FIX (dev-r3f-render): `CUE_RADIUS = RING_HIT_RADIUS` — the drawn ring's outer edge now IS the catch zone. Re-verified in-browser (green ring frames the head at the true radius). + 2 NITs (dead `resolveCaptorTexture` arg = intended art seam; pip/`captorHp` hardcode = follow-up).
+  - **B (bmad) — MERGE-CLEARED:** all three Bertrand iterations HOLD (colour-by-anatomy ring + damage + loss clock; ring does NOT grow; explainer over the real sprites). No doc drift beyond one NIT: stale `targetOffset` docstring (`head` band retired). FIX (docs): docstring realigned to the ring/`ringZoneAt`/`WANDER_CENTRE` model.
+  - **C (edge-case) — no BLOQUANT/MAJEUR:** every high-stakes boundary verified handled (multi-segment delta, tie-break, HP=0 vs negative, blownPeeks cap, wander t-boundaries, G6 corner tie, ringZone precedence, sprite-404, reduced-motion). 2 MINEURs (antiJitter near-corner sub-MIN leg = cosmetic; pip/`captorHp` = follow-up) + 1 NIT.
+  - **D (security) — CLEAN, nothing survives:** asset URLs are build-time constants, the `diagram` channel is authored data (no XSS), `?preview=` unchanged, no new localStorage trust.
+- INTEGRATION REVIEW (Winston): boundary law OK — `src/game/**` imports only types + the `RING_HIT_RADIUS` value; determinism preserved (seeded pure wander, no Math.random/Date.now). Seams clean; no dep/deploy impact.
+- FOLLOW-UPS (non-blocking, logged): (1) tie the captor-HP pip pool to `captorHp` before ADR-0035/F3 curves HP across levels (A/B/C); (2) antiJitter near-corner sub-MIN leg cosmetic (C). Neither triggers on Belliard (`captorHp: 3`).
+- VERDICT: PASS — code-review panel merge gate (senior-architect). No unresolved CONFIRMED BLOQUANT/MAJEUR; the one CONFIRMED MINEUR (aim-honesty) was fixed in-lane and re-verified.

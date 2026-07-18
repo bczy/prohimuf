@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
-import { isQteActive } from "@game/systems/qteSystem";
+import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
@@ -63,9 +63,12 @@ const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 // wander is computed by the game lane); this closes the aim-honesty seam — the drawn
 // ring sits exactly on the scored `head` band.
 const CUE_Z = 0.55;
-// World outer radius of the reticle ring at neutral scale; intensity scales it so
-// the open PEEKING window reads clearly larger than the COVERED wind-up.
-const CUE_RADIUS = 0.46;
+// World OUTER radius of the reticle ring — pinned to the game's `RING_HIT_RADIUS` so the
+// drawn ring IS the scored catch zone: a crosshair anywhere on/inside the ring is within
+// `RING_HIT_RADIUS` of its centre → a hit (aim-honesty — "shoot what you see"; the tutorial
+// literally instructs "aligne ta cible sur l'anneau"). The ring no longer grows, so a single
+// fixed radius is all it needs; the two-beat tell + zone read ride opacity, never size.
+const CUE_RADIUS = RING_HIT_RADIUS;
 // Hard cap on the ring's opacity: a subtle localised tell, never a solid block
 // (the earlier filled quad read as a placeholder box and hid the head).
 const CUE_OPACITY_MAX = 0.45;
