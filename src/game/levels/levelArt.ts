@@ -82,6 +82,33 @@ export interface WindowRows {
   readonly rows: readonly { readonly y: number; readonly xs: readonly number[] }[];
 }
 
+/** A near-foreground silhouette prop that scrolls faster than the street (ADR-0045). */
+export type NearForegroundKind =
+  | "parkingMeter"
+  | "lamppost"
+  | "wallaceFountain"
+  | "trafficLight"
+  | "bollard"
+  | "scooter"
+  | "bench"
+  | "streetSign";
+
+export interface NearForegroundObject {
+  readonly kind: NearForegroundKind;
+  /** Anchor x in full-street normalized units (0 = left edge of the street, 1 = right edge). */
+  readonly x: number;
+  readonly scale?: number; // default 1
+  /** Which kerb the prop stands on: "near" (front, big, fast) or "far" (back of
+   *  the road, small, slow). Defaults to "near". */
+  readonly row?: "near" | "far";
+}
+
+export interface NearForegroundLayer {
+  /** Engine parallax factor (NEGATIVE). mesh.x = camera.x * factor; screen speed S = 1 - factor. */
+  readonly factor: number;
+  readonly objects: readonly NearForegroundObject[];
+}
+
 export interface LevelArt {
   readonly id: string;
   readonly name: string;
@@ -101,6 +128,8 @@ export interface LevelArt {
   readonly windowGrid?: WindowGrid;
   /** Hand-authored window zones (level design); takes priority over windowGrid. */
   readonly windows?: WindowRows;
+  /** Near-foreground parallax layer (ADR-0045); absent = opt-out for this level. */
+  readonly nearForeground?: NearForegroundLayer;
 }
 
 const LEVELS = manifest.levels as readonly LevelArt[];
@@ -154,6 +183,66 @@ export function getIronworkStyle(id: string | undefined): IronworkStyle {
 export function getIronworkSillOffset(id: string | undefined): number {
   const raw = getLevelArt(id).ironworkSillOffset ?? 0;
   return Math.min(0.6, Math.max(0, raw));
+}
+
+/** Allowed range for the near-foreground parallax factor (NEGATIVE, ADR-0045).
+ *  Widened so the near (front) row can drift clearly faster than the facade. */
+const NEAR_FOREGROUND_FACTOR_MIN = -0.5;
+const NEAR_FOREGROUND_FACTOR_MAX = -0.1;
+/** Safe fallback factor when the declared one is non-finite (slow end of band). */
+const NEAR_FOREGROUND_FACTOR_DEFAULT = NEAR_FOREGROUND_FACTOR_MAX;
+
+/**
+ * The near-foreground kinds accepted at runtime. The manifest is cast (untyped
+ * JSON), so a typo like "carRof" would otherwise slip through the TS type and
+ * crash the render's `NEAR_KIND_SPECS[kind]` lookup — validate at the source.
+ */
+const NEAR_FOREGROUND_KINDS: readonly NearForegroundKind[] = [
+  "parkingMeter",
+  "lamppost",
+  "wallaceFountain",
+  "trafficLight",
+  "bollard",
+  "scooter",
+  "bench",
+  "streetSign",
+];
+
+const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
+  typeof kind === "string" && (NEAR_FOREGROUND_KINDS as readonly string[]).includes(kind);
+
+/**
+ * The near-foreground parallax layer for a level (ADR-0045), or `null` when the
+ * level opts out (no `nearForeground` field) or the id is unknown. Unlike
+ * {@link getLevelArt} this does NOT fall back to the first level: an unknown id
+ * yields null.
+ *
+ * Data is hardened at the source (the manifest is untyped JSON): `factor` is
+ * clamped to [-0.30, -0.15] — a non-finite value first falls back to a safe
+ * default so `NaN` cannot leak through the clamp. Objects with an unknown `kind`
+ * are dropped; an object whose `scale` is present but non-positive or non-finite
+ * is normalized to `1`.
+ */
+export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
+  const art = id !== undefined ? LEVEL_ART[id] : undefined;
+  const layer = art?.nearForeground;
+  if (layer === undefined) return null;
+
+  const rawFactor = Number.isFinite(layer.factor) ? layer.factor : NEAR_FOREGROUND_FACTOR_DEFAULT;
+  const factor = Math.min(
+    NEAR_FOREGROUND_FACTOR_MAX,
+    Math.max(NEAR_FOREGROUND_FACTOR_MIN, rawFactor),
+  );
+
+  const objects = layer.objects
+    .filter((obj) => isNearForegroundKind(obj.kind))
+    .map((obj) =>
+      obj.scale === undefined || (Number.isFinite(obj.scale) && obj.scale > 0)
+        ? obj
+        : { ...obj, scale: 1 },
+    );
+
+  return { factor, objects };
 }
 
 /**

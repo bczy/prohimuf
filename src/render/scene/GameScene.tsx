@@ -22,6 +22,7 @@ import { isQteActive } from "@game/systems/qteSystem";
 import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
+import { NearForeground } from "./NearForeground";
 import { applyFacadeStretchX, invertFacadeStretchX } from "./facadeLayout";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite } from "./EnemySprite";
@@ -378,6 +379,13 @@ export function GameScene({
             />
           </group>
         ))}
+      <NearForeground
+        levelId={levelId}
+        isMobile={isMobile}
+        facadeW={panelW}
+        facadeH={facadeH}
+        panels={PANELS}
+      />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />

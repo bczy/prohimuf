@@ -218,6 +218,22 @@ export function facadeBackdropPath(): string {
   return "assets/facade_bg.png";
 }
 
+/**
+ * The code-drawn near-foreground props (ADR-0045) a level declares, as synthetic
+ * `nearfg:<kind>` manifest entries so the loading gate warms their shared textures
+ * (there is no PNG on disk — warmAssets builds the CanvasTexture for this scheme).
+ * De-duplicated; empty for a level that opts out (no `nearForeground` field).
+ */
+export function nearForegroundPaths(levelId: string): readonly string[] {
+  const id = resolveLevelArtId(levelId);
+  const lvl = levelArt.levels.find((l) => l.id === id) as
+    | { nearForeground?: { objects: readonly { kind: string }[] } }
+    | undefined;
+  const objects = lvl?.nearForeground?.objects;
+  if (objects === undefined) return [];
+  return dedupe(objects.map((o) => `nearfg:${o.kind}`));
+}
+
 /** Base-relative gameplay audio warmed by the level loader. ONLY committed files:
  *  the 3 BGM tiers + the shoot SFX. audioSystem.ts also references hit/death/win
  *  SFX, but those .mp3 are not committed (would 404) — add them here once they land.
@@ -277,6 +293,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
     ...levelLayerPaths(target),
     ...enemyAssetPathsFor(target),
     ...courierAssetPaths(),
+    ...nearForegroundPaths(target),
   ];
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));

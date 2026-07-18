@@ -23,7 +23,9 @@ import {
 import levelArt from "@game/levels/levelArt.json";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
-const ASSET_RE = /^assets\/.+\.(png|jpg|webp|mp3|wav)$/;
+// Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
+// near-foreground props (ADR-0045) — no PNG on disk, warmed by building a texture.
+const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav)|nearfg:[a-zA-Z]+)$/;
 
 // Every level id we build a full manifest for, plus the two special targets.
 const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
