@@ -1,0 +1,16 @@
+/*
+ * Tape-pin corner (ADR-0046) — static box/keyline only. The prop-driven bits stay
+ * inline in TapeCorner.tsx: the translucent masking-tape fill (an rgba with no plain
+ * token — manila carries only the opaque hex) and the per-corner offset + rotation
+ * selected from CORNER_STYLE. The always-black ink keyline references var(--ink-black).
+ */
+
+.tape {
+  position: absolute;
+  width: 48px;
+  height: 18px;
+  border-top: 1px solid var(--ink-black);
+  border-bottom: 1px solid var(--ink-black);
+  opacity: 0.85;
+  pointer-events: none;
+}

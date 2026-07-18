@@ -1,0 +1,23 @@
+/*
+ * FullscreenButton (ADR-0046) — static layout/box only. The bottom-right anchor,
+ * 40px hit target, transparent chrome and z-index:300 (pre-game fullscreen tier,
+ * above every overlay — no token carries this pre-game chrome value) are all fixed.
+ * The runtime glyph drop-shadow (rgba filter, no token) stays inline on the <svg>,
+ * as does the SVG stroke ink attribute. No colour/font here to token-ise.
+ */
+.button {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 300;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

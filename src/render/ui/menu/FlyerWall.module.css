@@ -1,0 +1,19 @@
+/*
+ * NIVEAUX flyer-wall layout (ADR-0046). Static box/layout only.
+ *
+ * The short-landscape rack reflow (row direction, gap, scroll-snap) stays in the
+ * component's inline <style> media block keyed on the global `.muf-flyerwall` /
+ * `.muf-flyer-slot` classes; `.wall` reads the `--muf-flyerwall-dir` custom property
+ * that block flips to `row`, defaulting to `column` outside the breakpoint.
+ */
+
+.wall {
+  display: flex;
+  flex-direction: var(--muf-flyerwall-dir, column);
+  padding: var(--space-xl);
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,34 @@
+/*
+ * Blown-up hero halftone for a rephotocopied facade (ADR-0046, art-direction §2bis).
+ * Static layout / box / filter only — the runtime values (the facade `src` background
+ * and the pitch-derived dot-screen gradient + tile size) stay inline in HalftoneHero.tsx.
+ *
+ * The dot-screen keeps its rgba ink literal inline (no token carries a 0.55-alpha ink);
+ * this file re-declares no hex / font stack / motion literal. Zero glow (art-direction
+ * §2bis): no box-shadow / text-shadow / backdrop-filter / scanline.
+ */
+
+/* Fills its container; the caller layers content above it. */
+.hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Facade photo rephotocopied to pure B&W. `background-image` (the src) stays inline. */
+.photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(1) contrast(2.2) brightness(1.1);
+  image-rendering: pixelated;
+}
+
+/* Blown-up halftone dot screen. `background-image` + `background-size` are pitch-derived,
+   so they stay inline. */
+.dots {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+}

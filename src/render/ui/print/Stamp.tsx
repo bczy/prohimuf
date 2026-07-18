@@ -1,5 +1,5 @@
-import type { CSSProperties, JSX } from "react";
-import { INK, FONT } from "./tokens";
+import type { JSX } from "react";
+import styles from "./Stamp.module.css";
 
 export type StampShape = "box" | "oval" | "diagonal";
 
@@ -23,51 +23,20 @@ export interface StampProps {
  * per-difficulty tell. Zero glow. A slight fixed rotation gives the stamped feel.
  */
 export function Stamp({ label, ink, shape = "box", struck = false }: StampProps): JSX.Element {
-  const box: CSSProperties = {
-    position: "relative",
-    display: "inline-block",
-    padding: "3px 9px",
-    border: `2px solid ${INK.black}`,
-    borderRadius: shape === "oval" ? "50%" : "1px",
-    color: INK.black,
-    fontFamily: FONT.mono,
-    fontSize: "11px",
-    fontWeight: 700,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    textDecoration: struck ? "line-through" : "none",
-    transform: `rotate(${shape === "diagonal" ? "-8" : "-4"}deg)`,
-  };
   return (
-    <span style={box}>
+    <span
+      className={styles.box}
+      style={{
+        borderRadius: shape === "oval" ? "50%" : "1px",
+        textDecoration: struck ? "line-through" : "none",
+        transform: `rotate(${shape === "diagonal" ? "-8" : "-4"}deg)`,
+      }}
+    >
       {label}
       {/* Hue tell: a slim inner rule in the mark ink — no text rides the colour. */}
-      <span
-        aria-hidden={true}
-        style={{
-          position: "absolute",
-          left: "12%",
-          right: "12%",
-          bottom: "1.5px",
-          height: "1.5px",
-          background: ink,
-          pointerEvents: "none",
-        }}
-      />
+      <span aria-hidden={true} className={styles.innerRule} style={{ background: ink }} />
       {shape === "diagonal" && (
-        <span
-          aria-hidden={true}
-          style={{
-            position: "absolute",
-            left: "-6%",
-            right: "-6%",
-            top: "50%",
-            height: "2px",
-            background: ink,
-            transform: "rotate(-14deg)",
-            pointerEvents: "none",
-          }}
-        />
+        <span aria-hidden={true} className={styles.diagonalStrike} style={{ background: ink }} />
       )}
     </span>
   );
