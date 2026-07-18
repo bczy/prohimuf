@@ -43,6 +43,16 @@ ADR-0012/0015 decisions) are grandfathered: they change only through this flow f
 | `pre-game-experience-ux.md` | `game-designer`      | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`) |
 | `pregame-copy-deck.md`      | `narrative-designer` | **PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`) |
 
+### Recherche / veille (pre-gate — non gaté)
+
+Livrables d'idéation produits par la veille concurrentielle du 2026-07-18. **Non gatés** :
+matière d'entrée pour de futures specs, à passer au design gate avant toute implémentation.
+
+| Deliverable                              | Author          | Statut                                        |
+| ---------------------------------------- | --------------- | --------------------------------------------- |
+| `veille-concurrentielle-shooters.md`     | `game-designer` | **Pre-gate** — features candidates (tiers S/A/B) |
+| `pre-spec-weapons.md`                    | `game-designer` | **Pre-gate** — modèle multi-armes par pickup  |
+
 ### Gated canon (pending `narrative-bible.md`)
 
 Net-new named entities PASSed as conscious extension (gate 2026-07-14, condition f1) —
