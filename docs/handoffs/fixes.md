@@ -8,6 +8,19 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/preview-deletion-after-merge-dt20co (PR #101) · dev-tooling-assets ·
+  add `cleanup-preview.yml`: remove `preview/<slug>/` from gh-pages on branch delete /
+  PR merge (+ manual dispatch for orphaned previews) by publishing an EMPTY dir through
+  the existing gh-pages-publish clean-replace (same rebase-retry loop; delete semantic
+  now stated in the action's publish_dir contract); shares the branch's deploy-preview
+  concurrency group; ci.md + ADR-0001 amendment · checks: prettier/tsc/vitest/lint ·
+  review: code-review(high, 8-angle) — 2 CONFIRMED fixed (workflow_dispatch fallback
+  never reached inputs.branch — event.ref is truthy on dispatch; newline in dispatch
+  input line-injects GITHUB_OUTPUT past the empty-slug guard → could wipe preview/),
+  4 hardened (fork-PR + stacked-PR guards, '.'/'..' slug reject, wrong "inert until
+  merged" comment, sparse checkout), rest accepted as documented limitations (slug
+  collision = same as deploy; merged-PR double-fire = cheap serialized no-op)
+
 - 2026-07-18 · claude/render-css-design-system (42ff2c7) · dev-r3f-render · in-game HUD
   legibility (labels 9→11 / niveau 12→16px; strip → IBM Plex Mono, labels 400 / readouts
   600; stamps keep Rubik) · VERDICT: PASS — art-direction HUD gate (lead-art/Nico), on the
