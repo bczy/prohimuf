@@ -21,7 +21,7 @@ cutouts assembled on a road band.
 **One-line rationale:** axes 2 (gaps between buildings) and 3 (both-side street cross-section)
 are relationships that live **between and around** buildings, not inside one — FLUX must
 compose the sky-sliver / mur-pignon / narrow passage and the continuous kerb+trottoir line
-*within a single frame*; butting single-building cutouts can only fake those relationships and
+_within a single frame_; butting single-building cutouts can only fake those relationships and
 produces the hard-seam, wide-isolated-gap look Bertrand is moving away from.
 
 **How they tile.** Each tronçon **begins and ends on a thin sky-sliver gap** between buildings,
@@ -32,7 +32,7 @@ passage) and shuffle them so the street reads **irregular**, not a repeating mod
 axis-2 risk).
 
 **Cross-section split (axis 3).** Bake **only the far-side trottoir + granite kerb** into each
-tronçon — the buildings visibly *stand on a pavement band*, which is unambiguous as flat-frontal
+tronçon — the buildings visibly _stand on a pavement band_, which is unambiguous as flat-frontal
 elevation, supports the existing `nearForeground` "far" prop row (bollard/bench/Wallace), and
 keeps the FLUX load per image sane. The **chaussée + near-side trottoir** stay the
 `street`/foreground layers' job; §4 gives the companion `street`-layer tweak that adds the
@@ -40,20 +40,32 @@ near-side trottoir band the current bitumen-only prompt lacks. Full-cross-sectio
 was considered and rejected (§5): it overloads FLUX-schnell and duplicates the existing road
 layer.
 
-> **Baked sky in the slivers.** The tronçon is a full-bleed opaque image (like the current
-> `facade.png`; only the `foreground` layer chroma-keys). The gaps therefore carry **baked dark
-> night sky** in the sliver, value-matched to the `sky` layer that shows above the rooflines —
-> not transparency. Flagged so `lead-art` judges the sliver as painted sky.
+> **Transparent sky AND transparent sky-sliver gaps (lead-art RULING, Nico, 2026-07-18).**
+> The 7 current facade PNGs already key their sky to transparency (the board calls them
+> "transparent building-facade PNGs"), and Bertrand's standing decision is a **TRANSPARENT**
+> building layer over a **separate parallax sky** (stars / clouds / moon / haze). So the
+> tronçon's sky above the rooflines **and** the between-building **true sky slivers** are the
+> **same flat unlit dark sky field, both cut to transparency** by the keyer — the parallax sky
+> shows continuously through every opening and its stars/moon read _in the gaps_. Baking opaque
+> value-matched gap-sky is **REJECTED**: it is incoherent (you cannot key the above-roofline sky
+> transparent while keeping the same-value gap sky opaque), it would occlude the parallax stars
+> in the gaps, and a static baked patch would drift out of register as the parallax sky moves.
+> The tronçon is therefore **not** full-bleed opaque — only **the buildings + the far-trottoir
+> band + the opaque architectural gap beats (the mur-pignon gable, the passage alley) survive
+> the key**; the roofline sky and the true sky slivers go transparent. (The mur-pignon and
+> passage are solid building fabric, not sky — they stay opaque and read as gap variety.) Key
+> colour / threshold, so the dark grimy walls are not eaten by a near-black key
+> (sprite-hole-audit risk), is a `dev-tooling-assets` keying call — flagged in §6.
 
 **Seeds & size guidance** (Pollinations flux, 1024-tall working res, variable width):
 
-| Tronçon | Buildings | Gap beat | Suggested size (W×H) | Pinned seed |
-| ------- | --------- | -------- | -------------------- | ----------- |
-| A | 2 | one thin sky sliver | `1536×1024` (~3:2) | `7101` |
-| B | 3 | one bare **mur-pignon** gable + slivers | `1920×1024` (~15:8) | `7102` |
-| C | 2–3 | one narrow **passage** alley + slivers | `1792×1024` (~7:4) | `7103` |
+| Tronçon | Buildings | Gap beat                                | Suggested size (W×H) | Pinned seed |
+| ------- | --------- | --------------------------------------- | -------------------- | ----------- |
+| A       | 2         | one thin sky sliver                     | `1536×1024` (~3:2)   | `7101`      |
+| B       | 3         | one bare **mur-pignon** gable + slivers | `1920×1024` (~15:8)  | `7102`      |
+| C       | 2–3       | one narrow **passage** alley + slivers  | `1792×1024` (~7:4)   | `7103`      |
 
-- **Pin the seed per image** (bible §3.10). `gen-level-art.mjs` currently picks a *random*
+- **Pin the seed per image** (bible §3.10). `gen-level-art.mjs` currently picks a _random_
   seed (`Math.floor(Math.random()*99999)`) — same reroll hazard the `street` layer hit
   (seed 6601 PIN). These décor tronçons MUST be generated on the pinned seeds above and the
   winners committed; re-roll a seed **only** if the composition (gap rhythm, taper falloff) is
@@ -71,8 +83,8 @@ Two clauses in that script are off-register for this family and must be bypassed
    register; these prompts carry their **own** self-contained style block (§1) and must be sent
    **without** the pixel-art suffix.
 2. the hard-coded facade `continuity` suffix (`"one section of a single long continuous
-   parisian haussmann terrace… the left and right edges continue seamlessly into the
-   neighbouring buildings"`) — that forces a **fused mitoyen wall**, the direct opposite of
+parisian haussmann terrace… the left and right edges continue seamlessly into the
+neighbouring buildings"`) — that forces a **fused mitoyen wall**, the direct opposite of
    axis 2. Must **not** be appended for this family.
 
 **kontext vs flux.** PRIMARY = **flux text-to-image** with the §1 style block (the composition
@@ -102,7 +114,7 @@ Per-clause rationale:
   the exact cel-shade / posterize / muted look Bertrand validated; keeps it painterly-cartoon,
   not photoreal.
 - `deep night` + `grimy weathered dirty stained walls with soot marks water streaks peeling
-  render and hairline cracks` → the D1 crade-documentaire texture ceiling (soot/water/peel/crack)
+render and hairline cracks` → the D1 crade-documentaire texture ceiling (soot/water/peel/crack)
   — dirty/real, the register these boards live in.
 - `grey zinc mansard roofs` → period-true Paris faubourg roofline (D4 ordinary 18e fabric).
 - `flat frontal orthographic elevation seen perfectly straight on with no perspective` →
@@ -113,8 +125,8 @@ Per-clause rationale:
 
 > **Optional gate-hardening (lead-art's call).** To force the 3 tronçons to read as one
 > printing run, a shared hex anchor can be added to the block — e.g. `muted desaturated
-> palette of cool greys around #3A3E44`, and `worn granite-kerbed stone trottoir in dirty
-> pale grey #6B6E72` in the subjects. Offered, not baked: the accepted facades passed without
+palette of cool greys around #3A3E44`, and `worn granite-kerbed stone trottoir in dirty
+pale grey #6B6E72` in the subjects. Offered, not baked: the accepted facades passed without
 > hex, and adding it is one variable to change deliberately, not silently.
 
 ---
@@ -127,45 +139,50 @@ highest-attention tokens (bible §3.2), even though the medium also lives in the
 ### Tronçon A — two buildings, one thin sliver (seed `7101`)
 
 ```
-flat frontal night elevation of two distinct ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights standing close together, separated by one thin vertical sliver of dark night sky, four to five storeys each, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and a couple of stapled photocopied flyers, the tags rarefying fast with height so the upper floors and roofs stay clean, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
+flat frontal night elevation of two distinct ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights standing close together, separated by one thin vertical sliver of flat unlit night sky, four to five storeys each, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and a couple of stapled photocopied flyers, the tags rarefying fast with height, only occasional isolated tags at mid-height and bare clean upper floors and roofs, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
 ```
 
 ### Tronçon B — three buildings, one bare mur-pignon (seed `7102`)
 
 ```
-flat frontal night elevation of three distinct ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights in a tight irregular row, two of them separated by a thin sky sliver and one slightly wider gap revealing a bare untreated masonry mur-pignon gable end wall with no windows, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and stapled photocopied flyers, the tags rarefying fast with height so the upper floors and roofs stay clean, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
+flat frontal night elevation of three distinct ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights in a tight irregular row, two of them separated by a thin sliver of flat unlit night sky and one slightly wider gap revealing a bare untreated masonry mur-pignon gable end wall with no windows, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and stapled photocopied flyers, the tags rarefying fast with height, only occasional isolated tags at mid-height and bare clean upper floors and roofs, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
 ```
 
 ### Tronçon C — two–three buildings, one narrow passage (seed `7103`)
 
 ```
-flat frontal night elevation of a tight row of ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights, separated by thin slivers of dark sky and one narrow shadowed passage alley running back between two of them, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and stapled photocopied flyers, the tags rarefying fast with height so the upper floors and roofs stay clean, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
+flat frontal night elevation of a tight row of ordinary Paris 18e faubourg apartment buildings of different widths and storey-heights, separated by thin slivers of flat unlit night sky and one narrow shadowed passage alley running back between two of them, the clean upper floors carrying regular rows of tall shuttered french windows with plain wrought-iron railings, the ground floor and its metal roll-down shop shutters densely layered with hand-painted graffiti tags throw-ups stickers stencils and stapled photocopied flyers, the tags rarefying fast with height, only occasional isolated tags at mid-height and bare clean upper floors and roofs, the buildings standing on a worn granite-kerbed stone trottoir, the image beginning and ending on a thin sky-sliver gap
 ```
 
 Per-clause rationale (shared across A/B/C; deltas noted):
 
 - `two/three distinct ordinary Paris 18e faubourg apartment buildings of different widths and
-  storey-heights standing close together` → **axis 2**: distinct volumes set tight, ordinary
+storey-heights standing close together` → **axis 2**: distinct volumes set tight, ordinary
   18e fabric (D4), varied so the row reads irregular, not a Haussmann cornice line.
-- `separated by one thin vertical sliver of dark night sky` (A/C) · `one slightly wider gap
-  revealing a bare untreated masonry mur-pignon gable end wall with no windows` (B) · `one
-  narrow shadowed passage alley running back between two of them` (C) → **axis 2** gap beats,
+- `separated by one thin vertical sliver of flat unlit night sky` (A/C) · `one slightly wider
+gap revealing a bare untreated masonry mur-pignon gable end wall with no windows` (B) · `one
+narrow shadowed passage alley running back between two of them` (C) → **axis 2** gap beats,
   each grounded in a real faubourg form (sliver / mur-pignon / passage) so the three tronçons
-  differ; B's gable is the "residual wall" beat (board axis-2 refs).
+  differ; B's gable is the "residual wall" beat (board axis-2 refs). The sky slivers are
+  `flat unlit` (uniform, keyable — they cut to transparency, §0); the mur-pignon and passage are
+  opaque building fabric and stay (§0).
 - `the clean upper floors carrying regular rows of tall shuttered french windows with plain
-  wrought-iron railings` → **axis 1 taper (top)**: upper facade stays clean so architecture
+wrought-iron railings` → **axis 1 taper (top)**: upper facade stays clean so architecture
   reads; keeps the period french-window rhythm and demoted-to-plain ironwork (ordinary 18e, no
   Deneux likeness).
 - `the ground floor and its metal roll-down shop shutters densely layered with hand-painted
-  graffiti tags throw-ups stickers stencils and a couple of stapled photocopied flyers` →
+graffiti tags throw-ups stickers stencils and a couple of stapled photocopied flyers` →
   **axis 1 (bottom band)**: D1 competition-wall density concentrated at street/shutter level
   (Petite-Ceinture/Stalingrad register), the on-façade free-party tell as print.
-- `the tags rarefying fast with height so the upper floors and roofs stay clean` → **axis 1's
-  critical nuance**: density falls off fast with height, essentially none up top — the
-  street-level band, *not* a full-facade wash (Bertrand's explicit "do not overload").
+- `the tags rarefying fast with height, only occasional isolated tags at mid-height and bare
+clean upper floors and roofs` → **axis 1's critical nuance**, now spelled out as Bertrand's
+  full three-step gradient (dense at street/shutter level → _much rarer at human/mid height_ →
+  _almost nonexistent, bare, at the top_), stated **positively** (bare/clean surfaces, not "no
+  tags up top" — FLUX reads a negated absence as presence, bible §3.1). Guards against the
+  full-facade wash he explicitly warned off ("do not overload").
 - `the buildings standing on a worn granite-kerbed stone trottoir` → **axis 3 (far side)**:
   buildings sit on a pavement band with a granite kerb, worn D1 palette; the near-side trottoir
-  + chaussée come from the `street` layer (§4).
+  - chaussée come from the `street` layer (§4).
 - `the image beginning and ending on a thin sky-sliver gap` → the **tiling contract**: every
   panel seam is a gap, so tronçons shuffle/tile gap-to-gap without a mid-facade cut.
 
@@ -180,8 +197,11 @@ composition calls FLUX only approximates (board axis-2 risk).
 ## 3. `sky` layer — unchanged
 
 The `sky` layer (`"parisian night sky with stars and distant haussmann rooftops silhouette,
-full moon haze"`) is untouched: it still reads above the tronçon rooflines. Confirm the baked
-sliver-sky value (§0) matches it at the composite gate.
+full moon haze"`) is untouched. Per the §0 ruling the tronçon's roofline sky **and** its true
+sky slivers are keyed transparent, so this `sky` layer is what shows through **both** the
+above-roofline area and the between-building gaps — stars/moon read in the slivers, and the
+parallax holds because no static gap-sky is baked in front of it. Confirm alignment + parallax
+(no visible seam where a gap meets the sky plane, no double-exposure) at the composite gate.
 
 ---
 
@@ -216,8 +236,8 @@ reading as a second lane (board axis-3 risk). This is a **separate iteration** o
   FLUX-schnell for multiple buildings + taper + gaps + a 5-band road cross-section in one
   flat-frontal frame overloads it and muddles the road bands; it also duplicates the existing
   `street`/foreground layers. Split instead: far trottoir in the tronçon, near trottoir on the
-  `street` layer (§0, §4). *Reversible if lead-art prefers one baked image — then the `street`
-  layer's main-view role is retired (a world-space call for `dev-r3f-render`).*
+  `street` layer (§0, §4). _Reversible if lead-art prefers one baked image — then the `street`
+  layer's main-view role is retired (a world-space call for `dev-r3f-render`)._
 - **kontext off the old single-building `facade.png` for layout — REJECTED.** It carries no
   gaps and no trottoir; kontext would replicate its single-building layout and fight the new
   composition. Kontext is reserved as a **style-lock fallback** off an accepted facade (§0).
@@ -244,6 +264,12 @@ assumption:
 3. **QTE `street` reconciliation.** The ×2.4 hostage-QTE zoom currently reads the overhead
    `street` patch; with a baked far-trottoir + a near-trottoir on the `street` layer, confirm the
    QTE band still reads as a real cross-section (lead-art / `dev-r3f-render`).
+4. **Key colour / threshold for the transparent sky + sky slivers (§0 ruling).** The tronçon
+   keys its roofline sky and true sky slivers to transparency while the buildings are "deep
+   night" / dark grimy walls — a near-black key risks eating dark wall pixels and punching holes
+   _inside_ the facade (the sprite-hole-audit failure mode). Pick a keyable sky value / threshold
+   that leaves the walls solid; a mask-by-region cut (only above rooflines + inside slivers) is
+   the safer path than a global chroma-key. `dev-tooling-assets` keying call, not a prompt clause.
 
 ---
 
