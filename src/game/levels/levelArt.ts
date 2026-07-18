@@ -389,15 +389,14 @@ export interface BackdropLayout {
 }
 
 /**
- * World-unit gap of parallax sky left BETWEEN adjacent tronçons (ADR-0046).
- * The tronçon PNGs fill their own frame edge-to-edge (their outer edges are
- * building walls), so butting them abutted two different buildings' walls into
- * a hard vertical seam. A gap restores the validated read — distinct buildings
- * separated by a sliver of sky, through which the parallax sky (and the street
- * band below) shows — instead of a fused seam. Applied only between tiles, never
- * before the first or after the last.
+ * World-unit gap of sky left BETWEEN adjacent tronçons (ADR-0046). The tronçon
+ * PNGs now carry their OWN transparent L/R margins (the buildings never touch the
+ * image edge), so butting the tiles (gap 0) already leaves a sky gap of the two
+ * neighbours' margins combined — through which the owner-supplied parallax sky
+ * shows above and the continuous ground layer shows below. Kept as a tunable knob
+ * for any extra spacing on top of the baked-in margins.
  */
-export const TRONCON_GAP = 1.8;
+export const TRONCON_GAP = 0;
 
 /** Compose a troncon-sequence backdrop: variable-width tiles laid left→right
  *  with a {@link TRONCON_GAP} sky gap between neighbours, centred on the origin,

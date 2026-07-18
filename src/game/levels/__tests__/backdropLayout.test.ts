@@ -70,8 +70,8 @@ describe("getBackdropLayout — single-facade parity (fixed levels)", () => {
 });
 
 describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
-  // Manifest sequence: troncon-a, troncon-c, troncon-b, troncon-c.
-  const ASPECTS = [1.4992, 1.75, 1.6262, 1.75];
+  // Manifest sequence: troncon-a, troncon-c, troncon-b, troncon-c (padded aspects).
+  const ASPECTS = [1.6491, 1.9224, 1.7857, 1.9224];
   const WIDTHS = ASPECTS.map((a) => WORLD_HEIGHT * a);
   const WIDTHS_SUM = WIDTHS.reduce((s, w) => s + w, 0);
   // fullW includes a TRONCON_GAP sky gap between each adjacent pair (n-1 gaps).
@@ -92,8 +92,7 @@ describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
   it("sums tile widths + inter-tile gaps to fullW", () => {
     const layout = getBackdropLayout("belliard");
     expect(layout.fullW).toBeCloseTo(FULL_W, 12);
-    // widths 79.5048 + 3 gaps of TRONCON_GAP
-    expect(layout.fullW).toBeCloseTo(79.5048 + TRONCON_GAP * 3, 6);
+    expect(layout.fullW).toBeCloseTo(WIDTHS_SUM + TRONCON_GAP * 3, 6);
   });
 
   it("places centreX cumulatively and symmetrically about the origin", () => {

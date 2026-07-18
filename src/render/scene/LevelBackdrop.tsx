@@ -1,9 +1,9 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { TextureLoader, CanvasTexture } from "three";
+import { TextureLoader, CanvasTexture, RepeatWrapping } from "three";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
-import { getBackdropLayout, getLevelArt, levelLayerUrl } from "@game/levels/levelArt";
+import { getBackdropLayout, getLevelArt, levelLayerUrl, WORLD_HEIGHT } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { BLEND, backdropPanes } from "./facadeLayout";
 
@@ -76,6 +76,19 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
   const fullW = layout.fullW;
   const featherFrac = BLEND / (1 + BLEND); // overlap as a fraction of the draw width
 
+  // Tronçon backdrops decompose the ground into a SEPARATE continuous layer
+  // (the tronçon PNGs are buildings-only, cut at the street line): one strip of
+  // trottoir+road spanning the whole street so the road is unbroken under the
+  // between-building sky gaps (ADR-0046). The tronçon art is cut at this fraction
+  // of image height, so the ground layer's top sits at the matching world y.
+  const isTroncon = layout.mode === "troncon-sequence";
+  const STREET_LINE_FRAC = 0.864;
+  const GROUND_TILE_W = WORLD_HEIGHT * 1.4992; // one ground.png = tronçon-a's native (pre-pad) width
+  const groundTopY = facadeH * (0.5 - STREET_LINE_FRAC);
+  const groundH = facadeH * 0.42;
+  const groundY = isTroncon ? groundTopY - groundH / 2 : -facadeH * 0.62;
+  const groundPlaneH = isTroncon ? groundH : facadeH * 0.9;
+
   const skyRef = useRef<Mesh>(null);
   const facadeRefs = useRef<(Mesh | null)[]>([]);
   const streetRef = useRef<Mesh>(null);
@@ -127,12 +140,30 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
         () => undefined,
       );
     });
-    // The continuous street band stays a plain dark plane (its FALLBACK colour) —
-    // NOT textured with street.png: that image is the overhead QTE road, whose
-    // centred white zebra crossing would otherwise peek through the backdrop's
-    // between-tronçon gap at world x=0. The tronçons bake their own far-trottoir,
-    // so the band only needs to fill the gap bottoms with dark road.
-  }, [art.id, panes, featherFrac]);
+    // Tronçon mode: load the continuous ground strip (trottoir+road) and tile it
+    // horizontally across the whole street so the road reads unbroken under the
+    // between-building sky gaps. Single-facade keeps the plain dark band (its
+    // FALLBACK colour) — its opaque panels hide it, and street.png's centred zebra
+    // crossing is the QTE overhead road, not this backdrop band.
+    if (isTroncon) {
+      loader.load(
+        tileUrl(art.id, "ground"),
+        (t) => {
+          const ref = streetRef.current;
+          if (ref === null) return;
+          t.wrapS = RepeatWrapping;
+          t.repeat.set(Math.max(1, Math.round(fullW / GROUND_TILE_W)), 1);
+          applyPixelFilter(t);
+          const mat = ref.material as MeshBasicMaterial;
+          mat.map = t;
+          mat.color.set("#ffffff");
+          mat.needsUpdate = true;
+        },
+        undefined,
+        () => undefined,
+      );
+    }
+  }, [art.id, panes, featherFrac, isTroncon, fullW, GROUND_TILE_W]);
 
   // Only the sky parallaxes; facade/street planes are world-locked so they tile.
   useFrame(() => {
@@ -148,12 +179,13 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
         <meshBasicMaterial color={FALLBACK.sky} />
       </mesh>
 
-      {/* Street band — ONE continuous plane behind the facade spanning the whole
-          street. The tronçons bake their own far-trottoir; this fills the bottom
-          of the transparent between-building gaps with road so a gap reads as an
-          alley (sky above, road below), not a full-height sky slit. */}
-      <mesh ref={streetRef} position={[0, -facadeH * 0.62, -2]}>
-        <planeGeometry args={[fullW * 1.02, facadeH * 0.9]} />
+      {/* Ground — ONE continuous plane behind the buildings spanning the whole
+          street. Tronçon mode textures it with the tiled trottoir+road strip and
+          anchors its top at the street line, so the road runs unbroken under the
+          between-building sky gaps (the buildings-only tronçons are cut here).
+          Single-facade keeps a plain dark band hidden behind its opaque panels. */}
+      <mesh ref={streetRef} position={[0, groundY, -2]}>
+        <planeGeometry args={[fullW * 1.02, groundPlaneH]} />
         <meshBasicMaterial color={FALLBACK.street} />
       </mesh>
 
