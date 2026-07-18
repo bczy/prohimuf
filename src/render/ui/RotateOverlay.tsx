@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { PaperSheet, STOCK, INK } from "@render/ui/print";
+import styles from "./RotateOverlay.module.css";
 
 /**
  * Full-screen blocker shown on mobile while the device is in portrait
@@ -11,16 +12,7 @@ import { PaperSheet, STOCK, INK } from "@render/ui/print";
 export function RotateOverlay(): JSX.Element {
   return (
     <PaperSheet stock={STOCK.shell} style={{ zIndex: 200 }}>
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "24px",
-        }}
-      >
+      <div className={styles.stack}>
         <style>{`
         @keyframes mufRotateHint { 0%,25% { transform: rotate(0deg); } 60%,100% { transform: rotate(90deg); } }
         @media (prefers-reduced-motion: reduce) { .muf-rotate-glyph { animation: none !important; } }
@@ -48,28 +40,8 @@ export function RotateOverlay(): JSX.Element {
           <line x1="16" y1="36" x2="32" y2="36" stroke={INK.black} strokeWidth="2" />
           <circle cx="24" cy="39" r="1.4" fill={INK.black} />
         </svg>
-        <div
-          style={{
-            fontFamily: "Impact, sans-serif",
-            fontSize: "32px",
-            color: INK.full,
-            letterSpacing: "0.1em",
-            textAlign: "center",
-            padding: "0 24px",
-          }}
-        >
-          TOURNEZ VOTRE APPAREIL
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: "12px",
-            color: INK.black,
-            letterSpacing: "0.15em",
-          }}
-        >
-          muf se joue en paysage
-        </div>
+        <div className={styles.title}>TOURNEZ VOTRE APPAREIL</div>
+        <div className={styles.caption}>muf se joue en paysage</div>
       </div>
     </PaperSheet>
   );

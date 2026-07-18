@@ -1,0 +1,31 @@
+/* Hostage QTE overlay stamps (ADR-0046) — static structure/typography only; the
+   verdict ink and the vignette gradient stay inline in HostageQteOverlay.tsx. */
+
+/* Stamped paper chip (shared, composed) — reads over any scene, zero glow. */
+.chip {
+  composes: chip from "./shared.module.css";
+}
+
+/* Full-viewport centred overlay for the set-piece stamps (shared, composed). */
+.centerOverlay {
+  composes: centerOverlay from "./shared.module.css";
+}
+
+/* OTAGE warning stamp. */
+.chipOtage {
+  padding: 10px 22px;
+  border: 3px solid var(--ink-black);
+  font-size: var(--font-size-display);
+  color: var(--mark-pink);
+  letter-spacing: 0.12em;
+  transform: rotate(-4deg);
+}
+
+/* QTE verdict stamp (WON / LOST) — ink inline. */
+.chipVerdict {
+  padding: 12px 26px;
+  border: 3px solid var(--ink-black);
+  font-size: var(--font-size-display-lg);
+  letter-spacing: 0.12em;
+  transform: rotate(-4deg);
+}

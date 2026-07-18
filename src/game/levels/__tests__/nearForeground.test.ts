@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { getNearForeground, LEVEL_ART_LIST, type NearForegroundKind } from "@game/levels/levelArt";
 
 /**
- * Near-foreground parallax data seam (ADR-0045, story near-foreground parallax).
+ * Near-foreground parallax data seam (ADR-0047, story near-foreground parallax).
  * This is the FROZEN cross-lane contract Lane B (render) imports: the shape of
  * `getNearForeground`, its opt-out semantics and the clamped factor range. These
  * tests pin that behaviour against the real manifest data.

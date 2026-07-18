@@ -24,7 +24,7 @@ import levelArt from "@game/levels/levelArt.json";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
 // Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
-// near-foreground props (ADR-0045) — no PNG on disk, warmed by building a texture.
+// near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
 const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav)|nearfg:[a-zA-Z]+)$/;
 
 // Every level id we build a full manifest for, plus the two special targets.
@@ -106,7 +106,7 @@ describe("assetManifest — menu & tutorial", () => {
 describe("assetManifest — belliard level manifest", () => {
   const m = manifestFor("belliard");
 
-  it("warms the tronçon tiles + ground it actually renders (ADR-0046), in tile order", () => {
+  it("warms the tronçon tiles + ground it actually renders (ADR-0048), in tile order", () => {
     // belliard is a troncon-sequence level: the gate warms the tile PNGs (unique,
     // manifest order) + the continuous ground strip — NOT the sky/facade/street
     // trio the tronçon path never draws.

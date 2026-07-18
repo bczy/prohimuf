@@ -1,5 +1,5 @@
 /**
- * Near-foreground décor silhouettes (ADR-0045) — pure Canvas2D, no React/Three.
+ * Near-foreground décor silhouettes (ADR-0047) — pure Canvas2D, no React/Three.
  * Mirrors `foregroundArt.ts`: deterministic B&W silhouettes (dark fill + a GREY
  * moon-reflection rim + a soft drop shadow), shareable with offline preview.
  *
@@ -525,7 +525,7 @@ function drawPedestrianHeadProfile(
 }
 
 /**
- * Feu tricolore parisien, animated, seen in PROFILE (ADR-0045): the whole signal is
+ * Feu tricolore parisien, animated, seen in PROFILE (ADR-0047): the whole signal is
  * turned ~90° — it stands on the pavement facing the road, so we see it from the
  * side. A slim vertical mast on the mast side, a 3-aspect vehicle head up top and a
  * feu piéton lower down, both cantilevered toward the road on short brackets, lenses

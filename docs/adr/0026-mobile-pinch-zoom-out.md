@@ -1,6 +1,6 @@
 # 0026 — Mobile pinch-to-zoom-out (two-finger spread controls the framing)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18)
 - **Date:** 2026-07-15
 - **Related:** [ADR-0003](./0003-mobile-touch-controls-and-camera-pan.md) (mobile
   touch scheme — one finger pans, two-finger tap shoots; `MOBILE_ZOOM_FACTOR`
@@ -63,6 +63,13 @@ would have registered as a shot. Any zoom scheme has to coexist with that.
   stays constant across the zoom range. The factor is 1 at the base (max) zoom
   and on desktop's static zoom (clamped ≥ 1 — the rim only ever grows out), so
   neither look regresses; `GameScene` passes `baseZoom` down to `EnemySprite`.
+
+## Acceptance note
+
+Accepted 2026-07-18: `nextZoomFraction` (`useTouchControls`), the `useGameLoop` zoom
+application, and `rimZoomCompensation` are all implemented and unit-tested. On-device
+pinch feel (gesture responsiveness on real hardware, as opposed to the unit-tested math)
+remains a manual verify, not covered by CI.
 
 ## Scope note (cahier des charges)
 

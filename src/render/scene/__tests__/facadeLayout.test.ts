@@ -72,12 +72,12 @@ describe("facadeLayout stretch", () => {
 });
 
 /**
- * ADR-0046: the per-tile stretch primitive + the mode → draw-scale rule. These
+ * ADR-0048: the per-tile stretch primitive + the mode → draw-scale rule. These
  * lock that the mode-agnostic `stretchAboutCentre` reproduces the fixed panel
  * stretch exactly (single-facade non-regression) and collapses to the identity
  * for the tronçon tiles.
  */
-describe("stretchAboutCentre / facadeDrawScale (ADR-0046)", () => {
+describe("stretchAboutCentre / facadeDrawScale (ADR-0048)", () => {
   const panels = 4;
   const panelW = 10;
   const centreOf = (p: number): number => (p - (panels - 1) / 2) * panelW;
@@ -112,12 +112,12 @@ describe("stretchAboutCentre / facadeDrawScale (ADR-0046)", () => {
 });
 
 /**
- * ADR-0046: the render-side plane list (`backdropPanes`). Asserts the tronçon
+ * ADR-0048: the render-side plane list (`backdropPanes`). Asserts the tronçon
  * tiling (one native-width, un-feathered pane per tile at its centreX) AND that
  * the single-facade path is unchanged (1+BLEND stretch, feather on every interior
  * panel), off the FROZEN `getBackdropLayout` geometry.
  */
-describe("backdropPanes (ADR-0046)", () => {
+describe("backdropPanes (ADR-0048)", () => {
   it("single-facade (stalingrad): PANELS stretched, feathered panes", () => {
     const layout = getBackdropLayout("stalingrad");
     const panes = backdropPanes(layout);

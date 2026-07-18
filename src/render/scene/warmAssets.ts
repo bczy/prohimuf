@@ -14,7 +14,7 @@ import { warmCourierTexture } from "./courierTextures";
 import { preloadVehicle } from "./DeliveryVehicleSprite";
 import { warmNearForegroundTexture } from "./nearForegroundTextures";
 
-// Synthetic manifest scheme for the code-drawn near-foreground props (ADR-0045):
+// Synthetic manifest scheme for the code-drawn near-foreground props (ADR-0047):
 // they have no PNG on disk, so the manifest lists them as `nearfg:<kind>` and the
 // gate builds the shared CanvasTexture instead of fetching a URL.
 const NEAR_FG_PREFIX = "nearfg:";

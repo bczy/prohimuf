@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { PaperSheet, STOCK, INK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, INK, FONT, useRovingIndex } from "@render/ui/print";
+import { SelectableListItem, cx } from "../controls";
+import styles from "./OptionsColophon.module.css";
 
 /**
  * OPTIONS — the OURS / colophon (UX §2.5, deck §4). The zine back page: sliders are
@@ -14,9 +16,6 @@ interface OptionsColophonProps {
   prefs: Prefs;
   onSave: (prefs: Prefs) => void;
 }
-
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
 
 const COLOPHON_LINES = [
   "UNDERGROUND PARIS — fanzine clandestin",
@@ -72,21 +71,15 @@ export function OptionsColophon({ prefs, onSave }: OptionsColophonProps): JSX.El
     <PaperSheet
       stock={STOCK.orange}
       fullBleed={false}
-      style={{ padding: "18px 20px", fontFamily: BODY_FONT, color: INK.black, maxWidth: "560px" }}
+      style={{ padding: "18px 20px", fontFamily: FONT.mono, color: INK.black, maxWidth: "560px" }}
     >
-      <div style={{ fontFamily: DISPLAY_FONT, fontSize: "30px", letterSpacing: "0.05em" }}>
-        OURS
-      </div>
-      <div style={{ fontSize: "11px", letterSpacing: "0.12em", marginBottom: "14px" }}>
-        l'ours du fanzine · réglages
-      </div>
+      <div className={styles.title}>OURS</div>
+      <div className={styles.subtitle}>l'ours du fanzine · réglages</div>
 
       {/* Colophon body (static block) */}
-      <div
-        style={{ borderLeft: `2px solid ${INK.black}`, paddingLeft: "10px", marginBottom: "18px" }}
-      >
+      <div className={styles.colophon}>
         {COLOPHON_LINES.map((line) => (
-          <div key={line} style={{ fontSize: "11px", lineHeight: 1.6 }}>
+          <div key={line} className={styles.colophonLine}>
             {line}
           </div>
         ))}
@@ -131,13 +124,11 @@ function VuMeter({
   onChange: (v: number) => void;
 }): JSX.Element {
   return (
-    <div style={{ marginBottom: "18px", minHeight: "44px" }}>
-      <div style={{ fontSize: "11px", letterSpacing: "0.14em", fontWeight: 700 }}>
+    <div className={styles.vuMeter}>
+      <div className={styles.optLabel}>
         {label} — {Math.round(value * 100)}%
       </div>
-      <div style={{ fontSize: "9px", letterSpacing: "0.1em", marginBottom: "6px", opacity: 0.8 }}>
-        {hint}
-      </div>
+      <div className={styles.optHint}>{hint}</div>
       <input
         type="range"
         min={0}
@@ -146,7 +137,7 @@ function VuMeter({
         onChange={(e) => {
           onChange(Number(e.target.value) / 100);
         }}
-        style={{ width: "100%", accentColor: INK.black, height: "24px" }}
+        className={styles.slider}
       />
     </div>
   );
@@ -180,11 +171,9 @@ function BallotRow({
   }, [roving.index]);
 
   return (
-    <div style={{ marginBottom: "18px" }}>
-      <div style={{ fontSize: "11px", letterSpacing: "0.14em", fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: "9px", letterSpacing: "0.1em", marginBottom: "6px", opacity: 0.8 }}>
-        {hint}
-      </div>
+    <div className={styles.ballotRow}>
+      <div className={styles.optLabel}>{label}</div>
+      <div className={styles.optHint}>{hint}</div>
       <div
         ref={containerRef}
         onFocus={() => {
@@ -195,64 +184,30 @@ function BallotRow({
             setFocusWithin(false);
           }
         }}
-        style={{ display: "flex", gap: "8px" }}
+        className={styles.ballots}
       >
         {options.map((opt, i) => (
-          <MarkerCircle key={opt.key} active={focusWithin && roving.index === i} ink={INK.black}>
-            <button
-              ref={(el) => {
-                itemRefs.current[i] = el;
-              }}
-              type="button"
-              tabIndex={roving.index === i ? 0 : -1}
-              onKeyDown={roving.onKeyDown}
-              onFocus={() => {
-                roving.setIndex(i);
-              }}
-              onClick={opt.onSelect}
-              style={{
-                position: "relative",
-                minWidth: "44px",
-                height: "44px",
-                padding: "0 12px",
-                background: "transparent",
-                color: INK.black,
-                border: `2px solid ${INK.black}`,
-                cursor: "pointer",
-                fontFamily: BODY_FONT,
-                fontSize: "13px",
-                letterSpacing: "0.08em",
-                fontWeight: opt.selected ? 700 : 400,
-              }}
-            >
-              {opt.label}
-              {opt.selected && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: "-8px",
-                    right: "-8px",
-                    width: "18px",
-                    height: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "13px",
-                    lineHeight: 1,
-                    color: INK.full,
-                    background: STOCK.orange,
-                    border: `1.5px solid ${INK.black}`,
-                    borderRadius: "1px",
-                    transform: "rotate(-8deg)",
-                    pointerEvents: "none",
-                  }}
-                >
-                  ✕
-                </span>
-              )}
-            </button>
-          </MarkerCircle>
+          <SelectableListItem
+            key={opt.key}
+            active={focusWithin && roving.index === i}
+            buttonRef={(el) => {
+              itemRefs.current[i] = el;
+            }}
+            tabIndex={roving.index === i ? 0 : -1}
+            onKeyDown={roving.onKeyDown}
+            onFocus={() => {
+              roving.setIndex(i);
+            }}
+            onClick={opt.onSelect}
+            className={cx(styles.ballot, opt.selected && styles.ballotSelected)}
+          >
+            {opt.label}
+            {opt.selected && (
+              <span aria-hidden="true" className={styles.xstamp}>
+                ✕
+              </span>
+            )}
+          </SelectableListItem>
         ))}
       </div>
     </div>

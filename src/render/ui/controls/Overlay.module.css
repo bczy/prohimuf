@@ -1,0 +1,15 @@
+/*
+ * Shared full-viewport overlay frame (ADR-0046). The repeated
+ * `position: fixed; inset: 0; flex-center` box used by PauseScreen (modal backdrop)
+ * and EndScreen (full solid screen). Static structure only — surface-specific
+ * ground/backdrop (rgba/gradient with no clean token), z-index and flex-direction
+ * are added by the consumer (inline or a composed modifier), so no property declared
+ * here is ever redeclared by a consumer (order-independent cascade, the #98 lesson).
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

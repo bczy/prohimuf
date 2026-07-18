@@ -3,7 +3,9 @@ import type { JSX } from "react";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { PaperSheet, STOCK, INK, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, INK, FONT, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { SelectableListItem, cx } from "../controls";
+import styles from "./ScoresUne.module.css";
 
 /**
  * SCORES — the PARIS-MINUIT journal UNE (UX §2.4). The per-level high-score view is
@@ -15,10 +17,6 @@ import { PaperSheet, STOCK, INK, MARK, MarkerCircle, useRovingIndex } from "@ren
 interface ScoresUneProps {
   unlockedLevels: ReadonlySet<string>;
 }
-
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
-const ROSE = STOCK.rose;
 
 export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
   // Same filter as the shipped ScoresTab: unlocked, non-tutorial levels.
@@ -49,25 +47,12 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
     <PaperSheet
       stock={STOCK.shell}
       fullBleed={false}
-      style={{ padding: "18px 20px", fontFamily: BODY_FONT, color: INK.black }}
+      style={{ padding: "18px 20px", fontFamily: FONT.mono, color: INK.black }}
     >
       {/* Masthead (deck §3.1) */}
-      <div style={{ borderBottom: `3px double ${INK.black}`, paddingBottom: "8px" }}>
-        <div
-          style={{
-            fontFamily: DISPLAY_FONT,
-            fontSize: "40px",
-            letterSpacing: "0.04em",
-            textAlign: "center",
-            // Single rose accent — masthead only (§4.5). A flat ink shadow, not glow.
-            textShadow: `2px 2px 0 ${ROSE}`,
-          }}
-        >
-          PARIS-MINUIT
-        </div>
-        <div style={{ fontSize: "10px", letterSpacing: "0.2em", textAlign: "center" }}>
-          LE QUOTIDIEN QUI VEILLE · 1F50 · 1998
-        </div>
+      <div className={styles.masthead}>
+        <div className={styles.wordmark}>PARIS-MINUIT</div>
+        <div className={styles.subtitle}>LE QUOTIDIEN QUI VEILLE · 1F50 · 1998</div>
       </div>
 
       {/* Édition switch (kept level selector, reframed) */}
@@ -81,118 +66,71 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
             setFocusWithin(false);
           }
         }}
-        style={{ display: "flex", gap: "6px", margin: "12px 0", flexWrap: "wrap" }}
+        className={styles.editions}
       >
         {editions.map((l, i) => {
           const active = selected.id === l.id;
           return (
-            <MarkerCircle key={l.id} active={focusWithin && roving.index === i} ink={INK.black}>
-              <button
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                }}
-                type="button"
-                tabIndex={roving.index === i ? 0 : -1}
-                onKeyDown={roving.onKeyDown}
-                onFocus={() => {
-                  roving.setIndex(i);
-                }}
-                onClick={() => {
-                  roving.setIndex(i);
-                }}
-                style={{
-                  minHeight: "44px",
-                  padding: "6px 12px",
-                  background: "transparent",
-                  color: INK.black,
-                  border: `1px solid ${INK.black}`,
-                  borderBottomWidth: active ? "3px" : "1px",
-                  cursor: "pointer",
-                  fontFamily: BODY_FONT,
-                  fontSize: "11px",
-                  letterSpacing: "0.1em",
-                  fontWeight: active ? 700 : 400,
-                }}
-              >
-                {l.name}
-              </button>
-            </MarkerCircle>
+            <SelectableListItem
+              key={l.id}
+              active={focusWithin && roving.index === i}
+              buttonRef={(el) => {
+                itemRefs.current[i] = el;
+              }}
+              tabIndex={roving.index === i ? 0 : -1}
+              onKeyDown={roving.onKeyDown}
+              onFocus={() => {
+                roving.setIndex(i);
+              }}
+              onClick={() => {
+                roving.setIndex(i);
+              }}
+              className={cx(styles.edition, active ? styles.editionActive : styles.editionIdle)}
+            >
+              {l.name}
+            </SelectableListItem>
           );
         })}
       </div>
 
-      <div style={{ fontSize: "10px", letterSpacing: "0.15em", fontWeight: 700 }}>
-        RUBRIQUE FAITS DIVERS — {selected.name}
-      </div>
+      <div className={styles.rubrique}>RUBRIQUE FAITS DIVERS — {selected.name}</div>
 
       {scores.length === 0 || top === undefined ? (
         // Empty state (deck §3.4) — "no news" standfirst, keeps the meaning.
-        <div style={{ textAlign: "center", padding: "36px 8px" }}>
-          <div style={{ fontFamily: DISPLAY_FONT, fontSize: "26px", letterSpacing: "0.03em" }}>
-            AUCUN MÉFAIT SIGNALÉ
-          </div>
-          <div style={{ fontSize: "12px", marginTop: "8px" }}>
-            La rue a été calme. Pour l'instant.
-          </div>
+        <div className={styles.empty}>
+          <div className={styles.emptyTitle}>AUCUN MÉFAIT SIGNALÉ</div>
+          <div className={styles.emptyText}>La rue a été calme. Pour l'instant.</div>
         </div>
       ) : (
         <>
           {/* Lead story from scores[0] (deck §3.2) */}
-          <div
-            style={{
-              margin: "12px 0",
-              borderBottom: `1px solid ${INK.black}`,
-              paddingBottom: "10px",
-            }}
-          >
-            <div style={{ fontSize: "10px", letterSpacing: "0.2em" }}>
-              NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT
-            </div>
-            <div style={{ fontFamily: DISPLAY_FONT, fontSize: "30px", letterSpacing: "0.02em" }}>
-              NUIT BLANCHE : {top.score}
-            </div>
-            <div style={{ fontSize: "12px", marginTop: "4px" }}>
-              {top.wave} vagues de bleus, et le son a tenu.
-            </div>
+          <div className={styles.lead}>
+            <div className={styles.leadKicker}>NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT</div>
+            <div className={styles.leadTitle}>NUIT BLANCHE : {top.score}</div>
+            <div className={styles.leadText}>{top.wave} vagues de bleus, et le son a tenu.</div>
           </div>
 
           {/* Classement (deck §3.3) — # / BUTIN / ASSAUTS / NUIT DU */}
-          <div
-            style={{
-              display: "flex",
-              fontSize: "10px",
-              letterSpacing: "0.15em",
-              fontWeight: 700,
-              borderBottom: `1px solid ${INK.black}`,
-              paddingBottom: "4px",
-            }}
-          >
-            <span style={{ width: "36px" }}>N°</span>
-            <span style={{ flex: 1 }}>BUTIN</span>
-            <span style={{ width: "72px" }}>ASSAUTS</span>
-            <span style={{ width: "96px" }}>NUIT DU</span>
+          <div className={styles.tableHead}>
+            <span className={styles.colNum}>N°</span>
+            <span className={styles.colButin}>BUTIN</span>
+            <span className={styles.colAssauts}>ASSAUTS</span>
+            <span className={styles.colNuit}>NUIT DU</span>
           </div>
           {scores.map((s, i) => {
             const isTop = i === 0;
             // rank-1 highlight WITHOUT an inline-block wrapper: the row stays a
             // full-width block so every column aligns. The green is a keyline/accent
             // only — an inset left rule (no layout shift) plus a circled rank NUMBER —
-            // never small body text on newsprint (2.40:1). Row text is INK.black.
+            // never small body text on newsprint (2.40:1). Row text is INK.black. The
+            // hairline rgba (ink at 0.25α, no clean token) stays inline.
             return (
               <div
                 key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "13px",
-                  padding: "5px 0",
-                  borderBottom: `1px solid rgba(20,18,16,0.25)`,
-                  color: INK.black,
-                  fontWeight: isTop ? 700 : 400,
-                  boxShadow: isTop ? `inset 3px 0 0 ${MARK.green}` : undefined,
-                }}
+                className={cx(styles.row, isTop && styles.rowTop)}
+                style={{ borderBottom: "1px solid rgba(20,18,16,0.25)" }}
               >
-                <span style={{ width: "36px" }}>
+                <span className={styles.colNum}>
                   {isTop ? (
                     <MarkerCircle active ink={MARK.green}>
                       <span>{i + 1}</span>
@@ -201,9 +139,9 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
                     i + 1
                   )}
                 </span>
-                <span style={{ flex: 1, fontSize: "16px" }}>{s.score}</span>
-                <span style={{ width: "72px" }}>{s.wave}</span>
-                <span style={{ width: "96px" }}>{s.date.slice(0, 10)}</span>
+                <span className={cx(styles.colButin, styles.scoreCell)}>{s.score}</span>
+                <span className={styles.colAssauts}>{s.wave}</span>
+                <span className={styles.colNuit}>{s.date.slice(0, 10)}</span>
               </div>
             );
           })}

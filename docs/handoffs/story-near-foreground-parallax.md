@@ -41,7 +41,7 @@ Story: [`_bmad-output/planning-artifacts/story-near-foreground-parallax.md`](../
   ADR number the `senior-architect` needs to draft the ADR, and set the pipeline state entering
   TECH PLAN → DEV.
 - release: pipeline tracking opened. Decisions recorded below.
-  - **ADR ALLOCATION: `ADR-0045`** — near-foreground differential-parallax layer. Verified
+  - **ADR ALLOCATION: `ADR-0047`** — near-foreground differential-parallax layer. Verified
     the next free number by sweeping all branch `docs/adr/` files, all commit messages
     (`git log --all --grep=ADR`) and all handoff shards: highest allocated anywhere = 0037
     (crew-extension). `main` has NOT allocated beyond 0037. `senior-architect` (Winston) owns
@@ -52,7 +52,7 @@ Story: [`_bmad-output/planning-artifacts/story-near-foreground-parallax.md`](../
   - **Current stage: 2. TECH PLAN** — hand is with `senior-architect` (Winston): confirm
     render-only lane placement (spec §Lane → `dev-r3f-render`, no `src/game` change), the
     non-occlusion contract against `windowGrid`, the `levelArt.json` factor convention
-    (engine `mesh.x = camera.x * factor`, negative factor for S>1 apparent speed), and draft ADR-0045.
+    (engine `mesh.x = camera.x * factor`, negative factor for S>1 apparent speed), and draft ADR-0047.
   - **Next hand-offs:** DEV (`dev-r3f-render`, ∥ `lead-art` for band silhouettes / read) →
     VERIFY (`qa-lead` orchestrated: tsc/vitest/lint + `game-designer` playtest vs AC1–AC7 +
     `ux-designer` built-screen review both device classes + `gpu-specialist` perf verdict since
@@ -69,7 +69,7 @@ Story: [`_bmad-output/planning-artifacts/story-near-foreground-parallax.md`](../
   - **CAPS (bounded iteration — enforced by producer):** ≤ 2 spec rework rounds; ≤ 2 art
     generation batches for the band silhouette set; ≤ 2 verify↔build rework rounds for the story.
     On any cap hit I stop the loop and assemble the escalation packet for Bertrand.
-- next: `senior-architect` (Winston) — TECH PLAN + draft ADR-0045 (blocked-soft on Karim's design
+- next: `senior-architect` (Winston) — TECH PLAN + draft ADR-0047 (blocked-soft on Karim's design
   gate for the design-dependent rulings, but the ADR number is available to start drafting NOW).
 
 ## 3. DESIGN GATE — lead-game-designer (Karim) — 2026-07-17
@@ -130,7 +130,7 @@ Story: [`_bmad-output/planning-artifacts/story-near-foreground-parallax.md`](../
     File List: `docs/handoffs/story-near-foreground-parallax.md`, `docs/handoffs/story-foreground-parallax.md`,
     `docs/game-design/README.md`.
 
-- next: **DEV UNBLOCKED.** `senior-architect` (Winston) finalises TECH PLAN + ADR-0045; then
+- next: **DEV UNBLOCKED.** `senior-architect` (Winston) finalises TECH PLAN + ADR-0047; then
   `dev-r3f-render` (∥ `lead-art` on the grey band silhouettes under C1/C2). C3 to be pinned before
   transcription. Caps unchanged (≤2 spec-rework rounds — none consumed).
 - VERDICT: PASS — design gate (lead-game-designer)
@@ -152,14 +152,14 @@ security-review), findings adversarially verified. CONFIRMED & FIXED before merg
 - [MAJEUR] single-facade street band had lost its street.png texture (zebra
   fix over-reach) → restored for single-facade; tronçon keeps the ground strip.
 - [MAJEUR→doc] factor clamp doc drift ([-0.30,-0.15] documented vs [-0.5,-0.1]
-  shipped & visually gated) → JSDoc + manifest $comments + ADR-0045 realigned
+  shipped & visually gated) → JSDoc + manifest $comments + ADR-0047 realigned
   to the shipped band.
 - [MINEUR] gen-window-zones rerun would silently clobber the hand-calibrated
   belliard/troncon-\* zones → guard added (preserved unless FORCE_TRONCON=1);
   pngjs declared as devDependency (was transitive); scooter wheel radius no
   longer rasterizes past the canvas; non-finite nearForeground.x dropped.
 
-Accepted-deferred (non-blocking, logged for follow-up): ADR-0045/0046 prose
+Accepted-deferred (non-blocking, logged for follow-up): ADR-0047/0046 prose
 drift cluster (tile count/aspects, renderOrder numbers, locked object set,
 density cap wording), unused computeBackdropSlots production caller, fallback
 test exercising the generated path, ground repeat 1.02 squeeze, belliard fullW

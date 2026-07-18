@@ -14,7 +14,7 @@ import {
 import type { WindowSlot } from "@game/types/map";
 
 /**
- * FROZEN cross-lane contract for ADR-0046 (troncon-sequence backdrop mode).
+ * FROZEN cross-lane contract for ADR-0048 (troncon-sequence backdrop mode).
  * Render + tooling build against these exact shapes:
  *   - getBackdropLayout(id) → BackdropLayout (pure geometry, both modes)
  *   - computeBackdropSlots(id, facadeH) → world WindowSlot[]

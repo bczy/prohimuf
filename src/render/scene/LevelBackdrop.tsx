@@ -17,7 +17,7 @@ const FALLBACK = {
 
 /** Public URL of a backdrop tile image (respects Vite base path). `levelLayerUrl`
  *  only knows the fixed {@link LayerName}s; tronçon tiles are arbitrary basenames
- *  under the same `assets/levels/<id>/` folder (ADR-0046). For a single-facade
+ *  under the same `assets/levels/<id>/` folder (ADR-0048). For a single-facade
  *  pane (`file === "facade"`) this resolves to the exact same URL as
  *  `levelLayerUrl(id, "facade")`. */
 function tileUrl(id: string, file: string): string {
@@ -55,7 +55,7 @@ interface Props {
 }
 
 /**
- * Renders a level as a wide street over one parallaxing sky (ADR-0046). The
+ * Renders a level as a wide street over one parallaxing sky (ADR-0048). The
  * backdrop composition is driven by {@link getBackdropLayout}:
  *
  * - `single-facade` (stalingrad, vitry): N equal-width panels all loading the
@@ -79,7 +79,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
   // Tronçon backdrops decompose the ground into a SEPARATE continuous layer
   // (the tronçon PNGs are buildings-only, cut at the street line): one strip of
   // trottoir+road spanning the whole street so the road is unbroken under the
-  // between-building sky gaps (ADR-0046). The tronçon art is cut at this fraction
+  // between-building sky gaps (ADR-0048). The tronçon art is cut at this fraction
   // of image height, so the ground layer's top sits at the matching world y.
   const isTroncon = layout.mode === "troncon-sequence";
   const STREET_LINE_FRAC = 0.864;
@@ -125,7 +125,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
     // layer EMPTY (no image) on purpose — the mesh + parallax are kept so an
     // owner-supplied sky can be dropped in later, but nothing is drawn now, so
     // the between-building gaps and the area above the rooflines show through to
-    // the canvas background (ADR-0046).
+    // the canvas background (ADR-0048).
     if (!isTroncon) {
       loader.load(
         levelLayerUrl(art.id, "sky"),
@@ -152,7 +152,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
     // between-building sky gaps — NOT street.png, whose centred zebra crossing
     // (belliard's QTE overhead road) would peek through the gap at world x=0.
     // Single-facade: the classic per-level street.png backdrop art, exactly as
-    // before ADR-0046 (stalingrad/vitry's street art is genuine backdrop, not a
+    // before ADR-0048 (stalingrad/vitry's street art is genuine backdrop, not a
     // QTE view — dropping it flattened their pavement band to a dark rectangle).
     if (isTroncon) {
       loader.load(

@@ -1,0 +1,157 @@
+/*
+ * NarrativeScreen (ADR-0046) — static structure/typography only. Runtime-driven bits
+ * stay inline: the halftone backdrop mask/opacity, the progress-dot fill, the sprite
+ * grayscale filter, and the transcript ground (solid on backdrop scenes, transparent
+ * on the tutorial). The typewriter/continue blink keyframe is scoped here (moved from
+ * the old inline <style>; identical). Every colour/font/size references a var(--…).
+ */
+.root {
+  position: fixed;
+  inset: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.column {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+/* Running masthead — transparent bar with a bottom ink rule. */
+.masthead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--ink-black);
+  padding: var(--space-xs) var(--space-lg);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.3em;
+  color: var(--ink-black);
+  text-align: center;
+}
+
+.skip {
+  position: absolute;
+  top: 32px;
+  left: 16px;
+  min-height: 44px;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+  color: var(--ink-black);
+  padding: 10px 20px;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  font-family: inherit;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.dots {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+}
+
+/* Progress dot; the fill (background) is state-driven -> the .dotFilled modifier. */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-black);
+}
+
+.dotFilled {
+  background: var(--ink-black);
+}
+
+/* Shared illustration slot for the image / gesture / diagram channels. */
+.illustrationSlot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 12px;
+  min-height: 0;
+  flex-shrink: 1;
+  max-height: 38vh;
+}
+
+/* Sprite in the slot; the grayscale filter is scene-driven -> stays inline. */
+.sprite {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Transcript box; the ground (solid vs transparent) is scene-driven -> stays inline. */
+.transcript {
+  position: relative;
+  margin: 0;
+  padding: 24px 32px 48px;
+  border-top: var(--keyline-width) solid var(--ink-black);
+  min-height: 160px;
+}
+
+.speaker {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.3em;
+  color: var(--ink-black);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.text {
+  font-size: var(--font-size-lg);
+  line-height: 1.55;
+  color: var(--ink-black);
+  min-height: 60px;
+  letter-spacing: 0.02em;
+}
+
+/* Typewriter caret; blink keyframe scoped in this module. */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--ink-black);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.7s step-start infinite;
+}
+
+/* Continue hint; on the final panel .hintDone adds the green-box accent (no property
+   shared with .hint, so cascade order is irrelevant — the #98 lesson). */
+.hint {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  font-size: var(--font-size-sm);
+  color: var(--ink-black);
+  letter-spacing: 0.15em;
+  animation: blink 1s step-start infinite;
+}
+
+.hintDone {
+  background: var(--mark-green);
+  border: 1px solid var(--ink-black);
+  padding: 1px 6px;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}

@@ -213,7 +213,7 @@ export function levelLayerPaths(levelId: string): readonly string[] {
   const lvl = levelArt.levels.find((l) => l.id === id) as
     | { backdrop?: { mode?: string; tiles?: readonly { file: string }[] } }
     | undefined;
-  // Tronçon-sequence levels (ADR-0046) render their tile PNGs + the continuous
+  // Tronçon-sequence levels (ADR-0048) render their tile PNGs + the continuous
   // ground strip — warm THOSE, not the sky/facade/street trio the tronçon path
   // never draws (which would let the gate open onto fallback-colour planes and
   // the whole street pop in mid-play on a slow connection).
@@ -233,7 +233,7 @@ export function facadeBackdropPath(): string {
 }
 
 /**
- * The code-drawn near-foreground props (ADR-0045) a level declares, as synthetic
+ * The code-drawn near-foreground props (ADR-0047) a level declares, as synthetic
  * `nearfg:<kind>` manifest entries so the loading gate warms their shared textures
  * (there is no PNG on disk — warmAssets builds the CanvasTexture for this scheme).
  * De-duplicated; empty for a level that opts out (no `nearForeground` field).

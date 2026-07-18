@@ -1,4 +1,4 @@
-# 0045 — Near-foreground differential-parallax décor layer
+# 0047 — Near-foreground differential-parallax décor layer
 
 - **Status:** Proposed
 - **Date:** 2026-07-17

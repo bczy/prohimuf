@@ -1,0 +1,14 @@
+/* Wave readout (ADR-0046) — .item/.label/.value are shared (composed from
+   shared.module.css). */
+
+.item {
+  composes: item from "./shared.module.css";
+}
+
+.label {
+  composes: label from "./shared.module.css";
+}
+
+.value {
+  composes: value from "./shared.module.css";
+}

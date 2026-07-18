@@ -1,0 +1,43 @@
+/*
+ * In-game HUD ticker-strip container (ADR-0046). This module now holds only the
+ * top strip shell (`.hud`) plus the `niveau` readout that stays inline in HUD.tsx;
+ * every other widget owns its own co-located `*.module.css` under `./hud/`. Static
+ * structure/box/typography only — every colour/font/keyline/size references a
+ * var(--…) injected by applyPrintTokens.ts from tokens.ts (no hex/font/motion
+ * literal is re-declared here).
+ */
+
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--stock-shell);
+  border-bottom: var(--keyline-width) solid var(--ink-black);
+  /* HUD ticker only: IBM Plex Mono for legibility at strip sizes (readouts inherit it). */
+  font-family: var(--font-hud-mono);
+  letter-spacing: 0.08em;
+}
+
+/* The `niveau` readout shares the readout-cell structure/caption (composed from the
+   HUD shared module) with the per-widget readouts. */
+.item {
+  composes: item from "./hud/shared.module.css";
+}
+
+.label {
+  composes: label from "./hud/shared.module.css";
+}
+
+.levelName {
+  font-size: var(--font-size-base);
+  color: var(--ink-black);
+  font-family: var(--font-hud-mono);
+  letter-spacing: 0.05em;
+}

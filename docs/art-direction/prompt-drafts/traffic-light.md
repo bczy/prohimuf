@@ -3,7 +3,7 @@
 Craft rules per [`flux-prompt`](../../../.claude/skills/flux-prompt/SKILL.md); nothing
 reaches `levelArt.json` without the `lead-art` PROMPT GATE.
 
-Family: **near-foreground parallax props** (`levels[*].nearForeground`, ADR-0045) —
+Family: **near-foreground parallax props** (`levels[*].nearForeground`, ADR-0047) —
 first _generated_ asset in this family (bollard/bench/Wallace/lamppost/streetSign/
 parkingMeter are still code-drawn). Replaces the code-drawn `kind: "trafficLight"` prop.
 

@@ -58,7 +58,7 @@
           "height": 160
         },
         "neon": "magenta",
-        "facing": "right",
+        "facing": "left",
         "seed": 8128,
         "prompt": "1990s delivery moped, fat small-diameter wheels, exposed tube frame, single round headlamp, top-box crate strapped over the rear rack, empty saddle"
       }
@@ -96,14 +96,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          {
-            "x": 0.829,
-            "y": 0.251
-          },
-          {
-            "x": 0.8,
-            "y": 0.217
-          }
+          { "x": 0.483, "y": 0.391 },
+          { "x": 0.399, "y": 0.113 }
         ]
       },
       "enemy_shooting_2": {
@@ -114,14 +108,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          {
-            "x": 0.106,
-            "y": 0.181
-          },
-          {
-            "x": 0.088,
-            "y": 0.143
-          }
+          { "x": 0.499, "y": 0.371 },
+          { "x": 0.378, "y": 0.167 }
         ]
       },
       "enemy_shooting_3": {
@@ -132,14 +120,8 @@
           "handgun recoiled upward after firing, arm raised higher, big bright muzzle flash"
         ],
         "muzzle": [
-          {
-            "x": 0.77,
-            "y": 0.44
-          },
-          {
-            "x": 0.709,
-            "y": 0.19
-          }
+          { "x": 0.494, "y": 0.359 },
+          { "x": 0.394, "y": 0.12 }
         ]
       },
       "enemy_riot": {
@@ -152,14 +134,8 @@
         "prompt": "a french riot police officer CRS in helmet and body armor aiming a handgun forward at the viewer, muzzle flash",
         "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
         "muzzle": [
-          {
-            "x": 0.808,
-            "y": 0.34
-          },
-          {
-            "x": 0.763,
-            "y": 0.347
-          }
+          { "x": 0.496, "y": 0.193 },
+          { "x": 0.352, "y": 0.118 }
         ]
       },
       "enemy_biker": {
@@ -172,14 +148,8 @@
         "prompt": "a french motorcycle police officer in a full-face helmet aiming a handgun forward at the viewer, muzzle flash",
         "frames": ["", "handgun recoiled upward after firing, big bright muzzle flash"],
         "muzzle": [
-          {
-            "x": 0.182,
-            "y": 0.267
-          },
-          {
-            "x": 0.225,
-            "y": 0.271
-          }
+          { "x": 0.497, "y": 0.095 },
+          { "x": 0.351, "y": 0.126 }
         ]
       },
       "enemy_bonus": {
@@ -263,7 +233,7 @@
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
       "backdrop": {
-        "$comment": "Tronçon-sequence backdrop (ADR-0046): a FIXED deterministic sequence of distinct variable-width transparent tronçon PNGs. Each PNG is BUILDINGS ONLY (floating, transparent L/R margins so buildings never touch the image edge, no baked road, barrière/ground kept only under a building) over a continuous ground layer (assets/levels/belliard/ground.png, one strip spanning the whole street) and — later, owner-supplied — a parallax sky showing through the between-building gaps. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (drives world width = world.heightUnits * aspect). Absent on a level ⇒ single-facade mode. The transparent margins provide the between-building gap, so TRONCON_GAP is 0.",
+        "$comment": "Tronçon-sequence backdrop (ADR-0048): a FIXED deterministic sequence of distinct variable-width transparent tronçon PNGs. Each PNG is BUILDINGS ONLY (floating, transparent L/R margins so buildings never touch the image edge, no baked road, barrière/ground kept only under a building) over a continuous ground layer (assets/levels/belliard/ground.png, one strip spanning the whole street) and — later, owner-supplied — a parallax sky showing through the between-building gaps. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (drives world width = world.heightUnits * aspect). Absent on a level ⇒ single-facade mode. The transparent margins provide the between-building gap, so TRONCON_GAP is 0.",
         "mode": "troncon-sequence",
         "tiles": [
           { "file": "troncon-a", "aspect": 1.6491 },
@@ -279,7 +249,7 @@
       },
       "ironwork": "haussmann",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0045). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right).",
+        "$comment": "Near-foreground parallax props (ADR-0047). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right).",
         "factor": -0.34,
         "objects": [
           {
@@ -420,7 +390,7 @@
       },
       "ironwork": "plain",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0045). factor NEGATIVE, clamped to [-0.5,-0.1]. x full-street normalized (0..1).",
+        "$comment": "Near-foreground parallax props (ADR-0047). factor NEGATIVE, clamped to [-0.5,-0.1]. x full-street normalized (0..1).",
         "factor": -0.38,
         "objects": [
           {

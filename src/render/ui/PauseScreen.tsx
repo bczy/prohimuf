@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { STOCK, INK } from "@render/ui/print";
+import { Overlay, cx } from "./controls";
+import styles from "./PauseScreen.module.css";
 
 interface Props {
   prefs: Prefs;
@@ -20,16 +21,8 @@ function Slider({
   onChange: (v: number) => void;
 }): JSX.Element {
   return (
-    <div style={{ marginBottom: "14px" }}>
-      <div
-        style={{
-          fontFamily: "monospace",
-          fontSize: "10px",
-          color: "#555",
-          marginBottom: "4px",
-          letterSpacing: "0.15em",
-        }}
-      >
+    <div className={styles.field}>
+      <div className={styles.fieldLabel}>
         {label} — {Math.round(value * 100)}%
       </div>
       <input
@@ -40,7 +33,7 @@ function Slider({
         onChange={(e) => {
           onChange(Number(e.target.value) / 100);
         }}
-        style={{ width: "100%", accentColor: INK.black }}
+        className={styles.slider}
       />
     </div>
   );
@@ -56,34 +49,15 @@ function Toggle({
   onChange: (v: boolean) => void;
 }): JSX.Element {
   return (
-    <div style={{ marginBottom: "14px" }}>
-      <div
-        style={{
-          fontFamily: "monospace",
-          fontSize: "10px",
-          color: "#555",
-          marginBottom: "4px",
-          letterSpacing: "0.15em",
-        }}
-      >
+    <div className={styles.field}>
+      <div className={styles.fieldLabel}>
         {label} — {value ? "ON" : "OFF"}
       </div>
       <button
         onClick={() => {
           onChange(!value);
         }}
-        style={{
-          display: "block",
-          width: "100%",
-          padding: "8px",
-          background: value ? INK.full : "transparent",
-          color: value ? STOCK.shell : INK.black,
-          border: `1px solid ${INK.black}`,
-          cursor: "pointer",
-          fontFamily: "monospace",
-          fontSize: "11px",
-          letterSpacing: "0.2em",
-        }}
+        className={cx(styles.toggle, value ? styles.toggleOn : styles.toggleOff)}
       >
         {value ? "◉ ACTIVÉ" : "○ DÉSACTIVÉ"}
       </button>
@@ -101,27 +75,8 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(215,210,198,0.90)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-        backdropFilter: "blur(2px)",
-      }}
-    >
-      <div
-        style={{
-          border: `2px solid ${INK.black}`,
-          padding: "32px",
-          width: "min(420px, 90vw)",
-          background: STOCK.shell,
-          position: "relative",
-        }}
-      >
+    <Overlay className={styles.backdrop} style={{ background: "rgba(215,210,198,0.90)" }}>
+      <div className={styles.card}>
         {/* Scanlines */}
         <div
           style={{
@@ -133,19 +88,9 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
           }}
         />
 
-        <div style={{ position: "relative" }}>
+        <div className={styles.inner}>
           {/* Title */}
-          <div
-            style={{
-              fontFamily: "Impact, sans-serif",
-              fontSize: "36px",
-              color: INK.full,
-              letterSpacing: "0.1em",
-              marginBottom: "24px",
-            }}
-          >
-            PAUSE
-          </div>
+          <div className={styles.title}>PAUSE</div>
 
           {/* Options */}
           <Slider
@@ -170,61 +115,21 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
             }}
           />
 
-          {/* Separator */}
+          {/* Separator (ink rgba hairline, no clean token -> inline) */}
           <div style={{ height: 1, background: "rgba(20,18,16,0.25)", margin: "20px 0" }} />
 
           {/* Action buttons */}
-          <button
-            onClick={onResume}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "12px",
-              marginBottom: "10px",
-              background: INK.full,
-              color: STOCK.shell,
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-            }}
-          >
+          <button onClick={onResume} className={cx(styles.action, styles.actionPrimary)}>
             ▶ REPRENDRE
           </button>
-          <button
-            onClick={onMenu}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "12px",
-              background: "transparent",
-              color: INK.black,
-              border: `1px solid ${INK.black}`,
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-            }}
-          >
+          <button onClick={onMenu} className={cx(styles.action, styles.actionSecondary)}>
             ← RETOUR AU MENU
           </button>
 
           {/* ESC hint */}
-          <div
-            style={{
-              marginTop: "16px",
-              fontFamily: "monospace",
-              fontSize: "10px",
-              color: "#555",
-              textAlign: "center",
-              letterSpacing: "0.15em",
-            }}
-          >
-            [ESC] pour reprendre
-          </div>
+          <div className={styles.escHint}>[ESC] pour reprendre</div>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

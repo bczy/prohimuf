@@ -8,6 +8,33 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/preview-deletion-after-merge-dt20co (PR #101) · dev-tooling-assets ·
+  add `cleanup-preview.yml`: remove `preview/<slug>/` from gh-pages on branch delete /
+  PR merge (+ manual dispatch for orphaned previews) by publishing an EMPTY dir through
+  the existing gh-pages-publish clean-replace (same rebase-retry loop; delete semantic
+  now stated in the action's publish_dir contract); shares the branch's deploy-preview
+  concurrency group; ci.md + ADR-0001 amendment · checks: prettier/tsc/vitest/lint ·
+  review: code-review(high, 8-angle) — 2 CONFIRMED fixed (workflow_dispatch fallback
+  never reached inputs.branch — event.ref is truthy on dispatch; newline in dispatch
+  input line-injects GITHUB_OUTPUT past the empty-slug guard → could wipe preview/),
+  4 hardened (fork-PR + stacked-PR guards, '.'/'..' slug reject, wrong "inert until
+  merged" comment, sparse checkout), rest accepted as documented limitations (slug
+  collision = same as deploy; merged-PR double-fire = cheap serialized no-op)
+
+- 2026-07-18 · claude/render-css-design-system (42ff2c7) · dev-r3f-render · in-game HUD
+  legibility (labels 9→11 / niveau 12→16px; strip → IBM Plex Mono, labels 400 / readouts
+  600; stamps keep Rubik) · VERDICT: PASS — art-direction HUD gate (lead-art/Nico), on the
+  real before/after strips. Plex Mono accepted as the in-game instrument face (HUD is the
+  game-world layer, not a §2bis print surface; bible was silent — rule proposed below).
+  Recommendation on the open readout-face question: KEEP readouts on Plex 600, do NOT
+  revert to Rubik — Rubik Mono One stays reserved for stamps/headlines (OTAGE/LIVRAISON/
+  phase chips), which preserves its punch. Sizes/weights PASS as shipped. Not a Gate-4
+  composite matter: no runtime-composed glow/rim changed, judged on the delivered strips.
+  Proposed bible addition (§2bis-adjacent): "In-game HUD strip = IBM Plex Mono instrument
+  face; Rubik Mono One and Courier Prime stay reserved for print surfaces and set-piece
+  stamps." · checks: N/A to art gate (dev lane ran tsc/vitest/lint) · review: advisory to
+  Bertrand's eye on the readout face
+
 - 2026-07-18 · claude/rtk-graph-savings-report-2a6t8o · dev-tooling-assets · capture the
   last two tooling-savings postes: (1) CLAUDE.md working rule steering code navigation to
   codegraph-first (callers/impact/search) before grep/Read dumps files; (2) install
@@ -39,3 +66,18 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   re-triage (PASS — written moments after Bertrand's merge, hence this follow-up),
   flip the story index row to closed. Docs-only, one shard + index. (orchestrator →
   single code-review waived by fix-lane tier: log-only diff; Marion may challenge.)
+
+- 2026-07-18 · claude/fix-gh-pages-deploy-race · dev-tooling-assets · replace the
+  plain-push peaceiris gh-pages publishes (deploy-preview.yml + deploy.yml) with a
+  shared rebase-retry composite action (.github/actions/gh-pages-publish): re-clone
+  per attempt, subtree clean-replace / root overlay (previews preserved, .nojekyll
+  re-created), backoff+jitter on rejection — ends the cross-branch
+  '! [rejected] (fetch first)' deploy races (runs 475/476/480). ADR-0001 amended
+  (deployment mechanism + dependency removal). · checks: YAML+bash -n, empirical
+  git harness (subtree isolation, root overlay, orphan init, simulated mid-publish
+  race, shallow push, ls-remote rc 0/2/128, dest-guard cases); tsc/vitest N/A (no
+  src) · review: code-review(high) — 1 MAJEUR + 4 MINEUR + 4 NIT, ALL fixed
+  (ls-remote branch-existence gate + retryable clones, stderr surfaced on final
+  failure, .nojekyll parity, ADR-0001 amendment, ci.md + workflow comment refresh,
+  dest guard hardened vs ./.git, no post-final-attempt sleep, max_attempts
+  validated)

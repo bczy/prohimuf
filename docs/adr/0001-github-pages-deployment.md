@@ -40,3 +40,32 @@ MIME type ("text/html")`. The code and workflows are fine in that case — only
 - Changing the Pages source via the API does **not** auto-rebuild; a build must
   be triggered explicitly. Repair commands and verification steps are documented
   in [../ci.md](../ci.md#-critical-setting-pages-must-serve-gh-pages-not-main).
+
+## Amendment — rebase-retry publish (2026-07-18)
+
+The original publishes used `peaceiris/actions-gh-pages@v4` with a plain
+`git push`. With several `claude/**` branch previews and the `main` deploy all
+writing the single `gh-pages` ref, the loser of a concurrent push got
+`! [rejected] (fetch first)` and the deploy failed (observed repeatedly on the
+branch-preview farm). Both workflows now publish through the in-repo composite
+action **`.github/actions/gh-pages-publish`**: each attempt re-clones
+`gh-pages` fresh, applies only its own target (root overlay for `main`,
+clean-replace of `preview/<slug>/` for branch previews — the rest of the branch
+is always preserved, and `.nojekyll` is re-created on root publishes), then
+pushes; a rejected push re-clones and retries with backoff + jitter. This
+removes the `peaceiris/actions-gh-pages` dependency; everything else above
+(branch layout, Pages source, sub-path bases, SPA fallback) is unchanged.
+
+## Amendment — preview lifecycle cleanup (2026-07-18)
+
+Branch previews had no end of life: `preview/<slug>/` subtrees accumulated on
+`gh-pages` forever after their branches merged. **`cleanup-preview.yml`** now
+removes a branch's preview when the branch is deleted or its PR merges (manual
+dispatch prunes previews orphaned before the workflow existed). It reuses
+`gh-pages-publish` unchanged: clean-replacing `preview/<slug>/` with an
+**empty** publish dir deletes the subtree (git tracks no empty directories),
+through the same rebase-retry loop — and it shares the branch's
+`deploy-preview-*` concurrency group so a cleanup queues behind an in-flight
+deploy of the same ref instead of interleaving with it. (One asymmetry: a new
+push-deploy of a branch kept alive after merge may cancel a pending cleanup —
+that branch's eventual delete event re-fires it.)

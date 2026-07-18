@@ -1,0 +1,93 @@
+/*
+ * TitleScreen (ADR-0046) — static structure/typography only. The short-landscape
+ * @media reflow (toggling --muf-* vars on the global .muf-title-surface) and the
+ * mufTitleBlink cursor keyframe stay in the component's <style> block; the
+ * media-driven padding/wordmark-size/display values stay inline as var(--muf-*)
+ * reads. Every colour/font references a var(--…) injected from tokens.ts.
+ */
+
+/* Printed masthead ink bar pinned to the top edge. */
+.masthead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--ink-full);
+  color: var(--stock-shell);
+  padding: var(--space-xs) var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Interactive cover column. `padding` (var --muf-title-pad) stays inline (responsive). */
+.surface {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+/* Uppercase mono info line; per-line font-size/letter-spacing/margin-top (and the
+   responsive display toggle) stay inline. */
+.info {
+  font-family: var(--font-mono);
+  color: var(--ink-black);
+  text-transform: uppercase;
+}
+
+/* MUF wordmark; the responsive var(--muf-wordmark-size) font-size stays inline. */
+.wordmark {
+  font-family: var(--font-display);
+  line-height: 0.9;
+  letter-spacing: 0.05em;
+  color: var(--ink-full);
+  margin-top: var(--space-md);
+}
+
+/* Ink divider rule; the responsive display toggle stays inline. */
+.divider {
+  width: min(420px, 80%);
+  height: 2px;
+  background: var(--ink-black);
+  margin: 22px 0;
+}
+
+/* Teaser block; the responsive display toggle stays inline. */
+.teasers {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+  color: var(--ink-black);
+  text-align: left;
+}
+
+/* Info-line CTA (focus target). */
+.cta {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  color: var(--ink-black);
+  padding: var(--space-md) 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Typewriter cursor box; the blink animation (global mufTitleBlink keyframe, literal
+   ms duration) stays inline to preserve behaviour exactly. */
+.cursor {
+  display: inline-block;
+  width: 9px;
+  height: 1em;
+  margin-left: 4px;
+  background: var(--ink-black);
+  vertical-align: text-bottom;
+}

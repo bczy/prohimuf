@@ -15,7 +15,7 @@
  *    track whatever art was generated. Output keyed by bare level id →
  *    `WindowZone[][]` (outer = panels 0..PANELS-1).
  *
- * 2. TRONÇON-SEQUENCE (ADR-0046): each level with a `backdrop.mode ===
+ * 2. TRONÇON-SEQUENCE (ADR-0048): each level with a `backdrop.mode ===
  *    "troncon-sequence"` in the manifest names a FIXED set of distinct,
  *    variable-width, transparent PNG tronçons (`<file>.png`), each its own
  *    building(s) with irregular window counts/positions — there is no shared
@@ -186,7 +186,7 @@ function writeOverlay(raw, zones, out) {
 }
 
 // ---------------------------------------------------------------------------
-// Pass 2 — tronçon-sequence (ADR-0046): detect real window openings.
+// Pass 2 — tronçon-sequence (ADR-0048): detect real window openings.
 // ---------------------------------------------------------------------------
 
 // Upper lit-window floors: below the roofline/chimneys, above the tagged
@@ -411,7 +411,7 @@ function main() {
     result[level.id] = panels;
   }
 
-  // Pass 2 — tronçon-sequence levels (ADR-0046): detect real window openings
+  // Pass 2 — tronçon-sequence levels (ADR-0048): detect real window openings
   // per distinct tronçon file, keyed `${levelId}/${file}`.
   //
   // GUARD: existing `${id}/${file}` keys are HAND-CALIBRATED (Bertrand rejected

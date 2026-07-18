@@ -8,14 +8,15 @@ All workflows live in `.github/workflows/`. Asset-generation internals are in
 
 ## Workflows at a glance
 
-| Workflow                     | File                      | Trigger                                 | What it does                                                               |
-| ---------------------------- | ------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
-| **CI**                       | `ci.yml`                  | push to `main`, every PR                | Typecheck · Lint · Format check · Tests + coverage                         |
-| **Deploy to GitHub Pages**   | `deploy.yml`              | push to `main`, manual                  | Builds the app and publishes it to `gh-pages` root → the live site         |
-| **Deploy branch preview**    | `deploy-preview.yml`      | push to `claude/*` (auto), manual       | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages` |
-| **Style B Preview**          | `preview.yml`             | push to a specific style branch, manual | Generates level art, renders screenshots, uploads a contact sheet artifact |
-| **Generate enemy sprites**   | `gen-sprites.yml`         | manual, or dispatch marker              | Regenerates missing enemy sprites and commits them                         |
-| **Generate vehicle sprites** | `gen-vehicle-sprites.yml` | manual, or dispatch marker              | Regenerates truck/car/moto sprites (FORCE=1) and commits them              |
+| Workflow                     | File                      | Trigger                            | What it does                                                                                                                          |
+| ---------------------------- | ------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **CI**                       | `ci.yml`                  | push to `main`, every PR           | Typecheck · Lint · Format check · Tests + coverage, **plus** the E2E job (home/in-game smoke, ADR-0005 D1/D2/D3 harness, assets gate) |
+| **Deploy to GitHub Pages**   | `deploy.yml`              | push to `main`, manual             | Builds the app and publishes it to `gh-pages` root → the live site                                                                    |
+| **Deploy branch preview**    | `deploy-preview.yml`      | push to `claude/*` (auto), manual  | Builds any branch and publishes it under `preview/<branch>/` on `gh-pages`                                                            |
+| **Cleanup branch preview**   | `cleanup-preview.yml`     | branch delete, PR merge, manual    | Removes `preview/<branch>/` from `gh-pages` once the branch is merged/deleted                                                         |
+| **Style B Preview**          | `preview.yml`             | push to `main`/`claude/**`, manual | Generates level art, renders screenshots, uploads a contact sheet artifact (decorative — see the harness section below)               |
+| **Generate enemy sprites**   | `gen-sprites.yml`         | manual, or dispatch marker         | Regenerates missing enemy sprites and commits them                                                                                    |
+| **Generate vehicle sprites** | `gen-vehicle-sprites.yml` | manual, or dispatch marker         | Regenerates truck/car/moto sprites (FORCE=1) and commits them                                                                         |
 
 `pages-build-deployment` also appears in the Actions tab — that one is
 **GitHub's own internal Pages build**, not a workflow in this repo. It runs
@@ -93,6 +94,43 @@ curl -s https://bczy.github.io/prohimuf/ | grep script
 
 ---
 
+## The ADR-0005 dynamic-verification harness (D1/D2/D3) — a REQUIRED check
+
+[ADR-0005](./adr/0005-dynamic-verification-harness.md) extends the render farm
+past a single frozen frame per level with three additive capture modes, each
+one `node` script driven headless via the shared `.github/actions/e2e-ingame`
+composite action (same "serve `dist/` + run a script against it" wrapper the
+in-game smoke already uses — see `ci.yml`'s `e2e` job, three steps after
+"E2E in-game smoke"):
+
+| Mode                | Script                       | What it proves                                                                                                                                                                                                                                                                                                         |
+| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1 — motion**     | `scripts/harness-motion.mjs` | Belliard in `__MUF_PLAY__` (un-frozen) mode: the courier traversing the street, and the QTE's ZOOMING push + COVERED→PEEKING telegraph. Writes a reviewable frame strip (`screenshots/motion-belliard.png`) and hard-fails unless the state trace shows a monotonic courier advance AND a telegraphed peek transition. |
+| **D2 — assertions** | `scripts/harness-assert.mjs` | Drives real canvas input and asserts exact `energy`/`score` deltas read through `window.__MUF_STATE__()` — belliard's panic-shot penalty during ZOOMING, and vitry's accomplice-only drain with zero player fire.                                                                                                      |
+| **D3 — golden**     | `scripts/harness-golden.mjs` | Pixel-diffs the frozen `stalingrad` / `vitry` frames against committed baselines (`screenshots/golden/level_*.png`), enforcing ADR-0004 D2's "byte-for-byte unchanged for the same seed" at the visual layer.                                                                                                          |
+
+**Merge-gate-policy decision (senior-architect, Bertrand-approved):** all three
+are wired as steps in `ci.yml`'s `e2e` job, which runs on every `pull_request` —
+so a red harness now **blocks merge**, closing the "artifact-only preview that
+can fail invisibly" gap ADR-0005 calls out. `preview.yml` (the AI-art contact
+sheet farm) stays **decorative / artifact-only** on purpose — its branch pin was
+widened so it actually runs on `claude/**`, but it is not, and does not become,
+part of the merge gate.
+
+**Golden churn (D3) is a deliberate workflow, never a rubber-stamp.** A real art
+change to `stalingrad`/`vitry` reds the diff; regenerate consciously and eyeball
+the result before committing:
+
+```bash
+UPDATE_GOLDEN=1 node scripts/harness-golden.mjs
+```
+
+`scripts/SCRIPTS.md`'s "Dynamic verification harness" section has the full
+per-script detail (tolerance calibration, the `__MUF_PLAY__` / `__MUF_STATE__`
+seam contract, etc.).
+
+---
+
 ## Dispatching a workflow without `actions: write`
 
 The REST dispatch endpoint
@@ -146,11 +184,19 @@ post-generation preview.
 To try a branch live without merging to `main`:
 
 - **Playable preview** — run **Deploy branch preview** manually (Actions → pick
-  the ref). Lands at `https://bczy.github.io/prohimuf/preview/<branch>/`. It uses
-  `keep_files: true` so it never wipes `main`'s root or other previews.
+  the ref). Lands at `https://bczy.github.io/prohimuf/preview/<branch>/`. The
+  publish (`.github/actions/gh-pages-publish`) clean-replaces only its own
+  `preview/<slug>/` subtree and never wipes `main`'s root or other previews;
+  it re-clones + retries on a concurrent-push race instead of failing.
 - **Visual contact sheet** — **Style B Preview** renders level screenshots and
   uploads them as a downloadable artifact (`style-b-screenshots`), not committed
   back to the branch.
+- **Cleanup** — **Cleanup branch preview** (`cleanup-preview.yml`) removes
+  `preview/<slug>/` when the branch is deleted or its PR merges, by publishing
+  an _empty_ directory through the same `gh-pages-publish` clean-replace (git
+  keeps no empty dirs, so the subtree disappears — same rebase-retry loop, no
+  race with in-flight deploys). Previews orphaned before this workflow existed
+  can be pruned manually (Actions → Cleanup branch preview → branch name).
 
 ---
 
@@ -160,6 +206,7 @@ To try a branch live without merging to `main`:
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Ship to the live site                        | Push / merge to `main` (automatic)                                                                |
 | Preview a branch live                        | Actions → Deploy branch preview → pick ref                                                        |
+| Remove a stale branch preview                | Actions → Cleanup branch preview → branch name (automatic on branch delete / PR merge)            |
 | See why the live site is blank               | Check Pages source is `gh-pages` (above)                                                          |
 | Regenerate enemy sprites                     | Actions → Generate enemy-type sprites                                                             |
 | Dispatch a workflow without `actions: write` | `date > .github/dispatch/<name> && git add … && git commit -m "ci(dispatch): <name>" && git push` |

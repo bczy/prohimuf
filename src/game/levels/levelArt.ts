@@ -87,7 +87,7 @@ export interface WindowRows {
   readonly rows: readonly { readonly y: number; readonly xs: readonly number[] }[];
 }
 
-/** A near-foreground silhouette prop that scrolls faster than the street (ADR-0045). */
+/** A near-foreground silhouette prop that scrolls faster than the street (ADR-0047). */
 export type NearForegroundKind =
   | "parkingMeter"
   | "lamppost"
@@ -122,7 +122,7 @@ export interface BackdropTileSpec {
 }
 
 /**
- * How a level composes its backdrop (ADR-0046). Absent on a level ⇒
+ * How a level composes its backdrop (ADR-0048). Absent on a level ⇒
  * `single-facade`: the classic {@link PANELS} equal-width `facade.png` panels.
  * `troncon-sequence`: a fixed, deterministic sequence of distinct
  * variable-width tronçon images laid side by side.
@@ -136,7 +136,7 @@ export interface LevelArt {
   readonly name: string;
   readonly label: string;
   readonly parallax: LevelArtParallax;
-  /** How the backdrop is composed (ADR-0046); absent ⇒ single-facade. */
+  /** How the backdrop is composed (ADR-0048); absent ⇒ single-facade. */
   readonly backdrop?: BackdropDescriptor;
   /** Which code-drawn foreground ironwork to render; defaults to "haussmann". */
   readonly ironwork?: IronworkStyle;
@@ -152,7 +152,7 @@ export interface LevelArt {
   readonly windowGrid?: WindowGrid;
   /** Hand-authored window zones (level design); takes priority over windowGrid. */
   readonly windows?: WindowRows;
-  /** Near-foreground parallax layer (ADR-0045); absent = opt-out for this level. */
+  /** Near-foreground parallax layer (ADR-0047); absent = opt-out for this level. */
   readonly nearForeground?: NearForegroundLayer;
 }
 
@@ -209,7 +209,7 @@ export function getIronworkSillOffset(id: string | undefined): number {
   return Math.min(0.6, Math.max(0, raw));
 }
 
-/** Allowed range for the near-foreground parallax factor (NEGATIVE, ADR-0045).
+/** Allowed range for the near-foreground parallax factor (NEGATIVE, ADR-0047).
  *  Widened so the near (front) row can drift clearly faster than the facade. */
 const NEAR_FOREGROUND_FACTOR_MIN = -0.5;
 const NEAR_FOREGROUND_FACTOR_MAX = -0.1;
@@ -236,7 +236,7 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
   typeof kind === "string" && (NEAR_FOREGROUND_KINDS as readonly string[]).includes(kind);
 
 /**
- * The near-foreground parallax layer for a level (ADR-0045), or `null` when the
+ * The near-foreground parallax layer for a level (ADR-0047), or `null` when the
  * level opts out (no `nearForeground` field) or the id is unknown. Unlike
  * {@link getLevelArt} this does NOT fall back to the first level: an unknown id
  * yields null.
@@ -364,7 +364,7 @@ export function computeLevelSlots(
 const PANEL_WIDTH = WORLD_HEIGHT * FACADE_ASPECT;
 
 /**
- * Per-tronçon generated window zones (troncon-sequence, ADR-0046), keyed
+ * Per-tronçon generated window zones (troncon-sequence, ADR-0048), keyed
  * `${levelId}/${tile.file}`. This is a FLAT view of the same generated map as
  * {@link GENERATED_ZONES} (double-cast through `unknown`: the per-tronçon
  * entries are a single zone list, not the per-panel array-of-arrays of the
@@ -385,7 +385,7 @@ export interface BackdropTile {
   readonly zones: readonly WindowZone[];
 }
 
-/** The pure geometric composition of a level's backdrop (ADR-0046). Contains
+/** The pure geometric composition of a level's backdrop (ADR-0048). Contains
  *  NO draw-scale / feather / blend — those stay render-side, applied per mode. */
 export interface BackdropLayout {
   readonly mode: "single-facade" | "troncon-sequence";
@@ -394,7 +394,7 @@ export interface BackdropLayout {
 }
 
 /**
- * World-unit gap of sky left BETWEEN adjacent tronçons (ADR-0046). The tronçon
+ * World-unit gap of sky left BETWEEN adjacent tronçons (ADR-0048). The tronçon
  * PNGs now carry their OWN transparent L/R margins (the buildings never touch the
  * image edge), so butting the tiles (gap 0) already leaves a sky gap of the two
  * neighbours' margins combined — through which the owner-supplied parallax sky
@@ -423,7 +423,7 @@ function buildTronconLayout(id: string, tiles: readonly BackdropTileSpec[]): Bac
 }
 
 /**
- * The pure, deterministic backdrop layout for a level (ADR-0046). Single grid
+ * The pure, deterministic backdrop layout for a level (ADR-0048). Single grid
  * abstraction for both modes:
  * - single-facade (default): {@link PANELS} equal-width `facade` tiles of width
  *   {@link PANEL_WIDTH}, centred on the origin, each carrying its panel's zones

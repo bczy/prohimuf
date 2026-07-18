@@ -8,7 +8,7 @@
  * stretch factor and the world-X remap used by `LevelBackdrop`,
  * `ForegroundFrames` and `GameScene`.
  *
- * ADR-0046 generalizes this to a per-tile stretch: {@link stretchAboutCentre}
+ * ADR-0048 generalizes this to a per-tile stretch: {@link stretchAboutCentre}
  * scales a world X about ANY tile centre by ANY draw-scale, so the same remap
  * serves both the fixed equal-width `single-facade` panels (draw-scale
  * {@link FACADE_DRAW_SCALE}, the seam is a feathered overlap) and the
@@ -63,7 +63,7 @@ export function invertFacadeStretchX(worldX: number, panelW: number, panels: num
 
 /**
  * Scale `worldX`'s offset from a given tile centre by `drawScale` — the
- * mode-agnostic generalization of {@link applyFacadeStretchX} (ADR-0046). The
+ * mode-agnostic generalization of {@link applyFacadeStretchX} (ADR-0048). The
  * caller supplies the tile's own `centreX` (no floor-based panel classification),
  * so it works for the variable-width tronçon tiles too. For a `single-facade`
  * panel this is numerically identical to `applyFacadeStretchX(worldX, panelW,
@@ -75,7 +75,7 @@ export function stretchAboutCentre(worldX: number, centreX: number, drawScale: n
 }
 
 /**
- * The facade horizontal draw-scale for a backdrop mode (ADR-0046): the
+ * The facade horizontal draw-scale for a backdrop mode (ADR-0048): the
  * `single-facade` panels are drawn at {@link FACADE_DRAW_SCALE} so neighbours
  * overlap and the left-edge feather crossfades the seam; the `troncon-sequence`
  * tiles are drawn at native width (1) — the seam is a transparent sky gap, not a
@@ -103,7 +103,7 @@ export interface BackdropPane {
 }
 
 /**
- * The render-side plane list for a backdrop layout (ADR-0046): one pane per tile,
+ * The render-side plane list for a backdrop layout (ADR-0048): one pane per tile,
  * carrying the draw-scale and feather flag `LevelBackdrop` needs on top of the
  * pure geometry. Keeps the single-facade path byte-identical (draw-scale 1.08,
  * feather on every panel after the first) while the tronçon path draws native,

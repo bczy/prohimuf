@@ -1,0 +1,107 @@
+name: Cleanup branch preview
+
+# Removes preview/<slug>/ from gh-pages once a branch preview is obsolete —
+# the counterpart of deploy-preview.yml, so previews stop accumulating forever:
+#
+#   - delete:        the branch itself was deleted (incl. auto-delete on merge)
+#   - pull_request:  the branch's PR was merged (covers branches kept after merge)
+#   - workflow_dispatch: manual cleanup of one branch's preview (retroactive
+#     pruning of previews orphaned before this workflow existed)
+#
+# NOTE: `delete` events run the workflow version on the default branch, so that
+# trigger is inert until this file lands on main. `pull_request: closed` runs
+# the version from the PR's merge ref — it is live for any PR whose merge
+# result contains this file (including the PR that introduces it).
+
+on:
+  delete:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch whose preview/<slug>/ should be removed from gh-pages"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# Same concurrency group as deploy-preview.yml for the same branch
+# (deploy-preview-refs/heads/<branch>), so a cleanup queues behind an in-flight
+# deploy of that ref instead of interleaving with it, and cancel-in-progress
+# stays false so a cleanup never kills a deploy. (The reverse is not
+# guaranteed: a NEW push-deploy of a kept-alive branch may cancel a pending
+# cleanup — that branch's eventual delete event re-fires the cleanup.)
+# inputs.branch comes first in the fallback: it is empty for the other two
+# events, while workflow_dispatch payloads carry their own truthy event.ref
+# (the ref the run was dispatched ON, not the branch to clean).
+concurrency:
+  group: deploy-preview-refs/heads/${{ inputs.branch || github.event.pull_request.head.ref || github.event.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Remove branch preview from gh-pages
+    runs-on: ubuntu-latest
+    # Tag deletions have no preview; an unmerged-closed PR keeps its preview
+    # (the branch still exists — the delete event will clean up later). Same
+    # for a PR merged into a non-default base (stacked PR: the branch lives
+    # on). Fork PRs are skipped: their head.ref names a branch in the FORK's
+    # namespace, and their GITHUB_TOKEN is read-only anyway.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == github.event.repository.default_branch &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    steps:
+      # Only needed for the local composite action below — skip the rest of
+      # the tree (sources, committed art/audio assets).
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions/gh-pages-publish
+
+      - name: Sanitize branch name
+        id: slug
+        # Pass the branch through env, not ${{ }} interpolation into the run
+        # block, so a crafted branch name cannot inject (same rule as
+        # deploy-preview.yml). Delete events carry it in event.ref, merged PRs
+        # in the head ref, manual runs in the input (checked first — see the
+        # concurrency comment above).
+        env:
+          BRANCH_NAME: ${{ inputs.branch || github.event.pull_request.head.ref || github.event.ref }}
+        run: |
+          # Same allowlist sanitize as deploy-preview.yml, minus '\n': git ref
+          # names can't contain newlines so real-branch slugs are identical,
+          # but inputs.branch is free text and a preserved newline would
+          # line-inject into GITHUB_OUTPUT below (last `slug=` wins),
+          # bypassing the degenerate-slug guard.
+          slug=$(printf '%s' "$BRANCH_NAME" | tr -c 'a-zA-Z0-9._-' '-')
+          case "$slug" in
+            ''|.|..)
+              echo "::error::degenerate branch name '$slug' — refusing (destination would escape preview/<slug>)"
+              exit 1
+              ;;
+          esac
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Create empty publish dir
+        run: mkdir -p "$RUNNER_TEMP/empty-preview"
+
+      # gh-pages-publish clean-replaces destination_dir with publish_dir and
+      # git tracks no empty directories — so publishing an EMPTY dir deletes
+      # the preview/<slug> subtree, reusing the exact rebase-retry loop the
+      # deploys use (no race with concurrent publishes). Exits 0 as a no-op
+      # when the preview was never deployed or is already gone. (This delete
+      # semantic is part of the action's documented contract — see its
+      # publish_dir input description.)
+      - name: Remove preview/<slug> from gh-pages
+        uses: ./.github/actions/gh-pages-publish
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ runner.temp }}/empty-preview
+          destination_dir: preview/${{ steps.slug.outputs.slug }}
+          commit_message: "preview: remove ${{ steps.slug.outputs.slug }} (${{ github.event_name }})"

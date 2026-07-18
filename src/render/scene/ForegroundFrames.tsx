@@ -61,7 +61,7 @@ interface Props {
   /** Per-level drop of the railing base below the opening (fraction of zone height). */
   sillOffset: number;
   /**
-   * Horizontal draw-scale of the facade plane this overlay tracks (ADR-0046).
+   * Horizontal draw-scale of the facade plane this overlay tracks (ADR-0048).
    * Defaults to {@link FACADE_DRAW_SCALE} (the single-facade panel stretch);
    * tronçon tiles pass 1 (drawn at native width, no feather/stretch).
    */

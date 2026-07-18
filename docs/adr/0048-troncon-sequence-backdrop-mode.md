@@ -1,9 +1,9 @@
-# 0046 — Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2)
+# 0048 — Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2)
 
 - **Status:** Proposed
 - **Date:** 2026-07-18
 - **Number:** provisional — allocated pending `producer` (Marion) confirmation in
-  `docs/handoffs/story-foreground-parallax.md` (next free after ADR-0045 on this branch;
+  `docs/handoffs/story-foreground-parallax.md` (next free after ADR-0047 on this branch;
   `origin/main` is at 0044, this branch added 0045; if Marion assigns a different number
   this file is renamed and the index row updated).
 
@@ -83,7 +83,7 @@ pipeline with one world-space composition: a tile-local zone `(x,y,w,h)` → wor
 on mode: single-facade keeps its exact current path; troncon-sequence draws each tile as its own
 world-locked plane at native `width`, butted at `centreX`, **no left-edge feather**, letting the
 unchanged parallax `sky` show through rooflines and slivers, plus the `street`/road band and the
-near-foreground (ADR-0045). `GameScene.tsx` reads slots from `getBackdropLayout` (drops the local
+near-foreground (ADR-0047). `GameScene.tsx` reads slots from `getBackdropLayout` (drops the local
 `panelW`/`PANELS` math); `ForegroundFrames` is placed per tile at `centreX_i` with `facadeW =
 width_i` and that tile's zones (replacing the `(p−(PANELS−1)/2)·panelW` group placement). The
 `applyFacadeStretchX` remap is applied with each tile's `drawScale`, so it is identity for
@@ -167,7 +167,7 @@ global near-black chroma-key, so the deep-night grimy walls survive (sprite-hole
 
 - `docs/art-direction/prompt-drafts/level-belliard-decor-v2.md` (§0 transparency, §3 sky, §4
   near-trottoir, §6 open questions)
-- ADR-0028 (window-alignment harness), ADR-0004 (per-level roster), ADR-0045 (near-foreground)
+- ADR-0028 (window-alignment harness), ADR-0004 (per-level roster), ADR-0047 (near-foreground)
 - `src/render/scene/LevelBackdrop.tsx`, `src/render/scene/facadeLayout.ts`,
   `src/render/scene/ForegroundFrames.tsx`, `src/render/scene/GameScene.tsx`,
   `src/game/levels/levelArt.ts` (`tilePanelZones`, `computeSlotsFromZones`,

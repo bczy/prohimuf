@@ -1,4 +1,4 @@
-// Pure, Three-free helpers for the near-foreground parallax layer (ADR-0045).
+// Pure, Three-free helpers for the near-foreground parallax layer (ADR-0047).
 // Co-located with a vitest spec, mirroring the deriveCrtParams / markRing
 // precedent, so the two load-bearing invariants — reduced-motion clamping the
 // layer to the facade (S = 1×), and the bottom band staying below the lowest

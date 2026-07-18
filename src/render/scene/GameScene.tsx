@@ -129,7 +129,7 @@ export function GameScene({
   crt = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art. The
-  // backdrop composition (ADR-0046) is the single grid abstraction — enemy slots,
+  // backdrop composition (ADR-0048) is the single grid abstraction — enemy slots,
   // railings and the harness all derive from it, in either mode.
   const facadeH = WORLD_HEIGHT;
   const layout = useMemo(() => getBackdropLayout(levelId), [levelId]);
@@ -140,7 +140,7 @@ export function GameScene({
   const panelW = WORLD_HEIGHT * FACADE_ASPECT;
   // Facade horizontal draw-scale: single-facade panels stretch by 1+BLEND (the
   // feathered overlap); tronçon tiles draw at native width (1) — the seam is a
-  // real transparent gap, so there is nothing to stretch (ADR-0046).
+  // real transparent gap, so there is nothing to stretch (ADR-0048).
   const drawScale = useMemo(() => facadeDrawScale(layout.mode), [layout.mode]);
 
   // Dev harness override for the level's window zones (never set in production).
@@ -247,7 +247,7 @@ export function GameScene({
 
   // Register the harness slot-rects reader. Each slot's rendered sprite box is
   // pre-computed alongside the slots (see `facade.rects`) in TILE-local facade-
-  // normalized coords, so the reader is a pass-through. ADR-0046: `panel` is now
+  // normalized coords, so the reader is a pass-through. ADR-0048: `panel` is now
   // the backdrop-tile index (located by cumulative offset during composition, not
   // `floor(x·PANELS)`), so this generalizes to the variable-width tronçon layout
   // while staying byte-identical for the fixed equal-width panels.
@@ -278,7 +278,7 @@ export function GameScene({
 
   // Register the harness screen-projection hook (never set in production). It
   // maps a tile-local facade point to CSS pixels through the SAME production path
-  // the railings/slots use: the addressed tile (ADR-0046 — located by index, not
+  // the railings/slots use: the addressed tile (ADR-0048 — located by index, not
   // by fixed pitch) gives world x = tile.centreX + (x-0.5)·tile.width, remapped by
   // the shared stretch (identity in tronçon mode), world y = (0.5-y)·facadeH, then
   // camera.project() → NDC → CSS px (y-down). Lets the scripts/ SCREEN pass gate

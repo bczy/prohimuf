@@ -21,10 +21,30 @@ export const STOCK = {
   shell: "#D7D2C6", // NIVEAUX flyer-wall backing
 } as const;
 
+// Typography — embedded self-hosted webfonts (OFL 1.1, see `src/assets/fonts/`, registered
+// by `fonts.css` imported in `main.tsx`). Each stack leads with the bundled face and falls
+// back to the former system stack so text renders before `font-display: swap` resolves and
+// on a load failure. Single source: no DOM UI surface may re-declare a font stack (art-direction
+// §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed). The
+// one exception is `src/render/scene/FeedbackLayer.tsx`, which paints score/combo numerals on a
+// 2D canvas where a `font-display: swap` webfont can't be used without `document.fonts.ready`
+// orchestration; it keeps a system-font stack by design (scene layer, not DOM UI).
+export const FONT = {
+  display: "'Rubik Mono One', Impact, 'Arial Narrow', sans-serif", // techno-flyer headlines
+  mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + pre-game
+  hand: "'Caveat', cursive", // felt-tip flyer annotations
+  // In-game HUD ticker ONLY (lead-art pre-approved): IBM Plex Mono holds its stroke at
+  // the 11–14px strip sizes where Courier Prime's thin hairlines break up. Falls back to
+  // Courier Prime so the ticker still renders before swap / on a load failure. Menus and
+  // the print system keep FONT.mono.
+  hudMono: "'IBM Plex Mono', 'Courier Prime', 'Courier New', monospace",
+} as const;
+
 // Ink.
 export const INK = {
   black: "#141210", // body, Courier blocks, rules, keylines
   full: "#000000", // display/ransom headlines + stamp fills
+  mute: "#555555", // muted caption grey — Pause slider/toggle labels + ESC hint
 } as const;
 
 // Marker / stamp inks (semantic — always with an ink-black keyline + distinct shape).
@@ -71,4 +91,47 @@ export const MOTION = {
   charDelayMs: 28, // reuse the shipped NarrativeScreen value (consistency)
   cursorBlinkMs: 850,
   lockedShakeMs: 180,
+} as const;
+
+// Typographic size scale (px) — NAMED from the sizes the HUD/menus already use
+// (9/11/12/16/18/20/22/44/48/56), NOT a new grid. Monotonic: xs→displayXl. The
+// `display*` tier is the ransom/headline register; the smaller steps are body/HUD.
+export const FONT_SIZE = {
+  xs: 9, // HUD micro-labels, colophon fine print
+  sm: 11, // stamp / small body
+  md: 12, // HUD level name
+  base: 16, // delivery call-out chip
+  lg: 18, // HUD energy value
+  xl: 20, // delivery verdict chip
+  xxl: 22, // HUD score / value
+  display: 44, // OTAGE warning stamp
+  displayLg: 48, // QTE verdict stamp
+  displayXl: 56, // end-of-level phase stamp
+} as const;
+
+// Spacing scale (px) — NAMED from the gaps/padding steps already in use
+// (4/6/8/12/16/24). One-off values outside this set (e.g. the 3px energy-column
+// gap) stay as literals; the scale carries only the recurring steps.
+export const SPACE = {
+  xs: 4,
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  xxl: 24,
+} as const;
+
+// Dominant keyline weight (px) — the 2px ink rule that borders the HUD strip, paper
+// chips and gauge frames. Heavier one-off borders (3px stamps, 1px micro-gauges)
+// stay as literals; this is the single named default.
+export const KEYLINE_WIDTH = 2;
+
+// Z-index scale — names the implicit stacking of the in-game HUD layers, which are
+// separate `position: fixed` surfaces ordered only by DOM sequence today: the paper
+// strip (hud) < the arrow/QTE-wash overlays (overlay) < the centred set-piece stamps
+// (modal). Sits BELOW the pre-game chrome (pause 100 / rotate 200 / fullscreen 300).
+export const Z = {
+  hud: 10,
+  overlay: 20,
+  modal: 30,
 } as const;

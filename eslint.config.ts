@@ -8,6 +8,9 @@ export default tseslint.config(
     ignores: [
       "dist/**",
 
+      // BUILD_CATALOG=1 output (vite.config.ts) — a build artifact, lint-ignored like dist.
+      "dist-catalog/**",
+
       "node_modules/**",
 
       "coverage/**",

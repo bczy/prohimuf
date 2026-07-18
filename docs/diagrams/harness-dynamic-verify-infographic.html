@@ -616,12 +616,13 @@
           <div><b>3840²</b><span>px par shot</span></div>
         </div>
         <div class="status">
-          <b>ADR Proposed</b
+          <b>ADR Accepted (amended)</b
           ><span
-            >Statut proposé (2026-06-22) : <code>preview.yml</code> est épinglé à une branche
-            non-courante, donc sur une branche feature le harness
-            <strong>ne tourne pas encore</strong> — le gate reste décoratif tant que le pin n'est
-            pas élargi.</span
+            >Statut accepté (2026-07-18) : le pin de <code>preview.yml</code> a été élargi (le
+            harness tourne désormais sur <code>claude/**</code> + PR), les trois modes sont livrés
+            et câblés en <strong>required check</strong> dans <code>ci.yml</code>. Amendement :
+            D1/D2 re-scopés sur le réel livré (la voiture drive-by est retirée, le hostage_taker de
+            rue est devenu le QTE cinématique).</span
           >
         </div>
       </header>
@@ -634,10 +635,10 @@
           <span class="saw">voyait pas : le mouvement</span>
           <h4>Motion capture</h4>
           <p>
-            Séquence multi-frames (strip / WebM) des entités de rue. Exerce le muzzle flash du
-            drive-by, le miroir <code>dir</code> de la sprite directionnelle, le cue de décompte du
-            hostage_taker. Mode « play » dégelé (<code>__MUF_PLAY__</code>), audio muet, seed
-            épinglé.
+            Séquence multi-frames (strip) des entités de rue livrées : la traversée du livreur
+            (courier) et le QTE cinématique — le push de zoom sur l'ancre, puis le tell G4
+            <code>COVERED→PEEKING</code>. Mode « play » dégelé (<code>__MUF_PLAY__</code>), audio
+            muet, seed épinglé ; garde de seam non-vacuité via <code>__MUF_STATE__</code>.
           </p>
         </div>
         <div class="mode">
@@ -645,9 +646,10 @@
           <span class="saw">voyait pas : la boucle interactive</span>
           <h4>Play-through scripté</h4>
           <p>
-            Injecte un vrai input dans le canvas, lit l'état LIVE via le seam, assert des deltas :
-            hostage-precedence, timeout chargé une seule fois, énergie décrémentée et affichée au
-            HUD. La boucle complète <code>input → render → state → HUD</code>.
+            Injecte un vrai input dans le canvas, lit l'état LIVE via le seam, assert des deltas
+            exacts : belliard PANIC (un tir en ZOOMING → énergie −6, score inchangé) et vitry
+            ACCOMPLICE (sans tirer, drain −8 par tir de l'accomplice, <code>captorHp</code> intact —
+            invariant P3-ACC). La boucle complète <code>input → render → state → HUD</code>.
           </p>
         </div>
         <div class="mode">
@@ -674,8 +676,8 @@
           <strong>Boundary rule + DIP</strong> : le harness dépend de l'abstraction, jamais d'un
           import d'un système de jeu (<code>src/game/**</code>) ni des internals de rendu
           (<code>src/render/**</code>) ; il porte zéro règle de jeu. <strong>TDD</strong> : les
-          assertions viennent d'abord et sont <strong>rouges</strong> aujourd'hui ; un harness rouge
-          <strong>bloque le merge</strong>.
+          assertions D2 sont écrites en premier, vérifiées à vide, puis vertes contre le build ; un
+          harness rouge <strong>bloque le merge</strong>.
         </p>
       </div>
 
@@ -687,9 +689,9 @@
           <code>levelArt.json</code> · input scripté (D2) · goldens committés (D3).
         </div>
         <div class="card">
-          <b class="t-1">Sorties</b> <code>screenshots/*.png</code> +
-          <code>overview.png</code> (contact sheet 2 colonnes, primitive de la lib partagée) ·
-          strips/WebM (D1) · verdict d'assertions (D2) · diff pixel (D3).
+          <b class="t-1">Sorties</b> <code>screenshots/golden/*.png</code> (baselines D3) · strip de
+          frames labellisées via <code>stitchLabeledStrip</code> (D1) · verdict d'assertions live
+          (D2) · diff pixel (D3).
         </div>
       </div>
 
@@ -746,9 +748,10 @@
       </div>
 
       <footer>
-        Source : <code>docs/adr/0005-dynamic-verification-harness.md</code> (Proposed) ·
-        <code>scripts/screenshot-preview.mjs</code> · <code>scripts/e2e-lib.mjs</code>. Un poster de
-        la série des harness de muf. Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
+        Source : <code>docs/adr/0005-dynamic-verification-harness.md</code> (Accepted (amended)) ·
+        <code>scripts/harness-motion.mjs</code> · <code>scripts/harness-assert.mjs</code> ·
+        <code>scripts/harness-golden.mjs</code> · <code>scripts/e2e-lib.mjs</code>. Un poster de la
+        série des harness de muf. Sprites : <code>docs/muf-crew-bitmap.py --singles</code>.
       </footer>
     </div>
   </body>

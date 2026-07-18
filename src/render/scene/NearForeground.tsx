@@ -33,7 +33,7 @@ const MAX_PROP_WORLD_H = 3.4;
 // The far (back-of-road) row drifts only a little faster than the facade, the near
 // row much faster — so the two rows clearly separate in depth as the camera pans.
 const FAR_PARALLAX_RATIO = 0.18;
-// Feu tricolore height as a fraction of the facade height (ADR-0045 amendment,
+// Feu tricolore height as a fraction of the facade height (ADR-0047 amendment,
 // Bertrand-directed). The traffic light is the one prop that DELIBERATELY breaks
 // the non-occlusion band: it rises well into the window rows for a dominant, close
 // signal, accepting that it may briefly mask a cop behind it as the camera pans.
@@ -90,7 +90,7 @@ function Row({
         const spec = NEAR_KIND_SPECS[obj.kind];
         const scale = (obj.scale ?? 1) * rowScale;
         // The feu tricolore (hero prop) deliberately breaks the non-occlusion band
-        // (ADR-0045 amendment): it bypasses BOTH the band ceiling (`maxH`) and the
+        // (ADR-0047 amendment): it bypasses BOTH the band ceiling (`maxH`) and the
         // "believable size" cap, bounded only by its own generous world-height
         // allowance, so it can rise into the window rows. Every other prop stays
         // strictly under `maxH` — non-occlusion still holds for them by construction.
@@ -117,7 +117,7 @@ function Row({
 }
 
 /**
- * Near-foreground differential-parallax décor layer (ADR-0045): TWO kerb rows of
+ * Near-foreground differential-parallax décor layer (ADR-0047): TWO kerb rows of
  * grey silhouette props — Parisian street furniture (horodateur, réverbère,
  * fontaine Wallace, feu tricolore, potelet, scooter, banc, panneau) lining both
  * edges of the road. The near row (front) is big and drifts fast; the far row (at
@@ -151,7 +151,7 @@ export function NearForeground({
   // Bottom-band top edge from the level's own window zones — read through
   // getBackdropLayout so it is the SAME source that places the cops in BOTH
   // modes (tronçon tiles carry per-tronçon zones; the legacy per-panel path
-  // used here before ADR-0046 diverged on belliard and let props rise into
+  // used here before ADR-0048 diverged on belliard and let props rise into
   // the lower cop windows). Zone y/h are image-normalized in every mode, which
   // is all nearForegroundBandTop reads.
   const bandTop = useMemo(

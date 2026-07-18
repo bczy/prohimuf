@@ -1,6 +1,6 @@
 /**
  * Traffic-signal phase clock for the decorative near-foreground feu tricolore
- * (ADR-0045). Pure and deterministic — no React/Three — so it unit-tests cleanly
+ * (ADR-0047). Pure and deterministic — no React/Three — so it unit-tests cleanly
  * and NearForeground can drive the texture off `state.clock.elapsedTime`.
  *
  * Models a real French carrefour interlock between the vehicle head (rouge / orange

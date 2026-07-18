@@ -1,6 +1,6 @@
 # 0043 — Validated-reference promotion loop (internal hero → style-lock family derivation)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18)
 - **Date:** 2026-07-18
 - **Number:** 0043, **self-allocated** by `senior-architect` (no `producer` in the loop
   for this design session; Bertrand directed the scaffold via the `adr-new` skill —
@@ -197,6 +197,14 @@ All new/changed surface is in `scripts/**`, `.github/workflows/ci.yml`, `docs/**
 `references/approved/`, not in `src/game/levels/levelArt.json`, precisely so AC7 ("zero touch
 to `src/game`, `src/render`, `src/hooks`") is literally true and the game/render/hooks
 boundary law is not engaged.
+
+## Acceptance note
+
+Accepted 2026-07-18: landed in commit 7912783 (`scripts/lib/heroes.mjs`,
+`scripts/promote-hero.mjs`, `scripts/check-hero-wiring.mjs`, the CI guard, and both test
+layers). Per §1's "absent or empty `heroes.json` ⇒ exactly today's behaviour", the loop
+ships as a **no-op** until the first `PROMOTE` verdict populates `heroes.json` — no
+generator behaviour changes until then.
 
 ## Consequences
 

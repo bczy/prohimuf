@@ -4,15 +4,15 @@ import type { Prefs } from "@game/systems/prefsSystem";
 import {
   PaperSheet,
   STOCK,
-  INK,
   MASTHEAD,
-  MarkerCircle,
   useRovingIndex,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
+import { SelectableListItem, cx } from "./controls";
 import { FlyerWall } from "./menu/FlyerWall";
 import { ScoresUne } from "./menu/ScoresUne";
 import { OptionsColophon } from "./menu/OptionsColophon";
+import styles from "./MainMenu.module.css";
 
 /**
  * MENU — the zine interior shell (ADR-0021, UX §2.2). A running masthead + a
@@ -28,9 +28,6 @@ interface Props {
   onPlay: (levelId: string) => void;
   onSavePrefs: (prefs: Prefs) => void;
 }
-
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
 
 const RUBRIQUES = [
   { key: "levels", label: "NIVEAUX" },
@@ -77,47 +74,14 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
           }
         }
       `}</style>
-      <div
-        className="muf-menu-shell"
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          userSelect: "none",
-        }}
-      >
+      <div className={cx("muf-menu-shell", styles.shell)}>
         {/* Running masthead (hidden in short-landscape; the MUF mark below stands in) */}
         <div
-          style={{
-            padding: "12px 16px 8px",
-            borderBottom: `1px solid ${INK.black}`,
-            display: "var(--muf-menu-masthead-display, flex)",
-            alignItems: "center",
-            gap: "16px",
-            flexShrink: 0,
-          }}
+          className={styles.masthead}
+          style={{ display: "var(--muf-menu-masthead-display, flex)" }}
         >
-          <div
-            style={{
-              fontFamily: DISPLAY_FONT,
-              fontSize: "32px",
-              color: INK.full,
-              letterSpacing: "0.04em",
-            }}
-          >
-            MUF
-          </div>
-          <div
-            style={{
-              fontFamily: BODY_FONT,
-              fontSize: "10px",
-              color: INK.black,
-              letterSpacing: "0.25em",
-            }}
-          >
-            {MASTHEAD.running}
-          </div>
+          <div className={styles.mark}>MUF</div>
+          <div className={styles.mastheadText}>{MASTHEAD.running}</div>
         </div>
 
         {/* Sommaire — hand-inked index, marker-circled active rubrique (no yellow fill) */}
@@ -132,72 +96,46 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
               setFocusWithin(false);
             }
           }}
-          style={{
-            display: "flex",
-            gap: "8px",
-            padding: "8px 16px",
-            borderBottom: `1px solid ${INK.black}`,
-            flexShrink: 0,
-          }}
+          className={styles.sommaire}
         >
           {/* Compact identity mark — only shown in short-landscape, where the full
               masthead band above is collapsed. Decorative (Escape → TITLE still works). */}
           <span
             aria-hidden={true}
-            style={{
-              display: "var(--muf-menu-mark-display, none)",
-              alignSelf: "center",
-              marginRight: "4px",
-              fontFamily: DISPLAY_FONT,
-              fontSize: "20px",
-              color: INK.full,
-              letterSpacing: "0.04em",
-            }}
+            className={styles.compactMark}
+            style={{ display: "var(--muf-menu-mark-display, none)" }}
           >
             MUF
           </span>
           {RUBRIQUES.map((r, i) => {
             const isActive = active === r.key;
             return (
-              <MarkerCircle key={r.key} active={focusWithin && roving.index === i} ink={INK.black}>
-                <button
-                  ref={(el) => {
-                    itemRefs.current[i] = el;
-                  }}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  tabIndex={roving.index === i ? 0 : -1}
-                  onKeyDown={roving.onKeyDown}
-                  onFocus={() => {
-                    roving.setIndex(i);
-                  }}
-                  onClick={() => {
-                    roving.setIndex(i);
-                  }}
-                  style={{
-                    minHeight: "44px",
-                    padding: "8px 14px",
-                    background: "transparent",
-                    color: INK.black,
-                    border: "none",
-                    borderBottom: `3px solid ${isActive ? INK.black : "transparent"}`,
-                    cursor: "pointer",
-                    fontFamily: BODY_FONT,
-                    fontSize: "13px",
-                    letterSpacing: "0.2em",
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                >
-                  {r.label}
-                </button>
-              </MarkerCircle>
+              <SelectableListItem
+                key={r.key}
+                active={focusWithin && roving.index === i}
+                buttonRef={(el) => {
+                  itemRefs.current[i] = el;
+                }}
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={roving.index === i ? 0 : -1}
+                onKeyDown={roving.onKeyDown}
+                onFocus={() => {
+                  roving.setIndex(i);
+                }}
+                onClick={() => {
+                  roving.setIndex(i);
+                }}
+                className={cx(styles.tab, isActive ? styles.tabActive : styles.tabIdle)}
+              >
+                {r.label}
+              </SelectableListItem>
             );
           })}
         </div>
 
         {/* Active rubrique surface */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div className={styles.rubriques}>
           {active === "levels" && <FlyerWall unlockedLevels={unlockedLevels} onPlay={onPlay} />}
           {active === "scores" && <ScoresUne unlockedLevels={unlockedLevels} />}
           {active === "prefs" && <OptionsColophon prefs={prefs} onSave={onSavePrefs} />}

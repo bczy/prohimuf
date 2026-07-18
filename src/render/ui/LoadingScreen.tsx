@@ -1,6 +1,8 @@
 import type { CSSProperties, JSX } from "react";
-import { INK, MASTHEAD, STOCK } from "@render/ui/print";
+import { MASTHEAD, STOCK } from "@render/ui/print";
 import { PaperSheet } from "@render/ui/print";
+import { cx } from "./controls/cx";
+import styles from "./LoadingScreen.module.css";
 
 /**
  * Progressive loading screen shown while a screen's asset manifest warms
@@ -14,8 +16,6 @@ import { PaperSheet } from "@render/ui/print";
  * §2bis; PaperSheet supplies the dot-screen + toner texture).
  */
 
-const mono = "'Courier New', Courier, monospace";
-
 interface Props {
   /** What is loading — e.g. "MENU", a level name, or "Tutoriel". */
   label: string;
@@ -23,15 +23,9 @@ interface Props {
   progress: number;
 }
 
-function infoStyle(fontSize: string, letterSpacing: string, marginTop = 0): CSSProperties {
-  return {
-    fontFamily: mono,
-    fontSize,
-    letterSpacing,
-    color: INK.black,
-    marginTop,
-    textTransform: "uppercase",
-  };
+// The per-line variable typography (static font/colour/transform live in styles.info).
+function infoVars(fontSize: string, letterSpacing: string, marginTop = 0): CSSProperties {
+  return { fontSize, letterSpacing, marginTop };
 }
 
 export function LoadingScreen({ label, progress }: Props): JSX.Element {
@@ -46,58 +40,22 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
       <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}`}</style>
 
       {/* Masthead strip — printed ink bar (single-sourced running string). */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          background: INK.full,
-          color: STOCK.shell,
-          padding: "4px 12px",
-          fontFamily: mono,
-          fontSize: "10px",
-          letterSpacing: "0.28em",
-          textAlign: "center",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      >
-        {MASTHEAD.running}
-      </div>
+      <div className={styles.masthead}>{MASTHEAD.running}</div>
 
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          padding: "48px 40px",
-          boxSizing: "border-box",
-        }}
-      >
-        <div style={infoStyle("11px", "0.4em")}>★ SOUS PRESSE ★</div>
+      <div className={styles.body}>
+        <div className={styles.info} style={infoVars("11px", "0.4em")}>
+          ★ SOUS PRESSE ★
+        </div>
 
-        <div
-          style={{
-            fontFamily: "Impact, 'Arial Narrow', sans-serif",
-            fontSize: "clamp(44px, 8vw, 84px)",
-            lineHeight: 0.9,
-            letterSpacing: "0.05em",
-            color: INK.full,
-            marginTop: "8px",
-          }}
-        >
+        <div className={styles.wordmark} style={{ fontSize: "clamp(44px, 8vw, 84px)" }}>
           CHARGEMENT…
         </div>
 
         {/* The edition being pulled — target name under an ink rule. */}
-        <div style={infoStyle("clamp(12px, 1.8vw, 16px)", "0.22em", 10)}>{label}</div>
-        <div
-          style={{ width: "min(420px, 80%)", height: 2, background: INK.black, margin: "18px 0" }}
-        />
+        <div className={styles.info} style={infoVars("clamp(12px, 1.8vw, 16px)", "0.22em", 10)}>
+          {label}
+        </div>
+        <div className={styles.rule} />
 
         {/* Press bar — black keyline the ink fills as the tirage is pulled. */}
         <div
@@ -106,39 +64,12 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`Chargement ${label}`}
-          style={{
-            width: "min(60vw, 420px)",
-            height: "16px",
-            border: `2px solid ${INK.black}`,
-            background: STOCK.shell,
-            position: "relative",
-            overflow: "hidden",
-          }}
+          className={styles.bar}
         >
-          <div
-            className="muf-load-fill"
-            style={{
-              position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: 0,
-              width: `${String(pct)}%`,
-              background: INK.black,
-            }}
-          />
+          <div className={cx("muf-load-fill", styles.fill)} style={{ width: `${String(pct)}%` }} />
         </div>
 
-        <div
-          style={{
-            fontFamily: mono,
-            fontSize: "20px",
-            letterSpacing: "0.18em",
-            color: INK.black,
-            marginTop: 14,
-          }}
-        >
-          {folio} %
-        </div>
+        <div className={styles.folio}>{folio} %</div>
       </div>
     </PaperSheet>
   );

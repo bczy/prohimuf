@@ -1,5 +1,5 @@
 /**
- * Shared cache for the code-drawn near-foreground silhouette textures (ADR-0045),
+ * Shared cache for the code-drawn near-foreground silhouette textures (ADR-0047),
  * mirroring `enemyTextures.ts`: one CanvasTexture per kind, built once and reused
  * across every instance and every scene mount. The loading gate warms them via
  * {@link warmNearForegroundTexture} (registered in the asset manifest as
