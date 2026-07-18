@@ -1,0 +1,23 @@
+/*
+ * MarkerCircle (ADR-0046) — static layout/box only. The mark colour rides the SVG
+ * `stroke` attribute in MarkerCircle.tsx (prop-driven), not a style, so nothing here
+ * is prop-driven. No colour/font/motion literal lives here.
+ */
+
+/* Inline wrapper anchoring the absolutely-positioned focus ellipse. */
+.wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* Hand-inked focus ellipse: fixed offsets/size + the fixed -1.5deg stamped tilt. */
+.marker {
+  position: absolute;
+  top: -8px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 16px);
+  pointer-events: none;
+  overflow: visible;
+  transform: rotate(-1.5deg);
+}

@@ -11,8 +11,9 @@ import {
   useRovingIndex,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
-import type { CSSProperties } from "react";
 import { LevelFlyer } from "./LevelFlyer";
+import styles from "./FlyerWall.module.css";
+import { cx } from "../controls";
 
 /**
  * NIVEAUX — the flyer wall (UX §2.3). A deterministically jittered vertical stack
@@ -103,7 +104,7 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
   return (
     <div
       ref={containerRef}
-      className="muf-flyerwall"
+      className={cx("muf-flyerwall", styles.wall)}
       // Deterministic "the click-through lockout has elapsed" signal: reflects the
       // `armed` state so automation can wait for a real actionable state instead of
       // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
@@ -120,11 +121,6 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
       // scroll-snap rack; the roving axis stays vertical because the reflow only
       // triggers on `pointer: coarse` (touch) where arrow-key nav is not the input,
       // and Up/Down still moves focus across all flyers, scrolling each into view.
-      style={{
-        padding: "16px",
-        display: "flex",
-        flexDirection: "var(--muf-flyerwall-dir, column)" as CSSProperties["flexDirection"],
-      }}
     >
       <style>{`
         @media ${SHORT_LANDSCAPE_MEDIA}{
@@ -156,11 +152,7 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
         // width in both the portrait column (full width) and the landscape rack (fixed
         // card width, set by the `.muf-flyer-slot` class rule above).
         return (
-          <div
-            key={level.id}
-            className="muf-flyer-slot"
-            style={{ display: "flex", flexDirection: "column" }}
-          >
+          <div key={level.id} className={cx("muf-flyer-slot", styles.slot)}>
             <LevelFlyer
               level={level}
               unlocked={entry.unlocked}
