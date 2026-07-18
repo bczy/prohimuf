@@ -51,6 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     # Never on main — this is an exploratory branch tool, not a production gate.
     if: github.ref_name != 'main'
+    env:
+      # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
+      # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
+      # for a faster rate limit + honoured `nologo`. Unset/empty → anonymous
+      # fallback (unchanged behaviour), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

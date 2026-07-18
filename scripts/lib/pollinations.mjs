@@ -11,10 +11,21 @@ export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Optional authentication (Pollinations tiers): when POLLINATIONS_TOKEN is set
+// (CI secret), send it as a Bearer header so the request runs on the account's
+// tier — faster rate limit (down from the anonymous 1 req / 15s) and `nologo`
+// actually honoured (anonymous nologo is no longer guaranteed post-2025-03).
+// Kept in the header, NOT the URL, so it never leaks into the URLs the
+// generators log. Anonymous (no token) stays the default and is unchanged.
+function authHeaders() {
+  const token = process.env.POLLINATIONS_TOKEN;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function fetchImage(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const req = https
-      .get(url, (res) => {
+      .get(url, { headers: authHeaders() }, (res) => {
         if (res.statusCode === 301 || res.statusCode === 302) {
           if (redirects >= 5 || !res.headers.location) {
             res.resume();
@@ -58,10 +69,13 @@ export async function fetchWithRetry(url, retries = 5) {
 // enhance=false is load-bearing (art bible §3.11): Pollinations' enhancer
 // rewrites the prompt through an LLM and destroys the verbatim style block the
 // set consistency depends on. private=true keeps assets out of the public feed.
+// safe=false is pinned explicitly (not left to the server default): the house
+// register — clandestine-rave / police / raw-fanzine subject matter — must not
+// be silently rejected if Pollinations ever flips its NSFW-filter default.
 export function fluxUrl(prompt, seed, width, height) {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(
     prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
+  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true&safe=false`;
 }
 
 // kontext img2img (art bible §3.12, style-lock): same query plus `image=` set to
@@ -69,7 +83,7 @@ export function fluxUrl(prompt, seed, width, height) {
 export function kontextUrl(prompt, seed, width, height, imageUrl) {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(
     prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=kontext&seed=${seed}&enhance=false&private=true&image=${encodeURIComponent(
+  )}?width=${width}&height=${height}&nologo=true&model=kontext&seed=${seed}&enhance=false&private=true&safe=false&image=${encodeURIComponent(
     imageUrl,
   )}`;
 }

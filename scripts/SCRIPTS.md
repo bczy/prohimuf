@@ -22,6 +22,14 @@ All image generators call **Pollinations.ai** (free,
 no account,
 no API key).
 
+> **Optional — account tier.** Set the `POLLINATIONS_TOKEN` environment variable
+> (a Pollinations API key from `auth.pollinations.ai`) and the shared fetch helper
+> (`scripts/lib/pollinations.mjs`) sends it as a `Bearer` header, running requests
+> on that account's tier: a faster rate limit (vs. the anonymous 1 req / 15s) and
+> a reliably honoured `nologo`. It is **optional** — unset or empty falls back to
+> anonymous, the default behaviour. In CI it is wired as the `POLLINATIONS_TOKEN`
+> repo secret at the job level of every `gen-*.yml` generation workflow.
+
 ---
 
 ## generate-assets.mjs — Character & UI Sprites

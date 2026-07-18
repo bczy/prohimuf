@@ -29,6 +29,7 @@ describe("fluxUrl", () => {
     expect(url).toContain("height=160");
     expect(url).toContain("enhance=false");
     expect(url).toContain("private=true");
+    expect(url).toContain("safe=false");
   });
 
   it("URL-encodes the prompt", () => {
@@ -40,11 +41,12 @@ describe("fluxUrl", () => {
 describe("kontextUrl", () => {
   const imageUrl = "https://raw.githubusercontent.com/bczy/prohimuf/main/references/x.png";
 
-  it("emits model=kontext, enhance=false, private=true", () => {
+  it("emits model=kontext, enhance=false, private=true, safe=false", () => {
     const url = kontextUrl("same character, new pose", 12345, 256, 256, imageUrl);
     expect(url).toContain("model=kontext");
     expect(url).toContain("enhance=false");
     expect(url).toContain("private=true");
+    expect(url).toContain("safe=false");
   });
 
   it("encodes the image= param with encodeURIComponent", () => {
@@ -59,7 +61,7 @@ describe("fetchImage redirect handling", () => {
   });
 
   it("rejects after more than 5 redirect hops", async () => {
-    https.get.mockImplementation((url, cb) => {
+    https.get.mockImplementation((url, opts, cb) => {
       cb(fakeResponse(302, { location: "https://example.com/next" }));
       return fakeRequest();
     });
@@ -67,10 +69,50 @@ describe("fetchImage redirect handling", () => {
   });
 
   it("rejects a redirect with no location header", async () => {
-    https.get.mockImplementation((url, cb) => {
+    https.get.mockImplementation((url, opts, cb) => {
       cb(fakeResponse(302, {}));
       return fakeRequest();
     });
     await expect(fetchImage("https://example.com/start")).rejects.toThrow(/redirect/i);
+  });
+});
+
+describe("fetchImage authentication", () => {
+  // A 200 response that drives the data/end path so fetchImage's promise resolves.
+  function okResponse() {
+    const res = fakeResponse(200);
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "end") fn();
+      return res;
+    });
+    return res;
+  }
+
+  beforeEach(() => {
+    https.get.mockReset();
+    delete process.env.POLLINATIONS_TOKEN;
+  });
+
+  it("sends no Authorization header when POLLINATIONS_TOKEN is unset", async () => {
+    let seenOpts;
+    https.get.mockImplementation((url, opts, cb) => {
+      seenOpts = opts;
+      cb(okResponse());
+      return fakeRequest();
+    });
+    await fetchImage("https://example.com/img");
+    expect(seenOpts.headers.Authorization).toBeUndefined();
+  });
+
+  it("sends a Bearer header when POLLINATIONS_TOKEN is set", async () => {
+    process.env.POLLINATIONS_TOKEN = "tok_abc";
+    let seenOpts;
+    https.get.mockImplementation((url, opts, cb) => {
+      seenOpts = opts;
+      cb(okResponse());
+      return fakeRequest();
+    });
+    await fetchImage("https://example.com/img");
+    expect(seenOpts.headers.Authorization).toBe("Bearer tok_abc");
   });
 });
