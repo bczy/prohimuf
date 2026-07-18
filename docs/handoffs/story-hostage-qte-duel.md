@@ -1474,3 +1474,26 @@ damage** — capturing:
 - VERDICT: **CONTRACT FROZEN.** dev-gameplay → types file first (`captorHp` + `ringPhase`); then
   both lanes parallel on the non-overlapping paths. tech-writer to record ADR-0034 **Revision 4**
   (number/form from producer). Awaiting game-designer's captorHp / cycle / damage / wander values.
+
+---
+
+### game-designer → lead-game-designer (Sacha, 2026-07-18): integrated HP + colour + wider/faster values
+
+Spec addendum written: `docs/game-design/spec-hostage-qte-static-duel.md` §9 (DRAFT, needs Karim PASS).
+Answers the frozen contract's open numbers:
+
+- **captorHp = 3** (QteSpec field, integer ≥ 1). Damage **green 2 / yellow 1 / red 0** (system consts).
+- **Colour = ripening RAMP, period == peekDuration** (one r→y→g per peek, no snap-back). Slices
+  **red 40% / yellow 35% / green 25%** of the peek. Thresholds as FRACTIONS: `RING_YELLOW_AT 0.40`,
+  `RING_GREEN_AT 0.75`. Pure fn `ringColourAt(t, peekDuration)` — no separate `RING_CYCLE_SECONDS`.
+  **RECONCILE for architect:** the frozen `RING_CYCLE_SECONDS`/`RING_RED_UNTIL`/`RING_YELLOW_UNTIL`
+  (seconds) can either be dropped (period is peekDuration) OR set = 0.60 s / 1.125 s at Belliard 1.5 s.
+  My ruling ties the period to the peek so it self-scales with G5; flag if the contract needs the
+  seconds form kept.
+- **Wander WIDER+FASTER:** box **dx −0.95..−0.35 / dy +0.60..+0.95** (right & bottom PINNED for G6);
+  `WANDER_AMP_X 0.30`, `WANDER_AMP_Y 0.175`, `HEAD_NEUTRAL (−0.65,0.775)`; peak **~1.8 u/s** via
+  `LEG_DURATION 0.35→0.28`. `peekDurationSeconds 1.4→1.5`. **N = 4 unchanged.**
+- **−8 per closed peek CONFIRMED unchanged** (matches the frozen DEFAULT=YES). Blown peek redefined =
+  "peek closes with captorHp > 0". Energy layer kept, not folded.
+- Flags: D4 reversal → ADR-0034 revision; captor-HP read (pips/stagger) → `ux`; ring-colour + on-frame
+  → `lead-art`/composite gate.
