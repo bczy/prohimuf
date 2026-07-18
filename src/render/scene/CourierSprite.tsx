@@ -150,7 +150,10 @@ function updateLayer(
   }
   mesh.position.set(courier.x, courier.y + entry.offsetY + bobY, z);
   mesh.scale.set(courier.dir * entry.scale, entry.scale, 1);
-  mesh.rotation.z = lean;
+  // Scale by dir so the lean reads the same way relative to travel: the sprite is
+  // mirrored via negative scale.x, which would otherwise flip the visual tilt for
+  // left-bound couriers.
+  mesh.rotation.z = courier.dir * lean;
   setMap(mesh, getCourierTexture(layer, frame));
   // Civilian tint = gameplay "don't shoot" colour-code.
   (mesh.material as MeshBasicMaterial).color.set(ARCHETYPES.civilian.tint);

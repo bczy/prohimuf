@@ -208,8 +208,11 @@ export function EnemySprite({
         archetype.shoots && resolved !== null ? getSilhouetteFor(resolved.texture) : null;
       rim.visible = neon !== null;
       if (neon !== null) {
-        // Follow the body's recoil nudge so the rim stays flush behind it.
+        // Follow the body's recoil nudge AND tilt so the rim stays flush behind
+        // it — mirror mesh.rotation.z (0 when not recoiling) or the rim detaches
+        // from the body during the kick's tilt.
         rim.position.set(screenPosition.x + recoilDX, bodyY + recoilDY, -0.01);
+        rim.rotation.z = mesh.rotation.z;
         rimMat.uniforms.uMap.value = neon.texture;
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
