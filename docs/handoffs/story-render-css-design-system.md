@@ -49,7 +49,30 @@ design-system foundation. ADR-0046. Branch `claude/render-css-design-system` (st
   Single-source, strict-TS, FOUC, CSS-module override ordering all verified.
 - VERDICT: **MERGE** — no unresolved CONFIRMED BLOQUANT/MAJEUR after fixes. Re-verified green.
 
+## P2 STEP 1 — HUD widget extraction — dev-r3f-render — 2026-07-18
+
+- `HUD.tsx` 515 → 97 lines; 9 widgets extracted to `src/render/ui/hud/` (each + co-located
+  `*.module.css`); ramps → `hud/derivations.ts`; `cx()` → `hud/cx.ts`. Public `HudData/*`
+  unchanged. PR #97 (branch `claude/render-css-p2-widgets`, off merged #95).
+- Pixel-identity PASS: canvas diff 0px on the strip; overlays structurally lossless.
+  tsc + 575 tests + lint + build + format:check green.
+
+## P2 STEP 1 — STAGE-6 REVIEW PANEL — 2026-07-18
+
+- 4 reviewers on `git diff origin/main...HEAD` (22 files): code-review(high) MERGE ·
+  bmad-code-review MERGE · edge-case-hunter **zero findings, CONFIRMED lossless** ·
+  security-review clean. Boundary CLEAN (derivations render-side, no `src/game` import);
+  tokens single-source; strict TS.
+- No CONFIRMED BLOQUANT/MAJEUR. NIT/MINEUR only, deferred to the shared-primitives step:
+  (1) shared readout classes (`.item`/`.label`/`.value`/`.chip`/`.centerOverlay`) duplicated
+  across co-located modules → collapse into a shared module / CSS `composes` when the shared
+  primitives land; (2) relocate the `Hud*` types to `hud/types.ts` to drop the type-only import
+  cycle (HUD.tsx re-exports for external consumers); (3) `.energyTrack` raw `1px` → `var(--keyline-width)`
+  in a future token pass (pre-existing, carried verbatim).
+- VERDICT: **MERGE**.
+
 ## OUTSTANDING
 
-- P2 (extract 9 HUD widgets + shared primitives + HTML catalog) and P3 (Figma + Code Connect,
-  blocked on Bertrand creating the file + sharing editor access). Merge ordering: #94 then #95.
+- P2 step 2: shared primitives (Button/SelectableListItem/Toggle/Overlay) + the deferred NITs
+  above + the **HTML component catalog**. P3 (Figma + Code Connect) blocked on Bertrand creating
+  the file + sharing editor access.
