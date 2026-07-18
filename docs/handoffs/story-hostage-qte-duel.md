@@ -847,3 +847,203 @@ tests and the stage-6 panel's determinism/boundary check. AC6 (`qteZoneAt` bands
 - This acceptance **supersedes** the §8 pm acceptance, which was for the playtest-rejected
   retreat/porte-cochère build. Story is accepted for merge; no further pm-lane rework
   required.
+
+## 14. REVISION — wandering peek target (moving head-zone) — senior-architect (Winston) — 2026-07-18
+
+**Bertrand wants a mechanic tweak on the accepted static duel.** The PEEK TARGET — the head
+kill-zone / cue ring the player shoots during `PEEKING` — must now **MOVE** with a
+random-feeling wander (a moving-target tracking test). **The captor stays static** (Revision 2
+holds); only the **head zone** wanders, and only **while PEEKING**. Everything else in §9's
+frozen delta is unchanged. This section is the FROZEN contract delta both lanes build against;
+it supersedes §9 only where the head zone is now offset.
+
+`game-designer` (Sacha) writes the feel/bounds/rebalance spec (wander amplitude, speed, and
+whether they curve per level) in parallel; I own the CODE contract (field names/types) and the
+DETERMINISM approach below.
+
+### HARD CONSTRAINT — `src/game` stays replay-deterministic
+
+No `Math.random`, no `Date.now`. The wander is a **seeded, PURE function** — deterministic
+given an authored seed and the deterministic sim state. The stage-6 panel verified "no
+randomness in `src/game`"; a seeded PRNG advanced deterministically **preserves** that (a
+deterministic function is not randomness). Two determinism rules are LAW:
+
+1. **The wander is a pure function of accumulated peek-time, NOT a per-tick stepped PRNG.**
+   A per-tick random-walk step would be frame-count-dependent (variable `delta` → different
+   result) — a replay landmine. A pure `wander(seed, peekIndex, t)` of the continuous
+   peek-elapsed `t` is framerate-independent and robust to delta re-chunking. FROZEN: pure
+   function, no carried mutable PRNG cursor.
+2. **No `rngState` field is added.** All wander inputs already live in deterministic state
+   (authored `targetSeed`, `blownPeeks`, and `stanceRemaining`). `targetOffset` is a stored
+   DERIVED cache (render reads it + fire classifies against it), not a PRNG cursor.
+
+### Frozen delta — `src/game/types/hostageQte.ts`
+
+**`QteSpec`**
+
+- **ADD:** `readonly targetSeed: number;` — authored deterministic seed for the head-zone
+  wander. Finite (added to the C6 finiteness list). Field name/type is LAW; the VALUE is
+  game-designer's. Different levels → different seed → different-feeling wander path.
+- **Wander params (amplitude/speed): DEFAULT = system constants, NOT `QteSpec` fields.** They
+  are seeded-feel/anti-frustration knobs, kept as constants in `qteSystem.ts`
+  (`WANDER_AMP_X/Y`, wander angular speeds) alongside the energy/telegraph constants. **SEAM
+  (single dependency on game-designer's spec):** if the F3 curve needs per-level wander
+  difficulty, promote them to `QteSpec` (`readonly wanderAmplitude: Vec2; readonly
+wanderSpeed: number;`) as an ADDITIVE change in the same dev-gameplay pass — otherwise leave
+  them as constants. Freeze the DEFAULT as constants so the contract is buildable now.
+- **Everything else unchanged** (§9 delta holds: `triggerAtElapsedSeconds`, `zoomSeconds`,
+  static `anchor`, `maxBlownPeeks`, `peekCadenceSeconds`, `peekDurationSeconds`).
+
+**`HostageQte` (runtime)**
+
+- **ADD:** `readonly targetOffset: Vec2;` — the CURRENT head-zone centre, **anchor-relative**.
+  Updated every tick. During `PEEKING`: `clampTargetOffsetG6(HEAD_NEUTRAL + wander(...))`.
+  During `COVERED`/`ZOOMING`: the **NEUTRAL** head-zone centre `HEAD_NEUTRAL` (wander term = 0)
+  — NOT literal `(0,0)`, so the telegraph wind-up ring draws at the head's resting spot, not on
+  the captor's chest. Reset to `HEAD_NEUTRAL` on every peek close.
+- **NO other new field.** No `rngState`, no peek-elapsed field: `tSincePeekOpen` is DERIVED
+  (below), `peekIndex` is `blownPeeks` (below).
+- **KEEP everything else** from §9 verbatim.
+
+### Determinism approach — the exact shapes (LAW; dev-gameplay finalises values + tests)
+
+- **Peek-elapsed (no new field):** `tSincePeekOpen = qte.peekDurationSeconds -
+qte.stanceRemaining` while `PEEKING`. `peekDurationSeconds` is already the G5-clamped runtime
+  exposure, so `t ∈ [0, peekDurationSeconds]`; at open `stanceRemaining = peekDurationSeconds`
+  → `t = 0`. Both operands are deterministic sim state → `t` is deterministic and
+  framerate-independent.
+- **Per-peek index (no new field):** `peekIndex = qte.blownPeeks`. `blownPeeks` increments
+  only on a `PEEKING → COVERED` close, so during the k-th exposure (1-indexed) `blownPeeks =
+k − 1` — a stable ordinal for the CURRENT open peek. Feeding it into the wander decorrelates
+  successive peeks so each of the N openings traces a different-feeling path (the
+  "random-feeling" the tweak asks for), while staying fully deterministic.
+- **Pure wander (system module `src/game/systems/`):**
+  `wander(seed: number, peekIndex: number, t: number): Vec2` — a bounded sum-of-sines
+  displacement centred on 0 (smooth + trackable, NOT jittery noise), per-peek phases derived
+  from a cheap integer hash of `(seed, peekIndex)`. Bounded by construction (Σ sine amplitudes
+  = the amp), so the amp box is the feel bound and the G6 clamp is the SAFETY net. Pure,
+  deterministic, framerate-independent, unit-testable without a canvas.
+- **`HEAD_NEUTRAL: Vec2`** — the head band centre, a system constant derived from the head
+  band bounds (currently `((HEAD_DX_MIN+HEAD_DX_MAX)/2, (HEAD_DY_MIN+HEAD_DY_MAX)/2) =
+(−0.35, 0.75)`). `targetOffset = clampTargetOffsetG6(HEAD_NEUTRAL + wander(...))`.
+
+### Frozen delta — `qteZoneAt` signature change (dev-gameplay)
+
+- **FROZEN new signature:** `qteZoneAt(dx: number, dy: number, stance: CaptorStance,
+targetOffset: Vec2): QteZone`. The `head` band is now the head rectangle **centred on
+  `targetOffset`** (i.e. tested as `|dx − targetOffset.x| ≤ HEAD_HALF_W && |dy − targetOffset.y|
+≤ HEAD_HALF_H`, refactoring the head band from absolute `HEAD_D*_MIN/MAX` to
+  centre±half-extent). Returned ONLY while `PEEKING`, exactly as today.
+- **`hostage` / `body` / `miss` bands are UNCHANGED** — still anchor-relative (`targetOffset`
+  does not move them). Precedence UNCHANGED: `hostage` checked first, then offset `head`
+  (PEEKING only), then `body`, then `miss`.
+- **G6 — ASSERTED invariant, not trusted from tuning.** The wander bounds must keep the head
+  band DISJOINT from the hostage band at EVERY offset. FROZEN clamp guarantees it on the Y
+  axis for ANY x (two rectangles disjoint on one axis ⇒ disjoint): `clampTargetOffsetG6`
+  forces `centre.y ≥ HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H` (head bottom stays above the
+  hostage top by a non-zero margin regardless of x). Belt-and-suspenders: (a) runtime clamp on
+  every computed `targetOffset`, AND (b) a unit test that across the full wander amp box the
+  head band never intersects the hostage band (non-zero gap). Do NOT rely on the amp values
+  being small enough — clamp AND test.
+
+### Frozen delta — `tickQte` (dev-gameplay)
+
+- **`ZOOMING`:** unchanged. `targetOffset` is `HEAD_NEUTRAL` (no wander pre-ACTIVE).
+- **`ACTIVE` (order preserved):** (1) resolve `fire` FIRST against
+  `qteZoneAt(dx, dy, qte.stance, qte.targetOffset)` — the STORED offset, i.e. exactly what
+  render drew last frame → tightest aim-honesty (the ring the player shot at IS the scored
+  zone). `head → WON`. (2) advance the COVERED↔PEEKING sub-machine — **UNCHANGED** (blown
+  peeks / energy / the `maxBlownPeeks` fatal-close tie-break / bounded loop all verbatim from
+  §9). (3) compute the OUTGOING `targetOffset` from the RESULTING stance: `PEEKING` →
+  `clampTargetOffsetG6(HEAD_NEUTRAL + wander(qte.targetSeed, blownPeeks, tSincePeekOpen))`;
+  `COVERED` → `HEAD_NEUTRAL`. Store it on the returned `qte`.
+- **Reset on close:** falls out of step (3) — a `PEEKING → COVERED` close yields `COVERED` →
+  `targetOffset = HEAD_NEUTRAL`.
+- **Deterministic tie-break preserved:** `fire` resolved before the sub-machine (a same-tick
+  winning headshot still beats the same-tick fatal blown-peek → WON). Energy constants,
+  blown-peeks logic, WON/LOST hold: all unchanged.
+- **`createQte`:** add `targetSeed` to the C6 finiteness guard; seed `targetOffset:
+HEAD_NEUTRAL`. No other change.
+- **`levels.ts` (belliard `QteSpec`):** add `targetSeed` (game-designer's value). No other
+  field changes.
+- **`stateMachine.ts`:** `tickQte(qte, fire, impactPoint, delta)` signature and
+  `{ qte, energyDelta }` result UNCHANGED — call site needs no edit.
+
+### Frozen delta — render + view-hook (dev-r3f-render)
+
+- **`HostageQteSprite.tsx`:** the peek cue ring position is now `anchor + qte.targetOffset`,
+  **written each frame** (during ACTIVE) instead of the fixed `CUE_DX/CUE_DY` one-time place.
+  The captor + hostage meshes STAY positioned once (they do not move). Only the `peekCue` mesh
+  gets a per-frame `position.set(anchor.x + qte.targetOffset.x, anchor.y + qte.targetOffset.y,
+CUE_Z)` — one mesh, acceptable (the component already writes per-frame tints/pulse). Retire
+  the `CUE_DX/CUE_DY` constants (their intent is now `HEAD_NEUTRAL` on the game side, and the
+  ring follows `targetOffset`). This also CLOSES the long-standing "visible-head ==
+  scored-head-zone" aim-honesty seam: the ring is now drawn at exactly the scored head-zone
+  centre. Camera stays static-zoom — `useGameLoop.ts` / `qteCamera.ts` UNCHANGED.
+- **`hostageCue.ts` / `HUD.tsx`:** UNCHANGED (the tell FORM/tint logic and the HUD are
+  agnostic to where the ring sits). No new field surfaced to the DOM HUD.
+
+### Lane assignment — non-overlapping paths
+
+| Lane               | Owns (writes)                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **dev-gameplay**   | `src/game/types/hostageQte.ts` (`targetSeed` on spec, `targetOffset` on runtime), `src/game/systems/qteSystem.ts` (pure `wander` + `HEAD_NEUTRAL`/`clampTargetOffsetG6` + new `qteZoneAt` sig + `tickQte`/`createQte`), `src/game/levels/levels.ts` (belliard `targetSeed`), `src/game/systems/__tests__/` (wander determinism + G6 clamp + moving-target classification tests) |
+| **dev-r3f-render** | `src/render/scene/HostageQteSprite.tsx` only (ring follows `qte.targetOffset` per frame). No `src/game/**`, no camera/HUD change.                                                                                                                                                                                                                                               |
+
+**No shared-file contention.** dev-gameplay owns all of `src/game/**`; dev-r3f-render touches
+one render file and only READS `qte.targetOffset`. `useGameLoop.ts` / `qteCamera.ts` /
+`hostageCue.ts` / `HUD.tsx` are untouched this pass.
+
+**Sequencing:** (1) dev-gameplay lands the FROZEN `hostageQte.ts` field additions first
+(`targetSeed`, `targetOffset`) → handoff. (2) Both lanes fan out in parallel as concurrent Task
+calls on the non-overlapping paths above. Render only needs the `targetOffset` field to exist to
+build against; the wander VALUES it draws come from the game lane at runtime.
+
+### ADR impact (→ tech-writer / producer — number from producer, NOT self-allocated)
+
+This is a **further amendment to ADR-0034** on top of Revision 2. Two records:
+
+1. **The target MOVES — a deliberate reversal of the Revision-2 implication** that "the only
+   motion is the peek exposure" (Revision 2 removed captor motion; this re-introduces motion,
+   but LOCALISED to the head kill-zone, not the captor's body — the captor stays static). Record
+   as a dated amendment (or superseder — Marion's call on number/form).
+2. **New architecture decision worth recording: a seeded-PRNG-in-`src/game` precedent.** This
+   INTRODUCES the first deliberate deterministic-pseudo-random source inside the pure game layer.
+   The decision to record: seeded pure PRNG (pure function of authored seed + deterministic sim
+   state, no `Math.random`/`Date.now`, no per-tick stepped cursor) is PERMITTED in `src/game`
+   and PRESERVES replay determinism + the boundary law. Future randomness-flavoured mechanics
+   should follow this shape (authored seed + pure function of accumulated sim time). Flag to
+   `producer` for the ADR number and `tech-writer` to write it.
+
+- VERDICT: **CONTRACT FROZEN.** dev-gameplay → `hostageQte.ts` field additions first; then both
+  lanes parallel. tech-writer/producer: ADR amendment + seeded-PRNG precedent record. Awaiting
+  game-designer's `targetSeed` value + wander amplitude/speed defaults (and their per-level-or-
+  constant call, which triggers the additive `QteSpec` seam above only if per-level).
+
+## 14. DESIGN — game-designer (Sacha) — 2026-07-18 — wander addendum → design gate
+
+New Bertrand steer on the already-accepted static duel (PR #79):
+_"il faudrait faire bouger le rond dans lequel il faut tirer / cela doit être des mouvements
+aléatoires."_ The **head kill-zone + its reticle ring WANDER during PEEKING** — aiming
+becomes a tracking-a-moving-target test. Captor stays static; §§1–7 inherited verbatim.
+
+- **Deliverable:** `docs/game-design/spec-hostage-qte-static-duel.md` **§8** (addendum) —
+  D-W1 what/when, D-W2 feel, D-W3 bounds, D-W4 difficulty, §8.6 AC8–AC11, §8.7 flags.
+- **Key decisions:**
+  - Feel: **seeded-waypoint wander** (per-QTE `wanderSeed` → pure PRNG advanced by the tick;
+    NO `Math.random`/`Date.now` — replay-deterministic), ease-in/out per leg (deceleration =
+    fairness firing window), min leg 0.15 u. Rejected Lissajous (periodic → learnable).
+  - Speed: **`wanderSpeed` = 1.2 u/s** (Belliard, peak mid-leg). Trackable, not teleporting.
+  - Zone: **0.5 × 0.5** (unchanged size — difficulty from motion, not shrink).
+  - Bounds (centre, anchor-relative): dx **−0.70…−0.35**, dy **+0.60…+0.85** → head-box
+    occupancy dx [−0.95, −0.10], dy [+0.35, +1.10]. **G6 holds on BOTH axes**: right edge
+    −0.10 < hostage 0.0 (dx margin ≥ 0.10, = today's `HEAD_DX_MAX`, boundary preserved) AND
+    bottom +0.35 > hostage top 0.15 (dy margin ≥ 0.20). No bavure ever required.
+  - Belliard rebalance: **`peekDurationSeconds` 1.2 → 1.4 s** (acquire+track cushion, ≫ G5
+    floor); **N = 4 unchanged**; cadence 1.5 s unchanged. Passive loss ≈ 11.6 s.
+  - Contract: +`wanderSeed`/`wanderSpeed` on `QteSpec`, +`peekTargetOffset` (+wander
+    bookkeeping) on runtime, `qteZoneAt` head test recentred on `peekTargetOffset`; region↔G6
+    disjointness asserted in `createQte`. Render ring follows `peekTargetOffset`.
+- **Status:** DRAFT — **needs `lead-game-designer` (Karim) PASS** before `senior-architect`
+  and any dev. Flags to gate: §8.7 (ADR-0034 superseder touch; model choice; ring-follows read
+  → lead-art/composite gate).
