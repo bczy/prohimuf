@@ -24,38 +24,40 @@ products (Retro Diffusion, PixelLab) on aesthetic grounds. The two approaches th
 are already within reach and free:
 
 1. **Instruction-editing with FLUX Kontext, on Pollinations** — generate coherent frames
-   by *editing a base frame*, not by re-rolling a seed. Same platform, no key, free.
+   by _editing a base frame_, not by re-rolling a seed. Same platform, no key, free.
 2. **Procedural mesh deformation in R3F** — for rigid motion, animate a single static
    sprite by code (no per-frame generation at all).
 
 ## Evidence (verified claims)
 
 ### a) Inter-frame coherence with diffusion — CONFIRMED
+
 - **Pollinations supports seed parameters** for reproducible generations (SDK forwards
   seeds). muf's seed-pinning is a supported platform feature. `3-0`
   — <https://github.com/pollinations/pollinations>
-- **Pollinations offers image *editing***, not just text-to-image, including
+- **Pollinations offers image _editing_**, not just text-to-image, including
   gptimage-family and a `kontext` model on dedicated routes — instruction-based editing
   is available on the platform muf already uses. `3-0` — same source
 - The "Pollinations now requires an API key / paid Pollen" claim was **REFUTED** by a
   live keyless test on 2026-07-18 (HTTP 200, real image, no key/account). `0-3`
 - **FLUX.1 Kontext** unifies generation + instruction editing, using an existing image
-  as *context* for edits — directly applicable to coherent frames from a base sprite.
+  as _context_ for edits — directly applicable to coherent frames from a base sprite.
   `3-0` — <https://arxiv.org/html/2506.15742v2>
 - **But consistency degrades after ~6 iterative edits** (documented identity drift /
   artifacts). ⇒ edit every frame **from the base frame**, never chain N→N+1; 2–8 frames
   is the safe regime. `3-0` — same source
 - The claim that Kontext beats GPT-Image/Gen-4 at multi-turn identity was **REFUTED**
   (`1-2`) — it's good, not a silver bullet. Alternative: **Qwen-Image-Edit v2509** takes
-  up to 3 input images and reads OpenPose skeletons natively (no LoRA). *(fetch-extracted,
-  verification cut short.)*
+  up to 3 input images and reads OpenPose skeletons natively (no LoRA). _(fetch-extracted,
+  verification cut short.)_
 - Kontext is also on fal.ai at ~$0.04/image (Kontext pro) if a paid path is ever wanted.
 
 ### b) Specialised sprite/pixel-art tools — CONFIRMED, but wrong fit
+
 - **Retro Diffusion `rd-animation`** (Replicate) makes style-consistent animated pixel
   sprites / spritesheets — but the image reference **only guides style/identity, it is
   NOT an img2img init**, so an existing FLUX sprite can't be animated pixel-for-pixel;
-  output is a *redrawn pixel-art* interpretation. `3-0`
+  output is a _redrawn pixel-art_ interpretation. `3-0`
   — <https://replicate.com/retro-diffusion/rd-animation>
 - Retro Diffusion has a cloud REST API (no local GPU) but needs a key (`X-RD-Token`) and
   is paid (~$0.03–0.18/image, $0.14–0.25/animation; free `check_cost` dry-run). `3-0`
@@ -67,17 +69,19 @@ are already within reach and free:
 - Verdict: both are pixel-art + paid ⇒ **wrong aesthetic for muf, exclude.**
 
 ### c) Frame interpolation / in-betweens — MIXED confidence
+
 - **FILM** (Google, open-source) interpolates between two images with a single unified
   net (no separate optical-flow net) — a candidate for densifying a 2-pose flip.
-  *(fetch-extracted; verification cut short.)*
+  _(fetch-extracted; verification cut short.)_
   — <https://github.com/google-research/frame-interpolation>
 - **Bitmapflow** (MIT) makes optical-flow in-betweens for sprites, **but it's a Godot GUI
-  app, not a CLI** → awkward in CI. *(fetch-extracted.)*
-- Practitioner caveat: **chroma-keying AI-*animated* output fails** — the model doesn't
+  app, not a CLI** → awkward in CI. _(fetch-extracted.)_
+- Practitioner caveat: **chroma-keying AI-_animated_ output fails** — the model doesn't
   preserve the exact key colour, leaving residual key pixels. ⇒ interpolate **after**
-  cut-out, on alpha, never before. *(blog-sourced, medium confidence.)*
+  cut-out, on alpha, never before. _(blog-sourced, medium confidence.)_
 
 ### d) Procedural / hybrid — CONFIRMED, most underrated
+
 - **Free-Form Deformation**: animate one static sprite via a 2D vertex mesh — move vertex
   subsets per frame while UVs stay fixed (squash/stretch, pivoted rotation, easing). No
   per-frame images. Native fit for R3F and for muf's existing `flipbookFrame` (swap "which
@@ -88,6 +92,7 @@ are already within reach and free:
   — <https://arxiv.org/html/2602.21153v1>
 
 ### e) What indie/jam devs actually do — CONFIRMED
+
 - Aug-2024: no AI tool trained on spritesheets; general text-to-image gives "random,
   inconsistent frames." By 2026 specialised models exist — but pixel-art only. For a
   non-pixel style like muf's, the shipped path is **static generation + code/rig
@@ -106,7 +111,7 @@ A **two-track hybrid**, keyed by motion type, plugged into the existing `flipboo
    frame** via Pollinations' `kontext` model instead of re-seeding. Rule from the paper:
    always edit from frame 1, never chain, ≤6 variants.
 
-**Exclude:** Retro Diffusion / PixelLab (pixel-art + paid); chroma-key *before* animation.
+**Exclude:** Retro Diffusion / PixelLab (pixel-art + paid); chroma-key _before_ animation.
 
 **Residual risks for the architect:** (a) Pollinations `kontext` quality/latency at muf's
 style not yet empirically tested here — spike one enemy recoil before committing; (b)
