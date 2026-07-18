@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import { STOCK, INK, FONT } from "@render/ui/print";
+import { Overlay } from "./controls/Overlay";
+import styles from "./EndScreen.module.css";
 
 interface EndScreenProps {
   phase: "GAME_OVER" | "LEVEL_COMPLETE";
@@ -15,21 +16,8 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
   const title = isGameOver ? "LE LIVREUR DU 19ÈME INTERPELLÉ" : "LA RAVE A EU LIEU";
 
   return (
-    <div
-      onClick={onRestart}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: STOCK.shell,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        userSelect: "none",
-      }}
-    >
-      {/* grain overlay */}
+    <Overlay onClick={onRestart} className={styles.screen}>
+      {/* grain overlay — rgba gradient with no clean token stays inline */}
       <div
         style={{
           position: "absolute",
@@ -40,63 +28,17 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
         }}
       />
 
-      <div style={{ position: "relative", textAlign: "center" }}>
-        <div
-          style={{
-            fontFamily: FONT.mono,
-            fontSize: "14px",
-            color: INK.black,
-            letterSpacing: "0.2em",
-            marginBottom: "16px",
-          }}
-        >
-          {label}
-        </div>
+      <div className={styles.content}>
+        <div className={styles.label}>{label}</div>
+
+        <div className={styles.title}>{title}</div>
 
         <div
-          style={{
-            fontFamily: FONT.display,
-            fontSize: "64px",
-            color: INK.full,
-            lineHeight: 1,
-            letterSpacing: "0.03em",
-            maxWidth: "700px",
-          }}
-        >
-          {title}
-        </div>
+          className={styles.score}
+        >{`SCORE FINAL : ${String(score)} | VAGUE ${String(wave)}`}</div>
 
-        <div
-          style={{
-            fontFamily: FONT.mono,
-            fontSize: "16px",
-            color: INK.black,
-            marginTop: "24px",
-            letterSpacing: "0.1em",
-          }}
-        >
-          {`SCORE FINAL : ${String(score)} | VAGUE ${String(wave)}`}
-        </div>
-
-        <div
-          style={{
-            fontFamily: FONT.mono,
-            fontSize: "14px",
-            color: INK.full,
-            marginTop: "48px",
-            animation: "blink 1s step-start infinite",
-          }}
-        >
-          [ CLIQUER POUR RETOURNER AU MENU ]
-        </div>
+        <div className={styles.prompt}>[ CLIQUER POUR RETOURNER AU MENU ]</div>
       </div>
-
-      <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
-    </div>
+    </Overlay>
   );
 }
