@@ -10,6 +10,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `pm` | John 📋 | PRD, epics, stories, scope (`_bmad-output/planning-artifacts/`) | production code |
 | `producer` | Marion 📆 | pipeline execution: stage tracking, hand-off chasing, caps & escalations, sprint status, ADR number allocation, handoffs-shard opening | scope, gate verdicts, specs, production code |
 | `senior-architect` | Winston 🏗️ | architecture, ADRs, boundaries, cross-cutting sign-off | feature implementation |
+| `tech-scout` | Nadia 🔭 | technical reconnaissance: prior-art surveys, feasibility spikes, honest tech comparison (advice only) — sourced reports in `docs/research/` via the `deep-research` harness | production code, prompts, ADRs, any gate verdict, scope, architecture decisions |
 | `lead-game-designer` | Karim 🧭 | design gate (specs & scripts), design↔art↔dev sync, `docs/game-design/README.md` | first-draft specs, production code |
 | `game-designer` | Sacha 🎮 | mechanics, tuning values, 3C — specs in `docs/game-design/` | production code, lore, visual style |
 | `narrative-designer` | Yasmine ✒️ | universe, cast, every player-facing word — scripts in `docs/game-design/` | production code, mechanics, visuals |
@@ -54,7 +55,12 @@ bending the pipeline silently is worse.
               partition: dev lanes + an ART lane when the feature needs new or
               changed visuals. Perf-sensitive features (post-processing, shaders,
               particles, render targets, draw-call growth) → gpu-specialist
-              GPU-cost analysis BEFORE lanes are cut.
+              GPU-cost analysis BEFORE lanes are cut. Stories resting on an
+              unproven technique or an unfamiliar model/API/dependency →
+              tech-scout RECON REPORT (sourced feasibility + reco vs muf's
+              constraints — budget, no-GPU, CI, style-fit — via the deep-research
+              harness) BEFORE lanes are cut, so the architect partitions against
+              evidence, not a guess.
 4. BUILD      parallel, non-overlapping lanes:
                 · ART — (reference hunt: graphic-references ↔ Bertrand, when the
                   family lacks references) → advisor → concept-artist →
