@@ -64,8 +64,13 @@ export interface LevelArtParallax {
   readonly street: number;
 }
 
-/** Code-drawn foreground ironwork style, matched to each level's architecture. */
-export type IronworkStyle = "haussmann" | "plain" | "hlm";
+/**
+ * Code-drawn foreground ironwork style. `haussmann`/`plain`/`hlm` are the
+ * per-level architectural registers (manifest `ironwork` field); `artdeco` and
+ * `croix` are extra wrought-iron variants used only render-side to vary the
+ * railing per building on multi-building tronçons (never declared per level).
+ */
+export type IronworkStyle = "haussmann" | "plain" | "hlm" | "artdeco" | "croix";
 
 /** A single hand-placed window, normalized to the facade image (centre + size, y-down). */
 export interface WindowZone {

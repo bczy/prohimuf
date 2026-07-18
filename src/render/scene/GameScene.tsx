@@ -394,6 +394,8 @@ export function GameScene({
               style={ironworkStyle}
               sillOffset={ironworkSillOffset}
               drawScale={drawScale}
+              varyPerBuilding={layout.mode === "troncon-sequence"}
+              tileIndex={i}
             />
           </group>
         ))}

@@ -3,13 +3,22 @@
  * Canvas2D pur, sans React ni Three. Partagé par le composant `ForegroundFrames`
  * et les scripts de preview hors-ligne (Node + node-canvas).
  *
- * Trois styles selon l'architecture du niveau :
+ * Styles selon l'architecture du niveau :
  *  - `haussmann` : garde-corps en fonte ouvragé (rails, barreaux à pointe de
  *    lance, volutes) — la façade haussmannienne de la rue Belliard ;
  *  - `plain` : simples barreaux métalliques droits (fenêtres et balcons nus) —
  *    le tissu mixte de Stalingrad ;
  *  - `hlm` : parapet de balcon en béton + main courante tubulaire — la tour HLM
- *    des années 1970 de Vitry.
+ *    des années 1970 de Vitry ;
+ *  - `artdeco` : garde-corps géométrique (rails, montants espacés, rangée de
+ *    losanges) — registre Art déco des années 30 ;
+ *  - `croix` : barreaux croisés en X entre deux lisses — grille en croix de
+ *    Saint-André.
+ *
+ * `artdeco` et `croix` ne sont pas déclarés par niveau : ils servent à VARIER la
+ * ferronnerie bâtiment par bâtiment sur les tronçons multi-immeubles (voir
+ * {@link drawForegroundIronworkPerBuilding}), en gardant le même registre fer
+ * forgé noir que `haussmann`/`plain`.
  *
  * Fonte parisienne : barreaux et volutes en métal sombre rehaussés d'un liséré
  * clair (reflet) et d'une ombre décalée — le relief vient de ce contraste.
@@ -89,6 +98,42 @@ function ironCurve(
   g.beginPath();
   g.arc(cx, cy - so, r, a0, a1);
   g.stroke();
+}
+
+/**
+ * Trait droit en fonte (polyligne) avec ombre + reflet → relief, même registre
+ * que {@link ironCurve} mais pour les motifs anguleux (chevrons, losanges,
+ * croix). `pts` en espace image (px) ; `closed` ferme le contour. `so` = décalage
+ * d'ombre (px).
+ */
+function ironPath(
+  g: CanvasRenderingContext2D,
+  pts: readonly (readonly [number, number])[],
+  width: number,
+  so: number,
+  closed = false,
+): void {
+  if (pts.length < 2) return;
+  const trace = (dx: number, dy: number): void => {
+    g.beginPath();
+    pts.forEach(([x, y], i) => {
+      if (i === 0) g.moveTo(x + dx, y + dy);
+      else g.lineTo(x + dx, y + dy);
+    });
+    if (closed) g.closePath();
+    g.stroke();
+  };
+  g.lineJoin = "round";
+  g.lineCap = "round";
+  g.strokeStyle = SHADOW;
+  g.lineWidth = width + 1.5;
+  trace(so, so);
+  g.strokeStyle = IRON;
+  g.lineWidth = width;
+  trace(0, 0);
+  g.strokeStyle = HILIGHT;
+  g.lineWidth = Math.max(1, width * 0.45);
+  trace(0, -so);
 }
 
 /**
@@ -291,6 +336,256 @@ function drawHlmZone(
 }
 
 /**
+ * Garde-corps Art déco : main courante et lisse basse, montants verticaux
+ * espacés (registre géométrique, plus larges que `plain`) et une rangée de
+ * losanges centrés — le vocabulaire anguleux des années 30. Gabarit calé sous
+ * l'ouverture comme `plain`.
+ */
+function drawArtdecoZone(
+  g: CanvasRenderingContext2D,
+  box: ZoneBox,
+  lw: number,
+  texW: number,
+  so: number,
+  sillOffset: number,
+): void {
+  const { left, top, ww, hh, cy } = box;
+  const railLeft = left - ww * 0.03;
+  const railW = ww * 1.06;
+  const railTop = cy + hh * 0.18;
+  const railBottom = top + hh * (1.14 + sillOffset);
+  const midY = (railTop + railBottom) / 2;
+
+  g.globalAlpha = 0.88;
+
+  drawRail(g, railLeft, railW, railTop, lw * 1.1, so); // main courante
+  drawRail(g, railLeft, railW, railBottom - lw, lw, so); // lisse basse
+
+  // Montants verticaux espacés (registre géométrique, plus larges que `plain`).
+  const bays = Math.max(4, Math.round(railW / (texW * 0.026)));
+  const pw = Math.max(1.6, lw * 0.5);
+  for (let i = 0; i <= bays; i++) {
+    const px = railLeft + railW * (i / bays);
+    g.fillStyle = SHADOW;
+    g.fillRect(px - pw / 2 + so, railTop + so, pw, railBottom - railTop);
+    g.fillStyle = IRON;
+    g.fillRect(px - pw / 2, railTop, pw, railBottom - railTop);
+    g.fillStyle = HILIGHT;
+    g.fillRect(px - pw / 2, railTop, Math.max(1, pw * 0.4), railBottom - railTop);
+  }
+
+  // Rangée de losanges centrés (motif Art déco), un par travée.
+  const bw = railW / bays;
+  const rh = Math.min((railBottom - railTop) * 0.34, bw * 0.42);
+  for (let i = 0; i < bays; i++) {
+    const dcx = railLeft + bw * (i + 0.5);
+    ironPath(
+      g,
+      [
+        [dcx, midY - rh],
+        [dcx + bw * 0.32, midY],
+        [dcx, midY + rh],
+        [dcx - bw * 0.32, midY],
+      ],
+      lw * 0.6,
+      so,
+      true,
+    );
+  }
+
+  g.globalAlpha = 1;
+}
+
+/**
+ * Grille en croix de Saint-André : deux lisses (haute/basse), montants verticaux
+ * aux limites de travée et une croix (deux diagonales) dans chaque travée — fer
+ * forgé fin, même registre que `plain`. Gabarit calé sous l'ouverture.
+ */
+function drawCroixZone(
+  g: CanvasRenderingContext2D,
+  box: ZoneBox,
+  lw: number,
+  texW: number,
+  so: number,
+  sillOffset: number,
+): void {
+  const { left, top, ww, hh, cy } = box;
+  const railLeft = left - ww * 0.03;
+  const railW = ww * 1.06;
+  const railTop = cy + hh * 0.2;
+  const railBottom = top + hh * (1.14 + sillOffset);
+
+  g.globalAlpha = 0.86;
+
+  drawRail(g, railLeft, railW, railTop, lw * 0.9, so); // lisse haute
+  drawRail(g, railLeft, railW, railBottom - lw * 0.7, lw * 0.7, so); // lisse basse
+
+  const bays = Math.max(4, Math.round(railW / (texW * 0.03)));
+  const bw = railW / bays;
+  const pw = Math.max(1.3, lw * 0.34);
+  for (let i = 0; i <= bays; i++) {
+    const px = railLeft + bw * i;
+    g.fillStyle = SHADOW;
+    g.fillRect(px - pw / 2 + so, railTop + so, pw, railBottom - railTop);
+    g.fillStyle = IRON;
+    g.fillRect(px - pw / 2, railTop, pw, railBottom - railTop);
+    g.fillStyle = HILIGHT;
+    g.fillRect(px - pw / 2, railTop, Math.max(1, pw * 0.4), railBottom - railTop);
+  }
+
+  // Croix de Saint-André dans chaque travée (deux diagonales).
+  for (let i = 0; i < bays; i++) {
+    const x0 = railLeft + bw * i;
+    const x1 = x0 + bw;
+    ironPath(
+      g,
+      [
+        [x0, railTop],
+        [x1, railBottom],
+      ],
+      lw * 0.42,
+      so,
+    );
+    ironPath(
+      g,
+      [
+        [x1, railTop],
+        [x0, railBottom],
+      ],
+      lw * 0.42,
+      so,
+    );
+  }
+
+  g.globalAlpha = 1;
+}
+
+/**
+ * Palette de ferronneries en fer forgé noir permutée par bâtiment sur les
+ * tronçons multi-immeubles. `hlm` (parapet béton) en est exclu : il romprait le
+ * registre fonte de la rue. L'ordre place des styles voisins visuellement
+ * distincts (fonte ouvragée → géométrique → croix → barreaux droits), si bien
+ * que la permutation par rang donne toujours des voisins contrastés.
+ */
+const BUILDING_IRON_STYLES: readonly IronworkStyle[] = ["haussmann", "artdeco", "croix", "plain"];
+
+/**
+ * Style de ferronnerie d'un bâtiment donné, déterministe et stable d'un montage à
+ * l'autre. Permutation pure : on part du style déclaré du niveau (index dans
+ * {@link BUILDING_IRON_STYLES}, sinon 0), décalé par le tronçon PUIS par le rang
+ * du bâtiment. Deux bâtiments consécutifs d'un même tronçon reçoivent donc
+ * toujours des styles différents (rangs voisins → entrées voisines, distinctes),
+ * et le décalage par tronçon fait varier une même image répétée.
+ */
+export function buildingIronStyle(
+  levelStyle: IronworkStyle,
+  tileIndex: number,
+  buildingIndex: number,
+): IronworkStyle {
+  const n = BUILDING_IRON_STYLES.length;
+  const base = Math.max(0, BUILDING_IRON_STYLES.indexOf(levelStyle));
+  const i = (((base + tileIndex + buildingIndex) % n) + n) % n;
+  return BUILDING_IRON_STYLES[i] ?? levelStyle;
+}
+
+/** Seuil de coupure en x (largeur de tuile normalisée) qui sépare deux bâtiments
+ *  d'un même tronçon : un écart entre deux x-centres consécutifs supérieur à ce
+ *  seuil ouvre un nouveau bâtiment. Calé au-dessus du pas régulier des fenêtres
+ *  d'un immeuble haussmannien (≈0.06) et sous le vrai vide entre immeubles. */
+const BUILDING_GAP = 0.09;
+
+/**
+ * Regroupe les zones d'une tuile en bâtiments par écart horizontal : les zones
+ * sont triées par x, et un écart entre deux x-centres consécutifs supérieur à
+ * `gap` (largeur de tuile normalisée) démarre un nouveau bâtiment. Renvoie, dans
+ * l'ordre gauche→droite, des listes d'INDICES d'origine (dans `zones`) — l'indice
+ * original est conservé pour que la variété de motif par zone (idx) reste stable.
+ */
+export function clusterZonesByBuilding(
+  zones: readonly IronZone[],
+  gap: number = BUILDING_GAP,
+): number[][] {
+  const order = zones.map((z, i) => ({ i, x: z.x })).sort((a, b) => a.x - b.x);
+  const clusters: number[][] = [];
+  let current: number[] = [];
+  let prevX: number | null = null;
+  for (const { i, x } of order) {
+    if (prevX !== null && x - prevX > gap) {
+      clusters.push(current);
+      current = [];
+    }
+    current.push(i);
+    prevX = x;
+  }
+  if (current.length > 0) clusters.push(current);
+  return clusters;
+}
+
+/** Épaisseur de trait de dessin à la résolution `texW`. */
+const drawLineWidth = (texW: number): number => Math.max(2, texW * 0.0045);
+/** Décalage d'ombre (px) : 1 px à la résolution native de l'art (1280). */
+const shadowOffset = (texW: number): number => Math.max(1, Math.round(texW / 1280));
+
+/**
+ * Dessine la ferronnerie d'UNE zone dans le style donné, en espace image. Ne
+ * remet pas le canvas à zéro : partagé par le tracé uniforme
+ * ({@link drawForegroundIronwork}) et le tracé par bâtiment
+ * ({@link drawForegroundIronworkPerBuilding}). `zones` reste la liste complète
+ * de la tuile (le style `hlm` y cherche la fenêtre du dessous).
+ */
+function drawZone(
+  g: CanvasRenderingContext2D,
+  z: IronZone,
+  idx: number,
+  zones: readonly IronZone[],
+  texW: number,
+  texH: number,
+  style: IronworkStyle,
+  sillOffset: number,
+  lw: number,
+  so: number,
+): void {
+  if (z.w <= 0 || z.h <= 0) return; // zone dégénérée : rien à dessiner
+  const ww = z.w * texW;
+  const hh = z.h * texH;
+  const left = z.x * texW - ww / 2;
+  const top = z.y * texH - hh / 2;
+  const cy = z.y * texH;
+  const box: ZoneBox = { left, top, ww, hh, cy };
+
+  if (style === "plain") {
+    drawPlainZone(g, box, lw, texW, so, sillOffset);
+  } else if (style === "artdeco") {
+    drawArtdecoZone(g, box, lw, texW, so, sillOffset);
+  } else if (style === "croix") {
+    drawCroixZone(g, box, lw, texW, so, sillOffset);
+  } else if (style === "hlm") {
+    // Fenêtre la plus proche EN DESSOUS qui chevauche horizontalement — la
+    // dalle s'y arrête pour ne pas mordre sur l'art de l'étage inférieur.
+    let nextWinTop = Number.POSITIVE_INFINITY;
+    for (const o of zones) {
+      if (o === z || o.w <= 0 || o.h <= 0) continue;
+      const oTop = (o.y - o.h / 2) * texH;
+      if (oTop <= cy) continue;
+      if (Math.abs(o.x - z.x) * texW >= (ww + o.w * texW) / 2) continue;
+      nextWinTop = Math.min(nextWinTop, oTop);
+    }
+    drawHlmZone(g, box, lw, idx, so, nextWinTop, sillOffset);
+  } else {
+    // Gabarit Haussmann historique (inchangé) : garde-corps en travers du
+    // bas de la fenêtre (devant le bas du flic), avec débord latéral.
+    const railLeft = left - ww * 0.05;
+    const railW = ww * 1.1;
+    const railTop = cy + hh * 0.2;
+    const railBottom = top + hh + hh * (0.22 + sillOffset);
+    const midY = (railTop + railBottom) / 2;
+    const railRight = railLeft + railW;
+    const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };
+    drawHaussmannZone(g, geo, lw, texW, idx, so);
+  }
+}
+
+/**
  * Dessine, pour chaque zone, la ferronnerie de premier plan dans le style du
  * niveau (`haussmann` / `plain` / `hlm`). Dessine en espace image (texW × texH),
  * aligné sur les zones des fenêtres.
@@ -309,45 +604,40 @@ export function drawForegroundIronwork(
   sillOffset = 0,
 ): void {
   g.clearRect(0, 0, texW, texH);
-  const lw = Math.max(2, texW * 0.0045);
-  // Décalage d'ombre : 1 px à la résolution native de l'art (1280), suit la
-  // résolution de dessin pour garder le même relief qu'au 1×.
-  const so = Math.max(1, Math.round(texW / 1280));
-
+  const lw = drawLineWidth(texW);
+  const so = shadowOffset(texW);
   zones.forEach((z, idx) => {
-    if (z.w <= 0 || z.h <= 0) return; // zone dégénérée : rien à dessiner
-    const ww = z.w * texW;
-    const hh = z.h * texH;
-    const left = z.x * texW - ww / 2;
-    const top = z.y * texH - hh / 2;
-    const cy = z.y * texH;
-    const box: ZoneBox = { left, top, ww, hh, cy };
+    drawZone(g, z, idx, zones, texW, texH, style, sillOffset, lw, so);
+  });
+}
 
-    if (style === "plain") {
-      drawPlainZone(g, box, lw, texW, so, sillOffset);
-    } else if (style === "hlm") {
-      // Fenêtre la plus proche EN DESSOUS qui chevauche horizontalement — la
-      // dalle s'y arrête pour ne pas mordre sur l'art de l'étage inférieur.
-      let nextWinTop = Number.POSITIVE_INFINITY;
-      for (const o of zones) {
-        if (o === z || o.w <= 0 || o.h <= 0) continue;
-        const oTop = (o.y - o.h / 2) * texH;
-        if (oTop <= cy) continue;
-        if (Math.abs(o.x - z.x) * texW >= (ww + o.w * texW) / 2) continue;
-        nextWinTop = Math.min(nextWinTop, oTop);
-      }
-      drawHlmZone(g, box, lw, idx, so, nextWinTop, sillOffset);
-    } else {
-      // Gabarit Haussmann historique (inchangé) : garde-corps en travers du
-      // bas de la fenêtre (devant le bas du flic), avec débord latéral.
-      const railLeft = left - ww * 0.05;
-      const railW = ww * 1.1;
-      const railTop = cy + hh * 0.2;
-      const railBottom = top + hh + hh * (0.22 + sillOffset);
-      const midY = (railTop + railBottom) / 2;
-      const railRight = railLeft + railW;
-      const geo: ZoneGeometry = { railLeft, railW, railTop, railBottom, midY, railRight };
-      drawHaussmannZone(g, geo, lw, texW, idx, so);
+/**
+ * Comme {@link drawForegroundIronwork}, mais VARIE le style bâtiment par
+ * bâtiment : les zones de la tuile sont regroupées en immeubles par écart
+ * horizontal ({@link clusterZonesByBuilding}) et chaque immeuble reçoit un style
+ * de fer forgé déterministe ({@link buildingIronStyle}), stable d'un montage à
+ * l'autre. `tileIndex` désaligne les tronçons entre eux (une même image répétée
+ * ne porte donc pas deux fois les mêmes ferronneries). `levelStyle` sert de point
+ * de départ de la permutation et de repli. La liste complète des zones est passée
+ * au tracé pour que la recherche « fenêtre du dessous » reste correcte.
+ */
+export function drawForegroundIronworkPerBuilding(
+  g: CanvasRenderingContext2D,
+  zones: readonly IronZone[],
+  texW: number,
+  texH: number,
+  levelStyle: IronworkStyle,
+  sillOffset: number,
+  tileIndex: number,
+): void {
+  g.clearRect(0, 0, texW, texH);
+  const lw = drawLineWidth(texW);
+  const so = shadowOffset(texW);
+  clusterZonesByBuilding(zones).forEach((indices, building) => {
+    const style = buildingIronStyle(levelStyle, tileIndex, building);
+    for (const idx of indices) {
+      const z = zones[idx];
+      if (z !== undefined) drawZone(g, z, idx, zones, texW, texH, style, sillOffset, lw, so);
     }
   });
 }
