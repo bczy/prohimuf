@@ -319,8 +319,9 @@ export function useGameLoop(
     // Floating feedback for each takedown: bonus time, civilian penalty, score.
     // A non-zero energyDelta floats a second "⚡" label just above, so both the
     // score and the energy hit are read. (During the hostage QTE the frozen tick
-    // emits no feedback events — its energy swings are read on the HUD gauge and
-    // the result chip instead, ADR-0030.)
+    // emits no feedback events — its energy swings are read on the persistent global
+    // énergie bar instead; the QTE-local HUD gauge and result chip were removed by
+    // ADR-0034.)
     const queue = feedbackQueueRef?.current;
     if (queue && next.feedback) {
       for (const ev of next.feedback) {

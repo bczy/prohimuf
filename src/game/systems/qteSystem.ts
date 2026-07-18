@@ -24,7 +24,7 @@ export const QTE_RESULT_HOLD = 2.2;
 export const PEEK_EXPOSURE_FLOOR = 0.5;
 /** G4 (ADR-0034): every peek is preceded by a perceptible, structural tell — the
  *  last `TELEGRAPH_LEAD_SECONDS` of the COVERED beat. `peekCadenceSeconds` must be
- *  ≥ this so a tell always fits before every exposure. */
+ *  STRICTLY > this so the tell is a discrete wind-up, not the entire COVERED beat. */
 export const TELEGRAPH_LEAD_SECONDS = 0.35;
 
 // --- Energy economy — outcome currency only, no passive drain (ADR-0034 D5) ------
@@ -129,16 +129,43 @@ export function shouldTriggerQte(
  * "door strictly ahead, non-zero retreat" are asserted (ADR-0034 gotchas).
  */
 export function createQte(spec: QteSpec): HostageQte {
+  // C6: reject non-finite authored numerics up front — NaN/Infinity slips past the
+  // `=== 0` guard and past `Math.max`, and can wedge the peek sub-machine open
+  // forever. Guard every scalar the tick reads before any of them is used.
+  const numerics: readonly number[] = [
+    spec.triggerAtElapsedSeconds,
+    spec.zoomSeconds,
+    spec.anchor.x,
+    spec.anchor.y,
+    spec.porteCochere.x,
+    spec.porteCochere.y,
+    spec.retreatSpeed,
+    spec.peekCadenceSeconds,
+    spec.peekDurationSeconds,
+  ];
+  if (!numerics.every((n) => Number.isFinite(n))) {
+    throw new Error(
+      "QteSpec invariant (C6): all authored numerics must be finite (no NaN/Infinity)",
+    );
+  }
   const dx = spec.porteCochere.x - spec.anchor.x;
   if (dx === 0) {
     throw new Error("QteSpec invariant (D1): porteCochere must be strictly ahead of anchor");
   }
+  // C3: the retreat freezes y (movement is x-only) and the door test is x-only, so a
+  // door authored off the anchor's street would "arrive" on x alone while the camera
+  // leads toward a y never reached. Require the door on the SAME horizontal street.
+  if (spec.porteCochere.y !== spec.anchor.y) {
+    throw new Error(
+      "QteSpec invariant (C3): porteCochere.y must equal anchor.y — the retreat is x-only (same street)",
+    );
+  }
   if (spec.retreatSpeed <= 0) {
     throw new Error("QteSpec invariant (D1): retreatSpeed must be > 0 — the clock must run");
   }
-  if (spec.peekCadenceSeconds < TELEGRAPH_LEAD_SECONDS) {
+  if (spec.peekCadenceSeconds <= TELEGRAPH_LEAD_SECONDS) {
     throw new Error(
-      "QteSpec invariant (G4): peekCadenceSeconds must be ≥ TELEGRAPH_LEAD_SECONDS so a tell fits",
+      "QteSpec invariant (G4): peekCadenceSeconds must be > TELEGRAPH_LEAD_SECONDS so a discrete tell fits",
     );
   }
   const dir: 1 | -1 = dx > 0 ? 1 : -1;
@@ -183,8 +210,9 @@ const NO_DELTA = { energyDelta: 0 } as const;
  *   `fire` FIRST via the stance-aware classifier — a head-during-peek WINS; body /
  *   hostage bleed energy; miss does nothing. (2) If not won, advance the retreat and
  *   check the door — reaching it → LOST (no extra charge, the loss was paid
- *   peek-by-peek). (3) Otherwise tick the COVERED↔PEEKING sub-machine, set the G4
- *   tell, and charge the unanswered-peek drain ONCE on a PEEKING→COVERED close.
+ *   peek-by-peek). (3) Otherwise tick the COVERED↔PEEKING sub-machine over the FULL
+ *   delta (a large delta may cross several segments), set the G4 tell, and charge the
+ *   unanswered-peek drain ONCE per PEEKING→COVERED close crossed.
  * - WON/LOST: hold briefly, then DONE. DONE/default are no-ops.
  */
 export function tickQte(
@@ -245,10 +273,20 @@ export function tickQte(
         return { qte: { ...qte, phase: "LOST", anchor }, energyDelta };
       }
 
-      // (3) Tick the COVERED↔PEEKING sub-machine.
+      // (3) Tick the COVERED↔PEEKING sub-machine over the FULL delta (C1). A delta
+      // larger than the current segment must not silently swallow the skipped peeks:
+      // consume whole segments one at a time, charging each CLOSED exposure. Each
+      // iteration subtracts a strictly-positive stance duration (peekCadence >
+      // TELEGRAPH_LEAD_SECONDS > 0, peekDuration ≥ PEEK_EXPOSURE_FLOOR > 0), so
+      // `remaining` strictly decreases and the loop is provably bounded (terminates).
+      // Small deltas cross ≤ 1 boundary → identical to the prior single toggle.
       let stance: CaptorStance = qte.stance;
-      let stanceRemaining = qte.stanceRemaining - delta;
-      if (stanceRemaining <= 0) {
+      let stanceRemaining = qte.stanceRemaining;
+      let remaining = delta;
+      let crossed = false;
+      while (remaining >= stanceRemaining) {
+        remaining -= stanceRemaining;
+        crossed = true;
         if (stance === "COVERED") {
           // Open an exposure. G5: never below the runtime floor.
           stance = "PEEKING";
@@ -256,11 +294,18 @@ export function tickQte(
         } else {
           // Close an exposure. A peek that CLOSES was by definition unanswered (a
           // head hit during it would have WON), so charge the counter-fire ONCE.
+          // C2: a body/hostage/miss shot fired during this closing peek is charged on
+          // BOTH axes — the shot drain resolved above AND this close drain — by design
+          // (reckless spray AND a non-answer to the opening; INTENDED, do not net).
           stance = "COVERED";
           stanceRemaining = qte.peekCadenceSeconds;
           energyDelta += QTE_UNANSWERED_PEEK;
         }
       }
+      // Advance within the landed segment. On a boundary crossing the current segment
+      // resets to its FULL duration (the trailing overshoot is discarded, exactly as
+      // the prior single-toggle path did — preserving small-delta behaviour bit-for-bit).
+      if (!crossed) stanceRemaining -= remaining;
       // The G4 tell shows in the last TELEGRAPH_LEAD_SECONDS of a COVERED beat.
       const telegraphActive = stance === "COVERED" && stanceRemaining <= TELEGRAPH_LEAD_SECONDS;
 

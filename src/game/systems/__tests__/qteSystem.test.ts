@@ -19,6 +19,7 @@ import {
   HOSTAGE_DY_MAX,
 } from "@game/systems/qteSystem";
 import type { HostageQte, QteSpec } from "@game/types/hostageQte";
+import { LEVELS } from "@game/levels/levels";
 
 // Belliard default (spec §5). Anchor at origin ⇒ impactPoint IS the (dx, dy) offset.
 const SPEC: QteSpec = {
@@ -145,15 +146,32 @@ describe("createQte — seeding + safety invariants (asserted in code)", () => {
     expect(createQte(SPEC).peekDurationSeconds).toBe(1.2);
   });
 
-  // AC4 / G4 — every peek must be telegraphed; the cadence must leave room for the tell.
-  it("G4: throws if peekCadenceSeconds < TELEGRAPH_LEAD_SECONDS", () => {
+  // AC4 / G4 — every peek must be telegraphed; the cadence must leave STRICT room for
+  // the tell (C4). At equality the tell would be on for the whole COVERED beat.
+  it("G4: throws unless peekCadenceSeconds is STRICTLY > TELEGRAPH_LEAD_SECONDS", () => {
     expect(() => createQte({ ...SPEC, peekCadenceSeconds: 0.2 })).toThrow(/G4/);
-    expect(SPEC.peekCadenceSeconds).toBeGreaterThanOrEqual(TELEGRAPH_LEAD_SECONDS);
+    // Equality collapses the discrete wind-up (tell on for the entire beat) → rejected.
+    expect(() => createQte({ ...SPEC, peekCadenceSeconds: TELEGRAPH_LEAD_SECONDS })).toThrow(/G4/);
+    // Belliard's cadence sits strictly above the lead and passes.
+    expect(SPEC.peekCadenceSeconds).toBeGreaterThan(TELEGRAPH_LEAD_SECONDS);
   });
 
   it("D1: throws if the door is not strictly ahead or the retreat is non-positive", () => {
     expect(() => createQte({ ...SPEC, porteCochere: { x: 0, y: 0 } })).toThrow(/D1/);
     expect(() => createQte({ ...SPEC, retreatSpeed: 0 })).toThrow(/D1/);
+  });
+
+  // C3 — movement freezes y and the door test is x-only; a door off the anchor's
+  // street would "arrive" on x while the camera leads toward a y never reached.
+  it("C3: throws if the door is off the anchor's street (porteCochere.y !== anchor.y)", () => {
+    expect(() => createQte({ ...SPEC, porteCochere: { x: 7.2, y: 1 } })).toThrow(/C3/);
+  });
+
+  // C6 — non-finite authored numerics slip past `=== 0`/`Math.max` and can wedge the
+  // peek sub-machine open forever; they are rejected at seed time.
+  it("C6: throws on a non-finite authored numeric (NaN/Infinity)", () => {
+    expect(() => createQte({ ...SPEC, retreatSpeed: NaN })).toThrow(/C6/);
+    expect(() => createQte({ ...SPEC, porteCochere: { x: Infinity, y: 0 } })).toThrow(/C6/);
   });
 });
 
@@ -312,6 +330,23 @@ describe("tickQte — peek sub-machine, telegraph & counter-fire (AC2, AC4, AC5)
     expect(r.qte.stance).toBe("PEEKING");
     expect(r.energyDelta).toBe(0);
   });
+
+  // C1 — a delta larger than a stance segment must not silently swallow the skipped
+  // peeks: the sub-machine consumes the FULL delta, charging each CLOSED peek once.
+  it("C1: a large delta spanning ≥2 stance boundaries charges each closed peek once", () => {
+    // COVERED with 0.1 s left, then a single 4.2 s delta. Boundaries crossed:
+    //   0.1  COVERED→PEEKING (open, free)
+    //   +1.2 PEEKING→COVERED (close #1, −8)
+    //   +1.5 COVERED→PEEKING (open, free)
+    //   +1.2 PEEKING→COVERED (close #2, −8)   [t = 4.0]
+    // → lands 0.2 s into a fresh COVERED beat. Retreat 0.6 × 4.2 = 2.52 u < 7.2 → ACTIVE.
+    const q = active({ stance: "COVERED", stanceRemaining: 0.1 });
+    const r = tickQte(q, false, NO_HIT, 4.2);
+    expect(r.qte.phase).toBe("ACTIVE");
+    expect(r.qte.stance).toBe("COVERED");
+    // Two full exposures closed within the tick → charged exactly twice, not once.
+    expect(r.energyDelta).toBe(2 * QTE_UNANSWERED_PEEK);
+  });
 });
 
 describe("tickQte — result hold → DONE (once per level)", () => {
@@ -333,6 +368,21 @@ describe("tickQte — result hold → DONE (once per level)", () => {
     expect(r.qte.phase).toBe("WON");
     expect(r.qte.resultRemaining).toBeCloseTo(0.9);
     expect(r).toMatchObject({ energyDelta: 0 });
+  });
+});
+
+describe("real level data honours the safety floors (B1 / AC3)", () => {
+  it("every authored hostageQte clears the exposure floor and telegraph lead", () => {
+    const specs = LEVELS.map((l) => l.hostageQte).filter((s): s is QteSpec => s !== undefined);
+    expect(specs.length).toBeGreaterThan(0); // Belliard opts in — the test has teeth.
+    for (const s of specs) {
+      // AC3 asks for a test on the actual level data, not just synthetic specs, so an
+      // authoring regression in levels.ts surfaces here.
+      expect(s.peekDurationSeconds).toBeGreaterThanOrEqual(PEEK_EXPOSURE_FLOOR);
+      expect(s.peekCadenceSeconds).toBeGreaterThan(TELEGRAPH_LEAD_SECONDS);
+      // And the authored spec seeds without tripping any invariant (D1/C3/C6/G4).
+      expect(() => createQte(s)).not.toThrow();
+    }
   });
 });
 
