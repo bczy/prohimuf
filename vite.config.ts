@@ -2,6 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
+// The component catalog (design-system living doc) is its own Vite entry, at
+// `catalog.html`. It is DELIBERATELY excluded from the default build input, so the
+// game bundle never imports catalog code. Build it on demand with BUILD_CATALOG=1
+// (→ dist-catalog); the dev server serves it directly at /catalog.html either way.
+const buildCatalog = process.env.BUILD_CATALOG === "1";
+
 export default defineConfig({
   plugins: [react()],
 
@@ -27,9 +33,13 @@ export default defineConfig({
   build: {
     target: "es2022",
 
-    outDir: "dist",
+    outDir: buildCatalog ? "dist-catalog" : "dist",
 
     sourcemap: true,
+
+    // Default (undefined) → Vite builds index.html only: the catalog never lands in
+    // the game bundle. BUILD_CATALOG=1 → build the catalog entry in isolation.
+    rollupOptions: buildCatalog ? { input: { catalog: resolve(__dirname, "catalog.html") } } : {},
   },
 
   server: {

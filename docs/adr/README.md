@@ -100,5 +100,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0042](./0042-crew-extension-tech-scout-recon-lane.md) | Crew extension: tech-scout technical-reconnaissance / feasibility lane (Nadia) | Accepted |
 | [0043](./0043-validated-reference-promotion-loop.md) | Validated-reference promotion loop (internal hero → style-lock family derivation) | Accepted |
 | [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Accepted |
+| [0045](./0045-embedded-ofl-webfonts.md) | Embedded self-hosted OFL webfonts via a single `FONT` token | Accepted |
+| [0046](./0046-render-css-modules-and-token-bridge.md) | Render-layer CSS Modules + tokens.ts→CSS-var bridge; hud-css skill | Accepted |
 
 <!-- ADR-INDEX:END -->

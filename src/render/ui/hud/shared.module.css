@@ -1,0 +1,65 @@
+/*
+ * Shared HUD widget rulesets (ADR-0046). The readout-token classes that were
+ * duplicated verbatim across the per-widget `*.module.css` files are single-sourced
+ * here and consumed via CSS-Modules `composes: x from "./shared.module.css"`, so a
+ * readout-token change lives in ONE place. Static structure/typography only — every
+ * colour/font/keyline/size references a var(--…) injected by applyPrintTokens.ts from
+ * tokens.ts (no hex/font/motion literal re-declared here). Holds zero game rules.
+ */
+
+/* Vertical readout cell: stacked label over value, centred. */
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Readout caption — small, muted, tracked-out uppercase mono. */
+.label {
+  font-size: var(--font-size-sm);
+  color: var(--ink-black);
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: var(--font-hud-mono);
+  font-weight: 400;
+}
+
+/* Readout value — big mono digits, semibold; default ink full-black (a state-driven
+   ink, when any, overrides `color` inline from the widget's ramp). */
+.value {
+  font-size: var(--font-size-xxl);
+  line-height: 1;
+  color: var(--ink-full);
+  font-weight: 600;
+}
+
+/* Stamped paper chip — reads over any scene, zero glow. Holds only the declarations
+   common to EVERY chip; `padding`/`border` are NOT set here because the set-piece
+   stamps override them at equal specificity, and a composed base sharing a property
+   with its modifiers makes the winner depend on CSS emit order. Each consumer states
+   its own padding/border explicitly (default 6×12 / 2px, or a stamp's own), so the
+   result is deterministic regardless of module import/emit order. */
+.chip {
+  background: var(--stock-shell);
+  font-family: var(--font-display);
+}
+
+/* Full-viewport centred overlay for the set-piece stamps. */
+.centerOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Shared gauge fill: width % and hue arrive as inline custom properties; the
+   transition duration stays inline (per-gauge, not a token). */
+.gaugeFill {
+  height: 100%;
+  width: var(--gauge-fill);
+  background: var(--gauge-hue);
+}

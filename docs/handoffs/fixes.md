@@ -8,6 +8,20 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/render-css-design-system (42ff2c7) · dev-r3f-render · in-game HUD
+  legibility (labels 9→11 / niveau 12→16px; strip → IBM Plex Mono, labels 400 / readouts
+  600; stamps keep Rubik) · VERDICT: PASS — art-direction HUD gate (lead-art/Nico), on the
+  real before/after strips. Plex Mono accepted as the in-game instrument face (HUD is the
+  game-world layer, not a §2bis print surface; bible was silent — rule proposed below).
+  Recommendation on the open readout-face question: KEEP readouts on Plex 600, do NOT
+  revert to Rubik — Rubik Mono One stays reserved for stamps/headlines (OTAGE/LIVRAISON/
+  phase chips), which preserves its punch. Sizes/weights PASS as shipped. Not a Gate-4
+  composite matter: no runtime-composed glow/rim changed, judged on the delivered strips.
+  Proposed bible addition (§2bis-adjacent): "In-game HUD strip = IBM Plex Mono instrument
+  face; Rubik Mono One and Courier Prime stay reserved for print surfaces and set-piece
+  stamps." · checks: N/A to art gate (dev lane ran tsc/vitest/lint) · review: advisory to
+  Bertrand's eye on the readout face
+
 - 2026-07-18 · claude/rtk-graph-savings-report-2a6t8o · dev-tooling-assets · capture the
   last two tooling-savings postes: (1) CLAUDE.md working rule steering code navigation to
   codegraph-first (callers/impact/search) before grep/Read dumps files; (2) install

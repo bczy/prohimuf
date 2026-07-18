@@ -5,6 +5,7 @@ import {
   PaperSheet,
   STOCK,
   INK,
+  FONT,
   MASTHEAD,
   MarkerCircle,
   useRovingIndex,
@@ -29,8 +30,8 @@ interface Props {
   onSavePrefs: (prefs: Prefs) => void;
 }
 
-const BODY_FONT = "'Courier New', Courier, monospace";
-const DISPLAY_FONT = "'Impact', 'Arial Narrow', sans-serif";
+const BODY_FONT = FONT.mono;
+const DISPLAY_FONT = FONT.display;
 
 const RUBRIQUES = [
   { key: "levels", label: "NIVEAUX" },

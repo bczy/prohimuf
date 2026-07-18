@@ -1,0 +1,21 @@
+/* End-of-level phase stamp (ADR-0046) — static structure/typography only; the
+   state-driven ink stays inline in PhaseMessageBanner.tsx. */
+
+/* Stamped paper chip (shared, composed) — reads over any scene, zero glow. */
+.chip {
+  composes: chip from "./shared.module.css";
+}
+
+/* Full-viewport centred overlay for the set-piece stamp (shared, composed). */
+.centerOverlay {
+  composes: centerOverlay from "./shared.module.css";
+}
+
+/* End-of-level phase stamp — ink inline. */
+.chipMessage {
+  padding: 14px 28px;
+  border: 3px solid var(--ink-black);
+  font-size: var(--font-size-display-xl);
+  letter-spacing: 0.1em;
+  transform: rotate(-3deg);
+}
