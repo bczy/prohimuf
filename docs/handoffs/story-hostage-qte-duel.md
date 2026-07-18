@@ -740,3 +740,110 @@ post-BUILD.
 - verify: `npx --yes prettier@3.8.2 --check` on every markdown file touched — clean (see
   below). No code or tuning numbers touched.
 - VERDICT: not a gate — doc realignment, traced to §10 findings C-1 and Flag A.
+
+## 12. VERIFY — static-duel build: playtest + stage-6 code-review panel — 2026-07-18
+
+- claim: verify the built static-duel revision (implementing §9's architect frozen delta +
+  §10's design-gate corrections) end-to-end, and run the mandatory 4-reviewer merge-gate
+  panel on the diff. This is the build that **replaced** the playtest-rejected retreat/
+  porte-cochère version pm accepted-with-notes at §8 — that acceptance is superseded by
+  this one.
+- release:
+  - **Bertrand playtested the built static duel and ACCEPTED it.** Browser verify confirms
+    the spec's behavioural claims: static tableau (captor fixed at the zoom anchor, camera
+    zoom-and-hold, **no** lateral slide — both defects he named in the Revision 2 rejection
+    are gone), energy drains per blown peek matching the ledger (§3 of the spec), HUD clean
+    (no captor-HP/countdown bars, no stress bar, per PROJECT_GUIDELINES §6). He deferred the
+    peek-tell's final visual read to the art pass — **Flag B** (→ ux-designer/lead-art, the
+    real peeking sprite + distress-escalation-vs-pips read) — a conscious, non-blocking
+    deferral, not a build defect.
+  - **Stage-6 code-review panel** (4 reviewers run in parallel: `code-review` high,
+    `bmad-code-review`, `bmad-review-edge-case-hunter`, `security-review`) on
+    `git diff origin/main...HEAD` — **NO CONFIRMED BLOQUANT/MAJEUR finding → MERGE**.
+    Fix-lane hardening applied (single dev-lane diff, no re-review needed beyond the
+    fix-lane rule): peek cue/tint no longer reads danger-red during the WON result hold;
+    a stale score comment fixed. Loop-termination proof holds (the bounded blown-peeks
+    sub-machine loop terminates on the fatal close, does not overshoot past `LOST`);
+    determinism + the boundary law are clean (`qteSystem.ts` / `types/hostageQte.ts` remain
+    zero React/Three).
+  - Toolchain: `tsc` clean, `vitest` green (480 tests), `eslint` clean, `prettier` (3.8.2)
+    clean. CI green on `claude/harness-1er-adr-otages-rcay2h` (PR #79).
+- verdict: MERGE-CLEARED (panel + playtest) — proceeds to pm acceptance, §13.
+
+## 13. PM ACCEPTANCE — pm (John) — 2026-07-18
+
+- claim: final pipeline stage — accept or reject the static-duel STATIC-DUEL rework (PR #79,
+  branch `claude/harness-1er-adr-otages-rcay2h`) against scope and the spec's AC1–AC7, and
+  record the two consciously-deferred items. Not a re-review: leaning on the §10 design
+  gate, Bertrand's playtest acceptance, and the §12 stage-6 panel's MERGE verdict.
+
+### 1. Scope (cahier des charges)
+
+**HOLDS.** This is a further-reduced-scope revision of an already scope-gated extension
+(ADR-0030's static-tableau precedent → ADR-0034's F1/F2 duel-of-patience rework → this
+Revision 2). The static-duel spec explicitly **removes** the moving-captor mechanic and its
+art dependency rather than adding new scope, reverting to the ADR-0030 shape the guardrail
+already cleared. Checked against every guardrail:
+
+- **Core loop untouched.** `Récupérer → Livrer → Éviter` — the QTE remains a scripted,
+  once-per-level side beat that freezes the rest of the level; it never touches delivery,
+  recruitment, or the base récupérer/livrer/éviter mechanics.
+- **Side objective, never advances the kill quota.** Unchanged (spec §3.2, ADR-0030 D4) — a
+  rescue still pays `energy` only; `kills` is untouched. The blown-peeks loss clock is a new
+  _fail_ route, not a new _scoring_ route — it does not touch the quota either.
+- **Mission length.** No change to the ~10.8 s ACTIVE beat inside the 3–5 min mission
+  envelope (guideline §2 KISS budget).
+- **"Jamais de mort bullshit" (guideline §5.6).** The F-1 reversal (hostage killable again
+  via the execution clock) is coherent, not a violation: no `hostageHp`, no per-bullet
+  death, no coin-flip — it is a legible, fully telegraphed patience clock (G4 tell ≥ 0.35 s,
+  G5 exposure ≥ 0.5 s, N = 4 readable openings). A hostage-band hit stays a flat, non-fatal
+  −30. The design gate (§10, point 4) independently confirmed this reading; this is the
+  product decision Bertrand himself steered via the playtest rejection, so no separate
+  ratification is outstanding the way the original F-1 needed one at §8 — it is settled by
+  this build being the one he accepted.
+
+Design gate (`lead-game-designer`, §10) independently confirmed conscious-extension +
+scope + core-loop + verifiability as PASS, noting the revision **reduces** scope. No open
+scope question.
+
+### 2. Acceptance criteria
+
+Leaning on the design gate's AC1–AC7 audit (§10) and the §12 playtest + panel evidence, not
+re-deriving: AC1 (static captor, no slide) — confirmed by Bertrand's browser playtest. AC2
+(blown-peeks loss, N=4, ≈10.8 s ACTIVE) — matches spec §3.1/§6 tempo math, unit-tested. AC3
+(head-during-`PEEKING` sole win route) — unchanged from the F1/F2 base, hitboxes kept
+byte-for-byte (Bertrand likes them, spec §2). AC4 (energy ledger: rescue +40, hostage −30,
+blown peek −8 once per close, panic −6, body −5; passive-ignore = −32 and `LOST`) — matches
+playtest evidence (energy drains per blown peek, HUD clean). AC5 (G4/G5 floors +
+`maxBlownPeeks` integer ≥ 1 asserted in code) — confirmed via the fix-lane's real-level-data
+tests and the stage-6 panel's determinism/boundary check. AC6 (`qteZoneAt` bands unchanged)
+— confirmed, no band value changes per spec §2. AC7 (deterministic when `qteSpec === null`)
+— unaffected by this revision, boundary law holds per panel. `tsc` + `vitest` (480) +
+`eslint` + `prettier` (3.8.2) green; CI green. **AC1–AC7: MET.**
+
+### 3. Consciously-deferred, non-blocking items
+
+- **Flag B — the peek-tell's art/UX read** (→ `ux-designer` Tony + `lead-art` Nico). The
+  diegetic "how close is the captor to executing her" read (distress-escalation vs discrete
+  pips) and the real peeking sprite (replacing the moving-captor cop-fallback placeholder)
+  are not yet committed. Bertrand explicitly deferred this to the art pass during his
+  playtest accept. No HUD bar — stays diegetic per PROJECT_GUIDELINES §6 and the design
+  gate's point 3. Not a merge blocker; tracked for the next art-lane pass.
+- **G4 no-margin NIT** (ADR-0035 tell-curve territory, stage-6 panel deferred item, §7(b)).
+  `TELEGRAPH_LEAD_SECONDS` is a global constant (0.35 s), not a per-level `QteSpec` field.
+  If ADR-0035/F3's per-level curve later wants to tighten the tell toward the 0.25 s floor,
+  it will need a contract note to make the tell curvable. Not introduced by this revision,
+  not a blocker — flagged forward to the ADR-0035 curve lane.
+
+### VERDICT: **ACCEPT-WITH-NOTES**
+
+- Scope: HOLDS (conscious, scope-_reducing_ revision of an already-gated extension; core
+  loop intact; side-objective rule intact; F-1 reversal coherent with §5.6 and settled by
+  this accepted build).
+- AC1–AC7: MET (per design gate audit + Bertrand's playtest + stage-6 panel MERGE verdict).
+- Notes (both non-blocking, consciously deferred, not re-opening this acceptance): **Flag B**
+  (peek-tell art/UX read → ux-designer/lead-art) and the **G4 no-margin NIT**
+  (TELEGRAPH_LEAD_SECONDS curvability → ADR-0035 F3 lane).
+- This acceptance **supersedes** the §8 pm acceptance, which was for the playtest-rejected
+  retreat/porte-cochère build. Story is accepted for merge; no further pm-lane rework
+  required.
