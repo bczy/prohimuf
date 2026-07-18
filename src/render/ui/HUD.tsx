@@ -19,15 +19,16 @@ export interface HudDelivery {
   integrityMax: number;
 }
 
-/** Hostage-taker QTE state surfaced to the DOM HUD (ADR-0030), read from the state ref. */
+/**
+ * Hostage-taker QTE state surfaced to the DOM HUD (the static duel), read from the
+ * state ref. Only the two set-piece stamps remain on the HUD — the "OTAGE" zoom
+ * banner (`warning`) and the WON/LOST verdict (`phase`). The captor-HP, countdown
+ * and hostage-HP gauges left the screen (UX spec §1): the duel is binary and the
+ * sole clock is the blown-peeks count, surfaced diegetically in-world (Flag B),
+ * never as a HUD bar.
+ */
 export interface HudHostageQte {
   phase: QtePhase;
-  captorHp: number;
-  captorHpMax: number;
-  hostageHp: number;
-  hostageHpMax: number;
-  windowRemaining: number;
-  windowSeconds: number;
   warning: boolean;
 }
 
@@ -223,14 +224,6 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
   const qtePhase = qte?.phase;
   const qteVisible =
     qtePhase === "ZOOMING" || qtePhase === "ACTIVE" || qtePhase === "WON" || qtePhase === "LOST";
-  const captorFill =
-    qte !== undefined && qte.captorHpMax > 0
-      ? Math.max(0, Math.min(1, qte.captorHp / qte.captorHpMax))
-      : 0;
-  const countdownFill =
-    qte !== undefined && qte.windowSeconds > 0
-      ? Math.max(0, Math.min(1, qte.windowRemaining / qte.windowSeconds))
-      : 0;
 
   return (
     <>
@@ -374,7 +367,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       {qteVisible && qte !== undefined && (
         <>
           {/* Dim wash over the frozen scene — a soft vignette that keeps the
-              centred, zoomed captor readable (transparent core). */}
+              centred, zoomed captor readable (transparent core). The bottom-centre
+              gauge stack is intentionally GONE (UX spec §1): the sole clock is the
+              blown-peeks count, read diegetically in-world (Flag B), no HUD
+              surrogate. */}
           <div
             style={{
               position: "fixed",
@@ -384,73 +380,6 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
                 "radial-gradient(ellipse at center, rgba(20,18,16,0) 42%, rgba(20,18,16,0.5) 100%)",
             }}
           />
-          {/* Gauges: captor health + shoot-window countdown + hostage-hp pips. */}
-          <div
-            style={{
-              position: "fixed",
-              bottom: 24,
-              left: "50%",
-              transform: "translateX(-50%)",
-              pointerEvents: "none",
-              userSelect: "none",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>preneur</span>
-              <div
-                style={{
-                  width: 240,
-                  height: 12,
-                  border: `2px solid ${INK.black}`,
-                  background: STOCK.shell,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${String(captorFill * 100)}%`,
-                    height: "100%",
-                    background: integrityColor(captorFill),
-                    transition: "width 100ms linear",
-                  }}
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>
-                compte à rebours
-              </span>
-              <div
-                style={{
-                  width: 240,
-                  height: 10,
-                  border: `2px solid ${INK.black}`,
-                  background: STOCK.shell,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${String(countdownFill * 100)}%`,
-                    height: "100%",
-                    background: integrityColor(countdownFill),
-                    transition: "width 100ms linear",
-                  }}
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ ...labelStyle, color: INK.black, opacity: 0.9 }}>otage</span>
-              <span style={{ fontSize: "18px", color: MARK.pink, letterSpacing: "0.1em" }}>
-                {"♥".repeat(Math.max(0, qte.hostageHp))}
-                <span style={{ color: INK.black, opacity: 0.3 }}>
-                  {"♡".repeat(Math.max(0, qte.hostageHpMax - qte.hostageHp))}
-                </span>
-              </span>
-            </div>
-          </div>
 
           {qte.warning && (
             <div

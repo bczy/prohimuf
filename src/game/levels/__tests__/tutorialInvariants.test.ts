@@ -76,9 +76,9 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     }
   });
 
-  it("keeps both variants at the expanded 11-panel count (ADR-0020)", () => {
+  it("keeps both variants at the expanded 12-panel count (ADR-0020 + hostage-QTE diagram)", () => {
     for (const variant of VARIANTS) {
-      expect(variant.lines).toHaveLength(11);
+      expect(variant.lines).toHaveLength(12);
     }
   });
 
@@ -88,8 +88,8 @@ describe("tutorial stage invariants (ADR-0012)", () => {
     // Progress-dot parity: both variants have the same panel count.
     expect(desktop.lines.length).toBe(mobile.lines.length);
     // Shared segments are the SAME objects by reference — zero copy duplication
-    // (opening [0,1] + expanded field [4..10], ADR-0020).
-    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10]) {
+    // (opening [0,1] + expanded field [4..11], ADR-0020 + hostage-QTE diagram panel).
+    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10, 11]) {
       expect(desktop.lines[i]).toBe(mobile.lines[i]);
     }
     // The two control panels (indices 2 and 3) diverge between devices.
@@ -116,7 +116,7 @@ describe("tutorial stage invariants (ADR-0012)", () => {
   it("keeps the shared segments free of device-specific control tokens (ADR-0015)", () => {
     // Shared panels must carry none of the four fork tokens, or a shared panel would
     // leak device-specific copy onto the wrong variant.
-    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10]) {
+    for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10, 11]) {
       const text = TUTORIAL_NARRATIVE_DESKTOP.lines[i]?.text ?? "";
       expect(text).not.toMatch(/clic|souris|doigt|balay/i);
     }
@@ -154,6 +154,27 @@ describe("tutorial stage invariants (ADR-0012)", () => {
       for (const line of scene.lines) {
         if (line.gesture !== undefined) {
           expect((line.gestureAlt ?? "").trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("keeps the diagram channel mutually exclusive with image and gesture", () => {
+    for (const scene of ALL_SCENES) {
+      for (const line of scene.lines) {
+        if (line.diagram !== undefined) {
+          expect(line.image).toBeUndefined();
+          expect(line.gesture).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it("provides an accessible diagramAlt wherever a diagram is set", () => {
+    for (const scene of ALL_SCENES) {
+      for (const line of scene.lines) {
+        if (line.diagram !== undefined) {
+          expect((line.diagramAlt ?? "").trim().length).toBeGreaterThan(0);
         }
       }
     }

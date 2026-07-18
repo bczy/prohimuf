@@ -58,7 +58,7 @@ describe("qtePose", () => {
     expect(qtePose(BASE, ANCHOR, 0)).toEqual({ zoom: BASE.zoom, x: BASE.x, y: BASE.y });
   });
 
-  it("returns the fully-zoomed pose on the anchor at p=1", () => {
+  it("returns the fully-zoomed pose on the static anchor at p=1", () => {
     expect(qtePose(BASE, ANCHOR, 1)).toEqual({
       zoom: BASE.zoom * QTE_ZOOM_FACTOR,
       x: ANCHOR.x,

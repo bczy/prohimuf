@@ -1,43 +1,110 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
-import type { QtePhase } from "@game/types/hostageQte";
-import { isQteActive } from "@game/systems/qteSystem";
+import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
+import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
-import { hostageColor, hostageTension, lerpHex } from "./hostageCue";
+import {
+  blownPeeksProximity,
+  captorHpPipLit,
+  captorTint,
+  CAPTOR_WON_TINT,
+  hostageAlarmColor,
+  hostageDistressTint,
+  peekTellVisual,
+  ringZoneColour,
+  ringZoneEmphasis,
+} from "./hostageCue";
 import type { HudHostageQte } from "@render/ui/HUD";
 
-// The captor: a SQUARE plane (his texture is 256×256, figure centred — no
-// aspect distortion) sized to the QTE hit zones (qteSystem.qteZoneAt: tableau
-// silhouette dx ∈ [−0.85, 0.85], dy ∈ [−1.05, 1.05]) so the figure the player
-// aims at coincides with the body-part bands the game resolves shots against.
+// The captor: a SQUARE plane (his texture is 256×256, figure centred — no aspect
+// distortion) drawn at the STATIC `qte.anchor` where he stands holding the
+// hostage (the static duel — he never moves). His covered / peeking poses ship
+// later via the CI art lane; until then a stance→texture-key indirection
+// (resolveCaptorTexture) resolves the cop fallback, so landing the real art is a
+// pure data swap here.
 const QTE_W = 2.0;
 const QTE_H = 2.0;
 const QTE_Z = 0.5;
 
-// The hostage — the cartel boss's daughter, held in front of the captor — is a
-// SECOND figure drawn over his lower half, covering exactly the "hostage" hit
-// band of qteZoneAt (body dx > −0.35 below his waistline + her head strip up to
-// dy ≈ 0.2), so what the player must NOT shoot is visibly a distinct young woman. Her dedicated art is
+// The hostage — the cartel boss's daughter, dragged in front as a living shield
+// (ADR-0034 D2) — is a SECOND figure over his lower-front. Her dedicated art is
 // assets/hostage/girl.png (levelArt.json `hostages` block, generated in CI).
-// Square plane (her texture is 256×256, figure centred — no aspect distortion);
-// she KNEELS at his front-right, her plane bottom on the same ground line as his
-// feet (anchor − 1.0). Matches the qteZoneAt hostage band.
+// Square plane (256×256, centred). Kept to his front-RIGHT so the peeking head
+// (front-left) clears her silhouette by a visible gap (G6 / UX spec D3.1).
 const HOSTAGE_W = 1.3;
 const HOSTAGE_H = 1.3;
-const HOSTAGE_DX = 0.3;
-const HOSTAGE_DY = -0.35;
+const HOSTAGE_DX = 0.32;
+const HOSTAGE_DY = -0.3;
 const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 
-// The girl's art reads untinted (white multiplies to identity).
-const GIRL_TINT = "#ffffff";
-const HIT_FLASH_SECONDS = 0.25;
+// The peek CUE: a thin RETICLE RING that FRAMES the head point (front-LEFT of the
+// captor, clear of the hostage silhouette — G6), never a filled quad that covers
+// it — the head-shot kill-zone stays visible through the ring's open centre. It
+// carries BOTH beats of the peek tell (ADR-0034 D2/D3, UX spec §2): the pre-peek
+// wind-up while `telegraphActive` (COVERED) draws a small, faint ring, and the
+// open danger window while `PEEKING` a larger, brighter one. PRESENCE keys COVERED
+// (absent) vs PEEKING (present), and radius + opacity carry the two-beat signal as
+// a FORM change — legible without hue (a11y §4.2). The ring's COLOUR now reads the
+// spatial-colour model: `ringZoneColour(qte.ringZone)` — GREEN over a vital zone
+// ("shoot now" payoff), YELLOW over a limb, RED over empty space — paired with
+// `ringZoneEmphasis` so the vital/limb/off read survives in grayscale (green
+// brightens, red dims — via opacity, the ring size is constant). The game owns the
+// zone; the render owns the
+// colour map. Exact alignment vs `qteZoneAt`'s head band is reconciled at the
+// composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
+// The ring's XY now FOLLOWS the live `qte.targetOffset` (anchor-relative head-zone
+// centre): it wanders during PEEKING and rests at the neutral head point
+// (≈ {x:-0.525, y:0.725}, front-left of the captor — where the fixed CUE_DX/CUE_DY
+// used to place it) during COVERED/ZOOMING. The render only READS the offset (the
+// wander is computed by the game lane); this closes the aim-honesty seam — the drawn
+// ring sits exactly on the scored `head` band.
+const CUE_Z = 0.55;
+// World OUTER radius of the reticle ring — pinned to the game's `RING_HIT_RADIUS` so the
+// drawn ring IS the scored catch zone: a crosshair anywhere on/inside the ring is within
+// `RING_HIT_RADIUS` of its centre → a hit (aim-honesty — "shoot what you see"; the tutorial
+// literally instructs "aligne ta cible sur l'anneau"). The ring no longer grows, so a single
+// fixed radius is all it needs; the two-beat tell + zone read ride opacity, never size.
+const CUE_RADIUS = RING_HIT_RADIUS;
+// Hard cap on the ring's opacity: a subtle localised tell, never a solid block
+// (the earlier filled quad read as a placeholder box and hid the head).
+const CUE_OPACITY_MAX = 0.45;
+// Ring geometry: outer radius normalised to 1 so world radius = the mesh scale;
+// inner 0.78 leaves a wide open centre so the kill-zone is never occluded.
+const CUE_RING_INNER = 0.78;
+const CUE_RING_OUTER = 1.0;
+const CUE_RING_SEGMENTS = 40;
 
-// Pulse speed (rad/ms) for the rising-tension tint / execution strobe.
+// Pulse speed (rad/ms) for the peek-cue brightness pulse / LOST execution strobe.
 const PULSE_SPEED = 0.006;
+
+// DIEGETIC captor-HP read (U-1, NO HUD bar): a row of small pips above the captor's
+// head, one per HP point (belliard starts 3), that vanish as `qte.captorHp` drops.
+// Depletion-by-presence is reduced-motion-safe by construction (no strobe). The
+// pool is fixed at the belliard-first authored HP; the render only READS captorHp
+// (it never computes damage). Placed once with the static tableau, lit each frame.
+const CAPTOR_HP_PIPS = 3;
+const PIP_SIZE = 0.14;
+const PIP_GAP = 0.2;
+const PIP_DY = 1.18; // above his head (captor half-height ≈ QTE_H / 2 = 1.0)
+const PIP_Z = 0.56;
+const PIP_COLOUR = "#f7f7f7"; // bone white — a neutral vitality read, not a zone hue
+
+type CaptorTexKey = "covered" | "peeking";
+
+/**
+ * Stance→texture indirection (ADR-0034 / ADR-0030). The real drag / covered /
+ * peeking-with-gun-raised captor sprites ship later via the CI art lane; until
+ * then every key resolves to the cop fallback, so landing the art is a pure data
+ * swap at THIS seam (no component logic change). Flagged to `lead-art`: the cop
+ * fallback is a placeholder for the real static captor pose.
+ */
+function resolveCaptorTexture(_key: CaptorTexKey): ResolvedEnemyTexture | null {
+  return resolveEnemyTexture("hostage_taker", 1, false, 1);
+}
 
 interface Props {
   stateRef: React.RefObject<GameState>;
@@ -49,69 +116,78 @@ interface Props {
 }
 
 // The HUD-relevant slice, or null when inactive. Used both to emit and to detect
-// change without a per-frame React re-render (mirrors DeliveryVehicleSprite).
+// change without a per-frame React re-render (mirrors DeliveryVehicleSprite). The
+// HUD now shows only the OTAGE banner (warning) and the WON/LOST verdict (phase)
+// — the captor/countdown/hostage gauges left the screen (ADR-0034, UX spec §1).
 function hudSliceKey(slice: HudHostageQte | null): string {
   if (slice === null) return "none";
-  return [
-    slice.phase,
-    slice.captorHp,
-    slice.hostageHp,
-    Math.ceil(slice.windowRemaining),
-    slice.warning ? 1 : 0,
-  ].join(":");
+  return `${slice.phase}:${slice.warning ? "1" : "0"}`;
 }
 
 /**
- * The hostage-taker QTE tableau (ADR-0030): the captor holding the hostage in
- * front of him. Two pooled meshes driven each frame from `GameState.qte` (world
- * space, same axes as bullets / crosshair), mirroring `DeliveryVehicleSprite`.
- * Visible only while the QTE holds the scene frozen (`isQteActive`).
+ * The hostage-taker QTE tableau (the static duel): the captor standing STILL,
+ * holding the hostage as a living shield, drawn at the FIXED `qte.anchor` the
+ * camera zooms onto and holds. Three pooled meshes (world space, same axes as
+ * bullets / crosshair): the captor, the hostage shield, and the peek cue
+ * (wind-up tell + open-window marker). The captor and hostage are positioned ONCE
+ * from the static anchor on activation (no per-tick moving-anchor writes); the peek
+ * ring instead FOLLOWS the live `qte.targetOffset` each frame (the wandering
+ * head-zone centre) alongside its tint/opacity pulse. Visible only while the
+ * QTE holds the scene frozen (`isQteActive`).
  *
- * Captor: the `enemy_hostage` texture (cop fallback until its art lands); tint
- * climbs from calm pink toward alarm red as the window runs down and strobes
- * red↔white on LOST (the execution flash). Hostage: the kneeling daughter held
- * over his lower-front — she flashes white when a stray shot hits her, and
- * strobes with the alarm on LOST (she is the one being executed).
+ * COVERED ↔ PEEKING reads by FORM (peek cue absent vs present) and pose, not hue;
+ * the pre-peek cue is keyed off the game's `telegraphActive` (anticipation, not
+ * reaction). The blown-peeks proximity is surfaced diegetically (Flag B): the
+ * hostage's distress tint warms toward alarm as `blownPeeks` nears `maxBlownPeeks`
+ * — no HUD bar. Under `prefers-reduced-motion` the cue and the LOST execution
+ * flash degrade from a pulse/strobe to a STEADY appearing cue, and the distress
+ * tint is steady by construction (signal preserved, no >3 Hz flash — WCAG 2.3.1 /
+ * UX spec §4).
  */
 export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element {
   const captorRef = useRef<Mesh>(null);
   const hostageRef = useRef<Mesh>(null);
+  const peekCueRef = useRef<Mesh>(null);
+  // Fixed pool of captor-HP pips (diegetic HP read); populated by the JSX ref cbs.
+  const pipRefs = useRef<(Mesh | null)[]>([]);
   const lastKeyRef = useRef<string>("none");
-  // Previous hostage hp + remaining flash time, to pulse her white on a stray hit.
-  const lastHostageHpRef = useRef<number | null>(null);
-  const hitFlashRef = useRef(0);
-  const lastFrameMsRef = useRef<number | null>(null);
+  // The static tableau is positioned ONCE per activation (the captor never moves);
+  // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
+  const positionedRef = useRef(false);
+  // Render-side reduced-motion detection (UX spec §4.1): degrades the peek cue /
+  // execution flash to a steady, strobe-free form. Mirrors CrtPass's live query.
+  const reducedMotionRef = useRef(
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = (): void => {
+      reducedMotionRef.current = mq.matches;
+    };
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => {
+      mq.removeEventListener("change", onChange);
+    };
+  }, []);
 
   useFrame(() => {
     const captor = captorRef.current;
     const hostage = hostageRef.current;
-    if (captor === null || hostage === null) return;
+    const peekCue = peekCueRef.current;
+    if (captor === null || hostage === null || peekCue === null) return;
 
-    // Render-side frame delta for the cosmetic hit flash (the game state is
-    // frozen-time authoritative; this only times a tint pulse).
     const nowMs = performance.now();
-    const frameDelta =
-      lastFrameMsRef.current === null ? 0 : Math.min(0.1, (nowMs - lastFrameMsRef.current) / 1000);
-    lastFrameMsRef.current = nowMs;
-
     const qte = stateRef.current.qte;
     const active = isQteActive(qte);
 
     // Surface the HUD slice only when a HUD-relevant field changes (bounded), so
-    // the DOM HUD gauges update without a per-frame React re-render.
+    // the DOM HUD updates the banner/verdict without a per-frame React re-render.
     const slice: HudHostageQte | null =
-      active && qte !== null
-        ? {
-            phase: qte.phase,
-            captorHp: qte.captorHp,
-            captorHpMax: qte.captorHpMax,
-            hostageHp: qte.hostageHp,
-            hostageHpMax: qte.hostageHpMax,
-            windowRemaining: qte.windowRemaining,
-            windowSeconds: qte.windowSeconds,
-            warning: qte.warning,
-          }
-        : null;
+      active && qte !== null ? { phase: qte.phase, warning: qte.warning } : null;
     const key = hudSliceKey(slice);
     if (key !== lastKeyRef.current) {
       lastKeyRef.current = key;
@@ -121,36 +197,70 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     if (!active || qte === null) {
       captor.visible = false;
       hostage.visible = false;
-      lastHostageHpRef.current = null;
-      hitFlashRef.current = 0;
+      peekCue.visible = false;
+      for (const pip of pipRefs.current) {
+        if (pip !== null) pip.visible = false;
+      }
+      positionedRef.current = false;
       return;
     }
 
-    // ── Captor ──────────────────────────────────────────────────────────────
-    captor.visible = true;
-    captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
-    captor.scale.set(QTE_W, QTE_H, 1);
+    // ── Static placement (once per activation) ────────────────────────────────
+    // The captor and hostage never move (the static duel): place those two meshes
+    // ONCE from the fixed `qte.anchor` — no per-tick moving-anchor writes. The peek
+    // ring's XY is NOT static — it follows the live `qte.targetOffset` each frame
+    // below (in addition to its tint/opacity pulse).
+    if (!positionedRef.current) {
+      captor.position.set(qte.anchor.x, qte.anchor.y, QTE_Z);
+      captor.scale.set(QTE_W, QTE_H, 1);
+      hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
+      hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
+      // Captor-HP pips: a static row centred above his head (he never moves), so
+      // they are placed ONCE like the captor/hostage. Only their visibility (how
+      // many are lit) changes per frame as `captorHp` chips down.
+      for (let i = 0; i < CAPTOR_HP_PIPS; i++) {
+        const pip = pipRefs.current[i];
+        if (pip === null || pip === undefined) continue;
+        const spread = (i - (CAPTOR_HP_PIPS - 1) / 2) * PIP_GAP;
+        pip.position.set(qte.anchor.x + spread, qte.anchor.y + PIP_DY, PIP_Z);
+        pip.scale.set(PIP_SIZE, PIP_SIZE, 1);
+        (pip.material as MeshBasicMaterial).color.set(PIP_COLOUR);
+      }
+      positionedRef.current = true;
+    }
 
-    const captorTex = resolveEnemyTexture("hostage_taker", 1, false, 1);
+    const reducedMotion = reducedMotionRef.current;
+    const pulse01 = reducedMotion ? 0 : (Math.sin(nowMs * PULSE_SPEED) + 1) / 2;
+    const lost = qte.phase === "LOST";
+    const won = qte.phase === "WON";
+    const peeking = qte.stance === "PEEKING";
+    // Flag B: how close the captor is to executing the hostage (blown peeks / cap).
+    const proximity = blownPeeksProximity(qte.blownPeeks, qte.maxBlownPeeks);
+
+    // ── Captor (static tableau; pose via stance→texture indirection) ──────────
+    captor.visible = true;
+    const captorTex = resolveCaptorTexture(peeking ? "peeking" : "covered");
     const captorMat = captor.material as MeshBasicMaterial;
     if (captorTex !== null && captorMat.map !== captorTex.texture) {
       captorMat.map = captorTex.texture;
       captorMat.needsUpdate = true;
     }
+    // On LOST he strobes the alarm (the execution); on WON he reads the resolved
+    // win green — NOT the PEEKING danger red the tick leaves his stance in through
+    // the win hold. Otherwise the live COVERED/PEEKING reinforcement tint.
+    captorMat.color.set(
+      lost
+        ? hostageAlarmColor(pulse01, reducedMotion)
+        : won
+          ? CAPTOR_WON_TINT
+          : captorTint(qte.stance, qte.telegraphActive),
+    );
 
-    const pulse01 = (Math.sin(nowMs * PULSE_SPEED) + 1) / 2;
-    const tension = hostageTension(qte.windowRemaining, qte.windowSeconds);
-    const phase: QtePhase = qte.phase;
-    captorMat.color.set(hostageColor(tension, pulse01, phase === "LOST"));
-
-    // ── Hostage (the daughter, held in front) ───────────────────────────────
+    // ── Hostage (the daughter, held in front as a shield) ─────────────────────
     hostage.visible = true;
-    hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
-    hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
-
-    // Her dedicated art (committed). No figure fallback: enemy_civilian was
-    // retired (ADR-0029) and the enemy cache's cop fallback would make her read
-    // as a hostile — so she simply stays hidden for the beat her PNG loads.
+    // Her dedicated art (committed). No figure fallback: the enemy cache's cop
+    // fallback would make her read as a hostile — so she stays hidden the beat
+    // her PNG loads (getHostageGirlTexture returns null until then).
     const girlTex = getHostageGirlTexture();
     const hostageMat = hostage.material as MeshBasicMaterial;
     if (girlTex === null) {
@@ -159,21 +269,60 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       hostageMat.map = girlTex;
       hostageMat.needsUpdate = true;
     }
+    // Flag B (diegetic, no HUD bar): her distress tint warms toward alarm as the
+    // blown peeks approach the execution cap — the "he's about to do it" read. On
+    // LOST she strobes the alarm (she is the one being executed). Steady
+    // escalation ⇒ reduced-motion-safe. No stray-hit white flash: a hostage hit
+    // is a flat energy penalty with no per-hit signal on the contract.
+    hostageMat.color.set(
+      lost ? hostageAlarmColor(pulse01, reducedMotion) : hostageDistressTint(proximity),
+    );
 
-    // A stray hit on her (hp dropped since last frame) pulses her white briefly.
-    if (lastHostageHpRef.current !== null && qte.hostageHp < lastHostageHpRef.current) {
-      hitFlashRef.current = HIT_FLASH_SECONDS;
+    // ── Peek cue (reticle ring that FRAMES the head point — never covers it) ──
+    // The ring is a CONSTANT size (it no longer grows during the peek); OPACITY
+    // alone carries the two beats as a brightness change (brighter for the open
+    // PEEKING window than the COVERED wind-up); the open centre keeps the head-shot
+    // kill-zone visible. Opacity is hard-capped so it reads as a subtle tell, not a
+    // solid block.
+    // The cue is a DANGER/ACTIVE marker: only during ACTIVE. Hidden through both
+    // result holds (WON: the tick keeps stance PEEKING but the danger is over;
+    // LOST: the execution reads instead), so no danger ring lingers over a win.
+    const cue = peekTellVisual(qte.telegraphActive, qte.stance, pulse01, reducedMotion);
+    peekCue.visible = cue.active && qte.phase === "ACTIVE";
+    if (peekCue.visible) {
+      // Follow the live head-zone centre: anchor + the (wandering) targetOffset,
+      // so the drawn ring sits exactly on the scored `head` band (aim-honesty seam).
+      peekCue.position.set(
+        qte.anchor.x + qte.targetOffset.x,
+        qte.anchor.y + qte.targetOffset.y,
+        CUE_Z,
+      );
+      // Colour = the anatomy zone under the ring (spatial-colour model); the paired
+      // emphasis is the NON-colour a11y channel — vital reads bright/large, off
+      // dim/thin — so the payoff/wasted read survives without hue. `cue.intensity`
+      // still carries the two-beat wind-up→open peek FORM on top of it.
+      const emphasis = ringZoneEmphasis(qte.ringZone);
+      // Fixed radius — the reticle no longer GROWS during the peek (Bertrand
+      // playtest: "la cible ne devrait pas grossir"). Its size is CONSTANT so the
+      // wander reads as MOVEMENT, not a zoom; the wind-up→open tell and the
+      // vital/limb/off a11y read ride OPACITY/brightness below (never size).
+      peekCue.scale.set(CUE_RADIUS, CUE_RADIUS, 1);
+      const cueMat = peekCue.material as MeshBasicMaterial;
+      cueMat.color.set(ringZoneColour(qte.ringZone));
+      cueMat.opacity = Math.min(
+        CUE_OPACITY_MAX,
+        (0.15 + 0.3 * cue.intensity) * (0.4 + 0.6 * emphasis),
+      );
     }
-    lastHostageHpRef.current = qte.hostageHp;
-    hitFlashRef.current = Math.max(0, hitFlashRef.current - frameDelta);
 
-    if (phase === "LOST") {
-      // She is the one being executed — strobe with the alarm.
-      hostageMat.color.set(hostageColor(1, pulse01, true));
-    } else if (hitFlashRef.current > 0) {
-      hostageMat.color.set(lerpHex(GIRL_TINT, "#ffffff", hitFlashRef.current / HIT_FLASH_SECONDS));
-    } else {
-      hostageMat.color.set(GIRL_TINT);
+    // ── Captor HP pips (diegetic, no HUD bar) ─────────────────────────────────
+    // Light one pip per remaining HP; they deplete as the captor is chipped. Only
+    // during ACTIVE — on WON he is dead (HP 0) / the verdict reads, on LOST the
+    // execution reads — so no HP row lingers over a result hold.
+    for (let i = 0; i < CAPTOR_HP_PIPS; i++) {
+      const pip = pipRefs.current[i];
+      if (pip === null || pip === undefined) continue;
+      pip.visible = qte.phase === "ACTIVE" && captorHpPipLit(i, qte.captorHp);
     }
   });
 
@@ -181,7 +330,7 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
     // renderOrder 6/7 = the STREET-actor layers (courier 6, delivery vehicle 7):
     // the tableau stands on the sidewalk in front of the facade, drawn over the
     // balcony ironwork like every street actor. The hostage's higher order + z
-    // draws her over the captor.
+    // draws her over the captor; the peek cue (8) sits on top of both.
     <>
       <mesh ref={captorRef} renderOrder={6} visible={false}>
         <planeGeometry args={[1, 1]} />
@@ -191,6 +340,25 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
+      <mesh ref={peekCueRef} renderOrder={8} visible={false}>
+        <ringGeometry args={[CUE_RING_INNER, CUE_RING_OUTER, CUE_RING_SEGMENTS]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      {/* Diegetic captor-HP pips (renderOrder 8, over the tableau). One per HP
+          point; they deplete as `qte.captorHp` chips down. No HUD bar (U-1). */}
+      {Array.from({ length: CAPTOR_HP_PIPS }, (_, i) => (
+        <mesh
+          key={i}
+          ref={(m): void => {
+            pipRefs.current[i] = m;
+          }}
+          renderOrder={8}
+          visible={false}
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial transparent depthWrite={false} />
+        </mesh>
+      ))}
     </>
   );
 }

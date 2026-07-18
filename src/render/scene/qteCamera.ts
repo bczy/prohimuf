@@ -55,8 +55,10 @@ export function qteZoomInProgress(
 
 /**
  * The camera pose at zoom-in progress `p` (0 = pre-QTE `base`, 1 = fully zoomed
- * onto `anchor` at `base.zoom × QTE_ZOOM_FACTOR`). `p` is expected pre-eased (see
- * `qteZoomInProgress`); this is a plain lerp so the endpoints are exact.
+ * onto the STATIC `anchor` at `base.zoom × QTE_ZOOM_FACTOR`). `p` is expected
+ * pre-eased (see `qteZoomInProgress`); this is a plain lerp so the endpoints are
+ * exact. The captor never moves (the static duel), so the target is the fixed
+ * `qte.anchor` — the camera zooms in and HOLDS (ADR-0030, no follow).
  */
 export function qtePose(base: CamPose, anchor: { x: number; y: number }, p: number): CamPose {
   const k = clamp01(p);

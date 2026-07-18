@@ -271,11 +271,13 @@ export function useGameLoop(
         }
       : next;
 
-    // QTE cinematic camera (ADR-0030): while the QTE is active, capture the
-    // pre-QTE pose ONCE, then progressively zoom onto the captor's anchor
-    // (eased over ZOOMING, pinned once ACTIVE). When it ends, ease back to the
-    // captured base over QTE_RESTORE_SECONDS and restore it EXACTLY. Runs after
-    // the tick so it reads this frame's fresh phase/timers.
+    // QTE cinematic camera (ADR-0030, the static duel): while the QTE is active,
+    // capture the pre-QTE pose ONCE, then progressively zoom onto the captor's
+    // STATIC `anchor` and HOLD there (no follow — the captor never moves). The
+    // zoom eases in during ZOOMING and pins fully in during ACTIVE / WON / LOST.
+    // When it ends, ease back to the captured base over QTE_RESTORE_SECONDS and
+    // restore it EXACTLY. Runs after the tick so it reads this frame's fresh
+    // phase/timers.
     const qte = gameStateRef.current.qte;
     if (isQteActive(qte) && qte !== null) {
       qteBaseRef.current ??= { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y };
@@ -312,8 +314,9 @@ export function useGameLoop(
     // Floating feedback for each takedown: bonus time, civilian penalty, score.
     // A non-zero energyDelta floats a second "⚡" label just above, so both the
     // score and the energy hit are read. (During the hostage QTE the frozen tick
-    // emits no feedback events — its energy swings are read on the HUD gauge and
-    // the result chip instead, ADR-0030.)
+    // emits no feedback events — its energy swings are read on the persistent global
+    // énergie bar instead; the QTE-local HUD gauge and result chip were removed by
+    // ADR-0034.)
     const queue = feedbackQueueRef?.current;
     if (queue && next.feedback) {
       for (const ev of next.feedback) {

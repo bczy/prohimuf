@@ -87,20 +87,31 @@ export const LEVELS: readonly LevelConfig[] = [
     // taker is no longer a window/street pop-up — it triggers the cinematic QTE
     // below (ADR-0030). The car remains withdrawn.
     roster: { streetSpawns: ["courier"] },
-    // Hostage-taker QTE (ADR-0030): scripted set-piece, once per level. Values are
-    // game-designer defaults (tunable). `anchor` is the captor's world position the
-    // camera zooms onto — ON THE SIDEWALK, in the street lane where couriers ride
-    // (courierField.streetY = −0.4 × worldHeight 12 = −4.8): centre −5 puts the
-    // 2.0-tall tableau's feet on the ground line at −6, beside the road.
+    // Hostage-taker QTE — "the static duel" (revises ADR-0034 after playtest; tuning
+    // per spec-hostage-qte §5). Scripted set-piece, once per level. Values are
+    // game-designer defaults (tunable; F3/ADR-0035 curves them across levels). `anchor`
+    // is the captor's STATIC world position the camera zooms onto and holds — ON THE
+    // SIDEWALK, in the street lane where couriers ride (streetY = −0.4 × worldHeight
+    // 12 = −4.8): centre −5 puts the 2.0-tall tableau's feet on the ground line at −6.
+    // He stands still; the sole clock is `maxBlownPeeks` blown openings before the
+    // execution (the retreat/distance clock is removed).
     hostageQte: {
       triggerAtElapsedSeconds: 12,
-      captorHp: 4,
-      hostageHp: 3,
       zoomSeconds: 2,
-      windowSeconds: 5,
-      bonusScore: 8,
-      bonusEnergy: 15,
       anchor: { x: 0, y: -5 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
+      // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
+      peekDurationSeconds: 1.5,
+      // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
+      // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
+      captorHp: 3,
+      // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
+      // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
+      // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
+      // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
+      targetSeed: 20260718,
     },
   },
   {
