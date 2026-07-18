@@ -54,9 +54,13 @@ function fetchImage(url) {
 
 async function generate(prompt, size, retries = 5) {
   const seed = Math.floor(Math.random() * 99999);
+  // private=true keeps the backdrops out of the public Pollinations feed;
+  // enhance=false is load-bearing (art bible §3.11) — the enhancer's LLM rewrite
+  // destroys the verbatim style block; safe=false pins the NSFW filter off so the
+  // house register is never silently rejected if the server default flips.
   const url =
     `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", " + style)}` +
-    `?width=${size.width}&height=${size.height}&nologo=true&model=flux&seed=${seed}`;
+    `?width=${size.width}&height=${size.height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true&safe=false`;
   for (let i = 0; i < retries; i++) {
     try {
       return await fetchImage(url);

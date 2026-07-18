@@ -102,7 +102,7 @@ async function generate(h, retries = 5) {
   // consistency depends on. private=true keeps assets out of the public feed.
   const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
     h.prompt,
-  )}?width=${h.width}&height=${h.height}&nologo=true&model=flux&seed=${h.seed}&enhance=false&private=true`;
+  )}?width=${h.width}&height=${h.height}&nologo=true&model=flux&seed=${h.seed}&enhance=false&private=true&safe=false`;
   for (let i = 0; i < retries; i++) {
     try {
       return await fetchImage(url);

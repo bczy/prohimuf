@@ -182,7 +182,7 @@ async function fetchWithRetry(url, retries = 5) {
 function fluxUrl(prompt, seed, width, height) {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(
     prompt,
-  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true`;
+  )}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}&enhance=false&private=true&safe=false`;
 }
 
 // ── Reuse the enemy edge flood-fill keyer per sliced frame ────────────────────
