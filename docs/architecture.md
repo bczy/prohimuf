@@ -158,6 +158,6 @@ clamped to scene bounds.
 | Build            | Vite                         |
 | Tests            | Vitest                       |
 | Audio            | Howler.js                    |
-| Package manager  | Yarn 4 (PnP)                 |
+| Package manager  | Yarn 4 (node-modules linker) |
 | Asset generation | Pollinations.ai (FLUX model, |
 | free)            |

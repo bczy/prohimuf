@@ -62,16 +62,14 @@ jobs:
       - name: Build
         run: yarn build
 
-      # Installed via npm (not yarn) so yarn.lock stays untouched; the
-      # node-modules linker lets the scripts resolve these from node_modules.
-      - name: Install Playwright + Chromium
-        run: |
-          npm install --no-save --legacy-peer-deps playwright@1.48.0 @napi-rs/canvas
-          npx playwright install --with-deps chromium
+      # playwright and @napi-rs/canvas are devDependencies (installed by
+      # `yarn install` above); only the Chromium browser binary is fetched here.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
       # Chroma-key the magenta foreground to transparency. Done AFTER the build
-      # (npm before `yarn build` corrupts the yarn install), so we update both
-      # the source (committed) and the built copy that the preview serves.
+      # so we update both the source (committed) and the built copy that the
+      # preview serves.
       - name: Cut out foreground layer
         run: |
           node scripts/cutout-foreground.mjs

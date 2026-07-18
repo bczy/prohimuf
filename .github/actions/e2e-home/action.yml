@@ -17,13 +17,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Installed via npm --no-save so yarn.lock / PnP stay untouched (same
-    # convention as the screenshot render farm in preview.yml).
-    - name: Install Playwright + Chromium
+    # playwright is a devDependency, brought in by `yarn install` in the job;
+    # only the Chromium browser binary is fetched here.
+    - name: Install Chromium
       shell: bash
-      run: |
-        npm install --no-save --legacy-peer-deps playwright@1.48.0
-        npx playwright install --with-deps chromium
+      run: npx playwright install --with-deps chromium
 
     - name: Serve build & run home-screen E2E
       shell: bash
