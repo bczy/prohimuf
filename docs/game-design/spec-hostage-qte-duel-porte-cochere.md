@@ -122,9 +122,16 @@ already paid peek-by-peek (unanswered-peek drains) plus the forfeited +40 refill
 on the 100 scale — the outcome now matters to the run. A single bavure (−30) is the sharpest
 atomic mistake. The old design's "ignoring it was near-optimal" is closed.
 
-**Score.** Score is **not** the stake (D5). Keep the small side-objective score bonus for the
-clean rescue only (default **+8**, unchanged from the shipped `QTE_SUCCESS.scoreDelta`); no
-score penalties are load-bearing here — energy carries all sanction nuance.
+**Score.** The QTE moves **no score** — energy is the **sole** outcome currency (D5). No
+score bonus on rescue, no score penalties anywhere in the duel; energy carries all
+sanction and reward nuance.
+
+> **Amendment (2026-07-18, design-gate finding G-1, applied per stage-6 code-review panel
+> finding B1).** This paragraph previously kept a "+8 rescue score bonus" as a
+> non-load-bearing side objective. The design gate ruled **REMOVE** (ADR-0034 D5 read as a
+> single currency; the already-FROZEN `QteTickResult = { qte, energyDelta }` contract and
+> shipped `stateMachine.ts` never moved score for this QTE). The code ships G-1 as decided;
+> this spec now matches it. No energy value in this spec changes.
 
 ---
 
@@ -169,18 +176,18 @@ the retreat (§1) + peek cadence (§2). The captor has no health bar; the duel i
 
 **Game-wide constants (`qteSystem.ts` — not per level):**
 
-| Constant                   | Default    | Notes                                 |
-| -------------------------- | ---------- | ------------------------------------- |
-| `QTE_RESCUE_REFILL`        | **+40**    | clean rescue (energy)                 |
-| `QTE_HOSTAGE_HIT` (energy) | **−30**    | bavure                                |
-| `QTE_UNANSWERED_PEEK`      | **−8**     | per closed exposure                   |
-| `QTE_PANIC_SHOT`           | **−6**     | fired during zoom                     |
-| `QTE_BODY_HIT`             | **−5**     | per body-zone hit                     |
-| rescue score bonus         | **+8**     | side objective only, non-load-bearing |
-| `QTE_ZOOM_SECONDS`         | 2.0 s      | kept                                  |
-| `QTE_RESULT_HOLD`          | 2.2 s      | kept                                  |
-| **`PEEK_EXPOSURE_FLOOR`**  | **0.5 s**  | **assert** (G5), max-difficulty floor |
-| **`TELL_FLOOR`**           | **0.25 s** | **assert** (G4)                       |
+| Constant                   | Default    | Notes                                           |
+| -------------------------- | ---------- | ----------------------------------------------- |
+| `QTE_RESCUE_REFILL`        | **+40**    | clean rescue (energy)                           |
+| `QTE_HOSTAGE_HIT` (energy) | **−30**    | bavure                                          |
+| `QTE_UNANSWERED_PEEK`      | **−8**     | per closed exposure                             |
+| `QTE_PANIC_SHOT`           | **−6**     | fired during zoom                               |
+| `QTE_BODY_HIT`             | **−5**     | per body-zone hit                               |
+| ~~rescue score bonus~~     | ~~+8~~     | **removed by G-1** — no score, energy-only (D5) |
+| `QTE_ZOOM_SECONDS`         | 2.0 s      | kept                                            |
+| `QTE_RESULT_HOLD`          | 2.2 s      | kept                                            |
+| **`PEEK_EXPOSURE_FLOOR`**  | **0.5 s**  | **assert** (G5), max-difficulty floor           |
+| **`TELL_FLOOR`**           | **0.25 s** | **assert** (G4)                                 |
 
 ---
 

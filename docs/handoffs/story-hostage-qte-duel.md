@@ -388,3 +388,28 @@ review vs A1–A12 post-BUILD.
   ADR-0034, merged this shard, and fixed the cross-refs in `docs/agent-handoffs.md` and
   `docs/game-design/README.md`. G-1 (the +8 score-bonus removal in Sacha's spec) remains
   outstanding for `game-designer` — not a docs-lane edit.
+  - **Superseded by §7 below (2026-07-18):** the stage-6 code-review panel re-triaged G-1
+    (finding B1) as a doc-realignment — the spec text was contradicting already-shipped,
+    already-decided code (no value to author, no design choice left open) — and routed it
+    to `tech-writer`. Applied; see §7.
+
+## 7. VERIFY — stage-6 code-review panel — 2026-07-18
+
+- claim: mandatory 4-reviewer merge-gate panel on PR #79
+  (`claude/harness-1er-adr-otages-rcay2h`), diff `git diff origin/main...HEAD`.
+- reviewers run in parallel: `code-review` (high), `bmad-code-review`,
+  `bmad-review-edge-case-hunter`, `security-review`.
+- findings adversarially verified; triaged by `senior-architect` (Winston).
+- **verdict: NO CONFIRMED BLOQUANT/MAJEUR finding → MERGE**, gated on a fix-lane
+  hardening pass (single dev-lane diff, no re-review needed beyond the fix-lane rule):
+  - `dev-gameplay` applies: bounded stance-toggle loop (**C1**), `porteCochere.y` assert
+    (**C3**), strict G4 cadence > tell (**C4**), finiteness guards (**C6**), an
+    intended-double-charge comment (**C2**), and the real-level-data AC3 test.
+  - `tech-writer` applies: the G-1 spec reconcile (**B1**) — done, see the spec edit
+    logged above and in `docs/game-design/spec-hostage-qte-duel-porte-cochere.md` §3/§5.
+- **Consciously DEFERRED (not blockers):**
+  - **(a) C5** — pre-existing camera restore-vs-pan interaction during the `DONE` phase;
+    not introduced by this diff, left for a separate pass.
+  - **(b) NIT** — `TELEGRAPH_LEAD_SECONDS` is a global constant, not a per-level `QteSpec`
+    field; ADR-0035/F3 will need a contract note if it wants to curve the tell toward the
+    0.25 s floor (see this shard §3, "Telegraph lead" reconcile note).
