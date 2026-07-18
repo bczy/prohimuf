@@ -37,20 +37,30 @@ const HOSTAGE_DX = 0.32;
 const HOSTAGE_DY = -0.3;
 const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 
-// The peek CUE: a localised quad at the point the head emerges, front-LEFT of
-// the captor and clear of the hostage silhouette (G6). It carries BOTH beats of
-// the peek tell (ADR-0034 D2/D3, UX spec §2): the pre-peek wind-up while
-// `telegraphActive` (COVERED) and the open danger window while `PEEKING`. Its
-// PRESENCE keys COVERED (absent) vs PEEKING (present, full) as a FORM change —
-// legible without hue (a11y §4.2) — and its scale/opacity carry the signal so
-// colour is never the sole channel. Abstract placeholder until the real peeking
-// pose art lands; exact alignment vs `qteZoneAt`'s head band is reconciled at
-// the composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
-const CUE_W = 0.72;
-const CUE_H = 0.72;
+// The peek CUE: a thin RETICLE RING that FRAMES the head point (front-LEFT of the
+// captor, clear of the hostage silhouette — G6), never a filled quad that covers
+// it — the head-shot kill-zone stays visible through the ring's open centre. It
+// carries BOTH beats of the peek tell (ADR-0034 D2/D3, UX spec §2): the pre-peek
+// wind-up while `telegraphActive` (COVERED) draws a small, faint ring, and the
+// open danger window while `PEEKING` a larger, brighter one. PRESENCE keys COVERED
+// (absent) vs PEEKING (present), and radius + opacity carry the two-beat signal as
+// a FORM change — legible without hue (a11y §4.2), colour only reinforces (TELL →
+// ALARM). Exact alignment vs `qteZoneAt`'s head band is reconciled at the
+// composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
 const CUE_DX = -0.5;
 const CUE_DY = 0.7;
 const CUE_Z = 0.55;
+// World outer radius of the reticle ring at neutral scale; intensity scales it so
+// the open PEEKING window reads clearly larger than the COVERED wind-up.
+const CUE_RADIUS = 0.46;
+// Hard cap on the ring's opacity: a subtle localised tell, never a solid block
+// (the earlier filled quad read as a placeholder box and hid the head).
+const CUE_OPACITY_MAX = 0.45;
+// Ring geometry: outer radius normalised to 1 so world radius = the mesh scale;
+// inner 0.78 leaves a wide open centre so the kill-zone is never occluded.
+const CUE_RING_INNER = 0.78;
+const CUE_RING_OUTER = 1.0;
+const CUE_RING_SEGMENTS = 40;
 
 // Pulse speed (rad/ms) for the peek-cue brightness pulse / LOST execution strobe.
 const PULSE_SPEED = 0.006;
@@ -217,15 +227,19 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       lost ? hostageAlarmColor(pulse01, reducedMotion) : hostageDistressTint(proximity),
     );
 
-    // ── Peek cue (wind-up tell + open-window marker at the head point) ────────
+    // ── Peek cue (reticle ring that FRAMES the head point — never covers it) ──
+    // Radius + opacity carry the two beats as a FORM change (bigger/brighter for
+    // the open PEEKING window than the COVERED wind-up); the open centre keeps the
+    // head-shot kill-zone visible. Opacity is hard-capped so it reads as a subtle
+    // tell, not a solid block.
     const cue = peekTellVisual(qte.telegraphActive, qte.stance, pulse01, reducedMotion);
     peekCue.visible = cue.active && !lost;
     if (peekCue.visible) {
-      const s = 0.7 + 0.6 * cue.intensity;
-      peekCue.scale.set(CUE_W * s, CUE_H * s, 1);
+      const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity);
+      peekCue.scale.set(r, r, 1);
       const cueMat = peekCue.material as MeshBasicMaterial;
       cueMat.color.set(cue.color);
-      cueMat.opacity = 0.35 + 0.55 * cue.intensity;
+      cueMat.opacity = Math.min(CUE_OPACITY_MAX, 0.15 + 0.3 * cue.intensity);
     }
   });
 
@@ -244,7 +258,7 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       <mesh ref={peekCueRef} renderOrder={8} visible={false}>
-        <planeGeometry args={[1, 1]} />
+        <ringGeometry args={[CUE_RING_INNER, CUE_RING_OUTER, CUE_RING_SEGMENTS]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
     </>
