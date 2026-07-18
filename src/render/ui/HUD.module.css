@@ -19,7 +19,8 @@
   padding: var(--space-sm) var(--space-lg);
   background: var(--stock-shell);
   border-bottom: var(--keyline-width) solid var(--ink-black);
-  font-family: var(--font-display);
+  /* HUD ticker only: IBM Plex Mono for legibility at strip sizes (readouts inherit it). */
+  font-family: var(--font-hud-mono);
   letter-spacing: 0.08em;
 }
 
@@ -30,20 +31,22 @@
 }
 
 .label {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--ink-black);
   opacity: 0.7;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-family: var(--font-mono);
+  font-family: var(--font-hud-mono);
+  font-weight: 400;
 }
 
-/* Ticker value — 22px display digits. Default ink is full-black; state-driven inks
-   (time/lives/energy) override `color` inline. */
+/* Ticker value — 22px mono digits, semibold for punch. Default ink is full-black;
+   state-driven inks (time/lives/energy) override `color` inline. */
 .value {
   font-size: var(--font-size-xxl);
   line-height: 1;
   color: var(--ink-full);
+  font-weight: 600;
 }
 
 .scoreRow {
@@ -53,16 +56,16 @@
 }
 
 .hiFlag {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--mark-green);
-  font-family: var(--font-mono);
+  font-family: var(--font-hud-mono);
   letter-spacing: 0.1em;
 }
 
 .levelName {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-base);
   color: var(--ink-black);
-  font-family: var(--font-mono);
+  font-family: var(--font-hud-mono);
   letter-spacing: 0.05em;
 }
 
@@ -73,10 +76,11 @@
   gap: 3px;
 }
 
-/* Energy value — 18px; ink is the state-driven energy hue (inline). */
+/* Energy value — 18px mono, semibold; ink is the state-driven energy hue (inline). */
 .energyValue {
   font-size: var(--font-size-lg);
   line-height: 1;
+  font-weight: 600;
 }
 
 .energyTrack {

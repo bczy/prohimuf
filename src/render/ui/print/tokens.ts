@@ -28,8 +28,13 @@ export const STOCK = {
 // §Typographie — the "display webfont" + "handwriting webfont" fast-follows, now landed).
 export const FONT = {
   display: "'Rubik Mono One', Impact, 'Arial Narrow', sans-serif", // techno-flyer headlines
-  mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + HUD
+  mono: "'Courier Prime', 'Courier New', Courier, monospace", // typewriter body + pre-game
   hand: "'Caveat', cursive", // felt-tip flyer annotations
+  // In-game HUD ticker ONLY (lead-art pre-approved): IBM Plex Mono holds its stroke at
+  // the 11–14px strip sizes where Courier Prime's thin hairlines break up. Falls back to
+  // Courier Prime so the ticker still renders before swap / on a load failure. Menus and
+  // the print system keep FONT.mono.
+  hudMono: "'IBM Plex Mono', 'Courier Prime', 'Courier New', monospace",
 } as const;
 
 // Ink.
