@@ -53,7 +53,23 @@ system-font stopgaps (Impact / Courier New / cursive) and close the two `docs/ar
   art-direction §Typographie + ADR-0045 updated. Mono (Courier Prime) and hand (Caveat) unchanged.
   VERDICT: owner decision (no gate — Bertrand's direct call supersedes the art gate here).
 
-## OUTSTANDING (merge gate)
+## STAGE-6 REVIEW PANEL — 2026-07-18
 
-- Stage-6 review panel not yet run (draft PR). At merge: re-check ADR number; **Gate-4 mobile/CRT
-  HUD legibility** for Courier Prime (fallback IBM Plex Mono pre-approved if it aliases at ~11px).
+- 4 reviewers in parallel on `git diff origin/main...HEAD` (34 files): code-review(high) ·
+  bmad-code-review · bmad-review-edge-case-hunter · security-review. Findings adversarially
+  self-verified.
+- **No CONFIRMED BLOQUANT/MAJEUR.** Security: supply chain clean (10 woff2 = genuine fonts,
+  zero payload; fully self-hosted, no CDN; OFL §2 satisfied). Edge-case: French coverage,
+  FOUT fallbacks, italic/700 shipped, Vite `/preview/<slug>/` base-path all sound.
+- One MAJEUR (PLAUSIBLE), triaged & DISCHARGED: ADR-0045's Gate-4 HUD-legibility condition —
+  exercised (Courier Prime HUD read too small) and resolved via IBM Plex Mono on stacked #95
+  (ADR-0046, lead-art PASS). ADR-0045 updated.
+- Fixed on #94: ADR-0045 "Anton fallback" doc drift → Impact/Arial Narrow; Gate-4 discharge note.
+- Deferred to #95 (touch the font files #95 extends — avoid stacked conflict; all MINEUR/NIT):
+  drop 2 unused Courier Prime italic woff2 (~35KB); consolidate 3 copyright lines into OFL.txt +
+  correct CREDITS Rubik notice (binary = "2013,2014 Hubert and Fischer"); soften tokens.ts
+  single-source comment to note the `FeedbackLayer` canvas-font exception. Verify: Rubik Mono
+  width vs narrow-viewport headline overflow (EndScreen/Pause) at #95 UX gate.
+- Integration review: boundary law CLEAN (fonts render-only, no `src/game` import — unanimous
+  across reviewers); deps = committed assets only, no runtime/network change.
+- VERDICT: **MERGE** — #94 to land with (or immediately before) #95 so the HUD fix ships with the embed.

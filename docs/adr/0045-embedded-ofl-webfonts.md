@@ -26,7 +26,8 @@ Embed three **SIL OFL 1.1** faces:
 - **Display / titres → Rubik Mono One** — geometric mono block, techno-flyer character that
   reads at every size. Bertrand (owner) selected it directly from an 8-face visual
   comparison board, overriding `lead-art`'s original Anton pick (which was a faithful-but-
-  invisible Impact substitute); Anton stays in the stack as the near-Impact fallback.
+  invisible Impact substitute). Anton was removed (not bundled); the stack falls back to
+  system **Impact / Arial Narrow**.
 - **Corps / mono → Courier Prime** (400 / 700 / italic-400) — keeps the named typewriter
   identity, a legibility upgrade on system Courier New. Gated by `lead-art` (PASS).
 - **Manuscrit → Caveat** — legible felt-tip marker hand. Gated by `lead-art` (PASS).
@@ -49,8 +50,10 @@ Rejected: **Permanent Marker / Rock Salt** for the hand role — Apache-2.0, not
 - **Positive:** house-style type now renders as authored on every OS; one place to change a
   font stack; the two art-direction fast-follows are closed; offline guarantee preserved.
 - **Negative:** production bundle grows ~230 KB (10 woff2, gzip-exempt but cache-friendly).
-- **Gotcha / follow-up:** Courier Prime's HUD-size legibility under the CRT scanline pass is
-  **not** covered by the typographic PASS — it must clear **Gate 4 on real in-game
-  screenshots** (§8.5 P5) at the merge panel. If it aliases at ~11px, the HUD-only usage
-  switches to the **pre-approved IBM Plex Mono** fallback while Courier Prime stays for
-  menu/print blocks. Desktop HUD evidence (1280×800) reads clean; mobile/CRT is the open case.
+- **Gotcha / follow-up (DISCHARGED):** Courier Prime's HUD-size legibility under the CRT
+  scanline pass was not covered by the typographic PASS. That condition was exercised —
+  the HUD Courier Prime text read too small/thin in-game — and **resolved**: the HUD strip
+  switched to the pre-approved **IBM Plex Mono** (`FONT.hudMono`, labels bumped 9→11px),
+  gated `lead-art` PASS, on the stacked follow-up (ADR-0046 / PR #95). Courier Prime stays
+  for menu/print blocks. Merge ordering: #94 lands with (or immediately before) #95 so the
+  HUD legibility fix ships with the embed, never Courier-Prime-HUD alone.
