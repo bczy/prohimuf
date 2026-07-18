@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { HudDelivery } from "@render/ui/HUD";
+import type { HudDelivery } from "./types";
 import { MARK } from "@render/ui/print";
 import { cx } from "./cx";
 import { integrityColor } from "./derivations";

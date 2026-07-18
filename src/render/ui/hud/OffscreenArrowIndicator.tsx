@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { HudTargetIndicator } from "@render/ui/HUD";
+import type { HudTargetIndicator } from "./types";
 import { INK, ACID } from "@render/ui/print";
 import styles from "./OffscreenArrowIndicator.module.css";
 

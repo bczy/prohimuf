@@ -71,8 +71,32 @@ design-system foundation. ADR-0046. Branch `claude/render-css-design-system` (st
   in a future token pass (pre-existing, carried verbatim).
 - VERDICT: **MERGE**.
 
+## P2 STEP 2 — CSS consolidation + type relocation + HTML catalog — dev-r3f-render — 2026-07-18
+
+- `hud/shared.module.css` (widgets consume via CSS-Modules `composes`); `Hud*` types → `hud/types.ts`
+  (`HUD.tsx` re-exports); offline HTML component catalog (`catalog.html` + `src/catalog/`, env-gated
+  `BUILD_CATALOG=1` separate Vite entry, never in the game bundle). PR #98.
+
+## P2 STEP 2 — STAGE-6 REVIEW PANEL — 2026-07-18
+
+- 4 reviewers on `git diff origin/main...HEAD`: security CLEAN · code-review MERGE · bmad MERGE ·
+  **edge-case-hunter: CONFIRMED BLOQUANT** — the `composes` refactor put `padding`/`border` on the
+  shared `.chip`, which the set-piece stamp modifiers (`.chipOtage` 10×22/3px, `.chipVerdict`
+  12×26/3px, `.chipMessage` 14×28/3px) override at equal specificity, so the winner depended on
+  CSS emit order. In the bundle the shared base emitted after `.chipOtage`/`.chipVerdict` → it won →
+  OTAGE + QTE verdict stamps collapsed to 6×12/2px (pixel regression the dev's strip-only verify missed).
+- VERDICT: NO-MERGE → **fix applied** (dev-r3f-render): removed `padding`/`border` from shared `.chip`
+  (kept `background`+`font-family`); declared the default explicitly on `.chipDelivering`/`.deliveryVerdict`.
+  No property now lives in both base and modifier → order-independent, no `!important`. Verified via
+  catalog `getComputedStyle`: every chip variant matches origin/main intent. tsc + 575 tests + lint +
+  build + build:catalog + format:check green. HUD strip untouched.
+- Non-blocking NITs deferred: `build:catalog` inline env-var (POSIX-only; `cross-env` not a dep, left);
+  catalog bootstrap hex + HalftoneHero asset (catalog-only cosmetic).
+- VERDICT after fix: **MERGE**.
+
 ## OUTSTANDING
 
-- P2 step 2: shared primitives (Button/SelectableListItem/Toggle/Overlay) + the deferred NITs
-  above + the **HTML component catalog**. P3 (Figma + Code Connect) blocked on Bertrand creating
-  the file + sharing editor access.
+- Menu-screen migration to CSS Modules + shared primitives (Button/Toggle/Overlay/SelectableListItem):
+  the menu surfaces still use inline `style={{}}` (tokenised via `FONT`, but not CSS Modules).
+- P3 Figma (Menu/Pause/End screens + Code Connect) blocked on the Figma Starter-plan MCP tool-call
+  limit — deferred. Tokens + Composants + TITLE screen were built before the cap.

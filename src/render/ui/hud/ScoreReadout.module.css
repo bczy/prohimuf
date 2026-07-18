@@ -1,28 +1,17 @@
-/* Score readout (ADR-0046) — static structure/typography only; colours/fonts/sizes
-   reference the print-token CSS vars injected by applyPrintTokens.ts. */
+/* Score readout (ADR-0046) — .item/.label/.value are shared (composed from
+   shared.module.css); only the score-row layout and the ★HI flag are local. */
 
 .item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  composes: item from "./shared.module.css";
 }
 
 .label {
-  font-size: var(--font-size-sm);
-  color: var(--ink-black);
-  opacity: 0.7;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-family: var(--font-hud-mono);
-  font-weight: 400;
+  composes: label from "./shared.module.css";
 }
 
 /* Ticker value — mono digits, semibold for punch; default ink is full-black. */
 .value {
-  font-size: var(--font-size-xxl);
-  line-height: 1;
-  color: var(--ink-full);
-  font-weight: 600;
+  composes: value from "./shared.module.css";
 }
 
 .scoreRow {

@@ -1,26 +1,16 @@
-/* Timer readout (ADR-0046) — static structure/typography only; the state-driven
-   ink (`color`) is applied inline from the timeColor ramp. */
+/* Timer readout (ADR-0046) — .item/.label/.value are shared (composed from
+   shared.module.css); the state-driven ink (`color`) is applied inline from the
+   timeColor ramp. */
 
 .item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  composes: item from "./shared.module.css";
 }
 
 .label {
-  font-size: var(--font-size-sm);
-  color: var(--ink-black);
-  opacity: 0.7;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-family: var(--font-hud-mono);
-  font-weight: 400;
+  composes: label from "./shared.module.css";
 }
 
 /* Default ink is full-black; the state-driven ink overrides `color` inline. */
 .value {
-  font-size: var(--font-size-xxl);
-  line-height: 1;
-  color: var(--ink-full);
-  font-weight: 600;
+  composes: value from "./shared.module.css";
 }
