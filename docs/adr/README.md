@@ -83,7 +83,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0025](./0025-live-hue-enemy-neon-rim-shader.md) | Live-hue enemy neon rim via a 1-tap ShaderMaterial | Accepted |
 | [0026](./0026-mobile-pinch-zoom-out.md) | Mobile pinch-to-zoom-out (two-finger spread controls the framing) | Proposed |
 | [0027](./0027-audio-in-loading-gate.md) | Audio in the level loading gate | Accepted |
-| [0028](./0028-window-alignment-harness.md) | Rendered-scene window-alignment harness for belliard | Accepted |
+| [0028](./0028-window-alignment-harness.md) | Rendered-scene window-alignment harness for belliard | Accepted (amended) |
 | [0029](./0029-retire-enemy-civilian-sprite.md) | Retire the legacy `enemy_civilian.png` courier sprite | Accepted |
 | [0030](./0030-hostage-taker-feature-and-sprite.md) | Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting) | Accepted (partially superseded) |
 | [0031](./0031-crt-post-process-composite-pass.md) | CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep) | Accepted |
