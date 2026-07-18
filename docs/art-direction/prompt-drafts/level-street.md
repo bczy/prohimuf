@@ -32,6 +32,15 @@ far left edge to the far right edge of the frame, evenly stacked and covering th
 whole road, flat level ground plane, no horizon
 ```
 
+**Committed asset = seed 6601 + a 15% width inset (post retouch).** Bertrand's final
+call: the crossing must be a touch narrower — it should NOT reach the kerbs. FLUX cannot
+dial width to the percent, so the full-width seed-6601 generation is trimmed in post: the
+outer 7.5% on each side is repainted with the image's own sampled dark-asphalt tone
+(mean of the dark bluish pixels) + grain, giving asphalt shoulders and a crossing ~85%
+of the road width. Deterministic scripted retouch (repo precedent: `scripts/retouch-*.mjs`);
+the FLUX prompt above intentionally still describes the full-width generation. Re-composited
+under the facade at QTE framing to confirm the shoulders read as asphalt, not a seam.
+
 Rationale (clause → the failure it locks down):
 
 - `flat overhead top-down view … seen straight from directly above` → kills the
