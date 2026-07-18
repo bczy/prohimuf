@@ -42,10 +42,10 @@ hostage). The re-spec must split the fused event and reassign only the correct h
 
 Split the fused blown-peek event into its two threats and reassign exactly one:
 
-| Half of the blown-peek event                          | Threat against | With accomplice present                          |
-| ----------------------------------------------------- | -------------- | ------------------------------------------------ |
-| `blownPeeks += 1` and execution at `maxBlownPeeks`    | **the hostage**| **UNCHANGED** — stays wholly on the captor.      |
-| `energyDelta += QTE_UNANSWERED_PEEK` (−8)             | **the player** | **SUPPRESSED** — the captor stops firing at you. |
+| Half of the blown-peek event                       | Threat against  | With accomplice present                          |
+| -------------------------------------------------- | --------------- | ------------------------------------------------ |
+| `blownPeeks += 1` and execution at `maxBlownPeeks` | **the hostage** | **UNCHANGED** — stays wholly on the captor.      |
+| `energyDelta += QTE_UNANSWERED_PEEK` (−8)          | **the player**  | **SUPPRESSED** — the captor stops firing at you. |
 
 - **The accomplice owns the player-directed fire.** When present, it fires on its own
   deterministic cadence during `ACTIVE`, each landed shot draining `ACCOMPLICE_SHOT_DAMAGE`
@@ -256,7 +256,7 @@ hostageQte: {
 >   elapse. Armed **iff `qte.accomplice !== null`**.
 >
 > `armed(C) = (accomplice === null)` and `armed(A) = (accomplice !== null)` ⇒ `armed(C) XOR
-> armed(A)` is a **tautology** — never both, never neither. (Player-caused self-inflicted costs
+armed(A)` is a **tautology** — never both, never neither. (Player-caused self-inflicted costs
 > — bavure −30, body −5, panic −6 — are **not** incoming fire and are outside this invariant.)
 
 This is the exact P3 violation the ADR-0036 coherence pass ruled out ("do not let both the

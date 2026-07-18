@@ -61,8 +61,11 @@ const STATE_POLL_MS = 120;
 // Screenshot cadence for the reviewable strip (visual artifact only).
 const SHOT_INTERVAL_MS = 2000;
 // belliard's hostageQte: trigger @12s + zoom 2s (ACTIVE @14s) + 2 full
-// COVERED↔PEEKING cycles (1.5s + 1.5s each) + margin for CI scheduling jitter.
-const RUN_DURATION_MS = 28000;
+// COVERED↔PEEKING cycles (1.5s + 1.5s each) + margin. Budgeted in GAME time —
+// CI's SwiftShader advances game time at ~0.4x wall time, so a wall-clock
+// duration under-records there. The wall cap only bounds a hung page.
+const RUN_GAME_SECONDS = 21;
+const RUN_WALL_CAP_MS = 180000;
 
 const COURIER_ADVANCE_EPS = 0.05; // world units; kills float/rounding noise
 
@@ -120,15 +123,17 @@ async function main() {
   await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
 
   console.log(
-    `[harness-motion] recording ${String(RUN_DURATION_MS / 1000)}s (courier traversal + QTE zoom/telegraph/peek)…`,
+    `[harness-motion] recording ${String(RUN_GAME_SECONDS)}s of GAME time (courier traversal + QTE zoom/telegraph/peek)…`,
   );
   const trace = [];
   const frames = [];
   const start = Date.now();
   let lastShotAt = -Infinity;
-  while (Date.now() - start < RUN_DURATION_MS) {
+  let gameElapsed = 0;
+  while (gameElapsed < RUN_GAME_SECONDS && Date.now() - start < RUN_WALL_CAP_MS) {
     const tMs = Date.now() - start;
     const snap = await readState(page);
+    if (snap !== null) gameElapsed = snap.game.elapsedSeconds;
     if (snap !== null) trace.push({ tMs, game: snap.game });
     if (tMs - lastShotAt >= SHOT_INTERVAL_MS) {
       const buffer = await page.screenshot();

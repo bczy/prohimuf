@@ -50,8 +50,14 @@ const VIEWPORT = { width: 1280, height: 720 };
 const DEVICE_SCALE = 1;
 const NAV_TIMEOUT = 30000;
 const RENDER_TIMEOUT = 20000;
-const QTE_TIMEOUT = 25000; // trigger @10-12s + zoom 2s, generous CI margin
-const SHOT_SETTLE_MS = 3000; // accomplice cadence is 2.8s — bound the first-shot wait a little above it
+// CI's SwiftShader software renderer advances GAME time at ~0.4x wall time
+// (observed: elapsedSeconds ~10 after 25s wall), so wall-clock budgets must
+// carry a ~3-4x margin over the game-time they wait for. Trigger @10-12s +
+// zoom 2s game-time ≈ 35s wall on CI; 120s absorbs slower runners too. The
+// assertions still hard-fail on wrong VALUES — a generous timeout only delays
+// a genuine timeout failure, it cannot mask a wrong delta.
+const QTE_TIMEOUT = 120000;
+const SHOT_SETTLE_MS = 12000; // accomplice cadence is 2.8s game-time ≈ 7s CI wall — bound above it
 
 // Mirrored magnitudes (qteSystem.ts) — NOT imported: this script stays outside
 // src/game on purpose (a harness reads state through the seam, never a game
@@ -102,7 +108,7 @@ async function assertBelliardPanic(context, levelIds, belliard) {
   // Catch the FIRST energy transition after the click — tightly scoped so a
   // slow poll can't accidentally straddle a later ACTIVE-phase event too.
   const after = await pollState(page, (s) => s.game.energy !== baselineEnergy, {
-    timeout: 3000,
+    timeout: 15000, // one tick of game-time; wide for CI's ~0.4x frame pacing
     interval: 40,
   });
 

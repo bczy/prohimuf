@@ -186,7 +186,7 @@ ADR's Consequences already cross-reference). This pass added the remaining D2 mo
 the loop:
 
 - **`idempotent.mjs`** — `skipIfExists({ exists }, force)` (pure decision) + `skip(filePath,
-  { force, existsSync })` (the injectable-`existsSync` edge wrapper, per the "inject at the edge"
+{ force, existsSync })` (the injectable-`existsSync` edge wrapper, per the "inject at the edge"
   gotcha above). Adopted in the four **canonical** generators (see amendment below), replacing
   their inline `!FORCE && fs.existsSync(...)` guards.
 - **`cli.mjs`** — `parseAssetArgs(argv, { targetFlag })` replaces the duplicated `--list`/`--asset`

@@ -9,11 +9,13 @@ ADR-0005 (dynamic verification harness). Two forks were escalated to Bertrand: 0
 full build incl. golden + required gate; 0036 → build logic+render now, cop-fallback art.
 
 ## 0. SCOPE — 8× parallel readers — 2026-07-18
+
 - release: per-ADR implementation plans, file maps, design-gate flags, conflict areas.
   Finding: 0024/0026/0043/0044 already shipped (status flip only); 0039 is a decided
   backlog record; 0007 buildable offline; 0005/0036 XL + blocked → escalated.
 
 ## 1. BUILD (Wave 1) — dev-tooling-assets / game-designer→dev-gameplay→dev-r3f-render / dev-r3f-render / tech-writer — 2026-07-18
+
 - 0007: pure lib (idempotent/cli/cutout) TDD + `_template` + SCRIPTS.md anatomy; adopted
   in canonical generators; chromaKey byte-identical over 22 enemy PNGs. Accepted.
 - 0036: re-specified "replace the captor's counter-fire" against the shipped post-Rev-5
@@ -24,6 +26,7 @@ full build incl. golden + required gate; 0036 → build logic+render now, cop-fa
 - VERDICT: PASS — quality gate Wave 1 (orchestrator: tsc + 633 vitest + lint + build)
 
 ## 2. BUILD (Wave 2) — senior-architect→dev-r3f-render→dev-tooling-assets — 2026-07-18
+
 - 0005: re-scoped stale D1/D2 AC (withdrawn car / superseded street-hostage → shipped
   courier + cinematic QTE); `__MUF_PLAY__` un-frozen mode + read-only `__MUF_STATE__`
   seam in useGameLoop; harness-motion (D1) / harness-assert (D2: belliard PANIC −6, vitry
@@ -35,6 +38,7 @@ full build incl. golden + required gate; 0036 → build logic+render now, cop-fa
 - VERDICT: PASS — quality gate Wave 2 (orchestrator: tsc + 633 vitest + lint + build + goldens)
 
 ## 3. MERGE GATE — review-panel (4 reviewers, parallel) — 2026-07-18
+
 - code-review(high): no blocking; MINEUR cutout-foreground algo change (byte-identical
   claim misleading on fresh art); NIT deepFreeze redundant.
 - bmad-code-review (acceptance auditor): no blocking; all ADR criteria met; MINEUR ×2
@@ -51,6 +55,7 @@ full build incl. golden + required gate; 0036 → build logic+render now, cop-fa
 - VERDICT: PASS — merge gate (no unresolved CONFIRMED BLOQUANT/MAJEUR)
 
 ## Follow-ups (out of this story)
+
 - ADR-0036: generate the real accomplice sprite family in CI (cop-fallback ships now);
   narrative-designer to name the second Vitry shooter; stage-5 playtest of the −32 drain
   / 2.8 s cadence; consider a no-accomplice stalingrad duel first (met on separate levels).

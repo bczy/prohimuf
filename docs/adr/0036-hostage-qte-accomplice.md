@@ -96,7 +96,7 @@ shipped duel:
   captor, unchanged. "The captor stops firing at the player; the accomplice owns all incoming
   fire at the player" (D2) now reads as: suppress the drain half, arm the accomplice, leave the
   hostage-execution half alone. Structural invariant P3-ACC (`armed(captor-fire) XOR
-  armed(accomplice-fire)`) encodes the no-both/no-neither rule this ADR's Gotchas required.
+armed(accomplice-fire)`) encodes the no-both/no-neither rule this ADR's Gotchas required.
 - D3's "new sprite lane" shipped as a **cop-fallback placeholder** (the captor's existing
   `resolveEnemyTexture("hostage_taker", …)` data-swap, reused per ADR-0030/0031 precedent), not
   bespoke art. A dedicated accomplice sprite is a **follow-up CI art-generation pass**, owned by
