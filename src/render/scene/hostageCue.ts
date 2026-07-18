@@ -13,7 +13,7 @@
 // surfaced diegetically (Flag B) via `blownPeeksProximity`/`hostageDistressTint`
 // below, NOT a HUD bar.
 
-import type { CaptorStance } from "@game/types/hostageQte";
+import type { CaptorStance, RingZone } from "@game/types/hostageQte";
 
 // Calm captor tint (acid neon pink), the alarm red the peek/execution reads, a
 // distinct acid-yellow "NOW" tell that must out-read any residual mood, white.
@@ -21,6 +21,14 @@ const CALM = "#ff8ad8";
 const ALARM = "#ff1e2d";
 const TELL = "#fff27a";
 const WHITE = "#ffffff";
+
+// The reticle-ring colours for the spatial-colour model (ADR-0034 revision). The
+// GAME owns the anatomy `RingZone` under the ring; the RENDER owns this colour map
+// — the game never names a colour. `vital` reads GREEN (lethal — "shoot now"),
+// `limb` YELLOW (partial chip), `off` RED (over empty space — a wasted shot).
+const RING_VITAL = "#39ff14"; // acid green — the lethal payoff zone
+const RING_LIMB = "#ffe23d"; // acid yellow — a partial-damage limb hit
+const RING_OFF = ALARM; // red — the ring is over empty space (0 damage)
 
 /**
  * The captor's tint during the WON hold: a resolved acid-green, NOT the PEEKING
@@ -122,6 +130,53 @@ export function blownPeeksProximity(blownPeeks: number, maxBlownPeeks: number): 
  */
 export function hostageDistressTint(proximity: number): string {
   return lerpHex(WHITE, ALARM, clamp01(proximity) * 0.7);
+}
+
+/**
+ * The reticle-ring colour for the anatomy `zone` under it (spatial-colour model).
+ * The GAME classifies the zone (`qte.ringZone`); the RENDER maps it to a colour
+ * here — `vital` GREEN (lethal payoff), `limb` YELLOW (partial), `off` RED (over
+ * empty space, wasted). Colour is never the sole channel: it is paired with
+ * `ringZoneEmphasis` (a brightness/size/thickness cue) so the read survives without
+ * hue (a11y §4.2). Total over the closed `RingZone` union (no default needed).
+ */
+export function ringZoneColour(zone: RingZone): string {
+  switch (zone) {
+    case "vital":
+      return RING_VITAL;
+    case "limb":
+      return RING_LIMB;
+    case "off":
+      return RING_OFF;
+  }
+}
+
+/**
+ * The NON-colour channel paired with `ringZoneColour` (a11y): a [0,1] emphasis the
+ * render lane maps to the ring's brightness/opacity, radius and thickness. `vital`
+ * reads brightest/largest (the payoff brightens/pulses), `off` dim/thin (a wasted
+ * shot barely registers), `limb` between — so the vital/limb/off read is legible in
+ * grayscale, colour only reinforcing it. Total over the closed `RingZone` union.
+ */
+export function ringZoneEmphasis(zone: RingZone): number {
+  switch (zone) {
+    case "vital":
+      return 1;
+    case "limb":
+      return 0.6;
+    case "off":
+      return 0.28;
+  }
+}
+
+/**
+ * DIEGETIC captor-HP read (U-1, no HUD bar): whether the pip at `pipIndex` (0-based)
+ * is lit for the current `captorHp`. A row of pips lights one per remaining HP and
+ * depletes as the captor is chipped; depletion-by-presence is reduced-motion-safe by
+ * construction (no strobe). Pure and total — negative indices/HP read unlit.
+ */
+export function captorHpPipLit(pipIndex: number, captorHp: number): boolean {
+  return pipIndex >= 0 && pipIndex < captorHp;
 }
 
 /**

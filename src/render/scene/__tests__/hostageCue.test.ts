@@ -8,6 +8,9 @@ import {
   energyFloater,
   blownPeeksProximity,
   hostageDistressTint,
+  ringZoneColour,
+  ringZoneEmphasis,
+  captorHpPipLit,
   CAPTOR_WON_TINT,
 } from "../hostageCue";
 
@@ -154,6 +157,77 @@ describe("CAPTOR_WON_TINT", () => {
     expect(g).toBeGreaterThan(r);
     expect(g).toBeGreaterThan(b);
     expect(CAPTOR_WON_TINT).not.toBe("#ff1e2d");
+  });
+});
+
+describe("ringZoneColour", () => {
+  const chan = (hex: string): [number, number, number] => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+
+  it("maps vital → a green-dominant colour (the lethal 'shoot now' payoff)", () => {
+    const [r, g, b] = chan(ringZoneColour("vital"));
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
+  });
+
+  it("maps limb → a yellow (red+green high, blue low)", () => {
+    const [r, g, b] = chan(ringZoneColour("limb"));
+    expect(r).toBeGreaterThan(b);
+    expect(g).toBeGreaterThan(b);
+  });
+
+  it("maps off → a red-dominant colour (over empty space, wasted)", () => {
+    const [r, g, b] = chan(ringZoneColour("off"));
+    expect(r).toBeGreaterThan(g);
+    expect(r).toBeGreaterThan(b);
+  });
+
+  it("gives a distinct colour to each of the three zones", () => {
+    const colours = new Set([
+      ringZoneColour("vital"),
+      ringZoneColour("limb"),
+      ringZoneColour("off"),
+    ]);
+    expect(colours.size).toBe(3);
+  });
+});
+
+describe("ringZoneEmphasis", () => {
+  it("is a non-colour a11y channel: vital reads loudest, off quietest", () => {
+    // vital brightens/enlarges (payoff), off dims/thins (wasted) — a grayscale read.
+    expect(ringZoneEmphasis("vital")).toBeGreaterThan(ringZoneEmphasis("limb"));
+    expect(ringZoneEmphasis("limb")).toBeGreaterThan(ringZoneEmphasis("off"));
+  });
+
+  it("stays within the unit interval", () => {
+    for (const zone of ["vital", "limb", "off"] as const) {
+      const e = ringZoneEmphasis(zone);
+      expect(e).toBeGreaterThanOrEqual(0);
+      expect(e).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe("captorHpPipLit", () => {
+  it("lights exactly the pips below the current HP (3 HP ⇒ pips 0,1,2)", () => {
+    expect(captorHpPipLit(0, 3)).toBe(true);
+    expect(captorHpPipLit(1, 3)).toBe(true);
+    expect(captorHpPipLit(2, 3)).toBe(true);
+  });
+
+  it("depletes a pip as HP drops", () => {
+    expect(captorHpPipLit(2, 2)).toBe(false); // 3rd pip unlit at 2 HP
+    expect(captorHpPipLit(1, 2)).toBe(true);
+    expect(captorHpPipLit(1, 1)).toBe(false); // 2nd pip unlit at 1 HP
+    expect(captorHpPipLit(0, 0)).toBe(false); // all dark at 0 HP
+  });
+
+  it("guards negative indices/HP (total render)", () => {
+    expect(captorHpPipLit(-1, 3)).toBe(false);
+    expect(captorHpPipLit(0, -1)).toBe(false);
   });
 });
 

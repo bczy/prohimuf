@@ -101,10 +101,15 @@ export const LEVELS: readonly LevelConfig[] = [
       anchor: { x: 0, y: -5 },
       maxBlownPeeks: 4,
       peekCadenceSeconds: 1.5,
-      // Rebalanced 1.2 → 1.4 for the moving head kill-zone (the target now wanders during
-      // the peek, so the exposure gets slightly longer to stay fairly answerable).
-      peekDurationSeconds: 1.4,
-      // Fixed authored seed for the deterministic, replay-safe head wander (F3 may curve it).
+      // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
+      // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
+      peekDurationSeconds: 1.5,
+      // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
+      // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
+      captorHp: 3,
+      // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
+      // K-5 PIN: with peekDuration 1.5 / LEG_DURATION 0.38 this seed presents ≥1 on-captor
+      // (vital∪limb) decelerating window in EVERY one of the 4 peeks (per-peek counts 3/1/3/3).
       targetSeed: 20260718,
     },
   },

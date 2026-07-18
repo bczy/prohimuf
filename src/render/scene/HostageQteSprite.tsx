@@ -9,11 +9,14 @@ import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
 import {
   blownPeeksProximity,
+  captorHpPipLit,
   captorTint,
   CAPTOR_WON_TINT,
   hostageAlarmColor,
   hostageDistressTint,
   peekTellVisual,
+  ringZoneColour,
+  ringZoneEmphasis,
 } from "./hostageCue";
 import type { HudHostageQte } from "@render/ui/HUD";
 
@@ -45,8 +48,12 @@ const HOSTAGE_Z = 0.6; // in front of the captor — she is his shield
 // wind-up while `telegraphActive` (COVERED) draws a small, faint ring, and the
 // open danger window while `PEEKING` a larger, brighter one. PRESENCE keys COVERED
 // (absent) vs PEEKING (present), and radius + opacity carry the two-beat signal as
-// a FORM change — legible without hue (a11y §4.2), colour only reinforces (TELL →
-// ALARM). Exact alignment vs `qteZoneAt`'s head band is reconciled at the
+// a FORM change — legible without hue (a11y §4.2). The ring's COLOUR now reads the
+// spatial-colour model: `ringZoneColour(qte.ringZone)` — GREEN over a vital zone
+// ("shoot now" payoff), YELLOW over a limb, RED over empty space — paired with
+// `ringZoneEmphasis` so the vital/limb/off read survives in grayscale (green
+// brightens/enlarges, red dims/thins). The game owns the zone; the render owns the
+// colour map. Exact alignment vs `qteZoneAt`'s head band is reconciled at the
 // composite gate (ADR-0034 Gotchas — head-zone-vs-visible-head assertion).
 // The ring's XY now FOLLOWS the live `qte.targetOffset` (anchor-relative head-zone
 // centre): it wanders during PEEKING and rests at the neutral head point
@@ -69,6 +76,18 @@ const CUE_RING_SEGMENTS = 40;
 
 // Pulse speed (rad/ms) for the peek-cue brightness pulse / LOST execution strobe.
 const PULSE_SPEED = 0.006;
+
+// DIEGETIC captor-HP read (U-1, NO HUD bar): a row of small pips above the captor's
+// head, one per HP point (belliard starts 3), that vanish as `qte.captorHp` drops.
+// Depletion-by-presence is reduced-motion-safe by construction (no strobe). The
+// pool is fixed at the belliard-first authored HP; the render only READS captorHp
+// (it never computes damage). Placed once with the static tableau, lit each frame.
+const CAPTOR_HP_PIPS = 3;
+const PIP_SIZE = 0.14;
+const PIP_GAP = 0.2;
+const PIP_DY = 1.18; // above his head (captor half-height ≈ QTE_H / 2 = 1.0)
+const PIP_Z = 0.56;
+const PIP_COLOUR = "#f7f7f7"; // bone white — a neutral vitality read, not a zone hue
 
 type CaptorTexKey = "covered" | "peeking";
 
@@ -125,6 +144,8 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
   const captorRef = useRef<Mesh>(null);
   const hostageRef = useRef<Mesh>(null);
   const peekCueRef = useRef<Mesh>(null);
+  // Fixed pool of captor-HP pips (diegetic HP read); populated by the JSX ref cbs.
+  const pipRefs = useRef<(Mesh | null)[]>([]);
   const lastKeyRef = useRef<string>("none");
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
@@ -173,6 +194,9 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       captor.visible = false;
       hostage.visible = false;
       peekCue.visible = false;
+      for (const pip of pipRefs.current) {
+        if (pip !== null) pip.visible = false;
+      }
       positionedRef.current = false;
       return;
     }
@@ -187,6 +211,17 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       captor.scale.set(QTE_W, QTE_H, 1);
       hostage.position.set(qte.anchor.x + HOSTAGE_DX, qte.anchor.y + HOSTAGE_DY, HOSTAGE_Z);
       hostage.scale.set(HOSTAGE_W, HOSTAGE_H, 1);
+      // Captor-HP pips: a static row centred above his head (he never moves), so
+      // they are placed ONCE like the captor/hostage. Only their visibility (how
+      // many are lit) changes per frame as `captorHp` chips down.
+      for (let i = 0; i < CAPTOR_HP_PIPS; i++) {
+        const pip = pipRefs.current[i];
+        if (pip === null || pip === undefined) continue;
+        const spread = (i - (CAPTOR_HP_PIPS - 1) / 2) * PIP_GAP;
+        pip.position.set(qte.anchor.x + spread, qte.anchor.y + PIP_DY, PIP_Z);
+        pip.scale.set(PIP_SIZE, PIP_SIZE, 1);
+        (pip.material as MeshBasicMaterial).color.set(PIP_COLOUR);
+      }
       positionedRef.current = true;
     }
 
@@ -257,11 +292,29 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         qte.anchor.y + qte.targetOffset.y,
         CUE_Z,
       );
-      const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity);
+      // Colour = the anatomy zone under the ring (spatial-colour model); the paired
+      // emphasis is the NON-colour a11y channel — vital reads bright/large, off
+      // dim/thin — so the payoff/wasted read survives without hue. `cue.intensity`
+      // still carries the two-beat wind-up→open peek FORM on top of it.
+      const emphasis = ringZoneEmphasis(qte.ringZone);
+      const r = CUE_RADIUS * (0.55 + 0.75 * cue.intensity) * (0.7 + 0.3 * emphasis);
       peekCue.scale.set(r, r, 1);
       const cueMat = peekCue.material as MeshBasicMaterial;
-      cueMat.color.set(cue.color);
-      cueMat.opacity = Math.min(CUE_OPACITY_MAX, 0.15 + 0.3 * cue.intensity);
+      cueMat.color.set(ringZoneColour(qte.ringZone));
+      cueMat.opacity = Math.min(
+        CUE_OPACITY_MAX,
+        (0.15 + 0.3 * cue.intensity) * (0.4 + 0.6 * emphasis),
+      );
+    }
+
+    // ── Captor HP pips (diegetic, no HUD bar) ─────────────────────────────────
+    // Light one pip per remaining HP; they deplete as the captor is chipped. Only
+    // during ACTIVE — on WON he is dead (HP 0) / the verdict reads, on LOST the
+    // execution reads — so no HP row lingers over a result hold.
+    for (let i = 0; i < CAPTOR_HP_PIPS; i++) {
+      const pip = pipRefs.current[i];
+      if (pip === null || pip === undefined) continue;
+      pip.visible = qte.phase === "ACTIVE" && captorHpPipLit(i, qte.captorHp);
     }
   });
 
@@ -283,6 +336,21 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
         <ringGeometry args={[CUE_RING_INNER, CUE_RING_OUTER, CUE_RING_SEGMENTS]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
+      {/* Diegetic captor-HP pips (renderOrder 8, over the tableau). One per HP
+          point; they deplete as `qte.captorHp` chips down. No HUD bar (U-1). */}
+      {Array.from({ length: CAPTOR_HP_PIPS }, (_, i) => (
+        <mesh
+          key={i}
+          ref={(m): void => {
+            pipRefs.current[i] = m;
+          }}
+          renderOrder={8}
+          visible={false}
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial transparent depthWrite={false} />
+        </mesh>
+      ))}
     </>
   );
 }

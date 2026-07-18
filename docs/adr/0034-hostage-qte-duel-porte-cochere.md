@@ -1,7 +1,8 @@
 # 0034 — Hostage QTE rework: "Le duel de la porte cochère" (living tableau + shot rules)
 
 - **Status:** Accepted (amended 2026-07-18 — D1 reversed, see Revision 2; further amended
-  2026-07-18 — wandering peek target + seeded-pure-PRNG precedent, see Revision 3)
+  2026-07-18 — wandering peek target + seeded-pure-PRNG precedent, see Revision 3; further
+  amended 2026-07-18 — graded captor HP + spatial-colour reticle, see Revision 4)
 - **Date:** 2026-07-17
 - **Partially supersedes:** [ADR-0030](./0030-hostage-taker-feature-and-sprite.md) — the
   **static frozen tableau**, the **`windowSeconds` clock**, and the **`PART_DAMAGE`
@@ -355,3 +356,159 @@ blownPeeks`) and the peek-elapsed time (`t = peekDurationSeconds − stanceRemai
   pure function of accumulated, already-deterministic sim state — rather than a stepped
   generator. A deviation from this shape is an architecture question to raise before
   shipping, not a call to make silently in a dev lane.
+
+## Revision 4 — 2026-07-18: graded captor HP + spatial-colour reticle
+
+Bertrand made two further product calls on the accepted wandering-target duel (PR #79),
+confirmed and reframed in a single design pass: _"PV + chip couleur"_ — the captor gets an
+HP bar and a head hit no longer instantly wins, it chips HP by a colour read on the ring —
+and, once the colour mechanism was drafted, a reframe of what the colour MEANS: _"Rouge = le
+rond n'est pas sur le preneur (sur du vide). Jaune = le rond est sur une partie non létale
+(bras, jambe…). Vert = le rond est sur une zone létale (torse, visage). Plus d'ampleur dans
+le mouvement."_ An interim design draft had the colour cycle rouge→jaune→vert over
+peek-elapsed TIME (a `cyclePhase(t)`/`ringPhase` ramp); Bertrand's anatomy reframe
+**superseded and withdrew it before any code landed** (`git`-clean `src/` never carried
+`ringPhase`/`cyclePhase`/`RingColour`) — it is recorded here only so a reader of the story
+shard's superseded draft isn't misled; **the shipped model is SPATIAL**, below. Design source
+[`spec-hostage-qte-static-duel.md`](../game-design/spec-hostage-qte-static-duel.md) §9
+(HP/loss/energy, carried forward) and §10 (the spatial colour reframe, `game-designer`
+values in the story shard's §19), gated **PASS-WITH-CORRECTIONS** by `lead-game-designer`
+(Karim, gate verdict in the story shard's §20 — corrections K-2/K-5, conditions K-1/K-3/K-4).
+The frozen code contract is `senior-architect`'s story shard §18,
+`docs/handoffs/story-hostage-qte-duel.md`.
+
+### D4 reversed again — the captor has graded HP; the head kill-band is retired
+
+**D4** ("head-during-peek is the sole kill route, no captor HP") **is REVERSED**: the captor
+gets `captorHp` (Belliard default **3**, `QteSpec`/`HostageQte`, integer ≥ 1). A head hit no
+longer wins outright — it chips HP, and depleting it is what wins.
+
+The dedicated `"head"` kill-band **leaves `QteZone`** — `QteZone` is now `"body" | "hostage" |
+"miss"` only. Captor damage no longer flows through a position-classified band at all; it
+flows through a separate ring-hit test (below). A `QteZone` member that could no longer kill
+would have been a footgun left in the contract, so it is retired rather than kept inert.
+
+### Spatial colour — the ring's colour is WHAT ANATOMY it sits over, not WHEN in the peek
+
+The wandering reticle ring (Revision 3) now carries a **colour that is a pure function of its
+own CENTRE POSITION** against a static anatomy map of the captor: a new `RingZone = "vital" |
+"limb" | "off"`, returned by `ringZoneAt(centre)` (precedence vital > limb > off). The game
+layer names only the anatomy zone; the render layer maps it to the diegetic colour — `vital`
+→ vert, `limb` → jaune, `off` → rouge — so the game never imports a colour and the render
+never imports the anatomy bands.
+
+A shot that **hits the ring** (within `RING_HIT_RADIUS` — Belliard 0.30 — of the ring centre,
+and only while `stance === "PEEKING"`) chips captor HP by that zone's damage: **vital −2**
+(`CAPTOR_DAMAGE_VITAL`), **limb −1** (`CAPTOR_DAMAGE_LIMB`), **off 0** (a wasted shot — the
+peek still closes and still ticks the loss clock). Depleting `captorHp` to ≤ 0 → `WON`,
+paying `QTE_RESCUE_REFILL` (+40) on the depleting shot. A shot that does **not** hit the ring
+falls through to `qteZoneAt` (now body/hostage/miss only) for the unchanged energy
+penalties — **hostage hit stays a flat −30 `QTE_HOSTAGE_HIT`** (still not a death route),
+body −5, miss 0.
+
+Because the ring's position is itself the seeded wander's pure function of peek-elapsed `t`
+(Revision 3), the colour is transitively a deterministic function of `t` too — but it is
+_expressed_ as position, not time: no temporal seed, no cycle period, no `ringPhase`, no
+per-tick stepped state. This joins the wander under Revision 3's seeded/deterministic-pure-fn
+precedent rather than opening a second one. **Colour-honesty (drawn colour == scored
+colour):** the runtime STORES the derived `HostageQte.ringZone` (computed each tick from the
+same last-drawn `targetOffset`, exactly as `targetOffset` itself is stored) and a `fire`
+scores against that **last-drawn** value — the player is judged on the colour the ring showed
+when they fired, the same aim-honesty discipline Revision 3 established for position.
+
+### Loss route unchanged — "blown peek" re-keyed, not replaced
+
+The **sole `LOST` route stays the execution-after-`maxBlownPeeks`-blown-peeks clock**
+(Revision 2) — no door, no second condition. Its trigger event is re-keyed because a headshot
+no longer instantly wins: a **blown peek** is now **"a `PEEKING` exposure that CLOSES with
+`captorHp > 0`"** (previously "closed without a headshot" — obsolete once headshots chip
+rather than win). `QTE_UNANSWERED_PEEK` (−8) still does double duty on that same close: it
+drains energy **and** increments `blownPeeks`, charged once per closed exposure, never per
+tick. The deterministic tie-break is preserved: `fire` resolves before the loss check, so a
+same-tick **depleting** ring hit beats a same-tick fatal blown peek → `WON`; a same-tick
+**chipping-only** ring hit does not save the run — the loop still reaches the fatal close →
+`LOST`.
+
+### Wander widened, G6 clamp reshaped from a Y-floor to X-disjoint
+
+The roam box grows **~5.7×** ("plus d'ampleur") to span the captor's exposed silhouette plus
+surrounding air — Belliard `dx [−1.20, −0.45]` / `dy [−0.50, +1.10]` (was Revision 3's `dx
+[−0.95, −0.35]` / `dy [+0.60, +0.95]`) — so red/yellow/green all occur as the ring moves. Zone
+size and peak wander speed are unchanged (difficulty from tracking + reading anatomy, not
+shrink or extra speed).
+
+Revision 3's `clampTargetOffsetG6` was a **Y-floor** (head band bottom kept above the hostage
+top), which was correct for a head-only band stacked vertically above the hostage but is
+**wrong** for a roam that now includes a LOW `limb` (leg) zone — a Y-floor would flatten the
+entire lower half of the intended roam and delete the zone Bertrand's anatomy model requires.
+The clamp is **reshaped to X-disjoint**: keep the ring circle entirely LEFT of the hostage
+(she is the front-right shield; the captor's exposed anatomy is his left side) —
+
+```
+clampTargetOffsetG6(offset).x = min(offset.x, HOSTAGE_DX_MIN − RING_HIT_RADIUS − G6_MARGIN)
+clampTargetOffsetG6(offset).y = offset.y   // untouched — the low leg survives
+```
+
+A circle whose rightmost point never crosses `x = HOSTAGE_DX_MIN − G6_MARGIN` is disjoint
+from the hostage band for **any** `dy` — X-separation alone is sufficient, independent of
+height. With Belliard's values (`HOSTAGE_DX_MIN 0.0`, `RING_HIT_RADIUS 0.30`, `G6_MARGIN
+0.10`) the ceiling is `−0.40`; the authored roam's right edge (`−0.45`) already sits inside
+it, so the clamp is an **asserted safety net**, not an active distorter of the authored box.
+No bavure is ever required to reach a vital or limb zone. (The Revision 3 Y-floor fallback —
+drop the leg, arm-only `limb`, raise the roam to `dy ≥ 0.55` — was recorded as the safe degrade
+if the X-clamp were rejected; it was **not** taken, since it deletes an anatomy zone the
+product call requires.)
+
+### Captor-HP read stays diegetic — a HUD bar is out of scope for this amendment
+
+Re-introducing captor HP does **not** reverse Revision 2's **U-1** ("no captor-HP HUD
+element" — `HudHostageQte` stays `{ phase, warning }`). The default, gate-confirmed read
+(design-gate correction **K-4**) is **diegetic pips** near the tableau, in-world, not a HUD
+bar; `ux-designer` rules the exact form. If a HUD element is ever approved later, that is a
+fresh reversal of U-1 to be logged separately before either lane builds it — not implied by
+this amendment.
+
+### Contract delta
+
+- **`QteSpec`** — gains `readonly captorHp: number` (integer ≥ 1, asserted, per-level).
+  Anatomy bands, per-zone damage, and `RING_HIT_RADIUS` are Belliard-first **system
+  constants** in `qteSystem.ts`, not `QteSpec` fields (same F3-promotion seam as the wander
+  amplitude). Everything else on `QteSpec` unchanged.
+- **`HostageQte` runtime** — gains `readonly captorHp: number` (current HP, seeded from
+  `spec.captorHp`, decremented by ring-hit chips, never below 0) and `readonly ringZone:
+RingZone` (derived cache, computed each ACTIVE tick as `ringZoneAt(targetOffset)` from the
+  same last-drawn offset; rests at `ringZoneAt(HEAD_NEUTRAL)` while `COVERED`/`ZOOMING`).
+  Everything else (`targetOffset`, `targetSeed`, `blownPeeks`, `maxBlownPeeks`, `stance`,
+  `telegraphActive`, `stanceRemaining`, static `anchor`, `zoomRemaining`/`zoomSeconds`,
+  `resultRemaining`, `warning`) unchanged.
+- **`QteZone`** loses `"head"` → `"body" | "hostage" | "miss"`. `qteZoneAt` now classifies the
+  energy layer only; the ring-hit test (`RING_HIT_RADIUS` around `targetOffset`, PEEKING-gated)
+  is a separate check in `tickQte`, resolved before the `qteZoneAt` fallback.
+- New pure functions in `qteSystem.ts`: `ringZoneAt(centre: Vec2): RingZone` and
+  `colourDamage(zone: RingZone): number` (vital/limb/off → damage; off implicit 0).
+- Energy ledger, `maxBlownPeeks`/blown-peeks mechanics, the WON/LOST → DONE hold, and the
+  static camera/anchor (Revision 2) are unchanged by this amendment.
+
+Full frozen delta (types, `qteSystem.ts`, render) lives in `senior-architect`'s story shard
+§18, `docs/handoffs/story-hostage-qte-duel.md` — this ADR section is the decision record, not
+the code contract.
+
+### Open pre-ship conditions (design-gate §20, tracked here for traceability)
+
+Two conditions the design gate left open, not resolved by this amendment:
+
+- **K-1 — wide-box on-frame framing.** The ~5.7× roam reaches ring extents beyond the
+  previously-proven-safe occupancy; on-frame framing at the QTE zoom is unverified pending the
+  built box. Composite gate + stage-5 `verify` must confirm the ring stays framed and
+  trackable on both device classes before ship. Defined fallback if it clips: tighten
+  `WANDER_AMP_Y → 0.65` and/or `WANDER_AMP_X → 0.325` — a constant-value tweak that never
+  touches the G6 X-clamp above.
+- **K-5 — pin the Belliard `targetSeed` and guarantee a per-peek on-captor window.** The
+  balance claim ("floor path wins with an opening to spare") assumes every one of the
+  `maxBlownPeeks` openings presents a landable vital-or-limb window, but the wander only
+  visits a handful of hash-derived waypoints per peek and vital∪limb is a minority of the
+  roam. Before this is verifiably fair on level 1: (a) the Belliard `targetSeed` value must be
+  pinned (left unspecified as of this amendment), and (b) either a structural assert (≥ 1
+  waypoint per peek lands inside vital∪limb) or an empirical `verify`-playtest confirmation
+  with the pinned seed must close the gap. Tracked as a stage-5 pre-ship item, not a merge
+  blocker for the contract itself.

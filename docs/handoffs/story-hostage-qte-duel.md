@@ -1951,3 +1951,54 @@ leg + vertical ampleur AND shifts LIMB ~28 % → ~18 %, which changes the floor 
 - Stage-5 design acceptance re-verdicts Sacha's `verify` playtest vs AC12′–AC17′ (+ inherited
   AC1–AC11, AC15/16) post-BUILD — the AC17′ approachability claim, the AC14′ G6/no-bavure
   sweep, and the K-1 framing check are the load-bearing checks.
+
+## 21. DOCS — tech-writer (Otis) — 2026-07-18
+
+- claim: record the SPATIAL-colour model (`senior-architect`'s §18 frozen contract + X-disjoint
+  G6 clamp ruling, `game-designer`'s §19 values, `lead-game-designer`'s §20
+  PASS-WITH-CORRECTIONS) as ADR-0034 **Revision 4**, and clean up a doc-lane artifact flagged
+  by `game-designer`. Not a gate — doc realignment, traced to §18/§19/§20.
+- release:
+  - **ADR-0034 amended** — new **"Revision 4 — 2026-07-18: graded captor HP +
+    spatial-colour reticle"** section in
+    `docs/adr/0034-hostage-qte-duel-porte-cochere.md`, recording: D4 reversed AGAIN (the
+    captor gets graded `captorHp`, Belliard 3; the `"head"` kill-band retires from `QteZone`
+    → `"body" | "hostage" | "miss"`); the spatial colour model (`RingZone =
+"vital"|"limb"|"off"` as a pure function of the ring's CENTRE POSITION via `ringZoneAt`,
+    not time — joining Revision 3's seeded/deterministic-pure-fn precedent; a ring hit within
+    `RING_HIT_RADIUS` during PEEKING chips HP by zone — vital −2 / limb −1 / off 0 — depleting
+    → WON; a miss-the-ring shot falls to `qteZoneAt`, hostage −30 kept; colour-honesty via the
+    stored last-drawn `HostageQte.ringZone`, same discipline as `targetOffset`'s aim-honesty);
+    the loss route UNCHANGED (`blownPeeks >= maxBlownPeeks` execution stays sole `LOST`,
+    "blown peek" re-keyed to "closes with `captorHp > 0`", `QTE_UNANSWERED_PEEK` −8 still
+    doing double duty); the wander widened ~5.7× (roam `dx [−1.20,−0.45]` / `dy
+[−0.50,+1.10]`) with the G6 clamp **reshaped from Revision 3's Y-floor to X-disjoint**
+    (`clampTargetOffsetG6`: `offset.x ≤ HOSTAGE_DX_MIN − RING_HIT_RADIUS − G6_MARGIN`, `y`
+    untouched — the Y-floor would have flattened the low leg zone the anatomy model needs);
+    the captor-HP read staying **diegetic pips, no HUD bar** (K-4, holds Revision 2's U-1);
+    and the two open pre-ship conditions **K-1** (wide-box on-frame framing at the composite
+    gate/stage-5, fallback `WANDER_AMP_Y → 0.65` / `WANDER_AMP_X → 0.325`, G6 X-pin untouched)
+    and **K-5** (pin the Belliard `targetSeed` + assert/verify ≥ 1 on-captor decelerating
+    window per peek). One traceability sentence notes an interim TEMPORAL colour-ramp draft
+    (`cyclePhase(t)`/`ringPhase`) was superseded and withdrawn **before any code landed** —
+    explicitly NOT presented as shipped; the shipped/recorded model is spatial only, matching
+    `git`-clean `src/` (no `ringPhase`/`cyclePhase`/`RingColour` ever committed). Status line
+    updated to note Revision 4 (no other Status-line change) — no ADR number reallocated, a
+    further dated amendment per the story's own §18 "ADR impact" note (`producer` not asked
+    for a standalone superseder number this pass).
+  - **Registry regenerated**: `node scripts/gen-adr-index.mjs --write` then `--check` — fresh
+    (41 ADR; ADR-0034's registry row still reads `Accepted (amended)`, unaffected by the added
+    Revision-4 clause in the Status line).
+  - **Spec artifact removed** — `docs/game-design/spec-hostage-qte-static-duel.md` had a
+    stray malformed `</content>` / `</invoke>` tool-call-wrapper leak at true EOF (after §10.H,
+    following the section's trailing `---` separator — a leftover from a prior Write, not
+    real content). Confirmed via grep it was the sole occurrence in the file and that the
+    document's `---` separator convention (11 uses, one per section) made the preceding `---`
+    itself legitimate house style, not part of the artifact. Removed only the two stray tag
+    lines; the `---` separator and all real content (§10.H's flags list) untouched.
+- verify: `npx --yes prettier@3.8.2 --check` on every markdown file touched (this shard, the
+  ADR, the spec) — clean (see below). No code or tuning numbers touched; no game/render source
+  edited this pass (the artifact removed was in a design-spec markdown file, not source).
+- VERDICT: not a gate — doc realignment, traced to §18 (contract + X-disjoint clamp ruling),
+  §19 (values), §20 (PASS-WITH-CORRECTIONS, K-1/K-4/K-5), and the `game-designer`-flagged EOF
+  artifact.

@@ -1,4 +1,4 @@
-import type { HostageQte, QteSpec, QteZone, CaptorStance } from "@game/types/hostageQte";
+import type { HostageQte, QteSpec, QteZone, RingZone, CaptorStance } from "@game/types/hostageQte";
 import type { Vec2 } from "@game/types/vector";
 
 // Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034 after playtest).
@@ -46,6 +46,26 @@ export const QTE_PANIC_SHOT = -6;
 /** A captor-body hit (any time) — reckless spray bleeds you. Per body-zone hit. */
 export const QTE_BODY_HIT = -5;
 
+// --- Spatial-colour ring model (spatial-colour revision of ADR-0034) -------------
+// A shot that HITS the wandering reticle ring (within RING_HIT_RADIUS of its centre)
+// during a PEEKING exposure chips the captor's HP by the ring's anatomy zone
+// (`ringZoneAt`): a VITAL centre chips the most (drawn GREEN), a LIMB chips less
+// (YELLOW), an OFF centre does nothing (RED). Depleting the HP wins the rescue. The
+// GAME owns the semantic zone + the damage; the render lane maps the zone to a colour.
+/** Ring-hit tolerance: an impact within this world-radius of the ring centre is a hit. */
+export const RING_HIT_RADIUS = 0.3;
+/** VITAL ring hit (head/torso, GREEN) — the heaviest chip. */
+export const CAPTOR_DAMAGE_VITAL = 2;
+/** LIMB ring hit (arm/leg, YELLOW) — the lighter chip. */
+export const CAPTOR_DAMAGE_LIMB = 1;
+
+/** The HP a ring hit chips for a given anatomy zone (`off` → 0, no chip). */
+export function colourDamage(zone: RingZone): number {
+  if (zone === "vital") return CAPTOR_DAMAGE_VITAL;
+  if (zone === "limb") return CAPTOR_DAMAGE_LIMB;
+  return 0;
+}
+
 // --- Shot classifier bands (anchor-relative world offsets, y up) -----------------
 // Traced against the tableau the render lane draws: the captor ≈1.9 u tall on a 2.0
 // plane centred on the (static) anchor, using the kneeling hostage held front-right as
@@ -59,39 +79,40 @@ export const HOSTAGE_DX_MIN = 0.0;
 export const HOSTAGE_DX_MAX = 0.75;
 export const HOSTAGE_DY_MIN = -1.05;
 export const HOSTAGE_DY_MAX = 0.15;
-// Peeking head kill-zone — a FIXED-SIZE box (half-extents below) that no longer sits at
-// absolute coords: during PEEKING it is centred on the live, wandering `targetOffset`
-// (see `wander`); during COVERED/ZOOMING it rests at `HEAD_NEUTRAL`. Difficulty comes from
-// the MOTION, not from shrinking the zone — the box keeps today's 0.5-wide, 0.5-tall size.
-export const HEAD_HALF_W = 0.25;
-export const HEAD_HALF_H = 0.25;
 /**
- * Resting centre of the head kill-zone (anchor-relative) — the centre of the game-designer
- * head-zone bounds box dx −0.70..−0.35 / dy +0.60..+0.85. `targetOffset` rests here while
- * COVERED/ZOOMING and wanders around it (± the amplitudes below) while PEEKING.
+ * Resting/centre of the wandering reticle ring (anchor-relative). `targetOffset` rests here
+ * while COVERED/ZOOMING (with `ringZone` forced `"off"`) and wanders around it (± the
+ * amplitudes below) while PEEKING. Replaces the retired head-band `HEAD_NEUTRAL` — the ring
+ * roams the captor's anatomy (`ringZoneAt`) rather than centring a fixed head kill-box.
  */
-export const HEAD_NEUTRAL: Vec2 = { x: -0.525, y: 0.725 };
+export const WANDER_CENTRE: Vec2 = { x: -0.825, y: 0.3 };
 /**
- * Half-extents of the wander amplitude box, anchored on `HEAD_NEUTRAL`. Reproduces the
- * game-designer bounds box exactly (−0.525 ± 0.175 = [−0.70, −0.35]; 0.725 ± 0.125 =
- * [0.60, 0.85]). SYSTEM constants — only the seed is authored (F3 may promote these).
+ * Half-extents of the wander amplitude box, anchored on `WANDER_CENTRE` (spatial-colour,
+ * WIDER roam so the ring visits arm/leg/torso). Reproduces the authored roam box
+ * (−0.825 ± 0.375 = [−1.20, −0.45]; 0.30 ± 0.80 = [−0.50, +1.10]). SYSTEM constants — only
+ * the seed is authored (F3 may promote these; K-1 fallback 0.325/0.65 if it clips at zoom).
  */
-export const WANDER_AMP_X = 0.175;
-export const WANDER_AMP_Y = 0.125;
+export const WANDER_AMP_X = 0.375;
+export const WANDER_AMP_Y = 0.8;
 /**
- * One wander leg (waypoint→waypoint) lasts this long. Chosen so a typical leg's peak speed
- * — smoothstep peaks at 1.5× the average mid-leg — lands near the game-designer feel target
- * of ≈ 1.2 world u/s: a representative ~0.28 u leg ⇒ 0.28 × 1.5 / 0.35 ≈ 1.2 u/s.
+ * One wander leg (waypoint→waypoint) lasts this long. Chosen with `MAX_LEG_DISPLACEMENT` so
+ * a capped leg's peak speed — smoothstep peaks at 1.5× the average mid-leg — lands near the
+ * game-designer feel target of ≈ 1.8 world u/s: 0.45 × 1.5 / 0.38 ≈ 1.78 u/s.
  */
-export const LEG_DURATION = 0.35;
+export const LEG_DURATION = 0.38;
 /**
- * Anti-jitter floor: consecutive waypoints are nudged at least this far apart, so the head
+ * Anti-jitter floor: consecutive waypoints are nudged at least this far apart, so the ring
  * never quivers in place (a degenerate near-zero leg reads as a stutter, not a peek).
  */
 export const MIN_LEG_DISPLACEMENT = 0.15;
 /**
- * G6 safety margin — the ASSERTED minimum vertical gap `clampTargetOffsetG6` forces between
- * the head band's bottom and the hostage band's top, for ANY x. Not trusted from tuning.
+ * Speed cap: a single leg is pulled in to at most this far, so the WIDER roam box can't spawn
+ * a corner-to-corner "teleport-fast" leg. Bounds the peak wander speed (see `LEG_DURATION`).
+ */
+export const MAX_LEG_DISPLACEMENT = 0.45;
+/**
+ * G6 safety margin — the ASSERTED minimum horizontal gap `clampTargetOffsetG6` forces between
+ * the ring's right edge and the hostage band's left edge, for ANY dy. Not trusted from tuning.
  */
 export const G6_MARGIN = 0.1;
 // Captor body silhouette (the covered mass; kill-safe by itself).
@@ -99,6 +120,24 @@ export const BODY_DX_MIN = -0.85;
 export const BODY_DX_MAX = 0.85;
 export const BODY_DY_MIN = -1.0;
 export const BODY_DY_MAX = 0.95;
+
+// --- Captor anatomy bands for the ring centre (spatial-colour, anchor-relative) --------
+// The wandering ring centre is classified against the captor's anatomy: VITAL (head/torso),
+// LIMB (arm OR leg), else OFF. VITAL takes precedence over LIMB where the bands abut. These
+// live left of the hostage silhouette (all dx ≤ −0.45 < HOSTAGE_DX_MIN) so the on-captor
+// zones and the bavure band never share space.
+export const VITAL_DX_MIN = -0.8;
+export const VITAL_DX_MAX = -0.45;
+export const VITAL_DY_MIN = 0.05;
+export const VITAL_DY_MAX = 0.9;
+export const ARM_DX_MIN = -1.2;
+export const ARM_DX_MAX = -0.8;
+export const ARM_DY_MIN = 0.25;
+export const ARM_DY_MAX = 0.65;
+export const LEG_DX_MIN = -0.8;
+export const LEG_DX_MAX = -0.45;
+export const LEG_DY_MIN = -0.45;
+export const LEG_DY_MAX = 0.05;
 
 function inBand(
   dx: number,
@@ -112,29 +151,30 @@ function inBand(
 }
 
 /**
- * Which zone a shot at anchor-relative offset (dx, dy) strikes — STANCE-AWARE
- * (ADR-0034 D4/D6). `"head"` is the fixed-size box (HEAD_HALF_W/H) centred on the live
- * `targetOffset` and is returned ONLY while `PEEKING`, so head-during-peek is the sole kill
- * route by construction; during `COVERED` the head region yields `"body"` or `"miss"` (no
- * kill zone). `hostage`/`body`/`miss` stay ANCHOR-relative — `targetOffset` moves only the
- * head band. The hostage silhouette takes precedence, and the G6 clamp keeps the head band
- * spatially disjoint from the hostage band with a non-zero gap for any offset.
+ * Which anatomy zone the wandering RING CENTRE (anchor-relative offset) sits over
+ * (spatial-colour model). Precedence VITAL > LIMB > OFF: a VITAL centre chips the most HP,
+ * a LIMB (arm OR leg) chips less, an OFF centre chips nothing. Pure geometry — no stance,
+ * no HP; the tick reads the LAST-DRAWN cache `qte.ringZone` (colour-honesty) for scoring.
  */
-export function qteZoneAt(
-  dx: number,
-  dy: number,
-  stance: CaptorStance,
-  targetOffset: Vec2,
-): QteZone {
+export function ringZoneAt(offset: Vec2): RingZone {
+  const { x, y } = offset;
+  if (inBand(x, y, VITAL_DX_MIN, VITAL_DX_MAX, VITAL_DY_MIN, VITAL_DY_MAX)) return "vital";
+  const arm = inBand(x, y, ARM_DX_MIN, ARM_DX_MAX, ARM_DY_MIN, ARM_DY_MAX);
+  const leg = inBand(x, y, LEG_DX_MIN, LEG_DX_MAX, LEG_DY_MIN, LEG_DY_MAX);
+  if (arm || leg) return "limb";
+  return "off";
+}
+
+/**
+ * Which zone a shot at anchor-relative offset (dx, dy) strikes AFTER it has already MISSED
+ * the reticle ring (spatial-colour revision retires the head band — captor damage flows
+ * through the ring, `ringZoneAt`). The hostage silhouette takes precedence (a bavure), then
+ * the captor body (a small energy bleed), else empty space (`miss`). Anchor-relative and
+ * stance-free: this only classifies the off-ring backdrop.
+ */
+export function qteZoneAt(dx: number, dy: number): QteZone {
   if (inBand(dx, dy, HOSTAGE_DX_MIN, HOSTAGE_DX_MAX, HOSTAGE_DY_MIN, HOSTAGE_DY_MAX)) {
     return "hostage";
-  }
-  if (
-    stance === "PEEKING" &&
-    Math.abs(dx - targetOffset.x) <= HEAD_HALF_W &&
-    Math.abs(dy - targetOffset.y) <= HEAD_HALF_H
-  ) {
-    return "head";
   }
   if (inBand(dx, dy, BODY_DX_MIN, BODY_DX_MAX, BODY_DY_MIN, BODY_DY_MAX)) {
     return "body";
@@ -201,17 +241,29 @@ function antiJitter(raw: Vec2, prev: Vec2): Vec2 {
   };
 }
 
+/** Speed cap: pull `p` in along the leg toward `prev` so the step is at most
+ *  MAX_LEG_DISPLACEMENT. Both endpoints are in-box, so the interpolated point stays in-box
+ *  (convex). Applied AFTER anti-jitter, so the leg keeps MIN ≤ len ≤ MAX (MIN < MAX). */
+function capLeg(p: Vec2, prev: Vec2): Vec2 {
+  const dx = p.x - prev.x;
+  const dy = p.y - prev.y;
+  const d = Math.hypot(dx, dy);
+  if (d <= MAX_LEG_DISPLACEMENT) return p;
+  const s = MAX_LEG_DISPLACEMENT / d;
+  return { x: prev.x + dx * s, y: prev.y + dy * s };
+}
+
 /** Smoothstep 3u²−2u³ (zero velocity at u=0 and u=1 → the deceleration firing window). */
 function smoothstep(u: number): number {
   return u * u * (3 - 2 * u);
 }
 
 /**
- * The seeded head-wander offset (relative to HEAD_NEUTRAL) at peek-elapsed `t` seconds.
+ * The seeded ring-wander offset (relative to WANDER_CENTRE) at peek-elapsed `t` seconds.
  * PURE and closed-form in (targetSeed, peekIndex, t): waypoints are hashed, coupled only by
- * a bounded anti-jitter forward pass (a peek is a few legs, so `k` is tiny), and the eased
- * result is a convex blend of two in-box waypoints, so it stays within the amplitude box.
- * Framerate-independent: a function of `t` alone (re-chunking delta gives the same result).
+ * a bounded anti-jitter + speed-cap forward pass (a peek is a few legs, so `k` is tiny), and
+ * the eased result is a convex blend of two in-box waypoints, so it stays within the
+ * amplitude box. Framerate-independent: a function of `t` alone (re-chunking delta agrees).
  */
 export function wander(targetSeed: number, peekIndex: number, t: number): Vec2 {
   const leg = Math.max(0, t) / LEG_DURATION;
@@ -222,7 +274,7 @@ export function wander(targetSeed: number, peekIndex: number, t: number): Vec2 {
   let wpK = prev; // canonical waypoint[k]
   let wpK1 = prev; // canonical waypoint[k+1]
   for (let i = 1; i <= k + 1; i++) {
-    const next = antiJitter(rawWaypoint(targetSeed, peekIndex, i), prev);
+    const next = capLeg(antiJitter(rawWaypoint(targetSeed, peekIndex, i), prev), prev);
     if (i === k) wpK = next;
     if (i === k + 1) wpK1 = next;
     prev = next;
@@ -234,15 +286,17 @@ export function wander(targetSeed: number, peekIndex: number, t: number): Vec2 {
 }
 
 /**
- * G6 safety net — ASSERTED, never trusted from tuning. Force the head-zone centre high
- * enough that the head band's bottom (`centre.y − HEAD_HALF_H`) stays clear of the hostage
- * band's top (`HOSTAGE_DY_MAX`) by `G6_MARGIN`, for ANY x. Two rectangles disjoint on the Y
- * axis are disjoint everywhere, so the head kill-zone can never overlap the hostage band.
- * The x coordinate is untouched. Applied to EVERY computed `targetOffset`.
+ * G6 safety net — ASSERTED, never trusted from tuning (architect ruling: X-disjoint,
+ * replacing the old Y-floor). Force the ring centre far enough LEFT that the ring's right
+ * edge (`centre.x + RING_HIT_RADIUS`) stays clear of the hostage band's left edge
+ * (`HOSTAGE_DX_MIN`) by `G6_MARGIN`, for ANY y. Two shapes disjoint on the X axis are
+ * disjoint everywhere, so the ring circle can never intersect the hostage band — and the
+ * low leg (small y) survives untouched. The authored roam box (dx_max −0.45 ≤ this cap
+ * −0.40) already satisfies it; the clamp is the asserted floor. Applied to EVERY offset.
  */
 export function clampTargetOffsetG6(offset: Vec2): Vec2 {
-  const minY = HOSTAGE_DY_MAX + G6_MARGIN + HEAD_HALF_H;
-  return { x: offset.x, y: offset.y < minY ? minY : offset.y };
+  const maxX = HOSTAGE_DX_MIN - RING_HIT_RADIUS - G6_MARGIN;
+  return { x: offset.x > maxX ? maxX : offset.x, y: offset.y };
 }
 
 /** True while the QTE holds the scene frozen (ZOOMING…LOST); DONE/null resume the sim. */
@@ -289,6 +343,7 @@ export function createQte(spec: QteSpec): HostageQte {
     spec.peekDurationSeconds,
     spec.maxBlownPeeks,
     spec.targetSeed,
+    spec.captorHp,
   ];
   if (!numerics.every((n) => Number.isFinite(n))) {
     throw new Error(
@@ -300,6 +355,13 @@ export function createQte(spec: QteSpec): HostageQte {
   if (!Number.isInteger(spec.maxBlownPeeks) || spec.maxBlownPeeks < 1) {
     throw new Error(
       "QteSpec invariant: maxBlownPeeks must be an integer ≥ 1 — the failure clock must count",
+    );
+  }
+  // The captor's HP is the kill currency — it must be a whole, ≥ 1 count, or the rescue is
+  // either unwinnable or already won at seed time.
+  if (!Number.isInteger(spec.captorHp) || spec.captorHp < 1) {
+    throw new Error(
+      "QteSpec invariant: captorHp must be an integer ≥ 1 — the captor must have hit points to deplete",
     );
   }
   if (spec.peekCadenceSeconds <= TELEGRAPH_LEAD_SECONDS) {
@@ -315,14 +377,17 @@ export function createQte(spec: QteSpec): HostageQte {
     telegraphActive: false,
     stanceRemaining: spec.peekCadenceSeconds,
     anchor: spec.anchor,
-    // The head kill-zone rests at HEAD_NEUTRAL until the first PEEKING wander; the seed is
-    // mirrored onto the runtime so the tick can compute the pure wander offset.
-    targetOffset: HEAD_NEUTRAL,
+    // The ring rests at WANDER_CENTRE until the first PEEKING wander; the seed is mirrored
+    // onto the runtime so the tick can compute the pure wander offset.
+    targetOffset: WANDER_CENTRE,
     targetSeed: spec.targetSeed,
     blownPeeks: 0,
     maxBlownPeeks: spec.maxBlownPeeks,
     peekCadenceSeconds: spec.peekCadenceSeconds,
     peekDurationSeconds,
+    // The captor starts at full HP; the ring rests OFF (no chip) until the first peek.
+    captorHp: spec.captorHp,
+    ringZone: "off",
     zoomRemaining: spec.zoomSeconds,
     zoomSeconds: spec.zoomSeconds,
     resultRemaining: QTE_RESULT_HOLD,
@@ -347,15 +412,18 @@ const NO_DELTA = { energyDelta: 0 } as const;
  *
  * - ZOOMING: counts the zoom down; a `fire` this beat is a PANIC shot (energy −).
  *   When the zoom elapses → ACTIVE, COVERED, warning off.
- * - ACTIVE (ORDER MATTERS — deterministic tie-break, ADR-0034 gotcha): (1) resolve
- *   `fire` FIRST via the stance-aware classifier — a head-during-peek WINS; body /
- *   hostage bleed energy; miss does nothing. (2) If not won, advance the COVERED↔PEEKING
+ * - ACTIVE (ORDER MATTERS — deterministic tie-break, spatial-colour revision): (1) resolve
+ *   `fire` FIRST. A RING HIT (PEEKING and within RING_HIT_RADIUS of the drawn ring centre)
+ *   chips the captor by the LAST-DRAWN `ringZone` colour (`vital` 2 / `limb` 1 / `off` 0);
+ *   depleting HP → WON (+refill). A non-killing chip records HP, charges no energy, and falls
+ *   through. A shot that MISSES the ring is classified by `qteZoneAt` — hostage/body bleed
+ *   energy, miss nothing (no captor damage). (2) If not won, advance the COVERED↔PEEKING
  *   sub-machine over the FULL delta (a large delta may cross several segments), set the
- *   G4 tell, and charge the unanswered-peek drain ONCE per PEEKING→COVERED close crossed.
- *   Each such close also increments `blownPeeks`; reaching `maxBlownPeeks` executes the
- *   hostage → LOST (no extra charge, the cost was paid peek-by-peek) and HALTS the loop
- *   at the fatal close (a large delta must not overshoot past the execution). A same-tick
- *   winning headshot, resolved first, beats the fatal peek → WON.
+ *   G4 tell, and charge the unanswered-peek drain ONCE per PEEKING→COVERED close crossed
+ *   with `captorHp > 0`. Each such close also increments `blownPeeks`; reaching
+ *   `maxBlownPeeks` executes the hostage → LOST (no extra charge) and HALTS the loop at the
+ *   fatal close. Tie-break: a same-tick DEPLETING ring hit, resolved first, beats the fatal
+ *   peek → WON; a mere chip on that peek → LOST.
  * - WON/LOST: hold briefly, then DONE. DONE/default are no-ops.
  */
 export function tickQte(
@@ -389,27 +457,37 @@ export function tickQte(
     }
     case "ACTIVE": {
       let energyDelta = 0;
+      let captorHp = qte.captorHp;
 
-      // (1) Resolve the player's shot FIRST — a winning head-shot beats a same-tick
-      // fatal peek close (tie-break: the shot wins). Aim-honesty: the head band is centred
-      // on `qte.targetOffset` — the offset the render drew LAST frame — so the player shoots
-      // exactly what they saw. The anchor is static; only the head zone has moved.
+      // (1) Resolve the player's shot FIRST — a DEPLETING ring hit beats a same-tick fatal
+      // peek close (tie-break: the shot wins). Aim-honesty: the ring is centred on
+      // `qte.targetOffset` — the offset the render drew LAST frame — and scored against
+      // `qte.ringZone` — the colour drawn there (colour-honesty), so the player shoots
+      // exactly what they saw. The anchor is static; only the ring has moved.
       if (fire) {
-        const zone = qteZoneAt(
-          impactPoint.x - qte.anchor.x,
-          impactPoint.y - qte.anchor.y,
-          qte.stance,
-          qte.targetOffset,
-        );
-        if (zone === "head") {
-          return {
-            qte: { ...qte, phase: "WON" },
-            energyDelta: QTE_RESCUE_REFILL,
-          };
+        const ringCentreX = qte.anchor.x + qte.targetOffset.x;
+        const ringCentreY = qte.anchor.y + qte.targetOffset.y;
+        const isRingHit =
+          qte.stance === "PEEKING" &&
+          Math.hypot(impactPoint.x - ringCentreX, impactPoint.y - ringCentreY) <= RING_HIT_RADIUS;
+        if (isRingHit) {
+          // Colour-honest chip: the LAST-DRAWN zone's damage. `off` (red) chips 0 but still
+          // consumes the shot (no fall-through to the off-ring classifier).
+          captorHp = qte.captorHp - colourDamage(qte.ringZone);
+          if (captorHp <= 0) {
+            return {
+              qte: { ...qte, phase: "WON", captorHp: 0 },
+              energyDelta: QTE_RESCUE_REFILL,
+            };
+          }
+          // A non-killing chip: HP recorded, NO energy charged, fall through to the peek loop.
+        } else {
+          // The shot missed the ring → classify the backdrop it struck (no captor damage).
+          const zone = qteZoneAt(impactPoint.x - qte.anchor.x, impactPoint.y - qte.anchor.y);
+          if (zone === "body") energyDelta += QTE_BODY_HIT;
+          else if (zone === "hostage") energyDelta += QTE_HOSTAGE_HIT;
+          // "miss": nothing.
         }
-        if (zone === "body") energyDelta += QTE_BODY_HIT;
-        else if (zone === "hostage") energyDelta += QTE_HOSTAGE_HIT;
-        // "miss": nothing.
       }
 
       // (2) Tick the COVERED↔PEEKING sub-machine over the FULL delta (C1). A delta
@@ -432,32 +510,38 @@ export function tickQte(
           stance = "PEEKING";
           stanceRemaining = Math.max(qte.peekDurationSeconds, PEEK_EXPOSURE_FLOOR);
         } else {
-          // Close an exposure. A peek that CLOSES was by definition unanswered (a
-          // head hit during it would have WON), so charge the counter-fire ONCE and
-          // count the blown opening.
+          // Close an exposure. A "blown peek" = a PEEKING→COVERED close with the captor still
+          // alive (`captorHp > 0`): the opening went unanswered (a depleting ring hit would
+          // have WON and returned above), so charge the counter-fire ONCE and count the blown
+          // opening. A non-killing chip earlier this tick left captorHp > 0, so the chip does
+          // NOT spare the peek — it still blows.
           // C2: a body/hostage/miss shot fired during this closing peek is charged on
           // BOTH axes — the shot drain resolved above AND this close drain — by design
           // (reckless spray AND a non-answer to the opening; INTENDED, do not net).
           stance = "COVERED";
           stanceRemaining = qte.peekCadenceSeconds;
-          blownPeeks += 1;
-          energyDelta += QTE_UNANSWERED_PEEK;
-          // The blown-peeks clock reaching the cap = the captor executes the hostage.
-          // HALT at this fatal close (no extra energy charge, no overshoot past it).
-          if (blownPeeks >= qte.maxBlownPeeks) {
-            return {
-              qte: {
-                ...qte,
-                phase: "LOST",
-                stance,
-                stanceRemaining,
-                blownPeeks,
-                telegraphActive: false,
-                // The fatal close is a PEEKING→COVERED close → the head zone resets to rest.
-                targetOffset: HEAD_NEUTRAL,
-              },
-              energyDelta,
-            };
+          if (captorHp > 0) {
+            blownPeeks += 1;
+            energyDelta += QTE_UNANSWERED_PEEK;
+            // The blown-peeks clock reaching the cap = the captor executes the hostage.
+            // HALT at this fatal close (no extra energy charge, no overshoot past it).
+            if (blownPeeks >= qte.maxBlownPeeks) {
+              return {
+                qte: {
+                  ...qte,
+                  phase: "LOST",
+                  stance,
+                  stanceRemaining,
+                  blownPeeks,
+                  captorHp,
+                  telegraphActive: false,
+                  // The fatal close is a PEEKING→COVERED close → the ring resets to rest, OFF.
+                  targetOffset: WANDER_CENTRE,
+                  ringZone: "off",
+                },
+                energyDelta,
+              };
+            }
           }
         }
       }
@@ -468,25 +552,39 @@ export function tickQte(
       // The G4 tell shows in the last TELEGRAPH_LEAD_SECONDS of a COVERED beat.
       const telegraphActive = stance === "COVERED" && stanceRemaining <= TELEGRAPH_LEAD_SECONDS;
 
-      // (3) Compute the OUTGOING head-zone offset for the RESULTING stance. During PEEKING it
-      // wanders (seeded, pure) around HEAD_NEUTRAL as a function of the peek-elapsed time,
-      // G6-clamped clear of the hostage; during COVERED it rests at HEAD_NEUTRAL. `peekIndex`
-      // is the resulting `blownPeeks` (0-based peek ordinal — it increments only on close),
-      // and `t` is the peek-elapsed seconds (peekDuration − stanceRemaining, clamped ≥ 0).
+      // (3) Compute the OUTGOING ring offset + its cached `ringZone` for the RESULTING stance.
+      // During PEEKING the ring wanders (seeded, pure) around WANDER_CENTRE as a function of
+      // the peek-elapsed time, G6-clamped clear of the hostage, and `ringZone` is the anatomy
+      // under that centre (`ringZoneAt`); during COVERED/ZOOMING it rests at WANDER_CENTRE
+      // with `ringZone` forced OFF (no chip while covered). `peekIndex` is the resulting
+      // `blownPeeks` (0-based peek ordinal — it increments only on close), and `t` is the
+      // peek-elapsed seconds (peekDuration − stanceRemaining, clamped ≥ 0).
       let targetOffset: Vec2;
+      let ringZone: RingZone;
       if (stance === "PEEKING") {
         const t = Math.max(0, qte.peekDurationSeconds - stanceRemaining);
         const w = wander(qte.targetSeed, blownPeeks, t);
         targetOffset = clampTargetOffsetG6({
-          x: HEAD_NEUTRAL.x + w.x,
-          y: HEAD_NEUTRAL.y + w.y,
+          x: WANDER_CENTRE.x + w.x,
+          y: WANDER_CENTRE.y + w.y,
         });
+        ringZone = ringZoneAt(targetOffset);
       } else {
-        targetOffset = HEAD_NEUTRAL;
+        targetOffset = WANDER_CENTRE;
+        ringZone = "off";
       }
 
       return {
-        qte: { ...qte, stance, stanceRemaining, blownPeeks, telegraphActive, targetOffset },
+        qte: {
+          ...qte,
+          stance,
+          stanceRemaining,
+          blownPeeks,
+          captorHp,
+          telegraphActive,
+          targetOffset,
+          ringZone,
+        },
         energyDelta,
       };
     }

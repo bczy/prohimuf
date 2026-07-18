@@ -559,8 +559,11 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     anchor: { x: 0, y: 0 },
     maxBlownPeeks: 4,
     peekCadenceSeconds: 1.5,
-    peekDurationSeconds: 1.2,
-    targetSeed: 12345,
+    peekDurationSeconds: 1.5,
+    // Spatial-colour ring: 3 HP depleted by chipping the wandering ring. Pinned seed whose
+    // first peek opens on an on-captor (limb→vital) window, so firing at the live ring wins.
+    targetSeed: 20260718,
+    captorHp: 3,
   };
   function qteState(): GameState {
     return createInitialState(FACADE_01, {
@@ -605,22 +608,29 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     expect(s1.enemies).toBe(s0.enemies); // still frozen
   });
 
-  it("opens the duel after the zoom, then a head shot during a peek WINS (side objective)", () => {
+  it("opens the duel after the zoom, then depleting the captor's HP during peeks WINS", () => {
     let s = tick(qteState(), noFire, 0, 0, 0.1); // → ZOOMING
     s = tick(s, noFire, 0, 0, 2.0); // end the 2 s zoom → ACTIVE, COVERED
     expect(s.qte?.phase).toBe("ACTIVE");
     expect(s.qte?.stance).toBe("COVERED");
-    // Cross into a PEEKING exposure (cadence 1.5 s). The anchor is static, but the head
-    // kill-zone now WANDERS (seeded) around HEAD_NEUTRAL during the peek.
+    // Cross into a PEEKING exposure (cadence 1.5 s). The anchor is static, but the reticle
+    // ring now WANDERS (seeded) around WANDER_CENTRE across the captor's anatomy.
     s = tick(s, noFire, 0, 0, 1.5);
     expect(s.qte?.stance).toBe("PEEKING");
     expect(s.qte?.anchor).toEqual({ x: 0, y: 0 });
-    // Aim at the head zone the render drew LAST frame (anchor is origin ⇒ world == offset).
-    const target = s.qte?.targetOffset ?? { x: 0, y: 0 };
-    s = tick(s, fire, target.x, target.y, 0.1);
+    // Fire ONLY while PEEKING, aiming at the ring the render drew LAST frame (anchor origin ⇒
+    // world == offset). Each on-captor ring hit chips HP; a ring hit charges no energy, so
+    // energy stays 100 until the +40 rescue refill. The pinned seed's first peek opens on an
+    // on-captor window, so the 3 HP deplete before the peek closes.
+    const dt = 1 / 60;
+    for (let i = 0; i < 60 * 5 && s.qte?.phase === "ACTIVE"; i++) {
+      const off = s.qte.targetOffset;
+      const peeking = s.qte.stance === "PEEKING";
+      s = tick(s, peeking, off.x, off.y, dt);
+    }
     expect(s.qte?.phase).toBe("WON");
     expect(s.score).toBe(0); // energy is the sole QTE currency (G-1); score untouched
-    expect(s.energy).toBe(100); // +40 clamped at the 100 cap
+    expect(s.energy).toBe(100); // +40 rescue refill clamped at the 100 cap
     expect(s.kills).toBe(0); // rescue never advances the win quota
   });
 

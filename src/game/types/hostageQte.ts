@@ -33,12 +33,22 @@ export type QtePhase = "ZOOMING" | "ACTIVE" | "WON" | "LOST" | "DONE";
 export type CaptorStance = "COVERED" | "PEEKING";
 
 /**
- * What a QTE shot resolves to (ADR-0034 D4). `head` is returned ONLY while the
- * captor is `PEEKING` (the sole kill route) and is spatially disjoint from the
- * `hostage` band (G6). `body` is any captor-body hit (a small energy drain);
- * `hostage` is a bavure (heavy penalty); `miss` is empty space.
+ * What a shot that MISSES the reticle ring resolves to (ADR-0034, spatial-colour
+ * revision). Captor damage no longer flows through a head band — it flows through
+ * a ring hit (see `RingZone`), so `"head"` is retired. `body` is a captor-body hit
+ * off the ring (small energy drain); `hostage` is a bavure (heavy penalty); `miss`
+ * is empty space.
  */
-export type QteZone = "head" | "body" | "hostage" | "miss";
+export type QteZone = "body" | "hostage" | "miss";
+
+/**
+ * The captor anatomy under the wandering reticle ring's centre (spatial-colour
+ * model). `vital` = head/face + torso (a ring hit here chips the most HP → drawn
+ * GREEN); `limb` = arm/leg (chips less → YELLOW); `off` = the ring is over empty
+ * space, not the captor (a ring hit does 0 → RED). The GAME owns this semantic
+ * zone; the render lane maps it to a colour — the game never names a colour.
+ */
+export type RingZone = "vital" | "limb" | "off";
 
 /**
  * Authored per-level QTE data (`LevelConfig.hostageQte`). Deterministic, scripted
@@ -78,6 +88,14 @@ export interface QteSpec {
    * the others to additive fields later).
    */
   readonly targetSeed: number;
+  /**
+   * Captor hit points (spatial-colour revision — reverses ADR-0034 D4's binary
+   * duel). A shot that HITS the wandering ring chips this by the ring's zone-colour
+   * (`vital` big, `limb` small, `off` none); reaching 0 wins the rescue. Integer ≥ 1,
+   * asserted in `createQte`. Per-zone damage + the ring hit radius are system
+   * constants (`qteSystem.ts`); only the HP total is authored per level (F3 seam).
+   */
+  readonly captorHp: number;
 }
 
 /**
@@ -141,6 +159,20 @@ export interface HostageQte {
    * `COVERED → PEEKING` open.
    */
   readonly peekDurationSeconds: number;
+  /**
+   * Captor hit points remaining (starts = `spec.captorHp`, never < 0). A ring hit
+   * chips it by the ring's `ringZone` colour-damage; reaching 0 → WON. This is the
+   * kill currency (spatial-colour revision); the blown-peeks count is the LOSS clock.
+   */
+  readonly captorHp: number;
+  /**
+   * The captor anatomy under the ring centre right now — a DERIVED cache (like
+   * `targetOffset`), `= ringZoneAt(targetOffset)`, recomputed at each ACTIVE tick's
+   * end from the same last-drawn offset. The render maps it to the ring colour and
+   * the tick scores a ring hit against THIS value (colour-honesty: drawn colour ==
+   * scored colour == ring position). Rests at `"off"` during COVERED/ZOOMING.
+   */
+  readonly ringZone: RingZone;
   /** Seconds left of the zoom (zoomSeconds → 0 during ZOOMING). Drives the render lerp. */
   readonly zoomRemaining: number;
   readonly zoomSeconds: number;

@@ -1044,6 +1044,3 @@ RING_HIT_RADIUS` during PEEKING), resolved in `tickQte`.
     fallback). **This must be resolved before dev-gameplay implements the wander/clamp.**
 
 ---
-
-    </content>
-    </invoke>
