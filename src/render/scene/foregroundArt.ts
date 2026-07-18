@@ -621,6 +621,16 @@ export function drawForegroundIronwork(
  * de départ de la permutation et de repli. La liste complète des zones est passée
  * au tracé pour que la recherche « fenêtre du dessous » reste correcte.
  */
+/**
+ * Largeur de garde-corps tracée, en fraction de la largeur de zone (tronçons
+ * uniquement). Les zones calibrées à la main sur les tronçons encadrent
+ * l'ouverture AVEC son encadrement (~35-50 % plus large que le vitrage peint) :
+ * tracer la balustrade à pleine largeur de zone la faisait déborder sur le mur
+ * — surtout à droite avec le léger biais de calage (retour Bertrand). Resserrée
+ * autour du centre, elle retombe sur la baie peinte.
+ */
+const TRONCON_RAIL_W_SCALE = 0.74;
+
 export function drawForegroundIronworkPerBuilding(
   g: CanvasRenderingContext2D,
   zones: readonly IronZone[],
@@ -637,7 +647,9 @@ export function drawForegroundIronworkPerBuilding(
     const style = buildingIronStyle(levelStyle, tileIndex, building);
     for (const idx of indices) {
       const z = zones[idx];
-      if (z !== undefined) drawZone(g, z, idx, zones, texW, texH, style, sillOffset, lw, so);
+      if (z === undefined) continue;
+      const nz = { ...z, w: z.w * TRONCON_RAIL_W_SCALE };
+      drawZone(g, nz, idx, zones, texW, texH, style, sillOffset, lw, so);
     }
   });
 }
