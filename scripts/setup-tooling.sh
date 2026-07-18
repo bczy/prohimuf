@@ -24,6 +24,20 @@ cd "$(dirname "$0")/.." # repo root (this script lives in scripts/)
 say() { printf '\n▸ %s\n' "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 
+# Retry a network-flaky step: retry <attempts> <first-backoff-s> <cmd...>.
+# A transient download failure shouldn't leave a tool missing. Backoff doubles.
+retry() {
+  local attempts=$1 delay=$2 n=1
+  shift 2
+  until "$@"; do
+    [ "$n" -ge "$attempts" ] && return 1
+    warn "attempt $n/$attempts failed — retrying in ${delay}s"
+    sleep "$delay"
+    n=$((n + 1))
+    delay=$((delay * 2))
+  done
+}
+
 # cargo installs land in ~/.cargo/bin — make it reachable for this run.
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -34,8 +48,8 @@ elif ! command -v cargo >/dev/null 2>&1; then
   warn "cargo not found — install Rust (https://rustup.rs), then re-run for rtk"
 else
   say "installing rtk from source (pinned ${RTK_REV:0:12}, slow once)…"
-  cargo install --git "$RTK_GIT" --rev "$RTK_REV" \
-    || warn "rtk install failed; agents will fall back to yarn commands"
+  retry 3 10 cargo install --git "$RTK_GIT" --rev "$RTK_REV" \
+    || warn "rtk install failed after retries; agents will fall back to yarn commands"
 fi
 
 # --- codegraph — local code knowledge graph served over MCP (.mcp.json) ------
@@ -45,8 +59,8 @@ elif ! command -v npm >/dev/null 2>&1; then
   warn "npm not found — install Node.js, then re-run for codegraph"
 else
   say "installing codegraph ($CODEGRAPH_PKG)…"
-  npm install -g --ignore-scripts "$CODEGRAPH_PKG" \
-    || warn "codegraph install failed; agents will fall back to grep"
+  retry 3 10 npm install -g --ignore-scripts "$CODEGRAPH_PKG" \
+    || warn "codegraph install failed after retries; agents will fall back to grep"
 fi
 
 # --- codegraph index (.codegraph/ is gitignored, rebuilt per machine) --------
