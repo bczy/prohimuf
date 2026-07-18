@@ -112,12 +112,13 @@ jobs:
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
 
+      # Rebase-retry publish (see .github/actions/gh-pages-publish): overlays the
+      # build onto the gh-pages root, preserving the preview/ subfolders that
+      # branch deploys created, and re-clones + retries on a push race instead of
+      # failing the production deploy.
       - name: Publish to gh-pages (root)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: ./.github/actions/gh-pages-publish
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          publish_branch: gh-pages
-          # Keep the preview/ subfolders that branch deploys created.
-          keep_files: true
           commit_message: "deploy: main → / (${{ github.sha }})"
