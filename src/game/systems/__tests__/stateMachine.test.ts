@@ -800,6 +800,36 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
     expect(s.impactEvents).toEqual([]);
   });
 
+  it("GUARD: refuses a level authoring BOTH a hostage QTE and a boss QTE (no silent drop)", () => {
+    // REGRESSION (code-review panel, PR #112): the top-of-tick boss block can `return` early and
+    // freeze `elapsedSeconds`, so a co-authored hostage QTE (triggered off `elapsedSeconds`) would
+    // be SILENTLY dropped once the boss quota is met. The two cinematics do not interleave yet, so
+    // `createInitialState` fails LOUD at level load rather than lose the beat. Not reachable in V1
+    // (no shipped level co-authors them; the dev harness authors only the boss) — locked here.
+    const HOSTAGE_SPEC = {
+      triggerAtElapsedSeconds: 0,
+      zoomSeconds: 2,
+      anchor: { x: 0, y: 0 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      peekDurationSeconds: 1.5,
+      targetSeed: 20260718,
+      captorHp: 3,
+    };
+    const both: LevelParams = {
+      lives: 3,
+      timeSeconds: 90,
+      enemiesToWin: QUOTA,
+      enemySpeedMultiplier: 1,
+      hostageQte: HOSTAGE_SPEC,
+      bossQte: BOSS_SPEC,
+    };
+    expect(() => createInitialState(FACADE_01, both)).toThrow(/cannot author BOTH/);
+    // Each spec ALONE still loads fine (the guard fires only on the combination).
+    expect(() => createInitialState(FACADE_01, { ...both, bossQte: null })).not.toThrow();
+    expect(() => createInitialState(FACADE_01, { ...both, hostageQte: null })).not.toThrow();
+  });
+
   it("IDENTITY: a boss-less level is byte-for-byte unchanged — the quota still wins directly", () => {
     // The ADR-0051 D4 safety property: `bossQteSpec === null` (every shipped level) makes the
     // boss branch a strict no-op, so the existing `kills >= enemiesToWin → LEVEL_COMPLETE` path

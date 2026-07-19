@@ -986,3 +986,75 @@ to be 'PLAYING'`), GREEN with it. The existing IDENTITY test (boss-less level un
   - `src/game/systems/__tests__/stateMachine.test.ts` — +1 regression test.
 - handoff → `senior-architect` (Winston): re-triage on PR #112; the reviewer's repro is resolved,
   fix is game-lane-only, no boundary/dependency/ADR-contract change.
+
+## Code-review panel fixes (PR #112, stage 6) — dev-gameplay (Amelia) — 2026-07-19
+
+Two CONFIRMED MAJOR findings from the mandatory stage-6 code-review panel (verified live by the
+reviewer) on PR #112 (boss QTE, ADR-0051). Project law blocks the merge on any unresolved
+CONFIRMED blocking/major finding (COLLABORATION.md). Both fixed, surgically, in the game lane only.
+
+### Fix 1 (MAJOR) — `phaseBreakRemaining` never decremented tick-by-tick → brace pulse never played
+
+- finding: in `tickBossQte` (ACTIVE), only `stanceRemaining` counted down on a non-crossing tick;
+  `phaseBreakRemaining` was set to `PHASE_BREAK_SECONDS` (1.0) at trigger and only ever forced to 0
+  by a WHOLE-segment crossing in one tick. The real loop clamps delta to `MAX_DELTA` 0.1
+  (`useGameLoop`), so a 1.0 s break is never crossed whole in one tick — `phaseBreakRemaining`
+  stayed pinned at 1.0 across every real frame, then snapped to 0 the same frame `breakActive`
+  flips false. `BossQteSprite.tsx` (~L240) computes the brace dip as
+  `p = clamp01(1 − phaseBreakRemaining / PHASE_BREAK_SECONDS)`, so `p` stayed 0 the whole break and
+  the dip-and-rise never rendered. The old unit test masked it by ticking `delta =
+PHASE_BREAK_SECONDS` in one shot (unrepresentative of per-frame calls).
+- fix: `src/game/systems/bossQteSystem.ts`, non-crossing branch (was `if (!crossed) stanceRemaining
+-= remaining;`) now also counts the break down in lockstep with its SHIELDED hold:
+  `if (inBreakAtStart && phaseBreakRemaining > 0) phaseBreakRemaining = Math.max(0,
+phaseBreakRemaining − remaining);`. Gated on `inBreakAtStart` (already computed at the top of the
+  ACTIVE case) so the tick that TRIGGERS a break still reports the full `PHASE_BREAK_SECONDS` — only
+  a break already open at tick start decrements. No render/boundary change.
+- test: `src/game/systems/__tests__/bossQteSystem.test.ts` — new "counts phaseBreakRemaining DOWN
+  tick-by-tick under real clamped per-frame deltas": open a break (VITAL chip 17→15 crossing 16),
+  assert full duration on the trigger tick, then drive 0.1 s frames and assert `phaseBreakRemaining`
+  strictly decreases EVERY frame (no plateau) over >5 frames until it reaches exactly 0. Confirmed
+  RED without the fix (value pinned at 1.0). The existing "break ends into a fresh SHIELDED lull"
+  test (delta = `PHASE_BREAK_SECONDS` in one shot) and the "crossing forces a re-SHIELD break" test
+  (`toBeCloseTo(PHASE_BREAK_SECONDS)` on the trigger tick) both stay green — the `inBreakAtStart`
+  gate is exactly what preserves the trigger-tick value.
+
+### Fix 2 (MAJOR) — a co-authored boss + hostage QTE would silently drop the hostage QTE
+
+- finding: in `tickGameState`, the boss QTE block can `return` early with `elapsedSeconds` frozen,
+  and never checks for a pending/active hostage QTE. A level authoring BOTH `hostageQte` (trigger on
+  `elapsedSeconds`) and `bossQteSpec` (`enemiesToWin: 0`) triggers the boss at tick 0, then every
+  tick returns early with the clock frozen, so the hostage's temporal trigger never fires — the
+  hostage QTE is silently LOST for the rest of the level. Generalises beyond the extreme 0-quota
+  case: any level whose kill quota is met before the scripted hostage trigger drops it. NOT
+  reachable in V1 (no shipped level co-authors both; the dev harness authors only the boss) — a
+  latent footgun for a future story.
+- scope: per the review directive, NOT implementing full QTE interleaving (out of scope). Added a
+  minimal, surgical guard instead.
+- fix: `src/game/systems/stateMachine.ts`, `createInitialState` — if `params.hostageQte` and
+  `params.bossQte` are BOTH non-null, throw a clear error explaining the two cinematics do not
+  interleave yet (the boss freezes the clock the hostage trigger reads) and to split them across
+  levels / await the QTE-interleave follow-up story. Fails LOUD at level load, so a future level
+  author sees it immediately instead of a silent drop. The existing `?? null` on each spec is
+  hoisted into locals reused by the return (no behaviour change when only one spec is authored).
+- test: `src/game/systems/__tests__/stateMachine.test.ts` — new "GUARD: refuses a level authoring
+  BOTH a hostage QTE and a boss QTE": `createInitialState` with both specs throws `/cannot author
+BOTH/`; each spec alone still loads without throwing.
+
+### Verification
+
+- `yarn typecheck` — 0 errors.
+- `yarn test` — 816 passed (64 files), was 814 + 2 new. The IDENTITY test ("a boss-less level is
+  byte-for-byte unchanged") stays green.
+- `yarn lint` — 0 errors.
+
+### File List
+
+- `src/game/systems/bossQteSystem.ts` — Fix 1 (phase-break lockstep decrement).
+- `src/game/systems/stateMachine.ts` — Fix 2 (co-authored-QTE load-time guard).
+- `src/game/systems/__tests__/bossQteSystem.test.ts` — +1 regression test (Fix 1).
+- `src/game/systems/__tests__/stateMachine.test.ts` — +1 regression test (Fix 2).
+
+- handoff → `senior-architect` (Winston): re-triage both MAJOR findings on PR #112. Both fixes are
+  game-lane-only (no React/Three, no boundary/dependency/ADR-contract change); Fix 2 is a defensive
+  load-time guard, not the deferred interleaving work.
