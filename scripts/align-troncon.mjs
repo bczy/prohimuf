@@ -34,21 +34,31 @@
  * everything. It corrects two INDEPENDENT things, each only when it has a
  * confident basis to:
  *
- *   1. HEIGHT / VERTICAL SEATING (always corrected, the dominant reported bug):
- *      the committed troncon zone.h is (confirmed by overlay inspection) close
- *      to the RAW window-opening pixel height, i.e. never ran through the
- *      render-contract's FILL/ENEMY_PLANE_SCALE pre-shrink
+ *   1. HEIGHT / VERTICAL SEATING (corrected ONLY for zones that actually
+ *      overflow at baseline, the dominant reported bug): a minority of the
+ *      committed troncon zone.h values are (confirmed by overlay inspection)
+ *      close to the RAW window-opening pixel height, i.e. never ran through
+ *      the render-contract's FILL/ENEMY_PLANE_SCALE pre-shrink
  *      (`zonesFromOpenings` in align-windows.mjs). Rendered as-is, the sprite
  *      plane overshoots the sill by design amount minus that missing shrink —
- *      exactly "feet not seated". This harness treats the committed x/y/w as
- *      the trusted window-opening rectangle, empirically CALIBRATES the
- *      h→size / y→placement mapping off a live probe render (same technique
- *      as align-windows.mjs's `fixLevel`, not hand-derived constants — the
- *      render contract is verified against the ACTUAL render, never assumed),
- *      derives a FILL-scaled starting height, and iterates the same
- *      shrink-and-recentre correction `fixLevel` uses until every rendered
- *      slot's feet sit at/above the sill (OVERFLOW defect clear). Convergence
- *      gate = OVERFLOW only.
+ *      exactly "feet not seated". This harness first MEASURES the committed
+ *      zones as-is (identical technique to `--check`) to find which zones
+ *      actually overflow — every zone that DOESN'T is left byte-identical to
+ *      its committed value, never touched. (A prior version applied the FILL
+ *      rewrite to every zone unconditionally; that silently drifted
+ *      already-correct zones off their hand-placed position — invisible to
+ *      the OVERFLOW gate since the enemy still fit, but visibly mis-
+ *      registered the grille overlay drawn from the same zone.h/y. Regression
+ *      caught post-merge; fixed by gating the rewrite on the baseline
+ *      measurement.) For zones that DO overflow, this harness treats the
+ *      committed x/y/w as the trusted window-opening rectangle, empirically
+ *      CALIBRATES the h→size / y→placement mapping off a live probe render
+ *      (same technique as align-windows.mjs's `fixLevel`, not hand-derived
+ *      constants — the render contract is verified against the ACTUAL
+ *      render, never assumed), derives a FILL-scaled starting height, and
+ *      iterates the same shrink-and-recentre correction `fixLevel` uses until
+ *      every rendered slot's feet sit at/above the sill (OVERFLOW defect
+ *      clear). Convergence gate = OVERFLOW only.
  *   2. HORIZONTAL DRIFT / GRILLE FRAMING (best-effort, bounded): per tile, the
  *      edge-density detector above proposes real window openings. A committed
  *      zone's x/w is SNAPPED to the nearest detected opening only when it is
@@ -600,20 +610,78 @@ async function main() {
         `[align-troncon] calibrated a=${cal.a.toFixed(4)} b=${cal.b.toFixed(4)} (n=${String(n)} probe slots)`,
       );
 
+      // Baseline: measure the COMMITTED zones AS-IS (identical technique to
+      // --check) to find which zones ACTUALLY overflow today. Only THOSE get
+      // the FILL/calibration rewrite below — every other zone is left BYTE-
+      // IDENTICAL to its committed value. Regression found post-merge: this
+      // used to run the FILL formula unconditionally on every zone, silently
+      // drifting already-correct zones (e.g. troncon-a, 0 baseline OVERFLOW)
+      // away from their hand-placed h/y — invisible to the OVERFLOW gate
+      // (the enemy still fit), but visibly mis-registered the grille overlay
+      // `ForegroundFrames` draws from that SAME zone.h/y, on the "blue"
+      // building the report named.
+      const baselineApplied = [
+        committedZones["troncon-a"],
+        committedZones["troncon-c"],
+        committedZones["troncon-b"],
+        committedZones["troncon-c"],
+      ];
+      await applyAndRead(page, baselineApplied);
+      await sleep(300);
+      const baselineSlots = await readSlots(page);
+      const baselineOverflowByFile = {};
+      for (const file of files) {
+        const panels = panelsForFile(sequence, file);
+        baselineOverflowByFile[file] = new Set();
+        for (const p of panels) {
+          const zonesByPanel = [];
+          zonesByPanel[p] = committedZones[file];
+          const { defects, bySlot } = measure(
+            baselineSlots,
+            openings[file],
+            null,
+            null,
+            zonesByPanel,
+            [p],
+          );
+          const countDefect = defects.find((d) => d.includes("COUNT"));
+          if (countDefect) {
+            throw new Error(
+              `${file} panel ${String(p)}: ${countDefect} — baseline measurement returned an ` +
+                `unexpected slot count; refusing to proceed without a valid baseline`,
+            );
+          }
+          bySlot
+            .filter((bs) => bs.panel === p && !bs.contained)
+            .forEach((bs) => {
+              const idx = openings[file].indexOf(bs.opening);
+              if (idx >= 0) baselineOverflowByFile[file].add(idx);
+            });
+        }
+        console.log(
+          `[align-troncon] ${file}: ${baselineOverflowByFile[file].size}/${committedZones[file].length} ` +
+            `zone(s) need vertical correction (baseline OVERFLOW) — the rest stay untouched`,
+        );
+      }
+
       // WRITTEN x/w always come from the COMMITTED (hand-placed) zone, never
       // from the best-effort detection snap — the snap only feeds `openings[]`
       // (the sill-line target + the MISALIGN/WALL/COVER AUDIT below), never the
       // data this harness actually overwrites. Only h/y (the vertical seating,
-      // the confirmed and mechanically-understood bug) are corrected here; see
-      // the file header for why horizontal correction stays audit-only on this
-      // art. `o.y`/`o.h` are unaffected by the snap (only x/w are), so the sill
+      // the confirmed and mechanically-understood bug) are corrected here, and
+      // ONLY for zones flagged by the baseline measurement above; see the file
+      // header for why horizontal correction stays audit-only on this art.
+      // `o.y`/`o.h` are unaffected by the snap (only x/w are), so the sill
       // target itself is exactly the committed data either way.
       let zonesByFile = Object.fromEntries(
         files.map((file) => [
           file,
           openings[file].map((o, i) => {
-            const zh = (FILL * o.h) / cal.a;
             const committed = committedZones[file][i];
+            if (!baselineOverflowByFile[file].has(i)) {
+              return { x: committed.x, y: committed.y, w: committed.w, h: committed.h };
+            }
+            const zh = (FILL * o.h) / cal.a;
             return {
               x: committed.x,
               y: +(o.y - cal.b * zh).toFixed(4),

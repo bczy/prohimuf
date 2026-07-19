@@ -16,10 +16,19 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   tronçon PNGs' ink/wash art via a new additive `LEVEL_CFG.buildMask` hook, plus a
   namespaced-id PNG decode path, `measure()`'s `panels` param and `writeOverlay`'s
   `panel` param — all backward-compatible, zero behaviour change for
-  belliard/stalingrad/vitry). Always corrects height/vertical seating (calibrated
-  FILL/render-contract mapping, iterate-to-convergence); horizontal drift is
-  snap-corrected only when detection is confident, else left as a non-gating audit
-  finding. Fixed 26/164 rendered OVERFLOW slots → 0, confirmed idempotent. Data-only:
+  belliard/stalingrad/vitry). Corrects height/vertical seating (calibrated
+  FILL/render-contract mapping, iterate-to-convergence) ONLY for zones flagged by a
+  baseline measurement of the committed data — horizontal drift is snap-corrected
+  only when detection is confident, else left as a non-gating audit finding.
+  Post-push regression (caught by Bertrand: "les barrières ne sont pas bien
+  positionnés sur le bâtiment bleu") — an earlier version of the FIX step rewrote
+  EVERY zone's h/y unconditionally, drifting already-correct zones (troncon-a: 0
+  baseline defects, still 31/31 rewritten) off their hand-placed position and
+  visibly mis-registering the grille overlay drawn from the same data; root-caused
+  and fixed by gating the rewrite on the baseline measurement. Corrected outcome:
+  32/114 zones actually needed correction (troncon-a 10/31, troncon-b 12/33,
+  troncon-c 10/50), converges to 0 OVERFLOW in 4 iterations, the other 82 zones now
+  byte-identical to the original hand-placed art, confirmed idempotent. Data-only:
   `src/game/levels/windowZones.generated.json`'s three `belliard/troncon-{a,b,c}`
   keys. ADR-0028 addendum (cross-linked from ADR-0048); `HARNESS.md`/`SCRIPTS.md`/
   `package.json` (`align:troncon[:check]`) updated. · checks: tsc clean, vitest
