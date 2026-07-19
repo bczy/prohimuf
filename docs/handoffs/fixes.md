@@ -8,6 +8,24 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-19 · claude/ui-adjustments-cyclist-animation-wfpm52 · dev-r3f-render · four
+  Bertrand tuning calls in one lane: (1) window enemies 0.8×→1.3× window height
+  (shared `ENEMY_PLANE_SCALE`/`ENEMY_BODY_LIFT` consts, feet kept at the sill; the
+  align-windows plane-box gate re-modelled to FEET SEATING since the plane now
+  overshoots the opening by design, goldens regenerated + diff ceiling recalibrated
+  5%→12% for the 2.6× silhouettes); (2) off-screen edge arrows ×0.75 (102px desktop
+  / 51px short-landscape); (3) `TUBE CATHODIQUE` OUI/NON ballot row in the OURS
+  colophon wired to the existing `Prefs.crt`; (4) courier flipbook rebuilt via
+  retouch-courier-spokes.mjs — the shipped frames were six DIFFERENT raw FLUX
+  generations strobing at 48 fps; all six now derive from the frame-1 base with
+  only the spokes rotating. · checks: tsc/vitest(684)/lint green + verify
+  (Playwright screenshots: options row, CRT on/off, in-game arrows, stable
+  cyclist) · review: code-review(high) 8 findings → 6 fixed (harness gate+docs,
+  golden ceiling, fallback-branch slip, stale comments), 1 refuted (frames
+  "identical" — a Pillow getbbox alpha-only artefact; md5/numpy prove the spoke
+  rotation), 1 accepted-risk (stacked-window quad overlap: draw order is stable,
+  opaque pixels rarely reach the plane top)
+
 - 2026-07-19 · claude/tapecorner-static-fill · dev-r3f-render · fold TapeCorner's static
   masking-tape fill `rgba(236,231,218,0.72)` from inline into the co-located `.tape` class,
   closing the one static-inline consistency gap the #104 stage-6 panel (bmad) flagged vs the
