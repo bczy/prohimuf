@@ -6,6 +6,16 @@
 
 <!-- Résumé du changement et de la story/ADR qui le motive. -->
 
+**Story / shard :** <!-- lien vers docs/handoffs/story-<slug>.md, ou "fix lane" -->
+**ADR :** <!-- lien vers docs/adr/NNNN-*.md si applicable, sinon "n/a" -->
+
+## Captures d'écran (si changement visible en jeu)
+
+<!-- OBLIGATOIRE si le changement touche au gameplay, au rendu ou à l'UI :
+     captures/enregistrement issus du skill `verify` ou de la suite e2e (jamais
+     de mockup) — desktop ET mobile si le HUD/les contrôles sont concernés.
+     cf. COLLABORATION.md stage 5 VERIFY et §fix lane. -->
+
 ## Preview
 
 <!-- OBLIGATOIRE : lien vers la preview de branche (déployée par
@@ -39,6 +49,8 @@
 ### Voie FIX (petit diff mono-lane : zéro design, zéro asset, zéro dépendance/frontière)
 
 - [ ] Un seul lane dev propriétaire, comportement DÉJÀ gaté (bug fix / polish)
+- [ ] Si le changement est visible en jeu : captures/e2e `verify` jointes (voir
+      section ci-dessus)
 - [ ] **Un reviewer `code-review` (effort high)** sur `git diff origin/main...HEAD` —
       findings traités ou réfutés
 - [ ] Une ligne tracée dans `docs/handoffs/fixes.md`
