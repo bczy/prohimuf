@@ -822,3 +822,87 @@ follow-up story); lead-art's Gate-4 falloff verdict on the phase-break pulse on 
   real screenshots); per-phase posture is the provisional stand-in pending distinct sprites (§7 Q3).
 - handoff → `senior-architect` (Winston): render lane ready for the merge-gate panel — additive, one
   bridge file touched (`useGameLoop.ts`), `src/game` untouched.
+
+## 11. VERIFY (stage 5) — qa-lead (Inès) — 2026-07-19
+
+- claim: orchestrate stage-5 VERIFY — mechanical gates, runtime drive of the `?preview=boss`
+  harness, the "no shipped level affected" safety proof, and the owed-at-stage-5 items
+  (ring-on-frame at boss zoom, phase-break pulse, UX A1–A7, WON/LOST). Test plan:
+  `docs/qa/plan-story-boss-encounter-qte.md` (written from the story ACs + gated specs).
+- release: verdict below + the plan. Evidence in
+  `docs/qa/plan-story-boss-encounter-qte.md` §Evidence pointers and this entry.
+
+- **VERDICT: PASS-WITH-CORRECTIONS — boss-encounter-qte quality gate (qa-lead)**
+
+  The buildable / logic / **safety** surface PASSES and I re-ran it myself (not trusted from
+  §9/§10). The runtime RENDER acceptance items (the explicit "owed at stage-5" list) are
+  **UNVERIFIED HOLES** — I could not drive the encounter to trigger in the sandbox. Per the
+  iron rule an unrun check is a hole, never a PASS; the gate does not deadlock, it escalates
+  (C-QA1). The additive, inert V1 code is mergeable behind the merge-gate panel; the held
+  render items MUST be closed before the follow-up player-facing story ships the boss live.
+
+  ### VERIFIED (evidence in hand)
+  1. **Mechanical (re-run, not trusted):** `yarn typecheck` exit 0; `yarn test` **813/813**
+     (64 files, incl. `bossQteSystem.test.ts` 34 + `stateMachine.test.ts` 50); `yarn lint`
+     exit 0; `yarn test:coverage` all-files 97.03 %, `bossQteSystem.ts` 93.67 % stmts /
+     88.23 % branch / 100 % funcs — over the 80 % `src/game` gate. `yarn build` exit 0.
+  2. **Harness boots (BOTH device classes):** `?preview=boss` boots straight into the
+     non-shipped `boss-harness` ("Le Commandant (harness)"), HUD renders, no `pageerror` —
+     verified desktop 1280×720 AND mobile (iPhone UA, 844×390 landscape, ADR-0003/0015).
+  3. **Spec wired + inert until quota:** via the ADR-0005 `__MUF_STATE__` read seam the live
+     state carries `bossQteSpec {zoomSeconds 2, anchor {0,−5}, phaseCount 3, bossHp 24,
+maxBlownWindows 10, targetSeed 20260719}` with `bossQte: null` (no-op) pre-quota.
+  4. **NO shipped player reaches the gate (the load-bearing safety claim) — CONFIRMED at the
+     ARTIFACT level.** Production `yarn build`: the harness level is TREE-SHAKEN OUT — the
+     shipped bundle contains **0** occurrences of `boss-harness` and **0** of `Le Commandant`
+     (the only non-null `bossQteSpec` lives on that DEV-only, `import.meta.env.DEV`-gated,
+     `LEVELS`-excluded config). The boss _system_ code ships but is INERT (guarded by
+     `bossQteSpec === null`, which every shipped level is). Belliard's live quota-win
+     contract is untouched (code-read + the `stateMachine` byte-identity unit test).
+  5. **Logic (unit + integration):** the pure system + the guarded `tickGameState` branch are
+     exhaustively covered (§3 of the plan): phases, ring 2/1/0, WON/LOST, both tie-break
+     directions, blown-window-charged-once, telegraph/EXPOSED floors asserted in code,
+     seeded-pure determinism, and the `bossQteSpec === null` byte-identity no-op.
+
+  ### CORRECTIONS / HOLES (routed; escalated — do not silently pass)
+  - **C-QA1 (BLOCKING the owed render items; → `dev-tooling-assets` + `dev-r3f-render`;
+    escalated to `producer` as CI-DEFERRED-BLOCKED).** The runtime render acceptance items —
+    **ring-on-frame at the boss zoom on both device classes** (G6 dropped ⇒ wider roam),
+    the **phase-break pulse** + reduced-motion degrade (UX A3/A6), **UX A1–A7**, the
+    **WON/LOST verdict** visuals, and `lead-art`'s **Gate-4 falloff** verdict — are
+    **UNVERIFIED**. Root cause: `?preview=boss` has NO deterministic boss-trigger seam; the
+    encounter only fires after clearing a 3-mook quota, and headless Playwright input cannot
+    clear it reliably (rAF throttled ~7 fps; synthetic `MouseEvent` does not register as
+    fire; real clicks ~1 shot/sec against fixed-slot enemies with hp > 1 ⇒ ~1 landed hit /
+    90 s; enemies also spawn off the default view). This is a HARNESS/INPUT limitation, not a
+    product defect — but the items cannot be certified without it. **Fix:** add a
+    deterministic trigger seam (e.g. harness `enemiesToWin: 0` / auto-trigger, or
+    `?preview=boss&at=active` seeding the boss ACTIVE at the pinned K-5 seed) so E2E-BOSS-3
+    (plan §4) and the composite/UX items become automatable in `verify` AND CI. Only Bertrand
+    may waive these holes; otherwise they are closed in this story's next cycle or, at latest,
+    the follow-up player-facing story's stage-5 (before any live ship).
+  - **REG-2 (OBSERVATION; → `dev-gameplay`; non-blocking).** With the pre-existing
+    `__MUF_FREEZE_COPS__` dev harness enabled ON TOP of `?preview=boss`, the level completed
+    via the quota path ("LA RAVE A EU LIEU", score 4) instead of triggering the boss (no zoom
+    observed). Dev-only seam combination (freeze is neither a shipped nor a boss scenario), so
+    NOT a shipped-path concern — but please root-cause / add a guard or document the
+    incompatibility so the two ADR-0005-style seams don't silently mask each other. Filed as
+    REG-2 in the plan.
+
+  ### Still owed by OTHER gate-holders at stage 5 (not mine to close)
+  - `game-designer` (Sacha) design-acceptance playtest vs spec §6 (does it play as designed) —
+    same trigger-seam blocker applies; flagging so it isn't mistaken as covered by this gate.
+  - `lead-art` (Nico) Gate-4 phase-break-pulse falloff on real screenshots (§7 NOTE) —
+    blocked on C-QA1's trigger seam.
+
+- handoff → `dev-tooling-assets` (Serge) + `dev-r3f-render` (Amelia): **C-QA1** — a
+  deterministic boss-trigger seam in the `?preview=boss` harness (spec E2E-BOSS-3, plan §4),
+  then implement E2E-BOSS-1/2 (already automatable) on `e2e-lib.mjs`.
+- handoff → `dev-gameplay` (Amelia): **REG-2** freeze+boss observation — root-cause / guard.
+- handoff → `producer` (Marion): the render acceptance items are **CI-DEFERRED-BLOCKED**
+  pending the C-QA1 seam (Playwright hits the same input wall in CI); track and surface to
+  Bertrand — the additive/inert V1 code can proceed to the merge-gate panel, but the held
+  items are not waived, only escalated.
+- handoff → `senior-architect` (Winston): quality gate RAN — additive/inert surface PASSES
+  and the "no shipped level affected" guarantee is artifact-confirmed; the integration review
+  can proceed on the code, with C-QA1's runtime holes on record (not a clean green).
