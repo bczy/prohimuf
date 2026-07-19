@@ -314,21 +314,21 @@ partly `pm`'s WHAT)._
 
 **Game-wide constants (`bossQteSystem.ts` or shared — `senior-architect`'s call, not per level):**
 
-| Constant                         | Default          | Kind           |
-| -------------------------------- | ---------------- | -------------- |
-| `QTE_BOSS_REFILL`                | **+50**          | new            |
-| boss shot drain (phase 1/2/3)    | **−5 / −6 / −8** | new            |
-| `QTE_PANIC_SHOT`                 | −6               | reuse          |
-| `QTE_BODY_HIT`                   | −5               | reuse          |
-| ring damage vital/limb/off       | 2 / 1 / 0        | reuse          |
-| `RING_HIT_RADIUS`                | 0.30             | reuse          |
-| `PHASE_BREAK_SECONDS`            | 1.0 s            | new            |
-| `PEEK_EXPOSURE_FLOOR`            | 0.5 s            | reuse (assert) |
-| `TELEGRAPH_LEAD_SECONDS` (hostage fixed tell-window, `qteSystem.ts:39`) | 0.35 s | reference only — **NOT** the boss floor |
-| `BOSS_TELEGRAPH_LEAD_FLOOR` (asserted floor on the per-phase `telegraphLeadSeconds`) | 0.35 s | new (assert) |
-| `telegraphLeadSeconds` (per phase) | 0.45 / 0.40 / 0.35 s (§4.3) | new — authored per phase (assert ≥ floor, and lull > lead) |
-| `QTE_ZOOM_SECONDS`               | 2.0 s            | reuse          |
-| `QTE_RESULT_HOLD`                | 2.2 s            | reuse          |
+| Constant                                                                             | Default                     | Kind                                                       |
+| ------------------------------------------------------------------------------------ | --------------------------- | ---------------------------------------------------------- |
+| `QTE_BOSS_REFILL`                                                                    | **+50**                     | new                                                        |
+| boss shot drain (phase 1/2/3)                                                        | **−5 / −6 / −8**            | new                                                        |
+| `QTE_PANIC_SHOT`                                                                     | −6                          | reuse                                                      |
+| `QTE_BODY_HIT`                                                                       | −5                          | reuse                                                      |
+| ring damage vital/limb/off                                                           | 2 / 1 / 0                   | reuse                                                      |
+| `RING_HIT_RADIUS`                                                                    | 0.30                        | reuse                                                      |
+| `PHASE_BREAK_SECONDS`                                                                | 1.0 s                       | new                                                        |
+| `PEEK_EXPOSURE_FLOOR`                                                                | 0.5 s                       | reuse (assert)                                             |
+| `TELEGRAPH_LEAD_SECONDS` (hostage fixed tell-window, `qteSystem.ts:39`)              | 0.35 s                      | reference only — **NOT** the boss floor                    |
+| `BOSS_TELEGRAPH_LEAD_FLOOR` (asserted floor on the per-phase `telegraphLeadSeconds`) | 0.35 s                      | new (assert)                                               |
+| `telegraphLeadSeconds` (per phase)                                                   | 0.45 / 0.40 / 0.35 s (§4.3) | new — authored per phase (assert ≥ floor, and lull > lead) |
+| `QTE_ZOOM_SECONDS`                                                                   | 2.0 s                       | reuse                                                      |
+| `QTE_RESULT_HOLD`                                                                    | 2.2 s                       | reuse                                                      |
 
 Whether the per-phase window table is authored per-level or lives as constants (Belliard-first,
 like the hostage's wander amplitude) is a data-shape call for `senior-architect` — I recommend
