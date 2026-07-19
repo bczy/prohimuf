@@ -18,6 +18,7 @@ import {
   FONT_SIZE,
   SPACE,
   KEYLINE_WIDTH,
+  FLYER_MAX_WIDTH_PX,
   Z,
 } from "./print/tokens";
 
@@ -63,6 +64,8 @@ export function buildPrintTokenVars(): Record<string, string> {
   }
   // KEYLINE_WIDTH is a lone scalar, not a group object.
   vars["--keyline-width"] = px(KEYLINE_WIDTH);
+  // FLYER_MAX_WIDTH_PX is a lone scalar too — the shared A5 flyer cap (ADR-0049).
+  vars["--flyer-max-width"] = px(FLYER_MAX_WIDTH_PX);
   return vars;
 }
 

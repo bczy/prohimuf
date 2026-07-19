@@ -100,7 +100,7 @@ breakpoint-dependent (≥640px horizontal).
 - release: Signed-off reference board, move to next cycle.
 - VERDICT: PASS — Bertrand approval round 1 (reference hunt)
 
-## 5. DEV — dev-r3f-render (Amelia) — IN FLIGHT
+## 5. DEV — dev-r3f-render (Amelia) — DELIVERED
 
 - claim: implement the render + token side against the FROZEN contract (§3 above).
 - scope: LevelFlyer/FlyerWall restructure + layout, TapeCorner redesign, print tokens +
@@ -108,6 +108,28 @@ breakpoint-dependent (≥640px horizontal).
   screenshot gate (visual proof at 640px+ and mobile breakpoints).
 - ADR-0049 allocated (producer) and drafted (tech-writer):
   `docs/adr/0049-flyer-occlusion-shadow-exception.md`.
+- release: implemented per frozen contract. Verify — `yarn typecheck` clean, `yarn test`
+  693/693 pass (new `flyerGeometry.test.ts` 9 tests, `applyPrintTokens.test.ts` +2 assertions),
+  `yarn lint` clean, `yarn format` applied. NO game-logic touched, copy/stamps/roving-order/
+  unlock logic untouched, short-landscape inline rack block untouched.
+- File List:
+  - `src/render/ui/print/tokens.ts` (+FLYER_MAX_WIDTH_PX/EDGE_SEED/EDGE_MAX_DEV/DOG_EAR/
+    CREASE_ANGLE/WEATHERED/TAPE_WIDTH/TAPE_FRAY_SEED; type-only Corner import)
+  - `src/render/ui/print/flyerGeometry.ts` (NEW — flyerEdgePolygon/dogEarCorner/tapeStripPath)
+  - `src/render/ui/print/useMediaQuery.ts` (NEW — SSR/jsdom-safe matchMedia hook)
+  - `src/render/ui/print/index.ts` (barrel exports)
+  - `src/render/ui/print/TapeCorner.tsx` + `TapeCorner.module.css` (translucent frayed strips)
+  - `src/render/ui/applyPrintTokens.ts` (+`--flyer-max-width`)
+  - `src/render/ui/menu/LevelFlyer.tsx` + `LevelFlyer.module.css` (.flyer/.paper split, overlays)
+  - `src/render/ui/menu/FlyerWall.tsx` + `FlyerWall.module.css` (A5 wrap + roving axis flip)
+  - `src/render/ui/print/__tests__/flyerGeometry.test.ts` (NEW)
+  - `src/render/ui/__tests__/applyPrintTokens.test.ts` (extended)
+- RISK flagged for screenshot gate: the plan applies `aspect-ratio:148/210` to `.flyer`/`.paper`
+  unconditionally; in the short-landscape rack this makes each 280px flyer ~397px tall
+  (content is ~264px), which visibly changes the rack vs `flyer-wall-format.md` §4/AC4
+  ("ratio waived, rack pixel-unchanged"). Implemented as the plan specifies (no waiver);
+  needs a rack screenshot check — if the taller flyers regress the rack, add a
+  `@media SHORT_LANDSCAPE_MEDIA { .paper,.flyer { aspect-ratio:auto } }` waiver (architect call).
 
 ---
 

@@ -7,6 +7,7 @@
  * render layer's own style source of truth. Every hex is the exact §2bis.1 anchor; no
  * pre-game surface may re-declare a stock/ink/marker hex or a masthead string.
  */
+import type { Corner } from "./TapeCorner";
 
 // Paper stocks — fluo copier card + newsprint grounds. Black ink clears WCAG AA
 // (>=4.5:1) on every stock; the fluo cards sit at AA, not AAA (rose 6.14:1, orange
@@ -81,6 +82,53 @@ export const FLYER_STOCK_BY_PLAYABLE_INDEX = [STOCK.rose, STOCK.vert, STOCK.oran
 export const FLYER_REST_ROTATION_DEG = [-3, 2, -1.5, 3, -2] as const;
 export const FLYER_JITTER_PX = [-8, 8, -4, 6, -6] as const;
 export const MAX_TILT_DEG = 3;
+
+// Flyer paper materiality (art-direction §2bis.2, ADR-0049) — every value indexed by
+// list position like FLYER_REST_ROTATION_DEG; NO Math.random anywhere in the render path.
+
+// Half-A4 portrait cap — the single shared flyer width (UX flyer-wall-format §2, reconciled
+// down from "~300–340px" at the 2026-07-19 design gate). Exposed to CSS as `--flyer-max-width`
+// by applyPrintTokens.ts so the wrap-grid / narrow-column caps read one source of truth.
+export const FLYER_MAX_WIDTH_PX = 280;
+
+// Hand-cut edge (§2bis.2 pt2): the guillotine/scissor waver never exceeds ~3px, budgeted
+// against the FLYER_MAX_WIDTH_PX × A5 reference box. FLYER_EDGE_SEED holds per-flyer inward
+// deviation magnitudes (px), one entry per polygon vertex — same amplitude, different
+// vertices, so the wall reads as one bad guillotine, not four treatments.
+export const FLYER_EDGE_MAX_DEV_PX = 3;
+export const FLYER_EDGE_SEED: readonly (readonly number[])[] = [
+  [2.4, 1.2, 1.8, 2.1, 1.5, 2.7, 1.0, 2.2],
+  [1.1, 2.6, 2.2, 1.4, 2.8, 1.7, 2.0, 1.3],
+  [2.9, 1.5, 1.2, 2.4, 1.9, 2.2, 1.6, 2.8],
+  [1.6, 2.1, 2.7, 1.3, 1.1, 2.5, 2.3, 1.8],
+  [2.0, 1.4, 1.7, 2.6, 2.2, 1.2, 2.9, 1.5],
+] as const;
+
+// Dog-eared corner (§2bis.2 pt4): KEEP one folded corner — but only on a chosen few sheets
+// (null = flat), so the fold reads as handling, not a uniform treatment.
+export const FLYER_DOG_EAR_CORNER: readonly (Corner | null)[] = [null, "tr", null, "bl", null];
+
+// Fold crease angle (§2bis.2 pt4): one sanctioned diagonal darkening streak per sheet, its
+// angle fanning from a different handling grip per flyer.
+export const FLYER_CREASE_ANGLE_DEG: readonly number[] = [103, 78, 116, 94, 70];
+
+// Weathered subset (§2bis.2 pt4): only these indices get a SECOND parallel crease, so a
+// fresh-vs-worn contrast runs across the wall instead of uniform wear.
+export const FLYER_WEATHERED_INDICES: ReadonlySet<number> = new Set([1, 3]);
+
+// Masking-tape geometry (§2bis.2 pt6): real proportions — wider, shorter than the old thin
+// stroke. Strip WIDTH in px; the length that bridges the corner lives in flyerGeometry.
+export const TAPE_WIDTH_PX = 30;
+
+// Per-corner fray seed (§2bis.2 pt6): 1–2px jags at the two strip TIPS only (deterministic,
+// no Math.random). Six magnitudes per corner — left tip [top, mid, bottom], right tip
+// [top, mid, bottom] — consumed by tapeStripPath; long sides stay near-straight.
+export const TAPE_FRAY_SEED: Record<Corner, readonly number[]> = {
+  tl: [1.6, 0.6, 1.9, 0.8, 1.7, 1.1],
+  tr: [0.9, 1.8, 1.2, 1.6, 0.7, 1.9],
+  bl: [1.9, 1.0, 0.7, 1.4, 1.8, 0.6],
+  br: [0.7, 1.5, 1.7, 1.0, 1.3, 1.8],
+};
 
 // Motion tokens (ms) — all forced to 0 under prefers-reduced-motion except the typewriter.
 export const MOTION = {

@@ -21,3 +21,8 @@ export type { TapeCornerProps, Corner } from "./TapeCorner";
 
 export { useRovingIndex, nextRovingIndex } from "./useRovingIndex";
 export type { RovingAxis, RovingOptions, RovingIndex } from "./useRovingIndex";
+
+export { useMediaQuery } from "./useMediaQuery";
+
+export { flyerEdgePolygon, dogEarCorner, tapeStripPath } from "./flyerGeometry";
+export type { FlyerEdge, TapeStrip } from "./flyerGeometry";
