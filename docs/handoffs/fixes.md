@@ -8,6 +8,15 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-19 · claude/mobile-game-zoom-start-pbaf4j · dev-r3f-render · mobile levels
+  opened pinched all the way to the base zoom (ADR-0026's `MAX_ZOOM_FRACTION = 1`,
+  1.7×, tuned for finger-sized targets), leaving no headroom to read the wider street
+  without a manual pinch-out. Add `DEFAULT_ZOOM_FRACTION = 0.7` as the committed
+  pinch fraction's starting value (`useTouchControls`), so a level opens showing more
+  of the facade; a pinch-in still reaches the full 1.7× tightness. Bounds
+  (`MIN_ZOOM_FRACTION`/`MAX_ZOOM_FRACTION`) and the pinch math are unchanged. ·
+  checks: tsc/vitest(771)/lint/format green · review: code-review(high) CLEAR
+
 - 2026-07-19 · claude/hostage-scene-bike-visibility-wekl3y · dev-r3f-render · the hostage
   QTE freezes couriers/the delivery vehicle in place (stateMachine early-returns while it
   holds the scene) instead of moving them off-stage, so a courier's bike or the delivery
