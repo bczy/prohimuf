@@ -40,6 +40,10 @@ const FLICK_MIN_VELOCITY = 0.05;
 // the two-finger tap — once the spread changes by more than this (normalized).
 export const MAX_ZOOM_FRACTION = 1;
 export const MIN_ZOOM_FRACTION = 0.5;
+// The level starts less tight than the max zoom — a pinch can still zoom all
+// the way in for finger-sized targets, but the opening framing shows more of
+// the street. Roughly midway down the pinch range.
+export const DEFAULT_ZOOM_FRACTION = 0.7;
 const PINCH_MIN_DELTA = 0.02;
 
 /**
@@ -73,7 +77,7 @@ export function useTouchControls(
     flickVelocityX: null,
     flickVelocityY: null,
     pendingTaps: [],
-    zoom: MAX_ZOOM_FRACTION,
+    zoom: DEFAULT_ZOOM_FRACTION,
   });
 
   useEffect(() => {
