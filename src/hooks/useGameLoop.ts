@@ -20,6 +20,7 @@ import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import { isQteActive } from "@game/systems/qteSystem";
+import { isBossQteActive } from "@game/systems/bossQteSystem";
 import type { ImpactEvent } from "@game/types/feedback";
 import type { Floater } from "@render/scene/FeedbackLayer";
 import { energyFloater } from "@render/scene/hostageCue";
@@ -203,7 +204,12 @@ export function useGameLoop(
     // While the QTE cinematic runs, its zoom driver (below) owns ortho.zoom —
     // applying the pinch zoom here would desync the aim mapping (viewW/viewH
     // derive from ortho.zoom before the tick) from the displayed framing.
-    if (mobileControls !== undefined && touch !== undefined && !isQteActive(prev.qte)) {
+    if (
+      mobileControls !== undefined &&
+      touch !== undefined &&
+      !isQteActive(prev.qte) &&
+      !isBossQteActive(prev.bossQte)
+    ) {
       const zoom = mobileControls.baseZoom * touch.zoom;
       if (ortho.zoom !== zoom) {
         ortho.zoom = zoom;
@@ -220,7 +226,12 @@ export function useGameLoop(
     // While the QTE holds the scene frozen the cinematic zoom below owns the
     // camera; skip the inertial pan so the two don't fight over its position
     // (taps are still dequeued below as QTE shots).
-    if (mobileControls !== undefined && touch !== undefined && !isQteActive(prev.qte)) {
+    if (
+      mobileControls !== undefined &&
+      touch !== undefined &&
+      !isQteActive(prev.qte) &&
+      !isBossQteActive(prev.bossQte)
+    ) {
       const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
       const rangeY = Math.max(0, mobileControls.halfWorldHeight - viewH / 2);
       const range = { x: rangeX, y: rangeY };
@@ -330,19 +341,24 @@ export function useGameLoop(
         }
       : next;
 
-    // QTE cinematic camera (ADR-0030, the static duel): while the QTE is active,
-    // capture the pre-QTE pose ONCE, then progressively zoom onto the captor's
-    // STATIC `anchor` and HOLD there (no follow — the captor never moves). The
-    // zoom eases in during ZOOMING and pins fully in during ACTIVE / WON / LOST.
-    // When it ends, ease back to the captured base over QTE_RESTORE_SECONDS and
-    // restore it EXACTLY. Runs after the tick so it reads this frame's fresh
-    // phase/timers.
-    const qte = gameStateRef.current.qte;
-    if (isQteActive(qte) && qte !== null) {
+    // QTE cinematic camera (ADR-0030, the static duel): while EITHER QTE is active,
+    // capture the pre-QTE pose ONCE, then progressively zoom onto the actor's STATIC
+    // `anchor` and HOLD there (no follow — the actor never moves). The zoom eases in
+    // during ZOOMING and pins fully in during ACTIVE / WON / LOST. When it ends, ease
+    // back to the captured base over QTE_RESTORE_SECONDS and restore it EXACTLY. Runs
+    // after the tick so it reads this frame's fresh phase/timers. The boss QTE
+    // (ADR-0051) exposes the SAME `{ anchor, phase, zoomRemaining, zoomSeconds }`
+    // shape, so the driver generalises unchanged — it drives whichever QTE is live
+    // (never both: the boss triggers on quota-completion, after any hostage QTE has
+    // long resolved).
+    const hostageQte = gameStateRef.current.qte;
+    const bossQte = gameStateRef.current.bossQte;
+    const camQte = isQteActive(hostageQte) ? hostageQte : isBossQteActive(bossQte) ? bossQte : null;
+    if (camQte !== null) {
       qteBaseRef.current ??= { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y };
       qteRestoreRef.current = null;
-      const p = qteZoomInProgress(qte.phase, qte.zoomRemaining, qte.zoomSeconds);
-      const pose = qtePose(qteBaseRef.current, qte.anchor, p);
+      const p = qteZoomInProgress(camQte.phase, camQte.zoomRemaining, camQte.zoomSeconds);
+      const pose = qtePose(qteBaseRef.current, camQte.anchor, p);
       ortho.zoom = pose.zoom;
       camera.position.x = pose.x;
       camera.position.y = pose.y;

@@ -18,6 +18,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HudData, HudDelivery, HudHostageQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { isQteActive } from "@game/systems/qteSystem";
+import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
@@ -27,6 +28,7 @@ import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite, ENEMY_PLANE_SCALE, ENEMY_BODY_LIFT } from "./EnemySprite";
 import { CourierSprite } from "./CourierSprite";
 import { HostageQteSprite } from "./HostageQteSprite";
+import { BossQteSprite } from "./BossQteSprite";
 import { DeliveryVehicleSprite } from "./DeliveryVehicleSprite";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
@@ -355,9 +357,9 @@ export function GameScene({
     // On pause the whole scene freezes (game loop, couriers, flipbooks) — the
     // camera must not keep edge-scrolling or gliding behind the pause sheet.
     if (isMobile || paused === true) return;
-    // While the QTE holds the scene frozen the cinematic zoom (useGameLoop) owns
+    // While EITHER QTE holds the scene frozen the cinematic zoom (useGameLoop) owns
     // the camera; skip edge-scroll so the two don't fight over its position.
-    if (isQteActive(stateRef.current.qte)) return;
+    if (isQteActive(stateRef.current.qte) || isBossQteActive(stateRef.current.bossQte)) return;
     const { x: mouseX, y: mouseY } = mouseRef.current;
     const ortho = camera as OrthographicCamera;
 
@@ -414,6 +416,7 @@ export function GameScene({
       />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
+      <BossQteSprite stateRef={stateRef} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />
