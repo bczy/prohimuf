@@ -167,7 +167,13 @@ describe("nearForegroundArt accessors — block PRESENT", () => {
 
   it('returns null when "lenses" is JSON null (no TypeError in the repaint path)', async () => {
     const m = await importWithBlock({
-      trafficLight: { asset: "assets/nearfg/trafficLight.png", size: { width: 226, height: 512 }, seed: 1, prompt: "x", lenses: null },
+      trafficLight: {
+        asset: "assets/nearfg/trafficLight.png",
+        size: { width: 226, height: 512 },
+        seed: 1,
+        prompt: "x",
+        lenses: null,
+      },
     });
     expect(m.trafficLightLenses()).toBeNull();
   });

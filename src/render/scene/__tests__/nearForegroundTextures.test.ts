@@ -52,8 +52,18 @@ vi.mock("@game/levels/levelArt.json", async (importOriginal) => {
       ...actual.default,
       nearForegroundArt: {
         types: {
-          parkingMeter: { asset: "assets/nearfg/parkingMeter.png", size: { width: 256, height: 512 }, seed: 1, prompt: "x" },
-          bench: { asset: "assets/nearfg/bench.png", size: { width: 870, height: 512 }, seed: 2, prompt: "x" },
+          parkingMeter: {
+            asset: "assets/nearfg/parkingMeter.png",
+            size: { width: 256, height: 512 },
+            seed: 1,
+            prompt: "x",
+          },
+          bench: {
+            asset: "assets/nearfg/bench.png",
+            size: { width: 870, height: 512 },
+            seed: 2,
+            prompt: "x",
+          },
         },
       },
     },
