@@ -1,6 +1,7 @@
 import type { Prefs } from "@game/systems/prefsSystem";
 import type { DeliverySpec } from "@game/types/delivery";
 import type { QteSpec } from "@game/types/hostageQte";
+import type { BossQteSpec } from "@game/types/bossQte";
 import type { EnemyKind } from "@game/types/enemy";
 
 // Per-level roster gate (ADR-0004, D2). Optional and additive: absence is
@@ -44,6 +45,14 @@ export interface LevelConfig {
    * The seed of `GameState.qteSpec` reads this. Belliard-first.
    */
   readonly hostageQte?: QteSpec;
+  /**
+   * Scripted boss QTE encounter — "le Commandant" (ADR-0051). Absent ⇒ no boss. In V1 the
+   * ONLY level carrying it is the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` (D4), which is
+   * deliberately EXCLUDED from the shipped `LEVELS` array — no shipped level authors a boss,
+   * so no shipped player can reach the required gate. The seed of `GameState.bossQteSpec`
+   * reads this.
+   */
+  readonly bossQteSpec?: BossQteSpec;
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -191,6 +200,45 @@ export const LEVELS: readonly LevelConfig[] = [
     },
   },
 ];
+
+/**
+ * NON-SHIPPED boss QTE dev-harness (ADR-0051 D4). The ONLY level in the tree carrying a
+ * non-null `bossQteSpec`, deliberately kept OUT of the shipped `LEVELS` array/menu so the
+ * required, level-gating boss is unreachable by any shipped player in V1 (the "Belliard live
+ * contract untouched" guarantee). It exercises the system + tuning on the built Belliard
+ * tableau; the render lane runs it on the cop/provisional fallback sprite (no canon art yet —
+ * the FLUX generator has not run, cf. the lead-art §7 gate). The dev-only reachability seam
+ * (`?preview=`-style / `import.meta.env.DEV`) is the render/tooling lanes' call (ADR-0051 D4 /
+ * Consequences) — this module provides ONLY the harness LevelConfig, not the access point.
+ *
+ * The `bossQteSpec` carries the game-designer defaults (spec §5): 3 phases, 24 HP (3×8),
+ * `maxBlownWindows 10`, a 2 s zoom on the centre-street anchor. The per-phase window escalation
+ * (EXPOSED 1.6→1.0 s, lull 2.0→1.2 s, tell 0.45→0.35 s, wander 1.0→1.6 u/s, drain −5/−6/−8) and
+ * `PHASE_BREAK_SECONDS 1.0` are system constants in `bossQteSystem.ts` (F3-promotable later).
+ * `targetSeed` is provisional pending the stage-5 K-5 seed pin (ADR-0051 gotcha; a competent
+ * player clears with margin on this seed — a landable vital/limb window opens in each phase).
+ */
+export const BOSS_QTE_DEV_HARNESS_LEVEL: LevelConfig = {
+  id: "boss-harness",
+  name: "Le Commandant (harness)",
+  district: "Dev — Belliard",
+  year: "1998",
+  enemySpeedMultiplier: 1.0,
+  // Reach the boss quickly on the harness so a dev iterates the duel, not the mook clearing.
+  enemiesToWin: 3,
+  timeSeconds: 90,
+  unlocked: false,
+  deliveries: [],
+  roster: { streetSpawns: ["courier"] },
+  bossQteSpec: {
+    zoomSeconds: 2,
+    anchor: { x: 0, y: -5 },
+    phaseCount: 3,
+    bossHp: 24,
+    maxBlownWindows: 10,
+    targetSeed: 20260719,
+  },
+};
 
 /**
  * The first playable (non-tutorial) level — Rue Belliard. Consumers that used to

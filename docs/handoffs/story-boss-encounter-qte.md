@@ -681,3 +681,78 @@ shared bridge files: `stateMachine.ts`+`gameState.ts` (dev-gameplay authors the 
   pre-allocated) — please record/adopt in the index and confirm at merge (collision re-check).
 * NOTE: this is a TECH PLAN, not a gate — no `VERDICT:` line. Lanes are ready to launch;
   Bertrand launches `dev-gameplay` + `dev-r3f-render` in parallel per the standing policy.
+
+## 9. DEV LANE — dev-gameplay (Amelia) — 2026-07-19
+
+**STATUS: pure game-core lane DONE — all three checks green.** Implemented ADR-0051 D1/D2/D3/D7
+in `src/game` only; `qteSystem.ts` / `hostageQte.ts` UNTOUCHED (D1 fully honoured). TDD: specs
+written then implemented to green.
+
+**Verification (local; deps installed via corepack routed through `registry.npmjs.org` — note the
+sandbox's `repo.yarnpkg.com` is proxy-blocked, so use `COREPACK_NPM_REGISTRY=https://registry.npmjs.org`):**
+
+- `yarn typecheck` (tsc, strict) → **exit 0**, clean.
+- `yarn test` (vitest, full suite) → **813 passed / 64 files, 0 failures.** New: `bossQteSystem.test.ts`
+  (34) + 8 boss-integration cases appended to `stateMachine.test.ts` (file now 50).
+- `yarn lint` (eslint) → **clean, 0 problems.**
+
+**Delivered (File List):**
+
+- `src/game/types/bossQte.ts` (NEW, types-only, zero functions): `BossQteSpec` (authored:
+  `zoomSeconds`/`anchor`/`phaseCount`/`bossHp`/`maxBlownWindows`/`targetSeed` — per-phase table is
+  NOT authored, it's a system constant per D2), `BossQte` (runtime), `BossQtePhase`
+  (`ZOOMING→ACTIVE→(WON|LOST)→DONE`), `BossStance` (`SHIELDED|EXPOSED`), `BossRingZone`, `BossQteZone`
+  (no `hostage` bavure — G6 dropped). Phase break is the `phaseBreakRemaining` sub-state field of
+  `ACTIVE`, NOT a top-level phase (AC2).
+- `src/game/systems/bossQteSystem.ts` (NEW, pure, SEPARATE from `qteSystem.ts`): constants
+  (`QTE_BOSS_REFILL +50`, `PHASE_BREAK_SECONDS 1.0`, `BOSS_TELEGRAPH_LEAD_FLOOR 0.35`, reused
+  `PEEK_EXPOSURE_FLOOR`/`RING_HIT_RADIUS`/`QTE_PANIC_SHOT`/`QTE_BODY_HIT`/`QTE_ZOOM_SECONDS`/
+  `QTE_RESULT_HOLD`); `BOSS_PHASE_TABLE` (EXPOSED 1.6→1.0 / lull 2.0→1.2 / tell 0.45→0.35 / wander
+  1.0→1.6 / drain −5/−6/−8); boss anatomy bands + `bossRingZoneAt` (full-figure, no G6 clamp) +
+  `bossQteZoneAt`; the COPIED-and-PARAMETERISED seeded wander (`bossWander` + `bossWanderLegDuration`
+  — per-phase speed knob the hostage lacks, NO `Math.random`/`Date.now`); `phaseIndexAt(currentHp,
+maxHp, phaseCount)` (exported pure helper — render derives phase without re-encoding 16/8);
+  `createBossQte` (ALL D7 safety asserts vs. authored spec — integers ≥1, `phaseCount` ≤ table len,
+  per-phase EXPOSED ≥ floor, tell ≥ `BOSS_TELEGRAPH_LEAD_FLOOR` AND strictly < that phase's lull,
+  break ≥ phase tell, C6 finite guards); `tickBossQte` (fire-resolves-first tie-break, ring chip,
+  phase-break sequencing on threshold cross, blown-window drain charged ONCE per CLOSED 0-chip
+  window, `LOST` on `maxBlownWindows`); `isBossQteActive`, `shouldTriggerBossQte`.
+- `src/game/systems/__tests__/bossQteSystem.test.ts` (NEW, 34 tests): helpers, `phaseIndexAt`,
+  every invariant assert, ZOOMING/window machine/telegraph, spatial-colour scoring, phase break
+  (damage-free + panic-during-break + break-ends-into-new-lull), WON/LOST + BOTH tie-break
+  directions, seeded-pure determinism (replay-identity + source scan for forbidden APIs),
+  winnability on the harness seed (K-5 structural stand-in — a competent player clears 24 HP before
+  the blown-window clock).
+- **SHARED BRIDGE FILES (additive, guarded — landed green, safe for `dev-r3f-render` to wire):**
+  - `src/game/types/gameState.ts`: `+bossQteSpec: BossQteSpec | null`, `+bossQte: BossQte | null`.
+  - `src/game/systems/stateMachine.ts`: `LevelParams.bossQte?`, `createInitialState` seeds
+    `bossQteSpec`/`bossQte`, and the **boss gate branch** (placed BEFORE the quota→LEVEL_COMPLETE
+    check, `bossQteSpec !== null`-guarded): triggers on `kills >= enemiesToWin`, freezes the level
+    while active, `LEVEL_COMPLETE` only on boss WON (DONE + `bossHp <= 0`), `GAME_OVER` on boss
+    LOST. `bossQteSpec === null` ⇒ strict no-op (D4 identity test proves it: quota still wins
+    directly, byte-identical to before).
+- `src/game/levels/levels.ts`: `LevelConfig.bossQteSpec?` (additive, absent on ALL shipped levels)
+  - `BOSS_QTE_DEV_HARNESS_LEVEL` — the NON-SHIPPED harness config (D4), **excluded from `LEVELS`**,
+    `enemiesToWin: 3` (quick reach), 3×8/24 HP defaults, provisional `targetSeed 20260719` (winnable —
+    the winnability test confirms landable windows per phase; stage-5 K-5 pin still owed).
+
+**FOR `dev-r3f-render` (what I expose — no new game field needed beyond these):**
+
+- Camera driver: `BossQte` exposes the SAME `{ anchor, phase, zoomRemaining, zoomSeconds }` names the
+  hostage does → generalise the `useGameLoop` zoom writer to drive on EITHER QTE active; `qteCamera.ts`
+  reused verbatim.
+- Tableau/poses read: `stance` (`SHIELDED`/`EXPOSED`), `telegraphActive` (window tell), `targetOffset`
+  - `ringZone` (draw the wandering ring, colour by zone — same vocabulary as the hostage ring),
+    `bossHp`/`bossHpMax`.
+- **Phase read (D5, no new game field):** derive posture from `bossHp` via the exported
+  `phaseIndexAt(bossHp, bossHpMax, phaseCount)` (all three on the runtime record) OR read
+  `bossQte.phaseIndex` directly (they always agree). **Phase-break cue keys on
+  `phaseBreakRemaining > 0`** (a break is shorter than phase-3's lull → not distinguishable by
+  duration; needs its own non-text/non-duration read, ≤3 Hz reduced-motion-safe).
+- Harness reachability seam (`?preview=`-style / `import.meta.env.DEV`) + the `LevelConfig →
+LevelParams` mapping (`level.bossQteSpec → params.bossQte`) are YOURS/`dev-tooling-assets`' — I
+  provide the harness `LevelConfig` (`BOSS_QTE_DEV_HARNESS_LEVEL`) only, not the access point.
+
+**Owed at stage-5 (not contract blockers, per ADR gotchas):** the empirical K-5 `targetSeed` pin
+(harness seed is provisional but proven winnable structurally); ring-on-frame at the boss zoom (G6
+dropped ⇒ wider roam — the render/verify lanes' framing check on both device classes).

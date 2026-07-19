@@ -3,6 +3,7 @@ import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
 import type { HostageQte, QteSpec } from "@game/types/hostageQte";
+import type { BossQte, BossQteSpec } from "@game/types/bossQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
 
@@ -38,6 +39,14 @@ export interface GameState {
   // is active the general sim is frozen (see stateMachine).
   readonly qteSpec: QteSpec | null;
   readonly qte: HostageQte | null;
+  // Boss QTE encounter — "le Commandant" (ADR-0051). `bossQteSpec` is the authored
+  // per-level data (null = no boss — EVERY shipped level in V1; only the non-shipped
+  // Belliard dev-harness authors it, D4); `bossQte` is the runtime sub-record (null
+  // until the kill quota is reached, then persists through DONE). While it is active the
+  // general sim is frozen and the quota → LEVEL_COMPLETE transition is REPLACED by the
+  // duel (D3). Additive-and-optional: `bossQteSpec === null` is byte-for-byte identical.
+  readonly bossQteSpec: BossQteSpec | null;
+  readonly bossQte: BossQte | null;
   // Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
   // `deliverySpec` is the authored data for this level (null = no delivery);
   // `deliveryVehicle` is its runtime state the render lane draws (phase,

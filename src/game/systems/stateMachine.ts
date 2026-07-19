@@ -3,6 +3,7 @@ import type { Enemy } from "@game/types/enemy";
 import type { Bullet } from "@game/types/bullet";
 import type { Courier } from "@game/types/courier";
 import type { QteSpec } from "@game/types/hostageQte";
+import type { BossQteSpec } from "@game/types/bossQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
@@ -22,6 +23,12 @@ import {
 } from "@game/systems/courierSystem";
 import type { CourierField } from "@game/systems/courierSystem";
 import { isQteActive, shouldTriggerQte, createQte, tickQte } from "@game/systems/qteSystem";
+import {
+  isBossQteActive,
+  shouldTriggerBossQte,
+  createBossQte,
+  tickBossQte,
+} from "@game/systems/bossQteSystem";
 import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
 import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
@@ -61,6 +68,11 @@ export interface LevelParams {
    * Omitted / null = no QTE this level.
    */
   hostageQte?: QteSpec | null;
+  /**
+   * Scripted boss QTE encounter for this level (ADR-0051). Omitted / null = no boss
+   * (EVERY shipped level in V1 — only the non-shipped Belliard dev-harness authors it).
+   */
+  bossQte?: BossQteSpec | null;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -93,6 +105,8 @@ export function createInitialState(
     energy: ENERGY_INITIAL,
     qteSpec: params.hostageQte ?? null,
     qte: null,
+    bossQteSpec: params.bossQte ?? null,
+    bossQte: null,
     deliverySpec,
     deliveryVehicle: seedDeliveryVehicle(deliverySpec),
   };
@@ -117,6 +131,52 @@ export function tickGameState(
     // Idle terminal ticks must not replay last tick's transient events (they are
     // consumed once by the bridge; the transition tick already emitted its burst).
     return { ...state, impactEvents: [], feedback: [], pointFeedback: [] };
+  }
+
+  // Boss QTE encounter — "le Commandant" (ADR-0051 D3). Additive-and-optional: this whole
+  // block is skipped when `bossQteSpec === null` (EVERY shipped level), so the quota-win path
+  // below is BYTE-FOR-BYTE unchanged (the ADR-0051 D4 safety property, asserted by the
+  // `bossQteSpec === null` identity test — exactly as the hostage guards `qteSpec === null`).
+  // When a boss IS authored, the boss REPLACES the abrupt "quota met → LEVEL_COMPLETE": it
+  // triggers on quota-completion, freezes the rest of the level while ACTIVE, and only a boss
+  // WON completes the level (boss LOST fails it). The boss is NOT in the kill quota.
+  if (state.bossQteSpec !== null) {
+    let bossQte = state.bossQte;
+    if (shouldTriggerBossQte(state.bossQteSpec, bossQte, state.kills, enemiesToWin)) {
+      bossQte = createBossQte(state.bossQteSpec);
+    }
+    if (isBossQteActive(bossQte) && bossQte !== null) {
+      const crosshair = moveCrosshair(mouseX, mouseY);
+      const impactPoint = crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH);
+      const r = tickBossQte(bossQte, fire, impactPoint, delta);
+      return {
+        ...state,
+        crosshair,
+        // The clock is frozen — the cinematic beat is "outside time".
+        elapsedSeconds: state.elapsedSeconds,
+        bossQte: r.qte,
+        // Energy is the boss QTE's sole outcome currency (ADR-0051 D2); score is untouched.
+        energy: applyEnergy(state.energy, r.energyDelta),
+        impactEvents: [],
+        feedback: [],
+        pointFeedback: [],
+      };
+    }
+    // The boss has resolved (phase DONE): a depleted `bossHp` WON the fight → the level
+    // completes; the blown-window clock LOST it → the level fails. LEVEL_COMPLETE fires ONLY
+    // on a boss win. (A boss authored but not yet triggered — quota not reached — falls
+    // through to normal play, exactly as before.)
+    if (bossQte !== null && bossQte.phase === "DONE") {
+      const won = bossQte.bossHp <= 0;
+      return {
+        ...state,
+        bossQte,
+        phase: won ? "LEVEL_COMPLETE" : "GAME_OVER",
+        impactEvents: [],
+        feedback: [],
+        pointFeedback: [],
+      };
+    }
   }
 
   // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never
@@ -367,6 +427,10 @@ export function tickGameState(
     energy: newEnergy,
     qteSpec: state.qteSpec,
     qte,
+    // Boss QTE carried inert through normal play: it only triggers on quota-completion
+    // (handled above), so here `bossQte` is always `state.bossQte` (null pre-trigger).
+    bossQteSpec: state.bossQteSpec,
+    bossQte: state.bossQte,
     deliverySpec: state.deliverySpec,
     deliveryVehicle,
     elapsedSeconds,
