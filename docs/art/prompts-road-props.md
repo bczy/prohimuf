@@ -577,5 +577,3 @@ a Parisian enamel street-name plaque mounted on a single thin post: a wide lands
   covered by this prompt-gate PASS.
 
 — Nico, PROMPT GATE — 8/8 PASS
-</content>
-</invoke>
