@@ -8,6 +8,25 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-18 · claude/screen-edge-arrows-size-jlnmix · dev-r3f-render · enlarge the
+  off-screen target edge arrows ×4 (Bertrand: too small, then "double again") — svg
+  glyph 34→68→136 desktop, 68 on short-landscape phones (ADR-0024
+  SHORT_LANDSCAPE_MEDIA scoped-style + var() fallbacks, CSS-owned size: .arrowCore
+  136px/68px, svg width/height 100%, .arrowWrap 160px/80px); keyline held at 2px at
+  every size via vector-effect non-scaling-stroke; golden baselines regenerated
+  twice (ADR-0005 flow, eyeballed desktop + coarse-pointer 800×360 capture);
+  anchors unchanged (tips keep hugging the edges, verified); arrow ring hidden for
+  the whole hostage-QTE set-piece (shared isQteSetPieceVisible predicate, back when
+  the verdict clears — Bertrand); post-rebase golden re-gen (main's new enemy art +
+  the big arrows) · checks:
+  tsc/vitest(637)/lint · review: code-review(high, 8-angle) — 2 CONFIRMED fixed
+  (up-arrow overprinted the LIVRAISON banner track → indicator now renders BEFORE
+  the banner so delivery readout paints on top; size literal triplicated across
+  tsx+css → svg 100%), 1 PLAUSIBLE fixed on Bertrand's call (keyline kept at the 2px
+  ink-rule weight: strokeWidth 2→1 viewBox units under the ×2 scale), 4 REFUTED
+  (scale-1.12 clipping, short-landscape collision, repaint cost, fill swallowed
+  at tip)
+
 - 2026-07-18 · claude/preview-deletion-after-merge-dt20co (PR #101) · dev-tooling-assets ·
   add `cleanup-preview.yml`: remove `preview/<slug>/` from gh-pages on branch delete /
   PR merge (+ manual dispatch for orphaned previews) by publishing an EMPTY dir through

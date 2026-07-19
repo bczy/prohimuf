@@ -9,16 +9,26 @@ import styles from "./HostageQteOverlay.module.css";
  * the "OTAGE" warning stamp, and the WON/LOST verdict. Only the two set-piece stamps
  * remain on the HUD (UX spec §1) — no captor-HP/countdown/hostage-HP gauges.
  */
+/**
+ * True while the QTE set-piece owns the screen (zoom, duel, verdict). Shared with
+ * HUD.tsx, which hides the off-screen arrow ring for exactly this window — the
+ * frozen duel has no steerable target, and the arrows would poke into the tableau.
+ */
+export function isQteSetPieceVisible(hostageQte: HudHostageQte | undefined): boolean {
+  const qtePhase = hostageQte?.phase;
+  return (
+    qtePhase === "ZOOMING" || qtePhase === "ACTIVE" || qtePhase === "WON" || qtePhase === "LOST"
+  );
+}
+
 export function HostageQteOverlay({
   hostageQte,
 }: {
   hostageQte: HudHostageQte | undefined;
 }): JSX.Element | null {
   const qtePhase = hostageQte?.phase;
-  const qteVisible =
-    qtePhase === "ZOOMING" || qtePhase === "ACTIVE" || qtePhase === "WON" || qtePhase === "LOST";
 
-  if (!qteVisible || hostageQte === undefined) return null;
+  if (!isQteSetPieceVisible(hostageQte) || hostageQte === undefined) return null;
 
   return (
     <>
