@@ -8,6 +8,13 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-19 · claude/tapecorner-static-fill · dev-r3f-render · fold TapeCorner's static
+  masking-tape fill `rgba(236,231,218,0.72)` from inline into the co-located `.tape` class,
+  closing the one static-inline consistency gap the #104 stage-6 panel (bmad) flagged vs the
+  PaperSheet precedent; inline `style` now carries only the prop-driven CORNER_STYLE offset/
+  rotation. Pixel-identical (same rgba, no cascade competitor). · checks: tsc/vitest(637)/lint/
+  format green · review: code-review(high) CLEAR
+
 - 2026-07-18 · claude/screen-edge-arrows-size-jlnmix · dev-r3f-render · enlarge the
   off-screen target edge arrows ×4 (Bertrand: too small, then "double again") — svg
   glyph 34→68→136 desktop, 68 on short-landscape phones (ADR-0024
