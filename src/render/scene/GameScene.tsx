@@ -310,8 +310,11 @@ export function GameScene({
   // Cover framing: fill the wider axis with ONE panel, letting the other
   // overflow a little. Mobile zooms in further (bigger, finger-sized targets)
   // and this is the *max* zoom — the pinch gesture backs out from here.
+  // Belliard dezoom test: factor to reduce zoom and show roof of building
   const baseZoom =
-    Math.max(size.width / panelW, size.height / facadeH) * (isMobile ? MOBILE_ZOOM_FACTOR : 1);
+    Math.max(size.width / panelW, size.height / facadeH) *
+    (isMobile ? MOBILE_ZOOM_FACTOR : 1) *
+    (levelId === "belliard" ? 0.85 : 1);
 
   const touchRef = useTouchControls(canvasRef, isMobile);
   const stateRef = useGameLoop(

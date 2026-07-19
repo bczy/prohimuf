@@ -16,8 +16,8 @@
  * stay below the window row (non-occlusion).
  */
 
-import type { NearForegroundKind } from "@game/levels/levelArt";
-import { DEFAULT_SIGNAL, type SignalState } from "./trafficSignal";
+import type { LensAnchor, NearForegroundKind, SignalLenses } from "@game/levels/levelArt";
+import type { SignalState } from "./trafficSignal";
 
 // Grey palette — same register as foregroundArt.ts (IRON / HILIGHT / SHADOW),
 // but strictly monochrome: no coloured rim anywhere (C1).
@@ -26,6 +26,7 @@ const RIM = "rgba(168,172,198,0.5)"; // cool grey moon-reflection rim (NOT neon)
 const RIM_SOFT = "rgba(158,162,186,0.26)";
 const SHADOW = "rgba(0,0,0,0.45)"; // soft drop/ground shadow
 const GLASS = "rgba(168,172,196,0.36)"; // translucent grey glass (screen / pane)
+const FIGURE_DEAD = "rgba(64,64,76,0.9)"; // dead pedestrian pictogram (grey, unlit)
 
 const TAU = Math.PI * 2;
 
@@ -305,46 +306,26 @@ function lensHalo(
 }
 
 /**
- * One signal lamp in PROFILE — a vertical ellipse (a round lens foreshortened by the
- * ~90° turn) with its glow spilling toward the road (left). Lit ⇒ colour + halo;
- * else a dead near-black disc. `i` selects the colour (0 red / 1 amber / 2 green).
+ * One DEAD signal lamp in PROFILE — a vertical ellipse (a round lens foreshortened
+ * by the ~90° turn) painted near-black with a grey rim. The housing art is always
+ * unlit and colourless (art law C1); the lit colour + halo lives on the separate
+ * render-side overlay ({@link drawSignalLenses}).
  */
-function drawProfileLamp(
+function drawDeadLens(
   g: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   rx: number,
   ry: number,
-  lit: boolean,
-  i: number,
 ): void {
   g.fillStyle = "rgba(3,3,7,1)";
   g.beginPath();
   g.ellipse(cx, cy, rx * 1.22, ry * 1.15, 0, 0, TAU);
   g.fill();
-  if (lit) {
-    // Halo, offset left — the beam throws toward the road the signal faces.
-    const grad = g.createRadialGradient(cx - rx * 0.5, cy, rx * 0.2, cx - rx * 0.5, cy, rx * 3.6);
-    grad.addColorStop(0, SIGNAL_HALO[i] ?? "rgba(255,255,255,0.4)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = grad;
-    g.beginPath();
-    g.arc(cx - rx * 0.5, cy, rx * 3.6, 0, TAU);
-    g.fill();
-    g.fillStyle = SIGNAL_LIT[i] ?? "#ffffff";
-    g.beginPath();
-    g.ellipse(cx, cy, rx, ry, 0, 0, TAU);
-    g.fill();
-    g.fillStyle = "rgba(255,255,255,0.6)";
-    g.beginPath();
-    g.ellipse(cx - rx * 0.24, cy - ry * 0.3, rx * 0.42, ry * 0.42, 0, 0, TAU);
-    g.fill();
-  } else {
-    g.fillStyle = LENS_OFF;
-    g.beginPath();
-    g.ellipse(cx, cy, rx, ry, 0, 0, TAU);
-    g.fill();
-  }
+  g.fillStyle = LENS_OFF;
+  g.beginPath();
+  g.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+  g.fill();
   g.strokeStyle = RIM;
   g.lineWidth = Math.max(1, rx * 0.22);
   g.beginPath();
@@ -357,7 +338,8 @@ function drawProfileLamp(
  * faces the road, so we see its side, not its face). The housing is a tall box from
  * `faceX` (road side, left) to `rightX` (mast side); the three lenses sit on the
  * front panel as foreshortened ellipses (rouge/orange/vert top→bottom), each under a
- * curved HOOD/visor jutting toward the road. `litIndex` is the one lit lamp.
+ * curved HOOD/visor jutting toward the road. All lenses are DEAD here — the lit
+ * lamp is painted by the overlay ({@link drawSignalLenses}).
  */
 function drawSignalHeadProfile(
   g: CanvasRenderingContext2D,
@@ -365,7 +347,6 @@ function drawSignalHeadProfile(
   rightX: number,
   topY: number,
   bh: number,
-  litIndex: number,
 ): void {
   const hw = rightX - faceX;
   // Housing (side of the box).
@@ -398,7 +379,7 @@ function drawSignalHeadProfile(
     g.moveTo(faceX + hw * 0.12, cy - ry * 1.6);
     g.quadraticCurveTo(faceX - hw * 0.34, cy - ry * 1.9, faceX - hw * 0.3, cy - ry * 0.1);
     g.stroke();
-    drawProfileLamp(g, lampCx, cy, rx, ry, i === litIndex, i);
+    drawDeadLens(g, lampCx, cy, rx, ry);
   }
 }
 
@@ -466,11 +447,11 @@ function drawWalkFigure(g: CanvasRenderingContext2D, cx: number, y: number, s: n
 }
 
 /**
- * Feu piéton in PROFILE: a small 2-aspect box (red standing man top, green walking
- * man below) seen from the side, on the road-facing front panel. Only ONE aspect
- * lights, OPPOSITE the vehicle head (`greenLit` only while vehicles are red). The
- * pictogram is horizontally foreshortened (the turn) so it hints the figure without
- * pretending to be a full face-on symbol.
+ * Feu piéton in PROFILE: a small 2-aspect box (standing man top, walking man below)
+ * seen from the side, on the road-facing front panel. Both pictograms are DEAD grey
+ * here (art law C1) — the lit colour + halo is painted by the overlay
+ * ({@link drawSignalLenses}). The pictogram is horizontally foreshortened (the turn)
+ * so it hints the figure without pretending to be a full face-on symbol.
  */
 function drawPedestrianHeadProfile(
   g: CanvasRenderingContext2D,
@@ -478,7 +459,6 @@ function drawPedestrianHeadProfile(
   rightX: number,
   topY: number,
   bh: number,
-  greenLit: boolean,
 ): void {
   const hw = rightX - faceX;
   roundRectPath(g, faceX, topY, hw, bh, hw * 0.1);
@@ -496,17 +476,12 @@ function drawPedestrianHeadProfile(
   const gap = bh * 0.06;
   const wcx = faceX + hw * 0.3;
   const ww = hw * 0.36;
-  const drawAspect = (winY: number, kind: "stand" | "walk", lit: boolean): void => {
+  const drawAspect = (winY: number, kind: "stand" | "walk"): void => {
     roundRectPath(g, wcx - ww / 2, winY, ww, winH, ww * 0.22);
     g.fillStyle = "rgba(3,3,7,1)";
     g.fill();
-    if (lit) {
-      const halo = kind === "stand" ? "rgba(255,60,74,0.42)" : "rgba(80,240,130,0.42)";
-      lensHalo(g, wcx - ww * 0.15, winY + winH / 2, ww * 1.1, halo);
-      g.fillStyle = kind === "stand" ? "#ff3446" : "#3bf06e";
-    } else {
-      g.fillStyle = kind === "stand" ? "rgba(78,26,30,0.9)" : "rgba(26,66,38,0.9)";
-    }
+    // Dead grey pictogram — no colour, no halo (the overlay carries the lit figure).
+    g.fillStyle = FIGURE_DEAD;
     // Foreshorten the pictogram horizontally about the window centre.
     g.save();
     g.translate(wcx, 0);
@@ -520,8 +495,8 @@ function drawPedestrianHeadProfile(
     roundRectPath(g, wcx - ww / 2, winY, ww, winH, ww * 0.22);
     g.stroke();
   };
-  drawAspect(topY + bh * 0.04, "stand", !greenLit);
-  drawAspect(topY + bh * 0.04 + winH + gap, "walk", greenLit);
+  drawAspect(topY + bh * 0.04, "stand");
+  drawAspect(topY + bh * 0.04 + winH + gap, "walk");
 }
 
 /**
@@ -530,20 +505,15 @@ function drawPedestrianHeadProfile(
  * side. A slim vertical mast on the mast side, a 3-aspect vehicle head up top and a
  * feu piéton lower down, both cantilevered toward the road on short brackets, lenses
  * as foreshortened ellipses under hoods. `state` selects the lit lamps; the two
- * heads are interlocked (see {@link trafficSignalPhase}). Lit lamp = colour + halo
- * (Bertrand-directed exception to the grey glow law); everything structural is grey.
+ * heads are interlocked (see {@link trafficSignalPhase}). The housing is DEAD grey
+ * (art law C1); the lit lamp colour + halo is a render-side overlay
+ * ({@link drawSignalLenses}) painted on a co-located plane.
  */
-function drawTrafficLight(
-  g: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  state: SignalState,
-): void {
+function drawTrafficLight(g: CanvasRenderingContext2D, w: number, h: number): void {
   const gy = h * 0.965;
   const poleX = w * 0.66;
   const pw = Math.max(3, w * 0.085);
   baseShadow(g, w, h, 0.26);
-  const litIndex = state.vehicle === "red" ? 0 : state.vehicle === "amber" ? 1 : 2;
 
   // Vehicle head geometry (road side = left, mast side = right).
   const vTop = h * 0.012;
@@ -568,8 +538,8 @@ function drawTrafficLight(
   g.fillRect(vRight - w * 0.02, vTop + vBh * 0.42, poleX - (vRight - w * 0.02) + pw / 2, vBh * 0.1);
   g.fillRect(pRight - w * 0.02, pTop + pBh * 0.4, poleX - (pRight - w * 0.02) + pw / 2, pBh * 0.12);
 
-  drawSignalHeadProfile(g, vFace, vRight, vTop, vBh, litIndex);
-  drawPedestrianHeadProfile(g, pFace, pRight, pTop, pBh, state.ped === "green");
+  drawSignalHeadProfile(g, vFace, vRight, vTop, vBh);
+  drawPedestrianHeadProfile(g, pFace, pRight, pTop, pBh);
 
   // Splayed foot under the mast.
   g.fillStyle = BODY;
@@ -718,23 +688,18 @@ function drawStreetSign(g: CanvasRenderingContext2D, w: number, h: number): void
   g.stroke();
 }
 
-/** Per-kind draw options. Only the traffic light reads one (its lit signal aspect). */
-export interface DrawNearForegroundOptions {
-  readonly signal?: SignalState;
-}
-
 /**
  * Draw a near-foreground silhouette of `kind` filling the (texW × texH) canvas,
  * y-down, base at the bottom. Clears first, like {@link drawForegroundIronwork}.
- * Deterministic for a given (kind, size, options): the traffic light varies only
- * with `options.signal`; every other kind ignores options and is constant.
+ * Deterministic and signal-independent for every kind: the traffic-light housing
+ * is now DEAD grey, and its animated lit lens is a separate overlay
+ * ({@link drawSignalLenses}).
  */
 export function drawNearForegroundObject(
   g: CanvasRenderingContext2D,
   kind: NearForegroundKind,
   texW: number,
   texH: number,
-  options?: DrawNearForegroundOptions,
 ): void {
   g.clearRect(0, 0, texW, texH);
   switch (kind) {
@@ -748,7 +713,7 @@ export function drawNearForegroundObject(
       drawWallaceFountain(g, texW, texH);
       return;
     case "trafficLight":
-      drawTrafficLight(g, texW, texH, options?.signal ?? DEFAULT_SIGNAL);
+      drawTrafficLight(g, texW, texH);
       return;
     case "bollard":
       drawBollard(g, texW, texH);
@@ -763,4 +728,91 @@ export function drawNearForegroundObject(
       drawStreetSign(g, texW, texH);
       return;
   }
+}
+
+// --- Feu tricolore lit-lens overlay (ADR-0049) ----------------------------
+// The housing PNG (or procedural fallback) carries the DEAD grey lenses; this
+// overlay paints ONLY the lit coloured lens + halo, on a transparent co-located
+// plane driven by the pure trafficSignal clock. The one directed C1 exception.
+
+// Fixed-fraction fallback anchors, seeded from the procedural housing geometry,
+// used when the levelArt `lenses` block is absent or an anchor is malformed — so
+// the overlay still lights up before the generated block lands. Order matches
+// SignalLenses: vehicle red/amber/green, pedestrian stand/walk.
+const FALLBACK_VEHICLE_LENSES: readonly LensAnchor[] = [
+  { x: 0.29, y: 0.1, rx: 0.11, ry: 0.035 },
+  { x: 0.29, y: 0.24, rx: 0.11, ry: 0.035 },
+  { x: 0.29, y: 0.38, rx: 0.11, ry: 0.035 },
+];
+const FALLBACK_PED_LENSES: readonly LensAnchor[] = [
+  { x: 0.34, y: 0.62, rx: 0.14, ry: 0.05 },
+  { x: 0.34, y: 0.8, rx: 0.14, ry: 0.05 },
+];
+
+/** Resolve anchor `i`, degrading to the fixed-fraction fallback when the provided
+ *  array is missing or the anchor is not fully finite (mirrors `muzzleFor`). */
+function anchorAt(
+  arr: readonly LensAnchor[] | undefined,
+  i: number,
+  fallback: readonly LensAnchor[],
+): LensAnchor {
+  const a = arr?.[i];
+  if (
+    a !== undefined &&
+    [a.x, a.y, a.rx, a.ry].every((n) => Number.isFinite(n)) &&
+    a.rx > 0 &&
+    a.ry > 0
+  ) {
+    return a;
+  }
+  return fallback[i] ?? { x: 0.3, y: 0.3, rx: 0.1, ry: 0.04 };
+}
+
+/** Paint one lit, glowing coloured lens + halo at a normalized anchor. `colourIndex`
+ *  selects the aspect colour (0 red, 1 amber, 2 green); the beam throws left toward
+ *  the road the signal faces, mirroring the procedural housing. */
+function litLens(
+  g: CanvasRenderingContext2D,
+  texW: number,
+  texH: number,
+  a: LensAnchor,
+  colourIndex: number,
+): void {
+  const cx = a.x * texW;
+  const cy = a.y * texH;
+  const rx = a.rx * texW;
+  const ry = a.ry * texH;
+  lensHalo(g, cx - rx * 0.5, cy, rx * 3.6, SIGNAL_HALO[colourIndex] ?? "rgba(255,255,255,0.4)");
+  g.fillStyle = SIGNAL_LIT[colourIndex] ?? "#ffffff";
+  g.beginPath();
+  g.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+  g.fill();
+  g.fillStyle = "rgba(255,255,255,0.6)";
+  g.beginPath();
+  g.ellipse(cx - rx * 0.24, cy - ry * 0.3, rx * 0.42, ry * 0.42, 0, 0, TAU);
+  g.fill();
+}
+
+/**
+ * Paint ONLY the lit coloured lens + halo of the feu tricolore onto a TRANSPARENT
+ * overlay canvas (the housing art carries the dead grey lenses). Clears first, then
+ * lights exactly one vehicle aspect and one pedestrian aspect for `state`, at the
+ * normalized `lenses` anchors. A null `lenses` block, short arrays or non-finite
+ * anchors all degrade to the fixed-fraction fallback (never throws), so the overlay
+ * lights up even before the levelArt block lands. The one directed C1 colour
+ * exception — everything structural is grey.
+ */
+export function drawSignalLenses(
+  g: CanvasRenderingContext2D,
+  texW: number,
+  texH: number,
+  lenses: SignalLenses | null,
+  state: SignalState,
+): void {
+  g.clearRect(0, 0, texW, texH);
+  const vIndex = state.vehicle === "red" ? 0 : state.vehicle === "amber" ? 1 : 2;
+  litLens(g, texW, texH, anchorAt(lenses?.vehicle, vIndex, FALLBACK_VEHICLE_LENSES), vIndex);
+  // Pedestrian: stand (index 0) shows red, walk (index 1) shows green.
+  const pLit = state.ped === "green" ? 1 : 0;
+  litLens(g, texW, texH, anchorAt(lenses?.ped, pLit, FALLBACK_PED_LENSES), pLit === 1 ? 2 : 0);
 }
