@@ -104,6 +104,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0046](./0046-render-css-modules-and-token-bridge.md) | Render-layer CSS Modules + tokens.ts→CSS-var bridge; hud-css skill | Accepted |
 | [0047](./0047-near-foreground-parallax-layer.md) | Near-foreground differential-parallax décor layer | Proposed |
 | [0048](./0048-troncon-sequence-backdrop-mode.md) | Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2) | Proposed |
-| [0049](./0049-flyer-occlusion-shadow-exception.md) | Flyer occlusion-shadow exception & breakpoint-dependent roving axis | Proposed |
+| [0049](./0049-nearfg-generated-sprites-with-procedural-fallback.md) | Near-foreground props: generated gptimage sprites with procedural fallback | Proposed |
+| [0050](./0050-flyer-occlusion-shadow-exception.md) | Flyer occlusion-shadow exception & breakpoint-dependent roving axis | Proposed |
 
 <!-- ADR-INDEX:END -->

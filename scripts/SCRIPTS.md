@@ -724,6 +724,72 @@ produced here.
 
 ---
 
+## lib/gptimage.mjs, gen-nearfg-sprites.mjs — Near-foreground road-prop sprites
+
+Extracted from `gen-gptimage-asset.mjs` (tech-plan-road-props.md decision 4,
+ADR-0047/0049) into a shared, unit-tested library so a second generator could
+reuse the same gptimage-large pipeline instead of forking it.
+
+- **`lib/gptimage.mjs`** — `readToken({ env, readFileSync })` (precedence:
+  `POLLINATIONS_TOKEN` env → legacy scratchpad token file → throws a clear
+  error); `genUrl`/`fetchImg`/`withRetry` (gptimage-large, always requested
+  SQUARE); `cropRectForAspect(W, H, targetW, targetH)` (pure geometry — the
+  centered crop rect for a non-square target inside a square source) and
+  `keyAndDown(buf, { targetW, targetH, keepColor, tol })` (chroma-key +
+  optional luma-desaturate + center-crop-then-downscale); `cyanPreviewCanvas`.
+  Non-square targets are handled by generating SQUARE and center-cropping to
+  aspect before the final downscale (gptimage-large's arbitrary-aspect support
+  is unreliable) — see the module header for the full rationale.
+- **`gen-gptimage-asset.mjs`** is now a thin CLI over this lib (same flags,
+  same behaviour).
+- **`gen-nearfg-sprites.mjs`** — the 8 near-foreground décor props (parking
+  meter, lamppost, Wallace fountain, traffic light, bollard, scooter, bench,
+  street sign): single source of truth is the `nearForegroundArt` block of
+  `src/game/levels/levelArt.json` (opening/style/per-kind prompt/seed/asset/
+  **non-square** size). Luma-desaturation is always ON (strict grey décor —
+  art law C1); the traffic light's PNG is a DEAD-lens housing only, the lit
+  lens is a render-side overlay. Only-missing by default; `FORCE=1`
+  regenerates all; `--asset <kind>` for one; `--list`. A kind whose `prompt`
+  is still the pre-gate empty placeholder is **skipped with a loud warning**
+  (never spends Pollen on an empty prompt).
+
+```bash
+node scripts/gen-nearfg-sprites.mjs                 # generate missing (network)
+FORCE=1 node scripts/gen-nearfg-sprites.mjs          # regenerate all (network) [CI]
+node scripts/gen-nearfg-sprites.mjs --asset bollard  # one kind only
+node scripts/gen-nearfg-sprites.mjs --list           # list defined kinds
+```
+
+### CI
+
+`.github/workflows/gen-nearfg-sprites.yml`, modeled on `gen-vehicle-sprites.yml`:
+`workflow_dispatch` or the `.github/dispatch/gen-nearfg-sprites` marker (guarded
+by the `ci(dispatch):` commit-message check), runs the `nearForeground`
+prompt gate (`check-art-prompts.mjs`) before any paid generation, then
+`FORCE=1 node scripts/gen-nearfg-sprites.mjs`, then the grey/C1 style gate
+(`check-nearfg-style.mjs`) with a bounded regen retry, then commits
+`public/assets/nearfg/*.png`.
+
+---
+
+## check-nearfg-style.mjs — Near-foreground grey/C1 pixel style gate
+
+ART GATE 2 for the near-foreground props: asserts near-zero **mean
+saturation** (strict grey — same 0.10 ceiling and formula as
+`check-sprite-style.mjs`'s vehicle MEAN-SAT check) and a non-empty opaque
+**silhouette** per generated `public/assets/nearfg/<kind>.png`. Deliberately a
+standalone script rather than a `check-sprite-style.mjs` mode — that script's
+per-type neon hue / aspect-bounds config is vehicle-specific and near-fg props
+have neither.
+
+```bash
+node scripts/check-nearfg-style.mjs                          # check all defined kinds
+node scripts/check-nearfg-style.mjs --file a.png --kind bollard
+node scripts/check-nearfg-style.mjs --fail-list f.txt        # write failing kinds (CI retry)
+```
+
+---
+
 ## gen-from-reference.mjs — Ad-hoc kontext reference-conditioned iteration
 
 Exploratory one-shot CLI (ADR-0044): drop a graphic reference, run a single

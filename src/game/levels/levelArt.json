@@ -218,6 +218,72 @@
       }
     }
   },
+  "nearForegroundArt": {
+    "$comment": "Generated near-foreground décor prop sprites (ADR-0049, amends ADR-0047 code-drawn → generated-with-procedural-fallback). Single source of truth for scripts/gen-nearfg-sprites.mjs. House style: strict GREY B&W photocopied-fanzine décor (art law C1 — décor is grey; ZERO colour). gptimage-large on flat magenta #FF3CDC chroma ground, chroma-keyed + luma-desaturated. Files: public/assets/nearfg/<kind>.png. World sizing (aspect/heightFrac, plane math) stays in code (src/render/scene/nearForegroundArt.ts NEAR_KIND_SPECS) so placement + tests do not move; this block carries ONLY generation inputs + render registration knobs. Per-type `size` sets the GENERATED texture pixel dims (width = round(512*aspect)); it must match NEAR_KIND_SPECS aspect (pinned by nearForegroundArt.consistency test) so the plane never distorts. The trafficLight PNG is a DEAD-lens grey housing; the coloured lit lens + halo is a render-side overlay (the one directed C1 exception) anchored via `lenses` (normalized [0..1] over the texture, y-down, TUNED at the art gate against the real PNG — pattern: enemies muzzle anchors). Missing/uncommitted PNG ⇒ render falls back to the procedural CanvasTexture, so the loading gate never breaks. PROMPTS are the LEAD-ART-GATE-FINAL strings from docs/art/prompts-road-props.md § \"Lead-art gate\" (Nico, 2026-07-19 — verdict 8/8 PASS), copied verbatim: opening/style/per-kind subject clauses + seeds + the trafficLight lenses sketch (lenses stay the tech-plan Decision-1 placeholder values — tuned render-side at the Gate-4 composite review, not a prompt matter). scooter drops the top-box (open-item #1: distinct from the interactive moto's signature silhouette); streetSign keeps the post-mounted plate (open-item #2). STILL OWED before CI dispatch: the asset gate on the keyed PNGs and the composite gate on the trafficLight lit-lens overlay (neither covered by the prompt-gate PASS) — see that doc's \"Notes for the generation lane\".",
+    "opening": "Flat 2D video game sprite, strict side-view orthographic projection, a single piece of 1998 Parisian street furniture at street level, ",
+    "style": ", clean bold comic book ink illustration, three-tone cel shading in grey black and white, thick clean black outline, flat evenly filled shapes, strictly monochrome greyscale with no colour, the single object fully visible and centered, floating isolated on a perfectly flat solid uniform bright magenta #FF3CDC background, empty flat magenta backdrop, no ground, no floor, no cast shadow, no drop shadow, no people, no text, no letters, no numbers, no logo, no writing, no signature, single object only",
+    "types": {
+      "parkingMeter": {
+        "asset": "assets/nearfg/parkingMeter.png",
+        "size": { "width": 256, "height": 512 },
+        "seed": 6101,
+        "prompt": "a 1990s Parisian pay-and-display parking machine standing tall: a slim steel pole clearly much thinner than the head, topped by a bulky rectangular boxy head whose whole top face is a single steeply slanted rain-cap wedge; on the head's road-facing front a small dark blank recessed rectangular screen with nothing on it, a wide horizontal coin slot below it, a low ticket-delivery slot near the bottom, and a few horizontal ventilation grooves shown as indented surface ridges rather than cut-through vents; angular sheet-metal casing, hard straight edges, distinctly taller than it is wide"
+      },
+      "lamppost": {
+        "asset": "assets/nearfg/lamppost.png",
+        "size": { "width": 256, "height": 512 },
+        "seed": 6102,
+        "prompt": "a tall cast-iron Haussmann-era Parisian street lamp: a fluted base flaring out at the foot, a slender fluted shaft tapering as it rises, a single curved S-shaped swan-neck arm sweeping outward near the very top, ending in a faceted many-sided polygonal lantern with a small pointed cap, the lantern's facets solid opaque panels with no open lattice or see-through gaps; ornamental antique cast-iron, elegant and slender, dark uniform painted finish, a paler grey highlight edge along the shaft's lit side to keep the silhouette legible against a dark night backdrop"
+      },
+      "wallaceFountain": {
+        "asset": "assets/nearfg/wallaceFountain.png",
+        "size": { "width": 282, "height": 512 },
+        "seed": 6103,
+        "prompt": "a Wallace drinking fountain, a compact cast-iron monument: an octagonal pedestal at the base, four caryatid figures fused into one continuous closed silhouette around the centre, only surface linework separating each figure with no open gaps between them or under their raised arms, the arms supporting a domed pointed cap with a few small rounded bumps studding the dome; the silhouette pinched narrow at the base, widest at mid-height where the four figures stand, then tapering up to the pointed dome; modest and squat, clearly wider and lower than a street lamp, dark uniform patinated finish, a lighter grey highlight along the dome and body edges to separate the silhouette from the dark street"
+      },
+      "trafficLight": {
+        "asset": "assets/nearfg/trafficLight.png",
+        "size": { "width": 226, "height": 512 },
+        "seed": 6104,
+        "prompt": "a French road traffic signal on a slim round mast with a splayed foot, seen from the side at street level. High on the mast a tall boxy vehicle signal head turned in strict side profile: three round lenses stacked vertically, each tucked under a curved tunnel hood-visor that juts sideways toward the road, the lens discs seen edge-on as narrow dark slivers, all dead and unlit. Lower down a smaller pedestrian signal head turned to face the viewer head-on: two blank dark round lens windows stacked vertically, both dead and unlit. Both heads cantilevered from the mast on short brackets. Every lens dark, matte and switched off, no glow and no colour; boxy hooded metal housings, dark uniform finish, a light grey highlight along the visor lips and mast edge to keep the housing legible against a dark night backdrop, with generous empty magenta margin on the road side so the visor tip stays fully clear of the frame edge",
+        "lenses": {
+          "vehicle": [
+            { "x": 0.29, "y": 0.1, "rx": 0.11, "ry": 0.035 },
+            { "x": 0.29, "y": 0.24, "rx": 0.11, "ry": 0.035 },
+            { "x": 0.29, "y": 0.38, "rx": 0.11, "ry": 0.035 }
+          ],
+          "ped": [
+            { "x": 0.34, "y": 0.62, "rx": 0.14, "ry": 0.05 },
+            { "x": 0.34, "y": 0.8, "rx": 0.14, "ry": 0.05 }
+          ]
+        }
+      },
+      "bollard": {
+        "asset": "assets/nearfg/bollard.png",
+        "size": { "width": 307, "height": 512 },
+        "seed": 6105,
+        "prompt": "a Parisian ball-top bollard: a short stout smooth tubular steel post about knee-to-hip height, slightly flared where it meets the ground, topped by a single rounded cast-iron ball cap; squat and low, much shorter than a street lamp, one smooth unbroken shaft, dark uniform painted finish with no reflective band and no collar, a subtle lighter grey highlight along the ball cap and the shaft's lit side"
+      },
+      "scooter": {
+        "asset": "assets/nearfg/scooter.png",
+        "size": { "width": 768, "height": 512 },
+        "seed": 6106,
+        "prompt": "a 1990s plastic-bodied sport scooter parked side-on in profile, standing upright on its centre stand: small fat low-diameter wheels shown as solid flat discs with no spokes and no rim cut-outs, a low continuous one-piece moulded plastic body with a step-through floorboard and a raised front leg-shield, a low flat seat, a simple round headlamp set in the front shield, a thin single mirror stalk, a bare empty rear luggage rack; stocky youthful scooter proportions, clearly wider than it is tall, comfortably inset within the frame with empty magenta margin on both sides, nothing touching the canvas edge"
+      },
+      "bench": {
+        "asset": "assets/nearfg/bench.png",
+        "size": { "width": 870, "height": 512 },
+        "seed": 6107,
+        "prompt": "a Parisian Davioud public bench seen side-on in profile: three or four bold horizontal wooden slats forming the seat and the gently reclined backrest, drawn flush against each other with only thin dividing outline strokes between them so they read as clear parallel horizontal lines with no open gaps or daylight visible between slats; a heavy ornate cast-iron end frame at each end with floral scrollwork legs, the scrollwork read as bold solid shapes rather than fine see-through openwork, visibly bulkier and heavier than the thin slats; the backrest gently reclined for comfort, the whole bench resting directly on the pavement; a long low bench, much wider than it is tall, one continuous seat with no armrest dividers, comfortably inset with empty magenta margin on both ends, no part touching the canvas edge"
+      },
+      "streetSign": {
+        "asset": "assets/nearfg/streetSign.png",
+        "size": { "width": 384, "height": 512 },
+        "seed": 6108,
+        "prompt": "a Parisian enamel street-name plaque mounted on a single thin post: a wide landscape rectangular flat plate, clearly wider than it is tall, its face completely blank and empty with nothing written on it, bordered by a bold single raised keyline border running just inside the edge; one slender post, much thinner than the plate, rising from below into the centre of the plate and planted on a small splayed foot on the pavement, the post attaching behind the plate with no visible gap or hole through it; a single flat plane, not a boxy double-sided sign, plain and empty"
+      }
+    }
+  },
   "windowGrid": {
     "$comment": "Where cops pop up, as a normalized grid over the facade image (0..1, y down). Tuned to the upper lit-window floors of the generated facades.",
     "cols": 7,

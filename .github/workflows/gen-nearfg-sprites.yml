@@ -1,0 +1,138 @@
+name: Generate near-foreground road-prop sprites
+
+# Regenerates the 8 near-foreground road-prop sprites (ADR-0047, amended by the
+# road-props gptimage remake — docs/handoffs/tech-plan-road-props.md) from the
+# `nearForegroundArt` block of src/game/levels/levelArt.json via the
+# gptimage-large pipeline (scripts/lib/gptimage.mjs / scripts/gen-nearfg-
+# sprites.mjs): magenta chroma-key ground, chroma-keyed + luma-desaturated to
+# strict GREY (house law C1 — décor carries ZERO colour). FORCE=1 so a
+# re-dispatch overwrites the procedural render fallback with real art. Real
+# art then passes the grey/C1 style gate (scripts/check-nearfg-style.mjs) —
+# with a bounded regen retry — before it is committed, so no off-style sprite
+# lands.
+#
+# gptimage-large is a PREMIUM Pollinations model (spends Pollen). Deliberate
+# runs only: manual (workflow_dispatch) or by touching the dispatch marker
+# .github/dispatch/gen-nearfg-sprites (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-nearfg-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-nearfg-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # gptimage-large is premium — the token is REQUIRED here (unlike the
+      # anonymous-fallback flux/kontext generators): scripts/lib/gptimage.mjs's
+      # readToken() throws a clear error when it is unset and no legacy
+      # scratchpad token file exists.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key + style gate)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Prompt gate (word check, before any paid generation)
+        run: node scripts/check-art-prompts.mjs --set nearForeground
+
+      - name: Generate near-foreground sprites (gptimage-large) and chroma-key to transparency
+        run: FORCE=1 node scripts/gen-nearfg-sprites.mjs
+
+      - name: Style gate (grey/C1 pixel check + bounded regen retry)
+        run: |
+          # ART GATE 2 — reject sprites that came back with a colour cast (a
+          # failed/incomplete magenta key) or an empty/near-empty silhouette. On
+          # a FAIL we delete ONLY the offending PNG(s) and re-run the generator
+          # WITHOUT FORCE — it fills missing files only, so exactly the deleted
+          # sprites are regenerated (pinned seeds reproduce the reviewed art;
+          # transient network flakes that left a file missing get another
+          # fetch). Bounded to 2 extra attempts; still failing → the job fails
+          # and the if: failure() upload below preserves the outputs for
+          # lead-art review.
+          max_retries=2
+          attempt=0
+          fail_list="$RUNNER_TEMP/failing-nearfg.txt"
+          while true; do
+            if node scripts/check-nearfg-style.mjs --fail-list "$fail_list"; then
+              echo "Style gate passed."
+              break
+            fi
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "::error::near-foreground style gate still failing after $max_retries retries"
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            echo "Style gate failed — retry $attempt/$max_retries: regenerating only the failing sprites"
+            while IFS= read -r k; do
+              [ -n "$k" ] && rm -f "public/assets/nearfg/$k.png" "public/assets/nearfg/${k}_cyan.png"
+            done <"$fail_list"
+            # No FORCE: regenerates only the just-deleted (now missing) sprites.
+            node scripts/gen-nearfg-sprites.mjs
+          done
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # nearfg dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/nearfg/*.png" > /dev/null; then
+            git add -f public/assets/nearfg/*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate near-foreground road-prop sprites"
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash (the
+            # generation step can leave unstaged files that would abort a bare
+            # rebase) and retry, max 3 attempts. The if: failure() upload below
+            # preserves the assets so no paid generation is lost.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearfg-sprites-unpushed
+          path: public/assets/nearfg/*.png
+          if-no-files-found: warn
+          retention-days: 14

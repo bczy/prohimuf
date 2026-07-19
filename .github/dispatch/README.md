@@ -17,13 +17,17 @@ is guarded by an `if:` that only fires a push-triggered run when the head commit
 message starts with `ci(dispatch):`, so merge/rebase/revert pushes that happen
 to touch a marker path do not trigger a paid run.
 
-Markers are created on first dispatch, so only `gen-vehicle-sprites` exists
-today. The rows below list every marker path and the workflow it dispatches:
+Markers are created on first dispatch (the rest come into existence the first
+time they are pushed) — `gen-vehicle-sprites` and `gen-nearfg-sprites` exist
+today (the latter pre-created so the road-props CI lane is dispatchable as
+soon as the gated prompts land, see docs/handoffs/tech-plan-road-props.md).
+The rows below list every marker path and the workflow it dispatches:
 
-| Marker                | Workflow                    |
-| --------------------- | --------------------------- |
-| `gen-sprites`         | Generate enemy-type sprites |
-| `gen-vehicle-sprites` | Generate vehicle sprites    |
+| Marker                | Workflow                                   |
+| --------------------- | ------------------------------------------ |
+| `gen-sprites`         | Generate enemy-type sprites                |
+| `gen-vehicle-sprites` | Generate vehicle sprites                   |
+| `gen-nearfg-sprites`  | Generate near-foreground road-prop sprites |
 
 > Note: `deploy-preview.yml` no longer has a marker — it auto-deploys on every
 > push to `claude/*` branches (other branches: Actions UI). `preview.yml`
