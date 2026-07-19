@@ -66,6 +66,7 @@
  *   node scripts/check-art-prompts.mjs --set enemies   # only the enemies block
  *   node scripts/check-art-prompts.mjs --set courier   # only the courier layered-flipbook block
  *   node scripts/check-art-prompts.mjs --set levels    # only the levels block
+ *   node scripts/check-art-prompts.mjs --set nearForeground # only nearForegroundArt
  * Exit: 0 when there are no ERROR-level violations (WARNs allowed); 1 otherwise.
  */
 import fs from "fs";
@@ -597,6 +598,168 @@ function checkCourier(courier, rep) {
   }
 }
 
+// nearForegroundArt contract (road-props gptimage remake,
+// docs/handoffs/tech-plan-road-props.md decision 1/4). Generator:
+// scripts/gen-nearfg-sprites.mjs. Strict GREY B&W décor (art law C1 — near-
+// foreground props carry ZERO colour; the trafficLight's coloured lit lens is
+// a render-side overlay, never baked into the housing PNG) on a magenta
+// chroma-key ground. Negation budget reuses `countNegations`/the SAME NEG_RE
+// pattern and NEG_WARN_OVER/NEG_ERROR_OVER thresholds every other set is
+// policed with ("no negation words it already polices"), but — UNLIKE every
+// other set — TWO differences, both deliberate:
+//   1. Scoped to `opening + prompt` only, EXCLUDING the shared `style` tail:
+//      the frozen house style (tech-plan-road-props.md decision 1) legitimately
+//      carries a run of REQUIRED "no ground / no cast shadow / no text / no
+//      logo / no writing / no signature" boilerplate clauses (already enforced
+//      above via the "no-text clause" token) — unlike vehicles/enemies/
+//      courier's much shorter negation-light tails, this one alone clears the
+//      >4-negation hard ceiling by itself. That boilerplate is pre-approved,
+//      per-block content an individual prompt author neither writes nor can
+//      fix, so it must not be blamed on (or gate) their prompt. `prompt`
+//      itself is still fully policed for negation, which is what "positively
+//      phrased … no negation words" actually targets: prose an author wrote.
+//   2. NO word-count budget (`checkBudgets`'s other half) is applied here.
+//      The 30-90/120-word bands are a FLUX-specific calibration (art bible
+//      §3.3); nearForegroundArt is generated on gptimage-large, which
+//      docs/art/prompts-road-props.md's own authoring method notes is "more
+//      instruction-adherent than FLUX" and is deliberately used with longer,
+//      more explicit per-prop descriptions (the trafficLight prompt alone,
+//      describing two distinct signal heads, runs well past 90 words by
+//      design). Reusing the FLUX word ceiling here would gate correct,
+//      reviewed prose for using a different model's idiom.
+//
+// PRE-GATE STATE: while prompts are still being authored/gated by the
+// concept-artist lane (docs/art/prompts-road-props.md), a per-kind `prompt`
+// may legitimately be the placeholder empty string "" — unlike every other set
+// (where an empty prompt is a hard ERROR), that is tolerated here: it WARNs
+// loudly and skips the per-kind content checks for that entry, so the checker
+// (and CI's `node scripts/check-art-prompts.mjs`) stays green through the
+// pre-gate window without silently hiding a permanently-empty prompt.
+const NEARFG_STYLE_TOKENS = [
+  {
+    name: "grey/monochrome (C1 — décor carries zero colour)",
+    any: [
+      /\bmonochrome\b/i,
+      /\bgreyscale\b/i,
+      /\bgrayscale\b/i,
+      /\bgrey black and white\b/i,
+      /\bblack and white\b/i,
+      /\bno colour\b/i,
+      /\bno color\b/i,
+    ],
+  },
+  {
+    name: "chroma-key ground term (magenta key)",
+    any: [/\bchroma-?key\b/i, /\bmagenta\b/i, /#FF3CDC/i],
+  },
+  {
+    name: "no-text clause",
+    any: [/\bno text\b/i],
+  },
+  {
+    name: "positive medium statement (illustration/ink/comic/etc.)",
+    any: [
+      /\billustration\b/i,
+      /\bink\b/i,
+      /\bcomic\b/i,
+      /\bsprite\b/i,
+      /\bhalftone\b/i,
+      /\blinework\b/i,
+    ],
+  },
+];
+
+function checkNearForegroundArt(nearForegroundArt, rep) {
+  if (!nearForegroundArt) {
+    rep.error("nearForegroundArt", "missing `nearForegroundArt` block");
+    return;
+  }
+
+  const opening = typeof nearForegroundArt.opening === "string" ? nearForegroundArt.opening : "";
+  const style = typeof nearForegroundArt.style === "string" ? nearForegroundArt.style : "";
+  if (!opening.trim()) {
+    rep.error("nearForegroundArt.opening", "missing/empty — required medium + view slot");
+  }
+  if (!style.trim()) {
+    rep.error("nearForegroundArt.style", "missing/empty — required shared style tail");
+  } else {
+    for (const tok of NEARFG_STYLE_TOKENS) {
+      if (!tok.any.some((re) => re.test(style))) {
+        rep.error("nearForegroundArt.style", `missing required token: ${tok.name}`);
+      }
+    }
+  }
+
+  const types = nearForegroundArt.types ?? {};
+  if (Object.keys(types).length === 0) {
+    rep.error("nearForegroundArt.types", "missing or empty `types` block");
+  }
+
+  const seenAssets = new Map();
+  for (const [kind, def] of Object.entries(types)) {
+    const p = `nearForegroundArt.types.${kind}`;
+    if (def === null || typeof def !== "object" || Array.isArray(def)) {
+      rep.error(p, "entry must be an object");
+      continue;
+    }
+
+    // asset: EXACTLY "assets/nearfg/<kind>.png" — the generator writes files
+    // derived from the kind key while the renderer loads the manifest `asset`,
+    // same equality contract as courier.layers.*.asset.
+    const asset = def.asset ?? "";
+    const expectedAsset = `assets/nearfg/${kind}.png`;
+    if (typeof asset !== "string" || asset !== expectedAsset) {
+      rep.error(`${p}.asset`, `must be exactly "${expectedAsset}"`);
+    } else if (seenAssets.has(asset)) {
+      rep.error(`${p}.asset`, `duplicate asset "${asset}" (also ${seenAssets.get(asset)})`);
+    } else {
+      seenAssets.set(asset, p);
+    }
+
+    if (!Number.isInteger(def.seed) || def.seed <= 0) {
+      rep.error(`${p}.seed`, "seed must be a positive integer");
+    }
+
+    const w = def.size?.width;
+    const h = def.size?.height;
+    if (!Number.isInteger(w) || w <= 0) {
+      rep.error(`${p}.size.width`, "must be a positive integer");
+    }
+    if (!Number.isInteger(h) || h <= 0) {
+      rep.error(`${p}.size.height`, "must be a positive integer");
+    }
+
+    const prompt = typeof def.prompt === "string" ? def.prompt : "";
+    if (!prompt.trim()) {
+      rep.warn(
+        `${p}.prompt`,
+        "empty prompt — PRE-GATE PLACEHOLDER, generation skips this kind until the " +
+          "concept-artist/lead-art gate fills it in (see " +
+          "docs/handoffs/tech-plan-road-props.md decision 1)",
+      );
+      continue; // nothing else to check on an empty prompt
+    }
+
+    // Positively phrased: negation budget only (no word-count ceiling — see
+    // the block comment above), over the AUTHOR-CONTROLLED part of the prompt
+    // (opening + subject), excluding the shared `style` tail.
+    const negAssembled = `${opening}${prompt}`;
+    const negs = countNegations(negAssembled);
+    const ap = `${p} (opening+prompt, excludes required style tail)`;
+    if (negs > NEG_ERROR_OVER) {
+      rep.error(
+        ap,
+        `${negs} negations — over the hard ceiling of ${NEG_ERROR_OVER}; gptimage/FLUX reads negation as affirmation, rewrite positively`,
+      );
+    } else if (negs > NEG_WARN_OVER) {
+      rep.warn(
+        ap,
+        `${negs} negations — over the ≤${NEG_WARN_OVER} budget; prefer positive description`,
+      );
+    }
+  }
+}
+
 function checkLevels(levels, rep) {
   if (!Array.isArray(levels)) {
     rep.error("levels", "missing or non-array `levels`");
@@ -626,8 +789,10 @@ function main() {
   const args = process.argv.slice(2);
   const si = args.indexOf("--set");
   const set = si !== -1 ? args[si + 1] : "all";
-  if (!["all", "vehicles", "enemies", "courier", "levels"].includes(set)) {
-    console.error(`Unknown --set "${set}" (expected: vehicles | enemies | courier | levels)`);
+  if (!["all", "vehicles", "enemies", "courier", "levels", "nearForeground"].includes(set)) {
+    console.error(
+      `Unknown --set "${set}" (expected: vehicles | enemies | courier | levels | nearForeground)`,
+    );
     process.exit(2);
   }
 
@@ -638,6 +803,9 @@ function main() {
   if (set === "all" || set === "enemies") checkEnemies(json.enemies, rep);
   if (set === "all" || set === "courier") checkCourier(json.courier, rep);
   if (set === "all" || set === "levels") checkLevels(json.levels, rep);
+  if (set === "all" || set === "nearForeground") {
+    checkNearForegroundArt(json.nearForegroundArt, rep);
+  }
 
   const rel = path.relative(ROOT, LEVEL_ART);
   console.log(`[check-art-prompts] linting ${rel} (set: ${set})\n`);

@@ -10,6 +10,7 @@ import {
   FONT_SIZE,
   SPACE,
   KEYLINE_WIDTH,
+  FLYER_MAX_WIDTH_PX,
   Z,
 } from "../print/tokens";
 
@@ -44,11 +45,13 @@ describe("buildPrintTokenVars", () => {
     }
   });
 
-  it("covers exactly the token keys plus keyline-width (no extras, none dropped)", () => {
+  it("covers exactly the token keys plus the lone scalars (no extras, none dropped)", () => {
+    // +2 lone scalars: --keyline-width and --flyer-max-width.
     const expected =
-      Object.values(GROUPS).reduce((n, tokens) => n + Object.keys(tokens).length, 0) + 1;
+      Object.values(GROUPS).reduce((n, tokens) => n + Object.keys(tokens).length, 0) + 2;
     expect(Object.keys(vars)).toHaveLength(expected);
     expect(vars).toHaveProperty("--keyline-width");
+    expect(vars).toHaveProperty("--flyer-max-width");
   });
 
   it("formats each group with the right unit", () => {
@@ -58,6 +61,7 @@ describe("buildPrintTokenVars", () => {
     expect(vars["--font-size-xs"]).toBe(`${String(FONT_SIZE.xs)}px`);
     expect(vars["--space-md"]).toBe(`${String(SPACE.md)}px`);
     expect(vars["--keyline-width"]).toBe(`${String(KEYLINE_WIDTH)}px`);
+    expect(vars["--flyer-max-width"]).toBe(`${String(FLYER_MAX_WIDTH_PX)}px`);
     expect(vars["--z-hud"]).toBe(String(Z.hud)); // unitless
   });
 });

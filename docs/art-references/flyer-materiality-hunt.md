@@ -1,0 +1,304 @@
+# Reference hunt — Flyer PHYSICAL OBJECT materiality (NIVEAUX menu)
+
+Hunt run by `graphic-references` (Ray), relayed by the orchestrator, in **ADAPTED
+mode**: Bertrand intermittently available this session, so Round 1 (live interview)
+was skipped in favor of assumed answers, flagged below for correction. Topic is
+strictly the **physical object** — paper stock, cut, tape, wall pile — never the
+graphic/typographic content of flyers (already banked,
+`docs/art-direction/references/LICENSES.md` §2 and `docs/references/art-culture.md`).
+
+This board feeds `docs/art-direction.md` §2bis.2 "Matérialité du flyer" directly —
+it is a **grounding/refinement pass** on an already-implemented spec, not a
+from-scratch brief.
+
+## Round 1 — questions I would have asked, and assumed answers (mark for correction)
+
+1. **Scope check** — is this purely the CSS/inline-SVG NIVEAUX flyer-wall treatment
+   (§2bis.2), no new generated PNG asset? _Assumed: yes, materiality-only, extends
+   the existing spec's toner/cut/tape/shadow ingredients — no new asset family._
+2. **Geography flex** — is "Paris 1996–1999 free-party/teknival" a hard anchor, or
+   is UK/European free-party material acceptable for **object physics** (paper,
+   toner, tape don't vary much by nationality) while graphic/typographic content
+   stays French-only? _Assumed: French-first when available, UK/Euro free-party
+   acceptable as materiality-only reference, never for type/iconography._
+3. **Technique-portability** — is a non-rave xerox/DIY-flyer materiality reference
+   (different scene/decade, e.g. NYC 1970s-80s downtown xerox ephemera) admissible
+   as a **medium-level** analog, given the house style's own anchor is "generational
+   xerox degradation IS the texture" (§1, medium-first) rather than scene-first?
+   _Assumed: yes, admissible as technique reference, flagged per-direction as a
+   named risk, never presented as the scene's identity anchor._
+
+## Round 2 — propositions
+
+### D1 — The stock itself: fluo copier paper + toner grain
+
+- [Rave Preservation Project archive](https://www.ravepreservationproject.com/) —
+  ~1000 digitized flyers; already banked (`LICENSES.md` §2). Re-flagged here for a
+  **different read**: most entries are flatbed scans, auto-levelled for legibility —
+  useful for colour/stock identification, weak for toner-grain/wear (scanning
+  erases exactly what this hunt wants).
+- [metek.free.fr — Story 1997/1998](http://metek.free.fr/Story/1997/METEK-1997.htm)
+  and [1998](http://metek.free.fr/Story/1998/METEK-1998.htm) — French teknival flyer
+  pages, period-exact (1997–1998); same scan-vs-photograph caveat as above, but the
+  strongest date/place match found.
+- [Gallery 98 — "Xerox and Photocopies" category](https://gallery98.org/category/xerox-ephemera/) —
+  dealer inventory of 1970s–80s NYC DIY xerox flyers/zines, hand-lettered,
+  cheaply printed; **technique analog, not scene match** (see Round 1 Q3) — useful
+  for how black toner sits IN cheap paper fibre rather than on top of it.
+- _Why it serves muf:_ grounds §2bis.2 ingredient 1 ("toner grain, not TV snow")
+  against real stock — confirms the `multiply`-only, darken-only approach is
+  technically correct, and gives clump/streak character to tune the existing
+  6–10% opacity budget.
+- _Risk:_ **scan-vs-photograph gap** — nearly every accessible online flyer archive
+  is a cleaned scan; treat all of D1 as colour/stock reference, not toner-texture
+  ground truth, and prefer D2 for the latter.
+- _Licence:_ Rave Preservation Project / metek.free.fr — reference pages only, no
+  scans to commit (same restriction as `LICENSES.md` §2). Gallery 98 — dealer site,
+  images copyrighted per-item, reference/mood only.
+
+**Actionable takeaways:**
+
+- Toner reads **clumpy, not uniform** — lower `feTurbulence` `numOctaves` (fewer,
+  bigger clumps) rather than fine even snow; keep the 6–10% opacity budget but
+  split it: a fine even speckle layer + an occasional faint (~3–5%) horizontal
+  streak band (bad-drum artifact), not one uniform noise pass.
+- Confirms `mix-blend-mode: multiply`-only is period-correct: xerox toner sits in
+  the fibre and can only darken, never lighten — no change needed, just validated.
+
+### D2 — Photographed (not scanned) ephemera: Seana Gavin's _Spiralled_
+
+- [Seana Gavin — _Spiralled_ (IDEA, artist page)](https://www.seanagavin.com/newblog/2020/7/13/spiralled-1) —
+  a decade of photography (1993–2003) across UK/European free-party sound systems
+  including Spiral Tribe, interspersed with **saved flyers, diary entries and
+  ephemera photographed as physical objects**, not re-scanned clean.
+- [The Vinyl Factory — coverage of _Spiralled_](https://www.thevinylfactory.com/news/nineties-rave-scene-new-book-seana-gavin-spiralled) —
+  secondary write-up confirming the book's ephemera/diary/flyer-object mix.
+- [Gallery 98 — "Flyers" category](https://gallery98.org/category/flyers/) —
+  photographed dealer-inventory shots of individual worn flyers (corners, creases,
+  fold lines visible as physical wear), same technique-analog caveat as D1.
+- _Why it serves muf:_ this is the closest match to what §2bis.2 ingredients 2 and
+  4 (hand-cut edge, dog-ear, fold crease) are trying to fake in CSS — an actual
+  photographed, handled, worn paper object rather than a graphic-design scan.
+- _Risk:_ _Spiralled_ is a UK/pan-European scene, not Paris-specific (Round 1 Q2)
+  — use for **wear/cut/fold physics only**, never for iconography or place-naming.
+  It's also a paid photobook, not a freely reproducible archive — study/mood only.
+- _Licence:_ copyrighted photobook (IDEA) and dealer-owned photography (Gallery 98)
+  — reference/study only, never reproduce or trace a page.
+
+**Actionable takeaways:**
+
+- Cut edges show a **slightly compressed, darker line** where the blade/guillotine
+  crushed the fibre — an optional 1px darker edge stroke along the `clip-path`
+  outline (distinct from, and in addition to, the tape's own edge treatment) would
+  sell this; currently unaddressed in §2bis.2 ingredient 2.
+- Worn-corner rounding is **asymmetric per corner** (2–4px varying radius), not a
+  uniform corner-radius — confirms the existing "same amplitude budget, different
+  vertices" deterministic approach is right; no change needed.
+- Creases fan from a **handling point** (often a corner or mid-edge grip), not
+  purely diagonal corner-to-corner — the current single diagonal streak
+  (§2bis.1) is an acceptable simplification, but if budget allows, an occasional
+  mid-edge crease variant would read as more handled than the diagonal-only set.
+- Reserve **multiple stacked creases** for a "well-worn" subset only (not every
+  flyer) — a fresh vs. weathered contrast within the same wall reads truer than
+  uniform wear across all sheets.
+
+### D3 — Tape physics: masking tape / cellotape over saturated stock — **VALIDATED (Bertrand, 2026-07-19): KEEP** ("ça c'est cool, garde mais cherches-en d'autres")
+
+- [Indieground — "Glued Paper Textures" (40 hi-res JPGs)](https://indieground.net/product/glued-paper-textures/) —
+  photographed (not rendered) posters pasted/taped on real walls while adhesive
+  was fresh; useful for wrinkle/translucency behaviour, though this is a
+  **wheatpaste glue** technique, not tape — see risk.
+- [Abposters — "Ripped Masking Tape" photograph](https://www.abposters.com/ripped-masking-tape-f75472623) —
+  a single studio photograph of torn masking-tape strips; useful for the torn-end
+  silhouette and matte-vs-gloss read at close range.
+- _Why it serves muf:_ directly grounds §2bis.2 ingredient 6 (real scotch, not
+  crossed strokes) — confirms the translucency-via-multiply approach and gives a
+  concrete torn-end silhouette to base the `clip-path` on.
+- _Risk:_ **anachronism via material choice** — most contemporary "tape texture"
+  stock leans toward patterned/coloured craft ("washi") tape, a 2010s aesthetic;
+  1998 reality is dull beige paper masking tape or clear cellotape only. Flag any
+  tape reference that reads patterned or brightly coloured as off-period. Also:
+  the Indieground pack is wheatpaste-glue, a different adhesive language than a
+  pinned/taped fanzine flyer (intimate, DIY, reversible vs. glued/permanent
+  street-poster) — use for wrinkle physics only, not for the adhesive method.
+- _Licence:_ both are commercial texture/stock products — reference/mood only,
+  do not composite the purchased texture files directly into the game asset.
+
+**Actionable takeaways:**
+
+- Pick **one tape material and hold it system-wide** — matte beige masking tape
+  (current spec) — and explicitly reject mixing in a glossy/clear-tape look
+  elsewhere; a mixed-material wall reads over-designed rather than found-object.
+- Torn ends aren't uniformly serrated along their whole length — the fray
+  concentrates at the very tip (1–2px extra jag), with straighter edges along the
+  strip's sides; a light irregularity concentrated at the end reads truer than an
+  even sawtooth border.
+- Wrinkle lines should run **parallel to the pull direction** (perpendicular to
+  the tape's length), not diagonal/random — if more than one wrinkle line is used,
+  keep them parallel to each other.
+- Explicit anachronism flag for the implementer: no patterned/coloured "washi"
+  tape, ever — dull beige or clear only.
+
+### D4 — The wall: flyer piles, squat & teknival interiors (place/era anchor)
+
+- [Molly Macindoe — _Out of Order_, Vice profile](https://www.vice.com/en/article/molly-macindoes-out-of-order-rave-photos-659/) —
+  400+ photographs of UK/European free parties and squats, 1997–2006; documentary
+  interiors likely to show flyer/notice walls in situ (venue and squat spaces).
+- [metek.free.fr — Story 1997/1998 pages](http://metek.free.fr/Story/1998/METEK-1998.htm) —
+  same French teknival archive as D1, re-flagged here for **place/date anchor**
+  rather than stock colour (Paris-adjacent French free-party scene, exact years).
+- [Tom Hunter — "The Ghetto" series (1993–94, Hackney squats)](http://www.tomhunter.org/the-ghetto-series/) —
+  documentary interiors of squatted houses; **technique/place analog, not Paris**
+  (Round 1 Q2/Q3) — useful for how notices/paper accumulate on a lived-in squat
+  wall, distinct from a curated gallery flyer-wall shot.
+- _Why it serves muf:_ grounds §2bis.2 ingredient 5 ("pinned pile") in a real
+  documented wall rather than an abstracted corkboard — density, overlap ratio,
+  rotation spread, and light-source consistency.
+- _Risk:_ UK-scene bias (Macindoe, Hunter) against the Paris 1996–99 brief — hold
+  strictly to **density/overlap/rotation physics**, never let UK flyer graphics or
+  venue signage slip into the visual target. metek.free.fr is the one Paris-exact
+  anchor among these three; lean on it for place, the UK sources for wall physics
+  where French photographic documentation is thin.
+- _Licence:_ Macindoe's book and Hunter's series are both copyrighted photography
+  — reference/study only, never reproduce. metek.free.fr — reference page only, no
+  scan download, matches `LICENSES.md` §2 handling.
+
+**Actionable takeaways:**
+
+- Real flyer walls are **denser than an evenly-spaced grid**: 20–40% overlap
+  between neighbours, several sharing a shared corner/tape point — worth checking
+  the current pile's overlap ratio against this if the wall still reads too
+  gridded.
+- Rotation spread in a real pile is **wider than a subtle tilt**: mostly
+  small-angle, but with occasional 10–15° outliers — check
+  `FLYER_REST_ROTATION_DEG`'s distribution skews toward small tilts with rare
+  large ones, rather than a uniform narrow band.
+- **One light source for the whole wall** — every contact shadow falls the same
+  direction — confirms the current single-angle `box-shadow` approach; do not
+  vary shadow angle per flyer even as a "randomization" pass.
+- (Stretch, flag as future idea, not current scope) real piles show an occasional
+  **torn scrap or bare tape square** where a flyer was ripped down — a rare
+  "ghost" mark among the pile would sell wall history, but is new surface area
+  beyond §2bis.2's current ingredients — do not build without a separate go-ahead.
+
+## Round 3 — Bertrand's verdict + bounded refine hunt (2026-07-19)
+
+Bertrand's verdict on Round 2: **D3 VALIDATED — KEEP**, both links (Indieground,
+Abposters) confirmed useful, plus two flyer scans he supplied directly as loved
+references, with the instruction "ça c'est cool, garde mais cherches-en d'autres."
+This round logs the two supplied scans as a new validated direction (D5) and adds a
+bounded set of new finds in the same vein per his ask.
+
+### D5 — VALIDATED (Bertrand-supplied, 2026-07-19): 1997 French teknival xerox flyers
+
+Two flyer scans Bertrand shared directly in this session — described here for the
+record; **no stable public link found at hunt time** (searched, not located — see
+Round 3 new-finds search below), so treat as **Bertrand-supplied ground truth**,
+same handling as the unstable Le Parisien reference in
+`docs/art-direction/references/boards/board-belliard-decor.md` D2 — re-verify a
+stable source before an asset build leans on it directly.
+
+- **"TEKNIVAL — South West of France, du 12 au 15 juillet 97"** — B&W photocopy,
+  hand-drawn spiral/saw-blade logo, rough halftone, open-invitation text to "all
+  tribes sound systems and performers", info-line number. Exact date/place match
+  for the 1996–99 Paris-adjacent French teknival window.
+- **"FREE PARTY PLUGS — METECK"** — dense B&W xerox, halftone spiral faces,
+  ornamental border built from repeated X/K glyphs, info-line number
+  (`0836/331...`), numbers running along the margins. Same scene, likely same
+  METECK sound system as the `metek.free.fr` archive already used in D1/D4 —
+  **worth a follow-up hunt to confirm whether these exact two scans live on that
+  site**, which would upgrade this from Bertrand-supplied to a stable-linked pair.
+- _Why it serves muf:_ these are the clearest examples yet of the target register —
+  dense B&W xerox, hand-drawn/rub-on graphic vocabulary, functional margin text
+  (info-line, numbers) — closer to the house style's own flyer-as-object brief
+  than any digitally-cleaned archive scan found so far.
+- _Risk:_ no re-sourceable stable link yet; and being Bertrand's own scans, their
+  provenance/rights are unconfirmed — reference/mood only until sourced.
+- _Licence:_ unconfirmed — treat as unlicensed personal scans, reference/study
+  only, do not redistribute or commit the images themselves.
+
+**Actionable takeaways:**
+
+- The **ornamental border of repeated glyphs** (X/K) on the METECK flyer is a
+  xerox-friendly way to fill margin space with cheap, high-contrast ink — if a
+  future flyer-content pass (not this materiality pass) wants a period-correct
+  border treatment, this is the pattern-language to draw from (out of §2bis.2
+  scope, flag for `concept-artist`/`lead-art` if it comes up).
+- Both flyers read **dense and busy at the ink level but graphically flat** —
+  reinforces that the toner-grain/halftone texture (§2bis.2 ingredient 1) should
+  sit as a **uniform layer over the whole sheet**, not vary by "how much ink" a
+  given flyer's design has — the paper object's grain is independent of its
+  printed content.
+- The **hand-drawn spiral/saw-blade logo** on the South-West France flyer confirms
+  the halftone dot-screen should hold up under **thick, rough black ink linework**
+  (not just fine type) without smearing into an illegible blob — worth a spot
+  check against the current toner-speckle tuning on a bold-ink test sheet.
+
+### New finds — bounded refine round (French/Euro teknival object physics + more tape/adhesive physics)
+
+**Teknival/free-party physical-object vein:**
+
+- [Mattia Zoppellaro — European free-party photo essay, Huck](https://www.huckmag.com/article/inside-europes-exhilarating-free-party-scene-in-the-90s)
+  (companion piece: [Aperture — "Finding Euphoria and Community in a Traveling
+  Rave Culture"](https://aperture.org/editorial/system)) — documentary photography
+  of continental European free-party/tekno travellers, late 90s–early 2000s,
+  including the flyer-as-object hand-off ritual (a traveller handing over a flyer
+  with an info-line number). _Why it serves muf:_ shows the flyer **in use**, mid
+  hand-off, not archived flat — useful for how a fresh (uncreased, unfaded) flyer
+  looks distinct from a wall-worn one. _Risk:_ pan-European, not Paris-confirmed,
+  and slightly later than the 96–99 window in places — technique/mood analog, not
+  a place anchor. _Licence:_ editorial photography, copyrighted — reference only.
+- [freepartypeople.wordpress.com — "Flyers" category](https://freepartypeople.wordpress.com/category/flyers/)
+  and [its "Photos" category](https://freepartypeople.wordpress.com/category/photos/) —
+  UK Free Parties and Free Festivals 1988–1994 community archive: flyers and
+  photos "lent to be scanned" by scene participants, alongside party reports.
+  _Why it serves muf:_ a **community-submitted** archive (not a curated gallery or
+  cleaned commercial scan set) is more likely to preserve incidental wear —
+  worth a manual browse for any entry that reads as a photograph of the object
+  rather than a flat scan. _Risk:_ UK and predates the 96–99 window by several
+  years (1988–94) — technique analog only, same caveat as D4's Macindoe/Hunter.
+  _Licence:_ user-submitted personal scans, site says shared for the archive's own
+  non-commercial purpose — reference/study only, no redistribution.
+
+**Tape/adhesive physics vein:**
+
+- [Tate — "The Removal of Pressure Sensitive Tape from Works of Art on Paper"](https://www.tate.org.uk/about-us/projects/nanorestart/pst-removal-workshop) —
+  museum conservation project page on how masking tape/cellotape ages on paper:
+  adhesive migrates into and stains the paper, the tape yellows and the carrier
+  strip shrinks/distorts over time. _Why it serves muf:_ authoritative, non-
+  commercial source for **aging** tape (a slightly weathered flyer wall, not
+  fresh-pinned) — a step beyond the fresh-tape read D3 already validated.
+  _Risk:_ describes fine-art conservation context, not street ephemera — pull the
+  aging **physics** (yellowing, staining halo, shrink) not the museum framing.
+  _Licence:_ institutional page, reference only, no images to lift.
+- [Cardiff University Conservation blog — "All about Sellotape"](https://blogs.cardiff.ac.uk/conservation/all-about-sellotape/) —
+  conservation-student blog specifically on clear cellotape's appearance and
+  degradation on paper over time (yellowing, brittleness, adhesive staining
+  visible through the paper). _Why it serves muf:_ complements the Tate page with
+  a **clear-tape-specific** read — if a future pass ever wants a "years-old flyer"
+  variant (stretch, not current scope), this is the visual physics to reference.
+  _Risk:_ academic/niche blog — treat as informational, not a visual asset source.
+  _Licence:_ university blog, reference/study only.
+
+**Explicit gap found (log for a future hunt, do not action now):** no genuinely
+new **French-specific, photographed-not-scanned** teknival flyer source surfaced
+in this bounded round beyond the `metek.free.fr` pages already in D1/D4 and
+Bertrand's two D5 scans — the searchable web still skews toward UK archives
+(Macindoe, Hunter, freepartypeople) or cleaned digital scans (Rave Preservation
+Project, Phatmedia). If Bertrand wants to push further on the Paris/French object
+specifically, the next unblocked lead is confirming whether D5's two scans
+originate on `metek.free.fr` itself (see D5 above).
+
+## Hand-off
+
+Ready for `lead-art` to curate into the reference library (`docs/references/art-culture.md`
+/ `docs/art-direction/references/`) if validated — this board does not self-curate.
+`art-advisor` and the implementing dev lane (`dev-r3f-render`, per §2bis.2's CSS/SVG-only
+constraint) can consume it directly for the NIVEAUX flyer-wall materiality pass once a
+verdict is given per direction.
+
+**Status: D3 VALIDATED by Bertrand (2026-07-19) — KEEP. D5 VALIDATED by Bertrand
+(2026-07-19) — KEEP (Bertrand-supplied scans, no stable link yet, see D5).
+D1/D2/D4 and the Round 3 new finds (Zoppellaro/Aperture, freepartypeople, Tate,
+Cardiff Sellotape) await Bertrand's verdict — KEEP / DROP / DIG per item — plus
+correction on the three Round 1 assumed answers above if still open.**

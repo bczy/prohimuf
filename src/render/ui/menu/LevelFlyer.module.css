@@ -1,23 +1,190 @@
 /*
- * LevelFlyer (ADR-0046) — static structure/typography only. Everything state-driven
- * stays inline: the flyer stock (prop), the pull/tilt transform + its transition, the
- * shaking animation, and the locked opacity/grayscale. The mufLockedShake keyframe +
- * the .muf-anim reduced-motion override stay in the component's <style> block. Every
- * colour/font references a var(--…) injected from tokens.ts.
+ * LevelFlyer (ADR-0046 / §2bis.2, ADR-0049) — static structure/typography + paper
+ * materiality. State-driven bits stay inline: the flyer stock (prop), the pull/tilt
+ * transform + its transition, the shaking animation, the locked opacity, the hand-cut
+ * clip (`--flyer-clip`), the crease angle (`--flyer-crease-angle`) and the locked
+ * greyscale (`--flyer-lock-filter`). The mufLockedShake keyframe + the .muf-anim
+ * reduced-motion override stay in the component's <style> block. Every token colour/font
+ * references a var(--…); the materiality overlays are alpha rgba (no re-declared hex,
+ * mirroring PaperSheet.module.css) so they only ever DARKEN — zero glow.
  */
 
-/* Flyer card static box; background/transform/transition/animation/opacity/filter are
-   runtime-driven and stay inline. */
+/* The flyer object — unclipped, carries the runtime transform/pull/opacity and the occlusion
+   shadow. A5 target ratio + shared width cap (target, not a clip: content may grow the box
+   taller). The drop-shadow is the sanctioned ink-black occlusion exception to §2bis's
+   box-shadow ban — it MUST live on this UNCLIPPED parent: `filter` runs before `clip-path`,
+   so a drop-shadow on the clipped `.paper` never paints. Here the filter reads the clipped
+   child's alpha, so the shadow follows the cut silhouette (rgba = alpha of ink-black). */
 .flyer {
   position: relative;
-  color: var(--ink-black);
-  padding: 16px 18px;
+  /* A5 ratio is waived in the short-landscape rack (spec §4): the FlyerWall rack
+     media block flips --muf-flyer-aspect to auto. */
+  aspect-ratio: var(--muf-flyer-aspect, 148 / 210);
+  width: 100%;
+  max-width: var(--flyer-max-width);
+  box-sizing: border-box;
   /* Extra vertical gap so tilted flyers never crowd a neighbour (lead-art Gate 4). */
   margin-bottom: 22px;
-  min-height: 72px;
   outline: none;
   transform-origin: center;
   box-shadow: none;
+  filter: drop-shadow(1px 3px 6px rgba(20, 18, 16, 0.35));
+}
+
+/* The paper sheet — clipped to the hand-cut silhouette, carries the stock + toner/crease
+   overlays + content. The occlusion drop-shadow lives on the parent `.flyer` (clip-path would
+   erase a filter here); this element keeps ONLY the locked greyscale fold via
+   `--flyer-lock-filter`, which folds in greyscale(1) when the level is locked. */
+.paper {
+  position: relative;
+  aspect-ratio: var(--muf-flyer-aspect, 148 / 210);
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px 18px;
+  color: var(--ink-black);
+  clip-path: var(--flyer-clip);
+  /* `grayscale(0)` default is an identity no-op — `none` would be invalid in a filter list
+     and silently drop the whole declaration. */
+  filter: var(--flyer-lock-filter, grayscale(0));
+}
+
+/* Content sits above the materiality overlays; padding keeps text clear of the cut waver. */
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Shared full-bleed, non-interactive materiality layer. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Photocopy toner — reuses the §2bis.1 feTurbulence data-URI but LOWER numOctaves (clumpy,
+   not fine TV snow), multiply so it only subtracts light from the fluo stock. */
+.toner {
+  composes: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='ft'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.2 0.35'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23ft)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+/* Bad-drum streak — one faint horizontal darkening band (~3–5%), multiply. */
+.streak {
+  composes: overlay;
+  background: linear-gradient(
+    180deg,
+    transparent 0 38%,
+    rgba(20, 18, 16, 0.045) 44% 52%,
+    transparent 58% 100%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* One fold crease — a §2bis.1 diagonal darkening streak at the per-flyer handling angle. */
+.crease {
+  composes: overlay;
+  background: linear-gradient(
+    var(--flyer-crease-angle, 100deg),
+    transparent 46%,
+    rgba(20, 18, 16, 0.06) 49% 51%,
+    transparent 54%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Second parallel crease — weathered subset only (§2bis.2 pt4). */
+.creaseAlt {
+  composes: overlay;
+  background: linear-gradient(
+    var(--flyer-crease-angle, 100deg),
+    transparent 22%,
+    rgba(20, 18, 16, 0.05) 26% 28%,
+    transparent 32%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Dog-eared corner (§2bis.2 pt4) — a folded triangle of the shell/back with its own tiny ink
+   shadow. Sibling of `.paper`. TWO elements: this UNCLIPPED wrapper carries the fold shadow
+   (filter before clip-path means a shadow on the clipped triangle itself would never paint),
+   the `.dogEarFold` child carries the clipped triangle. The corner modifier positions the
+   wrapper; the fold modifier picks the triangle. drop-shadow rgba is alpha of ink-black. */
+.dogEar {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(-1px -1px 1px rgba(20, 18, 16, 0.3));
+}
+
+.earTl {
+  composes: dogEar;
+  top: 0;
+  left: 0;
+}
+
+.earTr {
+  composes: dogEar;
+  top: 0;
+  right: 0;
+}
+
+.earBl {
+  composes: dogEar;
+  bottom: 0;
+  left: 0;
+}
+
+.earBr {
+  composes: dogEar;
+  bottom: 0;
+  right: 0;
+}
+
+/* Clipped triangle child — the visible fold; the wrapper above supplies the shadow. */
+.dogEarFold {
+  position: absolute;
+  inset: 0;
+  background: var(--stock-shell);
+}
+
+.foldTl {
+  composes: dogEarFold;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.foldTr {
+  composes: dogEarFold;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.foldBl {
+  composes: dogEarFold;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.foldBr {
+  composes: dogEarFold;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+/* Blade-crushed cut line — inline SVG, a SIBLING of `.paper` (ADR-0049 D1) so the clip can't
+   eat the outer half of the stroke. No z-index: as a later sibling it already paints above
+   the whole clipped `.paper` subtree, and below the tape that follows it in the DOM. The
+   token stroke lives in the polygon rule below (var() is unreliable as an SVG presentation
+   attribute); non-scaling-stroke keeps it 1px through the stretched 0–100 viewBox. */
+.cutLine {
+  composes: overlay;
+  width: 100%;
+  height: 100%;
+}
+
+.cutLine polygon {
+  fill: none;
+  stroke: var(--ink-black);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
 .infoRow {

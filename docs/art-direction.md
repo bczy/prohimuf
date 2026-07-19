@@ -152,6 +152,95 @@ Courier Prime broke up. Rubik Mono One and Courier Prime stay **reserved** for p
 surfaces and the set-piece stamps (OTAGE / LIVRAISON / phase chips), keeping the display
 face scarce so it still reads as "this is a big deal".
 
+### 2bis.2 Matérialité du flyer — the paper is an object, not a swatch
+
+The NIVEAUX flyers are **half-A4 photocopies pinned to a wall**, not colour rectangles.
+Reference: the ~1998 clandestine-rave A5 flyer — cheap fluo copier card, xeroxed,
+guillotine- or hand-cut, thumbed and taped (sourced hunt: `docs/art-references/flyer-materiality-hunt.md`).
+The stock hue stays (§2bis.1); what follows gives it a **surface, a cut edge, a shadow and
+a real piece of tape**. All **CSS + inline-SVG on a DOM div — no WebGL, no generated PNG**
+(accepted constraint: the §2bis.1 machinery — `feTurbulence`, `clip-path`, `radial-gradient`
+— already covers it). The whole treatment obeys the **zero-glow law**: paper darkens and
+occludes, it never emits.
+
+1. **Toner grain, not TV snow.** A **photocopy-toner** layer over the stock, reusing the
+   §2bis.1 `feTurbulence` data-URI, composited **`mix-blend-mode: multiply`** so it can only
+   **darken** the fluo — **never a lightening/screen pass** (a light speckle reads as glow —
+   FAIL; validated period-correct by the hunt D1: xerox toner sits _in_ the fibre and only
+   subtracts light). Read **clumpy, not uniform**: lower `feTurbulence` `numOctaves` (fewer,
+   bigger clumps, not fine even snow). Split the **~6–10 %** budget into two passes — a fine
+   even speckle **plus an occasional faint (~3–5 %) horizontal streak band** (bad-drum
+   artifact) — never one flat noise wash. Tuned so black ink stays **AA (≥4.5:1)** on
+   rose/orange. No paper-fibre normal map — this is copier card, its tell is toner, not fibre.
+2. **Hand-cut edge.** The silhouette is **not a perfect rectangle**: an SVG `clip-path`
+   polygon with **~1.5–3 px** deviation on the corners and one or two slightly non-parallel
+   edges (guillotine skew / scissor waver). **Deterministic per flyer** — a small table
+   indexed by list position, seeded like `FLYER_REST_ROTATION_DEG`, **never `Math.random`**.
+   Per-flyer variation: same amplitude budget, different vertices, so the wall reads as
+   **one printing run, cut on one bad guillotine** — not four different treatments. Add a
+   **1 px darker compressed line right along the cut edge** (blade-crushed fibre, hunt D2),
+   distinct from the tape's own edge shading. **No deckle** (that's wet handmade paper,
+   wrong era/process); micro-tears live only at the dog-ear (extra 4).
+3. **Contact shadow (occlusion, not glow).** One soft **ink-black** drop shadow anchoring
+   the sheet to the `paper-shell` wall: `box-shadow: 1px 3px 6px rgba(20,18,16,0.35)`
+   (offset from `ink-black`, ~2 px y, ~6 px blur, ~0.35 α). This is the **explicit exception**
+   to §2bis's "no `box-shadow`": that ban targets **coloured light with falloff**; a neutral
+   ink-black occlusion shadow is the opposite — it removes light. **No coloured shadow, no
+   second/neon layer, no spread** — one grey contact shadow, tightening on the pull
+   (this last behaviour is **deferred**, not shipped in `flyer-paper-materiality` —
+   see the scope note after point 6).
+4. **Extras — keep two, reject the rest.** KEEP the **dog-eared corner**: one corner (chosen
+   deterministically, not every flyer) folded to show a thin triangle of the shell/back, its
+   own tiny ink-black shadow. KEEP **one subtle fold crease** — the sanctioned §2bis.1
+   diagonal `linear-gradient` streak, at most one per sheet; creases fan from a **handling
+   point** (a corner/mid-edge grip), so a mid-edge crease variant is truer than diagonal-only
+   (hunt D2). **Reserve multiple stacked creases for a small "weathered" subset only** — a
+   fresh-vs-worn contrast across the wall reads truer than uniform wear on every sheet.
+   REJECT: **staple** (metallic specular = a glint = glow, and it duplicates the tape
+   language), **corner curl casting a halo**, **glossy sheen**, any **highlight/emboss** that
+   lightens the stock or drops ink below AA. Nothing here may fight readability or the
+   zero-glow law.
+5. **Desktop format ruling — half-A4 portrait.** The canonical flyer is **A5, ratio
+   148:210** (`aspect-ratio: 148 / 210`), **portrait**. Kill the full-width horizontal
+   bands: cap each flyer (`max-width: 280 px` — the shared `FLYER_MAX_WIDTH_PX`, reconciled
+   down from the earlier "~300–340 px" at the design gate 2026-07-19 to match
+   `flyer-wall-format.md` §2 and reuse the shipped short-landscape rack constant) and lock
+   the A5 aspect so it reads as a **half-sheet pinned to the wall**, not a banner. The wall
+   stays a **pinned pile** — the deterministic `FLYER_REST_ROTATION_DEG` tilt +
+   `FLYER_JITTER_PX` offset stay the source of the pile, **used as-is**. _(Design-gate
+   ruling 2026-07-19: further pile re-tuning toward a real wall — denser overlap ~20–40 %
+   between neighbours, wider rotation spread with rare 10–15° outliers, hunt D4 — is
+   **deferred to a separate pass**. It exceeds this story's ACs (AC1 pins per-flyer
+   variation to the existing index arrays) and conflicts with the gated wrap-grid desktop
+   layout of `flyer-wall-format.md` §2; flagged to `lead-art` for a future dedicated
+   pile-tuning spec.)_ **One light
+   source for the whole wall**: every contact shadow (extra 3) falls the same direction —
+   never vary the shadow angle per flyer, even as a jitter pass. Mobile keeps the pile
+   stacked; the materiality (1–4) is what makes each one read as paper at phone size.
+6. **Real scotch, not crossed strokes.** The current `TapeCorner` (four flat 72 %-alpha
+   strips) reads as thin drawn lines. Fix it to look **stuck on**: (a) **translucency that
+   visibly tints the stock beneath** — composite `multiply` so the fluo shows _through_ the
+   tape as a darker, desaturated band (masking tape is not opaque manila); (b) **fray at the
+   strip TIPS, not a full-length sawtooth** — the SVG `clip-path` stays near-straight along
+   the sides and jags **1–2 px only at the two ends** (hunt D3), **fixed per corner**
+   (indexed, no `Math.random`); (c) real **masking-tape proportions** — wider and shorter
+   than now (**~26–34 px wide**, length just enough to bridge the corner), a matte band,
+   **not** a thin 18 px stroke; (d) **wrinkle lines run parallel to the pull direction**
+   (across the strip's width, perpendicular to its length); if more than one, keep them
+   parallel; **sheen/gloss is forbidden** — any specular highlight = glow = FAIL, tape here
+   is dead-matte. **One tape material system-wide: dull beige paper masking tape (or plain
+   clear) — never patterned/coloured "washi" (a 2010s anachronism), automatic FAIL.** Drop
+   the hard top/bottom **ink keyline** to a **very faint torn-edge shading** (the adhesive
+   edge, not a drawn border); its darkened footprint against the stock is what sells it, not
+   an outline. Deterministic per corner, all CSS/inline-SVG.
+
+> **Scope note (`flyer-paper-materiality` story, 2026-07-19):** two refinements above are
+> **deferred**, not shipped in this pass — pt3's "tightening on the pull" (a per-interaction
+> shadow-response animation) and pt6's "very faint torn-edge shading" replacing the tape's
+> ink keyline. This story ships the base occlusion shadow (pt3, static) and the
+> translucent/frayed tape geometry (pt6, static); the two motion/shading refinements are a
+> follow-up, not scope drift.
+
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 
 Pollinations' `flux` is a FLUX.1 [schnell]-class distilled model: **no negative

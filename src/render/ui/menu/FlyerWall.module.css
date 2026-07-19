@@ -10,10 +10,30 @@
 .wall {
   display: flex;
   flex-direction: var(--muf-flyerwall-dir, column);
+  align-items: center;
   padding: var(--space-xl);
 }
 
 .slot {
   display: flex;
   flex-direction: column;
+  width: min(100%, var(--flyer-max-width));
+}
+
+/* Desktop wrap-grid (UX flyer-wall-format §2) — half-A4 sheets wrap in a centered row
+   instead of one full-width band. The min-height guard is SHORT_LANDSCAPE_MAX_H + 1, so
+   this never double-matches the pointer:coarse short-landscape rack (that reflow stays in
+   the FlyerWall.tsx inline <style> and is untouched). */
+@media (min-width: 640px) and (min-height: 481px) {
+  .wall {
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: var(--space-xxl);
+    align-items: flex-start;
+  }
+
+  .slot {
+    flex: 0 0 auto;
+    width: var(--flyer-max-width);
+  }
 }

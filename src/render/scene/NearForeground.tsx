@@ -1,12 +1,16 @@
 import type { JSX } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import type { Group } from "three";
+import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
 import { NEAR_KIND_SPECS } from "./nearForegroundArt";
-import { getNearForegroundTexture, updateTrafficLightSignal } from "./nearForegroundTextures";
+import {
+  getNearForegroundTexture,
+  getTrafficLightOverlayTexture,
+  updateTrafficLightSignal,
+} from "./nearForegroundTextures";
 import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
 
 // The flat facade art has a single pavement at the bottom, so BOTH rows stand on
@@ -82,6 +86,24 @@ function Row({
   renderOrder,
   z,
 }: RowProps): JSX.Element {
+  // Async PNG swap visibility: the generated texture replaces the procedural one in
+  // the shared cache AFTER mount (getNearForegroundTexture then returns a NEW object),
+  // but `map={texture}` binds only on the render that mounted the mesh. Re-read per
+  // frame and rebind imperatively when the cache entry changed — the same pattern as
+  // EnemySprite. Keyed by the stable object index so a mobile-density re-split can't
+  // misalign refs.
+  const housingMats = useRef<Map<number, MeshBasicMaterial>>(new Map());
+  useFrame(() => {
+    for (const { obj, index } of objects) {
+      const mat = housingMats.current.get(index);
+      if (mat === undefined) continue;
+      const tex = getNearForegroundTexture(obj.kind);
+      if (tex !== null && mat.map !== tex) {
+        mat.map = tex;
+        mat.needsUpdate = true;
+      }
+    }
+  });
   return (
     <>
       {objects.map(({ obj, index }) => {
@@ -101,15 +123,31 @@ function Row({
         const planeW = planeH * spec.aspect;
         const worldX = (obj.x - 0.5) * fullW;
         const centerY = streetWorldY + planeH / 2;
+        // The feu tricolore adds a second co-located plane carrying the animated
+        // lit-lens overlay, at z+0.001 so it sorts in FRONT of the dead-grey housing
+        // within the SAME renderOrder — still below courier (6) / delivery van (7).
+        const overlay = isTrafficLight ? getTrafficLightOverlayTexture() : null;
         return (
-          <mesh
-            key={`near-${obj.kind}-${String(index)}`}
-            position={[worldX, centerY, z]}
-            renderOrder={renderOrder}
-          >
-            <planeGeometry args={[planeW, planeH]} />
-            <meshBasicMaterial map={texture} transparent depthWrite={false} />
-          </mesh>
+          <group key={`near-${obj.kind}-${String(index)}`}>
+            <mesh position={[worldX, centerY, z]} renderOrder={renderOrder}>
+              <planeGeometry args={[planeW, planeH]} />
+              <meshBasicMaterial
+                ref={(m) => {
+                  if (m) housingMats.current.set(index, m);
+                  else housingMats.current.delete(index);
+                }}
+                map={texture}
+                transparent
+                depthWrite={false}
+              />
+            </mesh>
+            {overlay !== null && (
+              <mesh position={[worldX, centerY, z + 0.001]} renderOrder={renderOrder}>
+                <planeGeometry args={[planeW, planeH]} />
+                <meshBasicMaterial map={overlay} transparent depthWrite={false} />
+              </mesh>
+            )}
+          </group>
         );
       })}
     </>

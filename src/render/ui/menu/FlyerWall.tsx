@@ -9,6 +9,7 @@ import {
   MAX_TILT_DEG,
   MOTION,
   useRovingIndex,
+  useMediaQuery,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
 import { LevelFlyer } from "./LevelFlyer";
@@ -85,8 +86,13 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
     }
   }
 
+  // At the desktop wrap-grid the flyers sit in rows, so Left/Right cycle them in list order;
+  // below it (narrow column AND the short-landscape rack) they stack, so Up/Down navigate.
+  // The query MUST match the CSS wrap-grid guard exactly — including the min-height that
+  // excludes the pointer:coarse rack — or the horizontal axis leaks into a vertical layout.
+  const wide = useMediaQuery("(min-width: 640px) and (min-height: 481px)");
   const roving = useRovingIndex(LEVELS.length, {
-    axis: "vertical",
+    axis: wide ? "horizontal" : "vertical",
     wrap: false,
     onActivate: activate,
   });
@@ -118,14 +124,17 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
         }
       }}
       // In short-landscape (ADR-0024) the class rules below flip this to a horizontal
-      // scroll-snap rack; the roving axis stays vertical because the reflow only
-      // triggers on `pointer: coarse` (touch) where arrow-key nav is not the input,
-      // and Up/Down still moves focus across all flyers, scrolling each into view.
+      // scroll-snap rack. The roving axis stays VERTICAL here: the `wide` query carries a
+      // `min-height: 481px` guard (SHORT_LANDSCAPE_MAX_H + 1) that this ≤480px-tall rack
+      // fails, so Up/Down still moves focus across all flyers, scrolling each into view.
     >
       <style>{`
         @media ${SHORT_LANDSCAPE_MEDIA}{
           .muf-flyerwall{
             --muf-flyerwall-dir: row;
+            /* A5 ratio waived in the rack (flyer-wall-format.md §4): the ~300px
+               content band cannot fit a 397px-tall A5 sheet. */
+            --muf-flyer-aspect: auto;
             gap: 16px;
             align-items: flex-start;
             overflow-x: auto;
@@ -133,8 +142,8 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
             scroll-snap-type: x mandatory;
           }
           .muf-flyerwall > .muf-flyer-slot{
-            flex: 0 0 280px;
-            width: 280px;
+            flex: 0 0 var(--flyer-max-width);
+            width: var(--flyer-max-width);
             scroll-snap-align: start;
           }
         }
@@ -155,6 +164,7 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
           <div key={level.id} className={cx("muf-flyer-slot", styles.slot)}>
             <LevelFlyer
               level={level}
+              flyerIndex={i}
               unlocked={entry.unlocked}
               stock={entry.stock}
               restRotationDeg={restRotationDeg}
