@@ -161,6 +161,25 @@ breakpoint-dependent (≥640px horizontal).
     `dev-r3f-render`; doc corrections (this handoff, ADR-0049 D1, the story, the UX spec,
     art-direction §2bis.2) routed to `tech-writer`.
 
+## 7. FIX ROUND + RE-VERDICTS — 2026-07-19
+
+- claim: close the panel findings and re-run the gates.
+- release: dev-r3f-render fix commit `237ea7e` (all 8 ordered items: shadow → unclipped
+  `.flyer`; dog-ear wrapper/fold split; cut-line hoisted sibling; compound axis query +
+  comments; rack `var(--flyer-max-width)`; `vectorEffect` attr; 1–2 wrinkles per corner
+  from `TAPE_FRAY_SEED`; weathered lookup wraps modulo) + tech-writer doc commit
+  `9ad7b76`. Checks: tsc clean, 693/693 vitest, lint clean.
+- Composite gate (lead-art) re-run on fresh Chromium screenshots: **PASS** — occlusion
+  shadow now paints (neutral, chroma 10–12 < wall 17, one direction, follows the cut
+  silhouette), full 1px cut line, dog-ear fold shadow present, faint lifted-tape shadow
+  ruled on-law (darkening occlusion, not a halo).
+- senior-architect re-verdict: **MERGE** — all fixes verified in HEAD, boundary law
+  intact (`git diff origin/main...HEAD --stat -- src/game src/hooks` empty), no residual
+  blocking/major condition. Deferred polish (shadow tightening on pull, tape torn-edge
+  shading) bible-noted as future scope.
+- pm acceptance: **ACCEPT** — AC1–AC8 verified (AC3 accept-with-amendment, sanctioned);
+  scope-guard contingency closed by the empty `src/game`/`src/hooks` diff above.
+
 ---
 
 ## Audit trail
