@@ -55,13 +55,87 @@ Cinq types d'adversaires peuplent les façades parisiennes. Les flics (normal, r
 tirent et doivent être neutralisés ; les bonus récompensent le temps ; le livreur est un
 allié qu'il ne faut **jamais** tirer.
 
-| Ennemi             | Santé | Tire | Points | Bonus temps | Notes                                     |
-| ------------------ | :---: | :--: | :----: | :---------: | ----------------------------------------- |
-| **Flic** (Normal)  |   1   |  ✓   |   +1   |      —      | Archétype courant — plusieurs variantes   |
-| **CRS** (Riot)     |   2   |  ✓   |   +2   |      —      | Plus durable — prend **deux coups**       |
-| **Motard** (Biker) |   1   |  ✓   |   +1   |      —      | Plus rapide — moins de temps visible      |
-| **Bonus** ⭐       |   1   |  —   |   +1   |   **+5s**   | Rare — accélère le chrono                 |
-| **Livreur** ⚠️     |   1   |  —   | **-1** |      —      | **NE PAS TIRER DESSUS** — perte d'une vie |
+### Adversaires
+
+#### Flic (Normal) — Le vigilant
+
+<img src="public/assets/enemy_sprite.png" width="80" height="80" alt="Flic" />
+
+| Propriété | Valeur |
+| --------- | :----: |
+| Santé | 1 |
+| Tire | ✓ |
+| Points | +1 |
+| Bonus temps | — |
+| Apparence | Blanc pur |
+
+L'archétype courant des forces de l'ordre. Plusieurs variantes visuelles pour l'imprévisibilité.
+
+---
+
+#### CRS (Riot) — Le blindé
+
+<img src="public/assets/enemy_riot.png" width="80" height="80" alt="CRS" />
+
+| Propriété | Valeur |
+| --------- | :----: |
+| Santé | **2** |
+| Tire | ✓ |
+| Points | +2 |
+| Bonus temps | — |
+| Apparence | Bleu pâle |
+
+Plus durable : prend **deux coups** avant de tomber. Vaut deux points.
+
+---
+
+#### Motard (Biker) — Le rapide
+
+<img src="public/assets/enemy_biker.png" width="80" height="80" alt="Motard" />
+
+| Propriété | Valeur |
+| --------- | :----: |
+| Santé | 1 |
+| Tire | ✓ |
+| Points | +1 |
+| Bonus temps | — |
+| Apparence | Beige chaud |
+
+Tempo accéléré : reste visible moins longtemps. Demande de la réactivité.
+
+---
+
+#### Bonus ⭐ — Le récompense
+
+<img src="public/assets/enemy_bonus.png" width="80" height="80" alt="Bonus" />
+
+| Propriété | Valeur |
+| --------- | :----: |
+| Santé | 1 |
+| Tire | — |
+| Points | +1 |
+| Bonus temps | **+5s** |
+| Apparence | Jaune doré |
+
+Rare et inoffensif. En le neutralisant, tu gagnes **5 secondes supplémentaires** au chrono.
+
+---
+
+#### Livreur ⚠️ — L'allié
+
+| Propriété | Valeur |
+| --------- | :----: |
+| Santé | 1 |
+| Tire | — |
+| Points | **-1** |
+| Bonus temps | — |
+| Apparence | Vert (courrier) |
+
+**NE PAS TIRER DESSUS.** C'est un coursier du réseau. Le tirer provoque :
+- Perte de **1 point**
+- Perte de **1 vie**
+
+Protège le livreur à tout prix.
 
 ---
 
