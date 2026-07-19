@@ -5,6 +5,7 @@ import { TextureLoader, AdditiveBlending } from "three";
 import type { Texture, CanvasTexture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { DeliveryPhase, VehicleType } from "@game/types/delivery";
+import { isQteActive } from "@game/systems/qteSystem";
 import { applyPixelFilter } from "./pixelArt";
 import { buildNeonSilhouette, computeHaloMarginPx, getVehicleNeonHex } from "./vehicleNeon";
 import { vehicleAssetPath } from "@game/systems/assetManifest";
@@ -172,7 +173,13 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
       });
     }
 
-    const onStage = vehicle.phase !== "IDLE" && vehicle.phase !== "GONE";
+    // The hostage QTE freezes the vehicle mid-street (stateMachine early-returns
+    // while it holds the scene) rather than moving it off-stage first, so it can
+    // freeze right in front of the zoomed-in tableau and squat the frame. Hide
+    // the street layer for the cinematic's duration — it resumes exactly where
+    // it froze once the QTE clears.
+    const onStage =
+      vehicle.phase !== "IDLE" && vehicle.phase !== "GONE" && !isQteActive(stateRef.current.qte);
     mesh.visible = onStage;
     if (!onStage) {
       if (rim !== null) rim.visible = false;

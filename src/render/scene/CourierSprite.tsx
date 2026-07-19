@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
 import { ARCHETYPES } from "@game/types/enemyTypes";
+import { isQteActive } from "@game/systems/qteSystem";
 import {
   courierArtReady,
   courierAnimFps,
@@ -74,10 +75,17 @@ export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element 
   const clock = useRef(0);
 
   useFrame((_, delta) => {
+    // The hostage QTE freezes couriers mid-street (stateMachine early-returns
+    // while it holds the scene) rather than moving them off-stage first, so a
+    // courier can freeze right in front of the zoomed-in tableau and squat the
+    // frame. Hide the street layer for the cinematic's duration — it resumes
+    // exactly where it froze once the QTE clears.
+    const qteActive = isQteActive(stateRef.current.qte);
     // Hold the flipbook with the game loop: useGameLoop freezes couriers on
-    // pause, and at 48 fps a still-rolling clock reads as wheels spinning in
-    // place on a frozen street.
-    if (!paused) clock.current += delta;
+    // pause and during the QTE, and at 48 fps a still-rolling clock reads as
+    // wheels spinning in place (or pops to a new frame/bob pose on resume) on
+    // a frozen street.
+    if (!paused && !qteActive) clock.current += delta;
     const couriers = stateRef.current.couriers;
     const ready = courierArtReady();
 
@@ -86,9 +94,10 @@ export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element 
       if (rider === null) continue;
 
       const courier = couriers[i];
-      if (courier === undefined || !ready) {
-        // No courier here, or the rider frames haven't resolved yet (a frame or
-        // two at most, since they are committed + preloaded): hide the plane.
+      if (courier === undefined || !ready || qteActive) {
+        // No courier here, the rider frames haven't resolved yet (a frame or two
+        // at most, since they are committed + preloaded), or the hostage QTE is
+        // holding the scene: hide the plane.
         rider.visible = false;
         continue;
       }
