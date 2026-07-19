@@ -412,7 +412,14 @@ export function tickGameState(
     };
   }
 
-  const finalPhase = newKills >= enemiesToWin ? "LEVEL_COMPLETE" : "PLAYING";
+  // Quota met THIS tick (the kill that crossed the threshold landed here, so `state.kills`
+  // was still below quota at the top). A boss-less level (every shipped level) still wins
+  // abruptly. But when a boss IS authored, victory-by-quota must NOT complete the level here:
+  // stay PLAYING with `kills` at/over quota so the boss block at the TOP of the NEXT tick sees
+  // `state.kills >= enemiesToWin` and opens the duel via `shouldTriggerBossQte` (ADR-0051 D3).
+  // Only VICTORY yields to the boss — the GAME_OVER branches above (lives/timer) stay immediate.
+  const finalPhase =
+    newKills >= enemiesToWin && state.bossQteSpec === null ? "LEVEL_COMPLETE" : "PLAYING";
 
   return {
     phase: finalPhase,
