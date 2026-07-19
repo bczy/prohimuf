@@ -337,13 +337,24 @@ same iterate-to-convergence pattern as `fixLevel()`) rather than forking them, a
 4. **Conservative correction scope (explicit design choice, not full re-detection).** Per
    architect direction, this harness does not treat the edge-density detection as ground truth
    and overwrite the hand-placed data wholesale. It corrects two independent things:
-   - **Height/vertical seating (always corrected — the dominant reported defect).** The
-     committed x/y stay TRUSTED; a per-DETECTED-ROW hand-tuned constant table
-     (`ROW_HEIGHTS`, the tronçon analogue of `LEVEL_CFG.openingH`) supplies the raw opening
-     height (never read off the live committed `z.h`, which the FILL step below mutates —
-     see the idempotency note); the FILL/`ENEMY_PLANE_SCALE` mapping is CALIBRATED off a live
-     probe render every run (never hand-derived), exactly `fixLevel()`'s technique; the same
-     shrink-and-recentre loop iterates to `OVERFLOW = 0`, the harness's convergence gate.
+   - **Height/vertical seating (corrected ONLY for zones that overflow at baseline — the
+     dominant reported defect).** A dedicated baseline pass MEASURES the committed zones as-is
+     (identical technique to `--check`) before touching anything; only zones flagged OVERFLOW
+     there get rewritten — every other zone is left byte-identical to its committed value. (A
+     first version of this harness applied the FILL rewrite to every zone unconditionally,
+     regardless of baseline OVERFLOW. That shipped, was pushed, and was caught post-push:
+     Bertrand reported "les barrières ne sont pas bien positionnés sur le bâtiment bleu" —
+     troncon-a had 0 baseline OVERFLOW yet 31/31 of its zones had still been rewritten, silently
+     drifting the grille overlay [drawn from the same zone.h/y] off the art it had already been
+     correctly hand-placed against. Root-caused and fixed by gating the rewrite on the baseline
+     measurement; re-verified against the true pre-harness data, see Outcome below.) For a
+     flagged zone: the committed x/y stay TRUSTED as the window-opening reference; a
+     per-DETECTED-ROW hand-tuned constant table (`ROW_HEIGHTS`, the tronçon analogue of
+     `LEVEL_CFG.openingH`) supplies the raw opening height (never read off the live committed
+     `z.h`, which the FILL step below mutates — see the idempotency note); the FILL/
+     `ENEMY_PLANE_SCALE` mapping is CALIBRATED off a live probe render every run (never
+     hand-derived), exactly `fixLevel()`'s technique; the same shrink-and-recentre loop iterates
+     to `OVERFLOW = 0`, the harness's convergence gate.
    - **Horizontal drift / grille framing (best-effort, bounded).** A committed zone's x/w is
      snapped to the nearest edge-density-detected opening only when close (within one
      opening-pitch) AND a plausible width match (0.5–2×) — high confidence only. Everything
@@ -366,10 +377,14 @@ same iterate-to-convergence pattern as `fixLevel()`) rather than forking them, a
    caller's reference panel — unaffected) so a tronçon call can pass its OWN tile's panel index
    (never 0 for troncon-b/troncon-c) instead of silently drawing a DIFFERENT tile's slot boxes.
 
-**Outcome.** Baseline (committed, unfixed): 26 OVERFLOW / 164 rendered slots (troncon-a 0,
-troncon-b 6, troncon-c 20) — confirming the vertical bug was pervasive, matching the bug report.
-`--fix` converges in 4 iterations (110→50→20→0) to **0 OVERFLOW**, confirmed idempotent
-(`--check` clean twice, repeat `--fix` byte-identical). Residual: 186 `MISALIGN`/`WALL(0)`/
+**Outcome.** Baseline (committed, unfixed, measured against the true pre-harness hand-placed
+data): **32 zones need vertical correction** out of 114 (troncon-a 10/31, troncon-b 12/33,
+troncon-c 10/50 by union across its two on-screen instances) — a smaller, more precise defect
+set than the earlier "26/164 rendered slots, troncon-a 0" figure, which was measured against
+data already mutated by the unconditional-rewrite bug described in point 4 and is superseded by
+this baseline. `--fix` now touches only those 32 zones — the other **82 stay byte-identical to
+the original hand-placed art** — and converges in 4 iterations to **0 OVERFLOW**, confirmed
+idempotent (`--check` clean, repeat `--fix` byte-identical). Residual: 186 `MISALIGN`/`WALL(0)`/
 `COVER` findings, entirely `MISALIGN`+`OVERCOVER`+`UNDERCOVER` (0 `WALL` — no zone sits on bare
 art), i.e. the residual is imprecise FRAMING per the edge-density detector's own confidence
 limits on this art style, never a zone on blank wall — an explicit, documented, non-gating
