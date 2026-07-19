@@ -259,10 +259,10 @@ math:
 **Lane plan + file ownership (two parallel, non-overlapping lanes).**
 
 - **Lane 1 `dev-r3f-render` — `src/render/**`only.** Owns **all** of`GameScene.tsx`for this
-  cycle: the slot remap, the`**MUF_SLOT_RECTS**`inverse update, **and** the`**MUF_PROJECT**`hook, plus new`src/render/scene/facadeLayout.ts`, `ForegroundFrames.tsx`, `LevelBackdrop.tsx`.
+cycle: the slot remap, the`**MUF_SLOT_RECTS**`inverse update, **and** the`**MUF_PROJECT**`hook, plus new`src/render/scene/facadeLayout.ts`, `ForegroundFrames.tsx`, `LevelBackdrop.tsx`.
 - **Lane 2 `dev-tooling-assets` — `scripts/**`only.** The SCREEN pass in`align-windows.mjs`,
-  screen-space reuse of `scripts/lib/coverage.mjs`, `SCRIPTS.md`/`HARNESS.md`. It only
-  **consumes** `**MUF_PROJECT**`— it never touches`GameScene`. **No file overlap.**
+screen-space reuse of `scripts/lib/coverage.mjs`, `SCRIPTS.md`/`HARNESS.md`. It only
+**consumes** `**MUF_PROJECT**`— it never touches`GameScene`. **No file overlap.**
 - **Sequencing.** The hook contract (`__MUF_PROJECT__` signature + thresholds) is fully
   specified here, so both lanes develop in parallel against it; Lane 2's SCREEN `--check`
   **integration verify runs after Lane 1's hook lands**.

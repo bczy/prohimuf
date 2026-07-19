@@ -211,7 +211,8 @@ function resolveLevelArtId(levelId: string): string {
 export function levelLayerPaths(levelId: string): readonly string[] {
   const id = resolveLevelArtId(levelId);
   const lvl = levelArt.levels.find((l) => l.id === id) as
-    { backdrop?: { mode?: string; tiles?: readonly { file: string }[] } } | undefined;
+    | { backdrop?: { mode?: string; tiles?: readonly { file: string }[] } }
+    | undefined;
   // Tronçon-sequence levels (ADR-0048) render their tile PNGs + the continuous
   // ground strip — warm THOSE, not the sky/facade/street trio the tronçon path
   // never draws (which would let the gate open onto fallback-colour planes and
@@ -240,7 +241,8 @@ export function facadeBackdropPath(): string {
 export function nearForegroundPaths(levelId: string): readonly string[] {
   const id = resolveLevelArtId(levelId);
   const lvl = levelArt.levels.find((l) => l.id === id) as
-    { nearForeground?: { objects: readonly { kind: string }[] } } | undefined;
+    | { nearForeground?: { objects: readonly { kind: string }[] } }
+    | undefined;
   const objects = lvl?.nearForeground?.objects;
   if (objects === undefined) return [];
   return dedupe(objects.map((o) => `nearfg:${o.kind}`));

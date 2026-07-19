@@ -153,14 +153,14 @@ postprocessing` dep.** Only bloom is non-trivial and the required halo is 1–2p
   builds an EXHAUSTIVE `Record<GestureKind,…>` (compile-time completeness). `GestureIcon` lives at
   NEW `src/render/ui/GestureIcon.tsx`.
   **LANE A → `dev-gameplay` (`src/game/**`only):**`src/game/systems/narrativeSystem.ts`(add`GestureKind`+ the two fields; transcribe the gated 11-panel script VERBATIM from`docs/game-design/tutorial-script-visual-gestures.md`— opening ×2 shared, desktop/mobile control
-  ×2 forked with`gesture`set +`image`unset, field ×7 shared; set`gestureAlt`from the script's
-  parenthetical labels);`src/game/levels/**tests**/tutorialInvariants.test.ts`(widen shared-ref
-  index list`[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
-  ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
-  both `image`&`gesture`· every`gesture`line has non-empty`gestureAlt`; keep device-copy regex +
-  shipped-sprite-exists checks green); `src/game/systems/**tests**/narrativeSystem.test.ts`(gesture
-  value ∈ enum integrity).
-  **LANE B →`dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
+×2 forked with`gesture`set +`image`unset, field ×7 shared; set`gestureAlt`from the script's
+parenthetical labels);`src/game/levels/**tests**/tutorialInvariants.test.ts`(widen shared-ref
+index list`[0,1,4,5,6,7]`→`[0,1,4,5,6,7,8,9,10]`, parity 11==11, fork `[2,3]`; new pins: gesture
+ONLY on 2,3 · desktop∈{mouse-click,edge-scroll}/mobile∈{two-finger-tap,swipe-pan} · no panel sets
+both `image`&`gesture`· every`gesture`line has non-empty`gestureAlt`; keep device-copy regex +
+shipped-sprite-exists checks green); `src/game/systems/**tests**/narrativeSystem.test.ts`(gesture
+value ∈ enum integrity).
+**LANE B →`dev-r3f-render` (`src/render/**` only):** NEW `src/render/ui/GestureIcon.tsx` (4
   animated B&W-lineart+neon icons per `docs/game-design/tutorial-visual-gestures.md` §1, loi du glow
   = only the acted element glows w/ alpha falloff to 0, two-finger = ONE simultaneous tap + long
   rest, edge-scroll = PUSH not drag, swipe = 1 finger/4 dirs/inertia); MOD
@@ -215,19 +215,19 @@ postprocessing` dep.** Only bloom is non-trivial and the required halo is 1–2p
     stays suppressed) — add a fallback to the drawable icon in the degradation chain. (11) extract the
     gesture-slot container style (verbatim copy of the image slot) into a shared const so the "same
     slot" contract holds by construction. · **CONFIRMED → `dev-gameplay` (Lane A, `src/game/**`):**
-    (5c) widen the XOR + `gestureAlt` invariant tests from the tutorial variants to ALL exported
-    scenes (pre/post-level lines currently unguarded); (6) fix the HUD-panel copy (panel 9) — the real
-    top bar (`src/render/ui/HUD.tsx`) renders score/niveau/vague/temps/vies (no elimination counter;
-    delivery is a separate centered banner), corrected French in the briefing register, keeping the
-    ADR-0015 device-token pins (no clic/souris/doigt/balay in shared panels); (7) test A5 in
-    `narrativeSystem.test.ts`is tautological under strict TS (exhaustive Record already guards enum
-    growth) — **derive-or-drop → DROP** (the compile-time guard is the real check). · **REFUTED
-    (no action):** new sprite paths "lack existence assertions" (Blind Hunter) — the existing`existsSync` invariant already covers both variants (confirmed by 3 reviewers + acceptance
-    auditor). "Stale QA PASS" (Blind Hunter major) — MITIGATED not refuted: the post-QA icon rework
-    was dev-self-verified + orchestrator-reviewed on screenshots; a focused QA re-capture runs AFTER
-    this fix batch (re-verifies reworked + newly-fixed icons in one pass). **VERDICT: no unresolved
-    CONFIRMED blocking/major → clear to dispatch the fix batch.** Lanes A and B are path-disjoint
-    (`src/game/**`⟂`src/render/**`) → dispatched in **parallel**; QA re-capture then re-review of
+(5c) widen the XOR + `gestureAlt` invariant tests from the tutorial variants to ALL exported
+scenes (pre/post-level lines currently unguarded); (6) fix the HUD-panel copy (panel 9) — the real
+top bar (`src/render/ui/HUD.tsx`) renders score/niveau/vague/temps/vies (no elimination counter;
+delivery is a separate centered banner), corrected French in the briefing register, keeping the
+ADR-0015 device-token pins (no clic/souris/doigt/balay in shared panels); (7) test A5 in
+`narrativeSystem.test.ts`is tautological under strict TS (exhaustive Record already guards enum
+growth) — **derive-or-drop → DROP** (the compile-time guard is the real check). · **REFUTED
+(no action):** new sprite paths "lack existence assertions" (Blind Hunter) — the existing`existsSync` invariant already covers both variants (confirmed by 3 reviewers + acceptance
+auditor). "Stale QA PASS" (Blind Hunter major) — MITIGATED not refuted: the post-QA icon rework
+was dev-self-verified + orchestrator-reviewed on screenshots; a focused QA re-capture runs AFTER
+this fix batch (re-verifies reworked + newly-fixed icons in one pass). **VERDICT: no unresolved
+CONFIRMED blocking/major → clear to dispatch the fix batch.** Lanes A and B are path-disjoint
+(`src/game/**`⟂`src/render/**`) → dispatched in **parallel**; QA re-capture then re-review of
     the fix diff, then pm accept. (Panel + Winston / Senior Architect)
 - pm acceptance (John, stage 8): **ACCEPT-WITH-NOTES.** All 12 ACs verified against the
   shipped artifacts, not just the log: ADR-0020 landed (AC11); `GestureIcon.tsx` ships the four
@@ -536,11 +536,11 @@ postprocessing` dep.** Only bloom is non-trivial and the required halo is 1–2p
   (`energy: 100` init + `hostageTakers` array + energy aggregation), `levels.ts`
   (`belliard.roster` += windowWeights.hostage*taker≈8 + streetSpawns).
   `dev-r3f-render`: new `src/render/scene/HostageTaker*.tsx`(kidnapper + foreground hostage,
-  rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
-  (+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
-  `onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
-  `scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts` (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
-  **`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
+rising-tension countdown, execution beat, mirror on`dir`); SHARED-serial: `src/render/ui/HUD.tsx`
+(+`HudData.energy?`, read-only energy display), `useGameLoop.ts` (`floaterFor`energy label +
+`onHudUpdate`energy plumb — coordinate with S2 on this file).`dev-tooling-assets`: new
+`scripts/gen-hostage-enemies.mjs`, `cutout-enemies.mjs`(extend),`enemyTextures.ts` (register`hostage\*\*`). PARALLEL-SAFE: YES across lanes on new paths; shared files serialised;
+**`useGameLoop.ts` is the one file S2 and S3 both touch — serialise S2 then S3 on it.\*\*
   Released: pending.
 
 ### mobile-two-axis-pan + fullscreen-toggle (WI-1 / WI-2, PR #29 `claude/mobile-landscape-adr-awjl8z`)
@@ -1023,8 +1023,8 @@ changes in this cycle — the ADR is design-only; implementation is a separate s
   `?preview=tutorial`/BASE*URL confirmés sans risque (aucun script n'itère le module
   `LEVELS` ; tous lisent `levelArt.json` seul), mais D5 doit être amendé : sprites drive-by
   `car*\_`et`hostage\_\_`+ assets HUD **non livrés**, donc « illustré avec les assets
-  existants seulement » n'est vrai aujourd'hui que pour cops/livreur/bonus. Le harnais
-  preview a deux moitiés :`App.tsx:74-76`ET`scripts/screenshot-preview.mjs:167-169`.
+existants seulement » n'est vrai aujourd'hui que pour cops/livreur/bonus. Le harnais
+preview a deux moitiés :`App.tsx:74-76`ET`scripts/screenshot-preview.mjs:167-169`.
 - arch (Winston), arbitration: ADR-0012 — adversarial-review amendments arbitrated,
   **16/16 findings ACCEPTED, 0 rejected**. ADR amended in place (Context + D1–D5 +
   Consequences/Gotchas): scope descoped to shipped content (window cops + courier + loop +
@@ -1198,10 +1198,10 @@ COLLABORATION.md §code-review panel, CLAUDE.md, le hook crew-reminder et le PR 
     rule held on first contact with real screenshots. (Nico / Lead-Art — Gate 4, first pass)
 - arch review (PR #32, `claude/halo-alpha-transparency-review-uez37y`, 0a0cad0..85d581b):
   **BOUNDARY + TECHNIQUE PASS.** Boundary law upheld: **zero `src/game/**`changes** (diff
-  empty), every`src/**`change confined to`src/render/**`. New `haloFalloff.ts`is pure and
-  DOM-free (no React/Three import);`vehicleNeon.ts`/`DeliveryVehicleSprite.tsx`hold no game
-  rules — they read`deliveryVehicle`phase/position/integrity from state and render, hue stays
-  render-side data and never enters`GameState`. **Stock materials only** (`MeshBasicMaterial`
+empty), every`src/**`change confined to`src/render/**`. New `haloFalloff.ts`is pure and
+DOM-free (no React/Three import);`vehicleNeon.ts`/`DeliveryVehicleSprite.tsx`hold no game
+rules — they read`deliveryVehicle`phase/position/integrity from state and render, hue stays
+render-side data and never enters`GameState`. **Stock materials only** (`MeshBasicMaterial`
   - `CanvasTexture` + `AdditiveBlending`); no `ShaderMaterial` / `onBeforeCompile` /
     `EffectComposer` / GLSL introduced → SwiftShader gate safe. **Scripts stay outside `src`**
     (no script imports from `src`; only `playwright` + node built-ins + lazy CI-only

@@ -178,7 +178,7 @@ it does not throw during any non-browser test environment; it is standard
 - **Do not move `TapeCorner` or the cut-line svg inside `.paper`** — they must stay
   siblings so the clip never touches them.
 - **Do not widen `useMediaQuery` into `src/hooks/**`** in a later refactor — it is pure
-  view interaction, same rationale as `useRovingIndex` (ADR-0021 D4).
+view interaction, same rationale as `useRovingIndex` (ADR-0021 D4).
 - Deterministic per-flyer geometry (the guillotine-edge `clip-path` vertex table, the
   tape fray/crease tables) is seeded like `FLYER_REST_ROTATION_DEG` — indexed by list
   position, never `Math.random` — and lives in `src/render/ui/print/tokens.ts`

@@ -403,7 +403,7 @@ temporary git checkout/stash used only to RUN old code for measurement, fully re
   of the refactor. **R1 amended to the old-vs-new oracle (R1′), dated + logged as a spec amendment,
   not silently passed.** R1′ PASSES.
 - **eslint ignores `scripts/**`+ config — dev CORRECT.** Verified:`yarn lint`is clean AND the
-  local`zoneMask`in retouch is live-and-referenced, so`no-unused-vars` would not fire regardless;
+local`zoneMask`in retouch is live-and-referenced, so`no-unused-vars` would not fire regardless;
   lint structurally cannot catch the D1 duplication (it is a DRY/AC1 defect, not a lint defect). This
   is why the static grep in §6 D1 exists as a separate gate — the dev's point is a correct
   explanation of why lint stayed green, not a dodge of D1.
