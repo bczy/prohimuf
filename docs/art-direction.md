@@ -152,6 +152,66 @@ Courier Prime broke up. Rubik Mono One and Courier Prime stay **reserved** for p
 surfaces and the set-piece stamps (OTAGE / LIVRAISON / phase chips), keeping the display
 face scarce so it still reads as "this is a big deal".
 
+### 2bis.2 Matérialité du flyer — the paper is an object, not a swatch
+
+The NIVEAUX flyers are **half-A4 photocopies pinned to a wall**, not colour rectangles.
+Reference: the ~1998 clandestine-rave A5 flyer — cheap fluo copier card, run off a xerox,
+guillotine- or hand-cut, thumbed and taped. The stock hue stays (§2bis.1); what follows
+gives it a **surface, a cut edge, a shadow and a real piece of tape**. All of it is
+**CSS + inline-SVG on a DOM div — no WebGL, no generated PNG** (accepted constraint:
+these are print surfaces, and the §2bis.1 texture machinery — `feTurbulence`, `clip-path`,
+`radial-gradient` — already covers it). The whole treatment obeys the **zero-glow law**:
+paper darkens and occludes, it never emits.
+
+1. **Toner grain, not TV snow.** A single **photocopy-toner speckle** layer over the stock,
+   reusing the §2bis.1 `feTurbulence` data-URI, composited **`mix-blend-mode: multiply`** so
+   it can only **darken** the fluo — **never a lightening/screen pass** (a light speckle
+   reads as glow — FAIL). Coarse and clumpy (toner clumps), low coverage: effective opacity
+   **~6–10 %**, tuned so black ink stays **AA (≥4.5:1)** on rose/orange. It must read as
+   _dirty photocopy_, not fine uniform digital noise and not a shader haze. No paper-fibre
+   normal map — this is copier card, its tell is toner, not fibre.
+2. **Hand-cut edge.** The silhouette is **not a perfect rectangle**: an SVG `clip-path`
+   polygon with **~1.5–3 px** deviation on the corners and one or two slightly non-parallel
+   edges (guillotine skew / scissor waver). **Deterministic per flyer** — a small table
+   indexed by list position, seeded like `FLYER_REST_ROTATION_DEG`, **never `Math.random`**.
+   Per-flyer variation: same amplitude budget, different vertices, so the wall reads as
+   **one printing run, cut on one bad guillotine** — not four different treatments. **No
+   deckle** (that's wet handmade paper, wrong era/process); micro-tears live only at the
+   dog-ear (extra 4).
+3. **Contact shadow (occlusion, not glow).** One soft **ink-black** drop shadow anchoring
+   the sheet to the `paper-shell` wall: `box-shadow: 1px 3px 6px rgba(20,18,16,0.35)`
+   (offset from `ink-black`, ~2 px y, ~6 px blur, ~0.35 α). This is the **explicit exception**
+   to §2bis's "no `box-shadow`": that ban targets **coloured light with falloff**; a neutral
+   ink-black occlusion shadow is the opposite — it removes light. **No coloured shadow, no
+   second/neon layer, no spread** — one grey contact shadow, tightening on the pull.
+4. **Extras — keep two, reject the rest.** KEEP the **dog-eared corner**: one corner (chosen
+   deterministically, not every flyer) folded to show a thin triangle of the shell/back, its
+   own tiny ink-black shadow. KEEP **one subtle fold crease** — the sanctioned §2bis.1
+   diagonal `linear-gradient` streak, at most one per sheet. REJECT: **staple** (metallic
+   specular = a glint = glow, and it duplicates the tape language), **corner curl casting a
+   halo**, **glossy sheen**, any **highlight/emboss** that lightens the stock or drops ink
+   below AA. Nothing here may fight readability or the zero-glow law.
+5. **Desktop format ruling — half-A4 portrait.** The canonical flyer is **A5, ratio
+   148:210** (`aspect-ratio: 148 / 210`), **portrait**. Kill the full-width horizontal
+   bands: cap each flyer (`max-width ~300–340 px`) and lock the A5 aspect so it reads as a
+   **half-sheet pinned to the wall**, not a banner. The wall stays a **pinned pile** — the
+   deterministic `FLYER_REST_ROTATION_DEG` tilt + `FLYER_JITTER_PX` offset are unchanged;
+   portrait sheets simply overlap as a corkboard of copies. Mobile keeps the pile stacked;
+   the materiality (1–4) is what makes each one read as paper at phone size.
+6. **Real scotch, not crossed strokes.** The current `TapeCorner` (four flat 72 %-alpha
+   strips) reads as thin drawn lines. Fix it to look **stuck on**: (a) **translucency that
+   visibly tints the stock beneath** — composite `multiply` so the fluo shows _through_ the
+   tape as a darker, desaturated band (masking tape is not opaque manila); (b) **torn/serrated
+   strip ends**, not clean rectangles — an SVG `clip-path` with a ragged short edge, **fixed
+   per corner** (indexed, no `Math.random`); (c) real **masking-tape proportions** — wider
+   and shorter than now (**~26–34 px wide**, length just enough to bridge the corner), a
+   matte band, **not** a thin 18 px stroke; (d) a **hair of wrinkle** (one faint darker
+   crease line across the band) is allowed; **sheen/gloss is not** — any specular highlight =
+   glow = FAIL, tape here is dead-matte. Drop the hard top/bottom **ink keyline** to a
+   **very faint torn-edge shading** (the adhesive edge, not a drawn border); its darkened
+   footprint against the stock is what sells it, not an outline. Deterministic per corner,
+   all CSS/inline-SVG.
+
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 
 Pollinations' `flux` is a FLUX.1 [schnell]-class distilled model: **no negative
