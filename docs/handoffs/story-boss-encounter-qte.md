@@ -1101,3 +1101,126 @@ BOTH/`; each spec alone still loads without throwing.
 - handoff → `senior-architect` (Winston): re-triage both MAJOR findings on PR #112. Both fixes are
   game-lane-only (no React/Three, no boundary/dependency/ADR-contract change); Fix 2 is a defensive
   load-time guard, not the deferred interleaving work.
+
+## 12. INTEGRATION REVIEW + MERGE-GATE TRIAGE (stage 6) — senior-architect (Winston) — 2026-07-19
+
+Final arbiter pass over the WHOLE `git diff origin/main...HEAD` (31 files, player-visible), not a
+second isolated review — my integration sign-off IS the triage of the 4-reviewer panel. I re-read
+every fix against the reviewers' descriptions (did not trust the fix reports) and re-ran the gates
+myself.
+
+```
+Panel — claude/miboss-boss-feature-olnbxz vs origin/main · 31 files, player-visible
+Reviewers (parallel): code-review(high) · bmad-code-review · edge-case-hunter · security-review
+```
+
+### CONFIRMED findings (most severe first) — status verified by me, not trusted
+
+1. **[BLOCKING → FIXED, verified]** Same-tick quota-crossing skipped the boss. `stateMachine.ts`
+   L438-439 now guards `newKills >= enemiesToWin && state.bossQteSpec === null`; a boss-authored
+   quota-win stays `PLAYING` at/over quota and the top-of-tick block opens the duel next tick via
+   `shouldTriggerBossQte`. Traced the full tick: on the crossing tick `state.kills` is still
+   sub-quota at the top (no trigger), so the fall-through is provably safe. Regression test
+   (`stateMachine.test.ts:718`) uses the REAL `enemiesToWin = QUOTA` (3) with a visible hp-1 enemy —
+   the true case, not the 0-quota harness — asserts PLAYING@quota then ZOOMING next tick. Genuine.
+
+2. **[MAJOR → FIXED, verified]** ADR-0051 D5 "no HUD bar" stale after the same-day override.
+   `0051-...md:218-227` carries an explicit AMENDED note; the boundary-law sentence still holds
+   (bar reads `bossHp/bossHpMax/phaseCount`, no new `src/game` field). Coherent with the render.
+
+3. **[MAJOR → FIXED, verified]** Harness completion wrote real localStorage side effects.
+   `App.tsx:213-237` now gates BOTH `saveScore` and the unlock hop behind
+   `isShippedLevel = LEVELS.findIndex(...) !== -1`, and the unlock reads `LEVELS[shippedIdx + 1]`
+   with `shippedIdx >= 0` — the phantom `LEVELS[-1+1]` tutorial-unlock and phantom high-score are
+   both closed. Correct that this matters precisely because `?preview=boss` is intentionally NOT
+   `import.meta.env.DEV`-gated (Bertrand's branch-preview request, D4 "and/or" query-seam — no ADR
+   contradiction).
+
+4. **[MAJOR → FIXED, verified]** `phaseBreakRemaining` never decremented under clamped deltas.
+   `bossQteSystem.ts:706-708` counts it down in lockstep on non-crossing ticks, gated on
+   `inBreakAtStart` so the trigger tick still reports full `PHASE_BREAK_SECONDS`. Regression
+   (`bossQteSystem.test.ts:339`) drives 0.1 s frames and asserts STRICT per-frame decrease to 0 —
+   reproduces the pinned-at-1.0 bug. (Noted a benign ~1 delta-frame offset between `stanceRemaining`
+   and `phaseBreakRemaining`; the brace pulse still plays across the break — not a defect.)
+
+5. **[MAJOR → FIXED, verified]** Co-authored hostage+boss silently drops the hostage QTE.
+   `createInitialState` (`stateMachine.ts:100-107`) throws on both-non-null; regression at
+   `stateMachine.test.ts:803`. Correct scope: a load-time guard, not the deferred interleaving. This
+   is the RIGHT tool here because the hostage beat genuinely, permanently VANISHES (frozen clock) and
+   there is no near-term plan to combine them.
+
+### Findings I triaged myself (uncorrected on entry)
+
+6. **[MAJOR, reviewer B — `BossHpBar`/`DeliveryIntegrityBanner` share `fixed; top:58px; left:50%`]
+   → REJECT-WITH-REASON (documented + tracked), NO guard now.** Confirmed the shared anchor
+   (`BossHpBar.module.css:9-13` vs `DeliveryIntegrityBanner.module.css:10-14`). Not reachable in V1
+   (the only `bossQteSpec` level — the harness — has `deliveries: []`; no shipped level has a boss).
+   I deliberately did NOT mirror the fix-#5 assert here, and this is a considered architect's call:
+   - a game-layer `deliveries.length && bossQteSpec` throw would forbid **exactly the finale the
+     story anticipates** (OQ1 frames the boss as "l'obstacle climatique de la livraison" — delivery
+     - boss are designed to co-exist in the Niveau Final). Fix #5's throw is proportionate because a
+       scripted beat is LOST; here the collision is a **cosmetic HUD overlap** (the delivery merely
+       freezes cleanly while the boss holds the scene — nothing is dropped), so a loud game-layer throw
+       is both disproportionate and a boundary smell (pure game layer asserting a render-cosmetic).
+   - the real resolution is a UX/render **co-display decision** (stack the two call-outs, or suppress
+     the delivery banner during the boss, or reposition) owned by `ux-designer` + `dev-r3f-render`,
+     correctly sequenced with the follow-up story where delivery + boss first co-exist.
+   - Tracked for `story-boss-qte-differentiation.md` (the follow-up) + this handoff. Does NOT block
+     the merge (not reachable in V1). → `ux-designer` + `dev-r3f-render`, follow-up story.
+
+7. **[MINOR, reviewer A — `phaseIndexAt` can skip an intermediate phase break's telegraph if a
+   future spec's HP band `maxHp/phaseCount` ≤ `BOSS_DAMAGE_VITAL` (2)]
+   → DOC finding, NON-BLOCKING.** Confirmed the mechanism (`bossQteSystem.ts:620-627`: a single
+   VITAL chip can jump `phaseIndex` by >1, firing one break and skipping the middle telegraph).
+   Not reachable with the harness spec (24 HP / 3 phases ⇒ band 8 ≫ 2). MINOR, does not block the
+   merge by project policy. It is **currently NOT documented** in code — so I am NOT silently passing
+   it: routed as a DOC note below. Prescribed, not applied (keeps the panel-triaged diff frozen).
+
+### Integration review
+
+- **Boundary law: OK.** Mechanical sweep: `src/game/**` imports zero React/Three; `src/render/**`
+  holds no boss rule — it imports only read-helpers (`isBossQteActive`, `phaseIndexAt`) and derives
+  posture/pulse/colour/dividers from exposed state, exactly per ADR-0051 D5. `HUD.tsx` imports view
+  types only. The BossHpBar's even `i/phaseCount` divider spacing is a visual layout of the
+  game-owned `phaseCount`, not a re-encoded rule — acceptable.
+- **Seams: OK.** The only game↔render bridge remains `useGameLoop.ts`; it generalises the camera
+  driver to drive EITHER QTE via the shared `{anchor,phase,zoomRemaining,zoomSeconds}` shape and
+  reuses `qteCamera.ts` (`qtePose`/`qteZoomInProgress`) VERBATIM. The two serialised shared files
+  (`stateMachine.ts`+`gameState.ts`, `useGameLoop.ts`) landed additively; boss lane never touched
+  `qteSystem.ts`/`hostageQte.ts` (D1 honoured) — no contention with hostage work.
+- **Deps/deploy: clean.** No new dependency, no build/CI change. `bossQteSpec === null` byte-identity
+  path proven by unit test; production build tree-shakes the harness (qa-lead §11 artifact check).
+  ADR-0051 number re-checked at merge: no collision on `origin/main` — clean allocation.
+
+### Gates (re-run by me, not trusted from §9/§10/§11)
+
+- `yarn typecheck` → exit 0, clean.
+- `yarn lint` → exit 0, clean.
+- `yarn test` → **816 passed / 64 files, 0 failures** (incl. the 3 new regression tests for
+  findings #1/#4/#5).
+
+### DOC findings → tech-writer / dev-gameplay (non-blocking, do NOT hold the merge)
+
+- Finding #7: add a one-line comment near `phaseIndexAt` / `BOSS_PHASE_TABLE` in `bossQteSystem.ts`
+  noting that future tuning must keep the HP band (`bossHp / phaseCount`) strictly greater than
+  `BOSS_DAMAGE_VITAL` (2), or a single VITAL chip can skip an intermediate phase-break telegraph.
+- Finding #6: carry the shared-anchor co-display constraint into `story-boss-qte-differentiation.md`
+  as an explicit acceptance item for the Niveau-Final follow-up (UX to rule stack/suppress/reposition
+  before delivery + boss ship on one level).
+
+### Verdict
+
+```
+Verdict: MERGE — no unresolved CONFIRMED blocking/major finding. Findings #1–#5 fixed and
+independently verified (3 genuine regression tests); #6 reject-with-reason (not reachable in V1,
+tracked to the follow-up — a game-layer guard would wrongly forbid the intended delivery+boss
+finale); #7 minor doc, non-blocking. Boundary law intact, one bridge file, additive/inert,
+`src/game` untouched by render. tsc/lint green, 816/816 tests. ADR-0051 collision-free at merge.
+```
+
+- handoff → `producer` (Marion): merge-gate CLEARED on PR #112; ADR-0051 collision-free — adopt in
+  the index. Two non-blocking DOC follow-ups above (finding #6 → follow-up story acceptance, #7 →
+  code comment) — schedule, they do not gate this merge. Bertrand merges.
+- handoff → `ux-designer` (Tony) + `dev-r3f-render` (Amelia): finding #6 co-display decision, owned
+  by the Niveau-Final follow-up story.
+- handoff → `tech-writer` (Otis) / `dev-gameplay` (Amelia): finding #7 one-line tuning-guard comment.
