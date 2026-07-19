@@ -46,51 +46,49 @@ format unified max-width 280px (design gate amendment); tape/corner treatment de
 
 ### Frozen contract — render restructure + CSS
 
-**DOM shape:**
+**DOM shape (`src/render/ui/menu/LevelFlyer.tsx`):**
 
-- `.flyer > .paper` (new wrapper for ::before pseudo-element shadow injection);
-- clip-path on `.paper` (not `.flyer`), drop-shadow filter on `.paper::before` (exception:
-  cannot live inside clip-path, must be injected via pseudo-element);
-- content + existing children move INTO `.paper`; `.flyer` becomes the clip+shadow container.
+- `.flyer` (role=button, transform/pull/tilt, `position:relative`, NOT clipped) wraps:
+  `.paper` (clip-path `var(--flyer-clip)`, stock background, grain/streak/crease overlays,
+  content, `filter: drop-shadow(1px 3px 6px rgba(20,18,16,.35))`), a `.cutLine` inline SVG
+  polygon sharing the clip vertices (crushed-fibre line), and `TapeCorner` as an UNCLIPPED
+  SIBLING of `.paper` (tape bridges the cut edge; clip-path would erase box-shadow and
+  clip the tape — hence drop-shadow on the clipped element).
 
-**Shadow tokens (deterministic per breakpoint, asserted in unit tests):**
+**Layout (`FlyerWall.module.css` + `LevelFlyer.module.css`):** A5 `aspect-ratio:148/210`
+target-not-clip, `max-width: var(--flyer-max-width)` (280px); desktop
+`(min-width:640px) and (min-height:481px)` → row wrap + center + gap 24px; narrow <640
+centered column; short-landscape rack untouched.
 
-- Desktop (≥640px): roving axis at Δx=−0.08rem, Δy=+0.12rem (worn-tape tilt);
-- Mobile (<640px): axis roving to Δx=−0.04rem, Δy=+0.08rem (lighter, stabler visual on small screens).
-- Shadow blur: 0.24rem, spread: 0 (hard edge for xerox-ish edge worn look);
-- Color: `rgba(0,0,0,0.35)` (semi-transparent black, occlusion not total).
-- Reduced-motion: shadow held at the desktop angle (no sway animation), blur → 0.12rem
-  (softer standby, motion eliminated).
+**Roving axis:** keyboard-focus axis flips vertical→horizontal at ≥640px via a new
+SSR-safe `useMediaQuery` hook in `src/render/ui/print/`.
 
-**Pure geometry helpers (unit-tested):**
+**New deterministic tokens (`src/render/ui/print/tokens.ts`, indexed, no Math.random):**
+`FLYER_MAX_WIDTH_PX` (→ `--flyer-max-width` via `applyPrintTokens.ts`), `FLYER_EDGE_SEED`
 
-- `computeShadowOffset(viewportWidth: number): { x: number; y: number }` —
-  returns Δx/Δy in `rem` units, breakpoint-aware.
-- `applyShadowToken(element, config: ShadowConfig): void` — applies computed offset +
-  blur/color via CSS custom properties (token-driven).
+- `FLYER_EDGE_MAX_DEV_PX`, `FLYER_DOG_EAR_CORNER`, `FLYER_CREASE_ANGLE_DEG`,
+  `FLYER_WEATHERED_INDICES`, `TAPE_WIDTH_PX`, `TAPE_FRAY_SEED`.
 
-**Layout constants (in `src/render/ui/tokens.ts`):**
-
-- `FLYER_DESKTOP_SHADOW_X_REM`, `FLYER_DESKTOP_SHADOW_Y_REM` (roving desktop offset);
-- `FLYER_MOBILE_SHADOW_X_REM`, `FLYER_MOBILE_SHADOW_Y_REM` (roving mobile offset);
-- `FLYER_SHADOW_BLUR_REM`, `FLYER_SHADOW_COLOR` (shared blur/color across breakpoints).
+**Pure geometry helpers (unit-tested):** `flyerEdgePolygon(i)` (clipPath + svgPoints,
+amplitude ≤ `FLYER_EDGE_MAX_DEV_PX`), `dogEarCorner(i)`, `tapeStripPath(corner)` (fray at
+strip tips only).
 
 ### Lane assignment — render lane only
 
-| Lane               | Owns (writes)                                                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **dev-r3f-render** | `src/render/ui/Flyer.tsx` (DOM restructure), `src/render/ui/tokens.ts` (shadow tokens), `src/render/scene/__tests__/` (geometry + screenshot gate) |
+| Lane               | Owns (writes)                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **dev-r3f-render** | `src/render/ui/menu/*` (flyer restructure + layout), `src/render/ui/print/*` (TapeCorner, tokens, useMediaQuery) + tests |
 
 No game-logic involvement; pure render-layer CSS + DOM shape. No shared-file contention.
 
 ### ADR impact
 
 **ADR-0049** — "Flyer occlusion-shadow exception & breakpoint-dependent roving axis" (Proposed).
-Amends ADR-0021 (print-token system) and ADR-0046 (render CSS Modules + tokens bridge) by
-extending the token contract to include shadow geometry. Reverses an earlier clip-path +
-filter-stacking refusal: drop-shadow inside clip-path does not work (clip applies BEFORE
-filter); solution is a pseudo-element outside the clip. Tokens remain centralized; the
-exception is documented and bounded to `.paper::before`.
+Amends ADR-0021 (print-token system) and ADR-0046 (render CSS Modules + tokens bridge):
+the §2bis box-shadow ban gets a bounded ink-black occlusion exception shipped as
+`filter: drop-shadow` on the clipped `.paper` (clip-path erases box-shadow; drop-shadow
+follows the cut silhouette), and the flyer wall's roving-focus axis becomes
+breakpoint-dependent (≥640px horizontal).
 
 - VERDICT: **CONTRACT FROZEN.** dev-r3f-render → implement against frozen contract above.
   ADR-0049 to be drafted by tech-writer.
