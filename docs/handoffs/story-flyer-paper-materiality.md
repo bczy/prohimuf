@@ -2,8 +2,9 @@
 
 Encodes the design, reference validation, and render-lane tech plan for realistic 1990s
 rave-flyer visual materiality: xerox grain, guillotine edge, worn glued-paper occlusion
-shadow, and a breakpoint-dependent roving shadow axis (≥640px viewport). Scope: A5 desktop
-format unified max-width 280px (design gate amendment); tape/corner treatment deferred post-MVP.
+shadow, realistic tape corners, and a breakpoint-dependent roving-focus axis (≥640px
+viewport). Scope: A5 desktop format unified max-width 280px (design gate amendment);
+dense-pile overlap re-tuning deferred to a future spec.
 
 ## 1. INTAKE — pm (John) — 2026-07-19
 
@@ -28,15 +29,15 @@ format unified max-width 280px (design gate amendment); tape/corner treatment de
 - claim: UX spec for flyer-wall layout (responsive breakpoints, max-width unified at 280px
   desktop post-amendment), accessibility (reduced-motion safe shadow, contrast), and design
   gate verdict on materiality spec.
-- release: `docs/game-design/ux/spec-flyer-wall-format.md` (A1–A8: breakpoint constraints,
-  280px max-width, edge + shadow rendering, accessible shadow motion).
-  `docs/game-design/spec-flyer-materiality.md` (design spec: grain, edge, occlusion shadow,
-  tape—tape deferred post-MVP per design gate amendment).
-- Amendment (design gate, Karim): max-width tightened to 280px unified across breakpoints
-  (simplifies DOM, unifies shadow axis for ≥640px). Tape/corner detail deferred; shadow is
-  gating constraint (breakpoint-dependent roving axis).
+- release: `docs/game-design/ux/flyer-wall-format.md` (PASSED: A5 target-not-clip,
+  ≥640px wrap grid + roving-axis flip, narrow cap, short-landscape rack ratio-waived) +
+  `docs/art-direction.md` §2bis.2 (grain, guillotine edge, occlusion shadow, dog-ear/crease,
+  A5 format, realistic tape).
+- Amendment (design gate, Karim): max-width reconciled to ONE number — 280px
+  (`FLYER_MAX_WIDTH_PX`); dense-pile overlap/rotation re-tuning deferred (contradicts the
+  gated wrap-grid + existing-index-array AC) to a future dedicated pile-tuning spec.
 - VERDICT: PASS-WITH-AMENDMENT — design gate (lead-game-designer)
-  - Amendment: max-width 280px unified, tape visual deferred post-MVP.
+  - Amendment: max-width 280px unified, dense-pile re-tuning deferred.
 
 ## 3. HOW — senior-architect (Winston) — 2026-07-19
 
@@ -64,10 +65,9 @@ centered column; short-landscape rack untouched.
 SSR-safe `useMediaQuery` hook in `src/render/ui/print/`.
 
 **New deterministic tokens (`src/render/ui/print/tokens.ts`, indexed, no Math.random):**
-`FLYER_MAX_WIDTH_PX` (→ `--flyer-max-width` via `applyPrintTokens.ts`), `FLYER_EDGE_SEED`
-
-- `FLYER_EDGE_MAX_DEV_PX`, `FLYER_DOG_EAR_CORNER`, `FLYER_CREASE_ANGLE_DEG`,
-  `FLYER_WEATHERED_INDICES`, `TAPE_WIDTH_PX`, `TAPE_FRAY_SEED`.
+`FLYER_MAX_WIDTH_PX` (→ `--flyer-max-width` via `applyPrintTokens.ts`), `FLYER_EDGE_SEED`,
+`FLYER_EDGE_MAX_DEV_PX`, `FLYER_DOG_EAR_CORNER`, `FLYER_CREASE_ANGLE_DEG`,
+`FLYER_WEATHERED_INDICES`, `TAPE_WIDTH_PX`, `TAPE_FRAY_SEED`.
 
 **Pure geometry helpers (unit-tested):** `flyerEdgePolygon(i)` (clipPath + svgPoints,
 amplitude ≤ `FLYER_EDGE_MAX_DEV_PX`), `dogEarCorner(i)`, `tapeStripPath(corner)` (fray at
@@ -103,10 +103,11 @@ breakpoint-dependent (≥640px horizontal).
 ## 5. DEV — dev-r3f-render (Amelia) — IN FLIGHT
 
 - claim: implement the render + token side against the FROZEN contract (§3 above).
-- scope: Flyer.tsx DOM restructure, tokens.ts shadow constants, unit tests for
-  `computeShadowOffset` + screenshot gate (visual proof at 640px+ and mobile breakpoints).
-- NEEDS: ADR number allocated (producer to provide), handoff log opened (producer to write),
-  then dev lane starts build.
+- scope: LevelFlyer/FlyerWall restructure + layout, TapeCorner redesign, print tokens +
+  `useMediaQuery`, unit tests for `flyerEdgePolygon`/`dogEarCorner`/`tapeStripPath` +
+  screenshot gate (visual proof at 640px+ and mobile breakpoints).
+- ADR-0049 allocated (producer) and drafted (tech-writer):
+  `docs/adr/0049-flyer-occlusion-shadow-exception.md`.
 
 ---
 
