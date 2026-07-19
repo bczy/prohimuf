@@ -25,6 +25,17 @@ lands, for different reasons, on the same _family_ of answer (diegetic), not a r
 
 ## 0. The ruling (headline)
 
+> **OVERRIDDEN 2026-07-19 by Bertrand, after playtesting the harness:** diegetic-only was not
+> legible enough in practice ("gênant de ne pas voir l'énergie du boss") — he asked directly for a
+> HUD health bar. This is the product owner's explicit call after hands-on play, which outranks
+> the §6/no-HUD reasoning below. The reasoning §0.1-§0.2 stays on record (it was sound reasoning
+> from the spec, not an error), but the ruling itself no longer holds: **a HUD boss-HP bar ships.**
+> `dev-r3f-render` implements against `bossHp`/`bossHpMax` (already exposed by `bossQteSystem.ts`),
+> segmented by phase threshold (16/8) if convenient, no new game-layer field required. D1-D3 (the
+> diegetic posture-escalation and phase-transition-pulse requirements) are UNCHANGED and still
+> apply **in addition to** the bar — the bar solves "how much HP is left," not "a phase just
+> changed," which is still a distinct legibility need per §2.1.
+
 **No HUD element for boss HP. Diegetic only, in two parts already paid for by the planned art
 budget** (`docs/game-design/spec-boss-qte-encounter.md` §7-9: shielded / telegraph-windup /
 exposed-firing / hit / per-phase posture / defeated, ≈5 poses):
