@@ -43,8 +43,11 @@ Same shipping world the hostage QTE numbers are traced against (sister spec §0)
   colour** anatomy read (`ringZoneAt → vital | limb | off`, damage `2 / 1 / 0`); the multi-hit
   `captorHp`; the **blown-peek loss clock** (`blownPeeks` / `maxBlownPeeks`); the energy ledger
   constants (`QTE_RESCUE_REFILL +40`, `QTE_UNANSWERED_PEEK −8`, `QTE_BODY_HIT −5`,
-  `QTE_PANIC_SHOT −6`); the invariant floors (`PEEK_EXPOSURE_FLOOR 0.5`,
-  `TELEGRAPH_LEAD_SECONDS 0.35`); `QTE_ZOOM_SECONDS 2.0`, `QTE_RESULT_HOLD 2.2`.
+  `QTE_PANIC_SHOT −6`); the exposure floor `PEEK_EXPOSURE_FLOOR 0.5`; the FIXED tell-window
+  duration `TELEGRAPH_LEAD_SECONDS 0.35` (`src/game/systems/qteSystem.ts:39` — the last 0.35 s
+  of the COVERED beat carries the tell, asserted `peekCadenceSeconds > TELEGRAPH_LEAD_SECONDS`;
+  it is a tell DURATION, **not** a "≥ 0.25 s lead minimum"); `QTE_ZOOM_SECONDS 2.0`,
+  `QTE_RESULT_HOLD 2.2`.
 
 The boss is, mechanically, **the spatial-colour ring duel MINUS the human shield, PLUS a bigger
 phased HP pool and a per-phase escalation of the window parameters.** Everything below is either
@@ -164,12 +167,12 @@ break** and re-parameterises the exposed-window duel — the fight gets tighter,
 
 ### 2.4 Anti-"mort bullshit" guardrails (mirror ADR-0034 G4/G5, asserted not trusted)
 
-| Guardrail                     | Floor                                                                           | Rationale                                                                                                             |
-| ----------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **EXPOSED duration** (window) | **≥ 0.5 s** even in the final phase (`PEEK_EXPOSURE_FLOOR`, reused)             | A window must stay answerable within human reaction time. The phase-3 default (1.0 s) never approaches it.            |
-| **Telegraph lead**            | **≥ 0.25 s** before every EXPOSED window (reuse `TELEGRAPH_LEAD_SECONDS` floor) | Every exposure is telegraphed by a perceptible, non-zero cue. No blind memorisation — the story's explicit garde-fou. |
-| **Phase break**               | **telegraphed, ≥ `PHASE_BREAK_SECONDS`, damage-free**                           | A new attack pattern never opens on the player un-warned.                                                             |
-| **Ring on-frame**             | asserted at the boss zoom                                                       | The moving weak point never leaves the framed tableau (no "shoot what you can't see"). Stage-5 `verify`.              |
+| Guardrail                                                                      | Floor                                                                                                                       | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **EXPOSED duration** (window)                                                  | **≥ 0.5 s** even in the final phase (`PEEK_EXPOSURE_FLOOR`, reused)                                                         | A window must stay answerable within human reaction time. The phase-3 default (1.0 s) never approaches it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Telegraph lead** (NEW per-phase authored field `telegraphLeadSeconds`, §4.3) | **≥ `BOSS_TELEGRAPH_LEAD_FLOOR` = 0.35 s** in every phase, **AND** each phase's SHIELDED lull STRICTLY > its telegraph lead | This is a NEW authored per-phase field (0.45→0.40→0.35), **NOT** a reuse of the fixed `TELEGRAPH_LEAD_SECONDS` constant (a fixed constant cannot vary per phase). Its asserted floor value (0.35) is deliberately the shipped hostage tell (`qteSystem.ts:39`) — the boss tell never drops below the proven hostage read; phase 3 sits exactly on the floor. The `lull > lead` assert mirrors the hostage's `peekCadenceSeconds > TELEGRAPH_LEAD_SECONDS`, so the tell is a discrete wind-up, not the whole SHIELDED beat. No blind memorisation — the story's explicit garde-fou. |
+| **Phase break**                                                                | **telegraphed, ≥ `PHASE_BREAK_SECONDS`, damage-free**                                                                       | A new attack pattern never opens on the player un-warned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Ring on-frame**                                                              | asserted at the boss zoom                                                                                                   | The moving weak point never leaves the framed tableau (no "shoot what you can't see"). Stage-5 `verify`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 These are **system invariants asserted against level data in code**, exactly as ADR-0034 asserts
 its floors — never trusted from the authored spec (incl. any future difficulty curve).
@@ -237,7 +240,8 @@ vital-or-limb window per exposure** at stage-5 `verify` (the ADR-0034 K-5 discip
 
 ### 4.3 Per-phase escalation table (the §OQ2.3 sequencing — one lever per phase)
 
-Floors respected at every row (EXPOSED ≥ 0.5 s, telegraph ≥ 0.25 s):
+Floors respected at every row (EXPOSED ≥ 0.5 s = `PEEK_EXPOSURE_FLOOR`; telegraph ≥ 0.35 s =
+`BOSS_TELEGRAPH_LEAD_FLOOR`; and each phase's SHIELDED lull STRICTLY > that phase's telegraph lead):
 
 | Phase            | HP band | EXPOSED (window) | SHIELDED lull | telegraph lead | wander speed | boss shot drain |
 | ---------------- | ------- | ---------------- | ------------- | -------------- | ------------ | --------------- |
@@ -247,10 +251,16 @@ Floors respected at every row (EXPOSED ≥ 0.5 s, telegraph ≥ 0.25 s):
 
 - **EXPOSED ↓ 1.6 → 1.0 s**: the window tightens; still 2× the 0.5 s floor at its worst.
 - **SHIELDED lull ↓ 2.0 → 1.2 s**: less recovery between openings — the frenzy phase crowds you.
-- **telegraph lead ↓ 0.45 → 0.35 s**: never below the 0.25 s floor; the tell stays readable, it
-  just demands quicker acquisition.
-- **wander speed ↑ 1.0 → 1.6 u/s**: reuses the hostage `wanderSpeed ≈ 1.2` scale; the moving weak
-  point gets harder to track (the story's "point faible qui se déplace" as the difficulty ramp).
+- **telegraph lead ↓ 0.45 → 0.35 s** — a **NEW per-phase authored field `telegraphLeadSeconds`**,
+  NOT a reuse of the fixed `TELEGRAPH_LEAD_SECONDS` constant (a fixed constant could not ramp
+  0.45→0.40→0.35): never below the `BOSS_TELEGRAPH_LEAD_FLOOR` = 0.35 s floor (phase 3 sits exactly
+  ON it); the tell stays readable, it just demands quicker acquisition. Floor value 0.35 = the
+  shipped hostage tell so the boss is never LESS readable than the proven duel.
+- **wander speed ↑ 1.0 → 1.6 u/s** — a **NEW per-phase authored field**; the hostage has **no**
+  wander-speed knob (its speed is implicit at ≈ 1.8 u/s peak, derived from `LEG_DURATION 0.38`
+  - `MAX_LEG_DISPLACEMENT 0.45`, `qteSystem.ts:123`). The boss caps at 1.6 u/s, staying UNDER the
+    proven hostage peak; the moving weak point gets harder to track (the story's "point faible qui se
+    déplace" as the difficulty ramp).
 - **boss shot drain ↑ −5 → −8**: a missed window in the frenzy hurts most (attrition pressure).
 
 `PHASE_BREAK_SECONDS` = **1.0 s** (new) — the damage-free, re-posture telegraph between phases
@@ -314,7 +324,9 @@ partly `pm`'s WHAT)._
 | `RING_HIT_RADIUS`                | 0.30             | reuse          |
 | `PHASE_BREAK_SECONDS`            | 1.0 s            | new            |
 | `PEEK_EXPOSURE_FLOOR`            | 0.5 s            | reuse (assert) |
-| `TELEGRAPH_LEAD_SECONDS` (floor) | 0.25 s           | reuse (assert) |
+| `TELEGRAPH_LEAD_SECONDS` (hostage fixed tell-window, `qteSystem.ts:39`) | 0.35 s | reference only — **NOT** the boss floor |
+| `BOSS_TELEGRAPH_LEAD_FLOOR` (asserted floor on the per-phase `telegraphLeadSeconds`) | 0.35 s | new (assert) |
+| `telegraphLeadSeconds` (per phase) | 0.45 / 0.40 / 0.35 s (§4.3) | new — authored per phase (assert ≥ floor, and lull > lead) |
 | `QTE_ZOOM_SECONDS`               | 2.0 s            | reuse          |
 | `QTE_RESULT_HOLD`                | 2.2 s            | reuse          |
 
@@ -332,9 +344,12 @@ multi-encounter curve story (Option B/C) needs them. Same F3-promotion seam as A
   explicit on-screen reason. Ignoring the boss is NOT viable (contrast the hostage).
 - **AC2 — Sequenced vulnerability.** The boss is shootable (chips HP) **only** during `EXPOSED`;
   a ring hit while `SHIELDED` or during a phase break does 0 and costs the body/panic penalty.
-- **AC3 — Telegraph floors (anti-bullshit).** Every `EXPOSED` is preceded by a perceptible tell
-  ≥ 0.25 s; every `EXPOSED` duration ≥ 0.5 s even in phase 3; every phase break is damage-free and
-  ≥ 1.0 s. Asserted in code against the authored spec (unit test), not just observed.
+- **AC3 — Telegraph floors (anti-bullshit).** Every `EXPOSED` is preceded by a perceptible tell of
+  the phase's `telegraphLeadSeconds`, which is asserted **≥ `BOSS_TELEGRAPH_LEAD_FLOOR` = 0.35 s**
+  in every phase AND STRICTLY < that phase's SHIELDED lull (so the tell is a discrete wind-up, not
+  the whole beat); every `EXPOSED` duration ≥ 0.5 s even in phase 3; every phase break is
+  damage-free and ≥ 1.0 s. Asserted in code against the authored spec (unit test), not just
+  observed.
 - **AC4 — Phases escalate, legibly.** HP crossing 16 and 8 triggers a phase break; phases 2 and 3
   read as tighter (shorter window, faster wander, shorter lull) and the transition is an
   unmissable beat (not just a number ticking).
