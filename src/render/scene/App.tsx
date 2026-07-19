@@ -213,15 +213,26 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
 
-    const dateStr = new Date().toISOString();
-    saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
+    // Persistence side-effects (high-score board, next-level unlock) are scoped to
+    // SHIPPED levels only. `BOSS_QTE_DEV_HARNESS_LEVEL` is deliberately EXCLUDED from
+    // `LEVELS` (ADR-0051 D4, "Belliard live contract untouched"), so `?preview=boss` must
+    // stay fully inert — no write to `muf_scores_*` or `muf_progress`. Because that seam is
+    // now reachable on branch-preview builds (commit 9a49edf), guarding on
+    // membership-in-`LEVELS` — not just `findIndex !== -1` for the unlock hop — keeps any
+    // player finishing the duel from corrupting their own save (review-panel finding, PR #112).
+    const shippedIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
+    const isShippedLevel = shippedIdx !== -1;
 
-    if (hudData.phase === "LEVEL_COMPLETE") {
-      const currentIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
-      const nextLevel = LEVELS[currentIdx + 1];
-      if (nextLevel !== undefined && !unlockedLevels.has(nextLevel.id)) {
-        unlockLevel(nextLevel.id);
-        setUnlockedLevels(loadUnlockedLevels());
+    if (isShippedLevel) {
+      const dateStr = new Date().toISOString();
+      saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
+
+      if (hudData.phase === "LEVEL_COMPLETE") {
+        const nextLevel = LEVELS[shippedIdx + 1];
+        if (nextLevel !== undefined && !unlockedLevels.has(nextLevel.id)) {
+          unlockLevel(nextLevel.id);
+          setUnlockedLevels(loadUnlockedLevels());
+        }
       }
     }
 
