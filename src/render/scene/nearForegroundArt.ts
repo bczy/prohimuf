@@ -757,7 +757,14 @@ function anchorAt(
   fallback: readonly LensAnchor[],
 ): LensAnchor {
   const a = arr?.[i];
-  if (a !== undefined && [a.x, a.y, a.rx, a.ry].every((n) => Number.isFinite(n))) return a;
+  if (
+    a !== undefined &&
+    [a.x, a.y, a.rx, a.ry].every((n) => Number.isFinite(n)) &&
+    a.rx > 0 &&
+    a.ry > 0
+  ) {
+    return a;
+  }
   return fallback[i] ?? { x: 0.3, y: 0.3, rx: 0.1, ry: 0.04 };
 }
 

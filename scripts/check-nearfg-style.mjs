@@ -135,6 +135,15 @@ async function main() {
   const fl = args.indexOf("--fail-list");
   const failListPath = fl !== -1 ? args[fl + 1] : null;
 
+  // Reset the fail-list to EMPTY as the very first thing, before any check
+  // (or arg-validation error) can throw. A caller (the CI retry loop) reading
+  // this file must never see a STALE list from a previous run — if this run
+  // crashes before reaching the real write below, an empty list means
+  // "nothing to delete/retry," never "delete/retry the wrong kinds."
+  if (failListPath) {
+    fs.writeFileSync(failListPath, "");
+  }
+
   let targets;
   if (fi !== -1) {
     const kind = ki !== -1 ? args[ki + 1] : null;
@@ -142,7 +151,12 @@ async function main() {
       console.error("--file requires --kind <kind>");
       process.exit(2);
     }
-    targets = [{ kind, file: path.resolve(process.cwd(), args[fi + 1]) }];
+    const fileArg = args[fi + 1];
+    if (!fileArg || fileArg.startsWith("--")) {
+      console.error("--file requires a path");
+      process.exit(2);
+    }
+    targets = [{ kind, file: path.resolve(process.cwd(), fileArg) }];
   } else {
     targets = loadKinds();
   }

@@ -71,12 +71,24 @@ export function loadNearForegroundArt() {
   const style = block.style ?? "";
   return Object.entries(block.types).map(([kind, def]) => {
     const prompt = typeof def.prompt === "string" ? def.prompt : "";
+    const width = def.size?.width;
+    const height = def.size?.height;
+    // A missing/malformed `size` silently defaulting to 256x512 would generate
+    // a distorted, mis-cropped texture for that kind. check-art-prompts.mjs
+    // already errors on this in CI, but the generator must be honest run
+    // standalone too — fail loudly rather than shipping a wrong-aspect PNG.
+    if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
+      throw new Error(
+        `nearForegroundArt.types.${kind}.size — missing/invalid width/height ` +
+          `(got ${JSON.stringify(def.size)}); see levelArt.json`,
+      );
+    }
     return {
       kind,
       prompt,
       assembled: `${opening}${prompt}${style}`,
-      width: def.size?.width ?? 256,
-      height: def.size?.height ?? 512,
+      width,
+      height,
       // Pinned seed → reproducible rolls, reviewable diffs (REROLL=1 ignores it).
       seed: Number.isInteger(def.seed) && process.env.REROLL !== "1" ? def.seed : null,
       asset: def.asset ?? `assets/nearfg/${kind}.png`,
@@ -84,8 +96,7 @@ export function loadNearForegroundArt() {
   });
 }
 
-async function generateOne(assembledPrompt, seed, width, height) {
-  const token = readToken();
+async function generateOne(token, assembledPrompt, seed, width, height) {
   const effectiveSeed = seed ?? Math.floor(Math.random() * 99999);
   const url = genUrl(assembledPrompt, effectiveSeed, { gen: GEN });
   const buf = await withRetry(url, token, 3);
@@ -122,6 +133,23 @@ async function main() {
   }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  // Resolve the token ONCE, up front, but only when there is at least one
+  // kind this run will actually attempt to generate (skip-existing and
+  // empty-prompt entries never touch the network). A missing token THROWS
+  // here — uncaught, propagating to the fatal handler below (non-zero exit,
+  // clear message) — instead of failing per-kind inside the try/catch below,
+  // which used to swallow it as a misleading "will be generated in CI" and
+  // let a token-less FORCE=1 re-dispatch silently no-op (green, nothing
+  // regenerated). The per-kind try/catch still exists for transient network
+  // failures only.
+  const pending = todo.filter(
+    (p) =>
+      !skip(path.join(OUT_DIR, `${p.kind}.png`), { force: FORCE, existsSync: fs.existsSync }) &&
+      p.prompt.trim(),
+  );
+  const token = pending.length > 0 ? readToken() : null;
+
   console.log(`Near-foreground sprites → ${path.relative(ROOT, OUT_DIR)}\n`);
 
   for (const p of todo) {
@@ -143,6 +171,7 @@ async function main() {
     console.log(`  [gen]  ${p.kind}`);
     try {
       const { s, ground, opaque, effectiveSeed } = await generateOne(
+        token,
         p.assembled,
         p.seed,
         p.width,

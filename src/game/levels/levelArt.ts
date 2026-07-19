@@ -328,11 +328,16 @@ export function nearForegroundArtAsset(kind: NearForegroundKind): string | null 
   return typeof asset === "string" && asset.length > 0 ? asset : null;
 }
 
-/** Type guard: a fully finite {@link LensAnchor} (x, y, rx, ry all finite numbers). */
+/**
+ * Type guard for a usable {@link LensAnchor}: x, y, rx, ry are finite numbers AND the
+ * radii are strictly positive. Zero/negative radii would blow up the overlay repaint
+ * (`ellipse` with a negative radius throws IndexSizeError), so they degrade to null.
+ */
 function isFiniteAnchor(a: unknown): a is LensAnchor {
   if (a === null || typeof a !== "object") return false;
   const { x, y, rx, ry } = a as Record<string, unknown>;
-  return [x, y, rx, ry].every((n) => typeof n === "number" && Number.isFinite(n));
+  const finite = [x, y, rx, ry].every((n) => typeof n === "number" && Number.isFinite(n));
+  return finite && (rx as number) > 0 && (ry as number) > 0;
 }
 
 /** Validate exactly `count` finite anchors off the untyped JSON; null on any miss. */
@@ -355,10 +360,11 @@ function sanitizeAnchors(arr: unknown, count: number): LensAnchor[] | null {
  * its fixed-fraction anchors, so the signal still lights up before the block lands.
  */
 export function trafficLightLenses(): SignalLenses | null {
-  const lenses = NEAR_FOREGROUND_ART?.types?.trafficLight?.lenses;
-  if (lenses === undefined) return null;
-  const vehicle = sanitizeAnchors(lenses.vehicle, 3);
-  const ped = sanitizeAnchors(lenses.ped, 2);
+  const lenses: unknown = NEAR_FOREGROUND_ART?.types?.trafficLight?.lenses;
+  if (lenses === null || typeof lenses !== "object") return null;
+  const { vehicle: rawVehicle, ped: rawPed } = lenses as { vehicle?: unknown; ped?: unknown };
+  const vehicle = sanitizeAnchors(rawVehicle, 3);
+  const ped = sanitizeAnchors(rawPed, 2);
   if (vehicle === null || ped === null) return null;
   return { vehicle, ped };
 }

@@ -164,4 +164,48 @@ describe("nearForegroundArt accessors — block PRESENT", () => {
     });
     expect(nonFinite.trafficLightLenses()).toBeNull();
   });
+
+  it('returns null when "lenses" is JSON null (no TypeError in the repaint path)', async () => {
+    const m = await importWithBlock({
+      trafficLight: { asset: "assets/nearfg/trafficLight.png", size: { width: 226, height: 512 }, seed: 1, prompt: "x", lenses: null },
+    });
+    expect(m.trafficLightLenses()).toBeNull();
+  });
+
+  it("returns null when an anchor has a zero or negative radius (no IndexSizeError)", async () => {
+    const zeroRadius = await importWithBlock({
+      trafficLight: {
+        asset: "assets/nearfg/trafficLight.png",
+        size: { width: 226, height: 512 },
+        seed: 1,
+        prompt: "x",
+        lenses: {
+          vehicle: [
+            { x: 0.29, y: 0.1, rx: 0, ry: 0.035 },
+            { x: 0.29, y: 0.24, rx: 0.11, ry: 0.035 },
+            { x: 0.29, y: 0.38, rx: 0.11, ry: 0.035 },
+          ],
+          ped: LENSES.ped,
+        },
+      },
+    });
+    expect(zeroRadius.trafficLightLenses()).toBeNull();
+
+    const negativeRadius = await importWithBlock({
+      trafficLight: {
+        asset: "assets/nearfg/trafficLight.png",
+        size: { width: 226, height: 512 },
+        seed: 1,
+        prompt: "x",
+        lenses: {
+          vehicle: LENSES.vehicle,
+          ped: [
+            { x: 0.34, y: 0.62, rx: 0.14, ry: -0.05 },
+            { x: 0.34, y: 0.8, rx: 0.14, ry: 0.05 },
+          ],
+        },
+      },
+    });
+    expect(negativeRadius.trafficLightLenses()).toBeNull();
+  });
 });

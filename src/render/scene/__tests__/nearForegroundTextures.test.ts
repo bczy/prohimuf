@@ -6,32 +6,38 @@ import type * as NearFgTextures from "../nearForegroundTextures";
  * ADR-0049 texture pipeline: {@link warmNearForegroundTexture} builds the procedural
  * CanvasTexture SYNCHRONOUSLY (guaranteed fallback) then async-loads the generated
  * PNG and swaps the cache entry on success. A 404 keeps the procedural texture; a
- * kind absent from the `nearForegroundArt` block never issues a load. TextureLoader
- * is mocked to settle synchronously (success by URL); the JSON block is injected so
- * the asset accessor yields paths; happy-dom's null canvas context is stubbed so the
- * procedural build produces a real CanvasTexture.
+ * kind absent from the `nearForegroundArt` block never issues a load.
+ *
+ * The TextureLoader mock is ASYNC-settling — loads are QUEUED and fired manually via
+ * {@link settleLoads} — so a test can observe the state a mounted mesh's per-frame
+ * re-read (NearForeground) sees: procedural BEFORE the load settles, the swapped PNG
+ * AFTER (a different Texture object). The JSON block is injected so the asset accessor
+ * yields paths; happy-dom's null canvas context is stubbed so the procedural build
+ * produces a real CanvasTexture.
  */
 
-const { loadCalls } = vi.hoisted(() => ({ loadCalls: [] as string[] }));
+const { loadCalls, pendingLoads } = vi.hoisted(() => ({
+  loadCalls: [] as string[],
+  pendingLoads: [] as {
+    url: string;
+    onLoad: ((t: unknown) => void) | undefined;
+    onError: ((e: unknown) => void) | undefined;
+  }[],
+}));
 
-// Real three except a controllable TextureLoader: success unless the URL is a bench
-// (our 404 fixture). onLoad receives a real (non-Canvas) Texture so a successful
-// swap is observable as "no longer a CanvasTexture".
+// Real three except a controllable TextureLoader that QUEUES loads instead of
+// settling them inline.
 vi.mock("three", async (importOriginal) => {
   const actual = await importOriginal<typeof Three>();
   class MockTextureLoader {
     load(
       url: string,
-      onLoad?: (t: Three.Texture) => void,
+      onLoad?: (t: unknown) => void,
       _onProgress?: unknown,
       onError?: (e: unknown) => void,
     ): void {
       loadCalls.push(url);
-      if (url.includes("bench")) {
-        onError?.(new Error("404"));
-      } else {
-        onLoad?.(new actual.Texture());
-      }
+      pendingLoads.push({ url, onLoad, onError });
     }
   }
   return { ...actual, TextureLoader: MockTextureLoader };
@@ -46,23 +52,23 @@ vi.mock("@game/levels/levelArt.json", async (importOriginal) => {
       ...actual.default,
       nearForegroundArt: {
         types: {
-          parkingMeter: {
-            asset: "assets/nearfg/parkingMeter.png",
-            size: { width: 256, height: 512 },
-            seed: 1,
-            prompt: "x",
-          },
-          bench: {
-            asset: "assets/nearfg/bench.png",
-            size: { width: 870, height: 512 },
-            seed: 2,
-            prompt: "x",
-          },
+          parkingMeter: { asset: "assets/nearfg/parkingMeter.png", size: { width: 256, height: 512 }, seed: 1, prompt: "x" },
+          bench: { asset: "assets/nearfg/bench.png", size: { width: 870, height: 512 }, seed: 2, prompt: "x" },
         },
       },
     },
   };
 });
+
+// Settle every queued load: bench is our 404 fixture, everything else succeeds with
+// a real (non-Canvas) Texture so a swap is observable as "no longer a CanvasTexture".
+async function settleLoads(): Promise<void> {
+  const { Texture } = await import("three");
+  for (const load of pendingLoads.splice(0)) {
+    if (load.url.includes("bench")) load.onError?.(new Error("404"));
+    else load.onLoad?.(new Texture());
+  }
+}
 
 // happy-dom canvases have no 2D context; hand the procedural draw a no-op ctx so the
 // CanvasTexture fallback is actually produced.
@@ -90,20 +96,30 @@ afterAll(() => {
 });
 beforeEach(() => {
   loadCalls.length = 0;
+  pendingLoads.length = 0;
   vi.resetModules();
 });
 
 type Mod = typeof NearFgTextures;
 
 describe("warmNearForegroundTexture — procedural fallback + generated swap", () => {
-  it("swaps to the loaded PNG on a successful generated load", async () => {
+  it("shows the procedural texture until the load settles, then the swapped PNG (re-read path)", async () => {
     const { CanvasTexture } = await import("three");
     const mod: Mod = await import("../nearForegroundTextures");
     await mod.warmNearForegroundTexture("parkingMeter");
-    const tex = mod.getNearForegroundTexture("parkingMeter");
-    expect(tex).not.toBeNull();
-    // Swapped: the cache now holds the loaded Texture, not the procedural CanvasTexture.
-    expect(tex instanceof CanvasTexture).toBe(false);
+
+    // Pre-settle: a mounted mesh re-reading the cache still sees the procedural fallback.
+    const before = mod.getNearForegroundTexture("parkingMeter");
+    expect(before).not.toBeNull();
+    expect(before instanceof CanvasTexture).toBe(true);
+
+    await settleLoads();
+
+    // Post-settle: the SAME re-read now returns the swapped PNG — a different object,
+    // no longer a CanvasTexture. This is what NearForeground's useFrame observes.
+    const after = mod.getNearForegroundTexture("parkingMeter");
+    expect(after instanceof CanvasTexture).toBe(false);
+    expect(after).not.toBe(before);
     expect(loadCalls.some((u) => u.includes("parkingMeter.png"))).toBe(true);
   });
 
@@ -111,6 +127,7 @@ describe("warmNearForegroundTexture — procedural fallback + generated swap", (
     const { CanvasTexture } = await import("three");
     const mod: Mod = await import("../nearForegroundTextures");
     await mod.warmNearForegroundTexture("bench");
+    await settleLoads();
     const tex = mod.getNearForegroundTexture("bench");
     expect(tex).not.toBeNull();
     expect(tex instanceof CanvasTexture).toBe(true);
@@ -121,12 +138,13 @@ describe("warmNearForegroundTexture — procedural fallback + generated swap", (
     const { CanvasTexture } = await import("three");
     const mod: Mod = await import("../nearForegroundTextures");
     await mod.warmNearForegroundTexture("lamppost");
+    await settleLoads();
     const tex = mod.getNearForegroundTexture("lamppost");
     expect(tex instanceof CanvasTexture).toBe(true);
     expect(loadCalls.some((u) => u.includes("lamppost"))).toBe(false);
   });
 
-  it("loads at most once even when warmed twice (pending/loaded guard)", async () => {
+  it("loads at most once even when warmed twice (loaded/pending guard)", async () => {
     const mod: Mod = await import("../nearForegroundTextures");
     await mod.warmNearForegroundTexture("parkingMeter");
     await mod.warmNearForegroundTexture("parkingMeter");

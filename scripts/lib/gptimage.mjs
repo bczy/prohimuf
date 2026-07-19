@@ -68,12 +68,23 @@ export function genUrl(prompt, seed, { gen = 1024, model = "gptimage-large" } = 
   );
 }
 
-/** fetchImg(url, token, redir) -> Buffer. Bearer-authenticated GET, follows up to 5 redirects. */
-export function fetchImg(url, token, redir = 0) {
+/**
+ * fetchImg(url, token, redir, originHost) -> Buffer. Bearer-authenticated GET,
+ * follows up to 5 redirects. The Authorization header is only attached when
+ * the CURRENT request's host matches the ORIGINAL (first-call) request's host
+ * — a redirect to a different host never receives the token (mirrors
+ * scripts/lib/pollinations.mjs's authHeaders same-host guard). `originHost` is
+ * internal (threaded through the recursive redirect calls); callers pass just
+ * `(url, token)`.
+ */
+export function fetchImg(url, token, redir = 0, originHost = null) {
+  const host = new URL(url).hostname;
+  const origin = originHost ?? host;
+  const headers = host === origin ? { Authorization: `Bearer ${token}` } : {};
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { Authorization: `Bearer ${token}` } }, (res) => {
+    const req = https.get(url, { headers }, (res) => {
       if ([301, 302].includes(res.statusCode) && res.headers.location && redir < 5) {
-        fetchImg(new URL(res.headers.location, url).toString(), token, redir + 1)
+        fetchImg(new URL(res.headers.location, url).toString(), token, redir + 1, origin)
           .then(resolve)
           .catch(reject);
         return;

@@ -1,4 +1,4 @@
-# Handoffs — Flyer paper materiality: occlusion-shadow exception & breakpoint-dependent roving axis (ADR-0049)
+# Handoffs — Flyer paper materiality: occlusion-shadow exception & breakpoint-dependent roving axis (ADR-0050)
 
 Encodes the design, reference validation, and render-lane tech plan for realistic 1990s
 rave-flyer visual materiality: xerox grain, guillotine edge, worn glued-paper occlusion
@@ -83,7 +83,7 @@ No game-logic involvement; pure render-layer CSS + DOM shape. No shared-file con
 
 ### ADR impact
 
-**ADR-0049** — "Flyer occlusion-shadow exception & breakpoint-dependent roving axis" (Proposed).
+**ADR-0050** — "Flyer occlusion-shadow exception & breakpoint-dependent roving axis" (Proposed).
 Amends ADR-0021 (print-token system) and ADR-0046 (render CSS Modules + tokens bridge):
 the §2bis box-shadow ban gets a bounded ink-black occlusion exception shipped as
 `filter: drop-shadow` on the clipped `.paper` (clip-path erases box-shadow; drop-shadow
@@ -91,7 +91,7 @@ follows the cut silhouette), and the flyer wall's roving-focus axis becomes
 breakpoint-dependent (≥640px horizontal).
 
 - VERDICT: **CONTRACT FROZEN.** dev-r3f-render → implement against frozen contract above.
-  ADR-0049 to be drafted by tech-writer.
+  ADR-0050 to be drafted by tech-writer.
 
 ## 4. REFERENCE GATE — lead-art + Bertrand verdict — 2026-07-19
 
@@ -106,8 +106,8 @@ breakpoint-dependent (≥640px horizontal).
 - scope: LevelFlyer/FlyerWall restructure + layout, TapeCorner redesign, print tokens +
   `useMediaQuery`, unit tests for `flyerEdgePolygon`/`dogEarCorner`/`tapeStripPath` +
   screenshot gate (visual proof at 640px+ and mobile breakpoints).
-- ADR-0049 allocated (producer) and drafted (tech-writer):
-  `docs/adr/0049-flyer-occlusion-shadow-exception.md`.
+- ADR-0050 allocated (producer) and drafted (tech-writer):
+  `docs/adr/0050-flyer-occlusion-shadow-exception.md`.
 - release: implemented per frozen contract. Verify — `yarn typecheck` clean, `yarn test`
   693/693 pass (new `flyerGeometry.test.ts` 9 tests, `applyPrintTokens.test.ts` +2 assertions),
   `yarn lint` clean, `yarn format` applied. NO game-logic touched, copy/stamps/roving-order/
@@ -148,17 +148,17 @@ breakpoint-dependent (≥640px horizontal).
     before `clip-path`, so the shadow is computed and then clipped away with the rest of
     the element — the occlusion shadow never paints. (The dog-ear corners already use the
     correct unclipped-wrapper/clipped-fold split in `LevelFlyer.tsx`; `.paper`'s shadow
-    needs the same split.) See ADR-0049 D1 (corrected).
+    needs the same split.) See ADR-0050 D1 (corrected).
   - **2 MAJEUR:** - _cut-line_ — the `.cutLine` blade-crushed-edge SVG is nested INSIDE `.paper` (a
     child of the clipped element), so its on-boundary stroke is itself clipped by
     `.paper`'s `clip-path`, thinning/erasing the "1px darker compressed line" §2bis.2
     pt2 specifies. - _axis-guard_ — `FlyerWall.tsx`'s roving-axis query is `useMediaQuery("(min-width:
-640px)")`, width-only; ADR-0049 D2's `(min-height: 481px)` guard was not carried
+640px)")`, width-only; ADR-0050 D2's `(min-height: 481px)` guard was not carried
     into the implementation, so a wide short-landscape touch device can double-match
     the horizontal-axis rule instead of keeping the vertical roving the rack requires. - several MINEUR findings folded into the same fix round (not individually blocking).
   - VERDICT: senior-architect (Winston) triage — **NO-MERGE** (unresolved confirmed
     BLOQUANT finding, mandatory-gate rule). Fix round launched: code fixes routed to
-    `dev-r3f-render`; doc corrections (this handoff, ADR-0049 D1, the story, the UX spec,
+    `dev-r3f-render`; doc corrections (this handoff, ADR-0050 D1, the story, the UX spec,
     art-direction §2bis.2) routed to `tech-writer`.
 
 ## 7. FIX ROUND + RE-VERDICTS — 2026-07-19

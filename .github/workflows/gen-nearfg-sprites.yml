@@ -74,6 +74,15 @@ jobs:
           # fetch). Bounded to 2 extra attempts; still failing → the job fails
           # and the if: failure() upload below preserves the outputs for
           # lead-art review.
+          #
+          # NOTE (accepted trade-off): the seed is PINNED (levelArt.json), so a
+          # DETERMINISTIC style-gate FAIL (not a network flake) re-rolls the
+          # exact same generation and fails again, burning premium Pollen on
+          # both attempts before the bounded retry gives up. This is
+          # intentional — a seed bump on retry would silently swap in
+          # un-reviewed art instead of surfacing the failure for a lead-art
+          # re-roll decision. The retry exists to repair missing-file flakes,
+          # not deterministic style failures; those need a human, not a loop.
           max_retries=2
           attempt=0
           fail_list="$RUNNER_TEMP/failing-nearfg.txt"
@@ -87,6 +96,15 @@ jobs:
               exit 1
             fi
             attempt=$((attempt + 1))
+            # The checker resets $fail_list to EMPTY as the first thing it
+            # does (never a stale list from an earlier run), so a MISSING
+            # file here means it crashed before writing anything at all
+            # (e.g. failed to even start) — abort the retry rather than
+            # reading a nonexistent/stale list and mis-deleting passing art.
+            if [ ! -f "$fail_list" ]; then
+              echo "::error::style gate failed but produced no fail-list (checker crashed before writing one) — aborting retry"
+              exit 1
+            fi
             echo "Style gate failed — retry $attempt/$max_retries: regenerating only the failing sprites"
             while IFS= read -r k; do
               [ -n "$k" ] && rm -f "public/assets/nearfg/$k.png" "public/assets/nearfg/${k}_cyan.png"
@@ -103,6 +121,14 @@ jobs:
           # nearfg dir. compgen guards the zero-file case.
           if compgen -G "public/assets/nearfg/*.png" > /dev/null; then
             git add -f public/assets/nearfg/*.png
+          fi
+          # The cyan-backdrop review previews (<kind>_cyan.png) are debug art
+          # for the lead-art gate, not a shipped asset — unstage them so they
+          # never land in public/ (the Vite bundle). They stay on disk
+          # untracked, still picked up by the failure-path artifact upload
+          # below for review.
+          if compgen -G "public/assets/nearfg/*_cyan.png" > /dev/null; then
+            git reset -q -- public/assets/nearfg/*_cyan.png
           fi
           if git diff --cached --quiet; then
             echo "No new sprites to commit."

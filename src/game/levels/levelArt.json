@@ -243,7 +243,7 @@
       },
       "trafficLight": {
         "asset": "assets/nearfg/trafficLight.png",
-        "size": { "width": 226, "height": 512 },
+        "size": { "width": 225, "height": 512 },
         "seed": 6104,
         "prompt": "a French road traffic signal on a slim round mast with a splayed foot, seen from the side at street level. High on the mast a tall boxy vehicle signal head turned in strict side profile: three round lenses stacked vertically, each tucked under a curved tunnel hood-visor that juts sideways toward the road, the lens discs seen edge-on as narrow dark slivers, all dead and unlit. Lower down a smaller pedestrian signal head turned to face the viewer head-on: two blank dark round lens windows stacked vertically, both dead and unlit. Both heads cantilevered from the mast on short brackets. Every lens dark, matte and switched off, no glow and no colour; boxy hooded metal housings, dark uniform finish, a light grey highlight along the visor lips and mast edge to keep the housing legible against a dark night backdrop, with generous empty magenta margin on the road side so the visor tip stays fully clear of the frame edge",
         "lenses": {

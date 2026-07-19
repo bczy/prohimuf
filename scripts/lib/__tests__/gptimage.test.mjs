@@ -115,7 +115,7 @@ describe("cropRectForAspect — non-square target dims math", () => {
     const cases = [
       [256, 512], // parkingMeter / lamppost (aspect 0.5)
       [282, 512], // wallaceFountain (aspect 0.55)
-      [226, 512], // trafficLight (aspect 0.44)
+      [225, 512], // trafficLight (aspect 0.44, round(512*0.44)=225)
       [307, 512], // bollard (aspect 0.6)
       [768, 512], // scooter (aspect 1.5)
       [870, 512], // bench (aspect 1.7)
@@ -191,6 +191,50 @@ describe("fetchImg", () => {
     });
     await fetchImg("https://gen.pollinations.ai/image/x", "tok");
     expect(calls).toBe(2);
+  });
+
+  it("keeps sending the Bearer header across a SAME-host redirect", async () => {
+    const seenOpts = [];
+    https.get.mockImplementation((url, opts, cb) => {
+      seenOpts.push(opts);
+      if (seenOpts.length === 1) {
+        cb(fakeResponse(302, { location: "https://gen.pollinations.ai/image/y" }));
+      } else {
+        const res = fakeResponse(200);
+        res.on.mockImplementation((ev, fn) => {
+          if (ev === "end") fn();
+          return res;
+        });
+        cb(res);
+      }
+      return fakeRequest();
+    });
+    await fetchImg("https://gen.pollinations.ai/image/x", "tok_abc");
+    expect(seenOpts).toHaveLength(2);
+    expect(seenOpts[0].headers.Authorization).toBe("Bearer tok_abc");
+    expect(seenOpts[1].headers.Authorization).toBe("Bearer tok_abc");
+  });
+
+  it("DROPS the Bearer header on a CROSS-host redirect (security hardening)", async () => {
+    const seenOpts = [];
+    https.get.mockImplementation((url, opts, cb) => {
+      seenOpts.push(opts);
+      if (seenOpts.length === 1) {
+        cb(fakeResponse(302, { location: "https://evil.example/image/y" }));
+      } else {
+        const res = fakeResponse(200);
+        res.on.mockImplementation((ev, fn) => {
+          if (ev === "end") fn();
+          return res;
+        });
+        cb(res);
+      }
+      return fakeRequest();
+    });
+    await fetchImg("https://gen.pollinations.ai/image/x", "tok_abc");
+    expect(seenOpts).toHaveLength(2);
+    expect(seenOpts[0].headers.Authorization).toBe("Bearer tok_abc");
+    expect(seenOpts[1].headers.Authorization).toBeUndefined();
   });
 });
 

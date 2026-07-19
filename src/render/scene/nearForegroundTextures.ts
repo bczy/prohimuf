@@ -27,9 +27,16 @@ import { DEFAULT_SIGNAL, type SignalState } from "./trafficSignal";
 // (traffic-light lenses, sign plate, lantern facets) crisp at in-game size.
 const TEX_H = 512;
 
-// Cache holds the loaded PNG once swapped, else the procedural CanvasTexture, so
-// the type is the wider `Texture`.
+// Cache holds the CURRENT best texture per kind: the procedural CanvasTexture until
+// the generated PNG swaps in, so the type is the wider `Texture`.
 const cache = new Map<NearForegroundKind, Texture>();
+
+// Procedural fallback textures, retained per kind and NEVER disposed. A live
+// material can still bind the procedural texture after the async swap — the
+// per-frame re-read in NearForeground rebinds it lazily, and disposing a still-bound
+// texture deletes its GPU resource mid-render (the mesh goes black). One small canvas
+// per kind, so retaining it for the session is cheap insurance.
+const procedural = new Map<NearForegroundKind, CanvasTexture>();
 
 // Generated-PNG loading — mirror enemyTextures' pending/failed guards so a swap is
 // attempted at most once per kind and can never be re-issued per frame.
@@ -67,15 +74,21 @@ function ensureProcedural(kind: NearForegroundKind): Texture | null {
   const cached = cache.get(kind);
   if (cached !== undefined) return cached;
   const tex = buildProcedural(kind);
-  if (tex !== null) cache.set(kind, tex);
+  if (tex !== null) {
+    procedural.set(kind, tex); // retained (never disposed) — see `procedural` above
+    cache.set(kind, tex);
+  }
   return tex;
 }
 
-// Async-load the generated PNG and swap the cache entry on success, disposing the
-// procedural texture it replaces. Missing block / 404 / non-DOM keep the procedural
-// entry. Never throws / never rejects; at most one load per kind (pending/failed).
+// Async-load the generated PNG and swap the cache entry on success. The procedural
+// texture it replaces is NOT disposed (it is retained in `procedural` and may still
+// be bound to a live material until the per-frame re-read rebinds it). Missing block
+// / 404 / non-DOM keep the procedural entry. Never throws / never rejects; at most
+// one load per kind (loaded/pending/failed guards).
 function loadGenerated(kind: NearForegroundKind): void {
   if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
+  if (typeof document === "undefined") return; // non-DOM (node/SSR): keep procedural
   const rel = nearForegroundArtAsset(kind);
   if (rel === null) return; // block absent → procedural stays
   pending.add(kind);
@@ -84,9 +97,7 @@ function loadGenerated(kind: NearForegroundKind): void {
     (t) => {
       pending.delete(kind);
       loaded.add(kind);
-      const previous = cache.get(kind);
       cache.set(kind, applyPixelFilter(t));
-      if (previous instanceof CanvasTexture) previous.dispose();
     },
     undefined,
     () => {
@@ -169,9 +180,10 @@ export function getTrafficLightOverlayTexture(): Texture | null {
 }
 
 /**
- * Repaint the shared overlay for a new signal aspect. No-op if unchanged, or before
- * the overlay texture is built. Called from NearForeground's frame loop off the
- * signal-phase clock; the housing texture is never touched.
+ * Repaint the shared overlay for a signal aspect (always repaints when called; the
+ * NearForeground frame loop dedupes on the signal key so it only calls on a phase
+ * change). No-op only before the overlay texture is built (non-DOM / not yet
+ * requested). The housing texture is never touched.
  */
 export function updateTrafficLightSignal(signal: SignalState): void {
   overlaySignal = signal;

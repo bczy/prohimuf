@@ -44,7 +44,7 @@ per-level `levels[].nearForeground` layer (factor + placement objects), which is
     "wallaceFountain": { "asset": "assets/nearfg/wallaceFountain.png", "size": { "width": 282, "height": 512 }, "seed": 6103, "prompt": "…" },
     "trafficLight":    {
       "asset": "assets/nearfg/trafficLight.png",
-      "size": { "width": 226, "height": 512 },
+      "size": { "width": 225, "height": 512 },
       "seed": 6104,
       "prompt": "a French vehicle traffic signal in strict side profile, slim mast, a tall 3-aspect vehicle head up top and a 2-aspect pedestrian head lower down cantilevered toward the road on short brackets, each round lens under a curved hood, ALL LENSES DARK AND UNLIT",
       "lenses": {
@@ -68,8 +68,11 @@ per-level `levels[].nearForeground` layer (factor + placement objects), which is
 ```
 
 `size.width` per kind = `round(512 * NEAR_KIND_SPECS[kind].aspect)` (parkingMeter 0.5→256,
-lamppost 0.5→256, wallaceFountain 0.55→282, trafficLight 0.44→226, bollard 0.6→307,
-scooter 1.5→768, bench 1.7→870, streetSign 0.75→384). `lenses` anchors seeded from the
+lamppost 0.5→256, wallaceFountain 0.55→282, trafficLight 0.44→225 (**corrected** —
+the schema block above originally showed 226, an arithmetic slip caught in the stage-6
+panel triage; `round(512*0.44)=225`, aligned with `NEAR_KIND_SPECS.trafficLight.aspect`),
+bollard 0.6→307, scooter 1.5→768, bench 1.7→870, streetSign 0.75→384). `lenses` anchors
+seeded from the
 current procedural geometry (`drawTrafficLight`/`drawSignalHeadProfile`/`drawProfileLamp`)
 and **re-tuned at the art gate** once the real PNG lands. Prompts drafted via the
 **flux-prompt** skill (concept-artist), gated by lead-art — silhouette-only, positively

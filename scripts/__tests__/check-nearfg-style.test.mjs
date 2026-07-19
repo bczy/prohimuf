@@ -1,5 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { fileURLToPath } from "url";
+import { spawnSync } from "child_process";
 import { measure, evaluate } from "../check-nearfg-style.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "..", "..");
+const SCRIPT = path.join(REPO_ROOT, "scripts", "check-nearfg-style.mjs");
 
 // A plain object of the same shape as a Canvas ImageData ({width,height,data}
 // over a Uint8ClampedArray-like array) — pure, no @napi-rs/canvas round trip
@@ -68,5 +77,70 @@ describe("evaluate", () => {
     const { pass, checks } = evaluate({ W: 4, H: 4, content: 16, contentPct: 100, meanSat: 0.4 });
     expect(pass).toBe(false);
     expect(checks.find((c) => c.name.startsWith("MEAN-SAT")).ok).toBe(false);
+  });
+});
+
+// Black-box, subprocess-driven exercise of the real CLI's arg-validation and
+// fail-list handling — mirrors check-art-prompts.test.mjs's subprocess pattern.
+describe("check-nearfg-style.mjs CLI", () => {
+  const tmpDirs = [];
+
+  afterEach(() => {
+    for (const d of tmpDirs.splice(0)) {
+      fs.rmSync(d, { recursive: true, force: true });
+    }
+  });
+
+  function tmpDir() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "check-nearfg-style-"));
+    tmpDirs.push(dir);
+    return dir;
+  }
+
+  it("--file with NO value emits a clean usage error, not a raw TypeError", () => {
+    const res = spawnSync(process.execPath, [SCRIPT, "--kind", "bollard", "--file"], {
+      encoding: "utf8",
+    });
+    expect(res.status).toBe(2);
+    expect(res.stderr).toMatch(/--file requires a path/);
+    expect(res.stderr).not.toMatch(/TypeError/);
+  });
+
+  it("--file followed by another flag (no value) emits a clean usage error", () => {
+    const res = spawnSync(
+      process.execPath,
+      [SCRIPT, "--kind", "bollard", "--file", "--fail-list", "/tmp/x"],
+      { encoding: "utf8" },
+    );
+    expect(res.status).toBe(2);
+    expect(res.stderr).toMatch(/--file requires a path/);
+  });
+
+  it("--file --kind with a missing PNG reports MISSING and fails cleanly (no throw)", () => {
+    const dir = tmpDir();
+    const res = spawnSync(
+      process.execPath,
+      [SCRIPT, "--file", path.join(dir, "nope.png"), "--kind", "bollard"],
+      { encoding: "utf8" },
+    );
+    expect(res.status).toBe(1);
+    expect(res.stdout).toMatch(/MISSING/);
+  });
+
+  it("resets --fail-list to EMPTY at the start of the run, even before a stale file is overwritten by a real result", () => {
+    const dir = tmpDir();
+    const failList = path.join(dir, "fail-list.txt");
+    // Pre-seed a STALE fail-list from an imagined earlier run — a crash on
+    // THIS run must not leave this stale content behind for the CI retry
+    // loop to misread.
+    fs.writeFileSync(failList, "someOtherKind\n");
+    const res = spawnSync(
+      process.execPath,
+      [SCRIPT, "--file", path.join(dir, "nope.png"), "--kind", "bollard", "--fail-list", failList],
+      { encoding: "utf8" },
+    );
+    expect(res.status).toBe(1);
+    // The real (post-check) write reflects only THIS run's failing kind.
+    expect(fs.readFileSync(failList, "utf8").trim()).toBe("bollard");
   });
 });
