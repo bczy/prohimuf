@@ -55,13 +55,13 @@ Cinq types d'adversaires peuplent les façades parisiennes. Les flics (normal, r
 tirent et doivent être neutralisés ; les bonus récompensent le temps ; le livreur est un
 allié qu'il ne faut **jamais** tirer.
 
-| Ennemi               | Santé | Tire | Points | Bonus temps | Notes                                          |
-| -------------------- | :---: | :--: | :----: | :---------: | ---------------------------------------------- |
-| **Flic** (Normal)    |   1   | ✓    |   +1   |      —      | Archétype courant — plusieurs variantes       |
-| **CRS** (Riot)       |   2   | ✓    |   +2   |      —      | Plus durable — prend **deux coups**          |
-| **Motard** (Biker)   |   1   | ✓    |   +1   |      —      | Plus rapide — moins de temps visible          |
-| **Bonus** ⭐         |   1   | —    |   +1   |   **+5s**   | Rare — accélère le chrono                     |
-| **Livreur** ⚠️       |   1   | —    |  **-1**  |      —      | **NE PAS TIRER DESSUS** — perte d'une vie    |
+| Ennemi             | Santé | Tire | Points | Bonus temps | Notes                                     |
+| ------------------ | :---: | :--: | :----: | :---------: | ----------------------------------------- |
+| **Flic** (Normal)  |   1   |  ✓   |   +1   |      —      | Archétype courant — plusieurs variantes   |
+| **CRS** (Riot)     |   2   |  ✓   |   +2   |      —      | Plus durable — prend **deux coups**       |
+| **Motard** (Biker) |   1   |  ✓   |   +1   |      —      | Plus rapide — moins de temps visible      |
+| **Bonus** ⭐       |   1   |  —   |   +1   |   **+5s**   | Rare — accélère le chrono                 |
+| **Livreur** ⚠️     |   1   |  —   | **-1** |      —      | **NE PAS TIRER DESSUS** — perte d'une vie |
 
 ---
 
