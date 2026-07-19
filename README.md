@@ -59,7 +59,7 @@ allié qu'il ne faut **jamais** tirer.
 
 #### Flic (Normal) — Le vigilant
 
-<img src="public/assets/enemy_sprite.png" width="80" height="80" alt="Flic" />
+<img src="./public/assets/enemy_sprite.png" width="80" height="80" alt="Flic" />
 
 | Propriété | Valeur |
 | --------- | :----: |
@@ -75,7 +75,7 @@ L'archétype courant des forces de l'ordre. Plusieurs variantes visuelles pour l
 
 #### CRS (Riot) — Le blindé
 
-<img src="public/assets/enemy_riot.png" width="80" height="80" alt="CRS" />
+<img src="./public/assets/enemy_riot.png" width="80" height="80" alt="CRS" />
 
 | Propriété | Valeur |
 | --------- | :----: |
@@ -91,7 +91,7 @@ Plus durable : prend **deux coups** avant de tomber. Vaut deux points.
 
 #### Motard (Biker) — Le rapide
 
-<img src="public/assets/enemy_biker.png" width="80" height="80" alt="Motard" />
+<img src="./public/assets/enemy_biker.png" width="80" height="80" alt="Motard" />
 
 | Propriété | Valeur |
 | --------- | :----: |
@@ -107,7 +107,7 @@ Tempo accéléré : reste visible moins longtemps. Demande de la réactivité.
 
 #### Bonus ⭐ — Le récompense
 
-<img src="public/assets/enemy_bonus.png" width="80" height="80" alt="Bonus" />
+<img src="./public/assets/enemy_bonus.png" width="80" height="80" alt="Bonus" />
 
 | Propriété | Valeur |
 | --------- | :----: |
