@@ -215,16 +215,28 @@ for a shipped feature:
 
 ### D5 — HP read stays diegetic; the phase break is the only new render requirement (OQ6, C1)
 
-Per the UX ruling (`spec-boss-qte-hp-read.md`, C1 closed): **no HUD bar, no numeric counter,
-no per-hit pip stack** for boss HP (§6 "pas de barre de stress" applies to the same _family_
-of object). The continuous "how hurt is he" read is the **already-budgeted per-phase posture
-escalation** (D1.1) + the **per-hit reaction pose** (D1.2). The one genuinely-new render
-requirement is a **dedicated phase-break cue that does not depend on reading text or noticing
-a duration** (D2.1) — because `PHASE_BREAK_SECONDS 1.0 s` is shorter than phase-3's ordinary
-1.2 s lull and cannot be distinguished by duration — plus a distinct re-`SHIELDED` animation
-(D2.4), reduced-motion-safe (≤ 3 Hz, D3.1). **No new `src/game` HUD contract field**: the
-render derives the current phase from `bossHp` via the exported pure `phaseIndexAt` (D2). The
-boundary law holds — the game names phase/HP; the render maps them to poses/pulse/colour.
+> **AMENDED 2026-07-19 — the "no HUD bar" ruling below was OVERRIDDEN the same day.** Bertrand
+> playtested the harness and found the diegetic-only read insufficient ("gênant de ne pas voir
+> l'énergie du boss") and asked directly for a HUD health bar. Shipped:
+> `src/render/ui/hud/BossHpBar.tsx` (+ `HudBossQte` in `src/render/ui/hud/types.ts`), reading
+> `bossHp`/`bossHpMax`/`phaseCount` — still **no new `src/game` contract field**, so the
+> boundary-law sentence below still holds. The override is logged in full in
+> `docs/game-design/ux/spec-boss-qte-hp-read.md` §0 and `docs/handoffs/story-boss-encounter-qte.md`.
+> D1.1/D1.2/D2's diegetic reads (posture escalation, per-hit reaction, phase-break cue) are
+> UNCHANGED and ship **alongside** the bar, not replaced by it — the bar answers "how much HP
+> is left," the diegetic reads answer "did a hit land" / "did the pattern just change."
+
+Per the original UX ruling (`spec-boss-qte-hp-read.md`, C1 closed, since overridden — see above):
+**no HUD bar, no numeric counter, no per-hit pip stack** for boss HP (§6 "pas de barre de
+stress" applies to the same _family_ of object). The continuous "how hurt is he" read is the
+**already-budgeted per-phase posture escalation** (D1.1) + the **per-hit reaction pose** (D1.2).
+The one genuinely-new render requirement is a **dedicated phase-break cue that does not depend
+on reading text or noticing a duration** (D2.1) — because `PHASE_BREAK_SECONDS 1.0 s` is shorter
+than phase-3's ordinary 1.2 s lull and cannot be distinguished by duration — plus a distinct
+re-`SHIELDED` animation (D2.4), reduced-motion-safe (≤ 3 Hz, D3.1). **No new `src/game` HUD
+contract field**: the render derives the current phase from `bossHp` via the exported pure
+`phaseIndexAt` (D2). The boundary law holds — the game names phase/HP; the render maps them to
+poses/pulse/colour.
 
 ### D6 — Deferred: extract the shared QTE primitives when the boss ships player-facing
 
