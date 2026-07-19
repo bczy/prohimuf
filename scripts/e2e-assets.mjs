@@ -33,7 +33,7 @@ const DIST_DIR = path.resolve(ROOT, process.env.DIST_DIR ?? "dist");
 const MIN_BYTES = 5 * 1024; // 5KB floor — catches empty/placeholder art.
 
 // The four backdrop layers gen-level-art.mjs produces for every level.
-const LAYERS = [ "facade", "street", "foreground"];
+const LAYERS = ["facade", "street", "foreground"];
 
 function expectedAssetPaths(manifest) {
   const rels = [];
