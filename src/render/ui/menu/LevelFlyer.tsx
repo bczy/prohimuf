@@ -2,7 +2,19 @@ import { useState } from "react";
 import type { JSX } from "react";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { Stamp, MarkerCircle, TapeCorner, INK, MARK, MOTION } from "@render/ui/print";
+import {
+  Stamp,
+  MarkerCircle,
+  TapeCorner,
+  INK,
+  MARK,
+  MOTION,
+  flyerEdgePolygon,
+  dogEarCorner,
+  FLYER_CREASE_ANGLE_DEG,
+  FLYER_WEATHERED_INDICES,
+} from "@render/ui/print";
+import type { Corner } from "@render/ui/print";
 import { cx } from "../controls";
 import { difficultyMark } from "./derivations";
 import styles from "./LevelFlyer.module.css";
@@ -77,6 +89,8 @@ const LOCKED_COPY = {
 
 interface LevelFlyerProps {
   level: LevelConfig;
+  /** List position — drives the deterministic paper materiality (edge/crease/dog-ear). */
+  flyerIndex: number;
   unlocked: boolean;
   stock: string;
   restRotationDeg: number;
@@ -90,12 +104,22 @@ interface LevelFlyerProps {
   registerRef: (el: HTMLDivElement | null) => void;
 }
 
+// Folded-corner triangle class per dog-ear corner (§2bis.2 pt4). CSS-module lookups are
+// `string | undefined` under noUncheckedIndexedAccess; className tolerates undefined.
+const DOG_EAR_CLASS: Record<Corner, string | undefined> = {
+  tl: styles.earTl,
+  tr: styles.earTr,
+  bl: styles.earBl,
+  br: styles.earBr,
+};
+
 function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
   return <div className={styles.infoRow}>{children}</div>;
 }
 
 export function LevelFlyer({
   level,
+  flyerIndex,
   unlocked,
   stock,
   restRotationDeg,
@@ -119,16 +143,28 @@ export function LevelFlyer({
   const rotation = pulled || !unlocked ? 0 : restRotationDeg;
   const translateX = pulled ? 0 : jitterPx;
 
-  // Runtime-driven only; static box/typography live in styles.flyer.
-  const dynamic: React.CSSProperties = {
-    background: stock,
+  // Deterministic paper materiality (art-direction §2bis.2, ADR-0049) — all indexed, no random.
+  const edge = flyerEdgePolygon(flyerIndex);
+  const dogEar = dogEarCorner(flyerIndex);
+  const creaseAngle = FLYER_CREASE_ANGLE_DEG[flyerIndex % FLYER_CREASE_ANGLE_DEG.length] ?? 100;
+  const weathered = FLYER_WEATHERED_INDICES.has(flyerIndex);
+
+  // Object-level transform/pull/opacity live on the (unclipped) `.flyer`; background, the
+  // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
+  const flyerDynamic: React.CSSProperties = {
     cursor: unlocked ? "pointer" : "default",
     transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -4 : 0)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
     transition: `transform ${String(MOTION.flyerPull)}ms ease-out`,
     animation: shaking ? `mufLockedShake ${String(MOTION.lockedShakeMs)}ms ease-in-out` : undefined,
     opacity: unlocked ? 1 : 0.85,
-    filter: unlocked ? "none" : "grayscale(1)",
   };
+  const paperDynamic = {
+    background: stock,
+    "--flyer-clip": edge.clipPath,
+    "--flyer-crease-angle": `${String(creaseAngle)}deg`,
+    // Folded into the CSS drop-shadow filter; only set when locked (grayscale over the paper).
+    ...(unlocked ? {} : { "--flyer-lock-filter": "grayscale(1)" }),
+  } as React.CSSProperties;
 
   return (
     <MarkerCircle active={focused} ink={INK.black}>
@@ -146,28 +182,52 @@ export function LevelFlyer({
         onMouseLeave={() => {
           setHovered(false);
         }}
-        style={dynamic}
+        style={flyerDynamic}
         className={cx("muf-anim", styles.flyer)}
       >
-        {pulled && unlocked && <TapeCorner />}
+        <div className={styles.paper} style={paperDynamic}>
+          {/* Photocopy materiality overlays (stock → toner → streak → crease), all darken-only. */}
+          <div aria-hidden={true} className={styles.toner} />
+          <div aria-hidden={true} className={styles.streak} />
+          <div aria-hidden={true} className={styles.crease} />
+          {weathered && <div aria-hidden={true} className={styles.creaseAlt} />}
+          {dogEar !== null && <div aria-hidden={true} className={DOG_EAR_CLASS[dogEar]} />}
 
-        {isTutorial ? (
-          <>
-            <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
-            <div className={styles.tutorialName}>{level.name}</div>
-            <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
-            <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
-            <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
-            <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
-            <div className={styles.markTop}>
-              <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
-            </div>
-          </>
-        ) : unlocked ? (
-          <PlayableBody level={level} best={best?.score} />
-        ) : (
-          <LockedBody level={level} />
-        )}
+          <div className={styles.content}>
+            {isTutorial ? (
+              <>
+                <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
+                <div className={styles.tutorialName}>{level.name}</div>
+                <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
+                <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
+                <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
+                <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
+                <div className={styles.markTop}>
+                  <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
+                </div>
+              </>
+            ) : unlocked ? (
+              <PlayableBody level={level} best={best?.score} />
+            ) : (
+              <LockedBody level={level} />
+            )}
+          </div>
+
+          {/* Blade-crushed cut line — shares the clip polygon vertices (0–100 viewBox). */}
+          <svg
+            aria-hidden={true}
+            className={styles.cutLine}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            {/* Stroke token + 1px pin live in CSS (var() is unreliable in an SVG presentation
+                attribute; non-scaling-stroke keeps 1px through the stretched viewBox). */}
+            <polygon points={edge.svgPoints} />
+          </svg>
+        </div>
+
+        {/* Unclipped sibling: the tape bridges over the cut edge. */}
+        {pulled && unlocked && <TapeCorner />}
       </div>
       <style>{`
         @keyframes mufLockedShake {

@@ -9,6 +9,7 @@ import {
   MAX_TILT_DEG,
   MOTION,
   useRovingIndex,
+  useMediaQuery,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
 import { LevelFlyer } from "./LevelFlyer";
@@ -85,8 +86,11 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
     }
   }
 
+  // At the ≥640px wrap-grid (UX flyer-wall-format §2) the flyers sit in rows, so Left/Right
+  // cycle them in list order; below that they stack in a column and Up/Down navigate.
+  const wide = useMediaQuery("(min-width: 640px)");
   const roving = useRovingIndex(LEVELS.length, {
-    axis: "vertical",
+    axis: wide ? "horizontal" : "vertical",
     wrap: false,
     onActivate: activate,
   });
@@ -126,6 +130,9 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
         @media ${SHORT_LANDSCAPE_MEDIA}{
           .muf-flyerwall{
             --muf-flyerwall-dir: row;
+            /* A5 ratio waived in the rack (flyer-wall-format.md §4): the ~300px
+               content band cannot fit a 397px-tall A5 sheet. */
+            --muf-flyer-aspect: auto;
             gap: 16px;
             align-items: flex-start;
             overflow-x: auto;
@@ -155,6 +162,7 @@ export function FlyerWall({ unlockedLevels, onPlay }: FlyerWallProps): JSX.Eleme
           <div key={level.id} className={cx("muf-flyer-slot", styles.slot)}>
             <LevelFlyer
               level={level}
+              flyerIndex={i}
               unlocked={entry.unlocked}
               stock={entry.stock}
               restRotationDeg={restRotationDeg}
