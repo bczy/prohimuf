@@ -116,6 +116,12 @@ export function tapeStripPath(corner: Corner): TapeStrip {
     [s(1), w / 2], // left-mid (fray)
   ];
   const points = verts.map(([x, y]) => `${round2(x)},${round2(y)}`).join(" ");
-  const wrinkles = [Math.round(L * 0.38 * 100) / 100, Math.round(L * 0.64 * 100) / 100];
+  // 1–2 wrinkle lines — count and positions jittered per corner from the fray seed, so the
+  // strips genuinely vary (deterministic, no Math.random).
+  const positions = [
+    Math.round((L * 0.36 + s(1)) * 100) / 100,
+    Math.round((L * 0.63 + s(4)) * 100) / 100,
+  ];
+  const wrinkles = s(0) >= 1 ? positions : positions.slice(0, 1);
   return { length: L, width: w, points, wrinkles };
 }
