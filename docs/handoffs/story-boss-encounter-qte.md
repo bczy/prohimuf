@@ -571,3 +571,113 @@ Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline,
   phase-break pulse is a Gate-4 composite item (my §2.1 falloff verdict owed on real screenshots).
 - NOTE — GATES STILL OWED (not covered by this PASS): ASSET GATE (Gate 2) on the keyed PNGs, and
   COMPOSITE GATE (Gate 4) on the render-side phase-break pulse. This gate covered PROMPTS only.
+
+## 8. TECH PLAN — senior-architect (Winston) — 2026-07-19
+
+- claim: TECH PLAN (C5) on the corrected premise (K1 closed §6, K2 closed by `pm` §5) —
+  shared-vs-new-system ruling, the harness/ship split mechanism, the dev-lane cut, and the
+  AC5 ADR. Read the full chain (story + K2 ratification + mechanic/fiction/UX specs +
+  ADR-0030/0034 + the shipped `qteSystem.ts`/`hostageQte.ts`/`useGameLoop.ts`/`stateMachine.ts`/
+  `qteCamera.ts`/`levels.ts`). Design/implement nothing — I cut lanes.
+- release: **`docs/adr/0051-boss-qte-encounter-system.md`** (Accepted; indexed via
+  `gen-adr-index.mjs --write`, registry fresh at 51 ADR). Number self-allocated via the
+  collision-safe check (no `producer` number in the shard at TECH PLAN; re-check at merge).
+
+### Rulings (the architect's calls the gate routed to me, C5)
+
+- **Shared-vs-new system → NEW, separate `bossQteSystem.ts` + `types/bossQte.ts`, fully
+  additive; the shipped `qteSystem.ts`/`hostageQte.ts` are NOT touched** (ADR-0051 D1). Reuse
+  is at the SHELL, not the contract: camera `qteCamera.ts` reused VERBATIM (it is already
+  QTE-agnostic — the boss runtime mirrors `{ anchor, phase, zoomRemaining, zoomSeconds }`); the
+  forward-only phase machine SHAPE reproduced structurally; the seeded closed-form wander
+  **copied and parameterised** for the per-phase wander speed (1.0→1.6 u/s) the hostage wander
+  has no knob for — copying the proven closed-form FOLLOWS the ADR-0034 Rev. 3 precedent, a
+  from-scratch sum-of-sines / per-tick PRNG would VIOLATE it. Rejected extending `HostageQte`
+  (fattens a playtest-frozen, gated, LIVE contract for a NON-shipped feature) and rejected
+  extracting the shared primitives in V1 (same shipped-disturbance objection — DEFERRED to the
+  follow-up, ADR-0051 D6, not dropped). Full reused-verbatim-vs-newly-authored map: ADR-0051 D2.
+- **Phase break is an `ACTIVE` SUB-STATE, not a new top-level phase** — so the top-level
+  `ZOOMING → ACTIVE → (WON|LOST) → DONE` machine stays byte-shape-identical to the shell (AC2).
+- **Trigger = on quota-completion** (ADR-0051 D3, `game-designer` §7 flag 3 taken): when
+  `bossQteSpec !== null` and `kills >= enemiesToWin`, the boss REPLACES the abrupt
+  `LEVEL_COMPLETE`; completion fires only on boss WON/DONE, boss LOST → level fail. Boss is NOT
+  in `enemiesToWin` (AC-safe).
+- **Harness/ship split (K2) → a SEPARATE dev-only level config carrying the only non-null
+  `bossQteSpec`, excluded from the shipped `LEVELS` array, reachable only through a dev-only seam
+  (`?preview=`-style query and/or `import.meta.env.DEV`, ADR-0005 harness-window discipline)**
+  (ADR-0051 D4). Shipped `belliard` `LevelConfig` stays **byte-identical** (its `hostageQte`,
+  `roster`, `enemiesToWin`, quota-win contract untouched); no shipped player reaches the boss
+  branch. Guaranteed by additive-and-optional: `bossQteSpec === null` ⇒ the new `tickGameState`
+  branch is a strict no-op (byte-identity test, exactly as the hostage guards `qteSpec === null`).
+- **OQ6/HP read (C1) confirmed:** no new `src/game` HUD contract field. The current phase is a
+  pure exported `phaseIndexAt(bossHp)` helper the render calls (keeps the 16/8 thresholds in the
+  game layer); the render derives posture/pulse/colour from it. Boundary intact.
+- **Per-phase escalation table = system constants for V1** (one encounter, no curve), promoted
+  to `BossQteSpec` fields only when a multi-encounter curve story needs them (the ADR-0035 F3
+  seam). `phaseCount`/`bossHp` ARE spec fields from day one (C4 tier-as-data).
+
+### Lane cut (non-overlapping paths; the story file map was indicative — this is the real cut)
+
+- **`dev-gameplay` (pure `src/game`, TDD — the critical path, owns the whole contract):**
+  1. `src/game/types/bossQte.ts` (NEW, types-only, zero functions): `BossQtePhase` (shell
+     shape), `SHIELDED|EXPOSED` stance + phase-break sub-state, `BossQteSpec`
+     (`triggerAtElapsedSeconds`|on-quota, `zoomSeconds`, `anchor`, `phaseCount`, `bossHp`,
+     `maxBlownWindows`, `targetSeed`), `BossQte` runtime, `RingZone` reuse.
+  2. `src/game/systems/bossQteSystem.ts` (NEW): the constants (per ADR-0051 D2 / spec §4–§5),
+     boss anatomy bands `bossRingZoneAt` (full-figure, **G6 clamp DROPPED**), the copied
+     parameterised seeded wander, `phaseIndexAt`, `createBossQte` (ALL safety asserts — integers
+     ≥1, EXPOSED ≥ `PEEK_EXPOSURE_FLOOR`, per-phase `telegraphLeadSeconds` ≥
+     `BOSS_TELEGRAPH_LEAD_FLOOR 0.35` AND strictly < that phase's lull, phase-break damage-free
+     ≥ `PHASE_BREAK_SECONDS 1.0`, C6 finite guards), `tickBossQte` (fire-before-loss tie-break,
+     HP chip, blown-window clock, phase-break sequencing, phase-scaled drain charged once per
+     CLOSED window), `isBossQteActive`, `shouldTriggerBossQte`.
+  3. `src/game/systems/__tests__/bossQteSystem.test.ts` (NEW): design AC1–AC8 + invariants +
+     determinism (no `Math.random`/`Date.now`) + `bossQteSpec === null` byte-identity.
+  4. **SHARED FILES (serialise — the only cross-boundary touch):** `src/game/types/gameState.ts`
+     (+`bossQteSpec`/`bossQte`, additive, `null` on every shipped level) and
+     `src/game/systems/stateMachine.ts` (the freeze branch + quota-completion interception,
+     provably inert when `bossQteSpec === null`). `src/game/levels/levels.ts` — the dev-harness
+     level config's `bossQteSpec` data.
+- **`dev-r3f-render` (`src/render` + the bridge):**
+  1. `src/render/scene/BossQteSprite.tsx` (NEW): tableau, SHIELDED/EXPOSED/hit/defeated poses
+     (cop/provisional fallback until art gated), the wandering ring (colour by `ringZone`, follow
+     `targetOffset` — reuse the hostage ring render vocabulary), per-phase posture escalation
+     (UX D1.1 — NOTE lead-art §7 CORRECTION: live per-phase posture needs distinct SPRITES not
+     tint/scale; V1 harness uses the fallback), per-hit reaction (D1.2), telegraph tell.
+  2. The **phase-break cue** (UX D2): screen-level pulse (reduced-motion ≤3 Hz, D3.1), distinct
+     re-`SHIELDED` motion (D2.4); derive phase via `phaseIndexAt` (no new game field).
+  3. **SHARED FILE (serialise):** `src/hooks/useGameLoop.ts` — generalise the QTE zoom driver to
+     drive on EITHER QTE active (reads the common `{anchor,phase,zoomRemaining,zoomSeconds}`
+     shape); keep minimal. `src/render/scene/qteCamera.ts` reused VERBATIM (no change expected).
+  4. The dev-only harness reachability seam (query-param / `import.meta.env.DEV`) in `App.tsx`,
+     shared with `dev-tooling-assets` — production carries no menu path to it.
+- **`dev-tooling-assets` (BLOCKED on the lead-art ASSET GATE — parallel, NOT critical path):**
+  the `boss` block in `levelArt.json` (ratify provisional structure/keys/paths/size/seeds +
+  EXPOSED `muzzle`), `gen-boss-sprites.mjs` with **kontext-from-hero SHIELDED** (lead-art N1),
+  sequenced after tooling (N2, 2-batch cap), `bossTextures.ts` render registration. The V1
+  harness runs on the cop fallback, so this does NOT gate the system+tuning+harness build.
+
+### Parallel-safety / serialisation
+
+`dev-gameplay` and `dev-r3f-render` run in parallel on non-overlapping trees EXCEPT the two
+shared bridge files: `stateMachine.ts`+`gameState.ts` (dev-gameplay authors the additive fields
+
+- branch first; land + byte-identity-green before render wires the driver) and `useGameLoop.ts`
+  (dev-r3f-render, after the game fields exist). `qteSystem.ts`/`hostageQte.ts` are **NOT** touched
+  by any boss lane (D1) — no contention with any concurrent hostage work. Art lane is fully
+  disjoint (assets/scripts) and gated.
+
+* handoff → `dev-gameplay` (Amelia): lanes 1–4 above — the pure contract + the guarded
+  `stateMachine`/`gameState` additive branch (byte-identity test is a merge-gate must). Owns the
+  harness `bossQteSpec` data + the K-5-style `targetSeed` pin (stage-5).
+* handoff → `dev-r3f-render` (Amelia): the tableau + phase-break pulse + the `useGameLoop` driver
+  generalisation + the dev-only reachability seam; consume `phaseIndexAt`, no new game field.
+* handoff → `dev-tooling-assets`: gated on lead-art Gate 2 (N1/N2) — generator + `levelArt.json`
+  `boss` ratification + `bossTextures.ts`; off the critical path (cop fallback carries V1).
+* handoff → `qa-lead` (stage-5 verify): ring-on-frame at the boss zoom (G6 dropped ⇒ wider roam,
+  both device classes), the K-5 seed pin (≥1 landable vital/limb window per exposure per phase),
+  the phase-break read (UX A3–A7), and the `bossQteSpec === null` byte-identity regression.
+* handoff → `producer` (Marion): ADR-0051 self-allocated at TECH PLAN (no shard number was
+  pre-allocated) — please record/adopt in the index and confirm at merge (collision re-check).
+* NOTE: this is a TECH PLAN, not a gate — no `VERDICT:` line. Lanes are ready to launch;
+  Bertrand launches `dev-gameplay` + `dev-r3f-render` in parallel per the standing policy.
