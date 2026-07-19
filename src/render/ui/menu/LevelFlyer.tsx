@@ -104,13 +104,21 @@ interface LevelFlyerProps {
   registerRef: (el: HTMLDivElement | null) => void;
 }
 
-// Folded-corner triangle class per dog-ear corner (§2bis.2 pt4). CSS-module lookups are
-// `string | undefined` under noUncheckedIndexedAccess; className tolerates undefined.
-const DOG_EAR_CLASS: Record<Corner, string | undefined> = {
+// Dog-ear (§2bis.2 pt4) is TWO elements: an unclipped wrapper carrying the fold's drop-shadow
+// and a clipped triangle child — `filter` + `clip-path` on one element never paints the shadow
+// (filter runs before clip). Wrapper picks the corner position, fold picks the triangle. CSS-
+// module lookups are `string | undefined` under noUncheckedIndexedAccess; className tolerates it.
+const DOG_EAR_WRAP_CLASS: Record<Corner, string | undefined> = {
   tl: styles.earTl,
   tr: styles.earTr,
   bl: styles.earBl,
   br: styles.earBr,
+};
+const DOG_EAR_FOLD_CLASS: Record<Corner, string | undefined> = {
+  tl: styles.foldTl,
+  tr: styles.foldTr,
+  bl: styles.foldBl,
+  br: styles.foldBr,
 };
 
 function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
@@ -147,7 +155,8 @@ export function LevelFlyer({
   const edge = flyerEdgePolygon(flyerIndex);
   const dogEar = dogEarCorner(flyerIndex);
   const creaseAngle = FLYER_CREASE_ANGLE_DEG[flyerIndex % FLYER_CREASE_ANGLE_DEG.length] ?? 100;
-  const weathered = FLYER_WEATHERED_INDICES.has(flyerIndex);
+  // Wrap the index like the other flyer tables so the weathered subset cycles past the end.
+  const weathered = FLYER_WEATHERED_INDICES.has(flyerIndex % FLYER_CREASE_ANGLE_DEG.length);
 
   // Object-level transform/pull/opacity live on the (unclipped) `.flyer`; background, the
   // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
@@ -191,7 +200,6 @@ export function LevelFlyer({
           <div aria-hidden={true} className={styles.streak} />
           <div aria-hidden={true} className={styles.crease} />
           {weathered && <div aria-hidden={true} className={styles.creaseAlt} />}
-          {dogEar !== null && <div aria-hidden={true} className={DOG_EAR_CLASS[dogEar]} />}
 
           <div className={styles.content}>
             {isTutorial ? (
@@ -212,19 +220,28 @@ export function LevelFlyer({
               <LockedBody level={level} />
             )}
           </div>
-
-          {/* Blade-crushed cut line — shares the clip polygon vertices (0–100 viewBox). */}
-          <svg
-            aria-hidden={true}
-            className={styles.cutLine}
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            {/* Stroke token + 1px pin live in CSS (var() is unreliable in an SVG presentation
-                attribute; non-scaling-stroke keeps 1px through the stretched viewBox). */}
-            <polygon points={edge.svgPoints} />
-          </svg>
         </div>
+
+        {/* Dog-ear — unclipped wrapper carries the fold shadow, clipped child is the triangle
+            (filter + clip-path on one element never paints the shadow). Sibling of .paper. */}
+        {dogEar !== null && (
+          <div aria-hidden={true} className={DOG_EAR_WRAP_CLASS[dogEar]}>
+            <div className={DOG_EAR_FOLD_CLASS[dogEar]} />
+          </div>
+        )}
+
+        {/* Blade-crushed cut line — sibling of .paper (ADR-0049 D1) so the clip can't eat the
+            outer half of the 1px stroke; shares the clip polygon vertices (0–100 viewBox). */}
+        <svg
+          aria-hidden={true}
+          className={styles.cutLine}
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          {/* Stroke token + 1px pin live in CSS (var() is unreliable in an SVG presentation
+              attribute); the attribute below keeps 1px in Firefox where the CSS prop is patchy. */}
+          <polygon points={edge.svgPoints} vectorEffect="non-scaling-stroke" />
+        </svg>
 
         {/* Unclipped sibling: the tape bridges over the cut edge. */}
         {pulled && unlocked && <TapeCorner />}
