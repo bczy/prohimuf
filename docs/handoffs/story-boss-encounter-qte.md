@@ -67,7 +67,7 @@ normal roadmap sequencing on Bertrand's explicit instruction.
   - **Tuning:** `bossHp 24` (3×8), ring dmg 2/1/0, `maxBlownWindows 10`, per-phase table
     (EXPOSED 1.6→1.0 s, lull 2.0→1.2 s, tell 0.45→0.35 s, wander 1.0→1.6 u/s, drain
     −5→−8), `PHASE_BREAK_SECONDS 1.0`, `QTE_BOSS_REFILL +50`, zoom 2.0 s. Winnability math
-    + K-5-style seed-pin flagged as a stage-5 `verify` item.
+    - K-5-style seed-pin flagged as a stage-5 `verify` item.
 - handoff → `lead-game-designer` (Karim): **design gate requested** — `VERDICT:` line
   before this reaches `senior-architect`. AC1 (spec answers OQ1–3) met.
 - handoff → `ux-designer` (input, not a decision): **OQ6 HP-read surface** — flagged as
