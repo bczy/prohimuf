@@ -661,3 +661,118 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     expect(s1.elapsedSeconds).toBeCloseTo(0.1);
   });
 });
+
+describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-0051)", () => {
+  // A boss spec that triggers on quota-completion. anchor at origin so a world point IS the
+  // anchor-relative offset (like the hostage test's mapping).
+  const BOSS_SPEC = {
+    zoomSeconds: 2,
+    anchor: { x: 0, y: 0 },
+    phaseCount: 3,
+    bossHp: 24,
+    maxBlownWindows: 10,
+    targetSeed: 20260719,
+  };
+  const QUOTA = 3;
+  function bossState(overrides: Partial<GameState> = {}): GameState {
+    return {
+      ...createInitialState(FACADE_01, {
+        lives: 3,
+        timeSeconds: 90,
+        enemiesToWin: QUOTA,
+        enemySpeedMultiplier: 1,
+        bossQte: BOSS_SPEC,
+      }),
+      ...overrides,
+    };
+  }
+  const chX = (wx: number) => wx / 18 + 0.5;
+  const chY = (wy: number) => 0.5 - wy / 12;
+  const tick = (s: GameState, f: boolean, wx: number, wy: number, dt: number) =>
+    tickGameState(s, f, chX(wx), chY(wy), dt, FACADE_01, 0, 0, 18, 12, QUOTA, FIELD);
+
+  it("initialises bossQte null and carries the authored bossQteSpec", () => {
+    const s = bossState();
+    expect(s.bossQte).toBeNull();
+    expect(s.bossQteSpec).toEqual(BOSS_SPEC);
+  });
+
+  it("BELOW quota, the boss stays dormant and the level plays normally", () => {
+    const s = tick(bossState({ kills: QUOTA - 1 }), noFire, 0, 0, 0.1);
+    expect(s.phase).toBe("PLAYING");
+    expect(s.bossQte).toBeNull();
+    expect(s.elapsedSeconds).toBeCloseTo(0.1);
+  });
+
+  it("reaching the quota triggers the boss into ZOOMING instead of LEVEL_COMPLETE, and FREEZES", () => {
+    const s0 = bossState({ kills: QUOTA });
+    const s1 = tick(s0, noFire, 0, 0, 0.1);
+    expect(s1.phase).toBe("PLAYING"); // NOT LEVEL_COMPLETE — the boss replaces the abrupt win
+    expect(s1.bossQte?.phase).toBe("ZOOMING");
+    // Frozen: the general sim is carried through unchanged, the clock does not advance.
+    expect(s1.enemies).toBe(s0.enemies);
+    expect(s1.elapsedSeconds).toBe(s0.elapsedSeconds);
+    expect(s1.couriers).toBe(s0.couriers);
+  });
+
+  it("a panic shot during the boss zoom drains energy inside the frozen tick", () => {
+    const s1 = tick(bossState({ kills: QUOTA }), fire, 0, 0, 0.1);
+    expect(s1.bossQte?.phase).toBe("ZOOMING");
+    expect(s1.energy).toBe(94); // −6 panic
+  });
+
+  it("defeating the boss (bossHp → 0) completes the level; the kill quota is NOT inflated", () => {
+    let s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1); // ZOOMING
+    // Play the duel: fire at the drawn ring whenever it sits on vital/limb during EXPOSED.
+    const dt = 1 / 60;
+    for (let i = 0; i < 60 * 90 && s.phase === "PLAYING"; i++) {
+      const q = s.bossQte;
+      const onRing =
+        q !== null && q.stance === "EXPOSED" && q.phaseBreakRemaining <= 0 && q.ringZone !== "off";
+      const off = q?.targetOffset ?? { x: 0, y: 0 };
+      s = tick(s, onRing, off.x, off.y, dt);
+    }
+    expect(s.phase).toBe("LEVEL_COMPLETE");
+    expect(s.bossQte?.phase).toBe("DONE");
+    expect(s.bossQte?.bossHp).toBe(0);
+    expect(s.kills).toBe(QUOTA); // the boss never advanced the kill quota
+  });
+
+  it("a passive player blows every window → boss LOST → level fails (GAME_OVER)", () => {
+    let s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1); // ZOOMING
+    for (let i = 0; i < 60 * 120 && s.phase === "PLAYING"; i++) {
+      s = tick(s, noFire, 0, 0, 1 / 60);
+    }
+    expect(s.phase).toBe("GAME_OVER");
+    expect(s.bossQte?.phase).toBe("DONE");
+    expect(s.bossQte?.bossHp).toBeGreaterThan(0); // never defeated → a loss
+    expect(s.bossQte?.blownWindows).toBe(BOSS_SPEC.maxBlownWindows);
+  });
+
+  it("the frozen boss tick clears the transient event channels", () => {
+    const s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1);
+    expect(s.feedback).toEqual([]);
+    expect(s.pointFeedback).toEqual([]);
+    expect(s.impactEvents).toEqual([]);
+  });
+
+  it("IDENTITY: a boss-less level is byte-for-byte unchanged — the quota still wins directly", () => {
+    // The ADR-0051 D4 safety property: `bossQteSpec === null` (every shipped level) makes the
+    // boss branch a strict no-op, so the existing `kills >= enemiesToWin → LEVEL_COMPLETE` path
+    // is exactly as before. Mirrors the hostage `qteSpec === null` guard.
+    const base = createInitialState(FACADE_01);
+    expect(base.bossQteSpec).toBeNull();
+    expect(base.bossQte).toBeNull();
+    // At quota → LEVEL_COMPLETE directly (the boss branch does not intercept).
+    const atQuota: GameState = { ...base, kills: ENEMIES_TO_WIN };
+    const won = tickGameState(atQuota, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(won.phase).toBe("LEVEL_COMPLETE");
+    expect(won.bossQte).toBeNull();
+    // Below quota → normal play, boss fields inert.
+    const playing = tickGameState(base, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(playing.phase).toBe("PLAYING");
+    expect(playing.bossQteSpec).toBeNull();
+    expect(playing.bossQte).toBeNull();
+    expect(playing.elapsedSeconds).toBeCloseTo(0.1);
+  });
+});
