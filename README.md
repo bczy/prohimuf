@@ -61,13 +61,13 @@ allié qu'il ne faut **jamais** tirer.
 
 <img src="./public/assets/enemy_sprite.png" width="80" height="80" alt="Flic" />
 
-| Propriété | Valeur |
-| --------- | :----: |
-| Santé | 1 |
-| Tire | ✓ |
-| Points | +1 |
-| Bonus temps | — |
-| Apparence | Blanc pur |
+| Propriété   |  Valeur   |
+| ----------- | :-------: |
+| Santé       |     1     |
+| Tire        |     ✓     |
+| Points      |    +1     |
+| Bonus temps |     —     |
+| Apparence   | Blanc pur |
 
 L'archétype courant des forces de l'ordre. Plusieurs variantes visuelles pour l'imprévisibilité.
 
@@ -77,13 +77,13 @@ L'archétype courant des forces de l'ordre. Plusieurs variantes visuelles pour l
 
 <img src="./public/assets/enemy_riot.png" width="80" height="80" alt="CRS" />
 
-| Propriété | Valeur |
-| --------- | :----: |
-| Santé | **2** |
-| Tire | ✓ |
-| Points | +2 |
-| Bonus temps | — |
-| Apparence | Bleu pâle |
+| Propriété   |  Valeur   |
+| ----------- | :-------: |
+| Santé       |   **2**   |
+| Tire        |     ✓     |
+| Points      |    +2     |
+| Bonus temps |     —     |
+| Apparence   | Bleu pâle |
 
 Plus durable : prend **deux coups** avant de tomber. Vaut deux points.
 
@@ -93,13 +93,13 @@ Plus durable : prend **deux coups** avant de tomber. Vaut deux points.
 
 <img src="./public/assets/enemy_biker.png" width="80" height="80" alt="Motard" />
 
-| Propriété | Valeur |
-| --------- | :----: |
-| Santé | 1 |
-| Tire | ✓ |
-| Points | +1 |
-| Bonus temps | — |
-| Apparence | Beige chaud |
+| Propriété   |   Valeur    |
+| ----------- | :---------: |
+| Santé       |      1      |
+| Tire        |      ✓      |
+| Points      |     +1      |
+| Bonus temps |      —      |
+| Apparence   | Beige chaud |
 
 Tempo accéléré : reste visible moins longtemps. Demande de la réactivité.
 
@@ -109,13 +109,13 @@ Tempo accéléré : reste visible moins longtemps. Demande de la réactivité.
 
 <img src="./public/assets/enemy_bonus.png" width="80" height="80" alt="Bonus" />
 
-| Propriété | Valeur |
-| --------- | :----: |
-| Santé | 1 |
-| Tire | — |
-| Points | +1 |
-| Bonus temps | **+5s** |
-| Apparence | Jaune doré |
+| Propriété   |   Valeur   |
+| ----------- | :--------: |
+| Santé       |     1      |
+| Tire        |     —      |
+| Points      |     +1     |
+| Bonus temps |  **+5s**   |
+| Apparence   | Jaune doré |
 
 Rare et inoffensif. En le neutralisant, tu gagnes **5 secondes supplémentaires** au chrono.
 
@@ -123,15 +123,16 @@ Rare et inoffensif. En le neutralisant, tu gagnes **5 secondes supplémentaires*
 
 #### Livreur ⚠️ — L'allié
 
-| Propriété | Valeur |
-| --------- | :----: |
-| Santé | 1 |
-| Tire | — |
-| Points | **-1** |
-| Bonus temps | — |
-| Apparence | Vert (courrier) |
+| Propriété   |     Valeur      |
+| ----------- | :-------------: |
+| Santé       |        1        |
+| Tire        |        —        |
+| Points      |     **-1**      |
+| Bonus temps |        —        |
+| Apparence   | Vert (courrier) |
 
 **NE PAS TIRER DESSUS.** C'est un coursier du réseau. Le tirer provoque :
+
 - Perte de **1 point**
 - Perte de **1 vie**
 
