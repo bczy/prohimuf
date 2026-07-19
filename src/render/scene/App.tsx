@@ -43,7 +43,13 @@ import {
 } from "@game/systems/narrativeSystem";
 
 type AppPhase =
-  "TITLE" | "MENU" | "NARRATIVE_PRE" | "PLAYING" | "NARRATIVE_POST" | "END" | "TUTORIAL";
+  | "TITLE"
+  | "MENU"
+  | "NARRATIVE_PRE"
+  | "PLAYING"
+  | "NARRATIVE_POST"
+  | "END"
+  | "TUTORIAL";
 
 // Preview harness hook: `?preview=title|menu|narrative|end|tutorial` boots straight
 // into a screen so the screenshot tool can capture the front-end screens without playing.
