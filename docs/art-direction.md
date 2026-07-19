@@ -186,7 +186,9 @@ occludes, it never emits.
    (offset from `ink-black`, ~2 px y, ~6 px blur, ~0.35 α). This is the **explicit exception**
    to §2bis's "no `box-shadow`": that ban targets **coloured light with falloff**; a neutral
    ink-black occlusion shadow is the opposite — it removes light. **No coloured shadow, no
-   second/neon layer, no spread** — one grey contact shadow, tightening on the pull.
+   second/neon layer, no spread** — one grey contact shadow, tightening on the pull
+   (this last behaviour is **deferred**, not shipped in `flyer-paper-materiality` —
+   see the scope note after point 6).
 4. **Extras — keep two, reject the rest.** KEEP the **dog-eared corner**: one corner (chosen
    deterministically, not every flyer) folded to show a thin triangle of the shell/back, its
    own tiny ink-black shadow. KEEP **one subtle fold crease** — the sanctioned §2bis.1
@@ -231,6 +233,13 @@ occludes, it never emits.
    the hard top/bottom **ink keyline** to a **very faint torn-edge shading** (the adhesive
    edge, not a drawn border); its darkened footprint against the stock is what sells it, not
    an outline. Deterministic per corner, all CSS/inline-SVG.
+
+> **Scope note (`flyer-paper-materiality` story, 2026-07-19):** two refinements above are
+> **deferred**, not shipped in this pass — pt3's "tightening on the pull" (a per-interaction
+> shadow-response animation) and pt6's "very faint torn-edge shading" replacing the tape's
+> ink keyline. This story ships the base occlusion shadow (pt3, static) and the
+> translucent/frayed tape geometry (pt6, static); the two motion/shading refinements are a
+> follow-up, not scope drift.
 
 ## 3. FLUX prompt rules (the contract `scripts/check-art-prompts.mjs` enforces)
 
