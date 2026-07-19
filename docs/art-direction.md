@@ -200,12 +200,18 @@ occludes, it never emits.
    zero-glow law.
 5. **Desktop format ruling — half-A4 portrait.** The canonical flyer is **A5, ratio
    148:210** (`aspect-ratio: 148 / 210`), **portrait**. Kill the full-width horizontal
-   bands: cap each flyer (`max-width ~300–340 px`) and lock the A5 aspect so it reads as a
-   **half-sheet pinned to the wall**, not a banner. The wall stays a **pinned pile** — the
-   deterministic `FLYER_REST_ROTATION_DEG` tilt + `FLYER_JITTER_PX` offset stay the source
-   of the pile, but tune them toward a **real wall (hunt D4): denser overlap (~20–40 %
-   between neighbours) and a wider rotation spread** — mostly small tilts with **rare 10–15°
-   outliers**, not a uniform narrow band — so it reads pinned, not gridded. **One light
+   bands: cap each flyer (`max-width: 280 px` — the shared `FLYER_MAX_WIDTH_PX`, reconciled
+   down from the earlier "~300–340 px" at the design gate 2026-07-19 to match
+   `flyer-wall-format.md` §2 and reuse the shipped short-landscape rack constant) and lock
+   the A5 aspect so it reads as a **half-sheet pinned to the wall**, not a banner. The wall
+   stays a **pinned pile** — the deterministic `FLYER_REST_ROTATION_DEG` tilt +
+   `FLYER_JITTER_PX` offset stay the source of the pile, **used as-is**. _(Design-gate
+   ruling 2026-07-19: further pile re-tuning toward a real wall — denser overlap ~20–40 %
+   between neighbours, wider rotation spread with rare 10–15° outliers, hunt D4 — is
+   **deferred to a separate pass**. It exceeds this story's ACs (AC1 pins per-flyer
+   variation to the existing index arrays) and conflicts with the gated wrap-grid desktop
+   layout of `flyer-wall-format.md` §2; flagged to `lead-art` for a future dedicated
+   pile-tuning spec.)_ **One light
    source for the whole wall**: every contact shadow (extra 3) falls the same direction —
    never vary the shadow angle per flyer, even as a jitter pass. Mobile keeps the pile
    stacked; the materiality (1–4) is what makes each one read as paper at phone size.

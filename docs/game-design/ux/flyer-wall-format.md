@@ -2,7 +2,11 @@
 
 **Surface:** MENU shell, rubrique NIVEAUX — `FlyerWall.tsx` + `FlyerWall.module.css`,
 `LevelFlyer.tsx` + `.module.css`. **Author:** `ux-designer` (Tony) · **Date:** 2026-07-19.
-**Status:** DRAFT — awaiting `lead-game-designer` (Karim) DESIGN GATE PASS.
+**Status:** PASSED — `lead-game-designer` (Karim) design gate 2026-07-19.
+`FLYER_MAX_WIDTH_PX = 280` ratified as the single shared width; reconciles
+`art-direction.md` §2bis.2 pt5 (was "~300–340 px") down to 280. The dense-overlap /
+wider-rotation pile re-tuning in art §2bis.2 pt5 is deferred out of this story — the
+desktop wall is the wrap-grid defined in §2 below.
 **Amends:** `pre-game-experience-ux.md` §3.2 ("near-full-width" stack) and §3.4 (flyer
 min-height) for the format axis only. Everything else in §2.3/§3.2/§4.1 (tilt/jitter
 tokens, tape corners, unlock predicate, 8-line copy budget) is unchanged.
