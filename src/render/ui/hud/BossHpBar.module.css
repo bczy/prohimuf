@@ -1,0 +1,60 @@
+/* Boss-QTE health bar (ADR-0051) — "le Commandant". Static structure/typography only;
+   the gauge fill %/hue arrive inline from BossHpBar.tsx, the phase-divider offsets inline
+   too. Matches the delivery-integrity banner vocabulary (centred paper call-out: a stamp
+   chip label over a keylined track). Every colour/font/size references a var(--…) from
+   tokens.ts (no hex/font/px literal re-declared here). Holds zero game rules. */
+
+/* Centred call-out, top — below the ticker strip, same anchor family as the delivery
+   banner so the two set-piece call-outs read as one system (never both on screen at once). */
+.bossBar {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Stamped paper chip label — the boss name, ransom-display face, ink-black keyline, zero
+   glow (mirrors .chipDelivering). */
+.label {
+  background: var(--stock-shell);
+  font-family: var(--font-display);
+  padding: var(--space-sm) var(--space-lg);
+  border: var(--keyline-width) solid var(--ink-black);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.1em;
+  color: var(--ink-full);
+}
+
+/* HP track — wider/taller than the energy gauge so the boss read is prominent; relative
+   so the phase dividers position against it. */
+.track {
+  position: relative;
+  width: 300px;
+  height: 14px;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+  overflow: hidden;
+}
+
+/* Shared gauge fill (composed): width % and hue arrive as inline custom properties; the
+   transition duration stays inline (per-gauge, not a token). */
+.gaugeFill {
+  composes: gaugeFill from "./shared.module.css";
+}
+
+/* Phase-threshold divider — a thin ink keyline splitting the track into phase segments
+   (the 8/16 thresholds for 24 HP / 3 phases). `left` arrives inline per divider. */
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--keyline-width);
+  transform: translateX(-50%);
+  background: var(--ink-black);
+}

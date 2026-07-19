@@ -37,6 +37,25 @@ export interface HudHostageQte {
   warning: boolean;
 }
 
+/**
+ * Boss-QTE state surfaced to the DOM HUD — the "le Commandant" health bar (ADR-0051).
+ * Present only while the boss QTE holds the scene (`isBossQteActive`); `undefined`
+ * otherwise, so the bar never renders orphaned. Bertrand's 2026-07-19 override of the
+ * §0 diegetic-only ruling (`docs/game-design/ux/spec-boss-qte-hp-read.md`): a HUD HP bar
+ * ships IN ADDITION to the diegetic posture / phase-break-pulse reads. Read-only view
+ * values already exposed by `bossQteSystem.ts` — the render never re-encodes a rule; the
+ * per-phase segment ticks come straight from `phaseCount` (thresholds derived by the
+ * pure `phaseIndexAt`, ADR-0051 D5), never re-computed here.
+ */
+export interface HudBossQte {
+  /** Boss hit points remaining (0…bossHpMax). Drives the bar fill. */
+  bossHp: number;
+  /** The boss's full HP (the bar's denominator). */
+  bossHpMax: number;
+  /** Number of HP phases — segments the bar at the phase thresholds (16/8 for 24/3). */
+  phaseCount: number;
+}
+
 export interface HudData {
   score: number;
   lives: number;
@@ -51,4 +70,5 @@ export interface HudData {
   targetIndicator?: HudTargetIndicator | undefined;
   delivery?: HudDelivery | undefined;
   hostageQte?: HudHostageQte | undefined;
+  bossQte?: HudBossQte | undefined;
 }

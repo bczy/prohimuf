@@ -906,3 +906,43 @@ maxBlownWindows 10, targetSeed 20260719}` with `bossQte: null` (no-op) pre-quota
 - handoff → `senior-architect` (Winston): quality gate RAN — additive/inert surface PASSES
   and the "no shipped level affected" guarantee is artifact-confirmed; the integration review
   can proceed on the code, with C-QA1's runtime holes on record (not a clean green).
+
+## HUD BOSS-HP BAR (Bertrand override of OQ6) — dev-r3f-render (Amelia) — 2026-07-19
+
+- trigger: Bertrand, after playtesting the `?preview=boss` harness, found the diegetic-only
+  boss-HP read illegible ("gênant de ne pas voir l'énergie du boss") and asked directly for a
+  HUD health bar. Recorded as the §0 OVERRIDDEN ruling in
+  `docs/game-design/ux/spec-boss-qte-hp-read.md` (product-owner call, outranks §6/no-HUD).
+  Scope: add the bar ONLY; D1-D3 (diegetic posture escalation + phase-break pulse) UNCHANGED.
+- claim: a HUD boss-HP bar visible only while the boss QTE holds the scene, coherent with the
+  existing print-system HUD (énergie/integrity vocabulary). Zero `src/game` change — reads the
+  already-exposed `bossHp`/`bossHpMax`/`phaseCount` on `state.bossQte` (boundary law respected;
+  no rule in the HUD, view-mapping only via the shared `integrityColor` ramp).
+- release / File List:
+  - `src/render/ui/hud/types.ts` — new `HudBossQte { bossHp, bossHpMax, phaseCount }`;
+    `HudData.bossQte?` field.
+  - `src/render/ui/hud/BossHpBar.tsx` — new widget (renders null when `bossQte === undefined`;
+    fill %/hue inline custom props, warm ramp reused from `integrityColor`, phase dividers
+    derived purely from `phaseCount`).
+  - `src/render/ui/hud/BossHpBar.module.css` — co-located CSS Module (ADR-0046); centred paper
+    call-out matching `DeliveryIntegrityBanner` (chip label + keylined track + segment ticks),
+    tokens-only, no hex/font/px re-declared.
+  - `src/render/ui/HUD.tsx` — mount `<BossHpBar>`, re-export `HudBossQte`.
+  - `src/render/scene/BossQteSprite.tsx` — new `onBossQte` callback + bounded change-detection
+    (mirrors `HostageQteSprite`); emits the HUD slice on HP change, `null` when inactive.
+  - `src/render/scene/GameScene.tsx` — `onBossQte` prop threaded to `<BossQteSprite>`.
+  - `src/render/scene/App.tsx` — merge `onBossQte` into `hudData` (kept across `onHudUpdate`
+    refreshes like `hostageQte`/`delivery`).
+- verify: `yarn typecheck` (0), `yarn lint` (0), `yarn test` (813 passed). Visual — Playwright
+  `?preview=boss` + `__MUF_PLAY__` seam (ADR-0005): bar present at 24/24 (green, 2 dividers,
+  300px track), and after draining to 10/24 the fill goes orange (warm ramp) at ~42 % past the
+  first divider; absent on `?preview=menu` (no orphan HUD). Screenshots captured, temp scripts
+  removed (not committed).
+- notes / seams left intact: `BossQteSprite`'s diegetic reads (ring, posture hunch/brace,
+  per-hit reaction, phase-break pulse, reduced-motion branches) untouched — the bar is additive.
+  The `__MUF_STATE__` `hud.bossQte` snapshot stays `null` during the boss QTE because that seam
+  caches only `useGameLoop`'s emitted `HudData`; `bossQte` is merged App-side via `setHudData`
+  (same as `hostageQte`/`delivery`) — the DOM bar is the source of truth, confirmed present.
+- handoff → `ux-designer` (Tony): stage-5 review of the built bar against the overridden ruling
+  (bar + D1-D3 co-exist) on both device classes. → `senior-architect` (Winston): integration
+  review; the change is render-lane-only, no boundary/dependency/ADR-contract change.
