@@ -30,12 +30,16 @@
  * as equal (residual AA/rounding); the run REDS once the fraction of genuinely
  * differing pixels exceeds `GOLDEN_MAX_DIFF_FRACTION` (default 3%, both
  * env-tunable without a code change — same idiom as `check-halo-gradient.mjs`).
- * CALIBRATION (measured, 1280×720, this SwiftShader build): back-to-back runs
- * against a fixed baseline landed at {0.000%, 0.018%, 0.834%, 0.852%, 1.290%,
- * 1.306%, 1.307%} — an observed ceiling of ~1.31%. 3% keeps ~2× headroom above
- * that ceiling while staying far below what an actual regression (a missing
- * facade layer, a shifted layout, a broken texture) would move — those are
- * whole-frame-composition changes, not a handful of sprite silhouettes.
+ * CALIBRATION (re-measured 2026-07-18 after the enemy-art regeneration, 1280×720):
+ * the distribution is bimodal — a run lands on the SAME flipbook phase as the
+ * baseline (diff ≈ 0.000%) or the OPPOSITE one; the new, larger enemy
+ * silhouettes moved the opposite-phase worst case to ~2.9% (stalingrad, observed
+ * {0.000%, 2.278%, 2.892%}), which left the old 3% floor with ~0.1% headroom — a
+ * coin flip once cross-build AA drift is added. 5% restores ~1.7× headroom above
+ * the measured worst case while staying far below what an actual regression (a
+ * missing facade layer, a shifted layout, a broken texture) would move — those
+ * are whole-frame-composition changes, not a handful of sprite silhouettes.
+ * (Original calibration, pre-regeneration art: ceiling ~1.31%, floor 3%.)
  *
  * Baselines: `screenshots/golden/level_stalingrad.png`,
  * `screenshots/golden/level_vitry.png` — COMMITTED. Regenerate deliberately
@@ -83,9 +87,9 @@ const DEVICE_SCALE = 1;
 const SETTLE_MS = 4000;
 
 const CHANNEL_TOLERANCE = numEnv("GOLDEN_CHANNEL_TOLERANCE", 2);
-// 3% — see the module doc's CALIBRATION note (measured ceiling ~1.31% from the
-// enemy idle-flipbook's per-run phase, not from SwiftShader non-determinism).
-const MAX_DIFF_FRACTION = numEnv("GOLDEN_MAX_DIFF_FRACTION", 0.03);
+// 5% — see the module doc's CALIBRATION note (opposite-flipbook-phase worst case
+// ~2.9% with the regenerated enemy art, not SwiftShader non-determinism).
+const MAX_DIFF_FRACTION = numEnv("GOLDEN_MAX_DIFF_FRACTION", 0.05);
 
 const LEVEL_IDS = ["stalingrad", "vitry"];
 const UPDATE = process.env.UPDATE_GOLDEN === "1";
