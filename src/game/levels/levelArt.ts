@@ -114,6 +114,44 @@ export interface NearForegroundLayer {
   readonly objects: readonly NearForegroundObject[];
 }
 
+/**
+ * One coloured signal-lens anchor on the feu tricolore overlay, normalized [0..1]
+ * over the texture (y-down, top-left origin — the same convention as the enemy
+ * muzzle anchors). `x,y` = centre, `rx,ry` = the foreshortened-ellipse radii.
+ */
+export interface LensAnchor {
+  readonly x: number;
+  readonly y: number;
+  readonly rx: number;
+  readonly ry: number;
+}
+
+/**
+ * Overlay lens anchors for the feu tricolore (ADR-0049): the 3 vehicle aspects
+ * (order red, amber, green) and the 2 pedestrian aspects (order stand, walk).
+ * The housing PNG carries the DEAD grey lenses; these place the render-side lit
+ * colour + halo (the one directed C1 exception) over that housing.
+ */
+export interface SignalLenses {
+  readonly vehicle: readonly LensAnchor[];
+  readonly ped: readonly LensAnchor[];
+}
+
+/**
+ * One generated near-foreground décor sprite's generation + registration inputs
+ * (ADR-0049, amends the ADR-0047 code-drawn décor). World sizing (aspect/height)
+ * stays in code (`NEAR_KIND_SPECS`); this block carries only the asset path, the
+ * generated pixel size, seed, prompt and — for the traffic light — the overlay
+ * lens anchors.
+ */
+export interface NearForegroundArtType {
+  readonly asset: string;
+  readonly size: { readonly width: number; readonly height: number };
+  readonly seed: number;
+  readonly prompt: string;
+  readonly lenses?: SignalLenses;
+}
+
 /** One tile of a tronçon-sequence backdrop: an image basename + its native
  *  aspect (image width/height), which drives the tile's world width. */
 export interface BackdropTileSpec {
@@ -267,6 +305,62 @@ export function getNearForeground(id: string | undefined): NearForegroundLayer |
     );
 
   return { factor, objects };
+}
+
+/** The generated near-foreground art block (ADR-0049), a top-level art family
+ *  sibling of `vehicles`/`enemies`. Cast off the untyped JSON and read
+ *  defensively: the tooling lane writes it, so it may be ABSENT while render
+ *  builds — every accessor degrades to null so the procedural fallback engages. */
+interface NearForegroundArtBlock {
+  readonly types?: Readonly<Record<string, NearForegroundArtType | undefined>>;
+}
+const NEAR_FOREGROUND_ART = (manifest as { nearForegroundArt?: NearForegroundArtBlock })
+  .nearForegroundArt;
+
+/**
+ * Public path (relative to BASE_URL) of a kind's generated near-foreground sprite,
+ * or null when the `nearForegroundArt` block — or this kind's entry — is absent.
+ * Source-hardened: a non-string or empty `asset` also yields null, so the render
+ * keeps its synchronous procedural fallback texture.
+ */
+export function nearForegroundArtAsset(kind: NearForegroundKind): string | null {
+  const asset = NEAR_FOREGROUND_ART?.types?.[kind]?.asset;
+  return typeof asset === "string" && asset.length > 0 ? asset : null;
+}
+
+/** Type guard: a fully finite {@link LensAnchor} (x, y, rx, ry all finite numbers). */
+function isFiniteAnchor(a: unknown): a is LensAnchor {
+  if (a === null || typeof a !== "object") return false;
+  const { x, y, rx, ry } = a as Record<string, unknown>;
+  return [x, y, rx, ry].every((n) => typeof n === "number" && Number.isFinite(n));
+}
+
+/** Validate exactly `count` finite anchors off the untyped JSON; null on any miss. */
+function sanitizeAnchors(arr: unknown, count: number): LensAnchor[] | null {
+  if (!Array.isArray(arr) || arr.length < count) return null;
+  const raw = arr as readonly unknown[];
+  const out: LensAnchor[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = raw[i];
+    if (!isFiniteAnchor(a)) return null;
+    out.push({ x: a.x, y: a.y, rx: a.rx, ry: a.ry });
+  }
+  return out;
+}
+
+/**
+ * The feu tricolore overlay lens anchors (3 vehicle + 2 pedestrian), or null when
+ * the block / traffic-light entry / `lenses` are absent or malformed. Source-hardened
+ * like {@link getNearForeground}: a null return makes the overlay drawer fall back to
+ * its fixed-fraction anchors, so the signal still lights up before the block lands.
+ */
+export function trafficLightLenses(): SignalLenses | null {
+  const lenses = NEAR_FOREGROUND_ART?.types?.trafficLight?.lenses;
+  if (lenses === undefined) return null;
+  const vehicle = sanitizeAnchors(lenses.vehicle, 3);
+  const ped = sanitizeAnchors(lenses.ped, 2);
+  if (vehicle === null || ped === null) return null;
+  return { vehicle, ped };
 }
 
 /**

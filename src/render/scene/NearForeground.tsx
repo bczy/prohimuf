@@ -6,7 +6,11 @@ import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
 import { NEAR_KIND_SPECS } from "./nearForegroundArt";
-import { getNearForegroundTexture, updateTrafficLightSignal } from "./nearForegroundTextures";
+import {
+  getNearForegroundTexture,
+  getTrafficLightOverlayTexture,
+  updateTrafficLightSignal,
+} from "./nearForegroundTextures";
 import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
 
 // The flat facade art has a single pavement at the bottom, so BOTH rows stand on
@@ -101,15 +105,23 @@ function Row({
         const planeW = planeH * spec.aspect;
         const worldX = (obj.x - 0.5) * fullW;
         const centerY = streetWorldY + planeH / 2;
+        // The feu tricolore adds a second co-located plane carrying the animated
+        // lit-lens overlay, at z+0.001 so it sorts in FRONT of the dead-grey housing
+        // within the SAME renderOrder — still below courier (6) / delivery van (7).
+        const overlay = isTrafficLight ? getTrafficLightOverlayTexture() : null;
         return (
-          <mesh
-            key={`near-${obj.kind}-${String(index)}`}
-            position={[worldX, centerY, z]}
-            renderOrder={renderOrder}
-          >
-            <planeGeometry args={[planeW, planeH]} />
-            <meshBasicMaterial map={texture} transparent depthWrite={false} />
-          </mesh>
+          <group key={`near-${obj.kind}-${String(index)}`}>
+            <mesh position={[worldX, centerY, z]} renderOrder={renderOrder}>
+              <planeGeometry args={[planeW, planeH]} />
+              <meshBasicMaterial map={texture} transparent depthWrite={false} />
+            </mesh>
+            {overlay !== null && (
+              <mesh position={[worldX, centerY, z + 0.001]} renderOrder={renderOrder}>
+                <planeGeometry args={[planeW, planeH]} />
+                <meshBasicMaterial map={overlay} transparent depthWrite={false} />
+              </mesh>
+            )}
+          </group>
         );
       })}
     </>
