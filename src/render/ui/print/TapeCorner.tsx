@@ -1,5 +1,5 @@
 import type { CSSProperties, JSX } from "react";
-import { INK } from "./tokens";
+import styles from "./TapeCorner.module.css";
 
 export type Corner = "tl" | "tr" | "bl" | "br";
 
@@ -28,15 +28,12 @@ export function TapeCorner({ corners = ALL_CORNERS }: TapeCornerProps): JSX.Elem
         <div
           key={c}
           aria-hidden={true}
+          className={styles.tape}
           style={{
-            position: "absolute",
-            width: "48px",
-            height: "18px",
+            // Translucent masking-tape fill: manila carries only the opaque hex, so
+            // this 72%-alpha variant has no plain token and stays inline by design.
             background: "rgba(236,231,218,0.72)",
-            borderTop: `1px solid ${INK.black}`,
-            borderBottom: `1px solid ${INK.black}`,
-            opacity: 0.85,
-            pointerEvents: "none",
+            // Per-corner offset + rotation, selected by prop.
             ...CORNER_STYLE[c],
           }}
         />

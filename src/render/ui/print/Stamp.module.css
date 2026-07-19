@@ -1,0 +1,43 @@
+/*
+ * Stamp (ADR-0046) — static keyline/box/typography only. Prop-driven bits stay inline
+ * in Stamp.tsx: the shape border-radius, the struck text-decoration, the shape rotation,
+ * and the mark-ink background of the hue rule + diagonal strike. Every colour/font/size
+ * references a var(--…) injected from tokens.ts.
+ */
+
+/* Rubber-stamp box: fixed layout/typography + the always-black toner keyline.
+   border-radius / text-decoration / transform are prop-driven and stay inline. */
+.box {
+  position: relative;
+  display: inline-block;
+  padding: 3px 9px;
+  border: var(--keyline-width) solid var(--ink-black);
+  color: var(--ink-black);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Hue tell: slim inner rule; its background (mark ink) is prop-driven, stays inline. */
+.innerRule {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 1.5px;
+  height: 1.5px;
+  pointer-events: none;
+}
+
+/* Diagonal strike (shape="diagonal"): the -14deg tilt is fixed; the background
+   (mark ink) is prop-driven and stays inline. */
+.diagonalStrike {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  top: 50%;
+  height: 2px;
+  transform: rotate(-14deg);
+  pointer-events: none;
+}

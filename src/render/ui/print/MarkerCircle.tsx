@@ -1,5 +1,6 @@
 import type { JSX, ReactNode } from "react";
 import { INK } from "./tokens";
+import styles from "./MarkerCircle.module.css";
 
 export interface MarkerCircleProps {
   /** Draw the ink when the wrapped item is focused / selected. */
@@ -20,23 +21,14 @@ export function MarkerCircle({
   children,
 }: MarkerCircleProps): JSX.Element {
   return (
-    <span style={{ position: "relative", display: "inline-block" }}>
+    <span className={styles.wrap}>
       {children}
       {active && (
         <svg
           aria-hidden={true}
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
-          style={{
-            position: "absolute",
-            top: "-8px",
-            left: "-12px",
-            width: "calc(100% + 24px)",
-            height: "calc(100% + 16px)",
-            pointerEvents: "none",
-            overflow: "visible",
-            transform: "rotate(-1.5deg)",
-          }}
+          className={styles.marker}
         >
           <ellipse
             cx="50"

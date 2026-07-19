@@ -14,6 +14,7 @@ import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
 import { GameScene } from "./GameScene";
 import { warm } from "./warmAssets";
+import styles from "./App.module.css";
 
 import { useAudio } from "@hooks/useAudio";
 import { useAssetPreloader } from "@hooks/useAssetPreloader";
@@ -377,10 +378,8 @@ export function App(): JSX.Element {
 
   return renderAppShell(
     <div
+      className={styles.gameRoot}
       style={{
-        position: "relative",
-        width: "100vw",
-        height: "100vh",
         cursor: paused ? "default" : "none",
         // Keeps two-finger taps from becoming browser pinch/double-tap zoom.
         touchAction: IS_MOBILE ? "none" : "auto",
@@ -391,7 +390,7 @@ export function App(): JSX.Element {
         flat
         orthographic
         camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
-        style={{ width: "100%", height: "100%", background: "#000000" }}
+        className={styles.canvas}
       >
         <ambientLight intensity={2.2} />
         <directionalLight position={[-12, 2, 4]} intensity={0.8} />
@@ -429,10 +428,8 @@ export function App(): JSX.Element {
       {lifeFlash > 0 && (
         <div
           key={lifeFlash}
+          className={styles.lifeFlash}
           style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
             background:
               "radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(220,0,0,0.55) 100%)",
             animation: "mufRedFlash 0.6s ease-out forwards",

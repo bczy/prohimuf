@@ -121,6 +121,21 @@ design-system foundation. ADR-0046. Branch `claude/render-css-design-system` (st
   docstring imprecision; `OverlayProps.children` stricter than needed.
 - VERDICT: **MERGE**.
 
+## PRINT/SHELL PRIMITIVES INLINE STRIP — dev-r3f-render (parallel sweep) — 2026-07-18
+
+- Final inline-style sweep across the last 8 un-migrated render surfaces (an agent-per-file
+  fan-out): print primitives PaperSheet, Stamp, MarkerCircle, TapeCorner, HalftoneHero +
+  menu/FlyerWall + FullscreenButton + scene/App. Each static `style={{…}}` block moved to a
+  co-located `*.module.css` (colour/size/motion via `var(--…)` tokens where a token exists);
+  every runtime-computed value (stock/ink/src backgrounds, pitch-derived dot gradients,
+  paused-cursor + IS_MOBILE touch-action, per-corner tape offset, prop-driven shape rotation)
+  stays inline by design and is documented as such in each module header. Net −113.
+- Global-class + module-class joins (FlyerWall `.muf-flyerwall`/`.muf-flyer-slot` kept for the
+  inline `<style>` media block; FullscreenButton `.muf-fs-btn` kept for its hover rule) use the
+  `cx()` helper, satisfying `restrict-template-expressions` over `string|undefined` module keys.
+- Diff-reviewed value-by-value against origin/main intent; tsc + 637 tests + lint + build +
+  format:check green. Branch `claude/render-strip-inline`.
+
 ## DONE
 
 - Design-system render layer complete: fonts (ADR-0045) + CSS Modules + token→CSS-var bridge + HUD

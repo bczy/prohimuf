@@ -1,4 +1,5 @@
 import type { CSSProperties, JSX } from "react";
+import styles from "./HalftoneHero.module.css";
 
 export interface HalftoneHeroProps {
   /** A `BASE_URL`-prefixed facade PNG path. */
@@ -18,28 +19,13 @@ export function HalftoneHero({ src, pitch = 10, style }: HalftoneHeroProps): JSX
   const dotCore = (pitch * 0.24).toFixed(2);
   const dotEdge = (pitch * 0.32).toFixed(2);
   return (
-    <div
-      aria-hidden={true}
-      style={{ position: "absolute", inset: 0, overflow: "hidden", ...style }}
-    >
+    <div aria-hidden={true} className={styles.hero} style={style}>
+      <div className={styles.photo} style={{ backgroundImage: `url('${src}')` }} />
       <div
+        className={styles.dots}
         style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `url('${src}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "grayscale(1) contrast(2.2) brightness(1.1)",
-          imageRendering: "pixelated",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
           backgroundImage: `radial-gradient(circle, rgba(20,18,16,0.55) ${dotCore}px, transparent ${dotEdge}px)`,
           backgroundSize: `${pitch.toString()}px ${pitch.toString()}px`,
-          mixBlendMode: "multiply",
         }}
       />
     </div>

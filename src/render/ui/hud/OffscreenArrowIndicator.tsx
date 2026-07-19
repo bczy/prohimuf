@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { HudTargetIndicator } from "./types";
-import { INK, ACID } from "@render/ui/print";
+import { INK, ACID, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import styles from "./OffscreenArrowIndicator.module.css";
 
 function ArrowIndicator({
@@ -34,9 +34,11 @@ function ArrowIndicator({
     >
       {/* display:block — an inline svg sits on the text baseline and drifts off
           the span's geometric centre, which is also the rotation origin. */}
+      {/* width/height 100%: .arrowCore (CSS module) is the single owner of the
+          rendered size; the viewBox scales the glyph to fill it. */}
       <svg
-        width={34}
-        height={34}
+        width="100%"
+        height="100%"
         viewBox="0 0 34 34"
         aria-hidden="true"
         style={{ display: "block" }}
@@ -45,7 +47,11 @@ function ArrowIndicator({
           points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
           fill={ACID.yellow}
           stroke={INK.black}
+          // non-scaling-stroke: strokeWidth is device px, so the keyline holds
+          // the HUD's 2px ink-rule weight at both the desktop (136px) and
+          // short-landscape (68px) render sizes (Bertrand: don't scale it).
           strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
           strokeLinejoin="round"
         />
       </svg>
@@ -66,6 +72,17 @@ export function OffscreenArrowIndicator({
 
   return (
     <div className={styles.targetRing}>
+      {/* ADR-0024 pattern (TitleScreen/MainMenu): the short-landscape device class
+          drops the arrows to 2x original (68px glyph) instead of the desktop 4x;
+          unmatched viewports keep the CSS-module var() fallbacks. */}
+      <style>{`
+        @media ${SHORT_LANDSCAPE_MEDIA}{
+          .${styles.targetRing ?? ""}{
+            --muf-arrow-wrap-size: 80px;
+            --muf-arrow-core-size: 68px;
+          }
+        }
+      `}</style>
       <span
         className={styles.arrowWrap}
         style={{ top: 52, left: "50%", transform: "translateX(-50%)" }}
