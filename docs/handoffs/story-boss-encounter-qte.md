@@ -156,7 +156,6 @@ normal roadmap sequencing on Bertrand's explicit instruction.
   round 1 of 2.)
 
   ### What PASSes (substance ratified)
-
   1. **Scope / cahier des charges.** [EXTENSION] correctly declared in both specs
      (Prohibition ST had no boss — veille §1), same documented standard as ADR-0030/0034,
      Bertrand-requested, ADR to follow (AC5). Declared, not silent ⇒ passes the scope test.
@@ -188,7 +187,6 @@ normal roadmap sequencing on Bertrand's explicit instruction.
      scene bounds, skippable, mute-QTE-compatible.
 
   ### CORRECTIONS (blocking — apply before `senior-architect` cuts lanes)
-
   - **K1 — game-designer (verifiability).** The telegraph floor is misstated. The spec cites
     `TELEGRAPH_LEAD_SECONDS` as a "0.25 s floor" (§2.4 and §5 constants table) but as "0.35"
     in §0. The SHIPPED constant is **0.35** (`qteSystem.ts:39`), and in code it is the _tell-
@@ -231,7 +229,6 @@ normal roadmap sequencing on Bertrand's explicit instruction.
     placeholder gate on a shipped level."
 
   ### CONDITIONS (tracked; do not block this PASS, bind downstream)
-
   - **C1 — OQ6 → `ux-designer` (REQUIRED before `dev-r3f-render` builds the HP read).** Ruling
     on the mission's question: **a dedicated `ux-designer` opinion IS necessary** (HUD-vs-
     diegetic is their gate, and the multi-hit + phased case genuinely differs from the binary
@@ -281,6 +278,46 @@ normal roadmap sequencing on Bertrand's explicit instruction.
   TECH PLAN hand-off block below. Do NOT cut lanes until K1 applied and K2 closed.
 - handoff → `ux-designer` (Sally): **C1** OQ6 HP-read surface (blocking `dev-r3f-render` only).
 - handoff → `lead-art` (Nico): **C3** Commandant sprite request + full-figure-enemy coherence.
+
+## 5. UX — ux-designer (Tony) — 2026-07-19
+
+- claim: close gate condition **C1** (OQ6, HP-read surface) — a fresh call, not inherited from
+  ADR-0034 K-4's hostage ruling (multi-hit + phased boss is a different shape from the near-binary
+  hostage duel).
+- release: `docs/game-design/ux/spec-boss-qte-hp-read.md`. Headline ruling:
+  - **No HUD element for boss HP — diegetic only, no bar (segmented or continuous), no per-hit pip
+    stack.** §6 ("pas de barre de stress") applies to a boss-HP meter as the same _family_ of
+    object as a stress bar (a persistent, quantified, continuously-ticking gauge), not just
+    literally to player stress; 24 HP at ~12-16 landed hits is also the wrong _grain_ for pips
+    (24 dots = a bar in disguise, not a simpler alternative). Continuous progress reads off the
+    **already-budgeted** per-phase posture (ordered escalation requirement, D1) + per-hit reaction
+    pose (D1.2) — zero new art cost beyond what `spec-boss-qte-encounter.md` §7 flag 9 already
+    lists.
+  - **The one genuinely new requirement: phase transitions need a dedicated, non-duration-dependent,
+    non-text-dependent trigger cue** (screen-level pulse + a re-`SHIELDED` pose distinct from an
+    ordinary lull), because **`PHASE_BREAK_SECONDS` (1.0 s) is not reliably distinguishable by
+    duration from an ordinary `SHIELDED` lull** — phase-3's lull is 1.2 s, _longer_ than the break
+    that precedes it, so "he's shielded a bit longer" is not a safe signal late in the fight, right
+    where the transition matters most. Posture-swap-alone was also flagged as missable inside a
+    1.0 s window. Audio stinger/tempo-shift recommended to `game-designer`/sound-designer as a
+    legitimate, in-spirit _use_ of §6's music-as-tension rule (not a violation of it).
+  - **No new `src/game` contract field expected:** `phase`/"progress within phase" is
+    render-derivable from the already-planned `bossHp` + threshold constants (16/8) — flagged to
+    `senior-architect` as an expectation, not a ruling.
+  - Accessibility: reduced-motion (pulse degrades to a static, non-strobing cue, ≤3 Hz, mirrors
+    the hostage-duel D4.1 precedent), not-colour-alone / not-text-alone, contrast, and a
+    no-regression note on aria for any new textual stamp (mirrors the current OTAGE-banner
+    baseline, does not block on closing that pre-existing gap).
+- handoff → `lead-art` (Nico): posture-escalation ordering (D1.1) + phase-break pulse/pose
+  treatment (D2.1/D2.4) — style is his, the read is spec'd.
+- handoff → `narrative-designer` (Yasmine): optional phase-break banner copy (D2.2), reinforcement
+  only, never the sole channel — her call whether to add one at all.
+- handoff → `game-designer` (Sacha) / sound-designer: optional audio stinger/tempo-shift at each
+  phase break (D2.3) — recommended, not mandated.
+- handoff → `senior-architect` (Winston): confirm the render-derivable `phase` helper needs no new
+  `src/game` field (§0.2/§4 of the spec); fold into the TECH PLAN alongside C5.
+- handoff → `lead-game-designer` (Karim): **C1 closed** — spec delivered, ready to inform
+  `dev-r3f-render` once TECH PLAN lands. Does not reopen the design-gate PASS-WITH-CORRECTIONS.
 
 ### TECH PLAN hand-off → `senior-architect` (prepared; gated, pending K1+K2)
 
