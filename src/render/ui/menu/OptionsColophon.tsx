@@ -33,6 +33,11 @@ const DIFFICULTIES: readonly { value: Prefs["difficulty"]; label: string }[] = [
 
 const LIVES = [1, 2, 3, 4, 5] as const;
 
+const CRT_CHOICES: readonly { value: boolean; label: string }[] = [
+  { value: true, label: "OUI" },
+  { value: false, label: "NON" },
+];
+
 interface BallotOption {
   key: string;
   label: string;
@@ -64,6 +69,15 @@ export function OptionsColophon({ prefs, onSave }: OptionsColophonProps): JSX.El
     selected: local.difficulty === d.value,
     onSelect: () => {
       update({ difficulty: d.value });
+    },
+  }));
+
+  const crtOptions: BallotOption[] = CRT_CHOICES.map((c) => ({
+    key: c.label,
+    label: c.label,
+    selected: local.crt === c.value,
+    onSelect: () => {
+      update({ crt: c.value });
     },
   }));
 
@@ -108,6 +122,7 @@ export function OptionsColophon({ prefs, onSave }: OptionsColophonProps): JSX.El
         hint="à quel point les flics te collent"
         options={difficultyOptions}
       />
+      <BallotRow label="TUBE CATHODIQUE" hint="scanlines & courbure d'écran" options={crtOptions} />
     </PaperSheet>
   );
 }
