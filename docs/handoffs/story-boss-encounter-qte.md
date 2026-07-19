@@ -321,7 +321,7 @@ Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline,
     for reversing it (a strong narrative counter-argument — satisfied by narrative's
     "descend tirer lui-même, débordé, plus personne pour le couvrir" being diegetically
     1:1 with the Niveau Final's already-canon "flics débordés" moment, §7). **V1 =
-    system + tuning + gated fiction + a Belliard *dev-harness*, not shipped, not
+    system + tuning + gated fiction + a Belliard _dev-harness_, not shipped, not
     touching Belliard's live quota-win completion contract.** Canon "le Commandant"
     live encounter deferred to a **named follow-up story** that also builds a minimal
     Niveau Final — not bundled here.
@@ -335,7 +335,7 @@ Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline,
     HP-phased, dispatch-scripted, ceremonially-refilled boss duel is a "real" weighted
     encounter regardless of the name on him; relabelling him non-canon launders the
     incoherence rather than closing it. The only genuinely coherent version of Option 3
-    would be a distinct, lesser, *canon* Belliard antagonist — i.e. the mini-boss tier
+    would be a distinct, lesser, _canon_ Belliard antagonist — i.e. the mini-boss tier
     (OQ3 option C) already RATIFIED OUT of V1 by C4. Not reopened under a different name.
   - **Trade-off surfaced explicitly, not silently absorbed:** V1 ships **no
     player-facing canon boss encounter** — a deliberate deviation from every prior QTE's
@@ -368,3 +368,41 @@ Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline,
 - Not yet a `VERDICT:` line — this is a `pm` ratification of a JOINT call, not an
   independent gate. The gate verdict of record remains §4's
   `VERDICT: PASS — boss-encounter-qte design gate (lead-game-designer)`.
+
+## 6. K1 CORRECTION APPLIED — game-designer (Sacha) — 2026-07-19
+
+- claim: close **K1** (telegraph-floor value/reuse mis-citation) in
+  `docs/game-design/spec-boss-qte-encounter.md`, as required before `senior-architect`
+  cuts lanes.
+- **K1 RESOLVED.** Corrected the spec against shipped code (`src/game/systems/qteSystem.ts`):
+  - **True value stated:** `TELEGRAPH_LEAD_SECONDS = 0.35` (`qteSystem.ts:39`) is a FIXED
+    _tell-window duration_ (the last 0.35 s of the COVERED beat carries the tell), asserted
+    `peekCadenceSeconds > TELEGRAPH_LEAD_SECONDS` — **not** a "≥ 0.25 s lead minimum". Fixed
+    §0, §2.4 table, §4.3 header + note, §5 constants table, §6 AC3 (every stale "0.25 s"
+    citation removed).
+  - **Ambiguity TRANCHÉE:** the per-phase telegraph lead (0.45→0.40→0.35) is a **NEW authored
+    per-phase field `telegraphLeadSeconds`**, NOT a reuse of the fixed constant (a fixed
+    constant cannot ramp). It gets its **own named, numeric, asserted floor
+    `BOSS_TELEGRAPH_LEAD_FLOOR = 0.35 s`** (value deliberately = the shipped hostage tell, so
+    the boss is never LESS readable than the proven duel; phase 3 sits exactly on it), PLUS a
+    per-phase `lull STRICTLY > lead` assert mirroring the hostage's
+    `peekCadenceSeconds > TELEGRAPH_LEAD_SECONDS`. Precedent for a distinct named constant
+    rather than aliasing: `ACCOMPLICE_TELL_SECONDS` (`qteSystem.ts:69`), deliberately not
+    aliased to `TELEGRAPH_LEAD_SECONDS`. §5.6 anti-bullshit garde-fou now rests on an assert a
+    dev can implement without guessing.
+  - **Second divergence caught + fixed while verifying:** §4.3 cited a hostage
+    "`wanderSpeed ≈ 1.2` scale" — no such knob exists; hostage wander speed is implicit at
+    ≈ 1.8 u/s peak (derived from `LEG_DURATION 0.38` + `MAX_LEG_DISPLACEMENT 0.45`,
+    `qteSystem.ts:123`). Reworded: boss wander speed 1.0→1.6 u/s is a NEW per-phase field
+    capped UNDER the proven hostage peak. All other reused constants re-verified against
+    `qteSystem.ts` and unchanged (`PEEK_EXPOSURE_FLOOR 0.5`, `RING_HIT_RADIUS 0.3`,
+    damage 2/1/0, `QTE_RESCUE_REFILL +40`, `QTE_UNANSWERED_PEEK −8`, `QTE_BODY_HIT −5`,
+    `QTE_PANIC_SHOT −6`, `QTE_ZOOM_SECONDS 2.0`, `QTE_RESULT_HOLD 2.2` — all match).
+  - No tuning MAGNITUDE moved: the per-phase table values (tell 0.45→0.35, wander 1.0→1.6)
+    are unchanged; only the constant NAME, its reuse/new classification, and the asserted
+    floor semantics were corrected.
+- handoff → `lead-game-designer` (Karim): **K1 closed** — ready for your confirmation.
+- handoff → `senior-architect` (Winston): TECH PLAN note — carry `BOSS_TELEGRAPH_LEAD_FLOOR`
+  (new, 0.35) + `telegraphLeadSeconds` (new per-phase authored) into the ADR's newly-authored
+  map; `TELEGRAPH_LEAD_SECONDS 0.35` is a _reference_, not reused verbatim by the boss (line
+  294's "value per K1" now resolves to: hostage constant referenced, boss floor newly named).
