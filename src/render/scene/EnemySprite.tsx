@@ -18,11 +18,24 @@ import { recoilTransform, type RecoilParams } from "./deform";
 import { createEnemyRimMaterial, rimZoomCompensation } from "./enemyRimMaterial";
 import { heatColor, heatProgress } from "./neonHeatColor";
 
+// Enemy plane height as a fraction of the window opening — a standing figure is
+// taller than the window it occupies; at the old 0.8× the cops read as
+// miniatures lost in the frame. Shared with GameScene's harness slot-rect
+// mirror so the alignment harness always tests the layout actually rendered.
+export const ENEMY_PLANE_SCALE = 1.3;
+// Upward offset (fraction of planeH) seating the FEET at the sill/balcony line
+// the original 0.8×-plane tuning produced (railing crosses the legs):
+// old feet = y − 0.8·0.28·h − 0.8·h/2 = y − 0.624·h ⇒ lift = 0.65 − 0.624 = 0.026·h
+// = 0.02·planeH.
+export const ENEMY_BODY_LIFT = 0.02;
+
 // SPIKE (animation-2d-pipeline): procedural recoil deformation, additive over the
 // baked flipbook. Flip to false to disable the whole-plane kick and fall back to
 // the pure flipbook baseline (no regression).
 const DEFORM_RECOIL_ENABLED = true as boolean;
-// One-shot kick tuned in world units for the window-sized cop plane (planeH≈1).
+// One-shot kick in world units, tuned on the pre-ENEMY_PLANE_SCALE window plane
+// (planeH≈1); on today's taller plane the same world-unit kick reads slightly
+// softer, which is accepted.
 const RECOIL: RecoilParams = {
   duration: 0.22,
   kick: 0.06,
@@ -71,10 +84,11 @@ export function EnemySprite({
   // Square base plane sized to the window height; per-kind width is applied via
   // scale.x each frame (the courier-on-a-bike is wider than the portrait cops),
   // since the occupant's kind changes every wave. Fallback for grid-only levels.
-  const planeH = size !== undefined ? size.y * 0.8 : 1.3;
-  // Drop the sprite below the window centre so the feet rest at the sill/balcony
-  // and the railing crosses the legs (instead of the cop floating mid-window).
-  const bodyY = screenPosition.y - planeH * 0.28;
+  const planeH = size !== undefined ? size.y * ENEMY_PLANE_SCALE : 2.1;
+  // Feet anchored at the sill/balcony (see ENEMY_BODY_LIFT) so the railing still
+  // crosses the legs; the taller plane rises through the window instead of
+  // floating mid-frame.
+  const bodyY = screenPosition.y + planeH * ENEMY_BODY_LIFT;
   const muzzleY = planeH * 0.12;
   const meshRef = useRef<Mesh>(null);
   const flashRef = useRef<Mesh>(null);
