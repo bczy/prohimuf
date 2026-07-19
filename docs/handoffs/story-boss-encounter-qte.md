@@ -443,3 +443,131 @@ Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline,
   (new, 0.35) + `telegraphLeadSeconds` (new per-phase authored) into the ADR's newly-authored
   map; `TELEGRAPH_LEAD_SECONDS 0.35` is a _reference_, not reused verbatim by the boss (line
   294's "value per K1" now resolves to: hostage constant referenced, boss floor newly named).
+
+## 7. ART PROMPT GATE — lead-art (Nico) — 2026-07-19
+
+- claim: PROMPT GATE (bible Gate 1) on the `boss` block prompts/style authored by
+  `concept-artist` (Maud) — `docs/art-direction/prompt-drafts/boss-commander.md` +
+  `src/game/levels/levelArt.json` `boss` (4 poses). This gate judges the PROMPT STRINGS only
+  (no PNG exists yet — the ASSET GATE (Gate 2) and, for the phase-break pulse, the COMPOSITE
+  GATE (Gate 4) remain OWED on real output). Answered Maud's 3 explicit questions.
+
+- **VERDICT: PASS-WITH-CORRECTIONS — boss `commander_*` prompt gate (lead-art).**
+  All 4 subjects are on-direction, silhouette-first, family-consistent and honour the hard
+  no-CRS constraint. Two blocking conditions on the GENERATION lane (N1, N2) and three
+  pre-registered Gate-2 defect watch-items (W-a/b/c) must be carried before/at the CI run.
+  Iteration budget: 0 of 2 batches burned (prompt gate only).
+
+  ### What PASSes (ratified)
+  1. **Family consistency §2 law 2 — style block byte-identical.** Verified: `boss.style`
+     (levelArt.json:223) === `enemies.style` (:69) character-for-character (police roster uses
+     "…limbs and **gear**"; correct for a capped/coated/holstered figure — not the hostages'
+     "…limbs and **hair**"). The boss is a police-roster member and prints as one run with it.
+  2. **Silhouette-first §2 law 3 — the four reads are distinct at a glance.** SHIELDED = closed
+     upright authority, halt-palm + hand on hip; EXPOSED = open lunge, both arms thrust + coat
+     flaring + muzzle flash; HIT = reeling backward, cap coming off, hand to chest; DOWN =
+     horizontal sprawled heap. Standing×3 + prone×1 with clear inter-pose separation. The
+     "chef" tell (knee-length overcoat + tall stiff peaked cap + dominant stature) reads
+     authority in <0.3s without colour and is carried by garment SHAPE, not by any prop that
+     dies at game size.
+  3. **Hard fiction constraint HONOURED — NOT an `enemy_riot`/CRS reskin.** Zero helmet, visor,
+     riot shield or body armour in any of the 4 subjects. Distinct commanding silhouette.
+     Anachronism check: "service pistol" (generic, period-neutral), no modern named weapon, no
+     smartphone-era item — clean.
+  4. **Craft credit — hand-defect mitigation is deliberate across all 4 poses.** SHIELDED
+     "gloved" hand hides finger-count; EXPOSED foreshortened gun-hands are masked by the muzzle
+     flash (same trick the shipped `enemy_shooting` family uses); HIT hand is clutched against
+     the chest; DOWN hand is relaxed/open. FLUX's worst zone (hands at the viewer) is defused by
+     design, not left to luck.
+  5. **Negation/word budgets in bounds.** 0 negations per subject; verbatim tail carries 2
+     (`no text, no watermark`) ⇒ total ≤2 (§3.1). ~90–96 assembled words, warn band, every
+     clause load-bearing for a NEW non-ambiguous authority figure (§3.3-justified). The `boss`
+     block is not even reached by `check-art-prompts.mjs` — taste is the whole gate here.
+
+  ### Answer to Maud's Q1 — SHIELDED-without-a-shield reconciliation: RATIFIED (bible ruling)
+
+  ENDORSED as written. The mechanic's SHIELDED ("behind cover / riot shield", §OQ2) resolves on
+  the FICTION side, never on a prop: for the `boss` family **SHIELDED is a POSTURE STATE (closed
+  commanding stance, sidearm holstered), never a physical riot shield.** It is the
+  `enemy_riot`(closed) ↔ `enemy_riot_shooting`(fires) couple re-themed onto ONE man via arm
+  position — halt-palm+hip (closed) vs pistol-thrust+flash (open) — and it is diegetically 1:1
+  with the fiction's "il sort du couvert de ses propres troupes" (§1.3). **New family rule
+  (recorded so it cannot drift): no physical shield may ever be generated into a Commandant
+  pose; the "shield" is his rank and his troops' cover, carried by silhouette closure alone.**
+
+  ### CORRECTIONS — blocking on the GENERATION lane (→ `dev-tooling-assets`), not on the prompt
+  - **N1 — cross-pose character identity must be TOOL-LOCKED, not left to text.** The 4 poses
+    sit on 4 INDEPENDENT seeds (4870–4873). "the same … commander" as prose will NOT hold coat
+    length, cap height, build and value rendering constant across 4 independent FLUX rolls — the
+    bible made kontext img2img the PRIMARY consistency strategy (§4.1) precisely because
+    independent rolls drift, and Maud's own rationale concedes the text is only "utile pour un
+    futur kontext lock." Requirement: **generate SHIELDED first as the hero, then derive EXPOSED
+    / HIT / DOWN via `kontext` from it** (mirroring the enemy flipbook), or a matched-seed pair
+    as fallback. Text-only 4-up is NOT acceptable for "un seul personnage reconnaissable à
+    travers les 4 poses" — it becomes a Gate-2 hard-fail driver and a wasted batch. Build the
+    generator (`gen-boss-sprites.mjs`/extension) with kontext-from-hero BEFORE burning a run.
+  - **N2 — do not burn a run ahead of need.** Per pm §5, V1 ships a NON-shipped Belliard
+    dev-harness with a generic fallback; no render consumer references the `boss` block yet, and
+    the canon live encounter is deferred to the follow-up Niveau-Final story. Generation is
+    therefore prep, not urgent — sequence it AFTER N1's kontext tooling exists so the (bounded, 2
+    per set) batch budget buys 4 consistent poses, not 4 drifting ones.
+
+  ### Gate-2 defect watch-items — PRE-REGISTERED (bible §2 law 3 sweep, on real PNGs, contrasting bg)
+
+  These poses INVITE the exact defects the bible calls automatic FAILs; flagging now so the
+  ASSET GATE and Serge's technical pass check them explicitly (their mechanical PASS won't bind):
+  - **W-a (EXPOSED):** lunge + knee-length coat "flaring open" over separated legs → the courier
+    "legs-detached-from-hips" precedent: an enclosed region between legs/coat that the keyer can
+    punch to a hole. Read on a contrasting bg; do not accept the auto-key.
+  - **W-b (HIT):** "cap tipping off his head" risks a fully airborne DETACHED disc (a called-out
+    defect) + a bg enclave between cap and scalp. Prefer a cap "sliding off, still just in
+    contact" over free-floating; verify at game size.
+  - **W-c (DOWN):** prone-on-black in a projection that BREAKS the roster's frontal "facing
+    forward" view (the subject rightly drops that token) + no ground plane in the black-ground
+    convention → highest perspective-incoherence + baked-ground/shadow risk of the four; confirm
+    the "à terre" read survives at game size, no cast shadow bleeds into the key. Cap + dropped
+    pistol are separate islands post-key — flavour, not silhouette-load-bearing; the load-bearing
+    read is the sprawled long-coat heap.
+
+  ### Answer to Maud's Q2 — style-direction timing: RATIFIED (SNES-live now, pochoir in lockstep)
+
+  Copy the live tail verbatim NOW; migrate to the gated pochoir direction IN LOCKSTEP with the
+  whole roster, never fork it for the boss alone. Correct per §2 law 2: the pochoir tail (PASS'd
+  for enemies 2026-07-18) is blocked on keying/liseré and is NOT yet in levelArt.json for ANY
+  roster member — a lone pochoir boss over a SNES roster = an off-family asset = FAIL of the set.
+  The byte-identity I verified (N above) is what makes the lockstep mechanically clean: one
+  find-replace across enemies/hostages/boss migrates all three together.
+
+  ### Answer to Maud's Q3 — deferred optional poses: CONFIRM DEFER, but CORRECT the mechanism
+  - **CONFIRM** deferral of `telegraph-windup` and `per-phase posture` for V1 — the 4 core poses
+    are all V1's non-shipped harness needs (pm §5), no run should produce them now.
+  - **CORRECT the proposed render-side mechanism for per-phase posture.** The UX spec
+    (`docs/game-design/ux/spec-boss-qte-hp-read.md` D1.1/D1.3, acceptance A1) makes the
+    phase-1→2→3 damage escalation a **greyscale-rankable, silhouette-only** legibility
+    requirement ("not colour alone"). A render-side TINT does not change silhouette and dies in
+    greyscale; SCALE does not read as "more damaged" — so **render tint/scale CANNOT satisfy the
+    per-phase posture requirement.** When the live encounter ships (follow-up story), per-phase
+    posture must be **distinct posture SPRITES** (torn clothing / more hunched / more strained),
+    or the UX A1 requirement is renegotiated with `ux-designer`. Render-side IS the right home
+    for (i) the D2.1 phase-break PULSE cue (a non-diegetic screen flash — UX already spec'd it
+    render-side, subject to my Gate-4 §2.1 falloff check when it lands) and (ii) `telegraph-windup`
+    timing for V1 — with the caveat that a live windup readable only via tint would fail
+    "not colour alone" + the §5.6 anti-bullshit floor and likely wants its own pose eventually.
+  - Route the per-phase-posture mechanism to a `lead-art` ↔ `ux-designer` ↔ `dev-r3f-render`
+    reconciliation when the Niveau-Final follow-up story opens — NOT resolved by burning runs now.
+
+- handoff → `concept-artist` (Maud): PASS-WITH-CORRECTIONS. Prompt STRINGS are gated as-is (no
+  rewrite required); the corrections are pipeline (N1/N2) and downstream-scope (Q3) items, not
+  string edits. If you want to pre-empt W-b, a one-clause softening of `commander_hit`'s cap
+  ("sliding off, still touching his head") is welcome and would come back for a trivial re-PASS.
+- handoff → `dev-tooling-assets`: N1 (kontext-from-hero SHIELDED generator before any run) + N2
+  (sequence generation after tooling, respect the 2-batch cap) + own the block structure/keys/
+  paths/size/seeds + the EXPOSED `muzzle` anchor (tuned at Gate 2, as with enemies).
+- handoff → `dev-tooling-assets` / `game-graphist` (Serge): carry W-a/W-b/W-c into the ASSET
+  GATE + technical-pass sweep on the real PNGs (contrasting bg, game size) — mechanical
+  `check-sprite-integrity.mjs` PASS does not bind my eye; ASSET GATE (Gate 2) still OWED.
+- handoff → `ux-designer` (Tony) / `dev-r3f-render` (Amelia): Q3 per-phase-posture mechanism
+  correction (distinct sprites, not tint/scale) for the follow-up live-encounter story; the
+  phase-break pulse is a Gate-4 composite item (my §2.1 falloff verdict owed on real screenshots).
+- NOTE — GATES STILL OWED (not covered by this PASS): ASSET GATE (Gate 2) on the keyed PNGs, and
+  COMPOSITE GATE (Gate 4) on the render-side phase-break pulse. This gate covered PROMPTS only.
