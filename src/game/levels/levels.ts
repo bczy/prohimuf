@@ -103,7 +103,11 @@ export const LEVELS: readonly LevelConfig[] = [
     hostageQte: {
       triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,
-      anchor: { x: 0, y: -5 },
+      // x nudged off the origin: the ADR-0048 tronçon layout leaves a between-
+      // building sky gap exactly at world x=0, which put a black void behind the
+      // captor at the ×2.4 zoom. 9.9 = troncon-b's tile centre, so the tableau
+      // reads against a facade (playtest note, PR #76).
+      anchor: { x: 9.9, y: -5 },
       maxBlownPeeks: 4,
       peekCadenceSeconds: 1.5,
       // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents

@@ -210,12 +210,42 @@ function resolveLevelArtId(levelId: string): string {
  */
 export function levelLayerPaths(levelId: string): readonly string[] {
   const id = resolveLevelArtId(levelId);
+  const lvl = levelArt.levels.find((l) => l.id === id) as
+    | { backdrop?: { mode?: string; tiles?: readonly { file: string }[] } }
+    | undefined;
+  // Tronçon-sequence levels (ADR-0048) render their tile PNGs + the continuous
+  // ground strip — warm THOSE, not the sky/facade/street trio the tronçon path
+  // never draws (which would let the gate open onto fallback-colour planes and
+  // the whole street pop in mid-play on a slow connection).
+  if (lvl?.backdrop?.mode === "troncon-sequence") {
+    const tiles = lvl.backdrop.tiles ?? [];
+    return dedupe([
+      ...tiles.map((t) => `assets/levels/${id}/${t.file}.png`),
+      `assets/levels/${id}/ground.png`,
+    ]);
+  }
   return BACKDROP_LAYERS.map((layer) => `assets/levels/${id}/${layer}.png`);
 }
 
 /** Base-relative facade backdrop (mirrors FacadeBackground). */
 export function facadeBackdropPath(): string {
   return "assets/facade_bg.png";
+}
+
+/**
+ * The code-drawn near-foreground props (ADR-0047) a level declares, as synthetic
+ * `nearfg:<kind>` manifest entries so the loading gate warms their shared textures
+ * (there is no PNG on disk — warmAssets builds the CanvasTexture for this scheme).
+ * De-duplicated; empty for a level that opts out (no `nearForeground` field).
+ */
+export function nearForegroundPaths(levelId: string): readonly string[] {
+  const id = resolveLevelArtId(levelId);
+  const lvl = levelArt.levels.find((l) => l.id === id) as
+    | { nearForeground?: { objects: readonly { kind: string }[] } }
+    | undefined;
+  const objects = lvl?.nearForeground?.objects;
+  if (objects === undefined) return [];
+  return dedupe(objects.map((o) => `nearfg:${o.kind}`));
 }
 
 /** Base-relative gameplay audio warmed by the level loader. ONLY committed files:
@@ -277,6 +307,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
     ...levelLayerPaths(target),
     ...enemyAssetPathsFor(target),
     ...courierAssetPaths(),
+    ...nearForegroundPaths(target),
   ];
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));

@@ -102,5 +102,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0044](./0044-adhoc-reference-conditioned-asset-iteration.md) | Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference) | Accepted |
 | [0045](./0045-embedded-ofl-webfonts.md) | Embedded self-hosted OFL webfonts via a single `FONT` token | Accepted |
 | [0046](./0046-render-css-modules-and-token-bridge.md) | Render-layer CSS Modules + tokens.ts→CSS-var bridge; hud-css skill | Accepted |
+| [0047](./0047-near-foreground-parallax-layer.md) | Near-foreground differential-parallax décor layer | Proposed |
+| [0048](./0048-troncon-sequence-backdrop-mode.md) | Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2) | Proposed |
 
 <!-- ADR-INDEX:END -->

@@ -64,8 +64,13 @@ export interface LevelArtParallax {
   readonly street: number;
 }
 
-/** Code-drawn foreground ironwork style, matched to each level's architecture. */
-export type IronworkStyle = "haussmann" | "plain" | "hlm";
+/**
+ * Code-drawn foreground ironwork style. `haussmann`/`plain`/`hlm` are the
+ * per-level architectural registers (manifest `ironwork` field); `artdeco` and
+ * `croix` are extra wrought-iron variants used only render-side to vary the
+ * railing per building on multi-building tronçons (never declared per level).
+ */
+export type IronworkStyle = "haussmann" | "plain" | "hlm" | "artdeco" | "croix";
 
 /** A single hand-placed window, normalized to the facade image (centre + size, y-down). */
 export interface WindowZone {
@@ -82,11 +87,57 @@ export interface WindowRows {
   readonly rows: readonly { readonly y: number; readonly xs: readonly number[] }[];
 }
 
+/** A near-foreground silhouette prop that scrolls faster than the street (ADR-0047). */
+export type NearForegroundKind =
+  | "parkingMeter"
+  | "lamppost"
+  | "wallaceFountain"
+  | "trafficLight"
+  | "bollard"
+  | "scooter"
+  | "bench"
+  | "streetSign";
+
+export interface NearForegroundObject {
+  readonly kind: NearForegroundKind;
+  /** Anchor x in full-street normalized units (0 = left edge of the street, 1 = right edge). */
+  readonly x: number;
+  readonly scale?: number; // default 1
+  /** Which kerb the prop stands on: "near" (front, big, fast) or "far" (back of
+   *  the road, small, slow). Defaults to "near". */
+  readonly row?: "near" | "far";
+}
+
+export interface NearForegroundLayer {
+  /** Engine parallax factor (NEGATIVE). mesh.x = camera.x * factor; screen speed S = 1 - factor. */
+  readonly factor: number;
+  readonly objects: readonly NearForegroundObject[];
+}
+
+/** One tile of a tronçon-sequence backdrop: an image basename + its native
+ *  aspect (image width/height), which drives the tile's world width. */
+export interface BackdropTileSpec {
+  readonly file: string;
+  readonly aspect: number;
+}
+
+/**
+ * How a level composes its backdrop (ADR-0048). Absent on a level ⇒
+ * `single-facade`: the classic {@link PANELS} equal-width `facade.png` panels.
+ * `troncon-sequence`: a fixed, deterministic sequence of distinct
+ * variable-width tronçon images laid side by side.
+ */
+export type BackdropDescriptor =
+  | { readonly mode: "single-facade" }
+  | { readonly mode: "troncon-sequence"; readonly tiles: readonly BackdropTileSpec[] };
+
 export interface LevelArt {
   readonly id: string;
   readonly name: string;
   readonly label: string;
   readonly parallax: LevelArtParallax;
+  /** How the backdrop is composed (ADR-0048); absent ⇒ single-facade. */
+  readonly backdrop?: BackdropDescriptor;
   /** Which code-drawn foreground ironwork to render; defaults to "haussmann". */
   readonly ironwork?: IronworkStyle;
   /**
@@ -101,6 +152,8 @@ export interface LevelArt {
   readonly windowGrid?: WindowGrid;
   /** Hand-authored window zones (level design); takes priority over windowGrid. */
   readonly windows?: WindowRows;
+  /** Near-foreground parallax layer (ADR-0047); absent = opt-out for this level. */
+  readonly nearForeground?: NearForegroundLayer;
 }
 
 const LEVELS = manifest.levels as readonly LevelArt[];
@@ -156,6 +209,66 @@ export function getIronworkSillOffset(id: string | undefined): number {
   return Math.min(0.6, Math.max(0, raw));
 }
 
+/** Allowed range for the near-foreground parallax factor (NEGATIVE, ADR-0047).
+ *  Widened so the near (front) row can drift clearly faster than the facade. */
+const NEAR_FOREGROUND_FACTOR_MIN = -0.5;
+const NEAR_FOREGROUND_FACTOR_MAX = -0.1;
+/** Safe fallback factor when the declared one is non-finite (slow end of band). */
+const NEAR_FOREGROUND_FACTOR_DEFAULT = NEAR_FOREGROUND_FACTOR_MAX;
+
+/**
+ * The near-foreground kinds accepted at runtime. The manifest is cast (untyped
+ * JSON), so a typo like "carRof" would otherwise slip through the TS type and
+ * crash the render's `NEAR_KIND_SPECS[kind]` lookup — validate at the source.
+ */
+const NEAR_FOREGROUND_KINDS: readonly NearForegroundKind[] = [
+  "parkingMeter",
+  "lamppost",
+  "wallaceFountain",
+  "trafficLight",
+  "bollard",
+  "scooter",
+  "bench",
+  "streetSign",
+];
+
+const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
+  typeof kind === "string" && (NEAR_FOREGROUND_KINDS as readonly string[]).includes(kind);
+
+/**
+ * The near-foreground parallax layer for a level (ADR-0047), or `null` when the
+ * level opts out (no `nearForeground` field) or the id is unknown. Unlike
+ * {@link getLevelArt} this does NOT fall back to the first level: an unknown id
+ * yields null.
+ *
+ * Data is hardened at the source (the manifest is untyped JSON): `factor` is
+ * clamped to [-0.5, -0.1] — a non-finite value first falls back to a safe
+ * default so `NaN` cannot leak through the clamp. Objects with an unknown `kind`
+ * or a non-finite `x` are dropped; an object whose `scale` is present but
+ * non-positive or non-finite is normalized to `1`.
+ */
+export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
+  const art = id !== undefined ? LEVEL_ART[id] : undefined;
+  const layer = art?.nearForeground;
+  if (layer === undefined) return null;
+
+  const rawFactor = Number.isFinite(layer.factor) ? layer.factor : NEAR_FOREGROUND_FACTOR_DEFAULT;
+  const factor = Math.min(
+    NEAR_FOREGROUND_FACTOR_MAX,
+    Math.max(NEAR_FOREGROUND_FACTOR_MIN, rawFactor),
+  );
+
+  const objects = layer.objects
+    .filter((obj) => isNearForegroundKind(obj.kind) && Number.isFinite(obj.x))
+    .map((obj) =>
+      obj.scale === undefined || (Number.isFinite(obj.scale) && obj.scale > 0)
+        ? obj
+        : { ...obj, scale: 1 },
+    );
+
+  return { factor, objects };
+}
+
 /**
  * Hand-authored window zones for a level (normalized, y-down). Uses the
  * explicit `windows` layout when declared, otherwise expands the parametric
@@ -190,7 +303,7 @@ export function tileZones(zones: readonly WindowZone[], panels: number = PANELS)
 
 /** Per-panel window zones derived from each facade panel's art (see
  *  scripts/gen-window-zones.mjs), keyed by level id. */
-const GENERATED_ZONES = generatedZones as Readonly<
+const GENERATED_ZONES = generatedZones as unknown as Readonly<
   Record<string, readonly (readonly WindowZone[])[]>
 >;
 
@@ -245,4 +358,119 @@ export function computeLevelSlots(
   facadeH: number,
 ): WindowSlot[] {
   return computeSlotsFromZones(getWindowZones(id), facadeW, facadeH);
+}
+
+/** World width of one single-facade panel (height × facade aspect). */
+const PANEL_WIDTH = WORLD_HEIGHT * FACADE_ASPECT;
+
+/**
+ * Per-tronçon generated window zones (troncon-sequence, ADR-0048), keyed
+ * `${levelId}/${tile.file}`. This is a FLAT view of the same generated map as
+ * {@link GENERATED_ZONES} (double-cast through `unknown`: the per-tronçon
+ * entries are a single zone list, not the per-panel array-of-arrays of the
+ * legacy level-id keys, and the two key namespaces never collide — level-id
+ * keys carry no `/`). Phase-1 these keys are ABSENT (the generator adds them
+ * later); {@link getBackdropLayout} then falls back to {@link getWindowZones}.
+ */
+const GENERATED_TRONCON_ZONES = generatedZones as unknown as Readonly<
+  Record<string, readonly WindowZone[]>
+>;
+
+/** One composed backdrop tile: an image, its world width and centre, plus the
+ *  window zones normalized to THIS tile's own width (0..1, y-down). */
+export interface BackdropTile {
+  readonly file: string;
+  readonly width: number;
+  readonly centreX: number;
+  readonly zones: readonly WindowZone[];
+}
+
+/** The pure geometric composition of a level's backdrop (ADR-0048). Contains
+ *  NO draw-scale / feather / blend — those stay render-side, applied per mode. */
+export interface BackdropLayout {
+  readonly mode: "single-facade" | "troncon-sequence";
+  readonly fullW: number;
+  readonly tiles: readonly BackdropTile[];
+}
+
+/**
+ * World-unit gap of sky left BETWEEN adjacent tronçons (ADR-0048). The tronçon
+ * PNGs now carry their OWN transparent L/R margins (the buildings never touch the
+ * image edge), so butting the tiles (gap 0) already leaves a sky gap of the two
+ * neighbours' margins combined — through which the owner-supplied parallax sky
+ * shows above and the continuous ground layer shows below. Kept as a tunable knob
+ * for any extra spacing on top of the baked-in margins.
+ */
+export const TRONCON_GAP = 0;
+
+/** Compose a troncon-sequence backdrop: variable-width tiles laid left→right
+ *  with a {@link TRONCON_GAP} sky gap between neighbours, centred on the origin,
+ *  each carrying its own (per-tronçon or fallback) zones. */
+function buildTronconLayout(id: string, tiles: readonly BackdropTileSpec[]): BackdropLayout {
+  const widthsSum = tiles.reduce((sum, t) => sum + WORLD_HEIGHT * t.aspect, 0);
+  const fullW = widthsSum + TRONCON_GAP * Math.max(0, tiles.length - 1);
+  const fallbackZones = getWindowZones(id);
+  const out: BackdropTile[] = [];
+  let cursor = -fullW / 2;
+  for (const tile of tiles) {
+    const width = WORLD_HEIGHT * tile.aspect;
+    const centreX = cursor + width / 2;
+    cursor += width + TRONCON_GAP;
+    const zones = GENERATED_TRONCON_ZONES[`${id}/${tile.file}`] ?? fallbackZones;
+    out.push({ file: tile.file, width, centreX, zones });
+  }
+  return { mode: "troncon-sequence", fullW, tiles: out };
+}
+
+/**
+ * The pure, deterministic backdrop layout for a level (ADR-0048). Single grid
+ * abstraction for both modes:
+ * - single-facade (default): {@link PANELS} equal-width `facade` tiles of width
+ *   {@link PANEL_WIDTH}, centred on the origin, each carrying its panel's zones
+ *   ({@link getLevelPanelZones}). Provably byte-identical to the legacy
+ *   `tilePanelZones → computeSlotsFromZones` slots (see backdropLayout tests).
+ * - troncon-sequence: the manifest's fixed variable-width tiles (see
+ *   {@link buildTronconLayout}).
+ */
+export function getBackdropLayout(id: string | undefined): BackdropLayout {
+  const art = getLevelArt(id);
+  const backdrop = art.backdrop;
+  if (backdrop?.mode === "troncon-sequence") {
+    return buildTronconLayout(art.id, backdrop.tiles);
+  }
+  const panelZones = getLevelPanelZones(art.id);
+  const tiles: BackdropTile[] = [];
+  for (let p = 0; p < PANELS; p++) {
+    tiles.push({
+      file: "facade",
+      width: PANEL_WIDTH,
+      centreX: (p - (PANELS - 1) / 2) * PANEL_WIDTH,
+      zones: panelZones[p] ?? [],
+    });
+  }
+  return { mode: "single-facade", fullW: PANEL_WIDTH * PANELS, tiles };
+}
+
+/**
+ * Enemy window slots in world space, derived from {@link getBackdropLayout}.
+ * Each tile-local zone `(x,y,w,h)` maps to world
+ * `x = centreX + (x−0.5)·width`, `y = (0.5−y)·facadeH`,
+ * `size = (w·width, h·facadeH)`. Replaces the
+ * `tilePanelZones → computeSlotsFromZones` chain for callers.
+ */
+export function computeBackdropSlots(id: string | undefined, facadeH: number): WindowSlot[] {
+  const layout = getBackdropLayout(id);
+  const slots: WindowSlot[] = [];
+  let col = 0;
+  for (const tile of layout.tiles) {
+    for (const z of tile.zones) {
+      slots.push({
+        col: col++,
+        row: 0,
+        screenPosition: { x: tile.centreX + (z.x - 0.5) * tile.width, y: (0.5 - z.y) * facadeH },
+        size: { x: z.w * tile.width, y: z.h * facadeH },
+      });
+    }
+  }
+  return slots;
 }

@@ -45,7 +45,7 @@ import {
 } from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
-const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
+const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://localhost:5173/prohimuf/";
 const OUT_DIR = path.resolve(ROOT, "screenshots");
 const SHOT = path.join(OUT_DIR, "e2e-home.png");
 

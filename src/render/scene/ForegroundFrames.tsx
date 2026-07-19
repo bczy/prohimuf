@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { CanvasTexture, LinearMipmapLinearFilter } from "three";
 import type { IronworkStyle, WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
-import { drawForegroundIronwork } from "./foregroundArt";
+import { drawForegroundIronwork, drawForegroundIronworkPerBuilding } from "./foregroundArt";
 import { FACADE_DRAW_SCALE } from "./facadeLayout";
 
 // Frame texture resolution: 2× the native facade art (1280×768) so the
@@ -13,16 +13,20 @@ const TEX_W = 2560;
 const TEX_H = 1536;
 
 /**
- * Build a transparent overlay texture: for each window zone, the level's
- * code-drawn foreground ironwork in the given {@link IronworkStyle}. Drawn in
- * facade-image space (y-down) so it lines up with the zones the cops sit in. The
- * actual drawing lives in {@link drawForegroundIronwork} so it can be reused by
- * offline preview scripts.
+ * Build a transparent overlay texture: for each window zone, the code-drawn
+ * foreground ironwork. Drawn in facade-image space (y-down) so it lines up with
+ * the zones the cops sit in. The actual drawing lives in {@link drawForegroundIronwork}
+ * so it can be reused by offline preview scripts. When `varyPerBuilding` is set,
+ * the tile's zones are clustered into buildings and each building gets its own
+ * wrought-iron style (multi-building tronçons); otherwise a single uniform
+ * {@link IronworkStyle} is drawn.
  */
 function buildFrameTexture(
   zones: readonly WindowZone[],
   style: IronworkStyle,
   sillOffset: number,
+  varyPerBuilding: boolean,
+  tileIndex: number,
 ): CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
@@ -31,7 +35,11 @@ function buildFrameTexture(
   const g = canvas.getContext("2d");
   if (g === null) return null;
 
-  drawForegroundIronwork(g, zones, TEX_W, TEX_H, style, sillOffset);
+  if (varyPerBuilding) {
+    drawForegroundIronworkPerBuilding(g, zones, TEX_W, TEX_H, style, sillOffset, tileIndex);
+  } else {
+    drawForegroundIronwork(g, zones, TEX_W, TEX_H, style, sillOffset);
+  }
 
   const tex = new CanvasTexture(canvas);
   applyPixelFilter(tex);
@@ -52,6 +60,20 @@ interface Props {
   style: IronworkStyle;
   /** Per-level drop of the railing base below the opening (fraction of zone height). */
   sillOffset: number;
+  /**
+   * Horizontal draw-scale of the facade plane this overlay tracks (ADR-0048).
+   * Defaults to {@link FACADE_DRAW_SCALE} (the single-facade panel stretch);
+   * tronçon tiles pass 1 (drawn at native width, no feather/stretch).
+   */
+  drawScale?: number;
+  /**
+   * When set, cluster this tile's zones into buildings by x-gap and draw a
+   * different wrought-iron style per building (multi-building tronçons). Off ⇒
+   * the whole tile draws in the single `style` (unchanged single-facade levels).
+   */
+  varyPerBuilding?: boolean;
+  /** Backdrop-tile index — deterministic seed so repeated tronçon images vary. */
+  tileIndex?: number;
 }
 
 /**
@@ -64,10 +86,13 @@ export function ForegroundFrames({
   facadeH,
   style,
   sillOffset,
+  drawScale = FACADE_DRAW_SCALE,
+  varyPerBuilding = false,
+  tileIndex = 0,
 }: Props): JSX.Element | null {
   const texture = useMemo(
-    () => buildFrameTexture(zones, style, sillOffset),
-    [zones, style, sillOffset],
+    () => buildFrameTexture(zones, style, sillOffset, varyPerBuilding, tileIndex),
+    [zones, style, sillOffset, varyPerBuilding, tileIndex],
   );
   // Free the GPU texture (~16 MB per panel at 2×) when zones/style change or
   // the scene unmounts — R3F does not dispose prop-passed textures.
@@ -79,11 +104,12 @@ export function ForegroundFrames({
   }, [texture]);
   if (texture === null) return null;
   return (
-    // Scale the overlay plane by FACADE_DRAW_SCALE about the panel-group origin
-    // so the railings track the facade image (drawn at the same 1+BLEND stretch)
-    // pixel-for-pixel; the texture content (zone → texture-x) is untouched.
+    // Scale the overlay plane by `drawScale` about the tile-group origin so the
+    // railings track the facade image (drawn at the same stretch) pixel-for-pixel;
+    // the texture content (zone → texture-x) is untouched. Single-facade panels
+    // stretch by 1+BLEND; tronçon tiles pass 1 (native width, no feather).
     <mesh position={[0, 0, 0.5]} renderOrder={5}>
-      <planeGeometry args={[facadeW * FACADE_DRAW_SCALE, facadeH]} />
+      <planeGeometry args={[facadeW * drawScale, facadeH]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
   );

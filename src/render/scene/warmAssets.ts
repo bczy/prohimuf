@@ -12,6 +12,12 @@ import { Howl } from "howler";
 import { warmEnemyTexture } from "./enemyTextures";
 import { warmCourierTexture } from "./courierTextures";
 import { preloadVehicle } from "./DeliveryVehicleSprite";
+import { warmNearForegroundTexture } from "./nearForegroundTextures";
+
+// Synthetic manifest scheme for the code-drawn near-foreground props (ADR-0047):
+// they have no PNG on disk, so the manifest lists them as `nearfg:<kind>` and the
+// gate builds the shared CanvasTexture instead of fetching a URL.
+const NEAR_FG_PREFIX = "nearfg:";
 
 // Everything else (facades, sky/street parallax, narrative art, the menu
 // backdrop): just prime the browser's HTTP/image cache. `decode()` finishes when
@@ -52,6 +58,11 @@ function warmAudio(url: string): Promise<void> {
 // under their own subdirectories, so they are matched before the generic enemy
 // prefix. ALWAYS resolves.
 export function warm(path: string): Promise<void> {
+  // Code-drawn props: build the shared texture, no URL fetch (must precede the
+  // BASE_URL prefixing below, which only makes sense for real file paths).
+  if (path.startsWith(NEAR_FG_PREFIX)) {
+    return warmNearForegroundTexture(path.slice(NEAR_FG_PREFIX.length));
+  }
   const url = `${import.meta.env.BASE_URL}${path}`;
   if (path.startsWith("assets/vehicles/")) return preloadVehicle(url);
   if (path.startsWith("assets/courier/")) return warmCourierTexture(url);

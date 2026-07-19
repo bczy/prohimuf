@@ -1,11 +1,11 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { TextureLoader, CanvasTexture } from "three";
+import { TextureLoader, CanvasTexture, RepeatWrapping } from "three";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
-import { getLevelArt, levelLayerUrl } from "@game/levels/levelArt";
+import { getBackdropLayout, getLevelArt, levelLayerUrl, WORLD_HEIGHT } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
-import { BLEND } from "./facadeLayout";
+import { BLEND, backdropPanes } from "./facadeLayout";
 
 // Fallback solid colours shown until (or instead of) the generated art loads,
 // so the game still renders during local dev before any AI assets exist.
@@ -14,6 +14,15 @@ const FALLBACK = {
   facade: "#2a2840",
   street: "#14121f",
 } as const;
+
+/** Public URL of a backdrop tile image (respects Vite base path). `levelLayerUrl`
+ *  only knows the fixed {@link LayerName}s; tronçon tiles are arbitrary basenames
+ *  under the same `assets/levels/<id>/` folder (ADR-0048). For a single-facade
+ *  pane (`file === "facade"`) this resolves to the exact same URL as
+ *  `levelLayerUrl(id, "facade")`. */
+function tileUrl(id: string, file: string): string {
+  return `${import.meta.env.BASE_URL}assets/levels/${id}/${file}.png`;
+}
 
 // Copy an image to a canvas and ramp its left-edge alpha from 0→1 over `frac`
 // of the width, returning a pixel-filtered texture (null in non-DOM contexts).
@@ -41,36 +50,49 @@ function featherLeftTexture(img: HTMLImageElement, frac: number): Texture | null
 
 interface Props {
   levelId: string | undefined;
-  /** Width of a single facade panel in world units. */
-  panelW: number;
   /** Facade height in world units. */
   facadeH: number;
-  /** Number of facade panels placed side by side. */
-  panels: number;
 }
 
 /**
- * Renders a level as a wide street: one parallaxing sky behind N distinct
- * facade panels laid side by side (each its own image, world-locked). Panels
- * overlap slightly and crossfade at the edges so the joins are invisible.
+ * Renders a level as a wide street over one parallaxing sky (ADR-0048). The
+ * backdrop composition is driven by {@link getBackdropLayout}:
+ *
+ * - `single-facade` (stalingrad, vitry): N equal-width panels all loading the
+ *   same `facade.png`, each drawn `1+BLEND` wide and its left edge alpha-feathered
+ *   so the seams crossfade invisibly (the classic path, unchanged).
+ * - `troncon-sequence` (belliard): one world-locked plane PER tile at its native
+ *   width, loading a distinct transparent tronçon PNG — NO feather, so the
+ *   parallax sky shows through the rooflines and between-building gaps as real
+ *   transparency. The street band still shows through the transparent gaps.
+ *
+ * Only the sky parallaxes; facade/street planes are world-locked so the enemy
+ * slots and railings (placed off the same layout in `GameScene`) stay aligned.
  */
-export const LevelBackdrop = memo(function LevelBackdrop({
-  levelId,
-  panelW,
-  facadeH,
-  panels,
-}: Props): JSX.Element {
+export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: Props): JSX.Element {
   const art = getLevelArt(levelId);
+  const layout = useMemo(() => getBackdropLayout(levelId), [levelId]);
+  const panes = useMemo(() => backdropPanes(layout), [layout]);
+  const fullW = layout.fullW;
+  const featherFrac = BLEND / (1 + BLEND); // overlap as a fraction of the draw width
+
+  // Tronçon backdrops decompose the ground into a SEPARATE continuous layer
+  // (the tronçon PNGs are buildings-only, cut at the street line): one strip of
+  // trottoir+road spanning the whole street so the road is unbroken under the
+  // between-building sky gaps (ADR-0048). The tronçon art is cut at this fraction
+  // of image height, so the ground layer's top sits at the matching world y.
+  const isTroncon = layout.mode === "troncon-sequence";
+  const STREET_LINE_FRAC = 0.864;
+  const GROUND_TILE_W = WORLD_HEIGHT * 1.4992; // one ground.png = tronçon-a's native (pre-pad) width
+  const groundTopY = facadeH * (0.5 - STREET_LINE_FRAC);
+  const groundH = facadeH * 0.42;
+  const groundY = isTroncon ? groundTopY - groundH / 2 : -facadeH * 0.62;
+  const groundPlaneH = isTroncon ? groundH : facadeH * 0.9;
 
   const skyRef = useRef<Mesh>(null);
   const facadeRefs = useRef<(Mesh | null)[]>([]);
-  const streetRefs = useRef<(Mesh | null)[]>([]);
+  const streetRef = useRef<Mesh>(null);
   const { camera } = useThree();
-
-  const fullW = panelW * panels;
-  const panelDrawW = panelW * (1 + BLEND); // widened so neighbours overlap
-  const featherFrac = BLEND / (1 + BLEND); // overlap as a fraction of the draw width
-  const offsetX = (p: number): number => (p - (panels - 1) / 2) * panelW;
 
   useEffect(() => {
     const loader = new TextureLoader();
@@ -82,14 +104,15 @@ export const LevelBackdrop = memo(function LevelBackdrop({
       mat.color.set("#ffffff");
       mat.needsUpdate = true;
     };
-    // Facade panels: feather the left edge of every panel after the first so it
-    // crossfades over its neighbour.
-    const assignFacade = (ref: Mesh | null, texture: Texture, p: number): void => {
+    // Facade planes: feather the left edge only when the pane asks for it (the
+    // interior single-facade panels), so those seams crossfade over their
+    // neighbour. Tronçon tiles never feather — their seam is a transparent gap.
+    const assignFacade = (ref: Mesh | null, texture: Texture, feather: boolean): void => {
       if (ref === null) return;
       const mat = ref.material as MeshBasicMaterial;
       const image = texture.image as HTMLImageElement | undefined;
       const tex =
-        p > 0 && image !== undefined
+        feather && image !== undefined
           ? (featherLeftTexture(image, featherFrac) ?? applyPixelFilter(texture))
           : applyPixelFilter(texture);
       mat.map = tex;
@@ -98,80 +121,107 @@ export const LevelBackdrop = memo(function LevelBackdrop({
       mat.needsUpdate = true;
     };
 
-    loader.load(
-      levelLayerUrl(art.id, "sky"),
-      (t) => {
-        assignPlain(skyRef.current, t);
-      },
-      undefined,
-      () => undefined,
-    );
-
-    for (let p = 0; p < panels; p++) {
-      // All panels share the SAME facade image so the (single) window-zone grid
-      // — used for cop spawns and the foreground ironwork — lines up on every
-      // panel. A Haussmann terrace is repetitive, so the repeat reads naturally;
-      // the left-edge feather still crossfades each seam.
+    // Sky layer: single-facade loads its sky.png; tronçon mode leaves the sky
+    // layer EMPTY (no image) on purpose — the mesh + parallax are kept so an
+    // owner-supplied sky can be dropped in later, but nothing is drawn now, so
+    // the between-building gaps and the area above the rooflines show through to
+    // the canvas background (ADR-0048).
+    if (!isTroncon) {
       loader.load(
-        levelLayerUrl(art.id, "facade"),
+        levelLayerUrl(art.id, "sky"),
         (t) => {
-          assignFacade(facadeRefs.current[p] ?? null, t, p);
-        },
-        undefined,
-        () => undefined,
-      );
-      loader.load(
-        levelLayerUrl(art.id, "street"),
-        (t) => {
-          assignPlain(streetRefs.current[p] ?? null, t);
+          assignPlain(skyRef.current, t);
         },
         undefined,
         () => undefined,
       );
     }
-  }, [art.id, panels, featherFrac]);
 
-  // Only the sky parallaxes; facade/street panels are world-locked so they tile.
+    panes.forEach((pane, i) => {
+      loader.load(
+        tileUrl(art.id, pane.file),
+        (t) => {
+          assignFacade(facadeRefs.current[i] ?? null, t, pane.feather);
+        },
+        undefined,
+        () => undefined,
+      );
+    });
+    // Street band texture, per mode. Tronçon: the continuous ground strip
+    // (trottoir+road), tiled horizontally so the road reads unbroken under the
+    // between-building sky gaps — NOT street.png, whose centred zebra crossing
+    // (belliard's QTE overhead road) would peek through the gap at world x=0.
+    // Single-facade: the classic per-level street.png backdrop art, exactly as
+    // before ADR-0048 (stalingrad/vitry's street art is genuine backdrop, not a
+    // QTE view — dropping it flattened their pavement band to a dark rectangle).
+    if (isTroncon) {
+      loader.load(
+        tileUrl(art.id, "ground"),
+        (t) => {
+          const ref = streetRef.current;
+          if (ref === null) return;
+          t.wrapS = RepeatWrapping;
+          t.repeat.set(Math.max(1, Math.round(fullW / GROUND_TILE_W)), 1);
+          applyPixelFilter(t);
+          const mat = ref.material as MeshBasicMaterial;
+          mat.map = t;
+          mat.color.set("#ffffff");
+          mat.needsUpdate = true;
+        },
+        undefined,
+        () => undefined,
+      );
+    } else {
+      loader.load(
+        levelLayerUrl(art.id, "street"),
+        (t) => {
+          assignPlain(streetRef.current, t);
+        },
+        undefined,
+        () => undefined,
+      );
+    }
+  }, [art.id, panes, featherFrac, isTroncon, fullW, GROUND_TILE_W]);
+
+  // Only the sky parallaxes; facade/street planes are world-locked so they tile.
   useFrame(() => {
     if (skyRef.current) skyRef.current.position.x = camera.position.x * art.parallax.sky;
   });
 
-  const panelIdx = Array.from({ length: panels }, (_, p) => p);
-
   return (
     <>
-      {/* Sky — one wide plane, farthest, drifts slowest */}
-      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]}>
+      {/* Sky — one wide plane, farthest, drifts slowest. Single-facade shows its
+          sky.png; tronçon mode keeps this layer but draws NOTHING (empty, owner
+          fills it later), so the gaps and above-roofline show the canvas behind. */}
+      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]} visible={!isTroncon}>
         <planeGeometry args={[fullW * 1.3, facadeH * 1.4]} />
         <meshBasicMaterial color={FALLBACK.sky} />
       </mesh>
 
-      {/* Street band — repeated behind the facade (only shows in gaps) */}
-      {panelIdx.map((p) => (
-        <mesh
-          key={`street-${String(p)}`}
-          ref={(m) => {
-            streetRefs.current[p] = m;
-          }}
-          position={[offsetX(p), -facadeH * 0.62, -2]}
-        >
-          <planeGeometry args={[panelW * 1.02, facadeH * 0.9]} />
-          <meshBasicMaterial color={FALLBACK.street} />
-        </mesh>
-      ))}
+      {/* Ground — ONE continuous plane behind the buildings spanning the whole
+          street. Tronçon mode textures it with the tiled trottoir+road strip and
+          anchors its top at the street line, so the road runs unbroken under the
+          between-building sky gaps (the buildings-only tronçons are cut here).
+          Single-facade keeps a plain dark band hidden behind its opaque panels. */}
+      <mesh ref={streetRef} position={[0, groundY, -2]}>
+        <planeGeometry args={[fullW * 1.02, groundPlaneH]} />
+        <meshBasicMaterial color={FALLBACK.street} />
+      </mesh>
 
-      {/* Facade — N panels side by side; overlap + left-edge crossfade hides the
-          joins. Drawn front-to-back by renderOrder so the feather blends. */}
-      {panelIdx.map((p) => (
+      {/* Facade — one world-locked plane per tile at its native width. Single-
+          facade panels are drawn 1+BLEND wide with a feathered left edge to hide
+          the seam; tronçon tiles draw at native width, transparent, letting the
+          sky show through. Drawn back-to-front by renderOrder. */}
+      {panes.map((pane, i) => (
         <mesh
-          key={`facade-${String(p)}`}
+          key={`facade-${String(i)}`}
           ref={(m) => {
-            facadeRefs.current[p] = m;
+            facadeRefs.current[i] = m;
           }}
-          position={[offsetX(p), 0, -1]}
-          renderOrder={p}
+          position={[pane.centreX, 0, -1]}
+          renderOrder={i}
         >
-          <planeGeometry args={[panelDrawW, facadeH]} />
+          <planeGeometry args={[pane.width * pane.drawScale, facadeH]} />
           <meshBasicMaterial color={FALLBACK.facade} transparent depthWrite={false} />
         </mesh>
       ))}

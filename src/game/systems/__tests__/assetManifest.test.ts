@@ -23,7 +23,9 @@ import {
 import levelArt from "@game/levels/levelArt.json";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
-const ASSET_RE = /^assets\/.+\.(png|jpg|webp|mp3|wav)$/;
+// Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
+// near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
+const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav)|nearfg:[a-zA-Z]+)$/;
 
 // Every level id we build a full manifest for, plus the two special targets.
 const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
@@ -104,13 +106,25 @@ describe("assetManifest — menu & tutorial", () => {
 describe("assetManifest — belliard level manifest", () => {
   const m = manifestFor("belliard");
 
-  it("contains the three backdrop layers in sky/facade/street order", () => {
+  it("warms the tronçon tiles + ground it actually renders (ADR-0048), in tile order", () => {
+    // belliard is a troncon-sequence level: the gate warms the tile PNGs (unique,
+    // manifest order) + the continuous ground strip — NOT the sky/facade/street
+    // trio the tronçon path never draws.
     expect(levelLayerPaths("belliard")).toEqual([
-      "assets/levels/belliard/sky.png",
-      "assets/levels/belliard/facade.png",
-      "assets/levels/belliard/street.png",
+      "assets/levels/belliard/troncon-a.png",
+      "assets/levels/belliard/troncon-c.png",
+      "assets/levels/belliard/troncon-b.png",
+      "assets/levels/belliard/ground.png",
     ]);
     for (const layer of levelLayerPaths("belliard")) expect(m).toContain(layer);
+  });
+
+  it("keeps the classic sky/facade/street trio for single-facade levels", () => {
+    expect(levelLayerPaths("stalingrad")).toEqual([
+      "assets/levels/stalingrad/sky.png",
+      "assets/levels/stalingrad/facade.png",
+      "assets/levels/stalingrad/street.png",
+    ]);
   });
 
   it("contains the truck vehicle, bullet, facade backdrop, menu backdrop and fallbacks", () => {
