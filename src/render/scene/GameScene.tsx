@@ -15,7 +15,7 @@ import {
 import type { WindowSlot } from "@game/types/map";
 import type { WindowZone } from "@game/levels/levelArt";
 import { ARCHETYPES } from "@game/types/enemyTypes";
-import type { HudData, HudDelivery, HudHostageQte } from "@render/ui/HUD";
+import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
@@ -113,6 +113,8 @@ interface Props {
   onDelivery?: (delivery: HudDelivery) => void;
   /** Surfaces hostage-taker QTE HUD state (gauges + warning) to the DOM HUD. */
   onHostageQte?: (qte: HudHostageQte | null) => void;
+  /** Surfaces boss-QTE HUD state (the "le Commandant" HP bar) to the DOM HUD. */
+  onBossQte?: (qte: HudBossQte | null) => void;
   /** Mobile mode (ADR-0003): touch controls + stronger zoom; replaces edge-scroll. */
   isMobile?: boolean;
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
@@ -129,6 +131,7 @@ export function GameScene({
   paused,
   onDelivery,
   onHostageQte,
+  onBossQte,
   isMobile = false,
   crt = false,
 }: Props): JSX.Element {
@@ -416,7 +419,7 @@ export function GameScene({
       />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
-      <BossQteSprite stateRef={stateRef} />
+      <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />

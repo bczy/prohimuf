@@ -13,6 +13,7 @@ import {
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
+import type { HudBossQte } from "@render/ui/HUD";
 
 // The boss QTE tableau — "le Commandant" (ADR-0051). A cinematic duel drawn at the
 // STATIC `qte.anchor` the camera zooms onto and holds (the ADR-0030 static-duel
@@ -99,6 +100,22 @@ function resolveBossTexture(firing: boolean): ResolvedEnemyTexture | null {
 
 interface Props {
   stateRef: React.RefObject<GameState>;
+  /**
+   * Surfaces the boss QTE's HUD-relevant slice (bossHp / bossHpMax / phaseCount) to the
+   * DOM HP bar (Bertrand's 2026-07-19 override of the diegetic-only §0 ruling). Fired only
+   * when those fields change (never per frame); `null` when the QTE is inactive/absent, so
+   * the bar renders null (no orphan HUD).
+   */
+  onBossQte?: ((qte: HudBossQte | null) => void) | undefined;
+}
+
+// The HUD-relevant slice, or null when inactive. Used both to emit and to detect change
+// without a per-frame React re-render (mirrors HostageQteSprite / DeliveryVehicleSprite).
+// bossHpMax / phaseCount are constant per encounter; bossHp is the only field that moves,
+// so a change is at most one emit per landed chip (bounded).
+function hudSliceKey(slice: HudBossQte | null): string {
+  if (slice === null) return "none";
+  return `${String(slice.bossHp)}:${String(slice.bossHpMax)}:${String(slice.phaseCount)}`;
 }
 
 /**
@@ -114,10 +131,13 @@ interface Props {
  * `prefers-reduced-motion` the phase-break pulse and the re-arm brace degrade to a
  * steady, non-strobing step (≤ 3 Hz — WCAG 2.3.1 / UX D3.1).
  */
-export function BossQteSprite({ stateRef }: Props): JSX.Element {
+export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
   const bossRef = useRef<Mesh>(null);
   const ringRef = useRef<Mesh>(null);
   const pulseRef = useRef<Mesh>(null);
+  // Last emitted HUD-slice key — surfaces the HP bar only when a field changes (bounded),
+  // no per-frame React re-render.
+  const lastKeyRef = useRef<string>("none");
   // Static placement flag (the commander never moves): reset when the QTE goes
   // inactive so a fresh encounter re-places from its own anchor.
   const positionedRef = useRef(false);
@@ -157,6 +177,18 @@ export function BossQteSprite({ stateRef }: Props): JSX.Element {
     const nowMs = performance.now();
     const qte = stateRef.current.bossQte;
     const active = isBossQteActive(qte);
+
+    // Surface the HUD slice only when a HP-relevant field changes (bounded), so the DOM
+    // HP bar updates without a per-frame React re-render. Null while inactive → bar hidden.
+    const slice: HudBossQte | null =
+      active && qte !== null
+        ? { bossHp: qte.bossHp, bossHpMax: qte.bossHpMax, phaseCount: qte.phaseCount }
+        : null;
+    const key = hudSliceKey(slice);
+    if (key !== lastKeyRef.current) {
+      lastKeyRef.current = key;
+      onBossQte?.(slice);
+    }
 
     if (!active || qte === null) {
       boss.visible = false;

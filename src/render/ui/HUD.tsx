@@ -9,11 +9,18 @@ import { DeliveryIntegrityBanner } from "./hud/DeliveryIntegrityBanner";
 import { HostageQteOverlay, isQteSetPieceVisible } from "./hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "./hud/PhaseMessageBanner";
+import { BossHpBar } from "./hud/BossHpBar";
 
 // HUD view types now live in ./hud/types (drops the type-only import cycle: widgets
 // import the shapes from there, not from this component). Re-exported so external
 // consumers keep importing them from `@render/ui/HUD` unchanged.
-export type { HudData, HudDelivery, HudHostageQte, HudTargetIndicator } from "./hud/types";
+export type {
+  HudData,
+  HudDelivery,
+  HudHostageQte,
+  HudBossQte,
+  HudTargetIndicator,
+} from "./hud/types";
 import type { HudData } from "./hud/types";
 
 /**
@@ -57,6 +64,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       <DeliveryIntegrityBanner delivery={data.delivery} />
 
       <HostageQteOverlay hostageQte={data.hostageQte} />
+
+      {/* Boss-QTE HP bar (ADR-0051) — only while the boss QTE holds the scene
+          (`bossQte` present); renders null otherwise (no orphan HUD). */}
+      <BossHpBar bossQte={data.bossQte} />
 
       <PhaseMessageBanner phase={data.phase} />
     </>

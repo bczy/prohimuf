@@ -429,6 +429,7 @@ export function App(): JSX.Element {
                 // Delivery / QTE state arrive on separate channels; keep across refreshes.
                 delivery: prev.delivery,
                 hostageQte: prev.hostageQte,
+                bossQte: prev.bossQte,
               }));
             }}
             onDelivery={(delivery) => {
@@ -436,6 +437,9 @@ export function App(): JSX.Element {
             }}
             onHostageQte={(hostageQte) => {
               setHudData((prev) => ({ ...prev, hostageQte: hostageQte ?? undefined }));
+            }}
+            onBossQte={(bossQte) => {
+              setHudData((prev) => ({ ...prev, bossQte: bossQte ?? undefined }));
             }}
             canvasRef={canvasRef}
             playSfx={audio.playSfx}
