@@ -756,3 +756,69 @@ LevelParams` mapping (`level.bossQteSpec → params.bossQte`) are YOURS/`dev-too
 **Owed at stage-5 (not contract blockers, per ADR gotchas):** the empirical K-5 `targetSeed` pin
 (harness seed is provisional but proven winnable structurally); ring-on-frame at the boss zoom (G6
 dropped ⇒ wider roam — the render/verify lanes' framing check on both device classes).
+
+## 10. DEV LANE — dev-r3f-render (Amelia) — 2026-07-19
+
+**STATUS: render lane DONE — all three checks green.** Wired the boss QTE tableau, generalised the
+shared QTE camera driver, added the phase-break cue and the dev-only harness seam. Consumed
+`dev-gameplay`'s §9 contract verbatim (no new `src/game` field; phase DERIVED via `phaseIndexAt`).
+`src/game` UNTOUCHED — the render lane holds no boss rule (boundary law).
+
+**Verification (local; deps installed, `yarn` fallback — `rtk` unavailable in sandbox):**
+
+- `yarn typecheck` (tsc, strict + `exactOptionalPropertyTypes`) → **exit 0**, clean.
+- `yarn test` (vitest, full suite) → **813 passed / 64 files, 0 failures** (no regression; render lane
+  adds no new game test — the pure contract is `dev-gameplay`'s, already green).
+- `yarn lint` (eslint) → **exit 0**, clean.
+
+**Delivered (File List):**
+
+- `src/render/scene/BossQteSprite.tsx` (NEW): the boss tableau drawn at the static `qte.anchor`
+  the camera holds. Runs on the **cop fallback sprite** (`resolveEnemyTexture("riot", …)`, gun-raised
+  shooting frame for EXPOSED) via a stance→texture indirection — the real 4-pose Commandant art is a
+  pure data swap at that one seam when the FLUX generator lands (lead-art §7 N1/N2 still blocking).
+  Reads consumed: `phase`/`stance`/`telegraphActive`/`phaseBreakRemaining`/`targetOffset`+`ringZone`/
+  `bossHp`+`bossHpMax`+`phaseCount`. Draws: the wandering weak-point RING (reuses the hostage
+  `ringZoneColour`/`ringZoneEmphasis` vocabulary — colour by anatomy zone + non-colour emphasis;
+  faint wind-up ring at `BOSS_WANDER_CENTRE` while `telegraphActive`); the per-hit reaction (recoil +
+  whiten keyed off a `bossHp` DROP only — off/miss 0-damage shots never fire it, UX D1.2); the
+  provisional per-phase hunch (UX D1.1 — flagged PROVISIONAL: lead-art §7 ruled the true
+  greyscale-rankable read needs distinct SPRITES, deferred to the live-encounter follow-up; the cop
+  fallback carries only an ordered stand-in).
+- **Phase-break cue (UX D2, the one genuinely-new render requirement):** a screen-level, non-diegetic
+  **pulse quad** (cool white, distinct from the alarm-red LOST strobe / green WON) pegged to the camera
+  and scaled to cover the view, fired ONE-SHOT at each break ONSET (rising edge on
+  `phaseBreakRemaining > 0`) — a cue that needs neither text nor duration-reading (the 1.0 s break is
+  SHORTER than phase-3's 1.2 s lull, D5). PLUS the distinct re-`SHIELDED` **brace** motion (D2.4): a
+  single dip-and-rise under motion, a held braced-lower posture under reduced motion. Reduced-motion
+  (`prefers-reduced-motion`) degrades pulse + brace to a steady, non-strobing step (≤ 3 Hz, WCAG 2.3.1
+  / D3.1) — mirrors the HostageQteSprite matchMedia precedent.
+- `src/hooks/useGameLoop.ts` (the SOLE game↔render bridge): generalised the QTE zoom driver to drive
+  on **EITHER** QTE active (`isQteActive(qte) || isBossQteActive(bossQte)`), reading the common
+  `{ anchor, phase, zoomRemaining, zoomSeconds }` shape — the boss exposes it identically, so
+  `qteCamera.ts` (`qtePose`/`qteZoomInProgress`) is reused **VERBATIM** (no change). Both freeze pans
+  (mobile inertial + pinch) are now gated on either QTE, exactly as they already were for the hostage.
+- `src/render/scene/GameScene.tsx`: mounts `<BossQteSprite>`; the desktop edge-scroll freeze now gates
+  on either QTE active too.
+- `src/render/scene/App.tsx`: the **dev-only harness reachability seam** (ADR-0051 D4) — `?preview=boss`
+  behind `import.meta.env.DEV` boots straight into `BOSS_QTE_DEV_HARNESS_LEVEL`. Production
+  (`DEV === false`) tree-shakes the branch ⇒ **no shipped menu path, no shipped player reaches the
+  required gate** (mirrors the ADR-0005 harness-window discipline). Also threaded
+  `bossQte: level.bossQteSpec ?? null` through `buildLevelParams` (additive; `null`/byte-identical on
+  every shipped level).
+
+**Boundary / discipline:** `HUD.tsx` UNTOUCHED (no boss HUD surface — UX §0 ruled diegetic-only; the
+pulse is an in-scene camera-space quad, so no new DOM/HUD channel was threaded). No game rule in the
+render; the only bridge remains `useGameLoop.ts`; phase is derived, never re-encoded (`phaseIndexAt`).
+
+**Owed at stage-5 (qa-lead / composite gate, per ADR gotchas — NOT my contract blockers):**
+ring-on-frame at the boss zoom on both device classes (G6 dropped ⇒ wider roam); the UX A1–A7 review
+of the built screens (A1 provisional on the fallback — real per-phase posture sprites are the
+follow-up story); lead-art's Gate-4 falloff verdict on the phase-break pulse on real screenshots.
+
+- handoff → `qa-lead` (Inès): stage-5 `verify` on `?preview=boss` (dev build) — ring framing + the
+  phase-break read (A3–A7) on desktop + mobile; the `bossQteSpec === null` byte-identity regression.
+- handoff → `lead-art` (Nico): the phase-break pulse is live render-side (Gate-4 §2.1 falloff owed on
+  real screenshots); per-phase posture is the provisional stand-in pending distinct sprites (§7 Q3).
+- handoff → `senior-architect` (Winston): render lane ready for the merge-gate panel — additive, one
+  bridge file touched (`useGameLoop.ts`), `src/game` untouched.

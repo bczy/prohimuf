@@ -24,7 +24,13 @@ import type { ManifestTarget } from "@game/systems/assetManifest";
 import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { loadUnlockedLevels, unlockLevel, LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import {
+  loadUnlockedLevels,
+  unlockLevel,
+  LEVELS,
+  FIRST_PLAYABLE_LEVEL,
+  BOSS_QTE_DEV_HARNESS_LEVEL,
+} from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import { saveScore, isHighScore } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
@@ -49,6 +55,17 @@ type AppPhase =
 // into a screen so the screenshot tool can capture the front-end screens without playing.
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
+
+// Dev-only boss QTE harness reachability seam (ADR-0051 D4): `?preview=boss` boots
+// straight into the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` so engineering can iterate
+// "le Commandant" without shipping it. Gated behind `import.meta.env.DEV` so a production
+// build (DEV === false) tree-shakes the branch — no menu path, no shipped player reaches
+// the required gate ("Belliard live contract untouched"). Mirrors the ADR-0005
+// harness-window discipline and the `?preview=` screen seam above.
+const BOSS_HARNESS_PREVIEW = import.meta.env.DEV && PREVIEW_SCREEN === "boss";
+const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
+  ? BOSS_QTE_DEV_HARNESS_LEVEL
+  : FIRST_PLAYABLE_LEVEL;
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
@@ -97,28 +114,33 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     delivery: level.deliveries[0] ?? null,
     // Scripted hostage-taker QTE for this level (ADR-0030), if authored.
     hostageQte: level.hostageQte ?? null,
+    // Scripted boss QTE for this level (ADR-0051). Absent on every shipped level ⇒ `null`
+    // (byte-identical); only the non-shipped dev-harness authors one.
+    bossQte: level.bossQteSpec ?? null,
   };
 }
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
-    PREVIEW_SCREEN === "narrative"
-      ? "NARRATIVE_PRE"
-      : PREVIEW_SCREEN === "end"
-        ? "END"
-        : PREVIEW_SCREEN === "tutorial"
-          ? "TUTORIAL"
-          : PREVIEW_SCREEN === "menu"
-            ? "MENU"
-            : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
-              "TITLE",
+    BOSS_HARNESS_PREVIEW
+      ? "PLAYING"
+      : PREVIEW_SCREEN === "narrative"
+        ? "NARRATIVE_PRE"
+        : PREVIEW_SCREEN === "end"
+          ? "END"
+          : PREVIEW_SCREEN === "tutorial"
+            ? "TUTORIAL"
+            : PREVIEW_SCREEN === "menu"
+              ? "MENU"
+              : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
+                "TITLE",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [unlockedLevels, setUnlockedLevels] = useState<ReadonlySet<string>>(loadUnlockedLevels);
-  const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(() => FIRST_PLAYABLE_LEVEL);
+  const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(() => INITIAL_LEVEL);
   const [hudData, setHudData] = useState<HudData>(() => {
-    const initial = buildHudInitial(FIRST_PLAYABLE_LEVEL, loadPrefs());
+    const initial = buildHudInitial(INITIAL_LEVEL, loadPrefs());
     return PREVIEW_SCREEN === "end"
       ? { ...initial, phase: "GAME_OVER", score: 4200, wave: 3 }
       : initial;
