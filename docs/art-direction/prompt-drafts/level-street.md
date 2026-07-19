@@ -54,7 +54,7 @@ Rationale (clause → the failure it locks down):
   otherwise brightens the surface into a lighter, busier band than the facade base.
 - `a full-width pedestrian crossing of several bold horizontal white zebra stripes each
 spanning the entire width from the far left edge to the far right edge … covering the
-  whole road` → the requested marking, final form. Bertrand's call after two in-game
+whole road` → the requested marking, final form. Bertrand's call after two in-game
   looks: the bars run HORIZONTAL and, crucially, span the FULL WIDTH of the road edge to
   edge — the crossing must not stop mid-road as the earlier centred blocks did. "each
   spanning the entire width … far left edge to far right edge" is the load-bearing clause

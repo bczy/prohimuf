@@ -92,7 +92,7 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
             setFocusWithin(true);
           }}
           onBlur={(e) => {
-            if (!navRef.current?.contains(e.relatedTarget as Node | null)) {
+            if (!navRef.current?.contains(e.relatedTarget)) {
               setFocusWithin(false);
             }
           }}
