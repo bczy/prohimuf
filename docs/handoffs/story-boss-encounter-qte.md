@@ -987,6 +987,49 @@ to be 'PLAYING'`), GREEN with it. The existing IDENTITY test (boss-less level un
 - handoff → `senior-architect` (Winston): re-triage on PR #112; the reviewer's repro is resolved,
   fix is game-lane-only, no boundary/dependency/ADR-contract change.
 
+## Fix — boss harness must not persist score/unlock side effects — dev-r3f-render (Amelia) — 2026-07-19
+
+- finding: code-review panel (stage-6, PR #112, ADR-0051) CONFIRMED finding, live-verified by two
+  independent reviewers (split MINEUR — "not exploitable as progression abuse" — vs MAJEUR — "real
+  save corruption"; the project blocks merge on any unresolved BLOCKING/MAJEUR, so this is fixed).
+  In `src/render/scene/App.tsx` the end-of-level effect (was ~lines 214-226) ran persistence
+  side-effects keyed off `selectedLevel` WITHOUT checking the level is actually shipped.
+- impact: `BOSS_QTE_DEV_HARNESS_LEVEL` (`id: "boss-harness"`) is deliberately EXCLUDED from the
+  `LEVELS` array (ADR-0051 D4, "Belliard live contract untouched"), so `LEVELS.findIndex(l => l.id
+=== selectedLevel.id)` returned `-1`; the old unlock hop then read `LEVELS[currentIdx + 1]` →
+  `LEVELS[-1 + 1]` → `LEVELS[0]` (the tutorial), and `unlockLevel(LEVELS[0].id)` persisted
+  `"tutorial"` into the real player-progress key `muf_progress`. In parallel, `saveScore(
+selectedLevel.id, …)` ran unconditionally on GAME_OVER / LEVEL_COMPLETE, writing a phantom
+  `muf_scores_boss-harness` high-score entry. Since `?preview=boss` is now reachable on
+  branch-preview builds (commit 9a49edf), anyone opening the link and finishing/losing the duel
+  corrupted their own localStorage — the harness is contractually supposed to be fully inert.
+- fix (surgical, render-lane only): gate BOTH persistence writes (`saveScore` AND the next-level
+  `unlockLevel`) behind an explicit `isShippedLevel = LEVELS.findIndex(...) !== -1` membership
+  check — not merely correcting the `-1 + 1` index arithmetic — so a non-shipped level writes
+  NOTHING regardless of whether it is won (LEVEL_COMPLETE) or lost (GAME_OVER). The reused
+  `shippedIdx` also feeds the next-level lookup, killing the `LEVELS[-1+1]` root cause outright.
+  The `setTimeout` UI transition to END stays unconditional (it is pure view state, no persistence),
+  so the harness still ends gracefully. No game rule touched; `src/game` untouched.
+- verify: `yarn typecheck` (0), `yarn lint` (0), `yarn test` (814 passed, 64 files). Live
+  Playwright (`executablePath: "/opt/pw-browsers/chromium"`, `--headless=new`) on
+  `?preview=boss`: instrumented `Storage.prototype.setItem/removeItem/clear` before app boot,
+  cleared storage, then drove the duel to an end state. Passive run (never fire → blown-window
+  clock → LOST → GAME_OVER, the exact phase that previously called `saveScore`): effect fired,
+  `__lsWrites` = `[]`, final `localStorage` = `{}`, `muf_progress` = `null`,
+  `muf_scores_boss-harness` = `null`. Aggressive spam-click run reached the same clean end state.
+  Confirms the guard evaluates `isShippedLevel === false` at end-of-duel and skips every write;
+  the LEVEL_COMPLETE `unlockLevel` branch is nested inside that same false guard. Temp Playwright
+  script removed (not committed).
+- note: branch HEAD already carries this as commit `2c09253` (a parallel pass converged on the
+  identical guard); this dev pass independently reproduced the byte-identical fix and re-verified
+  it live — working tree == HEAD, no residual diff. This handoff entry closes the previously
+  missing log for the finding.
+- File List:
+  - `src/render/scene/App.tsx` — end-of-level effect: `isShippedLevel` (LEVELS-membership) guard
+    around `saveScore` + the next-level `unlockLevel` hop; `shippedIdx` reused for the lookup.
+- handoff → `senior-architect` (Winston): re-triage on PR #112; the MAJEUR finding's repro is
+  resolved, fix is render-lane-only, no boundary/dependency/ADR-contract change.
+
 ## Code-review panel fixes (PR #112, stage 6) — dev-gameplay (Amelia) — 2026-07-19
 
 Two CONFIRMED MAJOR findings from the mandatory stage-6 code-review panel (verified live by the
