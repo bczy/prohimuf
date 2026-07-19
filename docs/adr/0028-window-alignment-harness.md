@@ -259,10 +259,10 @@ math:
 **Lane plan + file ownership (two parallel, non-overlapping lanes).**
 
 - **Lane 1 `dev-r3f-render` — `src/render/**`only.** Owns **all** of`GameScene.tsx`for this
-cycle: the slot remap, the`**MUF_SLOT_RECTS**`inverse update, **and** the`**MUF_PROJECT**`hook, plus new`src/render/scene/facadeLayout.ts`, `ForegroundFrames.tsx`, `LevelBackdrop.tsx`.
+  cycle: the slot remap, the`**MUF_SLOT_RECTS**`inverse update, **and** the`**MUF_PROJECT**`hook, plus new`src/render/scene/facadeLayout.ts`, `ForegroundFrames.tsx`, `LevelBackdrop.tsx`.
 - **Lane 2 `dev-tooling-assets` — `scripts/**`only.** The SCREEN pass in`align-windows.mjs`,
-screen-space reuse of `scripts/lib/coverage.mjs`, `SCRIPTS.md`/`HARNESS.md`. It only
-**consumes** `**MUF_PROJECT**`— it never touches`GameScene`. **No file overlap.**
+  screen-space reuse of `scripts/lib/coverage.mjs`, `SCRIPTS.md`/`HARNESS.md`. It only
+  **consumes** `**MUF_PROJECT**`— it never touches`GameScene`. **No file overlap.**
 - **Sequencing.** The hook contract (`__MUF_PROJECT__` signature + thresholds) is fully
   specified here, so both lanes develop in parallel against it; Lane 2's SCREEN `--check`
   **integration verify runs after Lane 1's hook lands**.
@@ -282,3 +282,109 @@ panel index carried on the slot instead of geometric recovery. (b) Overlay doubl
 only for current zone ranges; a level populating **both** edge bands (`u < 0.074` and `u > 0.926`)
 would double-draw edge railings misregistered by up to `~0.04·panelW` — mitigation (left-feather
 or clip the overlay to `[featherFrac, 1]`) is deferred until such a level exists.
+
+## Addendum 2026-07-19 — `scripts/align-troncon.mjs`, a sibling harness for troncon-sequence zones
+
+**Problem.** Belliard's backdrop is `troncon-sequence` mode (ADR-0048), not `single-facade`: the
+enemy/railing zones for its three building images (`belliard/troncon-{a,b,c}` keys in
+`windowZones.generated.json`, tiled on-screen `a,c,b,c`) are HAND-PLACED, not this harness's
+output — `scripts/gen-window-zones.mjs`'s tronçon pass exists but is gated behind
+`FORCE_TRONCON=1` because its blind detector output was previously rejected and the zones were
+re-placed one by one. Those hand-placed zones traced the real window RECTANGLES directly, never
+through this harness's FILL/`ENEMY_PLANE_SCALE` pre-shrink (`zonesFromOpenings`, above) — so on
+render the sprite plane systematically overshot the sill by the missing shrink: cops floating
+above/below the balcony line, some off the window bay horizontally, some rendering past their
+railing's frame. `align-windows.mjs`'s own detection (`detectColumns`/`rowsThirds`/`rowsRuns`)
+could not be pointed at this art as-is: it is a WARM-GLOW pixel test tuned for the lit-window
+JPEG facades, and sampled directly off the tronçon PNGs, mean window luminance ≈ mean wall
+luminance (warm-vs-cool even flips sign between tiles) — the wrong signal for this ink/wash
+illustration style, where LOCAL DETAIL DENSITY (frame/mullion/ironwork ink vs flat plaster)
+is what actually separates window from wall (measured: local luminance std-dev inside a
+hand-placed zone averages 45–49 across all three tiles vs 26–39 in the gap between zones).
+
+**Decision.** A new sibling driver, `scripts/align-troncon.mjs`, imports `detectOpenings`,
+`LEVEL_CFG`, `writeOverlay`, `measure` from `align-windows.mjs` (same defect vocabulary,
+same iterate-to-convergence pattern as `fixLevel()`) rather than forking them, and adds:
+
+1. **An edge-density detector, not warm-glow**, wired through ONE small additive hook on
+   `align-windows.mjs`: `LEVEL_CFG[id].buildMask(W, H, data)`, an optional factory returning a
+   per-pixel `(x,y) → 0|1` predicate that REPLACES the pointwise `cfg.warm(r,g,b)` wrapper (both
+   `detectOpenings`'s `warmAt` and its `warmRect` sampler now build off this shared predicate).
+   Every existing `LEVEL_CFG` entry omits it, so belliard/stalingrad/vitry are byte-identical.
+   `align-troncon.mjs` supplies `buildEdgeDensityMask` (a local-detail integral-image threshold,
+   relative to each tile's own mean detail so one factor self-adjusts across tiles) as three
+   INDEPENDENT `LEVEL_CFG` entries keyed `belliard/troncon-{a,b,c}` (own band/thresholds each —
+   `facadeFile`/`detectOpenings` were also extended, additively, to resolve a namespaced
+   `"level/file"` id to `public/assets/levels/<level>/<file>.png` and decode it via `pngjs`
+   (real alpha) instead of `jpeg-js` — bare ids are unaffected, same shape `{width,height,data}`
+   either decoder returns).
+2. **Tile de-multiplexing needs NO inverse transform.** `window.__MUF_SLOT_RECTS__` already
+   reports each rendered slot in TILE-LOCAL facade-normalized coords (`GameScene.tsx`'s `facade`
+   `useMemo` builds `rects` per backdrop tile, `panel` = tile index 0..3, straight off `z` and
+   `tile.width`/`facadeH` — never `tile.centreX`), and tronçon tiles draw at native width
+   (`facadeDrawScale("troncon-sequence") === 1`, `stretchAboutCentre` is the identity) — so a
+   WindowZone and its rendered slot rect already share one coordinate space. The only demuxing
+   is PANEL INDEX → TRONÇON KEY, read off `levelArt.json`'s `backdrop.tiles` sequence at
+   runtime (never hardcoded as `[a,c,b,c]`).
+3. **troncon-c reconciliation.** Both on-screen instances apply the SAME zones array reference
+   against the SAME tile width with no draw-scale stretch, so — per the point above — their
+   rendered slot rects are IDENTICAL BY CONSTRUCTION; there is nothing to reconcile in STORAGE
+   (one JSON key, as already true). The merge rule is scoped to the CORRECTION computation: the
+   OVERFLOW-shrink loop measures panel 1 and panel 3 independently and UNIONS the flagged
+   indices (correct if EITHER instance overflows, never intersect), and logs a `MISMATCH` if the
+   two ever disagree (which the render contract above proves they should not — a disagreement
+   would mean a render-contract regression, not a data problem).
+4. **Conservative correction scope (explicit design choice, not full re-detection).** Per
+   architect direction, this harness does not treat the edge-density detection as ground truth
+   and overwrite the hand-placed data wholesale. It corrects two independent things:
+   - **Height/vertical seating (always corrected — the dominant reported defect).** The
+     committed x/y stay TRUSTED; a per-DETECTED-ROW hand-tuned constant table
+     (`ROW_HEIGHTS`, the tronçon analogue of `LEVEL_CFG.openingH`) supplies the raw opening
+     height (never read off the live committed `z.h`, which the FILL step below mutates —
+     see the idempotency note); the FILL/`ENEMY_PLANE_SCALE` mapping is CALIBRATED off a live
+     probe render every run (never hand-derived), exactly `fixLevel()`'s technique; the same
+     shrink-and-recentre loop iterates to `OVERFLOW = 0`, the harness's convergence gate.
+   - **Horizontal drift / grille framing (best-effort, bounded).** A committed zone's x/w is
+     snapped to the nearest edge-density-detected opening only when close (within one
+     opening-pitch) AND a plausible width match (0.5–2×) — high confidence only. Everything
+     else keeps its committed x/w untouched. The snapped value feeds ONLY the `MISALIGN`/
+     `WALL`/`COVER` AUDIT (informational, `--check`-time); the WRITTEN x/w is always the
+     committed value, never the detector's guess — this art's detector is not trusted enough
+     to relocate a window on its own say-so.
+5. **Idempotency (found and fixed during development).** `windowZones.generated.json`'s `h`
+   (and `y`, offset by a small fixed amount — `ENEMY_BODY_LIFT·ENEMY_PLANE_SCALE = 0.026`,
+   `EnemySprite.tsx`) for an already-harness-fixed zone are RENDER-INPUT values (post-FILL-
+   shrink), not raw opening measurements; re-reading `z.h`/`z.y` off the committed JSON as if
+   still raw is circular on any re-run after a fix (`--check` right after a `--fix` regressed 26
+   fresh OVERFLOW zones the first time this was tried). Fixed by never deriving `opening.h` from
+   live committed data (the `ROW_HEIGHTS` table above) and by recovering `opening.y` with the
+   EXACT (known-constant) inverse of the write-time offset — a no-op perturbation on
+   never-processed data, exact on already-fixed data. Verified: `--fix` → `--check` → `--check`
+   → `--fix` all converge to the SAME committed bytes (`md5sum` identical across repeat `--fix`
+   runs).
+6. **`writeOverlay` gained a `panel` parameter** (default `0`, every existing single-facade
+   caller's reference panel — unaffected) so a tronçon call can pass its OWN tile's panel index
+   (never 0 for troncon-b/troncon-c) instead of silently drawing a DIFFERENT tile's slot boxes.
+
+**Outcome.** Baseline (committed, unfixed): 26 OVERFLOW / 164 rendered slots (troncon-a 0,
+troncon-b 6, troncon-c 20) — confirming the vertical bug was pervasive, matching the bug report.
+`--fix` converges in 4 iterations (110→50→20→0) to **0 OVERFLOW**, confirmed idempotent
+(`--check` clean twice, repeat `--fix` byte-identical). Residual: 186 `MISALIGN`/`WALL(0)`/
+`COVER` findings, entirely `MISALIGN`+`OVERCOVER`+`UNDERCOVER` (0 `WALL` — no zone sits on bare
+art), i.e. the residual is imprecise FRAMING per the edge-density detector's own confidence
+limits on this art style, never a zone on blank wall — an explicit, documented, non-gating
+audit residual per point 4 above, not silently swept.
+
+**Lane.** Single `dev-tooling-assets` lane (fix-lane per COLLABORATION.md — scripts + generated
+data only, no design/dependency/boundary change, player-visible). `docs/handoffs/fixes.md` has
+the one-line entry.
+
+## References
+
+- `scripts/align-troncon.mjs`, `scripts/align-windows.mjs` (`buildMask` hook, namespaced
+  `facadeFile`/`detectOpenings`, `measure`'s `panels` param, `writeOverlay`'s `panel` param).
+- ADR-0048 (troncon-sequence backdrop mode) — the tile geometry / a,c,b,c sequence this
+  addendum demuxes; cross-linked from there too.
+- `src/render/scene/GameScene.tsx` (`facade` `useMemo` — the tile-local slot-rect contract),
+  `src/render/scene/facadeLayout.ts` (`facadeDrawScale`/`stretchAboutCentre`),
+  `src/render/scene/EnemySprite.tsx` (`ENEMY_PLANE_SCALE`/`ENEMY_BODY_LIFT`).

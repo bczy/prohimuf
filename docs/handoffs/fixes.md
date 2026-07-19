@@ -8,6 +8,25 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-19 · claude/beliard-enemy-positioning-tool-6wo3vu · dev-tooling-assets ·
+  Belliard cops badly seated (feet not on the sill, some drifted off the window bay,
+  some in front of the wrought-iron grille). New sibling harness
+  `scripts/align-troncon.mjs` (imports `align-windows.mjs`'s `detectOpenings`/
+  `LEVEL_CFG`/`writeOverlay`/`measure`; adds an edge-density detector for the
+  tronçon PNGs' ink/wash art via a new additive `LEVEL_CFG.buildMask` hook, plus a
+  namespaced-id PNG decode path, `measure()`'s `panels` param and `writeOverlay`'s
+  `panel` param — all backward-compatible, zero behaviour change for
+  belliard/stalingrad/vitry). Always corrects height/vertical seating (calibrated
+  FILL/render-contract mapping, iterate-to-convergence); horizontal drift is
+  snap-corrected only when detection is confident, else left as a non-gating audit
+  finding. Fixed 26/164 rendered OVERFLOW slots → 0, confirmed idempotent. Data-only:
+  `src/game/levels/windowZones.generated.json`'s three `belliard/troncon-{a,b,c}`
+  keys. ADR-0028 addendum (cross-linked from ADR-0048); `HARNESS.md`/`SCRIPTS.md`/
+  `package.json` (`align:troncon[:check]`) updated. · checks: tsc clean, vitest
+  771/771, lint clean on touched files (6 pre-existing unrelated errors elsewhere,
+  confirmed present without this diff too) +verify (before/after in-game
+  screenshots, `--check`↔`--fix` round-trip byte-identical) · review: pending
+
 - 2026-07-19 · claude/mobile-game-zoom-start-pbaf4j · dev-r3f-render · mobile levels
   opened pinched all the way to the base zoom (ADR-0026's `MAX_ZOOM_FRACTION = 1`,
   1.7×, tuned for finger-sized targets), leaving no headroom to read the wider street

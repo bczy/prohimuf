@@ -589,6 +589,93 @@ while any defect remains.
 
 ---
 
+## align-troncon.mjs — Window-alignment harness (tronçon-sequence levels)
+
+Sibling of `align-windows.mjs` scoped to `belliard/troncon-{a,b,c}` — belliard's
+**tronçon-sequence** backdrop (ADR-0048): three distinct, hand-painted building images
+(`public/assets/levels/belliard/troncon-{a,b,c}.png`, real PNGs with alpha, tiled
+on-screen `a,c,b,c`), not `align-windows.mjs`'s equal-width `facade.png` panels — so it
+is not a level id you can pass to that script. Fixes the "cops badly seated on Belliard
+windows" bug: sprites floating above/below the sill, some off the window bay
+horizontally, some rendering past their railing's frame.
+
+Imports `detectOpenings`/`LEVEL_CFG`/`writeOverlay`/`measure` from `align-windows.mjs`
+(same defect vocabulary, same iterate-to-convergence pattern as `fixLevel()`) rather
+than forking them. See the ADR-0028 addendum (2026-07-19) and `HARNESS.md` for the full
+rationale; summary:
+
+- **Detection.** This ink/wash illustration style has no warm-glow signal (sampled off
+  the shipped art: mean window luminance ≈ mean wall luminance, warm-vs-cool even flips
+  sign between tiles) — what separates window from wall is LOCAL DETAIL DENSITY
+  (frame/mullion/ironwork ink vs flat plaster). `buildEdgeDensityMask` (local integral-
+  image threshold, self-adjusting per tile) is wired through a new, additive
+  `LEVEL_CFG[id].buildMask(W,H,data)` hook on `align-windows.mjs`'s `detectOpenings`
+  (every existing entry omits it — byte-identical for belliard/stalingrad/vitry).
+  Three INDEPENDENT `LEVEL_CFG` entries, keyed `belliard/troncon-{a,b,c}` (own
+  band/thresholds each). `align-windows.mjs`'s `facadeFile`/`detectOpenings` were also
+  extended (additively) to resolve a namespaced `"level/file"` id to
+  `public/assets/levels/<level>/<file>.png` and decode via `pngjs` (real alpha) instead
+  of `jpeg-js` — bare ids unaffected.
+- **Correction is conservative, not a full re-detection overwrite** (the committed
+  tronçon zones are hand-placed; a blind detector's output was previously rejected once
+  already):
+  - **Height/vertical seating — always corrected.** The committed troncon zone's `h` was
+    never run through the FILL/`ENEMY_PLANE_SCALE` pre-shrink `zonesFromOpenings()`
+    applies, so rendered as-is the sprite plane systematically overshoots the sill
+    (feet not seated). A per-DETECTED-ROW constant table (`ROW_HEIGHTS`, the tronçon
+    analogue of `LEVEL_CFG.openingH`) supplies the raw opening height; the FILL mapping
+    is calibrated off a **live probe render** every run (never hand-derived — same
+    technique as `fixLevel()`); the same shrink-and-recentre loop iterates to
+    `OVERFLOW = 0`, the harness's convergence gate.
+  - **Horizontal drift / grille framing — best-effort, bounded.** A committed zone's x/w
+    is snapped to the nearest edge-density-detected opening only when CONFIDENT (within
+    one opening-pitch AND a plausible 0.5–2× width match). The snap feeds only the
+    `MISALIGN`/`WALL`/`COVER` **audit** (informational, `--check`-time); the WRITTEN x/w
+    is always the committed value — this art's detector is not trusted enough to
+    relocate a window on its own.
+- **Tile de-multiplexing needs no inverse transform.** `__MUF_SLOT_RECTS__` already
+  reports each rendered slot in TILE-LOCAL facade-normalized coords (tronçon tiles draw
+  at native width, no facade stretch) — the only demuxing is PANEL INDEX → TRONÇON KEY,
+  read off `levelArt.json`'s `backdrop.tiles` sequence at runtime (never hardcoded).
+- **troncon-c reconciliation.** Both on-screen instances render IDENTICAL slot rects by
+  construction (same zones reference, same tile width, no draw-scale stretch) — nothing
+  to reconcile in storage. The OVERFLOW-shrink loop measures both instances and UNIONS
+  the flagged indices; a disagreement (which should never happen) logs a `MISMATCH`.
+- **Idempotent.** `opening.h`/`opening.y` are NEVER read back off the live committed
+  JSON (which the harness's own `--fix` output mutates — that circularity produced 26
+  false-fresh `OVERFLOW` findings the first time this was tried); `--fix`, re-run,
+  writes byte-identical output (`md5sum`-verified).
+- **Output:** overwrites only the three `belliard/troncon-{a,b,c}` keys of
+  `windowZones.generated.json`; other levels (incl. the vestigial bare `belliard` key,
+  ADR-0028's original single-facade harness target, no longer consumed by
+  `getBackdropLayout` in troncon mode) are untouched. Proof overlays
+  `scripts/.dbg-belliard-troncon-{a,b,c}-align-{check,fix}-i00.jpg` (art-space,
+  gitignored) plus real in-game screenshots
+  `scripts/.dbg-belliard-troncon-screenshot-{before,after,check}.jpg`.
+
+```bash
+# --fix (default): detect → correct height (always) + snap horizontal (confident-only) →
+# converge OVERFLOW=0 → write + proof overlays/screenshots
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/align-troncon.mjs
+yarn align:troncon
+
+# --check: measure the committed zones only, write nothing; exits non-zero on any residual
+# OVERFLOW (the gate) — MISALIGN/WALL/COVER print as a non-gating audit
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/align-troncon.mjs --check
+yarn align:troncon:check
+```
+
+SUCCESS = 0 `OVERFLOW` across all rendered tronçon instances. `MISALIGN`/`WALL`/`COVER`
+residuals (same defect classes as `align-windows.mjs`, see above) are audited and
+printed but do not gate the exit code on this art — see the ADR-0028 addendum for why.
+
+Same setup as `align-windows.mjs` (built prod build served at `PREVIEW_URL`, `jpeg-js`
+
+- `playwright`); `pngjs` is already a `devDependency` (used for the real-alpha tronçon
+  PNGs).
+
+---
+
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
 
 Generates the enemy archetype sprites (base cops + variants, riot/CRS,

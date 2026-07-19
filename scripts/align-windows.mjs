@@ -58,6 +58,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jpeg from "jpeg-js";
+import { PNG } from "pngjs";
 import {
   SWIFTSHADER_ARGS,
   dismissNarrative,
@@ -72,8 +73,20 @@ import { coverStrips, coverDefects } from "./lib/coverage.mjs";
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
 const ZONES_JSON = path.resolve(ROOT, "src/game/levels/windowZones.generated.json");
-const facadeFile = (id) => path.resolve(ROOT, "public/assets/levels", id, "facade.png");
-const dbgPrefix = (id) => path.resolve(ROOT, "scripts", `.dbg-${id}-align`);
+// A bare level id ("belliard") resolves the classic single-facade "facade.png".
+// A NAMESPACED id "belliard/troncon-a" (align-troncon.mjs, ADR-0028 addendum
+// "troncon-sequence") resolves that level's OWN tronçon PNG instead — level ids
+// never contain "/", so the two never collide.
+const facadeFile = (id) => {
+  const slash = id.indexOf("/");
+  if (slash < 0) return path.resolve(ROOT, "public/assets/levels", id, "facade.png");
+  const level = id.slice(0, slash);
+  const file = id.slice(slash + 1);
+  return path.resolve(ROOT, "public/assets/levels", level, `${file}.png`);
+};
+// Debug-overlay filenames are flat under scripts/, so a namespaced id's "/"
+// must not become a path separator.
+const dbgPrefix = (id) => path.resolve(ROOT, "scripts", `.dbg-${id.replace(/\//g, "-")}-align`);
 
 const VIEWPORT = { width: 1280, height: 720 };
 const NAV_TIMEOUT = 30000;
@@ -463,8 +476,10 @@ function rowsRuns(det, cfg) {
 /** Rectangular-region warm-density sampler (normalized `[x0,x1]×[y0,y1]` → warm
  * fraction). The coverage audit and the UNDERCOVER/OVERCOVER gate use this, unlike
  * the fixed 0.03×0.05 point sampler (`makeWarmDensity`) that the WALL check keeps.
- * An empty span (x1<=x0 or y1<=y0, e.g. a neighbour-clamped strip) returns 0. */
-function makeWarmRect(W, H, data, warm) {
+ * An empty span (x1<=x0 or y1<=y0, e.g. a neighbour-clamped strip) returns 0.
+ * `pixelAt(x,y)` is the same per-pixel "window evidence" predicate `detectOpenings`
+ * builds (pointwise `warm(r,g,b)` by default, or a level's `cfg.buildMask`). */
+function makeWarmRect(W, H, pixelAt) {
   return (nx0, nx1, ny0, ny1) => {
     // A reversed span (nx1 <= nx0) means a neighbour bound clamped the strip past the
     // frame edge — no room for the window to continue there, so it reads EMPTY (0).
@@ -480,8 +495,7 @@ function makeWarmRect(W, H, data, warm) {
     let total = 0;
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
-        const i = (y * W + x) * 4;
-        if (warm(data[i], data[i + 1], data[i + 2])) hit++;
+        if (pixelAt(x, y)) hit++;
         total++;
       }
     }
@@ -661,15 +675,35 @@ function auditCoverage(raw, cfg, warmRect, W, H, rowCenters) {
 function detectOpenings(levelId, band) {
   const cfg = { ...LEVEL_CFG[levelId] };
   if (cfg.band === null) cfg.band = band;
-  const decoded = jpeg.decode(fs.readFileSync(facadeFile(levelId)), { useTArray: true });
+  // Tronçon tiles (namespaced id) are REAL PNGs (RGBA + alpha); every other
+  // level's facade.png is JPEG-encoded despite its extension. Both decoders
+  // return the same {width,height,data:RGBA} shape (see gen-window-zones.mjs),
+  // so nothing downstream needs to know which one ran.
+  const decoded = levelId.includes("/")
+    ? PNG.sync.read(fs.readFileSync(facadeFile(levelId)))
+    : jpeg.decode(fs.readFileSync(facadeFile(levelId)), { useTArray: true });
   const { width: W, height: H, data } = decoded;
-  const warm = cfg.warm;
-  const warmAt = (x, y) => {
-    const i = (y * W + x) * 4;
-    return warm(data[i], data[i + 1], data[i + 2]) ? 1 : 0;
-  };
+  // Per-pixel "window evidence" predicate. Every level so far (belliard/
+  // stalingrad/vitry) uses `cfg.warm(r,g,b)` — a single-pixel warm-glow test
+  // that works because their facades are lit-window JPEGs. The tronçon PNGs
+  // (align-troncon.mjs) are a flat ink/wash illustration style where NEITHER
+  // warmth NOR raw brightness separates window from wall (measured on the
+  // shipped art: mean luminance win≈wall, r−b sign even flips between tiles);
+  // what DOES separate them is local detail density (frame/mullion/ironwork
+  // ink vs flat plaster) — a NEIGHBOURHOOD property a single (r,g,b) triple
+  // cannot express. `cfg.buildMask(W,H,data)`, when set, replaces the pointwise
+  // `warm()` wrapper with a precomputed `(x,y) → 0|1` predicate of the caller's
+  // choosing (align-troncon.mjs's edge-density mask); every existing cfg omits
+  // it, so `pixelAt` degrades to the byte-identical pointwise path.
+  const pixelAt = cfg.buildMask
+    ? cfg.buildMask(W, H, data)
+    : (x, y) => {
+        const i = (y * W + x) * 4;
+        return cfg.warm(data[i], data[i + 1], data[i + 2]) ? 1 : 0;
+      };
+  const warmAt = (x, y) => pixelAt(x, y);
   const det = { W, H, data, warmAt };
-  const warmRect = makeWarmRect(W, H, data, warm);
+  const warmRect = makeWarmRect(W, H, pixelAt);
 
   const rowCenters = cfg.rowMode === "thirds" ? rowsThirds(det, cfg) : rowsRuns(det, cfg);
 
@@ -735,14 +769,21 @@ function zonesFromOpenings(openings, cal) {
  * coverage strips (OVERCOVER is suppressed for a frame at the floor width `cover.floorW`).
  * `cover` = `{ warmRect, floorW }` (omit to skip the coverage pass). `zonesByPanel` is
  * the APPLIED per-panel zone arrays (the committed 4 panels in `--check`, the 4 identical
- * `panelZones` in `--fix`); omit it to skip the MISALIGN + coverage pass.
+ * `panelZones` in `--fix`); omit it to skip the MISALIGN + coverage pass. `panels`
+ * (default every index `0..PANELS-1`) restricts which panel indices are evaluated —
+ * the troncon-sequence harness (align-troncon.mjs) has HETEROGENEOUS tiles (one
+ * detected-opening set per tronçon key, not one shared per level), so it measures
+ * one key's own tile instance(s) at a time (e.g. `[0]` for troncon-a, `[1,3]` for the
+ * two on-screen troncon-c instances) against that key's openings, leaving
+ * `zonesByPanel` sparse (`undefined` at every index outside `panels`).
  */
-function measure(slotRects, openings, warmDensity, cover, zonesByPanel) {
+function measure(slotRects, openings, warmDensity, cover, zonesByPanel, panels = null) {
   const warmRect = cover?.warmRect;
   const floorW = cover?.floorW ?? 0;
+  const panelIndices = panels ?? Array.from({ length: PANELS }, (_, p) => p);
   const defects = [];
   const bySlot = [];
-  for (let p = 0; p < PANELS; p++) {
+  for (const p of panelIndices) {
     const slots = slotRects.filter((s) => s.panel === p);
     if (slots.length !== openings.length) {
       defects.push(`panel ${p}: COUNT ${slots.length} zones ≠ ${openings.length} openings`);
@@ -795,7 +836,7 @@ function measure(slotRects, openings, warmDensity, cover, zonesByPanel) {
   // they pair 1:1 BY INDEX (zones[i] ↔ openings[i]) — no greedy nearest-centre match,
   // which could mis-pair when frames drift. A count mismatch is its own defect.
   if (zonesByPanel) {
-    for (let p = 0; p < PANELS; p++) {
+    for (const p of panelIndices) {
       const zones = zonesByPanel[p];
       if (!zones) continue;
       if (zones.length !== openings.length) {
@@ -888,10 +929,15 @@ function outline(buf, W, H, cx, cy, w, h, [r, g, b]) {
 }
 
 /**
- * Debug overlay: dimmed facade with detected openings (green) and panel-0 slot
- * rects (magenta; red if the slot overflows). Read this to judge alignment.
+ * Debug overlay: dimmed facade with detected openings (green) and one panel's
+ * slot rects (magenta; red if the slot overflows) — `panel` (default 0, every
+ * existing single-facade caller's reference panel, since those 4 panels share
+ * identical zones) selects WHICH rendered panel's rects to draw; the tronçon
+ * harness (align-troncon.mjs) passes its tile's own panel index (never 0 for
+ * troncon-b/troncon-c) so the drawn boxes are the boxes ACTUALLY rendered on
+ * THIS image, not another tile's. Read this to judge alignment.
  */
-function writeOverlay(det, id, slotRects, bySlot, iter, tag) {
+function writeOverlay(det, id, slotRects, bySlot, iter, tag, panel = 0) {
   const { W, H, data } = det;
   const buf = Buffer.from(data);
   for (let i = 0; i < buf.length; i += 4) {
@@ -900,8 +946,10 @@ function writeOverlay(det, id, slotRects, bySlot, iter, tag) {
     buf[i + 2] *= 0.42;
   }
   for (const o of det.openings) outline(buf, W, H, o.x, o.y, o.w, o.h, [0, 255, 40]);
-  const overflow = new Set(bySlot.filter((b) => b.panel === 0 && !b.contained).map((b) => b.slot));
-  for (const s of slotRects.filter((s) => s.panel === 0)) {
+  const overflow = new Set(
+    bySlot.filter((b) => b.panel === panel && !b.contained).map((b) => b.slot),
+  );
+  for (const s of slotRects.filter((s) => s.panel === panel)) {
     outline(buf, W, H, s.x, s.y, s.w, s.h, overflow.has(s) ? [255, 40, 40] : [255, 0, 220]);
   }
   const file = `${dbgPrefix(id)}-${tag}-i${String(iter).padStart(2, "0")}.jpg`;

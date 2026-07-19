@@ -104,6 +104,49 @@ wall. Two tools keep the zones honest:
   CI gate (measure only, exit non-zero on any defect). `yarn align` / `yarn align:check`
   run all levels; `yarn align:belliard[:check]` scope to belliard. See `scripts/SCRIPTS.md`.
 
+### Tronçon-sequence levels (ADR-0048) — `scripts/align-troncon.mjs`
+
+Belliard's backdrop is a **tronçon-sequence** (ADR-0048): three distinct, hand-painted
+building images (`public/assets/levels/belliard/troncon-{a,b,c}.png`) tiled on-screen
+`a, c, b, c` — not `align-windows.mjs`'s equal-width `facade.png` panels, so it is
+covered by a sibling driver instead of a level id you can pass to `align-windows.mjs`:
+
+```bash
+node scripts/align-troncon.mjs --check   # measure the committed belliard/troncon-{a,b,c}
+node scripts/align-troncon.mjs           # (default --fix) detect → correct → converge → write
+```
+
+Same defect vocabulary and iterate-to-convergence pattern as `align-windows.mjs`
+(imports its `detectOpenings`/`LEVEL_CFG`/`writeOverlay`/`measure`, never forks them),
+but this art needs a genuinely different detector and a more conservative correction
+scope — see the ADR-0028 addendum (2026-07-19) for the full rationale:
+
+- **Detection.** The tronçon PNGs are an ink/wash illustration style where warm-glow
+  (the JPEG-facade signal) does not separate window from wall; a **local edge-density**
+  mask (`buildEdgeDensityMask`, wired through a new `LEVEL_CFG[id].buildMask` hook on
+  `align-windows.mjs`, additive/backward-compatible) does. Three independently-tuned
+  `LEVEL_CFG` entries, keyed `belliard/troncon-{a,b,c}`.
+- **Correction scope.** Height/vertical seating (feet at the sill) is ALWAYS corrected —
+  this was the dominant reported defect (26/164 rendered slots overflowing on the
+  committed data) — via a live-calibrated FILL/`ENEMY_PLANE_SCALE` mapping and the same
+  shrink-loop `fixLevel()` uses. Horizontal drift is corrected only when the edge-density
+  detector is CONFIDENT (near a detected opening, plausible width match); everything else
+  keeps its hand-placed x/w and is reported (MISALIGN/WALL/COVER) as a non-gating audit,
+  not auto-relocated — this art's committed zones are hand-placed once already (a blind
+  detector's output was previously rejected), so a low-confidence match is left alone
+  rather than risking a new wrong placement.
+- **Tile de-multiplexing.** `__MUF_SLOT_RECTS__` already reports slots in tile-local
+  facade-normalized coords (no inverse transform needed); panel index → tronçon key
+  comes from `levelArt.json`'s `backdrop.tiles` sequence at runtime.
+- **Idempotency.** `--fix`, re-run, writes byte-identical output — "opening" height/y are
+  never read back off the committed JSON (which the harness's own output mutates), only
+  off a stable per-row constant table and the render contract's known geometry.
+
+Debug overlays and screenshots follow the same convention as `align-windows.mjs`:
+`scripts/.dbg-belliard-troncon-{a,b,c}-align-{check,fix}-i00.jpg` (art-space, gitignored)
+and `scripts/.dbg-belliard-troncon-screenshot-{before,after,check}.jpg` (real in-game
+render). `yarn align:troncon` / `yarn align:troncon:check` run it. See `scripts/SCRIPTS.md`.
+
 ## Ad-hoc reference-conditioned iteration (ADR-0044)
 
 Outside the curated manifest loop above, `scripts/gen-from-reference.mjs`
