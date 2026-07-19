@@ -48,8 +48,8 @@ function ArrowIndicator({
           fill={ACID.yellow}
           stroke={INK.black}
           // non-scaling-stroke: strokeWidth is device px, so the keyline holds
-          // the HUD's 2px ink-rule weight at both the desktop (136px) and
-          // short-landscape (68px) render sizes (Bertrand: don't scale it).
+          // the HUD's 2px ink-rule weight at both the desktop (102px) and
+          // short-landscape (51px) render sizes (Bertrand: don't scale it).
           strokeWidth={2}
           vectorEffect="non-scaling-stroke"
           strokeLinejoin="round"
@@ -73,13 +73,14 @@ export function OffscreenArrowIndicator({
   return (
     <div className={styles.targetRing}>
       {/* ADR-0024 pattern (TitleScreen/MainMenu): the short-landscape device class
-          drops the arrows to 2x original (68px glyph) instead of the desktop 4x;
-          unmatched viewports keep the CSS-module var() fallbacks. */}
+          drops the arrows to a smaller glyph than the desktop size; unmatched
+          viewports keep the CSS-module var() fallbacks. Both device classes carry
+          Bertrand's ×0.75 trim of the original 4x/2x enlargement (#103). */}
       <style>{`
         @media ${SHORT_LANDSCAPE_MEDIA}{
           .${styles.targetRing ?? ""}{
-            --muf-arrow-wrap-size: 80px;
-            --muf-arrow-core-size: 68px;
+            --muf-arrow-wrap-size: 60px;
+            --muf-arrow-core-size: 51px;
           }
         }
       `}</style>

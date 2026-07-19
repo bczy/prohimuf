@@ -9,8 +9,8 @@
 
 .arrowWrap {
   position: fixed;
-  width: var(--muf-arrow-wrap-size, 160px);
-  height: var(--muf-arrow-wrap-size, 160px);
+  width: var(--muf-arrow-wrap-size, 120px);
+  height: var(--muf-arrow-wrap-size, 120px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,6 +20,6 @@
    stay inline (state-driven / motion literal). */
 .arrowCore {
   position: relative;
-  width: var(--muf-arrow-core-size, 136px);
-  height: var(--muf-arrow-core-size, 136px);
+  width: var(--muf-arrow-core-size, 102px);
+  height: var(--muf-arrow-core-size, 102px);
 }
