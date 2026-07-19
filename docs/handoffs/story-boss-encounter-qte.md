@@ -43,3 +43,40 @@ normal roadmap sequencing on Bertrand's explicit instruction.
   shell reuse (binding directive above).
 - Not yet logged as a `VERDICT:` line — no gate has run yet; this entry is INTAKE/PRODUCT
   only. `producer` to track stage progression from here.
+
+## 2. DESIGN LOOP — game-designer (Sacha) — 2026-07-19
+
+- claim: mechanic + tuning + 3C (camera) side of the design loop — answer Open Questions
+  1, 2, 3 and post tuning magnitudes. NOT fiction (OQ5, `narrative-designer`), NOT the
+  HP-read surface (OQ6, `ux-designer`).
+- release: `docs/game-design/spec-boss-qte-encounter.md` (DRAFT — needs gate PASS).
+  Headlines:
+  - **OQ1 DECIDED — required gate on `Livrer`.** The boss is the delivery's climactic
+    obstacle; the level cannot complete until he is down; he is NOT in the kill quota;
+    failure = level fails via the blown-window clock (only telegraphed windows can hurt
+    you → non-bullshit, §5.6). The required-vs-optional asymmetry vs. the hostage is made
+    mechanical (ignore the boss ⇒ fail in ≈ 34 s; ignore the hostage ⇒ lose a bonus).
+  - **OQ2 DECIDED — reuse the `COVERED↔PEEKING` exposed-window skeleton + the ADR-0034
+    spatial-colour wandering ring, re-themed `SHIELDED↔EXPOSED`, PLUS a 3-phase HP
+    sequencing** that re-parameterises the window per phase (the "sustained mastery"
+    lever). G6 drops — no human shield. Anti-bullshit floors reused + asserted.
+  - **OQ3 POSED (not decided) — 3 options with art/tuning/ADR cost** (A: one finale boss;
+    B: one per zone/contact ×5; C: finale boss + cheap 1-phase mini-boss tier). Recommend
+    **A in V1, architected so tier = data ⇒ C is a later data-only story**. Pick is
+    Karim + John's.
+  - **Tuning:** `bossHp 24` (3×8), ring dmg 2/1/0, `maxBlownWindows 10`, per-phase table
+    (EXPOSED 1.6→1.0 s, lull 2.0→1.2 s, tell 0.45→0.35 s, wander 1.0→1.6 u/s, drain
+    −5→−8), `PHASE_BREAK_SECONDS 1.0`, `QTE_BOSS_REFILL +50`, zoom 2.0 s. Winnability math
+    + K-5-style seed-pin flagged as a stage-5 `verify` item.
+- handoff → `lead-game-designer` (Karim): **design gate requested** — `VERDICT:` line
+  before this reaches `senior-architect`. AC1 (spec answers OQ1–3) met.
+- handoff → `ux-designer` (input, not a decision): **OQ6 HP-read surface** — flagged as
+  gameplay-relevant (multi-hit + phased ⇒ stronger case for a visible read than the
+  binary hostage) with the constraint that **phase transitions need their own strong
+  read**; HUD-vs-diégétique deliberately NOT tranched by me.
+- handoff → `narrative-designer` (Yasmine): dependency — OQ5 fiction, and the
+  **human-shield scope question** (V1 assumes NO human shield; adding one re-imports the
+  bavure penalty + G6 clamp = a scope addition to raise with pm/Karim).
+- handoff → `senior-architect` (Winston, post-gate): §7 tech flags — trigger timing
+  (recommend on-quota-completion), Belliard-required-gate interaction, per-phase table
+  as constants vs. `bossQteSpec` fields, shared-vs-new-system.
