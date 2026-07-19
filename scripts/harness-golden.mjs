@@ -87,9 +87,12 @@ const DEVICE_SCALE = 1;
 const SETTLE_MS = 4000;
 
 const CHANNEL_TOLERANCE = numEnv("GOLDEN_CHANNEL_TOLERANCE", 2);
-// 5% — see the module doc's CALIBRATION note (opposite-flipbook-phase worst case
-// ~2.9% with the regenerated enemy art, not SwiftShader non-determinism).
-const MAX_DIFF_FRACTION = numEnv("GOLDEN_MAX_DIFF_FRACTION", 0.05);
+// 12% — the ENEMY_PLANE_SCALE bump (0.8→1.3, EnemySprite.tsx) grew each sprite
+// silhouette (1.3/0.8)² ≈ 2.6×, scaling the measured opposite-flipbook-phase
+// worst case (~2.9%, see the module doc's CALIBRATION note) to ~7.7%; 12% keeps
+// ~1.5× headroom above that while staying far below a whole-frame-composition
+// regression (missing facade layer, shifted layout, broken texture).
+const MAX_DIFF_FRACTION = numEnv("GOLDEN_MAX_DIFF_FRACTION", 0.12);
 
 const LEVEL_IDS = ["stalingrad", "vitry"];
 const UPDATE = process.env.UPDATE_GOLDEN === "1";

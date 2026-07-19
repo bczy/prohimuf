@@ -24,7 +24,7 @@ import { ForegroundFrames } from "./ForegroundFrames";
 import { NearForeground } from "./NearForeground";
 import { facadeDrawScale, stretchAboutCentre } from "./facadeLayout";
 import { CrosshairSprite } from "./CrosshairSprite";
-import { EnemySprite } from "./EnemySprite";
+import { EnemySprite, ENEMY_PLANE_SCALE, ENEMY_BODY_LIFT } from "./EnemySprite";
 import { CourierSprite } from "./CourierSprite";
 import { HostageQteSprite } from "./HostageQteSprite";
 import { DeliveryVehicleSprite } from "./DeliveryVehicleSprite";
@@ -44,7 +44,8 @@ import type { CameraPan } from "@game/types/cameraPan";
  * lane; NEVER set in production — same precedent as window.__MUF_FREEZE_COPS__
  * in useGameLoop). The harness boots belliard headless, pushes candidate window
  * zones, and reads back where each enemy sprite renders to check the invariant
- * "sprite plane box ⊆ window opening".
+ * "sprite feet seated at the sill" (the ENEMY_PLANE_SCALE plane deliberately
+ * overshoots the opening's top and sides — see align-windows.mjs).
  */
 interface HarnessWindow extends Window {
   /** Per-panel WindowZone arrays that override the level's own zones. */
@@ -62,7 +63,8 @@ interface HarnessWindow extends Window {
   /**
    * Each current slot's rendered sprite box, in PER-PANEL facade-normalized
    * coords: x,y = box CENTRE, w,h = box SIZE, all 0..1 within one panel — the
-   * exact coordinate space of a WindowZone, so the harness can test containment.
+   * exact coordinate space of a WindowZone, so the harness can test the feet
+   * seating (and calibrate its h→size / y→placement mapping).
    */
   __MUF_SLOT_RECTS__?: () => {
     panel: number;
@@ -181,7 +183,8 @@ export function GameScene({
     const slots: WindowSlot[] = [];
     // Per-slot harness rect, in tile-local facade-normalized coords: x,y = box
     // CENTRE, w,h = box SIZE, all 0..1 within one tile (a WindowZone's space), so
-    // the alignment harness can test containment. Mirrors EnemySprite's layout.
+    // the alignment harness can test the feet seating. Mirrors EnemySprite's
+    // layout via the shared ENEMY_PLANE_SCALE / ENEMY_BODY_LIFT constants.
     const rects: { panel: number; x: number; y: number; w: number; h: number }[] = [];
     let col = 0;
     tiles.forEach((tile, i) => {
@@ -196,9 +199,9 @@ export function GameScene({
           screenPosition: { x: worldX, y: worldY },
           size: { x: z.w * tile.width, y: sizeY },
         });
-        const planeH = sizeY * 0.8; // window-height plane (EnemySprite)
+        const planeH = sizeY * ENEMY_PLANE_SCALE; // window-height plane (EnemySprite)
         const planeW = planeH * WIDEST_ASPECT; // square plane scaled on X
-        const bodyY = worldY - planeH * 0.28; // feet at sill
+        const bodyY = worldY + planeH * ENEMY_BODY_LIFT; // feet at sill
         rects.push({
           panel: i,
           x: z.x,

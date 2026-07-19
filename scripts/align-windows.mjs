@@ -36,12 +36,14 @@
  *     lit windows. Dark/ambiguous windows are intentionally NOT invented.
  *
  * Geometry contract (GameScene.tsx, mirrored by measure()):
- *   The EnemySprite plane IGNORES the zone width — planeH = zone.h · 0.8, planeW =
- *   planeH · WIDEST_ASPECT, and the box is shifted DOWN by planeH · 0.28 (feet at
- *   sill). So zone.h controls the sprite SIZE, zone.y its vertical placement, and
- *   zone.w only frames the foreground railing (⇒ set to the opening width). The
- *   harness reads the live per-panel slot rects via __MUF_SLOT_RECTS__ and
- *   calibrates the h→size / y→placement mapping from the first render.
+ *   The EnemySprite plane IGNORES the zone width — planeH = zone.h ·
+ *   ENEMY_PLANE_SCALE (1.3, EnemySprite.tsx), planeW = planeH · WIDEST_ASPECT,
+ *   and the box is lifted UP by planeH · ENEMY_BODY_LIFT (0.02 — feet seated at
+ *   the sill, body rising through and above the opening). So zone.h controls the
+ *   sprite SIZE, zone.y its vertical placement, and zone.w only frames the
+ *   foreground railing (⇒ set to the opening width). The harness reads the live
+ *   per-panel slot rects via __MUF_SLOT_RECTS__ and calibrates the h→size /
+ *   y→placement mapping from the first render.
  *
  * Every facade is one panel tiled ×4, so ONE detection drives all four identical
  * panels of a level.
@@ -81,8 +83,15 @@ const PANELS = 4;
 
 // Containment tolerance (per side), matching the render contract's τ.
 const TAU = 0.01;
-// Sprite plane target: fill this fraction of the opening HEIGHT.
-const FILL = 0.88;
+// Sprite plane target: fill this fraction of the opening HEIGHT. Since the
+// ENEMY_PLANE_SCALE bump (0.8→1.3, EnemySprite.tsx) the SQUARE plane (aspect-1
+// gptimage cells, figure centred with transparent margins) deliberately
+// overshoots the opening's top AND sides — a standing figure is taller than its
+// window — so the target is the old 0.88 fill scaled by 1.3/0.8, the plane-box
+// gate degrades to FEET SEATING (bottom edge at the sill; horizontal alignment
+// is gated by MISALIGN/coverage on the railing frames instead), and the
+// old fit caps no longer apply.
+const FILL = 1.43;
 // Extra safety margin (beyond τ) kept between the sprite box and the opening edge.
 const MARGIN = 0.006;
 
@@ -700,12 +709,11 @@ function detectOpenings(levelId, band) {
  * to FILL of the opening height and centres it, with zone.w = opening width.
  */
 function zonesFromOpenings(openings, cal) {
-  const { a, b, c } = cal;
+  const { a, b } = cal;
   return openings.map((o) => {
-    let zh = (FILL * o.h) / a;
-    const zhMaxH = (o.h + 2 * TAU - 2 * MARGIN) / a;
-    const zhMaxW = (o.w + 2 * TAU - 2 * MARGIN) / c;
-    zh = Math.min(zh, zhMaxH, zhMaxW);
+    // No fit caps: the square plane overshoots the opening's top and sides by
+    // design (see FILL above); only the feet line is gated in measure().
+    const zh = (FILL * o.h) / a;
     const zy = o.y - b * zh; // reported slot centre lands on o.y
     return {
       x: +o.x.toFixed(4),
@@ -754,11 +762,11 @@ function measure(slotRects, openings, warmDensity, cover, zonesByPanel) {
       if (best < 0) continue;
       used.add(best);
       const o = openings[best];
-      const contained =
-        s.x - s.w / 2 >= o.x - o.w / 2 - TAU &&
-        s.x + s.w / 2 <= o.x + o.w / 2 + TAU &&
-        s.y - s.h / 2 >= o.y - o.h / 2 - TAU &&
-        s.y + s.h / 2 <= o.y + o.h / 2 + TAU;
+      // Feet seating only: the square plane deliberately overshoots the
+      // opening's top and sides since the ENEMY_PLANE_SCALE bump; the bottom
+      // edge (the feet) must still land at/inside the sill. Horizontal
+      // alignment is gated by MISALIGN/coverage on the railing frames.
+      const contained = s.y + s.h / 2 <= o.y + o.h / 2 + TAU;
       bySlot.push({ panel: p, opening: o, slot: s, contained });
       if (!contained) {
         defects.push(
@@ -1002,9 +1010,12 @@ async function fixLevel(page, level, band) {
 
   // Calibrate the h→(size,y,size-x) map from a first probe render.
   const probeH = det.cfg.probeH;
+  // Initial-guess placement from the render contract (bodyY = y + 0.02·planeH,
+  // planeH = 1.3·zone.h ⇒ rect centre 0.026·zone.h ABOVE the zone centre in
+  // image space); self-calibration refines a/b/c from the live render.
   const probe = det.openings.map((o) => ({
     x: +o.x.toFixed(4),
-    y: +(o.y - 0.224 * probeH).toFixed(4),
+    y: +(o.y + 0.026 * probeH).toFixed(4),
     w: +o.w.toFixed(4),
     h: probeH,
   }));
