@@ -195,7 +195,7 @@ function BallotRow({
           setFocusWithin(true);
         }}
         onBlur={(e) => {
-          if (!containerRef.current?.contains(e.relatedTarget as Node | null)) {
+          if (!containerRef.current?.contains(e.relatedTarget)) {
             setFocusWithin(false);
           }
         }}

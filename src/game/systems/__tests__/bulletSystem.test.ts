@@ -69,9 +69,9 @@ function enemyAt(slotIndex: number, overrides: Partial<Enemy> = {}): Enemy {
   return {
     id: slotIndex + 1,
     slotIndex,
-    state: "VISIBLE" as EnemyState,
+    state: "VISIBLE",
     timer: 1,
-    kind: "normal" as EnemyKind,
+    kind: "normal",
     hp: 1,
     ...overrides,
   };
