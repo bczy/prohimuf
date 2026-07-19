@@ -166,3 +166,14 @@ with `concept-artist` (prompts) → `lead-art` (prompt gate) ahead of generation
   composite gate (owed by lead-art, not covered by the prompt-gate PASS) run
   after CI generates real art — dispatch via
   `date > .github/dispatch/gen-nearfg-sprites && git add .github/dispatch/gen-nearfg-sprites && git commit -m "ci(dispatch): gen-nearfg-sprites" && git push`.
+
+## Verify (fallback path, 2026-07-19)
+
+Browser run on the branch (vite dev, Belliard): scene renders with zero console
+errors; procedural fallback props on the kerb (lamppost, bench, bollard…); feu
+tricolore composite CONFIRMED — dead-lens housing + render-side overlay showing
+vehicle green (halo) / ped red, HUD timer ticking. Full phase cycle covered by
+trafficSignal.test.ts + overlay repaint tests. CI generation attempt failed:
+POLLINATIONS_TOKEN repo secret NOT SET (all 8 kinds [fail] "No Pollinations
+token") — blocked on Bertrand; workflow re-runs via the dispatch marker once
+the secret exists.
