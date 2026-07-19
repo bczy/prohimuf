@@ -177,3 +177,113 @@ trafficSignal.test.ts + overlay repaint tests. CI generation attempt failed:
 POLLINATIONS_TOKEN repo secret NOT SET (all 8 kinds [fail] "No Pollinations
 token") — blocked on Bertrand; workflow re-runs via the dispatch marker once
 the secret exists.
+
+## 2. Panel triage (Winston) — senior-architect — 2026-07-19
+
+Stage-6 gate. The 4-reviewer panel (code-review high · bmad-code-review ·
+edge-case-hunter · security-review) ran on `origin/main...HEAD`; findings were
+adversarially verified upstream. This is my triage + integration sign-off in one
+pass (one read of the diff areas each finding points at). Owners:
+**R** = dev-r3f-render, **T** = dev-tooling-assets, **P** = pm, **W** = tech-writer.
+
+### Triage table
+
+| # | Sev · conv | Verdict | Prescription → owner |
+| - | ---------- | ------- | -------------------- |
+| 1 | MAJEUR · 3 | **UPHELD** | `nearForegroundTextures.loadGenerated` swaps the cache entry but `Row` binds `map={getNearForegroundTexture(kind)}` once and the scene never re-renders on that swap → a PNG that resolves after mount is **never shown**; the swap also `dispose()`s the procedural `CanvasTexture` still bound to the live material. Fix: per-frame cache re-read in `Row` à la `EnemySprite.tsx:169-172` (read texture in `useFrame`, assign `material.map` + `needsUpdate` only when it changes) **and drop the in-use `dispose()`** (release nothing still bound). Keep `warm` non-blocking (tech-plan invariant "never stall"). **Latent in the current art-less state** (all PNGs 404 → `failed` → procedural), **fatal the moment art lands**. → **R** |
+| 2 | MINEUR · 3 | **UPHELD** | `trafficLightLenses()` guards only `=== undefined`, so a JSON `"lenses": null` reaches `sanitizeAnchors(null.vehicle,…)` → TypeError; `isFiniteAnchor` accepts negative `rx/ry` → `ellipse`/`createRadialGradient` `IndexSizeError` inside the `useFrame` repaint. Fix: guard `lenses == null` (both), and require `rx > 0 && ry > 0` in `isFiniteAnchor`. Contract = malformed ⇒ null/fallback. Latent (committed lenses are well-formed). → **R** |
+| 3 | MINEUR · 2 | **UPHELD** | `levelArt.json` `trafficLight.size.width` = **226**, but `round(512×0.44)=225` (`NEAR_KIND_SPECS.trafficLight.aspect`). Slip originated in my tech-plan line 71 — my error, corrected here. Housing PNG (226) vs overlay canvas (225, sized from `NEAR_KIND_SPECS`) → sub-pixel lens misalignment + 0.3% housing distortion. Fix: 226 → 225. → **T** |
+| 4 | MINEUR · 2 | **UPHELD** | The `nearForegroundArt.consistency` test my tech plan promised (and the JSON `$comment` claims as the pin) **does not exist** — proven by #3 slipping through. `levelArt.consistency.test.ts` covers only `enemies`/`courier`. Add: for every `NEAR_KIND_SPECS` kind, `types[kind]` exists, `asset === assets/nearfg/<kind>.png`, `size.height === 512`, `size.width === round(512×aspect)`. Land **after** #3 (else it red-flags 226). → **R** |
+| 5 | MINEUR · 2 | **UPHELD** | Workflow L104-106 `git add -f public/assets/nearfg/*.png` also commits the 8 `<kind>_cyan.png` review previews into `public/` → shipped in the bundle. Fix: write previews outside the committed dir (`$RUNNER_TEMP`) **or** enumerate the 8 final basenames **or** `git reset -q public/assets/nearfg/*_cyan.png` before commit. Must land **before** the token-enabled dispatch. → **T** |
+| 6 | MINEUR · 2 | **UPHELD** | `gen-nearfg-sprites.mjs`: `readToken()` throws **inside** `generateOne`, caught by the per-kind `try/catch` (exit 0) → the missing token is misdiagnosed 2 steps later as a style-gate failure; with sprites already committed, `FORCE=1` re-dispatch without a token is a **silent green no-op** (old art re-passes). Fix: call `readToken()` **once at the top of `main()`** (fail fast, non-zero, clear message) before the loop; keep per-kind catch for transient network only. Before dispatch. → **T** |
+| 7 | MINEUR · 1 | **UPHELD (doc)** | Story AC5 / non-goals "no change to `src/game/**`" contradicts the architect-sanctioned `levelArt.ts`/`levelArt.json` additions (Decision 5 seam). Reword to the real law: *no gameplay/placement change; the sanctioned exception is the `nearForegroundArt` data block + typed accessors — the same pure-data / pure-accessor pattern every other art family already uses, with `src/game` importing no React/Three.* Boundary law is **intact** (see integration review). → **P** |
+| 8 | MINEUR · 1 | **UPHELD (doc)** | `docs/art/prompts-road-props.md` ends with leaked `</content></invoke>` tool-call markup after the 8/8 PASS. Strip the two trailing lines. → **W** |
+| 9a | NIT · 1 | **UPHELD** | `loadGenerated` lacks the non-DOM guard `ensureProcedural` has → `loader.load` touches `document` in a non-DOM context. Add `if (typeof document === "undefined") return;` at the top. Fold into #1. → **R** |
+| 9b | NIT · 1 | **UPHELD** | `updateTrafficLightSignal` docstring "No-op if unchanged" is false (it repaints every call; the change-gate is in `NearForeground`). Fix the docstring (or add the unchanged guard). → **R** |
+| 9c | NIT · 1 | **UPHELD** | `check-nearfg-style.mjs:145` `args[fi+1]` undefined when `--file` is the last arg → `path.resolve(…, undefined)` TypeError. Guard the missing value. Operator-only; optional. → **T** |
+| 9d | NIT · 1 | **UPHELD (low)** | `gptimage.fetchImg` re-sends `Authorization: Bearer` across cross-host redirects (L74-76). Upstream (Pollinations) controlled, low exposure; one-line same-host check before forwarding the header. → **T** |
+| 9e | — | **ACCEPT-AS-IS** | `MIN_CONTENT_PCT=1` — a 1% floor guards the empty-key failure; no committed prop silhouette lands near it. Retune at the art gate if a legit thin prop trips it. → monitor **T** |
+| 9f | — | **ACCEPT-AS-IS** | Same-seed style-gate retry "burning" premium generations — bounded to 2, then the job fails and uploads artifacts for lead-art. Varying the seed would change reviewed art. Acceptable as bounded. |
+| 9g | — | **ACCEPT-AS-IS** | Missing-`size` default 256×512 distortion is local-run-only on malformed JSON; the committed block is complete and #4's consistency test now pins presence. |
+
+No finding **rejected** outright. Every UPHELD item is small and single-lane;
+render vs tooling vs docs paths do **not** overlap → the fixes fan out in parallel
+(#1/2/4/9a/9b to **R**, #3/5/6/9c/9d to **T**, #7 to **P**, #8 to **W**), no
+serialisation needed except #4 landing after #3.
+
+### Integration review
+
+**Boundary law — INTACT.** The seam I sanctioned in the tech plan (Decision 5)
+holds as built: `levelArt.ts` (in `src/game/`) gains only pure types + pure
+accessors (`nearForegroundArtAsset`, `trafficLightLenses`) reading untyped JSON —
+no React, no Three. `levelArt.json` is pure data. The render side
+(`nearForegroundTextures.ts`) imports **from** `@game/levels/levelArt` — render
+depending on game is the allowed direction; game imports nothing render/Three.
+The traffic-light overlay split kept all rules (`trafficSignal` clock, placement,
+non-occlusion caps, parallax) in code, byte-for-byte — confirmed unchanged. So
+AC5's wording (#7) is over-strict, not a real breach: the law is "game never
+imports React/Three", and it does not.
+
+**Seams.** The two-lane split ran clean on non-overlapping files (tooling wrote
+`levelArt.json` + `scripts/**`; render wrote `levelArt.ts` + `scene/**`). The one
+frozen-contract slip (#3, the 226/225 aspect) is exactly what the promised
+consistency test (#4) existed to catch — its absence is the root cause, so #4 is
+the durable fix, #3 the immediate one. The `nearfg:<kind>` manifest scheme was
+retained as designed (Decision 2) — the guaranteed synchronous procedural
+fallback is real and VERIFY-confirmed.
+
+**Deps / deploy.** No new runtime dependency. New CI lane
+(`gen-nearfg-sprites.yml`) is premium-Pollen and correctly main-guarded
+(`branches-ignore: [main]` + `ci(dispatch):` head-commit gate + `ref_name != main`).
+Two deploy defects gate the FIRST real generation: #5 (ships `_cyan` previews into
+the bundle) and #6 (token failure misdiagnosed / silent no-op). Both must land
+before the token-enabled re-dispatch.
+
+**ADR.** ADR-0049 (generated-with-procedural-fallback, amends ADR-0047) is present
+and referenced consistently across `levelArt.ts`/`textures`/JSON. Number was
+allocated via the proper channel — good.
+
+**Merge-hygiene BLOCKER (scope).** The branch top commit
+`9f8ae13 refactor(render): extract inline styles to CSS modules` is a broad
+`src/render/ui/**` + `src/catalog/**` CSS-Modules migration (hud-css / ADR-0046
+territory) with **no relationship to road-props** and **not covered by this
+panel** — every finding above is road-props. Merging this branch as-is would push
+an un-panel-reviewed migration to `main` under the road-props gate. It must be
+**split to its own branch + its own review panel** (or, if already reviewed
+elsewhere, that review recorded) before this branch merges. This is not a
+road-props defect; it is a gate-integrity blocker. → **producer** to split /
+sequence.
+
+### Verdict
+
+**(a) Current code-ahead-of-art state — NO-MERGE, on hygiene + docs only.**
+The road-props code itself is sound in the art-less state: every PNG 404s →
+`failed` → procedural, VERIFY confirmed zero console errors and a working feu
+composite. No CONFIRMED blocking/major finding manifests in the running current
+state (the MAJEUR #1 is latent until art lands). Blockers to clear before this
+branch may merge:
+  1. Split out the unrelated CSS-Modules migration commit `9f8ae13` (producer).
+  2. Strip leaked markup (#8, W) and realign AC5/non-goals wording (#7, P).
+  3. Recommended in the same pass (all small, single-lane, non-overlapping): fold
+     the render fixes #1/#2/#9a/#9b (R) and the tooling fixes #3/#6/#9c/#9d + test
+     #4 (R, after #3) so the branch merges already-correct rather than trailing a
+     fix lane.
+
+**(b) Before the CI art dispatch (token-enabled re-dispatch that generates +
+commits real PNGs) — HARD GATE, must all be true:**
+  1. **#1 fixed** (per-frame re-read + no in-use dispose) — else generated art
+     never displays and the story fails silently. Non-negotiable.
+  2. **#3 + #4** landed (aspect 225 + consistency test) so housing/overlay align
+     and the pin can't regress.
+  3. **#5 + #6** fixed (no `_cyan` previews shipped; fail-fast on missing token) —
+     else the first real dispatch ships previews and/or greens silently.
+  4. **#2** fixed (defensive lens hardening) — cheap, prevents a hand-edit crash.
+  5. Re-run **VERIFY on both device classes with real art**, plus the lead-art
+     **asset gate** (magenta-spill sweep) and the **composite gate** on the
+     trafficLight lit-lens overlay — both explicitly still owed (§1), neither
+     covered by the prompt-gate PASS.
+
+Once (a)'s blockers clear, the code-ahead-of-art branch is mergeable; the art
+itself does not merge until every (b) condition is met and re-verified.
+
+— Winston, panel triage + integration sign-off
