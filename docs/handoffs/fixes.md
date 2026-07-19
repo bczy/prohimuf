@@ -28,7 +28,17 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   and fixed by gating the rewrite on the baseline measurement. Corrected outcome:
   32/114 zones actually needed correction (troncon-a 10/31, troncon-b 12/33,
   troncon-c 10/50), converges to 0 OVERFLOW in 4 iterations, the other 82 zones now
-  byte-identical to the original hand-placed art, confirmed idempotent. Data-only:
+  byte-identical to the original hand-placed art, confirmed idempotent. Separate
+  follow-up (Bertrand, with a screenshot of the exact spot): `troncon-b` zones 0/1
+  are two real windows only ~0.003 apart with a narrow stone mullion between them —
+  their committed x-positions were accurate, but the haussmann rail-drawing
+  geometry's fixed 10% width overshoot on each side consumed the whole gap,
+  rendering as one merged bar. Horizontal drift is intentionally audit-only per
+  point 4 above (never auto-corrected), so this pre-existing defect was never
+  touched by any `--fix` run; hand-corrected these two zones' `w` only (0.0484→
+  0.0426, 0.0558→0.0500, verified against the raw art and the rail-extent formula
+  so a ~0.004 gap reopens) — `x`/`y`/`h` untouched, 0 OVERFLOW maintained, visually
+  confirmed in a fresh render. Data-only:
   `src/game/levels/windowZones.generated.json`'s three `belliard/troncon-{a,b,c}`
   keys. ADR-0028 addendum (cross-linked from ADR-0048); `HARNESS.md`/`SCRIPTS.md`/
   `package.json` (`align:troncon[:check]`) updated. · checks: tsc clean, vitest
