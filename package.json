@@ -23,6 +23,8 @@
     "align:check": "node scripts/align-windows.mjs --check",
     "align:belliard": "node scripts/align-windows.mjs belliard",
     "align:belliard:check": "node scripts/align-windows.mjs --check belliard",
+    "align:troncon": "node scripts/align-troncon.mjs",
+    "align:troncon:check": "node scripts/align-troncon.mjs --check",
     "prepare": "husky"
   },
   "dependencies": {

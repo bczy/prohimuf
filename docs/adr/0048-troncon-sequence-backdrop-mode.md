@@ -101,7 +101,10 @@ windows and railings sit on real balconies.
 `__MUF_PROJECT__`, `__MUF_ZONES__` (`GameScene.tsx`) drop `panelW = fullW/PANELS` +
 `floor(globalXNorm·PANELS)` and instead locate a world-X's tile by cumulative offsets, reporting
 tile index + tile-local coords. This keeps `gen-window-zones`' SCREEN validation pass working on
-the variable layout (round-trip identity unit-tested).
+the variable layout (round-trip identity unit-tested). A dedicated sibling driver,
+`scripts/align-troncon.mjs`, drives this per-tile contract to detect and correct belliard's
+`belliard/troncon-{a,b,c}` zones (ADR-0028's 2026-07-19 addendum: an edge-density detector for
+this ink/wash art, the a,c,b,c panel→key demux, and the troncon-c two-instance merge rule).
 
 **6. Near-side trottoir on the `street` layer (v2 §4).** The far-side trottoir is baked in each
 tronçon; the near-side band is added to the `street`-layer prompt (`level-street.md`) as its own
