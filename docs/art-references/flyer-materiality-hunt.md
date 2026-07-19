@@ -65,13 +65,13 @@ from-scratch brief.
 - Confirms `mix-blend-mode: multiply`-only is period-correct: xerox toner sits in
   the fibre and can only darken, never lighten — no change needed, just validated.
 
-### D2 — Photographed (not scanned) ephemera: Seana Gavin's *Spiralled*
+### D2 — Photographed (not scanned) ephemera: Seana Gavin's _Spiralled_
 
-- [Seana Gavin — *Spiralled* (IDEA, artist page)](https://www.seanagavin.com/newblog/2020/7/13/spiralled-1) —
+- [Seana Gavin — _Spiralled_ (IDEA, artist page)](https://www.seanagavin.com/newblog/2020/7/13/spiralled-1) —
   a decade of photography (1993–2003) across UK/European free-party sound systems
   including Spiral Tribe, interspersed with **saved flyers, diary entries and
   ephemera photographed as physical objects**, not re-scanned clean.
-- [The Vinyl Factory — coverage of *Spiralled*](https://www.thevinylfactory.com/news/nineties-rave-scene-new-book-seana-gavin-spiralled) —
+- [The Vinyl Factory — coverage of _Spiralled_](https://www.thevinylfactory.com/news/nineties-rave-scene-new-book-seana-gavin-spiralled) —
   secondary write-up confirming the book's ephemera/diary/flyer-object mix.
 - [Gallery 98 — "Flyers" category](https://gallery98.org/category/flyers/) —
   photographed dealer-inventory shots of individual worn flyers (corners, creases,
@@ -79,7 +79,7 @@ from-scratch brief.
 - _Why it serves muf:_ this is the closest match to what §2bis.2 ingredients 2 and
   4 (hand-cut edge, dog-ear, fold crease) are trying to fake in CSS — an actual
   photographed, handled, worn paper object rather than a graphic-design scan.
-- _Risk:_ *Spiralled* is a UK/pan-European scene, not Paris-specific (Round 1 Q2)
+- _Risk:_ _Spiralled_ is a UK/pan-European scene, not Paris-specific (Round 1 Q2)
   — use for **wear/cut/fold physics only**, never for iconography or place-naming.
   It's also a paid photobook, not a freely reproducible archive — study/mood only.
 - _Licence:_ copyrighted photobook (IDEA) and dealer-owned photography (Gallery 98)
@@ -141,7 +141,7 @@ from-scratch brief.
 
 ### D4 — The wall: flyer piles, squat & teknival interiors (place/era anchor)
 
-- [Molly Macindoe — *Out of Order*, Vice profile](https://www.vice.com/en/article/molly-macindoes-out-of-order-rave-photos-659/) —
+- [Molly Macindoe — _Out of Order_, Vice profile](https://www.vice.com/en/article/molly-macindoes-out-of-order-rave-photos-659/) —
   400+ photographs of UK/European free parties and squats, 1997–2006; documentary
   interiors likely to show flyer/notice walls in situ (venue and squat spaces).
 - [metek.free.fr — Story 1997/1998 pages](http://metek.free.fr/Story/1998/METEK-1998.htm) —
