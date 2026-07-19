@@ -50,6 +50,12 @@ set for the short-landscape rack in `pregame-landscape-ux.md` §3.2): Left/Right
 flyers in **list order** (tutorial, belliard, stalingrad, vitry — unchanged, no
 reorder), `wrap: false`. Below 640 px the axis stays **vertical** (unchanged).
 
+**Amended (ADR-0049 D2):** the guard is the compound query
+`(min-width: 640px) and (min-height: 481px)`, not width alone — the width-only phrasing
+above is superseded by this compound form. The height half keeps the short-landscape
+rack (ADR-0024, `pointer: coarse`, ≤480px tall) from double-matching the horizontal
+rule and losing its required vertical roving.
+
 ## 3. Narrow / single-column (< 640 px, not short-landscape)
 
 Same `aspect-ratio`, same `FLYER_MAX_WIDTH_PX = 280` cap, **`width: min(100%, 280px)`,

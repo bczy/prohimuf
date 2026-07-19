@@ -61,8 +61,16 @@ deterministic-per-corner treatment (`CORNER_STYLE`), no runtime randomness.
 3. **Mobile portrait & short-landscape unaffected in structure.** Existing single-column
    portrait stack and the 280px scroll-snap rack (ADR-0024) keep their current
    breakpoint behavior; only the per-flyer materiality is added.
+   **Amendment (UX spec `flyer-wall-format.md` §3, PASSED design gate 2026-07-19):** the
+   narrow/portrait column's `width: min(100%, 280px)` cap + centering (replacing the
+   prior full-width stack) is a sanctioned format change, not scope drift against this
+   AC's "unaffected in structure" wording.
 4. **Content untouched.** No copy, stamp, marker-circle, tape-corner, or info-row change;
    diff stays inside shape/surface (background/texture/edge/shadow) and sizing.
+   **Clarified (resolves an AC4↔AC8 wording clash):** "tape-corner ... untouched" here
+   means the `TapeCorner` TRIGGER/placement logic — still pulled/focused-flyer only,
+   still driven by the same `CORNER_STYLE`/`corners` prop, no new appearance condition.
+   AC8 below governs the tape's own visual redesign; the two ACs are not in conflict.
 5. **Perf.** No added texture asset over ~50KB per stock color; prefer CSS-only
    (gradients/filters/clip-path) or a single small shared SVG/texture reused across all
    flyers. No runtime cost added to `useFrame`/game loop (this is DOM/CSS, not R3F).

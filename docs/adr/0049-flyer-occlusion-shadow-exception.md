@@ -35,11 +35,14 @@ decisions are cross-cutting enough to record:
 
 Forces from the code:
 
-- `clip-path` on an element clips everything painted on that element, including a
-  `box-shadow` — the shadow gets cut away with the corners it was meant to sit outside
-  of. `filter: drop-shadow(...)`, by contrast, is computed from the element's alpha
-  silhouette **after** clipping, so it follows the cut edge instead of being erased by
-  it — the physically correct behaviour for a shadow cast by a guillotine-cut sheet.
+- `clip-path` on an element clips everything painted on that element — including a
+  `box-shadow` **and** a same-element `filter: drop-shadow(...)`. CSS applies `filter`
+  before `clip-path` in a single element's rendering, so a filter painted on the
+  clipped element itself is computed and then clipped away right along with it
+  (empirically confirmed in Chromium). The shadow only survives one level up: a
+  `drop-shadow` filter on an **unclipped parent** is evaluated over that parent's
+  already-rendered (already-clipped) subtree, so it correctly hugs the child's cut
+  silhouette instead of a phantom full rectangle.
 - `LevelFlyer.tsx` (`src/render/ui/menu/LevelFlyer.tsx`) currently renders one `.flyer`
   div holding both the card content and a sibling `<TapeCorner />`; `LevelFlyer.module.css`
   ships `box-shadow: none` on `.flyer` today. Introducing `clip-path` directly on that
@@ -61,35 +64,47 @@ and (max-height: 480px) and (pointer: coarse)` media condition and keeps **verti
 
 ## Decision
 
-### D1 — The occlusion shadow ships as `filter: drop-shadow(...)`, never `box-shadow`, via a DOM restructure that isolates the clip
+### D1 — The occlusion shadow ships as `filter: drop-shadow(...)` on the UNCLIPPED `.flyer` wrapper, never `box-shadow`, and never on the clipped element itself
+
+> **Corrected** (code-review panel BLOQUANT finding, senior-architect NO-MERGE triage,
+> 2026-07-19 — `docs/handoffs/story-flyer-paper-materiality.md` §6). The first pass of
+> this D1 put `clip-path` and `drop-shadow` on the **same** element (`.paper`); that
+> never paints a shadow — see the Context "Forces from the code" note above. The
+> decision itself — `drop-shadow`, not `box-shadow` — is unchanged; only the
+> mechanism/placement below is corrected.
 
 `§2bis.2`'s occlusion shadow is implemented as `filter: drop-shadow(1px 3px 6px
-rgba(20,18,16,.35))` on the clipped element, not as `box-shadow`. `drop-shadow` is
-computed from the post-clip alpha silhouette, so it hugs the guillotine-cut edge
-instead of being clipped away with it — more physically correct for a sheet with a
-non-rectangular cut, and the only mechanism that survives `clip-path` at all.
+rgba(20,18,16,.35))` on `.flyer`, the **unclipped** wrapper — never on `.paper`, the
+clipped child. `.paper` carries `clip-path` and paints the guillotine silhouette;
+`.flyer`'s `drop-shadow` filter is evaluated over its rendered subtree — i.e. over
+`.paper` already clipped — so the cast shadow hugs the cut edge exactly, without ever
+sitting on the same element as the clip that would erase it. The same rule applies to
+the dog-eared corner (§2bis.2 pt4): its folded triangle is clipped on one element, and
+the "tiny ink-black shadow" filter for that fold must sit on an **unclipped wrapper one
+level up** from that clip — the identical parent/child split, not a coincidence.
 
-The flyer DOM is restructured to give the clip a home that does not also swallow the
+The flyer DOM is restructured to give each clip a home that does not also swallow the
 elements that must overhang it:
 
 ```
-.flyer            (unclipped wrapper — hosts layout, transform/tilt/jitter, TapeCorner)
- ├─ .paper         (clipped: clip-path guillotine polygon + drop-shadow filter + content)
+.flyer            (unclipped wrapper — hosts layout, transform/tilt/jitter, TapeCorner,
+                    AND the drop-shadow filter that reads .paper's clipped alpha)
+ ├─ .paper         (clipped: clip-path guillotine polygon + content — no filter here)
  ├─ <cut-line svg> (sibling of .paper — the 1px blade-crushed edge line, §2bis.2 pt2)
  └─ <TapeCorner />  (sibling of .paper — must overhang the cut edge, never itself clipped)
 ```
 
-`.flyer` stays the unclipped positioning/transform root (rotation, jitter, pull
-transform stay exactly where they are today); `.paper` is the new inner element that
-carries `clip-path` and the `drop-shadow` filter together, so the shadow silhouette and
-the clip silhouette are always the same shape by construction. Tape and the cut-line
-mark are **siblings** of `.paper`, not children — they are drawn on top of the wall,
-not through the clipped card, so they are never accidentally clipped.
+Tape and the cut-line mark are **siblings** of `.paper`, not children — they are drawn
+on top of the wall, not through the clipped card, so they are never accidentally
+clipped. The dog-ear triangle follows its own analogous two-element split (unclipped
+shadow wrapper > clipped fold), nested wherever §2bis.2 pt4 places it on the sheet.
 
-**Do not** revert to `box-shadow` on any clipped flyer element — it will be silently
-erased by the clip. **Do not** move `TapeCorner` (or the cut-line svg) inside `.paper`
-— it will be clipped and lose the "stuck on across the seam" read §2bis.2 pt6 exists
-for.
+**Do not** revert to `box-shadow` on any clipped flyer element. **Do not** put the
+`drop-shadow` filter on the same element as its `clip-path` — filter-before-clip order
+means it will be computed then clipped away, same as `box-shadow`; the filter must sit
+one level up, on the unclipped parent. **Do not** move `TapeCorner` (or the cut-line
+svg) inside `.paper` — it will be clipped and lose the "stuck on across the seam" read
+§2bis.2 pt6 exists for.
 
 ### D2 — Roving-focus axis becomes breakpoint-dependent via a new render-layer `useMediaQuery` hook
 
@@ -123,8 +138,9 @@ it does not throw during any non-browser test environment; it is standard
 **Positive**
 
 - The occlusion shadow renders correctly on a non-rectangular clip without any
-  specificity fight or duplicated silhouette — `.paper`'s `clip-path` and its
-  `drop-shadow` filter are computed from the same element, so they cannot drift apart.
+  specificity fight — `.flyer`'s `drop-shadow` filter reads `.paper`'s already-clipped
+  alpha directly off the DOM, so the shadow silhouette and the clip silhouette cannot
+  drift apart even though they live on two different elements.
 - `TapeCorner` and the cut-line mark keep overhanging the cut edge exactly as
   §2bis.2 pt2/pt6 intend, because the DOM restructure makes "never clip the tape"
   structural rather than a rule a future edit could silently violate by moving a `<div>`.
@@ -139,8 +155,8 @@ it does not throw during any non-browser test environment; it is standard
 
 - One more DOM level (`.flyer > .paper`) on every flyer card; any future style or test
   that assumed `.flyer` was the outermost _and_ the only styled box must be re-checked
-  against which element now owns which concern (transform/tilt lives on `.flyer`; clip
-  - shadow + content live on `.paper`).
+  against which element now owns which concern (transform/tilt AND the `drop-shadow`
+  filter live on `.flyer`; `clip-path` + content live on `.paper`).
 - A new hook (`useMediaQuery`) is added to the render layer's public surface; it must
   stay a thin `matchMedia` listener and must not grow into a general "viewport info"
   hook that tempts a future author to reach for it in `src/hooks/**` instead (the same
@@ -154,8 +170,11 @@ it does not throw during any non-browser test environment; it is standard
 
 **Gotchas to watch**
 
-- **Do not put `box-shadow` back on a clipped flyer element** — `clip-path` erases it;
-  only `filter: drop-shadow(...)` on `.paper` survives the clip.
+- **Do not put `box-shadow` back on a clipped flyer element, and do not put the
+  `drop-shadow` filter on that same clipped element either** — CSS applies `filter`
+  before `clip-path`, so a same-element filter is clipped away just like `box-shadow`
+  is. The `drop-shadow` filter must sit one level up, on the unclipped `.flyer` parent,
+  reading `.paper`'s clipped alpha — same two-element split for the dog-ear fold.
 - **Do not move `TapeCorner` or the cut-line svg inside `.paper`** — they must stay
   siblings so the clip never touches them.
 - **Do not widen `useMediaQuery` into `src/hooks/**`** in a later refactor — it is pure

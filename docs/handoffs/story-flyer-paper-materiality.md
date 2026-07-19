@@ -111,7 +111,10 @@ breakpoint-dependent (≥640px horizontal).
 - release: implemented per frozen contract. Verify — `yarn typecheck` clean, `yarn test`
   693/693 pass (new `flyerGeometry.test.ts` 9 tests, `applyPrintTokens.test.ts` +2 assertions),
   `yarn lint` clean, `yarn format` applied. NO game-logic touched, copy/stamps/roving-order/
-  unlock logic untouched, short-landscape inline rack block untouched.
+  unlock logic untouched. **Correction:** the short-landscape inline rack block in
+  `FlyerWall.tsx` was **not** left untouched — it gains `--muf-flyer-aspect: auto` (the A5
+  ratio waiver), sanctioned by `flyer-wall-format.md` §4 at the orchestrator level, not a
+  fresh architect call (see RISK note below).
 - File List:
   - `src/render/ui/print/tokens.ts` (+FLYER_MAX_WIDTH_PX/EDGE_SEED/EDGE_MAX_DEV/DOG_EAR/
     CREASE_ANGLE/WEATHERED/TAPE_WIDTH/TAPE_FRAY_SEED; type-only Corner import)
@@ -124,12 +127,39 @@ breakpoint-dependent (≥640px horizontal).
   - `src/render/ui/menu/FlyerWall.tsx` + `FlyerWall.module.css` (A5 wrap + roving axis flip)
   - `src/render/ui/print/__tests__/flyerGeometry.test.ts` (NEW)
   - `src/render/ui/__tests__/applyPrintTokens.test.ts` (extended)
-- RISK flagged for screenshot gate: the plan applies `aspect-ratio:148/210` to `.flyer`/`.paper`
-  unconditionally; in the short-landscape rack this makes each 280px flyer ~397px tall
-  (content is ~264px), which visibly changes the rack vs `flyer-wall-format.md` §4/AC4
-  ("ratio waived, rack pixel-unchanged"). Implemented as the plan specifies (no waiver);
-  needs a rack screenshot check — if the taller flyers regress the rack, add a
-  `@media SHORT_LANDSCAPE_MEDIA { .paper,.flyer { aspect-ratio:auto } }` waiver (architect call).
+- RISK (resolved, was open when this section was first drafted): the plan initially
+  applied `aspect-ratio:148/210` to `.flyer`/`.paper` unconditionally, which would have
+  made each 280px rack flyer ~397px tall (content is ~264px) and regressed the rack vs
+  `flyer-wall-format.md` §4/AC4 ("ratio waived, rack pixel-unchanged"). Resolved in the
+  same dev pass via a `--muf-flyer-aspect` custom property, flipped to `auto` inside the
+  `SHORT_LANDSCAPE_MEDIA` block in `FlyerWall.tsx`. This did **not** need a separate
+  architect call — the waiver is already sanctioned by `flyer-wall-format.md` §4 at the
+  orchestrator level (the UX spec explicitly rules "Ratio is explicitly waived here").
+
+## 6. PANEL — code-review panel + senior-architect (Winston) — 2026-07-19
+
+- claim: mandatory 4-reviewer merge-gate panel (`code-review` high, `bmad-code-review`,
+  `bmad-review-edge-case-hunter`, `security-review`) on the dev-lane diff, findings
+  adversarially verified, then triaged by senior-architect (COLLABORATION.md §code-review
+  panel).
+- release: findings —
+  - **1 BLOQUANT — shadow-clipped.** `.paper` (`LevelFlyer.module.css`) carries both
+    `clip-path` and `filter: drop-shadow(...)` on the SAME element. CSS applies `filter`
+    before `clip-path`, so the shadow is computed and then clipped away with the rest of
+    the element — the occlusion shadow never paints. (The dog-ear corners already use the
+    correct unclipped-wrapper/clipped-fold split in `LevelFlyer.tsx`; `.paper`'s shadow
+    needs the same split.) See ADR-0049 D1 (corrected).
+  - **2 MAJEUR:** - _cut-line_ — the `.cutLine` blade-crushed-edge SVG is nested INSIDE `.paper` (a
+    child of the clipped element), so its on-boundary stroke is itself clipped by
+    `.paper`'s `clip-path`, thinning/erasing the "1px darker compressed line" §2bis.2
+    pt2 specifies. - _axis-guard_ — `FlyerWall.tsx`'s roving-axis query is `useMediaQuery("(min-width:
+640px)")`, width-only; ADR-0049 D2's `(min-height: 481px)` guard was not carried
+    into the implementation, so a wide short-landscape touch device can double-match
+    the horizontal-axis rule instead of keeping the vertical roving the rack requires. - several MINEUR findings folded into the same fix round (not individually blocking).
+  - VERDICT: senior-architect (Winston) triage — **NO-MERGE** (unresolved confirmed
+    BLOQUANT finding, mandatory-gate rule). Fix round launched: code fixes routed to
+    `dev-r3f-render`; doc corrections (this handoff, ADR-0049 D1, the story, the UX spec,
+    art-direction §2bis.2) routed to `tech-writer`.
 
 ---
 
