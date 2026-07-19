@@ -715,6 +715,50 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
     expect(s1.couriers).toBe(s0.couriers);
   });
 
+  it("the kill that CROSSES the quota this tick hands off to the boss (not a direct LEVEL_COMPLETE)", () => {
+    // REGRESSION (code-review panel, PR #112): the top-of-tick boss check reads `state.kills`
+    // (pre-tick) while the bottom-of-tick completion read `newKills` (post-tick) WITHOUT the
+    // boss guard. So landing the quota-meeting kill in a single tick used to set LEVEL_COMPLETE
+    // directly and skip the boss forever. With `enemiesToWin > 0` (a real level, not the 0-quota
+    // harness), the last kill must leave the level PLAYING at quota, and the NEXT tick must open
+    // the duel. A `VISIBLE`, hp-1 "normal" enemy sits at slot 0; firing on it takes it down.
+    const slot = FACADE_01.slots[0];
+    if (slot === undefined) throw new Error("expected slot");
+    const enemy = {
+      id: 1,
+      slotIndex: 0,
+      state: "VISIBLE" as const,
+      timer: 5,
+      kind: "normal" as const,
+      hp: 1,
+    };
+    const s0 = bossState({ kills: QUOTA - 1, enemies: [enemy] });
+    // Fire at the enemy's slot (aim via the camera offset so a centred crosshair lands ON the
+    // slot, as the courier test does): this shot kills the last enemy needed, so `newKills`
+    // reaches QUOTA in the SAME tick `state.kills` was QUOTA − 1.
+    const s1 = tickGameState(
+      s0,
+      fire,
+      0.5,
+      0.5,
+      0.1,
+      FACADE_01,
+      slot.screenPosition.x,
+      slot.screenPosition.y,
+      18,
+      12,
+      QUOTA,
+      FIELD,
+    );
+    expect(s1.kills).toBe(QUOTA); // the crossing kill counted
+    expect(s1.phase).toBe("PLAYING"); // NOT LEVEL_COMPLETE — the boss must still get its turn
+    expect(s1.bossQte).toBeNull(); // not triggered YET (top check ran before the kill landed)
+    // NEXT tick: the top-of-tick boss check now sees `state.kills >= enemiesToWin` → duel opens.
+    const s2 = tick(s1, noFire, 0, 0, 0.1);
+    expect(s2.bossQte?.phase).toBe("ZOOMING");
+    expect(s2.phase).not.toBe("LEVEL_COMPLETE");
+  });
+
   it("a panic shot during the boss zoom drains energy inside the frozen tick", () => {
     const s1 = tick(bossState({ kills: QUOTA }), fire, 0, 0, 0.1);
     expect(s1.bossQte?.phase).toBe("ZOOMING");

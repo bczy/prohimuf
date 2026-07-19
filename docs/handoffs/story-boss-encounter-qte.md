@@ -946,3 +946,43 @@ maxBlownWindows 10, targetSeed 20260719}` with `bossQte: null` (no-op) pre-quota
 - handoff → `ux-designer` (Tony): stage-5 review of the built bar against the overridden ruling
   (bar + D1-D3 co-exist) on both device classes. → `senior-architect` (Winston): integration
   review; the change is render-lane-only, no boundary/dependency/ADR-contract change.
+
+## Fix — BLOCKING same-tick quota-crossing skips the boss — dev-gameplay (Amelia) — 2026-07-19
+
+- finding: code-review panel (stage-6, PR #112, ADR-0051) confirmed a BLOCKING bug with repro,
+  independently re-verified by Bertrand. In `src/game/systems/stateMachine.ts` the boss trigger
+  check sits at the TOP of `tickGameState` and reads `state.kills` (pre-tick), while normal
+  level-completion sat at the BOTTOM and read `newKills` (post-tick) WITHOUT any `bossQteSpec`
+  guard: `const finalPhase = newKills >= enemiesToWin ? "LEVEL_COMPLETE" : "PLAYING";`.
+- impact: the ordinary case — the shot that kills the last required enemy — crosses the quota
+  in ONE tick. `state.kills` is still < quota at the top (boss not triggered), but `newKills`
+  reaches quota at the bottom → `LEVEL_COMPLETE` posted directly, `bossQteSpec` ignored. The
+  boss NEVER appears; the next tick short-circuits on the terminal-phase guard, so there is no
+  second chance. Masked in practice only because the sole boss-bearing level
+  (`BOSS_QTE_DEV_HARNESS_LEVEL`) authors `enemiesToWin: 0`, so `state.kills (0) >= 0` is already
+  true on tick 1 and the top check fires before the crossing path is ever exercised. This is the
+  true root cause of `qa-lead`'s REG-2 (`docs/qa/plan-story-boss-encounter-qte.md`), previously
+  mis-attributed to a dev-seam interaction.
+- fix (surgical, one line + guard comment): the bottom completion now yields to the boss —
+  `newKills >= enemiesToWin && state.bossQteSpec === null ? "LEVEL_COMPLETE" : "PLAYING"`. When a
+  boss is authored, victory-by-quota stays `PLAYING` with `kills` at/over quota so the top-of-
+  tick boss block opens the duel on the NEXT tick via `shouldTriggerBossQte`. The two GAME_OVER
+  branches above (lives ≤ 0, timer ≤ 0) are deliberately NOT changed: a defeat must stay
+  immediate — only VICTORY cedes to the boss. The top-of-tick victory branch (line ~184, reading
+  `state.kills`) needs no change: when `bossQteSpec !== null` and `state.kills >= quota`, the boss
+  block above always intercepts (triggers ZOOMING and returns, or resolves a DONE boss), so that
+  branch is only reached with `state.kills < quota` under an authored boss — provably safe.
+- test: new permanent regression in `src/game/systems/__tests__/stateMachine.test.ts` ("the kill
+  that CROSSES the quota this tick hands off to the boss") — `kills = QUOTA − 1`, `enemiesToWin =
+QUOTA` (= 3, NOT the 0-quota harness), one VISIBLE hp-1 enemy; the kill-shot this tick leaves
+  the level `PLAYING` at quota with `bossQte === null`, and the next tick opens `bossQte.phase
+=== "ZOOMING"` (never `LEVEL_COMPLETE`). Confirmed RED without the fix (`expected 'LEVEL_COMPLETE'
+to be 'PLAYING'`), GREEN with it. The existing IDENTITY test (boss-less level unchanged) and the
+  0-quota harness path both stay green — the guard collapses to the old expression when
+  `bossQteSpec === null`.
+- verify: `yarn typecheck` (0), `yarn lint` (0), `yarn test` (814 passed, was 813 + 1 new).
+- File List:
+  - `src/game/systems/stateMachine.ts` — boss-aware completion guard (bottom of `tickGameState`).
+  - `src/game/systems/__tests__/stateMachine.test.ts` — +1 regression test.
+- handoff → `senior-architect` (Winston): re-triage on PR #112; the reviewer's repro is resolved,
+  fix is game-lane-only, no boundary/dependency/ADR-contract change.
