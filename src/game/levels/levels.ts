@@ -224,8 +224,9 @@ export const BOSS_QTE_DEV_HARNESS_LEVEL: LevelConfig = {
   district: "Dev — Belliard",
   year: "1998",
   enemySpeedMultiplier: 1.0,
-  // Reach the boss quickly on the harness so a dev iterates the duel, not the mook clearing.
-  enemiesToWin: 3,
+  // Instant trigger (kills 0 >= enemiesToWin 0) so `?preview=boss` lands straight in the duel —
+  // Bertrand asked for direct access, not mook-clearing (2026-07-19).
+  enemiesToWin: 0,
   timeSeconds: 90,
   unlocked: false,
   deliveries: [],

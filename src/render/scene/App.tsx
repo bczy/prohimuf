@@ -56,13 +56,14 @@ type AppPhase =
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
 
-// Dev-only boss QTE harness reachability seam (ADR-0051 D4): `?preview=boss` boots
-// straight into the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` so engineering can iterate
-// "le Commandant" without shipping it. Gated behind `import.meta.env.DEV` so a production
-// build (DEV === false) tree-shakes the branch — no menu path, no shipped player reaches
-// the required gate ("Belliard live contract untouched"). Mirrors the ADR-0005
-// harness-window discipline and the `?preview=` screen seam above.
-const BOSS_HARNESS_PREVIEW = import.meta.env.DEV && PREVIEW_SCREEN === "boss";
+// Boss QTE harness reachability seam (ADR-0051 D4): `?preview=boss` boots straight into
+// the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` so engineering (and Bertrand, on a branch
+// preview) can iterate "le Commandant" without shipping it. No `LEVELS`/menu path exists
+// to it, so no player reaches the required gate ("Belliard live contract untouched") —
+// same protection as the other `?preview=` screens above, which are equally reachable on
+// production builds. Bertrand explicitly asked for this to work on the branch-preview
+// build (2026-07-19), so this is intentionally NOT `import.meta.env.DEV`-gated.
+const BOSS_HARNESS_PREVIEW = PREVIEW_SCREEN === "boss";
 const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
   ? BOSS_QTE_DEV_HARNESS_LEVEL
   : FIRST_PLAYABLE_LEVEL;
