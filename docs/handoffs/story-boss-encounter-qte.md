@@ -80,3 +80,195 @@ normal roadmap sequencing on Bertrand's explicit instruction.
 - handoff → `senior-architect` (Winston, post-gate): §7 tech flags — trigger timing
   (recommend on-quota-completion), Belliard-required-gate interaction, per-phase table
   as constants vs. `bossQteSpec` fields, shared-vs-new-system.
+
+## 3. DESIGN LOOP — narrative-designer (Yasmine) — 2026-07-19
+
+- claim: fiction side of the design loop — answer OQ5 (who the boss is) + opinion on OQ4
+  (where it lives first). NOT OQ1/2/3/6 (other lanes).
+- release: `docs/game-design/spec-boss-encounter-fiction.md` (DRAFT — needs gate PASS).
+  Headlines:
+  - **OQ5 DECIDED (proposal) — "le Commandant"**, singular/named apex of the **BAC de
+    nuit** (§7), node where BAC (visible arm) × RG (intel) × indics meet. **Extension of
+    the §7 roster, NOT a 4th faction** (traces 1:1 to §7, §1.2 table). Underground calls
+    him by grade only ("le Commandant"); the establishment tabloid `PARIS-MINUIT` prints
+    "commandant **Ferrand**" (fictional name, legal-safe like the `08 36` numbers).
+  - **Diegetic justification of "vulnerable only when he opens fire":** the Niveau Final
+    (31 déc 1999, flics débordés, §7) — with his men swamped he descends to fire himself,
+    with nobody to cover him. Opening fire = leaving his troops' cover = the sole window he
+    is both reachable and dangerous (the ADR-0034 D3 bidirectional pivot, given a reason,
+    not plaqué). DISPATCH pre-scene line 6 teaches the rule diegetically (names the *quand*,
+    not the *comment* — compatible with game-designer's OQ2 shape).
+  - **OQ4 OPINION — Belliard-first with a NON-CANON placeholder** (generic chef de
+    patrouille dev-harness, never presented to the player as a real defeat); **canon "le
+    Commandant" reserved for the Niveau Final** (his only credible home). Scripts (pre/post)
+    written + gated-now, held until the finale is built. Constraint flagged: finale not
+    built ⇒ `pm`+`lead`+`architect` co-arbitration if the crew wants the boss canon in V1.
+- handoff → `lead-game-designer` (Karim): design gate — PASS on fiction + scripts;
+  ratify/amend the 7 flags (§5); co-arbitrate OQ4 §3.3 with `pm`/`architect`.
+- handoff → art flow (via gate): open the Commandant sprite request (poses
+  protégé/à-découvert/touché/à-terre) — `concept-artist` → `lead-art`.
+
+## 4. DESIGN GATE — lead-game-designer (Karim) — 2026-07-19
+
+- claim: gate both design deliverables (mechanic/tuning spec + fiction spec) before they
+  reach `senior-architect`; reconcile the two lanes; decide OQ3 (with `pm`) and rule on
+  whether OQ6 needs a dedicated `ux-designer` opinion before the verdict.
+- release: verdict below + `docs/game-design/README.md` index updated (In flight / gated).
+
+- **VERDICT: PASS — boss-encounter-qte design gate (lead-game-designer)**
+
+  **(PASS-WITH-CORRECTIONS.** Both specs are individually gate-quality — declared
+  extension, loop served, verifiable magnitudes, mechanic↔fiction coherent, roster-faithful,
+  anti-bullshit floors genuinely reused. Two corrections (K1, K2) must be applied/closed
+  before `senior-architect` cuts lanes; five conditions (C1–C5) bind downstream. Rework
+  round 1 of 2.)
+
+  ### What PASSes (substance ratified)
+
+  1. **Scope / cahier des charges.** [EXTENSION] correctly declared in both specs
+     (Prohibition ST had no boss — veille §1), same documented standard as ADR-0030/0034,
+     Bertrand-requested, ADR to follow (AC5). Declared, not silent ⇒ passes the scope test.
+  2. **Core loop served, not diluted.** OQ1's "required gate on `Livrer`" makes the boss the
+     terminal obstacle on an *existing* verb (delivery physically blocked), not a new verb,
+     and gives §7's already-canon finale its mechanical climax. He is NOT in the kill quota
+     (AC-safe). Winnability math ≈ 60–75 s climax sits inside "une mission = 3–5 min"
+     (verify at stage 5). Coherent.
+  3. **Mechanic ↔ fiction lock is seamless.** game-designer's SHIELDED↔EXPOSED "opens fire =
+     sole shootable = sole dangerous (D3 fusion)" and narrative's "débordé ⇒ descend tirer
+     lui-même ⇒ sort du couvert" describe the *same* window from mechanic and fiction sides.
+     Fiction names the *quand*, not the *comment* (explicitly), leaving OQ2's form to
+     game-designer. No visible seam. This is the reconciliation working as designed.
+  4. **Anti-bullshit floors (§5.6 / ADR-0034 G4/G5) — reuse verified against shipped code.**
+     `PEEK_EXPOSURE_FLOOR = 0.5` (`qteSystem.ts:35`) reused verbatim, correct value, asserted
+     discipline preserved. Dropping G6 is SAFE, not a regression: G6 existed only to prevent a
+     bavure on the human shield; with no hostage there is no bavure path, so removing it deletes
+     a fairness risk rather than creating one — the only remaining spatial constraint
+     (ring-on-frame at the boss zoom) is kept as a stage-5 verify item (ADR-0034 K-1 shape).
+     The required-gate loss model (blown-window clock, re-key of `maxBlownPeeks`) reuses the
+     exact structure `lead-game-designer` already blessed as §5.6-coherent at ADR-0034 Rev. 2
+     (a legible telegraphed patience clock, not a stray-bullet HP death), and surfaces an
+     explicit failure reason (§5.6 rule 4). Sufficient for a required gate — subject to K1.
+  5. **Fiction faction fidelity (§7 / AC6) — CONFIRMED.** "le Commandant" extends the §7
+     roster (BAC/RG/indics) into one named apex; it does NOT fork a 4th faction (§1.2 traces
+     1:1). "BAC-not-RG-as-anchor" reasoning is sound and preserves RG's §7 characterisation
+     (intel/tells, never frontal fire). Period authenticity (31 déc 1999 / bug 2000 / francs /
+     PARIS-MINUIT) clean, matches §7 Niveau Final. Scripts (8+6 lines) inside the shipped
+     scene bounds, skippable, mute-QTE-compatible.
+
+  ### CORRECTIONS (blocking — apply before `senior-architect` cuts lanes)
+
+  - **K1 — game-designer (verifiability).** The telegraph floor is misstated. The spec cites
+    `TELEGRAPH_LEAD_SECONDS` as a "0.25 s floor" (§2.4 and §5 constants table) but as "0.35"
+    in §0. The SHIPPED constant is **0.35** (`qteSystem.ts:39`), and in code it is the *tell-
+    window duration* asserted as `peekCadenceSeconds STRICTLY > TELEGRAPH_LEAD_SECONDS` — not
+    a "≥ 0.25 minimum lead." Reconcile explicitly: (a) state the true reused value (0.35);
+    (b) decide whether the boss's per-phase telegraph lead (0.45→0.40→0.35) is a NEW authored
+    per-phase field — in which case it is NOT a reuse of the fixed 0.35 constant and needs its
+    own named, numeric, asserted floor — or a fixed reuse of 0.35, in which case the
+    0.45→0.40 ramp is contradicted. As written a dev cannot implement the anti-bullshit
+    telegraph assert without guessing, and §5.6 rests on this floor being asserted correctly.
+    Values, not adjectives.
+
+  - **K2 — JOINT `lead-game-designer` + `pm` + `senior-architect` (coherence/scope).** The two
+    specs are each internally coherent but leave one seam at their intersection that BOTH
+    correctly flagged and neither closed — it must be closed here, not left to drift, because
+    it determines the lane cut, the ADR content, and whether AC3 ("one encounter ships") is
+    even met. The collision: OQ1 makes the boss a **required gate that FAILS the level**
+    (inherently player-facing, stakes-bearing) while the fiction's OQ4 opinion puts a
+    **non-canon throwaway placeholder** on Belliard ("jamais présenté au joueur comme une vraie
+    défaite") and reserves the canon Commandant for the **unbuilt** Niveau Final. A required
+    level-gating boss and a non-canon dev-harness are mutually exclusive as a *shipping* config
+    (you cannot force a throwaway placeholder onto a live, gated level as a mandatory
+    level-failing obstacle) — though they are compatible as an *iteration* config.
+    **My recommendation, to be co-ratified by `pm` + `senior-architect` (the OQ4 + OQ1-sub-flag
+    arbitration the story provisioned): decouple SHELL from SHIP.**
+    (i) Iterate `bossQteSystem` on Belliard behind a **non-shipped dev-harness** placeholder
+    that does NOT alter shipped Belliard's quota-win completion contract (engineering gets its
+    Belliard-first velocity without spending the Commandant or forcing a placeholder required
+    gate onto a live level);
+    (ii) ship the **canon required-gate "le Commandant" in the Niveau Final**, as a **separate
+    follow-up story** that builds the finale (where required-gate + "flics débordés"
+    vulnerability + the ceremonial +50 refill all cohere) — fiction scripts §4 gated-now,
+    held-until-then;
+    (iii) therefore V1's shippable = **system + tuning + gated fiction + Belliard dev-harness**,
+    canon player-facing encounter explicitly deferred. If `pm` wants a canon player-facing
+    encounter IN V1, the honest route is narrative's option (b) — build a **minimal finale**
+    inside this feature's scope — a `pm` scope call made explicitly (AC7), never by drift.
+    This keeps required-gate (OQ1) intact as the stakes MODEL, keeps Option A (OQ3), honours
+    the fiction's capstone argument (OQ4), and avoids the incoherent "required non-canon
+    placeholder gate on a shipped level."
+
+  ### CONDITIONS (tracked; do not block this PASS, bind downstream)
+
+  - **C1 — OQ6 → `ux-designer` (REQUIRED before `dev-r3f-render` builds the HP read).** Ruling
+    on the mission's question: **a dedicated `ux-designer` opinion IS necessary** (HUD-vs-
+    diegetic is their gate, and the multi-hit + phased case genuinely differs from the binary
+    hostage duel, so it CANNOT inherit ADR-0034 K-4) — **but it does NOT block this design
+    gate or the tech plan**, because the game layer names phase + HP as state regardless of the
+    surface, and no game value or contract depends on it. I do NOT tranche it myself (out of my
+    lane). Route to `ux-designer` with two binding design inputs: (i) §6 "la musique est le seul
+    indicateur de tension — pas de barre de stress" (a full HUD stress-bar for boss HP is in
+    tension with this; likely resolves to diegetic pips per K-4 precedent — `ux` + `lead-art`
+    reconcile); (ii) game-designer's "phase transitions must carry their own strong, distinct
+    read". `ux-designer` gates the surface, `lead-art` the visual.
+
+  - **C2 — fiction canon flags RATIFIED.** Flag 1 (net-new named canon "le Commandant") and
+    flag 2 (`Ferrand` fictional, PARIS-MINUIT-only, legal-safe) RATIFIED as conscious
+    documented extension; flag 3 (roster extension, no 4th faction) CONFIRMED. Fold both names
+    into the future `narrative-bible.md` + `characters.md`, same treatment as the SPIRALE 23 /
+    PARIS-MINUIT gated canon (README "Gated canon" list).
+
+  - **C3 — → `lead-art` (coherence flag; I do NOT arbitrate visuals).** Fiction §2 specs the
+    Commandant as a **plein-pied authority silhouette, explicitly NOT the CRS/`enemy_riot`
+    anti-émeute look**, B&W photocopié + néon acide, "chef" readable by silhouette alone
+    (bible §2 law 3 — consistent). Two art-flow items: (i) a **full-figure enemy is a NEW
+    composition** vs. the existing buste-fenêtre enemy family — feasibility/house-style at
+    `concept-artist` → `lead-art`; (ii) note for any FUTURE Option-C mini-boss: game-designer's
+    cost-saving "re-posture the `riot`/CRS archetype" conflicts with the fiction's "pas la
+    tenue CRS" for the Commandant HIMSELF — a lesser anonymous *chef de patrouille* mini-boss
+    may reuse CRS, the Commandant may not; recorded so the C-story assumes no forbidden reskin.
+
+  - **C4 — OQ3 count (my joint call with `pm`): RATIFIED — Option A in V1, architected tier =
+    data** (`phaseCount`/`bossHp` as spec fields from day one) so **C is a later data-only
+    story**. Respects AC3 (one boss-tier encounter) + AC4 (no fuyard), cheapest V1, maximal
+    future optionality, mirrors the proven hostage Belliard→curve rollout. `pm` confirms at the
+    AC7 re-review. (A mini-boss tier in V1 = a `pm` scope-expansion call, NOT taken here.)
+
+  - **C5 — → `senior-architect` (TECH PLAN):** carry game-designer §7 tech flags — trigger
+    on-quota-completion vs. scripted; the Belliard required-gate completion-contract
+    interaction (now reframed by K2); per-phase table as constants (recommended V1) vs.
+    `bossQteSpec` fields; shared-vs-new system (`bossQteSystem.ts` vs. extend `qteSystem.ts`).
+    AC5 ADR to document the extension + the OQ1/OQ2/OQ6 resolutions, ADR-0030/0034 revision-log
+    discipline (reused-verbatim vs. newly-authored map).
+
+- handoff → `game-designer` (Sacha): apply **K1** (telegraph floor value/reuse); participate
+  in **K2** reconciliation.
+- handoff → `pm` (John): **K2** co-arbitration (system-only V1 vs. minimal-finale V1) + **C4**
+  OQ3 concurrence + AC7 re-review.
+- handoff → `senior-architect` (Winston): **K2** co-arbitration + TECH PLAN (**C5**) — see the
+  TECH PLAN hand-off block below. Do NOT cut lanes until K1 applied and K2 closed.
+- handoff → `ux-designer` (Sally): **C1** OQ6 HP-read surface (blocking `dev-r3f-render` only).
+- handoff → `lead-art` (Nico): **C3** Commandant sprite request + full-figure-enemy coherence.
+
+### TECH PLAN hand-off → `senior-architect` (prepared; gated, pending K1+K2)
+
+Reuse map to state explicitly in the ADR (ADR-0030/0034 revision-log discipline, AC2):
+
+- **Reused verbatim (do not re-derive):** the `ZOOMING → ACTIVE → (WON|LOST) → DONE`
+  forward-only phase machine; the freeze-the-rest-of-the-level branch (ADR-0030 D3); the 2 s
+  progressive zoom + result hold; the `COVERED↔PEEKING` two-stance skeleton (re-themed
+  `SHIELDED↔EXPOSED`); the seeded, pure, closed-form wandering ring + `ringZoneAt` spatial
+  colour + `RING_HIT_RADIUS 0.3` + damage 2/1/0; the `energy` outcome-currency ledger
+  constants; `PEEK_EXPOSURE_FLOOR 0.5`; `TELEGRAPH_LEAD_SECONDS` (value per K1); the boundary
+  law (additive-and-optional, `spec === null` byte-identical); the seeded-pure-PRNG
+  determinism law (ADR-0034 Rev. 3 — no `Math.random`, no per-tick cursor).
+- **Newly authored (boss-only):** `phaseCount` (tier lever) + `bossHp` (24 = 3×8) + phase
+  thresholds; the per-phase escalation table (EXPOSED 1.6→1.0 s, lull 2.0→1.2 s, telegraph
+  0.45→0.35 s [K1], wander 1.0→1.6 u/s, drain −5→−8); `PHASE_BREAK_SECONDS 1.0` damage-free
+  telegraphed break; `maxBlownWindows 10`; `QTE_BOSS_REFILL +50`; the phase-index sequencing.
+  G6 clamp is DROPPED (no human shield); the sole remaining spatial constraint is
+  ring-on-frame at the boss zoom (stage-5 verify).
+- **Architect's calls (C5):** `bossQteSystem.ts` vs. extending `qteSystem.ts`; trigger
+  on-quota-completion vs. scripted; per-phase table as constants vs. `bossQteSpec` fields;
+  the K2 Belliard-completion-contract interaction. Reinventing the freeze/zoom/phase-machine
+  primitive is a story-level scope violation (story Architecture directive) — not on the table.
