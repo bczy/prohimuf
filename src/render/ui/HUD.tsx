@@ -6,7 +6,7 @@ import { TimerReadout } from "./hud/TimerReadout";
 import { LivesReadout } from "./hud/LivesReadout";
 import { EnergyGauge } from "./hud/EnergyGauge";
 import { DeliveryIntegrityBanner } from "./hud/DeliveryIntegrityBanner";
-import { HostageQteOverlay } from "./hud/HostageQteOverlay";
+import { HostageQteOverlay, isQteSetPieceVisible } from "./hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "./hud/PhaseMessageBanner";
 
@@ -47,7 +47,12 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       {/* Rendered before the delivery banner: both are center-anchored fixed
           siblings near y=58, and the enlarged up-arrow overlaps the banner's track —
           the delivery readout must paint on top of the direction cue. */}
-      <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+      {/* Hidden for the whole QTE set-piece (zoom → duel → verdict): the scene is
+          frozen on the tableau, so the direction cue is meaningless there and the
+          enlarged arrows would poke into it. Back as soon as the verdict clears. */}
+      {!isQteSetPieceVisible(data.hostageQte) && (
+        <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+      )}
 
       <DeliveryIntegrityBanner delivery={data.delivery} />
 

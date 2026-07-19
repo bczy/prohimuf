@@ -15,7 +15,10 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   136px/68px, svg width/height 100%, .arrowWrap 160px/80px); keyline held at 2px at
   every size via vector-effect non-scaling-stroke; golden baselines regenerated
   twice (ADR-0005 flow, eyeballed desktop + coarse-pointer 800×360 capture);
-  anchors unchanged (tips keep hugging the edges, verified) · checks:
+  anchors unchanged (tips keep hugging the edges, verified); arrow ring hidden for
+  the whole hostage-QTE set-piece (shared isQteSetPieceVisible predicate, back when
+  the verdict clears — Bertrand); post-rebase golden re-gen (main's new enemy art +
+  the big arrows) · checks:
   tsc/vitest(637)/lint · review: code-review(high, 8-angle) — 2 CONFIRMED fixed
   (up-arrow overprinted the LIVRAISON banner track → indicator now renders BEFORE
   the banner so delivery readout paints on top; size literal triplicated across
