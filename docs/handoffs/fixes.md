@@ -8,6 +8,21 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-19 · claude/hostage-scene-bike-visibility-wekl3y · dev-r3f-render · the hostage
+  QTE freezes couriers/the delivery vehicle in place (stateMachine early-returns while it
+  holds the scene) instead of moving them off-stage, so a courier's bike or the delivery
+  vehicle could freeze right next to the QTE anchor and dominate the zoomed-in captor/
+  hostage frame (repro'd headless: courier froze 2.2 world units from the anchor,
+  screenshot showed the bike squatting beside the tableau). Hide both sprites while
+  `isQteActive`, same guard already used for camera edge-scroll and the QTE tableau
+  itself; also gate the courier's flipbook clock on `qteActive` (mirrors the existing
+  `paused` guard) so its pose doesn't pop to a new frame on reappear. · checks:
+  tsc/vitest(771)/lint green + verify (headless-browser before/after screenshots via
+  seedPlay + `__MUF_STATE__` polling, confirming the bug and the fix) · review:
+  code-review(high) — 1 CONFIRMED fixed (flipbook clock kept advancing while hidden,
+  contradicting the "resumes exactly where it froze" claim), 1 noted (no existing test
+  file for either R3F sprite component — matches project convention, not a regression)
+
 - 2026-07-19 · claude/ui-adjustments-cyclist-animation-wfpm52 · dev-r3f-render · four
   Bertrand tuning calls in one lane: (1) window enemies 0.8×→1.3× window height
   (shared `ENEMY_PLANE_SCALE`/`ENEMY_BODY_LIFT` consts, feet kept at the sill; the
