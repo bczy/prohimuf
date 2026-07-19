@@ -59,3 +59,18 @@
     opacity: 0;
   }
 }
+
+/* Grain overlay — repeating linear gradient for toner speckle effect. The rgba
+   literal (no clean token for this specific alpha) is kept inline. */
+.grain {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(20, 18, 16, 0.04) 0px,
+    rgba(20, 18, 16, 0.04) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}

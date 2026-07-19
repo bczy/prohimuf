@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import styles from "./Stamp.module.css";
 
 export type StampShape = "box" | "oval" | "diagonal";
@@ -23,21 +23,20 @@ export interface StampProps {
  * per-difficulty tell. Zero glow. A slight fixed rotation gives the stamped feel.
  */
 export function Stamp({ label, ink, shape = "box", struck = false }: StampProps): JSX.Element {
+  // CSS custom properties for shape and struck variants — injected via inline style.
+  const customProps: CSSProperties = {
+    "--stamp-border-radius": shape === "oval" ? "50%" : "1px",
+    "--stamp-text-decoration": struck ? "line-through" : "none",
+    "--stamp-transform": `rotate(${shape === "diagonal" ? "-8" : "-4"}deg)`,
+    "--stamp-ink": ink,
+  } as CSSProperties;
+
   return (
-    <span
-      className={styles.box}
-      style={{
-        borderRadius: shape === "oval" ? "50%" : "1px",
-        textDecoration: struck ? "line-through" : "none",
-        transform: `rotate(${shape === "diagonal" ? "-8" : "-4"}deg)`,
-      }}
-    >
+    <span className={styles.box} style={customProps}>
       {label}
       {/* Hue tell: a slim inner rule in the mark ink — no text rides the colour. */}
-      <span aria-hidden={true} className={styles.innerRule} style={{ background: ink }} />
-      {shape === "diagonal" && (
-        <span aria-hidden={true} className={styles.diagonalStrike} style={{ background: ink }} />
-      )}
+      <span aria-hidden={true} className={styles.innerRule} />
+      {shape === "diagonal" && <span aria-hidden={true} className={styles.diagonalStrike} />}
     </span>
   );
 }

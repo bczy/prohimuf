@@ -18,16 +18,26 @@ export interface HalftoneHeroProps {
 export function HalftoneHero({ src, pitch = 10, style }: HalftoneHeroProps): JSX.Element {
   const dotCore = (pitch * 0.24).toFixed(2);
   const dotEdge = (pitch * 0.32).toFixed(2);
+  const pitchPx = `${pitch.toString()}px`;
+
+  // CSS custom properties for pitch-derived dot-screen gradient and size.
+  const heroCssVars: CSSProperties = {
+    ...style,
+  };
+
+  const photoCssVars: CSSProperties = {
+    "--halftone-photo-bg": `url('${src}')`,
+  } as CSSProperties;
+
+  const dotsCssVars: CSSProperties = {
+    "--halftone-dots-bg": `radial-gradient(circle, rgba(20,18,16,0.55) ${dotCore}px, transparent ${dotEdge}px)`,
+    "--halftone-dots-size": `${pitchPx} ${pitchPx}`,
+  } as CSSProperties;
+
   return (
-    <div aria-hidden={true} className={styles.hero} style={style}>
-      <div className={styles.photo} style={{ backgroundImage: `url('${src}')` }} />
-      <div
-        className={styles.dots}
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(20,18,16,0.55) ${dotCore}px, transparent ${dotEdge}px)`,
-          backgroundSize: `${pitch.toString()}px ${pitch.toString()}px`,
-        }}
-      />
+    <div aria-hidden={true} className={styles.hero} style={heroCssVars}>
+      <div className={styles.photo} style={photoCssVars} />
+      <div className={styles.dots} style={dotsCssVars} />
     </div>
   );
 }

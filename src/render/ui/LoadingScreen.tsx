@@ -34,7 +34,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
   const folio = String(pct).padStart(3, "0");
 
   return (
-    <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
+    <PaperSheet stock={STOCK.shell}>
       {/* The bar's width tracks real progress; smooth it, but honour reduced-motion
           (the rest of the print system forces its motion tokens to 0 there too). */}
       <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}`}</style>
@@ -47,7 +47,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
           ★ SOUS PRESSE ★
         </div>
 
-        <div className={styles.wordmark} style={{ fontSize: "clamp(44px, 8vw, 84px)" }}>
+        <div className={styles.wordmark}>
           CHARGEMENT…
         </div>
 
@@ -66,6 +66,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
           aria-label={`Chargement ${label}`}
           className={styles.bar}
         >
+          {/* Fill width stays inline: pct is a computed runtime value (0-100). */}
           <div className={cx("muf-load-fill", styles.fill)} style={{ width: `${String(pct)}%` }} />
         </div>
 

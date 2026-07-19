@@ -78,7 +78,6 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
         {/* Running masthead (hidden in short-landscape; the MUF mark below stands in) */}
         <div
           className={styles.masthead}
-          style={{ display: "var(--muf-menu-masthead-display, flex)" }}
         >
           <div className={styles.mark}>MUF</div>
           <div className={styles.mastheadText}>{MASTHEAD.running}</div>
@@ -103,7 +102,6 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
           <span
             aria-hidden={true}
             className={styles.compactMark}
-            style={{ display: "var(--muf-menu-mark-display, none)" }}
           >
             MUF
           </span>

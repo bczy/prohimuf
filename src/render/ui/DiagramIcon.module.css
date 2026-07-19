@@ -1,0 +1,80 @@
+.icon-svg {
+  height: min(240px, 34vh);
+  width: min(240px, 34vh);
+  max-height: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+.di-anim {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.di-ring {
+  animation: di-ring 5.4s ease-in-out infinite;
+}
+
+.di-flash {
+  animation: di-flash 5.4s ease-out infinite;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+@keyframes di-ring {
+  0% {
+    transform: translate(0, 0);
+    stroke: var(--green);
+  }
+  26% {
+    transform: translate(0, 0);
+    stroke: var(--green);
+  }
+  33% {
+    transform: translate(-2px, 20px);
+    stroke: var(--yellow);
+  }
+  59% {
+    transform: translate(-2px, 20px);
+    stroke: var(--yellow);
+  }
+  66% {
+    transform: translate(-28px, 4px);
+    stroke: var(--red);
+  }
+  93% {
+    transform: translate(-28px, 4px);
+    stroke: var(--red);
+  }
+  100% {
+    transform: translate(0, 0);
+    stroke: var(--green);
+  }
+}
+
+@keyframes di-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  6% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  22% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .di-anim {
+    animation: none !important;
+  }
+}

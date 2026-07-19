@@ -13,18 +13,13 @@ export function RotateOverlay(): JSX.Element {
   return (
     <PaperSheet stock={STOCK.shell} style={{ zIndex: 200 }}>
       <div className={styles.stack}>
-        <style>{`
-        @keyframes mufRotateHint { 0%,25% { transform: rotate(0deg); } 60%,100% { transform: rotate(90deg); } }
-        @media (prefers-reduced-motion: reduce) { .muf-rotate-glyph { animation: none !important; } }
-      `}</style>
         {/* Inked phone/rotate glyph (inline SVG, no emoji, no glow) */}
         <svg
-          className="muf-rotate-glyph"
+          className={styles.rotateGlyph}
           width="72"
           height="72"
           viewBox="0 0 48 48"
           aria-hidden="true"
-          style={{ animation: "mufRotateHint 1.8s ease-in-out infinite alternate" }}
         >
           <rect
             x="16"

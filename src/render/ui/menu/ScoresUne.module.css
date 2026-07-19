@@ -1,9 +1,15 @@
 /*
  * ScoresUne (ADR-0046) — the PARIS-MINUIT UNE. Static structure/typography only; the
- * PaperSheet ground font/colour/padding stay on its inline style prop, the rank-row
- * hairline (an ink-black rgba with no clean token) stays inline, and the rank-1
+ * rank-row hairline (an ink-black rgba with no clean token) stays inline, and the rank-1
  * MarkerCircle keeps its MARK.green ink prop. Every colour/font references a var(--…).
  */
+
+/* Wrapper for the scores view: font, colour, and padding are fixed. */
+.wrapper {
+  padding: 18px 20px;
+  font-family: var(--font-mono);
+  color: var(--ink-black);
+}
 .masthead {
   border-bottom: 3px double var(--ink-black);
   padding-bottom: 8px;
@@ -142,4 +148,9 @@
 /* Row BUTIN cell bumps the score up to 16px (composed with .colButin). */
 .scoreCell {
   font-size: 16px;
+}
+
+/* Row hairline border (ink at ~0.25α, no clean token). */
+.rowBorder {
+  border-bottom: 1px solid rgba(20, 18, 16, 0.25);
 }

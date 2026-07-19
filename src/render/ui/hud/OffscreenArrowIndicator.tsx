@@ -41,7 +41,7 @@ function ArrowIndicator({
         height="100%"
         viewBox="0 0 34 34"
         aria-hidden="true"
-        style={{ display: "block" }}
+        className={styles.arrowSvg}
       >
         <polygon
           points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
@@ -84,28 +84,16 @@ export function OffscreenArrowIndicator({
           }
         }
       `}</style>
-      <span
-        className={styles.arrowWrap}
-        style={{ top: 52, left: "50%", transform: "translateX(-50%)" }}
-      >
+      <span className={`${styles.arrowWrap ?? ""} ${styles.arrowWrapTop ?? ""}`}>
         <ArrowIndicator direction="up" active={indicator.up} />
       </span>
-      <span
-        className={styles.arrowWrap}
-        style={{ bottom: 8, left: "50%", transform: "translateX(-50%)" }}
-      >
+      <span className={`${styles.arrowWrap ?? ""} ${styles.arrowWrapBottom ?? ""}`}>
         <ArrowIndicator direction="down" active={indicator.down} />
       </span>
-      <span
-        className={styles.arrowWrap}
-        style={{ top: "50%", left: 8, transform: "translateY(-50%)" }}
-      >
+      <span className={`${styles.arrowWrap ?? ""} ${styles.arrowWrapLeft ?? ""}`}>
         <ArrowIndicator direction="left" active={indicator.left} />
       </span>
-      <span
-        className={styles.arrowWrap}
-        style={{ top: "50%", right: 8, transform: "translateY(-50%)" }}
-      >
+      <span className={`${styles.arrowWrap ?? ""} ${styles.arrowWrapRight ?? ""}`}>
         <ArrowIndicator direction="right" active={indicator.right} />
       </span>
     </div>

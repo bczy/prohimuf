@@ -17,16 +17,7 @@ export function EndScreen({ phase, score, wave, onRestart }: EndScreenProps): JS
 
   return (
     <Overlay onClick={onRestart} className={styles.screen}>
-      {/* grain overlay — rgba gradient with no clean token stays inline */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "repeating-linear-gradient(0deg, rgba(20,18,16,0.04) 0px, rgba(20,18,16,0.04) 1px, transparent 1px, transparent 2px)",
-          pointerEvents: "none",
-        }}
-      />
+      <div className={styles.grain} />
 
       <div className={styles.content}>
         <div className={styles.label}>{label}</div>

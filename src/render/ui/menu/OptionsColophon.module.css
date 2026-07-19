@@ -1,9 +1,18 @@
 /*
  * OptionsColophon (ADR-0046) — the OURS / colophon back page. Static structure/
- * typography only; the PaperSheet orange ground font/colour/padding/max-width stay on
- * its inline style prop. The ballot X-stamp is a static token-only badge. Every
- * colour/font references a var(--…) injected from tokens.ts.
+ * typography only. Container properties (padding, font, colour, max-width) are now
+ * extracted to CSS (.container class); PaperSheet provides the orange ground + shell.
+ * The ballot X-stamp is a static token-only badge. Every colour/font references a
+ * var(--…) injected from tokens.ts.
  */
+
+.container {
+  padding: 18px 20px;
+  font-family: var(--font-mono);
+  color: var(--ink-black);
+  max-width: 560px;
+}
+
 .title {
   font-family: var(--font-display);
   font-size: 30px;

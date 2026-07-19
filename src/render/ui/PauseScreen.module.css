@@ -6,11 +6,12 @@
  * lesson). Every colour/font references a var(--…) injected from tokens.ts.
  */
 
-/* Composed overlay backdrop; the translucent stock ground stays inline. */
+/* Composed overlay backdrop with translucent stock ground. */
 .backdrop {
   composes: overlay from "./controls/Overlay.module.css";
   z-index: 100;
   backdrop-filter: blur(2px);
+  background: rgba(215, 210, 198, 0.9);
 }
 
 .card {
@@ -106,4 +107,25 @@
   color: var(--ink-mute);
   text-align: center;
   letter-spacing: 0.15em;
+}
+
+/* Scanlines overlay — CRT aesthetic with subtle horizontal striation (no pointer events). */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(20, 18, 16, 0.03) 0px,
+    rgba(20, 18, 16, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+
+/* Separator hairline between options and buttons (ink rgba, no clean token). */
+.separator {
+  height: 1px;
+  background: rgba(20, 18, 16, 0.25);
+  margin: 20px 0;
 }

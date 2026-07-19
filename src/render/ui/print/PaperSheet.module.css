@@ -10,6 +10,7 @@
  */
 
 .sheet {
+  background: var(--paper-stock);
   color: var(--ink-black);
   overflow: hidden;
 }

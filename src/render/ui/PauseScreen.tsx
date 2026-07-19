@@ -75,18 +75,10 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
   }
 
   return (
-    <Overlay className={styles.backdrop} style={{ background: "rgba(215,210,198,0.90)" }}>
+    <Overlay className={styles.backdrop}>
       <div className={styles.card}>
         {/* Scanlines */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "repeating-linear-gradient(0deg, rgba(20,18,16,0.03) 0px, rgba(20,18,16,0.03) 1px, transparent 1px, transparent 3px)",
-            pointerEvents: "none",
-          }}
-        />
+        <div className={styles.scanlines} />
 
         <div className={styles.inner}>
           {/* Title */}
@@ -115,8 +107,8 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
             }}
           />
 
-          {/* Separator (ink rgba hairline, no clean token -> inline) */}
-          <div style={{ height: 1, background: "rgba(20,18,16,0.25)", margin: "20px 0" }} />
+          {/* Separator (ink rgba hairline) */}
+          <div className={styles.separator} />
 
           {/* Action buttons */}
           <button onClick={onResume} className={cx(styles.action, styles.actionPrimary)}>

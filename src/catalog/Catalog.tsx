@@ -1,4 +1,4 @@
-import type { CSSProperties, JSX, ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 import {
   PaperSheet,
   HalftoneHero,
@@ -21,6 +21,7 @@ import { HostageQteOverlay } from "@render/ui/hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "@render/ui/hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "@render/ui/hud/PhaseMessageBanner";
 import { Overlay, SelectableListItem } from "@render/ui/controls";
+import styles from "./Catalog.module.css";
 
 /*
  * muf component catalog — the design-system's living doc (P2 step 2). A standalone,
@@ -33,22 +34,11 @@ import { Overlay, SelectableListItem } from "@render/ui/controls";
 // A titled block of demo cells.
 function Section({ title, children }: { title: string; children: ReactNode }): JSX.Element {
   return (
-    <section style={{ marginBottom: "40px" }}>
-      <h2
-        style={{
-          fontFamily: FONT.mono,
-          fontSize: "13px",
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: INK.black,
-          borderBottom: `2px solid ${INK.black}`,
-          paddingBottom: "6px",
-          marginBottom: "16px",
-        }}
-      >
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>
         {title}
       </h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-start" }}>
+      <div className={styles.sectionContent}>
         {children}
       </div>
     </section>
@@ -66,30 +56,14 @@ function Cell({
   width?: number;
 }): JSX.Element {
   return (
-    <figure style={{ margin: 0, width: width !== undefined ? `${String(width)}px` : "auto" }}>
-      <div
-        style={{
-          background: STOCK.shell,
-          border: `1px solid ${INK.black}`,
-          padding: "14px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "48px",
-        }}
-      >
+    <figure
+      className={styles.cellFigure}
+      style={{ width: width !== undefined ? `${String(width)}px` : "auto" }}
+    >
+      <div className={styles.cellBox}>
         {children}
       </div>
-      <figcaption
-        style={{
-          fontFamily: FONT.mono,
-          fontSize: "10px",
-          letterSpacing: "0.08em",
-          color: INK.black,
-          opacity: 0.75,
-          marginTop: "5px",
-        }}
-      >
+      <figcaption className={styles.cellCaption}>
         {label}
       </figcaption>
     </figure>
@@ -109,29 +83,14 @@ function Stage({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <figure style={{ margin: 0, width: "260px" }}>
+    <figure className={styles.stageFigure}>
       <div
-        style={{
-          position: "relative",
-          transform: "translateZ(0)",
-          overflow: "hidden",
-          height: `${String(height)}px`,
-          background: STOCK.shell,
-          border: `1px solid ${INK.black}`,
-        }}
+        className={styles.stageBox}
+        style={{ height: `${String(height)}px` }}
       >
         {children}
       </div>
-      <figcaption
-        style={{
-          fontFamily: FONT.mono,
-          fontSize: "10px",
-          letterSpacing: "0.08em",
-          color: INK.black,
-          opacity: 0.75,
-          marginTop: "5px",
-        }}
-      >
+      <figcaption className={styles.stageCaption}>
         {label}
       </figcaption>
     </figure>
@@ -161,39 +120,14 @@ const TYPE_SPECIMENS: readonly { name: string; stack: string }[] = [
   { name: "FONT.hudMono", stack: FONT.hudMono },
 ];
 
-// The readouts are `.item` flex cells (not fixed); a paper strip mimics the HUD ground.
-const stripStyle: CSSProperties = {
-  background: STOCK.shell,
-  border: `1px solid ${INK.black}`,
-  padding: "10px 16px",
-  display: "flex",
-  gap: "20px",
-  alignItems: "flex-start",
-};
-
 export function Catalog(): JSX.Element {
   return (
-    <main
-      style={{
-        maxWidth: "1040px",
-        margin: "0 auto",
-        padding: "32px 24px 64px",
-        color: INK.black,
-        fontFamily: FONT.mono,
-      }}
-    >
-      <header style={{ marginBottom: "36px" }}>
-        <h1
-          style={{
-            fontFamily: FONT.display,
-            fontSize: "30px",
-            letterSpacing: "0.04em",
-            margin: 0,
-          }}
-        >
+    <main className={styles.main}>
+      <header className={styles.header}>
+        <h1 className={styles.pageTitle}>
           muf — component catalog
         </h1>
-        <p style={{ fontSize: "12px", opacity: 0.75, marginTop: "8px", lineHeight: 1.5 }}>
+        <p className={styles.pageDescription}>
           Living design-system doc (ADR-0046). Print primitives + in-game HUD widgets, each with
           representative mock props and key variant states. Offline, separate Vite entry — never
           bundled into the game.
@@ -202,11 +136,12 @@ export function Catalog(): JSX.Element {
 
       <Section title="Tokens — colour">
         {SWATCH.map((s) => (
-          <figure key={s.name} style={{ margin: 0, width: "104px" }}>
+          <figure key={s.name} className={styles.swatchFigure}>
             <div
-              style={{ height: "56px", background: s.value, border: `1px solid ${INK.black}` }}
+              className={styles.swatchBox}
+              style={{ background: s.value }}
             />
-            <figcaption style={{ fontSize: "10px", marginTop: "4px", lineHeight: 1.4 }}>
+            <figcaption className={styles.swatchCaption}>
               {s.name}
               <br />
               {s.value}
@@ -218,7 +153,12 @@ export function Catalog(): JSX.Element {
       <Section title="Tokens — type">
         {TYPE_SPECIMENS.map((t) => (
           <Cell key={t.name} label={t.name} width={240}>
-            <span style={{ fontFamily: t.stack, fontSize: "22px" }}>Paris 1998 — 42</span>
+            <span
+              className={styles.typeSpecimen}
+              style={{ fontFamily: t.stack }}
+            >
+              Paris 1998 — 42
+            </span>
           </Cell>
         ))}
       </Section>
@@ -230,22 +170,20 @@ export function Catalog(): JSX.Element {
             fullBleed={false}
             style={{ width: "200px", height: "110px" }}
           >
-            <div style={{ padding: "12px", fontFamily: FONT.mono, fontSize: "12px" }}>
+            <div className={styles.paperContent}>
               toner + halftone + fold
             </div>
           </PaperSheet>
         </Cell>
 
         <Cell label="HalftoneHero (belliard facade)" width={240}>
-          <div
-            style={{ position: "relative", width: "200px", height: "110px", overflow: "hidden" }}
-          >
+          <div className={styles.halftoneContainer}>
             <HalftoneHero src={`${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`} />
           </div>
         </Cell>
 
         <Cell label="Stamp box / oval / diagonal">
-          <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
+          <div className={styles.layoutRow}>
             <Stamp label="FACILE" ink={MARK.green} shape="box" />
             <Stamp label="NORMAL" ink={MARK.orange} shape="oval" />
             <Stamp label="DIFFICILE" ink={MARK.pink} shape="diagonal" />
@@ -257,27 +195,20 @@ export function Catalog(): JSX.Element {
         </Cell>
 
         <Cell label="MarkerCircle active / idle">
-          <div
-            style={{ display: "flex", gap: "28px", alignItems: "center", fontFamily: FONT.mono }}
-          >
+          <div className={styles.layoutRow__large}>
             <MarkerCircle active={true}>
-              <span style={{ fontSize: "14px" }}>JOUER</span>
+              <span className={styles.smallText}>JOUER</span>
             </MarkerCircle>
             <MarkerCircle active={false}>
-              <span style={{ fontSize: "14px" }}>OPTIONS</span>
+              <span className={styles.smallText}>OPTIONS</span>
             </MarkerCircle>
           </div>
         </Cell>
 
         <Cell label="TapeCorner (4 corners)" width={240}>
           <div
-            style={{
-              position: "relative",
-              width: "150px",
-              height: "80px",
-              background: STOCK.rose,
-              border: `1px solid ${INK.black}`,
-            }}
+            className={styles.tapeContainer}
+            style={{ background: STOCK.rose }}
           >
             <TapeCorner />
           </div>
@@ -285,7 +216,7 @@ export function Catalog(): JSX.Element {
       </Section>
 
       <Section title="HUD — readouts (ticker strip)">
-        <div style={stripStyle}>
+        <div className={styles.hudStrip}>
           <ScoreReadout score={1240} isHighScore={false} />
           <ScoreReadout score={9990} isHighScore={true} />
           <WaveReadout wave={3} />
@@ -352,26 +283,42 @@ export function Catalog(): JSX.Element {
       <Section title="Controls — menu primitives">
         <Stage label="Overlay (fixed inset-0 flex-centre frame)">
           <Overlay style={{ background: "rgba(215,210,198,0.9)" }}>
-            <div
-              style={{
-                border: `2px solid ${INK.black}`,
-                background: STOCK.shell,
-                padding: "12px 18px",
-                fontFamily: FONT.mono,
-                fontSize: "12px",
-              }}
-            >
+            <div className={styles.overlayContent}>
               centred child
             </div>
           </Overlay>
         </Stage>
 
         <Cell label="SelectableListItem (active / idle)">
-          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-            <SelectableListItem active={true} style={SELECTABLE_DEMO}>
+          <div className={styles.layoutRow__medium}>
+            <SelectableListItem
+              active={true}
+              style={{
+                padding: "8px 14px",
+                background: "transparent",
+                border: `1px solid ${INK.black}`,
+                color: INK.black,
+                fontFamily: FONT.mono,
+                fontSize: "13px",
+                letterSpacing: "0.2em",
+                cursor: "pointer",
+              }}
+            >
               NIVEAUX
             </SelectableListItem>
-            <SelectableListItem active={false} style={SELECTABLE_DEMO}>
+            <SelectableListItem
+              active={false}
+              style={{
+                padding: "8px 14px",
+                background: "transparent",
+                border: `1px solid ${INK.black}`,
+                color: INK.black,
+                fontFamily: FONT.mono,
+                fontSize: "13px",
+                letterSpacing: "0.2em",
+                cursor: "pointer",
+              }}
+            >
               SCORES
             </SelectableListItem>
           </div>
@@ -380,16 +327,3 @@ export function Catalog(): JSX.Element {
     </main>
   );
 }
-
-// Demo-only styling for the SelectableListItem specimens (each real surface supplies
-// its own tab/édition/ballot class; the primitive itself carries no visual).
-const SELECTABLE_DEMO: CSSProperties = {
-  padding: "8px 14px",
-  background: "transparent",
-  border: `1px solid ${INK.black}`,
-  color: INK.black,
-  fontFamily: FONT.mono,
-  fontSize: "13px",
-  letterSpacing: "0.2em",
-  cursor: "pointer",
-};

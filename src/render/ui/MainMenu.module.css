@@ -1,8 +1,9 @@
 /*
  * MainMenu (ADR-0046) — static structure/typography only. The short-landscape @media
- * reflow (toggling --muf-menu-* vars on the global .muf-menu-shell) stays in the
- * component's <style> block; the media-driven display toggles stay inline as
- * var(--muf-menu-*) reads. Every colour/font references a var(--…) from tokens.ts.
+ * reflow (toggling --muf-menu-* vars) stays in the component's <style> block to keep
+ * media query logic colocated; the responsive display toggles are applied via CSS
+ * variables on .masthead and .compactMark. Every colour/font references a var(--…)
+ * from tokens.ts.
  */
 .shell {
   height: 100%;
@@ -12,8 +13,10 @@
   user-select: none;
 }
 
-/* Running masthead band; the responsive display toggle stays inline. */
+/* Running masthead band; the responsive display is set via --muf-menu-masthead-display
+   CSS variable (default flex, hidden in short-landscape). */
 .masthead {
+  display: var(--muf-menu-masthead-display, flex);
   padding: 12px 16px 8px;
   border-bottom: 1px solid var(--ink-black);
   align-items: center;
@@ -44,8 +47,10 @@
   flex-shrink: 0;
 }
 
-/* Compact identity mark, only shown in short-landscape; the display toggle stays inline. */
+/* Compact identity mark, only shown in short-landscape via --muf-menu-mark-display
+   CSS variable (default none, inline-block in short-landscape). */
 .compactMark {
+  display: var(--muf-menu-mark-display, none);
   align-self: center;
   margin-right: 4px;
   font-family: var(--font-display);

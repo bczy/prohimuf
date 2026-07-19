@@ -380,10 +380,9 @@ export function App(): JSX.Element {
     <div
       className={styles.gameRoot}
       style={{
-        cursor: paused ? "default" : "none",
-        // Keeps two-finger taps from becoming browser pinch/double-tap zoom.
-        touchAction: IS_MOBILE ? "none" : "auto",
-      }}
+        "--game-root-cursor": paused ? "default" : "none",
+        "--game-root-touch-action": IS_MOBILE ? "none" : "auto",
+      } as React.CSSProperties}
     >
       <Canvas
         ref={canvasRef}
@@ -430,8 +429,6 @@ export function App(): JSX.Element {
           key={lifeFlash}
           className={styles.lifeFlash}
           style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(220,0,0,0.55) 100%)",
             animation: "mufRedFlash 0.6s ease-out forwards",
           }}
         />

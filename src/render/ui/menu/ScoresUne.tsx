@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
-import { PaperSheet, STOCK, INK, FONT, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
 import { SelectableListItem, cx } from "../controls";
 import styles from "./ScoresUne.module.css";
 
@@ -44,12 +44,9 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
   const top = scores[0];
 
   return (
-    <PaperSheet
-      stock={STOCK.shell}
-      fullBleed={false}
-      style={{ padding: "18px 20px", fontFamily: FONT.mono, color: INK.black }}
-    >
-      {/* Masthead (deck §3.1) */}
+    <PaperSheet stock={STOCK.shell} fullBleed={false}>
+      <div className={styles.wrapper}>
+        {/* Masthead (deck §3.1) */}
       <div className={styles.masthead}>
         <div className={styles.wordmark}>PARIS-MINUIT</div>
         <div className={styles.subtitle}>LE QUOTIDIEN QUI VEILLE · 1F50 · 1998</div>
@@ -127,8 +124,7 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
             return (
               <div
                 key={i}
-                className={cx(styles.row, isTop && styles.rowTop)}
-                style={{ borderBottom: "1px solid rgba(20,18,16,0.25)" }}
+                className={cx(styles.row, styles.rowBorder, isTop && styles.rowTop)}
               >
                 <span className={styles.colNum}>
                   {isTop ? (
@@ -147,6 +143,7 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
           })}
         </>
       )}
+      </div>
     </PaperSheet>
   );
 }

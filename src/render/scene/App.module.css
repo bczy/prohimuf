@@ -1,16 +1,21 @@
 /*
  * App shell (ADR-0046) — static structure/box only for the in-game root, the R3F
  * Canvas wrapper and the life-loss vignette. Runtime-computed values stay inline in
- * App.tsx: the root cursor (paused) + touch-action (IS_MOBILE), and the vignette's
- * red radial-gradient + 0.6s flash animation (no matching colour/motion token; the
- * `mufRedFlash` keyframes live in the component's <style> block). Every colour here
- * references a var(--…) injected from tokens.ts — no hex/font/motion literal.
+ * App.tsx via CSS custom properties: the root cursor (paused true/false) is set via
+ * --game-root-cursor (default none, true→default); touch-action (IS_MOBILE) is set
+ * via --game-root-touch-action (default auto, IS_MOBILE→none). The vignette's red
+ * radial-gradient is extracted here (no colour token); the 0.6s flash animation
+ * (mufRedFlash keyframes) is generated in the component's <style> block and applied inline
+ * because it's keyed per lifeFlash increment. Every colour here references a var(--…)
+ * from tokens.ts — no hex/font/motion literal.
  */
 
 .gameRoot {
   position: relative;
   width: 100vw;
   height: 100vh;
+  cursor: var(--game-root-cursor, none);
+  touch-action: var(--game-root-touch-action, auto);
 }
 
 .canvas {
@@ -23,4 +28,5 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(220,0,0,0.55) 100%);
 }

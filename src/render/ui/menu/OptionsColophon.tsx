@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { PaperSheet, STOCK, INK, FONT, useRovingIndex } from "@render/ui/print";
+import { PaperSheet, STOCK, useRovingIndex } from "@render/ui/print";
 import { SelectableListItem, cx } from "../controls";
 import styles from "./OptionsColophon.module.css";
 
@@ -85,9 +85,9 @@ export function OptionsColophon({ prefs, onSave }: OptionsColophonProps): JSX.El
     <PaperSheet
       stock={STOCK.orange}
       fullBleed={false}
-      style={{ padding: "18px 20px", fontFamily: FONT.mono, color: INK.black, maxWidth: "560px" }}
     >
-      <div className={styles.title}>OURS</div>
+      <div className={styles.container}>
+        <div className={styles.title}>OURS</div>
       <div className={styles.subtitle}>l'ours du fanzine · réglages</div>
 
       {/* Colophon body (static block) */}
@@ -123,6 +123,7 @@ export function OptionsColophon({ prefs, onSave }: OptionsColophonProps): JSX.El
         options={difficultyOptions}
       />
       <BallotRow label="TUBE CATHODIQUE" hint="scanlines & courbure d'écran" options={crtOptions} />
+      </div>
     </PaperSheet>
   );
 }

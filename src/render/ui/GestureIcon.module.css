@@ -1,0 +1,15 @@
+/**
+ * Gesture Icon (ADR-0020) — animated code-drawn icons for tutorial control panels.
+ * All keyframes and animation classes are embedded in the GESTURE_STYLES string injected
+ * at render time (one per visible icon). SVG rendering and animations are structural,
+ * so most styling stays in the SVG markup itself (gradients, paths, animations).
+ * The icon container sizing is extracted here for reuse across all icon variants.
+ */
+
+.iconSvg {
+  height: min(240px, 34vh);
+  width: min(240px, 34vh);
+  max-height: 100%;
+  max-width: 100%;
+  display: block;
+}

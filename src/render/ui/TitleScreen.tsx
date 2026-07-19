@@ -64,7 +64,7 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
   }
 
   return (
-    <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
+    <PaperSheet stock={STOCK.shell}>
       <style>{`
         @keyframes mufTitleBlink{0%,100%{opacity:1}50%{opacity:0}}
         /* Short-landscape (ADR-0024): keep the single centered column but shrink the
@@ -90,36 +90,33 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
       {/* Interactive surface: whole cover is the hit target — a single centered column
           (identity, then the info-line CTA). Short-landscape shrinks the wordmark and
           hides the secondary lines via the class rules above. `padding` reads the
-          media-toggled var (responsive), so it stays inline. */}
+          media-toggled var (responsive) from the CSS class. */}
       <div
         role="button"
         aria-label={CTA}
         tabIndex={-1}
         onClick={handlePointer}
         className={cx("muf-title-surface", styles.surface)}
-        style={{ padding: "var(--muf-title-pad, 48px 40px)" }}
       >
         <div className={styles.info} style={infoVars("11px", "0.4em")}>
           {ISSUE_LABEL}
         </div>
 
-        <div
-          className={styles.wordmark}
-          style={{ fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))" }}
-        >
+        <div className={styles.wordmark}>
           MUF
         </div>
 
+        {/* Year tag: per-line font sizing stays inline; responsive display via CSS class. */}
         <div
-          className={styles.info}
-          style={{ ...infoVars("12px", "0.2em", 6), display: "var(--muf-yeartag-display, block)" }}
+          className={cx(styles.info, styles.yearTag)}
+          style={infoVars("12px", "0.2em", 6)}
         >
           {YEAR_TAG}
         </div>
 
-        <div className={styles.divider} style={{ display: "var(--muf-divider-display, block)" }} />
+        <div className={styles.divider} />
 
-        <div className={styles.teasers} style={{ display: "var(--muf-teasers-display, block)" }}>
+        <div className={styles.teasers}>
           {TEASERS.map((line) => (
             <div key={line}>{line}</div>
           ))}
@@ -130,10 +127,12 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
         </div>
 
         {/* Infoline CTA — the visible affordance + focus target + typewriter cursor. */}
-        <div style={{ marginTop: 20 }}>
+        <div className={styles.ctaWrapper}>
           <MarkerCircle active={true}>
             <div ref={ctaRef} tabIndex={0} className={styles.cta}>
               {CTA}
+              {/* Cursor animation: the MOTION.cursorBlinkMs value is dynamic, so animation
+                  timing stays inline to preserve runtime behavior. */}
               <span
                 aria-hidden={true}
                 className={styles.cursor}
@@ -145,12 +144,10 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           </MarkerCircle>
         </div>
 
+        {/* Microcopy: per-line font sizing stays inline; responsive display via CSS class. */}
         <div
-          className={styles.info}
-          style={{
-            ...infoVars("11px", "0.08em", 14),
-            display: "var(--muf-microcopy-display, block)",
-          }}
+          className={cx(styles.info, styles.microcopy)}
+          style={infoVars("11px", "0.08em", 14)}
         >
           {MICROCOPY}
         </div>

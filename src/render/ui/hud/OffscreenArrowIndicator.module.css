@@ -16,10 +16,41 @@
   justify-content: center;
 }
 
+.arrowWrapTop {
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.arrowWrapBottom {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.arrowWrapLeft {
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+}
+
+.arrowWrapRight {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
 /* Arrow core — opacity/transform (rotation + active scale) and the transition
    stay inline (state-driven / motion literal). */
 .arrowCore {
   position: relative;
   width: var(--muf-arrow-core-size, 102px);
   height: var(--muf-arrow-core-size, 102px);
+  display: block;
+}
+
+.arrowSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }

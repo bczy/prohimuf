@@ -8,7 +8,7 @@ import styles from "./DeliveryIntegrityBanner.module.css";
 /**
  * Delivery set-piece: the centred "LIVRAISON" call-out banner with its integrity
  * gauge while DELIVERING, and the SUCCESS/FAILED verdict stamp. The gauge fill %/hue
- * flow inline as custom properties; the verdict ink stays inline.
+ * flow inline as custom properties; the verdict ink stays inline (state-driven).
  */
 export function DeliveryIntegrityBanner({
   delivery,
@@ -29,6 +29,8 @@ export function DeliveryIntegrityBanner({
             LIVRAISON — PROTÉGEZ LE VÉHICULE !
           </span>
           <div className={styles.deliveryTrack}>
+            {/* State-driven fill % and hue flow as CSS variables; transition is per-gauge
+                (100ms), so it stays inline with the computed values. */}
             <div
               className={styles.gaugeFill}
               style={

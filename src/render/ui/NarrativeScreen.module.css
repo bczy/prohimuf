@@ -1,9 +1,10 @@
 /*
  * NarrativeScreen (ADR-0046) — static structure/typography only. Runtime-driven bits
  * stay inline: the halftone backdrop mask/opacity, the progress-dot fill, the sprite
- * grayscale filter, and the transcript ground (solid on backdrop scenes, transparent
- * on the tutorial). The typewriter/continue blink keyframe is scoped here (moved from
- * the old inline <style>; identical). Every colour/font/size references a var(--…).
+ * grayscale filter, the transcript ground (solid on backdrop scenes, transparent on
+ * the tutorial), and the PaperSheet font-family (component style prop). The typewriter/continue
+ * blink keyframe is scoped here (moved from the old inline <style>; identical).
+ * Every colour/font/size references a var(--…).
  */
 .root {
   position: fixed;

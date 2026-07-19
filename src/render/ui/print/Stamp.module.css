@@ -6,7 +6,7 @@
  */
 
 /* Rubber-stamp box: fixed layout/typography + the always-black toner keyline.
-   border-radius / text-decoration / transform are prop-driven and stay inline. */
+   border-radius / text-decoration / transform use CSS variables injected via inline style. */
 .box {
   position: relative;
   display: inline-block;
@@ -18,26 +18,31 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  border-radius: var(--stamp-border-radius, 1px);
+  text-decoration: var(--stamp-text-decoration, none);
+  transform: var(--stamp-transform, rotate(-4deg));
 }
 
-/* Hue tell: slim inner rule; its background (mark ink) is prop-driven, stays inline. */
+/* Hue tell: slim inner rule; its background (mark ink) is injected via --stamp-ink. */
 .innerRule {
   position: absolute;
   left: 12%;
   right: 12%;
   bottom: 1.5px;
   height: 1.5px;
+  background: var(--stamp-ink);
   pointer-events: none;
 }
 
 /* Diagonal strike (shape="diagonal"): the -14deg tilt is fixed; the background
-   (mark ink) is prop-driven and stays inline. */
+   (mark ink) is injected via --stamp-ink. */
 .diagonalStrike {
   position: absolute;
   left: -6%;
   right: -6%;
   top: 50%;
   height: 2px;
+  background: var(--stamp-ink);
   transform: rotate(-14deg);
   pointer-events: none;
 }

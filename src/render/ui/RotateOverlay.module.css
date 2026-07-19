@@ -1,9 +1,27 @@
 /*
  * RotateOverlay (ADR-0046) — static structure/typography only. The rotate-hint
- * keyframes + reduced-motion @media stay in the component's <style> block (the glyph
- * animation is preserved verbatim); the SVG stroke uses the INK token as an attribute.
+ * keyframes + reduced-motion @media stay in the component's <style> block for
+ * animation-specific control; the SVG stroke uses the INK token as an attribute.
  * Every colour/font/size here references a var(--…) injected from tokens.ts.
  */
+
+@keyframes mufRotateHint {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotateGlyph {
+    animation: none !important;
+  }
+}
+
 .stack {
   height: 100%;
   display: flex;
@@ -11,6 +29,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-xxl);
+}
+
+.rotateGlyph {
+  animation: mufRotateHint 1.8s ease-in-out infinite alternate;
 }
 
 .title {

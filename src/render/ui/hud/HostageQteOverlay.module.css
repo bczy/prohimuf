@@ -1,5 +1,6 @@
 /* Hostage QTE overlay stamps (ADR-0046) — static structure/typography only; the
-   verdict ink and the vignette gradient stay inline in HostageQteOverlay.tsx. */
+   verdict ink stays inline (state-driven color). The vignette gradient is extracted
+   to .vignetteWash with its complex radial-gradient literal (no design token equivalent). */
 
 /* Stamped paper chip (shared, composed) — reads over any scene, zero glow. */
 .chip {
@@ -9,6 +10,17 @@
 /* Full-viewport centred overlay for the set-piece stamps (shared, composed). */
 .centerOverlay {
   composes: centerOverlay from "./shared.module.css";
+}
+
+/* Dim wash over the frozen scene — soft vignette that keeps the centred, zoomed
+   captor readable (transparent core). The rgba is INK-black at partial alpha — a
+   gradient literal with no clean design token, so the gradient itself stays here
+   but the element structure is now organized. */
+.vignetteWash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(20,18,16,0) 42%, rgba(20,18,16,0.5) 100%);
 }
 
 /* OTAGE warning stamp. */
@@ -21,7 +33,7 @@
   transform: rotate(-4deg);
 }
 
-/* QTE verdict stamp (WON / LOST) — ink inline. */
+/* QTE verdict stamp (WON / LOST) — ink inline (state-driven color). */
 .chipVerdict {
   padding: 12px 26px;
   border: 3px solid var(--ink-black);

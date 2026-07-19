@@ -23,10 +23,16 @@ export function PaperSheet({
   children,
   style,
 }: PaperSheetProps): JSX.Element {
+  // CSS custom property for the paper stock color, merged with any additional styles.
+  const sheetStyle: CSSProperties = {
+    "--paper-stock": stock,
+    ...style,
+  } as CSSProperties;
+
   return (
     <div
       className={cx(styles.sheet, fullBleed ? styles.fullBleed : styles.contained)}
-      style={{ background: stock, ...style }}
+      style={sheetStyle}
     >
       <div aria-hidden={true} className={styles.dotScreen} />
       <div aria-hidden={true} className={styles.toner} />

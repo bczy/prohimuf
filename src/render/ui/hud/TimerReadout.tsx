@@ -7,6 +7,7 @@ export function TimerReadout({ timeRemaining }: { timeRemaining: number }): JSX.
   return (
     <div className={styles.item}>
       <span className={styles.label}>temps</span>
+      {/* State-driven ink colour (timeColor ramp) stays inline — no static token equivalent. */}
       <span className={styles.value} style={{ color: timeColor(timeRemaining) }}>
         {Math.ceil(timeRemaining)}s
       </span>

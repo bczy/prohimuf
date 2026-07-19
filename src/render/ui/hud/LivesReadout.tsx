@@ -7,6 +7,7 @@ export function LivesReadout({ lives }: { lives: number }): JSX.Element {
   return (
     <div className={styles.item}>
       <span className={styles.label}>vies</span>
+      {/* State-driven ink colour (livesColor ramp) stays inline — no static token equivalent. */}
       <span className={styles.value} style={{ color: livesColor(lives) }}>
         {"♥".repeat(Math.max(0, lives))}
       </span>

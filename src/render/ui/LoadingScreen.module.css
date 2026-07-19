@@ -20,6 +20,7 @@
   text-align: center;
   z-index: 2;
   pointer-events: none;
+  user-select: none;
 }
 
 .body {
@@ -31,6 +32,7 @@
   text-align: center;
   padding: 48px 40px;
   box-sizing: border-box;
+  user-select: none;
 }
 
 /* Uppercase mono info line; per-line font-size/letter-spacing/margin-top stay inline. */
@@ -40,13 +42,14 @@
   text-transform: uppercase;
 }
 
-/* "CHARGEMENT…" wordmark; the clamp() font-size stays inline (responsive). */
+/* "CHARGEMENT…" wordmark; the clamp() font-size is responsive. */
 .wordmark {
   font-family: var(--font-display);
   line-height: 0.9;
   letter-spacing: 0.05em;
   color: var(--ink-full);
   margin-top: var(--space-md);
+  font-size: clamp(44px, 8vw, 84px);
 }
 
 .rule {

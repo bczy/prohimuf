@@ -1,5 +1,6 @@
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
 import type { GestureKind } from "@game/systems/narrativeSystem";
+import styles from "./GestureIcon.module.css";
 
 /**
  * Code-drawn, animated gesture icons for the tutorial control panels (ADR-0020).
@@ -41,14 +42,6 @@ const HAND_ONE_FINGER =
   "M45 24 C45 18 56 18 56 24 L57 52 C60 47 67 47 68 55 C70 50 77 51 78 59 " +
   "C80 55 86 56 87 63 C91 73 90 93 82 105 C76 110 59 110 53 105 " +
   "C49 104 39 99 36 91 C33 84 34 78 38 74 C41 71 44 72 45 74 L45 24 Z";
-
-const ICON_SVG_STYLE: CSSProperties = {
-  height: "min(240px, 34vh)",
-  width: "min(240px, 34vh)",
-  maxHeight: "100%",
-  maxWidth: "100%",
-  display: "block",
-};
 
 /**
  * All keyframes + animation classes for the four icons, plus the reduced-motion freeze.
@@ -117,7 +110,7 @@ const GESTURE_STYLES = `
 /** Desktop — single LEFT click = one shot (§1.1). Left button + one ripple are the only glow. */
 function MouseClickIcon(): JSX.Element {
   return (
-    <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
+    <svg viewBox="0 0 120 120" className={styles.iconSvg} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
         <radialGradient id="gi-mc-halo-grad" cx="50%" cy="50%" r="50%">
@@ -184,7 +177,7 @@ function MouseClickIcon(): JSX.Element {
 /** Desktop — push cursor to an EDGE, view scrolls that way, both senses (§1.2). Edge band glows. */
 function EdgeScrollIcon(): JSX.Element {
   return (
-    <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
+    <svg viewBox="0 0 120 120" className={styles.iconSvg} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
         <linearGradient id="gi-es-gr" x1="0" y1="0" x2="1" y2="0">
@@ -294,7 +287,7 @@ function EdgeScrollIcon(): JSX.Element {
  */
 function TwoFingerTapIcon(): JSX.Element {
   return (
-    <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
+    <svg viewBox="0 0 120 120" className={styles.iconSvg} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
         <radialGradient id="gi-tt-halo-grad" cx="50%" cy="50%" r="50%">
@@ -391,7 +384,7 @@ function TwoFingerTapIcon(): JSX.Element {
  */
 function SwipePanIcon(): JSX.Element {
   return (
-    <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
+    <svg viewBox="0 0 120 120" className={styles.iconSvg} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
         {/* one alpha-falloff motion trail per axis-sense: bright at the fingertip → 0 at the tail */}

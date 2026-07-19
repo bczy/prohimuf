@@ -1,6 +1,7 @@
 import type { CSSProperties, JSX } from "react";
 import type { DiagramKind } from "@game/systems/narrativeSystem";
 import { ringZoneColour } from "@render/scene/hostageCue";
+import styles from "./DiagramIcon.module.css";
 
 /**
  * Animated MECHANIC diagrams for the tutorial (sibling of `GestureIcon`, which teaches control
@@ -31,47 +32,18 @@ const GREEN = ringZoneColour("vital"); // head → lethal
 const YELLOW = ringZoneColour("limb"); // limb → partial
 const RED = ringZoneColour("off"); // off-body → wasted
 
-const ICON_SVG_STYLE: CSSProperties = {
-  height: "min(240px, 34vh)",
-  width: "min(240px, 34vh)",
-  maxHeight: "100%",
-  maxWidth: "100%",
-  display: "block",
-};
-
-// The ring rides three beats — head(green) → torso(yellow) → off(red) — translating from its
-// base (the head) and recolouring in lockstep, so colour reads as a function of POSITION. On the
-// green beat a shot-flash pulses (the payoff). Reduced motion freezes every element (base attrs =
-// green-on-head). transform-box/origin let the SVG translate honour px deltas.
-const DIAGRAM_STYLES = `
-.di-anim { transform-box: fill-box; transform-origin: center; }
-.di-ring  { animation: di-ring 5.4s ease-in-out infinite; }
-.di-flash { animation: di-flash 5.4s ease-out infinite; }
-@keyframes di-ring {
-  0%   { transform: translate(0,0);        stroke: ${GREEN};  }
-  26%  { transform: translate(0,0);        stroke: ${GREEN};  }
-  33%  { transform: translate(-2px,20px);  stroke: ${YELLOW}; }
-  59%  { transform: translate(-2px,20px);  stroke: ${YELLOW}; }
-  66%  { transform: translate(-28px,4px); stroke: ${RED};    }
-  93%  { transform: translate(-28px,4px); stroke: ${RED};    }
-  100% { transform: translate(0,0);        stroke: ${GREEN};  }
-}
-@keyframes di-flash {
-  0%   { opacity: 0; transform: scale(.5); }
-  6%   { opacity: .9; transform: scale(1); }
-  22%  { opacity: 0; transform: scale(1.35); }
-  100% { opacity: 0; transform: scale(1.35); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .di-anim { animation: none !important; }
-}
-`;
+// CSS custom properties for dynamic animation colors — injected as inline style on the SVG element.
+// The animation keyframes in DiagramIcon.module.css reference these via var().
+const SVG_VARS: CSSProperties = {
+  "--green": GREEN,
+  "--yellow": YELLOW,
+  "--red": RED,
+} as CSSProperties;
 
 /** The hostage-QTE colour-ring diagram (the only `DiagramKind` today). */
 function HostageRingIcon(): JSX.Element {
   return (
-    <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
-      <style>{DIAGRAM_STYLES}</style>
+    <svg viewBox="0 0 120 120" className={styles["icon-svg"]} aria-hidden="true" style={SVG_VARS}>
       {/* Dark "screen" inset — lets the acid ring hues read on the light newsprint panel. */}
       <rect
         x="8"
@@ -92,7 +64,7 @@ function HostageRingIcon(): JSX.Element {
         width="80"
         height="80"
         preserveAspectRatio="xMidYMid meet"
-        style={{ imageRendering: "pixelated" }}
+        className={styles.pixelated}
       />
       {/* Hostage — the REAL girl sprite, held front-right-lower over the captor (his shield). */}
       <image
@@ -102,7 +74,7 @@ function HostageRingIcon(): JSX.Element {
         width="54"
         height="54"
         preserveAspectRatio="xMidYMid meet"
-        style={{ imageRendering: "pixelated" }}
+        className={styles.pixelated}
       />
 
       {/* Player aim reticle — a fixed, neutral crosshair low on the tableau (never a zone hue). */}
@@ -117,7 +89,7 @@ function HostageRingIcon(): JSX.Element {
 
       {/* Shot-flash on the GREEN (head) beat — the payoff. Base opacity 0 (reduced-motion: stays off). */}
       <circle
-        className="di-anim di-flash"
+        className={`${String(styles["di-anim"])} ${String(styles["di-flash"])}`}
         cx="60"
         cy="24"
         r="18"
@@ -130,7 +102,7 @@ function HostageRingIcon(): JSX.Element {
       {/* The wandering reticle RING — the one lit element. Base = GREEN on the head (also the
           reduced-motion frozen frame); the animation sweeps it to the limb (yellow) and off (red). */}
       <circle
-        className="di-anim di-ring"
+        className={`${String(styles["di-anim"])} ${String(styles["di-ring"])}`}
         cx="60"
         cy="24"
         r="13"

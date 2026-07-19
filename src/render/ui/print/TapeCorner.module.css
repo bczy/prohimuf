@@ -1,14 +1,23 @@
 /*
- * Tape-pin corner (ADR-0046 / §2bis.2 pt6) — static box only. The strip geometry, the
- * translucent beige fill and the wrinkle stroke are inline-SVG in TapeCorner.tsx (rgba with
- * no plain token — masking-tape beige is not a §2bis.1 stock); the per-corner offset +
- * rotation come from CORNER_STYLE. `mix-blend-mode: multiply` lets the per-flyer stock tint
- * through the strip. Dead-matte: no border keyline, no box-shadow, no sheen (zero glow).
+ * Tape-pin corner (ADR-0046) — static box/keyline/fill with prop-driven positioning.
+ * The per-corner offset + rotation are injected via CSS custom properties
+ * (--tape-top, --tape-bottom, --tape-left, --tape-right, --tape-transform).
+ * The translucent masking-tape fill is a static rgba with no plain token (manila carries
+ * only the opaque hex), so it lives here as a literal. The keyline references var(--ink-black).
  */
 
 .tape {
   position: absolute;
-  mix-blend-mode: multiply;
+  top: var(--tape-top);
+  bottom: var(--tape-bottom);
+  left: var(--tape-left);
+  right: var(--tape-right);
+  width: 48px;
+  height: 18px;
+  background: rgba(236, 231, 218, 0.72);
+  border-top: 1px solid var(--ink-black);
+  border-bottom: 1px solid var(--ink-black);
+  transform: var(--tape-transform);
+  opacity: 0.85;
   pointer-events: none;
-  overflow: visible;
 }

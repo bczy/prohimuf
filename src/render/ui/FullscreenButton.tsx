@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { useFullscreen } from "@hooks/useFullscreen";
 import styles from "./FullscreenButton.module.css";
-import { cx } from "./controls";
 
 // Inked glyph on a light halo — reads on the grey pre-game grounds (STOCK.shell)
 // and keeps presence over the darker in-game canvas via the halo.
@@ -22,16 +21,14 @@ export function FullscreenButton(): JSX.Element | null {
   const label = isFullscreen ? "Quitter le plein écran" : "Plein écran";
 
   return (
-    <>
-      <style>{`.muf-fs-btn{opacity:0.55;transition:opacity 0.15s ease}.muf-fs-btn:hover,.muf-fs-btn:focus{opacity:1}`}</style>
-      <button
-        type="button"
-        className={cx("muf-fs-btn", styles.button)}
-        data-muf-ui
-        onClick={toggle}
-        aria-label={label}
-        title={label}
-      >
+    <button
+      type="button"
+      className={styles.button}
+      data-muf-ui
+      onClick={toggle}
+      aria-label={label}
+      title={label}
+    >
         <svg
           width="22"
           height="22"
@@ -62,7 +59,6 @@ export function FullscreenButton(): JSX.Element | null {
             </>
           )}
         </svg>
-      </button>
-    </>
+    </button>
   );
 }

@@ -21,9 +21,10 @@
   text-align: center;
   z-index: 2;
   pointer-events: none;
+  user-select: none;
 }
 
-/* Interactive cover column. `padding` (var --muf-title-pad) stays inline (responsive). */
+/* Interactive cover column. `padding` uses CSS var for responsive reflow. */
 .surface {
   height: 100%;
   display: flex;
@@ -33,6 +34,8 @@
   text-align: center;
   cursor: pointer;
   box-sizing: border-box;
+  padding: var(--muf-title-pad, 48px 40px);
+  user-select: none;
 }
 
 /* Uppercase mono info line; per-line font-size/letter-spacing/margin-top (and the
@@ -43,24 +46,26 @@
   text-transform: uppercase;
 }
 
-/* MUF wordmark; the responsive var(--muf-wordmark-size) font-size stays inline. */
+/* MUF wordmark; the responsive font-size uses CSS var for reflow. */
 .wordmark {
   font-family: var(--font-display);
   line-height: 0.9;
   letter-spacing: 0.05em;
   color: var(--ink-full);
   margin-top: var(--space-md);
+  font-size: var(--muf-wordmark-size, clamp(80px, 14vw, 160px));
 }
 
-/* Ink divider rule; the responsive display toggle stays inline. */
+/* Ink divider rule; the responsive display toggle uses CSS var. */
 .divider {
   width: min(420px, 80%);
   height: 2px;
   background: var(--ink-black);
   margin: 22px 0;
+  display: var(--muf-divider-display, block);
 }
 
-/* Teaser block; the responsive display toggle stays inline. */
+/* Teaser block; the responsive display toggle uses CSS var. */
 .teasers {
   font-family: var(--font-mono);
   font-size: var(--font-size-md);
@@ -68,6 +73,7 @@
   letter-spacing: 0.04em;
   color: var(--ink-black);
   text-align: left;
+  display: var(--muf-teasers-display, block);
 }
 
 /* Info-line CTA (focus target). */
@@ -90,4 +96,19 @@
   margin-left: 4px;
   background: var(--ink-black);
   vertical-align: text-bottom;
+}
+
+/* Wrapper for info-line CTA; applies vertical spacing. */
+.ctaWrapper {
+  margin-top: 20px;
+}
+
+/* Year tag info line; responsive display via CSS var. */
+.yearTag {
+  display: var(--muf-yeartag-display, block);
+}
+
+/* Microcopy info line; responsive display via CSS var. */
+.microcopy {
+  display: var(--muf-microcopy-display, block);
 }

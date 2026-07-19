@@ -11,6 +11,7 @@ export function PhaseMessageBanner({ phase }: { phase: Phase }): JSX.Element | n
 
   return (
     <div className={styles.centerOverlay}>
+      {/* State-driven ink colour (phase-specific) stays inline — computed from phaseMessage. */}
       <div className={cx(styles.chip, styles.chipMessage)} style={{ color: msg.color }}>
         {msg.text}
       </div>

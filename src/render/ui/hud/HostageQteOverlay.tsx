@@ -36,17 +36,8 @@ export function HostageQteOverlay({
           centred, zoomed captor readable (transparent core). The bottom-centre
           gauge stack is intentionally GONE (UX spec §1): the sole clock is the
           blown-peeks count, read diegetically in-world (Flag B), no HUD
-          surrogate. The rgba is INK-black at partial alpha — a gradient literal
-          with no clean token, so it stays inline (not re-declared in CSS). */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          background:
-            "radial-gradient(ellipse at center, rgba(20,18,16,0) 42%, rgba(20,18,16,0.5) 100%)",
-        }}
-      />
+          surrogate. */}
+      <div className={styles.vignetteWash} />
 
       {hostageQte.warning && (
         <div className={styles.centerOverlay}>
