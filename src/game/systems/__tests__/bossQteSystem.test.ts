@@ -336,6 +336,45 @@ describe("bossQteSystem — phase break (damage-free, telegraphed ACTIVE sub-sta
     expect(r.qte.bossHp).toBe(15); // damage-free
   });
 
+  it("counts phaseBreakRemaining DOWN tick-by-tick under real clamped per-frame deltas", () => {
+    // REGRESSION (code-review panel, PR #112): the real loop clamps delta to MAX_DELTA (0.1 s,
+    // useGameLoop) and PHASE_BREAK_SECONDS is 1.0, so a break is NEVER crossed whole in a single
+    // tick. phaseBreakRemaining must decrement every frame — else the render's brace pulse
+    // (`1 − phaseBreakRemaining / PHASE_BREAK_SECONDS`) stays pinned at 0 and only snaps to 1 the
+    // frame the break ends (when breakActive also flips false), so the animation never plays.
+    const seed: BossQte = {
+      ...toActive(),
+      stance: "EXPOSED",
+      stanceRemaining: 1.0,
+      bossHp: 17, // a VITAL chip of 2 → 15 crosses 16 into phase 1, opening the break
+      phaseIndex: 0,
+      windowChipped: false,
+      windowOrdinal: 1,
+      targetOffset: { x: 0, y: 0.8 },
+      ringZone: "vital",
+    };
+    // The chip opens the break at its FULL duration on the trigger tick (small delta 0.01).
+    let qte = tickBossQte(seed, true, { x: 0, y: 0.8 }, 0.01).qte;
+    expect(qte.phaseBreakRemaining).toBeCloseTo(PHASE_BREAK_SECONDS);
+    expect(qte.stance).toBe("SHIELDED");
+    // Now drive the break down in 0.1 s frames (the clamped real delta). It must STRICTLY
+    // decrease every frame until it reaches 0 (the break's end) — never stuck at the full value.
+    let prev = qte.phaseBreakRemaining; // the full trigger value
+    let frames = 0;
+    let last = prev;
+    for (let i = 0; i < 15; i++) {
+      qte = tickBossQte(qte, false, NO_HIT, 0.1).qte;
+      const now = qte.phaseBreakRemaining;
+      expect(now).toBeLessThan(prev); // strictly decreasing every frame — no plateau
+      prev = now;
+      last = now;
+      frames += 1;
+      if (now <= 0) break;
+    }
+    expect(frames).toBeGreaterThan(5); // many frames of visible descent, not one snap
+    expect(last).toBe(0); // reaches 0 → the brace pulse had time to play
+  });
+
   it("the break ends into a fresh SHIELDED lull at the NEW phase (tighter cadence)", () => {
     const qte: BossQte = {
       ...toActive(),

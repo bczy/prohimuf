@@ -695,7 +695,18 @@ export function tickBossQte(
       }
       // Advance within the landed segment (on a crossing the segment was reset to its full
       // duration above — the trailing overshoot is discarded, preserving small-delta behaviour).
-      if (!crossed) stanceRemaining -= remaining;
+      if (!crossed) {
+        stanceRemaining -= remaining;
+        // Count the phase break DOWN in lockstep with its SHIELDED hold on every non-crossing
+        // tick — but only for a break already OPEN at the start of this tick, so the tick that
+        // TRIGGERS a break still reports the full `PHASE_BREAK_SECONDS`. Without this the break
+        // stayed pinned at its trigger value until the crossing snapped it to 0, so the render's
+        // brace pulse (`1 − phaseBreakRemaining / PHASE_BREAK_SECONDS`) never played under the
+        // real clamped per-frame delta (`MAX_DELTA` 0.1 < `PHASE_BREAK_SECONDS` 1.0).
+        if (inBreakAtStart && phaseBreakRemaining > 0) {
+          phaseBreakRemaining = Math.max(0, phaseBreakRemaining - remaining);
+        }
+      }
 
       // The window tell shows in the last `telegraphLeadSeconds` of a normal SHIELDED beat
       // (NOT during a phase break — the render reads `phaseBreakRemaining > 0` for that cue).

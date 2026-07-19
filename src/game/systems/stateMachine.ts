@@ -88,6 +88,23 @@ export function createInitialState(
   roster?: LevelRoster,
 ): GameState {
   const deliverySpec = params.delivery ?? null;
+  const hostageQteSpec = params.hostageQte ?? null;
+  const bossQteSpec = params.bossQte ?? null;
+  // GUARD (code-review panel, PR #112): a level may NOT author BOTH a hostage QTE and a boss
+  // QTE yet. The two cinematics do not interleave — the boss block at the top of `tickGameState`
+  // freezes `elapsedSeconds` while the boss is active, and the hostage QTE triggers off
+  // `elapsedSeconds`; so a co-authored hostage would be SILENTLY dropped once the boss quota is
+  // met (never delayed — lost). Interleaving them is a follow-up story; until then, fail LOUD at
+  // level load rather than lose a scripted beat in play. Not reachable in V1 (no shipped level
+  // authors both; the dev harness authors only the boss spec) — this locks it that way.
+  if (hostageQteSpec !== null && bossQteSpec !== null) {
+    throw new Error(
+      "LevelConfig invariant: a level cannot author BOTH hostageQte and bossQte yet — the two " +
+        "QTE cinematics do not interleave (the boss freezes the clock the hostage trigger reads), " +
+        "so the hostage QTE would be silently dropped. Split them across levels or wait for the " +
+        "QTE-interleave follow-up story.",
+    );
+  }
   return {
     phase: "PLAYING",
     crosshair: { position: { x: 0.5, y: 0.5 } },
@@ -103,9 +120,9 @@ export function createInitialState(
     courierTimer: FIRST_COURIER_DELAY,
     couriersSpawned: 0,
     energy: ENERGY_INITIAL,
-    qteSpec: params.hostageQte ?? null,
+    qteSpec: hostageQteSpec,
     qte: null,
-    bossQteSpec: params.bossQte ?? null,
+    bossQteSpec: bossQteSpec,
     bossQte: null,
     deliverySpec,
     deliveryVehicle: seedDeliveryVehicle(deliverySpec),
