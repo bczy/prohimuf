@@ -142,7 +142,7 @@ budget §3.1). Continuité `the same … commander` = recolle les poses (utile p
 - `towering … at full height` → masse dominante, plein pied ; distinct du buste-fenêtre.
 - `bare-headed` → RULING §1 ; le tell fort (seul crâne nu du roster).
 - `long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black
-  backdrop` → LE tell « chef » sans couleur, **+ [S1]** : valeur médiane keyable (jamais near-black),
+backdrop` → LE tell « chef » sans couleur, **+ [S1]** : valeur médiane keyable (jamais near-black),
   résout la contradiction avec la tail « light grey … tones ».
 - `reflective armband brassard` + `boxy radio clipped at the shoulder` → micro-tells d'autorité
   plainclothes-BAC qui **remplacent** la casquette (RULING §1) ; la radio pose le finisher.
@@ -155,43 +155,53 @@ budget §3.1). Continuité `the same … commander` = recolle les poses (utile p
 
 ### `commander_exposed` — EXPOSED phase-1 / à découvert, tire (seed 4871) — APPLIQUÉ
 
-> the same towering bare-headed french plainclothes commander in his long knee-length overcoat,
-> reflective armband and shoulder radio, lunging one stride forward into the open, both arms thrust
-> forward presenting a boxy service pistol straight at the viewer, big bright muzzle flash, the long
-> coat flaring open, aggressive exposed firing stance, facing forward
+> the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey
+> overcoat, reflective armband and shoulder radio, lunging one stride forward into the open, both arms
+> thrust forward presenting a boxy service pistol straight at the viewer, big bright muzzle flash, the
+> long coat flaring open to reveal a pale contrasting grey lining, aggressive firing stance, facing forward
 
+- `in his long knee-length charcoal-grey overcoat` → **[S1]** valeur médiane keyable (continuité DNA).
 - `reflective armband and shoulder radio` → ADN compact re-cité (continuité).
 - `lunging one stride forward into the open` → EXPOSED = il quitte le couvert = la seule fenêtre.
 - `both arms thrust forward presenting a boxy service pistol … big bright muzzle flash` → calque
   `enemy_shooting` ; frame dangereuse **et** atteignable (anchor `muzzle` tuné au gate).
-- `the long coat flaring open` → silhouette OUVERTE, contraste net avec le SHIELDED fermé.
+- `the long coat flaring open to reveal a pale contrasting grey lining` → silhouette OUVERTE (contraste
+  net avec SHIELDED fermé) **+ [S2]** : le pan ouvert reçoit une valeur claire pour ne pas devenir un
+  trou-torse keyé (le pan sombre ouvert sur fond near-black = grande zone que le keyer prend pour le fond).
 - **Sert la phase-1 (mono-ring).** La phase-2+ (deux rings) utilise `commander_weakpoint` (ci-dessous)
   — bras étendus-présentés ici **occultent la bande torse**, inutilisable comme canvas deux-bandes.
 
 ### `commander_hit` — touché (seed 4872) — APPLIQUÉ · **re-clé RULING §1**
 
-> the same towering bare-headed french plainclothes commander in his long knee-length overcoat,
-> staggered a step backward by a bullet impact, torso recoiling and head snapping back, the
-> reflective armband brassard torn loose and flapping from his sleeve, the shoulder radio knocked
-> spinning off its clip, the boxy pistol arm falling loose, off-balance reeling posture, facing forward
+> the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey
+> overcoat, staggered back by a bullet, torso recoiling and head snapping back, the reflective brassard
+> torn loose and flapping from his sleeve, the shoulder radio knocked spinning off its clip, both still
+> tethered to him by a strap and cord, the pistol arm falling loose, reeling off-balance, facing forward
 
-- `staggered a step backward … torso recoiling and head snapping back` → lecture « touché » claire.
-- `the reflective armband brassard torn loose … the shoulder radio knocked spinning off its clip` →
+- `staggered back … torso recoiling and head snapping back` → lecture « touché » claire.
+- `the reflective brassard torn loose … the shoulder radio knocked spinning off its clip` →
   **le beat d'autorité défaite re-clé sur brassard + radio** au lieu d'une casquette qui saute
   (RULING §1 mandaté). Deux tells lisibles à taille de jeu.
-- `the boxy pistol arm falling loose` → blessé, ne tire plus.
+- `both still tethered to him by a strap and cord` → **[S4]** : le brassard/radio arrachés lisent
+  « coming loose FROM him » et non débris flottant — évite aussi un faux-positif du defect-sweep
+  (objet flottant = suspicion de trou de génération). `charcoal-grey overcoat` = **[S1]**.
+- `the pistol arm falling loose` → blessé, ne tire plus.
 
 ### `commander_down` — à terre / vaincu (seed 4873) — APPLIQUÉ · **re-clé RULING §1**
 
-> the same towering bare-headed french plainclothes commander defeated and fallen, lying sprawled on
-> his back flat on the ground, the long overcoat splayed out around him, the torn armband brassard
-> and the knocked-loose shoulder radio lying on the ground beside him, a boxy service pistol dropped
-> from his open hand, a motionless collapsed heap
+> the same towering bare-headed french plainclothes commander defeated and fallen, sprawled on his
+> back flat on the ground, his long overcoat splayed around him in mid-grey fabric lighter than the
+> pitch-black ground and traced by a thin pale contour, the torn brassard and knocked-loose shoulder
+> radio lying beside him, a boxy service pistol dropped from his open hand, a motionless heap
 
-- `lying sprawled on his back flat on the ground` → à terre / vaincu, posé lisible sur fond noir.
-- `the long overcoat splayed out around him` → garde le manteau signature reconnaissable au sol.
-- `the torn armband brassard and the knocked-loose shoulder radio lying … beside him` → l'autorité
-  défaite **re-clé sur brassard + radio** (RULING §1), plus le `service pistol dropped` (déjà là).
+- `sprawled on his back flat on the ground` → à terre / vaincu, posé lisible sur fond noir.
+- `his long overcoat splayed around him in mid-grey fabric lighter than the pitch-black ground and
+traced by a thin pale contour` → garde le manteau signature **+ [S3] (priorité)** : la plus grande
+  masse sombre continue du set, couchée à plat contre le fond noir sans arête verticale pour accrocher
+  un liseré ; valeur médiane + contour pâle explicites empêchent qu'elle soit avalée en entier (ce qui
+  tuerait le seul rôle de la pose : un tas lisible au sol).
+- `the torn brassard and knocked-loose shoulder radio lying … beside him` → l'autorité défaite
+  **re-clé sur brassard + radio** (RULING §1), plus le `service pistol dropped` (déjà là).
   (`knocked-loose`, pas `knocked-free` : `-free` déclencherait le détecteur de négation.)
 - **Distinct du finisher** : ici il est **immobile, sur le dos** = déjà vaincu ; le finisher le montre
   **sur un genou, tête haute, encore en train d'essayer**.
@@ -213,19 +223,21 @@ head exposed, torso squared frontal, NOTHING occluding head or torso bands ; the
 callout, the sprite only keeps both bands clean ; Prohibition-ST window-enemy grammar : frontal,
 still, readable. »
 
-> the same towering bare-headed french plainclothes commander in his long knee-length overcoat,
-> reflective armband and shoulder radio, square and still facing forward, chin lifted and head fully
-> clear, torso squared flat to the viewer, both arms held out wide, a boxy service pistol in one
-> lowered hand held clear of the chest, frontal readable stance
+> the same towering bare-headed french plainclothes commander in his long knee-length mid-grey
+> charcoal overcoat clearly lighter than the black backdrop, reflective armband and shoulder radio,
+> square and still facing forward, chin lifted and head fully clear, torso squared flat to the viewer,
+> both arms held out wide, a boxy service pistol low in one hand, clear of the chest, frontal readable stance
 
-- `standing square and still facing directly forward` → grammaire fenêtre Prohibition-ST : frontal,
-  immobile, lisible.
-- `chin lifted and head held fully clear` → **bande VITAL (tête) dégagée** pour le ring tête.
-- `chest and torso squared flat to the viewer` + `both arms held out wide away from the body` →
-  **bande LIMB (torse) dégagée** ; rien (bras/revers/holster) n'occulte les bandes (discipline de
-  négatif Estelle).
-- `a boxy service pistol in one lowered hand kept clear of the chest` → silhouette d'arme **conservée
-  partout** (jamais un tell melee), mais tenue basse hors de la bande torse.
+- `square and still facing forward` → grammaire fenêtre Prohibition-ST : frontal, immobile, lisible.
+- `chin lifted and head fully clear` → **bande VITAL (tête) dégagée** pour le ring tête.
+- `torso squared flat to the viewer` + `both arms held out wide` → **bande LIMB (torse) dégagée** ;
+  rien (bras/revers/holster) n'occulte les bandes (discipline de négatif Estelle).
+- `mid-grey charcoal overcoat clearly lighter than the black backdrop` → **[S1]** — compte **plus**
+  ici (Serge) : les rings render-side se posent DIRECTEMENT sur ces valeurs ; une valeur de manteau
+  ambiguë sous le ring LIMB est pire que sur une pose statique. La tête nue value-sépare naturellement
+  du manteau (peau pâle vs masse), ce qui renforce la lecture deux-bandes (Serge PASS-AS-IS là-dessus).
+- `a boxy service pistol low in one hand, clear of the chest` → silhouette d'arme **conservée partout**
+  (jamais un tell melee), mais tenue basse hors de la bande torse.
 
 ### `commander_parry_windup` — PARRY / charged windup (seed sugg. 4875)
 
@@ -236,19 +248,24 @@ Estelle : « pull the moment EARLIER than commander_exposed — elbows bent, pis
 presented, shoulders hunched loading the swing ; arms-drawn-IN vs exposed's arms-EXTENDED is the
 sub-half-second read ; firearm silhouette throughout, never a melee tell. »
 
-> the same towering bare-headed french plainclothes commander in his long knee-length overcoat,
-> reflective armband and shoulder radio, coiled a beat before firing, elbows bent and drawn in tight
-> to the body, a boxy service pistol gripped in both hands and angled steeply upward mid-raise, still
-> short of firing level, shoulders hunched and loaded, tense wound-up crouch, facing forward
+> the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey
+> overcoat clearly lighter than the black backdrop, the long coat still hanging closed, reflective
+> armband, shoulder radio, coiled a beat before firing, elbows drawn in tight, a boxy service pistol
+> gripped two-handed, angled steeply upward mid-raise, short of firing level, shoulders hunched, tense
+> wound-up crouch, facing forward
 
-- `coiled a beat before firing` + `weight gathered back` → le moment **plus tôt** qu'EXPOSED.
-- `elbows bent and drawn in tight to the body` → **bras rentrés** (le read sub-0,5 s vs bras étendus
-  d'EXPOSED) — le contraste catégorique que §3-C exige.
-- `a boxy service pistol … angled steeply upward mid-raise, still short of firing level` → **arme qui
-  se lève, pas encore présentée** = le point de parade (fiction « on tire sur le flingue ») ;
-  silhouette d'arme conservée, **jamais un tell melee** (`still short of firing level` = phrasé
-  positif, 0 négation).
-- `shoulders hunched and loaded, tense wound-up crouch` → charge le swing (le « charged window »).
+- `coiled a beat before firing` → le moment **plus tôt** qu'EXPOSED.
+- `the long coat still hanging closed` → **[S6] (priorité, mécanique-critique)** : verrouille le
+  contraste de silhouette DANS le prompt pour ne pas converger vers l'enveloppe ouverte/flared
+  d'`exposed` (le voisinage `overcoat`+`firing` pousse FLUX vers « flaring open » sinon) — §3-C « a
+  shared tell = a bullshit whiff ». **`charcoal-grey … lighter than the black backdrop`** = [S1].
+- `elbows drawn in tight` → **bras rentrés** (le read sub-0,5 s vs bras étendus d'EXPOSED) — le
+  contraste catégorique que §3-C exige.
+- `a boxy service pistol gripped two-handed, angled steeply upward mid-raise, short of firing level`
+  → **arme qui se lève, pas encore présentée** = le point de parade (fiction « on tire sur le
+  flingue ») ; silhouette d'arme conservée, **jamais un tell melee** (`short of firing level` =
+  phrasé positif, 0 négation).
+- `shoulders hunched, tense wound-up crouch` → charge le swing (le « charged window »).
 
 ### `commander_finisher` — COUP DE GRÂCE / kneeling still-trying (seed sugg. 4876)
 
@@ -260,18 +277,22 @@ sur lui — livraison, pas exécution. Sprite mono-figure → aucun agresseur/ar
 garde-fou est intrinsèquement tenu ; je décris positivement (main qui remonte, main qui prend appui,
 tête haute).
 
-> the same towering bare-headed french plainclothes commander brought down onto one knee, the long
-> overcoat pooling around his bent leg, still upright from the waist with head held up, one free hand
-> reaching up toward the shoulder radio as if to call it in, the other hand braced on his knee,
-> reflective armband, straining unfinished effort, facing forward
+> the same bare-headed french plainclothes commander down on one knee, his long charcoal-grey
+> overcoat, lighter than the black ground, pooling at his bent leg, upright from the waist, head up,
+> one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder radio,
+> calling it in, the other on his knee, straining unfinished effort, facing forward
 
-- `brought down onto one knee` + `the long overcoat pooling on the ground` → à genou, manteau qui
-  flaque (Estelle « one knee down, coat pooling »).
-- `still upright from the waist with his head held up` → **encore en vie / en train d'essayer**, le
-  distingue nettement du sprawl immobile de `down`.
-- `one free hand reaching up toward the radio at his shoulder as if to call it in` → le geste que le
-  finisher stoppe (fiction §3.1) ; la radio-tell d'épaule paie ici son set-up.
-- `straining unfinished effort` → tension d'effort, **pas** douleur/mort (garde-fou de ton §3.2).
+- `down on one knee` + `his long charcoal-grey overcoat … pooling at his bent leg` → à genou, manteau
+  qui flaque (Estelle « one knee down, coat pooling ») ; **`lighter than the black ground`** = [S1].
+- `upright from the waist, head up` → **encore en vie / en train d'essayer**, le distingue nettement
+  du sprawl immobile de `down`.
+- `one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder
+radio, calling it in` → le geste que le finisher stoppe (fiction §3.1) **+ [S7] (priorité)** : la
+  manche couvre le bras épaule→poignet (membre épais/continu → coupe le risque limb-detach ET
+  thin-limb-vanish à taille de jeu) et la **main fermée** sur la radio supprime le gap-entre-doigts
+  qui key-troue. (Passe TECHNIQUE de Serge = defect-sweep anatomie obligatoire sur cette entrée.)
+- `straining unfinished effort` → tension d'effort, **pas** douleur/mort (garde-fou de ton §3.2 ;
+  sprite mono-figure = aucune arme braquée sur lui, garde-fou intrinsèquement tenu).
 
 ## C. Les 2 props de la salle — READY-FOR-STRUCTURE (n'existent PAS en JSON)
 
@@ -287,20 +308,25 @@ salle-de-bal 1900-30, **dégât asymétrique** (une pampille manquante, inclinai
 gravats ; silhouette cône/parapluie avec **spokes rayonnants SUGGÉRÉS** (non énumérés). PAS une
 boule à facettes, PAS d'industrial-chic.
 
-> a grand old ballroom chandelier hanging from a single chain up top, a multi-tier cone-and-umbrella
-> silhouette of stacked crystal-drop rings, an ornate wrought-iron and brass armature with suggested
-> radiating arms, strings of faceted glass droplets, one drop broken off on one side, the fixture
-> hanging slightly tilted and dust-dulled, decayed 1900s ballroom grandeur, centered and fully visible
+> a grand ballroom chandelier hung from a single chain up top, a multi-tier cone-and-umbrella stack of
+> crystal-drop rings, an ornate wrought-iron and brass armature with suggested arms, solid pale
+> grey-white faceted crystal drops, each with a bright rim highlight, two adjacent drops missing on one
+> side, a wide notch, hanging slightly tilted and dust-dulled, decayed 1900s grandeur, centered and fully visible
 
-- `hanging from a single chain at the top of the frame` → il **PEND** (HUNG) — lecture « au
-  bâtiment », composition top-centrée.
-- `multi-tier cone-and-umbrella silhouette of stacked crystal-drop rings` → la forme cône/parapluie
-  qui **exclut la boule à facettes** (mirror-ball) par la forme, pas par négation.
-- `ornate wrought-iron and brass armature with suggested radiating arms` → armature ornée qui exclut
-  l'industrial-chic ; **arms suggérés, non énumérés** (Estelle).
-- `one drop broken and missing on one side, … slightly tilted and dust-dulled` → **dégât asymétrique**
-  (pampille manquante + inclinaison + poussière), jamais gravats.
-- `decayed 1900s ballroom grandeur` → registre salle-de-bal d'époque.
+- `hung from a single chain up top` → il **PEND** (HUNG) — lecture « au bâtiment », composition top-centrée.
+- `multi-tier cone-and-umbrella stack of crystal-drop rings` → la forme cône/parapluie qui **exclut la
+  boule à facettes** (mirror-ball) par la forme, pas par négation.
+- `ornate wrought-iron and brass armature with suggested arms` → armature ornée qui exclut
+  l'industrial-chic ; **arms suggérés, non énumérés** (Estelle ; Serge PASS-AS-IS : linework tier/arms
+  ornemental, la lecture porte sur cône + chaîne + tilt + dust).
+- `solid pale grey-white faceted crystal drops, each with a bright rim highlight` → **[S8]** : valeur
+  PLEINE claire (remplace « strings of faceted glass droplets ») — aucune facette à valeur sombre qui
+  tomberait dans la plage near-black et se ferait key-trouer contre le fond noir (le keyer confondrait
+  ces trous avec le SEUL dégât voulu).
+- `two adjacent drops missing on one side, a wide notch` → **[S9]** : notch élargie (deux pampilles
+  adjacentes) pour que le **dégât asymétrique** survive au downscale à taille de jeu, pas seulement en
+  256px pleine résolution ; jamais gravats.
+- `decayed 1900s grandeur` → registre salle-de-bal d'époque.
 
 ### `speaker_wall` (mur d'enceintes) — le sound-system du crew (seed sugg. 4878)
 
@@ -309,20 +335,27 @@ pyramide/mur brute, non-brandé, câbles speakon/XLR qui serpentent, gaffer, rig
 marques de crew au **pochoir** (cadeau maison). Lit **CONSTRUIT** vs le lustre **PENDU**. PAS un
 line-array, PAS un DJ booth, PAS des amplis guitare.
 
-> a hand-built teknival sound-system wall stacked from the ground up, a rough pyramid of mismatched
-> plywood bass-bin boxes and flared horn cabinets wedged together, on a scaffold and pallet rig, thick
-> cables snaking down and taped with gaffer, a sprayed stencil spiral mark on one cabinet, unbranded
-> raw plywood, chunky top-heavy improvised mass, centered and fully visible
+> a hand-built teknival sound-system wall from the ground up, a pyramid of mismatched plywood bass-bins
+> and horn cabinets, cabinet faces flat pale grey panels with black contours, the stack lighter than
+> the black backdrop, on a scaffold and pallet rig, cables as pale grey lines with lighter gaffer wraps,
+> a sprayed stencil spiral mark, chunky unbranded mass, centered and fully visible
 
-- `stacked from the ground up … bolted onto a scaffold and wooden-pallet rig` → il est **CONSTRUIT**
-  (BUILT) — lecture « au crew », par le sol, pas suspendu.
-- `a rough pyramid of mismatched plywood bass-bin boxes and flared horn cabinets` → caissons
-  contreplaqué dépareillés + pavillons = **sound-system**, ce qui exclut par la forme le line-array
-  (arrays lisses suspendus), le DJ booth et les amplis guitare.
-- `thick speaker cables snaking down and taped with gaffer` → câbles + gaffer, tell teknival.
-- `a sprayed stencil spiral crew mark on one cabinet face` → **pochoir** (spirale Spiral-Tribe,
-  période) rendu comme **FORME** sprayée, pas comme du texte (loi `no text`).
-- `unbranded raw plywood, chunky top-heavy improvised mass` → non-brandé, improvisé.
+- `from the ground up … on a scaffold and pallet rig` → il est **CONSTRUIT** (BUILT) — lecture « au
+  crew », par le sol, pas suspendu.
+- `a pyramid of mismatched plywood bass-bins and horn cabinets` → caissons contreplaqué dépareillés +
+  pavillons = **sound-system**, ce qui exclut par la forme le line-array (arrays lisses suspendus), le
+  DJ booth et les amplis guitare.
+- `cabinet faces flat pale grey panels with black contours, the stack lighter than the black backdrop`
+  → **[S10]** : le plus gros risque de masse-sombre-continue du set (contreplaqué brut → gris moyen-
+  sombre, touche le fond noir sur plusieurs arêtes). Valeur claire + contours noirs explicites
+  verrouillent la silhouette contre le key.
+- `cables as pale grey lines with lighter gaffer wraps` → **[S11]** : une ligne near-black sur fond
+  near-black **disparaît** (l'inverse du trou) et perd le tell teknival — d'où la valeur claire
+  explicite sur les câbles + le gaffer.
+- `a sprayed stencil spiral mark` → **pochoir** (spirale Spiral-Tribe, période) rendu comme **FORME**
+  sprayée, pas du texte (loi `no text`). Serge PASS-AS-IS : mush en accent de texture à taille de jeu,
+  pas load-bearing (BUILT-vs-HUNG porté par la forme pyramide/palette, pas par la marque).
+- `chunky unbranded mass` → non-brandé, improvisé, top-heavy.
 
 ---
 
