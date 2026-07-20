@@ -25,14 +25,21 @@ surfaced, so it is legible as its own choice rather than buried in generic setti
 
 ## Scope (V1)
 
-- Difficulty (`PRESSION`) becomes visually and/or navigationally **distinct** from the
-  audio/CRT settings — exact shape (new sommaire rubrique, a labelled sub-section within
-  OPTIONS, or folding it into the level-selection step) is a design-loop call (epic open
-  question #3), constrained to stay small.
-- `VIES` (lives) is a genuine game modifier too (changes how many hits you can take) and
-  should move alongside difficulty if the design loop agrees they're the same category
-  ("comment tu joues" vs "comment ça sonne / comment ça rend") — PM leans yes, not gating the
-  story on it; `game-designer` confirms the grouping.
+- Difficulty (`PRESSION`) becomes visually and navigationally **distinct** from the audio/CRT
+  settings. **Gate ruling 2026-07-20 (Q3):** the chosen shape is a **glanceable `PRESSION`
+  ballot header row above the flyer grid inside the NIVEAUX rubrique body** (UX spec §5),
+  reusing OptionsColophon's ballot vocabulary — NOT a new sommaire rubrique and NOT a removal
+  from OPTIONS. PRESSION stays writable from OptionsColophon too (same `Prefs.difficulty` field,
+  single source of truth); the header is a second, more prominent point of access. On the
+  short-landscape mobile sub-class (`SHORT_LANDSCAPE`, ≤480px tall) the header is **not** added
+  (Option A, see below) to protect the gated `pregame-landscape-ux.md` chrome budget — PRESSION
+  stays reachable via OPTIONS there, a documented non-regression.
+- **Gate ruling 2026-07-20 (Q3):** only `PRESSION` is promoted to the NIVEAUX header; `VIES`
+  stays in the OPTIONS/PAUSE consolidated surface (owned by M3), NOT promoted. Rationale:
+  PRESSION is the "which gig, how hard" decision that belongs co-located with the level browse;
+  VIES is a run-config modifier that belongs with settings, and keeping the promoted header to a
+  single row protects the layout budget (parity with the short-landscape chrome-budget reasoning
+  below).
 - No new difficulty tiers, no new modifiers, no per-level override — the three existing
   tiers (`easy`/`normal`/`hard`) and their existing `DIFFICULTY_CONFIG` values are untouched.
 - `PauseScreen.tsx` is explicitly NOT touched — it deliberately omits difficulty/lives
@@ -51,11 +58,13 @@ surfaced, so it is legible as its own choice rather than buried in generic setti
 
 ## File map (lane assignment hint for Winston)
 
+**Gate-decided shape (Q3, 2026-07-20): promoted NIVEAUX header, additive — no removal, no new rubrique.**
+
 | Lane | File(s) | Change |
 | --- | --- | --- |
-| `dev-r3f-render` | `src/render/ui/menu/OptionsColophon.tsx` | Remove the `PRESSION` (and, if design confirms, `VIES`) `BallotRow`(s) from the generic colophon list. |
-| `dev-r3f-render` | `src/render/ui/MainMenu.tsx` | If the design-loop picks a new sommaire rubrique: add it to `RUBRIQUES` + render branch (mirrors the existing `levels`/`scores`/`prefs` pattern). If instead a sub-section within OPTIONS: no `MainMenu.tsx` change needed. |
-| `dev-r3f-render` | new (if new rubrique chosen): `src/render/ui/menu/DifficultyColophon.tsx` (naming TBD) | New small surface, reuses `print/` tokens + `BallotRow`-equivalent pattern from `OptionsColophon.tsx` — no bespoke visual system. |
+| `dev-r3f-render` | `src/render/ui/menu/OptionsColophon.tsx` | **No change from this story** — `PRESSION` (and `VIES`) STAY here (OPTIONS remains the full settings surface and the sole difficulty access on short-landscape mobile per Option A). Do NOT remove them. (M3 separately regroups the CRT/reduced-motion rows on this surface — sequence with M3, see epic.) |
+| `dev-r3f-render` | `src/render/ui/menu/FlyerWall.tsx` (or the NIVEAUX rubrique body) | Add a `PRESSION` ballot header row above the flyer grid (UX §5), reusing OptionsColophon's ballot/X-stamp vocabulary and the shared `Prefs.difficulty`/`onSave` round-trip. `role="radiogroup"` per UX §3/§5. Gated OFF under `SHORT_LANDSCAPE` (Option A). |
+| `dev-r3f-render` | `src/render/ui/MainMenu.tsx` | **No `RUBRIQUES` change** — no new sommaire tab (rejected in favour of the in-NIVEAUX header). |
 
 ## Out of scope (V1)
 

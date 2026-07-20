@@ -22,6 +22,7 @@ Rules of the folder:
 - Everything here passes the "cahier des charges" test against
   `_bmad-output/guidelines/PROJECT_GUIDELINES.md` before gating.
 - Gate verdicts are logged in `docs/agent-handoffs.md`.
+| `ux/spec-menus-ui-completion.md` (+ stories M1 name-entry, M2 difficulty-separation, M3 a11y-consolidation) | `ux-designer` + `pm` | **PASS w/ edits** 2026-07-20 (`design-gate-menus-ui-completion.md`). 7 Qs resolved: Q1 typed byline (native input, ≤16ch), Q2 `NAME_ENTRY` phase after `NARRATIVE_POST`, Q3 promoted PRESSION header in NIVEAUX + Option A short-landscape (VIES stays in OPTIONS), Q4 S0.1-owns-schema sequencing, Q5 `reducedMotion` default false + **live-union** (reconcile timer-duel AC13's seed-once), Q6 outcome-contract boundary → architect, Q7 single `muf_seen_tutorial_nudge` flag. M3 PASS conditional on union semantics. Next: `senior-architect` lane cut + scope ADR. |
 
 ## Status
 
