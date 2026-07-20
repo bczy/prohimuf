@@ -1245,3 +1245,96 @@ VERDICT: PASS — quality gate leg 1 (qa-lead) — mechanical gate GREEN (tsc/vi
   - `docs/qa/plan-story-boss-qte-differentiation.md` (NEW — this plan)
   - `docs/qa/evidence/story-boss-qte-differentiation/*.png` (NEW — 6 state-verified captures)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 11. VERIFY (stage 5) — dev-r3f-render (Amelia) — 2026-07-20 — correction C-QA2: deterministic state-seed capture seam + missing e2e evidence
+
+- claim: discharge qa-lead's stage-5 correction C-QA2 (shard §10) — build the deterministic
+  state-seed seam she requested on the EXISTING `?preview=boss` dev-harness so the
+  depletion-gated ADR-0052 differentiation reads become e2e-screenshottable at ~2 fps
+  SwiftShader, then USE it myself to capture the missing evidence PNGs, each state-verified via
+  the `__MUF_STATE__` seam. Branch `claude/yo-pmnyzr`. No manual commit/push (an environment
+  auto-snapshot hook committed an in-flight `wip` — not my doing; nothing pushed).
+- **How the seam works (view-side only, NO `src/game` edit):**
+  - `?preview=boss&at=phase2|phase3|finisher` boots the harness with the boss QTE already
+    advanced to that beat. The advanced `BossQte` is CONSTRUCTED by driving the EXISTING pure
+    API: `createBossQte(spec)` then a synchronous, fixed-step (`1/60`) `tickBossQte`
+    fast-forward loop with SCRIPTED inputs — fire on the live ring (`targetOffset`, always the
+    fixed-identity VITAL ring in phase 2+) during normal EXPOSED windows, on `BOSS_PARRY_POINT`
+    during CHARGED windows, idle otherwise — so every window is answered (zero blown) until the
+    target phaseIndex (1/2) or FINISHER is reached. Seeded-pure ⇒ deterministic. Lives entirely
+    in NEW `src/render/scene/bossHarness.ts`.
+  - Injection: `bossHarness.installBossCaptureSeam()` (called once at `App` module load,
+    guarded so it no-ops unless `?preview=boss` AND a valid `at=`) installs a
+    `window.__MUF_BOSS_BOOT__` factory. `useGameLoop` consumes it ONCE at init to seed the
+    initial `bossQte` (double-guarded: factory present AND `bossQteSpec !== null` — true only on
+    the excluded-from-`LEVELS` dev-harness). Mirrors the existing `__MUF_PLAY__`/`__MUF_STATE__`
+    harness-global pattern already in `useGameLoop`; no game rule touched, no boundary crossed.
+  - **`&blownImmune=1` — SHIPPED (view-side, pure-API re-seed).** `useGameLoop` re-invokes the
+    same fast-forward factory the moment the boss transitions to `LOST` (the blown-window clock —
+    the exact thing that made the reads unreachable), keeping an unattended capture pinned at its
+    phase. Bounded to the `LOST` transition, uses only the pure API (no game-state field is
+    hand-mutated, no `src/game` edit) — the pure-API re-seed option qa-lead named, so it is added
+    rather than skipped. (Note: it proved un-needed in practice — at ~2 fps the clamped 0.1 s dt
+    gives ~0.2 s sim/real-s, so with `blownWindows` fast-forwarded to 0 there is >2 min of
+    real-time headroom before LOSS; every capture landed well inside it. Kept as insurance for
+    unattended runs.)
+  - Guard/reachability: identical discipline to `?preview=boss` — shipped players (no
+    `?preview=boss`) never install the factory; LEVELS-exclusion + persistence-inertness
+    (App.tsx L216-222) untouched and still holding. No `src/game/**` file changed; no
+    `src/hooks` signature changed (globals-only, like the sibling seams).
+- **Mechanical gate — ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent → `yarn`):
+  - `yarn typecheck` → **EXIT 0**. `yarn vitest run` → **843/843 PASS, 64 files, EXIT 0** (no
+    test churn — the seam is harness-only view code). `yarn lint` → **EXIT 0**.
+    `yarn format:check` → **EXIT 0**. `yarn build` → **EXIT 0**.
+- **New e2e evidence (Playwright headless, `chromium_headless_shell-1194` + SwiftShader args,
+  `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`; build + `vite preview`; `__MUF_PLAY__` seeded so
+  `__MUF_STATE__` is live). Every shot STATE-VERIFIED against the page snapshot BEFORE the
+  screenshot — the asserted phase/flags are logged below; ZERO `pageerror` on all 8 runs:**
+  - `20-phase2-dual-rings.png` — `phaseIndex 1, EXPOSED, chargedWindow false`: the dual VITAL
+    (head, green) + LIMB (torso) rings drawn simultaneously, HP bar at the phase-2 band. Proves
+    lever 1 (AC-D2) renders — the read qa-lead could not reach.
+  - `21-parry-telegraph.png` — `chargedWindow true, telegraphActive true, phaseIndex 2`: the
+    CHARGED/parry window telegraph (no rings). Proves lever 3 (AC-D3) legibility.
+  - `22-phase3-smoke-veil.png` — `phaseIndex 2, smokeActive true, EXPOSED`: the smoke veil
+    overlaid, telegraph DEGRADED-not-removed (rings still legible under it). Proves lever 2 / 2-C.
+  - `23-renfort-edge.png` — `renfortActive true, phaseIndex 2` (énergie already drained by the
+    surge): the in-tableau renfort pressure read. Proves lever 4 (AC-D4).
+  - `24-decor-armed-glow.png` — `decorArmed true, phaseIndex 1, SHIELDED`: the armed décor prop
+    glow in the SHIELDED lull. Proves lever 2 décor (AC-D5).
+  - `25-finisher-livre-le-son.png` — `phase FINISHER, bossHp 0`: the FINISHER reticle + the
+    « LIVRE LE SON » prompt (narrative §3.3 canonical string). Proves lever 5 (AC-D6).
+  - `26-hpbar-zero-settle.png` — `phase WON, bossHp 0`: the boss HP bar settled at 0 % on the
+    WON verdict. Proves the HP-bar zero-state read.
+  - `27-reduced-motion-phase3.png` — `phaseIndex 2, smokeActive true`, captured under
+    `prefers-reduced-motion: reduce`: the phase-3 veil held/non-strobing. Proves the
+    reduced-motion degrade branch.
+- C-QA2 status: the CI-DEFERRED-BLOCKED hole is now CLOSED for automated capture — the phase-2+
+  differentiation RENDER reads are state-verified and screenshotted in-sandbox. Leg-2 UX/design
+  legibility judgement (Tony/Sacha, A1–A15 / AC-D1..D8) can now run on THESE PNGs instead of
+  waiting for a real-GPU build. The `E2E-BOSS-DIFF` regression (plan §7 R5) is now implementable
+  against the seam.
+- handoff → `qa-lead` (Inès): C-QA2 seam delivered + the 8 missing evidence PNGs (20–27)
+  captured and state-verified; fold into the quality gate / close the CI-DEFERRED item.
+- handoff → `ux-designer` (Tony) + `game-designer` (Sacha): phase-2+ reads are now screenshot
+  evidence (`docs/qa/evidence/story-boss-qte-differentiation/20–27`) — run the deferred leg-2
+  legibility review on them.
+- handoff → `producer` (Marion): C-QA2 (CI-DEFERRED-BLOCKED) can be cleared on the board.
+- handoff → `senior-architect` (Winston): the seam is view-side only — new
+  `src/render/scene/bossHarness.ts` + a globals-only consume in `src/hooks/useGameLoop.ts`
+  (no signature change, no `src/game` edit, no boundary crossed); flagged for the merge review.
+
+VERDICT: PASS — C-QA2 correction (dev-r3f-render) — deterministic `?preview=boss&at=…` (+`blownImmune=1`) state-seed capture seam built view-side (pure-API fast-forward, no `src/game` edit, reachability = `?preview=boss`); mechanical gate GREEN (tsc / vitest 843·843 / lint / format / build all EXIT 0); 8 previously-unreachable differentiation-read PNGs (20–27: dual rings, parry telegraph, smoke veil, renfort edge, décor glow, FINISHER, HP-bar zero-settle, reduced-motion phase-3) captured headless and STATE-VERIFIED via `__MUF_STATE__`, zero pageerror.
+
+- File List:
+  - `src/render/scene/bossHarness.ts` (NEW — the capture seam: fast-forward + install)
+  - `src/render/scene/App.tsx` (install call + import, module-load, guarded)
+  - `src/hooks/useGameLoop.ts` (consume `__MUF_BOSS_BOOT__` at boot + `__MUF_BOSS_IMMUNE__` re-seed on LOST; `BossQte` type import)
+  - `docs/qa/evidence/story-boss-qte-differentiation/20-phase2-dual-rings.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/21-parry-telegraph.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/22-phase3-smoke-veil.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/23-renfort-edge.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/24-decor-armed-glow.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/25-finisher-livre-le-son.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/26-hpbar-zero-settle.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/27-reduced-motion-phase3.png` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
