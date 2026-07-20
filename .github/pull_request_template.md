@@ -20,11 +20,11 @@
      (une ligne par type). Source : `git diff --name-status origin/main...HEAD`
      (M = modifié, A = créé, D = supprimé). -->
 
-| Type      | .ts | .tsx | Autres |
-| --------- | --- | ---- | ------ |
-| Modifiés  | 0   | 0    | 0      |
-| Créés     | 0   | 0    | 0      |
-| Supprimés | 0   | 0    | 0      |
+| Type      | .ts | .tsx | .mjs | .css | .json | .md | .png | Autres |
+| --------- | --- | ---- | ---- | ---- | ----- | --- | ---- | ------ |
+| Modifiés  | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
+| Créés     | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
+| Supprimés | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
 
 ## 📸 Preuve sur le mur (si visible en jeu)
 
