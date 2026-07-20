@@ -3236,3 +3236,91 @@ match landed code; no decision reopened — see Revision 2)`, following the ADR-
   - `src/game/systems/bossQteSystem.ts` (décor depleting return carries `decorConsumed: true`)
   - `src/game/systems/__tests__/bossQteSystem.test.ts` (regression test + stale-0.18 NIT; 67 tests)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 7. FIX (stage 6, pre-merge batch) — dev-r3f-render (Amelia) — 2026-07-20 — the 4 render-lane MINEUR fixes (#1/#6/#7/#8) + 2 free NITs from Winston's §6 triage
+
+- claim: land the render-lane half of the 7-item pre-merge batch (§6). Four MINEUR fixes + two
+  free NITs, all confined to my two files (`src/render/scene/BossQteSprite.tsx`,
+  `src/render/scene/smokeParticles.ts`). No game rule, no boundary, no dependency, no asset
+  touched. #2 (dev-gameplay), #3 (dev-tooling-assets+gpu), #4/#11 (tech-writer) are other lanes.
+- release: verified GREEN + two new state-verified captures. Details below.
+
+### The four fixes
+
+- **#1 parry-whiff break guard** (`BossQteSprite.tsx`, the L3 whiff detector): a SUCCESSFUL
+  threshold-crossing parry takes the phase-break path, which zeroes `staggerRemaining` — so the
+  old predicate (`wasParryOpen && !parryOpen && !staggered && phase==="ACTIVE"`) fired the red
+  WHIFF flash over a phase break. Added `&& qte.phaseBreakRemaining <= 0` so the flash never
+  plays during a break. (No `breakActive` alias reuse — kept the literal field read the triage
+  prescribed.)
+- **#6 smoke onError + disposed guard + fairness gate** (`smokeParticles.ts` + `BossQteSprite.tsx`):
+  (a) `TextureLoader.load` now has an `onError` (4th arg) that logs ONCE (`console.warn`) and
+  leaves the field hidden; `isReady()` is newly exposed on `SmokeField`. The smoke envelope ramp
+  in `BossQteSprite` is gated `qte.smokeActive && smokeField.isReady()` so the parry glyph never
+  pays `PARRY_SMOKE_DEGRADE` (40%) for a veil that is absent (404) or not yet loaded — the 2-C
+  "degraded only when truly degrading" discipline. (b) A `disposed` flag: a texture arriving after
+  `dispose()` is `.dispose()`d immediately in the load callback instead of being stamped onto
+  already-disposed materials.
+- **#7 device-tier pool alloc** (`BossQteSprite.tsx:~332`): `createSmokeField(smokeMax)` (was
+  `SMOKE_MAX_DESKTOP`), with `smokeMax` added to the `useMemo` deps. Mobile now allocates 32
+  meshes/materials, not 64. `SMOKE_MAX_DESKTOP` still referenced by the `smokeMax` tier compute.
+- **#8 framerate-independent envelope lerps** (`BossQteSprite.tsx`): both the smoke and renfort
+  envelopes now use exponential smoothing `env += (target-env) * (1 - Math.exp(-k·delta))`. The
+  per-frame constants `SMOKE_FADE 0.06` / `RENFORT_FADE 0.08` became per-second rates
+  `SMOKE_FADE_K ≈ 3.7` / `RENFORT_FADE_K ≈ 5.0` (`k = -60·ln(1-factor)`, reproducing the old feel
+  at 60 fps). At the ~2 fps capture sandbox the veil now ramps in within a few seconds, not tens.
+
+### Free NITs (folded, my files)
+
+- Split-preview VITAL ring position: hardcoded `qte.anchor.y + 0.75` → derived from
+  `BOSS_VITAL_WANDER_CENTRE` (`{x:0, y:0.8}`, imported), the vital ring's own wander centre.
+- Parry-glyph comment: the false "the catch zone footprint" claim on `PARRY_SIZE` corrected — the
+  rotated diamond sits WITHIN the parry catch zone (drawn ⊂ catch; its corners fall short of
+  `RING_HIT_RADIUS`), so no drawn pixel lies outside a scored click.
+
+### Verification — ALL GREEN (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent, yarn fallback)
+
+- `yarn typecheck` → **EXIT 0**.
+- `yarn vitest run` → **848 / 848 PASS**, 64 files, EXIT 0 (unchanged suite; the +1 vs qa-lead's
+  847 is a concurrent lane's in-flight `bossQteSystem.test.ts` addition in the shared checkout,
+  not mine).
+- `yarn lint` → **EXIT 0**.
+- `yarn format:check` → my two files are Prettier-clean (`prettier --check` on both → EXIT 0). The
+  repo-wide `format:check` flags ONLY `docs/handoffs/story-boss-qte-differentiation.md`, whose
+  drift comes from another lane's concurrent uncommitted +56-line append (working-tree also shows
+  in-flight `docs/adr/0052`, `0053`, `bossQteSystem.test.ts` from other lanes) — NOT my edit. I did
+  not reformat it (would clobber another lane's in-flight work). Flag for whoever squares the md
+  before merge.
+
+### EVIDENCE (state-verified via the `?preview=boss` seam + `__MUF_STATE__`/`__MUF_PLAY__`,
+
+### Playwright headless_shell-1194 SwiftShader, `vite preview` on the production build)
+
+- `40-parry-break-no-whiff.png` — driven with the PURE API: constructed `S_before` (a phaseIndex-1
+  charged parryOpen window, `bossHp 10`) via `createBossQte`+`tickBossQte`, injected as
+  `__MUF_BOSS_BOOT__`, then fired a real click on the parry point (desktop zoom 120, screen offset
+  −48/−36 px). State at capture: `phase=ACTIVE, phaseBreakRemaining=0.900, staggerRemaining=0,
+bossHp=8, phaseIndex=2` — i.e. 0.1 s into the parry-induced break, squarely inside the 220 ms
+  whiff-onset window the OLD predicate would have reddened. The frame shows the cool BREAK tint,
+  NO red whiff. Proves #1. (Green reticle = the player crosshair at the click point.)
+- `41-smoke-envelope-delta.png` — booted `?preview=boss&at=phase3&blownImmune=1`; state
+  `phase=ACTIVE, phaseIndex=2, smokeActive=true`. The phase-3 smoke veil is fully present a few
+  real seconds after onset at the ~2 fps sandbox — proving the delta-normalised envelope (#8) ramps
+  in fast (pre-fix: tens of seconds). `smoke.png` loads (`isReady()` true) so the veil renders.
+
+- Routing: FIX-LANE-shaped (single render lane, no design/asset/dependency/boundary change), but
+  this is the architect-prescribed §6 pre-merge BATCH — re-verify handled here, merge stays with
+  the panel/Bertrand. No commit/push by me.
+- handoff → `senior-architect` (Winston): render-lane batch (#1/#6/#7/#8 + 2 NITs) landed &
+  re-verified; captures `40`/`41` filed. Awaiting #2 (dev-gameplay), #3 (dev-tooling-assets+gpu),
+  #4/#11 (tech-writer) before the batch closes. The shared-checkout md format drift (other lanes)
+  needs squaring before merge — noted above.
+- File List:
+  - `src/render/scene/BossQteSprite.tsx` (#1 break guard, #6 fairness gate, #7 `smokeMax` alloc,
+    #8 exponential-smoothing envelopes, 2 NITs)
+  - `src/render/scene/smokeParticles.ts` (#6 `onError` + `isReady()` + `disposed` guard)
+  - `docs/qa/evidence/story-boss-qte-differentiation/40-parry-break-no-whiff.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/41-smoke-envelope-delta.png` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: DONE — render-lane pre-merge batch (dev-r3f-render). #1 parry-whiff break guard, #6 smoke onError + disposed guard + `isReady()` fairness gate, #7 device-tier pool alloc, #8 framerate-independent envelope lerps — all landed in my two files, plus the split-preview vital-y and parry-glyph-comment NITs. Verified GREEN (typecheck EXIT 0, vitest 848/848, lint EXIT 0, my files Prettier-clean). Two new state-verified captures: `40` proves the whiff is suppressed 0.1 s into a parry-induced break; `41` proves the smoke envelope ramps in fast at ~2 fps. No game/boundary/dependency/asset touched. No commit/push.
