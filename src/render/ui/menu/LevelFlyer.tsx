@@ -76,11 +76,11 @@ const PLAYABLE_COPY: Record<string, FlyerCopy> = {
     zoneLine: "L'ÉDEN · ANCIEN DANCING",
     rvLine: "RV : SUR L'INFO-LINE",
     infoLine: "08 36 31 12 99",
-    // PROVISIONAL — the AMBIANCE slot is a required FlyerCopy field but Yasmine's fiction §4.1
-    // table authored only the 6 fields above (no ambiance). ux §1.2 documents this slot as the
-    // finale-flavour carrier; continuing the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT)
-    // one notch. Flagged to narrative-designer for ratification — this word is not yet gated canon.
-    ambiance: "AMBIANCE : INCANDESCENT",
+    // AMBIANCE — the finale notch above the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT).
+    // Canon-authored by narrative-designer (spec-niveau-final-fiction.md §4.1): « EN FUSION »
+    // replaces the render lane's provisional « INCANDESCENT » — the crowd at white-heat AND the
+    // three crews (SPIRALE 23 · KANAL SYSTEM · NADIR 94) fused into one for the millennium.
+    ambiance: "AMBIANCE : EN FUSION",
   },
 };
 
