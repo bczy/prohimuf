@@ -92,3 +92,22 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
   `game-designer`) before either ships; S0.1's AIMING/shake ADR references ADR-0052 for the
   authority, does not re-decide it.
 - HANDOFF → `producer`: schedule M3-component-slice → M2; enforce the single-owner claim.
+
+## stage-4. DEV (M3 reducedMotion slice) — dev-gameplay (Amelia) — 2026-07-20
+
+- **SINGLE-OWNER CLAIM:** M3 lands the `Prefs.reducedMotion` schema addition in
+  `prefsSystem.ts` first (S0.1 `story-timer-duel-telegraph` had not touched the file — grep
+  confirmed `reducedMotion` absent before this change). S0.1 now **rebases** — consumes the
+  shipped field, does not re-add it.
+- claim: pure-logic side of M3 — `Prefs.reducedMotion` field + migration + TDD, per ADR-0052 §3.
+- release: `src/game/systems/prefsSystem.ts` (field on `Prefs`, `DEFAULT_PREFS.reducedMotion:
+  false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/prefsSystem.test.ts`
+  (+5 tests). **Per ADR-0052 (supersedes story text outcome-b seed-once):** default `false`,
+  **no seed-from-OS** — `prefsSystem` stays a pure reducer/serializer, no `matchMedia`. Legacy
+  blobs without the field load as `reducedMotion: false`. The LIVE-UNION `prefs || OS` is the
+  render/bridge lane's job (wave-2), NOT here.
+- verify: `yarn typecheck` clean · `yarn test --run` 821/821 (prefsSystem 16/16) · `yarn lint` clean.
+- File List: `src/game/systems/prefsSystem.ts`, `src/game/systems/__tests__/prefsSystem.test.ts`.
+- HANDOFF → `dev-r3f-render` (wave-2 wiring): `Prefs.reducedMotion: boolean` (default `false`)
+  is persisted in the `muf_prefs` blob. Build the shared derived signal `prefs.reducedMotion || OS`
+  at the bridge edge (resolve `matchMedia` there) + the toggle row grouped with CRT.
