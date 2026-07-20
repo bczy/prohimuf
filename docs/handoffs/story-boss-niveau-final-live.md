@@ -324,3 +324,210 @@ bonus 10 }` (riot-heavy: 2-HP CRS `enemy_riot` is the thematic finale enemy and 
 - **File List:**
   - `docs/game-design/spec-boss-niveau-final-level.md` (NEW — this deliverable)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## DESIGN GATE — lead-game-designer (Karim) — 2026-07-20
+
+- **Claim:** gate the three parallel design-loop deliverables for STORY-BOSS-NIVEAU-FINAL-LIVE
+  (`spec-boss-niveau-final-level.md` / `spec-niveau-final-fiction.md` / `ux/spec-niveau-final-ux.md`)
+  against the story's 10 ACs, the gated ADR-0051/0052 boss contract, `PROJECT_GUIDELINES.md`
+  (curve law, 3-5 min ceiling, §5.6), and my own gated `spec-boss-qte-differentiation.md`.
+  Verified the load-bearing claims against **real code** (`levels.ts`, `stateMachine.ts`,
+  `enemyTypes.ts`), not on the specs' word.
+
+### Verified against real code (adversarial leg)
+
+- **AC5 — value-for-value copy CONFIRMED.** Harness `BOSS_QTE_DEV_HARNESS_LEVEL.bossQteSpec`
+  (`levels.ts:234-247`) = `{ zoomSeconds 2, anchor {0,-5}, phaseCount 3, bossHp 24,
+maxBlownWindows 10, targetSeed 20260719, decorProp {1.4,0.2} armPhaseIndex 1 }`. The
+  niveau-final spec authors the **identical combat block** — zoom/phase/HP/maxBlown/anchor all
+  byte-equal — changing **only** `targetSeed → 19991231` (K-5 re-pin) and `decorProp → {0.2,1.5}`
+  (chandelier re-site, `armPhaseIndex 1` unchanged). These are exactly the two re-authorings AC5
+  permits; **no system value smuggled in as data.** PASS.
+- **AC1 — mutual exclusion by construction CONFIRMED.** `stateMachine.ts:100-104` throws at load
+  if a level authors both `hostageQte` and `bossQteSpec`. The niveau-final entry authors **no**
+  `hostageQte`. `windowWeights {normal 40, riot 28, biker 20, bonus 10}` merges as
+  `{...defaults, ...overrides}`; `civilian`/`hostage_taker` carry default `weight 0`
+  (`enemyTypes.ts:110,139`) and are not overridden, so they stay out of the pool. PASS.
+- **AC4 — real quota-crossing trigger CONFIRMED.** `enemiesToWin: 16` (non-zero, not the harness
+  `0` instant-trigger). `stateMachine.ts:439` shows `newKills >= enemiesToWin && bossQteSpec ===
+null ? LEVEL_COMPLETE : PLAYING` — a non-null `bossQteSpec` suppresses the instant complete and
+  routes the quota crossing into `shouldTriggerBossQte`. The boss fires as the terminal beat on a
+  real gallery, not an ambush. PASS.
+- **Curve coherence CONFIRMED.** Shipped `levels.ts`: belliard 1.0/10/90, stalingrad 1.3/12/80,
+  vitry 1.6/15/70. Sacha's 1.8/16/70 is monotonic-hardest on every axis (speed ↑, quota ↑,
+  4.4 s/kill tighter than Vitry's 4.7, timer not looser).
+
+### Per-deliverable verdicts
+
+**1. `spec-boss-niveau-final-level.md` (Sacha) — PASS.**
+
+- Scope: no undeclared extension. The level is already-committed roadmap (§7/§10, no test owed);
+  the boss going live is the ratified ADR-0051 K2 extension; `windowWeights` + `decorProp` re-site
+  are existing additive/optional fields re-authored per venue, not new mechanics. Core loop served
+  (pre-boss plays the loop; boss stays terminal on `Livrer`, folded into nothing).
+- The +0.2 (not +0.3) speed step and the **broken −10 timer descent (70 held vs. 60)** are
+  JUSTIFIED, not oversights: 16 kills at 1.8 in 60 s would clock-ambush the finale before it
+  triggers — the exact §5.6/AC4 failure. The disjoint-economy thesis (§0: street `lives`/`timer`
+  vs. boss `blownWindows`, decoupled by the freeze) is sound and grounds the whole pacing shape.
+- `decorProp` chandelier re-site {0.2,1.5} overhead is spatially coherent with fiction §1.3
+  ("faire tomber l'ancien monde sur le flic") and clears the two rings + parry point. The
+  `mur d'enceintes`-as-reserved-2nd-prop → `decorProps[]` promotion held correctly as a
+  correct-course (§4), not smuggled in. AC5 §4 discipline is exemplary — every system-tuning
+  temptation logged as a correct-course flag, only the seed re-authored freely (by K-5 design).
+- Verifiability: stage-5 AC-L1..L6 are concrete for qa-lead; the K-5 seed re-verify (AC-L5) is the
+  sharpest, with a real precedent (Vitry 19940714→15).
+- Advisories (non-blocking): (a) preamble over-reads OQ3 (art-lane timing) as "Bertrand DECIDED" —
+  it was NOT (Bertrand's intake named the boss-in-stage, not the 9-asset lane; the story reserves
+  OQ3 as a pm+lead+architect joint call). Changes **no** design value (the level ships on
+  procedural fallbacks regardless), so non-blocking — reword the preamble; I resolve OQ3 below.
+  (b) `anchor.x` nudge = tracked art-dependency at verify (Vitry x:9.9 precedent). (c) riot-density
+  × 4.4 s/kill is the sharpest stage-5 playtest risk (2-HP CRS density can bite harder than the raw
+  s/kill implies). (d) provisional seed `19991231` = pre-declared most-likely stage-5 correction.
+
+**2. `spec-niveau-final-fiction.md` (Yasmine) — PASS.**
+
+- `final_pre`/`final_post` reused **byte-for-byte** — the frozen-copy / one-shot-reveal discipline
+  is held. Venue hardened coherently (l'Éden, one paragraph of history, period-authentic). Wiring
+  flags A (id rename `final_pre`→`niveau-final_pre`, req'd by test A2) and B (mandatory `backdrop`
+  path, req'd by test A5) are correctly classified as the "light adaptation" AC7 anticipated —
+  **BUILD work, not copy drift.** Flyer copy (SPIRALE 23 · KANAL SYSTEM · NADIR 94 / LE DERNIER SON
+  DU SIÈCLE / L'ÉDEN · ANCIEN DANCING) is spoiler-clean (names the teuf + venue, never the boss),
+  coherent with ux's no-badge D3.
+- **RULINGS delivered** (below): Q1 = NO; Q2 = confirmed; l'Éden RATIFIED.
+- No corrections.
+
+**3. `ux/spec-niveau-final-ux.md` (Tony) — PASS.**
+
+- Zero new UI (4th flyer through the gated `LevelFlyer`/`FlyerWall`, index-hop unlock reused). The
+  D5 ruling — the already-gated `final_pre` IS the §5.6 fairness mechanism (plays at level start,
+  line 6 teaches the vulnerability window diegetically without mechanic vocab, + the 2 s `ZOOMING`
+  buffer) — is sound and reconciles the one-shot reveal with the anti-ambush floor. D3 no-badge is
+  both a minimal-surface and a spoiler-discipline call, coherent with the fiction. Retry loop =
+  reused `EndScreen` + no boss checkpoint (falls out of ADR-0051 D3, not reopened).
+- Stage-5 checklist (§3.1, 5 items) is concrete for qa-lead; the **legibility re-verify on the NEW
+  backdrop** (re-run A1-A15 of the differentiation-ux captures against the l'Éden backdrop +
+  re-anchored position) is the correctly-identified highest-value level-specific check.
+- Advisory (non-blocking): make the **boss-loss→retry FELT cost** an explicit verify-leg capture
+  (D11) — the ~70 s street replay before each boss retry is the single biggest frustration risk and
+  is only answerable in playtest.
+
+### Rulings (gate owner)
+
+- **Q1 — name l'Éden inside the briefing dialogue? RULED: NO (uphold Yasmine's recommendation).**
+  `final_pre` is frozen gated copy already at 8 lines (top of the 5-9 bound); the venue is carried
+  player-facing by three non-dialogue surfaces (level-select title `L'Éden`, flyer zoneLine, and
+  the interior backdrop the scene plays over). Speaking the name would (i) require a conscious
+  amendment to gated copy + a fresh PASS + a rework round, (ii) violate the zine rule "name it,
+  don't narrate it" (§1.1) by pointing at the Éden/ruin irony the scene deliberately leaves for the
+  player to catch, and (iii) spend budget for zero fairness gain (§5.6 is satisfied by #6's
+  vulnerability line, which is untouched). Keep `final_pre` frozen.
+- **Q2 — other gated-copy drift? CONFIRMED none.** No gated line names or contradicts the hall;
+  hardening l'Éden needs zero rewrite.
+- **Proper noun `l'Éden` — RATIFIED.** Legal-safe (generic inter-war dancing name, same principle
+  as commandant Ferrand / `08 36`); the venue TYPE is the Bertrand-confirmed canon and is
+  independent of the name (renamable later without cost).
+- **OQ3 (art-lane timing) — design-half RULED, timing routed to the joint call.** Sacha's
+  preamble over-attributed this to Bertrand; it is a pm+lead+architect joint call. My design-side
+  ruling: **decouple.** The venue **backdrop** is MANDATORY regardless of OQ3 (every level needs a
+  facade; test A5 requires the `facade.png` path) — it opens by necessity, not as an OQ3 outcome.
+  The **9 canon boss assets** (4 `commander_*` poses + 5 differentiation reads, already batched
+  under Nico's headgear pre-ruling at zero regen cost) should open as a **PARALLEL, non-blocking**
+  art lane landing before this story's stage-6 panel, NOT before dev starts — the level ships on
+  the already-stage-5-verified procedural fallbacks meanwhile. Routing the velocity-vs-"finished
+  finale" trade-off to `pm` + `senior-architect` for ratification; my recommendation is
+  parallel-non-blocking. No design value depends on the outcome.
+- **OQ4 (venue) — CLOSED, ratified via Yasmine's routing** (Bertrand-confirmed squatted grand hall;
+  chandelier-hall was already RATIFIED as a loose extension at the differentiation gate). OQ5
+  (BUILD-vs-ADR-0052-merge sequencing, AC8) is **not** a design decision — it stays `producer`'s
+  dependency gate / `senior-architect`'s compress call; the design gate does not block on it.
+
+### Cross-lane coherence flags (forward, not arbitrated here)
+
+- → `lead-art` (prompt gate): (i) the l'Éden backdrop must frame a clean centred tableau at
+  `anchor {0,-5}` with **no dead sky-gap behind the boss** (Vitry x:9.9 precedent) AND a legible,
+  shootable, boss-distinct **chandelier** at `{0.2,1.5}` anchor-relative; (ii) the **mur
+  d'enceintes** is canon set-dressing but the RESERVED 2nd décor prop — it must NOT read as a
+  shootable/interactive false-affordance in V1 (same class as the ADR-0045 C2 car-roofline
+  condition). These are prompt-gate coherence constraints, not visual arbitration.
+- Riot-heavy street ↔ CRS renfort ↔ BAC boss: coherent and SHARPENING — the CRS-heavy gallery +
+  CRS renfort that "doesn't cover him" reinforces « il n'a plus personne pour le couvrir »; the
+  plainclothes BAC apex stays distinct (headgear ruling upheld).
+
+### Overall
+
+**Design gate PASS on the set** — the three specs are mutually coherent, in-scope, verifiable, and
+AC1/AC4/AC5-clean against real code. **No blocking corrections.** Advisories are verify-leg /
+art-flow / joint-call items tracked above. Downstream unblocked: `pm` re-review (AC9) → TECH PLAN
+(`senior-architect`, data + narrative wiring only, confirm AC1-AC5 vs. real code) → `producer`'s
+AC8 sequencing gate before dev lanes touch `levels.ts`/`bossQteSystem.ts`.
+
+VERDICT: PASS — design gate spec-boss-niveau-final-level (lead-game-designer)
+VERDICT: PASS — design gate spec-niveau-final-fiction (lead-game-designer)
+VERDICT: PASS — design gate ux/spec-niveau-final-ux (lead-game-designer)
+
+- **File List:**
+  - `docs/game-design/README.md` (index — three new specs recorded under In flight / gated)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this gate entry appended)
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-20 · canon boss 9-asset prompt family (REDRAFT + 5 new)
+
+- claim: author the FULL 9-asset canon prompt family for « le Commandant » + the two Niveau-Final
+  hall props, on lead-art RULING (1) (bare-headed plainclothes-BAC, no peaked cap, defeat re-keyed
+  off brassard/radio/pistol) and art-advisor Estelle's advisory (relayed in the boss art-lane
+  brief). I own ONLY the `prompt` + `style` strings; structure/ids/paths/seeds/anchors are
+  `dev-tooling-assets`.
+- release — the 9 entries (one-line silhouette read each):
+  1. `commander_shielded` (V1 redraft, APPLIED) — bare head, long coat, brassard + shoulder radio,
+     halt-hand up + hand on holstered boxy sidearm: closed, commanding, arm not presented = untouchable.
+  2. `commander_exposed` (V1 redraft, APPLIED) — lunging one stride out, both arms thrust forward
+     presenting the pistol + muzzle flash, coat flaring: EXPOSED phase-1 single-ring window.
+  3. `commander_hit` (V1 redraft, APPLIED) — staggered back, brassard torn loose + shoulder radio
+     knocked spinning off + pistol arm falling loose: authority-defeated re-keyed off the tells, NOT a cap.
+  4. `commander_down` (V1 redraft, APPLIED) — sprawled on his back, coat splayed, torn brassard +
+     knocked-loose radio + dropped pistol beside him: motionless, already vaincu.
+  5. `commander_weakpoint` (NEW, READY-FOR-STRUCTURE) — square, still, frontal, chin up, torso squared
+     flat, arms held wide, pistol low & clear of the chest: BOTH anatomy bands clean for the phase-2+
+     two-ring callout (render rings do the callout; the sprite only keeps the bands clean).
+  6. `commander_parry_windup` (NEW, READY-FOR-STRUCTURE) — coiled a beat earlier than exposed, elbows
+     bent + arms drawn IN, pistol angled steeply up mid-raise (still short of aim), shoulders hunched:
+     the categorically-distinct charged/parry tell (arms-IN vs exposed's arms-EXTENDED).
+  7. `commander_finisher` (NEW, READY-FOR-STRUCTURE) — down on one knee, coat pooling, upright from
+     the waist, head UP, one free hand reaching up for the shoulder radio: still-trying, NOT dead
+     (distinct from `down`); tone guardrail held (no blood/grimace/weapon-at-him).
+  8. `lustre` (NEW prop, READY-FOR-STRUCTURE) — multi-tier cone/umbrella crystal chandelier HUNG from
+     a chain, wrought-iron/brass armature w/ suggested spokes, one drop missing + tilted + dusty:
+     reads « au bâtiment / ancien monde », asymmetric damage not rubble, not a mirror-ball.
+  9. `speaker_wall` (NEW prop, READY-FOR-STRUCTURE) — hand-built teknival pyramid of mismatched
+     plywood bass-bins + horn cabinets on a scaffold/pallet rig, gaffered cables, a sprayed pochoir
+     spiral mark: reads BUILT « au crew / le son », not a line-array/DJ-booth/guitar-amp.
+- File List:
+  - `src/game/levels/levelArt.json` (boss block: 4 V1 `prompt` strings redrafted to bare-headed +
+    brassard/radio defeat keys; `$comment` silhouette-DNA clause corrected cap→bare-headed + poses
+    note; `style` tail UNCHANGED — factored once, verbatim from the live roster).
+  - `docs/art-direction/prompt-drafts/boss-commander.md` (full redraft: RULING + Estelle advisory
+    integrated; shared style tail factored once; 9 entries with per-clause rationale; the 5 new ones
+    marked READY-FOR-STRUCTURE for `dev-tooling-assets`).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (12 pre-existing warnings,
+  courier + nearForeground/bench; none from the boss block, which is out of the lint's scope so its
+  contract — ≤2 negations, positive shape language, subject-only, no baked colour — is held by hand:
+  every subject 0 negations, assembled 2, all 9 assembled under the 120-word hard ceiling, 109-115w).**
+- Deviations from Estelle's advisory (flagged for the gate):
+  1. **« POLICE » reflective lettering → rendered as a reflective armband/panel SHAPE, not glyphs.**
+     The shared tail carries `no text` (house law §3.8) and FLUX-schnell garbles text at 256px
+     (a generation defect = set FAIL, §2 law 3). The brassard + reflective panel carry the
+     plainclothes-cop read by silhouette; the literal word would not survive game-size anyway.
+     Confirm at the gate, or consciously amend `no text` to attempt lettering.
+  2. **Props share the boss `style` tail verbatim** (which says « figure's limbs and gear ») rather
+     than a prop-specific tail — forking would break Family consistency (§2 law 2: the tableau is one
+     printing). The « figure » wording is inert for FLUX (it keys on black ground + pixel medium +
+     grey/white/pale-neon tones + centered, all valid for an object). If lead-art wants « figure » →
+     « figure or object », that is a roster-wide tail change, not a local fork — flagged to the gate.
+- handoff → `game-graphist` (PRE-PROD PASS: readability at game size, keying soundness) →
+  `lead-art` (Nico) PROMPT GATE. Open items for the gate listed in the draft shard §"Reste à trancher"
+  (the 2 deviations above + style-migration timing + the render-side anchors dev-tooling owns:
+  `muzzle` on exposed, `parryPoint` on parry_windup, VITAL/LIMB rings on weakpoint).
+- Not a `VERDICT:` line — prompts remain OWED and un-gated; this is the concept-artist draft, gated next.
