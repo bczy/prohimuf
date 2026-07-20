@@ -58,7 +58,7 @@ export interface HudBossQte {
 }
 
 /**
- * Active-weapon state surfaced to the DOM HUD (ADR-0052 §6.2). Read-only view value
+ * Active-weapon state surfaced to the DOM HUD (ADR-0055 §6.2). Read-only view value
  * mirrored from `GameState.weapon`; the game owns the rule (stock/burst/auto-return).
  * The HUD renders it as a fuel gauge (glyph + stock), never a tension meter (N2/W4).
  */
@@ -84,7 +84,7 @@ export interface HudData {
   delivery?: HudDelivery | undefined;
   hostageQte?: HudHostageQte | undefined;
   bossQte?: HudBossQte | undefined;
-  // Active weapon + special stock (ADR-0052). Absent only on the pre-tick initial
+  // Active weapon + special stock (ADR-0055). Absent only on the pre-tick initial
   // HUD before the first loop tick populates it; the readout defaults to base/∞.
   weapon?: HudWeapon | undefined;
   // Monotonic counter bumped the tick a special empties and auto-returns to base

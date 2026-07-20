@@ -55,7 +55,7 @@ export interface LevelConfig {
    */
   readonly bossQteSpec?: BossQteSpec;
   /**
-   * Armament-crate pickup config (ADR-0052 D8). Absent ⇒ no crates spawn ⇒ the
+   * Armament-crate pickup config (ADR-0055 D8). Absent ⇒ no crates spawn ⇒ the
    * level's tick is byte-for-byte identical to ADR-0040 (weapon stays `base`/∞).
    * Belliard-first for V1; the seed of `GameState.lootSpec` reads this.
    */
@@ -138,7 +138,7 @@ export const LEVELS: readonly LevelConfig[] = [
       // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
       targetSeed: 20260718,
     },
-    // Belliard-first armament crates (ADR-0052 D8). Generic window spawn (pm ruling
+    // Belliard-first armament crates (ADR-0055 D8). Generic window spawn (pm ruling
     // #3), not per-level scripted placement. Cadence/pool are verify-tunable (§7),
     // not gated: a crate every ~15 s, carrying `auto` or `spread`.
     loot: {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate the LOOT crate sprite (story-loot-crate-sidewalk, ADR-0053) — the
+ * Generate the LOOT crate sprite (story-loot-crate-sidewalk, ADR-0056) — the
  * street-level wooden crate that replaces `LootCrate.tsx`'s code-drawn
  * placeholder when the generated PNG is present (ADR-0049 generated-with-
  * procedural-fallback idiom: a missing/404 asset keeps the drawn box, this
@@ -20,7 +20,7 @@
  * (opening/style/per-type prompt/seed/size/asset). Add or tune a crate type
  * THERE, never here — this script only assembles + fetches + keys.
  *
- * Naming contract (renderer aligns on this, ADR-0053 D5):
+ * Naming contract (renderer aligns on this, ADR-0056 D5):
  *   public/assets/loot/crate.png   (loaded by LootCrate.tsx via `levelArt.loot`)
  *
  * Only MISSING files are generated, so re-runs are cheap; set FORCE=1 to

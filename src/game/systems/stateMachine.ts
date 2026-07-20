@@ -77,7 +77,7 @@ export interface LevelParams {
    */
   bossQte?: BossQteSpec | null;
   /**
-   * Per-level armament crate config (ADR-0052 D8, from `LevelConfig.loot`).
+   * Per-level armament crate config (ADR-0055 D8, from `LevelConfig.loot`).
    * Omitted / null = no crates this level ⇒ weapon stays `base`/∞ and the tick is
    * byte-for-byte identical to ADR-0040. Belliard-first for V1.
    */
@@ -141,7 +141,7 @@ export function createInitialState(
     bossQte: null,
     deliverySpec,
     deliveryVehicle: seedDeliveryVehicle(deliverySpec),
-    // Weapon+loot seam (ADR-0052 D1/D5/D8). Every level starts on `base`/∞; a
+    // Weapon+loot seam (ADR-0055 D1/D5/D8). Every level starts on `base`/∞; a
     // level without `lootSpec` never spawns a crate, so weapon stays `base` and
     // the tick is byte-identical to ADR-0040.
     weapon: {
@@ -206,7 +206,7 @@ export function tickGameState(
         feedback: [],
         pointFeedback: [],
         // Weapon state (active/stock/burst) rides `...state` FROZEN through the duel
-        // (ADR-0052 D7); only the transient empty flag is cleared.
+        // (ADR-0055 D7); only the transient empty flag is cleared.
         weaponEmpty: false,
       };
     }
@@ -274,7 +274,7 @@ export function tickGameState(
       impactEvents: [],
       feedback: [],
       pointFeedback: [],
-      // Weapon+stock ride `...state` FROZEN through the QTE (ADR-0052 D7 / AC6); no
+      // Weapon+stock ride `...state` FROZEN through the QTE (ADR-0055 D7 / AC6); no
       // weapon/loot logic runs in this branch. Clear only the transient empty flag.
       weaponEmpty: false,
     };
@@ -287,7 +287,7 @@ export function tickGameState(
   const allDead = tickedEnemies.every((e) => e.state === "DEAD");
   const newWave = allDead ? state.wave + 1 : state.wave;
   // On a wave rollover, exclude the live crate's slot so a fresh enemy never seats
-  // on it (ADR-0052 D5 co-location guard, direction b). `state.loot` is the pre-tick
+  // on it (ADR-0055 D5 co-location guard, direction b). `state.loot` is the pre-tick
   // crate; its slot is stable across the tick.
   const activeEnemies: readonly Enemy[] = allDead
     ? spawnWave(
@@ -298,10 +298,10 @@ export function tickGameState(
       )
     : tickedEnemies;
 
-  // 3b. Armament crate (ADR-0052 D5 / ADR-0053): advance / spawn the LOOT crate.
+  // 3b. Armament crate (ADR-0055 D5 / ADR-0056): advance / spawn the LOOT crate.
   // Runs only on the normal-tick path, so a QTE freeze never spawns or resolves a
   // crate (D7 / AC6). No-op when the level authors no `lootSpec` (D8). The D9-2
-  // delivery x-gap (ADR-0053 D4) is assembled HERE from the PRE-tick delivery
+  // delivery x-gap (ADR-0056 D4) is assembled HERE from the PRE-tick delivery
   // snapshot (this runs before the 7c delivery tick): the phase-gate lives in the
   // stateMachine (it knows the delivery types); only pure data crosses the seam
   // into the delivery-agnostic `lootSystem` (P1, boundary law).
@@ -343,7 +343,7 @@ export function tickGameState(
   }
 
   // 4b. Player fires — the active weapon folds 1..3 instant hitscan resolutions
-  // (ADR-0052 D2), each an ADR-0040 shot: window-priority (enemy OR VISIBLE crate)
+  // (ADR-0055 D2), each an ADR-0040 shot: window-priority (enemy OR VISIBLE crate)
   // then courier-only-on-miss, threading enemies+couriers+crate. Burst scheduling
   // (B) and equip-on-loot (P2) live in `resolveTrigger`. Reads the pre-hit enemy
   // snapshot, exactly like the enemy-fire step below. A level with no crate stays
@@ -537,7 +537,7 @@ export function tickGameState(
     lives: newLives,
     timeRemaining,
     wave: newWave,
-    // Weapon+loot resolved this tick (ADR-0052): active weapon / stock / burst,
+    // Weapon+loot resolved this tick (ADR-0055): active weapon / stock / burst,
     // the crate channel, and the one-tick empty flag.
     weapon: trigger.weapon,
     loot: trigger.loot,

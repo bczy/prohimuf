@@ -5,7 +5,7 @@ import { weaponGlyph, isLowStock } from "./derivations";
 import styles from "./WeaponReadout.module.css";
 
 /**
- * Active-weapon readout (ADR-0052 §6.2) — a fuel gauge, not a tension meter (N2):
+ * Active-weapon readout (ADR-0055 §6.2) — a fuel gauge, not a tension meter (N2):
  * the A/B/C glyph plus the special stock. Rules:
  *  - base (∞) shows the ∞ symbol with NO counter, NO red, NO blink, ever (W4/AC11);
  *  - a special shows its numeric stock, which blinks in the last ~20 % (fuel warning,

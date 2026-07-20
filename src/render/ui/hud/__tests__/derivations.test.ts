@@ -3,7 +3,7 @@ import { weaponGlyph, isLowStock, LOW_STOCK_FRACTION } from "../derivations";
 import { WEAPON_SPECS } from "@game/types/weapon";
 
 /**
- * Pure regression lock for the weapon-readout view mapping (ADR-0052 §6.2). These are
+ * Pure regression lock for the weapon-readout view mapping (ADR-0055 §6.2). These are
  * render-side derivations, NOT game rules: `weaponGlyph` is the A/B/C picto (design §1)
  * and `isLowStock` is the fuel-gauge blink threshold — the 0.2 ratio is a HUD constant,
  * but the DENOMINATOR is read from the game's `WEAPON_SPECS`, never copied, so the tests

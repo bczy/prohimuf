@@ -856,10 +856,10 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
   });
 });
 
-// --- ADR-0052: weapon + LOOT integration at the tick level ---------------------
+// --- ADR-0055: weapon + LOOT integration at the tick level ---------------------
 
 // Aim `mouseX/mouseY` at a crate on the given slot: its x is the slot's world-x,
-// but since ADR-0053 the crate resolves at street-y (LOOT_STREET_Y), NOT the slot's
+// but since ADR-0056 the crate resolves at street-y (LOOT_STREET_Y), NOT the slot's
 // window-y. Under the tick's default 18×12 view (see crosshairToWorld).
 function aimAtCrate(slotIndex: number): { mx: number; my: number } {
   const p = FACADE_01.slots[slotIndex]?.screenPosition;
@@ -1028,7 +1028,7 @@ describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (
   });
 });
 
-describe("tickGameState — ADR-0052 D5 co-location guard (b): a wave rollover excludes the crate slot", () => {
+describe("tickGameState — ADR-0055 D5 co-location guard (b): a wave rollover excludes the crate slot", () => {
   it("never seats a rolled-over enemy on the live crate's slot", () => {
     // A slot the un-excluded wave-2 would use ⇒ the exclusion is actually exercised.
     const takenSlot = spawnWave(2, FACADE_01)[0]?.slotIndex;

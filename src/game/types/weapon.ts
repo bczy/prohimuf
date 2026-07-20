@@ -1,4 +1,4 @@
-// Multi-weapon pickup roster V1 (A-B-C) — ADR-0052 D1.
+// Multi-weapon pickup roster V1 (A-B-C) — ADR-0055 D1.
 // Type-only module (no functions), the exact `enemyTypes.ts` precedent: the
 // runtime `WeaponState` rides `GameState`; `WEAPON_SPECS` is a data table, not
 // logic. Tuning values trace to `docs/game-design/weapons.md` §7 and are
@@ -13,7 +13,7 @@ export type WeaponKind = "base" | "auto" | "spread";
 // A special (non-base) weapon — the only kinds a LOOT crate can carry (§5.2).
 export type SpecialWeaponKind = Exclude<WeaponKind, "base">;
 
-// Data descriptor for a weapon kind (ADR-0052 D1; ARCHETYPES precedent). Carries
+// Data descriptor for a weapon kind (ADR-0055 D1; ARCHETYPES precedent). Carries
 // the §7 tuning: how many resolutions a trigger produces (`offsets`), the burst
 // cadence (`auto` only), the post-fire lockout, and the starting stock.
 export interface WeaponSpec {
@@ -28,14 +28,14 @@ export interface WeaponSpec {
   // (value inert; the auto branch of `resolveTrigger` is the sole reader).
   readonly burstRounds: number;
   // Inter-round cadence for a burst, ms (`auto`; §7 BURST_INTERVAL_MS = 90). At
-  // most one round fires per tick (ADR-0052 D4). 0 for non-burst weapons.
+  // most one round fires per tick (ADR-0055 D4). 0 for non-burst weapons.
   readonly burstIntervalMs: number;
   // Post-fire lockout, ms: `auto` post-burst BURST_REFRACTORY_MS = 150, `spread`
   // post-press SPREAD_COOLDOWN_MS = 300, `base` 0 (input-gated, no cooldown, §2.2).
   readonly refractoryMs: number;
 }
 
-// Runtime weapon state on `GameState` (ADR-0052 D1). Burst is pure tick state
+// Runtime weapon state on `GameState` (ADR-0055 D1). Burst is pure tick state
 // (D4): the timer-accumulator lives here, so it freezes naturally through a QTE
 // (D7 — rides `...state`, no weapon logic runs in the frozen branches).
 export interface WeaponState {

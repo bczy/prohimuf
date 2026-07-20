@@ -396,7 +396,7 @@ function checkVehicles(vehicles, rep) {
   }
 }
 
-// LOOT crate contract (story-loot-crate-sidewalk, ADR-0053). The generator
+// LOOT crate contract (story-loot-crate-sidewalk, ADR-0056). The generator
 // (gen-loot-sprites.mjs) reads the `loot` block, which is the SAME printing
 // run as `vehicles` — `opening`/`style` are byte-identical (magenta #FF3CDC
 // chroma-key ground, fanzine/xerox B&W) and the render-side-neon-rim rule

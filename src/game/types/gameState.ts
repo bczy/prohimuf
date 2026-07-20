@@ -60,15 +60,15 @@ export interface GameState {
   // Courier-hit penalties this tick, anchored to world positions (transient).
   readonly pointFeedback?: readonly PointHitEvent[];
   // Player-shot impacts from the latest tick (transient; drives render effects
-  // — explosion, wall marks). 0 to 3 elements (ADR-0052 D3: C `spread` emits up
+  // — explosion, wall marks). 0 to 3 elements (ADR-0055 D3: C `spread` emits up
   // to 3 per tick; A/B emit ≤1). Render is already N-safe — the bridge drains the
   // list and ImpactEffects pools it, so the widening needs no render change.
   readonly impactEvents?: readonly ImpactEvent[];
-  // Active weapon + special stock + burst tick state (ADR-0052 D1). Rule-owned;
+  // Active weapon + special stock + burst tick state (ADR-0055 D1). Rule-owned;
   // seeded `base`/∞ and always `base` on a level with no `lootSpec` (byte-identical
   // to ADR-0040). Frozen through a QTE (rides `...state`, D7).
   readonly weapon: WeaponState;
-  // The single in-flight armament crate, or null (ADR-0052 D5). Off the
+  // The single in-flight armament crate, or null (ADR-0055 D5). Off the
   // `ARCHETYPES`/score-lives path — a crate hit equips only, never scores.
   readonly loot: LootCrate | null;
   // Per-level loot config (null = no crates this level; parallels `deliverySpec`).

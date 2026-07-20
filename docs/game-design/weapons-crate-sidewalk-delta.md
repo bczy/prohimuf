@@ -6,7 +6,7 @@ sidewalk**, rendered as a **real wooden crate** (FLUX sprite).
 **Status:** DRAFT (round 2) — amended per Karim's round-1 gate (PASS-WITH-CORRECTIONS,
 `docs/handoffs/story-loot-crate-sidewalk.md`, be9b5ce): C1 runtime-x formula + C2 mobile-frame
 reachability resolved, premises N1/N2/N3/N5 corrected; confirmed points (precedence, D9-1/D9-2,
-W1 stencil) untouched. **Needs Karim's round-2 PASS** before `senior-architect` (ADR-0053).
+W1 stencil) untouched. **Needs Karim's round-2 PASS** before `senior-architect` (ADR-0056).
 **Supersedes, in `docs/game-design/weapons.md`:** the placement half of **§5.1 (R2/R3/R4)**,
 **§5.2** (window-slot acquisition geometry), **§5.3** (window-channel triage / the R4
 three-read claim), **§5.4** (W2 spawn-exclusion) and the crate durations in `lootSystem.ts`
@@ -176,12 +176,12 @@ skill), style is `lead-art`'s:
 
 - → `lead-art` / `concept-artist` (Maud): A1–A4 real wooden crate sprite (FLUX), glyph-on-face
   legibility, neon rim, cutout solidity. Spec = the read; prompt/style = theirs.
-- → `senior-architect` (Winston): ADR-0053. **This is a real code change, not "no code
+- → `senior-architect` (Winston): ADR-0056. **This is a real code change, not "no code
   change" (N3):** (a) `resolvePlayerShot` today reads the crate hit-point from
   `facade.slots[loot.slotIndex].screenPosition` (window y) — it must resolve the crate at
   street-y instead (decouple the crate's y, or `LootCrate` gains its own position); (b)
   `tickLoot`/`attemptSpawn` gains the `|slot.screenPosition.x| ≤ LOOT_MAX_ABS_X` filter (D3) and
   the D9-2 delivery phase + `stopPosition.x` check; (c) new constants `LOOT_STREET_Y`/
   `LOOT_MAX_ABS_X`/`CRATE_DELIVERY_GAP_X`; `LOOT_VISIBLE_DURATION 4.0 → 6.0`. Placement amendment
-  to ADR-0052 D5.
+  to ADR-0055 D5.
 - → `ux-designer` (Tony): no HUD change — glyph stays on the crate face, not HUD (D8).

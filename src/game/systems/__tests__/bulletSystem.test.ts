@@ -59,7 +59,7 @@ describe("tickBullets", () => {
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } };
 // Aim at the crate's street row (world y = LOOT_STREET_Y) under an 18×12 view — the
-// crate resolves at street-y since ADR-0053, not at its slot window-y (D3).
+// crate resolves at street-y since ADR-0056, not at its slot window-y (D3).
 const streetAim: Crosshair = { position: { x: 0.5, y: 0.5 - LOOT_STREET_Y / 12 } };
 
 function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
@@ -226,7 +226,7 @@ describe("resolvePlayerShot — multi-hp riot, non-lethal hit (D1.6 / D3.1)", ()
   });
 });
 
-// --- ADR-0052 D2: offset + LOOT crate extension -------------------------------
+// --- ADR-0055 D2: offset + LOOT crate extension -------------------------------
 
 describe("resolvePlayerShot — offsetDx shifts the resolution point (C spread, §2.4)", () => {
   it("aims at aim.x + offsetDx; an enemy under the offset column is hit, not the centre one", () => {
@@ -258,7 +258,7 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
 
   it("a shot on a VISIBLE crate is a loot-hit: equip weapon, ZERO score/lives, crate consumed", () => {
     const facade = facadeWithSlots([{ x: 0, y: 0 }]);
-    // Aim at street-y (the crate's world row since ADR-0053), not the slot window-y.
+    // Aim at street-y (the crate's world row since ADR-0056), not the slot window-y.
     const result = resolvePlayerShot(streetAim, [], facade, 0, 0, 18, 12, crate);
     expect(result.outcome).toBe("loot-hit");
     expect(result.equippedWeapon).toBe("spread");
@@ -307,7 +307,7 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
   });
 });
 
-describe("resolvePlayerShot — crate resolves at LOOT_STREET_Y (ADR-0053 D3)", () => {
+describe("resolvePlayerShot — crate resolves at LOOT_STREET_Y (ADR-0056 D3)", () => {
   const crate: LootCrate = { id: 1, slotIndex: 0, state: "VISIBLE", timer: 1, weapon: "auto" };
 
   it("a shot at the crate slot's OLD window-y no longer hits the crate", () => {

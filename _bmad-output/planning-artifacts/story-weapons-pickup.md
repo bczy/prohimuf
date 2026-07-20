@@ -4,7 +4,7 @@
 **Statut:** prête-pour-dev (attend design gate `lead-game-designer` en parallèle, puis TECH
 PLAN `senior-architect`) · **Date :** 2026-07-20 · **PM :** John
 **Pré-spec :** `docs/game-design/pre-spec-weapons.md` (2026-07-18, lane `game-designer`,
-statut pre-gate) · **ADR réservé :** ADR-0052 · **Shard hand-offs :**
+statut pre-gate) · **ADR réservé :** ADR-0055 · **Shard hand-offs :**
 `docs/handoffs/story-weapons-pickup.md` (ne pas écrire ici — log tenu par `producer`)
 
 ## Why
@@ -239,4 +239,4 @@ est un spawn générique, pas data-driven par niveau comme les livraisons) · tu
   (ADR-0003/0015) — non-bloquant pour le lancement des lanes A/B (hypothèse de layout dans
   B3 ci-dessus), à réconcilier avant ship.
 - `senior-architect` (Winston) : TECH PLAN — trancher le point `impactEvents`/multi-cible
-  (`spread`) et le discriminant `LOOT`, écrire ADR-0052 sur cette base.
+  (`spread`) et le discriminant `LOOT`, écrire ADR-0055 sur cette base.

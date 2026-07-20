@@ -127,7 +127,7 @@ function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
     wave: 1,
     // Energy init 100 (ADR-0030 D5), mirrors createInitialState.
     energy: 100,
-    // Every level starts on the base weapon at ∞ stock (ADR-0052 D1), mirrors
+    // Every level starts on the base weapon at ∞ stock (ADR-0055 D1), mirrors
     // createInitialState; the first loop tick then keeps `weapon` live.
     weapon: { active: "base", stock: Number.POSITIVE_INFINITY },
     weaponEmptyNonce: 0,
@@ -148,7 +148,7 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     // Scripted boss QTE for this level (ADR-0051). Absent on every shipped level ⇒ `null`
     // (byte-identical); only the non-shipped dev-harness authors one.
     bossQte: level.bossQteSpec ?? null,
-    // Per-level armament crates (ADR-0052 D8). Absent on a level ⇒ `null` ⇒ no crates
+    // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.
     loot: level.loot ?? null,
   };

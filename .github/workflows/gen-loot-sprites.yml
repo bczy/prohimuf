@@ -1,6 +1,6 @@
 name: Generate loot sprites
 
-# Regenerates the LOOT crate sprite (ADR-0053, story-loot-crate-sidewalk) from
+# Regenerates the LOOT crate sprite (ADR-0056, story-loot-crate-sidewalk) from
 # the `loot` block of src/game/levels/levelArt.json with real FLUX art, keys
 # its magenta (#FF3CDC) chroma-key background to transparency (same
 # corner-adaptive edge flood-fill as the vehicle set), desaturates the

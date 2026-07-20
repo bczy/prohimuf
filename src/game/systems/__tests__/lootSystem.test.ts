@@ -28,7 +28,7 @@ function facadeCols(cols: number): FacadeMap {
   };
 }
 
-// A `mergedFacade`-shaped fixture (ADR-0053 pin P3): runtime `col` is a sequential
+// A `mergedFacade`-shaped fixture (ADR-0056 pin P3): runtime `col` is a sequential
 // index while `screenPosition.x` is tile-derived (arbitrary world-x), so the spawn
 // x-filter must key off `screenPosition.x`, NOT the facade01 `col*2-18` arithmetic.
 function mergedFacade(xs: readonly number[]): FacadeMap {
@@ -135,7 +135,7 @@ describe("tickLoot — spawn cadence + exclusion (AC9)", () => {
     expect(r.lootTimer).toBeCloseTo(4);
   });
 
-  // ADR-0052 D5 co-location guard (a): a crate must not spawn on a slot held by a
+  // ADR-0055 D5 co-location guard (a): a crate must not spawn on a slot held by a
   // non-DEAD enemy of ANY state — including HIDDEN/HIT, which the §5.4 column-gap
   // rule (active states only) does not catch.
   it("never spawns on a slot occupied by a HIDDEN enemy (co-location guard)", () => {
@@ -215,7 +215,7 @@ describe("tickLoot — crate state machine HIDDEN→APPEARING→VISIBLE→expire
   });
 });
 
-// --- ADR-0053 sidewalk delta -------------------------------------------------
+// --- ADR-0056 sidewalk delta -------------------------------------------------
 
 describe("tickLoot — near-centre x-bound (D3 / AC-D1), mergedFacade-shaped slots (P3)", () => {
   it("only spawns on a slot whose |screenPosition.x| ≤ LOOT_MAX_ABS_X", () => {

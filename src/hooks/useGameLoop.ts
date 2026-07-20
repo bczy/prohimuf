@@ -218,7 +218,7 @@ export function useGameLoop(
   // Last HudData emitted to onHudUpdate — read (never mutated) by the __MUF_STATE__
   // seam so the harness reads the same view value the HUD renders (ADR-0005).
   const lastHudRef = useRef<HudData | null>(null);
-  // Monotonic empty-return counter (ADR-0052 §6.1 / AC10): bumped the tick a special
+  // Monotonic empty-return counter (ADR-0055 §6.1 / AC10): bumped the tick a special
   // empties (the `weaponEmpty` transient), surfaced to the HUD so its empty-flash
   // replays the SAME frame as the auto-return. Distinct from `impactEvents`.
   const weaponEmptyNonceRef = useRef(0);
@@ -320,7 +320,7 @@ export function useGameLoop(
     const didFire = hasPendingShot;
     mouseRef.current.pendingShots = Math.max(0, mouse.pendingShots - 1);
     // NB: the shoot cue is NOT played here on the raw input gesture. Under the weapon
-    // system (ADR-0052) a press can resolve into 0..3 hitscan resolutions across ticks —
+    // system (ADR-0055) a press can resolve into 0..3 hitscan resolutions across ticks —
     // a refractory/mid-burst tap is swallowed (0), a burst emits one round per later tick,
     // a spread press emits up to 3 in one tick. Keying the cue off the gesture would play
     // a phantom shot for a swallowed tap, stay silent for burst rounds 2..N, and play once
@@ -478,7 +478,7 @@ export function useGameLoop(
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
     }
-    // Shoot cue (ADR-0052 MINEUR-1): keyed off RESOLUTION ACTIVITY, not the input gesture.
+    // Shoot cue (ADR-0055 MINEUR-1): keyed off RESOLUTION ACTIVITY, not the input gesture.
     // `impactEvents` is the per-tick transient set of player-shot resolutions (0..3), so a
     // single cue when it is non-empty gives the correct model on every weapon: base/miss →
     // 1 (unchanged, a fired tap always resolves ≥1 impact); burst → one pop per round-tick
@@ -487,7 +487,7 @@ export function useGameLoop(
     if (next.impactEvents !== undefined && next.impactEvents.length > 0) {
       playSfx("shoot");
     }
-    // Weapon empty-return cue (ADR-0052 §6.1 / AC10 / W3): the tick a special empties
+    // Weapon empty-return cue (ADR-0055 §6.1 / AC10 / W3): the tick a special empties
     // and auto-returns to `base`, fire the audible cue (culasse à vide) AND bump the
     // HUD flash nonce the SAME frame — never a silently-failed shot. V1 reuses the
     // shipped `death` SFX slot for the culasse-à-vide (spec §6.1: existing SFX
