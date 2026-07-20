@@ -65,6 +65,23 @@ const PLAYABLE_COPY: Record<string, FlyerCopy> = {
     infoLine: "08 36 23 94 09",
     ambiance: "AMBIANCE : BRÛLANT",
   },
+  // Niveau Final — spoiler-clean finale flyer (spec-niveau-final-fiction.md §4.1, gate PASS):
+  // names the teuf + venue (l'Éden), never le Commandant. The three crews served one-by-one
+  // finally united for the millennium. Difficulty stamp auto-derives DIFFICILE from
+  // `enemySpeedMultiplier 1.8` (derivations.ts) — no per-entry stamp.
+  "niveau-final": {
+    crew: "SPIRALE 23 · KANAL SYSTEM · NADIR 94",
+    slogan: "LE DERNIER SON DU SIÈCLE",
+    dateLine: "31 DÉC. 1999 → JUSQU'EN 2000",
+    zoneLine: "L'ÉDEN · ANCIEN DANCING",
+    rvLine: "RV : SUR L'INFO-LINE",
+    infoLine: "08 36 31 12 99",
+    // PROVISIONAL — the AMBIANCE slot is a required FlyerCopy field but Yasmine's fiction §4.1
+    // table authored only the 6 fields above (no ambiance). ux §1.2 documents this slot as the
+    // finale-flavour carrier; continuing the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT)
+    // one notch. Flagged to narrative-designer for ratification — this word is not yet gated canon.
+    ambiance: "AMBIANCE : INCANDESCENT",
+  },
 };
 
 // Tutorial substitutions (deck §2.1) — no info-line, no stats.

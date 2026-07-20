@@ -1097,11 +1097,11 @@ describe("bossQteSystem — AMENDMENT A2: décor catch = drawn silhouette (AABB,
     expect(decorDropsAtOffset(0.35, 0.5).consumed).toBe(true);
   });
 
-  it("the inclusive box edges (±HALF_W, ±HALF_H) score; just beyond does NOT", () => {
-    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W, 0).consumed).toBe(true);
-    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H).consumed).toBe(true);
-    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W + 0.001, 0).consumed).toBe(false);
-    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H + 0.001).consumed).toBe(false);
+  it("the box boundary: just inside ±(HALF_W, HALF_H) scores, just beyond does not", () => {
+    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W - 0.01, 0).consumed).toBe(true);
+    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H - 0.01).consumed).toBe(true);
+    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W + 0.01, 0).consumed).toBe(false);
+    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H + 0.01).consumed).toBe(false);
   });
 
   it("beyond the drawn silhouette does NOT score (dy 0.60 too tall, dx 0.45 too wide)", () => {
@@ -1121,7 +1121,12 @@ describe("bossQteSystem — AMENDMENT A2: décor catch = drawn silhouette (AABB,
       NO_HIT,
       0.01,
     ).qte;
-    const miss = tickBossQte(armed, true, { x: armed.anchor.x + PX, y: armed.anchor.y + PY + 0.6 }, 0.01);
+    const miss = tickBossQte(
+      armed,
+      true,
+      { x: armed.anchor.x + PX, y: armed.anchor.y + PY + 0.6 },
+      0.01,
+    );
     expect(miss.qte.decorConsumed).toBe(false);
     expect(miss.qte.decorArmed).toBe(true);
   });

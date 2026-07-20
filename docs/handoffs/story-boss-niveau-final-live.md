@@ -1929,7 +1929,7 @@ SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN
      `screenshots/` back to the branch") is STALE against the actual `preview.yml` (doc/code
      drift, flagged here for `tech-writer`, not fixed in this pass — out of lane). Closed the gap
      the idiomatic way: **`.github/workflows/gen-level-art.yml`** (NEW), mirroring the same
-     gen-*.yml commit-back pattern (dispatch marker `.github/dispatch/gen-level-art`,
+     gen-\*.yml commit-back pattern (dispatch marker `.github/dispatch/gen-level-art`,
      `workflow_dispatch` with the same `regenerate` boolean `preview.yml` has, generate → cutout
      foreground (`cutout-foreground.mjs`) → bounded-retry commit/push → artifact-on-failure).
   6. **Dispatch markers staged (not pushed):** `.github/dispatch/gen-boss-sprites` and
@@ -1962,7 +1962,7 @@ SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN
   - `yarn format:check` / `npx prettier --check` on every file in this List → clean.
   - `actionlint` not available in this sandbox; both new workflow YAMLs hand-reviewed against the
     `gen-hostage-sprites.yml`/`preview.yml` patterns and validated parseable (`python3 -c
-    "yaml.safe_load(...)"`).
+"yaml.safe_load(...)"`).
 - **Scope discipline:** did not touch `levels.ts`/`narrativeSystem.ts`/`bossQteSystem.ts`/any
   render file (dev-gameplay's/dev-r3f-render's concurrent lanes); did not invent an anchor schema
   (the boss block's ANCHOR SCHEMA GAP from the earlier dev-tooling-assets entry is untouched,
@@ -2040,3 +2040,96 @@ SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: RELEASE — A2 (décor AABB) + follow-up-#9 (phase-2 teach-index) transcribed into the gated spec (game-designer) — AMENDMENT A2 written VERBATIM into spec-boss-qte-differentiation.md §2 (catch = AABB ±(0.40, 0.525) == drawn 0.80×1.05, drawn UNCHANGED, glow 2.2 = attention cue not catch, direction (b) rejected for the 3 logged reasons, paired gameplay-AABB ∥ render-derives-DECOR_W/H) + AC-D4 tail + §2 reuse-map supersede; follow-up #9 closed as a dated LEVER-3 note (PARRY_PHASE2_TEACH_INDEX = 1, near phase START, replaces "near the phase end"). Dev lanes cleared to implement from spec text.
+
+## 4. BUILD (stage 4) — dev-r3f-render (Amelia) — niveau-final flyer entry + A2 décor drift-guard — 2026-07-20
+
+- **Stage:** 4 BUILD · **Lane:** dev-r3f-render (render-only; two SMALL items cut at TECH PLAN /
+  Karim's A2 gate). Non-overlapping with the concurrent dev-gameplay (`levels.ts`/`narrativeSystem.ts`/
+  `bossQteSystem.ts`) and dev-tooling-assets (`levelArt.json`) lanes.
+- **CLAIM → RELEASE (one pass):**
+  1. **4th flyer entry** — `src/render/ui/menu/LevelFlyer.tsx`: added `PLAYABLE_COPY["niveau-final"]`,
+     spoiler-clean, transcribed from `spec-niveau-final-fiction.md` §4.1 (gate PASS). crew
+     `SPIRALE 23 · KANAL SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, dateLine
+     `31 DÉC. 1999 → JUSQU'EN 2000`, zoneLine `L'ÉDEN · ANCIEN DANCING`, rvLine `RV : SUR L'INFO-LINE`,
+     infoLine `08 36 31 12 99`. Frozen `LevelFlyer`/`FlyerWall`/`LOCKED_COPY`/`TUTORIAL_COPY` untouched;
+     `FlyerWall`'s `LEVELS.map` auto-renders the 4th flyer; difficulty stamp auto-derives **DIFFICILE**
+     from `enemySpeedMultiplier 1.8` (`derivations.ts`) — zero new UI (ux D1/D3). No `App.tsx`/
+     `FlyerWall.tsx` change.
+     - **FLAG (narrative-designer / Yasmine):** the `FlyerCopy.ambiance` field is REQUIRED by the
+       interface but fiction §4.1 authored only the 6 fields above — **no ambiance for niveau-final**.
+       ux §1.2 documents the ambiance slot as the finale-flavour carrier; I set a **PROVISIONAL**
+       `AMBIANCE : INCANDESCENT` continuing the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT) one
+       notch, flagged in a code comment. **This word is not yet gated canon** — needs a narrative
+       ratification/amend pass. Spoiler-clean, no boss hint.
+  2. **A2 décor drift-guard** — `src/render/scene/BossQteSprite.tsx` (Karim's panel-#5 A2 ruling,
+     dev-r3f-render paired lane): imported `BOSS_DECOR_CATCH_HALF_W`/`BOSS_DECOR_CATCH_HALF_H` from
+     `bossQteSystem` and derived `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W` / `DECOR_H = 2 *
+BOSS_DECOR_CATCH_HALF_H` (today `2×0.40 × 2×0.525 == 0.80 × 1.05` — **zero pixel change**, art-
+     preserving), so drawn == catch is enforced structurally and tracks any future catch re-tune,
+     exactly as the vital ring draws at the imported `BOSS_VITAL_CATCH_RADIUS`. Updated the comment to
+     record A2 (glow 2.2 untouched, attention cue not catch). Glow/grey/armed treatment untouched.
+- **CROSS-LANE:** dev-gameplay's paired A2 change landed the constants concurrently
+  (`BOSS_DECOR_CATCH_HALF_W = 0.4` / `BOSS_DECOR_CATCH_HALF_H = 0.525`, `withinBox` AABB hit-test,
+  `createBossQte` asserts) — so my import resolves and typecheck is green (no "constants not exported
+  yet" report needed; both landed).
+- **VERIFY (all green on my files):** `yarn typecheck` clean (EXIT 0) · `yarn vitest run` **867 passed /
+  65 files, 0 fail** · `yarn lint` clean (EXIT 0) · `yarn format:check` — my two files pass Prettier
+  (`npx prettier --check` on both = "All matched files use Prettier code style!"). The 3 `format:check`
+  warnings (`spec-boss-qte-differentiation.md`, this handoff shard, `bossQteSystem.test.ts`) are OTHER
+  lanes' concurrent files, not in my File List.
+- **No commit/push** (per instruction). Owning-lane verify complete; ready for the quality gate.
+- **File List:**
+  - `src/render/ui/menu/LevelFlyer.tsx` (MODIFIED — added `PLAYABLE_COPY["niveau-final"]`)
+  - `src/render/scene/BossQteSprite.tsx` (MODIFIED — A2 drift-guard: import constants, derive DECOR_W/H)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this BUILD entry appended)
+
+---
+
+## FIX (gated) — dev-gameplay (Amelia) — 2026-07-20 · AMENDMENT A2 décor catch = drawn AABB
+
+- **Stage:** follow-up gated fix riding with story 2 · **Lane:** dev-gameplay (owns
+  `bossQteSystem.ts` for this ruling). Built on Karim's stage-5-blocker DESIGN GATE ruling
+  (panel follow-up #5, "décor aim-honesty", logged above — VERDICT PASS-WITH-CORRECTIONS,
+  direction (a) ENLARGE catch to the drawn silhouette).
+- **AC5 NOTE (explicit):** this **intentionally touches `src/game/systems/bossQteSystem.ts`**, which
+  story-2's original AC5 declared byte-untouched. This is the **GATED AMENDMENT A2** — a
+  lead-game-designer stage-5-blocker fairness correction to already-ratified ADR-0052 lever 2, NOT a
+  silent retune. It rides with story 2 by Karim's paired-lane assignment; the stage-6 review panel
+  will see it against this gate entry. The ADR-0052 phase table, floors, HP/window constants and
+  every other lever are UNCHANGED — this adds only the décor catch shape.
+- **CLAIM:** implement the game-side of A2 (the substantive change) — replace the décor branch's
+  `RING_HIT_RADIUS 0.30` circle with an anchor-relative AABB matching the drawn `0.80×1.05`
+  silhouette, TDD. The render pairing (derive `DECOR_W/H` from the constants) is dev-r3f-render's
+  paired lane.
+- **RELEASE — `src/game/systems/bossQteSystem.ts` (45/2 vs origin/main):**
+  - Two new exported constants `BOSS_DECOR_CATCH_HALF_W = 0.4` / `BOSS_DECOR_CATCH_HALF_H = 0.525`
+    (= half the drawn `DECOR_W 0.80 × DECOR_H 1.05` plane) with the A2 rationale doc-comment.
+  - New pure `withinBox(px, py, anchor, ox, oy, halfW, halfH)` AABB helper (inclusive edges), beside
+    the untouched `withinCatch` circle helper.
+  - The SHIELDED armed-décor branch now gates on `withinBox(...HALF_W, HALF_H)` instead of
+    `withinCatch(...RING_HIT_RADIUS)`. **The ring / parry / phase-1 circle tests are UNCHANGED**
+    (`RING_HIT_RADIUS` still serves the limb ring, parry point and phase-1 ring — not orphaned).
+  - `createBossQte` gains two `assertPositiveScalar` guards (both half-extents finite & > 0),
+    mirroring the A1 / stagger / finisher assert pattern.
+  - Glow halo (2.2) untouched — an attention cue, NOT the catch (per the ruling).
+- **TESTS — `src/game/systems/__tests__/bossQteSystem.test.ts` (new "AMENDMENT A2" describe, 6 tests):**
+  the reported hole `dy 0.45` now scores the +3 `BOSS_DECOR_DAMAGE` burst (was a silent no-op under
+  the 0.30 circle); the horizontal corner `dx 0.35, dy 0.50` scores (inside box, hypot≈0.61 outside
+  the old circle); `dy 0.60` (too tall) and `dx 0.45` (too wide) do NOT score; the box boundary
+  (just inside ± the half-extents scores, just beyond does not); pure-upside preserved (an
+  off-silhouette click leaves the prop armed). The existing lever-2 décor tests (fire dead-centre
+  {1.5,0} or far off {0,0}) never encoded the 0.30 boundary, so they stayed green unadjusted.
+- **VERIFY (all green):** `yarn typecheck` clean · `yarn vitest run` **867 passed / 65 files, 0 fail**
+  (861 story-2 + 6 new A2) · `yarn lint` clean · `yarn format:check` clean on my files.
+- **DIFF returned to coordinator:** `bossQteSystem.ts` = the 2 constants + `withinBox` + branch swap
+  - 2 asserts (45/2); `bossQteSystem.test.ts` = the 6-test A2 describe block + 2 imports.
+- **Flag → dev-r3f-render (paired lane):** the drawn pairing (`BossQteSprite.tsx` deriving
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W`, `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` from my exported
+  constants) is landed in the working tree — confirmed it imports the two constants and derives the
+  drawn size (no pixel change today, 0.80×1.05 preserved). drawn==catch now holds structurally.
+- **No commit/push** (per instruction).
+- **File List:**
+  - `src/game/systems/bossQteSystem.ts` (MODIFIED — GATED A2: 2 constants + `withinBox` + décor
+    branch AABB swap + 2 `createBossQte` asserts)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (MODIFIED — 6-test AMENDMENT A2 describe block)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this FIX entry appended)
