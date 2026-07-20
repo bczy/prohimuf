@@ -279,6 +279,14 @@ LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane;
   `src/render/ui/hud/__tests__/derivations.test.ts` (NEW).
 - **Downstream:** `ux-designer` HUD-layout reconcile (desktop+mobile) + `lead-art` crate/glyph read
   (R1-R4) stand as gated fast-follows if the placeholder reads poorly — not V1 blockers.
+- **FIX (stage-5 lead-art blocking correction, 2026-07-20):** crate glow re-worked in
+  `src/render/scene/LootCrate.tsx` only — the neon rim now BAKES a wide monotonic alpha falloff via
+  `shadowBlur` (alpha-composited, survives a bright facade where a purely-additive halo clamps to
+  white), the enemy-neon-rim technique; kept the additive box-halo for the dark-background bloom.
+  No hue/silhouette/glyph change (hue is a separate concept-artist fast-follow). Re-shot VISIBLE-state
+  via the `__MUF_PLAY__` seam → `docs/qa/evidence/weapons-pickup/d-loot-crate-halo-falloff.png` (+
+  `-crop.png`); offline radial scan on the crate = peak-at-edge then monotonic decay to 0
+  (yellowExcess 0.13→**0.47**→0.05→0.002→0). tsc/test(860)/lint/format:check green.
 
 ---
 
