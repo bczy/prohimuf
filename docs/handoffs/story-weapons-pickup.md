@@ -279,3 +279,42 @@ LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane;
   `src/render/ui/hud/__tests__/derivations.test.ts` (NEW).
 - **Downstream:** `ux-designer` HUD-layout reconcile (desktop+mobile) + `lead-art` crate/glyph read
   (R1-R4) stand as gated fast-follows if the placeholder reads poorly — not V1 blockers.
+
+---
+
+## stage-5. QUALITY GATE — qa-lead (Inès) — 2026-07-20
+
+- claim: stage-5 VERIFY / quality gate — static gate (tsc/vitest/lint/format) + AC sweep of
+  weapons.md §9 (AC1–AC15) mapped to named tests + runtime evidence on Belliard (headless
+  Chromium, SwiftShader, `__MUF_PLAY__` seam) + regression hunt (no-loot byte-identity, QTE
+  freeze, `impactEvents` 0-to-3 render consumers, P1 courier loop-widening, LOOT off score-path)
+  / release: **PASS**. Test plan + full verdict at `docs/qa/plan-story-weapons-pickup.md`;
+  evidence PNGs at `docs/qa/evidence/weapons-pickup/`. No production code touched (iron rule).
+- VERDICT: PASS — quality gate (qa-lead)
+- **Static gate:** tsc 0 errors · vitest **860 passed / 67 files / 0 failed / 0 unexpected-skip**
+  (read, not asserted) · lint clean · `format:check` clean.
+- **AC coverage:** 13 VERIFIED-BY-TEST (AC1–AC11, AC14, AC15; 5 also carry runtime evidence:
+  AC1/AC7-loot/AC8/AC9/AC11) · 1 VERIFIED-BY-INSPECTION (AC12 — `enemySystem.ts` has zero weapon
+  references, so the telegraph cadence is weapon-independent by construction) · 1
+  MANUAL-PLAYTEST-NEEDED (AC13 / W7 ≤40 % special uptime — `game-designer`'s measured playtest,
+  stock is `verify`-tunable/not gated; escalated via producer, does NOT block this gate).
+- **Runtime evidence (Belliard, no page errors):** `a-hud-base-infinity.png` (HUD "A ∞",
+  weapon=base/∞) · `b-loot-crate-visible.png` (VISIBLE crate, neon box + legible "C" glyph BEFORE
+  the shot — W1/R1/R3) · `c-hud-special-equipped.png` (HUD "C 30" post-pickup, SCORE 0000 / ♥♥♥ —
+  crate hit = zero score/lives, AC7-loot confirmed at runtime).
+- **Regression:** no-loot byte-identity (D8) PASS · QTE freeze (D7) PASS · `impactEvents`
+  0-to-3 render consumers (D3) PASS with **zero** render change (bridge drains a list loop;
+  ImpactEffects splices into pools of 12) · `weaponEmpty` bridge drain PASS · P1 courier
+  loop-widening (≤3/tick, threaded, `courierField` short-circuit intact) PASS · LOOT off
+  `ARCHETYPES`/score-lives (D5) PASS.
+- **Non-blocking observations (documented V1 concessions, owners named — NOT gate failures):**
+  Obs-1 culasse-à-vide reuses the `death` SFX slot (spec §6.1 permits; HUD flash is the primary
+  cue so W3/AC10 hold) — dedicated `empty` asset/slot fast-follow, owner `sound-designer` +
+  `dev-gameplay`; audibly identical to the death cue is a minor UX note. Obs-2 crate is a
+  code-drawn placeholder (pm ruling #4) — `lead-art` R1–R4 read is a gated fast-follow.
+- **No FAIL cases.** Sibling verdicts still required at stage 5: `game-designer` conformity
+  playtest (incl. AC13 uptime measure), `ux-designer` HUD reconcile (desktop+mobile), `lead-art`
+  crate/glyph read.
+- **Files (mine only, under docs/qa/):** `docs/qa/plan-story-weapons-pickup.md` (NEW),
+  `docs/qa/evidence/weapons-pickup/{a-hud-base-infinity,b-loot-crate-visible,c-hud-special-equipped}.png`
+  (NEW).
