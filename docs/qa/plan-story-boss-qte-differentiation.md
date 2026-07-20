@@ -6,8 +6,9 @@
 `docs/game-design/ux/spec-boss-qte-differentiation-ux.md` (A1–A15),
 `docs/game-design/spec-boss-differentiation-fiction.md`,
 `docs/game-design/spec-boss-qte-differentiation-audio.md`.
-**Owner:** `qa-lead` (Inès) · **Stage:** 5 (VERIFY), leg 1 · **Date:** 2026-07-20
-**Verdict of record:** handoff shard §10 (`docs/handoffs/story-boss-qte-differentiation.md`).
+**Owner:** `qa-lead` (Inès) · **Stage:** 5 (VERIFY) — leg 1 + CLOSE · **Date:** 2026-07-20
+**Verdict of record:** leg-1 shard §10; **quality-gate CLOSE** shard §24
+(`docs/handoffs/story-boss-qte-differentiation.md`) + the STAGE-5 CLOSE audit at the end of this plan.
 **Predecessor plan (house style):** `docs/qa/plan-story-boss-encounter-qte.md` (V1).
 
 This plan derives from the story ACs + the gated design/UX specs (plan-from-spec, not from the
@@ -116,7 +117,15 @@ ACTIVE phase 1 is now deterministic on both device classes.
 - **E2E-3 — the differentiated duel (phase-2 dual rings → parry → phase-3 smoke/renfort →
   FINISHER → WON). [CI-DEFERRED-BLOCKED — see the hole below].**
 
-**BLOCKING HOLE — C-QA2 (routed + escalated).** The depletion-gated differentiation reads
+**BLOCKING HOLE — C-QA2 [CLOSED at stage-5 close].** `dev-r3f-render` built the deterministic
+state-seed capture seam I specced (`?preview=boss&at=phase2|phase3|finisher` + `&blownImmune=1`,
+view-side pure-API fast-forward, shard §11) — phases 2/3/FINISHER are now e2e-reachable and
+state-verified in-sandbox (evidence 20-39). The runtime differentiation reads are captured and were
+run through Sacha's playtest + Tony's UX review + Nico's composite gate. See the STAGE-5 CLOSE audit
+at the end of this plan for the final per-read disposition. The original hole text is retained below
+for the record.
+
+**BLOCKING HOLE — C-QA2 (as first raised at leg 1 — retained for the record).** The depletion-gated differentiation reads
 (phase-2 dual rings, parry telegraph, stagger, phase-3 smoke, renfort edge, décor-armed, FINISHER,
 WON, HP-bar zero-settle) could NOT be reached in the sandbox. Measured cause: **headless SwiftShader
 renders at ~2 fps** (rAF probe = 2), so each ~1.6 s EXPOSED window gets ~2-4 sim ticks with the ring
@@ -217,3 +226,97 @@ are **DEFERRED** with it.
 - GPU frame-budget of the smoke on weak mobile — `gpu-specialist` verdict (shard §8): PERF PASS on
   the ≤6-quad technique; the marginal-ms + phase-3 median on weak mobile is DEFERRED-ON-TARGET
   (unmeasurable in SwiftShader; Bertrand runs). Not a QA-gate item; noted for coherence.
+
+---
+
+## STAGE-5 CLOSE — quality-gate funnel audit (qa-lead, 2026-07-20)
+
+Written at gate close, after the full leg-2 + correction history ran (shard §11-§23). Every plan
+line below is either **VERIFIED** (evidence + verdict named) or **DEFERRED** (deferral + owner named).
+Nothing is silently assumed green.
+
+### Mechanical gate — re-run at close (ALL GREEN)
+
+| Check      | Command             | Result                                                                                                           |
+| ---------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Typecheck  | `yarn typecheck`    | **EXIT 0**                                                                                                       |
+| Unit suite | `yarn vitest run`   | **847 / 847 PASS**, 64 files, EXIT 0 (grew 843→847 with the A1/A1-R2 vital-catch-radius tests; boss suite 62→66) |
+| Lint       | `yarn lint`         | **EXIT 0**                                                                                                       |
+| Format     | `yarn format:check` | **EXIT 0**                                                                                                       |
+
+### Per-plan-line disposition
+
+| Line                                          | Final status | Evidence / verdict (or deferral + owner)                                                                                                                                                                                                      |
+| --------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1 (tsc/vitest/lint/fmt; coverage ≥80%)       | **VERIFIED** | mechanical GREEN above; CI `test:coverage` gate authoritative for the 80% threshold                                                                                                                                                           |
+| Q2 (L1 dual rings)                            | **VERIFIED** | unit (66-test suite) + e2e PNG `20` (dual rings) + Sacha AC-D2 PASS (§12/§19) + Tony D4.1/D4.5 PASS (§15/§23). **Amended:** per-ring `BOSS_VITAL_CATCH_RADIUS 0.11` (A1-R2, Karim §17 PASS, Sacha §19 re-verify PASS — camp dominance broken) |
+| Q3 (L3 parry)                                 | **VERIFIED** | unit (cadence + floor asserts) + e2e PNG `21`/`33`/`28`/`29` + Sacha AC-D3 PASS + Tony D2.1 PASS after the parry-glyph salience fix (§16, glyph+halo above smoke)                                                                             |
+| Q4 (L2 décor + smoke)                         | **VERIFIED** | unit (pure-upside, additive-optional) + e2e `22`/`27`/`30`-`32`/`34` + Sacha AC-D4/D5 PASS + Nico composite PASS (particle smoke `30-32`, décor dégradé `34` after the §2.1-aplat FAIL→fix)                                                   |
+| Q5 (L5 FINISHER)                              | **VERIFIED** | unit (FINISHER-holds-freeze + interpose) + e2e `25`/`35` + Sacha AC-D5 PASS + Tony D3.1/D3.2 PASS + Nico composite PASS (`35` B&W after the sepia colour-law FAIL→fix)                                                                        |
+| Q6 (L4 renfort)                               | **VERIFIED** | unit (surge range + D4 boundary assertion) + e2e `23` + Sacha AC-D6 PASS (−12 single charge, loss-clock +1 exactly, no double jeopardy)                                                                                                       |
+| Q7 (§5.6 attributability)                     | **VERIFIED** | unit (telegraph floors, monotonic ledger) + Sacha AC-D7 PASS + Karim gate §5.6 checks (§13/§17)                                                                                                                                               |
+| Q8 (boundary/determinism)                     | **VERIFIED** | unit (byte-identity, source scan) + boundary diff (below): `stateMachine.ts`, hostage system byte-untouched; seeded-pure                                                                                                                      |
+| Q9 (legibility, reduced-motion, mobile 44×44) | **VERIFIED** | Tony UX review PASS on both device classes (§23), incl. the mobile small-ring FAIL (§20) → architect ruling (§21) → frame-lift fix (§22) → **RE-VERDICT PASS** (§23). Reduced-motion `27`/`32`. Finisher full-frame click ≫44px               |
+| Q10 (boot both classes, no pageerror)         | **VERIFIED** | e2e `01`/`13`/`14` (leg 1) + all §11/§20/§22 captures, zero pageerror                                                                                                                                                                         |
+| Q11 (no shipped reach; persistence inert)     | **VERIFIED** | e2e persistence-inert (leg 1) + `LEVELS` exclusion (inspect) + boundary diff: only the non-shipped harness `decorProp` added to `levels.ts`                                                                                                   |
+
+### Regression lines (re-verified mechanically at close vs `origin/main`)
+
+| Reg                                                        | Status                | Proof                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R1 (byte-identity `bossQteSpec===null`; additive-optional) | **VERIFIED**          | unit guard (`stateMachine.test.ts`) + boss suite additive-optional tests, green in 847/847                                                                                                                                                                                                                                                                                                                                                             |
+| R2 (phase-1 byte-identical)                                | **VERIFIED**          | unit (`bossWander`→`bossWanderBox` identical output) + e2e `01`                                                                                                                                                                                                                                                                                                                                                                                        |
+| R3 (hostage QTE + stateMachine untouched)                  | **VERIFIED**          | `git diff origin/main...HEAD` = **zero** diff on `qteSystem.ts`, `hostageQte.ts`, `types/hostageQte.ts`, `stateMachine.ts`. NOTE (updated from leg 1): `src/hooks/useGameLoop.ts` DID change (+52: the C-QA2 boot seam §11 + the §22 mobile frame-lift) — ruled render-owned bridge code consuming the `{anchor,…}` data contract UNCHANGED (architect §21, no game/hooks CONTRACT crossing); stage-6 architect integration review owns final sign-off |
+| R4 (harness persistence inert, f5bd0a0)                    | **VERIFIED**          | runtime (leg 1: no `muf_scores_*`, `muf_progress=null`) + App.tsx L216-222 `LEVELS`-membership guard (inspect). WON-path runtime now reachable via the seam — no persistence write observed (harness excluded from `LEVELS`)                                                                                                                                                                                                                           |
+| R5 (shipped LevelConfigs untouched)                        | **VERIFIED**          | `levels.ts` diff = only the non-shipped `boss-harness` `decorProp` (+6 lines); no belliard/stalingrad/vitry config touched                                                                                                                                                                                                                                                                                                                             |
+| E2E-BOSS-DIFF (new regression, was §7 R5)                  | **IMPLEMENTABLE now** | the C-QA2 seam (§11) makes it automatable; spec stands for `dev-tooling-assets` next cycle                                                                                                                                                                                                                                                                                                                                                             |
+
+### Gate-verdict ledger for stage-6 (every needed verdict logged + final PASS)
+
+| Gate                               | Owner                      | Final verdict                                                                                           | Shard                      |
+| ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Design acceptance (AC-D1..D8)      | game-designer (Sacha)      | **PASS** (after PASS-WITH-CORRECTIONS §12 → A1 re-verify FAIL §15 → A1-R2 §19)                          | §19                        |
+| Design gate (lever-1 correction)   | lead-game-designer (Karim) | **PASS** (A1 §13, A1-R2 round 2 §17)                                                                    | §13, §17                   |
+| UX review (A1–A15, both classes)   | ux-designer (Tony)         | **PASS** (after PASS-WITH-CORRECTIONS §15 → mobile FAIL §20 → RE-VERDICT §23)                           | §23                        |
+| Composite Gate-4 (runtime visuals) | lead-art (Nico)            | **PASS** (after FAIL on `24`/`25` → particle smoke + décor dégradé + B&W finisher → RE-VERDICT `30-35`) | §21 (composite re-verdict) |
+| Perf (smoke technique)             | gpu-specialist (Ben)       | **PERF PASS** (particle bounds CAP-A..E) + **DEFERRED-ON-TARGET** (on-device ms)                        | §18                        |
+| Architect render-scale ruling      | senior-architect (Winston) | RULING (mobile frame-lift, render-lane)                                                                 | §21                        |
+
+### Deferral list (explicit, with owner — the honest holes in the funnel)
+
+1. **DEFERRED-ON-TARGET — smoke marginal-ms + phase-3 median/p95 on weak mobile.** Unmeasurable in
+   SwiftShader (particle overdraw needs silicon). Owner: **Bertrand executes** the on-device run;
+   `producer` chases; thresholds per Ben §18 (mobile marginal ≤~1.5 ms, median ≤33.3 ms, p95 ≤~40 ms).
+   Not a sandbox-runnable check — CI-DEFERRED, only Bertrand closes.
+2. **DEFERRED — audio wiring (8 cues).** Deferred by ADR-0052 §7 (separate licence-gated
+   `dev-tooling-assets`→`dev-r3f-render` lane; no `playSfx` stubs this story). Owner: `producer`
+   sequences post-merge. Out of this story's scope by design.
+3. **DEFERRED (code-inferred, not captured) — phase-1→2 split-preview "new pattern" cue (D4.7/A14).**
+   The `?preview=boss&at=…` seam fast-forwards THROUGH the phase-1→2 break, so this window is not
+   screenshot-reachable. Tony confirmed the fix coverage by source read (`BossQteSprite.tsx:589`
+   split-preview uses `ringGeoVital` + the frame-lift covers its position); code-level coverage
+   unambiguous, held CLOSED-by-inspection, not by capture. Owner: `dev-tooling-assets` if a future
+   reviewer wants a capture (small harness extension to stop inside the break).
+4. **DEFERRED — canon boss art (Niveau-Final).** Placeholder/procedural this story (ADR-0052 §7 N2);
+   `enemy_riot` fallback. Owner: `lead-art` when the Niveau-Final story opens.
+
+### Scope-bleed finding (routed to producer + stage-6 architect triage — NOT a defect in this pack)
+
+The branch `git diff origin/main...HEAD` also carries **concurrent NIVEAU-FINAL work** that is NOT
+part of STORY-BOSS-QTE-DIFFERENTIATION and NOT covered by this gate: `src/game/levels/levelArt.json`
+(+39: plainclothes-BAC boss redesign + differentiation-pose + hall-prop PROMPT strings, ADR-0053,
+gated under that story's own lead-art PROMPT GATE) and `public/adr/index.html` (ADR-0053 index row).
+Prompt strings only — no generation dispatched, no runtime effect (harness uses the fallback sprite),
+so no runtime regression risk to this pack. Flagged so the stage-6 panel (which reads the WHOLE diff)
+and `senior-architect`'s integration triage decide whether the two stories merge together or split —
+`producer`'s branch-hygiene call, explicitly not mine.
+
+### CLOSING VERDICT
+
+The plan ran and held. Mechanical gate GREEN (847/847), all eleven acceptance lines VERIFIED, all five
+regression lines VERIFIED, all four stage-6 gate verdicts logged and PASS (Sacha design-acceptance,
+Tony UX, Nico composite, Ben perf-pre-close), every deferral explicit with an owner. The one
+CI-DEFERRED item (Ben's on-device ms) and the scope-bleed finding are named and routed, neither
+deadlocks the gate. **The quality gate PASSES — stage-6 (the 4-reviewer merge panel) is open.**
+
+**VERDICT: PASS — quality gate (qa-lead)**
