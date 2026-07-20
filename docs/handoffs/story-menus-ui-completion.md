@@ -270,3 +270,82 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   fully static). +8 tests (12 total in file), all suites 888/888. Files: `src/render/ui/menu/FlyerWall.tsx`,
   `src/render/ui/menu/FlyerWall.module.css`, `src/render/ui/menu/__tests__/FlyerWall.test.ts`.
 - verify: `yarn typecheck` clean · `yarn test --run` 888/888 · `yarn lint` clean · Prettier applied.
+
+## stage-6. PANEL TRIAGE + INTEGRATION REVIEW — senior-architect (Winston) — 2026-07-20
+
+Branch `claude/missing-menus-ui-aa87gt` (PR #116). One-pass triage of the 4-reviewer merge-gate
+panel (code-review high, bmad-code-review incl. Acceptance-Auditor + Edge-Case layers,
+edge-case-hunter, security-review) — this IS my integration review (one stage, one read over
+`git diff origin/main...HEAD`).
+
+### CONFIRMED MAJEUR — all 4 fixed & pushed, each verified green (tsc/vitest 888/lint)
+
+1. `?preview=end` drift to NAME_ENTRY + preview storage writes → persistence/routing effect
+   early-returns under any `?preview=` (App.tsx:250); nameentry preview inert via `pendingScore`
+   null guards. (Side-effect assessed below — benign.)
+2. Binary test files (raw NUL/DEL bytes) → `\uXXXX` escapes.
+3. Reduced-motion union not reaching consumers → 3 scene sprites take the shared `reducedMotion`
+   prop (private `matchMedia` polls deleted, source-assertion test); 5 component `@media` blocks
+   gained a `:root[data-reduced-motion]` second trigger.
+4. UX §4 tutorial first-visit nudge (gate Q7) unimplemented → shipped: `muf_seen_tutorial_nudge`
+   flag, auto-focus (not navigate) + static COMMENCE ICI scrawl, 8 tests.
+
+### Triage of remaining findings
+
+| #   | Sev              | Finding                                                                                                                                                                                                                                                                                                                      | Disposition                                                                                                                                                                                                                                                | Owner                        |
+| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| a   | MINEUR           | FlyerWall PRESSION ballots bypass the wall's `armed` click-through lockout — stray click after ENTRER can change+persist difficulty                                                                                                                                                                                          | FOLLOW-UP TICKET (fix lane). Lower-stakes than the START-a-level race `armed` guards; reversible, self-evident (X-stamp), takes effect next game. Wiring `armed`/disabled into the shared `BallotRow` is a shared-contract change → not rushed in the gate | dev-r3f-render               |
+| b   | MINEUR           | Deferred save durability — qualifying score lost if tab closes during NARRATIVE_POST/NAME_ENTRY                                                                                                                                                                                                                              | REJECT (by-design). Spec-ratified in ADR-0052 §2; the alternative (save-then-rename) reintroduces the double-save + transient anonymous row. Logged as known limitation                                                                                    | —                            |
+| c   | MINEUR           | BallotRow "prend effet…" note not linked via `aria-describedby` to the radiogroup                                                                                                                                                                                                                                            | FOLLOW-UP TICKET (a11y polish; bundle with a)                                                                                                                                                                                                              | dev-r3f-render               |
+| d   | MINEUR           | DIFFICULTIES + PRESSION label/hint copy duplicated verbatim between FlyerWall.tsx & OptionsControls.tsx                                                                                                                                                                                                                      | FOLLOW-UP TICKET. VALUE divergence already killed (both read `prefs.difficulty`); only LABEL COPY duplicated. Extract a shared export                                                                                                                      | dev-r3f-render               |
+| e   | MINEUR doc       | M3 story AC1/Scope V1 still spec seed-once (contradicts ADR-0052 union + shipped code); AC5 says `aria-pressed` while code ships radiogroup/`aria-checked`                                                                                                                                                                   | FIX-NOW (pure doc, applied) — amendment blockquote added to `story-accessibility-settings-consolidation.md`, mirroring the timer-duel amendment style                                                                                                      | senior-architect             |
+| f   | MINEUR           | Missing "AFFICHAGE/ACCESSIBILITÉ" heading (ADR-0052 §3 wording) — rows only adjacent                                                                                                                                                                                                                                         | FOLLOW-UP TICKET (nice-to-have). AC6 permits "visually adjacent, shared heading OR section" — adjacency satisfies the AC; explicit heading is polish                                                                                                       | dev-r3f-render               |
+| g   | MINEUR           | NameEntry mobile deviations vs UX spec §2 (~200px budget, no scrollIntoView)                                                                                                                                                                                                                                                 | FOLLOW-UP TICKET — mitigated by `overflow-y:auto`; ux-designer to verify on-device                                                                                                                                                                         | ux-designer + dev-r3f-render |
+| h   | MINEUR/PLAUSIBLE | Escape skip without `isComposing` guard (IME); IME composition truncation via live sanitize+maxLength                                                                                                                                                                                                                        | FOLLOW-UP TICKET — guard Enter/Escape with `isComposing`, defer sanitize to composition end. Minority input path, cosmetic byline                                                                                                                          | dev-r3f-render               |
+| i   | NIT (batch)      | Lone-surrogate slice at 16-unit boundary; bidi/zero-width not stripped; tab lands on roving index not aria-checked; Escape only inside form focus; NameEntry mounts under RotateOverlay; empty submit erases remembered byline; pre-existing double `saveScore` on non-qualifying first completion (NARROWED by this branch) | LOG (NameEntry/BallotRow NIT backlog). None blocking; the double-save NIT is an improvement vs main                                                                                                                                                        | dev-r3f-render backlog       |
+| j   | MINEUR process   | Wave-2 handoff completeness                                                                                                                                                                                                                                                                                                  | FIX-NOW (this entry). Also noted: the reducedMotion wave-2 render slice (commit `62e7778` — MOUVEMENT RÉDUIT toggle + `useReducedMotionRoot` union signal) had no dedicated stage-4 entry; recorded here so the log tells the story end-to-end             | senior-architect             |
+
+### Integration review (same pass)
+
+- **Boundary law — PASS.** `src/game/systems/highScoreSystem.ts` + `prefsSystem.ts` import zero
+  React/Three (grep-verified); sanitize/validation/serialization stay pure. `NAME_ENTRY` is a
+  render-layer `AppPhase` only — no `src/game` stateMachine/levels touched; the phase does routing
+  - deferred-save orchestration, the rules (`sanitizeName`, `isHighScore`, `resolveDisplayName`)
+    live in the pure layer. `useReducedMotionRoot` resolves `matchMedia` at the render/bridge edge,
+    never in `src/game`.
+- **Cross-lane seams — PASS.** App.tsx is the single Prefs owner (`useState<Prefs>(loadPrefs)`),
+  threading `prefs`/`onSavePrefs` → MainMenu → FlyerWall and the derived `reducedMotion` signal →
+  GameScene → sprites. FlyerWall PRESSION reads the prop directly (no duplicated difficulty state,
+  so header ↔ OPTIONS colophon cannot diverge on VALUE). Shared `OptionsControls`/`BallotRow`
+  consumed by OptionsColophon + PauseScreen + FlyerWall, a11y contract owned once in `BallotRow`.
+- **Deps — PASS.** `package.json`/`yarn.lock` untouched (verified). `vitest.config.ts` gained the
+  `@render` alias only (test infra, already in vite/tsconfig).
+- **Hooks bridge — PASS.** `src/hooks/**` untouched; the reduced-motion bridge lives in
+  `render/ui/print/useReducedMotionRoot`.
+- **Deploy — PASS.** Preview-harness determinism restored (FIX 1): every `?preview=` screen is now
+  fully inert w.r.t. persistence/routing.
+
+### Boss-preview side-effect assessment (flagged with FIX 1)
+
+BENIGN — accept, no action. Before this branch, `?preview=boss` reaching GAME*OVER drifted to the
+END screen after the 1500 ms timer (the routing `setTimeout` sat outside the `isShippedLevel`
+guard). The FIX-1 `if (PREVIEW_SCREEN !== null) return;` now makes `?preview=boss` behave like
+every other preview screen: it stays frozen on the boss scene. This is \_more* correct for a dev
+harness whose whole purpose is to iterate "le Commandant" on a stable frame — and it removes exactly
+the non-determinism FIX 1 targets. No shipped gameplay path is affected (the boss harness level is
+deliberately excluded from `LEVELS`, ADR-0051 D4); END remains previewable via `?preview=end`.
+
+### VERDICT
+
+**MERGE.** All four CONFIRMED MAJEUR are fixed, pushed, and green (tsc clean · vitest 888/888 ·
+lint clean). No unresolved CONFIRMED BLOQUANT/MAJEUR remain. Remaining findings are MINEUR/NIT →
+follow-up tickets (a, c, d, f, g, h), one by-design REJECT (b), a NIT backlog (i), and pure-doc
+fix-nows applied in this pass (e, j). Integration review PASS on boundary law, cross-lane seams,
+deps, hooks, and deploy determinism. ADR-0052 number to be re-confirmed against `producer` at merge
+(self-allocated via `adr-new`; re-check noted in stage-3).
+
+- Doc edits applied (no production code touched): `_bmad-output/planning-artifacts/story-accessibility-settings-consolidation.md`
+  (AC1/AC5 amendment), this handoff completion entry.
+- Follow-up tickets to open (producer): a+c (BallotRow armed-lockout + aria-describedby a11y),
+  d (shared difficulty-copy export), f (AFFICHAGE/ACCESSIBILITÉ heading), g (NameEntry mobile
+  on-device pass), h (IME composition guards). NIT backlog (i) logged, non-blocking.
