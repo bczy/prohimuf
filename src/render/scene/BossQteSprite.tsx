@@ -6,6 +6,7 @@ import type { Mesh, MeshBasicMaterial, OrthographicCamera, Texture } from "three
 import type { GameState } from "@game/types/gameState";
 import {
   BOSS_PARRY_POINT,
+  BOSS_VITAL_CATCH_RADIUS,
   BOSS_WANDER_CENTRE,
   isBossQteActive,
   phaseIndexAt,
@@ -44,9 +45,13 @@ const BOSS_H = 2.2;
 const BOSS_Z = 0.5;
 
 // The reticle RING that FRAMES a wandering weak-point (spatial-colour model, reused from the
-// hostage duel). Radius pinned to the game's `RING_HIT_RADIUS` so the drawn ring IS the scored
-// catch zone (aim-honesty). Both rings (vital A / limb B, L1) share the catch radius; they are
-// distinguished by ANATOMY POSITION (head vs torso) + EMPHASIS brightness, never colour alone.
+// hostage duel). The drawn ring IS the scored catch zone (aim-honesty — "click inside the drawn
+// ring = hit" must stay literally true). AMENDMENT A1 §4 (gated 2026-07-20) makes the two L1 rings
+// carry DIFFERENT catch radii: the VITAL ring (A) is tighter — drawn at `BOSS_VITAL_CATCH_RADIUS`
+// (0.18) so a fixed head-camp can't answer the whole vital path; the LIMB ring (B), the parry
+// glyph, the décor prop and the phase-1 single ring all keep `RING_HIT_RADIUS` (0.30). The two
+// rings also read apart by ANATOMY POSITION (head vs torso) + EMPHASIS brightness, never colour
+// alone.
 const RING_Z = 0.55;
 const RING_INNER = 0.78;
 const RING_OUTER = 1.0;
@@ -378,7 +383,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     // ── Static placement / scales (once per activation) ───────────────────────
     if (!positionedRef.current) {
       boss.scale.set(BOSS_W, BOSS_H, 1);
-      ring.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
+      // Ring A's radius switches by role (vital 0.18 vs. single/tell 0.30) so it is set per-frame
+      // in each branch below; ring B is always the limb catch radius.
       ringB.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
       parry.scale.set(PARRY_SIZE, PARRY_SIZE, 1);
       decor.scale.set(DECOR_W, DECOR_H, 1);
