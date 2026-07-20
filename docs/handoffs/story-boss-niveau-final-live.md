@@ -1989,3 +1989,54 @@ SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN
   - `.github/dispatch/gen-level-art` (NEW marker, staged)
   - `.github/dispatch/README.md` (MODIFIED — table rows added)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## SPEC TRANSCRIPTION (stage-5 follow-ups #5 + #9) — game-designer (Sacha) — 2026-07-20 — A2 décor aim-honesty + phase-2 teach-index resolution into the gated spec
+
+- claim: discharge the transcription owed on two panel follow-ups Karim ruled, writing the gated
+  text into `docs/game-design/spec-boss-qte-differentiation.md` (LEVER 2 / LEVER 3 / AC-D4) so the
+  paired dev lanes implement from spec, not from a gate note. Doc task; no production code, no
+  commit/push.
+- release: `docs/game-design/spec-boss-qte-differentiation.md` updated —
+  - **NEW section "AMENDMENT A2 — décor catch = drawn silhouette (AABB) (LEVER 2) — gated 2026-07-20"**
+    (after LEVER 2, before LEVER 5): Karim's follow-up-#5 ruling transcribed VERBATIM — the hole
+    (drawn 0.80×1.05 + glow 2.2 vs. a 0.30-circle catch → silent no-op on visibly-clickable edges,
+    violating the A1 drawn==catch invariant); direction (a) ENLARGE catch to the drawn silhouette;
+    direction (b) SHRINK-drawn REJECTED for the three logged reasons (art-coherence / shrinks a
+    pure-upside single-use reward / A1 precedent doesn't transfer — décor catch is unpinned, drawn is
+    load-bearing); exact values `BOSS_DECOR_CATCH_HALF_W 0.40` + `BOSS_DECOR_CATCH_HALF_H 0.525` AABB
+    at `decorProp.position`; drawn size UNCHANGED 0.80×1.05; glow 2.2 UNCHANGED and explicitly NOT the
+    affordance boundary (crisp grey silhouette = aim target, glow = attention cue); paired lanes
+    (dev-gameplay AABB `withinBox` + 2 constants + assert + TDD ∥ dev-r3f-render derives
+    `DECOR_W/H = 2×` the constants, drift-guard no pixel change); the stage-5 landability watch.
+  - **AC-D4 tail amended** (Design VERIFY acceptance list): "…décor prop scored within the AABB
+    `±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn 0.80×1.05 silhouette
+    (drawn == catch); glow 2.2 is an attention cue, not the catch."
+  - **§2 reuse-map line superseded** for the décor: "`RING_HIT_RADIUS 0.30` (prop catch radius)" now
+    flags "SUPERSEDED for the décor by A2: AABB `±(0.40, 0.525)`; `RING_HIT_RADIUS 0.30` stays for the
+    limb ring / parry point / phase-1 ring."
+  - **Follow-up #9 CLOSED (my own):** a dated one-line AMENDMENT note under LEVER 3's cadence table —
+    the phase-2 parry teach lands near the phase **START** (`PARRY_PHASE2_TEACH_INDEX = 1`, the 2nd
+    phase-2 window; dev-resolved + playtest-accepted), REPLACING the spec's "near the phase end" line
+    (not robustly implementable under HP-gated variable window counts). Phase-3 "every other" unchanged.
+- amendment section titles (for the dev lanes / record):
+  1. **"AMENDMENT A2 — décor catch = drawn silhouette (AABB) (LEVER 2) — gated 2026-07-20"**
+  2. **"AMENDMENT (dated 2026-07-20, panel follow-up #9 resolution — dev-resolved + playtest-accepted)"**
+     (the LEVER-3 phase-2 teach-index note).
+- handoff → `dev-gameplay` (Amelia): A2 substantive change — `BOSS_DECOR_CATCH_HALF_W 0.40` /
+  `BOSS_DECOR_CATCH_HALF_H 0.525` in `bossQteSystem.ts`, an AABB `withinBox` gating the SHIELDED décor
+  branch (replaces `withinCatch(...RING_HIT_RADIUS)`), a `createBossQte` assert (both half-extents
+  finite & > 0), TDD per the gate (`dy 0.45` inside scores +3; `dy 0.60`/`dx 0.45` outside does not;
+  corner `dx 0.35, dy 0.50` scores); additive-and-optional law intact.
+- handoff → `dev-r3f-render` (Amelia): A2 drift-guard — import the two constants, set
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W` / `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` (0.80×1.05 today,
+  identical output); glow 2.2 + prop treatment untouched. Required, not optional.
+- handoff → `lead-game-designer` (Karim): A2 + follow-up-#9 transcribed verbatim into the gated spec
+  per your ruling; the paired lanes implement from spec text. Stage-5 landability of the phase-2 décor
+  arm-window on the live `{0.2,1.5}` chandelier with the new box is my playtest/K-5 watch (AC-L5).
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). Spec edits were surgical Edits
+  to my own artifact; no `src/**`, test, or repo edit; no commit/push.
+- File List:
+  - `docs/game-design/spec-boss-qte-differentiation.md` (A2 section + AC-D4 tail + §2 reuse-map supersede + LEVER-3 #9 note)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: RELEASE — A2 (décor AABB) + follow-up-#9 (phase-2 teach-index) transcribed into the gated spec (game-designer) — AMENDMENT A2 written VERBATIM into spec-boss-qte-differentiation.md §2 (catch = AABB ±(0.40, 0.525) == drawn 0.80×1.05, drawn UNCHANGED, glow 2.2 = attention cue not catch, direction (b) rejected for the 3 logged reasons, paired gameplay-AABB ∥ render-derives-DECOR_W/H) + AC-D4 tail + §2 reuse-map supersede; follow-up #9 closed as a dated LEVER-3 note (PARRY_PHASE2_TEACH_INDEX = 1, near phase START, replaces "near the phase end"). Dev lanes cleared to implement from spec text.
