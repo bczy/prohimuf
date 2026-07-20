@@ -134,3 +134,40 @@ false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/
   row + entry lead-story display), `loadPlayerName()` (pre-fill), `savePlayerName(name)` (persist
   last byline on submit). The next-level unlock (`App.tsx:230-236`) stays on today's schedule —
   never gate it behind the name.
+
+## stage-4. DEV (M3 component slice) — dev-r3f-render (Amelia) — 2026-07-20
+
+- claim: the ADR-0052 §4/§5 Extract slice — shared `OptionsControls` (ballot/VU rows + a11y
+  contract) consumed by BOTH `OptionsColophon` and `PauseScreen`, each keeping its own chrome.
+  Structure + a11y + drift-kill only. Did NOT touch `prefsSystem.ts` (no `reducedMotion` row —
+  that is wave-2's, per the reducedMotion-slice handoff above), `FlyerWall.tsx`, `App.tsx`.
+- release:
+  - NEW `src/render/ui/controls/BallotRow.tsx` (+ `.module.css`) — the reusable ballot primitive
+    and **sole owner of the a11y contract**: `role="radiogroup"` + `aria-labelledby` (named from
+    the visible row label) on the row, `role="radio"` + `aria-checked` on each box, ≥44×44px hit
+    targets, `useRovingIndex` keyboard nav, X-stamp. Exported from the `controls` barrel.
+  - NEW `src/render/ui/controls/VuMeter.tsx` (+ `.module.css`) — native `<input type=range>` under
+    the print skin (keeps implicit `role=slider`), now with `aria-label`. Exported from the barrel.
+  - NEW `src/render/ui/menu/OptionsControls.tsx` (+ `.module.css`) — the shared OPTIONS body:
+    controlled (`prefs` + `onChange(patch)`), maps the single `Prefs` store → 5 rows (BRUITS DE
+    RUE, LA SONO, VIES, PRESSION, TUBE CATHODIQUE). `runScopedNote?` renders the false-affordance
+    caveat under VIES/PRESSION; `style`/`className` passthrough lets a host set `--ballot-stamp-bg`.
+  - `OptionsColophon.tsx` — now renders `<OptionsControls>`; inline `BallotRow`/`VuMeter` removed;
+    moved CSS out of its module. **Pixel-stable** (same rows/labels/order; default stamp bg = orange).
+  - `PauseScreen.tsx` — **rebuilt options body**: killed the hand-rolled range `Slider` + on/off
+    `Toggle` + leftover scanline `<div>`; now renders `<OptionsControls>` with the "prend effet à
+    la prochaine partie" note and `--ballot-stamp-bg: var(--stock-shell)`. **Pause now shows the
+    previously-missing VIES + PRESSION rows** and the canonical `TUBE CATHODIQUE` (was `ÉCRAN
+CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
+  - `vitest.config.ts` — added the `@render` alias (present in vite/tsconfig, missing here) so the
+    render lane can unit-test its own components. NEW `src/render/ui/menu/__tests__/OptionsControls.test.ts`
+    (+8 tests via `renderToStaticMarkup`) pins the radiogroup/radio/aria-checked contract, the
+    canonical label, native sliders, and the run-scoped note.
+- verify: `yarn typecheck` clean · `yarn test` 851/851 (OptionsControls 8/8) · `yarn lint` clean · Prettier applied.
+- HANDOFF → M2 `FlyerWall` lane: consume `BallotRow` from `@render/ui/controls` for the `PRESSION`
+  header — the `role="radiogroup"` a11y contract comes for free (ADR-0052 §5). Props:
+  `{ label, hint?, options: BallotChoice[], note? }`, `BallotChoice = { key, label, selected, onSelect }`.
+- HANDOFF → M3 reducedMotion wave-2 lane: add a `MOUVEMENT RÉDUIT` `OUI/NON` ballot to
+  `OptionsControls` (one `BallotRow`, grouped with `TUBE CATHODIQUE`) once `Prefs.reducedMotion`
+  is wired through — this slice deliberately left it out. `OptionsControls` is controlled, so just
+  extend the row map + the `Prefs` patch surface.

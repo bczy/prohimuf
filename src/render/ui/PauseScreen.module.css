@@ -1,8 +1,9 @@
 /*
  * PauseScreen (ADR-0046) — static structure/typography only. The modal frame composes
- * the shared Overlay; the translucent stock backdrop, the scanline layer and the hair
- * separator are rgba literals with no clean token, so they stay inline. Toggle/action
- * state colours live in mutually-exclusive modifiers (no shared property, the #98
+ * the shared Overlay; the translucent stock backdrop and the hair separator are rgba
+ * literals with no clean token, so they stay inline. The options body is the shared
+ * OptionsControls (ADR-0052 §4); only the modal chrome (card/title/actions) lives here.
+ * Action state colours live in mutually-exclusive modifiers (no shared property, the #98
  * lesson). Every colour/font references a var(--…) injected from tokens.ts.
  */
 
@@ -31,47 +32,6 @@
   color: var(--ink-full);
   letter-spacing: 0.1em;
   margin-bottom: 24px;
-}
-
-/* Slider / Toggle field wrapper + caption. */
-.field {
-  margin-bottom: 14px;
-}
-
-.fieldLabel {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-mute);
-  margin-bottom: 4px;
-  letter-spacing: 0.15em;
-}
-
-.slider {
-  width: 100%;
-  accent-color: var(--ink-black);
-}
-
-/* CRT toggle — shared box; the on/off ground+ink live in the mutually-exclusive
-   .toggleOn / .toggleOff (never both), so no property collides across rules. */
-.toggle {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--ink-black);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  letter-spacing: 0.2em;
-}
-
-.toggleOn {
-  background: var(--ink-full);
-  color: var(--stock-shell);
-}
-
-.toggleOff {
-  background: transparent;
-  color: var(--ink-black);
 }
 
 /* Action buttons — shared box; primary/secondary set their own ground/ink/border/
