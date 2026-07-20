@@ -4,10 +4,17 @@ name: Generate from reference (ad-hoc kontext)
 # kontext img2img generation of `out` conditioned on `ref` (a committed
 # reference image or an external URL), post-processes it per `family`, and
 # commits the single output file back to the branch. Exploratory — NO style
-# gate; the human reviews the result in the PR/branch preview. Manual only:
-# the reference must already be committed and pushed on this branch so its
+# gate; the human reviews the result in the PR/branch preview. Two triggers:
+# manual workflow_dispatch, or (for sessions whose token cannot dispatch
+# workflows) a push touching .github/dispatch/gen-from-reference.json — the
+# committed marker file carries the same inputs as JSON, guarded by the house
+# `ci(dispatch):` head-commit convention. Either way the reference must
+# already be committed and pushed on this branch so its
 # raw.githubusercontent.com URL resolves at GITHUB_SHA.
 on:
+  push:
+    branches-ignore: [main]
+    paths: [".github/dispatch/gen-from-reference.json"]
   workflow_dispatch:
     inputs:
       ref:
@@ -50,7 +57,9 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     # Never on main — this is an exploratory branch tool, not a production gate.
-    if: github.ref_name != 'main'
+    # Push events additionally require the ci(dispatch): head-commit guard so an
+    # unrelated edit of the marker file in a bigger push cannot fire a generation.
+    if: github.ref_name != 'main' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
     env:
       # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
       # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
@@ -72,17 +81,31 @@ jobs:
           # prebuilt native binary is fetched by the package resolution itself.
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
+      - name: Resolve params (push marker file → outputs)
+        id: params
+        if: github.event_name == 'push'
+        run: |
+          f=.github/dispatch/gen-from-reference.json
+          for k in ref prompt out family seed size style; do
+            v=$(jq -r --arg k "$k" '.[$k] // ""' "$f")
+            {
+              echo "$k<<PARAM_EOF"
+              echo "$v"
+              echo "PARAM_EOF"
+            } >> "$GITHUB_OUTPUT"
+          done
+
       - name: Generate from reference (kontext img2img) + post-process
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
-          REF: ${{ github.event.inputs.ref }}
-          PROMPT: ${{ github.event.inputs.prompt }}
-          OUT: ${{ github.event.inputs.out }}
-          FAMILY: ${{ github.event.inputs.family }}
-          SEED: ${{ github.event.inputs.seed }}
-          SIZE: ${{ github.event.inputs.size }}
-          STYLE: ${{ github.event.inputs.style }}
+          REF: ${{ github.event.inputs.ref || steps.params.outputs.ref }}
+          PROMPT: ${{ github.event.inputs.prompt || steps.params.outputs.prompt }}
+          OUT: ${{ github.event.inputs.out || steps.params.outputs.out }}
+          FAMILY: ${{ github.event.inputs.family || steps.params.outputs.family }}
+          SEED: ${{ github.event.inputs.seed || steps.params.outputs.seed }}
+          SIZE: ${{ github.event.inputs.size || steps.params.outputs.size || '256x256' }}
+          STYLE: ${{ github.event.inputs.style || steps.params.outputs.style }}
         run: |
           node scripts/gen-from-reference.mjs \
             --ref "$REF" \
@@ -95,7 +118,7 @@ jobs:
 
       - name: Commit output
         env:
-          OUT: ${{ github.event.inputs.out }}
+          OUT: ${{ github.event.inputs.out || steps.params.outputs.out }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -128,6 +151,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gen-from-reference-unpushed
-          path: ${{ github.event.inputs.out }}
+          path: ${{ github.event.inputs.out || steps.params.outputs.out }}
           if-no-files-found: warn
           retention-days: 14
