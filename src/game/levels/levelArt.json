@@ -64,6 +64,25 @@
       }
     }
   },
+  "loot": {
+    "$comment": "LOOT crate sprite — the armament pickup that replaces the code-drawn placeholder in src/render/scene/LootCrate.tsx (story-loot-crate-sidewalk, ADR-0053; design delta docs/game-design/weapons-crate-sidewalk-delta.md §4 A1-A4; refs docs/game-design/refs-loot-crate-sidewalk.md). NEAREST STRUCTURAL COUSIN = `vehicles`: the crate is a street-level interactive object in the SAME fanzine printing run (pure B&W xerox, refs §3), generated on the flat magenta (#FF3CDC) chroma-key and cut out like the vehicle set, with the neon rim drawn RENDER-SIDE (ADR 0011 analogue — `neon` is render metadata only, never a token in the prompt) so `neonPhrase` stays empty exactly as vehicles. ONE glyph-less crate BODY sprite serves all three weapons: the A/B/C weapon glyph is composited render-side (LootCrate.tsx already bakes the glyph per weapon onto the plane), so a single asset covers A/B/C and the stencil glyph stays crisp and re-hueable without three near-identical rolls (design D8/W1 — glyph-before-fire lives on the crate FACE, drawn over this body). HUE: green (`#78FF3C`, art-advisor rec — the only §2-law-1 accent with no fixed street-level object identity); lead-art's composite gate must confirm the green rim stays discriminable from the enemy early-telegraph green in a same-frame screenshot (Karim P4), cyan (`#28F0FF`) is the fallback. STRUCTURE IS PROVISIONAL, owned by dev-tooling-assets (mirrored from `vehicles` per the boss-block precedent): block name, `types` key, `asset` path, `size`, `facing`, pinned `seed`, and lint/generator wiring (check-art-prompts.mjs does not yet cover this block; a gen-loot-sprites.mjs or an extension of gen-vehicle-sprites.mjs is dev-tooling-assets') — concept-artist owns ONLY the `opening`/`style`/`prompt` strings. Contract: file lands at public/assets/loot/crate.png. lead-art PROMPT GATE required before any commit/generation.",
+    "opening": "Flat 2D video game sprite, strict side view in orthographic projection, single wooden crate centered and fully visible, sitting flat on the ground, ",
+    "neonPhrase": "",
+    "style": ", photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox toner texture, coarse halftone dots, fully black and white, isolated on a solid flat uniform bright magenta (#FF3CDC) chroma-key background, fully magenta empty surroundings, flat ambient lighting, crisp cutout edges",
+    "types": {
+      "crate": {
+        "asset": "assets/loot/crate.png",
+        "size": {
+          "width": 256,
+          "height": 192
+        },
+        "neon": "green",
+        "facing": "left",
+        "seed": 7401,
+        "prompt": "a squat plank crate wider than tall, thick horizontal pine boards butted tight with dark seams, corner battens, one bold diagonal cross-brace, a top lid rail"
+      }
+    }
+  },
   "enemies": {
     "$comment": "Enemy sprite flipbook frames (Prohibition-1987-style 2-frame flips). Single source of truth for scripts/gen-enemy-types.mjs. Keys are the exact base filename (asset root + legacy variant suffix) that fileFor() in src/render/scene/enemyTextures.ts computes: enemy_sprite_2 = normal cop VARIANT 2. frames[0] is ALWAYS '' (the committed unsuffixed PNG is frame 1 and is never regenerated); frames[i>0] is a short pose-delta clause for the extra frame file <key>_f<i+1>.png (keys already carry the enemy_ prefix), generated in CI via kontext img2img from the committed frame 1 (fallback: matched pair under the pinned seed). Only the pose clause varies between frames; `style` is appended verbatim to every prompt. fps drives the render-side flipbook (src/render/scene/flipbook.ts).",
     "style": ", 16-bit pixel art game sprite on a solid uniform matte black background (#000000) filling the whole frame edge to edge, the same flat black filling every space between the figure's limbs and gear, crisp clean pixels, light grey white and pale neon tones figure, simple bold shapes, centered, high contrast, retro snes style, no text, no watermark",

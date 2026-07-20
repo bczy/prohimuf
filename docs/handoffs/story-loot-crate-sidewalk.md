@@ -254,4 +254,120 @@ left untouched.
 
 ---
 
-**Awaiting Karim's round-2 design gate on the amended delta.**
+## stage-3. TECH PLAN + ADR-0053 — senior-architect (Winston) — 2026-07-20
+
+- claim: tech plan + ADR for the gated sidewalk delta; lane cut → release: **ADR-0053**
+  ([`docs/adr/0053-loot-crate-sidewalk-placement.md`](../adr/0053-loot-crate-sidewalk-placement.md),
+  index regenerated); two dev lanes cut on disjoint paths; art lane runs ∥.
+- **No escalation.** Everything in the plan follows the gated delta + Karim's pins P1–P4; nothing
+  contradicts the delta. Honoured: P1 (delivery data threaded as pure input), P2 (`resolvePlayerShot`
+  ordering byte-identical, only y source moves), P3 (unit targets vs `mergedFacade`; AC-D8 empirical),
+  P4 (hue is lead-art's composite-gate call — untouched here).
+
+**DECISION — slotIndex vs x-only:** **KEEP `slotIndex`** (column seed + x carrier); decouple **only
+y** to `LOOT_STREET_Y`. An x-only model would break the replay-safe seed pick, the ADR-0052 D5
+co-location guards (a)/(b), and the enemies∪crate tie-break. This is exactly delta D2 (ADR-0053 D1).
+
+**ADR-0052 relationship:** ADR-0053 **supersedes ADR-0052's D5 _placement_ clause only** (+ the two
+durations). Survives verbatim: new-entity-not-`EnemyKind`, `LootCrate`/`LootState` shape, `slotIndex`
+as x-carrier, co-location guards (a)/(b), D9-1 col-gap. Untouched: ADR-0052 D1/D2/D3/D4/D7/D8.
+
+### Lane cut (parallel-safe — disjoint paths; art lane ∥)
+
+**Lane A — `dev-gameplay`** (`src/game/**`, TDD):
+
+- `src/game/systems/lootSystem.ts` — add consts `LOOT_STREET_Y = −4.3`, `LOOT_MAX_ABS_X = 7`,
+  `CRATE_DELIVERY_GAP_X = 2.0`; bump `LOOT_VISIBLE_DURATION 4.0→6.0`, `LOOT_APPEARING_DURATION
+0.3→0.45`. Add to `attemptSpawn`'s eligible filter: `|slot.screenPosition.x| ≤ LOOT_MAX_ABS_X`
+  (D3) + the D9-2 delivery-gap predicate. Add **one** new pure param to `tickLoot`/`attemptSpawn`
+  carrying the delivery data — recommended `deliveryGap: { stopX: number } | null` (dev's exact
+  shape). `lootSystem` stays delivery-type-agnostic (a number/enum in, never `DeliveryVehicle`).
+- `src/game/systems/bulletSystem.ts` — in `resolvePlayerShot`, the crate hit-point y uses
+  `LOOT_STREET_Y` (import from `lootSystem`; acyclic) instead of `slot.screenPosition.y`. Enemy
+  loop, `HIT_RADIUS`, nearest-wins + tie-break, step ordering **byte-identical** (P2).
+- `src/game/systems/stateMachine.ts` — at the step-3b `tickLoot` call site, assemble the delivery
+  descriptor from the **pre-tick** `state.deliveryVehicle`/`state.deliverySpec`: non-null only when
+  `phase ∈ {INCOMING, DELIVERING}`, `stopX = deliverySpec.stopPosition.x`. Phase-gate lives here
+  (it already knows delivery types); only pure data crosses the seam (P1, boundary law).
+- Tests: `src/game/systems/__tests__/lootSystem.test.ts` (x-filter + D9-2 gap + defer, against
+  `mergedFacade`-shaped slots), `bulletSystem.test.ts` (AC-D3 street-y precedence regression). P3.
+
+**Lane B — `dev-r3f-render`** (`src/render/**`):
+
+- `src/render/scene/LootCrate.tsx` — mount at `(slot.screenPosition.x, LOOT_STREET_Y)` (**import**
+  `LOOT_STREET_Y` from `lootSystem`, never re-declare −4.3); decouple the plane from `slot.size` →
+  fixed crate world-size (verify-tunable for AC-D8). Load the FLUX wooden-crate sprite with the
+  **existing code-drawn box kept as synchronous fallback** (ADR-0049 generated-with-procedural-
+  fallback idiom; keying per `enemyTextures.ts`) so the lane never blocks on CI. A/B/C glyph
+  composited **render-side** over the crate (per-weapon via `weaponGlyph`) — on the crate face,
+  not HUD (D8). Render-side neon rim (ADR-0011/0025), **hue = lead-art's call (P4)**. Drop-and-
+  settle APPEARING + pre-despawn rim blink over the last ~0.8 s (render-only, no new game state).
+  Optional new `src/render/scene/lootTextures.ts` for the load-with-fallback cache (dev B's call).
+- `src/render/scene/GameScene.tsx` — `<LootCrate slots={mergedFacade.slots}/>` mount: comment
+  update only (still passes `slots` for x). Minimal/none.
+
+**Seams & sequencing:**
+
+- **`LOOT_STREET_Y`** — single source of truth in `lootSystem.ts` (Lane A owns), imported by
+  `bulletSystem` (A) and `LootCrate.tsx` (B). Value fixed here (−4.3), so **both lanes run in
+  parallel** with no blocking handshake; B imports the symbol, never re-declares the literal.
+- **`src/game/levels/levelArt.json`** — the `loot` art block (prompt/seed/asset/size) is
+  **`concept-artist`'s file**, authored in the **∥ art lane**, gated by lead-art, generated in CI.
+  **Neither dev lane edits `levelArt.json`.** Lane B consumes `levelArt.loot.asset` **read-only**
+  with the procedural fallback when the block/PNG is absent (shard stage-0 shared-file rule).
+- No file is touched by both dev lanes (`src/game` vs `src/render` disjoint) → launch A ∥ B.
+
+**Verify/composite (post-lanes):** AC-D8 crop clearance (tune `LOOT_STREET_Y` if the crate/glyph/rim
+clips the ≈−4.5/−4.6 cover-crop bottom) + P4 green-crate-vs-green-enemy-telegraph co-occurrence.
+
+- **Next:** `dev-gameplay` ∥ `dev-r3f-render` ∥ art lane. Then verify → stage-6 panel re-run → pm.
+
+---
+
+## stage-2. FLUX PROMPT — concept-artist (Maud) — 2026-07-20 (retry; prior run produced no output)
+
+- claim: author the generation prompt for the REAL WOODEN CRATE sprite replacing the
+  code-drawn LOOT placeholder (design delta gated round-2 PASS) / release: new `loot` family
+  block in `src/game/levels/levelArt.json`, gate-ready, drafts logged.
+- **One-asset decision (Step 3): ONE glyph-less crate BODY sprite**, weapon glyph composited
+  render-side. Justified in the block `$comment`: `LootCrate.tsx` already bakes the A/B/C glyph
+  per weapon onto the plane, so a single body serves all three weapons and the stencil glyph
+  (D8/W1, glyph-before-fire on the crate FACE) stays crisp and re-hueable — no three
+  near-identical rolls, no per-weapon asset drift.
+- **Family = new `loot` block, structural cousin `vehicles`.** The crate is a street-level
+  interactive object in the SAME fanzine printing run (pure B&W xerox, refs §3): reuses the
+  vehicle `opening` framing + `style` tail VERBATIM (flat magenta `#FF3CDC` chroma-key ground,
+  cutout edges), `neonPhrase` empty — the green neon rim is drawn RENDER-SIDE (ADR-0011
+  analogue), `neon` is render metadata only. Structure (block name / key / `asset` / `size` /
+  `facing` / `seed` / lint+generator wiring) is PROVISIONAL, owned by `dev-tooling-assets` per
+  the boss-block precedent; concept-artist owns only `opening`/`style`/`prompt`.
+- **Assembled prompt** (`loot.opening` + `loot.types.crate.prompt` + `loot.style`, neonPhrase
+  empty), **90 words, 0 negations** — gate-ready, in the 30-90 band:
+  > Flat 2D video game sprite, strict side view in orthographic projection, single wooden crate
+  > centered and fully visible, sitting flat on the ground, a squat plank crate wider than tall,
+  > thick horizontal pine boards butted tight with dark seams, corner battens, one bold diagonal
+  > cross-brace, a top lid rail, photocopied 1990s punk fanzine illustration, rough black ink
+  > linework, high-contrast xerox toner texture, coarse halftone dots, fully black and white,
+  > isolated on a solid flat uniform bright magenta (#FF3CDC) chroma-key background, fully magenta
+  > empty surroundings, flat ambient lighting, crisp cutout edges
+- **Subject clause rationale (one line per clause that earns its place):**
+  - `squat plank crate wider than tall` → A1 squat non-human OBJECT silhouette, ground-sitting
+    (ground contact in `opening`); box-vs-figure read for the D6/D7 triage.
+  - `thick horizontal pine boards butted tight with dark seams` → "real wood" read via thick ink
+    plank strokes (refs §3), period-true pine marché/ammo register; **butted tight** locks A4
+    (solid faces, no see-through gaps for the magenta key to bleed through — cf. sprite-hole-audit).
+  - `corner battens` → structural crate vocabulary, reinforces the box corners for the cutout.
+  - `one bold diagonal cross-brace` → the single strong plank gesture that reads a crate at street
+    distance (Metal Slug / Wild Guns single-bold-mark discipline, refs §2), low-contrast ink so it
+    does not fight the render-side glyph/rim accent.
+  - `a top lid rail` → lid band = "crate", not a plain board; sits within strict side view.
+- **HUE:** `neon: "green"` (`#78FF3C`, art-advisor rec). BINDING on lead-art composite gate
+  (Karim P4): confirm the green rim vs the enemy early-telegraph green stays discriminable in a
+  same-frame screenshot (silhouette box-vs-figure + street-vs-window z-band carry it); cyan
+  (`#28F0FF`) is the fallback. NOT baked — render-side per the law of glow.
+- **Lint:** `node scripts/check-art-prompts.mjs` → PASSED (12 pre-existing WARNs on
+  enemies/courier/nearForegroundArt, left untouched; the new `loot` block is not yet in the
+  lint's set list — dev-tooling-assets to add coverage with the generator wiring).
+- **No VERDICT** — next: `game-graphist` pre-prod annotation (readability at game size, keying
+  soundness), then the `lead-art` PROMPT GATE. No image generated (CI render farm); no other
+  `levelArt.json` entry touched.
