@@ -110,5 +110,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0052](./0052-boss-qte-differentiation-levers.md) | Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception | Accepted |
 | [0053](./0053-niveau-final-live-boss-level.md) | "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA | Accepted |
 | [0054](./0054-menus-ui-completion-scope-and-contracts.md) | Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract | Accepted |
+| [0055](./0055-weapons-pickup-system.md) | Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate | Accepted (amended) |
+| [0056](./0056-loot-crate-sidewalk-placement.md) | LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback | Accepted |
 
 <!-- ADR-INDEX:END -->
