@@ -136,7 +136,14 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
 
         {/* Active rubrique surface */}
         <div className={styles.rubriques}>
-          {active === "levels" && <FlyerWall unlockedLevels={unlockedLevels} onPlay={onPlay} />}
+          {active === "levels" && (
+            <FlyerWall
+              unlockedLevels={unlockedLevels}
+              onPlay={onPlay}
+              prefs={prefs}
+              onSavePrefs={onSavePrefs}
+            />
+          )}
           {active === "scores" && <ScoresUne unlockedLevels={unlockedLevels} />}
           {active === "prefs" && <OptionsColophon prefs={prefs} onSave={onSavePrefs} />}
         </div>
