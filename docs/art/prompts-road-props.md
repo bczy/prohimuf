@@ -577,3 +577,250 @@ a Parisian enamel street-name plaque mounted on a single thin post: a wide lands
   covered by this prompt-gate PASS.
 
 — Nico, PROMPT GATE — 8/8 PASS
+
+---
+
+## Reference-revision delta review (concept-artist, 2026-07-20)
+
+Maud, reference-alignment DELTA REVIEW of the 8 gate-final road-prop strings (§ "Lead-art
+gate" above, verbatim in `levelArt.json` `nearForegroundArt`). Two audits per prop:
+(1) **camera-orientation** against Bertrand's binding directive
+(`docs/handoffs/story-road-props-reference-revision.md` intake completion — « fais
+attention au sens de la caméra, la rue est vue de profil. la caméra regarde du trottoir
+vers le batiment »): street in strict profile, camera from the opposite pavement toward
+the facade, props stand on the facade-side kerb and are seen from their **road-facing
+side** (the face turned toward the roadway/camera); any clause depicting a prop's
+sidewalk-facing back is a defect. (2) **Reference-delta** folding in the 7 relayed boards'
+"Prompt delta check" conclusions + the pre-CURATED traffic-light board.
+
+Gate-decided items are NOT relitigated here (scooter top-box DROP, streetSign post-mount +
+single keyline, lamppost solid-panel lantern, wallace solid caryatid silhouette + rounded
+bumps, bench solid scrollwork + flush slats + 3–4-slat cap, all grey legibility
+highlights).
+
+### 1. Camera-orientation audit
+
+| Prop                 | Verdict      | Reasoning (one line)                                                                                                                                                                                       |
+| -------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [S1] parkingMeter    | **CONFORME** | Screen + coin/ticket slots sit on the "road-facing front" — the operative face is turned toward the roadway/camera exactly as the directive wants visible; no sidewalk-facing back described.              |
+| [S2] lamppost        | **CONFORME** | Near-symmetric fluted shaft in strict profile; the col-de-cygne arm "sweeping outward" reads as an in-plane S-silhouette (side-scroller convention), no front/back face to reverse.                        |
+| [S3] wallaceFountain | **CONFORME** | Radially symmetric ring of four caryatids — the profile silhouette reads identically from any azimuth; there is no road-vs-sidewalk face to get wrong.                                                     |
+| [S4] trafficLight    | **CONFORME** | Matches the CURATED board geometry verbatim: vehicle head strict profile with the hood-visor jutting toward the road (camera), pedestrian head face-on toward the crossing — the directive's dual read.    |
+| [S5] bollard         | **CONFORME** | Radially symmetric post + ball cap; no orientation face to reverse.                                                                                                                                        |
+| [S6] scooter         | **CONFORME** | "Parked side-on in profile"; a scooter flank reads the same from either side and the road-facing flank is what the camera sees; no sidewalk-back defect (mirror/headlamp are front-of-vehicle, in-plane).  |
+| [S7] bench           | **CONFORME** | Seat + backrest read toward the camera = the road-facing side; the street-correct Davioud is the double-sided/coat-of-arms type (a seat faces the road regardless), so the road-facing seat view is right. |
+| [S8] streetSign      | **CONFORME** | The blank plate is presented face-on (landscape rectangle visible) — its face turned toward the road/camera, same face-on-toward-camera logic as the ped head; no sidewalk-facing back.                    |
+
+**Camera verdict: 8/8 CONFORME — no camera-orientation delta.** The gate authored every
+prop as a profile silhouette and put each prop's identifying/operative face on the
+road-facing side already; Bertrand's directive confirms that framing rather than
+overturning it. Two props carry a legibility-driven face-on element that is _consistent
+with_ (not contrary to) the directive because it faces the road: the trafficLight ped head
+and the streetSign plate — both present their road-facing face to the camera, which is the
+correct read.
+
+### 2. Reference-delta list
+
+**One delta — [S7] bench backrest reclination → straight.**
+
+- **Prop:** bench (seed 6107).
+- **Clause(s) to change (two occurrences of the reclination claim):**
+  1. `...forming the seat and the gently reclined backrest, drawn flush...`
+     → `...forming the seat and the upright straight backrest, drawn flush...`
+  2. `the backrest gently reclined for comfort, the whole bench resting directly on the pavement`
+     → `the backrest standing straight and vertical, not curved or reclined, the whole bench resting directly on the pavement`
+- **Source / board line:** `board-bench.md` — Prompt delta check item 1, backed by Claims
+  audit item 8 (Trait 3 « dossier légèrement incliné (confort), pas un dossier vertical
+  droit » → **CONTRADICTED**). Axis 2: **both** documented Davioud typologies (the
+  boulevard/pavement straight-back bench AND the garden gondola) carry a **straight
+  backrest** (« dossier droit »); the only inclination that exists is in the gondola's
+  _seat pan_, never the back — and the gondola is the garden, not street, type. Sourced:
+  Jardins de France (« Amoureux des bancs publics ») + Musée du Louvre (votrebanc « urban
+  furniture ») + Wikipédia (Banc Davioud). A kerb-side street bench should read
+  upright-backed.
+- **Craft / keying note (gptimage-adapted flux-prompt discipline):** silhouette guidance
+  only. Leaves intact the flush-slats enclosed-magenta fix, the solid-scrollwork clause,
+  the "three or four" slat readability cap, and the edge-inset margin. A vertical back
+  introduces no new gaps (no enclosed magenta), no dark-on-dark (the bench string carries
+  no dark-uniform/highlight clause to disturb), and no text risk; a straight vertical back
+  still satisfies "a long low bench, much wider than it is tall."
+
+**PROPOSED FINAL string — [S7] bench (delta applied, ready for the lead-art gate):**
+
+```
+a Parisian Davioud public bench seen side-on in profile: three or four bold horizontal wooden slats forming the seat and the upright straight backrest, drawn flush against each other with only thin dividing outline strokes between them so they read as clear parallel horizontal lines with no open gaps or daylight visible between slats; a heavy ornate cast-iron end frame at each end with floral scrollwork legs, the scrollwork read as bold solid shapes rather than fine see-through openwork, visibly bulkier and heavier than the thin slats; the backrest standing straight and vertical, not curved or reclined, the whole bench resting directly on the pavement; a long low bench, much wider than it is tall, one continuous seat with no armrest dividers, comfortably inset with empty magenta margin on both ends, no part touching the canvas edge
+```
+
+**Deferred (flagged, NOT authored — pending `art-advisor`/`lead-art` one-photo check):**
+`board-bench.md` delta #2 — backrest slat multiplicity. Sourced technical text (Axis 2:
+« l'assise double est constituée de quatre lattes et le dossier d'une latte ») describes
+the backrest as a **single broad board per side**, not a multi-slat assembly, but the
+board explicitly withholds this as a DIG pending a photo-level check before touching an
+already-gated prompt. I therefore keep the current "slats forming the seat **and** the...
+backrest" wording and the 3–4-slat cap unchanged. If the photo check confirms, the
+follow-up delta would change the **backrest only** from slats to a single broad board
+while keeping the seat's multi-slat read — logged here as pending, not proposed.
+
+**Informational (no delta):** `board-bench.md` Claims audit item 5 CONTRADICTED — the
+street-correct Davioud is the **double-sided/coat-of-arms** bench (garden = single-face
+gondola). The gate-final string is orientation-agnostic on single-vs-double and reads
+correctly either way (a seat faces the road on the road side regardless), so this forces
+no prompt change; it is a correction to the reference-doc framing, not a silhouette gap.
+It also _reinforces_ the camera verdict (a double-sided bench always presents a seat toward
+the road).
+
+### 3. No-delta confirmations
+
+Seven props left untouched — each board's Prompt delta check concluded NO DELTA; the
+remaining nuances are informational only and below the bar to reopen a gated, seed-pinned
+prompt:
+
+- **[S1] parkingMeter** — `board-parking-meter.md`: no delta. Only soft flag = the
+  rain-cap slant "steeply slanted" rests on the weakest-sourced clause (no period
+  Schlumberger photo confirming a _steep_ pitch); nothing contradicts it, genre-consistent,
+  don't touch on this hunt's strength.
+- **[S2] lamppost** — `board-lamppost.md`: no delta; every silhouette clause corroborated
+  (fluted shaft, S-arm, faceted lantern). Solid-panel lantern is the gate-decided keying
+  deviation from real glazing, not relitigated. Open items (unverified 12 485→33 859
+  figures; missing dated-1998 photo) are evidentiary, not prompt-facing.
+- **[S3] wallaceFountain** — `board-wallace-fountain.md`: no delta; octagonal pedestal +
+  4-caryatid + dolphin dome all VERIFIED. Dolphins→"rounded bumps" is the gate-decided
+  legibility trade (dolphins historically real but doomed at 100–160 px), not relitigated.
+  2.71 m vs "~2.5 m" is a ref-doc number nuance; the prompt carries no numeric figure.
+- **[S4] trafficLight** — `board-traffic-light.md` (pre-CURATED, Bertrand 2026-07-18): the
+  gate-final string already conforms (profile vehicle head + face-on ped head, visor toward
+  road, dead grey housing). No prompt delta. The render-side lit-lens + halo overlay stays
+  a Gate-4 composite matter (ped anchor tuning included), not a prompt change.
+- **[S5] bollard** — `board-bollard.md`: no delta; smooth shaft + ball cap + dark uniform
+  no-collar all VERIFIED. "knee-to-hip" (real ≈ hip-to-chest) and "massif...1990s" (real ≈
+  early-growth phase, saturation post-2001) are informational nuances the board explicitly
+  declines to turn into edits — nudging height wording risks reading taller/less squat.
+- **[S6] scooter** — `board-scooter.md`: no delta; continuous plastic fairing (vs the
+  moto's exposed frame), centre-stand posture, "small fat low-diameter" wheels all VERIFIED
+  under the Big-Wheels nuance. Top-box DROP stays gate-decided (open-item #1, moto
+  distinctness / AC6), not relitigated; the bare rack reads as period-plausible
+  customization. Weakest-sourced trait (headlamp/mirror) is generic-and-safe, no change.
+- **[S8] streetSign** — `board-street-sign.md`: no delta; landscape rectangle + single
+  post + blank face all consistent, every anachronism trap dated. Post-mount and single
+  keyline stay gate-decided, not relitigated. The optional "boxy-panel thickness" is a
+  non-blocking observation only (thickness barely reads in strict profile; silhouette-first
+  law favours the flat plate).
+
+**Hand-off:** one delta ([S7] bench backrest) for the lead-art delta gate (stage 3); on
+PASS, `dev-tooling-assets` applies the [S7] PROPOSED FINAL string above verbatim to
+`levelArt.json` `nearForegroundArt.types.bench.prompt` and this doc (stage 4). Seven props
+= no-delta (stage 4 no-op for them). The bench backrest-slat DIG and the single/double-face
+ref-doc correction are routed to `art-advisor`, not blocking this pass.
+
+— Maud, reference-revision delta review
+
+---
+
+## Lead-art delta gate (Nico, 2026-07-20)
+
+Gate on the concept-artist's reference-revision delta review (§ above) — Stage 3 of
+`docs/handoffs/story-road-props-reference-revision.md`. Gated against `docs/art-direction.md`
+§1 (house style), §2 (law 2 one-printing-run, law 3 silhouette-first + AI-defect clause),
+§3 (prompt rules), C1 (grey-décor law), keying safety, no-text kill, and reference fidelity
+(`board-bench.md` sourcing + Bertrand's binding camera constraint). The 8/8 gate-final
+strings of 2026-07-19 remain the baseline; only what changes below is re-gated.
+
+### 1. Camera-orientation audit — COUNTERSIGNED (8/8 CONFORME)
+
+I countersign the concept-artist's 8/8 CONFORME with no contest. The 2026-07-19 gate already
+authored every prop as a profile silhouette with its identifying/operative face on the
+road-facing side, so Bertrand's directive (« la rue est vue de profil, la caméra regarde du
+trottoir vers le bâtiment ») confirms the existing framing rather than overturning it.
+Spot-checks that carried the most risk of a sidewalk-facing-back defect:
+
+- **[S7] bench** — "seen side-on in profile … much wider than it is tall" shows the long
+  road-facing flank (seat + backrest running horizontally, end-frames at each end); the
+  street-correct double-sided/coat-of-arms Davioud (board-bench Claims audit item 5) presents
+  a seat toward the road regardless of azimuth. Road-facing seat view is correct. CONFORME.
+- **[S1] parkingMeter** — screen + coin/ticket slots on the "road-facing front": the operative
+  face is turned to the camera, no sidewalk back described. CONFORME.
+- **[S4] trafficLight** — matches the CURATED board verbatim (vehicle head strict profile,
+  visor toward road; ped head face-on toward the crossing). CONFORME.
+- The two legibility-driven face-on elements (trafficLight ped head, streetSign plate) face
+  the **road**, so they are consistent with — not contrary to — the directive.
+
+No camera delta. Nothing to change from this audit.
+
+### 2. [S7] bench backrest reclination → straight — **PASS** (clean, no tightening)
+
+**Verdict: PASS.** The one proposed delta is accepted as authored — no lead-art tightening
+required. Rationale against each gate criterion:
+
+- **Reference fidelity (the source of the delta):** PASS. `board-bench.md` Claims audit item 8
+  rates Trait 3 (« dossier légèrement incliné, pas un dossier vertical droit ») **CONTRADICTED**:
+  both documented Davioud typologies (boulevard/pavement straight-back AND garden gondola)
+  carry a « dossier droit »; the only inclination that exists is the gondola's _seat pan_, and
+  the gondola is the garden type, not the street type. Three sources (Jardins de France,
+  Musée du Louvre / votrebanc, Wikipédia). The old clause was actively wrong — it not only
+  reclined the back but explicitly steered _against_ "a vertical-straight back," i.e. away from
+  the correct reference. The delta corrects a genuine fidelity error on a kerb-side street bench,
+  not a taste preference. This clears the reference-fidelity bar.
+- **House style §1–§2, silhouette-first:** PASS. A straight-vs-reclined backrest is
+  silhouette-guidance only; it changes no treatment, line weight, ground or family clause, so
+  the one-printing-run read with the other seven props is untouched. A vertical back still
+  satisfies "a long low bench, much wider than it is tall" — no conflict with the low-wide
+  silhouette, and at ~60–90 px on screen the corrected back reads at least as legibly as the
+  reclined one.
+- **C1 grey-décor law:** PASS. No colour introduced; the bench string carries no
+  dark-uniform/highlight clause, so nothing to disturb. The bench remains grey décor with no
+  neon rim (« ce qui brille est interactif » — the bench is not interactive).
+- **Keying safety:** PASS. A vertical back introduces no new enclosed magenta. The flush-slats
+  enclosed-magenta fix, the solid-scrollwork clause, the "three or four" slat readability cap
+  and the both-ends edge-inset margin all survive verbatim. No dark-on-dark regression (no dark
+  clause present to regress).
+- **No-text kill:** PASS. Untouched — lives in the shared family-locked tail, not disturbed by
+  this subject-clause edit.
+- **Coherence of the full PROPOSED FINAL string:** PASS. Both reclination occurrences are
+  replaced and now agree; no leftover "reclined for comfort" / "gently reclined" wording
+  survives, and no clause contradicts another. One coherent prompt.
+
+**FINAL [S7] bench string (delta applied — this is the new tooling contract):**
+
+```
+a Parisian Davioud public bench seen side-on in profile: three or four bold horizontal wooden slats forming the seat and the upright straight backrest, drawn flush against each other with only thin dividing outline strokes between them so they read as clear parallel horizontal lines with no open gaps or daylight visible between slats; a heavy ornate cast-iron end frame at each end with floral scrollwork legs, the scrollwork read as bold solid shapes rather than fine see-through openwork, visibly bulkier and heavier than the thin slats; the backrest standing straight and vertical, not curved or reclined, the whole bench resting directly on the pavement; a long low bench, much wider than it is tall, one continuous seat with no armrest dividers, comfortably inset with empty magenta margin on both ends, no part touching the canvas edge
+```
+
+**This FINAL [S7] string REPLACES the 2026-07-19 [S7] string as the tooling contract.**
+`dev-tooling-assets` (stage 4) copies it **verbatim** into `levelArt.json`
+`nearForegroundArt.types.bench.prompt`. Seed 6107, `size`, `asset` path and every other field
+stay exactly as frozen. The other seven props carry **no delta** (I concur with the seven
+no-delta confirmations — all rest on the boards' own "no delta" conclusions and informational
+nuances below the bar to reopen a gated, seed-pinned prompt); stage 4 is a no-op for them.
+
+### 3. Deferred item — backrest slat multiplicity — **DEFERRAL CONFIRMED**
+
+**Decision: confirm the deferral. Do not touch the "slats forming the seat and the … backrest"
+wording or the 3–4-slat cap on this pass.** `board-bench.md` rates this a **DIG**, not a
+CONTRADICTED: the "backrest = single broad board per side" figure is textual-only, repeated
+across sources of a shared lineage, and could not be cross-checked against a photograph this
+session — and the board itself notes circulation photos suggest more visible board-lines than
+"one slat" reads as. That is not strong enough evidence to reopen a gated, seed-pinned clause.
+The stakes are low either way (at ~60–90 px a single-board back and a 1–2-line slatted back
+both resolve to one dark horizontal band at the top of the bench), which makes burning a
+re-gate cycle on it now disproportionate. Routed to `art-advisor` for a one-photo check; if
+confirmed, `concept-artist` owns the backrest-only rewrite (seat keeps its multi-slat read) and
+a fresh delta gate — a separate follow-up, not this pass. The single-vs-double-face ref-doc
+correction (Claims audit item 5) forces no prompt change and only reinforces the camera verdict.
+
+### What remains owed downstream (unchanged)
+
+- **Asset gate — still owed on the [S7] bench PNG when generated.** This delta gate covers the
+  prompt string only. On delivery I run the §2 law-3 AI-defect sweep on the keyed PNG on a
+  contrasting ground (verify the flush-slats / solid-scrollwork hardening left no pink pocket
+  and no defect the white ground hid). Not covered here.
+- **Composite gate — N/A for the bench, unchanged for the trafficLight.** The bench carries no
+  runtime-composed visual (grey décor, no neon rim), so Gate 4 does not apply to it. The
+  trafficLight lit-lens + halo overlay remains the open Gate-4 composite matter (judged on real
+  in-game screenshots against §2.1 « un halo est un dégradé, jamais un aplat », ped anchors
+  tuned there) — no change from the 2026-07-19 flag.
+- **Generation still blocked** on the unset `POLLINATIONS_TOKEN` repo secret; this PASS updates
+  the contract for when the token lands, it does not trigger a run. Iteration budget unchanged
+  (2 batches per set this cycle before options escalate to Bertrand).
+
+— Nico, DELTA GATE — camera audit COUNTERSIGNED (8/8), [S7] bench delta PASS, slat-multiplicity
+DEFERRAL CONFIRMED
