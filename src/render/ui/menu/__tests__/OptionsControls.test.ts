@@ -18,7 +18,7 @@ function render(prefs: Prefs, runScopedNote?: string): string {
 const count = (html: string, re: RegExp): number => (html.match(re) ?? []).length;
 
 /**
- * The shared OPTIONS body is the single source of truth for both surfaces (ADR-0052 §4).
+ * The shared OPTIONS body is the single source of truth for both surfaces (ADR-0054 §4).
  * These tests pin the a11y contract and the drift-kill so neither can silently regress:
  * one radiogroup per ballot row, radio + aria-checked per choice, the canonical CRT
  * label, native sliders kept, and the Pause-only false-affordance note.

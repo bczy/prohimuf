@@ -1,5 +1,5 @@
 /*
- * OptionsControls (ADR-0052 §4) — the shared OPTIONS body composes VuMeter + BallotRow.
+ * OptionsControls (ADR-0054 §4) — the shared OPTIONS body composes VuMeter + BallotRow.
  * The root is a boxless `display: contents` wrapper so it adds no layout of its own
  * (the colophon stays pixel-stable) yet still carries any `--ballot-stamp-bg` override
  * a host sets on it — custom properties inherit through `display: contents`.

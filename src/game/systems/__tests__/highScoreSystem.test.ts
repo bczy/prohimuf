@@ -167,7 +167,7 @@ describe("ScoreEntry name persistence (AC3)", () => {
   });
 });
 
-describe("save-once contract (ADR-0052 §2)", () => {
+describe("save-once contract (ADR-0054 §2)", () => {
   it("a single save with a name yields exactly one persisted entry with that name", () => {
     // The render layer defers to ONE saveScore at NAME_ENTRY resolution — this documents
     // that a lone call persists a single named row (no duplicate write).

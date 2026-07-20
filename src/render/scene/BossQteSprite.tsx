@@ -281,7 +281,7 @@ interface Props {
    */
   onBossQte?: ((qte: HudBossQte | null) => void) | undefined;
   /**
-   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * Effective reduced motion (ADR-0054 §3): the shared union signal (prefs toggle OR
    * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
    * GameScene — the ONE authority. Degrades the phase-break pulse and re-arm brace to
    * a steady, non-strobing step, honouring the in-app toggle as well as the OS query.
@@ -342,7 +342,6 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
 
   const { camera, size } = useThree();
 
-<<<<<<< HEAD
   // Device tier for the particle count (like the CRT lite/full split) — decided once at mount.
   const smokeMax = useMemo(() => (detectMobile() ? SMOKE_MAX_MOBILE : SMOKE_MAX_DESKTOP), []);
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
@@ -375,7 +374,7 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
 
   // Reduced motion (UX D3.1) now arrives via the `reducedMotion` prop — the shared
   // union signal from `useReducedMotionRoot` (App → GameScene), the ONE authority
-  // (ADR-0052 §3) — degrading the phase-break pulse and re-arm brace to a steady,
+  // (ADR-0054 §3) — degrading the phase-break pulse and re-arm brace to a steady,
   // non-strobing step. No private `matchMedia` poll: the in-app toggle reaches here too.
 
   useFrame((_, delta) => {

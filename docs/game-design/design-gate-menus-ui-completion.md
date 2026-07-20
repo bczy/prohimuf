@@ -224,7 +224,7 @@ Design gate **PASS** for the menus/UI-completion cycle (M1, M2, M3 stories + UX 
   the shared `OptionsColophon.tsx`/`PauseScreen.tsx` surfaces (both stories touch them).
 - M3 + `story-timer-duel-telegraph`: enforce the Q4 single-owner rule on `Prefs.reducedMotion`,
   and record the **Q5 union model + CrtPass/`print`-vs-`Prefs` authority** in the authority ADR
-  (**ADR-0052** — `story-timer-duel-telegraph`'s own AIMING/shake ADR references it rather than
+  (**ADR-0054** — `story-timer-duel-telegraph`'s own AIMING/shake ADR references it rather than
   re-deciding) — with AC13 reconciled to the union model first.
 - Confirm the outcome-contract-only posture on the OPTIONS/PAUSE component boundary (Q6).
 

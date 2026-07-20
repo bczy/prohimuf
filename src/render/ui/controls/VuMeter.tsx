@@ -13,7 +13,7 @@ export interface VuMeterProps {
 }
 
 /**
- * The shared inked VU-meter slider (ADR-0052 §4): a native `<input type="range">`
+ * The shared inked VU-meter slider (ADR-0054 §4): a native `<input type="range">`
  * under the print skin, so it keeps its implicit `role="slider"` + value announcement.
  * ≥44px row height. Rules relocated verbatim from OptionsColophon.module.css.
  */

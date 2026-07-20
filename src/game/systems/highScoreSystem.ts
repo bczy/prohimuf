@@ -3,7 +3,7 @@ export interface ScoreEntry {
   readonly wave: number;
   readonly date: string; // ISO
   /**
-   * Player byline (M1, ADR-0052 §2). Optional on read: legacy blobs written before
+   * Player byline (M1, ADR-0054 §2). Optional on read: legacy blobs written before
    * this field existed have no `name`, and a skipped/empty entry stores none either.
    * Always clamped/trimmed/plain-text when present (see `sanitizeName`).
    */
@@ -14,7 +14,7 @@ const MAX_ENTRIES = 10;
 const STORAGE_KEY_PREFIX = "muf_scores_";
 const PLAYER_NAME_KEY = "muf_player_name";
 
-/** Byline budget — mirrors the gated `[CREW_NAME]` cap (ADR-0052 §2, story AC6). */
+/** Byline budget — mirrors the gated `[CREW_NAME]` cap (ADR-0054 §2, story AC6). */
 export const MAX_NAME_LENGTH = 16;
 
 /**
@@ -100,7 +100,7 @@ export function isHighScore(levelId: string, score: number): boolean {
 
 /**
  * Last-used byline convenience key (`muf_player_name`) — identity, not a `Prefs` setting
- * (ADR-0052 §2). Stored as a plain sanitised string; missing/empty reads as `""` so the
+ * (ADR-0054 §2). Stored as a plain sanitised string; missing/empty reads as `""` so the
  * entry input starts blank on the first-ever high score.
  */
 export function loadPlayerName(): string {

@@ -1,6 +1,6 @@
 /*
  * OptionsColophon (ADR-0046) — the OURS / colophon back page chrome only. The ballot/VU
- * row styles moved to the shared BallotRow/VuMeter primitives (ADR-0052 §4); this module
+ * row styles moved to the shared BallotRow/VuMeter primitives (ADR-0054 §4); this module
  * keeps only the masthead + colophon block. The PaperSheet orange ground
  * font/colour/padding/max-width stay on its inline style prop. Every colour/font
  * references a var(--…) injected from tokens.ts.

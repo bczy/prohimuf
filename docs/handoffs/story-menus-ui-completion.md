@@ -31,7 +31,7 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
 ## stage-3. LANE CUT — senior-architect (Winston) — 2026-07-20
 
 - claim: turn the gated cycle into a buildable lane split + scope/contract ADR.
-- release: **ADR-0052** (`docs/adr/0052-menus-ui-completion-scope-and-contracts.md`, Accepted)
+- release: **ADR-0054** (`docs/adr/0054-menus-ui-completion-scope-and-contracts.md`, Accepted)
   — scope verdicts, `NAME_ENTRY` phase + deferred-save contract, `reducedMotion` live-union
   authority, OPTIONS/PAUSE extract-a-shared-component call, M2/M3 sequencing. Index
   regenerated. Number self-allocated via `adr-new` (no producer number pre-recorded);
@@ -64,7 +64,7 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
   `aria-checked`/≥44px a11y on the ballot primitive) consumed by `OptionsColophon` +
   `PauseScreen`; rebuild Pause body (adds VIES/PRESSION + false-affordance note), CRT+reduced-
   motion under one AFFICHAGE/ACCESSIBILITÉ heading, close CRT-toggle a11y debt; `CrtPass`/`print`
-  read the shared derived signal (ADR-0052).
+  read the shared derived signal (ADR-0054).
 
 ### Shared seams to serialise
 
@@ -89,7 +89,7 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
   first lane into `prefsSystem.ts` owns the schema addition + logs the claim here; the other
   rebases. **Default owner = S0.1.** M3 always owns consolidation + CRT-toggle a11y debt
   regardless of order. **Blocker:** S0.1 AC13 must be amended seed-once → union model (routed to
-  `game-designer`) before either ships; S0.1's AIMING/shake ADR references ADR-0052 for the
+  `game-designer`) before either ships; S0.1's AIMING/shake ADR references ADR-0054 for the
   authority, does not re-decide it.
 - HANDOFF → `producer`: schedule M3-component-slice → M2; enforce the single-owner claim.
 
@@ -99,10 +99,10 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
   `prefsSystem.ts` first (S0.1 `story-timer-duel-telegraph` had not touched the file — grep
   confirmed `reducedMotion` absent before this change). S0.1 now **rebases** — consumes the
   shipped field, does not re-add it.
-- claim: pure-logic side of M3 — `Prefs.reducedMotion` field + migration + TDD, per ADR-0052 §3.
+- claim: pure-logic side of M3 — `Prefs.reducedMotion` field + migration + TDD, per ADR-0054 §3.
 - release: `src/game/systems/prefsSystem.ts` (field on `Prefs`, `DEFAULT_PREFS.reducedMotion:
 false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/prefsSystem.test.ts`
-  (+5 tests). **Per ADR-0052 (supersedes story text outcome-b seed-once):** default `false`,
+  (+5 tests). **Per ADR-0054 (supersedes story text outcome-b seed-once):** default `false`,
   **no seed-from-OS** — `prefsSystem` stays a pure reducer/serializer, no `matchMedia`. Legacy
   blobs without the field load as `reducedMotion: false`. The LIVE-UNION `prefs || OS` is the
   render/bridge lane's job (wave-2), NOT here.
@@ -137,7 +137,7 @@ false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/
 
 ## stage-4. DEV (M3 component slice) — dev-r3f-render (Amelia) — 2026-07-20
 
-- claim: the ADR-0052 §4/§5 Extract slice — shared `OptionsControls` (ballot/VU rows + a11y
+- claim: the ADR-0054 §4/§5 Extract slice — shared `OptionsControls` (ballot/VU rows + a11y
   contract) consumed by BOTH `OptionsColophon` and `PauseScreen`, each keeping its own chrome.
   Structure + a11y + drift-kill only. Did NOT touch `prefsSystem.ts` (no `reducedMotion` row —
   that is wave-2's, per the reducedMotion-slice handoff above), `FlyerWall.tsx`, `App.tsx`.
@@ -165,7 +165,7 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
     canonical label, native sliders, and the run-scoped note.
 - verify: `yarn typecheck` clean · `yarn test` 851/851 (OptionsControls 8/8) · `yarn lint` clean · Prettier applied.
 - HANDOFF → M2 `FlyerWall` lane: consume `BallotRow` from `@render/ui/controls` for the `PRESSION`
-  header — the `role="radiogroup"` a11y contract comes for free (ADR-0052 §5). Props:
+  header — the `role="radiogroup"` a11y contract comes for free (ADR-0054 §5). Props:
   `{ label, hint?, options: BallotChoice[], note? }`, `BallotChoice = { key, label, selected, onSelect }`.
 - HANDOFF → M3 reducedMotion wave-2 lane: add a `MOUVEMENT RÉDUIT` `OUI/NON` ballot to
   `OptionsControls` (one `BallotRow`, grouped with `TUBE CATHODIQUE`) once `Prefs.reducedMotion`
@@ -243,7 +243,7 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   with representative props but `pendingScore` stays null → SIGNER/PASSER no-op on storage (existing
   `pendingScore !== null` guards) and route to END. Updated the stale preview-list comment to include
   `nameentry`. `scripts/screenshot-preview.mjs` unchanged.
-- FIX 2 (MAJEUR — reduced-motion union reaches every consumer, ADR-0052 §3 / UX spec §3): the three JS
+- FIX 2 (MAJEUR — reduced-motion union reaches every consumer, ADR-0054 §3 / UX spec §3): the three JS
   pollers (`NearForeground`, `HostageQteSprite`, `BossQteSprite`) dropped their private
   `matchMedia("(prefers-reduced-motion: reduce)")` reads and now take the shared union signal as a
   `reducedMotion` prop threaded App → `useReducedMotionRoot` → GameScene → sprite (comments re-pointed to the
@@ -263,7 +263,7 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
 
 ## fix — dev-r3f-render (Amelia) — 2026-07-20 — merge-gate finding: §4 tutorial first-run discoverability
 
-- claim: implement the gated-but-unshipped UX §4 slice (design-gate Q7 / ADR-0052 §1). Single
+- claim: implement the gated-but-unshipped UX §4 slice (design-gate Q7 / ADR-0054 §1). Single
   `muf_seen_tutorial_nudge` localStorage flag (render-side, NOT a Pref): first-ever NIVEAUX mount
   auto-FOCUSES the tutorial flyer (not navigate) + shows a one-time felt-tip "COMMENCE ICI" nudge;
   flag written on that first mount so returning players see neither. Reduced-motion safe (nudge is
@@ -295,11 +295,11 @@ edge-case-hunter, security-review) — this IS my integration review (one stage,
 | #   | Sev              | Finding                                                                                                                                                                                                                                                                                                                      | Disposition                                                                                                                                                                                                                                                | Owner                        |
 | --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | a   | MINEUR           | FlyerWall PRESSION ballots bypass the wall's `armed` click-through lockout — stray click after ENTRER can change+persist difficulty                                                                                                                                                                                          | FOLLOW-UP TICKET (fix lane). Lower-stakes than the START-a-level race `armed` guards; reversible, self-evident (X-stamp), takes effect next game. Wiring `armed`/disabled into the shared `BallotRow` is a shared-contract change → not rushed in the gate | dev-r3f-render               |
-| b   | MINEUR           | Deferred save durability — qualifying score lost if tab closes during NARRATIVE_POST/NAME_ENTRY                                                                                                                                                                                                                              | REJECT (by-design). Spec-ratified in ADR-0052 §2; the alternative (save-then-rename) reintroduces the double-save + transient anonymous row. Logged as known limitation                                                                                    | —                            |
+| b   | MINEUR           | Deferred save durability — qualifying score lost if tab closes during NARRATIVE_POST/NAME_ENTRY                                                                                                                                                                                                                              | REJECT (by-design). Spec-ratified in ADR-0054 §2; the alternative (save-then-rename) reintroduces the double-save + transient anonymous row. Logged as known limitation                                                                                    | —                            |
 | c   | MINEUR           | BallotRow "prend effet…" note not linked via `aria-describedby` to the radiogroup                                                                                                                                                                                                                                            | FOLLOW-UP TICKET (a11y polish; bundle with a)                                                                                                                                                                                                              | dev-r3f-render               |
 | d   | MINEUR           | DIFFICULTIES + PRESSION label/hint copy duplicated verbatim between FlyerWall.tsx & OptionsControls.tsx                                                                                                                                                                                                                      | FOLLOW-UP TICKET. VALUE divergence already killed (both read `prefs.difficulty`); only LABEL COPY duplicated. Extract a shared export                                                                                                                      | dev-r3f-render               |
-| e   | MINEUR doc       | M3 story AC1/Scope V1 still spec seed-once (contradicts ADR-0052 union + shipped code); AC5 says `aria-pressed` while code ships radiogroup/`aria-checked`                                                                                                                                                                   | FIX-NOW (pure doc, applied) — amendment blockquote added to `story-accessibility-settings-consolidation.md`, mirroring the timer-duel amendment style                                                                                                      | senior-architect             |
-| f   | MINEUR           | Missing "AFFICHAGE/ACCESSIBILITÉ" heading (ADR-0052 §3 wording) — rows only adjacent                                                                                                                                                                                                                                         | FOLLOW-UP TICKET (nice-to-have). AC6 permits "visually adjacent, shared heading OR section" — adjacency satisfies the AC; explicit heading is polish                                                                                                       | dev-r3f-render               |
+| e   | MINEUR doc       | M3 story AC1/Scope V1 still spec seed-once (contradicts ADR-0054 union + shipped code); AC5 says `aria-pressed` while code ships radiogroup/`aria-checked`                                                                                                                                                                   | FIX-NOW (pure doc, applied) — amendment blockquote added to `story-accessibility-settings-consolidation.md`, mirroring the timer-duel amendment style                                                                                                      | senior-architect             |
+| f   | MINEUR           | Missing "AFFICHAGE/ACCESSIBILITÉ" heading (ADR-0054 §3 wording) — rows only adjacent                                                                                                                                                                                                                                         | FOLLOW-UP TICKET (nice-to-have). AC6 permits "visually adjacent, shared heading OR section" — adjacency satisfies the AC; explicit heading is polish                                                                                                       | dev-r3f-render               |
 | g   | MINEUR           | NameEntry mobile deviations vs UX spec §2 (~200px budget, no scrollIntoView)                                                                                                                                                                                                                                                 | FOLLOW-UP TICKET — mitigated by `overflow-y:auto`; ux-designer to verify on-device                                                                                                                                                                         | ux-designer + dev-r3f-render |
 | h   | MINEUR/PLAUSIBLE | Escape skip without `isComposing` guard (IME); IME composition truncation via live sanitize+maxLength                                                                                                                                                                                                                        | FOLLOW-UP TICKET — guard Enter/Escape with `isComposing`, defer sanitize to composition end. Minority input path, cosmetic byline                                                                                                                          | dev-r3f-render               |
 | i   | NIT (batch)      | Lone-surrogate slice at 16-unit boundary; bidi/zero-width not stripped; tab lands on roving index not aria-checked; Escape only inside form focus; NameEntry mounts under RotateOverlay; empty submit erases remembered byline; pre-existing double `saveScore` on non-qualifying first completion (NARROWED by this branch) | LOG (NameEntry/BallotRow NIT backlog). None blocking; the double-save NIT is an improvement vs main                                                                                                                                                        | dev-r3f-render backlog       |
@@ -341,7 +341,7 @@ deliberately excluded from `LEVELS`, ADR-0051 D4); END remains previewable via `
 lint clean). No unresolved CONFIRMED BLOQUANT/MAJEUR remain. Remaining findings are MINEUR/NIT →
 follow-up tickets (a, c, d, f, g, h), one by-design REJECT (b), a NIT backlog (i), and pure-doc
 fix-nows applied in this pass (e, j). Integration review PASS on boundary law, cross-lane seams,
-deps, hooks, and deploy determinism. ADR-0052 number to be re-confirmed against `producer` at merge
+deps, hooks, and deploy determinism. ADR-0054 number to be re-confirmed against `producer` at merge
 (self-allocated via `adr-new`; re-check noted in stage-3).
 
 - Doc edits applied (no production code touched): `_bmad-output/planning-artifacts/story-accessibility-settings-consolidation.md`

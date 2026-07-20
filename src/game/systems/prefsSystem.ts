@@ -4,7 +4,7 @@ export interface Prefs {
   readonly lives: number; // 1–5
   readonly difficulty: "easy" | "normal" | "hard";
   readonly crt: boolean;
-  // Player's own reduced-motion toggle. Default false (ADR-0052): the OS
+  // Player's own reduced-motion toggle. Default false (ADR-0054): the OS
   // `prefers-reduced-motion` signal is unioned LIVE at the render/bridge edge —
   // never seeded into or stored by this pure reducer.
   readonly reducedMotion: boolean;

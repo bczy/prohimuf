@@ -23,7 +23,7 @@
 }
 
 /*
- * Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle. The render
+ * Second trigger (ADR-0054 §3): the in-app MOUVEMENT RÉDUIT toggle. The render
  * root carries data-reduced-motion="true" whenever the shared derived signal
  * (prefs.reducedMotion OR the live OS query) is active — so the toggle STRENGTHENS
  * but never WEAKENS the OS @media block above (union, never a downgrade). Same

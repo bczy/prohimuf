@@ -2,7 +2,7 @@
  * PauseScreen (ADR-0046) — static structure/typography only. The modal frame composes
  * the shared Overlay; the translucent stock backdrop and the hair separator are rgba
  * literals with no clean token, so they stay inline. The options body is the shared
- * OptionsControls (ADR-0052 §4); only the modal chrome (card/title/actions) lives here.
+ * OptionsControls (ADR-0054 §4); only the modal chrome (card/title/actions) lives here.
  * Action state colours live in mutually-exclusive modifiers (no shared property, the #98
  * lesson). Every colour/font references a var(--…) injected from tokens.ts.
  */

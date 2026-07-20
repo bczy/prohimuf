@@ -74,7 +74,7 @@ export function buildPressionChoices(
 
 /**
  * First-run discoverability flag (spec-menus-ui-completion §4, gate ruling Q7 /
- * ADR-0052 §1). One dedicated render-side `localStorage` key — deliberately NOT a
+ * ADR-0054 §1). One dedicated render-side `localStorage` key — deliberately NOT a
  * `Prefs` field (it records that a UI *visit* happened, not a game setting), read with
  * the same private-mode/SSR-safe guard as `loadPrefs`. Absent ⇒ first-ever NIVEAUX
  * visit; the same flag gates BOTH the tutorial-flyer auto-focus and the one-time
