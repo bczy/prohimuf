@@ -1684,3 +1684,111 @@ Lanes initialized:
 - **dev-r3f-render**: hook facade (Amelia) — ZERO scope unless flyer-words land
 
 No entries logged yet (lanes are live, work in progress). Producer will chase stage completion as lanes close and revert to the handoffs log.
+
+---
+
+## DESIGN GATE (stage-5 blocker) — lead-game-designer (Karim) — 2026-07-20 — panel follow-up #5, décor aim-honesty
+
+- **Claim:** rule the CONFIRMED stage-6 panel finding #5 (flagged by `producer` as the HARD gate that
+  MUST land before this story's verify leg-1 closes, because this level AUTHORS a `decorProp` — the
+  chandelier `{0.2,1.5}`, `armPhaseIndex 1`, `spec-boss-niveau-final-level.md` §2). The finding, verified
+  against real code:
+  - **Drawn** (`BossQteSprite.tsx:133-138`): the décor prop plane is `DECOR_W 0.8 × DECOR_H 1.05` world
+    units, wrapped by a `DECOR_GLOW_SIZE 2.2` acid glow-halo that invites the click.
+  - **Catch** (`bossQteSystem.ts:1084-1096`, `withinCatch`): a **0.30-radius circle** at
+    `decorProp.position` (`RING_HIT_RADIUS` reuse).
+  - **The hole:** the drawn prop's upper/lower edges (`|dy| ∈ (0.30, 0.525]`, and the horizontal corners
+    `|dx| ∈ (0.30, 0.40]`) are DRAWN and glow-lit but silently no-op — the single-use arm window ticks
+    away on a click the player correctly aimed at a visible target. This violates the **drawn == catch**
+    invariant my own AMENDMENT A1 §4 made binding for the rings ("click inside the drawn thing = hit must
+    stay literally true, or the tighter catch becomes a bullshit miss").
+
+### Ruling — direction (a): ENLARGE the catch to the drawn silhouette (rectangular AABB)
+
+**Direction (b) — SHRINK the drawn prop toward the 0.30 circle — is REJECTED**, for three reasons:
+
+1. **Art-coherence conflict I don't own and won't override.** The niveau-final backdrop (l'Éden ceiling
+   slot, `eden_ceiling` prompt-gate PASS) bakes a chandelier at a scale the `{0.2,1.5}` render-side
+   lustre must match; §6 of the level spec and the lead-art compo control both require the chandelier
+   read "legible, shootable, boss-distinct." A ≤0.6-wide drawn prop would fight that baked scale — a
+   `lead-art` bible question, not a design lever to spend on a fairness bug.
+2. **It shrinks a PURE-UPSIDE reward during a SINGLE-USE window** — backwards for lever 2, whose whole
+   point (spec §2-B) is turning dead SHIELDED downtime into a _generous_ optional play. Making the one-shot
+   bonus HARDER to claim is the opposite of the mechanic's intent.
+3. **The A1 precedent does NOT transfer.** A1 shrank _drawn → catch_ only because the vital catch value
+   was **mechanically pinned** (the 0.11 camp-dominance threshold, A1-R2 §15 sweep). The décor catch is
+   **not** pinned by anything — it is an arbitrary `RING_HIT_RADIUS` reuse with no dominance role. When the
+   catch is free and the drawn size is load-bearing (art), the invariant is restored by moving the _catch_,
+   not the drawn.
+
+**Direction (a) is CORRECT and this is the ruling.** A silent no-op on a visibly clickable, glow-lit target
+during a single-use window is the exact §5.6 frustration class ("mort/rate bullshit") the drawn==catch
+guardrail exists to forbid — and it is _worse_ than the ring case because a whiffed décor window does not
+come back. Because the prop is pure upside (no failure surface, no competing SHIELDED-gap target, no
+dominance concern), a generous catch has **zero** player downside; the only correct catch is the full drawn
+silhouette — every drawn pixel clickable, nothing beyond it.
+
+### Exact target values
+
+- **Catch shape:** an **axis-aligned box (AABB)**, anchor-relative, centred at `decorProp.position` —
+  NOT a circle (a circumscribing radius = half-diagonal `hypot(0.40,0.525)≈0.66` would make empty space
+  outside the drawn corners score, breaking drawn==catch the _other_ way; a box matches the drawn plane
+  exactly). Replaces the `withinCatch(...RING_HIT_RADIUS)` circle in the SHIELDED décor branch ONLY.
+- **Catch half-extents (game-side source of truth, new constants):**
+  - `BOSS_DECOR_CATCH_HALF_W = 0.40` (= `DECOR_W 0.80 / 2`)
+  - `BOSS_DECOR_CATCH_HALF_H = 0.525` (= `DECOR_H 1.05 / 2`)
+    A hit iff `|impact.x − (anchor.x + decorProp.position.x)| ≤ 0.40` **and**
+    `|impact.y − (anchor.y + decorProp.position.y)| ≤ 0.525`.
+- **Drawn prop size:** **UNCHANGED** — `DECOR_W 0.80 × DECOR_H 1.05`. (Art-preserving: no chandelier
+  re-scale, no backdrop re-verify. The two catch constants are defined to equal half the _existing_ drawn
+  size, so this ruling changes only the catch, never a pixel.)
+- **Glow halo (`DECOR_GLOW_SIZE 2.2`):** **UNCHANGED**, and explicitly **NOT** the affordance boundary. My
+  call on "does drawn mean silhouette or glow": **the crisp grey prop silhouette is the aim target; the glow
+  is an attention cue only.** The halo is a radial dégradé falling to alpha 0 at the rim (`buildRadialGlowTexture`)
+  — it has no crisp edge to aim at, so it reads as "something here is live," exactly as the ring's
+  emphasis-brightness reinforces the ring geometry without being the catch. Catch does NOT extend to 2.2
+  (that would make hazy empty space score — dishonest the opposite way).
+
+### Paired-lane assignment (BUILD, this story's stage-4 lanes)
+
+This is a paired change, same shape as A1 (a game catch + a render pairing that keeps drawn==catch literal):
+
+- **`dev-gameplay` (catch — the substantive change, TDD):** author `BOSS_DECOR_CATCH_HALF_W 0.40` /
+  `BOSS_DECOR_CATCH_HALF_H 0.525` in `bossQteSystem.ts`; add a rectangular `withinBox` helper (or inline
+  AABB) and gate the SHIELDED décor branch (`~:1084-1096`) on it instead of `withinCatch(...RING_HIT_RADIUS)`;
+  add a `createBossQte` assert (both half-extents finite & > 0, mirroring `assertPositiveScalar`). Unit tests:
+  a click at `dy 0.45` inside the prop (previously a silent no-op — the reported hole) now scores the +3
+  `BOSS_DECOR_DAMAGE`; a click at `dy 0.60` / `dx 0.45` (outside the drawn box) does NOT; the horizontal
+  corner `dx 0.35, dy 0.50` scores (inside the box). Determinism/purity unchanged; additive-and-optional law
+  intact (`decorProp === null` ⇒ byte-identical).
+- **`dev-r3f-render` (drawn pairing — drift-guard, no pixel change):** import the two new constants and set
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W`, `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` (today 0.80 × 1.05 —
+  identical output), so drawn==catch is enforced structurally and tracks any future catch re-tune, exactly as
+  the vital ring draws at the imported `BOSS_VITAL_CATCH_RADIUS`. The glow (2.2) and the prop's grey/armed
+  treatment are untouched. This lane's diff is a two-line derivation, but it is REQUIRED — without it the
+  invariant holds only by coincidence.
+
+### Spec bookkeeping & stage-5 watch
+
+- **Transcribe verbatim into `spec-boss-qte-differentiation.md` §2 (LEVER 2)** as **AMENDMENT A2 — décor
+  catch = drawn silhouette (AABB)**, and update **AC-D4** tail: "…décor prop scored within the AABB
+  `±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn `0.80×1.05` silhouette
+  (drawn == catch); glow 2.2 is an attention cue, not the catch." Same pattern as A1/A1-R2 (my ruling is the
+  record; Sacha/dev transcribes). Reuse-map line "décor prop … `RING_HIT_RADIUS 0.30` (prop catch radius)"
+  is superseded for the décor by the AABB — `RING_HIT_RADIUS` stays for limb ring / parry point / phase-1
+  ring.
+- **Stage-5 (Sacha playtest + K-5 seed re-verify):** confirm the phase-2 décor arm-window is landable on the
+  live `{0.2,1.5}` chandelier with the new box (AC-L5). **Bounded watch item (NOT a re-open of this gate):**
+  if the 2.2 glow rim draws the eye to click _beyond_ the silhouette and players miss, that is a render-salience
+  fix (crisper/brighter armed silhouette) owned by `dev-r3f-render` + `ux-designer` — NOT a catch enlargement
+  to the halo (which would make empty haze score). Same disposition as A1-R2 §4's small-ring legibility seam.
+- **Scope / iteration:** in-scope — a fairness correction to already-ratified ADR-0052 lever 2, no new
+  mechanic, no core-loop touch (round 0 of the 2-round cap; the ruling is decisive, no rework requested).
+  Design gate for this story otherwise stands PASS (§ DESIGN GATE 2026-07-20); this closes the last open
+  design blocker before verify leg-1.
+
+VERDICT: PASS-WITH-CORRECTIONS — décor aim-honesty (panel follow-up #5) — direction (a) ENLARGE catch to drawn silhouette. Catch = AABB ±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525) at decorProp.position, replacing the 0.30 circle; drawn UNCHANGED 0.80×1.05; glow UNCHANGED 2.2 (attention cue, not catch). Direction (b) shrink-drawn REJECTED (art-coherence + shrinks a pure-upside single-use reward + A1 precedent does not transfer — catch here is unpinned, drawn is load-bearing). Paired lanes: dev-gameplay (AABB hit-test + 2 constants + assert + TDD) ∥ dev-r3f-render (import constants, derive DECOR_W/H — drift-guard, no pixel change). Transcribe as AMENDMENT A2 into spec-boss-qte-differentiation.md §2 + AC-D4 tail. Stage-5: décor arm-window landability on {0.2,1.5} (AC-L5); glow-rim over-aim is a render-salience watch, not a catch re-tune. (lead-game-designer)
+
+- **File List:**
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this gate ruling appended)
+  - `docs/game-design/README.md` (index — record décor aim-honesty A2 ruling as gated; to update)
