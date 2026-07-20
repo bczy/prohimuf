@@ -564,6 +564,62 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
     }
     expect(won).toBe(true);
   });
+
+  it("A1 §5 (greedyLimb): competent limb-banking still clears with margin on targetSeed 20260719", () => {
+    // The A1 re-pin acceptance: the safe LIMB bank (ignore the fast head ring, chip the slow torso
+    // ring, parry the charged windows) must still clear — the tighter vital catch raises the
+    // ceiling (greed risk) without breaking the floor (limb stays landable at RING_HIT_RADIUS 0.30).
+    let qte = toActive();
+    let won = false;
+    for (let i = 0; i < 60 * 90; i++) {
+      const canAct =
+        qte.stance === "EXPOSED" && qte.phaseBreakRemaining <= 0 && qte.staggerRemaining <= 0;
+      let fire = false;
+      let impact = { x: qte.anchor.x, y: qte.anchor.y };
+      if (qte.phase === "FINISHER") {
+        fire = true;
+      } else if (canAct && qte.chargedWindow) {
+        fire = true;
+        impact = { x: qte.anchor.x + BOSS_PARRY_POINT.x, y: qte.anchor.y + BOSS_PARRY_POINT.y };
+      } else if (canAct && qte.phaseIndex >= 1) {
+        fire = true; // bank the LIMB ring only (never chase vital)
+        impact = { x: qte.anchor.x + qte.targetOffsetB.x, y: qte.anchor.y + qte.targetOffsetB.y };
+      } else if (canAct && qte.ringZone !== "off") {
+        fire = true; // phase 1 single ring
+        impact = { x: qte.anchor.x + qte.targetOffset.x, y: qte.anchor.y + qte.targetOffset.y };
+      }
+      qte = tickBossQte(qte, fire, impact, 1 / 60).qte;
+      if (qte.phase === "WON") {
+        won = true;
+        break;
+      }
+      expect(qte.phase).not.toBe("LOST");
+    }
+    expect(won).toBe(true);
+  });
+
+  it("A1 §5 (camp punished): a fixed head-camp aim leaves the 0.18 vital catch on the pinned seed", () => {
+    // The acceptance the tighter catch exists to create: the vital ring wanders BEYOND the 0.18
+    // catch of a fixed camp aim at the box centre, so greed that camps (rather than tracks) whiffs.
+    // Deterministic on targetSeed 20260719 — a stand-in for Sacha's cross-seed greedyVital>0 check.
+    const legA = bossWanderLegDuration(phaseRow(2).wanderSpeed);
+    let maxDev = 0;
+    for (let win = 1; win <= 12; win++) {
+      for (let s = 0; s <= 20; s++) {
+        const t = (s / 20) * phaseRow(2).exposedSeconds;
+        const w = bossWanderBox(
+          SPEC.targetSeed,
+          win,
+          t,
+          legA,
+          BOSS_VITAL_WANDER_AMP_X,
+          BOSS_VITAL_WANDER_AMP_Y,
+        );
+        maxDev = Math.max(maxDev, Math.hypot(w.x, w.y));
+      }
+    }
+    expect(maxDev).toBeGreaterThan(BOSS_VITAL_CATCH_RADIUS);
+  });
 });
 
 // ============================================================================================
