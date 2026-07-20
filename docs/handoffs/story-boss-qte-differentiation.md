@@ -1178,3 +1178,70 @@ snapshot` commits are environment snapshots of the types/levels/test scaffolding
   - `src/game/systems/__tests__/bossQteSystem.test.ts` (35 → 62 tests)
   - `src/game/levels/levels.ts` (harness `decorProp` data only — no shipped level touched)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 10. VERIFY (stage 5, leg 1) — qa-lead (Inès) — 2026-07-20 — test plan + mechanical gate + e2e evidence + V1 regression
+
+- claim: stage-5 VERIFY first leg for STORY-BOSS-QTE-DIFFERENTIATION — author the per-story test
+  plan, run the mechanical gate myself, produce state-verified e2e screenshots for the leg-2
+  design-acceptance (Sacha) + UX review (Tony), discharge the three lane-flagged verify-leg
+  obligations, and check the two V1-carryover regressions (seed winnability, harness persistence
+  inertness). Commit `3c1bf8e`, branch `claude/yo-pmnyzr`. No commit/push.
+- release: `docs/qa/plan-story-boss-qte-differentiation.md` (per-lever matrix, mechanical results,
+  e2e holes, regression specs) + `docs/qa/evidence/story-boss-qte-differentiation/` (6 PNGs).
+- **Mechanical gate — ALL GREEN** (corepack Yarn 4.12.0, `COREPACK_NPM_REGISTRY=…npmjs.org`; rtk
+  absent → `yarn` fallbacks):
+  - `yarn typecheck` → **EXIT 0** (whole repo).
+  - `yarn vitest run` → **843/843 PASS**, 64 files, EXIT 0 (boss suite 62 tests).
+  - `yarn lint` → **EXIT 0** (0 problems).
+  - `yarn format:check` → **EXIT 0** ("All matched files use Prettier code style!").
+  - `yarn build` → **EXIT 0** (dist emitted; reachability grep below).
+- **E2e evidence (state-verified via the ADR-0005 `__MUF_STATE__` snapshot seam under
+  `__MUF_PLAY__`; `?preview=boss` now boots straight to ACTIVE — harness `enemiesToWin: 0`, V1's
+  C-QA1 mook-quota blocker gone):** ZERO `pageerror` on every run.
+  - `01-phase1-single-ring.png` — ACTIVE phase-0 EXPOSED single green ring (**V1 regression baseline**).
+  - `02-phase1-telegraph.png` — SHIELDED `telegraphActive` (shoot tell).
+  - `11-lost.png` — phase LOST, `blownWindows 10`, HP still 20/24, ÉNERGIE ⚡0 (loss on the
+    blown-window clock, NOT HP — the failure model reads correctly).
+  - `12-reduced-motion-phase1.png` — phase-1 EXPOSED under `prefers-reduced-motion: reduce`.
+  - `13-mobile-boot.png` / `14-mobile-phase1-ring.png` — iPhone UA 844×390, boss zoom, ring legible.
+- **Three lane-flagged verify-leg obligations — DISCHARGED at the deterministic unit level** (the
+  authoritative place for seeded-pure logic; runtime feel = leg 2 on real GPU):
+  1. **K-5 seed winnability** — unit "competent player (rings+parry) clears 24 HP before the blown
+     clock" on the pinned `targetSeed 20260719`. Seeded-pure ⇒ this IS the winnability proof.
+  2. **Phase-2 teach cadence** — `isChargedWindow`: none phase 1, exactly ONE teach phase 2 (window
+     index 1), every-other phase 3.
+  3. **Renfort surge count** — `RENFORT_SURGE = {phaseIndex:2, onsetWindowIndex:1, durationWindows:2}`
+     (exactly 1 surge, phase 3, 2 windows); blown-under-surge −12 as ONE blown window (no loss-clock
+     accel); charged+surge overlap de-stacked to max(−10,−12)=−12; answered window costs nothing.
+- **V1 regressions checked:** (a) phase-1 byte-identical (unit `bossWander`→`bossWanderBox` identical
+  output + runtime `01`); (b) hostage QTE + every shipped `LevelConfig` + `stateMachine.ts` + `src/hooks`
+  byte-untouched (ADR-0052 D1 boundary, unit suite); (c) **harness persistence inertness (f5bd0a0)** —
+  runtime after boot→duel→LOST `localStorage` held only my injected `muf_prefs`: NO `muf_scores_*`,
+  `muf_progress = null`; App.tsx L216-222 scopes writes to `LEVELS` membership, `boss-harness` excluded.
+- **BLOCKING HOLE C-QA2 (CI-DEFERRED-BLOCKED, escalated → producer; only Bertrand waives):** the
+  depletion-gated **differentiation reads** (phase-2 dual rings, parry telegraph, stagger, phase-3
+  smoke, renfort edge, décor-armed, FINISHER, WON, HP-bar zero-settle) are UNREACHABLE in the sandbox
+  — headless SwiftShader runs ~2 fps, so the blown-window LOST clock (10) trips before enough chips
+  land to cross the first HP threshold (16); an honest ~90 s aided-fire attempt landed only 4 HP
+  (24→20) → LOST at phase 1. Harness/frame-rate limitation, NOT a defect — the pure logic of every
+  such read is fully unit-proven (62 tests, AC-D1..D8, D4 boundary assertion, FINISHER-holds-freeze).
+  The **runtime render / UX legibility** of phase-2+ reads is therefore UNVERIFIED in-sandbox.
+  → correction to `dev-tooling-assets` (+ small game/render assist): add a deterministic **state-seed
+  seam** (`?preview=boss&at=phase2|phase3|finisher` or a `&blownImmune` capture flag) so these become
+  e2e-automatable; regression `E2E-BOSS-DIFF` specced (plan §7 R5). Interim leg-2 path: Sacha's
+  playtest + Tony's UX review of phase-2+ reads run on a **real-GPU build** (branch preview / local).
+- handoff → `game-designer` (Sacha) + `ux-designer` (Tony): leg-2 verification — phase-1 / reduced-
+  motion / mobile / LOST evidence is in `docs/qa/evidence/story-boss-qte-differentiation/`; the
+  phase-2+ differentiation reads (AC-D1..D6 visual, UX A1/A2/A4/A5/A7/A12-A15 for phase-2+) are
+  CI-DEFERRED under C-QA2 — run those on a real-GPU build until the state-seed seam lands.
+- handoff → `producer` (Marion): CI-DEFERRED-BLOCKED item C-QA2 for the sprint board; chase the
+  state-seed seam lane (`dev-tooling-assets`); only Bertrand waives the sandbox-runtime hole.
+- handoff → `senior-architect` (Winston): mechanical gate + boundary regressions GREEN; the
+  FINISHER↔`qteCamera.ts` type widening (shard §8) noted for the D3-narrowing merge review.
+
+VERDICT: PASS — quality gate leg 1 (qa-lead) — mechanical gate GREEN (tsc/vitest 843·843/lint/format/build all EXIT 0); pure logic of all 5 levers unit-proven incl. the 3 flagged verify-leg obligations; V1 regressions (phase-1 byte-identical, hostage + Belliard + hooks untouched, harness persistence inert) hold; deterministically-reachable e2e evidence (boot both classes, phase-1 read, telegraph, reduced-motion, mobile, LOST) captured and real. NAMED HOLE: the phase-2+ differentiation RENDER/UX reads are UNVERIFIED in-sandbox (C-QA2, ~2 fps SwiftShader vs. the blown-window LOST clock) — CI-DEFERRED-BLOCKED, escalated to producer, leg-2 visual verification of those reads deferred to a real-GPU run; NOT a clean green on the runtime differentiation reads.
+
+- File List:
+  - `docs/qa/plan-story-boss-qte-differentiation.md` (NEW — this plan)
+  - `docs/qa/evidence/story-boss-qte-differentiation/*.png` (NEW — 6 state-verified captures)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
