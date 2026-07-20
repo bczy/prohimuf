@@ -2,22 +2,40 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  BOSS_DECOR_DAMAGE,
+  BOSS_LIMB_WANDER_AMP_X,
+  BOSS_LIMB_WANDER_AMP_Y,
+  BOSS_LIMB_WANDER_CENTRE,
+  BOSS_PARRY_POINT,
   BOSS_PHASE_TABLE,
+  BOSS_RING_B_SALT,
   BOSS_TELEGRAPH_LEAD_FLOOR,
+  BOSS_VITAL_WANDER_AMP_X,
+  BOSS_VITAL_WANDER_AMP_Y,
+  BOSS_VITAL_WANDER_CENTRE,
   BOSS_WANDER_CENTRE,
+  FINISHER_HOLD_SECONDS,
   PEEK_EXPOSURE_FLOOR,
   PHASE_BREAK_SECONDS,
   QTE_BODY_HIT,
   QTE_BOSS_REFILL,
+  QTE_CHARGED_WHIFF,
   QTE_PANIC_SHOT,
+  QTE_PARRY_CHIP,
+  QTE_RENFORT_DRAIN,
+  RENFORT_SURGE,
   RING_HIT_RADIUS,
+  STAGGER_SECONDS,
   bossColourDamage,
   bossQteZoneAt,
   bossRingZoneAt,
   bossWander,
+  bossWanderBox,
   bossWanderLegDuration,
   createBossQte,
   isBossQteActive,
+  isChargedWindow,
+  isRenfortWindow,
   phaseIndexAt,
   shouldTriggerBossQte,
   tickBossQte,
@@ -392,7 +410,10 @@ describe("bossQteSystem — phase break (damage-free, telegraphed ACTIVE sub-sta
 });
 
 describe("bossQteSystem — win / loss + deterministic tie-break", () => {
-  it("depleting bossHp to 0 during an EXPOSED window WINS (+refill)", () => {
+  it("depleting bossHp to 0 opens the FINISHER (lever 5), then resolves to WON (+refill)", () => {
+    // ADR-0052 lever 5 CHANGE vs. V1: a depleting chip no longer returns WON directly — it
+    // opens the ceremonial FINISHER beat first (energyDelta 0), which a click OR timeout
+    // resolves to WON, paying QTE_BOSS_REFILL there (once).
     const qte: BossQte = {
       ...toActive(),
       stance: "EXPOSED",
@@ -402,9 +423,13 @@ describe("bossQteSystem — win / loss + deterministic tie-break", () => {
       ringZone: "vital",
     };
     const r = tickBossQte(qte, true, { x: 0, y: 0.8 }, 0.1);
-    expect(r.qte.phase).toBe("WON");
+    expect(r.qte.phase).toBe("FINISHER");
     expect(r.qte.bossHp).toBe(0);
-    expect(r.energyDelta).toBe(QTE_BOSS_REFILL);
+    expect(r.qte.finisherRemaining).toBeCloseTo(FINISHER_HOLD_SECONDS);
+    expect(r.energyDelta).toBe(0); // no refill yet — the finisher is ceremonial
+    const won = tickBossQte(r.qte, true, NO_HIT, 0.01);
+    expect(won.qte.phase).toBe("WON");
+    expect(won.energyDelta).toBe(QTE_BOSS_REFILL);
   });
 
   it("reaching maxBlownWindows via a 0-chip close LOSES (level fails)", () => {
@@ -423,7 +448,7 @@ describe("bossQteSystem — win / loss + deterministic tie-break", () => {
     expect(r.energyDelta).toBe(phaseRow(0).shotDrain); // the drain still charges once
   });
 
-  it("a same-tick DEPLETING hit BEATS a same-tick fatal window → WON (fire resolves first)", () => {
+  it("a same-tick DEPLETING hit BEATS a same-tick fatal window → FINISHER (fire resolves first)", () => {
     const qte: BossQte = {
       ...toActive(),
       stance: "EXPOSED",
@@ -436,8 +461,9 @@ describe("bossQteSystem — win / loss + deterministic tie-break", () => {
       ringZone: "vital",
     };
     const r = tickBossQte(qte, true, { x: 0, y: 0.8 }, 0.5);
-    expect(r.qte.phase).toBe("WON"); // NOT LOST — the shot resolved first
-    expect(r.energyDelta).toBe(QTE_BOSS_REFILL);
+    expect(r.qte.phase).toBe("FINISHER"); // NOT LOST — the shot resolved first (lever 5)
+    expect(r.qte.bossHp).toBe(0);
+    expect(r.energyDelta).toBe(0); // refill is paid on the FINISHER → WON resolution
   });
 
   it("a chipping-but-NOT-depleting hit does not avert a later fatal window in the same tick", () => {
@@ -511,17 +537,23 @@ describe("bossQteSystem — seeded-pure determinism (ADR-0051 D7 / spec AC8)", (
 });
 
 describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
-  it("firing at every on-ring window clears 24 HP before the blown-window clock trips", () => {
-    // A competent player who fires whenever the reticle sits on vital/limb clears with margin
-    // (ADR-0051 gotcha / spec AC6). Confirms the pinned seed presents landable windows in each
-    // phase — a structural stand-in for the stage-5 empirical seed pin.
+  it("a competent player (rings + parry) clears 24 HP before the blown-window clock trips", () => {
+    // A competent player who fires whenever the reticle sits on vital/limb AND parries every
+    // charged window clears with margin (ADR-0051 gotcha / spec AC6, extended for the ADR-0052
+    // full kit). Confirms the pinned seed presents landable windows/parries in each phase — a
+    // structural stand-in for the stage-5 empirical seed pin.
     let qte = toActive();
     let won = false;
     for (let i = 0; i < 60 * 90; i++) {
-      const onRing =
-        qte.stance === "EXPOSED" && qte.phaseBreakRemaining <= 0 && qte.ringZone !== "off";
-      const impact = { x: qte.anchor.x + qte.targetOffset.x, y: qte.anchor.y + qte.targetOffset.y };
-      qte = tickBossQte(qte, onRing, impact, 1 / 60).qte;
+      const canAct =
+        qte.stance === "EXPOSED" && qte.phaseBreakRemaining <= 0 && qte.staggerRemaining <= 0;
+      const parry = canAct && qte.chargedWindow;
+      const onRing = canAct && !qte.chargedWindow && qte.ringZone !== "off";
+      const fire = parry || onRing || qte.phase === "FINISHER";
+      const impact = parry
+        ? { x: qte.anchor.x + BOSS_PARRY_POINT.x, y: qte.anchor.y + BOSS_PARRY_POINT.y }
+        : { x: qte.anchor.x + qte.targetOffset.x, y: qte.anchor.y + qte.targetOffset.y };
+      qte = tickBossQte(qte, fire, impact, 1 / 60).qte;
       if (qte.phase === "WON") {
         won = true;
         break;
