@@ -22,13 +22,14 @@ import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
 // behind. Tall "pole" props (lamppost, traffic light, sign) live in the NEAR row
 // where they are big and their base reads; the FAR row carries only low, chunky,
 // self-grounding props (bollard, bench, Wallace, scooter) that never float small.
-const NEAR_STREET_LINE = 1.05;
+// Near row anchored ON the ground texture's bottom pavement (Bertrand-directed,
+// 2026-07-20): the v6 ground puts the near kerb at ~1.215 of facadeH, so prop
+// feet sit on the pavement band (1.215–1.284) and masts run up across the road.
+// The line is now tied to the visible pavement, identical on all devices — the
+// earlier mobile-only extra drop is gone.
+const NEAR_STREET_LINE = 1.27;
 const FAR_STREET_LINE = 0.93;
-// Extra downward shift of the NEAR kerb line on mobile (facade-normalized, y-down):
-// the portrait camera shows a much deeper street band below the facade, so the
-// near row drops further toward the screen-bottom kerb (Bertrand-directed,
-// 2026-07-20) — same spirit as MOBILE_BAND_DROP for the ceiling.
-const MOBILE_NEAR_LINE_DROP = 0.12;
+const MOBILE_NEAR_LINE_DROP = 0;
 // Perspective scaling per row: the NEAR row is zoomed up (close to the camera,
 // in-your-face), the FAR row shrunk (back of the road). Both stay capped at the
 // band top (non-occlusion), so a zoomed near prop fills the band without ever
