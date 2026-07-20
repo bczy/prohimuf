@@ -168,6 +168,50 @@ unchanged.
 
 ---
 
+## AMENDMENT A1 — per-ring catch radius (LEVER 1) — gated 2026-07-20
+
+**Gated by `lead-game-designer` (Karim), stage-5 verify correction — handoff shard §13
+(`docs/handoffs/story-boss-qte-differentiation.md`, "DESIGN GATE (stage-5 correction)"). Transcribed
+VERBATIM from the gate entry. This amendment SUPERSEDES the single-radius assumption in §1-A/1-B, the
+§1 reuse map, the §1 tuning-defaults table, and AC-D2 (amended tail restated at the bottom of A1).
+Source: `game-designer` (Sacha) design-acceptance playtest, shard §12 — the VITAL wander-box reach
+0.226 < `RING_HIT_RADIUS 0.30` collapse (a fixed head-camp answers every vital window; vital strictly
+dominates limb; the "which target?" decision of §0 degenerates). `dev-gameplay` implements §2/§5,
+`dev-r3f-render` implements §4 (the paired render constraint is non-negotiable).**
+
+> **AMENDMENT A1 (gated 2026-07-20, stage-5 verify correction; supersedes the single-radius assumption
+> in §1-A/1-B, the §1 reuse map, the §1 tuning-defaults table, and AC-D2): per-ring catch radius.**
+>
+> 1. **New constant `BOSS_VITAL_CATCH_RADIUS = 0.18`** (game-designer default, tunable). The VITAL
+>    ring's hit test uses it; the LIMB ring, the parry point, the décor prop, and the phase-1 single
+>    ring all keep `RING_HIT_RADIUS = 0.30` unchanged.
+> 2. **Hit-test shape:** `withinCatch` / `ringHitZone` (`bossQteSystem.ts`) take a per-zone catch
+>    radius. A `fire` scores a VITAL chip only if `hypot(impactPoint − vitalRingCentre) ≤
+BOSS_VITAL_CATCH_RADIUS`; a LIMB chip only if within `RING_HIT_RADIUS` of the limb centre. Overlap
+>    tie-break UNCHANGED (a shot inside BOTH scores vital). Add a `⊂`-band-aware assert: the vital
+>    catch is smaller than the vital wander-box reach so the box is not trivially camp-able.
+> 3. **Rationale:** VITAL box (centre (0,0.80), amp 0.16) has corner reach 0.226; the old 0.30 catch
+>    made the whole vital path answerable from one fixed head-camp aim, so vital strictly dominated
+>    limb and the "which target?" choice (spec §0) collapsed. `0.18 < 0.226` forces genuine tracking of
+>    the fast head ring → the 2 HP chip is EARNED and greed carries a real whiff→blown-window risk,
+>    restoring the high-risk/high-reward vital vs. safe-bank limb dilemma.
+> 4. **PAIRED RENDER CONSTRAINT (§5.6, binding on `dev-r3f-render` — non-negotiable):** the VITAL ring
+>    (ring A) must be DRAWN at a radius equal to `BOSS_VITAL_CATCH_RADIUS` (0.18), NOT `RING_HIT_RADIUS`.
+>    In `BossQteSprite.tsx` the vital ring's `scale.set(...)` uses the vital catch radius; the limb ring
+>    (ringB) keeps `RING_HIT_RADIUS`. The drawn ring IS the catch tolerance (preserve the lines 47-48
+>    aim-honesty invariant) — "click inside the drawn ring = hit" must stay literally true, or the
+>    tighter catch becomes a bullshit miss. (Coherent with the §1-A table's own "VITAL … small".)
+> 5. **WINNABILITY RE-PIN (K-5, gate condition on the re-verify):** after this lands, re-verify on
+>    `targetSeed 20260719` — the pinned seed must present ≥1 landable, TRACKABLE vital waypoint (a path
+>    a competent player can follow to land within 0.18 inside the EXPOSED window) AND competent
+>    limb-banking (`greedyLimb`, optimal) must still clear with margin; re-pin if not. Acceptance:
+>    `greedyVital` loss rate rises above 0 (greed now punished) while `greedyLimb`/optimal stay 100 %.
+>
+> **AC-D2 (amended tail):** "…vital scored only within `BOSS_VITAL_CATCH_RADIUS 0.18`, and the vital
+> ring is DRAWN at that radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`."
+
+---
+
 ## LEVER 3 — Parade façon Sekiro
 
 ### 3-A — DECIDED, STATED PLAINLY: the SAME fire-click, reinterpreted by a distinct telegraphed PARRY window. NO new input channel. NO `src/hooks` change.
@@ -545,9 +589,11 @@ timing make the seed pin harder than V1's single ring; this is the most likely c
 - **AC-D1 — Differentiation reads.** By phase 2 the fight poses a visible targeting **choice**
   (two live rings) and by phase 3 a **parry** beat, both introduced on a telegraphed phase break;
   a playtester describes a different moment-to-moment than the hostage duel. (The whole point.)
-- **AC-D2 — Lever 1.** Phase 1 = single ring (V1). Phase 2+ = two simultaneous rings, vital 2 HP /
-  limb 1 HP, both live, one shared `windowChipped` (a chip from either answers the window; overlap
-  scores vital). No double-drain.
+- **AC-D2 — Lever 1** _(amended by AMENDMENT A1, gated 2026-07-20 — see the A1 section after LEVER 1)._
+  Phase 1 = single ring (V1). Phase 2+ = two simultaneous rings, vital 2 HP / limb 1 HP, both live,
+  one shared `windowChipped` (a chip from either answers the window; overlap scores vital). No
+  double-drain. **Amended tail (A1):** vital scored only within `BOSS_VITAL_CATCH_RADIUS 0.18`, and the
+  vital ring is DRAWN at that radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`.
 - **AC-D3 — Lever 3.** Parry decoded from the SAME `fire`+`impactPoint` (no `src/hooks` change);
   distinct `parryLeadSeconds` tell ≥ 0.35 and < the lull; `parryWindowSeconds` ≥ 0.5; success =
   +2 HP + stagger bonus window; whiff = −10 + one blown window (single charge); panic-click during

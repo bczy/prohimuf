@@ -1571,3 +1571,40 @@ BOSS_VITAL_CATCH_RADIUS`; a LIMB chip only if within `RING_HIT_RADIUS` of the li
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: PASS-WITH-CORRECTIONS — design acceptance playtest (game-designer) — differentiation thesis lands (phase-1 V1 → phase-2 visible two-target choice → phase-3 parry/smoke/renfort → ceremonial finisher, a different moment-to-moment than the hostage duel); §5.6 attributability holds, no double jeopardy (renfort −12 single-charge, loss clock +1 exactly, LOST at 10), décor pure-upside, smoke degrades-not-removes, finisher ceremonial; winnable-not-trivial (greedyLimb 100%) and losable (sloppy 19%). ONE gated correction: Lever-1 risk/reward is inverted — VITAL box reach 0.226 < catch radius 0.30 makes the head ring trivially campable and strictly dominant, collapsing the "which target" decision; fix = per-ring `BOSS_VITAL_CATCH_RADIUS ≈0.18` in `bossQteSystem.ts` (route to lead-game-designer). Plus a soft parry-tell form-legibility flag to ux/art.
+
+STATUS UPDATE (2026-07-20, §12 correction): the Lever-1 correction is NOW GATED — Karim §13 (PASS-WITH-AMENDMENT A1: accepted + bound to the paired-render constraint + the K-5 re-pin condition). Transcribed VERBATIM into `docs/game-design/spec-boss-qte-differentiation.md` as "AMENDMENT A1 — per-ring catch radius (LEVER 1)" (after LEVER 1) + AC-D2 amended tail. Release logged §14 below; two dev lanes implement from the gated spec text. The soft parry-tell form flag remains ux/lead-art's leg-2 lane (non-gating, §13 advisory).
+
+## 14. VERIFY (stage 5, leg 2 — post-gate release) — game-designer (Sacha) — 2026-07-20 — AMENDMENT A1 transcribed into the gated spec
+
+- claim: discharge Karim's §13 handoff — transcribe the gated AMENDMENT A1 (Lever-1 per-ring catch
+  radius) VERBATIM into my spec so the two dev lanes implement from gated text, not a playtest note;
+  amend AC-D2; update my §12 status (correction now gated). Bounded doc task; no production code, no
+  commit/push.
+- release: `docs/game-design/spec-boss-qte-differentiation.md` updated —
+  - **NEW section "AMENDMENT A1 — per-ring catch radius (LEVER 1) — gated 2026-07-20"** (inserted after
+    LEVER 1, before LEVER 3): Karim's §13 blockquote transcribed verbatim — items 1–5
+    (`BOSS_VITAL_CATCH_RADIUS 0.18`; per-zone `withinCatch`/`ringHitZone`; rationale; the binding
+    paired render constraint = vital ring A DRAWN at 0.18, drawn=catch, §5.6 aim-honesty; the K-5
+    winnability re-pin gate condition) + the AC-D2 amended tail. Header cites shard §13 + §12 source.
+  - **AC-D2 amended in place** (Design VERIFY acceptance list): flagged "amended by AMENDMENT A1",
+    amended tail appended — vital scored only within `BOSS_VITAL_CATCH_RADIUS 0.18`, vital ring DRAWN
+    at that radius (drawn = catch), limb unchanged at `RING_HIT_RADIUS 0.30`.
+  - §12 verdict-line STATUS UPDATE appended (correction now gated → §13; transcribed → §A1).
+- Amendment section title (for the dev lanes): **"AMENDMENT A1 — per-ring catch radius (LEVER 1) —
+  gated 2026-07-20"** in `docs/game-design/spec-boss-qte-differentiation.md`.
+- handoff → `dev-gameplay` (Amelia): implement A1 §2 + §5 — per-zone catch radius in
+  `withinCatch`/`ringHitZone`, `BOSS_VITAL_CATCH_RADIUS 0.18`, the `⊂`-band-aware assert (vital catch
+  < vital box reach 0.226), a corner-whiffable-vital unit test, and a `targetSeed 20260719`
+  winnability unit re-check. Overlap tie-break (score vital) unchanged.
+- handoff → `dev-r3f-render` (Amelia): implement A1 §4 (MANDATORY §5.6 pairing) — draw vital ring A at
+  `BOSS_VITAL_CATCH_RADIUS` (0.18); limb ring B stays `RING_HIT_RADIUS` (0.30). Drawn = catch.
+- handoff → `lead-game-designer` (Karim): A1 transcribed into the gated spec per your §13 PASS; after
+  the two lanes build, I re-run the design-acceptance winnability re-pin (A1 §5) and report — a re-pin
+  failure is round 2 of the 2-round cap.
+- NOTE (process): §14 appended via `cat >>` heredoc (additive at end-of-file); the §12 status line and
+  the two spec edits were surgical Edits to my own artefacts.
+- File List:
+  - `docs/game-design/spec-boss-qte-differentiation.md` (AMENDMENT A1 section + AC-D2 amended tail)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry + §12 status update)
+
+VERDICT: RELEASE — AMENDMENT A1 transcribed into the gated spec (game-designer) — Karim's §13 per-ring catch-radius amendment written VERBATIM into `spec-boss-qte-differentiation.md` as "AMENDMENT A1 — per-ring catch radius (LEVER 1) — gated 2026-07-20" (after LEVER 1) with AC-D2 amended tail; §12 status updated to GATED; `dev-gameplay` (§2/§5) + `dev-r3f-render` (§4 paired render) cleared to implement from gated text; Sacha owes the post-build winnability re-pin (A1 §5).
