@@ -148,7 +148,7 @@ different mechanic answer would change the wiring, not the character.
 
 **Escalation note:** if `game-designer`'s 3-B ruling makes a whiff carry real HP/energy
 cost (not just an opportunity cost), the whiff cue's character should be revisited —
-right now I'm specifying it as a *neutral* miss, not a *penalised* one; a heavier cost
+right now I'm specifying it as a _neutral_ miss, not a _penalised_ one; a heavier cost
 would want a slightly harder-landing sound to keep sound and consequence proportionate.
 Flagged, not pre-decided.
 
@@ -210,7 +210,7 @@ as of this writing.
   sub-layer since the main BGM can't move. Diegetic dressing (radio chatter, a distant
   siren swell, boots/crowd rumble — the actual timbral choice) is `narrative-designer`'s
   call per OQ4-D's fiction question (does it read as HIS men or a rival unit); I specify
-  only that it must read as *approaching pressure*, not as a specific narrative object.
+  only that it must read as _approaching pressure_, not as a specific narrative object.
 - **Mix constraint (binding regardless of final tuning):** this is a background LAYER,
   never a foreground cue — it must sit low enough in the mix that it never masks the
   EXPOSED telegraph riser/downbeat (§1) or the parry tell (§2.1). If lever 4's tuning
@@ -229,17 +229,17 @@ function.
 
 ## 5. New vs. reuse — consolidated
 
-| Cue | Lever | New / reuse | Notes |
-| --- | --- | --- | --- |
-| Smoke-tell riser | 2 (OQ2-C) | **NEW** | pitched sweep, duration = phase `telegraphLeadSeconds` |
-| Smoke-tell downbeat | 2 (OQ2-C) | **NEW** | dry clank at `SHIELDED→EXPOSED` flip |
-| Parry-window tell | 3 | **NEW** | dry transient, distinct family from telegraph riser |
-| Parry success clang | 3 | **NEW** | metallic + vinyl-cut flavour |
-| Parry whiff feedback | 3 | **NEW** | quiet diegetic fumble, non-punitive character |
-| Finisher hush | 5 | **NEW** | BGM ducking/attenuation, frozen tier-2 bed |
-| Finisher impact stinger | 5 | **NEW** | same sonic family as parry clang, bigger/ceremonial |
-| Finisher → WON handoff | 5 | **REUSE** | existing `bgm_win.mp3` / `QTE_RESULT_HOLD` treatment, unchanged |
-| Renfort pressure bed | 4 | **NEW** | ambient layer, shape only, no tuning; mix-subordinate to window telegraphs |
+| Cue                     | Lever     | New / reuse | Notes                                                                      |
+| ----------------------- | --------- | ----------- | -------------------------------------------------------------------------- |
+| Smoke-tell riser        | 2 (OQ2-C) | **NEW**     | pitched sweep, duration = phase `telegraphLeadSeconds`                     |
+| Smoke-tell downbeat     | 2 (OQ2-C) | **NEW**     | dry clank at `SHIELDED→EXPOSED` flip                                       |
+| Parry-window tell       | 3         | **NEW**     | dry transient, distinct family from telegraph riser                        |
+| Parry success clang     | 3         | **NEW**     | metallic + vinyl-cut flavour                                               |
+| Parry whiff feedback    | 3         | **NEW**     | quiet diegetic fumble, non-punitive character                              |
+| Finisher hush           | 5         | **NEW**     | BGM ducking/attenuation, frozen tier-2 bed                                 |
+| Finisher impact stinger | 5         | **NEW**     | same sonic family as parry clang, bigger/ceremonial                        |
+| Finisher → WON handoff  | 5         | **REUSE**   | existing `bgm_win.mp3` / `QTE_RESULT_HOLD` treatment, unchanged            |
+| Renfort pressure bed    | 4         | **NEW**     | ambient layer, shape only, no tuning; mix-subordinate to window telegraphs |
 
 Every NEW item above is future `dev-tooling-assets` sourcing/generation work, gated by me
 (licence-first, period-correct, legible-function, mix-safe) at the ASSET GATE before it
