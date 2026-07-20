@@ -564,3 +564,188 @@ shared.module.css}`, `src/render/ui/{HUD.tsx,HUD.module.css}`, `src/render/scene
   short-landscape (568×320) evidence, plus a live DOM/CSS check of the shipped
   `prefers-reduced-motion` rule. No production code, spec, or evidence file modified (iron rule).
   Reported to `lead-game-designer` (Karim) ahead of the architect integration review.
+
+---
+
+## stage-6. REVIEW-PANEL TRIAGE + INTEGRATION REVIEW — senior-architect (Winston) — 2026-07-20
+
+- claim: stage-6 merge gate — one-pass triage of the 4-reviewer panel (`code-review` high,
+  `bmad-code-review`, `bmad-review-edge-case-hunter`, `security-review`) over
+  `git diff origin/main...HEAD` (PR #115) + integration review (boundary law, cross-lane seams,
+  deps/deploy, golden-baseline legitimacy). Read the diff once, verified each finding in source, no
+  re-review from scratch. / release: **NO-MERGE** — the MAJEUR co-location invariant is a
+  player-facing functional break of the shipped feature (unpickable crate + overlapping sprites,
+  live-proven wave 7 / slot 1) and 3 of the 5 MINEURs are player-facing enough to block. Pre-merge
+  set + re-verify sequence below; fast-follows logged. No production code written by me.
+- VERDICT: NO-MERGE — stage-6 review-panel triage + integration review: weapons pickup (senior-architect)
+
+### 1. TRIAGE
+
+**[MAJEUR] — co-location invariant enforced nowhere (both directions) → PRE-MERGE. Owner: `dev-gameplay`.**
+Confirmed in source. `lootSystem.attemptSpawn` (L91-99) filters candidate slots by the §5.4
+**column-gap** predicate only (`canSpawnLootAt`), and `activeEnemyCols` (L28-36) deliberately
+excludes `HIDDEN`/`HIT`/`DEAD` — so nothing stops a crate seating on the _exact slot_ of a HIDDEN
+enemy about to pop (direction a). `spawnWave` (`enemySystem.ts` L67-99) reseeds all slots with **no
+knowledge of `state.loot`**, and the wave-rollover call (`stateMachine.ts` L285) passes no
+exclusion — so a rollover can seat an enemy in the live crate's slot (direction b). Once co-located,
+`resolvePlayerShot`'s equal-slot tie-break (`bulletSystem.ts` L123, `crate.slotIndex < best.enemy.slotIndex`)
+is always false (same slotIndex) → the enemy shields the crate → unpickable + overlapping sprites.
+The "one entity per slot, so slot indices never collide" comments (`bulletSystem.ts` L108,
+`LootCrate.tsx` L22, ADR-0052 D5) _assume_ the invariant that no spawn path actually enforces.
+**Enforcement design (consistent with ADR-0052 D5, minimal — two one-direction guards, NOT a new
+slot-occupancy authority):** the invariant is stated in D5 but its two spawn producers are the only
+things that can violate it, so guard each producer in place rather than introduce a central
+authority (that would be a redesign for a two-call surface):
+
+- (a) `attemptSpawn`: add a slot-occupancy filter — exclude any slotIndex occupied by a **non-DEAD**
+  enemy (`new Set(enemies.filter(e => e.state !== "DEAD").map(e => e.slotIndex))`), applied
+  alongside (not replacing) the existing §5.4 column-gap rule. The column-gap rule handles the
+  reticle-path concern; the slot filter handles co-location for the HIDDEN/HIT cases it misses.
+- (b) `spawnWave`: add an optional `excludeSlots?: readonly number[]` param; the L285 rollover
+  passes `state.loot ? [state.loot.slotIndex] : []`. (The L121 `createInitialState` call keeps
+  `[]` — loot is null at construction.) Edge: if excluding the crate slot drops `count` below
+  available slots the wave seats one fewer enemy that tick — acceptable and rare (loot is
+  Belliard-only); `slice` already degrades gracefully.
+  With both guards, the tie-break assumption is _restored true_ (slots never collide) → **no
+  `bulletSystem` change needed**, its comment becomes accurate as-is. TDD: two new `lootSystem`/`stateMachine`
+  tests — crate never spawns on a HIDDEN/HIT enemy's slot; a wave rollover never seats an enemy in
+  the live crate's slot.
+  **ADR amendment: YES** — amend ADR-0052 **D5** with an explicit _Enforcement_ clause naming the
+  two guards (the invariant was asserted as "for free" via threading + tie-break, which was wrong;
+  record the two producers so it is not silently re-broken). This same amendment closes **NIT-6**
+  (D6 prices a two-crate-in-the-fan case that `loot: LootCrate | null` makes unreachable — strike
+  that paragraph, note the right-most-wins fold in `weaponSystem.ts` L128-132 is inert-but-harmless
+  under the single-crate model) and adds a one-line **D1** note that the shipped state shape also
+  carries `lootSpec`/`lootTimer` (spawn-cadence bookkeeping Lane A added beyond the enumerated seam,
+  parallel to `deliverySpec`/`courierTimer` — legitimate, in-lane). **Fold the ADR edit into the fix
+  PR** (owner: `tech-writer` applies my amendment text; content is mine).
+
+**[MINEUR-1] SFX on raw `didFire` → PRE-MERGE. Owner: `dev-r3f-render`.** Confirmed
+(`useGameLoop.ts` L292 `if (didFire) playSfx("shoot")`). For `base` (every shipped level) this is
+correct and unchanged — refractory is 0, a tap always resolves one offset. The breakage is confined
+to the specials, which are player-reachable on Belliard: a tap during refractory plays a phantom
+shot (zero resolutions), burst rounds 2-N fire on later ticks where `didFire` is false → silent
+(no sulfateuse rattle), and a 3-barrel spread plays one sound. Wrong-signal audio on the headline
+feature's debut. **Minimal fix:** drive the shoot cue off _resolution activity_, not the input
+gesture — after `tickGameState`, play once per tick where `next` produced at least one resolution
+(`next.impactEvents.length > 0` vs `prev`, or a dedicated count). This yields: base/miss → 1 sound
+(unchanged); burst → one pop per round-tick = a rattle; spread → one sound/press; refractory-ignored
+tap → silent. No regression to shipped levels (base still emits ≥1 impact per fired tap). ~5 lines,
+one file.
+
+**[MINEUR-2] `_nextLootId` never reset → PRE-MERGE (fold). Owner: `dev-gameplay`.** Confirmed
+(`stateMachine.ts` L57; `createInitialState` does not reset it). Unlike `_nextBulletId`/`_nextCourierId`
+(identity only, gameplay-invariant across restart), the loot id is the **RNG seed** for both slot and
+weapon (`lootSystem.ts` L98-101), so an in-session restart diverges the crate pattern — the
+"Deterministic, replay-safe crate spawn" comment (L76) and the ADR-0052 Consequences bullet are
+false as written. Practical player impact is nil (no replay/ghost system consumes it), but shipping a
+**false invariant claim** is the landmine. **Minimal fix:** reset `_nextLootId = 1` in
+`createInitialState` (1 line, makes the claim true, matches the replay-safe intent) — folds cleanly
+into the same file the MAJEUR fix already touches. If dev-gameplay prefers not to mutate a module
+counter from the factory, the acceptable alternative is to _correct the wording_ instead; either way
+the false claim must not merge. I prescribe the reset.
+
+**[MINEUR-3] reduced-motion kills the empty cue → PRE-MERGE. Owner: `dev-r3f-render`.** Confirmed
+(`WeaponReadout.module.css` L64 `.emptyFlash { opacity: 0 }` at rest; L93-97 `animation: none
+!important` under `prefers-reduced-motion`) → for reduced-motion users the flash stays invisible and
+the L62-64/L90-92 comments claiming it "show[s] a steady state" are false. The stage-5 ux PASS was
+granted trusting that comment. Mitigants exist (the audio culasse cue and the readout content
+flipping to "A ∞" both still fire), but removing the _only_ dedicated visible cue is an
+information-loss regression, and reduced-motion should suppress **motion, not information**. Note the
+`weaponEmptyFlash` keyframe is **opacity-only** (a one-shot 0.45s fade — no transform, not vestibular
+motion, single pulse so no WCAG flash concern). **Minimal fix (CSS only):** drop `.emptyFlash` from
+the reduced-motion selector (keep `.stockLow` there — a persistent blink is legitimately stilled),
+so the one-shot fade cue survives; correct the two comments to match. ~2 lines + comment.
+
+**[MINEUR-4] firing mode on literal strings, not `WEAPON_SPECS` fields → FAST-FOLLOW (deferred, not
+now).** Confirmed (`weaponSystem.ts` L73/L179 dispatch on `active === "auto"/"spread"`). No bug today
+— the union is closed at 3 and all handled. Making dispatch data-driven (`burstRounds > 0`) is
+exactly the refactor the **D/tromblon fast-follow** will want; doing it now is speculative
+generalization (YAGNI). Log against the D story; do not action in this PR. Owner when it lands:
+`dev-gameplay`.
+
+**[MINEUR-5] `energyDelta` dead API surface → FAST-FOLLOW (low priority).** Confirmed
+(`TriggerResult.energyDelta` summed L123 but `stateMachine.ts` L400 sets `newEnergy = state.energy`,
+never consuming it; player shots award no energy — energy is boss-QTE-only, ADR-0051 D2). Harmless
+dead field on a pre-existing shape; removing it churns `weaponSystem` + `bulletSystem` return types +
+tests for little value. Remove opportunistically. Owner: `dev-gameplay`. `docs/handoffs/fixes.md`.
+
+**[NITs] — all FAST-FOLLOW / doc, none block:** (1) 0.3s appear cadence hardcoded ×3 —
+minor DRY, `dev-gameplay`+`dev-r3f-render`. (2) `WeaponSpec.kind` duplicates the record key, never
+read — trivial cleanup, `dev-gameplay`. (3) `createInitialState` inlines the base-weapon literal vs
+`baseWeaponState()` — DRY, may fold into the MAJEUR PR, `dev-gameplay`. (4) vitest alias map missing
+`@render` (the stage-4 leaf-import workaround spreading) — real small tech-debt, add `@render` to the
+vitest resolver, **owner `dev-tooling-assets`**; log it so the deep-import pattern stops spreading.
+(5) `LootCrate` unfolds during pause (CourierSprite takes `paused`) — render polish, `dev-r3f-render`.
+(6) ADR D6 vs D5 inconsistency — folded into the MAJEUR ADR amendment above. (7) `.infinity` byte-
+identical to `.glyph` — `composes: glyph`, `dev-r3f-render`. Log NITs 1-2-3-5-7 in `docs/handoffs/fixes.md`.
+
+**Security:** panel returned zero findings, MERGE-compatible — concur, nothing weapon/loot touches
+input trust, storage, or network.
+
+### 2. INTEGRATION REVIEW
+
+- **Boundary law — INTACT (confirmed, not taken on faith).** `src/game/**` (`weapon.ts`, `loot.ts`,
+  `gameState.ts`, `weaponSystem.ts`, `lootSystem.ts`, `bulletSystem.ts`, `stateMachine.ts`) imports
+  only `@game` types + pure systems — zero React/Three. `src/render/**` (`LootCrate.tsx`,
+  `WeaponReadout.tsx`, HUD) reads `GameState.weapon`/`.loot` and _derives_ display; holds no rule —
+  the crate is resolved and equips entirely in `src/game` (`resolvePlayerShot` → `loot-hit` → equip),
+  the HUD's `isLowStock`/`weaponGlyph` are pure view derivations reading `WEAPON_SPECS`, not rule
+  copies. `useGameLoop` is the sole bridge (the `weaponEmpty` drain + `LevelConfig.loot` mapping).
+  Reviewers correct.
+- **Cross-lane seams — held.** Disjoint file sets: Lane A `src/game/**` (+`levels.ts`), Lane B
+  `src/render/**` + `useGameLoop.ts` + `App.tsx`. No file edited by both. Type ownership held: Lane A
+  authored the type seam, Lane B imports read-only. The seam grew beyond the ADR's enumeration
+  (`lootSpec`/`lootTimer` on `GameState`) — in-lane, `src/game`, and consistent with the shipped
+  `deliverySpec`/`courierTimer` precedent; not a breach, captured in the D1 ADR note above. Lane B's
+  `derivations.ts` leaf-import deviation (`../print/tokens` vs the `@render/ui/print` barrel) is a
+  within-`src/render` workaround for the missing vitest `@render` alias — behaviourally inert (vite
+  build unaffected), but it is spreading → NIT-4 addresses the root cause.
+- **Deps / deploy — none.** No `package.json`, lockfile, `.github/workflows/**`, or `.mcp.json` in
+  the diff. No new dependency, no deploy surface. Confirmed against the diff-stat.
+- **Golden-baseline regeneration — LEGITIMATE.** `screenshots/golden/level_stalingrad.png` +
+  `level_vitry.png` regenerated. These are _shipped_ levels with **no loot** — the change is NOT loot
+  leaking into them (D8 byte-identity is a **game-state** property, which the stage-5 QA regression
+  confirmed). The visual delta is the **universal HUD weapon cell**: `WeaponReadout` mounts
+  unconditionally in `HUD.tsx`, rendering "ARME A ∞" on every level, so the ticker strip legitimately
+  changes on all levels while the loot/crate stays Belliard-only. Consistent: game tick identical,
+  HUD gained a universal read-only cell. Re-verify (below) must confirm the _only_ delta on shipped
+  goldens is that cell.
+
+### 3. DOC ROUTING
+
+- ADR-0052 **D5 enforcement clause + D6/NIT-6 strike + D1 seam note** — my amendment text (above);
+  **fold into the fix PR**, `tech-writer` applies. Prefer folding over a separate doc PR so the ADR
+  lands atomically with the fix that makes D5 true.
+- The false "Deterministic, replay-safe" wording (lootSystem.ts L76 + ADR Consequences bullet) is
+  resolved by the MINEUR-2 reset (claim becomes true); if dev-gameplay takes the wording-only branch
+  instead, `tech-writer` corrects both in the same PR.
+
+### 4. PROVISIONAL VERDICT
+
+**NO-MERGE.** One CONFIRMED MAJEUR (player-facing functional break) + MINEUR-1/2/3 ruled PRE-MERGE.
+MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-4 → D story).
+
+**Pre-merge set:** MAJEUR (dev-gameplay, +ADR D5 amendment) · MINEUR-1 (dev-r3f-render) · MINEUR-2
+(dev-gameplay, fold) · MINEUR-3 (dev-r3f-render) · ADR-0052 amendment (tech-writer, folded).
+
+**Exact re-verify sequence (must all pass before I re-triage → merge):**
+
+1. `dev-gameplay`: write the two co-location guard tests (RED), then the (a)+(b) guards + `_nextLootId`
+   reset → tests GREEN.
+2. `dev-r3f-render`: MINEUR-1 (SFX off resolution) + MINEUR-3 (reduced-motion CSS + comments).
+3. `tech-writer`: ADR-0052 D5/D6/D1 amendment folded into the same PR.
+4. Static gate: `rtk tsc` (0) · `rtk vitest` (≥ current 860 + the 2 new guard tests, 0 fail) ·
+   `rtk lint` (0) · `yarn format:check` clean.
+5. Golden: re-run the golden suite; confirm shipped-level goldens differ ONLY by the HUD weapon cell
+   (no new/unexpected regen).
+6. `verify` on Belliard (player-facing, mandatory here): crate now spawns clear of every occupied
+   slot and is pickable through a wave rollover (MAJEUR); burst audio rattles / refractory is silent
+   (MINEUR-1); empty cue shows under `prefers-reduced-motion` (MINEUR-3).
+7. Back to me for re-triage of the fix diff → merge. No merge while any CONFIRMED pre-merge item is open.
+
+- **Read (inspection only):** `git diff origin/main...HEAD`, `docs/adr/0052-weapons-pickup-system.md`,
+  `src/game/systems/{lootSystem,weaponSystem,bulletSystem,stateMachine,enemySystem}.ts`,
+  `src/game/types/weapon.ts`, `src/hooks/useGameLoop.ts`,
+  `src/render/ui/hud/WeaponReadout.module.css`, `src/render/scene/LootCrate.tsx`, this shard. No
+  production code written (design/review/unblock only).
