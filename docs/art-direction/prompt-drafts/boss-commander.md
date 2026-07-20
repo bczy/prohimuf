@@ -6,8 +6,46 @@ Fiches : [`spec-boss-encounter-fiction.md`](../../game-design/spec-boss-encounte
 [`spec-boss-differentiation-fiction.md`](../../game-design/spec-boss-differentiation-fiction.md)
 §1/§3/§5, mécaniques dans
 [`spec-boss-qte-differentiation.md`](../../game-design/spec-boss-qte-differentiation.md).
-**Statut : DRAFT — game-graphist PRE-PROD PASS puis lead-art PROMPT GATE requis avant tout
-commit/génération.**
+**Statut : DRAFT — game-graphist PRE-PROD PASS INTÉGRÉE (Serge, 2026-07-20, 9/9
+PASS-WITH-CORRECTION) ; lead-art PROMPT GATE requis avant tout commit/génération.**
+
+## PRE-PROD corrections intégrées (Serge, game-graphist, 2026-07-20)
+
+Toutes value-language + continuité, **aucune ne change le sujet/silhouette** (les poses sont
+intactes). Résout le piège keying « dark clothing eaten by the near-black key » (art-direction §2).
+
+- **[S1] (les 7 figures)** — le « dark overcoat » contredisait la tail « light grey white and pale
+  neon tones ». Le manteau est maintenant steeré en **valeur médiane keyable dans le SUJET** :
+  `charcoal-grey … lighter than the black backdrop` (+ pale edge highlights sur la pose
+  établissante), jamais near-black. **Phrasé positif** (« lighter than », pas « never dark ») → 0
+  négation.
+- **[S2] exposed** — clause lining sur le pan ouvert : `flaring open to reveal a pale contrasting
+grey lining` (le pan sombre ouvert = trou-torse keyé sinon).
+- **[S3] down (priorité)** — la masse manteau étalée est le plus gros risque de trou : valeur
+  explicite `mid-grey fabric lighter than the pitch-black ground and traced by a thin pale contour`.
+- **[S4] hit** — tether stroke : `both still tethered to him by a strap and cord` (brassard/radio
+  arrachés lisent « FROM him », pas débris flottant → évite un faux-positif du defect-sweep).
+- **[S6] parry_windup (priorité, mécanique-critique)** — `the long coat still hanging closed`
+  verrouille le contraste de silhouette dans le prompt, pour **ne pas** converger avec l'enveloppe
+  ouverte/flared d'exposed (§3-C « a shared tell = a bullshit whiff »).
+- **[S7] finisher (priorité)** — continuité de membre + main fermée : `the coat sleeve covering it
+to the wrist` (membre épais/continu, coupe le risque limb-detach + thin-limb-vanish) + `the closed
+hand on the shoulder radio` (supprime le gap-entre-doigts qui key-troue).
+- **[S8]/[S9] lustre** — cristal en valeur pleine claire : `solid pale grey-white faceted crystal
+drops, each with a bright rim highlight` (pas de facettes sombres qui key-trouent) ; notch de dégât
+  élargie `two adjacent drops missing on one side, a wide notch` (lisible à taille de jeu).
+- **[S10]/[S11] speaker_wall** — verrou valeur/contour sur la grande masse : `cabinet faces flat pale
+grey panels with black contours, the stack lighter than the black backdrop` ; câbles clairs :
+  `cables as pale grey lines with lighter gaffer wraps` (une ligne near-black sur fond near-black
+  disparaît sinon).
+- **[S13] (pour dev-tooling-assets, structure)** — les 2 props ne doivent PAS hériter le `size`
+  carré 256×256 du bloc figures : `lustre` = **portrait** (silhouette pendante chaîne→pampilles),
+  `speaker_wall` = **landscape** (pyramide large au sol). Précédent : `nearForegroundArt.types`
+  assigne un `size`/aspect par kind, épinglé par son test de cohérence. **Appel structurel de
+  dev-tooling** ; je l'enregistre ici (readability-at-game-size que je porte), je n'invente pas le JSON.
+- **Deviations Maud CONFIRMÉES par Serge** (POLICE-en-forme + « figure » dans la tail props) : gardées
+  telles quelles ; la 2ᵉ devient un check prop-specific du defect-sweep de sa passe TECHNIQUE (si une
+  silhouette humaine incidente bleed dans un prop → trigger du fallback tail roster-wide, pas un fork).
 
 ## Binding ruling — RULING (1) bare-headed plainclothes-BAC (lead-art, Nico, 2026-07-20)
 
@@ -96,14 +134,16 @@ budget §3.1). Continuité `the same … commander` = recolle les poses (utile p
 
 ### `commander_shielded` — SHIELDED / protégé (seed 4870) — APPLIQUÉ
 
-> a towering french plainclothes commander at full height facing forward, bare-headed, a long
-> knee-length dark overcoat, broad squared shoulders, a reflective armband brassard on one sleeve, a
-> boxy radio clipped at the shoulder, one gloved hand raised flat in a halt-and-hold gesture, the
-> other hand resting on a holstered boxy sidearm at the hip, closed guarded upright stance
+> a towering french plainclothes commander at full height, facing forward, bare-headed, a long
+> knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black backdrop, broad
+> squared shoulders, a reflective brassard on the sleeve, a radio clipped at the shoulder, a gloved
+> hand flat in a halt gesture, the other on a holstered boxy sidearm at the hip, closed guarded stance
 
 - `towering … at full height` → masse dominante, plein pied ; distinct du buste-fenêtre.
 - `bare-headed` → RULING §1 ; le tell fort (seul crâne nu du roster).
-- `long knee-length dark overcoat` → LE tell « chef » sans couleur.
+- `long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black
+  backdrop` → LE tell « chef » sans couleur, **+ [S1]** : valeur médiane keyable (jamais near-black),
+  résout la contradiction avec la tail « light grey … tones ».
 - `reflective armband brassard` + `boxy radio clipped at the shoulder` → micro-tells d'autorité
   plainclothes-BAC qui **remplacent** la casquette (RULING §1) ; la radio pose le finisher.
 - `one gloved hand raised flat in a halt-and-hold gesture` → « il commande / ne tire pas » = SHIELDED,
