@@ -58,6 +58,11 @@ const BOSS_Z = 0.5;
 // alone.
 const RING_Z = 0.55;
 const RING_INNER = 0.78;
+// A BOLDER stroke on the VITAL ring only (§21 do-anyway): its tiny 0.11 drawn radius needs a
+// heavier annulus to stay perceivable at the boss zoom. Inner hole narrows (0.78 → 0.55) while
+// `RING_OUTER` stays 1.0, so the drawn OUTER edge = catch radius (0.11) aim-honesty is inviolate.
+// Applied to the vital ring's own geometry ONLY (live + split-preview); the limb ring keeps 0.78.
+const RING_INNER_VITAL = 0.55;
 const RING_OUTER = 1.0;
 const RING_SEGMENTS = 40;
 const RING_OPACITY_MAX = 0.5;
@@ -326,6 +331,15 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
   // its billboards in world space each frame around the boss anchor.
   const smokeField = useMemo(() => createSmokeField(SMOKE_MAX_DESKTOP), []);
 
+  // Ring A geometries: the normal annulus (phase-1 single ring + the neutral tell) and a
+  // bolder-stroke vital annulus (§21) swapped onto ring A in its vital branches. Ring B (limb)
+  // keeps the normal inner via its own declarative geometry.
+  const ringGeoNormal = useMemo(() => new RingGeometry(RING_INNER, RING_OUTER, RING_SEGMENTS), []);
+  const ringGeoVital = useMemo(
+    () => new RingGeometry(RING_INNER_VITAL, RING_OUTER, RING_SEGMENTS),
+    [],
+  );
+
   // Baked textures (created once per mount; disposed on unmount). Guarded null under SSR / test.
   const glowTex = useMemo(() => buildRadialGlowTexture(), []);
   const vignetteTex = useMemo(() => buildVignetteTexture(), []);
@@ -336,8 +350,10 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       vignetteTex?.dispose();
       promptTex?.dispose();
       smokeField.dispose();
+      ringGeoNormal.dispose();
+      ringGeoVital.dispose();
     };
-  }, [glowTex, vignetteTex, promptTex, smokeField]);
+  }, [glowTex, vignetteTex, promptTex, smokeField, ringGeoNormal, ringGeoVital]);
 
   // Render-side reduced-motion detection (UX D3.1) — mirrors HostageQteSprite / CrtPass.
   const reducedMotionRef = useRef(
@@ -541,7 +557,9 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       );
       const ringMat = ring.material as MeshBasicMaterial;
       if (twoRing) {
-        // VITAL ring drawn at the tighter catch radius (AMENDMENT A1 §4 — drawn = catch).
+        // VITAL ring drawn at the tighter catch radius (AMENDMENT A1 §4 — drawn = catch), with the
+        // bolder vital stroke (§21) so the tiny ring stays perceivable.
+        ring.geometry = ringGeoVital;
         ring.scale.set(BOSS_VITAL_CATCH_RADIUS, BOSS_VITAL_CATCH_RADIUS, 1);
         ringMat.color.set(ringZoneColour("vital"));
         ringMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis("vital"));
@@ -555,7 +573,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         ringBMat.color.set(ringZoneColour("limb"));
         ringBMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis("limb"));
       } else {
-        // Phase-1 single ring — the V1 catch radius (unchanged by A1).
+        // Phase-1 single ring — the V1 catch radius (unchanged by A1) + normal stroke.
+        ring.geometry = ringGeoNormal;
         ring.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
         ringMat.color.set(ringZoneColour(qte.ringZone));
         ringMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis(qte.ringZone));
@@ -566,7 +585,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         ? 0.22
         : 0.15 + 0.1 * ((Math.sin(nowMs * 0.006) + 1) / 2);
       ring.visible = true;
-      // Preview the vital ring at its true (tighter) catch radius so the split reads honestly.
+      // Preview the vital ring at its true (tighter) catch radius + bolder vital stroke (§21).
+      ring.geometry = ringGeoVital;
       ring.scale.set(BOSS_VITAL_CATCH_RADIUS, BOSS_VITAL_CATCH_RADIUS, 1);
       ring.position.set(qte.anchor.x + BOSS_WANDER_CENTRE.x, qte.anchor.y + 0.75, RING_Z);
       const ringMat = ring.material as MeshBasicMaterial;
@@ -579,8 +599,9 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       ringBMat.opacity = previewOpacity;
     } else if (qte.telegraphActive && qte.phase === "ACTIVE" && !charged) {
       // The ordinary shoot wind-up tell — a faint neutral ring at the centre (not a scored catch
-      // zone, so it keeps the baseline radius).
+      // zone, so it keeps the baseline radius + normal stroke).
       ring.visible = true;
+      ring.geometry = ringGeoNormal;
       ring.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
       ring.position.set(
         qte.anchor.x + BOSS_WANDER_CENTRE.x,
@@ -788,8 +809,9 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
-      <mesh ref={ringRef} renderOrder={8} visible={false}>
-        <ringGeometry args={[RING_INNER, RING_OUTER, RING_SEGMENTS]} />
+      {/* Ring A geometry is swapped between normal / bolder-vital in useFrame (§21), so it is
+          supplied as a prop rather than a declarative child. Ring B (limb) keeps the normal inner. */}
+      <mesh ref={ringRef} renderOrder={8} geometry={ringGeoNormal} visible={false}>
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       <mesh ref={ringBRef} renderOrder={8} visible={false}>
