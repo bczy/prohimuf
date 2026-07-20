@@ -260,3 +260,13 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   `src/render/scene/__tests__/reducedMotionProp.test.ts`, `src/render/ui/menu/LevelFlyer.tsx`,
   `src/render/ui/RotateOverlay.tsx`, `src/render/ui/DiagramIcon.tsx`, `src/render/ui/GestureIcon.tsx`,
   `src/render/ui/LoadingScreen.tsx`, `src/render/ui/menu/OptionsColophon.tsx`.
+
+## fix — dev-r3f-render (Amelia) — 2026-07-20 — merge-gate finding: §4 tutorial first-run discoverability
+
+- claim: implement the gated-but-unshipped UX §4 slice (design-gate Q7 / ADR-0052 §1). Single
+  `muf_seen_tutorial_nudge` localStorage flag (render-side, NOT a Pref): first-ever NIVEAUX mount
+  auto-FOCUSES the tutorial flyer (not navigate) + shows a one-time felt-tip "COMMENCE ICI" nudge;
+  flag written on that first mount so returning players see neither. Reduced-motion safe (nudge is
+  fully static). +8 tests (12 total in file), all suites 888/888. Files: `src/render/ui/menu/FlyerWall.tsx`,
+  `src/render/ui/menu/FlyerWall.module.css`, `src/render/ui/menu/__tests__/FlyerWall.test.ts`.
+- verify: `yarn typecheck` clean · `yarn test --run` 888/888 · `yarn lint` clean · Prettier applied.
