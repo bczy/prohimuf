@@ -1084,3 +1084,97 @@ BUDGET GAP: docs/perf-budget.md absent — working budgets (desktop 16.6 ms / mo
   - `src/render/ui/hud/BossHpBar.tsx` (bossHp===0 one-shot settle class via `cx`)
   - `src/render/ui/hud/BossHpBar.module.css` (`.settled` keyframe + reduced-motion guard)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 8. BUILD (gameplay lane) — dev-gameplay (Amelia) — 2026-07-20 — the 5 levers in the pure game core (TDD)
+
+- claim: stage-4 BUILD of the pure `src/game` half of ADR-0052 — all five differentiation
+  levers authored inside `bossQteSystem.ts` / `types/bossQte.ts` (+ harness `decorProp` data),
+  TDD, spec values verbatim, seeded-pure, boundary law held (zero React/Three; `stateMachine.ts`,
+  `src/hooks`, `src/render`, `qteSystem.ts`/`hostageQte.ts`, every shipped `LevelConfig`
+  byte-untouched). Built to ADR-0052 D2 reuse map, D3 finisher shape, D4 freeze-law constraints,
+  D5 boundary/determinism; frozen field/constant names (D2/D3) used exactly so the render lane's
+  parallel work binds.
+- release (per lever):
+  - **Lever 1 (dual rings, phase-escalated):** phase 1 = single V1 ring, byte-behaviour-identical
+    (`bossWander` now delegates to a parameterised `bossWanderBox`, full-anatomy amps ⇒ identical
+    output). Phase 2+ = two FIXED-identity rings — VITAL/tête (`BOSS_VITAL_WANDER_*`, ×1.0, 2 HP)
+    - LIMB/corps (`BOSS_LIMB_WANDER_*`, ×0.6, 1 HP, ring B via a decorrelating seed salt
+      `BOSS_RING_B_SALT`). One shot tested against both (`ringHitZone`), overlap → vital; ONE shared
+      `windowChipped` (a chip from either answers the window — no double drain). ⊂-band containment
+      asserted in `createBossQte`.
+  - **Lever 3 (charged parry window, same fire-click):** `chargedWindow` decoded from the existing
+    `fire`+`impactPoint` (no `src/hooks` change). Cadence `isChargedWindow`: none phase 1, one
+    teach phase 2 (phase-window index 1 — separated from the split per Karim advisory 1), every
+    other phase 3. Parry on `BOSS_PARRY_POINT` → `QTE_PARRY_CHIP +2` + STAGGER (`staggerRemaining`
+    → bonus EXPOSED window, the tempo flip); whiff → `QTE_CHARGED_WHIFF −10` + one blown window
+    (single charge, replaces the phase drain); panic click off the parry point → `QTE_PANIC_SHOT −6`,
+    non-consuming. Distinct `parryLeadSeconds`/`parryWindowSeconds` per phase, each asserted vs. its
+    floor (`≥ BOSS_TELEGRAPH_LEAD_FLOOR` & `< lull`; `≥ PEEK_EXPOSURE_FLOOR`).
+  - **Lever 5 (FINISHER):** ADR-0052 D3 new TOP-LEVEL phase. Any depleting chip → `FINISHER`
+    (energyDelta 0, `finisherRemaining = FINISHER_HOLD_SECONDS 1.5`); a `fire` OR timeout → `WON`
+    (`QTE_BOSS_REFILL +50` paid there) → `QTE_RESULT_HOLD 2.2` → DONE. `isBossQteActive` extended to
+    include `FINISHER` (freeze holds — unit-tested). Ceremonial, damage-free, zero failure surface.
+  - **Lever 2 (décor prop):** optional `BossQteSpec.decorProp?` (`null`/absent ⇒ additive-and-optional,
+    byte-behaviour-identical). Runtime `decorArmed`/`decorConsumed` (+ a runtime `decorProp` mirror so
+    the tick hit-tests and the render draws the position). Player-triggered during a SHIELDED lull of
+    `armPhaseIndex` → `BOSS_DECOR_DAMAGE 3`, single-use, PURE UPSIDE (missing costs nothing to the
+    mechanic). `smokeActive` = phase-3 stretch (game owns only the boolean + the ≥-floor guarantee).
+  - **Lever 4 (renfort surge):** in-tableau, seeded, telegraphed. `RENFORT_SURGE` descriptor (phase 3,
+    onset window 1, 2 windows); `renfortActive` derived from `phaseWindowIndex` (`isRenfortWindow`).
+    A BLOWN flagged window drains `QTE_RENFORT_DRAIN −12` INSTEAD of the phase drain (charged+surge
+    overlap → the greater magnitude only, never stacked); still exactly ONE `blownWindows++`
+    (`maxBlownWindows` never accelerated). Reads/mutates ONLY boss-QTE runtime state — encoded as the
+    **D4 unit assertion** (source scan: no `enemies`/`spawnWave`/`couriers`/`bullets`/`lives`/
+    `elapsedSeconds`/`qteSystem`/`hostageQte`).
+- **Ambiguities resolved (spec left open; dev-authored per the reuse maps' latitude):**
+  1. **STAGGER duration** — spec fixes the parry reward SHAPE but not the stagger duration →
+     `STAGGER_SECONDS = 0.3` (a brief damage-free beat, asserted > 0), analogous to the ring-B salt
+     being explicitly the dev's call.
+  2. **Ring-B salt** — `BOSS_RING_B_SALT = 0x9E3779B1` (a fixed large odd constant XORed into the
+     seed), decorrelating ring B from ring A; seeded-pure law unchanged.
+  3. **Phase-2 "teach near the phase end"** — not robustly implementable under HP-gated phases (window
+     count varies with skill), so implemented as a deterministic per-phase-window cadence: teach at
+     `phaseWindowIndex === 1` (the 2nd phase-2 window, one step after the two-ring split — the Karim
+     advisory-1 separation), phase-3 "every other" = odd `phaseWindowIndex`. The exact cadence is the
+     spec's own designated verify-tunable.
+  4. **`smokeActive` "a stretch of phase 3"** — defaulted to the whole phase 3 (`phaseIndex ≥ 2`); the
+     exact sub-stretch is a render/UX tunable (game owns only the boolean + the floor guarantee).
+  5. Added internal `phaseWindowIndex` (render-ignored) + runtime `decorProp`/`targetOffsetB` +
+     constant `BOSS_RING_B_ZONE` to carry the cadence/positions deterministically; ring-B liveness is
+     derived by render from the same EXPOSED/phase-≥1/non-charged condition the game uses.
+- **V1 behaviour changes (logged, spec-driven):** (a) lever 5 — a depleting chip no longer returns
+  `WON` directly; it opens `FINISHER` first (energyDelta 0), then `WON (+50)`. Two win/loss tests
+  updated to assert the FINISHER interposition. (b) the winnability test now models the full kit
+  (parries charged windows + resolves the finisher). No other V1 test changed.
+- **Cross-lane seam (closed):** the ADR-0052 D3 `FINISHER` top-level phase is not assignable to the
+  hostage-owned `QtePhase` param of the render camera driver (`qteCamera.ts qteZoomInProgress`, called
+  from `useGameLoop.ts`) — the tech-plan's "camera driver unchanged" had a type gap. dev-r3f-render
+  closed it in parallel (widened the param to `QtePhase | BossQtePhase` + pinned `FINISHER`, commit
+  d4e0877) via the frozen `FINISHER` name, so the integrated typecheck is green. Flagged here for the
+  merge-gate record; no `src/hooks`/`src/render` edit made by this lane.
+- **Verification (all green):** `yarn typecheck` — EXIT 0 (whole repo). `yarn vitest run` — 843/843
+  pass (full suite); the boss suite grew 35 → 62 tests (AC-D1..D8, the D4 boundary assertion, the
+  FINISHER-holds-the-freeze test, ⊂-band containment, two-ring/parry/décor/renfort determinism). `yarn
+lint` — EXIT 0.
+- boundary check: `stateMachine.ts`, all of `src/hooks`, `src/render`, `qteSystem.ts`/`hostageQte.ts`
+  and every shipped `LevelConfig` untouched by this lane; only the non-shipped harness gained a
+  `decorProp`. Seeded-pure preserved (no `Math.random`/`Date.now`/per-tick cursor — asserted).
+- stage-5 note (K-5, unchanged obligation): the harness `targetSeed 20260719` re-pin must confirm each
+  phase-2/3 window presents ≥1 landable waypoint on EACH ring, each charged window a landable parry,
+  and the `decorProp` arm-window landable — the two decorrelated ring paths + parry timing make this
+  harder than V1's single ring (per the ADR-0052 gotcha). Structural stand-in green; empirical pin is a
+  verify-leg item, not a contract blocker.
+- handoff → `qa-lead` (Inès) / `game-designer` (Sacha): stage-5 verify — design-acceptance vs.
+  AC-D1..D8, the seed re-pin, and the phase-3 parry cadence / renfort-surge-count verify-tunables.
+- handoff → `senior-architect` (Winston): merge-gate record — the FINISHER↔camera type seam (above)
+  was a tech-plan gap closed by dev-r3f-render in parallel; note it in the D3 narrowing review.
+- NOTE (process): appended via `cat >>` heredoc, strictly additive at end-of-file (the render lane
+  appends concurrently). NOT committed/pushed by this lane (the two `feat/test(game) … in-flight lane
+snapshot` commits are environment snapshots of the types/levels/test scaffolding; `bossQteSystem.ts`
+  - the final test refinements remain unstaged per the no-commit instruction).
+- File List:
+  - `src/game/types/bossQte.ts` (FINISHER phase + new runtime fields + `BossQteSpec.decorProp?`)
+  - `src/game/systems/bossQteSystem.ts` (the 5 levers, new constants/helpers, `createBossQte` asserts)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (35 → 62 tests)
+  - `src/game/levels/levels.ts` (harness `decorProp` data only — no shipped level touched)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)

@@ -14,12 +14,7 @@ import {
 } from "@game/systems/bossQteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
-import {
-  clamp01,
-  lerpHex,
-  ringZoneColour,
-  ringZoneEmphasis,
-} from "./hostageCue";
+import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
 import type { HudBossQte } from "@render/ui/HUD";
 
 // The boss QTE tableau — "le Commandant" (ADR-0051, differentiation pack ADR-0052). A
@@ -460,7 +455,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     if (whiffK > 0) tint = reducedMotion ? WHIFF_TINT : lerpHex(tint, WHIFF_TINT, whiffK);
     if (won) tint = WON_TINT;
     if (finisher) tint = FINISHER_DEFEAT_TINT;
-    if (lost) tint = reducedMotion ? ALARM : lerpHex(ALARM, WHITE, (Math.sin(nowMs * 0.006) + 1) / 2);
+    if (lost)
+      tint = reducedMotion ? ALARM : lerpHex(ALARM, WHITE, (Math.sin(nowMs * 0.006) + 1) / 2);
     if (hitK > 0) tint = lerpHex(tint, WHITE, hitK);
     (boss.material as MeshBasicMaterial).color.set(tint);
 
@@ -477,7 +473,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     ringB.visible = false;
     if (shootWindow) {
       ring.visible = true;
-      ring.position.set(qte.anchor.x + qte.targetOffset.x, qte.anchor.y + qte.targetOffset.y, RING_Z);
+      ring.position.set(
+        qte.anchor.x + qte.targetOffset.x,
+        qte.anchor.y + qte.targetOffset.y,
+        RING_Z,
+      );
       const ringMat = ring.material as MeshBasicMaterial;
       if (twoRing) {
         ringMat.color.set(ringZoneColour("vital"));
@@ -497,7 +497,9 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       }
     } else if (splitPreview) {
       // Faint dual-ring preview: "two openings now." Distinct from a plain phase break.
-      const previewOpacity = reducedMotion ? 0.22 : 0.15 + 0.1 * ((Math.sin(nowMs * 0.006) + 1) / 2);
+      const previewOpacity = reducedMotion
+        ? 0.22
+        : 0.15 + 0.1 * ((Math.sin(nowMs * 0.006) + 1) / 2);
       ring.visible = true;
       ring.position.set(qte.anchor.x + BOSS_WANDER_CENTRE.x, qte.anchor.y + 0.75, RING_Z);
       const ringMat = ring.material as MeshBasicMaterial;
@@ -511,7 +513,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     } else if (qte.telegraphActive && qte.phase === "ACTIVE" && !charged) {
       // The ordinary shoot wind-up tell — a faint ring at the neutral centre.
       ring.visible = true;
-      ring.position.set(qte.anchor.x + BOSS_WANDER_CENTRE.x, qte.anchor.y + BOSS_WANDER_CENTRE.y, RING_Z);
+      ring.position.set(
+        qte.anchor.x + BOSS_WANDER_CENTRE.x,
+        qte.anchor.y + BOSS_WANDER_CENTRE.y,
+        RING_Z,
+      );
       const ringMat = ring.material as MeshBasicMaterial;
       ringMat.color.set(TELL_TINT);
       ringMat.opacity = reducedMotion ? 0.22 : 0.15 + 0.12 * ((Math.sin(nowMs * 0.006) + 1) / 2);
@@ -524,7 +530,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     parry.visible = false;
     if (parryWindup || parryOpen) {
       parry.visible = true;
-      parry.position.set(qte.anchor.x + BOSS_PARRY_POINT.x, qte.anchor.y + BOSS_PARRY_POINT.y, PARRY_Z);
+      parry.position.set(
+        qte.anchor.x + BOSS_PARRY_POINT.x,
+        qte.anchor.y + BOSS_PARRY_POINT.y,
+        PARRY_Z,
+      );
       const parryMat = parry.material as MeshBasicMaterial;
       parryMat.color.set(parryOpen ? PARRY_OPEN_TINT : PARRY_WINDUP_TINT);
       const pulseK = reducedMotion ? 1 : 0.6 + 0.4 * ((Math.sin(nowMs * 0.012) + 1) / 2);
@@ -536,7 +546,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     decor.visible = false;
     if (decorProp !== null) {
       decor.visible = true;
-      decor.position.set(qte.anchor.x + decorProp.position.x, qte.anchor.y + decorProp.position.y, DECOR_Z);
+      decor.position.set(
+        qte.anchor.x + decorProp.position.x,
+        qte.anchor.y + decorProp.position.y,
+        DECOR_Z,
+      );
       const decorMat = decor.material as MeshBasicMaterial;
       const armed = qte.decorArmed && !qte.decorConsumed;
       if (armed) {
@@ -573,7 +587,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       q.position.set(qte.anchor.x + spreadX + driftX, qte.anchor.y + 0.4 + driftY, SMOKE_Z);
       const qMat = q.material as MeshBasicMaterial;
       qMat.color.set(SMOKE_COLOUR);
-      qMat.opacity = SMOKE_PEAK_ALPHA * smokeEnv * (0.7 + 0.3 * ((i % 2) === 0 ? 1 : 0.6));
+      qMat.opacity = SMOKE_PEAK_ALPHA * smokeEnv * (0.7 + 0.3 * (i % 2 === 0 ? 1 : 0.6));
     }
 
     // ── L4 renfort — frame-edge silhouette pressure (motion only, no shootable body) ───────────
@@ -583,7 +597,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     const cam = camera as OrthographicCamera;
     const halfW = size.width / cam.zoom / 2;
     const halfH = size.height / cam.zoom / 2;
-    const renfortTex = renfortEnv > 0.02 ? resolveRenfortTexture()?.texture ?? null : null;
+    const renfortTex = renfortEnv > 0.02 ? (resolveRenfortTexture()?.texture ?? null) : null;
     for (let i = 0; i < renfortRefs.current.length; i++) {
       const q = renfortRefs.current[i];
       if (q === null || q === undefined) continue;
@@ -641,7 +655,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       if (promptTex !== null) {
         finisherPrompt.visible = true;
         applyTexture(finisherPrompt, promptTex);
-        finisherPrompt.position.set(qte.anchor.x, qte.anchor.y - FINISHER_PROMPT_DY, FINISHER_PROMPT_Z);
+        finisherPrompt.position.set(
+          qte.anchor.x,
+          qte.anchor.y - FINISHER_PROMPT_DY,
+          FINISHER_PROMPT_Z,
+        );
         const promptMat = finisherPrompt.material as MeshBasicMaterial;
         promptMat.color.set(WHITE);
         promptMat.opacity = reducedMotion ? 1 : 0.65 + 0.35 * ((Math.sin(nowMs * 0.008) + 1) / 2);
