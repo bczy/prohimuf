@@ -824,3 +824,240 @@ correction (Claims audit item 5) forces no prompt change and only reinforces the
 
 — Nico, DELTA GATE — camera audit COUNTERSIGNED (8/8), [S7] bench delta PASS, slat-multiplicity
 DEFERRAL CONFIRMED
+
+---
+
+## Bertrand-directed revision v2 (concept-artist, 2026-07-20)
+
+Maud, authoring the new prompt strings for six props from **Bertrand's DIRECTED art
+changes** on the freshly generated PNGs (`public/assets/nearfg/*.png`, branch
+`claude/rue-propos-pipelines-revision-r4g52z`). These are Bertrand verdicts and **override
+prior gate decisions where they conflict** — I note each override at the clause where it
+happens and do NOT relitigate them. One variable changed per directive against the current
+gate-final strings; every keying/legibility hardening clause the earlier gate earned is
+carried through untouched unless the directive itself displaces it. Assembled prompt is
+still `opening` + this per-kind `prompt` + shared `style` tail (both family-locked, unedited).
+
+`bench_front.png` and `parkingMeter_front.png` are **preserved assets** (already copied) for
+a future far-side-of-road layer — no prompt entries here; that is a separate future story.
+
+### Camera-constraint override (directives 1 & 2)
+
+`story-road-props-reference-revision.md` binds props to their **road-facing side** (face
+toward the roadway/camera). Directives 1 (bench) and 2 (parkingMeter) **override that for the
+near-foreground copies**: Bertrand wants the FOREGROUND bench and horodateur seen **from
+behind**. Spatially coherent — these two sit on the camera's own (near) pavement, oriented so
+a sitter/user faces the street, so the camera sees their backs; the preserved front versions
+(`*_front.png`) go on the facade-side kerb across the road, where the road-facing front reads
+toward camera per the original constraint. Override noted; the other six-prop camera verdicts
+(8/8 CONFORME) stand.
+
+---
+
+**[R1] bench — regenerate from BEHIND** (seed 6107).
+Directive (verbatim): « Tourne le banc à 180° de manière à ce qu'on le voit de dos. Place
+celui de dos en premier plan. Garde cette version pour le mettre de l'autre coté de la
+route ». [Turn the bench 180° so we see it from behind. Put the back-view one in the
+foreground. Keep this (front) version for the other side of the road.]
+
+Clause-level changes (vs the 2026-07-19/-20 delta-gate FINAL):
+- Opening framing `seen side-on in profile` → `seen from directly behind, the straight
+  vertical backrest turned toward the viewer and filling the view, the seat hidden behind
+  the backrest` — the 180° turn. **Overrides** the road-facing-side camera clause for this
+  near copy (see override note above).
+- The slats now form the **backrest only** (the seat plane is hidden behind it), so `forming
+  the seat and the upright straight backrest` → `forming the upright straight backrest`.
+- `one continuous seat` → `one continuous backrest` (the seat is no longer the visible
+  surface).
+- KEPT verbatim: straight-vertical backrest (delta-gate fidelity fix), flush-slats +
+  thin-dividing-strokes keying clause, three-or-four-slat readability cap, solid-scrollwork
+  cast-iron end frames (still visible flanking the back), resting-on-pavement, both-ends
+  edge-inset margin.
+
+PROPOSED FINAL:
+```
+a Parisian Davioud public bench seen from directly behind, the straight vertical backrest turned toward the viewer and filling the view, the seat hidden behind the backrest: three or four bold horizontal wooden slats forming the upright straight backrest, drawn flush against each other with only thin dividing outline strokes between them so they read as clear parallel horizontal lines with no open gaps or daylight visible between slats; a heavy ornate cast-iron end frame at each end with floral scrollwork legs, the scrollwork read as bold solid shapes rather than fine see-through openwork, visibly bulkier and heavier than the thin slats; the backrest standing straight and vertical, not curved or reclined, the whole bench resting directly on the pavement; a long low bench, much wider than it is tall, one continuous backrest with no armrest dividers, comfortably inset with empty magenta margin on both ends, no part touching the canvas edge
+```
+Keying/readability: rear view is keying-SAFER than the front — the backrest is one closed
+slab flanked by solid end frames, flush-slats clause keeps inter-slat gaps closed (no
+enclosed magenta); no dark-uniform clause to regress; both-ends inset holds on the widest
+canvas (1.7).
+
+---
+
+**[R2] parkingMeter — regenerate from BEHIND** (seed 6101).
+Directive (verbatim): « [même] » [same — seen from behind]. Bertrand: the back of the head =
+plain sheet-metal back panel, no screen/slots; keep the slanted rain-cap read from behind,
+thin mast.
+
+Clause-level changes (vs the gate-final S1):
+- `standing tall:` → `standing tall, seen from behind:` — the 180° turn. **Overrides** the
+  road-facing-front camera clause for this near copy.
+- The whole operative-face clause `on the head's road-facing front a small dark blank
+  recessed rectangular screen … coin slot … ticket-delivery slot … ventilation grooves shown
+  as indented surface ridges` → `the head's back face turned toward the viewer as a plain
+  blank flat sheet-metal panel with nothing on it, broken only by a faint vertical hinge seam
+  down one side and a small flush lock plate, no screen and no slots on this rear face`. The
+  back genuinely shows none of the front furniture; the hinge seam + lock plate are the only
+  honest back-of-cabinet tells, drawn as surface lines (not cut-through → no un-keyed
+  hairlines, same discipline as the retired vent-groove edit).
+- `whole top face is a single steeply slanted rain-cap wedge` → `… rain-cap wedge sloping
+  away from the viewer` (the cap read from behind).
+- KEPT: slim-pole-thinner-than-head ratio, bulky boxy head, angular sheet-metal hard edges,
+  taller-than-wide.
+
+PROPOSED FINAL:
+```
+a 1990s Parisian pay-and-display parking machine standing tall, seen from behind: a slim steel pole clearly much thinner than the head, topped by a bulky rectangular boxy head whose whole top face is a single steeply slanted rain-cap wedge sloping away from the viewer; the head's back face turned toward the viewer as a plain blank flat sheet-metal panel with nothing on it, broken only by a faint vertical hinge seam down one side and a small flush lock plate, no screen and no slots on this rear face; angular sheet-metal casing, hard straight edges, distinctly taller than it is wide
+```
+Keying/readability: blank rear panel = no interior gaps, no enclosed magenta; hinge/lock are
+surface lines only. Mid-grey sheet-metal head + three-tone tail carry rim; no dark-uniform
+clause to regress. The now-plain head loses the screen/slot contrast that used to break up
+the mass — the slanted cap + hinge seam are the only silhouette breakers, adequate at the
+0.5 canvas.
+
+---
+
+**[R3] streetSign — plate reads "PARIS" + a graffiti tag** (seed 6108).
+Directive (verbatim): « Inscrit: PARIS. Et rajoute un tag ». [Write: PARIS. And add a tag.]
+
+**EXPLICIT no-text-law OVERRIDE:** this is a Bertrand-directed exception to the house no-text
+law for **this prop only**. The word PARIS is the ONLY legible text; the tag is an illegible
+spray scrawl (no readable letters). Clause changes (vs gate-final S8):
+- Removed `its face completely blank and empty with nothing written on it` and the trailing
+  `plain and empty` — those directly contradict the directive (this is the override).
+- Added the PARIS clause: `across the centre of the plate the single word PARIS spelled out
+  in bold clean white uppercase capital letters, large and clearly legible, this one word
+  PARIS being the only readable text anywhere` — emphatic and self-limiting so it does not
+  invite a second street-name line.
+- Added the tag clause: `sprayed across one corner of the plate an illegible looping graffiti
+  tag, a tangle of curving spray-paint strokes forming no readable letters, kept clear of the
+  plate edge` — scrawl, not letters; kept off the edge per Bertrand's note.
+- KEPT: landscape-rectangle silhouette anchor, bold single keyline border, single slender
+  post + splayed foot, post-attaches-behind (no through-hole), single flat plane.
+
+PROPOSED FINAL:
+```
+a Parisian enamel street-name plaque mounted on a single thin post: a wide landscape rectangular flat plate, clearly wider than it is tall, bordered by a bold single raised keyline border running just inside the edge; across the centre of the plate the single word PARIS spelled out in bold clean white uppercase capital letters, large and clearly legible, this one word PARIS being the only readable text anywhere; sprayed across one corner of the plate an illegible looping graffiti tag, a tangle of curving spray-paint strokes forming no readable letters, kept clear of the plate edge; one slender post, much thinner than the plate, rising from below into the centre of the plate and planted on a small splayed foot on the pavement, the post attaching behind the plate with no visible gap or hole through it; a single flat plane, not a boxy double-sided sign
+```
+Keying/readability: the tag sits ON the opaque plate and is held off the plate edge → no
+bridge to the magenta ground, no enclosed pocket. **RISK — flagged to lead-art (mechanical
+conflict I cannot resolve in my lane):** the shared family-locked `style` tail still ends
+with the six-way no-text kill (`no text, no letters, no numbers, no logo, no writing, no
+signature`) and it is the LAST word of the assembled prompt, so it directly fights the PARIS
+instruction (which lives earlier, in the subject). The subject is worded as forcefully as I
+can, but if PARIS fails to render, the fix is structural (a streetSign-specific `style`
+override, owned by dev-tooling-assets) — not a subject reword I can do alone. Second, lower
+risk: white letters on the light enamel plate are low-contrast in greyscale; the black glyph
+outline from the house ink style should carry them, verify at the asset gate.
+
+---
+
+**[R4] trafficLight — bigger + wider gap between the two heads** (seed 6104).
+Directive (verbatim): « Fais le plus grand et ajoute de l'espace entre les deux feux ».
+[Make it bigger and add space between the two lights.]
+
+Clause changes (vs gate-final S4):
+- Added scale: `the signal drawn large to fill most of the frame height`; vehicle head
+  `a tall boxy vehicle signal head` → `a big tall boxy vehicle signal head`.
+- Head gap: `Lower down a smaller pedestrian signal head` → `Well below it, separated by a
+  long clearly bare stretch of empty mast, a smaller pedestrian signal head` — the directed
+  bare-mast gap.
+- Road-side margin: `generous empty magenta margin on the road side so the visor tip stays
+  fully clear` → `just enough empty magenta margin on the road side that the visor tip stays
+  fully clear` — honours "bigger / less empty margin" while **keeping** the clause that
+  protects the keyer and the render-side lens anchors from a frame-crop (the earlier gate's
+  load-bearing fix; not dropped).
+- KEPT verbatim: strict-profile vehicle head, three edge-on lens slivers under tunnel
+  hood-visors, face-on ped head with two blank windows, dead/unlit/no-glow/no-colour
+  dead-housing law, grey visor-lip/mast highlight, splayed-foot mast.
+
+PROPOSED FINAL:
+```
+a French road traffic signal on a slim round mast with a splayed foot, seen from the side at street level, the signal drawn large to fill most of the frame height. High on the mast a big tall boxy vehicle signal head turned in strict side profile: three round lenses stacked vertically, each tucked under a curved tunnel hood-visor that juts sideways toward the road, the lens discs seen edge-on as narrow dark slivers, all dead and unlit. Well below it, separated by a long clearly bare stretch of empty mast, a smaller pedestrian signal head turned to face the viewer head-on: two blank dark round lens windows stacked vertically, both dead and unlit. Both heads cantilevered from the mast on short brackets. Every lens dark, matte and switched off, no glow and no colour; boxy hooded metal housings, dark uniform finish, a light grey highlight along the visor lips and mast edge to keep the housing legible against a dark night backdrop, with just enough empty magenta margin on the road side that the visor tip stays fully clear of the frame edge
+```
+Keying/readability: mast/head gaps stay open to background (edge-connected, key clean); the
+retained road-side margin protects the visor tip from a frame-crop even as the signal grows.
+**Note (not a prompt matter):** the render-side lens anchors (`lenses` block) must be
+re-tuned to the new bigger heads + wider gap after regen — orchestrator pixel-scan, tuned at
+the composite gate, NOT baked here.
+
+---
+
+**[R5] lamppost — bigger + LIT lantern** (seed 6102).
+Directive (verbatim): « Fais le plus grand et allume le ». [Make it bigger and light it up.]
+
+Clause changes (vs gate-final S2):
+- Added scale: `drawn large to fill most of the frame`.
+- Lit lantern: the lantern clause gains `every pane glowing bright pale near-white as if the
+  lamp is lit from within, a soft narrow pale halo hugging close around the lantern and
+  staying fully clear of the frame edges`. Per Bertrand: the pipeline luma-desaturates, so
+  "lit" = brightness, not colour → near-white panes + soft bright halo. The real glow is a
+  **render-side light/shader story pm is opening**; the sprite carries only the lit-lantern
+  READ. **This inverts the earlier keying rationale** for the lantern from "dark panes" to
+  "bright panes" — but it KEEPS `solid opaque panels with no open lattice or see-through
+  gaps` (the enclosed-magenta guard is orthogonal to pane brightness).
+- Scoped the dark clause: `dark uniform painted finish` → `dark uniform painted finish on the
+  base, shaft and arm` so the ironwork stays dark while the panes read lit (no self-conflict).
+- KEPT: fluted flaring base, tapering fluted shaft, S-swan-neck arm, faceted lantern +
+  pointed cap, solid-opaque panels, shaft lit-side grey highlight.
+
+PROPOSED FINAL:
+```
+a tall cast-iron Haussmann-era Parisian street lamp drawn large to fill most of the frame: a fluted base flaring out at the foot, a slender fluted shaft tapering as it rises, a single curved S-shaped swan-neck arm sweeping outward near the very top, ending in a faceted many-sided polygonal lantern with a small pointed cap, the lantern's facets solid opaque panels with no open lattice or see-through gaps, every pane glowing bright pale near-white as if the lamp is lit from within, a soft narrow pale halo hugging close around the lantern and staying fully clear of the frame edges; ornamental antique cast-iron, elegant and slender, dark uniform painted finish on the base, shaft and arm, a paler grey highlight edge along the shaft's lit side to keep the silhouette legible against a dark night backdrop
+```
+Keying/readability: bright panes IMPROVE legibility of the lantern (was the dark-mass top of
+the sprite). **RISK — flagged to lead-art asset gate:** the soft halo blends near-white →
+magenta at its outer edge, and that transition band is exactly where the flood-fill keyer
+gets ambiguous (a pink fringe or a ragged halo edge). Mitigated by `hugging close` (small
+halo) + `staying fully clear of the frame edges` (keeper edge-seeds never touch it) — verify
+no pink fringe on the keyed PNG; if it fringes, tighten the halo to zero and let the
+render-side shader own all the glow.
+
+---
+
+**[R6] wallaceFountain — add a prominent socle** (seed 6103).
+Directive (verbatim): « Ajoute un socle ». [Add a base/plinth.]
+
+Clause changes (vs gate-final S3):
+- Added the socle at the base: `raised on a prominent stepped stone plinth: a broad low socle
+  of two or three stacked rectangular stone steps at the very bottom, clearly wider than the
+  fountain body and reading plainly as a solid stone base, fully inside the frame with empty
+  margin on either side`. Wider-than-body, clearly a socle, per directive.
+- Adjusted the profile description to match: the old `pinched narrow at the base` read is now
+  preceded by the wider socle, so `the silhouette pinched narrow at the base, widest at
+  mid-height` → `the silhouette widest at the stone base, pinched narrower at the pedestal,
+  widening again at mid-height where the four figures stand`.
+- Extended the dark/highlight clause: `dark uniform patinated finish` → `dark uniform
+  patinated finish with the stone base a lighter stone grey` (tonal separation of the new
+  socle, keeps it legible + reads as stone vs the iron body).
+- KEPT: fused-caryatid closed silhouette (the enclosed-magenta guard), rounded-bump dome,
+  octagonal pedestal, squat-wider-than-lamp scale, dome/body-edge grey highlight.
+
+PROPOSED FINAL:
+```
+a Wallace drinking fountain, a compact cast-iron monument raised on a prominent stepped stone plinth: a broad low socle of two or three stacked rectangular stone steps at the very bottom, clearly wider than the fountain body and reading plainly as a solid stone base, fully inside the frame with empty margin on either side, above it an octagonal pedestal, four caryatid figures fused into one continuous closed silhouette around the centre, only surface linework separating each figure with no open gaps between them or under their raised arms, the arms supporting a domed pointed cap with a few small rounded bumps studding the dome; the silhouette widest at the stone base, pinched narrower at the pedestal, widening again at mid-height where the four figures stand, then tapering up to the pointed dome; modest and squat, clearly wider and lower than a street lamp, dark uniform patinated finish with the stone base a lighter stone grey, a lighter grey highlight along the dome and body edges to separate the silhouette from the dark street
+```
+Keying/readability: the stepped socle is solid stone (no gaps → no enclosed magenta); the
+`fully inside the frame with empty margin on either side` clause keeps the now-widest element
+off the side edges on the 0.55 portrait canvas. Lighter-stone-grey base = no dark-on-dark
+regression; fused-caryatid guard untouched.
+
+---
+
+### Unchanged props
+
+- **bollard** (seed 6105) — no directive, UNTOUCHED; gate-final S5 string stands.
+- **scooter** (seed 6106) — no directive, UNTOUCHED; gate-final S6 string stands.
+
+### Hand-off
+
+Six PROPOSED FINAL strings above for the **lead-art gate** (Nico). On PASS, dev-tooling-assets
+copies them verbatim into `levelArt.json` `nearForegroundArt.types.{bench,parkingMeter,
+streetSign,trafficLight,lamppost,wallaceFountain}.prompt` (seeds/size/asset unchanged) and the
+trafficLight `lenses` anchors get re-tuned to the bigger heads post-regen. Two risk flags for
+the gate: **[R3] streetSign** — the family-locked tail's no-text kill mechanically fights the
+directed PARIS text (may need a streetSign-specific `style` override, above my lane); **[R5]
+lamppost** — the lit-halo/magenta blend is a keyer fringe risk (asset-gate check).
+
+— Maud, Bertrand-directed revision v2
