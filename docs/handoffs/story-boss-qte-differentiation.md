@@ -1895,3 +1895,315 @@ chargedWindow=true smokeActive=true` (the parry WINDUP telegraph under the phase
 - Composite-gate consequence: smoke-related verdicts on evidence 22/27
   (and the glyph-over-smoke 28/29) are SUPERSEDED once the particle smoke
   lands — fresh captures + Gate-4 re-verdict required.
+
+---
+
+## COMPOSITE GATE (Gate 4) — lead-art (Nico) — 2026-07-20 · differentiation-pack runtime visuals
+
+Judged on the REAL in-game captures in `docs/qa/evidence/story-boss-qte-differentiation/` (20-27
+set + the new §16 render-fix captures 28/29), against the loi du glow — in particular §2.1
+« un halo est un dégradé, jamais un aplat » — and the §1/§2 B&W-plus-acid-neon colour law. Where the
+eye could be fooled I **measured pixels** (PIL sampling), not eyeballed. An asset-gate/design-loop
+PASS does not bind this gate; the composite gate is the first ART-AUTHORITY verdict on the runtime
+colour/glow, which is my jurisdiction.
+
+### PASS composites
+
+- **`22` — phase-3 smoke veil over the telegraph — PASS.** Sampled the veil bands: neutral grey
+  (g−r ≈ 0, b−r ≈ 0-2). The smoke is a normal-blend value desaturation that adds NO hue — it
+  degrades-not-removes the rings/telegraph and respects the B&W discipline. A translucent veil is
+  not a glow, so the §2.1 falloff law is not the operative test; the operative test (no second
+  colour, tell survives) passes.
+- **`26` — HP-bar zero settle — PASS.** The three-segment boss HP bar drains to empty cleanly; it
+  is a flat HUD instrument element (not a glow — §2.1 N/A). The full-sprite green tint on the boss
+  is an interactive-state recolour flash in the assigned neon hue (green) on the interactive
+  subject (loi du glow satisfied) — a state fill on a sprite with its own alpha edges, not a
+  hard-edged decorative halo-plate, so it is not a §2.1 aplat.
+- **`27` — reduced-motion phase-3 — PASS.** The smoke degrades to a held, non-strobing neutral-grey
+  veil (sampled g−r ≈ 0-1, b−r ≈ 0-3); tell still present and legible. Reduced-motion path holds.
+- **`28` (desktop) / `29` (mobile) — parry glyph + paper-white halo above the smoke (the §16 render
+  fix) — PASS.** This is the runtime-composed visual the §16 gate note explicitly routes to me.
+  Measured the halo falloff (vertical scan through the glyph, capture 28): background lum 120 →
+  ramp 125 → 164 → core 179 → decay 167 → 142 → 129 → back to ~120, with a slight cool cast
+  (b−r ≈ +18) that fades at the margins. That is a genuine **dégradé** with monotonic-ish falloff to
+  the ground value on both edges — NOT an aplat. It is a **near-neutral paper-white VALUE halo**
+  (house value language), so it adds no saturated hue to the B&W world — the correct restrained
+  choice for lifting a mechanic-critical tell above the smoke. Legible at both device classes (the
+  diamond guard-form reads distinctly from the open shoot-ring in 28 and 29, a clear improvement on
+  the washed-out pre-fix `21`). The render lane priced legibility; on the **aesthetic opacity floor
+  (my call)** the `1 − 0.4·smokeEnv` envelope lands it legible-but-restrained, degraded-never-
+  removed per 2-C — accepted. Both of the render lane's captured states verified.
+
+### FAIL composites (route to dev-r3f-render)
+
+- **`24` — décor prop "armed glow" — FAIL (§2.1 automatic, hard-edged aplat).** Measured a
+  horizontal scan through the armed prop: background grey `(119,120,116)` steps in ONE jump to full
+  lime `(197,254,90)`, holds **dead-flat** across the entire rectangle (no internal gradient), then
+  steps back to grey in ONE jump — no falloff, no surrounding halo. This is exactly the §2.1
+  automatic-FAIL signature (« un halo est un dégradé, jamais un aplat » — "a hard-edged solid neon
+  plate, opacity constant then cut to nothing, is not a glow, it is a decal — automatic FAIL"), and
+  the very failure mode §2.1 was written for (the ADR-0011 runtime rim shipping hard-edged). The loi
+  du glow requires the armed (interactive) décor prop to glow; §2.1 requires that glow to fall off.
+  It does not.
+  - **Concrete fix (dev-r3f-render):** the décor armed-state affordance must be a neon rim/halo with
+    an **alpha falloff that decreases from the prop edge outward and reaches 0 at the outer margin**
+    (measurable: sample edge→margin, monotonically non-increasing, terminate at 0), NOT a flat
+    constant-alpha fill. This applies to the procedural fallback AND to the eventual `lustre` sprite
+    rim. If the intent is that the falloff-bearing rim only lands on the generated sprite, then the
+    décor-glow composite is simply **not yet gateable** and must be re-captured once a falloff-
+    bearing treatment is on screen — either way PASS is withheld until a dégradé is visible in a
+    capture I can Read.
+- **`25` — FINISHER sepia wash — FAIL (colour law; hue added to the B&W world).** Measured a uniform
+  **R−B ≈ +14-15 warm cast across the whole game world** (concrete ground 300,430 → r−b +14; 1000,430
+  → +15; lower 640,600 → +14), i.e. paper/neutral-value world pixels no longer sample neutral —
+  corroborating game-designer's §13 "genuine warm sepia (R−B ≈ 13-18)" measurement. The single most
+  load-bearing rule of the whole art direction is §1: **the only colour is acid neon, reserved for
+  what matters.** A full-frame warm-amber wash puts a decorative, non-neon, saturated-leaning hue on
+  the entire B&W world — the exact thing §8.4.4/P2 makes an automatic FAIL for world post-processing
+  ("No hue added to the B&W layer. White pixels stay neutral"), and §8.1 lists OUT ("adding a second
+  colour to a B&W world"). Sepia is also an off-identity MEDIUM metaphor — warm photographic aging,
+  not cold xerox toner (§1 is photocopied-fanzine B&W). This composite arrives at my gate as the
+  first colour-law verdict on it (game-designer/ux-designer observed it without owning the colour
+  law); it does not survive that verdict.
+  - **Concrete fix (dev-r3f-render):** keep a DISTINCT FINISHER visual beat (the ADR-0052 FINISHER
+    state rightly needs to read differently from WON) but stay INSIDE the B&W + acid-neon identity —
+    e.g. a **monochrome** punctuation (high-contrast value-crush / brief inverted flash / deep
+    feathered vignette hold) and/or a **hue-preserving neon bloom pulse** on the already-neon
+    elements (the crosshair / « LIVRE LE SON » prompt). **No warm second-colour wash on the
+    decorative world**; sampled world/paper-value pixels must stay neutral (R−B ≈ 0). The «LIVRE LE
+    SON» prompt copy and the finisher's mechanical distinctness are unaffected — only the colour
+    grade changes.
+
+### Bible gap noted (proposed rule — routed for a bible-gate amendment, not asserted unilaterally)
+
+The bible is silent on a discrete **cinematic finisher/kill-beat treatment**. To close the gap that
+let a sepia wash reach runtime, I propose adding to §2/§8 (through the bible gate): _a momentary
+cinematic beat (finisher, transition) may shift TONE — value, contrast, vignette, hue-preserving
+neon bloom — but may never introduce a saturated non-neon hue to the world; sampled world/paper-value
+pixels stay neutral, same footing as the CRT §8.4.4/P2 test._ Logged here as a proposal; I will carry
+it into `art-direction.md` via the bible gate if ratified.
+
+### Overall
+
+**COMPOSITE GATE: FAIL** — 5 of 7 composites PASS (22, 26, 27, 28, 29), **2 FAIL** (24 décor-glow
+aplat §2.1; 25 finisher sepia colour-law). The pack cannot merge on the runtime-visual axis until
+`24` and `25` are reworked and **re-captured** for a fresh composite verdict (an asset/design PASS
+does not cover them). Both FAILs route to `dev-r3f-render` with the concrete fixes above. Bertrand is
+the only one who may override a FAIL.
+
+VERDICT: PASS — composite gate 22-smoke-veil (lead-art)
+VERDICT: FAIL — composite gate 24-decor-armed-glow (lead-art)
+VERDICT: FAIL — composite gate 25-finisher-sepia-wash (lead-art)
+VERDICT: PASS — composite gate 26-hpbar-zero-settle (lead-art)
+VERDICT: PASS — composite gate 27-reduced-motion-smoke (lead-art)
+VERDICT: PASS — composite gate 28-parry-glyph-halo-desktop (lead-art)
+VERDICT: PASS — composite gate 29-parry-glyph-halo-mobile (lead-art)
+VERDICT: FAIL — composite gate differentiation-runtime-visuals (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-qte-differentiation.md` (this composite-gate entry appended).
+
+## 18. PERF RE-VERDICT (particle smoke) — gpu-specialist (Ben) — 2026-07-20 — bounds for Bertrand's particle override (§17)
+
+- claim: re-verdict the BOUNDS after Bertrand's §17 override of the smoke LOOK (4-quad veil → real
+  particle system + CC0 texture). The look is his call and out of my lane — I do not re-litigate it;
+  I price the technique so the particle implementation `dev-r3f-render` is building RIGHT NOW stays
+  inside the mobile fill-bound frame the §8 verdict defended (33.3 ms mobile / 16.6 ms desktop working
+  budget; CRT `lite` already eats most of the mobile frame; smoke rides pass 1, adds NO pass/NO RT).
+- **Honest delta vs. §8:** a particle system is the exact "unbounded transparent overdraw stacked under
+  the full-res composite" I named as the fill-rate cliff (§8, line "A particle cloud = …"). It is NOT
+  disqualified — it is BOUNDABLE — but the marginal budget is now the BINDING gate with little slack,
+  and the DEFERRED-ON-TARGET silicon measurement is now genuinely load-bearing, not a formality. A
+  4-quad veil I could near-certify by reasoning; a particle cloud MUST be measured on device.
+
+### (1) Binding caps — the RIGHT budget for the fill-bound mobile frame
+
+`dev-r3f-render`'s interim self-bounds are in the right ballpark; I RATIFY the counts and blend, and
+add the two caps that actually govern fill (raw count alone has a loophole: N huge quads = fullscreen
+wash). **The binding constraint is cumulative screen coverage (overdraw), not particle count** — count
+and size are the levers to stay under it.
+
+- **CAP-A — Max particle count per tier: desktop ≤ 64, mobile ≤ 32.** RATIFIED as the count ceiling
+  (target ~24 on mobile to keep headroom). Subordinate to CAP-C — whichever is hit first binds.
+- **CAP-B — Max per-particle size ≤ 1/3 of min(viewport W, H).** Closes the "few huge billboards"
+  loophole; no single particle may be a stealth fullscreen wash. Small-to-mid is correct; this is the
+  hard ceiling on "mid."
+- **CAP-C — Cumulative coverage / overdraw heuristic (THE binding cap): Σ(live particle screen
+  areas, counting overlap) ≤ 3× viewport area on mobile, ≤ 6× on desktop.** Device- and dpr-
+  independent (a fraction of the frame), maps directly to fill cost. This is the number to instrument
+  and defend; CAP-A/CAP-B exist to keep it satisfied. (Sanity: 32 mobile particles at ~0.3×0.3 viewport
+  = ~2.9× — under 3×. Consistent with the self-imposed bounds; the cloud must not drift past it as
+  particles cluster.)
+- **CAP-D — Texture: single texture, ONE fetch, ≤ 256² (CC0 smoke).** A soft puff needs no more; 256²
+  is sampler-cache-friendly on mobile. 512² is the absolute ceiling only if art insists; 256² is the
+  binding recommendation. No second texture, no lookup/noise map.
+- **CAP-E — ADDITIVE BLEND PROHIBITED (retained hard).** Normal desaturated alpha only. Additive over
+  many overlapping particles both trips the composite bloom gate (`bloomThreshold 0.25 /
+bloomBrightness 0.55` → neon haze) AND is the worst-case fill blend. Desaturated keeps the puffs out
+  of the bloom saturation gate.
+- **RETAINED from §8:** ZERO new render targets, ZERO new fullscreen passes, `CrtPass.tsx` untouched
+  (particles are layer-0 scene geometry riding pass 1); renderOrder UNDER the parry glyph + telegraph
+  (the ring/pose stays on top = degraded-not-removed, UX D1.1/D1.2); reduced-motion = frozen
+  positions + opacity, no strobe (CAP-C still applies to the frozen frame).
+- **Portability note (perf, not aesthetic):** prefer instanced/merged textured billboards over raw
+  `gl.POINTS` if point-sprite size clamping bites — many mobile GL drivers cap `gl_PointSize`
+  (~64–256 px) inconsistently, which would silently break CAP-B/CAP-C control. Either is fine if the
+  coverage cap holds; billboards give predictable size control. No determinism constraint (smoke is a
+  render visual, not game state — like the CRT grain; the game owns only the `smokeActive` boolean).
+
+### (2) DEFERRED-ON-TARGET protocol — updated thresholds for the particle version
+
+Build / devices / CRT-lite-ON / `?preview=boss` / phase-3 scenario / smoke-on-minus-smoke-off marginal
+isolation — all UNCHANGED from §8. Particle-specific updates:
+
+- **Capture at PEAK coverage, not average** — the frame where the cloud fills the most screen (mobile
+  `MOBILE_ZOOM 1.7` pulls the puffs closer = more coverage). Particle fill is coverage-driven, so the
+  worst frame is the gate, not the mean.
+- **Metrics add instrumented coverage:** alongside frame time, dump `renderer.info.render.calls` and —
+  if the probe can — an overdraw proxy (Σ particle area / viewport area) to check CAP-C empirically on
+  device, not just by eye.
+- **Thresholds (vs. working budget, pending ratification):**
+  - **Mobile smoke marginal ≤ ~1.5 ms — HELD** (the §8 number; it is the defensible headroom under the
+    33.3 ms mobile frame the CRT already fills). This is now the BINDING gate — particles will run
+    closer to it than the veil did.
+  - **Mobile phase-3 median (smoke active) ≤ 33.3 ms (30 fps).** HELD.
+  - **NEW mobile p95 ≤ ~40 ms** (no single-frame stall worse than ~25 fps) — particle overdraw spikes
+    as puffs cluster/overlap; a passing median with a hitching p95 still fails the feel.
+  - **Desktop smoke marginal ≤ ~1.5 ms; desktop phase-3 median ≤ 16.6 ms (60 fps).**
+  - **FAIL on any** → descend the cheap-out ladder (3), re-measure.
+
+### (3) Cheap-out ladder for the particle version (ordered, least-visible change first)
+
+1. **Count tier down** — mobile 32 → 24 → 16 (desktop 64 → 48). Pure knob, linear fill reduction; the
+   "smoke cloud" read survives a lower count. Owner: `dev-r3f-render`.
+2. **Size / coverage down** — tighten CAP-C (mobile 3× → 2×) and/or per-particle size. Fill scales with
+   area, so this is the strongest single lever. Owner: `dev-r3f-render`.
+3. **Texture down** — 256² → 128² if the on-device profile shows sampler/bandwidth bound rather than
+   overdraw bound (usually secondary to 1–2). Owner: `dev-r3f-render`.
+4. **Static-veil fallback on MOBILE ONLY (LAST RESORT)** — if even a minimal particle count blows the
+   weak-mobile budget, mobile falls back to the §8 ≤6-quad static veil while desktop keeps the particle
+   cloud (a quality tier-split, the same philosophy as CRT `full`/`lite`). NOTE: this reverts the LOOK
+   on mobile, which is Bertrand's §17 call — so reaching lever 4 routes BACK to Bertrand / `lead-art`
+   via `senior-architect`, never decided unilaterally in the render or a fix lane. I price it; the
+   mobile-look trade is theirs.
+
+VERDICT: PERF PASS (particle smoke, pre-close) — CC0 particle system OK within: ≤64 desktop/≤32 mobile particles (CAP-A), per-particle ≤1/3 min-viewport (CAP-B), cumulative coverage ≤3× mobile/≤6× desktop = the BINDING cap (CAP-C), single ≤256² texture 1 fetch (CAP-D), additive PROHIBITED normal-desaturated-alpha (CAP-E), zero new RT/pass, CrtPass untouched, renderOrder under glyph, reduced-motion frozen; look override is Bertrand's, bounds are mine (gpu-specialist)
+VERDICT: DEFERRED-ON-TARGET (particle smoke) — marginal ≤~1.5 ms mobile HELD (now binding), phase-3 median ≤33.3 ms mobile / ≤16.6 ms desktop, NEW p95 ≤~40 ms mobile; capture at PEAK coverage; particle overdraw genuinely needs silicon — producer chases, Bertrand runs; cheap-out = count↓ → size/coverage↓ → texture↓ → mobile-only static-veil (routes back to Bertrand) (gpu-specialist)
+
+- handoff → `dev-r3f-render` (Amelia): build to CAP-A..E above; your interim bounds are ratified with
+  CAP-B (size) + CAP-C (coverage) added as the real governors and CAP-E (additive prohibited) retained.
+  I re-verdict at stage-5 (in-sandbox `renderer.info`: draw calls + RT count unchanged + coverage proxy)
+  and the DEFERRED on-target run confirms the ms.
+- handoff → `producer` (Marion): the DEFERRED-ON-TARGET item is now MORE load-bearing (particle overdraw
+  unmeasurable in SwiftShader) — keep it on the chase list ahead of / at stage-6 as §16 already flagged;
+  fresh Gate-4 captures for evidence 22/27/28/29 are superseded per §17.
+- handoff → `senior-architect` (Winston): bounds are additive to the boss render, no boundary/ADR change;
+  the only decision that could escalate to you is cheap-out lever 4 (mobile-only look revert), which is
+  Bertrand's call, not a fix-lane one.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 15. VERIFY (stage 5, leg 2 — A1 re-verify) — game-designer (Sacha) — 2026-07-20 — statistical winnability re-pin on the landed BOSS_VITAL_CATCH_RADIUS 0.18
+
+- claim: my owed A1 §5 re-verify — re-ran the scratchpad simulation harness (N=500/style, seed 20260719) against the CURRENT code (rebundled `bossQteSystem.ts`: `BOSS_VITAL_CATCH_RADIUS 0.18`,
+  per-zone `withinCatch`, sub-band assert confirmed present) and checked the gated acceptance
+  (`greedyVital`/`campVital` loss > 0 while `greedyLimb`/optimal stay 100%). Also closed my §12
+  parry-read soft flag against evidence `28`/`29`.
+
+### VERDICT: FAIL — A1 winnability re-pin (game-designer)
+
+The gated acceptance is NOT met and — more importantly — the correction's PURPOSE (break the
+camp-vital dominance my §12 finding named) is NOT achieved at 0.18. The mechanism (per-ring catch
+radius) is the right lever, but **the value 0.18 is too loose** (it excludes only the ~8 % corner
+sliver of the vital box) AND **the acceptance metric "loss > 0" is structurally unreachable by
+catch-radius tuning** (evidence below). This is round 1 of the 2-round cap failing its re-verify →
+round 2: concrete re-tune + a corrected acceptance metric, for Karim to re-gate.
+
+### Re-run at the landed value (BOSS_VITAL_CATCH_RADIUS 0.18, current code, seed 20260719, N=500)
+
+| Style         | Win   | Loss   | avg blown | avg ΔE    | avg time | note                                                                                    |
+| ------------- | ----- | ------ | --------- | --------- | -------- | --------------------------------------------------------------------------------------- |
+| optimal       | 100%  | 0%     | 0.00      | +13.1     | 41.7s    | must stay 100 ✓                                                                         |
+| greedyLimb    | 100%  | 0%     | 0.00      | +3.6      | 49.3s    | must stay 100 ✓ — safe bank                                                             |
+| greedyVital   | 100%  | **0%** | 0.43 (≤3) | −8.3      | 44.9s    | **loss 0% — FAILS "loss > 0"** (punished, not lost)                                     |
+| parryWhiff    | 99.8% | 0.2%   | 7.45 (≤9) | −91.1     | 76.0s    | whiff cost bites (unchanged axis)                                                       |
+| decorIgnore   | 100%  | 0%     | 0.00      | +3.6      | 49.3s    | décor pure-upside                                                                       |
+| **campVital** | 100%  | **0%** | **0.00**  | **+45.0** | 41.6s    | **FAILS — still the SINGLE BEST line (+45 E, fastest, 0 blown); camp dominance intact** |
+| campLimb      | 100%  | 0%     | 0.00      | +45.0     | 52.9s    | reference                                                                               |
+| sloppy        | 46.4% | 53.6%  | 9.06      | −177      | 81.1s    | losable by execution                                                                    |
+| sloppyNoParry | 23.4% | 76.6%  | 9.44      | −190      | 74.1s    | losable                                                                                 |
+
+- **greedyVital loss = 0.0 % and campVital loss = 0.0 %** — both required > 0. FAIL on the letter.
+- **campVital net +45 E is the MAX of any style** (barely down from +50 pre-A1) and clears fastest
+  (41.6 s) with 0 blown → head-camping is STILL strictly dominant. The §12 exploit is essentially
+  untouched: at 0.18 a fixed-centre spammer hits **94 %/shot and blows 0/18 vital windows** (kinematic
+  reconstruction off the real `bossWanderBox`, seed 20260719). 0.18 only excludes the box corners
+  (reach 0.226), ~8 % of positions — too little to matter.
+
+### Why "loss > 0" is structurally unreachable by catch-radius tuning (root-cause evidence)
+
+Full-sim sweep (rebundled scratchpad copy at each radius — NO repo edit; real tick logic):
+
+| Vital catch r | campVital ΔE | campVital blown | greedyVital ΔE | greedyVital blown | greedyVital loss | greedyLimb/optimal |
+| ------------- | ------------ | --------------- | -------------- | ----------------- | ---------------- | ------------------ |
+| 0.18 (landed) | **+45.0**    | 0.00            | −8.3           | 0.43              | 0%               | 100% / 100%        |
+| 0.13          | +20.0        | 0.00            | −32.4          | 1.41 (≤6)         | 0%               | 100% / 100%        |
+| 0.12          | +5.0         | 0.00            | −37.9          | 1.63 (≤6)         | 0%               | 100% / 100%        |
+| **0.11**      | **−5.0**     | 0.00            | −44.7          | 1.92 (≤7)         | 0%               | 100% / 100%        |
+| 0.10          | −10.0        | 0.00            | −53.7          | 2.33 (≤8)         | 0%               | 100% / 100%        |
+
+Even at 0.10 both greedyVital and campVital stay **0 % loss** — the loss clock needs 10 FULLY-blown
+windows, but (i) multi-shot spam answers a window with a single hit, (ii) the ring decelerates to
+zero velocity at each waypoint (built-in stillness → a tracker/spammer lands ≥1/window), and (iii)
+energy-bleed is NOT a death in the boss tableau (clamp-only, carried out — by design, ADR-0051). So
+the catch radius controls per-shot hit rate → ENERGY BLEED and clear-time, NOT the loss clock. "Loss
+
+> 0" cannot be produced by this lever for realistic (spamming) play. The metric is ill-posed.
+
+### ROUND-2 RE-TUNE PROPOSAL (concrete — for Karim to re-gate)
+
+1. **Value: `BOSS_VITAL_CATCH_RADIUS 0.18 → 0.11`** (`src/game/systems/bossQteSystem.ts`). 0.11 is the
+   threshold where **campVital net energy first goes NEGATIVE (−5)** — below `greedyLimb` (+1.7) and
+   optimal (+12.8) — so head-camping is no longer the dominant line: you may still camp for speed
+   (42.9 s) but you PAY for it in energy, vs. camp-limb +45 / bank-limb +1.7 / track-vital +12.8. The
+   dilemma is restored. A decelerating-waypoint tracker keeps ≥1 hit/window (vital stays viable &
+   winnable); `greedyLimb`/optimal stay 100 % (limb/parry/décor/phase-1 untouched at 0.30).
+   (0.10 is a more decisive alternative — campVital −10 — if a bigger margin is wanted.)
+2. **Reframed acceptance metric (replace "loss > 0", which is structurally unreachable — evidence
+   above):** camp-vital is no longer dominant — **campVital net energy < optimal AND < greedyLimb**
+   (at 0.11: −5 < +12.8 and < +1.7 ✓), AND greedyVital carries material cost (**energy clearly
+   negative, blown-windows ≫ greedyLimb's 0** — at 0.11: −44.7 E, 1.92 blown ✓), while
+   greedyLimb/optimal stay 100 % win and the seed stays winnable (re-pin if not). This measures the
+   real design goal (earned 2 HP / camp-no-longer-dominant) instead of an unachievable loss rate.
+   (If literal loss > 0 is required, it needs a DIFFERENT mechanism — a per-window vital shot budget,
+   or vital-off-ring-miss counting toward the blown clock — a larger change than a value tweak; I
+   recommend the reframed metric over that.)
+3. **Paired render + K-5 re-pin gate carry over unchanged:** vital ring A DRAWN at the new catch
+   radius (drawn = catch, §5.6) — flag to `ux-designer`/`lead-art`: a 0.11-world-unit ring is small,
+   so it must stay legible (bright/high-contrast) especially on mobile; the drawn=catch invariant
+   forbids drawing it bigger than 0.11. Re-pin seed 20260719 if a landable trackable vital waypoint
+   or competent limb-banking clears is not present at 0.11.
+
+### §12 parry-read soft flag — CLOSED
+
+Evidence `28-parry-telegraph-under-smoke.png` (desktop) + `29-mobile-parry-under-smoke.png` (mobile):
+the parry telegraph now carries a FORM-distinct pale rotated-diamond "guard" glyph at the raised
+sidearm (up-left of the round shoot reticle), reading ABOVE the smoke veil on both device classes —
+parry-vs-shoot now reads by FORM, not colour/position alone. My §12 soft flag is addressed; final
+A-item legibility sign-off remains `ux-designer` (Tony)'s leg-2 lane (spec 3-C).
+
+- handoff → `lead-game-designer` (Karim): A1 re-verify = FAIL (round 1's re-verify). The mechanism is
+  right; the VALUE (0.18) is too loose and the METRIC (loss > 0) is ill-posed. Round-2 proposal above:
+  re-tune to 0.11 + reframe acceptance to "camp non-dominant / greed energy-negative." Please re-gate
+  (a value change + the reframed metric); a further re-verify failure would hit the 2-round cap →
+  Bertrand. I stand ready to re-run the sim the moment `dev-gameplay` lands the new value.
+- handoff → `dev-gameplay` (Amelia): pending Karim's re-gate — `BOSS_VITAL_CATCH_RADIUS 0.18 → 0.11`
+  (sub-band assert still holds: 0.11 < vital reach 0.226); update the winnability unit re-check.
+- handoff → `dev-r3f-render` (Amelia) + `ux-designer`/`lead-art`: pending re-gate — vital ring A DRAWN
+  at 0.11 (drawn = catch), with a legibility treatment for the smaller ring (mobile especially).
+- NOTE (process): §15 appended via `cat >>` heredoc (additive, end-of-file). Simulation + radius sweep
+  ran on throwaway scratchpad bundles/copies (esbuild + sed of the bundle only) — NO `src/**`, test,
+  or repo edit; no commit/push.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: FAIL — A1 winnability re-pin (game-designer) — on the landed BOSS_VITAL_CATCH_RADIUS 0.18 the gated acceptance is unmet: greedyVital loss 0.0% and campVital loss 0.0% (both required > 0), and campVital remains the single BEST line (+45 E, fastest 41.6s, 0 blown — a fixed head-camp still hits 94%/shot, blows 0/18 vital windows), so the §12 camp-dominance is essentially intact. Root cause (full-sim radius sweep 0.18→0.10): "loss > 0" is structurally unreachable by catch-radius tuning (multi-shot spam answers a window with one hit + waypoint stillness + energy-is-not-death), so the radius controls energy-bleed, not the loss clock. Round-2 re-tune: BOSS_VITAL_CATCH_RADIUS → 0.11 (campVital net energy goes NEGATIVE −5 < greedyLimb +1.7 < optimal +12.8 → camp no longer dominant; greedyVital −44.7 E / 1.92 blown; greedyLimb & optimal stay 100%), PLUS reframe the acceptance to "camp-vital non-dominant + greedyVital energy-negative" (loss>0 is ill-posed). §12 parry-read soft flag CLOSED by evidence 28/29 (form-distinct diamond guard glyph above the smoke, desktop + mobile). Round-1 re-verify failed → round 2, Karim to re-gate.

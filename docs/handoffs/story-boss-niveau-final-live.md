@@ -1559,3 +1559,98 @@ in size`. **Count = 5 (not belliard's 7)** justified: grand ballroom arches are 
   optional ceiling), same chain as the 9. dev-tooling-assets owns the `levels[]` structure incl.
   `windowGrid.cols = 5`.
 - Not a `VERDICT:` line — prompt OWED and un-gated pending Nico.
+
+---
+
+## PROMPT GATE — lead-art (Nico) — 2026-07-20 · l'Éden venue backdrop family (3 slots)
+
+Read in full: `docs/art-direction/prompt-drafts/niveau-final-eden.md` (facade + foreground +
+optional ceiling, per-clause rationale, Serge PRE-PROD [E1]-[E6], Maud's integration of [E3]+[E4]
+and the speaker bake-in RULING), the binding composition constraints (Karim advisory 6 + my own
+restatement), `docs/game-design/spec-niveau-final-fiction.md` §1 (l'Éden canon), and my bible
+`docs/art-direction.md` (§1 identity, §2 laws, §5 facades/levels grammar, §2bis facade treatment).
+
+**Hand-held contract (the `levels` block is NOT word/negation machine-linted — I re-counted it
+myself):** facade **114w / 0 negations** (under the 120 ceiling); foreground **38w / 2 negations**
+(`no wall, no floor`, ≤2 budget) AND carries the **required `magenta chroma-key` phrase**
+(`checkLevels` cut-out requirement — confirmed present); ceiling (optional) **29w / 0 negations**.
+Maud's 114/38/29 counts CONFIRMED exact. No baked neon hue in any slot (décor is value/atmosphere —
+`dim warm night light`, `faded gilt` are lighting/material words, not §2-law-1 neon accents; the
+acid neon stays render-side; nothing interactive is baked into the facade).
+
+### Per-slot verdicts
+
+- **`facade` (porteur) — PASS.** Delivers the Prohibition §5 grammar (flat front-elevation, a
+  window grid where hostiles pop) in the l'Éden register (derelict 1930s dancing-hall ballroom —
+  `dancing-hall ballroom` excludes the warehouse-industrial register by form; `peeling gilded
+  cornices` / `faded decayed grandeur` is faded-grandeur, not horror-decay, on-direction for §1
+  clandestine-Paris night). The three binding composition constraints are all met IN the prompt:
+  - **Constraint 1 (back wall plein cadre {0,-5}, no dead sky-gap) — PASS, my compo check.** The
+    interior venue correctly DROPS the exterior sky/street layers, and `the back wall filling the
+    frame ceiling to floor` positively fills the frame — no sky band can sit behind the boss at
+    {0,-5} (the Vitry x:9.9 dead-gap failure is structurally excluded by an interior wall). Positive
+    phrasing (`filling … ceiling to floor`, not "no sky") = 0 negation.
+  - **Constraint 2 (bare hook {0.2,1.5} for the render-side shootable lustre; NO baked chandelier) —
+    PASS at the prompt level, with a carried-forward compo check.** `a bare ceiling hook high where
+    a chandelier once hung` reserves a clean high anchor and bakes NO lustre (avoids doublon + false
+    affordance — the shootable lustre is the render-side `decorProp`, family Commandant, already
+    FAMILY PASS). MY COMPO CONTROL, provable only when the PNG lands (asset/composite stage, flagged
+    not blocking): verify the generated facade actually leaves the {0.2,1.5} hook zone clean and high
+    enough that the render-side hanging lustre reads with no cornice/mezzanine element colliding and
+    no dead-gap around it.
+  - **Constraint 3 (mur d'enceintes present but NOT a shootable false-affordance in V1) — PASS,
+    Serge's bake-in-facade RULING RATIFIED.** `plywood speaker cabinets low in one corner as flat
+    set-dressing` bakes the speakers into the `facade` layer, which is composited directly and
+    NEVER chroma-keyed → no per-object render path can ever give them a neon rim → non-interactive
+    by the loi du glow (§2 law 1: only a render-side rim = interactive). This is the STRONGEST
+    possible guarantee against the false-affordance Karim's constraint 3 targets, and it also
+    sidesteps the [S10] large-near-black-mass keying risk of a re-keyed autonomous `speaker_wall`
+    for zero V1 gain. The autonomous `speaker_wall` sprite (Commandant family, PASS) stays the
+    promotion asset for a future venue that makes it interactive; in V1 it is NOT rendered.
+  - **Window row [E3]+[E4] — PASS.** `exactly 5 tall arched windows, evenly spaced and identical in
+    size` reuses belliard's proven regularity formula; **5 (not 7)** is correctly justified — wide
+    ballroom arches (vs narrow immeuble windows) fill one 1280×768 wall with visible masonry piers
+    between them, directly mitigating the belliard [E5] merge risk. [E4]'s de-sealing (`dark
+    recessed cavity … lower panes boarded, upper arch left open, warm light spilling through`) is
+    the right fix: a fully-boarded plank gives `align-windows.mjs` no detectable blob AND a cop
+    popping from a sealed board = broken silhouette (§2 law 3); the open upper arch keeps each
+    window an occupiable pop-opening while the lower boards keep the "condamnées" decrepitude read.
+    dev-tooling pins `windowGrid.cols = 5` to this count.
+- **`foreground` (chroma-keyed near-plane) — PASS.** Interior version of the street foreground (the
+  cast-iron ballroom balustrade the crosshair aims over, coherent with the facade's balustrade +
+  cornices). Carries the required `magenta chroma-key` cut-out phrase; the 2-negation isolation
+  (`no wall, no floor`, adapted from the street family's 3-neg `no building/wall/sky` to fit an
+  interior AND the ≤2 budget) is a sound assumed family deviation.
+- **`ceiling` (optional) — PASS-AS-IS.** To be used ONLY if the level structure needs a separate
+  high slot (the `facade` already carries the ceiling/cornices; by default this layer DROPS). Keeps
+  the clean bare hook (constraint 2), bakes no lustre.
+
+### Family + coherence
+
+The three slots read as one interior (cast-iron balustrade + gilded cornices + parquet + faded
+grandeur run through facade/foreground/ceiling coherently) and are consistent with the existing
+level-backdrop grammar (belliard/stalingrad/vitry pattern). The venue is on-canon (l'Éden,
+Bertrand-confirmed grand disused dancing-hall, design-gate ratified). This backdrop is a SEPARATE
+family from the `boss` block 9-asset family I gated earlier today — nothing here re-gates that, and
+that gate did not gate this.
+
+### Dispatch-readiness (family PASS)
+
+All 3 slots PASS + family PASS — **no FAIL, no iteration owed to Maud.** Structure to
+`dev-tooling-assets`: add the `levels[]` entry (`id` `niveau-final`, name/label,
+`backdrop`/`parallax`/`nearForeground` knobs, layer set with sky/street DROPPED for the interior,
+`size` = global `facade` 1280×768, path `assets/levels/niveau-final/facade.png` per narrative
+wiring flag B / ADR-0023) and **pin `windowGrid.cols = 5`** to the arch row. Two carried-forward
+checks at the post-art / asset / composite stage (NOT prompt-gate blockers): (i) my compo control on
+the {0.2,1.5} hook clean-zone for the render-side lustre; (ii) the [E5] alignment check that the 5
+arches do not merge (rails/mullions) and that `windowGrid.cols = 5` snaps clean on the detected
+cavities. **Generation remains HELD on the `POLLINATIONS_TOKEN` repo secret** (producer's
+escalation — the workflow fails silently without it; Bertrand must set it before dispatch), and
+under producer's AC8 dependency gate.
+
+VERDICT: PASS — prompt gate eden_facade (lead-art)
+VERDICT: PASS — prompt gate eden_foreground (lead-art)
+VERDICT: PASS — prompt gate eden_ceiling (lead-art)
+VERDICT: PASS — prompt gate eden_family (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this l'Éden prompt-gate entry appended).
