@@ -5,6 +5,7 @@ import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
+import type { LootCrate } from "@game/types/loot";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
 describe("crosshairToWorld (single source of truth — ADR-0002)", () => {
@@ -218,5 +219,67 @@ describe("resolvePlayerShot — multi-hp riot, non-lethal hit (D1.6 / D3.1)", ()
     expect(result.timeDelta).toBe(0);
     expect(result.targetsDown).toBe(0);
     expect(result.events).toEqual([]);
+  });
+});
+
+// --- ADR-0052 D2: offset + LOOT crate extension -------------------------------
+
+describe("resolvePlayerShot — offsetDx shifts the resolution point (C spread, §2.4)", () => {
+  it("aims at aim.x + offsetDx; an enemy under the offset column is hit, not the centre one", () => {
+    const facade = facadeWithSlots([
+      { x: 0, y: 0 }, // slot 0 under the centre
+      { x: 2, y: 0 }, // slot 1 two units right (façade column pitch)
+    ]);
+    const result = resolvePlayerShot(centre, [enemyAt(0), enemyAt(1)], facade, 0, 0, 18, 12, null, 2);
+    expect(result.outcome).toBe("enemy-hit");
+    expect(result.impact.impactPoint).toEqual({ x: 2, y: 0 });
+    expect(result.impact.hit?.slotIndex).toBe(1);
+    // The centre enemy is untouched by this offset barrel.
+    expect(result.enemies.find((e) => e.slotIndex === 0)?.state).toBe("VISIBLE");
+  });
+});
+
+describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / AC8)", () => {
+  const crate: LootCrate = { id: 1, slotIndex: 0, state: "VISIBLE", timer: 1, weapon: "spread" };
+
+  it("a shot on a VISIBLE crate is a loot-hit: equip weapon, ZERO score/lives, crate consumed", () => {
+    const facade = facadeWithSlots([{ x: 0, y: 0 }]);
+    const result = resolvePlayerShot(centre, [], facade, 0, 0, 18, 12, crate);
+    expect(result.outcome).toBe("loot-hit");
+    expect(result.equippedWeapon).toBe("spread");
+    expect(result.loot).toBeNull(); // consumed
+    expect(result.scoreDelta).toBe(0);
+    expect(result.livesDelta).toBe(0);
+    expect(result.targetsDown).toBe(0);
+    expect(result.events).toEqual([]);
+  });
+
+  it("a non-VISIBLE crate is not a target (miss); loot threaded through unchanged", () => {
+    const facade = facadeWithSlots([{ x: 0, y: 0 }]);
+    const hidden: LootCrate = { ...crate, state: "HIDDEN" };
+    const result = resolvePlayerShot(centre, [], facade, 0, 0, 18, 12, hidden);
+    expect(result.outcome).toBe("miss");
+    expect(result.loot).toBe(hidden);
+  });
+
+  it("nearest wins across enemy vs crate: a closer enemy is hit, the crate survives", () => {
+    // Crate at (0.5,0) dist 0.5; enemy at (0.2,0) dist 0.2 — nearer.
+    const facade = facadeWithSlots([{ x: 0.5, y: 0 }, { x: 0.2, y: 0 }]);
+    const near = enemyAt(1, { id: 9 });
+    const crateFar: LootCrate = { ...crate, slotIndex: 0 };
+    const result = resolvePlayerShot(centre, [near], facade, 0, 0, 18, 12, crateFar);
+    expect(result.outcome).toBe("enemy-hit");
+    expect(result.impact.hit?.enemyId).toBe(9);
+    expect(result.loot).toBe(crateFar); // crate untouched
+  });
+
+  it("nearest wins across enemy vs crate: a closer crate is equipped, the enemy survives", () => {
+    // Crate at (0.2,0) dist 0.2 — nearer; enemy at (0.5,0) dist 0.5.
+    const facade = facadeWithSlots([{ x: 0.2, y: 0 }, { x: 0.5, y: 0 }]);
+    const far = enemyAt(1, { id: 9 });
+    const crateNear: LootCrate = { ...crate, slotIndex: 0 };
+    const result = resolvePlayerShot(centre, [far], facade, 0, 0, 18, 12, crateNear);
+    expect(result.outcome).toBe("loot-hit");
+    expect(result.enemies.find((e) => e.id === 9)?.state).toBe("VISIBLE");
   });
 });
