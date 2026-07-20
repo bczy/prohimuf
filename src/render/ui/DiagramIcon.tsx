@@ -65,6 +65,8 @@ const DIAGRAM_STYLES = `
 @media (prefers-reduced-motion: reduce) {
   .di-anim { animation: none !important; }
 }
+/* Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle strengthens the OS block above. */
+:root[data-reduced-motion="true"] .di-anim { animation: none !important; }
 `;
 
 /** The hostage-QTE colour-ring diagram (the only `DiagramKind` today). */

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
@@ -61,6 +61,13 @@ interface Props {
   facadeH: number;
   /** Number of facade panels laid side by side. */
   panels: number;
+  /**
+   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
+   * GameScene — the ONE authority. Freezes the parallax drift + traffic-light cycle,
+   * so this layer honours the in-app MOUVEMENT RÉDUIT toggle, not just the OS query.
+   */
+  reducedMotion: boolean;
 }
 
 interface RowProps {
@@ -174,6 +181,7 @@ export function NearForeground({
   facadeW,
   facadeH,
   panels,
+  reducedMotion,
 }: Props): JSX.Element | null {
   const { camera } = useThree();
   const nearRef = useRef<Group>(null);
@@ -197,23 +205,9 @@ export function NearForeground({
     [levelId],
   );
 
-  // Live prefers-reduced-motion read (copied from CrtPass): reacts to OS changes.
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
-  );
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (): void => {
-      setReducedMotion(mq.matches);
-    };
-    mq.addEventListener("change", onChange);
-    return () => {
-      mq.removeEventListener("change", onChange);
-    };
-  }, []);
+  // Reduced motion now arrives via the `reducedMotion` prop — the shared union signal
+  // from `useReducedMotionRoot` (App → GameScene), the ONE authority (ADR-0052 §3) —
+  // so no private `matchMedia` poll here; the in-app toggle reaches this layer too.
 
   // Parallax: each kerb row tracks the camera at its own factor (far = slower), like
   // the sky in LevelBackdrop. No per-frame allocation.

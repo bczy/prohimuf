@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial } from "three";
@@ -151,6 +151,13 @@ interface Props {
    * fields change (never per frame); `null` when the QTE is inactive/absent.
    */
   onHostageQte?: ((qte: HudHostageQte | null) => void) | undefined;
+  /**
+   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
+   * GameScene — the ONE authority. Degrades the peek cue / execution flash to a
+   * steady, strobe-free form, honouring the in-app toggle as well as the OS query.
+   */
+  reducedMotion: boolean;
 }
 
 // The HUD-relevant slice, or null when inactive. Used both to emit and to detect
@@ -184,7 +191,7 @@ function hudSliceKey(slice: HudHostageQte | null): string {
  * tint is steady by construction (signal preserved, no >3 Hz flash — WCAG 2.3.1 /
  * UX spec §4).
  */
-export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element {
+export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Props): JSX.Element {
   const captorRef = useRef<Mesh>(null);
   const hostageRef = useRef<Mesh>(null);
   const peekCueRef = useRef<Mesh>(null);
@@ -202,25 +209,10 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
   const positionedRef = useRef(false);
-  // Render-side reduced-motion detection (UX spec §4.1): degrades the peek cue /
-  // execution flash to a steady, strobe-free form. Mirrors CrtPass's live query.
-  const reducedMotionRef = useRef(
-    typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
-  );
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (): void => {
-      reducedMotionRef.current = mq.matches;
-    };
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => {
-      mq.removeEventListener("change", onChange);
-    };
-  }, []);
+  // Reduced motion (UX spec §4.1) now arrives via the `reducedMotion` prop — the
+  // shared union signal from `useReducedMotionRoot` (App → GameScene), the ONE
+  // authority (ADR-0052 §3) — degrading the peek cue / execution flash to a steady,
+  // strobe-free form. No private `matchMedia` poll: the in-app toggle reaches here too.
 
   useFrame(() => {
     const captor = captorRef.current;
@@ -308,7 +300,6 @@ export function HostageQteSprite({ stateRef, onHostageQte }: Props): JSX.Element
       positionedRef.current = true;
     }
 
-    const reducedMotion = reducedMotionRef.current;
     const pulse01 = reducedMotion ? 0 : (Math.sin(nowMs * PULSE_SPEED) + 1) / 2;
     const lost = qte.phase === "LOST";
     const won = qte.phase === "WON";

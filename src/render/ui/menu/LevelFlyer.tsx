@@ -256,6 +256,9 @@ export function LevelFlyer({
         @media (prefers-reduced-motion: reduce) {
           .muf-anim { transition: none !important; animation: none !important; }
         }
+        /* Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle sets
+           :root[data-reduced-motion="true"], strengthening the OS block above identically. */
+        :root[data-reduced-motion="true"] .muf-anim { transition: none !important; animation: none !important; }
       `}</style>
     </MarkerCircle>
   );

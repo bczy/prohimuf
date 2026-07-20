@@ -420,10 +420,15 @@ export function GameScene({
         facadeW={layout.mode === "single-facade" ? panelW : fullW}
         facadeH={facadeH}
         panels={layout.mode === "single-facade" ? PANELS : 1}
+        reducedMotion={reducedMotion}
       />
       <CourierSprite stateRef={stateRef} paused={paused} />
-      <HostageQteSprite stateRef={stateRef} onHostageQte={onHostageQte} />
-      <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} />
+      <HostageQteSprite
+        stateRef={stateRef}
+        onHostageQte={onHostageQte}
+        reducedMotion={reducedMotion}
+      />
+      <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} reducedMotion={reducedMotion} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />
