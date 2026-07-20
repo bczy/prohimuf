@@ -298,9 +298,19 @@ export function tickGameState(
       )
     : tickedEnemies;
 
-  // 3b. Armament crate (ADR-0052 D5): advance / spawn the LOOT crate on the window
-  // channel. Runs only on the normal-tick path, so a QTE freeze never spawns or
-  // resolves a crate (D7 / AC6). No-op when the level authors no `lootSpec` (D8).
+  // 3b. Armament crate (ADR-0052 D5 / ADR-0053): advance / spawn the LOOT crate.
+  // Runs only on the normal-tick path, so a QTE freeze never spawns or resolves a
+  // crate (D7 / AC6). No-op when the level authors no `lootSpec` (D8). The D9-2
+  // delivery x-gap (ADR-0053 D4) is assembled HERE from the PRE-tick delivery
+  // snapshot (this runs before the 7c delivery tick): the phase-gate lives in the
+  // stateMachine (it knows the delivery types); only pure data crosses the seam
+  // into the delivery-agnostic `lootSystem` (P1, boundary law).
+  const deliveryGap =
+    state.deliveryVehicle !== null &&
+    state.deliverySpec !== null &&
+    (state.deliveryVehicle.phase === "INCOMING" || state.deliveryVehicle.phase === "DELIVERING")
+      ? { stopX: state.deliverySpec.stopPosition.x }
+      : null;
   const lootTick = tickLoot(
     state.loot,
     state.lootSpec,
@@ -309,6 +319,7 @@ export function tickGameState(
     activeEnemies,
     facade,
     _nextLootId,
+    deliveryGap,
   );
   if (lootTick.spawned) _nextLootId++;
 

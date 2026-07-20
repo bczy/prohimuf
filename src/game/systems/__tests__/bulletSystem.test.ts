@@ -6,6 +6,7 @@ import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
 import type { LootCrate } from "@game/types/loot";
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
 describe("crosshairToWorld (single source of truth — ADR-0002)", () => {
@@ -57,6 +58,9 @@ describe("tickBullets", () => {
 // impact point. Tests build small custom facades to control that distance.
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } };
+// Aim at the crate's street row (world y = LOOT_STREET_Y) under an 18×12 view — the
+// crate resolves at street-y since ADR-0053, not at its slot window-y (D3).
+const streetAim: Crosshair = { position: { x: 0.5, y: 0.5 - LOOT_STREET_Y / 12 } };
 
 function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
   return {
@@ -254,7 +258,8 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
 
   it("a shot on a VISIBLE crate is a loot-hit: equip weapon, ZERO score/lives, crate consumed", () => {
     const facade = facadeWithSlots([{ x: 0, y: 0 }]);
-    const result = resolvePlayerShot(centre, [], facade, 0, 0, 18, 12, crate);
+    // Aim at street-y (the crate's world row since ADR-0053), not the slot window-y.
+    const result = resolvePlayerShot(streetAim, [], facade, 0, 0, 18, 12, crate);
     expect(result.outcome).toBe("loot-hit");
     expect(result.equippedWeapon).toBe("spread");
     expect(result.loot).toBeNull(); // consumed
@@ -287,15 +292,37 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
   });
 
   it("nearest wins across enemy vs crate: a closer crate is equipped, the enemy survives", () => {
-    // Crate at (0.2,0) dist 0.2 — nearer; enemy at (0.5,0) dist 0.5.
+    // Both resolve at street-y here so the tie-break MECHANISM is exercised (crate dist
+    // 0.2 < enemy dist 0.5). In real play they rarely share a y (crate street, enemy
+    // window) — the mechanism, not the geometry, is what this asserts.
     const facade = facadeWithSlots([
-      { x: 0.2, y: 0 },
-      { x: 0.5, y: 0 },
+      { x: 0.2, y: LOOT_STREET_Y },
+      { x: 0.5, y: LOOT_STREET_Y },
     ]);
     const far = enemyAt(1, { id: 9 });
     const crateNear: LootCrate = { ...crate, slotIndex: 0 };
-    const result = resolvePlayerShot(centre, [far], facade, 0, 0, 18, 12, crateNear);
+    const result = resolvePlayerShot(streetAim, [far], facade, 0, 0, 18, 12, crateNear);
     expect(result.outcome).toBe("loot-hit");
     expect(result.enemies.find((e) => e.id === 9)?.state).toBe("VISIBLE");
+  });
+});
+
+describe("resolvePlayerShot — crate resolves at LOOT_STREET_Y (ADR-0053 D3)", () => {
+  const crate: LootCrate = { id: 1, slotIndex: 0, state: "VISIBLE", timer: 1, weapon: "auto" };
+
+  it("a shot at the crate slot's OLD window-y no longer hits the crate", () => {
+    // The slot sits on a window row (y = 2.25); the crate now lives at street-y.
+    const facade = facadeWithSlots([{ x: 0, y: 2.25 }]);
+    const windowAim: Crosshair = { position: { x: 0.5, y: 0.5 - 2.25 / 12 } }; // → world (0, 2.25)
+    const result = resolvePlayerShot(windowAim, [], facade, 0, 0, 18, 12, crate);
+    expect(result.outcome).toBe("miss");
+    expect(result.loot).toBe(crate); // untouched
+  });
+
+  it("a shot at (slot.x, LOOT_STREET_Y) hits ⇒ loot-hit, regardless of the slot's window-y", () => {
+    const facade = facadeWithSlots([{ x: 0, y: 2.25 }]);
+    const result = resolvePlayerShot(streetAim, [], facade, 0, 0, 18, 12, crate);
+    expect(result.outcome).toBe("loot-hit");
+    expect(result.equippedWeapon).toBe("auto");
   });
 });

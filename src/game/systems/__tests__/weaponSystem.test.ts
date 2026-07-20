@@ -3,6 +3,7 @@ import { resolveTrigger } from "@game/systems/weaponSystem";
 import type { TriggerResult } from "@game/systems/weaponSystem";
 import { WEAPON_SPECS } from "@game/types/weapon";
 import type { WeaponState } from "@game/types/weapon";
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy } from "@game/types/enemy";
 import type { Courier } from "@game/types/courier";
@@ -12,6 +13,9 @@ import type { Vec2 } from "@game/types/vector";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } }; // → world (0,0)
+// Aim at the crate's street row (world y = LOOT_STREET_Y) under the default 18×12
+// view — the crate resolves at street-y since ADR-0053, not at its slot window-y.
+const streetAim: Crosshair = { position: { x: 0.5, y: 0.5 - LOOT_STREET_Y / 12 } };
 
 function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
   return {
@@ -72,8 +76,9 @@ function trigger(
   loot: LootCrate | null,
   facade: FacadeMap,
   couriers: readonly Courier[] = EMPTY,
+  crosshair: Crosshair = centre,
 ): TriggerResult {
-  return resolveTrigger(weapon, fire, delta, centre, enemies, loot, facade, couriers);
+  return resolveTrigger(weapon, fire, delta, crosshair, enemies, loot, facade, couriers);
 }
 
 describe("resolveTrigger — A base (AC1/AC2): 1 resolution at offset 0, ∞ stock", () => {
@@ -211,7 +216,7 @@ describe("resolveTrigger — LOOT equip (AC7-loot/AC8)", () => {
   const crate: LootCrate = { id: 1, slotIndex: 0, state: "VISIBLE", timer: 1, weapon: "spread" };
 
   it("firing a VISIBLE crate equips at full stock with ZERO score/lives; crate consumed; no impact", () => {
-    const r = trigger(baseW(), true, 0.016, [], crate, facade);
+    const r = trigger(baseW(), true, 0.016, [], crate, facade, EMPTY, streetAim);
     expect(r.weapon.active).toBe("spread");
     expect(r.weapon.stock).toBe(WEAPON_SPECS.spread.startStock);
     expect(r.loot).toBeNull();
@@ -224,7 +229,7 @@ describe("resolveTrigger — LOOT equip (AC7-loot/AC8)", () => {
   it("equip takes effect from the NEXT trigger (the equipping shot used the old weapon)", () => {
     // Equip auto off a crate while holding base.
     const autoCrate: LootCrate = { ...crate, weapon: "auto" };
-    const equipped = trigger(baseW(), true, 0.016, [], autoCrate, facade).weapon;
+    const equipped = trigger(baseW(), true, 0.016, [], autoCrate, facade, EMPTY, streetAim).weapon;
     expect(equipped.active).toBe("auto");
     expect(equipped.burstRemaining).toBe(0); // no burst started on the equipping tick
     // Next trigger fires the newly-equipped auto (arms a burst).
@@ -257,7 +262,8 @@ describe("resolveTrigger — P2: mid-burst crate equip aborts the burst", () => 
     const facade = facadeWithSlots([{ x: 0, y: 0 }]);
     const crate: LootCrate = { id: 1, slotIndex: 0, state: "VISIBLE", timer: 1, weapon: "spread" };
     const w = autoW({ stock: 50, burstRemaining: 4, burstTimerMs: 85 });
-    const r = trigger(w, false, 0.1, [], crate, facade); // the round crosses the interval and hits the crate
+    // the round crosses the interval and hits the crate at street-y
+    const r = trigger(w, false, 0.1, [], crate, facade, EMPTY, streetAim);
     expect(r.weapon.active).toBe("spread");
     expect(r.weapon.stock).toBe(WEAPON_SPECS.spread.startStock);
     expect(r.weapon.burstRemaining).toBe(0);

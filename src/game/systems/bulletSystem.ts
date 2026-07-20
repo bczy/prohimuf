@@ -9,6 +9,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 import type { HitEvent, ImpactEvent } from "@game/types/feedback";
 import type { LootCrate } from "@game/types/loot";
 import type { WeaponKind } from "@game/types/weapon";
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 
 // What a single hitscan resolution landed on (ADR-0052 D2). `enemy-hit` carries
 // the existing reward math; `loot-hit` equips only (never scores, AC7-loot);
@@ -103,15 +104,18 @@ export function resolvePlayerShot(
     }
   }
 
-  // The VISIBLE crate is one more eligible target on the same window channel
-  // (§5.3): compare it against the best enemy — nearest wins, tie → lowest
-  // slotIndex (one entity per slot, so slot indices never collide).
+  // The VISIBLE crate is one more eligible target (§5.3): compare it against the
+  // best enemy — nearest wins, tie → lowest slotIndex (one entity per slot, so
+  // slot indices never collide). Since ADR-0053 the crate is a STREET object: its
+  // x stays the slot's (`slot.screenPosition.x`) but its y is the fixed
+  // `LOOT_STREET_Y`, NOT the slot's window row. Only this y source changed — the
+  // nearest-wins/tie-break ordering below is byte-identical (AC-D3 / P2).
   let crate: { dist: number; slotIndex: number; weapon: WeaponKind } | null = null;
   if (loot !== null && loot.state === "VISIBLE") {
     const slot = facade.slots[loot.slotIndex];
     if (slot !== undefined) {
       const dx = impactPoint.x - slot.screenPosition.x;
-      const dy = impactPoint.y - slot.screenPosition.y;
+      const dy = impactPoint.y - LOOT_STREET_Y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist <= HIT_RADIUS) crate = { dist, slotIndex: loot.slotIndex, weapon: loot.weapon };
     }

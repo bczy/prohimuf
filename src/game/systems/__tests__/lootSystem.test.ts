@@ -7,6 +7,8 @@ import {
   LOOT_HIDDEN_DURATION,
   LOOT_APPEARING_DURATION,
   LOOT_VISIBLE_DURATION,
+  LOOT_MAX_ABS_X,
+  CRATE_DELIVERY_GAP_X,
 } from "@game/systems/lootSystem";
 import type { Enemy, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
@@ -23,6 +25,19 @@ function facadeCols(cols: number): FacadeMap {
       row: 0,
       screenPosition: { x: col * 2 - (cols - 1), y: 0 },
     })),
+  };
+}
+
+// A `mergedFacade`-shaped fixture (ADR-0053 pin P3): runtime `col` is a sequential
+// index while `screenPosition.x` is tile-derived (arbitrary world-x), so the spawn
+// x-filter must key off `screenPosition.x`, NOT the facade01 `col*2-18` arithmetic.
+function mergedFacade(xs: readonly number[]): FacadeMap {
+  return {
+    width: xs.length,
+    height: 1,
+    // y is a window-row value (3.2) — irrelevant to spawn; the crate's own y is the
+    // decoupled LOOT_STREET_Y, resolved in bulletSystem, not here.
+    slots: xs.map((x, col) => ({ col, row: 0, screenPosition: { x, y: 3.2 } })),
   };
 }
 
@@ -197,5 +212,61 @@ describe("tickLoot — crate state machine HIDDEN→APPEARING→VISIBLE→expire
     expect(r.loot?.state).toBe("VISIBLE");
     expect(r.spawned).toBe(false);
     expect(r.lootTimer).toBe(0.01); // untouched while a crate is live
+  });
+});
+
+// --- ADR-0053 sidewalk delta -------------------------------------------------
+
+describe("tickLoot — near-centre x-bound (D3 / AC-D1), mergedFacade-shaped slots (P3)", () => {
+  it("only spawns on a slot whose |screenPosition.x| ≤ LOOT_MAX_ABS_X", () => {
+    expect(LOOT_MAX_ABS_X).toBe(7);
+    // Tile-derived x spanning the wide street; cols are a sequential index.
+    const facade = mergedFacade([-40, -6, 0, 6, 40]);
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 3);
+    expect(r.spawned).toBe(true);
+    if (r.loot === null) throw new Error("expected a spawned crate");
+    const x = facade.slots[r.loot.slotIndex]?.screenPosition.x ?? NaN;
+    expect(Math.abs(x)).toBeLessThanOrEqual(LOOT_MAX_ABS_X);
+  });
+
+  it("defers when every eligible slot is beyond LOOT_MAX_ABS_X (off-centre street)", () => {
+    const facade = mergedFacade([-40, -20, 20, 40]);
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 1);
+    expect(r.spawned).toBe(false);
+    expect(r.loot).toBeNull();
+  });
+});
+
+describe("tickLoot — delivery x-gap (D9-2 / AC-D6)", () => {
+  it("excludes slots within CRATE_DELIVERY_GAP_X of the delivery stop when a vehicle is present", () => {
+    expect(CRATE_DELIVERY_GAP_X).toBe(2.0);
+    // Three in-bounds slots; the truck stops at x=0 ⇒ the x=0 slot is under it.
+    const facade = mergedFacade([-6, 0, 6]);
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 1, { stopX: 0 });
+    expect(r.spawned).toBe(true);
+    if (r.loot === null) throw new Error("expected a spawned crate");
+    const x = facade.slots[r.loot.slotIndex]?.screenPosition.x ?? NaN;
+    expect(Math.abs(x - 0)).toBeGreaterThanOrEqual(CRATE_DELIVERY_GAP_X);
+  });
+
+  it("defers when the only in-bounds slot sits under the delivery stop", () => {
+    const facade = mergedFacade([0]); // only slot is at the truck's stop x
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 1, { stopX: 0 });
+    expect(r.spawned).toBe(false);
+    expect(r.loot).toBeNull();
+  });
+
+  it("no delivery active (deliveryGap null) ⇒ the gap predicate is skipped", () => {
+    const facade = mergedFacade([0]); // the truck's-stop x, but no delivery this tick
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 1, null);
+    expect(r.spawned).toBe(true);
+    expect(r.loot?.slotIndex).toBe(0);
+  });
+});
+
+describe("lootSystem — sidewalk durations (delta D4/D5)", () => {
+  it("VISIBLE lifetime is 6.0 s and APPEARING is 0.45 s", () => {
+    expect(LOOT_VISIBLE_DURATION).toBe(6.0);
+    expect(LOOT_APPEARING_DURATION).toBe(0.45);
   });
 });

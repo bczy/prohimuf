@@ -534,3 +534,47 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
 > ambient lighting, crisp cutout edges
 
 — Nico, PROMPT GATE
+
+---
+
+## stage-4. DEV LANE A — dev-gameplay (Amelia) — 2026-07-20
+
+- claim: Lane A (`src/game/**` only) — implement the sidewalk placement per ADR-0053 (D1-D4/D9),
+  TDD red-first / release: **DONE, all green** (tsc 0, lint 0, format 0 on Lane-A files; vitest
+  875 passed — 867 baseline + 8 new). No deviation from ADR-0053; `slotIndex` kept as the
+  x-carrier (D1), no x-only refactor.
+- VERDICT: PASS — dev-gameplay: LOOT crate sidewalk placement (Lane A)
+- **Branch:** `claude/features-a-implémenter-ehw9q4` (1 commit; orchestrator pushes).
+- **Decisions as-built:**
+  - **D2 consts (single source of truth in `lootSystem.ts`):** `LOOT_STREET_Y = -4.3`,
+    `LOOT_MAX_ABS_X = 7`, `CRATE_DELIVERY_GAP_X = 2.0`, all exported; `LOOT_VISIBLE_DURATION`
+    4.0→6.0 (D4), `LOOT_APPEARING_DURATION` 0.3→0.45 (D5). `LOOT_STREET_Y` is imported by
+    `bulletSystem` (game) and is available for `LootCrate.tsx` (render, Lane B) to import — never
+    re-declared as a literal.
+  - **D3 (`bulletSystem.resolvePlayerShot`):** crate hit-point y is now `LOOT_STREET_Y` instead of
+    `slot.screenPosition.y`; x stays `slot.screenPosition.x`. The enemy scan, `HIT_RADIUS`,
+    nearest-wins comparison and `crateWins` tie-break are **byte-identical** — only the one y
+    source line changed (P2). AC-D3 street-y precedence holds by construction.
+  - **D4 spawn filter (`attemptSpawn`):** added `|slot.screenPosition.x| <= LOOT_MAX_ABS_X` (D3)
+    and the D9-2 delivery x-gap `|x - stopX| >= CRATE_DELIVERY_GAP_X` (skipped when no delivery),
+    ALONGSIDE the kept §5.4 col-gap + occupied-slot guards. New pure param
+    `deliveryGap: DeliveryGap | null` (a `{ stopX }` snapshot, default null) on `tickLoot`/
+    `attemptSpawn` — `lootSystem` stays delivery-type-agnostic (a number in, never a
+    `DeliveryVehicle`), boundary law preserved (P1).
+  - **stateMachine (P1):** the delivery descriptor is assembled at the step-3b `tickLoot` call
+    site from the **pre-tick** `state.deliveryVehicle`/`state.deliverySpec`, non-null only when
+    `phase ∈ {INCOMING, DELIVERING}`, `stopX = deliverySpec.stopPosition.x`. Phase-gate lives here;
+    only pure data crosses the seam.
+- **Tests (TDD red-first, P3 — against `mergedFacade`-shaped slots, not facade01 arithmetic):**
+  x-bound filter + defer-when-off-centre; D9-2 delivery-gap + defer + no-delivery-active (null)
+  skip; VISIBLE 6.0 s / APPEARING 0.45 s; `bulletSystem` street-y regression (a shot at the crate
+  slot's OLD window-y no longer hits; a shot at street-y hits). Existing crate-position tests
+  (bulletSystem/weaponSystem/stateMachine) re-aimed to street-y for the moved crate; the AC-D3
+  precedence mechanism and the ADR-0052 co-location guards stay green unmodified.
+- **File List:** `src/game/systems/lootSystem.ts`, `src/game/systems/bulletSystem.ts`,
+  `src/game/systems/stateMachine.ts`, and their `__tests__` specs
+  (`lootSystem`, `bulletSystem`, `weaponSystem`, `stateMachine`).
+- **Lane B / art handshake:** `LOOT_STREET_Y` is live and importable — Lane B mounts `LootCrate`
+  at `(slot.screenPosition.x, LOOT_STREET_Y)` (import, never re-declare −4.3). No dev lane edits
+  `src/game/levels/levelArt.json` (concept-artist's file). Not touched here: `src/render/**`,
+  `scripts/**`, `levelArt.json`.
