@@ -14,6 +14,7 @@ import {
   withRetry,
   cropRectForAspect,
   cyanPreviewCanvas,
+  keyAndDown,
 } from "../gptimage.mjs";
 import { createCanvas } from "@napi-rs/canvas";
 
@@ -139,6 +140,72 @@ describe("cyanPreviewCanvas", () => {
     const preview = cyanPreviewCanvas(sprite);
     expect(preview.width).toBe(37);
     expect(preview.height).toBe(51);
+  });
+});
+
+describe("keyAndDown — globalKey option (enclosed magenta pocket)", () => {
+  // Synthesizes a real PNG buffer (keyAndDown loads via @napi-rs/canvas's
+  // loadImage, so it needs actual encoded bytes, not a plain ImageData-shaped
+  // object): a magenta ground with a small opaque black ring, and INSIDE that
+  // ring a pocket of magenta pixels that is never connected to the canvas
+  // border — the exact shape of the scooter defect (magenta trapped between
+  // opaque geometry, e.g. between the wheels). Corner sample blocks (10x10)
+  // stay clear of the ring so the sampled ground colour is pure magenta.
+  const W = 30,
+    H = 30;
+  function enclosedPocketPng() {
+    const c = createCanvas(W, H);
+    const x = c.getContext("2d");
+    x.fillStyle = "#FF3CDC";
+    x.fillRect(0, 0, W, H);
+    x.fillStyle = "#000000";
+    // A 3px-thick ring (not 1px) so a ring pixel deep inside a corner block
+    // has ALL 8 neighbours also opaque black — a 1px ring's pixels each
+    // border a keyed-transparent pixel, which the target canvas's smoothed
+    // 1:1 drawImage can blend into a non-255 alpha at the sample point.
+    x.fillRect(10, 10, 12, 3); // ring top band (x10..21, y10..12)
+    x.fillRect(10, 19, 12, 3); // ring bottom band (x10..21, y19..21)
+    x.fillRect(10, 13, 3, 6); // ring left band (x10..12, y13..18)
+    x.fillRect(19, 13, 3, 6); // ring right band (x19..21, y13..18)
+    // interior (13..18, 13..18) stays magenta — enclosed, unreachable by the
+    // edge-seeded flood fill.
+    return c.toBuffer("image/png");
+  }
+
+  async function pocketAlpha(opts) {
+    const { s } = await keyAndDown(enclosedPocketPng(), { targetW: W, targetH: H, ...opts });
+    const px = s.getContext("2d").getImageData(15, 15, 1, 1).data;
+    return px[3];
+  }
+
+  it("leaves an enclosed magenta pocket OPAQUE when globalKey is off (default) — reproduces the defect", async () => {
+    expect(await pocketAlpha({})).toBe(255);
+  });
+
+  it("keys an enclosed magenta pocket TRANSPARENT when globalKey is on", async () => {
+    expect(await pocketAlpha({ globalKey: true })).toBe(0);
+  });
+
+  it("still keys the border-connected magenta the same way regardless of globalKey", async () => {
+    const offImg = (await keyAndDown(enclosedPocketPng(), { targetW: W, targetH: H })).s;
+    const onImg = (
+      await keyAndDown(enclosedPocketPng(), { targetW: W, targetH: H, globalKey: true })
+    ).s;
+    const offPx = offImg.getContext("2d").getImageData(1, 1, 1, 1).data;
+    const onPx = onImg.getContext("2d").getImageData(1, 1, 1, 1).data;
+    expect(offPx[3]).toBe(0);
+    expect(onPx[3]).toBe(0);
+  });
+
+  it("does not touch the opaque ring pixels either way (not near-magenta)", async () => {
+    const offImg = (await keyAndDown(enclosedPocketPng(), { targetW: W, targetH: H })).s;
+    const onImg = (
+      await keyAndDown(enclosedPocketPng(), { targetW: W, targetH: H, globalKey: true })
+    ).s;
+    const offPx = offImg.getContext("2d").getImageData(11, 11, 1, 1).data;
+    const onPx = onImg.getContext("2d").getImageData(11, 11, 1, 1).data;
+    expect(offPx[3]).toBe(255);
+    expect(onPx[3]).toBe(255);
   });
 });
 

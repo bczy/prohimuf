@@ -140,7 +140,7 @@ export function cropRectForAspect(W, H, targetW, targetH) {
 }
 
 /**
- * keyAndDown(buf, { targetW, targetH, keepColor, tol }) -> { s, ground, opaque }
+ * keyAndDown(buf, { targetW, targetH, keepColor, tol, globalKey }) -> { s, ground, opaque }
  *
  * Chroma-keys a magenta-ground gptimage PNG buffer (edge-flood-fill from the
  * sampled corner ground colour), optionally luma-desaturates the kept pixels
@@ -150,8 +150,25 @@ export function cropRectForAspect(W, H, targetW, targetH) {
  * `.toBuffer("image/png")`; `ground` is the sampled RGB background colour;
  * `opaque` is the fraction of GEN-resolution pixels kept (post-key), for
  * logging/QA.
+ *
+ * `globalKey` (default false, opt-in): the edge-seeded flood fill only keys
+ * magenta CONNECTED to the canvas border — a magenta pocket fully enclosed by
+ * opaque geometry (e.g. between a vehicle's wheels) is never reached, and the
+ * desaturation pass below then turns it into an opaque grey patch (the keying
+ * defect this flag fixes). When on, a global pass runs AFTER the flood fill
+ * but BEFORE desaturation and keys every remaining pixel within the flood
+ * fill's own colour-distance tolerance of the sampled ground colour,
+ * regardless of connectivity — it must run before desaturation because once a
+ * pixel is desaturated its magenta signature is gone and it can no longer be
+ * distinguished from real grey art. Only safe for strict-grey (C1) asset
+ * families with no legitimate magenta-ish pixels in the art (near-foreground
+ * décor); leave off for anything that keeps colour (e.g. vehicles), where a
+ * legit pixel could fall within tolerance of the ground colour.
  */
-export function keyAndDown(buf, { targetW, targetH, keepColor = false, tol = 95 } = {}) {
+export function keyAndDown(
+  buf,
+  { targetW, targetH, keepColor = false, tol = 95, globalKey = false } = {},
+) {
   return loadImage(buf).then((img) => {
     const W = img.width,
       H = img.height;
@@ -215,6 +232,16 @@ export function keyAndDown(buf, { targetW, targetH, keepColor = false, tol = 95 
       push(px - 1, py);
       push(px, py + 1);
       push(px, py - 1);
+    }
+    if (globalKey) {
+      // Global pass (opt-in): key every remaining near-magenta pixel by the
+      // SAME colour-distance predicate (d2/tol2) as the flood fill, ignoring
+      // connectivity — catches magenta pockets the edge flood fill can't
+      // reach because they're fully enclosed by opaque geometry. Must run
+      // before desaturation (see doc comment above).
+      for (let i = 0; i < W * H; i++) {
+        if (!bg[i] && d2(i) < tol2) bg[i] = 1;
+      }
     }
     let op = 0;
     for (let i = 0; i < W * H; i++) {

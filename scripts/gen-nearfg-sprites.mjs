@@ -96,16 +96,24 @@ export function loadNearForegroundArt() {
   });
 }
 
-async function generateOne(token, assembledPrompt, seed, width, height) {
+// Exported for testability (same reason as loadNearForegroundArt): asserts
+// the keyAndDown wiring — globalKey MUST stay on for this C1 strict-grey
+// family — without spending Pollen on a real network round trip.
+export async function generateOne(token, assembledPrompt, seed, width, height) {
   const effectiveSeed = seed ?? Math.floor(Math.random() * 99999);
   const url = genUrl(assembledPrompt, effectiveSeed, { gen: GEN });
   const buf = await withRetry(url, token, 3);
   // luma-desaturation ALWAYS on (keepColor:false) — strict grey décor (C1).
+  // globalKey ALWAYS on too: this family is C1 strict-grey (no legit magenta
+  // in the art), so it's safe to key every remaining near-magenta pixel, not
+  // just flood-fill-connected ones — closes enclosed magenta pockets (e.g.
+  // between wheels, under a floorboard) that the edge flood fill can't reach.
   const result = await keyAndDown(buf, {
     targetW: width,
     targetH: height,
     keepColor: false,
     tol: TOL,
+    globalKey: true,
   });
   return { ...result, effectiveSeed };
 }

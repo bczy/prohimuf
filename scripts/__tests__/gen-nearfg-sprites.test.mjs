@@ -9,6 +9,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const SCRIPT = path.join(REPO_ROOT, "scripts", "gen-nearfg-sprites.mjs");
 
+// generateOne()'s keyAndDown wiring — mock the lib so this is a pure wiring
+// check (no network, no Pollen spend). Every gen-nearfg-sprites.test.mjs test
+// re-imports the module fresh via importFresh()/vi.resetModules(), so this
+// mock (hoisted by vitest) applies to every one of those imports; it only
+// matters for the generateOne() call below, nothing else in this file calls
+// keyAndDown.
+vi.mock("../lib/gptimage.mjs", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    withRetry: vi.fn(async () => Buffer.from("fake-png-bytes")),
+    keyAndDown: vi.fn(async () => ({ s: { width: 1, height: 1 }, ground: [1, 2, 3], opaque: 1 })),
+  };
+});
+
 // loadNearForegroundArt() reads LEVEL_ART at import-time via a module-level
 // `path.resolve(ROOT, process.env.LEVEL_ART ?? ...)` — set the env var BEFORE
 // each (re-)import so the pure reader resolves to a disposable fixture, same
@@ -150,6 +165,18 @@ describe("loadNearForegroundArt", () => {
     });
     const { loadNearForegroundArt } = await importFresh();
     expect(() => loadNearForegroundArt()).toThrow(/bollard\.size/);
+  });
+});
+
+describe("generateOne", () => {
+  it("always passes globalKey: true to keyAndDown — C1 strict-grey décor has no legit magenta", async () => {
+    const { generateOne } = await importFresh();
+    const { keyAndDown } = await import("../lib/gptimage.mjs");
+    await generateOne("tok", "a bollard", 6105, 307, 512);
+    expect(keyAndDown).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ targetW: 307, targetH: 512, keepColor: false, globalKey: true }),
+    );
   });
 });
 

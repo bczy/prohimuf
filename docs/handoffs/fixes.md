@@ -16,6 +16,24 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   checks: tsc/vitest(874)/lint · review: folded into the branch review panel
   (pre-merge gate on the full diff)
 
+- 2026-07-20 · claude/rue-propos-pipelines-revision-r4g52z · dev-tooling-assets · fix a
+  chroma-key defect on generated near-foreground sprites (Bertrand: two grey patches on
+  `public/assets/nearfg/scooter.png`, under the body / between the wheels). Root cause:
+  `keyAndDown`'s (`scripts/lib/gptimage.mjs`) edge-seeded flood fill only keys magenta
+  CONNECTED to the canvas border, so a magenta pocket fully enclosed by opaque geometry
+  (between wheels, under the floorboard) is never reached, then the luma-desaturation
+  pass turns it into an opaque grey patch. Added an opt-in `globalKey` option to
+  `keyAndDown`: after the flood fill but before desaturation, a global pass keys every
+  remaining pixel within the flood fill's own colour-distance tolerance (`d2`/`tol2`,
+  reused — no second tolerance) regardless of connectivity. Wired ON in
+  `gen-nearfg-sprites.mjs` (this family is C1 strict-grey — no legit magenta can exist in
+  the art); every other caller (`gen-gptimage-asset.mjs`, vehicles/couriers/hostages)
+  defaults `globalKey: false`, unchanged behaviour. · checks: tsc clean, vitest 821/821
+  (new: synthetic-PNG enclosed-magenta-pocket case in `gptimage.test.mjs` proving OPAQUE
+  off / TRANSPARENT on; wiring test in `gen-nearfg-sprites.test.mjs` asserting
+  `globalKey: true`), lint clean, `check-art-prompts.mjs --set nearForeground` PASSED (1
+  pre-existing unrelated warning) · review: pending
+
 - 2026-07-19 · claude/beliard-enemy-positioning-tool-6wo3vu · dev-tooling-assets ·
   Belliard cops badly seated (feet not on the sill, some drifted off the window bay,
   some in front of the wrought-iron grille). New sibling harness
