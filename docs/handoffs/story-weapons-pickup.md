@@ -117,3 +117,65 @@ Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs
 - **P3 (→ pm, one-line ack, not a re-gate).** The B stock-unit change (round, not press) **amends pm story AC A4.** It is a legitimate consequence of the gate-mandated B4 burst model — A4 was written under the superseded "faster-cooldown base" reading — but it edits a pm-authored AC, so pm gets an explicit one-line acknowledgment before the story text is treated as final. No design content is in question.
 
 **Hand-offs stand (unchanged from round-1 formalize):** `lead-art` (crate R1–R4 + A/B/C glyphs), `ux-designer` (HUD desktop+mobile, ADR-0003), `narrative-designer` (weapon names — placeholders, not lore-locked), `senior-architect` (ADR-0052 + §8 contract delta, now incl. P1/P2). Round 2 of 2 — cap reached, gate closed PASS.
+
+---
+
+## stage-3. TECH PLAN + ADR — senior-architect (Winston) — 2026-07-20
+
+- claim: TECH PLAN + ADR-0052 (number reserved by producer), boundary/contract analysis, lane cut for dev-gameplay ∥ dev-r3f-render / release: **ADR-0052 written** (`docs/adr/0052-weapons-pickup-system.md`, Accepted); lanes assigned below; PARALLEL-SAFE after the type seam lands. **No escalation** — the gated spec is buildable within the boundary law; no contract analysis surfaced a contradiction with `weapons.md`.
+- VERDICT: PASS — tech plan: weapons pickup system (senior-architect)
+
+**ADR-0052 decisions (summary):** D1 `weapon: WeaponState` + transient `weaponEmpty?` on GameState; `WEAPON_SPECS` data table in `types/weapon.ts` (ARCHETYPES precedent). D2 N-resolution via new pure `weaponSystem.resolveTrigger` folding 1..3 resolutions sequentially (left→centre→right, threading enemies + couriers), reusing the extended `resolvePlayerShot` primitive. **P1 priced:** courier-on-miss moves into the per-offset fold → up to 3 `resolveCourierShot`/tick (was 1), threaded so no courier is double-hit. D3 `impactEvents` invariant widened 0-or-1 → 0-to-3 — **render is already N-safe** (bridge loops; `ImpactEffects` drains the queue into pools of 12), so **zero render-consumer change** for multi-impact. D4 B = per-trigger burst as pure tick state (timer-accumulator, ≤1 round/tick, no `pendingShots` coupling, no new binding). **D5 LOOT = NEW ENTITY, not a weight-0 `EnemyKind`** — structurally off the `ARCHETYPES`/score-lives path (AC7-loot cannot regress); own `lootSystem` + §5.4 spawn-exclusion predicate. **P2 decided:** an equipping resolution takes effect immediately and aborts remaining burst rounds that tick; within a C press, multiple crate hits → right-most (last-resolved) wins; equip from next trigger. D7 QTE freeze satisfied by construction (`weapon` rides `...state`). D8 Belliard-first via optional `LevelConfig.loot` (absent ⇒ every shipped level byte-identical).
+
+### LANE ASSIGNMENT (claim/release format; run in parallel AFTER the type seam)
+
+**Shared seam (Lane A writes FIRST, then both fan out):** the type contract —
+`src/game/types/weapon.ts` (NEW: `WeaponKind`, `WeaponSpec`, `WeaponState`, `WEAPON_SPECS`),
+`src/game/types/loot.ts` (NEW: `LootCrate`, `LootState`, `LootSpec`), and the `GameState` field
+additions in `src/game/types/gameState.ts` (`readonly weapon: WeaponState`, `readonly loot:
+LootCrate | null`, `readonly weaponEmpty?: boolean`, widen the `impactEvents` comment). These are
+all `src/game/` files → **owned by Lane A**. Lane B only _imports_ the types (read-only). Rule:
+**Lane A lands the seam (types + field defaults, tsc green) before Lane B consumes the names.**
+No file is edited by both lanes — the seam is a types-first handshake, not a shared file.
+
+**Lane A — `dev-gameplay` (`src/game/**` only, TDD):\*\*
+
+- `src/game/types/weapon.ts` (NEW) — seam.
+- `src/game/types/loot.ts` (NEW) — seam.
+- `src/game/types/gameState.ts` (EDIT) — seam fields + `impactEvents` comment widening.
+- `src/game/systems/weaponSystem.ts` (NEW) — `resolveTrigger`: offset list per weapon, sequential
+  fold threading enemies+couriers, burst scheduling (D4), stock decrement, auto-return +
+  `weaponEmpty` on 0 (§6.1), equip-on-loot ordering (P2 / D6).
+- `src/game/systems/lootSystem.ts` (NEW) — pure crate spawn (§5.4 exclusion predicate) + tick.
+- `src/game/systems/bulletSystem.ts` (EDIT) — extend `resolvePlayerShot` to a single-point
+  primitive over enemies ∪ {VISIBLE crate}, discriminated outcome (`enemy-hit`|`loot-hit`|`miss`);
+  return `impacts` list shape.
+- `src/game/systems/stateMachine.ts` (EDIT) — seed `weapon`+`loot` in `createInitialState`
+  (from `LevelParams.loot`); replace step-4 shot + step-7b courier resolution with a single
+  `weaponSystem.resolveTrigger` call; loot spawn/tick wiring; `LevelParams.loot` gate.
+- `src/game/levels/levels.ts` (EDIT) — optional `LevelConfig.loot?: LootSpec`; Belliard opts in.
+- `src/game/systems/__tests__/{weaponSystem,lootSystem}.test.ts` (NEW) +
+  `stateMachine.test.ts` (EDIT: AC1-AC15 regressions — esp. AC7-loot no score/lives, AC14 hit
+  never touches weapon, AC9 spawn-exclusion, AC10 same-tick auto-return + one `weaponEmpty`).
+
+**Lane B — `dev-r3f-render` (`src/render/**` + view bridge only):\*\*
+
+- `src/render/scene/LootCrate.tsx` (NEW) — crate in its window slot: **drawn glyph placeholder**
+  (`GestureIcon`/`DiagramIcon` DOM pattern, no FLUX), glow while `VISIBLE`; reads `GameState.loot`.
+- `src/render/scene/GameScene.tsx` (EDIT) — mount `LootCrate`, pass `loot` state.
+- `src/render/ui/HUD.tsx` (EDIT) — active-weapon glyph, special stock counter/pips, ∞ for base
+  (no counter/red/blink ever, AC11), last-~20% blink, `weaponEmpty` flash. All derived from
+  `GameState.weapon` + `weaponEmpty` — no game rule in render.
+- `src/hooks/useGameLoop.ts` (EDIT) — drain the new transient `weaponEmpty` per-frame (like
+  `impactEvents`) to a HUD/audio channel; wire the empty-return SFX cue (reuse an existing SFX,
+  no new asset). **NB: the multi-impact path needs NO change (D3).**
+
+**Parallel-safe verdict:** Lane A = `src/game/**` (+`levels.ts`); Lane B = `src/render/**` +
+`src/hooks/useGameLoop.ts`. Disjoint. The only cross-lane dependency is Lane B importing the new
+types. **Sequencing:** (1) Lane A publishes the type seam (files above with default field values,
+tsc green); (2) Lanes A and B run fully in parallel. Not parallel-safe _before_ the seam lands
+(Lane B has no type names to import).
+
+**Downstream (unchanged):** `ux-designer` HUD layout (desktop+mobile, ADR-0003) reconciled before
+ship; `lead-art` crate/glyph read (R1-R4) — fast-follow if placeholder illegible, not a V1 blocker;
+`narrative-designer` weapon names. P3 (B stock-unit) is pm-owned and already ack'd in the story.
