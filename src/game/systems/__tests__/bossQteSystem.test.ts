@@ -604,6 +604,8 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
     // Deterministic on targetSeed 20260719 — a stand-in for Sacha's cross-seed greedyVital>0 check.
     const legA = bossWanderLegDuration(phaseRow(2).wanderSpeed);
     let maxDev = 0;
+    let inCatch = 0;
+    let samples = 0;
     for (let win = 1; win <= 12; win++) {
       for (let s = 0; s <= 20; s++) {
         const t = (s / 20) * phaseRow(2).exposedSeconds;
@@ -615,10 +617,16 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
           BOSS_VITAL_WANDER_AMP_X,
           BOSS_VITAL_WANDER_AMP_Y,
         );
-        maxDev = Math.max(maxDev, Math.hypot(w.x, w.y));
+        const dev = Math.hypot(w.x, w.y);
+        maxDev = Math.max(maxDev, dev);
+        if (dev <= BOSS_VITAL_CATCH_RADIUS) inCatch += 1;
+        samples += 1;
       }
     }
     expect(maxDev).toBeGreaterThan(BOSS_VITAL_CATCH_RADIUS);
+    // R2 stronger property: at 0.11 a fixed camp aim at the box centre catches the vital ring for
+    // only a MINORITY of the window — the head ring must genuinely be tracked, not parked on.
+    expect(inCatch / samples).toBeLessThan(0.5);
   });
 });
 
@@ -695,11 +703,12 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
     expect(tickBossQte(overlap, true, { x: 0, y: 0.5 }, 0.1).qte.bossHp).toBe(10);
   });
 
-  it("AMENDMENT A1: a click inside 0.30 but outside the 0.18 vital catch is NOT a vital chip", () => {
-    // The corner-whiffable-vital case (A1 §2/§3). The vital catch is 0.18 < the 0.30 the ring used
-    // to answer from a fixed head-camp; a shot in the 0.18–0.30 annulus of the vital centre no
-    // longer scores the free 2 HP — greed must be tracked and is punished if it whiffs.
-    expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.18);
+  it("AMENDMENT A1 (R2): a click inside 0.30 but outside the 0.11 vital catch is NOT a vital chip", () => {
+    // The corner-whiffable-vital case (A1 §2/§3, catch tightened to 0.11 in round 2). A shot in the
+    // 0.11–0.30 annulus of the vital centre no longer scores the free 2 HP — greed must be tracked
+    // and is punished if it whiffs. The 0.15 probe binds to 0.11: it WAS a vital chip under the
+    // round-1 0.18 catch and is now a whiff, proving the stronger read.
+    expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.11);
     const base = activeWith({
       phaseIndex: 1,
       stance: "EXPOSED",
@@ -711,15 +720,15 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
       ringZone: "vital",
       bossHp: 12,
     });
-    // 0.25 from the vital centre (inside old 0.30, OUTSIDE new 0.18) and outside the limb ring →
-    // NO vital chip, no limb chip: the actual outcome is a whiff (a body bleed here), never −2 HP.
-    const annulusOnly = tickBossQte(base, true, { x: 0.25, y: 0.8 }, 0.1);
+    // 0.15 from the vital centre (inside 0.30, inside the OLD 0.18, OUTSIDE the new 0.11) and outside
+    // the limb ring → NO vital chip, no limb chip: the actual outcome is a whiff (a body bleed here).
+    const annulusOnly = tickBossQte(base, true, { x: 0.15, y: 0.8 }, 0.1);
     expect(annulusOnly.qte.bossHp).toBe(12); // the 2 HP was NOT free
     expect(annulusOnly.energyDelta).toBe(QTE_BODY_HIT); // it resolved as an off-ring body bleed
     // Same annulus distance from the vital centre, but ALSO within the limb ring's 0.30 catch →
     // it scores the LIMB chip (1), never vital (the tighter vital catch is checked first and misses).
-    const alsoLimb = activeWith({ ...base, targetOffsetB: { x: 0, y: 0.6 } });
-    const r = tickBossQte(alsoLimb, true, { x: 0, y: 0.55 }, 0.1); // 0.25 from vital, 0.05 from limb
+    const alsoLimb = activeWith({ ...base, targetOffsetB: { x: 0, y: 0.68 } });
+    const r = tickBossQte(alsoLimb, true, { x: 0, y: 0.65 }, 0.1); // 0.15 from vital, 0.03 from limb
     expect(r.qte.bossHp).toBe(11); // limb chip, never the 2 HP vital
   });
 

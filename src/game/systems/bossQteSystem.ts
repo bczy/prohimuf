@@ -65,7 +65,7 @@ export const RING_HIT_RADIUS = 0.3;
  *  limb dilemma (spec §0). PAIRED render constraint (A1 §4, dev-r3f-render): the vital ring is
  *  DRAWN at this radius (drawn == catch — the aim-honesty invariant), the limb ring at
  *  `RING_HIT_RADIUS`. */
-export const BOSS_VITAL_CATCH_RADIUS = 0.18;
+export const BOSS_VITAL_CATCH_RADIUS = 0.11;
 /** VITAL ring hit (head, GREEN) — the heaviest chip. */
 export const BOSS_DAMAGE_VITAL = 2;
 /** LIMB ring hit (torso/shoulders, YELLOW) — the lighter chip. */

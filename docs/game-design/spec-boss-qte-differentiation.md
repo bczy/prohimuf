@@ -212,6 +212,59 @@ BOSS_VITAL_CATCH_RADIUS`; a LIMB chip only if within `RING_HIT_RADIUS` of the li
 
 ---
 
+## AMENDMENT A1-R2 — catch-radius value + reframed acceptance (LEVER 1) — gated 2026-07-20 (ROUND 2)
+
+**Gated by `lead-game-designer` (Karim), stage-5 correction ROUND 2 — handoff shard §17 ("DESIGN GATE
+(stage-5 correction ROUND 2)"). Transcribed VERBATIM from the gate entry. SUPERSEDES A1's VALUE (0.18)
+and A1's §5 ACCEPTANCE metric ("greedyVital loss > 0"); the per-ring-catch MECHANISM (A1 §2) and the
+paired-render pairing (A1 §4) CARRY OVER. Source: `game-designer` (Sacha) A1 re-verify FAIL, shard §15
+— at 0.18 campVital stayed the single best line (+45 E, 0 blown), camp dominance intact, and "loss > 0"
+proved structurally unreachable by catch-radius tuning. `dev-gameplay` sets the value (0.11, pre-cleared
+0.10 contingency SAME round); `dev-r3f-render` draws vital ring A at the value; `ux-designer` + `lead-art`
+own the NEW binding small-ring legibility condition (§4 below).**
+
+> **AMENDMENT A1-R2 (gated 2026-07-20, stage-5 correction ROUND 2).**
+>
+> 1. **Value: `BOSS_VITAL_CATCH_RADIUS = 0.11`** (was 0.18). `RING_HIT_RADIUS = 0.30` unchanged for
+>    LIMB / parry-point / décor / phase-1 single ring. 0.11 is the measured threshold at which
+>    head-camping the vital ring stops being dominant (campVital net energy −5, below greedyLimb +1.7
+>    and optimal +12.8; §15 sweep). The sub-band assert (`BOSS_VITAL_CATCH_RADIUS < vital wander-box
+reach 0.226`) still holds. **Pre-cleared contingency, SAME lever, NOT a new round:** if the
+>    re-verify shows campVital net energy is not cleanly below BOTH greedyLimb and optimal with
+>    separation beyond sim-noise, `dev-gameplay` may drop to **0.10** (campVital −10, wider margin)
+>    under this same gate.
+> 2. **REFRAMED ACCEPTANCE — replaces A1 §5's "greedyVital loss > 0"** (structurally unreachable by
+>    catch-radius tuning: multi-shot spam answers a window with one hit; the ring decelerates to
+>    stillness at each waypoint; energy is clamp-only not death in the tableau, ADR-0051 — so the
+>    radius governs ENERGY, not the loss clock). **The A1 correction is ACCEPTED at re-verify iff, on
+>    `targetSeed 20260719`, N ≥ 500/style:**
+>    - **(a) camp non-dominant:** campVital net energy **< optimal AND < greedyLimb**;
+>    - **(b) greed materially punished:** greedyVital net energy **clearly negative** and avg
+>      blown-windows **≫ greedyLimb's** (~0);
+>    - **(c) honest play clears:** greedyLimb AND optimal stay **100 % win** with margin;
+>    - **(d) seed holds:** the pinned seed presents ≥1 landable, trackable vital waypoint AND competent
+>      limb-banking clears — else re-pin.
+> 3. **PAIRED RENDER (carries from A1 §4, value updated — binding on `dev-r3f-render`):** the VITAL
+>    ring A is DRAWN at a radius equal to `BOSS_VITAL_CATCH_RADIUS` (0.11); drawn = catch, the
+>    aim-honesty invariant (`BossQteSprite.tsx` lines 47-48). It may NOT be drawn larger than the catch.
+> 4. **NEW BINDING CONDITION — small-ring legibility (§5.6 FEEL axis; `ux-designer` + `lead-art`, the
+>    same weight as the render pairing):** a 0.11-world-unit vital ring is small and drawn=catch forbids
+>    enlarging it. `ux-designer` + `lead-art` owe a legibility treatment (bright / high-contrast /
+>    thick-stroke, distinct from the smoke veil), and `ux-designer`'s leg-2 sign-off MUST confirm the
+>    0.11 vital ring is clearly perceivable AND honestly aim-able on BOTH device classes at the boss
+>    zoom — mobile-landscape especially. Too-small-to-aim = a frustration-miss (attributable, so not a
+>    §5.6 bullshit death, but a §5.4/§5.5 feel/fairness FAIL). **If leg-2 finds 0.11 not legibly
+>    aim-able on mobile at the boss zoom, that is a render-scale / boss-zoom question for `lead-art` +
+>    `senior-architect` — NOT a re-tune of the radius (which is mechanically pinned by the dominance
+>    threshold) and NOT a third round of this cap.**
+
+**AC-D2 (A1-R2 re-amended tail, supersedes the A1 tail above):** "…vital scored only within
+`BOSS_VITAL_CATCH_RADIUS 0.11` (pre-cleared contingency 0.10), and the vital ring is DRAWN at that
+radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`. Acceptance is the reframed A1-R2 §2
+energy metric (camp non-dominant), NOT loss > 0."
+
+---
+
 ## LEVER 3 — Parade façon Sekiro
 
 ### 3-A — DECIDED, STATED PLAINLY: the SAME fire-click, reinterpreted by a distinct telegraphed PARRY window. NO new input channel. NO `src/hooks` change.
@@ -589,11 +642,13 @@ timing make the seed pin harder than V1's single ring; this is the most likely c
 - **AC-D1 — Differentiation reads.** By phase 2 the fight poses a visible targeting **choice**
   (two live rings) and by phase 3 a **parry** beat, both introduced on a telegraphed phase break;
   a playtester describes a different moment-to-moment than the hostage duel. (The whole point.)
-- **AC-D2 — Lever 1** _(amended by AMENDMENT A1, gated 2026-07-20 — see the A1 section after LEVER 1)._
-  Phase 1 = single ring (V1). Phase 2+ = two simultaneous rings, vital 2 HP / limb 1 HP, both live,
-  one shared `windowChipped` (a chip from either answers the window; overlap scores vital). No
-  double-drain. **Amended tail (A1):** vital scored only within `BOSS_VITAL_CATCH_RADIUS 0.18`, and the
-  vital ring is DRAWN at that radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`.
+- **AC-D2 — Lever 1** _(amended by AMENDMENT A1 then A1-R2, gated 2026-07-20 — see the A1 / A1-R2
+  sections after LEVER 1)._ Phase 1 = single ring (V1). Phase 2+ = two simultaneous rings, vital 2 HP /
+  limb 1 HP, both live, one shared `windowChipped` (a chip from either answers the window; overlap
+  scores vital). No double-drain. **Amended tail (A1-R2, supersedes A1):** vital scored only within
+  `BOSS_VITAL_CATCH_RADIUS 0.11` (pre-cleared contingency 0.10), and the vital ring is DRAWN at that
+  radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`. Acceptance is the reframed A1-R2 §2
+  energy metric (camp non-dominant), NOT loss > 0.
 - **AC-D3 — Lever 3.** Parry decoded from the SAME `fire`+`impactPoint` (no `src/hooks` change);
   distinct `parryLeadSeconds` tell ≥ 0.35 and < the lull; `parryWindowSeconds` ≥ 0.5; success =
   +2 HP + stagger bonus window; whiff = −10 + one blown window (single charge); panic-click during
