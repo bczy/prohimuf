@@ -8,4 +8,10 @@ export type { OverlayProps } from "./Overlay";
 export { SelectableListItem } from "./SelectableListItem";
 export type { SelectableListItemProps } from "./SelectableListItem";
 
+export { BallotRow } from "./BallotRow";
+export type { BallotRowProps, BallotChoice } from "./BallotRow";
+
+export { VuMeter } from "./VuMeter";
+export type { VuMeterProps } from "./VuMeter";
+
 export { cx } from "./cx";

@@ -43,6 +43,8 @@ export default defineConfig({
 
       "@utils": resolve(__dirname, "src/utils"),
 
+      "@render": resolve(__dirname, "src/render"),
+
       "@hooks": resolve(__dirname, "src/hooks"),
     },
   },

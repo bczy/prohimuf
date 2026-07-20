@@ -1,0 +1,78 @@
+/*
+ * BallotRow (ADR-0046/ADR-0052) — the shared ballot primitive. Rules relocated
+ * verbatim from OptionsColophon.module.css so the OPTIONS colophon stays pixel-stable;
+ * the `.note` caveat and the `--ballot-stamp-bg` fallback var are the only additions.
+ * Every colour/font references a var(--…) injected from tokens.ts.
+ */
+.ballotRow {
+  margin-bottom: 18px;
+}
+
+/* Row label + hint. */
+.optLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+.optHint {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+.ballots {
+  display: flex;
+  gap: 8px;
+}
+
+/* Ballot box — the 2px ink border is invariant; the selected weight is the
+   .ballotSelected modifier (no shared property). ≥44×44px hit target. */
+.ballot {
+  position: relative;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ink-black);
+  border: var(--keyline-width) solid var(--ink-black);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.ballotSelected {
+  font-weight: 700;
+}
+
+/* Rubber-stamp X on the selected ballot. The badge ground matches the host paper:
+   `--ballot-stamp-bg` defaults to the colophon orange stock, overridden per host. */
+.xstamp {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-full);
+  background: var(--ballot-stamp-bg, var(--stock-orange));
+  border: 1.5px solid var(--ink-black);
+  border-radius: 1px;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+/* False-affordance caveat (Pause VIES/PRESSION — "prend effet à la prochaine partie"). */
+.note {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  margin-top: 6px;
+  opacity: 0.75;
+  font-style: italic;
+}

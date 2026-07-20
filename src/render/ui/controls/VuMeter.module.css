@@ -1,0 +1,28 @@
+/*
+ * VuMeter (ADR-0046/ADR-0052) — the shared inked slider. Rules relocated verbatim
+ * from OptionsColophon.module.css so the OPTIONS colophon stays pixel-stable. Every
+ * colour/font references a var(--…) injected from tokens.ts.
+ */
+.vuMeter {
+  margin-bottom: 18px;
+  min-height: 44px;
+}
+
+.optLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+.optHint {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--ink-black);
+  height: 24px;
+}
