@@ -22,14 +22,28 @@ function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
 }
 
 function enemyAt(slotIndex: number, overrides: Partial<Enemy> = {}): Enemy {
-  return { id: slotIndex + 1, slotIndex, state: "VISIBLE", timer: 1, kind: "normal", hp: 1, ...overrides };
+  return {
+    id: slotIndex + 1,
+    slotIndex,
+    state: "VISIBLE",
+    timer: 1,
+    kind: "normal",
+    hp: 1,
+    ...overrides,
+  };
 }
 
 function courier(id: number, x: number, y = 0): Courier {
   return { id, x, y, dir: 1, speed: 7 };
 }
 
-const baseW = (): WeaponState => ({ active: "base", stock: Infinity, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 });
+const baseW = (): WeaponState => ({
+  active: "base",
+  stock: Infinity,
+  burstRemaining: 0,
+  burstTimerMs: 0,
+  refractoryMs: 0,
+});
 const autoW = (over: Partial<WeaponState> = {}): WeaponState => ({
   active: "auto",
   stock: WEAPON_SPECS.auto.startStock,
@@ -140,7 +154,11 @@ describe("resolveTrigger — B auto (AC3): per-trigger burst, ≤1 round/tick", 
 
 describe("resolveTrigger — C spread (AC4): 3 simultaneous resolutions at ±2 u", () => {
   it("fires 3 resolutions covering the 3 adjacent columns; -1 stock per press; refractory armed", () => {
-    const facade = facadeWithSlots([{ x: -2, y: 0 }, { x: 0, y: 0 }, { x: 2, y: 0 }]);
+    const facade = facadeWithSlots([
+      { x: -2, y: 0 },
+      { x: 0, y: 0 },
+      { x: 2, y: 0 },
+    ]);
     const enemies = [enemyAt(0), enemyAt(1), enemyAt(2)];
     const r = trigger(spreadW(), true, 0.016, enemies, null, facade);
     expect(r.impacts).toHaveLength(3);

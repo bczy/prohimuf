@@ -230,7 +230,17 @@ describe("resolvePlayerShot — offsetDx shifts the resolution point (C spread, 
       { x: 0, y: 0 }, // slot 0 under the centre
       { x: 2, y: 0 }, // slot 1 two units right (façade column pitch)
     ]);
-    const result = resolvePlayerShot(centre, [enemyAt(0), enemyAt(1)], facade, 0, 0, 18, 12, null, 2);
+    const result = resolvePlayerShot(
+      centre,
+      [enemyAt(0), enemyAt(1)],
+      facade,
+      0,
+      0,
+      18,
+      12,
+      null,
+      2,
+    );
     expect(result.outcome).toBe("enemy-hit");
     expect(result.impact.impactPoint).toEqual({ x: 2, y: 0 });
     expect(result.impact.hit?.slotIndex).toBe(1);
@@ -264,7 +274,10 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
 
   it("nearest wins across enemy vs crate: a closer enemy is hit, the crate survives", () => {
     // Crate at (0.5,0) dist 0.5; enemy at (0.2,0) dist 0.2 — nearer.
-    const facade = facadeWithSlots([{ x: 0.5, y: 0 }, { x: 0.2, y: 0 }]);
+    const facade = facadeWithSlots([
+      { x: 0.5, y: 0 },
+      { x: 0.2, y: 0 },
+    ]);
     const near = enemyAt(1, { id: 9 });
     const crateFar: LootCrate = { ...crate, slotIndex: 0 };
     const result = resolvePlayerShot(centre, [near], facade, 0, 0, 18, 12, crateFar);
@@ -275,7 +288,10 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
 
   it("nearest wins across enemy vs crate: a closer crate is equipped, the enemy survives", () => {
     // Crate at (0.2,0) dist 0.2 — nearer; enemy at (0.5,0) dist 0.5.
-    const facade = facadeWithSlots([{ x: 0.2, y: 0 }, { x: 0.5, y: 0 }]);
+    const facade = facadeWithSlots([
+      { x: 0.2, y: 0 },
+      { x: 0.5, y: 0 },
+    ]);
     const far = enemyAt(1, { id: 9 });
     const crateNear: LootCrate = { ...crate, slotIndex: 0 };
     const result = resolvePlayerShot(centre, [far], facade, 0, 0, 18, 12, crateNear);

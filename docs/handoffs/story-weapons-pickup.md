@@ -191,8 +191,8 @@ ship; `lead-art` crate/glyph read (R1-R4) — fast-follow if placeholder illegib
 - **Branch:** `claude/features-a-implémenter-ehw9q4` (3 commits; orchestrator pushes).
 - **Commits:** (1) `feat(game): weapon+loot type seam (ADR-0052 D1)` — types + GameState fields,
   tsc green, byte-identical passthrough. (2) `feat(game): weaponSystem + lootSystem, N-resolution
-  hitscan (ADR-0052 D2-D6)` — pure systems + unit tests. (3) `feat(game): wire weapon+loot into
-  tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC regressions.
+hitscan (ADR-0052 D2-D6)` — pure systems + unit tests. (3) `feat(game): wire weapon+loot into
+tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC regressions.
 - **Decisions as-built:** D1 `weapon: WeaponState` + `loot`/`lootSpec`/`lootTimer` + transient
   `weaponEmpty?` on GameState; `WEAPON_SPECS` (§7) in `types/weapon.ts`. Added `lootSpec`+`lootTimer`
   GameState fields (beyond the ADR's enumerated seam) — the necessary spawn-cadence bookkeeping,
@@ -220,4 +220,4 @@ ship; `lead-art` crate/glyph read (R1-R4) — fast-follow if placeholder illegib
 - **Lane B handshake:** the type seam is live — `WeaponState`/`WeaponKind`/`LootCrate`/`LootState`
   are importable; `GameState.weapon`/`.loot`/`.weaponEmpty` populated each tick. Lane B still owns
   the `weaponEmpty` per-frame bridge drain in `useGameLoop.ts` and the `LevelConfig.loot →
-  LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane; not touched here).
+LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane; not touched here).

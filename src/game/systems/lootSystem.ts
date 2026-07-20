@@ -44,16 +44,29 @@ export interface LootTickResult {
 
 // Advance an existing crate's state machine by `delta`; expiry removes it and
 // re-arms the spawn timer to the configured interval.
-function advanceCrate(loot: LootCrate, spec: LootSpec, lootTimer: number, delta: number): LootTickResult {
+function advanceCrate(
+  loot: LootCrate,
+  spec: LootSpec,
+  lootTimer: number,
+  delta: number,
+): LootTickResult {
   const timer = loot.timer - delta;
   if (timer > 0) {
     return { loot: { ...loot, timer }, lootTimer, spawned: false };
   }
   switch (loot.state) {
     case "HIDDEN":
-      return { loot: { ...loot, state: "APPEARING", timer: LOOT_APPEARING_DURATION }, lootTimer, spawned: false };
+      return {
+        loot: { ...loot, state: "APPEARING", timer: LOOT_APPEARING_DURATION },
+        lootTimer,
+        spawned: false,
+      };
     case "APPEARING":
-      return { loot: { ...loot, state: "VISIBLE", timer: LOOT_VISIBLE_DURATION }, lootTimer, spawned: false };
+      return {
+        loot: { ...loot, state: "VISIBLE", timer: LOOT_VISIBLE_DURATION },
+        lootTimer,
+        spawned: false,
+      };
     default:
       // VISIBLE elapsed with no pickup: the crate is gone; re-arm the spawn timer.
       return { loot: null, lootTimer: spec.spawnIntervalSeconds, spawned: false };
@@ -89,7 +102,13 @@ function attemptSpawn(
   if (weapon === undefined) return { loot: null, lootTimer: 0, spawned: false };
 
   return {
-    loot: { id: nextId, slotIndex: chosen.slotIndex, state: "HIDDEN", timer: LOOT_HIDDEN_DURATION, weapon },
+    loot: {
+      id: nextId,
+      slotIndex: chosen.slotIndex,
+      state: "HIDDEN",
+      timer: LOOT_HIDDEN_DURATION,
+      weapon,
+    },
     lootTimer: spec.spawnIntervalSeconds,
     spawned: true,
   };
