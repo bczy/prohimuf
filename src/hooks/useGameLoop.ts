@@ -27,6 +27,7 @@ import type { Floater } from "@render/scene/FeedbackLayer";
 import { energyFloater } from "@render/scene/hostageCue";
 import type { CamPose } from "@render/scene/qteCamera";
 import {
+  BOSS_MOBILE_FRAME_LIFT,
   QTE_RESTORE_SECONDS,
   qtePose,
   qteRestorePose,
@@ -400,7 +401,14 @@ export function useGameLoop(
       qteBaseRef.current ??= { zoom: ortho.zoom, x: camera.position.x, y: camera.position.y };
       qteRestoreRef.current = null;
       const p = qteZoomInProgress(camQte.phase, camQte.zoomRemaining, camQte.zoomSeconds);
-      const pose = qtePose(qteBaseRef.current, camQte.anchor, p);
+      // Mobile boss framing lift (§21): raise the camera TARGET above the boss anchor so the
+      // tableau drops on screen and the vital band clears the fixed-footprint BossHpBar. Boss-only,
+      // mobile-only; the hostage path, the desktop path, and the qteBaseRef restore are untouched.
+      const camAnchor =
+        mobileControls !== undefined && camQte === bossQte
+          ? { x: camQte.anchor.x, y: camQte.anchor.y + BOSS_MOBILE_FRAME_LIFT }
+          : camQte.anchor;
+      const pose = qtePose(qteBaseRef.current, camAnchor, p);
       ortho.zoom = pose.zoom;
       camera.position.x = pose.x;
       camera.position.y = pose.y;

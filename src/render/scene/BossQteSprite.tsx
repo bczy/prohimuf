@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CanvasTexture } from "three";
+import { CanvasTexture, RingGeometry } from "three";
 import type { Mesh, MeshBasicMaterial, OrthographicCamera, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
 import {

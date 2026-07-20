@@ -15,6 +15,20 @@ import type { BossQtePhase } from "@game/types/bossQte";
  */
 export const QTE_ZOOM_FACTOR = 2.4;
 
+/**
+ * Mobile boss-zoom framing LIFT (world units, POSITIVE) — senior-architect ruling §21. On mobile
+ * the effective boss zoom (`MOBILE_ZOOM_FACTOR × QTE_ZOOM_FACTOR`) maps the vital band (anchor.y +
+ * ~0.8 ± wander) to more screen px, so the boss head rides up UNDER the fixed-CSS-footprint
+ * `BossHpBar` (a DOM overlay that cannot be drawn under). The bridge (`useGameLoop`) applies this
+ * as a positive lift of the camera TARGET above the boss anchor (boss-only, mobile-only) so the
+ * whole tableau drops on screen and the vital band clears the bar's bottom edge. NOT a zoom bump
+ * (that pushes the head further up). Coupled to the bar's fixed footprint (`BossHpBar.module.css`
+ * `top:58px` + height); revisit if `MOBILE_ZOOM_FACTOR`, the bar's `top`, or the anchor moves.
+ * Magnitude calibrated on real 844×390 captures: enough that the full vital band clears the bar
+ * with margin, bounded so the limb ring / lower body stay on the short mobile-landscape frame.
+ */
+export const BOSS_MOBILE_FRAME_LIFT = 0.7;
+
 /** Seconds the camera takes to ease back to its pre-QTE framing once the QTE ends. */
 export const QTE_RESTORE_SECONDS = 0.6;
 
