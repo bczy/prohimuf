@@ -1,6 +1,7 @@
 # 0052 — Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception
 
-- **Status:** Accepted
+- **Status:** Accepted — **doc-corrected 2026-07-20** (two stale claims fixed to match landed
+  code; no decision reopened — see Revision 2)
 - **Date:** 2026-07-20
 - **Number:** 0052, **allocated by `producer` (Marion)** at DESIGN stage and recorded in the
   story shard (`docs/handoffs/story-boss-qte-differentiation.md` §2) — not self-allocated
@@ -265,3 +266,69 @@ document because there is none.**
 - **Determinism surface widened** — the two-ring salt, parry decode, decor, renfort modulation and
   finisher are all seeded/scripted; a stray `Math.random` anywhere reopens the replay-determinism
   class. Asserted by the pure-function tests.
+
+## Revision 2 — 2026-07-20: stage-6 doc-coherence corrections (no boundary/contract change)
+
+Triggered by the stage-6 4-reviewer merge-gate triage, finding #4 (`senior-architect`, shard
+`docs/handoffs/story-boss-qte-differentiation.md` §"6. REVIEW" triage table, "Confirmed
+(useGameLoop diff +52 harness seam; BOSS_VITAL_CATCH_RADIUS=0.11)"). Two claims below no longer
+match the landed code. Both are DOC corrections filed by `tech-writer` (Otis); neither reopens a
+decision, and the same triage's integration review confirms the boundary law still holds
+("`render`→`game` is `import type` + pure-API… legitimate hooks bridge, no rule leak"). D1's and
+D2's original text is left as written below — it was accurate at TECH PLAN — this revision
+records what has changed since and points to the ruling that authorised each change.
+
+### D1's "load-bearing finding" — `useGameLoop.ts` is no longer byte-untouched (two render-owned bridge additions since this ADR was written)
+
+D1 stated `src/hooks/useGameLoop.ts` are byte-untouched by this story. That was true when D1 was
+written; it is now FALSE of the file as a whole. The property D1 was actually protecting — the
+game/render/hooks CONTRACT (`{anchor, phase, zoomRemaining, zoomSeconds}`), not literal byte
+count — still holds: both additions below consume that contract UNCHANGED, mutate no
+`src/game` state directly, and add no field to the bridge's signature.
+
+1. **The C-QA2 capture seam** (shard §11, `dev-r3f-render` correction discharging qa-lead's
+   stage-5 correction C-QA2) — `useGameLoop` consumes two new harness globals,
+   `window.__MUF_BOSS_BOOT__` (seeds the initial `bossQte` once at init, factory-driven, via a
+   deterministic pure-API fast-forward, mirroring the existing `__MUF_PLAY__`/`__MUF_STATE__`
+   harness pattern) and `window.__MUF_BOSS_IMMUNE__` (re-invokes the same fast-forward factory on
+   the boss's `LOST` transition, gated behind `&blownImmune=1`). Both are double-guarded to the
+   non-shipped `?preview=boss` dev-harness (factory present AND `bossQteSpec !== null` — true only
+   on the excluded-from-`LEVELS` harness); reachability for shipped players is unchanged. No
+   `src/game/**` edit, no hooks signature change — globals-only, like the sibling `__MUF_PLAY__`
+   seam.
+2. **The mobile boss frame lift** (shard §21, `senior-architect` render-scale ruling on the
+   mobile boss-zoom framing collision with `BossHpBar`) — `useGameLoop`'s boss branch, when the
+   live QTE is the boss AND mobile, now passes `qtePose` a locally-lifted anchor
+   (`{ x: anchor.x, y: anchor.y + BOSS_MOBILE_FRAME_LIFT }`) instead of the raw `camQte.anchor`.
+   `qtePose`'s own signature, and the hostage/desktop paths, are byte-unchanged (shard §21(a),
+   "the game/render/hooks contract… is consumed UNCHANGED").
+
+Both were ruled render-lane fixes with no boundary/contract crossing at the time (shard §11, §21;
+confirmed again at the stage-6 integration review). This revision exists only so a reader of D1
+is not misled by "byte-untouched" into assuming `useGameLoop.ts` is still literally unmodified.
+
+### §21(d) coupling note (recorded, not gated) — `BOSS_MOBILE_FRAME_LIFT` is coupled to `BossHpBar`'s footprint and `MOBILE_ZOOM_FACTOR`
+
+Per the architect's render-scale ruling (shard §21(d), recommended not blocking):
+`BOSS_MOBILE_FRAME_LIFT` (`src/render/scene/qteCamera.ts`, landed value `0.7`) is not an
+independent magic number — it was calibrated against (a) `BossHpBar`'s fixed CSS footprint
+(`top` + rendered height — ≈114 CSS px bottom edge measured on the 844×390 capture, shard §22)
+and (b) `MOBILE_ZOOM_FACTOR` (the mobile boss-zoom multiplier that maps the vital band's fixed
+world offset to screen px). **Revisit `BOSS_MOBILE_FRAME_LIFT` if any of the three moves** — the
+bar's `top`/height, `MOBILE_ZOOM_FACTOR`, or the vital band's anchor-relative wander amplitude —
+otherwise the calibrated clearance (bar bottom edge to the worst-case lifted vital ring, ~44 CSS
+px margin at landing, shard §22) can silently erode, or the limb ring/lower body can fall off the
+mobile-landscape frame.
+
+### D2 lever-1 reuse map — the ring catch radius is now per-ring, not a flat `RING_HIT_RADIUS 0.30`
+
+D2's "Lever 1 — points faibles multiples" paragraph above still names `RING_HIT_RADIUS 0.30` as
+the reused catch radius for both rings — that was the value at TECH PLAN. It was superseded
+during stage-5 correction by the gated design-gate amendments **A1** (`lead-game-designer`, shard
+§13) and **A1-R2** (`lead-game-designer`, shard §17, re-gate on the game-designer's re-tune): the
+ring catch radius is now **per ring**, `BOSS_VITAL_CATCH_RADIUS = 0.11` for the VITAL ring only.
+The LIMB ring, the parry point, the décor prop, and the phase-1 single ring all keep the original
+`RING_HIT_RADIUS 0.30`. The per-ring-catch mechanism and the drawn==catch aim-honesty invariant
+carry over from A1 unchanged; A1-R2 is the value + winnability-metric reframe that actually
+landed (game-designer re-verify, shard §19, VERDICT: PASS). D2's original sentence is left as
+written; this note is the amendment that supersedes its one value.

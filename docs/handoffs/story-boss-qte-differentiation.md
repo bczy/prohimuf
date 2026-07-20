@@ -3148,3 +3148,91 @@ self-waive):
   Karim design-gate hard-block on décor before any shipped level authors decorProp), #9, #10, NITs.
 - VERDICT: PASS — integration/boundary review (senior-architect)
 - VERDICT: FAIL — stage-6 merge gate, pending the 7-item pre-merge batch (senior-architect)
+
+## 25. PRE-MERGE FIX — tech-writer (Otis) — 2026-07-20 — stage-6 finding #4 (ADR-0052 annotations) + ADR-0053 status reword
+
+- claim: discharge the stage-6 merge-gate pre-merge batch item routed to `tech-writer` (§"6.
+  REVIEW", `senior-architect`, finding #4 + integration-review ruling folding #11's ADR-0053
+  status reword into #4). Wording/coherence only — every content decision below is Winston's
+  (or already-landed lane rulings his triage cites); nothing here reopens a decision.
+- release:
+  - **`docs/adr/0052-boss-qte-differentiation-levers.md`** — added **"Revision 2 — 2026-07-20:
+    stage-6 doc-coherence corrections (no boundary/contract change)"** at the end of the file
+    (original D1/D2 text left AS WRITTEN, per the ADR's own revision discipline — ADR-0034
+    precedent). Three items, each traced to its authorising shard section: 1. D1's "load-bearing finding" annotated: `useGameLoop.ts` is no longer byte-untouched —
+    it gained the C-QA2 capture seam (`__MUF_BOSS_BOOT__`/`__MUF_BOSS_IMMUNE__`, shard §11,
+    `dev-r3f-render` correction) and the mobile boss frame lift (`BOSS_MOBILE_FRAME_LIFT`
+    applied at the `qtePose` call site, shard §21, `senior-architect` render-scale ruling).
+    Recorded that neither crosses the game/render/hooks CONTRACT (`{anchor, phase,
+zoomRemaining, zoomSeconds}` consumed unchanged) — D1's original sentence is not
+    rewritten, only annotated as no-longer-literally-true-of-the-file. 2. §21(d)'s recommended coupling note recorded: `BOSS_MOBILE_FRAME_LIFT` (landed `0.7`) is
+    coupled to `BossHpBar`'s fixed CSS footprint (`top` + height) and `MOBILE_ZOOM_FACTOR` —
+    flagged to revisit if any of the three moves. 3. D2's lever-1 reuse map annotated: the flat `RING_HIT_RADIUS 0.30` catch it names is
+    superseded by the gated amendments **A1** (shard §13) / **A1-R2** (shard §17, re-verified
+    shard §19) — per-ring catch, `BOSS_VITAL_CATCH_RADIUS = 0.11` (vital only), `RING_HIT_RADIUS
+0.30` retained for limb/parry/décor/phase-1. - **Status line** updated to `Accepted — doc-corrected 2026-07-20 (two stale claims fixed to
+match landed code; no decision reopened — see Revision 2)`, following the ADR-0028/0034
+    dated-revision Status convention. No other Status-line change; ADR-0052 stays Accepted, not
+    re-numbered, not superseded.
+  - **`docs/adr/0053-niveau-final-live-boss-level.md`** — Status reworded from `Accepted` to
+    "Accepted — pending build (the design/architecture decision below is accepted; the level
+    itself has not been built yet — dev-lane launch is gated on ADR-0052's stage-6 panel
+    MERGE-clearing on `main`, the AC8 sequencing gate, see Gotchas)" — Winston's exact stage-6
+    triage disposition for the story-2 ride-along (integration review: "the ONE real risk —
+    ADR-0053 'Accepted' implying a BUILT level — is neutralised by rewording its status"). No
+    other line changed; the D1–D6 decision content is untouched.
+  - **Registry regenerated**: `node scripts/gen-adr-index.mjs --write` then `--check` — fresh
+    (53 ADR). No diff to `docs/adr/README.md` / `public/adr/index.html`: `normalizeStatus()`
+    only appends `(amended)`/`(partially superseded)` notes, so both ADRs' index rows already
+    read plain `Accepted` before and after — accurate either way (neither decision reopened).
+  - **`docs/index.md`** — checked, no ADR-0052/0053 cross-refs present; nothing to update.
+- verify: `npx --yes prettier@3.8.2 --check` on both touched ADR files — clean.
+  `docs/adr/README.md` / `public/adr/index.html` are prettier-ignored (script owns their
+  byte-exact formatting) — not run through prettier, `gen-adr-index.mjs --check` is their
+  freshness gate and it passed. No source file touched (annotation-only, no JSDoc/comment
+  edit this round) — `rtk tsc`/`rtk lint` not re-run, out of scope for this batch.
+- VERDICT: not a gate — doc realignment discharging stage-6 pre-merge item "tech-writer: #4
+  (ADR-0052 annotations) + ADR-0053 status → 'Accepted — pending build'".
+- handoff → `senior-architect` (Winston): #4 + the folded #11 ADR-0053 reword are done; ready
+  for re-verify alongside the other six pre-merge items before Bertrand merges.
+- File List:
+  - `docs/adr/0052-boss-qte-differentiation-levers.md` (Status line + new "Revision 2" section)
+  - `docs/adr/0053-niveau-final-live-boss-level.md` (Status line only)
+  - `docs/adr/README.md` / `public/adr/index.html` (regenerated, no content diff)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 11. BUILD (gameplay lane) — dev-gameplay (Amelia) — 2026-07-20 — stage-6 pre-merge fix #2 (décor-depletes-into-FINISHER loses decorConsumed)
+
+- claim: apply senior-architect's stage-6 triage fix #2 (prescribed verbatim) — the SHIELDED décor
+  branch, when the drop DEPLETES HP, returned `toFinisher(qte)` with the ORIGINAL qte, losing the
+  local `decorConsumed = true` (the early return bypasses the step-3 write-back), so the FINISHER
+  state read the prop un-spent. Plus the free NIT: stale round-1 "0.18" wording in the test file.
+- release (diff summary):
+  - `bossQteSystem.ts`, décor call site ONLY: `return toFinisher(qte)` →
+    `return toFinisher({ ...qte, decorConsumed: true })` (+ a one-line why comment). `toFinisher`'s
+    own override list is UNCHANGED, and the parry / ring depleting sites (which do not spend décor)
+    still pass `qte` unchanged — exactly as prescribed.
+  - `bossQteSystem.test.ts`: NEW regression test — a décor drop that DEPLETES (bossHp 3, +3 burst) →
+    `phase === "FINISHER"`, `bossHp === 0`, `decorConsumed === true`. (Fails against the old
+    `toFinisher(qte)`; passes with the fix.)
+  - NIT: updated the three stale "0.18" strings that described the CURRENT catch (the camp-punished
+    test title + its comment + the ⊂-band assert-test comment) to 0.11. Kept the two DELIBERATE
+    historical references ("was a vital chip under the round-1 0.18 catch" / "inside the OLD 0.18,
+    OUTSIDE the new 0.11") — those are accurate contrast notes, not stale leftovers.
+- **Verification — MY LANE GREEN (deterministic):** boss suite **67/67** (+1 regression); full
+  `yarn vitest run` **848/848**; `yarn eslint` + `prettier --check` on both changed gameplay files —
+  **EXIT 0 / clean**; the game layer typechecks clean.
+  - The repo-wide `yarn typecheck` / `yarn lint` FLAP red↔green during this round because
+    `dev-r3f-render` is concurrently editing `src/render/scene/BossQteSprite.tsx` (the A1 §4 vital-ring
+    draw) — every observed error is in THAT render file only (`RepeatWrapping` import + lint), none in
+    the game lane, none touchable by me. When BossQteSprite.tsx settles, the shared gate is green
+    (observed EXIT 0 mid-round). Flagged to `producer`/`qa-lead` to serialise the two lanes' green
+    before the merge gate re-runs.
+- boundary: only `bossQteSystem.ts` (one line + comment) + `bossQteSystem.test.ts` (one test + NIT
+  wording) changed; seeded-pure preserved; no type/spec/level change.
+- handoff → `senior-architect` (Winston): fix #2 applied exactly as triaged; regression test pins it.
+- NOTE (process): appended via `cat >>` heredoc, additive at end-of-file. Not committed/pushed.
+- File List:
+  - `src/game/systems/bossQteSystem.ts` (décor depleting return carries `decorConsumed: true`)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (regression test + stale-0.18 NIT; 67 tests)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)

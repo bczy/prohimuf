@@ -102,6 +102,9 @@ export interface SmokeUpdate {
 
 export interface SmokeField {
   readonly group: Group;
+  /** True once the CC0 sprite has loaded. Consumers gate the veil envelope on this so no
+   * fairness cost (e.g. the parry-glyph smoke degrade) is paid while the veil is absent. */
+  isReady(): boolean;
   update(dt: number, opts: SmokeUpdate): void;
   dispose(): void;
 }
@@ -135,15 +138,35 @@ export function createSmokeField(maxParticles: number): SmokeField {
 
   let texture: Texture | null = null;
   let ready = false;
-  new TextureLoader().load(SMOKE_URL, (t) => {
-    texture = t;
-    for (const m of meshes) {
-      const mat = m.material as MeshBasicMaterial;
-      mat.map = t;
-      mat.needsUpdate = true;
-    }
-    ready = true;
-  });
+  let disposed = false;
+  let errored = false;
+  new TextureLoader().load(
+    SMOKE_URL,
+    (t) => {
+      if (disposed) {
+        // Arrived after dispose() — never stamp it onto disposed materials; release it now.
+        t.dispose();
+        return;
+      }
+      texture = t;
+      for (const m of meshes) {
+        const mat = m.material as MeshBasicMaterial;
+        mat.map = t;
+        mat.needsUpdate = true;
+      }
+      ready = true;
+    },
+    undefined,
+    () => {
+      // The CC0 sprite failed to load (e.g. 404). Log ONCE and leave the field hidden — the veil
+      // simply never appears and isReady() stays false, so no consumer pays a fairness cost (the
+      // parry-glyph smoke degrade) for a veil that is not on screen.
+      if (!errored) {
+        errored = true;
+        console.warn(`[smokeParticles] smoke sprite failed to load (${SMOKE_URL}); veil disabled`);
+      }
+    },
+  );
 
   const update = (dt: number, opts: SmokeUpdate): void => {
     const visible = ready && opts.envelope > 0.02;
@@ -185,10 +208,11 @@ export function createSmokeField(maxParticles: number): SmokeField {
   };
 
   const dispose = (): void => {
+    disposed = true; // a texture still in flight is disposed on arrival (see the load callback)
     for (const m of meshes) (m.material as MeshBasicMaterial).dispose();
     geometry.dispose();
     texture?.dispose();
   };
 
-  return { group, update, dispose };
+  return { group, isReady: () => ready, update, dispose };
 }
