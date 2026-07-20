@@ -77,3 +77,37 @@ Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs
 - **Files:** `docs/game-design/weapons.md` (new). Read-only inputs: `docs/game-design/pre-spec-weapons.md`, `_bmad-output/planning-artifacts/story-weapons-pickup.md`, `src/game/systems/stateMachine.ts` / `bulletSystem.ts` / `courierSystem.ts` / `maps/facade01.ts`, ADR-0003/0034/0040/0051. No pre-spec/shard/code edits.
 - **B1–B6 resolved:** B1 full innocent penalty per resolution, no spread amnesty (§3/AC5). B2 each weapon = N hitscan resolutions at deterministic offsets, window-priority + courier-only-on-miss per point (§2). B3 resolved-by-descope (D out of V1; re-answer if D ships). B4 per-trigger burst for B (no hold, identical desktop/mobile, zero binding) + ADR-0015→**ADR-0003** citation fix (§2.3). B5 QTEs weapon-agnostic/base-only, special stock frozen (§4/AC6). B6 LOOT own non-human channel + glyph-before-fire + testable spawn-exclusion `|loot.col−a.col|≥2` + off score/lives path, read to lead-art (§5).
 - **Flags:** C's multi-`impactEvents` widening + LOOT-off-score-path → senior-architect (ADR-0052). B-stock-unit (round vs press) refines pm story AC A4 for `auto` as a B4 consequence — within the A-B-C envelope, flagged for pm/architect visibility. Hand-offs stand: lead-art (crate/glyph read), ux-designer (HUD desktop+mobile), narrative-designer (weapon names).
+
+---
+
+## stage-2. DESIGN GATE ROUND 2 — lead-game-designer (Karim) — 2026-07-20
+
+- claim: round-2 (final, bounded-iteration cap) re-gate of `docs/game-design/weapons.md` — verify B1–B6 genuinely resolved (not hand-waved), W1–W8 baked as verifiable ACs, pm rulings #1–#4 respected, no scope creep beyond A-B-C, burst/stock-unit refinement sound; resolution-model claims cross-checked against `bulletSystem.ts`/`stateMachine.ts` + ADR-0040/0003/0034/0051 / release: **PASS** with 3 pinned corrections (P1–P3) the senior-architect/dev/pm must honour; advances to senior-architect lane assignment + ADR-0052.
+- VERDICT: PASS — design gate round 2: weapons.md formalized spec (lead-game-designer)
+
+**PASS (final round).** Clean enough to advance: the six blocking corrections are genuinely resolved (not restated), the eight guardrails are numbered verifiable ACs, and every pm ruling is honoured. Residual holes are small and pinned as corrections downstream must honour — none structural, so no escalation packet.
+
+**Blocking set — verified genuinely resolved (not hand-waved):**
+
+- **B1** ✓ — §3 + AC5: full civilian penalty computed **per resolution** through the unchanged `resolveCourierShot`; a low burst charges up to `BURST_ROUNDS` penalties, a low éventail press up to 3. No amnesty rule anywhere. Keeps `Éviter` honest.
+- **B2** ✓ — §2: each weapon = N independent hitscan resolutions at deterministic offsets, each running window-priority **then** courier-only-on-miss individually. Grounded verbatim on ADR-0040; cross-checked against `resolvePlayerShot` (nearest-eligible-within-`HIT_RADIUS=0.8`, tie→lowest `slotIndex`) — accurate.
+- **B3** ✓ — resolved-by-descope (D out of V1, pm #1); no depth/range axis invented. Flag correctly carried: re-answer only if D ships. This is exactly the round-1 "remove the attribute" branch.
+- **B4** ✓ — §2.3 per-trigger burst: one tap = one burst, no hold gesture, identical desktop/mobile, zero new binding (**W8**). Citation fixed ADR-0015→**ADR-0003** throughout. Expressible under the discrete-tap model.
+- **B5** ✓ — §4 + AC6: QTEs weapon-agnostic/base-only, `weapon.active`/`weapon.stock` frozen. Verified against `stateMachine.ts`: both QTE branches early-return via `...state` through their own `tickQte`/`tickBossQte` classifiers — the weapon fields ride `...state` untouched. Accurate.
+- **B6** ✓ — §5 + AC7-loot/AC8/AC9: LOOT = non-human silhouette in its own channel (R1), glyph-before-fire (R2/W1), **shares** the window channel with an explicit <0.3 s triage re-measure (R4), testable spawn-exclusion `∀ active slot a: |loot.col−a.col| ≥ 2` (W2), off the `ARCHETYPES`/score-lives path. Read handed to `lead-art`, not arbitrated. Column-pitch grounding (2.0 u = `col*2-18`) verified against `facade01.ts`.
+
+**W1–W8 as verifiable ACs:** W1→AC8, W2→AC9, W3→AC10, W4→AC11, W5→AC5(=B1), W6→AC12, W7→AC13, W8→AC3. All eight present and testable. ✓
+
+**pm rulings:** #1 A-B-C only (D fast-follow, E YAGNI) — roster §1 holds, no fourth weapon. #2 NO loss-on-death → AC14/A7 regression (my round-1 N1(a) lean stands overridden — accepted). #3 Belliard-first — §7 measures there. #4 no FLUX, drawn glyph placeholder — §5.1. All respected. ✓
+
+**Scope:** no creep beyond A-B-C. C's up-to-3-`impactEvents`/tick is an in-scope consequence of `spread` existing (already flagged to architect), not a new feature. No switch, no inventory, no meta-layer. ✓
+
+**Burst/stock-unit refinement:** SOUND. Once B4 makes B a burst weapon, the atomic consumable is the round (per-press would just indirect through "6 rounds/press" and falsify "burns fast"). C correctly stays per-press. It is a downstream consequence of MY gate-mandated B4, not designer overreach — legitimate. But it does edit a pm-authored AC (A4), hence P3.
+
+### PINNED CORRECTIONS (PASS is conditioned on these; honour downstream, no re-gate)
+
+- **P1 (→ senior-architect, ADR-0052).** §8's summary line "courier resolution … inherited unchanged" **understates C**: per §2.4/AC5, C invokes courier-only-on-miss **per-offset — up to 3× per tick** at 3 distinct world points, whereas shipped `stateMachine.ts` runs it **once** on the single shot's miss (lines 319–325). Architect must price the courier-resolution loop-widening **alongside** the `impactEvents` widening in ADR-0052, not just the latter. Design intent is unambiguous in §2.4; only §8's rollup is loose.
+- **P2 (→ senior-architect + dev-gameplay).** Mid-burst / multi-resolution **crate-equip ordering is unspecified.** §5.2 ("equip takes effect from the next trigger") assumes a single-resolution trigger; it is silent on a **burst round or éventail barrel that lands on a `VISIBLE` crate**. Pin: a resolution that equips a crate takes effect immediately and **aborts any remaining burst rounds that tick** (the old special's in-flight burst stops; equip cannot be undone). If the dev prefers "burst completes on the old weapon, equip from next trigger," that is acceptable **only if chosen explicitly** in ADR-0052 — never left to guess. Narrow (spawn-exclusion §5.4 makes it rare), so a pin, not a FAIL.
+- **P3 (→ pm, one-line ack, not a re-gate).** The B stock-unit change (round, not press) **amends pm story AC A4.** It is a legitimate consequence of the gate-mandated B4 burst model — A4 was written under the superseded "faster-cooldown base" reading — but it edits a pm-authored AC, so pm gets an explicit one-line acknowledgment before the story text is treated as final. No design content is in question.
+
+**Hand-offs stand (unchanged from round-1 formalize):** `lead-art` (crate R1–R4 + A/B/C glyphs), `ux-designer` (HUD desktop+mobile, ADR-0003), `narrative-designer` (weapon names — placeholders, not lore-locked), `senior-architect` (ADR-0052 + §8 contract delta, now incl. P1/P2). Round 2 of 2 — cap reached, gate closed PASS.
