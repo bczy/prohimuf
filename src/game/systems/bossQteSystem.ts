@@ -659,7 +659,10 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     // ADR-0052 lever 3 — a charged-window phase (phase 2+) carries its own asserted parry
     // floors: the tell ≥ the shot-tell floor and < the lull (same shape as the normal tell,
     // longer), the window ≥ the exposure floor (answerable within reaction time).
-    if (isChargedWindow(i, PARRY_PHASE2_TEACH_INDEX) || isChargedWindow(i, PARRY_PHASE3_CHARGED_PARITY)) {
+    if (
+      isChargedWindow(i, PARRY_PHASE2_TEACH_INDEX) ||
+      isChargedWindow(i, PARRY_PHASE3_CHARGED_PARITY)
+    ) {
       const lead = row.parryLeadSeconds;
       const win = row.parryWindowSeconds;
       if (lead === undefined || !Number.isFinite(lead) || lead < BOSS_TELEGRAPH_LEAD_FLOOR) {
@@ -808,13 +811,7 @@ export interface BossQteTickResult {
 const NO_DELTA = { energyDelta: 0 } as const;
 
 /** True iff `(px,py)` is within `RING_HIT_RADIUS` of the anchor-relative point `(ox,oy)`. */
-function withinCatch(
-  px: number,
-  py: number,
-  anchor: Vec2,
-  ox: number,
-  oy: number,
-): boolean {
+function withinCatch(px: number, py: number, anchor: Vec2, ox: number, oy: number): boolean {
   return Math.hypot(px - (anchor.x + ox), py - (anchor.y + oy)) <= RING_HIT_RADIUS;
 }
 
@@ -1217,8 +1214,14 @@ export function tickBossQte(
             BOSS_LIMB_WANDER_AMP_X,
             BOSS_LIMB_WANDER_AMP_Y,
           );
-          targetOffset = { x: BOSS_VITAL_WANDER_CENTRE.x + wa.x, y: BOSS_VITAL_WANDER_CENTRE.y + wa.y };
-          targetOffsetB = { x: BOSS_LIMB_WANDER_CENTRE.x + wb.x, y: BOSS_LIMB_WANDER_CENTRE.y + wb.y };
+          targetOffset = {
+            x: BOSS_VITAL_WANDER_CENTRE.x + wa.x,
+            y: BOSS_VITAL_WANDER_CENTRE.y + wa.y,
+          };
+          targetOffsetB = {
+            x: BOSS_LIMB_WANDER_CENTRE.x + wb.x,
+            y: BOSS_LIMB_WANDER_CENTRE.y + wb.y,
+          };
           ringZone = "vital";
         } else {
           const legDuration = bossWanderLegDuration(row.wanderSpeed);

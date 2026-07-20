@@ -679,7 +679,14 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
 
   it("ring B wanders a decorrelated, seeded path (distinct salt) and is pure/replayable", () => {
     const leg = bossWanderLegDuration(phaseRow(1).wanderSpeed);
-    const a = bossWanderBox(SPEC.targetSeed, 0, 0.3, leg, BOSS_VITAL_WANDER_AMP_X, BOSS_VITAL_WANDER_AMP_Y);
+    const a = bossWanderBox(
+      SPEC.targetSeed,
+      0,
+      0.3,
+      leg,
+      BOSS_VITAL_WANDER_AMP_X,
+      BOSS_VITAL_WANDER_AMP_Y,
+    );
     const b = bossWanderBox(
       (SPEC.targetSeed ^ BOSS_RING_B_SALT) >>> 0,
       0,
@@ -865,7 +872,13 @@ describe("bossQteSystem — lever 2: interactive décor prop", () => {
 
   it("arms during a SHIELDED lull of its arm phase; a shot drops it for +3 (single-use)", () => {
     const active = toActiveSpec(DECOR_SPEC);
-    const shielded = { ...active, phaseIndex: 1, stance: "SHIELDED" as const, stanceRemaining: 1.0, bossHp: 12 };
+    const shielded = {
+      ...active,
+      phaseIndex: 1,
+      stance: "SHIELDED" as const,
+      stanceRemaining: 1.0,
+      bossHp: 12,
+    };
     const armedTick = tickBossQte(shielded, false, NO_HIT, 0.01);
     expect(armedTick.qte.decorArmed).toBe(true);
     // Shoot the armed prop.
@@ -907,7 +920,10 @@ describe("bossQteSystem — lever 2: interactive décor prop", () => {
       createBossQte({ ...SPEC, decorProp: { position: { x: 0, y: 0 }, armPhaseIndex: 1.5 } }),
     ).toThrow(/decorProp/);
     expect(() =>
-      createBossQte({ ...SPEC, decorProp: { position: { x: Number.NaN, y: 0 }, armPhaseIndex: 1 } }),
+      createBossQte({
+        ...SPEC,
+        decorProp: { position: { x: Number.NaN, y: 0 }, armPhaseIndex: 1 },
+      }),
     ).toThrow(/decorProp/);
   });
 });
@@ -985,8 +1001,14 @@ describe("bossQteSystem — lever 4: in-tableau renfort pressure surge", () => {
   });
 
   it("smokeActive is a phase-3 stretch (owned by the game as a boolean + floor guarantee)", () => {
-    expect(tickBossQte(activeWith({ phaseIndex: 2, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte.smokeActive).toBe(true);
-    expect(tickBossQte(activeWith({ phaseIndex: 1, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte.smokeActive).toBe(false);
+    expect(
+      tickBossQte(activeWith({ phaseIndex: 2, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte
+        .smokeActive,
+    ).toBe(true);
+    expect(
+      tickBossQte(activeWith({ phaseIndex: 1, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte
+        .smokeActive,
+    ).toBe(false);
   });
 
   it("D4 boundary assertion: the source reads/mutates NO frozen level-pipeline state", () => {
