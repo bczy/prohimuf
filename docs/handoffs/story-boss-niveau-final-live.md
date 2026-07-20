@@ -73,3 +73,131 @@ DANS LE STAGE — CELA FAIT PARTIE D'UNE STORY APPAREMMENT."_
   - `_bmad-output/planning-artifacts/story-boss-niveau-final-live.md` (NEW)
   - `docs/handoffs/story-boss-niveau-final-live.md` (NEW — this file)
   - `docs/agent-handoffs.md` (index row added)
+
+## 2. DESIGN LOOP — ux-designer (Tony) — 2026-07-20
+
+- claim: fresh-eyes UX pass on the Niveau Final live-ship — the level-select
+  progression/unlock surface for the new flyer, the finale's onboarding (fairness vs.
+  spoiler discipline for the boss reveal), accessibility carry-over onto the new level's
+  surfaces, and the failure/retry loop on the hardest level. Explicitly did NOT respec
+  the boss QTE's own on-screen legibility (`ux/spec-boss-qte-hp-read.md`,
+  `ux/spec-boss-qte-differentiation-ux.md`) — both ship unchanged per the story's
+  instruction.
+- release: `docs/game-design/ux/spec-niveau-final-ux.md`. Headlines:
+  - **Level-select (§1):** zero new UI. The niveau-final flyer is the 4th playable
+    flyer through the already-gated `LevelFlyer`/`FlyerWall` (`flyer-wall-format.md`
+    PASS 2026-07-19) — locked/unlocked states, touch target, device classes all
+    inherited unchanged. Ruled OUT: any new "finale" badge/stamp/boss-reveal on the
+    flyer itself (D3) — both a minimal-surface discipline call and a spoiler-discipline
+    call (the reveal belongs inside the level, not on the menu a player skims first).
+  - **Finale onboarding ruling (§2, the gate-critical call):** the already-gated
+    `final_pre` narrative scene (`spec-boss-encounter-fiction.md` §4.1) IS the fairness
+    mechanism required by `PROJECT_GUIDELINES.md` §5.6 (no ambush), and is sufficient
+    AS WRITTEN — no new onboarding surface needed. Its line 6 already teaches the
+    vulnerability rule diegetically ("il tire le premier, c'est là qu'il est à
+    découvert") without naming the mechanic (no HP bar/phase/QTE vocabulary), reconciling
+    the one-shot narrative reveal (line 4, the name) with the anti-bullshit fairness
+    floor. A second, already-existing lead-time buffer (the boss's 2 s `ZOOMING`
+    transition, unchanged) reinforces this for a player who skipped/skimmed the
+    cutscene. Ruled OUT: any boss sprite/HP-bar preview/mechanic vocabulary before the
+    encounter itself (menu, `final_pre` imagery, HUD-at-rest) — confirmed absent in the
+    already-gated script.
+  - **Accessibility carry-over (§3):** no new decision — every discipline (touch
+    target, reduced-motion, keyboard roving focus, ADR-0015 device wording, not-colour-
+    alone) already applies via reused components. Named a level-specific stage-5
+    checklist (5 items) whose single most important entry is re-verifying the already-
+    gated boss-QTE legibility acceptance captures (A1-A15 of
+    `ux/spec-boss-qte-differentiation-ux.md`) against the NEW venue backdrop/anchor —
+    a legibility guarantee proven on the harness's backdrop is not automatically true
+    on the live level's.
+  - **Failure/retry loop (§4):** reused pattern, unchanged — a boss loss renders the
+    same generic `EndScreen` (`GAME_OVER` phase) every other level failure already uses;
+    no boss-specific failure copy. No mid-level checkpoint at the boss (falls out of
+    ADR-0051 D3, confirmed not reopened) — a lost fight means a full level replay from
+    the top, bounded by the standing 3-5 min mission ceiling like any other level.
+    Flagged (not decided) to `game-designer`: the felt retry cost scales with however
+    long Open Question 1's pre-boss quota lands.
+- Not yet logged as a `VERDICT:` line — awaiting `lead-game-designer` design gate
+  alongside `game-designer`'s pacing spec and `narrative-designer`'s venue/script
+  wiring, per the story's Definition of Done.
+- handoff → `lead-game-designer` (Karim): design gate on this spec jointly with the
+  parallel `game-designer`/`narrative-designer` specs.
+- handoff → `narrative-designer` (Yasmine): the `PLAYABLE_COPY` entry for the
+  niveau-final flyer (crew/slogan/date/zone/rv/info lines) and confirmation that
+  `final_pre`/`final_post` need no adaptation beyond the concrete id/anchor (AC7) and
+  introduce no input-instruction copy (ADR-0015 check, §3).
+- handoff → `game-designer` (Sacha): D11 flag — pre-boss quota/pacing (Open Q1-2)
+  determines the retry loop's felt cost; numbers are his, the no-checkpoint floor is
+  confirmed reused here.
+- release (self, closing this claim): no further UX work pending on this spec until
+  the design gate; will review the built screens (flyer, onboarding flow, retry loop)
+  against this spec's acceptance criteria at stage-5 `verify` on both device classes.
+- File List:
+  - `docs/game-design/ux/spec-niveau-final-ux.md` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry, appended)
+
+---
+
+## Pre-ruling — Commandant headgear / plainclothes register (lead-art, Nico) · 2026-07-20
+
+**Decision: OPTION (1)** — period-correct plainclothes-BAC swap. Drop the tall peaked
+officer's cap; the Commandant is **bare-headed**. This is shared DNA across all 7
+human-figure prompts.
+
+**Reasoning (anchored in the bible, not taste):**
+
+1. **Silhouette-first (§2 law 3) FAVOURS the swap, it does not resist it.** The n°1 "chef"
+   tell is already the **long knee-length overcoat** — no other roster member has it
+   (mook = hip jacket, `enemy_riot` = armour/shield/helmet, `enemy_biker` = crash helmet).
+   The peaked cap is a _weak, colliding_ secondary tell: at game size a flat mook cap and a
+   peaked officer's cap both read as the same "capped-head bump" — the draft's own
+   differentiator ("distincte par sa hauteur/rigidité") is a fine detail that does NOT
+   survive silhouette-first. A **bare head is a STRONGER differentiator**: the Commandant
+   becomes the _only_ uncovered head in a roster that is otherwise uniformly capped or
+   helmeted. Bare head + long coat contrasts harder against the whole cop-family than
+   cap + long coat. Silhouette clarity is _gained_ by (1), not spent.
+
+2. **Family/fiction coherence — the cap imports the wrong DNA.** The gated fiction
+   (spec-boss-encounter-fiction.md §1.1, §2) makes him the apex of the **BAC de nuit**
+   (plainclothes) and _hard-forbids_ the CRS register ("PAS de CRS", "pas la tenue
+   anti-émeute"). A ceremonial peaked cap + grande-tenue is commissaire/CRS-parade
+   iconography — it pulls his silhouette toward `enemy_riot`'s register, blurring the exact
+   contrast the fiche demands. Period grounding (La Haine 1995 BAC: blouson/trench,
+   brassard POLICE, bare-headed) is culturally correct for 1998 Paris night-plainclothes.
+
+3. **Villain-iconography (option 2's case) does not survive.** The "iconic apex villain"
+   read is fully carried by the towering stature + squared shoulders + long flaring coat;
+   the cap is redundant to it and actively costs the two things above. The Prohibition-ST
+   "iconic not accurate" licence buys nothing here because the icon is the coat, not the
+   headgear.
+
+**The bible decides this — no Bertrand escalation.** §2 law 3 (silhouette) and §2 law 2
+(family) + the gated fiche converge; this is not the pure-taste case that would defer.
+
+**Consequence — regeneration cost is ZERO.** The 4 V1 poses are committed to
+`levelArt.json` (`boss` block) but **never generated** — `public/assets/boss/` does not
+exist, no PNG has ever landed the asset gate. So the 4 V1 prompts get **redrafted in the
+same batch** as the 5 differentiation reads with zero throwaway. All 7 figures carry the
+shared bare-headed plainclothes-BAC DNA.
+
+**Redraft directives for concept-artist (Maud) — mandatory in the redraft, NOT authored here:**
+
+- Register per figure: dark **blouson OR trench/gabardine** (long-coat silhouette is
+  correct and preserved — only the _cap_ is wrong), **bare-headed**, **brassard** over the
+  sleeve, reversible-lining **POLICE** reflective lettering as the plainclothes tell.
+  Sidearm stays a generic boxy period pistol (no named/modern weapon, §3.7).
+- **Shoulder-clipped radio/mic bump** on every pose — it is the finisher-reach set-up and
+  it replaces the cap as the authority micro-tell.
+- **`commander_hit` / `commander_down` must NOT key their defeat beat off a flying cap**
+  (there is no cap now). Re-key the "authority defeated" beat onto: the **brassard torn
+  loose**, the **shoulder radio/mic knocked free**, and the **dropped pistol** (already in
+  the down pose). This is a real redraft requirement, not cosmetic.
+- Style tail unchanged (still the live roster tail per §2 law 2); this ruling is about the
+  subject clause's headgear/register only, not the style-migration timing question (that
+  stays open at the prompt gate).
+
+Prompts remain OWED and un-gated: this is a pre-ruling to prevent a rework round, NOT a
+prompt-gate PASS. Maud drafts the 7 subject clauses on this DNA; they come back to me at
+the prompt gate.
+
+RULING: (1) — commandant headgear (lead-art)
