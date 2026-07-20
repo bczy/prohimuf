@@ -21,3 +21,20 @@
     --motion-locked-shake-ms: 0ms !important;
   }
 }
+
+/*
+ * Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle. The render
+ * root carries data-reduced-motion="true" whenever the shared derived signal
+ * (prefs.reducedMotion OR the live OS query) is active — so the toggle STRENGTHENS
+ * but never WEAKENS the OS @media block above (union, never a downgrade). Same
+ * --motion-* zeroing, same !important reason (beats applyPrintTokens' inline vars).
+ * The typewriter cadence (--motion-char-delay-ms) is preserved, as above.
+ */
+:root[data-reduced-motion="true"] {
+  --motion-title-to-menu: 0ms !important;
+  --motion-flyer-pull: 0ms !important;
+  --motion-rubrique-switch: 0ms !important;
+  --motion-marker-draw: 0ms !important;
+  --motion-cursor-blink-ms: 0ms !important;
+  --motion-locked-shake-ms: 0ms !important;
+}

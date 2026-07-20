@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { OptionsControls } from "../OptionsControls";
+import { OptionsControls, buildReducedMotionChoices } from "../OptionsControls";
 
 const noop = (): void => {
   /* controlled by the host in production */
@@ -26,22 +26,26 @@ const count = (html: string, re: RegExp): number => (html.match(re) ?? []).lengt
 describe("OptionsControls a11y contract", () => {
   const html = render(DEFAULT_PREFS);
 
-  it("wraps every ballot row in role=radiogroup (VIES, PRESSION, TUBE CATHODIQUE)", () => {
-    expect(count(html, /role="radiogroup"/g)).toBe(3);
+  it("wraps every ballot row in role=radiogroup (VIES, PRESSION, TUBE CATHODIQUE, MOUVEMENT RÉDUIT)", () => {
+    expect(count(html, /role="radiogroup"/g)).toBe(4);
   });
 
   it("names each radiogroup from its visible row label", () => {
-    expect(count(html, /role="radiogroup" aria-labelledby="/g)).toBe(3);
+    expect(count(html, /role="radiogroup" aria-labelledby="/g)).toBe(4);
   });
 
   it("exposes role=radio + aria-checked on every choice", () => {
-    // 5 lives + 3 difficulties + 2 CRT choices = 10 radios.
-    expect(count(html, /role="radio"/g)).toBe(10);
-    expect(count(html, /aria-checked="/g)).toBe(10);
+    // 5 lives + 3 difficulties + 2 CRT + 2 reduced-motion choices = 12 radios.
+    expect(count(html, /role="radio"/g)).toBe(12);
+    expect(count(html, /aria-checked="/g)).toBe(12);
   });
 
   it("checks exactly one choice per radiogroup", () => {
-    expect(count(html, /aria-checked="true"/g)).toBe(3);
+    expect(count(html, /aria-checked="true"/g)).toBe(4);
+  });
+
+  it("renders the MOUVEMENT RÉDUIT row (accessibility toggle)", () => {
+    expect(html).toContain("MOUVEMENT RÉDUIT");
   });
 
   it("keeps the native range sliders for the two VU meters", () => {
@@ -55,6 +59,29 @@ describe("OptionsControls drift-kill", () => {
   it("uses the canonical TUBE CATHODIQUE label, never ÉCRAN CATHODIQUE", () => {
     expect(html).toContain("TUBE CATHODIQUE");
     expect(html).not.toContain("ÉCRAN CATHODIQUE");
+  });
+});
+
+describe("buildReducedMotionChoices patch-through", () => {
+  it("marks the choice matching prefs.reducedMotion as selected", () => {
+    const off = buildReducedMotionChoices({ ...DEFAULT_PREFS, reducedMotion: false }, noop);
+    expect(off.find((c) => c.label === "NON")?.selected).toBe(true);
+    expect(off.find((c) => c.label === "OUI")?.selected).toBe(false);
+
+    const on = buildReducedMotionChoices({ ...DEFAULT_PREFS, reducedMotion: true }, noop);
+    expect(on.find((c) => c.label === "OUI")?.selected).toBe(true);
+    expect(on.find((c) => c.label === "NON")?.selected).toBe(false);
+  });
+
+  it("reports the reducedMotion patch through onChange when a choice is selected", () => {
+    const onChange = vi.fn();
+    const choices = buildReducedMotionChoices({ ...DEFAULT_PREFS, reducedMotion: false }, onChange);
+    choices.find((c) => c.label === "OUI")?.onSelect();
+    expect(onChange).toHaveBeenCalledWith({ reducedMotion: true });
+
+    onChange.mockClear();
+    choices.find((c) => c.label === "NON")?.onSelect();
+    expect(onChange).toHaveBeenCalledWith({ reducedMotion: false });
   });
 });
 

@@ -24,5 +24,7 @@ export type { RovingAxis, RovingOptions, RovingIndex } from "./useRovingIndex";
 
 export { useMediaQuery } from "./useMediaQuery";
 
+export { useReducedMotionRoot, unionReducedMotion, REDUCED_MOTION_QUERY } from "./useReducedMotion";
+
 export { flyerEdgePolygon, dogEarCorner, tapeStripPath } from "./flyerGeometry";
 export type { FlyerEdge, TapeStrip } from "./flyerGeometry";

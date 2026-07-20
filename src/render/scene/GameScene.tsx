@@ -120,6 +120,9 @@ interface Props {
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
    *  and moves the crosshair to the flat overlay layer (ADR-0031). */
   crt?: boolean;
+  /** Effective reduced motion (ADR-0052 §3): the shared derived signal, forwarded
+   *  to CrtPass so the CRT grain/flicker freeze honours the in-app toggle + OS. */
+  reducedMotion?: boolean;
 }
 
 export function GameScene({
@@ -134,6 +137,7 @@ export function GameScene({
   onBossQte,
   isMobile = false,
   crt = false,
+  reducedMotion = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art. The
   // backdrop composition (ADR-0048) is the single grid abstraction — enemy slots,
@@ -425,7 +429,13 @@ export function GameScene({
       <ImpactEffects channelRef={impactChannelRef} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} crtEnabled={crt} />
-      {crt && <CrtPass tier={isMobile ? "lite" : "full"} paused={paused === true} />}
+      {crt && (
+        <CrtPass
+          tier={isMobile ? "lite" : "full"}
+          paused={paused === true}
+          reducedMotion={reducedMotion}
+        />
+      )}
     </>
   );
 }
