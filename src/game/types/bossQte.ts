@@ -24,12 +24,22 @@ import type { Vec2 } from "@game/types/vector";
  */
 
 /**
- * Life-cycle of the boss QTE. Strictly forward-only, byte-shape-identical to the shell
- * (ADR-0051 D1/AC2): `ZOOMING → ACTIVE → (WON | LOST) → DONE`. The PHASE BREAK is a
- * sub-state of `ACTIVE` (see `BossQte.phaseBreakRemaining`), NOT a new top-level phase.
- * `DONE` persists so the encounter resolves exactly once.
+ * Life-cycle of the boss QTE. Strictly forward-only:
+ * `ZOOMING → ACTIVE → FINISHER → WON → DONE` (or `ACTIVE → LOST → DONE`).
+ *
+ * ADR-0052 D3 (lever 5) inserts a new TOP-LEVEL `FINISHER` node between `ACTIVE` and `WON`
+ * — a ceremonial, guaranteed-success, damage-free coup-de-grâce beat that awaits a final
+ * `fire` OR a `FINISHER_HOLD_SECONDS` timeout before paying `QTE_BOSS_REFILL` on the WON it
+ * resolves to. This is the ONE clause ADR-0052 narrows from ADR-0051 D1's "top-level machine
+ * byte-shape-identical to the shell"; the isolation / additive-and-optional property is
+ * untouched. `isBossQteActive` includes `FINISHER` so the freeze holds through the beat.
+ *
+ * The PHASE BREAK stays a sub-state of `ACTIVE` (`BossQte.phaseBreakRemaining`), and the
+ * parry STAGGER is likewise an `ACTIVE` sub-state (`BossQte.staggerRemaining`) — only the
+ * post-combat finisher earns a top-level node (ADR-0052 D3 rationale). `DONE` persists so
+ * the encounter resolves exactly once.
  */
-export type BossQtePhase = "ZOOMING" | "ACTIVE" | "WON" | "LOST" | "DONE";
+export type BossQtePhase = "ZOOMING" | "ACTIVE" | "FINISHER" | "WON" | "LOST" | "DONE";
 
 /**
  * The boss's sub-state during `ACTIVE` (re-theme of the hostage `COVERED ↔ PEEKING`).
@@ -101,6 +111,16 @@ export interface BossQteSpec {
    * seed is authored per level (F3 may promote the others later).
    */
   readonly targetSeed: number;
+  /**
+   * OPTIONAL interactive décor prop (ADR-0052 lever 2). A single authored prop that arms
+   * during a SHIELDED lull in `armPhaseIndex` (0-based phase); shooting it while armed
+   * drops it on the boss for a fixed `BOSS_DECOR_DAMAGE` burst, single-use, PURE UPSIDE
+   * (no failure surface). Absent / `undefined` ⇒ no prop ⇒ byte-behaviour-identical to V1
+   * (the additive-and-optional law). `armPhaseIndex` is an integer in `[0, phaseCount − 1]`,
+   * `position` is anchor-relative and finite — both asserted in `createBossQte`. Array
+   * promotion (multiple props) is the deferred F3 seam.
+   */
+  readonly decorProp?: { readonly position: Vec2; readonly armPhaseIndex: number };
 }
 
 /**
@@ -141,9 +161,20 @@ export interface BossQte {
    * Current reticle-RING centre, ANCHOR-RELATIVE — the point the render draws the ring at
    * and that `bossRingZoneAt` classifies for the spatial-colour read. During `EXPOSED`
    * (not breaking) it wanders (seeded, pure, full-anatomy — no G6 clamp); otherwise it
-   * rests at `BOSS_WANDER_CENTRE` with the ring forced `off`.
+   * rests at `BOSS_WANDER_CENTRE` with the ring forced `off`. In the two-ring phase-2+ mode
+   * (ADR-0052 lever 1) this is RING A — the VITAL/tête ring (fixed identity `vital`, 2 HP),
+   * wandering the head sub-box; in phase 1 it is the single V1 ring.
    */
   readonly targetOffset: Vec2;
+  /**
+   * RING B centre, ANCHOR-RELATIVE (ADR-0052 lever 1). The LIMB/corps ring — a FIXED
+   * identity (`BOSS_RING_B_ZONE = "limb"`, 1 HP), wandering the torso sub-box on a slower,
+   * decorrelated seeded path. LIVE only during a two-ring EXPOSED window (`phaseIndex ≥ 1`,
+   * `stance === "EXPOSED"`, not breaking / staggering / charged); otherwise rests at
+   * `BOSS_WANDER_CENTRE`. The render derives ring-B liveness from that same condition and
+   * draws it with the fixed limb colour. Phase 1 leaves this resting (single-ring V1).
+   */
+  readonly targetOffsetB: Vec2;
   /**
    * Authored wander seed — the runtime mirror of `BossQteSpec.targetSeed` (copied once at
    * `createBossQte`). The tick has ONLY the runtime record, so it needs the seed here to
@@ -203,6 +234,67 @@ export interface BossQte {
    * wander so each window presents a distinct (but deterministic) reticle path.
    */
   readonly windowOrdinal: number;
+  /**
+   * The 0-based index of the current/most-recent EXPOSED window WITHIN the current phase
+   * (ADR-0052 levers 3 & 4). Reset to `-1` on entering a phase (and at ACTIVE start), +1
+   * each window open. Drives the deterministic charged-window cadence (`isChargedWindow`)
+   * and the renfort surge onset (`isRenfortWindow`). Game-internal; the render reads the
+   * derived `chargedWindow` / `renfortActive` flags, not this counter.
+   */
+  readonly phaseWindowIndex: number;
+  /**
+   * The current-or-imminent EXPOSED window is a CHARGED / parry window (ADR-0052 lever 3):
+   * the boss winds up a heavy shot the player must PARRY by firing on the `BOSS_PARRY_POINT`
+   * within `parryWindowSeconds`. Set true during the preceding SHIELDED lull (so the
+   * distinct parry telegraph can lead) and for the whole charged window; there are NO rings
+   * during a charged window (`ringZone` rests `off`). Phase 1 never charges.
+   */
+  readonly chargedWindow: boolean;
+  /**
+   * Seconds left in the parry STAGGER, or 0 when not staggered (ADR-0052 lever 3). A
+   * successful parry briefly staggers the boss damage-free (stance forced `SHIELDED`), then
+   * — unlike the phase break which re-SHIELDs — opens a BONUS EXPOSED window (the tempo
+   * flip). While > 0 no window opens/closes and a `fire` is a PANIC shot.
+   */
+  readonly staggerRemaining: number;
+  /**
+   * The décor prop is ARMED and shootable right now (ADR-0052 lever 2): true only during a
+   * SHIELDED lull of `decorProp.armPhaseIndex`, before it is consumed. Derived each tick;
+   * the render draws the armed glow. `false` for every boss without a `decorProp`.
+   */
+  readonly decorArmed: boolean;
+  /**
+   * The décor prop has been spent (ADR-0052 lever 2). Once true it stays true (single-use).
+   * `false` for every boss without a `decorProp`.
+   */
+  readonly decorConsumed: boolean;
+  /**
+   * The authored décor prop (runtime mirror of `BossQteSpec.decorProp`), or `null` when the
+   * boss has none (ADR-0052 lever 2). Carries the anchor-relative `position` the tick
+   * hit-tests and the render draws. `null` ⇒ the whole décor path no-ops (additive law).
+   */
+  readonly decorProp: { readonly position: Vec2; readonly armPhaseIndex: number } | null;
+  /**
+   * Scripted smoke stretch is active (ADR-0052 lever 2): a phase-3 frenzy flag the render /
+   * audio use to degrade — never remove — the visual telegraph. The GAME owns only this
+   * boolean and the floor guarantee (the telegraph lead stays ≥ `BOSS_TELEGRAPH_LEAD_FLOOR`
+   * — trivially held, the leads are constants ≥ the floor); the degradation look is render.
+   */
+  readonly smokeActive: boolean;
+  /**
+   * The in-tableau renfort pressure SURGE is active for the current/imminent window
+   * (ADR-0052 lever 4): a telegraphed, seeded, phase-3 stretch during which a BLOWN window
+   * drains the heavier `QTE_RENFORT_DRAIN` instead of the phase drain — priced in the SAME
+   * energy/window ledger, NEVER a second loss clock. Reads as "pas ses hommes" (frame-edge
+   * motion, no shootable body). Derived from `phaseWindowIndex`; the render draws the cue.
+   */
+  readonly renfortActive: boolean;
+  /**
+   * Seconds left in the ceremonial FINISHER beat (ADR-0052 lever 5), or 0 outside it. Seeded
+   * to `FINISHER_HOLD_SECONDS` when `bossHp` hits 0; a `fire` OR its elapse resolves the
+   * beat to `WON`. Damage-free — zero failure surface.
+   */
+  readonly finisherRemaining: number;
   /** Seconds left of the zoom (zoomSeconds → 0 during ZOOMING). Drives the render lerp. */
   readonly zoomRemaining: number;
   readonly zoomSeconds: number;

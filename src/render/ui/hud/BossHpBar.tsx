@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import type { HudBossQte } from "./types";
 import { integrityColor } from "./derivations";
+import { cx } from "./cx";
 import styles from "./BossHpBar.module.css";
 
 /**
@@ -30,11 +31,15 @@ export function BossHpBar({ bossQte }: { bossQte: HudBossQte | undefined }): JSX
   // Interior phase dividers: phaseCount − 1 ticks at i/phaseCount (24 HP / 3 phases →
   // 33 % and 67 %, the 8/16 thresholds). Guard a degenerate phaseCount (< 2 → none).
   const dividerCount = Number.isFinite(phaseCount) ? Math.max(0, Math.floor(phaseCount) - 1) : 0;
+  // Boss down: the bar registers "empty" as a ONE-SHOT settle beat (UX D3.4) rather than a silent
+  // drain-to-zero — reinforcing the diegetic finisher cue, never a new persistent HUD state
+  // (D3.5). The settle is disabled under prefers-reduced-motion in the CSS module (non-strobing).
+  const defeated = Number.isFinite(bossHp) && bossHp <= 0 && bossHpMax > 0;
 
   return (
     <div className={styles.bossBar}>
       <span className={styles.label}>— LE COMMANDANT —</span>
-      <div className={styles.track}>
+      <div className={cx(styles.track, defeated ? styles.settled : undefined)}>
         <div
           className={styles.gaugeFill}
           style={
