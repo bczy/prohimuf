@@ -42,6 +42,32 @@ const CRT_CHOICES: readonly { value: boolean; label: string }[] = [
   { value: false, label: "NON" },
 ];
 
+const REDUCED_MOTION_CHOICES: readonly { value: boolean; label: string }[] = [
+  { value: true, label: "OUI" },
+  { value: false, label: "NON" },
+];
+
+/**
+ * Map the single `Prefs.reducedMotion` field to the MOUVEMENT RÉDUIT ballot choices
+ * (ADR-0052 §3). `selected` reads straight from `prefs`; each `onSelect` reports the
+ * `reducedMotion` patch through the shared `onChange` so both host surfaces stay in
+ * lockstep. Exported pure so the write-through contract is unit-testable DOM-free
+ * (mirrors `FlyerWall.buildPressionChoices`).
+ */
+export function buildReducedMotionChoices(
+  prefs: Prefs,
+  onChange: (patch: Partial<Prefs>) => void,
+): BallotChoice[] {
+  return REDUCED_MOTION_CHOICES.map((c) => ({
+    key: c.label,
+    label: c.label,
+    selected: prefs.reducedMotion === c.value,
+    onSelect: () => {
+      onChange({ reducedMotion: c.value });
+    },
+  }));
+}
+
 export function OptionsControls({
   prefs,
   onChange,
@@ -76,6 +102,8 @@ export function OptionsControls({
     },
   }));
 
+  const reducedMotionOptions = buildReducedMotionChoices(prefs, onChange);
+
   return (
     <div className={cx(styles.root, className)} style={style}>
       <VuMeter
@@ -108,6 +136,11 @@ export function OptionsControls({
         note={runScopedNote}
       />
       <BallotRow label="TUBE CATHODIQUE" hint="scanlines & courbure d'écran" options={crtOptions} />
+      <BallotRow
+        label="MOUVEMENT RÉDUIT"
+        hint="moins d'animations & de flashs"
+        options={reducedMotionOptions}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
 import { GameScene } from "./GameScene";
 import { installBossCaptureSeam } from "./bossHarness";
+import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
 import styles from "./App.module.css";
 
@@ -164,6 +165,11 @@ export function App(): JSX.Element {
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+  // The ONE shared derived reduced-motion signal (ADR-0052 §3): unions
+  // prefs.reducedMotion with the live OS query, mirrors it onto the document root as
+  // data-reduced-motion (base.css's second --motion-* zeroing trigger), and returns
+  // the effective value for the JS consumer that can't read CSS vars (CrtPass).
+  const reducedMotion = useReducedMotionRoot(prefs.reducedMotion);
   const [unlockedLevels, setUnlockedLevels] = useState<ReadonlySet<string>>(loadUnlockedLevels);
   const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(() => INITIAL_LEVEL);
   const [hudData, setHudData] = useState<HudData>(() => {
@@ -539,6 +545,7 @@ export function App(): JSX.Element {
             paused={paused || rotateBlocked}
             isMobile={IS_MOBILE}
             crt={prefs.crt}
+            reducedMotion={reducedMotion}
           />
         </Suspense>
       </Canvas>

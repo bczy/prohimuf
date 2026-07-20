@@ -76,3 +76,19 @@ export function applyPrintTokens(root: HTMLElement = document.documentElement): 
     root.style.setProperty(name, value);
   }
 }
+
+/**
+ * Second trigger for the `--motion-*` zeroing (ADR-0052 §3). Reflects the shared
+ * derived reduced-motion signal onto the root as `data-reduced-motion="true"`, so
+ * `base.css` zeroes the motion durations from the in-app MOUVEMENT RÉDUIT toggle in
+ * addition to the OS `@media (prefers-reduced-motion)` block. The attribute is
+ * removed (not set to `"false"`) when off, so the `[data-reduced-motion="true"]`
+ * selector matches only while reduced motion is actually active.
+ */
+export function applyReducedMotion(
+  reduced: boolean,
+  root: HTMLElement = document.documentElement,
+): void {
+  if (reduced) root.setAttribute("data-reduced-motion", "true");
+  else root.removeAttribute("data-reduced-motion");
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -55,34 +55,24 @@ const FLICKER_TIME_WRAP = ((2 * Math.PI) / 3) * 900;
 export function CrtPass({
   tier,
   paused = false,
+  reducedMotion = false,
 }: {
   tier: CrtTier;
   paused?: boolean;
+  /**
+   * Effective reduced motion, the shared derived signal (ADR-0052 §3): freezes the
+   * animated grain/flicker. Owned once at the render/bridge edge
+   * (`useReducedMotionRoot`, `prefs.reducedMotion` unioned with the live OS query)
+   * and passed in — CrtPass no longer polls `matchMedia` itself, so there is exactly
+   * one reduced-motion authority.
+   */
+  reducedMotion?: boolean;
 }): JSX.Element | null {
   const { size } = useThree();
   // Live device-pixel-ratio (P?/D): subscribing to viewport.dpr makes the RT-size
   // effect re-run on a dpr change that arrives without a CSS resize, so the render
   // targets and the CSS-locked scanline period track the real drawing buffer.
   const dpr = useThree((s) => s.viewport.dpr);
-
-  // Render-side reduced-motion detection (P6): freezes the animated grain/flicker
-  // (a display concern, not a pref field). Reacts to live OS-setting changes.
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
-  );
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (): void => {
-      setReducedMotion(mq.matches);
-    };
-    mq.addEventListener("change", onChange);
-    return () => {
-      mq.removeEventListener("change", onChange);
-    };
-  }, []);
 
   const params = useMemo(() => deriveCrtParams(tier, reducedMotion), [tier, reducedMotion]);
 
