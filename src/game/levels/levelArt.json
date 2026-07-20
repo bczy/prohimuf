@@ -229,22 +229,22 @@
       "commander_shielded": {
         "asset": "assets/boss/commander_shielded.png",
         "seed": 4870,
-        "prompt": "a towering french plainclothes commander at full height facing forward, bare-headed, a long knee-length dark overcoat, broad squared shoulders, a reflective armband brassard on one sleeve, a boxy radio clipped at the shoulder, one gloved hand raised flat in a halt-and-hold gesture, the other hand resting on a holstered boxy sidearm at the hip, closed guarded upright stance"
+        "prompt": "a towering french plainclothes commander at full height, facing forward, bare-headed, a long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black backdrop, broad squared shoulders, a reflective brassard on the sleeve, a radio clipped at the shoulder, a gloved hand flat in a halt gesture, the other on a holstered boxy sidearm at the hip, closed guarded stance"
       },
       "commander_exposed": {
         "asset": "assets/boss/commander_exposed.png",
         "seed": 4871,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length overcoat, reflective armband and shoulder radio, lunging one stride forward into the open, both arms thrust forward presenting a boxy service pistol straight at the viewer, big bright muzzle flash, the long coat flaring open, aggressive exposed firing stance, facing forward"
+        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey overcoat, reflective armband and shoulder radio, lunging one stride forward into the open, both arms thrust forward presenting a boxy service pistol straight at the viewer, big bright muzzle flash, the long coat flaring open to reveal a pale contrasting grey lining, aggressive firing stance, facing forward"
       },
       "commander_hit": {
         "asset": "assets/boss/commander_hit.png",
         "seed": 4872,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length overcoat, staggered a step backward by a bullet impact, torso recoiling and head snapping back, the reflective armband brassard torn loose and flapping from his sleeve, the shoulder radio knocked spinning off its clip, the boxy pistol arm falling loose, off-balance reeling posture, facing forward"
+        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey overcoat, staggered back by a bullet, torso recoiling and head snapping back, the reflective brassard torn loose and flapping from his sleeve, the shoulder radio knocked spinning off its clip, both still tethered to him by a strap and cord, the pistol arm falling loose, reeling off-balance, facing forward"
       },
       "commander_down": {
         "asset": "assets/boss/commander_down.png",
         "seed": 4873,
-        "prompt": "the same towering bare-headed french plainclothes commander defeated and fallen, lying sprawled on his back flat on the ground, the long overcoat splayed out around him, the torn armband brassard and the knocked-loose shoulder radio lying on the ground beside him, a boxy service pistol dropped from his open hand, a motionless collapsed heap"
+        "prompt": "the same towering bare-headed french plainclothes commander defeated and fallen, sprawled on his back flat on the ground, his long overcoat splayed around him in mid-grey fabric lighter than the pitch-black ground and traced by a thin pale contour, the torn brassard and knocked-loose shoulder radio lying beside him, a boxy service pistol dropped from his open hand, a motionless heap"
       }
     }
   },

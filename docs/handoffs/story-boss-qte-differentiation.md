@@ -1338,3 +1338,12 @@ VERDICT: PASS — C-QA2 correction (dev-r3f-render) — deterministic `?preview=
   - `docs/qa/evidence/story-boss-qte-differentiation/26-hpbar-zero-settle.png` (NEW)
   - `docs/qa/evidence/story-boss-qte-differentiation/27-reduced-motion-phase3.png` (NEW)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## STAGE 5 LEG 2 (VERIFY + UX REVIEW) — producer (Marion) — 2026-07-20
+
+- **Claim:** stage tracking; log playtest + UX review leg currently running; cap status and next hand-off.
+- **Status:** Story sits at stage 5 leg 2 in parallel (playtest by game-designer + ux-review on both device classes), evidence gathering. Design gate PASS + AC7 re-review PASS complete. Bounded-iteration cap: 2 verify↔build rework rounds — LEG 1 complete, LEG 2 running. Stage-6 merge-review panel queued next once leg-2 evidence closes.
+- **No cap breached.** Stage-5 is the final verification leg; stage-6 is the mandatory 4-reviewer code-review panel.
+- **AC8 dependency (story 2's gate):** ADR-0052 stage-6 MERGE-clear on `main` is the release condition for story-boss-niveau-final-live dev lanes (AC8 sequencing gate). Story 1's stage-5 evidence is complete; stage-6 panel entry is the next critical path. `producer` tracking for merge-clear and will signal story-2 dev-lane unblock upon MERGE.
+- **Perf protocol note (DEFERRED-ON-TARGET from this story's own gates):** Ben's smoke effect measurement + Bertrand's on-device test run are on producer's chase list — flag to Bertrand if not executed before stage-6 panel convenes.
+- **Handoff:** → `qa-lead` (Inès) once stage-5 evidence complete (definition of done per COLLABORATION.md); stage-6 code-review panel (4 reviewers, `senior-architect` triage).

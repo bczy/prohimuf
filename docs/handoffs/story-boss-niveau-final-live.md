@@ -834,3 +834,14 @@ Not a `VERDICT:` line (PRE-PROD annotations only, per the game-graphist role —
 Nico's).
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PRE-PROD PASS appended).
+
+---
+
+## STAGE 2 (DESIGN LOOP) COMPLETE — producer (Marion) — 2026-07-20
+
+- **Claim:** open stage tracking, allocate ADR number for TECH PLAN, log stage completion and next hand-off.
+- **Release:** ADR-0053 allocated for this story's TECH PLAN (amendment to ADR-0051 or new extending ADR per AC6; `senior-architect` to decide which at TECH PLAN stage). All design-loop deliverables (level spec, fiction, UX) landed and gated PASSed via Karim. AC9 re-review PASS; pre-prod pass complete.
+- **Status:** Story enters TECH PLAN (stage 3); AC8 sequencing gate ACTIVE — dev lanes touching `levels.ts`/`bossQteSystem.ts` held until ADR-0052 (story 1) merges on `main` (stage-6 panel currently running on story 1, not yet MERGE-cleared). `senior-architect` may proceed to TECH PLAN architecture/ADR work now; `producer` chasing ADR-0052 merge status for AC8 gate release.
+- **Blockers:** AC8 dependency on story 1's stage-6 panel merge (non-blocking for TECH PLAN opening, blocking for dev-lane start).
+- **Note:** CI env issue flagged — art generation workflow may fail silently if POLLINATIONS_TOKEN repo secret not set by Bertrand BEFORE dispatch. Escalate if dispatch runs without that env var.
+- **Handoff:** → `senior-architect` (Winston) TECH PLAN (ADR-0053 allocation, data + narrative wiring architecture review).
