@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { JSX, KeyboardEvent as ReactKeyboardEvent, SyntheticEvent } from "react";
-import { sanitizeName, MAX_NAME_LENGTH } from "@game/systems/highScoreSystem";
+import { sanitizeNameLive, MAX_NAME_LENGTH } from "@game/systems/highScoreSystem";
 import { PaperSheet, STOCK, INK, FONT } from "@render/ui/print";
 import styles from "./NameEntryScreen.module.css";
 
@@ -25,8 +25,9 @@ export interface NameEntryScreenProps {
  * virtual-keyboard support, screen-reader-legible, no custom widget to relearn.
  *
  * Input is clamped live to `MAX_NAME_LENGTH` and control-stripped via the pure
- * `sanitizeName`; the pure layer sanitises again on save, so the leaderboard row can
- * never render anything but plain text. Enter (form submit) or `[ SIGNER ]` signs;
+ * `sanitizeNameLive` (edge whitespace kept so internal spaces survive typing — the full
+ * trim happens at save via `sanitizeName`), so the leaderboard row can never render
+ * anything but plain text. Enter (form submit) or `[ SIGNER ]` signs;
  * `[ PASSER ]` or Escape skips. Static: the only motion is the native caret blink, which
  * the print system already zeroes under `prefers-reduced-motion`.
  */
@@ -38,7 +39,7 @@ export function NameEntryScreen({
   onSkip,
 }: NameEntryScreenProps): JSX.Element {
   const inputId = useId();
-  const [name, setName] = useState(() => sanitizeName(initialName));
+  const [name, setName] = useState(() => sanitizeNameLive(initialName));
   const inputRef = useRef<HTMLInputElement>(null);
 
   // A11y (AC7): focus lands in the byline on mount and selects the pre-filled tag, so a
@@ -95,7 +96,7 @@ export function NameEntryScreen({
             autoCorrect="off"
             spellCheck={false}
             onChange={(e) => {
-              setName(sanitizeName(e.currentTarget.value));
+              setName(sanitizeNameLive(e.currentTarget.value));
             }}
           />
 

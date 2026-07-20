@@ -8,6 +8,14 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-20 · claude/missing-menus-ui-aa87gt (PR #116) · dev-gameplay+dev-r3f-render ·
+  NAME_ENTRY live input ate internal spaces ("DJ MEHDI"→"DJMEHDI"): per-keystroke
+  `sanitizeName` trims edges, so the just-typed space vanished. Added pure
+  `sanitizeNameLive` (control-strip + ≤16 clamp, no trim; full trim stays at
+  submit/save via `sanitizeName`), NameEntryScreen switched to it (+3 tests) ·
+  checks: tsc/vitest(874)/lint · review: folded into the branch review panel
+  (pre-merge gate on the full diff)
+
 - 2026-07-19 · claude/beliard-enemy-positioning-tool-6wo3vu · dev-tooling-assets ·
   Belliard cops badly seated (feet not on the sill, some drifted off the window bay,
   some in front of the wrought-iron grille). New sibling harness

@@ -38,10 +38,21 @@ function storageKey(levelId: string): string {
 /**
  * Pure normalisation of a raw player byline: strip control characters, trim, clamp to
  * `MAX_NAME_LENGTH`. Returns `""` for an empty/whitespace-only name (no minimum — the
- * fallback is applied at display time, not here). Idempotent, safe to call per-keystroke.
+ * fallback is applied at display time, not here). Idempotent. For per-keystroke input
+ * clamping use `sanitizeNameLive` — trimming here would eat the space the player just
+ * typed mid-name ("DJ MEHDI" would collapse to "DJMEHDI").
  */
 export function sanitizeName(raw: string): string {
   return raw.replace(CONTROL_CHARS, "").trim().slice(0, MAX_NAME_LENGTH).trim();
+}
+
+/**
+ * Per-keystroke variant of `sanitizeName`: strips control characters and clamps to
+ * `MAX_NAME_LENGTH` but keeps edge whitespace, so internal spaces survive typing
+ * left-to-right. The full trim is applied at submit/save via `sanitizeName`.
+ */
+export function sanitizeNameLive(raw: string): string {
+  return raw.replace(CONTROL_CHARS, "").slice(0, MAX_NAME_LENGTH);
 }
 
 /**
