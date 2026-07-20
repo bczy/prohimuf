@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CanvasTexture, RepeatWrapping } from "three";
+import { CanvasTexture } from "three";
 import type { Mesh, MeshBasicMaterial, OrthographicCamera, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
 import {
@@ -13,8 +13,10 @@ import {
   PHASE_BREAK_SECONDS,
   RING_HIT_RADIUS,
 } from "@game/systems/bossQteSystem";
+import { detectMobile } from "@utils/platform";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
+import { createSmokeField } from "./smokeParticles";
 import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
 import type { HudBossQte } from "@render/ui/HUD";
 
@@ -27,10 +29,11 @@ import type { HudBossQte } from "@render/ui/HUD";
 // visuals (no new art assets this story — architect call, §7 art-lane deferral):
 //   L1 points faibles multiples — a second (limb) ring in phases 2+, form-not-colour read.
 //   L3 parade — a form-distinct parry telegraph at the raised sidearm + stagger/whiff reads.
-//   L2 décor interactif — a placeholder prop mesh that glows only while armed + a smoke veil.
+//   L2 décor interactif — a placeholder prop with a real dégradé glow-halo while armed + a
+//      drifting particle SMOKE FIELD (`smokeParticles.ts`, Bertrand order §17).
 //   L4 renfort — frame-edge silhouette pressure (motion only, no shootable body).
 //   L5 coup de grâce — a FINISHER read distinct from the passive QTE_RESULT_HOLD breather,
-//      « LIVRE LE SON » prompt, one ceremonial click cue.
+//      « LIVRE LE SON » prompt, one ceremonial click cue. B&W + acid-neon only (no warm wash).
 // Every animated read carries its `prefers-reduced-motion` branch (UX D2.7/D3.1).
 //
 // V1 runs on the COP FALLBACK sprite (`enemy_riot`): the FLUX generator has not yet produced
@@ -60,7 +63,7 @@ const RING_OPACITY_MAX = 0.5;
 
 // The screen-level phase-break PULSE (ADR-0051 D5, UX §2.1): a brief, one-shot, non-diegetic
 // wash at the ONSET of every phase break. Cool white, disjoint from the alarm-red LOST strobe,
-// the green WON tint, and the sepia FINISHER wash so each event reads as itself.
+// the green WON tint, and the monochrome FINISHER treatment so each event reads as itself.
 const PULSE_Z = 5;
 const PULSE_MS = 500;
 const PULSE_PEAK = 0.5;
@@ -112,25 +115,26 @@ const PARRY_HALO_SIZE = PARRY_SIZE * 1.4;
 const PARRY_HALO_TINT = "#ffffff";
 const PARRY_SMOKE_DEGRADE = 0.4; // at full smoke the glyph dims to 0.6× — a legibility floor, present
 
-// L2 décor — a procedural PLACEHOLDER prop (no FLUX asset this story). It sits in the tableau
-// dim/inert and GLOWS only during its armed, shootable window ("ce qui brille est interactif").
+// L2 décor — a procedural PLACEHOLDER prop (no FLUX asset this story). The prop stays a DIM GREY
+// placeholder at all times (B&W layer); the "armed / shootable" read is a separate acid GLOW-HALO
+// with a genuine radial DÉGRADÉ (alpha falls monotonically to 0 at the rim — « un halo est un
+// dégradé, jamais un aplat », composite-gate §2.1 fix). The lime never becomes a flat fill.
 const DECOR_Z = 0.45;
 const DECOR_W = 0.8;
 const DECOR_H = 1.05;
 const DECOR_INERT_TINT = "#6b7580";
-const DECOR_ARMED_TINT = "#c6ff5a"; // acid glow = interactive (bible's glow law)
+const DECOR_ARMED_TINT = "#c6ff5a"; // acid glow = interactive (bible's glow law) — HALO only, dégradé
+const DECOR_GLOW_Z = 0.44; // just behind the prop, so the halo dégradé wraps it
+const DECOR_GLOW_SIZE = 2.2; // the halo reaches well past the prop so the falloff is measurable
 
-// L2 smoke veil — under the gpu-specialist BINDING bounds (shard §8): ≤6 alpha-blended quads,
-// world-space layer 0, MeshBasicMaterial-class (one texture fetch + tint, UV scroll + opacity
-// envelope, NO per-pixel noise), desaturated NORMAL blend (never additive), reduced-motion holds
-// static. Drawn IN FRONT of the boss/rings (renderOrder 10) at a capped opacity so the telegraph
-// stays grayscale-legible through it (degraded, never removed — UX D1.1/D1.2).
-const SMOKE_QUADS = 4; // ≤6 ceiling; 4 layers already read as "smoke covers the duel"
-const SMOKE_Z = 0.7;
-const SMOKE_SIZE = 3.0;
-const SMOKE_COLOUR = "#9a9a9a"; // desaturated haze, never bright (would trip the CRT bloom gate)
-const SMOKE_PEAK_ALPHA = 0.42; // ≤ ~0.5–0.6 guidance; keeps the ring/pose perceptible
-const SMOKE_FADE = 0.06; // per-frame envelope lerp toward the smokeActive target
+// L2 smoke — a real drifting PARTICLE FIELD (`smokeParticles.ts`), Bertrand direct order §17
+// (supersedes the gpu 4-quad-veil constraint; Ben re-verdicts in parallel). Device-tiered count
+// (like CRT lite), one CC0 texture fetch, desaturated NORMAL blend, world layer 0 (rides the CRT
+// pass for free — no new RT/pass), renderOrder below the parry halo/glyph. Reduced-motion freezes
+// it to a scattered static arrangement. The count caps are the self-imposed bounds pending Ben.
+const SMOKE_MAX_DESKTOP = 64;
+const SMOKE_MAX_MOBILE = 32;
+const SMOKE_FADE = 0.06; // per-frame envelope lerp toward the smokeActive target (drives the field)
 
 // L4 renfort — frame-edge silhouette PRESSURE (a lost CRS section, "pas ses hommes"). Motion
 // only, NO shootable body, NO travelling bullet. Reuses the shipped `enemy_riot` silhouette,
@@ -142,18 +146,21 @@ const RENFORT_TINT = "#2f353b";
 const RENFORT_PEAK_ALPHA = 0.55;
 const RENFORT_FADE = 0.08;
 
-// L5 finisher (coup de grâce) — a ceremonial post-combat beat (boss at 0 HP). Its wash colour is
-// a desaturated SEPIA, deliberately disjoint from the cool-white phase-break pulse, the green WON
-// tint and the alarm-red LOST strobe, so it reads as its own event. The « LIVRE LE SON » prompt +
-// a pulsing click cue positively signal "this beat wants your input" — the distinction from the
-// passive QTE_RESULT_HOLD breather (UX D3.2). Resolves on ANY `fire` (game 5-B), so the click
-// zone is the full frame — the 44px touch floor is trivially met (UX D3.6/A10).
-const FINISHER_WASH_COLOUR = "#d8c08f";
-const FINISHER_WASH_PEAK = 0.44;
+// L5 finisher (coup de grâce) — a ceremonial post-combat beat (boss at 0 HP). Kept STRICTLY inside
+// the B&W + acid-neon identity (composite-gate colour-law fix — the old sepia wash added a warm
+// R−B cast to world pixels, off the cold-xerox look). The treatment is now MONOCHROME on the world:
+// a brief WHITE inverted flash at onset + a held BLACK vignette value-crush that focuses the frame
+// on the downed boss. Colour lives ONLY on the acid-neon « LIVRE LE SON » prompt (the game's neon
+// language). Distinct from the cool-white pulse / green WON / red LOST and from the passive
+// QTE_RESULT_HOLD breather (the prompt's presence = "this beat wants input", UX D3.2). Resolves on
+// ANY `fire` (game 5-B) → the whole frame is the click zone (44px floor trivially met, UX D3.6/A10).
 const FINISHER_ONSET_MS = 600;
+const FINISHER_FLASH_PEAK = 0.5; // white inverted flash at onset (a VALUE, no hue)
+const FINISHER_VIGNETTE_PEAK = 0.5; // black edge value-crush held for the beat (a VALUE, no hue)
 const FINISHER_KNEEL = 0.35; // the commander drops to a defeated posture
 const FINISHER_DEFEAT_TINT = "#7d8791"; // desaturated, down-but-not-finished
 const FINISHER_PROMPT_TEXT = "LIVRE LE SON"; // canonical copy (NOT "ACHEVER" — narrative §3.3)
+const FINISHER_PROMPT_TINT = "#39ff14"; // acid-neon green (the only colour allowed on the B&W world)
 const FINISHER_PROMPT_DY = 1.25; // below the boss, in the tableau (diegetic, not a HUD chip)
 const FINISHER_PROMPT_W = 2.0;
 const FINISHER_PROMPT_H = 0.5;
@@ -175,11 +182,11 @@ function resolveRenfortTexture(): ResolvedEnemyTexture | null {
 }
 
 /**
- * A procedural desaturated smoke texture baked ONCE into a CanvasTexture (soft grayscale blobs).
- * This is the "single texture fetch" the gpu verdict mandates — the cloudiness is baked into the
- * image, not computed per-pixel in a shader. `null` when no 2D canvas is available (SSR / test).
+ * A soft radial GLOW-HALO baked once (white core, alpha falling MONOTONICALLY to 0 at the rim).
+ * Tinted at runtime (acid for the armed décor prop). This is the genuine dégradé the composite gate
+ * §2.1 requires — a halo, never an aplat. `null` under SSR / test (no 2D canvas).
  */
-function buildSmokeTexture(): CanvasTexture | null {
+function buildRadialGlowTexture(): CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const size = 128;
   const canvas = document.createElement("canvas");
@@ -188,25 +195,35 @@ function buildSmokeTexture(): CanvasTexture | null {
   const ctx = canvas.getContext("2d");
   if (ctx === null) return null;
   ctx.clearRect(0, 0, size, size);
-  // A handful of soft radial blobs tiled toward the edges so the texture wraps seamlessly.
-  const blobs: [number, number, number][] = [
-    [40, 46, 44],
-    [92, 70, 52],
-    [64, 100, 40],
-    [16, 96, 34],
-    [110, 24, 38],
-  ];
-  for (const [cx, cy, r] of blobs) {
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, "rgba(255,255,255,0.55)");
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-  }
-  const tex = new CanvasTexture(canvas);
-  tex.wrapS = RepeatWrapping;
-  tex.wrapT = RepeatWrapping;
-  return tex;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.45, "rgba(255,255,255,0.55)");
+  g.addColorStop(1, "rgba(255,255,255,0)"); // → 0 at the rim (measurable falloff)
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
+}
+
+/**
+ * A monochrome VIGNETTE baked once: fully clear at the centre, ramping to opaque BLACK at the edges
+ * (alpha rising monotonically outward). Used as the finisher's value-crush — a VALUE change only,
+ * no hue on world pixels (composite-gate colour-law fix). `null` under SSR / test.
+ */
+function buildVignetteTexture(): CanvasTexture | null {
+  if (typeof document === "undefined") return null;
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (ctx === null) return null;
+  ctx.clearRect(0, 0, size, size);
+  const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.2, size / 2, size / 2, size * 0.72);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
 }
 
 /**
@@ -269,11 +286,12 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
   const ringBRef = useRef<Mesh>(null); // ring B (phase 2+ = LIMB)
   const parryRef = useRef<Mesh>(null); // L3 parry marker (diamond guard glyph)
   const parryHaloRef = useRef<Mesh>(null); // L3 paper-white contrast halo (survives the smoke veil)
-  const decorRef = useRef<Mesh>(null); // L2 décor placeholder prop
+  const decorRef = useRef<Mesh>(null); // L2 décor placeholder prop (always dim grey)
+  const decorGlowRef = useRef<Mesh>(null); // L2 armed dégradé glow-halo (acid, radial falloff)
   const pulseRef = useRef<Mesh>(null); // phase-break pulse
-  const finisherWashRef = useRef<Mesh>(null); // L5 ceremonial wash
-  const finisherPromptRef = useRef<Mesh>(null); // L5 « LIVRE LE SON »
-  const smokeRefs = useRef<(Mesh | null)[]>([]);
+  const finisherFlashRef = useRef<Mesh>(null); // L5 white inverted onset flash (value)
+  const finisherVignetteRef = useRef<Mesh>(null); // L5 black value-crush vignette (value)
+  const finisherPromptRef = useRef<Mesh>(null); // L5 « LIVRE LE SON » (acid neon)
   const renfortRefs = useRef<(Mesh | null)[]>([]);
 
   const lastKeyRef = useRef<string>("none");
@@ -294,15 +312,24 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
 
   const { camera, size } = useThree();
 
+  // Device tier for the particle count (like the CRT lite/full split) — decided once at mount.
+  const smokeMax = useMemo(() => (detectMobile() ? SMOKE_MAX_MOBILE : SMOKE_MAX_DESKTOP), []);
+  // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
+  // its billboards in world space each frame around the boss anchor.
+  const smokeField = useMemo(() => createSmokeField(SMOKE_MAX_DESKTOP), []);
+
   // Baked textures (created once per mount; disposed on unmount). Guarded null under SSR / test.
-  const smokeTex = useMemo(() => buildSmokeTexture(), []);
+  const glowTex = useMemo(() => buildRadialGlowTexture(), []);
+  const vignetteTex = useMemo(() => buildVignetteTexture(), []);
   const promptTex = useMemo(() => buildPromptTexture(FINISHER_PROMPT_TEXT), []);
   useEffect(() => {
     return () => {
-      smokeTex?.dispose();
+      glowTex?.dispose();
+      vignetteTex?.dispose();
       promptTex?.dispose();
+      smokeField.dispose();
     };
-  }, [smokeTex, promptTex]);
+  }, [glowTex, vignetteTex, promptTex, smokeField]);
 
   // Render-side reduced-motion detection (UX D3.1) — mirrors HostageQteSprite / CrtPass.
   const reducedMotionRef = useRef(
@@ -323,15 +350,17 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const boss = bossRef.current;
     const ring = ringRef.current;
     const ringB = ringBRef.current;
     const parry = parryRef.current;
     const parryHalo = parryHaloRef.current;
     const decor = decorRef.current;
+    const decorGlow = decorGlowRef.current;
     const pulse = pulseRef.current;
-    const finisherWash = finisherWashRef.current;
+    const finisherFlash = finisherFlashRef.current;
+    const finisherVignette = finisherVignetteRef.current;
     const finisherPrompt = finisherPromptRef.current;
     if (
       boss === null ||
@@ -340,8 +369,10 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       parry === null ||
       parryHalo === null ||
       decor === null ||
+      decorGlow === null ||
       pulse === null ||
-      finisherWash === null ||
+      finisherFlash === null ||
+      finisherVignette === null ||
       finisherPrompt === null
     ) {
       return;
@@ -368,9 +399,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       parry.visible = false;
       parryHalo.visible = false;
       decor.visible = false;
-      finisherWash.visible = false;
+      decorGlow.visible = false;
+      finisherFlash.visible = false;
+      finisherVignette.visible = false;
       finisherPrompt.visible = false;
-      for (const q of smokeRefs.current) if (q !== null) q.visible = false;
+      smokeField.group.visible = false;
       for (const q of renfortRefs.current) if (q !== null) q.visible = false;
     };
 
@@ -402,7 +435,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       parry.scale.set(PARRY_SIZE, PARRY_SIZE, 1);
       parryHalo.scale.set(PARRY_HALO_SIZE, PARRY_HALO_SIZE, 1);
       decor.scale.set(DECOR_W, DECOR_H, 1);
-      for (const q of smokeRefs.current) if (q !== null) q.scale.set(SMOKE_SIZE, SMOKE_SIZE, 1);
+      decorGlow.scale.set(DECOR_GLOW_SIZE, DECOR_GLOW_SIZE, 1);
       prevHpRef.current = qte.bossHp;
       positionedRef.current = true;
     }
@@ -581,54 +614,48 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       parryMat.opacity = baseOpacity;
     }
 
-    // ── L2 décor prop — a placeholder mesh that GLOWS only while armed ─────────────────────────
+    // ── L2 décor prop — a DIM GREY placeholder always; the "armed" read is a DÉGRADÉ glow-halo ──
+    // The prop never becomes a flat lime aplat (composite-gate §2.1 fix). It stays a grey B&W
+    // placeholder; when armed, a separate acid glow-HALO with a radial alpha falloff (→ 0 at the
+    // rim) wraps it — a genuine dégradé (« un halo est un dégradé, jamais un aplat »).
     const decorProp = state.bossQteSpec?.decorProp ?? null;
     decor.visible = false;
+    decorGlow.visible = false;
     if (decorProp !== null) {
+      const dx = qte.anchor.x + decorProp.position.x;
+      const dy = qte.anchor.y + decorProp.position.y;
       decor.visible = true;
-      decor.position.set(
-        qte.anchor.x + decorProp.position.x,
-        qte.anchor.y + decorProp.position.y,
-        DECOR_Z,
-      );
+      decor.position.set(dx, dy, DECOR_Z);
       const decorMat = decor.material as MeshBasicMaterial;
       const armed = qte.decorArmed && !qte.decorConsumed;
-      if (armed) {
-        const glow = reducedMotion ? 0.85 : 0.6 + 0.4 * ((Math.sin(nowMs * 0.01) + 1) / 2);
-        decorMat.color.set(DECOR_ARMED_TINT);
-        decorMat.opacity = glow;
-      } else {
-        decorMat.color.set(DECOR_INERT_TINT);
-        decorMat.opacity = qte.decorConsumed ? 0.25 : 0.55; // spent reads dimmer than inert-but-present
+      // The prop itself stays grey (value only), a touch brighter while armed to draw the eye.
+      decorMat.color.set(DECOR_INERT_TINT);
+      decorMat.opacity = qte.decorConsumed ? 0.25 : armed ? 0.7 : 0.55;
+      if (armed && glowTex !== null) {
+        decorGlow.visible = true;
+        decorGlow.position.set(dx, dy, DECOR_GLOW_Z);
+        const glowMat = decorGlow.material as MeshBasicMaterial;
+        applyTexture(decorGlow, glowTex);
+        glowMat.color.set(DECOR_ARMED_TINT);
+        // Pulse the halo intensity (steady under reduced motion). The DÉGRADÉ is baked into the
+        // texture's radial alpha, so the rim always falls to 0 — never a hard edge.
+        glowMat.opacity = reducedMotion ? 0.85 : 0.55 + 0.45 * ((Math.sin(nowMs * 0.01) + 1) / 2);
       }
     }
 
-    // ── L2 smoke veil — ≤6 desaturated alpha quads, one baked texture, UV scroll + envelope ────
-    // Envelope ramps smoothly toward the smokeActive target so the haze never pops. Under reduced
-    // motion: no UV scroll, no drift, static opacity (gpu Q1 + UX §2.3, non-strobing).
+    // ── L2 smoke — a real drifting PARTICLE FIELD (Bertrand order §17) ──────────────────────────
+    // Envelope ramps smoothly toward the smokeActive target (also feeds the parry-glyph degrade).
+    // The field module owns spawn/drift/expand/fade + the reduced-motion static freeze; it hides
+    // itself when the envelope is ~0.
     const smokeTarget = qte.smokeActive ? 1 : 0;
     smokeEnvRef.current += (smokeTarget - smokeEnvRef.current) * SMOKE_FADE;
-    const smokeEnv = smokeEnvRef.current;
-    if (smokeTex !== null && !reducedMotion) {
-      smokeTex.offset.x = (nowMs * 0.00003) % 1;
-      smokeTex.offset.y = (nowMs * 0.00002) % 1;
-    }
-    for (let i = 0; i < smokeRefs.current.length; i++) {
-      const q = smokeRefs.current[i];
-      if (q === null || q === undefined) continue;
-      if (smokeEnv < 0.02) {
-        q.visible = false;
-        continue;
-      }
-      q.visible = true;
-      const driftX = reducedMotion ? 0 : 0.18 * Math.sin(nowMs * 0.0005 + i * 1.7);
-      const driftY = reducedMotion ? 0 : 0.1 * Math.sin(nowMs * 0.0004 + i * 2.3);
-      const spreadX = (i - (SMOKE_QUADS - 1) / 2) * 0.6;
-      q.position.set(qte.anchor.x + spreadX + driftX, qte.anchor.y + 0.4 + driftY, SMOKE_Z);
-      const qMat = q.material as MeshBasicMaterial;
-      qMat.color.set(SMOKE_COLOUR);
-      qMat.opacity = SMOKE_PEAK_ALPHA * smokeEnv * (0.7 + 0.3 * (i % 2 === 0 ? 1 : 0.6));
-    }
+    smokeField.update(delta, {
+      activeCount: smokeMax,
+      reducedMotion,
+      centreX: qte.anchor.x,
+      centreY: qte.anchor.y + 0.2,
+      envelope: smokeEnvRef.current,
+    });
 
     // ── L4 renfort — frame-edge silhouette pressure (motion only, no shootable body) ───────────
     const renfortTarget = qte.renfortActive ? 1 : 0;
@@ -673,25 +700,39 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       pulseMat.opacity = reducedMotion ? PULSE_PEAK : PULSE_PEAK * k;
     }
 
-    // ── L5 finisher — a ceremonial wash (distinct from the pulse/WON) + the « LIVRE LE SON »
-    //    prompt + a click-cue pulse. The prompt's presence positively distinguishes this ACTIVE
-    //    beat from the passive QTE_RESULT_HOLD breather (UX D3.2). Resolves on ANY fire → the
-    //    whole frame is the click zone (44px floor trivially met, UX D3.6). ──────────────────────
-    finisherWash.visible = false;
+    // ── L5 finisher — MONOCHROME on the world (no warm hue): a white inverted onset flash + a held
+    //    black value-crush vignette, plus the acid-neon « LIVRE LE SON » prompt. The prompt's
+    //    presence distinguishes this ACTIVE beat from the passive QTE_RESULT_HOLD breather (UX D3.2).
+    //    Resolves on ANY fire → the whole frame is the click zone (44px floor met, UX D3.6). ───────
+    finisherFlash.visible = false;
+    finisherVignette.visible = false;
     finisherPrompt.visible = false;
     if (finisher) {
-      // Ceremonial onset wash (one-shot fade; steady step under reduced motion).
       const onsetRemaining = finisherUntilRef.current - nowMs;
-      finisherWash.visible = true;
-      finisherWash.position.set(cam.position.x, cam.position.y, PULSE_Z);
-      finisherWash.scale.set(halfW * 2, halfH * 2, 1);
-      const washK = reducedMotion ? 1 : clamp01(onsetRemaining / FINISHER_ONSET_MS);
-      const washMat = finisherWash.material as MeshBasicMaterial;
-      washMat.color.set(FINISHER_WASH_COLOUR);
-      // Hold a low steady sepia veil for the beat, brighter during the onset flash.
-      washMat.opacity = FINISHER_WASH_PEAK * (0.35 + 0.65 * washK);
+      const flashK = reducedMotion ? 0.4 : clamp01(onsetRemaining / FINISHER_ONSET_MS);
 
-      // The prompt — diegetic, below the boss; a pulse = "click now" (steady under reduced motion).
+      // White inverted flash at onset (a VALUE, fades out; a low steady step under reduced motion).
+      finisherFlash.visible = true;
+      finisherFlash.position.set(cam.position.x, cam.position.y, PULSE_Z);
+      finisherFlash.scale.set(halfW * 2, halfH * 2, 1);
+      const flashMat = finisherFlash.material as MeshBasicMaterial;
+      flashMat.color.set(WHITE);
+      flashMat.opacity = FINISHER_FLASH_PEAK * flashK;
+
+      // Black vignette value-crush, held for the beat — darkens the frame edges, focuses on the
+      // downed boss. VALUE only (black), no hue on world pixels.
+      if (vignetteTex !== null) {
+        finisherVignette.visible = true;
+        applyTexture(finisherVignette, vignetteTex);
+        finisherVignette.position.set(cam.position.x, cam.position.y, PULSE_Z - 0.01);
+        finisherVignette.scale.set(halfW * 2, halfH * 2, 1);
+        const vignetteMat = finisherVignette.material as MeshBasicMaterial;
+        vignetteMat.color.set("#000000");
+        vignetteMat.opacity = FINISHER_VIGNETTE_PEAK;
+      }
+
+      // The prompt — diegetic, below the boss, ACID NEON (the only colour on the B&W world); a
+      // pulse = "click now" (steady under reduced motion).
       if (promptTex !== null) {
         finisherPrompt.visible = true;
         applyTexture(finisherPrompt, promptTex);
@@ -701,7 +742,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
           FINISHER_PROMPT_Z,
         );
         const promptMat = finisherPrompt.material as MeshBasicMaterial;
-        promptMat.color.set(WHITE);
+        promptMat.color.set(FINISHER_PROMPT_TINT);
         promptMat.opacity = reducedMotion ? 1 : 0.65 + 0.35 * ((Math.sin(nowMs * 0.008) + 1) / 2);
       }
     }

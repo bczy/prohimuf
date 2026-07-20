@@ -2309,3 +2309,136 @@ reach 0.226`) still holds. **Pre-cleared contingency, SAME lever, NOT a new roun
   (same limitation logged in §3/§5/§13). Strictly additive at end-of-file.
 - File List:
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 19. VERIFY (stage 5, leg 2 — A1-R2 final re-verify) — game-designer (Sacha) — 2026-07-20 — reframed-metric re-verify on the landed BOSS_VITAL_CATCH_RADIUS 0.11
+
+- claim: two tasks off Karim's §17 re-gate. (1) Transcribed AMENDMENT A1-R2 VERBATIM into
+  `spec-boss-qte-differentiation.md` (new "AMENDMENT A1-R2" section under A1: value 0.11 + pre-cleared
+  0.10 contingency, the reframed (a)-(d) energy acceptance REPLACING A1 §5's "loss > 0", paired render
+  at 0.11, the new small-ring legibility condition; AC-D2 re-amended tail). (2) Final design-acceptance
+  re-verify of the LANDED 0.11 code against the reframed metric.
+- landed-state check before running (the §17 "wait for the dev release" guard): `bossQteSystem.ts`
+  `BOSS_VITAL_CATCH_RADIUS = 0.11`; `yarn vitest run bossQteSystem.test.ts` = **66/66 PASS** (incl.
+  `toBe(0.11)`, the sub-band assert `0.11 < 0.226`, and the seed-20260719 winnability re-check) — the
+  implementation is complete + green. NOTE for `producer`/Karim: `dev-gameplay`'s formal A1-R2 release
+  shard entry was not yet posted at my run time; I measured against the committed 0.11 source with the
+  green boss suite as the landed-state proof, so the result stands. (Ordering nit, not a correctness
+  issue — reconcile the entry order.)
+
+### VERDICT: PASS — A1-R2 winnability re-verify (game-designer)
+
+The reframed (a)-(d) acceptance is fully met at 0.11. Camp-vital dominance is broken, the vital-vs-limb
+dilemma (spec §1-A high-risk/high-reward vs. safe bank) is genuine, honest play clears, the seed holds.
+0.11 stands — the pre-cleared 0.10 contingency is NOT needed (campVital cleanly negative, deterministic
+separation beyond sim-noise). No cap breach, no escalation.
+
+### Re-verify table (landed 0.11 code, seed 20260719, N=500/style)
+
+| Style         | Win   | Loss  | avg blown | avg ΔE    | avg time | reframed-metric read                                                    |
+| ------------- | ----- | ----- | --------- | --------- | -------- | ----------------------------------------------------------------------- |
+| optimal       | 100%  | 0%    | 0.00      | +12.8     | 41.8s    | (c) best line — skilled tracker REWARDED                                |
+| greedyLimb    | 100%  | 0%    | 0.00      | +1.7      | 50.6s    | (c) safe bank holds, 100 %                                              |
+| **campVital** | 100%  | 0%    | 0.00      | **−5.0**  | 42.9s    | **(a) NEGATIVE, < greedyLimb +1.7 & optimal +12.8 → camp NON-dominant** |
+| greedyVital   | 100%  | 0%    | 1.92 (≤7) | **−44.7** | 49.1s    | **(b) clearly negative, blown 1.92 ≫ greedyLimb 0 → greed punished**    |
+| decorIgnore   | 100%  | 0%    | 0.00      | +1.7      | 50.6s    | décor still pure-upside                                                 |
+| campLimb      | 100%  | 0%    | 0.00      | +45.0     | 52.9s    | limb bank campable (1 HP → slow) — fine, by design                      |
+| parryWhiff    | 100%  | 0%    | 7.84 (≤9) | −101.5    | 79.0s    | parry axis unchanged                                                    |
+| sloppy        | 28.8% | 71.2% | 9.52      | −200.9    | 83.6s    | losable by execution                                                    |
+| sloppyNoParry | 1.4%  | 98.6% | 9.97      | −222.3    | 74.2s    | losable                                                                 |
+
+### Reframed acceptance (A1-R2 §2 (a)-(d)) — line by line
+
+- **(a) camp non-dominant — PASS.** campVital net **−5.0 E** < optimal **+12.8** AND < greedyLimb
+  **+1.7**. A sign flip (camping now COSTS energy) + a 6.7-unit gap below greedyLimb. campVital aims
+  deterministically (sigma-0) → −5.0 is flat across all 500 trials (zero variance), so the separation
+  is clean, well beyond sim-noise. Camping the head is no longer the best line (it was +45 at 0.18).
+- **(b) greed materially punished — PASS.** greedyVital net **−44.7 E** (clearly negative) with avg
+  **1.92** blown windows (max 7) vs. greedyLimb's **0** — greed is heavily taxed in energy and blows
+  windows, though it still wins (loss clock untouched by design).
+- **(c) honest play clears with margin — PASS.** greedyLimb AND optimal both **100 % / 0 blown** —
+  full margin against the 10-window loss budget. A skilled vital-tracker (optimal) is the single best
+  line (+12.8) — vital is REWARDED, not dead.
+- **(d) seed holds — PASS, no re-pin.** Landable windows present (P1 6, P2 2 + charged, P3 3 + charged);
+  optimal single-walk clears (bossHp 0, 0 blown); greedyVital (a tracking vital-chaser) still wins
+  100 % → ≥1 landable, TRACKABLE vital waypoint per window exists; competent limb-banking (greedyLimb)
+  clears 100 %. Corroborated by the green unit winnability re-check on `targetSeed 20260719`.
+
+### The dilemma now reads right (qualitative)
+
+- **track vital (optimal):** +12.8 E, the best line — skill rewarded (2 HP EARNED by tracking the tight ring).
+- **bank limb (greedyLimb):** +1.7 E, slower (50.6 s) — the safe, modest line, viable.
+- **camp head (campVital):** −5 E, fast (42.9 s) but now PAYS energy — camping trades energy for speed, no longer free/dominant.
+- **reckless vital-chase (greedyVital):** −44.7 E / 1.92 blown — materially punished, still clears (vital viable for the skilled).
+
+Exactly the spec §1-A "VITAL = high-risk/high-reward, tracked" vs. "LIMB = safe bank" read. §0's
+"which target?" decision is restored.
+
+### Outstanding (NOT part of this re-verify)
+
+- **A1-R2 §4 small-ring legibility** (0.11 vital ring drawn=catch, perceivable + aim-able on both
+  device classes) is `ux-designer` (Tony) + `lead-art` (Nico)'s BINDING leg-2 condition — not my lane;
+  per §17 a legibility failure routes to lead-art/`senior-architect` as a render-scale/boss-zoom
+  question, explicitly NOT a third radius round.
+
+- handoff → `lead-game-designer` (Karim): A1-R2 re-verify = PASS on the reframed (a)-(d) metric at the
+  landed 0.11; the Lever-1 correction is design-accepted. 0.11 stands (0.10 contingency not needed).
+  No cap breach. The camp-dominance defect from §12/§15 is resolved; the vital-vs-limb dilemma is real.
+- handoff → `ux-designer` (Tony) + `lead-art` (Nico): the small-ring legibility sign-off (A1-R2 §4)
+  remains yours — the mechanic is settled at 0.11; confirm the drawn=catch 0.11 vital ring is aim-able
+  on mobile-landscape at the boss zoom.
+- handoff → `producer` (Marion): Lever-1 correction closed at round 2 (PASS) — no escalation. Reconcile
+  the shard entry order (my re-verify ran against the green landed 0.11 source ahead of dev-gameplay's
+  formal A1-R2 release entry).
+- NOTE (process): §19 appended via `cat >>` heredoc (additive, end-of-file). Re-verify ran on a
+  throwaway scratchpad bundle of the LANDED source (esbuild, value 0.11 confirmed) — NO `src/**`, test,
+  or repo edit by me; the 0.10 contingency (unused) would be `dev-gameplay`'s to apply. No commit/push.
+- File List:
+  - `docs/game-design/spec-boss-qte-differentiation.md` (AMENDMENT A1-R2 section + AC-D2 re-amended tail)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: PASS — A1-R2 winnability re-verify (game-designer) — on the landed BOSS_VITAL_CATCH_RADIUS 0.11 (boss suite 66/66 green) the reframed (a)-(d) acceptance is fully met: (a) campVital net −5.0 E < greedyLimb +1.7 AND < optimal +12.8 (sign-flip, deterministic, clean beyond noise → camp NON-dominant, was +45 at 0.18); (b) greedyVital −44.7 E / 1.92 blown ≫ greedyLimb 0 (greed punished); (c) greedyLimb + optimal 100 % / 0 blown (honest play clears with full margin); (d) seed 20260719 holds (landable trackable vital waypoints, limb-banking + vital-tracking both clear — no re-pin). 0.11 stands, pre-cleared 0.10 contingency NOT needed; the vital-vs-limb dilemma (spec §1-A) is restored, §12/§15 camp-dominance resolved. No cap breach. Outstanding: the A1-R2 §4 small-ring legibility sign-off is ux/lead-art's leg-2 lane (a legibility failure routes to lead-art/architect, not a radius round).
+
+## 10. BUILD (gameplay lane) — dev-gameplay (Amelia) — 2026-07-20 — AMENDMENT A1-R2 (vital catch 0.18 → 0.11)
+
+- claim: apply Karim's A1 round-2 gate (shard §17, PASS): tighten `BOSS_VITAL_CATCH_RADIUS`
+  from 0.18 to **0.11** in `bossQteSystem.ts`, updating the unit tests that encode the old value.
+  Everything else untouched. `dev-r3f-render` re-draws the vital ring at 0.11 (§4) in parallel.
+- release (diff summary):
+  - `bossQteSystem.ts`: `BOSS_VITAL_CATCH_RADIUS = 0.18` → `0.11` (one-line value change + doc). The
+    ⊂-band-aware A1 assert (`BOSS_VITAL_CATCH_RADIUS < hypot(0.16,0.16) ≈ 0.226`) still holds and
+    still fires correctly — `0.11 < 0.226`, so `createBossQte` does not spuriously throw (unit-tested).
+    No other logic changed; the hit-test shape (per-zone `withinCatch`/`ringHitZone`) is unchanged.
+  - `bossQteSystem.test.ts`: updated the two tests encoding the old value/annulus —
+    - corner-whiffable: `expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.11)`; the probe tightened to **0.15
+      from the vital centre** (was a vital chip under the round-1 0.18 catch, now a whiff), so the
+      annulus test genuinely binds to 0.11 (0.11–0.30); the also-limb probe moved to 0.15-from-vital /
+      0.03-from-limb → still a LIMB chip, never vital.
+    - camp-punished: added the R2 stronger property — a fixed camp aim at the box centre catches the
+      vital ring for a **minority** of the window (`inCatch / samples < 0.5` over 12 phase-3 windows on
+      `targetSeed 20260719`), cheaply assertable at the unit level. `maxDev > catch` retained.
+- **SEED STATUS: still HELD — `targetSeed 20260719` not re-pinned.** greedyLimb still clears with
+  margin and the perfect tracker still lands the vital ring at 0.11 (both winnability tests green); the
+  tighter catch only raises the vital ceiling. Sacha's cross-seed greedyVital-loss-rate re-verify
+  remains her acceptance leg.
+- **Verification — MY LANE GREEN; one CROSS-LANE red flagged (not mine):**
+  - `yarn vitest run` — **847/847** (boss suite 66/66, incl. the two updated A1 tests).
+  - `yarn eslint` on `bossQteSystem.ts` + the test — **EXIT 0**; `prettier --check` on all four
+    gameplay-lane files — **clean**.
+  - `yarn typecheck` (repo-wide) is RED, but **only** in `src/render/scene/BossQteSprite.tsx`
+    (`TS2304: Cannot find name 'RepeatWrapping'`, lines 210-211) — `dev-r3f-render`'s in-flight A1 §4
+    render work (missing a `three` import); the pure game layer compiles clean. `yarn lint`'s 13
+    errors are all in that same render file; `yarn format:check` flags that file + the gated design
+    doc `docs/game-design/spec-boss-qte-differentiation.md` — none in this lane, none touchable by me
+    (src/render forbidden). Flagged to `dev-r3f-render` to import `RepeatWrapping` from `three` and
+    lint/format the file so the shared gate goes green.
+- boundary: only `bossQteSystem.ts` + `bossQteSystem.test.ts` changed this round; seeded-pure preserved.
+- handoff → `dev-r3f-render`: fix `BossQteSprite.tsx` (`import { RepeatWrapping } from "three"` or the
+  namespaced form) + lint/format; the `BOSS_VITAL_CATCH_RADIUS 0.11` constant is exported and ready
+  for the drawn-== -catch (0.11) vital ring.
+- handoff → `producer`/`qa-lead`: the repo-wide typecheck/lint/format gate is blocked ONLY by the
+  render lane's in-flight `BossQteSprite.tsx`, not the game lane — serialise the two lanes' green.
+- NOTE (process): appended via `cat >>` heredoc, additive at end-of-file. Not committed/pushed.
+- File List:
+  - `src/game/systems/bossQteSystem.ts` (`BOSS_VITAL_CATCH_RADIUS` 0.18 → 0.11)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (two A1 tests updated; 66 tests)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
