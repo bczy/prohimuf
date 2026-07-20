@@ -750,11 +750,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
 
   return (
     <>
-      {/* renderOrder 6 = the STREET-actor layer. Rings (8) sit on top; the décor prop behind (4);
-          the smoke veil (10) hazes the duel; the parry halo+glyph (13/14) draw ABOVE the veil so
-          the tell survives smoke; renfort pressure (3) sits behind the tableau at the frame edges;
-          the finisher prompt (12) reads over the haze; the phase-break pulse and finisher wash (20)
-          wash over everything. */}
+      {/* Draw order (by renderOrder): renfort edges (3) behind the tableau; décor glow-halo (4) +
+          prop (5); boss (6); rings (8); the smoke PARTICLE FIELD (10, set in the module) hazes the
+          duel; the parry halo+glyph (13/14) draw ABOVE the smoke so the tell survives; the finisher
+          prompt (12) reads over the haze; the phase-break pulse + finisher flash/vignette (20) wash
+          over everything. */}
       {Array.from({ length: RENFORT_QUADS }, (_, i) => (
         <mesh
           key={`renfort-${String(i)}`}
@@ -768,7 +768,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
           <meshBasicMaterial transparent depthWrite={false} />
         </mesh>
       ))}
-      <mesh ref={decorRef} renderOrder={4} visible={false}>
+      <mesh ref={decorGlowRef} renderOrder={4} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      <mesh ref={decorRef} renderOrder={5} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
@@ -784,8 +788,10 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         <ringGeometry args={[RING_INNER, RING_OUTER, RING_SEGMENTS]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
-      {/* The parry halo (13) + glyph (14) draw ABOVE the smoke veil (10) so the tell survives
-          phase-3 smoke; the paper-white halo gives value contrast against the veil + shoulder art. */}
+      {/* The drifting smoke particle field (renderOrder 10, set per-billboard in the module). */}
+      <primitive object={smokeField.group} />
+      {/* The parry halo (13) + glyph (14) draw ABOVE the smoke so the tell survives phase-3 smoke;
+          the paper-white halo gives value contrast against the smoke + shoulder art. */}
       <mesh ref={parryHaloRef} renderOrder={13} rotation={[0, 0, Math.PI / 4]} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
@@ -794,19 +800,6 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
-      {Array.from({ length: SMOKE_QUADS }, (_, i) => (
-        <mesh
-          key={`smoke-${String(i)}`}
-          ref={(el) => {
-            smokeRefs.current[i] = el;
-          }}
-          renderOrder={10}
-          visible={false}
-        >
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial transparent depthWrite={false} />
-        </mesh>
-      ))}
       <mesh ref={finisherPromptRef} renderOrder={12} visible={false}>
         <planeGeometry args={[FINISHER_PROMPT_W, FINISHER_PROMPT_H]} />
         <meshBasicMaterial transparent depthWrite={false} />
@@ -815,7 +808,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
-      <mesh ref={finisherWashRef} renderOrder={20} visible={false}>
+      <mesh ref={finisherVignetteRef} renderOrder={20} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      <mesh ref={finisherFlashRef} renderOrder={20} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
