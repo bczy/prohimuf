@@ -28,6 +28,10 @@ The rows below list every marker path and the workflow it dispatches:
 | `gen-sprites`         | Generate enemy-type sprites                |
 | `gen-vehicle-sprites` | Generate vehicle sprites                   |
 | `gen-nearfg-sprites`  | Generate near-foreground road-prop sprites |
+| `gen-hostage-sprites` | Generate hostage sprites                   |
+| `gen-courier-sprites` | Generate courier sprites                   |
+| `gen-boss-sprites`    | Generate boss sprites                      |
+| `gen-level-art`       | Generate level art                         |
 
 > Note: `deploy-preview.yml` no longer has a marker — it auto-deploys on every
 > push to `claude/*` branches (other branches: Actions UI). `preview.yml`

@@ -269,6 +269,49 @@ export const PRE_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
       { speaker: "KENZA", text: "Pas les nouveaux." },
     ],
   },
+  // Niveau Final — l'Éden (STORY-BOSS-NIVEAU-FINAL-LIVE / ADR-0053). The gated `final_pre` script
+  // (spec-boss-encounter-fiction §4.1), wired VERBATIM under the concrete level id. Only the scene
+  // id (flag A: `niveau-final_pre`, test A2) and the mandatory backdrop (flag B: ADR-0023, test A5)
+  // are new — not one French line changes. The venue is set up player-facing by the title, the
+  // flyer and this l'Éden-interior backdrop, never by naming it in-dialogue (gate ruling Q1 = NO).
+  "niveau-final": {
+    id: "niveau-final_pre",
+    backdrop: "assets/levels/niveau-final/facade.png",
+    lines: [
+      {
+        speaker: "DISPATCH",
+        text: "31 décembre. Tout Paris est dehors. Le dernier son du siècle, Muf.",
+      },
+      { speaker: "MUF", text: "Et les flics ?", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
+      {
+        speaker: "DISPATCH",
+        text: "Débordés. Partout à la fois. Sauf un.",
+        image: "assets/enemy_shooting.png",
+        imageAlt: "Un flic qui dégaine à la fenêtre",
+      },
+      {
+        speaker: "MUF",
+        text: "...le Commandant.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
+      {
+        speaker: "DISPATCH",
+        text: "Cette nuit il n'a plus personne pour le couvrir. Il descend lui-même.",
+      },
+      {
+        speaker: "DISPATCH",
+        text: "Il tire le premier. C'est là qu'il est à découvert. Nulle part ailleurs.",
+      },
+      {
+        speaker: "MUF",
+        text: "Une seule fenêtre.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
+      { speaker: "DISPATCH", text: "Une. Livre le son, Muf. Qu'il danse jusqu'en 2000." },
+    ],
+  },
 };
 
 /** Dialogue shown AFTER a level (win only) */
@@ -326,6 +369,27 @@ export const POST_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
       { speaker: "MUF", text: "J'aurais pas dû revenir." },
       { speaker: "KENZA", text: "...Muf ?" },
       { speaker: "MUF", text: "On rentre.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
+    ],
+  },
+  // Niveau Final — l'Éden (win). The gated `final_post` script (spec-boss-encounter-fiction §4.2),
+  // wired VERBATIM. Only the scene id (`niveau-final_post`, test A2) and the backdrop (test A5) are
+  // new. The emotional beat is the city holding into 2000, not the kill (the boss's fall stays flat,
+  // one line). The only level with the right to conclude — closes the loop on l'an 2000.
+  "niveau-final": {
+    id: "niveau-final_post",
+    backdrop: "assets/levels/niveau-final/facade.png",
+    lines: [
+      { speaker: "MUF", text: "Le son passe.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
+      { speaker: "DISPATCH", text: "Et le Commandant ?" },
+      {
+        speaker: "MUF",
+        text: "À terre. Ses hommes l'ont pas vu tomber.",
+        image: MUF_RIDER_IMAGE,
+        imageAlt: MUF_RIDER_ALT,
+      },
+      { speaker: "DISPATCH", text: "Minuit dans deux minutes. Écoute la ville." },
+      { speaker: "MUF", text: "...ça tient.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
+      { speaker: "DISPATCH", text: "Bonne année, Muf." },
     ],
   },
 };

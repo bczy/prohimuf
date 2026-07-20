@@ -1,0 +1,121 @@
+name: Generate boss sprites
+
+# Regenerates the QTE boss ("le Commandant") figure + hall-prop sprites
+# (ADR-0051/ADR-0052/ADR-0053) from the `boss` block of
+# src/game/levels/levelArt.json with real FLUX art, chroma-keys them on the
+# shared black-ground detour, solidifies + gates each figure, and commits the
+# 9 PNG(s) to the current branch.
+#
+# Why this is a SEPARATE workflow from gen-sprites.yml (the enemy set) and
+# gen-hostage-sprites.yml (the hostage set): the Commandant is NOT an enemy
+# archetype and NOT a hostage — his spec deliberately lives in his own `boss`
+# block, outside enemies.types (the levelArt.consistency gate closes that
+# register to ARCHETYPES-derived keys) and outside hostages.types (a distinct
+# QTE-only figure family, ADR-0053). Same reasoning as the hostage/courier
+# workflows each getting their own file.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-boss-sprites (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-boss-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-boss-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
+      # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
+      # for a faster rate limit + honoured `nologo`. Unset/empty → anonymous
+      # fallback (unchanged behaviour), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key + solidify)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate boss sprites (FLUX → chroma-key)
+        # FORCE=1 so a re-dispatch overwrites a rejected roll (each seed is
+        # pinned in levelArt.json; bump it there to re-roll deterministically).
+        run: FORCE=1 node scripts/gen-boss-sprites.mjs
+
+      - name: Solidify figures (fill chroma-key holes)
+        run: |
+          node scripts/fill-sprite-holes.mjs public/assets/boss/*.png
+          node scripts/fill-sprite-holes.mjs --check public/assets/boss/*.png
+
+      - name: Sprite integrity gate (figure/prop topology)
+        run: |
+          # check-sprite-integrity.mjs takes one --file at a time; loop over
+          # the 9 generated PNGs (7 figures + 2 props). The SOFT torso-zone
+          # enclave check assumes a standing human figure and only WARNs
+          # (never fails) — harmless on the 2 non-figure props (lustre,
+          # speaker_wall); the HARD checks (dominance ratio, speckle budget,
+          # binary alpha) are figure-agnostic and always apply.
+          for f in public/assets/boss/*.png; do
+            node scripts/check-sprite-integrity.mjs --file "$f"
+          done
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # boss dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/boss/*.png" > /dev/null; then
+            git add -f public/assets/boss/*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate boss (le Commandant) sprites"
+            # Bounded retry: another push may land while we generated. Push first
+            # (normal case); on rejection rebase with --autostash and retry.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boss-sprites-unpushed
+          path: public/assets/boss/*.png
+          if-no-files-found: warn
+          retention-days: 14

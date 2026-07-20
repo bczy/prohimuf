@@ -77,9 +77,17 @@ async function main() {
         console.log(`  [skip] ${level.id}/${layer}.png (exists)`);
         continue;
       }
+      const baseLayer = layer.startsWith("facade_") ? "facade" : layer;
+      // Interior venues (e.g. niveau-final's l'Éden hall) legitimately drop
+      // sky/street — there is no exterior for them to depict (lead-art PROMPT
+      // GATE, "layer set with sky/street DROPPED for the interior"). Skip
+      // cleanly rather than sending FLUX a broken "${undefined}, ..." prompt.
+      if (level.prompts[baseLayer] === undefined) {
+        console.log(`  [skip] ${level.id}/${layer}.png (no prompts.${baseLayer} — layer dropped)`);
+        continue;
+      }
       console.log(`  [gen]  ${level.id}/${layer}.png`);
       try {
-        const baseLayer = layer.startsWith("facade_") ? "facade" : layer;
         // All facade panels are sections of ONE continuous terrace so they abut
         // seamlessly: force level/aligned floor lines + cornice and a flat,
         // straight-on elevation. Different seeds keep each panel distinct.

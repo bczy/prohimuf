@@ -214,6 +214,68 @@ export const LEVELS: readonly LevelConfig[] = [
       accomplice: { fireIntervalSeconds: 2.8 },
     },
   },
+  // Niveau Final — l'Éden, 31 déc 1999 (STORY-BOSS-NIVEAU-FINAL-LIVE / ADR-0053). The one canon,
+  // progression-gated level that ships the ADR-0051/0052 boss "le Commandant" LIVE. Appended after
+  // Vitry so the existing index-based unlock hop (App.tsx `LEVELS[shippedIdx + 1]` on
+  // LEVEL_COMPLETE) auto-unlocks it — no new unlock code. Pre-boss street is the hardest gallery
+  // (spec-boss-niveau-final-level §1): speed 1.8 / quota 16 / timer 70 (monotonic-hardest vs Vitry,
+  // each step deliberately modest). The boss is the terminal beat on the REAL quota crossing
+  // (enemiesToWin 16, non-zero — NOT the harness `0` instant-trigger, AC4). It authors NO
+  // `hostageQte` (AC1 — mutual exclusion by construction; civilian/hostage_taker keep default
+  // weight 0 and stay out of the window pool). `bossQteSpec` is a value-for-value copy of the tuned
+  // harness combat block (zoom 2 / phase 3 / bossHp 24 / maxBlownWindows 10 / anchor {0,-5}) with
+  // ONLY `targetSeed` re-pinned (19991231, the diegetic date — winnability re-verified per the K-5
+  // discipline) and `decorProp` re-sited to the hall chandelier — no system value smuggled as data
+  // (AC5). `bossQteSystem.ts` / `types/bossQte.ts` stay byte-untouched.
+  {
+    id: "niveau-final",
+    // Player-facing name — narrative-designer's one-field canonical value (fiction spec §4),
+    // mirrors the "Vitry — 94" convention (the millennium date is the finale's meaningful tag).
+    name: "L'Éden — 31 déc. 1999",
+    district: "Paris",
+    year: "1999",
+    enemySpeedMultiplier: 1.8,
+    enemiesToWin: 16,
+    timeSeconds: 70,
+    unlocked: false, // unlocked by clearing Vitry via the existing index hop
+    deliveries: [
+      {
+        // The crew's sound-system rig — "livre le son" to the hall. Held ≈ Vitry (integrity 60 /
+        // window 6 s), not tightened: the escalation is carried by speed + quota + the boss.
+        vehicleType: "truck",
+        triggerAtElapsedSeconds: 18,
+        integrity: 60,
+        windowSeconds: 6,
+        bonus: 300,
+        entrySide: "left",
+        stopPosition: { x: 0, y: -4.5 },
+      },
+    ],
+    // Riot-heavy window mix (2-HP CRS `enemy_riot` is the thematic finale enemy and the honest
+    // source of "harder without a new mechanic"); bonus kept near default as the 70 s time valve.
+    // civilian/hostage_taker are NOT overridden ⇒ they keep default weight 0 (AC1).
+    roster: {
+      streetSpawns: ["courier"],
+      windowWeights: { normal: 40, riot: 28, biker: 20, bonus: 10 },
+    },
+    // NO hostageQte (AC1) — mutual-exclusion invariant respected by construction.
+    bossQteSpec: {
+      zoomSeconds: 2,
+      anchor: { x: 0, y: -5 }, // centred hall tableau (x may nudge once the backdrop lands, §6)
+      phaseCount: 3, // unchanged (ADR-0052 tuned)
+      bossHp: 24, // unchanged (3×8, thresholds 16/8)
+      maxBlownWindows: 10, // unchanged — the sole failure clock
+      // K-5 PIN (re-verified, dev-gameplay/stage-5): with the full ADR-0052 kit (two decorrelated
+      // rings + parry) a competent player who fires on-ring and parries every charged window clears
+      // 24 HP before the blown-window clock trips on this seed (winnability test). The diegetic
+      // date; re-pinnable per the K-5 discipline if a landability gap is found.
+      targetSeed: 19991231,
+      // The hall chandelier — overhead pure-upside +3 HP drop, armed once in phase 2 (armPhaseIndex
+      // 1). Re-sited from the harness speaker-stack {1.4,0.2}; the mur d'enceintes is the reserved
+      // F3 second prop (needs the decorProps[] promotion, not authored — a correct-course, not now).
+      decorProp: { position: { x: 0.2, y: 1.5 }, armPhaseIndex: 1 },
+    },
+  },
 ];
 
 /**

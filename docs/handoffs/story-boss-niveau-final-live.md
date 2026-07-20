@@ -1792,3 +1792,200 @@ VERDICT: PASS-WITH-CORRECTIONS — décor aim-honesty (panel follow-up #5) — d
 - **File List:**
   - `docs/handoffs/story-boss-niveau-final-live.md` (this gate ruling appended)
   - `docs/game-design/README.md` (index — record décor aim-honesty A2 ruling as gated; to update)
+
+---
+
+## BUILD — dev-gameplay (Amelia) — 2026-07-20 · niveau-final LevelConfig + narrative wiring (TDD)
+
+- **Stage:** 4 BUILD · **Lane:** dev-gameplay (the AC8-gated lane — owns `levels.ts`). Built on
+  AC8-clear (STORY-BOSS-QTE-DIFFERENTIATION merged to `main`; branch reset on merged main).
+- **CLAIM:** author the `niveau-final` `LevelConfig` (ADR-0053 D2/D4) + wire the gated
+  `final_pre`/`final_post` scripts to the new id, TDD, against the FROZEN ADR-0051/0052 boss
+  contract. Non-overlapping with the concurrent dev-tooling-assets (`levelArt.json`) and
+  dev-r3f-render (`LevelFlyer.tsx`) lanes; the only shared contract is the id string `niveau-final`.
+- **RELEASE — what I built:**
+  - **`src/game/levels/levels.ts`** — APPENDED one `LevelConfig` `niveau-final` after `vitry` (pure
+    append, 62/0 — the four shipped levels + `BOSS_QTE_DEV_HARNESS_LEVEL` byte-untouched, AC2/AC3).
+    `enemySpeedMultiplier 1.8` / `enemiesToWin 16` (REAL quota, non-zero — AC4) / `timeSeconds 70`;
+    one `truck` delivery ≈Vitry (integrity 60 / window 6 / bonus 300 / trigger 18 / stop {0,-4.5});
+    `roster.windowWeights {normal 40, riot 28, biker 20, bonus 10}` (civilian/hostage_taker NOT
+    overridden ⇒ stay weight-0, AC1). **NO `hostageQte`** (AC1 mutual exclusion by construction).
+    `bossQteSpec` = value-for-value copy of the harness combat block (`zoomSeconds 2` / `anchor
+{0,-5}` / `phaseCount 3` / `bossHp 24` / `maxBlownWindows 10`), re-authoring ONLY `targetSeed
+19991231` (K-5 re-pin) and `decorProp {position {0.2,1.5}, armPhaseIndex 1}` (chandelier) — no
+    system value smuggled as data (AC5). Name = narrative's one-field canonical `L'Éden — 31 déc.
+1999` (mirrors "Vitry — 94"); district `Paris`, year `1999`. Unlock via the existing index hop
+    (`unlocked: false`) — no new unlock code.
+  - **`src/game/systems/narrativeSystem.ts`** — ADDED the `niveau-final` key to BOTH
+    `PRE_LEVEL_NARRATIVE` and `POST_LEVEL_NARRATIVE` (A1), scene ids `niveau-final_pre`/`_post`
+    (flag A / test A2), each with `backdrop: "assets/levels/niveau-final/facade.png"` (flag B / test
+    A5, ADR-0023). The gated `final_pre` (8 lines) / `final_post` (6 lines) French copy transcribed
+    **VERBATIM** from `spec-boss-encounter-fiction.md` §4.1/§4.2 — only the id/key/backdrop strings
+    are new, zero French line changed (Q1=NO upheld: l'Éden is NOT named in dialogue). The reveal
+    line `...le Commandant.` (final_pre #4) carries the gated MUF rider image and no Commandant
+    sprite (imageless of him, as gated).
+  - **`src/game/levels/__tests__/niveauFinal.test.ts`** (NEW) — 12 tests: level-authoring
+    assertions (placement/unlock, AC1 no-hostageQte + roster weight-0, AC4 real-quota `16 !== 0`,
+    monotonic-hardest pacing, delivery ≈Vitry, AC5 value-for-value copy vs the harness), narrative
+    A1/A2/A5 + verbatim-script/reveal-beat checks for the new scenes, and the **K-5 seed-winnability**
+    driver (a competent rings+parry player clears 24 HP before the blown-window clock trips).
+- **SEED STATUS — `19991231` HOLDS (no re-pin needed).** The K-5 winnability driver, run against
+  the FULL differentiated kit live via the authored spec (two rings + parry + décor, anchor {0,-5}),
+  confirms a competent player clears with `blownWindows < maxBlownWindows 10`. The provisional pin
+  is now stage-5-verified for the mechanical winnability property; the empirical playtest
+  landability-per-ring/per-charged-window nuance stays the `game-designer` stage-5 leg, but the
+  hard "is it winnable at all" gate PASSES on `19991231` — no `+n` re-pin.
+- **VERIFY (all green):** `yarn typecheck` clean · `yarn vitest run` **861 passed / 65 files, 0
+  fail** (incl. the 12 new + the untouched `narrativeSystem`/`levelArt.consistency`/`stateMachine`/
+  `rosterAssetCoverage`/`assetManifest` suites) · `yarn lint` clean · `yarn format:check` clean.
+  **AC5 byte-diff CONFIRMED EMPTY:** `git diff` shows ZERO changed lines in
+  `src/game/systems/bossQteSystem.ts`, `src/game/types/bossQte.ts`, `src/game/systems/stateMachine.ts`,
+  and `src/hooks/**`. `levels.ts` diff is pure append (62/0) — no shipped-level/harness line touched.
+- **CROSS-LANE NOTES / flags for other lanes:**
+  - **dev-tooling-assets** — you landed the `levelArt.json` `levels[]` `niveau-final` entry
+    concurrently while I built (name `L'Éden — 31 déc. 1999` — matches my `levels.ts` exactly, the
+    id/name contract held; `levelArt.consistency.test.ts` GREEN). I did NOT touch `levelArt.json`.
+    Note: `windowGrid.rows: 1` in your entry means the pre-boss gallery pops from a single arch row
+    — confirm that reads as intended density at stage-5 playtest (not a blocker; flagging the shape).
+  - **dev-r3f-render** — the `PLAYABLE_COPY["niveau-final"]` flyer entry (crew `SPIRALE 23 · KANAL
+SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN DANCING`, etc.,
+    fiction §4.1) is YOUR lane (`src/render/ui/menu/LevelFlyer.tsx`) — I did not author it (render
+    boundary). The 4th flyer will only render once you add it; no gameplay/test blocks on it.
+  - **Backdrop asset** — the level references `assets/levels/niveau-final/facade.png` (narrative
+    backdrop + in-game facade), which the CI art pipeline generates later. No fallback code needed
+    in my lane: the path is a valid string before the PNG exists, and no vitest/asset guard requires
+    the facade PNG on disk for a new level (rosterAssetCoverage checks only rostered enemy sprites,
+    all shipped). Generation is HELD on the `POLLINATIONS_TOKEN` secret (producer's escalation).
+- **No commit/push** (per instruction). Owning-lane verify complete; ready for the quality gate.
+- **File List:**
+  - `src/game/levels/levels.ts` (MODIFIED — appended the `niveau-final` `LevelConfig`)
+  - `src/game/systems/narrativeSystem.ts` (MODIFIED — `niveau-final` pre/post scenes, gated copy verbatim)
+  - `src/game/levels/__tests__/niveauFinal.test.ts` (NEW — 12 tests: authoring + narrative + K-5 winnability)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this BUILD entry appended)
+
+## 4. BUILD (stage 4) — dev-tooling-assets (Amelia) — l'Éden levels[] block + boss sprite generator/workflow + dispatch — 2026-07-20
+
+- **claim:** the dev-tooling-assets BUILD scope cut at TECH PLAN (ADR-0053 D2/lane partition): (1)
+  the `levels[]` `niveau-final` block in `src/game/levels/levelArt.json`; (2) the missing
+  `scripts/gen-boss-sprites.mjs` + `.github/workflows/gen-boss-sprites.yml` pair for the 9-entry
+  `boss` block (already structurally landed by an earlier dev-tooling-assets pass, §"5 new gated
+  boss-block sprite JSON entries" above); (3) dispatch prep for both, plus a check on whether the
+  existing level-art CI path picks up the new block automatically.
+- **release:**
+  1. **`levels[]` niveau-final block** — appended after `vitry` (ADR-0053 D2 order). `facade`/
+     `foreground` prompt strings copied VERBATIM from the GATED
+     `docs/art-direction/prompt-drafts/niveau-final-eden.md` (lead-art FAMILY PASS, `eden_facade`/
+     `eden_foreground`/`eden_family` all PASS, this shard §"PROMPT GATE — l'Éden venue backdrop
+     family"). `windowGrid.cols = 5` pinned per the gate's [E3] count, `rows: 1` (a single row of
+     arches, not the street levels' multi-floor grid — `computeWindowSlots`/`getWindowZones` both
+     special-case `rows===1` to `ny=0.5`, so `top`/`bottom` are inert-by-construction, kept equal
+     for readability). `size` uses the shared global `sizes.facade`/`sizes.foreground` (1280×768,
+     no override). `parallax`/`ironwork` set by structural analogy to stalingrad/vitry (this venue's
+     décor is not gated content, no copy authored). **Interior venue: `sky`/`street` DROPPED from
+     `prompts`** per the gate's explicit ruling ("layer set with sky/street DROPPED for the
+     interior") — NOT included as empty/placeholder strings, genuinely absent, because the facade
+     alone fills the frame ceiling-to-floor (the "no dead sky-gap behind the boss" constraint).
+     Optional `ceiling` layer NOT added either, per the draft's own "by default this layer drops."
+     `name`/`label`: `name: "L'Éden — 31 déc. 1999"` — the narrative-designer's own documented
+     "one-field fallback… mirrors the Vitry — 94 convention" recommendation (fiction spec §4);
+     CONFIRMED byte-identical against dev-gameplay's concurrently-landed `levels.ts` entry
+     (`levelArt.consistency.test.ts`, 16/16 green) — no cross-lane drift.
+  2. **Two structural fixes this block's shape required** (both minimal, both because no level had
+     ever dropped a layer before):
+     - `src/game/levels/levelArt.ts` — `LevelArt.prompts` widened from `Record<LayerName, string>`
+       to `Partial<Record<LayerName, string>>`. Verified dead-safe: grepped the whole `src/` tree —
+       nothing reads `.prompts` at runtime (only `scripts/gen-level-art.mjs`, plain JS, reads the
+       raw JSON directly); the field exists purely as a JSON-shape assertion. `yarn typecheck`
+       confirmed green after the change (it was NOT green before — the niveau-final entry's 2-key
+       `prompts` object didn't structurally satisfy the closed 4-key `Record`).
+     - `scripts/gen-level-art.mjs` — the per-layer generation loop now skips a layer cleanly
+       (`if (level.prompts[baseLayer] === undefined) { …skip log…; continue; }`) instead of sending
+       FLUX a broken `"${undefined}, …"` prompt for a level that doesn't declare that layer. This is
+       the "mirror the structural mechanism or omit cleanly" fix — there was no existing per-level
+       layer-set mechanism to mirror, so this is the minimal guard, not a new abstraction.
+  3. **`scripts/gen-boss-sprites.mjs`** (NEW) — modeled closely on `gen-hostage-sprites.mjs`: reads
+     `boss.types` from `levelArt.json` (prompt + shared `style` tail, pinned `seed`, `asset` path,
+     per-entry `size` override defaulting to the block's 256×256), same FLUX fetch
+     (`lib/pollinations.mjs`), same black-ground cutout detour (`cutout-enemies.mjs`) + despeckle
+     sweep (`retouch-sprites.mjs`) as hostages/enemies, `--list`/`--asset`/`FORCE=1` CLI parity.
+     `--list` verified locally (no network needed): correctly resolves all 9 entries with the right
+     per-type sizes (7 figures 256×256, `lustre` 320×512 portrait, `speaker_wall` 512×320 landscape
+     — [S13]).
+  4. **`.github/workflows/gen-boss-sprites.yml`** (NEW) — modeled closely on
+     `gen-hostage-sprites.yml`: same trigger shape (`workflow_dispatch` + push-marker
+     `.github/dispatch/gen-boss-sprites`, `branches-ignore: main`, `ci(dispatch):` head-commit
+     guard per ADR-0009), same `FORCE=1` generate → solidify (`fill-sprite-holes.mjs` +
+     `--check`) → integrity gate (`check-sprite-integrity.mjs`, looped per-file since the script
+     takes one `--file` at a time — the SOFT torso-zone WARN is harmless on the 2 non-figure props,
+     HARD checks are figure-agnostic) → bounded-retry commit/push → artifact-on-failure shape.
+  5. **Dispatch gap found + closed: level-art generation had NO commit-back path at all.**
+     `preview.yml` ("Style B Preview" / "Generate art · render levels · contact sheet") DOES run
+     `gen-level-art.mjs` automatically on the next push (levelArt.json isn't under its
+     `paths-ignore`), so the niveau-final facade/foreground WOULD generate there — but that
+     workflow is deliberately decorative/artifact-only (confirmed by reading it: it uploads a
+     screenshot artifact and never `git add`s `public/assets/levels/**`). Unlike every other asset
+     family (enemies/vehicles/hostages/courier/near-fg props), level backdrops had no dedicated
+     commit-back workflow — `HARNESS.md`'s own step 5 ("commit `public/assets/levels/` +
+     `screenshots/` back to the branch") is STALE against the actual `preview.yml` (doc/code
+     drift, flagged here for `tech-writer`, not fixed in this pass — out of lane). Closed the gap
+     the idiomatic way: **`.github/workflows/gen-level-art.yml`** (NEW), mirroring the same
+     gen-*.yml commit-back pattern (dispatch marker `.github/dispatch/gen-level-art`,
+     `workflow_dispatch` with the same `regenerate` boolean `preview.yml` has, generate → cutout
+     foreground (`cutout-foreground.mjs`) → bounded-retry commit/push → artifact-on-failure).
+  6. **Dispatch markers staged (not pushed):** `.github/dispatch/gen-boss-sprites` and
+     `.github/dispatch/gen-level-art` created (real content via `date >`, not bare `touch`, per
+     ADR-0009); `.github/dispatch/README.md` table updated with both new rows (plus the 2
+     already-existing-but-undocumented `gen-hostage-sprites`/`gen-courier-sprites` marker rows,
+     noticed while editing the same table).
+- **What the next push triggers (once committed with a `ci(dispatch):`-prefixed message, per
+  ADR-0009):**
+  - `preview.yml` fires on ANY push to this branch regardless of the markers (its own trigger,
+    unrelated to dispatch) — generates the niveau-final layers ephemerally for the screenshot
+    contact sheet, does NOT persist them.
+  - The `gen-boss-sprites` marker dispatches `gen-boss-sprites.yml` → generates + commits the 9
+    `public/assets/boss/*.png` files.
+  - The `gen-level-art` marker dispatches `gen-level-art.yml` → generates + commits
+    `public/assets/levels/niveau-final/{facade,foreground}.png`.
+  - Both are HELD on the `POLLINATIONS_TOKEN` repo secret (producer's earlier escalation) —
+    confirmed SET by Bertrand 2026-07-20 per producer's AC8-release entry above, so generation
+    should fire for real on next push.
+- **Verify:**
+  - `node scripts/check-art-prompts.mjs` → PASSED, 0 errors, 12 pre-existing WARNs (courier +
+    enemies + nearForeground/bench) — unchanged, nothing new from the `levels` block.
+  - `yarn typecheck` → green.
+  - `yarn lint` → green.
+  - `yarn vitest run` → 861/861 passed, 65/65 files, including `levelArt.consistency.test.ts`
+    (16/16) and the concurrently-added `niveauFinal.test.ts` (both green at time of this check —
+    one transient failure in `niveauFinal.test.ts` was observed mid-session and traced to
+    dev-gameplay's own concurrent in-flight `narrativeSystem.ts` edit, not to anything in this
+    File List; it was green again on the next run without any action from this lane).
+  - `yarn format:check` / `npx prettier --check` on every file in this List → clean.
+  - `actionlint` not available in this sandbox; both new workflow YAMLs hand-reviewed against the
+    `gen-hostage-sprites.yml`/`preview.yml` patterns and validated parseable (`python3 -c
+    "yaml.safe_load(...)"`).
+- **Scope discipline:** did not touch `levels.ts`/`narrativeSystem.ts`/`bossQteSystem.ts`/any
+  render file (dev-gameplay's/dev-r3f-render's concurrent lanes); did not invent an anchor schema
+  (the boss block's ANCHOR SCHEMA GAP from the earlier dev-tooling-assets entry is untouched,
+  still owed to `senior-architect`); did not modify the 4 already-applied `commander_*` prompt
+  strings or any other pre-existing `boss.types`/`hostages`/`enemies`/`vehicles`/`courier`/
+  `nearForegroundArt` content.
+- **Handoff** → `senior-architect` (Winston): FYI on the `preview.yml` commit-back gap +
+  `HARNESS.md` doc drift found while checking dispatch-readiness (not this story's blocker, since
+  the new dedicated `gen-level-art.yml` closes it, but worth a `tech-writer` follow-up on the doc).
+  → `producer` (Marion): both dispatch markers are staged, ready for a `ci(dispatch):` commit on
+  the next push (not pushed by this lane, per instruction — the orchestrator drives the actual
+  commit/push).
+- **File List:**
+  - `src/game/levels/levelArt.json` (MODIFIED — new `levels[]` `niveau-final` entry, appended
+    after `vitry`; no other block touched)
+  - `src/game/levels/levelArt.ts` (MODIFIED — `LevelArt.prompts` widened to
+    `Partial<Record<LayerName, string>>`)
+  - `scripts/gen-level-art.mjs` (MODIFIED — clean per-layer skip when a level's `prompts` omits
+    that layer)
+  - `scripts/gen-boss-sprites.mjs` (NEW)
+  - `.github/workflows/gen-boss-sprites.yml` (NEW)
+  - `.github/workflows/gen-level-art.yml` (NEW)
+  - `.github/dispatch/gen-boss-sprites` (NEW marker, staged)
+  - `.github/dispatch/gen-level-art` (NEW marker, staged)
+  - `.github/dispatch/README.md` (MODIFIED — table rows added)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
