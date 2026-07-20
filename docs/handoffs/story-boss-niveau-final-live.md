@@ -1654,3 +1654,33 @@ VERDICT: PASS — prompt gate eden_ceiling (lead-art)
 VERDICT: PASS — prompt gate eden_family (lead-art)
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this l'Éden prompt-gate entry appended).
+
+---
+
+## 3. AC8 SEQUENCING GATE RELEASED — producer (Marion) — 2026-07-20
+
+- claim: ADR-0052 (story-boss-qte-differentiation) stage-6 review panel MERGE-CLEARED on `main` (PR #114 merged by Bertrand 2026-07-20); the blocking gate AC8 is now released. Dependency cascade for story-boss-niveau-final-live stage 4 BUILD unblocked: dev lanes may touch `levels.ts`/`bossQteSystem.ts` without restriction.
+- release: AC8 gate RELEASED. Story-2 `claude/yo-pmnyzr` branch is LIVE; dev-lane hand-offs below proceed immediately.
+- handoff → `dev-gameplay` (Amelia): stage 4 BUILD — level config + narrative wiring. Freed from AC8 gate; ready to cut new `niveau-final` `LevelConfig` and wire the gated `final_pre`/`final_post` scenes to the level id (per narrative-designer §2 wiring flags A/B). Build on the frozen ADR-0051/0052 contract; touch no `bossQteSystem.ts` values (all re-authored at design time by Sacha §game-designer, re-verified by Karim §gate). Scope: `levels.ts` new entry + `src/game/narrative/specifyNarrativeLine.ts` one-line scene-key substitution.
+- handoff → `dev-tooling-assets` (Victor): stage 4 BUILD + ART LANE — l'Éden backdrop generation + structure/dispatch. Receive the l'Éden family from `dev-r3f-render` (or re-patch locally if need a quicker spin — artist runway). Three slots (facade + foreground + ceiling per lead-art's stage-3 prompt-gate PASS); `dev-tooling-assets` owns the `levels[]` entry registration, `windowGrid.cols = 5` pinning, and `POLLINATIONS_TOKEN` secret gate to generation dispatch. Scope: `scripts/art-generation.mjs` (new l'Éden entry in the dispatch + the eden block structure), `src/game/levels/levelArt.json` (index registration), optional `public/adr/index.html` housekeeping if ADR-0053 routing updates (out of scope for this story's own BUILD, logged separately). POLLINATIONS_TOKEN: confirmed SET by Bertrand 2026-07-20, generation dispatch fires on next push.
+- handoff → `dev-r3f-render` (Amelia): stage 4 BUILD — render-side seams only. Per ADR-0053 Giveaway (render-lane is ZERO except for flyer copy if the ux-designer's §story-2-stage-3 flyer-words land on render-side — currently null, so render is muted). No new components, no new anchor/zoom/frame-logic; hook the generated facade at the `levels.ts` backdrop path. Scope: ZERO unless flyer.copy lands here (confirm with Tony).
+- handoff → `lead-game-designer` (Karim): stage 4 BUILD witness. Re-verify the dev lanes against Karim's gated specs (§4 stage-3 DESIGN GATE PASS) as code lands — catch any AC5/scope drift silently. Stage-5 VERIFY includes the K-5 seed re-pin (`19991231` vs harness `20260719`) on the real level's quota/timing, and the K-6 backdrop-anchor re-check once the facade lands (Vitry precedent: `x:9.9`, Sacha's spec authorizes `anchor.x` nudge up to ±0.5 once art lands, no respec needed).
+- handoff → `producer` (Marion): AC8 gate RELEASED — no further blocking on this story. Stage-4 BUILD lanes are running. Pipeline ahead: stage 5 VERIFY (k-5 seed re-verify, legibility re-verify against new l'Éden backdrop per ux-designer K-6 checklist, composite gate, perf), stage 6 REVIEW (4-reviewer panel on `niveau-final` delta only if this PR splits; if ride-along merged with story-1, architect integration-triage reads the cross-story seams), stage 7 ACCEPTANCE (pm), stage 8 MERGE (Bertrand). Flagged: story-1's follow-up blocker #5 (décor aim-honesty, HARD design gate, BLOCKS any shipped level that authors decorProp — this level will author it on Sacha's spec §2, so Karim's gate ruling MUST land before this story's verify leg-1 closes). Story-1's #3 (smoke.png downsize, landed but undocumented) noted; no impact on this story's build.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: RELEASED — AC8 sequencing gate (producer) — ADR-0052 PR #114 merged to main 2026-07-20; dev lanes touching levels.ts/bossQteSystem.ts are now unblocked. POLLINATIONS_TOKEN confirmed set by Bertrand. Story-2 BUILD lanes launched: dev-gameplay (level config + narrative wiring), dev-tooling-assets (facade generation + structure), dev-r3f-render (zero unless flyer-words), lead-game-designer (gate witness). Pipeline ahead: stage-5 verify (including K-5 seed re-verify on live level quota/timing and K-6 backdrop-anchor check once facade lands) → stage-6 review (4-reviewer if split PR, or architect integration-triage if ride-along) → stage-7 acceptance (pm) → stage-8 merge (Bertrand). Active blocker flagged: story-1 follow-up #5 (décor aim-honesty HARD gate, must land before this story's verify leg-1 closes — this level WILL author decorProp per Sacha §2 spec).
+
+## 4. BUILD (stage 4) — dev-gameplay (Amelia) + dev-tooling-assets (Victor) + dev-r3f-render (Amelia) — 2026-07-20 — LANES OPENED
+
+## [lanes running]
+
+**Status: stage-4 BUILD OPEN, 2026-07-20**
+
+Lanes initialized:
+
+- **dev-gameplay**: level config + narrative scene wiring (Amelia)
+- **dev-tooling-assets**: l'Éden backdrop generation, structure, dispatch (Victor)
+- **dev-r3f-render**: hook facade (Amelia) — ZERO scope unless flyer-words land
+
+No entries logged yet (lanes are live, work in progress). Producer will chase stage completion as lanes close and revert to the handoffs log.
