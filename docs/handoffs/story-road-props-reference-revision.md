@@ -61,8 +61,100 @@
 - VERDICT: (TBD, after review).
 - next: pm accepts.
 
+## 7. ASSET GATE — lead-art (Nico) — 2026-07-20
+
+- claim: run the ASSET GATE owed from the road-props story (the prompt-gate PASS of stage 3
+  did NOT cover the produced pixels). Inspected the 8 generated PNGs landed on
+  `claude/rue-propos-pipelines-revision-r4g52z` (CI run, commit `e98629d`, seeds 6101-6108,
+  gate-final prompts incl. the [S7] straight-backrest delta) at
+  `public/assets/nearfg/*.png`, plus the pre-rendered lit composite
+  `trafficLight_composite_v2.png` at the new tuned `lenses` anchors (vehicle y
+  0.094/0.193/0.292, ped y 0.44/0.537; vehicle green + ped red).
+- method: Read every PNG; then composited each over contrasting grounds (magenta/dark) and
+  ran a border-flood enclosed-hole + pink-residue + saturated-hue sweep (non-binding
+  mechanical pre-check, taste-overridable). Mechanical result, all 8: **0 enclosed
+  transparent holes, 0 pink/magenta residue pixels, 0.00 % saturated-hue** (strict C1
+  monochrome confirmed, incl. the trafficLight base — dead lenses, no baked colour). No
+  keyer-revealed anatomy hole in any of the flagged risk zones (bench slat gaps, scooter
+  wheels, lamppost lantern, wallace caryatid ring, streetSign plate interior — all solid).
+
+### Per-prop verdict
+
+| Prop            | Verdict            | One-line reason (bible anchor)                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| parkingMeter    | **PASS**           | Schlumberger horodateur reads: single steep rain-cap wedge top, thin pole ≪ bulky head, blank recessed screen + wide coin slot + low ticket slot + indented vent ridges. Monochrome, no holes, silhouette holds downscaled (§2 law 3, C1).                                                                                                                                                               |
+| lamppost        | **PASS**           | Col-de-cygne candélabre: fluted flared base, tapering fluted shaft, single S swan-neck arm near the top, faceted lantern with pointed cap drawn as **solid opaque panels** (lantern keys solid — 0 holes). One clean printing (§2 law 2).                                                                                                                                                                |
+| wallaceFountain | **PASS**           | Grande modèle 4-caryatide: octagonal pedestal, four figures fused into one closed silhouette (inter-figure gaps solid, 0 holes), dome with small rounded bumps, hourglass profile pinched-base/wide-mid/tapered-dome. Reads squat & lower than the lamp.                                                                                                                                                 |
+| trafficLight    | **PASS-with-note** | Casquette tunnel-hoods jut sideways (road-facing profile cue) + ped head face-on — two heads, two readings, NOT the flat face-on Bertrand DROPPED (board-traffic-light). C1 clean (satPct 0). **Note:** vehicle lenses read as partial discs tucked under the deep visors (a 3/4 read) rather than [S4]'s literal "edge-on narrow dark slivers" — see composite gate + escalation below.                 |
+| bollard         | **PASS**           | Ball-top potelet: smooth unbroken shaft, slight flared foot, single rounded cast-iron ball cap, squat/low. Simplest silhouette in the set, reads cleanly at its ~60-90 px game size (smallest prop). Ball specular dot is a painted value highlight, not a glow.                                                                                                                                         |
+| scooter         | **PASS-with-note** | Plastic-fairing scooter — step-through floorboard, front leg-shield, round headlamp, single mirror stalk, **bare empty rear rack / no top-box → AC6 satisfied**, does NOT read as the interactive delivery moto. **Note:** carries a **baked ground/contact shadow** under the wheels — the only prop in the set with a baked ground, an off-family tell vs §2 law 2 ("same ground"). Retouch fix below. |
+| bench           | **PASS**           | Davioud straight-back bench — the **[S7] delta LANDED**: backrest is **upright/vertical, not reclined**. Flush horizontal slats (no daylight gaps, 0 holes), heavy floral-scrollwork cast-iron end frames bulkier than the slats, resting on pavement, no armrest dividers. Widest silhouette, reads long-and-low.                                                                                       |
+| streetSign      | **PASS**           | Landscape blank plate, bold single keyline border, one slender post ≪ plate on a splayed foot, single flat plane (not the barred US double-post). Face blank (no baked text). Plate interior solid opaque (0 holes), monochrome. Carries no neon → will not falsely read as interactive (loi du glow intact).                                                                                            |
+
+### Composite gate (Gate 4) — trafficLight lit lenses
+
+- **PASS.** On `trafficLight_composite_v2.png`: **green sits on the bottom vehicle lens**
+  (y≈0.29, the "go" position) and **red on the top pedestrian window** (y≈0.44, the
+  standing-man position) — both on the correct windows, aligned to the new tuned anchors.
+- **« Un halo est un dégradé, jamais un aplat » (§2.1): SATISFIED.** Both the green and red
+  halos are soft radial dégradés falling off to zero at the outer margin — no binary-alpha
+  aplat, no hard-edged decal. The only added hue is the two lit lenses + their bloom; the
+  B&W housing stays neutral.
+- This composite is exactly why the trafficLight PASS-with-note (3/4 vehicle lens vs strict
+  edge-on sliver) is the **right** call, not a defect: a pure edge-on lens sliver could not
+  present a face for the diegetic green dot to land on. The delivered 3/4 lens (partial disc
+  under a deep jutting hood) keeps the hooded road-side profile read AND makes the lit-lens
+  state legible. The board's "lens faces not visible" line predates the committed render-side
+  lit-lens approach (board §"Note for concept-artist", option (a)); the two are in tension.
+
+### Escalation (board ↔ delivered tension — Bertrand, tie-breaker)
+
+- Bertrand CURATED `board-traffic-light.md` on the explicit point that the vehicle head must
+  be **strict profile, lens faces NOT visible** (he DROPPED the MSR25 fiche _because_ its
+  vehicle heads were face-on). The delivered sprite honours the load-bearing half (hoods jut
+  sideways, two heads read distinctly) but shows the vehicle lens faces as partial discs so
+  the render-side green/red lit-lens composite can read. I am **PASSing** it because the
+  deviation serves the diegetic composite and readability and is NOT the flat face-on he
+  rejected — but flagging the board-text ↔ shipped-art contradiction for Bertrand's ruling.
+  No regen requested on my authority; if he wants literal edge-on slivers, that reopens the
+  lit-lens composite design (Gate 4), not just this sprite.
+
+### Fixes (prefer retouch/render-side over seed bump — a seed bump swaps reviewed art)
+
+- **scooter (baked ground shadow):** cheapest fix is a **scripted retouch** to erase/crop the
+  baked contact-shadow band beneath the wheels (or mask it render-side), restoring "same
+  ground" family parity with the other 7 props — **not** a seed bump (which would re-roll the
+  whole reviewed, AC6-passing sprite). Non-blocking for merge; log as a follow-up retouch.
+
+### PROMOTE (ADR-0043 heroes)
+
+- **None recorded.** `nearForegroundArt` is not a wired hero family, and PROMOTE is recorded
+  only for **humans**, not machine-wired props — all 8 here are set-dressing props. Craft note
+  only (not a PROMOTE): lamppost and wallaceFountain are the two strongest renders of the set.
+
+### VERDICT
+
+- **ASSET GATE: PASS — 8/8 usable, 0 FAIL, 0 regen required.** 6 clean PASS (parkingMeter,
+  lamppost, wallaceFountain, bollard, bench, streetSign) + 2 PASS-with-note (trafficLight —
+  board↔render tension escalated to Bertrand, no rework; scooter — baked shadow, follow-up
+  retouch). **Composite gate (Gate 4): PASS** (correct windows, halo dégradé to zero, §2.1
+  clean). The [S7] straight-backrest delta is correctly reflected in the bench sprite.
+- next: pm/product acceptance; dev-tooling-assets to schedule the scooter shadow retouch as a
+  follow-up; Bertrand's ruling on the trafficLight profile-vs-lit-lens tension when convenient.
+
 ## Notes
 
 - **Lane / file exclusion:** Each of the 7 hunts (ray's work) writes exactly one `board-<kind>.md` file; no other lane reads or writes any of the 7 hunt files. Concept-artist reads all 7 boards + the pre-CURATED traffic-light board for the delta review; lead-art reads the delta report. Dev-tooling-assets reads the lead-art verdict and applies only approved deltas to the two target files (`levelArt.json`, `docs/art/prompts-road-props.md`).
 - **Trafficlight board:** pre-CURATED by Bertrand 2026-07-18, in use in the prompt already (ADR-0043 ADR-0044). This story does NOT re-hunt or re-curate it; concept-artist uses it as reference for consistency check against the 7 new hunts' direction.
 - **Precedent:** The trafficLight hunt model (Ray's board, then Bertrand's curation verdicts, then lead-art integration) is the blueprint for the 7-kind relay here.
+
+## Follow-up stories opened (pm)
+
+- `_bmad-output/planning-artifacts/story-lamppost-lantern-glow.md` — Bertrand-directed
+  night glow/halo on the near-foreground lamppost lantern (render-side, second C1
+  exception after trafficLight); needs design loop + gpu-specialist perf verdict +
+  lead-art composite gate before build.
+- `_bmad-output/planning-artifacts/story-far-side-street-props.md` — place the saved
+  `bench_front`/`parkingMeter_front` sprites on the camera-side kerb (new render
+  placement layer + data model); central risk is occlusion of gameplay-critical
+  elements, gated by the design loop before any implementation.
