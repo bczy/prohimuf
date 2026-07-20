@@ -355,22 +355,25 @@ decision above:
 
 ### Spec
 
-- **First-ever-session auto-focus (not auto-navigate).** Define "first-ever session"
-  precisely and cheaply: no `muf_progress` key AND no `muf_scores_*` key exists in
-  `localStorage` (i.e., this device has never unlocked a second level nor recorded a score —
-  `muf_progress` defaulting to `{"belliard"}` unlocked doesn't disqualify this, since that's
-  the unconditional default, not evidence of play). On that condition, when `NIVEAUX` first
-  mounts, keyboard focus lands on the **tutorial flyer** (index 0) instead of nowhere/the
-  tab — same marker-circle-focus mechanism already used everywhere, no new visual language.
-  This is *focus*, not *navigation*: nothing plays, nothing advances, the player still
-  chooses. Does not affect the <10 s budget (focus placement has zero time cost).
+- **First-ever-session detection — one dedicated flag (gate ruling Q7, 2026-07-20).** Both the
+  auto-focus AND the visual nudge below key off a **single** `localStorage` flag,
+  `muf_seen_tutorial_nudge`: absent ⇒ first-ever visit; set on first `NIVEAUX` mount. This
+  supersedes the earlier compound `no muf_progress AND no muf_scores_*` inference (KISS §guidelines:
+  one explicit flag beats a fragile two-key inference, and it sidesteps the `muf_progress`
+  default-unlock caveat entirely). The nudge already needs a "seen" flag to be one-time, so this
+  costs zero extra keys.
+- **First-ever-session auto-focus (not auto-navigate).** While `muf_seen_tutorial_nudge` is
+  absent, when `NIVEAUX` first mounts keyboard focus lands on the **tutorial flyer** (index 0)
+  instead of nowhere/the tab — same marker-circle-focus mechanism already used everywhere, no
+  new visual language. This is *focus*, not *navigation*: nothing plays, nothing advances, the
+  player still chooses. Does not affect the <10 s budget (focus placement has zero time cost).
 - **A one-time visual nudge, slot only (style = `lead-art`).** On that same first-ever-visit
-  condition, a small hand-drawn annotation (e.g. an arrow / "COMMENCE ICI" scrawl in the
-  `FONT.hand` felt-tip register already reserved for annotations) may sit near the tutorial
-  flyer. Persisted as "seen" after the first NIVEAUX visit (new `localStorage` flag, e.g.
-  `muf_seen_tutorial_hint`) so it never nags a returning player. **I spec that this slot
-  exists and when it appears/disappears — the mark itself, exact copy, and precise placement
-  are `lead-art`'s and `narrative-designer`'s calls respectively.**
+  condition (`muf_seen_tutorial_nudge` absent), a small hand-drawn annotation (e.g. an arrow /
+  "COMMENCE ICI" scrawl in the `FONT.hand` felt-tip register already reserved for annotations)
+  may sit near the tutorial flyer. The flag is set on the first `NIVEAUX` visit so it never nags
+  a returning player. **I spec that this slot exists and when it appears/disappears — the mark
+  itself, exact copy, and precise placement are `lead-art`'s and `narrative-designer`'s calls
+  respectively.**
 - **Rejected alternative — forcing the tutorial before the first playable level.** Explicitly
   rejected: it would insert a mandatory screen ahead of the player's own choice, breaking
   the <10 s rule's spirit for anyone who already knows the genre, and contradicts the
@@ -378,10 +381,12 @@ decision above:
 
 ### Acceptance criteria
 
-- [ ] On a `localStorage`-cleared device, opening `MENU → NIVEAUX` for the first time places
-      keyboard focus on the tutorial flyer, not the tab strip.
-- [ ] On any subsequent visit (same device), focus behavior is unchanged from today (lands
-      on the tab strip / wherever the roving index already was) — the nudge is one-time.
+- [ ] On a `localStorage`-cleared device (`muf_seen_tutorial_nudge` absent), opening
+      `MENU → NIVEAUX` for the first time places keyboard focus on the tutorial flyer, not the
+      tab strip.
+- [ ] On any subsequent visit (`muf_seen_tutorial_nudge` set), focus behavior is unchanged from
+      today (lands on the tab strip / wherever the roving index already was) — the nudge is
+      one-time.
 - [ ] The tutorial flyer's `Passer`/`TERMINER` paths are unaffected — this section changes
       discoverability only, never the tutorial's own frozen behavior.
 
@@ -446,7 +451,12 @@ This would achieve full mobile parity but risks squeezing the tab hit targets be
 the smallest tested width (390px) and reopens a budget that already went through its own
 design gate — I am not overriding that gate unilaterally.
 
-**This tension is an open question for the design gate (§6), not silently resolved here.**
+**GATE RULING 2026-07-20 (Q3): Option A is CHOSEN.** No new chrome row in short-landscape;
+PRESSION stays reachable via the OPTIONS tab on that one sub-class (unchanged one-tap cost, a
+documented non-regression), promoted header everywhere else. Rationale: Option B risks the
+tab hit targets falling below the 44px touch floor at 390px (UX §3.4 non-negotiable) and
+reopens the already-gated `pregame-landscape-ux.md` chrome budget (30%→12%, its headline fix) —
+neither is justified for full parity on the narrowest slice.
 
 ### Accessibility
 
@@ -473,31 +483,31 @@ effectively a missing one.
 
 ---
 
-## 6. Open questions for the `lead-game-designer` design gate
+## 6. Open questions for the `lead-game-designer` design gate — RESOLVED 2026-07-20
 
-1. **§5 short-landscape PRESSION placement — Option A vs Option B.** I recommend A
-   (OPTIONS-only on the narrow phone-landscape sub-class, promoted header everywhere else)
-   to protect the already-gated `pregame-landscape-ux.md` chrome budget. Karim's call if B
-   (compact inline cluster) is worth reopening that budget for full parity.
-2. **§2 NAME_ENTRY exact position relative to `NARRATIVE_POST`.** I placed it AFTER any
-   scripted post-level narrative and BEFORE `EndScreen`, so it never interrupts a fiction
-   beat and reads as "the paper goes to print after the story's told." Confirm this doesn't
-   fight a story beat `narrative-designer` has planned for a specific level's post-narrative.
-3. **§2 fallback anonymous name string** — copy slot only (`[FALLBACK_NAME]`), word choice is
-   `narrative-designer`'s.
-4. **§3 component boundary (embed vs extract) for the OPTIONS/PAUSE consolidation** — I fixed
-   the outcome (identical labels/controls/a11y in both places); whether `PauseScreen` embeds
-   `OptionsColophon` directly or both consume a new shared sub-component is an architecture
-   call, flagged to `senior-architect`.
-5. **§3 `Prefs.reducedMotion` default value** — I specced `false` (matches "never weaker than
-   the OS setting" reasoning: OFF still respects OS `prefers-reduced-motion`). Confirm this
-   reads correctly rather than defaulting `true` for new players, which would mute the
-   Paper-Mario unfold/motion identity by default for everyone (guidelines §5's "Paper Mario
-   Rules" are load-bearing visual identity, not just flourish) — I believe `false` is right
-   but flagging since it's an accessibility-vs-identity tradeoff.
-6. **§4 first-ever-session detection heuristic** (`no muf_progress AND no muf_scores_*`) —
-   confirm this is precise enough, or if a dedicated flag (`muf_has_launched`) is preferred
-   for clarity even though it's one more localStorage key than strictly needed.
+Full rationale in `docs/game-design/design-gate-menus-ui-completion.md`.
+
+1. **§5 short-landscape PRESSION placement — Option A vs Option B.** **RESOLVED: Option A** —
+   OPTIONS-only on short-landscape, promoted header everywhere else (protects the gated
+   `pregame-landscape-ux.md` chrome budget + the 44px touch floor).
+2. **§2 NAME_ENTRY position relative to `NARRATIVE_POST`.** **RATIFIED as specced** — AFTER any
+   scripted post-level narrative, BEFORE `EndScreen`; new `NAME_ENTRY` `AppPhase`, save deferred
+   to its resolution, unlock unaffected. `narrative-designer` to confirm no per-level
+   post-narrative beat is displaced (routine hand-off, not a gate blocker).
+3. **§2 fallback anonymous name string** — copy slot, `narrative-designer`'s call (unchanged).
+4. **§3 component boundary (embed vs extract).** **CONFIRMED as an outcome contract** (identical
+   labels/controls/a11y in both places); embed-vs-extract is `senior-architect`'s call.
+5. **§3 `Prefs.reducedMotion` default value + semantics.** **RATIFIED: default `false`.** Semantics
+   ruled to be a **live union** — effective reduced motion = `prefs.reducedMotion || OS-query`,
+   computed as ONE shared derived signal read by every consumer (DRY). This is the only model
+   that keeps the invariant "the toggle can strengthen but NEVER weaken a live OS `reduce`."
+   ⚠️ This is DIFFERENT from `story-timer-duel-telegraph.md` AC13's "seed-once-from-OS, never
+   re-polled" model, which CAN end up weaker than a live OS setting — that AC must be reconciled
+   to the union model before either story ships (routed to `game-designer` + `senior-architect`;
+   see gate doc Q4/Q5).
+6. **§4 first-ever-session detection heuristic.** **RESOLVED: single dedicated flag**
+   `muf_seen_tutorial_nudge` (supersedes the compound `no muf_progress AND no muf_scores_*`
+   inference; KISS, and the nudge already needs a seen-flag). §4 updated above.
 
 ---
 

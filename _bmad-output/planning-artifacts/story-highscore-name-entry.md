@@ -31,8 +31,12 @@ missing its one interactive step.
   `localStorage` key. Legacy entries without a name must still load and render (empty/blank
   name, not a crash — mirrors the existing `isValidEntry` tolerant-parse pattern).
 - A new, skippable entry step, reached only when `isHighScore` is true at the moment the
-  score is about to save. Single short text input (bounded length — 3-8 chars, exact bound a
-  design-loop call), fanzine-styled (reuses `print/` tokens/primitives, not a bespoke look).
+  score is about to save. Single short text input (**max 16 chars, no minimum** — gate ruling
+  2026-07-20, reuses the already-gated `[CREW_NAME]` budget so the byline shares the visual
+  register of the crew names on the flyers; an empty field submits the anonymous fallback),
+  fanzine-styled (reuses `print/` tokens/primitives, not a bespoke look). Form ratified by the
+  gate: a **native `<input>` typewriter byline on the PARIS-MINUIT UNE**, not a 3-initial
+  arcade wheel (gate Q1, see `docs/game-design/design-gate-menus-ui-completion.md`).
 - Wiring: `App.tsx` must not call `saveScore` before the name is captured (today it saves
   immediately on the `GAME_OVER`/`LEVEL_COMPLETE` effect) — the entry step, when triggered,
   gates the save; when not a high score, behavior is byte-identical to today (auto-save,
@@ -50,7 +54,7 @@ missing its one interactive step.
 | AC3 | The player types a name and confirms | The score saves | `ScoreEntry.name` (or confirmed field name) persists in `localStorage` under the existing `muf_scores_<levelId>` key; `ScoresUne.tsx`'s classement renders that name in the row. |
 | AC4 | The player skips/times out the entry step | The score saves | The score still persists (never dropped), with a fanzine-voiced anonymous placeholder shown in the leaderboard row — never a raw blank cell, never a crash. |
 | AC5 | A `muf_scores_<levelId>` blob written before this story ships (no `name` field) | `ScoresUne.tsx` loads it | It still renders without crashing (existing `isValidEntry` tolerant-parse pattern extended, not replaced) — the anonymous placeholder shows for legacy entries missing a name. |
-| AC6 | The name-entry input | The player types | Input is bounded to the design-loop-confirmed length (3-8 chars is the PM's starting bound; exact figure is a design call) and cannot submit control characters/HTML that would break the leaderboard row's plain-text rendering (trim + length-clamp is enough — no rich text, no HTML). |
+| AC6 | The name-entry input | The player types | Input is clamped to **≤16 chars (gate ruling 2026-07-20, matching the gated `[CREW_NAME]` budget), no minimum** — an empty/whitespace-only field submits the anonymous fallback (AC4). It cannot submit control characters/HTML that would break the leaderboard row's plain-text rendering (trim + length-clamp is enough — no rich text, no HTML). |
 | AC7 | Keyboard-only or touch-only player reaches the entry step | They interact | The input and its confirm/skip actions are reachable and operable without a mouse (tab order / touch target ≥44×44px), consistent with the roving-focus pattern already used across `print/` surfaces (`useRovingIndex`, `SelectableListItem`). |
 | AC8 | The build | Reviewed against PROJECT_GUIDELINES §5 | Total added-screen time stays inside the "3-5 min mission, <10s launch-to-play, one-action skip" envelope — the entry step must not become a mandatory multi-field form. |
 
@@ -85,5 +89,8 @@ missing its one interactive step.
       and its wiring live in `src/render`/bridge only.
 - [ ] Browser-verified: a high-score run shows the entry step; a non-high-score run doesn't;
       the leaderboard shows the entered name; a legacy (pre-story) score blob still renders.
-- [ ] Design-loop sign-off on signature format (initials vs fanzine tag) and trigger point
-      (epic open questions 1–2) before dev starts.
+- [x] Design-loop sign-off on signature format and trigger point (epic open questions 1–2) —
+      **GATED 2026-07-20** (`design-gate-menus-ui-completion.md`): signature = native `<input>`
+      typewriter byline on the PARIS-MINUIT UNE (not a 3-initial wheel); trigger = a new
+      `NAME_ENTRY` `AppPhase`, inserted **after** `NARRATIVE_POST` (if scripted) and **before**
+      `EndScreen`, save deferred to its resolution, next-level unlock unaffected.
