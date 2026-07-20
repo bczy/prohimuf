@@ -531,3 +531,176 @@ VERDICT: PASS — design gate ux/spec-niveau-final-ux (lead-game-designer)
   (the 2 deviations above + style-migration timing + the render-side anchors dev-tooling owns:
   `muzzle` on exposed, `parryPoint` on parry_windup, VITAL/LIMB rings on weakpoint).
 - Not a `VERDICT:` line — prompts remain OWED and un-gated; this is the concept-artist draft, gated next.
+
+---
+
+## PRE-PROD PASS — game-graphist (Serge) — 2026-07-20 · boss-commander 9-asset prompt family
+
+Read: `docs/art-direction/prompt-drafts/boss-commander.md` (full redraft), the boss block landed in
+`src/game/levels/levelArt.json` (4 applied prompts, shared `size` 256×256 for the whole block),
+`src/render/scene/BossQteSprite.tsx` (`BOSS_W`/`BOSS_H` = 2.2 world units, a touch bigger than the
+hostage captor's 2.0 — this is a cinematic zoom-and-hold tableau, NOT the small window-pop size of
+a mook; still, a generated 256px canvas gets downscaled/held at whatever the zoom settles to, so
+interior linework stays ornamental and silhouette/value stays load-bearing exactly as for every
+other set), and `docs/art-direction.md` §2 laws 1-3 (keying discipline, the hole-audit trap named
+explicitly: "dark clothing eaten by the near-black key").
+
+**Structural note before the per-entry pass:** every one of the 7 figures repeats "dark overcoat" /
+"long knee-length dark overcoat" in the subject clause while the shared `style` tail asserts "light
+grey white and pale neon tones figure." That is a direct value contradiction FLUX will resolve
+unpredictably — and it is _exactly_ the dark-clothing-vs-near-black-key trap the hole-audit exists
+for. None of the 7 subject clauses currently steers the coat's rendered value away from key-black on
+its own; they all lean on the generic tail alone. This is [S1], flagged once, applying to all 7.
+
+### READABILITY AT GAME SIZE + KEYING SOUNDNESS — per entry
+
+**`commander_shielded`** (APPLIED) — closed stance, coat shut, sidearm holstered: a closed, blocky
+silhouette that reads fine at small size; brassard/radio are minor accent detail, not the primary
+read, so they can mush without breaking the pose. PASS-WITH-CORRECTION: apply [S1].
+
+**`commander_exposed`** (APPLIED) — [S2] "the long coat flaring open" opens the torso interior. If
+the flap's underside/lining isn't explicitly value-locked lighter than the black backdrop, an open
+dark flap against a near-black ground is the torso-sized version of the courier's keyed-through hip:
+a large interior wedge the keyer reads as background. Fix: add a lining/value clause ("the coat's
+open lining a pale contrasting grey") so the flap reads as a value-separated shape, not a hole. The
+muzzle-flash + arms-thrust-forward envelope itself reads well at game size (wide, open, bright
+accent) — PASS-WITH-CORRECTION: [S1] + [S2].
+
+**`commander_hit`** (APPLIED) — [S4] the two RULING-mandated defeat tells ("brassard torn loose and
+flapping," "radio knocked spinning off its clip") are small, dynamic, and detached-by-design. At
+downscale they risk either mushing into an unreadable blur or reading as a disconnected floating
+fleck rather than "torn from the sleeve." Recommend keeping a visible tether/strap stroke linking
+each tell back to the body so it reads as "coming loose FROM him," not stray debris (also keeps the
+defect-sweep from mis-flagging it as a floating-object anatomy break). PASS-WITH-CORRECTION: [S1] +
+[S4].
+
+**`commander_down`** (APPLIED) — [S3] highest hole-risk of the 4 applied: the coat "splayed out
+around him" flat on the ground is the single largest continuous dark mass in the set, lying directly
+against the black key ground with no vertical edge to catch a rim. This is the pose whose entire job
+is "a readable heap on the floor" — if the coat's value sits too close to key-black it can get
+swallowed almost whole, defeating the pose's one purpose. Fix: an explicit rim/value clause — coat
+fabric a mid-grey clearly lighter than the pitch-black ground, silhouette traced by a thin pale
+contour. PASS-WITH-CORRECTION: [S1] + [S3], this one is the priority fix of the 4 applied.
+
+**`commander_weakpoint`** (READY) — [S5] structurally sound: the bare head naturally value-separates
+from the coat (skin/pale vs. coat mass), which reinforces the two-band VITAL/LIMB read Estelle
+wants without extra clauses — good bet, no readability fix needed on the band-separation strategy
+itself. Same [S1] tail-vs-coat contradiction applies here too, and it matters MORE on this entry
+because the render-side rings will sit directly over these values — an ambiguous coat value under
+the LIMB ring is worse than under a static pose. PASS-WITH-CORRECTION: [S1].
+
+**`commander_parry_windup`** (READY) — one of the two highest-risk reads per brief. [S6] The
+structural bet (arms drawn in tight/hunched/compact vs. exposed's arms-extended/lunging/open) IS a
+genuine silhouette-envelope difference that should survive downscale — good. But the windup prompt
+never states the coat's silhouette state. If FLUX defaults it toward the same "flaring open" look
+it associates with the neighbouring `overcoat`+`firing` vocabulary in `exposed`, the two poses could
+converge toward a similar open envelope and kill exactly the sub-half-second contrast lever 3 needs.
+Fix: add "the long coat still hanging closed around him" to lock the silhouette contrast IN the
+prompt, not just hope the pose carries it. PASS-WITH-CORRECTION: [S1] + [S6], high priority — this
+is mechanic-critical (§3-C "a shared tell = a bullshit whiff").
+
+**`commander_finisher`** (READY) — the other highest-risk read per brief. [S7] Two compounding
+risks on the reaching arm: (a) ANATOMY — a raised, bent, reaching arm toward a small object is the
+textbook FLUX "limb not rooted at the joint" failure the defect sweep exists for; (b) KEYING — a
+thin bent arm silhouette against black backdrop can partially vanish at scale, and any enclosed gap
+between the reaching hand and the radio is precisely the "between fingers" hole-class the sweep
+flags as a suspected generation hole, not background. Fix: add "the coat sleeve fully covering the
+reaching arm from shoulder to wrist" (keeps the limb visually thick and continuous, cuts both the
+anatomy-break risk and the thin-limb vanish risk) and "the hand closed around the radio" (removes
+the ambiguous finger-gap). This entry gets the MANDATORY post-generation anatomy sweep at my
+TECHNICAL pass regardless of this fix — flagging now so it isn't a surprise re-roll later (regen
+still counts against the 2-batches/cycle cap). PASS-WITH-CORRECTION: [S1] + [S7], high priority.
+
+### PROPS — the transparency/fringe trap (lustre) and the large-flat-mass trap (speaker_wall)
+
+**`lustre`** — [S8] "strings of faceted glass droplets" is the classic transparency/fringe trap
+named in the brief: if FLUX renders true shadowed/dark facets, those interior dark values fall into
+the near-black key range, and against the solid black background the keyer treats them as
+background — punching accidental gaps indistinguishable from the ONE intentional "drop broken off"
+damage read, and undermining the whole asymmetric-damage story. Fix: replace/augment with a solid
+positive value clause — "each crystal drop a solid pale grey-white faceted shape with a bright rim
+highlight" — so no facet sits at a keyable dark value. [S9] Separately: "one drop broken off on one
+side" may be too subtle a silhouette delta to register once downscaled from the 256px canvas to
+in-game size; recommend widening the notch (e.g., two adjacent drops missing together) so the
+asymmetric-damage read survives at game size, not just at full res. Interior tier/ring linework and
+the "suggested radiating arms" are correctly treated as ornamental in the draft (the read leans on
+cone silhouette + top-chain + tilt + dust) — that strategy is sound, PASS-AS-IS on that point.
+Overall: PASS-WITH-CORRECTION: [S8] + [S9].
+
+**`speaker_wall`** — [S10] the largest continuous-dark-area risk in the whole 9-entry set: "a rough
+pyramid of mismatched plywood bass-bin boxes and flared horn cabinets wedged together" filling most
+of the frame, sitting on the ground plane at the very base of a black-background canvas. In this
+grey/ink-leaning house style, "raw plywood" tends to render mid-to-dark grey, and a mass this large
+touching the key-black ground on multiple edges is a bigger hole risk than even `commander_down`'s
+coat. Fix: explicit value + contour clause — "each cabinet face a flat pale-to-mid grey panel with
+bold black contour lines separating adjoining boxes, the whole stack clearly lighter than the pure
+black backdrop." [S11] "thick cables snaking down" as dark linework against a dark backdrop is the
+inverse problem — a thin near-black line on a near-black ground can vanish outright rather than hole
+through, losing the teknival tell entirely. Fix: "cables shown as a pale grey line, gaffer tape a
+lighter grey wrap." [S12] the sprayed stencil spiral crew mark is fine, textured detail that will
+mush to a soft smudge at game size — but it isn't load-bearing (BUILT-vs-HUNG is carried by the
+pyramid/pallet-rig shape, not the mark), so PASS-AS-IS on that specific clause; just don't expect the
+spiral to read past a texture accent. Overall: PASS-WITH-CORRECTION: [S10] + [S11].
+
+### SET MECHANICS — canvas size across the 9
+
+[S13] The whole `boss` block currently shares ONE `size` (256×256, square) for all types. That's a
+sound default for the 7 humanoid figures (roughly square bounding box). It is the WRONG default for
+the 2 props once dev-tooling wires them in: `lustre` is a tall hanging silhouette (chain-to-drops,
+naturally portrait) and `speaker_wall` is a wide ground-built pyramid (naturally landscape or at
+least much wider than tall). Forcing both into the shared square canvas either shrinks the actual
+silhouette inside a mostly-empty frame (wasted resolution — worse readability at final game size) or
+invites FLUX to crop/distort to fill the square. Precedent already exists in this same file for doing
+it right: `nearForegroundArt.types` assigns a DIFFERENT `size`/aspect per kind (`lamppost` 256×512
+portrait, `trafficLight` 225×512, etc.), pinned against the render-side aspect by its own consistency
+test. Recommend dev-tooling assign per-prop canvas sizes matching natural aspect for `lustre`
+(portrait) and `speaker_wall` (landscape or square-but-wide) rather than inheriting the figure
+block's square default — a structural call for dev-tooling, flagged here because it's a readability-
+at-game-size concern I own.
+
+### Maud's two flagged deviations — my call
+
+1. **POLICE lettering rendered as a reflective shape, not glyphs — CONFIRM, no reservation.** Text is
+   FLUX-schnell's single weakest capability, weaker even than anatomy; at 256px it garbles into
+   noise, and noise-as-generation-defect is an automatic set FAIL under §2 law 3 regardless of
+   in-game scale. The brassard-as-luminous-shape carries the "flic en civil" read by silhouette,
+   which is exactly what survives downscale. Full agreement with Maud's production reasoning.
+
+2. **Shared style tail keeps "figure"/"tones figure" wording for the 2 props — CONFIRM as workable,
+   with one conditional flag.** No hard technical grounds to force a fork now; forking a prop-only
+   tail would cost Family consistency for a wording risk that is probabilistic, not certain. But
+   "figure" recurring twice in the tail is a non-trivial diffusion-prior token, and on two
+   prop-only generations (thinner training signal than a repeated humanoid template) there is a
+   real, if modest, risk FLUX bleeds an incidental human silhouette into either prop. I'm folding
+   this into my TECHNICAL-pass defect sweep as an explicit prop-specific check: if EITHER prop's
+   first-batch generation shows any incidental human silhouette/limb, that is the trigger for
+   Maud's own flagged fallback (roster-wide "figure" → "figure or object" tail amendment) — not a
+   local prop fork, and not something to pre-empt before seeing a generation.
+
+### Verdict summary
+
+| Entry                    | Verdict                                                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| `commander_shielded`     | PASS-WITH-CORRECTION — [S1]                                          |
+| `commander_exposed`      | PASS-WITH-CORRECTION — [S1] [S2]                                     |
+| `commander_hit`          | PASS-WITH-CORRECTION — [S1] [S4]                                     |
+| `commander_down`         | PASS-WITH-CORRECTION — [S1] [S3] (priority)                          |
+| `commander_weakpoint`    | PASS-WITH-CORRECTION — [S1]                                          |
+| `commander_parry_windup` | PASS-WITH-CORRECTION — [S1] [S6] (priority, mechanic-critical)       |
+| `commander_finisher`     | PASS-WITH-CORRECTION — [S1] [S7] (priority, anatomy+keying compound) |
+| `lustre`                 | PASS-WITH-CORRECTION — [S8] [S9]                                     |
+| `speaker_wall`           | PASS-WITH-CORRECTION — [S10] [S11]                                   |
+
+No entry is a straight PASS-AS-IS end to end (the [S1] coat-value gap runs through all 7 figures),
+but several individual strategies within entries ARE sound as drafted and called out above as
+PASS-AS-IS on that specific point (weakpoint's band-separation-by-bare-head strategy, parry_windup's
+pose-envelope strategy, down's motionless-heap concept, speaker_wall's pochoir clause, lustre's cone-
+silhouette + top-chain strategy). None of my corrections change subject/silhouette intent — they are
+value-language and continuity clauses Maud can fold into the existing strings without touching the
+poses themselves. Route back to `concept-artist` (Maud) for integration, then `lead-art` (Nico)
+PROMPT GATE.
+
+Not a `VERDICT:` line (PRE-PROD annotations only, per the game-graphist role — the gate verdict is
+Nico's).
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PRE-PROD PASS appended).
