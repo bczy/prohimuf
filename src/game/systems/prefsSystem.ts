@@ -4,6 +4,10 @@ export interface Prefs {
   readonly lives: number; // 1–5
   readonly difficulty: "easy" | "normal" | "hard";
   readonly crt: boolean;
+  // Player's own reduced-motion toggle. Default false (ADR-0052): the OS
+  // `prefers-reduced-motion` signal is unioned LIVE at the render/bridge edge —
+  // never seeded into or stored by this pure reducer.
+  readonly reducedMotion: boolean;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -12,6 +16,7 @@ export const DEFAULT_PREFS: Prefs = {
   lives: 3,
   difficulty: "normal",
   crt: true,
+  reducedMotion: false,
 };
 
 const STORAGE_KEY = "muf_prefs";
@@ -29,6 +34,10 @@ export function loadPrefs(): Prefs {
         ? parsed.difficulty
         : DEFAULT_PREFS.difficulty,
       crt: typeof parsed.crt === "boolean" ? parsed.crt : DEFAULT_PREFS.crt,
+      reducedMotion:
+        typeof parsed.reducedMotion === "boolean"
+          ? parsed.reducedMotion
+          : DEFAULT_PREFS.reducedMotion,
     };
   } catch {
     return DEFAULT_PREFS;

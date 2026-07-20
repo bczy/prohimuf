@@ -71,4 +71,47 @@ describe("loadPrefs", () => {
     expect(loaded.musicVolume).toBe(DEFAULT_PREFS.musicVolume);
     expect(loaded.crt).toBe(false);
   });
+
+  it("reducedMotion par défaut à false (ADR-0052 — jamais seed depuis l'OS)", () => {
+    expect(DEFAULT_PREFS.reducedMotion).toBe(false);
+    expect(loadPrefs().reducedMotion).toBe(false);
+  });
+
+  it("round-trip reducedMotion via savePrefs/loadPrefs", () => {
+    const prefs = { ...DEFAULT_PREFS, reducedMotion: true };
+    savePrefs(prefs);
+    expect(loadPrefs()).toEqual(prefs);
+    expect(loadPrefs().reducedMotion).toBe(true);
+  });
+
+  it("migration blob legacy sans reducedMotion → default false (pas de seed OS)", () => {
+    localStorage.setItem(
+      "muf_prefs",
+      JSON.stringify({
+        soundVolume: 0.7,
+        musicVolume: 0.5,
+        lives: 3,
+        difficulty: "normal",
+        crt: true,
+      }),
+    );
+    expect(loadPrefs().reducedMotion).toBe(false);
+  });
+
+  it("reducedMotion non-booléen → default false", () => {
+    localStorage.setItem("muf_prefs", JSON.stringify({ ...DEFAULT_PREFS, reducedMotion: "yes" }));
+    expect(loadPrefs().reducedMotion).toBe(false);
+  });
+
+  it("reducedMotion=true n'affecte pas les autres champs", () => {
+    const prefs = { ...DEFAULT_PREFS, reducedMotion: true, lives: 5, crt: false };
+    savePrefs(prefs);
+    const loaded = loadPrefs();
+    expect(loaded.lives).toBe(5);
+    expect(loaded.crt).toBe(false);
+    expect(loaded.soundVolume).toBe(DEFAULT_PREFS.soundVolume);
+    expect(loaded.musicVolume).toBe(DEFAULT_PREFS.musicVolume);
+    expect(loaded.difficulty).toBe(DEFAULT_PREFS.difficulty);
+    expect(loaded.reducedMotion).toBe(true);
+  });
 });
