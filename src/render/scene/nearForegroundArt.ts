@@ -39,7 +39,7 @@ export interface NearKindSpec {
 
 export const NEAR_KIND_SPECS = {
   parkingMeter: { aspect: 0.5, heightFrac: 0.24 },
-  lamppost: { aspect: 0.5, heightFrac: 0.44 },
+  lamppost: { aspect: 0.5, heightFrac: 0.62 },
   wallaceFountain: { aspect: 0.55, heightFrac: 0.32 },
   trafficLight: { aspect: 0.44, heightFrac: 1.44 },
   bollard: { aspect: 0.6, heightFrac: 0.13 },

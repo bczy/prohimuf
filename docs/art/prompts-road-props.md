@@ -1245,3 +1245,29 @@ overlay AND the R5 lamppost render-side halo, both against §2.1; the Flag-1 con
 budget unchanged: 2 batches per set this cycle before options escalate to Bertrand.
 
 — Nico, LEAD-ART v2 GATE — 6/6 through (3 PASS, 3 PASS-with-tightening)
+
+## Bertrand-directed live iteration v3 (2026-07-20, orchestrator-applied)
+
+Live art direction from Bertrand on the v2 renders, applied directly to `levelArt.json`
+(lead-art gates at the asset gate on the regenerated PNGs — live-directed pass, same
+authority chain as v2):
+
+1. **trafficLight** (verbatim): « le feu tricolore. Il faut vraiment le fait plus grand et
+   plus d'espace entre le deux feux. Deux la distance qu'il y a entre le feu piéton et le
+   sol. Du coup le feu tricolore est beaucoup plus grand ». Applied: (a) prompt recomposed —
+   the bare-mast gap between the vehicle head and the ped head is now described as about
+   TWICE the mast run left between the ped head and the ground, signal fills the whole frame
+   height; (b) render-side `TRAFFIC_LIGHT_H_FRAC` raised 0.6 → 0.8 (the in-game size was
+   cap-bound, not sprite-bound — this extends the ADR-0047 directed non-occlusion exception,
+   same law, bigger allowance); (c) `lenses` anchors re-tuned after regen (orchestrator
+   pixel-scan, composite gate).
+2. **lamppost** (verbatim): « Le réverbère; fait le plus grand, rajoute deux fois ce que
+   j'ai ajouté en saisie d'écran » (screenshot = a slice of bare shaft). Applied: (a) prompt —
+   exceptionally long bare fluted shaft, lantern held high, signal fills the frame height;
+   (b) `NEAR_KIND_SPECS.lamppost.heightFrac` 0.44 → 0.62 and `MAX_PROP_WORLD_H` 3.4 → 4.5 so
+   the taller lamp is not silently clamped (band cap `nearForegroundBandTop` untouched — the
+   window non-occlusion law still clamps if the band is lower).
+
+Golden baselines: Stalingrad/Vitry regenerated after the v2 art landed (deliberate art
+change, `UPDATE_GOLDEN=1`, eyeballed); they will be regenerated once more after this v3
+feu/réverbère regen — accepted churn of a live-direction session.
