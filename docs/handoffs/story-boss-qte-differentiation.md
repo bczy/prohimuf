@@ -1830,3 +1830,54 @@ VERDICT: PASS-WITH-CORRECTIONS — ux review of built screens (ux-designer) — 
   - `src/game/systems/bossQteSystem.ts` (`BOSS_VITAL_CATCH_RADIUS`, per-zone `withinCatch`/`ringHitZone`, A1 assert)
   - `src/game/systems/__tests__/bossQteSystem.test.ts` (62 → 66 tests)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 16. BUILD (render lane, stage-5 correction round 1) — dev-r3f-render (Amelia) — 2026-07-20 — AMENDMENT A1 §4 + parry-glyph smoke salience + evidence 28/29
+
+- claim: two GATED stage-5 corrections folded into one render-lane pass (same file), plus the
+  evidence duty. Files: `src/render/scene/BossQteSprite.tsx` only (+ prior §9 files unchanged this
+  round). `src/game` NOT touched; `stateMachine.ts`/`useGameLoop.ts`/`src/hooks`/`CrtPass.tsx`/
+  `crtParams.ts`/`levelArt.json` NOT touched; smoke veil gpu bounds (§8) NOT touched.
+- Correction 1 — **AMENDMENT A1 §4 (per-ring catch radius, LEVER 1):** the VITAL ring (ring A) is
+  now DRAWN at `BOSS_VITAL_CATCH_RADIUS` (0.18, imported from `bossQteSystem`), preserving the
+  drawn-ring = scored-catch aim-honesty invariant (BossQteSprite.tsx:47-48). Ring A's `scale.set` is
+  now per-branch: vital (phase 2+ shoot window AND the phase-1→2 split-preview cue) → 0.18;
+  phase-1 single ring + the neutral wind-up tell → `RING_HIT_RADIUS` (0.30) unchanged. Ring B (limb),
+  the parry glyph, and the décor prop keep `RING_HIT_RADIUS`. Checked the two other places the vital
+  radius could be assumed: the split-preview cue (now 0.18, coherent) and the wind-up tell (a neutral
+  non-scored ring, kept 0.30). No render test pinned the boss ring radius (grep-verified — the other
+  0.30/0.18 hits are unrelated parallax/art depths), so none needed updating.
+- Correction 2 — **parry-glyph salience under smoke (shard §12/§15):** phase-3 parry windows + smoke
+  are the same condition by construction, and Tony/Sacha found the tinted diamond washing out against
+  the veil + shoulder art. Fix (my lane call, justified): a **paper-white value-contrast halo** (house
+  value language) drawn just behind the glyph, and BOTH the halo (renderOrder 13) and glyph
+  (renderOrder 14) now draw ABOVE the smoke veil (renderOrder 10) so the tell survives — while a
+  **smoke-tied opacity envelope** (`1 − 0.4 × smokeEnv`, a legibility FLOOR, never 0) keeps it
+  "degraded, never removed" per the 2-C discipline. Diamond FORM stays distinct from the open shoot
+  ring; reduced-motion still holds steady (pulse `k=1`, non-strobing). Smoke veil bounds untouched;
+  CrtPass untouched.
+- VERIFICATION (corepack yarn 4.12.0, COREPACK_NPM_REGISTRY set; rtk not installed) — ALL GREEN
+  (both dev lanes have now landed; the previously-missing frozen symbols `BOSS_PARRY_POINT`,
+  `BOSS_VITAL_CATCH_RADIUS`, `BossQteSpec.decorProp` are all exported):
+  - `yarn typecheck` → exit 0 (full tree).
+  - `yarn vitest run` → **843/843 PASS** (64 files).
+  - `yarn lint` → exit 0 (full tree).
+  - `yarn format:check` → clean.
+- EVIDENCE (state-verified via `window.__MUF_STATE__().game.bossQte`, live `__MUF_PLAY__` loop,
+  `?preview=boss&at=phase3&blownImmune=1`, headless SwiftShader, crt:false to isolate the glyph/veil
+  value-contrast read — same discipline as the 20-27 set):
+  - `docs/qa/evidence/story-boss-qte-differentiation/28-parry-telegraph-under-smoke.png` — desktop
+    1280×720@2x. Verified frame: `phase=ACTIVE phaseIndex=2 stance=SHIELDED telegraphActive=true
+chargedWindow=true smokeActive=true` (the parry WINDUP telegraph under the phase-3 smoke veil).
+  - `docs/qa/evidence/story-boss-qte-differentiation/29-mobile-parry-under-smoke.png` — mobile
+    **844×390**@3x, same verified state. Both show the smoke veil hazing the tableau and the
+    paper-white parry diamond legible at the raised-weapon point against it (the fix reads).
+  - **Gate note for `lead-art` (Nico): Gate-4 (composite) must verdict the new glyph+halo treatment
+    on captures 28/29** — the value-contrast halo + above-veil renderOrder is a visual change owed a
+    composite sign-off. (I priced legibility; the aesthetic opacity floor is his visual call.)
+- No deviation from A1 §4. The parry-salience fix is my lane's chosen approach per the coordinator's
+  "your call, justify" — justification above. No commit/push.
+- File List:
+  - `src/render/scene/BossQteSprite.tsx` (A1 §4 per-ring radius + parry halo/renderOrder)
+  - `docs/qa/evidence/story-boss-qte-differentiation/28-parry-telegraph-under-smoke.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/29-mobile-parry-under-smoke.png` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)

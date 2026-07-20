@@ -1506,3 +1506,56 @@ PROMPT GATE.
 Not a `VERDICT:` line (PRE-PROD annotations only — the gate verdict is Nico's).
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PRE-PROD PASS appended).
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-20 · l'Éden facade: Serge PRE-PROD [E4]/[E3] integrated
+
+- claim: integrate game-graphist Serge's l'Éden PRE-PROD corrections into the facade prompt
+  (`docs/art-direction/prompt-drafts/niveau-final-eden.md`) — foreground PASS-AS-IS [E6], ceiling
+  PASS-AS-IS, facade PASS-WITH-CORRECTION [E3]+[E4]. No `levelArt.json` edit (dev-tooling-assets still
+  in that file); no commit/push.
+- release — the corrected `facade` prompt (114 words, 0 negations, under the 120 ceiling):
+  > front-elevation interior of a derelict 1930s parisian dancing-hall ballroom, the back wall filling
+  > the frame ceiling to floor, a row of exactly 5 tall arched windows, evenly spaced and identical in
+  > size, each a dark recessed cavity, their lower panes crudely boarded, the upper arch left open, warm
+  > light spilling through, peeling gilded cornices high up, a mezzanine balcony with an ornate
+  > cast-iron balustrade, a patched sprung-parquet floor below, party stencils and taped rave flyers
+  > layered over the lower mouldings at arm height, the upper walls calmer, plywood speaker cabinets low
+  > in one corner as flat set-dressing, a bare ceiling hook high where a chandelier once hung, dim warm
+  > night light, faded decayed grandeur
+- what changed (facade only — foreground/ceiling untouched, they PASS-AS-IS):
+  - **[E4] un-sealed the window row** — replaced `boarded and leaking thin light` (read as a solid
+    sealed plank: weak signal for the `align-windows.mjs` detector AND a cop popping IN a sealed plank
+    = broken silhouette) with `each a dark recessed cavity, their lower panes crudely boarded, the upper
+arch left open, warm light spilling through` (positive phrasing): every window stays a detectable
+    dark/lit cavity AND an opening a cop can occupy in the upper arch, boards now read as partial decay.
+  - **[E3] count + evenness (proven belliard formula)** — added `exactly 5 … evenly spaced and identical
+in size`. **Count = 5 (not belliard's 7)** justified: grand ballroom arches are WIDE (unlike narrow
+    french apartment windows), so 5 fill one static 1280×768 wall with visible masonry piers between —
+    directly mitigating the [E5] tight-pack merge risk; belliard was 7 narrow windows across a WIDE
+    panned troncon. dev-tooling pins `windowGrid.cols = 5` to match (avoids the belliard `8933c03`
+    rigid-grid-vs-art mismatch).
+  - **[E5] recorded (post-art, NOT a prompt fix)** — merged-railing risk (belliard `bb6404f`): the
+    facade also bakes a mezzanine balustrade and the foreground ships a near-identical ironwork motif;
+    if the 5 arches render tight, the same rail-overshoot merge risk applies. Flagged for the post-art
+    alignment/gate check (render-side rail geometry vs detected zone x-positions); the count-5 wide-arch
+    choice is my prompt-side mitigation.
+  - **Serge's speaker bake-ruling RECORDED as CONFIRMED** — bake-in-facade RULED over the
+    standalone-rimless-sprite alternative: the `facade` layer is composited directly (never
+    chroma-keyed, only `foreground` is), so baked speakers have no per-object render path that could
+    ever acquire a glow rim, AND a standalone re-keyed `speaker_wall` would reopen the [S10]
+    large-flat-near-black hole risk for zero gain. My earlier bake recommendation is now the ruling.
+- counts (held by hand — `checkLevels` doesn't machine-check word/neg on `levels`): facade 114w/0neg,
+  foreground 38w/2neg (carries `magenta chroma-key`), ceiling 29w/0neg. All under the 120 ceiling.
+- File List:
+  - `docs/art-direction/prompt-drafts/niveau-final-eden.md` (facade blockquote + window-row rationale
+    updated with [E3]/[E4]; speaker bake-ruling recorded as confirmed; [E5] note added; counts table +
+    Reste-à-trancher refreshed).
+  - **No `levelArt.json` edit** (concurrent-edit avoidance).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (12 pre-existing warnings;
+  none from this work — the prompt lives in the draft shard).**
+- handoff → `lead-art` (Nico) PROMPT GATE on the l'Éden backdrop family (facade corrected + foreground +
+  optional ceiling), same chain as the 9. dev-tooling-assets owns the `levels[]` structure incl.
+  `windowGrid.cols = 5`.
+- Not a `VERDICT:` line — prompt OWED and un-gated pending Nico.
