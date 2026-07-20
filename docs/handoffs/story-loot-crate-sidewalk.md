@@ -451,3 +451,86 @@ watches carried to the technical pass, not blockers on the prompt itself. I do n
 goes back up for the PROMPT GATE.
 
 — Serge, PRE-PROD pass
+
+---
+
+## stage-2. PROMPT GATE — lead-art (Nico) — 2026-07-20
+
+Gate object: the `loot` block in `src/game/levels/levelArt.json` (was commit 6f71f09),
+against `docs/art-direction.md` §2 laws + §3 FLUX contract, with Serge's pre-prod annotations
+(S1/S2) and the `vehicles` block as the family precedent. I own visual acceptance — Maud's
+structure (block name, `types` key, `asset`/`size`/`facing`/`seed`) stays; I only ratified the
+`prompt` wording.
+
+**S1 (board count) — ACCEPTED, amended.** Serge is right: "thick boards" with no count lets
+FLUX hedge toward a 6-8 board lattice that mushes to grey at the squat display size (Wild Guns
+lesson, refs §2). Pinned the count. I kept "butted tight with dark seams" (Serge S3 keying
+requirement — no gaps for the magenta key to bleed mid-body) and folded the count in.
+Ratified: `three or four wide horizontal pine boards butted tight with dark seams` ("wide"
+carries the low-count intent better than "thick").
+
+**S2 (cross-brace vs glyph zone) — ACCEPTED, option (a) tightened.** A bold diagonal through
+the geometric centre fights the render-side A/B/C glyph baked at `S/2,S/2` (`LootCrate.tsx`) —
+W1/AC-D5 glyph-before-fire is a gated guardrail, not a nice-to-have, so the brace must clear
+the centre. I did NOT drop the brace (option b): the diagonal is this object's single most
+crate-specific interior gesture and preserves continuity with the placeholder's lid-band +
+cross-brace language (refs §3) — dropping it risks the box reading as a plain carton
+(silhouette-first / archetype law). Confined it low instead. Ratified: `a short diagonal brace
+confined to the bottom third, clear of the centre` (dropped the "corner" qualifier to avoid
+colliding with the adjacent "corner battens").
+
+**Prompt vs the bible:**
+
+- **One-accent / ADR-0011 lesson — PASS.** `neonPhrase` empty; body prompt is "fully black and
+  white"; no neon/glow/acid/hue token anywhere in the assembled subject or style tail; `neon:
+  green` is render metadata only. The green rim is render-side, exactly the vehicle contract —
+  no baked-body flood risk.
+- **Style-tail conformity — PASS.** `opening` + `style` are byte-identical to the `vehicles`
+  block (Family consistency §2 law 2): same magenta `#FF3CDC` chroma-key ground, same
+  fanzine/xerox/halftone treatment, same cutout tail. The crate reads as one printing run with
+  the vehicle set it shares the street with.
+- **Silhouette-first / register — PASS.** "squat plank crate wider than tall, sitting flat on
+  the ground" is a box silhouette categorically distinct from any figure (D6/D7 triage);
+  pine boards + corner battens + lid rail = marché/ammo-box register, no anachronism (no
+  plastic beer crate, no branded label, no washi).
+- **Word budget — 102 assembled words, 0 negations.** In the 90-120 warn band (over the 90
+  target, under the 120 ceiling). Tolerated per §3.3: medium + view + silhouette all land in
+  the first ~26 words; every word past 90 is a load-bearing pre-prod fix clause (S1 count-pin,
+  S2 brace-placement), none filler. The tail is on watch at my asset gate. `check-art-prompts`
+  does not yet cover the `loot` block (dev-tooling-assets owes that coverage with the generator
+  wiring); ran it anyway — PASSED, 12 pre-existing WARNs, none on `loot`.
+
+**Two conditions carried DOWNSTREAM, still owed — this PASS does NOT cover them:**
+
+1. **ASSET GATE (mine, on the CI PNG).** Verdict the keyed `crate.png` on a contrasting
+   background at game size before it ships: AI-defect sweep (detached/fused/duplicated planks,
+   melted wood) + Serge's S4 crop — if FLUX renders the halftone as OPEN dot-screen, any
+   ink-enclosed magenta dot-gap gets punched by the enclosed-island keyer as an interior hole;
+   check that crop magenta-composited at real size. S5: re-verify the S1 low board count still
+   resolves across the whole plausible crate world-height range once `LOOT_STREET_Y`/crate
+   world-size are tuned.
+2. **COMPOSITE GATE (mine, on real in-game screenshots).** The green `#78FF3C` render-side rim
+   is a runtime composite never present in the PNG — it has NOT been gated here. Owed: (a) §2.1
+   « un halo est un dégradé, jamais un aplat » — the rim must show monotonic alpha falloff to
+   zero, no hard-edged aplat (the ADR-0011 hard-rim lesson); (b) Karim P4 — same-frame
+   screenshot proving the green crate rim stays discriminable from the still-green enemy
+   early-telegraph rim under the <0.3 s triage (box-vs-figure silhouette + street-vs-window
+   z-band carry it); **cyan `#28F0FF` is the fallback** if it fails.
+
+**VERDICT: PASS-WITH-CORRECTIONS** — S1 + S2 ratified and applied to `levelArt.json`
+(`loot.types.crate.prompt`); one-accent/style-tail/silhouette/register all PASS; asset gate +
+composite gate (incl. P4 hue-discriminability) carried as owed downstream. Prompt is cleared
+for CI generation.
+
+Ratified assembled prompt (opening + subject + style, neonPhrase empty):
+
+> Flat 2D video game sprite, strict side view in orthographic projection, single wooden crate
+> centered and fully visible, sitting flat on the ground, a squat plank crate wider than tall,
+> three or four wide horizontal pine boards butted tight with dark seams, corner battens, a
+> short diagonal brace confined to the bottom third, clear of the centre, a top lid rail,
+> photocopied 1990s punk fanzine illustration, rough black ink linework, high-contrast xerox
+> toner texture, coarse halftone dots, fully black and white, isolated on a solid flat uniform
+> bright magenta (#FF3CDC) chroma-key background, fully magenta empty surroundings, flat
+> ambient lighting, crisp cutout edges
+
+— Nico, PROMPT GATE
