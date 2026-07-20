@@ -371,3 +371,83 @@ clips the ≈−4.5/−4.6 cover-crop bottom) + P4 green-crate-vs-green-enemy-te
 - **No VERDICT** — next: `game-graphist` pre-prod annotation (readability at game size, keying
   soundness), then the `lead-art` PROMPT GATE. No image generated (CI render farm); no other
   `levelArt.json` entry touched.
+
+---
+
+## stage-2. PRE-PROD PASS — game-graphist (Serge) — 2026-07-20
+
+Gate object: the assembled `loot` prompt (Maud, above), `levelArt.json` `loot` block
+(commit 6f71f09), refs brief, delta doc, `LootCrate.tsx`, `scripts/cutout-enemies.mjs`. No
+image generated yet — this is a paper/text annotation pass, squinted at the numbers I can
+actually ground: `VEHICLE_H = 2.4` world units for the street vehicles it's structurally
+modeled on (`DeliveryVehicleSprite.tsx:19`), the crate's own generation canvas 256×192, and
+the cutout script's magenta-keying math (`cutout-enemies.mjs`).
+
+**[S1] Board count unconstrained — silhouette risk at squat display size.** "thick horizontal
+pine boards butted tight with dark seams" says THICK but not HOW MANY. A squat crate is, per
+the tech plan (`LootCrate.tsx` decouples from `slot.size` to "a fixed crate world-size,
+verify-tunable for AC-D8") going to render smaller than the 2.4u vehicles it's modeled on —
+plausibly ~1.0–1.4u to sit inside the AC-D8 crop line without dominating the street band, i.e.
+roughly HALF the vehicle world-height. FLUX left to its own devices on "thick... boards"
+without a count will happily give you 6-8 packed boards to fill a 192px-tall canvas; at half
+the vehicles' on-screen height those seam lines close up into a grey mush exactly the way
+fine plank/nail detail always does (refs §2, Wild Guns lesson). **Fix:** pin the count —
+`"three or four wide horizontal pine boards"` — so FLUX can't hedge toward a fine lattice.
+Three-to-four boards at any plausible crate world-height stay individually resolvable; six+
+do not.
+
+**[S2] Diagonal cross-brace sits exactly where the glyph lands — fights W1/AC-D5.** The
+assembled prompt is `opening` ("strict side view in orthographic projection") — a TRUE 2D
+side elevation, no depth reveal, so there is no end face to put the brace on; the "brace on
+the END faces" option the delta docs floated is not opticaly available here (nothing but the
+front plank face is ever visible). A brace running corner-to-corner through the crate's
+geometric centre lands directly under the render-side A/B/C glyph (`LootCrate.tsx` bakes the
+weapon glyph at `S/2, S/2`, dead centre) — a bold diagonal ink stroke crossing a bold letter
+stroke is a legibility fight, and W1 (glyph-before-fire, AC-D5) is a gated guardrail, not a
+nice-to-have. **Fix (concrete, pick one):**
+
+- confine the brace to the **bottom third only** — a short diagonal strut between the
+  bottom corner and mid-height, entirely below where the glyph sits: `"a short diagonal
+corner brace low on the crate, confined to the bottom third, well clear of the crate's
+centre"`; or
+- drop the diagonal gesture and let corner battens + the top lid rail alone carry the
+  "crate" read (both already in the prompt, both sit at the edges, both leave centre calm).
+  Either reading keeps a calm, flat landing zone at the exact spot the glyph is composited.
+
+**[S3] Keying soundness — READY, no change needed.** Dark pine ink body on `#FF3CDC` magenta
+(luminance ≈136) is a huge colour-distance separation; `cutout-enemies.mjs`'s
+`THRESHOLD_SQ = 24×24` per-channel key and the enclosed-island pass's `TIGHT_BAND = 20` are
+tuned tight specifically because this is the SAME regime the vehicle set already ships
+clean in (dark ink on bright magenta is the easy case — it's the near-black-ground enemy
+migration that was the hard case, not this one). "butted tight with dark seams" already says
+what the keyer needs: no gaps between boards for magenta to bleed through mid-body. No prompt
+change required here.
+
+**[S4] Halftone dots vs the cutout — WATCH, not blocking.** The shared `style` tail's "coarse
+halftone dots" is inherited verbatim from the vehicle family and already ships clean there, so
+this is not a NEW risk the crate introduces. Flagging anyway because the crate is smaller
+(S1): if FLUX renders the halftone as genuinely OPEN dot-screen (magenta showing between
+ink dots, not a solid dark wash with dot texture printed over it) on the shadow face, any
+dot-gap fully enclosed by ink (touching neither border nor already-transparent pixel) reads
+as a real magenta island to the enclosed-island pass and gets punched out — interior speckle,
+the same defect class the mechanical `check-sprite-integrity.mjs` speckle budget polices. No
+prompt tweak proposed (it's a shared style clause, not this prompt's to rewrite alone) — carry
+it into the TECHNICAL pass as a specific crop to check once the PNG lands, magenta-composited
+and at real display size.
+
+**[S5] Set-mechanics across sizes.** The `loot` block has one type (`crate`) at one generation
+size (256×192), so there's no per-type size split to cross-check the way `vehicles.types`
+has three. The real "multiple sizes" exposure here is temporal, not spatial: the crate's final
+on-screen world-height is still **verify-tunable** (AC-D8, not yet pinned in code). S1's fix
+(pin the board count low) must hold across the whole plausible range the tech lane might land
+on — from a vehicle-adjacent 2.4u down to a genuinely squat ~1.0u — not just whatever the first
+`LootCrate.tsx` tuning pass happens to pick. Re-check S1 empirically once `LOOT_STREET_Y`/the
+crate world-size are tuned at the composite gate.
+
+**VERDICT: ANNOTATED** (not READY-FOR-GATE as-is). Two concrete prompt-wording changes
+proposed (S1 board count, S2 cross-brace placement); S3 confirmed sound, no change; S4/S5 are
+watches carried to the technical pass, not blockers on the prompt itself. I do not edit
+`levelArt.json` — `concept-artist` (Maud) integrates if `lead-art` agrees, then the prompt
+goes back up for the PROMPT GATE.
+
+— Serge, PRE-PROD pass
