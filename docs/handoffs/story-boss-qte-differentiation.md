@@ -2515,3 +2515,67 @@ VERDICT: PASS — A1-R2 winnability re-verify (game-designer) — on the landed 
   - `public/assets/fx/LICENSES.md` (NEW — provenance)
   - `docs/qa/evidence/story-boss-qte-differentiation/30..35-*.png` (NEW — 6 state-verified captures)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+---
+
+## COMPOSITE GATE (Gate 4) — RE-VERDICT — lead-art (Nico) — 2026-07-20 · corrected runtime visuals (evidence 30-35)
+
+Re-verdict on the reworked runtime visuals (shard §17-§18), superseding the smoke/glow/finisher
+aspects of my prior FAILs (24 aplat, 25 sepia) and the quad-veil captures (22/27/28/29). Bertrand
+OVERRODE the quad-veil → real pooled particle smoke (CC0 puff billboards, normal desaturated blend,
+under the §18 GPU coverage caps). Measured pixels on every load-bearing item; the standing PASS on
+26 (HP-bar zero-settle) is NOT re-litigated.
+
+### Measured re-verdicts
+
+- **`30` particle smoke (desktop) — PASS.** House-style check: the textured puff field reads as
+  **desaturated grey** — the dense plume samples near-black `(0,0,0)`; the translucent right-edge
+  puffs `(134,136,138)`/`(97,104,109)` carry only a faint cool lean (g−r +2/+7, b−r +4/+12), well
+  short of a saturated hue — inside the photocopied-B&W register. No neon, no colour flood. The
+  particle field degrades-not-removes the tableau.
+- **`31` particle smoke (mobile) — PASS.** Right-billboard puffs `(132,136,139)`/`(125,130,133)`,
+  g−r +4/+5, b−r +7/+8 — same desaturated-grey read at mobile resolution.
+- **`32` reduced-motion frozen scatter — PASS.** A held, non-animated puff scatter (plume near-black
+  `(18,18,18)`, puff `(126,131,134)` b−r +8) — still-distinguishable, non-strobing, desaturated. The
+  reduced-motion discipline holds on the particle path.
+- **`33` parry glyph + paper-white halo above the particle smoke (§16-class check) — PASS.** Vertical
+  scan through the glyph: background lum 121 → ramp 139 → 172 → core 179-180 → decay 176 → 150 →
+  137 back toward ground. A genuine value-halo **dégradé** with falloff both sides, near-neutral
+  (b−r +18 at the core only, 0 elsewhere — a pale value lift, no saturated hue), legible ABOVE the
+  new particle smoke (the §16 treatment survives the medium change from quad-veil to particles). The
+  diamond guard-form stays distinct from the open shoot-ring. Consistent with my prior 28/29 PASS.
+- **`34` décor armed glow — radial-gradient halo — PASS (my prior FAIL on 24 is LIFTED).** Horizontal
+  scan outward from the armed prop: green strength g−r **+33 → +26 → +21 → +14 → +8 → +1 → 0**,
+  reaching neutral background (`~136,137,132`, g−r ≈ 0) at the outer margin. A **monotonically
+  non-increasing alpha falloff terminating at 0** — precisely what §2.1 requires (« un halo est un
+  dégradé, jamais un aplat »). The hard-edged single-step lime plate of capture 24 is gone; this is a
+  real glow. The loi du glow (interactive décor prop glows) is now satisfied WITH falloff.
+- **`35` finisher — B&W + neon-only — PASS (my prior FAIL on 25 is LIFTED).** Colour-law check:
+  world/ground pixels sample **neutral** (400,750 → r−b +3; 2100,760 → +4; mid → 0) — the +14-15
+  warm sepia cast of capture 25 is GONE. The finisher is now a held **black vignette value-crush**
+  (corners `(25,27,30)`/`(16,16,15)`, neutral dark) over a B&W world, and the ONLY saturated colour
+  in the frame is the acid-neon « LIVRE LE SON » prompt (brightest text px `(66,241,32)`, g−r 175 /
+  g−b 209 = neon green). This satisfies §1 (only neon is colour, reserved for what matters) and the
+  §8.4.4/P2 test (no hue added to the B&W layer; world/paper pixels stay neutral). The distinct
+  FINISHER beat (ADR-0052) is preserved without a second-colour wash. (The white inverted onset
+  flash is a transient not in this held still; a neutral-white flash is inherently colour-law-safe.)
+
+### Overall
+
+**COMPOSITE GATE: PASS.** All six corrected composites (30-35) clear Gate 4; my two prior FAILs are
+resolved — 24→34 (aplat replaced by a measured radial dégradé to 0) and 25→35 (sepia replaced by a
+neutral B&W value-crush with neon reserved to the prompt). Combined with the standing PASS items (26
+HP-bar; and the 28/29 parry-halo treatment, re-confirmed above the new smoke as 33), the
+differentiation pack's runtime visuals now pass the composite gate. No FAIL routed. The bible-gap
+proposal from my prior entry (a bounded cinematic-finisher rule) stands for the bible gate — the
+shipped fix is already inside it (value/vignette + hue-preserving neon, no second-colour hue).
+
+VERDICT: PASS — composite gate 30-particle-smoke-desktop (lead-art)
+VERDICT: PASS — composite gate 31-particle-smoke-mobile (lead-art)
+VERDICT: PASS — composite gate 32-smoke-reduced-motion (lead-art)
+VERDICT: PASS — composite gate 33-parry-glyph-halo-particle-smoke (lead-art)
+VERDICT: PASS — composite gate 34-decor-armed-radial-halo (lead-art)
+VERDICT: PASS — composite gate 35-finisher-bw-neon-only (lead-art)
+VERDICT: PASS — composite gate differentiation-runtime-visuals-REVERIFY (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-qte-differentiation.md` (this re-verdict entry appended).
