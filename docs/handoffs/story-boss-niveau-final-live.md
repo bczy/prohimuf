@@ -2133,3 +2133,36 @@ BOSS_DECOR_CATCH_HALF_H` (today `2×0.40 × 2×0.525 == 0.80 × 1.05` — **zero
     branch AABB swap + 2 `createBossQte` asserts)
   - `src/game/systems/__tests__/bossQteSystem.test.ts` (MODIFIED — 6-test AMENDMENT A2 describe block)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this FIX entry appended)
+
+---
+
+## CANON RATIFICATION — narrative-designer (Yasmine) — 2026-07-20 · niveau-final flyer `ambiance`
+
+- **Claim:** rule on the render lane's PROVISIONAL `AMBIANCE : INCANDESCENT` (flagged above, this
+  shard's BUILD entry) — the required `FlyerCopy.ambiance` field my fiction §4.1 table had not
+  authored. Bounded scope: one word/short phrase, FR, spoiler-clean, tone-correct, the finale notch
+  above `BRÛLANT`. No commit/push.
+- **Ruling — AUTHOR, not ratify.** `INCANDESCENT` was a sound gradient-continuation and a clean,
+  honestly-flagged provisional — but the finale word is load-bearing and can earn its keep. Canonical
+  value: **`AMBIANCE : EN FUSION`**. Rationale: (i) idiomatic rave/concert register for a room at peak
+  ("salle/public en fusion") — more streetwise than the Latinate INCANDESCENT, in the shipped zine
+  voice; (ii) still inside the heat metaphor (fusion = burning's endpoint, past `BRÛLANT`); (iii) zine
+  double-job — it echoes the flyer's own payoff, the three crews `SPIRALE 23 · KANAL SYSTEM · NADIR 94`
+  fused into one for the millennium, without narrating it; (iv) spoiler-clean, zero boss hint. The
+  mixed one-word/phrase register is already established (`ÇA ROULE`), so `EN FUSION` slots in.
+- **Applied (words mine, structure theirs — trivial single-string swap, per the flag):**
+  - `src/render/ui/menu/LevelFlyer.tsx` — `PLAYABLE_COPY["niveau-final"].ambiance` set to
+    `AMBIANCE : EN FUSION`; the PROVISIONAL code comment replaced with the canon note. Structure of
+    the entry untouched (render lane's).
+  - `docs/game-design/spec-niveau-final-fiction.md` §4.1 — added the `ambiance` row to the flyer table
+    - a canon note, so the value now lives in the gated doc (the flag's ask). No other §4.1 line changed.
+- **Not touched:** the three shipped ambiance values (`ÇA ROULE`/`CHAUD`/`BRÛLANT`), the `FlyerCopy`
+  contract, and every other niveau-final flyer field — all remain as gated/shipped.
+- **No commit/push** (per instruction).
+
+VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer, replacing the render lane's provisional `INCANDESCENT` (narrative-designer)
+
+- **File List:**
+  - `src/render/ui/menu/LevelFlyer.tsx` (MODIFIED — ambiance string + comment)
+  - `docs/game-design/spec-niveau-final-fiction.md` (MODIFIED — §4.1 ambiance row + canon note)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this ratification entry appended)

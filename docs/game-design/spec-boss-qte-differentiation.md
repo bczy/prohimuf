@@ -535,7 +535,7 @@ derives `DECOR_W/H` from the constants (drift-guard, no pixel change).**
 > (today 0.80 × 1.05 — identical output), so drawn==catch is enforced structurally; glow (2.2) untouched.
 >
 > **AC-D4 (amended tail):** "…décor prop scored within the AABB `±(BOSS_DECOR_CATCH_HALF_W 0.40,
-> BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn `0.80×1.05` silhouette (drawn == catch); glow 2.2 is an
+BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn `0.80×1.05` silhouette (drawn == catch); glow 2.2 is an
 > attention cue, not the catch."
 >
 > **Stage-5 watch (NOT a re-open):** confirm the phase-2 décor arm-window is landable on the live

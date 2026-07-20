@@ -194,14 +194,24 @@ carries the payoff instead: the three crews the player served one by one
 (SPIRALE 23 / KANAL SYSTEM / NADIR 94 — encounter sheet §2) finally on **one** flyer for the
 millennium.
 
-| field      | value (FR, player-facing)              | note                                                                                                                    |
-| ---------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `crew`     | `SPIRALE 23 · KANAL SYSTEM · NADIR 94` | The three crews united — the finale payoff. **Fallback if too wide for the surface (ux's call):** `LES TROIS SYSTÈMES`. |
-| `slogan`   | `LE DERNIER SON DU SIÈCLE`             | Echoes gated `final_pre` #1; reads as a party line, not a warning — no boss hint.                                       |
-| `dateLine` | `31 DÉC. 1999 → JUSQU'EN 2000`         | Echoes gated `final_pre` #8 (« Qu'il danse jusqu'en 2000 »).                                                            |
-| `zoneLine` | `L'ÉDEN · ANCIEN DANCING`              | Where the venue name first lands player-facing. Not a spoiler — the destination, not the antagonist.                    |
-| `rvLine`   | `RV : SUR L'INFO-LINE`                 | Verbatim convention (all three prior flyers).                                                                           |
-| `infoLine` | `08 36 31 12 99`                       | Same `08 36` legal-safe premium-infoline pattern (copy-deck §8.7); the millennium date as the number.                   |
+| field      | value (FR, player-facing)              | note                                                                                                                                                                                                                                                                                                |
+| ---------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `crew`     | `SPIRALE 23 · KANAL SYSTEM · NADIR 94` | The three crews united — the finale payoff. **Fallback if too wide for the surface (ux's call):** `LES TROIS SYSTÈMES`.                                                                                                                                                                             |
+| `slogan`   | `LE DERNIER SON DU SIÈCLE`             | Echoes gated `final_pre` #1; reads as a party line, not a warning — no boss hint.                                                                                                                                                                                                                   |
+| `dateLine` | `31 DÉC. 1999 → JUSQU'EN 2000`         | Echoes gated `final_pre` #8 (« Qu'il danse jusqu'en 2000 »).                                                                                                                                                                                                                                        |
+| `zoneLine` | `L'ÉDEN · ANCIEN DANCING`              | Where the venue name first lands player-facing. Not a spoiler — the destination, not the antagonist.                                                                                                                                                                                                |
+| `rvLine`   | `RV : SUR L'INFO-LINE`                 | Verbatim convention (all three prior flyers).                                                                                                                                                                                                                                                       |
+| `infoLine` | `08 36 31 12 99`                       | Same `08 36` legal-safe premium-infoline pattern (copy-deck §8.7); the millennium date as the number.                                                                                                                                                                                               |
+| `ambiance` | `AMBIANCE : EN FUSION`                 | The finale notch above the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT). Double read, zine-style: the crowd at white-heat AND the three crews fused into one. Spoiler-clean — the party's heat, never le Commandant. Authored here to replace the render lane's provisional « INCANDESCENT ». |
+
+**Ambiance field — canon note.** The initial §4.1 table authored only the six fields above;
+the required `FlyerCopy.ambiance` slot was set PROVISIONALLY to `INCANDESCENT` by the render
+lane (continuing the heat gradient), flagged not-yet-canon and routed back here. Ruling:
+**`AMBIANCE : EN FUSION`** is the canonical finale value. `EN FUSION` is the idiomatic
+rave/concert register for a room at peak ("salle en fusion"), stays inside the heat metaphor
+(fusion = burning's endpoint), and does the zine double-job of echoing the flyer's own payoff —
+the three crews (`SPIRALE 23 · KANAL SYSTEM · NADIR 94`) fused into one for the millennium —
+without narrating it. Spoiler-clean; carries no boss hint.
 
 **Locked-state flyer:** reuses the shipped `LOCKED_COPY` unchanged (crew stays legible,
 flavour withheld) — no new locked copy authored, and no boss reveal leaks on the locked node
