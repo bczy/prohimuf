@@ -2207,3 +2207,105 @@ A-item legibility sign-off remains `ux-designer` (Tony)'s leg-2 lane (spec 3-C).
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: FAIL — A1 winnability re-pin (game-designer) — on the landed BOSS_VITAL_CATCH_RADIUS 0.18 the gated acceptance is unmet: greedyVital loss 0.0% and campVital loss 0.0% (both required > 0), and campVital remains the single BEST line (+45 E, fastest 41.6s, 0 blown — a fixed head-camp still hits 94%/shot, blows 0/18 vital windows), so the §12 camp-dominance is essentially intact. Root cause (full-sim radius sweep 0.18→0.10): "loss > 0" is structurally unreachable by catch-radius tuning (multi-shot spam answers a window with one hit + waypoint stillness + energy-is-not-death), so the radius controls energy-bleed, not the loss clock. Round-2 re-tune: BOSS_VITAL_CATCH_RADIUS → 0.11 (campVital net energy goes NEGATIVE −5 < greedyLimb +1.7 < optimal +12.8 → camp no longer dominant; greedyVital −44.7 E / 1.92 blown; greedyLimb & optimal stay 100%), PLUS reframe the acceptance to "camp-vital non-dominant + greedyVital energy-negative" (loss>0 is ill-posed). §12 parry-read soft flag CLOSED by evidence 28/29 (form-distinct diamond guard glyph above the smoke, desktop + mobile). Round-1 re-verify failed → round 2, Karim to re-gate.
+
+## 17. DESIGN GATE (stage-5 correction ROUND 2) — lead-game-designer (Karim) — 2026-07-20 — re-gate on Sacha's A1-R2 re-tune (0.11 + reframed acceptance)
+
+- claim: re-gate the round-2 proposal after A1's re-verify FAILED (§15): the per-ring catch mechanism
+  is right, but the landed VALUE 0.18 is too loose (campVital still +45 E / dominant) AND my round-1
+  ACCEPTANCE metric ("greedyVital loss > 0") is structurally unreachable by radius tuning. This is
+  round 2 of the 2-round cap; a further re-verify failure escalates to Bertrand.
+
+VERDICT: PASS — design gate lever-1 catch-radius correction ROUND 2 / A1-R2 (lead-game-designer)
+
+### Gate-owner accountability (stated plainly)
+
+My round-1 acceptance criterion was **ill-posed, and that is my miss, not Sacha's.** His root-cause
+evidence is sound and I verify the mechanism against the shipped design: the loss clock needs 10
+FULLY-blown windows, but (i) multi-shot spam answers a window with a single hit, (ii) the ring
+decelerates to zero velocity at each waypoint (built-in stillness → a tracker/spammer lands ≥1/window),
+and (iii) energy is **clamp-only, not death** in the boss tableau (ADR-0051, by design — energy-bleed
+is carried out of the fight, `maxBlownWindows` is the sole death surface). So the catch radius moves
+ENERGY economics, never the loss rate. "loss > 0" cannot be produced by this lever. The reframed metric
+below measures the ACTUAL design goal (§0's "which target?" dilemma: the 2 HP vital chip must be EARNED
+by tracking; camping it must stop being free) — which is what the correction was always for.
+
+### Why PASS (round 2)
+
+- **0.11 is the measured minimal-sufficient value, and minimal-sufficient is the fairness-optimal
+  choice.** The full-sim sweep (§15) shows camp-vital net energy: 0.18 → +45, 0.13 → +20, 0.12 → +5,
+  **0.11 → −5**, 0.10 → −10. 0.11 is the threshold where camping first goes NEGATIVE (below greedyLimb
+  +1.7 and optimal +12.8) → the dilemma is restored. Because a smaller catch = a smaller drawn ring =
+  harder to aim on mobile, **the LARGEST catch that breaks camp dominance is the right pick** — 0.11,
+  not a gratuitously tighter value. This is the §5.6-FEEL-conscious choice.
+- **§5.6 both ways, checked.** Too big (0.18/0.13/0.12) = the dilemma collapses (proven, camp still
+  dominant/positive) — rejected. Too small = a frustration-miss risk on mobile: attributability is
+  intact (drawn = catch, every miss is "I clicked outside the visible ring", no bullshit death), but
+  FEEL/fairness (§5.4/§5.5, the 44-px-world mobile aim-ability) still matters — hence the binding
+  legibility condition below. 0.11 balances both.
+- **Honest play clears, the dilemma is genuine.** At 0.11: optimal 100 % / +12.8 E (the best line — a
+  vital tracker is REWARDED), greedyLimb 100 % / +1.7 (the safe bank holds), campVital −5 (camping now
+  PAYS), greedyVital −44.7 / 1.92 blown (greed is materially punished in energy). Exactly the
+  high-risk/high-reward vital vs. safe-bank limb read spec §1-A declares.
+- **Reframed metric is well-posed and coherent with the whole boss economy.** It scores energy
+  dominance (the axis the lever actually controls) and keeps `maxBlownWindows` as the untouched sole
+  death surface (ADR-0051). No §5.6 regression.
+- **Cap discipline:** this is round 2. To avoid a spurious escalation on a thin-margin near-miss, I
+  pre-clear a narrow same-lever contingency (0.11 → 0.10) WITHIN this gate — see A1-R2 §1. A genuinely
+  DIFFERENT failure mode (0.11 not legibly aim-able on mobile) is routed as a render-scale/boss-zoom
+  question to `lead-art` + `senior-architect`, explicitly NOT counted as a third radius round.
+
+### GATED AMENDMENT — A1-R2 (`game-designer` writes verbatim into `spec-boss-qte-differentiation.md`, LEVER 1; supersedes A1's value + acceptance metric — the per-ring-catch MECHANISM and the paired-render pairing carry over from A1)
+
+> **AMENDMENT A1-R2 (gated 2026-07-20, stage-5 correction ROUND 2).**
+>
+> 1. **Value: `BOSS_VITAL_CATCH_RADIUS = 0.11`** (was 0.18). `RING_HIT_RADIUS = 0.30` unchanged for
+>    LIMB / parry-point / décor / phase-1 single ring. 0.11 is the measured threshold at which
+>    head-camping the vital ring stops being dominant (campVital net energy −5, below greedyLimb +1.7
+>    and optimal +12.8; §15 sweep). The sub-band assert (`BOSS_VITAL_CATCH_RADIUS < vital wander-box
+reach 0.226`) still holds. **Pre-cleared contingency, SAME lever, NOT a new round:** if the
+>    re-verify shows campVital net energy is not cleanly below BOTH greedyLimb and optimal with
+>    separation beyond sim-noise, `dev-gameplay` may drop to **0.10** (campVital −10, wider margin)
+>    under this same gate.
+> 2. **REFRAMED ACCEPTANCE — replaces A1 §5's "greedyVital loss > 0"** (structurally unreachable by
+>    catch-radius tuning: multi-shot spam answers a window with one hit; the ring decelerates to
+>    stillness at each waypoint; energy is clamp-only not death in the tableau, ADR-0051 — so the
+>    radius governs ENERGY, not the loss clock). **The A1 correction is ACCEPTED at re-verify iff, on
+>    `targetSeed 20260719`, N ≥ 500/style:**
+>    - **(a) camp non-dominant:** campVital net energy **< optimal AND < greedyLimb**;
+>    - **(b) greed materially punished:** greedyVital net energy **clearly negative** and avg
+>      blown-windows **≫ greedyLimb's** (~0);
+>    - **(c) honest play clears:** greedyLimb AND optimal stay **100 % win** with margin;
+>    - **(d) seed holds:** the pinned seed presents ≥1 landable, trackable vital waypoint AND competent
+>      limb-banking clears — else re-pin.
+> 3. **PAIRED RENDER (carries from A1 §4, value updated — binding on `dev-r3f-render`):** the VITAL
+>    ring A is DRAWN at a radius equal to `BOSS_VITAL_CATCH_RADIUS` (0.11); drawn = catch, the
+>    aim-honesty invariant (`BossQteSprite.tsx` lines 47-48). It may NOT be drawn larger than the catch.
+> 4. **NEW BINDING CONDITION — small-ring legibility (§5.6 FEEL axis; `ux-designer` + `lead-art`, the
+>    same weight as the render pairing):** a 0.11-world-unit vital ring is small and drawn=catch forbids
+>    enlarging it. `ux-designer` + `lead-art` owe a legibility treatment (bright / high-contrast /
+>    thick-stroke, distinct from the smoke veil), and `ux-designer`'s leg-2 sign-off MUST confirm the
+>    0.11 vital ring is clearly perceivable AND honestly aim-able on BOTH device classes at the boss
+>    zoom — mobile-landscape especially. Too-small-to-aim = a frustration-miss (attributable, so not a
+>    §5.6 bullshit death, but a §5.4/§5.5 feel/fairness FAIL). **If leg-2 finds 0.11 not legibly
+>    aim-able on mobile at the boss zoom, that is a render-scale / boss-zoom question for `lead-art` +
+>    `senior-architect` — NOT a re-tune of the radius (which is mechanically pinned by the dominance
+>    threshold) and NOT a third round of this cap.**
+
+### Handoffs
+
+- handoff → `game-designer` (Sacha): PASS — transcribe A1-R2 verbatim into
+  `spec-boss-qte-differentiation.md` (LEVER 1: value, reuse map, tuning table, and REPLACE the A1 §5
+  acceptance with the reframed metric). Then re-run the design-acceptance re-verify against the reframed
+  (a)-(d) once `dev-gameplay` lands 0.11. A re-verify failure on the REFRAMED metric is the 2-round-cap
+  breach → Bertrand; a 0.11-legibility failure on mobile is NOT (it routes to lead-art/architect, above).
+- handoff → `dev-gameplay` (Amelia): `BOSS_VITAL_CATCH_RADIUS 0.18 → 0.11` (sub-band assert holds:
+  0.11 < 0.226); pre-cleared 0.10 contingency per §1; update the winnability unit re-check.
+- handoff → `dev-r3f-render` (Amelia): draw vital ring A at 0.11 (drawn = catch); limb ring B stays 0.30.
+- handoff → `ux-designer` (Tony) + `lead-art` (Nico): BINDING — the small-ring legibility treatment +
+  leg-2 aim-ability sign-off on both device classes (A1-R2 §4). This is a gate condition, not advisory.
+- handoff → `producer` (Marion): cap status — this is round 2 of 2 on the Lever-1 correction. Next
+  radius/acceptance failure escalates to Bertrand; the legibility branch is tracked separately.
+- NOTE (process): appended via Edit, not `cat >>` heredoc — no Bash tool in this subagent context
+  (same limitation logged in §3/§5/§13). Strictly additive at end-of-file.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
