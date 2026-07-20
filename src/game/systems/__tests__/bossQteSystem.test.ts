@@ -598,8 +598,8 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
     expect(won).toBe(true);
   });
 
-  it("A1 §5 (camp punished): a fixed head-camp aim leaves the 0.18 vital catch on the pinned seed", () => {
-    // The acceptance the tighter catch exists to create: the vital ring wanders BEYOND the 0.18
+  it("A1 §5 (camp punished): a fixed head-camp aim leaves the 0.11 vital catch on the pinned seed", () => {
+    // The acceptance the tighter catch exists to create: the vital ring wanders BEYOND the 0.11
     // catch of a fixed camp aim at the box centre, so greed that camps (rather than tracks) whiffs.
     // Deterministic on targetSeed 20260719 — a stand-in for Sacha's cross-seed greedyVital>0 check.
     const legA = bossWanderLegDuration(phaseRow(2).wanderSpeed);
@@ -733,7 +733,7 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
   });
 
   it("createBossQte asserts the vital catch is < the vital box corner reach (A1 not camp-able)", () => {
-    // The ⊂-band-aware A1 assert: the shipped 0.18 catch is < hypot(0.16,0.16) ≈ 0.226. A tuning
+    // The ⊂-band-aware A1 assert: the shipped 0.11 catch is < hypot(0.16,0.16) ≈ 0.226. A tuning
     // edit that widened the catch back past the box reach (camp-able again) must fail loudly.
     expect(BOSS_VITAL_CATCH_RADIUS).toBeLessThan(
       Math.hypot(BOSS_VITAL_WANDER_AMP_X, BOSS_VITAL_WANDER_AMP_Y),

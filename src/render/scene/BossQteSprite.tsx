@@ -7,6 +7,7 @@ import type { GameState } from "@game/types/gameState";
 import {
   BOSS_PARRY_POINT,
   BOSS_VITAL_CATCH_RADIUS,
+  BOSS_VITAL_WANDER_CENTRE,
   BOSS_WANDER_CENTRE,
   isBossQteActive,
   phaseIndexAt,
@@ -109,7 +110,10 @@ const PARRY_OPEN_TINT = "#ffb454";
 const STAGGER_TINT = "#c9f0ff";
 const WHIFF_TINT = "#ff3b30";
 const PARRY_Z = 0.56;
-const PARRY_SIZE = RING_HIT_RADIUS * 1.15; // the catch zone footprint, drawn as a filled guard
+// A filled diamond guard glyph sized off the parry catch radius (RING_HIT_RADIUS). The rotated
+// diamond sits WITHIN that catch zone (drawn ⊂ catch — its corners fall short of the hit radius),
+// so no drawn pixel lies outside a scored click; parry vs. shoot still reads by FORM.
+const PARRY_SIZE = RING_HIT_RADIUS * 1.15;
 const PARRY_WHIFF_MS = 220;
 // Phase-3 parry windows and the smoke veil are the SAME condition by construction (shard §12/§15):
 // the tinted glyph washed out against the veil + the boss shoulder art. Fix (gated stage-5): a
@@ -140,7 +144,11 @@ const DECOR_GLOW_SIZE = 2.2; // the halo reaches well past the prop so the fallo
 // it to a scattered static arrangement. The count caps are the self-imposed bounds pending Ben.
 const SMOKE_MAX_DESKTOP = 64;
 const SMOKE_MAX_MOBILE = 32;
-const SMOKE_FADE = 0.06; // per-frame envelope lerp toward the smokeActive target (drives the field)
+// Veil envelope ramp RATE (per second), applied via frame-rate-independent exponential smoothing
+// (`1 - exp(-k·dt)`) so the veil ramps in at the same wall-clock feel at any fps — the gating
+// capture runs at ~2 fps, where a fixed per-frame lerp would take tens of seconds. k reproduces the
+// prior 0.06-per-frame feel at 60 fps: 1 - exp(-k/60) == 0.06 ⇒ k = -60·ln(0.94) ≈ 3.7.
+const SMOKE_FADE_K = 3.7;
 
 // L4 renfort — frame-edge silhouette PRESSURE (a lost CRS section, "pas ses hommes"). Motion
 // only, NO shootable body, NO travelling bullet. Reuses the shipped `enemy_riot` silhouette,
@@ -150,7 +158,9 @@ const RENFORT_QUADS = 4;
 const RENFORT_Z = 0.3; // behind the tableau actors — background chaos at the edges
 const RENFORT_TINT = "#2f353b";
 const RENFORT_PEAK_ALPHA = 0.55;
-const RENFORT_FADE = 0.08;
+// Edge-pressure envelope ramp RATE (per second), same exponential smoothing as SMOKE_FADE_K.
+// k reproduces the prior 0.08-per-frame feel at 60 fps: 1 - exp(-k/60) == 0.08 ⇒ k = -60·ln(0.92) ≈ 5.0.
+const RENFORT_FADE_K = 5.0;
 
 // L5 finisher (coup de grâce) — a ceremonial post-combat beat (boss at 0 HP). Kept STRICTLY inside
 // the B&W + acid-neon identity (composite-gate colour-law fix — the old sepia wash added a warm
@@ -329,7 +339,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
   const smokeMax = useMemo(() => (detectMobile() ? SMOKE_MAX_MOBILE : SMOKE_MAX_DESKTOP), []);
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
   // its billboards in world space each frame around the boss anchor.
-  const smokeField = useMemo(() => createSmokeField(SMOKE_MAX_DESKTOP), []);
+  const smokeField = useMemo(() => createSmokeField(smokeMax), [smokeMax]);
 
   // Ring A geometries: the normal annulus (phase-1 single ring + the neutral tell) and a
   // bolder-stroke vital annulus (§21) swapped onto ring A in its vital branches. Ring B (limb)
@@ -494,7 +504,16 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     wasBreakingRef.current = breakActive;
 
     // ── L3 parry whiff: a live parry window closed without a stagger success ───
-    if (wasParryOpenRef.current && !parryOpen && !staggered && qte.phase === "ACTIVE") {
+    // A SUCCESSFUL threshold-crossing parry takes the phase-break path, which zeroes
+    // `staggerRemaining` — so `!staggered` alone can't tell a whiff from a break. Gate on
+    // `phaseBreakRemaining <= 0` so the red WHIFF flash never plays over a phase break.
+    if (
+      wasParryOpenRef.current &&
+      !parryOpen &&
+      !staggered &&
+      qte.phase === "ACTIVE" &&
+      qte.phaseBreakRemaining <= 0
+    ) {
       whiffUntilRef.current = nowMs + PARRY_WHIFF_MS;
     }
     wasParryOpenRef.current = parryOpen;
@@ -588,7 +607,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       // Preview the vital ring at its true (tighter) catch radius + bolder vital stroke (§21).
       ring.geometry = ringGeoVital;
       ring.scale.set(BOSS_VITAL_CATCH_RADIUS, BOSS_VITAL_CATCH_RADIUS, 1);
-      ring.position.set(qte.anchor.x + BOSS_WANDER_CENTRE.x, qte.anchor.y + 0.75, RING_Z);
+      ring.position.set(
+        qte.anchor.x + BOSS_VITAL_WANDER_CENTRE.x,
+        qte.anchor.y + BOSS_VITAL_WANDER_CENTRE.y,
+        RING_Z,
+      );
       const ringMat = ring.material as MeshBasicMaterial;
       ringMat.color.set(ringZoneColour("vital"));
       ringMat.opacity = previewOpacity;
@@ -676,8 +699,13 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     // Envelope ramps smoothly toward the smokeActive target (also feeds the parry-glyph degrade).
     // The field module owns spawn/drift/expand/fade + the reduced-motion static freeze; it hides
     // itself when the envelope is ~0.
-    const smokeTarget = qte.smokeActive ? 1 : 0;
-    smokeEnvRef.current += (smokeTarget - smokeEnvRef.current) * SMOKE_FADE;
+    // Ramp the envelope toward the target only while the field is actually READY (texture loaded).
+    // If the sprite 404s (or hasn't arrived yet) the veil is not on screen, so the target holds at 0
+    // and the parry glyph never pays PARRY_SMOKE_DEGRADE for an absent veil (2-C: degraded only when
+    // truly degrading). Frame-rate-independent exponential smoothing (see SMOKE_FADE_K).
+    const smokeTarget = qte.smokeActive && smokeField.isReady() ? 1 : 0;
+    smokeEnvRef.current +=
+      (smokeTarget - smokeEnvRef.current) * (1 - Math.exp(-SMOKE_FADE_K * delta));
     smokeField.update(delta, {
       activeCount: smokeMax,
       reducedMotion,
@@ -688,7 +716,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
 
     // ── L4 renfort — frame-edge silhouette pressure (motion only, no shootable body) ───────────
     const renfortTarget = qte.renfortActive ? 1 : 0;
-    renfortEnvRef.current += (renfortTarget - renfortEnvRef.current) * RENFORT_FADE;
+    renfortEnvRef.current +=
+      (renfortTarget - renfortEnvRef.current) * (1 - Math.exp(-RENFORT_FADE_K * delta));
     const renfortEnv = renfortEnvRef.current;
     const cam = camera as OrthographicCamera;
     const halfW = size.width / cam.zoom / 2;

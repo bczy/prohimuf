@@ -1,6 +1,8 @@
 # 0053 — "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA
 
-- **Status:** Accepted
+- **Status:** Accepted — pending build (the design/architecture decision below is accepted; the
+  level itself has not been built yet — dev-lane launch is gated on ADR-0052's stage-6 panel
+  MERGE-clearing on `main`, the AC8 sequencing gate, see Gotchas)
 - **Date:** 2026-07-20
 - **Number:** 0053, **allocated by `producer` (Marion)** at DESIGN/TECH-PLAN stage and recorded in
   the story shard (`docs/handoffs/story-boss-niveau-final-live.md` §"STAGE 2 COMPLETE" +
