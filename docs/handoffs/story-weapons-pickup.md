@@ -407,3 +407,132 @@ Belliard mission = **90 s**; crate spawn cadence = **15 s** (`levels.ts` `loot.s
 **Verdict: >40 % uptime IS structurally possible** with the current tuning — the 15 s spawn cadence is SHORTER than a continuously-fired burn (B 13.8 s / C 9 s), so an aggressive collector who burns each crate immediately reaches ≈50 % (C-only) to ≈76 % (B-only) of a 90 s run under a special. The numbers do **not** guarantee W7; the ≤40 % bound relies entirely on **collection friction that is NOT in the tuning table**: §5.4 pushes crates to façade edges away from centre engagement, only one crate exists at a time, and the VISIBLE pickup window is 4.0 s — so realistic uptime is materially below the structural ceiling (qa-lead's runtime capture needed a deliberate edge camera-pan to collect a single crate). **This is a tuning-risk flag, not a conformity defect** — §7 states the values are `verify` starting points, not gated, and W7's remedy is "tune stock down". If the human Belliard measure (escalated to Bertrand) reads >40 %, the one-variable lever is `auto` stock 120→lower and/or `spread` stock 30→lower and/or `loot.spawnIntervalSeconds` 15→higher. No spec change required.
 
 - **Read-only inputs:** `docs/game-design/weapons.md`, `docs/qa/plan-story-weapons-pickup.md` + evidence PNGs, this shard's stage-4 lanes, `src/game/types/weapon.ts`, `src/game/systems/{weaponSystem,lootSystem}.ts`, `src/game/levels/levels.ts`. No code or spec modified (iron rule). Reported to `lead-game-designer` (Karim) ahead of the architect integration review.
+
+---
+
+## stage-5. UX REVIEW — ux-designer (Tony) — 2026-07-20
+
+- claim: stage-5 UX review of the built weapon HUD (`arme` ticker cell) + LOOT crate read, on
+  **both device classes**, against `docs/game-design/weapons.md` §6.2/AC10-AC11, ADR-0046 (CSS
+  tokens), ADR-0003 (mobile/touch contract), and the QA plan's explicit HUD-on-mobile deferral
+  (`docs/qa/plan-story-weapons-pickup.md` §"Device matrix" — "HUD-layout-on-mobile is
+  ux-designer's reconcile"). Played the built branch live (desktop 1280×720 evidence + fresh
+  mobile-landscape 667×375 and short-landscape 568×320 captures via the `verify` skill /
+  `__MUF_PLAY__` seam, read-only driving, zero code touched).
+- VERDICT: PASS — ux review (ux-designer)
+
+**HUD ergonomics — PASS, no regression, on desktop AND mobile-landscape.**
+
+- **Placement/legibility.** `arme` is the rightmost ticker cell (`HUD.tsx` mount order after
+  `EnergyGauge`), same vertical readout-cell pattern (`composes: item/label from
+shared.module.css`) as every sibling — no bespoke layout, no special-casing. On desktop
+  (1280×720, evid `a`/`c`) it reads cleanly: "A ∞" / "C 30" at `--font-size-xxl` (22px), ample
+  gap to ÉNERGIE.
+- **Mobile-landscape (667×375, iPhone-SE-class) — captured live, no overlap.** Full HUD strip
+  renders correctly through the real MENU→narrative→PLAYING flow (mobile UA, `hasTouch`,
+  `isMobile`), "ARME A ∞" fits with clear margin at the right edge.
+- **Short-landscape stress test (568×320, below the ADR-0024 `SHORT_LANDSCAPE_MAX_H=480`
+  threshold) — captured live, still no overlap/wrap.** Cropped/zoomed the ÉNERGIE↔ARME boundary:
+  the two cells stay legibly separated (~15-20px gap at 1x), well short of colliding. **Named
+  gap, not a regression:** `HUD.module.css` never references `SHORT_LANDSCAPE_MEDIA` — the
+  in-game ticker has zero responsive reflow, unlike `FlyerWall`/`OffscreenArrowIndicator`/menus
+  which do use that breakpoint. This is the **pre-existing** gap ADR-0003 already names ("HUD and
+  menus were designed for desktop; small-landscape legibility is a known gap deferred to a
+  follow-up story") — the weapon cell inherits it but does not worsen it; it is one more
+  fixed-size cell in an already non-reflowing strip, and it empirically still fits at the
+  narrowest tested viewport. Not a blocker for this story; out of scope per ADR-0003's own
+  deferral.
+- **Fast-follow, non-blocking (owner: `dev-r3f-render` or `qa-lead`'s next `verify` pass) —
+  widest-case not directly evidenced.** The widest possible `arme` text is **"B 120"** (3-digit
+  `auto` start stock) vs the "A ∞" / "C 30" I could reach live. By font metrics (mono glyph +
+  4px gap + 3 digits at `--font-size-lg`/18px) it computes to only ~13px wider than "A ∞", inside
+  the ~15-20px margin measured at 568×320 — I could not land a live "B 120" capture at the
+  narrowest viewport within this pass's time-box (reaching a specific special-equipped state
+  requires panning to an off-centre crate column, per the spawn-exclusion rule, §5.4). Recommend
+  one screenshot of `auto` freshly equipped at ≤568×320 to close this out with certainty; not
+  expected to fail given the measured margin.
+- **Touch-target non-regression — N/A by construction, confirmed.** `arme` is a read-only
+  display cell, not a control: `HUD.module.css` `.hud { pointer-events: none }` (inherited,
+  unchanged), no `onClick`/button anywhere in `WeaponReadout.tsx`. No new tappable surface is
+  introduced, so there is nothing to measure against the 44px minimum. Pickup happens purely
+  through the existing fire gesture at the crate's world position (§5.2), never a HUD tap.
+- **W8 (no new binding) — confirmed at the render/hook layer.** `git diff origin/main...HEAD`
+  touches zero files under `src/hooks/useTouchControls.ts`, `useMouse.ts`,
+  `src/game/systems/tapGestureSystem.ts`, or any input path — the only render-lane additions are
+  `LootCrate.tsx` (a passive scene mesh) and the HUD widget. Pickup is exactly "the fire gesture
+  lands on a crate slot instead of an enemy slot" — desktop click / mobile two-finger-tap /
+  one-finger double-tap, unchanged (ADR-0003 D3/D5/D7).
+
+**Blink / reduced motion (W4/AC11, W3/AC10) — PASS, verified in the SHIPPED CSS, not just source.**
+
+- Read `WeaponReadout.module.css`: `.stockLow` (last ~20% blink, `weaponStockBlink`
+  step-start 0.6s infinite) and `.emptyFlash` (one-shot `weaponEmptyFlash` 0.45s) both sit under
+  `@media (prefers-reduced-motion: reduce) { animation: none !important }` — the exact
+  `GestureIcon`/`DiagramIcon` precedent (confirmed 15 files in `src/render` share this pattern).
+- **Did not trust the source alone:** built + served the branch and inspected
+  `document.styleSheets` in a live page for the compiled rule. Confirmed present verbatim:
+  `._stockLow_…, ._emptyFlash_… { animation: … none !important; }` under the
+  `prefers-reduced-motion` media query in the actual bundled CSS. The reduced-motion behaviour
+  ships, it is not just commented intent.
+- **W4 — base weapon never blinks, never warns, ever.** Code-confirmed: `isLowStock()`
+  (`hud/derivations.ts`) hard-returns `false` for `kind === "base"` before touching the
+  start-stock ratio; `.infinity` in the CSS carries zero animation/colour-ramp rules — there is
+  no code path that could make ∞ blink. Matches AC11 exactly: a resource readout, never a
+  tension gauge.
+
+**Aria/accessibility of the new cell — matches existing convention (no regression); a
+cross-cutting, non-blocking gap named for the record.**
+
+- `WeaponReadout.tsx` exposes **zero** `aria-*`/`role` on its label/glyph/stock text — but this
+  is **identical** to every sibling ticker cell (`ScoreReadout`, `LivesReadout`, `TimerReadout`,
+  `WaveReadout`, the inline `niveau` item in `HUD.tsx`): none of them carry accessible text
+  either. So the new cell is consistent with, not worse than, the shipped pattern — no
+  story-scoped regression.
+- The one new decorative element, `.emptyFlash`, correctly carries `aria-hidden="true"` (a
+  one-shot visual pulse with no informational content of its own — the same event is already
+  paired with an audible cue per §6.1) — this is _better_ practice than several siblings show.
+- **Named, not blocking:** the whole in-game HUD ticker today exposes no text to assistive tech
+  (no `aria-live` region, no per-cell label) — a pre-existing, cross-cutting gap that predates
+  this story and isn't weapon-specific. Flagging for a future holistic pass over `HUD.tsx`
+  (owner: `ux-designer` + `dev-r3f-render`), not a fast-follow scoped to this story.
+
+**Crate glyph readability at reticle distance on a small screen (R2/W1) — PASS by desktop
+evidence + structural reasoning; live mobile capture inconclusive within time-box.**
+
+- Cropped/zoomed `docs/qa/evidence/weapons-pickup/b-loot-crate-visible.png` at 5×: the "C" glyph
+  is unambiguous even though the on-screen crate is only ~45×50px at 1280×720 cover framing.
+  `LootCrate.tsx` bakes the glyph at a fixed 60/128 (~47%) proportion of its own canvas texture,
+  so legibility scales 1:1 with however large the crate's window slot renders on screen — it is
+  not a fixed pixel size that could shrink to unreadable independently of the slot.
+  `ctx.strokeText` dark keyline under the neon fill keeps contrast even over a bright façade
+  (confirmed in the crop).
+- **Structural mobile argument (not just assumed):** ADR-0003 D4's `MOBILE_ZOOM_FACTOR` (~1.7)
+  shrinks `viewW` on mobile specifically to _enlarge_ every on-screen target for touch — this
+  applies uniformly to every window slot, including a LOOT slot. So the crate (and its glyph)
+  should read at **least** as legibly on mobile as on the desktop evidence, by construction, not
+  a hope.
+- **Attempted live confirmation:** drove the mobile build (667×375) via the `__MUF_STATE__`
+  seam, detected a real `VISIBLE` crate (`slotIndex 1, weapon "spread"`) mid-session, but it fell
+  outside the panned camera framing before I could land it in a screenshot (the same "requires a
+  deliberate edge pan" friction qa-lead's plan already notes for §5.4's spawn-exclusion). Not a
+  finding against the build — a time-boxed capture limitation on my side. **Fast-follow (owner:
+  `lead-art`/`qa-lead`, already tracked as QA's Obs-2):** grab one live mobile-viewport
+  screenshot of the VISIBLE crate during the next art/QA pass to close this with direct evidence
+  instead of extrapolation.
+
+**Verdict rationale.** Every check I own (HUD placement/legibility on both device classes,
+touch-target non-regression, W8 no-new-binding, W4/AC11 base-never-blinks, W3/AC10 reduced-motion
+honoured in the shipped CSS, aria convention-match, R2 crate legibility) passes. Three items are
+logged as **named, non-blocking fast-follows** (the "B 120" widest-case screenshot, the
+cross-cutting HUD aria gap, and a live mobile crate screenshot) — none block V1, none are
+regressions introduced by this story, all have a named owner.
+
+- **Read-only inputs:** `docs/game-design/weapons.md` §6.2/§9, ADR-0046, ADR-0003, ADR-0024 (via
+  `print/tokens.ts` `SHORT_LANDSCAPE_MEDIA`), `docs/qa/plan-story-weapons-pickup.md` + its
+  evidence PNGs, `src/render/ui/hud/{WeaponReadout.tsx,WeaponReadout.module.css,derivations.ts,
+shared.module.css}`, `src/render/ui/{HUD.tsx,HUD.module.css}`, `src/render/scene/LootCrate.tsx`.
+  Built + drove the branch live via the `verify` skill (Playwright + pre-installed Chromium,
+  `__MUF_PLAY__`/`__MUF_STATE__` read-only seam) for fresh mobile-landscape (667×375) and
+  short-landscape (568×320) evidence, plus a live DOM/CSS check of the shipped
+  `prefers-reduced-motion` rule. No production code, spec, or evidence file modified (iron rule).
+  Reported to `lead-game-designer` (Karim) ahead of the architect integration review.
