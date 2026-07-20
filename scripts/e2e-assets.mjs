@@ -13,8 +13,14 @@
  *     files without pinning a specific size — real FLUX art is far larger).
  *
  * Expected assets, per levelArt.json:
- *   - each level → assets/levels/<id>/{sky,facade,street,foreground}.png
- *     (the four layers scripts/gen-level-art.mjs generates per level),
+ *   - each level → assets/levels/<id>/<layer>.png, one per key the level's own
+ *     `prompts` object actually authors (sky/facade/street/foreground) — an
+ *     INTERIOR venue (e.g. niveau-final's l'Éden hall) legitimately drops
+ *     sky/street (no exterior to depict) and this gate must not expect a file
+ *     scripts/gen-level-art.mjs was never asked to generate. Mirrors the same
+ *     per-layer skip gen-level-art.mjs applies at generation time, so the two
+ *     stay in lockstep: a layer key present in `prompts` ⇒ generated ⇒ expected
+ *     here; absent ⇒ skipped there ⇒ not expected here,
  *   - each vehicle → vehicles.types[*].asset (assets/vehicles/{truck,car,moto}.png).
  *
  * Sequencing note (PM flag): vehicle sprites are regenerated later in this PR.
@@ -32,13 +38,16 @@ const ROOT = process.cwd();
 const DIST_DIR = path.resolve(ROOT, process.env.DIST_DIR ?? "dist");
 const MIN_BYTES = 5 * 1024; // 5KB floor — catches empty/placeholder art.
 
-// The four backdrop layers gen-level-art.mjs produces for every level.
-const LAYERS = ["facade", "street", "foreground"];
-
 function expectedAssetPaths(manifest) {
   const rels = [];
   for (const level of manifest.levels) {
-    for (const layer of LAYERS) {
+    // Derive the expected layer set from the level's OWN authored `prompts`
+    // keys, not a fixed list — a level that drops a layer (interior venues
+    // drop sky/street) is never asked to generate it, so it must never be
+    // expected here either (see the header comment).
+    const prompts = level.prompts ?? {};
+    for (const layer of Object.keys(prompts)) {
+      if (layer.startsWith("$")) continue; // skip $comment keys
       rels.push(`assets/levels/${level.id}/${layer}.png`);
     }
   }
