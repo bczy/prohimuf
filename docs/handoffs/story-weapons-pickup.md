@@ -52,3 +52,19 @@
 ### If GO downstream
 
 Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs (owner: `game-designer`/Sacha; re-gate here). Hand-offs stand: `pm` scope (A–D vs A–B–C; loss-on-death) · `lead-art` crate + glyph read (B6) · `ux-designer` HUD + mobile full-auto input (B4) · `narrative-designer` weapon names (fiction, not lore-locked). Round 1 of 2.
+
+---
+
+## stage-1. SCOPE — pm (John) — 2026-07-20
+
+- claim: V1 scope cut + story authoring (parallel to design gate; logged by orchestrator to avoid shard write race) / release: story written at `_bmad-output/planning-artifacts/story-weapons-pickup.md`, 4 rulings below
+- VERDICT: PASS — pm scope: weapons V1 (pm)
+
+**Rulings:**
+
+1. **Roster V1 = A-B-C** (cuts the pre-spec's A-B-C-D recommendation). Bertrand's brief names two special fire types and says "1-2 spéciales"; shipping B+C+D at once breaks the pre-spec's own "one variable at a time" guardrail. Architecture reinforces the cut: shipped fire is instant hitscan (ADR-0040) — `auto` (B) is a trivial extension, `spread` (C) is one new unknown (multi-target resolution), `tromblon` (D) adds a second (range axis that doesn't exist). **D = fast-follow**, not killed. E stays YAGNI.
+2. **Loss-on-death: NO for V1.** muf's lives model has no respawn (a hit decrements `lives`, run continues) — coupling weapon-loss to the same event stacks two penalties with zero playtest data, and couples otherwise-independent systems. Explicit regression AC (A7): a hit never touches `weapon.active`/`weapon.stock`. Revisit only if playtest shows special hoarding. (Overrides Karim's N1(a) lean — pm's call per gate protocol.)
+3. **Rollout: Belliard-first, confirmed.** Crate is a generic spawn, not per-level scripted data.
+4. **Out of V1:** sliding-container crate variant, weapon E, final weapon names/lore (placeholders fine), and **no FLUX art lane** — a drawn glyph placeholder (existing `GestureIcon`/`DiagramIcon` pattern) suffices unless lead-art's B6 read judges it illegible (then small fast-follow, not blocker).
+
+**Flagged to senior-architect (not resolved here):** `spread`'s 3-simultaneous-target resolution vs the current "0-or-1 `impactEvents` per tick" invariant; `LOOT` pickup must stay outside the `ARCHETYPES`/score-lives path (a crate hit never produces stray score/life deltas).
