@@ -994,3 +994,93 @@ BUDGET GAP: docs/perf-budget.md absent — working budgets (desktop 16.6 ms / mo
   ever reached, is a visual trade routed to `lead-art` via you, not decided in a fix lane).
 - File List:
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 9. BUILD (render lane) — dev-r3f-render (Amelia) — 2026-07-20 — the 5-lever render layer (procedural/placeholder)
+
+- claim: stage-4 BUILD of the render layer for the 5 ADR-0052 differentiation levers, logic-free
+  (renders pure state; no game rules). Files per the §7 lane partition (hard boundary):
+  `src/render/scene/BossQteSprite.tsx` + `src/render/ui/hud/BossHpBar.tsx` (+ its module.css).
+  `src/render/ui/hud/types.ts` NOT touched (architect default NO — see deviations; no justification
+  needed, the finisher is diegetic + bar-reinforced, renfort diegetic; no new HUD field). Coded
+  strictly against the ADR-0052 D2/D3 FROZEN field/constant names; `CrtPass.tsx`/`crtParams.ts`,
+  `stateMachine.ts`, `src/hooks`, `levelArt.json` untouched; no new render target / fullscreen pass.
+- What I rendered, per lever:
+  - **L1 points faibles multiples** — a second (LIMB) ring mesh (`ringBRef`) drawn in phases 2+
+    (`phaseIndexAt >= 1`) on `qte.targetOffsetB`; ring A becomes the fixed VITAL identity (head,
+    green, brighter `ringZoneEmphasis`), ring B the fixed LIMB identity (torso, yellow, dimmer).
+    "Which is which" reads from ANATOMY POSITION + brightness, not colour alone (UX D4.1/D4.5).
+    Phase 1 = single ring, `bossRingZoneAt` colour-by-position — V1 byte-identical. The phase-1→2
+    split gets a faint DUAL-RING PREVIEW during that break only (`phaseBreakRemaining>0 && phase===1`),
+    the "new pattern" cue distinct from an ordinary phase break (UX D4.7; modest, verify-tunable —
+    Karim advisory 1).
+  - **L3 parade** — a FORM-distinct parry telegraph: a filled diamond "guard" glyph (`parryRef`,
+    rotated 45°) at `BOSS_PARRY_POINT` (the raised sidearm) — categorically NOT the open shoot ring,
+    so parry-vs-shoot reads by FORM in grayscale (UX D2.1). Faint during the wind-up
+    (`telegraphActive && chargedWindow && !EXPOSED`), solid/brighter when the parry window is live
+    (`EXPOSED && chargedWindow`). Shoot rings are suppressed during a charged window (it replaces a
+    normal EXPOSED window). Parry SUCCESS = a cool "reeling" stagger tint while `staggerRemaining>0`
+    (the bonus EXPOSED window then draws rings normally); parry WHIFF = a brief heavier-alarm flash
+    (render-side edge: a live parry window closed with no stagger success).
+  - **L2 décor** — a procedural PLACEHOLDER prop mesh (`decorRef`) at `bossQteSpec.decorProp.position`
+    (anchor-relative), dim/inert by default, GLOWING (acid tint + pulse) only while
+    `decorArmed && !decorConsumed` ("ce qui brille est interactif"); spent reads dimmer. The SMOKE
+    VEIL built to the gpu-specialist BINDING bounds (§8): **4 alpha quads (≤6), one baked desaturated
+    CanvasTexture (single fetch) + tint, UV scroll + per-quad opacity envelope + gentle world drift,
+    world-space layer 0, renderOrder 10 (in FRONT of rings so it degrades — capped peak alpha 0.42
+    so the telegraph stays grayscale-legible, never removed), NORMAL blend (never additive), ZERO new
+    RT / ZERO new pass / CrtPass untouched.** Reduced-motion = static veil (no UV scroll, no drift).
+  - **L4 renfort** — 4 frame-edge silhouette quads (`renfortRefs`) reusing the shipped `enemy_riot`
+    idle texture, dark/desaturated, hugging the camera edges partially off-screen, swaying inward;
+    MOTION ONLY — no shootable body, no travelling bullet, no lives (reads as "pas ses hommes").
+    Smooth opacity envelope ramps in/out on `renfortActive` (render-side onset).
+  - **L5 coup de grâce** — a FINISHER read on `qte.phase === "FINISHER"`: the commander drops to a
+    defeated kneel (non-firing frame, desaturated), a one-shot ceremonial SEPIA wash (`finisherWashRef`,
+    colour disjoint from the cool-white phase-break pulse / green WON / red LOST), and the
+    « LIVRE LE SON » prompt (`finisherPromptRef`, a baked CanvasTexture plane, diegetic below the
+    boss — canonical copy, NOT "ACHEVER"). The prompt's presence + a "click now" pulse positively
+    distinguish this ACTIVE beat from the passive `QTE_RESULT_HOLD` breather (UX D3.2). Resolves on
+    ANY `fire` (game 5-B) → the whole frame is the click zone, so the 44px touch floor is trivially
+    and generously met (UX D3.6/A10). HUD: `BossHpBar` now settles once (a single `scaleY` nudge on
+    the track) when `bossHp <= 0` (UX D3.4) — reinforcement only, NO new persistent "finisher pending"
+    HUD state (UX D3.5); ADR-0046 CSS-Modules/tokens discipline held (keyframe in the module,
+    `cx()` combiner, no hex/px literals).
+- Reduced-motion coverage (UX D2.7/D3.1, every animated read has a branch): ring-tell pulse → steady
+  opacity; split-preview pulse → steady; parry glyph pulse → steady; décor glow pulse → steady;
+  smoke → fully static veil (no scroll/drift, per gpu Q1 non-strobing); renfort sway → dropped (held
+  edge presence, envelope fade only); phase-break pulse & finisher wash → steady step (existing
+  pattern); finisher prompt "click" pulse → steady; HUD settle → `animation:none` under the media
+  query. All match the existing `BossQteSprite`/`CrtPass` reduced-motion idiom.
+- VERIFICATION (corepack yarn 4.12.0, COREPACK_NPM_REGISTRY set; rtk not installed):
+  - `yarn vitest run src/render` → **184/184 PASS** (my helpers are pure-tested; the R3F component
+    renders via canvas, no direct unit test — consistent with the codebase).
+  - `yarn eslint` on my two files → clean EXCEPT 6 errors at `BossQteSprite.tsx:527`, all
+    `no-unsafe-*` on `state.bossQteSpec?.decorProp` — a direct consequence of the missing frozen
+    type field below (the access is `any` until it lands).
+  - `yarn typecheck` on my files → clean EXCEPT `TS2305 BOSS_PARRY_POINT has no exported member`.
+  - **MISSING SYMBOLS (gameplay-lane dependency — I coded against the ADR-0052 frozen names; orchestrator
+    re-runs after both lanes land):**
+    1. `BOSS_PARRY_POINT: Vec2` — export from `src/game/systems/bossQteSystem.ts` (ADR-0052 D2 lever 3;
+       §7 new-constants list). → clears the typecheck TS2305.
+    2. `BossQteSpec.decorProp?: { position: Vec2; armPhaseIndex: number }` — type field in
+       `src/game/types/bossQte.ts` (ADR-0052 D2 lever 2; §7 dev-gameplay types). → clears the 6
+       BossQteSprite.tsx:527 lint errors (the `any` access).
+    - Behavioural dependency (not a symbol): `isBossQteActive` must include `"FINISHER"` (ADR-0052 D3)
+      or the render's active branch hides the finisher beat — I rely on the frozen contract.
+    - All OTHER frozen runtime reads (`targetOffsetB`, `chargedWindow`, `staggerRemaining`,
+      `decorArmed`, `decorConsumed`, `smokeActive`, `renfortActive`, `finisherRemaining`, phase
+      `"FINISHER"`) already typecheck against my reads — the gameplay lane's type extension landed;
+      only their `createBossQte`/`useGameLoop` FINISHER-mapping errors remain, which are THEIR lane.
+- Deviations from the UX spec (justified):
+  - The « LIVRE LE SON » prompt is DIEGETIC (in-scene CanvasTexture plane), not a DOM HUD element —
+    honours the §7 "types.ts default NO / finisher is diegetic + bar-reinforced" directive, so
+    `HudBossQte`/`types.ts` is untouched (no architect sign-off needed). Satisfies UX D3.3 (text is
+    reinforcement; the wash + click pulse + defeated pose carry "act now" without reading text).
+  - Finisher touch target (D3.6/A10): no drawn hitbox — the game resolves on ANY `fire`, so the click
+    zone IS the full frame (maximally generous), which is the intended "no unearned failure" outcome.
+  - NO audio wiring / no `playSfx` stubs (ADR-0052 §7 audio-wiring call — triggers land WITH assets in
+    a later lane).
+- File List:
+  - `src/render/scene/BossQteSprite.tsx` (rewritten: +L1/L3/L2/L4/L5 reads, baked smoke/prompt textures)
+  - `src/render/ui/hud/BossHpBar.tsx` (bossHp===0 one-shot settle class via `cx`)
+  - `src/render/ui/hud/BossHpBar.module.css` (`.settled` keyframe + reduced-motion guard)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)

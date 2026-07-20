@@ -40,6 +40,31 @@
   border: var(--keyline-width) solid var(--ink-black);
   background: var(--stock-shell);
   overflow: hidden;
+  transform-origin: center;
+}
+
+/* Boss down (bossHp === 0): a single settle nudge on the track (UX D3.4) — a one-shot beat,
+   NOT a repeating strobe, disabled entirely under prefers-reduced-motion (WCAG 2.3.1). */
+.settled {
+  animation: bossSettle 360ms ease-out 1;
+}
+
+@keyframes bossSettle {
+  0% {
+    transform: scaleY(1);
+  }
+  40% {
+    transform: scaleY(1.25);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settled {
+    animation: none;
+  }
 }
 
 /* Shared gauge fill (composed): width % and hue arrive as inline custom properties; the
