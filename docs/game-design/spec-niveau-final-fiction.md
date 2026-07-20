@@ -178,13 +178,47 @@ subtitle field exists at all); I own the **words**. Seam handed to Tony:
   (mirrors the « Vitry — 94 » one-field convention; the date is the finale's meaningful tag
   the way the _département_ is Vitry's.)
 
-Pick per what the surface supports — the words are fixed, the layout is Tony's. No other
-new player-facing string is authored by this story (AC7: nothing beyond the gated scripts +
-this title).
+Pick per what the surface supports — the words are fixed, the layout is Tony's.
 
 **Recommended level id (drives the narrative keying, §5): `niveau-final`** — the story's
 own example (`levels.ts` / `senior-architect` own the final id at TECH PLAN; the keying in
 §5 follows mechanically from whatever id ships).
+
+### 4.1 The flyer copy (`PLAYABLE_COPY`) — handed to me by `ux-designer` (Tony)
+
+The level-select flyer (`LevelFlyer.tsx` `PLAYABLE_COPY`, keyed by level id, gated
+`flyer-wall-format.md`) needs a fourth playable entry. This is the rave flyer a player skims
+**before** the level — so it is bound by the spoiler discipline (ux D3): **it names the
+teuf, never le Commandant, never the boss.** The reveal stays inside the level (§3). It
+carries the payoff instead: the three crews the player served one by one
+(SPIRALE 23 / KANAL SYSTEM / NADIR 94 — encounter sheet §2) finally on **one** flyer for the
+millennium.
+
+| field      | value (FR, player-facing)              | note                                                                                                                    |
+| ---------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `crew`     | `SPIRALE 23 · KANAL SYSTEM · NADIR 94` | The three crews united — the finale payoff. **Fallback if too wide for the surface (ux's call):** `LES TROIS SYSTÈMES`. |
+| `slogan`   | `LE DERNIER SON DU SIÈCLE`             | Echoes gated `final_pre` #1; reads as a party line, not a warning — no boss hint.                                       |
+| `dateLine` | `31 DÉC. 1999 → JUSQU'EN 2000`         | Echoes gated `final_pre` #8 (« Qu'il danse jusqu'en 2000 »).                                                            |
+| `zoneLine` | `L'ÉDEN · ANCIEN DANCING`              | Where the venue name first lands player-facing. Not a spoiler — the destination, not the antagonist.                    |
+| `rvLine`   | `RV : SUR L'INFO-LINE`                 | Verbatim convention (all three prior flyers).                                                                           |
+| `infoLine` | `08 36 31 12 99`                       | Same `08 36` legal-safe premium-infoline pattern (copy-deck §8.7); the millennium date as the number.                   |
+
+**Locked-state flyer:** reuses the shipped `LOCKED_COPY` unchanged (crew stays legible,
+flavour withheld) — no new locked copy authored, and no boss reveal leaks on the locked node
+(ux D3 held).
+
+### 4.2 The two confirmations `ux-designer` asked for
+
+- **AC7 — `final_pre`/`final_post` need no adaptation beyond the concrete id/anchor.**
+  **Confirmed.** The only wiring is the id/key + the mandatory backdrop (§5, flags A/B); not
+  one French line changes.
+- **ADR-0015 check — the finale copy introduces no input-instruction wording.**
+  **Confirmed.** Neither the flyer (§4.1), the level title (§4), nor the gated briefing
+  carries any device/control copy (« clic », « tap », « balaie », « swipe »…). Controls
+  wording lives only in the device-forked tutorial (ADR-0015); the finale adds none.
+
+Beyond the flyer, the title, and the (frozen) gated scripts, **no other new player-facing
+string is authored by this story** (AC7).
 
 ---
 
@@ -267,6 +301,10 @@ the concrete id/anchor" AC7 anticipated. Where an option _would_ touch gated cop
 - **Level-select words** for `ux-designer`: title `L'Éden`, subtitle
   `31 décembre 1999 · le dernier son du siècle`, one-field fallback `L'Éden — 31 déc. 1999`
   (§4). Words mine, surface his.
+- **Flyer `PLAYABLE_COPY`** (Tony's explicit follow-on ask): the fourth playable flyer
+  entry — crew/slogan/date/zone/rv/info (§4.1), spoiler-clean (names the teuf + l'Éden,
+  never le Commandant), plus the two confirmations he asked for (AC7 no-adaptation-beyond-id
+  and the ADR-0015 no-input-copy check — both **confirmed**, §4.2).
 
 **Ce que je NE décide pas :** the level id (`senior-architect`/`dev-gameplay` at TECH PLAN
 — my keying in §5 follows it mechanically), pacing/quota/difficulty (Open Q1–2,
