@@ -108,5 +108,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0050](./0050-flyer-occlusion-shadow-exception.md) | Flyer occlusion-shadow exception & breakpoint-dependent roving axis | Proposed |
 | [0051](./0051-boss-qte-encounter-system.md) | Boss QTE encounter system ("le Commandant"): phase-sequenced spatial-colour duel + non-shipped dev-harness | Accepted |
 | [0052](./0052-boss-qte-differentiation-levers.md) | Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception | Accepted |
+| [0053](./0053-niveau-final-live-boss-level.md) | "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA | Accepted |
 
 <!-- ADR-INDEX:END -->

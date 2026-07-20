@@ -1371,16 +1371,16 @@ a silent fix.
 
 ### Simulation results (seed 20260719, N=500 aim-trials/style)
 
-| Play style        | Win  | Loss | avg blown | avg ΔE | avg time | note                                            |
-| ----------------- | ---- | ---- | --------- | ------ | -------- | ----------------------------------------------- |
-| optimal (full kit)| 100% | 0%   | 0.00      | +17.3  | 40.0s    | ceiling — clears with full blown-window margin  |
-| greedyLimb (bank) | 100% | 0%   | 0.00      | +9.7   | 46.4s    | safe-bank line viable — floor intact            |
-| greedyVital (2HP) | 100% | 0.03 | 0.03      | +10.4  | 43.7s    | **greed NOT punished** (see Lever-1 finding)    |
-| parryWhiff        | 100% | 0%   | 5.99 (≤8) | −58.6  | 66.7s    | whiff cost STINGS + attributable; survivable    |
-| decorIgnore       | 100% | 0%   | 0.00      | +9.7   | 46.4s    | décor = pure upside (ignoring it costs nothing) |
-| campVital (exploit)| 100%| 0%   | 0.00      | +50.0  | 41.6s    | **dominant line: fixed-aim head, never tracks** |
-| sloppy            | 81%  | 19%  | 7.58 (≤9) | −121   | 74.1s    | losable by poor execution                       |
-| sloppyNoParry     | 91%  | 9%   | 6.66 (≤9) | −100   | 68.7s    | losable                                         |
+| Play style          | Win  | Loss | avg blown | avg ΔE | avg time | note                                            |
+| ------------------- | ---- | ---- | --------- | ------ | -------- | ----------------------------------------------- |
+| optimal (full kit)  | 100% | 0%   | 0.00      | +17.3  | 40.0s    | ceiling — clears with full blown-window margin  |
+| greedyLimb (bank)   | 100% | 0%   | 0.00      | +9.7   | 46.4s    | safe-bank line viable — floor intact            |
+| greedyVital (2HP)   | 100% | 0.03 | 0.03      | +10.4  | 43.7s    | **greed NOT punished** (see Lever-1 finding)    |
+| parryWhiff          | 100% | 0%   | 5.99 (≤8) | −58.6  | 66.7s    | whiff cost STINGS + attributable; survivable    |
+| decorIgnore         | 100% | 0%   | 0.00      | +9.7   | 46.4s    | décor = pure upside (ignoring it costs nothing) |
+| campVital (exploit) | 100% | 0%   | 0.00      | +50.0  | 41.6s    | **dominant line: fixed-aim head, never tracks** |
+| sloppy              | 81%  | 19%  | 7.58 (≤9) | −121   | 74.1s    | losable by poor execution                       |
+| sloppyNoParry       | 91%  | 9%   | 6.66 (≤9) | −100   | 68.7s    | losable                                         |
 
 Optimal single walk window-kinds on the seed: phase-1 6, phase-2 2 normal + charged, phase-3 3
 normal + charged — every phase presents landable windows; two rings + parry + décor arm all landable.
@@ -1468,8 +1468,8 @@ normal + charged — every phase presents landable windows; two rings + parry + 
 - handoff → `lead-game-designer` (Karim): design-acceptance VERDICT = PASS-WITH-CORRECTIONS. ONE
   gated design correction (Lever-1 per-ring VITAL catch radius ≈0.18 to restore risk/reward + undo
   vital-camp dominance) — needs your PASS, then a small `dev-gameplay` change (per-zone catch radius
-  + a unit test) + a winnability re-pin. Advisories 1 & 5 discharged. This report precedes
-  `senior-architect`'s integration review per the pipeline.
+  - a unit test) + a winnability re-pin. Advisories 1 & 5 discharged. This report precedes
+    `senior-architect`'s integration review per the pipeline.
 - handoff → `ux-designer` (Tony) + `lead-art` (Nico): soft READ flag — the parry telegraph (PNG `21`)
   does not yet read as form-distinct from the shoot ring at a glance; confirm in your leg-2 form
   review (spec 3-C is your lane; my mechanic is correct).
