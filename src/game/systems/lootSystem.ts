@@ -10,12 +10,28 @@ import type { LootCrate, LootSpec } from "@game/types/loot";
 // §5.4 — the crate's column must clear EVERY active engaged column by this gap.
 export const LOOT_SPAWN_MIN_COL_GAP = 2;
 
+// The crate's fixed world-y on the sidewalk strip (ADR-0053 D2, verify-tunable).
+// Single source of truth: read by `bulletSystem.resolvePlayerShot` (crate hit-point)
+// and by `LootCrate.tsx` (render mount) — the crate decouples its y from the window
+// row, keeping only its x (slot.screenPosition.x). AC-D8 crop-clearance knob.
+export const LOOT_STREET_Y = -4.3;
+
+// Near-centre spawn bound (ADR-0053 D3): a candidate slot's |screenPosition.x| must
+// be ≤ this, world-origin-anchored (the pure spawn can't read live camera pan —
+// ADR-0003/0026 keep pan out of GameState). verify-tunable.
+export const LOOT_MAX_ABS_X = 7;
+
+// Delivery x-gap (ADR-0053 D9-2): when a vehicle is INCOMING/at its stop, the crate
+// must not spawn within this world-x distance of the stop line. verify-tunable.
+export const CRATE_DELIVERY_GAP_X = 2.0;
+
 // Crate state durations, seconds (verify-tunable, §7 style — not gated). The
-// HIDDEN wait mirrors the target convention; APPEARING matches enemySystem's
-// 0.3; VISIBLE is the pickable window.
+// HIDDEN wait mirrors the target convention; APPEARING is a drop-and-settle
+// (ADR-0053 D5); VISIBLE is the pickable window, lengthened for a street object
+// read off the resting frame (ADR-0053 D4).
 export const LOOT_HIDDEN_DURATION = 0.4;
-export const LOOT_APPEARING_DURATION = 0.3;
-export const LOOT_VISIBLE_DURATION = 4.0;
+export const LOOT_APPEARING_DURATION = 0.45;
+export const LOOT_VISIBLE_DURATION = 6.0;
 
 // The §5.4 spawn-exclusion predicate (AC9): a candidate column is eligible iff it
 // is ≥ LOOT_SPAWN_MIN_COL_GAP from EVERY active-engagement column. Empty ⇒ true.
@@ -40,6 +56,14 @@ export interface LootTickResult {
   readonly lootTimer: number;
   // True on the tick a crate is created — the caller advances its id counter.
   readonly spawned: boolean;
+}
+
+// Pure delivery snapshot for the D9-2 x-gap (ADR-0053 D4). `stopX` is the vehicle's
+// stop world-x. `null` ⇒ no active delivery this tick ⇒ the gap predicate is
+// skipped. The phase-gate lives in `stateMachine`; `lootSystem` stays
+// delivery-type-agnostic (a number in, never a `DeliveryVehicle`) — boundary law.
+export interface DeliveryGap {
+  readonly stopX: number;
 }
 
 // Advance an existing crate's state machine by `delta`; expiry removes it and
@@ -83,6 +107,7 @@ function attemptSpawn(
   enemies: readonly Enemy[],
   facade: FacadeMap,
   nextId: number,
+  deliveryGap: DeliveryGap | null,
 ): LootTickResult {
   const timer = lootTimer - delta;
   if (timer > 0) return { loot: null, lootTimer: timer, spawned: false };
@@ -94,8 +119,16 @@ function attemptSpawn(
   // (active states only) does not catch. Applied ALONGSIDE the column-gap rule.
   const occupied = new Set(enemies.filter((e) => e.state !== "DEAD").map((e) => e.slotIndex));
   const eligible = facade.slots
-    .map((slot, slotIndex) => ({ slotIndex, col: slot.col }))
-    .filter((s) => !occupied.has(s.slotIndex) && canSpawnLootAt(s.col, activeCols));
+    .map((slot, slotIndex) => ({ slotIndex, col: slot.col, x: slot.screenPosition.x }))
+    .filter(
+      (s) =>
+        !occupied.has(s.slotIndex) &&
+        canSpawnLootAt(s.col, activeCols) &&
+        // Near-centre bound (ADR-0053 D3), world-origin-anchored.
+        Math.abs(s.x) <= LOOT_MAX_ABS_X &&
+        // Delivery x-gap (ADR-0053 D9-2); skipped when no vehicle is active.
+        (deliveryGap === null || Math.abs(s.x - deliveryGap.stopX) >= CRATE_DELIVERY_GAP_X),
+    );
   if (eligible.length === 0) return { loot: null, lootTimer: 0, spawned: false }; // deferred
 
   // Deterministic picks keyed on the crate id (the spawn sequence is replay-safe).
@@ -119,6 +152,9 @@ function attemptSpawn(
 }
 
 // Tick the loot channel: advance a live crate, or count down and (maybe) spawn one.
+// `deliveryGap` is the pre-computed pure delivery snapshot for the D9-2 x-gap
+// (null ⇒ no active delivery this tick); defaults to null so callers without a
+// delivery need not pass it.
 export function tickLoot(
   loot: LootCrate | null,
   spec: LootSpec | null,
@@ -127,8 +163,9 @@ export function tickLoot(
   enemies: readonly Enemy[],
   facade: FacadeMap,
   nextId: number,
+  deliveryGap: DeliveryGap | null = null,
 ): LootTickResult {
   if (spec === null) return { loot: null, lootTimer, spawned: false };
   if (loot !== null) return advanceCrate(loot, spec, lootTimer, delta);
-  return attemptSpawn(spec, lootTimer, delta, enemies, facade, nextId);
+  return attemptSpawn(spec, lootTimer, delta, enemies, facade, nextId, deliveryGap);
 }

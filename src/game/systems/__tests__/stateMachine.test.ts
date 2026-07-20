@@ -14,6 +14,7 @@ import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { CourierField } from "@game/systems/courierSystem";
 import type { LootCrate, LootSpec } from "@game/types/loot";
 import { BULLET_SPEED } from "@game/systems/bulletSystem";
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { spawnWave } from "@game/systems/enemySystem";
 import { pickKind } from "@game/types/enemyTypes";
 
@@ -857,14 +858,15 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
 
 // --- ADR-0052: weapon + LOOT integration at the tick level ---------------------
 
-// Aim `mouseX/mouseY` at a facade slot's world position under the tick's default
-// 18×12 view (see crosshairToWorld). Slot must sit within the visible range.
-function aimAtSlot(slotIndex: number): { mx: number; my: number } {
+// Aim `mouseX/mouseY` at a crate on the given slot: its x is the slot's world-x,
+// but since ADR-0053 the crate resolves at street-y (LOOT_STREET_Y), NOT the slot's
+// window-y. Under the tick's default 18×12 view (see crosshairToWorld).
+function aimAtCrate(slotIndex: number): { mx: number; my: number } {
   const p = FACADE_01.slots[slotIndex]?.screenPosition;
   if (p === undefined) throw new Error(`no slot ${String(slotIndex)}`);
-  return { mx: p.x / 18 + 0.5, my: -p.y / 12 + 0.5 };
+  return { mx: p.x / 18 + 0.5, my: 0.5 - LOOT_STREET_Y / 12 };
 }
-// Slot 49 = col 9 / row 2 → screenPosition (0, -0.75), safely inside the view.
+// Slot 49 = col 9 / row 2 → screenPosition.x = 0, safely inside the view.
 const CENTRE_SLOT = 49;
 
 describe("tickGameState — levels without loot stay byte-identical (D8)", () => {
@@ -927,7 +929,7 @@ describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives d
       ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))),
       loot: crate,
     };
-    const aim = aimAtSlot(CENTRE_SLOT);
+    const aim = aimAtCrate(CENTRE_SLOT);
     const next = tickGameState(s, fire, aim.mx, aim.my, 0.016, FACADE_01);
     expect(next.weapon.active).toBe("spread");
     expect(next.weapon.stock).toBe(30);
