@@ -81,6 +81,21 @@ AC1–AC3/AC7 (already satisfied) and keep AC4–AC6/AC8 (the consolidation/auth
   fix-lane item, not silently inherited here" — its AC19/Out-of-scope) — this story is that
   fix-lane item's home, folded in rather than shipped as a separate one-line fix.
 
+> [AMENDMENT 2026-07-20 — ADR-0052 / stage-6 merge gate, PR #116] The shipped scope
+> supersedes the seed-once model specced above. Per **ADR-0052 §3**, `Prefs.reducedMotion`
+> defaults to **`false`** and is **never seeded from the OS** — `prefsSystem.ts` stays a pure
+> reducer/serializer with no `matchMedia`. The effective value is the **live union**
+> `prefs.reducedMotion || OS prefers-reduced-motion`, resolved once at the render/bridge edge
+> (`useReducedMotionRoot`, mirrored onto `:root[data-reduced-motion]`); the toggle can
+> strengthen but never weaken a live OS `reduce`. Therefore **AC1** and the first Scope (V1)
+> bullet ("seeded once from `window.matchMedia`…, never re-polled") are replaced by "default
+> `false`, no OS seed, live union at the bridge" — a legacy blob missing the field loads as
+> `false`. **AC5** is amended: the reduced-motion and difficulty controls ship as the shared
+> `BallotRow` primitive (`role="radiogroup"` + `role="radio"`/`aria-checked`, ≥44×44px) — the
+> ARIA radio pattern per the UX spec, **not** a `<button aria-pressed>` toggle; `aria-pressed`
+> in AC5 is superseded by `aria-checked` on the radio boxes (the pre-existing CRT-toggle a11y
+> debt is still closed, via the same primitive). All other ACs stand as shipped.
+
 ## Acceptance criteria
 
 | # | Given | When | Then |
