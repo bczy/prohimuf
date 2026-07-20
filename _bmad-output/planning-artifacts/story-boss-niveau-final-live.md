@@ -216,6 +216,13 @@ canon confirmation, script wiring), `ux-designer` (fresh-eyes legibility — see
    or open the art lane now, in parallel, targeting landing before this story's stage-6
    panel? A real trade-off between velocity and the finale's "one true reveal" reading
    finished — `pm` + `lead-game-designer` + `senior-architect` call, not pre-decided here.
+
+   **RESOLVED (`pm`, AC9 re-review, 2026-07-20):** Bertrand explicitly decided this
+   mid-session, via a direct question — "Lane art complète maintenant" — opening the
+   full 9-asset art lane now, in parallel (not before dev starts). This is a real INTAKE
+   decision, not an inference from the boss-in-stage message; `game-designer`'s spec was
+   correctly written on it. (This also corrects the design gate's advisory (a), which
+   read the spec's framing as an over-read of intake — it was not.)
 4. **The canon-venue confirmation.** `spec-boss-differentiation-fiction.md` named the
    Niveau Final venue for the first time — "a squatted grand disused hall with an old
    chandelier" — flagged by `narrative-designer` as NEW-CANON and ratified by
@@ -227,6 +234,12 @@ canon confirmation, script wiring), `ux-designer` (fresh-eyes legibility — see
    about including the boss also constitutes sign-off on a specific venue description he
    has not been shown. A one-line confirmation ("yes, squatted hall + chandelier, as
    written" or a correction) closes this cleanly before art/backdrop work commits to it.
+
+   **RESOLVED (`pm`, AC9 re-review, 2026-07-20):** Bertrand confirmed, in the same intake
+   session, the squatted grand hall as canon (`narrative-designer` has since hardened it
+   as **l'Éden**, design-gate ratified). Both this and Open Question 3 above are explicit
+   intake decisions — recorded here so the open-questions log matches what actually
+   happened before this story was opened.
 5. **Sequencing (see Sequencing recommendation, above).** Does dev-lane BUILD wait for
    ADR-0052's stage-6 merge, or does Bertrand want it compressed? Flagged, not decided.
 
