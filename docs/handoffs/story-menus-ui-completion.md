@@ -111,3 +111,26 @@ false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/
 - HANDOFF → `dev-r3f-render` (wave-2 wiring): `Prefs.reducedMotion: boolean` (default `false`)
   is persisted in the `muf_prefs` blob. Build the shared derived signal `prefs.reducedMotion || OS`
   at the bridge edge (resolve `matchMedia` there) + the toggle row grouped with CRT.
+
+## stage-4. DEV (M1 pure-logic slice) — dev-gameplay (Amelia) — 2026-07-20
+
+- claim: pure side of M1 — `ScoreEntry.name`, sanitizer, deferred-save seam, `muf_player_name`
+  serializer; TDD. Did NOT touch `src/render`/`src/hooks`/`prefsSystem.ts` (M3 lane owns it).
+- release: `src/game/systems/highScoreSystem.ts` — `ScoreEntry.name?: string` (optional on read);
+  tolerant `isValidEntry` (legacy blobs without `name` load; corrupt non-string `name` drops the
+  row only); `saveScore` sanitises + omits empty `name` (skip = byte-identical to legacy); new pure
+  `sanitizeName` (strip control chars → trim → clamp `MAX_NAME_LENGTH=16` → trim), `resolveDisplayName`
+  (single fallback seam → `ANONYMOUS_NAME = "ANONYME"`, narrative-owned copy slot), `loadPlayerName`/
+  `savePlayerName` (`muf_player_name` plain-string key, mirrors the `muf_progress` idiom).
+  `src/game/systems/__tests__/highScoreSystem.test.ts` (+18 tests, 12→30).
+- verify: `yarn typecheck` clean · `yarn test` 843/843 (highScoreSystem 30/30) · `yarn lint` clean.
+- File List: `src/game/systems/highScoreSystem.ts`, `src/game/systems/__tests__/highScoreSystem.test.ts`.
+- HANDOFF → `dev-r3f-render` (wave-2 wiring, `App.tsx`): the current auto-save is `App.tsx:228`
+  (`saveScore(...)` inside the `GAME_OVER`/`LEVEL_COMPLETE` effect, `App.tsx:213-249`, guarded by
+  `isShippedLevel`, 226-237). When `isHighScore(selectedLevel.id, hudData.score)` is true, do NOT
+  call `saveScore` at :228 — route to `NAME_ENTRY`, hold `{score,wave,date}`, and call
+  `saveScore(levelId, { score, wave, date, name })` **exactly once** on resolution (submit/skip).
+  Pure API to call: `sanitizeName(raw)` (live input clamp), `resolveDisplayName(name)` (ScoresUne
+  row + entry lead-story display), `loadPlayerName()` (pre-fill), `savePlayerName(name)` (persist
+  last byline on submit). The next-level unlock (`App.tsx:230-236`) stays on today's schedule —
+  never gate it behind the name.
