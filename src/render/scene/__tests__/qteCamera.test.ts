@@ -43,6 +43,7 @@ describe("qteZoomInProgress", () => {
 
   it("stays fully zoomed for the active / result phases and zero otherwise", () => {
     expect(qteZoomInProgress("ACTIVE", 3, 5)).toBe(1);
+    expect(qteZoomInProgress("FINISHER", 1.5, 5)).toBe(1);
     expect(qteZoomInProgress("WON", 0, 5)).toBe(1);
     expect(qteZoomInProgress("LOST", 0, 5)).toBe(1);
     expect(qteZoomInProgress("DONE", 0, 5)).toBe(0);
