@@ -30,6 +30,8 @@ import {
   tickBossQte,
 } from "@game/systems/bossQteSystem";
 import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
+import { WEAPON_SPECS } from "@game/types/weapon";
+import type { LootSpec } from "@game/types/loot";
 import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
 import type { EnemyKind } from "@game/types/enemy";
@@ -73,6 +75,12 @@ export interface LevelParams {
    * (EVERY shipped level in V1 — only the non-shipped Belliard dev-harness authors it).
    */
   bossQte?: BossQteSpec | null;
+  /**
+   * Per-level armament crate config (ADR-0052 D8, from `LevelConfig.loot`).
+   * Omitted / null = no crates this level ⇒ weapon stays `base`/∞ and the tick is
+   * byte-for-byte identical to ADR-0040. Belliard-first for V1.
+   */
+  loot?: LootSpec | null;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -90,6 +98,7 @@ export function createInitialState(
   const deliverySpec = params.delivery ?? null;
   const hostageQteSpec = params.hostageQte ?? null;
   const bossQteSpec = params.bossQte ?? null;
+  const lootSpec = params.loot ?? null;
   // GUARD (code-review panel, PR #112): a level may NOT author BOTH a hostage QTE and a boss
   // QTE yet. The two cinematics do not interleave — the boss block at the top of `tickGameState`
   // freezes `elapsedSeconds` while the boss is active, and the hostage QTE triggers off
@@ -126,6 +135,19 @@ export function createInitialState(
     bossQte: null,
     deliverySpec,
     deliveryVehicle: seedDeliveryVehicle(deliverySpec),
+    // Weapon+loot seam (ADR-0052 D1/D5/D8). Every level starts on `base`/∞; a
+    // level without `lootSpec` never spawns a crate, so weapon stays `base` and
+    // the tick is byte-identical to ADR-0040.
+    weapon: {
+      active: "base",
+      stock: WEAPON_SPECS.base.startStock,
+      burstRemaining: 0,
+      burstTimerMs: 0,
+      refractoryMs: 0,
+    },
+    loot: null,
+    lootSpec,
+    lootTimer: lootSpec !== null ? lootSpec.spawnIntervalSeconds : 0,
   };
 }
 
@@ -464,5 +486,11 @@ export function tickGameState(
     lives: newLives,
     timeRemaining,
     wave: newWave,
+    // Weapon+loot carried through unchanged by the seam; the systems commit wires
+    // `weaponSystem`/`lootSystem` here.
+    weapon: state.weapon,
+    loot: state.loot,
+    lootSpec: state.lootSpec,
+    lootTimer: state.lootTimer,
   };
 }
