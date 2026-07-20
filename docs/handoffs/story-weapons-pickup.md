@@ -917,3 +917,66 @@ open. CI green on head d6b31d1.
 
 **Cleared to merge to `main`.** Fast-follows tracked in `docs/handoffs/fixes.md`; MINEUR-4 rides the
 D/tromblon story.
+
+---
+
+## stage-8. PM ACCEPTANCE — pm (John) — 2026-07-20
+
+- claim: stage-8 acceptance pass on `ef068a2` (merged) against my story
+  (`_bmad-output/planning-artifacts/story-weapons-pickup.md`, incl. amended A4) and every VERDICT
+  line in this shard / release: **ACCEPT-WITH-NOTES** — A1-A8/B1-B5 delivered, all 4 rulings held,
+  no scope creep, deferred items honestly logged; three items need PM-owned follow-through, none
+  block ship.
+- VERDICT: PASS — pm acceptance (pm)
+
+**AC sweep.** A1 (distinct kinds, `base` ∞ never decremented), A2 (`LOOT` off score/lives),
+A3 (equip replaces + resets stock, old stock lost), A4-amended (spread per-press / auto per-round,
+built exactly as ack'd P3), A5 (spread 3-adjacent, auto mono-cible faster), A6 (auto-return +
+single `weaponEmpty` same tick), A7 (hit never touches `weapon.*`, regression-tested), A8
+(tests/tsc/lint green, `src/game` React/Three-free) — all **DELIVERED**, cross-checked against
+dev-gameplay's stage-4 AC coverage list and the design-conformity playtest's tuning-traceability
+check (zero drift). B1-B5 — crate distinct+glyph, glow, HUD derivation, `weaponEmpty` flash+cue,
+render holds no rule — all **DELIVERED**, confirmed by lead-art's R1-R4 PASS (composite re-gate
+after the halo fix), ux-designer's PASS (both device classes), and senior-architect's boundary-law
+confirmation at integration review.
+
+**Rulings held.** #1 A-B-C only, D fast-follow (not killed), E YAGNI — no fourth weapon shipped,
+confirmed at both design-gate rounds and the stage-6 triage (scope-creep check: none beyond A-B-C).
+#2 no loss-on-death — explicit AC7/A7 regression test built and verified, not just asserted. #3
+Belliard-first — `LevelConfig.loot` opt-in, other shipped levels byte-identical (D8, re-verified at
+stage-6 golden re-run). #4 no FLUX, drawn placeholder — shipped as a code-drawn `CanvasTexture`
+glyph; lead-art's read PASSED (R1/R2/R4 clean; R3's glow-technique defect was a composite-rendering
+bug, not an illegibility verdict against the placeholder call, and it was fixed pre-merge) — my
+ruling's condition ("fast-follow only if the read judges it illegible") was never triggered.
+
+**Scope guard.** Nothing shipped beyond the gated spec: no switch/inventory/meta-layer, no new
+input binding (W8 confirmed at the hook layer — zero touch input-path files), no deps/deploy
+surface, `lootSpec`/`lootTimer` beyond the ADR's enumerated seam is in-lane bookkeeping (parallel
+to the shipped `deliverySpec`/`courierTimer` precedent), not a scope addition.
+
+**Deferred items — honestly logged, three carry a PM action:**
+
+1. **W7 uptime measure (Bertrand's human playtest)** — analytic bound shows >40 % is _structurally_
+   possible under current tuning but relies on collection friction (spawn-exclusion, single-crate,
+   4 s pickup window) the numbers don't capture; game-designer named the exact one-variable levers
+   (`auto`/`spread` stock down, or spawn interval up) if the measured number comes back high. **PM
+   action:** hold this open as a named tuning follow-up — I will chase Bertrand's read and, if >40 %,
+   route a one-variable tuning fix-lane change (no story reopening needed, §4.2/§7 already frame the
+   values as playtest hypotheses).
+2. **Tromblon (D) fast-follow** — correctly deferred, not killed, per ruling #1; MINEUR-4
+   (data-driven dispatch) rides the same future story. **PM action:** open `story-weapon-tromblon-d`
+   once A-B-C has enough live playtime to price it — not blocking, no urgency.
+3. **`empty` SFX + crate hue + FLUX art-quality pass** — all correctly scoped OUT of V1 by ruling #4
+   and spec §6.1, logged with named owners (`sound-designer`+`dev-gameplay`; `concept-artist`/
+   `lead-art`). **PM action:** none beyond confirming these stay tracked in `docs/handoffs/fixes.md`
+   and the lead-art fast-follow note — no ship blocker.
+
+**Ruling: ACCEPT-WITH-NOTES.** The three notes above are forward-tracking, not corrections — the
+story is fully delivered against its ACs and my four rulings, the pipeline caught and fixed the one
+real functional break (MAJEUR co-location) before merge, and every concession was disclosed with an
+owner. Story closes; the tuning/D-story/art follow-ups move to the backlog, not this shard.
+
+- **Read-only inputs:** `_bmad-output/planning-artifacts/story-weapons-pickup.md`,
+  `docs/game-design/weapons.md`, `docs/adr/0052-weapons-pickup-system.md` (incl. amendment),
+  `docs/handoffs/fixes.md`, this shard in full (stage-0 through stage-6 final re-triage). No code,
+  spec, or ADR touched.
