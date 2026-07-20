@@ -749,3 +749,47 @@ MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-
   `src/game/types/weapon.ts`, `src/hooks/useGameLoop.ts`,
   `src/render/ui/hud/WeaponReadout.module.css`, `src/render/scene/LootCrate.tsx`, this shard. No
   production code written (design/review/unblock only).
+
+---
+
+## stage-6. DOC ROUTING — tech-writer (Otis) — 2026-07-20
+
+- claim: DOC lane items routed by the stage-6 triage (§3 DOC ROUTING + MAJEUR/MINEUR-2 doc
+  notes above) — the ADR-0052 D5/D6/D1 amendment, folded pre-merge, and the 8 deferred
+  non-blocking cleanups logged for the fix lane / release: **DONE**. Decisions are Winston's;
+  I curated form, wording, and index hygiene only — nothing decided here.
+- **ADR-0052 amended** (`docs/adr/0052-weapons-pickup-system.md`): status line now
+  `Accepted — amended 2026-07-20`; new `## Amendment (2026-07-20 — stage-6 panel)` section
+  appended at the end of the file (original D1/D5/D6 text left intact, per house convention —
+  see ADR-0028/0040 precedent of append-only amendments, never rewriting an Accepted decision
+  in place). Content: (1) **D5** — the two one-direction enforcement guards named verbatim from
+  the triage (`lootSystem.attemptSpawn` non-DEAD slot-occupancy filter; `enemySystem.spawnWave`
+  `excludeSlots` param, wave-rollover passing `state.loot`'s slot), explicit "not a central
+  slot-occupancy authority" framing, and the note that this restores the `resolvePlayerShot`
+  tie-break assumption to true (no `bulletSystem` change needed). (2) **D6** — struck the
+  now-unreachable multi-crate-in-one-fan paragraph; reworded the right-most-wins rule as
+  explicitly defensive/forward-looking for a possible future multi-crate world, per the code
+  comment, not a live V1 mechanic. (3) **D1** — one-line note that the seam grew
+  `lootSpec`/`lootTimer` on `GameState` beyond the ADR's original enumeration, in-lane, parallel
+  to the shipped `deliverySpec`/`courierTimer` precedent. **Index regenerated** via
+  `node scripts/gen-adr-index.mjs --write` (not hand-edited) — ADR-0052's index row now reads
+  `Accepted (amended)`; `public/adr/index.html` regenerated alongside it (script-owned pair).
+- **Fix-lane log** (`docs/handoffs/fixes.md`): appended the 8 deferred non-blocking cleanups
+  named in the triage §1 (NIT-1/2/3/5/7 + MINEUR-4/5 + NIT-4) as one-liners each, matching the
+  existing rolling-log format, owner lane named in parentheses, `checks: N/A (not yet
+actioned)` since none has been built yet — appear-cadence constant triplicated (dev-gameplay +
+  dev-r3f-render), `WeaponSpec.kind` unread field (dev-gameplay), `createInitialState` inlines
+  the base-weapon literal (dev-gameplay), `LootCrate` ignores `paused` during `APPEARING`
+  (dev-r3f-render), `.infinity` CSS duplicates `.glyph` (dev-r3f-render), MINEUR-4
+  literal-string weapon dispatch deferred to the D/tromblon story (dev-gameplay), MINEUR-5 dead
+  `energyDelta` surface (dev-gameplay), vitest `@render` alias missing (dev-tooling-assets).
+- **Not touched (iron rule):** no production code, no gated spec (`docs/game-design/weapons.md`).
+  The MINEUR-2 (`_nextLootId` reset) doc-side branch is dev-gameplay's call (reset the counter
+  vs. correct the wording) — not yet resolved on this branch, so the "Deterministic, replay-safe"
+  wording in `lootSystem.ts`/ADR Consequences is left as-is pending dev-gameplay's pre-merge fix;
+  I will correct the wording in the same pass if dev-gameplay takes the wording-only branch,
+  per Winston's routing.
+- **Verify:** `rtk tsc` 0 errors, `rtk lint` 0 errors (doc-only + generated-index diff; no
+  `src/` files touched). `npx -y prettier@3.8.2 --write` run on every file I edited.
+- **File List:** `docs/adr/0052-weapons-pickup-system.md`, `docs/adr/README.md` (regenerated),
+  `public/adr/index.html` (regenerated), `docs/handoffs/fixes.md`, this shard.

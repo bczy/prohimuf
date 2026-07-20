@@ -33,6 +33,53 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   off / TRANSPARENT on; wiring test in `gen-nearfg-sprites.test.mjs` asserting
   `globalKey: true`), lint clean, `check-art-prompts.mjs --set nearForeground` PASSED (1
   pre-existing unrelated warning) · review: pending
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred stage-6
+  cleanups, not pre-merge blockers) · dev-gameplay + dev-r3f-render · appear-cadence
+  constant (0.3s) hardcoded three times across `lootSystem.ts`/`stateMachine.ts` and a
+  render-side consumer — fold into one shared constant. · owner: dev-gameplay +
+  dev-r3f-render · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred) ·
+  dev-gameplay · `WeaponSpec.kind` duplicates its own `WEAPON_SPECS` record key and is
+  never read — trivial dead-field cleanup. · owner: dev-gameplay · checks: N/A (not yet
+  actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred) ·
+  dev-gameplay · `createInitialState` inlines the base-weapon literal instead of calling
+  the existing `baseWeaponState()` helper — DRY cleanup, may fold into the MAJEUR
+  co-location fix PR. · owner: dev-gameplay · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred) ·
+  dev-r3f-render · `LootCrate` ignores `paused` during its `APPEARING` unfold (unlike
+  `CourierSprite`, which takes a `paused` prop) — crate keeps animating while the game is
+  paused. · owner: dev-r3f-render · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred) ·
+  dev-r3f-render · `.infinity` in `WeaponReadout.module.css` is byte-identical to
+  `.glyph` — should `composes: glyph` instead of duplicating the rule. · owner:
+  dev-r3f-render · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred — MINEUR-4
+  from the stage-6 panel) · dev-gameplay · `weaponSystem.ts` dispatches firing mode on
+  literal-string comparisons (`active === "auto"/"spread"`) instead of `WEAPON_SPECS`
+  fields — no bug today (closed 3-kind union), but the D/tromblon fast-follow story
+  should make dispatch data-driven (`burstRounds > 0`); log against that story, do not
+  action now (YAGNI). · owner: dev-gameplay · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred — MINEUR-5
+  from the stage-6 panel) · dev-gameplay · `TriggerResult.energyDelta` is a dead API
+  surface: summed in `weaponSystem.ts` but never consumed (`stateMachine.ts` sets
+  `newEnergy = state.energy` unconditionally — energy is boss-QTE-only, ADR-0051 D2).
+  Harmless; remove opportunistically (churns `weaponSystem`/`bulletSystem` return types +
+  tests, low priority). · owner: dev-gameplay · checks: N/A (not yet actioned) · review: N/A
+
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (weapons pickup, deferred) ·
+  dev-tooling-assets · vitest's resolver alias map is missing `@render` (only `@game`/
+  `@hooks` are configured) — the stage-4 `hud/derivations.ts` leaf-import workaround
+  (`../print/tokens` instead of the `@render/ui/print` barrel) is spreading to route
+  around this gap. Add `@render` to the vitest alias config so the deep-import pattern
+  stops propagating. · owner: dev-tooling-assets · checks: N/A (not yet actioned) ·
+  review: N/A
 
 - 2026-07-19 · claude/beliard-enemy-positioning-tool-6wo3vu · dev-tooling-assets ·
   Belliard cops badly seated (feet not on the sill, some drifted off the window bay,
