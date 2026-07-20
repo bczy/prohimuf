@@ -483,7 +483,7 @@ colliding with the adjacent "corner battens").
 
 - **One-accent / ADR-0011 lesson — PASS.** `neonPhrase` empty; body prompt is "fully black and
   white"; no neon/glow/acid/hue token anywhere in the assembled subject or style tail; `neon:
-  green` is render metadata only. The green rim is render-side, exactly the vehicle contract —
+green` is render metadata only. The green rim is render-side, exactly the vehicle contract —
   no baked-body flood risk.
 - **Style-tail conformity — PASS.** `opening` + `style` are byte-identical to the `vehicles`
   block (Family consistency §2 law 2): same magenta `#FF3CDC` chroma-key ground, same
@@ -590,7 +590,7 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
 - **Structure (finalized, no change needed).** The `loot` block already matches the ADR-0053 D5
   convention: `types.crate.asset = "assets/loot/crate.png"`, `size 256×192`, `seed 7401` (pinned),
   `neon: "green"` (render metadata, P4), `facing: "left"`. Verified against ADR-0053 §D5 ("`
-  LootCrate.tsx` consumes `levelArt.loot.asset` read-only") — no schema change was owed, only
+LootCrate.tsx` consumes `levelArt.loot.asset` read-only") — no schema change was owed, only
   generator + lint wiring.
 - **Generator (new `scripts/gen-loot-sprites.mjs`, smallest-diff cousin of `gen-vehicle-sprites.mjs`,
   not an extension of it — the vehicles generator's per-type placeholder-shape drawer is
@@ -608,11 +608,11 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
   synchronous code-drawn fallback, so the generator doesn't need to draw one too.
 - **CI wiring (new `.github/workflows/gen-loot-sprites.yml`, mirrors `gen-hostage-sprites.yml`):**
   **`workflow_dispatch`-only in practice** — the `push` trigger only fires on a `paths:
-  [".github/dispatch/gen-loot-sprites"]` change whose HEAD commit message starts with
+[".github/dispatch/gen-loot-sprites"]` change whose HEAD commit message starts with
   `ci(dispatch):` (ADR-0009; no `actions:write` on the AI-session token, so the marker-push is the
   dispatch mechanism), and never on `main`. **To generate real art on this branch:**
   `date > .github/dispatch/gen-loot-sprites && git add .github/dispatch/gen-loot-sprites && git
-  commit -m "ci(dispatch): gen-loot-sprites" && git push` (or Actions tab → "Generate loot
+commit -m "ci(dispatch): gen-loot-sprites" && git push` (or Actions tab → "Generate loot
   sprites" → Run workflow). `preview.yml` (the main render farm) does NOT pick up new families
   automatically — it screenshots `levels`/`vehicles`/etc. via its own generation step, unrelated
   to `loot`; did not touch it, no precedent for folding a new prop family into it (vehicles/
@@ -627,7 +627,7 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
   13 WARNs (12 pre-existing + the 1 new loot WARN), 0 errors.
 - **Smoke (no network generation — sandbox egress is blocked, confirmed by a timed-out
   `--asset crate` run with no partial file left on disk):** `node scripts/gen-loot-sprites.mjs
-  --list` → `crate  256x192  → public/assets/loot/crate.png`. Real generation is CI-only per
+--list` → `crate  256x192  → public/assets/loot/crate.png`. Real generation is CI-only per
   HARNESS.md.
 - **Not extended (explicit scope calls, flag if wrong):** no `check-sprite-style.mjs` /
   `check-sprite-integrity.mjs` gate added for the crate — those are respectively vehicle-hardcoded
@@ -640,3 +640,36 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
 - **File List:** `scripts/gen-loot-sprites.mjs` (new), `.github/workflows/gen-loot-sprites.yml`
   (new), `scripts/check-art-prompts.mjs` (checkLoot + `--set loot`). Not touched: `levelArt.json`
   (concept-artist's file, no change owed), `src/render/**` (Lane B's), `src/game/**` (Lane A's).
+
+---
+
+## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-07-20
+
+- claim: Lane B (`src/render/**`) — relocate the LOOT crate to the sidewalk + FLUX-sprite-with-
+  drawn-fallback per ADR-0053 D5 / release: **DONE, all green** (tsc 0, lint 0, format:check clean
+  on my files, vitest 875 passed — no count regression). No `src/game` touched; imported the
+  `LOOT_STREET_Y` seam from `lootSystem` (never re-declared −4.3).
+- VERDICT: PASS — dev-r3f-render: sidewalk crate + FLUX sprite/fallback (Lane B)
+- **What the crate looks like on the sidewalk (verified via the `__MUF_PLAY__` seam on Belliard):**
+  a squat box planted on the pavement at `LOOT_STREET_Y` (−4.3), above the courier lane, fully
+  inside the cover-crop bottom (AC-D8 clears at the fixed size; `LOOT_STREET_Y` is the composite-
+  gate knob). Three composited render layers, grouped for a **drop-and-settle APPEAR** (falls from
+  +2.2u, eased over 0.45 s) and a **pre-despawn rim blink** over the last ~0.8 s of VISIBLE
+  (render-only, reads `loot.timer`, no new game state): (1) a **green `#78FF3C` neon rim-glow**
+  (additive, baked shadowBlur falloff — the technique lead-art cleared at stage-5, re-hued per P4);
+  (2) the crate **body**; (3) the **A/B/C glyph** stencilled render-side on the crate face (green,
+  dark keyline, per-weapon via `weaponGlyph`) — glyph-before-fire on the crate, not HUD (D8/W1).
+- **Fallback behaviour (ADR-0049 idiom, verified):** the body loads `levelArt.loot.types.crate.asset`
+  (`assets/loot/crate.png`) async via `TextureLoader`+`applyPixelFilter`, swapping into the plane on
+  success; the **code-drawn plank box is the synchronous fallback** and shows immediately. The CI
+  asset does not exist yet → the load 404s → `spriteTex=null` (poisoned for the session, no reload
+  storm) → the drawn box stays, glyph + rim composited over it. Confirmed in-app: crate rendered as
+  the drawn box with green "C" + rim, zero page errors. When CI generates the PNG the sprite swaps
+  in with no code change. `levelArt.json` consumed **read-only** (art lane's file, untouched).
+- **Size:** fixed `CRATE_WORLD_W×H = 1.65×1.25` (4:3, matching the FLUX 256×192), in the graphist's
+  ~1.0–1.4u band (≈half the 2.4u vehicles). `GameScene.tsx`: comment-only (still passes
+  `slots={mergedFacade.slots}` — the crate reads world-X from `slot.screenPosition.x`, Y decoupled).
+- **Downstream (composite/verify gate, not this lane):** AC-D8 crop clearance (tune `LOOT_STREET_Y`)
+  - P4 green-crate-rim vs green enemy-early-telegraph / green traffic-signal co-occurrence.
+- **File List:** `src/render/scene/LootCrate.tsx` (rewrite — street mount, sprite+fallback, green
+  rim, drop-settle, pre-despawn blink), `src/render/scene/GameScene.tsx` (mount comment).

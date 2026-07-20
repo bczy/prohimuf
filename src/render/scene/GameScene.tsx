@@ -423,8 +423,10 @@ export function GameScene({
         panels={layout.mode === "single-facade" ? PANELS : 1}
         reducedMotion={reducedMotion}
       />
-      {/* Armament crate (ADR-0052): the single LOOT entity seats itself in its
-          window slot; shares the window channel but never co-locates with an enemy. */}
+      {/* Armament crate (ADR-0052 → ADR-0053): the single LOOT entity is now a static
+          SIDEWALK object at LOOT_STREET_Y — it reads only its world-X from the slot
+          (`slot.screenPosition.x`, keyed by `loot.slotIndex`); its Y is decoupled to the
+          street constant inside LootCrate, so it is no longer a window occupant. */}
       <LootCrate stateRef={stateRef} slots={mergedFacade.slots} />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite

@@ -1,216 +1,235 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
-import { CanvasTexture, AdditiveBlending } from "three";
-import type { Texture, Mesh, MeshBasicMaterial } from "three";
+import { CanvasTexture, TextureLoader, AdditiveBlending } from "three";
+import type { Texture, Mesh, MeshBasicMaterial, Group } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { WindowSlot } from "@game/types/map";
 import type { SpecialWeaponKind } from "@game/types/weapon";
+// LOOT_STREET_Y is a PURE game constant (single source of truth, lootSystem) read by both
+// the resolver and this render lane (ADR-0053 D2/D5) — imported, NEVER re-declared here.
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { weaponGlyph } from "@render/ui/hud/derivations";
+import { applyPixelFilter } from "./pixelArt";
+import levelArt from "@game/levels/levelArt.json";
 
 /**
- * Armament crate (ADR-0052 D5 / weapons spec §5.1) — the LOOT entity in its window
- * slot. V1 is a code-drawn glyph PLACEHOLDER, no FLUX sprite (pm ruling #4): a
- * non-human OBJECT silhouette (a boxy crate, never a human), neon-outlined so it
- * reads as interactive ("ce qui brille est interactif", R3), carrying the weapon
- * glyph (A/B/C) legibly BEFORE the collecting shot (R2/W1). Drawn onto a CanvasTexture
- * mapped on a plane — the same code-drawn, asset-free idiom as GestureIcon/DiagramIcon
- * and EnemySprite's glow, kept inside the render lane.
+ * Armament crate (ADR-0052 D5 → superseded on placement by ADR-0053) — the LOOT entity,
+ * now a static street object on the sidewalk (not a window occupant). It renders in three
+ * composited render-side layers, grouped so the whole crate drops-and-settles on APPEAR:
+ *   1. a green neon rim-glow (additive) with a baked shadowBlur falloff — "ce qui brille
+ *      est interactif" (R3), the falloff technique lead-art cleared at stage-5;
+ *   2. the crate BODY — a wooden-crate FLUX sprite (`levelArt.loot`) loaded async and
+ *      swapped in on success, with a code-drawn plank box as the SYNCHRONOUS fallback so
+ *      the dev lane never blocks on the CI render farm (ADR-0049 idiom); one body asset
+ *      serves all three weapons;
+ *   3. the A/B/C weapon glyph, composited render-side over the crate face (D8/W1 —
+ *      glyph-before-fire lives on the crate, re-hueable, not baked into the FLUX asset).
  *
- * There is only ever ONE crate (`GameState.loot` is a single crate | null), so this
- * mounts once and seats itself in `loot.slotIndex`. It shares the window channel with
- * enemies but never co-locates (one entity per slot, §5.3). Reads state only — holds
- * no rule (the crate is resolvable/equips purely in `src/game`).
+ * Position: mounted at `(slot.screenPosition.x, LOOT_STREET_Y)` — x still keyed by
+ * `loot.slotIndex` (the deterministic seed's x-carrier, D1), y decoupled to the fixed
+ * street constant. The plane size is a FIXED crate world-size (decoupled from `slot.size`,
+ * D5); AC-D8 crop-clearance is a verify/composite-gate item, `LOOT_STREET_Y` the knob.
+ * There is only ever ONE crate (`GameState.loot` is a single crate | null). Reads state
+ * only — holds no rule.
  */
 
-const NEON = "#ffe600"; // interactive glow ink (matches the tutorial-icon vocabulary)
-const BODY = "#141020"; // dark crate body so the neon outline + glyph pop over the scene
-const SLAT = "#3a3350"; // muted plank/brace lines — inert object detail
+const NEON = "#78FF3C"; // acid-green interactive rim (art-advisor rec, ADR-0053 P4; was #ffe600)
+const BODY = "#141020"; // dark plank body (fallback only) so the glyph + rim read over it
+const SLAT = "#3a3350"; // muted plank/brace lines — inert object detail (fallback only)
 
-// Crate plane as a fraction of the window opening height. The drawn box fills ~0.6 of
-// the texture, the rest is the baked glow margin, so the plane is scaled up a little to
-// keep the box itself a squat object seated in the opening.
-const CRATE_PLANE_SCALE = 1.1;
-const APPEAR_SECONDS = 0.3; // unfold to match the enemy pop-up cadence (§5.2)
+// Fixed crate world-size on the sidewalk (verify-tunable, AC-D8). Squat 4:3 box matching
+// the FLUX sprite (256×192); centred at LOOT_STREET_Y (= the resolver hit-point). If the
+// crate clips the 16:9 cover-crop bottom, the knob is LOOT_STREET_Y (game side), raised at
+// the composite gate — the render size stays fixed here.
+const CRATE_WORLD_W = 1.65;
+const CRATE_WORLD_H = 1.25;
+const RIM_SCALE = 1.18; // rim-glow plane a touch larger than the body so the glow spills out
 
-// Cache one crate texture per special weapon (A/B/C glyph baked in) + the radial glow.
-const crateTextures: Partial<Record<SpecialWeaponKind, Texture | null>> = {};
-let haloTexture: Texture | null | undefined;
+// Drop-and-settle APPEAR (ADR-0053 D5, render-only feel): the crate falls from just above
+// its rest point and eases down over ~LOOT_APPEARING_DURATION. Timed by a render
+// accumulator (does not read a game duration). Pre-despawn: the rim blinks over the last
+// BLINK_WINDOW seconds of VISIBLE as a leaving telegraph (read off `loot.timer`).
+const APPEAR_SECONDS = 0.45;
+const DROP_HEIGHT = 2.2;
+const BLINK_WINDOW = 0.8;
 
 function makeCanvas(
-  size: number,
+  w: number,
+  h: number,
 ): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (ctx === null) return null;
   return { canvas, ctx };
 }
 
-// Draw a boxy ammo crate (non-human) with a soft glowing neon rim + big weapon glyph.
-// The rim is drawn with `shadowBlur` so a monotonic yellow alpha falloff is BAKED into
-// the crate's own (alpha-composited) texture margin — it reads as a falloff over the
-// crate edge on ANY background, bright facade included (stage-5 lead-art fix: a purely
-// additive halo cannot survive a near-white facade — additive light clamps to white).
-function getCrateTexture(weapon: SpecialWeaponKind): Texture | null {
-  const cached = crateTextures[weapon];
-  if (cached !== undefined) return cached;
-  // 200px canvas: ~40px margins each side leave room for a WIDE blurred rim to fall to 0
-  // — the falloff must survive a bright facade, where only this alpha-composited baked
-  // rim contributes (an additive halo clamps to white over a bright background).
-  const S = 200;
-  const made = makeCanvas(S);
+function roundRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// ── Body: FLUX sprite with a code-drawn plank-box fallback (ADR-0053 D5 / ADR-0049) ──
+const spriteLoader = new TextureLoader();
+// undefined = not yet attempted; null = failed/404 (keep the fallback for the session);
+// Texture = the loaded FLUX crate.
+let spriteTex: Texture | null | undefined;
+let spritePending = false;
+let bodyFallbackTex: Texture | null | undefined;
+
+// The wooden-crate FLUX body when it has loaded, else null (→ caller uses the fallback).
+// Kicks the async load once; a 404 (asset not generated yet) poisons `spriteTex = null`
+// so the drawn fallback stays for the session — never blocks the dev lane.
+function getCrateSprite(): Texture | null {
+  if (spriteTex !== undefined) return spriteTex;
+  if (spritePending || typeof document === "undefined") return null;
+  spritePending = true;
+  const url = `${import.meta.env.BASE_URL}${levelArt.loot.types.crate.asset}`;
+  spriteLoader.load(
+    url,
+    (t) => {
+      spritePending = false;
+      spriteTex = applyPixelFilter(t);
+    },
+    undefined,
+    () => {
+      spritePending = false;
+      spriteTex = null;
+    },
+  );
+  return null;
+}
+
+// Synchronous drawn plank crate (body only — NO glyph, NO rim; those are separate layers).
+function getCrateBodyFallback(): Texture | null {
+  if (bodyFallbackTex !== undefined) return bodyFallbackTex;
+  const made = makeCanvas(256, 192);
   if (made === null) {
-    crateTextures[weapon] = null;
+    bodyFallbackTex = null;
     return null;
   }
-  const { canvas, ctx } = made;
-
-  // Crate body — a rounded rectangle, centred, clearly an object.
-  const x = 40;
-  const y = 44;
-  const w = 120;
-  const h = 112;
-  const r = 12;
-  const box = (): void => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  };
-  box();
+  const { ctx, canvas } = made;
+  const x = 16;
+  const y = 20;
+  const w = 224;
+  const h = 152;
+  roundRectPath(ctx, x, y, w, h, 10);
   ctx.fillStyle = BODY;
   ctx.fill();
-
-  // Inert plank/brace detail — a lid band across the top and a diagonal cross-brace.
+  // Plank boards + corner battens + lid rail + one diagonal cross-brace (inert detail).
   ctx.strokeStyle = SLAT;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(x, y + 22);
-  ctx.lineTo(x + w, y + 22);
-  ctx.moveTo(x, y + h);
-  ctx.lineTo(x + w, y + 22);
-  ctx.moveTo(x + w, y + h);
-  ctx.lineTo(x, y + 22);
-  ctx.stroke();
-
-  // Glowing neon rim (R3, "ce qui brille est interactif"): blurred stroke passes bake a
-  // WIDE monotonic alpha falloff into the texture margin (the "rim with a falloff, not a
-  // flat stroke"), tapering from the bright edge out to 0; then a crisp thin stroke keeps
-  // the box edge defined. Decreasing-blur passes pile a strong near-edge value with a
-  // smooth tail — the enemy-neon-rim look, alpha-composited so it survives a bright bg.
-  ctx.strokeStyle = NEON;
-  ctx.shadowColor = NEON;
-  for (const blur of [32, 20, 11]) {
-    ctx.shadowBlur = blur;
-    ctx.lineWidth = 4;
-    box();
-    ctx.stroke();
-    box();
-    ctx.stroke();
-  }
-  ctx.shadowBlur = 0;
   ctx.lineWidth = 4;
-  box();
+  ctx.beginPath();
+  ctx.moveTo(x, y + 34); // lid rail
+  ctx.lineTo(x + w, y + 34);
+  ctx.moveTo(x, y + 92); // mid board seam
+  ctx.lineTo(x + w, y + 92);
+  ctx.moveTo(x + 26, y); // left batten
+  ctx.lineTo(x + 26, y + h);
+  ctx.moveTo(x + w - 26, y); // right batten
+  ctx.lineTo(x + w - 26, y + h);
+  ctx.moveTo(x + 26, y + h); // diagonal brace
+  ctx.lineTo(x + w - 26, y + 34);
   ctx.stroke();
+  bodyFallbackTex = new CanvasTexture(canvas);
+  return bodyFallbackTex;
+}
 
-  // Weapon glyph (A/B/C) — the READ-before-fire (R2/W1), dominant and legible.
-  ctx.font = "bold 64px 'IBM Plex Mono', monospace";
+// ── Glyph: render-side A/B/C stencil on the crate face (per weapon), transparent ground ──
+const glyphTextures: Partial<Record<SpecialWeaponKind, Texture | null>> = {};
+function getGlyphTexture(weapon: SpecialWeaponKind): Texture | null {
+  const cached = glyphTextures[weapon];
+  if (cached !== undefined) return cached;
+  const made = makeCanvas(256, 192);
+  if (made === null) {
+    glyphTextures[weapon] = null;
+    return null;
+  }
+  const { ctx, canvas } = made;
+  ctx.font = "bold 118px 'IBM Plex Mono', monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const glyph = weaponGlyph(weapon);
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = BODY; // dark keyline so the glyph stays legible over the braces
-  ctx.strokeText(glyph, S / 2, S / 2);
+  // High-contrast stencil: a dark keyline under the acid-green fill so it reads on the
+  // planks (and on the FLUX B&W crate) before the collecting shot (D8/W1).
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = BODY;
+  ctx.strokeText(glyph, 128, 104);
   ctx.fillStyle = NEON;
-  ctx.fillText(glyph, S / 2, S / 2);
-
+  ctx.fillText(glyph, 128, 104);
   const tex = new CanvasTexture(canvas);
-  crateTextures[weapon] = tex;
+  glyphTextures[weapon] = tex;
   return tex;
 }
 
-// Box-shaped interactive halo (additive) behind the crate. Matches the enemy neon-rim
-// technique (ADR-0025): the falloff is BAKED into the texture as a monotonic edge
-// gradient, not a flat aplat — a filled neon box grown by `shadowBlur` so its alpha
-// falls off smoothly to 0 outward from the box edge, drawn in decreasing-blur passes
-// to pile up a strong near-edge value that survives the bright facade (additive) while
-// still tapering to zero at the margin. The box FOOTPRINT is a touch larger than the
-// crate's (below), so its solid core is occluded by the opaque crate body and only a
-// hot neon rim + the outward falloff read — the enemy-rim look. (stage-5 lead-art fix:
-// the prior centred radial halo read as a hard-edged aplat and died against the facade.)
-function getCrateHaloTexture(): Texture | null {
-  if (haloTexture !== undefined) return haloTexture;
-  const size = 256;
-  const made = makeCanvas(size);
+// ── Rim glow: green box-halo with a baked shadowBlur falloff (the lead-art-cleared
+// technique, re-hued). Additive; behind the body so the body occludes the core and only
+// the monotonic outward falloff reads — blooms cleanly over the dark street. ──
+let rimTexture: Texture | null | undefined;
+function getRimTexture(): Texture | null {
+  if (rimTexture !== undefined) return rimTexture;
+  const made = makeCanvas(256, 192);
   if (made === null) {
-    haloTexture = null;
+    rimTexture = null;
     return null;
   }
-  const { canvas, ctx } = made;
-  // Box footprint centred in the padded canvas, sized so a 1.6×-scaled halo plane lands
-  // the box edges just outside the crate edges (a thin rim), with room for the blur tail.
-  const bw = 100;
-  const bh = 94;
-  const r = 12;
-  const bx = (size - bw) / 2;
-  const by = (size - bh) / 2;
-  const path = (): void => {
-    ctx.beginPath();
-    ctx.moveTo(bx + r, by);
-    ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
-    ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
-    ctx.arcTo(bx, by + bh, bx, by, r);
-    ctx.arcTo(bx, by, bx + bw, by, r);
-    ctx.closePath();
-  };
+  const { ctx, canvas } = made;
+  roundRectPath(ctx, 40, 34, 176, 124, 12); // box footprint ≈ the crate, margin for the tail
   ctx.fillStyle = NEON;
   ctx.shadowColor = NEON;
-  for (const blur of [44, 28, 14]) {
+  for (const blur of [30, 18, 10]) {
     ctx.shadowBlur = blur;
-    path();
     ctx.fill();
   }
-  haloTexture = new CanvasTexture(canvas);
-  return haloTexture;
+  rimTexture = new CanvasTexture(canvas);
+  return rimTexture;
 }
+
+// EaseOutCubic — the drop settles fast then eases onto the pavement.
+const easeOut = (t: number): number => 1 - (1 - t) ** 3;
 
 interface Props {
   stateRef: React.RefObject<GameState>;
-  /** The merged window slots — the crate seats itself in `loot.slotIndex`. */
+  /** Merged window slots — the crate reads its world-X from `slot.screenPosition.x` only. */
   slots: readonly WindowSlot[];
 }
 
 export function LootCrate({ stateRef, slots }: Props): JSX.Element {
-  const meshRef = useRef<Mesh>(null);
-  const glowRef = useRef<Mesh>(null);
+  const groupRef = useRef<Group>(null);
+  const bodyRef = useRef<Mesh>(null);
+  const glyphRef = useRef<Mesh>(null);
+  const rimRef = useRef<Mesh>(null);
   const appearTimerRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
 
-  const halo = useMemo(() => getCrateHaloTexture(), []);
-
   useFrame((_state, delta) => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    const glowMesh = glowRef.current;
+    const group = groupRef.current;
+    if (group === null) return;
 
     const loot = stateRef.current.loot;
     if (loot === null || loot.state === "HIDDEN") {
-      mesh.visible = false;
-      if (glowMesh !== null) glowMesh.visible = false;
+      group.visible = false;
       prevStateRef.current = loot?.state ?? "HIDDEN";
       return;
     }
-
     const slot = slots[loot.slotIndex];
-    if (slot?.size === undefined) {
-      mesh.visible = false;
-      if (glowMesh !== null) glowMesh.visible = false;
+    if (slot === undefined) {
+      group.visible = false;
       return;
     }
 
@@ -218,64 +237,75 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
       appearTimerRef.current = 0;
     }
     prevStateRef.current = loot.state;
+    group.visible = true;
 
-    const planeH = slot.size.y * CRATE_PLANE_SCALE;
-    const cx = slot.screenPosition.x;
-    const cy = slot.screenPosition.y;
-
-    // Bind the crate texture for this crate's weapon (A/B/C baked in).
-    const mat = mesh.material as MeshBasicMaterial;
-    const tex = getCrateTexture(loot.weapon);
-    if (tex !== null && mat.map !== tex) {
-      mat.map = tex;
-      mat.needsUpdate = true;
-    }
-
-    mesh.visible = true;
-    mesh.position.set(cx, cy, 0);
-
-    // Paper-Mario unfold on APPEARING (scale Y 0→1), full box while VISIBLE.
+    // X from the deterministic slot; Y fixed at the sidewalk (drop-settle offset on APPEAR).
+    let dropY = 0;
     if (loot.state === "APPEARING") {
       appearTimerRef.current = Math.min(appearTimerRef.current + delta, APPEAR_SECONDS);
       const t = appearTimerRef.current / APPEAR_SECONDS;
-      mesh.scale.set(planeH, planeH * t, 1);
-    } else {
-      mesh.scale.set(planeH, planeH, 1);
+      dropY = DROP_HEIGHT * (1 - easeOut(t)); // falls from +DROP_HEIGHT to 0
     }
+    group.position.set(slot.screenPosition.x, LOOT_STREET_Y + dropY, 0);
 
-    // Pulsing interactive halo while VISIBLE (R3) — off during APPEARING/HIDDEN. Scaled
-    // 1.6× the crate so the baked box-halo footprint hugs the crate edge; the opacity
-    // breathes but stays high so the additive bloom survives the bright facade (the
-    // baked edge gradient carries the monotonic falloff — stage-5 lead-art fix).
-    if (glowMesh !== null) {
-      const gmat = glowMesh.material as MeshBasicMaterial;
-      if (loot.state === "VISIBLE") {
-        glowMesh.visible = true;
-        glowMesh.position.set(cx, cy, -0.02);
-        const pulse = 0.85 + Math.sin(performance.now() * 0.005) * 0.15;
-        glowMesh.scale.setScalar(planeH * 1.6);
-        gmat.opacity = pulse;
+    // Body: FLUX sprite when it has loaded, else the drawn plank fallback (never blocks).
+    const body = bodyRef.current;
+    if (body !== null) {
+      const mat = body.material as MeshBasicMaterial;
+      const tex = getCrateSprite() ?? getCrateBodyFallback();
+      if (tex !== null && mat.map !== tex) {
+        mat.map = tex;
+        mat.needsUpdate = true;
+      }
+    }
+    // Glyph for this crate's weapon (composited on the crate face).
+    const glyphMesh = glyphRef.current;
+    if (glyphMesh !== null) {
+      const gmat = glyphMesh.material as MeshBasicMaterial;
+      const gtex = getGlyphTexture(loot.weapon);
+      if (gtex !== null && gmat.map !== gtex) {
+        gmat.map = gtex;
+        gmat.needsUpdate = true;
+      }
+    }
+    // Rim glow: a gentle breathing pulse, then a fast leaving-blink over the last
+    // BLINK_WINDOW seconds of VISIBLE (ADR-0053 D5 pre-despawn telegraph).
+    const rim = rimRef.current;
+    if (rim !== null) {
+      const rmat = rim.material as MeshBasicMaterial;
+      const now = performance.now();
+      if (loot.state === "VISIBLE" && loot.timer < BLINK_WINDOW) {
+        rmat.opacity = Math.sin(now * 0.03) > 0 ? 0.95 : 0.15; // ~fast blink
       } else {
-        glowMesh.visible = false;
+        rmat.opacity = 0.7 + Math.sin(now * 0.005) * 0.2;
       }
     }
   });
 
   return (
-    <>
-      {/* Box halo behind the crate (renderOrder 4 like the window occupants; nudged to
-          z=-0.02 so it draws behind the opaque crate body — the solid core is occluded,
-          only the hot rim + baked outward falloff read). */}
-      <mesh ref={glowRef} visible={false} renderOrder={4}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={halo} transparent blending={AdditiveBlending} depthWrite={false} />
+    <group ref={groupRef} visible={false}>
+      {/* Rim glow behind the body (z=-0.02): additive green with the baked shadowBlur
+          falloff; the body occludes the core, the outward falloff reads as the rim. */}
+      <mesh ref={rimRef} position={[0, 0, -0.02]} renderOrder={4}>
+        <planeGeometry args={[CRATE_WORLD_W * RIM_SCALE, CRATE_WORLD_H * RIM_SCALE]} />
+        <meshBasicMaterial
+          map={getRimTexture()}
+          transparent
+          blending={AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
-      {/* The crate plane. depthWrite off like every other transparent quad (see
-          EnemySprite) so its transparent pixels don't punch holes in the backdrop. */}
-      <mesh ref={meshRef} visible={false} renderOrder={4}>
-        <planeGeometry args={[1, 1]} />
+      {/* Crate body (FLUX sprite | drawn plank fallback). depthWrite off like every other
+          transparent quad so it never punches holes in the backdrop. */}
+      <mesh ref={bodyRef} position={[0, 0, 0]} renderOrder={4}>
+        <planeGeometry args={[CRATE_WORLD_W, CRATE_WORLD_H]} />
         <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
       </mesh>
-    </>
+      {/* A/B/C glyph composited on the crate face (z=+0.02, drawn over the body). */}
+      <mesh ref={glyphRef} position={[0, 0, 0.02]} renderOrder={4}>
+        <planeGeometry args={[CRATE_WORLD_W, CRATE_WORLD_H]} />
+        <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
