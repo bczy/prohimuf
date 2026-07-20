@@ -393,6 +393,26 @@ halo is evidenced. Ruling per requirement:
   two orange-rimmed enemies same row). **Source inspected (read-only):**
   `src/render/scene/LootCrate.tsx`. No code or `levelArt.json` touched.
 
+### stage-5b. COMPOSITE RE-GATE (R3 glow, §2.1) — lead-art (Nico) — 2026-07-20
+
+- claim: re-run the §2.1 composite read on the R3 fix (commit dde1bd5 — blur-stroke-pass rim
+  falloff baked into the crate texture, ADR-0025 enemy-rim technique + retained additive
+  box-halo), on new evidence `d-loot-crate-halo-falloff.png` + `-crop.png`. Own pixel scan, not
+  theirs on faith. No code touched.
+- VERDICT: PASS — lead-art composite (lead-art)
+
+**PASS.** The blocking §2.1 correction is cleared. My own radial yellow-excess scan (`min(r,g)−b`)
+around the VISIBLE crate shows a **monotonic falloff to zero on every sampled edge**, so the glow
+is now a dégradé, not an aplat: right edge (bright facade) `177→148→100→74→51→34→0` over ~6 px;
+bottom `203→151→129→106→75→53→34→18→9→4→0` terminating cleanly before the untouched cool balcony
+shadow; top/left decreasing to ~0 over ~5 px against the bright wall/window header. It survives the
+bright facade (the exact failure of the first evidence). The honest white-wall desaturation caveat
+holds — over the near-white wall the rim reads whitish — but that is honest additive-light
+behaviour, matching the reference enemy rims, and the falloff structure stays monotonic through it
+(not a hard constant band). Hue/silhouette/glyph untouched, so R1/R2/R4 stand as previously ruled;
+the two fast-follows (off-palette `#ffe600` hue vs the reticle/enemy hues; FLUX art-quality pass)
+also stand — neither is a V1 blocker.
+
 ---
 
 ## stage-5. DESIGN CONFORMITY PLAYTEST — game-designer (Sacha) — 2026-07-20
