@@ -74,3 +74,98 @@
 - **Hue recommendation: `#78FF3C` (green)** — the only one of the four §2-law-1 accent hues with no fixed street-level object identity (truck=orange, car=cyan, moto=magenta all already live at street level; orange is also the enemy heat-rim's danger-stage colour, magenta is also the vehicle chroma-key background). Green also carries the right "safe/go/positive pickup" connotation already established by `mark-green`=FACILE in the print system. Fallback if rejected: cyan. Watch-out flagged (not blocking): a same-frame co-occurrence with an early-telegraph (still-green) enemy heat-rim should get a runtime screenshot sanity-check at the composite gate.
 - **Period register:** recommend the marché-crate / ammo-box register (thin pine slats or dovetailed box, rope-hole handles, single stencilled destination/lot mark) over a wooden beer crate (anachronistic — 1998 French beer crates are plastic, not wood).
 - No code/prompt/levelArt.json touched. Hands to `concept-artist` for the FLUX prompt draft.
+
+---
+
+## stage-2. DESIGN GATE — lead-game-designer (Karim) — 2026-07-20 (round 1 of 2)
+
+Gate object: `docs/game-design/weapons-crate-sidewalk-delta.md`. Cross-checked against
+`bulletSystem.ts` (`resolvePlayerShot`), `lootSystem.ts`, `courierSystem.ts`,
+`cameraPanSystem.ts`, `crosshairSystem.ts`, `GameScene.tsx`, `facade01.ts`, `levels.ts`,
+ADR-0003/0026. Delta NOT edited; code NOT touched.
+
+**Scope (cahier des charges):** PASS. Crate pickup is an already-documented [EXTENSION]
+(weapons.md §0); moving placement to the sidewalk is a documented refinement toward genre
+canon (Operation Wolf / Wild Guns street crates), not a new undeclared extension. Core loop
+`Récupérer → Livrer → Éviter` untouched. Une-mission-3-5-min unaffected (placement/art only).
+
+**BLOCKING corrections (must resolve before `senior-architect` / ADR-0053):**
+
+- **C1 — In-frame constraint uses the wrong x (D2/D3/D9/AC-D1). [verifiability]**
+  `|col·2 − 18| ≤ 7` is the legacy **FACADE_01 harness** formula. At runtime the crate's
+  world-x is `mergedFacade.slots[slotIndex].screenPosition.x` — tile-derived via
+  `stretchAboutCentre(tile.centreX + (z.x−0.5)·tile.width, …)` (GameScene.tsx:198-205) — and
+  runtime `col` is a **sequential 0..N index** (GameScene.tsx:203), so `col·2 − 18` is
+  meaningless arithmetic on Belliard/tronçon geometry (windows span the full ±40 street). A dev
+  implementing AC-D1 literally gets wrong placement. Re-express the constraint (and AC-D1) as
+  `|slot.screenPosition.x| ≤ LOOT_MAX_ABS_X`, anchored to the world origin.
+
+- **C2 — "reachable/readable on BOTH device classes without pan" is FALSE on mobile
+  (D1/D3/D4/AC-D1). [verifiability / ADR-0003+0026 coherence]** `MOBILE_ZOOM_FACTOR = 1.7`
+  zooms IN: resting mobile frame ≈ x∈[−5.3,5.3], y∈[−3.5,3.5] (centred). A crate at
+  `y = −4.3` is **below** the mobile resting frame, and x up to 7 is outside it horizontally, so
+  reaching a street crate on mobile requires a pan-down / zoom-out (exactly as couriers −4.8 and
+  the delivery truck −4.5 already do). AC-D1 as written fails on mobile. Either (a) reword
+  D1/D3/AC-D1 to state the crate is engaged on mobile the same way other street content is
+  (ADR-0003 pan / ADR-0026 zoom-out), drop "no pan", and restate D4's periphery rationale for the
+  pan case; or (b) size `LOOT_MAX_ABS_X` against BOTH frames if "no-pan" is kept (≈ ≤4.5 h,
+  likely too tight) — escalate if that kills the placement. Concept survives; the claim + AC do
+  not.
+
+**NON-BLOCKING corrections / notes:**
+
+- **N1 (point 3) — factual grounding.** Runtime `streetY = −facadeH·0.4 = −4.8`
+  (GameScene.tsx:276), not −5 (that's the test fixture); Belliard delivery
+  `stopPosition.y = −4.5` (levels.ts:104), not −5. So the crate at −4.3 sits **0.5 u** above
+  couriers and only **0.2 u** above the delivery truck — the "~0.7 u sidewalk-vs-road" vertical
+  separation (D1/D7) does not exist. Silhouette separation is carried by D9-2's x-gap (vehicle) +
+  shape/z-band, not a vertical offset; correct the premise.
+- **N2 (points 2/3) — frame bottom edge.** D1's "well inside the frame (bottom y = −6)" is the
+  ortho half-height, not the 16:9 cover crop. Per the truck tuning (levels.ts:99-104) the visible
+  bottom in cover framing is ≈ −4.5/−4.6 (wheels clip below −4.6). A crate at −4.3 sits at that
+  crop line — verify empirically (composite/verify gate) that the full crate + glyph + neon rim
+  are inside the crop; `LOOT_STREET_Y` is verify-tunable, raise if it clips.
+- **N3 (point 1) — precedence VERIFIED, hit-point path disclosed.** `resolvePlayerShot`:
+  couriers are step-2 on-miss only; a VISIBLE crate consuming step-1 is never re-evaluated against
+  couriers ⇒ crate-beats-courier is correct. But the function currently reads the crate hit point
+  from `facade.slots[loot.slotIndex].screenPosition` (window y); street-y decoupling is a real
+  change to it (or LootCrate gains its own position), and `tickLoot` must gain delivery phase+x
+  for D9-2. Disclosed to the architect via ADR-0053 — ensure the hand-off does not claim
+  "no code change to resolvePlayerShot / tickLoot".
+- **N4 (point 1) — crate-eats-courier fairness.** Acceptable under P3: crate-wins can only
+  **prevent** a courier penalty, never cause a death. Residual = an intentional near-crate shot
+  always equips (discarding the current special's stock, weapons.md §5.2), mitigated by W1
+  (glyph pre-fire) + R3 (glow) + D9-1 (crate off the firefight column). No new guard required;
+  verify playtest confirms accidental-pickup rate is low.
+- **N5 (point 2) — spawn anchor is boundary-bound.** The `|x| ≤ LOOT_MAX_ABS_X` filter must be
+  anchored to the **world origin**: the pure spawn cannot read live camera pan (ADR-0003/0026 keep
+  pan out of `GameState`). State this, and accept/document that a player panned away from centre
+  may miss a 6 s crate (consistent with missing other central action).
+- **N6 (point 4) — drop-in telegraph.** Confirm at verify/composite that the D5 drop-from-above
+  does not transit the window engagement zone as a false telegraph; crate is resolvable only when
+  VISIBLE (verified: `loot.state === "VISIBLE"` in `resolvePlayerShot`), so no mid-drop accidental
+  grab. Render-only.
+
+**CONFIRMED (PASS points):**
+
+- **Point 5 — D8 W1 stencil-glyph-on-crate OVERRIDES the shard's HUD-only note: CONFIRMED as a
+  gated guardrail.** Glyph-before-fire (weapons.md W1/R2/AC8) requires the A/B/C picto legible on
+  the crate face BEFORE the collecting shot; a HUD-only glyph shows what you HOLD, not what you'd
+  EQUIP ⇒ blind pickup ⇒ breaks W1. The HUD keeps its separate active-weapon glyph (weapons.md
+  §6.2); no conflict. The stage-0 "glyph in HUD only" key-decision note is **superseded** — glyph
+  lives on the crate face.
+- **Point 4 — W2 street reformulation is MEASURABLE.** D9-1 `|col−a.col| ≥ 2` (unchanged) +
+  D9-2 `|cx − delivery.stopPosition.x| ≥ 2.0`, both unit-testable (AC-D6). Shoot-reflex trap
+  adequately mitigated (street-level separation from the window reticle zone + D9-1 +
+  VISIBLE-only resolvability).
+- **Point 1 — precedence claim VERIFIED** (see N3).
+
+**DELEGATED (point 6 — hue):** the delta correctly does NOT hardcode a hue (A3 = four-hex house
+palette), so no delta correction. Hue is `lead-art`'s prompt-gate call — I do not arbitrate
+visuals. **Binding condition on lead-art:** the recommended green (`#78FF3C`) rim vs the enemy
+early/safe telegraph (also green) co-occurrence MUST be confirmed discriminable under the <0.3 s
+triage at the composite gate (same-frame screenshot: green crate + still-green enemy rim), with
+the silhouette law (box vs figure) + z-band (street vs window) carrying it; cyan (`#28F0FF`) is
+the art-advisor fallback if it fails. Flagged to `lead-art`, not blocking this design delta.
+
+**VERDICT:** PASS-WITH-CORRECTIONS — 2 blocking (C1 runtime-x formula, C2 mobile-frame reachability), 6 non-blocking + 3 confirmed; hue delegated to lead-art composite gate. Round 1 of 2: back to `game-designer` (Sacha) to amend C1/C2 (and N1–N2 premises) in the delta, then re-gate before `senior-architect` (ADR-0053). Scope/core-loop/W1/W2/precedence all PASS.
