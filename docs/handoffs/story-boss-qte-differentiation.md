@@ -2897,3 +2897,107 @@ RULING: mobile boss-zoom framing collision = render-lane fix, no game/hooks-cont
   - `docs/qa/evidence/story-boss-qte-differentiation/38-vital-ring-mobile-lifted.png` (NEW)
   - `docs/qa/evidence/story-boss-qte-differentiation/39-vital-ring-desktop-stroke.png` (NEW)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 23. VERIFY (stage 5, leg 2 — A1-R2 §4 RE-VERDICT) — ux-designer (Tony) — 2026-07-20 — small-ring legibility after the mobile-frame-lift + stroke-thickness fix (§21/§22)
+
+- claim: re-verdict my own §20 FAIL against the landed fix (`BOSS_MOBILE_FRAME_LIFT 0.7` +
+  `RING_INNER_VITAL 0.55`, `qteCamera.ts`/`BossQteSprite.tsx`) using the evidence handed to me
+  (`38-vital-ring-mobile-lifted.png`, `39-vital-ring-desktop-stroke.png`) plus my own pixel
+  measurements of both (not eyeballed) and a direct source read of the fix's mechanism.
+- **Method note (logged for the record, not evidence):** I attempted one extra capture of my own
+  (a "worst-case wander" mobile frame, polling `targetOffset.y` toward its ~0.96 ceiling) against a
+  fresh local rebuild on a new port. That capture came back showing a DIFFERENT boss skin and a
+  "Le Commandant (harness)"/`NIVEAU` HUD variant that matches neither this pack's shipped UI nor my
+  own `36`/`37` baselines — almost certainly a different in-flight branch's build clobbering the
+  shared `dist/` in this sandbox (other, pre-existing `vite preview` processes were already running
+  on this machine outside my own, evidence this checkout is shared with concurrent work). I discarded
+  that capture (deleted, not filed as evidence) rather than risk grounding a BINDING sign-off in a
+  contaminated sample. I did not chase a clean replacement given time-cost/risk; the verdict below
+  rests on the evidence provided (`38`/`39`), my own pixel measurements of them, and a direct read of
+  `qteCamera.ts`/`BossQteSprite.tsx`'s fix mechanism — which I judge sufficient (see reasoning below).
+
+### VERDICT: PASS — A1-R2 small-ring legibility RE-VERDICT (ux-designer)
+
+### Mobile (`38`) — occlusion fix confirmed, measured
+
+Pixel-scanned `38` (2532×1170 raw = DPR3 of the 844×390 viewport) through the boss's head column:
+the "LE COMMANDANT" HP-bar's black bottom border ends at raw y≈336; the vital ring's own halo/stroke
+first appears at raw y≈462 — a **≈126 raw px ≈ 42 CSS px clear gap** of pure black background between
+the bar and the ring, at the wander sample this particular capture landed on. This corroborates
+`dev-r3f-render`'s own claim of "~44 CSS px at worst-case wander y=0.92" (§22) — my figure and theirs
+agree within measurement noise, and mine was NOT deliberately sampled at the worst case, which makes
+the agreement more reassuring, not less (two independent, differently-timed samples land on
+materially the same clearance). The full ring is now visually a complete, closed, bright-green
+annulus sitting COMFORTABLY ABOVE the HUD bar's bottom edge with a full head-height of clear
+background around it — categorically different from `37`'s ≈6 CSS px occluded smear. The boss's feet
+remain fully on-frame in `38` (visually confirmed, no new clipping introduced by the lift). The LIMB
+ring (torso) is unaffected and stays legible as before.
+
+- **Perceivable — PASS.** Clearly visible, no HUD occlusion.
+- **Distinguishable from LIMB, not colour-alone — PASS, unchanged.** Position (head vs. torso) + size
+  - emphasis still triple-code the read; the frame-lift and stroke change touch neither.
+- **Honestly aim-able — PASS.** The ring is now visible for its full wander cycle (not just the
+  minority of it that happened to clear the bar before), so a mobile player can actually see what
+  they are tracking, which is the precondition for "honestly aim-able" — a target you cannot see is
+  not aim-able regardless of how honest its hitbox is.
+
+### Desktop (`39`) — stroke-thickness fix confirmed, closes my soft note
+
+Cropped and pixel-scanned the identical head-ring region in `39` vs. my original `36`: in `36` the
+ring reads as a thin hairline (a horizontal scan through it shows two separate ≈10-raw-px green bands
+with a clear ≈10-raw-px gap of bare skin colour between them — a genuine thin annulus, easy to misread
+as "a dot" at a glance). In `39` the SAME scan shows a continuous green band with no return to skin
+colour — confirmed by a zoomed, nearest-neighbour crop of both: `39`'s vital ring is now a visibly
+bold, chunky annulus, unmistakably "a ring," not a hairline. The catch/drawn OUTER radius is unchanged
+(`RING_OUTER` untouched, only `RING_INNER_VITAL` tightened 0.78→0.55) — aim-honesty holds exactly as
+before, just a fatter band on the same footprint. This closes my §20 desktop soft note outright.
+
+### Split-preview cue (D4.7) — inferred from source, not separately captured
+
+Confirmed in `BossQteSprite.tsx` (line 589) that the split-preview branch also assigns
+`ring.geometry = ringGeoVital` — the same bold-stroke geometry — so the phase-1→2 "new pattern"
+preview ring gets the identical thickness improvement, not just the live shoot-window ring. The
+mobile frame-lift (`BOSS_MOBILE_FRAME_LIFT`, applied in `useGameLoop.ts` to the camera target
+generally, not conditioned on which sub-state is active) covers the preview position too, since it
+sits at the same head-adjacent height (`anchor.y + 0.75`, close to the live ring's `anchor.y + 0.8`).
+I did not re-capture this specific window (same harness limitation as §15/§20 — the `at=` seam
+fast-forwards through the phase-1→2 break) but the code-level coverage is unambiguous enough that I
+do not hold it as an open item.
+
+### Why the mechanism is right, not just the measurement
+
+`qteCamera.ts`'s own comment on `BOSS_MOBILE_FRAME_LIFT` states the fix explicitly as a camera-TARGET
+lift (tableau drops on screen), NOT a zoom increase — exactly the distinction I raised in my §20
+reasoning (a zoom bump on the existing boss-centred anchor would have pushed the head further toward
+the bar, worsening the collision). The fix is coupled to the bar's fixed CSS footprint with an
+explicit revisit note if `MOBILE_ZOOM_FACTOR`/the bar's `top`/the anchor ever move — the right kind of
+documented coupling for a fix whose correctness depends on two independent layout constants staying
+in relative sync.
+
+### Acceptance against my gated spec + the binding condition (A1-R2 §4)
+
+- **D4.1/D4.5, A12 — PASS, unaffected and reconfirmed.**
+- **A15/D4.8 (mobile-landscape legibility, no device-specific exception) — PASS, the finding I raised
+  in §20 is now resolved on the evidence.**
+- **A1-R2 §4 binding condition — PASS on BOTH device classes.** The 0.11 vital ring is clearly
+  perceivable, distinguishable from the 0.30 limb ring by form/position (not colour-alone), and
+  honestly aim-able on desktop and mobile-landscape at the boss zoom.
+
+- handoff → `lead-game-designer` (Karim): A1-R2 §4 binding leg-2 sign-off = **PASS, both device
+  classes.** My §20 mobile FAIL is resolved by the render-scale/boss-zoom fix (§21/§22) exactly along
+  the lines I recommended (camera-anchor lift, not a zoom bump) plus the stroke-thickness change,
+  which also closes my desktop soft note. `BOSS_VITAL_CATCH_RADIUS = 0.11` stands untouched throughout
+  — this was never a radius question. I consider the A1-R2 small-ring legibility item CLOSED.
+- handoff → `dev-r3f-render` (Amelia) + `senior-architect` (Winston): sign-off confirmed on `38`/`39`;
+  no further render action owed on this item. Split-preview coverage confirmed by source read, not a
+  fresh capture — flag only if a future reviewer wants belt-and-braces evidence for it.
+- handoff → `producer` (Marion): A1-R2 small-ring legibility item closes PASS — nothing further to
+  track on this branch of the story.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). A stray extra capture attempt
+  (worst-case mobile wander) hit a contaminated shared `dist/` (another in-flight build's content) and
+  was discarded, not filed as evidence — logged above for transparency. No `src/**` edit, no
+  commit/push by me.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: PASS — A1-R2 small-ring legibility RE-VERDICT (ux-designer) — the mobile-frame-lift (`BOSS_MOBILE_FRAME_LIFT 0.7`, a camera-TARGET lift, not a zoom bump) fully clears the vital ring's fixed wander band from behind the fixed-footprint "LE COMMANDANT" HUD bar (measured ≈42 CSS px gap on `38`, corroborating dev-r3f-render's ~44 CSS px worst-case figure) — the ring is now a fully visible, complete, bright annulus on mobile-landscape, resolving my §20 FAIL. The stroke-thickness change (`RING_INNER_VITAL 0.78→0.55`, `RING_OUTER`/catch radius untouched) turns the vital ring from a thin hairline into a visibly bold, unmistakable ring on `39`, closing my §20 desktop soft note. Distinguishability from the LIMB ring (position + size + emphasis, not colour-alone) is unaffected and reconfirmed. `BOSS_VITAL_CATCH_RADIUS = 0.11` (game-designer's gated dominance threshold) is untouched throughout — this was, correctly, a render-scale/boss-zoom fix, never a radius re-tune. A1-R2 §4's binding condition is met on BOTH device classes; the small-ring legibility item is CLOSED.
