@@ -74,6 +74,66 @@ DANS LE STAGE — CELA FAIT PARTIE D'UNE STORY APPAREMMENT."_
   - `docs/handoffs/story-boss-niveau-final-live.md` (NEW — this file)
   - `docs/agent-handoffs.md` (index row added)
 
+## 2. DESIGN LOOP — narrative-designer (Yasmine) — 2026-07-20
+
+- claim: harden the Bertrand-CONFIRMED venue canon for the Niveau Final and wire the
+  already-gated `final_pre`/`final_post` scripts to the new level (Open Question 4 + AC7),
+  without rewriting one word of the gated copy and without deciding any mechanic, level id,
+  or surface.
+- release: `docs/game-design/spec-niveau-final-fiction.md`. Headlines:
+  - **Venue hardened — the hall is named `l'Éden` (ancien dancing).** Bertrand confirmed the
+    squatted grand hall as HARD canon (2026-07-20), lifting the differentiation spec's
+    loose-form flag 1. History fixed in one paragraph: an inter-war dancing / salle de bal,
+    single heavy chandelier, shuttered for decades, requisitioned by the sound systems for
+    `la teuf du siècle` on 31 déc 1999. Proper noun is fictional/legal-safe (same principle
+    as `commandant Ferrand` / `08 36`); the venue _type_ is Bertrand-confirmed and does not
+    depend on the name — gate may rename. Location left loose (an old dancing at the edge of
+    Paris) for the art/backdrop pass to pin.
+  - **AC7 — gated scripts reused AS-IS.** `final_pre`/`final_post` (encounter spec §4) ship
+    byte-for-byte. **No canon copy rewritten.** The venue is set up player-facing via three
+    surfaces that are NOT the gated dialogue: the level-select title, the l'Éden interior
+    backdrop behind the (frozen) briefing, and the mission itself.
+  - **Two wiring drift flags (neither a copy change — both the "light adaptation" AC7
+    anticipated):**
+    - **A — keys/ids follow the level id.** The gated placeholder ids `final_pre`/`final_post`
+      become `niveau-final_pre`/`niveau-final_post` (map key = level id; `narrativeSystem.test.ts`
+      A2 enforces `scene.id === "<key>_pre/_post"`). French lines unchanged; only the id string.
+    - **B — a `backdrop` is MANDATORY.** Test A5 requires every PRE/POST scene to carry
+      `backdrop: "assets/levels/<key>/facade.png"` (ADR-0023); the gated §4 scripts specified
+      none (predate the level). Wiring must add `assets/levels/niveau-final/facade.png` to both
+      scenes — this is the new venue-interior art `dev-tooling-assets` generates. Required
+      addition, not a copy change.
+  - **Two questions to the gate (would touch gated copy — NOT resolved silently):**
+    - **Q1** — name l'Éden inside the briefing dialogue? Recommendation: **no** (title +
+      backdrop carry it; keep `final_pre` frozen at 8 lines). If the gate wants it spoken,
+      that is a conscious amendment for a fresh PASS.
+    - **Q2** — confirmed no other gated-copy drift: no gated line names or contradicts the
+      hall, so hardening l'Éden needs zero rewrite.
+  - **One-shot reveal discipline restated:** the `boss-harness` stays non-canon and out of
+    `LEVELS` (ADR-0051 D4); the Commandant's name/embodiment/defeat and l'Éden appear on NO
+    prior level (verified against shipped copy) — the reserved reveal is unspent. Reveal beats
+    ordered on this single level (destination named → stakes+name → rule → embodiment →
+    downbeat). Reveal line stays imageless until the Commandant sprite lands (Open Q3).
+  - **Level-select words for `ux-designer` (words mine, surface his):** title `L'Éden`;
+    subtitle `31 décembre 1999 · le dernier son du siècle`; one-field fallback
+    `L'Éden — 31 déc. 1999` (mirrors the "Vitry — 94" convention). No other new player-facing
+    string authored (AC7).
+  - **Recommended level id `niveau-final`** (story's own example) — but the id is
+    `senior-architect`/`dev-gameplay`'s call at TECH PLAN; the §5 keying follows it mechanically.
+- Not decided (out of my lane): level id, pacing/quota/difficulty (Open Q1–2, `game-designer`),
+  art-lane timing (Open Q3, `pm`+`lead`+`architect`), all mechanics/HUD/surfaces.
+- handoff → `lead-game-designer` (Karim): design-gate PASS on §1 (venue) + §5 (wiring); rule
+  Q1 (name in-dialogue? — I recommend no) + confirm Q2; ratify/amend the proper noun `l'Éden`;
+  route the l'Éden interior backdrop request to the art flow when Open Q3 is resolved.
+- handoff → `ux-designer` (Tony): level-select title/subtitle words (§4) — the surface is his.
+- handoff → `game-designer` (Sacha): shared-terrain note — the venue name l'Éden and the
+  §1.3 prop identities (lustre/enceintes/fumée, unchanged from the differentiation spec) are
+  the canon the décor lever dresses; on conçoit ensemble, on livre séparément.
+- Not yet a `VERDICT:` line — awaiting Karim's gate.
+- File List:
+  - `docs/game-design/spec-niveau-final-fiction.md` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
 ## 2. DESIGN LOOP — ux-designer (Tony) — 2026-07-20
 
 - claim: fresh-eyes UX pass on the Niveau Final live-ship — the level-select
