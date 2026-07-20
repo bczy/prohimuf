@@ -1,10 +1,22 @@
-import { describe, it, expect, vi } from "vitest";
-import { createElement } from "react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { act, createElement } from "react";
+
+// Opt into React's act() environment so the client-render mount tests (auto-focus,
+// flag-write effect) don't warn.
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
-import { FlyerWall, buildPressionChoices } from "../FlyerWall";
+import {
+  FlyerWall,
+  buildPressionChoices,
+  hasSeenTutorialNudge,
+  markTutorialNudgeSeen,
+} from "../FlyerWall";
+
+const SEEN_KEY = "muf_seen_tutorial_nudge";
 
 const noop = (): void => {
   /* host-owned in production */
@@ -79,5 +91,95 @@ describe("FlyerWall PRESSION header — single-pref write-through", () => {
 
     expect(onSavePrefs).toHaveBeenCalledTimes(1);
     expect(onSavePrefs).toHaveBeenCalledWith({ ...DEFAULT_PREFS, difficulty: "hard" });
+  });
+});
+
+/**
+ * §4 — first-run tutorial discoverability (spec-menus-ui-completion §4, ADR-0052 §1).
+ * A single `muf_seen_tutorial_nudge` localStorage flag gates BOTH the tutorial-flyer
+ * auto-focus and the one-time "COMMENCE ICI" nudge; the flag is written on first mount
+ * so neither ever nags a returning player.
+ */
+describe("FlyerWall first-run — seen-flag helpers", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("reads absent as not-yet-seen, then seen after marking", () => {
+    expect(hasSeenTutorialNudge()).toBe(false);
+    markTutorialNudgeSeen();
+    expect(hasSeenTutorialNudge()).toBe(true);
+    expect(localStorage.getItem(SEEN_KEY)).not.toBeNull();
+  });
+});
+
+describe("FlyerWall first-run — nudge markup", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("renders the COMMENCE ICI nudge on a first-ever visit (flag absent)", () => {
+    const html = markup(DEFAULT_PREFS);
+    expect(html).toContain("muf-tutorial-nudge");
+    expect(html).toContain("COMMENCE ICI");
+  });
+
+  it("renders no nudge once the flag is set (returning visit)", () => {
+    markTutorialNudgeSeen();
+    const html = markup(DEFAULT_PREFS);
+    expect(html).not.toContain("muf-tutorial-nudge");
+    expect(html).not.toContain("COMMENCE ICI");
+  });
+});
+
+describe("FlyerWall first-run — auto-focus + flag timing (client mount)", () => {
+  let root: ReturnType<typeof createRoot> | null = null;
+  let container: HTMLDivElement | null = null;
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    container?.remove();
+    root = null;
+    container = null;
+  });
+
+  function mount(): HTMLDivElement {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => {
+      root?.render(
+        createElement(FlyerWall, {
+          unlockedLevels: NO_UNLOCKS,
+          onPlay: noop,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: noop,
+        }),
+      );
+    });
+    return container;
+  }
+
+  it("lands focus on the tutorial flyer and writes the flag (flag absent)", () => {
+    const el = mount();
+    const active = document.activeElement;
+    expect(active?.getAttribute("role")).toBe("button");
+    expect(active?.textContent).toContain("Tutoriel");
+    expect(el.contains(active)).toBe(true);
+    expect(localStorage.getItem(SEEN_KEY)).not.toBeNull();
+  });
+
+  it("does not steal focus nor render the nudge on a return visit (flag present)", () => {
+    markTutorialNudgeSeen();
+    const el = mount();
+    // No flyer stole focus — activeElement stays the document body.
+    expect(document.activeElement).toBe(document.body);
+    expect(el.textContent).not.toContain("COMMENCE ICI");
   });
 });

@@ -72,6 +72,38 @@ export function buildPressionChoices(
   }));
 }
 
+/**
+ * First-run discoverability flag (spec-menus-ui-completion §4, gate ruling Q7 /
+ * ADR-0052 §1). One dedicated render-side `localStorage` key — deliberately NOT a
+ * `Prefs` field (it records that a UI *visit* happened, not a game setting), read with
+ * the same private-mode/SSR-safe guard as `loadPrefs`. Absent ⇒ first-ever NIVEAUX
+ * visit; the same flag gates BOTH the tutorial-flyer auto-focus and the one-time
+ * visual nudge.
+ */
+const SEEN_TUTORIAL_NUDGE_KEY = "muf_seen_tutorial_nudge";
+
+/** True once the first-run tutorial nudge has been shown (or storage is unavailable — a
+ *  guarded read that treats absence-of-storage as "already seen", so it never nags nor
+ *  throws). Exported pure so the first-run decision is unit-testable DOM-free. */
+export function hasSeenTutorialNudge(): boolean {
+  try {
+    return localStorage.getItem(SEEN_TUTORIAL_NUDGE_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+/** Mark the first-run nudge seen so it never shows again (spec §4: set on first NIVEAUX
+ *  mount). Guarded like `savePrefs` — a storage failure just lets the nudge reappear
+ *  next mount, which is harmless. */
+export function markTutorialNudgeSeen(): void {
+  try {
+    localStorage.setItem(SEEN_TUTORIAL_NUDGE_KEY, "1");
+  } catch {
+    // storage unavailable — silently ignore (nudge may show again; no crash)
+  }
+}
+
 export function FlyerWall({
   unlockedLevels,
   onPlay,
@@ -80,6 +112,13 @@ export function FlyerWall({
 }: FlyerWallProps): JSX.Element {
   const [focusWithin, setFocusWithin] = useState(false);
   const [shakeIndex, setShakeIndex] = useState<number | null>(null);
+  // First-ever NIVEAUX visit (spec §4). Captured ONCE at mount so writing the "seen"
+  // flag below never retroactively hides the nudge or drops the focus steal during this
+  // same visit. Absent flag ⇒ first-timer: auto-focus the tutorial flyer + show the nudge.
+  const [firstVisit] = useState(() => !hasSeenTutorialNudge());
+  // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
+  // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
+  const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
   // Click-through guard: the title→menu transition can land a stray pointer/keydown
   // on a freshly mounted flyer. Arm activations only after MOTION.titleToMenu ms.
   // Deterministic (a plain mount timer), no Date.now in render.
@@ -95,6 +134,19 @@ export function FlyerWall({
       window.clearTimeout(t);
     };
   }, []);
+
+  // First-ever visit only (spec §4): set the one-time flag on mount, and land keyboard
+  // focus on the tutorial flyer instead of leaving it on the NIVEAUX tab. This is
+  // auto-FOCUS, not auto-navigate — nothing plays, nothing advances, the player still
+  // chooses. Every return visit keeps today's behaviour (no steal). `firstVisit` and
+  // `tutorialIndex` are mount-stable, so this runs exactly once.
+  useEffect(() => {
+    if (!firstVisit) return;
+    markTutorialNudgeSeen();
+    if (tutorialIndex >= 0) {
+      itemRefs.current[tutorialIndex]?.focus();
+    }
+  }, [firstVisit, tutorialIndex]);
 
   // Per-level derived presentation. Stock rotates rose/vert/orange by *playable*
   // index; the tutorial uses manila. Unlock predicate byte-identical to the shipped
@@ -231,6 +283,18 @@ export function FlyerWall({
           // card width, set by the `.muf-flyer-slot` class rule above).
           return (
             <div key={level.id} className={cx("muf-flyer-slot", styles.slot)}>
+              {/* First-run nudge (spec §4): a modest felt-tip "start here" scrawl above
+                  the tutorial flyer, shown only on the first-ever NIVEAUX visit and never
+                  again (same `firstVisit`/`muf_seen_tutorial_nudge` gate as the auto-focus).
+                  Static by construction — no animation to gate under reduced motion. */}
+              {firstVisit && i === tutorialIndex && (
+                <div className={cx("muf-tutorial-nudge", styles.nudge)}>
+                  COMMENCE ICI
+                  <span aria-hidden="true" className={styles.nudgeArrow}>
+                    ↓
+                  </span>
+                </div>
+              )}
               <LevelFlyer
                 level={level}
                 flyerIndex={i}
