@@ -2442,3 +2442,76 @@ VERDICT: PASS — A1-R2 winnability re-verify (game-designer) — on the landed 
   - `src/game/systems/bossQteSystem.ts` (`BOSS_VITAL_CATCH_RADIUS` 0.18 → 0.11)
   - `src/game/systems/__tests__/bossQteSystem.test.ts` (two A1 tests updated; 66 tests)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 18. BUILD (render lane, stage-5 correction round 2) — dev-r3f-render (Amelia) — 2026-07-20 — particle smoke (§17) + décor dégradé + finisher B&W + A1-R2 radius
+
+- claim: three gated corrections folded into one render pass — (1) Bertrand's §17 direct order
+  (real particle smoke), (2) composite-gate §2.1 FAIL (décor glow aplat → dégradé), (3)
+  composite-gate colour-law FAIL (finisher sepia → B&W + acid-neon) — plus picking up the A1-R2
+  radius bump (0.11) which landed mid-pass (§10). Files: `src/render/scene/BossQteSprite.tsx` +
+  NEW `src/render/scene/smokeParticles.ts` (a "sibling render-only module", explicitly allowed by
+  the order) + NEW asset `public/assets/fx/smoke.png` + `public/assets/fx/LICENSES.md`. `src/game`
+  NOT touched; `stateMachine.ts`/`useGameLoop.ts`/`src/hooks`/`CrtPass.tsx`/`crtParams.ts`/
+  `levelArt.json` NOT touched; NO new render target / fullscreen pass.
+- **Texture source + licence:** `public/assets/fx/smoke.png` — a soft-puff smoke sprite (512×512,
+  white-on-alpha). Downloaded (open-source route, per the order — Kenney GitHub mirrors 404'd,
+  GitHub code-search is repo-scoped) from `mrdoob/three.js` `examples/textures/opengameart/smoke1.png`
+  (`https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/opengameart/smoke1.png`),
+  three.js's OpenGameArt-sourced example texture set — **CC0 (public domain)**. Recorded in
+  `public/assets/fx/LICENSES.md`. Committed byte-for-byte (renamed only). (A phaser-examples puff was
+  also fetched but rejected — unclear asset licence; the CC0 three.js one honours the provenance
+  discipline.)
+- **Particle architecture (`smokeParticles.ts`):** a pooled field of billboard meshes (shared
+  `PlaneGeometry`, per-particle `MeshBasicMaterial` so each puff fades independently). Lifecycle:
+  spawn low → drift up+sideways → expand → fade in-then-out (`sin(lifeT·π)`) → respawn; randomized
+  per-particle scale / rotation / velocity / opacity / lifetime (Math.random at mount — pure
+  cosmetics, per the order). ONE shared texture fetch (hidden until it loads → no untextured square).
+  Added to the scene via `<primitive object={smokeField.group}/>`; billboards positioned in world
+  space around the boss anchor each frame; disposed on unmount. Reduced-motion: frozen at a scattered
+  static arrangement, opacity held (no drift/rotation/strobe).
+- **Bounds used (self-imposed, pending Ben's re-verdict):** particle count **≤64 desktop / ≤32
+  mobile** (device tier via `detectMobile()`, like CRT lite/full); soft small-to-mid quads; NormalBlending
+  desaturated (`#9a9a9a`, never additive); world-space layer 0 (rides the CRT composite pass 1 for
+  free — **zero new RT, zero new pass, `CrtPass` untouched**); renderOrder 10 (below the parry
+  halo/glyph 13/14 — the §16 legibility fix stays intact). Old 4-quad veil code REMOVED (my now-dead code).
+- **Décor glow dégradé (§2.1 FAIL fix):** the prop is now a DIM GREY placeholder at all times (B&W
+  value only); the "armed" read is a separate acid GLOW-HALO whose alpha falls MONOTONICALLY to 0 at
+  the rim (a baked radial-gradient `CanvasTexture`, `buildRadialGlowTexture`) — a genuine dégradé,
+  never a flat lime aplat. « Un halo est un dégradé, jamais un aplat. »
+- **Finisher B&W (colour-law FAIL fix):** the sepia world-wash is GONE. The FINISHER beat is now
+  MONOCHROME on world pixels — a brief WHITE inverted onset flash (value) + a held BLACK vignette
+  value-crush (a baked radial `buildVignetteTexture`, clear centre → black rim). Colour lives ONLY on
+  the acid-neon « LIVRE LE SON » prompt (`#39ff14` — the game's neon language). No warm hue on any
+  world pixel; the R−B world cast is eliminated. Copy/mechanics untouched; still distinct from the
+  passive `QTE_RESULT_HOLD` breather (prompt presence) and resolves on any fire (full-frame click zone).
+- **A1-R2 (vital catch 0.11) picked up:** the render imports `BOSS_VITAL_CATCH_RADIUS`, so the vital
+  ring now draws at 0.11 automatically (drawn == catch, no literal). Stale `0.18` comments updated to
+  0.11. No functional change needed on my side.
+- VERIFICATION — ALL GREEN (corepack yarn 4.12.0, COREPACK_NPM_REGISTRY set):
+  - `yarn typecheck` → exit 0. `yarn lint` → exit 0. `yarn format:check` → clean.
+  - `yarn vitest run` → **847/847 PASS** (both lanes landed).
+- EVIDENCE (state-verified via `__MUF_STATE__().game.bossQte`, live `__MUF_PLAY__`, headless
+  SwiftShader, crt:false to isolate the reads; replaces the 22/27/28/29 smoke aspects + 24/25):
+  - `30-smoke-particles-desktop.png` — desktop 1280×720@2x, phase 3, `smokeActive` (drifting puff field).
+  - `31-smoke-particles-mobile.png` — mobile **844×390**@3x, phase 3, `smokeActive`.
+  - `32-smoke-reduced-motion.png` — desktop, `prefers-reduced-motion: reduce`, phase 3, `smokeActive`
+    (frozen static scatter).
+  - `33-parry-under-smoke.png` — desktop, `telegraphActive && chargedWindow && smokeActive` (the §16
+    parry halo/glyph survives ABOVE the new particle smoke — re-verified).
+  - `34-decor-glow-falloff.png` — desktop, phase 2, `decorArmed && !decorConsumed` (the acid dégradé
+    halo wrapping the grey prop, monotonic falloff — no aplat).
+  - `35-finisher-bw.png` — desktop, `phase === "FINISHER"` (cold B&W world + acid-neon « LIVRE LE SON »,
+    no warm cast).
+  - **Composite gate (Gate-4, `lead-art` Nico): please RE-VERDICT on 30-35** — the particle smoke, the
+    décor dégradé, and the B&W finisher supersede the smoke/glow/finisher aspects of 22/24/25/27/28/29.
+- Deviations: none from the corrections as specced. The particle count caps are self-imposed pending
+  `gpu-specialist` (Ben)'s parallel re-verdict of the particle technique (his pre-build no-particles
+  constraint was overridden by Bertrand §17). No commit/push.
+- File List:
+  - `src/render/scene/BossQteSprite.tsx` (particle field wiring; décor dégradé halo; finisher B&W;
+    A1-R2 comment sync; old 4-quad veil removed)
+  - `src/render/scene/smokeParticles.ts` (NEW — the particle field module)
+  - `public/assets/fx/smoke.png` (NEW — CC0 three.js/OpenGameArt smoke sprite)
+  - `public/assets/fx/LICENSES.md` (NEW — provenance)
+  - `docs/qa/evidence/story-boss-qte-differentiation/30..35-*.png` (NEW — 6 state-verified captures)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
