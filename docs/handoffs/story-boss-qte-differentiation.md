@@ -3074,3 +3074,77 @@ VERDICT: PASS — A1-R2 small-ring legibility RE-VERDICT (ux-designer) — the m
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: PASS — quality gate (qa-lead) — the plan ran and held. Mechanical gate GREEN at close (typecheck EXIT 0, vitest 847/847, lint EXIT 0, format:check EXIT 0). All 11 acceptance lines VERIFIED (unit + the now-complete e2e evidence set 01/02/11-14/20-39, C-QA2 CLOSED via the state-seed capture seam), all 5 regression lines VERIFIED mechanically vs origin/main (phase-1 byte-identical; hostage + stateMachine ZERO-diff; harness persistence inert; shipped LevelConfigs untouched — only the non-shipped harness decorProp). Every stage-6-required gate verdict logged and PASS: design-acceptance (Sacha §19, camp-dominance broken at vital-catch 0.11), design gate (Karim §13/§17), UX (Tony §23, mobile small-ring FAIL resolved by the §21/§22 frame-lift), composite Gate-4 (Nico, particle smoke + décor dégradé + B&W finisher, 30-35 PASS), perf pre-close (Ben §18 PERF PASS). Deferrals all explicit with owners: Ben's on-device smoke ms (CI-DEFERRED, Bertrand executes — does not deadlock), audio wiring (ADR-0052 §7), split-preview cue (code-inferred CLOSED), canon boss art (Niveau-Final). One scope-bleed finding (concurrent NIVEAU-FINAL levelArt.json/ADR-0053 in the branch diff — no runtime effect here) routed to producer + architect triage. Stage-6 (4-reviewer merge panel) is OPEN.
+
+## 6. REVIEW — senior-architect (Winston) — 2026-07-20
+
+- claim: stage-6 TRIAGE + INTEGRATION REVIEW (one pass) of the 4-reviewer panel for
+  PR #114 / branch `claude/yo-pmnyzr` vs `origin/main`. Panel returned zero BLOQUANT,
+  zero MAJEUR; D=security clean, PNG hash-verified CC0, no new deps. One read of the
+  diff (game/render/hooks); findings I doubted re-verified against real code.
+- release: triage below. VERDICT is NO-MERGE-until-fix (7-item pre-merge batch; all
+  MINEUR, none BLOQUANT/MAJEUR — I hold the merge on a cheap batch that is player-visible
+  / touches the capture evidence / breaches a standing perf cap). #5/#9/#10 + NITs are
+  FOLLOW-UP. Story-2 (niveau-final) RIDES ALONG, gated on the ADR-0053 status reword.
+
+### Triage table
+
+| #   | Finding                                                                                                                                                                                                                               | Verified                                                                                                                               | Disposition                                                                                                                                                                                                                                                                                         | Lane                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | Parry-whiff red flash fires on a SUCCESSFUL threshold-crossing parry (phase break zeroes stagger; predicate lacks a break guard)                                                                                                      | Confirmed (BossQteSprite.tsx:496 `&& !staggered && phase==="ACTIVE"`, no break guard)                                                  | PRE-MERGE — add `&& qte.phaseBreakRemaining <= 0` (or `&& !breakActive`) guard                                                                                                                                                                                                                      | dev-r3f-render                           |
+| 2   | `toFinisher()` omits `decorConsumed` — a décor kill enters FINISHER/WON with `decorConsumed:false`                                                                                                                                    | Confirmed (call site 1099 sets local `decorConsumed=true` then passes original `qte` to toFinisher which spreads it)                   | PRE-MERGE — `return toFinisher({ ...qte, decorConsumed: true })` at the décor site only                                                                                                                                                                                                             | dev-gameplay                             |
+| 3   | smoke.png is 512×512 — outside CAP-D (≤256², 512² needs a recorded Ben waiver, none)                                                                                                                                                  | Confirmed (`file` + PIL: 512×512)                                                                                                      | PRE-MERGE — downsize to 256² (soft haze sprite, ample) OR record the gpu-specialist waiver; my steer = downsize (no waiver debt)                                                                                                                                                                    | dev-tooling-assets + gpu-specialist sign |
+| 4   | ADR-0052 stale: claims useGameLoop byte-untouched (now +52), D2 says ring catch 0.30 (A1-R2 is BOSS_VITAL_CATCH_RADIUS 0.11)                                                                                                          | Confirmed (useGameLoop diff +52 harness seam; BOSS_VITAL_CATCH_RADIUS=0.11)                                                            | PRE-MERGE — annotate ADR-0052 (§11/§21 seam, §21(d) coupling note, D2 radius) + fold #11 ADR-0053 status reword here                                                                                                                                                                                | tech-writer                              |
+| 5   | Décor aim-honesty gap — prop drawn ~0.8×1.05 (+glow) but catch is RING_HIT_RADIUS (0.30): silent no-op clicks on the drawn edges; violates the drawn==catch invariant                                                                 | Confirmed; decorProp authored ONLY on the excluded `BOSS_QTE_DEV_HARNESS_LEVEL` (levels.ts:246) — runtime-inert on every shipped level | FOLLOW-UP — HARD DESIGN GATE: before ANY shipped level authors decorProp, Karim stamps direction (enlarge catch to drawn box vs shrink drawn prop) — gated mechanic-value change of the A1 class — then paired dev-gameplay(catch)+dev-r3f-render(drawn). Not pre-merge (zero shipped reachability) | game-designer → paired dev               |
+| 6   | smokeParticles: TextureLoader.load has no onError (404 ⇒ veil silently absent while parry still pays the 40% smoke degrade = fairness bug) + no disposed-guard on async callback (late texture stamped on disposed materials, leaked) | Confirmed (single onLoad cb; dispose() can precede load)                                                                               | PRE-MERGE — add onError (log + leave field hidden) + a `disposed` flag guard that skips/disposes the late texture                                                                                                                                                                                   | dev-r3f-render                           |
+| 7   | Smoke pool always allocates SMOKE_MAX_DESKTOP (64); mobile only caps activeCount (32 shown, 64 iterated/allocated)                                                                                                                    | Confirmed (`createSmokeField(SMOKE_MAX_DESKTOP)` while `smokeMax` is mobile-aware, passed only as activeCount)                         | PRE-MERGE — `createSmokeField(smokeMax)`                                                                                                                                                                                                                                                            | dev-r3f-render                           |
+| 8   | smoke/renfort ENVELOPE lerps advance framerate-dependent (no delta): half-speed at 30fps, tens of seconds at the ~2fps capture sandbox                                                                                                | Confirmed (smokeEnvRef/renfortEnvRef `+= (target-cur)*FADE`, no dt; note the particle field itself IS delta-correct)                   | PRE-MERGE — delta-normalise the two envelope lerps (the capture evidence this story is gated on runs at ~2fps)                                                                                                                                                                                      | dev-r3f-render                           |
+| 9   | Spec teach-index discrepancy: spec says phase-2 teach parry "near phase end", shipped PARRY_PHASE2_TEACH_INDEX=1 is near start; dev-resolution logged+playtest-accepted, spec never amended                                           | Confirmed (process/doc)                                                                                                                | FOLLOW-UP — one-line spec transcription                                                                                                                                                                                                                                                             | game-designer/tech-writer                |
+| 10  | Décor drawn from `state.bossQteSpec.decorProp` but hit-tested against `qte.decorProp` (identical today; divergence risk)                                                                                                              | Confirmed                                                                                                                              | FOLLOW-UP — single-source the read (hygiene)                                                                                                                                                                                                                                                        | dev-r3f-render                           |
+| 11  | STORY-2 niveau-final ride-along: ADR-0053 "Accepted" + story/specs/handoffs + 9-entry levelArt boss prompt rewrite, all verified runtime-inert (no consumer, check-art-prompts green, AC8 holds)                                      | Confirmed inert                                                                                                                        | RULING: MERGE-TOGETHER (see integration review) — gated on ADR-0053 status reword to "Accepted — pending build" (folded into #4)                                                                                                                                                                    | tech-writer                              |
+
+NITs (fold where free, else logged, not gating): stale "0.18" comments in bossQteSystem.test.ts;
+split-preview vital y hardcoded 0.75 vs 0.8 constant; false "catch zone footprint" parry-glyph
+comment (drawn ⊂ catch, safe); FINISHER click/timeout exit literal duplicated (one owner);
+parry-floor assert gates on teach/parity constants happening to equal 1; 4th hand-rolled
+matchMedia vs existing useMediaQuery helper; at=finisher auto-resolves in 1.5s.
+
+### Integration review
+
+- BOUNDARY LAW — PASS. `src/game/**` imports NO react/three (scan empty). `render`→`game`
+  is `import type` + pure-API (`createBossQte`/`tickBossQte`/`BOSS_PARRY_POINT` + drawn==catch
+  radius constants — reading values, not embedding rules). `useGameLoop` harness seam
+  (`__MUF_BOSS_BOOT__`/`__MUF_BOSS_IMMUNE__`) is twice-guarded (factory only under
+  `?preview=boss`; fires only when `bossQteSpec !== null` = harness-only) and mutates state
+  via a pure BossQte value — legitimate hooks bridge, no rule leak. Confirms the panel.
+- SEAMS — the capture seam lives in the bridge (hooks) + a render-side harness driver
+  (bossHarness.ts drives the pure API to fast-forward). Correct layer; the only defect is
+  documentary (ADR-0052 claimed useGameLoop untouched → #4).
+- DEPS / DEPLOY — none. One CC0 asset (smoke.png), hash-verified, licensed
+  (public/assets/fx/LICENSES.md). No new package. CAP-D dimension breach is the only asset
+  issue (#3).
+- STORY-2 RIDE-ALONG RULING — MERGE-TOGETHER. Rationale: (a) all story-2 artifacts are
+  VERIFIED runtime-inert (no code consumer, check-art-prompts green, AC8 holds), zero runtime
+  risk; (b) the differentiation levers and the boss-sprite-family prompt rewrite are causally
+  coupled — the levers presuppose the family the prompts define; (c) splitting forces a rebase
+  - a full re-run of the 4-reviewer panel on the split PR to re-establish inertness the panel
+    already proved — process cost for zero runtime benefit; (d) specs preceding build is healthy.
+    The ONE real risk — ADR-0053 "Accepted" implying a BUILT level — is neutralised by rewording
+    its status to "Accepted — pending build" (design decision IS accepted; build is not).
+    Folded into #4, tech-writer, pre-merge.
+
+### VERDICT: NO-MERGE — until the 7-item pre-merge batch lands & re-verifies
+
+Pre-merge fix list (all MINEUR, all small; none BLOQUANT/MAJEUR — held because they are
+player-visible / affect the gating capture evidence / breach a standing perf cap I cannot
+self-waive):
+
+- dev-r3f-render: #1 (parry-whiff break guard), #6 (smoke onError + disposed guard),
+  #7 (createSmokeField(smokeMax)), #8 (delta-normalise the two envelope lerps).
+- dev-gameplay: #2 (toFinisher decorConsumed).
+- dev-tooling-assets + gpu-specialist: #3 (downsize smoke.png to 256², or Ben records a waiver).
+- tech-writer: #4 (ADR-0052 annotations) + ADR-0053 status → "Accepted — pending build".
+  Re-verify before Bertrand merges: `rtk tsc` + `rtk vitest` + `rtk lint`, and re-capture the
+  render-visible ones (#1/#8 under the ~2fps sandbox). FOLLOW-UP (producer chases): #5 (with the
+  Karim design-gate hard-block on décor before any shipped level authors decorProp), #9, #10, NITs.
+- VERDICT: PASS — integration/boundary review (senior-architect)
+- VERDICT: FAIL — stage-6 merge gate, pending the 7-item pre-merge batch (senior-architect)
