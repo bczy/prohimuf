@@ -147,7 +147,8 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
 - Conventional Commits (commitlint enforced).
 - Every PR description must include the branch-preview link (see the "Preview" section
   of the PR template): `https://bczy.github.io/prohimuf/preview/<slug>/`, where `<slug>`
-  is the branch name with any character outside `[a-zA-Z0-9._-]` replaced by `-`
+  is the branch name with any BYTE outside `[a-zA-Z0-9._-]` replaced by `-` — per byte,
+  not per character: a UTF-8 `é` (2 bytes) becomes `--` (the workflow uses `tr -c`)
   (deployed by `deploy-preview.yml` on each push to `claude/**`).
 - Record significant architecture decisions and changes as ADRs in `docs/adr/`
   (see `docs/adr/README.md`). When a change alters module boundaries, deployment,

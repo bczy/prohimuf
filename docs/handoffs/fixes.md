@@ -260,3 +260,4 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   failure, .nojekyll parity, ADR-0001 amendment, ci.md + workflow comment refresh,
   dest guard hardened vs ./.git, no post-final-attempt sleep, max_attempts
   validated)
+- 2026-07-20 · docs · CLAUDE.md slug rule said per-CHARACTER but deploy-preview.yml sanitizes per-BYTE (`tr -c`): UTF-8 é → `--`; CLAUDE.md wording fixed in-branch, decide later whether the workflow should sanitize per-character instead (dev-tooling-assets)
