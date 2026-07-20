@@ -137,6 +137,23 @@ export function isChargedWindow(phaseIndex: number, phaseWindowIndex: number): b
 // --- ADR-0052 lever 2 — interactive décor prop -------------------------------------------
 /** Décor prop burst (HP) — a single-use, pure-upside chunk dropped on the boss (⅛ of 24). */
 export const BOSS_DECOR_DAMAGE = 3;
+/**
+ * AMENDMENT A2 (lead-game-designer stage-5 gate ruling, décor aim-honesty — riding with story-2
+ * `niveau-final`, the first level that authors a `decorProp`). The armed décor prop's catch is an
+ * anchor-relative axis-aligned box (AABB) matching the DRAWN silhouette (`DECOR_W 0.80 × DECOR_H
+ * 1.05`, dev-r3f-render `BossQteSprite`), NOT the old `RING_HIT_RADIUS 0.30` circle. Rationale: a
+ * silent no-op on a visibly clickable, glow-lit target during a SINGLE-USE window (the drawn prop's
+ * `|dy| ∈ (0.30, 0.525]` / corner `|dx| ∈ (0.30, 0.40]` was drawn-but-dead) is the §5.6 "rate
+ * bullshit" class the drawn==catch guardrail (AMENDMENT A1 §4) forbids — and worse than the ring
+ * case because a whiffed décor window never returns. Direction (a) ENLARGE-catch (not shrink-drawn):
+ * the prop is pure upside (no failure surface, no dominance role, the drawn size is art-load-bearing
+ * per the l'Éden chandelier), so a generous catch has zero downside. Half-extents = half the drawn
+ * plane; asserted finite > 0 in `createBossQte`. PAIRED render constraint (dev-r3f-render): draw the
+ * prop at `DECOR_W = 2 × HALF_W`, `DECOR_H = 2 × HALF_H` (drift-guard). The glow halo (2.2) is an
+ * attention cue only — explicitly NOT the catch (a radial fade with no crisp edge to aim at).
+ */
+export const BOSS_DECOR_CATCH_HALF_W = 0.4;
+export const BOSS_DECOR_CATCH_HALF_H = 0.525;
 
 // --- ADR-0052 lever 5 — ceremonial FINISHER ----------------------------------------------
 /** The FINISHER hold: generous enough to click deliberately, short enough not to stall a
@@ -740,6 +757,11 @@ export function createBossQte(spec: BossQteSpec): BossQte {
   assertPositiveScalar("STAGGER_SECONDS (ADR-0052 lever 3)", STAGGER_SECONDS);
   assertPositiveScalar("FINISHER_HOLD_SECONDS (ADR-0052 lever 5)", FINISHER_HOLD_SECONDS);
 
+  // AMENDMENT A2 (décor aim-honesty) — the décor catch half-extents must be real positive extents
+  // so the drawn==catch AABB is a genuine, non-degenerate box.
+  assertPositiveScalar("BOSS_DECOR_CATCH_HALF_W (AMENDMENT A2)", BOSS_DECOR_CATCH_HALF_W);
+  assertPositiveScalar("BOSS_DECOR_CATCH_HALF_H (AMENDMENT A2)", BOSS_DECOR_CATCH_HALF_H);
+
   // ADR-0052 lever 4 — the renfort surge descriptor is a sane, telegraphed, seeded shape.
   if (
     !Number.isInteger(RENFORT_SURGE.phaseIndex) ||
@@ -840,6 +862,24 @@ function withinCatch(
   radius: number,
 ): boolean {
   return Math.hypot(px - (anchor.x + ox), py - (anchor.y + oy)) <= radius;
+}
+
+/**
+ * True iff `(px,py)` falls within the anchor-relative axis-aligned box centred at `(ox,oy)` with
+ * the given half-extents (inclusive edges). The décor prop's drawn==catch silhouette test
+ * (AMENDMENT A2) — a box, NOT a circle, so every drawn pixel is clickable and nothing beyond the
+ * drawn corners scores (a circumscribing radius would make empty corner space count).
+ */
+function withinBox(
+  px: number,
+  py: number,
+  anchor: Vec2,
+  ox: number,
+  oy: number,
+  halfW: number,
+  halfH: number,
+): boolean {
+  return Math.abs(px - (anchor.x + ox)) <= halfW && Math.abs(py - (anchor.y + oy)) <= halfH;
 }
 
 /**
@@ -1085,13 +1125,16 @@ export function tickBossQte(
           if (
             qte.decorArmed &&
             decorProp !== null &&
-            withinCatch(
+            // AMENDMENT A2 — the décor catch is the drawn-silhouette AABB, not the 0.30 circle
+            // (drawn == catch). The ring/parry circle tests are unchanged.
+            withinBox(
               impactPoint.x,
               impactPoint.y,
               qte.anchor,
               decorProp.position.x,
               decorProp.position.y,
-              RING_HIT_RADIUS,
+              BOSS_DECOR_CATCH_HALF_W,
+              BOSS_DECOR_CATCH_HALF_H,
             )
           ) {
             // ADR-0052 lever 2 — pure upside: drop the prop for a single-use burst.
