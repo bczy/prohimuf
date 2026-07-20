@@ -33,7 +33,7 @@ const FAR_SCALE = 0.72;
 // Absolute height cap (world units): even on levels whose windows sit high (a tall
 // street→window band), props stay a believable size — a short readable pole
 // instead of a floor-to-window mast whose dark shaft vanishes and reads as floating.
-const MAX_PROP_WORLD_H = 3.4;
+const MAX_PROP_WORLD_H = 4.5;
 // The far (back-of-road) row drifts only a little faster than the facade, the near
 // row much faster — so the two rows clearly separate in depth as the camera pans.
 const FAR_PARALLAX_RATIO = 0.18;
@@ -43,7 +43,7 @@ const FAR_PARALLAX_RATIO = 0.18;
 // signal, accepting that it may briefly mask a cop behind it as the camera pans.
 // It is still drawn BELOW the courier (6) / delivery van (7) — the "Livrer" targets
 // it must never mask (finding #8) — so only static cop windows can fall behind it.
-const TRAFFIC_LIGHT_H_FRAC = 0.6;
+const TRAFFIC_LIGHT_H_FRAC = 0.8;
 
 // Conservative extra downward drop of the near kerb on mobile (facade-normalized,
 // y-down). ADR-0003 defines no world-space HUD/thumb reserve, and these props are

@@ -328,7 +328,7 @@
           "height": 512
         },
         "seed": 6102,
-        "prompt": "a tall cast-iron Haussmann-era Parisian street lamp drawn large to fill most of the frame: a fluted base flaring out at the foot, a slender fluted shaft tapering as it rises, a single curved S-shaped swan-neck arm sweeping outward near the very top, ending in a faceted many-sided polygonal lantern with a small pointed cap, the lantern's facets solid opaque panels with no open lattice or see-through gaps, every pane glowing bright pale near-white as if the lamp is lit from within; ornamental antique cast-iron, elegant and slender, dark uniform painted finish on the base, shaft and arm, a paler grey highlight edge along the shaft's lit side to keep the silhouette legible against a dark night backdrop"
+        "prompt": "a very tall cast-iron Haussmann-era Parisian street lamp drawn large to fill the whole frame height: a fluted base flaring out at the foot, an exceptionally long slender fluted shaft tapering as it rises, running bare for most of the frame before reaching the top, a single curved S-shaped swan-neck arm sweeping outward at the very top, ending in a faceted many-sided polygonal lantern with a small pointed cap, the lantern held high above the street, the lantern facets solid opaque panels with no open lattice or see-through gaps, every pane glowing bright pale near-white as if the lamp is lit from within; ornamental antique cast-iron, elegant and slender, dark uniform painted finish on the base, shaft and arm, a paler grey highlight edge along the shaft lit side to keep the silhouette legible against a dark night backdrop"
       },
       "wallaceFountain": {
         "asset": "assets/nearfg/wallaceFountain.png",
@@ -346,40 +346,40 @@
           "height": 512
         },
         "seed": 6104,
-        "prompt": "a French road traffic signal on a slim round mast with a splayed foot, seen from the side at street level, the signal drawn large to fill most of the frame height. High on the mast a big tall boxy vehicle signal head turned in strict side profile: three round lenses stacked vertically, each tucked under a curved tunnel hood-visor that juts sideways toward the road, the lens discs seen edge-on as narrow dark slivers, all dead and unlit. Well below it, separated by a long clearly bare stretch of empty mast, a smaller pedestrian signal head turned to face the viewer head-on: two blank dark round lens windows stacked vertically, both dead and unlit. Both heads cantilevered from the mast on short brackets. Every lens dark, matte and switched off, no glow and no colour; boxy hooded metal housings, dark uniform finish, a light grey highlight along the visor lips and mast edge to keep the housing legible against a dark night backdrop, with just enough empty magenta margin on the road side that the visor tip stays fully clear of the frame edge",
+        "prompt": "a French road traffic signal on a slim round mast with a splayed foot, seen from the side at street level, the signal very tall and drawn large to fill the whole frame height. High on the mast a big tall boxy vehicle signal head turned in strict side profile: three round lenses stacked vertically, each tucked under a curved tunnel hood-visor that juts sideways toward the road, the lens discs seen edge-on as narrow dark slivers, all dead and unlit. Far below it, separated by a very long bare stretch of empty mast about twice as long as the short run of mast left between the pedestrian head and the ground, a smaller pedestrian signal head turned to face the viewer head-on: two blank dark round lens windows stacked vertically, both dead and unlit. Both heads cantilevered from the mast on short brackets. Every lens dark, matte and switched off, no glow and no colour; boxy hooded metal housings, dark uniform finish, a light grey highlight along the visor lips and mast edge to keep the housing legible against a dark night backdrop, with just enough empty magenta margin on the road side that the visor tip stays fully clear of the frame edge",
         "lenses": {
           "vehicle": [
             {
               "x": 0.3,
-              "y": 0.094,
-              "rx": 0.089,
-              "ry": 0.034
+              "y": 0.07,
+              "rx": 0.09,
+              "ry": 0.035
             },
             {
               "x": 0.3,
-              "y": 0.193,
-              "rx": 0.089,
-              "ry": 0.034
+              "y": 0.19,
+              "rx": 0.09,
+              "ry": 0.035
             },
             {
               "x": 0.3,
-              "y": 0.292,
-              "rx": 0.089,
-              "ry": 0.034
+              "y": 0.3,
+              "rx": 0.09,
+              "ry": 0.035
             }
           ],
           "ped": [
             {
-              "x": 0.3,
-              "y": 0.44,
+              "x": 0.67,
+              "y": 0.5,
               "rx": 0.1,
-              "ry": 0.045
+              "ry": 0.042
             },
             {
-              "x": 0.3,
-              "y": 0.537,
+              "x": 0.67,
+              "y": 0.575,
               "rx": 0.1,
-              "ry": 0.045
+              "ry": 0.042
             }
           ]
         }
