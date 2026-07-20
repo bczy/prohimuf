@@ -857,3 +857,140 @@ dropped.
   - `docs/adr/0052-boss-qte-differentiation-levers.md` (NEW)
   - `docs/adr/README.md` (index row added)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 8. PERF VERDICT (pre-build) — gpu-specialist (Ben) — 2026-07-20 — smoke technique + phase-3 worst-case composite
+
+- claim: the two-question pre-build perf verdict the TECH PLAN (§7) gates the render lane's SMOKE
+  technique on. Scope is EXACTLY those two questions — nothing else in the render lane is gated on me
+  (§7 is explicit). Measured against the REAL composite: `CrtPass.tsx` (ADR-0031, the 4-pass CRT
+  graph), `crtParams.ts` (per-tier `resScale` full=0.5 / lite=0.25), `BossQteSprite.tsx` (the mesh
+  idiom the new reads extend), `GameScene.tsx` (mount order; CRT `tier = isMobile ? "lite" : "full"`).
+- **BUDGET GAP FLAGGED (honesty first):** `docs/perf-budget.md` does **NOT exist**. Per my activation
+  rule a verdict against no budget is an opinion, so I state the WORKING budget I verdict against and
+  make authoring the budget line my first deliverable (proposed below, needs Bertrand ratification):
+  - Working frame budgets: **desktop 60 fps = 16.6 ms**; **mobile 30 fps floor = 33.3 ms** (mobile
+    runs `MOBILE_ZOOM 1.7` + CRT `lite`; 30 is the realistic browser-R3F mobile floor — RATIFY or
+    correct me).
+  - Proposed per-system line for THIS effect: **smoke degraded-telegraph treatment ≤ ~1.5 ms marginal
+    on the mobile reference device, and MUST add ZERO render targets and ZERO fullscreen passes.**
+
+### How the composite actually works (the load-bearing measurement)
+
+`CrtPass` (mounted only when `crt` pref ON) takes over the frame and runs, per frame:
+(1) world layer-0 → `sceneRT` (FULL drawing-buffer res, RGBA8+depth); (2) bright-pass → `bright`
+(resScale: lite **0.25**); (3+4) separable blur H/V at that scaled res; (5) composite → screen (FULL
+res, samples `sceneRT` full + `blur` scaled + scanline/grain/vignette); (6) crosshair overlay draw.
+On mobile the frame is ALREADY fill-bound: one full-res scene draw + one full-res composite pass +
+a 0.25²-res 3-pass chain. **The dominant mobile cost is the CRT composite itself — which the smoke
+must not touch.**
+
+**Decisive architectural fact:** any smoke drawn as world-space geometry on **layer 0** (the same
+idiom as every `BossQteSprite` mesh) is rendered INSIDE pass 1 (world→sceneRT). It rides the existing
+composite for FREE — no new render target, no new fullscreen pass, no `CrtPass.tsx` edit — and gets
+the tube/bloom/scanline treatment applied automatically (no compositing seam). It costs only extra
+draw calls + overdraw within the already-happening world render. A fullscreen post-process smoke, a
+noise-RT, or any CRT-graph edit ADDS a full-res pass on top of the 5-pass mobile chain = the exact
+mobile bandwidth cliff. A particle cloud = unbounded transparent overdraw stacked UNDER the full-res
+composite = the exact fill-rate cliff.
+
+### Q1 — SMOKE TECHNIQUE RECOMMENDATION (BINDING, render lane unblocked NOW)
+
+**RECOMMEND: a small set of animated alpha-blended textured quads — a local "smoke veil" — drawn in
+world space on layer 0, in front of the boss/telegraph region.** NOT a particle system, NOT a
+fullscreen/noise shader, NOT a post-process, NOT anything touching a render target or the CRT pass.
+Fallback (if even this is over on the weakest target — see cheap-out levers): drop to a single static
+veil quad, then to modulating the existing telegraph's own contrast/alpha (no separate smoke layer).
+
+Bounds (hard, for `dev-r3f-render` to build to; these are the stage-5 pass gates):
+
+- **Quad count ≤ 6** alpha-blended quads for the veil (2–3 drifting layers already read as "smoke
+  covers the duel"; 6 is the ceiling, not a target). This bounds worst-case overdraw to ≤6× over a
+  FRACTION of the frame.
+- **ZERO new render targets. ZERO new fullscreen passes. `CrtPass.tsx` unmodified.** (Stage-5
+  in-sandbox check: `renderer.info.memory` RT count unchanged; the CRT graph still 4 passes.)
+- **Shader complexity = MeshBasicMaterial-class:** a single texture fetch (one tiling smoke/alpha
+  texture) + tint, animated by UV scroll + an opacity envelope. **NO per-pixel fbm / multi-octave
+  procedural noise, no multi-tap.** `transparent:true`, `depthWrite:false` (exact existing mesh idiom).
+- **Normal alpha blend, greyish/desaturated, NOT additive.** Additive bright smoke would trip the
+  composite's saturation×brightness bloom gate (`bloomThreshold 0.25 / bloomBrightness 0.55`) and haze
+  the neon halo; a desaturated alpha veil reads as "smoke-machine haze" AND keeps the telegraph
+  "degraded not removed."
+- **Reduced-motion (UX §2.3 / D3.1, non-strobing):** under `prefers-reduced-motion` the veil HOLDS —
+  static opacity, no fast UV scroll, no opacity pulsing >3 Hz. This is the same freeze-the-clock branch
+  `BossQteSprite` (pulse/brace) and `CrtPass` (grain/flicker) already implement; it doubles as cheap-out
+  lever 2. Satisfies (a) degraded-not-removed, (b) mobile budget, (c) non-strobing degrade.
+- **Opacity ceiling over the telegraph zone** must keep the ring/pose perceptible in grayscale (UX A1/
+  A2, D1.1/D1.2 — degraded, never removed). Guidance peak alpha ≈ ≤0.5–0.6, but the EXACT salience
+  threshold that passes the grayscale legibility capture is a verify-skill/composite-gate screenshot
+  item + `lead-art`'s visual call — I price the technique, I do not pin the aesthetic opacity.
+
+### Q2 — PHASE-3 WORST-CASE COMPOSITE (2 rings + parry cue + smoke + renfort frame-edge + finisher)
+
+**Verdict: INSIDE budget on BOTH device classes WITH the recommended technique — subject to on-target
+ms confirmation (deferred, below).**
+
+- **Draw calls are NOT the risk.** Worst-case added meshes over the V1 baseline: boss(1) + ringA(1) +
+  ringB(1) + parry cue(~1) + smoke veil(≤6) + renfort frame-edge quads(≤4) + finisher marker(1) ≈ **~15
+  extra draw calls**, all layer 0, all riding pass 1. Three/R3F on mobile eats hundreds; ~15 is noise.
+  (Note: FINISHER is post-combat — 0 HP, no windows/wander/telegraph per ADR-0052 D3 — so it does not
+  truly co-occur with the 2-ring+parry+smoke frenzy; I counted it anyway for absolute worst case.)
+- **The specific risk = transparent OVERDRAW / fill-rate**, because the mobile frame is already
+  fill-bound by the CRT composite (full-res scene draw + full-res composite). Large overlapping
+  transparent smoke quads multiply per-pixel shading over their region, and every one of those pixels
+  is then resampled by the full-res composite. Overdraw stacked under a full-res composite is the mobile
+  cliff. The ≤6-quad + capped-opacity + local-region bound keeps that a small multiple over a fraction
+  of the frame — and the smoke adds NO pass and NO RT, so the dominant composite cost is untouched.
+  That is why it fits.
+- **Cheap-out levers if on-target says otherwise (ordered, cheapest first):**
+  1. **Reduce smoke quad count / opacity / region size** — pure knob, linear overdraw reduction, the
+     "degraded telegraph" read survives 2–3 quads. No design change. (Owner: `dev-r3f-render`.)
+  2. **Tier the smoke like the CRT already tiers** — mobile/`lite` draws the static single-veil branch
+     (= the reduced-motion path, already coded). No new code path. (Owner: `dev-r3f-render`.)
+  3. **LAST RESORT — a DESIGN/VISUAL trade, NOT mine to pick:** achieve "smoke-obscured" by modulating
+     the existing telegraph's own contrast/alpha (no separate smoke layer, zero added overdraw). This
+     changes the LOOK → routes to `lead-art` (visual) via `senior-architect`; I only price it.
+
+### What is verifiable in-sandbox (SwiftShader) vs. DEFERRED-ON-TARGET
+
+- **In-sandbox at stage-5 (SwiftShader CAN):** draw-call count (`renderer.info.render.calls`), RT count
+  unchanged (`renderer.info.memory` — smoke adds no RT), CRT graph still 4 passes, smoke material is
+  MeshBasicMaterial-class (single fetch). These bound the technique to spec.
+- **DEFERRED-ON-TARGET (SwiftShader CANNOT — no real GPU timing, no mobile fill/bandwidth):** the
+  actual ms cost of the smoke overdraw stacked under the composite on a weak mobile GPU. `producer`
+  chases; Bertrand runs. Protocol, ready-to-run:
+  - **Build:** branch preview `https://bczy.github.io/prohimuf/preview/claude-yo-pmnyzr/` once the smoke
+    lands; boss dev-harness route (`?preview=boss`, the one Bertrand playtested); **CRT pref ON, mobile
+    mode**.
+  - **Devices:** ≥1 weak-tier reference mobile (the class `lite` targets — mid/low Android or an
+    iPhone-SE-class device) + 1 modern mobile as ceiling; real Safari (iOS) AND Chrome (Android) —
+    different GL/ANGLE backends.
+  - **Scenario:** drive to phase 3, trigger the smoke window; capture the worst-case frame (smoke +
+    2 rings + parry cue + renfort surge). Then toggle smoke OFF on the same phase-3 frame to isolate the
+    smoke's MARGINAL cost.
+  - **Metrics:** median + p95 frame time (ms) over a 5 s window; and the marginal delta (smoke-on minus
+    smoke-off) = the smoke's real cost.
+  - **Thresholds (vs. the working budget, pending ratification):** PASS = median with smoke ≤ **33.3 ms**
+    on the weak device (CRT lite ON) AND smoke marginal ≤ **~1.5 ms**. FAIL = sustained median > 33.3 ms
+    during the smoke window OR marginal > ~1.5 ms (overdraw cliff) → apply cheap-out lever 1, re-measure.
+  - **Tooling I need (spec → `dev-tooling-assets`, not built by me):** a frame-time probe (rAF-delta
+    recorder exposing median/p95 over a rolling window on `window.__MUF_FRAMETIME__`) + a
+    `renderer.info` dump hook (`window.__MUF_RENDERER_INFO__`: draw calls + RT count) reusable by the
+    stage-5 e2e AND the on-target run.
+
+VERDICT: PERF PASS (pre-build) — smoke = ≤6 alpha-blended layer-0 quads, MeshBasicMaterial-class (1 texture fetch), desaturated normal-alpha, ZERO new RT / ZERO new pass / CrtPass untouched, reduced-motion holds static; phase-3 worst case INSIDE budget both classes, risk = transparent overdraw not draw calls, cheap-out = drop quad count/opacity then tier-static (gpu-specialist)
+VERDICT: DEFERRED-ON-TARGET — smoke marginal ms + phase-3 median frame time on weak mobile (CRT lite ON) unmeasurable in SwiftShader; protocol above, thresholds median ≤33.3 ms & marginal ≤~1.5 ms; producer chases, Bertrand runs (gpu-specialist)
+BUDGET GAP: docs/perf-budget.md absent — working budgets (desktop 16.6 ms / mobile 33.3 ms) + the smoke per-system line above proposed for Bertrand ratification; authoring perf-budget.md is my first deliverable (gpu-specialist)
+
+- handoff → `dev-r3f-render` (Amelia): render lane UNBLOCKED — build the smoke to the Q1 bounds
+  (≤6 layer-0 alpha quads, single-fetch material, desaturated normal-alpha, no new RT/pass, CrtPass
+  untouched, reduced-motion holds static). I re-verdict at stage-5 (in-sandbox `renderer.info` bounds +
+  the deferred on-target protocol).
+- handoff → `producer` (Marion): log the DEFERRED-ON-TARGET item (chase the on-target run against
+  Niveau-Final or whenever a smoke build is preview-deployed) and queue the frame-time/`renderer.info`
+  probe spec to `dev-tooling-assets`. Also: `docs/perf-budget.md` does not exist — flag for
+  ratification of the working budgets above.
+- handoff → `senior-architect` (Winston): perf-sensitivity gate answered — smoke recommendation is
+  additive to the boss system, touches no boundary, needs no ADR change (the cheap-out last-resort, IF
+  ever reached, is a visual trade routed to `lead-art` via you, not decided in a fix lane).
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
