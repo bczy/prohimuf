@@ -319,7 +319,13 @@ export function useGameLoop(
 
     const didFire = hasPendingShot;
     mouseRef.current.pendingShots = Math.max(0, mouse.pendingShots - 1);
-    if (didFire) playSfx("shoot");
+    // NB: the shoot cue is NOT played here on the raw input gesture. Under the weapon
+    // system (ADR-0052) a press can resolve into 0..3 hitscan resolutions across ticks —
+    // a refractory/mid-burst tap is swallowed (0), a burst emits one round per later tick,
+    // a spread press emits up to 3 in one tick. Keying the cue off the gesture would play
+    // a phantom shot for a swallowed tap, stay silent for burst rounds 2..N, and play once
+    // for a 3-impact spread. So the cue fires AFTER the tick, off resolution activity
+    // (`next.impactEvents`), below — one cue per tick with ≥1 resolution (MINEUR-1).
 
     // On mobile the crosshair sits at the last tap; on desktop it tracks the mouse.
     if (pendingTap !== undefined) aimRef.current = pendingTap;
@@ -471,6 +477,15 @@ export function useGameLoop(
     const impactChannel = impactChannelRef?.current;
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
+    }
+    // Shoot cue (ADR-0052 MINEUR-1): keyed off RESOLUTION ACTIVITY, not the input gesture.
+    // `impactEvents` is the per-tick transient set of player-shot resolutions (0..3), so a
+    // single cue when it is non-empty gives the correct model on every weapon: base/miss →
+    // 1 (unchanged, a fired tap always resolves ≥1 impact); burst → one pop per round-tick
+    // (the sulfateuse rattle); spread press → 1 cue for the fan; refractory/mid-burst
+    // swallowed tap → silent. Base/no-loot levels are byte-identical to the old behaviour.
+    if (next.impactEvents !== undefined && next.impactEvents.length > 0) {
+      playSfx("shoot");
     }
     // Weapon empty-return cue (ADR-0052 §6.1 / AC10 / W3): the tick a special empties
     // and auto-returns to `base`, fire the audible cue (culasse à vide) AND bump the

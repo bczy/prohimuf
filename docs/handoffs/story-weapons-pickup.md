@@ -312,6 +312,17 @@ co-location invariant + reset loot id seed (ADR-0052 D5, stage-6)`; NOT pushed.
   via the `__MUF_PLAY__` seam → `docs/qa/evidence/weapons-pickup/d-loot-crate-halo-falloff.png` (+
   `-crop.png`); offline radial scan on the crate = peak-at-edge then monotonic decay to 0
   (yellowExcess 0.13→**0.47**→0.05→0.002→0). tsc/test(860)/lint/format:check green.
+- **FIX (stage-6 review-panel pre-merge, 2026-07-20):** two render-lane MINEURs, my files only.
+  **MINEUR-1** (`src/hooks/useGameLoop.ts`): the shoot cue no longer fires on the raw input gesture
+  (`didFire`) — it now fires AFTER the tick, keyed on RESOLUTION ACTIVITY (`next.impactEvents.length
+  > 0`), one cue per tick with ≥1 resolution. Fixes the specials on Belliard: refractory/mid-burst
+swallowed tap → silent (was a phantom gunshot), each burst round-tick → one pop (the sulfateuse
+rattle, was silent), a spread press → one cue (unchanged). Base/no-loot levels byte-identical (a
+fired base tap always resolves ≥1 impact). **MINEUR-3** (`src/render/ui/hud/WeaponReadout.module.css`):
+dropped `.emptyFlash`from the`prefers-reduced-motion`selector (kept`.stockLow` stilled) so the
+  > one-shot opacity-only empty-flash survives — reduced motion suppresses motion, not information;
+  > corrected the two stale comments. No src/game touched (dev-gameplay owns MINEUR-2). No new test (no
+  > stable pattern: the cue is an inline useFrame side-effect, no pure fn). tsc/test(867)/lint/format:check green.
 
 ---
 
