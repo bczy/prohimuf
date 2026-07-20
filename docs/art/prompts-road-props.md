@@ -1271,3 +1271,57 @@ authority chain as v2):
 Golden baselines: Stalingrad/Vitry regenerated after the v2 art landed (deliberate art
 change, `UPDATE_GOLDEN=1`, eyeballed); they will be regenerated once more after this v3
 feu/réverbère regen — accepted churn of a live-direction session.
+
+## Belliard ground kontext refine (concept-artist, 2026-07-20)
+
+Bertrand rejected the hand-recomposed Belliard ground (`public/assets/levels/belliard/ground.png`)
+— « grossier, flou, ça fait tache avec le reste » (smudgy white wet-reflection blobs, coarse
+render). Repair path = one kontext img2img roll (`gen-from-reference.yml`, ADR-0044,
+`--family levels`, `enhance=false`) conditioned on the committed composition reference
+`references/belliard-ground-bands-ref.png` (1024×256; output downscaled to 940×85 for
+supersampled crispness). kontext nudges the reference toward the description, so the prompt
+describes the **target rendering** — the band layout is held; the wet-blob failure mode is
+named to be edited out. Sent **verbatim**.
+
+**Prompt (verbatim, enhancer OFF):**
+
+```
+Fine crisp Paris street ground texture, keep the reference band layout exactly: thin light pavement strip across the top, wide dark asphalt roadway in the middle, thin light pavement strip along the bottom, thin crisp kerbstone lines between the bands. Night asphalt in clean near-black greys with subtle fine grain, no bright white smudges, no blurry pale blotches, no large wet highlight puddles, at most faint small dim reflections. Pavement strips are flat-on Paris paving slabs with thin sharp joint lines, no perspective convergence, same slab rhythm on top and bottom strips. Photocopy ink-grey monochrome, no colour, seamless horizontal tiling.
+```
+
+**Seed:** `7301`
+
+**Rationale (one line per clause):**
+
+- `Fine crisp Paris street ground texture` → sets the register the whole edit serves — the
+  opposite of the rejected "grossier/flou"; period+place anchor kept minimal.
+- `keep the reference band layout exactly: thin light pavement strip across the top, wide dark
+asphalt roadway in the middle, thin light pavement strip along the bottom, thin crisp
+kerbstone lines between the bands` → pins the four bands + kerb lines of the ref so kontext
+  refines the RENDER, not the COMPOSITION (top ~9% / road / bottom ~16% / kerb edges held).
+- `Night asphalt in clean near-black greys with subtle fine grain` → the positive target for
+  the roadway: dark, clean, finely grained — replaces the blotchy wet look with tight tonal
+  value.
+- `no bright white smudges, no blurry pale blotches, no large wet highlight puddles` → names
+  the exact rejected failure mode (kontext is an edit model — stating what to remove is
+  load-bearing here, unlike open-canvas FLUX); kills the smeared white reflections directly.
+- `at most faint small dim reflections` → does not forbid wet-street reflection outright (period
+  truth — a wet 18e chaussée does glint), only caps it to small/dim so it never dominates.
+- `Pavement strips are flat-on Paris paving slabs with thin sharp joint lines` → the trottoir
+  bands read as crisp Decaux-era slabs, not a soft grey wash; sharp joints = the "fine" Bertrand
+  asked for.
+- `no perspective convergence` → the strips stay orthographic flat-on (the ground tiles as a
+  band; converging joints would break the tile and fight the profile camera).
+- `same slab rhythm on top and bottom strips` → top and bottom pavement read as one material
+  at one scale, so the narrower bottom strip matches the top's slab cadence.
+- `Photocopy ink-grey monochrome, no colour` → the Belliard crade-documentaire B&W register
+  (art-culture.md § Belliard), coherent with the adjacent `troncon-a.png` ink/wash greys — no
+  colour to key or clash.
+- `seamless horizontal tiling` → the ground repeats side-by-side along the street; edges must
+  not seam.
+
+**Gate note:** `gen-from-reference.yml` is exploratory and carries **no** style/word gate
+(no `check-art-prompts` on this roll — it is not a manifest `nearForeground`/`vehicles` entry).
+**lead-art gates the RESULT at the asset gate** (live-directed pass, same authority chain as the
+Belliard v2/v3 iterations above): the produced 940×85 PNG is judged in-scene under `troncon-a`,
+not the prompt. Iterate on FAIL within the batch cap.
