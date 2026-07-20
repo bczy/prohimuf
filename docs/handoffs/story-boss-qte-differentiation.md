@@ -2841,3 +2841,59 @@ Approved as an independent, low-risk perceivability boost. Constraints from my s
 - handoff → `ux-designer` (Tony): re-review owed once 36/37 re-captured.
 
 RULING: mobile boss-zoom framing collision = render-lane fix, no game/hooks-contract change. (a/b) PRIMARY — a POSITIVE render-owned vertical LIFT `BOSS_MOBILE_FRAME_LIFT` defined in `qteCamera.ts`, applied to the boss anchor's y at the `qtePose` call site in `useGameLoop.ts`'s boss branch (mobile-only, boss-only), raising the camera target above the anchor so the tableau drops on screen and the full vital band (`y=0.8±amp`) clears the fixed `BossHpBar` bottom edge — NOT a zoom bump (which worsens it); magnitude calibrated by the lane against captures 36/37, bounded to keep the limb ring/lower body on-frame. `qtePose` signature UNCHANGED, hostage path untouched. (c) SECONDARY do-anyway CONFIRMED — a vital-only `RING_INNER_VITAL ~0.55` on the vital ring's own geometry (live + split-preview), `RING_OUTER` staying 1.0 so drawn=catch=0.11 aim-honesty is untouched; limb ring's 0.78 unchanged. ADR-0052 revision NOT required (no boundary/contract change — operates within ADR-0030/0051); a one-line HUD-coupling note recommended, not gated. Single dev-r3f-render lane; qualifies for the fix lane. (senior-architect)
+
+## 22. BUILD (render lane, stage-5 final correction) — dev-r3f-render (Amelia) — 2026-07-20 — mobile boss-zoom frame lift + vital ring stroke (§21 ruling, fixes ux §20)
+
+- claim: implement senior-architect ruling §21 (a/b/c) fixing ux-designer's §20 mobile FAIL (the
+  boss head/vital band riding up UNDER the fixed-footprint `BossHpBar` at the mobile boss zoom).
+  §21 explicitly scopes this as a pure RENDER-LANE fix owned by dev-r3f-render (src/render + view
+  hooks), no game/hooks-CONTRACT change — so the `useGameLoop.ts` boss-branch edit is authorised.
+  Files: `src/render/scene/qteCamera.ts`, `src/hooks/useGameLoop.ts`, `src/render/scene/BossQteSprite.tsx`.
+  `src/game/**` untouched; `qtePose` signature UNCHANGED; hostage path + desktop path + `qteBaseRef`
+  restore untouched; `RING_OUTER` (drawn == catch == 0.11) inviolate.
+- (a/b) **Mobile frame lift:** new render constant **`BOSS_MOBILE_FRAME_LIFT = 0.7`** (world units,
+  POSITIVE) in `qteCamera.ts` next to `QTE_ZOOM_FACTOR`. In `useGameLoop.ts`'s QTE-camera block, when
+  the live QTE is the BOSS (`camQte === bossQte`) AND mobile (`mobileControls !== undefined`), the
+  `qtePose` target is a locally-lifted anchor `{ x: anchor.x, y: anchor.y + BOSS_MOBILE_FRAME_LIFT }`
+  — raising the camera target above the anchor so the tableau drops on screen and the vital band
+  clears the bar. Desktop / hostage / restore paths byte-unchanged.
+  - **Calibration (how I validated 0.7):** measured the bar's DOM rect on the 844×390 capture —
+    `bottom = 114 CSS px` (confirmed `getBoundingClientRect`). Then drove phase-2 to the vital ring's
+    WORST-CASE wander height (`targetOffset.y = 0.92`, near its 0.96 max) and confirmed the full bold
+    vital ring clears the bar bottom by **~44 CSS px** margin, WHILE the limb (torso) ring and the
+    boss's lower body / feet stay on the short mobile-landscape frame. 0.7 is the max that keeps the
+    feet on-frame; smaller values thin the worst-case clearance, larger clips the feet — 0.7 is the
+    calibrated balance. (Sign convention per §21: positive lift = target up = tableau down = head
+    clears the bar; NOT a zoom bump.)
+- (c) **Vital ring stroke:** dedicated **`RING_INNER_VITAL = 0.55`** applied to the VITAL ring's own
+  geometry ONLY, via a per-branch geometry swap (`ringGeoVital` vs `ringGeoNormal`, both memoized +
+  disposed) on ring A in its two vital instances — the live phase-2+ EXPOSED vital ring AND the
+  split-preview vital ring. The phase-1 single ring and the neutral wind-up tell keep `RING_INNER 0.78`;
+  the limb ring (`ringB`) keeps 0.78 via its own declarative geometry. `RING_OUTER` stays 1.0 → the
+  drawn outer edge = catch radius (0.11) aim-honesty is untouched. The tiny 0.11 vital ring now reads
+  as a chunky, perceivable annulus at the boss zoom.
+- VERIFICATION — ALL GREEN (corepack yarn 4.12.0, COREPACK_NPM_REGISTRY set):
+  - `yarn typecheck` → exit 0. `yarn lint` → exit 0. `yarn format:check` → clean.
+  - `yarn vitest run` → **847/847 PASS** (incl. `qteCamera.test.ts` 12/12 — the added constant does
+    not change `qtePose`'s signature or behaviour).
+- EVIDENCE (state-verified via `__MUF_STATE__().game.bossQte`, live `__MUF_PLAY__`, headless
+  SwiftShader, crt:false):
+  - `38-vital-ring-mobile-lifted.png` — **844×390**, phase-2 EXPOSED, BOTH rings live
+    (`phaseIndex=1, stance=EXPOSED, !chargedWindow, targetOffset.y≈0.81`). The bold vital ring is
+    fully legible BELOW the `BossHpBar`; limb ring + feet on-frame. (Worst-case `ty=0.92` also
+    verified clearing during calibration.)
+  - `39-vital-ring-desktop-stroke.png` — desktop 1280×720@2x, same state — the bolder vital stroke
+    renders (small but perceivable); no lift applied (desktop path unchanged).
+  - **Note for `ux-designer` (Tony): the §20 FAIL re-verdict runs on 38/39.**
+- Routing: §21 says this qualifies for the FIX LANE (single render lane, no boundary/design/asset/
+  dependency change). ADR-0052 revision NOT required (§21 (d)); a one-line HUD-coupling note is
+  recommended (not gated) — the `BOSS_MOBILE_FRAME_LIFT` doc comment records the coupling to
+  `BossHpBar`'s fixed footprint + `MOBILE_ZOOM_FACTOR` for whoever next touches them. No commit/push.
+- File List:
+  - `src/render/scene/qteCamera.ts` (`BOSS_MOBILE_FRAME_LIFT` render constant)
+  - `src/hooks/useGameLoop.ts` (boss-branch mobile lift at the `qtePose` call site — internal to the
+    bridge; the `{anchor,…}` data contract consumed unchanged)
+  - `src/render/scene/BossQteSprite.tsx` (`RING_INNER_VITAL` vital-only geometry swap)
+  - `docs/qa/evidence/story-boss-qte-differentiation/38-vital-ring-mobile-lifted.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/39-vital-ring-desktop-stroke.png` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
