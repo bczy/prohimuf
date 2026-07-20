@@ -300,6 +300,14 @@ radio, calling it in` → le geste que le finisher stoppe (fiction §3.1) **+ [S
 > bâtiment (l'ancien monde), le **mur d'enceintes** appartient au crew (le son). Le prop lit **à qui
 > il est** en un coup d'œil : le lustre **PEND** (HUNG), le mur est **CONSTRUIT** (BUILT). Partagent
 > la tail boss (voir nuance props↔tail plus haut). Seeds SUGGÉRÉS 4877/4878 — dev-tooling pinne.
+>
+> **[S13] — aspect par prop (POUR dev-tooling-assets, structure).** Les 2 props ne doivent PAS hériter
+> le `size` carré 256×256 du bloc figures : le **lustre = portrait** (silhouette pendante
+> chaîne→pampilles), le **speaker_wall = landscape** (pyramide large au sol). Forcer le carré rétrécit
+> la silhouette dans un cadre vide (résolution gâchée = pire readability au game-size final) ou invite
+> FLUX à cropper/déformer. Précédent dans ce fichier : `nearForegroundArt.types` assigne un
+> `size`/aspect par kind (lamppost 256×512 portrait, etc.), épinglé par son test de cohérence.
+> **Appel structurel de dev-tooling** — je l'enregistre (readability que je porte), je n'invente pas le JSON.
 
 ### `lustre` — le lustre de bal (seed sugg. 4877)
 
@@ -361,14 +369,20 @@ line-array, PAS un DJ booth, PAS des amplis guitare.
 
 ## Budgets (non-lint sur `boss`, mais contrat tenu à la main)
 
-- **Négations : 0 par sujet** (vérifié : pas de `no`/`not`/`without`/`*-free` ; `knocked-loose` et
-  non `knocked-free`, `still short of` et non `not yet`, `unobscured`/`unfinished`/`unbranded` ne sont
-  pas des formes de négation). La tail partagée en porte 2 → **total assemblé = 2**, dans le budget
-  §3.1.
-- **Assemblé (`prompt` + `style`) : ~105-115 mots** — bande warn si c'était lint (§3.3), mais `boss`
-  n'est pas linté ; chaque clause est load-bearing (7 figures d'autorité + 2 props qui doivent être
-  **non-ambigus** et différenciés). Sous le plafond dur 120.
-- **Aucune couleur/hue dans les sujets** (le néon acide est render-side, convention roster ADR-0011).
+- **Négations : 0 par sujet** (vérifié APRÈS intégration PRE-PROD sur les 9 : pas de
+  `no`/`not`/`without`/`*-free` ; les clauses de valeur sont **positives** — « lighter than the black
+  backdrop », jamais « never dark »/« not near-black » — précisément pour ne pas dépenser le budget ;
+  `knocked-loose` et non `knocked-free`, `short of firing level` et non `not yet`, `unbranded`/
+  `unfinished` ne sont pas des formes de négation). La tail partagée en porte 2 → **total assemblé =
+  2**, dans le budget §3.1.
+- **Assemblé (`prompt` + `style`) : 116-119 mots** après ajout des clauses de valeur/continuité
+  [S1-S11] (les sujets ont été re-trimés en compensation) — bande warn si c'était lint (§3.3), mais
+  `boss` n'est pas linté ; chaque clause est load-bearing (7 figures d'autorité + 2 props qui doivent
+  être **non-ambigus**, différenciés ET keyables). **Tous sous le plafond dur 120** (vérifié à la main).
+- **Aucune couleur/hue-néon dans les sujets** (le néon acide est render-side, convention roster
+  ADR-0011). Les steers de valeur [S1/S3/S8/S10] nomment des **gris/blanc-cassé** (valeur, pas hue-
+  néon) — c'est la palette que la tail elle-même déclare (« light grey white and pale … tones »), donc
+  cohérent, pas une couleur bakée.
 
 ## Reste à trancher par le gate (game-graphist PRE-PROD → lead-art PROMPT GATE)
 

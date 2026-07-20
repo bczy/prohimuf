@@ -845,3 +845,60 @@ Nico's).
 - **Blockers:** AC8 dependency on story 1's stage-6 panel merge (non-blocking for TECH PLAN opening, blocking for dev-lane start).
 - **Note:** CI env issue flagged — art generation workflow may fail silently if POLLINATIONS_TOKEN repo secret not set by Bertrand BEFORE dispatch. Escalate if dispatch runs without that env var.
 - **Handoff:** → `senior-architect` (Winston) TECH PLAN (ADR-0053 allocation, data + narrative wiring architecture review).
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-20 · PRE-PROD corrections integrated (Serge's 9/9)
+
+- claim: integrate game-graphist Serge's PRE-PROD annotations [S1]-[S13] (9/9 PASS-WITH-CORRECTION)
+  into all 9 boss prompts — both the 4 applied `levelArt.json` boss-block strings and the draft shard
+  — keeping the contract green (≤2 negations assembled, positive shape language, subject-only, ≤120
+  words). All corrections are value-language + continuity clauses; **no pose/silhouette intent changed.**
+- release — what changed per entry:
+  - **[S1] all 7 figures** — coat re-steered from "dark overcoat" (contradicted the "light grey …
+    tones" tail, the near-black-key hole trap) to a keyable mid-value stated IN the subject:
+    `charcoal-grey … lighter than the black backdrop` (+ pale edge highlights on shielded). Phrased
+    POSITIVELY ("lighter than", never "not near-black") → 0 negation.
+  - **`commander_exposed` [S2]** — open flap value-locked: `flaring open to reveal a pale contrasting
+grey lining` (kills the torso keyed-hole risk on the open coat).
+  - **`commander_hit` [S4]** — tether: `both still tethered to him by a strap and cord` (torn
+    brassard/spinning radio read as coming loose FROM him, not floating debris → no defect-sweep
+    false-positive).
+  - **`commander_down` [S3] (priority)** — largest hole-risk of the set: `mid-grey fabric lighter than
+the pitch-black ground and traced by a thin pale contour` on the sprawled coat mass.
+  - **`commander_weakpoint` [S1]** — coat value matters MORE here (render rings sit directly over it);
+    bare head naturally value-separates from the coat, reinforcing the two-band read.
+  - **`commander_parry_windup` [S6] (priority, mechanic-critical)** — `the long coat still hanging
+closed` locks the silhouette contrast IN the prompt so it can't converge with exposed's flared
+    envelope (§3-C "a shared tell = a bullshit whiff").
+  - **`commander_finisher` [S7] (priority)** — `the coat sleeve covering it to the wrist` (thick
+    continuous limb: cuts limb-detach + thin-limb-vanish risk) + `the closed hand on the shoulder
+radio` (removes the finger-gap hole-class). Serge flags a mandatory anatomy sweep at his TECHNICAL
+    pass on this entry regardless.
+  - **`lustre` [S8]/[S9]** — `solid pale grey-white faceted crystal drops, each with a bright rim
+highlight` (no dark facets to key-hole against the black ground) + widened damage notch `two
+adjacent drops missing on one side, a wide notch` (asymmetric-damage read survives downscale).
+  - **`speaker_wall` [S10]/[S11]** — `cabinet faces flat pale grey panels with black contours, the
+stack lighter than the black backdrop` (value/contour lock on the biggest dark mass of the set) +
+    `cables as pale grey lines with lighter gaffer wraps` (a near-black line on near-black ground
+    vanishes otherwise).
+  - **[S13] recorded for `dev-tooling-assets` (structure)** — the 2 props must NOT inherit the figure
+    block's square 256×256 `size`: `lustre` = portrait, `speaker_wall` = landscape (precedent:
+    `nearForegroundArt.types` per-kind aspect). Structural call theirs; recorded in the draft shard,
+    not invented in JSON here.
+  - **Maud's two deviations** — CONFIRMED by Serge, kept as-is (POLICE-as-shape; props keep the shared
+    "figure" tail, now a prop-specific check in Serge's defect-sweep — an incidental human silhouette
+    in either prop triggers the roster-wide "figure"→"figure or object" fallback, not a local fork).
+- budgets after integration: every subject 0 negations, assembled 2; all 9 assembled 116-119 words,
+  under the 120 hard ceiling (re-trimmed the subjects to absorb the added value/continuity clauses).
+- File List:
+  - `src/game/levels/levelArt.json` (boss block: 4 applied `prompt` strings updated with the [S1]-[S4]
+    value/tether clauses; `$comment` + `style` UNCHANGED this round).
+  - `docs/art-direction/prompt-drafts/boss-commander.md` (PRE-PROD corrections block added; all 9
+    blockquotes + per-clause rationale updated with [S1]-[S13]; budgets note refreshed).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (12 pre-existing warnings,
+  courier + nearForeground/bench; none from the boss block).**
+- handoff → `lead-art` (Nico) PROMPT GATE. Serge's PRE-PROD is integrated; the open gate items remain
+  the 2 confirmed deviations (POLICE-as-shape, props "figure" tail), the style-migration timing, and
+  the render-side anchors + per-prop `size` aspect [S13] that `dev-tooling-assets` owns.
+- Not a `VERDICT:` line — prompts remain OWED and un-gated pending Nico's PROMPT GATE.

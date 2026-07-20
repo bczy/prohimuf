@@ -1347,3 +1347,136 @@ VERDICT: PASS — C-QA2 correction (dev-r3f-render) — deterministic `?preview=
 - **AC8 dependency (story 2's gate):** ADR-0052 stage-6 MERGE-clear on `main` is the release condition for story-boss-niveau-final-live dev lanes (AC8 sequencing gate). Story 1's stage-5 evidence is complete; stage-6 panel entry is the next critical path. `producer` tracking for merge-clear and will signal story-2 dev-lane unblock upon MERGE.
 - **Perf protocol note (DEFERRED-ON-TARGET from this story's own gates):** Ben's smoke effect measurement + Bertrand's on-device test run are on producer's chase list — flag to Bertrand if not executed before stage-6 panel convenes.
 - **Handoff:** → `qa-lead` (Inès) once stage-5 evidence complete (definition of done per COLLABORATION.md); stage-6 code-review panel (4 reviewers, `senior-architect` triage).
+
+## 12. VERIFY (stage 5, leg 2) — game-designer (Sacha) — 2026-07-20 — design-acceptance playtest vs. the gated spec (AC-D1..D8)
+
+- claim: stage-5 VERIFY leg 2 — my design-acceptance playtest of the built 5-lever pack against
+  `spec-boss-qte-differentiation.md` (AC-D1..D8) + Karim's gate advisories 1 & 5. Method: a
+  SIMULATION playtest driving the REAL pure API (`createBossQte` + `tickBossQte`, esbuild-bundled
+  from `src/game/systems/bossQteSystem.ts`, type-only imports stripped) through full fights on the
+  pinned harness spec (`targetSeed 20260719`, 24 HP, `maxBlownWindows 10`, décorProp armed phase 2)
+  across play-style archetypes with sim-side seeded aim noise (the GAME stays seeded-pure) —
+  N=500 aim-trials/style — PLUS a VISUAL acceptance pass on the 14 state-verified evidence PNGs
+  (`docs/qa/evidence/story-boss-qte-differentiation/`). No production-code edit; no commit/push.
+
+### VERDICT: PASS-WITH-CORRECTIONS — design acceptance playtest (game-designer)
+
+The differentiation THESIS lands: the fight opens as the familiar single-ring V1 read (phase 1),
+becomes a visible two-target choice (phase 2), then a parry + smoke + renfort climax (phase 3),
+capped by a ceremonial finisher — a demonstrably different moment-to-moment than the hostage duel
+(AC-D1). §5.6 attributability holds, no double jeopardy, winnable-not-trivial and losable. ONE
+substantive correction (Lever 1 risk/reward, below) + one soft cross-lane flag (parry-tell form).
+None blocks the merge gate; the Lever-1 correction is a design/tuning change I route to Karim, not
+a silent fix.
+
+### Simulation results (seed 20260719, N=500 aim-trials/style)
+
+| Play style        | Win  | Loss | avg blown | avg ΔE | avg time | note                                            |
+| ----------------- | ---- | ---- | --------- | ------ | -------- | ----------------------------------------------- |
+| optimal (full kit)| 100% | 0%   | 0.00      | +17.3  | 40.0s    | ceiling — clears with full blown-window margin  |
+| greedyLimb (bank) | 100% | 0%   | 0.00      | +9.7   | 46.4s    | safe-bank line viable — floor intact            |
+| greedyVital (2HP) | 100% | 0.03 | 0.03      | +10.4  | 43.7s    | **greed NOT punished** (see Lever-1 finding)    |
+| parryWhiff        | 100% | 0%   | 5.99 (≤8) | −58.6  | 66.7s    | whiff cost STINGS + attributable; survivable    |
+| decorIgnore       | 100% | 0%   | 0.00      | +9.7   | 46.4s    | décor = pure upside (ignoring it costs nothing) |
+| campVital (exploit)| 100%| 0%   | 0.00      | +50.0  | 41.6s    | **dominant line: fixed-aim head, never tracks** |
+| sloppy            | 81%  | 19%  | 7.58 (≤9) | −121   | 74.1s    | losable by poor execution                       |
+| sloppyNoParry     | 91%  | 9%   | 6.66 (≤9) | −100   | 68.7s    | losable                                         |
+
+Optimal single walk window-kinds on the seed: phase-1 6, phase-2 2 normal + charged, phase-3 3
+normal + charged — every phase presents landable windows; two rings + parry + décor arm all landable.
+
+### Per-lever findings
+
+- **LEVER 1 — points faibles multiples — MECHANIC PASS / RISK-REWARD CORRECTION.** Phase 1 = single
+  V1 ring (byte-identical); phase 2+ = two simultaneous rings, vital 2 HP (head) / limb 1 HP (torso),
+  shared `windowChipped` (a chip from either answers; no double drain), overlap→vital. Visual (PNG
+  `20`): two anatomically-distinct rings — the CHOICE is visible (AC-D2 met). **BUT the intended
+  risk/reward is INVERTED and the "which target" decision degenerates.** Geometry: the VITAL wander
+  box (centre (0,0.80), amp 0.16) has max corner distance **0.226 < `RING_HIT_RADIUS` 0.30**, so the
+  ENTIRE vital ring path is answerable from ONE fixed aim at head-centre — the fast ×1.0 wander is
+  cosmetic, tracking is unnecessary. Meanwhile the LIMB box (amp 0.28) reaches **0.396 > 0.30**, so
+  the "safe bank" is actually the ring that can slip the reticle. Net: **vital strictly dominates**
+  (higher chip AND easier) → the load-bearing "which do I commit to?" move (spec §0) collapses to
+  "always camp vital for 2 HP" (sim: `campVital` 100% win / 0 blown / +50 E / 41.6 s is the dominant
+  line; `greedyVital` 0.03 avg blown — greed is not punished). Structural: with catch radius 0.30 and
+  the head band only 0.4×0.4 (dx ±0.2, dy 0.6–1.0), even the MAX in-band vital box (amp 0.2) reaches
+  0.283 < 0.30 — vital can NEVER require tracking under the current radius. **CORRECTION (design/
+  tuning — route to `lead-game-designer`, NOT fix-lane: hit-test shape + new constant + re-tune,
+  needs design sign-off): introduce a per-ring catch radius; set `BOSS_VITAL_CATCH_RADIUS ≈ 0.18`
+  (keep LIMB / parry-point / décor / phase-1 at `RING_HIT_RADIUS 0.30`).** File:
+  `src/game/systems/bossQteSystem.ts` — `withinCatch`/`ringHitZone` take a per-zone radius; add the
+  constant + a ⊂-band-aware assert. Why: 0.18 < vital reach 0.226 forces genuine tracking of the fast
+  head ring, so the 2 HP chip is EARNED and greed carries real whiff→blown-window risk — restoring the
+  dilemma the lever exists to create. Re-verify next playtest: `greedyVital` loss rate rises above 0
+  while competent limb-banking still clears. (This is exactly the spec's own flagged most-likely
+  verify correction — spec "Winnability envelope" / Karim advisory 5.)
+- **LEVER 3 — parade — MECHANIC PASS / soft READ flag.** Same fire-click reinterpreted on charged
+  windows; parry on `BOSS_PARRY_POINT` → +2 HP + STAGGER→bonus window; whiff → −10 + one blown window
+  (single charge); off-point panic → −6 non-consuming. Cadence: none phase 1, one teach at phase-2
+  window index 1 (the Karim-advisory-1 separation), every-other phase 3. Sim: parry styles win; the
+  whiff cost STINGS and is attributable — `parryWhiff` drains −58.6 avg E and reaches 8/10 blown
+  windows, each whiff = a telegraphed charged window failed (AC-D3, AC-D7 met). **Soft flag (route
+  to `ux-designer`/`lead-art`, NOT a FAIL — visual form is their lane per spec 3-C):** in PNG `21`
+  the parry telegraph reads as a centred reticle-like mark under the smoke veil; it does not clearly
+  read as the form-distinct "diamond guard glyph at the raised sidearm" the spec/UX require for
+  "parry-vs-shoot at a glance before commit." Mechanic is correct; the at-a-glance READ needs Tony's
+  leg-2 UX judgment.
+- **LEVER 2 — décor + smoke — PASS.** Décor: pure-upside armed prop in the SHIELDED gap, +3, single-
+  use (PNG `24`: glowing prop offset from the boss during SHIELDED — reads interactive; sim
+  `decorIgnore` 100% win confirms ignoring it costs nothing = pure upside, AC-D5 décor). Smoke: PNG
+  `22` — the veil DEGRADES but does not REMOVE the rings/telegraph (still legible under it); PNG `27`
+  — held static under reduced-motion. Degrades-not-removes confirmed (AC-D4).
+- **LEVER 5 — coup de grâce — PASS.** `bossHp≤0` → FINISHER (damage-free, click OR 1.5 s timeout →
+  WON +50) before `QTE_RESULT_HOLD`. PNG `25`: sepia wash + « LIVRE LE SON » (canonical copy, not
+  "ACHEVER"), an active-input read distinct from the green WON state (PNG `26`) and the cool
+  phase-break. Reads ceremonial, zero failure surface (AC-D5). Cosmetic: the harness placeholder
+  sprite does not show the "defeated kneel" pose (Niveau-Final art item, non-blocking).
+- **LEVER 4 — renfort — PASS.** Phase-3, telegraphed, in-tableau: PNG `23` shows desaturated
+  frame-edge silhouettes (no shootable body, énergie already drained) — reads PRESSURE not THREAT
+  ("pas ses hommes"). Deterministic check (chip to phase 3, then blow the surge windows): surge
+  windows drain **−12 as a SINGLE charge**; the charged+surge OVERLAP window de-stacks to
+  **max(−10,−12) = −12, never −22**; **every** blown window increments the loss clock by **exactly
+  +1** (the surge never accelerates `maxBlownWindows`); LOST lands at exactly 10. No double jeopardy
+  — the surge raises the ENERGY stakes only, the loss clock is untouched (AC-D6, AC-D7).
+
+### Karim gate advisories (my named verify-leg items)
+
+- **Advisory 1 (phase-2 double-introduction overload) — DISCHARGED, no correction.** Phase 2
+  introduces the two-ring split (at the phase-1→2 break) and the single parry teach (phase-window
+  index 1, one window later — the deliberate temporal separation). Sim: competent styles clear phase
+  2 at 100% / 0 blown — the double-introduction does NOT overload competent play; the teach is one
+  safe instance with the longest tell (`parryLeadSeconds` 0.8). I concur with the separation; no need
+  to push the teach later. (Cognitive-load-at-the-table is ultimately a real-player feel item; the sim
+  confirms the mechanical headroom, and the 1-window gap + the break's dual-ring preview cue suffice.)
+- **Advisory 5 (seed winnability, full kit, K-5) — DISCHARGED, seed HOLDS, no re-pin.** On
+  `targetSeed 20260719` every competent style clears with margin (optimal / greedyLimb / greedyVital
+  / decorIgnore 100% win, 0 blown); each phase presents landable normal + charged windows and the
+  décor arm-window is landable (optimal uses the full kit). `bossHp 24` / `maxBlownWindows 10` stand
+  — not re-tuned. NOTE: this winnability is currently PROPPED UP by the Lever-1 geometry (vital is
+  trivially campable); after the per-ring-catch-radius correction lands, RE-PIN/RE-VERIFY winnability
+  (a tighter vital catch is the point — competent limb-banking must still clear on the seed).
+
+### Winnability verdict (spec "Design VERIFY acceptance")
+
+- Winnable with competent-not-perfect play: **PASS** (greedyLimb / decorIgnore 100%; even `sloppy`
+  81%). Losable: **YES** (`sloppy` 19%, `sloppyNoParry` 9%). **DEVIATION:** losability comes from
+  execution sloppiness + parry-whiffing, NOT from the targeting greed the Lever-1 spec intends
+  ("chase 2 HP and risk the whole window") — because vital does not carry that risk (Lever-1
+  finding). The primary difficulty axis is parry execution, not the targeting choice. The Lever-1
+  correction restores the intended targeting risk.
+
+- handoff → `lead-game-designer` (Karim): design-acceptance VERDICT = PASS-WITH-CORRECTIONS. ONE
+  gated design correction (Lever-1 per-ring VITAL catch radius ≈0.18 to restore risk/reward + undo
+  vital-camp dominance) — needs your PASS, then a small `dev-gameplay` change (per-zone catch radius
+  + a unit test) + a winnability re-pin. Advisories 1 & 5 discharged. This report precedes
+  `senior-architect`'s integration review per the pipeline.
+- handoff → `ux-designer` (Tony) + `lead-art` (Nico): soft READ flag — the parry telegraph (PNG `21`)
+  does not yet read as form-distinct from the shoot ring at a glance; confirm in your leg-2 form
+  review (spec 3-C is your lane; my mechanic is correct).
+- handoff → `dev-gameplay` (Amelia): IF Karim gates the Lever-1 correction — a per-zone catch radius
+  in `withinCatch`/`ringHitZone` + `BOSS_VITAL_CATCH_RADIUS 0.18` + a test that the vital ring is
+  whiffable at its box corners and a unit winnability re-check on `targetSeed 20260719`.
+- NOTE (process): appended via `cat >>` heredoc, strictly additive at end-of-file. Simulation was a
+  throwaway node harness in the session scratchpad (not the repo); no `src/**` or test edit.
+
+VERDICT: PASS-WITH-CORRECTIONS — design acceptance playtest (game-designer) — differentiation thesis lands (phase-1 V1 → phase-2 visible two-target choice → phase-3 parry/smoke/renfort → ceremonial finisher, a different moment-to-moment than the hostage duel); §5.6 attributability holds, no double jeopardy (renfort −12 single-charge, loss clock +1 exactly, LOST at 10), décor pure-upside, smoke degrades-not-removes, finisher ceremonial; winnable-not-trivial (greedyLimb 100%) and losable (sloppy 19%). ONE gated correction: Lever-1 risk/reward is inverted — VITAL box reach 0.226 < catch radius 0.30 makes the head ring trivially campable and strictly dominant, collapsing the "which target" decision; fix = per-ring `BOSS_VITAL_CATCH_RADIUS ≈0.18` in `bossQteSystem.ts` (route to lead-game-designer). Plus a soft parry-tell form-legibility flag to ux/art.
