@@ -639,6 +639,43 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
     expect(tickBossQte(overlap, true, { x: 0, y: 0.5 }, 0.1).qte.bossHp).toBe(10);
   });
 
+  it("AMENDMENT A1: a click inside 0.30 but outside the 0.18 vital catch is NOT a vital chip", () => {
+    // The corner-whiffable-vital case (A1 §2/§3). The vital catch is 0.18 < the 0.30 the ring used
+    // to answer from a fixed head-camp; a shot in the 0.18–0.30 annulus of the vital centre no
+    // longer scores the free 2 HP — greed must be tracked and is punished if it whiffs.
+    expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.18);
+    const base = activeWith({
+      phaseIndex: 1,
+      stance: "EXPOSED",
+      stanceRemaining: 1.0,
+      windowChipped: false,
+      windowOrdinal: 1,
+      targetOffset: { x: 0, y: 0.8 }, // vital ring centre
+      targetOffsetB: { x: 0, y: 0.25 }, // limb ring centre — far from the vital annulus
+      ringZone: "vital",
+      bossHp: 12,
+    });
+    // 0.25 from the vital centre (inside old 0.30, OUTSIDE new 0.18) and outside the limb ring →
+    // NO vital chip, no limb chip: the actual outcome is a whiff (a body bleed here), never −2 HP.
+    const annulusOnly = tickBossQte(base, true, { x: 0.25, y: 0.8 }, 0.1);
+    expect(annulusOnly.qte.bossHp).toBe(12); // the 2 HP was NOT free
+    expect(annulusOnly.energyDelta).toBe(QTE_BODY_HIT); // it resolved as an off-ring body bleed
+    // Same annulus distance from the vital centre, but ALSO within the limb ring's 0.30 catch →
+    // it scores the LIMB chip (1), never vital (the tighter vital catch is checked first and misses).
+    const alsoLimb = activeWith({ ...base, targetOffsetB: { x: 0, y: 0.6 } });
+    const r = tickBossQte(alsoLimb, true, { x: 0, y: 0.55 }, 0.1); // 0.25 from vital, 0.05 from limb
+    expect(r.qte.bossHp).toBe(11); // limb chip, never the 2 HP vital
+  });
+
+  it("createBossQte asserts the vital catch is < the vital box corner reach (A1 not camp-able)", () => {
+    // The ⊂-band-aware A1 assert: the shipped 0.18 catch is < hypot(0.16,0.16) ≈ 0.226. A tuning
+    // edit that widened the catch back past the box reach (camp-able again) must fail loudly.
+    expect(BOSS_VITAL_CATCH_RADIUS).toBeLessThan(
+      Math.hypot(BOSS_VITAL_WANDER_AMP_X, BOSS_VITAL_WANDER_AMP_Y),
+    );
+    expect(() => createBossQte(SPEC)).not.toThrow();
+  });
+
   it("one shared windowChipped — a chip from EITHER ring answers the window (no double drain)", () => {
     const qte = activeWith({
       phaseIndex: 1,
