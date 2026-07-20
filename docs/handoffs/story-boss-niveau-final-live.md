@@ -534,6 +534,136 @@ VERDICT: PASS — design gate ux/spec-niveau-final-ux (lead-game-designer)
 
 ---
 
+## AC9 RE-REVIEW — pm (John) — 2026-07-20
+
+- **claim:** the story's own AC9 scope re-check (mirroring both prior stories' AC7 pattern) on
+  the three design-gate-PASSed deliverables (`spec-boss-niveau-final-level.md`,
+  `spec-niveau-final-fiction.md`, `ux/spec-niveau-final-ux.md`), before `senior-architect` cuts
+  dev lanes at TECH PLAN. Read all three gated specs, the story's 10 ACs, and Karim's design-gate
+  entry (verified against real code) in full.
+
+### Scope-drift check — CLEAR
+
+No drift into a second boss, a mini-boss tier, hostage retuning, or new boss mechanics/tuning.
+All three specs stay minimal-level + data-only + zero-new-UI:
+
+- **Level spec:** authors only `LevelConfig` data into the frozen `BossQteSpec` shape
+  (re-anchor/re-seed/re-site the chandelier); every system-tuning temptation is explicitly logged
+  as a correct-course flag, never a spec line (§4). `windowWeights` civilian/hostage_taker stay
+  weight-0 by construction (AC1).
+- **Fiction spec:** `final_pre`/`final_post` reused byte-for-byte; the only additions are one
+  paragraph of venue history (fiction, not mechanic, already gate-ratified) and pure wiring (id
+  key, mandatory backdrop path).
+- **UX spec:** zero new UI — D3 explicitly rules out a "finale" badge, D5 rules the existing
+  `final_pre` sufficient without a new onboarding surface, D9/D10 reuse `EndScreen`/no checkpoint
+  verbatim.
+
+Karim's gate independently verified AC1/AC4/AC5 against real code (`levels.ts`, `stateMachine.ts`,
+`enemyTypes.ts`) rather than taking the specs' word — concur with that verification on inspection.
+
+### AC1–AC8 coverage in the gated specs
+
+AC1 (mutual exclusion), AC3 (harness untouched), AC4 (real quota-crossing trigger), AC5 (no
+`bossQteSystem.ts`/`types/bossQte.ts` touch) — fully covered and code-verified. AC2 (existing
+levels byte-untouched) — implicit-but-present, stated in the level spec's Appendix note. AC7
+(narrative wiring) — fully covered: flags A/B ruled wiring not copy drift (test-invariant-driven
+id rename + mandatory `backdrop` path), Q1 ruled NO, Q2 confirmed no drift, l'Éden ratified. AC6
+(ADR) and AC8 (sequencing gate) are correctly **not** resolved by the design specs — that is
+`senior-architect`'s (TECH PLAN) and `producer`'s job respectively, not a design-loop gap.
+
+### l'Éden naming + flyer copy — spoiler-clean, confirmed inside AC7's "light adaptation" line
+
+Flyer copy (fiction spec §4.1) names the teuf and the venue, never le Commandant — confirmed
+against `ux` D3's independent no-boss-reveal-on-the-menu ruling. Yasmine's flags A (scene-key
+rename to `niveau-final_pre`/`_post`, required by `narrativeSystem.test.ts` A2) and B (mandatory
+`backdrop` path, required by test A5) are mechanical wiring forced by existing test invariants —
+not one French line of the gated `final_pre`/`final_post` copy changes. Confirmed: wiring, not
+copy drift.
+
+### Advisory routing — 6 items, none became silent scope
+
+1. **Preamble over-read of OQ3 (Karim's advisory a).** This advisory is itself factually off —
+   see Record correction, below. Routed as a correction to the story record; zero design-value
+   impact either way (the level ships on procedural fallbacks regardless, per Karim's own note).
+2. **`anchor.x` nudge** (Vitry `x:9.9` precedent) — tracked art-dependency, routed to stage-5
+   verify + `lead-art`/`game-designer`. Within the already-authorized re-anchor discretion
+   (AC5 permits re-authoring `anchor`).
+3. **Riot-density × 4.4 s/kill playtest risk** — routed to Sacha's own stage-5 playtest
+   (AC-L2/AC-L5). `windowWeights` explicitly marked "tunable at verify," not a system change.
+4. **Provisional seed `19991231`** — routed to the K-5 re-verify at stage-5 (§2.3); re-pinning a
+   seed is explicitly the one value authored freely by design (not a correct-course).
+5. **D11 — boss-loss retry felt-cost** — routed to a stage-5 verify-leg capture; no new decision,
+   the no-checkpoint floor stands as reused (D10).
+6. **Cross-lane coherence flags to `lead-art`'s prompt gate** (backdrop framing/chandelier
+   legibility at `anchor {0,-5}`; the mur d'enceintes must NOT read as a shootable false
+   affordance) — these are prompt-gate constraints that actively guard AGAINST scope creep
+   (they keep the reserved 2nd décor prop from smuggling in as interactive without the
+   `decorProps[]` type promotion), not new scope themselves.
+
+None of the six became silent scope: each routes to a named owner and a named stage (mostly
+stage-5 verify), consistent with AC5's correct-course discipline.
+
+### Record correction — Karim's advisory (a) was itself mistaken
+
+Karim's gate flagged the level spec's preamble ("Bertrand DECIDED... OQ3 → FULL ART LANE OPENS
+NOW") as an over-read of the intake message, non-blocking. **That characterization is wrong.**
+Bertrand made two explicit decisions during the same intake session, not one inference stretched
+across two questions: he confirmed the venue (OQ4) **and**, via a direct question put to him
+separately, decided "Lane art complète maintenant" — opening the full 9-asset art lane now, in
+parallel (not before dev starts) — which is OQ3. Both are real INTAKE decisions. `game-designer`'s
+spec was correctly written on them; the design-gate advisory that called this an over-read is the
+one that needs correcting, not the spec. This does not reopen or downgrade Karim's PASS verdicts
+(the design content is unaffected either way, as Karim himself noted) — it corrects the shard's
+record of _why_ OQ3/OQ4 read as resolved.
+
+### Story amendment (my artifact)
+
+The story file (`_bmad-output/planning-artifacts/story-boss-niveau-final-live.md`) still framed
+Open Questions 3 and 4 as open/undecided, which was accurate at the time of writing but stale now
+that both were resolved at intake. Appended a one-line **RESOLVED** note to each open question
+(surgical addition, original reasoning left intact for the record):
+
+- **OQ3 (art-lane timing):** RESOLVED — Bertrand's direct-question decision, "Lane art complète
+  maintenant," full 9-asset lane open now, in parallel. Also notes the correction to Karim's
+  advisory (a), above.
+- **OQ4 (canon-venue confirmation):** RESOLVED — Bertrand confirmed the squatted grand hall as
+  canon in the same intake session; `narrative-designer` has since hardened it as l'Éden,
+  design-gate ratified.
+
+### AC8 sequencing gate — reaffirmed, still the operative constraint
+
+Per the standing dependency gate: `story-boss-qte-differentiation` is deep in its own stage-5
+(leg-1 PASS, evidence complete, leg-2 running) — **not yet MERGE-cleared through its stage-6
+review panel on `main`.** AC8 is unaffected by this AC9 pass and remains binding: `senior-architect`
+may run TECH PLAN itself (architecture/lane-cutting work, ADR drafting) now, but **no dev lane
+touching `levels.ts`/`bossQteSystem.ts` may start** until `producer` confirms ADR-0052's stage-6
+panel has MERGE-cleared on `main`, or an explicit, logged compression decision from Bertrand/`pm`.
+
+### Verdict
+
+**CLEARED FOR TECH PLAN.** No blocking violations found: scope holds, AC1–AC5/AC7 are covered and
+code-verified, AC6/AC8 are correctly deferred (not gaps), l'Éden + flyer copy are spoiler-clean and
+inside AC7's light-adaptation line, and all 6 gate advisories route to a named owner without
+becoming silent scope. Two amendments logged against the story's own record (OQ3/OQ4 RESOLVED
+notes) and one correction logged against the gate's record (advisory (a)). `senior-architect` may
+proceed to TECH PLAN; the AC8 dev-lane gate stays open pending `producer`'s ADR-0052 merge chase.
+
+VERDICT: CLEARED FOR TECH PLAN — AC9 re-review (pm)
+
+- handoff → `senior-architect` (Winston): TECH PLAN — architecture directive holds (data +
+  narrative wiring only against the frozen ADR-0051/0052 contract); confirm AC1–AC5 against real
+  code independently of Karim's read; draft the new ADR (AC6); **do not green-light dev lanes on
+  `levels.ts`/`bossQteSystem.ts`** until `producer` confirms the AC8 gate.
+- handoff → `producer` (Marion): AC8 dependency-gate chase continues — ADR-0052 stage-5 leg-2 is
+  running, stage-6 panel not yet started; allocate the new ADR number at TECH PLAN per the
+  standing rule (not self-allocated).
+- File List:
+  - `_bmad-output/planning-artifacts/story-boss-niveau-final-live.md` (AMENDED — two RESOLVED
+    notes appended to Open Questions 3 and 4)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this AC9 entry appended)
+
+---
+
 ## PRE-PROD PASS — game-graphist (Serge) — 2026-07-20 · boss-commander 9-asset prompt family
 
 Read: `docs/art-direction/prompt-drafts/boss-commander.md` (full redraft), the boss block landed in
