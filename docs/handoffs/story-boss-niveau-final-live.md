@@ -261,3 +261,66 @@ prompt-gate PASS. Maud drafts the 7 subject clauses on this DNA; they come back 
 the prompt gate.
 
 RULING: (1) — commandant headgear (lead-art)
+
+---
+
+## `game-designer` (Sacha) — DESIGN LOOP: level pacing + live `bossQteSpec` data (OQ1/OQ2 + seed)
+
+- **When:** 2026-07-20 · **Stage:** 1 (DESIGN LOOP) · **Claim → Release** in one pass.
+- **CLAIM:** the level-design Open Questions this story hands me — **OQ1** (level length / quota
+  shape before the boss) and **OQ2** (difficulty placement) — plus the live `bossQteSpec` **data**
+  the story reserves to the design loop (values, décor prop siting, seed policy). Written on
+  Bertrand's two intake DECISIONS: **OQ4 venue CONFIRMED** = the squatted grand hall
+  (`spec-boss-differentiation-fiction.md`), and **OQ3 → full art lane opens now** (spec assumes
+  canon art will exist, ships behind procedural fallbacks until generation lands).
+- **DELIVERED:** `docs/game-design/spec-boss-niveau-final-level.md` (DRAFT — needs Karim PASS).
+  Headline numbers and rulings:
+  - **Pre-boss pacing (OQ1/OQ2), vs. the shipped curve** (belliard 1.0/10/90 · stalingrad
+    1.3/12/80 · vitry 1.6/15/70): **`enemySpeedMultiplier: 1.8`** (continue the curve but +0.2 not
+    the mechanical +0.3 — the boss carries the climax, don't over-grind lives on the approach),
+    **`enemiesToWin: 16`** (one notch over Vitry, a REAL quota — **not** the harness `0`
+    instant-trigger — so the boss fires on the real quota crossing, **AC4**; only +1 because the
+    boss is the length payload, KISS 3–5 min), **`timeSeconds: 70`** (HOLD Vitry's timer, break the
+    −10 descent — 16/70 = 4.4 s/kill is still tighter than Vitry's 4.7, but 60 s would clock-ambush
+    the finale before it triggers, §5.6/AC4). Monotonically the hardest level on every axis, each
+    step deliberately modest.
+  - **Spawn cadence:** no per-level spawn-interval field exists (cadence is a system function of
+    speed + wave); I tune the **mix** via `roster.windowWeights` — `{ normal 40, riot 28, biker 20,
+bonus 10 }` (riot-heavy: 2-HP CRS `enemy_riot` is the thematic finale enemy and the honest
+    source of "harder without a new mechanic"; bonus kept as the time valve). `hostage_taker`/
+    `civilian` stay weight-0 → **AC1** (no hostage anything) by construction.
+  - **Delivery:** one delivery, HELD at ≈ Vitry (truck, integrity 60, window 6 s, bonus 300, trigger
+    18 s) — not tightened (one-variable discipline; escalation is elsewhere). Vehicle type / diegetic
+    framing → Yasmine.
+  - **Live `bossQteSpec` DATA** (re-anchored/re-seeded copy of the ADR-0051/0052 tuned values, NOT a
+    retune): `zoomSeconds 2` · `anchor {0,-5}` (centred hall tableau; `x` may nudge once the backdrop
+    lands, Vitry `x:9.9` precedent) · **`phaseCount 3` / `bossHp 24` / `maxBlownWindows 10` — all
+    UNCHANGED** · **`decorProp` re-sited to the hall CHANDELIER** `{ position {0.2,1.5}, armPhaseIndex
+1 }` (overhead drop-burst read; the mur d'enceintes is the reserved 2nd prop — authoring two needs
+    the `decorProps[]` type promotion = correct-course, not now).
+  - **Seed policy:** a **PINNED, WINNABLE, stage-5-RE-VERIFIED** seed — provisional **`19991231`**
+    (the level's diegetic date), NOT per-run. Justified vs. precedent: every shipped QTE pins its seed;
+    a per-run seed is architecturally illegal (needs runtime randomness the determinism law forbids)
+    AND cannot carry the §5.6 winnability guarantee (a random seed can deal an un-landable window =
+    mort bullshit). K-5 obligation: re-verify landability on each ring / each charged window / the décor
+    arm-window at `verify`, or re-pin — **most likely correction at stage-5**.
+  - **AC5 correct-course discipline:** listed every system-tuning temptation (bump bossHp/maxBlownWindows,
+    touch the phase table, retune charged cadence/renfort count, add a 2nd décor prop, add a spawn-interval
+    field) as a **correct-course flag, not a spec line** — only the seed is re-authored freely by design.
+- **RELEASE.** Handoffs from this deliverable:
+  - → `lead-game-designer` (Karim): DESIGN GATE — `VERDICT:` on OQ1/OQ2 (§1), the `bossQteSpec` data +
+    seed policy (§2), difficulty placement (§3), AC5 discipline (§4), before pm re-review (AC9) + TECH PLAN.
+  - → `narrative-designer` (Yasmine): AC7 wiring of the gated `final_pre`/`final_post` to the level id;
+    the finale delivery's vehicle type + diegetic framing ("livre le son to the hall").
+  - → `ux-designer` (Tony): unlock SURFACE (flyer-stack "final" framing; logic reuses the index hop) +
+    fresh-eyes legibility of the boss beat inside a full level, both device classes.
+  - → `lead-art` (Maud) / `concept-artist`: venue backdrop art (new environment, per Bertrand's OQ3) —
+    I spec the READ (clean boss tableau at `anchor {0,-5}`, legible shootable overhead chandelier at
+    `{0.2,1.5}`, hall openings host the window-cops); ship behind procedural fallbacks until the 9
+    canon assets land. Framing dependency I own back: confirm `anchor.x` needs no nudge once the
+    backdrop lands.
+  - → `senior-architect` (Winston): TECH PLAN — data + narrative wiring only, confirm AC1–AC5 vs. real code.
+- **No `VERDICT:` line yet** — this is the DESIGN deliverable; Karim's gate is pending.
+- **File List:**
+  - `docs/game-design/spec-boss-niveau-final-level.md` (NEW — this deliverable)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)

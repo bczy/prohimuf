@@ -13,6 +13,7 @@ import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
 import { GameScene } from "./GameScene";
+import { installBossCaptureSeam } from "./bossHarness";
 import { warm } from "./warmAssets";
 import styles from "./App.module.css";
 
@@ -67,6 +68,14 @@ const BOSS_HARNESS_PREVIEW = PREVIEW_SCREEN === "boss";
 const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
   ? BOSS_QTE_DEV_HARNESS_LEVEL
   : FIRST_PLAYABLE_LEVEL;
+
+// Boss QTE capture seam (harness-only, non-shipped): `?preview=boss&at=phase2|phase3|finisher`
+// (optionally `&blownImmune=1`) installs a view-side fast-forward factory that `useGameLoop`
+// consumes to boot the boss already advanced to that state — so a ~2 fps SwiftShader sandbox
+// can screenshot the depletion-gated ADR-0052 differentiation reads (qa-lead C-QA2). It
+// no-ops unless `?preview=boss` is present, so it shares `?preview=boss`'s reachability
+// discipline exactly (shipped players never reach it). See `bossHarness.ts`.
+installBossCaptureSeam();
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.

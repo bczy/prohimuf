@@ -16,6 +16,7 @@ import {
   tickCameraPan,
 } from "@game/systems/cameraPanSystem";
 import type { GameState } from "@game/types/gameState";
+import type { BossQte } from "@game/types/bossQte";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
@@ -49,6 +50,18 @@ interface HarnessWindow {
   __MUF_FREEZE_COPS__?: boolean;
   __MUF_PLAY__?: boolean;
   __MUF_STATE__?: () => StateSnapshot;
+  /**
+   * Boss QTE capture seam (harness-only, non-shipped): a render-installed factory (see
+   * `render/scene/bossHarness.ts`, `?preview=boss&at=…`) that builds a boss already advanced
+   * to a target phase by driving the pure API. When present AND the level authors a boss
+   * (`bossQteSpec !== null` — only the excluded-from-`LEVELS` dev-harness), the initial boss
+   * state is seeded from it ONCE at boot, so a ~2 fps sandbox can screenshot the
+   * depletion-gated ADR-0052 reads (qa-lead C-QA2). Never set in production.
+   */
+  __MUF_BOSS_BOOT__?: () => BossQte;
+  /** Re-seed the boss on the blown-window LOSS so an unattended capture stays pinned at its
+   *  fast-forwarded phase (`?preview=boss&…&blownImmune=1`). Harness-only. */
+  __MUF_BOSS_IMMUNE__?: boolean;
 }
 
 /** Read-only state seam payload (ADR-0005): a frozen game + last-HUD snapshot. */
@@ -178,6 +191,22 @@ export function useGameLoop(
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
   const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams, roster));
+  // Boss QTE capture seam (harness-only, non-shipped): if the render layer installed a
+  // fast-forward factory (`?preview=boss&at=…`), seed the initial boss state with the
+  // pre-advanced BossQte ONCE — so the SwiftShader ~2 fps sandbox can screenshot the
+  // depletion-gated ADR-0052 differentiation reads without playing to them (qa-lead C-QA2).
+  // Guarded twice over: the factory only exists under `?preview=boss` (bossHarness install),
+  // and this only fires when the level authors a boss (`bossQteSpec !== null` — true only on
+  // the excluded-from-`LEVELS` dev-harness). Never runs on a shipped path.
+  const bossBootedRef = useRef(false);
+  if (!bossBootedRef.current) {
+    bossBootedRef.current = true;
+    const w = typeof window !== "undefined" ? (window as unknown as HarnessWindow) : undefined;
+    const boot = w?.__MUF_BOSS_BOOT__;
+    if (boot !== undefined && gameStateRef.current.bossQteSpec !== null) {
+      gameStateRef.current = { ...gameStateRef.current, bossQte: boot() };
+    }
+  }
   // Viewport state, not a game rule — lives in the bridge, not GameState (ADR-0003).
   const panRef = useRef<CameraPan>(createCameraPan());
   const aimRef = useRef({ x: 0.5, y: 0.5 });
