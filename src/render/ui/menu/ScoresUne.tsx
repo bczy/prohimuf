@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
-import { loadScores } from "@game/systems/highScoreSystem";
+import { loadScores, resolveDisplayName } from "@game/systems/highScoreSystem";
 import { PaperSheet, STOCK, INK, FONT, MARK, MarkerCircle, useRovingIndex } from "@render/ui/print";
 import { SelectableListItem, cx } from "../controls";
 import styles from "./ScoresUne.module.css";
@@ -105,7 +105,9 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
         <>
           {/* Lead story from scores[0] (deck §3.2) */}
           <div className={styles.lead}>
-            <div className={styles.leadKicker}>NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT</div>
+            <div className={styles.leadKicker}>
+              NOTRE ENVOYÉ SPÉCIAL Y ÉTAIT · {resolveDisplayName(top.name)}
+            </div>
             <div className={styles.leadTitle}>NUIT BLANCHE : {top.score}</div>
             <div className={styles.leadText}>{top.wave} vagues de bleus, et le son a tenu.</div>
           </div>
@@ -139,7 +141,10 @@ export function ScoresUne({ unlockedLevels }: ScoresUneProps): JSX.Element {
                     i + 1
                   )}
                 </span>
-                <span className={cx(styles.colButin, styles.scoreCell)}>{s.score}</span>
+                <span className={cx(styles.colButin, styles.scoreCell)}>
+                  {s.score}
+                  <span className={styles.byline}>{resolveDisplayName(s.name)}</span>
+                </span>
                 <span className={styles.colAssauts}>{s.wave}</span>
                 <span className={styles.colNuit}>{s.date.slice(0, 10)}</span>
               </div>

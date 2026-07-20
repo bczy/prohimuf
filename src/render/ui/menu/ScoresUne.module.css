@@ -143,3 +143,14 @@
 .scoreCell {
   font-size: 16px;
 }
+
+/* Signer byline under the score (M1) — the tabloid "par …" line. Its own weight/size
+   override the bold 16px score above it; resolveDisplayName supplies ANONYME for a
+   legacy/skipped row so the cell is never blank. */
+.byline {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--ink-black);
+}
