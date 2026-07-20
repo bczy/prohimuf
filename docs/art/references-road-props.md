@@ -7,6 +7,13 @@ Bertrand-directed, ADR-0047 amendement). **La couleur est donc hors-sujet ici : 
 comptent silhouette et proportion.** Une observation citée par prop = utilisable telle
 quelle dans un prompt.
 
+**Audit 2026-07-20** : chaque prop a depuis été confronté à une chasse aux références
+dédiée dans `docs/art-direction/references/boards/` (`board-parking-meter.md`,
+`board-lamppost.md`, `board-wallace-fountain.md`, `board-bollard.md`, `board-scooter.md`,
+`board-bench.md`, `board-street-sign.md` — statut PROPOSED, en attente du verdict
+KEEP/DROP de Bertrand). Les corrections ci-dessous sont tracées board par board ; en cas
+de désaccord entre ce document et un board, **le board fait foi**.
+
 ## 1. trafficLight — feu tricolore parisien
 
 Déjà chassé et curé : voir `docs/art-direction/references/boards/board-traffic-light.md`
@@ -32,9 +39,12 @@ Déjà chassé et curé : voir `docs/art-direction/references/boards/board-traff
 ## 2. lamppost — lampadaire parisien (col-de-cygne fonte)
 
 - **Modèle canonique** : candélabre haussmannien en fonte, héritage Second Empire (Alphand/
-  Davioud-era street furniture programme, 12 485 → 33 859 mâts installés 1853-1869), encore
-  la norme visuelle sur les rues secondaires du 18e/19e en 1998 — pas seulement les grands
-  boulevards. Fût fuselé, bras "col-de-cygne" en S, lanterne à pans facettés. **Ne PAS**
+  Davioud-era street furniture programme, de l'ordre de 12 000 à plus de 30 000 mâts/becs
+  de gaz installés entre 1853 et 1869 — ordre de grandeur seulement, chiffres exacts non
+  confirmés et possible confusion mâts installés / becs de gaz selon la source ; corrigé
+  2026-07-20, board-lamppost), encore la norme visuelle sur les rues secondaires du 18e/19e
+  en 1998 — pas seulement les grands boulevards. Fût fuselé, bras "col-de-cygne" en S,
+  lanterne à pans facettés. **Ne PAS**
   utiliser le "cobra head" en aluminium moderne (mât droit + tête plate rectangulaire) : ce
   registre existe en 1998 mais sur voirie fonctionnelle/périphérique, pas la rue de caractère
   qu'on veut vendre.
@@ -66,22 +76,34 @@ Déjà chassé et curé : voir `docs/art-direction/references/boards/board-traff
   2. dôme pointu au sommet, orné de petites protubérances (dauphins) — pas un dôme plat.
   3. silhouette resserrée à la base, élargie à mi-hauteur (les cariatides), puis resserrée
      vers le dôme — un profil "sablier", pas un cylindre droit.
-  4. échelle modeste (~2,5 m), nettement plus basse et plus large qu'un lampadaire.
-- **Piège** : le modèle "petite" à une seule cariatide (variante plus tardive/réduite,
-  aujourd'hui répandue mais moins iconique) — préférer les 4 cariatides pour la lisibilité
-  et la reconnaissance immédiate ; ne pas la confondre avec une fontaine à boire moderne en
-  acier (design "Ville de Paris" post-2000, cylindrique, sans ornement) ; ne pas la réduire
-  à une silhouette de borne/bollard (il lui faut le dôme + les colonnes pour se lire).
+  4. échelle modeste (2,71 m réels — corrigé 2026-07-20, board-wallace-fountain, ancienne
+     valeur ~2,5 m légèrement sous-estimée), nettement plus basse et plus large qu'un
+     lampadaire.
+- **Piège** : il n'existe pas de variante Wallace à une seule cariatide (corrigé 2026-07-20,
+  board-wallace-fountain — la taxonomie exacte est : le **petit modèle** ("borne de
+  jardin", 1,32 m) n'a **aucune** cariatide, simple borne à bouton-poussoir ; la variante
+  qui remplace les cariatides garde **quatre** colonnes nues, c'est le **modèle à
+  colonnettes**) — l'instruction reste la même : préférer les 4 cariatides du grand modèle
+  pour la lisibilité et la reconnaissance immédiate ; ne pas la confondre avec une fontaine
+  à boire moderne en acier (design "Ville de Paris" post-2000, cylindrique, sans ornement) ;
+  ne pas la réduire à une silhouette de borne/bollard (il lui faut le dôme + les colonnes
+  pour se lire).
 
 ## 4. parkingMeter — horodateur (grosse boîte grise Schlumberger, PAS le modèle 2020s)
 
 - **Modèle canonique** : horodateur "Compteurs Schlumberger" (Schlumberger a repris la
   Compagnie des Compteurs en 1970, dessiné son premier horodateur en 1972) — boîtier acier
-  gris/beige, tête inclinée en "casquette solaire" (pente pour évacuer la pluie), petit écran
-  LCD monochrome, large fente à pièces, ticket imprimé en sortie basse. En 1998, l'horodateur
-  multi-place coexiste avec des parcmètres individuels plus anciens (le remplacement complet
-  parcmètre→horodateur ne s'achève qu'entre 2001 et 2006) — soit une boîte mécanique/
-  électronique simple, PAS le terminal tactile couleur moderne.
+  gris/beige, tête inclinée en "casquette solaire" (pente pour évacuer la pluie ; le degré
+  d'inclinaison est plausible mais non sourcé — aucune photo/fiche technique Schlumberger
+  d'époque retrouvée, gardé comme convention de genre — corrigé 2026-07-20,
+  board-parking-meter), petit écran LCD monochrome (technologie d'affichage également non
+  sourcée, même statut plausible-mais-non-sourcé — corrigé 2026-07-20, board-parking-meter),
+  large fente à pièces, ticket imprimé en sortie basse (le mécanisme d'impression est
+  confirmé sur les séries DG2/DG3, la position basse précise de la fente ne l'est pas —
+  corrigé 2026-07-20, board-parking-meter). En 1998, l'horodateur multi-place coexiste avec
+  des parcmètres individuels plus anciens (le remplacement complet parcmètre→horodateur ne
+  s'achève qu'entre 2001 et 2006) — soit une boîte mécanique/électronique simple, PAS le
+  terminal tactile couleur moderne.
 - **Traits de silhouette** :
   1. mât fin, nettement plus mince que la tête (ratio fort) — sinon ça se lit comme un
      bollard.
@@ -98,11 +120,16 @@ Déjà chassé et curé : voir `docs/art-direction/references/boards/board-traff
 ## 5. bollard — potelet parisien (tête boule fonte)
 
 - **Modèle canonique** : le "potelet boule" — fût tubulaire acier meulé lisse, tête en fonte
-  ductile sphérique. Fait notable et **très favorable au brief 1998** : le déploiement massif
-  du potelet boule dans Paris a précisément commencé **dans les années 1990** — ce n'est pas
-  un objet rétro-daté, c'est contemporain de la scène.
+  ductile sphérique. Fait notable et **favorable au brief 1998** : le déploiement du potelet
+  boule dans Paris a bien commencé **au début des années 1990** — ce n'est pas un objet
+  rétro-daté. Nuance (corrigé 2026-07-20, board-bollard) : l'accélération/saturation du
+  déploiement est **postérieure à 2001** (mandat Delanoë) ; en 1998 l'objet est présent et
+  en phase de croissance précoce, pas encore massif/omniprésent — éviter le mot "massif"
+  pour cette date précise.
 - **Traits de silhouette** :
-  1. fût court et trapu (hauteur genou/hanche), pas un poteau élancé.
+  1. fût court et trapu, pas un poteau élancé (hauteur réelle plutôt hanche/torse,
+     900–1300 mm — corrigé 2026-07-20, board-bollard, l'ancienne mention "genou/hanche"
+     sous-estimait la hauteur ; la silhouette trapue/basse reste la bonne consigne).
   2. tête en boule/dôme arrondi — jamais plate ni pointue.
   3. fût lisse, légèrement évasé à la base, section constante sinon.
   4. peint sombre uniforme (noir/anthracite), pas de bande réfléchissante.
@@ -118,14 +145,21 @@ Déjà chassé et curé : voir `docs/art-direction/references/boards/board-traff
 - **Modèle canonique** : le **banc Davioud** (Gabriel Davioud, sous Haussmann/Alphand,
   années 1860 — 8 428 bancs posés dès 1869), toujours la référence visuelle du banc public
   parisien en 1998. Lattes de bois horizontales sur piètement en fonte ornée (motifs
-  floraux), forme double-assise dos-à-dos dans sa version square/promenade, ou simple-face
-  en version rue courante.
+  floraux). Typologie corrigée (2026-07-20, board-bench — l'ancienne association était
+  inversée) : la forme **double-assise dos-à-dos, aux armes de la Ville**, est le type
+  **rue/trottoir** ; la forme **simple-face "gondole" (assise galbée)** est le type
+  **square/jardin**. Les deux versions peuvent se croiser sur boulevards/promenades.
 - **Traits de silhouette** :
-  1. lattes de bois horizontales bien marquées (assise + dossier), lignes parallèles
-     lisibles — c'est le trait le plus identifiant.
+  1. lattes de bois horizontales bien marquées à l'assise, lignes parallèles lisibles —
+     c'est le trait le plus identifiant. Point de vigilance ouvert (non tranché, board-bench,
+     2026-07-20) : les descriptions techniques sourcées décrivent le dossier comme **une
+     seule planche large**, pas plusieurs lattes empilées — à vérifier sur photo avant de
+     trancher pour le dossier.
   2. piètement en fonte massif aux extrémités (volutes/ornement floral), nettement plus
      "lourd" visuellement que les lattes.
-  3. dossier légèrement incliné (confort), pas un dossier vertical droit.
+  3. dossier **droit** (vertical), pas incliné (corrigé 2026-07-20, board-bench — les deux
+     typologies documentées ont un dossier droit ; seule l'assise du modèle gondole/jardin
+     est légèrement inclinée, jamais le dossier).
   4. posé au sol/trottoir, pas sur un socle surélevé.
 - **Piège** : le banc béton préfabriqué "à la parisienne" version 2000s+ (blocs pleins, pas
   de lattes) est trop plat/anonyme — évite ce look. Éviter aussi tout séparateur médian
