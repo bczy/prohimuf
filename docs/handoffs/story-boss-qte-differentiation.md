@@ -2579,3 +2579,154 @@ VERDICT: PASS — composite gate 35-finisher-bw-neon-only (lead-art)
 VERDICT: PASS — composite gate differentiation-runtime-visuals-REVERIFY (lead-art)
 
 - **File List:** `docs/handoffs/story-boss-qte-differentiation.md` (this re-verdict entry appended).
+
+## 20. VERIFY (stage 5, leg 2 — A1-R2 §4 BINDING sign-off) — ux-designer (Tony) — 2026-07-20 — small-ring (0.11) legibility on both device classes at the boss zoom
+
+- claim: discharge Karim's §17 GATED AMENDMENT A1-R2 §4 binding condition — confirm whether the
+  drawn=catch VITAL ring at `BOSS_VITAL_CATCH_RADIUS 0.11` is clearly perceivable, distinguishable
+  from the 0.30 LIMB ring, and honestly aim-able on BOTH device classes at the boss zoom, mobile
+  especially. Built + captured fresh evidence via the existing dev-harness seam (`bossHarness.ts`,
+  `?preview=boss&at=phase2`), state-verified via `window.__MUF_STATE__()` (not eyeballed), judged on
+  the real captures at real size — no zoomed crops used for the verdict itself (crops below are
+  measurement AIDS, logged alongside the full-frame evidence).
+- Build: `yarn build` (COREPACK_NPM_REGISTRY=https://registry.npmjs.org) → clean production build;
+  `vite preview --port 4321`. Playwright (Chromium, `/opt/pw-browsers/chromium`,
+  `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`), `window.__MUF_PLAY__=true` seeded pre-navigation (the
+  `__MUF_STATE__` seam only installs under `__MUF_PLAY__`, per `useGameLoop.ts`), navigated to
+  `?preview=boss&at=phase2&blownImmune=1`, polled `__MUF_STATE__().game.bossQte` until
+  `phase==="ACTIVE" && phaseIndex>=1 && stance==="EXPOSED"` (both rings live) before each screenshot.
+- **Evidence (state-verified, both confirm `phaseIndex:1, stance:"EXPOSED"`):**
+  - `docs/qa/evidence/story-boss-qte-differentiation/36-vital-ring-011-desktop.png` — desktop
+    1280×720, DPR 2.
+  - `docs/qa/evidence/story-boss-qte-differentiation/37-vital-ring-011-mobile.png` — mobile
+    **844×390**, DPR 3, iPhone UA.
+
+### VERDICT: FAIL — A1-R2 §4 small-ring legibility (ux-designer) — mobile
+
+### Desktop — PASS (marginal, note attached)
+
+Measured directly on `36` (2560×1440 raw = 2× the 1280×720 CSS viewport): the vital ring's drawn
+outer diameter is **≈35 raw px ≈ 17.5 CSS px** (annulus stroke ≈5 CSS px, hollow interior ≈3.5 CSS px
+radius) — small, but: (a) clearly PERCEIVABLE — bright acid green (`#39ff14`) at full emphasis
+(opacity 0.5) against the boss's desaturated-orange torso, a comfortable ≈2 boss-head-heights of
+clear black background separates it from the "LE COMMANDANT" HUD bar (no occlusion risk on this
+device class); (b) distinguishable from the LIMB ring **by THREE independent channels, not colour
+alone** — position (head vs. torso), size (vital ≈2.7× smaller than limb, since both share the same
+`RING_INNER 0.78`/`RING_OUTER 1.0` geometry scaled by their own radius — limb draws ≈48 CSS px
+diameter, close to the project's standing 44 px reference), and emphasis (vital opacity 1.0 vs. limb
+0.6); (c) honestly aim-able — `game-designer`'s own sweep (shard §15/§19) already demonstrates a
+scripted perfect tracker lands it every window, and 17.5 CSS px is tight-but-workable for continuous
+mouse tracking (a fundamentally different task than a discrete tap — WCAG's 44×44/24×24 tap-target
+floors are not the literal bar here, they are context for how small is small). **Soft note, not a
+blocker:** 17.5 CSS px is close to the floor of what a moving mouse-tracked target can comfortably
+read as "a ring" rather than "a dot" at a glance — worth the same thickness treatment recommended
+below for mobile, as a shared, cheap desktop polish, but I do not hold desktop as failing.
+
+### Mobile-landscape — FAIL (the binding condition's own named risk, confirmed)
+
+`37` shows the vital ring **not clearly perceivable at all** — captured mid-frame with the head (and
+therefore the entire vital wander band) rendering **directly behind the fixed "LE COMMANDANT"
+name-plate + HP-bar HUD overlay**. Pixel-measured (raw 2532×1170 @ DPR 3): scanning vertically through
+the boss's head column, the HP-bar's green fill and black border run to raw y≈341, then only a
+**≈18 raw px (≈6 CSS px) sliver** of green-tinted, desaturated skin shows before the pure boss-orange
+skin tone resumes at y≈362 — no legible ring OUTLINE, just a smeared olive-green colour wash under the
+bar's bottom edge (horizontal scan at that row shows two faint green clusters, not a closed circle).
+**This is not incidental framing luck, it is structural:** the vital wander band is fixed at
+`BOSS_VITAL_WANDER_CENTRE.y = 0.8` ± a small amplitude (world units, unaffected by device or zoom),
+and `MOBILE_ZOOM_FACTOR = 1.7` (`GameScene.tsx`) pushes the whole tableau larger on a mobile-landscape
+canvas whose HUD bar is a **DOM overlay with a fixed CSS footprint, not scaled with camera zoom**
+(`BossHpBar.tsx`) — so the head/vital-ring band and the bar's fixed screen rectangle collide on every
+mobile capture, not just this one. **The LIMB ring is fine** (visible, bright, at the torso, clear of
+the bar) — this is squarely the VITAL ring's problem, and specifically the compounding of (i) its
+fixed near-top wander height (unchanged since A1) with (ii) its NEW, much smaller 0.11 footprint: the
+old 0.30 ring (still visible in the shipped `14-mobile-phase1-ring.png` phase-1 evidence) was big
+enough to poke a visible arc out from behind the same bar at the same screen height; the new 0.11 ring
+is small enough to fit ENTIRELY inside the occluded band, with no poke-out margin left. Since the DOM
+HUD bar renders in front of the WebGL canvas by construction (a DOM-stacking fact, not a `renderOrder`
+one — no in-canvas trick, like the parry-glyph-above-smoke fix in §16, can put a Three.js mesh above a
+DOM element), no in-canvas fix (bigger stroke, extra halo, brighter tint) can restore visibility once
+the ring's screen position falls inside the bar's rectangle. A player cannot perceive, and therefore
+cannot honestly aim at, a ring that is not there to see.
+
+### Split-preview cue (D4.7, the phase-1→2 "new pattern" cue) — same risk, not captured (code-inspected)
+
+Per `BossQteSprite.tsx:570` the split-preview vital ring is ALSO drawn at `BOSS_VITAL_CATCH_RADIUS`
+(0.11) at `qte.anchor.y + 0.75` — the same head-adjacent height — at an even FAINTER pulsing opacity
+(0.15–0.25) than the live ring. I could not reach this window with the existing `at=` harness seam
+(it fast-forwards THROUGH the phase-1→2 break rather than stopping inside it — the same gap I logged
+in my own §15 entry, D4.7/A14). By inspection it will suffer the identical mobile occlusion, likely
+worse (lower opacity, same position) — flagged as the same defect family, not a second one, so no new
+capture is owed before routing this.
+
+### Ruling per Karim's own §17 routing (verbatim: "a render-scale/boss-zoom question… NOT a re-tune
+
+of the radius… NOT a third round of this cap")
+
+This IS that scenario. `BOSS_VITAL_CATCH_RADIUS` stays mechanically pinned at 0.11 (game-designer's
+gated dominance threshold, §15/§17/§19 — not mine to reopen). The defect is compositional: the fixed
+mobile HUD bar's screen footprint was never re-checked against the vital ring's fixed wander height
+when the ring shrank from 0.30/0.18 → 0.11. Concrete treatment I'd spec (routed to `lead-art` +
+`senior-architect`, per Karim's routing, for the render-scale/boss-zoom call):
+
+1. **Primary — reframe, not re-zoom.** NOT a "zoom bump during vital windows": zooming IN on the
+   existing boss-centred anchor would push the head further UP toward/behind the fixed bar, making
+   occlusion WORSE, not better. The fix is a **camera-anchor / vertical-framing correction on
+   mobile** — give the boss tableau more headroom above the HUD bar specifically at
+   `MOBILE_ZOOM_FACTOR 1.7` (e.g., anchor the boss lower in the mobile-landscape frame, or reduce the
+   effective height the "LE COMMANDANT" name-plate + HP-bar block occupies on mobile) so the ENTIRE
+   vital wander band (`BOSS_VITAL_WANDER_CENTRE.y = 0.8` ± amplitude) clears the bar's bottom edge
+   with a comfortable margin — the same margin the phase-1 0.30 ring used to get "for free" by being
+   big enough to poke out.
+2. **Secondary, complementary — thickness/emphasis within drawn=catch (safe to do regardless of #1,
+   improves desktop's soft note too).** The vital ring's stroke is `RING_OUTER(1.0) − RING_INNER(0.78)`
+   of its own radius — a fixed 22%-of-radius band that shrinks in lockstep with the radius. Tightening
+   `RING_INNER` for the VITAL ring specifically (e.g., 0.78 → ~0.55, `RING_OUTER` unchanged at 1.0) makes
+   the SAME 0.11 catch boundary read as a visually bolder, chunkier band without moving the outer/catch
+   edge one unit — the aim-honesty invariant (drawn radius = catch radius = 0.11) is untouched, only the
+   hole in the middle narrows. This does not fix the mobile occlusion (a thicker ring behind an opaque
+   HUD bar is still invisible) but is a legitimate, low-risk perceivability boost worth doing alongside
+   #1, and closes my desktop soft note for free.
+3. **Rejected option — a non-scored outer "locator" affordance marker drawn in the canvas.** Would not
+   help on mobile: it lives in the SAME WebGL layer as the ring, so it hits the identical DOM-stacking
+   ceiling (nothing in-canvas can render above the fixed HUD bar). Only worth considering if paired
+   with #1's reframe (once the band is clear of the bar) as a discoverability nicety, not as the fix.
+
+### Acceptance against my own gated spec (`spec-boss-qte-differentiation-ux.md` A12/A15, D4.1/D4.5/D4.8)
+
+- **D4.1/D4.5 (form/position, not colour-alone) — PASS, both device classes.** Position (head vs.
+  torso) + size (≈2.7× ratio) + emphasis (1.0 vs. 0.6) triple-code the vital/limb distinction; colour
+  is reinforcement only, consistent with the rest of this pack.
+- **A15/D4.8 ("legible at mobile-landscape viewport… no device-specific exception… a `verify`-stage
+  finding to raise, not something to silently accept") — this IS that finding, raised, not accepted.**
+- **New binding condition (A1-R2 §4) — FAIL on mobile,** per the routing Karim pre-cleared: to
+  `lead-art` (Nico) + `senior-architect` (Winston), NOT a third radius round, NOT `dev-gameplay`'s or
+  `game-designer`'s lane.
+
+- handoff → `lead-game-designer` (Karim): A1-R2 §4 binding leg-2 sign-off = **FAIL, mobile-landscape**
+  (desktop PASS-with-a-soft-note). Per your own §17 pre-clearance this routes to `lead-art` +
+  `senior-architect` as a render-scale/boss-zoom problem, explicitly NOT a re-tune of
+  `BOSS_VITAL_CATCH_RADIUS` (which stays gated at 0.11, game-designer's A1-R2 win stands untouched)
+  and explicitly NOT a third round of the 2-round cap.
+- handoff → `lead-art` (Nico) + `senior-architect` (Winston): concrete treatment above — (1) primary:
+  a mobile camera-anchor/framing correction so the fixed vital wander band (`y=0.8`±amplitude) clears
+  the fixed-footprint "LE COMMANDANT" HUD bar at `MOBILE_ZOOM_FACTOR 1.7` (NOT a zoom increase, which
+  would worsen it); (2) secondary, low-risk, do-anyway: tighten `RING_INNER` for the vital ring only
+  (drawn=catch outer radius unchanged) for a bolder stroke at the same 0.11 footprint, closing my
+  desktop soft note too. Re-capture `36`/`37` once landed; I re-review.
+- handoff → `game-designer` (Sacha): no action — `BOSS_VITAL_CATCH_RADIUS 0.11` is untouched by this
+  finding; your A1-R2 dominance win (§19) stands independent of the render-scale fix above.
+  Split-preview cue (D4.7) will need its own quick re-check once #1 lands (same fix should cover it,
+  since it shares the same head-adjacent y-position).
+- handoff → `producer` (Marion): this is a NEW finding routed outside the 2-round radius cap per
+  Karim's own §17 pre-clearance — track as a render-scale/boss-zoom item, not a cap-count item.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). Build + Playwright capture
+  ran against a throwaway local `vite preview` (port 4321) of the current committed source — no
+  `src/**` edit, no commit/push. Pixel measurements taken with `@napi-rs/canvas` decode of the
+  captured PNGs (already a project-standard tool, `scripts/e2e-lib.mjs`'s `decodePng` family) — no new
+  dependency added.
+- File List:
+  - `docs/qa/evidence/story-boss-qte-differentiation/36-vital-ring-011-desktop.png` (NEW)
+  - `docs/qa/evidence/story-boss-qte-differentiation/37-vital-ring-011-mobile.png` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: FAIL — A1-R2 small-ring legibility (ux-designer) — the 0.11 VITAL ring is clearly perceivable, well-distinguished from the 0.30 LIMB ring (position + size + emphasis, not colour-alone), and honestly aim-able on DESKTOP (measured ≈17.5 CSS px drawn diameter, marginal but workable for continuous mouse tracking — soft note, not blocking). On MOBILE-LANDSCAPE it FAILS outright: the fixed vital wander band (world y=0.8±amplitude) renders almost entirely BEHIND the fixed-footprint "LE COMMANDANT" name+HP-bar DOM overlay at `MOBILE_ZOOM_FACTOR 1.7` — measured evidence (`37-vital-ring-011-mobile.png`) shows only a ≈6 CSS px smeared, non-circular colour sliver, no legible ring at all; this is structural (the old bigger 0.18/0.30 ring used to poke a visible arc past the same bar at the same screen height — the smaller 0.11 ring no longer does) and will recur on every mobile phase-2+ vital window, not this capture alone. Per Karim's §17 pre-clearance this is a render-scale/boss-zoom problem, NOT a radius re-tune and NOT a third cap round — routed to `lead-art` + `senior-architect` with a concrete treatment: (1) primary — a mobile camera-anchor/framing correction giving the vital band clearance under the fixed HUD bar (NOT a zoom increase, which would worsen the collision), (2) secondary/low-risk — tighten the vital ring's `RING_INNER` for a bolder stroke at the same pinned 0.11 catch radius (aim-honesty untouched), closing the desktop soft note too. `BOSS_VITAL_CATCH_RADIUS = 0.11` itself is untouched and stays gated.
