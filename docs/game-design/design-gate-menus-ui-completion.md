@@ -6,13 +6,13 @@ flagged (not blocked) in §Escalation.
 
 ## Deliverables under review
 
-| # | Deliverable | Author | Verdict |
-| --- | --- | --- | --- |
-| E | `_bmad-output/planning-artifacts/epic-menus-ui-completion.md` | `pm` (John) | **PASS** |
-| M1 | `_bmad-output/planning-artifacts/story-highscore-name-entry.md` | `pm` (John) | **PASS w/ edits** |
-| M2 | `_bmad-output/planning-artifacts/story-difficulty-modifiers-separation.md` | `pm` (John) | **PASS w/ edits** |
-| M3 | `_bmad-output/planning-artifacts/story-accessibility-settings-consolidation.md` | `pm` (John) | **PASS w/ condition** |
-| UX | `docs/game-design/ux/spec-menus-ui-completion.md` | `ux-designer` (Tony) | **PASS w/ edits** |
+| #   | Deliverable                                                                     | Author               | Verdict               |
+| --- | ------------------------------------------------------------------------------- | -------------------- | --------------------- |
+| E   | `_bmad-output/planning-artifacts/epic-menus-ui-completion.md`                   | `pm` (John)          | **PASS**              |
+| M1  | `_bmad-output/planning-artifacts/story-highscore-name-entry.md`                 | `pm` (John)          | **PASS w/ edits**     |
+| M2  | `_bmad-output/planning-artifacts/story-difficulty-modifiers-separation.md`      | `pm` (John)          | **PASS w/ edits**     |
+| M3  | `_bmad-output/planning-artifacts/story-accessibility-settings-consolidation.md` | `pm` (John)          | **PASS w/ condition** |
+| UX  | `docs/game-design/ux/spec-menus-ui-completion.md`                               | `ux-designer` (Tony) | **PASS w/ edits**     |
 
 No FAIL. Every edit was applied in-file (surgical, author voice preserved) and is listed in
 §Edits. All five clear the four gate legs:
@@ -45,8 +45,8 @@ PARIS-MINUIT UNE, the newsprint print-token set, `[CREW_NAME]` register) and is 
 accessible path (real keyboard/IME/mobile-virtual-keyboard, screen-reader-legible, no custom
 widget with mouse/touch-only input).
 
-**Scope-verdict reconciliation (coherence fix):** the *feature* — signing a high score — is
-**[FIDÈLE]** (§8 "leaderboard" canon, arcade lineage), exactly as M1 states. The *byline form*
+**Scope-verdict reconciliation (coherence fix):** the _feature_ — signing a high score — is
+**[FIDÈLE]** (§8 "leaderboard" canon, arcade lineage), exactly as M1 states. The _byline form_
 is not a separate net-new extension; it is the fanzine presentation of that in-scope feature,
 already covered by the gated ADR-0021 reskin. So the two lanes agree: FIDÈLE feature, gated
 fanzine skin — no new extension to justify. (The UX spec's "conscious documented extension"
@@ -64,7 +64,7 @@ deferred, not duplicated**: when `isHighScore` is true, the effect holds the `{s
 triple and calls `saveScore` once after submit/skip, name attached; the **next-level unlock
 side-effect is unaffected** (fires on today's schedule, never gated behind typing a name).
 Non-high-score path stays byte-identical to today. Exact mechanism (new phase vs sub-state) is
-the architect's to wire — design ratifies the *new phase* as specced.
+the architect's to wire — design ratifies the _new phase_ as specced.
 `narrative-designer` to confirm no per-level post-narrative beat is displaced (routine hand-off).
 
 ### Q3 — M2 IA shape → **promoted `PRESSION` header in the NIVEAUX flyer-wall shell** + **short-landscape = Option A**
@@ -72,7 +72,7 @@ the architect's to wire — design ratifies the *new phase* as specced.
 - **Shape:** a glanceable `PRESSION` ballot header row above the flyer grid, inside the NIVEAUX
   rubrique body (UX §5), reusing OptionsColophon's ballot/X-stamp vocabulary and the shared
   `Prefs.difficulty`/`onSave` round-trip. **Not** a 4th sommaire rubrique, **not** a removal
-  from OPTIONS. It stays writable from OPTIONS too — the header is a *second, more prominent*
+  from OPTIONS. It stays writable from OPTIONS too — the header is a _second, more prominent_
   point of access on a single field. This satisfies M2 AC1 ("distinct, not buried") without the
   brittleness of a new tab, and it makes the difficulty a player is about to play at glanceable
   during the level browse (a §5 rule 4 "no bullshit" transparency win).
@@ -105,7 +105,7 @@ Both stories add the field + toggle. Ownership split so devs never collide:
   irreducible M3 deliverable even under outcome (a).
 - **Mechanic:** `producer`/`senior-architect` check `docs/handoffs/` at sprint planning; the
   first lane to touch `prefsSystem.ts` claims the field and logs the claim. This is a producer
-  sequencing mechanic; the *design* ownership split above is unambiguous, so no dev collision.
+  sequencing mechanic; the _design_ ownership split above is unambiguous, so no dev collision.
 
 ### Q5 — `reducedMotion` default + semantics → **default `false`; live-union; single derived signal**
 
@@ -118,7 +118,7 @@ Both stories add the field + toggle. Ownership split so devs never collide:
   computed as **one shared derived signal** at the render/bridge edge and read by every consumer
   (CrtPass, `print/` primitives, and — once it ships — shake/hitstop). This satisfies DRY
   ("une seule source de vérité par concept") **and** the accessibility invariant the UX spec
-  states: *the toggle can strengthen reduced motion but must never weaken a live OS `reduce`.*
+  states: _the toggle can strengthen reduced motion but must never weaken a live OS `reduce`._
 - **Coherence conflict caught & resolved.** `story-timer-duel-telegraph.md` AC13 specs the
   OPPOSITE model — "seed once from OS, then persist, never re-polled." That model can produce a
   state **weaker than the live OS setting** (seed `true` → player toggles `false` → motion runs
@@ -154,6 +154,7 @@ UX §4 updated in-file.
 ## Edits applied (surgical, in-file)
 
 **`story-highscore-name-entry.md` (M1)**
+
 - Scope V1: input length pinned to **max 16 chars, no minimum** (was "3-8 chars, design-loop
   call") — reuses the gated `[CREW_NAME]` budget; recorded the byline form (Q1).
 - AC6: length clamp fixed to **≤16, no minimum**, empty → fallback (removes the guess a dev
@@ -161,6 +162,7 @@ UX §4 updated in-file.
 - DoD: the "design-loop sign-off" checkbox marked GATED with the Q1/Q2 resolutions inline.
 
 **`story-difficulty-modifiers-separation.md` (M2)**
+
 - Scope: recorded the chosen shape (promoted NIVEAUX header, additive, kept in OPTIONS too) and
   Option A for short-landscape.
 - Scope: VIES-grouping open question resolved (VIES stays in OPTIONS/PAUSE, not promoted).
@@ -171,6 +173,7 @@ UX §4 updated in-file.
   PRESSION header row in the NIVEAUX body (`FlyerWall`), no `MainMenu` rubrique change.
 
 **`spec-menus-ui-completion.md` (UX)**
+
 - §4: first-run heuristic switched to the single `muf_seen_tutorial_nudge` flag (Q7); §4 ACs
   updated to match.
 - §5: Option A marked CHOSEN with rationale (Q3).
@@ -180,14 +183,14 @@ UX §4 updated in-file.
 No edits were made to `epic-menus-ui-completion.md` (M3 story `story-accessibility-settings-
 consolidation.md` needed none beyond the condition below — its Sequencing section already encodes
 Q4 correctly) or to `story-timer-duel-telegraph.md` (an in-flight story of another epic — its
-AC13 reconciliation is *routed*, not edited here; see §Escalation).
+AC13 reconciliation is _routed_, not edited here; see §Escalation).
 
 ## M3 condition
 
 **M3 PASSes on one condition:** its `Prefs.reducedMotion` semantics must be the **live-union /
 single-derived-signal** model of Q5, not a seed-once model — and it must not ship a second
 reduced-motion field/authority. M3's own Sequencing section already forbids the duplicate field;
-this condition additionally pins the *semantics* so M3 and S0.1 can never ship two contradictory
+this condition additionally pins the _semantics_ so M3 and S0.1 can never ship two contradictory
 reduced-motion behaviours.
 
 ---
@@ -195,7 +198,7 @@ reduced-motion behaviours.
 ## Escalation notes for Bertrand (flags, not blockers)
 
 1. **Cross-epic reconciliation of `reducedMotion` (Q5).** Resolving the union-vs-seed-once
-   contradiction requires amending `story-timer-duel-telegraph.md` AC13 — a story in a *different*
+   contradiction requires amending `story-timer-duel-telegraph.md` AC13 — a story in a _different_
    epic (`socle-fidélité`) that is queued but not built. I ruled the union model canonical on a
    guideline basis (DRY + the "never weaker than OS" accessibility invariant), so this is a
    routed reconciliation, not a blocked decision. Bertrand/`producer` should be aware only for
@@ -214,13 +217,15 @@ reduced-motion behaviours.
 Design gate **PASS** for the menus/UI-completion cycle (M1, M2, M3 stories + UX spec).
 
 **Next → `senior-architect` (Winston)** for the lane cut and an ADR of the scope decisions:
+
 - Lane split for M1 (`dev-gameplay` schema + `dev-r3f-render` screen + shared `App.tsx`
   `NAME_ENTRY` phase wiring / deferred-save contract).
 - M2 is `dev-r3f-render`-only (NIVEAUX header + `SHORT_LANDSCAPE` gate) — **sequence with M3** on
   the shared `OptionsColophon.tsx`/`PauseScreen.tsx` surfaces (both stories touch them).
 - M3 + `story-timer-duel-telegraph`: enforce the Q4 single-owner rule on `Prefs.reducedMotion`,
   and record the **Q5 union model + CrtPass/`print`-vs-`Prefs` authority** in the authority ADR
-  (the same ADR that story already mandates) — with AC13 reconciled to the union model first.
+  (**ADR-0052** — `story-timer-duel-telegraph`'s own AIMING/shake ADR references it rather than
+  re-deciding) — with AC13 reconciled to the union model first.
 - Confirm the outcome-contract-only posture on the OPTIONS/PAUSE component boundary (Q6).
 
 **Design-side hand-offs:** `game-designer` — amend `story-timer-duel-telegraph.md` AC13 to the

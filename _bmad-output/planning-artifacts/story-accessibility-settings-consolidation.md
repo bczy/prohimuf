@@ -88,7 +88,7 @@ AC1–AC3/AC7 (already satisfied) and keep AC4–AC6/AC8 (the consolidation/auth
 | AC1 | A first-time player, or a returning player whose stored `muf_prefs` blob predates `reducedMotion` | muf loads | `Prefs.reducedMotion` seeds once from the OS `prefers-reduced-motion` signal before first render, then persists as the player-editable value — never silently re-polled afterward. *(Skip if already shipped by `story-timer-duel-telegraph` — see Sequencing.)* |
 | AC2 | `Prefs.reducedMotion` toggle, on either `PauseScreen` or `OptionsColophon` | The player changes it | The value persists to `muf_prefs` and is read by every consumer (CrtPass and/or `print/` primitives, per the resolved authority) within the same session, no reload required. |
 | AC3 | The toggle, in either location | Rendered | Same `Toggle`/`BallotRow` visual language as the shipped CRT control — no bespoke new widget. |
-| AC4 | The `CrtPass`-vs-`Prefs` dual-authority question | This story ships | It is resolved one way or the other and the decision is recorded in an ADR — not left as two silently-coexisting reduced-motion sources. |
+| AC4 | The `CrtPass`-vs-`Prefs` dual-authority question | This story ships | It is resolved per **ADR-0052** (live union / single shared derived signal — `CrtPass` reads the shared signal, does not poll `matchMedia` itself) — not left as two silently-coexisting reduced-motion sources. |
 | AC5 | The CRT toggle (pre-existing) and the new reduced-motion toggle | Reviewed for accessibility | Both expose `aria-pressed={value}` on their `<button>` and a ≥44×44px hit target (closes the debt `story-timer-duel-telegraph` flagged and deferred). |
 | AC6 | The OPTIONS/PAUSE surfaces after this story | Read together | CRT + reduced-motion are grouped/labelled as one coherent "accessibilité / affichage" concern (visually adjacent, shared heading or section), not two unrelated toggles scattered among audio sliders. |
 | AC7 | `Prefs.reducedMotion === true` | The game renders | Motion actually reduces somewhere the player can observe within one glance (CRT grain/flicker freeze at minimum) — the toggle must have a visible effect, not just persist a flag nobody reads. *(Cross-check with whatever `story-timer-duel-telegraph` shipped, if it landed first — its shake/hitstop/flash reductions should also respond to this same flag once merged.)* |
@@ -103,7 +103,7 @@ AC1–AC3/AC7 (already satisfied) and keep AC4–AC6/AC8 (the consolidation/auth
 | `dev-r3f-render` | `src/render/ui/PauseScreen.tsx`, `src/render/ui/menu/OptionsColophon.tsx` | New `reducedMotion` toggle, grouped with CRT under one labelled section (AC6); `aria-pressed` + ≥44px on both this and the pre-existing CRT toggle (AC5). |
 | `dev-r3f-render` / architect | `src/render/effects/CrtPass.tsx` | Resolve the dual-authority question: either read `Prefs.reducedMotion` instead of its own `matchMedia` poll, or keep it and document why (AC4). |
 | `dev-r3f-render` / architect | `src/render/ui/print/*` (primitives honouring reduced motion per the pre-game-redesign plan) | Same reconciliation as `CrtPass` — read the shared source where practical. |
-| `tech-writer` / `senior-architect` (handoff) | `docs/adr/` | New ADR (or amendment) recording the `CrtPass`/`print`-vs-`Prefs.reducedMotion` authority decision. |
+| `tech-writer` / `senior-architect` (handoff) | `docs/adr/` | **ADR-0052 already records** the `CrtPass`/`print`-vs-`Prefs.reducedMotion` authority decision (live union / single derived signal) — consume it; no new ADR needed for this story. |
 
 ## Out of scope (V1)
 
@@ -128,6 +128,7 @@ AC1–AC3/AC7 (already satisfied) and keep AC4–AC6/AC8 (the consolidation/auth
       render/bridge edge.
 - [ ] Browser-verified: toggle persists, has a visible effect, `aria-pressed` + hit target
       correct on both CRT and reduced-motion controls.
-- [ ] ADR added/updated resolving the dual-authority question (AC4).
+- [ ] Implementation matches ADR-0052's dual-authority resolution (AC4) — `CrtPass`/`print`
+      read the shared derived signal; no second reduced-motion authority introduced.
 - [ ] Checked against `story-timer-duel-telegraph`'s status before starting (Sequencing
       section) — no duplicate `Prefs.reducedMotion` addition.

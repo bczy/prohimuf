@@ -4,6 +4,7 @@ Covers the epic-level DESIGN GATE run before lane split. `producer` may shard pe
 (M1/M2/M3) at sprint planning; this block is the design-gate record for all three.
 
 ## stage-2. DESIGN GATE — lead-game-designer (Karim) — 2026-07-20
+
 - claim: gate the menus/UI-completion cycle — epic + 3 PM stories (M1 name-entry, M2
   difficulty-separation, M3 a11y-consolidation) + UX spec `spec-menus-ui-completion.md`;
   resolve 7 open questions from both lanes.
@@ -26,3 +27,68 @@ Conditions/routes (not blockers): M3 PASS conditional on the Q5 live-union seman
 seed-once to the union model before either story ships — routed to `game-designer` +
 `senior-architect` (authority ADR). Next stage → `senior-architect` lane cut + scope ADR;
 sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
+
+## stage-3. LANE CUT — senior-architect (Winston) — 2026-07-20
+
+- claim: turn the gated cycle into a buildable lane split + scope/contract ADR.
+- release: **ADR-0052** (`docs/adr/0052-menus-ui-completion-scope-and-contracts.md`, Accepted)
+  — scope verdicts, `NAME_ENTRY` phase + deferred-save contract, `reducedMotion` live-union
+  authority, OPTIONS/PAUSE extract-a-shared-component call, M2/M3 sequencing. Index
+  regenerated. Number self-allocated via `adr-new` (no producer number pre-recorded);
+  re-check at merge.
+
+### Lanes
+
+**M1 — high-score name entry** (cross-boundary; run the two lanes in parallel, integrate at App.tsx)
+
+- `dev-gameplay` (pure, TDD): `src/game/systems/highScoreSystem.ts` — `ScoreEntry.name?: string`,
+  tolerant `isValidEntry` (legacy blobs load), `saveScore` accepts name, ≤16+trim+plain-text
+  clamp in the pure layer; new pure `muf_player_name` serializer (identity, not `Prefs`).
+- `dev-r3f-render`: new `src/render/ui/HighScoreEntry.tsx` (reuses `print/` primitives);
+  `src/render/ui/menu/ScoresUne.tsx` renders `name`/fallback.
+- **Shared seam → `src/render/scene/App.tsx` phase machine** (owner: `dev-r3f-render`, architect
+  sign-off): add `NAME_ENTRY` `AppPhase` (render-layer only, NO `src/game` stateMachine/levels
+  touch), defer the single `saveScore()` behind the phase, unlock side-effect untouched.
+
+**M2 — difficulty separation** (`dev-r3f-render` only, XS)
+
+- `src/render/ui/menu/FlyerWall.tsx` — new `PRESSION` ballot header (reuses shared ballot
+  primitive + `Prefs.difficulty`/`onSave`; `role=radiogroup`; gated OFF under `SHORT_LANDSCAPE`).
+- Does **not** modify `OptionsColophon`/`PauseScreen` (PRESSION/VIES stay). No `MainMenu` rubrique.
+
+**M3 — accessibility consolidation** (cross-boundary)
+
+- `dev-gameplay` (pure, TDD): `src/game/systems/prefsSystem.ts` — `reducedMotion` field
+  (**only if S0.1 hasn't landed it** — single-owner rule below).
+- `dev-r3f-render`: extract shared `OptionsControls` (ballot/VU rows + `role=radiogroup`/
+  `aria-checked`/≥44px a11y on the ballot primitive) consumed by `OptionsColophon` +
+  `PauseScreen`; rebuild Pause body (adds VIES/PRESSION + false-affordance note), CRT+reduced-
+  motion under one AFFICHAGE/ACCESSIBILITÉ heading, close CRT-toggle a11y debt; `CrtPass`/`print`
+  read the shared derived signal (ADR-0052).
+
+### Shared seams to serialise
+
+- **`App.tsx` phase machine** — M1 only (M2/M3 don't touch it).
+- **`OptionsColophon.tsx` / `PauseScreen.tsx` / shared ballot primitive** — M3 territory; M2 only
+  _reuses_ the ballot primitive in `FlyerWall`.
+
+### Sequencing rule
+
+- **M3 component slice BEFORE M2.** M3 lands the shared `OptionsControls` + ballot-primitive a11y
+  contract (`role=radiogroup`/`aria-checked`/44px) FIRST — this slice touches
+  `OptionsColophon`/`PauseScreen`/the primitive, **not `prefsSystem.ts`**, so it is independent of
+  the reducedMotion schema and the S0.1 cross-epic dependency, and can land early. M2 then builds
+  its `PRESSION` header on that a11y-correct shared component (no throwaway inline ballot, no
+  cross-lane a11y smudge). M3's `reducedMotion` slice runs on its own track (never touches M2's
+  files) — may land before or after M2.
+- M1 is independent of M2/M3 — run in parallel.
+
+### Cross-epic dependency
+
+- **`Prefs.reducedMotion` single-owner** vs `story-timer-duel-telegraph` (S0.1, socle-fidélité):
+  first lane into `prefsSystem.ts` owns the schema addition + logs the claim here; the other
+  rebases. **Default owner = S0.1.** M3 always owns consolidation + CRT-toggle a11y debt
+  regardless of order. **Blocker:** S0.1 AC13 must be amended seed-once → union model (routed to
+  `game-designer`) before either ships; S0.1's AIMING/shake ADR references ADR-0052 for the
+  authority, does not re-decide it.
+- HANDOFF → `producer`: schedule M3-component-slice → M2; enforce the single-owner claim.

@@ -57,12 +57,14 @@ cross-device/online ranking would require a backend and is a hard reject, not a 
 ## ADR note
 
 `story-accessibility-settings-consolidation.md` and `story-highscore-name-entry.md` each
-change a persisted schema (`Prefs`/`ScoreEntry`) and, for M3, potentially resolve the
+change a persisted schema (`Prefs`/`ScoreEntry`) and, for M3, resolve the
 `CrtPass`-vs-`Prefs.reducedMotion` authority question already flagged by
-`story-timer-duel-telegraph`. An ADR records whichever story lands that resolution first
-(number allocated by `producer`/`adr-new` at story opening, not here). `story-difficulty-
-modifiers-separation` is presentation-only (no schema change) and should not need one unless
-the architect finds otherwise.
+`story-timer-duel-telegraph`. **ADR-0052** (`docs/adr/0052-menus-ui-completion-scope-and-
+contracts.md`) records the scope verdicts, the `NAME_ENTRY` phase + deferred-save contract,
+the `reducedMotion` live-union authority (canonical over `story-timer-duel-telegraph` AC13's
+seed-once model), and the OPTIONS/PAUSE extract-a-shared-component boundary.
+`story-difficulty-modifiers-separation` is presentation-only (no schema change) and needs no
+ADR of its own.
 
 ## Open questions for the `lead-game-designer` gate
 
