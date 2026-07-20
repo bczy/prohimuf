@@ -1,0 +1,98 @@
+/* Active-weapon readout (ADR-0052 §6.2 / ADR-0046) — .item/.label are shared
+   (composed from shared.module.css); every colour/font/size references a var(--…)
+   injected by applyPrintTokens.ts (no hex/font literal here). Print idiom: ink on
+   paper, zero glow. Holds zero game rules. */
+
+.item {
+  composes: item from "./shared.module.css";
+  /* Anchor the absolutely-positioned empty-flash to this cell. */
+  position: relative;
+}
+
+.label {
+  composes: label from "./shared.module.css";
+}
+
+/* Glyph + stock on one baseline. */
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+/* Weapon glyph (A/B/C) — big mono, semibold, full-black ink. */
+.glyph {
+  font-size: var(--font-size-xxl);
+  line-height: 1;
+  font-weight: 600;
+  color: var(--ink-full);
+  font-family: var(--font-hud-mono);
+}
+
+/* Special stock — mono digits, resource readout ink (full-black). */
+.stock {
+  composes: value from "./shared.module.css";
+  font-size: var(--font-size-lg);
+}
+
+/* Last ~20 % fuel warning (§6.2): pink marker ink + a steady blink. A legibility
+   warning, never a tension surrogate — specials only (base never reaches here). */
+.stockLow {
+  composes: stock;
+  color: var(--mark-pink);
+  animation: weaponStockBlink 0.6s step-start infinite;
+}
+
+/* Base weapon: the ∞ symbol, full-black ink — NO counter, NO red, NO blink (W4/AC11). */
+.infinity {
+  font-size: var(--font-size-xxl);
+  line-height: 1;
+  font-weight: 600;
+  color: var(--ink-full);
+  font-family: var(--font-hud-mono);
+}
+
+/* Same-frame empty-flash (W3/AC10): a one-shot marker-ink wash over the readout cell
+   the tick a special empties. Flat ink pulse, zero glow (print system §2bis). */
+.emptyFlash {
+  position: absolute;
+  inset: -2px -6px;
+  background: var(--mark-pink);
+  pointer-events: none;
+  /* Invisible at rest so it never washes the cell once the pulse has played (or
+     when animation is disabled under reduced motion). */
+  opacity: 0;
+  animation: weaponEmptyFlash 0.45s ease-out forwards;
+}
+
+@keyframes weaponStockBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes weaponEmptyFlash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Freeze both animations under reduced motion (GestureIcon/DiagramIcon precedent):
+   the low-stock ink and the flash element still show their steady state, so the
+   fuel warning and the empty cue remain legible without motion. */
+@media (prefers-reduced-motion: reduce) {
+  .stockLow,
+  .emptyFlash {
+    animation: none !important;
+  }
+}

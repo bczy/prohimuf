@@ -218,6 +218,10 @@ export function useGameLoop(
   // Last HudData emitted to onHudUpdate — read (never mutated) by the __MUF_STATE__
   // seam so the harness reads the same view value the HUD renders (ADR-0005).
   const lastHudRef = useRef<HudData | null>(null);
+  // Monotonic empty-return counter (ADR-0052 §6.1 / AC10): bumped the tick a special
+  // empties (the `weaponEmpty` transient), surfaced to the HUD so its empty-flash
+  // replays the SAME frame as the auto-return. Distinct from `impactEvents`.
+  const weaponEmptyNonceRef = useRef(0);
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
@@ -468,6 +472,15 @@ export function useGameLoop(
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
     }
+    // Weapon empty-return cue (ADR-0052 §6.1 / AC10 / W3): the tick a special empties
+    // and auto-returns to `base`, fire the audible cue (culasse à vide) AND bump the
+    // HUD flash nonce the SAME frame — never a silently-failed shot. V1 reuses the
+    // shipped `death` SFX slot for the culasse-à-vide (spec §6.1: existing SFX
+    // acceptable; a dedicated cue asset is a fast-follow — see the handoff note).
+    if (next.weaponEmpty === true) {
+      weaponEmptyNonceRef.current += 1;
+      playSfx("death");
+    }
 
     const nextCrosshairWorld = crosshairToWorld(
       next.crosshair,
@@ -494,6 +507,11 @@ export function useGameLoop(
       next.phase !== prev.phase ||
       next.wave !== prev.wave ||
       next.energy !== prev.energy ||
+      // Weapon glyph / stock changed (equip, burst-round decrement, auto-return) or a
+      // special emptied this tick — push so the fuel gauge + empty-flash stay live.
+      next.weapon.active !== prev.weapon.active ||
+      next.weapon.stock !== prev.weapon.stock ||
+      next.weaponEmpty === true ||
       !isSameIndicator(prevTargetIndicator, targetIndicator)
     ) {
       const hudData: HudData = {
@@ -504,6 +522,8 @@ export function useGameLoop(
         wave: next.wave,
         energy: next.energy,
         targetIndicator,
+        weapon: { active: next.weapon.active, stock: next.weapon.stock },
+        weaponEmptyNonce: weaponEmptyNonceRef.current,
       };
       // Cache for the __MUF_STATE__ read seam (ADR-0005) before handing it out.
       lastHudRef.current = hudData;
