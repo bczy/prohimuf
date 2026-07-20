@@ -1,9 +1,9 @@
 {
-  "ref": "references/belliard-ground-bands-ref.png",
+  "ref": "references/belliard-ground-bands-ref-sq.png",
   "prompt": "Fine crisp Paris street ground texture, keep the reference band layout exactly: thin light pavement strip across the top, wide dark asphalt roadway in the middle, thin light pavement strip along the bottom, thin crisp kerbstone lines between the bands. Night asphalt in clean near-black greys with subtle fine grain, no bright white smudges, no blurry pale blotches, no large wet highlight puddles, at most faint small dim reflections. Pavement strips are flat-on Paris paving slabs with thin sharp joint lines, no perspective convergence, same slab rhythm on top and bottom strips. Photocopy ink-grey monochrome, no colour, seamless horizontal tiling.",
   "out": "references/belliard-ground-candidate.png",
   "family": "levels",
   "seed": "7301",
-  "size": "1024x256",
+  "size": "1024x1024",
   "style": ""
 }
