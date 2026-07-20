@@ -1097,7 +1097,9 @@ export function tickBossQte(
             // ADR-0052 lever 2 — pure upside: drop the prop for a single-use burst.
             bossHp = qte.bossHp - BOSS_DECOR_DAMAGE;
             decorConsumed = true;
-            if (bossHp <= 0) return toFinisher(qte);
+            // A décor drop that DEPLETES must carry the local decorConsumed into FINISHER (the
+            // early return bypasses the step-3 write-back) — else the prop reads un-spent forever.
+            if (bossHp <= 0) return toFinisher({ ...qte, decorConsumed: true });
             applyPhaseBreakIfCrossed();
           } else {
             const zoneMiss = bossQteZoneAt(

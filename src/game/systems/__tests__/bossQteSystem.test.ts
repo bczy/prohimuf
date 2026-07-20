@@ -1029,6 +1029,24 @@ describe("bossQteSystem — lever 2: interactive décor prop", () => {
       }),
     ).toThrow(/decorProp/);
   });
+
+  it("a décor drop that DEPLETES → FINISHER carries decorConsumed === true (stage-6 fix #2)", () => {
+    // Regression: the depleting-décor early return must carry the local decorConsumed into the
+    // FINISHER state (it used to pass the original qte, losing the spend → the prop read un-spent).
+    const active = toActiveSpec(DECOR_SPEC);
+    const armed = {
+      ...active,
+      phaseIndex: 1,
+      stance: "SHIELDED" as const,
+      stanceRemaining: 1.0,
+      decorArmed: true,
+      bossHp: 3, // the +3 burst depletes exactly
+    };
+    const r = tickBossQte(armed, true, { x: 1.5, y: 0 }, 0.01);
+    expect(r.qte.phase).toBe("FINISHER");
+    expect(r.qte.bossHp).toBe(0);
+    expect(r.qte.decorConsumed).toBe(true);
+  });
 });
 
 describe("bossQteSystem — lever 4: in-tableau renfort pressure surge", () => {
