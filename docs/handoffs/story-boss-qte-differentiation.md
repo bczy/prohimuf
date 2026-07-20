@@ -2730,3 +2730,114 @@ when the ring shrank from 0.30/0.18 → 0.11. Concrete treatment I'd spec (route
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: FAIL — A1-R2 small-ring legibility (ux-designer) — the 0.11 VITAL ring is clearly perceivable, well-distinguished from the 0.30 LIMB ring (position + size + emphasis, not colour-alone), and honestly aim-able on DESKTOP (measured ≈17.5 CSS px drawn diameter, marginal but workable for continuous mouse tracking — soft note, not blocking). On MOBILE-LANDSCAPE it FAILS outright: the fixed vital wander band (world y=0.8±amplitude) renders almost entirely BEHIND the fixed-footprint "LE COMMANDANT" name+HP-bar DOM overlay at `MOBILE_ZOOM_FACTOR 1.7` — measured evidence (`37-vital-ring-011-mobile.png`) shows only a ≈6 CSS px smeared, non-circular colour sliver, no legible ring at all; this is structural (the old bigger 0.18/0.30 ring used to poke a visible arc past the same bar at the same screen height — the smaller 0.11 ring no longer does) and will recur on every mobile phase-2+ vital window, not this capture alone. Per Karim's §17 pre-clearance this is a render-scale/boss-zoom problem, NOT a radius re-tune and NOT a third cap round — routed to `lead-art` + `senior-architect` with a concrete treatment: (1) primary — a mobile camera-anchor/framing correction giving the vital band clearance under the fixed HUD bar (NOT a zoom increase, which would worsen the collision), (2) secondary/low-risk — tighten the vital ring's `RING_INNER` for a bolder stroke at the same pinned 0.11 catch radius (aim-honesty untouched), closing the desktop soft note too. `BOSS_VITAL_CATCH_RADIUS = 0.11` itself is untouched and stays gated.
+
+## 21. RENDER-SCALE RULING (stage 5) — senior-architect (Winston) — 2026-07-20 — mobile boss-zoom framing collision (routed by Karim §17 + ux-designer §20)
+
+**Scope:** ONE bounded mechanism ruling on the mobile boss-zoom framing collision (§20,
+evidence 36/37). NOT a catch-radius round (`BOSS_VITAL_CATCH_RADIUS 0.11` stays gated,
+§15/§17/§19 — untouched). NOT reopening the HUD bar's existence (Bertrand's OQ6 override,
+`story-boss-encounter-qte.md` §"HUD BOSS-HP BAR" — the bar STAYS; hiding/removing it on
+mobile would contradict a Bertrand decision and is explicitly OUT of this ruling). I rule
+the WHERE + SHAPE of the framing correction and confirm the do-anyway; dev-r3f-render
+implements.
+
+### Root cause (confirmed against code, not just the capture)
+
+The QTE camera centres on `qte.anchor` and holds (`useGameLoop.ts:399-407` → `qtePose`,
+`qteCamera.ts:64`). The vital band sits ABOVE the anchor (live ring `qte.anchor.y +
+targetOffset.y`, `BossQteSprite.tsx:539`; wander centre `BOSS_VITAL_WANDER_CENTRE.y=0.8`,
+anchor-relative). On mobile the effective boss zoom is `baseZoom(×MOBILE_ZOOM_FACTOR 1.7) ×
+QTE_ZOOM_FACTOR 2.4`, so that fixed world offset maps to MORE screen px → the head rides up
+under the fixed-CSS-footprint `BossHpBar` (`top:58px`, DOM, not zoom-scaled). Structural,
+recurs every mobile phase-2+ vital window + the split-preview (`BossQteSprite.tsx:570-571`).
+A DOM overlay cannot be drawn under by any in-canvas trick (ux-designer is correct: this is
+a DOM-stacking ceiling, not a `renderOrder` one).
+
+### (a) WHERE the correction lives — render side, at the qtePose call site in useGameLoop's boss branch
+
+The framing correction is a **render-owned vertical offset applied to the boss anchor the
+camera consumes**, NOT a game value and NOT a qteCamera signature change. Boundary law holds
+(ADR-0030/0051 precedent: the game owns NO camera values; `qte.anchor` is level DATA the
+render camera consumes, and camera-framing constants live in `render/scene/qteCamera.ts`
+alongside `QTE_ZOOM_FACTOR`). The three candidate homes and why I pick the middle one:
+
+- ~~qtePose pure-maths param~~ — REJECTED: broadens the generic pose API + the hostage
+  caller for a mobile-boss-only concern; would touch the hostage QTE path and qtePose's unit
+  tests for no reason.
+- **Anchor-offset applied in `useGameLoop`'s boss branch — CHOSEN.** Most surgical; qtePose
+  stays generic (hostage path byte-unchanged); no game edit; the game/render/hooks contract
+  (`{anchor, phase, zoomRemaining, zoomSeconds}`) is consumed UNCHANGED.
+- ~~per-device anchor adjust in GameScene~~ — REJECTED: GameScene doesn't drive the boss
+  camera; the driver is `useGameLoop`.
+
+### (b) EXACT shape (pick ONE — this is it)
+
+1. Add a render constant in **`src/render/scene/qteCamera.ts`** next to `QTE_ZOOM_FACTOR`,
+   e.g. `BOSS_MOBILE_FRAME_LIFT` (world units, POSITIVE). Home = qteCamera because it is a
+   camera-framing constant; it is only ever APPLIED by the driver.
+2. In **`src/hooks/useGameLoop.ts`**, in the QTE-camera block (around line 402-403), when
+   the live QTE is the BOSS **and** mobile (`mobileControls !== undefined`), pass qtePose a
+   locally-lifted anchor instead of `camQte.anchor`:
+   `{ x: camQte.anchor.x, y: camQte.anchor.y + BOSS_MOBILE_FRAME_LIFT }`.
+   Gate strictly on the boss (e.g. `camQte === bossQte`) so the hostage QTE is never shifted.
+   Leave the desktop path and `qteBaseRef` (restore target) untouched — restore still returns
+   to the true pre-QTE pose, no regression.
+
+- **Sign convention (binding):** POSITIVE lift = camera target raised ABOVE the boss anchor
+  ⇒ the whole tableau shifts DOWN on screen ⇒ the head/vital band drops clear of the top HUD
+  bar. (Ortho: increasing `camera.position.y` moves a fixed world point DOWN in y-down screen
+  space. This is the "reframe down", NOT a zoom bump — zooming in would push the head further
+  UP/behind the bar, worsening it, exactly as ux-designer warned.)
+- **Magnitude:** the tuned number is the lane's, calibrated against captures 36/37. Bound it:
+  enough that the FULL vital band (`0.8 ± amplitude` + the 0.11 ring's drawn radius) clears the
+  bar's bottom edge (bar `top:58px` + height, ≈114 CSS px on the 37 capture) with margin — the
+  same clearance the old 0.30 ring got "for free"; but NOT so much that the LIMB ring (torso)
+  or the boss's lower body falls off the bottom of the mobile-landscape frame. Re-capture
+  36/37, ux-designer re-reviews (his §20 handoff).
+
+### (c) RING_INNER stroke tightening (do-anyway) — CONFIRMED, with two constraints
+
+Approved as an independent, low-risk perceivability boost. Constraints from my side:
+
+- **`RING_OUTER` stays 1.0** — the drawn outer edge = catch radius = 0.11 aim-honesty
+  invariant (gated §15/§17/§19) must NOT move. Only the inner hole narrows.
+- **VITAL ring ONLY.** The vital (`ring`) and limb (`ringB`) meshes are already SEPARATE
+  geometries (`BossQteSprite.tsx:792`/`796`) but both currently read the single `RING_INNER
+0.78`. Introduce a dedicated `RING_INNER_VITAL` (~0.55) on the vital ring's geometry; leave
+  the limb ring at 0.78. Apply it to BOTH vital instances — the live EXPOSED vital ring AND
+  the split-preview vital ring (`:570`) — so they stay consistent. Do NOT touch the shared
+  constant globally (that would fatten the limb ring too).
+- Note: (c) does NOT fix the mobile occlusion on its own (a bolder ring behind an opaque bar
+  is still invisible) — it rides ON TOP of (a)/(b) and closes ux-designer's desktop soft note.
+
+### (d) Boundary + ADR
+
+- **This is a pure RENDER-LANE fix. No game/hooks CONTRACT change crosses.** Files:
+  `src/render/scene/qteCamera.ts` (new render constant), `src/hooks/useGameLoop.ts` (apply
+  offset in the boss branch — internal to the bridge, the `{anchor,…}` data contract is
+  consumed unchanged), `src/render/scene/BossQteSprite.tsx` (vital-only inner). All owned by
+  `dev-r3f-render` (src/render + view hooks). No `src/game/**` edit, no qtePose signature
+  change, no hostage-path change, no new dependency, no boundary move. Single non-overlapping
+  lane — no cross-lane serialisation needed.
+- **ADR-0052 revision: NOT REQUIRED (judgement).** No module boundary, deployment, dependency,
+  or game/render/hooks contract changes — the fix operates ENTIRELY within the standing
+  ADR-0030/0051 decision (camera framing is render-owned; game owns no camera values), so it
+  does not clear the ADR bar. RECOMMENDED (not blocking, tech-writer/producer when ADR-0052 is
+  written for the tech plan): a one-line note in ADR-0052 recording that the mobile boss
+  framing carries a render-side vertical lift coupled to the `BossHpBar` fixed footprint — so
+  the constant is not mistaken for a magic number and the HUD-bar-position ↔ boss-framing
+  coupling is documented for whoever next touches `MOBILE_ZOOM_FACTOR`, the bar's `top`, or the
+  anchor. ADR numbers stay `producer`'s to allocate; this is an in-place note, no new number.
+- **Process read (producer's call, not mine to force):** single-lane, render-only, no
+  boundary/design/asset/dependency change → fits the **fix lane** (dev-r3f-render →
+  tsc/vitest/lint + `verify` re-capture 36/37 → ONE `code-review` high → Bertrand merges;
+  logged in `docs/handoffs/fixes.md`). The split-preview cue (D4.7) is covered by the same
+  (a)/(b) lift — no separate fix.
+
+- handoff → `dev-r3f-render` (Amelia): implement (a)/(b) + (c) per the file/function targets
+  above; re-capture `36`/`37`; hand to `ux-designer` for the §20 re-review.
+- handoff → `producer` (Marion): fix-lane vs. full-pipeline routing call + optional one-line
+  ADR-0052 note (above); track outside the 2-round radius cap per Karim's §17 pre-clearance.
+- handoff → `ux-designer` (Tony): re-review owed once 36/37 re-captured.
+
+RULING: mobile boss-zoom framing collision = render-lane fix, no game/hooks-contract change. (a/b) PRIMARY — a POSITIVE render-owned vertical LIFT `BOSS_MOBILE_FRAME_LIFT` defined in `qteCamera.ts`, applied to the boss anchor's y at the `qtePose` call site in `useGameLoop.ts`'s boss branch (mobile-only, boss-only), raising the camera target above the anchor so the tableau drops on screen and the full vital band (`y=0.8±amp`) clears the fixed `BossHpBar` bottom edge — NOT a zoom bump (which worsens it); magnitude calibrated by the lane against captures 36/37, bounded to keep the limb ring/lower body on-frame. `qtePose` signature UNCHANGED, hostage path untouched. (c) SECONDARY do-anyway CONFIRMED — a vital-only `RING_INNER_VITAL ~0.55` on the vital ring's own geometry (live + split-preview), `RING_OUTER` staying 1.0 so drawn=catch=0.11 aim-honesty is untouched; limb ring's 0.78 unchanged. ADR-0052 revision NOT required (no boundary/contract change — operates within ADR-0030/0051); a one-line HUD-coupling note recommended, not gated. Single dev-r3f-render lane; qualifies for the fix lane. (senior-architect)
