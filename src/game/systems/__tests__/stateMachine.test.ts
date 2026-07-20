@@ -12,6 +12,8 @@ import type { LevelConfig } from "@game/levels/levels";
 import type { GameState } from "@game/types/gameState";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { CourierField } from "@game/systems/courierSystem";
+import type { LootCrate } from "@game/types/loot";
+import { BULLET_SPEED } from "@game/systems/bulletSystem";
 import { pickKind } from "@game/types/enemyTypes";
 
 /** Mirror of the render lane's LevelConfig -> LevelParams mapping. */
@@ -22,6 +24,7 @@ function paramsForLevel(level: LevelConfig): LevelParams {
     enemiesToWin: level.enemiesToWin,
     enemySpeedMultiplier: level.enemySpeedMultiplier,
     delivery: level.deliveries[0] ?? null,
+    loot: level.loot ?? null,
   };
 }
 
@@ -848,5 +851,123 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
     expect(playing.bossQteSpec).toBeNull();
     expect(playing.bossQte).toBeNull();
     expect(playing.elapsedSeconds).toBeCloseTo(0.1);
+  });
+});
+
+// --- ADR-0052: weapon + LOOT integration at the tick level ---------------------
+
+// Aim `mouseX/mouseY` at a facade slot's world position under the tick's default
+// 18×12 view (see crosshairToWorld). Slot must sit within the visible range.
+function aimAtSlot(slotIndex: number): { mx: number; my: number } {
+  const p = FACADE_01.slots[slotIndex]?.screenPosition;
+  if (p === undefined) throw new Error(`no slot ${String(slotIndex)}`);
+  return { mx: p.x / 18 + 0.5, my: -p.y / 12 + 0.5 };
+}
+// Slot 49 = col 9 / row 2 → screenPosition (0, -0.75), safely inside the view.
+const CENTRE_SLOT = 49;
+
+describe("tickGameState — levels without loot stay byte-identical (D8)", () => {
+  it("seeds base/∞ weapon, null loot/lootSpec when no loot config is supplied", () => {
+    const s = createInitialState(FACADE_01);
+    expect(s.weapon).toEqual({
+      active: "base",
+      stock: Infinity,
+      burstRemaining: 0,
+      burstTimerMs: 0,
+      refractoryMs: 0,
+    });
+    expect(s.loot).toBeNull();
+    expect(s.lootSpec).toBeNull();
+  });
+
+  it("never spawns a crate and never leaves base across many ticks (incl. firing)", () => {
+    let s = createInitialState(FACADE_01);
+    for (let i = 0; i < 200; i++) {
+      s = tickGameState(s, i % 2 === 0, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, ENEMIES_TO_WIN, FIELD);
+      if (s.phase !== "PLAYING") break;
+    }
+    expect(s.loot).toBeNull();
+    expect(s.weapon.active).toBe("base");
+    expect(s.weapon.stock).toBe(Infinity);
+  });
+
+  it("a base shot still emits at most one impact per tick (ADR-0040 invariant preserved)", () => {
+    const s = createInitialState(FACADE_01);
+    const next = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
+    expect((next.impactEvents ?? []).length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives delta", () => {
+  it("firing a VISIBLE crate equips its weapon; score, lives and kills are untouched", () => {
+    const crate: LootCrate = { id: 1, slotIndex: CENTRE_SLOT, state: "VISIBLE", timer: 5, weapon: "spread" };
+    // Belliard opts into loot; enemies from the initial spawn are HIDDEN (not hittable,
+    // no wave respawn), so the crate is the only eligible target this tick.
+    const s: GameState = { ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))), loot: crate };
+    const aim = aimAtSlot(CENTRE_SLOT);
+    const next = tickGameState(s, fire, aim.mx, aim.my, 0.016, FACADE_01);
+    expect(next.weapon.active).toBe("spread");
+    expect(next.weapon.stock).toBe(30);
+    expect(next.loot).toBeNull();
+    expect(next.score).toBe(s.score);
+    expect(next.lives).toBe(s.lives);
+    expect(next.kills).toBe(s.kills);
+  });
+});
+
+describe("tickGameState — AC14 (A7 regression): a player hit never touches weapon state", () => {
+  it("taking an enemy bullet decrements lives but leaves weapon.active/stock intact", () => {
+    const weapon = { active: "spread" as const, stock: 10, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const s: GameState = {
+      ...createInitialState(FACADE_01),
+      weapon,
+      // An enemy bullet already on top of the player centre.
+      bullets: [{ id: 1, position: { x: 0, y: 0 }, velocity: { x: 0, y: -BULLET_SPEED }, fromPlayer: false }],
+    };
+    const next = tickGameState(s, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.lives).toBe(s.lives - 1);
+    expect(next.weapon.active).toBe("spread");
+    expect(next.weapon.stock).toBe(10);
+  });
+});
+
+describe("tickGameState — AC10: stock→0 auto-returns to base with one weaponEmpty event", () => {
+  it("a spread press that empties the stock returns to base the same tick and flags weaponEmpty", () => {
+    const weapon = { active: "spread" as const, stock: 1, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const s: GameState = { ...createInitialState(FACADE_01), weapon };
+    const next = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.weapon.active).toBe("base");
+    expect(next.weapon.stock).toBe(Infinity);
+    expect(next.weaponEmpty).toBe(true);
+  });
+
+  it("clears the transient weaponEmpty on the following tick (consumed once)", () => {
+    const weapon = { active: "spread" as const, stock: 1, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const s: GameState = { ...createInitialState(FACADE_01), weapon };
+    const emptied = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
+    const after = tickGameState(emptied, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(after.weaponEmpty).toBe(false);
+  });
+});
+
+describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (D7)", () => {
+  it("a hostage QTE freeze leaves weapon.active/stock and loot untouched, no crate spawns", () => {
+    const weapon = { active: "spread" as const, stock: 10, burstRemaining: 2, burstTimerMs: 40, refractoryMs: 0 };
+    const belliard = levelById("belliard");
+    const s: GameState = {
+      ...createInitialState(FACADE_01, {
+        ...paramsForLevel(belliard),
+        hostageQte: belliard.hostageQte ?? null,
+      }),
+      elapsedSeconds: 11.99, // belliard hostage QTE triggers at 12 s
+      weapon,
+      loot: null,
+    };
+    // Fire during the freeze — the QTE resolves it, the special must NOT be consumed.
+    const next = tickGameState(s, fire, 0.5, 0.5, 0.02, FACADE_01);
+    expect(next.qte).not.toBeNull(); // QTE is active (frozen)
+    expect(next.weapon).toBe(s.weapon); // exact same reference — rides ...state frozen
+    expect(next.loot).toBeNull(); // no crate spawns during the freeze
+    expect(next.weaponEmpty).toBe(false);
   });
 });

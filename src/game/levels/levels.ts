@@ -3,6 +3,7 @@ import type { DeliverySpec } from "@game/types/delivery";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 import type { EnemyKind } from "@game/types/enemy";
+import type { LootSpec } from "@game/types/loot";
 
 // Per-level roster gate (ADR-0004, D2). Optional and additive: absence is
 // byte-for-byte identical to today's behaviour (default window pool +
@@ -53,6 +54,12 @@ export interface LevelConfig {
    * reads this.
    */
   readonly bossQteSpec?: BossQteSpec;
+  /**
+   * Armament-crate pickup config (ADR-0052 D8). Absent ⇒ no crates spawn ⇒ the
+   * level's tick is byte-for-byte identical to ADR-0040 (weapon stays `base`/∞).
+   * Belliard-first for V1; the seed of `GameState.lootSpec` reads this.
+   */
+  readonly loot?: LootSpec;
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -130,6 +137,13 @@ export const LEVELS: readonly LevelConfig[] = [
       // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
       // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
       targetSeed: 20260718,
+    },
+    // Belliard-first armament crates (ADR-0052 D8). Generic window spawn (pm ruling
+    // #3), not per-level scripted placement. Cadence/pool are verify-tunable (§7),
+    // not gated: a crate every ~15 s, carrying `auto` or `spread`.
+    loot: {
+      spawnIntervalSeconds: 15,
+      weapons: ["auto", "spread"],
     },
   },
   {
