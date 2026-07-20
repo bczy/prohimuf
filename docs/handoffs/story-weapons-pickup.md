@@ -179,3 +179,45 @@ tsc green); (2) Lanes A and B run fully in parallel. Not parallel-safe _before_ 
 **Downstream (unchanged):** `ux-designer` HUD layout (desktop+mobile, ADR-0003) reconciled before
 ship; `lead-art` crate/glyph read (R1-R4) — fast-follow if placeholder illegible, not a V1 blocker;
 `narrative-designer` weapon names. P3 (B stock-unit) is pm-owned and already ack'd in the story.
+
+---
+
+## stage-4. DEV LANE A — dev-gameplay (Amelia) — 2026-07-20
+
+- claim: Lane A (`src/game/**`) — implement the pure weapon+loot core per ADR-0052 (D1-D8),
+  TDD / release: **DONE, all green** (tsc 0, lint 0, vitest 856 passed — 816 baseline + 40 new).
+  No deviation from ADR-0052; every frozen decision (D1-D8, P1/P2) built as written.
+- VERDICT: PASS — dev-gameplay: weapon+loot pure core (Lane A)
+- **Branch:** `claude/features-a-implémenter-ehw9q4` (3 commits; orchestrator pushes).
+- **Commits:** (1) `feat(game): weapon+loot type seam (ADR-0052 D1)` — types + GameState fields,
+  tsc green, byte-identical passthrough. (2) `feat(game): weaponSystem + lootSystem, N-resolution
+  hitscan (ADR-0052 D2-D6)` — pure systems + unit tests. (3) `feat(game): wire weapon+loot into
+  tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC regressions.
+- **Decisions as-built:** D1 `weapon: WeaponState` + `loot`/`lootSpec`/`lootTimer` + transient
+  `weaponEmpty?` on GameState; `WEAPON_SPECS` (§7) in `types/weapon.ts`. Added `lootSpec`+`lootTimer`
+  GameState fields (beyond the ADR's enumerated seam) — the necessary spawn-cadence bookkeeping,
+  strictly parallel to the shipped `deliverySpec`/`courierTimer` precedent (NOT a semantic
+  deviation). D2 `resolveTrigger` folds 1..3 resolutions L→C→R threading enemies+couriers, reusing
+  the extended `resolvePlayerShot` (discriminated `enemy-hit|loot-hit|miss`). D3 `impactEvents`
+  0-to-3 (comment widened; loot-hit emits NO impact — its own render channel). D4 burst =
+  timer-accumulator tick state, threshold-based (≤1 round/tick; first round on the first
+  ≥`BURST_INTERVAL_MS` crossing, matching the ADR wording). D5 LOOT = new entity, off
+  ARCHETYPES/score-lives by construction. D6/P2 mid-burst equip aborts the burst, right-most crate
+  wins (single-crate model ⇒ ≤1 loot-hit/press in practice). D7 QTE freeze by construction
+  (weapon/loot ride `...state`; `weaponEmpty` cleared in every early-return). D8 Belliard-first via
+  optional `LevelConfig.loot` (shipped no-loot levels byte-identical; asserted).
+- **AC coverage (Vitest):** AC1/2 (base ∞, 1@0), AC3 (burst, no new binding, further-fire ignored,
+  refractory), AC4 (3@±2, per-press stock), AC5 (per-resolution courier penalty ×N, no amnesty +
+  courier threading no-double-hit), AC6 (QTE freeze — weapon ref-identical, no crate), AC7-loot
+  (equip, zero score/life/kills), AC8 (equip next-trigger), AC9 (`|Δcol|≥2` predicate + defer),
+  AC10 (same-tick auto-return + one `weaponEmpty`, cleared next tick), AC14/A7 (a hit never touches
+  weapon), AC15 (pure, no React/Three). Tuning values (§7) all traced in code comments.
+- **File List:** `src/game/types/weapon.ts` (NEW), `src/game/types/loot.ts` (NEW),
+  `src/game/types/gameState.ts`, `src/game/systems/weaponSystem.ts` (NEW),
+  `src/game/systems/lootSystem.ts` (NEW), `src/game/systems/bulletSystem.ts`,
+  `src/game/systems/stateMachine.ts`, `src/game/levels/levels.ts`,
+  `src/game/systems/__tests__/{weaponSystem,lootSystem,bulletSystem,stateMachine}.test.ts`.
+- **Lane B handshake:** the type seam is live — `WeaponState`/`WeaponKind`/`LootCrate`/`LootState`
+  are importable; `GameState.weapon`/`.loot`/`.weaponEmpty` populated each tick. Lane B still owns
+  the `weaponEmpty` per-frame bridge drain in `useGameLoop.ts` and the `LevelConfig.loot →
+  LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane; not touched here).
