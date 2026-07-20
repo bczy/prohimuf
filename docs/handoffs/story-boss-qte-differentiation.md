@@ -1479,4 +1479,95 @@ normal + charged — every phase presents landable windows; two rings + parry + 
 - NOTE (process): appended via `cat >>` heredoc, strictly additive at end-of-file. Simulation was a
   throwaway node harness in the session scratchpad (not the repo); no `src/**` or test edit.
 
+## 13. DESIGN GATE (stage-5 correction) — lead-game-designer (Karim) — 2026-07-20 — verdict on Sacha's Lever-1 per-ring catch-radius correction
+
+- claim: gate the ONE substantive correction from `game-designer`'s design-acceptance playtest (§12,
+  PASS-WITH-CORRECTIONS on my gated `spec-boss-qte-differentiation.md`): the Lever-1 dual-ring choice
+  COLLAPSES (VITAL wander box reach 0.226 < `RING_HIT_RADIUS 0.30` → head-camp answers every vital
+  window; vital strictly dominates limb; the "which target?" decision degenerates, contra spec §0).
+  Checked against my own gate reasoning (§5.6 attributability, verifiability, coherence with the gated
+  spec's intent) + the 2-rework-round cap (this is round 1).
+
+VERDICT: PASS — design gate lever-1 catch-radius correction (lead-game-designer)
+
+(PASS-WITH-AMENDMENT: the correction is accepted AND bound to a paired render constraint + a
+winnability re-pin condition, stated below, so dev implements from gated text, not a playtest note.)
+
+### Why PASS
+
+- **Restores the gated spec's OWN intent, does not change it.** The spec §1-A table already declares
+  VITAL = "small, fast, risky / high risk-high reward" and LIMB = "the safe bank." The build inverted
+  that (vital easier AND higher chip). Sacha's fix makes the spec true, not different — this is the
+  spec's own flagged most-likely verify correction (my gate advisory 5 / spec "Winnability envelope").
+- **Structurally the only possible fix.** Verified the geometry: max in-band vital box (amp 0.2, head
+  band dx ±0.2 / dy 0.6–1.0) reaches 0.283 < 0.30 — no in-band vital amp can ever exceed the 0.30
+  catch, so enlarging the wander box CANNOT force tracking. A per-ring (smaller) vital catch is the
+  only lever. Confirmed against the sim: `campVital` 100 % / 0 blown / +50 E is the dominant line;
+  `greedyVital` 0.03 blown = greed unpunished.
+- **Surgical, in-boundary, deterministic.** `withinCatch`/`ringHitZone` take a per-zone radius; VITAL
+  uses the new constant, LIMB / parry-point / décor / phase-1 single ring keep `RING_HIT_RADIUS 0.30`.
+  Pure `src/game`, additive, overlap tie-break (score vital) unchanged and still deterministic.
+- **§5.6 — the tighter catch stays attributable ONLY IF the drawn ring shrinks with it.** This is the
+  gate's load-bearing condition. I verified the render layer: `BossQteSprite.tsx:381-382` draws BOTH
+  rings at `RING_HIT_RADIUS`, with an explicit "the drawn ring IS the scored catch zone (aim-honesty)"
+  invariant (lines 47-48). Shrinking the vital CATCH to 0.18 while leaving the DRAWN vital ring at 0.30
+  would let a click visually-inside the ring miss = a §5.6 bullshit miss — trading a degenerate-choice
+  defect for a bullshit-death defect. So the amendment BINDS the drawn vital ring to the catch radius.
+  This is also coherent with the spec table's own "VITAL … small" — the smaller draw is not new.
+- **Cap:** round 1 of 2. The post-correction winnability re-pin is a re-verify, not a new correction;
+  a re-pin FAILURE would be round 2.
+
+### GATED AMENDMENT — `game-designer` writes this verbatim into `spec-boss-qte-differentiation.md` (LEVER 1), then `dev-gameplay` + `dev-r3f-render` implement from it
+
+> **AMENDMENT A1 (gated 2026-07-20, stage-5 verify correction; supersedes the single-radius assumption
+> in §1-A/1-B, the §1 reuse map, the §1 tuning-defaults table, and AC-D2): per-ring catch radius.**
+>
+> 1. **New constant `BOSS_VITAL_CATCH_RADIUS = 0.18`** (game-designer default, tunable). The VITAL
+>    ring's hit test uses it; the LIMB ring, the parry point, the décor prop, and the phase-1 single
+>    ring all keep `RING_HIT_RADIUS = 0.30` unchanged.
+> 2. **Hit-test shape:** `withinCatch` / `ringHitZone` (`bossQteSystem.ts`) take a per-zone catch
+>    radius. A `fire` scores a VITAL chip only if `hypot(impactPoint − vitalRingCentre) ≤
+BOSS_VITAL_CATCH_RADIUS`; a LIMB chip only if within `RING_HIT_RADIUS` of the limb centre. Overlap
+>    tie-break UNCHANGED (a shot inside BOTH scores vital). Add a `⊂`-band-aware assert: the vital
+>    catch is smaller than the vital wander-box reach so the box is not trivially camp-able.
+> 3. **Rationale:** VITAL box (centre (0,0.80), amp 0.16) has corner reach 0.226; the old 0.30 catch
+>    made the whole vital path answerable from one fixed head-camp aim, so vital strictly dominated
+>    limb and the "which target?" choice (spec §0) collapsed. `0.18 < 0.226` forces genuine tracking of
+>    the fast head ring → the 2 HP chip is EARNED and greed carries a real whiff→blown-window risk,
+>    restoring the high-risk/high-reward vital vs. safe-bank limb dilemma.
+> 4. **PAIRED RENDER CONSTRAINT (§5.6, binding on `dev-r3f-render` — non-negotiable):** the VITAL ring
+>    (ring A) must be DRAWN at a radius equal to `BOSS_VITAL_CATCH_RADIUS` (0.18), NOT `RING_HIT_RADIUS`.
+>    In `BossQteSprite.tsx` the vital ring's `scale.set(...)` uses the vital catch radius; the limb ring
+>    (ringB) keeps `RING_HIT_RADIUS`. The drawn ring IS the catch tolerance (preserve the lines 47-48
+>    aim-honesty invariant) — "click inside the drawn ring = hit" must stay literally true, or the
+>    tighter catch becomes a bullshit miss. (Coherent with the §1-A table's own "VITAL … small".)
+> 5. **WINNABILITY RE-PIN (K-5, gate condition on the re-verify):** after this lands, re-verify on
+>    `targetSeed 20260719` — the pinned seed must present ≥1 landable, TRACKABLE vital waypoint (a path
+>    a competent player can follow to land within 0.18 inside the EXPOSED window) AND competent
+>    limb-banking (`greedyLimb`, optimal) must still clear with margin; re-pin if not. Acceptance:
+>    `greedyVital` loss rate rises above 0 (greed now punished) while `greedyLimb`/optimal stay 100 %.
+>
+> **AC-D2 (amended tail):** "…vital scored only within `BOSS_VITAL_CATCH_RADIUS 0.18`, and the vital
+> ring is DRAWN at that radius (drawn = catch); limb unchanged at `RING_HIT_RADIUS 0.30`."
+
+### Advisories (non-gating, carried forward)
+
+- The parry-tell FORM read (Sacha's soft flag, PNG `21`: reads as a centred reticle, not a form-distinct
+  guard glyph at the raised sidearm) is `ux-designer` + `lead-art`'s leg-2 lane per spec 3-C — NOT part
+  of this gate; already routed. My original gate advisory 4 (form-distinct art asks) covers it.
+
+- handoff → `game-designer` (Sacha): PASS — transcribe AMENDMENT A1 verbatim into
+  `spec-boss-qte-differentiation.md` (LEVER 1: §1-A/1-B, reuse map, tuning table, AC-D2) so the gated
+  text carries the fix; then hand the two-lane change below.
+- handoff → `dev-gameplay` (Amelia): implement per §2 (per-zone catch radius + `BOSS_VITAL_CATCH_RADIUS
+0.18` + the corner-whiffable-vital unit test + a `targetSeed 20260719` winnability unit re-check).
+- handoff → `dev-r3f-render` (Amelia): implement §4 (draw vital ring A at the vital catch radius;
+  limb ring B stays `RING_HIT_RADIUS`) — the §5.6 pairing, mandatory.
+- handoff → `game-designer` (Sacha): after build, re-run the design-acceptance winnability re-pin (§5)
+  and report to me; a re-pin failure is round 2 of the 2-round cap.
+- NOTE (process): appended via Edit, not the mandated `cat >>` heredoc — this subagent environment
+  exposes no Bash tool (same limitation recorded in §3/§5). Strictly additive at end-of-file.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
 VERDICT: PASS-WITH-CORRECTIONS — design acceptance playtest (game-designer) — differentiation thesis lands (phase-1 V1 → phase-2 visible two-target choice → phase-3 parry/smoke/renfort → ceremonial finisher, a different moment-to-moment than the hostage duel); §5.6 attributability holds, no double jeopardy (renfort −12 single-charge, loss clock +1 exactly, LOST at 10), décor pure-upside, smoke degrades-not-removes, finisher ceremonial; winnable-not-trivial (greedyLimb 100%) and losable (sloppy 19%). ONE gated correction: Lever-1 risk/reward is inverted — VITAL box reach 0.226 < catch radius 0.30 makes the head ring trivially campable and strictly dominant, collapsing the "which target" decision; fix = per-ring `BOSS_VITAL_CATCH_RADIUS ≈0.18` in `bossQteSystem.ts` (route to lead-game-designer). Plus a soft parry-tell form-legibility flag to ux/art.
