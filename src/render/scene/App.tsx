@@ -7,6 +7,7 @@ import type { HudData } from "@render/ui/HUD";
 import { MainMenu } from "@render/ui/MainMenu";
 import { TitleScreen } from "@render/ui/TitleScreen";
 import { EndScreen } from "@render/ui/EndScreen";
+import { NameEntryScreen } from "@render/ui/NameEntryScreen";
 import { NarrativeScreen } from "@render/ui/NarrativeScreen";
 import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
@@ -33,7 +34,12 @@ import {
   BOSS_QTE_DEV_HARNESS_LEVEL,
 } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
-import { saveScore, isHighScore } from "@game/systems/highScoreSystem";
+import {
+  saveScore,
+  isHighScore,
+  loadPlayerName,
+  savePlayerName,
+} from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import {
@@ -49,8 +55,17 @@ type AppPhase =
   | "NARRATIVE_PRE"
   | "PLAYING"
   | "NARRATIVE_POST"
+  | "NAME_ENTRY"
   | "END"
   | "TUTORIAL";
+
+// The deferred high-score save (M1, ADR-0052 §2): the `{score, wave, date}` triple is
+// held while NAME_ENTRY collects the byline, then written exactly once on resolution.
+interface PendingScore {
+  readonly score: number;
+  readonly wave: number;
+  readonly date: string;
+}
 
 // Preview harness hook: `?preview=title|menu|narrative|end|tutorial` boots straight
 // into a screen so the screenshot tool can capture the front-end screens without playing.
@@ -138,12 +153,14 @@ export function App(): JSX.Element {
         ? "NARRATIVE_PRE"
         : PREVIEW_SCREEN === "end"
           ? "END"
-          : PREVIEW_SCREEN === "tutorial"
-            ? "TUTORIAL"
-            : PREVIEW_SCREEN === "menu"
-              ? "MENU"
-              : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
-                "TITLE",
+          : PREVIEW_SCREEN === "nameentry"
+            ? "NAME_ENTRY"
+            : PREVIEW_SCREEN === "tutorial"
+              ? "TUTORIAL"
+              : PREVIEW_SCREEN === "menu"
+                ? "MENU"
+                : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
+                  "TITLE",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -151,11 +168,14 @@ export function App(): JSX.Element {
   const [selectedLevel, setSelectedLevel] = useState<LevelConfig>(() => INITIAL_LEVEL);
   const [hudData, setHudData] = useState<HudData>(() => {
     const initial = buildHudInitial(INITIAL_LEVEL, loadPrefs());
-    return PREVIEW_SCREEN === "end"
+    return PREVIEW_SCREEN === "end" || PREVIEW_SCREEN === "nameentry"
       ? { ...initial, phase: "GAME_OVER", score: 4200, wave: 3 }
       : initial;
   });
   const [gameKey, setGameKey] = useState(0);
+  // Held when a run qualifies for the board; the single deferred saveScore reads it on
+  // NAME_ENTRY resolution (ADR-0052 §2). `null` = nothing pending (non-high-score path).
+  const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
   const isPortrait = useOrientation();
@@ -232,9 +252,19 @@ export function App(): JSX.Element {
     const shippedIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
     const isShippedLevel = shippedIdx !== -1;
 
+    // M1 (ADR-0052 §2): when the run qualifies for the board, DEFER the single saveScore
+    // to NAME_ENTRY resolution so the player's byline can be attached; otherwise save now,
+    // silently and anonymously, byte-identical to before. The next-level unlock below is
+    // UNAFFECTED either way — it fires on today's schedule, never gated behind typing a name.
+    const qualifies = isShippedLevel && isHighScore(selectedLevel.id, hudData.score);
+
     if (isShippedLevel) {
       const dateStr = new Date().toISOString();
-      saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
+      if (qualifies) {
+        setPendingScore({ score: hudData.score, wave: hudData.wave, date: dateStr });
+      } else {
+        saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
+      }
 
       if (hudData.phase === "LEVEL_COMPLETE") {
         const nextLevel = LEVELS[shippedIdx + 1];
@@ -250,7 +280,10 @@ export function App(): JSX.Element {
         hudData.phase === "LEVEL_COMPLETE" &&
         POST_LEVEL_NARRATIVE[selectedLevel.id] !== undefined
       ) {
+        // NARRATIVE_POST is told first; its onDone routes on to NAME_ENTRY when qualifying.
         setAppPhase("NARRATIVE_POST");
+      } else if (qualifies) {
+        setAppPhase("NAME_ENTRY");
       } else {
         setAppPhase("END");
       }
@@ -288,6 +321,29 @@ export function App(): JSX.Element {
     setPaused(false);
     setAppPhase("MENU");
   }
+
+  // NAME_ENTRY resolution — the ONE deferred write to `muf_scores_<id>` (ADR-0052 §2).
+  // Submit attaches the byline (and persists it as the last-used name); the pure layer
+  // sanitises + omits an empty name, so an empty submit is byte-identical to a skip.
+  const handleNameSubmit = useCallback(
+    (name: string): void => {
+      if (pendingScore !== null) {
+        saveScore(selectedLevel.id, { ...pendingScore, name });
+        savePlayerName(name);
+        setPendingScore(null);
+      }
+      setAppPhase("END");
+    },
+    [pendingScore, selectedLevel.id],
+  );
+
+  const handleNameSkip = useCallback((): void => {
+    if (pendingScore !== null) {
+      saveScore(selectedLevel.id, pendingScore);
+      setPendingScore(null);
+    }
+    setAppPhase("END");
+  }, [pendingScore, selectedLevel.id]);
 
   // Asset-preload gate (story-asset-preloading). Warm the module caches for the
   // screen about to render and hold a LoadingScreen until its manifest is 100%
@@ -378,7 +434,7 @@ export function App(): JSX.Element {
         <NarrativeScreen
           scene={scene}
           onDone={() => {
-            setAppPhase("END");
+            setAppPhase(pendingScore !== null ? "NAME_ENTRY" : "END");
           }}
         />,
         rotateBlocked,
@@ -396,6 +452,21 @@ export function App(): JSX.Element {
         showSkipButton
         onDone={handleBackToMenu}
         doneLabel="TERMINER"
+      />,
+      rotateBlocked,
+    );
+  }
+
+  if (appPhase === "NAME_ENTRY") {
+    // Reached only on a qualifying high score (ADR-0052 §2). Save is deferred to
+    // handleNameSubmit/handleNameSkip; the unlock side-effect already fired above.
+    return renderAppShell(
+      <NameEntryScreen
+        score={hudData.score}
+        wave={hudData.wave}
+        initialName={loadPlayerName()}
+        onSubmit={handleNameSubmit}
+        onSkip={handleNameSkip}
       />,
       rotateBlocked,
     );

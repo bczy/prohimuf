@@ -197,3 +197,40 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   second access point to the same field). Difficulty labels defined locally from the `Prefs["difficulty"]`
   union since OptionsControls does not export them.
 - verify: `yarn typecheck` clean · `yarn test` 858/858 (FlyerWall 7/7) · `yarn lint` clean · Prettier applied.
+
+## stage-4. DEV (M1 render slice + App.tsx phase wiring) — dev-r3f-render (Amelia) — 2026-07-20
+
+- claim: the render side of M1 — the `NAME_ENTRY` `AppPhase` + screen, the deferred-save
+  wiring in `App.tsx`, and the `resolveDisplayName` byline in `ScoresUne`. Consumes the pure
+  API shipped by the M1 pure-logic slice; did NOT touch `src/game`, `prefsSystem`, `FlyerWall`,
+  `OptionsColophon`/`OptionsControls`/`PauseScreen` (other lanes).
+- release:
+  - NEW `src/render/ui/NameEntryScreen.tsx` (+ `.module.css`) — the typed byline on the
+    PARIS-MINUIT UNE (reuses `PaperSheet`/newsprint/rose + masthead register). Native `<input>`
+    (`maxLength=16`, live `sanitizeName`, pre-filled from `loadPlayerName()`), `[ SIGNER ]`
+    submit + `[ PASSER ]` skip, Enter submits / Escape skips, label↔input association,
+    focus-on-mount + select, ≥44px targets, scroll-safe for the mobile on-screen keyboard.
+  - `src/render/scene/App.tsx` — new `NAME_ENTRY` `AppPhase` (render-layer only, NO `src/game`
+    stateMachine/levels touch). Save deferred: the `GAME_OVER`/`LEVEL_COMPLETE` effect now HOLDS
+    `{score,wave,date}` in `pendingScore` when `isHighScore` is true and calls `saveScore`
+    exactly once on submit/skip (name attached on submit via `savePlayerName`+`saveScore`,
+    omitted on skip); non-high-score path saves immediately, byte-identical to before. Routing:
+    `NARRATIVE_POST → NAME_ENTRY → END`, else `NAME_ENTRY → END`, else `→ END`. **Next-level
+    unlock untouched — fires on today's schedule, never gated behind the name.** Added
+    `?preview=nameentry` harness hook (mirrors `?preview=end`).
+  - `src/render/ui/menu/ScoresUne.tsx` (+ `.module.css`) — each classement row shows a
+    `resolveDisplayName(s.name)` byline under the score; the lead-story kicker shows the top
+    signer. Legacy/skipped rows show `ANONYME`, never a blank cell.
+  - NEW `src/render/ui/__tests__/NameEntryScreen.test.ts` (+10: a11y contract via
+    `renderToStaticMarkup` + focus/submit/skip via `react-dom/client`+`act`) and NEW
+    `src/render/ui/menu/__tests__/ScoresUne.test.ts` (+3: signed name / legacy-ANONYME fallback).
+- verify: `yarn typecheck` clean · `yarn test` 871/871 (new: 13/13) · `yarn lint` clean · Prettier applied.
+- File List: `src/render/ui/NameEntryScreen.tsx`, `src/render/ui/NameEntryScreen.module.css`,
+  `src/render/scene/App.tsx`, `src/render/ui/menu/ScoresUne.tsx`, `src/render/ui/menu/ScoresUne.module.css`,
+  `src/render/ui/__tests__/NameEntryScreen.test.ts`, `src/render/ui/menu/__tests__/ScoresUne.test.ts`.
+- FLAG → senior-architect / game-designer (playtest): the input uses live `sanitizeName` per the
+  contract; its outer `.trim()` per keystroke means an internal space typed left-to-right (e.g.
+  "DJ MEHDI") collapses (the space is trailing at that instant). Pasting a spaced name works, and
+  the pure layer sanitises on save regardless, so the leaderboard is never corrupted. If spaced
+  bylines must be typeable, the one-line fix is a live control-strip+clamp that defers the trim to
+  submit — flagged rather than unilaterally deviating from the "live sanitizeName" instruction.
