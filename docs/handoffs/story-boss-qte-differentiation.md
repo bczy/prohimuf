@@ -594,3 +594,104 @@ story's scope — routed to `producer` for backlog, NOT gated here.
 - File List:
   - `docs/game-design/README.md` (index updated — the 4-spec pack row added, In flight / gated)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 6. AC7 RE-REVIEW — pm (John) — 2026-07-20 — product/scope re-review of the gated pack
+
+- claim: story-owner re-review (AC7) of the design-gate-PASSed pack — mechanics
+  (`spec-boss-qte-differentiation.md`), fiction (`spec-boss-differentiation-fiction.md`),
+  UX (`ux/spec-boss-qte-differentiation-ux.md`), audio
+  (`spec-boss-qte-differentiation-audio.md`) — against this story's own scope decisions
+  (Wave 1/2/carve-out sequencing, the 3-A reversal, AC3/AC5/AC6/AC8, the out-of-scope
+  list) and against the product question the story exists to answer. This is a scope
+  review, not a second design gate — Karim's PASS on adversarial mechanics/fiction/
+  UX/audio correctness stands unrevisited here.
+
+VERDICT: CLEARED FOR TECH PLAN — no blocking scope violations found (pm)
+
+### Checklist findings
+
+- **Wave 1 / Wave 2 / lever-4-fold — RESPECTED, no blob.** Mechanics spec is
+  structurally split Wave 1 (levers 1, 3 — the two that redefine the moment-to-moment
+  loop) / Wave 2 (levers 2, 5, and 4 folded in per the 4-C ruling), matching the story's
+  sequencing exactly, each lever with its own reuse map, tuning table and phase-
+  introduction slot (phase 1 = V1-identical onboarding; phase 2 = two-ring split + one
+  parry teach; phase 3 = full kit + one renfort surge). No lever is silently merged into
+  another's spec.
+- **3-A reversal — VISIBLE, CONSCIOUS, and an acceptable resolution.** `game-designer`
+  named the reopened OUT-of-scope line explicitly and took the conservative reading: the
+  SAME `fire`+`impactPoint`, reinterpreted by a distinct telegraphed CHARGED window — no
+  new input channel, no `src/hooks` change. Checked against the AC7 question directly:
+  does it still read as a new BEAT without a new input channel? Yes — it has its own
+  telegraph channel (`parryLeadSeconds`, categorically distinct form per UX D2.1), its
+  own reward/cost ledger (chip+stagger vs. −10 whiff vs. −6 panic), its own fiction
+  ("il tire sur l'arme," not a re-skinned shoot), and its own audio texture family (dry
+  transient vs. the shoot-tell's sweep). Four independent lanes converge on the same
+  event reading as functionally distinct from a shoot beat. This satisfies the reversal
+  Bertrand asked for — it is minimal-input but not minimal-experience.
+- **AC3 (exactly five levers, no sixth veille idea folded in) — HOLDS, two items
+  reviewed and cleared as in-scope support, not additions:**
+  - The decor prop (lever 2's stagger target) is not a sixth idea — it is 2-A/2-B of
+    the story's own named lever 2, not a new mechanic.
+  - The CRS-section fiction (4-D) is not a sixth idea — it is the story's own named
+    Open Question 4-D, required by AC6 to justify lever 4 diegetically.
+  - Mechanics spec self-audits (§0: "no other veille Tier S/A idea… is folded in") and
+    audio spec self-audits (refuses to spec the adjacent phase-break-audio /
+    `hit`/`death` dead-code gaps, routing them to `producer`'s backlog instead) — both
+    checked and correct.
+- **AC8 (non-shipped harness status unchanged) — HOLDS.** Fiction spec pins this twice
+  (§0 "AC8 — nothing here ships live," §1.3 harness-vs-canon split) and ratifies it again
+  in flag 5. No spec touches `belliard`'s live `LevelConfig` or proposes shipping
+  anything live/canon. The Niveau-Final live-ship follow-up is referenced only as a
+  future, not-yet-opened destination for held canon.
+- **Out-of-scope list — INTACT.** No fuyard variant, no mini-boss tier, no hostage-QTE
+  retune anywhere in the four specs; ADR-0034 is cited only as a structural precedent
+  (parry point, execution-click shape), never as something being modified.
+- **AC5/AC6 — ON TRACK.** ADR-0052 allocated by `producer` (§2), not yet drafted — correct
+  sequencing, TECH PLAN is next after this review. Fiction traces 1:1 to the gated
+  Commandant fiction and is checked line-by-line against « il n'a plus personne pour le
+  couvrir » (§1.3/§2.3 of the fiction spec); Karim's gate ratified this as the AC6 ask,
+  closed.
+- **Product question — the pack, as specced, plausibly answers Bertrand's playtest
+  verdict.** The differentiation thesis table (mechanics §0) shows a real verb/decision
+  change on 4 of 5 levers (new decision on 1, new verb+decision on 3, new decision on 2,
+  new decision on 4; only 5 is a pure flourish, correctly so — a victory beat should not
+  add a decision). Phase 1 stays deliberately hostage-shaped (V1-identical, a conscious
+  onboarding choice, not drift) but phases 2-3 — the majority of the fight's HP and
+  duration — diverge hard: a two-target choice, a parry beat, and (phase 3) a pressure
+  surge stack on top of each other. At the table this should no longer read as "l'otage
+  sans l'otage." This is a design claim the spec argues coherently for, not something
+  `pm` can independently verify pre-code — it is exactly what `game-designer`'s own
+  AC-D1 ("a playtester describes a different moment-to-moment than the hostage duel")
+  is built to test at stage-5 `verify`. Flagging that this is the load-bearing
+  empirical check, not rubber-stamping it as already proven.
+
+### Advisories (non-blocking, logged for tracking — not scope violations)
+
+1. **`docs/audio-direction.md` (the new audio bible) is infrastructure, not a sixth
+   lever.** It was drafted because it didn't exist yet (sound-designer's first-
+   activation deliverable), not requested by this story. Correctly out of this story's
+   scope either way (it documents an existing system + flags two pre-existing gaps,
+   routed to `producer`'s backlog, not gated here) — no action needed, noting only that
+   its existence should be indexed as a project artifact, not counted against this
+   story's deliverable list.
+2. **The new venue canon (flag 1, "a squatted grand disused hall" for the Niveau
+   Final)** is a genuine first-time naming of the finale building, ratified by Karim as
+   a conscious extension. It is correctly held (non-canon placeholders in the harness,
+   loose form only) and doesn't ship here — but naming the finale venue is a
+   worldbuilding call with more weight than a prop description. Recommend a one-line
+   confirmation from Bertrand before it hardens further, whenever the Niveau-Final story
+   is opened — not a gate for this story.
+3. Karim's six logged advisories (phase-2 double-introduction, finisher-copy
+   supersession, decor glow-vs-grey art seam, deferred art-flow asks, seed-repin
+   obligation, parryPoint rationale nit) are verify-leg / art-flow items already
+   correctly routed and non-blocking for TECH PLAN — re-confirmed here as within their
+   owners' lanes, nothing re-opened.
+
+- handoff → `senior-architect` (Winston): AC7 CLEARED — proceed to TECH PLAN (ADR-0052:
+  amend ADR-0051 or new extending ADR; the 5-A finisher shape call; the lever-4
+  boundary-compliance assert already specced against). No scope corrections requested.
+- handoff → `producer` (Marion): track advisory 1 (audio bible indexing) and advisory 2
+  (Bertrand confirmation on the new venue canon, timed to the Niveau-Final story
+  opening, not this one) on the backlog; not blockers for this story's dev lanes.
+- File List: `docs/handoffs/story-boss-qte-differentiation.md` (this entry — additive
+  edit, end-of-file only).
