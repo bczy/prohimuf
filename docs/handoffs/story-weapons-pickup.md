@@ -221,3 +221,61 @@ tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC 
   are importable; `GameState.weapon`/`.loot`/`.weaponEmpty` populated each tick. Lane B still owns
   the `weaponEmpty` per-frame bridge drain in `useGameLoop.ts` and the `LevelConfig.loot →
 LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane; not touched here).
+
+---
+
+## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-07-20
+
+- claim: Lane B (`src/render/**` + view bridge) — render the weapon+loot core per ADR-0052 D8
+  (crate visual, HUD glyph/stock/blink/flash, `weaponEmpty` bridge drain, `LevelConfig.loot`
+  mapping) / release: **DONE, all green** (tsc 0, lint 0, `format:check` clean, vitest 860 passed
+  — 856 baseline + 4 new render-derivation cases). No deviation from ADR-0052 / the gated spec.
+- VERDICT: PASS — dev-r3f-render: weapon HUD + LOOT crate + bridge (Lane B)
+- **Branch:** `claude/features-a-implémenter-ehw9q4` (2 commits; orchestrator pushes).
+- **Commits:** (1) `feat(render): weapon HUD readout + LOOT crate + weaponEmpty bridge (ADR-0052)`
+  — the crate scene sprite, the HUD weapon readout, the bridge drain + `LevelConfig.loot` mapping.
+  (2) `docs(handoff): log dev-r3f-render stage-4 lane (weapons pickup)`.
+- **What the crate looks like (D5/§5.1, W1/R1-R3):** a code-drawn glyph PLACEHOLDER (no FLUX, pm
+  ruling #4) — a boxy ammo crate (non-human OBJECT silhouette: rounded-rect body + lid band +
+  diagonal cross-brace) drawn onto a `CanvasTexture` on a plane, seated in its window slot
+  (`loot.slotIndex`). Dark body, thick **neon-yellow outline** = "ce qui brille est interactif"
+  (R3), with a **big neon A/B/C glyph** baked centre (R2/W1 — legible at reticle distance BEFORE
+  the collecting shot). Paper-Mario unfold on APPEARING (scale-Y 0→1, matching the enemy pop-up),
+  a pulsing additive halo behind it while VISIBLE. renderOrder 4 (window-occupant), depthWrite off
+  like every other transparent quad. One crate ever (`loot` is single|null) ⇒ mounted once in
+  `GameScene`, hides on `null`/`HIDDEN`.
+- **What the HUD looks like (§6.2, W3/W4/AC10/AC11):** a new `WeaponReadout` cell on the ticker
+  strip (thin-composition widget, ADR-0046) — a print-idiom (ink, ZERO glow) `arme` cell showing
+  the **A/B/C glyph** + stock. `base` renders the **∞** symbol, full-black ink, **no counter, no
+  red, no blink, ever** (W4/AC11). A special renders its numeric stock; the **last ~20 % blinks**
+  in pink marker ink (`isLowStock` reads the start-stock denominator from the game's `WEAPON_SPECS`
+  — never a hardcoded rule copy; the 0.2 ratio is a HUD legibility constant). On the empty tick a
+  one-shot **marker-ink empty-flash** washes the cell the SAME frame as the auto-return (W3/AC10),
+  re-keyed off the drained `weaponEmpty` nonce (mirrors App's lifeFlash pattern). Both animations
+  freeze under `prefers-reduced-motion`.
+- **Bridge (`useGameLoop.ts`):** drains the transient `weaponEmpty` per frame → bumps a monotonic
+  HUD `weaponEmptyNonce` (same-frame flash) AND fires the audible culasse-à-vide cue; the weapon
+  glyph/stock flow into `HudData.weapon`, added to the change-detection (equip / burst-round
+  decrement / auto-return all push). Multi-impact path unchanged (D3 — already N-safe).
+- **AUDIO — missing asset noted (CI-side):** the culasse-à-vide cue reuses the shipped **`death`
+  SFX slot** for V1 (spec §6.1 explicitly permits an existing SFX). Reason: adding a dedicated
+  `empty` slot would require editing `src/game/systems/audioSystem.ts` (Lane A / off-limits to this
+  lane) — the SFX name union lives there. **Fast-follow:** a dedicated `assets/audio/empty.*`
+  culasse-à-vide asset + a one-line `"empty"` slot in `audioSystem.ts` (owner: sound-designer +
+  dev-gameplay). The same-frame HUD flash (fully in-lane) is the primary, unmistakable cue, so W3
+  holds today; the audio is reinforcement.
+- **DEVIATION note (minor, in-lane, no frozen decision touched):** `hud/derivations.ts` — the
+  `INK,MARK` import was switched from the `@render/ui/print` barrel to the leaf `../print/tokens`
+  module. The vitest resolver carries `@game`/`@hooks` but NOT `@render`, and the barrel drags in
+  print COMPONENTS that use the alias — so a barrel/alias import broke this folder's new tests. Now
+  matches the tested `menu/derivations.ts` convention (relative leaf import). App build unaffected
+  (vite has `@render`). No behaviour change.
+- **File List:** `src/render/scene/LootCrate.tsx` (NEW), `src/render/scene/GameScene.tsx` (mount),
+  `src/render/ui/hud/WeaponReadout.tsx` (NEW), `src/render/ui/hud/WeaponReadout.module.css` (NEW),
+  `src/render/ui/hud/types.ts` (`HudWeapon` + `weapon`/`weaponEmptyNonce`), `src/render/ui/hud/derivations.ts`
+  (`weaponGlyph`/`isLowStock`/`LOW_STOCK_FRACTION` + leaf-import fix), `src/render/ui/HUD.tsx` (mount),
+  `src/hooks/useGameLoop.ts` (bridge drain + HUD weapon fields), `src/render/scene/App.tsx`
+  (`LevelConfig.loot → LevelParams.loot`, initial-HUD weapon seed),
+  `src/render/ui/hud/__tests__/derivations.test.ts` (NEW).
+- **Downstream:** `ux-designer` HUD-layout reconcile (desktop+mobile) + `lead-art` crate/glyph read
+  (R1-R4) stand as gated fast-follows if the placeholder reads poorly — not V1 blockers.
