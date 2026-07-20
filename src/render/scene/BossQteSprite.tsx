@@ -51,7 +51,8 @@ const BOSS_Z = 0.5;
 // hostage duel). The drawn ring IS the scored catch zone (aim-honesty — "click inside the drawn
 // ring = hit" must stay literally true). AMENDMENT A1 §4 (gated 2026-07-20) makes the two L1 rings
 // carry DIFFERENT catch radii: the VITAL ring (A) is tighter — drawn at `BOSS_VITAL_CATCH_RADIUS`
-// (0.18) so a fixed head-camp can't answer the whole vital path; the LIMB ring (B), the parry
+// (0.11, tightened by A1-R2) so a fixed head-camp can't answer the whole vital path; the value
+// flows from the imported constant, so drawn == catch tracks any re-tune. The LIMB ring (B), the parry
 // glyph, the décor prop and the phase-1 single ring all keep `RING_HIT_RADIUS` (0.30). The two
 // rings also read apart by ANATOMY POSITION (head vs torso) + EMPHASIS brightness, never colour
 // alone.
@@ -436,7 +437,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     // ── Static placement / scales (once per activation) ───────────────────────
     if (!positionedRef.current) {
       boss.scale.set(BOSS_W, BOSS_H, 1);
-      // Ring A's radius switches by role (vital 0.18 vs. single/tell 0.30) so it is set per-frame
+      // Ring A's radius switches by role (vital 0.11 vs. single/tell 0.30) so it is set per-frame
       // in each branch below; ring B is always the limb catch radius.
       ringB.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
       parry.scale.set(PARRY_SIZE, PARRY_SIZE, 1);
