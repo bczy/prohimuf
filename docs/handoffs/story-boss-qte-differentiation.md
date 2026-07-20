@@ -1608,3 +1608,170 @@ STATUS UPDATE (2026-07-20, §12 correction): the Lever-1 correction is NOW GATED
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry + §12 status update)
 
 VERDICT: RELEASE — AMENDMENT A1 transcribed into the gated spec (game-designer) — Karim's §13 per-ring catch-radius amendment written VERBATIM into `spec-boss-qte-differentiation.md` as "AMENDMENT A1 — per-ring catch radius (LEVER 1) — gated 2026-07-20" (after LEVER 1) with AC-D2 amended tail; §12 status updated to GATED; `dev-gameplay` (§2/§5) + `dev-r3f-render` (§4 paired render) cleared to implement from gated text; Sacha owes the post-build winnability re-pin (A1 §5).
+
+## 15. VERIFY (stage 5, leg 2) — ux-designer (Tony) — 2026-07-20 — UX review of built screens vs. the gated spec (A1–A15), both device classes
+
+- claim: stage-5 VERIFY leg 2 — my review of the BUILT boss-QTE differentiation render against
+  `docs/game-design/ux/spec-boss-qte-differentiation-ux.md` (A1–A15), on the 14 state-verified
+  captures (`docs/qa/evidence/story-boss-qte-differentiation/01,02,11,12,13,14,20-27`) plus my own
+  supplementary captures (below) taken via the existing `?preview=boss&at=…` seam to close two
+  coverage gaps in the shipped evidence. Ruling requested on dev-r3f-render's two logged deviations
+  (§9). No production-code edit, no commit/push.
+
+### VERDICT: PASS-WITH-CORRECTIONS — ux review of built screens (ux-designer)
+
+The pack reads, and mostly reads correctly: phase-1 V1-identical onboarding → phase-2 visible
+two-target choice → phase-3 parry/smoke/renfort → a ceremonial finisher distinct from the passive
+WON breather. Ten of twelve checked items PASS on the evidence. ONE required correction (parry tell
+under smoke) and one softer correction (renfort edge contrast) are routed to `dev-r3f-render`/
+`lead-art`; two coverage gaps are named for `qa-lead`; both of `dev-r3f-render`'s logged deviations
+are ACCEPTED.
+
+### Method note (self-correction logged for the record)
+
+My first pass over `21-parry-telegraph.png` alone concluded the parry diamond glyph was entirely
+absent (indistinguishable from the ordinary shoot reticle) — the same read `game-designer` (Sacha)
+independently flagged as a "soft READ flag" in his §12 leg-2 entry above (PNG 21 "reads as a centred
+reticle-like mark," not the form-distinct diamond). Before finalising that as a hard FAIL, I drove the
+existing capture seam myself (`?preview=boss&at=phase2`, Playwright + Chromium headless-shell,
+SwiftShader, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`) to catch the SAME `chargedWindow` cue
+outside phase-3 smoke, at desktop (1280×720) and mobile (844×390, iPhone UA, 2x DPR) viewports. Both
+clean captures show a genuine, filled, rotated-square "guard" glyph at the boss's upper-left
+(raised-sidearm point), categorically distinct in silhouette from the circular shoot reticle —
+faint during the windup, solid/gold when live. **The mechanic and the render both do the right thing
+in clean conditions; D2.1's core requirement is met.** Re-examining `21` at that same offset (not the
+torso centre I first checked) with a 4x crop shows the SAME diamond IS present there too — but
+washed down to near-invisibility by the phase-3 smoke veil, and camouflaged against the boss's own
+shoulder-pad line art at that exact position. Correcting my own initial read in the open, since a
+reviewer's first impression is not evidence on its own — the crops/diffs are the evidence.
+
+### Per-requirement findings
+
+1. **2-C visual half — smoke degrades-not-removes the ORIGINAL (shoot) telegraph (PNG `22`,
+   grayscale-legibility) — PASS.** The ring/reticle stays visible and legible in form through the
+   veil (already near-desaturated); no colour-only residual. `27` (reduced-motion, phase-3 smoke)
+   shows the same elements present and legible under `prefers-reduced-motion: reduce`. D1.1/D1.2/D1.3
+   met for the ring-family tell.
+2. **Parry tell form-distinct from shoot tell (PNG `21` vs. `02`) — CORRECTION REQUIRED (narrower
+   than it first looked).** The diamond glyph exists, is coded distinctly, and is legible at both
+   device classes in clean (non-smoke, phase-2) conditions — verified by my own fresh captures
+   (`parry-phase2-telegraphActive.png`, `parry-phase2-EXPOSED-live.png`, and their mobile twins
+   `mobile-parry-telegraphActive2.png`, `mobile-parry-EXPOSED.png`; scratchpad, reproducible via the
+   commands above). **But every phase-3 parry window is, by construction, also a smoke window**
+   (`smokeActive` spans all of phase 3 per `dev-gameplay`'s §8 default; the parry cadence is
+   "every-other" in phase 3 per the gated mechanic spec) — so in practice roughly half of all
+   post-phase-2 parry attempts face this degraded glyph. This is exactly the accessibility risk §1 of
+   my spec was written to prevent (a smoke-obscured tell must clear the not-colour-alone bar on its
+   own, D1.3) — here recurring on lever 3's tell rather than the original ring. **Correction (route to
+   `dev-r3f-render` + `lead-art`, non-negotiable per D1.3/D2.1, not a rebuild):** raise the parry
+   glyph's salience specifically so it survives the smoke veil's capped peak alpha — larger glyph,
+   higher-contrast outline, or a `renderOrder` placing it ABOVE the smoke quads (the smoke's own
+   bound is "render in front of the telegraph region so it degrades," §8/§9 — the glyph riding at the
+   same depth as the ring means it degrades by the same amount the ring does, but the glyph's
+   silhouette needs MORE headroom than the ring's because it is also competing visually with the
+   shoulder-pad artwork at that exact screen position, which the ring never had to contend with).
+   Corroborates `game-designer`'s independent §12 flag — two lanes converging on the same read
+   problem from different methods is signal, not noise.
+3. **Dual-ring which-is-live read, form-not-colour (PNG `20`) — PASS.** VITAL (head) vs. LIMB (torso)
+   read by ANATOMICAL POSITION, not colour alone — confirmed legible at mobile too (my own
+   `mobile-dual-rings.png`, arguably clearer than desktop under `MOBILE_ZOOM`). Note for the record,
+   not a re-flag: `20`'s two rings are drawn at the SAME pre-AMENDMENT-A1 radius (§13 above, gated
+   after this render pass) — A1's paired render constraint (vital ring drawn at
+   `BOSS_VITAL_CATCH_RADIUS 0.18`, not `RING_HIT_RADIUS 0.30`) is dev-gameplay/dev-r3f-render's queued
+   follow-up, already gated and tracked (§14); it doesn't change the POSITION-based distinction this
+   requirement is about, so D4.1/D4.5 stand regardless of which radius eventually ships.
+4. **Renfort reads pressure-not-threat at frame edges (PNG `23`) — PASS-WITH-SOFT-CORRECTION.** A
+   humanoid silhouette (reusing `enemy_riot`) does render at the frame edges — confirmed by diffing
+   `23` against the `01` baseline and by a direct mobile capture (`mobile-renfort.png`, edges
+   proportionally closer to the action at 844px width, slightly more legible than desktop). No
+   shootable body, motion-only — correct semantics. But contrast against the (already desaturated,
+   since renfort and smoke share phase 3) backdrop is low enough that at a glance it barely reads as
+   "reinforcements arriving" rather than background noise. **Recommend (route to `dev-r3f-render`/
+   `lead-art`, advisory not blocking):** boost silhouette opacity/edge contrast, since renfort and
+   smoke stacking is the standing condition, not an edge case.
+5. **Decor armed glow only-while-armed (PNG `24` vs. every other capture) — PASS.** Dim/translucent
+   grey in every non-armed frame (`01,02,11,12,13,14,20,21,23,25,26,27`); bright acid-lime glow
+   specifically when `decorArmed` (`24`, and incidentally still-armed in my own phase-2 parry
+   captures). Binary, correctly gated, "ce qui brille est interactif" honoured.
+6. **FINISHER distinct from `QTE_RESULT_HOLD` breather + canonical copy (PNG `25` vs. `26`) — PASS.**
+   Numerically confirmed the wash is a genuine warm sepia (R−B delta ≈13–18) vs. the neutral
+   desaturation used for smoke/ordinary frames (R−B delta ≈1–2) — a real non-text differentiator, not
+   only the prompt. `26` (WON/passive hold) is a uniform vivid green tint, no prompt — clearly
+   distinct from `25`'s muted sepia + « LIVRE LE SON » + (per code) the click-pulse. Copy matches the
+   ratified narrative canonical string, correctly superseding the earlier "ACHEVER" placeholder
+   (Karim advisory 2, already closed). Minor, non-blocking note: the pose reused for FINISHER is the
+   same standing/shield silhouette as ordinary SHIELDED windows (no distinct "kneel" — expected under
+   the ratified "no art lane this story" placeholder-art call, not a defect).
+7. **HP-bar zero-settle, reinforcement-only (PNG `26`) — PASS.** One-shot settle (segments emptied),
+   no new persistent "ready-to-finish" HUD label/chip added. D3.4/D3.5 met.
+8. **Reduced-motion branches (PNG `12`, `27`) — PASS, with a methodological caveat.** Both show their
+   motion-enabled counterparts' elements present and legible; a static PNG cannot itself prove
+   "non-strobing" (that's a code-level guarantee, already reviewed in the render handoff's per-element
+   reduced-motion table, §9) — flagging the limit rather than treating it as silently verified.
+   Separately: `12`'s faint secondary ring near the shoulder is a PRE-EXISTING V1 background element
+   (present identically in the phase-1 baseline `01` and in `20`/`21` at the same screen position,
+   pixel-confirmed) — not a differentiation-pack regression, no action needed.
+9. **Mobile legibility (PNG `13`,`14` + my supplementary captures) — PASS, WITH A NAMED GAP NOW
+   CLOSED.** The shipped evidence set covered ONLY phase-1 boot/single-ring at mobile viewport — NONE
+   of the five levers' phase-2+ reads (dual-ring, parry, smoke, renfort, decor, finisher) had ANY
+   mobile-viewport capture (`capture-boss-diff.mjs`'s `VIEWPORT` is fixed at 1280×720 for all eight
+   shots). Per my own spec (A5, A15, D2.5/D3.6) this is exactly the device-class check that must not
+   be silently skipped. I closed it this session at 844×390/iPhone-UA/2x DPR (same profile qa-lead
+   used for `13`/`14`): dual-ring PASS, parry-diamond PASS in clean conditions (same finding as
+   desktop, item 2 above), renfort borderline-legible (same as item 4), finisher PASS (prompt legible,
+   full-frame click target trivially clears 44px). **Recommend `qa-lead` fold a mobile-viewport
+   variant of the `20/21/23/25` shots into the permanent evidence set** so this isn't re-derived ad
+   hoc at every future review.
+
+### Named gap (not captured, not fabricated)
+
+- **D4.7/A14 — the phase-1→2 "new pattern" dual-ring PREVIEW cue has no capture.** The render notes
+  (§9) describe a preview during `phaseBreakRemaining>0 && phase===1`; the existing `at=` seam
+  (`phase2`/`phase3`/`finisher`) fast-forwards THROUGH that window rather than stopping inside it
+  (`bossHarness.ts`'s `targetReached` only fires once `phaseIndex>=1`, i.e. after the break ends), so
+  I could not reach it without adding new harness instrumentation — properly `dev-tooling-assets`/
+  `dev-r3f-render`'s lane, not something a reviewer should freehand into the capture seam. Naming this
+  as an open item for `qa-lead` rather than passing on unseen surface.
+
+### Ruling on `dev-r3f-render`'s two logged deviations (§9)
+
+- **« LIVRE LE SON » diegetic (in-scene CanvasTexture), not a DOM HUD element — ACCEPT.** My spec
+  never required DOM placement; D2.2's diegetic-placement principle, if anything, favours this over a
+  HUD overlay, and `senior-architect`'s tech plan (§7) pre-approved exactly this call ("finisher is
+  diegetic + bar-reinforced… types.ts default NO"). D3.3's bar (text is reinforcement, never sole
+  channel) is satisfied independent of DOM-vs-canvas — the sepia wash + prompt + click-pulse together
+  carry "act now" for a player who can't parse the text. No screen-reader exposure is a real property
+  of the choice, but not a regression against anything D3.3 asked for (a QTE beat is not a menu; the
+  non-text channels already carry the signal for exactly this population).
+- **Finisher click zone = full frame (no drawn hitbox; resolves on ANY `fire`) — ACCEPT, no
+  reservation.** This is not merely compliant with D3.6/A10 — it IS the spec's own named
+  recommendation ("consider a full-frame or near-full-frame tap acceptance during the HOLD
+  sub-state") taken to its most generous conclusion. Trivially clears the 44×44 CSS px floor on both
+  device classes.
+
+### Corrections summary (routing)
+
+1. **REQUIRED → `dev-r3f-render` + `lead-art`:** parry-glyph salience under phase-3 smoke (item 2).
+2. **Advisory, non-blocking → `dev-r3f-render` + `lead-art`:** renfort frame-edge contrast (item 4).
+3. **Named gap → `qa-lead`:** fold a mobile-viewport capture set for the phase-2+ reads into the
+   permanent evidence (item 9); capture the phase-1→2 dual-ring preview cue via a small harness
+   extension (D4.7/A14 gap above).
+
+- handoff → `lead-game-designer` (Karim): PASS-WITH-CORRECTIONS verdict above; item 1 (parry-under-
+  smoke) is the only requirement I hold as gate-relevant per my own spec's §1/§2.1 "non-optional"
+  framing — corroborated independently by `game-designer`'s §12 soft flag on the same PNG. Items 4/9
+  are advisory/tracking, not blockers.
+- handoff → `dev-r3f-render` (Amelia): correction 1 (required) + correction 2 (advisory) above; both
+  logged deviations ACCEPTED, no rework needed on those two.
+- handoff → `qa-lead` (Inès): named gaps (mobile-viewport capture set for 20/21/23/25; phase-1→2
+  dual-ring preview capture) for the evidence backlog.
+- handoff → `game-designer` (Sacha): confirms your §12 soft flag on PNG `21` — same read, now
+  routed with a concrete fix direction (glyph salience vs. smoke depth/contrast) rather than left open.
+- Supplementary captures (session scratchpad, not repo evidence — reproducible via the `?preview=boss`
+  seam + Playwright commands logged in this entry; not committed): `parry-phase2-clean.png`,
+  `parry-phase2-telegraphActive.png`, `parry-phase2-EXPOSED-live.png`, `mobile-dual-rings.png`,
+  `mobile-parry-telegraph.png`, `mobile-parry-EXPOSED.png`, `mobile-parry-telegraphActive2.png`,
+  `mobile-renfort.png`, `mobile-finisher.png`.
+- File List: `docs/handoffs/story-boss-qte-differentiation.md` (this entry, additive `cat >>`).
+
+VERDICT: PASS-WITH-CORRECTIONS — ux review of built screens (ux-designer) — 10/12 checked requirements PASS on the state-verified evidence (2-C smoke-degrade of the ring telegraph, dual-ring position read, decor armed-only glow, FINISHER-vs-WON distinction + canonical copy, HP-bar zero-settle, reduced-motion held, mobile legibility once the coverage gap was closed this session); ONE required correction — the parry "guard" glyph is real, coded, and legible in clean conditions (verified desktop+mobile) but is washed to near-invisibility under phase-3 smoke, which co-occurs with every "every-other" phase-3 parry window by construction — routed to dev-r3f-render/lead-art, corroborated independently by game-designer's §12 soft flag on the same capture; ONE advisory (renfort frame-edge contrast); two named evidence gaps for qa-lead (mobile-viewport capture set for the phase-2+ reads; the phase-1→2 dual-ring "new pattern" preview cue). Both of dev-r3f-render's logged deviations (diegetic finisher prompt; full-frame finisher click zone) are ACCEPTED without reservation.
