@@ -16,6 +16,8 @@ export function RotateOverlay(): JSX.Element {
         <style>{`
         @keyframes mufRotateHint { 0%,25% { transform: rotate(0deg); } 60%,100% { transform: rotate(90deg); } }
         @media (prefers-reduced-motion: reduce) { .muf-rotate-glyph { animation: none !important; } }
+        /* Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle strengthens the OS block above. */
+        :root[data-reduced-motion="true"] .muf-rotate-glyph { animation: none !important; }
       `}</style>
         {/* Inked phone/rotate glyph (inline SVG, no emoji, no glow) */}
         <svg

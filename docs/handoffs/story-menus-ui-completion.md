@@ -234,3 +234,29 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   the pure layer sanitises on save regardless, so the leaderboard is never corrupted. If spaced
   bylines must be typeable, the one-line fix is a live control-strip+clamp that defers the trim to
   submit — flagged rather than unilaterally deviating from the "live sanitizeName" instruction.
+
+## Panel fixes (dev-r3f-render / Amelia — CONFIRMED merge-gate findings, branch `claude/missing-menus-ui-aa87gt`)
+
+- FIX 1 (MAJEUR — `?preview=end` drift + preview storage writes): `src/render/scene/App.tsx` persistence/
+  routing effect now early-returns when `PREVIEW_SCREEN !== null`, before any `saveScore`/`setPendingScore`/
+  unlock/phase-routing. `?preview=end` stays deterministically on END; `?preview=nameentry` shows NameEntry
+  with representative props but `pendingScore` stays null → SIGNER/PASSER no-op on storage (existing
+  `pendingScore !== null` guards) and route to END. Updated the stale preview-list comment to include
+  `nameentry`. `scripts/screenshot-preview.mjs` unchanged.
+- FIX 2 (MAJEUR — reduced-motion union reaches every consumer, ADR-0052 §3 / UX spec §3): the three JS
+  pollers (`NearForeground`, `HostageQteSprite`, `BossQteSprite`) dropped their private
+  `matchMedia("(prefers-reduced-motion: reduce)")` reads and now take the shared union signal as a
+  `reducedMotion` prop threaded App → `useReducedMotionRoot` → GameScene → sprite (comments re-pointed to the
+  shared authority; stale `nearParallax.ts` comment corrected). Five CSS `@media (prefers-reduced-motion)`
+  blocks (`LevelFlyer`, `RotateOverlay`, `DiagramIcon`, `GestureIcon`, `LoadingScreen`) gained a duplicate
+  `:root[data-reduced-motion="true"]` sibling so the in-app toggle strengthens them identically. Fixed the
+  stale `OptionsColophon` "Prefs schema byte-unchanged" comment (branch added `reducedMotion`). CrtPass
+  "one reduced-motion authority" comment is now true by virtue of the fix (no edit).
+  - Test: NEW `src/render/scene/__tests__/reducedMotionProp.test.ts` (+3) — source assertion that the three
+    files no longer poll `matchMedia`/`prefers-reduced-motion` and consume the `reducedMotion` prop.
+- verify: `yarn typecheck` clean · `yarn test --run` 883/883 · `yarn lint` clean · Prettier applied.
+- File List: `src/render/scene/App.tsx`, `src/render/scene/GameScene.tsx`, `src/render/scene/NearForeground.tsx`,
+  `src/render/scene/HostageQteSprite.tsx`, `src/render/scene/BossQteSprite.tsx`, `src/render/scene/nearParallax.ts`,
+  `src/render/scene/__tests__/reducedMotionProp.test.ts`, `src/render/ui/menu/LevelFlyer.tsx`,
+  `src/render/ui/RotateOverlay.tsx`, `src/render/ui/DiagramIcon.tsx`, `src/render/ui/GestureIcon.tsx`,
+  `src/render/ui/LoadingScreen.tsx`, `src/render/ui/menu/OptionsColophon.tsx`.

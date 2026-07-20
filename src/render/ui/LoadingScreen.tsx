@@ -37,7 +37,7 @@ export function LoadingScreen({ label, progress }: Props): JSX.Element {
     <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
       {/* The bar's width tracks real progress; smooth it, but honour reduced-motion
           (the rest of the print system forces its motion tokens to 0 there too). */}
-      <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}`}</style>
+      <style>{`.muf-load-fill{transition:width 0.12s linear}@media (prefers-reduced-motion: reduce){.muf-load-fill{transition:none}}:root[data-reduced-motion="true"] .muf-load-fill{transition:none}`}</style>
 
       {/* Masthead strip — printed ink bar (single-sourced running string). */}
       <div className={styles.masthead}>{MASTHEAD.running}</div>

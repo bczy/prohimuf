@@ -112,6 +112,8 @@ const GESTURE_STYLES = `
 @media (prefers-reduced-motion: reduce) {
   .gi-anim { animation: none !important; }
 }
+/* Second trigger (ADR-0052 §3): the in-app MOUVEMENT RÉDUIT toggle strengthens the OS block above. */
+:root[data-reduced-motion="true"] .gi-anim { animation: none !important; }
 `;
 
 /** Desktop — single LEFT click = one shot (§1.1). Left button + one ripple are the only glow. */

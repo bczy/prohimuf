@@ -68,8 +68,9 @@ interface PendingScore {
   readonly date: string;
 }
 
-// Preview harness hook: `?preview=title|menu|narrative|end|tutorial` boots straight
-// into a screen so the screenshot tool can capture the front-end screens without playing.
+// Preview harness hook: `?preview=title|menu|narrative|end|nameentry|tutorial` boots
+// straight into a screen so the screenshot tool can capture the front-end screens
+// without playing.
 const PREVIEW_SCREEN =
   typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview") : null;
 
@@ -246,6 +247,16 @@ export function App(): JSX.Element {
   }, [hudData.timeRemaining, selectedLevel.timeSeconds, setTension]);
 
   useEffect(() => {
+    // Preview harness (`?preview=`) boots straight into a screen; this persistence/
+    // routing effect must be FULLY INERT there. `?preview=end` / `?preview=nameentry`
+    // seed a GAME_OVER hudData (score 4200) on FIRST_PLAYABLE_LEVEL, so without this
+    // guard the effect would run for real: on a fresh board `isHighScore` is true, so
+    // the 1500ms timer would drift the phase to NAME_ENTRY (the screenshot tool would
+    // capture the WRONG screen for `09_end.png`), and SIGNER/PASSER would write a fake
+    // 4200 entry into the visitor's real `muf_scores_*`. Early-returning before any
+    // saveScore/setPendingScore/unlock/phase-routing keeps every `?preview=` screen
+    // deterministic (`pendingScore` stays null → the NameEntry handlers no-op on storage).
+    if (PREVIEW_SCREEN !== null) return;
     if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
 
     // Persistence side-effects (high-score board, next-level unlock) are scoped to

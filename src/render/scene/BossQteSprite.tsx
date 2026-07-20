@@ -280,6 +280,13 @@ interface Props {
    * inactive/absent, so the bar renders null (no orphan HUD).
    */
   onBossQte?: ((qte: HudBossQte | null) => void) | undefined;
+  /**
+   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
+   * GameScene — the ONE authority. Degrades the phase-break pulse and re-arm brace to
+   * a steady, non-strobing step, honouring the in-app toggle as well as the OS query.
+   */
+  reducedMotion: boolean;
 }
 
 // The HUD-relevant slice, or null when inactive. Used both to emit and to detect change without
@@ -303,7 +310,7 @@ function applyTexture(mesh: Mesh, tex: Texture | null): void {
  * meshes in world / camera space. Visible only while the boss QTE holds the scene frozen
  * (`isBossQteActive`, extended to include the FINISHER beat).
  */
-export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
+export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JSX.Element {
   const bossRef = useRef<Mesh>(null);
   const ringRef = useRef<Mesh>(null); // ring A (phase 1 single ring; phase 2+ = VITAL)
   const ringBRef = useRef<Mesh>(null); // ring B (phase 2+ = LIMB)
@@ -335,6 +342,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
 
   const { camera, size } = useThree();
 
+<<<<<<< HEAD
   // Device tier for the particle count (like the CRT lite/full split) — decided once at mount.
   const smokeMax = useMemo(() => (detectMobile() ? SMOKE_MAX_MOBILE : SMOKE_MAX_DESKTOP), []);
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
@@ -365,24 +373,10 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     };
   }, [glowTex, vignetteTex, promptTex, smokeField, ringGeoNormal, ringGeoVital]);
 
-  // Render-side reduced-motion detection (UX D3.1) — mirrors HostageQteSprite / CrtPass.
-  const reducedMotionRef = useRef(
-    typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
-  );
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (): void => {
-      reducedMotionRef.current = mq.matches;
-    };
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => {
-      mq.removeEventListener("change", onChange);
-    };
-  }, []);
+  // Reduced motion (UX D3.1) now arrives via the `reducedMotion` prop — the shared
+  // union signal from `useReducedMotionRoot` (App → GameScene), the ONE authority
+  // (ADR-0052 §3) — degrading the phase-break pulse and re-arm brace to a steady,
+  // non-strobing step. No private `matchMedia` poll: the in-app toggle reaches here too.
 
   useFrame((_, delta) => {
     const boss = bossRef.current;
@@ -474,7 +468,6 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       positionedRef.current = true;
     }
 
-    const reducedMotion = reducedMotionRef.current;
     const breakActive = qte.phaseBreakRemaining > 0;
     const won = qte.phase === "WON";
     const lost = qte.phase === "LOST";
