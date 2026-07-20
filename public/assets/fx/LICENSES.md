@@ -13,4 +13,6 @@ Provenance discipline (repo policy): every bundled asset records its source URL 
 - **Licence:** CC0 1.0 (public domain). The texture is part of three.js's OpenGameArt-sourced
   example texture set (`textures/opengameart/`), which three.js distributes as CC0 public-domain
   example assets. No attribution required; recorded here for provenance discipline.
-- **Modifications:** none (committed byte-for-byte as downloaded, renamed `smoke1.png` → `smoke.png`).
+- **Modifications:** downsized 512×512 → 256×256 (sharp, lossless resize) to comply with
+  the gpu-specialist perf cap CAP-D (≤ 256² texture, shard §18); renamed `smoke1.png` →
+  `smoke.png`. No other alteration.
