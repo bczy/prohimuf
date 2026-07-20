@@ -23,6 +23,7 @@ import {
   QTE_PANIC_SHOT,
   QTE_PARRY_CHIP,
   QTE_RENFORT_DRAIN,
+  QTE_RESULT_HOLD,
   RENFORT_SURGE,
   RING_HIT_RADIUS,
   STAGGER_SECONDS,
@@ -561,5 +562,473 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
       expect(qte.phase).not.toBe("LOST");
     }
     expect(won).toBe(true);
+  });
+});
+
+// ============================================================================================
+// ADR-0052 differentiation levers
+// ============================================================================================
+
+/** A fresh ACTIVE/SHIELDED (phase 0) QTE seeded from an arbitrary spec (e.g. with a decorProp). */
+function toActiveSpec(spec: BossQteSpec): BossQte {
+  const zooming = createBossQte(spec);
+  return tickBossQte(zooming, false, { x: 0, y: 0 }, spec.zoomSeconds).qte;
+}
+/** An ACTIVE state with overrides on the canonical harness spec (anchor at origin). */
+function activeWith(overrides: Partial<BossQte>): BossQte {
+  return { ...toActive(), ...overrides };
+}
+
+describe("bossQteSystem — createBossQte seeds the ADR-0052 runtime fields", () => {
+  it("initialises the new lever fields to their inert defaults", () => {
+    const qte = createBossQte(SPEC);
+    expect(qte.targetOffsetB).toEqual(BOSS_WANDER_CENTRE);
+    expect(qte.phaseWindowIndex).toBe(-1);
+    expect(qte.chargedWindow).toBe(false);
+    expect(qte.staggerRemaining).toBe(0);
+    expect(qte.decorArmed).toBe(false);
+    expect(qte.decorConsumed).toBe(false);
+    expect(qte.decorProp).toBeNull();
+    expect(qte.smokeActive).toBe(false);
+    expect(qte.renfortActive).toBe(false);
+    expect(qte.finisherRemaining).toBe(0);
+  });
+
+  it("the shipped VITAL/LIMB ring sub-boxes are ⊂ their anatomy bands (colour-honesty, D5)", () => {
+    // The ⊂-band containment createBossQte asserts, cross-checked structurally: every corner of
+    // each ring sub-box reads as its intended anatomy zone, so drawn colour == chip == anatomy.
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        expect(
+          bossRingZoneAt({
+            x: BOSS_VITAL_WANDER_CENTRE.x + sx * BOSS_VITAL_WANDER_AMP_X,
+            y: BOSS_VITAL_WANDER_CENTRE.y + sy * BOSS_VITAL_WANDER_AMP_Y,
+          }),
+        ).toBe("vital");
+        expect(
+          bossRingZoneAt({
+            x: BOSS_LIMB_WANDER_CENTRE.x + sx * BOSS_LIMB_WANDER_AMP_X,
+            y: BOSS_LIMB_WANDER_CENTRE.y + sy * BOSS_LIMB_WANDER_AMP_Y,
+          }),
+        ).toBe("limb");
+      }
+    }
+  });
+});
+
+describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
+  it("scores two FIXED-identity rings — A=vital(2), B=limb(1), overlap → vital", () => {
+    const base = activeWith({
+      phaseIndex: 1,
+      stance: "EXPOSED",
+      stanceRemaining: 1.0,
+      windowChipped: false,
+      windowOrdinal: 1,
+      targetOffset: { x: 0, y: 0.8 },
+      targetOffsetB: { x: 0, y: 0.25 },
+      ringZone: "vital",
+      bossHp: 12,
+    });
+    // Ring A (vital, 2 HP).
+    expect(tickBossQte(base, true, { x: 0, y: 0.8 }, 0.1).qte.bossHp).toBe(10);
+    // Ring B (limb, 1 HP) — even though targetOffsetB sits over the torso, its identity is fixed.
+    expect(tickBossQte(base, true, { x: 0, y: 0.25 }, 0.1).qte.bossHp).toBe(11);
+    // Overlap: both rings under one impact → the harder VITAL read scores (deterministic).
+    const overlap = { ...base, targetOffset: { x: 0, y: 0.5 }, targetOffsetB: { x: 0, y: 0.5 } };
+    expect(tickBossQte(overlap, true, { x: 0, y: 0.5 }, 0.1).qte.bossHp).toBe(10);
+  });
+
+  it("one shared windowChipped — a chip from EITHER ring answers the window (no double drain)", () => {
+    const qte = activeWith({
+      phaseIndex: 1,
+      stance: "EXPOSED",
+      stanceRemaining: 0.1,
+      windowChipped: false,
+      windowOrdinal: 1,
+      phaseWindowIndex: 0,
+      targetOffset: { x: 0, y: 0.8 },
+      targetOffsetB: { x: 0, y: 0.25 },
+      ringZone: "vital",
+      bossHp: 12,
+    });
+    // Answer the window on the LIMB ring, delta closes it → NOT blown, no drain.
+    const r = tickBossQte(qte, true, { x: 0, y: 0.25 }, 0.2);
+    expect(r.qte.bossHp).toBe(11);
+    expect(r.qte.stance).toBe("SHIELDED");
+    expect(r.qte.blownWindows).toBe(0);
+    expect(r.energyDelta).toBe(0);
+  });
+
+  it("phase 1 stays the single V1 ring (targetOffsetB rests, ring-B not scored)", () => {
+    // A phase-1 EXPOSED window with an off-anatomy single ring: a hit on the resting ring-B
+    // point must NOT score (ring B is inert in phase 1).
+    const qte = activeWith({
+      phaseIndex: 0,
+      stance: "EXPOSED",
+      stanceRemaining: 1.0,
+      targetOffset: { x: 0, y: 0.8 },
+      targetOffsetB: { x: 0, y: 0.25 },
+      ringZone: "vital",
+      bossHp: 20,
+    });
+    // Firing at the ring-B point (0,0.25) in phase 1: not ring A (far), falls to body bleed only.
+    const r = tickBossQte(qte, true, { x: 0, y: 0.25 }, 0.1);
+    expect(r.qte.bossHp).toBe(20); // no chip — ring B does not exist in phase 1
+    expect(r.energyDelta).toBe(QTE_BODY_HIT);
+  });
+
+  it("ring B wanders a decorrelated, seeded path (distinct salt) and is pure/replayable", () => {
+    const leg = bossWanderLegDuration(phaseRow(1).wanderSpeed);
+    const a = bossWanderBox(SPEC.targetSeed, 0, 0.3, leg, BOSS_VITAL_WANDER_AMP_X, BOSS_VITAL_WANDER_AMP_Y);
+    const b = bossWanderBox(
+      (SPEC.targetSeed ^ BOSS_RING_B_SALT) >>> 0,
+      0,
+      0.3,
+      leg,
+      BOSS_LIMB_WANDER_AMP_X,
+      BOSS_LIMB_WANDER_AMP_Y,
+    );
+    expect(a).not.toEqual(b); // decorrelated — the two rings never share a path
+    // Pure closed-form: same inputs → same output.
+    expect(b).toEqual(
+      bossWanderBox(
+        (SPEC.targetSeed ^ BOSS_RING_B_SALT) >>> 0,
+        0,
+        0.3,
+        leg,
+        BOSS_LIMB_WANDER_AMP_X,
+        BOSS_LIMB_WANDER_AMP_Y,
+      ),
+    );
+  });
+});
+
+describe("bossQteSystem — lever 3: charged parry window (same fire-click)", () => {
+  it("isChargedWindow: none in phase 1, one teach in phase 2, every-other in phase 3", () => {
+    expect([0, 1, 2, 3].map((k) => isChargedWindow(0, k))).toEqual([false, false, false, false]);
+    expect([0, 1, 2, 3].map((k) => isChargedWindow(1, k))).toEqual([false, true, false, false]);
+    expect([0, 1, 2, 3, 4].map((k) => isChargedWindow(2, k))).toEqual([
+      false,
+      true,
+      false,
+      true,
+      false,
+    ]);
+    expect(isChargedWindow(1, -1)).toBe(false);
+  });
+
+  it("parry success chips +2, opens a STAGGER (damage-free), answers the window", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.6,
+      chargedWindow: true,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 3,
+      ringZone: "off",
+      bossHp: 6,
+    });
+    const r = tickBossQte(qte, true, { x: BOSS_PARRY_POINT.x, y: BOSS_PARRY_POINT.y }, 0.1);
+    expect(r.qte.bossHp).toBe(4); // 6 − QTE_PARRY_CHIP
+    expect(r.qte.windowChipped).toBe(true);
+    expect(r.qte.staggerRemaining).toBeCloseTo(STAGGER_SECONDS);
+    expect(r.qte.stance).toBe("SHIELDED");
+    expect(r.energyDelta).toBe(0);
+  });
+
+  it("the STAGGER ends into a BONUS EXPOSED window (the tempo flip)", () => {
+    const staggered = activeWith({
+      phaseIndex: 2,
+      stance: "SHIELDED",
+      staggerRemaining: STAGGER_SECONDS,
+      stanceRemaining: STAGGER_SECONDS,
+      windowOrdinal: 5,
+      phaseWindowIndex: 3,
+      bossHp: 4,
+    });
+    const r = tickBossQte(staggered, false, NO_HIT, STAGGER_SECONDS + 0.05);
+    expect(r.qte.stance).toBe("EXPOSED");
+    expect(r.qte.staggerRemaining).toBe(0);
+    expect(r.qte.windowOrdinal).toBe(6);
+    expect(r.qte.windowChipped).toBe(false);
+  });
+
+  it("a charged shot UNANSWERED whiffs: −10 + exactly one blown window (single charge)", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.1,
+      chargedWindow: true,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 3, // charged, NOT under the surge (windows 1–2)
+      blownWindows: 0,
+      bossHp: 6,
+    });
+    const r = tickBossQte(qte, false, NO_HIT, 0.2); // closes the charged window
+    expect(r.qte.stance).toBe("SHIELDED");
+    expect(r.energyDelta).toBe(QTE_CHARGED_WHIFF); // −10 REPLACES the phase drain
+    expect(r.qte.blownWindows).toBe(1); // one blown window, not double
+    expect(r.qte.bossHp).toBe(6);
+  });
+
+  it("a panic click missing the parry point is −6 and NON-consuming (window stays open)", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.6,
+      chargedWindow: true,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 3,
+      blownWindows: 0,
+      bossHp: 6,
+    });
+    // Fire well away from the parry point (−0.4, 0.3): a panic click, not a parry.
+    const r = tickBossQte(qte, true, { x: 0, y: 0.8 }, 0.1);
+    expect(r.energyDelta).toBe(QTE_PANIC_SHOT); // −6
+    expect(r.qte.stance).toBe("EXPOSED"); // non-consuming — a valid parry can still land
+    expect(r.qte.chargedWindow).toBe(true);
+    expect(r.qte.blownWindows).toBe(0);
+  });
+
+  it("the CHARGED tell leads by parryLeadSeconds (longer than the normal shoot tell)", () => {
+    // Phase 2 (index 1): parryLeadSeconds 0.8, telegraphLeadSeconds 0.4. At stanceRemaining ~0.74
+    // the parry tell is ON (0.74 ≤ 0.8) but a normal tell would be OFF (0.74 > 0.4) — proving the
+    // charged window is announced with its own, longer lead.
+    const chargedSoon = activeWith({
+      phaseIndex: 1,
+      stance: "SHIELDED",
+      stanceRemaining: 0.75,
+      phaseWindowIndex: 0, // upcoming window index 1 → charged (the phase-2 teach)
+    });
+    const r = tickBossQte(chargedSoon, false, NO_HIT, 0.01);
+    expect(r.qte.chargedWindow).toBe(true); // upcoming charged, reflected for the render
+    expect(r.qte.telegraphActive).toBe(true);
+    // A non-charged upcoming window at the same stanceRemaining is NOT yet telling.
+    const normalSoon = activeWith({
+      phaseIndex: 1,
+      stance: "SHIELDED",
+      stanceRemaining: 0.75,
+      phaseWindowIndex: 1, // upcoming window index 2 → not charged
+    });
+    const r2 = tickBossQte(normalSoon, false, NO_HIT, 0.01);
+    expect(r2.qte.chargedWindow).toBe(false);
+    expect(r2.qte.telegraphActive).toBe(false);
+  });
+});
+
+describe("bossQteSystem — lever 5: ceremonial FINISHER", () => {
+  it("isBossQteActive includes FINISHER (the freeze holds through the coup de grâce)", () => {
+    const base = createBossQte(SPEC);
+    expect(isBossQteActive({ ...base, phase: "FINISHER" })).toBe(true);
+  });
+
+  it("a FINISHER resolves on a click → WON (+refill)", () => {
+    const fin = activeWith({ phase: "FINISHER", finisherRemaining: FINISHER_HOLD_SECONDS });
+    const r = tickBossQte(fin, true, NO_HIT, 0.1);
+    expect(r.qte.phase).toBe("WON");
+    expect(r.energyDelta).toBe(QTE_BOSS_REFILL);
+    expect(r.qte.resultRemaining).toBeCloseTo(QTE_RESULT_HOLD);
+  });
+
+  it("a FINISHER auto-resolves on timeout → WON (+refill), never a failure surface", () => {
+    let qte = activeWith({ phase: "FINISHER", finisherRemaining: FINISHER_HOLD_SECONDS });
+    // Tick without ever firing: it counts down, never LOST, then resolves to WON.
+    let won = false;
+    for (let i = 0; i < 40; i++) {
+      const r = tickBossQte(qte, false, NO_HIT, 0.1);
+      qte = r.qte;
+      expect(qte.phase).not.toBe("LOST");
+      if (qte.phase === "WON") {
+        expect(r.energyDelta).toBe(QTE_BOSS_REFILL);
+        won = true;
+        break;
+      }
+    }
+    expect(won).toBe(true);
+  });
+});
+
+describe("bossQteSystem — lever 2: interactive décor prop", () => {
+  const DECOR_SPEC: BossQteSpec = {
+    ...SPEC,
+    decorProp: { position: { x: 1.5, y: 0 }, armPhaseIndex: 1 },
+  };
+
+  it("no decorProp ⇒ decorArmed always false (additive-and-optional)", () => {
+    const r = tickBossQte(activeWith({ phaseIndex: 1, stance: "SHIELDED" }), false, NO_HIT, 0.01);
+    expect(r.qte.decorProp).toBeNull();
+    expect(r.qte.decorArmed).toBe(false);
+  });
+
+  it("arms during a SHIELDED lull of its arm phase; a shot drops it for +3 (single-use)", () => {
+    const active = toActiveSpec(DECOR_SPEC);
+    const shielded = { ...active, phaseIndex: 1, stance: "SHIELDED" as const, stanceRemaining: 1.0, bossHp: 12 };
+    const armedTick = tickBossQte(shielded, false, NO_HIT, 0.01);
+    expect(armedTick.qte.decorArmed).toBe(true);
+    // Shoot the armed prop.
+    const drop = tickBossQte(armedTick.qte, true, { x: 1.5, y: 0 }, 0.01);
+    expect(drop.qte.bossHp).toBe(9); // 12 − BOSS_DECOR_DAMAGE (3)
+    expect(drop.qte.decorConsumed).toBe(true);
+    expect(drop.qte.decorArmed).toBe(false); // spent
+    // Single-use: it never re-arms.
+    const again = tickBossQte(
+      { ...drop.qte, stance: "SHIELDED", stanceRemaining: 1.0 },
+      false,
+      NO_HIT,
+      0.01,
+    );
+    expect(again.qte.decorArmed).toBe(false);
+  });
+
+  it("is PURE UPSIDE: missing the prop costs nothing to the décor mechanic (it stays armed)", () => {
+    const active = toActiveSpec(DECOR_SPEC);
+    const armed = tickBossQte(
+      { ...active, phaseIndex: 1, stance: "SHIELDED", stanceRemaining: 1.0, bossHp: 12 },
+      false,
+      NO_HIT,
+      0.01,
+    ).qte;
+    expect(armed.decorArmed).toBe(true);
+    // Fire on the boss body (not the prop): the ordinary SHIELDED spray penalty only; the prop
+    // is untouched (not consumed) — a whiff on the prop is not a décor failure.
+    const miss = tickBossQte(armed, true, { x: 0, y: 0 }, 0.01);
+    expect(miss.energyDelta).toBe(QTE_BODY_HIT);
+    expect(miss.qte.decorConsumed).toBe(false);
+  });
+
+  it("createBossQte rejects an out-of-range or non-finite décor prop", () => {
+    expect(() =>
+      createBossQte({ ...SPEC, decorProp: { position: { x: 0, y: 0 }, armPhaseIndex: 5 } }),
+    ).toThrow(/decorProp/);
+    expect(() =>
+      createBossQte({ ...SPEC, decorProp: { position: { x: 0, y: 0 }, armPhaseIndex: 1.5 } }),
+    ).toThrow(/decorProp/);
+    expect(() =>
+      createBossQte({ ...SPEC, decorProp: { position: { x: Number.NaN, y: 0 }, armPhaseIndex: 1 } }),
+    ).toThrow(/decorProp/);
+  });
+});
+
+describe("bossQteSystem — lever 4: in-tableau renfort pressure surge", () => {
+  it("isRenfortWindow flags exactly the scripted phase-3 window range, nothing else", () => {
+    expect([0, 1, 2, 3].map((k) => isRenfortWindow(2, k))).toEqual([false, true, true, false]);
+    // Wrong phase → never.
+    expect([0, 1, 2, 3].map((k) => isRenfortWindow(1, k))).toEqual([false, false, false, false]);
+    expect(RENFORT_SURGE).toEqual({ phaseIndex: 2, onsetWindowIndex: 1, durationWindows: 2 });
+  });
+
+  it("a BLOWN window under the surge drains −12 (replacing −8) but counts as ONE blown window", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.1,
+      chargedWindow: false,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 2, // under the surge (windows 1–2), NOT charged (even index)
+      blownWindows: 0,
+      bossHp: 6,
+    });
+    const r = tickBossQte(qte, false, NO_HIT, 0.2); // closes 0-chip
+    expect(r.energyDelta).toBe(QTE_RENFORT_DRAIN); // −12, not the phase-3 −8
+    expect(r.qte.blownWindows).toBe(1); // exactly one — the loss clock is never accelerated
+  });
+
+  it("a charged whiff INSIDE the surge charges the greater magnitude only (−12, never both)", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.1,
+      chargedWindow: true,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 1, // charged (odd) AND under the surge
+      blownWindows: 0,
+      bossHp: 6,
+    });
+    const r = tickBossQte(qte, false, NO_HIT, 0.2);
+    expect(r.energyDelta).toBe(QTE_RENFORT_DRAIN); // max(−10 whiff, −12 surge) = −12, one charge
+    expect(r.qte.blownWindows).toBe(1);
+  });
+
+  it("an ANSWERED surge window costs nothing extra ('pas pour lui')", () => {
+    const qte = activeWith({
+      phaseIndex: 2,
+      stance: "EXPOSED",
+      stanceRemaining: 0.1,
+      chargedWindow: false,
+      windowChipped: false,
+      windowOrdinal: 5,
+      phaseWindowIndex: 2,
+      targetOffset: { x: 0, y: 0.8 },
+      ringZone: "vital",
+      bossHp: 6,
+    });
+    const r = tickBossQte(qte, true, { x: 0, y: 0.8 }, 0.2); // chip ring A, then close
+    expect(r.qte.bossHp).toBe(4);
+    expect(r.qte.blownWindows).toBe(0);
+    expect(r.energyDelta).toBe(0);
+  });
+
+  it("the surge onset is telegraphed (renfortActive during the preceding lull)", () => {
+    const beforeSurge = activeWith({
+      phaseIndex: 2,
+      stance: "SHIELDED",
+      stanceRemaining: 1.0,
+      phaseWindowIndex: 0, // upcoming window index 1 → surge onset
+    });
+    const r = tickBossQte(beforeSurge, false, NO_HIT, 0.01);
+    expect(r.qte.renfortActive).toBe(true);
+  });
+
+  it("smokeActive is a phase-3 stretch (owned by the game as a boolean + floor guarantee)", () => {
+    expect(tickBossQte(activeWith({ phaseIndex: 2, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte.smokeActive).toBe(true);
+    expect(tickBossQte(activeWith({ phaseIndex: 1, stance: "SHIELDED" }), false, NO_HIT, 0.01).qte.smokeActive).toBe(false);
+  });
+
+  it("D4 boundary assertion: the source reads/mutates NO frozen level-pipeline state", () => {
+    // The ADR-0052 D4 constraint-4 unit assertion (not left to review alone): the whole boss
+    // system — the renfort surge included — must NOT read or write `enemies` / `spawnWave` /
+    // `couriers` / `bullets` / `lives` / `elapsedSeconds` (all frozen during the QTE), and must
+    // not touch the hostage system. Strip comments/strings first so prose can name these tokens.
+    const src = readFileSync(resolve(process.cwd(), "src/game/systems/bossQteSystem.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "")
+      .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+      .replace(/'(?:[^'\\]|\\.)*'/g, "''");
+    // Whole-identifier matches (word boundaries) so a legitimate token like the `enemiesToWin`
+    // KILL-QUOTA count — a plain number param, not the enemy roster — is not a false positive.
+    for (const forbidden of [
+      "enemies",
+      "spawnWave",
+      "couriers",
+      "bullets",
+      "lives",
+      "elapsedSeconds",
+      "qteSystem",
+      "hostageQte",
+    ]) {
+      expect(src).not.toMatch(new RegExp(`\\b${forbidden}\\b`));
+    }
+  });
+});
+
+describe("bossQteSystem — ADR-0052 additive-and-optional boundary", () => {
+  it("a boss with no décor / no surge phase / a phase-1-only fight matches the V1 shape", () => {
+    // A single-phase boss never reaches the two-ring split, a charged window, the renfort surge
+    // (phase 3) or smoke: its EXPOSED windows stay the V1 single ring, additive-and-optional.
+    const mini = createBossQte({ ...SPEC, phaseCount: 1 });
+    let qte = tickBossQte(mini, false, { x: 0, y: 0 }, SPEC.zoomSeconds).qte;
+    qte = tickBossQte(qte, false, NO_HIT, phaseRow(0).shieldedLullSeconds).qte; // open a window
+    expect(qte.stance).toBe("EXPOSED");
+    expect(qte.chargedWindow).toBe(false);
+    expect(qte.renfortActive).toBe(false);
+    expect(qte.smokeActive).toBe(false);
+    expect(qte.targetOffsetB).toEqual(BOSS_WANDER_CENTRE); // ring B inert
+    // The single ring is the full-anatomy V1 wander (zone by position).
+    expect(["vital", "limb", "off"]).toContain(qte.ringZone);
   });
 });

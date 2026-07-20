@@ -238,6 +238,12 @@ export const BOSS_QTE_DEV_HARNESS_LEVEL: LevelConfig = {
     bossHp: 24,
     maxBlownWindows: 10,
     targetSeed: 20260719,
+    // ADR-0052 lever 2 — one non-canon placeholder décor prop (a mur d'enceintes / lustre),
+    // armed once during phase 2 (armPhaseIndex 1): shoot it in the SHIELDED lull for a single,
+    // pure-upside +3 HP burst. Anchor-relative position; harness-only (no shipped level touched).
+    // The stage-5 K-5 seed re-pin obligation (ADR-0052 gotcha) must confirm this arm-window is
+    // landable on `targetSeed`, alongside the two-ring + parry landability checks.
+    decorProp: { position: { x: 1.4, y: 0.2 }, armPhaseIndex: 1 },
   },
 };
 
