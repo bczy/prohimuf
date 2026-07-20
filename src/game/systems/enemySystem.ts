@@ -64,10 +64,14 @@ export function hitEnemy(enemy: Enemy): Enemy {
 // `weights`: optional override pool built by `buildWeightedFrom` for the active
 // level's `roster.windowWeights`. Omitted ⇒ the frozen `pickKind` path (legacy
 // behaviour, byte-for-byte identical for the same seed).
+// `excludeSlots`: slot indices the wave must NOT seat on — the co-location guard
+// for a live LOOT crate (ADR-0052 D5, direction b). Empty/omitted ⇒ the legacy
+// path, byte-for-byte identical (the shuffle + per-position seed are unchanged).
 export function spawnWave(
   wave: number,
   facade: FacadeMap,
   weights?: readonly EnemyKind[],
+  excludeSlots: readonly number[] = [],
 ): readonly Enemy[] {
   const count = Math.min(1 + wave, facade.slots.length);
   // Shuffled slot indices using a deterministic seed per wave
@@ -83,7 +87,12 @@ export function spawnWave(
     }
   }
 
-  return indices.slice(0, count).map((slotIndex, i) => {
+  // Drop excluded slots BEFORE taking `count`, so the crate's slot is never seated
+  // (a crate is Belliard-only + rare, and slots ≫ count, so the wave still fills).
+  const excluded = new Set(excludeSlots);
+  const usable = excluded.size === 0 ? indices : indices.filter((i) => !excluded.has(i));
+
+  return usable.slice(0, count).map((slotIndex, i) => {
     const seed = wave * 31 + i * 17 + slotIndex * 7;
     const kind = weights === undefined ? pickKind(seed) : pickKindFor(seed, weights);
     const archetype = ARCHETYPES[kind];
