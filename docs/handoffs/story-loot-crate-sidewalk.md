@@ -172,6 +172,55 @@ the art-advisor fallback if it fails. Flagged to `lead-art`, not blocking this d
 
 ---
 
+## stage-2. DESIGN GATE — lead-game-designer (Karim) — 2026-07-20 (round 2 of 2, final)
+
+Re-gate of the amended `docs/game-design/weapons-crate-sidewalk-delta.md` (Sacha, commit
+c949ceb) against my round-1 corrections. Verified each landed in code-grounded form, not
+hand-waved; checked no regression on confirmed rulings and no scope creep.
+
+**Blocking corrections — both resolved:**
+
+- **C1 (runtime-x formula) — RESOLVED.** The harness `col·2 − 18` is retired throughout;
+  crate world-x is now `slot.screenPosition.x` (grounding block, D2, D9-2 `cx`, AC-D1), and the
+  spawn filter is `|slot.screenPosition.x| ≤ LOOT_MAX_ABS_X = 7` world-origin-anchored (D3/N5).
+  Runtime `col`-as-sequential-index is called out. Unit-testable against `mergedFacade`.
+- **C2 (mobile reachability) — RESOLVED.** All "no-pan" claims removed. Grounding block states
+  the mobile resting frame (zoom 1.7 → x∈[−5.3,5.3], y∈[−3.5,3.5]); D3/D4/AC-D1 state the crate
+  is street content below the resting frame, engaged by the same pan-down / zoom-out as
+  couriers (−4.8) and the truck (−4.5), ADR-0003/0026-aligned; panned-away-miss documented and
+  accepted.
+
+**Premise corrections — landed:** N1 (runtime −4.8/−4.5, separation via shape + z-band + D9-2
+x-gap, not a 0.7 u depth offset — D1/D7); N2 (−4.3 sits at the ≈−4.5/−4.6 cover-crop bottom, new
+**AC-D8** empirical crop-clearance gate, `LOOT_STREET_Y` verify-tunable); N3 (architect hand-off
+now explicitly discloses the `resolvePlayerShot` street-y change + `tickLoot`/`attemptSpawn`
+filters + constants — "a real code change, not no-code-change"); N5 (world-origin anchor,
+boundary-legal, pan stays out of `GameState`).
+
+**No regression / no scope creep:** D6/D7 precedence (crate-beats-courier), D9-1/D9-2
+measurability, D8 W1 stencil-on-face override — all intact from round 1. D10 tuning (cadence 15 s,
+A-B-C stock) untouched; AC-D8 is a verify/composite gate consistent with N2, not a new mechanic.
+Supersession set (weapons.md §5.1-R2/R3/R4, §5.2, §5.3, §5.4, `LOOT_VISIBLE_DURATION`) unchanged.
+Cahier des charges still PASS (documented refinement of the greenlit [EXTENSION], loop untouched).
+
+**Pins for `senior-architect` (ADR-0053) / dev — carried into the tech lane, not blocking:**
+
+- **P1 — signature change.** `tickLoot`/`attemptSpawn` must gain the delivery phase +
+  `stopPosition.x` (for D9-2) as passed-in pure data (not render state) — the pure system takes
+  no delivery input today. Keep boundary law: data in, no React/Three.
+- **P2 — hit-point decoupling.** `resolvePlayerShot` must resolve the crate at `LOOT_STREET_Y`,
+  not `slot.screenPosition.y`; keep the nearest-wins / step-1-before-step-2 ordering
+  byte-identical (only the y source changes) so the AC-D3 precedence regression holds.
+- **P3 — test targets.** Unit-test the `|slot.screenPosition.x| ≤ 7` filter against
+  `mergedFacade` (not `facade01`); AC-D8 crop clearance is an empirical verify/composite gate
+  (not unit) — tune `LOOT_STREET_Y` there if the crate/glyph/rim clips the 16:9 bottom.
+- **P4 — lead-art (carried).** Green `#78FF3C` rim vs the green enemy early-telegraph
+  co-occurrence remains a binding composite-gate check (same-frame screenshot); cyan fallback.
+
+**VERDICT:** PASS — both blocking corrections (C1, C2) and all premise fixes (N1/N2/N3/N5) genuinely landed and code-grounded; confirmed rulings intact, no scope creep. Delta cleared for `senior-architect` (ADR-0053). 4 pins carried to the tech/art lanes (non-blocking). Cap reached (round 2 of 2) — no further design-gate rounds.
+
+---
+
 ## stage-2. DELTA AMENDMENT — game-designer (Sacha) — 2026-07-20 (for Karim round 2)
 
 All corrections applied to `docs/game-design/weapons-crate-sidewalk-delta.md`; confirmed points
