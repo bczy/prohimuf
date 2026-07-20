@@ -5,6 +5,7 @@ import { WaveReadout } from "./hud/WaveReadout";
 import { TimerReadout } from "./hud/TimerReadout";
 import { LivesReadout } from "./hud/LivesReadout";
 import { EnergyGauge } from "./hud/EnergyGauge";
+import { WeaponReadout } from "./hud/WeaponReadout";
 import { DeliveryIntegrityBanner } from "./hud/DeliveryIntegrityBanner";
 import { HostageQteOverlay, isQteSetPieceVisible } from "./hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
@@ -49,6 +50,12 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <TimerReadout timeRemaining={data.timeRemaining} />
         <LivesReadout lives={data.lives} />
         <EnergyGauge energy={data.energy} />
+        {/* Active-weapon fuel gauge (ADR-0052). Defaults to base/∞ before the first
+            loop tick populates `data.weapon`. */}
+        <WeaponReadout
+          weapon={data.weapon ?? { active: "base", stock: Number.POSITIVE_INFINITY }}
+          emptyNonce={data.weaponEmptyNonce ?? 0}
+        />
       </div>
 
       {/* Rendered before the delivery banner: both are center-anchored fixed

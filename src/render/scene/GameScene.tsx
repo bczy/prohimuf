@@ -26,6 +26,7 @@ import { NearForeground } from "./NearForeground";
 import { facadeDrawScale, stretchAboutCentre } from "./facadeLayout";
 import { CrosshairSprite } from "./CrosshairSprite";
 import { EnemySprite, ENEMY_PLANE_SCALE, ENEMY_BODY_LIFT } from "./EnemySprite";
+import { LootCrate } from "./LootCrate";
 import { CourierSprite } from "./CourierSprite";
 import { HostageQteSprite } from "./HostageQteSprite";
 import { BossQteSprite } from "./BossQteSprite";
@@ -422,6 +423,9 @@ export function GameScene({
         panels={layout.mode === "single-facade" ? PANELS : 1}
         reducedMotion={reducedMotion}
       />
+      {/* Armament crate (ADR-0052): the single LOOT entity seats itself in its
+          window slot; shares the window channel but never co-locates with an enemy. */}
+      <LootCrate stateRef={stateRef} slots={mergedFacade.slots} />
       <CourierSprite stateRef={stateRef} paused={paused} />
       <HostageQteSprite
         stateRef={stateRef}

@@ -2,6 +2,7 @@ import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
 import type { QtePhase } from "@game/types/hostageQte";
+import type { WeaponKind } from "@game/types/weapon";
 
 /*
  * DOM-HUD view types, extracted from HUD.tsx (ADR-0046) to drop the type-only import
@@ -56,6 +57,18 @@ export interface HudBossQte {
   phaseCount: number;
 }
 
+/**
+ * Active-weapon state surfaced to the DOM HUD (ADR-0052 §6.2). Read-only view value
+ * mirrored from `GameState.weapon`; the game owns the rule (stock/burst/auto-return).
+ * The HUD renders it as a fuel gauge (glyph + stock), never a tension meter (N2/W4).
+ */
+export interface HudWeapon {
+  /** Active weapon kind — drives the A/B/C glyph. */
+  active: WeaponKind;
+  /** Remaining stock; `Infinity` for `base` (rendered ∞, never a counter/red/blink). */
+  stock: number;
+}
+
 export interface HudData {
   score: number;
   lives: number;
@@ -71,4 +84,11 @@ export interface HudData {
   delivery?: HudDelivery | undefined;
   hostageQte?: HudHostageQte | undefined;
   bossQte?: HudBossQte | undefined;
+  // Active weapon + special stock (ADR-0052). Absent only on the pre-tick initial
+  // HUD before the first loop tick populates it; the readout defaults to base/∞.
+  weapon?: HudWeapon | undefined;
+  // Monotonic counter bumped the tick a special empties and auto-returns to base
+  // (the `weaponEmpty` transient, drained by useGameLoop). Drives the same-frame
+  // HUD empty-flash (W3/AC10) — the widget re-keys its flash on each change.
+  weaponEmptyNonce?: number | undefined;
 }
