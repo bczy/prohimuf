@@ -6,6 +6,7 @@
 
 import { clamp01 } from "./hostageCue";
 import type { QtePhase } from "@game/types/hostageQte";
+import type { BossQtePhase } from "@game/types/bossQte";
 
 /**
  * How much closer the camera pushes at full zoom, relative to the pre-QTE zoom.
@@ -41,7 +42,7 @@ function lerp(a: number, b: number, t: number): number {
  * holds). Any other phase reads 0 (not zoomed).
  */
 export function qteZoomInProgress(
-  phase: QtePhase,
+  phase: QtePhase | BossQtePhase,
   zoomRemaining: number,
   zoomSeconds: number,
 ): number {
@@ -49,7 +50,7 @@ export function qteZoomInProgress(
     const raw = zoomSeconds > 0 ? 1 - zoomRemaining / zoomSeconds : 1;
     return qteEase(raw);
   }
-  if (phase === "ACTIVE" || phase === "WON" || phase === "LOST") return 1;
+  if (phase === "ACTIVE" || phase === "FINISHER" || phase === "WON" || phase === "LOST") return 1;
   return 0;
 }
 
