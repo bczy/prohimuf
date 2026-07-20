@@ -59,8 +59,8 @@
   inset: -2px -6px;
   background: var(--mark-pink);
   pointer-events: none;
-  /* Invisible at rest so it never washes the cell once the pulse has played (or
-     when animation is disabled under reduced motion). */
+  /* Invisible at rest (0% and 100% keyframes are opacity 0) so the cell is never washed
+     once the one-shot pulse completes. */
   opacity: 0;
   animation: weaponEmptyFlash 0.45s ease-out forwards;
 }
@@ -87,12 +87,13 @@
   }
 }
 
-/* Freeze both animations under reduced motion (GestureIcon/DiagramIcon precedent):
-   the low-stock ink and the flash element still show their steady state, so the
-   fuel warning and the empty cue remain legible without motion. */
+/* Reduced motion suppresses MOTION, not information (MINEUR-3). The `.stockLow` blink is
+   a persistent repeating pulse → stilled here (the pink ink alone still flags low stock).
+   The `.emptyFlash` is DELIBERATELY NOT stilled: it is a single one-shot opacity fade (no
+   transform, not vestibular, no WCAG flash concern) and the ONLY dedicated visible empty
+   cue — killing it would drop information, not motion. So it keeps playing. */
 @media (prefers-reduced-motion: reduce) {
-  .stockLow,
-  .emptyFlash {
+  .stockLow {
     animation: none !important;
   }
 }
