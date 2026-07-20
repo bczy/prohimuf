@@ -730,7 +730,7 @@ describe("bossQteSystem — lever 3: charged parry window (same fire-click)", ()
       bossHp: 6,
     });
     const r = tickBossQte(qte, true, { x: BOSS_PARRY_POINT.x, y: BOSS_PARRY_POINT.y }, 0.1);
-    expect(r.qte.bossHp).toBe(4); // 6 − QTE_PARRY_CHIP
+    expect(r.qte.bossHp).toBe(6 - QTE_PARRY_CHIP);
     expect(r.qte.windowChipped).toBe(true);
     expect(r.qte.staggerRemaining).toBeCloseTo(STAGGER_SECONDS);
     expect(r.qte.stance).toBe("SHIELDED");
@@ -870,7 +870,7 @@ describe("bossQteSystem — lever 2: interactive décor prop", () => {
     expect(armedTick.qte.decorArmed).toBe(true);
     // Shoot the armed prop.
     const drop = tickBossQte(armedTick.qte, true, { x: 1.5, y: 0 }, 0.01);
-    expect(drop.qte.bossHp).toBe(9); // 12 − BOSS_DECOR_DAMAGE (3)
+    expect(drop.qte.bossHp).toBe(12 - BOSS_DECOR_DAMAGE);
     expect(drop.qte.decorConsumed).toBe(true);
     expect(drop.qte.decorArmed).toBe(false); // spent
     // Single-use: it never re-arms.

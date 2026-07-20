@@ -258,6 +258,15 @@ function inBand(
   return dx >= xMin && dx <= xMax && dy >= yMin && dy <= yMax;
 }
 
+/** Guard a NEW authored positive scalar (finite and > 0), asserted against the value at
+ *  `createBossQte` (ADR-0052 D5). Takes a widened `number` so a module-constant literal is
+ *  still genuinely checked (not a compile-time no-op). */
+function assertPositiveScalar(label: string, value: number): void {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`bossQteSystem invariant: ${label} must be finite and > 0`);
+  }
+}
+
 /** True iff the axis-aligned box (`centre` ± amp) is fully CONTAINED in the band — the
  *  colour-honesty ⊂ assertion for the lever-1 ring sub-boxes (ADR-0052 D5). */
 function boxInBand(
@@ -705,14 +714,8 @@ export function createBossQte(spec: BossQteSpec): BossQte {
   }
 
   // ADR-0052 levers 3 & 5 — the stagger and finisher beats must be real positive holds.
-  if (!Number.isFinite(STAGGER_SECONDS) || STAGGER_SECONDS <= 0) {
-    throw new Error("bossQteSystem invariant (ADR-0052 lever 3): STAGGER_SECONDS must be > 0");
-  }
-  if (!Number.isFinite(FINISHER_HOLD_SECONDS) || FINISHER_HOLD_SECONDS <= 0) {
-    throw new Error(
-      "bossQteSystem invariant (ADR-0052 lever 5): FINISHER_HOLD_SECONDS must be > 0",
-    );
-  }
+  assertPositiveScalar("STAGGER_SECONDS (ADR-0052 lever 3)", STAGGER_SECONDS);
+  assertPositiveScalar("FINISHER_HOLD_SECONDS (ADR-0052 lever 5)", FINISHER_HOLD_SECONDS);
 
   // ADR-0052 lever 4 — the renfort surge descriptor is a sane, telegraphed, seeded shape.
   if (
