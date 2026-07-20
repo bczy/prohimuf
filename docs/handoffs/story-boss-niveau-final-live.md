@@ -2166,3 +2166,77 @@ VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer
   - `src/render/ui/menu/LevelFlyer.tsx` (MODIFIED — ambiance string + comment)
   - `docs/game-design/spec-niveau-final-fiction.md` (MODIFIED — §4.1 ambiance row + canon note)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this ratification entry appended)
+
+## 5. FIX — dev-tooling-assets (Amelia) — e2e-assets.mjs derives expected layers from authored `prompts`, not a hardcoded list (PR #119 CI finding) — 2026-07-20
+
+- **claim:** coordinator-flagged CI finding on PR #119's E2E · assets job: `scripts/e2e-assets.mjs`
+  hardcoded a 3-layer list (`["facade", "street", "foreground"]`) applied uniformly to every level,
+  so it would permanently expect `assets/levels/niveau-final/street.png` — a file that will NEVER
+  exist (the interior l'Éden venue deliberately drops `sky`/`street`, per this same shard's §4 gate
+  ruling). Fix the derivation to read each level's own authored `prompts` keys; explicitly do NOT
+  special-case the two legitimately-pending niveau-final PNGs (facade/foreground) — the gate must
+  keep failing on those until `gen-level-art.yml` commits them back.
+- **release** (`scripts/e2e-assets.mjs`):
+  - Removed the hardcoded `const LAYERS = ["facade", "street", "foreground"]` (note: this array
+    never included `"sky"` even though the file's own header comment claimed "the four layers" —
+    pre-existing doc/code drift, not introduced by this fix).
+  - `expectedAssetPaths()` now derives, per level, the expected layer set from
+    `Object.keys(level.prompts)` (skipping `$comment`-prefixed keys) instead of the fixed list —
+    mirrors the exact same per-layer-presence logic `scripts/gen-level-art.mjs` already applies at
+    generation time (this story's §4 fix), so the two stay in lockstep by construction: a layer key
+    authored in `prompts` ⇒ generated ⇒ expected here; absent ⇒ skipped there ⇒ never expected here.
+  - Header comment updated to describe the derivation instead of a fixed 4-layer claim.
+- **Verify (local `yarn build` + the check):**
+  - `yarn build` → clean.
+  - `node scripts/e2e-assets.mjs` against the local `dist/`:
+    ```
+    [e2e-assets] checking 17 asset(s) in .../dist
+      ok  assets/levels/belliard/facade.png (105816B)
+      ok  assets/levels/belliard/street.png (60443B)
+      ok  assets/levels/belliard/foreground.png (763482B)
+      ok  assets/levels/stalingrad/sky.png (52879B)
+      ok  assets/levels/stalingrad/facade.png (105482B)
+      ok  assets/levels/stalingrad/street.png (65557B)
+      ok  assets/levels/stalingrad/foreground.png (559851B)
+      ok  assets/levels/vitry/sky.png (49953B)
+      ok  assets/levels/vitry/facade.png (93959B)
+      ok  assets/levels/vitry/street.png (48812B)
+      ok  assets/levels/vitry/foreground.png (517845B)
+      ok  assets/vehicles/truck.png (36484B)
+      ok  assets/vehicles/car.png (41976B)
+      ok  assets/vehicles/moto.png (49419B)
+    [e2e-assets] FAILED — 3 asset issue(s):
+      ✗ too small  assets/levels/belliard/sky.png (1604B < 5120B)
+      ✗ missing    assets/levels/niveau-final/facade.png
+      ✗ missing    assets/levels/niveau-final/foreground.png
+    ```
+    **Fix proven:** `assets/levels/niveau-final/street.png` is no longer listed at all (neither
+    "missing" nor "ok") — the check no longer expects a file niveau-final was never asked to
+    generate. **Expected failure, not fixed here (per instruction):**
+    `niveau-final/{facade,foreground}.png` missing — legitimately pending `gen-level-art.yml`'s
+    commit-back on the next dispatched run; left failing on purpose.
+  - **New finding surfaced by this fix (unplanned, NOT fixed in this pass — flagging for a
+    decision):** `belliard/sky.png` now fails ("too small", 1604B < the 5KB floor). This is NOT a
+    niveau-final regression — belliard has always authored a `sky` prompt and its committed
+    `sky.png` has apparently always been undersized/placeholder; it was simply never checked
+    before, because the OLD hardcoded `LAYERS` list never included `"sky"` at all (contradicting
+    its own header comment's "four layers" claim — pre-existing drift, confirmed via
+    `git log -p` — the array was `["facade","street","foreground"]` since this file's first
+    commit). Deriving layers from the level's own authored `prompts` (the correct fix) now
+    honestly includes `sky` for every level that authors it (belliard, stalingrad, vitry all do),
+    which surfaces this real, previously-invisible gap. Routed to `qa-lead`/`producer` for a call:
+    regenerate `belliard/sky.png` (separate, pre-existing-defect fix-lane item) vs. any other
+    disposition — out of scope for this narrow CI-finding fix.
+  - `yarn lint` → green (0 errors on the changed file).
+  - `npx prettier --check scripts/e2e-assets.mjs` → clean.
+- **Scope discipline:** touched only `scripts/e2e-assets.mjs` (derivation logic + header comment);
+  did not touch `gen-level-art.mjs`/`levelArt.json` further, did not regenerate/retouch any
+  committed PNG, did not silence or special-case the belliard/sky finding.
+- **Handoff** → `producer`/`qa-lead`: decide disposition of the newly-surfaced
+  `belliard/sky.png` pre-existing undersize defect (separate from this story). → whoever owns
+  PR #119: the E2E · assets job will now correctly stop expecting niveau-final's `street.png`, but
+  will still fail (as designed) until (a) `gen-level-art.yml` commits the niveau-final backdrop and
+  (b) the belliard/sky.png disposition above is resolved.
+- **File List:**
+  - `scripts/e2e-assets.mjs` (MODIFIED — layer derivation + header comment)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
