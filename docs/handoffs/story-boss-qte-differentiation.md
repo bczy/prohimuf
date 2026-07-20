@@ -284,3 +284,89 @@ read.md` §0.1 already argued against). Touch target: 44×44 px floor, recommend
   confirm the 2-C seam (above) is either concurred with by `sound-designer` or explicitly
   reconciled before PASS.
 - File List: `docs/game-design/ux/spec-boss-qte-differentiation-ux.md` (new).
+
+## 4. AUDIO SPEC — sound-designer (Malik) — 2026-07-20
+
+- claim: audio-flow verdict on the specced audible behaviour BEFORE implementation
+  (`COLLABORATION.md` §audio flow), running in parallel with `game-designer` /
+  `narrative-designer` / `ux-designer` on this story's design loop. Drafted the audio
+  bible (`docs/audio-direction.md`) first — it did not exist yet, my first-activation
+  deliverable per the agent fiche — then the audio spec for the pack.
+- release:
+  - `docs/audio-direction.md` — **NEW**, the audio bible (did not exist before this
+    pass). Identity (sonic twin of the fanzine B&W + acid neon art bible: 1998 Paris
+    free-party, acidcore/tribe/hardtek, period-correct test), the law of sound (_ce qui
+    sonne informe_ — tension tiers legible, every SFX maps 1:1 to one event), the
+    mix-serves-the-loop rule, an honest inventory of the shipped system incl. two
+    pre-existing gaps flagged (not fixed): `shoot.wav`'s unresolved-licence FAIL is
+    already on record in `CREDITS.md`; newly noted here that `hit`/`death` are dead
+    code paths (referenced by `audioSystem.ts`'s `playSfx` type, never called anywhere
+    in `src/` — verified by grep), and §6's "10 tracks minimum" is not yet met (5
+    shipped). Gate criteria stated (licence-first, period-correct, legible-function,
+    mix-safe).
+  - `docs/game-design/spec-boss-qte-differentiation-audio.md` — **NEW**, the audio spec
+    for the 5-lever pack. Headlines:
+    - **Lever 2 / OQ2-C (smoke audio tell) — MY POSITION: ADD, do not REPLACE.** A
+      rising filtered riser (duration = phase `telegraphLeadSeconds`, 0.45→0.35s,
+      time-compressing with phase like the bible's existing tempo-accelerates law) +
+      a dry metallic downbeat at the `SHIELDED→EXPOSED` flip, layered ON TOP of the
+      (merely degraded, not removed) visual tell — extends the game's "not colour
+      alone" discipline to "not audio alone." Flagged as contingent on `ux-designer`
+      (Tony)'s parallel ruling; if he lands on REPLACE instead, that is a real seam for
+      `lead-game-designer` to arbitrate, not something I silently resolved myself.
+    - **Lever 3 (parry) — 3 new cues specced by character, contingent on
+      `game-designer`'s still-open 3-A/B/C mechanic rulings:** a dry single-transient
+      parry-window tell (distinct texture family from the lever-2 sweep — sweep vs.
+      ping, blind-distinguishable); a metallic success clang with a sound-system
+      (vinyl-cut/fader) flavour, not a generic fantasy-parry sting; a quiet, diegetic,
+      non-punitive whiff cue (explicitly not an arcade fail-buzzer — fails the
+      period-correct test).
+    - **Lever 5 (finisher) — frames, does not replace, the existing WON/
+      `QTE_RESULT_HOLD` beat:** a BGM hush/duck (frozen tier-2 bed, §0) as the beat
+      opens, one ceremonial impact stinger (same sonic family as the parry clang, a
+      sound-system "kill-switch-and-slam-back" gesture) on the click, then the
+      existing `bgm_win.mp3`/WON treatment resumes unchanged. Failure-mode audio
+      explicitly left unspecced pending `game-designer`'s 5-B ruling (guaranteed-
+      success vs. real failure surface) — not an oversight.
+    - **Lever 4 (renfort) — informational SHAPE only, no tuning, per the
+      `senior-architect` 4-C ruling (§3 of this shard: in-tableau, energy-ledger-priced,
+      no real enemies).** A low ambient pressure bed, monotonic rise/resolve, needed
+      because BGM tension is FROZEN for the whole encounter (`isBossQteActive`
+      early-return holds whatever tier was live at trigger — almost certainly tier-2
+      `bgm_danger.mp3` in practice, verified against `App.tsx`'s `setTension` wiring) —
+      this cue is the only sonic channel available to carry that specific state.
+      Binding mix constraint regardless of final tuning: must never mask the window
+      telegraph or parry tell.
+    - **New vs. reuse, consolidated (§5 of the spec):** 8 NEW one-shot/layer assets
+      (smoke-tell riser + downbeat, parry tell + clang + whiff, finisher hush + impact,
+      renfort pressure bed) — all future `dev-tooling-assets` sourcing/generation work,
+      gated by me (licence-first) before landing in `public/assets/audio/`. 1 REUSE
+      (existing `bgm_win.mp3`/`QTE_RESULT_HOLD` treatment for the finisher handoff,
+      untouched).
+    - **VERDICT: APPROVABLE FOR IMPLEMENTATION, with 3 open seams flagged, none
+      blocking the sourcing lane from starting:** (1) lever 2-C ADD-vs-REPLACE pending
+      reconciliation with `ux-designer`; (2) lever 3 character holds under either shape
+      of `game-designer`'s 3-A ruling, wiring TBD; (3) lever 5 failure-mode audio and
+      lever 4 magnitudes deliberately unspecced pending those lanes' open rulings.
+      Automatic-FAIL triggers restated (sole-channel safety cue, non-period-correct
+      polish, lever-4 cue loud enough to mask a window telegraph).
+- handoff → `ux-designer` (Tony): reconcile lever 2-C ADD-vs-REPLACE position; escalate
+  to `lead-game-designer` if we diverge.
+- handoff → `game-designer` (Sacha): lever 3 (3-A/B/C) and lever 4 tuning rulings feed
+  final cue wiring (character already specced, contingent notes flagged inline); lever 5
+  5-A/5-B ruling feeds finisher wiring + whether a failure-mode cue is needed.
+- handoff → `narrative-designer` (Yasmine): lever 4's diegetic dressing (whose approach
+  the pressure bed represents — his men vs. a rival unit, OQ4-D) — I specced function
+  only, not the diegetic object.
+- handoff → `dev-tooling-assets`: 8 NEW assets queued for future sourcing/generation
+  once the above seams close and the tech plan lands — not started yet (design-loop
+  spec pass only, per the audio-flow contract).
+- handoff → `lead-game-designer` (Karim): design gate — this spec is my AC1-adjacent
+  input (OQ2-C answered from the audio side; OQ3-C/5-A informed but not tranched, those
+  stay `game-designer`'s).
+
+**File List:**
+
+- `docs/audio-direction.md` (NEW)
+- `docs/game-design/spec-boss-qte-differentiation-audio.md` (NEW)
+- `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
