@@ -102,6 +102,15 @@ const WHIFF_TINT = "#ff3b30";
 const PARRY_Z = 0.56;
 const PARRY_SIZE = RING_HIT_RADIUS * 1.15; // the catch zone footprint, drawn as a filled guard
 const PARRY_WHIFF_MS = 220;
+// Phase-3 parry windows and the smoke veil are the SAME condition by construction (shard §12/§15):
+// the tinted glyph washed out against the veil + the boss shoulder art. Fix (gated stage-5): a
+// paper-white value-contrast halo (house value language) drawn just behind the glyph, both ABOVE
+// the smoke veil's renderOrder so the tell survives — while an opacity envelope tied to the smoke
+// keeps it "degraded, never removed" (the 2-C discipline). The diamond FORM stays distinct from
+// the open shoot ring.
+const PARRY_HALO_SIZE = PARRY_SIZE * 1.4;
+const PARRY_HALO_TINT = "#ffffff";
+const PARRY_SMOKE_DEGRADE = 0.4; // at full smoke the glyph dims to 0.6× — a legibility floor, present
 
 // L2 décor — a procedural PLACEHOLDER prop (no FLUX asset this story). It sits in the tableau
 // dim/inert and GLOWS only during its armed, shootable window ("ce qui brille est interactif").
@@ -259,6 +268,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
   const ringRef = useRef<Mesh>(null); // ring A (phase 1 single ring; phase 2+ = VITAL)
   const ringBRef = useRef<Mesh>(null); // ring B (phase 2+ = LIMB)
   const parryRef = useRef<Mesh>(null); // L3 parry marker (diamond guard glyph)
+  const parryHaloRef = useRef<Mesh>(null); // L3 paper-white contrast halo (survives the smoke veil)
   const decorRef = useRef<Mesh>(null); // L2 décor placeholder prop
   const pulseRef = useRef<Mesh>(null); // phase-break pulse
   const finisherWashRef = useRef<Mesh>(null); // L5 ceremonial wash
@@ -318,6 +328,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     const ring = ringRef.current;
     const ringB = ringBRef.current;
     const parry = parryRef.current;
+    const parryHalo = parryHaloRef.current;
     const decor = decorRef.current;
     const pulse = pulseRef.current;
     const finisherWash = finisherWashRef.current;
@@ -327,6 +338,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       ring === null ||
       ringB === null ||
       parry === null ||
+      parryHalo === null ||
       decor === null ||
       pulse === null ||
       finisherWash === null ||
@@ -354,6 +366,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     const hideExtras = (): void => {
       ringB.visible = false;
       parry.visible = false;
+      parryHalo.visible = false;
       decor.visible = false;
       finisherWash.visible = false;
       finisherPrompt.visible = false;
@@ -387,6 +400,7 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       // in each branch below; ring B is always the limb catch radius.
       ringB.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
       parry.scale.set(PARRY_SIZE, PARRY_SIZE, 1);
+      parryHalo.scale.set(PARRY_HALO_SIZE, PARRY_HALO_SIZE, 1);
       decor.scale.set(DECOR_W, DECOR_H, 1);
       for (const q of smokeRefs.current) if (q !== null) q.scale.set(SMOKE_SIZE, SMOKE_SIZE, 1);
       prevHpRef.current = qte.bossHp;
@@ -486,6 +500,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       );
       const ringMat = ring.material as MeshBasicMaterial;
       if (twoRing) {
+        // VITAL ring drawn at the tighter catch radius (AMENDMENT A1 §4 — drawn = catch).
+        ring.scale.set(BOSS_VITAL_CATCH_RADIUS, BOSS_VITAL_CATCH_RADIUS, 1);
         ringMat.color.set(ringZoneColour("vital"));
         ringMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis("vital"));
         ringB.visible = true;
@@ -498,6 +514,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         ringBMat.color.set(ringZoneColour("limb"));
         ringBMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis("limb"));
       } else {
+        // Phase-1 single ring — the V1 catch radius (unchanged by A1).
+        ring.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
         ringMat.color.set(ringZoneColour(qte.ringZone));
         ringMat.opacity = RING_OPACITY_MAX * (0.4 + 0.6 * ringZoneEmphasis(qte.ringZone));
       }
@@ -507,6 +525,8 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         ? 0.22
         : 0.15 + 0.1 * ((Math.sin(nowMs * 0.006) + 1) / 2);
       ring.visible = true;
+      // Preview the vital ring at its true (tighter) catch radius so the split reads honestly.
+      ring.scale.set(BOSS_VITAL_CATCH_RADIUS, BOSS_VITAL_CATCH_RADIUS, 1);
       ring.position.set(qte.anchor.x + BOSS_WANDER_CENTRE.x, qte.anchor.y + 0.75, RING_Z);
       const ringMat = ring.material as MeshBasicMaterial;
       ringMat.color.set(ringZoneColour("vital"));
@@ -517,8 +537,10 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
       ringBMat.color.set(ringZoneColour("limb"));
       ringBMat.opacity = previewOpacity;
     } else if (qte.telegraphActive && qte.phase === "ACTIVE" && !charged) {
-      // The ordinary shoot wind-up tell — a faint ring at the neutral centre.
+      // The ordinary shoot wind-up tell — a faint neutral ring at the centre (not a scored catch
+      // zone, so it keeps the baseline radius).
       ring.visible = true;
+      ring.scale.set(RING_HIT_RADIUS, RING_HIT_RADIUS, 1);
       ring.position.set(
         qte.anchor.x + BOSS_WANDER_CENTRE.x,
         qte.anchor.y + BOSS_WANDER_CENTRE.y,
@@ -533,18 +555,30 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
     // A filled diamond at `BOSS_PARRY_POINT` — categorically NOT the open shoot ring, so parry vs.
     // shoot reads by FORM in grayscale. Faint during the wind-up, solid/brighter when the parry
     // window is live ("click the weapon now"). Under reduced motion the pulse holds steady.
+    // A paper-white halo behind the glyph (both drawn ABOVE the smoke veil, renderOrder 13/14)
+    // gives value contrast so the tell survives the phase-3 smoke + boss shoulder art (shard §15);
+    // a smoke-tied opacity envelope keeps it degraded-but-legible, never removed (2-C).
     parry.visible = false;
+    parryHalo.visible = false;
     if (parryWindup || parryOpen) {
+      const px = qte.anchor.x + BOSS_PARRY_POINT.x;
+      const py = qte.anchor.y + BOSS_PARRY_POINT.y;
+      const pulseK = reducedMotion ? 1 : 0.6 + 0.4 * ((Math.sin(nowMs * 0.012) + 1) / 2);
+      // Degrade (never remove) under smoke, using the last-frame veil envelope so it fades in step.
+      const smokeDegrade = 1 - PARRY_SMOKE_DEGRADE * clamp01(smokeEnvRef.current);
+      const baseOpacity = (parryOpen ? 0.9 : 0.5) * pulseK * smokeDegrade;
+
+      parryHalo.visible = true;
+      parryHalo.position.set(px, py, PARRY_Z - 0.01); // just behind the glyph, above the veil
+      const haloMat = parryHalo.material as MeshBasicMaterial;
+      haloMat.color.set(PARRY_HALO_TINT);
+      haloMat.opacity = baseOpacity; // the pale rim carries the value contrast
+
       parry.visible = true;
-      parry.position.set(
-        qte.anchor.x + BOSS_PARRY_POINT.x,
-        qte.anchor.y + BOSS_PARRY_POINT.y,
-        PARRY_Z,
-      );
+      parry.position.set(px, py, PARRY_Z);
       const parryMat = parry.material as MeshBasicMaterial;
       parryMat.color.set(parryOpen ? PARRY_OPEN_TINT : PARRY_WINDUP_TINT);
-      const pulseK = reducedMotion ? 1 : 0.6 + 0.4 * ((Math.sin(nowMs * 0.012) + 1) / 2);
-      parryMat.opacity = (parryOpen ? 0.9 : 0.5) * pulseK;
+      parryMat.opacity = baseOpacity;
     }
 
     // ── L2 décor prop — a placeholder mesh that GLOWS only while armed ─────────────────────────
@@ -675,10 +709,11 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
 
   return (
     <>
-      {/* renderOrder 6 = the STREET-actor layer. Rings (8) sit on top; the parry glyph (9); the
-          décor prop behind (4); the smoke veil (10) hazes the duel; renfort pressure (3) sits
-          behind the tableau at the frame edges; the finisher prompt (12) reads over the haze;
-          the phase-break pulse and finisher wash (20) wash over everything. */}
+      {/* renderOrder 6 = the STREET-actor layer. Rings (8) sit on top; the décor prop behind (4);
+          the smoke veil (10) hazes the duel; the parry halo+glyph (13/14) draw ABOVE the veil so
+          the tell survives smoke; renfort pressure (3) sits behind the tableau at the frame edges;
+          the finisher prompt (12) reads over the haze; the phase-break pulse and finisher wash (20)
+          wash over everything. */}
       {Array.from({ length: RENFORT_QUADS }, (_, i) => (
         <mesh
           key={`renfort-${String(i)}`}
@@ -708,7 +743,13 @@ export function BossQteSprite({ stateRef, onBossQte }: Props): JSX.Element {
         <ringGeometry args={[RING_INNER, RING_OUTER, RING_SEGMENTS]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
-      <mesh ref={parryRef} renderOrder={9} rotation={[0, 0, Math.PI / 4]} visible={false}>
+      {/* The parry halo (13) + glyph (14) draw ABOVE the smoke veil (10) so the tell survives
+          phase-3 smoke; the paper-white halo gives value contrast against the veil + shoulder art. */}
+      <mesh ref={parryHaloRef} renderOrder={13} rotation={[0, 0, Math.PI / 4]} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      <mesh ref={parryRef} renderOrder={14} rotation={[0, 0, Math.PI / 4]} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>

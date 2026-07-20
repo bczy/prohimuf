@@ -1210,3 +1210,153 @@ VERDICT: PASS — prompt gate speaker_wall (lead-art)
 VERDICT: PASS — prompt gate family (lead-art)
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PROMPT GATE entry appended).
+
+---
+
+## dev-tooling-assets (Amelia) — 5 new gated `boss`-block sprite JSON entries (structure only) — 2026-07-20
+
+- **Claim:** the art-lane, non-blocking parallel task named at TECH PLAN §"Lane partition"
+  (ADR-0053 D6) — add the JSON STRUCTURE (keys/`asset` paths/pinned seeds/[S13] per-type `size`) for
+  the 5 READY-FOR-STRUCTURE boss entries whose `prompt` strings were already lead-art FAMILY
+  PASSed (`commander_weakpoint`, `commander_parry_windup`, `commander_finisher`, `lustre`,
+  `speaker_wall`). NOT gated by AC8 — no `levels.ts`/`bossQteSystem.ts` touch. Read `docs/art-
+direction/prompt-drafts/boss-commander.md`, the live `boss` block, `nearForegroundArt.types`
+  ([S13] per-kind-size precedent), `scripts/check-art-prompts.mjs` (boss block confirmed out of
+  lint scope by design), and ADR-0053 D6 (generation deferred; zero runtime consumer today).
+
+- **Delivered (`src/game/levels/levelArt.json`, `boss.types`):**
+  - `commander_weakpoint` — `assets/boss/commander_weakpoint.png`, seed `4874`, prompt copied
+    VERBATIM from the draft. Block-default `size` (256×256, unchanged — figures stay square per
+    [S13]). Per-entry `$comment` flags the VITAL/LIMB band-anchor gap (see below).
+  - `commander_parry_windup` — `assets/boss/commander_parry_windup.png`, seed `4875`, prompt
+    VERBATIM. Block-default `size`. Per-entry `$comment` flags the `parryPoint` anchor gap.
+  - `commander_finisher` — `assets/boss/commander_finisher.png`, seed `4876`, prompt VERBATIM.
+    Block-default `size`. No anchor named for this entry — none added.
+  - `lustre` — `assets/boss/lustre.png`, seed `4877`, prompt VERBATIM. Per-type `size` override
+    `{width:320, height:512}` — **portrait**, per [S13] (hanging chandelier silhouette).
+  - `speaker_wall` — `assets/boss/speaker_wall.png`, seed `4878`, prompt VERBATIM. Per-type `size`
+    override `{width:512, height:320}` — **landscape**, per [S13] (ground-built pyramid stack).
+  - Seeds are the draft's own suggested 4874-4878, continuing the boss series (4870-4873) —
+    deterministic, pinned, non-overlapping with any other block.
+  - Hand-verified the boss-block contract (not linted by `check-art-prompts.mjs` by design): all 5
+    assembled (subject+tail) strings are 116-119 words (under the 120 hard ceiling) and 2 negations
+    each (tail's `no text, no watermark`; 0 in every subject) — matches lead-art's own gate numbers
+    exactly, re-derived independently with a throwaway script mirroring the lint's own regexes.
+
+- **Anchor-metadata decision — flagged, NOT invented (schema evolution needs architect sign-off).**
+  The tech plan (TECH PLAN + lead-art PROMPT GATE dispatch conditions) names `parryPoint` on
+  `commander_parry_windup` and VITAL/LIMB band anchors on `commander_weakpoint`. Checked whether the
+  existing schema has a slot: the only anchor mechanism in this file is `enemies.*.muzzle`, a
+  per-FRAME array indexed to a flipbook's `frames.length` (`levelArt.consistency.test.ts` asserts
+  frame-alignment). Boss entries carry no `frames` array (single static image), so that mechanism
+  does not fit — and VITAL/LIMB are BANDS, not points, which the existing point-anchor shape doesn't
+  represent either. `commander_exposed`'s own `muzzle` (named in the tech plan as a "future anchor")
+  also does NOT exist in the JSON today, confirming no boss anchor precedent exists at all yet, for
+  any entry. Per the task's explicit instruction, I did NOT invent a new anchor schema unilaterally:
+  no anchor field was added anywhere in the boss block. Instead: (1) each of the two affected new
+  entries carries a per-entry `$comment` naming the gap and its reason; (2) the block-level
+  `$comment` carries a consolidated "ANCHOR SCHEMA GAP" paragraph, flagged for `senior-architect`
+  sign-off before render-integration. Note these anchor VALUES could not be measured yet regardless
+  of schema — they require the real generated PNGs (same as `enemies.*.muzzle`, tuned post-
+  generation by `scripts/measure-muzzle-anchors.mjs`), and generation has not been dispatched.
+
+- **Generation-path confirmation.** No `gen-boss-sprites.mjs` and no boss CI workflow exist yet — for
+  ANY of the 9 `boss` entries, including the 4 already-APPLIED ones (`commander_shielded/exposed/
+hit/down`), which also have zero generation path today. My 5 new entries are structurally
+  identical siblings of those 4 (same shape: `asset`/`seed`/`prompt`, plus a `size` override for the
+  2 props, mirroring `nearForegroundArt.types`'s per-kind `size`), so they will be picked up
+  uniformly by whatever `gen-boss-sprites.mjs` (or `hostages`-style extension) is written to wire
+  the block — no new gap introduced by this change; the gap is pre-existing and matches ADR-0053
+  D6's explicit call that boss-asset generation dispatch is separately gated (token secret +
+  producer's go), not this story's or this task's concern.
+
+- **Verify:**
+  - `node scripts/check-art-prompts.mjs` → PASSED, 0 errors, 12 pre-existing WARNs (courier +
+    enemies + nearForeground/bench) — unchanged from before my edit; nothing from `boss` (out of
+    the lint's scope, contract held by hand as documented above).
+  - `npx prettier --check src/game/levels/levelArt.json` → clean.
+  - `yarn typecheck` → FAILS, but both errors are in `src/render/scene/BossQteSprite.tsx` /
+    `src/game/systems/bossQteSystem.ts` — other lanes' concurrent in-flight work (story-boss-qte-
+    differentiation), sharing this worktree. Confirmed by grep: **zero** TS files under `src/`
+    reference `manifest.boss`/`.boss` from the JSON today (ADR-0053 D6's "zero runtime consumer"),
+    so my change cannot be the cause; stashing/restoring those two files reproduces the same tsc
+    errors independent of my edit.
+  - `yarn vitest run` → 843/843 passed, 64/64 files green, including
+    `levelArt.consistency.test.ts` (16/16) run in isolation first.
+  - `yarn lint` → 3 errors, all three in `BossQteSprite.tsx` (unused vars), same other-lane file as
+    the tsc failures; nothing flagged on `levelArt.json`.
+
+- **Scope discipline:** touched ONLY `src/game/levels/levelArt.json` (5 new entries + the
+  block-level `$comment`). Did not touch the 4 already-APPLIED entries' `prompt`/`style` strings,
+  did not touch `scripts/**`, did not touch `.github/workflows/**`, did not dispatch any generation,
+  did not invent an anchor schema.
+
+- **Handoff:** → `senior-architect` (Winston): the anchor-schema gap ($comment in `boss.$comment`and on the two affected entries) needs a sign-off call on shape (point vs. band) before the
+follow-up render-integration pass touches`BossQteSprite.tsx`. → `producer`(Marion): structure
+half of the dispatch conditions is now met; the remaining blockers are the`POLLINATIONS_TOKEN`
+  secret and producer's go (AC8-adjacent but this art lane is declared parallel-non-blocking per
+  ADR-0053 D6).
+
+- **File List:**
+  - `src/game/levels/levelArt.json` (MODIFIED — 5 new `boss.types` entries + updated block-level
+    `$comment`; no other block touched)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-20 · l'Éden venue backdrop prompt (niveau-final facade)
+
+- claim: draft the l'Éden VENUE BACKDROP prompt for the niveau-final level facade — the one prompt
+  still missing for story 2 (the 9-entry Commandant family got FAMILY PASS at Nico's gate, unchanged).
+  Authored to the `levels[]` facade pattern (belliard/stalingrad/vitry) but written in a NEW draft
+  shard (NOT levelArt.json — `dev-tooling-assets` is concurrently editing that file), marked
+  READY-FOR-STRUCTURE.
+- release — `docs/art-direction/prompt-drafts/niveau-final-eden.md`, indexed in `prompt-drafts.md`:
+  - **`facade` (load-bearing, 92w / 0 neg):** `front-elevation interior of a derelict 1930s parisian
+dancing-hall ballroom, the back wall filling the frame ceiling to floor, a row of tall arched
+windows boarded and leaking thin light, peeling gilded cornices high up, a mezzanine balcony with
+an ornate cast-iron balustrade, a patched sprung-parquet floor below, party stencils and taped rave
+flyers layered over the lower mouldings at arm height, the upper walls calmer, plywood speaker
+cabinets low in one corner as flat set-dressing, a bare ceiling hook high where a chandelier once
+hung, dim warm night light, faded decayed grandeur`
+  - **`foreground` (38w / 2 neg, carries `magenta chroma-key`):** `row of ornate cast-iron ballroom
+balustrade railings, thick black silhouettes seen up close, evenly spaced, isolated on a solid flat
+uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette
+edges, pixel art, no wall, no floor`
+  - **`ceiling` (optional, 29w / 0 neg):** provided only if the generator needs a separate upper slot;
+    the facade already carries the ceiling register so by default this layer drops (interior venue ⇒
+    the outdoor sky/street layers of the street levels are dropped — which is exactly what satisfies
+    "no dead sky-gap").
+- the three binding composition constraints (Karim advisory 6 / Nico restatement) — how each is met:
+  - **No dead sky-gap behind boss `{0,-5}`** → `the back wall filling the frame ceiling to floor`
+    (positive phrasing, 0 negation; interior wall fills top-to-bottom, no sky band).
+  - **Legible shootable chandelier at `{0.2,1.5}`** → `a bare ceiling hook high where a chandelier once
+hung` — the facade leaves a CLEAN ceiling anchor and bakes NO chandelier; the shootable `lustre` is
+    the render-side decorProp (already FAMILY PASS). Avoids doubling + false-affordance.
+  - **Speaker wall as set-dressing, NOT a shootable affordance in V1** → `plywood speaker cabinets low
+in one corner as flat set-dressing`, baked flat/low = no render-side rim = non-interactive by the
+    loi du glow (§2 law 1). Strongest anti-false-affordance guarantee. Flagged alternative for the
+    gate: if dev-tooling instead renders the standalone `speaker_wall` sprite rim-less as set-dressing,
+    drop the facade clause to avoid a double — I recommend the facade-bake.
+- register per Estelle §7: derelict 1900-30 dancing/ballroom (patched sprung parquet, peeling gilt
+  cornices, boarded arched windows leaking light, mezzanine balustrade), party stencils + taped flyers
+  over the lower mouldings at arm height with calmer upper walls (board-belliard-decor-v2 axis 1); NO
+  2010s industrial-warehouse register, NO horror-decay — "faded decayed grandeur", elegant and dead.
+- counts assembled by hand against the `levels`-block rules: `checkLevels` enforces non-empty +
+  `foreground` carries `magenta chroma-key` (both met); it does NOT machine-check word bands or
+  negations on `levels` — held by hand anyway: facade 92w/0neg (a hair over the 90 target, every clause
+  load-bearing, well under the 120 ceiling), foreground 38w/2neg, ceiling 29w/0neg. No shared style
+  tail on `levels` (each string is standalone), so no tail-vs-subject contradiction to manage.
+- File List:
+  - `docs/art-direction/prompt-drafts/niveau-final-eden.md` (NEW shard, READY-FOR-STRUCTURE).
+  - `docs/art-direction/prompt-drafts.md` (index row added; also refreshed the boss-commander row to
+    "9 entries").
+  - **No `levelArt.json` edit** (concurrent-edit avoidance — dev-tooling-assets owns the `levels[]`
+    entry: id `niveau-final`, layer set, `size`, `windowGrid` on the arched-window row, path
+    `assets/levels/niveau-final/facade.png` per narrative wiring flag B / ADR-0023).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (12 pre-existing warnings;
+  none from this work — the new prompt lives in the draft shard, not yet in levelArt.json).**
+- handoff → `game-graphist` (Serge) PRE-PROD PASS → `lead-art` (Nico) PROMPT GATE, same chain as the 9.
+  Open gate items in the shard §"Reste à trancher" (speaker-wall bake-vs-sprite call, lustre
+  anchor-clearance compo check, and the `levels[]` structure dev-tooling owns).
+- Not a `VERDICT:` line — prompt OWED and un-gated pending Serge + Nico.

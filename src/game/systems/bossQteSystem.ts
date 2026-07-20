@@ -54,9 +54,18 @@ export const QTE_PANIC_SHOT = -6;
 export const QTE_BODY_HIT = -5;
 
 // --- Spatial-colour ring model (reused shape, boss-authored bands) -----------------------
-/** Ring-hit tolerance: an impact within this world-radius of the ring centre is a hit. Also
- *  reused as the parry-point catch radius (ADR-0052 lever 3) and the décor-prop catch radius. */
+/** Ring-hit tolerance: an impact within this world-radius of the ring centre is a hit. The LIMB
+ *  ring, the phase-1 single ring, the parry point (ADR-0052 lever 3) and the décor prop all use
+ *  it. The VITAL ring uses the tighter `BOSS_VITAL_CATCH_RADIUS` (AMENDMENT A1). */
 export const RING_HIT_RADIUS = 0.3;
+/** VITAL ring catch radius (AMENDMENT A1, stage-5 verify correction — game-designer default,
+ *  tunable). Tighter than `RING_HIT_RADIUS` and STRICTLY < the vital wander-box corner reach
+ *  (hypot(amp) ≈ 0.226, asserted in `createBossQte`) so the fast head ring cannot be camped from
+ *  one fixed aim — the 2 HP chip must be tracked and EARNED, restoring the risk/reward vital-vs-
+ *  limb dilemma (spec §0). PAIRED render constraint (A1 §4, dev-r3f-render): the vital ring is
+ *  DRAWN at this radius (drawn == catch — the aim-honesty invariant), the limb ring at
+ *  `RING_HIT_RADIUS`. */
+export const BOSS_VITAL_CATCH_RADIUS = 0.18;
 /** VITAL ring hit (head, GREEN) — the heaviest chip. */
 export const BOSS_DAMAGE_VITAL = 2;
 /** LIMB ring hit (torso/shoulders, YELLOW) — the lighter chip. */
@@ -716,6 +725,17 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     );
   }
 
+  // AMENDMENT A1 — the VITAL catch must be positive AND strictly < the vital wander-box corner
+  // reach (hypot(amp)), so the fast head ring cannot be answered from one fixed camp aim (the
+  // 0.30 collapse Sacha's playtest found); the 2 HP chip must be tracked.
+  assertPositiveScalar("BOSS_VITAL_CATCH_RADIUS (AMENDMENT A1)", BOSS_VITAL_CATCH_RADIUS);
+  const vitalBoxReach = Math.hypot(BOSS_VITAL_WANDER_AMP_X, BOSS_VITAL_WANDER_AMP_Y);
+  if (BOSS_VITAL_CATCH_RADIUS >= vitalBoxReach) {
+    throw new Error(
+      "bossQteSystem invariant (AMENDMENT A1): BOSS_VITAL_CATCH_RADIUS must be < the vital wander-box corner reach (hypot(amp)) so the vital ring is not camp-able",
+    );
+  }
+
   // ADR-0052 levers 3 & 5 — the stagger and finisher beats must be real positive holds.
   assertPositiveScalar("STAGGER_SECONDS (ADR-0052 lever 3)", STAGGER_SECONDS);
   assertPositiveScalar("FINISHER_HOLD_SECONDS (ADR-0052 lever 5)", FINISHER_HOLD_SECONDS);
@@ -811,8 +831,15 @@ export interface BossQteTickResult {
 const NO_DELTA = { energyDelta: 0 } as const;
 
 /** True iff `(px,py)` is within `RING_HIT_RADIUS` of the anchor-relative point `(ox,oy)`. */
-function withinCatch(px: number, py: number, anchor: Vec2, ox: number, oy: number): boolean {
-  return Math.hypot(px - (anchor.x + ox), py - (anchor.y + oy)) <= RING_HIT_RADIUS;
+function withinCatch(
+  px: number,
+  py: number,
+  anchor: Vec2,
+  ox: number,
+  oy: number,
+  radius: number,
+): boolean {
+  return Math.hypot(px - (anchor.x + ox), py - (anchor.y + oy)) <= radius;
 }
 
 /**
@@ -823,26 +850,42 @@ function withinCatch(px: number, py: number, anchor: Vec2, ox: number, oy: numbe
  * shot missed both rings and falls through to the body/miss classification.
  */
 function ringHitZone(qte: BossQte, impactPoint: Vec2): BossRingZone | "none" {
-  const hitA = withinCatch(
-    impactPoint.x,
-    impactPoint.y,
-    qte.anchor,
-    qte.targetOffset.x,
-    qte.targetOffset.y,
-  );
   if (qte.phaseIndex >= 1) {
-    if (hitA) return "vital";
-    const hitB = withinCatch(
+    // AMENDMENT A1 — the VITAL ring uses the tighter catch (must be tracked); the LIMB ring keeps
+    // RING_HIT_RADIUS. Overlap tie-break UNCHANGED: a shot inside the vital catch scores vital.
+    const hitVital = withinCatch(
+      impactPoint.x,
+      impactPoint.y,
+      qte.anchor,
+      qte.targetOffset.x,
+      qte.targetOffset.y,
+      BOSS_VITAL_CATCH_RADIUS,
+    );
+    if (hitVital) return "vital";
+    const hitLimb = withinCatch(
       impactPoint.x,
       impactPoint.y,
       qte.anchor,
       qte.targetOffsetB.x,
       qte.targetOffsetB.y,
+      RING_HIT_RADIUS,
     );
-    if (hitB) return BOSS_RING_B_ZONE;
+    if (hitLimb) return BOSS_RING_B_ZONE;
     return "none";
   }
-  if (hitA) return qte.ringZone;
+  // Phase 1 single V1 ring — unchanged RING_HIT_RADIUS catch.
+  if (
+    withinCatch(
+      impactPoint.x,
+      impactPoint.y,
+      qte.anchor,
+      qte.targetOffset.x,
+      qte.targetOffset.y,
+      RING_HIT_RADIUS,
+    )
+  ) {
+    return qte.ringZone;
+  }
   return "none";
 }
 
@@ -997,6 +1040,7 @@ export function tickBossQte(
               qte.anchor,
               BOSS_PARRY_POINT.x,
               BOSS_PARRY_POINT.y,
+              RING_HIT_RADIUS,
             );
             if (parried) {
               bossHp = qte.bossHp - QTE_PARRY_CHIP;
@@ -1047,6 +1091,7 @@ export function tickBossQte(
               qte.anchor,
               decorProp.position.x,
               decorProp.position.y,
+              RING_HIT_RADIUS,
             )
           ) {
             // ADR-0052 lever 2 — pure upside: drop the prop for a single-use burst.
