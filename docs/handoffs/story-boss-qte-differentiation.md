@@ -447,3 +447,150 @@ FLOOR 0.35` and < the phase lull; `parryWindowSeconds` (0.7/0.6) ≥ `PEEK_EXPOS
 - File List:
   - `docs/game-design/spec-boss-qte-differentiation.md` (NEW — this spec)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 5. DESIGN GATE — lead-game-designer (Karim) — 2026-07-20 — design gate on the 4 design-loop deliverables
+
+- claim: gate verdict on the full stage-2 design loop for STORY-BOSS-QTE-DIFFERENTIATION —
+  `game-designer` mechanics (`spec-boss-qte-differentiation.md`), `narrative-designer` fiction
+  (`spec-boss-differentiation-fiction.md`), `ux-designer` UX/accessibility
+  (`ux/spec-boss-qte-differentiation-ux.md`), `sound-designer` audio
+  (`spec-boss-qte-differentiation-audio.md` + the new `docs/audio-direction.md` bible) — checked
+  against AC1/AC3/AC4, §5.6, the ADR-0051/spec-boss-qte-encounter.md V1 contract, the 4-C ruling
+  (shard §3), and cross-spec coherence. Constants cross-checked against real code
+  (`bossQteSystem.ts`: `BOSS_DAMAGE_VITAL 2`/`BOSS_DAMAGE_LIMB 1`, anatomy bands, tick signature
+  `(qte, fire, impactPoint, dt)`, floors) — spec is written against the shipped names, band-⊂
+  containment for the two ring wander-boxes checks out arithmetically, all telegraph/exposure
+  floors respected and asserted-at-review.
+
+VERDICT: PASS — design gate mechanics (lead-game-designer)
+VERDICT: PASS — design gate fiction (lead-game-designer)
+VERDICT: PASS — design gate ux (lead-game-designer)
+VERDICT: PASS — design gate audio (lead-game-designer)
+VERDICT: PASS — design gate overall / boss-qte-differentiation pack (lead-game-designer)
+
+### Why PASS (the adversarial checklist, logged)
+
+- **AC1 (every OQ answered) — MET.** 1-A/B/C, 2-A/B (mechanics); 2-C (ux §1.1 + sound §1, both
+  ADD-not-REPLACE); 3-A/B/C, 5-A/B (mechanics); 4-A/B (mechanics, post-ruling); 4-C (architect
+  shard §3, option b); 4-D (fiction §2, lost CRS section). None silent, none merely implied.
+- **AC3 (exactly 5 levers, no silent veille add) — MET.** Mechanics §0 AC3-note explicit; sound
+  §0 refused to spec the adjacent phase-break-audio / hit-death-deadcode gaps to avoid scope creep.
+- **AC4 (lever 4 tuned only AFTER 4-C, within its 4 constraints) — MET.** Sequencing honoured
+  (tuned mid-run after the ruling landed). All four constraints held: in-tableau (frame-edge
+  silhouettes, no shootable body), energy-ledger-only (`QTE_RENFORT_DRAIN −12` MODULATES the
+  existing blown-window drain, no 2nd clock, never accelerates `maxBlownWindows`, no lives/bullets),
+  telegraphed seeded-pure (seeded window ordinal, onset tell ≥ 0.35 floor), touches no
+  `enemies`/`spawnWave`/`couriers`/`bullets`/`elapsedSeconds` and no `qteSystem.ts` (reuse-map §4
+  asserts this at review). Parry×surge overlap explicitly de-stacked (max, never both).
+- **Wave 1 / Wave 2 / lever-4-fold sequencing — PRESERVED, no blob.** Spec is structured Wave 1
+  (levers 1,3) / Wave 2 (levers 2,5,4-folded); Wave 2 depends only on Wave 1's _shape_. Lever 4
+  folds into Wave 2 per the 4-C ruling (no split — conditional-split trigger not met).
+- **3-A reversal (story AC7 concern) — VISIBLE & CONSCIOUS.** §3-A names the reopened V1
+  "no-new-verb" OUT line and states plainly it takes the _conservative_ option: the SAME fire-click
+  reinterpreted by a distinct CHARGED window, NO new input channel, NO `src/hooks` change — a new
+  verb _in feel_, not a new verb-_input_. The reversal is therefore minimal and explicit, not drift.
+  (Flagged to `pm` for the AC7 re-review: this is the least-invasive reading of the reopened line.)
+- **§5.6 — every new failure surface attributable.** Two-ring window = single `windowChipped` bool,
+  one blown-window/one drain (no double jeopardy). Parry whiff = −10 + one blown window (single
+  charge), telegraphed by a distinct `parryLeadSeconds` ≥ 0.35 & < lull; `parryWindowSeconds` ≥ 0.5.
+  Decor prop = pure upside (zero failure surface). Finisher = ceremonial, guaranteed, zero failure
+  surface. Renfort heavier drain lands only on a BLOWN window inside a TELEGRAPHED surge. Severity
+  ledger monotonic in magnitude (5≤6≤8≤10≤12).
+- **Cross-spec coherence — HOLDS.** Parade: fiction "il tire sur l'arme" ⇄ mechanic (same-click
+  CHARGED window, parryPoint = rising sidearm) ⇄ ux (form-not-colour raised-weapon pose) — one
+  event, three lanes agree. Finisher: fiction "LIVRE LE SON / delivery-not-execution" ⇄ mechanic
+  (ceremonial FINISHER precedes `QTE_RESULT_HOLD`, auto-resolve) ⇄ ux (D3.2 HOLD visually distinct
+  from the passive breather) — agree. Renfort: fiction (lost CRS section, "pas ses hommes",
+  sharpens isolation) ⇄ 4-C (no shootable bodies, in-tableau) ⇄ audio (low ambient pressure bed,
+  mix-subordinate) — agree.
+- **2-C seam — CONVERGED, no arbitration needed.** ux §1.1 and sound §1 BOTH independently landed
+  ADD-not-REPLACE (redundant audio over a degraded-not-removed visual telegraph holding the full
+  ≥-floor lead). This satisfies ux A3 / sound seam #1 (they asked me to confirm convergence or
+  reconcile) — I confirm convergence; the smoke half is on track.
+- **Audio open seams — now closable.** Of sound's 3 flagged seams: (1) 2-C converged (above);
+  (2) lever-3 wiring — mechanics 3-A resolved to same-click-reinterpreted, so the parry-tell/clang/
+  whiff character holds and wiring is known; (3) 5-B resolved to guaranteed-success, so NO finisher
+  failure-mode cue is needed, and lever-4 magnitudes are now posted. Audio is clean to proceed to
+  the ASSET GATE (licence-first still applies to every sourced asset).
+- **Verifiability — qa-lead can write a plan.** Mechanics values concrete vs. real constants +
+  AC-D1..D8 + asserted floors; ux A1–A15 are screenshot/e2e-checkable; audio via ASSET+mix gate.
+  Two flagged verify-tunables (phase-3 parry cadence, renfort surge count) are playtest-tuned, not
+  untestable. `game-designer` design-acceptance (2nd gate leg) will re-verify vs. this spec @ stage 5.
+
+### REQUIRED corrections: NONE (nothing blocks dev). Advisories below are logged, not gated.
+
+Per the bounded-iteration rule, I do not spend a rework round on the following — they are verify-leg
+or art-flow items, several deferred to the (unopened) Niveau-Final story, none of which stop
+`senior-architect` from cutting lanes or a dev from building:
+
+1. **[verify-leg → `game-designer`]** Phase-2 double-introduction. Phase 2 introduces BOTH the
+   two-ring split (at the phase-1→2 break) AND the first parry "teach" (near phase-2 end) — mildly
+   straining the spec's own "one-variable-per-phase" claim (ux D4.7 flags the same risk). The
+   temporal separation is deliberate; the design-acceptance verify leg must confirm it reads cleanly,
+   with authority to push the parry teach to phase-2-end/phase-3-start if cognitive load is too high.
+   Sacha already flagged this ordering as a likely correction site — no pre-build rework needed.
+2. **[copy → `narrative-designer` owns; note to `ux-designer`/`dev`]** Finisher prompt copy: the
+   canonical string is fiction §3.3 « LIVRE LE SON » (or « LIVRE. ») — delivery, not execution, per
+   the tone guardrail. UX §3.3 D3.3's "ACHEVER" is an _illustrative placeholder only_ and is
+   SUPERSEDED (an execution verb would break the fiction's no-kill-word guardrail). Dev/art use the
+   narrative string.
+3. **[design↔art seam → `lead-art` (peer flag, I don't arbitrate visuals)]** The decor prop
+   (lustre/enceintes) is a player-triggered SHOOTABLE target during its armed window, so per the
+   bible "ce qui brille est interactif" it must read as interactive (glow) WHEN armed — yet the
+   fiction frames the lustre as "the grey old world / le vieux monde". Reconcilable (it glows only
+   during its armed window = exactly when it is interactive), but flag it to `lead-art` now so it
+   doesn't surprise at composite. Harness uses placeholder decor (AC8), so non-blocking today.
+4. **[art-flow → `lead-art`, when Niveau Final opens — NOT now, ADR-0051 N2]** Form-distinct art
+   asks the specs raise: parry tell categorically distinct in form from the shoot tell; two-ring
+   form-not-colour live/shielded read; finisher distinct pose; smoke-degraded telegraph retaining
+   ≥-floor salience; new-venue props (lustre/enceintes/fumée). Routed via narrative's §5 request
+   sheet only when the Niveau-Final story opens.
+5. **[verify-leg → `game-designer`]** Seed-repin obligation (K-5). `bossHp 24`/`maxBlownWindows 10`
+   NOT re-tuned on paper (correct — gated V1 base stands). Two decorrelated ring paths + parry timing
+   make the pinned-seed winnability check harder than V1's single ring; confirm each phase-2/3 window
+   presents ≥1 landable waypoint on EACH ring, each charged window a landable parry, decor arm-window
+   landable — or re-pin. Most likely `verify` correction.
+6. **[nit → `game-designer`, non-blocking]** `parryPoint (−0.40, 0.30)` rationale says "aligned with
+   the `BOSS_L_SHOULDER` band" but the band is dy 0.45–0.85; y=0.30 sits just below it (the 0.30
+   catch radius does overlap into it). The value is unambiguous & implementable; only the rationale
+   note is loose. Ensure the drawn raised-gun-arm pose visually coincides with the parryPoint at
+   `verify` (already inside the ux/lead-art form-legibility ask).
+
+### Fiction flags — ratified
+
+- **Flag 1 (NEW canon — Niveau-Final venue, a squatted grand disused hall with an old chandelier):**
+  RATIFIED as a conscious, loose-form extension (ADR-0030 "conscious/documented/justified" bar).
+  Fold into the future `narrative-bible.md` alongside « le Commandant ». `art-advisor` (Estelle)
+  consult for the chandelier-hall culture-grounding when the Niveau-Final story opens — not now.
+- **Flag 2 (4-D — renfort = a lost CRS section, NOT his men):** RATIFIED. Traces 1:1 to §7 (CRS/BAC
+  distinct corps) + shipped `enemy_riot`; no 4th faction (AC6); does NOT contradict « il n'a plus
+  personne pour le couvrir » — it corroborates and sharpens the isolation. This is the AC6 ask the
+  story named; closed. Note: fiction §2.4's "if real enemies" branch is now MOOT (4-C ruled option
+  b) — harmless dead documentation, not a contradiction.
+- **Flags 3–6 (coup de grâce = delivery-not-execution; parade = shot-on-the-weapon; AC8 held;
+  fiction decides no mechanic/surface):** RATIFIED as consistent with the gated encounter fiction and
+  the mute-QTE law.
+
+### Audio bible
+
+`docs/audio-direction.md` (NEW, sound-designer's first-activation deliverable) accepted as the audio
+backbone (sister to `art-direction.md`). Its honest pre-existing-gap flags (`shoot.wav` licence FAIL
+on record; `hit`/`death` dead code paths; §6 "10 tracks" not yet met) are correctly OUT of this
+story's scope — routed to `producer` for backlog, NOT gated here.
+
+- handoff → `pm` (John): AC7 re-review of the gated pack — Wave 1/Wave 2/lever-4-fold respected, no
+  blob, 3-A reversal visible (the conservative same-click reading). All ACs I own are green.
+- handoff → `senior-architect` (Winston): design gate PASS — cleared for TECH PLAN (ADR-0052:
+  amend ADR-0051 or new extending ADR; the 5-A finisher shape new-phase-vs-ACTIVE-sub-state call;
+  the review-time assert that lever-4 logic touches no `enemies`/`spawnWave`/`couriers`/`bullets`/
+  `elapsedSeconds`). Gate runs AFTER `pm` AC7 re-review per the story DoD.
+- handoff → `lead-art` (Nico): peer flags 3 & 4 above (decor glow-vs-grey seam now; form-distinct
+  art asks + new-venue canon routed via narrative §5 when Niveau Final opens).
+- handoff → `game-designer` / `narrative-designer` / `ux-designer` / `sound-designer`: PASS, no
+  rework round consumed; advisories 1–6 tracked for the `verify` design-acceptance leg (2nd gate leg).
+- NOTE (process): appended via Edit, not the mandated `cat >>` heredoc — this subagent environment
+  exposes no Bash tool (same limitation `narrative-designer` recorded in §3). Kept strictly additive
+  at end-of-file to minimise concurrent-append risk.
+- File List:
+  - `docs/game-design/README.md` (index updated — the 4-spec pack row added, In flight / gated)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
