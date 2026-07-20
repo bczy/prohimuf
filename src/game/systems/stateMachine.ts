@@ -10,11 +10,11 @@ import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import { resolvePlayerShot, tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
-import type { PlayerShotResult } from "@game/systems/bulletSystem";
+import { tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { resolveTrigger } from "@game/systems/weaponSystem";
+import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
 import {
-  resolveCourierShot,
   courierSpawnInterval,
   FIRST_COURIER_DELAY,
   spawnCourier,
@@ -54,6 +54,7 @@ const PLAYER_HIT_RADIUS = 1.0;
 
 let _nextBulletId = 1;
 let _nextCourierId = 1;
+let _nextLootId = 1;
 
 export interface LevelParams {
   lives: number;
@@ -169,7 +170,7 @@ export function tickGameState(
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     // Idle terminal ticks must not replay last tick's transient events (they are
     // consumed once by the bridge; the transition tick already emitted its burst).
-    return { ...state, impactEvents: [], feedback: [], pointFeedback: [] };
+    return { ...state, impactEvents: [], feedback: [], pointFeedback: [], weaponEmpty: false };
   }
 
   // Boss QTE encounter — "le Commandant" (ADR-0051 D3). Additive-and-optional: this whole
@@ -199,6 +200,9 @@ export function tickGameState(
         impactEvents: [],
         feedback: [],
         pointFeedback: [],
+        // Weapon state (active/stock/burst) rides `...state` FROZEN through the duel
+        // (ADR-0052 D7); only the transient empty flag is cleared.
+        weaponEmpty: false,
       };
     }
     // The boss has resolved (phase DONE): a depleted `bossHp` WON the fight → the level
@@ -214,6 +218,7 @@ export function tickGameState(
         impactEvents: [],
         feedback: [],
         pointFeedback: [],
+        weaponEmpty: false,
       };
     }
   }
@@ -221,7 +226,14 @@ export function tickGameState(
   // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never
   // on the score — so the delivery bonus can never trigger the level win.
   if (state.kills >= enemiesToWin) {
-    return { ...state, phase: "LEVEL_COMPLETE", impactEvents: [], feedback: [], pointFeedback: [] };
+    return {
+      ...state,
+      phase: "LEVEL_COMPLETE",
+      impactEvents: [],
+      feedback: [],
+      pointFeedback: [],
+      weaponEmpty: false,
+    };
   }
 
   // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
@@ -257,6 +269,9 @@ export function tickGameState(
       impactEvents: [],
       feedback: [],
       pointFeedback: [],
+      // Weapon+stock ride `...state` FROZEN through the QTE (ADR-0052 D7 / AC6); no
+      // weapon/loot logic runs in this branch. Clear only the transient empty flag.
+      weaponEmpty: false,
     };
   }
 
@@ -270,23 +285,63 @@ export function tickGameState(
     ? spawnWave(newWave, facade, windowPoolFor(roster))
     : tickedEnemies;
 
-  // 4. Player fires — instant hitscan resolved at the crosshair world point
-  // (ADR-0040). No travelling player projectile enters `bullets`; the shot yields
-  // one ImpactEvent plus the per-hit reward math. Reads the pre-hit enemy
-  // snapshot, exactly like the enemy-fire step below.
-  const shot: PlayerShotResult | null = fire
-    ? resolvePlayerShot(
-        crosshair,
-        activeEnemies,
-        facade,
-        cameraOffsetX,
-        cameraOffsetY,
-        viewW,
-        viewH,
-      )
-    : null;
-  const shotEnemies = shot ? shot.enemies : activeEnemies;
-  const impactEvents: readonly ImpactEvent[] = shot ? [shot.impact] : [];
+  // 3b. Armament crate (ADR-0052 D5): advance / spawn the LOOT crate on the window
+  // channel. Runs only on the normal-tick path, so a QTE freeze never spawns or
+  // resolves a crate (D7 / AC6). No-op when the level authors no `lootSpec` (D8).
+  const lootTick = tickLoot(
+    state.loot,
+    state.lootSpec,
+    state.lootTimer,
+    delta,
+    activeEnemies,
+    facade,
+    _nextLootId,
+  );
+  if (lootTick.spawned) _nextLootId++;
+
+  // 4a. Street couriers (livreurs): move them along the road and spawn new ones on
+  // a timer BEFORE the shot resolves, so courier-on-miss (below) tests the current
+  // positions. Friendly-fire resolution itself moved into `resolveTrigger` (P1).
+  let couriers: readonly Courier[] = state.couriers;
+  let courierTimer = state.courierTimer;
+  let couriersSpawned = state.couriersSpawned;
+  if (courierField !== undefined) {
+    couriers = tickCouriers(couriers, delta, courierField);
+    courierTimer -= delta;
+    // Per-level roster gate: only spawn couriers when this level's street roster
+    // includes "courier" (absent roster ⇒ legacy courier-only behaviour).
+    if (courierTimer <= 0 && streetSpawnsCourier(roster?.streetSpawns)) {
+      const dir: 1 | -1 = couriersSpawned % 2 === 0 ? 1 : -1;
+      couriers = [...couriers, spawnCourier(_nextCourierId++, dir, courierField)];
+      couriersSpawned += 1;
+      courierTimer = courierSpawnInterval(couriersSpawned);
+    }
+  }
+
+  // 4b. Player fires — the active weapon folds 1..3 instant hitscan resolutions
+  // (ADR-0052 D2), each an ADR-0040 shot: window-priority (enemy OR VISIBLE crate)
+  // then courier-only-on-miss, threading enemies+couriers+crate. Burst scheduling
+  // (B) and equip-on-loot (P2) live in `resolveTrigger`. Reads the pre-hit enemy
+  // snapshot, exactly like the enemy-fire step below. A level with no crate stays
+  // on `base`, so this is byte-identical to the ADR-0040 single shot.
+  const trigger = resolveTrigger(
+    state.weapon,
+    fire,
+    delta,
+    crosshair,
+    activeEnemies,
+    lootTick.loot,
+    facade,
+    courierField !== undefined ? couriers : [],
+    cameraOffsetX,
+    cameraOffsetY,
+    viewW,
+    viewH,
+  );
+  const shotEnemies = trigger.enemies;
+  const impactEvents: readonly ImpactEvent[] = trigger.impacts;
+  couriers = courierField !== undefined ? trigger.couriers : couriers;
+  const pointFeedback: readonly PointHitEvent[] = trigger.pointFeedback;
 
   // 5. Enemies fire a SINGLE shot when they enter the SHOOTING state (not a
   // per-frame stream — that was unfairly dense). Reads `activeEnemies` (the
@@ -314,39 +369,6 @@ export function tickGameState(
   // 6. Tick bullets (only enemy bullets travel now — the player shot is hitscan).
   const movedBullets = tickBullets(bullets, delta);
 
-  // 7b. Street couriers (livreurs): move them along the road, spawn new ones on a
-  // timer, and resolve friendly fire. Under hitscan, a window hit takes priority
-  // and consumes the shot; only a MISS (no enemy struck) can hit a courier — the
-  // nearest single one within COURIER_HIT_RADIUS (one shot = one target, D1.5).
-  let couriers: readonly Courier[] = state.couriers;
-  let courierTimer = state.courierTimer;
-  let couriersSpawned = state.couriersSpawned;
-  let courierScoreDelta = 0;
-  let courierLivesDelta = 0;
-  let pointFeedback: readonly PointHitEvent[] = [];
-  if (courierField !== undefined) {
-    couriers = tickCouriers(couriers, delta, courierField);
-    courierTimer -= delta;
-    // Per-level roster gate: only spawn couriers when this level's street roster
-    // includes "courier" (absent roster ⇒ legacy courier-only behaviour).
-    if (courierTimer <= 0 && streetSpawnsCourier(roster?.streetSpawns)) {
-      const dir: 1 | -1 = couriersSpawned % 2 === 0 ? 1 : -1;
-      couriers = [...couriers, spawnCourier(_nextCourierId++, dir, courierField)];
-      couriersSpawned += 1;
-      courierTimer = courierSpawnInterval(couriersSpawned);
-    }
-
-    // A player MISS (no window enemy struck) can hit one courier — the nearest
-    // single one within COURIER_HIT_RADIUS (one shot = one target, D1.5).
-    if (shot !== null && shot.impact.classification === "miss") {
-      const cs = resolveCourierShot(shot.impact.impactPoint, couriers);
-      couriers = cs.couriers;
-      courierScoreDelta = cs.scoreDelta;
-      courierLivesDelta = cs.livesDelta;
-      pointFeedback = cs.events;
-    }
-  }
-
   // 7c. Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
   // Enemies currently in SHOOTING chip the vehicle's integrity during the
   // window; surviving it awards a one-shot score bonus. Shares the courier
@@ -368,13 +390,10 @@ export function tickGameState(
   }
 
   // Score folds in the delivery bonus; the win gate below stays on kills only.
-  const shotScoreDelta = shot ? shot.scoreDelta : 0;
-  const shotTargetsDown = shot ? shot.targetsDown : 0;
-  const newScore = Math.max(
-    0,
-    state.score + shotScoreDelta + courierScoreDelta + deliveryScoreDelta,
-  );
-  const newKills = state.kills + shotTargetsDown;
+  // `trigger.scoreDelta` already aggregates enemy rewards AND the per-resolution
+  // courier penalties (P1 / AC5).
+  const newScore = Math.max(0, state.score + trigger.scoreDelta + deliveryScoreDelta);
+  const newKills = state.kills + trigger.targetsDown;
 
   // Continuous energy is moved only by the hostage QTE (handled in the frozen QTE
   // branch above); the normal tick leaves it unchanged.
@@ -393,9 +412,8 @@ export function tickGameState(
   const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
 
   // Lives change from being shot AND from mistakes (shooting a civilian courier).
-  const shotLivesDelta = shot ? shot.livesDelta : 0;
-  const feedbackEvents: readonly HitEvent[] = shot ? shot.events : [];
-  const newLives = state.lives - (playerHit ? 1 : 0) + shotLivesDelta + courierLivesDelta;
+  const feedbackEvents: readonly HitEvent[] = trigger.events;
+  const newLives = state.lives - (playerHit ? 1 : 0) + trigger.livesDelta;
 
   if (newLives <= 0) {
     return {
@@ -419,12 +437,16 @@ export function tickGameState(
       score: newScore,
       wave: newWave,
       phase: "GAME_OVER",
+      weapon: trigger.weapon,
+      loot: trigger.loot,
+      lootSpec: state.lootSpec,
+      lootTimer: lootTick.lootTimer,
+      weaponEmpty: trigger.weaponEmpty,
     };
   }
 
   // 9. Tick timer (bonus enemies add seconds back)
-  const shotTimeDelta = shot ? shot.timeDelta : 0;
-  const timeRemaining = tickTimer(state.timeRemaining, delta) + shotTimeDelta;
+  const timeRemaining = tickTimer(state.timeRemaining, delta) + trigger.timeDelta;
   if (timeRemaining <= 0) {
     return {
       ...state,
@@ -448,6 +470,11 @@ export function tickGameState(
       wave: newWave,
       timeRemaining: 0,
       phase: "GAME_OVER",
+      weapon: trigger.weapon,
+      loot: trigger.loot,
+      lootSpec: state.lootSpec,
+      lootTimer: lootTick.lootTimer,
+      weaponEmpty: trigger.weaponEmpty,
     };
   }
 
@@ -486,11 +513,12 @@ export function tickGameState(
     lives: newLives,
     timeRemaining,
     wave: newWave,
-    // Weapon+loot carried through unchanged by the seam; the systems commit wires
-    // `weaponSystem`/`lootSystem` here.
-    weapon: state.weapon,
-    loot: state.loot,
+    // Weapon+loot resolved this tick (ADR-0052): active weapon / stock / burst,
+    // the crate channel, and the one-tick empty flag.
+    weapon: trigger.weapon,
+    loot: trigger.loot,
     lootSpec: state.lootSpec,
-    lootTimer: state.lootTimer,
+    lootTimer: lootTick.lootTimer,
+    weaponEmpty: trigger.weaponEmpty,
   };
 }
