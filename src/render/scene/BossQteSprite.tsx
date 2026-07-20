@@ -218,7 +218,14 @@ function buildVignetteTexture(): CanvasTexture | null {
   const ctx = canvas.getContext("2d");
   if (ctx === null) return null;
   ctx.clearRect(0, 0, size, size);
-  const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.2, size / 2, size / 2, size * 0.72);
+  const g = ctx.createRadialGradient(
+    size / 2,
+    size / 2,
+    size * 0.2,
+    size / 2,
+    size / 2,
+    size * 0.72,
+  );
   g.addColorStop(0, "rgba(0,0,0,0)");
   g.addColorStop(1, "rgba(0,0,0,1)");
   ctx.fillStyle = g;
