@@ -55,6 +55,12 @@ Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs
 
 ---
 
+## stage-1b. SCOPE AMENDMENT ACK — pm (John) — 2026-07-20
+
+- claim: P3 from design re-gate round 2 / release: AC A4 amended in `_bmad-output/planning-artifacts/story-weapons-pickup.md` — B (`auto`) stock decrements per burst-ROUND (consequence of the B4 per-trigger burst model), C (`spread`) stays per-press; pm ack logged inline, 2026-07-20. (Entry logged by orchestrator — shard write-race avoidance.)
+
+---
+
 ## stage-1. SCOPE — pm (John) — 2026-07-20
 
 - claim: V1 scope cut + story authoring (parallel to design gate; logged by orchestrator to avoid shard write race) / release: story written at `_bmad-output/planning-artifacts/story-weapons-pickup.md`, 4 rulings below

@@ -164,8 +164,12 @@ que les cibles existantes, mais un tir dessus **ne produit jamais** de `scoreDel
 A3. Tirer une `LOOT` `VISIBLE` remplace l'arme active par celle portée par la caisse, stock
 remis au plein ; le stock restant de l'arme précédente (si non-`base`) est perdu (test :
 équiper `auto` à moitié vide puis `spread` → `spread` au plein, pas de report).
-A4. Un tir avec l'arme active `auto`/`spread` décrémente son stock d'1 unité par pression
-(pas par projectile pour `spread` — 3 cibles touchées = 1 unité de stock consommée).
+A4. `spread` décrémente son stock d'1 unité **par pression** (3 cibles touchées = 1 unité de
+stock consommée) ; `auto` décrémente son stock d'1 unité **par round de rafale**
+(`BURST_ROUNDS` rounds par pression, décompte round par round, pas par pression) —
+*amended per design gate round 2 (P3), pm ack 2026-07-20* : conséquence directe du modèle
+rafale-par-pression B4 (VERDICT PASS `docs/game-design/weapons.md`, Karim) sur cette AC
+initialement rédigée pm.
 A5. `spread` résout jusqu'à 3 cibles éligibles sur des slots horizontalement adjacents en une
 seule pression ; `auto` reste mono-cible-la-plus-proche comme `base`, seul le cooldown change.
 A6. Stock à 0 → retour **immédiat et automatique** à `base` le même tick, avec exactement un
