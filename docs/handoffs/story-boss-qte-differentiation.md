@@ -3324,3 +3324,143 @@ bossHp=8, phaseIndex=2` — i.e. 0.1 s into the parry-induced break, squarely in
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: DONE — render-lane pre-merge batch (dev-r3f-render). #1 parry-whiff break guard, #6 smoke onError + disposed guard + `isReady()` fairness gate, #7 device-tier pool alloc, #8 framerate-independent envelope lerps — all landed in my two files, plus the split-preview vital-y and parry-glyph-comment NITs. Verified GREEN (typecheck EXIT 0, vitest 848/848, lint EXIT 0, my files Prettier-clean). Two new state-verified captures: `40` proves the whiff is suppressed 0.1 s into a parry-induced break; `41` proves the smoke envelope ramps in fast at ~2 fps. No game/boundary/dependency/asset touched. No commit/push.
+
+## 26. ACCEPTANCE (stage 7) — pm (John) — 2026-07-20 — story-owner acceptance of the merge-cleared pack
+
+- claim: stage-7 ACCEPTANCE. The stage-6 4-reviewer panel (§6, senior-architect) returned zero
+  BLOQUANT/MAJEUR and held a NO-MERGE-until-fix on a 7-item pre-merge batch (#1/#2/#3/#4/#6/#7/#8,
+  #11 folded into #4). All seven have since landed and re-verified: dev-r3f-render #1/#6/#7/#8
+  (§ "7. FIX", DONE, typecheck/vitest 848-848/lint EXIT 0, captures 40/41), dev-gameplay #2
+  (§ "11. BUILD" pre-merge fix#2, boss suite 67/67, full vitest 848/848, tsc/lint/format clean),
+  tech-writer #4+#11 (§25, ADR-0052 Revision 2 + ADR-0053 status reword to "Accepted — pending
+  build", doc-only, prettier-clean), and #3 (dev-tooling-assets + gpu-specialist: `smoke.png`
+  downsized 512²→256² to comply with CAP-D — confirmed landed in
+  `public/assets/fx/LICENSES.md` L16-18, though no dedicated shard handoff entry was posted for
+  this item; logged as a documentation-hygiene follow-up below, not a merge blocker since the
+  asset itself is verifiably compliant). Re-verified full-suite state: 848/848 vitest, tsc/lint/
+  format green. Re-reviewed the story (AC1-AC8), the guidelines, and the shard end-to-end from my
+  own §6 AC7 entry through the stage-6 panel close.
+
+### ACCEPTANCE: ACCEPTED — story-boss-qte-differentiation (pm)
+
+**Per-AC verdict:**
+
+- **AC1 (every OQ answered)** — MET. Karim's design gate (§5) itemises 1-A/B/C, 2-A/B/C, 3-A/B/C,
+  4-A/B/C/D, 5-A/B all answered, none silent; my own §6 re-review confirmed none were merely
+  implied. HOLDS.
+- **AC2 (per-lever reuse map)** — MET. ADR-0052 states the extend-in-place-vs-new split per lever
+  (D1-D4 + the ordinary-paragraph reuse map for lever 4), Revision 2 keeps the annotations
+  current against landed code (radius 0.11, the harness capture seam, the mobile frame-lift
+  coupling) without rewriting the original decision text. HOLDS.
+- **AC3 (exactly 5 levers, no smuggling)** — MET. Confirmed three times independently: Karim's
+  design gate (§5, mechanics/audio self-audits), my own §6 re-review (decor prop and the CRS
+  fiction are sub-questions of the story's own levers 2/4, not a 6th idea), and the stage-6 panel
+  (§6, zero BLOQUANT/MAJEUR, security/dep-clean, no unaccounted scope). No sixth veille idea rode
+  in anywhere in the chain.
+- **AC4 (lever-4 sequencing)** — MET. The architect's 4-C freeze-law ruling (§3, option b:
+  in-tableau scripted pressure, never touching the general enemy/spawn roster) landed BEFORE
+  `game-designer` tuned lever 4 (§5 Why-PASS: "sequencing honoured — tuned mid-run after the ruling
+  landed"). No tuning-before-ruling violation anywhere in the record.
+- **AC5 (ADR-0052 merged, extends 0051, freeze-law section)** — MET. `docs/adr/0052-boss-qte-
+differentiation-levers.md` is Accepted, states "in-tableau extension of the ADR-0051 duel, no
+  freeze-law exception" in its own title, carries a dedicated D4 "4-C freeze-law ruling" section,
+  and Revision 2 (tech-writer, §25) keeps it doc-coherent with the landed 0.11 radius and the
+  harness capture seam without reopening any decision.
+- **AC6 (fiction traces to gated canon)** — MET. Karim's gate ratified Flag 2 (renfort = a lost
+  CRS section, not "his men" — corroborates rather than contradicts "il n'a plus personne pour le
+  couvrir") and Flags 3-6 (finisher = delivery-not-execution, parade = shot-on-the-weapon) as
+  consistent with the gated `spec-boss-encounter-fiction.md` and the mute-QTE law. No new faction,
+  no contradiction of the Niveau-Final-reserved canon status.
+- **AC7 (pm re-review)** — DONE. My own §6 entry, verdict CLEARED FOR TECH PLAN, is on record
+  before TECH PLAN was opened, exactly as the story's DoD sequences it.
+- **AC8 (boss stays harness-only)** — HOLDS, including against the story-2 ride-along. The
+  architect's integration review (§6) verified every story-2 (`story-boss-niveau-final-live`)
+  artifact folded into this PR is RUNTIME-INERT: no code consumer, `check-art-prompts` green,
+  zero shipped `LevelConfig` touched (only the non-shipped harness's `decorProp`). ADR-0053's
+  status was reworded from bare "Accepted" to "Accepted — pending build" specifically so the
+  ride-along cannot be read as "the live level shipped" — the DESIGN decision is accepted, the
+  BUILD is not, and AC8 only ever gated the build/ship line, not the existence of a follow-up
+  story's specs. MERGE-TOGETHER does not violate AC8: no live level ships in this PR's code, and
+  `belliard`'s harness `LevelConfig` stays byte-identical (qa-lead §24, regression line VERIFIED).
+
+**The product question.** Bertrand's playtest verdict was "c'est limite au même gameplay que
+l'otage sans l'otage." The delivered pack answers it with evidence, not assertion: `game-
+designer`'s design-acceptance simulation (§12, N=500/style) first caught the pack UNDER-
+delivering on its own thesis — the vital ring was trivially campable, so the "which target under
+pressure" dilemma the whole pack exists to create had collapsed exactly the way a re-skinned
+hostage duel would. That is precisely the kind of drift this story was opened to prevent, and the
+process caught it before merge rather than after Bertrand's next playtest. The correction
+(`BOSS_VITAL_CATCH_RADIUS` 0.18 → 0.11, two design-gate rounds, §13/§17) was re-verified against a
+reframed, harder-to-fake acceptance metric (§19): camping the head now nets -5.0 energy against
+optimal's +12.8 and greedyLimb's +1.7 — a clean, deterministic sign-flip, not sim noise — while
+greedy vital-chasing is materially punished (-44.7 E, 1.92 blown windows) yet honest tracking is
+rewarded. Combined with the parry beat (its own telegraph, its own attributable whiff cost), the
+decor pure-upside target, and the in-tableau renfort pressure, phases 2-3 (the majority of the
+fight) now present real per-beat decisions the hostage duel's single wandering ring never did. The
+visual evidence set (20-41) and the composite-gate PASS on the corrected runtime visuals (Gate 4
+re-verdict, 30-35) confirm this reads at the table, not just in a spreadsheet. Bertrand's own
+mid-story overrides — the particle-smoke technique (§17, re-bounded by gpu-specialist §18,
+re-gated by lead-art 30-33 PASS) and the precedent HUD boss-HP bar from V1 (OQ6) — are both
+incorporated, not sidestepped. I accept this as a validated, evidenced answer to the original
+finding, with the residual honesty that `game-designer`'s own §12 note stands: the thesis is a
+design claim that stage-5 verify is built to test, and it was tested, and it needed one real
+correction before it passed — which is the process working, not a reason to withhold acceptance.
+
+**Deferrals sanity check** (none hollow out the story's promise — the differentiation itself is
+fully built, tuned, and evidenced; every deferral is either infrastructure outside this story's
+mechanical claim, or explicitly routed to the one future story that is allowed to touch it):
+
+1. **On-device perf run** — CI-DEFERRED per gpu-specialist's DEFERRED-ON-TARGET protocol (§8/§18):
+   SwiftShader cannot measure real mobile frame time for the particle smoke; bounds (CAP-A..E) are
+   set and PASS in simulation, cheap-out path specified. Owner: **Bertrand** (executes the
+   on-device run; producer chases). Non-blocking by the same convention already used for V1.
+2. **Audio wiring lane** — the audio spec/mix bible (`sound-designer`, gate PASS) is written; actual
+   Howler wiring is a separate, later lane (ADR-0052 §7). Owner: **dev-tooling-assets**, tracked on
+   `producer`'s backlog. Non-blocking: the product complaint Bertrand raised was about
+   moment-to-moment gameplay/verb similarity, not audio, and that is exactly what got fixed and
+   evidenced; audio differentiation is additive polish, not the load-bearing claim.
+3. **Split-preview capture** — already CLOSED via code-inference (qa-lead §24 quality-gate close);
+   not an open deferral requiring further owner action.
+4. **Canon boss art** — correctly deferred to the not-yet-opened Niveau-Final story (owner:
+   `lead-art`/`concept-artist`, routed via `narrative-designer`'s §5 request sheet when that story
+   opens). Building canon art now would itself risk an AC8 violation (implying a shippable,
+   canon-dressed encounter) — deferring it is the scope-correct call, not a gap.
+
+**Follow-up register — pm formally logs the following for `producer`'s backlog** (none block this
+acceptance; none are new asks, all already surfaced in the record):
+
+- **#5 (stage-6 triage, senior-architect §6)** — décor aim-honesty gap (drawn prop ~0.8x1.05
+  vs. catch `RING_HIT_RADIUS` 0.30): HARD DESIGN GATE — before ANY shipped level authors
+  `decorProp`, `lead-game-designer` (Karim) must stamp a direction (enlarge catch to drawn box vs.
+  shrink drawn prop), then a paired `dev-gameplay`(catch) + `dev-r3f-render`(drawn) fix. Currently
+  runtime-inert (harness-only, AC8) — this is a precondition on the Niveau-Final story's dev
+  lanes, not on this PR.
+- **#9 (stage-6 triage)** — spec/shipped teach-index transcription gap (phase-2 parry teach: spec
+  said "near phase end", shipped `PARRY_PHASE2_TEACH_INDEX=1` is near start; playtest-accepted,
+  spec never amended). Owner: `game-designer`/`tech-writer`, one-line spec correction.
+- **#10 (stage-6 triage)** — décor drawn from `state.bossQteSpec.decorProp` but hit-tested against
+  `qte.decorProp` (identical today, divergence risk). Owner: `dev-r3f-render`, single-source hygiene.
+- **NITs still open** (the ones NOT already folded free into the pre-merge batch — the stale
+  "0.18" comments and the split-preview vital-y/parry-glyph-comment NITs ARE already landed, see
+  §7/§11 above): the duplicated FINISHER click/timeout exit literal (needs one owner), the
+  parry-floor assert coincidentally gating on teach/parity constants that happen to equal 1, the
+  4th hand-rolled `matchMedia` vs. the existing `useMediaQuery` helper, and the informational note
+  that `at=finisher` auto-resolves in 1.5s. Owner: `producer` tracks on backlog; none are
+  player-visible defects.
+- **Documentation-hygiene note (new, this review)** — pre-merge item #3 (`smoke.png` downsize to
+  256² / gpu-specialist waiver) landed correctly (verified via `public/assets/fx/LICENSES.md`) but
+  has no corresponding shard handoff entry from `dev-tooling-assets`/`gpu-specialist`. Not a
+  blocker — the artifact and its licence note are the ground truth and both check out — but flag
+  to `producer` to have that lane post its entry for the record, same discipline as the other six.
+
+Story is **ready for Bertrand's merge** — stage 8 is his. No further pm action gates this PR.
+
+- handoff → Bertrand: ACCEPTED, ready to merge `claude/yo-pmnyzr` per the stage-6 panel's
+  MERGE-clearing (7-item batch landed & re-verified) and this stage-7 acceptance.
+- handoff → `producer` (Marion): register the follow-up items above (#5/#9/#10, the open NITs, the
+  #3 documentation-hygiene note) on the backlog; none block merge.
+- NOTE (process): appended via Edit, not the mandated `cat >>` heredoc — this subagent environment
+  exposes no Bash tool (same limitation logged by `lead-game-designer` §5 and `narrative-designer`
+  §3). Kept strictly additive at end-of-file. No commit/push.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry, additive, end-of-file only)
