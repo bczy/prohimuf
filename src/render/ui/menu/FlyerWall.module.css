@@ -7,6 +7,16 @@
  * that block flips to `row`, defaulting to `column` outside the breakpoint.
  */
 
+/* PRESSION difficulty header (spec-menus-ui-completion §5) — a compact ballot row above
+   the flyer grid, aligned to the wall's inline padding. The X-stamp badge ground matches
+   the shell backing (same override PauseScreen makes on its grey stock). Hidden on the
+   short-landscape rack via the `.muf-pression-header` rule in the component's
+   SHORT_LANDSCAPE_MEDIA <style> block (Option A). */
+.pressionHeader {
+  --ballot-stamp-bg: var(--stock-shell);
+  padding: var(--space-xl) var(--space-xl) 0;
+}
+
 .wall {
   display: flex;
   flex-direction: var(--muf-flyerwall-dir, column);

@@ -171,3 +171,29 @@ CATHODIQUE`). Orphaned CSS (`.field/.fieldLabel/.slider/.toggle*`) removed.
   `OptionsControls` (one `BallotRow`, grouped with `TUBE CATHODIQUE`) once `Prefs.reducedMotion`
   is wired through — this slice deliberately left it out. `OptionsControls` is controlled, so just
   extend the row map + the `Prefs` patch surface.
+
+### M2 — difficulty separation (PRESSION promoted to NIVEAUX header) · `dev-r3f-render` (Amelia) · 2026-07-20
+
+- start→finish: single lane, no boundary/dep/schema change (presentation/IA only), `src/game/**` byte-identical.
+- File List:
+  - `src/render/ui/menu/FlyerWall.tsx` — new required props `prefs` + `onSavePrefs`; renders a compact
+    `PRESSION` `BallotRow` header (label + hint identical to OptionsControls) above the flyer grid,
+    wrapped in a `.muf-pression-header` div. Exports a pure `buildPressionChoices(prefs, onSavePrefs)`
+    helper: `selected` reads straight from `prefs.difficulty` (no local copy — single source of truth),
+    each `onSelect` writes `{ ...prefs, difficulty }` through `onSavePrefs`.
+  - `src/render/ui/menu/FlyerWall.module.css` — NEW `.pressionHeader` (wall-aligned padding,
+    `--ballot-stamp-bg: var(--stock-shell)` to match the shell backing, same override PauseScreen makes).
+  - device gating (Option A): the existing `SHORT_LANDSCAPE_MEDIA` `<style>` block gains a
+    `.muf-pression-header { display: none; }` rule — same CSS-class chrome-gating primitive the wall
+    already uses for its rack reflow and MainMenu uses for its masthead. Header hidden on short-landscape;
+    PRESSION stays reachable via OPTIONS there (documented non-regression). Budget untouched in the gated breakpoint.
+  - `src/render/ui/MainMenu.tsx` — threads its existing `prefs`/`onSavePrefs` (App-owned store) into
+    `FlyerWall`. App is the single source of truth; FlyerWall reads the prop directly (no duplicated state),
+    so the header and the OptionsColophon `PRESSION` row can never diverge.
+  - NEW `src/render/ui/menu/__tests__/FlyerWall.test.ts` (7 tests) — a11y contract (1 radiogroup named from
+    label, 3 radio + aria-checked, exactly one checked matching `prefs.difficulty`), Option-A gating class +
+    `display:none` under `SHORT_LANDSCAPE_MEDIA`, and the single-pref write-through via `buildPressionChoices`.
+- OptionsColophon / OptionsControls / PauseScreen: NOT touched (M2 leaves PRESSION in OPTIONS; the header is a
+  second access point to the same field). Difficulty labels defined locally from the `Prefs["difficulty"]`
+  union since OptionsControls does not export them.
+- verify: `yarn typecheck` clean · `yarn test` 858/858 (FlyerWall 7/7) · `yarn lint` clean · Prettier applied.
