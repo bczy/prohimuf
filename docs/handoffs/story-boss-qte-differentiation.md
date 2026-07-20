@@ -370,3 +370,80 @@ read.md` §0.1 already argued against). Touch target: 44×44 px floor, recommend
 - `docs/audio-direction.md` (NEW)
 - `docs/game-design/spec-boss-qte-differentiation-audio.md` (NEW)
 - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 4. DESIGN LOOP — game-designer (Sacha) — 2026-07-20 — mechanic + tuning spec (levers 1/2/3/4/5)
+
+- claim: the mechanic/tuning half of the design loop — answer every Open Question I own
+  (1-A/B/C, 2-A/B, 3-A/B/C, 5-A/B) with concrete numbers stated against the REAL constants in
+  `bossQteSystem.ts`/`types/bossQte.ts`, structured by the story's Wave 1 / Wave 2 sequencing.
+  Lever 4 was tuned IN THIS SAME PASS after `senior-architect`'s 4-C freeze-law ruling landed
+  mid-run (§3, option (b)) — AC4 satisfied (tuned only after the ruling, within its four
+  constraints). NOT fiction (`narrative-designer`), NOT HUD/accessibility surfaces
+  (`ux-designer`), NOT audio character (`sound-designer`) — referenced where my mechanics depend
+  on them.
+- release: `docs/game-design/spec-boss-qte-differentiation.md` (DRAFT — needs Karim gate PASS).
+  Answers to the Open Questions I own:
+  - **1-A — a SECOND SIMULTANEOUS target** (not continuous re-colour = the hostage model; not
+    discrete alternation = a weak differentiator). During EXPOSED, two rings at once: VITAL/tête
+    (2 HP, small, fast, risky) + LIMB/corps (1 HP, larger, slow, the safe bank). One shot tested
+    against both; overlap scores vital.
+  - **1-B — both live together, one shared danger clock.** `windowChipped` stays a single bool
+    (a chip from either answers the window); a blown window is one `blownWindows++` + one phase
+    drain — no double jeopardy. The choice is purely offensive.
+  - **1-C — phase-escalation: phase 1 single ring (V1 exactly, onboarding); split introduced at
+    the phase-1→2 break; phases 2-3 two rings.** Raises the ceiling, keeps phase 1 legible.
+  - **3-A — STATED PLAINLY: the SAME fire-click reinterpreted by a distinct telegraphed CHARGED
+    window. NO new input channel, NO `src/hooks` change.** Decoded inside `tickBossQte` from the
+    existing `fire`+`impactPoint` (verified: that's the only input the tick receives). Chosen for
+    controller-parity (desktop/mobile one action) + §5-rule-5 compliance. Narrative concurs: Muf
+    shoots the pistol as it rises ("il tire sur l'arme").
+  - **3-B — success = +2 HP chip + STAGGER (bonus EXPOSED window, tempo flip); whiff (charged shot
+    unanswered) = −10 + ONE blown window (single charge, not double); panic click during the
+    window = −6, non-consuming.** Severity ledger monotonic.
+  - **3-C — REQUIRED distinct tell: `parryLeadSeconds` (0.8 teach / 0.6) ≥ `BOSS_TELEGRAPH_LEAD_
+FLOOR 0.35` and < the phase lull; `parryWindowSeconds` (0.7/0.6) ≥ `PEEK_EXPOSURE_FLOOR 0.5`.**
+    Channel-distinct from the shoot tell (UX/art own the look; concurs with UX §2 form-not-colour).
+    Cadence: 1 teach in phase 2, every-other window in phase 3 (verify-tunable).
+  - **2-A — data-driven SHAPE, single authored instance.** One optional `BossQteSpec.decorProp`
+    (position + arm phase), behaviour a system constant; `null` = unchanged. Not bespoke-hardcoded,
+    not a generic multi-prop system (YAGNI). Array-promotion is the deferred F3 seam.
+  - **2-B — PLAYER-TRIGGERED, sited in the SHIELDED gap (not a third EXPOSED ring).** Shoot the
+    armed prop during the lull → +3 HP burst (`BOSS_DECOR_DAMAGE`), single-use, PURE UPSIDE
+    (missing costs nothing → no §5.6 failure surface). Smoke/audio-tell half (2-C) deferred to
+    ux+sound — my constraint: visual tell degraded-NOT-removed (≥ floor lead), audio is a redundant
+    ADD. Both UX §1.1 and sound (lever 2) independently landed ADD-not-REPLACE — converged, on
+    track.
+  - **5-A — a dedicated FINISHER beat that PRECEDES `QTE_RESULT_HOLD` (does not replace it).**
+    `bossHp≤0` → FINISHER (awaits a final click) → WON (+50) → `QTE_RESULT_HOLD 2.2` → DONE.
+    Mirrors the porte-cochère execution-click. Narrative: the reach for the radio, stopped;
+    optional prompt « LIVRE LE SON » (ux-owned).
+  - **5-B — CEREMONIAL, guaranteed-success, auto-resolving.** Click OR a 1.5 s timeout resolves it;
+    damage-free; zero failure surface. Agreed with the story's lean — no bullshit-death at victory.
+  - **4-A/4-B (tuned after 4-C, option (b) constraints):** an in-tableau, seeded, telegraphed
+    PRESSURE SURGE — no shootable body, no bullets, no lives (reads as "pas ses hommes" = a lost
+    CRS section, per narrative 4-D). In-economy pricing (4-B, no double jeopardy): the surge
+    MODULATES the boss's own blown-window drain to `QTE_RENFORT_DRAIN −12` on flagged windows
+    (single charge, NEVER a second clock, NEVER accelerates `maxBlownWindows` — one blown window =
+    one count, just heavier energy). Phase 3, 1 surge, 2 windows, onset tell ≥ floor. Touches no
+    `enemies`/`spawnWave`/`couriers`/`bullets`/`elapsedSeconds`, no `qteSystem.ts`. Folds into
+    Wave 2 per the ruling.
+  - Per-lever AC2 reuse maps (extends-in-place vs. newly-authored) + design-VERIFY acceptance
+    (AC-D1..D8) stated. Winnability: `bossHp 24`/`maxBlownWindows 10` NOT re-tuned on paper;
+    stage-5 seed-repin obligation flagged (two decorrelated ring paths + parry timing make it
+    harder than V1's single ring).
+- seams flagged (mechanics depend on, do not decide):
+  - `ux-designer` + `sound-designer` — 2-C (converged ADD-not-REPLACE ✓); parry tell form (3-C);
+    finisher-hold-distinct-from-`QTE_RESULT_HOLD` read; two-ring form-not-colour read; renfort
+    frame-edge + audio pressure read.
+  - `narrative-designer` — parade « il tire sur l'arme », renfort « pas ses hommes »/lost CRS,
+    finisher reach-for-radio + « LIVRE LE SON », décor set-dressing. All reads referenced.
+  - `senior-architect` (TECH PLAN, not now) — 5-A finisher shape (new phase vs. ACTIVE sub-state);
+    ADR-0052; review-assert lever-4 boundary compliance.
+- handoff → `lead-game-designer` (Karim): design gate — requesting `VERDICT:` (PASS /
+  PASS-WITH-CORRECTIONS / FAIL) covering Wave 1 / Wave 2 (levers 2, 5, 4-folded) / and the AC4
+  discipline (lever 4 tuned only post-4-C). Most likely correction sites I flag myself: the
+  phase-3 parry cadence and the number of renfort surges (both verify-tunables), and the
+  lever-1/lever-3 phase-introduction ordering.
+- File List:
+  - `docs/game-design/spec-boss-qte-differentiation.md` (NEW — this spec)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
