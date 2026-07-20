@@ -163,3 +163,124 @@ above. A lever-4 spec proposing real roster enemies, a lives/bullet threat, or a
 that runs the enemy pipeline during the freeze is a design-gate FAIL against this ruling.
 
 RULING: 4-C = option (b) reframe — renfort lives inside the boss QTE state machine as seeded/telegraphed in-tableau pressure priced in the energy ledger; freeze law UNCHANGED (no exception); lever 4 FOLDS INTO WAVE 2, no split (senior-architect)
+
+## 3. DESIGN LOOP — narrative-designer (Yasmine) — 2026-07-20
+
+- claim: fiction side of the design loop (AC6) — décor set-dressing (lever 2), renfort
+  in-world justification incl. the Open Question 4-D ruling (lever 4), coup de grâce
+  (lever 5), and a one-line diegetic anchor for the parade (lever 3). NOT mechanics/tuning
+  (`game-designer`), NOT HUD/audio surfaces (`ux-designer`/`sound-designer`), NOT visuals
+  (art flow). Lever 1 needs no new fiction (already carried by the gated « il ouvre le feu »
+  window).
+- release: `docs/game-design/spec-boss-differentiation-fiction.md` (DRAFT — needs gate PASS).
+  Headlines:
+  - **Lever 2 (décor):** venue = a **squatted grand disused hall** (former ballroom/dancing)
+    for the millennium teuf. The three objects are the two bodies sharing the room —
+    **lustre** = the dead building (the old world falling on the cop), **mur d'enceintes** =
+    the crew's own sound-system (the fête's body turned against the man who came to cut it),
+    **fumée** = the party's smoke machine nobody switched off (covers Muf, drowns the
+    Commandant). Through-line: the room fights on Muf's side without meaning to. Belliard
+    harness gets non-canon placeholders; canon venue held for the Niveau Final (AC8).
+    NEW-CANON flag (naming the finale building, even loosely) raised for Karim.
+  - **Lever 4 — Open Question 4-D RULED:** the renfort is **NOT his men — a lost CRS section
+    swept in by millennium chaos**, a different corps he neither called nor commands, that in
+    the smoke does not even pick him out. This preserves « il n'a plus personne pour le
+    couvrir » (encounter §1.3) exactly and SHARPENS his isolation rather than breaking it. His
+    own brigade arriving = the one option refused (it would give him cover = canon
+    contradiction). No 4th faction; reuses shipped CRS (`enemy_riot`) / §7. Written to survive
+    BOTH architecture branches (real-enemies vs scripted-cue); consistent with the
+    senior-architect 4-C ruling above, whose **option (b) selects the scripted-in-tableau
+    variant** — the CRS read is carried by audio + frame-edge motion, no live shootable body,
+    no lives/bullet threat. Optional cue copy provided (DISPATCH « …Ils débarquent. Pas pour
+    lui. »).
+  - **Lever 5 (coup de grâce):** the beat = the Commandant down-but-not-finished, one hand
+    still reaching for the radio/whistle to have the son cut; the finisher stops that reach.
+    Tone guardrail (traces ADR-0030): delivery, not execution — no gore, no kill-word. In-beat
+    spoken line = NONE (mute-QTE law upheld); optional on-screen action prompt « LIVRE LE SON »
+    (bookends the gated `final_pre` #8), surface owned by `ux-designer`. Aftermath **reuses the
+    already-gated `final_post` unchanged** — no competing post-scene authored.
+  - **Lever 3 (parade), one line:** diegetically Muf shoots the **pistol, not the man** — a
+    precise shot on the sidearm as it comes up knocks the shot wide (« une balle suffit » on
+    the gun). Not a melee/baton parry; he's BAC with a service pistol. Timing/reward/telegraph
+    stay `game-designer` (3-A/B/C).
+  - **AC6 / AC8 held:** all canon written-and-held for the Niveau Final; harness gets
+    placeholders only; reserved-for-finale status untouched; nothing ships live.
+- Prop/renfort request sheet (§5) prepared for the art flow (venue props + reuse shipped CRS
+  - a possible « reaching » finisher pose) — routed to `lead-art` only when the Niveau-Final
+    story opens, NOT now (ADR-0051 art-gate N2 "no run ahead of need").
+- handoff → `lead-game-designer` (Karim): design gate — PASS on the four fiction beats
+  (§1–§4); ratify/amend the 6 flags (§6), esp. flag 1 (new venue canon) + flag 2 (the 4-D
+  ruling, the named AC6 ask).
+- handoff → `game-designer` (Sacha): shared terrain — the parade must READ as « il tire sur
+  l'arme » and the renfort must READ as « pas ses hommes »; on conçoit ensemble, on livre
+  séparément.
+- handoff → `ux-designer` (Tony) / `sound-designer` (Malik): I supply the WORDS not the
+  surface — optional renfort cue copy (§2.5) + finisher prompt « LIVRE LE SON » (§3.3) for
+  them to place (or not).
+- NOTE (process): appended via Edit, not the heredoc — this subagent environment exposes no
+  Bash tool. Kept strictly additive at end-of-file to minimise concurrent-append risk.
+- File List:
+  - `docs/game-design/spec-boss-differentiation-fiction.md` (NEW)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 4. DESIGN — ux-designer (Tony) — 2026-07-20 — UX/accessibility spec (parry, finisher, multi-target, 2-C ruling)
+
+- claim: design-loop deliverable for `ux-designer`'s lane — the audio-tell accessibility
+  ruling (Open Question 2-C, gate-critical), parry legibility (3-C UX side), finisher
+  legibility (5-A UX side, incl. relationship to the overridden HUD boss-HP bar), and
+  multi-target (lever 1) readability without colour-alone coding. No mechanics/tuning
+  numbers (game-designer's parallel spec), no visual style (lead-art's law), no production
+  code.
+- release: `docs/game-design/ux/spec-boss-qte-differentiation-ux.md`. Headlines:
+  - **2-C ruling (two sentences, §1.1):** during the smoke effect, the audio tell ADDS a
+    redundant channel; it never REPLACES the visual telegraph. The visual telegraph must
+    stay present — degraded in clarity by the smoke, never removed — for the full lead
+    time, so a deaf/hard-of-hearing player clears the window on the visual channel alone,
+    exactly like every other window in the fight. Stated as the accessibility CONSTRAINT
+    (§1.3: lead-time floor unchanged, form-persists-clarity-drops, still not-colour-alone
+    on its own); the audio tell's CHARACTER is left to `sound-designer` (Malik)'s parallel
+    ruling.
+  - **Parry (§2):** the parry tell must differ from the shoot (`EXPOSED`) tell in FORM
+    (pose/motion), not colour alone; diegetic placement at the boss body, no HUD icon;
+    same lead-time floor as the existing telegraph (`BOSS_TELEGRAPH_LEAD_FLOOR`), not a
+    looser one; 44×44 CSS px touch-target floor on mobile if 3-A resolves to a new input
+    hitbox (automatically satisfied if 3-A is a timing-reinterpretation of the existing
+    click); ADR-0015 device wording (`clic`/`souris` vs. `deux doigts`) applies to any
+    input copy; reduced-motion degrades to a held, non-strobing, still-distinguishable cue.
+  - **Finisher (§3):** the finisher's visual state must be unmistakably different from an
+    ordinary shoot/parry window — a one-shot event marker at `bossHp` → 0 (same family as
+    the phase-break pulse), and if 5-A resolves to a dedicated HOLD sub-state, that HOLD
+    must read as visually distinct from the existing passive `QTE_RESULT_HOLD` breather so
+    a player doesn't sit through an active-input window thinking it's the passive one. The
+    HUD HP bar settles/pulses once at 0% as reinforcement (not a new persistent
+    "ready-to-finish" HUD state — would repeat the meter-family object `spec-boss-qte-hp-
+read.md` §0.1 already argued against). Touch target: 44×44 px floor, recommended
+    generous (ring-radius-or-larger, possibly near-full-frame during the HOLD) since a
+    missed finisher due to touch precision rather than timing would be an unearned failure
+    under §5.6.
+  - **Multi-target (lever 1, §4):** "which point is live" must read from form/pose/
+    position, never colour alone (restates ADR-0034 D2.4/D4.2 for the two-target case);
+    diegetic on the boss body, no new HUD indicator. Covers both mechanic shapes
+    `game-designer` might pick: discrete alternation needs its own mode-switch transition
+    tell (not an instant silent flag flip); simultaneous dual-target likely doesn't need
+    an extra separation marker (anatomically distinct zones, unlike the hostage duel's
+    two-silhouette problem) but DOES need a form-based shielded/live state read per zone.
+    If 1-C phase-gates the second target to phase 2/3, its first introduction needs its
+    own "new pattern" cue, flagged as a possible confusable-with-phase-break risk.
+- seam flagged, not resolved here: **2-C** — `sound-designer` (Malik) rules on the same
+  Open Question from the audio side in parallel; if his ruling proposes audio as PRIMARY
+  or SOLE during smoke (rather than additive to a still-present degraded visual), that
+  directly conflicts with this ruling — routed to `lead-game-designer` (Karim) to
+  reconcile before the design gate, not silently picked either way.
+- other seams (not blocking, stated in the spec's own "Seams handed off" section):
+  `game-designer` (all conditioned mechanic-shape decisions + numeric floors),
+  `narrative-designer` (finisher/mode-switch/mobile-hint copy, ADR-0015 wording),
+  `lead-art` (form/pose/motion execution for every not-colour-alone requirement),
+  `dev-r3f-render` (everything drawn, all reduced-motion branches, HUD bar zero-state).
+- Does NOT reopen `spec-boss-qte-hp-read.md`'s already-gated C1 ruling (D1-D3 unchanged)
+  or the V1 design gate (ADR-0051).
+- handoff → `lead-game-designer` (Karim): design gate, alongside `game-designer`'s and
+  `narrative-designer`'s parallel specs for this story, per the Definition of Done. Please
+  confirm the 2-C seam (above) is either concurred with by `sound-designer` or explicitly
+  reconciled before PASS.
+- File List: `docs/game-design/ux/spec-boss-qte-differentiation-ux.md` (new).
