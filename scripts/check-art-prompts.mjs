@@ -63,6 +63,7 @@
  * Usage:
  *   node scripts/check-art-prompts.mjs                # lint everything
  *   node scripts/check-art-prompts.mjs --set vehicles # only the vehicles block
+ *   node scripts/check-art-prompts.mjs --set loot      # only the loot block
  *   node scripts/check-art-prompts.mjs --set enemies   # only the enemies block
  *   node scripts/check-art-prompts.mjs --set courier   # only the courier layered-flipbook block
  *   node scripts/check-art-prompts.mjs --set levels    # only the levels block
@@ -391,6 +392,80 @@ function checkVehicles(vehicles, rep) {
     if (SCENERY_RE.test(prompt)) {
       const hit = prompt.match(SCENERY_RE)[0];
       rep.warn(p, `mentions scenery "${hit}" — vehicle prompts should describe the subject only`);
+    }
+  }
+}
+
+// LOOT crate contract (story-loot-crate-sidewalk, ADR-0053). The generator
+// (gen-loot-sprites.mjs) reads the `loot` block, which is the SAME printing
+// run as `vehicles` — `opening`/`style` are byte-identical (magenta #FF3CDC
+// chroma-key ground, fanzine/xerox B&W) and the render-side-neon-rim rule
+// (ADR 0011 analogue, see the block's `$comment`) is the same inverse rule:
+// `neonPhrase` must stay empty, and no neon/glow/acid/hue token may appear
+// anywhere in the assembled prompt (baked neon would flood the body exactly
+// as it did for vehicles). Reuses every vehicles rule/threshold verbatim —
+// only the block name and report paths differ — so a future change to the
+// shared contract (STYLE_TOKENS, forbidden-neon list, budgets) does not drift
+// between the two sets.
+function checkLoot(loot, rep) {
+  if (!loot) {
+    rep.error("loot", "missing `loot` block");
+    return;
+  }
+
+  const opening = loot.opening ?? "";
+  const neonPhrase = loot.neonPhrase ?? "";
+  const style = loot.style ?? "";
+
+  if (!opening.trim()) rep.error("loot.opening", "missing/empty — required medium + view slot");
+  if (!style.trim()) rep.error("loot.style", "missing/empty — required shared style tail");
+
+  if (neonPhrase.trim()) {
+    rep.error(
+      "loot.neonPhrase",
+      "baked neon is retired, see ADR 0011 (render-side neon rim, applied to `loot` per the " +
+        "block's $comment) — the neon rim is drawn render-side; the crate sprite must be pure " +
+        "B&W, so `neonPhrase` must be empty or absent",
+    );
+  }
+
+  const types = loot.types ?? {};
+  if (Object.keys(types).length === 0) {
+    rep.error("loot.types", "missing or empty `types` block");
+  }
+  for (const [type, def] of Object.entries(types)) {
+    const p = `loot.types.${type}.prompt`;
+    const prompt = def.prompt ?? "";
+
+    if (!prompt.trim()) {
+      rep.error(p, "empty prompt");
+      continue;
+    }
+
+    const assembled = `${opening}${prompt}${style}`;
+    const ap = `loot.types.${type} (assembled)`;
+
+    for (const tok of STYLE_TOKENS) {
+      if (!tokenSatisfied(tok, assembled)) {
+        rep.error(ap, `missing required house concept: ${tok.name}`);
+      }
+    }
+
+    const forbidden = forbiddenNeonHits(assembled);
+    if (forbidden.length > 0) {
+      rep.error(
+        ap,
+        `contains forbidden neon token(s) "${forbidden.join(", ")}" — baked neon floods the body; ` +
+          `loot is pure B&W xerox and the rim is drawn render-side (ADR 0011 analogue)`,
+      );
+    }
+
+    checkBudgets(rep, ap, assembled);
+
+    // Subject/silhouette only (checked on the subject clause, not the shared tail).
+    if (SCENERY_RE.test(prompt)) {
+      const hit = prompt.match(SCENERY_RE)[0];
+      rep.warn(p, `mentions scenery "${hit}" — loot prompts should describe the subject only`);
     }
   }
 }
@@ -789,9 +864,11 @@ function main() {
   const args = process.argv.slice(2);
   const si = args.indexOf("--set");
   const set = si !== -1 ? args[si + 1] : "all";
-  if (!["all", "vehicles", "enemies", "courier", "levels", "nearForeground"].includes(set)) {
+  if (
+    !["all", "vehicles", "loot", "enemies", "courier", "levels", "nearForeground"].includes(set)
+  ) {
     console.error(
-      `Unknown --set "${set}" (expected: vehicles | enemies | courier | levels | nearForeground)`,
+      `Unknown --set "${set}" (expected: vehicles | loot | enemies | courier | levels | nearForeground)`,
     );
     process.exit(2);
   }
@@ -800,6 +877,7 @@ function main() {
   const rep = makeReport();
 
   if (set === "all" || set === "vehicles") checkVehicles(json.vehicles, rep);
+  if (set === "all" || set === "loot") checkLoot(json.loot, rep);
   if (set === "all" || set === "enemies") checkEnemies(json.enemies, rep);
   if (set === "all" || set === "courier") checkCourier(json.courier, rep);
   if (set === "all" || set === "levels") checkLevels(json.levels, rep);

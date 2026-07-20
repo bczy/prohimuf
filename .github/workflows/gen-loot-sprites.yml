@@ -1,0 +1,106 @@
+name: Generate loot sprites
+
+# Regenerates the LOOT crate sprite (ADR-0053, story-loot-crate-sidewalk) from
+# the `loot` block of src/game/levels/levelArt.json with real FLUX art, keys
+# its magenta (#FF3CDC) chroma-key background to transparency (same
+# corner-adaptive edge flood-fill as the vehicle set), desaturates the
+# ground-cast (Rec.601 luma, same pass as gen-vehicle-sprites.mjs), and
+# commits the PNG to the current branch.
+#
+# Why this is a SEPARATE workflow from gen-vehicle-sprites.yml: the crate is
+# not a delivery vehicle — its own block/asset dir (public/assets/loot/) needs
+# a dedicated dispatch marker so it can be regenerated independently of the
+# truck/car/moto set. Same reasoning as gen-hostage-sprites.yml vs
+# gen-sprites.yml (enemies).
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-loot-sprites (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-loot-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-loot-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
+      # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
+      # for a faster rate limit + honoured `nologo`. Unset/empty → anonymous
+      # fallback (unchanged behaviour), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key + desaturate)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate loot sprites (FLUX) and chroma-key to transparency
+        # FORCE=1 so a re-dispatch overwrites a rejected roll (the seed is
+        # pinned in levelArt.json; bump it there to re-roll deterministically).
+        run: FORCE=1 node scripts/gen-loot-sprites.mjs
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # loot dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/loot/*.png" > /dev/null; then
+            git add -f public/assets/loot/*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate LOOT crate sprite"
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash (the
+            # generation step can leave unstaged files that would abort a bare
+            # rebase) and retry, max 3 attempts. The if: failure() upload below
+            # preserves the assets so no paid generation is lost.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loot-sprites-unpushed
+          path: public/assets/loot/*.png
+          if-no-files-found: warn
+          retention-days: 14

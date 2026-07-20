@@ -578,3 +578,65 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
   at `(slot.screenPosition.x, LOOT_STREET_Y)` (import, never re-declare −4.3). No dev lane edits
   `src/game/levels/levelArt.json` (concept-artist's file). Not touched here: `src/render/**`,
   `scripts/**`, `levelArt.json`.
+
+---
+
+## stage-4. TOOLING LANE — dev-tooling-assets (Amelia) — 2026-07-20
+
+- claim: wire the lead-art-gated `loot` block (Nico's PROMPT GATE ratification, commit fd9e510)
+  into the render farm + lint per the boss-block precedent (structure/generator/lint owned by
+  this lane; prompt wording untouched) / release: **DONE**, generator + workflow + lint coverage
+  landed, `check-art-prompts.mjs` green (loot WARN is the pre-approved 102-word band, exit 0).
+- **Structure (finalized, no change needed).** The `loot` block already matches the ADR-0053 D5
+  convention: `types.crate.asset = "assets/loot/crate.png"`, `size 256×192`, `seed 7401` (pinned),
+  `neon: "green"` (render metadata, P4), `facing: "left"`. Verified against ADR-0053 §D5 ("`
+  LootCrate.tsx` consumes `levelArt.loot.asset` read-only") — no schema change was owed, only
+  generator + lint wiring.
+- **Generator (new `scripts/gen-loot-sprites.mjs`, smallest-diff cousin of `gen-vehicle-sprites.mjs`,
+  not an extension of it — the vehicles generator's per-type placeholder-shape drawer is
+  truck/car/moto-specific and not reusable for a crate; loot is a single-type family like
+  `hostages`, so this mirrors `gen-hostage-sprites.mjs`'s shape but borrows the vehicle set's
+  keying mechanism since `loot`'s ground is magenta, not black):** reads `loot.types` from
+  `levelArt.json` (single source, never touched here), assembles `opening+prompt+style` per type,
+  fetches via `fluxUrl`/`fetchWithRetry` (`scripts/lib/pollinations.mjs`), keys the magenta ground
+  via `cutout-enemies.mjs`'s existing corner-adaptive flood-fill (already ground-adaptive — no
+  code change needed there, verified by reading it), then desaturates with
+  `gen-vehicle-sprites.mjs`'s exported `desaturateFile` (imported, not duplicated) to kill the
+  magenta ground-cast bled into the B&W interior — same treatment vehicles get, reused not copied.
+  Output: `public/assets/loot/crate.png`. `--list`/`--asset`/`FORCE=1` CLI mirrors every sibling
+  generator. No procedural-placeholder mode: ADR-0053 D5 already gives `LootCrate.tsx` its
+  synchronous code-drawn fallback, so the generator doesn't need to draw one too.
+- **CI wiring (new `.github/workflows/gen-loot-sprites.yml`, mirrors `gen-hostage-sprites.yml`):**
+  **`workflow_dispatch`-only in practice** — the `push` trigger only fires on a `paths:
+  [".github/dispatch/gen-loot-sprites"]` change whose HEAD commit message starts with
+  `ci(dispatch):` (ADR-0009; no `actions:write` on the AI-session token, so the marker-push is the
+  dispatch mechanism), and never on `main`. **To generate real art on this branch:**
+  `date > .github/dispatch/gen-loot-sprites && git add .github/dispatch/gen-loot-sprites && git
+  commit -m "ci(dispatch): gen-loot-sprites" && git push` (or Actions tab → "Generate loot
+  sprites" → Run workflow). `preview.yml` (the main render farm) does NOT pick up new families
+  automatically — it screenshots `levels`/`vehicles`/etc. via its own generation step, unrelated
+  to `loot`; did not touch it, no precedent for folding a new prop family into it (vehicles/
+  hostages/courier/nearForeground all got their own dedicated `gen-*.yml`, so `loot` follows that
+  same established pattern rather than inventing a new one).
+- **Lint (`scripts/check-art-prompts.mjs`) — new `checkLoot`, wired into `--set loot` and the
+  default `all` run.** Reuses every `vehicles` rule verbatim (`STYLE_TOKENS`, the inverse
+  forbidden-neon-anywhere rule per ADR 0011 applied to `loot` per the block's own `$comment`,
+  `checkBudgets` for the negation/word ceilings) — no new thresholds invented, so the two sets
+  cannot silently drift. Verified: `node scripts/check-art-prompts.mjs --set loot` → PASSED (1
+  pre-approved WARN, the 102-word band Nico's PROMPT GATE already tolerated); full run → PASSED,
+  13 WARNs (12 pre-existing + the 1 new loot WARN), 0 errors.
+- **Smoke (no network generation — sandbox egress is blocked, confirmed by a timed-out
+  `--asset crate` run with no partial file left on disk):** `node scripts/gen-loot-sprites.mjs
+  --list` → `crate  256x192  → public/assets/loot/crate.png`. Real generation is CI-only per
+  HARNESS.md.
+- **Not extended (explicit scope calls, flag if wrong):** no `check-sprite-style.mjs` /
+  `check-sprite-integrity.mjs` gate added for the crate — those are respectively vehicle-hardcoded
+  (reads `json.vehicles.types` only) and figure-topology-focused (courier/hostage), and lead-art's
+  ASSET GATE + COMPOSITE GATE on the crate PNG are explicitly "owed downstream" per Nico's PROMPT
+  GATE note (manual CI-artifact review, not a scripted gate) — out of this lane's stated scope.
+  `.github/dispatch/README.md`'s marker table left as-is (already missing courier/hostage rows
+  pre-existing this change; not touching unrelated stale rows).
+- VERDICT: PASS — dev-tooling-assets: loot crate generation + lint wiring
+- **File List:** `scripts/gen-loot-sprites.mjs` (new), `.github/workflows/gen-loot-sprites.yml`
+  (new), `scripts/check-art-prompts.mjs` (checkLoot + `--set loot`). Not touched: `levelArt.json`
+  (concept-artist's file, no change owed), `src/render/**` (Lane B's), `src/game/**` (Lane A's).
