@@ -1016,3 +1016,197 @@ VERDICT: TECH PLAN COMPLETE — ADR-0053 drafted, lanes cut, AC1–AC5 code-conf
   - `docs/adr/README.md` (index regenerated — ADR-0053 row)
   - `public/adr/index.html` (index regenerated)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this TECH PLAN entry appended)
+
+---
+
+## PROMPT GATE — lead-art (Nico) — 2026-07-20 · boss-commander 9-asset prompt family
+
+Read in full before verdict: `docs/art-direction/prompt-drafts/boss-commander.md` (9 blockquotes +
+per-clause rationale + Serge S1-S13 integration + budgets + the two Maud deviations + the [S13]
+per-prop aspect note), the 4 APPLIED boss-block strings in `src/game/levels/levelArt.json`
+(shielded/exposed/hit/down — confirmed byte-verbatim against the draft blockquotes), my own bible
+`docs/art-direction.md` (§1 identity, §2 laws 1-3, §3 FLUX rules), and this shard's prior entries
+(my headgear RULING (1), Estelle's advisory relay, Sacha/Karim design gate, Serge's PRE-PROD 9/9,
+Maud's two release entries).
+
+**Mechanical pre-check (ran it myself — verify, don't trust):**
+
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 contract errors (12 pre-existing warnings:
+  courier + enemies + nearForeground/bench; NONE from the boss block, which is out of the lint's
+  scope by design — its contract is held by hand).
+- Hand-held contract, independently re-counted on all 9 assembled strings (subject + verbatim
+  58-word tail): every subject **0 negations**; tail **2** (`no text`, `no watermark`) → total
+  assembled **2**, inside §3.1 budget. Assembled length **116-119 words**, all under the **120**
+  hard ceiling. Maud's "116-119w / 0-subject-neg / assembled-2" claim is CONFIRMED exact.
+- No baked neon-accent hue in any of the 9 (ADR-0011 render-side-rim convention). Palette tokens
+  scrutinised and CLEARED as value/material language inside the tail's declared "light grey white
+  and pale neon tones" palette, not hue-bakes: `charcoal-grey`/`mid-grey`/`pale grey-white`
+  (values), `wrought-iron`/`brass`/`plywood` (material nouns monochromed by the tail, steering
+  silhouette not colour), `big bright muzzle flash`/`bright rim highlight` (luminance, white burst,
+  high-contrast xerox — not a neon accent). Contract held.
+
+**The mid-grey-mush question (the meatiest gate call).** The launcher's sharpest challenge: did
+Serge's value-locks [S1/S3/S8/S10] — steering surfaces off near-black to a keyable mid-value —
+drift the family into mid-grey mush and kill the xerox high-contrast? **No, and the reason is
+load-bearing:** every value-lock pairs the mid-value with an EXPLICIT high-contrast EDGE tell —
+`pale edge highlights` (shielded), `traced by a thin pale contour` (down), `flat pale grey panels
+with black contours` (speaker_wall), `bright rim highlight` (lustre). High-contrast xerox does NOT
+mean pure-black/pure-white only; the tail itself declares a grey/white/pale palette and renders
+midtones as halftone. `charcoal-grey` is a DARK grey lifted off key-black, not a mid-grey — the
+contrast lives at the SILHOUETTE EDGE, which is exactly where silhouette-first reads. This is the
+CORRECT resolution of the §2-law-3 near-black-key hole trap (the trap the bible names explicitly)
+WITHOUT surrendering contrast. **PASS on house-style — with an asset-gate WATCH carried forward
+(Gate 2, not decided here): if any of these renders as a flat even-grey fill WITHOUT the promised
+pale-edge / pale-contour / black-contour / bright-rim separation, THAT is mush and it FAILS at the
+asset gate.** The prompt does its job; the render must deliver the edge. `commander_down` is the
+priority mush-watch (largest continuous mass, flat on the key ground — the pale contour is its
+make-or-break).
+
+**Style-tail / migration-timing — ratified as drafted.** The 9 share the byte-identical LIVE
+roster tail (`16-bit … retro snes style`), NOT the gated fanzine-pochoir direction of bible §1.
+This is CORRECT under §2 law 2: the roster hasn't migrated (blocked on keying); forking a fanzine
+tail for the boss alone would break the one-printing-run law. Boss migrates to pochoir IN LOCKSTEP
+with the whole roster, never forked alone. The house-style question at THIS gate is consistency
+WITH THE LIVE ROSTER's current tail — held byte-verbatim. RATIFIED.
+
+### The two deviations — explicit verdict
+
+1. **POLICE lettering → reflective SHAPE, not glyphs — RATIFIED (no reservation).** Grounds are
+   bible-anchored, not taste: (a) the shared tail carries `no text` (§3 rule 8 / house law) —
+   rendering "POLICE" glyphs would CONTRADICT the tail's own no-text clause and be self-defeating;
+   (b) FLUX-schnell garbles text at 256px, and garbled text is a generation defect = automatic set
+   FAIL under §2 law 3; (c) the plainclothes-cop read is carried by the brassard + reflective panel
+   SILHOUETTE, which survives downscale where glyphs never would. Estelle's "POLICE lettering"
+   advisory is INPUT; my verdict is that the literal word is off-spec against my own no-text law.
+   **I do NOT amend `no text` to attempt lettering.** Confirmed: none of the 9 strings contains the
+   word "POLICE" as text-to-render. RATIFIED as drafted.
+
+2. **Props share the "figure"/"tones figure" tail verbatim — RATIFIED, with Serge's conditional
+   fallback exactly as wired.** Grounds: (a) §2 law 2 — the tableau is ONE printing run; forking a
+   prop-only tail for a probabilistic (not certain) wording risk breaks family consistency; (b) the
+   "figure" tokens are functionally inert for a prop generation — FLUX keys on black-ground + pixel
+   medium + grey/white/pale tones + centered, all valid for an object. The residual risk (repeated
+   "figure" prior bleeding an incidental human silhouette into a prop) is real but modest and is
+   correctly folded into Serge's TECHNICAL-pass defect sweep as a prop-specific check: IF either
+   prop's first-batch generation shows any incidental human silhouette/limb, THAT triggers the
+   **roster-wide** `figure` → `figure or object` tail amendment — NOT a local prop fork, and NOT a
+   pre-emptive change before seeing a generation. RATIFIED exactly on those terms.
+
+### Per-entry verdicts (silhouette-first · RULING (1) · roster-contrast · defect-risk read)
+
+- **`commander_shielded`** (APPLIED) — closed guarded upright stance, coat shut, halt-palm up +
+  hand on holstered sidearm. Blocky closed silhouette, reads "commanding / not firing," categorically
+  distinct from exposed's open lunge. Bare head + long coat = chef tell. RULING (1) held. **PASS.**
+- **`commander_exposed`** (APPLIED) — lunging one stride, both arms thrust forward presenting the
+  pistol + muzzle flash, coat flaring open (pale-lined [S2] so the open flap is not a keyed torso
+  hole). Open aggressive envelope, distinct from shielded (closed) AND parry_windup (arms IN).
+  Muzzle flash is a bright white burst, not a neon bake. **PASS.**
+- **`commander_hit`** (APPLIED) — staggered back, brassard torn loose + radio knocked spinning off,
+  both TETHERED by strap/cord [S4], pistol arm falling. Defeat re-keyed off brassard+radio per
+  RULING (1), never a flying cap. Reads "touché." Asset-gate WATCH (Gate 2): this is the entry with
+  the most small dynamic near-detached elements — scrutinise for the detached-element / floating-fleck
+  generation defect; the tether clause is the mitigation, whether FLUX honours it is a render read.
+  Prompt-side correctly constructed. **PASS.**
+- **`commander_down`** (APPLIED) — sprawled on back, coat splayed mid-grey + pale contour [S3],
+  torn brassard + knocked-loose radio + dropped pistol beside him, motionless heap. Distinct from
+  finisher (kneeling / upright / head up / still trying). Priority mush-watch at the asset gate (the
+  pale contour is load-bearing). RULING (1) held. **PASS.**
+- **`commander_weakpoint`** (READY-FOR-STRUCTURE) — square, still, frontal, chin up, torso squared
+  flat, arms wide, pistol low & clear of chest: BOTH anatomy bands clean for the phase-2+ two-ring
+  render callout (the sprite keeps the bands clean; the render rings do the callout). Bare head
+  value-separates from the coat [S5], reinforcing the two-band read — a genuinely good bet. Static
+  frontal, distinct from exposed's lunge. **PASS.**
+- **`commander_parry_windup`** (READY-FOR-STRUCTURE) — the MECHANIC-CRITICAL one. Coiled a beat
+  EARLIER than exposed, elbows drawn IN tight, pistol two-handed angled steeply up mid-raise (short
+  of firing level), coat STILL HANGING CLOSED [S6], hunched wound-up crouch. The closed-coat +
+  arms-IN lock is a real silhouette-envelope difference vs exposed's flaring-open + arms-EXTENDED —
+  the sub-0.5s categorical read §3-C demands, LOCKED in text not left to hope. I explicitly bless the
+  closed-coat clause as the load-bearing differentiator. Firearm silhouette kept throughout (never a
+  melee tell). Also checked non-convergence with shielded (holstered+halt-palm+upright vs
+  drawn+raised+two-handed+crouch — distinct envelopes, and they occur in different states, never
+  side-by-side). **PASS.**
+- **`commander_finisher`** (READY-FOR-STRUCTURE) — down on one knee, coat pooling, upright from the
+  waist, head UP, one arm reaching up for the shoulder radio (sleeve covering it to the wrist [S7],
+  closed hand), other on knee, straining. Reads "down-but-still-trying," distinct from down
+  (flat/motionless). Tone guardrail (no blood/grimace/weapon-at-him) intrinsically held by the
+  mono-figure frame. **PASS — with a MANDATORY anatomy defect-sweep reaffirmed at MY asset gate
+  (Gate 2):** the raised bent reaching arm is the textbook FLUX limb-detach / thin-limb-vanish /
+  finger-gap-hole risk; the [S7] sleeve-continuity + closed-hand clauses are the correct prompt-side
+  mitigations, but this entry is the single highest anatomy-defect risk of the 9 and the asset gate
+  is where a broken reach is caught (a re-roll there still counts against the 2-batch cap).
+- **`lustre`** (READY-FOR-STRUCTURE prop) — multi-tier cone/umbrella crystal chandelier HUNG from a
+  chain, wrought-iron/brass armature with suggested arms, pale grey-white faceted drops + bright
+  rim [S8], two adjacent drops missing / wide notch [S9], tilted + dusty. Reads HUNG = "au
+  bâtiment / ancien monde"; cone form excludes the mirror-ball by shape; asymmetric damage not
+  rubble. **PASS.**
+- **`speaker_wall`** (READY-FOR-STRUCTURE prop) — hand-built teknival pyramid of mismatched plywood
+  bass-bins + horn cabinets on a scaffold/pallet rig, pale grey panels with BLACK CONTOURS [S10]
+  (on-style ink linework), gaffered pale cables [S11], sprayed pochoir spiral (texture accent, not
+  load-bearing). Reads BUILT = "au crew / le son"; pyramid + pallet-rig excludes line-array / DJ
+  booth / guitar amp by form. **PASS.**
+
+### Family consistency + roster contrast — PASS
+
+Byte-identical tail across all 9 (one printing run). All 7 figures share the bare-headed + long
+knee-length coat + brassard + shoulder-radio DNA, with `the same … commander` continuity recolling
+the poses. Roster contrast at a glance is the STRONGEST possible: the Commandant is the ONLY bare
+head in an otherwise uniformly capped/helmeted roster (mook = flat cap, `enemy_riot` =
+helmet+shield+armour, `enemy_biker` = full crash helmet) AND the ONLY long-coat silhouette — my
+RULING (1) reasoning holds (bare head out-differentiates a peaked cap, which would have collided
+with the mook's capped-head bump at game size).
+
+### Venue backdrop is NOT gated here — confirmed + Karim's constraint 6 restated forward
+
+This family is the `boss` block ONLY: 7 figures + 2 hall décor PROPS (lustre, speaker_wall). The
+**l'Éden interior BACKDROP** (`assets/levels/niveau-final/facade.png`) is a SEPARATE level block,
+generated by the level/dev-tooling lane, and is NOT gated by this verdict. I confirm nothing in
+these 9 prompts pretends to be or gate that backdrop — the two props are set-dressing objects,
+distinct from the facade. It comes to me separately (asset gate + composite gate). Karim's
+cross-lane advisory constraint restated as BINDING-WHEN-THE-BACKDROP-COMES (not gated now): (i)
+frame a clean centred tableau at **anchor {0,-5}** with NO dead sky-gap behind the boss (Vitry
+x:9.9 precedent); (ii) a legible, shootable, boss-distinct **chandelier at {0.2,1.5}**
+anchor-relative; (iii) the **mur d'enceintes must NOT read as a shootable/interactive false
+affordance in V1** — loi du glow, `ce qui brille est interactif`: the speaker wall is décor and
+must carry NO luminous rim (same class as the ADR-0045 C2 car-roofline condition).
+
+### Scope of this PASS (what it does and does NOT cover)
+
+PASS covers the prompt STRINGS only: gate-ready, silhouette-first, positive shape language,
+subject-only, no baked neon, contract held by hand, house-style-consistent with the live roster
+tail, RULING (1) applied, both deviations ratified. It does NOT cover: (a) the generated PNGs —
+Gate 2 asset gate, where the mush-watch (down/speaker_wall/lustre edge-separation), the hit's
+detached-tell sweep, the finisher's mandatory anatomy sweep, and the props' incidental-human-bleed
+check all land, my eye binding over any mechanical pre-check; (b) the render-side neon rims/glows —
+Gate 4 composite gate, judged on real in-game screenshots against §2.1 (`un halo est un dégradé,
+jamais un aplat`). NOTE the two props carry OPPOSITE glow verdicts at Gate 4: the **lustre** is the
+interactive shootable `decorProp` → it MUST glow (render-side rim with falloff); the
+**speaker_wall** is the reserved non-interactive 2nd prop → it MUST NOT glow (an accidental rim on
+it is a composite-gate FAIL). Both sprites correctly ship pure-B&W-no-neon-token at the prompt
+level (ADR-0011). (c) the venue backdrop — separate, later.
+
+### Dispatch conditions (family PASS)
+
+No FAIL on any of the 9 → no iteration instruction owed to Maud; **no batch consumed** (the first
+generation batch is clean to dispatch under the 2-batches/cycle cap). Generation may be dispatched
+ONCE **both** hold: (1) `dev-tooling-assets` adds the **5 new JSON structures** for the
+READY-FOR-STRUCTURE entries (weakpoint, parry_windup, finisher, lustre, speaker_wall) —
+keys/asset paths/pinned seeds/sizes, INCLUDING the **[S13] per-prop aspect** (lustre = **portrait**,
+speaker_wall = **landscape**, NOT the figure block's 256×256 square) + the render-side anchors
+`muzzle` (exposed), `parryPoint` (parry_windup), VITAL/LIMB rings (weakpoint); AND (2) the
+**`POLLINATIONS_TOKEN` repo secret is set by Bertrand** before dispatch — producer (Marion) flagged
+the CI workflow will fail SILENTLY without it. Dispatch also remains subject to producer's AC8
+dependency gate (art lane declared parallel-non-blocking, coordinated by producer — not a prompt-gate
+concern).
+
+VERDICT: PASS — prompt gate commander_shielded (lead-art)
+VERDICT: PASS — prompt gate commander_exposed (lead-art)
+VERDICT: PASS — prompt gate commander_hit (lead-art)
+VERDICT: PASS — prompt gate commander_down (lead-art)
+VERDICT: PASS — prompt gate commander_weakpoint (lead-art)
+VERDICT: PASS — prompt gate commander_parry_windup (lead-art)
+VERDICT: PASS — prompt gate commander_finisher (lead-art)
+VERDICT: PASS — prompt gate lustre (lead-art)
+VERDICT: PASS — prompt gate speaker_wall (lead-art)
+VERDICT: PASS — prompt gate family (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PROMPT GATE entry appended).
