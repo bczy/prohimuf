@@ -370,6 +370,19 @@ export function useGameLoop(
         }
       : next;
 
+    // Boss QTE capture seam (harness-only): with `blownImmune`, re-seed the boss the moment
+    // the blown-window clock LOSES it — the exact clock that made the depletion-gated reads
+    // unreachable (qa-lead C-QA2) — so an unattended capture stays pinned at its
+    // fast-forwarded phase. Bounded (only on the LOST transition), view-side, pure-API. Never
+    // set in production.
+    if (
+      harness?.__MUF_BOSS_IMMUNE__ === true &&
+      harness.__MUF_BOSS_BOOT__ !== undefined &&
+      gameStateRef.current.bossQte?.phase === "LOST"
+    ) {
+      gameStateRef.current = { ...gameStateRef.current, bossQte: harness.__MUF_BOSS_BOOT__() };
+    }
+
     // QTE cinematic camera (ADR-0030, the static duel): while EITHER QTE is active,
     // capture the pre-QTE pose ONCE, then progressively zoom onto the actor's STATIC
     // `anchor` and HOLD there (no follow — the actor never moves). The zoom eases in
