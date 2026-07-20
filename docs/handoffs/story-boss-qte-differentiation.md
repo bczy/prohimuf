@@ -131,6 +131,7 @@ outcome currency, and keeps the seeded-pure + telegraph anti-bullshit discipline
 
 **Binding constraints on `game-designer`'s lever-4 tuning (these answer 4-C, and bound
 4-A/4-B):**
+
 - 4-A resolves to the **in-tableau scripted-pressure** interpretation. The "real roster
   `riot`/`normal` enemies" interpretation is ruled OUT on architecture grounds.
 - Any lever-4 pressure MUST be priced in the boss's **existing energy/window ledger** — no
