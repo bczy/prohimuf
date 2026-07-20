@@ -1775,3 +1775,58 @@ reviewer's first impression is not evidence on its own — the crops/diffs are t
 - File List: `docs/handoffs/story-boss-qte-differentiation.md` (this entry, additive `cat >>`).
 
 VERDICT: PASS-WITH-CORRECTIONS — ux review of built screens (ux-designer) — 10/12 checked requirements PASS on the state-verified evidence (2-C smoke-degrade of the ring telegraph, dual-ring position read, decor armed-only glow, FINISHER-vs-WON distinction + canonical copy, HP-bar zero-settle, reduced-motion held, mobile legibility once the coverage gap was closed this session); ONE required correction — the parry "guard" glyph is real, coded, and legible in clean conditions (verified desktop+mobile) but is washed to near-invisibility under phase-3 smoke, which co-occurs with every "every-other" phase-3 parry window by construction — routed to dev-r3f-render/lead-art, corroborated independently by game-designer's §12 soft flag on the same capture; ONE advisory (renfort frame-edge contrast); two named evidence gaps for qa-lead (mobile-viewport capture set for the phase-2+ reads; the phase-1→2 dual-ring "new pattern" preview cue). Both of dev-r3f-render's logged deviations (diegetic finisher prompt; full-frame finisher click zone) are ACCEPTED without reservation.
+
+## 9. BUILD (gameplay lane) — dev-gameplay (Amelia) — 2026-07-20 — AMENDMENT A1 §2+§5 (per-ring catch radius, stage-5 correction round 1)
+
+- claim: implement the gated AMENDMENT A1 §2/§5 (per-ring catch radius, LEVER 1) from
+  `docs/game-design/spec-boss-qte-differentiation.md` — Karim's §13 gate on Sacha's §12/§14
+  design-acceptance finding (the vital box reach 0.226 < the 0.30 catch collapsed the vital-vs-limb
+  "which target?" choice into a single head-camp). Pure game-lane only; `dev-r3f-render` implements
+  §4 (vital ring DRAWN at 0.18) in parallel — no render file touched by this lane.
+- release (what changed):
+  - **New exported constant `BOSS_VITAL_CATCH_RADIUS = 0.18`** (`bossQteSystem.ts`) — the VITAL ring
+    hit test only. The LIMB ring, the phase-1 single ring, the parry point and the décor prop all keep
+    `RING_HIT_RADIUS = 0.30` unchanged.
+  - **`withinCatch` gained a per-zone `radius` param; `ringHitZone` passes `BOSS_VITAL_CATCH_RADIUS`
+    for ring A (vital) and `RING_HIT_RADIUS` for ring B (limb) and the phase-1 single ring.** A `fire`
+    scores a vital chip ONLY within 0.18 of the vital centre; a limb chip within 0.30 of the limb
+    centre. Overlap tie-break UNCHANGED (inside the vital catch ⇒ vital, checked first). Parry-point
+    and décor catch calls explicitly pass `RING_HIT_RADIUS` (unchanged).
+  - **New `createBossQte` assert (⊂-band-aware, A1 §2):** `BOSS_VITAL_CATCH_RADIUS` must be finite,
+    > 0, and STRICTLY < the vital wander-box corner reach `hypot(0.16,0.16) ≈ 0.226` — so a tuning
+    > edit that re-widened the catch past the box (camp-able again) fails loudly. `0.18 < 0.226` holds.
+- **TDD / test deltas (boss suite 62 → 66; full suite 843 → 847):**
+  - `AMENDMENT A1: a click inside 0.30 but outside the 0.18 vital catch is NOT a vital chip` — the
+    mandated corner-whiffable case: a shot in the vital 0.18–0.30 annulus scores NO vital chip
+    (asserts the actual outcome: an off-ring body bleed when outside the limb catch; a LIMB chip when
+    also within the limb ring's 0.30). Greed is punished, never a free 2 HP.
+  - `createBossQte asserts the vital catch is < the vital box corner reach (A1 not camp-able)`.
+  - `A1 §5 (greedyLimb): competent limb-banking still clears with margin on targetSeed 20260719`.
+  - `A1 §5 (camp punished): a fixed head-camp aim leaves the 0.18 vital catch on the pinned seed`
+    (the vital ring's max deviation from the box centre over phase-3 windows exceeds 0.18 — the
+    deterministic unit stand-in for Sacha's cross-seed greedyVital-loss-rate>0 acceptance).
+  - **No existing test needed an expectation change** — none fired vital in the 0.18–0.30 annulus (the
+    lever-1 and winnability tests aim at exact ring centres, dist 0 ≤ 0.18). All prior 62 stayed green.
+- **SEED STATUS: HELD — `targetSeed 20260719` NOT re-pinned.** The A1 §5 K-5 re-verify passes at the
+  unit level on this seed: the perfect-tracker winnability test (≥1 landable, TRACKABLE vital
+  waypoint — a path a competent player follows to land within 0.18) clears, competent limb-banking
+  (`greedyLimb`) clears with margin, and the vital ring provably leaves the 0.18 camp catch (greed
+  punished). No re-pin required. (Sacha's cross-seed statistical re-verify — greedyVital loss rate > 0
+  while greedyLimb/optimal stay 100 % — remains her design-acceptance leg after this lands.)
+- **Verification (all green):** `yarn typecheck` EXIT 0 · `yarn vitest run` 847/847 · `yarn lint`
+  EXIT 0 · `yarn format:check` clean.
+- boundary: only `bossQteSystem.ts` + `bossQteSystem.test.ts` changed this round (no type change
+  needed — the catch radius is a system constant, not a spec/runtime field). `types/bossQte.ts`,
+  `levels.ts`, `stateMachine.ts`, `src/hooks`, `src/render`, the hostage system and every shipped
+  `LevelConfig` untouched. Seeded-pure preserved.
+- handoff → `game-designer` (Sacha): re-verify A1 §5 cross-seed (greedyVital loss>0 / greedyLimb+optimal
+  100 %) on the built harness; the pinned seed is HELD at the unit level.
+- handoff → `dev-r3f-render`: A1 §4 pairing (vital ring DRAWN at `BOSS_VITAL_CATCH_RADIUS` 0.18, limb
+  ring at `RING_HIT_RADIUS`) — the constant is exported and ready; drawn == catch must stay literally
+  true (aim-honesty).
+- NOTE (process): appended via `cat >>` heredoc, additive at end-of-file. Not committed/pushed by this
+  lane (`bossQteSystem.ts` + test refinements remain unstaged).
+- File List:
+  - `src/game/systems/bossQteSystem.ts` (`BOSS_VITAL_CATCH_RADIUS`, per-zone `withinCatch`/`ringHitZone`, A1 assert)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (62 → 66 tests)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
