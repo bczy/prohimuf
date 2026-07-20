@@ -3001,3 +3001,76 @@ in relative sync.
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
 
 VERDICT: PASS — A1-R2 small-ring legibility RE-VERDICT (ux-designer) — the mobile-frame-lift (`BOSS_MOBILE_FRAME_LIFT 0.7`, a camera-TARGET lift, not a zoom bump) fully clears the vital ring's fixed wander band from behind the fixed-footprint "LE COMMANDANT" HUD bar (measured ≈42 CSS px gap on `38`, corroborating dev-r3f-render's ~44 CSS px worst-case figure) — the ring is now a fully visible, complete, bright annulus on mobile-landscape, resolving my §20 FAIL. The stroke-thickness change (`RING_INNER_VITAL 0.78→0.55`, `RING_OUTER`/catch radius untouched) turns the vital ring from a thin hairline into a visibly bold, unmistakable ring on `39`, closing my §20 desktop soft note. Distinguishability from the LIMB ring (position + size + emphasis, not colour-alone) is unaffected and reconfirmed. `BOSS_VITAL_CATCH_RADIUS = 0.11` (game-designer's gated dominance threshold) is untouched throughout — this was, correctly, a render-scale/boss-zoom fix, never a radius re-tune. A1-R2 §4's binding condition is met on BOTH device classes; the small-ring legibility item is CLOSED.
+
+## 24. VERIFY (stage 5) — QUALITY GATE CLOSE — qa-lead (Inès) — 2026-07-20 — the funnel verdict that opens stage-6
+
+- claim: close the stage-5 quality gate — the funnel that consolidates the mechanical gate, the
+  design-acceptance verdict (Sacha), the UX review (Tony), the composite Gate-4 (Nico) and the perf
+  pre-close (Ben) into ONE quality verdict, after the full leg-2 + correction history ran (§11-§23).
+  Re-ran the mechanical gate myself; audited my own plan line-by-line against what actually ran;
+  re-verified the cheap regressions mechanically vs `origin/main`. Plan updated:
+  `docs/qa/plan-story-boss-qte-differentiation.md` (STAGE-5 CLOSE audit section). No commit/push.
+- **Mechanical gate — RE-RUN AT CLOSE, ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent):
+  - `yarn typecheck` → **EXIT 0**.
+  - `yarn vitest run` → **847 / 847 PASS**, 64 files, EXIT 0 (grew 843→847 across the story with the
+    A1/A1-R2 vital-catch-radius tests; boss suite 62→66).
+  - `yarn lint` → **EXIT 0**.
+  - `yarn format:check` → **EXIT 0** ("All matched files use Prettier code style!").
+- **Gate-verdict ledger — every stage-6-required verdict logged and PASS:**
+  - Design acceptance (Sacha, AC-D1..D8): **PASS** §19 (PASS-WITH-CORRECTIONS §12 → A1 re-verify FAIL
+    §15 → A1-R2 re-gate §17 → final re-verify PASS on `BOSS_VITAL_CATCH_RADIUS 0.11`; camp-vital
+    dominance broken, the vital-vs-limb dilemma restored).
+  - Design gate lever-1 correction (Karim): **PASS** §13 (A1) + **PASS** §17 (A1-R2, round 2 of 2).
+  - UX review (Tony, A1–A15, both classes): **PASS** §23 (PASS-WITH-CORRECTIONS §15 → parry-glyph
+    salience fix §16 → mobile small-ring FAIL §20 → architect ruling §21 → frame-lift fix §22 →
+    RE-VERDICT PASS both device classes).
+  - Composite Gate-4 (Nico, runtime visuals): **PASS** (re-verdict `30-35`) — after FAIL on `24`
+    (décor aplat §2.1) + `25` (finisher sepia colour-law) → Bertrand smoke override §17 + render
+    round-2 §18 (particle smoke, décor radial dégradé, B&W finisher) → all six corrected composites PASS.
+  - Perf (Ben): **PERF PASS** §18 (particle-smoke bounds CAP-A..E) + **DEFERRED-ON-TARGET** (on-device ms).
+  - Architect render-scale ruling (Winston §21): render-lane fix, no game/hooks CONTRACT change.
+- **Regression lines — re-verified mechanically vs `origin/main` at close:**
+  - Phase-1 byte-identical: unit (`bossWander`→`bossWanderBox`) + e2e `01`. **HOLDS.**
+  - Hostage QTE + `stateMachine.ts` untouched: `git diff` = ZERO diff on `qteSystem.ts`,
+    `hostageQte.ts`, `types/hostageQte.ts`, `stateMachine.ts`. **HOLDS** (the structural freeze
+    early-return literally unchanged). UPDATE from leg 1: `src/hooks/useGameLoop.ts` DID change (+52:
+    the C-QA2 boot seam §11 + the §22 mobile frame-lift) — architect-ruled (§21) render-owned bridge
+    code consuming the `{anchor,…}` data contract UNCHANGED, no game/hooks CONTRACT crossing.
+  - Harness persistence inert (f5bd0a0): runtime (no `muf_scores_*`, `muf_progress=null`) + App.tsx
+    L216-222 `LEVELS`-membership guard. **HOLDS.**
+  - Shipped LevelConfigs untouched: `levels.ts` diff = only the non-shipped `boss-harness` `decorProp`
+    (+6 lines). **HOLDS.**
+- **C-QA2 — CLOSED.** The deterministic `?preview=boss&at=phase2|phase3|finisher` (+`blownImmune=1`)
+  capture seam (`dev-r3f-render` §11) made every depletion-gated differentiation read e2e-reachable
+  and state-verified in-sandbox (evidence 20-39); leg-2 legibility/design review ran on those PNGs.
+  The CI-DEFERRED-BLOCKED item I escalated at leg 1 is resolved.
+- **Deferrals (explicit, with owner — the honest holes):**
+  1. **CI-DEFERRED — smoke on-device ms** (Ben's DEFERRED-ON-TARGET: mobile marginal ≤~1.5 ms /
+     median ≤33.3 ms / p95 ≤~40 ms). Unmeasurable in SwiftShader; **Bertrand executes**, `producer`
+     chases. Only Bertrand closes — does not deadlock the gate.
+  2. **DEFERRED — audio wiring (8 cues)** by ADR-0052 §7 (separate licence-gated lane). Owner: `producer`.
+  3. **DEFERRED (code-inferred, not captured) — phase-1→2 split-preview cue (D4.7/A14):** the `at=` seam
+     fast-forwards through the break; Tony confirmed fix coverage by source read (`BossQteSprite.tsx:589`
+     - the frame-lift covers its position). Held CLOSED-by-inspection. Owner: `dev-tooling-assets` if a
+       capture is later wanted (small harness extension).
+  4. **DEFERRED — canon boss art** to the Niveau-Final story (ADR-0052 §7 N2; `enemy_riot` fallback).
+- **SCOPE-BLEED FINDING (routed to `producer` + stage-6 architect triage — NOT a defect in this pack):**
+  `git diff origin/main...HEAD` also carries concurrent NIVEAU-FINAL work NOT part of this story and
+  NOT covered by this gate — `src/game/levels/levelArt.json` (+39: plainclothes-BAC boss redesign +
+  differentiation-pose + hall-prop PROMPT strings, ADR-0053, gated under that story's own PROMPT GATE)
+  and `public/adr/index.html` (ADR-0053 index row). Prompt strings only, no generation dispatched, no
+  runtime effect (harness uses the fallback sprite) → no runtime regression risk here. The stage-6
+  panel reads the WHOLE diff, so `senior-architect`'s integration triage + `producer` must decide
+  whether the two stories merge together or split — a branch-hygiene call, explicitly not mine.
+- handoff → `senior-architect` (Winston): quality gate PASS — stage-6 4-reviewer merge panel + your
+  integration triage are open. Flagged for your triage: (a) the `useGameLoop.ts` render-owned bridge
+  edit (your §21 ruling — confirm at integration); (b) the NIVEAU-FINAL scope-bleed in the branch diff.
+- handoff → `producer` (Marion): stage-5 CLOSED PASS; the CI-DEFERRED on-device smoke run (Bertrand)
+  and the scope-bleed branch-hygiene call are yours to track/route ahead of merge.
+- handoff → `pm` (John): all quality lines verified or explicitly deferred with owners; ready for your
+  stage-6→acceptance path once the panel clears.
+- File List:
+  - `docs/qa/plan-story-boss-qte-differentiation.md` (STAGE-5 CLOSE audit section + header update)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+VERDICT: PASS — quality gate (qa-lead) — the plan ran and held. Mechanical gate GREEN at close (typecheck EXIT 0, vitest 847/847, lint EXIT 0, format:check EXIT 0). All 11 acceptance lines VERIFIED (unit + the now-complete e2e evidence set 01/02/11-14/20-39, C-QA2 CLOSED via the state-seed capture seam), all 5 regression lines VERIFIED mechanically vs origin/main (phase-1 byte-identical; hostage + stateMachine ZERO-diff; harness persistence inert; shipped LevelConfigs untouched — only the non-shipped harness decorProp). Every stage-6-required gate verdict logged and PASS: design-acceptance (Sacha §19, camp-dominance broken at vital-catch 0.11), design gate (Karim §13/§17), UX (Tony §23, mobile small-ring FAIL resolved by the §21/§22 frame-lift), composite Gate-4 (Nico, particle smoke + décor dégradé + B&W finisher, 30-35 PASS), perf pre-close (Ben §18 PERF PASS). Deferrals all explicit with owners: Ben's on-device smoke ms (CI-DEFERRED, Bertrand executes — does not deadlock), audio wiring (ADR-0052 §7), split-preview cue (code-inferred CLOSED), canon boss art (Niveau-Final). One scope-bleed finding (concurrent NIVEAU-FINAL levelArt.json/ADR-0053 in the branch diff — no runtime effect here) routed to producer + architect triage. Stage-6 (4-reviewer merge panel) is OPEN.
