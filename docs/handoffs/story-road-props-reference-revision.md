@@ -17,8 +17,9 @@
   - `docs/art-direction/references/boards/board-scooter.md` (mobylette, décor family only)
   - `docs/art-direction/references/boards/board-bench.md` (banc)
   - `docs/art-direction/references/boards/board-street-sign.md` (panneau)
-  
+
   File List: one file per kind in `docs/art-direction/references/boards/`. No lane writes another's file.
+
 - next: Bertrand's curation pass (KEEP/DROP/ADD verdicts on each board); then lead-art gates prompt delta.
 
 ## 2. PROMPT-DELTA REVIEW — concept-artist (Maud) — pending curation
