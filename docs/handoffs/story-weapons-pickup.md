@@ -976,6 +976,8 @@ story is fully delivered against its ACs and my four rulings, the pipeline caugh
 real functional break (MAJEUR co-location) before merge, and every concession was disclosed with an
 owner. Story closes; the tuning/D-story/art follow-ups move to the backlog, not this shard.
 
+**SUPERSESSION NOTE (2026-07-20):** Bertrand's playtest verdict on PR #115 triggered a playtest override — the code-drawn placeholder crate was judged "ne ressemble pas du tout à une caisse" and mandated upscale to FLUX art + street-level placement. The three art-related fast-follows logged above (items 3: hue + FLUX art-quality pass + `empty` SFX) are now **superseded by story-loot-crate-sidewalk** (ADR-0053, same branch PR #115), which gates them as in-story deliverables. This shard stands closed on the V1 weapons-pickup logic; the crate's visual revision belongs to the new story's gated art + placement scope.
+
 - **Read-only inputs:** `_bmad-output/planning-artifacts/story-weapons-pickup.md`,
   `docs/game-design/weapons.md`, `docs/adr/0052-weapons-pickup-system.md` (incl. amendment),
   `docs/handoffs/fixes.md`, this shard in full (stage-0 through stage-6 final re-triage). No code,
