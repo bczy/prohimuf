@@ -14,6 +14,18 @@
 **Story / shard :** <!-- lien vers docs/handoffs/story-<slug>.md, ou "fix lane" -->
 **ADR :** <!-- lien vers docs/adr/NNNN-*.md si applicable, sinon "n/a" -->
 
+## 📦 Inventaire de la cargaison
+
+<!-- Compter les fichiers du diff par extension et par type de changement
+     (une ligne par type). Source : `git diff --name-status origin/main...HEAD`
+     (M = modifié, A = créé, D = supprimé). -->
+
+| Type      | .ts | .tsx | .mjs | .css | .json | .md | .png | Autres |
+| --------- | --- | ---- | ---- | ---- | ----- | --- | ---- | ------ |
+| Modifiés  | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
+| Créés     | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
+| Supprimés | 0   | 0    | 0    | 0    | 0     | 0   | 0    | 0      |
+
 ## 📸 Preuve sur le mur (si visible en jeu)
 
 <!-- OBLIGATOIRE si le changement touche au gameplay, au rendu ou à l'UI :
