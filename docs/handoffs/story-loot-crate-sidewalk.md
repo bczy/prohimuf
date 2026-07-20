@@ -27,4 +27,50 @@
 
 ---
 
-**No further entries until design gate runs.**
+## stage-2. DESIGN DELTA — game-designer (Sacha) — 2026-07-20
+
+- **Deliverable:** `docs/game-design/weapons-crate-sidewalk-delta.md` — a SHORT delta (not a
+  re-spec) superseding only the placement half of weapons.md §5.1 (R2/R3/R4), §5.2, §5.3,
+  §5.4, and `lootSystem.ts`'s `LOOT_VISIBLE_DURATION`. Everything else in weapons.md (§2/§3/
+  §4/§6/§7/§8, ACs 1–6 & 10–15) holds verbatim. Grounded on the shipped model
+  (`resolvePlayerShot`, `tickLoot`, `CourierField.streetY = −5`, `VIEW_W/H = 18/12`, façade
+  pitch `x = col·2 − 18`) — played the numbers, not imagined them.
+- **Placement (D1–D5):** static street entity at `LOOT_STREET_Y = −4.3` (sidewalk strip, ~0.7 u
+  back from the courier/vehicle road lane at `−5`); horizontal position = the **existing
+  deterministic column seed** (only y decouples from the window row); NEW in-frame constraint
+  `|col·2 − 18| ≤ 7` so it is shootable without a pan; `VISIBLE 4.0 → 6.0 s` (street objects
+  read slower, lost the window-unfold snap); appear = drop-and-settle (`0.45 s`), despawn =
+  neon-rim leaving-blink over the last ~0.8 s (no fold-away, render-only, no new state).
+- **Hit contract (D6–D7):** precedence is already correct and UNCHANGED — the crate resolves in
+  `resolvePlayerShot` step 1 (window-priority) before courier-on-miss step 2, so it always wins
+  overlaps: a pickup shot never penalises a courier and a courier never eats the pickup shot.
+  Loot LEAVES the window channel ⇒ the §5.1 R4 three-read requirement **dissolves**; window row
+  reverts to the ADR-0040 two-read triage. New crate-vs-courier read is static-object vs
+  moving-human (easiest in the game). Disambiguation is by precedence, not distance.
+- **W-guardrails (D8–D9):** W1 glyph-before-fire HOLDS, moved to a **stencil on the crate face**
+  (overrides the shard's "HUD-only glyph" note — HUD-only would break W1). W2 becomes a street
+  rule: kept firefight col-gap ≥2 PLUS a NEW delivery-x-gap ≥2.0 when a vehicle is present;
+  defer if unsatisfiable.
+- **Tuning (D10):** spawn cadence 15 s and all A-B-C stock values UNCHANGED — placement/art
+  revision, not a rebalance. W6/W7 not re-opened.
+- **Cahier des charges:** still an [EXTENSION] (crate pickup was never in Prohibition ST), but
+  the sidewalk placement is MORE faithful to genre canon (Operation Wolf / Wild Guns crates are
+  street objects, not window pop-ups). Core loop untouched.
+- **Hand-offs queued (log in agent-handoffs):** → `lead-art`/`concept-artist` (real wooden crate
+  FLUX sprite A1–A4: squat, planks, stencil glyph, neon rim, solid cutout); → `senior-architect`
+  (ADR-0053: `LOOT_STREET_Y`/`LOOT_MAX_ABS_X`/`CRATE_DELIVERY_GAP_X` + crate hit-point y
+  decoupled from the façade slot row); → `ux-designer` (no HUD change, glyph stays on crate).
+- **No VERDICT** — `lead-game-designer` (Karim) gates next.
+
+---
+
+**Awaiting Karim's design gate on the delta.**
+
+---
+
+## stage-2. ART REFS — art-advisor (Estelle) — 2026-07-20
+
+- claim: reference brief grounding the FLUX crate prompt (period objects, game precedents, fanzine B&W treatment, hue recommendation) / release: brief at `docs/game-design/refs-loot-crate-sidewalk.md`, no gate held (advisory). (Entry persisted by orchestrator — agent had no write tools.)
+- **Hue recommendation: `#78FF3C` (green)** — the only one of the four §2-law-1 accent hues with no fixed street-level object identity (truck=orange, car=cyan, moto=magenta all already live at street level; orange is also the enemy heat-rim's danger-stage colour, magenta is also the vehicle chroma-key background). Green also carries the right "safe/go/positive pickup" connotation already established by `mark-green`=FACILE in the print system. Fallback if rejected: cyan. Watch-out flagged (not blocking): a same-frame co-occurrence with an early-telegraph (still-green) enemy heat-rim should get a runtime screenshot sanity-check at the composite gate.
+- **Period register:** recommend the marché-crate / ammo-box register (thin pine slats or dovetailed box, rope-hole handles, single stencilled destination/lot mark) over a wooden beer crate (anachronistic — 1998 French beer crates are plastic, not wood).
+- No code/prompt/levelArt.json touched. Hands to `concept-artist` for the FLUX prompt draft.
