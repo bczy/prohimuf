@@ -902,3 +902,117 @@ stack lighter than the black backdrop` (value/contour lock on the biggest dark m
   the 2 confirmed deviations (POLICE-as-shape, props "figure" tail), the style-migration timing, and
   the render-side anchors + per-prop `size` aspect [S13] that `dev-tooling-assets` owns.
 - Not a `VERDICT:` line — prompts remain OWED and un-gated pending Nico's PROMPT GATE.
+
+---
+
+## TECH PLAN — senior-architect (Winston) — 2026-07-20
+
+- **Claim:** the TECH PLAN this story reserves to me — draft **ADR-0053** (number allocated by
+  `producer`, not self-allocated), cut the dev lanes, confirm AC1–AC5 against **real code**
+  independently of Karim's read, and rule the art-dependency shape / sprite-integration timing. Read
+  in full: the three gated specs, the story's 10 ACs, ADR-0051/0052, and — for the touch surface —
+  `levels.ts`, `narrativeSystem.ts` + `narrativeSystem.test.ts`, `App.tsx`, `FlyerWall.tsx`,
+  `LevelFlyer.tsx`, `levelArt.json`, `gen-level-art.mjs`, `gen-adr-index.mjs`.
+
+### Delivered
+
+- **ADR-0053** — `docs/adr/0053-niveau-final-live-boss-level.md` (Accepted; extends, does not
+  supersede, ADR-0051/0052). Records: the data-only live-ship decision (D1), the per-file touch map
+  = lane partition (D2), the FORBIDDEN changes + the byte-diff review-assert (D3), the seed/K-5 re-pin
+  discipline (D4), the harness's continued untouched existence (D5), and the art-dependency shape:
+  backdrop IN, canon-sprite render-integration a FOLLOW-UP pass (D6). ADR index regenerated
+  (`node scripts/gen-adr-index.mjs --write` → 53 ADR, `--check` FRESH); `docs/adr/README.md` +
+  `public/adr/index.html` in sync.
+
+### AC1–AC5 confirmed against real code (independent of Karim's leg)
+
+- **AC1** — `LevelConfig` authors `bossQteSpec`, no `hostageQte`; `windowWeights {normal 40, riot 28,
+biker 20, bonus 10}` merges `{...defaults, ...overrides}` (`levels.ts:12–13`), so `civilian`/
+  `hostage_taker` keep default `weight 0` and stay out of the pool. The `stateMachine.ts` both-QTE
+  throw is a safety net respected by construction. **PASS.**
+- **AC2** — the change is an APPEND (new `LEVELS` entry + new narrative keys); the four shipped
+  `LevelConfig`s stay byte-untouched. Enforced by the D3 review-assert. **PASS by construction.**
+- **AC3** — `BOSS_QTE_DEV_HARNESS_LEVEL` (`levels.ts:221–248`) unmodified, stays excluded from
+  `LEVELS`. **PASS.**
+- **AC4** — `enemiesToWin: 16` (real, non-zero — not the harness `0`); a non-null `bossQteSpec`
+  suppresses the instant `LEVEL_COMPLETE` and routes the quota crossing into `shouldTriggerBossQte`.
+  **PASS.**
+- **AC5** — the live `bossQteSpec` authors **only** the existing `BossQteSpec` fields the harness
+  already exercises (`levels.ts:234–247`: zoom/anchor/phaseCount/bossHp/maxBlownWindows/targetSeed/
+  decorProp) — no new field ⇒ no `types/bossQte.ts` change; no system value smuggled as data. The
+  review-assert (D3) enforces zero changed lines in `bossQteSystem.ts` / `types/bossQte.ts`. **PASS.**
+
+### Lane partition (PLANNED now, LAUNCHED post-AC8-clear)
+
+Non-overlapping paths; the one cross-lane contract is the id string **`niveau-final`** (fixed in the
+ADR) and the backdrop path `assets/levels/niveau-final/facade.png`. No two lanes share a file.
+
+- **dev-gameplay** (the AC8-gated lane — it owns `levels.ts`):
+  - `src/game/levels/levels.ts` — APPEND the `niveau-final` `LevelConfig` after `vitry` (speed 1.8,
+    quota 16, timer 70, one `truck` delivery ≈Vitry, riot-heavy `windowWeights`, `bossQteSpec` per
+    ADR D4, seed `19991231` PROVISIONAL, chandelier `decorProp {0.2,1.5}`). NO `hostageQte`. Shipped
+    levels + harness byte-untouched.
+  - `src/game/systems/narrativeSystem.ts` (+ `__tests__/narrativeSystem.test.ts` stays green) — ADD
+    `niveau-final` to BOTH `PRE_` and `POST_LEVEL_NARRATIVE` (test A1), ids `niveau-final_pre`/`_post`
+    (A2, flag A), each with `backdrop: "assets/levels/niveau-final/facade.png"` (A5, flag B). French
+    lines VERBATIM from `spec-boss-encounter-fiction.md` §4 — only id/key/backdrop strings are new.
+  - Boundary reminder: pure `src/game`, zero React/Three; TDD; the scene-id rename + backdrop path are
+    **data/id-only** — no gated French copy changes (confirms Q1=NO upheld).
+- **dev-tooling-assets** (`levelArt.json` — NOT AC8-named, can start in parallel):
+  - REQUIRED: ADD a `levels[]` `niveau-final` block (single-facade mode, vitry/stalingrad pattern):
+    `prompts.facade` = l'Éden hall interior + `windowGrid`/`parallax`/`sky`/`street`/`foreground`.
+    `gen-level-art.mjs` produces `assets/levels/niveau-final/facade.png` (serves in-game facade + the
+    narrative backdrop of flag B).
+  - PARALLEL / NON-BLOCKING (open art lane, OQ3): ADD the 5 new `boss`-block sprite JSON entries as
+    prompt-carrying structure (keys/asset/seed) with **per-type [S13] aspect** — figures square
+    256×256, `lustre` portrait, `speaker_wall` landscape (the `nearForegroundArt` per-type-size
+    precedent). Zero runtime effect today; PNGs may be absent. Structure is dev-tooling's.
+  - Boundary reminder: `levelArt.json` + `scripts/**` only; owns keys/paths/seeds/sizes, NOT prompt
+    strings (concept-artist) and NOT render registration.
+- **dev-r3f-render** (minimal — NOT zero):
+  - `src/render/ui/menu/LevelFlyer.tsx` — ADD one `PLAYABLE_COPY["niveau-final"]` entry
+    (crew/slogan/date/zone/rv/info) transcribed from `spec-niveau-final-fiction.md` §4.1. Frozen
+    `LevelFlyer`/`FlyerWall`/`LOCKED_COPY` untouched. `FlyerWall.tsx`'s `LEVELS.map` auto-renders the
+    4th flyer; `App.tsx` is fully data-driven (`LEVELS[shippedIdx+1]` unlock hop,
+    `PRE_/POST_LEVEL_NARRATIVE[id]`) → **zero `App.tsx`/`FlyerWall.tsx` change**. Zero-new-UI (ux D1/D3)
+    holds at the code level.
+  - Boundary reminder: render-layer DATA entry only; no new component, CSS, or game rule.
+
+### Perf call — NOT perf-sensitive; no `gpu-specialist` verdict required
+
+This story adds **no new render surface beyond an ordinary level's**: one more single-facade backdrop
+(halftone wash, identical to vitry/stalingrad) and the SAME ADR-0051/0052 boss system on its already-
+stage-5-perf-verified procedural fallbacks. No new shader, no new draw-call class, no new technique.
+The one perf-sensitive item in the boss family — ADR-0052's smoke compositing — ships **unchanged**
+(already cleared under its own gpu verdict); this story adds nothing to it. Verdict: **ordinary
+level, no perf gate** — the stage-5 checks are legibility (ux A1–A15 re-verify on the new backdrop),
+not frame-budget. Forward flag: the FOLLOW-UP canon-sprite integration (D6) swaps procedural quads
+for textured sampling — its perf check belongs to that pass, not this one.
+
+### Wiring flags A/B — lane confirmation
+
+Both land in **dev-gameplay** (`narrativeSystem.ts`), NOT render: the scene DATA lives in the game
+layer; `App.tsx` only reads it by id. Flag A (id rename `final_pre`→`niveau-final_pre`/`_post`, test
+A2) and flag B (mandatory `backdrop` path, test A5) are **data/id-only** — no gated French line
+changes. Confirmed: scene-id rename touches only ids/keys, not copy.
+
+### AC8 — reaffirmed, still binding
+
+TECH PLAN + ADR-0053 are complete and authorized now. The dev lanes above are **planned, not
+launched.** No dev lane touching `levels.ts`/`bossQteSystem.ts` starts until `producer` confirms
+ADR-0052's stage-6 panel MERGE-cleared on `main` (or a logged compression). All three lanes launch
+together under that gate to keep the `niveau-final` id contract coherent.
+
+VERDICT: TECH PLAN COMPLETE — ADR-0053 drafted, lanes cut, AC1–AC5 code-confirmed (senior-architect)
+
+- **Handoffs:**
+  - → `producer` (Marion): AC8 gate is now the sole blocker to dev-lane launch — chase ADR-0052's
+    stage-6 merge; release the three lanes together when it clears. ADR-0053 index re-pinned.
+  - → dev lanes (on AC8 release): the D2 touch map is the build contract; hold the D3 review-assert.
+  - → `lead-art` (Nico): the OQ3 art lane (backdrop + 9 canon assets) runs in parallel per D6;
+    render-integration of the boss sprites is a follow-up pass, not this story's stage-6.
+- **File List:**
+  - `docs/adr/0053-niveau-final-live-boss-level.md` (NEW)
+  - `docs/adr/README.md` (index regenerated — ADR-0053 row)
+  - `public/adr/index.html` (index regenerated)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this TECH PLAN entry appended)
