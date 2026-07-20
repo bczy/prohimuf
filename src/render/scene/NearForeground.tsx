@@ -22,8 +22,13 @@ import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
 // behind. Tall "pole" props (lamppost, traffic light, sign) live in the NEAR row
 // where they are big and their base reads; the FAR row carries only low, chunky,
 // self-grounding props (bollard, bench, Wallace, scooter) that never float small.
-const NEAR_STREET_LINE = 0.93;
+const NEAR_STREET_LINE = 1.05;
 const FAR_STREET_LINE = 0.93;
+// Extra downward shift of the NEAR kerb line on mobile (facade-normalized, y-down):
+// the portrait camera shows a much deeper street band below the facade, so the
+// near row drops further toward the screen-bottom kerb (Bertrand-directed,
+// 2026-07-20) — same spirit as MOBILE_BAND_DROP for the ceiling.
+const MOBILE_NEAR_LINE_DROP = 0.12;
 // Perspective scaling per row: the NEAR row is zoomed up (close to the camera,
 // in-your-face), the FAR row shrunk (back of the road). Both stay capped at the
 // band top (non-occlusion), so a zoomed near prop fills the band without ever
@@ -231,7 +236,8 @@ export function NearForeground({
   if (layer === null) return null;
 
   const fullW = facadeW * panels;
-  const nearStreetWorldY = (0.5 - NEAR_STREET_LINE) * facadeH;
+  const nearLine = isMobile ? NEAR_STREET_LINE + MOBILE_NEAR_LINE_DROP : NEAR_STREET_LINE;
+  const nearStreetWorldY = (0.5 - nearLine) * facadeH;
   const farStreetWorldY = (0.5 - FAR_STREET_LINE) * facadeH;
   // Non-occlusion ceiling below the windows. Mobile drops it lower (C3 buffer).
   const effectiveBandTop = isMobile ? bandTop + MOBILE_BAND_DROP : bandTop;
