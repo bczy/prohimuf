@@ -101,7 +101,7 @@ sequence M2 & M3 on shared `OptionsColophon.tsx`/`PauseScreen.tsx`.
   shipped field, does not re-add it.
 - claim: pure-logic side of M3 — `Prefs.reducedMotion` field + migration + TDD, per ADR-0052 §3.
 - release: `src/game/systems/prefsSystem.ts` (field on `Prefs`, `DEFAULT_PREFS.reducedMotion:
-  false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/prefsSystem.test.ts`
+false`, boolean-tolerant migration in `loadPrefs`); `src/game/systems/__tests__/prefsSystem.test.ts`
   (+5 tests). **Per ADR-0052 (supersedes story text outcome-b seed-once):** default `false`,
   **no seed-from-OS** — `prefsSystem` stays a pure reducer/serializer, no `matchMedia`. Legacy
   blobs without the field load as `reducedMotion: false`. The LIVE-UNION `prefs || OS` is the
