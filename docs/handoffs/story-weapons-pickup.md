@@ -318,3 +318,92 @@ LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane;
 - **Files (mine only, under docs/qa/):** `docs/qa/plan-story-weapons-pickup.md` (NEW),
   `docs/qa/evidence/weapons-pickup/{a-hud-base-infinity,b-loot-crate-visible,c-hud-special-equipped}.png`
   (NEW).
+
+---
+
+## stage-5. VISUAL READ (crate R1–R4) — lead-art (Nico) — 2026-07-20
+
+- claim: stage-5 visual gate of the LOOT-crate read contract (R1–R4) for V1 — the code-drawn
+  placeholder `src/render/scene/LootCrate.tsx`, judged on the runtime composite
+  (`docs/qa/evidence/weapons-pickup/b-loot-crate-visible.png`), against `docs/art-direction.md`
+  §2 (three laws) + §2.1 (loi du glow, « un halo est un dégradé, jamais un aplat ») + Gate 4
+  (composite). pm ruling #4 honoured: I gate the READ, not the render technique; no code touched.
+- VERDICT: PASS — lead-art crate read (lead-art)
+
+**PASS on the crate READ — with ONE BLOCKING composite correction on R3's glow (owner
+`dev-r3f-render`) that must land before merge, and two fast-follows.** The placeholder does its
+V1 design job: at game size (verified on a 4×/8× crop of the VISIBLE-state evidence) the crate is
+an unmistakable non-human object carrying a legible weapon glyph, and it does not degrade the
+menace/innocent triage. It is NOT a V1 read blocker (pm #4). But the runtime GLOW as shipped is an
+aplat, and §2.1 is a law I own at Gate 4 — so the composite sign-off is withheld until the falloff
+halo is evidenced. Ruling per requirement:
+
+- **R1 — PASS (§2 law 3, own channel).** The silhouette is a squat rounded-rect box with a lid
+  band + diagonal cross-brace: categorically a non-human OBJECT, sitting outside the human
+  menace/innocent binary. In the same slot row it is instantly separable from the two human
+  enemy figures beside it (shape is the dominant, <0.3 s separator). Confirmed at game size.
+- **R2 — PASS (W1, glyph-before-fire).** The "C" is large, centred, high-contrast bright glyph
+  over the dark body with a dark keyline — legible at reticle distance BEFORE the collecting
+  shot, both in the native frame and the crop. No blind pickup.
+- **R4 — PASS (shared window channel, triage survives).** Because the box read is
+  shape-categorical, the third read (loot = shoot-to-equip) does not collide with the
+  human-silhouette menace/innocent triage; the object channel is distinct. (The instrumented
+  <0.3 s re-measure with loot present is qa/`game-designer`'s composite-gate measurement; my
+  visual read says the channel separation holds.)
+- **R3 — reads interactive (PASS as READ), BUT composite glow FAILS §2.1 — BLOCKING.** The crate
+  does read as interactive: it carries a neon rim, so "ce qui brille est interactif" is
+  satisfied at the read level. However, on the real VISIBLE-state screenshot the ONLY glow that
+  lands is the hard-edged baked yellow OUTLINE — a constant-opacity band cut to nothing, i.e. an
+  **aplat / decal**, exactly the §2.1 automatic-FAIL mode. The coded additive falloff halo
+  (radial gradient, `0.7→0.28→0`, pulsing) does **not** read in the evidence: a horizontal +
+  vertical pixel scan around the crate shows no monotonic yellow falloff bleeding outward — into
+  the dark region below the crate the values stay cool (B ≥ R,G), i.e. no additive-yellow halo,
+  and against the bright facade any contribution is at best a marginal warm tint, nowhere near a
+  luminous dégradé. Contrast the enemy orange rims in the same frame, which bloom with visible
+  falloff. Per Gate 4 (« if the composed visual never lands in a screenshot you can Read, it has
+  NOT been gated — withhold PASS until it does ») and the ADR-0011 precedent this gate exists to
+  close, I **withhold the composite sign-off**. Fix (owner `dev-r3f-render`, single-lane): make
+  the halo actually read as a monotonic falloff-to-zero over the crate edge in-game (raise its
+  additive contribution / gate it so it survives a bright facade, and/or give the rim itself a
+  falloff instead of a flat stroke), then re-shoot a VISIBLE-state screenshot for my composite
+  verdict. Blocking, not fast-follow: §2.1 aplat is an automatic FAIL on the same footing as a
+  menu that glows.
+
+**Fast-follows (NOT blocking V1):**
+
+1. **Hue — `#ffe600` yellow is off the §2.1 palette (owner `concept-artist`/`lead-art`, art-quality
+   pass).** The four hex-anchored in-world accents are orange/cyan/magenta/green; yellow is not
+   among them, and it collides with the crosshair/control yellow already on screen (aim
+   affordance vs world pickup). The shape read carries V1, but the art-quality pass should move
+   the crate onto a sanctioned/deliberately-reserved loot hue — distinct from both the enemy
+   orange and the reticle yellow — and anchor it in data, not a hardcoded literal.
+2. **Art-quality FLUX pass (owner `concept-artist`, fast-follow per pm #4).** The code-drawn box
+   is a legible placeholder; the on-direction xerox/fanzine crate sprite is the deferred quality
+   pass. Not a V1 blocker.
+
+- **Evidence read:** `docs/qa/evidence/weapons-pickup/b-loot-crate-visible.png` (VISIBLE crate +
+  two orange-rimmed enemies same row). **Source inspected (read-only):**
+  `src/render/scene/LootCrate.tsx`. No code or `levelArt.json` touched.
+
+---
+
+## stage-5. DESIGN CONFORMITY PLAYTEST — game-designer (Sacha) — 2026-07-20
+
+- claim: stage-5 conformity verification of the BUILD against my gated spec `docs/game-design/weapons.md` — the six conformity checks (tuning traceability, burst model, éventail offsets, spawn-exclusion, penalty routing, AC13/W7 analytic bound) traced through `types/weapon.ts` / `weaponSystem.ts` / `lootSystem.ts` / `levels.ts` + cross-read against qa-lead's runtime evidence (Belliard, `__MUF_PLAY__` seam) / release: **PASS** — zero silent value drift, all four structural mechanics built as specced; AC13 analytic bound recorded below (the human uptime measure stays escalated to Bertrand).
+- VERDICT: PASS — design conformity playtest (game-designer)
+
+**Checks (all conform):**
+
+1. **Tuning traceability — EXACT, no drift.** Every `WEAPON_SPECS` constant matches weapons.md §7 byte-for-byte: `base` {stock ∞, offsets [0], no cooldown}; `auto` {stock **120**, burstRounds **6**, burstIntervalMs **90**, refractoryMs **150**, offsets [0]}; `spread` {stock **30**, offsets **[-2,0,2]**, refractoryMs **300**}. Runtime evid `c` shows "C 30" = spread startStock 30 confirmed on the built HUD.
+2. **Burst model — conform.** `weaponSystem.ts` L73-87/L161-178: trigger arms `burstRemaining=6`; rounds fire on `burstTimerMs>=90` interval crossings, **≤1 round/tick** (single `if`, timer decremented once, not a while-drain); **stock −1 per round** (per-round, not per-press — the B4 refinement); post-burst `refractoryMs=150` blocks re-trigger; further fire mid-burst ignored; empty-mid-burst ends burst + auto-returns to base + `weaponEmpty` same tick. Matches §2.3/AC3.
+3. **Éventail offsets — conform.** `[-2,0,2]` = façade column pitch (`col*2-18`), 3 adjacent columns; disc radius 0.8, inter-offset gap 2.0 > 1.6 ⇒ no self-overlap (no double-billing). Matches §2.4 "2-3 fenêtres" intent at the real pitch.
+4. **Spawn-exclusion — conform.** `canSpawnLootAt` = `activeCols.every(a => |col−a| >= LOOT_SPAWN_MIN_COL_GAP)` with `LOOT_SPAWN_MIN_COL_GAP=2`; `activeEnemyCols` filters exactly APPEARING∪VISIBLE∪SHOOTING; unsatisfiable ⇒ deferred (never force-placed). Exactly §5.4/AC9.
+5. **Penalty routing — conform, no amnesty.** `weaponSystem.ts` L133-142: on each MISS in the offset fold, `resolveCourierShot` runs at THAT offset's impact point and its `scoreDelta`/`livesDelta` are **summed** (not capped/reduced) — up to 3 full civilian penalties per spread press, up to BURST_ROUNDS per burst. Unchanged `resolveCourierShot`. Matches §3/AC5.
+
+**AC13 / W7 analytic bound (≤30-40 % special uptime) — the stage-5 record:**
+
+Belliard mission = **90 s**; crate spawn cadence = **15 s** (`levels.ts` `loot.spawnIntervalSeconds`); pool `[auto,spread]`. Wall-clock to empty a stock at max fire rate: **B ≈ 13.8 s** (20 bursts × [6×90 ms fire + 150 ms refractory] = 20×690 ms; "10.8 s of fire" excl. refractory, per §7), **C ≈ 9 s** (30 presses × 300 ms cooldown floor). First crate reachable ~t=15 (16.7 % of the mission is necessarily base-only up front), leaving ~75 s with ~5 collectable crates at the 15 s cadence.
+
+**Verdict: >40 % uptime IS structurally possible** with the current tuning — the 15 s spawn cadence is SHORTER than a continuously-fired burn (B 13.8 s / C 9 s), so an aggressive collector who burns each crate immediately reaches ≈50 % (C-only) to ≈76 % (B-only) of a 90 s run under a special. The numbers do **not** guarantee W7; the ≤40 % bound relies entirely on **collection friction that is NOT in the tuning table**: §5.4 pushes crates to façade edges away from centre engagement, only one crate exists at a time, and the VISIBLE pickup window is 4.0 s — so realistic uptime is materially below the structural ceiling (qa-lead's runtime capture needed a deliberate edge camera-pan to collect a single crate). **This is a tuning-risk flag, not a conformity defect** — §7 states the values are `verify` starting points, not gated, and W7's remedy is "tune stock down". If the human Belliard measure (escalated to Bertrand) reads >40 %, the one-variable lever is `auto` stock 120→lower and/or `spread` stock 30→lower and/or `loot.spawnIntervalSeconds` 15→higher. No spec change required.
+
+- **Read-only inputs:** `docs/game-design/weapons.md`, `docs/qa/plan-story-weapons-pickup.md` + evidence PNGs, this shard's stage-4 lanes, `src/game/types/weapon.ts`, `src/game/systems/{weaponSystem,lootSystem}.ts`, `src/game/levels/levels.ts`. No code or spec modified (iron rule). Reported to `lead-game-designer` (Karim) ahead of the architect integration review.
