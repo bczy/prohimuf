@@ -8,11 +8,11 @@
 
 ## stage-0. INTAKE — producer (Marion) — 2026-07-20
 
-- claim: story opening, ADR reservation, pipeline routing; supersession of story-weapons-pickup's deferred crate art fast-follows / release: shard opened, ADR-0053 reserved, design + art lanes queued, dependencies noted
+- claim: story opening, ADR reservation, pipeline routing; supersession of story-weapons-pickup's deferred crate art fast-follows / release: shard opened, ADR-0056 reserved, design + art lanes queued, dependencies noted
 - **Trigger:** Bertrand playtest of PR #115 (story-weapons-pickup, pm-accepted, unmerged): the shipped crate (V1 code-drawn placeholder, window-slot placement) "ne ressemble pas du tout à une caisse" — revision mandated: (1) REAL WOODEN CRATE sprite (FLUX art, references collected), (2) placed ON THE SIDEWALK (street level `y`-position, not window slot column), (3) full agent workflow.
-- **Reserved ADR:** ADR-0053 LOOT crate revision: sidewalk placement + FLUX art asset gen (reserved; senior-architect to write post-design-gate).
-- **Pipeline route:** design delta Karim (game-designer → lead-game-designer gate) ∥ art lane (art-advisor refs → concept-artist FLUX prompt → game-graphist pre-prod → lead-art prompt gate → CI generation → lead-art asset gate) → senior-architect tech-plan delta (ADR-0053, placement amendment to ADR-0052 D5 or standalone, architect's call) → dev-gameplay ∥ dev-r3f-render → verify → stage-6 panel re-run (material diff on an already-MERGE-cleared branch, per COLLABORATION.md §code-review panel) → pm re-accept.
-- **Scope guard:** ADR-0052 V1 crate was deferred: pm ruling #4 (no FLUX, drawn glyph placeholder suffices unless lead-art's B6 read judges it illegible, then small fast-follow). Bertrand playtest overrides: the placeholder is illegible/wrong as a crate → immediate upscale to full FLUX art lane.
+- **Reserved ADR:** ADR-0056 LOOT crate revision: sidewalk placement + FLUX art asset gen (reserved; senior-architect to write post-design-gate).
+- **Pipeline route:** design delta Karim (game-designer → lead-game-designer gate) ∥ art lane (art-advisor refs → concept-artist FLUX prompt → game-graphist pre-prod → lead-art prompt gate → CI generation → lead-art asset gate) → senior-architect tech-plan delta (ADR-0056, placement amendment to ADR-0055 D5 or standalone, architect's call) → dev-gameplay ∥ dev-r3f-render → verify → stage-6 panel re-run (material diff on an already-MERGE-cleared branch, per COLLABORATION.md §code-review panel) → pm re-accept.
+- **Scope guard:** ADR-0055 V1 crate was deferred: pm ruling #4 (no FLUX, drawn glyph placeholder suffices unless lead-art's B6 read judges it illegible, then small fast-follow). Bertrand playtest overrides: the placeholder is illegible/wrong as a crate → immediate upscale to full FLUX art lane.
 - **Supersession note:** The deferred fast-follows from story-weapons-pickup.md (lead-art R1–R4 read, concept-artist FLUX pass, hue amendment) are SUPERSEDED by this story — no longer fast-follows, now in-story gated deliverables. See story-weapons-pickup.md stage-5, "Fast-follows (NOT blocking V1)" entries 1–2.
 - **Contention:** The branch is shared with story-weapons-pickup (PR #115), which is pm-accepted. No scope drift on weapons-pickup itself; this story adds commits on top. Serialization: story-weapons-pickup merges first (lead to this story's dev entry); this story's commits land after, same branch+PR.
 - **Shared files at risk (hand-off coordination needed):** `src/game/levels/levelArt.json` (art-generation config), `src/render/scene/LootCrate.tsx` (visual + art reference hook). Both lanes must not edit these files in parallel — dev-r3f-render owns the hook, CI art-gen owns asset output. Rule: art lane generates assets to CI, dev-r3f-render consumes the final sprite path post-generation.
@@ -21,7 +21,7 @@
 
 ## Key Decisions (pre-stage-1 notes)
 
-- **Placement model:** crate moves from window-slot (indexed by `loot.slotIndex`, a column) to fixed street-level position (world `y`, constant across levels). Coordinate system: verify against `facade01.ts` facade geometry (window rows live at `y = 2.5` nominal; street = `y < 0`, e.g., `y = -1.0` or `-2.0`). Open question for lead-game-designer: does street placement affect the pickup window (currently 4.0 s VISIBLE window per ADR-0052 D5)?
+- **Placement model:** crate moves from window-slot (indexed by `loot.slotIndex`, a column) to fixed street-level position (world `y`, constant across levels). Coordinate system: verify against `facade01.ts` facade geometry (window rows live at `y = 2.5` nominal; street = `y < 0`, e.g., `y = -1.0` or `-2.0`). Open question for lead-game-designer: does street placement affect the pickup window (currently 4.0 s VISIBLE window per ADR-0055 D5)?
 - **Art direction:** FLUX generation via a `levelArt.json` art directive (style: xerox/fanzine wood crate, matching `docs/art-direction.md` §2; on-brand acid-neon trim per the four-hex palette). No glyph drawn on the crate sprite itself — glyph lives in HUD only (design delta, if any). Concept-artist to source wooden-crate references (shipping crates, rave-era props, fanzine xerox examples).
 - **CI pipeline:** assets/audio/art-generation lane will unblock this story post-design-gate when the FLUX prompt is ready (no local sandbox art generation; final sprite appears in `_bmad-output/sprites/` or equivalent, integrated into `levelArt.json`).
 
@@ -58,7 +58,7 @@
   street objects, not window pop-ups). Core loop untouched.
 - **Hand-offs queued (log in agent-handoffs):** → `lead-art`/`concept-artist` (real wooden crate
   FLUX sprite A1–A4: squat, planks, stencil glyph, neon rim, solid cutout); → `senior-architect`
-  (ADR-0053: `LOOT_STREET_Y`/`LOOT_MAX_ABS_X`/`CRATE_DELIVERY_GAP_X` + crate hit-point y
+  (ADR-0056: `LOOT_STREET_Y`/`LOOT_MAX_ABS_X`/`CRATE_DELIVERY_GAP_X` + crate hit-point y
   decoupled from the façade slot row); → `ux-designer` (no HUD change, glyph stays on crate).
 - **No VERDICT** — `lead-game-designer` (Karim) gates next.
 
@@ -89,7 +89,7 @@ ADR-0003/0026. Delta NOT edited; code NOT touched.
 canon (Operation Wolf / Wild Guns street crates), not a new undeclared extension. Core loop
 `Récupérer → Livrer → Éviter` untouched. Une-mission-3-5-min unaffected (placement/art only).
 
-**BLOCKING corrections (must resolve before `senior-architect` / ADR-0053):**
+**BLOCKING corrections (must resolve before `senior-architect` / ADR-0056):**
 
 - **C1 — In-frame constraint uses the wrong x (D2/D3/D9/AC-D1). [verifiability]**
   `|col·2 − 18| ≤ 7` is the legacy **FACADE_01 harness** formula. At runtime the crate's
@@ -130,7 +130,7 @@ canon (Operation Wolf / Wild Guns street crates), not a new undeclared extension
   couriers ⇒ crate-beats-courier is correct. But the function currently reads the crate hit point
   from `facade.slots[loot.slotIndex].screenPosition` (window y); street-y decoupling is a real
   change to it (or LootCrate gains its own position), and `tickLoot` must gain delivery phase+x
-  for D9-2. Disclosed to the architect via ADR-0053 — ensure the hand-off does not claim
+  for D9-2. Disclosed to the architect via ADR-0056 — ensure the hand-off does not claim
   "no code change to resolvePlayerShot / tickLoot".
 - **N4 (point 1) — crate-eats-courier fairness.** Acceptable under P3: crate-wins can only
   **prevent** a courier penalty, never cause a death. Residual = an intentional near-crate shot
@@ -168,7 +168,7 @@ triage at the composite gate (same-frame screenshot: green crate + still-green e
 the silhouette law (box vs figure) + z-band (street vs window) carrying it; cyan (`#28F0FF`) is
 the art-advisor fallback if it fails. Flagged to `lead-art`, not blocking this design delta.
 
-**VERDICT:** PASS-WITH-CORRECTIONS — 2 blocking (C1 runtime-x formula, C2 mobile-frame reachability), 6 non-blocking + 3 confirmed; hue delegated to lead-art composite gate. Round 1 of 2: back to `game-designer` (Sacha) to amend C1/C2 (and N1–N2 premises) in the delta, then re-gate before `senior-architect` (ADR-0053). Scope/core-loop/W1/W2/precedence all PASS.
+**VERDICT:** PASS-WITH-CORRECTIONS — 2 blocking (C1 runtime-x formula, C2 mobile-frame reachability), 6 non-blocking + 3 confirmed; hue delegated to lead-art composite gate. Round 1 of 2: back to `game-designer` (Sacha) to amend C1/C2 (and N1–N2 premises) in the delta, then re-gate before `senior-architect` (ADR-0056). Scope/core-loop/W1/W2/precedence all PASS.
 
 ---
 
@@ -203,7 +203,7 @@ A-B-C stock) untouched; AC-D8 is a verify/composite gate consistent with N2, not
 Supersession set (weapons.md §5.1-R2/R3/R4, §5.2, §5.3, §5.4, `LOOT_VISIBLE_DURATION`) unchanged.
 Cahier des charges still PASS (documented refinement of the greenlit [EXTENSION], loop untouched).
 
-**Pins for `senior-architect` (ADR-0053) / dev — carried into the tech lane, not blocking:**
+**Pins for `senior-architect` (ADR-0056) / dev — carried into the tech lane, not blocking:**
 
 - **P1 — signature change.** `tickLoot`/`attemptSpawn` must gain the delivery phase +
   `stopPosition.x` (for D9-2) as passed-in pure data (not render state) — the pure system takes
@@ -217,7 +217,7 @@ Cahier des charges still PASS (documented refinement of the greenlit [EXTENSION]
 - **P4 — lead-art (carried).** Green `#78FF3C` rim vs the green enemy early-telegraph
   co-occurrence remains a binding composite-gate check (same-frame screenshot); cyan fallback.
 
-**VERDICT:** PASS — both blocking corrections (C1, C2) and all premise fixes (N1/N2/N3/N5) genuinely landed and code-grounded; confirmed rulings intact, no scope creep. Delta cleared for `senior-architect` (ADR-0053). 4 pins carried to the tech/art lanes (non-blocking). Cap reached (round 2 of 2) — no further design-gate rounds.
+**VERDICT:** PASS — both blocking corrections (C1, C2) and all premise fixes (N1/N2/N3/N5) genuinely landed and code-grounded; confirmed rulings intact, no scope creep. Delta cleared for `senior-architect` (ADR-0056). 4 pins carried to the tech/art lanes (non-blocking). Cap reached (round 2 of 2) — no further design-gate rounds.
 
 ---
 
@@ -254,10 +254,10 @@ left untouched.
 
 ---
 
-## stage-3. TECH PLAN + ADR-0053 — senior-architect (Winston) — 2026-07-20
+## stage-3. TECH PLAN + ADR-0056 — senior-architect (Winston) — 2026-07-20
 
-- claim: tech plan + ADR for the gated sidewalk delta; lane cut → release: **ADR-0053**
-  ([`docs/adr/0053-loot-crate-sidewalk-placement.md`](../adr/0053-loot-crate-sidewalk-placement.md),
+- claim: tech plan + ADR for the gated sidewalk delta; lane cut → release: **ADR-0056**
+  ([`docs/adr/0056-loot-crate-sidewalk-placement.md`](../adr/0056-loot-crate-sidewalk-placement.md),
   index regenerated); two dev lanes cut on disjoint paths; art lane runs ∥.
 - **No escalation.** Everything in the plan follows the gated delta + Karim's pins P1–P4; nothing
   contradicts the delta. Honoured: P1 (delivery data threaded as pure input), P2 (`resolvePlayerShot`
@@ -265,12 +265,12 @@ left untouched.
   P4 (hue is lead-art's composite-gate call — untouched here).
 
 **DECISION — slotIndex vs x-only:** **KEEP `slotIndex`** (column seed + x carrier); decouple **only
-y** to `LOOT_STREET_Y`. An x-only model would break the replay-safe seed pick, the ADR-0052 D5
-co-location guards (a)/(b), and the enemies∪crate tie-break. This is exactly delta D2 (ADR-0053 D1).
+y** to `LOOT_STREET_Y`. An x-only model would break the replay-safe seed pick, the ADR-0055 D5
+co-location guards (a)/(b), and the enemies∪crate tie-break. This is exactly delta D2 (ADR-0056 D1).
 
-**ADR-0052 relationship:** ADR-0053 **supersedes ADR-0052's D5 _placement_ clause only** (+ the two
+**ADR-0055 relationship:** ADR-0056 **supersedes ADR-0055's D5 _placement_ clause only** (+ the two
 durations). Survives verbatim: new-entity-not-`EnemyKind`, `LootCrate`/`LootState` shape, `slotIndex`
-as x-carrier, co-location guards (a)/(b), D9-1 col-gap. Untouched: ADR-0052 D1/D2/D3/D4/D7/D8.
+as x-carrier, co-location guards (a)/(b), D9-1 col-gap. Untouched: ADR-0055 D1/D2/D3/D4/D7/D8.
 
 ### Lane cut (parallel-safe — disjoint paths; art lane ∥)
 
@@ -539,9 +539,9 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
 
 ## stage-4. DEV LANE A — dev-gameplay (Amelia) — 2026-07-20
 
-- claim: Lane A (`src/game/**` only) — implement the sidewalk placement per ADR-0053 (D1-D4/D9),
+- claim: Lane A (`src/game/**` only) — implement the sidewalk placement per ADR-0056 (D1-D4/D9),
   TDD red-first / release: **DONE, all green** (tsc 0, lint 0, format 0 on Lane-A files; vitest
-  875 passed — 867 baseline + 8 new). No deviation from ADR-0053; `slotIndex` kept as the
+  875 passed — 867 baseline + 8 new). No deviation from ADR-0056; `slotIndex` kept as the
   x-carrier (D1), no x-only refactor.
 - VERDICT: PASS — dev-gameplay: LOOT crate sidewalk placement (Lane A)
 - **Branch:** `claude/features-a-implémenter-ehw9q4` (1 commit; orchestrator pushes).
@@ -570,7 +570,7 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
   skip; VISIBLE 6.0 s / APPEARING 0.45 s; `bulletSystem` street-y regression (a shot at the crate
   slot's OLD window-y no longer hits; a shot at street-y hits). Existing crate-position tests
   (bulletSystem/weaponSystem/stateMachine) re-aimed to street-y for the moved crate; the AC-D3
-  precedence mechanism and the ADR-0052 co-location guards stay green unmodified.
+  precedence mechanism and the ADR-0055 co-location guards stay green unmodified.
 - **File List:** `src/game/systems/lootSystem.ts`, `src/game/systems/bulletSystem.ts`,
   `src/game/systems/stateMachine.ts`, and their `__tests__` specs
   (`lootSystem`, `bulletSystem`, `weaponSystem`, `stateMachine`).
@@ -587,9 +587,9 @@ Ratified assembled prompt (opening + subject + style, neonPhrase empty):
   into the render farm + lint per the boss-block precedent (structure/generator/lint owned by
   this lane; prompt wording untouched) / release: **DONE**, generator + workflow + lint coverage
   landed, `check-art-prompts.mjs` green (loot WARN is the pre-approved 102-word band, exit 0).
-- **Structure (finalized, no change needed).** The `loot` block already matches the ADR-0053 D5
+- **Structure (finalized, no change needed).** The `loot` block already matches the ADR-0056 D5
   convention: `types.crate.asset = "assets/loot/crate.png"`, `size 256×192`, `seed 7401` (pinned),
-  `neon: "green"` (render metadata, P4), `facing: "left"`. Verified against ADR-0053 §D5 ("`
+  `neon: "green"` (render metadata, P4), `facing: "left"`. Verified against ADR-0056 §D5 ("`
 LootCrate.tsx` consumes `levelArt.loot.asset` read-only") — no schema change was owed, only
   generator + lint wiring.
 - **Generator (new `scripts/gen-loot-sprites.mjs`, smallest-diff cousin of `gen-vehicle-sprites.mjs`,
@@ -604,7 +604,7 @@ LootCrate.tsx` consumes `levelArt.loot.asset` read-only") — no schema change w
   `gen-vehicle-sprites.mjs`'s exported `desaturateFile` (imported, not duplicated) to kill the
   magenta ground-cast bled into the B&W interior — same treatment vehicles get, reused not copied.
   Output: `public/assets/loot/crate.png`. `--list`/`--asset`/`FORCE=1` CLI mirrors every sibling
-  generator. No procedural-placeholder mode: ADR-0053 D5 already gives `LootCrate.tsx` its
+  generator. No procedural-placeholder mode: ADR-0056 D5 already gives `LootCrate.tsx` its
   synchronous code-drawn fallback, so the generator doesn't need to draw one too.
 - **CI wiring (new `.github/workflows/gen-loot-sprites.yml`, mirrors `gen-hostage-sprites.yml`):**
   **`workflow_dispatch`-only in practice** — the `push` trigger only fires on a `paths:
@@ -646,7 +646,7 @@ commit -m "ci(dispatch): gen-loot-sprites" && git push` (or Actions tab → "Gen
 ## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-07-20
 
 - claim: Lane B (`src/render/**`) — relocate the LOOT crate to the sidewalk + FLUX-sprite-with-
-  drawn-fallback per ADR-0053 D5 / release: **DONE, all green** (tsc 0, lint 0, format:check clean
+  drawn-fallback per ADR-0056 D5 / release: **DONE, all green** (tsc 0, lint 0, format:check clean
   on my files, vitest 875 passed — no count regression). No `src/game` touched; imported the
   `LOOT_STREET_Y` seam from `lootSystem` (never re-declared −4.3).
 - VERDICT: PASS — dev-r3f-render: sidewalk crate + FLUX sprite/fallback (Lane B)

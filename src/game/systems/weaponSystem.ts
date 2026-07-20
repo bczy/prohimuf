@@ -10,7 +10,7 @@ import { VIEW_W, VIEW_H } from "@game/systems/crosshairSystem";
 import { resolvePlayerShot } from "@game/systems/bulletSystem";
 import { resolveCourierShot } from "@game/systems/courierSystem";
 
-// The pure weapon orchestrator (ADR-0052 D2): one trigger → 1..3 §2.1 hitscan
+// The pure weapon orchestrator (ADR-0055 D2): one trigger → 1..3 §2.1 hitscan
 // resolutions, folded sequentially left→centre→right, threading the enemy AND
 // courier sets (so §2.4's no-double-billing and P1's per-offset courier-on-miss
 // come for free). Burst scheduling (B) is pure tick state (D4); equip-on-loot
@@ -29,7 +29,7 @@ export interface TriggerResult {
   readonly targetsDown: number;
   readonly events: readonly HitEvent[];
   readonly pointFeedback: readonly PointHitEvent[];
-  // 0-to-3 impacts (ADR-0052 D3); a loot-hit emits none (its own render channel).
+  // 0-to-3 impacts (ADR-0055 D3); a loot-hit emits none (its own render channel).
   readonly impacts: readonly ImpactEvent[];
   // True on the exact tick a special empties and auto-returns to base (§6.1/AC10).
   readonly weaponEmpty: boolean;

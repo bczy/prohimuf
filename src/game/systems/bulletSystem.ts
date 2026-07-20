@@ -11,7 +11,7 @@ import type { LootCrate } from "@game/types/loot";
 import type { WeaponKind } from "@game/types/weapon";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 
-// What a single hitscan resolution landed on (ADR-0052 D2). `enemy-hit` carries
+// What a single hitscan resolution landed on (ADR-0055 D2). `enemy-hit` carries
 // the existing reward math; `loot-hit` equips only (never scores, AC7-loot);
 // `miss` may then hit a courier (the caller resolves courier-on-miss).
 export type ShotOutcome = "enemy-hit" | "loot-hit" | "miss";
@@ -19,7 +19,7 @@ export type ShotOutcome = "enemy-hit" | "loot-hit" | "miss";
 // One resolved player shot. `enemies` is the enemy set after the (0-or-1) hit;
 // the per-hit reward math (deltas / events) matches the removed `checkBulletHits`.
 export interface PlayerShotResult {
-  // Which target class this resolution consumed (ADR-0052 D2).
+  // Which target class this resolution consumed (ADR-0055 D2).
   readonly outcome: ShotOutcome;
   readonly enemies: readonly Enemy[];
   // The crate after this resolution: null on a `loot-hit` (consumed), otherwise
@@ -64,7 +64,7 @@ export function tickBullets(bullets: readonly Bullet[], delta: number): readonly
 }
 
 // Resolve ONE player-shot hitscan resolution at a single world point (ADR-0040,
-// spec §2.1; extended per ADR-0052 D2). The point is the aiming SoT
+// spec §2.1; extended per ADR-0055 D2). The point is the aiming SoT
 // (`crosshairToWorld`) shifted by `offsetDx` (the weapon's per-resolution offset,
 // §2.4). Scans enemies ∪ {VISIBLE crate} for the nearest within HIT_RADIUS (tie →
 // lowest slotIndex, spanning both types): an enemy → the existing reward math; a
@@ -106,7 +106,7 @@ export function resolvePlayerShot(
 
   // The VISIBLE crate is one more eligible target (§5.3): compare it against the
   // best enemy — nearest wins, tie → lowest slotIndex (one entity per slot, so
-  // slot indices never collide). Since ADR-0053 the crate is a STREET object: its
+  // slot indices never collide). Since ADR-0056 the crate is a STREET object: its
   // x stays the slot's (`slot.screenPosition.x`) but its y is the fixed
   // `LOOT_STREET_Y`, NOT the slot's window row. Only this y source changed — the
   // nearest-wins/tie-break ordering below is byte-identical (AC-D3 / P2).

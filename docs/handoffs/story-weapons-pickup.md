@@ -8,9 +8,9 @@
 
 ## stage-0. INTAKE — producer (Marion) — 2026-07-20
 
-- claim: story opening, ADR reservation, pipeline routing / release: shard opened, ADR-0052 reserved, design lane queued
+- claim: story opening, ADR reservation, pipeline routing / release: shard opened, ADR-0055 reserved, design lane queued
 - **Pipeline route:** design gate Karim (lead-game-designer) + pm scope (pm John) → senior-architect tech plan → dev lanes dev-gameplay ∥ dev-r3f-render (± art lane for crate glyph) → qa-lead verify → stage-6 review panel → pm accept
-- **Reserved ADR:** ADR-0052 weapons pickup system (reserved; senior-architect to write post-design-gate)
+- **Reserved ADR:** ADR-0055 weapons pickup system (reserved; senior-architect to write post-design-gate)
 - **Pre-spec:** `docs/game-design/pre-spec-weapons.md` (statut pre-gate, 2026-07-18, game-designer lane)
 - **Scope note:** extension beyond Prohibition guidelines (multi-weapon roster); requires design gate + pm scope sign-off before dev entry
 
@@ -82,13 +82,13 @@ Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs
 - claim: formalize the gated pre-spec into `docs/game-design/weapons.md` (round-2 prep) — B1–B6 resolved, W1–W8 baked as ACs, bound to pm rulings #1–#4 / release: spec written; awaiting `lead-game-designer` round-2 gate (no VERDICT line — I hold no gate)
 - **Files:** `docs/game-design/weapons.md` (new). Read-only inputs: `docs/game-design/pre-spec-weapons.md`, `_bmad-output/planning-artifacts/story-weapons-pickup.md`, `src/game/systems/stateMachine.ts` / `bulletSystem.ts` / `courierSystem.ts` / `maps/facade01.ts`, ADR-0003/0034/0040/0051. No pre-spec/shard/code edits.
 - **B1–B6 resolved:** B1 full innocent penalty per resolution, no spread amnesty (§3/AC5). B2 each weapon = N hitscan resolutions at deterministic offsets, window-priority + courier-only-on-miss per point (§2). B3 resolved-by-descope (D out of V1; re-answer if D ships). B4 per-trigger burst for B (no hold, identical desktop/mobile, zero binding) + ADR-0015→**ADR-0003** citation fix (§2.3). B5 QTEs weapon-agnostic/base-only, special stock frozen (§4/AC6). B6 LOOT own non-human channel + glyph-before-fire + testable spawn-exclusion `|loot.col−a.col|≥2` + off score/lives path, read to lead-art (§5).
-- **Flags:** C's multi-`impactEvents` widening + LOOT-off-score-path → senior-architect (ADR-0052). B-stock-unit (round vs press) refines pm story AC A4 for `auto` as a B4 consequence — within the A-B-C envelope, flagged for pm/architect visibility. Hand-offs stand: lead-art (crate/glyph read), ux-designer (HUD desktop+mobile), narrative-designer (weapon names).
+- **Flags:** C's multi-`impactEvents` widening + LOOT-off-score-path → senior-architect (ADR-0055). B-stock-unit (round vs press) refines pm story AC A4 for `auto` as a B4 consequence — within the A-B-C envelope, flagged for pm/architect visibility. Hand-offs stand: lead-art (crate/glyph read), ux-designer (HUD desktop+mobile), narrative-designer (weapon names).
 
 ---
 
 ## stage-2. DESIGN GATE ROUND 2 — lead-game-designer (Karim) — 2026-07-20
 
-- claim: round-2 (final, bounded-iteration cap) re-gate of `docs/game-design/weapons.md` — verify B1–B6 genuinely resolved (not hand-waved), W1–W8 baked as verifiable ACs, pm rulings #1–#4 respected, no scope creep beyond A-B-C, burst/stock-unit refinement sound; resolution-model claims cross-checked against `bulletSystem.ts`/`stateMachine.ts` + ADR-0040/0003/0034/0051 / release: **PASS** with 3 pinned corrections (P1–P3) the senior-architect/dev/pm must honour; advances to senior-architect lane assignment + ADR-0052.
+- claim: round-2 (final, bounded-iteration cap) re-gate of `docs/game-design/weapons.md` — verify B1–B6 genuinely resolved (not hand-waved), W1–W8 baked as verifiable ACs, pm rulings #1–#4 respected, no scope creep beyond A-B-C, burst/stock-unit refinement sound; resolution-model claims cross-checked against `bulletSystem.ts`/`stateMachine.ts` + ADR-0040/0003/0034/0051 / release: **PASS** with 3 pinned corrections (P1–P3) the senior-architect/dev/pm must honour; advances to senior-architect lane assignment + ADR-0055.
 - VERDICT: PASS — design gate round 2: weapons.md formalized spec (lead-game-designer)
 
 **PASS (final round).** Clean enough to advance: the six blocking corrections are genuinely resolved (not restated), the eight guardrails are numbered verifiable ACs, and every pm ruling is honoured. Residual holes are small and pinned as corrections downstream must honour — none structural, so no escalation packet.
@@ -112,20 +112,20 @@ Formalize `docs/game-design/weapons.md` with B1–B6 resolved and W1–W8 as ACs
 
 ### PINNED CORRECTIONS (PASS is conditioned on these; honour downstream, no re-gate)
 
-- **P1 (→ senior-architect, ADR-0052).** §8's summary line "courier resolution … inherited unchanged" **understates C**: per §2.4/AC5, C invokes courier-only-on-miss **per-offset — up to 3× per tick** at 3 distinct world points, whereas shipped `stateMachine.ts` runs it **once** on the single shot's miss (lines 319–325). Architect must price the courier-resolution loop-widening **alongside** the `impactEvents` widening in ADR-0052, not just the latter. Design intent is unambiguous in §2.4; only §8's rollup is loose.
-- **P2 (→ senior-architect + dev-gameplay).** Mid-burst / multi-resolution **crate-equip ordering is unspecified.** §5.2 ("equip takes effect from the next trigger") assumes a single-resolution trigger; it is silent on a **burst round or éventail barrel that lands on a `VISIBLE` crate**. Pin: a resolution that equips a crate takes effect immediately and **aborts any remaining burst rounds that tick** (the old special's in-flight burst stops; equip cannot be undone). If the dev prefers "burst completes on the old weapon, equip from next trigger," that is acceptable **only if chosen explicitly** in ADR-0052 — never left to guess. Narrow (spawn-exclusion §5.4 makes it rare), so a pin, not a FAIL.
+- **P1 (→ senior-architect, ADR-0055).** §8's summary line "courier resolution … inherited unchanged" **understates C**: per §2.4/AC5, C invokes courier-only-on-miss **per-offset — up to 3× per tick** at 3 distinct world points, whereas shipped `stateMachine.ts` runs it **once** on the single shot's miss (lines 319–325). Architect must price the courier-resolution loop-widening **alongside** the `impactEvents` widening in ADR-0055, not just the latter. Design intent is unambiguous in §2.4; only §8's rollup is loose.
+- **P2 (→ senior-architect + dev-gameplay).** Mid-burst / multi-resolution **crate-equip ordering is unspecified.** §5.2 ("equip takes effect from the next trigger") assumes a single-resolution trigger; it is silent on a **burst round or éventail barrel that lands on a `VISIBLE` crate**. Pin: a resolution that equips a crate takes effect immediately and **aborts any remaining burst rounds that tick** (the old special's in-flight burst stops; equip cannot be undone). If the dev prefers "burst completes on the old weapon, equip from next trigger," that is acceptable **only if chosen explicitly** in ADR-0055 — never left to guess. Narrow (spawn-exclusion §5.4 makes it rare), so a pin, not a FAIL.
 - **P3 (→ pm, one-line ack, not a re-gate).** The B stock-unit change (round, not press) **amends pm story AC A4.** It is a legitimate consequence of the gate-mandated B4 burst model — A4 was written under the superseded "faster-cooldown base" reading — but it edits a pm-authored AC, so pm gets an explicit one-line acknowledgment before the story text is treated as final. No design content is in question.
 
-**Hand-offs stand (unchanged from round-1 formalize):** `lead-art` (crate R1–R4 + A/B/C glyphs), `ux-designer` (HUD desktop+mobile, ADR-0003), `narrative-designer` (weapon names — placeholders, not lore-locked), `senior-architect` (ADR-0052 + §8 contract delta, now incl. P1/P2). Round 2 of 2 — cap reached, gate closed PASS.
+**Hand-offs stand (unchanged from round-1 formalize):** `lead-art` (crate R1–R4 + A/B/C glyphs), `ux-designer` (HUD desktop+mobile, ADR-0003), `narrative-designer` (weapon names — placeholders, not lore-locked), `senior-architect` (ADR-0055 + §8 contract delta, now incl. P1/P2). Round 2 of 2 — cap reached, gate closed PASS.
 
 ---
 
 ## stage-3. TECH PLAN + ADR — senior-architect (Winston) — 2026-07-20
 
-- claim: TECH PLAN + ADR-0052 (number reserved by producer), boundary/contract analysis, lane cut for dev-gameplay ∥ dev-r3f-render / release: **ADR-0052 written** (`docs/adr/0052-weapons-pickup-system.md`, Accepted); lanes assigned below; PARALLEL-SAFE after the type seam lands. **No escalation** — the gated spec is buildable within the boundary law; no contract analysis surfaced a contradiction with `weapons.md`.
+- claim: TECH PLAN + ADR-0055 (number reserved by producer), boundary/contract analysis, lane cut for dev-gameplay ∥ dev-r3f-render / release: **ADR-0055 written** (`docs/adr/0055-weapons-pickup-system.md`, Accepted); lanes assigned below; PARALLEL-SAFE after the type seam lands. **No escalation** — the gated spec is buildable within the boundary law; no contract analysis surfaced a contradiction with `weapons.md`.
 - VERDICT: PASS — tech plan: weapons pickup system (senior-architect)
 
-**ADR-0052 decisions (summary):** D1 `weapon: WeaponState` + transient `weaponEmpty?` on GameState; `WEAPON_SPECS` data table in `types/weapon.ts` (ARCHETYPES precedent). D2 N-resolution via new pure `weaponSystem.resolveTrigger` folding 1..3 resolutions sequentially (left→centre→right, threading enemies + couriers), reusing the extended `resolvePlayerShot` primitive. **P1 priced:** courier-on-miss moves into the per-offset fold → up to 3 `resolveCourierShot`/tick (was 1), threaded so no courier is double-hit. D3 `impactEvents` invariant widened 0-or-1 → 0-to-3 — **render is already N-safe** (bridge loops; `ImpactEffects` drains the queue into pools of 12), so **zero render-consumer change** for multi-impact. D4 B = per-trigger burst as pure tick state (timer-accumulator, ≤1 round/tick, no `pendingShots` coupling, no new binding). **D5 LOOT = NEW ENTITY, not a weight-0 `EnemyKind`** — structurally off the `ARCHETYPES`/score-lives path (AC7-loot cannot regress); own `lootSystem` + §5.4 spawn-exclusion predicate. **P2 decided:** an equipping resolution takes effect immediately and aborts remaining burst rounds that tick; within a C press, multiple crate hits → right-most (last-resolved) wins; equip from next trigger. D7 QTE freeze satisfied by construction (`weapon` rides `...state`). D8 Belliard-first via optional `LevelConfig.loot` (absent ⇒ every shipped level byte-identical).
+**ADR-0055 decisions (summary):** D1 `weapon: WeaponState` + transient `weaponEmpty?` on GameState; `WEAPON_SPECS` data table in `types/weapon.ts` (ARCHETYPES precedent). D2 N-resolution via new pure `weaponSystem.resolveTrigger` folding 1..3 resolutions sequentially (left→centre→right, threading enemies + couriers), reusing the extended `resolvePlayerShot` primitive. **P1 priced:** courier-on-miss moves into the per-offset fold → up to 3 `resolveCourierShot`/tick (was 1), threaded so no courier is double-hit. D3 `impactEvents` invariant widened 0-or-1 → 0-to-3 — **render is already N-safe** (bridge loops; `ImpactEffects` drains the queue into pools of 12), so **zero render-consumer change** for multi-impact. D4 B = per-trigger burst as pure tick state (timer-accumulator, ≤1 round/tick, no `pendingShots` coupling, no new binding). **D5 LOOT = NEW ENTITY, not a weight-0 `EnemyKind`** — structurally off the `ARCHETYPES`/score-lives path (AC7-loot cannot regress); own `lootSystem` + §5.4 spawn-exclusion predicate. **P2 decided:** an equipping resolution takes effect immediately and aborts remaining burst rounds that tick; within a C press, multiple crate hits → right-most (last-resolved) wins; equip from next trigger. D7 QTE freeze satisfied by construction (`weapon` rides `...state`). D8 Belliard-first via optional `LevelConfig.loot` (absent ⇒ every shipped level byte-identical).
 
 ### LANE ASSIGNMENT (claim/release format; run in parallel AFTER the type seam)
 
@@ -184,15 +184,15 @@ ship; `lead-art` crate/glyph read (R1-R4) — fast-follow if placeholder illegib
 
 ## stage-4. DEV LANE A — dev-gameplay (Amelia) — 2026-07-20
 
-- claim: Lane A (`src/game/**`) — implement the pure weapon+loot core per ADR-0052 (D1-D8),
+- claim: Lane A (`src/game/**`) — implement the pure weapon+loot core per ADR-0055 (D1-D8),
   TDD / release: **DONE, all green** (tsc 0, lint 0, vitest 856 passed — 816 baseline + 40 new).
-  No deviation from ADR-0052; every frozen decision (D1-D8, P1/P2) built as written.
+  No deviation from ADR-0055; every frozen decision (D1-D8, P1/P2) built as written.
 - VERDICT: PASS — dev-gameplay: weapon+loot pure core (Lane A)
 - **Branch:** `claude/features-a-implémenter-ehw9q4` (3 commits; orchestrator pushes).
-- **Commits:** (1) `feat(game): weapon+loot type seam (ADR-0052 D1)` — types + GameState fields,
+- **Commits:** (1) `feat(game): weapon+loot type seam (ADR-0055 D1)` — types + GameState fields,
   tsc green, byte-identical passthrough. (2) `feat(game): weaponSystem + lootSystem, N-resolution
-hitscan (ADR-0052 D2-D6)` — pure systems + unit tests. (3) `feat(game): wire weapon+loot into
-tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC regressions.
+hitscan (ADR-0055 D2-D6)` — pure systems + unit tests. (3) `feat(game): wire weapon+loot into
+tickGameState, Belliard opts in (ADR-0055 D7/D8)` — integration + levels + AC regressions.
 - **Decisions as-built:** D1 `weapon: WeaponState` + `loot`/`lootSpec`/`lootTimer` + transient
   `weaponEmpty?` on GameState; `WEAPON_SPECS` (§7) in `types/weapon.ts`. Added `lootSpec`+`lootTimer`
   GameState fields (beyond the ADR's enumerated seam) — the necessary spawn-cadence bookkeeping,
@@ -227,7 +227,7 @@ LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane;
 Pre-merge panel fixes for Lane A (Winston's stage-6 triage), TDD (tests RED first), minimal diffs,
 no redesign, still React/Three-free. **All green: tsc 0, lint 0, format 0, vitest 867 passed**
 (860 → +7: 2 enemySystem, 3 lootSystem, 2 stateMachine). Commit `fix(game): enforce loot
-co-location invariant + reset loot id seed (ADR-0052 D5, stage-6)`; NOT pushed.
+co-location invariant + reset loot id seed (ADR-0055 D5, stage-6)`; NOT pushed.
 
 - **[MAJEUR] co-location invariant (spec §5.3 / D5) — two one-direction guards, no central slot
   authority, no `bulletSystem` change (tie-break assumption restored true):**
@@ -251,13 +251,13 @@ co-location invariant + reset loot id seed (ADR-0052 D5, stage-6)`; NOT pushed.
 
 ## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-07-20
 
-- claim: Lane B (`src/render/**` + view bridge) — render the weapon+loot core per ADR-0052 D8
+- claim: Lane B (`src/render/**` + view bridge) — render the weapon+loot core per ADR-0055 D8
   (crate visual, HUD glyph/stock/blink/flash, `weaponEmpty` bridge drain, `LevelConfig.loot`
   mapping) / release: **DONE, all green** (tsc 0, lint 0, `format:check` clean, vitest 860 passed
-  — 856 baseline + 4 new render-derivation cases). No deviation from ADR-0052 / the gated spec.
+  — 856 baseline + 4 new render-derivation cases). No deviation from ADR-0055 / the gated spec.
 - VERDICT: PASS — dev-r3f-render: weapon HUD + LOOT crate + bridge (Lane B)
 - **Branch:** `claude/features-a-implémenter-ehw9q4` (2 commits; orchestrator pushes).
-- **Commits:** (1) `feat(render): weapon HUD readout + LOOT crate + weaponEmpty bridge (ADR-0052)`
+- **Commits:** (1) `feat(render): weapon HUD readout + LOOT crate + weaponEmpty bridge (ADR-0055)`
   — the crate scene sprite, the HUD weapon readout, the bridge drain + `LevelConfig.loot` mapping.
   (2) `docs(handoff): log dev-r3f-render stage-4 lane (weapons pickup)`.
 - **What the crate looks like (D5/§5.1, W1/R1-R3):** a code-drawn glyph PLACEHOLDER (no FLUX, pm
@@ -627,8 +627,8 @@ exclusion — so a rollover can seat an enemy in the live crate's slot (directio
 `resolvePlayerShot`'s equal-slot tie-break (`bulletSystem.ts` L123, `crate.slotIndex < best.enemy.slotIndex`)
 is always false (same slotIndex) → the enemy shields the crate → unpickable + overlapping sprites.
 The "one entity per slot, so slot indices never collide" comments (`bulletSystem.ts` L108,
-`LootCrate.tsx` L22, ADR-0052 D5) _assume_ the invariant that no spawn path actually enforces.
-**Enforcement design (consistent with ADR-0052 D5, minimal — two one-direction guards, NOT a new
+`LootCrate.tsx` L22, ADR-0055 D5) _assume_ the invariant that no spawn path actually enforces.
+**Enforcement design (consistent with ADR-0055 D5, minimal — two one-direction guards, NOT a new
 slot-occupancy authority):** the invariant is stated in D5 but its two spawn producers are the only
 things that can violate it, so guard each producer in place rather than introduce a central
 authority (that would be a redesign for a two-call surface):
@@ -646,7 +646,7 @@ authority (that would be a redesign for a two-call surface):
   `bulletSystem` change needed**, its comment becomes accurate as-is. TDD: two new `lootSystem`/`stateMachine`
   tests — crate never spawns on a HIDDEN/HIT enemy's slot; a wave rollover never seats an enemy in
   the live crate's slot.
-  **ADR amendment: YES** — amend ADR-0052 **D5** with an explicit _Enforcement_ clause naming the
+  **ADR amendment: YES** — amend ADR-0055 **D5** with an explicit _Enforcement_ clause naming the
   two guards (the invariant was asserted as "for free" via threading + tie-break, which was wrong;
   record the two producers so it is not silently re-broken). This same amendment closes **NIT-6**
   (D6 prices a two-crate-in-the-fan case that `loot: LootCrate | null` makes unreachable — strike
@@ -673,7 +673,7 @@ one file.
 (`stateMachine.ts` L57; `createInitialState` does not reset it). Unlike `_nextBulletId`/`_nextCourierId`
 (identity only, gameplay-invariant across restart), the loot id is the **RNG seed** for both slot and
 weapon (`lootSystem.ts` L98-101), so an in-session restart diverges the crate pattern — the
-"Deterministic, replay-safe crate spawn" comment (L76) and the ADR-0052 Consequences bullet are
+"Deterministic, replay-safe crate spawn" comment (L76) and the ADR-0055 Consequences bullet are
 false as written. Practical player impact is nil (no replay/ghost system consumes it), but shipping a
 **false invariant claim** is the landmine. **Minimal fix:** reset `_nextLootId = 1` in
 `createInitialState` (1 line, makes the claim true, matches the replay-safe intent) — folds cleanly
@@ -750,7 +750,7 @@ input trust, storage, or network.
 
 ### 3. DOC ROUTING
 
-- ADR-0052 **D5 enforcement clause + D6/NIT-6 strike + D1 seam note** — my amendment text (above);
+- ADR-0055 **D5 enforcement clause + D6/NIT-6 strike + D1 seam note** — my amendment text (above);
   **fold into the fix PR**, `tech-writer` applies. Prefer folding over a separate doc PR so the ADR
   lands atomically with the fix that makes D5 true.
 - The false "Deterministic, replay-safe" wording (lootSystem.ts L76 + ADR Consequences bullet) is
@@ -763,14 +763,14 @@ input trust, storage, or network.
 MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-4 → D story).
 
 **Pre-merge set:** MAJEUR (dev-gameplay, +ADR D5 amendment) · MINEUR-1 (dev-r3f-render) · MINEUR-2
-(dev-gameplay, fold) · MINEUR-3 (dev-r3f-render) · ADR-0052 amendment (tech-writer, folded).
+(dev-gameplay, fold) · MINEUR-3 (dev-r3f-render) · ADR-0055 amendment (tech-writer, folded).
 
 **Exact re-verify sequence (must all pass before I re-triage → merge):**
 
 1. `dev-gameplay`: write the two co-location guard tests (RED), then the (a)+(b) guards + `_nextLootId`
    reset → tests GREEN.
 2. `dev-r3f-render`: MINEUR-1 (SFX off resolution) + MINEUR-3 (reduced-motion CSS + comments).
-3. `tech-writer`: ADR-0052 D5/D6/D1 amendment folded into the same PR.
+3. `tech-writer`: ADR-0055 D5/D6/D1 amendment folded into the same PR.
 4. Static gate: `rtk tsc` (0) · `rtk vitest` (≥ current 860 + the 2 new guard tests, 0 fail) ·
    `rtk lint` (0) · `yarn format:check` clean.
 5. Golden: re-run the golden suite; confirm shipped-level goldens differ ONLY by the HUD weapon cell
@@ -780,7 +780,7 @@ MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-
    (MINEUR-1); empty cue shows under `prefers-reduced-motion` (MINEUR-3).
 7. Back to me for re-triage of the fix diff → merge. No merge while any CONFIRMED pre-merge item is open.
 
-- **Read (inspection only):** `git diff origin/main...HEAD`, `docs/adr/0052-weapons-pickup-system.md`,
+- **Read (inspection only):** `git diff origin/main...HEAD`, `docs/adr/0055-weapons-pickup-system.md`,
   `src/game/systems/{lootSystem,weaponSystem,bulletSystem,stateMachine,enemySystem}.ts`,
   `src/game/types/weapon.ts`, `src/hooks/useGameLoop.ts`,
   `src/render/ui/hud/WeaponReadout.module.css`, `src/render/scene/LootCrate.tsx`, this shard. No
@@ -791,10 +791,10 @@ MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-
 ## stage-6. DOC ROUTING — tech-writer (Otis) — 2026-07-20
 
 - claim: DOC lane items routed by the stage-6 triage (§3 DOC ROUTING + MAJEUR/MINEUR-2 doc
-  notes above) — the ADR-0052 D5/D6/D1 amendment, folded pre-merge, and the 8 deferred
+  notes above) — the ADR-0055 D5/D6/D1 amendment, folded pre-merge, and the 8 deferred
   non-blocking cleanups logged for the fix lane / release: **DONE**. Decisions are Winston's;
   I curated form, wording, and index hygiene only — nothing decided here.
-- **ADR-0052 amended** (`docs/adr/0052-weapons-pickup-system.md`): status line now
+- **ADR-0055 amended** (`docs/adr/0055-weapons-pickup-system.md`): status line now
   `Accepted — amended 2026-07-20`; new `## Amendment (2026-07-20 — stage-6 panel)` section
   appended at the end of the file (original D1/D5/D6 text left intact, per house convention —
   see ADR-0028/0040 precedent of append-only amendments, never rewriting an Accepted decision
@@ -808,7 +808,7 @@ MINEUR-4/5 + all NITs are FAST-FOLLOW (logged: `docs/handoffs/fixes.md`; MINEUR-
   comment, not a live V1 mechanic. (3) **D1** — one-line note that the seam grew
   `lootSpec`/`lootTimer` on `GameState` beyond the ADR's original enumeration, in-lane, parallel
   to the shipped `deliverySpec`/`courierTimer` precedent. **Index regenerated** via
-  `node scripts/gen-adr-index.mjs --write` (not hand-edited) — ADR-0052's index row now reads
+  `node scripts/gen-adr-index.mjs --write` (not hand-edited) — ADR-0055's index row now reads
   `Accepted (amended)`; `public/adr/index.html` regenerated alongside it (script-owned pair).
 - **Fix-lane log** (`docs/handoffs/fixes.md`): appended the 8 deferred non-blocking cleanups
   named in the triage §1 (NIT-1/2/3/5/7 + MINEUR-4/5 + NIT-4) as one-liners each, matching the
@@ -827,7 +827,7 @@ actioned)` since none has been built yet — appear-cadence constant triplicated
   per Winston's routing.
 - **Verify:** `rtk tsc` 0 errors, `rtk lint` 0 errors (doc-only + generated-index diff; no
   `src/` files touched). `npx -y prettier@3.8.2 --write` run on every file I edited.
-- **File List:** `docs/adr/0052-weapons-pickup-system.md`, `docs/adr/README.md` (regenerated),
+- **File List:** `docs/adr/0055-weapons-pickup-system.md`, `docs/adr/README.md` (regenerated),
   `public/adr/index.html` (regenerated), `docs/handoffs/fixes.md`, this shard.
 
 ---
@@ -898,7 +898,7 @@ canSpawnLootAt(...)`) the §5.4 column-gap rule. Catches the HIDDEN/HIT cases th
 - **MINEUR-3** — `WeaponReadout.module.css`: `.emptyFlash` removed from the reduced-motion
   `animation: none` list (only `.stockLow` stilled); the one-shot opacity fade (non-vestibular,
   single pulse) survives so the visible empty cue is retained under reduced motion; comments corrected.
-- **ADR-0052** — D5 enforcement clause + D6/NIT-6 strike + D1 seam note appended (append-only);
+- **ADR-0055** — D5 enforcement clause + D6/NIT-6 strike + D1 seam note appended (append-only);
   index regenerated by script (`gen-adr-index.mjs`), not hand-edited. 8 deferred cleanups (MINEUR-4/5
   - NITs 1/2/3/5/7 + NIT-4 vitest `@render`) logged in `docs/handoffs/fixes.md`.
 
@@ -976,9 +976,9 @@ story is fully delivered against its ACs and my four rulings, the pipeline caugh
 real functional break (MAJEUR co-location) before merge, and every concession was disclosed with an
 owner. Story closes; the tuning/D-story/art follow-ups move to the backlog, not this shard.
 
-**SUPERSESSION NOTE (2026-07-20):** Bertrand's playtest verdict on PR #115 triggered a playtest override — the code-drawn placeholder crate was judged "ne ressemble pas du tout à une caisse" and mandated upscale to FLUX art + street-level placement. The three art-related fast-follows logged above (items 3: hue + FLUX art-quality pass + `empty` SFX) are now **superseded by story-loot-crate-sidewalk** (ADR-0053, same branch PR #115), which gates them as in-story deliverables. This shard stands closed on the V1 weapons-pickup logic; the crate's visual revision belongs to the new story's gated art + placement scope.
+**SUPERSESSION NOTE (2026-07-20):** Bertrand's playtest verdict on PR #115 triggered a playtest override — the code-drawn placeholder crate was judged "ne ressemble pas du tout à une caisse" and mandated upscale to FLUX art + street-level placement. The three art-related fast-follows logged above (items 3: hue + FLUX art-quality pass + `empty` SFX) are now **superseded by story-loot-crate-sidewalk** (ADR-0056, same branch PR #115), which gates them as in-story deliverables. This shard stands closed on the V1 weapons-pickup logic; the crate's visual revision belongs to the new story's gated art + placement scope.
 
 - **Read-only inputs:** `_bmad-output/planning-artifacts/story-weapons-pickup.md`,
-  `docs/game-design/weapons.md`, `docs/adr/0052-weapons-pickup-system.md` (incl. amendment),
+  `docs/game-design/weapons.md`, `docs/adr/0055-weapons-pickup-system.md` (incl. amendment),
   `docs/handoffs/fixes.md`, this shard in full (stage-0 through stage-6 final re-triage). No code,
   spec, or ADR touched.

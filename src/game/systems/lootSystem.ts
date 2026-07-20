@@ -2,7 +2,7 @@ import type { Enemy } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { LootCrate, LootSpec } from "@game/types/loot";
 
-// Pure armament-crate system (ADR-0052 D5): spawn (with the §5.4 exclusion rule)
+// Pure armament-crate system (ADR-0055 D5): spawn (with the §5.4 exclusion rule)
 // + the small HIDDEN→APPEARING→VISIBLE state machine. A crate is a NEW entity,
 // structurally off the ARCHETYPES/score-lives path — nothing here touches score,
 // lives or the enemy set; a crate hit is resolved by weaponSystem/bulletSystem.
@@ -10,25 +10,25 @@ import type { LootCrate, LootSpec } from "@game/types/loot";
 // §5.4 — the crate's column must clear EVERY active engaged column by this gap.
 export const LOOT_SPAWN_MIN_COL_GAP = 2;
 
-// The crate's fixed world-y on the sidewalk strip (ADR-0053 D2, verify-tunable).
+// The crate's fixed world-y on the sidewalk strip (ADR-0056 D2, verify-tunable).
 // Single source of truth: read by `bulletSystem.resolvePlayerShot` (crate hit-point)
 // and by `LootCrate.tsx` (render mount) — the crate decouples its y from the window
 // row, keeping only its x (slot.screenPosition.x). AC-D8 crop-clearance knob.
 export const LOOT_STREET_Y = -4.3;
 
-// Near-centre spawn bound (ADR-0053 D3): a candidate slot's |screenPosition.x| must
+// Near-centre spawn bound (ADR-0056 D3): a candidate slot's |screenPosition.x| must
 // be ≤ this, world-origin-anchored (the pure spawn can't read live camera pan —
 // ADR-0003/0026 keep pan out of GameState). verify-tunable.
 export const LOOT_MAX_ABS_X = 7;
 
-// Delivery x-gap (ADR-0053 D9-2): when a vehicle is INCOMING/at its stop, the crate
+// Delivery x-gap (ADR-0056 D9-2): when a vehicle is INCOMING/at its stop, the crate
 // must not spawn within this world-x distance of the stop line. verify-tunable.
 export const CRATE_DELIVERY_GAP_X = 2.0;
 
 // Crate state durations, seconds (verify-tunable, §7 style — not gated). The
 // HIDDEN wait mirrors the target convention; APPEARING is a drop-and-settle
-// (ADR-0053 D5); VISIBLE is the pickable window, lengthened for a street object
-// read off the resting frame (ADR-0053 D4).
+// (ADR-0056 D5); VISIBLE is the pickable window, lengthened for a street object
+// read off the resting frame (ADR-0056 D4).
 export const LOOT_HIDDEN_DURATION = 0.4;
 export const LOOT_APPEARING_DURATION = 0.45;
 export const LOOT_VISIBLE_DURATION = 6.0;
@@ -58,7 +58,7 @@ export interface LootTickResult {
   readonly spawned: boolean;
 }
 
-// Pure delivery snapshot for the D9-2 x-gap (ADR-0053 D4). `stopX` is the vehicle's
+// Pure delivery snapshot for the D9-2 x-gap (ADR-0056 D4). `stopX` is the vehicle's
 // stop world-x. `null` ⇒ no active delivery this tick ⇒ the gap predicate is
 // skipped. The phase-gate lives in `stateMachine`; `lootSystem` stays
 // delivery-type-agnostic (a number in, never a `DeliveryVehicle`) — boundary law.
@@ -114,7 +114,7 @@ function attemptSpawn(
   if (spec.weapons.length === 0) return { loot: null, lootTimer: 0, spawned: false };
 
   const activeCols = activeEnemyCols(enemies, facade);
-  // Co-location guard (ADR-0052 D5, direction a): a crate must not sit on ANY
+  // Co-location guard (ADR-0055 D5, direction a): a crate must not sit on ANY
   // non-DEAD enemy's slot — including HIDDEN/HIT, which the §5.4 column-gap rule
   // (active states only) does not catch. Applied ALONGSIDE the column-gap rule.
   const occupied = new Set(enemies.filter((e) => e.state !== "DEAD").map((e) => e.slotIndex));
@@ -124,9 +124,9 @@ function attemptSpawn(
       (s) =>
         !occupied.has(s.slotIndex) &&
         canSpawnLootAt(s.col, activeCols) &&
-        // Near-centre bound (ADR-0053 D3), world-origin-anchored.
+        // Near-centre bound (ADR-0056 D3), world-origin-anchored.
         Math.abs(s.x) <= LOOT_MAX_ABS_X &&
-        // Delivery x-gap (ADR-0053 D9-2); skipped when no vehicle is active.
+        // Delivery x-gap (ADR-0056 D9-2); skipped when no vehicle is active.
         (deliveryGap === null || Math.abs(s.x - deliveryGap.stopX) >= CRATE_DELIVERY_GAP_X),
     );
   if (eligible.length === 0) return { loot: null, lootTimer: 0, spawned: false }; // deferred

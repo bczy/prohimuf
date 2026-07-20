@@ -50,7 +50,7 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <TimerReadout timeRemaining={data.timeRemaining} />
         <LivesReadout lives={data.lives} />
         <EnergyGauge energy={data.energy} />
-        {/* Active-weapon fuel gauge (ADR-0052). Defaults to base/∞ before the first
+        {/* Active-weapon fuel gauge (ADR-0055). Defaults to base/∞ before the first
             loop tick populates `data.weapon`. */}
         <WeaponReadout
           weapon={data.weapon ?? { active: "base", stock: Number.POSITIVE_INFINITY }}

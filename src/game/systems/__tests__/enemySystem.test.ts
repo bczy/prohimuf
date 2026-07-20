@@ -42,9 +42,9 @@ describe("spawnWave", () => {
     });
   });
 
-  // ADR-0052 D5 co-location guard (b): a wave rollover must never seat an enemy on
+  // ADR-0055 D5 co-location guard (b): a wave rollover must never seat an enemy on
   // the live crate's slot.
-  it("never seats an enemy on an excluded slot (co-location guard, ADR-0052 D5)", () => {
+  it("never seats an enemy on an excluded slot (co-location guard, ADR-0055 D5)", () => {
     // A slot the un-excluded wave WOULD use, so the exclusion is actually exercised.
     const taken = spawnWave(2, FACADE_01)[0]?.slotIndex;
     if (taken === undefined) throw new Error("expected a seated enemy");

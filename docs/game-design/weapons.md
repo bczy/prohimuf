@@ -304,7 +304,7 @@ not a scope change.
 ## 8. Contract delta — design intent for `senior-architect` + `dev-gameplay`
 
 Pure `src/game`; boundary law preserved. This is the design intent; the dev lane owns the
-code and the architect owns the shape (ADR-0052).
+code and the architect owns the shape (ADR-0055).
 
 **Enters the contract:**
 
@@ -316,7 +316,7 @@ code and the architect owns the shape (ADR-0052).
 - LOOT discriminant on the window state machine, kept **off** the `ARCHETYPES`/score-lives path.
 - `weaponEmpty` event; the LOOT spawn-exclusion rule (§5.4) as a pure spawn constraint.
 
-**The two multi-event points flagged by pm (architect to resolve in ADR-0052):**
+**The two multi-event points flagged by pm (architect to resolve in ADR-0055):**
 
 1. **`spread` emits up to 3 `ImpactEvent`s in one tick**, and `weaponEmpty` is a distinct
    event — `GameState.impactEvents` is today commented "0 or 1 element (one shot per tick)".
@@ -415,7 +415,7 @@ architect's integration review.
 
 **Open flags for the gate:**
 
-1. **ADR-0052** records the weapon system (reserved by producer; content is the architect's).
+1. **ADR-0055** records the weapon system (reserved by producer; content is the architect's).
    This spec is its design input; the `impactEvents` widening for C (§8) is the key architecture
    call.
 2. **B-stock-unit refinement** (§7 note) refines pm story AC A4 for `auto` (round vs press) as a
@@ -431,5 +431,5 @@ architect's integration review.
   desktop **and** mobile (ADR-0003).
 - → `narrative-designer` (Yasmine): weapon names (calibre/sulfateuse/éventail are placeholders,
   not lore-locked).
-- → `senior-architect` (Winston): ADR-0052 + the §8 contract delta (C's multi-impact,
+- → `senior-architect` (Winston): ADR-0055 + the §8 contract delta (C's multi-impact,
   LOOT-off-score-path).

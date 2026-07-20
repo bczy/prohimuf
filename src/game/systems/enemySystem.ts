@@ -65,7 +65,7 @@ export function hitEnemy(enemy: Enemy): Enemy {
 // level's `roster.windowWeights`. Omitted ⇒ the frozen `pickKind` path (legacy
 // behaviour, byte-for-byte identical for the same seed).
 // `excludeSlots`: slot indices the wave must NOT seat on — the co-location guard
-// for a live LOOT crate (ADR-0052 D5, direction b). Empty/omitted ⇒ the legacy
+// for a live LOOT crate (ADR-0055 D5, direction b). Empty/omitted ⇒ the legacy
 // path, byte-for-byte identical (the shuffle + per-position seed are unchanged).
 export function spawnWave(
   wave: number,

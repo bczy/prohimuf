@@ -423,7 +423,7 @@ export function GameScene({
         panels={layout.mode === "single-facade" ? PANELS : 1}
         reducedMotion={reducedMotion}
       />
-      {/* Armament crate (ADR-0052 → ADR-0053): the single LOOT entity is now a static
+      {/* Armament crate (ADR-0055 → ADR-0056): the single LOOT entity is now a static
           SIDEWALK object at LOOT_STREET_Y — it reads only its world-X from the slot
           (`slot.screenPosition.x`, keyed by `loot.slotIndex`); its Y is decoupled to the
           street constant inside LootCrate, so it is no longer a window occupant. */}

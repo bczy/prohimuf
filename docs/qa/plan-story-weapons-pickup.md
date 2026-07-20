@@ -1,7 +1,7 @@
 # QA Test Plan + Verdict — Armement multi-armes par pickup (roster A-B-C)
 
 **Story:** `_bmad-output/planning-artifacts/story-weapons-pickup.md` · shard `docs/handoffs/story-weapons-pickup.md`
-**Gated spec:** `docs/game-design/weapons.md` (design gate round 2: PASS + P1/P2/P3) · **ADR:** `docs/adr/0052-weapons-pickup-system.md` (D1–D8)
+**Gated spec:** `docs/game-design/weapons.md` (design gate round 2: PASS + P1/P2/P3) · **ADR:** `docs/adr/0055-weapons-pickup-system.md` (D1–D8)
 **Author:** Inès (`qa-lead`) · **Written/ran:** 2026-07-20 · **Stage:** 5 (VERIFY)
 **Owning gate:** the QUALITY GATE (correctness + robustness). Sibling gates: `game-designer`
 playtest (conformity to spec, incl. the **W7/AC13** measured-uptime AC — Sacha's lane, not mine);
@@ -12,7 +12,7 @@ evidence captured on Belliard. One AC (**AC13**, ≤40 % special uptime) is a me
 owned by `game-designer`, marked MANUAL-PLAYTEST-NEEDED here (not a hole in _my_ gate). Two
 non-blocking observations (documented V1 concessions) logged, owners named — neither fails the gate.
 
-> Derived from the numbered ACs in `weapons.md` §9 and the ADR-0052 decisions, **not** from the
+> Derived from the numbered ACs in `weapons.md` §9 and the ADR-0055 decisions, **not** from the
 > diff. The diff (both lanes' File Lists) only told me where to look hardest: the N-resolution
 > fold, the courier loop-widening (P1), the crate-equip ordering (P2), the `impactEvents`
 > widening's render consumers, and the byte-identical guarantee for no-loot levels.

@@ -7,14 +7,14 @@ import type { GameState } from "@game/types/gameState";
 import type { WindowSlot } from "@game/types/map";
 import type { SpecialWeaponKind } from "@game/types/weapon";
 // LOOT_STREET_Y is a PURE game constant (single source of truth, lootSystem) read by both
-// the resolver and this render lane (ADR-0053 D2/D5) — imported, NEVER re-declared here.
+// the resolver and this render lane (ADR-0056 D2/D5) — imported, NEVER re-declared here.
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { weaponGlyph } from "@render/ui/hud/derivations";
 import { applyPixelFilter } from "./pixelArt";
 import levelArt from "@game/levels/levelArt.json";
 
 /**
- * Armament crate (ADR-0052 D5 → superseded on placement by ADR-0053) — the LOOT entity,
+ * Armament crate (ADR-0055 D5 → superseded on placement by ADR-0056) — the LOOT entity,
  * now a static street object on the sidewalk (not a window occupant). It renders in three
  * composited render-side layers, grouped so the whole crate drops-and-settles on APPEAR:
  *   1. a green neon rim-glow (additive) with a baked shadowBlur falloff — "ce qui brille
@@ -34,7 +34,7 @@ import levelArt from "@game/levels/levelArt.json";
  * only — holds no rule.
  */
 
-const NEON = "#78FF3C"; // acid-green interactive rim (art-advisor rec, ADR-0053 P4; was #ffe600)
+const NEON = "#78FF3C"; // acid-green interactive rim (art-advisor rec, ADR-0056 P4; was #ffe600)
 const BODY = "#141020"; // dark plank body (fallback only) so the glyph + rim read over it
 const SLAT = "#3a3350"; // muted plank/brace lines — inert object detail (fallback only)
 
@@ -46,7 +46,7 @@ const CRATE_WORLD_W = 1.65;
 const CRATE_WORLD_H = 1.25;
 const RIM_SCALE = 1.18; // rim-glow plane a touch larger than the body so the glow spills out
 
-// Drop-and-settle APPEAR (ADR-0053 D5, render-only feel): the crate falls from just above
+// Drop-and-settle APPEAR (ADR-0056 D5, render-only feel): the crate falls from just above
 // its rest point and eases down over ~LOOT_APPEARING_DURATION. Timed by a render
 // accumulator (does not read a game duration). Pre-despawn: the rim blinks over the last
 // BLINK_WINDOW seconds of VISIBLE as a leaving telegraph (read off `loot.timer`).
@@ -84,7 +84,7 @@ function roundRectPath(
   ctx.closePath();
 }
 
-// ── Body: FLUX sprite with a code-drawn plank-box fallback (ADR-0053 D5 / ADR-0049) ──
+// ── Body: FLUX sprite with a code-drawn plank-box fallback (ADR-0056 D5 / ADR-0049) ──
 const spriteLoader = new TextureLoader();
 // undefined = not yet attempted; null = failed/404 (keep the fallback for the session);
 // Texture = the loaded FLUX crate.
@@ -269,7 +269,7 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
       }
     }
     // Rim glow: a gentle breathing pulse, then a fast leaving-blink over the last
-    // BLINK_WINDOW seconds of VISIBLE (ADR-0053 D5 pre-despawn telegraph).
+    // BLINK_WINDOW seconds of VISIBLE (ADR-0056 D5 pre-despawn telegraph).
     const rim = rimRef.current;
     if (rim !== null) {
       const rmat = rim.material as MeshBasicMaterial;

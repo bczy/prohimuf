@@ -6,7 +6,7 @@
 - **Design delta (GATED):** [../game-design/weapons-crate-sidewalk-delta.md](../game-design/weapons-crate-sidewalk-delta.md)
   (lead-game-designer round-2 PASS; 4 pins P1–P4 carried to this lane)
 - **Number:** 0053, reserved by `producer` (Marion) at story opening (shard stage-0) — not self-allocated.
-- **Grounds on / relates to:** **ADR-0052** (weapons pickup / LOOT entity — this ADR supersedes its
+- **Grounds on / relates to:** **ADR-0055** (weapons pickup / LOOT entity — this ADR supersedes its
   D5 _placement_ clause only, see below), ADR-0040 (player-shot hitscan primitive),
   ADR-0049 (generated sprite with procedural fallback — the render idiom reused here),
   ADR-0011/0025 (render-side neon rim), ADR-0003/0026 (mobile pan / zoom-out framing),
@@ -14,7 +14,7 @@
 
 ## Context
 
-ADR-0052 D5 landed the armament crate as a **new entity** (not an `EnemyKind`) that **seats in a
+ADR-0055 D5 landed the armament crate as a **new entity** (not an `EnemyKind`) that **seats in a
 window slot** and is resolved/rendered at that slot's `screenPosition` (window row). PR #115
 shipped it as a code-drawn glyph placeholder. Bertrand's playtest verdict: the placeholder "ne
 ressemble pas à une caisse", and a window pop-up is the less genre-faithful placement (Operation
@@ -36,7 +36,7 @@ an ADR. The forces the architect must settle:
    today**. Threading it must preserve the boundary law (data in, no React/Three).
 4. **Art loading** — a FLUX crate sprite when the asset exists, the code-drawn box as fallback so
    the dev lane never blocks on the CI render farm; the A/B/C glyph composited render-side.
-5. **Relationship to ADR-0052** — which of its clauses survive.
+5. **Relationship to ADR-0055** — which of its clauses survive.
 
 Boundary law (unchanged): `src/game/**` pure, holds all rules; `src/render/**` renders state;
 `src/hooks/**` is the only bridge.
@@ -50,9 +50,9 @@ unchanged**, we do **not** move to an x-only model. Rationale (all three would b
 x-only model):
 
 - The deterministic slot pick (`seed = |nextId|`, `eligible[seed % eligible.length]`) is the
-  replay-safe spawn contract (ADR-0052; loot-id-as-seed, MINEUR-2). `slotIndex` is how the crate
+  replay-safe spawn contract (ADR-0055; loot-id-as-seed, MINEUR-2). `slotIndex` is how the crate
   carries its **world-x** (`slot.screenPosition.x`, tile-derived, `GameScene.tsx:198-205`).
-- The co-location guards (ADR-0052 D5 amendment (a)/(b)) key off `slotIndex`
+- The co-location guards (ADR-0055 D5 amendment (a)/(b)) key off `slotIndex`
   (`stateMachine.ts` wave-rollover `excludeSlots: [state.loot.slotIndex]`, `attemptSpawn`'s
   occupied-slot filter). They stay valid and correct.
 - `resolvePlayerShot`'s deterministic tie-break spans enemies ∪ {crate} on `slotIndex`.
@@ -157,23 +157,23 @@ authored in the ∥ art lane, gated by lead-art, generated in CI. **Neither dev 
 `levelArt.json`.** `LootCrate.tsx` consumes `levelArt.loot.asset` **read-only** with the procedural
 fallback when the block/PNG is absent.
 
-### D6 — Relationship to ADR-0052 (precise supersession)
+### D6 — Relationship to ADR-0055 (precise supersession)
 
-This ADR **supersedes ADR-0052's D5 _placement_ clause only**. Precisely:
+This ADR **supersedes ADR-0055's D5 _placement_ clause only**. Precisely:
 
 - **Superseded (D5 placement):** "the crate … shares the window channel by **occupying** a slot",
   resolved/rendered at `slot.screenPosition` (window y). Replaced by: the crate is a static
   **street** entity at `LOOT_STREET_Y`; `slotIndex` now carries **x only**; `resolvePlayerShot`
-  resolves it at street-y (D3). ADR-0052's §5.4 durations `LOOT_VISIBLE_DURATION` (4.0→6.0) and
+  resolves it at street-y (D3). ADR-0055's §5.4 durations `LOOT_VISIBLE_DURATION` (4.0→6.0) and
   `LOOT_APPEARING_DURATION` (0.3→0.45) are superseded by D2 here.
-- **Survives verbatim from ADR-0052 D5:** the crate is a **new entity, not an `EnemyKind`**
+- **Survives verbatim from ADR-0055 D5:** the crate is a **new entity, not an `EnemyKind`**
   (structurally off the `ARCHETYPES`/score-lives path, AC7-loot); the `LootCrate` shape and
   `LootState` machine; `slotIndex` as the deterministic seed's x-carrier; the co-location guards
   (D5 amendment (a) `attemptSpawn` occupied-slot filter and (b) `spawnWave` `excludeSlots`) — still
   correct and kept; **D9-1** firefight col-gap = §5.4 `LOOT_SPAWN_MIN_COL_GAP` (unchanged).
-- **Untouched (all other ADR-0052 clauses):** D1 weapon state, D2 N-resolution hitscan primitive
+- **Untouched (all other ADR-0055 clauses):** D1 weapon state, D2 N-resolution hitscan primitive
   and `weaponSystem` fold, D3 `impactEvents` widening, D4 burst, D7 QTE-freeze, D8 Belliard-first.
-- **New here (no ADR-0052 equivalent):** D9-2 delivery x-gap and its data threading (D4 above);
+- **New here (no ADR-0055 equivalent):** D9-2 delivery x-gap and its data threading (D4 above);
   the FLUX-sprite-with-drawn-fallback render model (D5 above).
 
 ## Consequences

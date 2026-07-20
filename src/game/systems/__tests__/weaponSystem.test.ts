@@ -14,7 +14,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } }; // → world (0,0)
 // Aim at the crate's street row (world y = LOOT_STREET_Y) under the default 18×12
-// view — the crate resolves at street-y since ADR-0053, not at its slot window-y.
+// view — the crate resolves at street-y since ADR-0056, not at its slot window-y.
 const streetAim: Crosshair = { position: { x: 0.5, y: 0.5 - LOOT_STREET_Y / 12 } };
 
 function facadeWithSlots(positions: readonly Vec2[]): FacadeMap {
