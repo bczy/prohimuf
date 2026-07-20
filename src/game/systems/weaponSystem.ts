@@ -166,7 +166,13 @@ export function resolveTrigger(
       newWeapon = baseWeaponState();
       weaponEmpty = true;
     } else if (burstRemaining <= 0) {
-      newWeapon = { active: "auto", stock, burstRemaining: 0, burstTimerMs: 0, refractoryMs: spec.refractoryMs };
+      newWeapon = {
+        active: "auto",
+        stock,
+        burstRemaining: 0,
+        burstTimerMs: 0,
+        refractoryMs: spec.refractoryMs,
+      };
     } else {
       newWeapon = { active: "auto", stock, burstRemaining, burstTimerMs, refractoryMs };
     }
@@ -176,7 +182,13 @@ export function resolveTrigger(
       newWeapon = baseWeaponState();
       weaponEmpty = true;
     } else {
-      newWeapon = { active: "spread", stock, burstRemaining: 0, burstTimerMs: 0, refractoryMs: spec.refractoryMs };
+      newWeapon = {
+        active: "spread",
+        stock,
+        burstRemaining: 0,
+        burstTimerMs: 0,
+        refractoryMs: spec.refractoryMs,
+      };
     }
   } else {
     // No consumption this tick: base (∞) or an idle/advancing special.

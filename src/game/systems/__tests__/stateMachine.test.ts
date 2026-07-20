@@ -883,7 +883,20 @@ describe("tickGameState — levels without loot stay byte-identical (D8)", () =>
   it("never spawns a crate and never leaves base across many ticks (incl. firing)", () => {
     let s = createInitialState(FACADE_01);
     for (let i = 0; i < 200; i++) {
-      s = tickGameState(s, i % 2 === 0, 0.5, 0.5, 0.1, FACADE_01, 0, 0, 18, 12, ENEMIES_TO_WIN, FIELD);
+      s = tickGameState(
+        s,
+        i % 2 === 0,
+        0.5,
+        0.5,
+        0.1,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        ENEMIES_TO_WIN,
+        FIELD,
+      );
       if (s.phase !== "PLAYING") break;
     }
     expect(s.loot).toBeNull();
@@ -900,10 +913,19 @@ describe("tickGameState — levels without loot stay byte-identical (D8)", () =>
 
 describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives delta", () => {
   it("firing a VISIBLE crate equips its weapon; score, lives and kills are untouched", () => {
-    const crate: LootCrate = { id: 1, slotIndex: CENTRE_SLOT, state: "VISIBLE", timer: 5, weapon: "spread" };
+    const crate: LootCrate = {
+      id: 1,
+      slotIndex: CENTRE_SLOT,
+      state: "VISIBLE",
+      timer: 5,
+      weapon: "spread",
+    };
     // Belliard opts into loot; enemies from the initial spawn are HIDDEN (not hittable,
     // no wave respawn), so the crate is the only eligible target this tick.
-    const s: GameState = { ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))), loot: crate };
+    const s: GameState = {
+      ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))),
+      loot: crate,
+    };
     const aim = aimAtSlot(CENTRE_SLOT);
     const next = tickGameState(s, fire, aim.mx, aim.my, 0.016, FACADE_01);
     expect(next.weapon.active).toBe("spread");
@@ -917,12 +939,25 @@ describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives d
 
 describe("tickGameState — AC14 (A7 regression): a player hit never touches weapon state", () => {
   it("taking an enemy bullet decrements lives but leaves weapon.active/stock intact", () => {
-    const weapon = { active: "spread" as const, stock: 10, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const weapon = {
+      active: "spread" as const,
+      stock: 10,
+      burstRemaining: 0,
+      burstTimerMs: 0,
+      refractoryMs: 0,
+    };
     const s: GameState = {
       ...createInitialState(FACADE_01),
       weapon,
       // An enemy bullet already on top of the player centre.
-      bullets: [{ id: 1, position: { x: 0, y: 0 }, velocity: { x: 0, y: -BULLET_SPEED }, fromPlayer: false }],
+      bullets: [
+        {
+          id: 1,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: -BULLET_SPEED },
+          fromPlayer: false,
+        },
+      ],
     };
     const next = tickGameState(s, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.lives).toBe(s.lives - 1);
@@ -933,7 +968,13 @@ describe("tickGameState — AC14 (A7 regression): a player hit never touches wea
 
 describe("tickGameState — AC10: stock→0 auto-returns to base with one weaponEmpty event", () => {
   it("a spread press that empties the stock returns to base the same tick and flags weaponEmpty", () => {
-    const weapon = { active: "spread" as const, stock: 1, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const weapon = {
+      active: "spread" as const,
+      stock: 1,
+      burstRemaining: 0,
+      burstTimerMs: 0,
+      refractoryMs: 0,
+    };
     const s: GameState = { ...createInitialState(FACADE_01), weapon };
     const next = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.weapon.active).toBe("base");
@@ -942,7 +983,13 @@ describe("tickGameState — AC10: stock→0 auto-returns to base with one weapon
   });
 
   it("clears the transient weaponEmpty on the following tick (consumed once)", () => {
-    const weapon = { active: "spread" as const, stock: 1, burstRemaining: 0, burstTimerMs: 0, refractoryMs: 0 };
+    const weapon = {
+      active: "spread" as const,
+      stock: 1,
+      burstRemaining: 0,
+      burstTimerMs: 0,
+      refractoryMs: 0,
+    };
     const s: GameState = { ...createInitialState(FACADE_01), weapon };
     const emptied = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
     const after = tickGameState(emptied, noFire, 0.5, 0.5, 0.016, FACADE_01);
@@ -952,7 +999,13 @@ describe("tickGameState — AC10: stock→0 auto-returns to base with one weapon
 
 describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (D7)", () => {
   it("a hostage QTE freeze leaves weapon.active/stock and loot untouched, no crate spawns", () => {
-    const weapon = { active: "spread" as const, stock: 10, burstRemaining: 2, burstTimerMs: 40, refractoryMs: 0 };
+    const weapon = {
+      active: "spread" as const,
+      stock: 10,
+      burstRemaining: 2,
+      burstTimerMs: 40,
+      refractoryMs: 0,
+    };
     const belliard = levelById("belliard");
     const s: GameState = {
       ...createInitialState(FACADE_01, {
