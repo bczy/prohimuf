@@ -1583,16 +1583,16 @@ acid neon stays render-side; nothing interactive is baked into the facade).
 - **`facade` (porteur) — PASS.** Delivers the Prohibition §5 grammar (flat front-elevation, a
   window grid where hostiles pop) in the l'Éden register (derelict 1930s dancing-hall ballroom —
   `dancing-hall ballroom` excludes the warehouse-industrial register by form; `peeling gilded
-  cornices` / `faded decayed grandeur` is faded-grandeur, not horror-decay, on-direction for §1
+cornices` / `faded decayed grandeur` is faded-grandeur, not horror-decay, on-direction for §1
   clandestine-Paris night). The three binding composition constraints are all met IN the prompt:
   - **Constraint 1 (back wall plein cadre {0,-5}, no dead sky-gap) — PASS, my compo check.** The
     interior venue correctly DROPS the exterior sky/street layers, and `the back wall filling the
-    frame ceiling to floor` positively fills the frame — no sky band can sit behind the boss at
+frame ceiling to floor` positively fills the frame — no sky band can sit behind the boss at
     {0,-5} (the Vitry x:9.9 dead-gap failure is structurally excluded by an interior wall). Positive
     phrasing (`filling … ceiling to floor`, not "no sky") = 0 negation.
   - **Constraint 2 (bare hook {0.2,1.5} for the render-side shootable lustre; NO baked chandelier) —
     PASS at the prompt level, with a carried-forward compo check.** `a bare ceiling hook high where
-    a chandelier once hung` reserves a clean high anchor and bakes NO lustre (avoids doublon + false
+a chandelier once hung` reserves a clean high anchor and bakes NO lustre (avoids doublon + false
     affordance — the shootable lustre is the render-side `decorProp`, family Commandant, already
     FAMILY PASS). MY COMPO CONTROL, provable only when the PNG lands (asset/composite stage, flagged
     not blocking): verify the generated facade actually leaves the {0.2,1.5} hook zone clean and high
@@ -1600,7 +1600,7 @@ acid neon stays render-side; nothing interactive is baked into the facade).
     no dead-gap around it.
   - **Constraint 3 (mur d'enceintes present but NOT a shootable false-affordance in V1) — PASS,
     Serge's bake-in-facade RULING RATIFIED.** `plywood speaker cabinets low in one corner as flat
-    set-dressing` bakes the speakers into the `facade` layer, which is composited directly and
+set-dressing` bakes the speakers into the `facade` layer, which is composited directly and
     NEVER chroma-keyed → no per-object render path can ever give them a neon rim → non-interactive
     by the loi du glow (§2 law 1: only a render-side rim = interactive). This is the STRONGEST
     possible guarantee against the false-affordance Karim's constraint 3 targets, and it also
@@ -1608,10 +1608,10 @@ acid neon stays render-side; nothing interactive is baked into the facade).
     for zero V1 gain. The autonomous `speaker_wall` sprite (Commandant family, PASS) stays the
     promotion asset for a future venue that makes it interactive; in V1 it is NOT rendered.
   - **Window row [E3]+[E4] — PASS.** `exactly 5 tall arched windows, evenly spaced and identical in
-    size` reuses belliard's proven regularity formula; **5 (not 7)** is correctly justified — wide
+size` reuses belliard's proven regularity formula; **5 (not 7)** is correctly justified — wide
     ballroom arches (vs narrow immeuble windows) fill one 1280×768 wall with visible masonry piers
     between them, directly mitigating the belliard [E5] merge risk. [E4]'s de-sealing (`dark
-    recessed cavity … lower panes boarded, upper arch left open, warm light spilling through`) is
+recessed cavity … lower panes boarded, upper arch left open, warm light spilling through`) is
     the right fix: a fully-boarded plank gives `align-windows.mjs` no detectable blob AND a cop
     popping from a sealed board = broken silhouette (§2 law 3); the open upper arch keeps each
     window an occupiable pop-opening while the lower boards keep the "condamnées" decrepitude read.
