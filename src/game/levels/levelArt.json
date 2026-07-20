@@ -476,7 +476,7 @@
           {
             "kind": "bench",
             "x": 0.162,
-            "row": "far"
+            "row": "near"
           },
           {
             "kind": "wallaceFountain",
@@ -496,7 +496,7 @@
           {
             "kind": "bench",
             "x": 0.613,
-            "row": "far"
+            "row": "near"
           },
           {
             "kind": "wallaceFountain",
@@ -622,7 +622,7 @@
           {
             "kind": "bench",
             "x": 0.305,
-            "row": "far"
+            "row": "near"
           },
           {
             "kind": "wallaceFountain",
@@ -642,7 +642,7 @@
           {
             "kind": "bench",
             "x": 0.755,
-            "row": "far"
+            "row": "near"
           },
           {
             "kind": "wallaceFountain",
