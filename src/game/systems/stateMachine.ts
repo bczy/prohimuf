@@ -100,6 +100,11 @@ export function createInitialState(
   const hostageQteSpec = params.hostageQte ?? null;
   const bossQteSpec = params.bossQte ?? null;
   const lootSpec = params.loot ?? null;
+  // Reset the crate-id counter per session (MINEUR-2): unlike bullet/courier ids
+  // (identity only), the loot id is the RNG seed for the slot+weapon pick
+  // (lootSystem), so resetting it makes the "deterministic, replay-safe" claim true
+  // — two fresh sessions on the same level produce the same crate sequence.
+  _nextLootId = 1;
   // GUARD (code-review panel, PR #112): a level may NOT author BOTH a hostage QTE and a boss
   // QTE yet. The two cinematics do not interleave — the boss block at the top of `tickGameState`
   // freezes `elapsedSeconds` while the boss is active, and the hostage QTE triggers off
@@ -281,8 +286,16 @@ export function tickGameState(
   // 3. Spawn new wave if all enemies dead
   const allDead = tickedEnemies.every((e) => e.state === "DEAD");
   const newWave = allDead ? state.wave + 1 : state.wave;
+  // On a wave rollover, exclude the live crate's slot so a fresh enemy never seats
+  // on it (ADR-0052 D5 co-location guard, direction b). `state.loot` is the pre-tick
+  // crate; its slot is stable across the tick.
   const activeEnemies: readonly Enemy[] = allDead
-    ? spawnWave(newWave, facade, windowPoolFor(roster))
+    ? spawnWave(
+        newWave,
+        facade,
+        windowPoolFor(roster),
+        state.loot !== null ? [state.loot.slotIndex] : [],
+      )
     : tickedEnemies;
 
   // 3b. Armament crate (ADR-0052 D5): advance / spawn the LOOT crate on the window

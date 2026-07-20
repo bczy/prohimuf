@@ -12,8 +12,9 @@ import type { LevelConfig } from "@game/levels/levels";
 import type { GameState } from "@game/types/gameState";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { CourierField } from "@game/systems/courierSystem";
-import type { LootCrate } from "@game/types/loot";
+import type { LootCrate, LootSpec } from "@game/types/loot";
 import { BULLET_SPEED } from "@game/systems/bulletSystem";
+import { spawnWave } from "@game/systems/enemySystem";
 import { pickKind } from "@game/types/enemyTypes";
 
 /** Mirror of the render lane's LevelConfig -> LevelParams mapping. */
@@ -1022,5 +1023,54 @@ describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (
     expect(next.weapon).toBe(s.weapon); // exact same reference — rides ...state frozen
     expect(next.loot).toBeNull(); // no crate spawns during the freeze
     expect(next.weaponEmpty).toBe(false);
+  });
+});
+
+describe("tickGameState — ADR-0052 D5 co-location guard (b): a wave rollover excludes the crate slot", () => {
+  it("never seats a rolled-over enemy on the live crate's slot", () => {
+    // A slot the un-excluded wave-2 would use ⇒ the exclusion is actually exercised.
+    const takenSlot = spawnWave(2, FACADE_01)[0]?.slotIndex;
+    if (takenSlot === undefined) throw new Error("expected a seated enemy");
+    const crate: LootCrate = {
+      id: 1,
+      slotIndex: takenSlot,
+      state: "VISIBLE",
+      timer: 5,
+      weapon: "auto",
+    };
+    const s: GameState = {
+      ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))),
+      wave: 1,
+      // A single DEAD enemy forces the all-dead wave rollover this tick.
+      enemies: [{ id: 999, slotIndex: 0, state: "DEAD", timer: 0, kind: "normal", hp: 0 }],
+      loot: crate,
+    };
+    const next = tickGameState(s, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.wave).toBe(2); // rollover happened
+    expect(next.enemies.every((e) => e.slotIndex !== takenSlot)).toBe(true);
+  });
+});
+
+describe("createInitialState — resets _nextLootId for replay-safe crate picks (MINEUR-2)", () => {
+  it("two fresh sessions produce identical crate slot + weapon", () => {
+    const spec: LootSpec = { spawnIntervalSeconds: 0.1, weapons: ["auto", "spread"] };
+    const params: LevelParams = {
+      lives: 3,
+      timeSeconds: 90,
+      enemiesToWin: 10,
+      enemySpeedMultiplier: 1,
+      loot: spec,
+    };
+    function firstCrate(): { slotIndex: number; weapon: string } {
+      let st = createInitialState(FACADE_01, params);
+      for (let i = 0; i < 5 && st.loot === null; i++) {
+        st = tickGameState(st, noFire, 0.5, 0.5, 0.1, FACADE_01);
+      }
+      if (st.loot === null) throw new Error("expected a crate to spawn");
+      return { slotIndex: st.loot.slotIndex, weapon: st.loot.weapon };
+    }
+    // Run a second session AFTER the first advanced the module counter — the reset
+    // in createInitialState must make the two picks identical.
+    expect(firstCrate()).toEqual(firstCrate());
   });
 });

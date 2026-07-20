@@ -119,6 +119,47 @@ describe("tickLoot — spawn cadence + exclusion (AC9)", () => {
     expect(r.loot).toBeNull();
     expect(r.lootTimer).toBeCloseTo(4);
   });
+
+  // ADR-0052 D5 co-location guard (a): a crate must not spawn on a slot held by a
+  // non-DEAD enemy of ANY state — including HIDDEN/HIT, which the §5.4 column-gap
+  // rule (active states only) does not catch.
+  it("never spawns on a slot occupied by a HIDDEN enemy (co-location guard)", () => {
+    const facade = facadeCols(4);
+    // HIDDEN enemies do not count as active (column rule ignores them), but they
+    // DO occupy their slots. Occupy 0,1,2 → the only free slot is 3.
+    const enemies = [enemyAt(0, "HIDDEN"), enemyAt(1, "HIDDEN"), enemyAt(2, "HIDDEN")];
+    const r = tickLoot(null, SPEC, 0, 1, enemies, facade, 5);
+    expect(r.spawned).toBe(true);
+    expect(r.loot?.slotIndex).toBe(3);
+  });
+
+  it("defers when every column-eligible slot is occupied by a non-DEAD enemy", () => {
+    const facade = facadeCols(4);
+    // All four slots occupied (mix of HIDDEN/HIT) though none are 'active' cols.
+    const enemies = [
+      enemyAt(0, "HIDDEN"),
+      enemyAt(1, "HIT"),
+      enemyAt(2, "HIDDEN"),
+      enemyAt(3, "HIT"),
+    ];
+    const r = tickLoot(null, SPEC, 0, 1, enemies, facade, 1);
+    expect(r.spawned).toBe(false);
+    expect(r.loot).toBeNull();
+  });
+
+  it("a DEAD enemy's slot is free for a crate", () => {
+    const facade = facadeCols(4);
+    // 0,1,2 occupied; slot 3 holds a DEAD enemy ⇒ still eligible.
+    const enemies = [
+      enemyAt(0, "HIDDEN"),
+      enemyAt(1, "HIDDEN"),
+      enemyAt(2, "HIDDEN"),
+      enemyAt(3, "DEAD"),
+    ];
+    const r = tickLoot(null, SPEC, 0, 1, enemies, facade, 5);
+    expect(r.spawned).toBe(true);
+    expect(r.loot?.slotIndex).toBe(3);
+  });
 });
 
 describe("tickLoot — crate state machine HIDDEN→APPEARING→VISIBLE→expire (AC7-loot)", () => {

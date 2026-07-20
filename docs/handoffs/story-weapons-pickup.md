@@ -222,6 +222,31 @@ tickGameState, Belliard opts in (ADR-0052 D7/D8)` — integration + levels + AC 
   the `weaponEmpty` per-frame bridge drain in `useGameLoop.ts` and the `LevelConfig.loot →
 LevelParams.loot` mapping in `App.tsx buildLevelParams` (App.tsx is render lane; not touched here).
 
+### stage-6 fix note — dev-gameplay (Amelia) — 2026-07-20
+
+Pre-merge panel fixes for Lane A (Winston's stage-6 triage), TDD (tests RED first), minimal diffs,
+no redesign, still React/Three-free. **All green: tsc 0, lint 0, format 0, vitest 867 passed**
+(860 → +7: 2 enemySystem, 3 lootSystem, 2 stateMachine). Commit `fix(game): enforce loot
+co-location invariant + reset loot id seed (ADR-0052 D5, stage-6)`; NOT pushed.
+
+- **[MAJEUR] co-location invariant (spec §5.3 / D5) — two one-direction guards, no central slot
+  authority, no `bulletSystem` change (tie-break assumption restored true):**
+  - (a) `lootSystem.attemptSpawn` now also excludes any slot held by a **non-DEAD** enemy (all
+    states incl. HIDDEN/HIT), applied alongside the §5.4 column-gap rule.
+  - (b) `enemySystem.spawnWave` gained an optional `excludeSlots` param (filter-before-`slice`,
+    byte-identical when empty); the `stateMachine` wave-rollover passes
+    `state.loot !== null ? [state.loot.slotIndex] : []`. `createInitialState`'s call keeps `[]`.
+  - Tests: crate never seats on a HIDDEN/HIT enemy slot (+ defer when all free, + DEAD slot free);
+    wave rollover never seats an enemy on the live crate's slot; `spawnWave([])` byte-identical.
+- **[MINEUR-2]** `createInitialState` now resets `_nextLootId = 1` (the loot id is the slot+weapon
+  RNG seed, unlike bullet/courier identity ids), making the "replay-safe" claim true. Test: two
+  fresh sessions produce identical crate slot + weapon.
+- **ADR amendment (D5 Enforcement clause, D6/NIT-6, D1 note):** content is Winston's, applied by
+  `tech-writer` — NOT in this Lane A diff. Fast-follow NITs (MINEUR-4/5, NITs 1-2-3) are logged
+  elsewhere, not actioned here.
+- **File List (fix):** `src/game/systems/enemySystem.ts`, `src/game/systems/lootSystem.ts`,
+  `src/game/systems/stateMachine.ts`, and their three `__tests__` specs.
+
 ---
 
 ## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-07-20

@@ -89,9 +89,13 @@ function attemptSpawn(
   if (spec.weapons.length === 0) return { loot: null, lootTimer: 0, spawned: false };
 
   const activeCols = activeEnemyCols(enemies, facade);
+  // Co-location guard (ADR-0052 D5, direction a): a crate must not sit on ANY
+  // non-DEAD enemy's slot — including HIDDEN/HIT, which the §5.4 column-gap rule
+  // (active states only) does not catch. Applied ALONGSIDE the column-gap rule.
+  const occupied = new Set(enemies.filter((e) => e.state !== "DEAD").map((e) => e.slotIndex));
   const eligible = facade.slots
     .map((slot, slotIndex) => ({ slotIndex, col: slot.col }))
-    .filter((s) => canSpawnLootAt(s.col, activeCols));
+    .filter((s) => !occupied.has(s.slotIndex) && canSpawnLootAt(s.col, activeCols));
   if (eligible.length === 0) return { loot: null, lootTimer: 0, spawned: false }; // deferred
 
   // Deterministic picks keyed on the crate id (the spawn sequence is replay-safe).
