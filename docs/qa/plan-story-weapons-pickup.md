@@ -208,3 +208,112 @@ QUALITY GATE — story-weapons-pickup — PASS
 FAIL would name the failing case and route it to the owning dev lane via `producer`; there is
 none. AC13 is escalated as the sibling measured-playtest (game-designer), not a hole in this gate.
 Green is given only because every row above was checked at the boundaries, on the built app.
+
+---
+
+## STAGE-6 RE-VERIFY — ran 2026-07-20 (Inès, `qa-lead`)
+
+Targeted re-verify of the two pre-merge fixes from the stage-6 review-panel triage (Winston's
+sequence, steps 4–6), on the branch HEAD:
+
+- **268eb16** — co-location invariant (D5) via two one-direction guards
+  (`lootSystem.attemptSpawn` excludes any non-DEAD enemy's slot; `enemySystem.spawnWave` gains
+  `excludeSlots`, the wave-rollover passes the live crate's slot) + `_nextLootId` reset (MINEUR-2).
+  +7 tests → 867.
+- **b9582ef** — shoot SFX keyed off `next.impactEvents.length > 0` (post-tick resolution
+  activity) instead of the raw `didFire` gesture (MINEUR-1); `.emptyFlash` removed from the
+  `prefers-reduced-motion` `animation: none` kill list (MINEUR-3).
+
+### Static gate (re-run myself on HEAD)
+
+| Check  | Result                                                                             |
+| ------ | ---------------------------------------------------------------------------------- |
+| tsc    | **PASS** (exit 0, no output)                                                       |
+| vitest | **PASS — 867 passed / 0 failed** (860 + 7 new co-location/seed guard tests; read). |
+| lint   | **PASS** (exit 0)                                                                  |
+| format | **PASS** ("All matched files use Prettier code style!")                            |
+
+The 7 new guard tests, all green: `enemySystem.test` — _"never seats an enemy on an excluded
+slot (co-location guard)"_ + _"without excludeSlots is byte-identical (default path)"_;
+`lootSystem.test` — _"never spawns on a slot occupied by a HIDDEN enemy"_ + _"defers when every
+column-eligible slot is occupied by a non-DEAD enemy"_ + _"a DEAD enemy's slot is free for a
+crate"_; `stateMachine.test` — _"D5 co-location guard (b): a wave rollover excludes the crate
+slot"_ + _"createInitialState resets \_nextLootId for replay-safe crate picks"_.
+
+### Runtime check 1 — crate co-location / pickable across a wave rollover (MAJEUR)
+
+Driven on Belliard via the `__MUF_PLAY__` seam. Split into the two guard directions:
+
+- **Direction (a) — a crate never co-locates with a non-DEAD enemy: VERIFIED-BY-RUNTIME.** Across
+  **two independent sessions, 624 crate-present state reads, 0 violations** — no read ever showed
+  a non-DEAD enemy sharing the live crate's `slotIndex`. This exercises the spawn-time guard
+  (`lootSystem.attemptSpawn`) live over the whole run. A live pickup also resolved as a **loot-hit**
+  (weapon flipped `base → spread`, no stray score/lives), i.e. shooting the crate slot equips —
+  the tie-break assumption (slots never collide) holds live.
+- **Direction (b) — the wave rollover excludes the crate slot: MANUAL-PLAYTEST-NEEDED (test-covered).**
+  A wave rollover fires only when **every** enemy is DEAD (`allDead`), and un-shot enemies recycle
+  (`VISIBLE→HIDDEN`), never reaching DEAD. Even with aggressive full-facade sweep-shooting for
+  100 s, **0 rollovers** were reached in the sandbox (off-screen/recycling enemies keep `allDead`
+  false), so a rollover **coincident with a VISIBLE crate** is not reliably drivable here. It is
+  fully covered by the new `stateMachine.test` _"D5 co-location guard (b)"_ + `enemySystem.test`
+  `excludeSlots` cases (re-run green). No fake evidence produced; `e-crate-across-rollover.png` is
+  intentionally absent.
+
+### Runtime check 2 — the signal the shoot cue is keyed on (`impactEvents`) behaves per the model
+
+The cue now fires iff `next.impactEvents.length > 0`. I verified that signal live via the
+**persistent `stock` counter** (the exact quantity `impactEvents` mirrors — one resolution per
+consumed unit) plus opportunistic `impactEvents` sampling:
+
+- **A fired spread press consumes 1** (`stock 30 → 29`) ⇒ ≥1 resolution ⇒ `impactEvents` non-empty
+  ⇒ one cue. **VERIFIED.**
+- **A swallowed press consumes 0**: two clicks 35 ms apart (the 2nd inside the 300 ms spread
+  cooldown) consumed **only 1** total (`29 → 28`) ⇒ the swallowed tap produced **no** resolution
+  ⇒ empty `impactEvents` ⇒ silent (no phantom shot). **VERIFIED.**
+- **A spread press emits up to 3 in one tick**: caught live `impactEvents` samples of **3** — the
+  fan cue fires once for the 3-resolution press. **VERIFIED.**
+- **Each burst round tick emits ≥1 impact (auto):** NOT driven live (collecting an `auto` crate in
+  its 4 s VISIBLE window was flaky), covered by `weaponSystem.test` _"one trigger fires
+  BURST_ROUNDS rounds over successive ticks"_ (each round is one §2.1 resolution ⇒ ≥1 impact by
+  the same mechanism proven above). VERIFIED-BY-TEST.
+
+### Runtime check 3 — empty cue under `prefers-reduced-motion` (MINEUR-3)
+
+- **The fix itself: VERIFIED-BY-CSS (deterministic, timing-independent).** With
+  `emulateMedia({ reducedMotion: "reduce" })` active, I read the loaded stylesheet: the
+  `@media (prefers-reduced-motion: reduce)` block stills **`._stockLow_8yynr_40`**
+  (`animation: … none !important`) but does **NOT** contain **`._emptyFlash_8yynr_57`** — so the
+  one-shot empty flash keeps its animation under reduced motion. `stillsStockLow=true`,
+  `stillsEmptyFlash=false` ⇒ exactly the MINEUR-3 intent (suppress motion, not information).
+- **Runtime path fires:** under reduced-motion emulation, draining a spread to 0 auto-returned to
+  `base` (state-confirmed) with the flash element mounting.
+- **`f-empty-cue-reduced-motion.png` — MANUAL-PLAYTEST-NEEDED (timing-limited, not a fix concern).**
+  The flash is a **0.45 s one-shot** DOM animation; under SwiftShader (no GPU) `page.screenshot()`
+  latency is **~400 ms each**, so even back-to-back captures land after the wash has faded (every
+  frame showed the settled "A ∞"). The visible-wash PNG is not reliably capturable in this
+  sandbox; the CSS-level proof above stands in its place. No fake evidence produced.
+
+### Verdict block
+
+```
+QUALITY GATE RE-VERIFY — story-weapons-pickup (stage-6 fixes 268eb16 + b9582ef) — PASS
+
+  Static (HEAD): tsc 0 · vitest 867/867 (7 new guard tests green) · lint 0 · format clean.
+
+  Check 1 co-location:
+    (a) crate never co-locates a non-DEAD enemy — VERIFIED-BY-RUNTIME (624 crate-present
+        reads / 0 violations, 2 sessions) + live loot-hit equip (base→spread, no stray score).
+    (b) wave-rollover excludes crate slot — MANUAL-PLAYTEST-NEEDED (0 rollovers drivable in
+        sandbox: allDead needs every enemy DEAD, recyclers block it) — COVERED by the new
+        stateMachine + enemySystem tests (re-run green). No fake e- PNG.
+  Check 2 SFX signal (impactEvents): fired press consumes 1 (≥1 impact ⇒ cue) · swallowed
+        press consumes 0 (0 impacts ⇒ silent) · spread press = 3 impacts caught live —
+        VERIFIED-BY-RUNTIME (stock) + live samples. Burst-round ≥1 impact VERIFIED-BY-TEST.
+  Check 3 reduced-motion empty cue: FIX VERIFIED-BY-CSS (reduced-motion stills .stockLow,
+        keeps .emptyFlash) + runtime empty→base under reduced-motion. Visible-wash PNG
+        (f-...) MANUAL-PLAYTEST-NEEDED — 0.45s one-shot vs ~400ms SwiftShader shot latency.
+
+  FAIL cases: NONE. No production code modified. Two items honestly MANUAL (not gate holes):
+  the wave-rollover-with-crate coincidence and the flash PNG — both under-covered by tests /
+  proven by CSS, and not sandbox-drivable. Merge-blocking fixes verified.
+```

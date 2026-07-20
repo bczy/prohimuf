@@ -829,3 +829,41 @@ actioned)` since none has been built yet — appear-cadence constant triplicated
   `src/` files touched). `npx -y prettier@3.8.2 --write` run on every file I edited.
 - **File List:** `docs/adr/0052-weapons-pickup-system.md`, `docs/adr/README.md` (regenerated),
   `public/adr/index.html` (regenerated), `docs/handoffs/fixes.md`, this shard.
+
+---
+
+## stage-6. QUALITY GATE RE-VERIFY — qa-lead (Inès) — 2026-07-20
+
+- claim: targeted re-verify of the two stage-6 pre-merge fixes (268eb16 co-location guards +
+  `_nextLootId` reset; b9582ef shoot-SFX keyed off `impactEvents.length>0` + reduced-motion
+  `.emptyFlash` kept) — static gate on HEAD + 3 runtime checks on the real Belliard build
+  (`__MUF_PLAY__` seam) / release: **PASS**. Re-verify section appended to
+  `docs/qa/plan-story-weapons-pickup.md`. No production code touched (iron rule).
+- VERDICT: PASS — quality gate re-verify (qa-lead)
+- **Static (HEAD, read not asserted):** tsc 0 · vitest **867 passed / 0 failed** (860 + 7 new
+  guard tests, all green) · lint 0 · format clean.
+- **Check 1 — co-location / pickable across rollover (MAJEUR):**
+  - direction (a) _crate never co-locates a non-DEAD enemy_: **VERIFIED-BY-RUNTIME** — 624
+    crate-present state reads across 2 sessions, **0 violations**; a live pickup resolved as a
+    loot-hit (weapon `base→spread`, no stray score/lives).
+  - direction (b) _wave-rollover excludes the crate slot_: **MANUAL-PLAYTEST-NEEDED** — a rollover
+    needs every enemy DEAD (`allDead`); recyclers keep it false, so **0 rollovers** were drivable
+    in 100 s of aggressive shooting ⇒ a rollover coincident with a VISIBLE crate is not
+    sandbox-drivable. COVERED by the new `stateMachine.test` "D5 co-location guard (b)" +
+    `enemySystem.test` `excludeSlots` cases (re-run green). No fake `e-crate-across-rollover.png`.
+- **Check 2 — the `impactEvents` signal the shoot cue is keyed on:** **VERIFIED-BY-RUNTIME** via the
+  persistent `stock` counter — a fired spread press consumes 1 (⇒ ≥1 resolution ⇒ non-empty
+  `impactEvents` ⇒ cue); a swallowed press inside the 300 ms cooldown consumes 0 (⇒ empty ⇒
+  silent, no phantom shot); a spread press emits **3** impacts in one tick (caught live). Burst
+  round ≥1-impact = VERIFIED-BY-TEST (`weaponSystem` burst test; same mechanism).
+- **Check 3 — empty cue under `prefers-reduced-motion` (MINEUR-3):** the **fix is
+  VERIFIED-BY-CSS** (deterministic): the reduced-motion `@media` block stills `._stockLow_…`
+  (`animation: none !important`) but does **not** contain `._emptyFlash_…` ⇒ the empty flash keeps
+  its animation. Runtime empty→base fires under reduced-motion. The **visible-wash PNG
+  (`f-empty-cue-reduced-motion.png`) is MANUAL-PLAYTEST-NEEDED** — a 0.45 s one-shot vs ~400 ms
+  SwiftShader screenshot latency; not reliably capturable here. No fake evidence.
+- **No FAIL cases.** Two items honestly MANUAL (not gate holes — test-covered / CSS-proven, and not
+  sandbox-drivable): the wave-rollover-with-crate coincidence and the flash PNG. Merge-blocking
+  fixes verified. Back to `senior-architect` for fix-diff re-triage → merge.
+- **Files (mine only, under docs/qa/):** `docs/qa/plan-story-weapons-pickup.md` (stage-6 section
+  appended). Stage-5 evidence PNGs (a/b/c) unchanged.
