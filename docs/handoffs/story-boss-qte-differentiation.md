@@ -1881,3 +1881,17 @@ chargedWindow=true smokeActive=true` (the parry WINDUP telegraph under the phase
   - `docs/qa/evidence/story-boss-qte-differentiation/28-parry-telegraph-under-smoke.png` (NEW)
   - `docs/qa/evidence/story-boss-qte-differentiation/29-mobile-parry-under-smoke.png` (NEW)
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
+
+## 17. OVERRIDE BERTRAND — smoke technique (2026-07-20)
+
+- Bertrand, direct feedback on the smoke veil: the 4-quad veil reads cheap
+  ("is this even using particles?? put some particles, get open source
+  texture"). DIRECT OVERRIDE of the pre-build PERF verdict's
+  no-particle-system constraint (§8).
+- Routing: `dev-r3f-render` re-implements the smoke as a real particle
+  system with an open-source (CC0) smoke texture; `gpu-specialist`
+  re-verdicts the bounds for the new technique (mobile fill-rate still the
+  named risk; DEFERRED-ON-TARGET protocol updated accordingly).
+- Composite-gate consequence: smoke-related verdicts on evidence 22/27
+  (and the glyph-over-smoke 28/29) are SUPERSEDED once the particle smoke
+  lands — fresh captures + Gate-4 re-verdict required.
