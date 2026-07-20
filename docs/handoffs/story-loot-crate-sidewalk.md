@@ -169,3 +169,40 @@ the silhouette law (box vs figure) + z-band (street vs window) carrying it; cyan
 the art-advisor fallback if it fails. Flagged to `lead-art`, not blocking this design delta.
 
 **VERDICT:** PASS-WITH-CORRECTIONS — 2 blocking (C1 runtime-x formula, C2 mobile-frame reachability), 6 non-blocking + 3 confirmed; hue delegated to lead-art composite gate. Round 1 of 2: back to `game-designer` (Sacha) to amend C1/C2 (and N1–N2 premises) in the delta, then re-gate before `senior-architect` (ADR-0053). Scope/core-loop/W1/W2/precedence all PASS.
+
+---
+
+## stage-2. DELTA AMENDMENT — game-designer (Sacha) — 2026-07-20 (for Karim round 2)
+
+All corrections applied to `docs/game-design/weapons-crate-sidewalk-delta.md`; confirmed points
+left untouched.
+
+- **C1 (BLOCKING) fixed** — dropped the harness `col·2 − 18` formula everywhere. Crate world-x
+  is now `slot.screenPosition.x` (tile-derived, `GameScene.tsx:198-205`); the D3 constraint and
+  AC-D1 are re-expressed as `|slot.screenPosition.x| ≤ LOOT_MAX_ABS_X (=7)`, world-origin-anchored
+  (pure spawn can't read pan; a panned-away player may miss a 6 s crate — documented, N5). D2/D9-2
+  cx updated too.
+- **C2 (BLOCKING) fixed** — removed every "no pan / reachable on both device classes without pan"
+  claim. D1/D3/D4/AC-D1 now state the crate is street content **below the mobile resting frame**
+  (`MOBILE_ZOOM_FACTOR 1.7` → `y∈[−3.5,3.5]`), engaged by the same pan-down/zoom-out the couriers
+  (`−4.8`) and truck (`−4.5`) already need (ADR-0003/0026); concept stands, the false claim is gone.
+- **N1 fixed** — runtime `streetY = −4.8` and truck stop `−4.5` (not the `−5` fixture): the
+  crate at `−4.3` is 0.5 u / 0.2 u above them, so the "~0.7 u sidewalk offset" is deleted. D1/D7
+  now state separation is carried by the box-vs-figure shape + street-vs-window z-band + D9-2
+  x-gap, **not** a vertical offset.
+- **N2 fixed** — `−6` was the ortho half-height, not the 16:9 crop; added **AC-D8** requiring the
+  full crate + glyph + rim to clear the cover crop (~`−4.5/−4.6`) empirically, `LOOT_STREET_Y`
+  verify-tunable.
+- **N3 fixed** — the architect hand-off no longer implies "no code change": it now spells out
+  that `resolvePlayerShot` must resolve the crate at street-y (it reads window-y today) and
+  `tickLoot` gains the x-bound filter + delivery phase/x check.
+- **N4/N5/N6** — folded in as accepted (D7 accidental-pickup residual, D3 world-origin anchor,
+  D5 drop-telegraph render-only note already present).
+- **Untouched (Karim CONFIRMED):** precedence ruling (D6), W2 predicates D9-1/D9-2, W1 stencil
+  override (D8), scope/core-loop, tuning (D10). Hue stays undelegated in the delta (lead-art
+  composite-gate call).
+- **No VERDICT** — back to Karim for the round-2 gate.
+
+---
+
+**Awaiting Karim's round-2 design gate on the amended delta.**
