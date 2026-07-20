@@ -31,7 +31,7 @@ export function PauseScreen({ prefs, onResume, onMenu, onSavePrefs }: Props): JS
           {/* Title */}
           <div className={styles.title}>PAUSE</div>
 
-          {/* Options — the shared body (ADR-0052 §4), same rows/labels/a11y as OPTIONS. */}
+          {/* Options — the shared body (ADR-0054 §4), same rows/labels/a11y as OPTIONS. */}
           <OptionsControls
             prefs={local}
             onChange={update}

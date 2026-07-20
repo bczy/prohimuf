@@ -72,7 +72,7 @@ describe("loadPrefs", () => {
     expect(loaded.crt).toBe(false);
   });
 
-  it("reducedMotion par défaut à false (ADR-0052 — jamais seed depuis l'OS)", () => {
+  it("reducedMotion par défaut à false (ADR-0054 — jamais seed depuis l'OS)", () => {
     expect(DEFAULT_PREFS.reducedMotion).toBe(false);
     expect(loadPrefs().reducedMotion).toBe(false);
   });

@@ -1,5 +1,5 @@
 /*
- * VuMeter (ADR-0046/ADR-0052) — the shared inked slider. Rules relocated verbatim
+ * VuMeter (ADR-0046/ADR-0054) — the shared inked slider. Rules relocated verbatim
  * from OptionsColophon.module.css so the OPTIONS colophon stays pixel-stable. Every
  * colour/font references a var(--…) injected from tokens.ts.
  */

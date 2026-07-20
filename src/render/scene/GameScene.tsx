@@ -120,7 +120,7 @@ interface Props {
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
    *  and moves the crosshair to the flat overlay layer (ADR-0031). */
   crt?: boolean;
-  /** Effective reduced motion (ADR-0052 §3): the shared derived signal, forwarded
+  /** Effective reduced motion (ADR-0054 §3): the shared derived signal, forwarded
    *  to CrtPass so the CRT grain/flicker freeze honours the in-app toggle + OS. */
   reducedMotion?: boolean;
 }

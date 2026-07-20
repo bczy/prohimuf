@@ -4,7 +4,7 @@
 // layer to the facade (S = 1×), and the bottom band staying below the lowest
 // window row (non-occlusion by construction) — are locked in-PR without a live
 // R3F scene. The reduced-motion signal is threaded into NearForeground.tsx as a
-// prop (the shared union from useReducedMotionRoot, ADR-0052 §3), exactly as
+// prop (the shared union from useReducedMotionRoot, ADR-0054 §3), exactly as
 // CrtPass.tsx keeps the OS read out of deriveCrtParams.
 
 import { WORLD_HEIGHT, type WindowZone } from "@game/levels/levelArt";

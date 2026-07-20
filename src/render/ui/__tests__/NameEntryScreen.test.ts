@@ -25,7 +25,7 @@ function markup(overrides: Partial<NameEntryScreenProps> = {}): string {
 }
 
 /**
- * NAME_ENTRY (M1, ADR-0052 §2). The static block pins the a11y contract the byline owes
+ * NAME_ENTRY (M1, ADR-0054 §2). The static block pins the a11y contract the byline owes
  * every input path (label↔input association, live clamp, pre-fill, both actions); the
  * client block pins the focus-on-mount + submit/skip wiring (AC1/AC7).
  */

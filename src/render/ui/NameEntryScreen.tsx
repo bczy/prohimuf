@@ -18,7 +18,7 @@ export interface NameEntryScreenProps {
 }
 
 /**
- * NAME_ENTRY (M1, ADR-0052 §2, UX spec §2) — the typed byline slot on the PARIS-MINUIT
+ * NAME_ENTRY (M1, ADR-0054 §2, UX spec §2) — the typed byline slot on the PARIS-MINUIT
  * UNE. Reached only when the run is a high score; reuses the gated newsprint/rose print
  * system (masthead, `NOTRE ENVOYÉ SPÉCIAL` byline convention) rather than an arcade
  * initials wheel. A native `<input>` styled as the typed line: real keyboard/IME/mobile

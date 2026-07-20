@@ -95,7 +95,7 @@ describe("FlyerWall PRESSION header — single-pref write-through", () => {
 });
 
 /**
- * §4 — first-run tutorial discoverability (spec-menus-ui-completion §4, ADR-0052 §1).
+ * §4 — first-run tutorial discoverability (spec-menus-ui-completion §4, ADR-0054 §1).
  * A single `muf_seen_tutorial_nudge` localStorage flag gates BOTH the tutorial-flyer
  * auto-focus and the one-time "COMMENCE ICI" nudge; the flag is written on first mount
  * so neither ever nags a returning player.

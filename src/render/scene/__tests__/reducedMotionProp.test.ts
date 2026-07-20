@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Union-signal reach (ADR-0052 §3, UX spec §3 "every motion consumer, not just a
+ * Union-signal reach (ADR-0054 §3, UX spec §3 "every motion consumer, not just a
  * subset"): the three scene-layer JS consumers that used to poll their OWN
  * `matchMedia("(prefers-reduced-motion: reduce)")` must now take the shared derived
  * signal via a `reducedMotion` prop (App `useReducedMotionRoot` → GameScene → here),

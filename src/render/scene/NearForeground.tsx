@@ -62,7 +62,7 @@ interface Props {
   /** Number of facade panels laid side by side. */
   panels: number;
   /**
-   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * Effective reduced motion (ADR-0054 §3): the shared union signal (prefs toggle OR
    * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
    * GameScene — the ONE authority. Freezes the parallax drift + traffic-light cycle,
    * so this layer honours the in-app MOUVEMENT RÉDUIT toggle, not just the OS query.
@@ -206,7 +206,7 @@ export function NearForeground({
   );
 
   // Reduced motion now arrives via the `reducedMotion` prop — the shared union signal
-  // from `useReducedMotionRoot` (App → GameScene), the ONE authority (ADR-0052 §3) —
+  // from `useReducedMotionRoot` (App → GameScene), the ONE authority (ADR-0054 §3) —
   // so no private `matchMedia` poll here; the in-app toggle reaches this layer too.
 
   // Parallax: each kerb row tracks the camera at its own factor (far = slower), like

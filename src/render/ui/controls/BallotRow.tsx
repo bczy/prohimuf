@@ -29,7 +29,7 @@ export interface BallotRowProps {
 }
 
 /**
- * The shared ballot primitive (ADR-0052 §4): a labelled `role="radiogroup"` of
+ * The shared ballot primitive (ADR-0054 §4): a labelled `role="radiogroup"` of
  * X-stampable ballot boxes, arrow-roving with an always-visible marker-circle focus.
  * Owns the a11y contract once — `role="radiogroup"` on the row, `role="radio"` +
  * `aria-checked` on each box, ≥44×44px hit targets (`.ballot`), keyboard navigable —

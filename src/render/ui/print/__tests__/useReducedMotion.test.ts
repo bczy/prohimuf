@@ -3,7 +3,7 @@ import { unionReducedMotion } from "../useReducedMotion";
 import { applyReducedMotion } from "../../applyPrintTokens";
 
 /**
- * The shared derived reduced-motion signal (ADR-0052 §3) has two testable pure
+ * The shared derived reduced-motion signal (ADR-0054 §3) has two testable pure
  * pieces: the union combiner (prefs OR OS) and the root-attribute writer that feeds
  * base.css's second `--motion-*` zeroing trigger. Together they pin the load-bearing
  * invariant "the toggle may strengthen but never weaken a live OS `reduce`."

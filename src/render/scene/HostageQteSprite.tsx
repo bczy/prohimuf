@@ -152,7 +152,7 @@ interface Props {
    */
   onHostageQte?: ((qte: HudHostageQte | null) => void) | undefined;
   /**
-   * Effective reduced motion (ADR-0052 §3): the shared union signal (prefs toggle OR
+   * Effective reduced motion (ADR-0054 §3): the shared union signal (prefs toggle OR
    * live OS query), owned once by `useReducedMotionRoot` in App and threaded through
    * GameScene — the ONE authority. Degrades the peek cue / execution flash to a
    * steady, strobe-free form, honouring the in-app toggle as well as the OS query.
@@ -211,7 +211,7 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   const positionedRef = useRef(false);
   // Reduced motion (UX spec §4.1) now arrives via the `reducedMotion` prop — the
   // shared union signal from `useReducedMotionRoot` (App → GameScene), the ONE
-  // authority (ADR-0052 §3) — degrading the peek cue / execution flash to a steady,
+  // authority (ADR-0054 §3) — degrading the peek cue / execution flash to a steady,
   // strobe-free form. No private `matchMedia` poll: the in-app toggle reaches here too.
 
   useFrame(() => {

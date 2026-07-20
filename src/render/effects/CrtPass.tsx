@@ -60,7 +60,7 @@ export function CrtPass({
   tier: CrtTier;
   paused?: boolean;
   /**
-   * Effective reduced motion, the shared derived signal (ADR-0052 §3): freezes the
+   * Effective reduced motion, the shared derived signal (ADR-0054 §3): freezes the
    * animated grain/flicker. Owned once at the render/bridge edge
    * (`useReducedMotionRoot`, `prefs.reducedMotion` unioned with the live OS query)
    * and passed in — CrtPass no longer polls `matchMedia` itself, so there is exactly

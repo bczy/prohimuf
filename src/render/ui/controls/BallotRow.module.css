@@ -1,5 +1,5 @@
 /*
- * BallotRow (ADR-0046/ADR-0052) — the shared ballot primitive. Rules relocated
+ * BallotRow (ADR-0046/ADR-0054) — the shared ballot primitive. Rules relocated
  * verbatim from OptionsColophon.module.css so the OPTIONS colophon stays pixel-stable;
  * the `.note` caveat and the `--ballot-stamp-bg` fallback var are the only additions.
  * Every colour/font references a var(--…) injected from tokens.ts.

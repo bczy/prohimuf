@@ -60,7 +60,7 @@ type AppPhase =
   | "END"
   | "TUTORIAL";
 
-// The deferred high-score save (M1, ADR-0052 §2): the `{score, wave, date}` triple is
+// The deferred high-score save (M1, ADR-0054 §2): the `{score, wave, date}` triple is
 // held while NAME_ENTRY collects the byline, then written exactly once on resolution.
 interface PendingScore {
   readonly score: number;
@@ -166,7 +166,7 @@ export function App(): JSX.Element {
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
-  // The ONE shared derived reduced-motion signal (ADR-0052 §3): unions
+  // The ONE shared derived reduced-motion signal (ADR-0054 §3): unions
   // prefs.reducedMotion with the live OS query, mirrors it onto the document root as
   // data-reduced-motion (base.css's second --motion-* zeroing trigger), and returns
   // the effective value for the JS consumer that can't read CSS vars (CrtPass).
@@ -181,7 +181,7 @@ export function App(): JSX.Element {
   });
   const [gameKey, setGameKey] = useState(0);
   // Held when a run qualifies for the board; the single deferred saveScore reads it on
-  // NAME_ENTRY resolution (ADR-0052 §2). `null` = nothing pending (non-high-score path).
+  // NAME_ENTRY resolution (ADR-0054 §2). `null` = nothing pending (non-high-score path).
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
@@ -269,7 +269,7 @@ export function App(): JSX.Element {
     const shippedIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
     const isShippedLevel = shippedIdx !== -1;
 
-    // M1 (ADR-0052 §2): when the run qualifies for the board, DEFER the single saveScore
+    // M1 (ADR-0054 §2): when the run qualifies for the board, DEFER the single saveScore
     // to NAME_ENTRY resolution so the player's byline can be attached; otherwise save now,
     // silently and anonymously, byte-identical to before. The next-level unlock below is
     // UNAFFECTED either way — it fires on today's schedule, never gated behind typing a name.
@@ -339,7 +339,7 @@ export function App(): JSX.Element {
     setAppPhase("MENU");
   }
 
-  // NAME_ENTRY resolution — the ONE deferred write to `muf_scores_<id>` (ADR-0052 §2).
+  // NAME_ENTRY resolution — the ONE deferred write to `muf_scores_<id>` (ADR-0054 §2).
   // Submit attaches the byline (and persists it as the last-used name); the pure layer
   // sanitises + omits an empty name, so an empty submit is byte-identical to a skip.
   const handleNameSubmit = useCallback(
@@ -475,7 +475,7 @@ export function App(): JSX.Element {
   }
 
   if (appPhase === "NAME_ENTRY") {
-    // Reached only on a qualifying high score (ADR-0052 §2). Save is deferred to
+    // Reached only on a qualifying high score (ADR-0054 §2). Save is deferred to
     // handleNameSubmit/handleNameSkip; the unlock side-effect already fired above.
     return renderAppShell(
       <NameEntryScreen

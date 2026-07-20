@@ -9,8 +9,8 @@ import styles from "./OptionsColophon.module.css";
  * OPTIONS — the OURS / colophon (UX §2.5, deck §4). The zine back page: sliders are
  * inked VU meters, toggles are ballot boxes with an X-stamp. Orange colophon stock
  * (§4.5), zero glow. Owns only the colophon chrome; the ballot/VU rows are the shared
- * `OptionsControls` (ADR-0052 §4). All writes go through the existing `onSave`; the
- * Prefs schema now carries `reducedMotion` (the MOUVEMENT RÉDUIT toggle, ADR-0052 §3),
+ * `OptionsControls` (ADR-0054 §4). All writes go through the existing `onSave`; the
+ * Prefs schema now carries `reducedMotion` (the MOUVEMENT RÉDUIT toggle, ADR-0054 §3),
  * alongside the pre-existing fields. Copy verbatim from deck §4.
  */
 

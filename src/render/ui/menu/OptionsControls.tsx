@@ -5,7 +5,7 @@ import type { BallotChoice } from "../controls";
 import styles from "./OptionsControls.module.css";
 
 /**
- * The shared OPTIONS body (ADR-0052 §4): the ballot + VU rows sourced from the single
+ * The shared OPTIONS body (ADR-0054 §4): the ballot + VU rows sourced from the single
  * `Prefs` store, consumed by BOTH `OptionsColophon` (colophon chrome) and `PauseScreen`
  * (modal chrome). Each host keeps its own outer chrome and supplies its own row config
  * — Pause passes `runScopedNote` so VIES/PRESSION carry the false-affordance caveat, and
@@ -49,7 +49,7 @@ const REDUCED_MOTION_CHOICES: readonly { value: boolean; label: string }[] = [
 
 /**
  * Map the single `Prefs.reducedMotion` field to the MOUVEMENT RÉDUIT ballot choices
- * (ADR-0052 §3). `selected` reads straight from `prefs`; each `onSelect` reports the
+ * (ADR-0054 §3). `selected` reads straight from `prefs`; each `onSelect` reports the
  * `reducedMotion` patch through the shared `onChange` so both host surfaces stay in
  * lockstep. Exported pure so the write-through contract is unit-testable DOM-free
  * (mirrors `FlyerWall.buildPressionChoices`).

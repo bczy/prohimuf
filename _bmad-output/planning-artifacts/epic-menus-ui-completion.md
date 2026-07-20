@@ -59,7 +59,7 @@ cross-device/online ranking would require a backend and is a hard reject, not a 
 `story-accessibility-settings-consolidation.md` and `story-highscore-name-entry.md` each
 change a persisted schema (`Prefs`/`ScoreEntry`) and, for M3, resolve the
 `CrtPass`-vs-`Prefs.reducedMotion` authority question already flagged by
-`story-timer-duel-telegraph`. **ADR-0052** (`docs/adr/0052-menus-ui-completion-scope-and-
+`story-timer-duel-telegraph`. **ADR-0054** (`docs/adr/0054-menus-ui-completion-scope-and-
 contracts.md`) records the scope verdicts, the `NAME_ENTRY` phase + deferred-save contract,
 the `reducedMotion` live-union authority (canonical over `story-timer-duel-telegraph` AC13's
 seed-once model), and the OPTIONS/PAUSE extract-a-shared-component boundary.
