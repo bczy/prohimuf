@@ -1360,3 +1360,149 @@ in one corner as flat set-dressing`, baked flat/low = no render-side rim = non-i
   Open gate items in the shard §"Reste à trancher" (speaker-wall bake-vs-sprite call, lustre
   anchor-clearance compo check, and the `levels[]` structure dev-tooling owns).
 - Not a `VERDICT:` line — prompt OWED and un-gated pending Serge + Nico.
+
+---
+
+## PRE-PROD PASS — game-graphist (Serge) — 2026-07-20 · l'Éden venue backdrop (facade/foreground/ceiling)
+
+Read: `docs/art-direction/prompt-drafts/niveau-final-eden.md` (READY-FOR-STRUCTURE draft), Maud's
+shard entries above (venue ratification + composition constraints), the shipped `levels[]` entries
+for `belliard`/`stalingrad`/`vitry` in `src/game/levels/levelArt.json` (`sizes.facade` 1280×768,
+global `windowGrid` prior cols7/rows3, per-level `windowGrid` + hand-tuned `windows` blocks),
+`src/game/levels/windowZones.generated.json`, and the git history on `scripts/align-windows.mjs` /
+`scripts/align-troncon.mjs` (the belliard window-zone fix chain: `94f5a4e`, `8933c03`, `6c140f3`,
+`bb6404f`). Numbering below is `[E#]` (Éden) to keep it distinct from the boss-family `[S#]` set
+above.
+
+### 1. Readability at game size — clause density vs. the street facades
+
+**Structural difference from belliard/stalingrad/vitry that changes the risk profile:** the street
+facades are a `troncon-sequence` the camera PANS across — a player only ever sees a fraction of the
+total facade clause budget in frame at once, so even a busy prompt gets spread out over the pan.
+L'Éden is a single static interior backdrop held BEHIND a frozen boss tableau for the whole fight —
+every one of its ~8 decorative registers (arched windows / cornices / mezzanine balustrade / parquet
+/ stencils+flyers / calmer upper wall / speaker corner / ceiling hook) is on screen simultaneously,
+competing with the active combat readout (rings, telegraph, HUD) for the whole encounter. That's a
+materially harder composition problem than a panned street facade with a similar clause count.
+
+[E1] That said, the **layering strategy itself is sound and follows precedent**: horizontal bands
+(cornice high / windows mid / parquet low, "the upper walls calmer" explicit) is the same
+Prohibition poster-grammar the street facades already use (roofline / window floors / ground-floor
+shops), and "party stencils and flyers … at arm height, the upper walls calmer" is the
+board-belliard-decor-v2 axis already validated elsewhere. No wholesale consolidation needed. PASS
+on the overall layering approach.
+
+[E2] The one register I'd prioritise for value-contrast budget is the **window row itself** — it is
+the single mechanically load-bearing layer (enemy pop positions, per the "galerie pré-boss" note)
+AND one of the 3 binding composition constraints sits right above it (the ceiling hook). Recommend
+the clause order/emphasis make sure cornice detail stays subordinate (lower contrast/simpler shapes)
+to the window row so the pop band reads first. This is the same fix as [E3] below — see there for
+the concrete clause.
+
+[E3] **The window row itself is the priority fix — tie to §2 below.** The current clause has no
+explicit count or evenness language ("a row of tall arched windows boarded and leaking thin light").
+Compare belliard's facade, which spells out "exactly 7 identical evenly spaced tall french windows
+per floor, every window and floor line perfectly aligned" — and even WITH that explicit regularity
+clause, belliard needed two correction passes (`8933c03` rigid-grid-vs-real-art mismatch, `bb6404f`
+two windows merging into one railing) before the window-pop zones rendered clean. Shipping l'Éden's
+window row with LESS regularity language than belliard had going in raises the odds of needing the
+same correction cycle, or worse. Fix: add an explicit count + evenness clause, e.g. "a row of
+`{N}` tall arched windows, evenly spaced and identical in width" (N left to dev-tooling/the gate to
+pin against `windowGrid.cols`).
+
+### 2. Window-zone risk — "boarded" vs. an occupiable opening
+
+[E4] **This is the entry's biggest structural risk.** "Boarded" windows, taken literally, read as a
+solid opaque plank surface nailed across the opening — not a dark/lit recessed cavity. Two distinct
+production problems follow:
+
+- **Detection/alignment risk.** Every window-zone fix logged on belliard (`94f5a4e` window-alignment
+  harness, `8933c03` troncon alignment harness, `6c140f3` overflow-only correction) works by
+  detecting REAL windows in the generated art — warm-lit floor row-centroids × per-row column-density
+  peaks, or an edge-density detector for the troncon ink/wash art — then snapping zones to them. A
+  window painted as a mostly-uniform boarded plank gives that detector a much weaker signal (no clean
+  warm-light blob, no clean dark-cavity edge) than an actual open or half-open window, which is
+  exactly the kind of ambiguity that produced 26/164 and 32/114 OVERFLOW slots on belliard even with
+  clean, unambiguous, lit windows to detect. Expect a HARDER alignment pass here, not an easier one,
+  unless the openings stay visually unambiguous.
+- **Fiction/mechanic incoherence.** A cop is meant to pop up and occupy that window slot. A window
+  boarded fully shut is, by its own read, sealed — a figure appearing to stand IN a solid plank
+  surface reads as broken, the same class of "wrong archetype" silhouette failure the house style
+  treats as automatic FAIL (§2 law 3), just applied to the backdrop opening instead of the figure.
+
+Fix (positive framing, keeps the "condamnées" decayed read Estelle wants): don't seal the whole
+opening — board only the LOWER portion of each window, leave the upper arch genuinely open/lit. e.g.
+"a row of tall arched window openings, evenly spaced and identical in size, each a dark recessed
+cavity, the lower panes crudely boarded across but the upper arch open, warm light spilling through
+the gap." This keeps every window a real, evenly-sized, evenly-spaced dark/lit slot the alignment
+harness can find AND an opening a cop can plausibly occupy, while the boards still carry the
+"condamnées" texture read as a partial decay detail rather than a sealed surface.
+
+[E5] Separately, flag the **merged-railing failure mode** (`bb6404f`: two closely-spaced windows'
+fixed-width rail-drawing overshoot ate the mullion gap between them) as a risk to watch specifically
+BECAUSE this facade also bakes "an ornate cast-iron balustrade" at the mezzanine AND ships a
+near-identical ironwork motif in the `foreground` layer — if the arched windows end up packed tight
+(no visible mullion/pier between them in the generated art), the same overshoot-merge risk applies
+here too. Not a prompt fix (this is render-side rail geometry vs. detected zone x-positions, exactly
+as it was on belliard) — flagged for the alignment/gate check once real art lands, not blocking the
+prompt pass.
+
+### 3. Foreground railings — keying on ornate cast-iron
+
+[E6] **PASS-AS-IS.** "thick black silhouettes seen up close … sharp silhouette edges" is the exact
+defensive clause family already shipped verbatim on belliard/stalingrad/vitry's foreground layers
+(magenta chroma-key, thick ironwork silhouettes) — and, notably, none of the logged production
+defects on this codebase's window/facade art have ever been a foreground-layer keying failure; every
+fix chain above was facade/window-zone side. Ornate cast-iron scrollwork IS the classic thin-line
+fringe trap on a magenta key, but asking for "thick" + "sharp silhouette edges" is precisely the
+right counter (bias toward bold blocky bars, not lace-like filigree) and it's a proven, shipped
+formula being transplanted, not a fresh bet. One insurance note for the TECHNICAL pass: Estelle's
+1900-30 ballroom register could tempt FLUX toward delicate tracery more than the street family's
+plainer balcony guards did — if the first generation shows genuinely thin filigree, the fix is
+pushing "thick" harder (e.g. "thick, bold, chunky black silhouettes"), not a structural change.
+Nothing to correct in the prompt now.
+
+### 4. The three binding composition constraints
+
+1. **`the back wall filling the frame ceiling to floor`** — CONFIRM, production-sound as phrased:
+   positive language (0 negation), directly answers the Vitry `x:9.9` dead-sky-gap lesson, and
+   because this is an INTERIOR venue there's no sky/street layer competing for the frame at all —
+   structurally the safest version of this constraint shipped yet.
+2. **`a bare ceiling hook high where a chandelier once hung`** — CONFIRM, prompt language is sound
+   (positive, guarantees an empty/clean hook silhouette rather than baking a duplicate lustre). The
+   exact `{0.2,1.5}` placement is a composition check against the real generated PNG, correctly left
+   to Nico at the gate (draft item 3) — nothing further for me to add on the string itself.
+3. **`plywood speaker cabinets low in one corner as flat set-dressing`** — CONFIRM Maud's bake
+   recommendation, and I'll add a second, purely production-side argument for it beyond the
+   false-affordance one: **the `facade` layer is a directly-composited backdrop image, never
+   chroma-keyed** (only `foreground` carries the `magenta chroma-key` lint requirement) — baking the
+   speakers here means they are never cut out and never wired to a per-object render path at all,
+   so there is literally no code path by which they could ever acquire a glow rim later (unlike a
+   discrete `decorProp`/sprite, which is exactly the kind of object the render layer CAN wire a rim
+   onto by a future accident). It is also the strictly SAFER choice on my own lane's axis: the
+   standalone-sprite alternative would mean generating a second `speaker_wall`-class asset that must
+   be chroma-keyed against black — reopening the large-flat-near-black-mass hole risk ([S10] in my
+   Commandant-family pass above) for zero gain, since this venue doesn't need the prop interactive.
+   **Ruling: bake-in-facade, reject the standalone-rimless-sprite alternative.**
+
+### Verdict summary
+
+| Layer                                   | Verdict                                                                                                                                                                                                                 |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `facade`                                | PASS-WITH-CORRECTION — [E3]/[E4] (window row: add count+evenness, un-seal the opening) is the priority fix; [E1]/[E2] no action beyond ordering emphasis; [E5] flagged for the post-art alignment check, not the prompt |
+| `foreground`                            | PASS-AS-IS — [E6], proven clause family, no correction                                                                                                                                                                  |
+| `ceiling` (optional)                    | PASS-AS-IS if used — same bare-hook language as facade, ornamental water-stain/plaster detail is non-load-bearing texture, no correction needed                                                                         |
+| Composition constraint 1 (back wall)    | CONFIRMED sound as phrased                                                                                                                                                                                              |
+| Composition constraint 2 (ceiling hook) | CONFIRMED sound as phrased; exact placement deferred to Nico's compo check (already correctly flagged)                                                                                                                  |
+| Composition constraint 3 (speakers)     | CONFIRMED — bake-in-facade ruled over standalone-rimless-sprite, on keying-safety grounds in addition to Maud's false-affordance reasoning                                                                              |
+
+The one concrete text change I'd want folded in before generation is the window-row clause ([E3]+
+[E4]): give it an explicit window count + "evenly spaced and identical in size," and un-seal the
+upper arch of each window so boarding reads as partial decay, not a sealed opaque surface. Everything
+else in the draft is either already following a proven shipped pattern or correctly deferred to the
+gate/harness stage. Route back to `concept-artist` (Maud) for integration, then `lead-art` (Nico)
+PROMPT GATE.
+
+Not a `VERDICT:` line (PRE-PROD annotations only — the gate verdict is Nico's).
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this PRE-PROD PASS appended).
