@@ -695,3 +695,165 @@ VERDICT: CLEARED FOR TECH PLAN — no blocking scope violations found (pm)
   opening, not this one) on the backlog; not blockers for this story's dev lanes.
 - File List: `docs/handoffs/story-boss-qte-differentiation.md` (this entry — additive
   edit, end-of-file only).
+
+## 7. TECH PLAN — senior-architect (Winston) — 2026-07-20 — ADR-0052 + lane partition + perf/art/audio calls
+
+- claim: the full TECH PLAN after the design gate PASS (§5) and pm AC7 clearance (§6). Delivers
+  ADR-0052 (AC2/AC5), the stage-4 BUILD lane partition, the perf-sensitivity call, the art-lane
+  call, and the audio-wiring call. Contract surface verified against real code before writing the
+  reuse map (`stateMachine.ts:160-197`, `bossQteSystem.ts` tick + `createBossQte`,
+  `types/bossQte.ts`, `useGameLoop.ts:295`, `BossQteSprite.tsx`, `BossHpBar.tsx`,
+  `levels.ts:221-242`) — the reuse map is written against shipped names, not assumed.
+
+### ADR-0052 — EXTENDS ADR-0051 (does not supersede)
+
+- release: `docs/adr/0052-boss-qte-differentiation-levers.md` (Accepted; number allocated by
+  producer §2, not self-allocated); `docs/adr/README.md` index row added.
+- **AMEND-vs-EXTEND call: EXTEND.** A new ADR that extends ADR-0051 in place, exactly as ADR-0051
+  extended ADR-0030/0034 ("extends, does not supersede" — the story's binding precedent). ADR-0051
+  stays Accepted, unamended. ADR-0052 records the ONE clause it narrows: ADR-0051 D1's "top-level
+  phase machine byte-shape-identical to the shell" — lever 5 adds a `FINISHER` node — while D1's
+  _isolation / additive-and-optional_ property (`bossQteSpec === null` ⇒ byte-for-byte identical)
+  is untouched. The narrowing is recorded, not silent.
+- **Finisher shape (5-A) — RATIFIED as a new top-level `FINISHER` phase, NOT an `ACTIVE`
+  sub-state.** Rationale: the phase break is a modulation of the live duel (correctly an `ACTIVE`
+  sub-state in ADR-0051); the finisher is post-combat (0 HP, no windows/wander/telegraph/drain), so
+  folding it into `ACTIVE` would force every safety-critical branch to guard `if (!finisherPending)`.
+  Insertion is surgical: the depleting-hit return (`bossQteSystem.ts:605-616`) sets
+  `phase:"FINISHER"` (energyDelta 0) + seeds `finisherRemaining`; a new `case "FINISHER"` resolves
+  on any `fire` OR a 1.5 s timeout → `WON` (+`QTE_BOSS_REFILL 50` paid there) → `QTE_RESULT_HOLD 2.2`
+  → DONE. `BossQtePhase` and `isBossQteActive` gain `"FINISHER"` (freeze holds through the beat);
+  `stateMachine.ts` needs NO edit (it _calls_ `isBossQteActive`). 5-B ratified: ceremonial,
+  guaranteed-success, damage-free — zero failure surface.
+- **4-C freeze-law ruling recorded as its OWN decision section (ADR-0052 D4), NOT folded into the
+  reuse map** (the story Architecture directive). Law UNCHANGED, no exception; renfort reframed
+  in-tableau; the four constraints (in-tableau only / energy-ledger-priced, no second clock, never
+  accelerates `maxBlownWindows` / telegraphed seeded-pure / touches no
+  `enemies`/`spawnWave`/`couriers`/`bullets`/`lives`/`elapsedSeconds` and no `qteSystem.ts`); the
+  review-assert (mine at stage-6 + a TDD unit assertion) restated. Conditional-split trigger NOT
+  met — lever 4 stays folded into Wave 2, no split, no boundary change to document.
+- **Load-bearing finding:** the entire pack lives inside `bossQteSystem.ts` + `types/bossQte.ts` +
+  the two view files. `stateMachine.ts`, `useGameLoop.ts` / all of `src/hooks`, the hostage system,
+  and every shipped `LevelConfig` are **byte-untouched**. Cross-boundary merge surface = zero.
+
+### Lane partition (stage 4 BUILD — non-overlapping, parallel-safe)
+
+Both dev lanes code against the runtime field/constant NAMES frozen in ADR-0052 D2/D3, so they run
+concurrently without a race (render reads named state; game authors it). New runtime fields (names
+frozen): `targetOffsetB` + fixed `ringB` identity, `chargedWindow`, `staggerRemaining`,
+`decorArmed`/`decorConsumed`, `smokeActive`, `renfortActive`, `finisherRemaining`; new constants
+`BOSS_*_WANDER_*` sub-boxes + speed multipliers, `BOSS_PARRY_POINT`, per-phase
+`parryLeadSeconds`/`parryWindowSeconds`, `QTE_PARRY_CHIP +2`, `QTE_CHARGED_WHIFF −10`,
+`BOSS_DECOR_DAMAGE 3`, `FINISHER_HOLD_SECONDS 1.5`, `QTE_RENFORT_DRAIN −12`, `renfortSurge` descriptor;
+new `BossQteSpec.decorProp?`.
+
+- **`dev-gameplay`** (pure `src/game`, TDD, spec values verbatim — boundary law: zero React/Three,
+  seeded-pure, no `Math.random`/`Date.now`):
+  - `src/game/types/bossQte.ts` — add `"FINISHER"` to `BossQtePhase`; extend the `BossQte` runtime
+    with the frozen new fields; add optional `BossQteSpec.decorProp?: { position: Vec2;
+armPhaseIndex: number }`.
+  - `src/game/systems/bossQteSystem.ts` — two-ring wander (2nd `bossWander` call + salt) + shared
+    `windowChipped` + overlap tie-break; parry decode in `tickBossQte` (same `fire`+`impactPoint`)
+    - STAGGER sub-state; decor hit-test + `smokeActive` flag + the floor guarantee; the `FINISHER`
+      phase (insertion + new case) + `isBossQteActive` extension; renfort surge derivation +
+      `QTE_RENFORT_DRAIN` modulation; all new constants; new `createBossQte` asserts (⊂-band, parry
+      floors, finisher/renfort floors, finite guards).
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` — TDD for all of the above incl. AC-D1..D8,
+    the **D4 lever-4 boundary-compliance assertion** (reads/writes only boss-QTE fields), the
+    `FINISHER`-holds-the-freeze test, determinism, ⊂-band containment.
+  - `src/game/levels/levels.ts` — author `BOSS_QTE_DEV_HARNESS_LEVEL.bossQteSpec.decorProp` (one
+    prop, phase-2 armed); note the stage-5 K-5 seed re-pin obligation. **Harness only — no shipped
+    level touched.**
+- **`dev-r3f-render`** (`src/render` only, logic-free, reads pure state; all reduced-motion
+  branches per UX D2.7/D3.1):
+  - `src/render/scene/BossQteSprite.tsx` — 2nd ring mesh + form-distinct per-zone live/shielded
+    read (UX D4.1/D4.5); parry telegraph cue form-distinct from the shoot tell (UX D2.1) + STAGGER
+    bonus-window read; decor placeholder mesh + armed-window glow (existing rim/quad idiom); smoke
+    degraded-telegraph treatment (**technique pending the GPU verdict below**); renfort frame-edge
+    silhouette quads (reuse `enemy_riot` texture, motion-only, no shootable body); `FINISHER` cue —
+    one-shot marker distinct from an ordinary window AND from the passive `QTE_RESULT_HOLD` breather
+    (UX D3.1/D3.2), reusing the phase-break pulse-quad family.
+  - `src/render/ui/hud/BossHpBar.tsx` — the `bossHp===0` one-shot settle/pulse (UX D3.4); NO new
+    persistent "finisher pending" state (UX D3.5). Minimal.
+  - `src/render/ui/hud/types.ts` (`HudBossQte`) — **only if strictly needed; default NO.** Finisher
+    is diegetic + bar-reinforced, renfort is diegetic — neither needs a new HUD field. Adding one
+    is a boundary decision that needs my sign-off first.
+- **Seam rules (who may touch what):**
+  - `stateMachine.ts` — **NObody touches it this story.** It is the cross-cutting freeze/quota seam;
+    any needed edit means the freeze is being perturbed (the exact thing 4-C ruled out) → STOP and
+    escalate to me. A PR that edits it fails my triage.
+  - `useGameLoop.ts` / `src/hooks` — **untouched** (3-A resolved to same-click; the loop already
+    passes `fire`+`impactPoint`, verified `stateMachine.ts:168` / `useGameLoop.ts:295`). Stated and
+    closed.
+  - `types/bossQte.ts` — **dev-gameplay owns; dev-r3f-render reads only** (never edits). Both build
+    against the ADR-0052 D2/D3 frozen names → no shared-file contention.
+  - `qteSystem.ts` / `hostageQte.ts` — untouched (separate system, ADR-0051 D1).
+
+### Perf-sensitivity call — YES, narrowly scoped to the SMOKE effect
+
+Per the pipeline definition (post-processing, shaders, particles, render targets, draw-call
+growth): most new reads are NOT perf-sensitive — the 2nd ring, parry cue, decor glow, renfort
+frame-edge quads, `FINISHER` marker and the HUD settle all reuse proven cheap idioms (extra meshes,
+tints, the pulse-quad family, the existing neon-rim `ShaderMaterial`), a bounded handful of extra
+draw calls. **The smoke effect IS perf-sensitive** and its technique is unbounded (particle system
+/ noise shader / fullscreen post-process are all on the table; the UX spec constrains only the
+_read_ — "degraded, not removed" — not the technique). It stacks on the existing CRT composite
+(ADR-0031) during the phase-3 frenzy — the worst-case concurrent frame: two rings + a parry cue +
+smoke + renfort frame-edge motion + (near the end) the finisher, on mobile.
+
+- **Ruling: `gpu-specialist` (Ben) MUST give a frame-budget verdict on the SMOKE technique BEFORE
+  the render lane locks its implementation.** Scope for Ben — exactly two questions: (1) a
+  frame-cost budget for the smoke degraded-telegraph treatment on mobile (technique recommendation:
+  cheap alpha-blended textured quad vs. shader vs. anything touching a render target / the CRT
+  pass); (2) a concurrent worst-case check of the phase-3 frenzy stack (2 rings + parry cue + smoke
+  - renfort frame-edge quads + finisher marker) over the CRT composite, both device classes.
+- Everything else in the render lane proceeds immediately (not gated on Ben), with the standing
+  frame budget respected and re-verified at stage-5 with Ben's usual perf verdict. This is a narrow,
+  justified pre-gate on one open-ended effect, not a blanket stall of the lane.
+
+### Art-lane call — NO art/tooling FLUX lane opens now (deferred to Niveau-Final, logged so producer chases it)
+
+The harness runs on the `enemy_riot` cop fallback (verified `BossQteSprite.tsx`
+`resolveBossTexture`), and V1 already draws every read procedurally on it. Per Karim advisory 4 +
+narrative §5 + ADR-0051 art-gate N2 ("no run ahead of need"): the form-distinct canon art asks
+(parry raised-weapon pose, two-ring form read, finisher "reach-for-radio" pose, smoke-degraded
+telegraph salience, new-venue props lustre/enceintes/fumée) route to `lead-art` **only when the
+Niveau-Final story opens — NOT now.** The differentiation harness builds on **placeholder /
+procedural visuals**: the render lane draws the new reads with the fallback sprite's firing/
+non-firing frames + code-driven motion/tint/quads (the decor prop is a procedural placeholder mesh,
+not a FLUX asset). **`dev-tooling-assets` has NO lane in this story.**
+
+- **Logged deferral (producer to track against Niveau-Final, never silently dropped):** the 5
+  form-distinct art asks above are a Niveau-Final dependency, carried by narrative §5's request
+  sheet. The harness ships procedurally in the interim (AC8 unchanged — nothing canon ships live).
+
+### Audio-wiring call — wire NOTHING this story; land triggers WITH the assets in a later lane
+
+The audio spec's 8 cues are specs for FUTURE, licence-gated assets (`sound-designer` handoff:
+"queued for future sourcing once the tech plan lands — not started yet"). The pure game layer
+already exposes every transition the cues key off (stance flip, `telegraphActive`,
+`phaseBreakRemaining`, the parry outcome, `FINISHER` onset, `renfortActive`, `decorArmed`), so no
+new game field is needed for audio and **dev-gameplay wires zero audio** (boundary law: game stays
+pure). For the render lane: **do NOT add speculative no-op / console `playSfx` trigger points now**
+— that is exactly the pattern that rotted into the dead `hit`/`death` audio paths the audio bible
+just flagged (§4 sound-designer). Audio wiring is a SEPARATE later lane: `dev-tooling-assets`
+sources + licence-gates the 8 assets → then `dev-r3f-render` wires the trigger points against the
+now-real `SfxName`s in the same pass (triggers and assets land together, no dead paths). Logged so
+producer sequences that lane after this harness lands (or once assets clear the licence gate) — not
+dropped.
+
+- handoff → `producer` (Marion): stage 4 BUILD ready — launch `dev-gameplay` + `dev-r3f-render` in
+  parallel (non-overlapping per above); gate the render lane's SMOKE technique on a `gpu-specialist`
+  verdict (scope above) before it locks that one effect. Track two deferred lanes: (a) Niveau-Final
+  form-distinct art asks; (b) the audio asset-sourcing + wiring lane. No `dev-tooling-assets` lane
+  this story.
+- handoff → `dev-gameplay` + `dev-r3f-render`: build to ADR-0052 (reuse map D2, finisher shape D3,
+  boundary law D5) + the gated specs; TDD spec values verbatim; seam rules above are hard.
+- handoff → `gpu-specialist` (Ben): the smoke frame-budget + phase-3 concurrent-worst-case scope
+  above, before the render lane locks the smoke technique.
+- NOTE (process): TECH PLAN entry appended via `cat >>` heredoc (Bash available here), strictly
+  additive at end-of-file.
+- File List:
+  - `docs/adr/0052-boss-qte-differentiation-levers.md` (NEW)
+  - `docs/adr/README.md` (index row added)
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry)
