@@ -2874,3 +2874,70 @@ Serge — TECHNICAL PASS (round 2)
   991×594→1280×768, smoothing off). Appliqué par l'orchestrateur ; vérifié
   1280×768, 355KB. Le foreground batch-2 (dégradé orange 63% opaque) est
   écarté.
+
+## DESIGN GATE (express) — lead-game-designer (Karim) — 2026-07-21 — windowGrid.cols 5→4 (Bertrand escalation, cap spent)
+
+- claim: express design-gate on the ONE gated-value amendment Bertrand decided at escalation
+  (§DÉCISIONS BERTRAND, Finding 1): accept the batch-2 l'Éden facade at **4 arches** and retune
+  `windowGrid.cols` **5→4** to match. The original 5 was my gated [E3] count (via `lead-art`'s
+  prompt gate, sourced from the belliard evenness formula). Bertrand's call stands (cap spent); my
+  job is to confirm 4 evenly-spaced occupiable arches still serve the design intent + a stage-5 note.
+
+VERDICT: PASS — design gate niveau-final windowGrid.cols 5→4 (lead-game-designer)
+
+### Why PASS — the [E3] count's PURPOSE (not the number 5) is preserved at 4
+
+- **[E3] purpose was properties, not the integer.** [E3] pinned _even spacing_ + _occupiable
+  window-cop slots_ + _[E5] merge-risk mitigation_ — never the number 5 for its own sake. 4
+  identical, evenly-spaced arches is exactly as EVEN as 5, and (per [E4]) each stays an occupiable
+  opening (upper arch open, lower boarded) — occupiability is per-arch, untouched by the count.
+- **[E5] merge-risk is IMPROVED, not merely unchanged.** Fewer arches across the same facade width
+  = wider piers/mullions between them = more gap = LESS of the `bb6404f` rail-overshoot-merge risk
+  the [E5] flag names. 5→4 moves this the right direction.
+- **No §5.6 surface.** `windowGrid.cols` governs the pre-boss STREET facade's pop-slot layout, not
+  any cop rule. Which cop is armed, its telegraph, and threat discrimination are per-cop and
+  unchanged; the boss QTE is downstream and untouched. Fewer slots introduces no new failure mode,
+  no hidden/inconsistent rule, no bullshit death.
+- **Pacing reads acceptable — fewer slots LOWERS peak crowding, does not raise it.** Verified the
+  spawn mechanic: `spawnWave` sets `count = Math.min(1 + wave, facade.slots.length)`
+  (`enemySystem.ts:76`), so the slot count CAPS peak simultaneity. 4 slots ⇒ max 4 concurrent cops
+  (was 5) — a marginal EASING of the busiest moments, not a density spike. The "higher per-arch pop
+  rate" is real (16 kills cycle through 4 positions instead of 5 ⇒ each arch refires a bit more
+  often), but for a solo one-crosshair shooter engaging one target at a time, 4 concurrent available
+  targets is ample supply to sustain the 4.4 s/kill pace; the bottleneck is the player's aim/click
+  cadence and enemy `visibleDuration`, not 4-vs-5 slots. The spec's "substantive gallery /
+  monotonic-hardest" intent (§1.3–§1.4) is preserved. niveau-final seats no window crate
+  (`truck` delivery, not a Belliard window-crate), so the `excludeSlots` guard never shrinks the
+  usable pool below 4.
+
+### Gated amendment (for the record)
+
+> **`windowGrid.cols`: 5 → 4** (`src/game/levels/levelArt.json`, `niveau-final` block). Supersedes
+> the gated [E3] count of 5. Decided by **Bertrand at escalation, 2026-07-21** (cap spent; batch-2
+> facade accepted at 4 arches, otherwise good). The [E3] intent (even spacing + occupiable
+> window-cop slots + [E5] merge mitigation) is served by 4; [E5] risk improves with wider piers.
+> `rows` unchanged (single arch row). `dev-tooling-assets` applies the JSON change AND re-runs the
+> `gen-window-zones` alignment re-check — confirming 4 clean, even centres snap to the 4 real arches
+> and no two arches merge on the detected zones (the [E5] check, now easier with wider piers).
+
+### Stage-5 playtest note (compensating watch, non-blocking)
+
+- **N1 — target-supply on 4 slots at the tightest pace.** Peak simultaneity drops 5→4 while the
+  quota (16) / timer (70) / speed (1.8) are held. Confirm at playtest the pre-boss gallery does NOT
+  read target-STARVED (a solo shooter waiting on pops) on the 4.4 s/kill pace — I expect ample
+  supply (speed 1.8 keeps reveals frequent), but it's the one thing 4-vs-5 could plausibly move.
+  **If** it reads thin/unreachable, the compensating lever is a `roster.windowWeights` nudge
+  (the mix is currently biased toward 2-HP `riot`, which slows clears — easing that share is the
+  fair valve), NOT re-adding a 5th arch (art is fixed at 4). Logged as a potential correct-course
+  (spec §4), not a pre-change.
+
+- handoff → `dev-tooling-assets`: apply `windowGrid.cols = 4` in `levelArt.json` (niveau-final) +
+  re-run `gen-window-zones`; confirm 4 even centres + no merged zones ([E5]); report OVERFLOW/clean.
+- handoff → `game-designer` (Sacha): carry N1 into your stage-5 design-acceptance for niveau-final
+  (target-supply on 4 slots vs. the 16/70/1.8 pacing intent).
+- handoff → `lead-art` (Nico): [E3] count formally amended 5→4 for l'Éden; the evenness/occupiability
+  clause is unchanged in substance, only the pinned integer.
+- NOTE (process): appended via Edit, not `cat >>` heredoc — no Bash tool in this subagent context
+  (same limitation logged on the differentiation shard §3/§5/§13/§17). Strictly additive at EOF.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
