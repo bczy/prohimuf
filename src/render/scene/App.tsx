@@ -152,8 +152,9 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     delivery: level.deliveries[0] ?? null,
     // Scripted hostage-taker QTE for this level (ADR-0030), if authored.
     hostageQte: level.hostageQte ?? null,
-    // Scripted boss QTE for this level (ADR-0051). Absent on every shipped level ⇒ `null`
-    // (byte-identical); only the non-shipped dev-harness authors one.
+    // Scripted boss QTE for this level (ADR-0051). Absent ⇒ `null` (byte-identical); the
+    // non-shipped dev-harness authors one for iteration, and since ADR-0053 the SHIPPED
+    // `niveau-final` level authors the live canon encounter too.
     bossQte: level.bossQteSpec ?? null,
     // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.

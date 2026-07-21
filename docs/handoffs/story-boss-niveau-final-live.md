@@ -3985,3 +3985,72 @@ handoff → `producer` (Marion): NO-MERGE. Chase the pre-merge fixes above (tech
 code fixes land (E9 touches an App-load path; E1 is CI-only). Follow-ups logged above.
 handoff → `pm` (John): one product call owed — E6 retro-unlock (migration vs release-note); my default
 is release-note. Everything else is doc/CI/wording + one tiny view-side gate.
+
+## 11. FIX (stage 6, pre-merge batch) — dev-r3f-render (Amelia) — 2026-07-20 — #3 seed-docstring + E9 reachability gate on the niveau-final capture seam
+
+- claim: land the two render-lane stage-6 pre-merge fixes from the architect's triage on the seam I
+  added in §9. Both in `src/render/scene/bossHarness.ts` (+ its test). No `src/game` touch.
+
+### #3 — docstring seed correction (one word)
+
+`resolveBossPreviewLevel`'s JSDoc said "seed 19991231" — the gate-REJECTED camp-dominant seed. The
+shipped K-5 re-pin is **19991232**. Corrected.
+
+```
+- * `niveau-final` — its real spec, seed 19991231, chandelier décor), boots THAT level so the boss
++ * `niveau-final` — its real spec, seed 19991232, chandelier décor), boots THAT level so the boss
+```
+
+### E9 — shipped-level boot requires a valid capture target (`at=`)
+
+Before: `?preview=boss&level=niveau-final` (no `at=`) booted the shipped finale FULLY PLAYABLE —
+canon-locked content + the fiction's one-shot reveal, reachable from a bare URL. Fix (triage
+prescription): the shipped-level branch of `resolveBossPreviewLevel` is now gated behind
+`parseBossHarnessTarget(params.get("at")) !== null`, so `level=` without a valid `at=` falls back to
+the non-shipped harness EXACTLY like an unknown id. The plain harness (`?preview=boss`, no `level=`)
+is unaffected (boots with or without `at=`, as before). The module docstring states the rule.
+
+```
+ export function resolveBossPreviewLevel(search: string): LevelConfig {
+-  const id = new URLSearchParams(search).get("level");
+-  if (id !== null) {
++  const params = new URLSearchParams(search);
++  const id = params.get("level");
++  // A shipped level needs a valid `at=` capture target (E9) — otherwise the finale is URL-reachable.
++  if (id !== null && parseBossHarnessTarget(params.get("at")) !== null) {
+     const lvl = LEVELS.find((l) => l.id === id);
+     if (lvl?.bossQteSpec !== undefined) return lvl;
+   }
+   return BOSS_QTE_DEV_HARNESS_LEVEL;
+ }
+```
+
+Because `resolveBossPreviewLevel` is the single source consumed by `App`'s `INITIAL_LEVEL`,
+`isBossSeamShippedLevel`, and `installBossCaptureSeam`, the gate lands once and covers all three:
+the finale is neither rendered (INITIAL_LEVEL falls back) nor seeded (install already required
+`at=`), and the persistence flag stays consistent.
+
+### Tests (`src/render/scene/__tests__/bossHarness.test.ts`)
+
+- Added the E9 case: `resolveBossPreviewLevel("?preview=boss&level=niveau-final")` (+ `&at=bogus`)
+  → harness; with a valid `at=finisher` → niveau-final (capture flows intact).
+- `isBossSeamShippedLevel` no-`at=` case flipped to **false** (E9 fallback) + kept the valid-`at=`
+  true case; the "unknown/boss-less id" and "off the seam" cases now pass a valid `at=` to isolate
+  their own reason.
+
+### Verification — ALL GREEN (`COREPACK_NPM_REGISTRY=…npmjs.org`)
+
+- `yarn typecheck` EXIT 0 · `yarn lint` EXIT 0 · `yarn format:check` (my files) clean ·
+  `yarn vitest run` **1015 / 1015** (+2 E9 cases).
+- Empirical E9 confirm (Playwright, prod build): `?preview=boss&level=niveau-final` (no `at=`) boots
+  the HARNESS (bossQte.targetSeed **20260719**, belliard) — the finale is NOT booted;
+  `?preview=boss&level=niveau-final&at=phase2` boots niveau-final (targetSeed **19991232**). Evidence
+  06-14 (all pass `at=`) stay reproducible.
+- handoff → `senior-architect` (Winston): #3 + E9 landed, view-side only, single-source gate. No
+  commit/push.
+- File List:
+  - `src/render/scene/bossHarness.ts` (#3 seed docstring; E9 `at=` gate on the shipped-level branch + rule in the module docstring)
+  - `src/render/scene/__tests__/bossHarness.test.ts` (E9 fallback cases + isBossSeamShippedLevel update)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — #3 + E9 seam fixes (dev-r3f-render). #3: `resolveBossPreviewLevel` docstring seed corrected 19991231→19991232 (the shipped K-5 re-pin; 19991231 was the gate-rejected camp-dominant seed). E9: the shipped-level boot now requires a valid `at=` capture target — a bare `?preview=boss&level=niveau-final` falls back to the non-shipped harness (finale no longer URL-playable, canon/one-shot-reveal leak closed), while every real capture flow passes `at=` so evidence 06-14 stays reproducible; the plain harness path is unchanged. Single-source gate in the pure resolver covers INITIAL_LEVEL + the persistence flag + the seam install. Gate GREEN (typecheck 0, vitest 1015/1015, lint 0, format clean); E9 empirically confirmed (no-at= → harness seed 20260719, at=phase2 → niveau-final seed 19991232). No commit/push.

@@ -47,11 +47,12 @@ export interface LevelConfig {
    */
   readonly hostageQte?: QteSpec;
   /**
-   * Scripted boss QTE encounter — "le Commandant" (ADR-0051). Absent ⇒ no boss. In V1 the
-   * ONLY level carrying it is the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` (D4), which is
-   * deliberately EXCLUDED from the shipped `LEVELS` array — no shipped level authors a boss,
-   * so no shipped player can reach the required gate. The seed of `GameState.bossQteSpec`
-   * reads this.
+   * Scripted boss QTE encounter — "le Commandant" (ADR-0051). Absent ⇒ no boss. V1 authored it
+   * only on the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` (D4), deliberately EXCLUDED from the
+   * shipped `LEVELS` array — the team's dev-only iteration surface. Since ADR-0053, the shipped
+   * `niveau-final` level also authors one — the player's one canon meeting with le Commandant,
+   * triggered on the real quota crossing. Every other shipped level still authors none. The
+   * seed of `GameState.bossQteSpec` reads this.
    */
   readonly bossQteSpec?: BossQteSpec;
   /**
