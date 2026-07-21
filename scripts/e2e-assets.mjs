@@ -89,7 +89,9 @@ function main() {
     const size = fs.statSync(abs).size;
     if (size < MIN_BYTES) {
       if (KNOWN_UNDERSIZED_DEBT.has(rel)) {
-        console.log(`  DEBT ${rel} (${String(size)}B < ${String(MIN_BYTES)}B — known, producer chases)`);
+        console.log(
+          `  DEBT ${rel} (${String(size)}B < ${String(MIN_BYTES)}B — known, producer chases)`,
+        );
         continue;
       }
       offenders.push(`too small  ${rel} (${String(size)}B < ${String(MIN_BYTES)}B)`);
