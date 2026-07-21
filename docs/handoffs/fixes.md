@@ -261,3 +261,4 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
   dest guard hardened vs ./.git, no post-final-attempt sleep, max_attempts
   validated)
 - 2026-07-20 · docs · CLAUDE.md slug rule said per-CHARACTER but deploy-preview.yml sanitizes per-BYTE (`tr -c`): UTF-8 é → `--`; CLAUDE.md wording fixed in-branch, decide later whether the workflow should sanitize per-character instead (dev-tooling-assets)
+- 2026-07-20 · claude/features-a-implémenter-ehw9q4 (post-merge follow-up) · tech-writer/orchestrator · stale H1 numbers in renumbered ADR-0055/0056 files (still said 0052/0053; QA finding during the aborted verify) · checks: gen-adr-index green · review: micro-edit fix lane

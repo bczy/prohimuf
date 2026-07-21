@@ -1,4 +1,4 @@
-# 0052 — Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate
+# 0055 — Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate
 
 - **Status:** Accepted — **amended 2026-07-20** (D5 enforcement clause, D6 struck, D1 seam
   note; see amendment below)
