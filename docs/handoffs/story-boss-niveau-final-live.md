@@ -2240,3 +2240,13 @@ VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer
 - **File List:**
   - `scripts/e2e-assets.mjs` (MODIFIED — layer derivation + header comment)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## FIX-LANE NOTE — belliard/sky.png undersized debt exemption (orchestrator, 2026-07-20)
+
+- The honest per-level layer derivation in `e2e-assets.mjs` surfaced
+  `assets/levels/belliard/sky.png` (1.6KB < 5KB floor) — pre-existing shipped
+  debt, never gated (the old hardcoded layer list skipped "sky"). Exempted via
+  the named `KNOWN_UNDERSIZED_DEBT` set with a paper-trail comment; regenerating
+  a shipped level's art is its own fix-lane cycle through the art gates.
+- CHASE (producer): regenerate belliard sky via the level-art pipeline, pass the
+  asset gate, then REMOVE the exemption entry.
