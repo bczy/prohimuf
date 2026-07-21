@@ -4159,3 +4159,115 @@ established failure-handling shape; nothing is silently lost, and nothing bad is
   - `.github/workflows/gen-boss-sprites.yml` (MODIFIED — solidify step scoped to the 7 figures,
     excludes `lustre.png`/`speaker_wall.png`, with rationale comment)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## 12. FIX (stage 6, pre-merge batch) — tech-writer (Otis) — 2026-07-21 — MAJEUR-1 (ADR-0053 realignment) + finding #4 (4 stale invariant comments) + finding #5 (yarn.lock accept-with-record note)
+
+- **claim:** land the three DOCS-lane pre-merge items off the architect's stage-6 triage
+  (`docs/handoffs/story-boss-niveau-final-live.md` §"STAGE 6 — TRIAGE + INTEGRATION REVIEW"):
+  MAJEUR-1 (ADR-0053 contradicts its own build PR), finding #4 (4 stale invariant comments the
+  story falsifies), finding #5 (yarn.lock runtime-delta acknowledgement). Wording/doc-of-record
+  only — zero logic changed anywhere. No commit/push.
+
+### MAJEUR-1 — ADR-0053 realigned to the landed build
+
+`docs/adr/0053-niveau-final-live-boss-level.md`:
+
+- **Status** flipped `Accepted — pending build` → `Accepted (built and shipped, PR #119,
+2026-07-21 …)` — the AC8 sequencing gate cleared and all dev lanes landed.
+- **New "## Revision 1" section appended** (mirrors the ADR-0052 Revision 2 discipline — annotate,
+  don't erase; D2/D3/D4's original text is untouched and left as written, accurate at TECH PLAN):
+  - Dated log of the four sanctioned amendments, each with its owning gate: **AMENDMENT A2**
+    (décor catch = drawn-silhouette AABB, `BOSS_DECOR_CATCH_HALF_W 0.40`/`HALF_H 0.525` in
+    `bossQteSystem.ts` + paired render derivation — Karim's stage-5 panel follow-up #5 gate);
+    **K-5 seed re-pin** `targetSeed` `19991231`→`19991232` (Sacha's leg-2 design-acceptance gate:
+    the diegetic seed FAILED (a), camp-vital dominant at the 0.11 catch); **`windowGrid.cols`**
+    `5`→`4` (Bertrand's escalation ruling + Karim's express design gate — 4-arch facade accepted);
+    **`lustre` seed re-roll** `4877`→`4879` (Nico's §3.10 composition-defect rule, Bertrand-approved
+    at the same escalation).
+  - D2's "ZERO lines" bold claim and D3's review-assert ("any hit is a blocking finding")
+    corrected into an accurate reuse map: `bossQteSystem.ts` carries the ONE sanctioned A2 touch;
+    `App.tsx` carries the C-QA3 capture seam + its persistence double-guard (view-side,
+    architect-ruled clean at the same stage-6 triage); `types/bossQte.ts`, `FlyerWall.tsx`,
+    `stateMachine.ts` are confirmed still byte-untouched; `useGameLoop.ts` gains the wording-only
+    JSDoc fix landed in this same entry (finding #4); the 4 shipped `LevelConfig` objects +
+    `BOSS_QTE_DEV_HARNESS_LEVEL` are confirmed still byte-untouched (AC2/AC3/AC5 hold).
+  - D4's provisional seed corrected: **`19991231` → `19991232`**, per the K-5 amendment above.
+
+### Finding #4 — 4 stale invariant comments, wording-only, zero logic
+
+Each comment claimed "no shipped level authors a boss" / "EVERY shipped level" / "only the
+non-shipped dev-harness" — all falsified by `niveau-final` shipping live per ADR-0053. Fixed to
+state the real, current guard honestly, matching each file's existing comment style:
+
+- `src/game/levels/levels.ts:49-55` (`LevelConfig.bossQteSpec` docblock) — now states V1 authored
+  it only on the harness, but since ADR-0053 the shipped `niveau-final` level also authors one
+  (the earned terminal beat); every other shipped level still authors none.
+- `src/hooks/useGameLoop.ts:54-64` (the `HarnessWindow.__MUF_BOSS_BOOT__` JSDoc) and
+  `~199-206` (the seed-once boot call site) — both corrected: the real guard is the
+  `?preview=boss` factory's own presence (bossHarness install, never in production); the second
+  clause, `bossQteSpec !== null`, no longer implies non-shipped by itself since ADR-0053's C-QA3
+  seam (`&level=<id>`) can boot the SHIPPED `niveau-final` level through the same path. Player
+  reachability (no `?preview=boss` param) is unchanged.
+- `src/game/systems/stateMachine.ts:182-184` (the boss-block comment in `tickGameState`) — "EVERY
+  shipped level" → "every shipped level EXCEPT `niveau-final`, ADR-0053".
+- `src/render/scene/App.tsx:154-156` (`buildLevelParams`'s `bossQte` field comment) — "only the
+  non-shipped dev-harness authors one" → the dev-harness authors one for iteration, and since
+  ADR-0053 the shipped `niveau-final` level authors the live canon encounter too.
+
+### Finding #5 — yarn.lock runtime-delta accept-with-record
+
+Per the architect's stage-6 disposition (triage row 5, ACCEPT-WITH-RECORD, `docs` lane): the
+prettier-pin lockfile regeneration this story required carried ~361 re-resolutions, including
+three **runtime** package bumps — **react 19.2.8**, **@react-three/fiber 9.6.1**,
+**zustand 5.0.14** — alongside devDependency churn. Pin-back was ruled not worth it (would
+invalidate the already-verified-green state and restart verification from zero); the deltas are
+accepted as landed and recorded here per the architect's ruling. Verified green by the full
+mechanical gate (`yarn typecheck`/`yarn vitest run` 1015/1015/`yarn lint`, §8/§11 above) and
+security-audited (stage-6 panel security lane: zero findings, `docs/handoffs/
+story-boss-niveau-final-live.md` §"STAGE 6", "Security lane: zero findings").
+
+### ADR index freshness
+
+- `node scripts/gen-adr-index.mjs --check` → fresh both before and after (the generator reduces
+  any `Accepted …` status line to the bare `Accepted` label, so `docs/adr/README.md`'s one-liner
+  for 0053 was already correct; `--write` produced a byte-identical `README.md`/`public/adr/
+index.html`, confirmed via `git diff --stat`, empty).
+
+### Verify — ALL GREEN
+
+- `yarn typecheck` → EXIT 0.
+- `yarn lint` → EXIT 0.
+- `npx prettier@3.8.2 --check` on all 5 touched files → clean (one reflow needed on the ADR after
+  the Revision 1 append; applied `--write`, re-checked clean).
+- No `yarn vitest run` re-run needed — zero logic touched (doc/JSDoc wording only); the stage-6
+  mechanical gate (§8/§11) already covers the current tree.
+
+- handoff → `senior-architect` (Winston): MAJEUR-1 + finding #4 + finding #5 landed, doc-lane
+  only, zero logic. ADR-0053's Revision 1 is a draft for your sign-off per the standing ADR
+  authority (COLLABORATION.md) — the four amendments were already gated at their own owning
+  lanes; this is documentation of decided fact, not a new decision.
+- handoff → `producer` (Marion): the tech-writer pre-merge items are clear; the only remaining
+  pre-merge items per the stage-6 triage table are `pm`'s E6 ruling (retro-unlock) — everything
+  else in the tech-writer lane is DONE.
+- handoff → `pm` (John): no action from me; E6 is still yours to rule (unchanged from the
+  triage).
+
+- **File List:**
+  - `docs/adr/0053-niveau-final-live-boss-level.md` (MODIFIED — Status flipped to Accepted;
+    "Revision 1" section appended recording the 4 sanctioned amendments + D2/D3/D4 corrections)
+  - `src/game/levels/levels.ts` (MODIFIED — `bossQteSpec` docblock wording, zero logic)
+  - `src/hooks/useGameLoop.ts` (MODIFIED — 2 comment blocks re-worded, zero logic)
+  - `src/game/systems/stateMachine.ts` (MODIFIED — boss-block comment re-worded, zero logic)
+  - `src/render/scene/App.tsx` (MODIFIED — `bossQte` field comment re-worded, zero logic)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+VERDICT: DONE — MAJEUR-1 + finding #4 + finding #5 (tech-writer). ADR-0053 realigned to the
+landed build (Status → Accepted; Revision 1 records the 4 sanctioned amendments — A2, K-5
+re-pin 19991232, windowGrid.cols 5→4, lustre seed 4879 — and corrects D2/D3's stale "zero
+lines"/"any hit blocking" claims into an accurate reuse map naming A2 in `bossQteSystem.ts` and
+the C-QA3 seam + persistence double-guard in `App.tsx`; D4's seed corrected to 19991232).
+Finding #4's 4 stale invariant comments (`levels.ts`, `useGameLoop.ts` ×2, `stateMachine.ts`,
+`App.tsx`) reworded to state the real, current guard honestly — zero logic changed anywhere.
+Finding #5's yarn.lock runtime deltas (react 19.2.8, @react-three/fiber 9.6.1, zustand 5.0.14)
+recorded as accepted-with-record per the architect's ruling. Gate GREEN (typecheck 0, lint 0,
+format clean); ADR index fresh (`gen-adr-index.mjs --check`, before and after). No commit/push.
