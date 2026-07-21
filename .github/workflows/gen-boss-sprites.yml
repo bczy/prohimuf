@@ -16,8 +16,26 @@ name: Generate boss sprites
 #
 # Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
 # marker .github/dispatch/gen-boss-sprites (see docs/adr/0009).
+#
+# MISSING-FILE SEMANTICS BY DEFAULT (dev-tooling-assets, 2026-07-21 batch-2 fix):
+# the 9-entry `boss` family is a MIXED accept/reject batch (game-graphist's
+# TECHNICAL PASS, docs/handoffs/story-boss-niveau-final-live.md — 5 entries
+# CLEAN, 4 sent to REGEN) — unlike the single-figure `hostages` workflow this
+# is modelled on, a marker-triggered re-dispatch here must NOT blindly redo
+# every entry (that would burn the 2-batches/cycle cap re-rolling the 5
+# ALREADY-ACCEPTED sprites for no reason, and risks losing their accepted
+# bytes). The default (marker push, or workflow_dispatch with the box
+# unchecked) generates ONLY missing files — delete an entry's PNG to target it
+# for regen, same "generate only missing" idiom every other gen-*.mjs uses.
+# `regenerate: true` (workflow_dispatch only — a push event carries no input)
+# is the explicit, deliberate full-batch escape hatch.
 on:
   workflow_dispatch:
+    inputs:
+      regenerate:
+        description: "Regenerate ALL 9 boss entries from scratch, including already-accepted ones (normally leave unchecked — missing-file semantics regenerate only deleted/new entries)"
+        type: boolean
+        default: false
   push:
     # Only branch pushes (never main); a branches filter also drops tag pushes.
     branches-ignore: ["main"]
@@ -60,9 +78,20 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Generate boss sprites (FLUX → chroma-key)
-        # FORCE=1 so a re-dispatch overwrites a rejected roll (each seed is
-        # pinned in levelArt.json; bump it there to re-roll deterministically).
-        run: FORCE=1 node scripts/gen-boss-sprites.mjs
+        # Default: MISSING-FILE semantics — generates only entries whose PNG is
+        # absent (delete a REGEN entry's file to target it; an already-accepted
+        # CLEAN entry's committed PNG is left completely alone). FORCE=1 (full
+        # regen of all 9, including CLEAN entries) fires ONLY when explicitly
+        # dispatched with regenerate=true via the Actions UI — never on the
+        # marker-triggered push path, so a routine re-dispatch cannot blow away
+        # already-accepted sprites.
+        run: |
+          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+            echo "Forcing full regeneration of all 9 boss entries"
+            FORCE=1 node scripts/gen-boss-sprites.mjs
+          else
+            node scripts/gen-boss-sprites.mjs
+          fi
 
       - name: Solidify figures (fill chroma-key holes)
         run: |
