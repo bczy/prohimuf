@@ -22,6 +22,7 @@ import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
+import { WindowGrilles } from "./WindowGrilles";
 import { NearForeground } from "./NearForeground";
 import { facadeDrawScale, stretchAboutCentre } from "./facadeLayout";
 import { CrosshairSprite } from "./CrosshairSprite";
@@ -415,6 +416,21 @@ export function GameScene({
               drawScale={drawScale}
               varyPerBuilding={layout.mode === "troncon-sequence"}
               tileIndex={i}
+            />
+          </group>
+        ))}
+      {/* single-wide (ADR-0057): overlay the generated grille sprite in front of
+          the cops, bottom edge on the feet line — the image ironwork replacing
+          the wrong baked grids in street-wide.png. */}
+      {!hideRailings &&
+        layout.mode === "single-wide" &&
+        tiles.map((tile, i) => (
+          <group key={`grille-${String(i)}`} position={[tile.centreX, 0, 0]}>
+            <WindowGrilles
+              levelId={levelId}
+              zones={tile.zones}
+              facadeW={tile.width}
+              facadeH={facadeH}
             />
           </group>
         ))}
