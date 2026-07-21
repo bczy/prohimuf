@@ -667,9 +667,9 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
   });
 });
 
-describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-0051)", () => {
-  // A boss spec that triggers on quota-completion. anchor at origin so a world point IS the
-  // anchor-relative offset (like the hostage test's mapping).
+describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-0051/0058)", () => {
+  // A boss spec — the level's TIMED FINALE (ADR-0059): it is created at TIMER EXPIRY, not on quota.
+  // anchor at origin so a world point IS the anchor-relative offset (like the hostage test's mapping).
   const BOSS_SPEC = {
     zoomSeconds: 2,
     anchor: { x: 0, y: 0 },
@@ -709,24 +709,29 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
     expect(s.elapsedSeconds).toBeCloseTo(0.1);
   });
 
-  it("reaching the quota triggers the boss into ZOOMING instead of LEVEL_COMPLETE, and FREEZES", () => {
-    const s0 = bossState({ kills: QUOTA });
+  it("timer expiry triggers the boss into ZOOMING; the kill quota alone does NOT (ADR-0059)", () => {
+    // Quota met but the timer is still running → the level keeps PLAYING (quota is score-only on a
+    // boss level) and no boss is born.
+    const mid = tick(bossState({ kills: QUOTA, timeRemaining: 5 }), noFire, 0, 0, 0.1);
+    expect(mid.phase).toBe("PLAYING");
+    expect(mid.bossQte).toBeNull();
+    // Timer expires → the boss is CREATED as the finale: level stays PLAYING (NOT the timeout
+    // GAME_OVER), the clock is pinned to 0, and the duel opens in ZOOMING.
+    const s0 = bossState({ kills: QUOTA, timeRemaining: 0.02 });
     const s1 = tick(s0, noFire, 0, 0, 0.1);
-    expect(s1.phase).toBe("PLAYING"); // NOT LEVEL_COMPLETE — the boss replaces the abrupt win
+    expect(s1.phase).toBe("PLAYING");
     expect(s1.bossQte?.phase).toBe("ZOOMING");
-    // Frozen: the general sim is carried through unchanged, the clock does not advance.
-    expect(s1.enemies).toBe(s0.enemies);
-    expect(s1.elapsedSeconds).toBe(s0.elapsedSeconds);
-    expect(s1.couriers).toBe(s0.couriers);
+    expect(s1.timeRemaining).toBe(0);
+    // The NEXT tick freezes the general sim — the boss owns the scene.
+    const s2 = tick(s1, noFire, 0, 0, 0.1);
+    expect(s2.elapsedSeconds).toBe(s1.elapsedSeconds);
+    expect(s2.enemies).toBe(s1.enemies);
   });
 
-  it("the kill that CROSSES the quota this tick hands off to the boss (not a direct LEVEL_COMPLETE)", () => {
-    // REGRESSION (code-review panel, PR #112): the top-of-tick boss check reads `state.kills`
-    // (pre-tick) while the bottom-of-tick completion read `newKills` (post-tick) WITHOUT the
-    // boss guard. So landing the quota-meeting kill in a single tick used to set LEVEL_COMPLETE
-    // directly and skip the boss forever. With `enemiesToWin > 0` (a real level, not the 0-quota
-    // harness), the last kill must leave the level PLAYING at quota, and the NEXT tick must open
-    // the duel. A `VISIBLE`, hp-1 "normal" enemy sits at slot 0; firing on it takes it down.
+  it("crossing the kill quota on a boss level never completes it (score-only; boss waits for the timer)", () => {
+    // ADR-0059: on a boss level the quota is score-only — landing the quota-meeting kill must NOT
+    // complete the level, and must NOT trigger the boss (that is the timed finale). A `VISIBLE`,
+    // hp-1 "normal" enemy sits at slot 0; firing on it takes it down with time still on the clock.
     const slot = FACADE_01.slots[0];
     if (slot === undefined) throw new Error("expected slot");
     const enemy = {
@@ -737,10 +742,7 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
       kind: "normal" as const,
       hp: 1,
     };
-    const s0 = bossState({ kills: QUOTA - 1, enemies: [enemy] });
-    // Fire at the enemy's slot (aim via the camera offset so a centred crosshair lands ON the
-    // slot, as the courier test does): this shot kills the last enemy needed, so `newKills`
-    // reaches QUOTA in the SAME tick `state.kills` was QUOTA − 1.
+    const s0 = bossState({ kills: QUOTA - 1, enemies: [enemy], timeRemaining: 30 });
     const s1 = tickGameState(
       s0,
       fire,
@@ -756,22 +758,21 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
       FIELD,
     );
     expect(s1.kills).toBe(QUOTA); // the crossing kill counted
-    expect(s1.phase).toBe("PLAYING"); // NOT LEVEL_COMPLETE — the boss must still get its turn
-    expect(s1.bossQte).toBeNull(); // not triggered YET (top check ran before the kill landed)
-    // NEXT tick: the top-of-tick boss check now sees `state.kills >= enemiesToWin` → duel opens.
-    const s2 = tick(s1, noFire, 0, 0, 0.1);
-    expect(s2.bossQte?.phase).toBe("ZOOMING");
-    expect(s2.phase).not.toBe("LEVEL_COMPLETE");
+    expect(s1.phase).toBe("PLAYING"); // NOT LEVEL_COMPLETE — quota is score-only on a boss level
+    expect(s1.bossQte).toBeNull(); // the boss is the TIMED finale, never a quota trigger
   });
 
   it("a panic shot during the boss zoom drains energy inside the frozen tick", () => {
-    const s1 = tick(bossState({ kills: QUOTA }), fire, 0, 0, 0.1);
+    const zooming = tick(bossState({ timeRemaining: 0.02 }), noFire, 0, 0, 0.1); // finale → ZOOMING
+    expect(zooming.bossQte?.phase).toBe("ZOOMING");
+    const s1 = tick(zooming, fire, 0, 0, 0.1);
     expect(s1.bossQte?.phase).toBe("ZOOMING");
     expect(s1.energy).toBe(94); // −6 panic
   });
 
   it("defeating the boss (bossHp → 0) completes the level; the kill quota is NOT inflated", () => {
-    let s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1); // ZOOMING
+    let s = tick(bossState({ kills: QUOTA, timeRemaining: 0.02 }), noFire, 0, 0, 0.1); // finale → ZOOMING
+    expect(s.bossQte?.phase).toBe("ZOOMING");
     // Play the duel: fire at the drawn ring whenever it sits on vital/limb during EXPOSED.
     const dt = 1 / 60;
     for (let i = 0; i < 60 * 90 && s.phase === "PLAYING"; i++) {
@@ -788,7 +789,7 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
   });
 
   it("a passive player blows every window → boss LOST → level fails (GAME_OVER)", () => {
-    let s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1); // ZOOMING
+    let s = tick(bossState({ kills: QUOTA, timeRemaining: 0.02 }), noFire, 0, 0, 0.1); // finale → ZOOMING
     for (let i = 0; i < 60 * 120 && s.phase === "PLAYING"; i++) {
       s = tick(s, noFire, 0, 0, 1 / 60);
     }
@@ -799,7 +800,9 @@ describe("boss QTE encounter — quota-gate trigger, freeze & completion (ADR-00
   });
 
   it("the frozen boss tick clears the transient event channels", () => {
-    const s = tick(bossState({ kills: QUOTA }), noFire, 0, 0, 0.1);
+    const zooming = tick(bossState({ timeRemaining: 0.02 }), noFire, 0, 0, 0.1); // finale → ZOOMING
+    const s = tick(zooming, noFire, 0, 0, 0.1); // a frozen boss tick
+    expect(s.bossQte?.phase).toBe("ZOOMING");
     expect(s.feedback).toEqual([]);
     expect(s.pointFeedback).toEqual([]);
     expect(s.impactEvents).toEqual([]);
@@ -1009,13 +1012,26 @@ describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (
       burstTimerMs: 40,
       refractoryMs: 0,
     };
-    const belliard = levelById("belliard");
+    // A synthetic hostage spec on stalingrad (no boss, no hostage of its own) so this freeze test
+    // is independent of which shipped level carries a hostage QTE — belliard's is now dropped when
+    // BELLIARD_BOSS_ENABLED (the boss replaces it), and a boss + hostage on one level throws.
+    const HOSTAGE = {
+      triggerAtElapsedSeconds: 12,
+      zoomSeconds: 2,
+      anchor: { x: 0, y: 0 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      peekDurationSeconds: 1.5,
+      captorHp: 3,
+      targetSeed: 20260718,
+    };
+    const stalingrad = levelById("stalingrad");
     const s: GameState = {
       ...createInitialState(FACADE_01, {
-        ...paramsForLevel(belliard),
-        hostageQte: belliard.hostageQte ?? null,
+        ...paramsForLevel(stalingrad),
+        hostageQte: HOSTAGE,
       }),
-      elapsedSeconds: 11.99, // belliard hostage QTE triggers at 12 s
+      elapsedSeconds: 11.99, // the synthetic hostage QTE triggers at 12 s
       weapon,
       loot: null,
     };

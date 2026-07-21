@@ -8,9 +8,11 @@ import {
   BOSS_DECOR_CATCH_HALF_H,
   BOSS_DECOR_CATCH_HALF_W,
   BOSS_PARRY_POINT,
+  BOSS_SHIELD_POINT,
   BOSS_VITAL_CATCH_RADIUS,
   BOSS_VITAL_WANDER_CENTRE,
   BOSS_WANDER_CENTRE,
+  bossShieldPointLive,
   isBossQteActive,
   phaseIndexAt,
   PHASE_BREAK_SECONDS,
@@ -19,6 +21,8 @@ import {
 import { detectMobile } from "@utils/platform";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
+import { getBossPoseTexture, getBossDecorTexture } from "./bossTextures";
+import type { BossPose } from "./bossTextures";
 import { createSmokeField } from "./smokeParticles";
 import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
 import type { HudBossQte } from "@render/ui/HUD";
@@ -39,10 +43,13 @@ import type { HudBossQte } from "@render/ui/HUD";
 //      « LIVRE LE SON » prompt, one ceremonial click cue. B&W + acid-neon only (no warm wash).
 // Every animated read carries its `prefers-reduced-motion` branch (UX D2.7/D3.1).
 //
-// V1 runs on the COP FALLBACK sprite (`enemy_riot`): the FLUX generator has not yet produced
-// the canon Commandant / defeated / raised-weapon poses (ADR-0052 §7 art-lane deferral to the
-// Niveau-Final story), so every state resolves to the riot cop until the real art lands —
-// swapping it in is then a pure data change at the `resolveBossTexture` seam.
+// The canon Commandant poses (`assets/boss/commander_*.png`, ADR-0053) are wired in via the
+// `bossTextures` loader: the CURRENT boss state maps to a pose (see the `bossPose` decode at the
+// boss draw), resolved through that cache. The riot-cop sprite (`enemy_riot`) is kept ONLY as a
+// graceful fallback — until a given PNG has loaded (or if one is missing) `resolveBossTexture`
+// degrades to the cop rather than drawing nothing. The SHIELD-COVER prop art
+// (shield_cover_raised/lowered) is still PENDING generation, so `resolveShieldCoverTexture` stays a
+// wired-ready null (the prop keeps its grey placeholder) — a pure data swap at that seam later.
 
 // The commander plane — a SQUARE plane (the fallback sprite is figure-centred), a touch
 // larger than the captor (2.0) for his dominant stature.
@@ -143,7 +150,7 @@ const DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H;
 const DECOR_INERT_TINT = "#6b7580";
 const DECOR_ARMED_TINT = "#c6ff5a"; // acid glow = interactive (bible's glow law) — HALO only, dégradé
 const DECOR_GLOW_Z = 0.44; // just behind the prop, so the halo dégradé wraps it
-const DECOR_GLOW_SIZE = 2.2; // the halo reaches well past the prop so the falloff is measurable
+const DECOR_GLOW_SIZE = 1.5; // the halo reaches past the prop (dégradé) but stays contained at the boss zoom
 
 // L2 smoke — a real drifting PARTICLE FIELD (`smokeParticles.ts`), Bertrand direct order §17
 // (supersedes the gpu 4-quad-veil constraint; Ben re-verdicts in parallel). Device-tiered count
@@ -170,6 +177,36 @@ const RENFORT_PEAK_ALPHA = 0.55;
 // k reproduces the prior 0.08-per-frame feel at 60 fps: 1 - exp(-k/60) == 0.08 ⇒ k = -60·ln(0.92) ≈ 5.0.
 const RENFORT_FADE_K = 5.0;
 
+// L6 shield-break (cran de sûreté) — a SEPARATE riot-shield COVER PROP the Commandant hunkers
+// behind (spec-boss-shield-break-tempo-shot §6-A/6-C, spec-boss-belliard-fiction §2). Canon lead-art
+// ruling: the Commandant is bare-headed with NOTHING shootable on his body — so the shield is a
+// standalone object beside him, NOT armour. Two mutually-exclusive reads driven by
+// `bossShieldPointLive(qte)`: RAISED/intact (SHIELDED, un-shootable) ↔ LOWERED/vulnerable (phase-2+
+// normal EXPOSED window, presenting the FIXED hit point on its low, street-side edge). It rides in
+// FRONT of the boss (higher z than his plane — he shelters behind it) but under the rings.
+//
+// The canon prop art is NOT generated yet: levelArt.json `boss.types.shield_cover_raised` /
+// `shield_cover_lowered` are `pending:true` with EMPTY prompts (skipped by gen-boss-sprites.mjs). So
+// the prop is a procedural DIM-GREY placeholder rectangle (B&W layer, value only), a touch of tilt on
+// the lowered read to sell "dropped". Swapping in the real textures is a ONE-SPOT change at the
+// `resolveShieldCoverTexture` seam below (mirrors the `resolveBossTexture` fallback swap).
+const SHIELD_PROP_Z = 0.6; // in front of the boss — he crouches BEHIND the cover
+const SHIELD_PROP_X = 0.45; // boss's screen-right, aligned with BOSS_SHIELD_POINT.x (0.4)
+const SHIELD_RAISED_Y = 0.1;
+const SHIELD_RAISED_W = 0.72;
+const SHIELD_RAISED_H = 1.55; // stood upright as cover — hides the boss's low body/right side
+const SHIELD_LOWERED_Y = -0.42;
+const SHIELD_LOWERED_W = 0.8;
+const SHIELD_LOWERED_H = 0.62; // dropped low — only the exposed street-side edge remains
+const SHIELD_LOWERED_TILT = -0.18; // radians — a slight cant to read "knocked down to fire"
+// The FIXED hit-point MARKER — a target-LOCK reticle (fixed crosshair-in-circle), categorically
+// distinct in FORM from the two WANDERING ring annuli (lever 1) and the parry DIAMOND (lever 3): it
+// is the fixed, "easy" vertex of the vital/limb/shield triangle. Drawn at EXACTLY `RING_HIT_RADIUS`
+// (the plane spans 2·RING_HIT_RADIUS, the reticle's outer circle sits on the rim) so drawn == catch —
+// the aim-honesty invariant, mirroring how the rings are drawn.
+const SHIELD_MARKER_Z = 0.62; // above the prop + rings so the lock reads on the lowered edge
+const SHIELD_MARKER_TINT = "#4fd6ff"; // electric-cyan lock — not vital-green nor limb-yellow
+
 // L5 finisher (coup de grâce) — a ceremonial post-combat beat (boss at 0 HP). Kept STRICTLY inside
 // the B&W + acid-neon identity (composite-gate colour-law fix — the old sepia wash added a warm
 // R−B cast to world pixels, off the cold-xerox look). The treatment is now MONOCHROME on the world:
@@ -190,14 +227,25 @@ const FINISHER_PROMPT_W = 2.0;
 const FINISHER_PROMPT_H = 0.5;
 const FINISHER_PROMPT_Z = 0.8;
 
+// Poses that read as "gun up / mid-action" — used to pick the riot cop's SHOOTING frame when we
+// fall back (so the fallback silhouette still roughly matches the beat).
+const FIRING_POSES: ReadonlySet<BossPose> = new Set<BossPose>([
+  "exposed",
+  "weakpoint",
+  "parry_windup",
+]);
+
 /**
- * Stance→texture indirection (mirrors HostageQteSprite): the real Commandant poses ship later
- * via the CI art lane; until then every state resolves to the riot cop fallback, so landing the
- * real art is a pure data swap HERE. `firing` picks the shooting frame (gun raised + muzzle) for
- * the EXPOSED / parry window.
+ * State→pose→texture indirection (mirrors HostageQteSprite's texture seam). The CURRENT boss state
+ * is decoded to a canon `BossPose` by the caller (the `bossPose` block); this resolves that pose to
+ * the real `commander_<pose>.png` via the `bossTextures` cache, and gracefully falls back to the
+ * riot cop (shooting frame for a gun-up pose, idle otherwise) while the PNG is still loading or if
+ * it is missing — the figure is never invisible.
  */
-function resolveBossTexture(firing: boolean): ResolvedEnemyTexture | null {
-  return resolveEnemyTexture("riot", 1, firing, 1);
+function resolveBossTexture(pose: BossPose): ResolvedEnemyTexture | null {
+  const canon = getBossPoseTexture(pose);
+  if (canon !== null) return { texture: canon, frame: null };
+  return resolveEnemyTexture("riot", 1, FIRING_POSES.has(pose), 1);
 }
 
 /** The idle riot-cop silhouette reused for the L4 frame-edge renfort pressure (motion only). */
@@ -280,6 +328,58 @@ function buildPromptTexture(text: string): CanvasTexture | null {
   return new CanvasTexture(canvas);
 }
 
+/**
+ * The FIXED shield-point target-LOCK reticle baked once (white, tinted at runtime). A crosshair-in-
+ * circle: the outer circle's OUTER edge sits at the canvas rim so, on a plane spanning
+ * 2·RING_HIT_RADIUS, the drawn circle == the scored catch disc (aim honesty — drawn == catch). The
+ * static centre cross + dot is the "locked, non-wandering" read that sets it apart from the two
+ * wandering ring annuli. `null` under SSR / test (no 2D canvas).
+ */
+function buildShieldReticleTexture(): CanvasTexture | null {
+  if (typeof document === "undefined") return null;
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (ctx === null) return null;
+  ctx.clearRect(0, 0, size, size);
+  const c = size / 2;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineCap = "round";
+  // Outer circle — outer edge on the canvas rim ⇒ drawn radius == catch radius (aim honesty).
+  const lw = 6;
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.arc(c, c, c - lw / 2, 0, Math.PI * 2);
+  ctx.stroke();
+  // Fixed crosshair — the static "lock" that distinguishes it from the wandering ring annuli.
+  ctx.lineWidth = 4;
+  const arm = size * 0.16;
+  ctx.beginPath();
+  ctx.moveTo(c - arm, c);
+  ctx.lineTo(c + arm, c);
+  ctx.moveTo(c, c - arm);
+  ctx.lineTo(c, c + arm);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(c, c, 5, 0, Math.PI * 2);
+  ctx.fill();
+  return new CanvasTexture(canvas);
+}
+
+/**
+ * Shield COVER-PROP texture seam (mirrors `resolveBossTexture`): the canon `shield_cover_raised` /
+ * `shield_cover_lowered` art is NOT generated yet (levelArt.json `boss.types.shield_cover_*` are
+ * `pending:true`, empty prompt, skipped by gen-boss-sprites.mjs), so this returns `null` and the prop
+ * renders as the procedural grey placeholder below. Landing the real art is a pure data swap HERE:
+ * return the raised/lowered texture keyed off `lowered`.
+ */
+function resolveShieldCoverTexture(_lowered: boolean): Texture | null {
+  return null;
+}
+
 interface Props {
   stateRef: React.RefObject<GameState>;
   /**
@@ -326,6 +426,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   const parryHaloRef = useRef<Mesh>(null); // L3 paper-white contrast halo (survives the smoke veil)
   const decorRef = useRef<Mesh>(null); // L2 décor placeholder prop (always dim grey)
   const decorGlowRef = useRef<Mesh>(null); // L2 armed dégradé glow-halo (acid, radial falloff)
+  const shieldPropRef = useRef<Mesh>(null); // L6 shield COVER prop (raised↔lowered placeholder)
+  const shieldMarkerRef = useRef<Mesh>(null); // L6 fixed hit-point lock reticle (drawn == catch)
   const pulseRef = useRef<Mesh>(null); // phase-break pulse
   const finisherFlashRef = useRef<Mesh>(null); // L5 white inverted onset flash (value)
   const finisherVignetteRef = useRef<Mesh>(null); // L5 black value-crush vignette (value)
@@ -369,16 +471,18 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   const glowTex = useMemo(() => buildRadialGlowTexture(), []);
   const vignetteTex = useMemo(() => buildVignetteTexture(), []);
   const promptTex = useMemo(() => buildPromptTexture(FINISHER_PROMPT_TEXT), []);
+  const shieldReticleTex = useMemo(() => buildShieldReticleTexture(), []);
   useEffect(() => {
     return () => {
       glowTex?.dispose();
       vignetteTex?.dispose();
       promptTex?.dispose();
+      shieldReticleTex?.dispose();
       smokeField.dispose();
       ringGeoNormal.dispose();
       ringGeoVital.dispose();
     };
-  }, [glowTex, vignetteTex, promptTex, smokeField, ringGeoNormal, ringGeoVital]);
+  }, [glowTex, vignetteTex, promptTex, shieldReticleTex, smokeField, ringGeoNormal, ringGeoVital]);
 
   // Reduced motion (UX D3.1) now arrives via the `reducedMotion` prop — the shared
   // union signal from `useReducedMotionRoot` (App → GameScene), the ONE authority
@@ -393,6 +497,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     const parryHalo = parryHaloRef.current;
     const decor = decorRef.current;
     const decorGlow = decorGlowRef.current;
+    const shieldProp = shieldPropRef.current;
+    const shieldMarker = shieldMarkerRef.current;
     const pulse = pulseRef.current;
     const finisherFlash = finisherFlashRef.current;
     const finisherVignette = finisherVignetteRef.current;
@@ -405,6 +511,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       parryHalo === null ||
       decor === null ||
       decorGlow === null ||
+      shieldProp === null ||
+      shieldMarker === null ||
       pulse === null ||
       finisherFlash === null ||
       finisherVignette === null ||
@@ -435,6 +543,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       parryHalo.visible = false;
       decor.visible = false;
       decorGlow.visible = false;
+      shieldProp.visible = false;
+      shieldMarker.visible = false;
       finisherFlash.visible = false;
       finisherVignette.visible = false;
       finisherPrompt.visible = false;
@@ -471,6 +581,9 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       parryHalo.scale.set(PARRY_HALO_SIZE, PARRY_HALO_SIZE, 1);
       decor.scale.set(DECOR_W, DECOR_H, 1);
       decorGlow.scale.set(DECOR_GLOW_SIZE, DECOR_GLOW_SIZE, 1);
+      // The shield marker spans 2·RING_HIT_RADIUS so the reticle's rim == the catch disc (drawn ==
+      // catch). Fixed scale; the prop's scale switches per raised/lowered read below.
+      shieldMarker.scale.set(RING_HIT_RADIUS * 2, RING_HIT_RADIUS * 2, 1);
       prevHpRef.current = qte.bossHp;
       positionedRef.current = true;
     }
@@ -489,9 +602,6 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     const shootWindow = exposedWindow && !charged; // a normal offensive window (rings)
     const parryOpen = exposedWindow && charged; // a live parry window (click the weapon)
     const parryWindup = qte.telegraphActive && qte.phase === "ACTIVE" && charged && !exposedWindow;
-    // The boss shows the raised-weapon frame for any EXPOSED window (shoot OR parry); ACTIVE and
-    // FINISHER are distinct phases, so `exposedWindow` is already false during the finisher.
-    const firing = exposedWindow;
 
     // ── Per-hit reaction: rising edge on a bossHp DROP (a landed chip only) ────
     const prevHp = prevHpRef.current ?? qte.bossHp;
@@ -540,7 +650,27 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     boss.position.set(posX, posY, BOSS_Z);
 
     boss.visible = true;
-    applyTexture(boss, resolveBossTexture(firing)?.texture ?? null);
+    // ── Canon pose: decode the CURRENT boss state to a Commandant pose (bossTextures) ──
+    // Priority top-down: the ceremonial FINISHER and the WON/defeated read override all; a reeling
+    // beat (parry-stagger or a fresh hit chip) shows the struck pose; a live parry window OR its
+    // telegraph wind-up raises the weapon (NOT the whole `charged` lull — `chargedWindow` is set for
+    // the entire resting lull before a charged window, so gating on it would leak the coiled pose ~1.2–1.6 s
+    // early; the windup pose tracks the tell exactly, like the tint layer); an offensive shoot window is
+    // the dual weak-point frontal in phase 2+ or the single-ring firing pose in phase 1; every other beat
+    // (SHIELDED wind-up, telegraph, phase break, LOST) holds the guarded shielded stance.
+    let bossPose: BossPose = "shielded";
+    if (finisher) bossPose = "finisher";
+    else if (won) bossPose = "down";
+    else if (staggered || hitK > 0) bossPose = "hit";
+    else if (parryOpen || parryWindup) bossPose = "parry_windup";
+    else if (shootWindow) bossPose = phase >= 1 ? "weakpoint" : "exposed";
+    else if (exposedWindow) bossPose = "exposed";
+    applyTexture(boss, resolveBossTexture(bossPose)?.texture ?? null);
+    // Is the CANON pose art actually loaded (vs the grey riot-cop fallback)? The colour multiply
+    // below is the state read for the FALLBACK sprite; over the true-colour canon art it would wash
+    // the Commandant into a flat tint (the red EXPOSED aplat Bertrand caught), so on canon we keep
+    // the sprite near-WHITE and let the POSES + dedicated cue meshes carry the state read.
+    const bossCanon = getBossPoseTexture(bossPose) !== null;
     let tint = SHIELDED_TINT;
     if (breakActive) tint = BREAK_TINT;
     else if (parryOpen) tint = PARRY_OPEN_TINT;
@@ -554,6 +684,15 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     if (lost)
       tint = reducedMotion ? ALARM : lerpHex(ALARM, WHITE, (Math.sin(nowMs * 0.006) + 1) / 2);
     if (hitK > 0) tint = lerpHex(tint, WHITE, hitK);
+    if (bossCanon) {
+      // Canon art shows true; only the critical damage/alarm flashes bleed through, subtly.
+      tint = WHITE;
+      if (whiffK > 0) tint = lerpHex(WHITE, WHIFF_TINT, whiffK * 0.7);
+      else if (lost)
+        tint = reducedMotion
+          ? lerpHex(WHITE, ALARM, 0.4)
+          : lerpHex(WHITE, ALARM, 0.35 * ((Math.sin(nowMs * 0.006) + 1) / 2));
+    }
     (boss.material as MeshBasicMaterial).color.set(tint);
 
     // ── L1 rings — the offensive read (a shoot window, or the two-ring preview at the split) ──
@@ -680,9 +819,15 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       decor.position.set(dx, dy, DECOR_Z);
       const decorMat = decor.material as MeshBasicMaterial;
       const armed = qte.decorArmed && !qte.decorConsumed;
-      // The prop itself stays grey (value only), a touch brighter while armed to draw the eye.
-      decorMat.color.set(DECOR_INERT_TINT);
-      decorMat.opacity = qte.decorConsumed ? 0.25 : armed ? 0.7 : 0.55;
+      // Prefer the canon décor art (the generated `speaker_wall` mur d'enceintes) — when it has
+      // loaded, paint the prop true-colour; until then fall back to the dim grey placeholder box
+      // (value only). The speaker wall is Belliard's interactive prop; a `decorProp.kind` key can
+      // select lustre vs speaker_wall later (game-logic seam).
+      const decorTex = getBossDecorTexture("speaker_wall");
+      applyTexture(decor, decorTex);
+      decorMat.color.set(decorTex !== null ? WHITE : DECOR_INERT_TINT);
+      const placeholderOpacity = qte.decorConsumed ? 0.2 : armed ? 0.42 : 0.32;
+      decorMat.opacity = decorTex !== null ? (qte.decorConsumed ? 0.4 : 1) : placeholderOpacity;
       if (armed && glowTex !== null) {
         decorGlow.visible = true;
         decorGlow.position.set(dx, dy, DECOR_GLOW_Z);
@@ -690,8 +835,66 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
         applyTexture(decorGlow, glowTex);
         glowMat.color.set(DECOR_ARMED_TINT);
         // Pulse the halo intensity (steady under reduced motion). The DÉGRADÉ is baked into the
-        // texture's radial alpha, so the rim always falls to 0 — never a hard edge.
-        glowMat.opacity = reducedMotion ? 0.85 : 0.55 + 0.45 * ((Math.sin(nowMs * 0.01) + 1) / 2);
+        // texture's radial alpha, so the rim always falls to 0 — never a hard edge. Kept subtle so it
+        // reads as "armed" without washing the scene at the boss zoom.
+        glowMat.opacity = reducedMotion ? 0.5 : 0.3 + 0.22 * ((Math.sin(nowMs * 0.01) + 1) / 2);
+      }
+    }
+
+    // ── L6 shield COVER prop — a SEPARATE object beside the boss, two reads (spec §6-A/6-C) ──────
+    // The prop is his standalone cover (NOT armour — canon lead-art: bare-headed, nothing shootable
+    // on his body). `bossShieldPointLive` drives the raised↔lowered swap; when live, the FIXED
+    // hit-point lock reticle shows on the lowered edge. Gated on phase ≥ 1 (ACTIVE), mirroring the
+    // two-ring gating — the triangle appears exactly when the two-ring choice does (§6-C onboarding).
+    const shieldLive = bossShieldPointLive(qte);
+    shieldProp.visible = false;
+    shieldMarker.visible = false;
+    if (qte.phase === "ACTIVE" && phase >= 1) {
+      const shieldTex = resolveShieldCoverTexture(shieldLive);
+      // Draw the cover prop ONLY once its canon art exists. Its `shield_cover_*` art is still
+      // pending, and the grey placeholder slab read as a strange plate over the scene (Bertrand
+      // playtest), so hide it until then — the fixed hit-point reticle below still carries the
+      // "shoot here" read while the point is live.
+      if (shieldTex !== null) {
+        shieldProp.visible = true;
+        applyTexture(shieldProp, shieldTex);
+        const shieldMat = shieldProp.material as MeshBasicMaterial;
+        shieldMat.color.set(WHITE);
+        shieldMat.opacity = 1;
+        if (shieldLive) {
+          // LOWERED / vulnerable — dropped low, slightly canted, its exposed edge presenting the point.
+          shieldProp.position.set(
+            qte.anchor.x + SHIELD_PROP_X,
+            qte.anchor.y + SHIELD_LOWERED_Y,
+            SHIELD_PROP_Z,
+          );
+          shieldProp.scale.set(SHIELD_LOWERED_W, SHIELD_LOWERED_H, 1);
+          shieldProp.rotation.z = SHIELD_LOWERED_TILT;
+        } else {
+          // RAISED / intact — stood upright as cover, un-shootable, no hit point.
+          shieldProp.position.set(
+            qte.anchor.x + SHIELD_PROP_X,
+            qte.anchor.y + SHIELD_RAISED_Y,
+            SHIELD_PROP_Z,
+          );
+          shieldProp.scale.set(SHIELD_RAISED_W, SHIELD_RAISED_H, 1);
+          shieldProp.rotation.z = 0;
+        }
+      }
+      // The FIXED hit-point lock reticle shows whenever the point is live (independent of the prop
+      // art), at anchor + BOSS_SHIELD_POINT, drawn == catch radius.
+      if (shieldLive) {
+        shieldMarker.visible = true;
+        shieldMarker.position.set(
+          qte.anchor.x + BOSS_SHIELD_POINT.x,
+          qte.anchor.y + BOSS_SHIELD_POINT.y,
+          SHIELD_MARKER_Z,
+        );
+        if (shieldReticleTex !== null) applyTexture(shieldMarker, shieldReticleTex);
+        const markerMat = shieldMarker.material as MeshBasicMaterial;
+        markerMat.color.set(SHIELD_MARKER_TINT);
+        // Steady under reduced motion; a gentle "lock" pulse otherwise (never a strobe).
+        markerMat.opacity = reducedMotion ? 1 : 0.65 + 0.35 * ((Math.sin(nowMs * 0.01) + 1) / 2);
       }
     }
 
@@ -809,7 +1012,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   return (
     <>
       {/* Draw order (by renderOrder): renfort edges (3) behind the tableau; décor glow-halo (4) +
-          prop (5); boss (6); rings (8); the smoke PARTICLE FIELD (10, set in the module) hazes the
+          prop (5); boss (6); the shield COVER prop (7) in front of him; rings (8); the shield
+          hit-point lock reticle (9); the smoke PARTICLE FIELD (10, set in the module) hazes the
           duel; the parry halo+glyph (13/14) draw ABOVE the smoke so the tell survives; the finisher
           prompt (12) reads over the haze; the phase-break pulse + finisher flash/vignette (20) wash
           over everything. */}
@@ -838,6 +1042,12 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
+      {/* L6 shield COVER prop (7) rides in FRONT of the boss — he shelters behind it — but under the
+          rings (8). Grey placeholder until the pending `shield_cover_*` art lands. */}
+      <mesh ref={shieldPropRef} renderOrder={7} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
       {/* Ring A geometry is swapped between normal / bolder-vital in useFrame (§21), so it is
           supplied as a prop rather than a declarative child. Ring B (limb) keeps the normal inner. */}
       <mesh ref={ringRef} renderOrder={8} geometry={ringGeoNormal} visible={false}>
@@ -845,6 +1055,13 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       </mesh>
       <mesh ref={ringBRef} renderOrder={8} visible={false}>
         <ringGeometry args={[RING_INNER, RING_OUTER, RING_SEGMENTS]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      {/* L6 fixed hit-point lock reticle (9) — a target-lock crosshair drawn at exactly
+          RING_HIT_RADIUS (plane spans 2·radius) so drawn == catch; distinct in FORM from the two
+          wandering ring annuli. */}
+      <mesh ref={shieldMarkerRef} renderOrder={9} visible={false}>
+        <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       {/* The drifting smoke particle field (renderOrder 10, set per-billboard in the module). */}

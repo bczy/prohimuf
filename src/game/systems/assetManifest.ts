@@ -189,6 +189,31 @@ export function bulletAssetPath(): string {
   return "assets/bullet_player.png";
 }
 
+/**
+ * Base-relative boss QTE figure + décor-prop assets for a level that authors a boss
+ * ("le Commandant" — ADR-0051/0058): the canon `commander_*` poses plus the generated
+ * hall props (lustre, speaker_wall) from levelArt.json's `boss` block, so the loading
+ * screen preloads them and the duel never pops in from the riot-cop fallback. Entries
+ * flagged `pending` (art not yet generated — e.g. `shield_cover_*`) are EXCLUDED so the
+ * preloader never blocks on a 404. Empty for a boss-less level (the additive-and-optional
+ * law). Mirrors `bossTextures.ts` / `levelArt.json` minus the `BASE_URL` prefix.
+ */
+export function bossAssetPaths(levelId: string): readonly string[] {
+  const level = LEVELS.find((l) => l.id === levelId);
+  if (level?.bossQteSpec === undefined) return [];
+  const types = levelArt.boss.types as Record<
+    string,
+    { readonly asset: string; readonly pending?: boolean } | undefined
+  >;
+  const paths: string[] = [];
+  for (const key of Object.keys(types)) {
+    const entry = types[key];
+    if (entry === undefined || entry.pending === true) continue;
+    paths.push(entry.asset);
+  }
+  return dedupe(paths);
+}
+
 // The level-art id to build layer paths from: the requested level when it has
 // art, else the first declared level — same fallback as `getLevelArt`, but read
 // straight from the JSON so we avoid levelArt.ts's import-time side effects.
@@ -294,7 +319,8 @@ export function narrativeImagePaths(scene: NarrativeScene): readonly string[] {
  * - `"tutorial"` — the menu backdrop plus BOTH tutorial forks' illustrations
  *   (desktop + mobile), so either device path is covered deterministically.
  * - any other string is treated as a level id — its backdrop layers, enemy
- *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops and its
+ *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops, the
+ *   boss QTE poses + décor props (when the level authors a boss), and its
  *   pre/post-level narrative illustrations. Unknown ids fall back to the first
  *   playable level.
  */
@@ -316,6 +342,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
     ...enemyAssetPathsFor(target),
     ...courierAssetPaths(),
     ...nearForegroundPaths(target),
+    ...bossAssetPaths(target),
   ];
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));

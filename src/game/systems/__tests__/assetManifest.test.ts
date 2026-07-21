@@ -8,6 +8,7 @@ import {
   courierAssetPaths,
   vehicleAssetPath,
   bulletAssetPath,
+  bossAssetPaths,
   levelLayerPaths,
   facadeBackdropPath,
   menuBackdropPath,
@@ -136,6 +137,24 @@ describe("assetManifest — belliard level manifest", () => {
 
   it("contains every courier frame", () => {
     for (const p of courierAssetPaths()) expect(m).toContain(p);
+  });
+
+  it("preloads the boss QTE poses + décor props (pending shield-cover art excluded)", () => {
+    const boss = bossAssetPaths("belliard");
+    // Belliard authors a boss (BELLIARD_BOSS_ENABLED) → the canon commander poses + the generated
+    // hall props are in the manifest, so the duel never pops in from the riot-cop fallback.
+    expect(boss).toContain("assets/boss/commander_shielded.png");
+    expect(boss).toContain("assets/boss/commander_exposed.png");
+    expect(boss).toContain("assets/boss/commander_down.png");
+    expect(boss).toContain("assets/boss/speaker_wall.png");
+    // Not-yet-generated art (pending) is never preloaded — it would 404 the loading screen.
+    expect(boss).not.toContain("assets/boss/shield_cover_raised.png");
+    expect(boss).not.toContain("assets/boss/shield_cover_lowered.png");
+    for (const p of boss) expect(m).toContain(p);
+  });
+
+  it("a boss-less level preloads no boss assets", () => {
+    expect(bossAssetPaths("stalingrad")).toEqual([]);
   });
 
   it("contains the pre- and post-level narrative illustrations when defined", () => {

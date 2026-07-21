@@ -19,6 +19,7 @@ import {
   isBossSeamShippedLevel,
   resolveBossPreviewLevel,
 } from "./bossHarness";
+import { nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
 import styles from "./App.module.css";
@@ -302,12 +303,14 @@ export function App(): JSX.Element {
         saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
       }
 
-      if (hudData.phase === "LEVEL_COMPLETE") {
-        const nextLevel = LEVELS[shippedIdx + 1];
-        if (nextLevel !== undefined && !unlockedLevels.has(nextLevel.id)) {
-          unlockLevel(nextLevel.id);
-          setUnlockedLevels(loadUnlockedLevels());
-        }
+      // Next-level unlock: pure decision (ADR-0059 §D4, AC3/AC4). Fires ONLY on a win —
+      // a shipped level reaching GAME_OVER (lives/timer death, or a boss LOST once
+      // Belliard's boss flips on) returns null here, so a failable shipped ending never
+      // unlocks the next level. Retry stays available; the write is still idempotent.
+      const unlockId = nextLevelToUnlock(hudData.phase, selectedLevel.id);
+      if (unlockId !== null && !unlockedLevels.has(unlockId)) {
+        unlockLevel(unlockId);
+        setUnlockedLevels(loadUnlockedLevels());
       }
     }
 

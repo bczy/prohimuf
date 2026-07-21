@@ -11,6 +11,8 @@ import {
   BOSS_PARRY_POINT,
   BOSS_PHASE_TABLE,
   BOSS_RING_B_SALT,
+  BOSS_SHIELD_DAMAGE,
+  BOSS_SHIELD_POINT,
   BOSS_VITAL_CATCH_RADIUS,
   BOSS_TELEGRAPH_LEAD_FLOOR,
   BOSS_VITAL_WANDER_AMP_X,
@@ -29,10 +31,13 @@ import {
   QTE_RESULT_HOLD,
   RENFORT_SURGE,
   RING_HIT_RADIUS,
+  SHIELD_BREAK_LULL_CUT,
+  SHIELD_BREAK_LULL_FLOOR_MARGIN,
   STAGGER_SECONDS,
   bossColourDamage,
   bossQteZoneAt,
   bossRingZoneAt,
+  bossShieldPointLive,
   bossWander,
   bossWanderBox,
   bossWanderLegDuration,
@@ -41,7 +46,7 @@ import {
   isChargedWindow,
   isRenfortWindow,
   phaseIndexAt,
-  shouldTriggerBossQte,
+  shouldTriggerBossFinale,
   tickBossQte,
 } from "../bossQteSystem";
 import type { BossPhaseTuning } from "../bossQteSystem";
@@ -181,11 +186,10 @@ describe("bossQteSystem — lifecycle predicates", () => {
     expect(isBossQteActive({ ...base, phase: "DONE" })).toBe(false);
   });
 
-  it("shouldTriggerBossQte fires once, only at the kill quota, only with a spec", () => {
-    expect(shouldTriggerBossQte(SPEC, null, 3, 3)).toBe(true);
-    expect(shouldTriggerBossQte(SPEC, null, 2, 3)).toBe(false); // quota not reached
-    expect(shouldTriggerBossQte(null, null, 3, 3)).toBe(false); // no boss authored
-    expect(shouldTriggerBossQte(SPEC, createBossQte(SPEC), 3, 3)).toBe(false); // already fired
+  it("shouldTriggerBossFinale: a spec authored and no boss born yet (the timed-finale gate)", () => {
+    expect(shouldTriggerBossFinale(SPEC, null)).toBe(true); // authored, not yet fired → finale
+    expect(shouldTriggerBossFinale(null, null)).toBe(false); // no boss authored
+    expect(shouldTriggerBossFinale(SPEC, createBossQte(SPEC))).toBe(false); // already born once
   });
 });
 
@@ -600,10 +604,11 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
     expect(won).toBe(true);
   });
 
-  it("A1 §5 (camp punished): a fixed head-camp aim leaves the 0.11 vital catch on the pinned seed", () => {
-    // The acceptance the tighter catch exists to create: the vital ring wanders BEYOND the 0.11
-    // catch of a fixed camp aim at the box centre, so greed that camps (rather than tracks) whiffs.
-    // Deterministic on targetSeed 20260719 — a stand-in for Sacha's cross-seed greedyVital>0 check.
+  it("A1 §5 (camp softened): the head ring still escapes a fixed camp aim past the 0.146 catch", () => {
+    // The catch was enlarged 0.11 → 0.146 (+33%, Bertrand readability call), which SOFTENS the
+    // anti-camp property: a fixed camp aim at the box centre now holds the vital ring most of the
+    // window, but the ring still WANDERS BEYOND the catch (`maxDev > catch`) so a pure camp never
+    // catches it 100% — tracking still earns more. Deterministic on targetSeed 20260719.
     const legA = bossWanderLegDuration(phaseRow(2).wanderSpeed);
     let maxDev = 0;
     let inCatch = 0;
@@ -626,9 +631,12 @@ describe("bossQteSystem — winnability (K-5 discipline, harness seed)", () => {
       }
     }
     expect(maxDev).toBeGreaterThan(BOSS_VITAL_CATCH_RADIUS);
-    // R2 stronger property: at 0.11 a fixed camp aim at the box centre catches the vital ring for
-    // only a MINORITY of the window — the head ring must genuinely be tracked, not parked on.
-    expect(inCatch / samples).toBeLessThan(0.5);
+    // Softened at 0.146: a fixed camp now holds the ring the MAJORITY of the window (~0.75 on this
+    // seed), but never the whole window — it still escapes, so tracking beats camping. (Was < 0.5 at
+    // the 0.11 catch; the +33% enlargement was Bertrand's readability call, anti-camp consciously
+    // relaxed.)
+    expect(inCatch / samples).toBeLessThan(0.85);
+    expect(inCatch / samples).toBeGreaterThan(0);
   });
 });
 
@@ -705,12 +713,12 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
     expect(tickBossQte(overlap, true, { x: 0, y: 0.5 }, 0.1).qte.bossHp).toBe(10);
   });
 
-  it("AMENDMENT A1 (R2): a click inside 0.30 but outside the 0.11 vital catch is NOT a vital chip", () => {
-    // The corner-whiffable-vital case (A1 §2/§3, catch tightened to 0.11 in round 2). A shot in the
-    // 0.11–0.30 annulus of the vital centre no longer scores the free 2 HP — greed must be tracked
-    // and is punished if it whiffs. The 0.15 probe binds to 0.11: it WAS a vital chip under the
-    // round-1 0.18 catch and is now a whiff, proving the stronger read.
-    expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.11);
+  it("AMENDMENT A1: a click inside 0.30 but outside the 0.146 vital catch is NOT a vital chip", () => {
+    // The corner-whiffable-vital case (A1 §2/§3). A shot in the 0.146–0.30 annulus of the vital
+    // centre does not score the free 2 HP — greed must be tracked and is punished if it whiffs. The
+    // 0.20 probe sits clearly outside the enlarged 0.146 catch (a whiff), the second probe (0.15)
+    // sits just outside it too but inside the limb ring (a limb chip).
+    expect(BOSS_VITAL_CATCH_RADIUS).toBe(0.146);
     const base = activeWith({
       phaseIndex: 1,
       stance: "EXPOSED",
@@ -722,9 +730,9 @@ describe("bossQteSystem — lever 1: dual VITAL/LIMB rings (phase 2+)", () => {
       ringZone: "vital",
       bossHp: 12,
     });
-    // 0.15 from the vital centre (inside 0.30, inside the OLD 0.18, OUTSIDE the new 0.11) and outside
-    // the limb ring → NO vital chip, no limb chip: the actual outcome is a whiff (a body bleed here).
-    const annulusOnly = tickBossQte(base, true, { x: 0.15, y: 0.8 }, 0.1);
+    // 0.20 from the vital centre (inside 0.30, OUTSIDE the 0.146 catch) and outside the limb ring →
+    // NO vital chip, no limb chip: the actual outcome is a whiff (a body bleed here).
+    const annulusOnly = tickBossQte(base, true, { x: 0.2, y: 0.8 }, 0.1);
     expect(annulusOnly.qte.bossHp).toBe(12); // the 2 HP was NOT free
     expect(annulusOnly.energyDelta).toBe(QTE_BODY_HIT); // it resolved as an off-ring body bleed
     // Same annulus distance from the vital centre, but ALSO within the limb ring's 0.30 catch →
@@ -1239,6 +1247,208 @@ describe("bossQteSystem — lever 4: in-tableau renfort pressure surge", () => {
     ]) {
       expect(src).not.toMatch(new RegExp(`\\b${forbidden}\\b`));
     }
+  });
+});
+
+describe("bossQteSystem — lever 6: shield-break tempo shot", () => {
+  // A phase-2+ NORMAL EXPOSED window with the two rings hand-placed at their centres and the
+  // shield point clear of both — firing at BOSS_SHIELD_POINT lands the shield, not a ring.
+  function exposedPhase(overrides: Partial<BossQte>): BossQte {
+    return activeWith({
+      phaseIndex: 1,
+      stance: "EXPOSED",
+      stanceRemaining: 1.0,
+      windowChipped: false,
+      windowOrdinal: 3,
+      phaseWindowIndex: 0,
+      chargedWindow: false,
+      targetOffset: { x: 0, y: 0.8 }, // vital ring centre
+      targetOffsetB: { x: 0, y: 0.25 }, // limb ring centre
+      ringZone: "vital",
+      bossHp: 12,
+      ...overrides,
+    });
+  }
+  const AT_SHIELD: Vec2 = { x: BOSS_SHIELD_POINT.x, y: BOSS_SHIELD_POINT.y }; // anchor at origin
+
+  it("bossShieldPointLive is true ONLY in a phase-2+ normal EXPOSED window", () => {
+    expect(bossShieldPointLive(exposedPhase({}))).toBe(true); // phase 2, normal EXPOSED
+    expect(bossShieldPointLive(exposedPhase({ phaseIndex: 2 }))).toBe(true); // phase 3
+    expect(bossShieldPointLive(exposedPhase({ phaseIndex: 0 }))).toBe(false); // phase 1 onboarding
+    expect(bossShieldPointLive(exposedPhase({ chargedWindow: true }))).toBe(false); // charged/parry
+    expect(bossShieldPointLive(exposedPhase({ stance: "SHIELDED" }))).toBe(false); // lull
+    expect(bossShieldPointLive(exposedPhase({ phaseBreakRemaining: 0.5 }))).toBe(false); // break
+    expect(bossShieldPointLive(exposedPhase({ staggerRemaining: 0.3 }))).toBe(false); // stagger
+  });
+
+  it("a shield-break chips 1 HP through the existing path, sets pending, moves NO energy", () => {
+    const r = tickBossQte(exposedPhase({}), true, AT_SHIELD, 0.01);
+    expect(r.qte.bossHp).toBe(11); // 12 − BOSS_SHIELD_DAMAGE (1)
+    expect(BOSS_SHIELD_DAMAGE).toBe(1);
+    expect(r.qte.windowChipped).toBe(true); // the window is answered
+    expect(r.qte.shieldBreakPending).toBe(true);
+    expect(r.energyDelta).toBe(0); // limb-equivalent chip — no energy, like a ring hit
+    expect(r.qte.stance).toBe("EXPOSED"); // window still open (small delta)
+  });
+
+  it("the NEXT lull is cut by 0.5 s — phase 2 (1.6 → 1.1) and phase 3 (1.2 → 0.7)", () => {
+    // Phase 2 (index 1): break, then a delta that closes the window → the cut lull opens.
+    const broke2 = tickBossQte(exposedPhase({ stanceRemaining: 0.1 }), true, AT_SHIELD, 0.01).qte;
+    expect(broke2.shieldBreakPending).toBe(true);
+    const close2 = tickBossQte(broke2, false, NO_HIT, 0.2);
+    expect(close2.qte.stance).toBe("SHIELDED");
+    expect(close2.qte.stanceRemaining).toBeCloseTo(1.1); // 1.6 − 0.5
+    expect(close2.qte.shieldBreakPending).toBe(false); // consumed
+    expect(close2.qte.blownWindows).toBe(0); // answered, not blown
+
+    // Phase 3 (index 2): bossHp 6 stays in phase 3 after a 1 HP chip (5 > 0, no crossing).
+    const broke3 = tickBossQte(
+      exposedPhase({ phaseIndex: 2, bossHp: 6, stanceRemaining: 0.1, windowOrdinal: 7 }),
+      true,
+      AT_SHIELD,
+      0.01,
+    ).qte;
+    expect(broke3.bossHp).toBe(5);
+    expect(broke3.shieldBreakPending).toBe(true);
+    const close3 = tickBossQte(broke3, false, NO_HIT, 0.2);
+    expect(close3.qte.stanceRemaining).toBeCloseTo(0.7); // 1.2 − 0.5
+    expect(close3.qte.shieldBreakPending).toBe(false);
+  });
+
+  it("is NON-CUMULATIVE: a double-break in one window still cuts a single 0.5 s", () => {
+    const first = tickBossQte(exposedPhase({ stanceRemaining: 0.5 }), true, AT_SHIELD, 0.05).qte;
+    expect(first.bossHp).toBe(11);
+    expect(first.shieldBreakPending).toBe(true);
+    const second = tickBossQte(first, true, AT_SHIELD, 0.05).qte; // break again, same window
+    expect(second.bossHp).toBe(10);
+    expect(second.shieldBreakPending).toBe(true); // still ONE pending flag
+    const close = tickBossQte(second, false, NO_HIT, 0.6);
+    expect(close.qte.stanceRemaining).toBeCloseTo(1.1); // one 0.5 s cut, not 1.0 (would be 0.6)
+    expect(close.qte.shieldBreakPending).toBe(false);
+  });
+
+  it("the floor keeps the cut lull STRICTLY above the phase tell for every used phase", () => {
+    // Structural AC2: even a hypothetical re-tune to a tight lull can never drive the cut lull to
+    // ≤ the tell, because the `Math.max(…, floor)` clamp target `tell + margin` is itself > tell.
+    expect(SHIELD_BREAK_LULL_FLOOR_MARGIN).toBeGreaterThan(0);
+    for (let i = 0; i < SPEC.phaseCount; i++) {
+      const row = phaseRow(i);
+      const floor = row.telegraphLeadSeconds + SHIELD_BREAK_LULL_FLOOR_MARGIN;
+      expect(floor).toBeGreaterThan(row.telegraphLeadSeconds);
+      // A synthetic tight-lull row: lull barely above the tell → the cut would go negative, but
+      // the clamp still lands strictly above the tell (never a blind window).
+      const tightLull = row.telegraphLeadSeconds + 0.001;
+      const cut = Math.max(tightLull - SHIELD_BREAK_LULL_CUT, floor);
+      expect(cut).toBeGreaterThan(row.telegraphLeadSeconds);
+    }
+    // The shipped table itself never binds the floor: 1.1 s > 0.40 s, 0.7 s > 0.35 s.
+    expect(phaseRow(1).shieldedLullSeconds - SHIELD_BREAK_LULL_CUT).toBeGreaterThan(
+      phaseRow(1).telegraphLeadSeconds,
+    );
+    expect(phaseRow(2).shieldedLullSeconds - SHIELD_BREAK_LULL_CUT).toBeGreaterThan(
+      phaseRow(2).telegraphLeadSeconds,
+    );
+  });
+
+  it("no shield point in phase 1 — firing there is an ordinary body bleed, no chip, no pending", () => {
+    const r = tickBossQte(
+      exposedPhase({ phaseIndex: 0, bossHp: 20, targetOffsetB: BOSS_WANDER_CENTRE }),
+      true,
+      AT_SHIELD,
+      0.1,
+    );
+    expect(r.qte.bossHp).toBe(20); // no shield chip in phase 1
+    expect(r.qte.shieldBreakPending).toBe(false);
+    expect(r.energyDelta).toBe(QTE_BODY_HIT); // resolves as an off-ring body bleed
+  });
+
+  it("no shield point in a charged/parry window — firing off the parry point is a panic shot", () => {
+    const r = tickBossQte(
+      exposedPhase({ phaseIndex: 2, chargedWindow: true, phaseWindowIndex: 3, bossHp: 6 }),
+      true,
+      AT_SHIELD,
+      0.1,
+    );
+    expect(r.qte.bossHp).toBe(6); // no shield chip during a charged window
+    expect(r.qte.shieldBreakPending).toBe(false);
+    expect(r.energyDelta).toBe(QTE_PANIC_SHOT); // a missed-parry panic, not a shield-break
+  });
+
+  it("a threshold-crossing shield-break DISCARDS the cut and takes the phase break", () => {
+    // Phase 2 (index 1), bossHp 9: a 1 HP shield chip → 8 crosses the 8 threshold into phase 3.
+    const r = tickBossQte(exposedPhase({ bossHp: 9 }), true, AT_SHIELD, 0.01);
+    expect(r.qte.bossHp).toBe(8);
+    expect(r.qte.phaseIndex).toBe(2);
+    expect(r.qte.phaseBreakRemaining).toBeCloseTo(PHASE_BREAK_SECONDS);
+    expect(r.qte.stance).toBe("SHIELDED");
+    expect(r.qte.shieldBreakPending).toBe(false); // the cut is discarded
+    expect(r.energyDelta).toBe(0);
+    // The break ends into a FULL (uncut) phase-3 lull — the cut never compressed the break.
+    const afterBreak = tickBossQte(r.qte, false, NO_HIT, PHASE_BREAK_SECONDS);
+    expect(afterBreak.qte.stanceRemaining).toBe(phaseRow(2).shieldedLullSeconds); // 1.2, uncut
+  });
+
+  it("a DEPLETING shield-break routes to the FINISHER (lever 5), pending cleared", () => {
+    const r = tickBossQte(exposedPhase({ bossHp: 1 }), true, AT_SHIELD, 0.1);
+    expect(r.qte.phase).toBe("FINISHER");
+    expect(r.qte.bossHp).toBe(0);
+    expect(r.qte.finisherRemaining).toBeCloseTo(FINISHER_HOLD_SECONDS);
+    expect(r.qte.shieldBreakPending).toBe(false);
+    expect(r.energyDelta).toBe(0); // refill is paid on FINISHER → WON
+  });
+
+  it("rings win any tie — a ring-answered window opens a FULL uncut lull, pending stays false", () => {
+    // Additive-and-optional (AC3): a window answered on the vital ring (never the shield) leaves
+    // shieldBreakPending false and the next lull at its full shipped length.
+    const broke = tickBossQte(
+      exposedPhase({ stanceRemaining: 0.1 }),
+      true,
+      { x: 0, y: 0.8 }, // the vital ring, not the shield
+      0.01,
+    ).qte;
+    expect(broke.bossHp).toBe(10); // vital chip (2), not a shield chip (1)
+    expect(broke.shieldBreakPending).toBe(false);
+    const close = tickBossQte(broke, false, NO_HIT, 0.2);
+    expect(close.qte.stance).toBe("SHIELDED");
+    expect(close.qte.stanceRemaining).toBe(phaseRow(1).shieldedLullSeconds); // 1.6, uncut
+  });
+
+  it("createBossQte seeds shieldBreakPending false and asserts the lever-6 invariants", () => {
+    expect(createBossQte(SPEC).shieldBreakPending).toBe(false);
+    // The shipped shield point is disjoint from both ring wander sub-boxes → no throw.
+    expect(() => createBossQte(SPEC)).not.toThrow();
+    // Disjointness holds structurally: the shield centre is outside both ring boxes.
+    const inVital =
+      Math.abs(BOSS_SHIELD_POINT.x - BOSS_VITAL_WANDER_CENTRE.x) <= BOSS_VITAL_WANDER_AMP_X &&
+      Math.abs(BOSS_SHIELD_POINT.y - BOSS_VITAL_WANDER_CENTRE.y) <= BOSS_VITAL_WANDER_AMP_Y;
+    const inLimb =
+      Math.abs(BOSS_SHIELD_POINT.x - BOSS_LIMB_WANDER_CENTRE.x) <= BOSS_LIMB_WANDER_AMP_X &&
+      Math.abs(BOSS_SHIELD_POINT.y - BOSS_LIMB_WANDER_CENTRE.y) <= BOSS_LIMB_WANDER_AMP_Y;
+    expect(inVital).toBe(false);
+    expect(inLimb).toBe(false);
+  });
+
+  it("AC3 byte-identity: a full duel that never fires the shield replays identically", () => {
+    // A competent line (rings + parry, never the shield) is byte-for-byte the same trajectory as
+    // the pre-lever-6 duel — the new field stays false and never alters a lull or an energy delta.
+    const run = (): BossQte => {
+      let qte = toActive();
+      for (let i = 0; i < 60 * 90; i++) {
+        const canAct =
+          qte.stance === "EXPOSED" && qte.phaseBreakRemaining <= 0 && qte.staggerRemaining <= 0;
+        const parry = canAct && qte.chargedWindow;
+        const onRing = canAct && !qte.chargedWindow && qte.ringZone !== "off";
+        const fire = parry || onRing || qte.phase === "FINISHER";
+        const impact = parry
+          ? { x: qte.anchor.x + BOSS_PARRY_POINT.x, y: qte.anchor.y + BOSS_PARRY_POINT.y }
+          : { x: qte.anchor.x + qte.targetOffset.x, y: qte.anchor.y + qte.targetOffset.y };
+        qte = tickBossQte(qte, fire, impact, 1 / 60).qte;
+        expect(qte.shieldBreakPending).toBe(false); // never armed on a no-shield line
+        if (qte.phase === "WON" || qte.phase === "LOST") break;
+      }
+      return qte;
+    };
+    expect(run()).toEqual(run());
   });
 });
 

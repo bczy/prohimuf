@@ -25,7 +25,7 @@ import type { CourierField } from "@game/systems/courierSystem";
 import { isQteActive, shouldTriggerQte, createQte, tickQte } from "@game/systems/qteSystem";
 import {
   isBossQteActive,
-  shouldTriggerBossQte,
+  shouldTriggerBossFinale,
   createBossQte,
   tickBossQte,
 } from "@game/systems/bossQteSystem";
@@ -108,10 +108,10 @@ export function createInitialState(
   // GUARD (code-review panel, PR #112): a level may NOT author BOTH a hostage QTE and a boss
   // QTE yet. The two cinematics do not interleave — the boss block at the top of `tickGameState`
   // freezes `elapsedSeconds` while the boss is active, and the hostage QTE triggers off
-  // `elapsedSeconds`; so a co-authored hostage would be SILENTLY dropped once the boss quota is
-  // met (never delayed — lost). Interleaving them is a follow-up story; until then, fail LOUD at
-  // level load rather than lose a scripted beat in play. Not reachable in V1 (no shipped level
-  // authors both; the dev harness authors only the boss spec) — this locks it that way.
+  // `elapsedSeconds`; so a co-authored hostage would be lost once the boss takes over the scene
+  // (at timer expiry, ADR-0059 Amendment 2 — never delayed, lost). Interleaving them is a follow-up
+  // story; until then, fail LOUD at level load rather than lose a scripted beat in play. Reached in V1
+  // only if a level co-authors both (belliard drops its hostage under `BELLIARD_BOSS_ENABLED`).
   if (hostageQteSpec !== null && bossQteSpec !== null) {
     throw new Error(
       "LevelConfig invariant: a level cannot author BOTH hostageQte and bossQte yet — the two " +
@@ -178,20 +178,16 @@ export function tickGameState(
     return { ...state, impactEvents: [], feedback: [], pointFeedback: [], weaponEmpty: false };
   }
 
-  // Boss QTE encounter — "le Commandant" (ADR-0051 D3). Additive-and-optional: this whole
-  // block is skipped when `bossQteSpec === null` (every shipped level EXCEPT `niveau-final`,
-  // ADR-0053), so the quota-win path below is BYTE-FOR-BYTE unchanged there (the ADR-0051 D4
-  // safety property, asserted by the `bossQteSpec === null` identity test — exactly as the
-  // hostage guards `qteSpec === null`).
-  // When a boss IS authored, the boss REPLACES the abrupt "quota met → LEVEL_COMPLETE": it
-  // triggers on quota-completion, freezes the rest of the level while ACTIVE, and only a boss
-  // WON completes the level (boss LOST fails it). The boss is NOT in the kill quota.
-  if (state.bossQteSpec !== null) {
-    let bossQte = state.bossQte;
-    if (shouldTriggerBossQte(state.bossQteSpec, bossQte, state.kills, enemiesToWin)) {
-      bossQte = createBossQte(state.bossQteSpec);
-    }
-    if (isBossQteActive(bossQte) && bossQte !== null) {
+  // Boss QTE encounter — "le Commandant" (ADR-0051 D3, retrigger amended by ADR-0059). Additive-
+  // and-optional: this whole block is skipped when `bossQte === null` (EVERY shipped level, and a
+  // boss level until its timer expires), so the quota-win path below is BYTE-FOR-BYTE unchanged
+  // (the ADR-0051 D4 safety property, asserted by the `bossQteSpec === null` identity test).
+  // The boss is now the level's TIMED FINALE: it is CREATED at TIMER EXPIRY (below), not on quota-
+  // completion. This block only RUNS an already-created boss — it freezes the scene while ACTIVE,
+  // and a boss WON completes the level (boss LOST fails it). The boss is NOT in the kill quota.
+  if (state.bossQte !== null) {
+    const bossQte = state.bossQte;
+    if (isBossQteActive(bossQte)) {
       const crosshair = moveCrosshair(mouseX, mouseY);
       const impactPoint = crosshairToWorld(crosshair, cameraOffsetX, cameraOffsetY, viewW, viewH);
       const r = tickBossQte(bossQte, fire, impactPoint, delta);
@@ -213,9 +209,8 @@ export function tickGameState(
     }
     // The boss has resolved (phase DONE): a depleted `bossHp` WON the fight → the level
     // completes; the blown-window clock LOST it → the level fails. LEVEL_COMPLETE fires ONLY
-    // on a boss win. (A boss authored but not yet triggered — quota not reached — falls
-    // through to normal play, exactly as before.)
-    if (bossQte !== null && bossQte.phase === "DONE") {
+    // on a boss win.
+    if (bossQte.phase === "DONE") {
       const won = bossQte.bossHp <= 0;
       return {
         ...state,
@@ -229,9 +224,11 @@ export function tickGameState(
     }
   }
 
-  // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never
-  // on the score — so the delivery bonus can never trigger the level win.
-  if (state.kills >= enemiesToWin) {
+  // Victory is gated on the kill-count only (`countsAsTarget` takedowns), never on the score —
+  // so the delivery bonus can never trigger the level win. On a BOSS level (ADR-0059) the quota
+  // NEVER completes the level: the player plays the full timer and the boss is the finale, so the
+  // quota stays a score-only target here.
+  if (state.kills >= enemiesToWin && state.bossQteSpec === null) {
     return {
       ...state,
       phase: "LEVEL_COMPLETE",
@@ -473,6 +470,16 @@ export function tickGameState(
   // 9. Tick timer (bonus enemies add seconds back)
   const timeRemaining = tickTimer(state.timeRemaining, delta) + trigger.timeDelta;
   if (timeRemaining <= 0) {
+    // Timer expired. On a BOSS level (spec authored, none fired yet) the boss is the level's
+    // TIMED FINALE (ADR-0059): CREATE it and stay in-play (phase PLAYING, timeRemaining 0) so the
+    // boss block at the TOP of the NEXT tick freezes the scene and runs the duel — WON →
+    // LEVEL_COMPLETE, LOST → GAME_OVER. There is NO quota gate for V1: the boss always caps the
+    // timer. A non-boss level fails on timer expiry exactly as before (GAME_OVER, byte-identical).
+    // The guard narrows `bossQteSpec` to non-null so `createBossQte` type-checks; `null` ⇒ no
+    // finale (non-boss level, or a boss already born earlier this level) ⇒ the timeout loss.
+    const finaleSpec = shouldTriggerBossFinale(state.bossQteSpec, state.bossQte)
+      ? state.bossQteSpec
+      : null;
     return {
       ...state,
       crosshair,
@@ -486,6 +493,7 @@ export function tickGameState(
       energy: newEnergy,
       qteSpec: state.qteSpec,
       qte,
+      bossQte: finaleSpec !== null ? createBossQte(finaleSpec) : state.bossQte,
       deliveryVehicle,
       elapsedSeconds,
       kills: newKills,
@@ -494,7 +502,7 @@ export function tickGameState(
       score: newScore,
       wave: newWave,
       timeRemaining: 0,
-      phase: "GAME_OVER",
+      phase: finaleSpec !== null ? "PLAYING" : "GAME_OVER",
       weapon: trigger.weapon,
       loot: trigger.loot,
       lootSpec: state.lootSpec,
@@ -503,12 +511,10 @@ export function tickGameState(
     };
   }
 
-  // Quota met THIS tick (the kill that crossed the threshold landed here, so `state.kills`
-  // was still below quota at the top). A boss-less level (every shipped level) still wins
-  // abruptly. But when a boss IS authored, victory-by-quota must NOT complete the level here:
-  // stay PLAYING with `kills` at/over quota so the boss block at the TOP of the NEXT tick sees
-  // `state.kills >= enemiesToWin` and opens the duel via `shouldTriggerBossQte` (ADR-0051 D3).
-  // Only VICTORY yields to the boss — the GAME_OVER branches above (lives/timer) stay immediate.
+  // Quota met THIS tick. A boss-less level (every shipped level) still wins abruptly. On a BOSS
+  // level (ADR-0059) the quota NEVER completes the level: the player plays the full timer and the
+  // boss caps it as the finale (created at timer expiry above), so stay PLAYING with `kills`
+  // at/over quota (a score-only target here).
   const finalPhase =
     newKills >= enemiesToWin && state.bossQteSpec === null ? "LEVEL_COMPLETE" : "PLAYING";
 
