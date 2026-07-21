@@ -3,9 +3,7 @@ import fs from "fs";
 import path from "path";
 import { planBelliardAssets } from "../gen-belliard-decor.mjs";
 
-const manifest = JSON.parse(
-  fs.readFileSync(path.resolve("src/game/levels/levelArt.json"), "utf8"),
-);
+const manifest = JSON.parse(fs.readFileSync(path.resolve("src/game/levels/levelArt.json"), "utf8"));
 const plan = planBelliardAssets(manifest);
 const byFile = Object.fromEntries(plan.map((a) => [a.file, a]));
 

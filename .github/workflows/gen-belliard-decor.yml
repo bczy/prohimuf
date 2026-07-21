@@ -1,0 +1,100 @@
+name: Generate Belliard décor v3 (fanzine B&W)
+
+# Regenerates the Rue Belliard décor v3 lot (troncon-a/b/c, sky, foreground) as
+# FLUX text-to-image — the photocopied-fanzine B&W register (lead-art PROMPT GATE
+# PASS). It deliberately bypasses gen-level-art.mjs (whose manifest `style` tail
+# is colour pixel-art) and gen-from-reference kontext img2img (colour photo
+# conditioning) — the two v2 colour root causes. Pipeline:
+#   1. gen-belliard-decor.mjs  → raw text-to-image PNGs (pinned seeds)
+#   2. key-troncon-sky.mjs     → region-mask the tronçon sky to transparency
+#   3. cutout-foreground.mjs   → magenta chroma-key the foreground
+# ground.png (v6) and street.png (not rendered in tronçon mode) are NOT touched.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-belliard-decor with a `ci(dispatch):` commit.
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-belliard-decor"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-belliard-decor-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (a manual dispatch on main would push art past the merge
+    # gate); for pushes only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # flux text-to-image has an anonymous fallback; the token, when set, lifts
+      # rate limits and keeps the rolls off the public feed.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (sky key + foreground cutout)
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Prompt gate (before any generation)
+        run: node scripts/check-art-prompts.mjs
+
+      - name: Generate the 5-asset lot (FLUX text-to-image, pinned seeds)
+        run: FORCE=1 node scripts/gen-belliard-decor.mjs
+
+      - name: Region-mask the tronçon sky to transparency
+        run: node scripts/key-troncon-sky.mjs
+
+      - name: Chroma-key the foreground (magenta → transparent)
+        run: node scripts/cutout-foreground.mjs
+
+      - name: Commit décor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Bounded to the belliard dir; ground.png/street.png are not regenerated
+          # so they only stage if the generator touched them (it does not).
+          for f in troncon-a troncon-b troncon-c sky foreground; do
+            if [ -f "public/assets/levels/belliard/$f.png" ]; then
+              git add -f "public/assets/levels/belliard/$f.png"
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo "No décor changes to commit."
+          else
+            git commit -m "chore(assets): generate Belliard décor v3 (fanzine B&W)"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated décor (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: belliard-decor-unpushed
+          path: public/assets/levels/belliard/*.png
+          if-no-files-found: warn
+          retention-days: 14
