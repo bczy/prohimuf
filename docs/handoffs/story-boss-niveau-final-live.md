@@ -3239,3 +3239,44 @@ install` to re-resolve and regenerate a correct Berry-format lockfile; confirmed
   - `yarn.lock` (MODIFIED — incidental repair of an unrelated concurrent corruption, not part of the
     assigned task but required for the verification suite to run at all)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## ASSET GATE (re-roll) — lead-art (Nico) — 2026-07-21 · `lustre.png` seed 4877→4879
+
+- **Scope:** narrow re-gate of the single re-rolled prop `public/assets/boss/lustre.png`
+  (seed 4877→4879, prompt string BYTE-UNCHANGED per the §3.10 one-variable discipline;
+  Bertrand granted the single re-roll to kill the twin flanking column/bracket masses of the
+  4877 roll). Judged on contrasting flats (magenta #FF3CDC + neon-green) at full and game
+  size, per the §2 law 3 defect-sweep (holes hide on opaque white).
+- **Flanking masses — GONE.** No residual side columns/brackets. What flanks the widest ring
+  is now crystal festoons cascading into two pendant clusters — drops that TAPER DOWN (HUNG),
+  not supports that rise (BUILT). Read as part of the one object, not appendages.
+- **HUNG-single-object identity — PASS.** Top-centred, single chain up top, crown → cone →
+  widest crystal ring → central pendant drop. Unmistakably suspended (§1.2 "au bâtiment").
+- **Silhouette one-read — PASS.** Downscaled to game-held size it reads instantly as a
+  chandelier; no ambiguity, no false BUILT read.
+- **Drops attached / integrity — PASS.** Opaque mask = ONE connected component (100% of the
+  body); ZERO enclosed transparent regions. No detached drop, no floating debris, no keying
+  hole. `check-sprite-integrity`-class floor cleared by inspection; no defect-sweep trigger.
+- **House style — PASS.** Value profile is bimodal: ~39% near-black (dense chain-convergence
+  cone) AND ~9.8% pale >180 (crystal drops carrying [S8]'s bright rim highlight — 2nd-highest
+  pale fraction in the family). That is HIGH CONTRAST, the opposite of the mid-grey-mush
+  failure the value-locks guarded against — on-direction for the fanzine "high contrast" law.
+  Near-black fraction is ~2× the figures' (0.13–0.20) but object-warranted (a chandelier crown
+  reads dark) and coherent with the dark prop sibling `speaker_wall` (med lum 44). The dark is
+  OPAQUE, so it will not key-hole against the in-game black ground; it reads as the dark bell
+  of the crown.
+- **[S13] aspect — landed.** 320×512 PORTRAIT as specified for the lustre (speaker_wall is
+  512×320 landscape); the per-prop aspect ask to dev-tooling-assets is honoured.
+- **Verdict:** PASS. The re-roll's sole objective (eliminate the flanking masses) is met, and
+  the sprite is single / HUNG / one-read / fully attached / hole-free / family-coherent.
+- **Consequence — boss canon 9-family COMPLETE (9/9).** With `lustre` cleared, all nine
+  boss-family source sprites (7 `commander_*` figures + `lustre` + `speaker_wall`) have passed
+  the asset gate. **This closes the canon art lane's GENERATION phase.** Remaining boss visual
+  work is render-side composition only — the loi du glow neon rim on the interactive props
+  (the lustre is the shootable `decorProp`) and any emissive/pulse — which is NOT baked in
+  these PNGs (ADR-0011) and lands under the Gate-4 composite gate on real in-game screenshots,
+  LATER. An asset-gate PASS here does NOT cover that runtime composite.
+
+VERDICT: PASS — asset gate lustre.png re-roll seed 4879 (lead-art)
