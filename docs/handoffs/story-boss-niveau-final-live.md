@@ -3535,3 +3535,91 @@ N1 target-supply unchanged (PASS, prior entry — 4-slot == vitry baseline, quot
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-pin (targetSeed 19991232, all else byte-equal; 0.11 + A2 AABB unchanged) re-verified at N=500: campVital −8.0 < optimal +14.0 & greedyLimb −4.3 (camp non-dominant), greedyVital −56.6 / 2.15 blown (greed punished), optimal + greedyLimb 100% (honest clears), sloppy 72.2% loss (losable), chandelier {0.2,1.5} armed+consumed +3 via A2 AABB (reachable); N1 target-supply PASS (4-slot facade == vitry baseline, 16-quota met in ~19 s / 3.7× headroom, no windowWeights nudge). K-5 leg closed — the earlier 19991231 camp-dominance FAIL is resolved by the re-pin exactly as prescribed.
+
+## 9. FIX (stage 5, C-QA3 correction) — dev-r3f-render (Amelia) — 2026-07-20 — extend the boss capture seam to the LIVE niveau-final level (over l'Éden), persistence-inert
+
+- claim: close qa-lead's C-QA3 hole (§8) — the boss over the REAL l'Éden backdrop was unreachable
+  in the 2 fps sandbox (16-kill quota grind = 0 kills; the `at=` seam was harness-only). Extended
+  the view-side capture seam so `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`
+  boots the niveau-final LevelConfig (its REAL bossQteSpec — seed re-pinned 19991232, chandelier
+  décor {0.2,1.5}) with the boss fast-forwarded via the SAME pure-API loop, rendering over l'Éden.
+  No `src/game` edit. Then captured the C-QA3 evidence set.
+
+### Seam design (view-side only; `src/render/scene/bossHarness.ts` + `App.tsx`)
+
+- **`resolveBossPreviewLevel(search)`** (pure, testable): default = the non-shipped dev harness
+  (belliard); with `&level=<id>` naming a LEVELS level that AUTHORS a `bossQteSpec`, boots THAT
+  level. Unknown / boss-less id ⇒ harness fallback (never a leaky boot). `installBossCaptureSeam`
+  now reads the spec from this resolver; `App`'s `INITIAL_LEVEL` uses it so `selectedLevel` →
+  GameScene renders the real l'Éden backdrop + anchor and `buildLevelParams` feeds the real spec.
+- **`at=phase1` added** to `BossHarnessTarget` (+ `parseBossHarnessTarget`): the phase targets now
+  land on the FIRST EXPOSED window of the wanted phase (a readable single/dual-ring frame). `phase1`
+  is REQUIRED because niveau-final's real kill quota gates the boss — unlike the harness's instant
+  trigger, phase 1 is unreachable in-sandbox without a seed.
+- **Reachability discipline unchanged**: the seam no-ops without `?preview=boss` (guard untouched);
+  `&level=` is inert on every shipped path (no `?preview=boss` ⇒ no install, no INITIAL_LEVEL swap).
+
+### Persistence-inertness proof (the CRITICAL constraint — niveau-final IS in LEVELS)
+
+- **Primary guard (existing, reused):** `App`'s persistence/routing effect early-returns on
+  `if (PREVIEW_SCREEN !== null) return;`. `?preview=boss&level=niveau-final` keeps `preview=boss`
+  (the `level=` is a SEPARATE param), so `PREVIEW_SCREEN === "boss"` ⇒ the effect returns BEFORE any
+  `saveScore` / `setPendingScore` / `unlockLevel` / phase-routing. No name-entry path opens
+  (`pendingScore` stays null ⇒ the NameEntry handlers no-op).
+- **Second guard (new, belt-and-suspenders):** `isBossSeamShippedLevel(search)` → `BOSS_SEAM_
+  SHIPPED_LEVEL`, folded into the persistence effect as `isShippedLevel = shippedIdx !== -1 &&
+  !BOSS_SEAM_SHIPPED_LEVEL`. So even if the primary early-return were ever narrowed, a seam-booted
+  SHIPPED level (niveau-final) is treated as non-shipped → still no score/unlock write. This is the
+  independent guard the harness gets "for free" via LEVELS-exclusion; niveau-final IS in LEVELS, so
+  it needed an explicit one.
+- **Empirical proof (Playwright):** cleared localStorage, booted
+  `?preview=boss&level=niveau-final&at=finisher`, FIRED to resolve the finisher → boss reached
+  `DONE`; localStorage stayed EMPTY afterwards — `muf_scores_niveau-final` absent, `muf_progress`
+  absent, no `muf_scores_*` key of any kind. **INERTNESS: PASS.**
+
+### Verification — ALL GREEN (`COREPACK_NPM_REGISTRY=…npmjs.org`)
+
+- `yarn typecheck` → EXIT 0. `yarn lint` → EXIT 0. `yarn format:check` (my touched files) → clean.
+- `yarn vitest run` → **1013 / 1013 PASS**, 75 files (added `src/render/scene/__tests__/
+  bossHarness.test.ts`, 10 tests: level pick, the inertness flag, `at=` parse incl. phase1, and the
+  fast-forward reaching phase1/2/3/finisher for niveau-final). The seed assertion DERIVES from
+  `LEVELS.find(...).bossQteSpec.targetSeed` (source of truth) so the K-5 re-pin (19991231→19991232,
+  dev-gameplay) never breaks it.
+
+### EVIDENCE — `docs/qa/evidence/story-boss-niveau-final-live/` (state-verified: bossQte.targetSeed
+### === 19991232 asserted per shot = niveau-final identity; phase asserted; ~2 fps SwiftShader,
+### `?preview=boss&level=niveau-final` + `__MUF_STATE__`/`__MUF_PLAY__`, vite preview on the prod build)
+
+- `06-boss-eden-phase1.png` — `at=phase1`; `ACTIVE, phaseIndex 0`. Phase-1 single ring, full HP bar,
+  over l'Éden (HUD "L'Éden — 31 déc. 1999", TEMPS 70s = niveau-final, not the harness 90s).
+- `07-boss-eden-dual-rings.png` — `at=phase2`; `phaseIndex 1, EXPOSED, !charged`. Both rings live
+  (green VITAL head + LIMB torso) over l'Éden.
+- `08-boss-eden-smoke.png` — `at=phase3`; `phaseIndex 2, smokeActive`. The phase-3 smoke veil fully
+  ramped in (delta envelope) + parry diamond/halo, over l'Éden.
+- `09-boss-eden-finisher.png` — `at=finisher`; `FINISHER, bossHp 0`. « LIVRE LE SON » acid-neon
+  prompt + black vignette crush, over l'Éden.
+- `10-boss-eden-mobile-phase2.png` — mobile 844×390 (iPhone UA); `phaseIndex 1, EXPOSED`. Dual rings
+  with the §22 mobile frame-lift clearing the vital ring above the "LE COMMANDANT" bar, over l'Éden.
+
+- handoff → `ux-designer` (Tony): the boss-over-l'Éden set (06-10) is now capturable/state-verified
+  in-sandbox — your A1–A15 legibility re-verify on the REAL backdrop + re-anchored position no longer
+  needs a real-GPU build for the RENDER reads (perf ms stays CI-DEFERRED to Ben). Reach any beat by
+  URL: `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher(&blownImmune=1)`.
+- handoff → `qa-lead` (Inès) + `producer` (Marion): C-QA3 render-reachability CLOSED (the seam +
+  inertness proof); the remaining C-QA3 legs (Sacha N1/K-5 empirical landability, D11 felt-cost,
+  on-device perf ms) are design/perf verdicts, not render-reachability — they run on this evidence.
+- handoff → `senior-architect` (Winston): seam extension is view-side only (no `src/game`), boundary
+  intact (bossHarness reads LEVELS data + drives the pure API, embeds no rule); persistence inertness
+  double-guarded (preview early-return + `BOSS_SEAM_SHIPPED_LEVEL`) and empirically proven. No
+  commit/push.
+- File List:
+  - `src/render/scene/bossHarness.ts` (`resolveBossPreviewLevel`, `isBossSeamShippedLevel`,
+    `at=phase1` target, level-aware `installBossCaptureSeam`)
+  - `src/render/scene/App.tsx` (INITIAL_LEVEL via the resolver, `BOSS_SEAM_SHIPPED_LEVEL` folded into
+    the persistence guard, capture-seam comment; dropped the now-unused `BOSS_QTE_DEV_HARNESS_LEVEL`
+    import)
+  - `src/render/scene/__tests__/bossHarness.test.ts` (NEW — 10 tests; seed derived from source of truth)
+  - `docs/qa/evidence/story-boss-niveau-final-live/06..10-boss-eden-*.png` (NEW — 5 state-verified)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — C-QA3 render-reachability closed (dev-r3f-render). The boss capture seam now boots the LIVE niveau-final level (real bossQteSpec, seed 19991232, chandelier décor) over the l'Éden backdrop via `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, fast-forwarded through the SAME pure-API loop — view-side only, no src/game edit. Persistence is DOUBLE-guarded (the existing `PREVIEW_SCREEN !== null` early-return + a new `BOSS_SEAM_SHIPPED_LEVEL` fold into the shipped-level check) and EMPIRICALLY proven inert (finisher driven to DONE → localStorage stayed empty, no muf_scores_*/muf_progress). Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). Five state-verified captures (06-10, each asserting targetSeed 19991232 + phase) feed Tony's A1–A15 real-backdrop re-verify. No commit/push.
