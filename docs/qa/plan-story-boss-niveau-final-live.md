@@ -5,8 +5,9 @@
 **Specs:** `docs/game-design/spec-boss-niveau-final-level.md` (pacing/quota/seed/AC-L1..L6),
 `docs/game-design/spec-niveau-final-fiction.md` (l'Éden canon, final_pre/post wiring),
 `docs/game-design/ux/spec-niveau-final-ux.md` (flyer/briefing/legibility, §3.1 stage-5 list).
-**Owner:** `qa-lead` (Inès) · **Stage:** 5 (VERIFY) — leg 1 · **Date:** 2026-07-21
-**Verdict of record:** handoff shard §8 (`docs/handoffs/story-boss-niveau-final-live.md`).
+**Owner:** `qa-lead` (Inès) · **Stage:** 5 (VERIFY) — leg 1 + CLOSE · **Date:** 2026-07-21
+**Verdict of record:** leg-1 shard §8; **quality-gate CLOSE** shard §11
+(`docs/handoffs/story-boss-niveau-final-live.md`) + the STAGE-5 CLOSE audit at the end of this plan.
 **House style:** `docs/qa/plan-story-boss-qte-differentiation.md`.
 
 This story is **data + narrative wiring only** against the FROZEN ADR-0051/0052 boss contract
@@ -81,7 +82,14 @@ Boot/flow: ZERO `pageerror` across menu, flyer wall (locked+unlocked), briefing,
 PLAYING — verified on repeated careful runs (a transient `errs:1` in one multi-context run was NOT
 reproducible: two independent clean re-runs of the identical flow reported 0).
 
-**BLOCKING HOLE — C-QA3 (boss over the l'Éden backdrop unreachable in sandbox; routed + deferred).**
+**BLOCKING HOLE — C-QA3 [CLOSED at stage-5 close].** `dev-r3f-render` extended the capture seam
+(`?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, shard §9) to boot the LIVE
+niveau-final level (real `bossQteSpec`, seed 19991232, chandelier décor) over the l'Éden backdrop
+via the same pure-API fast-forward — persistence double-guarded and empirically proven inert
+(finisher→DONE, localStorage stayed empty). Evidence 06-14 now cover every boss beat over l'Éden.
+See the STAGE-5 CLOSE audit for the final disposition. The original hole text is retained below.
+
+**BLOCKING HOLE — C-QA3 (as first raised at leg 1 — retained for the record).**
 The boss triggering + fighting **over the real l'Éden backdrop** could NOT be captured. Cause: it
 requires crossing the REAL `enemiesToWin 16` mook quota, and at ~2 fps headless SwiftShader
 synthetic clicks do NOT land mook kills — a 150 s aided-fire grind (state-verified) left `kills` at
@@ -166,3 +174,109 @@ limitation, not a defect:
 - **`facade` prompt "5 arches" residual.** The `levelArt.json` facade prompt still reads "5 arches"
   after the gated `windowGrid.cols 5→4` amendment — flagged to concept-artist (Maud); prompt-string
   content, not a runtime/gameplay defect (the accepted art + grid + zones are all 4).
+
+---
+
+## STAGE-5 CLOSE — quality-gate funnel audit (qa-lead, 2026-07-21)
+
+Written at gate close, after the full leg-2 + corrections ran (shard §9-§10). Every plan line is
+VERIFIED (evidence + verdict) or DEFERRED (deferral + owner). Nothing silently assumed.
+
+### Mechanical gate — re-run at close (ALL GREEN)
+
+| Check      | Command             | Result                                                                     |
+| ---------- | ------------------- | -------------------------------------------------------------------------- |
+| Typecheck  | `yarn typecheck`    | **EXIT 0**                                                                 |
+| Unit suite | `yarn vitest run`   | **1013 / 1013 PASS**, 75 files, EXIT 0 (+`bossHarness.test.ts` seam tests) |
+| Lint       | `yarn lint`         | **EXIT 0**                                                                 |
+| Format     | `yarn format:check` | **EXIT 0**                                                                 |
+
+### Per-AC final disposition
+
+| AC   | Final status | Evidence / verdict                                                                                                                            |
+| ---- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC1  | **VERIFIED** | unit (no hostageQte, weight-0) + e2e (level loads, 0 pageerror)                                                                               |
+| AC2  | **VERIFIED** | `levels.ts` pure append, zero deletions (§7 R1)                                                                                               |
+| AC3  | **VERIFIED** | harness untouched in the append                                                                                                               |
+| AC4  | **VERIFIED** | unit (real quota 16) + e2e (boss reached over l'Éden via the seam on the REAL bossQteSpec, `06-14`)                                           |
+| AC5  | **VERIFIED** | `bossQteSystem.ts` = A2 décor AABB only; `types/bossQte.ts` zero diff; live spec byte-equal to harness except seed 19991232 + décor {0.2,1.5} |
+| AC6  | **VERIFIED** | ADR-0053 Accepted                                                                                                                             |
+| AC7  | **VERIFIED** | unit (narrative A1/A2/A5 verbatim) + e2e (`03` final_pre over backdrop, skippable)                                                            |
+| AC8  | **VERIFIED** | shard §3 (ADR-0052 merged, lanes launched after)                                                                                              |
+| AC9  | **VERIFIED** | shard (pm AC9 CLEARED)                                                                                                                        |
+| AC10 | **VERIFIED** | git diff (no fuyard/mini-boss/hostage-retune)                                                                                                 |
+
+### Named stage-5 checks (§5) — final disposition
+
+- **Tony ux A1–A15 on the real l'Éden backdrop — PASS** (shard Tony §leg-2): dual-ring form-not-colour
+  (`07` grayscale), vital 0.11 mobile clearance (`10`, ~42-50 CSS px, same anchor {0,-5} → story-1 fix
+  transfers), parry-glyph salience (`08`), smoke degraded-not-removed motion+reduced-motion (`08`/`11`),
+  finisher distinct (`09`). Leg-1 flyer/onboarding all PASS (`01`-`05`).
+- **Karim N1 (target-supply on 4 slots) — PASS** (Sacha §leg-2): vitry is ALSO a 4-slot facade;
+  16-quota met in ~19 s / 3.7× headroom; idle 66.1 % ≤ vitry 70.1 %; no windowWeights nudge, no 5th arch.
+- **Sacha K-5 empirical (seed) — PASS after a gated data-only re-pin.** FAIL(a) on 19991231 (campVital
+  +30 dominant, seed-dependent) → **re-pin `targetSeed 19991231 → 19991232`** (K-5 data-only
+  correct-course; dev-gameplay §FIX) → **FINAL PASS** re-confirmed on landed code (campVital −8.0 <
+  optimal +14.0 & greedyLimb −4.3; greedyVital −56.6/2.15 blown; honest 100 %; sloppy 72 % loss; décor
+  reachable). `BOSS_VITAL_CATCH_RADIUS 0.11` + A2 AABB unchanged.
+- **A2 décor AABB catch on the live chandelier {0.2,1.5} — VERIFIED.** Unit (`bossQteSystem.test.ts`
+  drawn==catch AABB ±(0.40,0.525)) + e2e (`13`: décor ARMED glow over l'Éden, state-verified
+  decorArmed:true; Sacha confirms armed+consumed +3 on 19991232).
+
+### Tony's two named evidence-backlog gaps — closed/deferred at this close
+
+- **décor-ARMED capture — CLOSED.** `13-boss-eden-decor-armed.png` (`at=phase2`, state-verified
+  `decorArmed:true`, phaseIndex 1, SHIELDED, seed 19991232): the acid-lime armed chandelier halo
+  (dégradé, not aplat) over l'Éden.
+- **boss-loss capture — STATE captured, EndScreen component deferred.**
+  `14-boss-eden-lost-blown10.png` (passive run, state-verified `bossQte.phase LOST, blownWindows 10`,
+  énergie drained to 50): the loss clock (`maxBlownWindows 10`) fires on the LIVE level over l'Éden.
+  The GAME_OVER **EndScreen component** itself is NOT reachable via the seam — the persistence-inert
+  guard deliberately suppresses the GAME_OVER routing (that IS the inertness guarantee). Per Tony it
+  is a pure unchanged reuse (D9/D10) whose props this level's data does not touch; the generic
+  EndScreen is previewable via `?preview=end` (standing baseline). Niveau-final GAME_OVER via the real
+  16-kill quota is 2fps-unreachable → **DEFERRED (low-risk, unchanged-component reuse; owner: real-GPU
+  leg / a future real-play e2e).**
+
+### Gate-verdict ledger for stage-6 (all logged + PASS)
+
+| Gate                                   | Owner                                  | Final verdict                                        | Shard                 |
+| -------------------------------------- | -------------------------------------- | ---------------------------------------------------- | --------------------- |
+| Design acceptance FINAL (N1 + K-5)     | game-designer (Sacha)                  | **PASS** (after FAIL(a)→re-pin 19991232→FINAL)       | §leg-2 FINAL          |
+| Design gate (K-5 re-pin, cols 5→4, A2) | lead-game-designer (Karim)             | **PASS** (express gates)                             | §gates                |
+| UX review (A1–A15 on l'Éden)           | ux-designer (Tony)                     | **PASS-WITH-CORRECTIONS** (arrow-fix landed)         | §leg-2                |
+| Asset gate (9/9 boss family)           | lead-art (Nico) + Bertrand escalations | **PASS** (lustre re-roll 4879 PASS; family complete) | §ASSET GATE (re-roll) |
+| C-QA3 render-reachability              | dev-r3f-render                         | **CLOSED** (seam + inertness proof, 1013 green)      | §9                    |
+| Arrow-hide correction                  | dev-r3f-render                         | **DONE** (one-line HUD gate, `12`)                   | §10                   |
+| A2 / K-5 / cols=4 gated amendments     | dev-gameplay / dev-tooling             | **LANDED** with their gates                          | §FIX entries          |
+
+### Deferral list (explicit, with owner)
+
+1. **CI-DEFERRED — on-device smoke/perf ms** (Ben's DEFERRED-ON-TARGET, inherited unchanged from
+   ADR-0052; ADR-0053 adds no new render surface). **Bertrand executes**; `producer` chases.
+2. **DEFERRED — niveau-final GAME_OVER EndScreen component** (real-quota play path, 2fps-unreachable;
+   unchanged reuse, low-risk per Tony; generic EndScreen previewable via `?preview=end`).
+3. **Art follow-up (ADR-0053 D6, non-blocking):** canon boss sprite render-integration (`resolveBossTexture`
+   still fallback) — the 9-family is now asset-gate-complete on disk; the décor-armed read is already
+   verified on the procedural placeholder (`13`). Owner: `lead-art` / a D6 integration pass.
+4. **Standing findings (→ producer/tech-writer):** shipped stalingrad/vitry committed-zones drift
+   (pre-existing, byte-preserved by this story); residual `facade` prompt "5 arches" vs the gated
+   cols=4 (→ concept-artist).
+
+### Evidence set (18 state-verified PNGs)
+
+Leg-1 (mine): `01`-`05` (flyer locked/unlocked ×2 classes, briefing, gallery-cops, in-level ×2).
+Seam (dev-r3f §9): `06`-`10` (phase1/dual-rings/smoke/finisher/mobile-phase2 over l'Éden).
+Leg-2: `11` (Tony reduced-motion), `12` (arrow-fix proof, 0 arrows). Close (mine): `13`
+(décor-armed), `14` (boss-loss blown10).
+
+### CLOSING VERDICT
+
+The plan ran and held. Mechanical gate GREEN (1013/1013), all 10 ACs VERIFIED, all 4 regression lines
+VERIFIED, C-QA3 CLOSED, every stage-6 gate verdict logged and PASS (Sacha FINAL, Karim, Tony, Nico
+asset 9/9), every gated amendment (A2 / K-5 re-pin 19991232 / cols 5→4) landed with its gate. Tony's
+two backlog gaps: décor-armed CLOSED (`13`), boss-loss STATE captured (`14`) with the EndScreen
+component explicitly deferred (unchanged reuse, low-risk). The one CI-DEFERRED item (Ben's on-device
+ms) does not deadlock. **The quality gate PASSES — story-2 stage-6 (the 4-reviewer merge panel) is open.**
+
+**VERDICT: PASS — quality gate story-2 (qa-lead)**

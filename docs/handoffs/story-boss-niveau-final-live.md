@@ -3853,3 +3853,67 @@ react`), and Tony's prescription is explicitly "no new predicate" — so nothing
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: DONE — off-screen edge arrows hidden during the boss QTE (dev-r3f-render). One-line HUD gate extension (`&& data.bossQte === undefined`) folded into the existing `isQteSetPieceVisible` arrow gate, exactly as Tony prescribed (no new predicate); the arrows now hide for the whole boss set-piece (ZOOMING→verdict) like the hostage one. Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). State-verified capture `12-boss-eden-no-arrows.png` shows 0 arrow glyphs in the DOM during a phase-2 duel over l'Éden. No commit/push.
+
+## 11. VERIFY (stage 5) — QUALITY GATE CLOSE — qa-lead (Inès) — 2026-07-21 — the funnel verdict that opens story-2 stage-6
+
+- claim: close the stage-5 quality gate for STORY-BOSS-NIVEAU-FINAL-LIVE — funnel the mechanical
+  gate + design-acceptance FINAL (Sacha) + UX (Tony) + asset gate (Nico) + the gated amendments into
+  one quality verdict, after the full leg-2 + corrections ran (§9-§10). Re-ran the mechanical gate;
+  audited my plan line-by-line; closed Tony's two named evidence-backlog gaps myself via the extended
+  seam. Plan updated: `docs/qa/plan-story-boss-niveau-final-live.md` (STAGE-5 CLOSE audit). No commit/push.
+- **Mechanical gate — RE-RUN AT CLOSE, ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent):
+  - `yarn typecheck` → **EXIT 0**.
+  - `yarn vitest run` → **1013 / 1013 PASS**, 75 files, EXIT 0 (+`bossHarness.test.ts` seam tests).
+  - `yarn lint` → **EXIT 0**.
+  - `yarn format:check` → **EXIT 0**.
+- **C-QA3 — CLOSED.** `dev-r3f-render`'s §9 seam extension boots the LIVE niveau-final level
+  (`?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, real bossQteSpec seed 19991232,
+  chandelier décor) over the l'Éden backdrop via the same pure-API fast-forward — persistence
+  double-guarded + empirically proven inert. Boss-over-l'Éden captured (06-14).
+- **Tony's two named evidence-backlog gaps — closed/deferred at this close:**
+  - **décor-ARMED — CLOSED.** `13-boss-eden-decor-armed.png` (`at=phase2`, state-verified
+    `decorArmed:true`, phaseIndex 1, SHIELDED, seed 19991232): the acid-lime armed chandelier halo
+    (dégradé) over l'Éden.
+  - **boss-loss — STATE captured, EndScreen component DEFERRED.** `14-boss-eden-lost-blown10.png`
+    (passive run, state-verified `bossQte.phase LOST, blownWindows 10`, énergie 50): the loss clock
+    (`maxBlownWindows 10`) fires live over l'Éden. The GAME_OVER **EndScreen component** is NOT
+    reachable via the seam — the persistence-inert guard suppresses the GAME_OVER routing by design.
+    Per Tony it is a pure unchanged reuse (D9/D10), generic EndScreen previewable via `?preview=end`;
+    niveau-final GAME_OVER via the real 16-kill quota is 2fps-unreachable → DEFERRED (low-risk).
+- **Gate-verdict ledger — every stage-6-required verdict logged and PASS:**
+  - Design acceptance FINAL (Sacha): **PASS** — N1 target-supply PASS (vitry is ALSO a 4-slot facade,
+    16-quota met in ~19 s / 3.7× headroom); K-5 FAIL(a) on 19991231 → **gated data-only re-pin
+    19991231→19991232** (dev-gameplay FIX) → **FINAL PASS** on landed code (campVital −8.0 non-dominant,
+    greedyVital −56.6/2.15 blown, honest 100 %, sloppy 72 % loss, décor reachable). 0.11 + A2 unchanged.
+  - UX review (Tony): **PASS-WITH-CORRECTIONS** — A1–A15 all PASS on the l'Éden backdrop/re-anchored
+    position; the arrow-clutter defect (pre-existing since story-1, not niveau-final-specific) → one-line
+    HUD gate LANDED (§10, capture `12`, 0 arrows); décor-placeholder note = tracked ADR-0053 D6 follow-up.
+  - Asset gate (Nico) + Bertrand escalations: **PASS** — 9/9 boss family (lustre re-roll seed 4879 PASS,
+    family COMPLETE); cols 5→4 express gate PASS; backdrop escalations resolved.
+  - Gated amendments all LANDED with their gates: **A2** (décor AABB catch), **K-5 re-pin** (19991232),
+    **windowGrid.cols 5→4**.
+  - C-QA3 render-reachability CLOSED (§9); arrow-hide correction DONE (§10) — both 1013 green.
+- **Regressions — re-verified mechanically vs `origin/main` (leg 1, holding at close):** shipped 3
+  levels + tutorial byte-untouched (`levels.ts` pure append); shipped window-zones drift byte-preserved;
+  hostage + stateMachine ZERO-diff; differentiation system = gated A2 décor AABB ONLY; live bossQteSpec
+  byte-equal to harness except seed 19991232 + décor {0.2,1.5}.
+- **Deferrals (explicit, with owner):** (1) CI-DEFERRED on-device smoke/perf ms (Ben, inherited from
+  ADR-0052; ADR-0053 adds no render surface) — **Bertrand executes**, does not deadlock; (2) niveau-final
+  GAME_OVER EndScreen component (unchanged reuse, real-quota-only, 2fps-unreachable, low-risk per Tony);
+  (3) canon boss sprite render-integration (ADR-0053 D6; family asset-complete on disk, décor-armed read
+  already verified on the placeholder `13`) — `lead-art`; (4) standing findings → producer/tech-writer
+  (shipped stalingrad/vitry committed-zones drift, byte-preserved; `facade` prompt "5 arches" residual).
+- handoff → `senior-architect` (Winston): quality gate PASS — story-2 stage-6 4-reviewer merge panel +
+  your integration triage are open. Flag for triage: the §9 seam + §10 HUD gate are view-side only
+  (no `src/game`), and AC5's `bossQteSystem.ts` diff is the gated A2 décor AABB only.
+- handoff → `producer` (Marion): story-2 stage-5 CLOSED PASS; track the CI-DEFERRED on-device perf run
+  (Bertrand), the D6 art-integration follow-up, and the two standing findings.
+- handoff → `pm` (John): all quality lines verified or explicitly deferred with owners; ready for the
+  stage-6→acceptance path once the panel clears.
+- File List:
+  - `docs/qa/plan-story-boss-niveau-final-live.md` (STAGE-5 CLOSE audit + header update)
+  - `docs/qa/evidence/story-boss-niveau-final-live/13-boss-eden-decor-armed.png` (NEW)
+  - `docs/qa/evidence/story-boss-niveau-final-live/14-boss-eden-lost-blown10.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — quality gate story-2 (qa-lead) — the plan ran and held. Mechanical gate GREEN at close (typecheck EXIT 0, vitest 1013/1013, lint EXIT 0, format:check EXIT 0). All 10 ACs VERIFIED; all 4 regression lines VERIFIED vs origin/main (3 shipped levels + tutorial byte-untouched, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation = gated A2 décor AABB only, live bossQteSpec byte-equal to harness except seed 19991232 + décor {0.2,1.5}). C-QA3 CLOSED via the §9 live-level capture seam (boss over l'Éden, evidence 06-14, persistence double-guarded + empirically inert). Every stage-6 gate verdict logged and PASS: Sacha design-acceptance FINAL (K-5 re-pin 19991231→19991232 resolves the camp-dominance FAIL, N1 supply PASS), Tony UX (A1–A15 PASS on l'Éden; arrow-clutter fix landed §10/`12`), Nico asset gate 9/9 (lustre re-roll 4879, family complete); gated amendments A2 / K-5-re-pin / cols-5→4 all landed with their gates. Tony's two backlog gaps: décor-armed CLOSED (`13`), boss-loss STATE captured (`14`, blown 10) with the EndScreen component explicitly deferred (unchanged reuse, low-risk). Deferrals all explicit with owners (Ben's on-device ms — Bertrand executes, does not deadlock; EndScreen component; D6 art-integration; standing zone/prompt findings). Story-2 stage-6 (4-reviewer merge panel) is OPEN.
