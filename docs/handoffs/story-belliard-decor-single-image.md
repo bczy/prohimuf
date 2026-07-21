@@ -364,3 +364,35 @@ prop **autorisé** à occulter.
   `LevelBackdrop.tsx`. → `qa-lead`/`game-designer`: VERIFY playtest vs spec §5 acceptance
   criteria (AC-POP/AC-DENSITÉ/AC-VISÉE/AC-BARRIÈRES/AC-DIFFICULTÉ/AC-COHÉRENCE) can now run
   against the fully-wired manifest.
+
+## 5. ARCHITECT — ADR-0057 decision content authored — senior-architect (Winston) — 2026-07-21
+
+- claim: formalise the already-delivered-and-verified `single-wide` backdrop decision into
+  ADR-0057 (producer scaffolded Context + empty Decision/Consequences); reconcile the stale
+  aspect figure flagged by lanes A and C.
+- release: **ADR-0057 → Accepted** (`docs/adr/0057-single-wide-backdrop-belliard.md`). Authored
+  Decision (7 points), Consequences (positive/negative), and Alternatives; rewrote Context.
+  - **Aspect reconciled (ADR now authoritative):** the scaffold's `6656×1248 / ≈5.333` was a
+    stale draft figure. Committed asset verified `6418×1248` (`sips`), aspect **`5.1426`**,
+    **`fullW = 12 × 5.1426 ≈ 61.71`** (≈27% narrower). Matches lane A's pinned contract literal
+    and lane C's landed manifest. Fixed in Context, References, and the asset line.
+  - **Amends, not supersedes, ADR-0048** (Decision §5): `troncon-sequence` stays a valid, tested
+    capability with **zero live users**; belliard's freeze in `backdropLayout.test.ts` is lifted
+    and re-authored for 1 tile, stalingrad/vitry `single-facade` parity left frozen byte-for-byte.
+    Flagged in Consequences: troncon-sequence is now dead-code-adjacent, a candidate retirement if
+    still unused at the next backdrop revisit.
+  - **Alternatives documented:** rejected `troncon-1-tuile` (buildings-only + ground + empty sky)
+    and `single-facade` N-repeat as semantically wrong for a fully-baked opaque décor; rejected
+    detector-based zones (over-engineering) and win-condition retune (width is not the win lever).
+  - **Provenance recorded** (regen guard): paid `ideogram-v4-quality` + `POLLINATIONS_TOKEN`
+    (CI, seed 7111) mirror-stitched by `stitch-belliard-street.mjs` — NOT the FLUX prompt gate.
+  - Verified against shipped code before writing: `GameScene.tsx` L403-416 suppresses
+    `ForegroundFrames` on `single-wide`; `assetManifest.test.ts` L113 warms `street-wide.png`
+    only. Index regenerated (`gen-adr-index.mjs --write`): 0057 = Accepted; `public/adr/index.html`
+    kept in sync (freshness gate).
+  - Scope: touched only the ADR + generated index (+ its HTML companion) + this shard. No code.
+- File List: `docs/adr/0057-single-wide-backdrop-belliard.md`, `docs/adr/README.md`,
+  `public/adr/index.html`.
+- next: → `dev-gameplay`: the `levels.ts` hostage-anchor comment update and the
+  `assetManifest.test.ts` red remain open (out of scope of this ADR pass). → `qa-lead`: VERIFY
+  playtest + stage-6 review panel over the full diff before merge.

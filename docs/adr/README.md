@@ -112,6 +112,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0054](./0054-menus-ui-completion-scope-and-contracts.md) | Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract | Accepted |
 | [0055](./0055-weapons-pickup-system.md) | Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate | Accepted (amended) |
 | [0056](./0056-loot-crate-sidewalk-placement.md) | LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback | Accepted |
-| [0057](./0057-single-wide-backdrop-belliard.md) | Single-wide backdrop mode (belliard décor image unique) | Proposed |
+| [0057](./0057-single-wide-backdrop-belliard.md) | Single-wide backdrop mode (belliard décor image unique) | Accepted |
 
 <!-- ADR-INDEX:END -->
