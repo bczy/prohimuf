@@ -21,12 +21,12 @@ et sur la **HAUTEUR du plan façade** (y, haut→bas). C'est volontaire : les x/
 
 Conversions (façade plane `heightUnits = 12`, cf. `levelArt.json`) :
 
-| Grandeur | Formule | Note |
-|---|---|---|
-| `worldX` | `(x_norm − 0,5) · fullW` | `fullW` = largeur monde |
-| `worldY` | `(0,5 − y_norm) · 12` | haut plan = +6, bas plan = −6 |
-| `fullW` (nouvelle) | `12 × 5,333 = 64,0` | contre **87,36** en tronçon (§3) |
-| Lane rue / courier | `worldY = −4,8` ⇒ `y_norm 0,90` | `streetY = −facadeH·0,4` |
+| Grandeur           | Formule                         | Note                             |
+| ------------------ | ------------------------------- | -------------------------------- |
+| `worldX`           | `(x_norm − 0,5) · fullW`        | `fullW` = largeur monde          |
+| `worldY`           | `(0,5 − y_norm) · 12`           | haut plan = +6, bas plan = −6    |
+| `fullW` (nouvelle) | `12 × 5,333 = 64,0`             | contre **87,36** en tronçon (§3) |
+| Lane rue / courier | `worldY = −4,8` ⇒ `y_norm 0,90` | `streetY = −facadeH·0,4`         |
 
 **Hypothèse d'implémentation (à confirmer par `senior-architect`) :** l'image large est
 affichée comme **UNE tuile** à `heightUnits 12`, donc `fullW = 64,0`. Si le layout letterbox
@@ -37,27 +37,27 @@ seuls les chiffres de la §3 supposent `fullW = 64`.
 
 De haut en bas, en `y_norm` :
 
-| Bande | `y_norm` | Contenu |
-|---|---|---|
-| Ciel | 0,00–0,08 | au-dessus des toits |
-| Toiture mansardée + lucarnes + cheminées | 0,10–0,28 | **lucarnes = vraies fenêtres** |
-| Corniche | ~0,28 | |
-| **R1 — étage noble** (balcon-filant continu, portes-fenêtres) | 0,29–0,40 | vraies fenêtres |
-| Bandeau | ~0,40 | |
-| **R2 — fenêtres à persiennes** (grandes ouvertures) | 0,42–0,53 | **lecture la plus nette** |
-| **R3 — persiennes + garde-corps fonte** | 0,55–0,65 | |
-| **R4 — persiennes** | 0,67–0,77 | |
-| R5 — dernier étage résidentiel | 0,78–0,87 | |
-| Rez — devantures / rideaux de fer / portes / tags | 0,87–1,00 | KOR, MUR, XIX, BOULANGERIE, TABAC |
+| Bande                                                         | `y_norm`  | Contenu                           |
+| ------------------------------------------------------------- | --------- | --------------------------------- |
+| Ciel                                                          | 0,00–0,08 | au-dessus des toits               |
+| Toiture mansardée + lucarnes + cheminées                      | 0,10–0,28 | **lucarnes = vraies fenêtres**    |
+| Corniche                                                      | ~0,28     |                                   |
+| **R1 — étage noble** (balcon-filant continu, portes-fenêtres) | 0,29–0,40 | vraies fenêtres                   |
+| Bandeau                                                       | ~0,40     |                                   |
+| **R2 — fenêtres à persiennes** (grandes ouvertures)           | 0,42–0,53 | **lecture la plus nette**         |
+| **R3 — persiennes + garde-corps fonte**                       | 0,55–0,65 |                                   |
+| **R4 — persiennes**                                           | 0,67–0,77 |                                   |
+| R5 — dernier étage résidentiel                                | 0,78–0,87 |                                   |
+| Rez — devantures / rideaux de fer / portes / tags             | 0,87–1,00 | KOR, MUR, XIX, BOULANGERIE, TABAC |
 
 ### 0.2 Zones d'EXCLUSION (aucun pop ennemi, aucun prop haut) — repères de l'image
 
-| Zone | `x_norm` | Raison |
-|---|---|---|
-| **Le passage / mur-pignon** (coin noir vertical) | **0,372 – 0,408** | vide sombre entre deux immeubles : pas de fenêtre |
-| **Pignon aveugle bâtiment étroit droite** (raie d'ombre) | **0,788 – 0,812** | mur-pignon en ombre : pas de fenêtre |
-| **Couture tonale / mur mitoyen** central | **0,485 – 0,502** | jointure ambiguë : on saute une colonne |
-| Bords pannés/rognés | `< 0,035` et `> 0,965` | sortent du cadre au pan / risque de clip |
+| Zone                                                     | `x_norm`               | Raison                                            |
+| -------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
+| **Le passage / mur-pignon** (coin noir vertical)         | **0,372 – 0,408**      | vide sombre entre deux immeubles : pas de fenêtre |
+| **Pignon aveugle bâtiment étroit droite** (raie d'ombre) | **0,788 – 0,812**      | mur-pignon en ombre : pas de fenêtre              |
+| **Couture tonale / mur mitoyen** central                 | **0,485 – 0,502**      | jointure ambiguë : on saute une colonne           |
+| Bords pannés/rognés                                      | `< 0,035` et `> 0,965` | sortent du cadre au pan / risque de clip          |
 
 Ces quatre zones sont **les repères naturels** demandés (le passage, le pignon) et servent
 DOUBLEMENT : elles excluent les pops ET accueillent les props HAUTS (§2.3).
@@ -78,11 +78,11 @@ L'ancien pool tronçon faisait popper les flics depuis **3 rangées** hautes :
 Je pose 3 rangées dont le `worldY` reste **à moins de 0,4 unité** de l'ancien band, tout en
 tombant sur des ouvertures réelles et lisibles de la nouvelle image :
 
-| Rangée | `y_norm` | `worldY` | Ancien équivalent | Ouvertures |
-|---|---|---|---|---|
-| **A — lucarnes / mansarde** | **0,24** | +3,12 | 0,2238 (+3,31) | lucarnes du toit |
-| **B — étage noble R1** | **0,35** | +1,80 | 0,3243 (+2,11) | portes-fenêtres du balcon-filant |
-| **C — persiennes R2** | **0,47** | +0,36 | 0,4379 (+0,75) | grandes fenêtres à persiennes |
+| Rangée                      | `y_norm` | `worldY` | Ancien équivalent | Ouvertures                       |
+| --------------------------- | -------- | -------- | ----------------- | -------------------------------- |
+| **A — lucarnes / mansarde** | **0,24** | +3,12    | 0,2238 (+3,31)    | lucarnes du toit                 |
+| **B — étage noble R1**      | **0,35** | +1,80    | 0,3243 (+2,11)    | portes-fenêtres du balcon-filant |
+| **C — persiennes R2**       | **0,47** | +0,36    | 0,4379 (+0,75)    | grandes fenêtres à persiennes    |
 
 Hauteur de visée **préservée** ; les flics poppent sur des fenêtres **peintes et nettes**
 (silhouette-first). Écran : le plan (12 de haut) est visible en entier → +3,12 en haut de
@@ -95,22 +95,26 @@ réelle la plus proche** ; ces valeurs sont la **cible ET le critère d'acceptat
 Exclusions §0.2 respectées.
 
 **Rangée A — lucarnes (12 colonnes, plus espacées que les travées) :**
+
 ```
 0,055  0,125  0,195  0,265  0,335 | 0,455 | 0,545  0,620  0,700 | 0,835  0,905  0,950
 ```
 
 **Rangée B — étage noble R1 (18 colonnes) :**
+
 ```
 0,045  0,082  0,118  0,152  0,187  0,221  0,257  0,292  0,327 |
 0,427  0,458 | 0,516  0,583  0,651  0,719 | 0,836  0,897  0,957
 ```
 
 **Rangée C — persiennes R2 (22 colonnes, la plus dense) :**
+
 ```
 0,045  0,082  0,118  0,152  0,187  0,221  0,257  0,292  0,327  0,356 |
 0,427  0,481 | 0,516  0,549  0,617  0,651  0,685  0,719  0,746  0,766 |
 0,836  0,897  0,928  0,957
 ```
+
 (les `|` marquent les blocs d'immeubles séparés par une exclusion §0.2)
 
 ### 1.4 Densité & rythme
@@ -176,21 +180,21 @@ parkingMeter 0,24, scooter 0,18, bench 0,17, bollard 0,13 — **tous clampés �
 
 ### 2.4 Table de placement (13 props)
 
-| # | kind | `x_norm` | row | Ancrage / repère | H |
-|---|---|---|---|---|---|
-| 1 | scooter | 0,075 | far | garé contre le rideau taggé KOR | bas |
-| 2 | bench | 0,160 | near | devanture gauche | bas |
-| 3 | wallaceFountain | 0,275 | far | angle de trottoir | bas |
-| 4 | parkingMeter | 0,340 | near | devant la BOULANGERIE | bas |
-| 5 | **bollard** | 0,360 | far | flanc GAUCHE du passage | bas |
-| 6 | **trafficLight** | **0,388** | near | **DEVANT le passage** — SEUL prop occlusif (§2.3) | **HAUT (exempté)** |
-| 7 | **bollard** | 0,412 | far | flanc DROIT du passage | bas |
-| 8 | streetSign | 0,460 | near | post-passage | bas |
-| 9 | lamppost | 0,495 | near | souligne la couture mitoyenne (repère de sol) | bas (clampé) |
-| 10 | bench | 0,600 | near | devanture centrale | bas |
-| 11 | parkingMeter | 0,720 | near | devant le TABAC | bas |
-| 12 | lamppost | 0,800 | near | souligne le pignon aveugle droit (repère de sol) | bas (clampé) |
-| 13 | bollard | 0,900 | far | bord de trottoir droit | bas |
+| #   | kind             | `x_norm`  | row  | Ancrage / repère                                  | H                  |
+| --- | ---------------- | --------- | ---- | ------------------------------------------------- | ------------------ |
+| 1   | scooter          | 0,075     | far  | garé contre le rideau taggé KOR                   | bas                |
+| 2   | bench            | 0,160     | near | devanture gauche                                  | bas                |
+| 3   | wallaceFountain  | 0,275     | far  | angle de trottoir                                 | bas                |
+| 4   | parkingMeter     | 0,340     | near | devant la BOULANGERIE                             | bas                |
+| 5   | **bollard**      | 0,360     | far  | flanc GAUCHE du passage                           | bas                |
+| 6   | **trafficLight** | **0,388** | near | **DEVANT le passage** — SEUL prop occlusif (§2.3) | **HAUT (exempté)** |
+| 7   | **bollard**      | 0,412     | far  | flanc DROIT du passage                            | bas                |
+| 8   | streetSign       | 0,460     | near | post-passage                                      | bas                |
+| 9   | lamppost         | 0,495     | near | souligne la couture mitoyenne (repère de sol)     | bas (clampé)       |
+| 10  | bench            | 0,600     | near | devanture centrale                                | bas                |
+| 11  | parkingMeter     | 0,720     | near | devant le TABAC                                   | bas                |
+| 12  | lamppost         | 0,800     | near | souligne le pignon aveugle droit (repère de sol)  | bas (clampé)       |
+| 13  | bollard          | 0,900     | far  | bord de trottoir droit                            | bas                |
 
 **Résultat :** le **seul** prop occlusif (feu, 0,388) tombe sur la respiration passage §0.2 →
 son mât ne barre jamais une cible active au pan (§2.3). Les 12 autres props sont clampés sous
@@ -228,12 +232,12 @@ props (§2) sont les seuls changements.
 
 **Leviers nommés, à activer SEULEMENT si le playtest (VERIFY) dévie :**
 
-| Symptôme mesuré au playtest | Levier (dans l'ordre) | Valeur |
-|---|---|---|
-| Clear trop trivial (< ~60 s, marge large) | 1. `timeSeconds` | **90 → 80** |
-| " (encore trop facile) | 2. cadence de spawn | resserrer −10 % |
-| Trop punitif / cibles entassées illisibles | 1. densité pool §1 | 52 → ~44 (retirer 4 col. R2) |
-| " | 2. `timeSeconds` | 90 → 100 |
+| Symptôme mesuré au playtest                | Levier (dans l'ordre) | Valeur                       |
+| ------------------------------------------ | --------------------- | ---------------------------- |
+| Clear trop trivial (< ~60 s, marge large)  | 1. `timeSeconds`      | **90 → 80**                  |
+| " (encore trop facile)                     | 2. cadence de spawn   | resserrer −10 %              |
+| Trop punitif / cibles entassées illisibles | 1. densité pool §1    | 52 → ~44 (retirer 4 col. R2) |
+| "                                          | 2. `timeSeconds`      | 90 → 100                     |
 
 Ne PAS toucher `enemySpeedMultiplier` (1.0) : la vitesse ennemie n'est pas en cause ici.
 
@@ -250,17 +254,17 @@ une rue plus courte. À confirmer subjectivement au VERIFY ; aucun changement 3C
 Vérifié contre `levels.ts` (belliard) — toutes les entrées sont en **coordonnées MONDE**, donc
 sensibles au nouveau `fullW`. Traduction en `x_norm` sur la nouvelle image :
 
-| Élément | Valeur actuelle (monde) | `x_norm` sur 64 | Verdict |
-|---|---|---|---|
-| **Hostage QTE** `anchor` | `x 9,9 ; y −5` | **0,655** | ✅ tombe sur **façade pleine** (bloc central, zone TABAC/BOULANGERIE), **hors passage** (0,39) et **hors pignon** (0,80). Le ×2,4 zoom lit une façade, pas un vide. **On garde 9,9.** |
-| **Delivery** `stopPosition` | `x 0 ; y −4,5` | **0,50** | ✅ camion s'arrête en milieu de rue devant façade ; `y −4,5` = ligne de trottoir (lane courier `−4,8`). `windowSeconds 8` = timer fixe, insensible à la largeur. Approche gauche plus courte (32 vs 43,7) mais **rien ne clippe**. |
-| **Courier** (lane) | `worldY −4,8` (`y_norm 0,90`) | traverse | ✅ lane sur le bandeau trottoir/rez (0,87–1,00) de la nouvelle image. Traversée plus courte, aucune rupture. |
-| **Loot crates** | window-spawn générique, 15 s | pool §1 | ✅ réutilise le **nouveau pool** de fenêtres (§1). Rien à changer côté loot. |
+| Élément                     | Valeur actuelle (monde)       | `x_norm` sur 64 | Verdict                                                                                                                                                                                                                            |
+| --------------------------- | ----------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hostage QTE** `anchor`    | `x 9,9 ; y −5`                | **0,655**       | ✅ tombe sur **façade pleine** (bloc central, zone TABAC/BOULANGERIE), **hors passage** (0,39) et **hors pignon** (0,80). Le ×2,4 zoom lit une façade, pas un vide. **On garde 9,9.**                                              |
+| **Delivery** `stopPosition` | `x 0 ; y −4,5`                | **0,50**        | ✅ camion s'arrête en milieu de rue devant façade ; `y −4,5` = ligne de trottoir (lane courier `−4,8`). `windowSeconds 8` = timer fixe, insensible à la largeur. Approche gauche plus courte (32 vs 43,7) mais **rien ne clippe**. |
+| **Courier** (lane)          | `worldY −4,8` (`y_norm 0,90`) | traverse        | ✅ lane sur le bandeau trottoir/rez (0,87–1,00) de la nouvelle image. Traversée plus courte, aucune rupture.                                                                                                                       |
+| **Loot crates**             | window-spawn générique, 15 s  | pool §1         | ✅ réutilise le **nouveau pool** de fenêtres (§1). Rien à changer côté loot.                                                                                                                                                       |
 
 **Point de vigilance (VERIFY) :** l'ancien commentaire justifiait `anchor.x 9,9` par « centre du
 tronçon-b » et par un **trou de ciel à x=0** en mode tronçon. Sur l'image UNIQUE il n'y a plus de
 trou à x=0 (norm 0,50 = mur mitoyen continu, pas de ciel). Donc **9,9 reste valable** (façade
-derrière), mais le *pourquoi* change → mettre à jour le commentaire de `levels.ts` lors de l'impl.
+derrière), mais le _pourquoi_ change → mettre à jour le commentaire de `levels.ts` lors de l'impl.
 Si le composite-gate du zoom montrait un backdrop médiocre à 0,655, repli propre : `anchor.x 0`
 (norm 0,50, façade aussi) — **une seule variable**, à ne changer que sur preuve.
 
@@ -289,12 +293,12 @@ Si le composite-gate du zoom montrait un backdrop médiocre à 0,655, repli prop
 
 ## 6. Test cahier des charges
 
-| Élément | Prohibition ST ? | Traitement |
-|---|---|---|
-| Ennemis qui poppent aux fenêtres | **Oui** | §1 = version fidèle, recalée sur le nouveau décor |
-| 3 rangées / band de visée haut-milieu | Oui (feel repris) | conservé |
-| Barricades / cover interactif | Oui | **NON reproduit** dans muf (pas de collision) — non traité ici ; extension à décider par pm+lead-GD |
-| Mobilier de rue parallax (props) | Non (extension muf) | §2 = extension **assumée**, documentée (ADR-0047/0049), décorative |
+| Élément                               | Prohibition ST ?    | Traitement                                                                                          |
+| ------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| Ennemis qui poppent aux fenêtres      | **Oui**             | §1 = version fidèle, recalée sur le nouveau décor                                                   |
+| 3 rangées / band de visée haut-milieu | Oui (feel repris)   | conservé                                                                                            |
+| Barricades / cover interactif         | Oui                 | **NON reproduit** dans muf (pas de collision) — non traité ici ; extension à décider par pm+lead-GD |
+| Mobilier de rue parallax (props)      | Non (extension muf) | §2 = extension **assumée**, documentée (ADR-0047/0049), décorative                                  |
 
 ## 7. Hand-offs (à logguer dans `docs/handoffs/`)
 

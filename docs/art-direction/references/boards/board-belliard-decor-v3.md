@@ -68,13 +68,13 @@ frontally or near-frontally, with genuine linework (not photo-referenced renderi
   built his "Ray Banana" strips against a deliberately flat, graphic, near-frontal urban
   backdrop — a useful counter-example to Tardi's heavy blacks: same medium (ink line),
   lighter register (closer to a flat-fill silhouette read).
-- [Floc'h (illustrateur) — Wikipédia](https://fr.wikipedia.org/wiki/Floc'h_(illustrateur)) —
+- [Floc'h (illustrateur) — Wikipédia](<https://fr.wikipedia.org/wiki/Floc'h_(illustrateur)>) —
   one of the main living ligne-claire artists, illustration/press background, worked
   directly for Parisian institutions (Musée des Arts Décoratifs commission); a second
   ligne-claire hand to cross-reference against Ted Benoît's for how clean, uniform-weight
   ink line reads on architecture specifically.
 - [Baru — "Noir" (Casterman) — Planète BD](https://www.planetebd.com/bd/casterman/noir/-/7083.html) /
-  [Noir (bande dessinée) — Wikipédia](https://fr.wikipedia.org/wiki/Noir_(bande_dessin%C3%A9e)) —
+  [Noir (bande dessinée) — Wikipédia](<https://fr.wikipedia.org/wiki/Noir_(bande_dessin%C3%A9e)>) —
   three India-ink B&W suburban stories (1995–98, collected 2009): Baru works in ink wash and
   halftone gradation rather than pure line, built entirely around banlieue/faubourg concrete
   décor as a character in itself — the closest tonal cousin to our "crade-documentaire"
@@ -314,11 +314,12 @@ style) if fed as a `kontext` `image=` source, per `docs/art-direction.md` §3.12
    halftone dot density, this is the sample to calibrate it against.
 
 **Recommendation for the regen pass:** no single reference in this board satisfies cadrage
-+ style + grain at once — the practical path is likely a **two-reference kontext chain** (an
-elevation plate for framing, crossed with Presl/Tardi for ink handling), with the riso
-vocabulary (D4) folded into the prompt's style-block text rather than a third image input.
-This is a production-method call for `lead-art`/`concept-artist`, not something this board
-resolves on its own.
+
+- style + grain at once — the practical path is likely a **two-reference kontext chain** (an
+  elevation plate for framing, crossed with Presl/Tardi for ink handling), with the riso
+  vocabulary (D4) folded into the prompt's style-block text rather than a third image input.
+  This is a production-method call for `lead-art`/`concept-artist`, not something this board
+  resolves on its own.
 
 ---
 
