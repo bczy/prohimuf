@@ -3,7 +3,6 @@ import {
   FACADE_ASPECT,
   PANELS,
   WORLD_HEIGHT,
-  TRONCON_GAP,
   getBackdropLayout,
   getLevelPanelZones,
   getWindowZones,
@@ -14,14 +13,20 @@ import {
 import type { WindowSlot } from "@game/types/map";
 
 /**
- * FROZEN cross-lane contract for ADR-0048 (troncon-sequence backdrop mode).
+ * Cross-lane contract for the backdrop layout (ADR-0048, amended ADR-0057).
  * Render + tooling build against these exact shapes:
- *   - getBackdropLayout(id) → BackdropLayout (pure geometry, both modes)
+ *   - getBackdropLayout(id) → BackdropLayout (pure geometry, all modes)
  *   - computeBackdropSlots(id, facadeH) → world WindowSlot[]
  *
  * The single-facade path MUST reproduce today's slots byte-for-byte so the
  * fixed levels (stalingrad, vitry) are provably untouched when render migrates
- * off the legacy tilePanelZones → computeSlotsFromZones chain.
+ * off the legacy tilePanelZones → computeSlotsFromZones chain — this block is
+ * FROZEN.
+ *
+ * The ADR-0048 tronçon-sequence freeze is LIFTED for belliard (ADR-0057): its
+ * backdrop moves from the 4-tile troncon-sequence to a single-wide opaque décor
+ * baked in one plane. This file now pins the single-wide contract that lanes B
+ * (render) and C (data) build against.
  */
 
 const PANEL_WIDTH = WORLD_HEIGHT * FACADE_ASPECT;
@@ -69,69 +74,49 @@ describe("getBackdropLayout — single-facade parity (fixed levels)", () => {
   }
 });
 
-describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
-  // Manifest sequence: troncon-a, troncon-c, troncon-b, troncon-c (padded aspects).
-  const ASPECTS = [1.6491, 1.9224, 1.7857, 1.9224];
-  const WIDTHS = ASPECTS.map((a) => WORLD_HEIGHT * a);
-  const WIDTHS_SUM = WIDTHS.reduce((s, w) => s + w, 0);
-  // fullW includes a TRONCON_GAP sky gap between each adjacent pair (n-1 gaps).
-  const FULL_W = WIDTHS_SUM + TRONCON_GAP * (WIDTHS.length - 1);
+describe("getBackdropLayout — belliard single-wide (ADR-0057)", () => {
+  // Native aspect of street-wide.png (image width/height) = 6418/1248, rounded to
+  // 4 decimals per the manifest convention (cf. troncon aspects 1.6491, 1.9224…).
+  // This is the frozen contract value lane C must set EXACTLY in the belliard
+  // manifest so getBackdropLayout("belliard").tiles[0].width matches byte-for-byte.
+  const ASPECT = 5.1426; // = round(6418/1248, 4)
+  const WIDTH = WORLD_HEIGHT * ASPECT;
 
-  it("emits 4 variable-width tiles with the declared file sequence", () => {
+  it("is single-wide with exactly one street-wide tile", () => {
     const layout = getBackdropLayout("belliard");
-    expect(layout.mode).toBe("troncon-sequence");
-    expect(layout.tiles.map((t) => t.file)).toEqual([
-      "troncon-a",
-      "troncon-c",
-      "troncon-b",
-      "troncon-c",
-    ]);
-    expect(layout.tiles.map((t) => t.width)).toEqual(WIDTHS);
+    expect(layout.mode).toBe("single-wide");
+    expect(layout.tiles.length).toBe(1);
+    const tile = layout.tiles[0];
+    expect(tile).toBeDefined();
+    if (tile === undefined) return;
+    expect(tile.file).toBe("street-wide");
+    expect(tile.width).toBe(WORLD_HEIGHT * ASPECT);
+    expect(tile.centreX).toBe(0);
   });
 
-  it("sums tile widths + inter-tile gaps to fullW", () => {
+  it("fullW equals the single tile's width, centred on the origin", () => {
     const layout = getBackdropLayout("belliard");
-    expect(layout.fullW).toBeCloseTo(FULL_W, 12);
-    expect(layout.fullW).toBeCloseTo(WIDTHS_SUM + TRONCON_GAP * 3, 6);
+    expect(layout.fullW).toBe(WIDTH);
+    const tile = layout.tiles[0];
+    if (tile === undefined) return;
+    expect(layout.fullW).toBe(tile.width);
+    // Left edge -fullW/2, right edge +fullW/2, symmetric about x=0.
+    expect(tile.centreX - tile.width / 2).toBeCloseTo(-WIDTH / 2, 12);
+    expect(tile.centreX + tile.width / 2).toBeCloseTo(WIDTH / 2, 12);
   });
 
-  it("places centreX cumulatively and symmetrically about the origin", () => {
+  it("carries the level's window zones and emits one slot per zone", () => {
+    // The single opaque image carries getWindowZones("belliard") (fed by the
+    // manifest `belliard.windows`, lane C) — one continuous set, no per-tile split.
     const layout = getBackdropLayout("belliard");
-    const tiles = layout.tiles;
+    const zones = getWindowZones("belliard");
+    expect(zones.length).toBeGreaterThan(0);
+    const tile = layout.tiles[0];
+    if (tile === undefined) return;
+    expect(tile.zones.length).toBe(zones.length);
 
-    // First tile's left edge is -fullW/2, last tile's right edge is +fullW/2.
-    const first = tiles[0];
-    const last = tiles[tiles.length - 1];
-    expect(first).toBeDefined();
-    expect(last).toBeDefined();
-    if (first === undefined || last === undefined) return;
-    expect(first.centreX - first.width / 2).toBeCloseTo(-FULL_W / 2, 12);
-    expect(last.centreX + last.width / 2).toBeCloseTo(FULL_W / 2, 12);
-
-    // Tiles are separated by exactly one TRONCON_GAP of sky:
-    // tile_{i+1} left edge − tile_i right edge == TRONCON_GAP.
-    for (let i = 0; i < tiles.length - 1; i++) {
-      const cur = tiles[i];
-      const next = tiles[i + 1];
-      if (cur === undefined || next === undefined) continue;
-      const rightEdge = cur.centreX + cur.width / 2;
-      const leftEdge = next.centreX - next.width / 2;
-      expect(Math.abs(leftEdge - rightEdge - TRONCON_GAP)).toBeLessThanOrEqual(EPS);
-    }
-  });
-
-  it("fallback: with no per-tronçon generated zones, every tile still has zones", () => {
-    // Phase-1: the `belliard/troncon-*` generated keys do not exist yet, so each
-    // tile falls back to getWindowZones("belliard") — the game must stay playable.
-    const layout = getBackdropLayout("belliard");
-    const fallback = getWindowZones("belliard");
-    expect(fallback.length).toBeGreaterThan(0);
-    for (const tile of layout.tiles) {
-      expect(tile.zones.length).toBeGreaterThan(0);
-    }
-    // computeBackdropSlots yields one slot per zone across all tiles.
+    // computeBackdropSlots yields exactly one slot per zone.
     const slots = computeBackdropSlots("belliard", FACADE_H);
-    const zoneTotal = layout.tiles.reduce((s, t) => s + t.zones.length, 0);
-    expect(slots.length).toBe(zoneTotal);
+    expect(slots.length).toBe(zones.length);
   });
 });

@@ -36,6 +36,16 @@
  *    namespace from the bare level-id keys above; level-id keys never
  *    contain `/`, so the two never collide. `getBackdropLayout` falls back to
  *    the bare-id zones when a `${levelId}/${file}` entry is absent).
+ *    belliard NO LONGER takes this pass (ADR-0057): its backdrop.mode moved
+ *    to "single-wide" (one baked décor image, hand-authored `windows` zones
+ *    in levelArt.json instead of art-detected ones), so this pass 2 loop
+ *    (which filters on `backdrop.mode === "troncon-sequence"`) now silently
+ *    skips it and the old `belliard/troncon-a|b|c` keys were removed from the
+ *    output as dead. Still runs as before for any future troncon-sequence
+ *    level. belliard's bare `belliard` key (pass 1, single-facade) keeps
+ *    being (re)generated if `facade.png` exists, but is unconsumed by the
+ *    single-wide backdrop path (getBackdropLayout reads `getWindowZones`,
+ *    which prefers the manifest's `windows` field over any generated zones).
  *
  * Output: src/game/levels/windowZones.generated.json (one combined object).
  * Pass --debug to also write overlay JPEGs to scripts/.dbg-<level>-<tag>.jpg

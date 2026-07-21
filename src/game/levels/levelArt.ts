@@ -160,14 +160,18 @@ export interface BackdropTileSpec {
 }
 
 /**
- * How a level composes its backdrop (ADR-0048). Absent on a level ⇒
- * `single-facade`: the classic {@link PANELS} equal-width `facade.png` panels.
- * `troncon-sequence`: a fixed, deterministic sequence of distinct
- * variable-width tronçon images laid side by side.
+ * How a level composes its backdrop (ADR-0048, amended ADR-0057). Absent on a
+ * level ⇒ `single-facade`: the classic {@link PANELS} equal-width `facade.png`
+ * panels. `troncon-sequence`: a fixed, deterministic sequence of distinct
+ * variable-width tronçon images laid side by side. `single-wide` (ADR-0057): one
+ * complete décor baked into a single opaque wide plane (`file` basename + its
+ * native `aspect` = image width/height, which drives the plane's world width);
+ * replaces `troncon-sequence` for belliard.
  */
 export type BackdropDescriptor =
   | { readonly mode: "single-facade" }
-  | { readonly mode: "troncon-sequence"; readonly tiles: readonly BackdropTileSpec[] };
+  | { readonly mode: "troncon-sequence"; readonly tiles: readonly BackdropTileSpec[] }
+  | { readonly mode: "single-wide"; readonly file: string; readonly aspect: number };
 
 export interface LevelArt {
   readonly id: string;
@@ -488,7 +492,7 @@ export interface BackdropTile {
 /** The pure geometric composition of a level's backdrop (ADR-0048). Contains
  *  NO draw-scale / feather / blend — those stay render-side, applied per mode. */
 export interface BackdropLayout {
-  readonly mode: "single-facade" | "troncon-sequence";
+  readonly mode: "single-facade" | "troncon-sequence" | "single-wide";
   readonly fullW: number;
   readonly tiles: readonly BackdropTile[];
 }
@@ -522,19 +526,34 @@ function buildTronconLayout(id: string, tiles: readonly BackdropTileSpec[]): Bac
   return { mode: "troncon-sequence", fullW, tiles: out };
 }
 
+/** Compose a single-wide backdrop (ADR-0057): one complete opaque décor image
+ *  baked into a single plane, centred on the origin, carrying the level's window
+ *  zones ({@link getWindowZones}) normalized to the whole image. The plane's world
+ *  width is {@link WORLD_HEIGHT} × the image's native aspect; `fullW` equals it. */
+function buildSingleWideLayout(id: string, file: string, aspect: number): BackdropLayout {
+  const width = WORLD_HEIGHT * aspect;
+  const tile: BackdropTile = { file, width, centreX: 0, zones: getWindowZones(id) };
+  return { mode: "single-wide", fullW: width, tiles: [tile] };
+}
+
 /**
- * The pure, deterministic backdrop layout for a level (ADR-0048). Single grid
- * abstraction for both modes:
+ * The pure, deterministic backdrop layout for a level (ADR-0048, amended
+ * ADR-0057). Single grid abstraction for all modes:
  * - single-facade (default): {@link PANELS} equal-width `facade` tiles of width
  *   {@link PANEL_WIDTH}, centred on the origin, each carrying its panel's zones
  *   ({@link getLevelPanelZones}). Provably byte-identical to the legacy
  *   `tilePanelZones → computeSlotsFromZones` slots (see backdropLayout tests).
  * - troncon-sequence: the manifest's fixed variable-width tiles (see
  *   {@link buildTronconLayout}).
+ * - single-wide (belliard, ADR-0057): one opaque wide image in a single tile (see
+ *   {@link buildSingleWideLayout}).
  */
 export function getBackdropLayout(id: string | undefined): BackdropLayout {
   const art = getLevelArt(id);
   const backdrop = art.backdrop;
+  if (backdrop?.mode === "single-wide") {
+    return buildSingleWideLayout(art.id, backdrop.file, backdrop.aspect);
+  }
   if (backdrop?.mode === "troncon-sequence") {
     return buildTronconLayout(art.id, backdrop.tiles);
   }

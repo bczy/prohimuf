@@ -135,12 +135,13 @@ describe("backdropPanes (ADR-0048)", () => {
     });
   });
 
-  it("troncon-sequence (belliard): one native-width, un-feathered pane per tile", () => {
+  it("single-wide (belliard): one native-width, un-feathered pane (ADR-0057)", () => {
     const layout = getBackdropLayout("belliard");
     const panes = backdropPanes(layout);
-    // Plane count == tiles.length; the declared file sequence, in order.
+    // Single opaque décor image: exactly one pane, the declared file.
+    expect(panes.length).toBe(1);
     expect(panes.length).toBe(layout.tiles.length);
-    expect(panes.map((p) => p.file)).toEqual(["troncon-a", "troncon-c", "troncon-b", "troncon-c"]);
+    expect(panes.map((p) => p.file)).toEqual(["street-wide"]);
     panes.forEach((pane, i) => {
       const tile = layout.tiles[i];
       expect(tile).toBeDefined();

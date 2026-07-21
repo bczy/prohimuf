@@ -119,10 +119,11 @@ export const LEVELS: readonly LevelConfig[] = [
     hostageQte: {
       triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,
-      // x nudged off the origin: the ADR-0048 tronçon layout leaves a between-
-      // building sky gap exactly at world x=0, which put a black void behind the
-      // captor at the ×2.4 zoom. 9.9 = troncon-b's tile centre, so the tableau
-      // reads against a facade (playtest note, PR #76).
+      // x nudged off the origin so the tableau reads against a facade at the ×2.4
+      // zoom. Under ADR-0057's single-wide opaque décor there is no longer a sky
+      // gap at x=0 (the old black-void regression, PR #76), so 9.9 is now kept as
+      // a design constant: x_norm 0.655 = solid facade, clear of the passage
+      // (0.39) and the pignon (0.80) per the street-wide repositioning spec.
       anchor: { x: 9.9, y: -5 },
       maxBlownPeeks: 4,
       peekCadenceSeconds: 1.5,

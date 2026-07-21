@@ -456,26 +456,10 @@
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
       "backdrop": {
-        "$comment": "Tronçon-sequence backdrop (ADR-0048): a FIXED deterministic sequence of distinct variable-width transparent tronçon PNGs. Each PNG is BUILDINGS ONLY (floating, transparent L/R margins so buildings never touch the image edge, no baked road, barrière/ground kept only under a building) over a continuous ground layer (assets/levels/belliard/ground.png, one strip spanning the whole street) and — later, owner-supplied — a parallax sky showing through the between-building gaps. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (drives world width = world.heightUnits * aspect). Absent on a level ⇒ single-facade mode. The transparent margins provide the between-building gap, so TRONCON_GAP is 0.",
-        "mode": "troncon-sequence",
-        "tiles": [
-          {
-            "file": "troncon-a",
-            "aspect": 1.6491
-          },
-          {
-            "file": "troncon-c",
-            "aspect": 1.9224
-          },
-          {
-            "file": "troncon-b",
-            "aspect": 1.7857
-          },
-          {
-            "file": "troncon-c",
-            "aspect": 1.9224
-          }
-        ]
+        "$comment": "Single-wide backdrop (ADR-0057, amends ADR-0048): the FULL décor — buildings, ground, sky — is baked into ONE opaque wide plane; no more separate sky/ground/foreground tiles and no tronçon tiling. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (native street-wide.png is 6418×1248), drives world width = world.heightUnits * aspect. Non-standard art pipeline (NOT the prompt-gate flow below, which is legacy/unused for belliard's backdrop): generated via scripts/gen-street-paid.mjs (paid ideogram-v4-quality) + scripts/stitch-belliard-street.mjs (tone-matched butt-join of two street renders); regenerate through THAT pipeline, not gen-level-art.mjs.",
+        "mode": "single-wide",
+        "file": "street-wide",
+        "aspect": 5.1426
       },
       "parallax": {
         "sky": 0.88,
@@ -484,17 +468,17 @@
       },
       "ironwork": "haussmann",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0047). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right).",
+        "$comment": "Near-foreground parallax props (ADR-0047), repositioned for the single-wide street-wide.png décor (ADR-0057) per docs/game-design/spec-belliard-street-wide-repositioning.md §2 (13 props, gate lead-game-designer PASS 2026-07-21). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right). trafficLight (x=0.388, on the passage) is the ONLY prop exempt from the maxH clamp (TRAFFIC_LIGHT_H_FRAC, NearForeground.tsx) and thus the only one that can rise into the window band — deliberately placed over the passage exclusion zone so its mast never sweeps an active pop window; the other 12 props are clamped to maxH so non-occlusion holds by construction regardless of x.",
         "factor": -0.34,
         "objects": [
           {
-            "kind": "bollard",
-            "x": 0.05,
+            "kind": "scooter",
+            "x": 0.075,
             "row": "far"
           },
           {
             "kind": "bench",
-            "x": 0.162,
+            "x": 0.16,
             "row": "near"
           },
           {
@@ -503,107 +487,88 @@
             "row": "far"
           },
           {
-            "kind": "scooter",
-            "x": 0.387,
-            "row": "far"
-          },
-          {
-            "kind": "bollard",
-            "x": 0.5,
-            "row": "far"
-          },
-          {
-            "kind": "bench",
-            "x": 0.613,
+            "kind": "parkingMeter",
+            "x": 0.34,
             "row": "near"
           },
           {
-            "kind": "wallaceFountain",
-            "x": 0.725,
-            "row": "far"
-          },
-          {
-            "kind": "scooter",
-            "x": 0.837,
-            "row": "far"
-          },
-          {
             "kind": "bollard",
-            "x": 0.95,
+            "x": 0.36,
             "row": "far"
-          },
-          {
-            "kind": "lamppost",
-            "x": 0.02,
-            "row": "near"
           },
           {
             "kind": "trafficLight",
-            "x": 0.13,
+            "x": 0.388,
             "row": "near"
+          },
+          {
+            "kind": "bollard",
+            "x": 0.412,
+            "row": "far"
           },
           {
             "kind": "streetSign",
-            "x": 0.24,
-            "row": "near"
-          },
-          {
-            "kind": "parkingMeter",
-            "x": 0.35,
-            "row": "near"
-          },
-          {
-            "kind": "lamppost",
             "x": 0.46,
             "row": "near"
           },
           {
-            "kind": "trafficLight",
-            "x": 0.57,
+            "kind": "lamppost",
+            "x": 0.495,
             "row": "near"
           },
           {
-            "kind": "streetSign",
-            "x": 0.68,
+            "kind": "bench",
+            "x": 0.6,
             "row": "near"
           },
           {
             "kind": "parkingMeter",
-            "x": 0.79,
+            "x": 0.72,
             "row": "near"
           },
           {
             "kind": "lamppost",
-            "x": 0.9,
+            "x": 0.8,
             "row": "near"
+          },
+          {
+            "kind": "bollard",
+            "x": 0.9,
+            "row": "far"
           }
         ]
       },
       "windowGrid": {
-        "$comment": "Prior for scripts/gen-window-zones.mjs: cols/rows + extent of the lit-window band; the script snaps it to each panel's art.",
+        "$comment": "Prior for scripts/gen-window-zones.mjs Pass 1 (single-facade only — belliard no longer takes that path, see backdrop.mode single-wide above; kept for the still-generated but now-unconsumed bare `belliard` fallback key in windowZones.generated.json). top recalibrated to 0.24 (was 0.19) to track the new Row A y_norm (spec §1.2, dev note §7) — the actual near-foreground maxH clamp is derived live from `windows` below (nearForegroundBandTop), not from this field, but it is kept in sync for data hygiene.",
         "cols": 7,
         "rows": 3,
         "left": 0.085,
         "right": 0.9,
-        "top": 0.19,
+        "top": 0.24,
         "bottom": 0.48
       },
       "windows": {
-        "$comment": "Tuned to the actual windows of facade.png (repeated on every panel). Re-tune if facade.png is regenerated.",
-        "w": 0.085,
-        "h": 0.16,
+        "$comment": "Single-wide décor (ADR-0057): 3 rows recalibrated on street-wide.png's real openings, per docs/game-design/spec-belliard-street-wide-repositioning.md §1 (gate lead-game-designer PASS 2026-07-21) — A lucarnes (mansard dormers) y=0.24, B étage noble (balcony doors) y=0.35, C persiennes (shuttered windows, densest) y=0.47. x/y normalized over the WHOLE single image (not per-tile as before). Exclusion zones respected column-by-column: passage 0.372-0.408, couture (mitoyen seam) 0.485-0.502, pignon (blind gable) 0.788-0.812, edges <0.035/>0.965.",
+        "w": 0.018,
+        "h": 0.09,
         "rows": [
           {
-            "y": 0.19,
-            "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9]
+            "y": 0.24,
+            "xs": [0.055, 0.125, 0.195, 0.265, 0.335, 0.455, 0.545, 0.62, 0.7, 0.835, 0.905, 0.95]
           },
           {
-            "y": 0.335,
-            "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9]
+            "y": 0.35,
+            "xs": [
+              0.045, 0.082, 0.118, 0.152, 0.187, 0.221, 0.257, 0.292, 0.327, 0.427, 0.458, 0.516,
+              0.583, 0.651, 0.719, 0.836, 0.897, 0.957
+            ]
           },
           {
-            "y": 0.48,
-            "xs": [0.085, 0.215, 0.35, 0.49, 0.63, 0.77, 0.9]
+            "y": 0.47,
+            "xs": [
+              0.045, 0.082, 0.118, 0.152, 0.187, 0.221, 0.257, 0.292, 0.327, 0.356, 0.427, 0.481,
+              0.516, 0.549, 0.617, 0.651, 0.685, 0.719, 0.746, 0.766, 0.836, 0.897, 0.928, 0.957
+            ]
           }
         ]
       },

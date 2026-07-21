@@ -106,16 +106,11 @@ describe("assetManifest — menu & tutorial", () => {
 describe("assetManifest — belliard level manifest", () => {
   const m = manifestFor("belliard");
 
-  it("warms the tronçon tiles + ground it actually renders (ADR-0048), in tile order", () => {
-    // belliard is a troncon-sequence level: the gate warms the tile PNGs (unique,
-    // manifest order) + the continuous ground strip — NOT the sky/facade/street
-    // trio the tronçon path never draws.
-    expect(levelLayerPaths("belliard")).toEqual([
-      "assets/levels/belliard/troncon-a.png",
-      "assets/levels/belliard/troncon-c.png",
-      "assets/levels/belliard/troncon-b.png",
-      "assets/levels/belliard/ground.png",
-    ]);
+  it("warms the single wide décor image it actually renders (ADR-0057)", () => {
+    // belliard is now a single-wide level: ciel+immeubles+sol are baked into ONE
+    // opaque image, so the gate warms THAT image alone — NOT the sky/facade/street
+    // trio (suppressed by the single-wide render branch) nor the retired tronçons.
+    expect(levelLayerPaths("belliard")).toEqual(["assets/levels/belliard/street-wide.png"]);
     for (const layer of levelLayerPaths("belliard")) expect(m).toContain(layer);
   });
 
