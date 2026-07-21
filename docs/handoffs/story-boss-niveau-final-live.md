@@ -3917,3 +3917,71 @@ VERDICT: DONE — off-screen edge arrows hidden during the boss QTE (dev-r3f-ren
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: PASS — quality gate story-2 (qa-lead) — the plan ran and held. Mechanical gate GREEN at close (typecheck EXIT 0, vitest 1013/1013, lint EXIT 0, format:check EXIT 0). All 10 ACs VERIFIED; all 4 regression lines VERIFIED vs origin/main (3 shipped levels + tutorial byte-untouched, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation = gated A2 décor AABB only, live bossQteSpec byte-equal to harness except seed 19991232 + décor {0.2,1.5}). C-QA3 CLOSED via the §9 live-level capture seam (boss over l'Éden, evidence 06-14, persistence double-guarded + empirically inert). Every stage-6 gate verdict logged and PASS: Sacha design-acceptance FINAL (K-5 re-pin 19991231→19991232 resolves the camp-dominance FAIL, N1 supply PASS), Tony UX (A1–A15 PASS on l'Éden; arrow-clutter fix landed §10/`12`), Nico asset gate 9/9 (lustre re-roll 4879, family complete); gated amendments A2 / K-5-re-pin / cols-5→4 all landed with their gates. Tony's two backlog gaps: décor-armed CLOSED (`13`), boss-loss STATE captured (`14`, blown 10) with the EndScreen component explicitly deferred (unchanged reuse, low-risk). Deferrals all explicit with owners (Ben's on-device ms — Bertrand executes, does not deadlock; EndScreen component; D6 art-integration; standing zone/prompt findings). Story-2 stage-6 (4-reviewer merge panel) is OPEN.
+
+---
+
+## STAGE 6 — TRIAGE + INTEGRATION REVIEW (senior-architect, Winston) — PR #119 / claude/yo-pmnyzr
+
+One pass over `git diff origin/main...HEAD`. 4-reviewer panel + a late Edge-Case-Hunter layer
+folded in. Every finding re-verified against real code (not on the reviewers' word). Security lane:
+zero findings (seam guards proven independent, PNGs chunk-walked clean, secrets safe).
+
+### Integration review — boundary law verdict: CLEAN (confirmed)
+
+- **A2 (décor AABB) lives in `src/game/systems/bossQteSystem.ts`** — pure logic, no React/Three
+  import, `withinBox` + `BOSS_DECOR_CATCH_HALF_{W,H}`, unit-tested, `assertPositiveScalar`-guarded.
+  Correct layer. The PAIRED render draw-size (`DECOR_W/H` in `BossQteSprite`) is view-side. This is a
+  2-layer coordinated change (game constant ↔ render draw, drift-guarded in the A2 docblock) →
+  needs architect sign-off per COLLABORATION.md → **this triage IS that sign-off: GRANTED.**
+- **C-QA3 seam (`resolveBossPreviewLevel`/`isBossSeamShippedLevel`) is view-side** — `bossHarness.ts`
+  (render/scene) + `App.tsx`; the resolver is PURE (search→LevelConfig, no `window`); reads `@game`
+  data (allowed), no game→render leak. Persistence guard hardening (`&& !BOSS_SEAM_SHIPPED_LEVEL`) is a
+  real but view-side logic change, double-guarded behind the `PREVIEW_SCREEN !== null` early-return.
+- **HUD arrow-gate** — render-only. **Hooks contract UNCHANGED** — `useGameLoop.ts` diff is a stale
+  comment only, zero logic. Deps/deploy: the one real deps item is `yarn.lock` (see #5); the new
+  `gen-level-art.yml` is the one deploy-adjacent item (see E1).
+
+### Triage table
+
+| #                            | Sev                   | Verdict                                       | Lane                            | Disposition                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | --------------------- | --------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MAJEUR-1                     | MAJOR (doc-of-record) | **PRE-MERGE (blocking)**                      | tech-writer + architect         | ADR-0053 contradicts its own build PR (Status "pending build"; D2/D3 assert zero lines in `bossQteSystem.ts`/`App.tsx` — both changed; D4 seed 19991231 vs shipped 19991232). CLAUDE.md same-PR ADR rule ⇒ realign THIS PR.                                                                                                                                                                         |
+| E1                           | HIGH                  | **PRE-MERGE (blocking)**                      | dev-tooling-assets              | `regenerate=true` `rm -rf public/assets/levels` + generator `LAYERS=[sky,facade,street,foreground]` (no troncon/ground) + `git add -f` = commits DELETION of belliard's required `troncon-a/b/c.png`+`ground.png` on a _fully-successful_ run. Scope the purge to generated layers / fail on missing-required / assert post-gen parity. (Subsumes consolidated-#2 partial-failure variant.)         |
+| E9                           | LOW (product)         | **PRE-MERGE (fix; pm may downgrade)**         | dev-r3f-render                  | `?preview=boss&level=niveau-final` w/o `&at=` boots the CANON finale fully playable on the deployed branch-preview (harness precedent was NON-canon _by design_). Couple the shipped-level `INITIAL_LEVEL` boot to `parseBossHarnessTarget(at)!==null` — closes the one-shot-reveal URL surface, preserves every QA capture (always passes `at=`). Cheap; pm/Bertrand may accept-with-release-note. |
+| 3 (bossHarness seed)         | MINOR                 | **PRE-MERGE (blocking, trivial)**             | dev-r3f-render                  | `bossHarness.ts:98` docstring says seed 19991231; shipped 19991232. One word.                                                                                                                                                                                                                                                                                                                       |
+| 4 (stale invariants)         | MINOR                 | **PRE-MERGE (blocking, wording)**             | tech-writer (owning-lane aware) | 4 comments the story falsifies: `levels.ts:50-55`, `useGameLoop.ts:58 + ~200-207`, `stateMachine.ts:182-184`, `App.tsx:155-156` ("no shipped level authors a boss" / "EVERY shipped level" / "only the dev-harness"). Wording-only, zero logic.                                                                                                                                                     |
+| E4                           | MEDIUM                | **PRE-MERGE (fold-if-free)**                  | dev-tooling-assets              | `gen-boss-sprites.yml` solidify globs `boss/*.png` with no props exclusion → `fill-sprite-holes` fills the deliberately-porous `lustre`/`speaker_wall` opaque on next targeted regen. Current committed art is gate-passed (latent); exclude props from the glob while the E1 lane is open.                                                                                                         |
+| 5 (yarn.lock)                | MINOR                 | **ACCEPT-WITH-RECORD**                        | docs                            | ~361 re-resolutions incl. runtime (react 19.2.8, @react-three/fiber 9.6.1, zustand 5.0.14), all verified-green + security-audited. Pin-back would invalidate the verified-green state and restart verification — NOT worth it. Record the runtime deltas in PR body + shard (folded into the same doc pass).                                                                                        |
+| E6                           | LOW (player-facing)   | **PRODUCT CALL → pm (default: release-note)** | pm                              | Pre-existing vitry-completers don't retro-unlock the finale (unlock hop fires on a NEW `LEVEL_COMPLETE`; `muf_progress` stores unlocked ids, not completions). Not architect-blocking; migration heuristic ("vitry score exists") could mis-fire — default release-note, pm rules.                                                                                                                  |
+| 6 (assetManifest 404s)       | LOW                   | **FOLLOW-UP**                                 | dev-gameplay                    | `levelLayerPaths` returns sky/facade/street unconditionally → niveau-final warms 2 nonexistent layers = 4 graceful 404s/finale-load. Verify gate already screenshotted the finale (evidence 06-11) WITH this behavior ⇒ inside verified-green ⇒ non-blocking. Derive runtime layers from `levelArt` prompts (mirror e2e-assets) — same root as E1's generator-LAYERS divergence; unify.             |
+| E2                           | LOW                   | **FOLLOW-UP**                                 | concept-artist (Maud)           | `facade` prompt still says "exactly 5 tall arched windows" vs the 4-pinned grid/accepted art; a regen would reroll wrong (interacts with E1). Prompt content is Maud's lane. Higher priority post-E1.                                                                                                                                                                                               |
+| E3/E7/E8/E10 + nits          | LOW                   | **FOLLOW-UP**                                 | dev-tooling-assets              | Tooling-hardening pass: `--asset` arg guard (FORCE=1 re-rolls 5 clean figures), prompt-field validation (no "undefined…" to FLUX), `decodeImage` robustness (WebP/truncated), cutout byte-churn, misleading "(chroma-key runs in CI)" messages, unlock-adjacency test tutorial-filter, e2e-assets↔generator one-directional lockstep.                                                               |
+| D6 sprite render-integration | —                     | **FOLLOW-UP (already deferred)**              | lead-art                        | Unchanged from ADR-0053 D6.                                                                                                                                                                                                                                                                                                                                                                         |
+
+### Verdict: NO-MERGE until the pre-merge list clears.
+
+No CONFIRMED blocking CODE finding (A2 + C-QA3 are process-sanctioned and boundary-clean; security
+zero). The hard blocker is the doc-of-record (MAJEUR-1) which CLAUDE.md's same-PR ADR rule elevates
+to merge-blocking, plus E1 (a NEW workflow destroys required shipped art on its documented regen
+path). Pre-merge fix list, per lane:
+
+- **tech-writer + architect:** ADR-0053 realignment — flip Status to Accepted; record sanctioned
+  amendments (A2 décor AABB, K-5 re-pin 19991232, windowGrid cols 5→4 Bertrand-escalation, lustre
+  seed 4879); rewrite D2/D3 reuse map to NAME the sanctioned touches (bossQteSystem.ts A2 + décor
+  constants; App.tsx C-QA3 seam) instead of "zero lines / any hit blocking"; fix D4 seed →19991232;
+  place the A2 amendment in the ADR-0052/0053 amendment log.
+- **tech-writer (owning-lane aware):** 4 stale invariant comments (#4).
+- **dev-r3f-render:** bossHarness docstring seed →19991232 (#3); E9 `at=`-gate on the shipped boot.
+- **dev-tooling-assets:** E1 regen-destroys-required-art guard (blocking); E4 props solidify-exclusion
+  (fold-if-free).
+- **docs (PR body + this shard):** acknowledge the yarn.lock runtime deltas (#5).
+- **pm:** rule E6 (default release-note).
+
+Follow-ups for `producer` to track: #6+generator-LAYERS unification (dev-gameplay+tooling), E2
+(Maud), E3/E7/E8/E10+nits (tooling hardening), D6 (lead-art).
+
+handoff → `producer` (Marion): NO-MERGE. Chase the pre-merge fixes above (tech-writer / dev-r3f-render
+/ dev-tooling-assets / docs) and the pm E6 ruling; re-run the affected verify slices after the E1/E9
+code fixes land (E9 touches an App-load path; E1 is CI-only). Follow-ups logged above.
+handoff → `pm` (John): one product call owed — E6 retro-unlock (migration vs release-note); my default
+is release-note. Everything else is doc/CI/wording + one tiny view-side gate.
