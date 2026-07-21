@@ -461,19 +461,19 @@
         "tiles": [
           {
             "file": "troncon-a",
-            "aspect": 1.9234
+            "aspect": 1.6491
           },
           {
             "file": "troncon-c",
-            "aspect": 2.1156
+            "aspect": 1.9224
           },
           {
             "file": "troncon-b",
-            "aspect": 2.0406
+            "aspect": 1.7857
           },
           {
             "file": "troncon-c",
-            "aspect": 2.1156
+            "aspect": 1.9224
           }
         ]
       },

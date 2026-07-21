@@ -8,6 +8,14 @@ joins the regeneration lot. (`street` was verified not-rendered in tronçon mode
 the lot after Serge's pre-prod pass — §5, §10.) Belliard regeneration lot: `troncon-a`,
 `troncon-b`, `troncon-c`, `sky`, `foreground`.
 
+> **⚠️ PIVOT 2026-07-21 (Bertrand): tronçons = img2img framing + désaturation, PAS text-to-image.**
+> Le rendu réel a montré que FLUX text-to-image REMPLIT le cadre et coupe les immeubles aux bords.
+> L'art img2img d'origine avait déjà le bon cadrage (immeubles auto-contenus, marges de ciel, non
+> coupés) — son seul défaut était la couleur. Solution retenue: garder ce cadrage et juste
+> désaturer (`scripts/desat-troncons.mjs`). Les prompts tronçon text-to-image ci-dessous sont
+> CONSERVÉS pour mémoire mais NE SONT PLUS la source des tuiles. `gen-belliard-decor.mjs` ne
+> génère plus que le foreground.
+
 Supersedes [`level-belliard-decor-v2.md`](level-belliard-decor-v2.md). Structural authority:
 [`ADR-0048`](../../adr/0048-troncon-sequence-backdrop-mode.md). Consumes the two validated
 boards (do not reopen): `board-belliard-decor.md` (D1–D5), `board-belliard-decor-v2.md`.

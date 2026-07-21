@@ -45,17 +45,14 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install @napi-rs/canvas (sky key + foreground cutout)
+      - name: Install @napi-rs/canvas (foreground cutout)
         run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Prompt gate (before any generation)
         run: node scripts/check-art-prompts.mjs
 
-      - name: Generate the 5-asset lot (FLUX text-to-image, pinned seeds)
+      - name: Generate the foreground (FLUX text-to-image, pinned seed)
         run: FORCE=1 node scripts/gen-belliard-decor.mjs
-
-      - name: Region-mask the tronçon sky to transparency
-        run: node scripts/key-troncon-sky.mjs
 
       - name: Chroma-key the foreground (magenta → transparent)
         run: node scripts/cutout-foreground.mjs
@@ -64,13 +61,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Bounded to the belliard dir; ground.png/street.png are not regenerated
-          # so they only stage if the generator touched them (it does not).
-          for f in troncon-a troncon-b troncon-c sky foreground; do
-            if [ -f "public/assets/levels/belliard/$f.png" ]; then
-              git add -f "public/assets/levels/belliard/$f.png"
-            fi
-          done
+          # Only the foreground is generated here. The tronçons are stable img2img
+          # art (framing) desaturated by scripts/desat-troncons.mjs — not regenerated,
+          # so they are never clobbered by this workflow. sky/ground/street kept.
+          if [ -f "public/assets/levels/belliard/foreground.png" ]; then
+            git add -f "public/assets/levels/belliard/foreground.png"
+          fi
           if git diff --cached --quiet; then
             echo "No décor changes to commit."
           else
