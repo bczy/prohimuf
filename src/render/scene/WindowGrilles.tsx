@@ -7,13 +7,6 @@ import type { WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { ENEMY_PLANE_SCALE, ENEMY_BODY_LIFT } from "./EnemySprite";
 
-// Native size of the generated grille sprite (public/assets/levels/belliard/
-// foreground.png, 991×594 RGBA, chroma-keyed). Its aspect drives the on-screen
-// grille height from the per-zone width, so the ironwork never distorts.
-const GRILLE_SRC_W = 991;
-const GRILLE_SRC_H = 594;
-const GRILLE_ASPECT = GRILLE_SRC_W / GRILLE_SRC_H; // ≈ 1.6684
-
 interface Props {
   /** Level id — resolves the `foreground.png` overlay via {@link levelLayerUrl}. */
   levelId: string | undefined;
@@ -33,6 +26,11 @@ interface Props {
  *
  * One shared {@link Texture} is loaded once and mapped onto one quad per zone.
  * R3F does not auto-dispose loader/prop textures, so it is released on unmount.
+ *
+ * The source aspect ratio that drives each grille's on-screen height (so the
+ * ironwork never distorts) is read from the loaded texture's own image
+ * (`image.width / image.height`) — no pixel dimensions are hardcoded, so a
+ * re-cropped/regenerated `foreground.png` at any resolution stays correct.
  */
 export function WindowGrilles({
   levelId,
@@ -42,10 +40,16 @@ export function WindowGrilles({
   grilleScale = 1,
 }: Props): JSX.Element | null {
   const [texture, setTexture] = useState<Texture | null>(null);
+  // Source aspect (width / height) read from the loaded image; null until load.
+  const [aspect, setAspect] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof document === "undefined" || typeof window === "undefined") return;
     if (levelId === undefined) return;
+    // Clear any prior texture/aspect so no disposed texture is referenced
+    // between this cleanup and the new load resolving on a levelId swap.
+    setTexture(null);
+    setAspect(null);
     let disposed = false;
     let loaded: Texture | null = null;
     new TextureLoader().load(
@@ -58,6 +62,10 @@ export function WindowGrilles({
         }
         loaded = t;
         setTexture(t);
+        // Read the aspect from the loaded image itself (no hardcoded dims), so
+        // a re-cropped/regenerated foreground.png at any resolution stays true.
+        const image = t.image as HTMLImageElement | undefined;
+        if (image !== undefined) setAspect(image.width / image.height);
       },
       undefined,
       () => undefined,
@@ -68,7 +76,7 @@ export function WindowGrilles({
     };
   }, [levelId]);
 
-  if (texture === null) return null;
+  if (texture === null || aspect === null) return null;
 
   return (
     <>
@@ -82,7 +90,7 @@ export function WindowGrilles({
         // seating (feet = centre − planeH·(0.5 − lift)).
         const enemyFeetY = worldY - planeH * (0.5 - ENEMY_BODY_LIFT);
         const grilleW = z.w * facadeW * grilleScale;
-        const grilleH = grilleW / GRILLE_ASPECT; // preserve source aspect
+        const grilleH = grilleW / aspect; // preserve source aspect
         // Centre the quad so its BOTTOM edge lands exactly on the feet line.
         const grilleCentreY = enemyFeetY + grilleH / 2;
         return (
