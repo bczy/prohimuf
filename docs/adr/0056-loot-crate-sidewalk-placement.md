@@ -1,4 +1,4 @@
-# 0053 — LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback
+# 0056 — LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback
 
 - **Status:** Accepted
 - **Date:** 2026-07-20
