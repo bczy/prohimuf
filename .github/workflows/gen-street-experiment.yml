@@ -1,0 +1,48 @@
+name: Belliard street experiment (paid models)
+
+# EXPERIMENT: generate the wide drawn Belliard street with paid Pollinations
+# models (non-flux) at exact large dimensions, and upload the results as an
+# artifact for review. Does NOT commit anything. Manual dispatch only.
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: "Comma-separated model list"
+        default: "seedream-pro,nanobanana-2,gptimage-large,ideogram-v4-quality"
+      size:
+        description: "WxH (exact pixels)"
+        default: "3072x768"
+      seed:
+        description: "Seed"
+        default: "7111"
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Generate street candidates (paid models)
+        env:
+          MODELS: ${{ github.event.inputs.models }}
+          SIZE: ${{ github.event.inputs.size }}
+          SEED: ${{ github.event.inputs.seed }}
+        run: |
+          W="${SIZE%x*}"; H="${SIZE#*x}"
+          echo "models=$MODELS size=${W}x${H} seed=$SEED"
+          MODELS="$MODELS" W="$W" H="$H" SEED="$SEED" node scripts/gen-street-paid.mjs
+      - name: Upload candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: belliard-street-candidates
+          path: street-experiments/*.png
+          if-no-files-found: warn
+          retention-days: 7
