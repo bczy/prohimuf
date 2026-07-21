@@ -106,7 +106,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0048](./0048-troncon-sequence-backdrop-mode.md) | Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2) | Proposed |
 | [0049](./0049-nearfg-generated-sprites-with-procedural-fallback.md) | Near-foreground props: generated gptimage sprites with procedural fallback | Proposed |
 | [0050](./0050-flyer-occlusion-shadow-exception.md) | Flyer occlusion-shadow exception & breakpoint-dependent roving axis | Proposed |
-| [0051](./0051-boss-qte-encounter-system.md) | Boss QTE encounter system ("le Commandant"): phase-sequenced spatial-colour duel + non-shipped dev-harness | Accepted (D4 superseded by 0058) |
+| [0051](./0051-boss-qte-encounter-system.md) | Boss QTE encounter system ("le Commandant"): phase-sequenced spatial-colour duel + non-shipped dev-harness | Accepted |
 | [0052](./0052-boss-qte-differentiation-levers.md) | Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception | Accepted |
 | [0053](./0053-niveau-final-live-boss-level.md) | "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA | Accepted |
 | [0054](./0054-menus-ui-completion-scope-and-contracts.md) | Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract | Accepted |
@@ -114,7 +114,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0056](./0056-loot-crate-sidewalk-placement.md) | LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback | Accepted |
 | [0057](./0057-single-wide-backdrop-belliard.md) | Single-wide backdrop mode (belliard décor image unique) | Accepted |
 | [0058](./0058-grille-overlay-single-wide.md) | Grille overlay on single-wide backdrop (foreground.png window grilles) | Accepted |
-| [0059](./0059-belliard-boss-gated-shipped-level.md) | "Le Commandant" gates Rue Belliard: a boss-gated shipped level with a failable ending (supersedes ADR-0051 D4) | Accepted |
-| [0060](./0060-boss-qte-shield-break-tempo-lever.md) | Boss QTE lever 6 "cran de sûreté" (shield-break tempo shot): third per-window read, extends ADR-0052 in place | Accepted |
+| [0059](./0059-belliard-boss-gated-shipped-level.md) | "Le Commandant" gates Rue Belliard: a boss-gated SHIPPED level with a failable ending (supersedes ADR-0051 D4) | Accepted |
+| [0060](./0060-boss-qte-shield-break-tempo-lever.md) | Boss QTE lever 6 "cran de sûreté" (shield-break tempo shot): a third per-window read, extends ADR-0052 in place | Accepted |
 
 <!-- ADR-INDEX:END -->
