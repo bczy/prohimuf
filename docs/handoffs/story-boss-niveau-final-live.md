@@ -3350,3 +3350,120 @@ VERDICT: PASS — asset gate lustre.png re-roll seed 4879 (lead-art)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: PASS — quality gate leg 1 story-2 (qa-lead) — mechanical gate GREEN (typecheck EXIT 0, vitest 1003/1003, lint EXIT 0, format:check EXIT 0); the new `niveau-final` level authors correctly (AC1 no-hostageQte, AC4 real quota 16, AC5 value-for-value bossQteSpec + seed 19991231 + chandelier decorProp {0.2,1.5}) and ships/plays live over the real l'Éden backdrop (flyer locked/unlocked both classes, final_pre-over-backdrop + skippable, 4-arch gallery with the riot-heavy roster, PLAYING both classes — all state-verified, zero pageerror); regressions HOLD (3 shipped levels + tutorial byte-untouched pure-append, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation system = gated A2 décor AABB only); AC4 real-quota trigger + K-5 winnability (seed 19991231) unit-verified. NAMED HOLE C-QA3: the boss fight OVER the l'Éden backdrop is unreachable in-sandbox (16-kill quota grind = 0 kills at 2 fps; the at= seam is harness-only) — CI-DEFERRED to Sacha's N1/K-5 + Tony's A1–A15-on-real-backdrop leg-2 on a real-GPU build; boss render proven on the harness, trigger+winnability unit-proven. Art `lustre` FAIL is an off-screen D6 follow-up, not a leg-1 blocker. Leg-2 (playtest + device review) runs on this evidence.
+
+## VERIFY (stage 5, leg 2) — game-designer (Sacha) — 2026-07-20 — design-acceptance: N1 target-supply + K-5 live-seed landability (story-2)
+
+- claim: my two owed stage-5 leg-2 items — (N1) Karim's target-supply check on the 4-slot pre-boss
+  gallery, and (K-5) empirical seed-19991231 landability with the FULL ADR-0052 kit on the LIVE
+  bossQteSpec. Scratchpad sims only (esbuild bundles of the real pure systems: `enemySystem`/
+  `enemyTypes` for supply, `bossQteSystem` @ 0.11 + A2 AABB for the boss). No repo/production code.
+
+### VERDICT: FAIL — design acceptance story-2 (game-designer)
+
+N1 PASSES; K-5 FAILS acceptance criterion (a) on the LIVE seed `19991231` (camp-vital is dominant on
+this seed) — a DATA-ONLY, K-5-pre-authorised correction: **re-pin `targetSeed 19991231 → 19991232`**
+(confirmed clean at N=500 below). Everything else — winnability, greed-punish, losability, décor
+reachability, and the whole N1 supply leg — holds. No mechanic/gate change; the 0.11 value and the A2
+AABB stand.
+
+### N1 — target supply (PRE-BOSS gallery) — PASS
+
+**Premise correction (load-bearing):** `windowZones.generated.json` shows **vitry is a 4-slot facade,
+same as niveau-final** (belliard/stalingrad/vitry/niveau-final are all 4-slot; the 31/50/33 counts are
+belliard's scrolling tronçons). The "vitry = 5+ slots" baseline is factually off — the 4-slot facade IS
+the shipped, playtested standard, so niveau-final introduces no slot reduction and no "5th arch" was
+ever the baseline. (`enemySpeedMultiplier` is not consumed by the pure enemy-pop cadence — it drives
+threat/bullet feel, not window supply — so supply is speed-independent and set by slots + archetypes +
+weights.)
+
+Competent solo shooter (react 0.25 s, fire cadence 0.28 s), 4-slot facade, real `spawnWave`+`tickEnemy`, 70 s:
+
+| Level                                     | slots | kills/70 s | quota 16 | time→16 kills | idle % (no visible target) | longest gap | avg wave-clear |
+| ----------------------------------------- | ----- | ---------- | -------- | ------------- | -------------------------- | ----------- | -------------- |
+| **niveau-final** (riot-heavy 40/28/20/10) | 4     | 60         | YES      | **19.0 s**    | **66.1 %**                 | 2.48 s      | 4.03 s         |
+| vitry (default 52/15/15/11) — baseline    | 4     | 59         | YES      | 20.6 s        | 70.1 %                     | 2.23 s      | 4.00 s         |
+
+- **Not starved.** The 16-kill quota is reached in ~19 s vs the 70 s allowed — **~3.7× headroom** over
+  the 4.375 s/kill pace. The gallery over-supplies a max-rate shooter; supply is never the binding
+  constraint (fire cadence + wave-clear is).
+- **Matches / slightly betters the shipped baseline.** niveau-final idle 66.1 % is BELOW vitry's 70.1 %
+  (the riot-heavy mix = 2-HP `enemy_riot` stays VISIBLE longer under fire → more engagement per pop),
+  longest supply gap 2.48 s ≈ vitry 2.23 s. Idle % is high in absolute terms on BOTH, but that is an
+  inherent property of the shipped 4-slot gallery vs. a fast shooter — not a niveau-final regression.
+- **Verdict:** adequately supplied; **no `windowWeights` nudge needed** (Karim's compensating lever is
+  unnecessary — the riot-heavy mix already engages more, not less), and no 5th arch (correctly refused).
+
+### K-5 — live-seed landability with the full kit — FAIL (a) on 19991231; re-pin remedy
+
+Byte-equality verified: the live `bossQteSpec` equals the tuned harness combat block EXCEPT
+`targetSeed` (19991231 vs 20260719) and `decorProp` ({0.2,1.5} chandelier vs {1.4,0.2} stack). Boss sim
+@ `BOSS_VITAL_CATCH_RADIUS 0.11` + A2 AABB décor, N=500/style.
+
+**LIVE seed 19991231 (as authored) — FAILS A1-R2 (a):**
+
+| Style         | Win  | Loss | avg blown | avg ΔE    | A1-R2 read                                                          |
+| ------------- | ---- | ---- | --------- | --------- | ------------------------------------------------------------------- |
+| optimal       | 100% | 0%   | 0.00      | +7.5      | (c) honest clears                                                   |
+| greedyLimb    | 100% | 0%   | 0.00      | −0.6      | (c) honest clears                                                   |
+| **campVital** | 100% | 0%   | 0.00      | **+30.0** | **(a) FAIL — > optimal +7.5 AND > greedyLimb −0.6 → camp DOMINANT** |
+| greedyVital   | 100% | 0%   | 1.31      | −32.6     | (b) punished ✓                                                      |
+| parryWhiff    | 100% | 0%   | 7.68      | −102.2    | whiff axis ✓                                                        |
+| decorIgnore   | 100% | 0%   | 0.00      | −0.6      | décor pure-upside ✓                                                 |
+| sloppy        | 33%  | 67%  | 9.42      | −197.4    | losable ✓                                                           |
+
+- **The A1-R2 camp-non-dominance is SEED-DEPENDENT.** `campVital` camps head-centre `(0,0.80)`; whether
+  the 0.11 catch defeats it depends on how often that seed's vital waypoints sit within 0.11 of centre.
+  On the harness seed 20260719 that gave campVital −5.0 (non-dominant); on **19991231 the vital paths
+  cluster near centre → campVital +30.0, dominant** (2nd only to campLimb). Criteria (b)/(c)/(d) +
+  losability + décor all PASS on 19991231 — the ONLY failure is (a).
+- **Décor reachability — PASS (seed-independent):** the chandelier `decorProp {0.2,1.5}` arms in phase 2's
+  SHIELDED gap (`armPhaseIndex 1`) and is consumed for the +3 `BOSS_DECOR_DAMAGE` via the A2 AABB
+  (`±0.40, ±0.525`) on both seeds — armed/consumed/chip-3 confirmed.
+
+**REMEDY — re-pin `targetSeed 19991231 → 19991232` (K-5 discipline, data-only correct-course, already
+pre-authorised in the `levels.ts` comment "re-pinnable per the K-5 discipline").** A sweep of
+19991231..19991245 shows 19991232 is the NEAREST seed where all (a)-(d) hold cleanly. **19991232 —
+N=500 confirmation:**
+
+| Style         | Win   | Loss  | avg blown | avg ΔE   | A1-R2 read                                                               |
+| ------------- | ----- | ----- | --------- | -------- | ------------------------------------------------------------------------ |
+| optimal       | 100%  | 0%    | 0.00      | +14.0    | (c) honest clears with margin ✓                                          |
+| greedyLimb    | 100%  | 0%    | 0.00      | −4.3     | (c) honest clears ✓                                                      |
+| **campVital** | 100%  | 0%    | 1.00      | **−8.0** | **(a) PASS — < optimal +14.0 AND < greedyLimb −4.3 → camp NON-dominant** |
+| greedyVital   | 100%  | 0%    | 2.15 (≤8) | −56.6    | (b) clearly negative, blown ≫ greedyLimb ✓                               |
+| parryWhiff    | 100%  | 0%    | 7.75      | −106.1   | whiff axis ✓                                                             |
+| decorIgnore   | 100%  | 0%    | 0.00      | −4.3     | décor pure-upside ✓                                                      |
+| sloppy        | 27.8% | 72.2% | 9.54      | −208.5   | (losable) ✓                                                              |
+| sloppyNoParry | 1.0%  | 99.0% | 9.98      | −231.7   | losable ✓                                                                |
+
+- 19991232 passes every A1-R2 criterion: (a) campVital −8.0 (sign-flip negative) below both;
+  (b) greedyVital −56.6 / 2.15 blown; (c) optimal + greedyLimb 100 %; (d) all competent styles clear
+  (winnable — landable trackable vital + limb + parry); losable by sloppy (72 %); décor {0.2,1.5}
+  armed+consumed (+3, A2 AABB). (campLimb +40 remains the slow-but-rich safe-bank line — out of scope
+  of (a), which targets the vital head-camp exploit; unchanged from the accepted A1-R2 behaviour.)
+- Alternates if a wider camp-hostility margin is wanted: 19991233 (campVital −8.0) or 19991236 (+5.0,
+  marginal). 19991232 is the closest to the diegetic date and clean.
+
+### Disposition
+
+- N1: PASS — no correction. K-5: FAIL on the authored seed; the fix is a one-integer data re-pin
+  (`levels.ts` `targetSeed 19991231 → 19991232` + the `niveauFinal.test.ts` K-5 winnability expectation),
+  NOT a mechanic/gate change — the 0.11 value and A2 AABB stand. Same class as the vitry/belliard K-5
+  re-pins already shipped.
+
+- handoff → `dev-gameplay` (Amelia): apply the K-5 re-pin — `bossQteSpec.targetSeed 19991231 → 19991232`
+  in `levels.ts` (niveau-final), and update the `niveauFinal.test.ts` seed-winnability expectation
+  (currently asserts 19991231). Data-only; `bossQteSystem.ts`/`types` byte-untouched. I re-verify the
+  final authored seed at N=500 once landed.
+- handoff → `lead-game-designer` (Karim): design-acceptance story-2 = FAIL (K-5 leg) with a data-only
+  K-5 re-pin remedy (19991231 → 19991232, N=500-confirmed all A1-R2 (a)-(d)). N1 supply = PASS
+  (4-slot == vitry baseline, quota 3.7× headroom, no windowWeights nudge). Requesting your nod on the
+  re-pin as the closing correction before verify leg-1 closes.
+- handoff → `producer` (Marion): story-2 leg-2 blocked on the one-line K-5 seed re-pin; no cap round
+  (data correct-course, pre-authorised). N1 clear.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). All sims ran on throwaway
+  scratchpad bundles of the real pure systems — NO `src/**`, test, or repo edit; no commit/push.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: FAIL — design acceptance story-2 (game-designer) — N1 target-supply PASS (vitry is ALSO a 4-slot facade, not 5+; niveau-final quota met in ~19 s / 3.7× headroom; idle 66.1 % ≤ vitry 70.1 %; riot-heavy engages MORE — no windowWeights nudge, no 5th arch). K-5 FAILS A1-R2 (a) on the LIVE seed 19991231: campVital +30.0 E dominant (> optimal +7.5, > greedyLimb −0.6) — camp-non-dominance is seed-dependent and 19991231 is camp-friendly; (b)(c)(d)+losable+décor-reachability all PASS. Remedy (K-5 discipline, data-only): re-pin targetSeed 19991231 → 19991232 (N=500-confirmed: campVital −8.0 < optimal +14.0 & greedyLimb −4.3; greedyVital −56.6/2.15 blown; honest 100 %; sloppy 72 % loss; chandelier {0.2,1.5} armed+consumed +3 via A2 AABB). 0.11 value + A2 AABB unchanged; routed to dev-gameplay as a one-integer levels.ts re-pin + test expectation update.
