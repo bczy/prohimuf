@@ -689,24 +689,32 @@ describe("tickQte — result hold → DONE (once per level)", () => {
 describe("K-5 — the pinned belliard seed presents ≥1 on-captor decel window per peek", () => {
   const belliard = LEVELS.find((l) => l.id === "belliard")?.hostageQte;
 
-  it("each of the 4 peeks has a vital∪limb decelerating waypoint (fair firing window)", () => {
-    expect(belliard).toBeDefined();
-    if (belliard === undefined) return;
-    const seed = belliard.targetSeed;
-    // Decel windows = the zero-velocity waypoints reached at t = k·LEG_DURATION, k = 0..maxLeg.
-    const maxLeg = Math.floor((belliard.peekDurationSeconds - 1e-9) / LEG_DURATION);
-    for (let pi = 0; pi < belliard.maxBlownPeeks; pi++) {
-      let onCaptor = 0;
-      for (let k = 0; k <= maxLeg; k++) {
-        const w = wander(seed, pi, k * LEG_DURATION);
-        const centre = clampTargetOffsetG6({ x: WANDER_CENTRE.x + w.x, y: WANDER_CENTRE.y + w.y });
-        if (ringZoneAt(centre) !== "off") onCaptor++;
+  // When BELLIARD_BOSS_ENABLED, the boss REPLACES belliard's hostage QTE, so belliard carries no
+  // hostage and this belliard-specific seed pin is moot — vitry's equivalent K-5 test below covers
+  // the hostage QTE that ships in normal play. Skip (don't fail) when belliard has no hostage.
+  it.skipIf(belliard === undefined)(
+    "each of the 4 peeks has a vital∪limb decelerating waypoint (fair firing window)",
+    () => {
+      if (belliard === undefined) return;
+      const seed = belliard.targetSeed;
+      // Decel windows = the zero-velocity waypoints reached at t = k·LEG_DURATION, k = 0..maxLeg.
+      const maxLeg = Math.floor((belliard.peekDurationSeconds - 1e-9) / LEG_DURATION);
+      for (let pi = 0; pi < belliard.maxBlownPeeks; pi++) {
+        let onCaptor = 0;
+        for (let k = 0; k <= maxLeg; k++) {
+          const w = wander(seed, pi, k * LEG_DURATION);
+          const centre = clampTargetOffsetG6({
+            x: WANDER_CENTRE.x + w.x,
+            y: WANDER_CENTRE.y + w.y,
+          });
+          if (ringZoneAt(centre) !== "off") onCaptor++;
+        }
+        expect(onCaptor, `peek ${String(pi)} has no on-captor decel window`).toBeGreaterThanOrEqual(
+          1,
+        );
       }
-      expect(onCaptor, `peek ${String(pi)} has no on-captor decel window`).toBeGreaterThanOrEqual(
-        1,
-      );
-    }
-  });
+    },
+  );
 });
 
 describe("createQte — accomplice (F4 / ADR-0036) seeding + validation", () => {
@@ -955,10 +963,12 @@ describe("real level data honours the safety floors", () => {
 
   it("belliard pins: captorHp 3, a 1.5 s peek exposure and a finite seed", () => {
     const belliard = LEVELS.find((l) => l.id === "belliard")?.hostageQte;
-    expect(belliard).toBeDefined();
-    expect(belliard?.captorHp).toBe(3);
-    expect(belliard?.peekDurationSeconds).toBe(1.5);
-    expect(Number.isFinite(belliard?.targetSeed)).toBe(true);
+    // BELLIARD_BOSS_ENABLED replaces belliard's hostage QTE with the boss; when it does, belliard
+    // carries no hostage and these pins are moot (vitry's hostage pins cover the live QTE). Skip.
+    if (belliard === undefined) return;
+    expect(belliard.captorHp).toBe(3);
+    expect(belliard.peekDurationSeconds).toBe(1.5);
+    expect(Number.isFinite(belliard.targetSeed)).toBe(true);
   });
 });
 

@@ -64,8 +64,11 @@ export const RING_HIT_RADIUS = 0.3;
  *  one fixed aim — the 2 HP chip must be tracked and EARNED, restoring the risk/reward vital-vs-
  *  limb dilemma (spec §0). PAIRED render constraint (A1 §4, dev-r3f-render): the vital ring is
  *  DRAWN at this radius (drawn == catch — the aim-honesty invariant), the limb ring at
- *  `RING_HIT_RADIUS`. */
-export const BOSS_VITAL_CATCH_RADIUS = 0.11;
+ *  `RING_HIT_RADIUS`. Enlarged 0.11 → 0.146 (+33%, Bertrand readability call): the green head ring
+ *  reads bigger AND is a slightly easier target. Still STRICTLY < the 0.226 wander-box corner reach,
+ *  so a fixed camp aim still cannot hold it the whole window (the ring keeps escaping — anti-camp
+ *  softened but not defeated; see the A1 §5 test). */
+export const BOSS_VITAL_CATCH_RADIUS = 0.146;
 /** VITAL ring hit (head, GREEN) — the heaviest chip. */
 export const BOSS_DAMAGE_VITAL = 2;
 /** LIMB ring hit (torso/shoulders, YELLOW) — the lighter chip. */
@@ -190,6 +193,52 @@ export function isRenfortWindow(phaseIndex: number, phaseWindowIndex: number): b
   return (
     phaseWindowIndex >= RENFORT_SURGE.onsetWindowIndex &&
     phaseWindowIndex < RENFORT_SURGE.onsetWindowIndex + RENFORT_SURGE.durationWindows
+  );
+}
+
+// --- Lever 6 — shield-break tempo shot (spec-boss-shield-break-tempo-shot) ----------------
+// A THIRD, per-window read on the phase-2+ NORMAL EXPOSED window: a separate riot-shield COVER
+// PROP the Commandant hunkers behind, presenting a FIXED (non-wandering) hit point on its
+// lowered edge while he fires. Shooting it chips a limb-equivalent 1 HP THROUGH the existing
+// chip path AND arms a one-shot cut on the NEXT SHIELDED lull — trading recovery for pace. It is
+// additive-and-optional: never firing the shield point is byte-behaviour-identical to
+// ADR-0052/0053. Coexists with lever 1 (rings tested first, shield in the ring-missed branch,
+// rings win any tie); mutually exclusive with levers 2/3; orthogonal to lever 4.
+/** The lowered cover prop's FIXED hit point, anchor-relative (spec §6-A). Low, on the boss's
+ *  screen-right, on a SEPARATE object from the two body rings — the easy "pacing" vertex of the
+ *  vital/limb/shield triangle. Caught within `RING_HIT_RADIUS` (reuse). Its centre is disjoint
+ *  from both ring wander sub-boxes (asserted in `createBossQte`) and inside the body silhouette,
+ *  so a near-miss still falls through to `body`. Live only while `bossShieldPointLive`. */
+export const BOSS_SHIELD_POINT: Vec2 = { x: 0.4, y: -0.32 };
+/** Shield-break chip (HP) — limb-equivalent (spec §6-B): the shield is EASY, so it must not
+ *  out-value the tracked limb chip; its edge is TEMPO, never raw damage. Flows through the
+ *  existing chip path (`windowChipped` / `applyPhaseBreakIfCrossed` / `toFinisher`). */
+export const BOSS_SHIELD_DAMAGE = 1;
+/** The NEXT ordinary SHIELDED lull is shortened by this many seconds after a shield-break (spec
+ *  §6-B): next-lull-only, non-cumulative, floored strictly above the phase tell. Felt (0.5 s off a
+ *  1.6/1.2 s lull is 31 %/42 % less recovery) yet safe (stays above every shipped tell). */
+export const SHIELD_BREAK_LULL_CUT = 0.5;
+/** The shield-break cut clamps the shortened lull to at least the phase tell PLUS this margin, so
+ *  a self-inflicted compression can NEVER swallow the window telegraph — the
+ *  `shieldedLull > telegraphLead` invariant survives the cut (spec §6-B / AC2, asserted vs. the
+ *  runtime row in `createBossQte`). At shipped values the cut never reaches the floor
+ *  (0.7 s > 0.35 s); the floor protects future re-tunes only. */
+export const SHIELD_BREAK_LULL_FLOOR_MARGIN = 0.05;
+
+/**
+ * Whether the lowered shield cover prop presents its FIXED hit point right now (spec §6-C): iff
+ * the boss is in a phase-2+ (`phaseIndex ≥ 1`) NORMAL (non-charged) EXPOSED window and is not
+ * breaking / staggering. A logic-free derived read — the render lane imports this to drive the
+ * prop's lowered↔raised two-read swap; the tick gates the shield-point catch test on it (so no
+ * shield point in phase 1, a charged/parry window, a phase break, a stagger, or the finisher).
+ */
+export function bossShieldPointLive(qte: BossQte): boolean {
+  return (
+    qte.stance === "EXPOSED" &&
+    qte.phaseIndex >= 1 &&
+    !qte.chargedWindow &&
+    qte.phaseBreakRemaining <= 0 &&
+    qte.staggerRemaining <= 0
   );
 }
 
@@ -574,17 +623,17 @@ export function isBossQteActive(qte: BossQte | null): boolean {
 }
 
 /**
- * Fire the boss QTE at most once per level: only when a spec exists, none has fired yet
- * (`qte === null`), and the kill quota is reached — the boss is the terminal beat on `Livrer`
- * (ADR-0051 D3), REPLACING the abrupt quota → LEVEL_COMPLETE transition with the duel.
+ * Fire the boss QTE at most once per level: only when a spec exists and none has fired yet
+ * (`qte === null`). The boss is the level's TIMED FINALE — the stateMachine calls this at the
+ * level TIMER expiry (ADR-0059 amendment), NOT on kill-quota completion. There is no quota gate
+ * for V1: the boss always caps a boss level's timer (the kill quota stays a score target on boss
+ * levels). REPLACES the earlier quota → LEVEL_COMPLETE / timer → GAME_OVER endings with the duel.
  */
-export function shouldTriggerBossQte(
+export function shouldTriggerBossFinale(
   spec: BossQteSpec | null,
   qte: BossQte | null,
-  kills: number,
-  enemiesToWin: number,
-): boolean {
-  return spec !== null && qte === null && kills >= enemiesToWin;
+): spec is BossQteSpec {
+  return spec !== null && qte === null;
 }
 
 /**
@@ -662,6 +711,16 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     ) {
       throw new Error(
         `BossPhaseTuning invariant (G4): phase ${String(i)} SHIELDED lull must be STRICTLY > its telegraphLeadSeconds so the tell is a discrete wind-up`,
+      );
+    }
+    // Lever 6 (shield-break) — the cut clamp target (`telegraphLead + margin`) must itself be
+    // STRICTLY > the phase tell (asserted vs. the runtime row, spec §5/AC2). The `Math.max(…, floor)`
+    // clamp then guarantees a shortened lull can never reach ≤ the tell — the window telegraph is
+    // never swallowed by a self-inflicted compression.
+    const shieldCutFloor = row.telegraphLeadSeconds + SHIELD_BREAK_LULL_FLOOR_MARGIN;
+    if (!(shieldCutFloor > row.telegraphLeadSeconds)) {
+      throw new Error(
+        `bossQteSystem invariant (lever 6): phase ${String(i)} shield-break cut floor must be STRICTLY > its telegraphLeadSeconds so the cut never swallows the tell`,
       );
     }
     if (!Number.isFinite(row.wanderSpeed) || row.wanderSpeed <= 0) {
@@ -762,6 +821,36 @@ export function createBossQte(spec: BossQteSpec): BossQte {
   assertPositiveScalar("BOSS_DECOR_CATCH_HALF_W (AMENDMENT A2)", BOSS_DECOR_CATCH_HALF_W);
   assertPositiveScalar("BOSS_DECOR_CATCH_HALF_H (AMENDMENT A2)", BOSS_DECOR_CATCH_HALF_H);
 
+  // Lever 6 (shield-break) — the cut and its floor margin must be real positive magnitudes, and
+  // the FIXED shield point must lie OUTSIDE both ring wander sub-boxes (disjointness, spec §4): a
+  // clean shot on the shield reads unambiguously as the shield, never a ring — so a future
+  // re-position can't silently overlap a ring. (`RING_HIT_RADIUS` catch-disc disjointness is a
+  // stronger property the spec §6-A verifies numerically; the box-membership assert is the
+  // structural guard that mirrors the lever-1 `boxInBand` checks.)
+  assertPositiveScalar("SHIELD_BREAK_LULL_CUT (lever 6)", SHIELD_BREAK_LULL_CUT);
+  assertPositiveScalar("SHIELD_BREAK_LULL_FLOOR_MARGIN (lever 6)", SHIELD_BREAK_LULL_FLOOR_MARGIN);
+  const shieldInVitalBox = inBand(
+    BOSS_SHIELD_POINT.x,
+    BOSS_SHIELD_POINT.y,
+    BOSS_VITAL_WANDER_CENTRE.x - BOSS_VITAL_WANDER_AMP_X,
+    BOSS_VITAL_WANDER_CENTRE.x + BOSS_VITAL_WANDER_AMP_X,
+    BOSS_VITAL_WANDER_CENTRE.y - BOSS_VITAL_WANDER_AMP_Y,
+    BOSS_VITAL_WANDER_CENTRE.y + BOSS_VITAL_WANDER_AMP_Y,
+  );
+  const shieldInLimbBox = inBand(
+    BOSS_SHIELD_POINT.x,
+    BOSS_SHIELD_POINT.y,
+    BOSS_LIMB_WANDER_CENTRE.x - BOSS_LIMB_WANDER_AMP_X,
+    BOSS_LIMB_WANDER_CENTRE.x + BOSS_LIMB_WANDER_AMP_X,
+    BOSS_LIMB_WANDER_CENTRE.y - BOSS_LIMB_WANDER_AMP_Y,
+    BOSS_LIMB_WANDER_CENTRE.y + BOSS_LIMB_WANDER_AMP_Y,
+  );
+  if (shieldInVitalBox || shieldInLimbBox) {
+    throw new Error(
+      "bossQteSystem invariant (lever 6): BOSS_SHIELD_POINT must lie OUTSIDE both ring wander sub-boxes (disjointness)",
+    );
+  }
+
   // ADR-0052 lever 4 — the renfort surge descriptor is a sane, telegraphed, seeded shape.
   if (
     !Number.isInteger(RENFORT_SURGE.phaseIndex) ||
@@ -834,6 +923,7 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     smokeActive: false,
     renfortActive: false,
     finisherRemaining: 0,
+    shieldBreakPending: false,
     zoomRemaining: spec.zoomSeconds,
     zoomSeconds: spec.zoomSeconds,
     resultRemaining: QTE_RESULT_HOLD,
@@ -953,6 +1043,8 @@ function toFinisher(qte: BossQte): BossQteTickResult {
       renfortActive: false,
       smokeActive: false,
       decorArmed: false,
+      // Lever 6 — the finisher discards any pending shield-break cut (no ordinary lull follows).
+      shieldBreakPending: false,
     },
     energyDelta: 0,
   };
@@ -1043,6 +1135,7 @@ export function tickBossQte(
       let blownWindows = qte.blownWindows;
       let chargedWindow = qte.chargedWindow;
       let decorConsumed = qte.decorConsumed;
+      let shieldBreakPending = qte.shieldBreakPending;
       const decorProp = qte.decorProp;
       const inBreakAtStart = qte.phaseBreakRemaining > 0;
       const inStaggerAtStart = qte.staggerRemaining > 0;
@@ -1060,6 +1153,9 @@ export function tickBossQte(
           phaseWindowIndex = -1;
           chargedWindow = false;
           staggerRemaining = 0;
+          // Lever 6 — a threshold-crossing chip discards any pending shield-break cut: the
+          // PHASE BREAK follows (an unmissable fixed beat), never an ordinary compressible lull.
+          shieldBreakPending = false;
           return true;
         }
         return false;
@@ -1093,6 +1189,10 @@ export function tickBossQte(
                 stance = "SHIELDED";
                 stanceRemaining = STAGGER_SECONDS;
                 chargedWindow = false;
+                // Lever 6 — a stagger setup discards any pending shield-break cut (the stagger
+                // opens a BONUS window, not an ordinary compressible lull). Defensive: the shield
+                // point is never live in a charged window, so this is normally already clear.
+                shieldBreakPending = false;
               }
             } else {
               // Panic click that misses the parry point — NON-consuming (the window stays
@@ -1111,6 +1211,27 @@ export function tickBossQte(
                 applyPhaseBreakIfCrossed();
               }
               // A `zone === "off"` single-ring hit chips 0 but still consumes the shot.
+            } else if (
+              bossShieldPointLive(qte) &&
+              withinCatch(
+                impactPoint.x,
+                impactPoint.y,
+                qte.anchor,
+                BOSS_SHIELD_POINT.x,
+                BOSS_SHIELD_POINT.y,
+                RING_HIT_RADIUS,
+              )
+            ) {
+              // Lever 6 (shield-break) — a shot that MISSED both rings but caught the lowered
+              // cover prop's fixed point: a limb-equivalent 1 HP chip through the existing path
+              // (answers the window, can cross a phase threshold or deplete), no energy delta, and
+              // it arms the one-shot next-lull tempo cut. Rings are tested first, so they win any
+              // tie; the shield point is disjoint from both ring boxes (asserted).
+              bossHp = qte.bossHp - BOSS_SHIELD_DAMAGE;
+              windowChipped = true;
+              shieldBreakPending = true;
+              if (bossHp <= 0) return toFinisher(qte);
+              applyPhaseBreakIfCrossed();
             } else {
               const zoneMiss = bossQteZoneAt(
                 impactPoint.x - qte.anchor.x,
@@ -1191,9 +1312,21 @@ export function tickBossQte(
           // AND unanswered — 0 HP chipped (normal), or a charged window whiffed (no parry).
           const closingCharged = chargedWindow;
           const closingRenfort = isRenfortWindow(phaseIndex, phaseWindowIndex);
+          const closingRow = phaseTuning(phaseIndex);
           stance = "SHIELDED";
-          stanceRemaining = phaseTuning(phaseIndex).shieldedLullSeconds;
+          stanceRemaining = closingRow.shieldedLullSeconds;
           chargedWindow = false;
+          // Lever 6 — consume a pending shield-break tempo cut on THIS ordinary lull open, sizing
+          // it to `max(lull − cut, floor)` where `floor = tell + margin` keeps it STRICTLY above
+          // the phase tell (spec §4/§6-B). Non-cumulative: one pending flag → one 0.5 s cut.
+          if (shieldBreakPending) {
+            const floor = closingRow.telegraphLeadSeconds + SHIELD_BREAK_LULL_FLOOR_MARGIN;
+            stanceRemaining = Math.max(
+              closingRow.shieldedLullSeconds - SHIELD_BREAK_LULL_CUT,
+              floor,
+            );
+            shieldBreakPending = false;
+          }
           if (bossHp > 0 && (closingCharged || !windowChipped)) {
             // ADR-0052 levers 3 & 4 — one blown window = ONE charge: the charged whiff (−10)
             // or the phase drain, then the renfort surge (−12) if flagged — whichever
@@ -1227,6 +1360,8 @@ export function tickBossQte(
                   decorArmed: false,
                   smokeActive: false,
                   renfortActive: false,
+                  // Lever 6 — a LOST transition discards any pending shield-break cut.
+                  shieldBreakPending: false,
                 },
                 energyDelta,
               };
@@ -1351,6 +1486,7 @@ export function tickBossQte(
           decorArmed,
           smokeActive,
           renfortActive,
+          shieldBreakPending,
         },
         energyDelta,
       };

@@ -1,6 +1,6 @@
 # 0051 — Boss QTE encounter system ("le Commandant"): phase-sequenced spatial-colour duel + non-shipped dev-harness
 
-- **Status:** Accepted
+- **Status:** Accepted (D4 superseded by [ADR-0059](./0059-belliard-boss-gated-shipped-level.md))
 - **Date:** 2026-07-19
 - **Number:** 0051, **self-allocated** via the `adr-new` collision-safe check (highest
   across branch + `origin/main` + index was 0050 → 0051). No `producer` number was recorded

@@ -63,6 +63,21 @@ export interface LevelConfig {
   readonly loot?: LootSpec;
 }
 
+/**
+ * The Belliard boss decouple seam (story-boss-belliard-live, AC2). When TRUE, `belliard` authors
+ * the `bossQteSpec` and DROPS its `hostageQte` (the two set-pieces cannot coexist — see below), so
+ * the Commandant duel becomes Belliard's required end-gate: the TIMED FINALE (ADR-0059 Amendment 2) —
+ * the boss is created at TIMER EXPIRY, not on the quota (which is score-only on a boss level) → WON:
+ * LEVEL_COMPLETE / LOST: level fails. When FALSE, the level authors NO `bossQteSpec` and keeps the hostage QTE, so
+ * `belliard` is byte-for-byte identical to the pre-boss build.
+ *
+ * NOTE — enabled ahead of canon art (Bertrand, 2026-07-21): lead-art ruled the provisional fallback
+ * sprite a placeholder (the canon Commandant art is prepped for CI but not yet generated/gated), so
+ * with this flag ON the boss renders on placeholder art until the `gen-boss-sprites` dispatch lands.
+ * The one-spot `resolveShieldCoverTexture` / boss-texture seams swap in the real art with no logic change.
+ */
+export const BELLIARD_BOSS_ENABLED = true as boolean;
+
 export const LEVELS: readonly LevelConfig[] = [
   // Optional, scripted, informative-only onboarding stage (ADR-0012). Prepended so it
   // is the first menu card, ahead of Rue Belliard, without inventing a composite menu
@@ -117,29 +132,38 @@ export const LEVELS: readonly LevelConfig[] = [
     // 12 = −4.8): centre −5 puts the 2.0-tall tableau's feet on the ground line at −6.
     // He stands still; the sole clock is `maxBlownPeeks` blown openings before the
     // execution (the retreat/distance clock is removed).
-    hostageQte: {
-      triggerAtElapsedSeconds: 12,
-      zoomSeconds: 2,
-      // x nudged off the origin so the tableau reads against a facade at the ×2.4
-      // zoom. Under ADR-0057's single-wide opaque décor there is no longer a sky
-      // gap at x=0 (the old black-void regression, PR #76), so 9.9 is now kept as
-      // a design constant: x_norm 0.655 = solid facade, clear of the passage
-      // (0.39) and the pignon (0.80) per the street-wide repositioning spec.
-      anchor: { x: 9.9, y: -5 },
-      maxBlownPeeks: 4,
-      peekCadenceSeconds: 1.5,
-      // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
-      // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
-      peekDurationSeconds: 1.5,
-      // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
-      // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
-      captorHp: 3,
-      // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
-      // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
-      // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
-      // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
-      targetSeed: 20260718,
-    },
+    // When the boss is enabled it REPLACES the hostage QTE as Belliard's set-piece — the two
+    // cinematics cannot coexist (the `stateMachine` guard: the boss freezes the clock the hostage
+    // trigger reads, so a co-authored hostage would be lost — `createInitialState` in stateMachine.ts
+    // THROWS at load if a level authors both, so this drop is enforced fail-loud, not silent).
+    // Boss OFF ⇒ the hostage QTE exactly as before; boss ON ⇒ no hostage QTE on Belliard this run.
+    ...(BELLIARD_BOSS_ENABLED
+      ? {}
+      : {
+          hostageQte: {
+            triggerAtElapsedSeconds: 12,
+            zoomSeconds: 2,
+            // x nudged off the origin so the tableau reads against a facade at the ×2.4
+            // zoom. Under ADR-0057's single-wide opaque décor there is no longer a sky
+            // gap at x=0 (the old black-void regression, PR #76), so 9.9 is now kept as
+            // a design constant: x_norm 0.655 = solid facade, clear of the passage
+            // (0.39) and the pignon (0.80) per the street-wide repositioning spec.
+            anchor: { x: 9.9, y: -5 },
+            maxBlownPeeks: 4,
+            peekCadenceSeconds: 1.5,
+            // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
+            // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
+            peekDurationSeconds: 1.5,
+            // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
+            // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
+            captorHp: 3,
+            // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
+            // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
+            // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
+            // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
+            targetSeed: 20260718,
+          },
+        }),
     // Belliard-first armament crates (ADR-0055 D8). Generic window spawn (pm ruling
     // #3), not per-level scripted placement. Cadence/pool are verify-tunable (§7),
     // not gated: a crate every ~15 s, carrying `auto` or `spread`.
@@ -147,6 +171,27 @@ export const LEVELS: readonly LevelConfig[] = [
       spawnIntervalSeconds: 15,
       weapons: ["auto", "spread"],
     },
+    // Boss QTE — "le Commandant", the required end-gate (story-boss-belliard-live, AC1). ATTACHED
+    // ONLY behind the decouple flag (conditional spread so with the flag OFF the field is OMITTED,
+    // not `undefined` — exactOptionalPropertyTypes): Belliard is then byte-identical to today
+    // (AC2). The defaults mirror the dev-harness (game-designer spec §5): 3 phases, 24 HP (3×8),
+    // maxBlownWindows 10, the pinned harness seed, a 2 s zoom on the centre-street anchor, and the
+    // placeholder décor prop. When flipped on, the boss is created at TIMER EXPIRY via
+    // `shouldTriggerBossFinale` (ADR-0059 Amendment 2 — the timed finale, NOT quota-triggered);
+    // phases 2–3 present the lever-6 shield point.
+    ...(BELLIARD_BOSS_ENABLED
+      ? {
+          bossQteSpec: {
+            zoomSeconds: 2,
+            anchor: { x: 0, y: -5 },
+            phaseCount: 3,
+            bossHp: 24,
+            maxBlownWindows: 10,
+            targetSeed: 20260719,
+            decorProp: { position: { x: 1.4, y: 0.2 }, armPhaseIndex: 1 },
+          },
+        }
+      : {}),
   },
   {
     id: "stalingrad",

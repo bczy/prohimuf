@@ -295,6 +295,18 @@ export interface BossQte {
    * beat to `WON`. Damage-free — zero failure surface.
    */
   readonly finisherRemaining: number;
+  /**
+   * A shield-break (lever 6, spec-boss-shield-break-tempo-shot) is pending its one-shot tempo
+   * cut. Set true when a `fire` catches the lowered cover prop's fixed point
+   * (`BOSS_SHIELD_POINT`) during a phase-2+ NORMAL EXPOSED window; consumed at the NEXT ordinary
+   * SHIELDED lull open, which is shortened by `SHIELD_BREAK_LULL_CUT` (floored strictly above the
+   * phase tell so the window telegraph is never swallowed). Non-cumulative — one pending cut at a
+   * time (a double-break yields a single 0.5 s cut). Cleared WITHOUT applying on any phase-break /
+   * stagger / finisher / LOST transition (the cut never compresses `PHASE_BREAK_SECONDS` or a
+   * stagger setup). `false` for a boss never shot on the shield point (the additive-and-optional
+   * law — such a run is byte-behaviour-identical to ADR-0052/0053).
+   */
+  readonly shieldBreakPending: boolean;
   /** Seconds left of the zoom (zoomSeconds → 0 during ZOOMING). Drives the render lerp. */
   readonly zoomRemaining: number;
   readonly zoomSeconds: number;
