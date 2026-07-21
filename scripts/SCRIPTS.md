@@ -689,7 +689,7 @@ zones: 12+18+24), expanded the same way `getWindowZones()`'s windows branch does
 The render (`WindowGrilles.tsx`) overlays the generated `foreground.png` ironwork
 sprite at each zone with its BOTTOM edge pinned to the enemy's own feet line (same
 formula `EnemySprite` uses) — so the grille can never independently drift off the cop;
-verifying "does the cop's feet box sit at its window opening's base" transitively
+verifying "does the rendered feet line match the feet-seating CONTRACT" transitively
 verifies the grille.
 
 - **Verification-only** (unlike `align-windows.mjs`'s `--fix` loop): the hand-authored
@@ -701,11 +701,19 @@ verifies the grille.
   code paths (belliard included) are untouched.
 - **The SEAT gate** — this harness's own addition, not `measure()`'s one-sided OVERFLOW
   check (which only flags a slot sinking BELOW its opening's base, never one floating
-  ABOVE it). Computes a two-sided verdict, `|slot.bottom − opening.base| <= SEAT_TAU`
-  (`SEAT_TAU = 0.01`, the same tolerance `align-windows.mjs`'s `TAU` uses), from
-  `measure()`'s already-paired `bySlot`, then feeds a `bySlot`-shaped array with
-  `contained` overridden by that verdict into the shared `writeOverlay()` so the debug
-  JPEG's red/magenta split reflects SEAT.
+  ABOVE it). The target is NOT the opening's own box-bottom (`opening.y+opening.h/2`):
+  `EnemySprite`'s plane is deliberately `ENEMY_PLANE_SCALE` (1.3) taller than the
+  opening and lifted by `ENEMY_BODY_LIFT` (0.02), so the CONTRACTED feet line sits
+  `opening.h · (ENEMY_PLANE_SCALE·(0.5−ENEMY_BODY_LIFT) − 0.5)` (≈0.124·opening.h)
+  below the box-bottom on every level (`align-windows.mjs`'s one-sided OVERFLOW gate
+  tolerates this; it never checks feet==box-bottom). `FEET_OVERSHOOT_FRAC` derives that
+  fraction from the two mirrored constants (not a hardcoded ≈0.124). The gate is then
+  `|slot.bottom − expectedFeetLine(opening)| <= SEAT_TAU` (`SEAT_TAU = 0.01`, the same
+  tolerance `align-windows.mjs`'s `TAU` uses), computed from `measure()`'s already-
+  paired `bySlot`, then fed as a `bySlot`-shaped array with `contained` overridden by
+  that verdict into the shared `writeOverlay()` so the debug JPEG's red/magenta split
+  reflects SEAT. Green means "feet obey the seating contract" — it still catches a real
+  regression (e.g. a facade-stretch bug) that moves feet off that contract.
 - **Output:** `scripts/.dbg-belliard-grilles-check-i00.jpg` (gitignored) — the dimmed
   `street-wide.png`, hand-authored openings in GREEN, rendered slot boxes in MAGENTA
   (RED on a SEAT failure).
