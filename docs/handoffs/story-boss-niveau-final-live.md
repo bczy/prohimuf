@@ -2733,3 +2733,144 @@ VERDICT: PASS — prompt gate speaker_wall (lead-art)
 VERDICT: PASS — prompt gate boss batch-2 reroll (lead-art)
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this express prompt-gate entry appended).
+
+## TECHNICAL PASS ROUND 2 — game-graphist (Serge) — 2026-07-21 · batch-2 verification (boss REGEN targets + l'Éden backdrop)
+
+- **claim:** re-audit exactly the scope `producer` named after batch-2 landed: the 4 REGEN targets
+  (`commander_shielded`/`commander_finisher`/`lustre`/`speaker_wall`), the l'Éden backdrop at its
+  corrected 1280×768, and a confirm-untouched check on the 5 CLEAN sprites. Same methodology as
+  round 1 (magenta composite + zoomed crops + `check-sprite-integrity.mjs`), plus round 1's
+  closability probe, now live in `check-sprite-integrity.mjs` as a SOFT WARN (confirms my round-1
+  recommendation was adopted) — verified it still requires human judgment to separate true holes
+  from legitimate pose negative space, same discipline as round 1.
+
+### 5 CLEAN sprites — CONFIRMED UNTOUCHED
+
+`sha256sum`/byte-size match exactly round-1's measured values for all 5
+(`commander_down` 52814B, `commander_exposed` 36981B, `commander_hit` 37957B,
+`commander_parry_windup` 42045B, `commander_weakpoint` 31502B) — consistent with "missing-only boss
+regen" only touching the 4 deleted REGEN targets. No further action needed on these 5; every
+`check-sprite-integrity` closability WARN on them re-verified as legitimate pose negative space
+(spread-leg stances, arm-away-from-torso), same as round 1's finding.
+
+### Boss REGEN targets — batch-1 vs batch-2
+
+| Asset                | Batch-1                                                                                                                                           | Batch-2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Verdict                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `commander_shielded` | Round bite through solid coat at hip/hem (~600-1000px), edge-connected, `bridgeHip` couldn't safely close it                                      | Hole GONE — full-silhouette magenta composite shows a completely solid coat, no visible bite anywhere. One residual closability WARN (854px, bbox [78,189,129,223], 77% down) — cropped and confirmed **legitimate**: the natural gap between the two trouser legs in a standing stance, not a hole                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | **CLEAN** — B1 fix (hem contour) worked                               |
+| `commander_finisher` | Two true holes: thigh (~1680px) + torso/back (~839px), ~14.6% of figure missing                                                                   | Both holes GONE — `opaque comps` dropped from 4 (fragmented) to **1** (single solid silhouette), dominant area UP from 17267px to 20903px. Mandatory anatomy sweep re-run: reaching arm is continuous shoulder→sleeve→wrist→hand, fingers separated but rooted, no detached member; the radio/headset device reads as a coherent attached prop on the head. Residual closability WARNs (1396px kneeling-leg-to-ground area, 356px torso) cropped and confirmed **legitimate** — the space under the reaching arm/hand and a natural garment-fold concavity at the collar, not holes. One cosmetic note: a ragged ink-spatter-like ground-contact shadow under the front boot (jagged but opaque, not a keying artifact)                                                                                                                                                                  | **CLEAN** — B2 fix (fold floor) worked; anatomy sweep PASS            |
+| `lustre`             | Multiple large bites through the cone/dome armature (~13.5%, "swiss cheese" read) + one disconnected orphan crystal-drop fragment                 | Armature now reads as ONE coherent, continuous solid object — cropped every large closability WARN (10650px/9817px pair at the very top, 3389px/2790px/1220px lower down): all confirmed **legitimate** — the top pair is open background around the ceiling-mount brackets (a real design element, not a hole), the lower ones are the intentional gaps between individual hanging crystal-drop strands (the prompt's own "strings of faceted glass droplets"). No orphan/duplicated fragment found this round (opaque comps=20 but the non-dominant 19 sum to <1% of the opaque area — ordinary keying-debris scale, not a duplicated object). One taste note (not technical, routed to Nico/Maud): the intended asymmetric "one wide notch, two drops missing" damage read is not obviously visible in this roll — the silhouette now reads as a fairly complete/symmetric chandelier | **CLEAN** — B3 fix (armature value-lock) worked; no human-bleed       |
+| `speaker_wall`       | 94.3% of canvas stayed opaque — corners sampled a real outdoor rigging/sky photo (cool sky-grey top, warm ground-grey bottom), no flat key colour | Corners now transparent, opaque fraction dropped to **0.326** (in line with `lustre`'s 0.346 — a plausible figure/prop ratio). Background reads clean flat black behind the stack. One minor cosmetic NIT: a handful of thin disconnected cable-line fragments float in open background near the right edge (component sizes ~13-40px, under the 12px×N speckle profile but still visible up close) — cosmetic dangling-cable debris, invisible at real in-game prop scale, not blocking                                                                                                                                                                                                                                                                                                                                                                                                 | **CLEAN (minor NIT)** — B4 fix (black-bg lock) worked; no human-bleed |
+
+**Edge/fringe quality (Bertrand's détourage verdict):** all 9 boss sprites report `BINARY alpha: 0
+semi px` — hard, non-anti-aliased edges everywhere, correct for the "crisp clean pixels... retro
+snes style" tail. The stair-step raggedness visible on `commander_exposed`'s silhouette (flagged
+in round 1) is confirmed cosmetic pixel-art jaggedness, not a keying fringe — no semi-transparent
+halo pixels exist to soften it. Détourage verdict: **PASS** on all 9 boss sprites this round.
+
+### l'Éden backdrop — 1280×768 confirmed, arch count STILL 4 (unresolved), NEW foreground keying regression found
+
+- **Dimensions: FIXED.** Both `facade.png` and `foreground.png` decode at the true global
+  `sizes.facade`/`sizes.foreground` **1280×768** — the `normalizeSize` fix landed correctly.
+- **Arch count: still 4, not the gated 5 — recurring, not new.** Overlaid the windowGrid's own
+  even-5-slot centers (`left:0.1,right:0.9,cols:5` → x≈230/435/640/845/1050 px) on the facade.
+  The composition is a 3-wall perspective room: the BACK WALL (the plane the `windowGrid` is meant
+  to key on) carries **4** clear, evenly-spaced, fully-frontal arched openings, plus 2 additional
+  arches on the sharply-angled receding SIDE walls at the far left/right edges — these side-wall
+  arches are geometrically distinct (steep perspective, not flush to the picture plane) and are not
+  usable the same way a cop-popup window is on the other levels. Overlaid grid lines land centered
+  on only 3 of the 4 back-wall arches and fall on bare pillars/side-wall arches at the two grid
+  extremes — confirms the same `windowGrid.cols=5`-vs-real-art mismatch flagged in round 1,
+  **unaddressed by batch 2** (batch 2's scope was the boss prompt fixes + the dimension bug; the
+  arch-count prompt itself was not in the B1-B4 fix set, per the coordinator's own framing). This
+  is the same class of drift belliard hit twice (`8933c03`, `bb6404f`) and needs either (a) a
+  targeted facade re-roll that locks a flat single-wall elevation (drop the 3-wall room read) with
+  the count reinforced, or (b) a `windowGrid`/`gen-window-zones` retune to 4 columns against the
+  real art (an architecture/design call, not mine to make unilaterally). Could not run
+  `gen-window-zones.mjs`/`align-windows.mjs` in this sandbox (`jpeg-js` dependency still missing)
+  to see whether the detector snaps acceptably regardless — same gap as round 1.
+- **NEW FINDING — foreground.png keying regression (not present in round 1).** Round 1's
+  `foreground.png` composited cleanly (verified again by re-viewing my saved round-1 crop): sharp
+  black balustrade silhouette, clean magenta everywhere else. **Round 2's `foreground.png` has a
+  real keying failure**: sampled the raw committed pixel at (200,250) — a gap between two
+  balusters that should read background — and it is **RGB(206,73,82) at alpha 255, fully opaque**,
+  not magenta. `scripts/cutout-foreground.mjs`'s `isMagenta()` test (`r>110 && b>110 && g<min(r,b)
+*0.62`) correctly leaves this pixel alone because it genuinely isn't magenta — the underlying
+  generation rendered a **warm orange/red gradient** (looks like a sunset or warm-lit-interior
+  glow) behind large sections of the ironwork instead of the required flat `#FF3CDC` chroma, and
+  it baked in as permanent opaque content. Visually this reads as a solid warm haze filling most of
+  the gaps between the railing bars — corners are still cleanly transparent (0,0,0,0), so this is
+  a **partial** background-generation failure, same root-cause CLASS as round-1's `speaker_wall`
+  (background didn't hold flat/uniform), just on a different asset and this time surviving into
+  the SECOND batch. Global opaque fraction is 0.631 of the whole 1280×768 canvas — far more than a
+  thin railing should ever occupy. **This blocks the foreground layer as committed** — it was not
+  part of the 4-item regen scope (foreground wasn't a named REGEN target) but the dimension-fix
+  regen re-ran the whole backdrop generation and this defect appears to be new fallout from that
+  re-roll, not something batch 2 was even asked to check. Flagging as its own escalation item.
+
+### What reaches Nico
+
+**The `boss` 9-asset family is READY for the ASSET GATE** — all 9 are technically CLEAN this round
+(5 confirmed untouched, 4 REGEN targets confirmed fixed), no outstanding hole/fringe/anatomy/
+human-bleed defect. One non-blocking taste note forwarded (lustre's damage asymmetry read) for
+Nico/Maud, not a technical hold.
+
+**The l'Éden backdrop does NOT reach the gate as-is.** Two separate findings, both blocking:
+
+1. `facade.png` — window-row count mismatch (4 vs gated 5), recurring from round 1, unaddressed.
+2. `foreground.png` — NEW keying regression (background gradient bleed, ~63% of canvas wrongly
+   opaque), first observed this round.
+
+### Escalation shortlist for Bertrand (cap is SPENT — no further reroll without his call)
+
+Per the coordinator's framing, the 2-batches/cycle cap for the `boss` family is spent and satisfied
+(9/9 clean) — no escalation needed there. The **backdrop** is the open item, and since it was not
+counted against the same boss-family cap, the choice of remedy is Bertrand's:
+
+1. **Facade arch-count (4 vs 5):** (a) seed-sweep/re-roll the facade prompt with a stronger
+   single-flat-wall constraint (drop the 3-wall room read) and reinforced count language, or
+   (b) accept 4 arches and re-tune `windowGrid.cols` to 4 (an architecture/design call — changes
+   the pre-boss gallery's window-pop density, not just an art fix), or (c) accept-with-defect if
+   the alignment harness (once runnable) snaps acceptably despite the mismatch — unverified here.
+2. **Foreground keying regression:** (a) re-roll just the `foreground` prompt with the magenta
+   chroma-key clause reinforced/repeated (same class of fix as `speaker_wall`'s B4), or (b) a
+   kontext img2img pass to flatten the existing art's background to true magenta before re-keying
+   (preserves the current railing artwork, only touches the background), or (c) a retouch spike —
+   NOT safely scriptable as a simple threshold widen (the warm colour is nowhere near magenta in
+   hue, so loosening `isMagenta()` risks eating real dark ironwork instead of fixing the bleed;
+   this needs either a flood-fill-from-border approach like the boss sprites use, or new art).
+   My recommendation, precision for his call: this reads like the same root cause as `speaker_wall`
+   round 1 (background isolation failing to hold across a full re-roll) — a seed/prompt fix
+   (option a) has the best precedent (worked for all 4 boss REGENs this batch) and should be tried
+   before a retouch spike.
+
+### Verify
+
+- `node scripts/check-sprite-integrity.mjs --file <asset>` × 9 → all PASS, closability WARN now
+  live and used exactly as intended (floor, not verdict — every WARN individually adjudicated above).
+- `sha256sum`/byte-size cross-check on the 5 CLEAN sprites → confirmed untouched.
+- Pixel-sampled the raw `foreground.png` (not just the magenta composite) to rule out a tooling
+  artifact before flagging the regression — confirmed at the byte level.
+- `git status` → clean; no repo files modified this pass (inspection-only, scratchpad tools removed
+  after use, consistent with round 1's discipline).
+
+Not a `VERDICT:` line (TECHNICAL-pass annotations only — the ASSET GATE verdict is Nico's). The
+`boss` family is ready for that gate; the l'Éden backdrop is held on the two findings above.
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this ROUND 2 entry appended). No
+  asset or script files modified.
+
+Serge — TECHNICAL PASS (round 2)
+
+## DÉCISIONS BERTRAND — backdrop escalation (2026-07-21)
+
+- **Finding 1 (arches 4 vs 5)** : Bertrand tranche — ACCEPTER la façade batch-2
+  à 4 arches et RETUNER `windowGrid.cols` 5→4. Gate design express demandé à
+  `lead-game-designer` (la valeur 5 était gatée [E3]) + re-check alignement
+  fenêtres après application.
+- **Finding 2 (foreground régressé)** : Bertrand tranche — RESTAURER le
+  foreground round-1 (keying propre, commit 3371b20) et le normaliser
+  1280×768 par script (retouche documentée : @napi-rs/canvas, drawImage
+  991×594→1280×768, smoothing off). Appliqué par l'orchestrateur ; vérifié
+  1280×768, 355KB. Le foreground batch-2 (dégradé orange 63% opaque) est
+  écarté.
