@@ -92,8 +92,10 @@ const SHARED_STYLE =
   "windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no " +
   "glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked " +
   "graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean " +
-  "upper walls. The drawn block sits centered with an empty margin of night sky on both the left " +
-  "and right side, never touching the left or right frame edge.";
+  "upper walls. The buildings form one compact cluster floating in the centre of the frame, set " +
+  "well in from the sides, a wide band of empty plain night sky running down both the far left and " +
+  "the far right edge, the outermost building clearly ending inside the frame with sky beside it, " +
+  "the cluster never reaching or touching the left or right edge.";
 
 // Per-tronçon distinguishing clause (v3 §2). aspect drives the tile width.
 const TRONCONS = [

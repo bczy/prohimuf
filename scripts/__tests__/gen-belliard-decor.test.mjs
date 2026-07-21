@@ -82,7 +82,7 @@ describe("planBelliardAssets", () => {
     );
     expect(p, "strict frontal, no perspective").toMatch(/frontal orthographic elevation/i);
     expect(p, "no vanishing point").toMatch(/no vanishing point/i);
-    expect(p, "margin on both sides").toMatch(/margin of night sky on both the left and right/i);
+    expect(p, "margin on both sides").toMatch(/both the far left and the far right edge/i);
   });
 });
 
