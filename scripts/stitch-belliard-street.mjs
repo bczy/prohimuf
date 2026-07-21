@@ -63,22 +63,40 @@ async function main() {
   }
   const a = await prep(left);
   const b = await prep(right);
-  const finalW = a.w + b.w;
+  // Trim near-white margins on every edge so no pure-white band survives — the
+  // right margin of `left` butting `right` was a white strip at the seam.
+  const colMean = (im, x) => {
+    let s = 0;
+    for (let y = 0; y < H; y++) s += im.data[(y * im.w + x) * 4];
+    return s / H;
+  };
+  const trim = (im) => {
+    let L = 0;
+    let R = im.w;
+    while (L < R - 1 && colMean(im, L) > 210) L++;
+    while (R > L + 1 && colMean(im, R - 1) > 210) R--;
+    return { L, R, w: R - L };
+  };
+  const ta = trim(a);
+  const tb = trim(b);
+  const aw = ta.w;
+  const bw = tb.w;
+  const finalW = aw + bw;
+  const gA = (x, y) => a.data[(y * a.w + (ta.L + x)) * 4];
+  const gB = (x, y) => b.data[(y * b.w + (tb.L + x)) * 4];
   const cv = createCanvas(finalW, H);
   const ctx = cv.getContext("2d");
   const od = ctx.createImageData(finalW, H);
   const o = od.data;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < finalW; x++) {
-      const dx = x - a.w;
+      const dx = x - aw;
       let v;
-      if (dx < -FEATHER) v = a.data[(y * a.w + x) * 4];
-      else if (dx > FEATHER) v = b.data[(y * b.w + dx) * 4];
+      if (dx < -FEATHER) v = gA(x, y);
+      else if (dx > FEATHER) v = gB(dx, y);
       else {
         const w = (dx + FEATHER) / (2 * FEATHER);
-        const va = a.data[(y * a.w + Math.min(a.w - 1, x)) * 4];
-        const vb = b.data[(y * b.w + Math.max(0, dx)) * 4];
-        v = va * (1 - w) + vb * w;
+        v = gA(Math.min(aw - 1, x), y) * (1 - w) + gB(Math.max(0, dx), y) * w;
       }
       const i = (y * finalW + x) * 4;
       o[i] = o[i + 1] = o[i + 2] = v;
