@@ -27,11 +27,13 @@ describe("levels — Belliard boss gate (story-boss-belliard-live, AC1)", () => 
     expect(BELLIARD_BOSS_ENABLED).toBe(true);
   });
 
-  it("flag ON ⇒ Belliard authors the bossQteSpec and DROPS the hostage QTE (they can't coexist)", () => {
+  it("flag ON ⇒ Belliard authors BOTH the bossQteSpec and its hostageQte (ADR-0058 D3, sequential)", () => {
     const level = belliard();
     expect(level.bossQteSpec).toBeDefined();
-    // The two set-pieces cannot coexist (stateMachine guard); the boss replaces the hostage QTE.
-    expect(level.hostageQte).toBeUndefined();
+    // Bertrand, 2026-07-21: keep both — the hostage QTE (triggers 12s, resolves well within the
+    // level) always finishes long before the timed-finale boss (created only at timeSeconds) can
+    // exist, so the two are safely sequential, never concurrent (asserted in createInitialState).
+    expect(level.hostageQte).toBeDefined();
   });
 
   it("the boss is the level's timed finale (fires once a spec is authored, not on quota)", () => {

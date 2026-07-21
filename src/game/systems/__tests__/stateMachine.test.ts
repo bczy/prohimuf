@@ -808,14 +808,15 @@ describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-
     expect(s.impactEvents).toEqual([]);
   });
 
-  it("GUARD: refuses a level authoring BOTH a hostage QTE and a boss QTE (no silent drop)", () => {
-    // REGRESSION (code-review panel, PR #112): the top-of-tick boss block can `return` early and
-    // freeze `elapsedSeconds`, so a co-authored hostage QTE (triggered off `elapsedSeconds`) would
-    // be SILENTLY dropped once the boss quota is met. The two cinematics do not interleave yet, so
-    // `createInitialState` fails LOUD at level load rather than lose the beat. Not reachable in V1
-    // (no shipped level co-authors them; the dev harness authors only the boss) — locked here.
+  it("GUARD: allows hostage + boss together when the hostage safely resolves before the timed finale (ADR-0058 D3)", () => {
+    // Belliard now authors BOTH (Bertrand, 2026-07-21: keep both, don't drop the hostage). This is
+    // safe by construction: the boss is a TIMED FINALE, created no earlier than `timeSeconds` of
+    // non-frozen play, and the hostage QTE freezes the timer WHILE it's active — so as long as the
+    // hostage's worst case (trigger + zoom + every peek blown + result hold) finishes with margin
+    // before `timeSeconds`, the two never run concurrently. Belliard's own numbers (12 + 2 + 4×1.5 +
+    // 2.2 = 22.2s, vs. timeSeconds 90s) mirrored here.
     const HOSTAGE_SPEC = {
-      triggerAtElapsedSeconds: 0,
+      triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,
       anchor: { x: 0, y: 0 },
       maxBlownPeeks: 4,
@@ -832,10 +833,36 @@ describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-
       hostageQte: HOSTAGE_SPEC,
       bossQte: BOSS_SPEC,
     };
-    expect(() => createInitialState(FACADE_01, both)).toThrow(/cannot author BOTH/);
-    // Each spec ALONE still loads fine (the guard fires only on the combination).
+    expect(() => createInitialState(FACADE_01, both)).not.toThrow();
+    // Each spec ALONE still loads fine too.
     expect(() => createInitialState(FACADE_01, { ...both, bossQte: null })).not.toThrow();
     expect(() => createInitialState(FACADE_01, { ...both, hostageQte: null })).not.toThrow();
+  });
+
+  it("GUARD: throws when hostage+boss timing is UNSAFE — the hostage's worst case could still be running when the timed finale fires", () => {
+    // REGRESSION (code-review panel, PR #112, re-scoped for ADR-0058 D3): the two cinematics must
+    // never interleave. `createInitialState` fails LOUD at level load if a retune (here: a level
+    // timer far too short for the authored hostage) would let the boss's timer-expiry creation land
+    // before the hostage could possibly have resolved — never a silent drop.
+    const HOSTAGE_SPEC = {
+      triggerAtElapsedSeconds: 12,
+      zoomSeconds: 2,
+      anchor: { x: 0, y: 0 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      peekDurationSeconds: 1.5,
+      targetSeed: 20260718,
+      captorHp: 3,
+    };
+    const unsafe: LevelParams = {
+      lives: 3,
+      timeSeconds: 15, // worst-case hostage end (22.2s) + margin (5s) > 15s timer
+      enemiesToWin: QUOTA,
+      enemySpeedMultiplier: 1,
+      hostageQte: HOSTAGE_SPEC,
+      bossQte: BOSS_SPEC,
+    };
+    expect(() => createInitialState(FACADE_01, unsafe)).toThrow(/not safely sequential/);
   });
 
   it("IDENTITY: a boss-less level is byte-for-byte unchanged — the quota still wins directly", () => {
@@ -1013,8 +1040,9 @@ describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (
       refractoryMs: 0,
     };
     // A synthetic hostage spec on stalingrad (no boss, no hostage of its own) so this freeze test
-    // is independent of which shipped level carries a hostage QTE — belliard's is now dropped when
-    // BELLIARD_BOSS_ENABLED (the boss replaces it), and a boss + hostage on one level throws.
+    // is independent of which shipped level carries a hostage QTE — belliard authors both a
+    // hostage and a boss (ADR-0058 D3, sequential coexistence), so this stays deliberately
+    // decoupled from that specific pairing rather than re-deriving its timing-safety margin here.
     const HOSTAGE = {
       triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,

@@ -9,16 +9,17 @@
  * `HudData` snapshots and dispatches real mouse input, per the boundary rule.
  *
  * Two aim-INDEPENDENT assertions (energy starts at 100 and is moved ONLY by the
- * QTE under test per `src/game/systems/stateMachine.ts`, so every delta below is
+ * hostage QTE per `src/game/systems/stateMachine.ts`, so every delta below is
  * exact and deterministic — no tolerance needed):
  *
- *   D2-A — boss PANIC shot: firing once while `bossQte.phase === "ZOOMING"`
+ *   D2-A — belliard PANIC shot: firing once while `qte.phase === "ZOOMING"`
  *          drains `energy` by exactly `QTE_PANIC_SHOT` (−6), aim-independent
  *          (a panic shot is penalised regardless of where it lands), and never
- *          moves `score`. Exercised via `?preview=boss` (the Commandant replaced
- *          Belliard's hostage QTE as its required end-gate, ADR-0058) — the seam
- *          boots the boss straight into ZOOMING, avoiding the shipped 90 s
- *          timer-finale wait.
+ *          moves `score`. Control: belliard authors no accomplice, so
+ *          `qte.accomplice` must be `null` throughout. Belliard now ALSO
+ *          authors a boss (ADR-0058 D3, sequential coexistence) — this run,
+ *          entirely inside the hostage's ~20 s window, never reaches the
+ *          boss's 90 s timer-finale, so it never observes `bossQte`.
  *   D2-B — vitry ACCOMPLICE (ADR-0036): with the captor's own counter-fire
  *          suppressed by the presence of an accomplice (INVARIANT P3-ACC), and
  *          ZERO player fire, `energy` still drops — in exact multiples of
@@ -77,36 +78,35 @@ async function enterLevel(page, level) {
   await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
 }
 
-/** D2-A — boss QTE panic shot: one shot during the boss ZOOMING beat drains exactly QTE_PANIC_SHOT.
- *  Belliard's hostage QTE was replaced by the Commandant boss (ADR-0058), so this exercises the
- *  panic mechanic on the BOSS via the `?preview=boss` seam — an instant boss in ZOOMING, avoiding
- *  the 90 s timer-finale wait a shipped Belliard run would need. The boss starts SHIELDED after the
- *  zoom, so even a slightly-late shot lands on a non-window beat, which is also a panic (−6). */
-async function assertBossPanic(context, levelIds) {
+/** D2-A — belliard: one shot during ZOOMING drains exactly QTE_PANIC_SHOT. Belliard also authors a
+ *  boss (ADR-0058 D3), but this run never runs long enough to reach the boss's 90 s timer-finale —
+ *  it only proves the hostage QTE still fires and behaves correctly with the boss co-authored. */
+async function assertBelliardPanic(context, levelIds, belliard) {
   const page = await context.newPage();
   await seedPlay(page, levelIds);
-  console.log(`[D2-A] booting ?preview=boss, waiting for bossQte.phase === "ZOOMING"…`);
-  await page.goto(`${PREVIEW_URL}?preview=boss`, {
-    waitUntil: "networkidle",
-    timeout: NAV_TIMEOUT,
-  });
-  await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
+  console.log(`[D2-A] entering "${belliard.name}", waiting for qte.phase === "ZOOMING"…`);
+  await enterLevel(page, belliard);
 
   const zooming = await pollState(
     page,
-    (s) => s.game.bossQte !== null && s.game.bossQte.phase === "ZOOMING",
+    (s) => s.game.qte !== null && s.game.qte.phase === "ZOOMING",
     { timeout: QTE_TIMEOUT },
   );
+  if (zooming.game.qte.accomplice !== null) {
+    throw new Error(
+      `D2-A control failed: belliard authors no accomplice, but qte.accomplice = ${JSON.stringify(zooming.game.qte.accomplice)}`,
+    );
+  }
   const baselineEnergy = zooming.game.energy;
   const baselineScore = zooming.game.score;
   console.log(
-    `[D2-A] boss ZOOMING reached (energy=${String(baselineEnergy)}, score=${String(baselineScore)}) — firing one shot`,
+    `[D2-A] ZOOMING reached (energy=${String(baselineEnergy)}, score=${String(baselineScore)}, accomplice=null ok) — firing one shot`,
   );
 
   const canvas = page.locator("canvas").first();
   const box = await canvas.boundingBox();
   if (box === null) throw new Error("D2-A: canvas has no bounding box");
-  // Aim is irrelevant during ZOOMING (tickBossQte charges QTE_PANIC_SHOT regardless
+  // Aim is irrelevant during ZOOMING (tickQte charges QTE_PANIC_SHOT regardless
   // of impactPoint) — click dead centre to prove that, not to target anything.
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 
@@ -134,7 +134,7 @@ async function assertBossPanic(context, levelIds) {
   }
   await page.close();
   if (problems.length > 0) {
-    throw new Error(`D2-A (boss PANIC) FAILED:\n  ${problems.join("\n  ")}`);
+    throw new Error(`D2-A (belliard PANIC) FAILED:\n  ${problems.join("\n  ")}`);
   }
   console.log(
     `[D2-A] PASSED — energy ${String(baselineEnergy)} → ${String(after.game.energy)} (Δ${String(QTE_PANIC_SHOT)}), score unchanged`,
@@ -209,7 +209,7 @@ async function main() {
 
   let failure = null;
   try {
-    await assertBossPanic(context, levelIds);
+    await assertBelliardPanic(context, levelIds, belliard);
     // Small gap so the second page's harness init script isn't racing the first
     // page's teardown on a constrained CI runner.
     await sleep(200);
