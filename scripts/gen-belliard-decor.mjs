@@ -86,7 +86,8 @@ const SHARED_STYLE =
   "flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, " +
   "no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and " +
   "xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and " +
-  "paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five " +
+  "paper-white #E9E3D2. One to three ordinary weathered Paris 18e faubourg buildings standing alone as " +
+  "an isolated cut-out cluster against open empty night sky, not a continuous street, irregular widths, four-to-five " +
   "storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three " +
   "thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, " +
   "windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no " +
@@ -103,22 +104,22 @@ const TRONCONS = [
     file: "troncon-a",
     aspect: 1.9234,
     distinct:
-      "The row here is two such buildings of clearly different width and height side by side, a " +
-      "clear vertical sliver of empty night sky between them at least as wide as one window bay.",
+      "Here, two such buildings of clearly different width and height stand together as an isolated " +
+      "pair with open night sky all around them, a clear vertical sliver of sky between the two.",
   },
   {
     file: "troncon-b",
     aspect: 2.0406,
     distinct:
-      "The row here is three such buildings in a tight irregular row, one gap opening onto a bare " +
-      "windowless mid-grey #3A3E44 masonry gable end wall.",
+      "Here, three such buildings stand clustered together as an isolated group with open night sky " +
+      "around them, one showing a bare windowless mid-grey #3A3E44 masonry gable end wall.",
   },
   {
     file: "troncon-c",
     aspect: 2.1156,
     distinct:
-      "The row here is two or three such buildings, one narrow dark passage alley set back well " +
-      "within the row between two of them, away from either edge.",
+      "Here, two or three such buildings stand together as an isolated cluster with open night sky " +
+      "around them, one narrow dark passage alley set back well within the cluster, away from either edge.",
   },
 ];
 
