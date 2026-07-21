@@ -3503,3 +3503,35 @@ VERDICT: FAIL — design acceptance story-2 (game-designer) — N1 target-supply
   - `src/game/levels/levels.ts` (MODIFIED — targetSeed re-pin 19991231→19991232 + K-5 comment)
   - `src/game/levels/__tests__/niveauFinal.test.ts` (MODIFIED — seed expectation + K-5 titles)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this K-5 re-pin entry appended)
+
+## VERIFY (stage 5, leg 2 — FINAL confirm) — game-designer (Sacha) — 2026-07-20 — K-5 re-pin re-verified against the landed code
+
+- claim: closing design-acceptance line for story-2 — re-run the K-5 harness against the LANDED
+  re-pin (`levels.ts` `targetSeed → 19991232`, gameplay lane 85/85 green) and confirm the N=500
+  numbers reproduce. Scratchpad sim only; no repo/production code; no commit/push.
+- byte-equality (landed): niveau-final `bossQteSpec` = harness combat block EXCEPT the new seed —
+  zoom 2 / anchor {0,-5} / phaseCount 3 / bossHp 24 / maxBlownWindows 10 identical; `targetSeed
+19991232`; `decorProp {0.2,1.5}`. System constants unchanged: `BOSS_VITAL_CATCH_RADIUS 0.11`,
+  `BOSS_DECOR_CATCH_HALF_W/H 0.40/0.525` (A2 AABB). Rebundled the landed source and re-ran N=500/style.
+- result — reproduces the prescribed re-pin numbers EXACTLY (deterministic, same seed):
+
+| Style         | Win                        | ΔE                 | A1-R2                                                             |
+| ------------- | -------------------------- | ------------------ | ----------------------------------------------------------------- |
+| optimal       | 100%                       | +14.0              | (c) honest clears ✓                                               |
+| greedyLimb    | 100%                       | −4.3               | (c) honest clears ✓                                               |
+| **campVital** | 100%                       | **−8.0**           | **(a) < optimal +14.0 & < greedyLimb −4.3 → camp NON-dominant ✓** |
+| greedyVital   | 100%                       | −56.6 / 2.15 blown | (b) negative + blown ≫ greedyLimb ✓                               |
+| sloppy        | 27.8% win / **72.2% loss** | −208.5             | losable ✓                                                         |
+
+Décor: chandelier `{0.2,1.5}` armed in phase 2 SHIELDED gap, consumed for **+3** via the A2 AABB ✓.
+N1 target-supply unchanged (PASS, prior entry — 4-slot == vitry baseline, quota 3.7× headroom).
+
+- handoff → `lead-game-designer` (Karim) + `producer` (Marion): story-2 design acceptance CLOSED —
+  all A1-R2 (a)-(d) + losability + décor reachability hold on the landed seed 19991232; N1 supply
+  adequate. No open design blocker for verify leg-1.
+- NOTE (process): `cat >>` heredoc, additive at end-of-file; sim ran on a throwaway bundle of the
+  landed source; no repo edit.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-pin (targetSeed 19991232, all else byte-equal; 0.11 + A2 AABB unchanged) re-verified at N=500: campVital −8.0 < optimal +14.0 & greedyLimb −4.3 (camp non-dominant), greedyVital −56.6 / 2.15 blown (greed punished), optimal + greedyLimb 100% (honest clears), sloppy 72.2% loss (losable), chandelier {0.2,1.5} armed+consumed +3 via A2 AABB (reachable); N1 target-supply PASS (4-slot facade == vitry baseline, 16-quota met in ~19 s / 3.7× headroom, no windowWeights nudge). K-5 leg closed — the earlier 19991231 camp-dominance FAIL is resolved by the re-pin exactly as prescribed.
