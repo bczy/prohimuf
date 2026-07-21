@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>muf — le crew Claude</title>
+    <!--
+      Page statique "équipe" : le roster des subagents Claude du projet muf
+      (.claude/agents/COLLABORATION.md), avec mise en avant de ceux qui ont un
+      chantier en cours. Les inactifs sont assombris.
+
+      MISE À JOUR : éditer le tableau TEAM dans le <script> en bas de page
+      (active + task, une phrase), ainsi que la date SNAPSHOT. La vérité
+      d'activité vient de docs/agent-handoffs.md.
+    -->
+    <style>
+      :root {
+        --paper: #f2f0e9;
+        --ink: #0a0a0a;
+        --grey: #8a8a8a;
+        --cyan: #00f0ff;
+        --magenta: #ff2bd6;
+        --acid: #aaff00;
+        --orange: #ff9f00;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--ink);
+        color: var(--paper);
+        font-family: "Courier New", Courier, monospace;
+        min-height: 100vh;
+        padding: 2rem 1.5rem 4rem;
+        background-image:
+          radial-gradient(circle at 20% 10%, rgba(255, 43, 214, 0.06), transparent 40%),
+          radial-gradient(circle at 80% 90%, rgba(0, 240, 255, 0.06), transparent 40%);
+      }
+      header {
+        max-width: 72rem;
+        margin: 0 auto 2.5rem;
+        border: 2px solid var(--paper);
+        padding: 1.25rem 1.5rem;
+        position: relative;
+      }
+      header::after {
+        content: "";
+        position: absolute;
+        inset: 6px;
+        border: 1px dashed var(--grey);
+        pointer-events: none;
+      }
+      h1 {
+        font-size: clamp(1.6rem, 4vw, 2.6rem);
+        text-transform: uppercase;
+        letter-spacing: 0.35em;
+        text-shadow:
+          0 0 8px var(--cyan),
+          0 0 24px rgba(0, 240, 255, 0.4);
+      }
+      .tagline {
+        margin-top: 0.5rem;
+        color: var(--grey);
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+      }
+      .legend {
+        max-width: 72rem;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+      }
+      .legend .on {
+        color: var(--acid);
+        text-shadow: 0 0 6px var(--acid);
+      }
+      .legend .off {
+        color: var(--grey);
+      }
+      .grid {
+        max-width: 72rem;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+        gap: 1.25rem;
+      }
+      .card {
+        border: 1px solid var(--grey);
+        padding: 1.1rem 1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        background: rgba(242, 240, 233, 0.03);
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .card.active {
+        border-color: var(--neon);
+        box-shadow:
+          0 0 10px color-mix(in srgb, var(--neon) 55%, transparent),
+          inset 0 0 18px color-mix(in srgb, var(--neon) 8%, transparent);
+      }
+      .card.active:hover {
+        transform: translateY(-3px);
+      }
+      .card.idle {
+        opacity: 0.4;
+        filter: grayscale(1) brightness(0.75);
+      }
+      .avatar {
+        font-size: 2.6rem;
+        line-height: 1;
+      }
+      .name {
+        font-size: 1.05rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .card.active .name {
+        text-shadow: 0 0 8px var(--neon);
+      }
+      .agent-id {
+        font-size: 0.7rem;
+        color: var(--grey);
+        letter-spacing: 0.05em;
+      }
+      .role {
+        font-size: 0.78rem;
+        color: var(--paper);
+        opacity: 0.8;
+        line-height: 1.35;
+      }
+      .status {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: auto;
+        padding-top: 0.4rem;
+      }
+      .card.active .status {
+        color: var(--neon);
+        text-shadow: 0 0 6px var(--neon);
+      }
+      .card.idle .status {
+        color: var(--grey);
+      }
+      .task {
+        font-size: 0.82rem;
+        font-style: italic;
+        line-height: 1.45;
+        border-left: 3px solid var(--neon);
+        padding-left: 0.6rem;
+        color: color-mix(in srgb, var(--paper) 88%, var(--neon) 12%);
+      }
+      footer {
+        max-width: 72rem;
+        margin: 3rem auto 0;
+        color: var(--grey);
+        font-size: 0.75rem;
+        line-height: 1.6;
+        border-top: 1px dashed var(--grey);
+        padding-top: 1rem;
+      }
+      footer a {
+        color: var(--cyan);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Le crew — muf</h1>
+      <p class="tagline">
+        L'équipe Claude du projet · qui a la main, qui est en veille · instantané du
+        <span id="snapshot"></span>
+      </p>
+    </header>
+
+    <p class="legend">
+      <span class="on">● EN CHANTIER — une phrase dit sur quoi</span>
+      <span class="off">○ EN VEILLE — luminosité baissée</span>
+    </p>
+
+    <main class="grid" id="grid"></main>
+
+    <footer>
+      Roster : <code>.claude/agents/COLLABORATION.md</code> · activité :
+      <code>docs/agent-handoffs.md</code> · mise à jour : éditer le tableau <code>TEAM</code> de
+      cette page. ·
+      <a href="./index.html">← retour au jeu</a>
+    </footer>
+
+    <script>
+      const SNAPSHOT = "2026-07-14";
+
+      // Une entrée par agent. active=true → carte mise en avant + phrase de
+      // chantier (task). active=false → carte assombrie, pas de phrase.
+      const TEAM = [
+        {
+          name: "Claude",
+          emoji: "🤖",
+          agent: "orchestrateur",
+          role: "Lance les lanes, sérialise les seams, applique les verdicts",
+          neon: "var(--cyan)",
+          active: true,
+          task: "Coordonne les lanes du jour et construit cette page d'équipe.",
+        },
+        {
+          name: "John",
+          emoji: "📋",
+          agent: "pm",
+          role: "PRD, stories, scope — le QUOI et le POURQUOI",
+          neon: "var(--acid)",
+          active: true,
+          task: "Vient d'accepter le fix roues & orientation des véhicules (PR #42) et cadre la story du rim néon live.",
+        },
+        {
+          name: "Marion",
+          emoji: "📆",
+          agent: "producer",
+          role: "Exécution du pipeline : stages, hand-offs, caps, escalades",
+          neon: "var(--orange)",
+          active: false,
+        },
+        {
+          name: "Winston",
+          emoji: "🏗️",
+          agent: "senior-architect",
+          role: "Architecture, ADRs, frontières game/render/hooks",
+          neon: "var(--cyan)",
+          active: true,
+          task: "Tient la merge-gate du flipbook coursier : onze correctifs pré-merge à faire atterrir avant la génération CI.",
+        },
+        {
+          name: "Karim",
+          emoji: "🧭",
+          agent: "lead-game-designer",
+          role: "Design gate + synchro design ↔ art ↔ dev",
+          neon: "var(--magenta)",
+          active: false,
+        },
+        {
+          name: "Sacha",
+          emoji: "🎮",
+          agent: "game-designer",
+          role: "Mécaniques, tuning, 3C — les specs de gameplay",
+          neon: "var(--acid)",
+          active: false,
+        },
+        {
+          name: "Yasmine",
+          emoji: "✒️",
+          agent: "narrative-designer",
+          role: "Univers, cast, chaque mot vu par le joueur",
+          neon: "var(--magenta)",
+          active: false,
+        },
+        {
+          name: "Nico",
+          emoji: "🎯",
+          agent: "lead-art",
+          role: "Bible d'art direction, gates visuels prompts & assets",
+          neon: "var(--magenta)",
+          active: true,
+          task: "Gate visuel du set coursier : traque le flood couleur et vérifie le liseré néon batch après batch.",
+        },
+        {
+          name: "Estelle",
+          emoji: "📼",
+          agent: "art-advisor",
+          role: "Références culturelles 1998 — conseil, lecture seule",
+          neon: "var(--orange)",
+          active: false,
+        },
+        {
+          name: "Maud",
+          emoji: "✍️",
+          agent: "concept-artist",
+          role: "Prompts FLUX dans levelArt.json, langage de silhouette",
+          neon: "var(--cyan)",
+          active: true,
+          task: "Retravaille les prompts coursier : cadrage par cellule et registre niveaux de gris (seeds 5210/5220).",
+        },
+        {
+          name: "Serge",
+          emoji: "🕹️",
+          agent: "game-graphist",
+          role: "Passes techniques : lisibilité, keying, retouches scriptées",
+          neon: "var(--orange)",
+          active: true,
+          task: "Retouche scriptée des tireurs : rebouche bustes et halos déchirés sans jamais mordre la figure (itération 5).",
+        },
+        {
+          name: "Malik",
+          emoji: "🎧",
+          agent: "sound-designer",
+          role: "Bible audio, specs BGM/SFX, AUDIO GATE",
+          neon: "var(--cyan)",
+          active: false,
+        },
+        {
+          name: "Inès",
+          emoji: "🧪",
+          agent: "qa-lead",
+          role: "Stage VERIFY : plans de test, e2e, QUALITY GATE",
+          neon: "var(--acid)",
+          active: true,
+          task: "Vérifie en headless le fix roues & orientation : rayons qui tournent vite, capot dans le sens de la marche.",
+        },
+        {
+          name: "Amelia",
+          emoji: "🎨",
+          agent: "dev-r3f-render",
+          role: "src/render — R3F, sprites, shaders, HUD",
+          neon: "var(--magenta)",
+          active: true,
+          task: "Ancre la lueur de tir des ennemis frame par frame (muzzleFor) et prépare le rim néon émissif côté render.",
+        },
+        {
+          name: "Amelia",
+          emoji: "🧠",
+          agent: "dev-gameplay",
+          role: "src/game — logique pure, TDD, zéro React/Three",
+          neon: "var(--cyan)",
+          active: false,
+        },
+        {
+          name: "Amelia",
+          emoji: "🛠️",
+          agent: "dev-tooling-assets",
+          role: "scripts/, pipeline d'assets, workflows CI",
+          neon: "var(--orange)",
+          active: true,
+          task: "Construit le générateur strip-and-slice des sprites coursier et son workflow CI de génération dédié.",
+        },
+      ];
+
+      document.getElementById("snapshot").textContent = SNAPSHOT;
+
+      const grid = document.getElementById("grid");
+      for (const member of TEAM) {
+        const card = document.createElement("article");
+        card.className = `card ${member.active ? "active" : "idle"}`;
+        card.style.setProperty("--neon", member.neon);
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = member.emoji;
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = member.name;
+
+        const agentId = document.createElement("div");
+        agentId.className = "agent-id";
+        agentId.textContent = member.agent;
+
+        const role = document.createElement("p");
+        role.className = "role";
+        role.textContent = member.role;
+
+        card.append(avatar, name, agentId, role);
+
+        if (member.active && member.task) {
+          const task = document.createElement("p");
+          task.className = "task";
+          task.textContent = member.task;
+          card.append(task);
+        }
+
+        const status = document.createElement("div");
+        status.className = "status";
+        status.textContent = member.active ? "● en chantier" : "○ en veille";
+        card.append(status);
+
+        grid.append(card);
+      }
+    </script>
+  </body>
+</html>
