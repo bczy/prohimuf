@@ -3280,3 +3280,73 @@ install` to re-resolve and regenerate a correct Berry-format lockfile; confirmed
   LATER. An asset-gate PASS here does NOT cover that runtime composite.
 
 VERDICT: PASS — asset gate lustre.png re-roll seed 4879 (lead-art)
+
+## 8. VERIFY (stage 5, leg 1) — qa-lead (Inès) — 2026-07-21 — test plan + mechanical gate + e2e evidence + regressions
+
+- claim: stage-5 VERIFY leg 1 for STORY-BOSS-NIVEAU-FINAL-LIVE — author the per-story test plan,
+  run the mechanical gate, produce state-verified e2e evidence on the REAL level path for the leg-2
+  design-acceptance (Sacha N1/K-5) + UX review (Tony A1–A15-on-real-backdrop), and verify the
+  regressions (3 shipped levels + zones byte-untouched, hostage untouched, differentiation system
+  untouched save the gated A2). Branch `claude/yo-pmnyzr`. No commit/push.
+- release: `docs/qa/plan-story-boss-niveau-final-live.md` (per-AC matrix, stage-5 checks, regression
+  specs) + `docs/qa/evidence/story-boss-niveau-final-live/` (9 PNGs).
+- **Mechanical gate — ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent → `yarn`):
+  - `yarn typecheck` → **EXIT 0**.
+  - `yarn vitest run` → **1003 / 1003 PASS**, 74 files, EXIT 0.
+  - `yarn lint` → **EXIT 0**.
+  - `yarn format:check` → **EXIT 0**.
+- **E2e evidence (state-verified via `__MUF_STATE__` under `__MUF_PLAY__`; the REAL flyer→unlock→
+  briefing→PLAYING path, not the harness seam; ZERO `pageerror` across menu/flyer/briefing/PLAYING —
+  a lone transient `errs:1` in one multi-context run was NOT reproducible on two clean re-runs):**
+  - `01-flyer-eden-locked-{desktop,mobile}` — l'Éden flyer LOCKED (« LIGNE FERMÉE / PAS ENCORE POUR TOI »).
+  - `02-flyer-eden-unlocked-{desktop,mobile}` — l'Éden flyer UNLOCKED, full fiction copy + « 70 s · 16 cibles ».
+  - `03-briefing-final_pre-{desktop,mobile}` — `final_pre` « 31 décembre… Le dernier son du siècle, Muf. »
+    over the REAL l'Éden backdrop; PASSER present (**AC7 wired + skippable**).
+  - `04-gallery-cops-desktop` — the 4-arch gallery over the l'Éden backdrop, roster in the arches
+    (biker / bonus / plainclothes / CRS riot+shield), HUD « L'Éden — 31 déc. 1999 ».
+  - `05-ingame-gallery-{desktop,mobile}` — live PLAYING, TEMPS ticking (70→69s), real backdrop.
+- **Regressions — verified mechanically vs `origin/main` (now carrying merged ADR-0052):**
+  - **AC2 / 3 shipped levels + tutorial byte-untouched:** `levels.ts` diff = pure append (62/0), ZERO
+    deletions. `BOSS_QTE_DEV_HARNESS_LEVEL` untouched (AC3).
+  - **Shipped window-zones drift PRESERVED:** `windowZones.generated.json` diff = pure append, ZERO
+    deletions — the pre-existing stalingrad/vitry zone drift stayed byte-preserved, only `niveau-final`
+    added. (Standing finding → producer/tech-writer: whether the shipped committed zones match today's
+    generator output is a separate open item, NOT introduced by this story.)
+  - **Differentiation system untouched save the gated A2 (AC5):** `bossQteSystem.ts` diff = **A2 décor
+    AABB ONLY** (`BOSS_DECOR_CATCH_HALF_W 0.40` / `HALF_H 0.525`, `withinBox` drawn==catch décor test
+    replacing the 0.30 circle for the décor prop only, + positive-extent assert). No
+    ring/parry/renfort/finisher/phase/HP constant touched; `types/bossQte.ts` ZERO diff; `BossQteSprite.tsx`
+    = paired A2 render drift-guard only.
+  - **Hostage + stateMachine untouched:** `qteSystem.ts`/`hostageQte.ts`/`types/hostageQte.ts`/
+    `stateMachine.ts` = ZERO diff (mutual-exclusion + freeze early-return literally unchanged).
+  - **AC5 value-for-value bossQteSpec:** the live combat block is byte-equal to the harness except
+    `targetSeed 19991231` (K-5 re-pin) + `decorProp {0.2,1.5}` (chandelier) — no system value smuggled.
+- **AC4 real-quota trigger + K-5 winnability — UNIT-verified:** `niveauFinal.test.ts` asserts
+  `enemiesToWin 16 !== 0` (real quota, not the harness `0`) and the winnability driver clears the full
+  kit on `targetSeed 19991231` before the blown clock.
+- **BLOCKING HOLE C-QA3 (boss over the l'Éden backdrop — CI-DEFERRED, escalated → producer):** the
+  boss triggering/fighting **over the real l'Éden backdrop** is UNREACHABLE in-sandbox — crossing the
+  real 16-kill quota at ~2 fps SwiftShader fails (a 150 s state-verified grind left `kills = 0`; synthetic
+  clicks don't land mook kills), and the `?preview=boss&at=…` seam is HARNESS-only (belliard backdrop),
+  so it can't render l'Éden. Harness/frame-rate limitation, not a defect — AC4 trigger + K-5 winnability
+  are unit-proven; the boss RENDER is proven on the harness (story-1 20-39, identical procedural system,
+  differing only in backdrop pixels + anchor). → the boss-over-l'Éden checks (Tony A1–A15 legibility
+  re-verify on the real backdrop + re-anchored position; full finale flow mobile; D11 retry felt-cost;
+  Sacha N1 target-supply + K-5 empirical landability) run on a **real-GPU build** at leg 2. A
+  niveau-final state-seed seam would make it e2e-automatable — specced to `dev-tooling-assets`, non-blocking.
+- **Art follow-up (NOT a leg-1 blocker):** the `lustre` ASSET GATE FAIL (§"ASSET GATE"; re-roll seed 4879) is off-screen this story — `resolveBossTexture` still returns the `enemy_riot` fallback and the
+  décor draws procedurally (ADR-0053 D6 canon-sprite integration is a FOLLOW-UP pass). Tracked in the
+  art lane, not this mechanical gate.
+- handoff → `game-designer` (Sacha) + `ux-designer` (Tony): leg-2 verification — flyer (locked/unlocked,
+  both classes), briefing-over-backdrop + skippable, and the live gallery are in
+  `docs/qa/evidence/story-boss-niveau-final-live/`; the boss-over-l'Éden reads (Tony A1–A15 on the real
+  backdrop, Sacha N1/K-5 empirical, D11 retry) are CI-DEFERRED under C-QA3 — run on a real-GPU build.
+- handoff → `producer` (Marion): CI-DEFERRED-BLOCKED item C-QA3 for the board; the shipped
+  stalingrad/vitry committed-zones-drift standing finding; the `lustre` art follow-up; the residual
+  `facade` prompt "5 arches" text (→ concept-artist). None block leg-1.
+- File List:
+  - `docs/qa/plan-story-boss-niveau-final-live.md` (NEW — this plan)
+  - `docs/qa/evidence/story-boss-niveau-final-live/*.png` (NEW — 9 state-verified captures)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — quality gate leg 1 story-2 (qa-lead) — mechanical gate GREEN (typecheck EXIT 0, vitest 1003/1003, lint EXIT 0, format:check EXIT 0); the new `niveau-final` level authors correctly (AC1 no-hostageQte, AC4 real quota 16, AC5 value-for-value bossQteSpec + seed 19991231 + chandelier decorProp {0.2,1.5}) and ships/plays live over the real l'Éden backdrop (flyer locked/unlocked both classes, final_pre-over-backdrop + skippable, 4-arch gallery with the riot-heavy roster, PLAYING both classes — all state-verified, zero pageerror); regressions HOLD (3 shipped levels + tutorial byte-untouched pure-append, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation system = gated A2 décor AABB only); AC4 real-quota trigger + K-5 winnability (seed 19991231) unit-verified. NAMED HOLE C-QA3: the boss fight OVER the l'Éden backdrop is unreachable in-sandbox (16-kill quota grind = 0 kills at 2 fps; the at= seam is harness-only) — CI-DEFERRED to Sacha's N1/K-5 + Tony's A1–A15-on-real-backdrop leg-2 on a real-GPU build; boss render proven on the harness, trigger+winnability unit-proven. Art `lustre` FAIL is an off-screen D6 follow-up, not a leg-1 blocker. Leg-2 (playtest + device review) runs on this evidence.
