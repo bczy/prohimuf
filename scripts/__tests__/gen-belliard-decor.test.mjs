@@ -29,15 +29,15 @@ describe("planBelliardAssets", () => {
     // `width` is the inner generation width; `finalWidth` is the padded PNG that
     // carries the on-screen aspect.
     expect(byFile["troncon-a.png"].finalWidth / byFile["troncon-a.png"].height).toBeCloseTo(
-      1.6491,
+      1.9234,
       2,
     );
     expect(byFile["troncon-b.png"].finalWidth / byFile["troncon-b.png"].height).toBeCloseTo(
-      1.7857,
+      2.0406,
       2,
     );
     expect(byFile["troncon-c.png"].finalWidth / byFile["troncon-c.png"].height).toBeCloseTo(
-      1.9224,
+      2.1156,
       2,
     );
   });

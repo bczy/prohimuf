@@ -71,7 +71,7 @@ describe("getBackdropLayout — single-facade parity (fixed levels)", () => {
 
 describe("getBackdropLayout — belliard troncon-sequence geometry", () => {
   // Manifest sequence: troncon-a, troncon-c, troncon-b, troncon-c (padded aspects).
-  const ASPECTS = [1.6491, 1.9224, 1.7857, 1.9224];
+  const ASPECTS = [1.9234, 2.1156, 2.0406, 2.1156];
   const WIDTHS = ASPECTS.map((a) => WORLD_HEIGHT * a);
   const WIDTHS_SUM = WIDTHS.reduce((s, w) => s + w, 0);
   // fullW includes a TRONCON_GAP sky gap between each adjacent pair (n-1 gaps).
