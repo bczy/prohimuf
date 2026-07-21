@@ -65,6 +65,11 @@ interface Props {
  *   width, loading a distinct transparent tronçon PNG — NO feather, so the
  *   parallax sky shows through the rooflines and between-building gaps as real
  *   transparency. The street band still shows through the transparent gaps.
+ * - `single-wide` (belliard v4): ONE opaque world-locked plane carrying the whole
+ *   décor — sky, buildings and street are already baked into `street-wide.png`.
+ *   Drawn via the same facade-pane path (draw-scale 1, feather off); the separate
+ *   sky and street/ground meshes are hidden and their PNGs never loaded (the image
+ *   supplies both, so `ground.png` — ~1 Mo — is skipped).
  *
  * Only the sky parallaxes; facade/street planes are world-locked so the enemy
  * slots and railings (placed off the same layout in `GameScene`) stay aligned.
@@ -82,6 +87,10 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
   // between-building sky gaps (ADR-0048). The tronçon art is cut at this fraction
   // of image height, so the ground layer's top sits at the matching world y.
   const isTroncon = layout.mode === "troncon-sequence";
+  // single-wide (belliard v4): the whole décor — sky + buildings + street — is
+  // baked into one opaque plane (street-wide.png), so the sky and street/ground
+  // meshes are hidden and their textures never loaded.
+  const isSingleWide = layout.mode === "single-wide";
   const STREET_LINE_FRAC = 0.864;
   const GROUND_TILE_W = WORLD_HEIGHT * 1.4992; // one ground.png = tronçon-a's native (pre-pad) width
   const groundTopY = facadeH * (0.5 - STREET_LINE_FRAC);
@@ -126,7 +135,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
     // owner-supplied sky can be dropped in later, but nothing is drawn now, so
     // the between-building gaps and the area above the rooflines show through to
     // the canvas background (ADR-0048).
-    if (!isTroncon) {
+    if (!isTroncon && !isSingleWide) {
       loader.load(
         levelLayerUrl(art.id, "sky"),
         (t) => {
@@ -154,7 +163,10 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
     // Single-facade: the classic per-level street.png backdrop art, exactly as
     // before ADR-0048 (stalingrad/vitry's street art is genuine backdrop, not a
     // QTE view — dropping it flattened their pavement band to a dark rectangle).
-    if (isTroncon) {
+    if (isSingleWide) {
+      // Nothing: street-wide.png (loaded via the facade-pane path above) already
+      // contains the street, so neither ground.png nor street.png is fetched.
+    } else if (isTroncon) {
       loader.load(
         tileUrl(art.id, "ground"),
         (t) => {
@@ -181,7 +193,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
         () => undefined,
       );
     }
-  }, [art.id, panes, featherFrac, isTroncon, fullW, GROUND_TILE_W]);
+  }, [art.id, panes, featherFrac, isTroncon, isSingleWide, fullW, GROUND_TILE_W]);
 
   // Only the sky parallaxes; facade/street planes are world-locked so they tile.
   useFrame(() => {
@@ -193,7 +205,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
       {/* Sky — one wide plane, farthest, drifts slowest. Single-facade shows its
           sky.png; tronçon mode keeps this layer but draws NOTHING (empty, owner
           fills it later), so the gaps and above-roofline show the canvas behind. */}
-      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]} visible={!isTroncon}>
+      <mesh ref={skyRef} position={[0, facadeH * 0.32, -3]} visible={!isTroncon && !isSingleWide}>
         <planeGeometry args={[fullW * 1.3, facadeH * 1.4]} />
         <meshBasicMaterial color={FALLBACK.sky} />
       </mesh>
@@ -203,7 +215,7 @@ export const LevelBackdrop = memo(function LevelBackdrop({ levelId, facadeH }: P
           anchors its top at the street line, so the road runs unbroken under the
           between-building sky gaps (the buildings-only tronçons are cut here).
           Single-facade keeps a plain dark band hidden behind its opaque panels. */}
-      <mesh ref={streetRef} position={[0, groundY, -2]}>
+      <mesh ref={streetRef} position={[0, groundY, -2]} visible={!isSingleWide}>
         <planeGeometry args={[fullW * 1.02, groundPlaneH]} />
         <meshBasicMaterial color={FALLBACK.street} />
       </mesh>
