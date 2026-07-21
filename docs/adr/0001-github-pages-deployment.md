@@ -69,3 +69,18 @@ through the same rebase-retry loop — and it shares the branch's
 deploy of the same ref instead of interleaving with it. (One asymmetry: a new
 push-deploy of a branch kept alive after merge may cancel a pending cleanup —
 that branch's eventual delete event re-fires it.)
+
+## Amendment — preview tied to PR lifetime (2026-07-21)
+
+The cleanup above fired only when a PR **merged** (or its branch was deleted),
+so a preview kept living after a PR was **closed without merging** until the
+branch was eventually removed. A preview should exist only while its PR is
+open, so `cleanup-preview.yml` now prunes `preview/<slug>/` on **any** close of
+a same-repo PR into the default branch — merged **or** closed unmerged. The
+`if` guard dropped its `pull_request.merged == true` clause; the `pull_request:
+closed` trigger already fires for both outcomes, and deploy, concurrency and
+the empty-publish delete mechanic are otherwise unchanged.
+
+A one-time purge also cleared the ~60 previews that had accumulated on
+`gh-pages` before the cleanup workflow existed (branches merged but never
+deleted, so no event ever fired), keeping only the previews of still-open PRs.
