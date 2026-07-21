@@ -35,17 +35,30 @@ const TAU = Math.PI * 2;
 export interface NearKindSpec {
   readonly aspect: number;
   readonly heightFrac: number;
+  /**
+   * Fraction of the GENERATED texture height left transparent BELOW the prop's
+   * feet. The render anchors the plane's bottom on the kerb line, so this empty
+   * strip would otherwise become air — the prop floats by `footPadFrac * planeH`.
+   * The plane is dropped by that amount so the visible feet land on the pavement.
+   * EVERY generated sprite sits high in its 512-tall frame (the model centres the
+   * subject), so all kinds carry a value; it is measured off the committed PNG's
+   * alpha bounding box — the lowest row with ≥3 opaque pixels — exactly like the
+   * muzzle anchors (re-measure if a PNG is regenerated). Omitted ⇒ 0.
+   */
+  readonly footPadFrac?: number;
 }
 
+// footPadFrac values measured off the committed public/assets/nearfg/<kind>.png
+// (lowest texture row with ≥3 opaque pixels; see NearKindSpec.footPadFrac).
 export const NEAR_KIND_SPECS = {
-  parkingMeter: { aspect: 0.5, heightFrac: 0.24 },
-  lamppost: { aspect: 0.5, heightFrac: 0.62 },
-  wallaceFountain: { aspect: 0.55, heightFrac: 0.32 },
-  trafficLight: { aspect: 0.44, heightFrac: 1.44 },
-  bollard: { aspect: 0.6, heightFrac: 0.13 },
-  scooter: { aspect: 1.5, heightFrac: 0.18 },
-  bench: { aspect: 1.7, heightFrac: 0.17 },
-  streetSign: { aspect: 0.75, heightFrac: 0.4 },
+  parkingMeter: { aspect: 0.5, heightFrac: 0.24, footPadFrac: 0.057 },
+  lamppost: { aspect: 0.5, heightFrac: 0.62, footPadFrac: 0.072 },
+  wallaceFountain: { aspect: 0.55, heightFrac: 0.32, footPadFrac: 0.17 },
+  trafficLight: { aspect: 0.44, heightFrac: 1.44, footPadFrac: 0.029 },
+  bollard: { aspect: 0.6, heightFrac: 0.13, footPadFrac: 0.17 },
+  scooter: { aspect: 1.5, heightFrac: 0.18, footPadFrac: 0.201 },
+  bench: { aspect: 1.7, heightFrac: 0.17, footPadFrac: 0.305 },
+  streetSign: { aspect: 0.75, heightFrac: 0.4, footPadFrac: 0.162 },
 } as const satisfies Record<NearForegroundKind, NearKindSpec>;
 
 /** Soft ground shadow ellipse under a prop, drawn first so the body sits on it. */

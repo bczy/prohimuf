@@ -5,7 +5,7 @@ import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
-import { NEAR_KIND_SPECS } from "./nearForegroundArt";
+import { NEAR_KIND_SPECS, type NearKindSpec } from "./nearForegroundArt";
 import {
   getNearForegroundTexture,
   getTrafficLightOverlayTexture,
@@ -122,7 +122,7 @@ function Row({
       {objects.map(({ obj, index }) => {
         const texture = getNearForegroundTexture(obj.kind);
         if (texture === null) return null;
-        const spec = NEAR_KIND_SPECS[obj.kind];
+        const spec: NearKindSpec = NEAR_KIND_SPECS[obj.kind];
         const scale = (obj.scale ?? 1) * rowScale;
         // The feu tricolore (hero prop) deliberately breaks the non-occlusion band
         // (ADR-0047 amendment): it bypasses BOTH the band ceiling (`maxH`) and the
@@ -135,7 +135,11 @@ function Row({
         const planeH = Math.min(spec.heightFrac * facadeH * scale, heightCap, believableCap);
         const planeW = planeH * spec.aspect;
         const worldX = (obj.x - 0.5) * fullW;
-        const centerY = streetWorldY + planeH / 2;
+        // Drop the plane by the texture's transparent under-feet strip so the visible
+        // feet — not the empty pixels below them — land on the kerb line. Zero for
+        // kinds whose sprite already reaches the texture bottom.
+        const footPad = (spec.footPadFrac ?? 0) * planeH;
+        const centerY = streetWorldY + planeH / 2 - footPad;
         // The feu tricolore adds a second co-located plane carrying the animated
         // lit-lens overlay, at z+0.001 so it sorts in FRONT of the dead-grey housing
         // within the SAME renderOrder — still below courier (6) / delivery van (7).
