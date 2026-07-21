@@ -396,3 +396,44 @@ prop **autorisé** à occulter.
 - next: → `dev-gameplay`: the `levels.ts` hostage-anchor comment update and the
   `assetManifest.test.ts` red remain open (out of scope of this ADR pass). → `qa-lead`: VERIFY
   playtest + stage-6 review panel over the full diff before merge.
+
+---
+
+## Stage 6 — Code-review panel (merge gate) · CLOSED · 2026-07-21
+
+**Scope reviewed:** `git diff origin/main...HEAD`, single-wide story files only (levelArt.ts/.json,
+levels.ts, windowZones.generated.json, assetManifest.ts + tests, LevelBackdrop.tsx, GameScene.tsx,
+facadeLayout.test.ts, gen-window-zones.mjs, stitch-belliard-street.mjs, gen-street-paid.mjs,
+gen-street-experiment.yml). Boss/UI work on the shared worktree explicitly excluded.
+
+**Four reviewers, parallel, orthogonal skills:**
+- A `code-review` (high): 1 MINOR — seed input no-op (experiment tooling).
+- B `bmad-code-review`: 1 MINOR — `$comment` drift "butt-join of two renders" vs mirror-of-one.
+- C `bmad-review-edge-case-hunter`: #1 MAJEUR/CONFIRMED (seed `SEED` vs `SEEDS` → input ignored,
+  3× paid generations); #2-#4 MINEUR (divergent single-wide warm-guard, resolution-dependent
+  bottom band, stitch degenerate-source NaN); NITs (aspect/W-H validation).
+- D `security-review`: clean — token stays a CI secret, no attacker-controlled asset path.
+
+**Triage (integration review, senior-architect pass):**
+- **Boundary law: OK** — `src/game` stays React/Three-free (levelArt/assetManifest are pure data
+  + string builders); `src/render` (LevelBackdrop/GameScene) holds no rules, only reads
+  `layout.mode`; no new cross-layer import.
+- **Seams: OK** — the single-wide contract is consistent across the three touch points
+  (render draws one opaque pane, `levelLayerPaths` warms that one file, tests pin `street-wide`).
+- **Deps/deploy: none** — no dependency added; asset ships committed; workflow is manual-dispatch
+  experiment only, off the render path.
+
+**Findings actioned (commit `327487f`, dev-tooling + owning lanes):**
+- C#1 / A (seed): workflow now passes `SEEDS="$SEED"` — dispatch seed honoured. RESOLVED.
+- A+B (`$comment` drift): corrected to "mirror of ONE ideogram render". RESOLVED.
+- C#2 (divergent guard): `levelLayerPaths` keys on `mode === "single-wide"` alone, mirroring the
+  render's suppression. RESOLVED.
+- C#3 (bottom band) / C#4 (stitch NaN) / NITs: **not blocking** — resolution-dependent cosmetic
+  (band is night-black in the shipped 6418×1248 asset, verified in-game at 1280×800) and
+  build-time malformed-input guards on throwaway experiment tooling. Logged as follow-up, not
+  merge-blockers.
+
+**Re-verify after fixes:** `tsc` clean · `vitest` 991/0 · JSON+YAML valid.
+
+**VERDICT: MERGE.** No unresolved CONFIRMED BLOQUANT/MAJEUR finding remains. Branch = single-wide
+story (rebased on origin/main) + this fix commit. Ready for Bertrand to merge.
