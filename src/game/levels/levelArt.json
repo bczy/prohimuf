@@ -313,9 +313,10 @@
         "prompt": "the same bare-headed french plainclothes commander on one knee, his long overcoat pooling at his leg, its torso and thigh folds a mid-charcoal, lighter than the pitch-black backdrop, upright from the waist, head up, one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
       },
       "lustre": {
+        "$comment": "Seed re-rolled 4877→4879 (Bertrand escalation + lead-art Nico's ASSET GATE FAIL, 2026-07-21, docs/handoffs/story-boss-niveau-final-live.md): batch-2 art (seed 4877, prompt UNCHANGED from the B3 armature-lock fix) showed two parasitic flanking column masses — a FLUX COMPOSITION defect, not a value/hole defect the prompt caused. Per Nico's §3.10 rule, a composition defect gets a NEW SEED with the prompt held verbatim (prompt surgery is reserved for value/text-attributable defects); only this seed field changed, nothing else in the entry.",
         "asset": "assets/boss/lustre.png",
         "size": { "width": 320, "height": 512 },
-        "seed": 4877,
+        "seed": 4879,
         "prompt": "one grand ballroom chandelier on a single chain up top, a multi-tier cone-and-umbrella wrought-iron armature, the whole frame a solid pale-to-mid grey lighter than the black backdrop, hung with solid pale grey-white crystal drops, each with a bright rim, every drop attached to the frame, two adjacent drops missing, a wide notch, slightly tilted and dusty, decayed 1900s grandeur, centered and fully visible"
       },
       "speaker_wall": {

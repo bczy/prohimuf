@@ -3074,3 +3074,168 @@ VERDICT: PASS — asset gate speaker_wall (lead-art)
 VERDICT: FAIL — asset gate boss-family (lead-art) — 8/9 PASS and clear to ship their slots; family INCOMPLETE until lustre re-rolls (it is the sited décorProp at {0.2,1.5}, so its FAIL is gameplay-visible, not cosmetic)
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this asset-gate entry appended).
+
+## 7. FIX (gated amendment) — dev-tooling-assets (Amelia) — windowGrid.cols 5→4 + alignment re-check + lustre seed reroll — 2026-07-21
+
+- **claim:** Karim's express DESIGN GATE PASS + Bertrand's escalation decision (both above): retune
+  `windowGrid.cols` 5→4 in the `niveau-final` block, re-run the window-zone alignment check against
+  the accepted batch-2 facade (1280×768, 4 real arches) and confirm 4 clean non-merged centres, spot
+  the restored `foreground.png`'s cutout/keying sanity, plus a mid-pass addendum: reroll `lustre`'s
+  seed only (Nico's ASSET GATE FAIL — composition defect, §3.10 rule: new seed, prompt untouched).
+
+### windowGrid.cols 5→4
+
+- Applied in `src/game/levels/levelArt.json` (`niveau-final.windowGrid`): `cols: 5 → 4`, `rows`
+  unchanged (1). Rewrote the `$comment` to record the full chain (Bertrand's escalation decision,
+  Karim's express gate PASS, the [E3]-intent-preserved-at-4 / [E5]-improves reasoning) and to flag,
+  for the record, that the `facade` prompt string still reads "exactly 5 tall arched windows" — a
+  residual mismatch against the now-4-pinned grid and the already-accepted 4-arch art. **Not fixed
+  here** (prompt-string content is concept-artist Maud's lane, not dev-tooling's structural one) —
+  routed to lead-art/concept-artist so a future facade regen doesn't reroll toward the wrong count.
+
+### Alignment re-check — jpeg-js dep + a real format-mismatch bug found and fixed
+
+- **`jpeg-js` was indeed missing** (Serge's blocker, confirmed): `npm install --no-save
+--legacy-peer-deps jpeg-js` resolved it cleanly (network/registry access works in this sandbox even
+  though Pollinations' own domain is blocked — two different things). `pngjs` (also required by the
+  script's Pass-2/debug paths) was already present as a transitive dep, as the script's own header
+  comment predicted.
+- **Running `gen-window-zones.mjs` against niveau-final's real facade.png immediately hit a second,
+  genuine bug this pass introduced upstream:** `detectPanel()` unconditionally called
+  `jpeg.decode()`, but niveau-final's `facade.png`/`foreground.png` are now REAL PNG bytes (RGBA) —
+  a direct consequence of §6's `normalizeSize()` fix (`gen-level-art.mjs`), which re-encodes via
+  `@napi-rs/canvas`'s `canvas.toBuffer("image/png")` whenever Pollinations' response needs resizing
+  (which is every level, per §6's finding). The legacy belliard/stalingrad/vitry facades are still
+  raw un-normalized JPEG bytes (never regenerated since), so this format split is real and will
+  recur for any level regenerated through the fixed pipeline. **Fixed:** added `decodeImage(file)` to
+  `scripts/gen-window-zones.mjs` — sniffs the PNG magic bytes and decodes via `pngjs`'s
+  `PNG.sync.read` when present, falling back to `jpeg.decode` otherwise; both paths already collapse
+  to the same `{width,height,data}` RGBA shape `detectPanel`/`writeOverlay` were already documented
+  to treat uniformly ("either jpeg-js's or pngjs's raw shape"). `morphology.mjs`-style scope
+  discipline: this is additive (one new function, one call-site swap), no existing behaviour path
+  changed for files that ARE JPEG.
+- **A second self-caught bug, fixed before it shipped:** running the (unscoped — this script has no
+  `--asset` filter, always processes every manifest level) Pass-1 loop also re-detected
+  `stalingrad`/`vitry`'s zones against their CURRENT `windowGrid` (7×3=21, 5×4=20) — which do NOT
+  match their COMMITTED `windowZones.generated.json` (12/panel, 38/panel respectively, from some
+  earlier, unrelated drift pre-dating this story entirely: the committed file is stale relative to
+  what the current script+config would produce for those two levels). This is real, pre-existing,
+  and NOT something this task should silently correct (out of scope — repositioning two
+  ALREADY-SHIPPED levels' enemy/railing zones is a visual change with no gate run on it here, and
+  risks the ADR-0005 D3 golden-frame pixel-diff harness for stalingrad/vitry). Diffed before/after,
+  **surgically merged**: kept `belliard`/`stalingrad`/`vitry`/all `belliard/troncon-*` keys
+  byte-identical to the pre-existing committed baseline, and added ONLY the new `niveau-final` key.
+  (First merge attempt was itself clobbered by a later `--debug` re-run of the same unscoped script —
+  caught via a second diff against the true pre-existing baseline and re-merged; final state verified
+  key-by-key identical to the parent commit plus `niveau-final`.) **Flagging the stalingrad/vitry
+  drift as its own finding** for `qa-lead`/`producer` — the committed `windowZones.generated.json`
+  for those two levels does not match what `gen-window-zones.mjs` + their current `levelArt.json`
+  config would generate today; whether that's intentional (hand-tuned, never meant to be
+  machine-regenerated) or genuine drift needing its own regen+regate is a call for that lane, not
+  decided here.
+
+### Result: 4 even centres on 4 real arches, NO merged zones
+
+- niveau-final's 4 zones (identical across all 4 repeated panels, single-facade mode):
+
+  | zone | centre x (px, of 1280) | span (px)       |
+  | ---- | ---------------------- | --------------- |
+  | 0    | 244.7                  | [142.3, 347.1]  |
+  | 1    | 469.4                  | [367.0, 571.8]  |
+  | 2    | 810.6                  | [708.2, 913.0]  |
+  | 3    | 1068.9                 | [966.5, 1171.3] |
+
+  Edge-to-edge gaps: 19.9px / 136.4px / 53.5px — all **positive** (no overlap, no merge). Rendered a
+  `--debug` overlay (`scripts/.dbg-niveau-final-p0.jpg`, gitignored scratch, removed after use) and
+  cross-checked with cropped stills at each zone: all 4 zones visually land on a distinct real arch
+  in the accepted batch-2 art (confirmed via 4 individual crops). The gaps are UNEVEN (not a rigid
+  71-73px-everywhere grid) because the accepted art is a 3-wall perspective composition, not a flat
+  elevation (Serge's round-2 finding, unchanged by this fix) — the wider 136px gap between zones 1
+  and 2 corresponds to the room's wider central bay (where the ceiling-hook/chandelier anchor sits).
+  This is a real, already-acknowledged composition characteristic of the accepted art, not a
+  zone-alignment defect: **no two zones merge, and each sits on its own arch.**
+
+- Wrote the regenerated `src/game/levels/windowZones.generated.json` (pipeline's own artifact
+  pattern, confirmed by inspection: belliard's zones are stored the same way — a plain committed
+  JSON, single-facade levels keyed by bare level id → array of `PANELS` panel zone-arrays, tronçon
+  levels keyed `${id}/${file}`, hand-calibrated tronçon entries protected from a plain rerun unless
+  `FORCE_TRONCON=1`). Staged for the orchestrator's commit alongside the JSON/script changes.
+
+### Restored `foreground.png` — cutout/keying sanity re-verified
+
+- No dedicated integrity gate exists for level `foreground.png` layers (unlike the boss/hostage/enemy
+  black-ground family's `check-sprite-integrity.mjs`) — the applicable check is the magenta cutout
+  itself. Decoded the restored, resized (1280×768) file directly: **binary alpha only** (every
+  sampled pixel is exactly 0 or 255, no semi-transparent fringe — matches the house "sharp silhouette
+  edges" contract), all 4 corners fully transparent, opaque fraction **32.7%** (a plausible
+  railing-silhouette ratio, in line with round-1's clean read). Specifically re-sampled the EXACT
+  pixel Serge's round-2 audit flagged as regressed (raw (200,250), was RGB(206,73,82) opaque, the
+  orange-gradient background-bleed) — now **(0,0,0,0), fully transparent**: the regression is gone at
+  that location. A broader scan for the same warm-orange hue among all opaque pixels found only
+  ~1.7% (consistent with legitimate rim-highlight shading on the black ironwork, not a background
+  bleed) — no evidence of round-2's ~63%-of-canvas regression surviving in the restored file.
+
+### Lustre seed reroll (Bertrand escalation + Nico's ASSET GATE FAIL, mid-pass addendum)
+
+- **Finding:** Nico's ASSET GATE failed `lustre` — two parasitic flanking column masses, a FLUX
+  COMPOSITION defect (not a value/hole defect the B3 armature-lock prompt fix could have caused).
+  Per Nico's §3.10 rule (composition defect ⇒ new seed, prompt held verbatim), touched ONLY the seed.
+- **Applied:** `boss.types.lustre.seed`: `4877 → 4879` (checked against all 9 boss seeds first —
+  4879 was unused, no collision). Added a `$comment` on the entry recording the reroll reason/rule so
+  a future reader doesn't mistake this for an unexplained seed bump. `prompt`, `asset`, `size`
+  untouched — confirmed by diff (only the `seed` value and the new `$comment` line changed).
+- Deleted `public/assets/boss/lustre.png` so missing-file semantics pick it up on next dispatch; the
+  other 8 committed boss PNGs (including the CLEAN 5 + the 3 other batch-2-fixed REGEN targets) are
+  untouched on disk.
+- Re-staged `.github/dispatch/gen-boss-sprites` (fresh `date >` content) so the next `ci(dispatch):`
+  push regenerates ONLY the missing `lustre.png` (the §6 fix already made the workflow default to
+  missing-file semantics — no FORCE-all risk to the other 8).
+
+### Incidental fix (not requested, necessary to complete verification): corrupted `yarn.lock`
+
+- `yarn typecheck`/`yarn lint` started failing mid-pass with "This package doesn't seem to be present
+  in your lockfile" — `yarn.lock`'s header had been overwritten to a **Yarn Classic (v1)** lockfile
+  format (`# yarn lockfile v1`) instead of this project's Yarn Berry v4/`__metadata: version: 8`
+  format, by something in this shared, heavily concurrent worktree — not a command I ran (every
+  install I ran here used `npm install --no-save`, which never touches `yarn.lock`). Ran `yarn
+install` to re-resolve and regenerate a correct Berry-format lockfile; confirmed the header and
+  full toolchain green afterward. Flagging in case another concurrent lane hits the same symptom.
+
+### Verify
+
+- `yarn typecheck` → green.
+- `yarn lint` → green.
+- `yarn format:check` / `npx prettier --check` on every file in this entry's List → clean (7
+  unrelated pre-existing/concurrent warnings elsewhere in the repo, none of them mine).
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 warnings, unchanged from §6, still none
+  from `levels`/`boss`).
+- `yarn vitest run` → 74/74 files, 1003/1003 tests green.
+- `yarn build` → clean; `node scripts/e2e-assets.mjs` against the local `dist/` → **PASSED — all 17
+  assets present & >= 5KB**, including `niveau-final/facade.png` (1,386,414B) and
+  `niveau-final/foreground.png` (355,411B) both now present (belliard's pre-existing undersized
+  `sky.png` shows as a tracked DEBT line, not a failure — a concurrent lane appears to have already
+  wired that allowance since §5's finding).
+- `git status`/diff re-confirmed the final `windowZones.generated.json` is byte-identical to the
+  pre-existing committed baseline for every key except the new `niveau-final` one.
+- **Scope discipline:** did not touch the `facade`/`foreground` prompt strings (flagged the residual
+  "exactly 5" text mismatch instead, Maud's lane), did not touch `stalingrad`/`vitry`'s committed
+  zones despite the script naturally wanting to regenerate them (flagged the drift instead, not
+  fixed), did not touch the 8 other boss PNGs, did not touch `scripts/lib/morphology.mjs`.
+
+### New seed value (for the record)
+
+**`lustre`: 4877 → 4879.**
+
+- **File List:**
+  - `src/game/levels/levelArt.json` (MODIFIED — `niveau-final.windowGrid.cols` 5→4 + comment;
+    `boss.types.lustre.seed` 4877→4879 + comment)
+  - `src/game/levels/windowZones.generated.json` (MODIFIED — new `niveau-final` key added; every
+    other key confirmed byte-identical to the pre-existing baseline)
+  - `scripts/gen-window-zones.mjs` (MODIFIED — `decodeImage()` PNG/JPEG format-sniffing decode, fixes
+    a real bug this story's own `normalizeSize` fix would otherwise have introduced for any future
+    level regen)
+  - `public/assets/boss/lustre.png` (DELETED — seed reroll, regenerates via missing-file semantics)
+  - `.github/dispatch/gen-boss-sprites` (re-touched, staged)
+  - `yarn.lock` (MODIFIED — incidental repair of an unrelated concurrent corruption, not part of the
+    assigned task but required for the verification suite to run at all)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
