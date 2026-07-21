@@ -61,7 +61,7 @@ const TRONCON_HEIGHT = 640;
 // prompt asks for it, and this GUARANTEES it — the building is generated into the
 // inner width and padded with transparent columns out to the manifest-aspect final
 // width, so nothing is clipped and the on-screen aspect is unchanged.
-const TRONCON_MARGIN_FRAC = 0.08;
+const TRONCON_MARGIN_FRAC = 0.14;
 
 /**
  * Pure size planner for a padded tronçon tile. Exported for the unit test.
@@ -101,21 +101,21 @@ const SHARED_STYLE =
 const TRONCONS = [
   {
     file: "troncon-a",
-    aspect: 1.6491,
+    aspect: 1.9234,
     distinct:
       "The row here is two such buildings of clearly different width and height side by side, a " +
       "clear vertical sliver of empty night sky between them at least as wide as one window bay.",
   },
   {
     file: "troncon-b",
-    aspect: 1.7857,
+    aspect: 2.0406,
     distinct:
       "The row here is three such buildings in a tight irregular row, one gap opening onto a bare " +
       "windowless mid-grey #3A3E44 masonry gable end wall.",
   },
   {
     file: "troncon-c",
-    aspect: 1.9224,
+    aspect: 2.1156,
     distinct:
       "The row here is two or three such buildings, one narrow dark passage alley set back well " +
       "within the row between two of them, away from either edge.",
