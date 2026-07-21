@@ -2941,3 +2941,136 @@ VERDICT: PASS — design gate niveau-final windowGrid.cols 5→4 (lead-game-desi
   (same limitation logged on the differentiation shard §3/§5/§13/§17). Strictly additive at EOF.
 - File List:
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+---
+
+## ASSET GATE (Gate 2) — lead-art (Nico) — 2026-07-21 · boss 9-sprite family, real PNGs
+
+- **Claim:** Gate 2 (asset gate) on the 9 generated boss PNGs in `public/assets/boss/` vs
+  `docs/art-direction.md` — house style (photocopied-fanzine B&W, no baked neon), RULING (1)
+  bare-headed DNA IN THE PIXELS, silhouette one-read at game size (boss draws 2.2 world units),
+  the batch-1 watches (mush-watch, finisher anatomy, hit detached-tell, parry_windup vs exposed
+  distinction), and the two props' pure-B&W / render-side-rim discipline (ADR-0011). Serge's
+  round-2 technical pass (family technically CLEAN, all binary hard edges, 4 REGENs fixed) is a
+  NON-BINDING pre-check per §2/§6 — verdict is my eye on the actual pixels.
+- **Method:** flattened each keyed PNG onto MAGENTA (#FF3CDC — reveals any interior transparent
+  hole as a bright island over the body, the courier-hip-hole lesson) and onto MID-GREY (#7A7A7A
+  — tests value separation / mush of a light-grey figure), plus a ~64px game-size downscale over
+  magenta for the one-read silhouette test. Read all three per sprite. Mechanical pre-check
+  (`check-sprite-integrity.mjs --file`, non-binding) run on all 9: every HARD check PASSES
+  (dominance ≥98.97%, 0 semi-alpha → binary edges confirmed, speckle within budget); the
+  closability SOFT warns all correspond to legitimate pose negative-space (arms/legs held clear
+  of the body) or, on `lustre`, the flanking-mass channels called out below.
+
+### Per-sprite verdicts (my eye, on the contrasting-ground reads)
+
+1. **`commander_shielded`** — PASS. Bare-headed (RULING 1 held), long knee-length coat (the "chef"
+   tell, unique in the roster), closed guarded stance, gear/brassard on the chest. Pure greyscale,
+   no baked neon. On grey: dark coat sits clearly BELOW mid-grey with pale head + belt/brassard
+   highlights = high-contrast xerox value, NOT mid-grey mush ([S1] secured keyability without
+   flattening contrast). Magenta: zero interior bleed-through. One-read silhouette holds at game size.
+2. **`commander_exposed`** — PASS. Arms EXTENDED forward presenting the pistol + big bright muzzle
+   burst, lunging, coat flaring open (mid-grey lining value-separated per [S2]) — a wide, open,
+   unmistakably "firing/exposed" silhouette. Bare-headed DNA held, no baked neon, no interior hole.
+3. **`commander_hit`** — PASS. Recoiling/twisting stagger, bare head, coat, gear across chest, pistol
+   arm dropping. Anatomically coherent, NO floating detached debris (the defect the sweep guards
+   against — clean). Advisory (non-blocking): the RULING-mandated defeat tells (torn brassard /
+   knocked-loose radio) are subtle, absorbed into the chest gear rather than reading as distinct
+   torn-loose-FROM-him elements — a pose-fidelity note, not a bible violation; the "touché" read
+   and the tether discipline ([S4], no floating debris) both hold.
+4. **`commander_down`** — PASS. Clean sprawled-on-back heap, coat splayed in mid-grey fabric ([S3]
+   held — the highest hole-risk pose keyed solid), all limbs joined. The magenta wedges between the
+   splayed limbs are legitimate negative space (matching the closability warns), NOT body holes.
+   Motionless/defeated read is unambiguous and categorically distinct from the finisher.
+5. **`commander_weakpoint`** — PASS. Square, still, frontal, chin up / head value-separated from the
+   coat mass, torso squared flat, arms out with pistol held low & clear of the chest — BOTH anatomy
+   bands (VITAL head / LIMB torso) clean and unoccluded for the render-side two-ring callout, exactly
+   as specced. [S1] coat value holds under where the rings will sit. Anatomy coherent, no hole.
+6. **`commander_parry_windup`** — PASS. Coat hanging CLOSED ([S6] held), braced wound-up crouch, no
+   muzzle flash. Categorically distinct from `exposed` sub-half-second: exposed = arms-EXTENDED +
+   muzzle-BURST + flaring coat + forward lunge; parry = closed dark coat + NO flash + symmetric
+   braced crouch + drawn-in arm. The muzzle-flash presence/absence is the loudest game-size tell and
+   it lands. The §3-C "shared tell = bullshit whiff" risk is cleared. (Advisory: this is the tightest
+   read of the set — the render-side parry cue must not converge them further; that is a Gate-4
+   composite concern, not an asset-gate one.)
+7. **`commander_finisher`** — PASS. Kneeling on one knee, torso UPRIGHT, head UP, coat pooling —
+   "down but still trying," categorically distinct from `down`'s sprawl. Anatomy confirmed with my
+   own eye (backing Serge's mandatory sweep): single solid component, head + 2 arms + kneeling legs
+   all joined, NO detached / duplicated / fused limb, no interior hole (magenta only surrounds him).
+   Tone guardrail (§3.2) intrinsically held (mono-figure, no blood/grimace/weapon-at-him). Advisory
+   (non-blocking): the scripted "arm reaching UP to the shoulder radio, calling it in" rendered
+   instead as hands held low/forward — a pose-fidelity miss, NOT an anatomy or bible defect; the
+   gate-critical "kneeling still-trying ≠ dead" read is fully carried.
+8. **`lustre`** — **FAIL.** The central form IS a legible multi-tier crystal chandelier with pale
+   grey-white drops ([S8] value-lock worked — no key-holed facets) and a top chain. BUT the magenta
+   read reveals it is FLANKED by two heavy vertical column/bracket structures (horizontal capital-
+   like brackets at the top corners, thick dark bars dropping ~80% of the frame height, separated
+   from the chandelier by two large empty channels — the two ~10k-px closability regions at
+   bbox [81,26,158,224] and [162,26,240,229]). That is architectural bleed / perspective-incoherent
+   geometry: a chandelier hangs from ONE central point, it does not stand between two posts. The prop
+   therefore does NOT read as one hung chandelier at a glance — the game-size downscale is a confusing
+   dark triptych, not a single shootable object. Fails §2 law 3 (silhouette-first / one-read) and the
+   prop's HUNG-single-object identity, and it directly undermines the shootable-décor legibility Karim's
+   advisory (chandelier at anchor {0.2,1.5}) requires. Automatic FAIL on the incoherent-geometry clause,
+   same footing as "wrong archetype."
+9. **`speaker_wall`** — PASS. Hand-built pyramid of mismatched plywood bass-bins + horn cabinets on a
+   pallet base, speaker cones legible on the faces, stack clearly lighter than the ground ([S10]/[S11]
+   value+contour lock held). Reads BUILT-from-the-ground-up, cleanly distinct from the chandelier's
+   HUNG identity. Pure greyscale, NO baked neon (correct — and required by the advisory that this
+   reserved 2nd prop must NOT carry a shootable glow affordance in V1; that stays a render-side/Gate-4
+   matter, the PNG bakes no glow). No incidental human silhouette (Serge's deviation-2 prop-check
+   clears — the shared "figure" tail did NOT bleed a human into the prop). Advisory (non-blocking):
+   the right edge is slightly ragged from keying (dark cable/gaffer/shadow eaten) — cosmetic, the
+   solid stack silhouette and the BUILT read are unaffected.
+
+### The two deviations — ratified in the pixels
+
+- **POLICE-as-reflective-shape, not glyphs — RATIFIED.** No garbled text on any figure; the
+  plainclothes-cop read is carried by the brassard/gear as luminous shapes. No text-generation defect.
+- **Props keep the shared "figure" tail — RATIFIED, fallback NOT triggered.** Neither prop shows an
+  incidental human silhouette/limb, so Serge's conditional roster-wide "figure"→"figure or object"
+  fallback does not fire. Keep the shared tail as-is (Family consistency, §2 law 2).
+
+### House-style note (not a FAIL)
+
+All 9 are on the interim SNES roster tail VERBATIM, not the end-state pochoir — this is the ratified
+lockstep-migration decision (the boss migrates to pochoir WITH the whole roster, never forked alone).
+Judged against §2 law 2 (family consistency with the live roster), the treatment is correct; the
+pochoir migration is separate roster-wide debt, out of this gate's scope. All 9 are pure greyscale
+with zero baked neon — loi du glow correctly deferred to the render-side rim (ADR-0011).
+
+### Scope confirmation — the l'Éden backdrop is NOT in this gate
+
+Nothing here gates the venue backdrop (separate `levels` block, its 2 blocking findings already
+escalated to Bertrand). Restated for that future backdrop pass (Karim's advisory 6, carried forward,
+NOT resolved here): frame anchor {0,-5} with no dead sky-gap behind the boss; a legible, shootable,
+boss-distinct chandelier at {0.2,1.5} anchor-relative; the speaker wall must NOT read as a shootable/
+interactive false-affordance in V1. The `lustre` FAIL above is directly relevant to that shootable-
+chandelier legibility — the sited décorProp uses this sprite.
+
+### FAIL instruction → concept-artist (Maud) / escalation (cap spent)
+
+- **`lustre` — one variable, seed re-roll (sanctioned):** the defect is COMPOSITION (two flanking
+  column/bracket masses either side of the chandelier), not phrase/value description — the drops and
+  armature value-language already work. Per §3.10 ("re-roll seeds only when composition is wrong"),
+  the single-variable move is a **seed re-roll of 4877, prompt string UNCHANGED**. If the flanking
+  masses persist across ONE re-roll, THEN the single phrase change is a positive isolation clause
+  ("a single chandelier suspended alone in empty black space, nothing to either side"), watching the
+  negation budget. Do NOT change value clauses (they passed). Because the 2-batch cap is spent, this
+  FAIL goes to **Bertrand's escalation shortlist** rather than an automatic re-roll; a re-dispatch
+  also depends on the POLLINATIONS_TOKEN repo secret being set (producer's flag).
+
+### Verdicts
+
+VERDICT: PASS — asset gate commander_shielded (lead-art)
+VERDICT: PASS — asset gate commander_exposed (lead-art)
+VERDICT: PASS — asset gate commander_hit (lead-art)
+VERDICT: PASS — asset gate commander_down (lead-art)
+VERDICT: PASS — asset gate commander_weakpoint (lead-art)
+VERDICT: PASS — asset gate commander_parry_windup (lead-art)
+VERDICT: PASS — asset gate commander_finisher (lead-art)
+VERDICT: FAIL — asset gate lustre (lead-art) — flanking column/bracket masses break the single hung-chandelier one-read silhouette (§2 law 3 / incoherent geometry); seed re-roll 4877, prompt unchanged; escalated (cap spent)
+VERDICT: PASS — asset gate speaker_wall (lead-art)
+VERDICT: FAIL — asset gate boss-family (lead-art) — 8/9 PASS and clear to ship their slots; family INCOMPLETE until lustre re-rolls (it is the sited décorProp at {0.2,1.5}, so its FAIL is gameplay-visible, not cosmetic)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this asset-gate entry appended).

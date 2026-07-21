@@ -110,8 +110,33 @@ function snap(profile, nominal, half, lo, hi) {
   return w > 0 ? acc / w : nominal;
 }
 
+// Decode a facade file regardless of its actual byte format. Historically
+// every single-facade panel was JPEG-encoded despite the `.png` extension
+// (Pollinations' raw fetch bytes, written as-is) — hence the jpeg-js
+// dependency this whole pass was built on. scripts/gen-level-art.mjs's
+// `normalizeSize` fix (dev-tooling-assets, 2026-07-21 — resizes a mismatched
+// Pollinations response to the declared manifest size via @napi-rs/canvas)
+// now writes a REAL PNG for any facade that needed resizing, which today is
+// effectively every level (Pollinations' `flux` silently returns a smaller
+// resolution than requested regardless of the query, confirmed on every
+// committed level, not just niveau-final). Sniff the magic bytes and decode
+// with the matching library so this pass keeps working for both the legacy
+// raw-JPEG panels (until they too are eventually regenerated) and the newly
+// re-encoded PNGs — both decode to the same {width,height,data} RGBA shape
+// `detectPanel`/`writeOverlay` already treat uniformly (see the writeOverlay
+// comment below, which anticipated exactly this either/or).
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+function decodeImage(file) {
+  const buf = fs.readFileSync(file);
+  if (buf.length >= 4 && buf.subarray(0, 4).equals(PNG_MAGIC)) {
+    const png = PNG.sync.read(buf);
+    return { width: png.width, height: png.height, data: png.data };
+  }
+  return jpeg.decode(buf, { useTArray: true });
+}
+
 function detectPanel(file, grid) {
-  const raw = jpeg.decode(fs.readFileSync(file), { useTArray: true });
+  const raw = decodeImage(file);
   const { width: W, height: H, data } = raw;
   const mask = litMask(data, W, H);
 
