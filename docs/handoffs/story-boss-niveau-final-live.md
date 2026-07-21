@@ -2446,8 +2446,7 @@ mid-charcoal, lighter than the pitch-black backdrop` (not "no near-black", to ke
     compacted the [S7] sleeve clause to `sleeved to the wrist`.
   - **[B3] `lustre`** (120w, ~13.5% holed + one orphan severed drop) — extended the [S8] value-lock from
     the crystal DROPS to the ARMATURE mass: `the whole frame a solid pale-to-mid grey lighter than the
-black backdrop`; and a POSITIVE single-object guard for the duplication artifact: `one … chandelier`
-    - `every drop attached to the frame` (not "no duplicate").
+black backdrop`; and a POSITIVE single-object guard for the duplication artifact: `one … chandelier` - `every drop attached to the frame` (not "no duplicate").
   - **[B4] `speaker_wall`** (119w, 94.3% came back as a real outdoor rig/sky/tent photo) — a DOMINANT
     flat-black lock placed early in the subject: `on a completely flat uniform black background filling
 the frame`; and removed the photo-evoking tokens `from the ground up` and `scaffold` (kept `pallet
@@ -2471,3 +2470,137 @@ rig` as the rimless BUILT tell). Straight seed re-roll alone was judged unlikely
   the last of the 2-batch cap). Serge flagged for `dev-tooling-assets` a CI gate improvement (a
   "closability probe" SOFT check that would have WARNed these three holes) — out of my lane.
 - Not a `VERDICT:` line — the 4 REGEN prompts are OWED Nico's express PROMPT GATE before regeneration.
+
+## 6. FIX (batch-2 pipeline) — dev-tooling-assets (Amelia) — l'Éden size-bug diagnosis + boss selective purge + integrity closability probe — 2026-07-21
+
+- **claim:** three coordinator-routed items off Serge's TECHNICAL PASS (§ above): (1) diagnose +
+  fix why `gen-level-art.mjs` produced l'Éden's `facade`/`foreground` at 991×594 instead of the
+  declared 1280×768; (2) selectively purge the 4 REGEN boss PNGs (`commander_shielded`,
+  `commander_finisher`, `lustre`, `speaker_wall`) without touching the 5 CLEAN ones, and verify
+  the generator's marker-triggered path won't force-redo everything; (3) author Serge's SOFT
+  "closability probe" recommendation into `check-sprite-integrity.mjs`.
+
+### 1. l'Éden size-bug — diagnosis + fix
+
+- **Diagnosis (this is the load-bearing finding): NOT a niveau-final-specific config leak.**
+  Decoded every committed level PNG's real pixel dimensions (not just niveau-final's): `belliard`,
+  `stalingrad`, `vitry` and `niveau-final`'s `facade`/`foreground` files **all** decode to
+  991×594 — every single one, old and new alike, never the declared 1280×768. Traced
+  `gen-level-art.mjs`'s request path: `generate(prompt, sizes[baseLayer])` →
+  `fluxUrl(..., size.width, size.height)` → `?width=1280&height=768&...` in the Pollinations URL —
+  confirmed byte-identical for every level, niveau-final reads the exact same shared
+  `sizes.facade`/`sizes.foreground` object every other level does (no per-level override, no
+  default leaking). **The drift is upstream, not in this repo's code:** Pollinations' `flux`
+  model/service silently returns a smaller resolution than requested regardless of the query
+  params (991/1280 ≈ 594/768 ≈ 0.773 — a uniform aspect-preserving scale-down, consistent with an
+  upstream max-pixel-area cap around 768×768's ~590K px). This was invisible until now because
+  nothing in the pipeline (nor `e2e-assets.mjs`'s byte-size floor) ever decoded and checked actual
+  pixel dimensions against the manifest — it has silently affected every shipped level facade
+  since the pipeline's first commit, not something this story introduced.
+- **Fix (`scripts/gen-level-art.mjs`):** added `normalizeSize(buf, size)` — decodes the fetched
+  buffer via `@napi-rs/canvas` and, if its dimensions don't match the declared `size`, redraws it
+  onto a canvas of EXACTLY that size before writing, so the committed PNG's real pixel dimensions
+  always match `sizes[baseLayer]` going forward (levelArt.ts's `FACADE_ASPECT`/the render's plane
+  sizing derive world-space geometry from the declared size, not the file's own dimensions).
+  Best-effort/dynamic-import with a fallback to the raw buffer on any failure (mirrors the
+  try/catch detours already used in `gen-hostage-sprites.mjs`/`gen-boss-sprites.mjs` — never
+  hard-crash locally where canvas/network may be unavailable). Verified in isolation: resizing a
+  real committed 991×594 PNG through the new function decodes back at exactly 1280×768.
+- **Arch-count [4 not 5]:** left alone per instruction — a prompt-emphasis question routed to
+  Maud's concurrent batch-2 edit, not a pipeline/size matter; re-checked the live `prompts.facade`
+  string after this pass and it is UNCHANGED from what this lane originally landed, confirming no
+  concurrent-edit collision on my end.
+- **Missing-file semantics applied:** deleted `public/assets/levels/niveau-final/{facade,
+foreground}.png` so the next `gen-level-art.yml` dispatch regenerates them (now through the
+  fixed, size-normalizing pipeline). The 3 existing levels' committed PNGs are UNTOUCHED —
+  regenerating them was never asked and would burn art-gate budget on already-shipped, working
+  (if imperceptibly stretched) assets; the fix only changes behaviour for FUTURE generations.
+
+### 2. Boss selective purge + FORCE-all workflow bug found and fixed
+
+- **Purge:** deleted exactly the 4 REGEN entries — `commander_shielded.png`,
+  `commander_finisher.png`, `lustre.png`, `speaker_wall.png`. The 5 CLEAN entries
+  (`commander_exposed`, `commander_hit`, `commander_down`, `commander_weakpoint`,
+  `commander_parry_windup`) are untouched on disk.
+- **Missing-file semantics in `gen-boss-sprites.mjs` itself are correct** (verified by reading the
+  script: `if (!FORCE && fs.existsSync(f.outFile)) { skip; continue; }`) — the bug was NOT in the
+  generator, it was in **`gen-boss-sprites.yml`**, which ran `FORCE=1 node
+scripts/gen-boss-sprites.mjs` unconditionally on every dispatch (copied verbatim from the
+  single-figure `hostages` workflow, where always-force made sense — it doesn't for this 9-entry
+  MIXED accept/reject family). Confirmed this was exactly what the coordinator's concern named:
+  the marker path WAS wired to the FORCE-all mode. **Fixed:** the workflow now defaults to plain
+  `node scripts/gen-boss-sprites.mjs` (missing-file semantics — regenerates only the 4 deleted
+  entries, leaves the 5 CLEAN committed PNGs completely alone) on both the marker-push path and a
+  plain `workflow_dispatch`; `FORCE=1` now fires ONLY on an explicit `workflow_dispatch` with a new
+  `regenerate: true` boolean input (mirrors the `gen-level-art.yml`/`preview.yml` convention),
+  never on the automatic marker-push path.
+
+### 3. Closability probe (Serge's tooling finding) — added to `check-sprite-integrity.mjs`
+
+- **Shape, as recommended:** reconstructs the solid-body mask (the exact PASS-A recipe
+  `fill-sprite-holes.mjs`/`scripts/lib/morphology.mjs` `solidBodyMask` uses — `morphology.mjs`
+  itself is untouched, marked FROZEN/correctness-critical for committed-byte reproduction; a
+  parameterized COPY of the same steps lives in `check-sprite-integrity.mjs` instead, since
+  `solidBodyMask`'s closing radius is baked into a module-level disk at load time) at the current
+  `CLOSE_R` (10) and again at a larger diagnostic radius (`CLOSABILITY_DIAG_R = 25`). Pixels the
+  diagnostic radius reconstructs as body that the current radius still leaves transparent, AND
+  that are genuinely transparent in the source (not an anti-halo erosion edge artifact), are
+  candidate border-connected holes; run through `labelComponents` to get sized/bboxed candidates.
+  WARNs (mirrors the existing enclave check's shape exactly: same `ENCLAVE_TORSO_FRAC` torso-zone
+  scoping, `CLOSABILITY_MIN_PX = 150` mirroring `SUSPECT_ENCLAVE_MIN_PX`) — **never fails the
+  gate**: the new `closability` field is threaded through `measureIntegrity`'s return and only
+  feeds `evaluateIntegrity`'s `warnings` array, never its `checks`/`pass`.
+- **Verified against the real committed boss PNGs (post-purge, the 5 CLEAN ones):** ran
+  `check-sprite-integrity.mjs --file` on all 9 (~17.5s total, ~2s/file — acceptable CI cost). All 9
+  still **PASS** (HARD checks + exit code unaffected). The probe fires on **all 9**, including the
+  5 CLEAN ones — e.g. `commander_exposed`'s flagged candidates (755/436/178px) match exactly the
+  leg-spread/muzzle/holster gaps Serge's own manual audit already confirmed as legitimate pose
+  negative space, not holes. This is EXPECTED and by design, not a calibration miss: per the
+  explicit instruction ("flag, don't hard-fail, so legit anatomy gaps... don't false-positive"),
+  the probe is a SOFT diagnostic aid, not a discriminator — same nature as the existing enclave
+  check, which routes every large candidate to a human/agent glance rather than trying to
+  auto-distinguish a true hole from a legitimate pose concavity (a judgment call this mechanical
+  probe cannot make, same limitation the existing enclave check already carries). Its value is
+  that it would have surfaced `commander_shielded`/`commander_finisher`/`lustre` (Serge's
+  confirmed-worst 3) as WARN candidates in CI, closing the blind spot on future batches — it does
+  not, and is not meant to, replace the human crop-verification step Serge performed by hand.
+- Header doc-comment + the SOFT-checks bullet list updated to describe the new third check
+  alongside the existing enclave inventory.
+
+### Verify
+
+- `yarn typecheck` → green.
+- `yarn lint` → green (0 errors on every changed file).
+- `npx prettier --check scripts/gen-level-art.mjs scripts/check-sprite-integrity.mjs
+.github/workflows/gen-boss-sprites.yml` → clean.
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 WARNs now — 2 more than the prior
+  12, both from a `loot.types.crate` block landed by a concurrent, unrelated lane in this shared
+  worktree; not touched, not mine, still non-gating).
+- Both new/changed workflow YAMLs re-validated parseable (`python3 -c "yaml.safe_load(...)"`).
+- `git status` confirms exactly the intended file set changed (deletions + the 3 pipeline files);
+  no other repo content touched.
+- Both dispatch markers re-staged (`date > .github/dispatch/gen-boss-sprites` /
+  `.../gen-level-art`, fresh content, not bare `touch`) — ready for the orchestrator's
+  `ci(dispatch):` commit to fire the (now-fixed) selective boss regen and the l'Éden size-fixed
+  regen together.
+- **Scope discipline:** did not touch the facade prompt text (Maud's concurrent batch-2 lane), did
+  not touch `scripts/lib/morphology.mjs` (FROZEN/correctness-critical, per its own header), did not
+  regenerate/retouch the 3 already-shipped levels' PNGs, did not touch the newly-appeared
+  unrelated `loot` block.
+- **File List:**
+  - `scripts/gen-level-art.mjs` (MODIFIED — `normalizeSize()` post-fetch resize guard)
+  - `scripts/check-sprite-integrity.mjs` (MODIFIED — closability probe: new constants, a
+    parameterized body-mask-reconstruction helper, `measureIntegrity`/`evaluateIntegrity` wiring,
+    header doc update)
+  - `.github/workflows/gen-boss-sprites.yml` (MODIFIED — `regenerate` input, FORCE=1 now opt-in
+    only, missing-file semantics the default)
+  - `public/assets/levels/niveau-final/facade.png` (DELETED — regenerates via the fixed pipeline)
+  - `public/assets/levels/niveau-final/foreground.png` (DELETED — regenerates via the fixed
+    pipeline)
+  - `public/assets/boss/commander_shielded.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/commander_finisher.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/lustre.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/speaker_wall.png` (DELETED — REGEN per Serge's audit)
+  - `.github/dispatch/gen-boss-sprites` (re-touched, staged)
+  - `.github/dispatch/gen-level-art` (re-touched, staged)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
