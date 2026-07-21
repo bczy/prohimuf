@@ -400,7 +400,10 @@ export function GameScene({
           baseZoom={baseZoom}
         />
       ))}
+      {/* single-wide (ADR-0057): the drawn décor bakes its own balcony ironwork,
+          so the code-drawn foreground railings would double it up — suppressed. */}
       {!hideRailings &&
+        layout.mode !== "single-wide" &&
         tiles.map((tile, i) => (
           <group key={`fg-${String(i)}`} position={[tile.centreX, 0, 0]}>
             <ForegroundFrames
