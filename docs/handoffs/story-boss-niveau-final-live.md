@@ -3625,3 +3625,190 @@ bossHarness.test.ts`, 10 tests: level pick, the inertness flag, `at=` parse incl
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: DONE — C-QA3 render-reachability closed (dev-r3f-render). The boss capture seam now boots the LIVE niveau-final level (real bossQteSpec, seed 19991232, chandelier décor) over the l'Éden backdrop via `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, fast-forwarded through the SAME pure-API loop — view-side only, no src/game edit. Persistence is DOUBLE-guarded (the existing `PREVIEW_SCREEN !== null` early-return + a new `BOSS_SEAM_SHIPPED_LEVEL` fold into the shipped-level check) and EMPIRICALLY proven inert (finisher driven to DONE → localStorage stayed empty, no muf*scores*\*/muf_progress). Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). Five state-verified captures (06-10, each asserting targetSeed 19991232 + phase) feed Tony's A1–A15 real-backdrop re-verify. No commit/push.
+
+## VERIFY (stage 5, leg 2) — ux-designer (Tony) — 2026-07-21 — UX review story-2: A1-A15 boss legibility on the l'Éden backdrop + leg-1 flyer/onboarding
+
+- claim: my named stage-5 leg-2 check (`spec-niveau-final-ux.md` §3, item 3 — "the single most
+  important level-specific check") — re-verify every A1-A15 boss-QTE legibility requirement
+  (`ux/spec-boss-qte-differentiation-ux.md`) against the REAL l'Éden backdrop and re-anchored position,
+  using the C-QA3 seam extension's evidence (`06`-`10`) + one gap I closed myself (`11`, below) + a
+  grayscale post-process of two existing captures (no new build needed for that check). Also reviewed
+  leg-1 evidence (`01`-`05`) against my own gated spec §1-§2 (flyer, onboarding). Plus two ad hoc rulings
+  requested by the coordinator/Bertrand off capture `07` (décor placeholder legibility; off-screen arrow
+  clutter during the boss QTE).
+- **Gap closed:** the shipped evidence set had no reduced-motion capture over l'Éden. I captured one
+  myself via the extended seam: `11-boss-eden-reduced-motion-phase3.png`
+  (`?preview=boss&level=niveau-final&at=phase3&blownImmune=1`, Playwright `reducedMotion:"reduce"` +
+  `page.emulateMedia`), state-verified via `__MUF_STATE__()`
+  (`phase:"ACTIVE", phaseIndex:2, stance:"EXPOSED", smokeActive:true`). Built fresh (`yarn build`,
+  `COREPACK_NPM_REGISTRY` set), served on a dedicated local port, content-hash-verified against my own
+  `dist/` before trusting the capture (a stray earlier attempt this session hit a differently-built
+  `dist/` from concurrent work in this shared sandbox — logged for the record, not repeated here since
+  this capture was verified clean). No `src/**` edit, no commit/push.
+- Grayscale check: re-processed `07` (dual rings) and `08` (parry-under-smoke) to luma-only locally
+  (no new capture needed — this is a post-process of existing state-verified evidence) to confirm the
+  not-colour-alone reads hold on the new backdrop specifically.
+
+### VERDICT: PASS-WITH-CORRECTIONS — ux review story-2 (ux-designer)
+
+All A1-A15 boss legibility requirements I could check hold on the l'Éden backdrop/re-anchored position;
+all leg-1 flyer/onboarding requirements (§1-§2 of my spec) PASS on `01`-`05`. ONE required correction
+(off-screen arrow indicators rendering during the locked boss QTE — pre-existing, not niveau-final-
+specific, cheap fix) is routed to `dev-r3f-render`, plus one non-blocking note on the décor placeholder
+(already-tracked ADR-0053 D6 follow-up). Neither blocks this story's gate.
+
+### Boss-QTE legibility re-verify on l'Éden (spec §3 item 3)
+
+1. **Dual-ring form-not-colour read against the busier l'Éden backdrop (`07`, D4.1/D4.5) — PASS.**
+   VITAL (head, small/bright) and LIMB (torso, larger/dimmer) still read apart by POSITION + SIZE +
+   emphasis, not colour alone — confirmed in my own grayscale conversion of `07`: both rings remain
+   distinguishable by position/size with zero colour information. The hall's ironwork arches and
+   diagonal-tiled backdrop are busier than Belliard's plain rooftop, but the rings carry enough
+   brightness/contrast to read cleanly against it — no legibility loss from the backdrop swap.
+2. **Vital 0.11 ring perceivability on mobile at the new anchor (`10`) — PASS.** Pixel-measured (DPR1,
+   844×390 raw = CSS px directly): the "LE COMMANDANT" HP-bar's green fill ends at y≈110; the vital
+   ring's first pixel appears at y≈154-162 — a **≈42-50 CSS px clear gap**, matching story-1's
+   `BOSS_MOBILE_FRAME_LIFT`/bold-stroke fix numbers almost exactly. This checks out precisely BECAUSE
+   niveau-final's `anchor {0,-5}` is byte-identical to the harness's own anchor (`levels.ts:316` vs.
+   `:200`/`:263`) — the fix was calibrated against this exact anchor in story-1 and transfers without
+   re-tuning. The ring is a complete, bold, unoccluded annulus, clearly distinguishable from the LIMB
+   ring at the torso.
+3. **Parry/glyph salience vs. the hall's values (`08`) — PASS.** The paper-white diamond guard glyph
+   reads clearly above the smoke veil against l'Éden's warmer pink/purple palette — the glyph's
+   value-contrast halo (house value language, story-1's fix) is backdrop-agnostic by construction (a
+   near-neutral highlight reads against both a cool grey rooftop and a warm hall equally). Confirmed
+   again in grayscale (no colour-alone dependency).
+4. **Smoke degraded-not-removed over the warmer interior (`08`, `11`) — PASS.** The smoke veil is a
+   neutral, desaturating normal-blend wash — it does not pick up or fight the backdrop's warmer hue;
+   the ring/glyph telegraph stays visible THROUGH it on both `08` (motion) and `11` (reduced-motion,
+   frozen scatter, same telegraph still legible, non-strobing).
+5. **Finisher distinct + prompt legible (`09`) — PASS.** Monochrome value-crush boss + the acid-neon
+   « LIVRE LE SON » prompt reads cleanly against the hall backdrop; unmistakably different from every
+   ordinary window capture in the set (`06`-`08`, `10`).
+6. **HUD bar clearance at the new anchor (`10`) — PASS**, see item 2 — the fixed-footprint HP-bar/
+   vital-ring collision story-1 fixed does not regress at this anchor (same anchor, same fix).
+7. **Reduced-motion (`11`, the gap I closed) — PASS.** Telegraph/glyph/ring present, held (non-strobing)
+   under `prefers-reduced-motion: reduce`, smoke frozen to a static scatter — same discipline as
+   story-1, now confirmed on l'Éden specifically.
+8. **Audio-tell (not re-checked from scratch) — N/A to this backdrop question.** The audio channel is
+   backdrop-independent; story-1's ruling (audio additive, never sole channel) does not change with the
+   venue. Not re-verified here since nothing about it is backdrop-sensitive.
+
+### Leg-1 evidence vs. spec §1-§2 (`01`-`05`)
+
+- **A1/A2 (locked/unlocked flyer, both device classes) — PASS.** `01`/`02` (desktop + mobile) match the
+  Stalingrad/Vitry treatment exactly: `LIGNE FERMÉE`/`PAS ENCORE POUR TOI` locked, full crew/slogan/
+  difficulty/stats-row unlocked (`DIFFICILE`, `70 s · 16 cibles`).
+- **A3 (no boss stamp/spoiler on the flyer) — PASS.** Zero "boss"/"Commandant"/"QTE" text or imagery
+  anywhere on either flyer state. The slogan `« LE DERNIER SON DU SIÈCLE »` is a permitted "this is the
+  last one" signal through existing copy slots (D3), not a new UI tell.
+- **A4 (4-flyer layout, no regression) — PASS.** Desktop wide-viewport shows all 4 flyers in one row, no
+  odd wrap; mobile rack shows the same 3-visible-plus-scroll pattern as before.
+- **A5/A6 (briefing plays before pre-boss quota, no boss asset, skippable) — PASS.** `03` shows line 1
+  of `final_pre` over the REAL l'Éden arches (already correctly B&W-fanzine-treated), `PASSER` present
+  both device classes; no boss sprite/silhouette anywhere in the capture. Lines 4/6 verbatim-content are
+  already unit-test-proven byte-for-byte by `dev-gameplay`'s build entry (this story's own shard,
+  narrativeSystem tests) — I did not need to re-click through all 8 slides to confirm the TEXT is
+  unedited, only that it plays over the correct backdrop and is skippable, which `03` shows directly.
+- **A7 (ZOOMING transition fires) — PASS by construction.** `06`-`10` are all captured in `ACTIVE`
+  phases reached via the real `bossQteSpec.zoomSeconds` fast-forward path (the seam drives the SAME
+  pure tick loop the real game uses); the transition is not bypassed, only fast-forwarded through,
+  which is the seam's documented, non-rule-altering method.
+- **A9/A10 (boss-loss EndScreen reuse) — NOT captured in this evidence set** (no `GAME_OVER` capture
+  among `01`-`11`). D9/D10 are pure reuse of an already-gated, unchanged component (`EndScreen`), and
+  nothing about this level's data (new flyer copy, new anchor, new backdrop) touches that component's
+  props/behaviour — I do not consider this a live risk worth blocking on, but naming it as an
+  UNCAPTURED item for the record rather than silently assuming PASS. Recommend `qa-lead` fold one
+  boss-loss `GAME_OVER` capture into the permanent evidence set if a stage-5 capture pass runs again.
+
+### Ruling 1 (Bertrand, off capture `07`) — décor placeholder legibility ("c'est quoi ce carré ?")
+
+**Functionally correct, interim-art-ambiguous — NOT a new defect, already tracked, non-blocking.** The
+translucent grey-blue rectangle (pixel-sampled ~`(93-101, 91-92, 98-105)`, matching the coded
+`DECOR_INERT_TINT` family) is the chandelier's INERT state — binary armed/inert per the gated
+differentiation spec, correctly NOT confused with the boss's own silhouette or the HP bar (distinct
+position, distinct shape, distinct depth). **But Bertrand's reaction is itself a valid legibility
+signal on the INTERIM placeholder specifically:** a flat, hard-edged, unlabelled rectangle floating
+next to the boss reads as "an unexplained box," not as "a chandelier that will matter" — there is no
+anticipation cue for a first-time player before it arms (glows). This is the KNOWN, ALREADY-NAMED
+limitation of the procedural placeholder pending the canon `lustre` sprite (ADR-0053 D6 follow-up,
+already logged in this shard's leg-1 entry as an asset-gate FAIL/re-roll, off-screen this story). I am
+not routing a new correction for it — the binary state machine and its distinctness from every other
+HUD/boss element are correct, and "does the placeholder look like a chandelier" is `lead-art`'s call,
+not mine to decide (I rule function, not style). **None of the captures show the ARMED (glowing) state
+of the décor** — a genuine coverage gap for THAT specific read (bright acid-lime halo vs. this dim
+default) — naming it, not fabricating a verdict on it; recommend `qa-lead` add one `decorArmed:true`
+capture over l'Éden to the permanent set when convenient, non-blocking.
+
+### Ruling 2 (Bertrand, off capture `07`) — off-screen arrow indicators during the boss QTE
+
+**CONFIRMED DEFECT — required correction, concretely routed.** The four edge arrows
+(`OffscreenArrowIndicator`, meant to point at the current shooting-gallery target when it drifts
+off-frame) render at FULL "active" opacity throughout the ENTIRE boss encounter, in every capture I
+checked (`06`-`11`, all phases, both motion and reduced-motion) — confirmed pervasive, not intermittent.
+This is **pre-existing, not niveau-final-specific**: I checked story-1's own evidence
+(`docs/qa/evidence/story-boss-qte-differentiation/20-phase2-dual-rings.png`) and the same arrows render
+there too, identically, over the Belliard backdrop — it simply went unflagged in that story's leg-2
+because Belliard's plain grey background made them less visually loud. l'Éden's busier, warmer backdrop
+is what surfaced it, not a regression this story introduced.
+
+**Root cause (read directly, `src/render/ui/HUD.tsx:67` + `src/render/ui/hud/HostageQteOverlay.tsx`):**
+the arrow ring is already correctly gated OFF during the HOSTAGE QTE
+(`{!isQteSetPieceVisible(data.hostageQte) && <OffscreenArrowIndicator .../>}`) — that helper's own
+doc-comment states the exact reasoning that applies here too: _"the frozen duel has no steerable
+target, and the arrows would poke into the tableau."_ The BOSS QTE was simply never folded into that
+same gate — an oversight when the differentiation pack landed, not a niveau-final defect. `data.bossQte`
+is already `undefined` whenever the boss QTE is NOT active (`HudBossQte`'s own doc-comment,
+`present only while isBossQteActive`), which is exactly the boolean the gate needs — no new game-layer
+predicate, no new HUD field, a one-line JSX condition extension mirroring the existing hostage pattern.
+
+**Ruling: YES, hide them, per Bertrand's own expectation — they point at unreachable off-screen targets
+during a locked-camera duel and add clutter to the pack's single most important read.** Severity:
+**MEDIUM, required, not blocking.** It does not break any A1-A15 invariant itself (aim-honesty, form-
+distinction, HUD-bar clearance all hold regardless — the arrows sit at the frame's outer edges, not
+overlapping the rings/glyph/HP bar in any capture I reviewed), so I am not failing this story's gate
+over it. But the UP arrow specifically sits close to the HP bar / décor-prop region and compounds
+directly with Ruling 1's "unexplained square" read (Bertrand's own capture-`07` reaction was almost
+certainly reading the up-arrow's overlap near the décor box as part of one confusing shape, not two
+separate elements) — so fixing this ALSO improves Ruling 1's placeholder-legibility complaint for free,
+without touching the placeholder art itself.
+
+- **Concrete fix (routed to `dev-r3f-render`):** extend the existing gate at `HUD.tsx:67` to also hide
+  while the boss QTE holds the scene — `{!isQteSetPieceVisible(data.hostageQte) && data.bossQte ===
+undefined && <OffscreenArrowIndicator ... />}` (or an equivalent boolean derived the same way) — no
+  new predicate needed, `data.bossQte`'s own presence already IS `isBossQteActive`. Same one-line shape
+  as the hostage QTE's existing, proven gate.
+
+### Acceptance summary against my gated spec
+
+- §1 A1-A4: PASS. §2 A5-A7: PASS. §3 A8 (the five-item checklist): items 1/2/3/5 PASS; item 4
+  (mobile-landscape full finale flow, flyer→briefing→quota→ZOOMING→encounter→post) is PASS
+  **piecewise** across `01`-`11` (no single continuous-flow capture exists, but every beat is
+  individually state-verified at mobile viewport) — naming this as a piecewise, not end-to-end, proof,
+  for the record. §4 A9/A10: not captured this pass (see leg-1 note above), reused component, low risk,
+  named not assumed.
+
+- handoff → `lead-game-designer` (Karim): PASS-WITH-CORRECTIONS. Nothing here blocks story-2's gate.
+  One required correction (arrow-hide during boss QTE) routed to `dev-r3f-render`, low-risk/one-line,
+  pre-existing not niveau-final-specific. One non-blocking note (décor placeholder ambiguity, already
+  tracked under ADR-0053 D6). Two named coverage gaps (décor ARMED capture; boss-loss `EndScreen`
+  capture) for `qa-lead`'s backlog, not blockers.
+- handoff → `dev-r3f-render` (Amelia): required correction — gate `OffscreenArrowIndicator` off while
+  `data.bossQte !== undefined`, mirroring `HUD.tsx:67`'s existing hostage-QTE pattern exactly. Confirmed
+  present in BOTH story-1's Belliard captures and story-2's l'Éden captures — fix once, benefits both.
+- handoff → `lead-art` (Nico): FYI only, not a request to act — the décor-armed capture gap (above) is
+  for whenever the canon `lustre` sprite work (ADR-0053 D6) is scheduled; no new ask from me.
+- handoff → `qa-lead` (Inès): two evidence-backlog items — a `decorArmed:true` capture over l'Éden, and
+  a boss-loss `GAME_OVER` capture for niveau-final (A9/A10) — plus fold `11-boss-eden-reduced-motion-
+phase3.png` into the permanent set (state-verified, same discipline as `06`-`10`).
+- handoff → `producer` (Marion): story-2 UX leg-2 closes PASS-WITH-CORRECTIONS; one low-risk render fix
+  to track, non-blocking to this story's own gate.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). One new capture
+  (`11-boss-eden-reduced-motion-phase3.png`) added to the evidence directory, state-verified; built via
+  a throwaway local `vite preview` of the current committed source, content-hash-checked before use. No
+  `src/**` edit, no commit/push.
+- File List:
+  - `docs/qa/evidence/story-boss-niveau-final-live/11-boss-eden-reduced-motion-phase3.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS-WITH-CORRECTIONS — ux review story-2 (ux-designer) — every A1-A15 boss-QTE legibility requirement re-verified holds on the l'Éden backdrop/re-anchored position: dual-ring form-not-colour read PASS in grayscale against the busier hall arches (`07`), vital 0.11 ring PASS on mobile (~42-50 CSS px clear of the HP bar, same anchor `{0,-5}` as story-1's fix so it transfers without re-tuning, `10`), parry-glyph salience PASS against the warmer palette (`08`, grayscale-confirmed), smoke degraded-not-removed PASS motion + reduced-motion (`08`/`11`, the latter a gap I closed myself via the extended seam, state-verified), finisher distinct + prompt legible PASS (`09`). Leg-1 flyer/onboarding (spec §1-§2) all PASS on `01`-`05` — locked/unlocked both device classes, no boss spoiler anywhere, 4-flyer layout clean, briefing plays over the real backdrop and is skippable. Two Bertrand-requested rulings off capture `07`: (1) the décor placeholder is functionally correct (binary armed/inert, no read confusion with other HUD elements) but the INTERIM art is legitimately ambiguous as an object — already-tracked ADR-0053 D6 follow-up, not a new defect, no action routed; (2) the off-screen arrow indicators DO render throughout the entire locked-camera boss QTE (confirmed pervasive across all phases/motion states, and pre-existing since story-1's Belliard captures, not niveau-final-specific) — CONFIRMED DEFECT, ruled to hide (matches the existing, already-proven hostage-QTE gate pattern), routed to dev-r3f-render as a one-line `HUD.tsx` fix (`data.bossQte === undefined` folded into the existing arrow-visibility condition), severity medium/required-not-blocking, and fixing it also resolves the compounding "unexplained square" read from ruling (1) for free. Nothing in this review blocks story-2's gate.
