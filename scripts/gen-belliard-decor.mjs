@@ -57,18 +57,43 @@ const FOREGROUND_SEED = 7130;
 // consistent across the three.
 const TRONCON_HEIGHT = 640;
 
+// Guaranteed empty margin on EACH side of a tronçon (Bertrand correction 3): the
+// prompt asks for it, and this GUARANTEES it — the building is generated into the
+// inner width and padded with transparent columns out to the manifest-aspect final
+// width, so nothing is clipped and the on-screen aspect is unchanged.
+const TRONCON_MARGIN_FRAC = 0.08;
+
+/**
+ * Pure size planner for a padded tronçon tile. Exported for the unit test.
+ * `finalWidth` keeps the manifest aspect (height*aspect); the art is generated at
+ * `innerWidth` and centred, leaving >= marginFrac transparent on each side.
+ * @returns {{finalWidth:number, innerWidth:number, offsetX:number}}
+ */
+export function planTileSize(height, aspect, marginFrac = TRONCON_MARGIN_FRAC) {
+  const finalWidth = Math.round(height * aspect);
+  const innerWidth = Math.round(finalWidth * (1 - 2 * marginFrac));
+  const offsetX = Math.round((finalWidth - innerWidth) / 2);
+  return { finalWidth, innerWidth, offsetX };
+}
+
 // The byte-for-byte shared "printing-run" style block (v3 §1), reused by A/B/C.
+// Bertrand 2026-07-21 corrections front-loaded: (1) BD/cartoon drawing register
+// not photo, (2) strict frontal / no perspective, (3) empty margin both sides.
 const SHARED_STYLE =
-  "Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, " +
-  "coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and " +
-  "paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out " +
-  "silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five " +
+  "Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat " +
+  "cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph. Strict flat frontal " +
+  "orthographic elevation: every façade parallel to the picture plane and seen perfectly head-on, " +
+  "flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, " +
+  "no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and " +
+  "xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and " +
+  "paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five " +
   "storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three " +
   "thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, " +
   "windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no " +
   "glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked " +
-  "graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare " +
-  "clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge.";
+  "graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean " +
+  "upper walls. The drawn block sits centered with an empty margin of night sky on both the left " +
+  "and right side, never touching the left or right frame edge.";
 
 // Per-tronçon distinguishing clause (v3 §2). aspect drives the tile width.
 const TRONCONS = [
@@ -104,13 +129,19 @@ export function planBelliardAssets(manifest) {
   const level = (manifest.levels ?? []).find((l) => l.id === LEVEL_ID);
   if (!level) throw new Error(`level "${LEVEL_ID}" not found in manifest`);
   const sizes = manifest.sizes ?? {};
-  const plan = TRONCONS.map((t) => ({
-    file: `${t.file}.png`,
-    prompt: `${SHARED_STYLE} ${t.distinct}`,
-    seed: TRONCON_SEED,
-    width: Math.round(TRONCON_HEIGHT * t.aspect),
-    height: TRONCON_HEIGHT,
-  }));
+  const plan = TRONCONS.map((t) => {
+    const { finalWidth, innerWidth, offsetX } = planTileSize(TRONCON_HEIGHT, t.aspect);
+    return {
+      file: `${t.file}.png`,
+      prompt: `${SHARED_STYLE} ${t.distinct}`,
+      seed: TRONCON_SEED,
+      // `width` is the GENERATION width (inner); the written PNG is padded to finalWidth.
+      width: innerWidth,
+      height: TRONCON_HEIGHT,
+      finalWidth,
+      offsetX,
+    };
+  });
   plan.push({
     file: "sky.png",
     prompt: level.prompts.sky,
@@ -126,6 +157,18 @@ export function planBelliardAssets(manifest) {
     height: sizes.foreground.height,
   });
   return plan;
+}
+
+// Pad a generated PNG onto a transparent finalWidth×height canvas at offsetX,
+// leaving empty (fully transparent) columns on both sides.
+async function padSides(buf, finalWidth, height, offsetX) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(buf);
+  const cv = createCanvas(finalWidth, height);
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, finalWidth, height); // transparent margins
+  ctx.drawImage(img, offsetX, 0);
+  return cv.toBuffer("image/png");
 }
 
 async function main() {
@@ -154,11 +197,17 @@ async function main() {
       console.log(`  [skip] ${a.file} (exists)`);
       continue;
     }
-    console.log(`  [gen]  ${a.file} (seed ${a.seed}, ${a.width}x${a.height})`);
+    const label = a.finalWidth
+      ? `${a.width}x${a.height}→${a.finalWidth}x${a.height}`
+      : `${a.width}x${a.height}`;
+    console.log(`  [gen]  ${a.file} (seed ${a.seed}, ${label})`);
     try {
       const buf = await fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
-      fs.writeFileSync(out, buf);
-      console.log(`  [ok]   ${a.file} (${buf.length} bytes)`);
+      // Tronçons: pad the generated art with transparent columns out to the
+      // manifest-aspect final width, guaranteeing an empty margin on both sides.
+      const finalBuf = a.finalWidth ? await padSides(buf, a.finalWidth, a.height, a.offsetX) : buf;
+      fs.writeFileSync(out, finalBuf);
+      console.log(`  [ok]   ${a.file} (${finalBuf.length} bytes)`);
     } catch (e) {
       console.log(`  [fail] ${a.file} — ${e.message}`);
     }

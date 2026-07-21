@@ -42,47 +42,68 @@ and the anti-defect + hex-ladder + no-glow clauses are the blocking ones. One bl
 printing run, one shared pinned seed, one line weight (bible §2 law 2; RULING "un seul tirage").
 
 ```
-Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge.
+Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph. Strict flat frontal orthographic elevation: every façade parallel to the picture plane and seen perfectly head-on, flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls. The drawn block sits centered with an empty margin of night sky on both the left and right side, never touching the left or right frame edge.
 ```
 
-Per-clause rationale (each clause traces to a gated decision; front-loaded first):
+Per-clause rationale (each clause traces to a gated decision or a Bertrand 2026-07-21 correction;
+the three corrections are front-loaded in the strong attention zone):
 
-- `Photocopied 1990s fanzine xerox, high-contrast black-and-white only … coarse halftone toner
-dots` → **REGISTER at the head** — the direct fix for the v2 colour failure; xerox is the
-  house law (bible §1/§3.4), "black-and-white only" states the non-colour positively (§3.1).
+- `Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat
+cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph` →
+  **CORRECTION 2 (register → DESSIN), at the absolute head.** The real render read the old
+  "photocopied xerox / high-contrast B&W" opening as a *photograph*. The register now names
+  the medium as a **hand-drawn comic-book illustration** first — ink contour lines + cel-shaded
+  flats + ligne claire — stated positively so a drawing is what FLUX paints; the single bounded
+  `not a photograph` is the one negation kept for this correction (Bertrand's explicit ask), the
+  positive drawing vocabulary does the heavy lifting.
+- `Strict flat frontal orthographic elevation: every façade parallel to the picture plane and
+seen perfectly head-on, flat like an architect's front-elevation drawing and like a comic-book
+panel viewed dead ahead, no vanishing point` → **CORRECTION 1 (frontal strict), promoted to the
+  head and stated under two angles.** The real render showed a street in perspective (buildings
+  receding to a vanishing point). The fix restates the frontal read positively and redundantly —
+  *parallel to the picture plane*, *seen head-on*, *architect's front-elevation drawing*,
+  *comic panel viewed dead ahead* — so no depth cue survives; `no vanishing point` is the single
+  bounded negation that names the exact defect.
+- `Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over
+the linework` → **CORRECTION 2 (texture layer).** The xerox/halftone survives — but re-cast as a
+  **print texture laid *over the drawing***, not the primary register. This keeps the fanzine B&W
+  house look (bible §1/§3.4) while the SUBJECT stays a cartoon, exactly the plein/register split
+  Bertrand asked for.
 - `three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2` →
-  **mandatory hex value ladder**; binds tones to surfaces (§3.5) and forbids a 4th value —
-  the whole décor lives on these three.
-- `Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes` →
-  Prohibition "poster, not a diorama" geometry (§1/§5); hard silhouettes are **anti-defect
-  armour** front-loaded (RULING).
+  **mandatory hex value ladder** (unchanged); binds tones to surfaces (§3.5) and forbids a 4th
+  value — the whole décor lives on these three.
 - `Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys,
 louvered shutters, simple iron balcony rails, grey zinc mansard roofs` → **faubourien 18e
-  nord**, explicitly _not_ strict Haussmann: irregular R+4/R+5 volumes, volets/persiennes,
-  demoted plain garde-corps, zinc mansards (D4 period truth).
-- `two or three thick blocky chimneys per building` → **anti-defect armour**: bounds the
-  count _and_ the line weight of the roofline, the FLUX failure zone (RULING).
-- `a low iron Petite-Ceinture grille at each base` → signature 18e-nord motif, dosed; kept
-  only under buildings (§0).
+  nord** (unchanged, gated): irregular R+4/R+5 volumes, volets/persiennes, demoted plain
+  garde-corps, zinc mansards (D4 period truth).
+- `two or three thick blocky chimneys per building` → **anti-defect armour** (unchanged): bounds
+  the count _and_ the line weight of the roofline, the FLUX failure zone (RULING).
+- `a low iron Petite-Ceinture grille at each base` → signature 18e-nord motif, dosed; kept only
+  under buildings (§0). Unchanged.
 - `Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2
-rectangle, no glow` → **the NIGHT/no-glow RULING**: the décor never emits (loi du glow); a
-  lit window is paper-white _in the B&W gamut_, never a baked warm halo. Stated positively
-  (dark/shuttered/flat rectangle) with a single bounded negation.
+rectangle, no glow` → **the NIGHT/no-glow RULING** (unchanged): the décor never emits (loi du
+  glow); a lit window is paper-white _in the B&W gamut_, never a baked warm halo. Stated
+  positively with a single bounded negation.
 - `Ground floor one value step lighter … tags thinning fast to bare clean upper walls` →
-  the **tagged ground-floor band RULING** (one value step on the ladder, not a 4th value) +
-  axis-1 taper (dense at shutter level → bare up top), stated positively.
-- `flat inked graffiti tags and a stapled photocopied flyer in illegible lettering` →
-  Paris-Tonkar rideau-de-fer register + flyer/pochoir, **lettering illegible on purpose** so
-  FLUX does not emit gibberish typography; the on-façade free-party tell.
-- `buildings centered with clear night-sky margins so they never touch the frame edge` →
-  the ADR-0048 transparent-margin contract (≥1/10, keyable to the parallax gap).
+  the **tagged ground-floor band RULING** (unchanged) + axis-1 taper, stated positively.
+- `flat inked graffiti tags and a photocopied flyer in illegible lettering` → Paris-Tonkar
+  rideau-de-fer register + flyer/pochoir, **lettering illegible on purpose** (unchanged); the
+  "stapled" freebie stays cut (Serge S14).
+- `The drawn block sits centered with an empty margin of night sky on both the left and right
+side, never touching the left or right frame edge` → **CORRECTION 3 (vide L ET R), reinforced.**
+  The real render filled the right edge. The margin is now demanded **explicitly on both sides**
+  (left AND right named twice) — the ADR-0048 transparent-margin contract (≥1/10, keyable to the
+  parallax gap), still guaranteed mechanically by tooling padding on top of the prompt.
 
-> **Word count:** the shared block runs ~130 words. Lead-art's derogation (~115 common trunk)
-> is knowingly stretched; every clause past 90 is a **gated, load-bearing** requirement
-> (register / hex ladder / night-no-glow / anti-defect / tagged band / margins), not filler,
-> and all blocking clauses are front-loaded. This is already the tightest phrasing that keeps
-> each RULING. `checkLevels` imposes no word ceiling on level prompts (non-emptiness only) —
-> the real gate is in-scene validation at the play camera.
+> **Word count:** the shared block now runs ~190 words (up from ~130). The whole growth is the
+> three Bertrand 2026-07-21 corrections — the drawing register, the doubled frontal statement and
+> the two-sided margin — all front-loaded in FLUX's strong attention zone; every gated RULING
+> below them is preserved verbatim in concept (only "buildings centered … frame edge" was rewritten
+> to name both margins). `checkLevels` imposes **no** word or negation ceiling on level prompts
+> (non-emptiness + the foreground magenta phrase only), so the block clears the lint; the real gate
+> is the register/perspective/margin read at the play camera. Negation count = **3** (`not a
+> photograph`, `no vanishing point`, `no glow`) — under the house ≤4 hard ceiling, each bounded and
+> load-bearing, the positive drawing/frontal vocabulary carrying the corrections (bible §3.1).
 
 ---
 
@@ -94,7 +115,7 @@ composition is what FLUX only approximates, so it is validated in-scene, not by 
 ### Tronçon A — two buildings, one thin sky sliver (aspect 1.6491)
 
 ```
-Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is two such buildings of clearly different width and height side by side, a clear vertical sliver of empty night sky between them at least as wide as one window bay.
+Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph. Strict flat frontal orthographic elevation: every façade parallel to the picture plane and seen perfectly head-on, flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls. The drawn block sits centered with an empty margin of night sky on both the left and right side, never touching the left or right frame edge. The row here is two such buildings of clearly different width and height side by side, a clear vertical sliver of empty night sky between them at least as wide as one window bay.
 ```
 
 - `two such buildings of clearly different width and height side by side` → axis-2 distinct
@@ -106,7 +127,7 @@ Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked
 ### Tronçon B — three buildings, one bare mur-pignon (aspect 1.7857) · **generic, no Deneux**
 
 ```
-Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is three such buildings in a tight irregular row, one gap opening onto a bare windowless mid-grey #3A3E44 masonry gable end wall.
+Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph. Strict flat frontal orthographic elevation: every façade parallel to the picture plane and seen perfectly head-on, flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls. The drawn block sits centered with an empty margin of night sky on both the left and right side, never touching the left or right frame edge. The row here is three such buildings in a tight irregular row, one gap opening onto a bare windowless mid-grey #3A3E44 masonry gable end wall.
 ```
 
 - `three such buildings in a tight irregular row` → axis-2; three distinct generic faubourien
@@ -118,7 +139,7 @@ Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked
 ### Tronçon C — two–three buildings, one narrow passage (aspect 1.9224)
 
 ```
-Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is two or three such buildings, one narrow dark passage alley set back well within the row between two of them, away from either edge.
+Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph. Strict flat frontal orthographic elevation: every façade parallel to the picture plane and seen perfectly head-on, flat like an architect's front-elevation drawing and like a comic-book panel viewed dead ahead, no vanishing point. Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over the linework, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls. The drawn block sits centered with an empty margin of night sky on both the left and right side, never touching the left or right frame edge. The row here is two or three such buildings, one narrow dark passage alley set back well within the row between two of them, away from either edge.
 ```
 
 - `two or three such buildings` → axis-2 varied count (C is instanced twice in the sequence,
@@ -490,3 +511,40 @@ Corrective pass applied to my sections; Serge's text above is untouched.
 plein/vide au niveau du sujet ET du fond. `street` retiré du lot.** Le lot Belliard est
 maintenant : `troncon-a`, `troncon-b`, `troncon-c`, `sky`, `foreground`. Repart au gate prompt
 lead-art.
+
+### Retours Bertrand 2026-07-21 appliqués — Maud (tronçons A/B/C uniquement)
+
+Retour d'art direction du propriétaire projet **sur le rendu réel** des tronçons : le PNG livré
+sortait en **photo N&B haute-contraste en perspective** — l'inverse du décor voulu. Passe
+corrective sur **§1 (bloc partagé)** et **§2 (prompts A/B/C assemblés)** seulement ; le reste du
+draft (structure ADR-0048, `sky`, `foreground`, seeds, contraintes techniques) est inchangé. Les
+trois corrections sont **front-loadées** dans la zone d'attention forte de FLUX.
+
+- **[B1] FRONTAL STRICT, jamais de perspective — corrigé, remonté en tête absolue.** Le rendu
+  montrait une rue en fuyante (bâtiments s'enfonçant vers un point de fuite). L'ancien « Flat
+  frontal orthographic elevation, no perspective » (une seule mention, faible) est remplacé par une
+  clause **remontée juste après le registre dessin** et **répétée sous deux angles positifs** :
+  *every façade parallel to the picture plane and seen perfectly head-on*, *flat like an
+  architect's front-elevation drawing*, *and like a comic-book panel viewed dead ahead*, close par
+  la seule négation bornée qui nomme le défaut exact — *no vanishing point*. Aucune indice de
+  profondeur ne survit à cette description positive.
+- **[B2] BD / CARTOON, pas photo — corrigé, c'est la bascule de registre.** L'ouverture « photocopied
+  xerox / high-contrast black-and-white » était lue par FLUX comme une **photo N&B**. Le prompt
+  ouvre désormais sur le **médium DESSIN** : *hand-drawn black-and-white comic-book illustration,
+  bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing*,
+  avec l'unique négation *not a photograph*. Le xerox/halftone est **conservé mais requalifié en
+  TEXTURE d'impression posée par-dessus le dessin** (*coarse halftone toner dots and xerox grain
+  over the linework*), donc le SUJET reste un dessin, le N&B/grain reste la peau d'impression. Rien
+  dans le prompt ne tire plus vers le photoréalisme (aucun détail de brique/bitume photographique).
+- **[B3] Léger vide transparent à GAUCHE ET À DROITE — corrigé, les deux côtés nommés.** Le rendu
+  remplissait le bord droit. « buildings centered with clear night-sky margins so they never touch
+  the frame edge » (ambigu sur les côtés) devient **explicitement bilatéral** : *the drawn block
+  sits centered with an empty margin of night sky on both the left and right side, never touching
+  the left or right frame edge*. La garantie mécanique (padding transparent ≥1/10 côté tooling)
+  reste par-dessus le prompt (§0/§2, S13).
+
+Note contrat : `checkLevels` ne pose **ni plafond de mots ni budget de négation** sur les prompts
+de niveau (non-vide + phrase magenta du foreground seulement) — le bloc passe le lint mécanique ;
+négations = **3** bornées (`not a photograph`, `no vanishing point`, `no glow`), sous le plafond
+maison ≤4. Bloc partagé toujours **octet-pour-octet identique** entre A/B/C, un seul tirage seed
+`7110`, tronçon-b générique sans Deneux. **Repart au gate prompt lead-art.**
