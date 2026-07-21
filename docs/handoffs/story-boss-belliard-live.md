@@ -229,6 +229,7 @@ had no boss) — not relitigated. New here = placement (Belliard) + a 6th lever 
 trigger-timing change, all consciously scoped. Pass.
 
 **Story ACs:**
+
 - `story-boss-belliard-live`: AC1 (boss authored) MET; AC2 (decouple seam) exists + tested both ways
   but flipped ON at merge (deviation #1); AC3 (routing) MET; AC4 (persistence) accepted on the
   merge-gate PASS; AC5 (`?preview=boss` guard) MET; AC6 (supersedes D4) MET.
@@ -247,7 +248,7 @@ stage-5 watch-list.
 1. Close the shield-cover-prop art gate (gen-boss-sprites dispatch for shield_cover_* → texture swap).
 2. Hostage/boss coexistence on Belliard (ADR-0059 D3 option A) — scoped follow-up story if wanted.
 3. Stage-5 playtest: winnability as first boss (level-1-gate difficulty) + W1/W2/W3 with lever 6 live
-   + the +33% vital-ring anti-camp softening — one item on the pinned targetSeed.
-4. (cosmetic) Confirm the 0057→0059 renumber note in the docs index.
+   - the +33% vital-ring anti-camp softening — one item on the pinned targetSeed.
+4. (cosmetic) Confirm the 0058→0059 (and 0059→0060) renumber notes in the docs index.
 
 **Merge-cleared by the pm.** Remaining before Bertrand merges: the follow-ups above are post-merge.
