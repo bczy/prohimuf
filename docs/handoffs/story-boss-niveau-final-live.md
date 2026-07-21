@@ -2604,3 +2604,132 @@ scripts/gen-boss-sprites.mjs` unconditionally on every dispatch (copied verbatim
   - `.github/dispatch/gen-boss-sprites` (re-touched, staged)
   - `.github/dispatch/gen-level-art` (re-touched, staged)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## EXPRESS PROMPT GATE (batch-2 reroll, LAST of the 2-batch cap) — lead-art (Nico) — 2026-07-21 · 4 REGEN prompts
+
+Scope: gate ONLY the 4 changed `boss`-block prompts Maud rerolled per Serge's measured TECHNICAL-pass
+findings + Bertrand's two direct verdicts (« très mal détouré », « attention aux trous ») —
+`commander_shielded` [B1], `commander_finisher` [B2], `lustre` [B3], `speaker_wall` [B4]. The 5 CLEAN
+entries (`commander_exposed`/`hit`/`down`/`weakpoint`/`parry_windup`) keep their batch-1 FAMILY-PASS
+verbatim (Serge measured their "holes" as legitimate pose negative space — no reroll owed, prompts
+byte-identical, PASS stands). Read: Serge's TECHNICAL-pass hole-audit table + per-asset root causes +
+batch-2 requirements, Maud's [B1]-[B4] release entry, the 4 updated strings in
+`src/game/levels/levelArt.json` boss block AND the matching updated blockquotes in
+`docs/art-direction/prompt-drafts/boss-commander.md` (confirmed draft↔JSON consistent, no drift).
+
+**Mechanical + hand-held contract (ran it myself — verify, don't trust):**
+
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 contract errors (14 pre-existing / other-lane
+  word-band warnings: courier + enemies + nearForeground/bench + loot.crate; NONE from the boss
+  block, out of the lint's scope by design — its contract is held by hand).
+- Re-counted all 4 assembled strings independently (subject + verbatim 58-word tail): **shielded 117w,
+  finisher 119w, lustre 120w, speaker_wall 119w** — every subject **0 negations**, tail **2**
+  (`no text`, `no watermark`) → assembled **2**, inside the ≤2 budget. Maud's 117/119/120/119 claim
+  CONFIRMED exact. All under/at the **120** hard ceiling (lint errors strictly ABOVE 120).
+  **Budget NOTE (not a FAIL):** `lustre` sits AT 120 — zero remaining headroom; any further clause
+  breaches the ceiling. Flagged so a hypothetical batch-3 (there is none — see cap) would have to
+  trim first. Passes as-is.
+- No baked neon-accent hue in any of the 4. Every added token is value/luminance/material language
+  inside the tail's declared "light grey white and pale neon tones" palette: `charcoal-grey`/
+  `mid-charcoal`/`pale-to-mid grey`/`pale grey` (values), `a pale contour of light`/`bright rim`
+  (luminance edge tells), `wrought-iron`/`plywood`/`gaffer` (materials monochromed by the tail),
+  `black outlines`/`black ground` (ink linework). ADR-0011 render-side-rim convention held — the
+  acid neon stays render-side.
+
+**Batch-2 discipline — HELD.** All 4 are targeted, positive-phrased fixes each aimed at that asset's
+SPECIFIC measured defect, not rewrites; the poses/silhouettes are untouched; compensating trims are
+budget-driven, not new content. The negation budget is protected exactly where it mattered:
+`speaker_wall` took Serge's _positive_ option (front-loaded `completely flat uniform black background
+filling the frame`) and rejected his alternative `no sky, no outdoor scene, no photograph` phrasing —
+which would have added 3 negations and blown the ≤2 budget. That is the correct FLUX-rule call
+(§3 rule 1: never negate, describe the positive opposite).
+
+### Per-entry verdicts
+
+- **`commander_shielded` [B1] — PASS.** Serge measured a non-bridgeable round bite through solid coat
+  fabric at the hip/hem (silhouette edge lost contrast vs key at that one contour). The fix — a
+  dedicated `a pale contour of light tracing the coat lower hem and hip edge` — is precisely the
+  high-contrast xerox EDGE tell I called load-bearing at the batch-1 gate, applied exactly at the
+  failed contour. It is a VALUE-edge clause, not a silhouette change: bare-headed + long knee-length
+  overcoat + squared shoulders + brassard + shoulder radio + halt gesture + holstered boxy sidearm +
+  closed guarded stance all survive; `towering` retained at the head of the string (the dropped `at
+full height` was redundant with it). RULING (1) held (bare head, brassard/radio, boxy sidearm).
+  On-direction, house style intact.
+- **`commander_finisher` [B2] — PASS.** The measured worst (~14.6% holed straight through solid thigh
+  - torso/back) — exactly the "highest-anatomy-risk entry of the 9" I flagged at batch-1. The fix — a
+    POSITIVE fold-value floor on the exact failed zones, `its torso and thigh folds a mid-charcoal,
+lighter than the pitch-black backdrop` — is the correct mush-watch resolution (positive phrasing,
+    0 subject negation). The [S7] sleeve-continuity intent survives the compaction to `sleeved to the
+wrist` + retained `the closed hand on the shoulder radio` (thick continuous limb + no finger-gap
+    hole-class preserved). Reads "down-but-still-trying," distinct from `down`. Tone guardrail
+    intrinsically held (mono-figure). **PASS — with the MANDATORY anatomy defect-sweep REAFFIRMED at
+    my asset gate:** this entry materialized its predicted defect once already; the prompt-side fix is
+    correct, but whether FLUX delivers a solid thigh/torso is a render read the asset gate binds.
+- **`lustre` [B3] — PASS.** Two measured defects: swiss-cheese armature (~13.5%, [S8] had value-locked
+  only the crystal DROPS, not the connecting armature MASS) + one orphan severed drop
+  (duplication/severed-thread). Both fixed on their own axis: `the whole frame a solid pale-to-mid grey
+lighter than the black backdrop` extends the value-lock to the armature mass; `one … chandelier` +
+  `every drop attached to the frame` is a POSITIVE single-object / attachment guard against the
+  duplication (not "no duplicate" — budget-clean). HUNG read preserved (single chain up top,
+  cone-and-umbrella form excludes the mirror-ball, asymmetric two-drop notch, tilted+dusty). Dropped
+  `brass`/`with suggested arms` are acceptable trims (Serge PASS-AS-IS'd the arms as ornamental; the
+  cone silhouette carries the read). At the 120 ceiling (see budget note).
+- **`speaker_wall` [B4] — PASS.** The unambiguous batch-1 failure: 94.3% of the canvas came back as a
+  real outdoor rig/sky/tent PHOTOGRAPH — not a hole, a whole-scene flood that fought the style tail.
+  Root cause (Serge): the `from the ground up` / `scaffold` documentary-photo phrasing. The fix
+  front-loads `on a completely flat uniform black background filling the frame` into the subject
+  (early-token weight, §3 rule 2) to redouble the tail's own black-ground assertion FLUX ignored, and
+  removes the two photo-evoking tokens (`from the ground up`, `scaffold`) while keeping `pallet rig` as
+  the rimless BUILT tell. BUILT-vs-HUNG read preserved (hand-built + pyramid + pallet rig + chunky
+  unbranded mass, per Serge's own [S10]: BUILT is carried by pyramid/pallet-rig shape, not the removed
+  words). This is the strongest available PROMPT-side lever against a generation-side flood — whether
+  FLUX now honours the flat black is the asset-gate read, and given how hard batch-1 drifted (94%),
+  this is the single highest asset-gate risk of the 4.
+
+### Family + house-style (across the 4 changed, coherent with the 5 CLEAN + roster)
+
+No mid-grey mush drift: every batch-2 value floor is stated as an explicit _differential_ against the
+black backdrop (`lighter than`) and PAIRED with a high-contrast edge tell (pale contour of light /
+black outlines / bright rim / mid-charcoal-over-pitch-black). Xerox high-contrast held; the contrast
+still lives at the silhouette EDGE where silhouette-first reads. The 5 CLEAN prompts + the shared
+byte-identical tail are untouched → the family stays one printing run (§2 law 2). The two ratified
+deviations (POLICE-as-reflective-shape; props keep the shared "figure" tail) are unchanged by this
+reroll and stand as ratified at the batch-1 family gate. Roster contrast (bare head + long coat vs
+capped/helmeted mook/riot/biker) unaffected.
+
+### Scope of this PASS
+
+Covers the 4 changed prompt STRINGS only. It does NOT cover: (a) the regenerated PNGs — my ASSET GATE
+(Gate 2), where the carried-forward watches BIND: `speaker_wall` background-flood re-check (highest
+risk), `finisher` mandatory anatomy sweep, `lustre` armature-solidity + orphan-drop check,
+`shielded` hip/hem hole-close — my eye over any mechanical pre-check (and Serge's own note that
+`check-sprite-integrity.mjs` has a border-connected-hole BLIND SPOT here, so its PASS is a floor, not
+a verdict); (b) render-side rims/glows — composite Gate 4 (recall the OPPOSITE prop verdicts: `lustre`
+the interactive `decorProp` MUST glow with falloff; `speaker_wall` MUST NOT glow); (c) the l'Éden
+backdrop (separate family; Serge's window-count 5→4 / boarded-vs-glazed drift is routed to stage-5
+verify + dev-tooling, NOT this gate).
+
+### Dispatch conditions (batch-2 = the LAST reroll of the 2-batch cap)
+
+All 4 REGEN prompts PASS → no FAIL, no iteration owed to Maud. **Batch-2 generation may dispatch ONCE
+`dev-tooling-assets` finishes the in-flight size-bug fix + selective purge** (the boss `size`
+overrides / facade 991×594-vs-1280×768 dimension drift Serge flagged, and purging only the 4 stale
+REGEN PNGs so the 5 CLEAN are not needlessly re-rolled). `POLLINATIONS_TOKEN` is already confirmed SET
+by Bertrand (producer, 2026-07-20) and the AC8 gate is RELEASED — those are no longer blockers.
+
+**CAP REMINDER — this is the LAST batch.** Under the 2-batches/set/cycle discipline, batch-1 is spent
+and this reroll IS batch-2. If any of these 4 comes back defective at my asset gate (hole, flood,
+anatomy break, orphan), the cycle cap is exhausted — the correct next move is NOT a batch-3 but an
+ESCALATION to Bertrand with a shortlist of options (e.g. per-asset seed sweep outside the cap, a
+kontext img2img style-lock from a clean sibling, a scripted-retouch spike, or accept-with-known-defect
+vs cut-the-prop-from-V1). No third silent reroll.
+
+VERDICT: PASS — prompt gate commander_shielded (lead-art)
+VERDICT: PASS — prompt gate commander_finisher (lead-art)
+VERDICT: PASS — prompt gate lustre (lead-art)
+VERDICT: PASS — prompt gate speaker_wall (lead-art)
+VERDICT: PASS — prompt gate boss batch-2 reroll (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this express prompt-gate entry appended).
