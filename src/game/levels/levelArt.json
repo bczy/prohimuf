@@ -278,7 +278,7 @@
       "commander_shielded": {
         "asset": "assets/boss/commander_shielded.png",
         "seed": 4870,
-        "prompt": "a towering french plainclothes commander at full height, facing forward, bare-headed, a long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black backdrop, broad squared shoulders, a reflective brassard on the sleeve, a radio clipped at the shoulder, a gloved hand flat in a halt gesture, the other on a holstered boxy sidearm at the hip, closed guarded stance"
+        "prompt": "a towering french plainclothes commander, facing forward, bare-headed, a long knee-length charcoal-grey overcoat lighter than the black backdrop, a pale contour of light tracing the coat lower hem and hip edge, broad squared shoulders, a reflective brassard on the sleeve, a shoulder radio, a gloved hand in a halt gesture, the other on a holstered boxy sidearm, closed guarded stance"
       },
       "commander_exposed": {
         "asset": "assets/boss/commander_exposed.png",
@@ -310,19 +310,19 @@
       "commander_finisher": {
         "asset": "assets/boss/commander_finisher.png",
         "seed": 4876,
-        "prompt": "the same bare-headed french plainclothes commander down on one knee, his long charcoal-grey overcoat, lighter than the black ground, pooling at his bent leg, upright from the waist, head up, one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
+        "prompt": "the same bare-headed french plainclothes commander on one knee, his long overcoat pooling at his leg, its torso and thigh folds a mid-charcoal, lighter than the pitch-black backdrop, upright from the waist, head up, one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
       },
       "lustre": {
         "asset": "assets/boss/lustre.png",
         "size": { "width": 320, "height": 512 },
         "seed": 4877,
-        "prompt": "a grand ballroom chandelier hung from a single chain up top, a multi-tier cone-and-umbrella stack of crystal-drop rings, an ornate wrought-iron and brass armature with suggested arms, solid pale grey-white faceted crystal drops, each with a bright rim highlight, two adjacent drops missing on one side, a wide notch, hanging slightly tilted and dust-dulled, decayed 1900s grandeur, centered and fully visible"
+        "prompt": "one grand ballroom chandelier on a single chain up top, a multi-tier cone-and-umbrella wrought-iron armature, the whole frame a solid pale-to-mid grey lighter than the black backdrop, hung with solid pale grey-white crystal drops, each with a bright rim, every drop attached to the frame, two adjacent drops missing, a wide notch, slightly tilted and dusty, decayed 1900s grandeur, centered and fully visible"
       },
       "speaker_wall": {
         "asset": "assets/boss/speaker_wall.png",
         "size": { "width": 512, "height": 320 },
         "seed": 4878,
-        "prompt": "a hand-built teknival sound-system wall from the ground up, a pyramid of mismatched plywood bass-bins and horn cabinets, cabinet faces flat pale grey panels with black contours, the stack lighter than the black backdrop, on a scaffold and pallet rig, cables as pale grey lines with lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, centered and fully visible"
+        "prompt": "a hand-built teknival sound-system wall on a completely flat uniform black background filling the frame, a pyramid of mismatched plywood bass-bins and horns, cabinet faces flat pale grey panels with black outlines, the stack clearly lighter than the black ground, on a pallet rig, cables as pale grey lines, lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, fully visible"
       }
     }
   },

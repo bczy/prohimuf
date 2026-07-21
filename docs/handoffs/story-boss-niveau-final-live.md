@@ -2424,3 +2424,50 @@ verdict is Nico's, and this batch does not reach him).
   appended). No asset or script files modified.
 
 Serge — TECHNICAL PASS
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-21 · BATCH-2 reroll [B1]-[B4] (the LAST reroll of the cap)
+
+- claim: integrate Serge's measured TECHNICAL-pass batch-2 findings into the 4 REGEN prompts
+  (`commander_shielded`, `commander_finisher`, `lustre`, `speaker_wall`) — targeted (~1 variable each,
+  positive-phrased so the negation budget stays green), applied to BOTH the draft shard and the 4
+  applied strings in `levelArt.json`'s boss block. The 5 CLEAN entries keep their prompts byte-identical
+  (Serge measured their "holes" as legitimate pose negative space). No commit/push.
+- the 4 diffs (old → new clause; every subject stays 0-negation, assembled 2, all ≤120 words):
+  - **[B1] `commander_shielded`** (117w) — the general `with pale edge highlights` degraded at the one
+    hip/hem contour where batch-1 bit a non-bridgeable round hole. ADDED a dedicated hem clause:
+    `a pale contour of light tracing the coat lower hem and hip edge` (compensating trims: `at full
+height`, `flat`, `clipped at the shoulder`, `at the hip`).
+  - **[B2] `commander_finisher`** (119w, the worst — ~14.6% holed) — coat/trouser shadow folds rendered
+    near-key-black across the whole kneeling thigh + torso/back ([S7]/Nico's highest-anatomy-risk entry
+    materialized). ADDED a POSITIVE fold-value floor on those exact zones: `its torso and thigh folds a
+mid-charcoal, lighter than the pitch-black backdrop` (not "no near-black", to keep the budget). Also
+    compacted the [S7] sleeve clause to `sleeved to the wrist`.
+  - **[B3] `lustre`** (120w, ~13.5% holed + one orphan severed drop) — extended the [S8] value-lock from
+    the crystal DROPS to the ARMATURE mass: `the whole frame a solid pale-to-mid grey lighter than the
+black backdrop`; and a POSITIVE single-object guard for the duplication artifact: `one … chandelier`
+    - `every drop attached to the frame` (not "no duplicate").
+  - **[B4] `speaker_wall`** (119w, 94.3% came back as a real outdoor rig/sky/tent photo) — a DOMINANT
+    flat-black lock placed early in the subject: `on a completely flat uniform black background filling
+the frame`; and removed the photo-evoking tokens `from the ground up` and `scaffold` (kept `pallet
+rig` as the rimless BUILT tell). Straight seed re-roll alone was judged unlikely to fix this.
+- root-cause context (Serge, measured): batch-1's `check-sprite-integrity.mjs` PASSED all 9 (dominance
+  ~100%, 0 enclaves) but the true holes are edge-CONNECTED to background through thin channels — the
+  same blind spot as the historical courier bug; a raw re-cutout path does not exist (no `if: failure()`
+  artifact was uploaded on the successful run), so REGEN is the only route. The 5 CLEAN entries are held
+  with the family (one printing run, §2 law 2) rather than shipped 5/9 now.
+- File List:
+  - `src/game/levels/levelArt.json` (boss block: 4 REGEN `prompt` strings updated per [B1]-[B4]; the 5
+    CLEAN strings + `$comment` + `style` UNCHANGED). Note: dev-tooling had added all 9 boss entries +
+    per-prop `size` (lustre 320×512 portrait, speaker_wall 512×320 landscape — my [S13] aspect note
+    applied) since my last pass.
+  - `docs/art-direction/prompt-drafts/boss-commander.md` (BATCH-2 [B1]-[B4] summary block added; the 4
+    blockquotes + per-clause rationale updated; budgets note refreshed).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (14 word-band warnings,
+  all pre-existing/other-lane: courier + nearForeground/bench + loot.crate + enemies; the boss block is
+  out of the lint's scope, held by hand: the 4 REGEN prompts are 117/119/120/119w, 0 subj-neg, 2 asm-neg).**
+- handoff → `lead-art` (Nico) express-gates the 4 changed prompts, then dispatch/regenerate (batch 2 =
+  the last of the 2-batch cap). Serge flagged for `dev-tooling-assets` a CI gate improvement (a
+  "closability probe" SOFT check that would have WARNed these three holes) — out of my lane.
+- Not a `VERDICT:` line — the 4 REGEN prompts are OWED Nico's express PROMPT GATE before regeneration.
