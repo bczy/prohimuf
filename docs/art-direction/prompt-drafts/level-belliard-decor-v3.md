@@ -556,3 +556,237 @@ de niveau (non-vide + phrase magenta du foreground seulement) — le bloc passe 
 négations = **3** bornées (`not a photograph`, `no vanishing point`, `no glow`), sous le plafond
 maison ≤4. Bloc partagé toujours **octet-pour-octet identique** entre A/B/C, un seul tirage seed
 `7110`, tronçon-b générique sans Deneux. **Repart au gate prompt lead-art.**
+
+---
+
+# v4 — restyle dessiné par img2img
+
+**Statut : DRAFT concept-artist (Maud), repart au gate lead-art (style dessiné) puis
+`dev-tooling-assets` exécute.** Supersede la voie text-to-image des §1-§2 ET la voie
+desat-only du bandeau PIVOT en tête de fichier, **pour les tronçons A/B/C uniquement**.
+`sky` (§3) et `foreground` (§4) sont **inchangés** — ils étaient déjà gated et ne sont pas
+rouverts. Le lot img2img de cette section = `troncon-a`, `troncon-b`, `troncon-c`.
+
+## v4.0 Pourquoi v4 — la décision de pipeline (recon → arrêtée)
+
+Deux échecs constatés convergent :
+
+1. **text-to-image (§1-§2) REMPLIT le cadre et coupe les immeubles aux bords** — FLUX ne sait
+   pas laisser un immeuble « finir dans le ciel » quand on lui demande une rue.
+2. **desat-only (bandeau PIVOT) garde le médium PHOTO** — désaturer une photo donne une photo
+   grise, pas un fanzine dessiné (apprentissage art-advisor : le médium ne se corrige pas au
+   filtre, il vient de la SOURCE).
+
+**Voie retenue = img2img (kontext).** La SOURCE d'img2img porte à la fois le **cadrage**
+(immeubles auto-contenus, de face, non coupés) ET le **médium** (le trait) ; le prompt ne fait
+que **restyler**. Un seul passage kontext (pas de chaînage → évite le drift), puis en post
+`desat-troncons.mjs` (N&B Rec.601 + filet valeurs) et `key-troncon-sky.mjs` (détourage ciel par
+flood-fill depuis les bords). Pollinations img2img n'a **aucun réglage de force** : tout se joue
+au **PROMPT + seed** ; `image=` = source de structure. Repli **gptimage** si kontext sous-restyle
+après ~3 seeds.
+
+**Correction de registre (art-advisor) portée dans tout v4 :** le registre n'est **PAS « ligne
+claire »** (§1/§2 l'écrivaient — obsolète ici). C'est le **noir urbain à la Tardi** (_Nestor
+Burma_, _Brouillard au pont de Tolbiac_) : **trait d'encre d'ÉPAISSEUR CONSTANTE + gros APLATS
+NOIRS**. Le gris moyen de la ladder est un **APLAT FRANC** ou une **TRAME DE POINTS** (demi-ton BD
+= la texture xerox de la bible §3.4), **jamais une hachure en dégradé** (la hachure dégradée a fait
+échouer un filtre — c'est le défaut nommé à bannir). **RISO exclu** (bible §3.4) — non pas nommé en
+négation (nommer riso l'invoque), mais **évincé positivement** en occupant tout le registre
+d'impression par « photocopied fanzine xerox / coarse halftone dot screen ».
+
+## v4.1 SOURCE d'img2img — décision : **générer un HERO dessiné** (Voie B), planches écartées
+
+J'ai évalué les candidats dessinés libres de droits du board
+[`board-belliard-decor-v3.md`](../references/boards/board-belliard-decor-v3.md) (Direction 2 +
+short-list) comme `image=` source. **Verdict : AUCUNE ne convient.** Deux disqualifications, chacune
+suffisante :
+
+- **Contenu — mauvais registre bâti.** Bertall « Coupe d'une maison parisienne », Rondelet (_Art de
+  bâtir_) et César Daly (_Revue générale_) montrent des immeubles **haussmanniens/bourgeois ornés**
+  ou **institutionnels** — pas le faubourien 18e **ordinaire** (le board le dit lui-même : « too
+  rich/formal for Belliard's plain 18e stock »). En img2img, `image=` porte la **structure** : une
+  façade ornée en entrée = une façade ornée en sortie. Bertall est en plus une **coupe** (intérieur
+  visible, 5 strates sociales) — la structure transférée charrierait des planchers d'intérieur.
+- **Médium — hachure de gravure = le défaut à bannir.** Ces planches sont des **gravures au trait
+  fin variable + hachures** (Bertall : « diagonal hatching for structure and vertical strokes for
+  light/shadow »). C'est **exactement** la « hachure en dégradé » que l'art-advisor interdit et qui a
+  fait échouer un filtre. Puisque le médium vient de la SOURCE, injecter une gravure hachurée
+  **impose** le médium qu'on veut fuir. Rejet sur le médium autant que sur le contenu.
+
+Un troisième point tue l'idée de toute façon : **une planche = UN immeuble**. Les trois tronçons
+ont des **beats distincts** (A = 2 immeubles + trouée ; B = 3 + mur-pignon ; C = 2-3 + passage).
+Aucune planche unique ne porte ces compositions ; img2img préserve la structure (~1 immeuble en →
+~1 immeuble out), il ne les invente pas.
+
+**⇒ Recommandation explicite : Voie B — générer d'abord un HERO dessiné** (text-to-image), un
+immeuble faubourien **isolé**, de face, encre Tardi-noir sur **fond uni keyable**. Un objet unique
+centré sur fond plat est précisément l'**isolation** que FLUX text-to-image réussit (c'est le régime
+« un sujet centré » des sprites) — le « remplit-et-coupe » ne frappe que les **rues** pleine largeur.
+Ce hero fixe en une image le **médium** (trait constant + aplats noirs), le **contenu** faubourien
+(volets, zinc, cheminées, rideau tagué, grille PC) et la **discipline de cadrage** (finit dans le
+fond, jamais coupé). Il devient ensuite la **source img2img de la famille** (v4.4 hero-lock).
+
+## v4.2 Prompt HERO dessiné (text-to-image, bootstrap de la famille)
+
+Family : `levels[belliard]` · clé provisoire : `troncon-hero` (slot/id = `dev-tooling-assets`).
+Roll unique, seed dédiée proposée **`7100`**, `enhance=false`, fond uni keyable.
+
+```
+A single ordinary weathered Paris 18e-arrondissement faubourg apartment building standing completely alone as one isolated cut-out object centred on a plain uniform flat empty field with wide margins on every side, four to five storeys of irregular plain masonry seen in strict flat frontal elevation parallel to the picture plane with no vanishing point, louvered timber shutters and simple flat iron balcony rails, a grey zinc mansard roof carrying two or three thick blocky chimney stacks, a ground-floor roll-down metal shutter layered with flat inked graffiti tags in illegible lettering, a low iron Petite-Ceinture grille at its base, drawn as a 1990s French black-and-white crime comic in bold even-weight constant-thickness black ink outlines and large solid flat black shadow masses, its mid-tones only as flat grey fills or a coarse halftone dot screen and never as gradient hatching, a strict three-value scheme of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2, deep night with windows dark or shuttered and an occasional lit window a flat paper-white #E9E3D2 rectangle and no glow, the building ending cleanly against the empty flat field, hand-drawn comic-book illustration on a photocopied fanzine page with coarse xerox grain over the linework.
+```
+
+Rationale (une ligne par clause qui gagne sa place) :
+
+- `A single … faubourg apartment building standing completely alone as one isolated cut-out object
+  centred on a plain uniform flat empty field with wide margins on every side` → **isolation
+  maximale** : un objet centré sur fond plat = le régime FLUX text-to-image fiable (pas de rue → pas
+  de « remplit-et-coupe ») ; le fond uni est keyable pour le détourage.
+- `four to five storeys of irregular plain masonry` → gabarit **faubourien ordinaire** R+4/R+5,
+  « plain » coupe court à la dérive ornée haussmannienne (l'écueil des planches).
+- `strict flat frontal elevation parallel to the picture plane with no vanishing point` → **frontal
+  strict** ; `no vanishing point` = la seule négation bornée qui nomme le défaut perspective exact.
+- `louvered timber shutters … simple flat iron balcony rails … grey zinc mansard roof … Petite-
+  Ceinture grille` → **vérité période 18e nord 1998** (volets/persiennes, garde-corps simples, zinc,
+  grille PC), silhouette d'abord.
+- `two or three thick blocky chimney stacks` → **armure anti-défaut** : borne le compte ET l'épaisseur
+  du trait de la ligne de toit (la zone d'échec FLUX).
+- `ground-floor roll-down metal shutter layered with flat inked graffiti tags in illegible lettering`
+  → registre **rideau de fer tagué Paris-Tonkar**, lettrage illisible exprès (pas de marque réelle).
+- `1990s French black-and-white crime comic … bold even-weight constant-thickness black ink outlines
+  and large solid flat black shadow masses` → **le noir urbain Tardi** posé positivement (trait
+  constant + aplats noirs) — c'est la bascule de registre, pas de « ligne claire ».
+- `mid-tones only as flat grey fills or a coarse halftone dot screen and never as gradient hatching`
+  → le **gris moyen = aplat OU trame de points** ; `never as gradient hatching` = négation bornée qui
+  nomme le défaut (hachure dégradée) ayant fait échouer un filtre.
+- `strict three-value scheme of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2` →
+  **ladder hex** obligatoire, interdit une 4e valeur.
+- `deep night … an occasional lit window a flat paper-white #E9E3D2 rectangle and no glow` → **loi du
+  glow** : le décor n'émet jamais ; fenêtre allumée = rectangle blanc-papier dans le gamut N&B.
+- `hand-drawn comic-book illustration on a photocopied fanzine page with coarse xerox grain over the
+  linework` → **registre maison** : le dessin est le sujet, le grain xerox est la peau d'impression
+  (occupe le registre d'impression → riso évincé sans le nommer).
+
+Négations = **3** bornées (`no vanishing point`, `never as gradient hatching`, `no glow`), sous ≤4.
+
+## v4.3 Prompts d'img2img (restyle) — tronçons A/B/C
+
+Style **instruction d'édition** kontext : ouvre sur `Redraw this exact image as…`, ré-affirme
+`KEEP the exact same composition, framing and building positions`. Le **préambule de restyle est
+octet-pour-octet identique** A/B/C (loi 2, un seul tirage) ; seul le **tail de beat** diffère. Source
+`image=` : hero (v4.2) pour A ; puis tronçon-A promu hero pour B et C (v4.4). **Une seule seed
+partagée `7110`** pour A/B/C (une seule passe d'impression), `enhance=false`.
+
+**Préambule de restyle (identique A/B/C) :**
+
+```
+Redraw this exact image as a 1990s French black-and-white crime-comic illustration: bold even-weight constant-thickness black ink outlines and large solid flat black shadow masses, mid-tones only as flat grey fills or a coarse halftone dot screen and never as gradient hatching, a strict three-value scheme of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2, printed on a photocopied fanzine page with coarse xerox grain over the linework. KEEP the exact same composition, framing and building positions: every façade in flat frontal elevation parallel to the picture plane with no vanishing point, each building self-contained and ending in open night sky, the same wide empty night-sky margins down both the far left and the far right edge. Ordinary weathered Paris 18e faubourg buildings, four to five storeys, louvered shutters, simple flat iron balcony rails, grey zinc mansard roofs with two or three thick blocky chimneys each, ground-floor roll-down metal shutters layered with flat inked graffiti tags in illegible lettering thinning to bare upper walls, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow.
+```
+
+**Tail — tronçon A (aspect 1.6491) :**
+
+```
+ Here two such buildings of clearly different width and height stand as an isolated pair, a clear vertical sliver of open night sky between them at least as wide as one window bay.
+```
+
+**Tail — tronçon B (aspect 1.7857) :**
+
+```
+ Here three such buildings stand clustered as an isolated group, one presenting a bare windowless mid-grey #3A3E44 masonry gable end wall.
+```
+
+**Tail — tronçon C (aspect 1.9224) :**
+
+```
+ Here two or three such buildings stand as an isolated cluster, one narrow dark passage alley set back well within the row, away from either edge.
+```
+
+Rationale (préambule) :
+
+- `Redraw this exact image as a 1990s French black-and-white crime-comic illustration` → verbe
+  d'édition kontext : **restyle**, pas re-génère ; ancre le médium cible dès le premier token.
+- `bold even-weight constant-thickness black ink outlines and large solid flat black shadow masses`
+  → **noir urbain Tardi** : trait constant + aplats noirs (pas de ligne claire, pas de gravure).
+- `mid-tones only as flat grey fills or a coarse halftone dot screen and never as gradient hatching`
+  → **gris moyen = aplat OU trame** ; la seule négation qui nomme le défaut de filtre (hachure).
+- `strict three-value scheme … #141210 … #3A3E44 … #E9E3D2` → **ladder hex**, verrouille les 3 tons
+  (et `desat-troncons.mjs` re-force le N&B en post — double filet).
+- `printed on a photocopied fanzine page with coarse xerox grain over the linework` → registre
+  d'impression maison **occupé positivement** → riso évincé sans être nommé (bible §3.4).
+- `KEEP the exact same composition, framing and building positions` → clause kontext canonique :
+  garde le **cadrage auto-contenu** de la source, ne le recompose pas.
+- `every façade in flat frontal elevation … with no vanishing point` → réassure le **frontal strict**
+  au cas où kontext tenterait d'ajouter de la profondeur.
+- `each building self-contained and ending in open night sky, the same wide empty night-sky margins
+  down both the far left and the far right edge` → garde les **marges de ciel bilatérales** (le
+  détourage `key-troncon-sky.mjs` en dépend : flood-fill depuis les bords).
+- `Ordinary weathered Paris 18e faubourg buildings … Petite-Ceinture grille at each base` → **vérité
+  faubourienne** répétée pour que le restyle ne « bourgeoisifie » pas la source.
+- `two or three thick blocky chimneys each` → **armure anti-défaut** ligne de toit (compte + trait).
+- `Deep night … no glow` → **loi du glow**, fenêtre allumée = rectangle blanc-papier.
+
+Rationale (tails) :
+
+- **A** `two such buildings of clearly different width and height … a clear vertical sliver of open
+  night sky … at least as wide as one window bay` → beat A : deux volumes distincts (silhouette
+  d'abord, loi 3) + ancre de largeur mini pour que la trouée **keye propre** et ne fusionne pas les
+  deux immeubles en une masse.
+- **B** `three such buildings … one presenting a bare windowless mid-grey #3A3E44 masonry gable end
+  wall` → beat B : le **mur-pignon** ancré sur la valeur gris-moyen, générique (zéro Deneux).
+- **C** `two or three such buildings … one narrow dark passage alley set back well within the row,
+  away from either edge` → beat C : **passage** opaque near-black tenu **loin des bords** pour que le
+  flood-fill du ciel ne le mange pas (C est instancié deux fois dans `a,c,b,c`).
+
+Négations = **3** bornées (`no vanishing point`, `never as gradient hatching`, `no glow`), sous ≤4.
+Pas de « not a photograph » : la source **est** déjà un dessin (le hero), le médium vient de la
+source + du vocabulaire Tardi positif.
+
+> **Note lint (à l'exécution, `dev-tooling-assets`) :** ces chaînes remplacent les prompts
+> text-to-image A/B/C de §2 dans `levelArt.json`. `checkLevels` n'impose ni plafond de mots ni budget
+> de négation sur les prompts de niveau (la clause magenta ne concerne que `foreground`, hors lot v4).
+> Le préambule reste **octet-pour-octet identique** A/B/C ; `node scripts/check-art-prompts.mjs` doit
+> être vert avant dispatch.
+
+## v4.4 Plan HERO-LOCK — verrouiller la cohérence dessin-à-dessin des 3 tronçons
+
+Objectif : que A, B, C lisent comme **une seule main**, sans chaînage kontext (qui driftrait). On
+enchaîne des **passes img2img indépendantes conditionnées sur un même dessin validé**, promu hero via
+l'outillage existant (`scripts/promote-hero.mjs` + `references/approved/heroes.json`, ADR-0043).
+
+1. **Bootstrap hero (text-to-image).** Générer le hero dessiné (v4.2, seed `7100`). Gate `lead-art`
+   (registre dessiné). Sur `PROMOTE` :
+   `node scripts/promote-hero.mjs --from <public/assets/levels/belliard/troncon-hero.png>
+   --family levels --slot belliard-troncon --slug belliard-troncon-tardi-v4`
+   → gèle une copie dans `references/approved/levels/…` et inscrit le hero régnant du slot.
+   (`--family levels` doit être un `WIRED_FAMILIES` — sinon `dev-tooling-assets` câble le slot ; le
+   script refuse un slot non-wired **avant** toute écriture, donc pas d'effet de bord.)
+2. **Tronçon A (img2img, 1 passe kontext).** `image=` = le PNG hero promu ; prompt = préambule
+   v4.3 + tail A ; seed `7110`. Gate `lead-art`. **A est le tronçon-pivot** (aspect le plus proche
+   d'un couple d'immeubles ⇒ le restyle le plus sûr).
+3. **Promouvoir A en hero.** Sur `PROMOTE` de A :
+   `promote-hero.mjs --from <…/troncon-a.png> --family levels --slot belliard-troncon
+   --slug belliard-troncon-a-tardi-v4` (nouveau slug ; l'ancien hero est conservé à jamais). A porte
+   désormais le registre **à l'échelle/aspect tronçon** — meilleure ancre que le hero-immeuble seul.
+4. **Tronçons B et C (img2img, 1 passe chacun, en parallèle).** `image=` = **le même** PNG
+   tronçon-A-hero pour les deux ; prompt = préambule v4.3 (identique) + tail B / tail C ; **même seed
+   `7110`**. Comme B et C sont conditionnés sur **le même dessin validé** (pas l'un sur l'autre), on a
+   la cohérence dessin-à-dessin **sans chaîne** — donc sans drift cumulatif.
+5. **Post (les deux scripts, dans l'ordre).** `node scripts/desat-troncons.mjs` (N&B Rec.601 +
+   re-force la ladder si une teinte a bavé) **puis** `node scripts/key-troncon-sky.mjs` (détourage
+   ciel par flood-fill depuis les bords haut/gauche/droite — le trait noir Tardi **épais** cloisonne
+   bien l'intérieur du bord, ce qui sert le masque). `ground.png`/`sky`/`foreground` inchangés.
+
+**Repli.** Si kontext **sous-restyle** (la photo/gravure transparaît sous le trait) après **~3
+seeds** sur un tronçon donné, bascule `gptimage` en garde-source pour ce tronçon (même prompt
+d'édition, même `image=`), puis reprend le post identique. Si un beat ne « multiplie » pas les
+immeubles depuis la source (kontext garde le compte de la source), générer une **variante hero au bon
+compte** (2 pour A, 3 pour B) en text-to-image v4.2 et re-conditionner — à flaguer à
+`dev-tooling-assets`, c'est un ajustement de source, pas un rewrite de prompt.
+
+## v4.5 Hand-off
+
+Rien dans `levelArt.json` ne bouge tant que ce v4 n'a pas **PASS** au gate `lead-art` (style
+dessiné). `dev-tooling-assets` pose ensuite les chaînes (préambule octet-identique + tails), pin les
+seeds (`7100` hero ; `7110` partagé A/B/C), câble le slot hero `levels/belliard-troncon` si besoin,
+re-run `node scripts/check-art-prompts.mjs`, puis exécute l'enchaînement v4.4 (bootstrap → A →
+promote A → B∥C → post). `lead-art` verdicte les sorties ; j'itère sur les FAIL à **une variable près,
+seed gardée** (cap batch). `sky` et `foreground` restent hors de ce lot.
