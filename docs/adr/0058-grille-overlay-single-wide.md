@@ -99,9 +99,9 @@ that retouch step wired into `gen-belliard-decor.yml` so future regenerations st
 
 **Negative / gotchas**
 
-- **A systematic ~0.0112 (normalized) feet-vs-*painted*-opening offset** remains: the feet
+- **A systematic ~0.0112 (normalized) feet-vs-_painted_-opening offset** remains: the feet
   line (hence the grille base) sits ~0.0112 below the authored `windows` opening bottom.
-  This is the *painted* window reference, not the grille reference (feet-vs-grille is exact);
+  This is the _painted_ window reference, not the grille reference (feet-vs-grille is exact);
   the new-design overlay grille is authoritative per Bertrand's direction. Whether any baked
   ironwork in `street-wide.png` should be toned down where it now doubles with the overlay is
   a follow-up art pass, out of scope here. `align-grilles.mjs` reports this offset by design.
