@@ -5,9 +5,13 @@ name: Generate Belliard décor v3 (fanzine B&W)
 # PASS). It deliberately bypasses gen-level-art.mjs (whose manifest `style` tail
 # is colour pixel-art) and gen-from-reference kontext img2img (colour photo
 # conditioning) — the two v2 colour root causes. Pipeline:
-#   1. gen-belliard-decor.mjs  → raw text-to-image PNGs (pinned seeds)
-#   2. key-troncon-sky.mjs     → region-mask the tronçon sky to transparency
-#   3. cutout-foreground.mjs   → magenta chroma-key the foreground
+#   1. gen-belliard-decor.mjs        → raw text-to-image PNGs (pinned seeds)
+#   2. key-troncon-sky.mjs           → region-mask the tronçon sky to transparency
+#   3. cutout-foreground.mjs        → magenta chroma-key the foreground (narrow test)
+#   4. retouch-belliard-decor.mjs   → widen the key (FLUX paints a colour-cast
+#      duotone, not flat magenta, so step 3 alone leaves un-keyed magenta enclaves
+#      between balusters) + desaturate the surviving ironwork; silhouette-integrity
+#      guarded, see that script's header for the full rationale/calibration.
 # ground.png (v6) and street.png (not rendered in tronçon mode) are NOT touched.
 #
 # Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
@@ -56,6 +60,9 @@ jobs:
 
       - name: Chroma-key the foreground (magenta → transparent)
         run: node scripts/cutout-foreground.mjs
+
+      - name: Retouch the foreground (widen key + desaturate duotone cast)
+        run: node scripts/retouch-belliard-decor.mjs foreground.png
 
       - name: Commit décor
         run: |

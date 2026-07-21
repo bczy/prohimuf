@@ -676,6 +676,55 @@ Same setup as `align-windows.mjs` (built prod build served at `PREVIEW_URL`, `jp
 
 ---
 
+## align-grilles.mjs — Window/grille verification harness (single-wide belliard)
+
+Third sibling of `align-windows.mjs` / `align-troncon.mjs`, scoped to belliard's
+**single-wide** backdrop (ADR-0057: one baked `street-wide.png` plane, no more
+per-panel facade art or tronçon tiling). Neither sibling applies: there is no facade
+art to run edge/warm-glow DETECTION against, and none is needed — the window openings
+are **hand-authored** directly in `levelArt.json`'s `belliard.windows` (3 rows, 54
+zones: 12+18+24), expanded the same way `getWindowZones()`'s windows branch does (see
+`scripts/lib/windowRows.mjs`, unit-tested against the real manifest).
+
+The render (`WindowGrilles.tsx`) overlays the generated `foreground.png` ironwork
+sprite at each zone with its BOTTOM edge pinned to the enemy's own feet line (same
+formula `EnemySprite` uses) — so the grille can never independently drift off the cop;
+verifying "does the cop's feet box sit at its window opening's base" transitively
+verifies the grille.
+
+- **Verification-only** (unlike `align-windows.mjs`'s `--fix` loop): the hand-authored
+  zones are the ground truth, nothing is detected or corrected. It pushes them via
+  `__MUF_ZONES__`/`__MUF_APPLY_ZONES__`, reads back `__MUF_SLOT_RECTS__`, and reports
+  whether each rendered sprite box lands where it should. Reuses `measure()` (nearest-
+  opening pairing + COUNT/EMPTY) and `writeOverlay()` **unchanged** from
+  `align-windows.mjs` (imported, not forked) — that module's own `LEVEL_CFG`/detection
+  code paths (belliard included) are untouched.
+- **The SEAT gate** — this harness's own addition, not `measure()`'s one-sided OVERFLOW
+  check (which only flags a slot sinking BELOW its opening's base, never one floating
+  ABOVE it). Computes a two-sided verdict, `|slot.bottom − opening.base| <= SEAT_TAU`
+  (`SEAT_TAU = 0.01`, the same tolerance `align-windows.mjs`'s `TAU` uses), from
+  `measure()`'s already-paired `bySlot`, then feeds a `bySlot`-shaped array with
+  `contained` overridden by that verdict into the shared `writeOverlay()` so the debug
+  JPEG's red/magenta split reflects SEAT.
+- **Output:** `scripts/.dbg-belliard-grilles-check-i00.jpg` (gitignored) — the dimmed
+  `street-wide.png`, hand-authored openings in GREEN, rendered slot boxes in MAGENTA
+  (RED on a SEAT failure).
+
+```bash
+# the only mode — nothing is detected/corrected, so --check is accepted for CLI
+# parity with the sibling scripts but behaves identically to the default
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/align-grilles.mjs
+yarn align:grilles
+yarn align:grilles:check
+```
+
+SUCCESS = 0 SEAT defects and 0 COUNT/EMPTY defects over all 54 windows. Same setup as
+`align-windows.mjs` (built prod build served at `PREVIEW_URL`, `playwright`); `pngjs`
+decodes `street-wide.png` directly (a real opaque PNG, unlike the other levels'
+JPEG-despite-`.png` `facade.png`).
+
+---
+
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
 
 Generates the enemy archetype sprites (base cops + variants, riot/CRS,
