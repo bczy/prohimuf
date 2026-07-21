@@ -2250,3 +2250,13 @@ VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer
   a shipped level's art is its own fix-lane cycle through the art gates.
 - CHASE (producer): regenerate belliard sky via the level-art pipeline, pass the
   asset gate, then REMOVE the exemption entry.
+
+## REVIEW BERTRAND — sprites boss batch 1 (2026-07-20)
+
+- Bertrand, à la vue des 9 sprites bruts : « très mal détouré » — verdict humain
+  FAIL sur la qualité de détourage/keying du batch 1. Prioritaire pour la passe
+  technique en cours (game-graphist) : diagnostic détourage (clé, tolérance,
+  halos/fringe, arrière-plans résiduels) avant tout autre axe ; retouches
+  scriptées si récupérable, sinon findings REGEN précis (batch 2 du cap) —
+  y compris corrections du step cutout du workflow si le défaut est pipeline,
+  pas prompt.
