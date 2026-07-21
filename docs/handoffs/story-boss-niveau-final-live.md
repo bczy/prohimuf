@@ -2260,3 +2260,167 @@ VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer
   scriptées si récupérable, sinon findings REGEN précis (batch 2 du cap) —
   y compris corrections du step cutout du workflow si le défaut est pipeline,
   pas prompt.
+
+## TECHNICAL PASS (redirected mid-pass) — game-graphist (Serge) — 2026-07-21 · boss 9-asset cutout/hole crisis (Bertrand direct review)
+
+- **claim:** re-ordered per Bertrand's two direct PRIORITY INPUTs (his own visual review of the 9
+  landed `public/assets/boss/*.png`): (1) « très mal détouré » — the batch-1 cutout FAILS, (2) « et
+  attention aux trous » — confirmed interior holes on `commander_finisher`/`commander_shielded`/
+  `commander_exposed`, exactly the [S1]/[S3] dark-coat-vs-near-black-key risk flagged at my own
+  PRE-PROD pass. Measured, not eyeballed: composited every keyed PNG over magenta (`vis.mjs`,
+  scratchpad-only, not committed), pulled zoomed crops (`crop.mjs`), ran
+  `check-sprite-integrity.mjs` per file, then built a hole-audit + closability probe
+  (`hole-audit.mjs`/`locate-defect.mjs`, scratchpad) reusing `scripts/lib/morphology.mjs`
+  (`solidBodyMask`, disk closing/opening, `fillHoles`) to distinguish TRUE fabric holes from
+  legitimate pose-driven negative space (arm held clear of torso, spread-leg stance), and to test
+  whether a bigger closing radius could safely bridge each defect. Attempted a real scripted fix
+  (`sampleAplat`/`bridgeHip` from the existing `scripts/retouch-sprites.mjs`, same methodology as
+  the courier hip-bridge) on the best RETOUCH candidate before ruling it REGEN.
+
+### Root-cause finding (applies across the batch)
+
+`check-sprite-integrity.mjs` PASSED all 9 in CI and PASSES again now (dominance ~99-100%, 0
+enclaves, 0 semi-alpha) — this is a **real tooling gap, not a false Bertrand alarm**. Every true
+hole found is topologically CONNECTED to the exterior background through a channel (an edge
+notch, or a fabric-shadow trough that also reaches open background elsewhere), so it never
+registers as an "enclave" (`touchesBorder === false` is the enclave test) and dominance stays
+~100% because it's all one connected component. This is the **exact same blind spot** as the
+historical courier bug this gate's own header documents ("the legs hang on via the bike frame,
+~0.99 dominance ratio — does NOT catch it"). `fill-sprite-holes.mjs --check` also PASSES (0px would
+fill) — solidify already ran to a fixpoint at its CLOSE_R=10 disk radius; re-running it changes
+nothing, because closing radius 10 cannot bridge these gaps and, by the script's own conservative
+design (never glue a legitimate open concavity — cf. the between-spread-legs guard in
+`solidBodyMask`), it should not be blindly widened project-wide.
+
+**Compound root cause, confirmed per-asset below:** (a) GENERATION — the [S1]/[S3]/[S8]-predicted
+risk materialized: coat-fold shadows, the coat's silhouette edge at specific contour points, and
+the chandelier's iron/brass armature all rendered close enough to key-black over WIDE contiguous
+areas (not just the base garment tone the [S1] correction fixed) that `cutout-enemies.mjs`'s
+shared edge-flood + enclosed-island pass (TIGHT_BAND=20/LOOSE_BAND=55, unchanged, shared with
+every enemy/hostage sprite) read real fabric as background. (b) PIPELINE — `fill-sprite-holes.mjs`
+CLOSE_R=10 is far too small to bridge the resulting 20-80px breaches, and I confirmed (see below)
+that even testing radii up to 40 and the real enclosure-based `bridgeHip` primitive does NOT
+safely close the worst ones — they are edge-connected to true background, not sealed pockets, so
+no safe closing radius exists without risking bridging legitimate concavities elsewhere in the
+same shared scripts used by the whole roster. This is NOT a simple parameter tune.
+
+**Raw pre-cutout artifacts: NOT recoverable.** `.github/workflows/gen-boss-sprites.yml`'s
+"Upload generated sprites (push failed)" step only runs `if: failure()`; this run pushed
+successfully, so no raw artifact was ever uploaded. A re-cutout-from-raw path does not exist for
+this batch — confirmed from the workflow's own trigger logic, no API call needed.
+
+### Per-asset hole-audit table
+
+| Asset                    | Cutout/hole verdict                                       | Evidence                                                                                                                                                                                                                                                                                                                                                                 | Root cause                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `commander_shielded`     | **FAIL — REGEN**                                          | Round/notch bite through solid coat fabric at the hip/hem, bbox ~[142,24]-[186,234] cluster, ~600-1000px recoverable-looking but **edge-connected, not enclosed**: `bridgeHip` (real enclosure test, maxGap up to 35) recovers only 265px of the ~800px+ visible defect; the main round hole stays open — confirmed NOT safely bridgeable                                | (a)+(b): coat silhouette edge lost contrast vs key at this contour point, flood ate past the true boundary into solid fabric; not an enclosed pocket so no closing radius fix is safe            |
+| `commander_exposed`      | **CLEAN**                                                 | All "closability" candidates visually confirmed as legitimate pose negative space: the lunge's spread-leg V-gap (287px) and the muzzle/holster gaps. Ragged stair-step edges are correct 16-bit no-AA pixel-art style (binary alpha confirmed, 0 semi-transparent px) — cosmetic, not a keying defect                                                                    | n/a — false positive on first eyeball pass, corrected after measurement                                                                                                                          |
+| `commander_hit`          | **CLEAN**                                                 | Both flagged candidates (1456px, 365px) are the falling/reeling pistol-arm swung away from the torso ("the pistol arm falling loose, reeling off-balance") — legitimate negative space, visually confirmed via crop                                                                                                                                                      | n/a                                                                                                                                                                                              |
+| `commander_down`         | **CLEAN (minor nit)**                                     | Leg-spread gaps between the sprawled figure's separated legs are legitimate (matches `solidBodyMask`'s own spread-leg exception). One ~18px isolated opaque fleck near the outstretched hand (below the 12px speckle-sweep threshold, sub-pixel at game scale) — cosmetic, not a hole                                                                                    | n/a                                                                                                                                                                                              |
+| `commander_weakpoint`    | **CLEAN**                                                 | Both large candidates (409px, 111px) are the two arms held "wide... clear of the chest" — legitimate pose gap, confirmed by crop                                                                                                                                                                                                                                         | n/a                                                                                                                                                                                              |
+| `commander_parry_windup` | **CLEAN**                                                 | Largest candidate (2563px) is the two-handed raised-pistol arm held clear of the torso ("elbows drawn in tight... angled steeply upward") — legitimate, confirmed by crop                                                                                                                                                                                                | n/a                                                                                                                                                                                              |
+| `commander_finisher`     | **FAIL — REGEN (mandatory-sweep entry, confirmed worst)** | TWO true holes bitten straight through solid fabric: kneeling thigh/leg (~1680px) and torso/back (~839px) — ~14.6% of the figure's opaque area gone, NOT explainable by any joint/pose gap (crops show hard linework/scratch-texture crossing straight through the void, i.e. fabric erased mid-surface)                                                                 | (a): coat/trouser shadow folds rendered at near-key-black over the whole thigh and torso-back, exactly the anatomy-defect risk [S7]/Nico's gate flagged as "highest of the 9" — confirmed        |
+| `lustre`                 | **FAIL — REGEN**                                          | Multiple large bites through the solid cone/dome armature between crystal tiers (~6540px, ~13.5% of the prop), reading as a "swiss-cheese" cone rather than the intended single clean asymmetric notch, PLUS one fully disconnected orphan crystal-drop fragment (duplication/severed-thread artifact)                                                                   | (a): [S8]'s value-lock only steered the CRYSTAL DROPS lighter, not the connecting wrought-iron/brass armature MASS between tiers, which still rendered near-key-dark over a wide contiguous area |
+| `speaker_wall`           | **FAIL — REGEN (unambiguous)**                            | 94.3% of the canvas stayed fully OPAQUE (only 5.7% keyed) — sampled corners: top-left (209,215,215) cool sky-blue-grey, bottom-right (128,122,110) warm ground-grey. FLUX rendered a real outdoor rigging/sky/tent photograph, not the "solid uniform matte black background" the style tail demands — there is no flat key colour to cut against over most of the frame | (a) only, no pipeline parameter can fix a background that was never generated flat                                                                                                               |
+
+### Attempted RETOUCH (documented, tested, did not ship)
+
+Tried the established `sampleAplat`/`bridgeHip` primitives (same class already shipping in
+`scripts/retouch-sprites.mjs` for the courier hip-bridge) against `commander_shielded`'s hole with
+several `fillWin`/`maxGap` combinations (up to maxGap=35, enclosureLumMax=150). Best result: 265px
+filled near the smaller upper notch; the main visible round hole at the hem stayed open because it
+is genuinely edge-connected to true background, not a four-way-enclosed pocket — the enclosure
+test correctly refuses to bridge it (same reason a wider disk-closing radius doesn't help either,
+tested to r=40 via `solidBodyMask` reconstruction, see `hole-audit.mjs` probe). Per my mandate
+("retouch only if a documented script GENUINELY fixes it... otherwise a precise REGEN finding"), I
+am **not** shipping a partial fill that leaves the defect visible — logged as REGEN instead. No
+repo files were touched; the working tree is clean (`git status` verified empty after cleanup).
+
+### Tooling finding for `dev-tooling-assets` (directive #4 — why CI missed this)
+
+`check-sprite-integrity.mjs`'s SOFT enclave check only fires on a transparent component with
+`touchesBorder === false`; every hole found here is border-connected via a thin channel, so it is
+invisible to that check — the SAME blind spot the script's own header documents for the historical
+courier bug (dominance ~0.99, "does NOT catch it"). Recommend a **third SOFT check**: a
+"closability probe" — reconstruct `solidBodyMask` at the current CLOSE_R (10) and again at a larger
+diagnostic radius (e.g. 25), and WARN when the delta inside the figure's torso zone exceeds a
+threshold (mirroring `SUSPECT_ENCLAVE_MIN_PX`). This is exactly the `hole-audit.mjs` probe I used
+by hand for this pass; it would have surfaced `commander_shielded`/`commander_finisher`/`lustre` as
+WARN in CI without needing a human eye. Not implemented here (out of my lane — flagging for
+dev-tooling-assets to author and calibrate, same as any gate change).
+
+### l'Éden backdrop — quick pass (secondary axis, priority redirect honoured)
+
+- `facade.png`/`foreground.png` landed at 991×594 (not the global `sizes.facade` 1280×768 — a
+  dimension drift worth a dev-tooling-assets note, not diagnosed further here).
+- **Window-row count MISMATCH found:** the generated facade reads as a 3-wall perspective room
+  (angled left/right side walls + a back wall), not the flat front-elevation the prompt implied.
+  The back wall shows **4** clearly frontal, evenly-lit arched windows, not the gated "exactly 5" —
+  with 2 more arches visible on the angled side walls that are NOT part of the same evenly-spaced
+  row. `windowGrid.cols` is hard-pinned to 5 in `levelArt.json`; this is the same class of
+  rigid-grid-vs-real-art drift belliard hit twice (`8933c03`, `bb6404f`). Could not run
+  `gen-window-zones.mjs`/`align-windows.mjs` in this sandbox (`jpeg-js` dependency missing) to see
+  whether the detector still snaps acceptably — flagging for the stage-5 alignment check rather
+  than diagnosing further under this priority redirect.
+  - Separately, the windows rendered as **fully intact glazed arches** (blue-tinted glass, city
+    lights visible outside), not the [E4]-corrected "lower panes crudely boarded, upper arch open"
+    — a prompt-fidelity miss. This may actually make the openings EASIER for the alignment
+    detector (high-contrast lit rectangles) even though it drifts from the "condamnées" decay read
+    Estelle wanted — a taste call for Nico's gate, not a technical blocker by itself.
+- `foreground.png` — **CLEAN**: magenta-composited cleanly, thick bold cast-iron balustrade
+  silhouette, sharp edges, no visible fringe/halo, consistent with the proven belliard/stalingrad/
+  vitry foreground formula. No rail-merge observed at the balustrade itself (Karim's [E5] flag was
+  about the FACADE's arched windows, which I could not machine-verify per the dependency gap
+  above — visual read shows no obvious merge on the 4 visible arches, but not machine-confirmed).
+
+### What reaches Nico
+
+**Nothing from this `boss` batch reaches the ASSET GATE as-is.** 4 of 9 assets are blocked
+(`commander_shielded`, `commander_finisher`, `lustre`, `speaker_wall` — REGEN findings above); the
+other 5 (`commander_exposed`, `commander_hit`, `commander_down`, `commander_weakpoint`,
+`commander_parry_windup`) are technically CLEAN on the cutout/hole axis but I am holding the
+**whole family** back from Nico until batch 2 lands, per Bertrand's "no soft-PASS" instruction and
+because the family is judged as one printing run (§2 law 2) — shipping 5/9 now and 4/9 later would
+fragment the asset-gate review. The l'Éden backdrop's window-count mismatch is a separate, lower-
+severity finding routed to stage-5 verify / dev-tooling-assets, not a hold on the backdrop itself.
+
+### Batch-2 requirements (this is the LAST reroll under the 2-batch cap — precise, not vague)
+
+- **`commander_shielded`** — prompt: reinforce the pale-edge/rim-highlight contrast specifically at
+  the coat's hip/hem contour (the general "pale edge highlights" clause degraded at this one
+  contour point); alternative: re-roll the seed only.
+- **`commander_finisher`** — prompt: add an explicit fold-shadow floor, e.g. "no near-black shadow
+  creases; every fold in the coat rendered no darker than mid-charcoal, always clearly lighter than
+  the pitch-black backdrop" targeted at the torso and thigh; this is the [S7]/Nico's
+  highest-anatomy-risk entry materializing exactly as predicted.
+- **`lustre`** — prompt: extend the [S8] value-lock from the crystal DROPS to the connecting
+  wrought-iron/brass ARMATURE mass between tiers ("the whole armature, not just the crystal drops,
+  a solid pale-to-mid grey clearly lighter than the black backdrop"); add "a single continuous
+  chandelier, no duplicate or repeated hanging fixture" to guard the orphan-drop duplication.
+- **`speaker_wall`** — prompt: much stronger background lock; the "hand-built... on a scaffold and
+  pallet rig" phrasing likely pulls FLUX toward a documentary-photo composition (real sky/rigging)
+  that fights the style tail. Recommend trimming the photographic-scene-evoking language and/or
+  repeating "flat solid black background, no sky, no outdoor scene, no photograph" closer to the
+  subject clause; a straight seed re-roll alone is unlikely to fix this given how strongly the
+  current generation drifted (94% of canvas non-black).
+- The 5 CLEAN entries do **not** need to be in batch 2 — only reroll the 4 above; batch 2 stays
+  scoped to 4/9, consistent with the 2-batches/cycle discipline (batch 1 spent, this is the last).
+
+### Verify
+
+- `node scripts/check-sprite-integrity.mjs --file <asset>` × 9 → all PASS (confirms the tooling-gap
+  finding above — mechanical PASS is a floor, not a craft verdict, exactly per my mandate).
+- `node scripts/fill-sprite-holes.mjs --check public/assets/boss/*.png` → 0px would fill on all 9
+  (fixpoint already reached; confirms the CI solidify pass is not silently stale).
+- `git status` → clean; no repo files modified (all measurement/retouch experiments ran against
+  scratchpad copies; the one real retouch attempt did not produce a clean fix and was not applied
+  to the committed PNGs).
+- `yarn lint`/`yarn format` — not run, no repo script or asset was touched this pass.
+
+Not a `VERDICT:` line (TECHNICAL-pass annotations only, per the game-graphist role — the ASSET GATE
+verdict is Nico's, and this batch does not reach him).
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this TECHNICAL PASS entry
+  appended). No asset or script files modified.
+
+Serge — TECHNICAL PASS
