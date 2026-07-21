@@ -192,7 +192,7 @@ function getRimTexture(): Texture | null {
   roundRectPath(ctx, 40, 34, 176, 124, 12); // box footprint ≈ the crate, margin for the tail
   ctx.fillStyle = NEON;
   ctx.shadowColor = NEON;
-  for (const blur of [30, 18, 10]) {
+  for (const blur of [30, 14]) {
     ctx.shadowBlur = blur;
     ctx.fill();
   }
@@ -275,9 +275,9 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
       const rmat = rim.material as MeshBasicMaterial;
       const now = performance.now();
       if (loot.state === "VISIBLE" && loot.timer < BLINK_WINDOW) {
-        rmat.opacity = Math.sin(now * 0.03) > 0 ? 0.95 : 0.15; // ~fast blink
+        rmat.opacity = Math.sin(now * 0.03) > 0 ? 0.72 : 0.12; // ~fast blink
       } else {
-        rmat.opacity = 0.7 + Math.sin(now * 0.005) * 0.2;
+        rmat.opacity = 0.4 + Math.sin(now * 0.005) * 0.12;
       }
     }
   });
