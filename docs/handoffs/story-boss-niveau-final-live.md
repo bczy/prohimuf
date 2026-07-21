@@ -4054,3 +4054,108 @@ the finale is neither rendered (INITIAL_LEVEL falls back) nor seeded (install al
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: DONE — #3 + E9 seam fixes (dev-r3f-render). #3: `resolveBossPreviewLevel` docstring seed corrected 19991231→19991232 (the shipped K-5 re-pin; 19991231 was the gate-rejected camp-dominant seed). E9: the shipped-level boot now requires a valid `at=` capture target — a bare `?preview=boss&level=niveau-final` falls back to the non-shipped harness (finale no longer URL-playable, canon/one-shot-reveal leak closed), while every real capture flow passes `at=` so evidence 06-14 stays reproducible; the plain harness path is unchanged. Single-source gate in the pure resolver covers INITIAL_LEVEL + the persistence flag + the seam install. Gate GREEN (typecheck 0, vitest 1015/1015, lint 0, format clean); E9 empirically confirmed (no-at= → harness seed 20260719, at=phase2 → niveau-final seed 19991232). No commit/push.
+
+## 8. FIX (stage-6 pre-merge, architect triage) — dev-tooling-assets (Amelia) — E1 (regenerate=true purge safety) + E4 (boss solidify prop exclusion) — 2026-07-21
+
+- **claim:** the two dev-tooling-assets items off the architect's stage-6 pre-merge triage: (E1,
+  HIGH) `gen-level-art.yml`'s `regenerate=true` path can permanently destroy shipped art it never
+  regenerates (belliard's tronçon tiles + ground layer), then commit the deletion; (E4,
+  fold-if-free) `gen-boss-sprites.yml`'s solidify step globs all 9 boss PNGs, which would run
+  figure-oriented hole-filling over the 2 hall props' legitimate see-through gaps on any targeted
+  prop regen.
+
+### E1 — scoped purge + post-generation parity assert
+
+- **Diagnosis confirmed:** `gen-level-art.mjs`'s `LAYERS` is a fixed 4-item list
+  (`sky/facade/street/foreground`) and the script never reads `level.backdrop.tiles` at all — it has
+  no code path that ever touches belliard's `troncon-a/b/c.png` or `ground.png` (confirmed: no
+  `gen-troncon*.mjs`/equivalent generator exists anywhere in `scripts/` — those 4 files are outside
+  every generator's reach). The old `rm -rf public/assets/levels` wiped them with nothing able to
+  restore them, and the unconditional `git add -f public/assets/levels` in the commit step would
+  then stage and ship the deletion.
+- **Fix, both halves per the triage:**
+  1. **(a) Scoped purge.** Added a `--paths` mode to `scripts/gen-level-art.mjs`: prints, one per
+     line, the exact relative paths this run WILL (re)write — `LAYERS ∩ {layer : level.prompts[layer]
+!== undefined}` per level — using the identical gate the generation loop itself already applies
+     (same source of truth, cannot drift out of sync with actual behaviour). `gen-level-art.yml`'s
+     `regenerate=true` branch now purges ONLY that list (`while IFS= read -r f; do rm -f "$f"; done`)
+     instead of `rm -rf` the whole tree.
+  2. **(b) Post-generation parity assert.** After the forced regen, the same file's paths are
+     re-checked: any purged path still missing increments a counter and the step `exit 1`s with a
+     clear `::error::` line BEFORE the "Cut out foreground layer" / "Commit level art" steps run
+     (GitHub Actions halts subsequent steps on a non-zero `run:` by default — no
+     `continue-on-error` is set). This also closes the partial-failure gap: `gen-level-art.mjs`
+     catches a per-layer fetch error and continues past it (by design, so one bad network call
+     doesn't kill the whole batch), so without this assert a transient failure could ship a silent
+     deletion for just that one file.
+  3. The missing-only default path (no `regenerate` input — the marker-push / plain
+     `workflow_dispatch` path) is **untouched**, per instruction.
+- **Local dry sanity (scriptable — no real generation):** ran `node scripts/gen-level-art.mjs
+--paths` for real against the live manifest — confirms belliard's `ground.png`/`troncon-a/b/c.png`
+  are correctly ABSENT from the purge list, and niveau-final correctly lists only
+  `facade.png`/`foreground.png` (sky/street still dropped). Then, in a scratch copy (never touching
+  the real `public/assets/levels`), replayed the exact bash purge + parity-assert snippet with a
+  stub standing in for the real generator:
+  - **Case A (full success):** purge → all 14 real generatable paths removed, the 4
+    tronçon/ground files in belliard survive untouched → stub "regenerates" everything → parity
+    check: 0 missing → **would proceed to cutout+commit** (matches intended pass-through behaviour).
+  - **Case B (partial failure, one file "fails to regenerate"):** same purge → stub regenerates 13
+    of 14, skips `niveau-final/foreground.png` (simulating a network hiccup) → parity check reports
+    exactly 1 missing, prints `::error::purged file did not regenerate: …`, **simulated exit code
+    1** → confirmed this halts the job before the cutout/commit steps in the real workflow (no
+    `continue-on-error`) → the 4 tronçon/ground files remain intact throughout, in both cases.
+
+### E4 — boss solidify step excludes the 2 hall props
+
+- **Fix:** the "Solidify figures (fill chroma-key holes)" step in `gen-boss-sprites.yml` now builds
+  an explicit `figures=()` bash array by globbing `public/assets/boss/*.png` and skipping any
+  basename equal to `lustre.png`/`speaker_wall.png`, then calls `fill-sprite-holes.mjs` (both the
+  write pass and `--check`) on that array only — falls through to a no-op log line if the array is
+  empty (a props-only regen, e.g. this exact reroll cycle where only `lustre.png` is currently
+  missing). One-line rationale comment added: `fill-sprite-holes.mjs`'s solid-body reconstruction
+  assumes a standing-figure silhouette, so running it on the 2 props would fill their legitimate,
+  intentional see-through gaps (inter-crystal-drop gaps, cable/cabinet gaps) as if they were keying
+  holes; the props are already covered by the figure-agnostic HARD checks + WARN-only
+  closability/enclave probe in the (unchanged) "Sprite integrity gate" step that follows.
+- **Despeckle deliberately NOT scoped** (noted in the same comment): the despeckle sweep lives
+  inside `gen-boss-sprites.mjs` itself (`tryDespeckle`, called per-generated-file), not as a
+  workflow step, and only removes sub-12px debris islands — a different, size-bounded operation
+  that cannot eat a large legitimate concavity (the risk class E4 names), so it is out of scope for
+  this exclusion.
+- The "Sprite integrity gate" step (loops `check-sprite-integrity.mjs --file` over all 9 PNGs) is
+  **unchanged** — it already treats non-figure props correctly (HARD checks figure-agnostic, SOFT
+  torso-zone WARN harmless-if-noisy on props, per the existing comment).
+
+### Verify
+
+- YAML hand-review of both files (full read before and after editing); `python3 -c
+"yaml.safe_load(...)"` parses both cleanly. `actionlint` not available in this sandbox — every
+  changed `run:` block extracted and checked with `bash -n` (syntax-only, no execution): all pass.
+- `yarn typecheck` → green.
+- `yarn lint` → green (exit 0).
+- `yarn format:check` / `npx prettier --check` on `scripts/gen-level-art.mjs` +
+  both workflow YAMLs → clean.
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 pre-existing/concurrent warnings,
+  unchanged).
+- `yarn vitest run` → 75/75 files, 1015/1015 tests green (grew slightly from concurrent lanes'
+  in-flight work, unrelated to this fix).
+- **Scope discipline:** touched only the two workflow YAMLs + `gen-level-art.mjs`'s new `--paths`
+  mode (additive, the existing `--list`/`--asset`/generation-loop code paths untouched); did not
+  touch `gen-boss-sprites.mjs`, `fill-sprite-holes.mjs`, or `check-sprite-integrity.mjs`.
+
+### How the parity assert fails safe (for the record)
+
+`exit 1` inside the "Generate level art" step's `run:` block, with no `continue-on-error` set on
+that step ⇒ GitHub Actions marks the step (and the job) failed and **skips every subsequent step**
+in the job, including "Cut out foreground layer" and "Commit level art" — so a partial-failure
+regen can never reach `git add -f`/`git commit`/`git push`. The existing `if: failure()` upload step
+still runs (uploads whatever partial art exists as a diagnostic artifact), matching the workflow's
+established failure-handling shape; nothing is silently lost, and nothing bad is ever pushed.
+
+- **File List:**
+  - `scripts/gen-level-art.mjs` (MODIFIED — new `--paths` mode + usage-doc update)
+  - `.github/workflows/gen-level-art.yml` (MODIFIED — `regenerate=true` path: scoped purge +
+    post-generation parity assert; missing-only default path untouched)
+  - `.github/workflows/gen-boss-sprites.yml` (MODIFIED — solidify step scoped to the 7 figures,
+    excludes `lustre.png`/`speaker_wall.png`, with rationale comment)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)

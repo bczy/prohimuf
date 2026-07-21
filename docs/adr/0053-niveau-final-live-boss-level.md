@@ -250,8 +250,7 @@ verdict: CLEAN").
    `BossQteSprite.tsx` — drift-guarded, zero pixel change. This is the ONE sanctioned touch to
    `bossQteSystem.ts` (see the D2/D3 correction below).
 2. **K-5 seed re-pin, `targetSeed` `19991231` → `19991232`** (2026-07-20). Owned by
-   `game-designer` (Sacha)'s stage-5 design-acceptance leg-2 gate (shard §"VERIFY (stage 5, leg
-   2) — game-designer (Sacha) — 2026-07-20 — design-acceptance"): the diegetic seed `19991231`
+   `game-designer` (Sacha)'s stage-5 design-acceptance leg-2 gate (shard §"VERIFY (stage 5, leg 2) — game-designer (Sacha) — 2026-07-20 — design-acceptance"): the diegetic seed `19991231`
    **FAILED** K-5 acceptance criterion (a) — camp-vital dominant at the tightened
    `BOSS_VITAL_CATCH_RADIUS 0.11` catch (ADR-0052 Revision 2, AMENDMENT A1-R2) — an
    N=500-verified, data-only re-pin to `19991232` (nearest clean seed) resolved it; re-verified
@@ -290,7 +289,7 @@ The accurate reuse map, per file:
 - **`src/render/scene/App.tsx` — the C-QA3 capture seam + its persistence double-guard**, both
   view-side, architect-ruled clean at the same stage-6 triage: `resolveBossPreviewLevel`/
   `isBossSeamShippedLevel` (`bossHarness.ts` + `App.tsx`) let the dev-only `?preview=boss&level=
-  niveau-final` seam boot the SHIPPED `niveau-final` level's real `bossQteSpec` over its own
+niveau-final` seam boot the SHIPPED `niveau-final` level's real `bossQteSpec` over its own
   backdrop for capture (qa-lead C-QA3, shard §"9. FIX (stage 5, C-QA3 correction)");
   `BOSS_SEAM_SHIPPED_LEVEL` folds into the `LEVEL_COMPLETE` unlock/save guard as an independent
   second guard behind the pre-existing `PREVIEW_SCREEN !== null` early-return, so a seam-booted
