@@ -246,7 +246,9 @@ stage-5 watch-list.
 
 **Follow-ups (do NOT block merge):**
 1. Close the shield-cover-prop art gate (gen-boss-sprites dispatch for shield_cover_* → texture swap).
-2. Hostage/boss coexistence on Belliard (ADR-0059 D3 option A) — scoped follow-up story if wanted.
+2. ~~Hostage/boss coexistence on Belliard~~ — CLOSED post-acceptance (Bertrand, 2026-07-21): Belliard
+   now ships BOTH, per ADR-0059 D3 option A / Amendment 3 — sequential, never concurrent, asserted at
+   load via a timing-margin check (not the old blanket ban).
 3. Stage-5 playtest: winnability as first boss (level-1-gate difficulty) + W1/W2/W3 with lever 6 live
    - the +33% vital-ring anti-camp softening — one item on the pinned targetSeed.
 4. (cosmetic) Confirm the 0058→0059 (and 0059→0060) renumber notes in the docs index.

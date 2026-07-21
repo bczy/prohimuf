@@ -26,6 +26,21 @@
 > `shouldTriggerBossFinale(spec, qte)`. Implemented in `stateMachine.ts` (guarded quota-win to non-boss,
 > boss created at timer expiry) + `bossQteSystem.ts`; covered by the stateMachine timed-finale tests.
 
+> **AMENDMENT 3 (2026-07-21, Bertrand) — keep BOTH the hostage QTE and the boss; supersedes the
+> "drops the hostage" clause of Amendment 1.** Amendment 1 said enabling the boss drops Belliard's
+> hostage QTE (forced by the then-blanket `stateMachine` guard). Bertrand's call: keep both — resolve
+> this ADR's D3 "sequential coexistence" follow-up now instead of deferring it. This is SAFE by
+> construction now that the boss is a TIMED FINALE (Amendment 2): the boss is created no earlier than
+> `timeSeconds` of non-frozen play, and the hostage QTE (`triggerAtElapsedSeconds: 12`) freezes BOTH
+> `elapsedSeconds` and the level timer while active, so it always fully resolves (rescue or execution,
+> worst case ≈22s) tens of seconds before Belliard's 90s timer could expire and create the boss — the
+> two never run concurrently even though both are authored. The `createInitialState` guard is
+> relaxed from an unconditional "never both" throw to a NUMERIC timing-margin assertion: it still
+> fails LOUD at level load if a future retune (shorter `timeSeconds`, a later hostage trigger, more
+> `maxBlownPeeks`) ever closes that margin, so the safety property stays enforced, not just true today
+> by luck. `levels.ts` authors `hostageQte` unconditionally on Belliard again; `bossQteSpec` stays
+> behind `BELLIARD_BOSS_ENABLED` as before. D3's coexistence follow-up is now CLOSED, not just named.
+
 - **Number:** 0059. Renumbered twice across successive rebase-onto-main cycles as `main` claimed each
   number first: originally 0058, but `main` shipped its own `0058-grille-overlay-single-wide.md` before
   this branch merged, so this ADR moved 0058 → 0059 (the sibling shield-break ADR moved 0059 → 0060 in
@@ -123,7 +138,13 @@ bossQteSpec: BELLIARD_BOSS_ENABLED ? { /* game-designer defaults */ } : undefine
 - **The data flag** keeps the decision in the game-data layer where placement belongs, reuses the proven
   null-vs-non-null byte-identity property directly, and makes flip-on data-only. **Chosen.**
 
-### D3 — LOAD-BEARING PRECONDITION for flip-on: resolve the hostage/boss mutual-exclusion (design + `pm` call, my sign-off required)
+### D3 — RESOLVED (Amendment 3, 2026-07-21): option (A), Belliard keeps its hostage duel AND the boss
+
+**Bertrand decided (A) directly** — the discussion below is kept as the record of the options
+considered; see Amendment 3 for what actually shipped: the `stateMachine.ts:115` mutual-exclusion
+invariant is relaxed from "never both authored" to a **numeric timing-margin assertion** (the hostage
+must fully resolve, worst case, well before the boss's timed-finale trigger can fire), and Belliard
+authors `hostageQte` unconditionally again alongside its flagged `bossQteSpec`.
 
 Belliard authors a live `hostageQte`; `stateMachine.ts:100` throws on any level with BOTH. **The story
 did not flag this.** It does **not** block the merge (flag OFF ⇒ no `bossQteSpec` ⇒ no throw), but it

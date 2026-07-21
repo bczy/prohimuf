@@ -64,12 +64,15 @@ export interface LevelConfig {
 }
 
 /**
- * The Belliard boss decouple seam (story-boss-belliard-live, AC2). When TRUE, `belliard` authors
- * the `bossQteSpec` and DROPS its `hostageQte` (the two set-pieces cannot coexist — see below), so
- * the Commandant duel becomes Belliard's required end-gate: the TIMED FINALE (ADR-0059 Amendment 2) —
- * the boss is created at TIMER EXPIRY, not on the quota (which is score-only on a boss level) → WON:
- * LEVEL_COMPLETE / LOST: level fails. When FALSE, the level authors NO `bossQteSpec` and keeps the hostage QTE, so
- * `belliard` is byte-for-byte identical to the pre-boss build.
+ * The Belliard boss decouple seam (story-boss-belliard-live, AC2). When TRUE, `belliard` ALSO
+ * authors the `bossQteSpec` — ADDED to its always-present `hostageQte`, not replacing it (Bertrand,
+ * 2026-07-21: keep both) — so the Commandant duel becomes Belliard's required end-gate: the TIMED
+ * FINALE (ADR-0059 Amendment 2) — the boss is created at TIMER EXPIRY, not on the quota (which is
+ * score-only on a boss level) → WON: LEVEL_COMPLETE / LOST: level fails. The hostage QTE (triggers
+ * at 12s, resolves well within the level's 90s) always fires first and is long done before the boss
+ * can exist — sequential, never concurrent, asserted at load (see the hostage/boss timing-margin
+ * check in `createInitialState`, stateMachine.ts). When FALSE, the level authors NO `bossQteSpec`,
+ * so `belliard` is byte-for-byte identical to the pre-boss build (hostage QTE only).
  *
  * NOTE — enabled ahead of canon art (Bertrand, 2026-07-21): lead-art ruled the provisional fallback
  * sprite a placeholder (the canon Commandant art is prepped for CI but not yet generated/gated), so
@@ -132,38 +135,37 @@ export const LEVELS: readonly LevelConfig[] = [
     // 12 = −4.8): centre −5 puts the 2.0-tall tableau's feet on the ground line at −6.
     // He stands still; the sole clock is `maxBlownPeeks` blown openings before the
     // execution (the retreat/distance clock is removed).
-    // When the boss is enabled it REPLACES the hostage QTE as Belliard's set-piece — the two
-    // cinematics cannot coexist (the `stateMachine` guard: the boss freezes the clock the hostage
-    // trigger reads, so a co-authored hostage would be lost — `createInitialState` in stateMachine.ts
-    // THROWS at load if a level authors both, so this drop is enforced fail-loud, not silent).
-    // Boss OFF ⇒ the hostage QTE exactly as before; boss ON ⇒ no hostage QTE on Belliard this run.
-    ...(BELLIARD_BOSS_ENABLED
-      ? {}
-      : {
-          hostageQte: {
-            triggerAtElapsedSeconds: 12,
-            zoomSeconds: 2,
-            // x nudged off the origin so the tableau reads against a facade at the ×2.4
-            // zoom. Under ADR-0057's single-wide opaque décor there is no longer a sky
-            // gap at x=0 (the old black-void regression, PR #76), so 9.9 is now kept as
-            // a design constant: x_norm 0.655 = solid facade, clear of the passage
-            // (0.39) and the pignon (0.80) per the street-wide repositioning spec.
-            anchor: { x: 9.9, y: -5 },
-            maxBlownPeeks: 4,
-            peekCadenceSeconds: 1.5,
-            // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
-            // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
-            peekDurationSeconds: 1.5,
-            // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
-            // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
-            captorHp: 3,
-            // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
-            // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
-            // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
-            // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
-            targetSeed: 20260718,
-          },
-        }),
+    // Hostage QTE + boss now COEXIST on Belliard (Bertrand, 2026-07-21 — keep both, don't drop the
+    // hostage). This is SAFE by construction, not just by policy: the hostage triggers at 12s and
+    // resolves (rescue or execution) within ~10s worst case, and the boss is now a TIMED FINALE
+    // (ADR-0058 Amendment 2) — created only at TIMER EXPIRY, i.e. at `timeSeconds` (90s), never
+    // earlier. So the hostage is always long resolved before the boss can exist; the two cinematics
+    // never run concurrently even though both are authored. `createInitialState` in stateMachine.ts
+    // ASSERTS this timing margin (not a blanket ban) — fails LOUD at load if a future retune ever
+    // lets the hostage's worst case run past the boss's earliest trigger.
+    hostageQte: {
+      triggerAtElapsedSeconds: 12,
+      zoomSeconds: 2,
+      // x nudged off the origin so the tableau reads against a facade at the ×2.4
+      // zoom. Under ADR-0057's single-wide opaque décor there is no longer a sky
+      // gap at x=0 (the old black-void regression, PR #76), so 9.9 is now kept as
+      // a design constant: x_norm 0.655 = solid facade, clear of the passage
+      // (0.39) and the pignon (0.80) per the street-wide repositioning spec.
+      anchor: { x: 9.9, y: -5 },
+      maxBlownPeeks: 4,
+      peekCadenceSeconds: 1.5,
+      // Rebalanced for the spatial-colour ring: the exposure runs 1.5 s so each peek presents
+      // ~4 decelerating (zero-velocity) firing windows as the ring roams the wider anatomy box.
+      peekDurationSeconds: 1.5,
+      // Captor hit points — the kill currency (spatial-colour revision). 3 HP ⇒ two VITAL
+      // ring hits (2 each) or a VITAL + a LIMB deplete the rescue.
+      captorHp: 3,
+      // Fixed authored seed for the deterministic, replay-safe ring wander (F3 may curve it).
+      // K-5 PIN (re-pinned for the hitbox-diagram bands + roam): with peekDuration 1.5 /
+      // LEG_DURATION 0.38 (4 decel waypoints/peek) this seed presents ≥1 on-captor (vital∪limb)
+      // decelerating window in EVERY one of the 4 peeks (per-peek counts 3/2/4/3).
+      targetSeed: 20260718,
+    },
     // Belliard-first armament crates (ADR-0055 D8). Generic window spawn (pm ruling
     // #3), not per-level scripted placement. Cadence/pool are verify-tunable (§7),
     // not gated: a crate every ~15 s, carrying `auto` or `spread`.

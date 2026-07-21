@@ -689,9 +689,9 @@ describe("tickQte — result hold → DONE (once per level)", () => {
 describe("K-5 — the pinned belliard seed presents ≥1 on-captor decel window per peek", () => {
   const belliard = LEVELS.find((l) => l.id === "belliard")?.hostageQte;
 
-  // When BELLIARD_BOSS_ENABLED, the boss REPLACES belliard's hostage QTE, so belliard carries no
-  // hostage and this belliard-specific seed pin is moot — vitry's equivalent K-5 test below covers
-  // the hostage QTE that ships in normal play. Skip (don't fail) when belliard has no hostage.
+  // Belliard authors its hostage QTE unconditionally (ADR-0058 D3: it coexists with the boss,
+  // sequential not concurrent — Bertrand, 2026-07-21). Skip (don't fail) only if some future change
+  // ever drops it again; vitry's equivalent K-5 test below covers the hostage QTE either way.
   it.skipIf(belliard === undefined)(
     "each of the 4 peeks has a vital∪limb decelerating waypoint (fair firing window)",
     () => {
@@ -963,8 +963,8 @@ describe("real level data honours the safety floors", () => {
 
   it("belliard pins: captorHp 3, a 1.5 s peek exposure and a finite seed", () => {
     const belliard = LEVELS.find((l) => l.id === "belliard")?.hostageQte;
-    // BELLIARD_BOSS_ENABLED replaces belliard's hostage QTE with the boss; when it does, belliard
-    // carries no hostage and these pins are moot (vitry's hostage pins cover the live QTE). Skip.
+    // Belliard authors its hostage QTE unconditionally, coexisting with the boss (ADR-0058 D3).
+    // The `undefined` early-return is defensive only, kept for parity with the K-5 test above.
     if (belliard === undefined) return;
     expect(belliard.captorHp).toBe(3);
     expect(belliard.peekDurationSeconds).toBe(1.5);
