@@ -13,8 +13,9 @@
  *   - the render (`WindowGrilles.tsx`) overlays the generated `foreground.png`
  *     ironwork sprite at each zone with its BOTTOM edge pinned to the enemy's
  *     own feet line (same formula `EnemySprite` uses) — so the grille can never
- *     independently drift off the cop; verifying "does the cop's feet box sit at
- *     its window opening's base" transitively verifies the grille.
+ *     independently drift off the cop; verifying "does the cop's feet line match
+ *     the feet-seating CONTRACT" (see THE SEAT GATE below) transitively verifies
+ *     the grille.
  *
  * This is a VERIFICATION-ONLY harness (unlike align-windows.mjs's --fix loop):
  * the hand-authored zones are the ground truth, nothing is detected or
@@ -29,15 +30,29 @@
  * THE SEAT GATE (this harness's own addition, not `measure()`'s one-sided
  * OVERFLOW check): `measure()`'s `contained` only flags a slot sinking BELOW its
  * opening's base — it says nothing about a slot floating ABOVE it, which here
- * would show as the whole cop+grille assembly hovering clear of its window. The
- * invariant Bertrand wants gated is the grille's literal construction ("bottom
- * edge on the feet line" ⇐⇒ feet line should sit AT the opening's base, not
- * above or below it), so this script computes its own two-sided SEAT verdict —
- * `|slot.bottom − opening.base| <= SEAT_TAU` — from `measure()`'s already-paired
- * `bySlot` (reusing its nearest-centre matching + COUNT/EMPTY, not re-deriving
- * them), then feeds a `bySlot`-shaped array with `contained` overridden by that
- * verdict into the shared `writeOverlay()` so the debug JPEG's red/magenta
- * split reflects SEAT, not the (looser, one-sided) OVERFLOW rule.
+ * would show as the whole cop+grille assembly hovering clear of its window. So
+ * this script computes its own two-sided SEAT verdict from `measure()`'s
+ * already-paired `bySlot` (reusing its nearest-centre matching + COUNT/EMPTY,
+ * not re-deriving them), then feeds a `bySlot`-shaped array with `contained`
+ * overridden by that verdict into the shared `writeOverlay()` so the debug
+ * JPEG's red/magenta split reflects SEAT, not the (looser, one-sided) OVERFLOW
+ * rule.
+ *
+ * The SEAT target is NOT the opening's own box-bottom (`opening.y+opening.h/2`)
+ * — the rendered feet line is DESIGNED to sit below that by a fixed fraction of
+ * the opening height, on every level: `EnemySprite`'s plane is `ENEMY_PLANE_SCALE`
+ * (1.3) taller than the opening and lifted by `ENEMY_BODY_LIFT` (0.02), so the
+ * feet line sits `opening.h · (ENEMY_PLANE_SCALE·(0.5−ENEMY_BODY_LIFT) − 0.5)`
+ * (≈0.124·opening.h) below the box bottom — see `FEET_OVERSHOOT_FRAC` below,
+ * which derives this from the two constants rather than hardcoding ≈0.124.
+ * `align-windows.mjs` never gates this directly (its one-sided OVERFLOW check
+ * tolerates any amount of undershoot above the base); `WindowGrilles.tsx` pins
+ * the grille's own bottom to this SAME feet line, so "rendered feet line ==
+ * the CONTRACTED feet line" is the invariant that actually verifies the
+ * grille — not "feet at the box bottom", which the render was never designed
+ * to do. Green now means "feet obey the seating contract"; it still catches a
+ * real regression (e.g. a facade-stretch or ENEMY_PLANE_SCALE change) that
+ * moves feet off that contract.
  *
  * Usage:
  *   node scripts/align-grilles.mjs [--check]
@@ -86,6 +101,21 @@ const RENDER_TIMEOUT = 20000;
 // here it bounds a two-sided equality instead of a one-sided ⊆.
 const SEAT_TAU = 0.01;
 
+// Mirrors src/render/scene/EnemySprite.tsx's exported constants. A plain-node
+// harness cannot import a .tsx render module (no JSX/TS loader here), so these
+// are copied values, not a re-derivation — keep in lockstep with EnemySprite.tsx
+// by hand if either ever changes (same precedent as align-troncon.mjs's own
+// BODY_LIFT_COEFF comment).
+const ENEMY_PLANE_SCALE = 1.3;
+const ENEMY_BODY_LIFT = 0.02;
+// Derived (not hardcoded): the plane's designed overshoot of the rendered feet
+// line BELOW the opening's own box-bottom, as a fraction of the opening height
+// — see GameScene.tsx's `bodyY = worldY + planeH * ENEMY_BODY_LIFT` and
+// `planeH = sizeY * ENEMY_PLANE_SCALE`, which reduce (in normalized, y-down
+// coords) to `slot.bottom = opening.y + opening.h/2 + opening.h *
+// (ENEMY_PLANE_SCALE * (0.5 - ENEMY_BODY_LIFT) - 0.5)`. ≈ 0.124.
+const FEET_OVERSHOOT_FRAC = ENEMY_PLANE_SCALE * (0.5 - ENEMY_BODY_LIFT) - 0.5;
+
 // ---- Browser plumbing (same idiom as align-windows.mjs / align-troncon.mjs) ----
 
 async function enterLevel(page) {
@@ -123,19 +153,24 @@ function readBackdropImage(file) {
   return { W, H, data };
 }
 
+/** The CONTRACTED feet line for one opening — the box-bottom PLUS the designed
+ *  overshoot (see FEET_OVERSHOOT_FRAC above), not the box-bottom itself. */
+function expectedFeetLine(opening) {
+  return opening.y + opening.h / 2 + opening.h * FEET_OVERSHOOT_FRAC;
+}
+
 /**
  * Two-sided SEAT verdict for one paired {slot, opening}: does the rendered
- * sprite's feet-box BOTTOM sit at the opening's base, within SEAT_TAU? Unlike
- * measure()'s one-sided `contained` (⊆, never flags floating ABOVE the base),
- * this is symmetric — see the file header for why that is the invariant that
- * actually gates "the grille sits where it should" (the grille's own bottom
- * edge is derived from this same feet line by construction, so it can never
- * disagree with it independently).
+ * sprite's feet-box BOTTOM sit at the CONTRACTED feet line (not the opening's
+ * raw box-bottom — see the file header), within SEAT_TAU? Unlike measure()'s
+ * one-sided `contained` (⊆, never flags floating ABOVE the base), this is
+ * symmetric — the invariant that actually gates "the grille sits where it
+ * should" (the grille's own bottom edge is derived from this same feet line by
+ * construction, so it can never disagree with it independently).
  */
 function seated(slot, opening) {
   const bottom = slot.y + slot.h / 2;
-  const base = opening.y + opening.h / 2;
-  return Math.abs(bottom - base) <= SEAT_TAU;
+  return Math.abs(bottom - expectedFeetLine(opening)) <= SEAT_TAU;
 }
 
 async function main() {
@@ -186,11 +221,11 @@ async function main() {
       const ok = seated(b.slot, b.opening);
       if (!ok) {
         const bottom = b.slot.y + b.slot.h / 2;
-        const base = b.opening.y + b.opening.h / 2;
+        const expected = expectedFeetLine(b.opening);
         seatDefects.push(
           `panel 0: SEAT slot@(${b.slot.x.toFixed(3)},${b.slot.y.toFixed(3)}) ` +
-            `bottom=${bottom.toFixed(4)} ≠ opening base=${base.toFixed(4)} ` +
-            `(Δ=${(bottom - base).toFixed(4)}, τ=${SEAT_TAU})`,
+            `bottom=${bottom.toFixed(4)} ≠ expected feet line=${expected.toFixed(4)} ` +
+            `(Δ=${(bottom - expected).toFixed(4)}, τ=${SEAT_TAU})`,
         );
       }
       return { ...b, contained: ok };
@@ -227,4 +262,4 @@ if (invokedDirectly) {
   });
 }
 
-export { seated, readBackdropImage };
+export { seated, expectedFeetLine, readBackdropImage };
