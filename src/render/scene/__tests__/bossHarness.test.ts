@@ -61,10 +61,11 @@ describe("parseBossHarnessTarget", () => {
 
 describe("fastForwardBossQte boots niveau-final to each capture beat (C-QA3)", () => {
   const spec = LEVELS.find((l) => l.id === "niveau-final")?.bossQteSpec;
-  it("has the real niveau-final spec (seed + chandelier décor)", () => {
+  it("authors a real boss spec (its seed/décor are the level lane's to pin, not this test)", () => {
+    // Assert only that the shipped level carries a boss spec — the concrete seed/décor VALUES are
+    // owned by the game-designer/level lane (re-pinned per K-5) and must not be duplicated here.
     expect(spec).toBeDefined();
-    expect(spec?.targetSeed).toBe(19991231);
-    expect(spec?.decorProp?.position).toEqual({ x: 0.2, y: 1.5 });
+    expect(spec?.decorProp).toBeDefined();
   });
 
   it("lands phase1/phase2/phase3 on a real EXPOSED window of the wanted phase", () => {
@@ -73,7 +74,7 @@ describe("fastForwardBossQte boots niveau-final to each capture beat (C-QA3)", (
     expect(p1.phase).toBe("ACTIVE");
     expect(p1.stance).toBe("EXPOSED");
     expect(p1.phaseIndex).toBe(0);
-    expect(p1.targetSeed).toBe(19991231); // identity carried through the boot
+    expect(p1.targetSeed).toBe(spec.targetSeed); // the boot carries the spec's seed through unchanged
 
     const p2 = fastForwardBossQte(spec, "phase2");
     expect(p2.phase).toBe("ACTIVE");

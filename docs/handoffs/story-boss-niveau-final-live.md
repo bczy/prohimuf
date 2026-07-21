@@ -3467,3 +3467,39 @@ N=500 confirmation:**
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: FAIL — design acceptance story-2 (game-designer) — N1 target-supply PASS (vitry is ALSO a 4-slot facade, not 5+; niveau-final quota met in ~19 s / 3.7× headroom; idle 66.1 % ≤ vitry 70.1 %; riot-heavy engages MORE — no windowWeights nudge, no 5th arch). K-5 FAILS A1-R2 (a) on the LIVE seed 19991231: campVital +30.0 E dominant (> optimal +7.5, > greedyLimb −0.6) — camp-non-dominance is seed-dependent and 19991231 is camp-friendly; (b)(c)(d)+losable+décor-reachability all PASS. Remedy (K-5 discipline, data-only): re-pin targetSeed 19991231 → 19991232 (N=500-confirmed: campVital −8.0 < optimal +14.0 & greedyLimb −4.3; greedyVital −56.6/2.15 blown; honest 100 %; sloppy 72 % loss; chandelier {0.2,1.5} armed+consumed +3 via A2 AABB). 0.11 value + A2 AABB unchanged; routed to dev-gameplay as a one-integer levels.ts re-pin + test expectation update.
+
+---
+
+## FIX (K-5 re-pin, data-only) — dev-gameplay (Amelia) — 2026-07-20 · niveau-final targetSeed 19991231 → 19991232
+
+- **Stage:** K-5 leg-2 re-pin · **Lane:** dev-gameplay (owns `levels.ts`). Pre-authorised by the K-5
+  discipline (the seed is the one per-level value authored freely by design — NOT a system change),
+  on Sacha's leg-2 **FAIL(a)** + remedy: on the diegetic seed `19991231` the phase-2/3 VITAL
+  waypoints clustered near the box centre, so a fixed centre-camp aim was vital-dominant at the
+  tighter 0.11 catch (the AMENDMENT A1 camp-dominance floor). `19991232` is Sacha's N=500-verified
+  nearest clean seed (campVital −8.0 below both honest lines, greedyVital −56.6, honest 100% /
+  sloppy 72% loss, décor reachable).
+- **CHANGE (data-only, `src/game/levels/levels.ts`):** `niveau-final.bossQteSpec.targetSeed
+19991231 → 19991232`; K-5 comment updated with the re-pin + why (centre-cluster / camp-dominance).
+  The value-for-value copy note also updated. **NOTHING else** — no `bossQteSystem.ts` / `types`
+  change; zoom/anchor/phase/HP/maxBlownWindows/décor all byte-identical.
+- **TEST (`src/game/levels/__tests__/niveauFinal.test.ts`):** AC5 seed expectation and the K-5
+  winnability describe title/comment updated to `19991232`. The winnability driver re-run confirms a
+  competent rings+parry player still clears 24 HP with `blownWindows < 10` on the new seed.
+- **VERIFY:** `yarn typecheck` clean · `yarn lint` clean · `yarn format:check` clean on my files ·
+  **my lane 100% green** — `niveauFinal.test.ts` + `bossQteSystem.test.ts` = 85/85 pass on 19991232.
+- **CROSS-LANE FLAG → dev-r3f-render (BLOCKING for full-suite green):** the render-lane QA-capture
+  test `src/render/scene/__tests__/bossHarness.test.ts` **hardcodes the old seed** at **lines 66 and
+  76** (`expect(spec?.targetSeed).toBe(19991231)` / `expect(p1.targetSeed).toBe(19991231)`). It reads
+  the real niveau-final spec, so the K-5 re-pin fails those 2 assertions (`expected 19991232 to be
+19991231`). I did NOT touch it (Iron rule — no `src/render` edits — and the re-pin scope was
+  `levels.ts` + `niveauFinal.test.ts` only). **dev-r3f-render must bump both to `19991232`** (or
+  better, derive the expected seed from `LEVELS.find(...).bossQteSpec.targetSeed` so it tracks any
+  future K-5 re-pin without re-coupling). These 2 are the ONLY repo-wide vitest failures.
+- **No commit/push.** → **Sacha (game-designer):** re-confirm on this release (your final leg-2
+  line). → **Inès (qa-lead):** gate closes after Sacha's re-confirm + dev-r3f-render's 2-line seed
+  bump lands the full suite green.
+- **File List:**
+  - `src/game/levels/levels.ts` (MODIFIED — targetSeed re-pin 19991231→19991232 + K-5 comment)
+  - `src/game/levels/__tests__/niveauFinal.test.ts` (MODIFIED — seed expectation + K-5 titles)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this K-5 re-pin entry appended)

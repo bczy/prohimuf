@@ -97,8 +97,9 @@ describe("niveau-final level authoring (ADR-0053 D2/D4)", () => {
     expect(spec.bossHp).toBe(harness.bossHp);
     expect(spec.maxBlownWindows).toBe(harness.maxBlownWindows);
     expect(spec.anchor).toEqual({ x: 0, y: -5 });
-    // The two re-authorings — distinct from the harness by design.
-    expect(spec.targetSeed).toBe(19991231);
+    // The two re-authorings — distinct from the harness by design. Seed re-pinned at K-5 leg-2
+    // (19991231 → 19991232: the NYE seed clustered the vital waypoints centre → camp-dominant).
+    expect(spec.targetSeed).toBe(19991232);
     expect(spec.targetSeed).not.toBe(harness.targetSeed);
     expect(spec.decorProp).toEqual({ position: { x: 0.2, y: 1.5 }, armPhaseIndex: 1 });
     expect(spec.decorProp).not.toEqual(harness.decorProp);
@@ -177,12 +178,12 @@ function competentClears(spec: BossQteSpec): { won: boolean; lost: boolean; blow
   return { won: false, lost: false, blown: qte.blownWindows };
 }
 
-describe("niveau-final seed winnability (K-5 discipline, targetSeed 19991231)", () => {
+describe("niveau-final seed winnability (K-5 discipline, targetSeed 19991232)", () => {
   it("a competent player clears 24 HP before the blown-window clock trips on the pinned seed", () => {
     const spec = requireBossSpec();
     const result = competentClears(spec);
     // If this fails, the seed is NOT winnable with the differentiated kit — re-pin
-    // (19991231 + n) per the K-5 discipline and update levels.ts + this expectation.
+    // (19991232 + n) per the K-5 discipline and update levels.ts + this expectation.
     expect(result.lost).toBe(false);
     expect(result.won).toBe(true);
     expect(result.blown).toBeLessThan(spec.maxBlownWindows);

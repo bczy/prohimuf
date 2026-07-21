@@ -224,7 +224,7 @@ export const LEVELS: readonly LevelConfig[] = [
   // `hostageQte` (AC1 — mutual exclusion by construction; civilian/hostage_taker keep default
   // weight 0 and stay out of the window pool). `bossQteSpec` is a value-for-value copy of the tuned
   // harness combat block (zoom 2 / phase 3 / bossHp 24 / maxBlownWindows 10 / anchor {0,-5}) with
-  // ONLY `targetSeed` re-pinned (19991231, the diegetic date — winnability re-verified per the K-5
+  // ONLY `targetSeed` re-pinned (19991232, K-5 leg-2 re-verified — winnability + camp-dominance per the K-5
   // discipline) and `decorProp` re-sited to the hall chandelier — no system value smuggled as data
   // (AC5). `bossQteSystem.ts` / `types/bossQte.ts` stay byte-untouched.
   {
@@ -265,11 +265,15 @@ export const LEVELS: readonly LevelConfig[] = [
       phaseCount: 3, // unchanged (ADR-0052 tuned)
       bossHp: 24, // unchanged (3×8, thresholds 16/8)
       maxBlownWindows: 10, // unchanged — the sole failure clock
-      // K-5 PIN (re-verified, dev-gameplay/stage-5): with the full ADR-0052 kit (two decorrelated
-      // rings + parry) a competent player who fires on-ring and parries every charged window clears
-      // 24 HP before the blown-window clock trips on this seed (winnability test). The diegetic
-      // date; re-pinnable per the K-5 discipline if a landability gap is found.
-      targetSeed: 19991231,
+      // K-5 PIN (re-verified, dev-gameplay/stage-5, RE-PINNED at leg-2). With the full ADR-0052 kit
+      // (two decorrelated rings + parry) a competent player who fires on-ring and parries every
+      // charged window clears 24 HP before the blown-window clock trips, AND a camp aim cannot
+      // dominate the tighter 0.11 vital catch. Re-pinned from the diegetic date 19991231 →
+      // 19991232: on 19991231 the phase-2/3 VITAL waypoints clustered near the box centre, making a
+      // fixed centre-camp aim vital-dominant at the 0.11 catch (Sacha leg-2 FAIL(a) — the AMENDMENT
+      // A1 camp-dominance floor). 19991232 is the N=500-verified nearest clean seed (campVital −8.0
+      // below both honest lines, greedyVital −56.6, honest 100% / sloppy 72% loss, décor reachable).
+      targetSeed: 19991232,
       // The hall chandelier — overhead pure-upside +3 HP drop, armed once in phase 2 (armPhaseIndex
       // 1). Re-sited from the harness speaker-stack {1.4,0.2}; the mur d'enceintes is the reserved
       // F3 second prop (needs the decorProps[] promotion, not authored — a correct-course, not now).
