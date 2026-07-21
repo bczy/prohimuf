@@ -3567,8 +3567,8 @@ VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-
   `saveScore` / `setPendingScore` / `unlockLevel` / phase-routing. No name-entry path opens
   (`pendingScore` stays null ⇒ the NameEntry handlers no-op).
 - **Second guard (new, belt-and-suspenders):** `isBossSeamShippedLevel(search)` → `BOSS_SEAM_
-  SHIPPED_LEVEL`, folded into the persistence effect as `isShippedLevel = shippedIdx !== -1 &&
-  !BOSS_SEAM_SHIPPED_LEVEL`. So even if the primary early-return were ever narrowed, a seam-booted
+SHIPPED_LEVEL`, folded into the persistence effect as `isShippedLevel = shippedIdx !== -1 &&
+!BOSS_SEAM_SHIPPED_LEVEL`. So even if the primary early-return were ever narrowed, a seam-booted
   SHIPPED level (niveau-final) is treated as non-shipped → still no score/unlock write. This is the
   independent guard the harness gets "for free" via LEVELS-exclusion; niveau-final IS in LEVELS, so
   it needed an explicit one.
@@ -3581,13 +3581,15 @@ VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-
 
 - `yarn typecheck` → EXIT 0. `yarn lint` → EXIT 0. `yarn format:check` (my touched files) → clean.
 - `yarn vitest run` → **1013 / 1013 PASS**, 75 files (added `src/render/scene/__tests__/
-  bossHarness.test.ts`, 10 tests: level pick, the inertness flag, `at=` parse incl. phase1, and the
+bossHarness.test.ts`, 10 tests: level pick, the inertness flag, `at=` parse incl. phase1, and the
   fast-forward reaching phase1/2/3/finisher for niveau-final). The seed assertion DERIVES from
   `LEVELS.find(...).bossQteSpec.targetSeed` (source of truth) so the K-5 re-pin (19991231→19991232,
   dev-gameplay) never breaks it.
 
 ### EVIDENCE — `docs/qa/evidence/story-boss-niveau-final-live/` (state-verified: bossQte.targetSeed
+
 ### === 19991232 asserted per shot = niveau-final identity; phase asserted; ~2 fps SwiftShader,
+
 ### `?preview=boss&level=niveau-final` + `__MUF_STATE__`/`__MUF_PLAY__`, vite preview on the prod build)
 
 - `06-boss-eden-phase1.png` — `at=phase1`; `ACTIVE, phaseIndex 0`. Phase-1 single ring, full HP bar,
@@ -3622,4 +3624,4 @@ VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-
   - `docs/qa/evidence/story-boss-niveau-final-live/06..10-boss-eden-*.png` (NEW — 5 state-verified)
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
-VERDICT: DONE — C-QA3 render-reachability closed (dev-r3f-render). The boss capture seam now boots the LIVE niveau-final level (real bossQteSpec, seed 19991232, chandelier décor) over the l'Éden backdrop via `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, fast-forwarded through the SAME pure-API loop — view-side only, no src/game edit. Persistence is DOUBLE-guarded (the existing `PREVIEW_SCREEN !== null` early-return + a new `BOSS_SEAM_SHIPPED_LEVEL` fold into the shipped-level check) and EMPIRICALLY proven inert (finisher driven to DONE → localStorage stayed empty, no muf_scores_*/muf_progress). Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). Five state-verified captures (06-10, each asserting targetSeed 19991232 + phase) feed Tony's A1–A15 real-backdrop re-verify. No commit/push.
+VERDICT: DONE — C-QA3 render-reachability closed (dev-r3f-render). The boss capture seam now boots the LIVE niveau-final level (real bossQteSpec, seed 19991232, chandelier décor) over the l'Éden backdrop via `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, fast-forwarded through the SAME pure-API loop — view-side only, no src/game edit. Persistence is DOUBLE-guarded (the existing `PREVIEW_SCREEN !== null` early-return + a new `BOSS_SEAM_SHIPPED_LEVEL` fold into the shipped-level check) and EMPIRICALLY proven inert (finisher driven to DONE → localStorage stayed empty, no muf*scores*\*/muf_progress). Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). Five state-verified captures (06-10, each asserting targetSeed 19991232 + phase) feed Tony's A1–A15 real-backdrop re-verify. No commit/push.
