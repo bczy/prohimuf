@@ -1,594 +1,492 @@
-# Prompt drafts — Rue Belliard décor **v3** (N&B fanzine repair)
+# Prompt drafts — Rue Belliard décor **v3** (reconstruction of the lost, gated draft)
 
-Craft rules per [`flux-prompt`](../../../.claude/skills/flux-prompt/SKILL.md); nothing
-reaches `levelArt.json` without the `lead-art` PROMPT GATE. This draft **repairs** the
-v2 set ([`level-belliard-decor-v2.md`](level-belliard-decor-v2.md)) against the lead-art
-audit (B1–B4 + NIGHT ruling) and the art-advisor cadrage.
+Craft rules per [`flux-prompt`](../../../.claude/skills/flux-prompt/SKILL.md); nothing reaches
+`levelArt.json` without the `lead-art` PROMPT GATE. This file **rebuilds** the v3 draft that
+was PASS'd by `lead-art` then lost with an ephemeral env, carrying the gated decisions forward
+verbatim, with **two intentional changes** (§8): the Deneux homage is dropped, and `foreground`
+joins the regeneration lot. (`street` was verified not-rendered in tronçon mode and removed from
+the lot after Serge's pre-prod pass — §5, §10.) Belliard regeneration lot: `troncon-a`,
+`troncon-b`, `troncon-c`, `sky`, `foreground`.
 
-**Scope of this file:** prompt/style strings only, for `troncon-a`, `troncon-b` (with the
-Deneux volume), `troncon-c`, and `sky`. No `levelArt.json` edit, no script edit — that is
-`dev-tooling-assets` after the gate PASS. `foreground` / `ground` / `street` and `facade`
-(legacy) are **out of scope** (script retouch, per the audit).
-
----
-
-## 0. Why v2 failed, and how it was actually generated (root cause of B1)
-
-The v2 tronçons were **not** produced by flux text-to-image as v2 §0 proposed. The
-committed PNGs came out as **muted-colour, photo-real** immeubles — the tell of
-`scripts/gen-from-reference.mjs` (**`kontext` img2img**) run with `--family levels`:
-
-1. **kontext inherits the reference.** Conditioning on a colour photo of real Paris
-   façades drags the roll toward photographic realism and the photo's own colour; a
-   trailing "bold flat graphic-novel comic-book illustration, muted desaturated palette"
-   clause is far too weak to overrule the pixels it is conditioned on.
-2. **`--family levels` runs NO post-process.** `postProcess()` desaturates only
-   `vehicles`; `levels` backdrops ship the raw roll. So unlike a vehicle sprite, **nothing
-   downstream turns a level backdrop B&W** — the greyscale must be _baked by the prompt_
-   and, crucially, _not fought by a colour reference image_.
-
-**v3 workflow requirement (flag for `dev-tooling-assets`, not a prompt clause):** generate
-this set with **flux text-to-image** (no photo reference), so the xerox register is carried
-end-to-end by the words. If composition-locking via `kontext` is ever needed, condition off
-a **B&W / xerox reference** (an accepted fanzine facade), _never a colour photo_, and add a
-grayscale pass for the `levels` family. B1 cannot be closed by prompt words alone if the
-generator keeps conditioning on colour photos.
-
-Also fixed here: **B3** (`sky.png` never generated — blank white placeholder; §3 writes it),
-**B4** (troncon-c melted rooftops / hashed chimneys — §1 roof clause blinds it), and the
-NIGHT ruling (v2 read as bright daylight).
+Supersedes [`level-belliard-decor-v2.md`](level-belliard-decor-v2.md). Structural authority:
+[`ADR-0048`](../../adr/0048-troncon-sequence-backdrop-mode.md). Consumes the two validated
+boards (do not reopen): `board-belliard-decor.md` (D1–D5), `board-belliard-decor-v2.md`.
 
 ---
 
-## 1. Shared style block (verbatim, byte-for-byte across the 3 tronçons) + shared front lead
+## 0. Structure — locked by ADR-0048 (the v2 "trottoir baké" clause is OBSOLETE)
 
-The three tronçons are **one printing run** (bible §2 law 2). They carry **two shared
-verbatim fragments** so the medium AND the two hardest-won fixes (B4 roofline, buildings-off-
-the-edge margin) land in the highest-attention zone (bible §3.2 — FLUX over-weights the
-front; v2 buried the medium in the tail, and the v3.0 draft made the same mistake with B4 +
-margin — Serge [S1]). The style block then repeats/reinforces the register at the tail.
+The backdrop is a **fixed deterministic tronçon sequence** (`a, c, b, c` in the manifest).
+Each tronçon PNG is **buildings only, floating on transparency**:
 
-**Shared FRONT LEAD (verbatim, opens every tronçon subject):** carries B1 medium + B4
-roof/chimney + the buildings-float margin [S1/S4/S8].
+- **Transparent L/R margins ≥ 1/10 of the image width** — the buildings **never touch the
+  frame edge**; the transparent margin _is_ the between-building gap (`TRONCON_GAP = 0`).
+- **No baked road, no baked trottoir.** The v2 §0/§2 decision to bake a far-side trottoir
+  band into each tronçon is **RETIRED** — the street/ground live in their own layers.
+- **`ground.png`** — one continuous strip spanning the whole street, **kept as-is** (§6).
+- **Parallax sky** shows through every between-building gap and above the rooflines; the
+  sky region of each tronçon is **keyed transparent** (region-mask cut, not a global
+  near-black chroma-key — the deep-night walls near `#141210` would be eaten; §5 keying).
+- **Barrière / low grille** is kept **only directly under a building**, never spanning a gap.
 
-```
-Black-and-white photocopied fanzine, high-contrast xerox halftone and black ink, flat frontal night elevation: bold crisp rooflines carrying two or three thick blocky chimneys per building, sharply silhouetted against a flat black night-sky field, the buildings floating clear of both frame edges behind an empty sky margin at least a tenth of the image width on each side, of
-```
-
-**Shared STYLE BLOCK (verbatim, appended to every tronçon subject):**
-
-```
-, drawn as a high-contrast black-and-white photocopied punk-fanzine illustration: thick black ink outlines, flat posterized value blocks on a pure greyscale ladder of near-black ink #141210, dominant deep-night wall grey #3A3E44 and rare bare-paper highlight #E9E3D2, no colour, deep night carried by heavy ink and dense shadow, grimy walls in fine sparse inked hatching kept subordinate to the bolder window and shutter lines, sharp cutout edges
-```
-
-**Mandatory hex value-ladder (was optional in v2 §1 — now REQUIRED, B1):** the three
-anchors ARE the single value key (B2) — ink `#141210` (deep shadow, night-sky field,
-chimney/roof silhouettes), dominant wall grey `#3A3E44` (deep-night storeys), bare paper
-`#E9E3D2` (rare highlights: a lit pane, a moonlit roof edge). Every value in the set lives
-on this ladder; nothing sits at daylight brightness. The tagged ground band is pinned as an
-**interpolation** of two existing anchors — "midway between #3A3E44 and #E9E3D2" — so it stays
-on the ladder without adding a fourth named anchor [S3].
-
-Per-clause rationale (front lead + style block):
-
-- `Black-and-white photocopied fanzine, high-contrast xerox halftone and black ink, flat
-frontal night elevation` → front-loads the **xerox B&W medium + night + flat elevation**
-  into the top tokens, the single most important B1 fix (v2 had the medium only in the tail).
-- `bold crisp rooflines carrying two or three thick blocky chimneys per building, sharply
-silhouetted against a flat black night-sky field` → **B4 blindage promoted to the front
-  [S1]**, and now bounds **count + stroke weight** ("two or three thick blocky", not a dense
-  huddle of thin stacks) — the two variables that decide whether it survives 800px→200px [S4].
-- `the buildings floating clear of both frame edges behind an empty sky margin at least a tenth
-of the image width on each side` → the **buildings-only float promoted to the front [S1]**
-  with a **measured minimum margin** so the region-mask cut always has clear sky to remove and
-  no roll butts a wall to the edge [S8]; the flat black sky field is dark (not paper-white) so
-  gaps never read as holes (art-advisor).
-- `high-contrast black-and-white photocopied punk-fanzine illustration` (tail) → the house §1
-  register restated at the tail (bible §3.1/§3.4): xerox is the law, replaces v2's
-  colour-friendly "graphic-novel comic-book illustration, muted desaturated palette" (B1 cause).
-- `thick black ink outlines, flat posterized value blocks, … xerox halftone … toner grain` →
-  locks flat inked posterisation over photographic tonal gradients — the look kontext-from-
-  photo could not hold.
-- `pure greyscale ladder of near-black ink #141210, dominant deep-night wall grey #3A3E44 and
-rare bare-paper highlight #E9E3D2` → the **mandatory hex ladder**; binds the value key so the
-  3 rolls read as one printing run (B1 + B2, bible §3.5).
-- `no colour` → the one anti-colour clause (only negation of the set); the positive greyscale
-  ladder does the rest.
-- `deep night carried by heavy ink and dense shadow` → the NIGHT ruling in xerox grammar:
-  night = ink density (positively phrased — no "brightness"/"not" for FLUX to trip on); keeps
-  it from drifting back to daylight.
-- `grimy walls in fine sparse inked hatching kept subordinate to the bolder window and shutter
-lines` → the D1 crade texture, but deliberately **quiet and subordinate** so it does not
-  drown the window-frame/shutter dark-line density that `gen-window-zones.mjs` detects [S10].
-- `sharp cutout edges` → clean silhouette edges for the region-mask cut (keying soundness).
-
-Negation budget (assembled): **1** (`no colour`) — well within the ≤2 budget for A/B/C.
-
-**Word budget [S1] — honest accounting.** Assembled totals are now **A 191 / B 248 / C 224**
-words, down from v3.0's 291 / 364 / 299 (≈ −34 % / −32 % / −25 %). They still exceed the
-90-target / 120-hard craft band (bible §3.3), and I want to be straight about why **sub-120 is
-not reachable here**: the two _shared_ fragments alone — the dual-anchored B&W register (B1,
-front + tail), the front-loaded B4 roof/chimney (S4) and S8 margin, the 3-hex ladder (B2), and
-the S10 hatching-subordination clause — are ~**115 words of gate-mandated content**, so the
-assembled floor is ~130-140 even with a near-empty subject. The remaining per-tronçon length is
-also mandated: the NIGHT window logic, the axis-1 tag taper, the S3 value anchor, and for B the
-Deneux hommage that S2 requires _more_ detail on, not less. Every further cut would drop a
-ruling. So I optimized for **front-loading the blocking fixes + per-prompt minimalism** and flag
-the residual overage to `lead-art` as a conscious craft trade. Per Serge [S13] the `levels`
-family is **not** lint-gated on word count, so nothing downstream silently enforces 120 — but
-this is a real FLUX-attention risk on the long tail, so the in-scene gate should watch B (the
-248-word outlier) hardest for tail-clause drop-out.
+Target aspects (from the committed manifest tiles; `dev-tooling-assets` owns sizes):
+**A = 1.6491**, **B = 1.7857**, **C = 1.9224** (height fixed at `world.heightUnits`).
 
 ---
 
-## 2. Per-tronçon subject prompts + full ready-to-generate strings
+## 1. Shared "printing-run" style block (front-loaded, reused **byte-for-byte** by A/B/C)
 
-Each full prompt = **front lead + subject + style block** (concatenated verbatim). The NIGHT
-value logic (dark panes, a few bare-paper lit ones, the tagged band midway on the ladder,
-tags dense at street level thinning fast to bare clean walls above) lives in each subject;
-décor never glows (bible §2 law 1 — a lit pane is paper-white, never a warm emissive halo).
-
-### Tronçon A — two buildings, one thin sky sliver
-
-**Subject:**
+The register is the load-bearing fix (v2 shipped **coloured, photographic** tronçons). It is
+placed **at the head** of every tronçon prompt because FLUX over-weights the opening tokens,
+and the anti-defect + hex-ladder + no-glow clauses are the blocking ones. One block, one
+printing run, one shared pinned seed, one line weight (bible §2 law 2; RULING "un seul tirage").
 
 ```
-two ordinary Paris 18e faubourg buildings of different widths and heights standing close, one thin strip of night sky between them, four to five storeys of tall shuttered french windows over simple balconies, most panes dark and a few faint bare-paper white, the ground-floor shopfront band a locked mid-grey midway in value between #3A3E44 and #E9E3D2, its densely hand-tagged roll-down shutters thinning fast to bare clean walls above
+Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge.
 ```
 
-**Full string (ready to generate):** `«FRONT LEAD» + «two ordinary Paris 18e … bare clean
-walls above» + «STYLE BLOCK»` (191 words assembled).
+Per-clause rationale (each clause traces to a gated decision; front-loaded first):
 
-### Tronçon B — three buildings, the Deneux hommage volume + a bare mur-pignon
+- `Photocopied 1990s fanzine xerox, high-contrast black-and-white only … coarse halftone toner
+dots` → **REGISTER at the head** — the direct fix for the v2 colour failure; xerox is the
+  house law (bible §1/§3.4), "black-and-white only" states the non-colour positively (§3.1).
+- `three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2` →
+  **mandatory hex value ladder**; binds tones to surfaces (§3.5) and forbids a 4th value —
+  the whole décor lives on these three.
+- `Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes` →
+  Prohibition "poster, not a diorama" geometry (§1/§5); hard silhouettes are **anti-defect
+  armour** front-loaded (RULING).
+- `Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys,
+louvered shutters, simple iron balcony rails, grey zinc mansard roofs` → **faubourien 18e
+  nord**, explicitly _not_ strict Haussmann: irregular R+4/R+5 volumes, volets/persiennes,
+  demoted plain garde-corps, zinc mansards (D4 period truth).
+- `two or three thick blocky chimneys per building` → **anti-defect armour**: bounds the
+  count _and_ the line weight of the roofline, the FLUX failure zone (RULING).
+- `a low iron Petite-Ceinture grille at each base` → signature 18e-nord motif, dosed; kept
+  only under buildings (§0).
+- `Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2
+rectangle, no glow` → **the NIGHT/no-glow RULING**: the décor never emits (loi du glow); a
+  lit window is paper-white _in the B&W gamut_, never a baked warm halo. Stated positively
+  (dark/shuttered/flat rectangle) with a single bounded negation.
+- `Ground floor one value step lighter … tags thinning fast to bare clean upper walls` →
+  the **tagged ground-floor band RULING** (one value step on the ladder, not a 4th value) +
+  axis-1 taper (dense at shutter level → bare up top), stated positively.
+- `flat inked graffiti tags and a stapled photocopied flyer in illegible lettering` →
+  Paris-Tonkar rideau-de-fer register + flyer/pochoir, **lettering illegible on purpose** so
+  FLUX does not emit gibberish typography; the on-façade free-party tell.
+- `buildings centered with clear night-sky margins so they never touch the frame edge` →
+  the ADR-0048 transparent-margin contract (≥1/10, keyable to the parallax gap).
 
-**Subject:**
-
-```
-a tight row of three ordinary Paris 18e faubourg buildings, the middle one a strikingly narrow four-storey façade on a tiny parcel, stepped out by shallow projecting bow-windows, its whole face a large bold motif of chunky squares and diamond lozenges each as big as a window pane, a dense dark value-trame one tone heavier than its neighbours, reading as a single dark band, topped by a flat roof-terrace against their zinc mansards, one wider gap showing a blank unbroken raw-brick mur-pignon gable in solid opaque wall grey near #3A3E44, plus one thin strip of night sky, the two taller flanking buildings with dark shuttered windows and hand-tagged ground-floor shutters at a locked mid-grey midway between #3A3E44 and #E9E3D2, thinning to bare clean walls above
-```
-
-**Full string:** front lead + this subject + style block (248 words assembled — the set's
-outlier, see [S1] note; the in-scene gate should watch B's tail hardest).
-
-Deneux-specific rationale (hommage, stylised not photoreal):
-
-- `strikingly narrow four-storey façade on a tiny parcel` → the signature that reads at sprite
-  size: a much finer bay than the R+4/R+5 neighbours (the real 185 rue Belliard is a minuscule
-  parcel).
-- `stepped out by shallow projecting bow-windows` → the Deneux bow-window rhythm, the second
-  at-a-glance tell.
-- `a large bold motif of chunky squares and diamond lozenges each as big as a window pane, a
-dense dark value-trame one tone heavier than its neighbours reading as a single dark band at
-a glance` → **[S2] fix**: the céramique parement is now an explicitly **large-unit** motif
-  (each tile pane-sized, never fine), and the prompt states the **READ** ("a single dark band
-  at a glance") not just the shape vocabulary — so it survives the downscale + xerox-halftone
-  overlay instead of mushing to moiré. Pops _by value, never colour, never glow_ (loi du glow).
-- `topped by a flat roof-terrace against their zinc mansards` → the flat toit-terrasse vs.
-  neighbouring zinc mansards, a clean silhouette contrast (also feeds B4 roof legibility).
-- `a blank unbroken raw-brick mur-pignon gable in solid opaque wall grey near #3A3E44` →
-  **[S9] + [S10] fix**: the residual-wall gap beat is pinned **opaque and anchored to the wall
-  value** (`near #3A3E44`, distinct from the `#141210` sky field) so the region-mask never
-  cuts it and `gen-window-zones` never scans it as sky; and it is `blank unbroken raw-brick`
-  (the damaging word "soot-stained" is **dropped** [S10]) so no brick-coursing lines fake a
-  window-row peak on a wall that has no windows.
-
-### Tronçon C — two–three buildings, one narrow passage (B4-critical: rooftops were melting)
-
-**Subject:**
-
-```
-a tight row of two to three ordinary Paris 18e faubourg buildings of different widths and heights, four to six storeys of tall shuttered french windows over simple balconies, most panes dark with a few faint bare-paper white, one narrow passage recess between two of them in solid opaque wall grey near #3A3E44 kept clearly above the ink-black sky value, one thin strip of night sky, a plain blank rectangular bar-tabac sign panel with a simple pictogram at street level, the densely hand-tagged ground-floor shutters thinning fast to bare clean walls above on a locked mid-grey midway between #3A3E44 and #E9E3D2
-```
-
-**Full string:** front lead + this subject + style block (224 words assembled).
-
-Shared subject rationale (A/B/C; deltas noted):
-
-- `ordinary Paris 18e faubourg buildings of different widths and heights` → art-advisor: banal
-  faubourien 18e nord, irregular widths/heights R+4/R+5, not strict Haussmann.
-- gap beats: `one thin strip of night sky` (A) · `mur-pignon gable … plus one thin strip of
-night sky` (B) · `one narrow passage recess … one thin strip of night sky` (C) → the three
-  differ by gap beat (sliver / mur-pignon / passage). The **sky strips** are keyable void; the
-  **mur-pignon and passage are opaque wall anchored to `#3A3E44`, kept clearly above the
-  `#141210` sky value** so neither drifts to the keyable dark and gets wrongly cut or mis-
-  scanned [S9].
-- `tall shuttered french windows over simple balconies` → volets/persiennes + the balcony that
-  the `ForegroundFrames` ironwork layer (ADR-0048) and `gen-window-zones` anchor to; the
-  wrought-iron rail itself is that separate render layer, not baked here.
-- `most panes dark and a few faint bare-paper white` → the NIGHT ruling: windows éteintes; the
-  rare lit pane is **paper-white in the greyscale**, never a warm halo (loi du glow).
-- `the ground-floor shopfront band a locked mid-grey midway in value between #3A3E44 and
-#E9E3D2` → **[S3] fix**: the tag band's value is now a **closed interpolation of two existing
-  anchors**, not a floating "one step lighter" FLUX could drift — enough contrast for the tag
-  lettering to read, still on the three-anchor ladder (B2).
-- `densely hand-tagged … shutters thinning fast to bare clean walls above` → axis-1 density on
-  the rideaux de fer (Paris Tonkar 1987–91), tapering **positively** to bare clean walls up top
-  (Bertrand's "do not overload"); `hand-tagged` guards against anachronistic 2010s wildstyle.
-- `a plain blank rectangular bar-tabac sign panel with a simple pictogram` (C) → art-advisor
-  signature motif, terne (not neon); **[S7] fix**: a **blank panel + pictogram, no lettering
-  described**, so FLUX cannot smear pseudo-text charabia onto an asset-gate crop.
-
-Negation budget: A = 1, B = 1, C = 1 (all from the style block's `no colour`; subjects add
-none — the mur-pignon/passage/bar-tabac are all phrased positively) — within ≤2.
+> **Word count:** the shared block runs ~130 words. Lead-art's derogation (~115 common trunk)
+> is knowingly stretched; every clause past 90 is a **gated, load-bearing** requirement
+> (register / hex ladder / night-no-glow / anti-defect / tagged band / margins), not filler,
+> and all blocking clauses are front-loaded. This is already the tightest phrasing that keeps
+> each RULING. `checkLevels` imposes no word ceiling on level prompts (non-emptiness only) —
+> the real gate is in-scene validation at the play camera.
 
 ---
 
-## 3. `sky` prompt — v3 (B3: never generated; blank white placeholder today)
+## 2. Per-tronçon prompts (shared block above + one distinguishing clause; full strings below)
 
-The `sky` is the **separate parallax layer** that shows through the tronçon gaps and above
-the rooftops (ADR-0048). Rooftops now live in the tronçons, so the sky is **sky only** (v2's
-"distant haussmann rooftops silhouette, full moon haze" is dropped). Must stay **dark** so
-gaps never read as holes, carry the sodium halo as **value not colour**, and tile.
+Only the composition differs (building count + gap beat) — the weakest attention zone, and
+composition is what FLUX only approximates, so it is validated in-scene, not by tokens.
 
-**Full prompt:**
+### Tronçon A — two buildings, one thin sky sliver (aspect 1.6491)
 
 ```
-Black-and-white photocopied fanzine night sky, a flat empty deep-night field seen straight on, dark toner-grey low along the bottom horizon fading up to near-black ink #141210 at the top, the low sodium-lamp horizon glow rendered purely as a slightly lighter grey value band and coarse halftone dots, only a very few sparse pale specks each large enough to read as a small dot, an even overcast haze, coarse xerox halftone and toner grain, high-contrast black-and-white, no colour, the whole field staying well below paper white, horizontally tileable seamless repeat
+Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is two such buildings of clearly different width and height side by side, a clear vertical sliver of empty night sky between them at least as wide as one window bay.
 ```
 
-Per-clause rationale:
+- `two such buildings of clearly different width and height side by side` → axis-2 distinct
+  volumes set tight; irregular so the row never reads as a repeating module.
+- `a clear vertical sliver of empty night sky between them at least as wide as one window bay`
+  → the gap beat; "empty night sky" keys transparent to the parallax layer; **S10** min-width
+  anchor so the sliver keys clean and the two volumes read as distinct (not one fused mass).
 
-- `Black-and-white photocopied fanzine night sky` → same register as the tronçons (family
-  consistency); front-loaded.
-- `flat empty deep-night field seen straight on` → a plain parallax backing, no scene.
-- `dark toner-grey low along the bottom horizon fading up to near-black ink #141210 at the
-top` → art-advisor: **zenith darker than horizon**; hex-anchored to the set's ink value.
-- `low sodium-lamp horizon glow rendered purely as a slightly lighter grey value band and
-coarse halftone dots` → the 1998 orange sodium halo **translated to value** in the N&B gamut
-  — no orange, no synthwave sky (art-advisor).
-- `only a very few sparse pale specks each large enough to read as a small dot` → quasi pas
-  d'étoiles, positively bounded (no dense starfield, no moon-logo); **[S6] fix**: each fleck is
-  given a **minimum size** so it does not vanish to a sub-pixel on the thin parallax band.
-- `an even overcast haze` → soft, no lune-logo.
-- `coarse xerox halftone and toner grain, high-contrast black-and-white, no colour` → medium
-  lock (the only negation).
-- `the whole field staying well below paper white` → **B3 / art-advisor**: sky luminance below
-  paper white so the gaps read as sky, not blown-out holes.
-- `horizontally tileable seamless repeat` → tech requirement (see [S12]: FLUX has no true wrap-
-  awareness, so `dev-tooling-assets` must add a script-side seam check / offset-and-blend pass;
-  the smooth gradient + sparse specks make that cheap here).
+### Tronçon B — three buildings, one bare mur-pignon (aspect 1.7857) · **generic, no Deneux**
 
-Negation budget: **1** (`no colour`).
+```
+Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is three such buildings in a tight irregular row, one gap opening onto a bare windowless mid-grey #3A3E44 masonry gable end wall.
+```
 
----
+- `three such buildings in a tight irregular row` → axis-2; three distinct generic faubourien
+  volumes — **no bespoke façade** (Deneux dropped, §8).
+- `one gap opening onto a bare windowless mid-grey #3A3E44 masonry gable end wall` → the
+  **mur-pignon** gap beat: opaque building fabric anchored on the mid-grey wall value, the
+  transparent gap beside it revealing the near-black sky. The residual-wall variety beat.
 
-## 4. Technical constraints per asset (from the ADR-0048 pipeline)
+### Tronçon C — two–three buildings, one narrow passage (aspect 1.9224)
 
-**Tronçons (`troncon-a|b|c`):**
+```
+Photocopied 1990s fanzine xerox, high-contrast black-and-white only, thick inked outlines, coarse halftone toner dots, three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2. Flat frontal orthographic elevation, no perspective, hard cut-out silhouettes. Ordinary weathered Paris 18e faubourg buildings, irregular widths, four-to-five storeys, louvered shutters, simple iron balcony rails, grey zinc mansard roofs, two or three thick blocky chimneys per building, a low iron Petite-Ceinture grille at each base. Deep night, windows dark or shuttered, an occasional lit window a flat paper-white #E9E3D2 rectangle, no glow. Ground floor one value step lighter, its roll-down metal shutters layered with flat inked graffiti tags and a stapled photocopied flyer in illegible lettering, tags thinning fast to bare clean upper walls, buildings centered with clear night-sky margins so they never touch the frame edge. The row here is two or three such buildings, one narrow dark passage alley set back well within the row between two of them, away from either edge.
+```
 
-- **Buildings-only, floating.** Transparent L/R and above-roofline margins; buildings never
-  touch the frame edge (the front-lead margin minimum — **≥ a tenth of the width per side**
-  [S8] — guarantees the region-mask always has clear sky to remove). **No baked road / trottoir
-  / kerb** — `ground.png` is the separate continuous strip (v2's "far-trottoir baked in the
-  tronçon" clause is **retired**, per the audit).
-- **Keying = region-mask cut** (above rooflines + inside the L/R margins), NOT a global
-  near-black chroma-key — the deep-night walls (`#3A3E44`) must survive; the ink sky field is
-  darker (`#141210`) and the `sharp cutout edges` give the region cut a clean silhouette. The
-  **mur-pignon (B) and passage (C) are anchored to the wall value `#3A3E44`, clearly above the
-  `#141210` sky**, so they read as opaque wall to both the keyer and `gen-window-zones`, never
-  as void [S9] (`dev-tooling-assets` keying call, ADR-0048).
-- **`gen-window-zones.mjs` is a downstream consumer, not just décor** (ADR-0048 §4): it snaps
-  cop-pop windows + railing anchors off the painted dark-line density. So the shared hatching
-  is kept **fine, sparse and subordinate** to the window/shutter lines [S10], and the pignon is
-  **blank raw brick with no coursing/soot** [S10] — no false window-row peak on a blind wall.
-- **Aspects must match the committed tiles** so the ADR-0048 world layout is unchanged:
-  A `1.6491`, B `1.7857`, C `1.9224`, height fixed. Suggested working sizes (H = 1024):
-  A ≈ **1688×1024**, B ≈ **1829×1024**, C ≈ **1969×1024**. If a winning composition shifts an
-  aspect, `dev-tooling-assets` re-derives and updates `backdrop.tiles[*].aspect` (structure,
-  not my lane).
-- **B2 — one printing run.** Same pinned seed for all three, **byte-identical** front lead +
-  style block, generated in **one dispatch**, and **gated as a set**: if any one roll's value
-  key / light state / line weight diverges, the whole set FAILs (bible §2 law 2). _(Strongest
-  option, a `dev-tooling-assets` call: generate a single wide master elevation on one seed and
-  slice it at the gaps into A/B/C — guarantees an identical value key. Offered, not required —
-  same-seed separate rolls satisfy B2 within the per-asset-prompt format.)_
-- Generation path: **flux text-to-image**, `enhance=false`, `nologo=true`, `private=true`
-  (bible §3.11). Not `gen-from-reference` off a colour photo (§0).
+- `two or three such buildings` → axis-2 varied count (C is instanced twice in the sequence,
+  so it must read as generic, not a signature).
+- `one narrow dark passage alley set back well within the row between two of them, away from
+  either edge` → the passage gap beat; opaque shadowed recess, distinct from A's sliver and
+  B's gable; **S11** "away from either edge" keeps the near-black passage off the L/R margin so
+  the region-mask sky key does not swallow it (C is instanced twice, `a, c, b, c`).
 
-**`sky`:**
-
-- **Opaque, full-bleed** (it is the backing layer — no keying, no transparency).
-- **Horizontally tileable** and **dark** (luminance below paper white). Short-and-wide plane
-  (e.g. ≈ 1024×256, aspect a `dev-tooling-assets` sizing call). Seam is a **script-side check /
-  offset-and-blend** pass, not trusted to the prompt clause alone [S12].
+**Technical constraints (A/B/C, shared):** transparent PNG; **region-mask key** above
+rooflines + inside the sky slivers/margins only (NOT a global near-black chroma-key — flag to
+`dev-tooling-assets`, §5); transparent L/R margins ≥1/10 width; buildings never touch edge; no
+baked road/trottoir; grille only under buildings; **one shared pinned seed** for A/B/C (propose
+`7110`) so the three read as one printing run; committed by `dev-tooling-assets`.
 
 ---
 
-## 5. Changements vs v2 (diff for the gate)
+## 3. `sky` layer — regenerated (was left colour-ish in v2)
 
-| Clause / asset                 | v2                                                                           | v3                                                                                                                | Why                                                                                                                                          |
-| ------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Register                       | `bold flat graphic-novel comic-book illustration, muted desaturated palette` | `high-contrast black-and-white photocopied punk-fanzine illustration` + xerox halftone/ink                        | **B1** — the named colour cause replaced by an explicit N&B xerox register                                                                   |
-| Medium placement               | tail only                                                                    | **front lead + tail** (front-loaded)                                                                              | B1 — FLUX over-weights the front; v2 buried the medium                                                                                       |
-| B4 roofline + margin placement | (n/a) v3.0 buried them in the late tail                                      | **promoted to the front lead**                                                                                    | **[S1]** — same dead-zone mistake as v2's medium, recreated for B4/margin                                                                    |
-| Prompt length (assembled)      | v3.0: 291 / 364 / 299 words                                                  | 191 / 248 / 224 (subjects trimmed, B4/margin promoted to front)                                                   | **[S1]** — ~25-34 % cut; sub-120 unreachable (shared overhead ~115 mandated words), residual flagged, `levels` not lint-gated on words [S13] |
-| Chimneys                       | v3.0 shape only (`sharp chimney pots`)                                       | **count + weight** bounded (`two or three thick blocky chimneys per building`)                                    | **[S4]** — population/stroke is what survives 800→200px, not shape alone                                                                     |
-| Hex anchors                    | optional (§1 note)                                                           | **mandatory** ladder `#141210 / #3A3E44 / #E9E3D2`                                                                | B1/B2 — single value key baked in                                                                                                            |
-| Tag-band value                 | v3.0 "one value step lighter" (unanchored)                                   | **locked interpolation** "midway between #3A3E44 and #E9E3D2"                                                     | **[S3]** — closes FLUX drift on a set already failed for value drift                                                                         |
-| Deneux frieze                  | v3.0 "small squares dots and triangles"                                      | **large-unit** "chunky squares and diamond lozenges each as big as a window pane" + the READ ("single dark band") | **[S2]** — "small" mushes to moiré at game size; the hommage's one signature detail                                                          |
-| Mur-pignon / passage           | v3.0 ambiguous (could drift to sky-dark)                                     | **opaque, anchored to wall `#3A3E44`, clearly above `#141210`**                                                   | **[S9]** — opposite answers for the keyer vs the window detector resolved                                                                    |
-| Pignon texture                 | v3.0 "raw soot-stained brick"                                                | **"blank unbroken raw-brick"** (soot dropped)                                                                     | **[S10]** — soot/coursing fakes a window-row peak for `gen-window-zones`                                                                     |
-| Wall hatching                  | v3.0 "soot marks water streaks peeling render and hairline cracks"           | **"fine sparse inked hatching kept subordinate to the bolder window and shutter lines"**                          | **[S10]** — decoration must not drown the detector's window-line signal                                                                      |
-| L/R margin                     | v3.0 "wide margins" (mood)                                                   | **"≥ a tenth of the image width on each side"** (measured)                                                        | **[S8]** — region-mask needs a guaranteed clear band; seam defect otherwise                                                                  |
-| Bar-tabac sign                 | v3.0 "dim terne bar-tabac shopfront sign"                                    | **"plain blank rectangular sign panel with a simple pictogram"**                                                  | **[S7]** — kills FLUX pseudo-lettering charabia on gate crops                                                                                |
-| Sky specks                     | v3.0 "pinprick paper-white specks"                                           | **"each large enough to read as a small dot"**                                                                    | **[S6]** — 1px specks vanish on the thin parallax band                                                                                       |
-| Far-trottoir                   | **baked into the tronçon** (v2 §0/§2)                                        | **removed** — `ground.png` separate; buildings-only float                                                         | ADR-0048 + audit ("clause obsolète")                                                                                                         |
-| `sky`                          | untouched (`… rooftops silhouette, full moon haze`)                          | **written** — sky-only, dark, sodium-halo-as-value, tileable                                                      | **B3** — sky.png was a blank placeholder                                                                                                     |
-| Deneux (presence)              | absent                                                                       | narrow bow-window façade + frieze value-trame + flat terrace, in **troncon-b**                                    | Bertrand's explicit hommage                                                                                                                  |
-| Consistency                    | 3 pinned seeds (7101/2/3), style optional-hex                                | one seed, byte-identical block, one dispatch, gated as a set                                                      | **B2** — one printing run                                                                                                                    |
-| Generation path                | flux OR kontext (ambiguous) → came out kontext-from-colour-photo             | **flux text-to-image only**; kontext only off a B&W ref + grayscale pass                                          | §0 — B1 root cause                                                                                                                           |
+Separate backmost parallax layer showing through every gap and above the rooflines. The old
+`"…stars and distant haussmann rooftops silhouette, full moon haze"` is retired (colour-ish,
+and its rooftops double the buildings). New fanzine B&W sky, **sodium halo as VALUE not hue**.
 
----
+```
+Photocopied 1990s fanzine xerox night sky, high-contrast black-and-white only, coarse halftone toner dots, a deep near-black #141210 field, a faint sodium glow rendered purely as value, the low horizon band a shade lighter grey grading up to the darkest zenith, only a very few tiny scattered white star specks, everything staying below paper-white, horizontally tileable seamless left to right.
+```
 
-## 6. Hand-off
+- `Photocopied 1990s fanzine xerox night sky, high-contrast black-and-white only` → same
+  register as the tronçons (one world).
+- `deep near-black #141210 field` → anchors the sky on the darkest ladder value, below the
+  lit-window paper-white so a window still reads as the brightest thing.
+- `a faint sodium glow rendered purely as value, the low horizon band a shade lighter grey
+grading up to the darkest zenith` → the **RULING**: Paris sodium halo as a value gradient,
+  horizon lighter than zenith, **no colour**.
+- `only a very few tiny scattered white star specks` → "quasi pas d'étoiles", positively.
+- `everything staying below paper-white` → keeps the sky darker than a lit window (no glow).
+- `horizontally tileable seamless left to right` → the layer scrolls in parallax.
 
-- `node scripts/check-art-prompts.mjs` → for the `levels` family the lint checks **non-emptiness
-  only** (and, for `foreground` alone, the magenta chroma-key phrase); the word-count and
-  negation budgets are **craft-gate judgment calls, not lint-enforced** for this family
-  (`checkBudgets()` is never called from `checkLevels()`, per Serge [S13]). For the record these
-  prompts still sit at ≤1 negation each; the length overage is a conscious craft trade (§1 [S1]),
-  not something CI will catch.
-- **Nothing generates before the `lead-art` PROMPT GATE PASS.** Then `dev-tooling-assets`
-  lands the strings in `levelArt.json` (`belliard.prompts.troncon-a|b|c` + `sky`), regenerates
-  via **flux text-to-image** on the pinned set-seed, region-mask-keys the tronçons, and
-  in-scene validation runs at the play camera (value key, gap read, roof legibility, B2 set
-  cohesion) before the ASSET GATE.
+**Technical constraints:** opaque full-bleed (backmost layer, no keying); horizontally
+tileable; wide aspect; pinned seed (propose `7120`).
 
 ---
 
-## 7. Annotations game-graphist (pre-prod) — Serge
+## 4. `foreground` layer — **REGENERATED** (the script desaturation was rejected)
 
-Calibration before opening my mouth: I downscaled the committed v2 `troncon-a/b/c.png` to
-~800px, ~380px and ~200px tall (the desktop-ish / narrow-viewport-ish / worst-case game
-sizes, given `WORLD_HEIGHT=12` and the 0.85 Belliard dezoom in `GameScene.tsx`) and squinted.
-At 200px the roofline is already soup — confirms the audit's B4 call, and sets the bar for
-how much detail a clause can ask for before it's asking for something that dies on the
-cutting-room floor. I also read `scripts/gen-window-zones.mjs` and ADR-0048 end to end, because
-on this level the generated art isn't just decoration — it's the **input to an automated
-detector** that snaps cop-pop windows and railings onto the painted ink lines. That changes
-what "readability" means here: it's not only "does the eye register it", it's "does the
-detector register it too". Numbered notes below, concrete fix + severity on each. I did not
-touch the prompts — Maud integrates.
+Near-parallax ironwork overlay. The v2 approach — desaturate the colour photo by script —
+was judged a failure (a desaturated photo is not fanzine, and the interstices stayed as bouché
+photographic grey). This is a **full FLUX regeneration** that must **decide plein/vide**: the
+iron is solid ink, everything else (background AND every interstice between the bars) is one
+flat keyable field so the cutout reads as a hard découpe. The prompt front-loads that plein/vide
+clause (it is the load-bearing instruction), restores the two gated guarantees the earlier draft
+dropped — the ironwork **floats alone** (no building/wall/sky behind it, stated positively) and
+the bars are **evenly spaced** (so FLUX cannot weld them into a solid ink mass) — and drops the
+"glazing" wording that implied a real window pane could sit behind the bars (S2).
 
-### Lisibilité en jeu
+```
+A row of Parisian wrought-iron balcony railings and vertical window guard bars seen up close, the ironwork floating alone and filling the frame edge to edge with nothing else in view, the whole background and every gap between the bars and every space behind them one flat uniform bright magenta chroma-key field #FF3CDC so only the black iron is solid and all the negative space is an empty keyable field, thick solid pure-black inked silhouettes, each bar and scroll evenly spaced and separated by a clear magenta gap, hard crisp cut-out edges, photocopied 1990s fanzine xerox black-and-white, high-contrast.
+```
 
-**[S1] BLOCKING — the assembled prompts are 2.4×–3× over the house word ceiling, and the
-fixes that matter most sit in the dead zone.** I concatenated front-lead + subject + style
-block exactly as `checkLevels` and the generator would: troncon-a = **291 words**, troncon-c
-= **299**, troncon-b = **364**. Bible §3.3 caps assembled prompts at 90 target / **120 hard**.
-`sky` is fine at 91. Worse than the raw count: I located the two clauses this draft calls its
-B4/margin fixes inside the troncon-b string — `crisp hard-edged black silhouettes … chimney
-pots` lands at **word 298 of 364**, `the buildings standing clear of the frame edges` at
-**word 342 of 364**. §3.2 says early tokens weigh most and the tail is the weakest attention
-zone — this draft's own §1 rationale invokes exactly that principle to justify front-loading
-the _medium_ (front lead + tail repeat), then turns around and buries the _two hardest-won
-fixes in this file_ (B4 roofline, buildings-off-the-edge) as single, un-repeated, very-late
-tail clauses. That is the same failure mode as v2's medium placement, recreated for B4/margins
-instead of B1. **Fix:** two moves, both needed. (a) Trim the subject clauses — they restate the
-same "tags dense at street level, rarefying with height, bare clean walls above" beat almost
-verbatim across A/B/C at 15-20 words a pop; tighten each subject toward ~60-70 words without
-losing a silhouette-load-bearing noun. (b) Promote a compressed version of the B4 + margin
-beats into the **front lead**, the same treatment already given to the medium: e.g. `Black-
-and-white photocopied fanzine night elevation, flat frontal orthographic view of buildings
-with sharp roofline silhouettes floating clear of a flat black night-sky field, of …` — then
-let the full style-block clause repeat/reinforce it at the tail as originally drafted. Target:
-assembled total back under ~150 words, ideally nearer the 90-120 band; if the subject can't
-shrink that far, the two promoted clauses are non-negotiable regardless of total length.
+- `Parisian wrought-iron balcony railings and vertical window guard bars seen up close` → the
+  subject: garde-corps de balcon + barreaux, close near-parallax scale (S5: dropped the
+  ambiguous "near", "seen up close" already sets the scale).
+- `the ironwork floating alone and filling the frame edge to edge with nothing else in view`
+  → **S2 guarantee, restated positively**: no building, wall or sky behind the bars — the
+  overlay is a bare détourage, so FLUX cannot fill "behind" with a real façade fragment.
+- `the whole background and every gap between the bars and every space behind them one flat
+uniform bright magenta #FF3CDC so only the black iron is solid and all the negative space is
+an empty keyable field` → the **plein/vide decision, front-loaded** (S4): interstices are the
+  key colour, not photographic grey — the keyer punches them through.
+- `thick solid pure-black inked silhouettes` → **franc black ink** silhouette.
+- `each bar and scroll evenly spaced and separated by a clear magenta gap` → **S3 guarantee**:
+  regular spacing + a guaranteed magenta interstice, so the bars never fuse into a solid mass
+  (the plein/vide contract holds at the subject level, not only the background).
+- `hard crisp cut-out edges, photocopied 1990s fanzine xerox black-and-white, high-contrast` →
+  sharp découpe + the house register.
 
-**[S2] BLOCKING — the Deneux frieze is asked to be "small" then also asked to survive at game
-size; those are opposite requests.** `repeated geometric ceramic frieze of small squares dots
-and triangles` — "small" is exactly the word that produces a fine repeating micro-pattern, and
-a fine repeating micro-pattern is exactly what turns to halftone soup once xerox-toner-grained
-and downscaled to a ~600-800px-tall tronçon (my h200/h380 crops show plain window mullions
-already thinning to a grey smear at that size — an ornamental trame this fine has no chance).
-It also risks reading as moiré noise once the coarse xerox halftone dots from the shared style
-block land on top of an already-fine pattern — two competing high-frequency textures. This is
-the ONE signature detail carrying the whole hommage; if it mushes, the hommage reads as a dirty
-smudge, not a building. **Fix:** replace "small squares dots and triangles" with an
-explicitly large-unit motif — e.g. `a large bold geometric motif of chunky squares and diamond
-lozenges, each tile roughly a hand's-width — as big as a window pane, never finer` — and add
-"reads as one dense dark band at a glance, not fine ornamental detail" so FLUX is told the
-READ, not just the shape vocabulary.
+**Technical constraints:** magenta `#FF3CDC` key on the background **and all interstices** →
+keyed to transparency (bright key so the pure-black iron survives — never a near-black key);
+near-parallax overlay, no tiling required; sharp cutout edges; pinned seed (propose `7130`).
+Décor ironwork does **not** glow (it is keyed to bare B&W, no neon rim — loi du glow).
 
-**[S3] BLOCKING — the ground-floor tag band's value is a floating instruction, not a locked
-one, on a set that's already been failed once for value drift (the v2 B2 finding).** "the
-ground-floor shopfront band … one value step lighter than the storeys above" has no anchor.
-The mandatory ladder is explicitly closed to three: `#141210 / #3A3E44 / #E9E3D2` — good, that
-spread (~L7% / L26% / L89%) is plenty of contrast for xerox reproduction, no complaint there —
-but "one step lighter" between `#3A3E44` and `#E9E3D2` leaves FLUX to pick ANY midpoint, and
-on three independent-ish rolls (same seed helps, but the subject text differs per tronçon) that
-midpoint can drift, which is precisely the kind of per-tirage inconsistency the v2 audit
-flagged. It also matters for legibility: if the band lands too close to `#3A3E44` the tag
-lettering loses the contrast bump it needs to read as a distinct textured strip at game size.
-**Fix, without adding a fourth named anchor (keeps B2's "three anchors ARE the value key"
-rule intact):** pin it as an interpolation of the two existing anchors, e.g. `the ground-floor
-band sits at a locked mid-grey roughly midway in value between #3A3E44 and #E9E3D2` — numeric,
-closed, still on the ladder.
+---
 
-**[S4] BLOCKING — chimney pots get a shape fix (B4) but no count or thickness fix, so the
-exact defect can recur inside the "fixed" clause.** `sharp chimney pots standing clean against
-the sky` is the right instinct (positive, silhouette-first) but it doesn't bound HOW MANY or
-HOW THICK. Troncon-c's rooftop at h200 is already the messiest crop in my calibration set —
-a dense huddle of several thin stacks reads as a hashed blur the instant it's reduced, which is
-verbatim the B4 defect this clause exists to kill. A single word fixing shape without fixing
-population doesn't close the loop. **Fix:** `two or three bold, thick, blocky chimney
-silhouettes per building, sparsely spaced, never a dense cluster of thin stacks` — bounds count
-and stroke weight, the two variables that actually decide whether it survives 800px→200px.
+## 5. `street.png` — **NOT regenerated** (not rendered in tronçon mode)
 
-**[S5] RECOMMENDED — storey count varies (4-5 / 4(+taller neighbours) / 4-6) but the working
-canvas height is pinned equal (1024px) across A/B/C (§4), so the per-storey pixel budget isn't
-equal.** Troncon-c's six-storey buildings get noticeably less vertical room per floor than
-troncon-a's four-storey ones at the same 1024px height — meaning windows, shutters and tag
-band render proportionally smaller on troncon-c, then everything is displayed at the SAME
-`WORLD_HEIGHT`. Some variance is period-honest (real faubourien streets aren't uniform), but an
-extreme case would read as "the c tronçon is finer/denser than its neighbours" when the set is
-tiled side by side — a B2 cohesion nit, not a hard fail, since it's bounded (4-6 storeys isn't
-a huge spread) and the shared style block otherwise locks the line weight. **Fix (optional,
-insurance not a blocker):** add a loose proportion anchor, e.g. "each storey roughly a sixth to
-a seventh of the building's height", so no single roll's floor pitch runs away from the others.
+**Removed from the regeneration lot** (scope verification, Bertrand + Serge, 2026-07-21).
+`street.png` is **not rendered anywhere for Belliard**: in `troncon-sequence` mode
+`LevelBackdrop.tsx` uses `ground.png` for the floor and explicitly excludes `street.png` (its
+centred zebra would peek through the between-building gaps); `street.png` only exists in
+`single-facade` mode (stalingrad/vitry), and no call composites Belliard's street — not even the
+`QTE_ZOOM_FACTOR = 2.4` hostage view, which zooms the scene as-is rather than a dedicated
+`street.png` plane. Regenerating it would produce an asset the game never draws.
 
-**[S6] NICE-TO-HAVE — sky pinprick stars have no minimum size, and the sky plane is small on
-screen.** "only a very few faint sparse pinprick paper-white specks" is the right restraint
-(no starfield, no moon-logo), but at 1px-in-source they can vanish entirely once resized/
-mip-mapped for a parallax strip that's a thin band on screen. Low stakes — an empty ink field
-still satisfies "flat empty deep-night field" — but if the intent is a few visible flecks,
-worth insuring. **Fix:** "each fleck large enough to read as a small dot, not a single pixel."
+So, like `ground.png`, `street.png` is **kept as-is — no prompt is written for it**. (If a
+future design wires a dedicated top-down `street` plane into the tronçon QTE view, a fanzine-B&W
+regen prompt gets authored **then**, against a real compositing point — see Serge S7.)
 
-**[S7] RECOMMENDED — the bar-tabac shopfront sign is a FLUX pseudo-lettering trap.** "one dim
-terne bar-tabac shopfront sign" — signage is one of the two named FLUX failure modes in my
-brief (text/lettering → charabia). At game size a garbled sign is a harmless texture blob, so
-this isn't a gate-blocker, but it WILL show as an ugly fake-text smear on any asset-gate crop
-or promo screenshot, and it's cheap to preempt. **Fix:** "rendered as a plain rectangular
-sign shape with a simple pictogram, no legible lettering."
+---
 
-### Solidité technique — keying, tileability, set mechanics
+## 6. `ground.png` — **NOT regenerated** (kept as-is)
 
-**[S8] BLOCKING — the L/R transparent margin has no numerically guaranteed minimum width, and
-the region-mask cut (not a chroma key) depends on that margin actually existing on every
-roll.** The style block asks for "the wide margins to the left and right" and "the buildings
-standing clear of the frame edges" — good direction, but FLUX text-to-image has no innate
-respect for compositional margins and commonly fills frame-edge to frame-edge on a "wide shot"
-read, especially the longer this prompt runs (S1) and dilutes the instruction's weight. Because
-§4 specifies the keying method here is a **region-mask cut** (a fixed L/R band + above-roofline
-band get cut, not a value threshold), a building that touches or nearly touches the edge on
-one roll either gets clipped by the mask or leaves an un-keyed opaque sliver — on a THREE-tile
-set generated to be tiled edge to edge, that's a visible seam defect, not a cosmetic one.
-**Fix:** make the margin a measured minimum, not a mood: "a clear, unbroken band of the flat
-night-sky field at least a tenth of the image's width along both the left and right edges
-before any building wall begins."
+The committed **v6** ground strip (`assets/levels/belliard/ground.png`, **3760×340**) is
+already a neutral, deliberate deep-night bitumen band between two grey kerb/barrière runs. It
+is on-register and stays byte-stable — **no prompt is written for it**.
 
-**[S9] BLOCKING — the mur-pignon (troncon-b) and the passage alley (troncon-c) are neither
-explicitly opaque nor explicitly transparent, and that ambiguity has two different downstream
-consumers who need opposite answers.** The prompt describes both as rendered wall surface
-("a blank flat expanse of raw soot-stained brick", "a narrow shadowed passage alley running
-back") — i.e. opaque painted pixels, distinct from the "thin strip of dark night sky" gap beat
-which the style block explicitly ties to the keyable `#141210` sky field. If that's the
-intent, fine — but nothing in the prompt stops FLUX from rendering either as a near-black
-recess that reads exactly like the sky-field value, which then either (a) gets wrongly cut by
-a region-mask tuned for L/R margins only, or (b) gets scanned by `gen-window-zones.mjs`'s
-dark-line-density detector as if it were real building surface (see S10) when it's actually a
-value-matched void. **Fix:** state the intent explicitly per beat — if it should stay opaque
-painted wall (my read of the current wording), add "rendered as solid opaque wall surface, not
-sky-dark" to both the pignon and the passage clauses so neither drifts to the sky's own value
-by accident.
+---
 
-**[S10] BLOCKING — this is a load-bearing one, not a taste note: `gen-window-zones.mjs` finds
-cop-pop windows and railing anchors by peaks in the row/column density of near-black ink lines
-on the real painted tronçon art (ADR-0048 §4) — it is not manual placement.** Two things in
-this prompt actively compete with that signal. First, `soot-stained brick` on the pignon gable
-is exactly the kind of texture — brick coursing reads as regular horizontal mortar lines — that
-can fake a periodic "floor band" peak in a region that has NO real windows to detect, which is
-the textbook false positive for this detector (cop pops on blank wall). Second, the shared
-`hairline cracks rendered as inked hatching` clause, layered over the whole grimy wall texture
-including the window-bearing floors, adds competing dark-line density right where the detector
-is trying to isolate real window-frame/shutter outlines from everything else. Neither is
-hypothetical — I'm reading the detector's own doc-comment describing exactly this
-row/column-density method. **Fix:** keep the pignon/gable genuinely quiet — "a blank, unbroken
-expanse of raw brick, free of coursing lines or soot mottling" (drop "soot-stained", it's the
-one word doing the damage) — and on the window-bearing floors, keep the hatching clearly
-SUBORDINATE to the window/shutter outlines: add "the hairline cracks stay fine and sparse,
-never competing with the bolder window-frame and shutter lines" so the detector's signal isn't
-drowned by decoration.
+## 7. Generation — FLUX text-to-image, pinned seed, **never img2img off a colour photo**
 
-**[S11] RECOMMENDED — local ink-black shadow work risks touching the exact hex reserved for
-the sky field, and that field is what the region-mask cut and the false-positive check in
-`gen-window-zones` (opacity-checked against "real building pixels, not a between-building sky
-sliver") both key off.** "grimy weathered walls with soot marks … rendered as inked hatching"
-plus "thick black ink outlines" can legitimately produce small wall patches as dark as pure
-`#141210` — normally fine, ink shadow is ink shadow, but here `#141210` is ALSO the literal
-value the sky field and margins are anchored to. Low risk of an actual mis-key (the region-mask
-is positional, not value-based, per §4), higher risk for any future value-based sanity check
-or for a human eyeballing the alpha boundary. **Fix (cheap insurance, not urgent):** one clause
-reserving true ink-black for outlines and the sky field specifically — "wall shadow never
-drops all the way to the sky's own pure ink-black" — keeps a value margin between "dark wall"
-and "void" even though nothing currently depends on it automatically.
+**Every regenerated asset (tronçons A/B/C, sky, foreground) generates as FLUX
+text-to-image on a pinned seed** with the fanzine B&W register front-loaded — **never**
+`gen-from-reference` / `kontext` img2img conditioned on a colour photo. (`street.png` and
+`ground.png` are **not** regenerated — §5, §6.)
 
-**[S12] NICE-TO-HAVE — "horizontally tileable seamless repeat" is a words-only ask; FLUX
-text-to-image has no true wrap-awareness, so a hard seam on the actual edge pixels is likely
-regardless of the clause.** Low stakes here specifically because the content itself is
-forgiving — a smooth top-to-bottom gradient plus a handful of sparse specks has almost nothing
-structural to mismatch at a seam, unlike a skyline silhouette would. Not a prompt fix so much
-as a heads-up for whoever lands this: **flag to `dev-tooling-assets`** that the seam should get
-a script-side check (or a cheap offset-and-blend pass) rather than trusting the clause alone,
-same caution any tileable texture gets regardless of what generated it.
+- **Root cause of the v2 colour.** The v2 tronçons and the foreground came out coloured
+  (blue/sepia toner, pink-blue duotone) because they were derived from colour photo
+  references, and the pipeline's `postProcess()` desaturation only runs on the **vehicles**
+  family — level backdrops were never desaturated, so the colour survived to the PNG.
+- **Fix.** Pure text-to-image with "black-and-white only" + the hex value ladder at the head,
+  pinned seeds, `enhance=false` (bible §3.11). Colour cannot enter because no colour source
+  is conditioned in and the register forbids it in tokens.
+- **kontext is style-lock fallback only** — off a **lead-art-nominated fanzine B&W** result,
+  never off a colour photo and never for layout (bible §3.12).
+- **Shared seed** for A/B/C (one printing run); own pinned seeds for sky and foreground.
+- **Bypass** `gen-level-art.mjs`'s manifest `style` (pixel-art) and `continuity` (fused
+  terrace) suffixes for this family — same as v2 §0 (`dev-tooling-assets`).
 
-**[S13] NICE-TO-HAVE — §6 of this draft overclaims what `check-art-prompts.mjs` actually
-enforces for levels; worth fixing before it misleads someone at the gate.** I read
-`checkLevels()`: for the `levels` set it checks non-emptiness and (foreground only) the
-magenta chroma-key phrase — that's it. The word-count ceiling (§3.3, the one S1 leans on) and
-the negation ceiling this draft's own §6 claims ("the ≤4-negation ceiling only") are BOTH
-craft-only for this asset family — `checkBudgets()` is never called from `checkLevels()`. Not
-a prompt-content risk, just a documentation-accuracy nit: correct "level prompts are
-lint-checked for non-emptiness + the ≤4-negation ceiling only" to "non-emptiness only (word
-count and negation budgets are craft-gate judgment calls, not lint-enforced, for this
-family)", so nobody downstream assumes CI will catch a S1-style overrun.
+---
+
+## 8. Changes vs v2 and vs the lost v3
+
+**vs v2:**
+
+- **Structure.** The v2 baked far-side trottoir band (v2 §0/§2) is **OBSOLETE** — ADR-0048
+  locks buildings-only transparent tronçons + separate `ground.png` + parallax sky in the
+  gaps. Transparent L/R margins ≥1/10, buildings never touch the edge.
+- **Register.** v2's "graphic-novel comic-book, cel-shaded, muted desaturated palette"
+  appended as a **tail** produced coloured/photographic art. v3 replaces it with explicit
+  **photocopied fanzine xerox B&W, front-loaded**, with a mandatory `#141210 / #3A3E44 /
+#E9E3D2` value ladder; no colour.
+- **Night / glow.** v2 (and the old `facade`) allowed windows "glowing warm orange". v3
+  RULING forbids any baked warm halo — windows dark/shuttered, a lit one a flat paper-white
+  rectangle; the ground-floor band is one value step lighter, not a 4th value.
+- **Sky.** v2 kept the old colour-ish sky; v3 writes a new fanzine B&W sky (sodium halo as
+  value, almost no stars, tileable).
+- **Seeds.** v2 used per-tronçon seeds (7101/7102/7103); v3 uses **one shared pinned seed**
+  for A/B/C (one printing run).
+
+**vs the lost (PASS'd) v3:**
+
+- **Deneux homage DROPPED** (Bertrand). Tronçon B is now a **100% generic** faubourien volume
+  — the bare mur-pignon stays, but **no ceramic façade / bow-window / roof-terrace** and **no
+  Deneux mention** anywhere.
+- **`foreground` ADDED to the regeneration lot.** The script retouch (desaturating the colour
+  photo) was judged a failure, so it is now a **full FLUX regeneration** with its own v3 prompt
+  (§4), not a retouch.
+- **`street` REMOVED from the lot** (scope verification 2026-07-21): it is not rendered in
+  tronçon mode, so regenerating it is wasted work (§5).
+- **`ground.png` and `street.png` confirmed NOT regenerated** — both kept as-is (§5, §6).
+- **The Belliard regeneration lot is therefore: `troncon-a`, `troncon-b`, `troncon-c`, `sky`,
+  `foreground`.**
+
+---
+
+## 9. Hand-off
+
+Nothing in `levelArt.json` changes until this draft PASSes the **`lead-art` PROMPT GATE**;
+`dev-tooling-assets` then lands the strings, pins the seeds, and re-runs
+`node scripts/check-art-prompts.mjs`. Generation follows the gate; then in-scene validation at
+the play camera (gap width / axis-1 taper / QTE cross-section), per ADR-0048's risk register.
+Keying (region-mask cut for the tronçons; bright-magenta punch for the foreground) is a
+`dev-tooling-assets` call, flagged in §2/§4.
+
+---
+
+## 10. Annotations game-graphist (pre-prod) — Serge
+
+Passe PRE-PROD, avant PROMPT GATE. Je n'ai pas touché aux prompts — je note, Maud tranche.
+Calibrage : les tronçons/sky rendent GRANDS à l'écran (hauteur monde fixe = `world.heightUnits`
+12, ~600-900px selon viewport — pas des vignettes 64px), donc le risque n'est pas "le détail
+meurt en réduction" mais plutôt "le détail devient du bruit à taille affichée quasi native".
+J'ai vérifié les deux nouveautés (tronçon-b générique, foreground+street régénérés) en priorité,
+et comparé au rendu v2 réellement committé (`public/assets/levels/belliard/*.png`) pour voir
+concrètement le défaut que chaque clause v3 est censée corriger.
+
+### Tronçon B — résidu Deneux
+
+- **[S1] Deneux : clean, confirmé.** Le prompt §2/B ne contient plus aucune trace d'hommage —
+  pas de céramique, pas de bow-window, pas de toit-terrasse, pas de nom. Le mur-pignon est
+  générique (« bare windowless mid-grey #3A3E44 masonry gable end wall »). **Nice-to-have** :
+  ajouter un mot d'ancrage positif type « plain unornamented brick coursing » après « masonry »
+  — la banque d'images d'entraînement FLUX associe volontiers pignon parisien + fer forgé
+  ornemental (déjà très présent dans le tronc commun) à un décor de type céramique/mural
+  publicitaire ; un mot de plus coupe court à toute dérive de connotation sans reformuler la
+  clause. Non bloquant, juste une ceinture de sécurité gratuite.
+
+### `foreground` — régénéré, prompt neuf (§4)
+
+C'est la pièce la plus sensible du lot : la retouche script a été jugée ratée précisément parce
+que les interstices restaient un gris photo bouché au lieu d'un vide keyable. Le prompt v3 doit
+garantir ce plein/vide à deux niveaux — fond général ET intérieur du sujet (entre les barreaux) —
+et le draft ne le fait qu'à moitié.
+
+- **[S2] BLOQUANT — pas de garde anti-bâtiment.** Le prompt décrit des « window guard bars » et
+  parle explicitement de « every space behind the glazing » — donc il évoque un vitrage/une
+  fenêtre RÉELLE derrière les barreaux, sans jamais dire que le reste (mur, maçonnerie,
+  vitre physique) est absent du cadre. L'ancien prompt gated (v1/v2, `levelArt.json` §606) portait
+  justement « no building, no wall, no sky » — cette garde a disparu en v3. Sans elle, FLUX peut
+  très bien remplir « derrière le vitrage » par un fragment de mur/fenêtre réel au lieu d'un aplat
+  magenta, ce qui recrée exactement le problème qu'on regénère pour corriger (du gris/texture
+  photo bouché à la place du vide keyable). Fix concret : ajouter une clause positive du type
+  « the ironwork floating alone, filling the frame edge to edge, nothing else in view » (ou
+  réintroduire une version positive de « no building/no wall » — le budget négation de la maison
+  tolère ≤2 occurrences, on n'en a aucune ici, il y a de la marge).
+- **[S3] BLOQUANT — le garde-fou « evenly spaced » a sauté.** L'ancien prompt (§606) disait
+  « evenly spaced » ; le v3 ne le dit plus nulle part. Le prompt actuel garantit que **le fond**
+  est magenta, mais rien n'empêche FLUX de souder les barreaux/volutes entre eux en une masse
+  d'encre noire continue — auquel cas il n'y a plus d'interstice à remplir de magenta du tout, et
+  le contrat plein/vide échoue au niveau du sujet, pas du fond (c'est exactement le risque
+  « intersticies entre barreaux… vide keyable » nommé en tête de mission). Fix concret : rajouter
+  quelque chose comme « each bar and scroll evenly spaced, separated by a clear magenta gap » près
+  de « hard crisp cut-out ».
+- **[S4] Recommandé — la clause plein/vide est en queue de phrase.** Le principe déjà appliqué au
+  tronc commun (§1 rationale : « placed at the head… because FLUX over-weights the opening
+  tokens ») n'est pas repris ici : la phrase ouvre sur le sujet (« A row of ornate… »), le
+  registre xerox arrive au milieu, et la clause magenta/plein-vide — qui est LA clause bloquante
+  de ce prompt, l'exacte raison de la régénération — arrive en tout dernier, dans la zone
+  d'attention la plus faible (bible §3.2 : le queue de prompt est « the weakest attention zone »).
+  Remonter « the whole background… magenta #FF3CDC » juste après « seen up close », avant la
+  description du rendu de l'encre, comme on l'a fait pour le tronc commun.
+- **[S5] Nice-to-have — « near Parisian » est ambigu.** Probablement un résidu de rédaction
+  (« near-parallax Parisian » amputé ?). Ça ne casse rien parce que « seen up close » fait déjà le
+  travail de cadrage, mais autant lever l'ambiguïté : soit « near-parallax Parisian… », soit
+  simplement « Parisian… » sans « near ».
+- **[S6] Nice-to-have — deux motifs de ferronnerie dans une seule silhouette dense.** « balcony
+  railings » (rythme horizontal, ferronnerie ouvragée) + « vertical window guard bars » (barreaux
+  verticaux droits) cohabitent dans un même plan rapproché scrollant vite en overlay proche. Pas
+  bloquant (silhouette-first reste un appel de goût pour Nico), mais si le rendu part en fouillis
+  illisible à la vitesse de scroll du near-parallax, la prochaine itération devrait trancher pour
+  un seul motif dominant.
+
+### `street` — régénéré, prompt neuf (§5)
+
+- **[S7] Important — vérifier le point d'attache réel avant de sur-raffiner le prompt.**
+  `LevelBackdrop.tsx` (mode tronçon, code actuel) affiche `ground.png` tuilé sous les bâtiments et
+  exclut explicitement `street.png` (« NOT street.png, whose centred zebra crossing… would peek
+  through the gap »). `street.png` n'est référencé nulle part ailleurs dans `src/render` — à ce
+  jour il n'est PAS composité dans la vue QTE zoomée (`QTE_ZOOM_FACTOR = 2.4` existe bien dans
+  `qteCamera.ts`, mais il zoome sur la scène telle quelle, pas sur un plan `street.png` dédié).
+  Le §5 du draft affirme que c'est « read by the ×2.4 hostage-QTE zoom » — c'est un design
+  intentionnel, pas un fait déjà câblé. Pas un blocage prompt (le patch bitume xerox est utile
+  quel que soit le point d'ancrage final), mais je le signale pour que `dev-tooling-assets`/
+  `lead-art` confirment le plan de compositing avant qu'on affine trop précisément le prompt
+  autour d'une échelle d'affichage (« lisible à 2.4× ») qui n'est pas encore une vérité de code.
+- **[S8] Recommandé — durcir contre la dérive photographique.** Le PNG v2 committé (que j'ai
+  regardé) est exactement le défaut à éviter : bitume mouillé avec reflets spéculaires et une
+  fuite de lumière chaude en coin — un rendu photo, pas un aplat xerox. Le v3 corrige déjà
+  l'essentiel en front-loadant le registre et en ancrant la valeur sur `#141210` (bon calibrage,
+  aligné sur l'échelle `ink-black` de la bible), mais rien n'interdit positivement le rendu
+  « mouillé/spéculaire » qui a produit ce résultat une fois. Fix concret, sans dépasser le budget
+  négation (`no horizon, no perspective` = 2 déjà) : remplacer « flat level ground plane, no
+  horizon, no perspective » (redondant : les deux dernières clauses disent la même chose deux
+  fois) par « a dry matte flat ground plane, no horizon » — ça introduit « matte » positivement et
+  fait baisser le compte de négations au lieu de le monter.
+- **[S9] Recommandé — ancrer le nombre de bandes du zébra.** « evenly stacked » ne donne pas de
+  compte ; c'est exactement le risque FLUX nommé pour le reste du lot (« grilles régulières →
+  dérive de comptage »), et un passage piéton est une grille régulière. Ajouter un ancrage court,
+  ex. « six to eight thick stripes », pour éviter un roll à 3 bandes surdimensionnées ou 20 bandes
+  microscopiques.
+- Points confirmés propres, pas d'action : bitume plein cadre bord à bord (corrige le
+  letterboxing bleu du PNG v2), passage clouté explicitement pleine largeur (répété deux fois
+  dans la phrase), pas de keying nécessaire (plan opaque plein cadre).
+
+### Le reste (tronçons A/C, sky, tronc commun)
+
+- **[S10] Recommandé — tronçon A, sliver de ciel sans largeur minimale.** « one thin vertical
+  sliver of empty night sky between them » ne donne aucune ancre de largeur. Un sliver trop fin
+  keye mal (frange à l'anti-aliasing) et surtout risque de lire comme UN seul bâtiment fusionné à
+  l'écran plutôt que deux volumes distincts (silhouette-first, loi 3). Ancrer avec quelque chose
+  comme « a clear vertical sliver… at least as wide as one window bay ».
+- **[S11] Recommandé — tronçon C, le passage doit rester loin du bord.** Le passage alley est
+  volontairement opaque/near-black (contrairement au sliver de sky-A qui doit rester transparent)
+  — bonne distinction déjà faite par Maud. Mais C est instancié deux fois dans la séquence
+  (`a, c, b, c`) et sa valeur near-black est identique à celle des marges de ciel transparentes ;
+  si le masque region-mask utilisé au keying (§0 : « above rooflines + inside the sky
+  slivers/margins ») n'est pas repositionné avec précision par instance, un passage qui tomberait
+  trop près du bord L/R risque de se faire bouffer par la même passe que la marge ciel. Recommandé
+  d'ancrer la position dans le prompt : « … set back well within the row, away from either edge ».
+- **[S12] Confirmé propre — pas d'action.** Comptage de cheminées borné (« two or three… thick
+  blocky »), halftone « coarse » (bon choix pour un rendu grand format — du fin aurait fait du
+  bruit/moiré à taille quasi native, pas l'inverse du risque habituel petit-sprite), ciel avec
+  quelques étoiles rares + sodium-en-valeur (aucune fine texture à perdre, c'est un dégradé),
+  tuileability horizontale du ciel présente, keying du ciel en region-mask explicitement PAS un
+  chroma-key global (évite de bouffer les #141210 des murs — bon réflexe déjà pris). Mécanique
+  trois-tailles : comme la hauteur est verrouillée à `world.heightUnits` pour A/B/C et que seule
+  la largeur varie avec l'aspect, l'échelle apparente d'un bâtiment ne varie PAS entre les trois
+  tronçons — le risque « même traitement à 3 tailles » est structurellement neutralisé, pas
+  besoin d'une clause dédiée.
+- **[S13] Nice-to-have — marge numérique confirmée en texte, mais pas dans le prompt (normal).**
+  Le ≥1/10 de largeur (§0/§2) n'est pas — et ne peut pas être — un chiffre que FLUX respecte à la
+  lettre depuis le texte seul ; le draft le traite correctement comme une contrainte technique
+  post-génération plutôt que de le sur-promettre dans le prompt. Je demande juste confirmation
+  que `dev-tooling-assets` a bien un contrôle automatisé de cette marge (mesure de bbox) plutôt
+  qu'une vérification à l'œil — sinon la marge peut dériver silencieusement d'une régénération à
+  l'autre.
+
+### Tronc de style partagé — ~130 mots vs dérogation ~115
+
+- **[S14] Avis production : dérogation justifiée, ne pas forcer la coupe.** J'ai relu clause par
+  clause : quasiment chaque mot au-delà de 90 est déjà tracé à une RULING gated dans le tableau de
+  rationale de Maud (registre, ladder hex, no-glow, anti-defect cheminées, bande taguée + taper
+  qui protège justement la lisibilité des fenêtres en évitant que les tags débordent sur les
+  étages hauts, marges ADR-0048). Couper l'une de ces clauses pour gagner des mots recrée
+  précisément le risque que ce draft corrige (dérive couleur, halo, comptage cheminées non
+  borné, texte illisible qui part en charabia). Une seule économie gratuite trouvée, sans toucher
+  à une RULING citée : « and a stapled photocopied flyer in illegible lettering » → « and a
+  photocopied flyer in illegible lettering » (-1 mot, « stapled » n'est cité nulle part comme
+  load-bearing). Ça ne comble pas l'écart et ce n'est pas le but — je ne recommande pas de forcer
+  le tronc à 115 mots.
 
 ### Verdict
 
-**NEEDS REWORK.** Six blockers, all fixable in the text without touching the direction:
-**[S1]** prompt length + tail-buried B4/margin fixes, **[S2]** frieze motif scale word,
-**[S3]** tag-band value unanchored, **[S4]** chimney pot count/thickness unbounded, **[S8]**
-L/R margin width unguaranteed, **[S9]** pignon/passage opaque-vs-transparent ambiguity, and
-**[S10]** soot/hatching texture competing with the window-zone detector's own signal. None of
-these touch the Deneux hommage, the NIGHT ruling, or the flux-text-to-image workflow call —
-they're all "the words don't yet deliver what the direction already correctly wants." [S5],
-[S6], [S7], [S11], [S12], [S13] are recommended/nice-to-have polish, not gate-blocking on
-their own. Once S1/S2/S3/S4/S8/S9/S10 are folded in, this is ready for another look — happy to
-re-squint at the next revision.
+**NEEDS REWORK** — pas sur le fond (structure ADR-0048, retrait Deneux, registre xerox : tout est
+sain), mais **[S2] et [S3] sont bloquants pour le gate** : le prompt `foreground` tel qu'écrit ne
+garantit pas le contrat plein/vide qu'il existe pour livrer — ni contre le bâtiment qui pourrait
+réapparaître derrière le vitrage, ni contre des barreaux qui se souderaient en une masse pleine.
+Ce sont deux régressions concrètes par rapport au prompt gated précédent (`levelArt.json` §606
+avait « no building, no wall, no sky » + « evenly spaced » ; le v3 a perdu les deux en réécrivant
+le prompt). Les autres points ([S1], [S4]-[S13]) sont recommandés ou nice-to-have et n'empêchent
+pas le gate à eux seuls.
 
 — Serge, PRE-PROD pass
 
-### Réponses Maud — correction pass 1 (itération 1/2)
+### Résolution — Maud (itération 1/2, 2026-07-21)
 
-Sections 1–6 corrigées; le texte de Serge ci-dessus est conservé intact. Statut par
-annotation:
+Corrective pass applied to my sections; Serge's text above is untouched.
 
-- **[S1] ✅ appliqué** — B4 (rooflines + `two or three thick blocky chimneys per building`) et
-  la marge bâtiments-hors-bord (`floating clear of both frame edges behind an empty sky margin
-at least a tenth of the image width per side`) **remontés dans le front lead**. Prompts
-  assemblés ramenés à **191 / 248 / 224** mots (A/B/C) contre 291/364/299 (≈ -34/-32/-25 %).
-  Honnêtement: **sub-120 est inatteignable ici** — les seuls fragments partagés (registre N&B
-  bi-ancré B1, B4 toits/cheminées, marge S8, ladder 3-hex, clause S10) font déjà ~115 mots
-  gate-mandatés, plancher assemblé ~130-140. Le reste est aussi mandaté (fenêtres NUIT, taper
-  axe-1, ancre S3, hommage Deneux que S2 veut _plus_ détaillé). Signalé à lead-art comme
-  arbitrage conscient; `levels` non gatée mots par le lint (S13), mais le gate in-scene doit
-  surveiller B (248 mots) pour un éventuel drop-out de clause en queue.
-- **[S2] ✅ appliqué** — frise Deneux passée de `small squares dots and triangles` à un motif
-  GROS et espacé: `chunky squares and diamond lozenges each as big as a window pane` + on donne
-  le READ (`reading as a single dark band at a glance`), pas seulement le vocabulaire de forme.
-- **[S3] ✅ appliqué** — bande taguée ancrée en interpolation fermée des deux ancres existantes:
-  `locked mid-grey midway in value between #3A3E44 and #E9E3D2` (pas de 4e ancre nommée).
-- **[S4] ✅ appliqué** — cheminées bornées en nombre ET épaisseur dans le front lead:
-  `two or three thick blocky chimneys per building`.
-- **[S5] ⏸️ accepté-mais-reporté** — l'ancre de pas d'étage (~1/6–1/7) est une assurance
-  cohésion optionnelle (Serge: "not a blocker"); je ne l'ajoute pas au front lead partagé
-  (zone la plus disputée en mots, cf. S1) pour ne pas diluer les fixes BLOQUANTS. Le bloc de
-  style verrouille déjà la graisse de trait et l'étalement 4-6 étages est borné. Reporté à une
-  itération ultérieure si la cohésion in-scene le réclame.
-- **[S6] ✅ appliqué** — specks du ciel dotés d'une taille minimale: `each large enough to read
-as a small dot`.
-- **[S7] ✅ appliqué** — bar-tabac reformulé en `plain blank rectangular sign panel with a
-simple pictogram` (panneau vierge + pictogramme, aucun lettrage décrit → pas de charabia).
-- **[S8] ✅ appliqué** — marge L/R chiffrée: `an empty sky margin at least a tenth of the image
-width on each side` (front lead).
-- **[S9] ✅ appliqué** — mur-pignon (B) et passage (C) explicitement opaques et ancrés à la
-  valeur mur `#3A3E44`, `kept clearly above the ink-black sky value` → ni coupés par le
-  region-mask, ni scannés comme ciel.
-- **[S10] ✅ appliqué** — `soot-stained` retiré du pignon (`blank unbroken raw-brick`); hachures
-  du bloc partagé reformulées `fine sparse inked hatching kept subordinate to the bolder window
-and shutter lines` → ne piège plus le détecteur de densité de lignes de `gen-window-zones.mjs`.
-- **[S11] ⏸️ accepté-mais-reporté** — réserve "l'ombre de mur ne descend pas au pur ink-black
-  du ciel": Serge la note "cheap insurance, not urgent" et le region-mask est **positionnel,
-  pas value-based** (§4), donc rien n'en dépend automatiquement. Non ajouté pour tenir le budget
-  mots (S1); à reprendre si un futur check value-based l'exige.
-- **[S12] ✅ appliqué (flag)** — noté en §3 + §4: la couture du ciel passe par un check/offset-
-  and-blend côté script `dev-tooling-assets`, pas la clause seule.
-- **[S13] ✅ appliqué** — §6 corrigée: pour `levels`, `check-art-prompts.mjs` vérifie
-  **non-vacuité uniquement** (et la phrase chroma-key magenta pour `foreground` seul); mots et
-  négations sont craft-gate, non lint-enforced (`checkBudgets()` jamais appelé depuis
-  `checkLevels()`).
+- **[S1]** ⏸️ reporté (nice-to-have) — tronçon B mur-pignon stays clean/generic; the
+  "plain brick coursing" safety word is not added this pass to keep the byte-for-byte shared
+  block stable. Note for a future roll if the gable drifts toward ornament.
+- **[S2]** ✅ appliqué — foreground now states the ironwork **floats alone, nothing else in
+  view**; dropped the "behind the glazing" wording that implied a real pane/façade behind the
+  bars (§4).
+- **[S3]** ✅ appliqué — restored **`each bar and scroll evenly spaced and separated by a clear
+  magenta gap`** so the bars cannot weld into a solid ink mass (§4).
+- **[S4]** ✅ appliqué — the magenta plein/vide clause is **front-loaded**, right after "seen up
+  close", before the ink-rendering description (§4).
+- **[S5]** ✅ appliqué — dropped the ambiguous "near"; the subject reads "Parisian … seen up
+  close" (§4).
+- **[S6]** ⏸️ reporté (nice-to-have) — two ironwork motifs kept for now; if the near-parallax
+  scroll reads as clutter in-scene, the next iteration picks one dominant motif.
+- **[S7]** ✅ résolu par le retrait — `street` is removed from the lot (not composited in
+  tronçon mode); the "read by the ×2.4 QTE zoom" claim is gone with it (§5).
+- **[S8]** ✅ sans objet — the "matte / no-reflection" hardening targeted the `street` prompt,
+  which is removed (§5).
+- **[S9]** ✅ sans objet — the zebra stripe-count anchor targeted the `street` prompt, removed
+  (§5).
+- **[S10]** ✅ appliqué — tronçon A sliver anchored **`at least as wide as one window bay`** (§2).
+- **[S11]** ✅ appliqué — tronçon C passage anchored **`set back well within the row … away from
+  either edge`** so the region-mask sky key can't eat it (§2).
+- **[S12]** ✅ confirmé propre — no action.
+- **[S13]** ✅ noté — the ≥1/10 margin stays a post-gen technical constraint (§0/§2); flagged to
+  `dev-tooling-assets` to confirm an **automated bbox check** rather than an eyeball check.
+- **[S14]** ✅ dérogation gardée — ~130-word shared trunk kept (every word past 90 traces to a
+  gated RULING); the free "stapled" cut is left in place, non-load-bearing either way and not
+  worth the 4× byte-for-byte edits across the shared block.
 
-Reste hors de mon lane (inchangé): pas de modification de `levelArt.json` (dev-tooling-assets
-après le gate). Repart au **PROMPT GATE lead-art**.
-
-— Maud, correction pass 1
+**Bloquants [S2]/[S3] traités + [S4] front-load ⇒ le prompt `foreground` regarantit le contrat
+plein/vide au niveau du sujet ET du fond. `street` retiré du lot.** Le lot Belliard est
+maintenant : `troncon-a`, `troncon-b`, `troncon-c`, `sky`, `foreground`. Repart au gate prompt
+lead-art.
