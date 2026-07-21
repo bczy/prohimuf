@@ -59,7 +59,7 @@ the three corrections are front-loaded in the strong attention zone):
 - `Hand-drawn black-and-white comic-book illustration, bold clean black ink outlines and flat
 cel-shaded grey fills, clear ligne-claire cartoon drawing, not a photograph` →
   **CORRECTION 2 (register → DESSIN), at the absolute head.** The real render read the old
-  "photocopied xerox / high-contrast B&W" opening as a *photograph*. The register now names
+  "photocopied xerox / high-contrast B&W" opening as a _photograph_. The register now names
   the medium as a **hand-drawn comic-book illustration** first — ink contour lines + cel-shaded
   flats + ligne claire — stated positively so a drawing is what FLUX paints; the single bounded
   `not a photograph` is the one negation kept for this correction (Bertrand's explicit ask), the
@@ -69,12 +69,12 @@ seen perfectly head-on, flat like an architect's front-elevation drawing and lik
 panel viewed dead ahead, no vanishing point` → **CORRECTION 1 (frontal strict), promoted to the
   head and stated under two angles.** The real render showed a street in perspective (buildings
   receding to a vanishing point). The fix restates the frontal read positively and redundantly —
-  *parallel to the picture plane*, *seen head-on*, *architect's front-elevation drawing*,
-  *comic panel viewed dead ahead* — so no depth cue survives; `no vanishing point` is the single
+  _parallel to the picture plane_, _seen head-on_, _architect's front-elevation drawing_,
+  _comic panel viewed dead ahead_ — so no depth cue survives; `no vanishing point` is the single
   bounded negation that names the exact defect.
 - `Printed on a 1990s photocopied fanzine page, coarse halftone toner dots and xerox grain over
 the linework` → **CORRECTION 2 (texture layer).** The xerox/halftone survives — but re-cast as a
-  **print texture laid *over the drawing***, not the primary register. This keeps the fanzine B&W
+  **print texture laid _over the drawing_**, not the primary register. This keeps the fanzine B&W
   house look (bible §1/§3.4) while the SUBJECT stays a cartoon, exactly the plein/register split
   Bertrand asked for.
 - `three-value ladder of near-black #141210, mid-grey #3A3E44 and paper-white #E9E3D2` →
@@ -110,7 +110,7 @@ side, never touching the left or right frame edge` → **CORRECTION 3 (vide L ET
 > to name both margins). `checkLevels` imposes **no** word or negation ceiling on level prompts
 > (non-emptiness + the foreground magenta phrase only), so the block clears the lint; the real gate
 > is the register/perspective/margin read at the play camera. Negation count = **3** (`not a
-> photograph`, `no vanishing point`, `no glow`) — under the house ≤4 hard ceiling, each bounded and
+photograph`, `no vanishing point`, `no glow`) — under the house ≤4 hard ceiling, each bounded and
 > load-bearing, the positive drawing/frontal vocabulary carrying the corrections (bible §3.1).
 
 ---
@@ -153,7 +153,7 @@ Hand-drawn black-and-white comic-book illustration, bold clean black ink outline
 - `two or three such buildings` → axis-2 varied count (C is instanced twice in the sequence,
   so it must read as generic, not a signature).
 - `one narrow dark passage alley set back well within the row between two of them, away from
-  either edge` → the passage gap beat; opaque shadowed recess, distinct from A's sliver and
+either edge` → the passage gap beat; opaque shadowed recess, distinct from A's sliver and
   B's gable; **S11** "away from either edge" keeps the near-black passage off the L/R margin so
   the region-mask sky key does not swallow it (C is instanced twice, `a, c, b, c`).
 
@@ -492,7 +492,7 @@ Corrective pass applied to my sections; Serge's text above is untouched.
   view**; dropped the "behind the glazing" wording that implied a real pane/façade behind the
   bars (§4).
 - **[S3]** ✅ appliqué — restored **`each bar and scroll evenly spaced and separated by a clear
-  magenta gap`** so the bars cannot weld into a solid ink mass (§4).
+magenta gap`** so the bars cannot weld into a solid ink mass (§4).
 - **[S4]** ✅ appliqué — the magenta plein/vide clause is **front-loaded**, right after "seen up
   close", before the ink-rendering description (§4).
 - **[S5]** ✅ appliqué — dropped the ambiguous "near"; the subject reads "Parisian … seen up
@@ -507,7 +507,7 @@ Corrective pass applied to my sections; Serge's text above is untouched.
   (§5).
 - **[S10]** ✅ appliqué — tronçon A sliver anchored **`at least as wide as one window bay`** (§2).
 - **[S11]** ✅ appliqué — tronçon C passage anchored **`set back well within the row … away from
-  either edge`** so the region-mask sky key can't eat it (§2).
+either edge`** so the region-mask sky key can't eat it (§2).
 - **[S12]** ✅ confirmé propre — no action.
 - **[S13]** ✅ noté — the ≥1/10 margin stays a post-gen technical constraint (§0/§2); flagged to
   `dev-tooling-assets` to confirm an **automated bbox check** rather than an eyeball check.
@@ -532,23 +532,23 @@ trois corrections sont **front-loadées** dans la zone d'attention forte de FLUX
   montrait une rue en fuyante (bâtiments s'enfonçant vers un point de fuite). L'ancien « Flat
   frontal orthographic elevation, no perspective » (une seule mention, faible) est remplacé par une
   clause **remontée juste après le registre dessin** et **répétée sous deux angles positifs** :
-  *every façade parallel to the picture plane and seen perfectly head-on*, *flat like an
-  architect's front-elevation drawing*, *and like a comic-book panel viewed dead ahead*, close par
-  la seule négation bornée qui nomme le défaut exact — *no vanishing point*. Aucune indice de
+  _every façade parallel to the picture plane and seen perfectly head-on_, _flat like an
+  architect's front-elevation drawing_, _and like a comic-book panel viewed dead ahead_, close par
+  la seule négation bornée qui nomme le défaut exact — _no vanishing point_. Aucune indice de
   profondeur ne survit à cette description positive.
 - **[B2] BD / CARTOON, pas photo — corrigé, c'est la bascule de registre.** L'ouverture « photocopied
   xerox / high-contrast black-and-white » était lue par FLUX comme une **photo N&B**. Le prompt
-  ouvre désormais sur le **médium DESSIN** : *hand-drawn black-and-white comic-book illustration,
-  bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing*,
-  avec l'unique négation *not a photograph*. Le xerox/halftone est **conservé mais requalifié en
-  TEXTURE d'impression posée par-dessus le dessin** (*coarse halftone toner dots and xerox grain
-  over the linework*), donc le SUJET reste un dessin, le N&B/grain reste la peau d'impression. Rien
+  ouvre désormais sur le **médium DESSIN** : _hand-drawn black-and-white comic-book illustration,
+  bold clean black ink outlines and flat cel-shaded grey fills, clear ligne-claire cartoon drawing_,
+  avec l'unique négation _not a photograph_. Le xerox/halftone est **conservé mais requalifié en
+  TEXTURE d'impression posée par-dessus le dessin** (_coarse halftone toner dots and xerox grain
+  over the linework_), donc le SUJET reste un dessin, le N&B/grain reste la peau d'impression. Rien
   dans le prompt ne tire plus vers le photoréalisme (aucun détail de brique/bitume photographique).
 - **[B3] Léger vide transparent à GAUCHE ET À DROITE — corrigé, les deux côtés nommés.** Le rendu
   remplissait le bord droit. « buildings centered with clear night-sky margins so they never touch
-  the frame edge » (ambigu sur les côtés) devient **explicitement bilatéral** : *the drawn block
+  the frame edge » (ambigu sur les côtés) devient **explicitement bilatéral** : _the drawn block
   sits centered with an empty margin of night sky on both the left and right side, never touching
-  the left or right frame edge*. La garantie mécanique (padding transparent ≥1/10 côté tooling)
+  the left or right frame edge_. La garantie mécanique (padding transparent ≥1/10 côté tooling)
   reste par-dessus le prompt (§0/§2, S13).
 
 Note contrat : `checkLevels` ne pose **ni plafond de mots ni budget de négation** sur les prompts
@@ -638,7 +638,7 @@ A single ordinary weathered Paris 18e-arrondissement faubourg apartment building
 Rationale (une ligne par clause qui gagne sa place) :
 
 - `A single … faubourg apartment building standing completely alone as one isolated cut-out object
-  centred on a plain uniform flat empty field with wide margins on every side` → **isolation
+centred on a plain uniform flat empty field with wide margins on every side` → **isolation
   maximale** : un objet centré sur fond plat = le régime FLUX text-to-image fiable (pas de rue → pas
   de « remplit-et-coupe ») ; le fond uni est keyable pour le détourage.
 - `four to five storeys of irregular plain masonry` → gabarit **faubourien ordinaire** R+4/R+5,
@@ -646,14 +646,14 @@ Rationale (une ligne par clause qui gagne sa place) :
 - `strict flat frontal elevation parallel to the picture plane with no vanishing point` → **frontal
   strict** ; `no vanishing point` = la seule négation bornée qui nomme le défaut perspective exact.
 - `louvered timber shutters … simple flat iron balcony rails … grey zinc mansard roof … Petite-
-  Ceinture grille` → **vérité période 18e nord 1998** (volets/persiennes, garde-corps simples, zinc,
+Ceinture grille` → **vérité période 18e nord 1998** (volets/persiennes, garde-corps simples, zinc,
   grille PC), silhouette d'abord.
 - `two or three thick blocky chimney stacks` → **armure anti-défaut** : borne le compte ET l'épaisseur
   du trait de la ligne de toit (la zone d'échec FLUX).
 - `ground-floor roll-down metal shutter layered with flat inked graffiti tags in illegible lettering`
   → registre **rideau de fer tagué Paris-Tonkar**, lettrage illisible exprès (pas de marque réelle).
 - `1990s French black-and-white crime comic … bold even-weight constant-thickness black ink outlines
-  and large solid flat black shadow masses` → **le noir urbain Tardi** posé positivement (trait
+and large solid flat black shadow masses` → **le noir urbain Tardi** posé positivement (trait
   constant + aplats noirs) — c'est la bascule de registre, pas de « ligne claire ».
 - `mid-tones only as flat grey fills or a coarse halftone dot screen and never as gradient hatching`
   → le **gris moyen = aplat OU trame de points** ; `never as gradient hatching` = négation bornée qui
@@ -663,7 +663,7 @@ Rationale (une ligne par clause qui gagne sa place) :
 - `deep night … an occasional lit window a flat paper-white #E9E3D2 rectangle and no glow` → **loi du
   glow** : le décor n'émet jamais ; fenêtre allumée = rectangle blanc-papier dans le gamut N&B.
 - `hand-drawn comic-book illustration on a photocopied fanzine page with coarse xerox grain over the
-  linework` → **registre maison** : le dessin est le sujet, le grain xerox est la peau d'impression
+linework` → **registre maison** : le dessin est le sujet, le grain xerox est la peau d'impression
   (occupe le registre d'impression → riso évincé sans le nommer).
 
 Négations = **3** bornées (`no vanishing point`, `never as gradient hatching`, `no glow`), sous ≤4.
@@ -717,7 +717,7 @@ Rationale (préambule) :
 - `every façade in flat frontal elevation … with no vanishing point` → réassure le **frontal strict**
   au cas où kontext tenterait d'ajouter de la profondeur.
 - `each building self-contained and ending in open night sky, the same wide empty night-sky margins
-  down both the far left and the far right edge` → garde les **marges de ciel bilatérales** (le
+down both the far left and the far right edge` → garde les **marges de ciel bilatérales** (le
   détourage `key-troncon-sky.mjs` en dépend : flood-fill depuis les bords).
 - `Ordinary weathered Paris 18e faubourg buildings … Petite-Ceinture grille at each base` → **vérité
   faubourienne** répétée pour que le restyle ne « bourgeoisifie » pas la source.
@@ -727,13 +727,13 @@ Rationale (préambule) :
 Rationale (tails) :
 
 - **A** `two such buildings of clearly different width and height … a clear vertical sliver of open
-  night sky … at least as wide as one window bay` → beat A : deux volumes distincts (silhouette
+night sky … at least as wide as one window bay` → beat A : deux volumes distincts (silhouette
   d'abord, loi 3) + ancre de largeur mini pour que la trouée **keye propre** et ne fusionne pas les
   deux immeubles en une masse.
 - **B** `three such buildings … one presenting a bare windowless mid-grey #3A3E44 masonry gable end
-  wall` → beat B : le **mur-pignon** ancré sur la valeur gris-moyen, générique (zéro Deneux).
+wall` → beat B : le **mur-pignon** ancré sur la valeur gris-moyen, générique (zéro Deneux).
 - **C** `two or three such buildings … one narrow dark passage alley set back well within the row,
-  away from either edge` → beat C : **passage** opaque near-black tenu **loin des bords** pour que le
+away from either edge` → beat C : **passage** opaque near-black tenu **loin des bords** pour que le
   flood-fill du ciel ne le mange pas (C est instancié deux fois dans `a,c,b,c`).
 
 Négations = **3** bornées (`no vanishing point`, `never as gradient hatching`, `no glow`), sous ≤4.
@@ -755,7 +755,7 @@ l'outillage existant (`scripts/promote-hero.mjs` + `references/approved/heroes.j
 1. **Bootstrap hero (text-to-image).** Générer le hero dessiné (v4.2, seed `7100`). Gate `lead-art`
    (registre dessiné). Sur `PROMOTE` :
    `node scripts/promote-hero.mjs --from <public/assets/levels/belliard/troncon-hero.png>
-   --family levels --slot belliard-troncon --slug belliard-troncon-tardi-v4`
+--family levels --slot belliard-troncon --slug belliard-troncon-tardi-v4`
    → gèle une copie dans `references/approved/levels/…` et inscrit le hero régnant du slot.
    (`--family levels` doit être un `WIRED_FAMILIES` — sinon `dev-tooling-assets` câble le slot ; le
    script refuse un slot non-wired **avant** toute écriture, donc pas d'effet de bord.)
@@ -764,7 +764,7 @@ l'outillage existant (`scripts/promote-hero.mjs` + `references/approved/heroes.j
    d'un couple d'immeubles ⇒ le restyle le plus sûr).
 3. **Promouvoir A en hero.** Sur `PROMOTE` de A :
    `promote-hero.mjs --from <…/troncon-a.png> --family levels --slot belliard-troncon
-   --slug belliard-troncon-a-tardi-v4` (nouveau slug ; l'ancien hero est conservé à jamais). A porte
+--slug belliard-troncon-a-tardi-v4` (nouveau slug ; l'ancien hero est conservé à jamais). A porte
    désormais le registre **à l'échelle/aspect tronçon** — meilleure ancre que le hero-immeuble seul.
 4. **Tronçons B et C (img2img, 1 passe chacun, en parallèle).** `image=` = **le même** PNG
    tronçon-A-hero pour les deux ; prompt = préambule v4.3 (identique) + tail B / tail C ; **même seed

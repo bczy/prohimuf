@@ -92,7 +92,7 @@ Story: [`_bmad-output/planning-artifacts/story-belliard-decor-single-image.md`](
   false premise that lampposts occlude. Lamppost coords (0,495 / 0,800) unchanged — requalified
   as ground-level landmarks.
 - **C2 (coherence):** removed the contradictory "tall-props-in-gaps ⇒ AC1 free" claim; the feu
-  is *deliberately* exempt from AC1. Reworded the feu-on-passage rationale = **minimise swept
+  is _deliberately_ exempt from AC1. Reworded the feu-on-passage rationale = **minimise swept
   occlusion of ACTIVE targets** (placement was right, the described mechanic was wrong).
   Re-scoped **AC-BARRIÈRES §5.4** to the **12 clamped props only** (non-occlusion holds by
   construction; feu's exemption is intentional).
@@ -141,7 +141,7 @@ des 13 props, donc les lanes dev peuvent ouvrir en parallèle sur les valeurs.
   couture mais c'est un gros véhicule foreground opaque (couvre même la jointure) — non-conflit,
   les exclusions ne visent que pop/props.
 - **Zones d'exclusion — PASS (claires pour les devs).** `passage 0,372–0,408`, `pignon
-  0,788–0,812`, `couture 0,485–0,502`, `bords <0,035 / >0,965` : chiffrées, tabulées, load-bearing.
+0,788–0,812`, `couture 0,485–0,502`, `bords <0,035 / >0,965` : chiffrées, tabulées, load-bearing.
   Les 3 props « repères » tombent bien **dans** ces zones (feu 0,388 ∈ passage ✓, prop 0,495 ∈
   couture ✓, prop 0,800 ∈ pignon ✓).
 
@@ -201,7 +201,7 @@ prop **autorisé** à occulter.
   - **Lane B (dev-r3f-render):** `LevelBackdrop.tsx` + `GameScene.tsx` + `ForegroundFrames.tsx` wire single-wide mode, drop `troncon-sequence` branching for belliard, place 13 props per §2 + game-designer coordinates.
   - **Lane C (dev-tooling-assets):** `levelArt.json` belliard entry amended for `single-wide` mode (no standard Pollinations flow; note guard for regen via `gen-street-paid.mjs` + `stitch-belliard-street.mjs`), `levels.ts` backdrop mode wire.
   - **Contention:** Lanes A+B share `backdropLayout.test.ts` (A amends, B reads); lanes A+C share `levels.ts` (A comment, C mode wire); lanes B+C share `LevelBackdrop.tsx`/`GameScene.tsx` (mode dispatch). **Serialisation:** A → B → C (test→render→data).
-  File List: ADR-0057.
+    File List: ADR-0057.
 - next: awaiting `lead-game-designer` (Karim) design gate, then `senior-architect` TECH PLAN (ADR-0057 decision + lane green-light). Lanes hold until both gates PASS.
 
 ## 3. LANE B (render) — dev-r3f-render (Amelia) — 2026-07-21
@@ -212,7 +212,7 @@ prop **autorisé** à occulter.
 - release: **`src/render/scene/LevelBackdrop.tsx`** — added the 3rd composition branch for
   `layout.mode === "single-wide"`:
   - Draws ONLY the full décor plane through the existing `facadePane` path — `tileUrl(id,
-    "street-wide")`, draw-scale 1 (`facadeDrawScale` already returns 1 outside single-facade),
+"street-wide")`, draw-scale 1 (`facadeDrawScale` already returns 1 outside single-facade),
     feather OFF, world-locked, facade parallax 0. No new geometry, reuses the pane mesh.
   - In single-wide: sky + street/ground meshes forced `visible={false}` and their textures
     never loaded (`sky.png`, `street.png`, and the tiled `ground.png` ~1 Mo all skipped) —
@@ -226,7 +226,7 @@ prop **autorisé** à occulter.
     single-wide; no comment added — minimal diff).
 - verify (my files): `rtk tsc` = **No errors**. `rtk lint` = **No issues**. `rtk vitest` =
   **988 pass / 3 fail** — the 3 reds are ALL lane A's `getBackdropLayout — belliard
-  single-wide (ADR-0057)` contract test, red only because lane C has not yet flipped the
+single-wide (ADR-0057)` contract test, red only because lane C has not yet flipped the
   belliard `levelArt.json` entry from `troncon-sequence` to `single-wide` (getBackdropLayout
   still returns 4-tile geometry: fullW 87.36 vs expected 61.71, 31 zones vs 21). Not my
   files; they go green once lane C lands the data wire. `facadeLayout.test.ts` (my module)
@@ -271,8 +271,8 @@ prop **autorisé** à occulter.
     flips the manifest. **Proven:** a throwaway manifest patch to
     `{mode:"single-wide",file:"street-wide",aspect:5.1426}` → **7/7 pass**; manifest then
     hard-restored byte-identical (git-verified, `levelArt.json` unmodified).
-  File List: `src/game/levels/levelArt.ts`,
-  `src/game/levels/__tests__/backdropLayout.test.ts`.
+    File List: `src/game/levels/levelArt.ts`,
+    `src/game/levels/__tests__/backdropLayout.test.ts`.
 - note / not-in-this-cut: the producer lane-cut (§2) also assigned Lane A the `levels.ts`
   hostage-anchor comment update + `windowZones`/`windowGrid.top` data (design spec §1/§4).
   Those were NOT in my directive (contract-only) and `levels.ts` is shared with lane C —
@@ -289,42 +289,38 @@ prop **autorisé** à occulter.
   `windowZones.generated.json`, `gen-window-zones.mjs` (comment only). Did NOT touch
   `levelArt.ts` / `LevelBackdrop.tsx` / `backdropLayout.test.ts` / `levels.ts`.
 - release:
-  - **`src/game/levels/levelArt.json` belliard entry:**
-    - `backdrop`: `troncon-sequence` (4 tiles) → `{ mode: "single-wide", file:
-      "street-wide", aspect: 5.1426 }` — matches lane A's pinned contract literal exactly
-      (verified `image dimensions 6418×1248` via the committed PNG; `5.1426 = round(6418/1248,
-      4)`, NOT the ADR-0057 draft's stale 6656×1248/≈5.333). `$comment` rewritten: single
-      opaque plane (buildings+ground+sky baked in), no more tile/sky/ground split, regen
-      pipeline note (`gen-street-paid.mjs` + `stitch-belliard-street.mjs`, not
-      `gen-level-art.mjs`).
-    - `windows` (WindowRows, feeds `getWindowZones` → consumed directly by
-      `buildSingleWideLayout`): 3 rows from spec §1.2/§1.3 verbatim — y=0.24 (12 cols),
-      y=0.35 (18 cols), y=0.47 (24 cols; the spec's prose says "22 colonnes" but its own
-      explicit `x_norm` list — the stated "cible ET critère d'acceptation" — has 24 values;
-      I followed the literal list, total 54 zones, still inside the spec's 48-56 AC-DENSITÉ
-      band). All exclusion zones re-verified column-by-column (passage 0.372-0.408, couture
-      0.485-0.502, pignon 0.788-0.812, edges <0.035/>0.965) — clean. `w`/`h` are new: the
-      compact `WindowRows` format shares one box size across all rows/cols, so I picked
-      `w:0.018` (under the tightest observed column gap, 0.02, to avoid any zone overlap)
-      and `h:0.09` (close to the old per-tile generated windows' measured 0.0898, and
-      `facadeH` — what `h` scales against — is unchanged at `WORLD_HEIGHT=12` in both modes,
-      so this keeps roughly the same on-screen window-box height as before).
-    - `nearForeground.objects`: 18 props → the 13 from spec §2.4 verbatim (x_norm + row).
-      `trafficLight` at 0.388 (over the passage) documented in the `$comment` as the sole
-      prop exempt from the render-side `maxH` clamp (per Karim's C1/C2 gate correction) —
-      the only one that can rise into the window band, deliberately placed where its mast
-      never sweeps a live pop window.
-    - `windowGrid.top`: 0.19 → 0.24 per spec §7 dev note. **Correction to the dev note's own
-      premise, verified against shipped code:** the near-foreground `maxH` clamp
-      (`nearForegroundBandTop` in `src/render/scene/nearParallax.ts`) is derived LIVE from
-      the level's actual `windows` zones (lowest row's bottom edge + margin), not from
-      `windowGrid.top` — and `getWindowGrid`/`WINDOW_GRID` has no other live caller in
-      `src/render` or `src/game` today (checked: only defined, never imported elsewhere).
-      So this field has zero functional effect on belliard's clamp right now; I updated it
-      anyway for data hygiene (it's stale otherwise) and documented the real mechanism in
-      the `$comment` so a future reader doesn't chase a dead lead. Left `bottom`/`cols`/
-      `left`/`right` untouched (not asked, and `windowGrid` is otherwise unconsumed for
-      belliard since `windows` takes priority in `getWindowZones`).
+  - **`src/game/levels/levelArt.json` belliard entry:** - `backdrop`: `troncon-sequence` (4 tiles) → `{ mode: "single-wide", file:
+"street-wide", aspect: 5.1426 }` — matches lane A's pinned contract literal exactly
+    (verified `image dimensions 6418×1248` via the committed PNG; `5.1426 = round(6418/1248,
+4)`, NOT the ADR-0057 draft's stale 6656×1248/≈5.333). `$comment` rewritten: single
+    opaque plane (buildings+ground+sky baked in), no more tile/sky/ground split, regen
+    pipeline note (`gen-street-paid.mjs` + `stitch-belliard-street.mjs`, not
+    `gen-level-art.mjs`). - `windows` (WindowRows, feeds `getWindowZones` → consumed directly by
+    `buildSingleWideLayout`): 3 rows from spec §1.2/§1.3 verbatim — y=0.24 (12 cols),
+    y=0.35 (18 cols), y=0.47 (24 cols; the spec's prose says "22 colonnes" but its own
+    explicit `x_norm` list — the stated "cible ET critère d'acceptation" — has 24 values;
+    I followed the literal list, total 54 zones, still inside the spec's 48-56 AC-DENSITÉ
+    band). All exclusion zones re-verified column-by-column (passage 0.372-0.408, couture
+    0.485-0.502, pignon 0.788-0.812, edges <0.035/>0.965) — clean. `w`/`h` are new: the
+    compact `WindowRows` format shares one box size across all rows/cols, so I picked
+    `w:0.018` (under the tightest observed column gap, 0.02, to avoid any zone overlap)
+    and `h:0.09` (close to the old per-tile generated windows' measured 0.0898, and
+    `facadeH` — what `h` scales against — is unchanged at `WORLD_HEIGHT=12` in both modes,
+    so this keeps roughly the same on-screen window-box height as before). - `nearForeground.objects`: 18 props → the 13 from spec §2.4 verbatim (x_norm + row).
+    `trafficLight` at 0.388 (over the passage) documented in the `$comment` as the sole
+    prop exempt from the render-side `maxH` clamp (per Karim's C1/C2 gate correction) —
+    the only one that can rise into the window band, deliberately placed where its mast
+    never sweeps a live pop window. - `windowGrid.top`: 0.19 → 0.24 per spec §7 dev note. **Correction to the dev note's own
+    premise, verified against shipped code:** the near-foreground `maxH` clamp
+    (`nearForegroundBandTop` in `src/render/scene/nearParallax.ts`) is derived LIVE from
+    the level's actual `windows` zones (lowest row's bottom edge + margin), not from
+    `windowGrid.top` — and `getWindowGrid`/`WINDOW_GRID` has no other live caller in
+    `src/render` or `src/game` today (checked: only defined, never imported elsewhere).
+    So this field has zero functional effect on belliard's clamp right now; I updated it
+    anyway for data hygiene (it's stale otherwise) and documented the real mechanism in
+    the `$comment` so a future reader doesn't chase a dead lead. Left `bottom`/`cols`/
+    `left`/`right` untouched (not asked, and `windowGrid` is otherwise unconsumed for
+    belliard since `windows` takes priority in `getWindowZones`).
   - **`src/game/levels/windowZones.generated.json`:** removed the three dead
     `belliard/troncon-a|b|c` keys (114 zones, hand-calibrated troncon-pass output — never
     read by `buildSingleWideLayout`, which calls `getWindowZones` → `art.windows`, not
@@ -338,9 +334,9 @@ prop **autorisé** à occulter.
     its bare Pass-1 `belliard` key, while still generated, is unconsumed by the single-wide
     backdrop path.
 - verify: `python3 -c "json.load(...)"` valid on both JSON files; `node
-  scripts/check-art-prompts.mjs` → PASSED (0 errors, pre-existing unrelated warnings only);
+scripts/check-art-prompts.mjs` → PASSED (0 errors, pre-existing unrelated warnings only);
   `rtk tsc` → No errors; `rtk lint` → No issues; `rtk vitest run
-  src/game/levels/__tests__/backdropLayout.test.ts` → **7/7 pass** (lane A's contract now
+src/game/levels/__tests__/backdropLayout.test.ts` → **7/7 pass** (lane A's contract now
   green, confirming `aspect`/`file`/`mode`/zone-count all match); `npx prettier --check` on
   all 3 files → formatted correctly.
   - Full `rtk vitest run`: 989 pass / 2 fail — both **pre-existing, outside my lane, not
@@ -407,6 +403,7 @@ facadeLayout.test.ts, gen-window-zones.mjs, stitch-belliard-street.mjs, gen-stre
 gen-street-experiment.yml). Boss/UI work on the shared worktree explicitly excluded.
 
 **Four reviewers, parallel, orthogonal skills:**
+
 - A `code-review` (high): 1 MINOR — seed input no-op (experiment tooling).
 - B `bmad-code-review`: 1 MINOR — `$comment` drift "butt-join of two renders" vs mirror-of-one.
 - C `bmad-review-edge-case-hunter`: #1 MAJEUR/CONFIRMED (seed `SEED` vs `SEEDS` → input ignored,
@@ -415,15 +412,17 @@ gen-street-experiment.yml). Boss/UI work on the shared worktree explicitly exclu
 - D `security-review`: clean — token stays a CI secret, no attacker-controlled asset path.
 
 **Triage (integration review, senior-architect pass):**
+
 - **Boundary law: OK** — `src/game` stays React/Three-free (levelArt/assetManifest are pure data
-  + string builders); `src/render` (LevelBackdrop/GameScene) holds no rules, only reads
-  `layout.mode`; no new cross-layer import.
+  - string builders); `src/render` (LevelBackdrop/GameScene) holds no rules, only reads
+    `layout.mode`; no new cross-layer import.
 - **Seams: OK** — the single-wide contract is consistent across the three touch points
   (render draws one opaque pane, `levelLayerPaths` warms that one file, tests pin `street-wide`).
 - **Deps/deploy: none** — no dependency added; asset ships committed; workflow is manual-dispatch
   experiment only, off the render path.
 
 **Findings actioned (commit `327487f`, dev-tooling + owning lanes):**
+
 - C#1 / A (seed): workflow now passes `SEEDS="$SEED"` — dispatch seed honoured. RESOLVED.
 - A+B (`$comment` drift): corrected to "mirror of ONE ideogram render". RESOLVED.
 - C#2 (divergent guard): `levelLayerPaths` keys on `mode === "single-wide"` alone, mirroring the
