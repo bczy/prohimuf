@@ -4271,3 +4271,122 @@ Finding #4's 4 stale invariant comments (`levels.ts`, `useGameLoop.ts` ×2, `sta
 Finding #5's yarn.lock runtime deltas (react 19.2.8, @react-three/fiber 9.6.1, zustand 5.0.14)
 recorded as accepted-with-record per the architect's ruling. Gate GREEN (typecheck 0, lint 0,
 format clean); ADR index fresh (`gen-adr-index.mjs --check`, before and after). No commit/push.
+
+## §13 — STAGE 7 : ACCEPTATION PM (pm — John) — 2026-07-21
+
+- claim: STAGE 7 final acceptance for STORY-BOSS-NIVEAU-FINAL-LIVE (ADR-0053, PR #119). Two
+  things owed: (1) rule the E6 product call the stage-6 triage routed to me (retro-unlock vs
+  release-note); (2) accept-or-reject the story against its own AC1–AC10
+  (`_bmad-output/planning-artifacts/story-boss-niveau-final-live.md`) and against
+  `PROJECT_GUIDELINES.md`'s scope guard, now that all 6 stage-6 pre-merge items are closed
+  (MAJEUR-1 doc realignment, E1 purge guard, E4 solidify exclusion, #3 seed docstring, #4 stale
+  comments, #5 lockfile record) and the mechanical gate holds green (typecheck/lint/format
+  EXIT 0, vitest 1015/1015).
+
+### RULING — E6 (retro-unlock vs release-note)
+
+Accept Winston's default. Players who completed vitry before this deploy do **not**
+retroactively unlock niveau-final; they re-complete vitry once, same as any player reaching that
+point going forward. No new code.
+
+Why:
+
+- We are post-VERIFY. Any alternative here is a persistence migration (scan
+  `muf_scores_*`/`muf_progress`, back-fill the unlock) — new logic on a system this story never
+  designed, gated, or tested. Reopening that now means reopening stage-4/5 for a feature nobody
+  asked for: itself a YAGNI violation (§2 PROJECT_GUIDELINES, "pas d'abstraction pour une
+  utilisation future incertaine") dressed as a courtesy.
+- The unlock chain is index-based and stateless-by-design (`App.tsx`
+  `LEVELS[shippedIdx + 1]` on `LEVEL_COMPLETE`) — it has never modeled "was this level completed
+  in the past," only "is the next id unlocked." Grafting a completion-history read onto it is
+  exactly the speculative flexibility YAGNI forbids.
+- Cahier des charges / genre precedent: this is an arcade remake — replaying an already-cleared
+  level once to reach new content is native to the form and to muf's own "une mission = 3–5
+  minutes" rule (§2 KISS). Not a broken promise to the player; it's how arcade unlocks work,
+  including in the source game.
+- Blast radius is small and time-boxed: only players who completed vitry in the window before
+  this deploy are affected, and the cost is a few minutes of replay — no save/score is deleted,
+  nothing regresses.
+- The rejected alternative (a migration heuristic keyed on "vitry score exists") is the thing
+  Winston himself flagged as carrying its own mis-fire risk. Trading a small, well-understood,
+  fair cost for a new, untested inference is not a good trade for a LOW/player-facing finding.
+
+Action: ship as-is. `producer`/`tech-writer` to add one release-note line to the PR body: "Note
+de progression : si vous aviez déjà terminé Vitry avant cette mise à jour, refaites-le une fois
+pour débloquer le nouveau niveau final, l'Éden." No code, no story, no ADR amendment — closed by
+documentation alone.
+
+### ACCEPTANCE vs story ACs (planning artifact AC1–AC10)
+
+Cross-checked each AC against the shard's own gates/evidence (not re-litigated — Winston/Sacha/
+Inès already re-verified against real code; this confirms coverage):
+
+- **AC1** (mutual exclusion by construction) — CONFIRMED: Karim's design gate, Winston's TECH
+  PLAN ("AC1–AC5 confirmed against real code"), qa-lead quality-gate close (§11, "hostage +
+  stateMachine ZERO-diff"). No `hostageQte` authored; roster weight-0 by construction.
+- **AC2** (existing shipped `LevelConfig`s byte-untouched) — CONFIRMED: qa-lead quality-gate
+  close, "3 shipped levels + tutorial byte-untouched (`levels.ts` pure append)"; stage-6
+  integration review reconfirms.
+- **AC3** (dev-harness unchanged, non-shipped) — CONFIRMED, and hardened, not weakened: stage-6
+  D2/D3 correction confirms `BOSS_QTE_DEV_HARNESS_LEVEL` "still byte-untouched"; the E9 fix (§11,
+  dev-r3f-render) closes a gap the story didn't originally anticipate — the canon finale was
+  reachable fully-playable via a bare preview URL with no `at=` — by gating the shipped-level
+  boot behind a valid capture target. That strengthens AC3's non-canon-preview intent; it is
+  pipeline-hardening on code this story itself introduced, not scope creep.
+- **AC4** (real quota-crossing trigger) — CONFIRMED: `enemiesToWin: 16` (non-zero, non-harness);
+  Sacha's design-acceptance N1 target-supply PASS (~19s to quota).
+- **AC5** (`bossQteSystem.ts`/`types/bossQte.ts` untouched, no silent contract edit) —
+  CONFIRMED via its own designed escape valve, not a violation: the one touch to
+  `bossQteSystem.ts` (AMENDMENT A2, décor-catch AABB) is exactly the "tuning gap found at this
+  story's own playtest, logged as a correct-course" AC5 itself names as the legitimate path —
+  gated at Karim's stage-5 panel follow-up #5, sign-off granted at Winston's stage-6 integration
+  review. `types/bossQte.ts` — zero lines, confirmed. This is the one AC that reads literally
+  stricter than what shipped; the story's own text anticipates and licenses exactly this kind of
+  gated amendment, so I read it as satisfied in spirit and process, not breached.
+- **AC6** (ADR, producer-allocated, documents everything) — CONFIRMED: ADR-0053, allocated by
+  `producer`, Status Accepted, Revision 1 records all 4 sanctioned amendments and corrects the
+  stale D2/D3/D4 claims (tech-writer, §12, "VERDICT: DONE").
+- **AC7** (`final_pre`/`final_post` wired, narrative-designer confirms) — CONFIRMED:
+  dev-gameplay BUILD (§4) wires both keys under the A1/A2/A5 test-enforced invariants;
+  narrative-designer ratifies the flyer copy ("VERDICT: AUTHORED").
+- **AC8** (sequencing gate) — CONFIRMED: producer's §3 "VERDICT: RELEASED" only after ADR-0052
+  PR #114 merged to `main`; dev lanes on `levels.ts`/`bossQteSystem.ts` opened after, not before.
+- **AC9** (pm re-review before dev lanes cut) — CONFIRMED: my own AC9 entry, "VERDICT: CLEARED
+  FOR TECH PLAN", predating stage-4 BUILD.
+- **AC10** (fuyard/mini-boss/hostage-retuning out of scope) — CONFIRMED: none introduced
+  anywhere in the build lanes or the stage-6 diff; the only `bossQteSystem.ts` touch is A2
+  (décor hit-test shape), not a new mechanic.
+
+All 10 ACs hold.
+
+### Scope guard vs `PROJECT_GUIDELINES.md`
+
+- Cahier des charges test: the boss-as-extension was already ratified at ADR-0051 (correctly
+  not re-litigated here). The Niveau Final level itself is named, pre-committed roadmap content
+  (§7 "Niveau Final — 31 décembre 1999", §10 Sprint 4+) — building it needs no fresh extension
+  test.
+- Core loop untouched: niveau-final is Récupérer → Livrer → Éviter like every other level (one
+  truck delivery, quota, escape-the-cops loop), terminated by the already-ratified boss beat.
+- The stage-6 panel's hardening prescriptions (E1 CI purge-safety, E4 solidify prop-exclusion,
+  #3/#4 wording fixes, #5 lockfile record) fix files/pipelines THIS story's own lanes touched or
+  exposed (the new l'Éden art dispatch, the ADR this story owns, comments this story's code
+  changes made stale) — process correctness on the story's own footprint, not new features, not
+  scope creep. None add a mechanic, a UI surface, or player-facing behavior beyond AC1–AC10.
+- No mission exceeds 3–5 minutes, no non-skippable cutscene, no "bullshit" death introduced by
+  this story's changes.
+
+### VERDICT: ACCEPTED
+
+RULING: E6 — accept default (release-note, no code): players who completed vitry pre-deploy
+re-complete it once to unlock niveau-final; add one release-note line to the PR body, no
+migration, no new story.
+
+- handoff → `producer` (Marion): stage 7 CLOSED. All pre-merge items from the stage-6 triage are
+  cleared (tech-writer's MAJEUR-1/#4/#5, dev-r3f-render's #3/E9, dev-tooling-assets' E1/E4) and
+  my own E6 product call is ruled here. Nothing blocks stage 8 (Bertrand merge) on my side.
+  Please fold the E6 release-note line into the PR body per the ruling above before merge.
+- handoff → Bertrand: STORY-BOSS-NIVEAU-FINAL-LIVE / ADR-0053 / PR #119 is PM-accepted. Ready
+  for your merge call (stage 8).
+
+- **File List:**
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this §13 entry appended)
