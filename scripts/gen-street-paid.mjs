@@ -27,16 +27,14 @@ const PROMPT =
   "three values near-black mid-grey and paper-white, no glow, the row filling the whole width with a small band " +
   "of empty night sky at the far left end and the far right end.";
 
-const MODELS = (
-  process.env.MODELS || "seedream-pro,nanobanana-2,gptimage-large,ideogram-v4-quality"
-).split(",");
-const W = Number(process.env.W || 3072);
-const H = Number(process.env.H || 768);
-const SEED = Number(process.env.SEED || 7111);
+const MODELS = (process.env.MODELS || "ideogram-v4-quality").split(",");
+const SEEDS = (process.env.SEEDS || "7111,7112,7113").split(",");
+const W = Number(process.env.W || 5120); // 5:1 wide street
+const H = Number(process.env.H || 1024);
 
-const url = (model) =>
+const url = (model, seed) =>
   `https://gen.pollinations.ai/image/${encodeURIComponent(PROMPT)}` +
-  `?model=${encodeURIComponent(model)}&width=${W}&height=${H}&seed=${SEED}&nologo=true&quality=high&private=true`;
+  `?model=${encodeURIComponent(model)}&width=${W}&height=${H}&seed=${seed}&nologo=true&quality=high&private=true`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -65,14 +63,16 @@ async function fetchImg(u, bearer, tries = 3) {
 async function main() {
   const bearer = token();
   fs.mkdirSync(OUT, { recursive: true });
-  console.log(`Generating street ${W}x${H} seed ${SEED} → ${OUT}\n`);
+  console.log(`Generating street ${W}x${H} → ${OUT}\n`);
   for (const m of MODELS) {
-    try {
-      const buf = await fetchImg(url(m), bearer, 3);
-      fs.writeFileSync(path.join(OUT, `street-${m}.png`), buf);
-      console.log(`  [ok]   ${m} (${(buf.length / 1024) | 0} KB)`);
-    } catch (e) {
-      console.log(`  [fail] ${m} — ${e.message}`);
+    for (const seed of SEEDS) {
+      try {
+        const buf = await fetchImg(url(m, seed), bearer, 3);
+        fs.writeFileSync(path.join(OUT, `street-${m}-${seed}.png`), buf);
+        console.log(`  [ok]   ${m} seed ${seed} (${(buf.length / 1024) | 0} KB)`);
+      } catch (e) {
+        console.log(`  [fail] ${m} seed ${seed} — ${e.message}`);
+      }
     }
   }
   console.log("\ndone.");
