@@ -549,13 +549,13 @@
         "bottom": 0.48
       },
       "windows": {
-        "$comment": "Single-wide décor (ADR-0057): 3 rows recalibrated on street-wide.png's real openings, per docs/game-design/spec-belliard-street-wide-repositioning.md §1 (gate lead-game-designer PASS 2026-07-21) — A lucarnes (mansard dormers) y=0.24, B étage noble (balcony doors) y=0.35, C persiennes (shuttered windows, densest) y=0.47. x/y normalized over the WHOLE single image (not per-tile as before). Exclusion zones respected column-by-column: passage 0.372-0.408, couture (mitoyen seam) 0.485-0.502, pignon (blind gable) 0.788-0.812, edges <0.035/>0.965.",
+        "$comment": "Single-wide décor (ADR-0057): 3 rows recalibrated on street-wide.png's real openings, per docs/game-design/spec-belliard-street-wide-repositioning.md §1 (gate lead-game-designer PASS 2026-07-21) — A lucarnes (mansard dormers) y=0.24, B étage noble (balcony doors) y=0.35, C persiennes (shuttered windows, densest) y=0.47. x/y normalized over the WHOLE single image (not per-tile as before). Exclusion zones respected column-by-column: passage 0.372-0.408, couture (mitoyen seam) 0.485-0.502, recess 0.595-0.610 (a second, undocumented building-seam/recessed-gable column found by direct pixel inspection of street-wide.png during the enemy-recalibration pass — a narrow near-solid dark vertical band measured consistently ~lum<52 across y=0.20-0.51 at x≈0.597-0.608, the mirror-image counterpart of the `passage` seam; this was the exact cause of a cop rendering on bare roof next to a chimney with no grille, since the old row-A x=0.62 landed inside it), pignon (blind gable) 0.788-0.812, edges <0.035/>0.965. 2026-07-21 targeted fix (6/54 zones, verified per-zone against real street-wide.png pixels, not re-derived wholesale): row A xs[7] 0.62→0.643 (was inside the new `recess` zone, no dormer there — real dormer sits at 0.643), xs[9] 0.835→0.847 (was on a chimney stack, real dormer at 0.847), xs[11] 0.95→0.96 (was mostly off the roof skylight, nudged onto it); row C xs[6] 0.257→0.238 (was in the gap between two real windows), xs[18] 0.746→0.753 (was half on the wall beside the window), xs[22] 0.928→0.947 (was in the gap between two real windows). All other x/y values verified already correct against the real image and left untouched.",
         "w": 0.018,
         "h": 0.09,
         "rows": [
           {
             "y": 0.24,
-            "xs": [0.055, 0.125, 0.195, 0.265, 0.335, 0.455, 0.545, 0.62, 0.7, 0.835, 0.905, 0.95]
+            "xs": [0.055, 0.125, 0.195, 0.265, 0.335, 0.455, 0.545, 0.643, 0.7, 0.847, 0.905, 0.96]
           },
           {
             "y": 0.35,
@@ -567,8 +567,8 @@
           {
             "y": 0.47,
             "xs": [
-              0.045, 0.082, 0.118, 0.152, 0.187, 0.221, 0.257, 0.292, 0.327, 0.356, 0.427, 0.481,
-              0.516, 0.549, 0.617, 0.651, 0.685, 0.719, 0.746, 0.766, 0.836, 0.897, 0.928, 0.957
+              0.045, 0.082, 0.118, 0.152, 0.187, 0.221, 0.238, 0.292, 0.327, 0.356, 0.427, 0.481,
+              0.516, 0.549, 0.617, 0.651, 0.685, 0.719, 0.753, 0.766, 0.836, 0.897, 0.947, 0.957
             ]
           }
         ]
