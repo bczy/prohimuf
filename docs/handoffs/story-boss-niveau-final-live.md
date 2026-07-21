@@ -3812,3 +3812,44 @@ phase3.png` into the permanent set (state-verified, same discipline as `06`-`10`
   - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
 
 VERDICT: PASS-WITH-CORRECTIONS — ux review story-2 (ux-designer) — every A1-A15 boss-QTE legibility requirement re-verified holds on the l'Éden backdrop/re-anchored position: dual-ring form-not-colour read PASS in grayscale against the busier hall arches (`07`), vital 0.11 ring PASS on mobile (~42-50 CSS px clear of the HP bar, same anchor `{0,-5}` as story-1's fix so it transfers without re-tuning, `10`), parry-glyph salience PASS against the warmer palette (`08`, grayscale-confirmed), smoke degraded-not-removed PASS motion + reduced-motion (`08`/`11`, the latter a gap I closed myself via the extended seam, state-verified), finisher distinct + prompt legible PASS (`09`). Leg-1 flyer/onboarding (spec §1-§2) all PASS on `01`-`05` — locked/unlocked both device classes, no boss spoiler anywhere, 4-flyer layout clean, briefing plays over the real backdrop and is skippable. Two Bertrand-requested rulings off capture `07`: (1) the décor placeholder is functionally correct (binary armed/inert, no read confusion with other HUD elements) but the INTERIM art is legitimately ambiguous as an object — already-tracked ADR-0053 D6 follow-up, not a new defect, no action routed; (2) the off-screen arrow indicators DO render throughout the entire locked-camera boss QTE (confirmed pervasive across all phases/motion states, and pre-existing since story-1's Belliard captures, not niveau-final-specific) — CONFIRMED DEFECT, ruled to hide (matches the existing, already-proven hostage-QTE gate pattern), routed to dev-r3f-render as a one-line `HUD.tsx` fix (`data.bossQte === undefined` folded into the existing arrow-visibility condition), severity medium/required-not-blocking, and fixing it also resolves the compounding "unexplained square" read from ruling (1) for free. Nothing in this review blocks story-2's gate.
+
+## 10. FIX (stage 5, Tony UX correction) — dev-r3f-render (Amelia) — 2026-07-20 — hide the off-screen edge arrows during the boss QTE
+
+- claim: land Tony's prescribed one-line HUD fix (his story-2 UX shard entry; CONFIRMED pre-existing
+  defect, Bertrand-surfaced) — the off-screen direction arrows rendered during the locked-camera
+  BOSS QTE (the scene is frozen on the tableau, so the cue is meaningless and the enlarged arrows
+  poke into the duel). `HUD.tsx` already gated them off for the HOSTAGE set-piece via
+  `isQteSetPieceVisible`; extended the SAME gate to the boss.
+- diff (`src/render/ui/HUD.tsx`, the OffscreenArrowIndicator gate) — no new predicate, exactly as
+  prescribed (`HudBossQte` is `undefined` whenever the boss QTE is inactive):
+
+  ```
+  -      {!isQteSetPieceVisible(data.hostageQte) && (
+  +      {!isQteSetPieceVisible(data.hostageQte) && data.bossQte === undefined && (
+           <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+         )}
+  ```
+
+  (+ the adjacent comment now notes the boss-QTE coupling.) `data.bossQte` is defined for the WHOLE
+  boss set-piece — `isBossQteActive` covers ZOOMING/ACTIVE/FINISHER/WON/LOST — so the arrows stay
+  hidden zoom→duel→verdict and return exactly at DONE, matching the hostage gate's coverage.
+
+- test: no existing HUD test covers the hostage arrow gate (the project ships no `@testing-library/
+react`), and Tony's prescription is explicitly "no new predicate" — so nothing to adjust/extract.
+  Proof is the state-verified capture below (DOM arrow-glyph count asserted 0).
+- Verification — ALL GREEN: `yarn typecheck` EXIT 0, `yarn lint` EXIT 0, `yarn format:check`
+  (HUD.tsx) clean, `yarn vitest run` **1013 / 1013**.
+- EVIDENCE — `docs/qa/evidence/story-boss-niveau-final-live/12-boss-eden-no-arrows.png`
+  (`?preview=boss&level=niveau-final&at=phase2`, 1280×720, ~2 fps SwiftShader): state-verified
+  `phase ACTIVE, phaseIndex 1, targetSeed 19991232` (niveau-final identity) with **0** off-screen
+  arrow glyphs in the DOM (`svg polygon[points^="3,13"]` count === 0) — the edge arrows are GONE
+  during the duel (cf. §... capture `07`, which showed them left/right/down before this fix).
+- handoff → `ux-designer` (Tony): the arrow-during-boss-QTE defect is fixed and captured; your gate
+  prescription landed verbatim. → `senior-architect` (Winston): view-only HUD conditional, no
+  boundary/game touch. No commit/push.
+- File List:
+  - `src/render/ui/HUD.tsx` (fold `data.bossQte === undefined` into the arrow gate + comment)
+  - `docs/qa/evidence/story-boss-niveau-final-live/12-boss-eden-no-arrows.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — off-screen edge arrows hidden during the boss QTE (dev-r3f-render). One-line HUD gate extension (`&& data.bossQte === undefined`) folded into the existing `isQteSetPieceVisible` arrow gate, exactly as Tony prescribed (no new predicate); the arrows now hide for the whole boss set-piece (ZOOMING→verdict) like the hostage one. Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). State-verified capture `12-boss-eden-no-arrows.png` shows 0 arrow glyphs in the DOM during a phase-2 duel over l'Éden. No commit/push.
