@@ -4,7 +4,9 @@ name: Cleanup branch preview
 # the counterpart of deploy-preview.yml, so previews stop accumulating forever:
 #
 #   - delete:        the branch itself was deleted (incl. auto-delete on merge)
-#   - pull_request:  the branch's PR was merged (covers branches kept after merge)
+#   - pull_request:  the branch's PR was closed — merged OR closed unmerged
+#     (a preview lives only while its PR is open, so it goes as soon as the PR
+#     does)
 #   - workflow_dispatch: manual cleanup of one branch's preview (retroactive
 #     pruning of previews orphaned before this workflow existed)
 #
@@ -44,16 +46,16 @@ jobs:
   cleanup:
     name: Remove branch preview from gh-pages
     runs-on: ubuntu-latest
-    # Tag deletions have no preview; an unmerged-closed PR keeps its preview
-    # (the branch still exists — the delete event will clean up later). Same
-    # for a PR merged into a non-default base (stacked PR: the branch lives
-    # on). Fork PRs are skipped: their head.ref names a branch in the FORK's
-    # namespace, and their GITHUB_TOKEN is read-only anyway.
+    # Tag deletions have no preview. A preview lives only while its PR is open,
+    # so ANY close of a same-repo PR into the default branch — merged OR closed
+    # unmerged — prunes it. A PR into a non-default base (stacked PR) is left
+    # alone: the branch lives on, and its eventual delete event cleans up. Fork
+    # PRs are skipped: their head.ref names a branch in the FORK's namespace,
+    # and their GITHUB_TOKEN is read-only anyway.
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
       (github.event_name == 'pull_request' &&
-       github.event.pull_request.merged == true &&
        github.event.pull_request.base.ref == github.event.repository.default_branch &&
        github.event.pull_request.head.repo.full_name == github.repository)
     steps:
