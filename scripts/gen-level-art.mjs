@@ -15,6 +15,16 @@
  *
  * node scripts/gen-level-art.mjs --list          # list level ids + their layer files (no network)
  * node scripts/gen-level-art.mjs --asset <id>    # restrict the run to one level id
+ * node scripts/gen-level-art.mjs --paths         # print the exact relative file paths THIS run
+ *                                                 # would write (LAYERS ∩ each level's authored
+ *                                                 # `prompts` keys), one per line, no network.
+ *                                                 # Machine-readable single source of truth for
+ *                                                 # gen-level-art.yml's regenerate=true path, which
+ *                                                 # scopes its purge to exactly this set instead of
+ *                                                 # `rm -rf`-ing the whole tree (stage-6 triage E1 —
+ *                                                 # a blanket purge used to also delete files this
+ *                                                 # script has never produced and never will, e.g.
+ *                                                 # belliard's hand-authored troncon-*.png/ground.png).
  */
 import fs from "fs";
 import path from "path";
@@ -111,6 +121,21 @@ async function main() {
   if (target && todo.length === 0) {
     console.error(`Level "${target}" not found. Use --list.`);
     process.exit(1);
+  }
+
+  if (ARGV.includes("--paths")) {
+    // Same LAYERS ∩ prompts-present gate the generation loop below uses, so
+    // this can never drift from what the generator actually writes. Plain
+    // relative paths, one per line — nothing else on stdout — so a caller can
+    // consume it directly (e.g. `while IFS= read -r f; do ...; done`).
+    for (const level of todo) {
+      for (const layer of LAYERS) {
+        if (level.prompts[layer] !== undefined) {
+          console.log(path.posix.join("public/assets/levels", level.id, `${layer}.png`));
+        }
+      }
+    }
+    return;
   }
 
   console.log(`Generating level art → ${OUT_ROOT}${FORCE ? " (force)" : ""}\n`);

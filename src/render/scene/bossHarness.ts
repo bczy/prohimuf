@@ -95,14 +95,21 @@ export function parseBossHarnessTarget(raw: string | null): BossHarnessTarget | 
 /**
  * Which level `?preview=boss` boots (C-QA3). DEFAULT = the non-shipped dev harness (belliard
  * backdrop). With `&level=<id>` naming a LEVELS level that AUTHORS a `bossQteSpec` (e.g.
- * `niveau-final` — its real spec, seed 19991231, chandelier décor), boots THAT level so the boss
- * renders over its real backdrop + anchor. Any other/absent `level` ⇒ the harness. PURE (search
- * string in, LevelConfig out) — testable, no `window`. Callers gate reachability on `preview=boss`
- * separately; this only picks the level.
+ * `niveau-final` — its real spec, seed 19991232, chandelier décor), boots THAT level so the boss
+ * renders over its real backdrop + anchor. PURE (search string in, LevelConfig out) — testable,
+ * no `window`. Callers gate reachability on `preview=boss` separately; this only picks the level.
+ *
+ * REACHABILITY RULE (E9): a SHIPPED level boots ONLY alongside a VALID capture target (`at=`). A
+ * bare `?preview=boss&level=niveau-final` (no/invalid `at=`) would otherwise make the shipped
+ * finale — canon-locked content + the fiction's one-shot reveal — fully playable from a URL, so it
+ * falls back to the harness exactly like an unknown id. The plain harness (`?preview=boss`, no
+ * `level=`) is unaffected: it boots with or without `at=`, as before.
  */
 export function resolveBossPreviewLevel(search: string): LevelConfig {
-  const id = new URLSearchParams(search).get("level");
-  if (id !== null) {
+  const params = new URLSearchParams(search);
+  const id = params.get("level");
+  // A shipped level needs a valid `at=` capture target (E9) — otherwise the finale is URL-reachable.
+  if (id !== null && parseBossHarnessTarget(params.get("at")) !== null) {
     const lvl = LEVELS.find((l) => l.id === id);
     if (lvl?.bossQteSpec !== undefined) return lvl;
   }

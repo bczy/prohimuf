@@ -68,11 +68,44 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Generate level art (only missing layers, unless dispatched with regenerate=true)
+        # regenerate=true SCOPED PURGE (stage-6 pre-merge triage, finding E1 —
+        # HIGH): a blanket `rm -rf public/assets/levels` used to delete every
+        # committed file under the tree, including ones gen-level-art.mjs has
+        # NEVER produced and NEVER will (belliard's hand-authored
+        # troncon-a/b/c.png + ground.png — outside its fixed LAYERS list) —
+        # those were then gone for good and got committed as deletions by the
+        # step below. Fix, both halves required:
+        #   (a) purge ONLY the exact paths `--paths` reports (LAYERS ∩ each
+        #       level's authored `prompts` keys — the same set the generator
+        #       is actually about to (re)write), never the whole tree;
+        #   (b) a POST-GENERATION PARITY ASSERT: every purged path must exist
+        #       again after the run, or the job fails HERE, before the cutout
+        #       and commit steps — this also protects the partial-failure
+        #       case (gen-level-art.mjs catches a per-layer fetch error and
+        #       continues past it, so one bad network call must not silently
+        #       ship a deletion for that file).
+        # The missing-only default path (no `regenerate` input) is untouched.
         run: |
           if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
-            echo "Forcing full regeneration of level art"
-            rm -rf public/assets/levels
+            echo "Forcing full regeneration of level art (scoped purge)"
+            node scripts/gen-level-art.mjs --paths > /tmp/gen-level-art-purge-list.txt
+            echo "Purging exactly these files (all will be regenerated this run):"
+            cat /tmp/gen-level-art-purge-list.txt
+            while IFS= read -r f; do
+              [ -n "$f" ] && rm -f "$f"
+            done < /tmp/gen-level-art-purge-list.txt
             FORCE=1 node scripts/gen-level-art.mjs
+            missing=0
+            while IFS= read -r f; do
+              if [ -n "$f" ] && [ ! -f "$f" ]; then
+                echo "::error::purged file did not regenerate: $f"
+                missing=$((missing + 1))
+              fi
+            done < /tmp/gen-level-art-purge-list.txt
+            if [ "$missing" -gt 0 ]; then
+              echo "::error::$missing purged file(s) failed to regenerate — aborting before commit"
+              exit 1
+            fi
           else
             node scripts/gen-level-art.mjs
           fi

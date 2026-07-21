@@ -94,9 +94,35 @@ jobs:
           fi
 
       - name: Solidify figures (fill chroma-key holes)
+        # Scoped to the 7 HUMANOID figures only (stage-6 pre-merge triage,
+        # finding E4): fill-sprite-holes.mjs's solid-body reconstruction
+        # assumes a standing-figure silhouette, so running it against the 2
+        # hall PROPS (`lustre`/`speaker_wall`) would fill their legitimate,
+        # intentional see-through gaps (the chandelier's inter-crystal-drop
+        # gaps, the speaker stack's cable/cabinet gaps) as if they were keying
+        # holes in a figure. The props are already covered by the WARN-only
+        # sprite-integrity closability/enclave probe below (figure-agnostic
+        # HARD checks + a human/agent glance on the SOFT warnings) — they do
+        # not need, and must not get, figure-oriented hole-filling. (Despeckle
+        # — the small-debris sweep inside gen-boss-sprites.mjs itself — is a
+        # different, size-bounded operation that only removes sub-12px
+        # islands; it does not touch large legitimate concavities, so it is
+        # not in scope for this exclusion.)
         run: |
-          node scripts/fill-sprite-holes.mjs public/assets/boss/*.png
-          node scripts/fill-sprite-holes.mjs --check public/assets/boss/*.png
+          figures=()
+          for f in public/assets/boss/*.png; do
+            base="$(basename "$f")"
+            if [ "$base" = "lustre.png" ] || [ "$base" = "speaker_wall.png" ]; then
+              continue
+            fi
+            figures+=("$f")
+          done
+          if [ "${#figures[@]}" -gt 0 ]; then
+            node scripts/fill-sprite-holes.mjs "${figures[@]}"
+            node scripts/fill-sprite-holes.mjs --check "${figures[@]}"
+          else
+            echo "no figure PNGs present (props-only regen) — nothing to solidify"
+          fi
 
       - name: Sprite integrity gate (figure/prop topology)
         run: |
