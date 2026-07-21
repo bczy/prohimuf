@@ -1,30 +1,29 @@
 #!/usr/bin/env node
 /**
- * Stitch two ideogram street renders into ONE wide ~5:1 Belliard backdrop image
- * (no tiles, no seams to glue at runtime — Bertrand's single-image approach).
+ * Build the wide Belliard street backdrop from ONE ideogram render by mirroring
+ * it (Bertrand's call — a two-different-image butt-join always shows a seam; a
+ * horizontal mirror makes the seam meet its own reflection = invisible).
  *
- * WHY: the drawn look + self-contained frontal framing come from a paid model
- * (ideogram-v4-quality via scripts/gen-street-paid.mjs, CI), but those models
- * clamp their aspect ratio to ~2.67:1 max — no native 5:1. So two ideogram
- * streets are butt-joined here into ~5.3:1, both first normalised to a common
- * B&W value range (mean + contrast) so no brightness step shows at the join;
- * a tiny feather softens the exact seam. The join reads as a boundary between
- * two building blocks (streets have those).
+ * Pipeline: normalise to a common B&W value range → despeckle the sky band
+ * (grayscale dilation removes the model's dark stipple dots, keeps chimneys) →
+ * trim the left white margin and trim the right edge back to a DARK column (so
+ * the mirror seam lands on dark content, no white band) → mirror.
  *
- * Source renders come from the CI experiment (gen-street-experiment.yml,
- * model=ideogram-v4-quality, seeds 7111 + 7113) — not committed; pass their
- * paths. Output is the committed asset public/assets/levels/belliard/street-wide.png.
+ * Source render comes from the CI experiment (gen-street-experiment.yml,
+ * model=ideogram-v4-quality, seed 7111) — not committed; pass its path.
+ * Output: public/assets/levels/belliard/street-wide.png.
  *
- *   node scripts/stitch-belliard-street.mjs <left.png> <right.png> [out.png]
+ *   node scripts/stitch-belliard-street.mjs <source.png> [out.png]
  */
 import fs from "fs";
 import path from "path";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 
-const H = 1248; // shared height
+const H = 1248;
 const T_MEAN = 155;
 const T_STD = 68;
-const FEATHER = 6;
+const SKY_BAND = Math.round(H * 0.14);
+const DILATE_R = 2;
 
 async function prep(file) {
   const img = await loadImage(file);
@@ -34,8 +33,8 @@ async function prep(file) {
   c.drawImage(img, 0, 0, w, H);
   const d = c.getImageData(0, 0, w, H);
   const p = d.data;
-  let s = 0;
   const n = w * H;
+  let s = 0;
   for (let i = 0; i < p.length; i += 4) {
     const y = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2];
     p[i] = p[i + 1] = p[i + 2] = y;
@@ -49,55 +48,52 @@ async function prep(file) {
     const v = Math.max(0, Math.min(255, (p[i] - mean) * (T_STD / std) + T_MEAN));
     p[i] = p[i + 1] = p[i + 2] = v;
   }
+  // Sky despeckle: grayscale dilation over the top band fills small dark dots
+  // with surrounding light; chimneys (larger) survive.
+  const src = Float32Array.from({ length: w * H }, (_, k) => p[k * 4]);
+  for (let y = 0; y < SKY_BAND; y++) {
+    for (let x = 0; x < w; x++) {
+      let mx = 0;
+      for (let dy = -DILATE_R; dy <= DILATE_R; dy++) {
+        for (let dx = -DILATE_R; dx <= DILATE_R; dx++) {
+          const xx = Math.max(0, Math.min(w - 1, x + dx));
+          const yy = Math.max(0, Math.min(H - 1, y + dy));
+          if (src[yy * w + xx] > mx) mx = src[yy * w + xx];
+        }
+      }
+      const i = (y * w + x) * 4;
+      p[i] = p[i + 1] = p[i + 2] = mx;
+    }
+  }
   return { w, data: p };
 }
 
 async function main() {
-  const [left, right, out = "public/assets/levels/belliard/street-wide.png"] =
-    process.argv.slice(2);
-  if (!left || !right) {
-    console.error(
-      "usage: node scripts/stitch-belliard-street.mjs <left.png> <right.png> [out.png]",
-    );
+  const [source, out = "public/assets/levels/belliard/street-wide.png"] = process.argv.slice(2);
+  if (!source) {
+    console.error("usage: node scripts/stitch-belliard-street.mjs <source.png> [out.png]");
     process.exit(1);
   }
-  const a = await prep(left);
-  const b = await prep(right);
-  // Trim near-white margins on every edge so no pure-white band survives — the
-  // right margin of `left` butting `right` was a white strip at the seam.
-  const colMean = (im, x) => {
+  const a = await prep(source);
+  const colMean = (x) => {
     let s = 0;
-    for (let y = 0; y < H; y++) s += im.data[(y * im.w + x) * 4];
+    for (let y = 0; y < H; y++) s += a.data[(y * a.w + x) * 4];
     return s / H;
   };
-  const trim = (im) => {
-    let L = 0;
-    let R = im.w;
-    while (L < R - 1 && colMean(im, L) > 210) L++;
-    while (R > L + 1 && colMean(im, R - 1) > 210) R--;
-    return { L, R, w: R - L };
-  };
-  const ta = trim(a);
-  const tb = trim(b);
-  const aw = ta.w;
-  const bw = tb.w;
-  const finalW = aw + bw;
-  const gA = (x, y) => a.data[(y * a.w + (ta.L + x)) * 4];
-  const gB = (x, y) => b.data[(y * b.w + (tb.L + x)) * 4];
+  let L = 0;
+  while (L < a.w - 1 && colMean(L) > 210) L++; // drop left white margin
+  let R = a.w;
+  while (R > L + 1 && colMean(R - 1) > 150) R--; // trim right back to a dark seam column
+  const w = R - L;
+  const finalW = w * 2;
+  const g = (x, y) => a.data[(y * a.w + (L + x)) * 4];
   const cv = createCanvas(finalW, H);
   const ctx = cv.getContext("2d");
   const od = ctx.createImageData(finalW, H);
   const o = od.data;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < finalW; x++) {
-      const dx = x - aw;
-      let v;
-      if (dx < -FEATHER) v = gA(x, y);
-      else if (dx > FEATHER) v = gB(dx, y);
-      else {
-        const w = (dx + FEATHER) / (2 * FEATHER);
-        v = gA(Math.min(aw - 1, x), y) * (1 - w) + gB(Math.max(0, dx), y) * w;
-      }
+      const v = x < w ? g(x, y) : g(w - 1 - (x - w), y); // right half = mirror of left
       const i = (y * finalW + x) * 4;
       o[i] = o[i + 1] = o[i + 2] = v;
       o[i + 3] = 255;
@@ -107,7 +103,7 @@ async function main() {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, cv.toBuffer("image/png"));
   console.log(
-    `${out} — ${finalW}x${H} (${(finalW / H).toFixed(2)}:1, ${((finalW * H) / 1e6).toFixed(1)} MP)`,
+    `${out} — ${finalW}x${H} (${(finalW / H).toFixed(3)}:1, ${((finalW * H) / 1e6).toFixed(1)} MP)`,
   );
 }
 
