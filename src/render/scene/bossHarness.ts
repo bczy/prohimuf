@@ -1,7 +1,8 @@
 import type { BossQte, BossQteSpec } from "@game/types/bossQte";
 import type { Vec2 } from "@game/types/vector";
 import { BOSS_PARRY_POINT, createBossQte, tickBossQte } from "@game/systems/bossQteSystem";
-import { BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
+import { BOSS_QTE_DEV_HARNESS_LEVEL, LEVELS } from "@game/levels/levels";
+import type { LevelConfig } from "@game/levels/levels";
 
 /**
  * Boss QTE capture seam (harness-only, NON-shipped) — ADR-0051 D4 / ADR-0005 discipline.
@@ -24,9 +25,11 @@ import { BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
  * are untouched and keep holding.
  */
 
-/** The advance target: `phase2`/`phase3` = 0-based phaseIndex 1/2 ACTIVE; `finisher` = the
- *  ceremonial FINISHER beat (bossHp 0). */
-export type BossHarnessTarget = "phase2" | "phase3" | "finisher";
+/** The advance target: `phase1`/`phase2`/`phase3` = the first EXPOSED window of 0-based phaseIndex
+ *  0/1/2; `finisher` = the ceremonial FINISHER beat (bossHp 0). `phase1` exists so a SHIPPED level
+ *  whose real kill quota gates the boss (niveau-final, C-QA3) is capturable at the single-ring
+ *  opening — unreachable in-sandbox otherwise (the harness reaches it only via its instant trigger). */
+export type BossHarnessTarget = "phase1" | "phase2" | "phase3" | "finisher";
 
 interface BossHarnessWindow extends Window {
   /** Render-installed factory: build a fresh fast-forwarded boss for the boot / re-seed. */
@@ -42,11 +45,13 @@ interface BossHarnessWindow extends Window {
 const FF_DT = 1 / 60;
 const FF_MAX_TICKS = 200_000;
 
-/** True once the fast-forward has driven the boss to its target beat. */
+/** True once the fast-forward has driven the boss to its target beat. Phase targets land on the
+ *  FIRST EXPOSED window of the wanted phase (a readable single/dual-ring frame, not the SHIELDED
+ *  lull), so the scripted loop stops before chipping that window. */
 function targetReached(qte: BossQte, target: BossHarnessTarget): boolean {
   if (target === "finisher") return qte.phase === "FINISHER";
-  const wantPhaseIndex = target === "phase2" ? 1 : 2;
-  return qte.phase === "ACTIVE" && qte.phaseIndex >= wantPhaseIndex;
+  const wantPhaseIndex = target === "phase1" ? 0 : target === "phase2" ? 1 : 2;
+  return qte.phase === "ACTIVE" && qte.stance === "EXPOSED" && qte.phaseIndex >= wantPhaseIndex;
 }
 
 /**
@@ -82,7 +87,48 @@ export function fastForwardBossQte(spec: BossQteSpec, target: BossHarnessTarget)
 
 /** Parse the `at=` capture param to a target, or `null` for any other/absent value. */
 export function parseBossHarnessTarget(raw: string | null): BossHarnessTarget | null {
-  return raw === "phase2" || raw === "phase3" || raw === "finisher" ? raw : null;
+  return raw === "phase1" || raw === "phase2" || raw === "phase3" || raw === "finisher"
+    ? raw
+    : null;
+}
+
+/**
+ * Which level `?preview=boss` boots (C-QA3). DEFAULT = the non-shipped dev harness (belliard
+ * backdrop). With `&level=<id>` naming a LEVELS level that AUTHORS a `bossQteSpec` (e.g.
+ * `niveau-final` — its real spec, seed 19991232, chandelier décor), boots THAT level so the boss
+ * renders over its real backdrop + anchor. PURE (search string in, LevelConfig out) — testable,
+ * no `window`. Callers gate reachability on `preview=boss` separately; this only picks the level.
+ *
+ * REACHABILITY RULE (E9): a SHIPPED level boots ONLY alongside a VALID capture target (`at=`). A
+ * bare `?preview=boss&level=niveau-final` (no/invalid `at=`) would otherwise make the shipped
+ * finale — canon-locked content + the fiction's one-shot reveal — fully playable from a URL, so it
+ * falls back to the harness exactly like an unknown id. The plain harness (`?preview=boss`, no
+ * `level=`) is unaffected: it boots with or without `at=`, as before.
+ */
+export function resolveBossPreviewLevel(search: string): LevelConfig {
+  const params = new URLSearchParams(search);
+  const id = params.get("level");
+  // A shipped level needs a valid `at=` capture target (E9) — otherwise the finale is URL-reachable.
+  if (id !== null && parseBossHarnessTarget(params.get("at")) !== null) {
+    const lvl = LEVELS.find((l) => l.id === id);
+    if (lvl?.bossQteSpec !== undefined) return lvl;
+  }
+  return BOSS_QTE_DEV_HARNESS_LEVEL;
+}
+
+/**
+ * True when the boss capture seam targets a SHIPPED (in-`LEVELS`) level — i.e. `?preview=boss&
+ * level=<id>` where `<id>` is a real level authoring a `bossQteSpec` (C-QA3: `niveau-final`).
+ * `App` folds this into its persistence guard so a seam-booted SHIPPED level is treated as
+ * non-shipped for score/unlock writes — belt-and-suspenders BEHIND the `?preview=` early-return
+ * (the seam boots a level that IS in LEVELS, unlike the harness, so the LEVELS-membership guard
+ * alone would let it persist). `false` for the harness and off the `?preview=boss` path.
+ */
+export function isBossSeamShippedLevel(search: string): boolean {
+  const params = new URLSearchParams(search);
+  if (params.get("preview") !== "boss") return false;
+  const level = resolveBossPreviewLevel(search);
+  return level.id !== BOSS_QTE_DEV_HARNESS_LEVEL.id;
 }
 
 /**
@@ -98,7 +144,8 @@ export function installBossCaptureSeam(): void {
   if (params.get("preview") !== "boss") return;
   const target = parseBossHarnessTarget(params.get("at"));
   if (target === null) return;
-  const spec = BOSS_QTE_DEV_HARNESS_LEVEL.bossQteSpec;
+  // Default harness, or the `&level=<id>` shipped level (C-QA3 — niveau-final over l'Éden).
+  const spec = resolveBossPreviewLevel(window.location.search).bossQteSpec;
   if (spec === undefined) return;
   const w = window as BossHarnessWindow;
   w.__MUF_BOSS_BOOT__ = () => fastForwardBossQte(spec, target);

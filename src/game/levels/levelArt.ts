@@ -189,7 +189,12 @@ export interface LevelArt {
    * floor line. Defaults to 0 (base pinned just under the opening).
    */
   readonly ironworkSillOffset?: number;
-  readonly prompts: Record<LayerName, string>;
+  /** Per-layer generation prompts (scripts/gen-level-art.mjs). An INTERIOR venue
+   *  (e.g. niveau-final's l'Éden hall) legitimately drops `sky`/`street` — there is
+   *  no exterior for them to depict, and baking a dropped layer's prompt would send
+   *  the generator a broken "undefined" string. Partial, not a closed Record: the
+   *  generator/lint only iterate the keys actually present. */
+  readonly prompts: Partial<Record<LayerName, string>>;
   /** Per-level override of the enemy window grid; falls back to WINDOW_GRID. */
   readonly windowGrid?: WindowGrid;
   /** Hand-authored window zones (level design); takes priority over windowGrid. */

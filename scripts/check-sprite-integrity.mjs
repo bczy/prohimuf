@@ -32,9 +32,20 @@
  *     catches the 68 debris parasites) + binary-alpha. The speckle budget is what
  *     PROVES detection: pre-fix = 68 parasites → FAIL, post-retouch = 0 → PASS.
  *   • SOFT (inventory + WARN, printed, NON-failing — routed to the human/agent art
- *     gates): an inventory of interior transparent enclaves, flagging any large one
- *     sitting in the figure's torso/hip zone (where a human body is solid). This is
- *     the layer that surfaces the anatomy-hole class for a human glance.
+ *     gates): (1) an inventory of interior transparent enclaves, flagging any large
+ *     one sitting in the figure's torso/hip zone (where a human body is solid) —
+ *     surfaces the anatomy-hole class for a human glance; (2) a CLOSABILITY PROBE
+ *     (added for the boss 9-asset cutout crisis, docs/handoffs/
+ *     story-boss-niveau-final-live.md, Serge's TECHNICAL PASS 2026-07-21): a hole
+ *     that is topologically CONNECTED to the exterior background through a thin
+ *     channel (an edge notch, a fabric-shadow trough) is invisible to (1) — it
+ *     `touchesBorder`, so it never becomes an "enclave" and dominance stays ~100%
+ *     (the EXACT blind spot documented below for the historical courier bug). The
+ *     probe reconstructs the solid-body mask at the current closing radius and
+ *     again at a larger diagnostic radius and WARNs on the delta in the torso zone
+ *     — see the CLOSABILITY_DIAG_R/CLOSABILITY_MIN_PX constant-block comment for
+ *     the full rationale. Both SOFT checks only ever WARN; neither affects the
+ *     HARD PASS/FAIL verdict or the CI exit code.
  *
  * ── FIGURE-only scoping of the SOFT enclave check ────────────────────────────
  * The 0.80 torso fraction assumes a STANDING HUMAN FIGURE (solid torso up top, legit
@@ -59,7 +70,17 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { labelComponents } from "./lib/morphology.mjs";
+import {
+  labelComponents,
+  diskOffsets,
+  dilate,
+  erode,
+  fillHoles,
+  largestComponent,
+  CLOSE_R,
+  ERODE_R,
+  SEAL_MARGIN,
+} from "./lib/morphology.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -94,6 +115,29 @@ const MAX_SEMI_ALPHA_PX = 0;
 const SUSPECT_ENCLAVE_MIN_PX = 150;
 const ENCLAVE_TORSO_FRAC = 0.8;
 
+// (f) CLOSABILITY PROBE — game-graphist Serge's TECHNICAL PASS finding
+//     (docs/handoffs/story-boss-niveau-final-live.md, 2026-07-21 boss 9-asset cutout
+//     crisis): a hole topologically CONNECTED to the exterior background through a
+//     thin channel (an edge notch, a fabric-shadow trough that also reaches open
+//     background elsewhere) never registers as an "enclave" above — `touchesBorder`
+//     is true, so it's part of the one dominant component and dominance stays ~100%.
+//     This is the EXACT blind spot this gate's own header/calibration table documents
+//     for the historical courier bug ("the legs hang on via the bike frame, ~0.99
+//     dominance ratio — does NOT catch it"). Reconstruct the solid-body mask (the
+//     same PASS-A recipe fill-sprite-holes.mjs uses, scripts/lib/morphology.mjs) at
+//     the CURRENT close radius (CLOSE_R) and again at a larger DIAGNOSTIC radius:
+//     pixels the diagnostic radius reconstructs as body but the current radius still
+//     leaves transparent are candidate border-connected holes a bigger closing radius
+//     WOULD bridge. WARN (never fail) when that delta, restricted to the figure's
+//     torso zone (reuses ENCLAVE_TORSO_FRAC/isFigure), exceeds CLOSABILITY_MIN_PX —
+//     mirrors SUSPECT_ENCLAVE_MIN_PX's role for true enclaves. A bigger radius is
+//     deliberately NOT applied project-wide (it would also bridge legitimate pose
+//     concavities — an arm held clear of the torso, a spread-leg stance — the reason
+//     fill-sprite-holes.mjs's CLOSE_R stays 10); this probe only ever WARNS for a
+//     human glance, it never widens the real solidify radius nor fails the gate.
+const CLOSABILITY_DIAG_R = 25;
+const CLOSABILITY_MIN_PX = 150;
+
 // Alpha is binary after keying; treat anything non-zero as opaque content.
 const OPAQUE_ALPHA_MIN = 1;
 
@@ -102,6 +146,47 @@ const OPAQUE_ALPHA_MIN = 1;
 // retouch-sprites.mjs): an 8-conn labelling would merge the diagonally-linked keying-debris
 // cluster (near x199-206 on the courier) into one larger component that slips under the
 // < 12px speckle budget and escapes detection.
+
+/**
+ * Reconstruct the figure's solid-body mask at an arbitrary closing radius.
+ * DELIBERATE DUPLICATE of `solidBodyMask` (scripts/lib/morphology.mjs): that
+ * function's closing radius is `CLOSE_R`, precomputed into a module-level disk
+ * at load time and marked CORRECTNESS-CRITICAL/FROZEN (it is the exact recipe
+ * fill-sprite-holes.mjs commits bytes with) — it must not be touched to add a
+ * parameter. This copy exists ONLY so the closability probe below can compare
+ * the CURRENT radius against a larger DIAGNOSTIC one; it is never used to
+ * write pixels, only to measure a WARN-only delta.
+ */
+function reconstructBodyMaskAtRadius(opaque, W, H, closeR) {
+  const N = W * H;
+  let minX = W;
+  let maxX = -1;
+  for (let i = 0; i < N; i++) {
+    if (opaque[i]) {
+      const x = i % W;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+    }
+  }
+  if (maxX < minX) return opaque; // no figure — nothing to reconstruct
+  const sealed = Uint8Array.from(opaque);
+  const yCut = H - 1 - SEAL_MARGIN;
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = H - 1; y >= yCut; y--) {
+      if (opaque[y * W + x]) {
+        sealed[(H - 1) * W + x] = 1;
+        break;
+      }
+    }
+  }
+  const disk = diskOffsets(closeR);
+  let solid = dilate(sealed, W, H, disk);
+  solid = erode(solid, W, H, disk); // closing
+  solid = fillHoles(solid, W, H);
+  solid = largestComponent(solid, W, H);
+  solid = erode(solid, W, H, diskOffsets(ERODE_R)); // anti-halo
+  return solid;
+}
 
 /**
  * Measure the topology / integrity of one keyed sprite. Pure (no I/O), so it is
@@ -132,6 +217,23 @@ export function measureIntegrity({ W, H, d }) {
     .filter((c) => !c.touchesBorder)
     .map((c) => ({ size: c.size, bbox: c.bbox }));
 
+  // CLOSABILITY PROBE (see the constant-block comment above): reconstruct the solid
+  // body at the current CLOSE_R and again at the larger CLOSABILITY_DIAG_R. A pixel
+  // the diagnostic radius claims as body, the current radius still leaves open, AND
+  // is genuinely transparent in the source (not an anti-halo erosion edge artifact)
+  // is a candidate border-connected hole invisible to the enclave test above.
+  const opaqueMask = new Uint8Array(W * H);
+  for (let p = 0; p < W * H; p++) opaqueMask[p] = isOpaque(p) ? 1 : 0;
+  const closeMask = reconstructBodyMaskAtRadius(opaqueMask, W, H, CLOSE_R);
+  const diagMask = reconstructBodyMaskAtRadius(opaqueMask, W, H, CLOSABILITY_DIAG_R);
+  const delta = new Uint8Array(W * H);
+  for (let p = 0; p < W * H; p++) {
+    delta[p] = diagMask[p] === 1 && closeMask[p] !== 1 && !opaqueMask[p] ? 1 : 0;
+  }
+  const closability = labelComponents(W, H, (p) => delta[p] === 1, { connectivity: 4 }).map(
+    (c) => ({ size: c.size, bbox: c.bbox }),
+  );
+
   // Silhouette geometry from the dominant opaque component (for the torso-zone test).
   const [, silTop, , silBottom] = dominant.bbox;
   const silHeight = silBottom - silTop + 1;
@@ -150,6 +252,7 @@ export function measureIntegrity({ W, H, d }) {
     silTop,
     silHeight,
     enclaves,
+    closability,
   };
 }
 
@@ -190,6 +293,22 @@ export function evaluateIntegrity(m, { isFigure = true } = {}) {
       warnings.push(
         `enclave ${e.size}px bbox=[${e.bbox}] top at ${pctDown.toFixed(0)}% down ` +
           `(torso/hip zone) — verify it is not a severed limb / anatomy hole`,
+      );
+    }
+  }
+
+  // SOFT: closability probe (border-connected holes the enclave test above cannot
+  // see, per Serge's TECHNICAL PASS finding — see the constant-block comment).
+  // Same torso-zone scoping and size threshold shape as the enclave WARN.
+  for (const c of m.closability ?? []) {
+    const inTorsoZone = isFigure && c.bbox[1] < torsoY;
+    if (c.size > CLOSABILITY_MIN_PX && inTorsoZone) {
+      const pctDown = m.silHeight > 0 ? ((c.bbox[1] - m.silTop) / m.silHeight) * 100 : 0;
+      warnings.push(
+        `closability ${c.size}px bbox=[${c.bbox}] top at ${pctDown.toFixed(0)}% down ` +
+          `(torso/hip zone) — border-connected hole a bigger closing radius would bridge; ` +
+          `verify it is not a severed limb / anatomy hole (not caught by the enclave check ` +
+          `because it touches the border through a thin channel)`,
       );
     }
   }

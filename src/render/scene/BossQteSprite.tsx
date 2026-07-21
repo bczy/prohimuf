@@ -5,6 +5,8 @@ import { CanvasTexture, RingGeometry } from "three";
 import type { Mesh, MeshBasicMaterial, OrthographicCamera, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
 import {
+  BOSS_DECOR_CATCH_HALF_H,
+  BOSS_DECOR_CATCH_HALF_W,
   BOSS_PARRY_POINT,
   BOSS_VITAL_CATCH_RADIUS,
   BOSS_VITAL_WANDER_CENTRE,
@@ -130,8 +132,14 @@ const PARRY_SMOKE_DEGRADE = 0.4; // at full smoke the glyph dims to 0.6× — a 
 // with a genuine radial DÉGRADÉ (alpha falls monotonically to 0 at the rim — « un halo est un
 // dégradé, jamais un aplat », composite-gate §2.1 fix). The lime never becomes a flat fill.
 const DECOR_Z = 0.45;
-const DECOR_W = 0.8;
-const DECOR_H = 1.05;
+// AMENDMENT A2 §2 (gated 2026-07-20): the drawn prop plane IS the scored catch zone — the SHIELDED
+// décor branch scores an anchor-relative AABB of half-extents `BOSS_DECOR_CATCH_HALF_W/H`, so every
+// drawn pixel is clickable and nothing beyond it (drawn == catch, glow 2.2 is an attention cue, not
+// the catch). Derived from the game-side source of truth so the two stay locked structurally and
+// track any future catch re-tune — exactly as the vital ring draws at `BOSS_VITAL_CATCH_RADIUS`.
+// Today 2×0.40 × 2×0.525 == 0.80 × 1.05: identical output, zero pixel change (art-preserving).
+const DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W;
+const DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H;
 const DECOR_INERT_TINT = "#6b7580";
 const DECOR_ARMED_TINT = "#c6ff5a"; // acid glow = interactive (bible's glow law) — HALO only, dégradé
 const DECOR_GLOW_Z = 0.44; // just behind the prop, so the halo dégradé wraps it

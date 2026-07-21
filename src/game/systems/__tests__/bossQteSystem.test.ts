@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   BOSS_DECOR_DAMAGE,
+  BOSS_DECOR_CATCH_HALF_W,
+  BOSS_DECOR_CATCH_HALF_H,
   BOSS_LIMB_WANDER_AMP_X,
   BOSS_LIMB_WANDER_AMP_Y,
   BOSS_LIMB_WANDER_CENTRE,
@@ -1046,6 +1048,87 @@ describe("bossQteSystem — lever 2: interactive décor prop", () => {
     expect(r.qte.phase).toBe("FINISHER");
     expect(r.qte.bossHp).toBe(0);
     expect(r.qte.decorConsumed).toBe(true);
+  });
+});
+
+describe("bossQteSystem — AMENDMENT A2: décor catch = drawn silhouette (AABB, aim-honesty)", () => {
+  // The chandelier the live niveau-final level authors, at the origin anchor so an impact at
+  // `(PX+dx, PY+dy)` is exactly `(dx, dy)` off the drawn prop centre.
+  const PX = 0.2;
+  const PY = 1.5;
+  const A2_SPEC: BossQteSpec = {
+    ...SPEC,
+    decorProp: { position: { x: PX, y: PY }, armPhaseIndex: 1 },
+  };
+
+  /** Arm the prop, fire once at (prop centre + offset), return whether the burst was claimed. */
+  function decorDropsAtOffset(dx: number, dy: number): { consumed: boolean; hp: number } {
+    const active = toActiveSpec(A2_SPEC);
+    const armed = tickBossQte(
+      { ...active, phaseIndex: 1, stance: "SHIELDED", stanceRemaining: 1.0, bossHp: 12 },
+      false,
+      NO_HIT,
+      0.01,
+    ).qte;
+    expect(armed.decorArmed).toBe(true);
+    const shot = tickBossQte(
+      armed,
+      true,
+      { x: armed.anchor.x + PX + dx, y: armed.anchor.y + PY + dy },
+      0.01,
+    );
+    return { consumed: shot.qte.decorConsumed, hp: shot.qte.bossHp };
+  }
+
+  it("the catch half-extents equal half the drawn 0.80×1.05 plane (drawn == catch pin)", () => {
+    expect(BOSS_DECOR_CATCH_HALF_W).toBe(0.4);
+    expect(BOSS_DECOR_CATCH_HALF_H).toBe(0.525);
+  });
+
+  it("dy 0.45 — the reported hole — now scores the +3 burst (was a silent no-op under the 0.30 circle)", () => {
+    // |dy| 0.45 ∈ (0.30, 0.525]: outside the old circle, INSIDE the drawn silhouette.
+    const r = decorDropsAtOffset(0, 0.45);
+    expect(r.consumed).toBe(true);
+    expect(r.hp).toBe(12 - BOSS_DECOR_DAMAGE);
+  });
+
+  it("a horizontal corner (dx 0.35, dy 0.50) scores — inside the box, outside the 0.30 circle", () => {
+    // hypot(0.35, 0.50) ≈ 0.61 ≫ 0.30 (old circle would miss); both |dx|,|dy| within the box.
+    expect(decorDropsAtOffset(0.35, 0.5).consumed).toBe(true);
+  });
+
+  it("the box boundary: just inside ±(HALF_W, HALF_H) scores, just beyond does not", () => {
+    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W - 0.01, 0).consumed).toBe(true);
+    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H - 0.01).consumed).toBe(true);
+    expect(decorDropsAtOffset(BOSS_DECOR_CATCH_HALF_W + 0.01, 0).consumed).toBe(false);
+    expect(decorDropsAtOffset(0, BOSS_DECOR_CATCH_HALF_H + 0.01).consumed).toBe(false);
+  });
+
+  it("beyond the drawn silhouette does NOT score (dy 0.60 too tall, dx 0.45 too wide)", () => {
+    // These fell inside a circumscribing radius but are empty space beyond the drawn corners —
+    // the box keeps drawn==catch honest the OTHER way too (no phantom hits off the silhouette).
+    expect(decorDropsAtOffset(0, 0.6).consumed).toBe(false);
+    expect(decorDropsAtOffset(0.45, 0).consumed).toBe(false);
+  });
+
+  it("stays PURE UPSIDE: an off-silhouette click leaves the prop armed (no décor failure)", () => {
+    // Firing just outside the box is the ordinary SHIELDED spray — the prop is untouched, so the
+    // single-use window is not burned by a near-miss.
+    const active = toActiveSpec(A2_SPEC);
+    const armed = tickBossQte(
+      { ...active, phaseIndex: 1, stance: "SHIELDED", stanceRemaining: 1.0, bossHp: 12 },
+      false,
+      NO_HIT,
+      0.01,
+    ).qte;
+    const miss = tickBossQte(
+      armed,
+      true,
+      { x: armed.anchor.x + PX, y: armed.anchor.y + PY + 0.6 },
+      0.01,
+    );
+    expect(miss.qte.decorConsumed).toBe(false);
+    expect(miss.qte.decorArmed).toBe(true);
   });
 });
 

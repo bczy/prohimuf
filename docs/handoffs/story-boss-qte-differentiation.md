@@ -3464,3 +3464,12 @@ Story is **ready for Bertrand's merge** — stage 8 is his. No further pm action
   §3). Kept strictly additive at end-of-file. No commit/push.
 - File List:
   - `docs/handoffs/story-boss-qte-differentiation.md` (this entry, additive, end-of-file only)
+
+## 8. MERGE (stage 8) — orchestrator (Bertrand) — 2026-07-20
+
+- claim: merge `claude/yo-pmnyzr` (PR #114) to `main` after stage-6 4-reviewer panel NO-MERGE-until-fix cleared by the 7-item pre-merge batch (all MINEUR, none BLOQUANT/MAJEUR) and stage-7 pm ACCEPTANCE.
+- release: PR #114 merged to `main`, STORY-BOSS-QTE-DIFFERENTIATION stage 8 COMPLETE. Story CLOSED.
+- File List:
+  - `docs/handoffs/story-boss-qte-differentiation.md` (this entry — story CLOSED)
+
+VERDICT: CLOSED — story-boss-qte-differentiation (orchestrator) — PR #114 merged, 7-item pre-merge batch landed and re-verified (dev-r3f-render #1/#6/#7/#8 + NITs, dev-gameplay #2, tech-writer #4+ADR-0052/0053 revisions, dev-tooling-assets+gpu #3), all regression lines VERIFIED vs origin/main (phase-1 byte-identical, hostage + stateMachine ZERO-diff, shipped LevelConfigs untouched, harness persistence inert), story-7 pm ACCEPTANCE logged. The 5-lever differentiation pack (points faibles multiples, parade, décor interactif, coup de grâce, in-tableau renfort) is live. Follow-up register logged under stage-7 ACCEPTANCE (pm §26): #5 (décor aim-honesty — HARD design gate before any shipped level authors decorProp, gate BLOCKED until Karim stamps direction), #9 (teach-index spec transcription), #10 (décor single-source hygiene), NITs, documentation-hygiene note (smoke.png downsize landed but no dedicated handoff entry from dev-tooling-assets), on-device perf run (Bertrand executes), audio wiring lane (ADR-0052 §7).

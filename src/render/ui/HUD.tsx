@@ -63,8 +63,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           the delivery readout must paint on top of the direction cue. */}
       {/* Hidden for the whole QTE set-piece (zoom → duel → verdict): the scene is
           frozen on the tableau, so the direction cue is meaningless there and the
-          enlarged arrows would poke into it. Back as soon as the verdict clears. */}
-      {!isQteSetPieceVisible(data.hostageQte) && (
+          enlarged arrows would poke into it. Back as soon as the verdict clears. The
+          BOSS QTE (ADR-0051) freezes the scene on the same locked camera, so gate on it
+          too — `bossQte` is undefined exactly while it is inactive (Tony story-2 UX). */}
+      {!isQteSetPieceVisible(data.hostageQte) && data.bossQte === undefined && (
         <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
       )}
 

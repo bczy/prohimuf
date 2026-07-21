@@ -47,6 +47,29 @@ grey panels with black contours, the stack lighter than the black backdrop` ; c�
   telles quelles ; la 2ᵉ devient un check prop-specific du defect-sweep de sa passe TECHNIQUE (si une
   silhouette humaine incidente bleed dans un prop → trigger du fallback tail roster-wide, pas un fork).
 
+## BATCH-2 reroll [B1]-[B4] intégré (Serge TECHNICAL PASS mesurée, 2026-07-21 — DERNIER reroll du cap 2-batches)
+
+Le batch-1 a landé les 9 PNGs ; revue Bertrand « très mal détouré » + « attention aux trous ». Serge a
+**mesuré** (hole-audit / closability probe, `morphology.mjs`) : **5/9 CLEAN** (`commander_exposed`,
+`_hit`, `_down`, `_weakpoint`, `_parry_windup` — les « trous » y sont du **négatif de pose légitime**,
+prompts **inchangés byte-for-byte**) ; **4/9 REGEN**. Fixes ciblés (≈1 variable/prompt, tous **positifs**
+→ budget négation tenu), appliqués au shard **et** aux 4 strings `levelArt.json` :
+
+- **[B1] `commander_shielded`** — liséré clair dédié au **hem/hanche** (le trou rond du batch-1 y était
+  edge-connecté, non-bridgeable). `a pale contour of light tracing the coat lower hem and hip edge`.
+- **[B2] `commander_finisher`** (pire, ~14,6% troué) — **plancher de valeur des plis** sur **torse +
+  cuisse** (rendus near-black au batch-1). `its torso and thigh folds a mid-charcoal, lighter than the
+pitch-black backdrop` (positif, pas « no near-black »).
+- **[B3] `lustre`** (~13,5% troué + orphan-drop) — value-lock **étendu à l'ARMATURE** (`the whole frame
+a solid pale-to-mid grey lighter than the black backdrop`) + **guard mono-objet positif** (`one …
+chandelier`, `every drop attached to the frame`).
+- **[B4] `speaker_wall`** (94,3% revenu en photo outdoor) — **verrou fond-noir dominant** tôt dans le
+  sujet (`on a completely flat uniform black background filling the frame`) + retrait du langage
+  photo-évocateur (`from the ground up`, `scaffold` supprimés).
+
+Comptes après batch-2 (assemblé `prompt`+`style`, tenus à la main) : shielded **117**, finisher **119**,
+lustre **120**, speaker_wall **119** — 0 négation sujet, 2 assemblé, tous ≤120. Les 5 CLEAN inchangés.
+
 ## Binding ruling — RULING (1) bare-headed plainclothes-BAC (lead-art, Nico, 2026-07-20)
 
 **PAS de casquette à visière. Le Commandant est tête nue.** ADN partagé sur les **7 figures
@@ -132,15 +155,21 @@ budget §3.1). Continuité `the same … commander` = recolle les poses (utile p
 
 ## A. Les 4 poses V1 redraftées (EXISTENT dans levelArt.json — APPLIQUÉES)
 
-### `commander_shielded` — SHIELDED / protégé (seed 4870) — APPLIQUÉ
+### `commander_shielded` — SHIELDED / protégé (seed 4870) — APPLIQUÉ · **BATCH-2 [B1]**
 
-> a towering french plainclothes commander at full height, facing forward, bare-headed, a long
-> knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black backdrop, broad
-> squared shoulders, a reflective brassard on the sleeve, a radio clipped at the shoulder, a gloved
-> hand flat in a halt gesture, the other on a holstered boxy sidearm at the hip, closed guarded stance
+> a towering french plainclothes commander, facing forward, bare-headed, a long knee-length
+> charcoal-grey overcoat lighter than the black backdrop, a pale contour of light tracing the coat
+> lower hem and hip edge, broad squared shoulders, a reflective brassard on the sleeve, a shoulder
+> radio, a gloved hand in a halt gesture, the other on a holstered boxy sidearm, closed guarded stance
 
-- `towering … at full height` → masse dominante, plein pied ; distinct du buste-fenêtre.
+- `towering … commander` → masse dominante, plein pied ; distinct du buste-fenêtre.
 - `bare-headed` → RULING §1 ; le tell fort (seul crâne nu du roster).
+- **[B1] (batch-2, Serge TECHNICAL)** : `a pale contour of light tracing the coat lower hem and hip
+edge` → le liséré clair GÉNÉRAL (`with pale edge highlights`) s'était dégradé **à ce contour
+  précis** (le batch-1 a mordu un trou rond dans le tissu à la hanche/l'ourlet, edge-connecté au fond
+  → non-bridgeable). Clause de contour dédiée au hem/hanche = value-separation locale forcée là où le
+  détourage cassait. (Compensé : `at full height`, `flat`, `clipped at the shoulder`, `at the hip`
+  trimés pour rester ≤120.)
 - `long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black
 backdrop` → LE tell « chef » sans couleur, **+ [S1]** : valeur médiane keyable (jamais near-black),
   résout la contradiction avec la tail « light grey … tones ».
@@ -277,20 +306,25 @@ sur lui — livraison, pas exécution. Sprite mono-figure → aucun agresseur/ar
 garde-fou est intrinsèquement tenu ; je décris positivement (main qui remonte, main qui prend appui,
 tête haute).
 
-> the same bare-headed french plainclothes commander down on one knee, his long charcoal-grey
-> overcoat, lighter than the black ground, pooling at his bent leg, upright from the waist, head up,
-> one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder radio,
+> the same bare-headed french plainclothes commander on one knee, his long overcoat pooling at his
+> leg, its torso and thigh folds a mid-charcoal, lighter than the pitch-black backdrop, upright from
+> the waist, head up, one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio,
 > calling it in, the other on his knee, straining unfinished effort, facing forward
 
-- `down on one knee` + `his long charcoal-grey overcoat … pooling at his bent leg` → à genou, manteau
-  qui flaque (Estelle « one knee down, coat pooling ») ; **`lighter than the black ground`** = [S1].
+- `on one knee` + `his long overcoat pooling at his leg` → à genou, manteau qui flaque (Estelle « one
+  knee down, coat pooling »).
+- **[B2] (batch-2, Serge TECHNICAL — la pire entrée du set, ~14,6% de surface trouée)** : `its torso
+and thigh folds a mid-charcoal, lighter than the pitch-black backdrop` → le batch-1 a rendu les plis
+  d'ombre du manteau/pantalon en **near-key-black** sur toute la **cuisse à genou** et le **torse/dos**
+  (deux vrais trous à travers le tissu, exactement le risque [S7]/gate Nico « highest anatomy »). Plancher
+  de valeur des plis **positif** (mid-charcoal, jamais near-black) ciblé sur ces deux zones — pas de
+  négation (« lighter than », pas « no near-black », budget tenu).
 - `upright from the waist, head up` → **encore en vie / en train d'essayer**, le distingue nettement
   du sprawl immobile de `down`.
-- `one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder
-radio, calling it in` → le geste que le finisher stoppe (fiction §3.1) **+ [S7] (priorité)** : la
-  manche couvre le bras épaule→poignet (membre épais/continu → coupe le risque limb-detach ET
-  thin-limb-vanish à taille de jeu) et la **main fermée** sur la radio supprime le gap-entre-doigts
-  qui key-troue. (Passe TECHNIQUE de Serge = defect-sweep anatomie obligatoire sur cette entrée.)
+- `one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio, calling it in` →
+  le geste que le finisher stoppe (fiction §3.1) **+ [S7]** : `sleeved to the wrist` = manche couvre le
+  bras épaule→poignet (membre épais/continu → coupe limb-detach ET thin-limb-vanish) et la **main
+  fermée** supprime le gap-entre-doigts qui key-troue.
 - `straining unfinished effort` → tension d'effort, **pas** douleur/mort (garde-fou de ton §3.2 ;
   sprite mono-figure = aucune arme braquée sur lui, garde-fou intrinsèquement tenu).
 
@@ -316,24 +350,28 @@ salle-de-bal 1900-30, **dégât asymétrique** (une pampille manquante, inclinai
 gravats ; silhouette cône/parapluie avec **spokes rayonnants SUGGÉRÉS** (non énumérés). PAS une
 boule à facettes, PAS d'industrial-chic.
 
-> a grand ballroom chandelier hung from a single chain up top, a multi-tier cone-and-umbrella stack of
-> crystal-drop rings, an ornate wrought-iron and brass armature with suggested arms, solid pale
-> grey-white faceted crystal drops, each with a bright rim highlight, two adjacent drops missing on one
-> side, a wide notch, hanging slightly tilted and dust-dulled, decayed 1900s grandeur, centered and fully visible
+> one grand ballroom chandelier on a single chain up top, a multi-tier cone-and-umbrella wrought-iron
+> armature, the whole frame a solid pale-to-mid grey lighter than the black backdrop, hung with solid
+> pale grey-white crystal drops, each with a bright rim, every drop attached to the frame, two adjacent
+> drops missing, a wide notch, slightly tilted and dusty, decayed 1900s grandeur, centered and fully visible
 
-- `hung from a single chain up top` → il **PEND** (HUNG) — lecture « au bâtiment », composition top-centrée.
-- `multi-tier cone-and-umbrella stack of crystal-drop rings` → la forme cône/parapluie qui **exclut la
-  boule à facettes** (mirror-ball) par la forme, pas par négation.
-- `ornate wrought-iron and brass armature with suggested arms` → armature ornée qui exclut
-  l'industrial-chic ; **arms suggérés, non énumérés** (Estelle ; Serge PASS-AS-IS : linework tier/arms
-  ornemental, la lecture porte sur cône + chaîne + tilt + dust).
-- `solid pale grey-white faceted crystal drops, each with a bright rim highlight` → **[S8]** : valeur
-  PLEINE claire (remplace « strings of faceted glass droplets ») — aucune facette à valeur sombre qui
-  tomberait dans la plage near-black et se ferait key-trouer contre le fond noir (le keyer confondrait
-  ces trous avec le SEUL dégât voulu).
-- `two adjacent drops missing on one side, a wide notch` → **[S9]** : notch élargie (deux pampilles
-  adjacentes) pour que le **dégât asymétrique** survive au downscale à taille de jeu, pas seulement en
-  256px pleine résolution ; jamais gravats.
+- `one grand ballroom chandelier on a single chain up top` → il **PEND** (HUNG) — lecture « au
+  bâtiment », composition top-centrée ; `one … chandelier` ouvre le guard mono-objet (voir [B3]).
+- `multi-tier cone-and-umbrella wrought-iron armature` → la forme cône/parapluie qui **exclut la boule
+  à facettes** (mirror-ball) par la forme.
+- **[B3] (batch-2, Serge TECHNICAL — ~13,5% du prop troué + un orphan-drop dupliqué)** :
+  - `the whole frame a solid pale-to-mid grey lighter than the black backdrop` → **étend le value-lock
+    [S8] du CRISTAL à l'ARMATURE** : le batch-1 a rendu la masse fer forgé/laiton entre étages en
+    near-key-dark → « swiss-cheese » de la structure (le [S8] n'avait éclairci que les pampilles, pas le
+    frame). Maintenant tout le frame est verrouillé en valeur médiane claire.
+  - `one … chandelier` + `every drop attached to the frame` → **guard mono-objet POSITIF** contre
+    l'artefact orphan-drop (une pampille flottante déconnectée / fil sévéré du batch-1) : un seul objet
+    continu, chaque pampille restante rattachée au frame (0 négation — pas de « no duplicate »).
+- `solid pale grey-white crystal drops, each with a bright rim` → **[S8]** : valeur PLEINE claire (pas
+  de facette sombre qui key-troue contre le fond noir).
+- `two adjacent drops missing, a wide notch` → **[S9]** : notch élargie (deux pampilles adjacentes) pour
+  que le **dégât asymétrique** survive au downscale ; jamais gravats. (Cohérent avec « every drop
+  attached » : les manquantes sont ABSENTES — un trou net —, les présentes toutes rattachées.)
 - `decayed 1900s grandeur` → registre salle-de-bal d'époque.
 
 ### `speaker_wall` (mur d'enceintes) — le sound-system du crew (seed sugg. 4878)
@@ -343,20 +381,24 @@ pyramide/mur brute, non-brandé, câbles speakon/XLR qui serpentent, gaffer, rig
 marques de crew au **pochoir** (cadeau maison). Lit **CONSTRUIT** vs le lustre **PENDU**. PAS un
 line-array, PAS un DJ booth, PAS des amplis guitare.
 
-> a hand-built teknival sound-system wall from the ground up, a pyramid of mismatched plywood bass-bins
-> and horn cabinets, cabinet faces flat pale grey panels with black contours, the stack lighter than
-> the black backdrop, on a scaffold and pallet rig, cables as pale grey lines with lighter gaffer wraps,
-> a sprayed stencil spiral mark, chunky unbranded mass, centered and fully visible
+> a hand-built teknival sound-system wall on a completely flat uniform black background filling the
+> frame, a pyramid of mismatched plywood bass-bins and horns, cabinet faces flat pale grey panels with
+> black outlines, the stack clearly lighter than the black ground, on a pallet rig, cables as pale grey
+> lines, lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, fully visible
 
-- `from the ground up … on a scaffold and pallet rig` → il est **CONSTRUIT** (BUILT) — lecture « au
-  crew », par le sol, pas suspendu.
-- `a pyramid of mismatched plywood bass-bins and horn cabinets` → caissons contreplaqué dépareillés +
-  pavillons = **sound-system**, ce qui exclut par la forme le line-array (arrays lisses suspendus), le
-  DJ booth et les amplis guitare.
-- `cabinet faces flat pale grey panels with black contours, the stack lighter than the black backdrop`
-  → **[S10]** : le plus gros risque de masse-sombre-continue du set (contreplaqué brut → gris moyen-
-  sombre, touche le fond noir sur plusieurs arêtes). Valeur claire + contours noirs explicites
-  verrouillent la silhouette contre le key.
+- **[B4] (batch-2, Serge TECHNICAL — 94,3% du canvas revenu en photo outdoor, PAS keyable)** : le
+  batch-1 a rendu une **vraie photo de rig/ciel/tente en extérieur** (coins échantillonnés : bleu-ciel
+  et gris-sol) au lieu du fond noir plat — FLUX tiré vers une compo documentaire par « from the ground
+  up … on a scaffold ». Fix double : (1) **verrou fond-noir DOMINANT** placé tôt dans le sujet — `on a
+completely flat uniform black background filling the frame` (positif, 0 négation, redouble la tail) ;
+  (2) **langage photo-évocateur retiré** — `from the ground up` et `scaffold` supprimés (pallet rig
+  seul garde le tell BUILT sans évoquer un chantier/festival en extérieur).
+- `a pyramid of mismatched plywood bass-bins and horns` → caissons contreplaqué dépareillés + pavillons
+  = **sound-system**, ce qui exclut par la forme le line-array, le DJ booth et les amplis guitare ;
+  `on a pallet rig` garde le read **CONSTRUIT** (BUILT) au sol.
+- `cabinet faces flat pale grey panels with black outlines, the stack clearly lighter than the black
+ground` → **[S10]** : masse-sombre-continue verrouillée en valeur claire + contours (le key mord
+  sinon).
 - `cables as pale grey lines with lighter gaffer wraps` → **[S11]** : une ligne near-black sur fond
   near-black **disparaît** (l'inverse du trou) et perd le tell teknival — d'où la valeur claire
   explicite sur les câbles + le gaffer.

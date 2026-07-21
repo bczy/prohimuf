@@ -14,7 +14,11 @@ import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
 import { GameScene } from "./GameScene";
-import { installBossCaptureSeam } from "./bossHarness";
+import {
+  installBossCaptureSeam,
+  isBossSeamShippedLevel,
+  resolveBossPreviewLevel,
+} from "./bossHarness";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
 import styles from "./App.module.css";
@@ -27,13 +31,7 @@ import type { ManifestTarget } from "@game/systems/assetManifest";
 import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import {
-  loadUnlockedLevels,
-  unlockLevel,
-  LEVELS,
-  FIRST_PLAYABLE_LEVEL,
-  BOSS_QTE_DEV_HARNESS_LEVEL,
-} from "@game/levels/levels";
+import { loadUnlockedLevels, unlockLevel, LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import {
   saveScore,
@@ -82,16 +80,25 @@ const PREVIEW_SCREEN =
 // production builds. Bertrand explicitly asked for this to work on the branch-preview
 // build (2026-07-19), so this is intentionally NOT `import.meta.env.DEV`-gated.
 const BOSS_HARNESS_PREVIEW = PREVIEW_SCREEN === "boss";
+// `?preview=boss` boots the non-shipped harness by default; `&level=<id>` (C-QA3) boots a shipped
+// level (niveau-final) so the boss renders over its real backdrop. Resolved view-side from the URL.
+const BOSS_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.search : "";
 const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
-  ? BOSS_QTE_DEV_HARNESS_LEVEL
+  ? resolveBossPreviewLevel(BOSS_PREVIEW_SEARCH)
   : FIRST_PLAYABLE_LEVEL;
+// True when the seam booted a SHIPPED level (niveau-final IS in LEVELS, unlike the harness). Folded
+// into the persistence guard below so a seam-booted shipped level NEVER writes muf_scores_*/
+// muf_progress — belt-and-suspenders behind the `PREVIEW_SCREEN !== null` early-return.
+const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 
 // Boss QTE capture seam (harness-only, non-shipped): `?preview=boss&at=phase2|phase3|finisher`
 // (optionally `&blownImmune=1`) installs a view-side fast-forward factory that `useGameLoop`
 // consumes to boot the boss already advanced to that state — so a ~2 fps SwiftShader sandbox
 // can screenshot the depletion-gated ADR-0052 differentiation reads (qa-lead C-QA2). It
 // no-ops unless `?preview=boss` is present, so it shares `?preview=boss`'s reachability
-// discipline exactly (shipped players never reach it). See `bossHarness.ts`.
+// discipline exactly (shipped players never reach it). `&level=<id>` (C-QA3) points the boot at a
+// SHIPPED level's real bossQteSpec (niveau-final over l'Éden) instead of the harness; persistence
+// stays inert via the `PREVIEW_SCREEN !== null` guard + `BOSS_SEAM_SHIPPED_LEVEL`. See `bossHarness.ts`.
 installBossCaptureSeam();
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
@@ -145,8 +152,9 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     delivery: level.deliveries[0] ?? null,
     // Scripted hostage-taker QTE for this level (ADR-0030), if authored.
     hostageQte: level.hostageQte ?? null,
-    // Scripted boss QTE for this level (ADR-0051). Absent on every shipped level ⇒ `null`
-    // (byte-identical); only the non-shipped dev-harness authors one.
+    // Scripted boss QTE for this level (ADR-0051). Absent ⇒ `null` (byte-identical); the
+    // non-shipped dev-harness authors one for iteration, and since ADR-0053 the SHIPPED
+    // `niveau-final` level authors the live canon encounter too.
     bossQte: level.bossQteSpec ?? null,
     // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.
@@ -273,8 +281,12 @@ export function App(): JSX.Element {
     // now reachable on branch-preview builds (commit 9a49edf), guarding on
     // membership-in-`LEVELS` — not just `findIndex !== -1` for the unlock hop — keeps any
     // player finishing the duel from corrupting their own save (review-panel finding, PR #112).
+    // A boss-capture-seam session that booted a SHIPPED level (C-QA3: niveau-final over l'Éden)
+    // must NOT persist — niveau-final IS in `LEVELS`, so the membership check alone would let it
+    // write. `BOSS_SEAM_SHIPPED_LEVEL` forces it non-shipped here (redundant with the
+    // `PREVIEW_SCREEN !== null` early-return above, kept as an independent second guard).
     const shippedIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
-    const isShippedLevel = shippedIdx !== -1;
+    const isShippedLevel = shippedIdx !== -1 && !BOSS_SEAM_SHIPPED_LEVEL;
 
     // M1 (ADR-0054 §2): when the run qualifies for the board, DEFER the single saveScore
     // to NAME_ENTRY resolution so the player's byline can be attached; otherwise save now,

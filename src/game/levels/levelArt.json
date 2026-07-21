@@ -278,7 +278,7 @@
       "commander_shielded": {
         "asset": "assets/boss/commander_shielded.png",
         "seed": 4870,
-        "prompt": "a towering french plainclothes commander at full height, facing forward, bare-headed, a long knee-length charcoal-grey overcoat with pale edge highlights, lighter than the black backdrop, broad squared shoulders, a reflective brassard on the sleeve, a radio clipped at the shoulder, a gloved hand flat in a halt gesture, the other on a holstered boxy sidearm at the hip, closed guarded stance"
+        "prompt": "a towering french plainclothes commander, facing forward, bare-headed, a long knee-length charcoal-grey overcoat lighter than the black backdrop, a pale contour of light tracing the coat lower hem and hip edge, broad squared shoulders, a reflective brassard on the sleeve, a shoulder radio, a gloved hand in a halt gesture, the other on a holstered boxy sidearm, closed guarded stance"
       },
       "commander_exposed": {
         "asset": "assets/boss/commander_exposed.png",
@@ -310,19 +310,20 @@
       "commander_finisher": {
         "asset": "assets/boss/commander_finisher.png",
         "seed": 4876,
-        "prompt": "the same bare-headed french plainclothes commander down on one knee, his long charcoal-grey overcoat, lighter than the black ground, pooling at his bent leg, upright from the waist, head up, one arm reaching up, its coat sleeve covering it to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
+        "prompt": "the same bare-headed french plainclothes commander on one knee, his long overcoat pooling at his leg, its torso and thigh folds a mid-charcoal, lighter than the pitch-black backdrop, upright from the waist, head up, one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
       },
       "lustre": {
+        "$comment": "Seed re-rolled 4877→4879 (Bertrand escalation + lead-art Nico's ASSET GATE FAIL, 2026-07-21, docs/handoffs/story-boss-niveau-final-live.md): batch-2 art (seed 4877, prompt UNCHANGED from the B3 armature-lock fix) showed two parasitic flanking column masses — a FLUX COMPOSITION defect, not a value/hole defect the prompt caused. Per Nico's §3.10 rule, a composition defect gets a NEW SEED with the prompt held verbatim (prompt surgery is reserved for value/text-attributable defects); only this seed field changed, nothing else in the entry.",
         "asset": "assets/boss/lustre.png",
         "size": { "width": 320, "height": 512 },
-        "seed": 4877,
-        "prompt": "a grand ballroom chandelier hung from a single chain up top, a multi-tier cone-and-umbrella stack of crystal-drop rings, an ornate wrought-iron and brass armature with suggested arms, solid pale grey-white faceted crystal drops, each with a bright rim highlight, two adjacent drops missing on one side, a wide notch, hanging slightly tilted and dust-dulled, decayed 1900s grandeur, centered and fully visible"
+        "seed": 4879,
+        "prompt": "one grand ballroom chandelier on a single chain up top, a multi-tier cone-and-umbrella wrought-iron armature, the whole frame a solid pale-to-mid grey lighter than the black backdrop, hung with solid pale grey-white crystal drops, each with a bright rim, every drop attached to the frame, two adjacent drops missing, a wide notch, slightly tilted and dusty, decayed 1900s grandeur, centered and fully visible"
       },
       "speaker_wall": {
         "asset": "assets/boss/speaker_wall.png",
         "size": { "width": 512, "height": 320 },
         "seed": 4878,
-        "prompt": "a hand-built teknival sound-system wall from the ground up, a pyramid of mismatched plywood bass-bins and horn cabinets, cabinet faces flat pale grey panels with black contours, the stack lighter than the black backdrop, on a scaffold and pallet rig, cables as pale grey lines with lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, centered and fully visible"
+        "prompt": "a hand-built teknival sound-system wall on a completely flat uniform black background filling the frame, a pyramid of mismatched plywood bass-bins and horns, cabinet faces flat pale grey panels with black outlines, the stack clearly lighter than the black ground, on a pallet rig, cables as pale grey lines, lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, fully visible"
       }
     }
   },
@@ -725,6 +726,31 @@
         "facade": "1970s french social housing concrete tower facade at night, repetitive grid of windows some lit warm some dark, balconies with laundry, ground floor metal shutters and tags, front elevation",
         "street": "concrete suburban plaza and parking lot at night, painted parking lines, lamp post glow, wet ground reflections, horizontal strip",
         "foreground": "row of concrete balcony parapets and metal guard railings, thick black silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no building, no wall, no sky"
+      }
+    },
+    {
+      "id": "niveau-final",
+      "name": "L'Éden — 31 déc. 1999",
+      "label": "L'Éden, ancien dancing, 31 décembre 1999",
+      "$comment": "Niveau Final — l'Éden (ancien dancing), the boss-QTE venue (ADR-0053, story-boss-niveau-final-live). Single-facade mode (default, no `backdrop` field), same as stalingrad/vitry. INTERIOR venue: unlike the street levels this facade is a static hall interior held behind the whole boss tableau, so the exterior `sky`/`street` layers are DELIBERATELY DROPPED from `prompts` below (lead-art PROMPT GATE family PASS, 2026-07-20 — 'layer set with sky/street DROPPED for the interior') — the facade alone fills the frame ceiling-to-floor, which is exactly what satisfies the 'no dead sky-gap behind the boss {0,-5}' composition constraint. `gen-level-art.mjs` skips a layer cleanly when a level's `prompts` doesn't declare it, rather than sending FLUX a broken 'undefined' prompt (no hardcoded sky/street text ever reaches the generator for this level). `foreground`/`facade` prompt strings are copied VERBATIM from the gated draft `docs/art-direction/prompt-drafts/niveau-final-eden.md` (lead-art FAMILY PASS — Maud/concept-artist owns the prompt strings, this block's structure/ids/paths/sizes/windowGrid is dev-tooling-assets'). `size` uses the shared global `sizes.facade`/`sizes.foreground` (1280x768), no per-level override needed. A separate optional `ceiling` layer was drafted (bare-hook plaster detail) but is NOT included here per the draft's own default ('by default this layer drops' — the facade already carries the ceiling/cornice register); add it only if a future structural need requires a dedicated upper slot. Path `assets/levels/niveau-final/facade.png` (narrative wiring flag B, ADR-0023) generated via the existing `gen-level-art.mjs` → CI pipeline (ADR-0010), same as every other level — no new script/workflow needed for the backdrop itself.",
+      "parallax": {
+        "sky": 0.9,
+        "facade": 0.0,
+        "street": 0.05
+      },
+      "ironwork": "haussmann",
+      "windowGrid": {
+        "$comment": "cols RETUNED 5→4 (Bertrand escalation decision + lead-game-designer express DESIGN GATE PASS, 2026-07-21, docs/handoffs/story-boss-niveau-final-live.md — supersedes the original gated [E3] count of 5). The batch-2 l'Éden facade generated a 3-wall perspective room whose back wall carries 4 clear evenly-spaced frontal arches (not the gated 5 — a recurring generation drift, not a config bug); Bertrand accepted the art at 4 and ordered the grid retuned to match rather than a third reroll (the 2-batch cap was spent). Karim's gate confirmed the [E3] INTENT (even spacing + occupiable window-cop slots + [E5] merge-risk mitigation) is preserved at 4, and that [E5] risk actually IMPROVES (wider piers between fewer arches). rows=1 (a single row of arches, not multi-floor like the street levels) — computeWindowSlots/getWindowZones both special-case rows===1 to ny=0.5, so top/bottom are set equal and are inert by construction, kept for readability/consistency with the other per-level windowGrid blocks. NOTE (flagged, not fixed here — out of dev-tooling-assets' structural lane): the `facade` prompt string below still reads 'exactly 5 tall arched windows' — a residual mismatch against the now-4-pinned grid and the already-accepted 4-arch art; if `facade.png` is ever deleted and regenerated, the stale '5' text would reroll toward the wrong count again. Prompt-string content is concept-artist's (Maud's) lane, not touched here; routed to lead-art/concept-artist for a conscious amendment.",
+        "cols": 4,
+        "rows": 1,
+        "left": 0.1,
+        "right": 0.9,
+        "top": 0.38,
+        "bottom": 0.38
+      },
+      "prompts": {
+        "facade": "front-elevation interior of a derelict 1930s parisian dancing-hall ballroom, the back wall filling the frame ceiling to floor, a row of exactly 5 tall arched windows, evenly spaced and identical in size, each a dark recessed cavity, their lower panes crudely boarded, the upper arch left open, warm light spilling through, peeling gilded cornices high up, a mezzanine balcony with an ornate cast-iron balustrade, a patched sprung-parquet floor below, party stencils and taped rave flyers layered over the lower mouldings at arm height, the upper walls calmer, plywood speaker cabinets low in one corner as flat set-dressing, a bare ceiling hook high where a chandelier once hung, dim warm night light, faded decayed grandeur",
+        "foreground": "row of ornate cast-iron ballroom balustrade railings, thick black silhouettes seen up close, evenly spaced, isolated on a solid flat uniform bright magenta chroma-key background, fully magenta empty surroundings, sharp silhouette edges, pixel art, no wall, no floor"
       }
     }
   ]

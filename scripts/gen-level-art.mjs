@@ -15,6 +15,16 @@
  *
  * node scripts/gen-level-art.mjs --list          # list level ids + their layer files (no network)
  * node scripts/gen-level-art.mjs --asset <id>    # restrict the run to one level id
+ * node scripts/gen-level-art.mjs --paths         # print the exact relative file paths THIS run
+ *                                                 # would write (LAYERS ∩ each level's authored
+ *                                                 # `prompts` keys), one per line, no network.
+ *                                                 # Machine-readable single source of truth for
+ *                                                 # gen-level-art.yml's regenerate=true path, which
+ *                                                 # scopes its purge to exactly this set instead of
+ *                                                 # `rm -rf`-ing the whole tree (stage-6 triage E1 —
+ *                                                 # a blanket purge used to also delete files this
+ *                                                 # script has never produced and never will, e.g.
+ *                                                 # belliard's hand-authored troncon-*.png/ground.png).
  */
 import fs from "fs";
 import path from "path";
@@ -48,6 +58,52 @@ function generate(prompt, size) {
   return fetchWithRetry(fluxUrl(prompt + ", " + style, seed, size.width, size.height));
 }
 
+// ── Enforce the declared pixel size (pipeline bug found in the niveau-final
+// batch, dev-tooling-assets 2026-07-21) ──────────────────────────────────────
+// Diagnosis: this was NOT a niveau-final-specific size-config leak — the
+// `?width=&height=` query IS built correctly from `sizes[baseLayer]` above for
+// every level (confirmed: niveau-final reads the exact same shared
+// `sizes.facade`/`sizes.foreground` object every other level does, no default
+// leaked). The drift is upstream: Pollinations' `flux` model silently returns
+// a SMALLER resolution than requested regardless of the query params —
+// measured on every already-committed level PNG (belliard/stalingrad/vitry
+// facade/foreground, not just niveau-final's): every one of them decodes to
+// 991x594, never the declared 1280x768 (aspect preserved, ~0.77x linear
+// scale-down — consistent with an upstream max-pixel-area cap around
+// 768x768's ~590K px). This was invisible until now because nothing in the
+// pipeline (nor e2e-assets.mjs's byte-size floor) ever checked actual decoded
+// pixel dimensions against the manifest. Fix: resize the fetched buffer to
+// EXACTLY the requested size before writing, so the committed PNG's real
+// pixel dimensions always match `sizes[baseLayer]` (levelArt.ts's
+// FACADE_ASPECT and the render's plane sizing both derive world-space
+// geometry from the DECLARED size, not the file's own dimensions — a
+// mismatch is a silent, if usually tiny, stretch).
+//
+// Best-effort: @napi-rs/canvas is a devDependency, but network generation only
+// ever runs where the workflow installs it first (gen-level-art.yml installs
+// it before this step); if it's unavailable for any reason, fall back to
+// writing the raw buffer unresized rather than crashing — matches the
+// project's "generate only, never hard-fail locally" convention (mirrors the
+// try/catch detours in gen-hostage-sprites.mjs / gen-boss-sprites.mjs).
+async function normalizeSize(buf, size) {
+  try {
+    const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+    const img = await loadImage(buf);
+    if (img.width === size.width && img.height === size.height) return buf;
+    console.log(
+      `  [resize] ${img.width}x${img.height} → ${size.width}x${size.height} ` +
+        `(Pollinations returned a different resolution than requested)`,
+    );
+    const canvas = createCanvas(size.width, size.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, size.width, size.height);
+    return canvas.toBuffer("image/png");
+  } catch (e) {
+    console.log(`  [resize-skip] ${e.message} (runs in CI)`);
+    return buf;
+  }
+}
+
 async function main() {
   const { list, target } = parseAssetArgs(ARGV);
 
@@ -67,6 +123,21 @@ async function main() {
     process.exit(1);
   }
 
+  if (ARGV.includes("--paths")) {
+    // Same LAYERS ∩ prompts-present gate the generation loop below uses, so
+    // this can never drift from what the generator actually writes. Plain
+    // relative paths, one per line — nothing else on stdout — so a caller can
+    // consume it directly (e.g. `while IFS= read -r f; do ...; done`).
+    for (const level of todo) {
+      for (const layer of LAYERS) {
+        if (level.prompts[layer] !== undefined) {
+          console.log(path.posix.join("public/assets/levels", level.id, `${layer}.png`));
+        }
+      }
+    }
+    return;
+  }
+
   console.log(`Generating level art → ${OUT_ROOT}${FORCE ? " (force)" : ""}\n`);
   for (const level of todo) {
     const dir = path.join(OUT_ROOT, level.id);
@@ -77,9 +148,17 @@ async function main() {
         console.log(`  [skip] ${level.id}/${layer}.png (exists)`);
         continue;
       }
+      const baseLayer = layer.startsWith("facade_") ? "facade" : layer;
+      // Interior venues (e.g. niveau-final's l'Éden hall) legitimately drop
+      // sky/street — there is no exterior for them to depict (lead-art PROMPT
+      // GATE, "layer set with sky/street DROPPED for the interior"). Skip
+      // cleanly rather than sending FLUX a broken "${undefined}, ..." prompt.
+      if (level.prompts[baseLayer] === undefined) {
+        console.log(`  [skip] ${level.id}/${layer}.png (no prompts.${baseLayer} — layer dropped)`);
+        continue;
+      }
       console.log(`  [gen]  ${level.id}/${layer}.png`);
       try {
-        const baseLayer = layer.startsWith("facade_") ? "facade" : layer;
         // All facade panels are sections of ONE continuous terrace so they abut
         // seamlessly: force level/aligned floor lines + cornice and a flat,
         // straight-on elevation. Different seeds keep each panel distinct.
@@ -90,7 +169,8 @@ async function main() {
           " perspective, the left and right edges continue seamlessly into the neighbouring buildings";
         const suffix = baseLayer === "facade" ? continuity : "";
         const prompt = `${level.prompts[baseLayer]}${suffix}, ${level.label}`;
-        const buf = await generate(prompt, sizes[baseLayer]);
+        const raw = await generate(prompt, sizes[baseLayer]);
+        const buf = await normalizeSize(raw, sizes[baseLayer]);
         fs.writeFileSync(file, buf);
         console.log(`  [ok]   ${level.id}/${layer}.png (${buf.length} bytes)`);
       } catch (e) {

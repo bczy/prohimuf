@@ -1,0 +1,114 @@
+import { describe, expect, it } from "vitest";
+import {
+  fastForwardBossQte,
+  isBossSeamShippedLevel,
+  parseBossHarnessTarget,
+  resolveBossPreviewLevel,
+} from "../bossHarness";
+import { BOSS_QTE_DEV_HARNESS_LEVEL, LEVELS } from "@game/levels/levels";
+
+// The boss capture seam is view-side + harness-only. These pure helpers pick which level
+// `?preview=boss` boots and flag whether that level is a SHIPPED one (C-QA3) — the flag App folds
+// into its persistence guard so a seam-booted shipped level (niveau-final) never writes a save.
+
+describe("resolveBossPreviewLevel (C-QA3 level pick)", () => {
+  it("defaults to the non-shipped dev harness when no level= param", () => {
+    expect(resolveBossPreviewLevel("")).toBe(BOSS_QTE_DEV_HARNESS_LEVEL);
+    expect(resolveBossPreviewLevel("?preview=boss&at=phase2")).toBe(BOSS_QTE_DEV_HARNESS_LEVEL);
+  });
+
+  it("boots the named SHIPPED level when it authors a bossQteSpec AND a valid at= is present", () => {
+    const lvl = resolveBossPreviewLevel("?preview=boss&level=niveau-final&at=phase2");
+    expect(lvl.id).toBe("niveau-final");
+    expect(lvl.bossQteSpec).toBeDefined();
+    // Confirm it is the real in-LEVELS config (real backdrop + anchor + seed flow from here).
+    expect(lvl).toBe(LEVELS.find((l) => l.id === "niveau-final"));
+  });
+
+  it("falls back to the harness for an unknown or boss-less level id (with a valid at=)", () => {
+    expect(resolveBossPreviewLevel("?level=does-not-exist&at=phase2")).toBe(
+      BOSS_QTE_DEV_HARNESS_LEVEL,
+    );
+    // The tutorial ships but authors no bossQteSpec ⇒ harness fallback (never a leaky boot).
+    expect(resolveBossPreviewLevel("?level=tutorial&at=phase2")).toBe(BOSS_QTE_DEV_HARNESS_LEVEL);
+  });
+
+  it("E9: a shipped level WITHOUT a valid at= falls back to the harness (finale not URL-playable)", () => {
+    // The reveal-leak gate: `level=niveau-final` with no/invalid `at=` must NOT boot the shipped
+    // finale — it resolves to the non-shipped harness exactly like an unknown id.
+    expect(resolveBossPreviewLevel("?preview=boss&level=niveau-final")).toBe(
+      BOSS_QTE_DEV_HARNESS_LEVEL,
+    );
+    expect(resolveBossPreviewLevel("?preview=boss&level=niveau-final&at=bogus")).toBe(
+      BOSS_QTE_DEV_HARNESS_LEVEL,
+    );
+    // But every real capture flow passes a valid at=, so evidence 06-14 stays reproducible.
+    expect(resolveBossPreviewLevel("?preview=boss&level=niveau-final&at=finisher").id).toBe(
+      "niveau-final",
+    );
+  });
+});
+
+describe("isBossSeamShippedLevel (persistence-inertness flag)", () => {
+  it("is true only for a preview=boss seam booting a shipped boss level (valid at=)", () => {
+    expect(isBossSeamShippedLevel("?preview=boss&level=niveau-final&at=phase2")).toBe(true);
+  });
+
+  it("is false when level= lacks a valid at= (E9 falls back to the harness)", () => {
+    expect(isBossSeamShippedLevel("?preview=boss&level=niveau-final")).toBe(false);
+  });
+
+  it("is false for the non-shipped harness (no level=)", () => {
+    expect(isBossSeamShippedLevel("?preview=boss&at=phase3")).toBe(false);
+  });
+
+  it("is false off the ?preview=boss path (reachability discipline)", () => {
+    // Even naming a shipped level, without preview=boss the seam never installs ⇒ not flagged.
+    expect(isBossSeamShippedLevel("?level=niveau-final&at=phase2")).toBe(false);
+    expect(isBossSeamShippedLevel("")).toBe(false);
+  });
+});
+
+describe("parseBossHarnessTarget", () => {
+  it("accepts the four targets (incl. phase1, C-QA3) and rejects anything else", () => {
+    expect(parseBossHarnessTarget("phase1")).toBe("phase1");
+    expect(parseBossHarnessTarget("phase2")).toBe("phase2");
+    expect(parseBossHarnessTarget("phase3")).toBe("phase3");
+    expect(parseBossHarnessTarget("finisher")).toBe("finisher");
+    expect(parseBossHarnessTarget("phase9")).toBeNull();
+    expect(parseBossHarnessTarget(null)).toBeNull();
+  });
+});
+
+describe("fastForwardBossQte boots niveau-final to each capture beat (C-QA3)", () => {
+  const spec = LEVELS.find((l) => l.id === "niveau-final")?.bossQteSpec;
+  it("authors a real boss spec (its seed/décor are the level lane's to pin, not this test)", () => {
+    // Assert only that the shipped level carries a boss spec — the concrete seed/décor VALUES are
+    // owned by the game-designer/level lane (re-pinned per K-5) and must not be duplicated here.
+    expect(spec).toBeDefined();
+    expect(spec?.decorProp).toBeDefined();
+  });
+
+  it("lands phase1/phase2/phase3 on a real EXPOSED window of the wanted phase", () => {
+    if (spec === undefined) throw new Error("no spec");
+    const p1 = fastForwardBossQte(spec, "phase1");
+    expect(p1.phase).toBe("ACTIVE");
+    expect(p1.stance).toBe("EXPOSED");
+    expect(p1.phaseIndex).toBe(0);
+    expect(p1.targetSeed).toBe(spec.targetSeed); // the boot carries the spec's seed through unchanged
+
+    const p2 = fastForwardBossQte(spec, "phase2");
+    expect(p2.phase).toBe("ACTIVE");
+    expect(p2.stance).toBe("EXPOSED");
+    expect(p2.phaseIndex).toBe(1);
+
+    const p3 = fastForwardBossQte(spec, "phase3");
+    expect(p3.phase).toBe("ACTIVE");
+    expect(p3.phaseIndex).toBe(2);
+  });
+
+  it("reaches the FINISHER beat", () => {
+    if (spec === undefined) throw new Error("no spec");
+    expect(fastForwardBossQte(spec, "finisher").phase).toBe("FINISHER");
+  });
+});

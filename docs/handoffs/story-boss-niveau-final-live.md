@@ -1654,3 +1654,2739 @@ VERDICT: PASS — prompt gate eden_ceiling (lead-art)
 VERDICT: PASS — prompt gate eden_family (lead-art)
 
 - **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this l'Éden prompt-gate entry appended).
+
+---
+
+## 3. AC8 SEQUENCING GATE RELEASED — producer (Marion) — 2026-07-20
+
+- claim: ADR-0052 (story-boss-qte-differentiation) stage-6 review panel MERGE-CLEARED on `main` (PR #114 merged by Bertrand 2026-07-20); the blocking gate AC8 is now released. Dependency cascade for story-boss-niveau-final-live stage 4 BUILD unblocked: dev lanes may touch `levels.ts`/`bossQteSystem.ts` without restriction.
+- release: AC8 gate RELEASED. Story-2 `claude/yo-pmnyzr` branch is LIVE; dev-lane hand-offs below proceed immediately.
+- handoff → `dev-gameplay` (Amelia): stage 4 BUILD — level config + narrative wiring. Freed from AC8 gate; ready to cut new `niveau-final` `LevelConfig` and wire the gated `final_pre`/`final_post` scenes to the level id (per narrative-designer §2 wiring flags A/B). Build on the frozen ADR-0051/0052 contract; touch no `bossQteSystem.ts` values (all re-authored at design time by Sacha §game-designer, re-verified by Karim §gate). Scope: `levels.ts` new entry + `src/game/narrative/specifyNarrativeLine.ts` one-line scene-key substitution.
+- handoff → `dev-tooling-assets` (Victor): stage 4 BUILD + ART LANE — l'Éden backdrop generation + structure/dispatch. Receive the l'Éden family from `dev-r3f-render` (or re-patch locally if need a quicker spin — artist runway). Three slots (facade + foreground + ceiling per lead-art's stage-3 prompt-gate PASS); `dev-tooling-assets` owns the `levels[]` entry registration, `windowGrid.cols = 5` pinning, and `POLLINATIONS_TOKEN` secret gate to generation dispatch. Scope: `scripts/art-generation.mjs` (new l'Éden entry in the dispatch + the eden block structure), `src/game/levels/levelArt.json` (index registration), optional `public/adr/index.html` housekeeping if ADR-0053 routing updates (out of scope for this story's own BUILD, logged separately). POLLINATIONS_TOKEN: confirmed SET by Bertrand 2026-07-20, generation dispatch fires on next push.
+- handoff → `dev-r3f-render` (Amelia): stage 4 BUILD — render-side seams only. Per ADR-0053 Giveaway (render-lane is ZERO except for flyer copy if the ux-designer's §story-2-stage-3 flyer-words land on render-side — currently null, so render is muted). No new components, no new anchor/zoom/frame-logic; hook the generated facade at the `levels.ts` backdrop path. Scope: ZERO unless flyer.copy lands here (confirm with Tony).
+- handoff → `lead-game-designer` (Karim): stage 4 BUILD witness. Re-verify the dev lanes against Karim's gated specs (§4 stage-3 DESIGN GATE PASS) as code lands — catch any AC5/scope drift silently. Stage-5 VERIFY includes the K-5 seed re-pin (`19991231` vs harness `20260719`) on the real level's quota/timing, and the K-6 backdrop-anchor re-check once the facade lands (Vitry precedent: `x:9.9`, Sacha's spec authorizes `anchor.x` nudge up to ±0.5 once art lands, no respec needed).
+- handoff → `producer` (Marion): AC8 gate RELEASED — no further blocking on this story. Stage-4 BUILD lanes are running. Pipeline ahead: stage 5 VERIFY (k-5 seed re-verify, legibility re-verify against new l'Éden backdrop per ux-designer K-6 checklist, composite gate, perf), stage 6 REVIEW (4-reviewer panel on `niveau-final` delta only if this PR splits; if ride-along merged with story-1, architect integration-triage reads the cross-story seams), stage 7 ACCEPTANCE (pm), stage 8 MERGE (Bertrand). Flagged: story-1's follow-up blocker #5 (décor aim-honesty, HARD design gate, BLOCKS any shipped level that authors decorProp — this level will author it on Sacha's spec §2, so Karim's gate ruling MUST land before this story's verify leg-1 closes). Story-1's #3 (smoke.png downsize, landed but undocumented) noted; no impact on this story's build.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: RELEASED — AC8 sequencing gate (producer) — ADR-0052 PR #114 merged to main 2026-07-20; dev lanes touching levels.ts/bossQteSystem.ts are now unblocked. POLLINATIONS_TOKEN confirmed set by Bertrand. Story-2 BUILD lanes launched: dev-gameplay (level config + narrative wiring), dev-tooling-assets (facade generation + structure), dev-r3f-render (zero unless flyer-words), lead-game-designer (gate witness). Pipeline ahead: stage-5 verify (including K-5 seed re-verify on live level quota/timing and K-6 backdrop-anchor check once facade lands) → stage-6 review (4-reviewer if split PR, or architect integration-triage if ride-along) → stage-7 acceptance (pm) → stage-8 merge (Bertrand). Active blocker flagged: story-1 follow-up #5 (décor aim-honesty HARD gate, must land before this story's verify leg-1 closes — this level WILL author decorProp per Sacha §2 spec).
+
+## 4. BUILD (stage 4) — dev-gameplay (Amelia) + dev-tooling-assets (Victor) + dev-r3f-render (Amelia) — 2026-07-20 — LANES OPENED
+
+## [lanes running]
+
+**Status: stage-4 BUILD OPEN, 2026-07-20**
+
+Lanes initialized:
+
+- **dev-gameplay**: level config + narrative scene wiring (Amelia)
+- **dev-tooling-assets**: l'Éden backdrop generation, structure, dispatch (Victor)
+- **dev-r3f-render**: hook facade (Amelia) — ZERO scope unless flyer-words land
+
+No entries logged yet (lanes are live, work in progress). Producer will chase stage completion as lanes close and revert to the handoffs log.
+
+---
+
+## DESIGN GATE (stage-5 blocker) — lead-game-designer (Karim) — 2026-07-20 — panel follow-up #5, décor aim-honesty
+
+- **Claim:** rule the CONFIRMED stage-6 panel finding #5 (flagged by `producer` as the HARD gate that
+  MUST land before this story's verify leg-1 closes, because this level AUTHORS a `decorProp` — the
+  chandelier `{0.2,1.5}`, `armPhaseIndex 1`, `spec-boss-niveau-final-level.md` §2). The finding, verified
+  against real code:
+  - **Drawn** (`BossQteSprite.tsx:133-138`): the décor prop plane is `DECOR_W 0.8 × DECOR_H 1.05` world
+    units, wrapped by a `DECOR_GLOW_SIZE 2.2` acid glow-halo that invites the click.
+  - **Catch** (`bossQteSystem.ts:1084-1096`, `withinCatch`): a **0.30-radius circle** at
+    `decorProp.position` (`RING_HIT_RADIUS` reuse).
+  - **The hole:** the drawn prop's upper/lower edges (`|dy| ∈ (0.30, 0.525]`, and the horizontal corners
+    `|dx| ∈ (0.30, 0.40]`) are DRAWN and glow-lit but silently no-op — the single-use arm window ticks
+    away on a click the player correctly aimed at a visible target. This violates the **drawn == catch**
+    invariant my own AMENDMENT A1 §4 made binding for the rings ("click inside the drawn thing = hit must
+    stay literally true, or the tighter catch becomes a bullshit miss").
+
+### Ruling — direction (a): ENLARGE the catch to the drawn silhouette (rectangular AABB)
+
+**Direction (b) — SHRINK the drawn prop toward the 0.30 circle — is REJECTED**, for three reasons:
+
+1. **Art-coherence conflict I don't own and won't override.** The niveau-final backdrop (l'Éden ceiling
+   slot, `eden_ceiling` prompt-gate PASS) bakes a chandelier at a scale the `{0.2,1.5}` render-side
+   lustre must match; §6 of the level spec and the lead-art compo control both require the chandelier
+   read "legible, shootable, boss-distinct." A ≤0.6-wide drawn prop would fight that baked scale — a
+   `lead-art` bible question, not a design lever to spend on a fairness bug.
+2. **It shrinks a PURE-UPSIDE reward during a SINGLE-USE window** — backwards for lever 2, whose whole
+   point (spec §2-B) is turning dead SHIELDED downtime into a _generous_ optional play. Making the one-shot
+   bonus HARDER to claim is the opposite of the mechanic's intent.
+3. **The A1 precedent does NOT transfer.** A1 shrank _drawn → catch_ only because the vital catch value
+   was **mechanically pinned** (the 0.11 camp-dominance threshold, A1-R2 §15 sweep). The décor catch is
+   **not** pinned by anything — it is an arbitrary `RING_HIT_RADIUS` reuse with no dominance role. When the
+   catch is free and the drawn size is load-bearing (art), the invariant is restored by moving the _catch_,
+   not the drawn.
+
+**Direction (a) is CORRECT and this is the ruling.** A silent no-op on a visibly clickable, glow-lit target
+during a single-use window is the exact §5.6 frustration class ("mort/rate bullshit") the drawn==catch
+guardrail exists to forbid — and it is _worse_ than the ring case because a whiffed décor window does not
+come back. Because the prop is pure upside (no failure surface, no competing SHIELDED-gap target, no
+dominance concern), a generous catch has **zero** player downside; the only correct catch is the full drawn
+silhouette — every drawn pixel clickable, nothing beyond it.
+
+### Exact target values
+
+- **Catch shape:** an **axis-aligned box (AABB)**, anchor-relative, centred at `decorProp.position` —
+  NOT a circle (a circumscribing radius = half-diagonal `hypot(0.40,0.525)≈0.66` would make empty space
+  outside the drawn corners score, breaking drawn==catch the _other_ way; a box matches the drawn plane
+  exactly). Replaces the `withinCatch(...RING_HIT_RADIUS)` circle in the SHIELDED décor branch ONLY.
+- **Catch half-extents (game-side source of truth, new constants):**
+  - `BOSS_DECOR_CATCH_HALF_W = 0.40` (= `DECOR_W 0.80 / 2`)
+  - `BOSS_DECOR_CATCH_HALF_H = 0.525` (= `DECOR_H 1.05 / 2`)
+    A hit iff `|impact.x − (anchor.x + decorProp.position.x)| ≤ 0.40` **and**
+    `|impact.y − (anchor.y + decorProp.position.y)| ≤ 0.525`.
+- **Drawn prop size:** **UNCHANGED** — `DECOR_W 0.80 × DECOR_H 1.05`. (Art-preserving: no chandelier
+  re-scale, no backdrop re-verify. The two catch constants are defined to equal half the _existing_ drawn
+  size, so this ruling changes only the catch, never a pixel.)
+- **Glow halo (`DECOR_GLOW_SIZE 2.2`):** **UNCHANGED**, and explicitly **NOT** the affordance boundary. My
+  call on "does drawn mean silhouette or glow": **the crisp grey prop silhouette is the aim target; the glow
+  is an attention cue only.** The halo is a radial dégradé falling to alpha 0 at the rim (`buildRadialGlowTexture`)
+  — it has no crisp edge to aim at, so it reads as "something here is live," exactly as the ring's
+  emphasis-brightness reinforces the ring geometry without being the catch. Catch does NOT extend to 2.2
+  (that would make hazy empty space score — dishonest the opposite way).
+
+### Paired-lane assignment (BUILD, this story's stage-4 lanes)
+
+This is a paired change, same shape as A1 (a game catch + a render pairing that keeps drawn==catch literal):
+
+- **`dev-gameplay` (catch — the substantive change, TDD):** author `BOSS_DECOR_CATCH_HALF_W 0.40` /
+  `BOSS_DECOR_CATCH_HALF_H 0.525` in `bossQteSystem.ts`; add a rectangular `withinBox` helper (or inline
+  AABB) and gate the SHIELDED décor branch (`~:1084-1096`) on it instead of `withinCatch(...RING_HIT_RADIUS)`;
+  add a `createBossQte` assert (both half-extents finite & > 0, mirroring `assertPositiveScalar`). Unit tests:
+  a click at `dy 0.45` inside the prop (previously a silent no-op — the reported hole) now scores the +3
+  `BOSS_DECOR_DAMAGE`; a click at `dy 0.60` / `dx 0.45` (outside the drawn box) does NOT; the horizontal
+  corner `dx 0.35, dy 0.50` scores (inside the box). Determinism/purity unchanged; additive-and-optional law
+  intact (`decorProp === null` ⇒ byte-identical).
+- **`dev-r3f-render` (drawn pairing — drift-guard, no pixel change):** import the two new constants and set
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W`, `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` (today 0.80 × 1.05 —
+  identical output), so drawn==catch is enforced structurally and tracks any future catch re-tune, exactly as
+  the vital ring draws at the imported `BOSS_VITAL_CATCH_RADIUS`. The glow (2.2) and the prop's grey/armed
+  treatment are untouched. This lane's diff is a two-line derivation, but it is REQUIRED — without it the
+  invariant holds only by coincidence.
+
+### Spec bookkeeping & stage-5 watch
+
+- **Transcribe verbatim into `spec-boss-qte-differentiation.md` §2 (LEVER 2)** as **AMENDMENT A2 — décor
+  catch = drawn silhouette (AABB)**, and update **AC-D4** tail: "…décor prop scored within the AABB
+  `±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn `0.80×1.05` silhouette
+  (drawn == catch); glow 2.2 is an attention cue, not the catch." Same pattern as A1/A1-R2 (my ruling is the
+  record; Sacha/dev transcribes). Reuse-map line "décor prop … `RING_HIT_RADIUS 0.30` (prop catch radius)"
+  is superseded for the décor by the AABB — `RING_HIT_RADIUS` stays for limb ring / parry point / phase-1
+  ring.
+- **Stage-5 (Sacha playtest + K-5 seed re-verify):** confirm the phase-2 décor arm-window is landable on the
+  live `{0.2,1.5}` chandelier with the new box (AC-L5). **Bounded watch item (NOT a re-open of this gate):**
+  if the 2.2 glow rim draws the eye to click _beyond_ the silhouette and players miss, that is a render-salience
+  fix (crisper/brighter armed silhouette) owned by `dev-r3f-render` + `ux-designer` — NOT a catch enlargement
+  to the halo (which would make empty haze score). Same disposition as A1-R2 §4's small-ring legibility seam.
+- **Scope / iteration:** in-scope — a fairness correction to already-ratified ADR-0052 lever 2, no new
+  mechanic, no core-loop touch (round 0 of the 2-round cap; the ruling is decisive, no rework requested).
+  Design gate for this story otherwise stands PASS (§ DESIGN GATE 2026-07-20); this closes the last open
+  design blocker before verify leg-1.
+
+VERDICT: PASS-WITH-CORRECTIONS — décor aim-honesty (panel follow-up #5) — direction (a) ENLARGE catch to drawn silhouette. Catch = AABB ±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525) at decorProp.position, replacing the 0.30 circle; drawn UNCHANGED 0.80×1.05; glow UNCHANGED 2.2 (attention cue, not catch). Direction (b) shrink-drawn REJECTED (art-coherence + shrinks a pure-upside single-use reward + A1 precedent does not transfer — catch here is unpinned, drawn is load-bearing). Paired lanes: dev-gameplay (AABB hit-test + 2 constants + assert + TDD) ∥ dev-r3f-render (import constants, derive DECOR_W/H — drift-guard, no pixel change). Transcribe as AMENDMENT A2 into spec-boss-qte-differentiation.md §2 + AC-D4 tail. Stage-5: décor arm-window landability on {0.2,1.5} (AC-L5); glow-rim over-aim is a render-salience watch, not a catch re-tune. (lead-game-designer)
+
+- **File List:**
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this gate ruling appended)
+  - `docs/game-design/README.md` (index — record décor aim-honesty A2 ruling as gated; to update)
+
+---
+
+## BUILD — dev-gameplay (Amelia) — 2026-07-20 · niveau-final LevelConfig + narrative wiring (TDD)
+
+- **Stage:** 4 BUILD · **Lane:** dev-gameplay (the AC8-gated lane — owns `levels.ts`). Built on
+  AC8-clear (STORY-BOSS-QTE-DIFFERENTIATION merged to `main`; branch reset on merged main).
+- **CLAIM:** author the `niveau-final` `LevelConfig` (ADR-0053 D2/D4) + wire the gated
+  `final_pre`/`final_post` scripts to the new id, TDD, against the FROZEN ADR-0051/0052 boss
+  contract. Non-overlapping with the concurrent dev-tooling-assets (`levelArt.json`) and
+  dev-r3f-render (`LevelFlyer.tsx`) lanes; the only shared contract is the id string `niveau-final`.
+- **RELEASE — what I built:**
+  - **`src/game/levels/levels.ts`** — APPENDED one `LevelConfig` `niveau-final` after `vitry` (pure
+    append, 62/0 — the four shipped levels + `BOSS_QTE_DEV_HARNESS_LEVEL` byte-untouched, AC2/AC3).
+    `enemySpeedMultiplier 1.8` / `enemiesToWin 16` (REAL quota, non-zero — AC4) / `timeSeconds 70`;
+    one `truck` delivery ≈Vitry (integrity 60 / window 6 / bonus 300 / trigger 18 / stop {0,-4.5});
+    `roster.windowWeights {normal 40, riot 28, biker 20, bonus 10}` (civilian/hostage_taker NOT
+    overridden ⇒ stay weight-0, AC1). **NO `hostageQte`** (AC1 mutual exclusion by construction).
+    `bossQteSpec` = value-for-value copy of the harness combat block (`zoomSeconds 2` / `anchor
+{0,-5}` / `phaseCount 3` / `bossHp 24` / `maxBlownWindows 10`), re-authoring ONLY `targetSeed
+19991231` (K-5 re-pin) and `decorProp {position {0.2,1.5}, armPhaseIndex 1}` (chandelier) — no
+    system value smuggled as data (AC5). Name = narrative's one-field canonical `L'Éden — 31 déc.
+1999` (mirrors "Vitry — 94"); district `Paris`, year `1999`. Unlock via the existing index hop
+    (`unlocked: false`) — no new unlock code.
+  - **`src/game/systems/narrativeSystem.ts`** — ADDED the `niveau-final` key to BOTH
+    `PRE_LEVEL_NARRATIVE` and `POST_LEVEL_NARRATIVE` (A1), scene ids `niveau-final_pre`/`_post`
+    (flag A / test A2), each with `backdrop: "assets/levels/niveau-final/facade.png"` (flag B / test
+    A5, ADR-0023). The gated `final_pre` (8 lines) / `final_post` (6 lines) French copy transcribed
+    **VERBATIM** from `spec-boss-encounter-fiction.md` §4.1/§4.2 — only the id/key/backdrop strings
+    are new, zero French line changed (Q1=NO upheld: l'Éden is NOT named in dialogue). The reveal
+    line `...le Commandant.` (final_pre #4) carries the gated MUF rider image and no Commandant
+    sprite (imageless of him, as gated).
+  - **`src/game/levels/__tests__/niveauFinal.test.ts`** (NEW) — 12 tests: level-authoring
+    assertions (placement/unlock, AC1 no-hostageQte + roster weight-0, AC4 real-quota `16 !== 0`,
+    monotonic-hardest pacing, delivery ≈Vitry, AC5 value-for-value copy vs the harness), narrative
+    A1/A2/A5 + verbatim-script/reveal-beat checks for the new scenes, and the **K-5 seed-winnability**
+    driver (a competent rings+parry player clears 24 HP before the blown-window clock trips).
+- **SEED STATUS — `19991231` HOLDS (no re-pin needed).** The K-5 winnability driver, run against
+  the FULL differentiated kit live via the authored spec (two rings + parry + décor, anchor {0,-5}),
+  confirms a competent player clears with `blownWindows < maxBlownWindows 10`. The provisional pin
+  is now stage-5-verified for the mechanical winnability property; the empirical playtest
+  landability-per-ring/per-charged-window nuance stays the `game-designer` stage-5 leg, but the
+  hard "is it winnable at all" gate PASSES on `19991231` — no `+n` re-pin.
+- **VERIFY (all green):** `yarn typecheck` clean · `yarn vitest run` **861 passed / 65 files, 0
+  fail** (incl. the 12 new + the untouched `narrativeSystem`/`levelArt.consistency`/`stateMachine`/
+  `rosterAssetCoverage`/`assetManifest` suites) · `yarn lint` clean · `yarn format:check` clean.
+  **AC5 byte-diff CONFIRMED EMPTY:** `git diff` shows ZERO changed lines in
+  `src/game/systems/bossQteSystem.ts`, `src/game/types/bossQte.ts`, `src/game/systems/stateMachine.ts`,
+  and `src/hooks/**`. `levels.ts` diff is pure append (62/0) — no shipped-level/harness line touched.
+- **CROSS-LANE NOTES / flags for other lanes:**
+  - **dev-tooling-assets** — you landed the `levelArt.json` `levels[]` `niveau-final` entry
+    concurrently while I built (name `L'Éden — 31 déc. 1999` — matches my `levels.ts` exactly, the
+    id/name contract held; `levelArt.consistency.test.ts` GREEN). I did NOT touch `levelArt.json`.
+    Note: `windowGrid.rows: 1` in your entry means the pre-boss gallery pops from a single arch row
+    — confirm that reads as intended density at stage-5 playtest (not a blocker; flagging the shape).
+  - **dev-r3f-render** — the `PLAYABLE_COPY["niveau-final"]` flyer entry (crew `SPIRALE 23 · KANAL
+SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, zone `L'ÉDEN · ANCIEN DANCING`, etc.,
+    fiction §4.1) is YOUR lane (`src/render/ui/menu/LevelFlyer.tsx`) — I did not author it (render
+    boundary). The 4th flyer will only render once you add it; no gameplay/test blocks on it.
+  - **Backdrop asset** — the level references `assets/levels/niveau-final/facade.png` (narrative
+    backdrop + in-game facade), which the CI art pipeline generates later. No fallback code needed
+    in my lane: the path is a valid string before the PNG exists, and no vitest/asset guard requires
+    the facade PNG on disk for a new level (rosterAssetCoverage checks only rostered enemy sprites,
+    all shipped). Generation is HELD on the `POLLINATIONS_TOKEN` secret (producer's escalation).
+- **No commit/push** (per instruction). Owning-lane verify complete; ready for the quality gate.
+- **File List:**
+  - `src/game/levels/levels.ts` (MODIFIED — appended the `niveau-final` `LevelConfig`)
+  - `src/game/systems/narrativeSystem.ts` (MODIFIED — `niveau-final` pre/post scenes, gated copy verbatim)
+  - `src/game/levels/__tests__/niveauFinal.test.ts` (NEW — 12 tests: authoring + narrative + K-5 winnability)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this BUILD entry appended)
+
+## 4. BUILD (stage 4) — dev-tooling-assets (Amelia) — l'Éden levels[] block + boss sprite generator/workflow + dispatch — 2026-07-20
+
+- **claim:** the dev-tooling-assets BUILD scope cut at TECH PLAN (ADR-0053 D2/lane partition): (1)
+  the `levels[]` `niveau-final` block in `src/game/levels/levelArt.json`; (2) the missing
+  `scripts/gen-boss-sprites.mjs` + `.github/workflows/gen-boss-sprites.yml` pair for the 9-entry
+  `boss` block (already structurally landed by an earlier dev-tooling-assets pass, §"5 new gated
+  boss-block sprite JSON entries" above); (3) dispatch prep for both, plus a check on whether the
+  existing level-art CI path picks up the new block automatically.
+- **release:**
+  1. **`levels[]` niveau-final block** — appended after `vitry` (ADR-0053 D2 order). `facade`/
+     `foreground` prompt strings copied VERBATIM from the GATED
+     `docs/art-direction/prompt-drafts/niveau-final-eden.md` (lead-art FAMILY PASS, `eden_facade`/
+     `eden_foreground`/`eden_family` all PASS, this shard §"PROMPT GATE — l'Éden venue backdrop
+     family"). `windowGrid.cols = 5` pinned per the gate's [E3] count, `rows: 1` (a single row of
+     arches, not the street levels' multi-floor grid — `computeWindowSlots`/`getWindowZones` both
+     special-case `rows===1` to `ny=0.5`, so `top`/`bottom` are inert-by-construction, kept equal
+     for readability). `size` uses the shared global `sizes.facade`/`sizes.foreground` (1280×768,
+     no override). `parallax`/`ironwork` set by structural analogy to stalingrad/vitry (this venue's
+     décor is not gated content, no copy authored). **Interior venue: `sky`/`street` DROPPED from
+     `prompts`** per the gate's explicit ruling ("layer set with sky/street DROPPED for the
+     interior") — NOT included as empty/placeholder strings, genuinely absent, because the facade
+     alone fills the frame ceiling-to-floor (the "no dead sky-gap behind the boss" constraint).
+     Optional `ceiling` layer NOT added either, per the draft's own "by default this layer drops."
+     `name`/`label`: `name: "L'Éden — 31 déc. 1999"` — the narrative-designer's own documented
+     "one-field fallback… mirrors the Vitry — 94 convention" recommendation (fiction spec §4);
+     CONFIRMED byte-identical against dev-gameplay's concurrently-landed `levels.ts` entry
+     (`levelArt.consistency.test.ts`, 16/16 green) — no cross-lane drift.
+  2. **Two structural fixes this block's shape required** (both minimal, both because no level had
+     ever dropped a layer before):
+     - `src/game/levels/levelArt.ts` — `LevelArt.prompts` widened from `Record<LayerName, string>`
+       to `Partial<Record<LayerName, string>>`. Verified dead-safe: grepped the whole `src/` tree —
+       nothing reads `.prompts` at runtime (only `scripts/gen-level-art.mjs`, plain JS, reads the
+       raw JSON directly); the field exists purely as a JSON-shape assertion. `yarn typecheck`
+       confirmed green after the change (it was NOT green before — the niveau-final entry's 2-key
+       `prompts` object didn't structurally satisfy the closed 4-key `Record`).
+     - `scripts/gen-level-art.mjs` — the per-layer generation loop now skips a layer cleanly
+       (`if (level.prompts[baseLayer] === undefined) { …skip log…; continue; }`) instead of sending
+       FLUX a broken `"${undefined}, …"` prompt for a level that doesn't declare that layer. This is
+       the "mirror the structural mechanism or omit cleanly" fix — there was no existing per-level
+       layer-set mechanism to mirror, so this is the minimal guard, not a new abstraction.
+  3. **`scripts/gen-boss-sprites.mjs`** (NEW) — modeled closely on `gen-hostage-sprites.mjs`: reads
+     `boss.types` from `levelArt.json` (prompt + shared `style` tail, pinned `seed`, `asset` path,
+     per-entry `size` override defaulting to the block's 256×256), same FLUX fetch
+     (`lib/pollinations.mjs`), same black-ground cutout detour (`cutout-enemies.mjs`) + despeckle
+     sweep (`retouch-sprites.mjs`) as hostages/enemies, `--list`/`--asset`/`FORCE=1` CLI parity.
+     `--list` verified locally (no network needed): correctly resolves all 9 entries with the right
+     per-type sizes (7 figures 256×256, `lustre` 320×512 portrait, `speaker_wall` 512×320 landscape
+     — [S13]).
+  4. **`.github/workflows/gen-boss-sprites.yml`** (NEW) — modeled closely on
+     `gen-hostage-sprites.yml`: same trigger shape (`workflow_dispatch` + push-marker
+     `.github/dispatch/gen-boss-sprites`, `branches-ignore: main`, `ci(dispatch):` head-commit
+     guard per ADR-0009), same `FORCE=1` generate → solidify (`fill-sprite-holes.mjs` +
+     `--check`) → integrity gate (`check-sprite-integrity.mjs`, looped per-file since the script
+     takes one `--file` at a time — the SOFT torso-zone WARN is harmless on the 2 non-figure props,
+     HARD checks are figure-agnostic) → bounded-retry commit/push → artifact-on-failure shape.
+  5. **Dispatch gap found + closed: level-art generation had NO commit-back path at all.**
+     `preview.yml` ("Style B Preview" / "Generate art · render levels · contact sheet") DOES run
+     `gen-level-art.mjs` automatically on the next push (levelArt.json isn't under its
+     `paths-ignore`), so the niveau-final facade/foreground WOULD generate there — but that
+     workflow is deliberately decorative/artifact-only (confirmed by reading it: it uploads a
+     screenshot artifact and never `git add`s `public/assets/levels/**`). Unlike every other asset
+     family (enemies/vehicles/hostages/courier/near-fg props), level backdrops had no dedicated
+     commit-back workflow — `HARNESS.md`'s own step 5 ("commit `public/assets/levels/` +
+     `screenshots/` back to the branch") is STALE against the actual `preview.yml` (doc/code
+     drift, flagged here for `tech-writer`, not fixed in this pass — out of lane). Closed the gap
+     the idiomatic way: **`.github/workflows/gen-level-art.yml`** (NEW), mirroring the same
+     gen-\*.yml commit-back pattern (dispatch marker `.github/dispatch/gen-level-art`,
+     `workflow_dispatch` with the same `regenerate` boolean `preview.yml` has, generate → cutout
+     foreground (`cutout-foreground.mjs`) → bounded-retry commit/push → artifact-on-failure).
+  6. **Dispatch markers staged (not pushed):** `.github/dispatch/gen-boss-sprites` and
+     `.github/dispatch/gen-level-art` created (real content via `date >`, not bare `touch`, per
+     ADR-0009); `.github/dispatch/README.md` table updated with both new rows (plus the 2
+     already-existing-but-undocumented `gen-hostage-sprites`/`gen-courier-sprites` marker rows,
+     noticed while editing the same table).
+- **What the next push triggers (once committed with a `ci(dispatch):`-prefixed message, per
+  ADR-0009):**
+  - `preview.yml` fires on ANY push to this branch regardless of the markers (its own trigger,
+    unrelated to dispatch) — generates the niveau-final layers ephemerally for the screenshot
+    contact sheet, does NOT persist them.
+  - The `gen-boss-sprites` marker dispatches `gen-boss-sprites.yml` → generates + commits the 9
+    `public/assets/boss/*.png` files.
+  - The `gen-level-art` marker dispatches `gen-level-art.yml` → generates + commits
+    `public/assets/levels/niveau-final/{facade,foreground}.png`.
+  - Both are HELD on the `POLLINATIONS_TOKEN` repo secret (producer's earlier escalation) —
+    confirmed SET by Bertrand 2026-07-20 per producer's AC8-release entry above, so generation
+    should fire for real on next push.
+- **Verify:**
+  - `node scripts/check-art-prompts.mjs` → PASSED, 0 errors, 12 pre-existing WARNs (courier +
+    enemies + nearForeground/bench) — unchanged, nothing new from the `levels` block.
+  - `yarn typecheck` → green.
+  - `yarn lint` → green.
+  - `yarn vitest run` → 861/861 passed, 65/65 files, including `levelArt.consistency.test.ts`
+    (16/16) and the concurrently-added `niveauFinal.test.ts` (both green at time of this check —
+    one transient failure in `niveauFinal.test.ts` was observed mid-session and traced to
+    dev-gameplay's own concurrent in-flight `narrativeSystem.ts` edit, not to anything in this
+    File List; it was green again on the next run without any action from this lane).
+  - `yarn format:check` / `npx prettier --check` on every file in this List → clean.
+  - `actionlint` not available in this sandbox; both new workflow YAMLs hand-reviewed against the
+    `gen-hostage-sprites.yml`/`preview.yml` patterns and validated parseable (`python3 -c
+"yaml.safe_load(...)"`).
+- **Scope discipline:** did not touch `levels.ts`/`narrativeSystem.ts`/`bossQteSystem.ts`/any
+  render file (dev-gameplay's/dev-r3f-render's concurrent lanes); did not invent an anchor schema
+  (the boss block's ANCHOR SCHEMA GAP from the earlier dev-tooling-assets entry is untouched,
+  still owed to `senior-architect`); did not modify the 4 already-applied `commander_*` prompt
+  strings or any other pre-existing `boss.types`/`hostages`/`enemies`/`vehicles`/`courier`/
+  `nearForegroundArt` content.
+- **Handoff** → `senior-architect` (Winston): FYI on the `preview.yml` commit-back gap +
+  `HARNESS.md` doc drift found while checking dispatch-readiness (not this story's blocker, since
+  the new dedicated `gen-level-art.yml` closes it, but worth a `tech-writer` follow-up on the doc).
+  → `producer` (Marion): both dispatch markers are staged, ready for a `ci(dispatch):` commit on
+  the next push (not pushed by this lane, per instruction — the orchestrator drives the actual
+  commit/push).
+- **File List:**
+  - `src/game/levels/levelArt.json` (MODIFIED — new `levels[]` `niveau-final` entry, appended
+    after `vitry`; no other block touched)
+  - `src/game/levels/levelArt.ts` (MODIFIED — `LevelArt.prompts` widened to
+    `Partial<Record<LayerName, string>>`)
+  - `scripts/gen-level-art.mjs` (MODIFIED — clean per-layer skip when a level's `prompts` omits
+    that layer)
+  - `scripts/gen-boss-sprites.mjs` (NEW)
+  - `.github/workflows/gen-boss-sprites.yml` (NEW)
+  - `.github/workflows/gen-level-art.yml` (NEW)
+  - `.github/dispatch/gen-boss-sprites` (NEW marker, staged)
+  - `.github/dispatch/gen-level-art` (NEW marker, staged)
+  - `.github/dispatch/README.md` (MODIFIED — table rows added)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## SPEC TRANSCRIPTION (stage-5 follow-ups #5 + #9) — game-designer (Sacha) — 2026-07-20 — A2 décor aim-honesty + phase-2 teach-index resolution into the gated spec
+
+- claim: discharge the transcription owed on two panel follow-ups Karim ruled, writing the gated
+  text into `docs/game-design/spec-boss-qte-differentiation.md` (LEVER 2 / LEVER 3 / AC-D4) so the
+  paired dev lanes implement from spec, not from a gate note. Doc task; no production code, no
+  commit/push.
+- release: `docs/game-design/spec-boss-qte-differentiation.md` updated —
+  - **NEW section "AMENDMENT A2 — décor catch = drawn silhouette (AABB) (LEVER 2) — gated 2026-07-20"**
+    (after LEVER 2, before LEVER 5): Karim's follow-up-#5 ruling transcribed VERBATIM — the hole
+    (drawn 0.80×1.05 + glow 2.2 vs. a 0.30-circle catch → silent no-op on visibly-clickable edges,
+    violating the A1 drawn==catch invariant); direction (a) ENLARGE catch to the drawn silhouette;
+    direction (b) SHRINK-drawn REJECTED for the three logged reasons (art-coherence / shrinks a
+    pure-upside single-use reward / A1 precedent doesn't transfer — décor catch is unpinned, drawn is
+    load-bearing); exact values `BOSS_DECOR_CATCH_HALF_W 0.40` + `BOSS_DECOR_CATCH_HALF_H 0.525` AABB
+    at `decorProp.position`; drawn size UNCHANGED 0.80×1.05; glow 2.2 UNCHANGED and explicitly NOT the
+    affordance boundary (crisp grey silhouette = aim target, glow = attention cue); paired lanes
+    (dev-gameplay AABB `withinBox` + 2 constants + assert + TDD ∥ dev-r3f-render derives
+    `DECOR_W/H = 2×` the constants, drift-guard no pixel change); the stage-5 landability watch.
+  - **AC-D4 tail amended** (Design VERIFY acceptance list): "…décor prop scored within the AABB
+    `±(BOSS_DECOR_CATCH_HALF_W 0.40, BOSS_DECOR_CATCH_HALF_H 0.525)` == the drawn 0.80×1.05 silhouette
+    (drawn == catch); glow 2.2 is an attention cue, not the catch."
+  - **§2 reuse-map line superseded** for the décor: "`RING_HIT_RADIUS 0.30` (prop catch radius)" now
+    flags "SUPERSEDED for the décor by A2: AABB `±(0.40, 0.525)`; `RING_HIT_RADIUS 0.30` stays for the
+    limb ring / parry point / phase-1 ring."
+  - **Follow-up #9 CLOSED (my own):** a dated one-line AMENDMENT note under LEVER 3's cadence table —
+    the phase-2 parry teach lands near the phase **START** (`PARRY_PHASE2_TEACH_INDEX = 1`, the 2nd
+    phase-2 window; dev-resolved + playtest-accepted), REPLACING the spec's "near the phase end" line
+    (not robustly implementable under HP-gated variable window counts). Phase-3 "every other" unchanged.
+- amendment section titles (for the dev lanes / record):
+  1. **"AMENDMENT A2 — décor catch = drawn silhouette (AABB) (LEVER 2) — gated 2026-07-20"**
+  2. **"AMENDMENT (dated 2026-07-20, panel follow-up #9 resolution — dev-resolved + playtest-accepted)"**
+     (the LEVER-3 phase-2 teach-index note).
+- handoff → `dev-gameplay` (Amelia): A2 substantive change — `BOSS_DECOR_CATCH_HALF_W 0.40` /
+  `BOSS_DECOR_CATCH_HALF_H 0.525` in `bossQteSystem.ts`, an AABB `withinBox` gating the SHIELDED décor
+  branch (replaces `withinCatch(...RING_HIT_RADIUS)`), a `createBossQte` assert (both half-extents
+  finite & > 0), TDD per the gate (`dy 0.45` inside scores +3; `dy 0.60`/`dx 0.45` outside does not;
+  corner `dx 0.35, dy 0.50` scores); additive-and-optional law intact.
+- handoff → `dev-r3f-render` (Amelia): A2 drift-guard — import the two constants, set
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W` / `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` (0.80×1.05 today,
+  identical output); glow 2.2 + prop treatment untouched. Required, not optional.
+- handoff → `lead-game-designer` (Karim): A2 + follow-up-#9 transcribed verbatim into the gated spec
+  per your ruling; the paired lanes implement from spec text. Stage-5 landability of the phase-2 décor
+  arm-window on the live `{0.2,1.5}` chandelier with the new box is my playtest/K-5 watch (AC-L5).
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). Spec edits were surgical Edits
+  to my own artifact; no `src/**`, test, or repo edit; no commit/push.
+- File List:
+  - `docs/game-design/spec-boss-qte-differentiation.md` (A2 section + AC-D4 tail + §2 reuse-map supersede + LEVER-3 #9 note)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: RELEASE — A2 (décor AABB) + follow-up-#9 (phase-2 teach-index) transcribed into the gated spec (game-designer) — AMENDMENT A2 written VERBATIM into spec-boss-qte-differentiation.md §2 (catch = AABB ±(0.40, 0.525) == drawn 0.80×1.05, drawn UNCHANGED, glow 2.2 = attention cue not catch, direction (b) rejected for the 3 logged reasons, paired gameplay-AABB ∥ render-derives-DECOR_W/H) + AC-D4 tail + §2 reuse-map supersede; follow-up #9 closed as a dated LEVER-3 note (PARRY_PHASE2_TEACH_INDEX = 1, near phase START, replaces "near the phase end"). Dev lanes cleared to implement from spec text.
+
+## 4. BUILD (stage 4) — dev-r3f-render (Amelia) — niveau-final flyer entry + A2 décor drift-guard — 2026-07-20
+
+- **Stage:** 4 BUILD · **Lane:** dev-r3f-render (render-only; two SMALL items cut at TECH PLAN /
+  Karim's A2 gate). Non-overlapping with the concurrent dev-gameplay (`levels.ts`/`narrativeSystem.ts`/
+  `bossQteSystem.ts`) and dev-tooling-assets (`levelArt.json`) lanes.
+- **CLAIM → RELEASE (one pass):**
+  1. **4th flyer entry** — `src/render/ui/menu/LevelFlyer.tsx`: added `PLAYABLE_COPY["niveau-final"]`,
+     spoiler-clean, transcribed from `spec-niveau-final-fiction.md` §4.1 (gate PASS). crew
+     `SPIRALE 23 · KANAL SYSTEM · NADIR 94`, slogan `LE DERNIER SON DU SIÈCLE`, dateLine
+     `31 DÉC. 1999 → JUSQU'EN 2000`, zoneLine `L'ÉDEN · ANCIEN DANCING`, rvLine `RV : SUR L'INFO-LINE`,
+     infoLine `08 36 31 12 99`. Frozen `LevelFlyer`/`FlyerWall`/`LOCKED_COPY`/`TUTORIAL_COPY` untouched;
+     `FlyerWall`'s `LEVELS.map` auto-renders the 4th flyer; difficulty stamp auto-derives **DIFFICILE**
+     from `enemySpeedMultiplier 1.8` (`derivations.ts`) — zero new UI (ux D1/D3). No `App.tsx`/
+     `FlyerWall.tsx` change.
+     - **FLAG (narrative-designer / Yasmine):** the `FlyerCopy.ambiance` field is REQUIRED by the
+       interface but fiction §4.1 authored only the 6 fields above — **no ambiance for niveau-final**.
+       ux §1.2 documents the ambiance slot as the finale-flavour carrier; I set a **PROVISIONAL**
+       `AMBIANCE : INCANDESCENT` continuing the shipped heat gradient (ÇA ROULE < CHAUD < BRÛLANT) one
+       notch, flagged in a code comment. **This word is not yet gated canon** — needs a narrative
+       ratification/amend pass. Spoiler-clean, no boss hint.
+  2. **A2 décor drift-guard** — `src/render/scene/BossQteSprite.tsx` (Karim's panel-#5 A2 ruling,
+     dev-r3f-render paired lane): imported `BOSS_DECOR_CATCH_HALF_W`/`BOSS_DECOR_CATCH_HALF_H` from
+     `bossQteSystem` and derived `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W` / `DECOR_H = 2 *
+BOSS_DECOR_CATCH_HALF_H` (today `2×0.40 × 2×0.525 == 0.80 × 1.05` — **zero pixel change**, art-
+     preserving), so drawn == catch is enforced structurally and tracks any future catch re-tune,
+     exactly as the vital ring draws at the imported `BOSS_VITAL_CATCH_RADIUS`. Updated the comment to
+     record A2 (glow 2.2 untouched, attention cue not catch). Glow/grey/armed treatment untouched.
+- **CROSS-LANE:** dev-gameplay's paired A2 change landed the constants concurrently
+  (`BOSS_DECOR_CATCH_HALF_W = 0.4` / `BOSS_DECOR_CATCH_HALF_H = 0.525`, `withinBox` AABB hit-test,
+  `createBossQte` asserts) — so my import resolves and typecheck is green (no "constants not exported
+  yet" report needed; both landed).
+- **VERIFY (all green on my files):** `yarn typecheck` clean (EXIT 0) · `yarn vitest run` **867 passed /
+  65 files, 0 fail** · `yarn lint` clean (EXIT 0) · `yarn format:check` — my two files pass Prettier
+  (`npx prettier --check` on both = "All matched files use Prettier code style!"). The 3 `format:check`
+  warnings (`spec-boss-qte-differentiation.md`, this handoff shard, `bossQteSystem.test.ts`) are OTHER
+  lanes' concurrent files, not in my File List.
+- **No commit/push** (per instruction). Owning-lane verify complete; ready for the quality gate.
+- **File List:**
+  - `src/render/ui/menu/LevelFlyer.tsx` (MODIFIED — added `PLAYABLE_COPY["niveau-final"]`)
+  - `src/render/scene/BossQteSprite.tsx` (MODIFIED — A2 drift-guard: import constants, derive DECOR_W/H)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this BUILD entry appended)
+
+---
+
+## FIX (gated) — dev-gameplay (Amelia) — 2026-07-20 · AMENDMENT A2 décor catch = drawn AABB
+
+- **Stage:** follow-up gated fix riding with story 2 · **Lane:** dev-gameplay (owns
+  `bossQteSystem.ts` for this ruling). Built on Karim's stage-5-blocker DESIGN GATE ruling
+  (panel follow-up #5, "décor aim-honesty", logged above — VERDICT PASS-WITH-CORRECTIONS,
+  direction (a) ENLARGE catch to the drawn silhouette).
+- **AC5 NOTE (explicit):** this **intentionally touches `src/game/systems/bossQteSystem.ts`**, which
+  story-2's original AC5 declared byte-untouched. This is the **GATED AMENDMENT A2** — a
+  lead-game-designer stage-5-blocker fairness correction to already-ratified ADR-0052 lever 2, NOT a
+  silent retune. It rides with story 2 by Karim's paired-lane assignment; the stage-6 review panel
+  will see it against this gate entry. The ADR-0052 phase table, floors, HP/window constants and
+  every other lever are UNCHANGED — this adds only the décor catch shape.
+- **CLAIM:** implement the game-side of A2 (the substantive change) — replace the décor branch's
+  `RING_HIT_RADIUS 0.30` circle with an anchor-relative AABB matching the drawn `0.80×1.05`
+  silhouette, TDD. The render pairing (derive `DECOR_W/H` from the constants) is dev-r3f-render's
+  paired lane.
+- **RELEASE — `src/game/systems/bossQteSystem.ts` (45/2 vs origin/main):**
+  - Two new exported constants `BOSS_DECOR_CATCH_HALF_W = 0.4` / `BOSS_DECOR_CATCH_HALF_H = 0.525`
+    (= half the drawn `DECOR_W 0.80 × DECOR_H 1.05` plane) with the A2 rationale doc-comment.
+  - New pure `withinBox(px, py, anchor, ox, oy, halfW, halfH)` AABB helper (inclusive edges), beside
+    the untouched `withinCatch` circle helper.
+  - The SHIELDED armed-décor branch now gates on `withinBox(...HALF_W, HALF_H)` instead of
+    `withinCatch(...RING_HIT_RADIUS)`. **The ring / parry / phase-1 circle tests are UNCHANGED**
+    (`RING_HIT_RADIUS` still serves the limb ring, parry point and phase-1 ring — not orphaned).
+  - `createBossQte` gains two `assertPositiveScalar` guards (both half-extents finite & > 0),
+    mirroring the A1 / stagger / finisher assert pattern.
+  - Glow halo (2.2) untouched — an attention cue, NOT the catch (per the ruling).
+- **TESTS — `src/game/systems/__tests__/bossQteSystem.test.ts` (new "AMENDMENT A2" describe, 6 tests):**
+  the reported hole `dy 0.45` now scores the +3 `BOSS_DECOR_DAMAGE` burst (was a silent no-op under
+  the 0.30 circle); the horizontal corner `dx 0.35, dy 0.50` scores (inside box, hypot≈0.61 outside
+  the old circle); `dy 0.60` (too tall) and `dx 0.45` (too wide) do NOT score; the box boundary
+  (just inside ± the half-extents scores, just beyond does not); pure-upside preserved (an
+  off-silhouette click leaves the prop armed). The existing lever-2 décor tests (fire dead-centre
+  {1.5,0} or far off {0,0}) never encoded the 0.30 boundary, so they stayed green unadjusted.
+- **VERIFY (all green):** `yarn typecheck` clean · `yarn vitest run` **867 passed / 65 files, 0 fail**
+  (861 story-2 + 6 new A2) · `yarn lint` clean · `yarn format:check` clean on my files.
+- **DIFF returned to coordinator:** `bossQteSystem.ts` = the 2 constants + `withinBox` + branch swap
+  - 2 asserts (45/2); `bossQteSystem.test.ts` = the 6-test A2 describe block + 2 imports.
+- **Flag → dev-r3f-render (paired lane):** the drawn pairing (`BossQteSprite.tsx` deriving
+  `DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W`, `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H` from my exported
+  constants) is landed in the working tree — confirmed it imports the two constants and derives the
+  drawn size (no pixel change today, 0.80×1.05 preserved). drawn==catch now holds structurally.
+- **No commit/push** (per instruction).
+- **File List:**
+  - `src/game/systems/bossQteSystem.ts` (MODIFIED — GATED A2: 2 constants + `withinBox` + décor
+    branch AABB swap + 2 `createBossQte` asserts)
+  - `src/game/systems/__tests__/bossQteSystem.test.ts` (MODIFIED — 6-test AMENDMENT A2 describe block)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this FIX entry appended)
+
+---
+
+## CANON RATIFICATION — narrative-designer (Yasmine) — 2026-07-20 · niveau-final flyer `ambiance`
+
+- **Claim:** rule on the render lane's PROVISIONAL `AMBIANCE : INCANDESCENT` (flagged above, this
+  shard's BUILD entry) — the required `FlyerCopy.ambiance` field my fiction §4.1 table had not
+  authored. Bounded scope: one word/short phrase, FR, spoiler-clean, tone-correct, the finale notch
+  above `BRÛLANT`. No commit/push.
+- **Ruling — AUTHOR, not ratify.** `INCANDESCENT` was a sound gradient-continuation and a clean,
+  honestly-flagged provisional — but the finale word is load-bearing and can earn its keep. Canonical
+  value: **`AMBIANCE : EN FUSION`**. Rationale: (i) idiomatic rave/concert register for a room at peak
+  ("salle/public en fusion") — more streetwise than the Latinate INCANDESCENT, in the shipped zine
+  voice; (ii) still inside the heat metaphor (fusion = burning's endpoint, past `BRÛLANT`); (iii) zine
+  double-job — it echoes the flyer's own payoff, the three crews `SPIRALE 23 · KANAL SYSTEM · NADIR 94`
+  fused into one for the millennium, without narrating it; (iv) spoiler-clean, zero boss hint. The
+  mixed one-word/phrase register is already established (`ÇA ROULE`), so `EN FUSION` slots in.
+- **Applied (words mine, structure theirs — trivial single-string swap, per the flag):**
+  - `src/render/ui/menu/LevelFlyer.tsx` — `PLAYABLE_COPY["niveau-final"].ambiance` set to
+    `AMBIANCE : EN FUSION`; the PROVISIONAL code comment replaced with the canon note. Structure of
+    the entry untouched (render lane's).
+  - `docs/game-design/spec-niveau-final-fiction.md` §4.1 — added the `ambiance` row to the flyer table
+    - a canon note, so the value now lives in the gated doc (the flag's ask). No other §4.1 line changed.
+- **Not touched:** the three shipped ambiance values (`ÇA ROULE`/`CHAUD`/`BRÛLANT`), the `FlyerCopy`
+  contract, and every other niveau-final flyer field — all remain as gated/shipped.
+- **No commit/push** (per instruction).
+
+VERDICT: AUTHORED — `AMBIANCE : EN FUSION` is canon for the niveau-final flyer, replacing the render lane's provisional `INCANDESCENT` (narrative-designer)
+
+- **File List:**
+  - `src/render/ui/menu/LevelFlyer.tsx` (MODIFIED — ambiance string + comment)
+  - `docs/game-design/spec-niveau-final-fiction.md` (MODIFIED — §4.1 ambiance row + canon note)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this ratification entry appended)
+
+## 5. FIX — dev-tooling-assets (Amelia) — e2e-assets.mjs derives expected layers from authored `prompts`, not a hardcoded list (PR #119 CI finding) — 2026-07-20
+
+- **claim:** coordinator-flagged CI finding on PR #119's E2E · assets job: `scripts/e2e-assets.mjs`
+  hardcoded a 3-layer list (`["facade", "street", "foreground"]`) applied uniformly to every level,
+  so it would permanently expect `assets/levels/niveau-final/street.png` — a file that will NEVER
+  exist (the interior l'Éden venue deliberately drops `sky`/`street`, per this same shard's §4 gate
+  ruling). Fix the derivation to read each level's own authored `prompts` keys; explicitly do NOT
+  special-case the two legitimately-pending niveau-final PNGs (facade/foreground) — the gate must
+  keep failing on those until `gen-level-art.yml` commits them back.
+- **release** (`scripts/e2e-assets.mjs`):
+  - Removed the hardcoded `const LAYERS = ["facade", "street", "foreground"]` (note: this array
+    never included `"sky"` even though the file's own header comment claimed "the four layers" —
+    pre-existing doc/code drift, not introduced by this fix).
+  - `expectedAssetPaths()` now derives, per level, the expected layer set from
+    `Object.keys(level.prompts)` (skipping `$comment`-prefixed keys) instead of the fixed list —
+    mirrors the exact same per-layer-presence logic `scripts/gen-level-art.mjs` already applies at
+    generation time (this story's §4 fix), so the two stay in lockstep by construction: a layer key
+    authored in `prompts` ⇒ generated ⇒ expected here; absent ⇒ skipped there ⇒ never expected here.
+  - Header comment updated to describe the derivation instead of a fixed 4-layer claim.
+- **Verify (local `yarn build` + the check):**
+  - `yarn build` → clean.
+  - `node scripts/e2e-assets.mjs` against the local `dist/`:
+    ```
+    [e2e-assets] checking 17 asset(s) in .../dist
+      ok  assets/levels/belliard/facade.png (105816B)
+      ok  assets/levels/belliard/street.png (60443B)
+      ok  assets/levels/belliard/foreground.png (763482B)
+      ok  assets/levels/stalingrad/sky.png (52879B)
+      ok  assets/levels/stalingrad/facade.png (105482B)
+      ok  assets/levels/stalingrad/street.png (65557B)
+      ok  assets/levels/stalingrad/foreground.png (559851B)
+      ok  assets/levels/vitry/sky.png (49953B)
+      ok  assets/levels/vitry/facade.png (93959B)
+      ok  assets/levels/vitry/street.png (48812B)
+      ok  assets/levels/vitry/foreground.png (517845B)
+      ok  assets/vehicles/truck.png (36484B)
+      ok  assets/vehicles/car.png (41976B)
+      ok  assets/vehicles/moto.png (49419B)
+    [e2e-assets] FAILED — 3 asset issue(s):
+      ✗ too small  assets/levels/belliard/sky.png (1604B < 5120B)
+      ✗ missing    assets/levels/niveau-final/facade.png
+      ✗ missing    assets/levels/niveau-final/foreground.png
+    ```
+    **Fix proven:** `assets/levels/niveau-final/street.png` is no longer listed at all (neither
+    "missing" nor "ok") — the check no longer expects a file niveau-final was never asked to
+    generate. **Expected failure, not fixed here (per instruction):**
+    `niveau-final/{facade,foreground}.png` missing — legitimately pending `gen-level-art.yml`'s
+    commit-back on the next dispatched run; left failing on purpose.
+  - **New finding surfaced by this fix (unplanned, NOT fixed in this pass — flagging for a
+    decision):** `belliard/sky.png` now fails ("too small", 1604B < the 5KB floor). This is NOT a
+    niveau-final regression — belliard has always authored a `sky` prompt and its committed
+    `sky.png` has apparently always been undersized/placeholder; it was simply never checked
+    before, because the OLD hardcoded `LAYERS` list never included `"sky"` at all (contradicting
+    its own header comment's "four layers" claim — pre-existing drift, confirmed via
+    `git log -p` — the array was `["facade","street","foreground"]` since this file's first
+    commit). Deriving layers from the level's own authored `prompts` (the correct fix) now
+    honestly includes `sky` for every level that authors it (belliard, stalingrad, vitry all do),
+    which surfaces this real, previously-invisible gap. Routed to `qa-lead`/`producer` for a call:
+    regenerate `belliard/sky.png` (separate, pre-existing-defect fix-lane item) vs. any other
+    disposition — out of scope for this narrow CI-finding fix.
+  - `yarn lint` → green (0 errors on the changed file).
+  - `npx prettier --check scripts/e2e-assets.mjs` → clean.
+- **Scope discipline:** touched only `scripts/e2e-assets.mjs` (derivation logic + header comment);
+  did not touch `gen-level-art.mjs`/`levelArt.json` further, did not regenerate/retouch any
+  committed PNG, did not silence or special-case the belliard/sky finding.
+- **Handoff** → `producer`/`qa-lead`: decide disposition of the newly-surfaced
+  `belliard/sky.png` pre-existing undersize defect (separate from this story). → whoever owns
+  PR #119: the E2E · assets job will now correctly stop expecting niveau-final's `street.png`, but
+  will still fail (as designed) until (a) `gen-level-art.yml` commits the niveau-final backdrop and
+  (b) the belliard/sky.png disposition above is resolved.
+- **File List:**
+  - `scripts/e2e-assets.mjs` (MODIFIED — layer derivation + header comment)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## FIX-LANE NOTE — belliard/sky.png undersized debt exemption (orchestrator, 2026-07-20)
+
+- The honest per-level layer derivation in `e2e-assets.mjs` surfaced
+  `assets/levels/belliard/sky.png` (1.6KB < 5KB floor) — pre-existing shipped
+  debt, never gated (the old hardcoded layer list skipped "sky"). Exempted via
+  the named `KNOWN_UNDERSIZED_DEBT` set with a paper-trail comment; regenerating
+  a shipped level's art is its own fix-lane cycle through the art gates.
+- CHASE (producer): regenerate belliard sky via the level-art pipeline, pass the
+  asset gate, then REMOVE the exemption entry.
+
+## REVIEW BERTRAND — sprites boss batch 1 (2026-07-20)
+
+- Bertrand, à la vue des 9 sprites bruts : « très mal détouré » — verdict humain
+  FAIL sur la qualité de détourage/keying du batch 1. Prioritaire pour la passe
+  technique en cours (game-graphist) : diagnostic détourage (clé, tolérance,
+  halos/fringe, arrière-plans résiduels) avant tout autre axe ; retouches
+  scriptées si récupérable, sinon findings REGEN précis (batch 2 du cap) —
+  y compris corrections du step cutout du workflow si le défaut est pipeline,
+  pas prompt.
+
+## TECHNICAL PASS (redirected mid-pass) — game-graphist (Serge) — 2026-07-21 · boss 9-asset cutout/hole crisis (Bertrand direct review)
+
+- **claim:** re-ordered per Bertrand's two direct PRIORITY INPUTs (his own visual review of the 9
+  landed `public/assets/boss/*.png`): (1) « très mal détouré » — the batch-1 cutout FAILS, (2) « et
+  attention aux trous » — confirmed interior holes on `commander_finisher`/`commander_shielded`/
+  `commander_exposed`, exactly the [S1]/[S3] dark-coat-vs-near-black-key risk flagged at my own
+  PRE-PROD pass. Measured, not eyeballed: composited every keyed PNG over magenta (`vis.mjs`,
+  scratchpad-only, not committed), pulled zoomed crops (`crop.mjs`), ran
+  `check-sprite-integrity.mjs` per file, then built a hole-audit + closability probe
+  (`hole-audit.mjs`/`locate-defect.mjs`, scratchpad) reusing `scripts/lib/morphology.mjs`
+  (`solidBodyMask`, disk closing/opening, `fillHoles`) to distinguish TRUE fabric holes from
+  legitimate pose-driven negative space (arm held clear of torso, spread-leg stance), and to test
+  whether a bigger closing radius could safely bridge each defect. Attempted a real scripted fix
+  (`sampleAplat`/`bridgeHip` from the existing `scripts/retouch-sprites.mjs`, same methodology as
+  the courier hip-bridge) on the best RETOUCH candidate before ruling it REGEN.
+
+### Root-cause finding (applies across the batch)
+
+`check-sprite-integrity.mjs` PASSED all 9 in CI and PASSES again now (dominance ~99-100%, 0
+enclaves, 0 semi-alpha) — this is a **real tooling gap, not a false Bertrand alarm**. Every true
+hole found is topologically CONNECTED to the exterior background through a channel (an edge
+notch, or a fabric-shadow trough that also reaches open background elsewhere), so it never
+registers as an "enclave" (`touchesBorder === false` is the enclave test) and dominance stays
+~100% because it's all one connected component. This is the **exact same blind spot** as the
+historical courier bug this gate's own header documents ("the legs hang on via the bike frame,
+~0.99 dominance ratio — does NOT catch it"). `fill-sprite-holes.mjs --check` also PASSES (0px would
+fill) — solidify already ran to a fixpoint at its CLOSE_R=10 disk radius; re-running it changes
+nothing, because closing radius 10 cannot bridge these gaps and, by the script's own conservative
+design (never glue a legitimate open concavity — cf. the between-spread-legs guard in
+`solidBodyMask`), it should not be blindly widened project-wide.
+
+**Compound root cause, confirmed per-asset below:** (a) GENERATION — the [S1]/[S3]/[S8]-predicted
+risk materialized: coat-fold shadows, the coat's silhouette edge at specific contour points, and
+the chandelier's iron/brass armature all rendered close enough to key-black over WIDE contiguous
+areas (not just the base garment tone the [S1] correction fixed) that `cutout-enemies.mjs`'s
+shared edge-flood + enclosed-island pass (TIGHT_BAND=20/LOOSE_BAND=55, unchanged, shared with
+every enemy/hostage sprite) read real fabric as background. (b) PIPELINE — `fill-sprite-holes.mjs`
+CLOSE_R=10 is far too small to bridge the resulting 20-80px breaches, and I confirmed (see below)
+that even testing radii up to 40 and the real enclosure-based `bridgeHip` primitive does NOT
+safely close the worst ones — they are edge-connected to true background, not sealed pockets, so
+no safe closing radius exists without risking bridging legitimate concavities elsewhere in the
+same shared scripts used by the whole roster. This is NOT a simple parameter tune.
+
+**Raw pre-cutout artifacts: NOT recoverable.** `.github/workflows/gen-boss-sprites.yml`'s
+"Upload generated sprites (push failed)" step only runs `if: failure()`; this run pushed
+successfully, so no raw artifact was ever uploaded. A re-cutout-from-raw path does not exist for
+this batch — confirmed from the workflow's own trigger logic, no API call needed.
+
+### Per-asset hole-audit table
+
+| Asset                    | Cutout/hole verdict                                       | Evidence                                                                                                                                                                                                                                                                                                                                                                 | Root cause                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `commander_shielded`     | **FAIL — REGEN**                                          | Round/notch bite through solid coat fabric at the hip/hem, bbox ~[142,24]-[186,234] cluster, ~600-1000px recoverable-looking but **edge-connected, not enclosed**: `bridgeHip` (real enclosure test, maxGap up to 35) recovers only 265px of the ~800px+ visible defect; the main round hole stays open — confirmed NOT safely bridgeable                                | (a)+(b): coat silhouette edge lost contrast vs key at this contour point, flood ate past the true boundary into solid fabric; not an enclosed pocket so no closing radius fix is safe            |
+| `commander_exposed`      | **CLEAN**                                                 | All "closability" candidates visually confirmed as legitimate pose negative space: the lunge's spread-leg V-gap (287px) and the muzzle/holster gaps. Ragged stair-step edges are correct 16-bit no-AA pixel-art style (binary alpha confirmed, 0 semi-transparent px) — cosmetic, not a keying defect                                                                    | n/a — false positive on first eyeball pass, corrected after measurement                                                                                                                          |
+| `commander_hit`          | **CLEAN**                                                 | Both flagged candidates (1456px, 365px) are the falling/reeling pistol-arm swung away from the torso ("the pistol arm falling loose, reeling off-balance") — legitimate negative space, visually confirmed via crop                                                                                                                                                      | n/a                                                                                                                                                                                              |
+| `commander_down`         | **CLEAN (minor nit)**                                     | Leg-spread gaps between the sprawled figure's separated legs are legitimate (matches `solidBodyMask`'s own spread-leg exception). One ~18px isolated opaque fleck near the outstretched hand (below the 12px speckle-sweep threshold, sub-pixel at game scale) — cosmetic, not a hole                                                                                    | n/a                                                                                                                                                                                              |
+| `commander_weakpoint`    | **CLEAN**                                                 | Both large candidates (409px, 111px) are the two arms held "wide... clear of the chest" — legitimate pose gap, confirmed by crop                                                                                                                                                                                                                                         | n/a                                                                                                                                                                                              |
+| `commander_parry_windup` | **CLEAN**                                                 | Largest candidate (2563px) is the two-handed raised-pistol arm held clear of the torso ("elbows drawn in tight... angled steeply upward") — legitimate, confirmed by crop                                                                                                                                                                                                | n/a                                                                                                                                                                                              |
+| `commander_finisher`     | **FAIL — REGEN (mandatory-sweep entry, confirmed worst)** | TWO true holes bitten straight through solid fabric: kneeling thigh/leg (~1680px) and torso/back (~839px) — ~14.6% of the figure's opaque area gone, NOT explainable by any joint/pose gap (crops show hard linework/scratch-texture crossing straight through the void, i.e. fabric erased mid-surface)                                                                 | (a): coat/trouser shadow folds rendered at near-key-black over the whole thigh and torso-back, exactly the anatomy-defect risk [S7]/Nico's gate flagged as "highest of the 9" — confirmed        |
+| `lustre`                 | **FAIL — REGEN**                                          | Multiple large bites through the solid cone/dome armature between crystal tiers (~6540px, ~13.5% of the prop), reading as a "swiss-cheese" cone rather than the intended single clean asymmetric notch, PLUS one fully disconnected orphan crystal-drop fragment (duplication/severed-thread artifact)                                                                   | (a): [S8]'s value-lock only steered the CRYSTAL DROPS lighter, not the connecting wrought-iron/brass armature MASS between tiers, which still rendered near-key-dark over a wide contiguous area |
+| `speaker_wall`           | **FAIL — REGEN (unambiguous)**                            | 94.3% of the canvas stayed fully OPAQUE (only 5.7% keyed) — sampled corners: top-left (209,215,215) cool sky-blue-grey, bottom-right (128,122,110) warm ground-grey. FLUX rendered a real outdoor rigging/sky/tent photograph, not the "solid uniform matte black background" the style tail demands — there is no flat key colour to cut against over most of the frame | (a) only, no pipeline parameter can fix a background that was never generated flat                                                                                                               |
+
+### Attempted RETOUCH (documented, tested, did not ship)
+
+Tried the established `sampleAplat`/`bridgeHip` primitives (same class already shipping in
+`scripts/retouch-sprites.mjs` for the courier hip-bridge) against `commander_shielded`'s hole with
+several `fillWin`/`maxGap` combinations (up to maxGap=35, enclosureLumMax=150). Best result: 265px
+filled near the smaller upper notch; the main visible round hole at the hem stayed open because it
+is genuinely edge-connected to true background, not a four-way-enclosed pocket — the enclosure
+test correctly refuses to bridge it (same reason a wider disk-closing radius doesn't help either,
+tested to r=40 via `solidBodyMask` reconstruction, see `hole-audit.mjs` probe). Per my mandate
+("retouch only if a documented script GENUINELY fixes it... otherwise a precise REGEN finding"), I
+am **not** shipping a partial fill that leaves the defect visible — logged as REGEN instead. No
+repo files were touched; the working tree is clean (`git status` verified empty after cleanup).
+
+### Tooling finding for `dev-tooling-assets` (directive #4 — why CI missed this)
+
+`check-sprite-integrity.mjs`'s SOFT enclave check only fires on a transparent component with
+`touchesBorder === false`; every hole found here is border-connected via a thin channel, so it is
+invisible to that check — the SAME blind spot the script's own header documents for the historical
+courier bug (dominance ~0.99, "does NOT catch it"). Recommend a **third SOFT check**: a
+"closability probe" — reconstruct `solidBodyMask` at the current CLOSE_R (10) and again at a larger
+diagnostic radius (e.g. 25), and WARN when the delta inside the figure's torso zone exceeds a
+threshold (mirroring `SUSPECT_ENCLAVE_MIN_PX`). This is exactly the `hole-audit.mjs` probe I used
+by hand for this pass; it would have surfaced `commander_shielded`/`commander_finisher`/`lustre` as
+WARN in CI without needing a human eye. Not implemented here (out of my lane — flagging for
+dev-tooling-assets to author and calibrate, same as any gate change).
+
+### l'Éden backdrop — quick pass (secondary axis, priority redirect honoured)
+
+- `facade.png`/`foreground.png` landed at 991×594 (not the global `sizes.facade` 1280×768 — a
+  dimension drift worth a dev-tooling-assets note, not diagnosed further here).
+- **Window-row count MISMATCH found:** the generated facade reads as a 3-wall perspective room
+  (angled left/right side walls + a back wall), not the flat front-elevation the prompt implied.
+  The back wall shows **4** clearly frontal, evenly-lit arched windows, not the gated "exactly 5" —
+  with 2 more arches visible on the angled side walls that are NOT part of the same evenly-spaced
+  row. `windowGrid.cols` is hard-pinned to 5 in `levelArt.json`; this is the same class of
+  rigid-grid-vs-real-art drift belliard hit twice (`8933c03`, `bb6404f`). Could not run
+  `gen-window-zones.mjs`/`align-windows.mjs` in this sandbox (`jpeg-js` dependency missing) to see
+  whether the detector still snaps acceptably — flagging for the stage-5 alignment check rather
+  than diagnosing further under this priority redirect.
+  - Separately, the windows rendered as **fully intact glazed arches** (blue-tinted glass, city
+    lights visible outside), not the [E4]-corrected "lower panes crudely boarded, upper arch open"
+    — a prompt-fidelity miss. This may actually make the openings EASIER for the alignment
+    detector (high-contrast lit rectangles) even though it drifts from the "condamnées" decay read
+    Estelle wanted — a taste call for Nico's gate, not a technical blocker by itself.
+- `foreground.png` — **CLEAN**: magenta-composited cleanly, thick bold cast-iron balustrade
+  silhouette, sharp edges, no visible fringe/halo, consistent with the proven belliard/stalingrad/
+  vitry foreground formula. No rail-merge observed at the balustrade itself (Karim's [E5] flag was
+  about the FACADE's arched windows, which I could not machine-verify per the dependency gap
+  above — visual read shows no obvious merge on the 4 visible arches, but not machine-confirmed).
+
+### What reaches Nico
+
+**Nothing from this `boss` batch reaches the ASSET GATE as-is.** 4 of 9 assets are blocked
+(`commander_shielded`, `commander_finisher`, `lustre`, `speaker_wall` — REGEN findings above); the
+other 5 (`commander_exposed`, `commander_hit`, `commander_down`, `commander_weakpoint`,
+`commander_parry_windup`) are technically CLEAN on the cutout/hole axis but I am holding the
+**whole family** back from Nico until batch 2 lands, per Bertrand's "no soft-PASS" instruction and
+because the family is judged as one printing run (§2 law 2) — shipping 5/9 now and 4/9 later would
+fragment the asset-gate review. The l'Éden backdrop's window-count mismatch is a separate, lower-
+severity finding routed to stage-5 verify / dev-tooling-assets, not a hold on the backdrop itself.
+
+### Batch-2 requirements (this is the LAST reroll under the 2-batch cap — precise, not vague)
+
+- **`commander_shielded`** — prompt: reinforce the pale-edge/rim-highlight contrast specifically at
+  the coat's hip/hem contour (the general "pale edge highlights" clause degraded at this one
+  contour point); alternative: re-roll the seed only.
+- **`commander_finisher`** — prompt: add an explicit fold-shadow floor, e.g. "no near-black shadow
+  creases; every fold in the coat rendered no darker than mid-charcoal, always clearly lighter than
+  the pitch-black backdrop" targeted at the torso and thigh; this is the [S7]/Nico's
+  highest-anatomy-risk entry materializing exactly as predicted.
+- **`lustre`** — prompt: extend the [S8] value-lock from the crystal DROPS to the connecting
+  wrought-iron/brass ARMATURE mass between tiers ("the whole armature, not just the crystal drops,
+  a solid pale-to-mid grey clearly lighter than the black backdrop"); add "a single continuous
+  chandelier, no duplicate or repeated hanging fixture" to guard the orphan-drop duplication.
+- **`speaker_wall`** — prompt: much stronger background lock; the "hand-built... on a scaffold and
+  pallet rig" phrasing likely pulls FLUX toward a documentary-photo composition (real sky/rigging)
+  that fights the style tail. Recommend trimming the photographic-scene-evoking language and/or
+  repeating "flat solid black background, no sky, no outdoor scene, no photograph" closer to the
+  subject clause; a straight seed re-roll alone is unlikely to fix this given how strongly the
+  current generation drifted (94% of canvas non-black).
+- The 5 CLEAN entries do **not** need to be in batch 2 — only reroll the 4 above; batch 2 stays
+  scoped to 4/9, consistent with the 2-batches/cycle discipline (batch 1 spent, this is the last).
+
+### Verify
+
+- `node scripts/check-sprite-integrity.mjs --file <asset>` × 9 → all PASS (confirms the tooling-gap
+  finding above — mechanical PASS is a floor, not a craft verdict, exactly per my mandate).
+- `node scripts/fill-sprite-holes.mjs --check public/assets/boss/*.png` → 0px would fill on all 9
+  (fixpoint already reached; confirms the CI solidify pass is not silently stale).
+- `git status` → clean; no repo files modified (all measurement/retouch experiments ran against
+  scratchpad copies; the one real retouch attempt did not produce a clean fix and was not applied
+  to the committed PNGs).
+- `yarn lint`/`yarn format` — not run, no repo script or asset was touched this pass.
+
+Not a `VERDICT:` line (TECHNICAL-pass annotations only, per the game-graphist role — the ASSET GATE
+verdict is Nico's, and this batch does not reach him).
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this TECHNICAL PASS entry
+  appended). No asset or script files modified.
+
+Serge — TECHNICAL PASS
+
+---
+
+## ART LANE — concept-artist (Maud) — 2026-07-21 · BATCH-2 reroll [B1]-[B4] (the LAST reroll of the cap)
+
+- claim: integrate Serge's measured TECHNICAL-pass batch-2 findings into the 4 REGEN prompts
+  (`commander_shielded`, `commander_finisher`, `lustre`, `speaker_wall`) — targeted (~1 variable each,
+  positive-phrased so the negation budget stays green), applied to BOTH the draft shard and the 4
+  applied strings in `levelArt.json`'s boss block. The 5 CLEAN entries keep their prompts byte-identical
+  (Serge measured their "holes" as legitimate pose negative space). No commit/push.
+- the 4 diffs (old → new clause; every subject stays 0-negation, assembled 2, all ≤120 words):
+  - **[B1] `commander_shielded`** (117w) — the general `with pale edge highlights` degraded at the one
+    hip/hem contour where batch-1 bit a non-bridgeable round hole. ADDED a dedicated hem clause:
+    `a pale contour of light tracing the coat lower hem and hip edge` (compensating trims: `at full
+height`, `flat`, `clipped at the shoulder`, `at the hip`).
+  - **[B2] `commander_finisher`** (119w, the worst — ~14.6% holed) — coat/trouser shadow folds rendered
+    near-key-black across the whole kneeling thigh + torso/back ([S7]/Nico's highest-anatomy-risk entry
+    materialized). ADDED a POSITIVE fold-value floor on those exact zones: `its torso and thigh folds a
+mid-charcoal, lighter than the pitch-black backdrop` (not "no near-black", to keep the budget). Also
+    compacted the [S7] sleeve clause to `sleeved to the wrist`.
+  - **[B3] `lustre`** (120w, ~13.5% holed + one orphan severed drop) — extended the [S8] value-lock from
+    the crystal DROPS to the ARMATURE mass: `the whole frame a solid pale-to-mid grey lighter than the
+black backdrop`; and a POSITIVE single-object guard for the duplication artifact: `one … chandelier` - `every drop attached to the frame` (not "no duplicate").
+  - **[B4] `speaker_wall`** (119w, 94.3% came back as a real outdoor rig/sky/tent photo) — a DOMINANT
+    flat-black lock placed early in the subject: `on a completely flat uniform black background filling
+the frame`; and removed the photo-evoking tokens `from the ground up` and `scaffold` (kept `pallet
+rig` as the rimless BUILT tell). Straight seed re-roll alone was judged unlikely to fix this.
+- root-cause context (Serge, measured): batch-1's `check-sprite-integrity.mjs` PASSED all 9 (dominance
+  ~100%, 0 enclaves) but the true holes are edge-CONNECTED to background through thin channels — the
+  same blind spot as the historical courier bug; a raw re-cutout path does not exist (no `if: failure()`
+  artifact was uploaded on the successful run), so REGEN is the only route. The 5 CLEAN entries are held
+  with the family (one printing run, §2 law 2) rather than shipped 5/9 now.
+- File List:
+  - `src/game/levels/levelArt.json` (boss block: 4 REGEN `prompt` strings updated per [B1]-[B4]; the 5
+    CLEAN strings + `$comment` + `style` UNCHANGED). Note: dev-tooling had added all 9 boss entries +
+    per-prop `size` (lustre 320×512 portrait, speaker_wall 512×320 landscape — my [S13] aspect note
+    applied) since my last pass.
+  - `docs/art-direction/prompt-drafts/boss-commander.md` (BATCH-2 [B1]-[B4] summary block added; the 4
+    blockquotes + per-clause rationale updated; budgets note refreshed).
+- lint: `node scripts/check-art-prompts.mjs` → **PASSED — no contract errors (14 word-band warnings,
+  all pre-existing/other-lane: courier + nearForeground/bench + loot.crate + enemies; the boss block is
+  out of the lint's scope, held by hand: the 4 REGEN prompts are 117/119/120/119w, 0 subj-neg, 2 asm-neg).**
+- handoff → `lead-art` (Nico) express-gates the 4 changed prompts, then dispatch/regenerate (batch 2 =
+  the last of the 2-batch cap). Serge flagged for `dev-tooling-assets` a CI gate improvement (a
+  "closability probe" SOFT check that would have WARNed these three holes) — out of my lane.
+- Not a `VERDICT:` line — the 4 REGEN prompts are OWED Nico's express PROMPT GATE before regeneration.
+
+## 6. FIX (batch-2 pipeline) — dev-tooling-assets (Amelia) — l'Éden size-bug diagnosis + boss selective purge + integrity closability probe — 2026-07-21
+
+- **claim:** three coordinator-routed items off Serge's TECHNICAL PASS (§ above): (1) diagnose +
+  fix why `gen-level-art.mjs` produced l'Éden's `facade`/`foreground` at 991×594 instead of the
+  declared 1280×768; (2) selectively purge the 4 REGEN boss PNGs (`commander_shielded`,
+  `commander_finisher`, `lustre`, `speaker_wall`) without touching the 5 CLEAN ones, and verify
+  the generator's marker-triggered path won't force-redo everything; (3) author Serge's SOFT
+  "closability probe" recommendation into `check-sprite-integrity.mjs`.
+
+### 1. l'Éden size-bug — diagnosis + fix
+
+- **Diagnosis (this is the load-bearing finding): NOT a niveau-final-specific config leak.**
+  Decoded every committed level PNG's real pixel dimensions (not just niveau-final's): `belliard`,
+  `stalingrad`, `vitry` and `niveau-final`'s `facade`/`foreground` files **all** decode to
+  991×594 — every single one, old and new alike, never the declared 1280×768. Traced
+  `gen-level-art.mjs`'s request path: `generate(prompt, sizes[baseLayer])` →
+  `fluxUrl(..., size.width, size.height)` → `?width=1280&height=768&...` in the Pollinations URL —
+  confirmed byte-identical for every level, niveau-final reads the exact same shared
+  `sizes.facade`/`sizes.foreground` object every other level does (no per-level override, no
+  default leaking). **The drift is upstream, not in this repo's code:** Pollinations' `flux`
+  model/service silently returns a smaller resolution than requested regardless of the query
+  params (991/1280 ≈ 594/768 ≈ 0.773 — a uniform aspect-preserving scale-down, consistent with an
+  upstream max-pixel-area cap around 768×768's ~590K px). This was invisible until now because
+  nothing in the pipeline (nor `e2e-assets.mjs`'s byte-size floor) ever decoded and checked actual
+  pixel dimensions against the manifest — it has silently affected every shipped level facade
+  since the pipeline's first commit, not something this story introduced.
+- **Fix (`scripts/gen-level-art.mjs`):** added `normalizeSize(buf, size)` — decodes the fetched
+  buffer via `@napi-rs/canvas` and, if its dimensions don't match the declared `size`, redraws it
+  onto a canvas of EXACTLY that size before writing, so the committed PNG's real pixel dimensions
+  always match `sizes[baseLayer]` going forward (levelArt.ts's `FACADE_ASPECT`/the render's plane
+  sizing derive world-space geometry from the declared size, not the file's own dimensions).
+  Best-effort/dynamic-import with a fallback to the raw buffer on any failure (mirrors the
+  try/catch detours already used in `gen-hostage-sprites.mjs`/`gen-boss-sprites.mjs` — never
+  hard-crash locally where canvas/network may be unavailable). Verified in isolation: resizing a
+  real committed 991×594 PNG through the new function decodes back at exactly 1280×768.
+- **Arch-count [4 not 5]:** left alone per instruction — a prompt-emphasis question routed to
+  Maud's concurrent batch-2 edit, not a pipeline/size matter; re-checked the live `prompts.facade`
+  string after this pass and it is UNCHANGED from what this lane originally landed, confirming no
+  concurrent-edit collision on my end.
+- **Missing-file semantics applied:** deleted `public/assets/levels/niveau-final/{facade,
+foreground}.png` so the next `gen-level-art.yml` dispatch regenerates them (now through the
+  fixed, size-normalizing pipeline). The 3 existing levels' committed PNGs are UNTOUCHED —
+  regenerating them was never asked and would burn art-gate budget on already-shipped, working
+  (if imperceptibly stretched) assets; the fix only changes behaviour for FUTURE generations.
+
+### 2. Boss selective purge + FORCE-all workflow bug found and fixed
+
+- **Purge:** deleted exactly the 4 REGEN entries — `commander_shielded.png`,
+  `commander_finisher.png`, `lustre.png`, `speaker_wall.png`. The 5 CLEAN entries
+  (`commander_exposed`, `commander_hit`, `commander_down`, `commander_weakpoint`,
+  `commander_parry_windup`) are untouched on disk.
+- **Missing-file semantics in `gen-boss-sprites.mjs` itself are correct** (verified by reading the
+  script: `if (!FORCE && fs.existsSync(f.outFile)) { skip; continue; }`) — the bug was NOT in the
+  generator, it was in **`gen-boss-sprites.yml`**, which ran `FORCE=1 node
+scripts/gen-boss-sprites.mjs` unconditionally on every dispatch (copied verbatim from the
+  single-figure `hostages` workflow, where always-force made sense — it doesn't for this 9-entry
+  MIXED accept/reject family). Confirmed this was exactly what the coordinator's concern named:
+  the marker path WAS wired to the FORCE-all mode. **Fixed:** the workflow now defaults to plain
+  `node scripts/gen-boss-sprites.mjs` (missing-file semantics — regenerates only the 4 deleted
+  entries, leaves the 5 CLEAN committed PNGs completely alone) on both the marker-push path and a
+  plain `workflow_dispatch`; `FORCE=1` now fires ONLY on an explicit `workflow_dispatch` with a new
+  `regenerate: true` boolean input (mirrors the `gen-level-art.yml`/`preview.yml` convention),
+  never on the automatic marker-push path.
+
+### 3. Closability probe (Serge's tooling finding) — added to `check-sprite-integrity.mjs`
+
+- **Shape, as recommended:** reconstructs the solid-body mask (the exact PASS-A recipe
+  `fill-sprite-holes.mjs`/`scripts/lib/morphology.mjs` `solidBodyMask` uses — `morphology.mjs`
+  itself is untouched, marked FROZEN/correctness-critical for committed-byte reproduction; a
+  parameterized COPY of the same steps lives in `check-sprite-integrity.mjs` instead, since
+  `solidBodyMask`'s closing radius is baked into a module-level disk at load time) at the current
+  `CLOSE_R` (10) and again at a larger diagnostic radius (`CLOSABILITY_DIAG_R = 25`). Pixels the
+  diagnostic radius reconstructs as body that the current radius still leaves transparent, AND
+  that are genuinely transparent in the source (not an anti-halo erosion edge artifact), are
+  candidate border-connected holes; run through `labelComponents` to get sized/bboxed candidates.
+  WARNs (mirrors the existing enclave check's shape exactly: same `ENCLAVE_TORSO_FRAC` torso-zone
+  scoping, `CLOSABILITY_MIN_PX = 150` mirroring `SUSPECT_ENCLAVE_MIN_PX`) — **never fails the
+  gate**: the new `closability` field is threaded through `measureIntegrity`'s return and only
+  feeds `evaluateIntegrity`'s `warnings` array, never its `checks`/`pass`.
+- **Verified against the real committed boss PNGs (post-purge, the 5 CLEAN ones):** ran
+  `check-sprite-integrity.mjs --file` on all 9 (~17.5s total, ~2s/file — acceptable CI cost). All 9
+  still **PASS** (HARD checks + exit code unaffected). The probe fires on **all 9**, including the
+  5 CLEAN ones — e.g. `commander_exposed`'s flagged candidates (755/436/178px) match exactly the
+  leg-spread/muzzle/holster gaps Serge's own manual audit already confirmed as legitimate pose
+  negative space, not holes. This is EXPECTED and by design, not a calibration miss: per the
+  explicit instruction ("flag, don't hard-fail, so legit anatomy gaps... don't false-positive"),
+  the probe is a SOFT diagnostic aid, not a discriminator — same nature as the existing enclave
+  check, which routes every large candidate to a human/agent glance rather than trying to
+  auto-distinguish a true hole from a legitimate pose concavity (a judgment call this mechanical
+  probe cannot make, same limitation the existing enclave check already carries). Its value is
+  that it would have surfaced `commander_shielded`/`commander_finisher`/`lustre` (Serge's
+  confirmed-worst 3) as WARN candidates in CI, closing the blind spot on future batches — it does
+  not, and is not meant to, replace the human crop-verification step Serge performed by hand.
+- Header doc-comment + the SOFT-checks bullet list updated to describe the new third check
+  alongside the existing enclave inventory.
+
+### Verify
+
+- `yarn typecheck` → green.
+- `yarn lint` → green (0 errors on every changed file).
+- `npx prettier --check scripts/gen-level-art.mjs scripts/check-sprite-integrity.mjs
+.github/workflows/gen-boss-sprites.yml` → clean.
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 WARNs now — 2 more than the prior
+  12, both from a `loot.types.crate` block landed by a concurrent, unrelated lane in this shared
+  worktree; not touched, not mine, still non-gating).
+- Both new/changed workflow YAMLs re-validated parseable (`python3 -c "yaml.safe_load(...)"`).
+- `git status` confirms exactly the intended file set changed (deletions + the 3 pipeline files);
+  no other repo content touched.
+- Both dispatch markers re-staged (`date > .github/dispatch/gen-boss-sprites` /
+  `.../gen-level-art`, fresh content, not bare `touch`) — ready for the orchestrator's
+  `ci(dispatch):` commit to fire the (now-fixed) selective boss regen and the l'Éden size-fixed
+  regen together.
+- **Scope discipline:** did not touch the facade prompt text (Maud's concurrent batch-2 lane), did
+  not touch `scripts/lib/morphology.mjs` (FROZEN/correctness-critical, per its own header), did not
+  regenerate/retouch the 3 already-shipped levels' PNGs, did not touch the newly-appeared
+  unrelated `loot` block.
+- **File List:**
+  - `scripts/gen-level-art.mjs` (MODIFIED — `normalizeSize()` post-fetch resize guard)
+  - `scripts/check-sprite-integrity.mjs` (MODIFIED — closability probe: new constants, a
+    parameterized body-mask-reconstruction helper, `measureIntegrity`/`evaluateIntegrity` wiring,
+    header doc update)
+  - `.github/workflows/gen-boss-sprites.yml` (MODIFIED — `regenerate` input, FORCE=1 now opt-in
+    only, missing-file semantics the default)
+  - `public/assets/levels/niveau-final/facade.png` (DELETED — regenerates via the fixed pipeline)
+  - `public/assets/levels/niveau-final/foreground.png` (DELETED — regenerates via the fixed
+    pipeline)
+  - `public/assets/boss/commander_shielded.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/commander_finisher.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/lustre.png` (DELETED — REGEN per Serge's audit)
+  - `public/assets/boss/speaker_wall.png` (DELETED — REGEN per Serge's audit)
+  - `.github/dispatch/gen-boss-sprites` (re-touched, staged)
+  - `.github/dispatch/gen-level-art` (re-touched, staged)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## EXPRESS PROMPT GATE (batch-2 reroll, LAST of the 2-batch cap) — lead-art (Nico) — 2026-07-21 · 4 REGEN prompts
+
+Scope: gate ONLY the 4 changed `boss`-block prompts Maud rerolled per Serge's measured TECHNICAL-pass
+findings + Bertrand's two direct verdicts (« très mal détouré », « attention aux trous ») —
+`commander_shielded` [B1], `commander_finisher` [B2], `lustre` [B3], `speaker_wall` [B4]. The 5 CLEAN
+entries (`commander_exposed`/`hit`/`down`/`weakpoint`/`parry_windup`) keep their batch-1 FAMILY-PASS
+verbatim (Serge measured their "holes" as legitimate pose negative space — no reroll owed, prompts
+byte-identical, PASS stands). Read: Serge's TECHNICAL-pass hole-audit table + per-asset root causes +
+batch-2 requirements, Maud's [B1]-[B4] release entry, the 4 updated strings in
+`src/game/levels/levelArt.json` boss block AND the matching updated blockquotes in
+`docs/art-direction/prompt-drafts/boss-commander.md` (confirmed draft↔JSON consistent, no drift).
+
+**Mechanical + hand-held contract (ran it myself — verify, don't trust):**
+
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 contract errors (14 pre-existing / other-lane
+  word-band warnings: courier + enemies + nearForeground/bench + loot.crate; NONE from the boss
+  block, out of the lint's scope by design — its contract is held by hand).
+- Re-counted all 4 assembled strings independently (subject + verbatim 58-word tail): **shielded 117w,
+  finisher 119w, lustre 120w, speaker_wall 119w** — every subject **0 negations**, tail **2**
+  (`no text`, `no watermark`) → assembled **2**, inside the ≤2 budget. Maud's 117/119/120/119 claim
+  CONFIRMED exact. All under/at the **120** hard ceiling (lint errors strictly ABOVE 120).
+  **Budget NOTE (not a FAIL):** `lustre` sits AT 120 — zero remaining headroom; any further clause
+  breaches the ceiling. Flagged so a hypothetical batch-3 (there is none — see cap) would have to
+  trim first. Passes as-is.
+- No baked neon-accent hue in any of the 4. Every added token is value/luminance/material language
+  inside the tail's declared "light grey white and pale neon tones" palette: `charcoal-grey`/
+  `mid-charcoal`/`pale-to-mid grey`/`pale grey` (values), `a pale contour of light`/`bright rim`
+  (luminance edge tells), `wrought-iron`/`plywood`/`gaffer` (materials monochromed by the tail),
+  `black outlines`/`black ground` (ink linework). ADR-0011 render-side-rim convention held — the
+  acid neon stays render-side.
+
+**Batch-2 discipline — HELD.** All 4 are targeted, positive-phrased fixes each aimed at that asset's
+SPECIFIC measured defect, not rewrites; the poses/silhouettes are untouched; compensating trims are
+budget-driven, not new content. The negation budget is protected exactly where it mattered:
+`speaker_wall` took Serge's _positive_ option (front-loaded `completely flat uniform black background
+filling the frame`) and rejected his alternative `no sky, no outdoor scene, no photograph` phrasing —
+which would have added 3 negations and blown the ≤2 budget. That is the correct FLUX-rule call
+(§3 rule 1: never negate, describe the positive opposite).
+
+### Per-entry verdicts
+
+- **`commander_shielded` [B1] — PASS.** Serge measured a non-bridgeable round bite through solid coat
+  fabric at the hip/hem (silhouette edge lost contrast vs key at that one contour). The fix — a
+  dedicated `a pale contour of light tracing the coat lower hem and hip edge` — is precisely the
+  high-contrast xerox EDGE tell I called load-bearing at the batch-1 gate, applied exactly at the
+  failed contour. It is a VALUE-edge clause, not a silhouette change: bare-headed + long knee-length
+  overcoat + squared shoulders + brassard + shoulder radio + halt gesture + holstered boxy sidearm +
+  closed guarded stance all survive; `towering` retained at the head of the string (the dropped `at
+full height` was redundant with it). RULING (1) held (bare head, brassard/radio, boxy sidearm).
+  On-direction, house style intact.
+- **`commander_finisher` [B2] — PASS.** The measured worst (~14.6% holed straight through solid thigh
+  - torso/back) — exactly the "highest-anatomy-risk entry of the 9" I flagged at batch-1. The fix — a
+    POSITIVE fold-value floor on the exact failed zones, `its torso and thigh folds a mid-charcoal,
+lighter than the pitch-black backdrop` — is the correct mush-watch resolution (positive phrasing,
+    0 subject negation). The [S7] sleeve-continuity intent survives the compaction to `sleeved to the
+wrist` + retained `the closed hand on the shoulder radio` (thick continuous limb + no finger-gap
+    hole-class preserved). Reads "down-but-still-trying," distinct from `down`. Tone guardrail
+    intrinsically held (mono-figure). **PASS — with the MANDATORY anatomy defect-sweep REAFFIRMED at
+    my asset gate:** this entry materialized its predicted defect once already; the prompt-side fix is
+    correct, but whether FLUX delivers a solid thigh/torso is a render read the asset gate binds.
+- **`lustre` [B3] — PASS.** Two measured defects: swiss-cheese armature (~13.5%, [S8] had value-locked
+  only the crystal DROPS, not the connecting armature MASS) + one orphan severed drop
+  (duplication/severed-thread). Both fixed on their own axis: `the whole frame a solid pale-to-mid grey
+lighter than the black backdrop` extends the value-lock to the armature mass; `one … chandelier` +
+  `every drop attached to the frame` is a POSITIVE single-object / attachment guard against the
+  duplication (not "no duplicate" — budget-clean). HUNG read preserved (single chain up top,
+  cone-and-umbrella form excludes the mirror-ball, asymmetric two-drop notch, tilted+dusty). Dropped
+  `brass`/`with suggested arms` are acceptable trims (Serge PASS-AS-IS'd the arms as ornamental; the
+  cone silhouette carries the read). At the 120 ceiling (see budget note).
+- **`speaker_wall` [B4] — PASS.** The unambiguous batch-1 failure: 94.3% of the canvas came back as a
+  real outdoor rig/sky/tent PHOTOGRAPH — not a hole, a whole-scene flood that fought the style tail.
+  Root cause (Serge): the `from the ground up` / `scaffold` documentary-photo phrasing. The fix
+  front-loads `on a completely flat uniform black background filling the frame` into the subject
+  (early-token weight, §3 rule 2) to redouble the tail's own black-ground assertion FLUX ignored, and
+  removes the two photo-evoking tokens (`from the ground up`, `scaffold`) while keeping `pallet rig` as
+  the rimless BUILT tell. BUILT-vs-HUNG read preserved (hand-built + pyramid + pallet rig + chunky
+  unbranded mass, per Serge's own [S10]: BUILT is carried by pyramid/pallet-rig shape, not the removed
+  words). This is the strongest available PROMPT-side lever against a generation-side flood — whether
+  FLUX now honours the flat black is the asset-gate read, and given how hard batch-1 drifted (94%),
+  this is the single highest asset-gate risk of the 4.
+
+### Family + house-style (across the 4 changed, coherent with the 5 CLEAN + roster)
+
+No mid-grey mush drift: every batch-2 value floor is stated as an explicit _differential_ against the
+black backdrop (`lighter than`) and PAIRED with a high-contrast edge tell (pale contour of light /
+black outlines / bright rim / mid-charcoal-over-pitch-black). Xerox high-contrast held; the contrast
+still lives at the silhouette EDGE where silhouette-first reads. The 5 CLEAN prompts + the shared
+byte-identical tail are untouched → the family stays one printing run (§2 law 2). The two ratified
+deviations (POLICE-as-reflective-shape; props keep the shared "figure" tail) are unchanged by this
+reroll and stand as ratified at the batch-1 family gate. Roster contrast (bare head + long coat vs
+capped/helmeted mook/riot/biker) unaffected.
+
+### Scope of this PASS
+
+Covers the 4 changed prompt STRINGS only. It does NOT cover: (a) the regenerated PNGs — my ASSET GATE
+(Gate 2), where the carried-forward watches BIND: `speaker_wall` background-flood re-check (highest
+risk), `finisher` mandatory anatomy sweep, `lustre` armature-solidity + orphan-drop check,
+`shielded` hip/hem hole-close — my eye over any mechanical pre-check (and Serge's own note that
+`check-sprite-integrity.mjs` has a border-connected-hole BLIND SPOT here, so its PASS is a floor, not
+a verdict); (b) render-side rims/glows — composite Gate 4 (recall the OPPOSITE prop verdicts: `lustre`
+the interactive `decorProp` MUST glow with falloff; `speaker_wall` MUST NOT glow); (c) the l'Éden
+backdrop (separate family; Serge's window-count 5→4 / boarded-vs-glazed drift is routed to stage-5
+verify + dev-tooling, NOT this gate).
+
+### Dispatch conditions (batch-2 = the LAST reroll of the 2-batch cap)
+
+All 4 REGEN prompts PASS → no FAIL, no iteration owed to Maud. **Batch-2 generation may dispatch ONCE
+`dev-tooling-assets` finishes the in-flight size-bug fix + selective purge** (the boss `size`
+overrides / facade 991×594-vs-1280×768 dimension drift Serge flagged, and purging only the 4 stale
+REGEN PNGs so the 5 CLEAN are not needlessly re-rolled). `POLLINATIONS_TOKEN` is already confirmed SET
+by Bertrand (producer, 2026-07-20) and the AC8 gate is RELEASED — those are no longer blockers.
+
+**CAP REMINDER — this is the LAST batch.** Under the 2-batches/set/cycle discipline, batch-1 is spent
+and this reroll IS batch-2. If any of these 4 comes back defective at my asset gate (hole, flood,
+anatomy break, orphan), the cycle cap is exhausted — the correct next move is NOT a batch-3 but an
+ESCALATION to Bertrand with a shortlist of options (e.g. per-asset seed sweep outside the cap, a
+kontext img2img style-lock from a clean sibling, a scripted-retouch spike, or accept-with-known-defect
+vs cut-the-prop-from-V1). No third silent reroll.
+
+VERDICT: PASS — prompt gate commander_shielded (lead-art)
+VERDICT: PASS — prompt gate commander_finisher (lead-art)
+VERDICT: PASS — prompt gate lustre (lead-art)
+VERDICT: PASS — prompt gate speaker_wall (lead-art)
+VERDICT: PASS — prompt gate boss batch-2 reroll (lead-art)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this express prompt-gate entry appended).
+
+## TECHNICAL PASS ROUND 2 — game-graphist (Serge) — 2026-07-21 · batch-2 verification (boss REGEN targets + l'Éden backdrop)
+
+- **claim:** re-audit exactly the scope `producer` named after batch-2 landed: the 4 REGEN targets
+  (`commander_shielded`/`commander_finisher`/`lustre`/`speaker_wall`), the l'Éden backdrop at its
+  corrected 1280×768, and a confirm-untouched check on the 5 CLEAN sprites. Same methodology as
+  round 1 (magenta composite + zoomed crops + `check-sprite-integrity.mjs`), plus round 1's
+  closability probe, now live in `check-sprite-integrity.mjs` as a SOFT WARN (confirms my round-1
+  recommendation was adopted) — verified it still requires human judgment to separate true holes
+  from legitimate pose negative space, same discipline as round 1.
+
+### 5 CLEAN sprites — CONFIRMED UNTOUCHED
+
+`sha256sum`/byte-size match exactly round-1's measured values for all 5
+(`commander_down` 52814B, `commander_exposed` 36981B, `commander_hit` 37957B,
+`commander_parry_windup` 42045B, `commander_weakpoint` 31502B) — consistent with "missing-only boss
+regen" only touching the 4 deleted REGEN targets. No further action needed on these 5; every
+`check-sprite-integrity` closability WARN on them re-verified as legitimate pose negative space
+(spread-leg stances, arm-away-from-torso), same as round 1's finding.
+
+### Boss REGEN targets — batch-1 vs batch-2
+
+| Asset                | Batch-1                                                                                                                                           | Batch-2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Verdict                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `commander_shielded` | Round bite through solid coat at hip/hem (~600-1000px), edge-connected, `bridgeHip` couldn't safely close it                                      | Hole GONE — full-silhouette magenta composite shows a completely solid coat, no visible bite anywhere. One residual closability WARN (854px, bbox [78,189,129,223], 77% down) — cropped and confirmed **legitimate**: the natural gap between the two trouser legs in a standing stance, not a hole                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | **CLEAN** — B1 fix (hem contour) worked                               |
+| `commander_finisher` | Two true holes: thigh (~1680px) + torso/back (~839px), ~14.6% of figure missing                                                                   | Both holes GONE — `opaque comps` dropped from 4 (fragmented) to **1** (single solid silhouette), dominant area UP from 17267px to 20903px. Mandatory anatomy sweep re-run: reaching arm is continuous shoulder→sleeve→wrist→hand, fingers separated but rooted, no detached member; the radio/headset device reads as a coherent attached prop on the head. Residual closability WARNs (1396px kneeling-leg-to-ground area, 356px torso) cropped and confirmed **legitimate** — the space under the reaching arm/hand and a natural garment-fold concavity at the collar, not holes. One cosmetic note: a ragged ink-spatter-like ground-contact shadow under the front boot (jagged but opaque, not a keying artifact)                                                                                                                                                                  | **CLEAN** — B2 fix (fold floor) worked; anatomy sweep PASS            |
+| `lustre`             | Multiple large bites through the cone/dome armature (~13.5%, "swiss cheese" read) + one disconnected orphan crystal-drop fragment                 | Armature now reads as ONE coherent, continuous solid object — cropped every large closability WARN (10650px/9817px pair at the very top, 3389px/2790px/1220px lower down): all confirmed **legitimate** — the top pair is open background around the ceiling-mount brackets (a real design element, not a hole), the lower ones are the intentional gaps between individual hanging crystal-drop strands (the prompt's own "strings of faceted glass droplets"). No orphan/duplicated fragment found this round (opaque comps=20 but the non-dominant 19 sum to <1% of the opaque area — ordinary keying-debris scale, not a duplicated object). One taste note (not technical, routed to Nico/Maud): the intended asymmetric "one wide notch, two drops missing" damage read is not obviously visible in this roll — the silhouette now reads as a fairly complete/symmetric chandelier | **CLEAN** — B3 fix (armature value-lock) worked; no human-bleed       |
+| `speaker_wall`       | 94.3% of canvas stayed opaque — corners sampled a real outdoor rigging/sky photo (cool sky-grey top, warm ground-grey bottom), no flat key colour | Corners now transparent, opaque fraction dropped to **0.326** (in line with `lustre`'s 0.346 — a plausible figure/prop ratio). Background reads clean flat black behind the stack. One minor cosmetic NIT: a handful of thin disconnected cable-line fragments float in open background near the right edge (component sizes ~13-40px, under the 12px×N speckle profile but still visible up close) — cosmetic dangling-cable debris, invisible at real in-game prop scale, not blocking                                                                                                                                                                                                                                                                                                                                                                                                 | **CLEAN (minor NIT)** — B4 fix (black-bg lock) worked; no human-bleed |
+
+**Edge/fringe quality (Bertrand's détourage verdict):** all 9 boss sprites report `BINARY alpha: 0
+semi px` — hard, non-anti-aliased edges everywhere, correct for the "crisp clean pixels... retro
+snes style" tail. The stair-step raggedness visible on `commander_exposed`'s silhouette (flagged
+in round 1) is confirmed cosmetic pixel-art jaggedness, not a keying fringe — no semi-transparent
+halo pixels exist to soften it. Détourage verdict: **PASS** on all 9 boss sprites this round.
+
+### l'Éden backdrop — 1280×768 confirmed, arch count STILL 4 (unresolved), NEW foreground keying regression found
+
+- **Dimensions: FIXED.** Both `facade.png` and `foreground.png` decode at the true global
+  `sizes.facade`/`sizes.foreground` **1280×768** — the `normalizeSize` fix landed correctly.
+- **Arch count: still 4, not the gated 5 — recurring, not new.** Overlaid the windowGrid's own
+  even-5-slot centers (`left:0.1,right:0.9,cols:5` → x≈230/435/640/845/1050 px) on the facade.
+  The composition is a 3-wall perspective room: the BACK WALL (the plane the `windowGrid` is meant
+  to key on) carries **4** clear, evenly-spaced, fully-frontal arched openings, plus 2 additional
+  arches on the sharply-angled receding SIDE walls at the far left/right edges — these side-wall
+  arches are geometrically distinct (steep perspective, not flush to the picture plane) and are not
+  usable the same way a cop-popup window is on the other levels. Overlaid grid lines land centered
+  on only 3 of the 4 back-wall arches and fall on bare pillars/side-wall arches at the two grid
+  extremes — confirms the same `windowGrid.cols=5`-vs-real-art mismatch flagged in round 1,
+  **unaddressed by batch 2** (batch 2's scope was the boss prompt fixes + the dimension bug; the
+  arch-count prompt itself was not in the B1-B4 fix set, per the coordinator's own framing). This
+  is the same class of drift belliard hit twice (`8933c03`, `bb6404f`) and needs either (a) a
+  targeted facade re-roll that locks a flat single-wall elevation (drop the 3-wall room read) with
+  the count reinforced, or (b) a `windowGrid`/`gen-window-zones` retune to 4 columns against the
+  real art (an architecture/design call, not mine to make unilaterally). Could not run
+  `gen-window-zones.mjs`/`align-windows.mjs` in this sandbox (`jpeg-js` dependency still missing)
+  to see whether the detector snaps acceptably regardless — same gap as round 1.
+- **NEW FINDING — foreground.png keying regression (not present in round 1).** Round 1's
+  `foreground.png` composited cleanly (verified again by re-viewing my saved round-1 crop): sharp
+  black balustrade silhouette, clean magenta everywhere else. **Round 2's `foreground.png` has a
+  real keying failure**: sampled the raw committed pixel at (200,250) — a gap between two
+  balusters that should read background — and it is **RGB(206,73,82) at alpha 255, fully opaque**,
+  not magenta. `scripts/cutout-foreground.mjs`'s `isMagenta()` test (`r>110 && b>110 && g<min(r,b)
+*0.62`) correctly leaves this pixel alone because it genuinely isn't magenta — the underlying
+  generation rendered a **warm orange/red gradient** (looks like a sunset or warm-lit-interior
+  glow) behind large sections of the ironwork instead of the required flat `#FF3CDC` chroma, and
+  it baked in as permanent opaque content. Visually this reads as a solid warm haze filling most of
+  the gaps between the railing bars — corners are still cleanly transparent (0,0,0,0), so this is
+  a **partial** background-generation failure, same root-cause CLASS as round-1's `speaker_wall`
+  (background didn't hold flat/uniform), just on a different asset and this time surviving into
+  the SECOND batch. Global opaque fraction is 0.631 of the whole 1280×768 canvas — far more than a
+  thin railing should ever occupy. **This blocks the foreground layer as committed** — it was not
+  part of the 4-item regen scope (foreground wasn't a named REGEN target) but the dimension-fix
+  regen re-ran the whole backdrop generation and this defect appears to be new fallout from that
+  re-roll, not something batch 2 was even asked to check. Flagging as its own escalation item.
+
+### What reaches Nico
+
+**The `boss` 9-asset family is READY for the ASSET GATE** — all 9 are technically CLEAN this round
+(5 confirmed untouched, 4 REGEN targets confirmed fixed), no outstanding hole/fringe/anatomy/
+human-bleed defect. One non-blocking taste note forwarded (lustre's damage asymmetry read) for
+Nico/Maud, not a technical hold.
+
+**The l'Éden backdrop does NOT reach the gate as-is.** Two separate findings, both blocking:
+
+1. `facade.png` — window-row count mismatch (4 vs gated 5), recurring from round 1, unaddressed.
+2. `foreground.png` — NEW keying regression (background gradient bleed, ~63% of canvas wrongly
+   opaque), first observed this round.
+
+### Escalation shortlist for Bertrand (cap is SPENT — no further reroll without his call)
+
+Per the coordinator's framing, the 2-batches/cycle cap for the `boss` family is spent and satisfied
+(9/9 clean) — no escalation needed there. The **backdrop** is the open item, and since it was not
+counted against the same boss-family cap, the choice of remedy is Bertrand's:
+
+1. **Facade arch-count (4 vs 5):** (a) seed-sweep/re-roll the facade prompt with a stronger
+   single-flat-wall constraint (drop the 3-wall room read) and reinforced count language, or
+   (b) accept 4 arches and re-tune `windowGrid.cols` to 4 (an architecture/design call — changes
+   the pre-boss gallery's window-pop density, not just an art fix), or (c) accept-with-defect if
+   the alignment harness (once runnable) snaps acceptably despite the mismatch — unverified here.
+2. **Foreground keying regression:** (a) re-roll just the `foreground` prompt with the magenta
+   chroma-key clause reinforced/repeated (same class of fix as `speaker_wall`'s B4), or (b) a
+   kontext img2img pass to flatten the existing art's background to true magenta before re-keying
+   (preserves the current railing artwork, only touches the background), or (c) a retouch spike —
+   NOT safely scriptable as a simple threshold widen (the warm colour is nowhere near magenta in
+   hue, so loosening `isMagenta()` risks eating real dark ironwork instead of fixing the bleed;
+   this needs either a flood-fill-from-border approach like the boss sprites use, or new art).
+   My recommendation, precision for his call: this reads like the same root cause as `speaker_wall`
+   round 1 (background isolation failing to hold across a full re-roll) — a seed/prompt fix
+   (option a) has the best precedent (worked for all 4 boss REGENs this batch) and should be tried
+   before a retouch spike.
+
+### Verify
+
+- `node scripts/check-sprite-integrity.mjs --file <asset>` × 9 → all PASS, closability WARN now
+  live and used exactly as intended (floor, not verdict — every WARN individually adjudicated above).
+- `sha256sum`/byte-size cross-check on the 5 CLEAN sprites → confirmed untouched.
+- Pixel-sampled the raw `foreground.png` (not just the magenta composite) to rule out a tooling
+  artifact before flagging the regression — confirmed at the byte level.
+- `git status` → clean; no repo files modified this pass (inspection-only, scratchpad tools removed
+  after use, consistent with round 1's discipline).
+
+Not a `VERDICT:` line (TECHNICAL-pass annotations only — the ASSET GATE verdict is Nico's). The
+`boss` family is ready for that gate; the l'Éden backdrop is held on the two findings above.
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this ROUND 2 entry appended). No
+  asset or script files modified.
+
+Serge — TECHNICAL PASS (round 2)
+
+## DÉCISIONS BERTRAND — backdrop escalation (2026-07-21)
+
+- **Finding 1 (arches 4 vs 5)** : Bertrand tranche — ACCEPTER la façade batch-2
+  à 4 arches et RETUNER `windowGrid.cols` 5→4. Gate design express demandé à
+  `lead-game-designer` (la valeur 5 était gatée [E3]) + re-check alignement
+  fenêtres après application.
+- **Finding 2 (foreground régressé)** : Bertrand tranche — RESTAURER le
+  foreground round-1 (keying propre, commit 3371b20) et le normaliser
+  1280×768 par script (retouche documentée : @napi-rs/canvas, drawImage
+  991×594→1280×768, smoothing off). Appliqué par l'orchestrateur ; vérifié
+  1280×768, 355KB. Le foreground batch-2 (dégradé orange 63% opaque) est
+  écarté.
+
+## DESIGN GATE (express) — lead-game-designer (Karim) — 2026-07-21 — windowGrid.cols 5→4 (Bertrand escalation, cap spent)
+
+- claim: express design-gate on the ONE gated-value amendment Bertrand decided at escalation
+  (§DÉCISIONS BERTRAND, Finding 1): accept the batch-2 l'Éden facade at **4 arches** and retune
+  `windowGrid.cols` **5→4** to match. The original 5 was my gated [E3] count (via `lead-art`'s
+  prompt gate, sourced from the belliard evenness formula). Bertrand's call stands (cap spent); my
+  job is to confirm 4 evenly-spaced occupiable arches still serve the design intent + a stage-5 note.
+
+VERDICT: PASS — design gate niveau-final windowGrid.cols 5→4 (lead-game-designer)
+
+### Why PASS — the [E3] count's PURPOSE (not the number 5) is preserved at 4
+
+- **[E3] purpose was properties, not the integer.** [E3] pinned _even spacing_ + _occupiable
+  window-cop slots_ + _[E5] merge-risk mitigation_ — never the number 5 for its own sake. 4
+  identical, evenly-spaced arches is exactly as EVEN as 5, and (per [E4]) each stays an occupiable
+  opening (upper arch open, lower boarded) — occupiability is per-arch, untouched by the count.
+- **[E5] merge-risk is IMPROVED, not merely unchanged.** Fewer arches across the same facade width
+  = wider piers/mullions between them = more gap = LESS of the `bb6404f` rail-overshoot-merge risk
+  the [E5] flag names. 5→4 moves this the right direction.
+- **No §5.6 surface.** `windowGrid.cols` governs the pre-boss STREET facade's pop-slot layout, not
+  any cop rule. Which cop is armed, its telegraph, and threat discrimination are per-cop and
+  unchanged; the boss QTE is downstream and untouched. Fewer slots introduces no new failure mode,
+  no hidden/inconsistent rule, no bullshit death.
+- **Pacing reads acceptable — fewer slots LOWERS peak crowding, does not raise it.** Verified the
+  spawn mechanic: `spawnWave` sets `count = Math.min(1 + wave, facade.slots.length)`
+  (`enemySystem.ts:76`), so the slot count CAPS peak simultaneity. 4 slots ⇒ max 4 concurrent cops
+  (was 5) — a marginal EASING of the busiest moments, not a density spike. The "higher per-arch pop
+  rate" is real (16 kills cycle through 4 positions instead of 5 ⇒ each arch refires a bit more
+  often), but for a solo one-crosshair shooter engaging one target at a time, 4 concurrent available
+  targets is ample supply to sustain the 4.4 s/kill pace; the bottleneck is the player's aim/click
+  cadence and enemy `visibleDuration`, not 4-vs-5 slots. The spec's "substantive gallery /
+  monotonic-hardest" intent (§1.3–§1.4) is preserved. niveau-final seats no window crate
+  (`truck` delivery, not a Belliard window-crate), so the `excludeSlots` guard never shrinks the
+  usable pool below 4.
+
+### Gated amendment (for the record)
+
+> **`windowGrid.cols`: 5 → 4** (`src/game/levels/levelArt.json`, `niveau-final` block). Supersedes
+> the gated [E3] count of 5. Decided by **Bertrand at escalation, 2026-07-21** (cap spent; batch-2
+> facade accepted at 4 arches, otherwise good). The [E3] intent (even spacing + occupiable
+> window-cop slots + [E5] merge mitigation) is served by 4; [E5] risk improves with wider piers.
+> `rows` unchanged (single arch row). `dev-tooling-assets` applies the JSON change AND re-runs the
+> `gen-window-zones` alignment re-check — confirming 4 clean, even centres snap to the 4 real arches
+> and no two arches merge on the detected zones (the [E5] check, now easier with wider piers).
+
+### Stage-5 playtest note (compensating watch, non-blocking)
+
+- **N1 — target-supply on 4 slots at the tightest pace.** Peak simultaneity drops 5→4 while the
+  quota (16) / timer (70) / speed (1.8) are held. Confirm at playtest the pre-boss gallery does NOT
+  read target-STARVED (a solo shooter waiting on pops) on the 4.4 s/kill pace — I expect ample
+  supply (speed 1.8 keeps reveals frequent), but it's the one thing 4-vs-5 could plausibly move.
+  **If** it reads thin/unreachable, the compensating lever is a `roster.windowWeights` nudge
+  (the mix is currently biased toward 2-HP `riot`, which slows clears — easing that share is the
+  fair valve), NOT re-adding a 5th arch (art is fixed at 4). Logged as a potential correct-course
+  (spec §4), not a pre-change.
+
+- handoff → `dev-tooling-assets`: apply `windowGrid.cols = 4` in `levelArt.json` (niveau-final) +
+  re-run `gen-window-zones`; confirm 4 even centres + no merged zones ([E5]); report OVERFLOW/clean.
+- handoff → `game-designer` (Sacha): carry N1 into your stage-5 design-acceptance for niveau-final
+  (target-supply on 4 slots vs. the 16/70/1.8 pacing intent).
+- handoff → `lead-art` (Nico): [E3] count formally amended 5→4 for l'Éden; the evenness/occupiability
+  clause is unchanged in substance, only the pinned integer.
+- NOTE (process): appended via Edit, not `cat >>` heredoc — no Bash tool in this subagent context
+  (same limitation logged on the differentiation shard §3/§5/§13/§17). Strictly additive at EOF.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+---
+
+## ASSET GATE (Gate 2) — lead-art (Nico) — 2026-07-21 · boss 9-sprite family, real PNGs
+
+- **Claim:** Gate 2 (asset gate) on the 9 generated boss PNGs in `public/assets/boss/` vs
+  `docs/art-direction.md` — house style (photocopied-fanzine B&W, no baked neon), RULING (1)
+  bare-headed DNA IN THE PIXELS, silhouette one-read at game size (boss draws 2.2 world units),
+  the batch-1 watches (mush-watch, finisher anatomy, hit detached-tell, parry_windup vs exposed
+  distinction), and the two props' pure-B&W / render-side-rim discipline (ADR-0011). Serge's
+  round-2 technical pass (family technically CLEAN, all binary hard edges, 4 REGENs fixed) is a
+  NON-BINDING pre-check per §2/§6 — verdict is my eye on the actual pixels.
+- **Method:** flattened each keyed PNG onto MAGENTA (#FF3CDC — reveals any interior transparent
+  hole as a bright island over the body, the courier-hip-hole lesson) and onto MID-GREY (#7A7A7A
+  — tests value separation / mush of a light-grey figure), plus a ~64px game-size downscale over
+  magenta for the one-read silhouette test. Read all three per sprite. Mechanical pre-check
+  (`check-sprite-integrity.mjs --file`, non-binding) run on all 9: every HARD check PASSES
+  (dominance ≥98.97%, 0 semi-alpha → binary edges confirmed, speckle within budget); the
+  closability SOFT warns all correspond to legitimate pose negative-space (arms/legs held clear
+  of the body) or, on `lustre`, the flanking-mass channels called out below.
+
+### Per-sprite verdicts (my eye, on the contrasting-ground reads)
+
+1. **`commander_shielded`** — PASS. Bare-headed (RULING 1 held), long knee-length coat (the "chef"
+   tell, unique in the roster), closed guarded stance, gear/brassard on the chest. Pure greyscale,
+   no baked neon. On grey: dark coat sits clearly BELOW mid-grey with pale head + belt/brassard
+   highlights = high-contrast xerox value, NOT mid-grey mush ([S1] secured keyability without
+   flattening contrast). Magenta: zero interior bleed-through. One-read silhouette holds at game size.
+2. **`commander_exposed`** — PASS. Arms EXTENDED forward presenting the pistol + big bright muzzle
+   burst, lunging, coat flaring open (mid-grey lining value-separated per [S2]) — a wide, open,
+   unmistakably "firing/exposed" silhouette. Bare-headed DNA held, no baked neon, no interior hole.
+3. **`commander_hit`** — PASS. Recoiling/twisting stagger, bare head, coat, gear across chest, pistol
+   arm dropping. Anatomically coherent, NO floating detached debris (the defect the sweep guards
+   against — clean). Advisory (non-blocking): the RULING-mandated defeat tells (torn brassard /
+   knocked-loose radio) are subtle, absorbed into the chest gear rather than reading as distinct
+   torn-loose-FROM-him elements — a pose-fidelity note, not a bible violation; the "touché" read
+   and the tether discipline ([S4], no floating debris) both hold.
+4. **`commander_down`** — PASS. Clean sprawled-on-back heap, coat splayed in mid-grey fabric ([S3]
+   held — the highest hole-risk pose keyed solid), all limbs joined. The magenta wedges between the
+   splayed limbs are legitimate negative space (matching the closability warns), NOT body holes.
+   Motionless/defeated read is unambiguous and categorically distinct from the finisher.
+5. **`commander_weakpoint`** — PASS. Square, still, frontal, chin up / head value-separated from the
+   coat mass, torso squared flat, arms out with pistol held low & clear of the chest — BOTH anatomy
+   bands (VITAL head / LIMB torso) clean and unoccluded for the render-side two-ring callout, exactly
+   as specced. [S1] coat value holds under where the rings will sit. Anatomy coherent, no hole.
+6. **`commander_parry_windup`** — PASS. Coat hanging CLOSED ([S6] held), braced wound-up crouch, no
+   muzzle flash. Categorically distinct from `exposed` sub-half-second: exposed = arms-EXTENDED +
+   muzzle-BURST + flaring coat + forward lunge; parry = closed dark coat + NO flash + symmetric
+   braced crouch + drawn-in arm. The muzzle-flash presence/absence is the loudest game-size tell and
+   it lands. The §3-C "shared tell = bullshit whiff" risk is cleared. (Advisory: this is the tightest
+   read of the set — the render-side parry cue must not converge them further; that is a Gate-4
+   composite concern, not an asset-gate one.)
+7. **`commander_finisher`** — PASS. Kneeling on one knee, torso UPRIGHT, head UP, coat pooling —
+   "down but still trying," categorically distinct from `down`'s sprawl. Anatomy confirmed with my
+   own eye (backing Serge's mandatory sweep): single solid component, head + 2 arms + kneeling legs
+   all joined, NO detached / duplicated / fused limb, no interior hole (magenta only surrounds him).
+   Tone guardrail (§3.2) intrinsically held (mono-figure, no blood/grimace/weapon-at-him). Advisory
+   (non-blocking): the scripted "arm reaching UP to the shoulder radio, calling it in" rendered
+   instead as hands held low/forward — a pose-fidelity miss, NOT an anatomy or bible defect; the
+   gate-critical "kneeling still-trying ≠ dead" read is fully carried.
+8. **`lustre`** — **FAIL.** The central form IS a legible multi-tier crystal chandelier with pale
+   grey-white drops ([S8] value-lock worked — no key-holed facets) and a top chain. BUT the magenta
+   read reveals it is FLANKED by two heavy vertical column/bracket structures (horizontal capital-
+   like brackets at the top corners, thick dark bars dropping ~80% of the frame height, separated
+   from the chandelier by two large empty channels — the two ~10k-px closability regions at
+   bbox [81,26,158,224] and [162,26,240,229]). That is architectural bleed / perspective-incoherent
+   geometry: a chandelier hangs from ONE central point, it does not stand between two posts. The prop
+   therefore does NOT read as one hung chandelier at a glance — the game-size downscale is a confusing
+   dark triptych, not a single shootable object. Fails §2 law 3 (silhouette-first / one-read) and the
+   prop's HUNG-single-object identity, and it directly undermines the shootable-décor legibility Karim's
+   advisory (chandelier at anchor {0.2,1.5}) requires. Automatic FAIL on the incoherent-geometry clause,
+   same footing as "wrong archetype."
+9. **`speaker_wall`** — PASS. Hand-built pyramid of mismatched plywood bass-bins + horn cabinets on a
+   pallet base, speaker cones legible on the faces, stack clearly lighter than the ground ([S10]/[S11]
+   value+contour lock held). Reads BUILT-from-the-ground-up, cleanly distinct from the chandelier's
+   HUNG identity. Pure greyscale, NO baked neon (correct — and required by the advisory that this
+   reserved 2nd prop must NOT carry a shootable glow affordance in V1; that stays a render-side/Gate-4
+   matter, the PNG bakes no glow). No incidental human silhouette (Serge's deviation-2 prop-check
+   clears — the shared "figure" tail did NOT bleed a human into the prop). Advisory (non-blocking):
+   the right edge is slightly ragged from keying (dark cable/gaffer/shadow eaten) — cosmetic, the
+   solid stack silhouette and the BUILT read are unaffected.
+
+### The two deviations — ratified in the pixels
+
+- **POLICE-as-reflective-shape, not glyphs — RATIFIED.** No garbled text on any figure; the
+  plainclothes-cop read is carried by the brassard/gear as luminous shapes. No text-generation defect.
+- **Props keep the shared "figure" tail — RATIFIED, fallback NOT triggered.** Neither prop shows an
+  incidental human silhouette/limb, so Serge's conditional roster-wide "figure"→"figure or object"
+  fallback does not fire. Keep the shared tail as-is (Family consistency, §2 law 2).
+
+### House-style note (not a FAIL)
+
+All 9 are on the interim SNES roster tail VERBATIM, not the end-state pochoir — this is the ratified
+lockstep-migration decision (the boss migrates to pochoir WITH the whole roster, never forked alone).
+Judged against §2 law 2 (family consistency with the live roster), the treatment is correct; the
+pochoir migration is separate roster-wide debt, out of this gate's scope. All 9 are pure greyscale
+with zero baked neon — loi du glow correctly deferred to the render-side rim (ADR-0011).
+
+### Scope confirmation — the l'Éden backdrop is NOT in this gate
+
+Nothing here gates the venue backdrop (separate `levels` block, its 2 blocking findings already
+escalated to Bertrand). Restated for that future backdrop pass (Karim's advisory 6, carried forward,
+NOT resolved here): frame anchor {0,-5} with no dead sky-gap behind the boss; a legible, shootable,
+boss-distinct chandelier at {0.2,1.5} anchor-relative; the speaker wall must NOT read as a shootable/
+interactive false-affordance in V1. The `lustre` FAIL above is directly relevant to that shootable-
+chandelier legibility — the sited décorProp uses this sprite.
+
+### FAIL instruction → concept-artist (Maud) / escalation (cap spent)
+
+- **`lustre` — one variable, seed re-roll (sanctioned):** the defect is COMPOSITION (two flanking
+  column/bracket masses either side of the chandelier), not phrase/value description — the drops and
+  armature value-language already work. Per §3.10 ("re-roll seeds only when composition is wrong"),
+  the single-variable move is a **seed re-roll of 4877, prompt string UNCHANGED**. If the flanking
+  masses persist across ONE re-roll, THEN the single phrase change is a positive isolation clause
+  ("a single chandelier suspended alone in empty black space, nothing to either side"), watching the
+  negation budget. Do NOT change value clauses (they passed). Because the 2-batch cap is spent, this
+  FAIL goes to **Bertrand's escalation shortlist** rather than an automatic re-roll; a re-dispatch
+  also depends on the POLLINATIONS_TOKEN repo secret being set (producer's flag).
+
+### Verdicts
+
+VERDICT: PASS — asset gate commander_shielded (lead-art)
+VERDICT: PASS — asset gate commander_exposed (lead-art)
+VERDICT: PASS — asset gate commander_hit (lead-art)
+VERDICT: PASS — asset gate commander_down (lead-art)
+VERDICT: PASS — asset gate commander_weakpoint (lead-art)
+VERDICT: PASS — asset gate commander_parry_windup (lead-art)
+VERDICT: PASS — asset gate commander_finisher (lead-art)
+VERDICT: FAIL — asset gate lustre (lead-art) — flanking column/bracket masses break the single hung-chandelier one-read silhouette (§2 law 3 / incoherent geometry); seed re-roll 4877, prompt unchanged; escalated (cap spent)
+VERDICT: PASS — asset gate speaker_wall (lead-art)
+VERDICT: FAIL — asset gate boss-family (lead-art) — 8/9 PASS and clear to ship their slots; family INCOMPLETE until lustre re-rolls (it is the sited décorProp at {0.2,1.5}, so its FAIL is gameplay-visible, not cosmetic)
+
+- **File List:** `docs/handoffs/story-boss-niveau-final-live.md` (this asset-gate entry appended).
+
+## 7. FIX (gated amendment) — dev-tooling-assets (Amelia) — windowGrid.cols 5→4 + alignment re-check + lustre seed reroll — 2026-07-21
+
+- **claim:** Karim's express DESIGN GATE PASS + Bertrand's escalation decision (both above): retune
+  `windowGrid.cols` 5→4 in the `niveau-final` block, re-run the window-zone alignment check against
+  the accepted batch-2 facade (1280×768, 4 real arches) and confirm 4 clean non-merged centres, spot
+  the restored `foreground.png`'s cutout/keying sanity, plus a mid-pass addendum: reroll `lustre`'s
+  seed only (Nico's ASSET GATE FAIL — composition defect, §3.10 rule: new seed, prompt untouched).
+
+### windowGrid.cols 5→4
+
+- Applied in `src/game/levels/levelArt.json` (`niveau-final.windowGrid`): `cols: 5 → 4`, `rows`
+  unchanged (1). Rewrote the `$comment` to record the full chain (Bertrand's escalation decision,
+  Karim's express gate PASS, the [E3]-intent-preserved-at-4 / [E5]-improves reasoning) and to flag,
+  for the record, that the `facade` prompt string still reads "exactly 5 tall arched windows" — a
+  residual mismatch against the now-4-pinned grid and the already-accepted 4-arch art. **Not fixed
+  here** (prompt-string content is concept-artist Maud's lane, not dev-tooling's structural one) —
+  routed to lead-art/concept-artist so a future facade regen doesn't reroll toward the wrong count.
+
+### Alignment re-check — jpeg-js dep + a real format-mismatch bug found and fixed
+
+- **`jpeg-js` was indeed missing** (Serge's blocker, confirmed): `npm install --no-save
+--legacy-peer-deps jpeg-js` resolved it cleanly (network/registry access works in this sandbox even
+  though Pollinations' own domain is blocked — two different things). `pngjs` (also required by the
+  script's Pass-2/debug paths) was already present as a transitive dep, as the script's own header
+  comment predicted.
+- **Running `gen-window-zones.mjs` against niveau-final's real facade.png immediately hit a second,
+  genuine bug this pass introduced upstream:** `detectPanel()` unconditionally called
+  `jpeg.decode()`, but niveau-final's `facade.png`/`foreground.png` are now REAL PNG bytes (RGBA) —
+  a direct consequence of §6's `normalizeSize()` fix (`gen-level-art.mjs`), which re-encodes via
+  `@napi-rs/canvas`'s `canvas.toBuffer("image/png")` whenever Pollinations' response needs resizing
+  (which is every level, per §6's finding). The legacy belliard/stalingrad/vitry facades are still
+  raw un-normalized JPEG bytes (never regenerated since), so this format split is real and will
+  recur for any level regenerated through the fixed pipeline. **Fixed:** added `decodeImage(file)` to
+  `scripts/gen-window-zones.mjs` — sniffs the PNG magic bytes and decodes via `pngjs`'s
+  `PNG.sync.read` when present, falling back to `jpeg.decode` otherwise; both paths already collapse
+  to the same `{width,height,data}` RGBA shape `detectPanel`/`writeOverlay` were already documented
+  to treat uniformly ("either jpeg-js's or pngjs's raw shape"). `morphology.mjs`-style scope
+  discipline: this is additive (one new function, one call-site swap), no existing behaviour path
+  changed for files that ARE JPEG.
+- **A second self-caught bug, fixed before it shipped:** running the (unscoped — this script has no
+  `--asset` filter, always processes every manifest level) Pass-1 loop also re-detected
+  `stalingrad`/`vitry`'s zones against their CURRENT `windowGrid` (7×3=21, 5×4=20) — which do NOT
+  match their COMMITTED `windowZones.generated.json` (12/panel, 38/panel respectively, from some
+  earlier, unrelated drift pre-dating this story entirely: the committed file is stale relative to
+  what the current script+config would produce for those two levels). This is real, pre-existing,
+  and NOT something this task should silently correct (out of scope — repositioning two
+  ALREADY-SHIPPED levels' enemy/railing zones is a visual change with no gate run on it here, and
+  risks the ADR-0005 D3 golden-frame pixel-diff harness for stalingrad/vitry). Diffed before/after,
+  **surgically merged**: kept `belliard`/`stalingrad`/`vitry`/all `belliard/troncon-*` keys
+  byte-identical to the pre-existing committed baseline, and added ONLY the new `niveau-final` key.
+  (First merge attempt was itself clobbered by a later `--debug` re-run of the same unscoped script —
+  caught via a second diff against the true pre-existing baseline and re-merged; final state verified
+  key-by-key identical to the parent commit plus `niveau-final`.) **Flagging the stalingrad/vitry
+  drift as its own finding** for `qa-lead`/`producer` — the committed `windowZones.generated.json`
+  for those two levels does not match what `gen-window-zones.mjs` + their current `levelArt.json`
+  config would generate today; whether that's intentional (hand-tuned, never meant to be
+  machine-regenerated) or genuine drift needing its own regen+regate is a call for that lane, not
+  decided here.
+
+### Result: 4 even centres on 4 real arches, NO merged zones
+
+- niveau-final's 4 zones (identical across all 4 repeated panels, single-facade mode):
+
+  | zone | centre x (px, of 1280) | span (px)       |
+  | ---- | ---------------------- | --------------- |
+  | 0    | 244.7                  | [142.3, 347.1]  |
+  | 1    | 469.4                  | [367.0, 571.8]  |
+  | 2    | 810.6                  | [708.2, 913.0]  |
+  | 3    | 1068.9                 | [966.5, 1171.3] |
+
+  Edge-to-edge gaps: 19.9px / 136.4px / 53.5px — all **positive** (no overlap, no merge). Rendered a
+  `--debug` overlay (`scripts/.dbg-niveau-final-p0.jpg`, gitignored scratch, removed after use) and
+  cross-checked with cropped stills at each zone: all 4 zones visually land on a distinct real arch
+  in the accepted batch-2 art (confirmed via 4 individual crops). The gaps are UNEVEN (not a rigid
+  71-73px-everywhere grid) because the accepted art is a 3-wall perspective composition, not a flat
+  elevation (Serge's round-2 finding, unchanged by this fix) — the wider 136px gap between zones 1
+  and 2 corresponds to the room's wider central bay (where the ceiling-hook/chandelier anchor sits).
+  This is a real, already-acknowledged composition characteristic of the accepted art, not a
+  zone-alignment defect: **no two zones merge, and each sits on its own arch.**
+
+- Wrote the regenerated `src/game/levels/windowZones.generated.json` (pipeline's own artifact
+  pattern, confirmed by inspection: belliard's zones are stored the same way — a plain committed
+  JSON, single-facade levels keyed by bare level id → array of `PANELS` panel zone-arrays, tronçon
+  levels keyed `${id}/${file}`, hand-calibrated tronçon entries protected from a plain rerun unless
+  `FORCE_TRONCON=1`). Staged for the orchestrator's commit alongside the JSON/script changes.
+
+### Restored `foreground.png` — cutout/keying sanity re-verified
+
+- No dedicated integrity gate exists for level `foreground.png` layers (unlike the boss/hostage/enemy
+  black-ground family's `check-sprite-integrity.mjs`) — the applicable check is the magenta cutout
+  itself. Decoded the restored, resized (1280×768) file directly: **binary alpha only** (every
+  sampled pixel is exactly 0 or 255, no semi-transparent fringe — matches the house "sharp silhouette
+  edges" contract), all 4 corners fully transparent, opaque fraction **32.7%** (a plausible
+  railing-silhouette ratio, in line with round-1's clean read). Specifically re-sampled the EXACT
+  pixel Serge's round-2 audit flagged as regressed (raw (200,250), was RGB(206,73,82) opaque, the
+  orange-gradient background-bleed) — now **(0,0,0,0), fully transparent**: the regression is gone at
+  that location. A broader scan for the same warm-orange hue among all opaque pixels found only
+  ~1.7% (consistent with legitimate rim-highlight shading on the black ironwork, not a background
+  bleed) — no evidence of round-2's ~63%-of-canvas regression surviving in the restored file.
+
+### Lustre seed reroll (Bertrand escalation + Nico's ASSET GATE FAIL, mid-pass addendum)
+
+- **Finding:** Nico's ASSET GATE failed `lustre` — two parasitic flanking column masses, a FLUX
+  COMPOSITION defect (not a value/hole defect the B3 armature-lock prompt fix could have caused).
+  Per Nico's §3.10 rule (composition defect ⇒ new seed, prompt held verbatim), touched ONLY the seed.
+- **Applied:** `boss.types.lustre.seed`: `4877 → 4879` (checked against all 9 boss seeds first —
+  4879 was unused, no collision). Added a `$comment` on the entry recording the reroll reason/rule so
+  a future reader doesn't mistake this for an unexplained seed bump. `prompt`, `asset`, `size`
+  untouched — confirmed by diff (only the `seed` value and the new `$comment` line changed).
+- Deleted `public/assets/boss/lustre.png` so missing-file semantics pick it up on next dispatch; the
+  other 8 committed boss PNGs (including the CLEAN 5 + the 3 other batch-2-fixed REGEN targets) are
+  untouched on disk.
+- Re-staged `.github/dispatch/gen-boss-sprites` (fresh `date >` content) so the next `ci(dispatch):`
+  push regenerates ONLY the missing `lustre.png` (the §6 fix already made the workflow default to
+  missing-file semantics — no FORCE-all risk to the other 8).
+
+### Incidental fix (not requested, necessary to complete verification): corrupted `yarn.lock`
+
+- `yarn typecheck`/`yarn lint` started failing mid-pass with "This package doesn't seem to be present
+  in your lockfile" — `yarn.lock`'s header had been overwritten to a **Yarn Classic (v1)** lockfile
+  format (`# yarn lockfile v1`) instead of this project's Yarn Berry v4/`__metadata: version: 8`
+  format, by something in this shared, heavily concurrent worktree — not a command I ran (every
+  install I ran here used `npm install --no-save`, which never touches `yarn.lock`). Ran `yarn
+install` to re-resolve and regenerate a correct Berry-format lockfile; confirmed the header and
+  full toolchain green afterward. Flagging in case another concurrent lane hits the same symptom.
+
+### Verify
+
+- `yarn typecheck` → green.
+- `yarn lint` → green.
+- `yarn format:check` / `npx prettier --check` on every file in this entry's List → clean (7
+  unrelated pre-existing/concurrent warnings elsewhere in the repo, none of them mine).
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 warnings, unchanged from §6, still none
+  from `levels`/`boss`).
+- `yarn vitest run` → 74/74 files, 1003/1003 tests green.
+- `yarn build` → clean; `node scripts/e2e-assets.mjs` against the local `dist/` → **PASSED — all 17
+  assets present & >= 5KB**, including `niveau-final/facade.png` (1,386,414B) and
+  `niveau-final/foreground.png` (355,411B) both now present (belliard's pre-existing undersized
+  `sky.png` shows as a tracked DEBT line, not a failure — a concurrent lane appears to have already
+  wired that allowance since §5's finding).
+- `git status`/diff re-confirmed the final `windowZones.generated.json` is byte-identical to the
+  pre-existing committed baseline for every key except the new `niveau-final` one.
+- **Scope discipline:** did not touch the `facade`/`foreground` prompt strings (flagged the residual
+  "exactly 5" text mismatch instead, Maud's lane), did not touch `stalingrad`/`vitry`'s committed
+  zones despite the script naturally wanting to regenerate them (flagged the drift instead, not
+  fixed), did not touch the 8 other boss PNGs, did not touch `scripts/lib/morphology.mjs`.
+
+### New seed value (for the record)
+
+**`lustre`: 4877 → 4879.**
+
+- **File List:**
+  - `src/game/levels/levelArt.json` (MODIFIED — `niveau-final.windowGrid.cols` 5→4 + comment;
+    `boss.types.lustre.seed` 4877→4879 + comment)
+  - `src/game/levels/windowZones.generated.json` (MODIFIED — new `niveau-final` key added; every
+    other key confirmed byte-identical to the pre-existing baseline)
+  - `scripts/gen-window-zones.mjs` (MODIFIED — `decodeImage()` PNG/JPEG format-sniffing decode, fixes
+    a real bug this story's own `normalizeSize` fix would otherwise have introduced for any future
+    level regen)
+  - `public/assets/boss/lustre.png` (DELETED — seed reroll, regenerates via missing-file semantics)
+  - `.github/dispatch/gen-boss-sprites` (re-touched, staged)
+  - `yarn.lock` (MODIFIED — incidental repair of an unrelated concurrent corruption, not part of the
+    assigned task but required for the verification suite to run at all)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+---
+
+## ASSET GATE (re-roll) — lead-art (Nico) — 2026-07-21 · `lustre.png` seed 4877→4879
+
+- **Scope:** narrow re-gate of the single re-rolled prop `public/assets/boss/lustre.png`
+  (seed 4877→4879, prompt string BYTE-UNCHANGED per the §3.10 one-variable discipline;
+  Bertrand granted the single re-roll to kill the twin flanking column/bracket masses of the
+  4877 roll). Judged on contrasting flats (magenta #FF3CDC + neon-green) at full and game
+  size, per the §2 law 3 defect-sweep (holes hide on opaque white).
+- **Flanking masses — GONE.** No residual side columns/brackets. What flanks the widest ring
+  is now crystal festoons cascading into two pendant clusters — drops that TAPER DOWN (HUNG),
+  not supports that rise (BUILT). Read as part of the one object, not appendages.
+- **HUNG-single-object identity — PASS.** Top-centred, single chain up top, crown → cone →
+  widest crystal ring → central pendant drop. Unmistakably suspended (§1.2 "au bâtiment").
+- **Silhouette one-read — PASS.** Downscaled to game-held size it reads instantly as a
+  chandelier; no ambiguity, no false BUILT read.
+- **Drops attached / integrity — PASS.** Opaque mask = ONE connected component (100% of the
+  body); ZERO enclosed transparent regions. No detached drop, no floating debris, no keying
+  hole. `check-sprite-integrity`-class floor cleared by inspection; no defect-sweep trigger.
+- **House style — PASS.** Value profile is bimodal: ~39% near-black (dense chain-convergence
+  cone) AND ~9.8% pale >180 (crystal drops carrying [S8]'s bright rim highlight — 2nd-highest
+  pale fraction in the family). That is HIGH CONTRAST, the opposite of the mid-grey-mush
+  failure the value-locks guarded against — on-direction for the fanzine "high contrast" law.
+  Near-black fraction is ~2× the figures' (0.13–0.20) but object-warranted (a chandelier crown
+  reads dark) and coherent with the dark prop sibling `speaker_wall` (med lum 44). The dark is
+  OPAQUE, so it will not key-hole against the in-game black ground; it reads as the dark bell
+  of the crown.
+- **[S13] aspect — landed.** 320×512 PORTRAIT as specified for the lustre (speaker_wall is
+  512×320 landscape); the per-prop aspect ask to dev-tooling-assets is honoured.
+- **Verdict:** PASS. The re-roll's sole objective (eliminate the flanking masses) is met, and
+  the sprite is single / HUNG / one-read / fully attached / hole-free / family-coherent.
+- **Consequence — boss canon 9-family COMPLETE (9/9).** With `lustre` cleared, all nine
+  boss-family source sprites (7 `commander_*` figures + `lustre` + `speaker_wall`) have passed
+  the asset gate. **This closes the canon art lane's GENERATION phase.** Remaining boss visual
+  work is render-side composition only — the loi du glow neon rim on the interactive props
+  (the lustre is the shootable `decorProp`) and any emissive/pulse — which is NOT baked in
+  these PNGs (ADR-0011) and lands under the Gate-4 composite gate on real in-game screenshots,
+  LATER. An asset-gate PASS here does NOT cover that runtime composite.
+
+VERDICT: PASS — asset gate lustre.png re-roll seed 4879 (lead-art)
+
+## 8. VERIFY (stage 5, leg 1) — qa-lead (Inès) — 2026-07-21 — test plan + mechanical gate + e2e evidence + regressions
+
+- claim: stage-5 VERIFY leg 1 for STORY-BOSS-NIVEAU-FINAL-LIVE — author the per-story test plan,
+  run the mechanical gate, produce state-verified e2e evidence on the REAL level path for the leg-2
+  design-acceptance (Sacha N1/K-5) + UX review (Tony A1–A15-on-real-backdrop), and verify the
+  regressions (3 shipped levels + zones byte-untouched, hostage untouched, differentiation system
+  untouched save the gated A2). Branch `claude/yo-pmnyzr`. No commit/push.
+- release: `docs/qa/plan-story-boss-niveau-final-live.md` (per-AC matrix, stage-5 checks, regression
+  specs) + `docs/qa/evidence/story-boss-niveau-final-live/` (9 PNGs).
+- **Mechanical gate — ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent → `yarn`):
+  - `yarn typecheck` → **EXIT 0**.
+  - `yarn vitest run` → **1003 / 1003 PASS**, 74 files, EXIT 0.
+  - `yarn lint` → **EXIT 0**.
+  - `yarn format:check` → **EXIT 0**.
+- **E2e evidence (state-verified via `__MUF_STATE__` under `__MUF_PLAY__`; the REAL flyer→unlock→
+  briefing→PLAYING path, not the harness seam; ZERO `pageerror` across menu/flyer/briefing/PLAYING —
+  a lone transient `errs:1` in one multi-context run was NOT reproducible on two clean re-runs):**
+  - `01-flyer-eden-locked-{desktop,mobile}` — l'Éden flyer LOCKED (« LIGNE FERMÉE / PAS ENCORE POUR TOI »).
+  - `02-flyer-eden-unlocked-{desktop,mobile}` — l'Éden flyer UNLOCKED, full fiction copy + « 70 s · 16 cibles ».
+  - `03-briefing-final_pre-{desktop,mobile}` — `final_pre` « 31 décembre… Le dernier son du siècle, Muf. »
+    over the REAL l'Éden backdrop; PASSER present (**AC7 wired + skippable**).
+  - `04-gallery-cops-desktop` — the 4-arch gallery over the l'Éden backdrop, roster in the arches
+    (biker / bonus / plainclothes / CRS riot+shield), HUD « L'Éden — 31 déc. 1999 ».
+  - `05-ingame-gallery-{desktop,mobile}` — live PLAYING, TEMPS ticking (70→69s), real backdrop.
+- **Regressions — verified mechanically vs `origin/main` (now carrying merged ADR-0052):**
+  - **AC2 / 3 shipped levels + tutorial byte-untouched:** `levels.ts` diff = pure append (62/0), ZERO
+    deletions. `BOSS_QTE_DEV_HARNESS_LEVEL` untouched (AC3).
+  - **Shipped window-zones drift PRESERVED:** `windowZones.generated.json` diff = pure append, ZERO
+    deletions — the pre-existing stalingrad/vitry zone drift stayed byte-preserved, only `niveau-final`
+    added. (Standing finding → producer/tech-writer: whether the shipped committed zones match today's
+    generator output is a separate open item, NOT introduced by this story.)
+  - **Differentiation system untouched save the gated A2 (AC5):** `bossQteSystem.ts` diff = **A2 décor
+    AABB ONLY** (`BOSS_DECOR_CATCH_HALF_W 0.40` / `HALF_H 0.525`, `withinBox` drawn==catch décor test
+    replacing the 0.30 circle for the décor prop only, + positive-extent assert). No
+    ring/parry/renfort/finisher/phase/HP constant touched; `types/bossQte.ts` ZERO diff; `BossQteSprite.tsx`
+    = paired A2 render drift-guard only.
+  - **Hostage + stateMachine untouched:** `qteSystem.ts`/`hostageQte.ts`/`types/hostageQte.ts`/
+    `stateMachine.ts` = ZERO diff (mutual-exclusion + freeze early-return literally unchanged).
+  - **AC5 value-for-value bossQteSpec:** the live combat block is byte-equal to the harness except
+    `targetSeed 19991231` (K-5 re-pin) + `decorProp {0.2,1.5}` (chandelier) — no system value smuggled.
+- **AC4 real-quota trigger + K-5 winnability — UNIT-verified:** `niveauFinal.test.ts` asserts
+  `enemiesToWin 16 !== 0` (real quota, not the harness `0`) and the winnability driver clears the full
+  kit on `targetSeed 19991231` before the blown clock.
+- **BLOCKING HOLE C-QA3 (boss over the l'Éden backdrop — CI-DEFERRED, escalated → producer):** the
+  boss triggering/fighting **over the real l'Éden backdrop** is UNREACHABLE in-sandbox — crossing the
+  real 16-kill quota at ~2 fps SwiftShader fails (a 150 s state-verified grind left `kills = 0`; synthetic
+  clicks don't land mook kills), and the `?preview=boss&at=…` seam is HARNESS-only (belliard backdrop),
+  so it can't render l'Éden. Harness/frame-rate limitation, not a defect — AC4 trigger + K-5 winnability
+  are unit-proven; the boss RENDER is proven on the harness (story-1 20-39, identical procedural system,
+  differing only in backdrop pixels + anchor). → the boss-over-l'Éden checks (Tony A1–A15 legibility
+  re-verify on the real backdrop + re-anchored position; full finale flow mobile; D11 retry felt-cost;
+  Sacha N1 target-supply + K-5 empirical landability) run on a **real-GPU build** at leg 2. A
+  niveau-final state-seed seam would make it e2e-automatable — specced to `dev-tooling-assets`, non-blocking.
+- **Art follow-up (NOT a leg-1 blocker):** the `lustre` ASSET GATE FAIL (§"ASSET GATE"; re-roll seed 4879) is off-screen this story — `resolveBossTexture` still returns the `enemy_riot` fallback and the
+  décor draws procedurally (ADR-0053 D6 canon-sprite integration is a FOLLOW-UP pass). Tracked in the
+  art lane, not this mechanical gate.
+- handoff → `game-designer` (Sacha) + `ux-designer` (Tony): leg-2 verification — flyer (locked/unlocked,
+  both classes), briefing-over-backdrop + skippable, and the live gallery are in
+  `docs/qa/evidence/story-boss-niveau-final-live/`; the boss-over-l'Éden reads (Tony A1–A15 on the real
+  backdrop, Sacha N1/K-5 empirical, D11 retry) are CI-DEFERRED under C-QA3 — run on a real-GPU build.
+- handoff → `producer` (Marion): CI-DEFERRED-BLOCKED item C-QA3 for the board; the shipped
+  stalingrad/vitry committed-zones-drift standing finding; the `lustre` art follow-up; the residual
+  `facade` prompt "5 arches" text (→ concept-artist). None block leg-1.
+- File List:
+  - `docs/qa/plan-story-boss-niveau-final-live.md` (NEW — this plan)
+  - `docs/qa/evidence/story-boss-niveau-final-live/*.png` (NEW — 9 state-verified captures)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — quality gate leg 1 story-2 (qa-lead) — mechanical gate GREEN (typecheck EXIT 0, vitest 1003/1003, lint EXIT 0, format:check EXIT 0); the new `niveau-final` level authors correctly (AC1 no-hostageQte, AC4 real quota 16, AC5 value-for-value bossQteSpec + seed 19991231 + chandelier decorProp {0.2,1.5}) and ships/plays live over the real l'Éden backdrop (flyer locked/unlocked both classes, final_pre-over-backdrop + skippable, 4-arch gallery with the riot-heavy roster, PLAYING both classes — all state-verified, zero pageerror); regressions HOLD (3 shipped levels + tutorial byte-untouched pure-append, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation system = gated A2 décor AABB only); AC4 real-quota trigger + K-5 winnability (seed 19991231) unit-verified. NAMED HOLE C-QA3: the boss fight OVER the l'Éden backdrop is unreachable in-sandbox (16-kill quota grind = 0 kills at 2 fps; the at= seam is harness-only) — CI-DEFERRED to Sacha's N1/K-5 + Tony's A1–A15-on-real-backdrop leg-2 on a real-GPU build; boss render proven on the harness, trigger+winnability unit-proven. Art `lustre` FAIL is an off-screen D6 follow-up, not a leg-1 blocker. Leg-2 (playtest + device review) runs on this evidence.
+
+## VERIFY (stage 5, leg 2) — game-designer (Sacha) — 2026-07-20 — design-acceptance: N1 target-supply + K-5 live-seed landability (story-2)
+
+- claim: my two owed stage-5 leg-2 items — (N1) Karim's target-supply check on the 4-slot pre-boss
+  gallery, and (K-5) empirical seed-19991231 landability with the FULL ADR-0052 kit on the LIVE
+  bossQteSpec. Scratchpad sims only (esbuild bundles of the real pure systems: `enemySystem`/
+  `enemyTypes` for supply, `bossQteSystem` @ 0.11 + A2 AABB for the boss). No repo/production code.
+
+### VERDICT: FAIL — design acceptance story-2 (game-designer)
+
+N1 PASSES; K-5 FAILS acceptance criterion (a) on the LIVE seed `19991231` (camp-vital is dominant on
+this seed) — a DATA-ONLY, K-5-pre-authorised correction: **re-pin `targetSeed 19991231 → 19991232`**
+(confirmed clean at N=500 below). Everything else — winnability, greed-punish, losability, décor
+reachability, and the whole N1 supply leg — holds. No mechanic/gate change; the 0.11 value and the A2
+AABB stand.
+
+### N1 — target supply (PRE-BOSS gallery) — PASS
+
+**Premise correction (load-bearing):** `windowZones.generated.json` shows **vitry is a 4-slot facade,
+same as niveau-final** (belliard/stalingrad/vitry/niveau-final are all 4-slot; the 31/50/33 counts are
+belliard's scrolling tronçons). The "vitry = 5+ slots" baseline is factually off — the 4-slot facade IS
+the shipped, playtested standard, so niveau-final introduces no slot reduction and no "5th arch" was
+ever the baseline. (`enemySpeedMultiplier` is not consumed by the pure enemy-pop cadence — it drives
+threat/bullet feel, not window supply — so supply is speed-independent and set by slots + archetypes +
+weights.)
+
+Competent solo shooter (react 0.25 s, fire cadence 0.28 s), 4-slot facade, real `spawnWave`+`tickEnemy`, 70 s:
+
+| Level                                     | slots | kills/70 s | quota 16 | time→16 kills | idle % (no visible target) | longest gap | avg wave-clear |
+| ----------------------------------------- | ----- | ---------- | -------- | ------------- | -------------------------- | ----------- | -------------- |
+| **niveau-final** (riot-heavy 40/28/20/10) | 4     | 60         | YES      | **19.0 s**    | **66.1 %**                 | 2.48 s      | 4.03 s         |
+| vitry (default 52/15/15/11) — baseline    | 4     | 59         | YES      | 20.6 s        | 70.1 %                     | 2.23 s      | 4.00 s         |
+
+- **Not starved.** The 16-kill quota is reached in ~19 s vs the 70 s allowed — **~3.7× headroom** over
+  the 4.375 s/kill pace. The gallery over-supplies a max-rate shooter; supply is never the binding
+  constraint (fire cadence + wave-clear is).
+- **Matches / slightly betters the shipped baseline.** niveau-final idle 66.1 % is BELOW vitry's 70.1 %
+  (the riot-heavy mix = 2-HP `enemy_riot` stays VISIBLE longer under fire → more engagement per pop),
+  longest supply gap 2.48 s ≈ vitry 2.23 s. Idle % is high in absolute terms on BOTH, but that is an
+  inherent property of the shipped 4-slot gallery vs. a fast shooter — not a niveau-final regression.
+- **Verdict:** adequately supplied; **no `windowWeights` nudge needed** (Karim's compensating lever is
+  unnecessary — the riot-heavy mix already engages more, not less), and no 5th arch (correctly refused).
+
+### K-5 — live-seed landability with the full kit — FAIL (a) on 19991231; re-pin remedy
+
+Byte-equality verified: the live `bossQteSpec` equals the tuned harness combat block EXCEPT
+`targetSeed` (19991231 vs 20260719) and `decorProp` ({0.2,1.5} chandelier vs {1.4,0.2} stack). Boss sim
+@ `BOSS_VITAL_CATCH_RADIUS 0.11` + A2 AABB décor, N=500/style.
+
+**LIVE seed 19991231 (as authored) — FAILS A1-R2 (a):**
+
+| Style         | Win  | Loss | avg blown | avg ΔE    | A1-R2 read                                                          |
+| ------------- | ---- | ---- | --------- | --------- | ------------------------------------------------------------------- |
+| optimal       | 100% | 0%   | 0.00      | +7.5      | (c) honest clears                                                   |
+| greedyLimb    | 100% | 0%   | 0.00      | −0.6      | (c) honest clears                                                   |
+| **campVital** | 100% | 0%   | 0.00      | **+30.0** | **(a) FAIL — > optimal +7.5 AND > greedyLimb −0.6 → camp DOMINANT** |
+| greedyVital   | 100% | 0%   | 1.31      | −32.6     | (b) punished ✓                                                      |
+| parryWhiff    | 100% | 0%   | 7.68      | −102.2    | whiff axis ✓                                                        |
+| decorIgnore   | 100% | 0%   | 0.00      | −0.6      | décor pure-upside ✓                                                 |
+| sloppy        | 33%  | 67%  | 9.42      | −197.4    | losable ✓                                                           |
+
+- **The A1-R2 camp-non-dominance is SEED-DEPENDENT.** `campVital` camps head-centre `(0,0.80)`; whether
+  the 0.11 catch defeats it depends on how often that seed's vital waypoints sit within 0.11 of centre.
+  On the harness seed 20260719 that gave campVital −5.0 (non-dominant); on **19991231 the vital paths
+  cluster near centre → campVital +30.0, dominant** (2nd only to campLimb). Criteria (b)/(c)/(d) +
+  losability + décor all PASS on 19991231 — the ONLY failure is (a).
+- **Décor reachability — PASS (seed-independent):** the chandelier `decorProp {0.2,1.5}` arms in phase 2's
+  SHIELDED gap (`armPhaseIndex 1`) and is consumed for the +3 `BOSS_DECOR_DAMAGE` via the A2 AABB
+  (`±0.40, ±0.525`) on both seeds — armed/consumed/chip-3 confirmed.
+
+**REMEDY — re-pin `targetSeed 19991231 → 19991232` (K-5 discipline, data-only correct-course, already
+pre-authorised in the `levels.ts` comment "re-pinnable per the K-5 discipline").** A sweep of
+19991231..19991245 shows 19991232 is the NEAREST seed where all (a)-(d) hold cleanly. **19991232 —
+N=500 confirmation:**
+
+| Style         | Win   | Loss  | avg blown | avg ΔE   | A1-R2 read                                                               |
+| ------------- | ----- | ----- | --------- | -------- | ------------------------------------------------------------------------ |
+| optimal       | 100%  | 0%    | 0.00      | +14.0    | (c) honest clears with margin ✓                                          |
+| greedyLimb    | 100%  | 0%    | 0.00      | −4.3     | (c) honest clears ✓                                                      |
+| **campVital** | 100%  | 0%    | 1.00      | **−8.0** | **(a) PASS — < optimal +14.0 AND < greedyLimb −4.3 → camp NON-dominant** |
+| greedyVital   | 100%  | 0%    | 2.15 (≤8) | −56.6    | (b) clearly negative, blown ≫ greedyLimb ✓                               |
+| parryWhiff    | 100%  | 0%    | 7.75      | −106.1   | whiff axis ✓                                                             |
+| decorIgnore   | 100%  | 0%    | 0.00      | −4.3     | décor pure-upside ✓                                                      |
+| sloppy        | 27.8% | 72.2% | 9.54      | −208.5   | (losable) ✓                                                              |
+| sloppyNoParry | 1.0%  | 99.0% | 9.98      | −231.7   | losable ✓                                                                |
+
+- 19991232 passes every A1-R2 criterion: (a) campVital −8.0 (sign-flip negative) below both;
+  (b) greedyVital −56.6 / 2.15 blown; (c) optimal + greedyLimb 100 %; (d) all competent styles clear
+  (winnable — landable trackable vital + limb + parry); losable by sloppy (72 %); décor {0.2,1.5}
+  armed+consumed (+3, A2 AABB). (campLimb +40 remains the slow-but-rich safe-bank line — out of scope
+  of (a), which targets the vital head-camp exploit; unchanged from the accepted A1-R2 behaviour.)
+- Alternates if a wider camp-hostility margin is wanted: 19991233 (campVital −8.0) or 19991236 (+5.0,
+  marginal). 19991232 is the closest to the diegetic date and clean.
+
+### Disposition
+
+- N1: PASS — no correction. K-5: FAIL on the authored seed; the fix is a one-integer data re-pin
+  (`levels.ts` `targetSeed 19991231 → 19991232` + the `niveauFinal.test.ts` K-5 winnability expectation),
+  NOT a mechanic/gate change — the 0.11 value and A2 AABB stand. Same class as the vitry/belliard K-5
+  re-pins already shipped.
+
+- handoff → `dev-gameplay` (Amelia): apply the K-5 re-pin — `bossQteSpec.targetSeed 19991231 → 19991232`
+  in `levels.ts` (niveau-final), and update the `niveauFinal.test.ts` seed-winnability expectation
+  (currently asserts 19991231). Data-only; `bossQteSystem.ts`/`types` byte-untouched. I re-verify the
+  final authored seed at N=500 once landed.
+- handoff → `lead-game-designer` (Karim): design-acceptance story-2 = FAIL (K-5 leg) with a data-only
+  K-5 re-pin remedy (19991231 → 19991232, N=500-confirmed all A1-R2 (a)-(d)). N1 supply = PASS
+  (4-slot == vitry baseline, quota 3.7× headroom, no windowWeights nudge). Requesting your nod on the
+  re-pin as the closing correction before verify leg-1 closes.
+- handoff → `producer` (Marion): story-2 leg-2 blocked on the one-line K-5 seed re-pin; no cap round
+  (data correct-course, pre-authorised). N1 clear.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). All sims ran on throwaway
+  scratchpad bundles of the real pure systems — NO `src/**`, test, or repo edit; no commit/push.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: FAIL — design acceptance story-2 (game-designer) — N1 target-supply PASS (vitry is ALSO a 4-slot facade, not 5+; niveau-final quota met in ~19 s / 3.7× headroom; idle 66.1 % ≤ vitry 70.1 %; riot-heavy engages MORE — no windowWeights nudge, no 5th arch). K-5 FAILS A1-R2 (a) on the LIVE seed 19991231: campVital +30.0 E dominant (> optimal +7.5, > greedyLimb −0.6) — camp-non-dominance is seed-dependent and 19991231 is camp-friendly; (b)(c)(d)+losable+décor-reachability all PASS. Remedy (K-5 discipline, data-only): re-pin targetSeed 19991231 → 19991232 (N=500-confirmed: campVital −8.0 < optimal +14.0 & greedyLimb −4.3; greedyVital −56.6/2.15 blown; honest 100 %; sloppy 72 % loss; chandelier {0.2,1.5} armed+consumed +3 via A2 AABB). 0.11 value + A2 AABB unchanged; routed to dev-gameplay as a one-integer levels.ts re-pin + test expectation update.
+
+---
+
+## FIX (K-5 re-pin, data-only) — dev-gameplay (Amelia) — 2026-07-20 · niveau-final targetSeed 19991231 → 19991232
+
+- **Stage:** K-5 leg-2 re-pin · **Lane:** dev-gameplay (owns `levels.ts`). Pre-authorised by the K-5
+  discipline (the seed is the one per-level value authored freely by design — NOT a system change),
+  on Sacha's leg-2 **FAIL(a)** + remedy: on the diegetic seed `19991231` the phase-2/3 VITAL
+  waypoints clustered near the box centre, so a fixed centre-camp aim was vital-dominant at the
+  tighter 0.11 catch (the AMENDMENT A1 camp-dominance floor). `19991232` is Sacha's N=500-verified
+  nearest clean seed (campVital −8.0 below both honest lines, greedyVital −56.6, honest 100% /
+  sloppy 72% loss, décor reachable).
+- **CHANGE (data-only, `src/game/levels/levels.ts`):** `niveau-final.bossQteSpec.targetSeed
+19991231 → 19991232`; K-5 comment updated with the re-pin + why (centre-cluster / camp-dominance).
+  The value-for-value copy note also updated. **NOTHING else** — no `bossQteSystem.ts` / `types`
+  change; zoom/anchor/phase/HP/maxBlownWindows/décor all byte-identical.
+- **TEST (`src/game/levels/__tests__/niveauFinal.test.ts`):** AC5 seed expectation and the K-5
+  winnability describe title/comment updated to `19991232`. The winnability driver re-run confirms a
+  competent rings+parry player still clears 24 HP with `blownWindows < 10` on the new seed.
+- **VERIFY:** `yarn typecheck` clean · `yarn lint` clean · `yarn format:check` clean on my files ·
+  **my lane 100% green** — `niveauFinal.test.ts` + `bossQteSystem.test.ts` = 85/85 pass on 19991232.
+- **CROSS-LANE FLAG → dev-r3f-render (BLOCKING for full-suite green):** the render-lane QA-capture
+  test `src/render/scene/__tests__/bossHarness.test.ts` **hardcodes the old seed** at **lines 66 and
+  76** (`expect(spec?.targetSeed).toBe(19991231)` / `expect(p1.targetSeed).toBe(19991231)`). It reads
+  the real niveau-final spec, so the K-5 re-pin fails those 2 assertions (`expected 19991232 to be
+19991231`). I did NOT touch it (Iron rule — no `src/render` edits — and the re-pin scope was
+  `levels.ts` + `niveauFinal.test.ts` only). **dev-r3f-render must bump both to `19991232`** (or
+  better, derive the expected seed from `LEVELS.find(...).bossQteSpec.targetSeed` so it tracks any
+  future K-5 re-pin without re-coupling). These 2 are the ONLY repo-wide vitest failures.
+- **No commit/push.** → **Sacha (game-designer):** re-confirm on this release (your final leg-2
+  line). → **Inès (qa-lead):** gate closes after Sacha's re-confirm + dev-r3f-render's 2-line seed
+  bump lands the full suite green.
+- **File List:**
+  - `src/game/levels/levels.ts` (MODIFIED — targetSeed re-pin 19991231→19991232 + K-5 comment)
+  - `src/game/levels/__tests__/niveauFinal.test.ts` (MODIFIED — seed expectation + K-5 titles)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this K-5 re-pin entry appended)
+
+## VERIFY (stage 5, leg 2 — FINAL confirm) — game-designer (Sacha) — 2026-07-20 — K-5 re-pin re-verified against the landed code
+
+- claim: closing design-acceptance line for story-2 — re-run the K-5 harness against the LANDED
+  re-pin (`levels.ts` `targetSeed → 19991232`, gameplay lane 85/85 green) and confirm the N=500
+  numbers reproduce. Scratchpad sim only; no repo/production code; no commit/push.
+- byte-equality (landed): niveau-final `bossQteSpec` = harness combat block EXCEPT the new seed —
+  zoom 2 / anchor {0,-5} / phaseCount 3 / bossHp 24 / maxBlownWindows 10 identical; `targetSeed
+19991232`; `decorProp {0.2,1.5}`. System constants unchanged: `BOSS_VITAL_CATCH_RADIUS 0.11`,
+  `BOSS_DECOR_CATCH_HALF_W/H 0.40/0.525` (A2 AABB). Rebundled the landed source and re-ran N=500/style.
+- result — reproduces the prescribed re-pin numbers EXACTLY (deterministic, same seed):
+
+| Style         | Win                        | ΔE                 | A1-R2                                                             |
+| ------------- | -------------------------- | ------------------ | ----------------------------------------------------------------- |
+| optimal       | 100%                       | +14.0              | (c) honest clears ✓                                               |
+| greedyLimb    | 100%                       | −4.3               | (c) honest clears ✓                                               |
+| **campVital** | 100%                       | **−8.0**           | **(a) < optimal +14.0 & < greedyLimb −4.3 → camp NON-dominant ✓** |
+| greedyVital   | 100%                       | −56.6 / 2.15 blown | (b) negative + blown ≫ greedyLimb ✓                               |
+| sloppy        | 27.8% win / **72.2% loss** | −208.5             | losable ✓                                                         |
+
+Décor: chandelier `{0.2,1.5}` armed in phase 2 SHIELDED gap, consumed for **+3** via the A2 AABB ✓.
+N1 target-supply unchanged (PASS, prior entry — 4-slot == vitry baseline, quota 3.7× headroom).
+
+- handoff → `lead-game-designer` (Karim) + `producer` (Marion): story-2 design acceptance CLOSED —
+  all A1-R2 (a)-(d) + losability + décor reachability hold on the landed seed 19991232; N1 supply
+  adequate. No open design blocker for verify leg-1.
+- NOTE (process): `cat >>` heredoc, additive at end-of-file; sim ran on a throwaway bundle of the
+  landed source; no repo edit.
+- File List:
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — design acceptance story-2 FINAL (game-designer) — landed re-pin (targetSeed 19991232, all else byte-equal; 0.11 + A2 AABB unchanged) re-verified at N=500: campVital −8.0 < optimal +14.0 & greedyLimb −4.3 (camp non-dominant), greedyVital −56.6 / 2.15 blown (greed punished), optimal + greedyLimb 100% (honest clears), sloppy 72.2% loss (losable), chandelier {0.2,1.5} armed+consumed +3 via A2 AABB (reachable); N1 target-supply PASS (4-slot facade == vitry baseline, 16-quota met in ~19 s / 3.7× headroom, no windowWeights nudge). K-5 leg closed — the earlier 19991231 camp-dominance FAIL is resolved by the re-pin exactly as prescribed.
+
+## 9. FIX (stage 5, C-QA3 correction) — dev-r3f-render (Amelia) — 2026-07-20 — extend the boss capture seam to the LIVE niveau-final level (over l'Éden), persistence-inert
+
+- claim: close qa-lead's C-QA3 hole (§8) — the boss over the REAL l'Éden backdrop was unreachable
+  in the 2 fps sandbox (16-kill quota grind = 0 kills; the `at=` seam was harness-only). Extended
+  the view-side capture seam so `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`
+  boots the niveau-final LevelConfig (its REAL bossQteSpec — seed re-pinned 19991232, chandelier
+  décor {0.2,1.5}) with the boss fast-forwarded via the SAME pure-API loop, rendering over l'Éden.
+  No `src/game` edit. Then captured the C-QA3 evidence set.
+
+### Seam design (view-side only; `src/render/scene/bossHarness.ts` + `App.tsx`)
+
+- **`resolveBossPreviewLevel(search)`** (pure, testable): default = the non-shipped dev harness
+  (belliard); with `&level=<id>` naming a LEVELS level that AUTHORS a `bossQteSpec`, boots THAT
+  level. Unknown / boss-less id ⇒ harness fallback (never a leaky boot). `installBossCaptureSeam`
+  now reads the spec from this resolver; `App`'s `INITIAL_LEVEL` uses it so `selectedLevel` →
+  GameScene renders the real l'Éden backdrop + anchor and `buildLevelParams` feeds the real spec.
+- **`at=phase1` added** to `BossHarnessTarget` (+ `parseBossHarnessTarget`): the phase targets now
+  land on the FIRST EXPOSED window of the wanted phase (a readable single/dual-ring frame). `phase1`
+  is REQUIRED because niveau-final's real kill quota gates the boss — unlike the harness's instant
+  trigger, phase 1 is unreachable in-sandbox without a seed.
+- **Reachability discipline unchanged**: the seam no-ops without `?preview=boss` (guard untouched);
+  `&level=` is inert on every shipped path (no `?preview=boss` ⇒ no install, no INITIAL_LEVEL swap).
+
+### Persistence-inertness proof (the CRITICAL constraint — niveau-final IS in LEVELS)
+
+- **Primary guard (existing, reused):** `App`'s persistence/routing effect early-returns on
+  `if (PREVIEW_SCREEN !== null) return;`. `?preview=boss&level=niveau-final` keeps `preview=boss`
+  (the `level=` is a SEPARATE param), so `PREVIEW_SCREEN === "boss"` ⇒ the effect returns BEFORE any
+  `saveScore` / `setPendingScore` / `unlockLevel` / phase-routing. No name-entry path opens
+  (`pendingScore` stays null ⇒ the NameEntry handlers no-op).
+- **Second guard (new, belt-and-suspenders):** `isBossSeamShippedLevel(search)` → `BOSS_SEAM_
+SHIPPED_LEVEL`, folded into the persistence effect as `isShippedLevel = shippedIdx !== -1 &&
+!BOSS_SEAM_SHIPPED_LEVEL`. So even if the primary early-return were ever narrowed, a seam-booted
+  SHIPPED level (niveau-final) is treated as non-shipped → still no score/unlock write. This is the
+  independent guard the harness gets "for free" via LEVELS-exclusion; niveau-final IS in LEVELS, so
+  it needed an explicit one.
+- **Empirical proof (Playwright):** cleared localStorage, booted
+  `?preview=boss&level=niveau-final&at=finisher`, FIRED to resolve the finisher → boss reached
+  `DONE`; localStorage stayed EMPTY afterwards — `muf_scores_niveau-final` absent, `muf_progress`
+  absent, no `muf_scores_*` key of any kind. **INERTNESS: PASS.**
+
+### Verification — ALL GREEN (`COREPACK_NPM_REGISTRY=…npmjs.org`)
+
+- `yarn typecheck` → EXIT 0. `yarn lint` → EXIT 0. `yarn format:check` (my touched files) → clean.
+- `yarn vitest run` → **1013 / 1013 PASS**, 75 files (added `src/render/scene/__tests__/
+bossHarness.test.ts`, 10 tests: level pick, the inertness flag, `at=` parse incl. phase1, and the
+  fast-forward reaching phase1/2/3/finisher for niveau-final). The seed assertion DERIVES from
+  `LEVELS.find(...).bossQteSpec.targetSeed` (source of truth) so the K-5 re-pin (19991231→19991232,
+  dev-gameplay) never breaks it.
+
+### EVIDENCE — `docs/qa/evidence/story-boss-niveau-final-live/` (state-verified: bossQte.targetSeed
+
+### === 19991232 asserted per shot = niveau-final identity; phase asserted; ~2 fps SwiftShader,
+
+### `?preview=boss&level=niveau-final` + `__MUF_STATE__`/`__MUF_PLAY__`, vite preview on the prod build)
+
+- `06-boss-eden-phase1.png` — `at=phase1`; `ACTIVE, phaseIndex 0`. Phase-1 single ring, full HP bar,
+  over l'Éden (HUD "L'Éden — 31 déc. 1999", TEMPS 70s = niveau-final, not the harness 90s).
+- `07-boss-eden-dual-rings.png` — `at=phase2`; `phaseIndex 1, EXPOSED, !charged`. Both rings live
+  (green VITAL head + LIMB torso) over l'Éden.
+- `08-boss-eden-smoke.png` — `at=phase3`; `phaseIndex 2, smokeActive`. The phase-3 smoke veil fully
+  ramped in (delta envelope) + parry diamond/halo, over l'Éden.
+- `09-boss-eden-finisher.png` — `at=finisher`; `FINISHER, bossHp 0`. « LIVRE LE SON » acid-neon
+  prompt + black vignette crush, over l'Éden.
+- `10-boss-eden-mobile-phase2.png` — mobile 844×390 (iPhone UA); `phaseIndex 1, EXPOSED`. Dual rings
+  with the §22 mobile frame-lift clearing the vital ring above the "LE COMMANDANT" bar, over l'Éden.
+
+- handoff → `ux-designer` (Tony): the boss-over-l'Éden set (06-10) is now capturable/state-verified
+  in-sandbox — your A1–A15 legibility re-verify on the REAL backdrop + re-anchored position no longer
+  needs a real-GPU build for the RENDER reads (perf ms stays CI-DEFERRED to Ben). Reach any beat by
+  URL: `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher(&blownImmune=1)`.
+- handoff → `qa-lead` (Inès) + `producer` (Marion): C-QA3 render-reachability CLOSED (the seam +
+  inertness proof); the remaining C-QA3 legs (Sacha N1/K-5 empirical landability, D11 felt-cost,
+  on-device perf ms) are design/perf verdicts, not render-reachability — they run on this evidence.
+- handoff → `senior-architect` (Winston): seam extension is view-side only (no `src/game`), boundary
+  intact (bossHarness reads LEVELS data + drives the pure API, embeds no rule); persistence inertness
+  double-guarded (preview early-return + `BOSS_SEAM_SHIPPED_LEVEL`) and empirically proven. No
+  commit/push.
+- File List:
+  - `src/render/scene/bossHarness.ts` (`resolveBossPreviewLevel`, `isBossSeamShippedLevel`,
+    `at=phase1` target, level-aware `installBossCaptureSeam`)
+  - `src/render/scene/App.tsx` (INITIAL_LEVEL via the resolver, `BOSS_SEAM_SHIPPED_LEVEL` folded into
+    the persistence guard, capture-seam comment; dropped the now-unused `BOSS_QTE_DEV_HARNESS_LEVEL`
+    import)
+  - `src/render/scene/__tests__/bossHarness.test.ts` (NEW — 10 tests; seed derived from source of truth)
+  - `docs/qa/evidence/story-boss-niveau-final-live/06..10-boss-eden-*.png` (NEW — 5 state-verified)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — C-QA3 render-reachability closed (dev-r3f-render). The boss capture seam now boots the LIVE niveau-final level (real bossQteSpec, seed 19991232, chandelier décor) over the l'Éden backdrop via `?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, fast-forwarded through the SAME pure-API loop — view-side only, no src/game edit. Persistence is DOUBLE-guarded (the existing `PREVIEW_SCREEN !== null` early-return + a new `BOSS_SEAM_SHIPPED_LEVEL` fold into the shipped-level check) and EMPIRICALLY proven inert (finisher driven to DONE → localStorage stayed empty, no muf*scores*\*/muf_progress). Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). Five state-verified captures (06-10, each asserting targetSeed 19991232 + phase) feed Tony's A1–A15 real-backdrop re-verify. No commit/push.
+
+## VERIFY (stage 5, leg 2) — ux-designer (Tony) — 2026-07-21 — UX review story-2: A1-A15 boss legibility on the l'Éden backdrop + leg-1 flyer/onboarding
+
+- claim: my named stage-5 leg-2 check (`spec-niveau-final-ux.md` §3, item 3 — "the single most
+  important level-specific check") — re-verify every A1-A15 boss-QTE legibility requirement
+  (`ux/spec-boss-qte-differentiation-ux.md`) against the REAL l'Éden backdrop and re-anchored position,
+  using the C-QA3 seam extension's evidence (`06`-`10`) + one gap I closed myself (`11`, below) + a
+  grayscale post-process of two existing captures (no new build needed for that check). Also reviewed
+  leg-1 evidence (`01`-`05`) against my own gated spec §1-§2 (flyer, onboarding). Plus two ad hoc rulings
+  requested by the coordinator/Bertrand off capture `07` (décor placeholder legibility; off-screen arrow
+  clutter during the boss QTE).
+- **Gap closed:** the shipped evidence set had no reduced-motion capture over l'Éden. I captured one
+  myself via the extended seam: `11-boss-eden-reduced-motion-phase3.png`
+  (`?preview=boss&level=niveau-final&at=phase3&blownImmune=1`, Playwright `reducedMotion:"reduce"` +
+  `page.emulateMedia`), state-verified via `__MUF_STATE__()`
+  (`phase:"ACTIVE", phaseIndex:2, stance:"EXPOSED", smokeActive:true`). Built fresh (`yarn build`,
+  `COREPACK_NPM_REGISTRY` set), served on a dedicated local port, content-hash-verified against my own
+  `dist/` before trusting the capture (a stray earlier attempt this session hit a differently-built
+  `dist/` from concurrent work in this shared sandbox — logged for the record, not repeated here since
+  this capture was verified clean). No `src/**` edit, no commit/push.
+- Grayscale check: re-processed `07` (dual rings) and `08` (parry-under-smoke) to luma-only locally
+  (no new capture needed — this is a post-process of existing state-verified evidence) to confirm the
+  not-colour-alone reads hold on the new backdrop specifically.
+
+### VERDICT: PASS-WITH-CORRECTIONS — ux review story-2 (ux-designer)
+
+All A1-A15 boss legibility requirements I could check hold on the l'Éden backdrop/re-anchored position;
+all leg-1 flyer/onboarding requirements (§1-§2 of my spec) PASS on `01`-`05`. ONE required correction
+(off-screen arrow indicators rendering during the locked boss QTE — pre-existing, not niveau-final-
+specific, cheap fix) is routed to `dev-r3f-render`, plus one non-blocking note on the décor placeholder
+(already-tracked ADR-0053 D6 follow-up). Neither blocks this story's gate.
+
+### Boss-QTE legibility re-verify on l'Éden (spec §3 item 3)
+
+1. **Dual-ring form-not-colour read against the busier l'Éden backdrop (`07`, D4.1/D4.5) — PASS.**
+   VITAL (head, small/bright) and LIMB (torso, larger/dimmer) still read apart by POSITION + SIZE +
+   emphasis, not colour alone — confirmed in my own grayscale conversion of `07`: both rings remain
+   distinguishable by position/size with zero colour information. The hall's ironwork arches and
+   diagonal-tiled backdrop are busier than Belliard's plain rooftop, but the rings carry enough
+   brightness/contrast to read cleanly against it — no legibility loss from the backdrop swap.
+2. **Vital 0.11 ring perceivability on mobile at the new anchor (`10`) — PASS.** Pixel-measured (DPR1,
+   844×390 raw = CSS px directly): the "LE COMMANDANT" HP-bar's green fill ends at y≈110; the vital
+   ring's first pixel appears at y≈154-162 — a **≈42-50 CSS px clear gap**, matching story-1's
+   `BOSS_MOBILE_FRAME_LIFT`/bold-stroke fix numbers almost exactly. This checks out precisely BECAUSE
+   niveau-final's `anchor {0,-5}` is byte-identical to the harness's own anchor (`levels.ts:316` vs.
+   `:200`/`:263`) — the fix was calibrated against this exact anchor in story-1 and transfers without
+   re-tuning. The ring is a complete, bold, unoccluded annulus, clearly distinguishable from the LIMB
+   ring at the torso.
+3. **Parry/glyph salience vs. the hall's values (`08`) — PASS.** The paper-white diamond guard glyph
+   reads clearly above the smoke veil against l'Éden's warmer pink/purple palette — the glyph's
+   value-contrast halo (house value language, story-1's fix) is backdrop-agnostic by construction (a
+   near-neutral highlight reads against both a cool grey rooftop and a warm hall equally). Confirmed
+   again in grayscale (no colour-alone dependency).
+4. **Smoke degraded-not-removed over the warmer interior (`08`, `11`) — PASS.** The smoke veil is a
+   neutral, desaturating normal-blend wash — it does not pick up or fight the backdrop's warmer hue;
+   the ring/glyph telegraph stays visible THROUGH it on both `08` (motion) and `11` (reduced-motion,
+   frozen scatter, same telegraph still legible, non-strobing).
+5. **Finisher distinct + prompt legible (`09`) — PASS.** Monochrome value-crush boss + the acid-neon
+   « LIVRE LE SON » prompt reads cleanly against the hall backdrop; unmistakably different from every
+   ordinary window capture in the set (`06`-`08`, `10`).
+6. **HUD bar clearance at the new anchor (`10`) — PASS**, see item 2 — the fixed-footprint HP-bar/
+   vital-ring collision story-1 fixed does not regress at this anchor (same anchor, same fix).
+7. **Reduced-motion (`11`, the gap I closed) — PASS.** Telegraph/glyph/ring present, held (non-strobing)
+   under `prefers-reduced-motion: reduce`, smoke frozen to a static scatter — same discipline as
+   story-1, now confirmed on l'Éden specifically.
+8. **Audio-tell (not re-checked from scratch) — N/A to this backdrop question.** The audio channel is
+   backdrop-independent; story-1's ruling (audio additive, never sole channel) does not change with the
+   venue. Not re-verified here since nothing about it is backdrop-sensitive.
+
+### Leg-1 evidence vs. spec §1-§2 (`01`-`05`)
+
+- **A1/A2 (locked/unlocked flyer, both device classes) — PASS.** `01`/`02` (desktop + mobile) match the
+  Stalingrad/Vitry treatment exactly: `LIGNE FERMÉE`/`PAS ENCORE POUR TOI` locked, full crew/slogan/
+  difficulty/stats-row unlocked (`DIFFICILE`, `70 s · 16 cibles`).
+- **A3 (no boss stamp/spoiler on the flyer) — PASS.** Zero "boss"/"Commandant"/"QTE" text or imagery
+  anywhere on either flyer state. The slogan `« LE DERNIER SON DU SIÈCLE »` is a permitted "this is the
+  last one" signal through existing copy slots (D3), not a new UI tell.
+- **A4 (4-flyer layout, no regression) — PASS.** Desktop wide-viewport shows all 4 flyers in one row, no
+  odd wrap; mobile rack shows the same 3-visible-plus-scroll pattern as before.
+- **A5/A6 (briefing plays before pre-boss quota, no boss asset, skippable) — PASS.** `03` shows line 1
+  of `final_pre` over the REAL l'Éden arches (already correctly B&W-fanzine-treated), `PASSER` present
+  both device classes; no boss sprite/silhouette anywhere in the capture. Lines 4/6 verbatim-content are
+  already unit-test-proven byte-for-byte by `dev-gameplay`'s build entry (this story's own shard,
+  narrativeSystem tests) — I did not need to re-click through all 8 slides to confirm the TEXT is
+  unedited, only that it plays over the correct backdrop and is skippable, which `03` shows directly.
+- **A7 (ZOOMING transition fires) — PASS by construction.** `06`-`10` are all captured in `ACTIVE`
+  phases reached via the real `bossQteSpec.zoomSeconds` fast-forward path (the seam drives the SAME
+  pure tick loop the real game uses); the transition is not bypassed, only fast-forwarded through,
+  which is the seam's documented, non-rule-altering method.
+- **A9/A10 (boss-loss EndScreen reuse) — NOT captured in this evidence set** (no `GAME_OVER` capture
+  among `01`-`11`). D9/D10 are pure reuse of an already-gated, unchanged component (`EndScreen`), and
+  nothing about this level's data (new flyer copy, new anchor, new backdrop) touches that component's
+  props/behaviour — I do not consider this a live risk worth blocking on, but naming it as an
+  UNCAPTURED item for the record rather than silently assuming PASS. Recommend `qa-lead` fold one
+  boss-loss `GAME_OVER` capture into the permanent evidence set if a stage-5 capture pass runs again.
+
+### Ruling 1 (Bertrand, off capture `07`) — décor placeholder legibility ("c'est quoi ce carré ?")
+
+**Functionally correct, interim-art-ambiguous — NOT a new defect, already tracked, non-blocking.** The
+translucent grey-blue rectangle (pixel-sampled ~`(93-101, 91-92, 98-105)`, matching the coded
+`DECOR_INERT_TINT` family) is the chandelier's INERT state — binary armed/inert per the gated
+differentiation spec, correctly NOT confused with the boss's own silhouette or the HP bar (distinct
+position, distinct shape, distinct depth). **But Bertrand's reaction is itself a valid legibility
+signal on the INTERIM placeholder specifically:** a flat, hard-edged, unlabelled rectangle floating
+next to the boss reads as "an unexplained box," not as "a chandelier that will matter" — there is no
+anticipation cue for a first-time player before it arms (glows). This is the KNOWN, ALREADY-NAMED
+limitation of the procedural placeholder pending the canon `lustre` sprite (ADR-0053 D6 follow-up,
+already logged in this shard's leg-1 entry as an asset-gate FAIL/re-roll, off-screen this story). I am
+not routing a new correction for it — the binary state machine and its distinctness from every other
+HUD/boss element are correct, and "does the placeholder look like a chandelier" is `lead-art`'s call,
+not mine to decide (I rule function, not style). **None of the captures show the ARMED (glowing) state
+of the décor** — a genuine coverage gap for THAT specific read (bright acid-lime halo vs. this dim
+default) — naming it, not fabricating a verdict on it; recommend `qa-lead` add one `decorArmed:true`
+capture over l'Éden to the permanent set when convenient, non-blocking.
+
+### Ruling 2 (Bertrand, off capture `07`) — off-screen arrow indicators during the boss QTE
+
+**CONFIRMED DEFECT — required correction, concretely routed.** The four edge arrows
+(`OffscreenArrowIndicator`, meant to point at the current shooting-gallery target when it drifts
+off-frame) render at FULL "active" opacity throughout the ENTIRE boss encounter, in every capture I
+checked (`06`-`11`, all phases, both motion and reduced-motion) — confirmed pervasive, not intermittent.
+This is **pre-existing, not niveau-final-specific**: I checked story-1's own evidence
+(`docs/qa/evidence/story-boss-qte-differentiation/20-phase2-dual-rings.png`) and the same arrows render
+there too, identically, over the Belliard backdrop — it simply went unflagged in that story's leg-2
+because Belliard's plain grey background made them less visually loud. l'Éden's busier, warmer backdrop
+is what surfaced it, not a regression this story introduced.
+
+**Root cause (read directly, `src/render/ui/HUD.tsx:67` + `src/render/ui/hud/HostageQteOverlay.tsx`):**
+the arrow ring is already correctly gated OFF during the HOSTAGE QTE
+(`{!isQteSetPieceVisible(data.hostageQte) && <OffscreenArrowIndicator .../>}`) — that helper's own
+doc-comment states the exact reasoning that applies here too: _"the frozen duel has no steerable
+target, and the arrows would poke into the tableau."_ The BOSS QTE was simply never folded into that
+same gate — an oversight when the differentiation pack landed, not a niveau-final defect. `data.bossQte`
+is already `undefined` whenever the boss QTE is NOT active (`HudBossQte`'s own doc-comment,
+`present only while isBossQteActive`), which is exactly the boolean the gate needs — no new game-layer
+predicate, no new HUD field, a one-line JSX condition extension mirroring the existing hostage pattern.
+
+**Ruling: YES, hide them, per Bertrand's own expectation — they point at unreachable off-screen targets
+during a locked-camera duel and add clutter to the pack's single most important read.** Severity:
+**MEDIUM, required, not blocking.** It does not break any A1-A15 invariant itself (aim-honesty, form-
+distinction, HUD-bar clearance all hold regardless — the arrows sit at the frame's outer edges, not
+overlapping the rings/glyph/HP bar in any capture I reviewed), so I am not failing this story's gate
+over it. But the UP arrow specifically sits close to the HP bar / décor-prop region and compounds
+directly with Ruling 1's "unexplained square" read (Bertrand's own capture-`07` reaction was almost
+certainly reading the up-arrow's overlap near the décor box as part of one confusing shape, not two
+separate elements) — so fixing this ALSO improves Ruling 1's placeholder-legibility complaint for free,
+without touching the placeholder art itself.
+
+- **Concrete fix (routed to `dev-r3f-render`):** extend the existing gate at `HUD.tsx:67` to also hide
+  while the boss QTE holds the scene — `{!isQteSetPieceVisible(data.hostageQte) && data.bossQte ===
+undefined && <OffscreenArrowIndicator ... />}` (or an equivalent boolean derived the same way) — no
+  new predicate needed, `data.bossQte`'s own presence already IS `isBossQteActive`. Same one-line shape
+  as the hostage QTE's existing, proven gate.
+
+### Acceptance summary against my gated spec
+
+- §1 A1-A4: PASS. §2 A5-A7: PASS. §3 A8 (the five-item checklist): items 1/2/3/5 PASS; item 4
+  (mobile-landscape full finale flow, flyer→briefing→quota→ZOOMING→encounter→post) is PASS
+  **piecewise** across `01`-`11` (no single continuous-flow capture exists, but every beat is
+  individually state-verified at mobile viewport) — naming this as a piecewise, not end-to-end, proof,
+  for the record. §4 A9/A10: not captured this pass (see leg-1 note above), reused component, low risk,
+  named not assumed.
+
+- handoff → `lead-game-designer` (Karim): PASS-WITH-CORRECTIONS. Nothing here blocks story-2's gate.
+  One required correction (arrow-hide during boss QTE) routed to `dev-r3f-render`, low-risk/one-line,
+  pre-existing not niveau-final-specific. One non-blocking note (décor placeholder ambiguity, already
+  tracked under ADR-0053 D6). Two named coverage gaps (décor ARMED capture; boss-loss `EndScreen`
+  capture) for `qa-lead`'s backlog, not blockers.
+- handoff → `dev-r3f-render` (Amelia): required correction — gate `OffscreenArrowIndicator` off while
+  `data.bossQte !== undefined`, mirroring `HUD.tsx:67`'s existing hostage-QTE pattern exactly. Confirmed
+  present in BOTH story-1's Belliard captures and story-2's l'Éden captures — fix once, benefits both.
+- handoff → `lead-art` (Nico): FYI only, not a request to act — the décor-armed capture gap (above) is
+  for whenever the canon `lustre` sprite work (ADR-0053 D6) is scheduled; no new ask from me.
+- handoff → `qa-lead` (Inès): two evidence-backlog items — a `decorArmed:true` capture over l'Éden, and
+  a boss-loss `GAME_OVER` capture for niveau-final (A9/A10) — plus fold `11-boss-eden-reduced-motion-
+phase3.png` into the permanent set (state-verified, same discipline as `06`-`10`).
+- handoff → `producer` (Marion): story-2 UX leg-2 closes PASS-WITH-CORRECTIONS; one low-risk render fix
+  to track, non-blocking to this story's own gate.
+- NOTE (process): appended via `cat >>` heredoc (additive, end-of-file). One new capture
+  (`11-boss-eden-reduced-motion-phase3.png`) added to the evidence directory, state-verified; built via
+  a throwaway local `vite preview` of the current committed source, content-hash-checked before use. No
+  `src/**` edit, no commit/push.
+- File List:
+  - `docs/qa/evidence/story-boss-niveau-final-live/11-boss-eden-reduced-motion-phase3.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS-WITH-CORRECTIONS — ux review story-2 (ux-designer) — every A1-A15 boss-QTE legibility requirement re-verified holds on the l'Éden backdrop/re-anchored position: dual-ring form-not-colour read PASS in grayscale against the busier hall arches (`07`), vital 0.11 ring PASS on mobile (~42-50 CSS px clear of the HP bar, same anchor `{0,-5}` as story-1's fix so it transfers without re-tuning, `10`), parry-glyph salience PASS against the warmer palette (`08`, grayscale-confirmed), smoke degraded-not-removed PASS motion + reduced-motion (`08`/`11`, the latter a gap I closed myself via the extended seam, state-verified), finisher distinct + prompt legible PASS (`09`). Leg-1 flyer/onboarding (spec §1-§2) all PASS on `01`-`05` — locked/unlocked both device classes, no boss spoiler anywhere, 4-flyer layout clean, briefing plays over the real backdrop and is skippable. Two Bertrand-requested rulings off capture `07`: (1) the décor placeholder is functionally correct (binary armed/inert, no read confusion with other HUD elements) but the INTERIM art is legitimately ambiguous as an object — already-tracked ADR-0053 D6 follow-up, not a new defect, no action routed; (2) the off-screen arrow indicators DO render throughout the entire locked-camera boss QTE (confirmed pervasive across all phases/motion states, and pre-existing since story-1's Belliard captures, not niveau-final-specific) — CONFIRMED DEFECT, ruled to hide (matches the existing, already-proven hostage-QTE gate pattern), routed to dev-r3f-render as a one-line `HUD.tsx` fix (`data.bossQte === undefined` folded into the existing arrow-visibility condition), severity medium/required-not-blocking, and fixing it also resolves the compounding "unexplained square" read from ruling (1) for free. Nothing in this review blocks story-2's gate.
+
+## 10. FIX (stage 5, Tony UX correction) — dev-r3f-render (Amelia) — 2026-07-20 — hide the off-screen edge arrows during the boss QTE
+
+- claim: land Tony's prescribed one-line HUD fix (his story-2 UX shard entry; CONFIRMED pre-existing
+  defect, Bertrand-surfaced) — the off-screen direction arrows rendered during the locked-camera
+  BOSS QTE (the scene is frozen on the tableau, so the cue is meaningless and the enlarged arrows
+  poke into the duel). `HUD.tsx` already gated them off for the HOSTAGE set-piece via
+  `isQteSetPieceVisible`; extended the SAME gate to the boss.
+- diff (`src/render/ui/HUD.tsx`, the OffscreenArrowIndicator gate) — no new predicate, exactly as
+  prescribed (`HudBossQte` is `undefined` whenever the boss QTE is inactive):
+
+  ```
+  -      {!isQteSetPieceVisible(data.hostageQte) && (
+  +      {!isQteSetPieceVisible(data.hostageQte) && data.bossQte === undefined && (
+           <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+         )}
+  ```
+
+  (+ the adjacent comment now notes the boss-QTE coupling.) `data.bossQte` is defined for the WHOLE
+  boss set-piece — `isBossQteActive` covers ZOOMING/ACTIVE/FINISHER/WON/LOST — so the arrows stay
+  hidden zoom→duel→verdict and return exactly at DONE, matching the hostage gate's coverage.
+
+- test: no existing HUD test covers the hostage arrow gate (the project ships no `@testing-library/
+react`), and Tony's prescription is explicitly "no new predicate" — so nothing to adjust/extract.
+  Proof is the state-verified capture below (DOM arrow-glyph count asserted 0).
+- Verification — ALL GREEN: `yarn typecheck` EXIT 0, `yarn lint` EXIT 0, `yarn format:check`
+  (HUD.tsx) clean, `yarn vitest run` **1013 / 1013**.
+- EVIDENCE — `docs/qa/evidence/story-boss-niveau-final-live/12-boss-eden-no-arrows.png`
+  (`?preview=boss&level=niveau-final&at=phase2`, 1280×720, ~2 fps SwiftShader): state-verified
+  `phase ACTIVE, phaseIndex 1, targetSeed 19991232` (niveau-final identity) with **0** off-screen
+  arrow glyphs in the DOM (`svg polygon[points^="3,13"]` count === 0) — the edge arrows are GONE
+  during the duel (cf. §... capture `07`, which showed them left/right/down before this fix).
+- handoff → `ux-designer` (Tony): the arrow-during-boss-QTE defect is fixed and captured; your gate
+  prescription landed verbatim. → `senior-architect` (Winston): view-only HUD conditional, no
+  boundary/game touch. No commit/push.
+- File List:
+  - `src/render/ui/HUD.tsx` (fold `data.bossQte === undefined` into the arrow gate + comment)
+  - `docs/qa/evidence/story-boss-niveau-final-live/12-boss-eden-no-arrows.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — off-screen edge arrows hidden during the boss QTE (dev-r3f-render). One-line HUD gate extension (`&& data.bossQte === undefined`) folded into the existing `isQteSetPieceVisible` arrow gate, exactly as Tony prescribed (no new predicate); the arrows now hide for the whole boss set-piece (ZOOMING→verdict) like the hostage one. Gate GREEN (typecheck 0, vitest 1013/1013, lint 0, format clean). State-verified capture `12-boss-eden-no-arrows.png` shows 0 arrow glyphs in the DOM during a phase-2 duel over l'Éden. No commit/push.
+
+## 11. VERIFY (stage 5) — QUALITY GATE CLOSE — qa-lead (Inès) — 2026-07-21 — the funnel verdict that opens story-2 stage-6
+
+- claim: close the stage-5 quality gate for STORY-BOSS-NIVEAU-FINAL-LIVE — funnel the mechanical
+  gate + design-acceptance FINAL (Sacha) + UX (Tony) + asset gate (Nico) + the gated amendments into
+  one quality verdict, after the full leg-2 + corrections ran (§9-§10). Re-ran the mechanical gate;
+  audited my plan line-by-line; closed Tony's two named evidence-backlog gaps myself via the extended
+  seam. Plan updated: `docs/qa/plan-story-boss-niveau-final-live.md` (STAGE-5 CLOSE audit). No commit/push.
+- **Mechanical gate — RE-RUN AT CLOSE, ALL GREEN** (`COREPACK_NPM_REGISTRY=…npmjs.org`; rtk absent):
+  - `yarn typecheck` → **EXIT 0**.
+  - `yarn vitest run` → **1013 / 1013 PASS**, 75 files, EXIT 0 (+`bossHarness.test.ts` seam tests).
+  - `yarn lint` → **EXIT 0**.
+  - `yarn format:check` → **EXIT 0**.
+- **C-QA3 — CLOSED.** `dev-r3f-render`'s §9 seam extension boots the LIVE niveau-final level
+  (`?preview=boss&level=niveau-final&at=phase1|phase2|phase3|finisher`, real bossQteSpec seed 19991232,
+  chandelier décor) over the l'Éden backdrop via the same pure-API fast-forward — persistence
+  double-guarded + empirically proven inert. Boss-over-l'Éden captured (06-14).
+- **Tony's two named evidence-backlog gaps — closed/deferred at this close:**
+  - **décor-ARMED — CLOSED.** `13-boss-eden-decor-armed.png` (`at=phase2`, state-verified
+    `decorArmed:true`, phaseIndex 1, SHIELDED, seed 19991232): the acid-lime armed chandelier halo
+    (dégradé) over l'Éden.
+  - **boss-loss — STATE captured, EndScreen component DEFERRED.** `14-boss-eden-lost-blown10.png`
+    (passive run, state-verified `bossQte.phase LOST, blownWindows 10`, énergie 50): the loss clock
+    (`maxBlownWindows 10`) fires live over l'Éden. The GAME_OVER **EndScreen component** is NOT
+    reachable via the seam — the persistence-inert guard suppresses the GAME_OVER routing by design.
+    Per Tony it is a pure unchanged reuse (D9/D10), generic EndScreen previewable via `?preview=end`;
+    niveau-final GAME_OVER via the real 16-kill quota is 2fps-unreachable → DEFERRED (low-risk).
+- **Gate-verdict ledger — every stage-6-required verdict logged and PASS:**
+  - Design acceptance FINAL (Sacha): **PASS** — N1 target-supply PASS (vitry is ALSO a 4-slot facade,
+    16-quota met in ~19 s / 3.7× headroom); K-5 FAIL(a) on 19991231 → **gated data-only re-pin
+    19991231→19991232** (dev-gameplay FIX) → **FINAL PASS** on landed code (campVital −8.0 non-dominant,
+    greedyVital −56.6/2.15 blown, honest 100 %, sloppy 72 % loss, décor reachable). 0.11 + A2 unchanged.
+  - UX review (Tony): **PASS-WITH-CORRECTIONS** — A1–A15 all PASS on the l'Éden backdrop/re-anchored
+    position; the arrow-clutter defect (pre-existing since story-1, not niveau-final-specific) → one-line
+    HUD gate LANDED (§10, capture `12`, 0 arrows); décor-placeholder note = tracked ADR-0053 D6 follow-up.
+  - Asset gate (Nico) + Bertrand escalations: **PASS** — 9/9 boss family (lustre re-roll seed 4879 PASS,
+    family COMPLETE); cols 5→4 express gate PASS; backdrop escalations resolved.
+  - Gated amendments all LANDED with their gates: **A2** (décor AABB catch), **K-5 re-pin** (19991232),
+    **windowGrid.cols 5→4**.
+  - C-QA3 render-reachability CLOSED (§9); arrow-hide correction DONE (§10) — both 1013 green.
+- **Regressions — re-verified mechanically vs `origin/main` (leg 1, holding at close):** shipped 3
+  levels + tutorial byte-untouched (`levels.ts` pure append); shipped window-zones drift byte-preserved;
+  hostage + stateMachine ZERO-diff; differentiation system = gated A2 décor AABB ONLY; live bossQteSpec
+  byte-equal to harness except seed 19991232 + décor {0.2,1.5}.
+- **Deferrals (explicit, with owner):** (1) CI-DEFERRED on-device smoke/perf ms (Ben, inherited from
+  ADR-0052; ADR-0053 adds no render surface) — **Bertrand executes**, does not deadlock; (2) niveau-final
+  GAME_OVER EndScreen component (unchanged reuse, real-quota-only, 2fps-unreachable, low-risk per Tony);
+  (3) canon boss sprite render-integration (ADR-0053 D6; family asset-complete on disk, décor-armed read
+  already verified on the placeholder `13`) — `lead-art`; (4) standing findings → producer/tech-writer
+  (shipped stalingrad/vitry committed-zones drift, byte-preserved; `facade` prompt "5 arches" residual).
+- handoff → `senior-architect` (Winston): quality gate PASS — story-2 stage-6 4-reviewer merge panel +
+  your integration triage are open. Flag for triage: the §9 seam + §10 HUD gate are view-side only
+  (no `src/game`), and AC5's `bossQteSystem.ts` diff is the gated A2 décor AABB only.
+- handoff → `producer` (Marion): story-2 stage-5 CLOSED PASS; track the CI-DEFERRED on-device perf run
+  (Bertrand), the D6 art-integration follow-up, and the two standing findings.
+- handoff → `pm` (John): all quality lines verified or explicitly deferred with owners; ready for the
+  stage-6→acceptance path once the panel clears.
+- File List:
+  - `docs/qa/plan-story-boss-niveau-final-live.md` (STAGE-5 CLOSE audit + header update)
+  - `docs/qa/evidence/story-boss-niveau-final-live/13-boss-eden-decor-armed.png` (NEW)
+  - `docs/qa/evidence/story-boss-niveau-final-live/14-boss-eden-lost-blown10.png` (NEW)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: PASS — quality gate story-2 (qa-lead) — the plan ran and held. Mechanical gate GREEN at close (typecheck EXIT 0, vitest 1013/1013, lint EXIT 0, format:check EXIT 0). All 10 ACs VERIFIED; all 4 regression lines VERIFIED vs origin/main (3 shipped levels + tutorial byte-untouched, shipped window-zones drift byte-preserved, hostage + stateMachine ZERO-diff, differentiation = gated A2 décor AABB only, live bossQteSpec byte-equal to harness except seed 19991232 + décor {0.2,1.5}). C-QA3 CLOSED via the §9 live-level capture seam (boss over l'Éden, evidence 06-14, persistence double-guarded + empirically inert). Every stage-6 gate verdict logged and PASS: Sacha design-acceptance FINAL (K-5 re-pin 19991231→19991232 resolves the camp-dominance FAIL, N1 supply PASS), Tony UX (A1–A15 PASS on l'Éden; arrow-clutter fix landed §10/`12`), Nico asset gate 9/9 (lustre re-roll 4879, family complete); gated amendments A2 / K-5-re-pin / cols-5→4 all landed with their gates. Tony's two backlog gaps: décor-armed CLOSED (`13`), boss-loss STATE captured (`14`, blown 10) with the EndScreen component explicitly deferred (unchanged reuse, low-risk). Deferrals all explicit with owners (Ben's on-device ms — Bertrand executes, does not deadlock; EndScreen component; D6 art-integration; standing zone/prompt findings). Story-2 stage-6 (4-reviewer merge panel) is OPEN.
+
+---
+
+## STAGE 6 — TRIAGE + INTEGRATION REVIEW (senior-architect, Winston) — PR #119 / claude/yo-pmnyzr
+
+One pass over `git diff origin/main...HEAD`. 4-reviewer panel + a late Edge-Case-Hunter layer
+folded in. Every finding re-verified against real code (not on the reviewers' word). Security lane:
+zero findings (seam guards proven independent, PNGs chunk-walked clean, secrets safe).
+
+### Integration review — boundary law verdict: CLEAN (confirmed)
+
+- **A2 (décor AABB) lives in `src/game/systems/bossQteSystem.ts`** — pure logic, no React/Three
+  import, `withinBox` + `BOSS_DECOR_CATCH_HALF_{W,H}`, unit-tested, `assertPositiveScalar`-guarded.
+  Correct layer. The PAIRED render draw-size (`DECOR_W/H` in `BossQteSprite`) is view-side. This is a
+  2-layer coordinated change (game constant ↔ render draw, drift-guarded in the A2 docblock) →
+  needs architect sign-off per COLLABORATION.md → **this triage IS that sign-off: GRANTED.**
+- **C-QA3 seam (`resolveBossPreviewLevel`/`isBossSeamShippedLevel`) is view-side** — `bossHarness.ts`
+  (render/scene) + `App.tsx`; the resolver is PURE (search→LevelConfig, no `window`); reads `@game`
+  data (allowed), no game→render leak. Persistence guard hardening (`&& !BOSS_SEAM_SHIPPED_LEVEL`) is a
+  real but view-side logic change, double-guarded behind the `PREVIEW_SCREEN !== null` early-return.
+- **HUD arrow-gate** — render-only. **Hooks contract UNCHANGED** — `useGameLoop.ts` diff is a stale
+  comment only, zero logic. Deps/deploy: the one real deps item is `yarn.lock` (see #5); the new
+  `gen-level-art.yml` is the one deploy-adjacent item (see E1).
+
+### Triage table
+
+| #                            | Sev                   | Verdict                                       | Lane                            | Disposition                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | --------------------- | --------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MAJEUR-1                     | MAJOR (doc-of-record) | **PRE-MERGE (blocking)**                      | tech-writer + architect         | ADR-0053 contradicts its own build PR (Status "pending build"; D2/D3 assert zero lines in `bossQteSystem.ts`/`App.tsx` — both changed; D4 seed 19991231 vs shipped 19991232). CLAUDE.md same-PR ADR rule ⇒ realign THIS PR.                                                                                                                                                                         |
+| E1                           | HIGH                  | **PRE-MERGE (blocking)**                      | dev-tooling-assets              | `regenerate=true` `rm -rf public/assets/levels` + generator `LAYERS=[sky,facade,street,foreground]` (no troncon/ground) + `git add -f` = commits DELETION of belliard's required `troncon-a/b/c.png`+`ground.png` on a _fully-successful_ run. Scope the purge to generated layers / fail on missing-required / assert post-gen parity. (Subsumes consolidated-#2 partial-failure variant.)         |
+| E9                           | LOW (product)         | **PRE-MERGE (fix; pm may downgrade)**         | dev-r3f-render                  | `?preview=boss&level=niveau-final` w/o `&at=` boots the CANON finale fully playable on the deployed branch-preview (harness precedent was NON-canon _by design_). Couple the shipped-level `INITIAL_LEVEL` boot to `parseBossHarnessTarget(at)!==null` — closes the one-shot-reveal URL surface, preserves every QA capture (always passes `at=`). Cheap; pm/Bertrand may accept-with-release-note. |
+| 3 (bossHarness seed)         | MINOR                 | **PRE-MERGE (blocking, trivial)**             | dev-r3f-render                  | `bossHarness.ts:98` docstring says seed 19991231; shipped 19991232. One word.                                                                                                                                                                                                                                                                                                                       |
+| 4 (stale invariants)         | MINOR                 | **PRE-MERGE (blocking, wording)**             | tech-writer (owning-lane aware) | 4 comments the story falsifies: `levels.ts:50-55`, `useGameLoop.ts:58 + ~200-207`, `stateMachine.ts:182-184`, `App.tsx:155-156` ("no shipped level authors a boss" / "EVERY shipped level" / "only the dev-harness"). Wording-only, zero logic.                                                                                                                                                     |
+| E4                           | MEDIUM                | **PRE-MERGE (fold-if-free)**                  | dev-tooling-assets              | `gen-boss-sprites.yml` solidify globs `boss/*.png` with no props exclusion → `fill-sprite-holes` fills the deliberately-porous `lustre`/`speaker_wall` opaque on next targeted regen. Current committed art is gate-passed (latent); exclude props from the glob while the E1 lane is open.                                                                                                         |
+| 5 (yarn.lock)                | MINOR                 | **ACCEPT-WITH-RECORD**                        | docs                            | ~361 re-resolutions incl. runtime (react 19.2.8, @react-three/fiber 9.6.1, zustand 5.0.14), all verified-green + security-audited. Pin-back would invalidate the verified-green state and restart verification — NOT worth it. Record the runtime deltas in PR body + shard (folded into the same doc pass).                                                                                        |
+| E6                           | LOW (player-facing)   | **PRODUCT CALL → pm (default: release-note)** | pm                              | Pre-existing vitry-completers don't retro-unlock the finale (unlock hop fires on a NEW `LEVEL_COMPLETE`; `muf_progress` stores unlocked ids, not completions). Not architect-blocking; migration heuristic ("vitry score exists") could mis-fire — default release-note, pm rules.                                                                                                                  |
+| 6 (assetManifest 404s)       | LOW                   | **FOLLOW-UP**                                 | dev-gameplay                    | `levelLayerPaths` returns sky/facade/street unconditionally → niveau-final warms 2 nonexistent layers = 4 graceful 404s/finale-load. Verify gate already screenshotted the finale (evidence 06-11) WITH this behavior ⇒ inside verified-green ⇒ non-blocking. Derive runtime layers from `levelArt` prompts (mirror e2e-assets) — same root as E1's generator-LAYERS divergence; unify.             |
+| E2                           | LOW                   | **FOLLOW-UP**                                 | concept-artist (Maud)           | `facade` prompt still says "exactly 5 tall arched windows" vs the 4-pinned grid/accepted art; a regen would reroll wrong (interacts with E1). Prompt content is Maud's lane. Higher priority post-E1.                                                                                                                                                                                               |
+| E3/E7/E8/E10 + nits          | LOW                   | **FOLLOW-UP**                                 | dev-tooling-assets              | Tooling-hardening pass: `--asset` arg guard (FORCE=1 re-rolls 5 clean figures), prompt-field validation (no "undefined…" to FLUX), `decodeImage` robustness (WebP/truncated), cutout byte-churn, misleading "(chroma-key runs in CI)" messages, unlock-adjacency test tutorial-filter, e2e-assets↔generator one-directional lockstep.                                                               |
+| D6 sprite render-integration | —                     | **FOLLOW-UP (already deferred)**              | lead-art                        | Unchanged from ADR-0053 D6.                                                                                                                                                                                                                                                                                                                                                                         |
+
+### Verdict: NO-MERGE until the pre-merge list clears.
+
+No CONFIRMED blocking CODE finding (A2 + C-QA3 are process-sanctioned and boundary-clean; security
+zero). The hard blocker is the doc-of-record (MAJEUR-1) which CLAUDE.md's same-PR ADR rule elevates
+to merge-blocking, plus E1 (a NEW workflow destroys required shipped art on its documented regen
+path). Pre-merge fix list, per lane:
+
+- **tech-writer + architect:** ADR-0053 realignment — flip Status to Accepted; record sanctioned
+  amendments (A2 décor AABB, K-5 re-pin 19991232, windowGrid cols 5→4 Bertrand-escalation, lustre
+  seed 4879); rewrite D2/D3 reuse map to NAME the sanctioned touches (bossQteSystem.ts A2 + décor
+  constants; App.tsx C-QA3 seam) instead of "zero lines / any hit blocking"; fix D4 seed →19991232;
+  place the A2 amendment in the ADR-0052/0053 amendment log.
+- **tech-writer (owning-lane aware):** 4 stale invariant comments (#4).
+- **dev-r3f-render:** bossHarness docstring seed →19991232 (#3); E9 `at=`-gate on the shipped boot.
+- **dev-tooling-assets:** E1 regen-destroys-required-art guard (blocking); E4 props solidify-exclusion
+  (fold-if-free).
+- **docs (PR body + this shard):** acknowledge the yarn.lock runtime deltas (#5).
+- **pm:** rule E6 (default release-note).
+
+Follow-ups for `producer` to track: #6+generator-LAYERS unification (dev-gameplay+tooling), E2
+(Maud), E3/E7/E8/E10+nits (tooling hardening), D6 (lead-art).
+
+handoff → `producer` (Marion): NO-MERGE. Chase the pre-merge fixes above (tech-writer / dev-r3f-render
+/ dev-tooling-assets / docs) and the pm E6 ruling; re-run the affected verify slices after the E1/E9
+code fixes land (E9 touches an App-load path; E1 is CI-only). Follow-ups logged above.
+handoff → `pm` (John): one product call owed — E6 retro-unlock (migration vs release-note); my default
+is release-note. Everything else is doc/CI/wording + one tiny view-side gate.
+
+## 11. FIX (stage 6, pre-merge batch) — dev-r3f-render (Amelia) — 2026-07-20 — #3 seed-docstring + E9 reachability gate on the niveau-final capture seam
+
+- claim: land the two render-lane stage-6 pre-merge fixes from the architect's triage on the seam I
+  added in §9. Both in `src/render/scene/bossHarness.ts` (+ its test). No `src/game` touch.
+
+### #3 — docstring seed correction (one word)
+
+`resolveBossPreviewLevel`'s JSDoc said "seed 19991231" — the gate-REJECTED camp-dominant seed. The
+shipped K-5 re-pin is **19991232**. Corrected.
+
+```
+- * `niveau-final` — its real spec, seed 19991231, chandelier décor), boots THAT level so the boss
++ * `niveau-final` — its real spec, seed 19991232, chandelier décor), boots THAT level so the boss
+```
+
+### E9 — shipped-level boot requires a valid capture target (`at=`)
+
+Before: `?preview=boss&level=niveau-final` (no `at=`) booted the shipped finale FULLY PLAYABLE —
+canon-locked content + the fiction's one-shot reveal, reachable from a bare URL. Fix (triage
+prescription): the shipped-level branch of `resolveBossPreviewLevel` is now gated behind
+`parseBossHarnessTarget(params.get("at")) !== null`, so `level=` without a valid `at=` falls back to
+the non-shipped harness EXACTLY like an unknown id. The plain harness (`?preview=boss`, no `level=`)
+is unaffected (boots with or without `at=`, as before). The module docstring states the rule.
+
+```
+ export function resolveBossPreviewLevel(search: string): LevelConfig {
+-  const id = new URLSearchParams(search).get("level");
+-  if (id !== null) {
++  const params = new URLSearchParams(search);
++  const id = params.get("level");
++  // A shipped level needs a valid `at=` capture target (E9) — otherwise the finale is URL-reachable.
++  if (id !== null && parseBossHarnessTarget(params.get("at")) !== null) {
+     const lvl = LEVELS.find((l) => l.id === id);
+     if (lvl?.bossQteSpec !== undefined) return lvl;
+   }
+   return BOSS_QTE_DEV_HARNESS_LEVEL;
+ }
+```
+
+Because `resolveBossPreviewLevel` is the single source consumed by `App`'s `INITIAL_LEVEL`,
+`isBossSeamShippedLevel`, and `installBossCaptureSeam`, the gate lands once and covers all three:
+the finale is neither rendered (INITIAL_LEVEL falls back) nor seeded (install already required
+`at=`), and the persistence flag stays consistent.
+
+### Tests (`src/render/scene/__tests__/bossHarness.test.ts`)
+
+- Added the E9 case: `resolveBossPreviewLevel("?preview=boss&level=niveau-final")` (+ `&at=bogus`)
+  → harness; with a valid `at=finisher` → niveau-final (capture flows intact).
+- `isBossSeamShippedLevel` no-`at=` case flipped to **false** (E9 fallback) + kept the valid-`at=`
+  true case; the "unknown/boss-less id" and "off the seam" cases now pass a valid `at=` to isolate
+  their own reason.
+
+### Verification — ALL GREEN (`COREPACK_NPM_REGISTRY=…npmjs.org`)
+
+- `yarn typecheck` EXIT 0 · `yarn lint` EXIT 0 · `yarn format:check` (my files) clean ·
+  `yarn vitest run` **1015 / 1015** (+2 E9 cases).
+- Empirical E9 confirm (Playwright, prod build): `?preview=boss&level=niveau-final` (no `at=`) boots
+  the HARNESS (bossQte.targetSeed **20260719**, belliard) — the finale is NOT booted;
+  `?preview=boss&level=niveau-final&at=phase2` boots niveau-final (targetSeed **19991232**). Evidence
+  06-14 (all pass `at=`) stay reproducible.
+- handoff → `senior-architect` (Winston): #3 + E9 landed, view-side only, single-source gate. No
+  commit/push.
+- File List:
+  - `src/render/scene/bossHarness.ts` (#3 seed docstring; E9 `at=` gate on the shipped-level branch + rule in the module docstring)
+  - `src/render/scene/__tests__/bossHarness.test.ts` (E9 fallback cases + isBossSeamShippedLevel update)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry)
+
+VERDICT: DONE — #3 + E9 seam fixes (dev-r3f-render). #3: `resolveBossPreviewLevel` docstring seed corrected 19991231→19991232 (the shipped K-5 re-pin; 19991231 was the gate-rejected camp-dominant seed). E9: the shipped-level boot now requires a valid `at=` capture target — a bare `?preview=boss&level=niveau-final` falls back to the non-shipped harness (finale no longer URL-playable, canon/one-shot-reveal leak closed), while every real capture flow passes `at=` so evidence 06-14 stays reproducible; the plain harness path is unchanged. Single-source gate in the pure resolver covers INITIAL_LEVEL + the persistence flag + the seam install. Gate GREEN (typecheck 0, vitest 1015/1015, lint 0, format clean); E9 empirically confirmed (no-at= → harness seed 20260719, at=phase2 → niveau-final seed 19991232). No commit/push.
+
+## 8. FIX (stage-6 pre-merge, architect triage) — dev-tooling-assets (Amelia) — E1 (regenerate=true purge safety) + E4 (boss solidify prop exclusion) — 2026-07-21
+
+- **claim:** the two dev-tooling-assets items off the architect's stage-6 pre-merge triage: (E1,
+  HIGH) `gen-level-art.yml`'s `regenerate=true` path can permanently destroy shipped art it never
+  regenerates (belliard's tronçon tiles + ground layer), then commit the deletion; (E4,
+  fold-if-free) `gen-boss-sprites.yml`'s solidify step globs all 9 boss PNGs, which would run
+  figure-oriented hole-filling over the 2 hall props' legitimate see-through gaps on any targeted
+  prop regen.
+
+### E1 — scoped purge + post-generation parity assert
+
+- **Diagnosis confirmed:** `gen-level-art.mjs`'s `LAYERS` is a fixed 4-item list
+  (`sky/facade/street/foreground`) and the script never reads `level.backdrop.tiles` at all — it has
+  no code path that ever touches belliard's `troncon-a/b/c.png` or `ground.png` (confirmed: no
+  `gen-troncon*.mjs`/equivalent generator exists anywhere in `scripts/` — those 4 files are outside
+  every generator's reach). The old `rm -rf public/assets/levels` wiped them with nothing able to
+  restore them, and the unconditional `git add -f public/assets/levels` in the commit step would
+  then stage and ship the deletion.
+- **Fix, both halves per the triage:**
+  1. **(a) Scoped purge.** Added a `--paths` mode to `scripts/gen-level-art.mjs`: prints, one per
+     line, the exact relative paths this run WILL (re)write — `LAYERS ∩ {layer : level.prompts[layer]
+!== undefined}` per level — using the identical gate the generation loop itself already applies
+     (same source of truth, cannot drift out of sync with actual behaviour). `gen-level-art.yml`'s
+     `regenerate=true` branch now purges ONLY that list (`while IFS= read -r f; do rm -f "$f"; done`)
+     instead of `rm -rf` the whole tree.
+  2. **(b) Post-generation parity assert.** After the forced regen, the same file's paths are
+     re-checked: any purged path still missing increments a counter and the step `exit 1`s with a
+     clear `::error::` line BEFORE the "Cut out foreground layer" / "Commit level art" steps run
+     (GitHub Actions halts subsequent steps on a non-zero `run:` by default — no
+     `continue-on-error` is set). This also closes the partial-failure gap: `gen-level-art.mjs`
+     catches a per-layer fetch error and continues past it (by design, so one bad network call
+     doesn't kill the whole batch), so without this assert a transient failure could ship a silent
+     deletion for just that one file.
+  3. The missing-only default path (no `regenerate` input — the marker-push / plain
+     `workflow_dispatch` path) is **untouched**, per instruction.
+- **Local dry sanity (scriptable — no real generation):** ran `node scripts/gen-level-art.mjs
+--paths` for real against the live manifest — confirms belliard's `ground.png`/`troncon-a/b/c.png`
+  are correctly ABSENT from the purge list, and niveau-final correctly lists only
+  `facade.png`/`foreground.png` (sky/street still dropped). Then, in a scratch copy (never touching
+  the real `public/assets/levels`), replayed the exact bash purge + parity-assert snippet with a
+  stub standing in for the real generator:
+  - **Case A (full success):** purge → all 14 real generatable paths removed, the 4
+    tronçon/ground files in belliard survive untouched → stub "regenerates" everything → parity
+    check: 0 missing → **would proceed to cutout+commit** (matches intended pass-through behaviour).
+  - **Case B (partial failure, one file "fails to regenerate"):** same purge → stub regenerates 13
+    of 14, skips `niveau-final/foreground.png` (simulating a network hiccup) → parity check reports
+    exactly 1 missing, prints `::error::purged file did not regenerate: …`, **simulated exit code
+    1** → confirmed this halts the job before the cutout/commit steps in the real workflow (no
+    `continue-on-error`) → the 4 tronçon/ground files remain intact throughout, in both cases.
+
+### E4 — boss solidify step excludes the 2 hall props
+
+- **Fix:** the "Solidify figures (fill chroma-key holes)" step in `gen-boss-sprites.yml` now builds
+  an explicit `figures=()` bash array by globbing `public/assets/boss/*.png` and skipping any
+  basename equal to `lustre.png`/`speaker_wall.png`, then calls `fill-sprite-holes.mjs` (both the
+  write pass and `--check`) on that array only — falls through to a no-op log line if the array is
+  empty (a props-only regen, e.g. this exact reroll cycle where only `lustre.png` is currently
+  missing). One-line rationale comment added: `fill-sprite-holes.mjs`'s solid-body reconstruction
+  assumes a standing-figure silhouette, so running it on the 2 props would fill their legitimate,
+  intentional see-through gaps (inter-crystal-drop gaps, cable/cabinet gaps) as if they were keying
+  holes; the props are already covered by the figure-agnostic HARD checks + WARN-only
+  closability/enclave probe in the (unchanged) "Sprite integrity gate" step that follows.
+- **Despeckle deliberately NOT scoped** (noted in the same comment): the despeckle sweep lives
+  inside `gen-boss-sprites.mjs` itself (`tryDespeckle`, called per-generated-file), not as a
+  workflow step, and only removes sub-12px debris islands — a different, size-bounded operation
+  that cannot eat a large legitimate concavity (the risk class E4 names), so it is out of scope for
+  this exclusion.
+- The "Sprite integrity gate" step (loops `check-sprite-integrity.mjs --file` over all 9 PNGs) is
+  **unchanged** — it already treats non-figure props correctly (HARD checks figure-agnostic, SOFT
+  torso-zone WARN harmless-if-noisy on props, per the existing comment).
+
+### Verify
+
+- YAML hand-review of both files (full read before and after editing); `python3 -c
+"yaml.safe_load(...)"` parses both cleanly. `actionlint` not available in this sandbox — every
+  changed `run:` block extracted and checked with `bash -n` (syntax-only, no execution): all pass.
+- `yarn typecheck` → green.
+- `yarn lint` → green (exit 0).
+- `yarn format:check` / `npx prettier --check` on `scripts/gen-level-art.mjs` +
+  both workflow YAMLs → clean.
+- `node scripts/check-art-prompts.mjs` → PASSED, 0 errors (14 pre-existing/concurrent warnings,
+  unchanged).
+- `yarn vitest run` → 75/75 files, 1015/1015 tests green (grew slightly from concurrent lanes'
+  in-flight work, unrelated to this fix).
+- **Scope discipline:** touched only the two workflow YAMLs + `gen-level-art.mjs`'s new `--paths`
+  mode (additive, the existing `--list`/`--asset`/generation-loop code paths untouched); did not
+  touch `gen-boss-sprites.mjs`, `fill-sprite-holes.mjs`, or `check-sprite-integrity.mjs`.
+
+### How the parity assert fails safe (for the record)
+
+`exit 1` inside the "Generate level art" step's `run:` block, with no `continue-on-error` set on
+that step ⇒ GitHub Actions marks the step (and the job) failed and **skips every subsequent step**
+in the job, including "Cut out foreground layer" and "Commit level art" — so a partial-failure
+regen can never reach `git add -f`/`git commit`/`git push`. The existing `if: failure()` upload step
+still runs (uploads whatever partial art exists as a diagnostic artifact), matching the workflow's
+established failure-handling shape; nothing is silently lost, and nothing bad is ever pushed.
+
+- **File List:**
+  - `scripts/gen-level-art.mjs` (MODIFIED — new `--paths` mode + usage-doc update)
+  - `.github/workflows/gen-level-art.yml` (MODIFIED — `regenerate=true` path: scoped purge +
+    post-generation parity assert; missing-only default path untouched)
+  - `.github/workflows/gen-boss-sprites.yml` (MODIFIED — solidify step scoped to the 7 figures,
+    excludes `lustre.png`/`speaker_wall.png`, with rationale comment)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+## 12. FIX (stage 6, pre-merge batch) — tech-writer (Otis) — 2026-07-21 — MAJEUR-1 (ADR-0053 realignment) + finding #4 (4 stale invariant comments) + finding #5 (yarn.lock accept-with-record note)
+
+- **claim:** land the three DOCS-lane pre-merge items off the architect's stage-6 triage
+  (`docs/handoffs/story-boss-niveau-final-live.md` §"STAGE 6 — TRIAGE + INTEGRATION REVIEW"):
+  MAJEUR-1 (ADR-0053 contradicts its own build PR), finding #4 (4 stale invariant comments the
+  story falsifies), finding #5 (yarn.lock runtime-delta acknowledgement). Wording/doc-of-record
+  only — zero logic changed anywhere. No commit/push.
+
+### MAJEUR-1 — ADR-0053 realigned to the landed build
+
+`docs/adr/0053-niveau-final-live-boss-level.md`:
+
+- **Status** flipped `Accepted — pending build` → `Accepted (built and shipped, PR #119,
+2026-07-21 …)` — the AC8 sequencing gate cleared and all dev lanes landed.
+- **New "## Revision 1" section appended** (mirrors the ADR-0052 Revision 2 discipline — annotate,
+  don't erase; D2/D3/D4's original text is untouched and left as written, accurate at TECH PLAN):
+  - Dated log of the four sanctioned amendments, each with its owning gate: **AMENDMENT A2**
+    (décor catch = drawn-silhouette AABB, `BOSS_DECOR_CATCH_HALF_W 0.40`/`HALF_H 0.525` in
+    `bossQteSystem.ts` + paired render derivation — Karim's stage-5 panel follow-up #5 gate);
+    **K-5 seed re-pin** `targetSeed` `19991231`→`19991232` (Sacha's leg-2 design-acceptance gate:
+    the diegetic seed FAILED (a), camp-vital dominant at the 0.11 catch); **`windowGrid.cols`**
+    `5`→`4` (Bertrand's escalation ruling + Karim's express design gate — 4-arch facade accepted);
+    **`lustre` seed re-roll** `4877`→`4879` (Nico's §3.10 composition-defect rule, Bertrand-approved
+    at the same escalation).
+  - D2's "ZERO lines" bold claim and D3's review-assert ("any hit is a blocking finding")
+    corrected into an accurate reuse map: `bossQteSystem.ts` carries the ONE sanctioned A2 touch;
+    `App.tsx` carries the C-QA3 capture seam + its persistence double-guard (view-side,
+    architect-ruled clean at the same stage-6 triage); `types/bossQte.ts`, `FlyerWall.tsx`,
+    `stateMachine.ts` are confirmed still byte-untouched; `useGameLoop.ts` gains the wording-only
+    JSDoc fix landed in this same entry (finding #4); the 4 shipped `LevelConfig` objects +
+    `BOSS_QTE_DEV_HARNESS_LEVEL` are confirmed still byte-untouched (AC2/AC3/AC5 hold).
+  - D4's provisional seed corrected: **`19991231` → `19991232`**, per the K-5 amendment above.
+
+### Finding #4 — 4 stale invariant comments, wording-only, zero logic
+
+Each comment claimed "no shipped level authors a boss" / "EVERY shipped level" / "only the
+non-shipped dev-harness" — all falsified by `niveau-final` shipping live per ADR-0053. Fixed to
+state the real, current guard honestly, matching each file's existing comment style:
+
+- `src/game/levels/levels.ts:49-55` (`LevelConfig.bossQteSpec` docblock) — now states V1 authored
+  it only on the harness, but since ADR-0053 the shipped `niveau-final` level also authors one
+  (the earned terminal beat); every other shipped level still authors none.
+- `src/hooks/useGameLoop.ts:54-64` (the `HarnessWindow.__MUF_BOSS_BOOT__` JSDoc) and
+  `~199-206` (the seed-once boot call site) — both corrected: the real guard is the
+  `?preview=boss` factory's own presence (bossHarness install, never in production); the second
+  clause, `bossQteSpec !== null`, no longer implies non-shipped by itself since ADR-0053's C-QA3
+  seam (`&level=<id>`) can boot the SHIPPED `niveau-final` level through the same path. Player
+  reachability (no `?preview=boss` param) is unchanged.
+- `src/game/systems/stateMachine.ts:182-184` (the boss-block comment in `tickGameState`) — "EVERY
+  shipped level" → "every shipped level EXCEPT `niveau-final`, ADR-0053".
+- `src/render/scene/App.tsx:154-156` (`buildLevelParams`'s `bossQte` field comment) — "only the
+  non-shipped dev-harness authors one" → the dev-harness authors one for iteration, and since
+  ADR-0053 the shipped `niveau-final` level authors the live canon encounter too.
+
+### Finding #5 — yarn.lock runtime-delta accept-with-record
+
+Per the architect's stage-6 disposition (triage row 5, ACCEPT-WITH-RECORD, `docs` lane): the
+prettier-pin lockfile regeneration this story required carried ~361 re-resolutions, including
+three **runtime** package bumps — **react 19.2.8**, **@react-three/fiber 9.6.1**,
+**zustand 5.0.14** — alongside devDependency churn. Pin-back was ruled not worth it (would
+invalidate the already-verified-green state and restart verification from zero); the deltas are
+accepted as landed and recorded here per the architect's ruling. Verified green by the full
+mechanical gate (`yarn typecheck`/`yarn vitest run` 1015/1015/`yarn lint`, §8/§11 above) and
+security-audited (stage-6 panel security lane: zero findings, `docs/handoffs/
+story-boss-niveau-final-live.md` §"STAGE 6", "Security lane: zero findings").
+
+### ADR index freshness
+
+- `node scripts/gen-adr-index.mjs --check` → fresh both before and after (the generator reduces
+  any `Accepted …` status line to the bare `Accepted` label, so `docs/adr/README.md`'s one-liner
+  for 0053 was already correct; `--write` produced a byte-identical `README.md`/`public/adr/
+index.html`, confirmed via `git diff --stat`, empty).
+
+### Verify — ALL GREEN
+
+- `yarn typecheck` → EXIT 0.
+- `yarn lint` → EXIT 0.
+- `npx prettier@3.8.2 --check` on all 5 touched files → clean (one reflow needed on the ADR after
+  the Revision 1 append; applied `--write`, re-checked clean).
+- No `yarn vitest run` re-run needed — zero logic touched (doc/JSDoc wording only); the stage-6
+  mechanical gate (§8/§11) already covers the current tree.
+
+- handoff → `senior-architect` (Winston): MAJEUR-1 + finding #4 + finding #5 landed, doc-lane
+  only, zero logic. ADR-0053's Revision 1 is a draft for your sign-off per the standing ADR
+  authority (COLLABORATION.md) — the four amendments were already gated at their own owning
+  lanes; this is documentation of decided fact, not a new decision.
+- handoff → `producer` (Marion): the tech-writer pre-merge items are clear; the only remaining
+  pre-merge items per the stage-6 triage table are `pm`'s E6 ruling (retro-unlock) — everything
+  else in the tech-writer lane is DONE.
+- handoff → `pm` (John): no action from me; E6 is still yours to rule (unchanged from the
+  triage).
+
+- **File List:**
+  - `docs/adr/0053-niveau-final-live-boss-level.md` (MODIFIED — Status flipped to Accepted;
+    "Revision 1" section appended recording the 4 sanctioned amendments + D2/D3/D4 corrections)
+  - `src/game/levels/levels.ts` (MODIFIED — `bossQteSpec` docblock wording, zero logic)
+  - `src/hooks/useGameLoop.ts` (MODIFIED — 2 comment blocks re-worded, zero logic)
+  - `src/game/systems/stateMachine.ts` (MODIFIED — boss-block comment re-worded, zero logic)
+  - `src/render/scene/App.tsx` (MODIFIED — `bossQte` field comment re-worded, zero logic)
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this entry appended)
+
+VERDICT: DONE — MAJEUR-1 + finding #4 + finding #5 (tech-writer). ADR-0053 realigned to the
+landed build (Status → Accepted; Revision 1 records the 4 sanctioned amendments — A2, K-5
+re-pin 19991232, windowGrid.cols 5→4, lustre seed 4879 — and corrects D2/D3's stale "zero
+lines"/"any hit blocking" claims into an accurate reuse map naming A2 in `bossQteSystem.ts` and
+the C-QA3 seam + persistence double-guard in `App.tsx`; D4's seed corrected to 19991232).
+Finding #4's 4 stale invariant comments (`levels.ts`, `useGameLoop.ts` ×2, `stateMachine.ts`,
+`App.tsx`) reworded to state the real, current guard honestly — zero logic changed anywhere.
+Finding #5's yarn.lock runtime deltas (react 19.2.8, @react-three/fiber 9.6.1, zustand 5.0.14)
+recorded as accepted-with-record per the architect's ruling. Gate GREEN (typecheck 0, lint 0,
+format clean); ADR index fresh (`gen-adr-index.mjs --check`, before and after). No commit/push.
+
+## §13 — STAGE 7 : ACCEPTATION PM (pm — John) — 2026-07-21
+
+- claim: STAGE 7 final acceptance for STORY-BOSS-NIVEAU-FINAL-LIVE (ADR-0053, PR #119). Two
+  things owed: (1) rule the E6 product call the stage-6 triage routed to me (retro-unlock vs
+  release-note); (2) accept-or-reject the story against its own AC1–AC10
+  (`_bmad-output/planning-artifacts/story-boss-niveau-final-live.md`) and against
+  `PROJECT_GUIDELINES.md`'s scope guard, now that all 6 stage-6 pre-merge items are closed
+  (MAJEUR-1 doc realignment, E1 purge guard, E4 solidify exclusion, #3 seed docstring, #4 stale
+  comments, #5 lockfile record) and the mechanical gate holds green (typecheck/lint/format
+  EXIT 0, vitest 1015/1015).
+
+### RULING — E6 (retro-unlock vs release-note)
+
+Accept Winston's default. Players who completed vitry before this deploy do **not**
+retroactively unlock niveau-final; they re-complete vitry once, same as any player reaching that
+point going forward. No new code.
+
+Why:
+
+- We are post-VERIFY. Any alternative here is a persistence migration (scan
+  `muf_scores_*`/`muf_progress`, back-fill the unlock) — new logic on a system this story never
+  designed, gated, or tested. Reopening that now means reopening stage-4/5 for a feature nobody
+  asked for: itself a YAGNI violation (§2 PROJECT_GUIDELINES, "pas d'abstraction pour une
+  utilisation future incertaine") dressed as a courtesy.
+- The unlock chain is index-based and stateless-by-design (`App.tsx`
+  `LEVELS[shippedIdx + 1]` on `LEVEL_COMPLETE`) — it has never modeled "was this level completed
+  in the past," only "is the next id unlocked." Grafting a completion-history read onto it is
+  exactly the speculative flexibility YAGNI forbids.
+- Cahier des charges / genre precedent: this is an arcade remake — replaying an already-cleared
+  level once to reach new content is native to the form and to muf's own "une mission = 3–5
+  minutes" rule (§2 KISS). Not a broken promise to the player; it's how arcade unlocks work,
+  including in the source game.
+- Blast radius is small and time-boxed: only players who completed vitry in the window before
+  this deploy are affected, and the cost is a few minutes of replay — no save/score is deleted,
+  nothing regresses.
+- The rejected alternative (a migration heuristic keyed on "vitry score exists") is the thing
+  Winston himself flagged as carrying its own mis-fire risk. Trading a small, well-understood,
+  fair cost for a new, untested inference is not a good trade for a LOW/player-facing finding.
+
+Action: ship as-is. `producer`/`tech-writer` to add one release-note line to the PR body: "Note
+de progression : si vous aviez déjà terminé Vitry avant cette mise à jour, refaites-le une fois
+pour débloquer le nouveau niveau final, l'Éden." No code, no story, no ADR amendment — closed by
+documentation alone.
+
+### ACCEPTANCE vs story ACs (planning artifact AC1–AC10)
+
+Cross-checked each AC against the shard's own gates/evidence (not re-litigated — Winston/Sacha/
+Inès already re-verified against real code; this confirms coverage):
+
+- **AC1** (mutual exclusion by construction) — CONFIRMED: Karim's design gate, Winston's TECH
+  PLAN ("AC1–AC5 confirmed against real code"), qa-lead quality-gate close (§11, "hostage +
+  stateMachine ZERO-diff"). No `hostageQte` authored; roster weight-0 by construction.
+- **AC2** (existing shipped `LevelConfig`s byte-untouched) — CONFIRMED: qa-lead quality-gate
+  close, "3 shipped levels + tutorial byte-untouched (`levels.ts` pure append)"; stage-6
+  integration review reconfirms.
+- **AC3** (dev-harness unchanged, non-shipped) — CONFIRMED, and hardened, not weakened: stage-6
+  D2/D3 correction confirms `BOSS_QTE_DEV_HARNESS_LEVEL` "still byte-untouched"; the E9 fix (§11,
+  dev-r3f-render) closes a gap the story didn't originally anticipate — the canon finale was
+  reachable fully-playable via a bare preview URL with no `at=` — by gating the shipped-level
+  boot behind a valid capture target. That strengthens AC3's non-canon-preview intent; it is
+  pipeline-hardening on code this story itself introduced, not scope creep.
+- **AC4** (real quota-crossing trigger) — CONFIRMED: `enemiesToWin: 16` (non-zero, non-harness);
+  Sacha's design-acceptance N1 target-supply PASS (~19s to quota).
+- **AC5** (`bossQteSystem.ts`/`types/bossQte.ts` untouched, no silent contract edit) —
+  CONFIRMED via its own designed escape valve, not a violation: the one touch to
+  `bossQteSystem.ts` (AMENDMENT A2, décor-catch AABB) is exactly the "tuning gap found at this
+  story's own playtest, logged as a correct-course" AC5 itself names as the legitimate path —
+  gated at Karim's stage-5 panel follow-up #5, sign-off granted at Winston's stage-6 integration
+  review. `types/bossQte.ts` — zero lines, confirmed. This is the one AC that reads literally
+  stricter than what shipped; the story's own text anticipates and licenses exactly this kind of
+  gated amendment, so I read it as satisfied in spirit and process, not breached.
+- **AC6** (ADR, producer-allocated, documents everything) — CONFIRMED: ADR-0053, allocated by
+  `producer`, Status Accepted, Revision 1 records all 4 sanctioned amendments and corrects the
+  stale D2/D3/D4 claims (tech-writer, §12, "VERDICT: DONE").
+- **AC7** (`final_pre`/`final_post` wired, narrative-designer confirms) — CONFIRMED:
+  dev-gameplay BUILD (§4) wires both keys under the A1/A2/A5 test-enforced invariants;
+  narrative-designer ratifies the flyer copy ("VERDICT: AUTHORED").
+- **AC8** (sequencing gate) — CONFIRMED: producer's §3 "VERDICT: RELEASED" only after ADR-0052
+  PR #114 merged to `main`; dev lanes on `levels.ts`/`bossQteSystem.ts` opened after, not before.
+- **AC9** (pm re-review before dev lanes cut) — CONFIRMED: my own AC9 entry, "VERDICT: CLEARED
+  FOR TECH PLAN", predating stage-4 BUILD.
+- **AC10** (fuyard/mini-boss/hostage-retuning out of scope) — CONFIRMED: none introduced
+  anywhere in the build lanes or the stage-6 diff; the only `bossQteSystem.ts` touch is A2
+  (décor hit-test shape), not a new mechanic.
+
+All 10 ACs hold.
+
+### Scope guard vs `PROJECT_GUIDELINES.md`
+
+- Cahier des charges test: the boss-as-extension was already ratified at ADR-0051 (correctly
+  not re-litigated here). The Niveau Final level itself is named, pre-committed roadmap content
+  (§7 "Niveau Final — 31 décembre 1999", §10 Sprint 4+) — building it needs no fresh extension
+  test.
+- Core loop untouched: niveau-final is Récupérer → Livrer → Éviter like every other level (one
+  truck delivery, quota, escape-the-cops loop), terminated by the already-ratified boss beat.
+- The stage-6 panel's hardening prescriptions (E1 CI purge-safety, E4 solidify prop-exclusion,
+  #3/#4 wording fixes, #5 lockfile record) fix files/pipelines THIS story's own lanes touched or
+  exposed (the new l'Éden art dispatch, the ADR this story owns, comments this story's code
+  changes made stale) — process correctness on the story's own footprint, not new features, not
+  scope creep. None add a mechanic, a UI surface, or player-facing behavior beyond AC1–AC10.
+- No mission exceeds 3–5 minutes, no non-skippable cutscene, no "bullshit" death introduced by
+  this story's changes.
+
+### VERDICT: ACCEPTED
+
+RULING: E6 — accept default (release-note, no code): players who completed vitry pre-deploy
+re-complete it once to unlock niveau-final; add one release-note line to the PR body, no
+migration, no new story.
+
+- handoff → `producer` (Marion): stage 7 CLOSED. All pre-merge items from the stage-6 triage are
+  cleared (tech-writer's MAJEUR-1/#4/#5, dev-r3f-render's #3/E9, dev-tooling-assets' E1/E4) and
+  my own E6 product call is ruled here. Nothing blocks stage 8 (Bertrand merge) on my side.
+  Please fold the E6 release-note line into the PR body per the ruling above before merge.
+- handoff → Bertrand: STORY-BOSS-NIVEAU-FINAL-LIVE / ADR-0053 / PR #119 is PM-accepted. Ready
+  for your merge call (stage 8).
+
+- **File List:**
+  - `docs/handoffs/story-boss-niveau-final-live.md` (this §13 entry appended)

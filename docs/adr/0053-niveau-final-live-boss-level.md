@@ -1,8 +1,8 @@
 # 0053 — "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA
 
-- **Status:** Accepted — pending build (the design/architecture decision below is accepted; the
-  level itself has not been built yet — dev-lane launch is gated on ADR-0052's stage-6 panel
-  MERGE-clearing on `main`, the AC8 sequencing gate, see Gotchas)
+- **Status:** Accepted (built and shipped, PR #119, 2026-07-21 — the AC8 sequencing gate below
+  cleared and all dev lanes landed; see "Revision 1" at the end of this ADR for the four
+  amendments sanctioned en route and the resulting doc corrections)
 - **Date:** 2026-07-20
 - **Number:** 0053, **allocated by `producer` (Marion)** at DESIGN/TECH-PLAN stage and recorded in
   the story shard (`docs/handoffs/story-boss-niveau-final-live.md` §"STAGE 2 COMPLETE" +
@@ -220,3 +220,93 @@ follow-up lands — exactly as Vitry's monologue carries on the facade alone (fi
 - **Follow-up sprite integration will marginally change the render surface** (textured sampling vs.
   procedural quads); the perf check for that belongs to the follow-up pass, not this story (which adds
   no new render technique — see the story's perf call).
+
+## Revision 1 — 2026-07-21: stage-6 sanctioned amendments landed + doc-coherence corrections (PR #119 triage MAJEUR-1, senior-architect)
+
+Triggered by the stage-6 4-reviewer merge-gate triage (`senior-architect`, shard
+`docs/handoffs/story-boss-niveau-final-live.md` §"STAGE 6 — TRIAGE + INTEGRATION REVIEW",
+finding MAJEUR-1: "ADR-0053 contradicts its own build PR"). Status flipped `Accepted — pending
+build` → `Accepted` (the build shipped, PR #119). Four data-only amendments were sanctioned at
+their owning gates during stage-5 build/verify; they are recorded here, dated, per the
+ADR-0052 revision-log discipline. D2/D3/D4's original text above is left as written — it was
+accurate at TECH PLAN — this revision records what has changed since and the ruling that
+authorised each change. Filed by `tech-writer` (Otis); none of the four reopens the frozen
+ADR-0051/0052 boss-system contract they each explicitly reference, and the integration review
+confirms the boundary law still holds (shard, same triage, "Integration review — boundary law
+verdict: CLEAN").
+
+### The four sanctioned amendments (dated, with owning gate)
+
+1. **AMENDMENT A2 — décor catch = drawn-silhouette AABB** (2026-07-20). Gated at
+   `lead-game-designer`'s (Karim) stage-5 panel follow-up #5 (shard §"DESIGN GATE (stage-5
+   blocker) — lead-game-designer (Karim) — 2026-07-20 — panel follow-up #5, décor aim-honesty"),
+   transcribed verbatim into `spec-boss-qte-differentiation.md` §2 LEVER 2 by `game-designer`
+   (Sacha, shard §"SPEC TRANSCRIPTION (stage-5 follow-ups #5 + #9)"). Replaces the décor
+   hit-test's reused `RING_HIT_RADIUS` circle with a rectangular AABB matching the drawn
+   silhouette: **`BOSS_DECOR_CATCH_HALF_W = 0.40`** / **`BOSS_DECOR_CATCH_HALF_H = 0.525`**
+   (= half the drawn `DECOR_W 0.80 × DECOR_H 1.05` plane) in
+   `src/game/systems/bossQteSystem.ts`, with the paired render-side derivation
+   (`DECOR_W = 2 * BOSS_DECOR_CATCH_HALF_W`, `DECOR_H = 2 * BOSS_DECOR_CATCH_HALF_H`) in
+   `BossQteSprite.tsx` — drift-guarded, zero pixel change. This is the ONE sanctioned touch to
+   `bossQteSystem.ts` (see the D2/D3 correction below).
+2. **K-5 seed re-pin, `targetSeed` `19991231` → `19991232`** (2026-07-20). Owned by
+   `game-designer` (Sacha)'s stage-5 design-acceptance leg-2 gate (shard §"VERIFY (stage 5, leg 2) — game-designer (Sacha) — 2026-07-20 — design-acceptance"): the diegetic seed `19991231`
+   **FAILED** K-5 acceptance criterion (a) — camp-vital dominant at the tightened
+   `BOSS_VITAL_CATCH_RADIUS 0.11` catch (ADR-0052 Revision 2, AMENDMENT A1-R2) — an
+   N=500-verified, data-only re-pin to `19991232` (nearest clean seed) resolved it; re-verified
+   FINAL PASS on the landed code (shard §"VERIFY (stage 5, leg 2 — FINAL confirm)"). D4's
+   PROVISIONAL `19991231` is corrected by this amendment (see the D4 correction below).
+3. **`windowGrid.cols` 5 → 4** (2026-07-21). Bertrand's escalation ruling (shard §"DÉCISIONS
+   BERTRAND — backdrop escalation", Finding 1: accept the batch-2 l'Éden facade at 4 arches) +
+   `lead-game-designer` (Karim)'s express design gate (shard §"DESIGN GATE (express) —
+   lead-game-designer (Karim) — 2026-07-21 — windowGrid.cols 5→4"), PASS. Supersedes the
+   originally-gated [E3] count of 5 in `levelArt.json`'s `niveau-final` block; the [E3] intent
+   (even spacing, occupiable window-cop slots, [E5] merge mitigation) is served equally at 4.
+   Pre-boss STREET facade layout only — no `bossQteSpec`/§5.6 surface touched.
+4. **`lustre` sprite seed re-roll, `4877` → `4879`** (2026-07-21). `lead-art` (Nico)'s asset-gate
+   FAIL on the round-1 `lustre.png` (shard §"ASSET GATE (Gate 2) — lead-art (Nico) —
+   2026-07-21" — composition defect, flanking column/bracket masses break the single
+   hung-chandelier one-read silhouette) invoked Nico's own §3.10 rule ("re-roll seeds only when
+   composition is wrong"): a single-variable seed re-roll, prompt string byte-unchanged. PASS on
+   re-roll (shard §"ASSET GATE (re-roll) — lead-art (Nico) — 2026-07-21 · `lustre.png` seed
+   4877→4879"). Applied in `levelArt.json`'s `boss.types.lustre.seed`; Bertrand-approved at the
+   same escalation as amendment 3.
+
+### D2/D3 correction — `bossQteSystem.ts` and `App.tsx` are no longer "ZERO lines"
+
+D2's bold line above ("`App.tsx`, `FlyerWall.tsx`, `stateMachine.ts`, `useGameLoop.ts`,
+`bossQteSystem.ts`, `types/bossQte.ts` — ZERO lines") and D3's review-assert ("`git diff
+origin/main...HEAD` shows zero changed lines in `src/game/systems/bossQteSystem.ts` and
+`src/game/types/bossQte.ts` … Any hit is a blocking finding") were both true at TECH PLAN and
+are now stale for two of the six named files, per the stage-6 integration review (shard
+§"STAGE 6 — TRIAGE + INTEGRATION REVIEW", "Integration review — boundary law verdict: CLEAN").
+The accurate reuse map, per file:
+
+- **`src/game/systems/bossQteSystem.ts` — ONE sanctioned touch: AMENDMENT A2** (above). Pure
+  `src/game` logic, no React/Three import, unit-tested, `assertPositiveScalar`-guarded. A
+  2-layer coordinated change (game constant ↔ render draw) needing architect sign-off per
+  COLLABORATION.md — **granted at the stage-6 triage.**
+- **`src/render/scene/App.tsx` — the C-QA3 capture seam + its persistence double-guard**, both
+  view-side, architect-ruled clean at the same stage-6 triage: `resolveBossPreviewLevel`/
+  `isBossSeamShippedLevel` (`bossHarness.ts` + `App.tsx`) let the dev-only `?preview=boss&level=
+niveau-final` seam boot the SHIPPED `niveau-final` level's real `bossQteSpec` over its own
+  backdrop for capture (qa-lead C-QA3, shard §"9. FIX (stage 5, C-QA3 correction)");
+  `BOSS_SEAM_SHIPPED_LEVEL` folds into the `LEVEL_COMPLETE` unlock/save guard as an independent
+  second guard behind the pre-existing `PREVIEW_SCREEN !== null` early-return, so a seam-booted
+  shipped level can never write `muf_scores_*`/`muf_progress`. The resolver is pure (search
+  string → `LevelConfig`, no `window` read), reads `@game` data only (allowed direction) — no
+  game→render leak.
+- **`src/game/types/bossQte.ts`, `src/render/ui/menu/FlyerWall.tsx`,
+  `src/game/systems/stateMachine.ts` — still ZERO lines**, confirmed at the same stage-6
+  integration review. **`src/hooks/useGameLoop.ts`** gains wording-only JSDoc corrections in
+  this same pre-merge pass (stage-6 triage finding #4, `tech-writer`) — zero logic.
+- **The tutorial/belliard/stalingrad/vitry `LevelConfig` objects and
+  `BOSS_QTE_DEV_HARNESS_LEVEL` — still byte-untouched**, per D3's review-assert, confirmed at
+  the same stage-6 close (AC2/AC3/AC5 hold).
+
+### D4 correction — the seed is no longer PROVISIONAL
+
+D4 above reads, "**Re-pinned, PROVISIONAL `19991231`**." Amendment 2 above (the K-5 re-pin)
+supersedes this: the shipped, FINAL-PASS value is **`targetSeed: 19991232`**
+(`src/game/levels/levels.ts`). `decorProp { position: { x: 0.2, y: 1.5 }, armPhaseIndex: 1 }` is
+unchanged from D4's original text.

@@ -1,0 +1,176 @@
+name: Generate boss sprites
+
+# Regenerates the QTE boss ("le Commandant") figure + hall-prop sprites
+# (ADR-0051/ADR-0052/ADR-0053) from the `boss` block of
+# src/game/levels/levelArt.json with real FLUX art, chroma-keys them on the
+# shared black-ground detour, solidifies + gates each figure, and commits the
+# 9 PNG(s) to the current branch.
+#
+# Why this is a SEPARATE workflow from gen-sprites.yml (the enemy set) and
+# gen-hostage-sprites.yml (the hostage set): the Commandant is NOT an enemy
+# archetype and NOT a hostage — his spec deliberately lives in his own `boss`
+# block, outside enemies.types (the levelArt.consistency gate closes that
+# register to ARCHETYPES-derived keys) and outside hostages.types (a distinct
+# QTE-only figure family, ADR-0053). Same reasoning as the hostage/courier
+# workflows each getting their own file.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-boss-sprites (see docs/adr/0009).
+#
+# MISSING-FILE SEMANTICS BY DEFAULT (dev-tooling-assets, 2026-07-21 batch-2 fix):
+# the 9-entry `boss` family is a MIXED accept/reject batch (game-graphist's
+# TECHNICAL PASS, docs/handoffs/story-boss-niveau-final-live.md — 5 entries
+# CLEAN, 4 sent to REGEN) — unlike the single-figure `hostages` workflow this
+# is modelled on, a marker-triggered re-dispatch here must NOT blindly redo
+# every entry (that would burn the 2-batches/cycle cap re-rolling the 5
+# ALREADY-ACCEPTED sprites for no reason, and risks losing their accepted
+# bytes). The default (marker push, or workflow_dispatch with the box
+# unchecked) generates ONLY missing files — delete an entry's PNG to target it
+# for regen, same "generate only missing" idiom every other gen-*.mjs uses.
+# `regenerate: true` (workflow_dispatch only — a push event carries no input)
+# is the explicit, deliberate full-batch escape hatch.
+on:
+  workflow_dispatch:
+    inputs:
+      regenerate:
+        description: "Regenerate ALL 9 boss entries from scratch, including already-accepted ones (normally leave unchecked — missing-file semantics regenerate only deleted/new entries)"
+        type: boolean
+        default: false
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-boss-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-boss-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # Pollinations account tier (optional): when the POLLINATIONS_TOKEN repo
+      # secret is set, scripts/lib/pollinations.mjs sends it as a Bearer header
+      # for a faster rate limit + honoured `nologo`. Unset/empty → anonymous
+      # fallback (unchanged behaviour), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key + solidify)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate boss sprites (FLUX → chroma-key)
+        # Default: MISSING-FILE semantics — generates only entries whose PNG is
+        # absent (delete a REGEN entry's file to target it; an already-accepted
+        # CLEAN entry's committed PNG is left completely alone). FORCE=1 (full
+        # regen of all 9, including CLEAN entries) fires ONLY when explicitly
+        # dispatched with regenerate=true via the Actions UI — never on the
+        # marker-triggered push path, so a routine re-dispatch cannot blow away
+        # already-accepted sprites.
+        run: |
+          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+            echo "Forcing full regeneration of all 9 boss entries"
+            FORCE=1 node scripts/gen-boss-sprites.mjs
+          else
+            node scripts/gen-boss-sprites.mjs
+          fi
+
+      - name: Solidify figures (fill chroma-key holes)
+        # Scoped to the 7 HUMANOID figures only (stage-6 pre-merge triage,
+        # finding E4): fill-sprite-holes.mjs's solid-body reconstruction
+        # assumes a standing-figure silhouette, so running it against the 2
+        # hall PROPS (`lustre`/`speaker_wall`) would fill their legitimate,
+        # intentional see-through gaps (the chandelier's inter-crystal-drop
+        # gaps, the speaker stack's cable/cabinet gaps) as if they were keying
+        # holes in a figure. The props are already covered by the WARN-only
+        # sprite-integrity closability/enclave probe below (figure-agnostic
+        # HARD checks + a human/agent glance on the SOFT warnings) — they do
+        # not need, and must not get, figure-oriented hole-filling. (Despeckle
+        # — the small-debris sweep inside gen-boss-sprites.mjs itself — is a
+        # different, size-bounded operation that only removes sub-12px
+        # islands; it does not touch large legitimate concavities, so it is
+        # not in scope for this exclusion.)
+        run: |
+          figures=()
+          for f in public/assets/boss/*.png; do
+            base="$(basename "$f")"
+            if [ "$base" = "lustre.png" ] || [ "$base" = "speaker_wall.png" ]; then
+              continue
+            fi
+            figures+=("$f")
+          done
+          if [ "${#figures[@]}" -gt 0 ]; then
+            node scripts/fill-sprite-holes.mjs "${figures[@]}"
+            node scripts/fill-sprite-holes.mjs --check "${figures[@]}"
+          else
+            echo "no figure PNGs present (props-only regen) — nothing to solidify"
+          fi
+
+      - name: Sprite integrity gate (figure/prop topology)
+        run: |
+          # check-sprite-integrity.mjs takes one --file at a time; loop over
+          # the 9 generated PNGs (7 figures + 2 props). The SOFT torso-zone
+          # enclave check assumes a standing human figure and only WARNs
+          # (never fails) — harmless on the 2 non-figure props (lustre,
+          # speaker_wall); the HARD checks (dominance ratio, speckle budget,
+          # binary alpha) are figure-agnostic and always apply.
+          for f in public/assets/boss/*.png; do
+            node scripts/check-sprite-integrity.mjs --file "$f"
+          done
+
+      - name: Commit sprites
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the glob is bounded to the
+          # boss dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/boss/*.png" > /dev/null; then
+            git add -f public/assets/boss/*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new sprites to commit."
+          else
+            git commit -m "chore(assets): generate boss (le Commandant) sprites"
+            # Bounded retry: another push may land while we generated. Push first
+            # (normal case); on rejection rebase with --autostash and retry.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boss-sprites-unpushed
+          path: public/assets/boss/*.png
+          if-no-files-found: warn
+          retention-days: 14

@@ -52,12 +52,16 @@ interface HarnessWindow {
   __MUF_PLAY__?: boolean;
   __MUF_STATE__?: () => StateSnapshot;
   /**
-   * Boss QTE capture seam (harness-only, non-shipped): a render-installed factory (see
-   * `render/scene/bossHarness.ts`, `?preview=boss&at=…`) that builds a boss already advanced
-   * to a target phase by driving the pure API. When present AND the level authors a boss
-   * (`bossQteSpec !== null` — only the excluded-from-`LEVELS` dev-harness), the initial boss
-   * state is seeded from it ONCE at boot, so a ~2 fps sandbox can screenshot the
-   * depletion-gated ADR-0052 reads (qa-lead C-QA2). Never set in production.
+   * Boss QTE capture seam: a render-installed factory (see `render/scene/bossHarness.ts`,
+   * `?preview=boss&at=…`) that builds a boss already advanced to a target phase by driving the
+   * pure API. The real guard is the factory's own presence — it only exists under
+   * `?preview=boss` (bossHarness install), never in production. When present AND the booted
+   * level authors a boss (`bossQteSpec !== null`), the initial boss state is seeded from it
+   * ONCE at boot, so a ~2 fps sandbox can screenshot the depletion-gated ADR-0052 reads
+   * (qa-lead C-QA2). Since ADR-0053's C-QA3 seam (`&level=<id>`), that second clause no longer
+   * implies non-shipped by itself — the SHIPPED `niveau-final` level can be booted through this
+   * same seam over its own backdrop. Reachability for shipped players (no `?preview=boss`
+   * param) is unchanged.
    */
   __MUF_BOSS_BOOT__?: () => BossQte;
   /** Re-seed the boss on the blown-window LOSS so an unattended capture stays pinned at its
@@ -192,13 +196,15 @@ export function useGameLoop(
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
   const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams, roster));
-  // Boss QTE capture seam (harness-only, non-shipped): if the render layer installed a
-  // fast-forward factory (`?preview=boss&at=…`), seed the initial boss state with the
-  // pre-advanced BossQte ONCE — so the SwiftShader ~2 fps sandbox can screenshot the
-  // depletion-gated ADR-0052 differentiation reads without playing to them (qa-lead C-QA2).
-  // Guarded twice over: the factory only exists under `?preview=boss` (bossHarness install),
-  // and this only fires when the level authors a boss (`bossQteSpec !== null` — true only on
-  // the excluded-from-`LEVELS` dev-harness). Never runs on a shipped path.
+  // Boss QTE capture seam: if the render layer installed a fast-forward factory
+  // (`?preview=boss&at=…`), seed the initial boss state with the pre-advanced BossQte ONCE —
+  // so the SwiftShader ~2 fps sandbox can screenshot the depletion-gated ADR-0052
+  // differentiation reads without playing to them (qa-lead C-QA2). Guarded by the factory's own
+  // presence — it only exists under `?preview=boss` (bossHarness install), never in production
+  // — AND by `bossQteSpec !== null`. Since ADR-0053's C-QA3 seam (`&level=<id>`), that second
+  // clause no longer implies non-shipped by itself: the SHIPPED `niveau-final` level can be
+  // booted through this same seam over its real backdrop. Reachability for shipped players (no
+  // `?preview=boss` param) is unchanged — never runs on that path.
   const bossBootedRef = useRef(false);
   if (!bossBootedRef.current) {
     bossBootedRef.current = true;

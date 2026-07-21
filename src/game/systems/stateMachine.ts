@@ -179,9 +179,10 @@ export function tickGameState(
   }
 
   // Boss QTE encounter — "le Commandant" (ADR-0051 D3). Additive-and-optional: this whole
-  // block is skipped when `bossQteSpec === null` (EVERY shipped level), so the quota-win path
-  // below is BYTE-FOR-BYTE unchanged (the ADR-0051 D4 safety property, asserted by the
-  // `bossQteSpec === null` identity test — exactly as the hostage guards `qteSpec === null`).
+  // block is skipped when `bossQteSpec === null` (every shipped level EXCEPT `niveau-final`,
+  // ADR-0053), so the quota-win path below is BYTE-FOR-BYTE unchanged there (the ADR-0051 D4
+  // safety property, asserted by the `bossQteSpec === null` identity test — exactly as the
+  // hostage guards `qteSpec === null`).
   // When a boss IS authored, the boss REPLACES the abrupt "quota met → LEVEL_COMPLETE": it
   // triggers on quota-completion, freezes the rest of the level while ACTIVE, and only a boss
   // WON completes the level (boss LOST fails it). The boss is NOT in the kill quota.

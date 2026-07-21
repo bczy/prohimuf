@@ -1,0 +1,154 @@
+name: Generate level art
+
+# Regenerates level backdrop art (sky/facade/street/foreground layers) from the
+# `levels[]` array of src/game/levels/levelArt.json with real FLUX art, keys the
+# foreground layer's magenta chroma-key to transparency, and commits the PNGs to
+# the current branch.
+#
+# Why this workflow exists SEPARATELY from preview.yml ("Style B Preview"):
+# preview.yml already runs `gen-level-art.mjs` on every push (so the missing
+# `niveau-final` facade/foreground DO get generated there), but it is
+# deliberately DECORATIVE / artifact-only (docs/ci.md) — it uploads a
+# contact-sheet screenshot artifact and never `git add`/commits
+# `public/assets/levels/**` back to the branch. That leaves no committing path
+# for level backdrop art at all (unlike every other asset family — enemies,
+# vehicles, hostages, courier, near-foreground props — which each already have
+# a dedicated commit-back gen-*.yml). This workflow is that missing commit-back
+# counterpart for level backdrops, following the same pattern.
+#
+# Deliberate runs only: manual (workflow_dispatch, with an optional
+# `regenerate` boolean input mirroring preview.yml's) or by touching the
+# dispatch marker .github/dispatch/gen-level-art (see docs/adr/0009).
+on:
+  workflow_dispatch:
+    inputs:
+      regenerate:
+        description: "Regenerate all level art from scratch (AI)"
+        type: boolean
+        default: false
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-level-art"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-level-art-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # Pollinations account tier (optional): gen-level-art.mjs imports the
+      # shared lib, so the POLLINATIONS_TOKEN repo secret gives its backdrop
+      # generation a faster rate limit + honoured `nologo`. Unset/empty →
+      # anonymous fallback (unchanged), so the secret is not required.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (foreground chroma-key)
+        run: |
+          # Pinned exact version; --ignore-scripts skips postinstall since the
+          # prebuilt native binary is fetched by the package resolution itself.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate level art (only missing layers, unless dispatched with regenerate=true)
+        # regenerate=true SCOPED PURGE (stage-6 pre-merge triage, finding E1 —
+        # HIGH): a blanket `rm -rf public/assets/levels` used to delete every
+        # committed file under the tree, including ones gen-level-art.mjs has
+        # NEVER produced and NEVER will (belliard's hand-authored
+        # troncon-a/b/c.png + ground.png — outside its fixed LAYERS list) —
+        # those were then gone for good and got committed as deletions by the
+        # step below. Fix, both halves required:
+        #   (a) purge ONLY the exact paths `--paths` reports (LAYERS ∩ each
+        #       level's authored `prompts` keys — the same set the generator
+        #       is actually about to (re)write), never the whole tree;
+        #   (b) a POST-GENERATION PARITY ASSERT: every purged path must exist
+        #       again after the run, or the job fails HERE, before the cutout
+        #       and commit steps — this also protects the partial-failure
+        #       case (gen-level-art.mjs catches a per-layer fetch error and
+        #       continues past it, so one bad network call must not silently
+        #       ship a deletion for that file).
+        # The missing-only default path (no `regenerate` input) is untouched.
+        run: |
+          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+            echo "Forcing full regeneration of level art (scoped purge)"
+            node scripts/gen-level-art.mjs --paths > /tmp/gen-level-art-purge-list.txt
+            echo "Purging exactly these files (all will be regenerated this run):"
+            cat /tmp/gen-level-art-purge-list.txt
+            while IFS= read -r f; do
+              [ -n "$f" ] && rm -f "$f"
+            done < /tmp/gen-level-art-purge-list.txt
+            FORCE=1 node scripts/gen-level-art.mjs
+            missing=0
+            while IFS= read -r f; do
+              if [ -n "$f" ] && [ ! -f "$f" ]; then
+                echo "::error::purged file did not regenerate: $f"
+                missing=$((missing + 1))
+              fi
+            done < /tmp/gen-level-art-purge-list.txt
+            if [ "$missing" -gt 0 ]; then
+              echo "::error::$missing purged file(s) failed to regenerate — aborting before commit"
+              exit 1
+            fi
+          else
+            node scripts/gen-level-art.mjs
+          fi
+
+      - name: Cut out foreground layer (magenta chroma-key to transparency)
+        run: node scripts/cutout-foreground.mjs
+
+      - name: Commit level art
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -f only bypasses the assets gitignore; the path is bounded to the
+          # levels dir. compgen guards the zero-file case.
+          if compgen -G "public/assets/levels/*/*.png" > /dev/null; then
+            git add -f public/assets/levels
+          fi
+          if git diff --cached --quiet; then
+            echo "No new level art to commit."
+          else
+            git commit -m "chore(assets): generate level backdrop art"
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash and
+            # retry.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated level art (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: level-art-unpushed
+          path: public/assets/levels/
+          if-no-files-found: warn
+          retention-days: 14
