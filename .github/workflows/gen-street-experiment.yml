@@ -42,7 +42,9 @@ jobs:
         run: |
           W="${SIZE%x*}"; H="${SIZE#*x}"
           echo "models=$MODELS size=${W}x${H} seed=$SEED"
-          MODELS="$MODELS" W="$W" H="$H" SEED="$SEED" node scripts/gen-street-paid.mjs
+          # The script reads SEEDS (comma list); pass the dispatch seed as it so
+          # the input is honoured (a single value = one seed) instead of ignored.
+          MODELS="$MODELS" W="$W" H="$H" SEEDS="$SEED" node scripts/gen-street-paid.mjs
       - name: Upload candidates
         uses: actions/upload-artifact@v4
         with:

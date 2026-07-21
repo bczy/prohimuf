@@ -456,7 +456,7 @@
       "name": "Rue Belliard",
       "label": "Rue Belliard, Paris 18e, 1998",
       "backdrop": {
-        "$comment": "Single-wide backdrop (ADR-0057, amends ADR-0048): the FULL décor — buildings, ground, sky — is baked into ONE opaque wide plane; no more separate sky/ground/foreground tiles and no tronçon tiling. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (native street-wide.png is 6418×1248), drives world width = world.heightUnits * aspect. Non-standard art pipeline (NOT the prompt-gate flow below, which is legacy/unused for belliard's backdrop): generated via scripts/gen-street-paid.mjs (paid ideogram-v4-quality) + scripts/stitch-belliard-street.mjs (tone-matched butt-join of two street renders); regenerate through THAT pipeline, not gen-level-art.mjs.",
+        "$comment": "Single-wide backdrop (ADR-0057, amends ADR-0048): the FULL décor — buildings, ground, sky — is baked into ONE opaque wide plane; no more separate sky/ground/foreground tiles and no tronçon tiling. file = basename under assets/levels/belliard/<file>.png; aspect = image width/height (native street-wide.png is 6418×1248), drives world width = world.heightUnits * aspect. Non-standard art pipeline (NOT the prompt-gate flow below, which is legacy/unused for belliard's backdrop): generated via scripts/gen-street-paid.mjs (paid ideogram-v4-quality) + scripts/stitch-belliard-street.mjs (mirror of ONE ideogram render against its own reflection — a seamless join, not a two-image butt-join); regenerate through THAT pipeline, not gen-level-art.mjs.",
         "mode": "single-wide",
         "file": "street-wide",
         "aspect": 5.1426

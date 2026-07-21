@@ -216,8 +216,10 @@ export function levelLayerPaths(levelId: string): readonly string[] {
   // Single-wide levels (ADR-0057) bake ciel+immeubles+sol into ONE opaque image
   // and draw nothing else — warm that image alone, not the sky/facade/street trio
   // (suppressed by the single-wide render branch) which would pop nothing useful.
-  if (lvl?.backdrop?.mode === "single-wide" && lvl.backdrop.file) {
-    return [`assets/levels/${id}/${lvl.backdrop.file}.png`];
+  if (lvl?.backdrop?.mode === "single-wide") {
+    // Key on mode alone, mirroring the render (which suppresses sky/facade/street
+    // whenever the mode is single-wide): a single-wide level never warms the trio.
+    return lvl.backdrop.file ? [`assets/levels/${id}/${lvl.backdrop.file}.png`] : [];
   }
   // Tronçon-sequence levels (ADR-0048) render their tile PNGs + the continuous
   // ground strip — warm THOSE, not the sky/facade/street trio the tronçon path
