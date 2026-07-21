@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { HudWeapon } from "./types";
 import { weaponGlyph, isLowStock } from "./derivations";
+import { WeaponIcon } from "./WeaponIcon";
 import styles from "./WeaponReadout.module.css";
 
 /**
@@ -42,6 +43,7 @@ export function WeaponReadout({
     <div className={styles.item}>
       <span className={styles.label}>arme</span>
       <div className={styles.readout}>
+        <WeaponIcon kind={weapon.active} />
         <span className={styles.glyph}>{weaponGlyph(weapon.active)}</span>
         {isBase ? (
           <span className={styles.infinity}>∞</span>

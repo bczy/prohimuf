@@ -97,3 +97,12 @@
     animation: none !important;
   }
 }
+
+/* Weapon pictogram (Bertrand feedback 2026-07-20) — flat ink, inherits the cell's
+   currentColor like the glyph; no glow (ADR-0021 print idiom). */
+.icon {
+  height: 1.05em;
+  width: auto;
+  display: block;
+  flex: none;
+}
