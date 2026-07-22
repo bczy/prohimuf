@@ -245,7 +245,8 @@ trigger — clean, matches ADR-0059 Amendment 2, byte-identical on non-boss leve
 stage-5 watch-list.
 
 **Follow-ups (do NOT block merge):**
-1. Close the shield-cover-prop art gate (gen-boss-sprites dispatch for shield_cover_* → texture swap).
+
+1. Close the shield-cover-prop art gate (gen-boss-sprites dispatch for shield*cover*\* → texture swap).
 2. ~~Hostage/boss coexistence on Belliard~~ — CLOSED post-acceptance (Bertrand, 2026-07-21): Belliard
    now ships BOTH, per ADR-0059 D3 option A / Amendment 3 — sequential, never concurrent, asserted at
    load via a timing-margin check (not the old blanket ban).

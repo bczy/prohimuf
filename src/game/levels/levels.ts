@@ -138,7 +138,7 @@ export const LEVELS: readonly LevelConfig[] = [
     // Hostage QTE + boss now COEXIST on Belliard (Bertrand, 2026-07-21 — keep both, don't drop the
     // hostage). This is SAFE by construction, not just by policy: the hostage triggers at 12s and
     // resolves (rescue or execution) within ~10s worst case, and the boss is now a TIMED FINALE
-    // (ADR-0058 Amendment 2) — created only at TIMER EXPIRY, i.e. at `timeSeconds` (90s), never
+    // (ADR-0059 Amendment 2) — created only at TIMER EXPIRY, i.e. at `timeSeconds` (90s), never
     // earlier. So the hostage is always long resolved before the boss can exist; the two cinematics
     // never run concurrently even though both are authored. `createInitialState` in stateMachine.ts
     // ASSERTS this timing margin (not a blanket ban) — fails LOUD at load if a future retune ever

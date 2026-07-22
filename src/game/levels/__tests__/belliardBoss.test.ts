@@ -27,7 +27,7 @@ describe("levels — Belliard boss gate (story-boss-belliard-live, AC1)", () => 
     expect(BELLIARD_BOSS_ENABLED).toBe(true);
   });
 
-  it("flag ON ⇒ Belliard authors BOTH the bossQteSpec and its hostageQte (ADR-0058 D3, sequential)", () => {
+  it("flag ON ⇒ Belliard authors BOTH the bossQteSpec and its hostageQte (ADR-0059 D3, sequential)", () => {
     const level = belliard();
     expect(level.bossQteSpec).toBeDefined();
     // Bertrand, 2026-07-21: keep both — the hostage QTE (triggers 12s, resolves well within the
