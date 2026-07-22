@@ -1,47 +1,22 @@
-# CLAUDE.md — muf
+# CLAUDE.md — muf (Claude Code overlay)
 
-Orientation for AI coding agents working in this repo. Read this first.
+> **Read `AGENTS.md` first.** It holds the vendor-neutral project facts,
+> stack, commands, architecture boundary law, scope guard, working rules, and
+> Karpathy behavioral guidelines. This file only adds Claude-Code-specific
+> orchestration on top.
 
-## What this is
+## Commands (Claude-Code addendum)
 
-**muf** — a browser remake of _Prohibition_ (Atari ST, 1987), reset in the late-90s
-Parisian clandestine rave scene. 2D flat sprites (fanzine B&W + acid neon) in a 3D
-React Three Fiber world. Current prototype = the shooting-gallery phase. See `README.md`.
+Prefer **`rtk`** (Rust Token Killer) as a compact proxy over the yarn commands
+listed in `AGENTS.md` — it saves tokens by compressing `tsc`/`vitest`/`grep`/`git`
+output. A PreToolUse hook rewrites bash commands automatically once installed.
+Fall back to `yarn` if rtk is unavailable.
 
-## Stack
-
-React 19 · React Three Fiber + Three.js · TypeScript (strict) · Vite · Vitest ·
-Howler.js (audio) · Yarn 4 (node-modules linker) · asset gen via Pollinations.ai (FLUX).
-
-## Commands
-
-Use **`rtk`** as a compact proxy for dev commands (saves tokens); fall back to `yarn` if
-rtk is unavailable.
-
-| Task       | Preferred     | Fallback         |
-| ---------- | ------------- | ---------------- |
-| Dev server | `yarn dev`    | —                |
-| Typecheck  | `rtk tsc`     | `yarn typecheck` |
-| Tests      | `rtk vitest`  | `yarn test`      |
-| Lint       | `rtk lint`    | `yarn lint`      |
-| Format     | `yarn format` | —                |
-| Build      | `yarn build`  | —                |
-
-## Architecture (enforced — see `docs/architecture.md`)
-
-- `src/game/**` — **pure** game logic, **zero React/Three deps**. `types/` (no functions),
-  `systems/` (pure, unit-tested), `maps/`, `entities/`, `state/`.
-- `src/render/**` — R3F only: `scene/`, `ui/`, `effects/`. Renders state; no game rules.
-- `src/hooks/**` — the **only** bridge between pure logic and R3F.
-- `scripts/**` + `.github/workflows/**` — asset-gen pipeline & CI render farm (`HARNESS.md`).
-
-**Boundary rule (law):** game logic never imports React/Three; rendering never holds rules.
-
-## Scope guard (non-negotiable)
-
-`_bmad-output/guidelines/PROJECT_GUIDELINES.md`. Core loop = `Récupérer → Livrer → Éviter`.
-"Cahier des charges" test before any feature: _did Prohibition Atari ST have it?_
-Yes → implement faithfully. No → conscious, documented, justified extension only.
+| Task      | Preferred    | Fallback         |
+| --------- | ------------ | ---------------- |
+| Typecheck | `rtk tsc`    | `yarn typecheck` |
+| Tests     | `rtk vitest` | `yarn test`      |
+| Lint      | `rtk lint`   | `yarn lint`      |
 
 ## AIDD setup
 
@@ -122,7 +97,7 @@ on every prompt; the policy is here so it stays readable and versioned.
 research, one-line/micro edits (typo, local rename), and one-off git/CI commands. When in
 doubt on a borderline task, prefer the crew. To pause it for a session: `export MUF_CREW_OFF=1`.
 
-### Tooling for agents
+### Tooling for Claude sessions
 
 - **rtk** (Rust Token Killer) — CLI proxy that compresses `tsc`/`vitest`/`grep`/`git`
   output. A PreToolUse hook rewrites bash commands automatically once installed.
@@ -132,102 +107,11 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
   hook; on a local machine run `scripts/setup-tooling.sh` once (idempotent) to install
   rtk + codegraph by hand.
 
-## Working rules
+### Claude-specific working rules (on top of AGENTS.md)
 
-- Strict TypeScript, no `any`. Respect ESLint/Prettier; Husky + lint-staged run on commit.
-- TDD for `src/game`: tests in `src/game/systems/__tests__/` must pass 100%.
-- Verify before claiming done: `rtk tsc` + `rtk vitest` + `rtk lint`. Never report green
-  tests that aren't.
+- **Verify before claiming done:** `rtk tsc` + `rtk vitest` + `rtk lint` (the rtk versions
+  of the yarn commands in `AGENTS.md`). Never report green tests that aren't.
 - Navigating code — who calls `X`, the impact of changing `Y`, where a symbol is defined —
   query **codegraph** first (`codegraph_callers/_callees/_impact/_search`): it returns a
   compact structured answer instead of grep/Read dumping whole files into context. Fall
   back to grep/Read only when codegraph can't answer (e.g. non-code text, comments).
-- Adding a level = one entry in `src/game/levels/levelArt.json` + matching gameplay map
-  (`HARNESS.md`). Art generation normally runs in CI, not the local sandbox.
-- Conventional Commits (commitlint enforced).
-- Every PR description must include the branch-preview link (see the "Preview" section
-  of the PR template): `https://bczy.github.io/prohimuf/preview/<slug>/`, where `<slug>`
-  is the branch name with any BYTE outside `[a-zA-Z0-9._-]` replaced by `-` — per byte,
-  not per character: a UTF-8 `é` (2 bytes) becomes `--` (the workflow uses `tr -c`)
-  (deployed by `deploy-preview.yml` on each push to `claude/**`).
-- Record significant architecture decisions and changes as ADRs in `docs/adr/`
-  (see `docs/adr/README.md`). When a change alters module boundaries, deployment,
-  dependencies, or the game/render/hooks contract, add or update an ADR in the same PR.
-
-## Behavioral guidelines (Karpathy)
-
-Reproduced from [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
-(derived from Andrej Karpathy's observations on LLM coding pitfalls). They complement —
-never override — the project rules above.
-
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific
-instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use
-judgment.
-
-### 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-### 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-### 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-### 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work")
-require constant clarification.
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites
-due to overcomplication, and clarifying questions come before implementation rather than
-after mistakes.

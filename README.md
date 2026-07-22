@@ -280,6 +280,24 @@ Un petit correctif mono-lane suit une **voie FIX** allégée (dev → tsc/vitest
 → un seul reviewer → merge). Le garde-fou de périmètre est
 toujours le même : _« Prohibition Atari ST 1987 avait-il cette fonctionnalité ? »_
 
+### Multi-agent compatibility
+
+Le repo est configuré pour **plusieurs agents IA** — pas seulement Claude Code :
+
+- **[`AGENTS.md`](./AGENTS.md)** — source de vérité **vendor-neutre** : faits
+  projet, stack, commandes yarn, loi de frontière `src/game` / `src/render`,
+  scope guard, règles de travail, guidelines Karpathy. Lu par Claude Code,
+  GitHub Copilot, Cursor, Codex, Aider, etc.
+- **[`CLAUDE.md`](./CLAUDE.md)** — overlay Claude Code : équipage de sous-agents,
+  BMAD, hooks, `rtk`, `codegraph`.
+- **[`.github/copilot-instructions.md`](./.github/copilot-instructions.md)** —
+  overlay GitHub Copilot (chat + coding agent).
+- **[`.github/workflows/copilot-setup-steps.yml`](./.github/workflows/copilot-setup-steps.yml)**
+  — bootstrap sandbox du Copilot coding agent (Node 24 + Yarn 4 + `yarn install`).
+
+Aucune règle ne vit à deux endroits : `AGENTS.md` est canonique, les autres
+fichiers sont des pointeurs fins avec seulement le delta vendor-spécifique.
+
 ---
 
 ## Génération d'assets
