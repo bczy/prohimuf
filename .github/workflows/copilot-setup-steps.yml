@@ -1,0 +1,48 @@
+# Copilot coding-agent bootstrap for the sandbox that opens PRs for issues
+# assigned to @copilot. GitHub reads this job (must be named
+# `copilot-setup-steps`) and runs it before the agent starts, so `yarn install`
+# and the corepack setup are already done by the time Copilot writes code.
+#
+# This mirrors the install portion of `.github/workflows/ci.yml` — same Node,
+# same Yarn 4 via corepack, same immutable install — so what Copilot sees
+# locally matches what CI will run on the PR it opens.
+#
+# Docs: https://docs.github.com/en/copilot/how-tos/agents/copilot-coding-agent/customizing-the-development-environment-for-copilot-coding-agent
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Cache yarn
+        uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
