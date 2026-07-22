@@ -808,7 +808,7 @@ describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-
     expect(s.impactEvents).toEqual([]);
   });
 
-  it("GUARD: allows hostage + boss together when the hostage safely resolves before the timed finale (ADR-0058 D3)", () => {
+  it("GUARD: allows hostage + boss together when the hostage safely resolves before the timed finale (ADR-0059 D3)", () => {
     // Belliard now authors BOTH (Bertrand, 2026-07-21: keep both, don't drop the hostage). This is
     // safe by construction: the boss is a TIMED FINALE, created no earlier than `timeSeconds` of
     // non-frozen play, and the hostage QTE freezes the timer WHILE it's active — so as long as the
@@ -840,7 +840,7 @@ describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-
   });
 
   it("GUARD: throws when hostage+boss timing is UNSAFE — the hostage's worst case could still be running when the timed finale fires", () => {
-    // REGRESSION (code-review panel, PR #112, re-scoped for ADR-0058 D3): the two cinematics must
+    // REGRESSION (code-review panel, PR #112, re-scoped for ADR-0059 D3): the two cinematics must
     // never interleave. `createInitialState` fails LOUD at level load if a retune (here: a level
     // timer far too short for the authored hostage) would let the boss's timer-expiry creation land
     // before the hostage could possibly have resolved — never a silent drop.
@@ -1041,7 +1041,7 @@ describe("tickGameState — AC6: weapon + loot are FROZEN through a QTE freeze (
     };
     // A synthetic hostage spec on stalingrad (no boss, no hostage of its own) so this freeze test
     // is independent of which shipped level carries a hostage QTE — belliard authors both a
-    // hostage and a boss (ADR-0058 D3, sequential coexistence), so this stays deliberately
+    // hostage and a boss (ADR-0059 D3, sequential coexistence), so this stays deliberately
     // decoupled from that specific pairing rather than re-deriving its timing-safety margin here.
     const HOSTAGE = {
       triggerAtElapsedSeconds: 12,
