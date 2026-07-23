@@ -403,7 +403,10 @@ export function tickGameState(
       {
         id: _nextBulletId,
         position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
-        velocity: { x: 0, y: -BULLET_SPEED },
+        velocity: {
+          x: -slot.screenPosition.x * 0.4,
+          y: -BULLET_SPEED,
+        },
         fromPlayer: false,
       },
     ];
