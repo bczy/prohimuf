@@ -73,6 +73,24 @@ Yes → implement faithfully. No → conscious, documented, justified extension 
   (see `docs/adr/README.md`). When a change alters module boundaries, deployment,
   dependencies, or the game/render/hooks contract, add or update an ADR in the same PR.
 
+## Merge gate (all agents)
+
+Every merge to `main` must clear the **4-reviewer merge-gate panel** — same
+skills, same doctrine, same verdict for every agent (Claude Code, Copilot,
+human). Two runtimes execute the same panel:
+
+- **CI panel** (`.github/workflows/code-review-panel.yml`, ADR-0063): 6 parallel
+  jobs (4 reviewers + skeptic + triage) publishing the `panel-verdict` check
+  run. This is the source of truth when the repo variable `PANEL_ENABLED=true`.
+  Any agent pushes and lets CI run — no local simulation.
+- **Local panel** (Claude Code `/review-panel` skill, `Task` + `subagent_type`):
+  pre-push convenience for agents that have it. Its verdict is advisory once
+  the CI panel is enabled.
+
+Copilot Coding Agent and Cursor lack `Task` — they MUST NOT self-simulate the
+4-reviewer panel in a single conversation. Push, mark ready-for-review, let
+the CI panel run.
+
 ## AIDD context (informational — not required to use it)
 
 This repo is scaffolded with **BMAD-METHOD v6.3** (`_bmad/`, artifacts in

@@ -84,6 +84,12 @@ a different skill — `code-review` (high), `bmad-code-review`,
 triaged by `senior-architect`. No merge with an unresolved CONFIRMED blocking/major
 finding. Protocol: `.claude/agents/COLLABORATION.md` §"code-review panel".
 
+Since ADR-0063, the panel is also runnable in CI (`.github/workflows/code-review-panel.yml`),
+so contributors without the `Task`/subagent tooling (Copilot Coding Agent, human reviewers)
+get the same rigour. When the workflow is active, Claude's local `/review-panel` skill is
+a **pre-check** — a fast local pass before pushing — and the CI `panel-verdict` check run
+is the merge-blocking authority.
+
 ### Default orchestration policy (Bertrand's standing preference)
 
 **For every non-trivial task, orchestrate this crew in parallel by default — do not work
