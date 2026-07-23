@@ -28,9 +28,9 @@ on:
         required: true
         type: string
   # Activation: uncomment the block below when PANEL_ENABLED=true.
-  # pull_request:
-  #   types: [opened, synchronize, reopened, ready_for_review]
-  #   branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
 
 concurrency:
   group: panel-${{ github.event.pull_request.number || inputs.pr_number }}
