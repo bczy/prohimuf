@@ -45,6 +45,7 @@ Decision records & specs:
 | [qa/README.md](./qa/README.md) | QA index — test plans and regressions |
 | [handoffs/](./handoffs/) | Sharded hand-off logs; index at [agent-handoffs.md](./agent-handoffs.md) |
 | [drift-audit-2026-07.md](./drift-audit-2026-07.md) | Latest doc-drift audit (Sujet 1 catch-up) |
+| [follow-ups-2026-07-post-drift-audit.md](./follow-ups-2026-07-post-drift-audit.md) | Owner-routed follow-ups from the 2026-07 audit |
 
 ## Diagrams
 
