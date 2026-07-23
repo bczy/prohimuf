@@ -116,5 +116,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0058](./0058-grille-overlay-single-wide.md) | Grille overlay on single-wide backdrop (foreground.png window grilles) | Accepted |
 | [0059](./0059-belliard-boss-gated-shipped-level.md) | "Le Commandant" gates Rue Belliard: a boss-gated SHIPPED level with a failable ending (supersedes ADR-0051 D4) | Accepted |
 | [0060](./0060-boss-qte-shield-break-tempo-lever.md) | Boss QTE lever 6 "cran de sûreté" (shield-break tempo shot): a third per-window read, extends ADR-0052 in place | Accepted |
+| [0061](./0061-tech-writer-in-verification-loops.md) | tech-writer active in verification loops (DOCS-PLAN, DOC GATE, coherence sweep) | Accepted |
+| [0062](./0062-vendor-neutral-agent-orientation.md) | Vendor-neutral agent orientation: AGENTS.md canonical + thin overlays (proposed) | Proposed |
 
 <!-- ADR-INDEX:END -->
