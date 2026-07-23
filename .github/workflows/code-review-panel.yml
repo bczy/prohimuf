@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: panel-input, path: panel-input }
       - name: Invoke reviewer
         env:
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: panel-input, path: panel-input }
       - name: Invoke reviewer
         env:
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: panel-input, path: panel-input }
       - name: Invoke reviewer
         env:
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: panel-input, path: panel-input }
       - name: Invoke reviewer
         env:
@@ -176,12 +176,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with:
           pattern: findings-*
           path: findings-in
           merge-multiple: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: panel-input, path: panel-input }
       - name: Invoke skeptic
         env:
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.1.3
         with: { name: findings-confirmed, path: . }
       - name: Publish findings + verdict
         env:
