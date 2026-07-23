@@ -29,6 +29,11 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       mesh.visible = true;
       mesh.position.x = bullet.position.x;
       mesh.position.y = bullet.position.y;
+      // Bullets travel toward camera: z advances and scale grows for depth effect
+      const t = Math.max(0, 1 - bullet.position.y / 8);
+      mesh.position.z = t * 2;
+      const s = 1 + t * 0.8;
+      mesh.scale.set(s, s, s);
     }
   });
 
