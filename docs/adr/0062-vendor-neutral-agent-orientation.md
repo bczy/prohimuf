@@ -3,7 +3,7 @@
 - **Status:** Proposed
 - **Date:** 2026-07-23
 - **Origin:** commit 502ecd2 (2026-07, `docs(agents): add AGENTS.md + Copilot
-  overlay, split CLAUDE.md, add copilot-setup-steps`) — an orientation-model
+overlay, split CLAUDE.md, add copilot-setup-steps`) — an orientation-model
   change that shipped without an ADR. Drafted after the fact per drift-audit
   finding F9 (docs/drift-audit-2026-07.md), pending `senior-architect` PASS at
   the merge-gate triage (per ADR-0061's DOCS-PLAN doctrine, an ADR of this

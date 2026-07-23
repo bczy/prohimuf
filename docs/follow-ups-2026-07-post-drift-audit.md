@@ -2,7 +2,7 @@
 
 **Origine :** [drift-audit-2026-07.md](./drift-audit-2026-07.md), findings F5, F6, F7, F8, F10.
 **Convention :** ces items sortent de la lane `tech-writer` (iron rule : Otis
-décide *rien*). Chacun appartient à l'owner listé, qui doit soit ouvrir une
+décide _rien_). Chacun appartient à l'owner listé, qui doit soit ouvrir une
 story dans le sprint courant, soit la reporter avec une justification.
 
 Cette liste tient lieu de « tickets » tant que l'environnement de rédaction

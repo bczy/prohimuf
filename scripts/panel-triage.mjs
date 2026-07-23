@@ -149,14 +149,7 @@ function publishCheckRun(verdict, counts, body) {
       text: body.slice(0, 65000),
     },
   };
-  const args = [
-    "api",
-    `repos/${owner}/${repo}/check-runs`,
-    "-X",
-    "POST",
-    "--input",
-    "-",
-  ];
+  const args = ["api", `repos/${owner}/${repo}/check-runs`, "-X", "POST", "--input", "-"];
   try {
     execFileSync("gh", args, {
       input: JSON.stringify(payload),
