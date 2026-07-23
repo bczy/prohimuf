@@ -72,7 +72,7 @@ convertir en issues quand Bertrand ou un mainteneur avec droits le fera.
   comme un deliverable existant ; le fichier n'existe pas dans le repo. La
   drift-audit a évité de linker un fichier absent depuis `docs/index.md`.
 - **Livrable attendu :** doc initiale — frame budget spec, profiling
-  protocol, on-target measurement procedure — conforme au fiche fiche du
+  protocol, on-target measurement procedure — conforme à la fiche du
   `gpu-specialist`.
 - **Fix path :** full pipeline (contenu, ADR-worthy si les métriques
   fixées ont un impact décisionnel sur l'architecture render).

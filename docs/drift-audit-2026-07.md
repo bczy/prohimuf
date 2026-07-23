@@ -10,7 +10,9 @@ content.
 ## Method
 
 - Compared each doc's freshness stamp against the git log (last touched vs
-  current HEAD, 61 ADRs shipped, 25+ ADRs after the last `Generated:` date).
+  current HEAD, with ~25 ADRs shipped since the last `Generated:` date on
+  `docs/index.md`). Exact ADR count is deliberately not hard-coded — read it
+  from `docs/adr/README.md` at review time.
 - Grepped for stale format artefacts (comma-orphan lines inside markdown table
   cells — a Prettier reformatting damage pattern).
 - Cross-checked doc claims against shipped modules under `src/**`, ADRs, and
