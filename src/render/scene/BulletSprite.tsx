@@ -29,10 +29,10 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       mesh.visible = true;
       mesh.position.x = bullet.position.x;
       mesh.position.y = bullet.position.y;
-      // Bullets travel toward camera: z advances and scale grows for depth effect
+      mesh.position.z = 0.5; // slightly in front so it's always visible
+      // Scale grows as bullet travels toward camera for 3D depth feel
       const t = Math.max(0, 1 - bullet.position.y / 8);
-      mesh.position.z = t * 2;
-      const s = 1 + t * 0.8;
+      const s = 0.8 + t * 0.6;
       mesh.scale.set(s, s, s);
     }
   });
@@ -47,8 +47,8 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
           }}
           visible={false}
         >
-          <circleGeometry args={[0.1, 8]} />
-          <meshBasicMaterial color={ENEMY_BULLET_COLOR} transparent />
+          <sphereGeometry args={[0.12, 12, 8]} />
+          <meshBasicMaterial color={ENEMY_BULLET_COLOR} />
         </mesh>
       ))}
     </>
