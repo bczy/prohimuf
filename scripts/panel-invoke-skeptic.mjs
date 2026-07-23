@@ -22,11 +22,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-const {
-  ANTHROPIC_API_KEY,
-  PROMPT_FILE,
-  ANTHROPIC_MODEL = "claude-sonnet-4-5",
-} = process.env;
+const { ANTHROPIC_API_KEY, PROMPT_FILE, ANTHROPIC_MODEL = "claude-sonnet-4-5" } = process.env;
 
 const FINDINGS_IN = "findings-in";
 const OUT = "findings-confirmed.json";
@@ -49,10 +45,7 @@ async function main() {
   ]);
 
   const MAX_DIFF = 200 * 1024;
-  const diffTrunc =
-    diff.length > MAX_DIFF
-      ? `${diff.slice(0, MAX_DIFF)}\n\n[TRUNCATED]`
-      : diff;
+  const diffTrunc = diff.length > MAX_DIFF ? `${diff.slice(0, MAX_DIFF)}\n\n[TRUNCATED]` : diff;
 
   const userMessage = [
     "## Findings submitted by the four reviewers",

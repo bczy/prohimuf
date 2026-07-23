@@ -15,9 +15,9 @@ as **local Claude Code Task fan-out** using the built-in `Task` tool with
 `subagent_type` targeting `code-review`, `bmad-code-review`,
 `bmad-review-edge-case-hunter` and `security-review`.
 
-Bertrand's constraint (2026-07-23, verbatim): *« Mais je ne peux pas ouvrir
+Bertrand's constraint (2026-07-23, verbatim): _« Mais je ne peux pas ouvrir
 Claude code je veux pouvoir faire autant de chose que Claude code que sur
-copilot »*.
+copilot »_.
 
 Two problems surfaced simultaneously on PR #128:
 
@@ -57,14 +57,14 @@ reopened, ready_for_review) targeting `main`, plus manual
 
 Six jobs, five of them LLM-driven:
 
-| Job | Skill / role | Runs in parallel with |
-| --- | --- | --- |
-| `code-review` | `code-review` (effort high) — correctness / simplification / efficiency | 3 siblings |
-| `edge-case-hunter` | `bmad-review-edge-case-hunter` — branches, boundaries | 3 siblings |
-| `bmad-review` | `bmad-code-review` — Blind Hunter / Edge Case Hunter / Acceptance Auditor | 3 siblings |
-| `security-review` | `security-review` — attacker-controlled surface | 3 siblings |
-| `verify` | skeptic — refutes each finding against the real diff | after the 4 above |
-| `triage` | synthesises, posts findings, sets check run | after `verify` |
+| Job                | Skill / role                                                              | Runs in parallel with |
+| ------------------ | ------------------------------------------------------------------------- | --------------------- |
+| `code-review`      | `code-review` (effort high) — correctness / simplification / efficiency   | 3 siblings            |
+| `edge-case-hunter` | `bmad-review-edge-case-hunter` — branches, boundaries                     | 3 siblings            |
+| `bmad-review`      | `bmad-code-review` — Blind Hunter / Edge Case Hunter / Acceptance Auditor | 3 siblings            |
+| `security-review`  | `security-review` — attacker-controlled surface                           | 3 siblings            |
+| `verify`           | skeptic — refutes each finding against the real diff                      | after the 4 above     |
+| `triage`           | synthesises, posts findings, sets check run                               | after `verify`        |
 
 Each of the four reviewer jobs consumes the same input (unified diff +
 changed-file listing + story context if present) and produces a **findings
@@ -164,7 +164,7 @@ activation, per Bertrand's Q4 answer.
 
 ## Amendments to prior ADRs
 
-- **ADR-0018 (pipeline staffing)** — panel remains stage 6, but the *executor*
+- **ADR-0018 (pipeline staffing)** — panel remains stage 6, but the _executor_
   moves from "4 parallel Task calls" to "6 parallel GitHub Actions jobs".
   Roster unchanged.
 - **ADR-0032 (two-tier fix lane)** — fix-lane label mechanism formalised;

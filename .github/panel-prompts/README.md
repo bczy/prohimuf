@@ -6,13 +6,13 @@ gate defined in ADR-0063 and `.claude/agents/COLLABORATION.md:206-233`.
 
 ## Files
 
-| File | Role | Runs in job |
-| --- | --- | --- |
-| `code-review.md` | Correctness / simplification / efficiency | `code-review` |
-| `edge-case-hunter.md` | Every branch/boundary of the diff | `edge-case-hunter` |
-| `bmad-review.md` | Blind Hunter / Edge Case Hunter / Acceptance Auditor | `bmad-review` |
-| `security-review.md` | Attacker-controlled surface | `security-review` |
-| `skeptic.md` | Adversarial verification of findings | `verify` |
+| File                  | Role                                                 | Runs in job        |
+| --------------------- | ---------------------------------------------------- | ------------------ |
+| `code-review.md`      | Correctness / simplification / efficiency            | `code-review`      |
+| `edge-case-hunter.md` | Every branch/boundary of the diff                    | `edge-case-hunter` |
+| `bmad-review.md`      | Blind Hunter / Edge Case Hunter / Acceptance Auditor | `bmad-review`      |
+| `security-review.md`  | Attacker-controlled surface                          | `security-review`  |
+| `skeptic.md`          | Adversarial verification of findings                 | `verify`           |
 
 Each prompt is versioned. A change to a prompt is a diff that goes through
 the panel like any other change; owner for wording is `tech-writer`,

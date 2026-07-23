@@ -130,18 +130,18 @@ Format: `FILE:LINE — CLAIM → REALITY → OWNER`.
 
 ## Summary
 
-| ID | File | Severity | Fix path | This PR |
-| --- | --- | --- | --- | --- |
-| F1 | docs/index.md date | minor | tech-writer wording | ✅ |
-| F2 | docs/index.md tables | major | tech-writer wording | ✅ |
-| F3 | docs/index.md missing triad | minor | tech-writer wording | ✅ |
-| F4 | docs/index.md quick-ref | minor | tech-writer + pm decision | ✅ partial |
-| F5 | docs/roadmap.md stale | major | pm content | ❌ (ticket) |
-| F6 | docs/architecture.md stale | major | senior-architect content | ❌ (ticket) |
-| F7 | README.md spot-check | unknown | tech-writer | ❌ (ticket) |
-| F8 | handoffs sharding | minor | producer | ❌ (noted) |
-| F9 | missing ADR for orientation split | major | senior-architect + tech-writer | ✅ (draft) |
-| F10 | docs/perf-budget.md not shipped | major | gpu-specialist content | ❌ (ticket) |
+| ID  | File                              | Severity | Fix path                       | This PR     |
+| --- | --------------------------------- | -------- | ------------------------------ | ----------- |
+| F1  | docs/index.md date                | minor    | tech-writer wording            | ✅          |
+| F2  | docs/index.md tables              | major    | tech-writer wording            | ✅          |
+| F3  | docs/index.md missing triad       | minor    | tech-writer wording            | ✅          |
+| F4  | docs/index.md quick-ref           | minor    | tech-writer + pm decision      | ✅ partial  |
+| F5  | docs/roadmap.md stale             | major    | pm content                     | ❌ (ticket) |
+| F6  | docs/architecture.md stale        | major    | senior-architect content       | ❌ (ticket) |
+| F7  | README.md spot-check              | unknown  | tech-writer                    | ❌ (ticket) |
+| F8  | handoffs sharding                 | minor    | producer                       | ❌ (noted)  |
+| F9  | missing ADR for orientation split | major    | senior-architect + tech-writer | ✅ (draft)  |
+| F10 | docs/perf-budget.md not shipped   | major    | gpu-specialist content         | ❌ (ticket) |
 
 ## What Sujet 2 (ADR-0061) would have caught, going forward
 
