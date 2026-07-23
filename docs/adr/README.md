@@ -118,5 +118,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0060](./0060-boss-qte-shield-break-tempo-lever.md) | Boss QTE lever 6 "cran de sûreté" (shield-break tempo shot): a third per-window read, extends ADR-0052 in place | Accepted |
 | [0061](./0061-tech-writer-in-verification-loops.md) | tech-writer active in verification loops (DOCS-PLAN, DOC GATE, coherence sweep) | Accepted |
 | [0062](./0062-vendor-neutral-agent-orientation.md) | Vendor-neutral agent orientation: AGENTS.md canonical + thin overlays (proposed) | Proposed |
+| [0063](./0063-ci-run-code-review-panel.md) | ADR-0063 — CI-run code-review panel (portable merge gate) | Proposed |
 
 <!-- ADR-INDEX:END -->

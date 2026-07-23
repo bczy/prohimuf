@@ -1,0 +1,210 @@
+name: Code Review Panel
+
+# Mandatory merge-gate implementation per ADR-0063 (CI-run code-review panel).
+# Runs the 4 orthogonal review skills in parallel, an adversarial-verification
+# pass (skeptic), and a triage job that publishes the `panel-verdict` check.
+#
+# Rollout — INERT by default (per ADR-0063 §6):
+#   - `on:` is restricted to workflow_dispatch and workflow_call.
+#   - Every job is guarded by `if: vars.PANEL_ENABLED == 'true'`.
+#   - Activation is one commit: add `pull_request:` to `on:` AND set the
+#     repo variable `PANEL_ENABLED=true` (Settings → Secrets and variables
+#     → Actions → Variables tab). Both are required; either alone is a
+#     no-op safeguard.
+#
+# Once activated, branch protection on `main` should require the
+# `panel-verdict` check as a required status check.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to review (required when dispatched manually)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+  # Activation: uncomment the block below when PANEL_ENABLED=true.
+  # pull_request:
+  #   types: [opened, synchronize, reopened, ready_for_review]
+  #   branches: [main]
+
+concurrency:
+  group: panel-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  prepare:
+    name: Prepare diff and context
+    if: ${{ vars.PANEL_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      is_fix_lane: ${{ steps.classify.outputs.is_fix_lane }}
+      head_sha: ${{ steps.classify.outputs.head_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve PR context
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json=$(gh pr view "$PR_NUMBER" --json headRefOid,labels,baseRefName)
+          head_sha=$(printf '%s' "$pr_json" | jq -r .headRefOid)
+          base_ref=$(printf '%s' "$pr_json" | jq -r .baseRefName)
+          is_fix=$(printf '%s' "$pr_json" | jq -r '[.labels[].name] | index("fix-lane") != null | tostring')
+          printf 'head_sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
+          printf 'is_fix_lane=%s\n' "$is_fix" >> "$GITHUB_OUTPUT"
+          printf 'base_ref=%s\n' "$base_ref" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble reviewer input
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p panel-input
+          gh pr view "$PR_NUMBER" --json title,body > panel-input/pr.json
+          git fetch --no-tags origin main
+          git diff origin/main...HEAD --unified=3 > panel-input/diff.patch
+          git diff --name-status origin/main...HEAD > panel-input/files.txt
+
+      - name: Upload panel input
+        uses: actions/upload-artifact@v4
+        with:
+          name: panel-input
+          path: panel-input/
+          retention-days: 7
+
+  code-review:
+    name: "Reviewer · code-review (correctness)"
+    needs: prepare
+    if: ${{ vars.PANEL_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: panel-input, path: panel-input }
+      - name: Invoke reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT_FILE: .github/panel-prompts/code-review.md
+          FINDINGS_FILE: findings-code-review.json
+        run: node scripts/panel-invoke-reviewer.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-code-review
+          path: findings-code-review.json
+
+  edge-case-hunter:
+    name: "Reviewer · edge-case-hunter"
+    needs: prepare
+    if: ${{ vars.PANEL_ENABLED == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: panel-input, path: panel-input }
+      - name: Invoke reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT_FILE: .github/panel-prompts/edge-case-hunter.md
+          FINDINGS_FILE: findings-edge-case-hunter.json
+        run: node scripts/panel-invoke-reviewer.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-edge-case-hunter
+          path: findings-edge-case-hunter.json
+
+  bmad-review:
+    name: "Reviewer · bmad-review"
+    needs: prepare
+    if: ${{ vars.PANEL_ENABLED == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: panel-input, path: panel-input }
+      - name: Invoke reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT_FILE: .github/panel-prompts/bmad-review.md
+          FINDINGS_FILE: findings-bmad-review.json
+        run: node scripts/panel-invoke-reviewer.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-bmad-review
+          path: findings-bmad-review.json
+
+  security-review:
+    name: "Reviewer · security-review"
+    needs: prepare
+    if: ${{ vars.PANEL_ENABLED == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: panel-input, path: panel-input }
+      - name: Invoke reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT_FILE: .github/panel-prompts/security-review.md
+          FINDINGS_FILE: findings-security-review.json
+        run: node scripts/panel-invoke-reviewer.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-security-review
+          path: findings-security-review.json
+
+  verify:
+    name: "Skeptic · adversarial verification"
+    needs: [prepare, code-review, edge-case-hunter, bmad-review, security-review]
+    if: ${{ always() && vars.PANEL_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: findings-*
+          path: findings-in
+          merge-multiple: false
+      - uses: actions/download-artifact@v4
+        with: { name: panel-input, path: panel-input }
+      - name: Invoke skeptic
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT_FILE: .github/panel-prompts/skeptic.md
+        run: node scripts/panel-invoke-skeptic.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-confirmed
+          path: findings-confirmed.json
+
+  triage:
+    name: "Triage · publish verdict"
+    needs: [prepare, verify]
+    if: ${{ always() && vars.PANEL_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: findings-confirmed, path: . }
+      - name: Publish findings + verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+        run: node scripts/panel-triage.mjs
