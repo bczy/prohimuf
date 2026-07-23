@@ -5,7 +5,7 @@ import type { Courier } from "@game/types/courier";
 import type { HostageQte, QteSpec } from "@game/types/hostageQte";
 import type { BossQte, BossQteSpec } from "@game/types/bossQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent, PlayerHitEvent, PointHitEvent } from "@game/types/feedback";
 import type { WeaponState } from "@game/types/weapon";
 import type { LootCrate, LootSpec } from "@game/types/loot";
 
@@ -64,6 +64,10 @@ export interface GameState {
   // to 3 per tick; A/B emit ≤1). Render is already N-safe — the bridge drains the
   // list and ImpactEffects pools it, so the widening needs no render change.
   readonly impactEvents?: readonly ImpactEvent[];
+  // Enemy bullets that hit the player this tick (transient; drives full-screen
+  // red flash + camera shake — ADR-0064 D2). Mirror of `impactEvents` in the
+  // opposite direction. Optional so the pre-ADR-0064 shape stays valid.
+  readonly playerHitEvents?: readonly PlayerHitEvent[];
   // Active weapon + special stock + burst tick state (ADR-0055 D1). Rule-owned;
   // seeded `base`/∞ and always `base` on a level with no `lootSpec` (byte-identical
   // to ADR-0040). Frozen through a QTE (rides `...state`, D7).

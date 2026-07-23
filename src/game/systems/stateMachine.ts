@@ -5,12 +5,18 @@ import type { Courier } from "@game/types/courier";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent, PlayerHitEvent, PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
 import { tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
+import {
+  spawnEnemyBullet,
+  sampleDiscJitter,
+  AIM_JITTER_RADIUS,
+  type Rng,
+} from "@game/systems/enemyFireSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
@@ -61,6 +67,22 @@ const PLAYER_HIT_RADIUS = 1.0;
 let _nextBulletId = 1;
 let _nextCourierId = 1;
 let _nextLootId = 1;
+
+// Splitmix32 PRNG used to derive a per-bullet jitter stream. Pure: same seed
+// ⇒ same sequence, so `spawnEnemyBullet` stays deterministic under Vitest.
+// Seed folds bullet id + enemy id so bullets fired on the same tick from
+// different windows use different jitter samples.
+function makeBulletRng(bulletId: number, enemyId: number): Rng {
+  let s = (bulletId * 0x9e3779b1 + enemyId * 0x85ebca6b) >>> 0;
+  return () => {
+    s = (s + 0x9e3779b9) >>> 0;
+    let z = s;
+    z = Math.imul(z ^ (z >>> 16), 0x85ebca6b) >>> 0;
+    z = Math.imul(z ^ (z >>> 13), 0xc2b2ae35) >>> 0;
+    z = (z ^ (z >>> 16)) >>> 0;
+    return z / 0x1_0000_0000;
+  };
+}
 
 export interface LevelParams {
   lives: number;
@@ -398,14 +420,17 @@ export function tickGameState(
     const slot = facade.slots[enemy.slotIndex];
     if (slot === undefined) continue;
     _nextBulletId++;
+    // Deterministic per-bullet RNG (splitmix32): pure, testable, and independent
+    // of frame timing. Seed folds enemy id + bullet id so two shooters on the
+    // same tick produce different jitter samples.
+    const rng = makeBulletRng(_nextBulletId, enemy.id);
+    const origin = { x: slot.screenPosition.x, y: slot.screenPosition.y };
+    // Player-hit disc is centred at world origin (see PLAYER_HIT_RADIUS).
+    const target = { x: 0, y: 0 };
+    const jitter = sampleDiscJitter(rng, AIM_JITTER_RADIUS);
     bullets = [
       ...bullets,
-      {
-        id: _nextBulletId,
-        position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
-        velocity: { x: 0, y: -BULLET_SPEED },
-        fromPlayer: false,
-      },
+      spawnEnemyBullet(_nextBulletId, origin, target, jitter, BULLET_SPEED),
     ];
   }
 
@@ -445,11 +470,15 @@ export function tickGameState(
   // 8. Enemy bullet hits player (near screen center y=0)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
+  const playerHitEvents: PlayerHitEvent[] = [];
   for (const b of movedBullets) {
     if (b.fromPlayer) continue;
     if (Math.sqrt(b.position.x * b.position.x + b.position.y * b.position.y) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
       playerHit = true;
+      // ADR-0064 D2 — surface the crossing point for render (red flash + shake).
+      // Cosmetic-only: the `lives` rule below is unchanged.
+      playerHitEvents.push({ worldPoint: { x: b.position.x, y: b.position.y } });
     }
   }
   const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
@@ -466,6 +495,7 @@ export function tickGameState(
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
+      playerHitEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -508,6 +538,7 @@ export function tickGameState(
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
+      playerHitEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -546,6 +577,7 @@ export function tickGameState(
     feedback: feedbackEvents,
     pointFeedback,
     impactEvents,
+    playerHitEvents,
     couriers,
     courierTimer,
     couriersSpawned,

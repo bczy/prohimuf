@@ -36,8 +36,9 @@ import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
 import { ImpactEffects } from "@render/effects/ImpactEffects";
+import { PlayerHitEffects } from "@render/effects/PlayerHitEffects";
 import { CrtPass } from "@render/effects/CrtPass";
-import type { ImpactChannel } from "@hooks/useGameLoop";
+import type { ImpactChannel, PlayerHitChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
 import { createCameraPan, driveEdgeScroll, edgeScrollRamp } from "@game/systems/cameraPanSystem";
@@ -288,6 +289,7 @@ export function GameScene({
 
   const feedbackRef = useRef<Floater[]>([]);
   const impactChannelRef = useRef<ImpactChannel>({ queue: [], resetNonce: 0 });
+  const playerHitChannelRef = useRef<PlayerHitChannel>({ queue: [], resetNonce: 0 });
   const { camera, size } = useThree();
 
   // Register the harness screen-projection hook (never set in production). It
@@ -342,6 +344,7 @@ export function GameScene({
       ? { touchRef, halfWorldWidth: fullW / 2, halfWorldHeight: facadeH / 2, baseZoom }
       : undefined,
     impactChannelRef,
+    playerHitChannelRef,
   );
   const mouseRef = useMouse(canvasRef);
   // Desktop edge-scroll pan carried across frames so the camera can glide to rest
@@ -457,6 +460,7 @@ export function GameScene({
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
       <ImpactEffects channelRef={impactChannelRef} />
+      <PlayerHitEffects channelRef={playerHitChannelRef} reducedMotion={reducedMotion} />
       <FeedbackLayer queueRef={feedbackRef} />
       <CrosshairSprite stateRef={stateRef} cameraRef={camera} crtEnabled={crt} />
       {crt && (
