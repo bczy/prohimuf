@@ -23,7 +23,7 @@ but they **always coordinate** through this protocol. Read this before acting.
 | `sound-designer` | Malik 🎧 | audio direction bible (`docs/audio-direction.md`), audio specs, AUDIO GATE (BGM/SFX assets + audible behaviour) | production code, script mechanics |
 | `qa-lead` | Inès 🧪 | stage 5 VERIFY: test plans (`docs/qa/`), e2e/regression specs, QUALITY GATE | production code, test implementation (spec only) |
 | `gpu-specialist` | Ben 🏍️ | frame budget (`docs/perf-budget.md`), GPU-cost analysis, PERF VERDICT (stage 5) + on-target protocols | production code, visual/design verdicts |
-| `tech-writer` | Otis 📚 | DOCS lane: ADR drafting (decisions stay Winston's), doc realignments, `docs/index.md`, doc↔code coherence (incl. JSDoc wording) | code logic, gate verdicts, gated content decisions |
+| `tech-writer` | Otis 📚 | DOCS lane, active across the pipeline: **stage 3** DOCS-PLAN (which docs will be touched, ADR alloc check), **stage 5** DOC GATE (funnelled into qa-lead's QUALITY GATE), **stage 7** doc coherence sweep after every closed story; plus ADR drafting (decisions stay Winston's), doc realignments, `docs/index.md`, doc↔code coherence (incl. JSDoc wording) | code logic, gate verdicts, gated content decisions |
 | `dev-r3f-render` | Amelia 🎨 | `src/render/**`, view-side `src/hooks/**` | `src/game/**`, `scripts/**` |
 | `dev-gameplay` | Amelia 🧠 | `src/game/**`, logic-side `src/hooks/**` | `src/render/**`, `scripts/**` |
 | `dev-tooling-assets` | Amelia 🛠️ | `scripts/**`, `levelArt.json` (structure), `.github/**`, config | game rules, scene code, prompt strings |
@@ -61,6 +61,11 @@ bending the pipeline silently is worse.
               constraints — budget, no-GPU, CI, style-fit — via the deep-research
               harness) BEFORE lanes are cut, so the architect partitions against
               evidence, not a guess.
+              **tech-writer DOCS-PLAN in parallel:** lists the docs that will be
+              touched (architecture.md §X, ADR-00NN, index.md, JSDoc in `src/**`),
+              flags a missing ADR allocation if the story is ADR-worthy, logs it
+              in the story shard as `DOCS-PLAN: <paths>`. The dev lanes read the
+              DOCS-PLAN and own its execution — no "we'll see at review".
 4. BUILD      parallel, non-overlapping lanes:
                 · ART — (reference hunt: graphic-references ↔ Bertrand, when the
                   family lacks references) → advisor → concept-artist →
@@ -92,6 +97,11 @@ bending the pipeline silently is worse.
                 · ux-designer reviews built screens/flows vs his gated UX spec
                   on real screenshots, both device classes (verdict to
                   lead-game-designer)
+                · tech-writer DOC GATE — the docs listed at the stage-3 DOCS-PLAN
+                  have been touched, cross-refs resolve, `scripts/gen-adr-index.mjs`
+                  has run if an ADR was added/moved, `docs/index.md` still parses
+                  (verdict funnelled to qa-lead). A DOCS-PLAN with all `N` = drift
+                  in the making — FAIL routes to the owning dev lane.
                 · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
                   (PASS required before stage 6; FAIL routes back to the
                   owning lane with the failing case named)
@@ -101,6 +111,10 @@ bending the pipeline silently is worse.
               (he already reads the full diff to triage — one stage, one read;
               mandatory before any merge to main — see below).
 7. ACCEPT     pm — acceptance vs story + PROJECT_GUIDELINES.
+              tech-writer runs a **doc coherence sweep** on close: the docs
+              touched in this cycle agree with each other and with the merged
+              code; any residual gap opens a drift ticket (fix lane if wording,
+              full pipeline if content). Producer records the sweep verdict.
 8. MERGE      Bertrand (or an EXPLICIT merge instruction from him for this
               branch — a general standing preference is never merge authority) —
               merge to main; the full cycle is traceable in the story's
@@ -132,6 +146,10 @@ qualifies for the fix lane when ALL of these hold:
 - **No asset surface** — no new or changed prompt, sprite, or audio asset.
 - **No architecture surface** — no new dependency, no boundary or contract change,
   nothing ADR-worthy.
+- **No documentation surface** — no change to gated doc content (ADR, art/audio
+  bibles, README, architecture.md, game-design specs); JSDoc wording adjustments
+  on the same lane are fine. A fix that needs to update a gated doc escalates to
+  the full pipeline so tech-writer's DOCS-PLAN and DOC GATE cover it.
 - **Small** — a diff the single reviewer can hold in one read (rule of thumb: a bug
   fix, a copy-size tweak, a tap-target enlargement — not a feature in disguise).
 
@@ -324,7 +342,10 @@ in the story's handoffs shard (index: `docs/agent-handoffs.md`).
    (`docs/agent-handoffs.md` is the index — template and the machine-parsable
    `VERDICT: PASS|FAIL — <gate> (<agent>)` line format live there; fix-lane cycles log
    one line in `docs/handoffs/fixes.md`). One line to claim work, one to release it +
-   File List. `producer` curates the log's hygiene and chases missing entries — an
+   File List. The story shard also carries the `DOCS-PLAN:` line (stage 3) and the
+   DOC GATE / stage-7 coherence sweep verdicts — `producer` flags any story whose diff
+   touches doc paths without a corresponding tech-writer log entry (drift-in-the-making).
+   `producer` curates the log's hygiene and chases missing entries — an
    unlogged hand-off didn't happen. **Shard rule (general):** any shared, append-style
    doc approaching the point where an agent can no longer read it in one pass
    (~100 KB) gets sharded by its owner — per story, per family, or per period — with a
