@@ -44,3 +44,15 @@ export interface ImpactEvent {
     readonly slotPosition: Vec2;
   };
 }
+
+// One enemy bullet that entered the player-hit disc, surfaced for transient
+// render feedback (full-screen red flash, camera shake — ADR-0064). Mirror of
+// ImpactEvent in the opposite direction (enemy → player). Cosmetic-only: the
+// rule change on `lives` still lives in stateMachine. Consumed per-frame by
+// the hooks bridge; never persisted.
+export interface PlayerHitEvent {
+  // World point at which the enemy bullet crossed the player-hit disc. The
+  // disc is centred on the camera, so this is within PLAYER_HIT_RADIUS of
+  // (cameraOffsetX, cameraOffsetY), not of the world origin.
+  readonly worldPoint: Vec2;
+}
