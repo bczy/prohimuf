@@ -7,7 +7,7 @@ import type { GameState } from "@game/types/gameState";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { isQteActive } from "@game/systems/qteSystem";
 import { createSmokeField } from "@render/scene/smokeParticles";
-import { DEBRIS_KINDS, debrisY, makeDebris, stepDebris } from "./urbanDebris";
+import { DEBRIS_KINDS, debrisBaselineY, debrisY, makeDebris, stepDebris } from "./urbanDebris";
 import type { DebrisItem } from "./urbanDebris";
 
 /**
@@ -55,12 +55,15 @@ const VENT_PARTICLES_MOBILE = 5;
 /** Plume opacity envelope. Low: this is haze behind the action, never a curtain. */
 const VENT_ENVELOPE = 0.45;
 
-/** Debris baseline, facade-normalized and y-down: the road, in front of the base. */
-const DEBRIS_LINE = 1.02;
-
 // ── Silhouettes: B&W fanzine scraps, drawn once per session ──────────────────
-// Toner-dark and unsaturated on purpose: the CRT bright-pass keys on saturation ×
-// brightness, so a grey scrap can never trip the bloom and haze the street.
+// STRICTLY NEUTRAL greys — §1 reserves colour for the neon, and the first cut used a
+// warm cream (232,230,224) and a warm brown (58,52,44) on a black-and-white layer.
+// Both now sit in ONE mid-toner value band (#6E6E6E / #3C3C3C, art gate 2026-07-25):
+// printed litter, not lit litter. The paper used to read ~213/255 on the black road —
+// ≈14:1 contrast, the loudest moving thing in the exact band the courier and the van
+// travel through — while the leaf at ~52/255 was nearly invisible: two members of one
+// set, one glaring and one absent (§2 law 2 inside the debris family).
+// Being unsaturated also keeps them under the CRT bright-pass, so they never bloom.
 const debrisTextures: (Texture | null)[] = Array.from({ length: DEBRIS_KINDS }, () => null);
 let debrisBuilt = false;
 
@@ -73,7 +76,7 @@ function buildDebrisTextures(): void {
   paper.height = 32;
   const pg = paper.getContext("2d");
   if (pg !== null) {
-    pg.fillStyle = "rgba(232,230,224,0.92)";
+    pg.fillStyle = "rgba(110,110,110,0.92)"; // #6E6E6E — mid toner
     pg.beginPath();
     pg.moveTo(4, 10);
     pg.lineTo(19, 3);
@@ -81,7 +84,7 @@ function buildDebrisTextures(): void {
     pg.lineTo(14, 29);
     pg.closePath();
     pg.fill();
-    pg.strokeStyle = "rgba(40,40,44,0.75)";
+    pg.strokeStyle = "rgba(34,34,34,0.75)";
     pg.lineWidth = 1.5;
     pg.stroke();
     pg.beginPath();
@@ -96,13 +99,13 @@ function buildDebrisTextures(): void {
   leaf.height = 32;
   const lg = leaf.getContext("2d");
   if (lg !== null) {
-    lg.fillStyle = "rgba(58,52,44,0.92)";
+    lg.fillStyle = "rgba(60,60,60,0.92)"; // #3C3C3C — the same band, one step down
     lg.beginPath();
     lg.moveTo(3, 16);
     lg.quadraticCurveTo(16, 2, 29, 16);
     lg.quadraticCurveTo(16, 30, 3, 16);
     lg.fill();
-    lg.strokeStyle = "rgba(18,16,14,0.9)";
+    lg.strokeStyle = "rgba(20,20,20,0.9)";
     lg.lineWidth = 1.2;
     lg.beginPath();
     lg.moveTo(4, 16);
@@ -136,7 +139,7 @@ export function UrbanMotion({
 
   const halfWidth = fullW / 2;
   const debrisCount = isMobile ? DEBRIS_COUNT_MOBILE : DEBRIS_COUNT_DESKTOP;
-  const debrisBaseY = (0.5 - DEBRIS_LINE) * facadeH;
+  const debrisBaseY = debrisBaselineY(facadeH);
   const ventY = (0.5 - VENT_LINE) * facadeH;
 
   // Each item's parameters are drawn ONCE at mount (cosmetics — Math.random is
@@ -197,9 +200,13 @@ export function UrbanMotion({
       if (field === undefined || frac === undefined) continue;
       field.update(step, {
         activeCount: ventParticles,
-        // The field's own reduced-motion branch holds a static scatter; a boss
-        // fight zeroes the envelope instead, which hides the group outright.
-        reducedMotion: frozen,
+        // ONLY the real reduced-motion signal — never `frozen`. The field's
+        // reduced-motion branch REPOSITIONS every puff onto its static scatter, so
+        // passing the pause/QTE freeze here teleported the plume there and back on
+        // each hold (a visible pop, both ways). The pause/QTE freeze is carried by
+        // `step = 0`, exactly like the debris: the puffs simply stop advancing and
+        // hold the arrangement they were already in.
+        reducedMotion,
         centreX: (frac - 0.5) * fullW,
         centreY: ventY,
         envelope: bossFight ? 0 : VENT_ENVELOPE,

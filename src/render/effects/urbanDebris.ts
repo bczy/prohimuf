@@ -15,6 +15,47 @@
 /** Number of debris silhouettes available (paper scrap, leaf). */
 export const DEBRIS_KINDS = 2;
 
+/**
+ * Debris baseline, facade-normalized and y-down. The band has to clear TWO bounds:
+ *
+ *  - BELOW: the camera can never look lower than `-facadeH/2`. `GameScene` clamps
+ *    the pan to `rangeY = (facadeH - viewH)/2`, so the lowest world y ever framed is
+ *    `-rangeY - viewH/2 = -facadeH/2` — for `WORLD_HEIGHT = 12`, y = -6. The first
+ *    cut used 1.02 ⇒ baseline -6.24, items in [-6.39, -5.89]: the whole band sat
+ *    under that floor and was invisible on stalingrad (only belliard saw fragments,
+ *    and only at full bottom pan, because its 0.85 dezoom widens the view past the
+ *    facade). Reviewer finding, 2026-07-25.
+ *  - ABOVE: it must stay under the actors. The couriers ride at `-facadeH*0.4`
+ *    (y = -4.8); this band tops out well below that.
+ */
+export const DEBRIS_LINE = 0.965;
+/** Per-item vertical scatter around the baseline (world units). */
+export const DEBRIS_SPAWN_DY_MIN = -0.15;
+export const DEBRIS_SPAWN_DY_MAX = 0.35;
+/** Bob amplitude bounds (world units) — the drawn y never leaves `y ± bobAmp`. */
+export const DEBRIS_BOB_AMP_MIN = 0.04;
+export const DEBRIS_BOB_AMP_MAX = 0.22;
+
+/** World y of the debris baseline for a facade of height `facadeH`. */
+export function debrisBaselineY(facadeH: number): number {
+  return (0.5 - DEBRIS_LINE) * facadeH;
+}
+
+/**
+ * The extreme world-y a debris item can ever occupy — baseline scatter plus the
+ * widest bob. `bottom` is what must stay above the camera's `-facadeH/2` floor.
+ */
+export function debrisBandExtent(facadeH: number): {
+  readonly top: number;
+  readonly bottom: number;
+} {
+  const base = debrisBaselineY(facadeH);
+  return {
+    top: base + DEBRIS_SPAWN_DY_MAX + DEBRIS_BOB_AMP_MAX,
+    bottom: base + DEBRIS_SPAWN_DY_MIN - DEBRIS_BOB_AMP_MAX,
+  };
+}
+
 export interface DebrisItem {
   /** World position. `x` scrolls and wraps; `y` is the item's BASELINE (the bob
    *  is applied on read, see {@link debrisY}, so it never accumulates drift). */
@@ -54,9 +95,9 @@ export function makeDebris(rand: () => number, halfWidth: number, baseY: number)
   const dir = rand() < 0.5 ? -1 : 1;
   return {
     x: between(-halfWidth, halfWidth),
-    y: baseY + between(-0.15, 0.35),
+    y: baseY + between(DEBRIS_SPAWN_DY_MIN, DEBRIS_SPAWN_DY_MAX),
     vx: dir * between(0.5, 2.1),
-    bobAmp: between(0.04, 0.22),
+    bobAmp: between(DEBRIS_BOB_AMP_MIN, DEBRIS_BOB_AMP_MAX),
     bobHz: between(0.35, 1.4),
     bobPhase: rand(),
     spin: between(-2.4, 2.4),

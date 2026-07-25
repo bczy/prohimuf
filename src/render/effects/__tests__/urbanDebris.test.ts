@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { DEBRIS_KINDS, debrisY, makeDebris, stepDebris } from "../urbanDebris";
+import {
+  DEBRIS_KINDS,
+  debrisBandExtent,
+  debrisBaselineY,
+  debrisY,
+  makeDebris,
+  stepDebris,
+} from "../urbanDebris";
+import { WORLD_HEIGHT } from "@game/levels/levelArt";
 
 /** Deterministic RNG: cycles a fixed sequence so every assertion is reproducible. */
 function seq(values: readonly number[]): () => number {
@@ -105,6 +113,39 @@ describe("stepDebris", () => {
     const a1 = stepDebris(a, 0.1, HALF);
     const b1 = stepDebris(b, 0.1, HALF);
     expect(a1.x - a.x).not.toBeCloseTo(b1.x - b.x, 6);
+  });
+});
+
+describe("debris band placement", () => {
+  // GameScene clamps the camera pan to rangeY = (facadeH - viewH)/2, so the lowest
+  // world y that can EVER be framed is -rangeY - viewH/2 = -facadeH/2 — independent
+  // of zoom and of the level. Anything below it is unreachable on a level with no
+  // dezoom (stalingrad); belliard's 0.85 dezoom only widens the view, so a band that
+  // clears this floor is visible on every level.
+  const CAMERA_FLOOR = -WORLD_HEIGHT / 2;
+
+  it("keeps the whole band above the camera's lowest reachable y (all levels)", () => {
+    const { bottom } = debrisBandExtent(WORLD_HEIGHT);
+    expect(bottom).toBeGreaterThan(CAMERA_FLOOR);
+  });
+
+  it("keeps the band below the courier road, so litter never joins the actors", () => {
+    // Couriers ride at -facadeH * 0.4 (GameScene's courierField.streetY).
+    const { top } = debrisBandExtent(WORLD_HEIGHT);
+    expect(top).toBeLessThan(-WORLD_HEIGHT * 0.4);
+  });
+
+  it("puts every generated item inside the declared band", () => {
+    const base = debrisBaselineY(WORLD_HEIGHT);
+    const { top, bottom } = debrisBandExtent(WORLD_HEIGHT);
+    for (let i = 0; i < 300; i++) {
+      let d = makeDebris(Math.random, HALF, base);
+      for (let f = 0; f < 60; f++) {
+        d = stepDebris(d, 1 / 60, HALF);
+        expect(debrisY(d)).toBeGreaterThanOrEqual(bottom);
+        expect(debrisY(d)).toBeLessThanOrEqual(top);
+      }
+    }
   });
 });
 
