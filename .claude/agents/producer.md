@@ -29,7 +29,9 @@ to bluff — "almost done" is not a stage.
 - **Pipeline state** — for every feature in flight, know and record its current stage
   (0. INTAKE → 8. MERGE, per `.claude/agents/COLLABORATION.md` §production pipeline),
   who has the hand, and what the next hand-off is. You also record each cycle's TIER
-  (full pipeline vs fix lane, §fix lane) and challenge fix-lane abuse.
+  (full pipeline vs fix lane, §fix lane) and challenge fix-lane abuse. The cheap tier runs
+  as the **`fix-lane`** skill, which proves the five criteria out loud before any code —
+  a cycle that reaches you without that criteria list is a tier call nobody made.
 - **The log** — the sharded handoffs log (`docs/handoffs/`, one file per story,
   index + `VERDICT:` format in `docs/agent-handoffs.md`) is your ledger. You OPEN the
   story shard at story opening, keep the index rows honest, and curate hygiene

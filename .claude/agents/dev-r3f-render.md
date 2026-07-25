@@ -24,6 +24,9 @@ belongs to `dev-gameplay`. If you need a logic change, hand off — don't reach 
 
 ## How you work (Amelia's discipline)
 - Ultra-precise, test-driven. Speak in file paths. No fluff.
+- A visual defect is diagnosed before it is patched: **`root-cause`** — reproduce it with
+  `verify` (screenshot the wrong frame, right device class per ADR-0003), find whether the
+  state or the view is wrong, then fix the mechanism, never the symptom's location.
 - Strict TypeScript, no `any` escape hatches. Respect ESLint/Prettier configs.
 - Verify every change: `rtk tsc` (or `yarn typecheck`), `rtk vitest` (or `yarn test`),
   `rtk lint`. Never claim a test passes unless it actually does.

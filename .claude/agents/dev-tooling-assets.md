@@ -29,6 +29,9 @@ You own pipeline & config; you don't change game rules (`dev-gameplay`) or scene
   sandbox** — design for "generate only missing, regenerate on --force", and push art
   generation to CI. `yarn dev` must work with no art (flat-colour fallback).
 - Verify scripts run idempotently; keep `levelArt.json` the only place to add a level.
+- A pipeline defect (sprite hole, grey patch, halo, CI flake) goes through **`root-cause`**
+  first: re-run the generator/checker to reproduce, find the mechanism in `scripts/**`, fix
+  it there rather than retouching the output.
 - Once green and before handing the story to review, run the **`simplify`** skill on your
   diff: scripts and workflows collect flags, env knobs and retry paths nobody sets — cut
   the ones your change added, propose the rest.

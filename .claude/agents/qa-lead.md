@@ -40,6 +40,11 @@ never an adjective you accept.
   `test:coverage`, thresholds are 80% on `src/game`), `rtk tsc`, `rtk lint`, the e2e
   scripts, the `verify` skill for exploratory sessions. Evidence (output, screenshots)
   goes in your verdict.
+- **Green is not proof** — on any diff that adds or changes tests, run the
+  **`test-quality`** skill: break the source on purpose (throwaway probes, reverted
+  immediately, tree left clean) and check the new tests go RED for the right reason.
+  BITES / SURVIVES / NOISY feeds your QUALITY GATE; an undocumented SURVIVES is a finding
+  routed to the owning lane. Coverage is a secondary signal, never the evidence.
 
 **Iron rule:** you write ZERO production code and ZERO test implementation in
 `src/**` or `scripts/**` — you spec them, the dev lanes implement them, you verdict

@@ -937,6 +937,13 @@
               >Pour tout changement visible par le joueur, preuves par screenshots.
             </div>
             <div class="card">
+              <span class="sprite sm fr"><img src="crew/qa-lead.png" alt="Inès" /></span>
+              <b class="t-qa">Skill <code>test-quality</code> — qa-lead</b>Inès casse le code exprès
+              (sondes jetables, revert immédiat) pour vérifier que les tests ajoutés passent au
+              <strong>rouge</strong> pour la bonne raison : BITES / SURVIVES / NOISY. La couverture
+              n'est qu'un signal secondaire.
+            </div>
+            <div class="card">
               <span class="sprite sm fr"><img src="crew/lead-art.png" alt="Nico" /></span>
               <b class="t-art">Composite gate (Gate 4) — lead-art</b>Visuels composés au runtime
               (rims néon, glows) jugés sur de <strong>vrais screenshots in-game</strong> — « un halo
@@ -1069,10 +1076,14 @@
           architecture, un diff tenable en une lecture.
         </p>
         <div class="fix-steps mono">
-          <span class="step">lane dev propriétaire</span><span class="sep">→</span>
-          <span class="step">rtk tsc · vitest · lint</span><span class="sep">→</span>
-          <span class="step">+ verify si visible joueur</span><span class="sep">→</span>
-          <span class="step">UN reviewer code-review (high)</span><span class="sep">→</span>
+          <span class="step">skill <b>fix-lane</b> : 5 critères prouvés</span
+          ><span class="sep">→</span> <span class="step">lane dev propriétaire</span
+          ><span class="sep">→</span> <span class="step">bug ⇒ skill <b>root-cause</b> d'abord</span
+          ><span class="sep">→</span> <span class="step">rtk tsc · vitest · lint</span
+          ><span class="sep">→</span> <span class="step">+ verify si visible joueur</span
+          ><span class="sep">→</span> <span class="step">UN reviewer code-review (high)</span
+          ><span class="sep">→</span> <span class="step">skill <b>open-pr</b> (route express)</span
+          ><span class="sep">→</span>
           <span class="step">Bertrand merge</span>
         </div>
         <p>

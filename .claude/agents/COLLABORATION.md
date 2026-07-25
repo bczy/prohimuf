@@ -82,6 +82,11 @@ bending the pipeline silently is worse.
                   into stage 6 as PROPOSED items. Not a gate, no verdict; it
                   shrinks what the panel reads. Skipped for docs/config-only
                   or sub-30-line diffs.
+                · qa-lead runs the `test-quality` skill when the diff adds or
+                  changes tests: throwaway source mutations prove the new tests
+                  go RED for the right reason (BITES / SURVIVES / NOISY). A
+                  SURVIVES with no documented reason is a finding routed to the
+                  owning lane; coverage alone is never evidence.
                 · e2e / `verify` skill runs for anything player-visible
                 · runtime-composed visuals → screenshots → lead-art Gate 4
                 · audible behaviour changes → sound-designer behaviour verdict
@@ -159,7 +164,9 @@ qualifies for the fix lane when ALL of these hold:
 - **Small** — a diff the single reviewer can hold in one read (rule of thumb: a bug
   fix, a copy-size tweak, a tap-target enlargement — not a feature in disguise).
 
-Route: owning dev lane implements → `rtk tsc` + `rtk vitest` + `rtk lint` all green
+Route: owning dev lane implements (a defect goes through `root-cause` first — reproduction,
+named mechanism, regression test — before any fix is written) → `rtk tsc` + `rtk vitest` +
+`rtk lint` all green
 (+ `verify`/e2e screenshots when the change is player-visible) → `simplify` only if the
 fix grew past the skill's floor (~30 lines of code); a genuine fix-lane diff is already
 small, and paying a degreasing pass on it is the ceremony this tier exists to avoid →
@@ -167,6 +174,10 @@ small, and paying a degreasing pass on it is the ceremony this tier exists to av
 running `code-review` (effort high) on `git diff origin/main...HEAD`, findings fixed
 or refuted → Bertrand merges. No pm story, no design gate, no architect stage, no
 4-reviewer panel. The cycle is logged as ONE line in `docs/handoffs/fixes.md`.
+This whole route is packaged as the **`fix-lane`** skill (criteria check → implement →
+verify → one reviewer → the log line); the PR itself is opened with **`open-pr`**, which
+computes the preview slug per byte and ticks the 🛵 course express route in the template.
+Both tiers use `open-pr` — only the ticked route differs.
 
 Tiering: the orchestrator proposes the tier; `producer` records it and challenges
 abuse (a "fix" that fails a criterion mid-flight ESCALATES to the full pipeline at the
