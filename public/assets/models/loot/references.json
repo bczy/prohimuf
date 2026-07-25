@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-07-25T19:14:27.250Z",
+  "source": "scripts/gen-loot-3d.mjs",
+  "selection": {
+    "bagTypes": [
+      "cash bundle",
+      "attache case",
+      "backpack",
+      "flight case"
+    ],
+    "universes": [
+      "A Monochrome Street",
+      "B 90s Sportswear",
+      "E Business Clandestine"
+    ],
+    "verdicts": {
+      "monochrome street-carry": "DIG",
+      "90s sportswear panel language": "KEEP",
+      "business clandestine attache": "DIG",
+      "rave logistics flight-case": "DIG",
+      "cash bundle realism": "KEEP"
+    }
+  },
+  "assets": [
+    {
+      "id": "cash-bundle",
+      "file": "assets/models/loot/cash-bundle.glb",
+      "seed": 6201,
+      "prompt": "a compact bundle of late-1990s french-franc banknotes wrapped by two rubber bands, slightly worn paper edges, discreet street-cash look, not luxurious, low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, worn matte materials, monochrome-black base, subtle 1990s sportswear seam and panel language, restrained chrome details, readable silhouette",
+      "references": [
+        "https://en.wikipedia.org/wiki/French_franc",
+        "https://en.wikipedia.org/wiki/Banknote",
+        "https://en.wikipedia.org/wiki/Money_bag"
+      ]
+    },
+    {
+      "id": "attache-case",
+      "file": "assets/models/loot/attache-case.glb",
+      "seed": 6202,
+      "prompt": "a hard rectangular attache case, matte black shell with rounded edges, understated chrome latches and handle mounts, light scuffs, discreet clandestine-courier look, low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, worn matte materials, monochrome-black base, subtle 1990s sportswear seam and panel language, restrained chrome details, readable silhouette",
+      "references": [
+        "https://en.wikipedia.org/wiki/Briefcase",
+        "https://en.wikipedia.org/wiki/Zero_Halliburton"
+      ]
+    },
+    {
+      "id": "backpack",
+      "file": "assets/models/loot/backpack.glb",
+      "seed": 6203,
+      "prompt": "a medium urban backpack, black canvas-nylon mix, front pocket, generic 1990s sportswear panel seams, worn straps, practical street utility look, low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, worn matte materials, monochrome-black base, subtle 1990s sportswear seam and panel language, restrained chrome details, readable silhouette",
+      "references": [
+        "https://en.wikipedia.org/wiki/Eastpak",
+        "https://en.wikipedia.org/wiki/JanSport",
+        "https://archive.org/details/paris-tonkar-4-ans-de-graffitis"
+      ]
+    },
+    {
+      "id": "flight-case",
+      "file": "assets/models/loot/flight-case.glb",
+      "seed": 6204,
+      "prompt": "a compact rave logistics flight case, dark plywood panels, aluminum edge extrusions, corner protectors, recessed handle, slightly worn touring gear look, low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, worn matte materials, monochrome-black base, subtle 1990s sportswear seam and panel language, restrained chrome details, readable silhouette",
+      "references": [
+        "https://en.wikipedia.org/wiki/Road_case",
+        "https://en.wikipedia.org/wiki/Technics_SL-1200"
+      ]
+    }
+  ]
+}
