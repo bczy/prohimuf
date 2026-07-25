@@ -14,7 +14,7 @@ import {
 import { AURA_HIDDEN, createEntityAura } from "@render/effects/entityAura";
 import type { GameState } from "@game/types/gameState";
 import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
-import { resolveEnemyTexture, muzzleFor } from "./enemyTextures";
+import { resolveEnemyTexture, muzzleFor, getSilhouetteFor } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
 import { getAccompliceTexture } from "./accompliceTextures";
@@ -386,24 +386,26 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
   const positionedRef = useRef(false);
-  // Energy auras (soft shadow + energy-hued glow) for the two duel figures. Each
-  // sits one renderOrder band BELOW its figure and slightly behind it in z, so the
-  // opaque sprite occludes the glow core and only the rim reads — the hostage's
-  // aura therefore never washes over the captor she shields.
+  // Contact shadow + energy rim for the CAPTOR only.
+  //
+  // The hostage had one too in the first cut and it was cut at the art gate
+  // (2026-07-25): one global `energy` scalar painted the SAME hue on the man you
+  // must shoot and on the woman you must not. La loi du glow's job is identification
+  // — a rim says "this object, this class" — so a red rim on a don't-shoot figure
+  // says the opposite of the truth. `CourierSprite` was already excluded for exactly
+  // this reason; the hostage is the original don't-shoot figure.
+  //
+  // renderOrder 5 is strictly BELOW the captor mesh's 6, and `QTE_Z - 0.02` puts it
+  // behind him in z, so the rim can never draw over the body it traces.
   const captorAura = useMemo(
-    () => createEntityAura({ renderOrder: 5, glowZ: QTE_Z - 0.02, shadowZ: QTE_Z - 0.03 }),
-    [],
-  );
-  const hostageAura = useMemo(
-    () => createEntityAura({ renderOrder: 6, glowZ: HOSTAGE_Z - 0.02, shadowZ: HOSTAGE_Z - 0.03 }),
+    () => createEntityAura({ renderOrder: 5, rimZ: QTE_Z - 0.02, shadowZ: QTE_Z - 0.03 }),
     [],
   );
   useEffect(
     () => () => {
       captorAura.dispose();
-      hostageAura.dispose();
     },
-    [captorAura, hostageAura],
+    [captorAura],
   );
   // Reduced motion (UX spec §4.1) now arrives via the `reducedMotion` prop — the
   // shared union signal from `useReducedMotionRoot` (App → GameScene), the ONE
@@ -462,31 +464,9 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
         if (g !== null) g.visible = false;
       }
       captorAura.update(AURA_HIDDEN);
-      hostageAura.update(AURA_HIDDEN);
       positionedRef.current = false;
       return;
     }
-
-    // Energy auras follow the (static) tableau anchor. Updated per FRAME, not once
-    // per activation like the meshes: the hue tracks the live energy, which the
-    // duel itself drains.
-    const energy = stateRef.current.energy;
-    captorAura.update({
-      visible: true,
-      x: qte.anchor.x,
-      y: qte.anchor.y,
-      width: QTE_W,
-      height: QTE_H,
-      energy,
-    });
-    hostageAura.update({
-      visible: true,
-      x: qte.anchor.x + HOSTAGE_DX,
-      y: qte.anchor.y + HOSTAGE_DY,
-      width: HOSTAGE_W,
-      height: HOSTAGE_H,
-      energy,
-    });
 
     // ── Static placement (once per activation) ────────────────────────────────
     // The captor and hostage never move (the static duel): place those two meshes
@@ -555,6 +535,20 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       captorMat.map = captorTex.texture;
       captorMat.needsUpdate = true;
     }
+    // Contact shadow + energy rim, keyed to the pose the captor ACTUALLY displays —
+    // hence placed here, after the stance texture resolves, not with the static
+    // placement below: the silhouette must be re-baked per stance or the rim would
+    // trace the covered pose while he peeks. `getSilhouetteFor` caches per texture,
+    // so a stance swap is a map lookup, not a bake.
+    captorAura.update({
+      visible: true,
+      x: qte.anchor.x,
+      y: qte.anchor.y,
+      width: QTE_W,
+      height: QTE_H,
+      energy: stateRef.current.energy,
+      silhouette: captorTex === null ? null : getSilhouetteFor(captorTex.texture),
+    });
     // On LOST he strobes the alarm (the execution); on WON he reads the resolved
     // win green — NOT the PEEKING danger red the tick leaves his stance in through
     // the win hold. Otherwise the live COVERED/PEEKING reinforcement tint.
@@ -763,9 +757,8 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     // The hostage's higher order + z draws her over the captor; the peek cue (8)
     // sits on top of both.
     <>
-      {/* Energy auras, drawn under their figures (renderOrder 5/6). */}
+      {/* The captor's contact shadow + energy rim (renderOrder 5, under him). */}
       <primitive object={captorAura.group} />
-      <primitive object={hostageAura.group} />
       <mesh ref={captorRef} renderOrder={6} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ENERGY_EMPTY, ENERGY_FULL, ENERGY_HALF, energyGlowColor } from "../energyGlow";
+import { STATE_AMBER, STATE_GREEN, STATE_RED } from "@render/scene/neonHeatColor";
 
 const hex = (h: string): number[] => {
   const s = h.replace("#", "");
@@ -11,6 +12,21 @@ const expectClose = (got: readonly number[], want: readonly number[]): void => {
     expect(c).toBeCloseTo(want[i] ?? Number.NaN, 6);
   });
 };
+
+describe("energyGlowColor anchors", () => {
+  it("reuses the codebase's ONE green/amber/red state triple (art gate G5)", () => {
+    // No locally minted hexes: the first cut invented #00FF64/#FFD400/#FF3030, and
+    // that red exists nowhere in the palette. Both ramps now move together.
+    expect(ENERGY_FULL).toBe(STATE_GREEN);
+    expect(ENERGY_HALF).toBe(STATE_AMBER);
+    expect(ENERGY_EMPTY).toBe(STATE_RED);
+  });
+
+  it("anchors full and half energy on bible accents (§2 law 1)", () => {
+    expect(["#FF8C14", "#28F0FF", "#FF3CDC", "#78FF3C"]).toContain(ENERGY_FULL);
+    expect(["#FF8C14", "#28F0FF", "#FF3CDC", "#78FF3C"]).toContain(ENERGY_HALF);
+  });
+});
 
 describe("energyGlowColor", () => {
   it("pins the three anchors", () => {

@@ -19,7 +19,7 @@ import {
   RING_HIT_RADIUS,
 } from "@game/systems/bossQteSystem";
 import { detectMobile } from "@utils/platform";
-import { resolveEnemyTexture } from "./enemyTextures";
+import { resolveEnemyTexture, getSilhouetteFor } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getBossPoseTexture, getBossDecorTexture } from "./bossTextures";
 import type { BossPose } from "./bossTextures";
@@ -458,12 +458,14 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
   // its billboards in world space each frame around the boss anchor.
   const smokeField = useMemo(() => createSmokeField(smokeMax), [smokeMax]);
-  // Energy aura (soft shadow + energy-hued glow) around the Commandant. One band
-  // below the boss and slightly behind him in z, so his silhouette occludes the
-  // core and only the rim reads — the ADR-0052 stance TINT on his body stays the
-  // dominant read, and the aura is peripheral.
+  // Contact shadow + energy RIM around the Commandant. One band below the boss and
+  // behind him in z, so his body covers the silhouette's interior and only the
+  // outward margin shows — the ADR-0052 stance TINT stays the dominant read and the
+  // rim is peripheral. Was an additive DISC in the first cut; the composite gate
+  // measured it covering 7.73 % of the world area, pooling on the road and clipping
+  // the pavement to white. A silhouette rim cannot do either (see entityAura.ts).
   const bossAura = useMemo(
-    () => createEntityAura({ renderOrder: 5, glowZ: BOSS_Z - 0.02, shadowZ: BOSS_Z - 0.03 }),
+    () => createEntityAura({ renderOrder: 5, rimZ: BOSS_Z - 0.02, shadowZ: BOSS_Z - 0.03 }),
     [],
   );
 
@@ -668,17 +670,6 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     if (finisher) posY -= FINISHER_KNEEL; // the commander drops to a defeated posture
     if (!reducedMotion && hitK > 0) posX += HIT_RECOIL * hitK;
     boss.position.set(posX, posY, BOSS_Z);
-    // The aura tracks the live pose (hunch, brace dip, kneel, hit recoil), so it
-    // stays welded to the figure instead of to the static anchor.
-    bossAura.update({
-      visible: true,
-      x: posX,
-      y: posY,
-      width: BOSS_W,
-      height: BOSS_H,
-      energy: state.energy,
-    });
-
     boss.visible = true;
     // ── Canon pose: decode the CURRENT boss state to a Commandant pose (bossTextures) ──
     // Priority top-down: the ceremonial FINISHER and the WON/defeated read override all; a reeling
@@ -695,7 +686,21 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     else if (parryOpen || parryWindup) bossPose = "parry_windup";
     else if (shootWindow) bossPose = phase >= 1 ? "weakpoint" : "exposed";
     else if (exposedWindow) bossPose = "exposed";
-    applyTexture(boss, resolveBossTexture(bossPose)?.texture ?? null);
+    const bossTex = resolveBossTexture(bossPose);
+    applyTexture(boss, bossTex?.texture ?? null);
+    // Contact shadow + energy rim. Placed here, after the pose resolves, so the rim
+    // traces the pose actually drawn; it tracks the live position (hunch, brace dip,
+    // kneel, hit recoil), staying welded to the figure rather than to the anchor.
+    // `getSilhouetteFor` caches per texture, so a pose swap is a lookup, not a bake.
+    bossAura.update({
+      visible: true,
+      x: posX,
+      y: posY,
+      width: BOSS_W,
+      height: BOSS_H,
+      energy: state.energy,
+      silhouette: bossTex === null ? null : getSilhouetteFor(bossTex.texture),
+    });
     // Is the CANON pose art actually loaded (vs the grey riot-cop fallback)? The colour multiply
     // below is the state read for the FALLBACK sprite; over the true-colour canon art it would wash
     // the Commandant into a flat tint (the red EXPOSED aplat Bertrand caught), so on canon we keep
@@ -1096,7 +1101,7 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       </mesh>
       {/* The drifting smoke particle field (renderOrder 10, set per-billboard in the module). */}
       <primitive object={smokeField.group} />
-      {/* The Commandant's energy aura (renderOrder 5, under the boss). */}
+      {/* The Commandant's contact shadow + energy rim (renderOrder 5, under him). */}
       <primitive object={bossAura.group} />
       {/* The parry halo (13) + glyph (14) draw ABOVE the smoke so the tell survives phase-3 smoke;
           the paper-white halo gives value contrast against the smoke + shoulder art. */}

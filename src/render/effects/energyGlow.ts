@@ -8,20 +8,29 @@
  * the drift is felt before any threshold is crossed.
  *
  * Numeric-only, so it unit-tests without a browser or Three — same contract as
- * {@link ../scene/neonHeatColor} (which is a different signal: that one ramps on a
- * hostile's EXPOSURE timer, this one on the player's energy; they are deliberately
- * kept apart so re-tuning one never moves the other).
+ * {@link ../scene/neonHeatColor}. That module carries a DIFFERENT signal (a
+ * hostile's exposure timer, not the player's energy) but the two now share their
+ * colour ANCHORS on purpose: one green/amber/red state language, not two (art gate
+ * finding G5). The shaping stays per-feature — the enemy ramp lingers in orange,
+ * this one is two even halves.
  */
+
+import { STATE_AMBER, STATE_GREEN, STATE_RED } from "@render/scene/neonHeatColor";
 
 /** Normalized (0..1) RGB triple, three-friendly for a `Color`/uniform. */
 export type Rgb = readonly [number, number, number];
 
-/** Full energy: the acid green of the signage triad. */
-export const ENERGY_FULL = "#00FF64";
-/** Half energy. */
-export const ENERGY_HALF = "#FFD400";
-/** Empty: the same urgency red the enemy heat ramp ends on. */
-export const ENERGY_EMPTY = "#FF3030";
+/**
+ * Anchors, re-pointed at the shared state triple after the art gate's finding G5
+ * (2026-07-25): the first cut minted `#00FF64 / #FFD400 / #FF3030` locally, and
+ * `#FF3030` in particular is a red that exists nowhere in the palette. There is now
+ * exactly ONE green/amber/red ramp in the codebase — the enemy heat ramp's anchors,
+ * two of which are bible accents (§2 law 1) — and both features import it, so a
+ * bible amendment moves them together instead of one drifting from the other.
+ */
+export const ENERGY_FULL = STATE_GREEN;
+export const ENERGY_HALF = STATE_AMBER;
+export const ENERGY_EMPTY = STATE_RED;
 
 function hexToRgb(hex: string): Rgb {
   const h = hex.replace("#", "");
