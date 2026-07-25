@@ -55,18 +55,21 @@ export const MARK = {
   pink: "#D62A7A", // DIFFICILE
 } as const;
 
-// Chrome / silver ramp — the TITLE wordmark fill ONLY (spray-can reveal). NOT an ink and
-// NOT a marker: the letter is still DEFINED by its ink-black contour (art-direction §2bis),
-// the ramp only fills the inside of that contour, so the cover stays "loi de l'imprimé"
-// with one metallic accent. Neutral greys (no blue tint) so it reads as a photocopied metal
-// sticker on the jaune stock, not a 3D chrome logo. Deliberately OUT of the applyPrintTokens
-// bridge (single consumer): TitleScreen injects these as inline CSS custom properties on the
-// wordmark — the ADR-0046 escape hatch — so `--chrome-*` never becomes a global paint license.
+// Chrome / silver bands — the TITLE wordmark fill ONLY. NOT an ink and NOT a marker: the
+// letter is still DEFINED by its ink-black contour (art-direction §2bis), the bands only
+// fill the inside of that contour, so the cover stays "loi de l'imprimé" with one metallic
+// accent. Four POSTERISED tones, laid down as hard stops (lead-art gate): a page whose
+// identity is the degraded photocopy cannot carry the one object with a continuous ramp and
+// a specular fold — a metal sticker run through a copier collapses to flat bands. Every tone
+// stays inside the printable band: no near-white sheen on a light stock (§2bis.2). Neutral
+// greys (no blue tint). Deliberately OUT of the applyPrintTokens bridge (single consumer):
+// TitleScreen injects these as inline CSS custom properties on the wordmark — the ADR-0046
+// escape hatch — so `--chrome-*` never becomes a global paint license.
 export const CHROME = {
-  hi: "#FBFBF9", // top highlight / lower re-lit band
-  mid: "#BFC2C4", // body silver
-  edge: "#5C5F62", // the horizon line where the metal folds
-  lo: "#8E9194", // shadow just under the fold
+  hi: "#CFCCC3", // lightest printable band — toner grey, NOT a highlight
+  mid: "#9E9B94", // body band
+  lo: "#6E6C66", // shadow band under the fold
+  edge: "#46443F", // the fold itself; stays clear of the ink-black contour
 } as const;
 
 // In-game HUD accent — NOT a print marker ink: the acid neon of the game world,
@@ -153,12 +156,26 @@ export const MOTION = {
   charDelayMs: 28, // reuse the shipped NarrativeScreen value (consistency)
   cursorBlinkMs: 850,
   lockedShakeMs: 180,
-  // TITLE spray reveal: ONE letter's can-stroke (well under the 1s/letter budget)…
+  // TITLE wordmark reveal — ONE of three variants is drawn at each mount (see
+  // `pickTitleAnimation`). Each variant gets its own budget, and all three land in the
+  // same ~2s window so the cover reads at a constant tempo whatever the draw. All are
+  // killed (animation: none, wordmark shown at its resolved state) under either
+  // reduced-motion trigger, in TitleScreen.module.css.
+  //
+  // "spray": one can-stroke per letter (well under the 1s/letter budget)…
   titleSprayMs: 620,
-  // …and the gap between two strokes — the hand moving to the next letter. Total for
-  // "MUF" = 2 × stagger + duration ≈ 2.0s. Killed (animation: none, letters shown at
-  // their resolved state) under either reduced-motion trigger, in TitleScreen.module.css.
+  // …and the gap between two strokes — the hand moving to the next letter. ≈ 2.02s.
   titleSprayStaggerMs: 700,
+  // "paint": one letter traced dab by dab along its glyph path, then the gap to the
+  // next letter. ≈ 1.98s.
+  titlePaintMs: 700,
+  titlePaintStaggerMs: 640,
+  // "blast": ONE detonation for the whole wordmark (no per-letter stagger) — the smoke
+  // cloud's full life, ≈ 2.2s…
+  titleBlastMs: 2200,
+  // …and the much shorter settle of the letters themselves, which are thrown out by the
+  // blast and are already at rest behind the cloud long before it clears.
+  titleBlastSettleMs: 520,
 } as const;
 
 // Typographic size scale (px) — NAMED from the sizes the HUD/menus already use

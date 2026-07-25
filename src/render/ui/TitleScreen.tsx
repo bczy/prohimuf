@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { CHROME, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
@@ -21,16 +21,40 @@ const INFOLINE_ROW = "☎ INFO-LINE · 08 36 23 98 23";
 const CTA = "[ COMPOSE L'INFO-LINE ]";
 const MICROCOPY = "le répondeur donne le point de RV";
 
-// The wordmark, one entry per can-stroke of the spray reveal (see TitleScreen.module.css).
+// The wordmark, one entry per letter the reveal animates (see TitleScreen.module.css).
 const WORDMARK = ["M", "U", "F"] as const;
 
-// Chrome ramp stops, handed to the CSS module as inline custom properties (ADR-0046: a
+/**
+ * The three ways the cover can paint its wordmark. One is drawn at each mount, so the
+ * same player meets a different cover on a second visit. All three end on the SAME
+ * resting wordmark (chrome fill, ink-black contour) and share the same ~2s budget —
+ * only the way the letters arrive differs:
+ *   spray — an aerosol mist lands wide and soft, then bites into each letter in turn;
+ *   paint — the can traces each glyph, dab by dab, along a predetermined path;
+ *   blast — one detonation, and a halftone cloud that disperses off the finished word.
+ */
+export type TitleAnimation = "spray" | "paint" | "blast";
+
+/**
+ * Equiprobable draw over the three variants. The RNG is injected (the `makeDebris`
+ * idiom) so the partition is unit-testable without stubbing globals, and the final
+ * `return` is total: a `rand()` of exactly 1 — or a NaN from a broken stub — still
+ * yields a real variant instead of `undefined`.
+ */
+export function pickTitleAnimation(rand: () => number): TitleAnimation {
+  const draw = rand();
+  if (draw < 1 / 3) return "spray";
+  if (draw < 2 / 3) return "paint";
+  return "blast";
+}
+
+// Chrome band tones, handed to the CSS module as inline custom properties (ADR-0046: a
 // value with a single consumer flows inline rather than into the global token bridge).
 const CHROME_VARS = {
   "--chrome-hi": CHROME.hi,
   "--chrome-mid": CHROME.mid,
-  "--chrome-edge": CHROME.edge,
   "--chrome-lo": CHROME.lo,
+  "--chrome-edge": CHROME.edge,
 } as CSSProperties;
 
 /**
@@ -42,6 +66,11 @@ const CHROME_VARS = {
  */
 export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
   const ctaRef = useRef<HTMLDivElement>(null);
+  // Drawn ONCE per mount (lazy initialiser), never per render — a re-render must not
+  // restart the cover with a different animation. Cosmetic randomness in the render
+  // layer, the same licence UrbanMotion's debris field takes; nothing in `src/game`
+  // observes it, so no seeded PRNG is owed.
+  const [animation] = useState<TitleAnimation>(() => pickTitleAnimation(Math.random));
 
   const enter = useCallback((): void => {
     onEnter();
@@ -75,8 +104,10 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
     enter();
   }
 
+  // Jaune stock — TITLE only (art-direction §2bis.1 pins the fluo copier card to the cover;
+  // every other pre-game surface stays on newsprint/shell).
   return (
-    <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
+    <PaperSheet stock={STOCK.jaune} style={{ userSelect: "none" }}>
       <style>{`
         @keyframes mufTitleBlink{0%,100%{opacity:1}50%{opacity:0}}
         /* Short-landscape (ADR-0024): keep the single centered column but shrink the
@@ -115,27 +146,40 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           {ISSUE_LABEL}
         </div>
 
-        {/* Wordmark — sprayed on letter by letter the moment the cover shows (each span
-            carries its stagger index; `data-char` feeds the chrome-fill clone). Purely
-            declarative: no timer, no state, so a reduced-motion user gets the finished
-            wordmark from the very first paint. */}
+        {/* Wordmark — painted on the moment the cover shows, by whichever of the three
+            variants was drawn (the class picks the keyframes; `data-muf-title-anim` is
+            the stable hook for tests and the screenshot harness). Each span carries its
+            stagger index and its `data-char` (which feeds the chrome-fill clone).
+            Purely declarative: no timer, no per-frame state, so a reduced-motion user
+            gets the finished wordmark from the very first paint. */}
         <div
-          className={styles.wordmark}
+          className={cx(styles.wordmark, styles[animation])}
+          data-muf-title-anim={animation}
           style={{
             ...CHROME_VARS,
             fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
           }}
         >
           {WORDMARK.map((char, i) => (
+            // Two nested spans, because the can's mist and the letter's ink must fade
+            // INDEPENDENTLY (a parent's opacity would take its children with it): the outer
+            // cell owns layout + the overspray it paints in ::after, the inner one owns the
+            // ink (contour + chrome clone) and is what every variant actually reveals.
             <span
               key={char}
-              data-char={char}
               className={styles.letter}
               style={{ "--muf-letter-index": i.toString() } as CSSProperties}
             >
-              {char}
+              <span data-char={char} className={styles.glyph}>
+                {char}
+              </span>
             </span>
           ))}
+          {/* Detonation cloud — LAST so it paints over the letters (both are positioned,
+              so DOM order decides), and only for the variant that has one. */}
+          {animation === "blast" && (
+            <span aria-hidden={true} data-muf-title-smoke={true} className={styles.smoke} />
+          )}
         </div>
 
         <div

@@ -25,22 +25,44 @@ describe("short-landscape breakpoint (ADR-0024)", () => {
 });
 
 /**
- * TITLE spray reveal: the two tokens are a BUDGET, not decoration — the cover must be
- * finished before a player can plausibly have read it. `TitleScreen.module.css` derives
- * each letter's delay as `index × stagger`, so the wall-clock total for the 3-letter
- * wordmark is `2 × stagger + duration`; both bounds are pinned here so a later "make it
- * more dramatic" tweak can't silently push the cover past its window.
+ * TITLE reveal: the motion tokens are a BUDGET, not decoration — the cover must be
+ * finished before a player can plausibly have read it, and since the variant is DRAWN at
+ * random the player must not be able to feel which one they got from its length. So every
+ * variant is held to the same window. `TitleScreen.module.css` derives each letter's delay
+ * as `index × stagger`, so a staggered variant's wall-clock total for the 3-letter wordmark
+ * is `2 × stagger + duration`; the blast fires all three letters at once, so its total is
+ * its cloud's life. These bounds stop a later "make it more dramatic" tweak from silently
+ * pushing one variant past the window — or away from its siblings.
  */
-describe("TITLE spray reveal budget", () => {
+describe("TITLE reveal budget", () => {
   const WORDMARK_LETTERS = 3;
-  const totalMs = (WORDMARK_LETTERS - 1) * MOTION.titleSprayStaggerMs + MOTION.titleSprayMs;
+  const staggered = (durationMs: number, staggerMs: number): number =>
+    (WORDMARK_LETTERS - 1) * staggerMs + durationMs;
 
-  it("keeps one letter's can-stroke under the 1s-per-letter ceiling", () => {
+  const totals = {
+    spray: staggered(MOTION.titleSprayMs, MOTION.titleSprayStaggerMs),
+    paint: staggered(MOTION.titlePaintMs, MOTION.titlePaintStaggerMs),
+    blast: MOTION.titleBlastMs,
+  };
+
+  it("keeps one letter's stroke under the 1s-per-letter ceiling", () => {
     expect(MOTION.titleSprayMs).toBeLessThanOrEqual(1000);
+    expect(MOTION.titlePaintMs).toBeLessThanOrEqual(1000);
   });
 
-  it("finishes the whole wordmark within the 2–3s window", () => {
-    expect(totalMs).toBeGreaterThanOrEqual(1500);
-    expect(totalMs).toBeLessThanOrEqual(3000);
+  it("finishes every variant within the 2–3s window", () => {
+    for (const [variant, totalMs] of Object.entries(totals)) {
+      expect(totalMs, variant).toBeGreaterThanOrEqual(1500);
+      expect(totalMs, variant).toBeLessThanOrEqual(3000);
+    }
+  });
+
+  it("keeps the three variants within half a second of each other (no tell)", () => {
+    const values = Object.values(totals);
+    expect(Math.max(...values) - Math.min(...values)).toBeLessThanOrEqual(500);
+  });
+
+  it("settles the blast's letters well before its cloud clears", () => {
+    expect(MOTION.titleBlastSettleMs).toBeLessThan(MOTION.titleBlastMs);
   });
 });
