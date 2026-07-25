@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { resolvePlayerShot, tickBullets, BULLET_SPEED, aimBulletVelocity } from "@game/systems/bulletSystem";
+import {
+  resolvePlayerShot,
+  tickBullets,
+  BULLET_SPEED,
+  aimBulletVelocity,
+} from "@game/systems/bulletSystem";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
@@ -61,7 +66,7 @@ describe("aimBulletVelocity", () => {
   it("direction ratio matches (target - spawn)", () => {
     const v = aimBulletVelocity({ x: 3, y: 4 }, { x: 0, y: 0 });
     // direction is (-3, -4), normalised → (-0.6, -0.8)
-    expect(v.x / v.y).toBeCloseTo((-3) / (-4));
+    expect(v.x / v.y).toBeCloseTo(-3 / -4);
   });
 
   it("magnitude equals default BULLET_SPEED", () => {

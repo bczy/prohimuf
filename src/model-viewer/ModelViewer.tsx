@@ -36,7 +36,7 @@ const ENEMY_BULLET_EMISSIVE_INTENSITY = 0.7;
 
 function modelUrlFromQuery(): string {
   const raw = new URLSearchParams(window.location.search).get("url");
-  const path = raw?.trim() || DEFAULT_MODEL_PATH;
+  const path = raw?.trim() ?? DEFAULT_MODEL_PATH;
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
@@ -49,7 +49,7 @@ function OrbitRig(): null {
   useEffect(() => {
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    return () => controls.dispose();
+    return () => { controls.dispose(); };
   }, [controls]);
 
   useFrame(() => controls.update());
@@ -84,7 +84,11 @@ function ProceduralFallback(): JSX.Element {
 
 // Mounts the generated GLB the first frame it becomes available, and reports its
 // (unscaled) bounding-box size back up so the HUD can help pick MODEL_SCALE.
-function GeneratedModel({ onSize }: { onSize: (size: Vector3 | null) => void }): JSX.Element | null {
+function GeneratedModel({
+  onSize,
+}: {
+  onSize: (size: Vector3 | null) => void;
+}): JSX.Element | null {
   const groupRef = useRef<Group | null>(null);
   const attached = useRef(false);
 
@@ -102,7 +106,13 @@ function GeneratedModel({ onSize }: { onSize: (size: Vector3 | null) => void }):
   return <group ref={groupRef} />;
 }
 
-function Scene({ onStatus, onSize }: { onStatus: (s: BulletModelStatus) => void; onSize: (size: Vector3 | null) => void }): JSX.Element {
+function Scene({
+  onStatus,
+  onSize,
+}: {
+  onStatus: (s: BulletModelStatus) => void;
+  onSize: (size: Vector3 | null) => void;
+}): JSX.Element {
   const status = useRef<BulletModelStatus>("idle");
 
   useFrame(() => {
@@ -164,8 +174,7 @@ export function ModelViewer(): JSX.Element {
           status:{" "}
           <span
             style={{
-              color:
-                status === "loaded" ? "#7CFF7C" : status === "failed" ? "#FF7C7C" : "#FFD37C",
+              color: status === "loaded" ? "#7CFF7C" : status === "failed" ? "#FF7C7C" : "#FFD37C",
             }}
           >
             {status}
@@ -182,7 +191,9 @@ export function ModelViewer(): JSX.Element {
         <div style={{ marginTop: 6, opacity: 0.7 }}>
           drag = orbit · scroll = zoom · red/green/blue = local X/Y/Z axes
         </div>
-        <div style={{ marginTop: 6, opacity: 0.7 }}>?url=assets/models/&lt;other&gt;.glb to view another model</div>
+        <div style={{ marginTop: 6, opacity: 0.7 }}>
+          ?url=assets/models/&lt;other&gt;.glb to view another model
+        </div>
       </div>
     </div>
   );

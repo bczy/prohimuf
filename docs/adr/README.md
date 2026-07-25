@@ -120,6 +120,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0062](./0062-vendor-neutral-agent-orientation.md) | Vendor-neutral agent orientation: AGENTS.md canonical + thin overlays (proposed) | Proposed |
 | [0063](./0063-ci-run-code-review-panel.md) | ADR-0063 — CI-run code-review panel (portable merge gate) | Proposed |
 | [0064](./0064-copilot-runtime-split-crew-orchestration.md) | Copilot runtime split: the CLI/app orchestrates the crew, the Coding Agent does not | Proposed |
-| [0064](./0064-enemy-bullet-generated-model-with-fallback.md) | 0064 — Enemy bullet: generated textured GLB with procedural fallback | Proposed |
+| [0064](./0064-enemy-bullet-generated-model-with-fallback.md) | Enemy bullet: generated textured GLB with procedural fallback | Proposed |
 
 <!-- ADR-INDEX:END -->
