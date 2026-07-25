@@ -228,10 +228,12 @@
   animation-duration: var(--motion-title-paint-ms);
   animation-timing-function: linear;
   animation-delay: calc(var(--muf-letter-index, 0) * var(--motion-title-paint-stagger-ms));
-  -webkit-mask-image: var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab),
-    var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab);
-  mask-image: var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab),
-    var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab);
+  -webkit-mask-image:
+    var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab),
+    var(--muf-dab), var(--muf-dab), var(--muf-dab);
+  mask-image:
+    var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab), var(--muf-dab),
+    var(--muf-dab), var(--muf-dab), var(--muf-dab);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: var(--muf-paint-path);
@@ -246,14 +248,12 @@
 /* Waypoints, in the can's drawing order (x y, per cent of the letter box). M: up the left
    stem, down into the V, up to the right shoulder, down the right stem. */
 .paint .glyph[data-char="M"] {
-  --muf-paint-path: 5% 100%, 5% 52%, 6% 0%, 26% 34%, 44% 72%, 62% 34%, 94% 0%, 94% 52%,
-    94% 100%;
+  --muf-paint-path: 5% 100%, 5% 52%, 6% 0%, 26% 34%, 44% 72%, 62% 34%, 94% 0%, 94% 52%, 94% 100%;
 }
 
 /* U: down the left stem, across the bowl, back up the right stem. */
 .paint .glyph[data-char="U"] {
-  --muf-paint-path: 5% 0%, 5% 40%, 10% 74%, 28% 98%, 52% 100%, 76% 98%, 93% 74%, 95% 40%,
-    95% 0%;
+  --muf-paint-path: 5% 0%, 5% 40%, 10% 74%, 28% 98%, 52% 100%, 76% 98%, 93% 74%, 95% 40%, 95% 0%;
 }
 
 /* F: the top arm right-to-left, down the stem, out along the middle arm, back to the stem
@@ -266,63 +266,69 @@
    the paint accumulates as a moving stroke instead of nine separate stamps. */
 @keyframes mufPaintOn {
   0% {
-    mask-size: var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
+    mask-size:
+      var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off);
   }
 
   11% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off);
   }
 
   22% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off),
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off);
   }
 
   33% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off),
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off),
       var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off);
   }
 
   44% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
       var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
       var(--muf-dab-off);
   }
 
   55% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
-      var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off),
-      var(--muf-dab-off);
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
+      var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off);
   }
 
   66% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
-      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off),
-      var(--muf-dab-off);
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
+      var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off), var(--muf-dab-off);
   }
 
   77% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
-      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off),
-      var(--muf-dab-off);
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off), var(--muf-dab-off);
   }
 
   88% {
-    mask-size: var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
-      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
-      var(--muf-dab-off);
+    mask-size:
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on),
+      var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-on), var(--muf-dab-off);
   }
 
   100% {
-    mask-size: var(--muf-dab-full), var(--muf-dab-full), var(--muf-dab-full),
+    mask-size:
       var(--muf-dab-full), var(--muf-dab-full), var(--muf-dab-full), var(--muf-dab-full),
-      var(--muf-dab-full), var(--muf-dab-full);
+      var(--muf-dab-full), var(--muf-dab-full), var(--muf-dab-full), var(--muf-dab-full),
+      var(--muf-dab-full);
   }
 }
 
@@ -353,7 +359,8 @@
   /* Seven puffs, each near-opaque at its core and gone well before the box edge, so their
      union is a lumpy cloud rather than a panel — at the peak it really does hide the
      wordmark, which is what makes the dispersal a reveal. */
-  background-image: radial-gradient(circle at 26% 52%, rgb(0 0 0 / 96%) 0 9%, transparent 30%),
+  background-image:
+    radial-gradient(circle at 26% 52%, rgb(0 0 0 / 96%) 0 9%, transparent 30%),
     radial-gradient(circle at 48% 32%, rgb(0 0 0 / 94%) 0 10%, transparent 32%),
     radial-gradient(circle at 72% 50%, rgb(0 0 0 / 96%) 0 9%, transparent 30%),
     radial-gradient(circle at 36% 74%, rgb(0 0 0 / 90%) 0 8%, transparent 28%),
