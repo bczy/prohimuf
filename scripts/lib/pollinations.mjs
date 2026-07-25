@@ -102,6 +102,21 @@ export function fluxUrl(prompt, seed, width, height) {
   return modelUrl({ prompt, seed, width, height, model: "flux" });
 }
 
+// Text-to-3D (ADR-0064): a DIFFERENT host (gen.pollinations.ai, not
+// image.pollinations.ai) and a DIFFERENT auth contract — the 3D endpoint
+// requires an API key (401 with none; there is no anonymous tier like flux),
+// so this is CI-only (`POLLINATIONS_TOKEN` secret; authHeaders() above already
+// attaches it to any *.pollinations.ai host, so no change was needed there).
+// `hyper3d-rodin` is the only listed model that accepts a bare text prompt —
+// `trellis-2-*` are image-to-3D and require a reference `image` URL instead.
+// Returns a GLB (`model/gltf-binary`).
+export function gen3dUrl(prompt, seed, model = "hyper3d-rodin") {
+  return (
+    `https://gen.pollinations.ai/3d/${encodeURIComponent(prompt)}` +
+    `?model=${encodeURIComponent(model)}&seed=${seed}`
+  );
+}
+
 // kontext img2img (art bible §3.12, style-lock): same query plus `image=` set to
 // the committed frame-1 raw URL so the new pose stays the SAME character.
 export function kontextUrl(prompt, seed, width, height, imageUrl) {

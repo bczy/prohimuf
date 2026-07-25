@@ -1,0 +1,90 @@
+name: Generate bullet 3D model
+
+# Generates the enemy-bullet 3D model (ADR-0064) from a text prompt via
+# Pollinations' `gen.pollinations.ai/3d` endpoint (hyper3d-rodin model, real
+# API key required — the 3D endpoint has no anonymous tier, unlike flux),
+# and commits the GLB to the current branch. `BulletSprite.tsx` keeps its
+# code-drawn cylinder+cap fallback and swaps to this model once present
+# (ADR-0049 generated-with-procedural-fallback idiom).
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-bullet-3d (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    # Only branch pushes (never main); a branches filter also drops tag pushes.
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-bullet-3d"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-bullet-3d-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (branches-ignore only filters the push trigger — a manual
+    # workflow_dispatch on main would otherwise push art past the merge gate).
+    # For pushes, only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # REQUIRED here (unlike the flux 2D scripts, where it is an optional tier
+      # boost): the 3D endpoint returns 401 with no key at all.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate bullet 3D model
+        # FORCE=1 so a re-dispatch overwrites a rejected roll (the seed is
+        # pinned in the script; bump it there to re-roll deterministically).
+        run: FORCE=1 node scripts/gen-bullet-3d.mjs
+
+      - name: Commit model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f public/assets/models/bullet.glb ]; then
+            git add public/assets/models/bullet.glb
+          fi
+          if git diff --cached --quiet; then
+            echo "No new model to commit."
+          else
+            git commit -m "chore(assets): generate enemy bullet 3D model"
+            # Bounded retry: another push may land while we generated. Push
+            # first (normal case); on rejection rebase with --autostash (the
+            # generation step can leave unstaged files that would abort a bare
+            # rebase) and retry, max 3 attempts. The if: failure() upload below
+            # preserves the model so no paid generation is lost.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated model (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bullet-model-unpushed
+          path: public/assets/models/bullet.glb
+          if-no-files-found: warn
+          retention-days: 14

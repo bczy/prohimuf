@@ -8,6 +8,7 @@ import {
   courierAssetPaths,
   vehicleAssetPath,
   bulletAssetPath,
+  bulletModelPath,
   bossAssetPaths,
   levelLayerPaths,
   facadeBackdropPath,
@@ -26,7 +27,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 
 // Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
 // near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
-const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav)|nearfg:[a-zA-Z]+)$/;
+const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z]+)$/;
 
 // Every level id we build a full manifest for, plus the two special targets.
 const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
@@ -128,6 +129,8 @@ describe("assetManifest — belliard level manifest", () => {
     expect(vehicleAssetPath("truck")).toBe("assets/vehicles/truck.png");
     expect(m).toContain(bulletAssetPath());
     expect(bulletAssetPath()).toBe("assets/bullet_player.png");
+    expect(m).toContain(bulletModelPath());
+    expect(bulletModelPath()).toBe("assets/models/bullet.glb");
     expect(m).toContain(facadeBackdropPath());
     expect(facadeBackdropPath()).toBe("assets/facade_bg.png");
     expect(m).toContain(menuBackdropPath());

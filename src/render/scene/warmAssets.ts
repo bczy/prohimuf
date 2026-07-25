@@ -13,6 +13,7 @@ import { warmEnemyTexture } from "./enemyTextures";
 import { warmCourierTexture } from "./courierTextures";
 import { preloadVehicle } from "./DeliveryVehicleSprite";
 import { warmNearForegroundTexture } from "./nearForegroundTextures";
+import { warmBulletModel } from "./bulletModel";
 
 // Synthetic manifest scheme for the code-drawn near-foreground props (ADR-0047):
 // they have no PNG on disk, so the manifest lists them as `nearfg:<kind>` and the
@@ -68,5 +69,6 @@ export function warm(path: string): Promise<void> {
   if (path.startsWith("assets/courier/")) return warmCourierTexture(url);
   if (path.startsWith("assets/enemy")) return warmEnemyTexture(url);
   if (path.startsWith("assets/audio/")) return warmAudio(url);
+  if (path.endsWith(".glb")) return warmBulletModel(url);
   return warmImage(url);
 }
