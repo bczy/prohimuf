@@ -84,10 +84,12 @@ describe("assetManifest — menu & tutorial", () => {
     expect(menuBackdropPath()).toBe("assets/levels/belliard/facade.png");
   });
 
-  it("tutorial manifest = menu backdrop ∪ both tutorial forks' illustrations", () => {
+  it("tutorial manifest = menu backdrop ∪ both tutorial forks' authored backdrops ∪ illustrations", () => {
     const m = manifestFor("tutorial");
     const expected = new Set([
       menuBackdropPath(),
+      ...(TUTORIAL_NARRATIVE_DESKTOP.backdrop ? [TUTORIAL_NARRATIVE_DESKTOP.backdrop] : []),
+      ...(TUTORIAL_NARRATIVE_MOBILE.backdrop ? [TUTORIAL_NARRATIVE_MOBILE.backdrop] : []),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
     ]);

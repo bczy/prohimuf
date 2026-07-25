@@ -109,7 +109,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0051](./0051-boss-qte-encounter-system.md) | Boss QTE encounter system ("le Commandant"): phase-sequenced spatial-colour duel + non-shipped dev-harness | Accepted |
 | [0052](./0052-boss-qte-differentiation-levers.md) | Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception | Accepted |
 | [0053](./0053-niveau-final-live-boss-level.md) | "Le Commandant" goes live: the Niveau Final level ships the frozen boss system as pure DATA | Accepted |
-| [0054](./0054-menus-ui-completion-scope-and-contracts.md) | Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract | Accepted (amended) |
+| [0054](./0054-menus-ui-completion-scope-and-contracts.md) | Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract | Accepted |
 | [0055](./0055-weapons-pickup-system.md) | Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate | Accepted (amended) |
 | [0056](./0056-loot-crate-sidewalk-placement.md) | LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback | Accepted |
 | [0057](./0057-single-wide-backdrop-belliard.md) | Single-wide backdrop mode (belliard décor image unique) | Accepted |
@@ -124,7 +124,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0066](./0066-fractional-lives-per-archetype-damage.md) | Fractional lives: per-archetype bullet damage in quarter-heart steps | Proposed |
 | [0067](./0067-panel-provider-fallback-degraded-verdict.md) | ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open) | Proposed (partially superseded by 0070) |
 | [0068](./0068-lazy-load-threejs-r3f.md) | ADR-0068 — Lazy-load du runtime Three.js/R3F | Accepted |
-| [0069](./0069-energy-rim-signalling-contract.md) | Energy-rim signalling contract | Accepted |
+| [0069](./0069-tutorial-immersion-narrative-contract.md) | Tutorial immersion narrative contract (decor context + mechanic cue diagrams) | Proposed |
 | [0070](./0070-ci-panel-subscription-auth-claude-code-action.md) | CI code-review panel moves to subscription auth via `claude-code-action`, retires the GitHub Models fallback | Accepted |
 
 <!-- ADR-INDEX:END -->

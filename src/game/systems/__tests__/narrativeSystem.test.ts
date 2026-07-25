@@ -65,9 +65,11 @@ describe("narrativeSystem data integrity", () => {
     }
   });
 
-  it("A6: tutorial scenes carry no backdrop (byte-identical to pre-ADR-0023)", () => {
-    expect(TUTORIAL_NARRATIVE_DESKTOP.backdrop).toBeUndefined();
-    expect(TUTORIAL_NARRATIVE_MOBILE.backdrop).toBeUndefined();
+  it("A6: tutorial scenes may now carry authored scene backdrops (ADR-0069)", () => {
+    for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
+      expect(scene.backdrop).toBeDefined();
+      expect(scene.backdrop?.startsWith("/")).toBe(false);
+    }
   });
 
   it("A7: every line that sets `image` also sets a non-empty `imageAlt`", () => {
@@ -82,6 +84,24 @@ describe("narrativeSystem data integrity", () => {
         if (line.image !== undefined) {
           expect(line.image.startsWith("/")).toBe(false);
           expect((line.imageAlt ?? "").trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("A8: teachingBullets are optional, capped at 2, and non-empty when authored", () => {
+    const scenes = [
+      ...Object.values(PRE_LEVEL_NARRATIVE),
+      ...Object.values(POST_LEVEL_NARRATIVE),
+      TUTORIAL_NARRATIVE_DESKTOP,
+      TUTORIAL_NARRATIVE_MOBILE,
+    ];
+    for (const scene of scenes) {
+      for (const line of scene.lines) {
+        if (line.teachingBullets === undefined) continue;
+        expect(line.teachingBullets.length).toBeLessThanOrEqual(2);
+        for (const bullet of line.teachingBullets) {
+          expect(bullet.trim().length).toBeGreaterThan(0);
         }
       }
     }

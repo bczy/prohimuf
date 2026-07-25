@@ -16,7 +16,12 @@ export type GestureKind = "mouse-click" | "edge-scroll" | "two-finger-tap" | "sw
  * colour by the anatomy under it — vital/limb/off); the render lane draws it in the exact
  * `hostageCue` hues so the tutorial teaches the true in-game colours.
  */
-export type DiagramKind = "hostage-ring";
+export type DiagramKind =
+  | "shot-read-player-vs-enemy-bullet"
+  | "weapon-crate-loop"
+  | "threat-hierarchy-ladder"
+  | "hostage-ring"
+  | "boss-finale-switch";
 
 export interface NarrativeLine {
   readonly speaker: string; // character name
@@ -59,6 +64,11 @@ export interface NarrativeLine {
    * lane as `diagramAlt ?? ""`. Only meaningful alongside `diagram`.
    */
   readonly diagramAlt?: string;
+  /**
+   * Optional concise textual reinforcement bullets for a tutorial panel. Additive and
+   * render-agnostic: at most 2 short non-empty strings when authored.
+   */
+  readonly teachingBullets?: readonly string[];
 }
 
 export interface NarrativeScene {
@@ -70,7 +80,7 @@ export interface NarrativeScene {
    * The render lane prefixes `import.meta.env.BASE_URL` and paints it as a full-bleed
    * halftone-B&W wash BEHIND the (unchanged) transcript — grayscale via `HalftoneHero`,
    * zero glow. Structural twin of `NarrativeLine.image`, lifted to scene scope. Absent ⇒ no
-   * décor; the panel renders exactly as before (both tutorial variants omit it).
+   * décor; authored tutorial/pre/post scenes may set it.
    */
   readonly backdrop?: string;
 }
@@ -98,11 +108,11 @@ const MUF_RIDER_ALT = "Muf, le coursier à moto";
 const TUTORIAL_OPENING_LINES: readonly NarrativeLine[] = [
   {
     speaker: "DISPATCH",
-    text: "Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.",
+    text: "Muf, écoute. Façades fermées, rue sous tension : Récupérer, Livrer, Éviter.",
   },
   {
     speaker: "DISPATCH",
-    text: "Le colis arrive par le véhicule. Couvre-le pendant la livraison, puis laisse-le repartir intact.",
+    text: "Le camion porte le son. Couvre son arrêt, puis laisse-le repartir intact.",
     image: "assets/vehicles/truck.png",
     imageAlt: "Le camion de livraison",
   },
@@ -126,40 +136,56 @@ const DESKTOP_CONTROL_LINES: readonly NarrativeLine[] = [
 const MOBILE_CONTROL_LINES: readonly NarrativeLine[] = [
   {
     speaker: "KENZA",
-    text: "Pour tirer : tape à DEUX doigts en même temps, bref et net — la balle part pile entre tes doigts. Ou tape deux fois d'un seul doigt, un double-tap, là où tu vises.",
+    text: "Tire au tap à deux doigts, en même temps. Ou double-tap d'un doigt là où tu vises.",
     gesture: "two-finger-tap",
-    gestureAlt: "Deux doigts en un tap simultané, ou un double-tap d'un seul doigt, pour tirer.",
+    gestureAlt: "Tap simultané à deux doigts, ou double-tap d'un doigt, pour tirer.",
   },
   {
     speaker: "KENZA",
-    text: "La rue déborde de l'écran. Un doigt pour balayer — haut, bas, gauche, droite. Une pichenette, et ça glisse tout seul.",
+    text: "Un doigt balaie la rue : haut, bas, gauche, droite. Pichenette, ça continue seul.",
     gesture: "swipe-pan",
-    gestureAlt: "Un doigt balaye l'écran pour déplacer la vue.",
+    gestureAlt: "Un doigt balaye l'écran pour déplacer la vue avec inertie.",
   },
 ];
 
 const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   {
+    speaker: "DISPATCH",
+    text: "Ton tir frappe instantané à l'impact. Leurs balles voyagent : lis la trajectoire et décale-toi.",
+    diagram: "shot-read-player-vs-enemy-bullet",
+    diagramAlt:
+      "Comparaison tir joueur et balle ennemie : impact immédiat côté joueur, projectile visible côté ennemi avec trajectoire à éviter.",
+    teachingBullets: ["Ton tir: impact direct", "Leur tir: projectile à esquiver"],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Caisse d'armement : tire dessus pour équiper spécial. Stock fini, retour automatique au calibre de base.",
+    diagram: "weapon-crate-loop",
+    diagramAlt:
+      "Boucle d'armement : tir sur caisse, arme spéciale active, munitions spéciales épuisées, retour automatique à l'arme de base.",
+    teachingBullets: ["LOOT → spécial actif", "Stock épuisé → arme de base (∞)"],
+  },
+  {
     speaker: "KENZA",
-    text: "Le flic à la fenêtre, c'est ta cible. Une balle suffit — mais il dégaine avant toi si tu traînes.",
+    text: "Flic fenêtre : cible directe. Une balle suffit, mais il tire vite.",
     image: "assets/enemy_shooting.png",
     imageAlt: "Un flic qui dégaine à la fenêtre",
   },
   {
     speaker: "KENZA",
-    text: "Le CRS en tenue anti-émeute encaisse DEUX balles. Un seul tir le fait pas tomber — insiste.",
+    text: "CRS : deux balles minimum. Tu lâches pas après la première.",
     image: "assets/enemy_riot_shooting.png",
     imageAlt: "Un CRS anti-émeute qui dégaine",
   },
   {
     speaker: "KENZA",
-    text: "Le motard surgit vite et repart vite. Il reste jamais longtemps — vise dès qu'il paraît.",
+    text: "Motard : apparition éclair. Tu vois, tu tires.",
     image: "assets/enemy_biker_shooting.png",
     imageAlt: "Un motard qui dégaine à la fenêtre",
   },
   {
     speaker: "KENZA",
-    text: "Celui-là ne tire jamais. Descends-le pour +5 secondes au chrono — mais il compte pas dans ton quota d'éliminations.",
+    text: "Bonus : il tire pas. Tu le prends pour +5 secondes, pas pour le quota.",
     image: "assets/enemy_bonus.png",
     imageAlt: "Une cible bonus qui donne du temps",
   },
@@ -174,28 +200,46 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   },
   {
     speaker: "DISPATCH",
-    text: "Parfois, un preneur d'otage se planque derrière sa prise. Un anneau balaie son corps et vire de couleur : ROUGE à côté, JAUNE sur un membre, VERT sur la tête. Aligne ta cible sur l'anneau et tire quand il passe au VERT.",
+    text: "Priorité menace : CRS d'abord, puis motard, puis flic. Bonus et livreur ne font pas monter le danger.",
+    diagram: "threat-hierarchy-ladder",
+    diagramAlt:
+      "Échelle de priorité des menaces : CRS en tête, puis motard, puis flic standard ; bonus et livreur en bas de l'échelle.",
+    teachingBullets: ["CRS > motard > flic", "Bonus/livreur = non prioritaires"],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Parfois, prise d'otage : l'anneau passe rouge, jaune, vert. Tu tires au vert.",
     diagram: "hostage-ring",
     diagramAlt:
-      "Un anneau de visée balaie le preneur d'otage et cycle du rouge (à côté de lui) au jaune (un bras, une jambe) au vert (la tête) ; on tire quand il est vert.",
+      "Un anneau de visée passe du rouge au jaune puis au vert sur le preneur d'otage ; on tire au vert.",
   },
   {
     speaker: "DISPATCH",
-    text: "En haut : ton score, le niveau, la vague, le chrono et tes vies. Quand le colis passe, la jauge de livraison s'affiche au centre — tiens-la au vert.",
+    text: "En niveau boss, chrono à zéro : bascule finale Commandant. Le quota ne termine plus la manche.",
+    diagram: "boss-finale-switch",
+    diagramAlt:
+      "Bascule de fin de niveau boss : expiration du chrono active la phase finale Commandant et remplace la fin par quota.",
   },
   {
     speaker: "DISPATCH",
-    text: "Compris ? Alors bouge. Rue Belliard t'attend.",
+    text: "En haut : score, niveau, vague, chrono, vies. Au passage du camion, la jauge de livraison doit rester au vert.",
+    teachingBullets: ["HUD: score/niveau/vague/temps/vies", "Livraison: jauge verte pendant le passage"],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Compris ? Bouge. Rue Belliard t'attend.",
   },
 ];
 
 export const TUTORIAL_NARRATIVE_DESKTOP: NarrativeScene = {
   id: "tutorial_desktop",
+  backdrop: "assets/levels/belliard/facade.png",
   lines: [...TUTORIAL_OPENING_LINES, ...DESKTOP_CONTROL_LINES, ...TUTORIAL_FIELD_LINES],
 };
 
 export const TUTORIAL_NARRATIVE_MOBILE: NarrativeScene = {
   id: "tutorial_mobile",
+  backdrop: "assets/levels/belliard/facade.png",
   lines: [...TUTORIAL_OPENING_LINES, ...MOBILE_CONTROL_LINES, ...TUTORIAL_FIELD_LINES],
 };
 

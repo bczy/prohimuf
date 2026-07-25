@@ -32,6 +32,9 @@ Rules of the folder:
 | ------------------------------------------------------------ | ------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `tutorial-visual-gestures.md` — gesture-icon + bestiary spec | Sacha (`game-designer`)        | 2026-07-14 · PASS | 11-panel structure ratified; downstream: `senior-architect` ADR-0015 D3 amendment (AC11), `lead-art` glow-hue + falloff at composite gate |
 | `tutorial-script-visual-gestures.md` — expanded French copy  | Yasmine (`narrative-designer`) | 2026-07-14 · PASS | Copy TRUE to `ARCHETYPES`; device-accurate-copy pins hold; both `[FLAG]`s resolved by Sacha's spec                                        |
+| `tutorial-immersion-teaching-spec.md` — gameplay-teaching panel map (16 panels) | Sacha (`game-designer`) | 2026-07-25 · PASS | Re-gate PASS after parity fix; no net-new mechanic; token map + acceptance criteria aligned with script/UX triplet |
+| `tutorial-script-visual-gestures.md` — 16-panel parity script + gesture/diagram bullets | Yasmine (`narrative-designer`) | 2026-07-25 · PASS | Re-gate PASS after parity fix; panel/order/token parity restored; bullet discipline aligned to UX high-risk panels only |
+| `ux/spec-tutorial-narrative-presentation.md` — tutorial narrative presentation contract | Tony (`ux-designer`) | 2026-07-25 · PASS | Re-gate PASS after parity fix; channel hierarchy, bullet constraints, and accessibility contract coherent with teaching/script specs |
 
 _The design lane opened on 2026-07-14. Existing de-facto design surfaces (shipped tuning
 values in `src/game/**`, narrative scenes in `src/game/systems/narrativeSystem.ts`,

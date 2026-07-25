@@ -339,8 +339,13 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
     return dedupe([menuBackdropPath()]);
   }
   if (target === "tutorial") {
+    const tutorialBackdrops = [
+      TUTORIAL_NARRATIVE_DESKTOP.backdrop,
+      TUTORIAL_NARRATIVE_MOBILE.backdrop,
+    ].filter((backdrop): backdrop is string => backdrop !== undefined);
     return dedupe([
       menuBackdropPath(),
+      ...tutorialBackdrops,
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
     ]);

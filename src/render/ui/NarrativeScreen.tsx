@@ -63,6 +63,10 @@ export function NarrativeScreen({
   const currentLine = scene.lines[lineIndex];
   const fullText = currentLine?.text ?? "";
   const isTyping = charIndex < fullText.length;
+  const teachingBullets = (currentLine?.teachingBullets ?? [])
+      .map((bullet) => bullet.trim())
+      .filter((bullet) => bullet.length > 0)
+      .slice(0, 2);
 
   // Clear any previous sprite-load failure when the panel changes.
   useEffect(() => {
@@ -232,8 +236,7 @@ export function NarrativeScreen({
 
           {/* Transcript box — the fax/répondeur note, ink on paper. On a backdrop scene the
               ground is forced to SOLID newsprint (lead-art constraint) so the ink text never
-              rides over the halftone facade; backdrop-less scenes (tutorial) keep `transparent`
-              and are byte-identical to before. */}
+              rides over the halftone facade; backdrop-less scenes keep `transparent`. */}
           <div
             className={styles.transcript}
             style={{ background: scene.backdrop !== undefined ? STOCK.shell : "transparent" }}
@@ -246,6 +249,16 @@ export function NarrativeScreen({
               {displayedText}
               {isTyping && <span className={styles.caret} />}
             </div>
+
+            {teachingBullets.length > 0 && (
+              <ul className={styles.teachingBullets}>
+                {teachingBullets.map((bullet) => (
+                  <li key={bullet} className={styles.teachingBullet}>
+                    {bullet}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse).
                 On the final panel the "done" tell is a black-keylined green box accent, not
