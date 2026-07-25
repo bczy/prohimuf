@@ -213,3 +213,4 @@ To try a branch live without merging to `main`:
 | Regenerate enemy sprites                     | Actions → Generate enemy-type sprites                                                             |
 | Dispatch a workflow without `actions: write` | `date > .github/dispatch/<name> && git add … && git commit -m "ci(dispatch): <name>" && git push` |
 | Run checks locally before push               | `yarn typecheck && yarn lint && yarn test` (mirrors `ci.yml`)                                     |
+| Purge a stale lint/format cache              | `rm -rf node_modules/.cache` (ESLint does not invalidate on config change)                        |
