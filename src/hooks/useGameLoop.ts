@@ -150,6 +150,7 @@ function floaterFor(ev: {
   timeDelta: number;
 }): { text: string; color: string } | null {
   if (ev.livesDelta < 0) return { text: "-1 ♥", color: "#ff6b6b" };
+  if (ev.livesDelta > 0) return { text: `+${String(ev.livesDelta)} ♥`, color: "#7CFF7C" };
   if (ev.timeDelta > 0) return { text: `+${String(ev.timeDelta)}s`, color: "#ffe08a" };
   if (ev.scoreDelta > 0) return { text: `+${String(ev.scoreDelta)}`, color: "#bfffd0" };
   if (ev.scoreDelta < 0) return { text: String(ev.scoreDelta), color: "#ff6b6b" };

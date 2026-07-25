@@ -1068,6 +1068,29 @@ describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives d
     expect(next.lives).toBe(s.lives);
     expect(next.kills).toBe(s.kills);
   });
+
+  it("a rewarded crate hit applies score/lives and emits point feedback", () => {
+    const crate: LootCrate = {
+      id: 1,
+      slotIndex: CENTRE_SLOT,
+      state: "VISIBLE",
+      timer: 5,
+      weapon: "spread",
+      reward: { profile: "attache-case", scoreDelta: 0, livesDelta: 2 },
+    };
+    const s: GameState = {
+      ...createInitialState(FACADE_01, paramsForLevel(levelById("belliard"))),
+      loot: crate,
+    };
+    const aim = aimAtCrate(CENTRE_SLOT);
+    const next = tickGameState(s, fire, aim.mx, aim.my, 0.016, FACADE_01);
+    expect(next.loot).toBeNull();
+    expect(next.score).toBe(s.score);
+    expect(next.lives).toBe(s.lives + 2);
+    expect(next.pointFeedback).toEqual([
+      { x: FACADE_01.slots[CENTRE_SLOT]?.screenPosition.x ?? 0, y: LOOT_STREET_Y, scoreDelta: 0, livesDelta: 2, timeDelta: 0 },
+    ]);
+  });
 });
 
 describe("tickGameState — AC14 (A7 regression): a player hit never touches weapon state", () => {
