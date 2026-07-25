@@ -153,7 +153,75 @@ Consequences of the carve-out, and what still holds:
   the camera pans. This is the accepted cost of the bigger signal — a conscious,
   documented relaxation of the iron rule, scoped to this ONE kind.
 - It is still drawn at `renderOrder 5`, **below** the courier (6) and delivery van (7),
-  so it can never mask a "Livrer" target (finding #8 still holds).
+  so it can never mask a "Livrer" target (finding #8 still holds). *(Superseded on
+  2026-07-25 — see the amendment below: the near row moved to `renderOrder 5.75`, above
+  the courier (5.5), so the near row, traffic light included, now draws IN FRONT of
+  him.)*
 - **Every other near/far prop is unchanged** — still strictly capped under `maxH`
   (the band ceiling); the non-occlusion test still guards them. Only `trafficLight`
   bypasses `maxH`, via its own `TRAFFIC_LIGHT_H_FRAC` allowance in `NearForeground`.
+
+## Amendment — courier between the two prop rows (Bertrand-directed, 2026-07-25)
+
+Bertrand, reviewing the shipped street: *« le cycliste est en premier plan… il devrait
+être dans la première et la seconde ligne de props »*. The livreur read as pasted on top
+of the décor instead of riding **in** it, which flattened the differential parallax the
+whole layer exists to sell.
+
+The courier now sits **in depth between the two kerb rows**: drawn after the FAR row,
+before the NEAR row. This **reverses finding #8 for the near row only** — the original
+rule that no near-foreground prop may ever mask a "Livrer" target. Bertrand's explicit
+arbitration: **depth ambiance over total target legibility**. The near row is the ONLY
+newly accepted occlusion of the courier; nothing else in the scene gained the right to
+paint over him.
+
+Final street stack, single-sourced in `src/render/scene/streetDepth.ts` (`STREET_DEPTH`)
+and guarded by `src/render/scene/__tests__/streetDepth.test.ts`:
+
+| layer                        | renderOrder | z    | masks the courier?   |
+| ---------------------------- | ----------- | ---- | -------------------- |
+| far kerb row                 | 4           | 0.60 | never                |
+| facade ironwork (ceiling)    | 5           | 0.50 | **never** (see below)|
+| **courier (vélo)**           | **5.5**     | 0.65 | —                    |
+| near kerb row                | 5.75        | 0.70 | **may, partially**   |
+| delivery vehicle rim         | 6           | 0.71 | n/a                  |
+| delivery vehicle             | 7           | 0.72 | n/a (stays in front) |
+
+What still holds, and why the numbering looks like this:
+
+- The **delivery van is untouched** and still passes in front of the entire décor.
+- The **far row never masks the courier** — the guarantee of finding #8 survives for the
+  row that sits behind him.
+- **The courier still passes IN FRONT of the facade ironwork.** `ForegroundFrames` and
+  `WindowGrilles` are balcony/grille overlays painted ON the facade at z 0.50, i.e.
+  physically *behind* every street actor, yet they own `renderOrder 5`. All these
+  materials are `transparent` + `depthWrite:false` in one sort list, so renderOrder
+  alone decides. A first cut of this amendment put the courier at 4.5 and thereby sent
+  him **under** the ironwork: on `vitry` the opaque HLM balcony slab (`drawHlmZone`)
+  lands at world y −4.17…−4.55 while couriers ride at `streetY` −4.8 with a 2.6-unit
+  sprite, so a concrete rectangle painted straight across the rider's head and shoulders
+  at every window column; `niveau-final`'s haussmann balustrade did the same. Both
+  street-actor slots therefore stay **strictly above** `STREET_DEPTH.facadeOverlay` (5)
+  and strictly below the van rim (6): **5.5 / 5.75**. The layering test asserts this
+  explicitly (`street ACTOR above the facade-attached ironwork`), not merely that the
+  slot is free.
+- The fractional slots **5.5 / 5.75** (same device as `ImpactEffects`' 3.5 / 7.9 / 8.1)
+  keep every street layer on a **distinct, unambiguous** `renderOrder`: with
+  `depthWrite:false` transparent materials, equal renderOrders fall back to distance
+  sorting, which is precisely the ambiguity we refuse. The test derives the "already
+  claimed" set by scanning `src/render/**` for literal renderOrders, so a future module
+  grabbing 5.5 or 5.75 fails the build. (`ForegroundImage` declares a renderOrder-6
+  plane but is **not mounted anywhere** in the scene graph — `ForegroundFrames` and
+  `WindowGrilles` are the only real facade overlays; earlier drafts of this ADR listed
+  `ForegroundImage` as an occupant of 6, which was wrong.)
+- `RIDER_Z` moved 0.701 → **0.65**, between the two rows' z, so world depth agrees with
+  paint order rather than contradicting it. `ForegroundFrames` / `WindowGrilles` now
+  read their own z + renderOrder from `STREET_DEPTH.facadeOverlay`, so the ceiling and
+  the actors can no longer drift apart silently.
+- The **feu tricolore carve-out compounds with this**: it lives in the NEAR row, so the
+  hero mast may now cross a passing livreur as well as a static cop window. Accepted,
+  same arbitration.
+- **Known, pre-existing, out of scope:** the FAR row stays at `renderOrder 4`, below the
+  facade overlays, so a deep balcony slab can still paint over a low far-row prop on
+  `vitry`. Far-row props are décor, not "Livrer" targets; lifting the whole row over the
+  overlays is a visible art call for Bertrand / senior-architect, not a silent fix here.

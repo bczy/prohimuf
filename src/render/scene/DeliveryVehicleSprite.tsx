@@ -21,7 +21,9 @@ function vehicleAspect(type: VehicleType): number {
   const s = levelArt.vehicles.types[type].size;
   return s.width / s.height;
 }
-// Sits on the courier street lane, just in front of the couriers (z 0.7).
+// Sits on the courier street lane, in front of the whole near-foreground décor:
+// couriers ride at z 0.65 and the near prop row at z 0.7 (see streetDepth.ts),
+// so the van (renderOrder 7) still passes in front of everything.
 const VEHICLE_Z = 0.72;
 
 // The direction the committed source art faces, per vehicle type (art-gate

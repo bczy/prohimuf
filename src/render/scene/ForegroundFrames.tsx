@@ -5,6 +5,7 @@ import type { IronworkStyle, WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { drawForegroundIronwork, drawForegroundIronworkPerBuilding } from "./foregroundArt";
 import { FACADE_DRAW_SCALE } from "./facadeLayout";
+import { STREET_DEPTH } from "./streetDepth";
 
 // Frame texture resolution: 2× the native facade art (1280×768) so the
 // code-drawn ironwork stays crisp once the panel is magnified on screen
@@ -108,7 +109,13 @@ export function ForegroundFrames({
     // railings track the facade image (drawn at the same stretch) pixel-for-pixel;
     // the texture content (zone → texture-x) is untouched. Single-facade panels
     // stretch by 1+BLEND; tronçon tiles pass 1 (native width, no feather).
-    <mesh position={[0, 0, 0.5]} renderOrder={5}>
+    // Depth slot: STREET_DEPTH.facadeOverlay — this plane is PAINTED ON THE
+    // FACADE (z 0.5), so it must stay strictly BELOW every street actor
+    // (courier 5.5, delivery van 6/7), which are physically in front of it.
+    <mesh
+      position={[0, 0, STREET_DEPTH.facadeOverlay.z]}
+      renderOrder={STREET_DEPTH.facadeOverlay.order}
+    >
       <planeGeometry args={[facadeW * drawScale, facadeH]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
