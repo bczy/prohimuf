@@ -1,7 +1,5 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { lazy, Suspense, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import type { JSX } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
 import { HUD } from "@render/ui/HUD";
 import type { HudData } from "@render/ui/HUD";
 import { MainMenu } from "@render/ui/MainMenu";
@@ -13,7 +11,6 @@ import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
-import { GameScene } from "./GameScene";
 import {
   installBossCaptureSeam,
   isBossSeamShippedLevel,
@@ -48,6 +45,11 @@ import {
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
+
+// Lazy-loaded R3F/Three.js chunk (ADR-0068): Canvas + GameScene only reach the
+// network when the player is about to enter PLAYING. Prefetch fires on MENU entry
+// so the chunk is already cached when "Play" is clicked.
+const PlayingCanvas = lazy(() => import("./PlayingCanvas"));
 
 type AppPhase =
   | "TITLE"
@@ -332,6 +334,14 @@ export function App(): JSX.Element {
     };
   }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, unlockedLevels]);
 
+  // Prefetch the R3F/Three.js chunk as soon as the player reaches the MENU so
+  // the dynamic import is already cached when "Play" is clicked (ADR-0068).
+  useEffect(() => {
+    if (appPhase === "MENU") {
+      void import("./PlayingCanvas");
+    }
+  }, [appPhase]);
+
   function handlePlay(levelId: string): void {
     const level = LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
     // Scripted onboarding stage (ADR-0012, D3): no game state, no `setSelectedLevel`
@@ -538,62 +548,43 @@ export function App(): JSX.Element {
         touchAction: IS_MOBILE ? "none" : "auto",
       }}
     >
-      <Canvas
-        ref={canvasRef}
-        flat
-        orthographic
-        camera={{ zoom: 50, position: [0, 0, 100], near: 0.1, far: 1000 }}
-        className={styles.canvas}
-      >
-        <ambientLight intensity={2.2} />
-        <directionalLight position={[-12, 2, 4]} intensity={0.8} />
-        <directionalLight position={[10, -1, 3]} intensity={0.2} color="#2040a0" />
-        <Suspense fallback={null}>
-          <GameScene
-            key={gameKey}
-            onHudUpdate={(data) => {
-              setHudData((prev) => ({
-                ...data,
-                levelName: selectedLevel.name,
-                isHighScore: isHighScore(selectedLevel.id, data.score),
-                // Delivery / QTE state arrive on separate channels; keep across refreshes.
-                delivery: prev.delivery,
-                hostageQte: prev.hostageQte,
-                bossQte: prev.bossQte,
-              }));
-            }}
-            onDelivery={(delivery) => {
-              setHudData((prev) => ({ ...prev, delivery }));
-            }}
-            onHostageQte={(hostageQte) => {
-              setHudData((prev) => ({ ...prev, hostageQte: hostageQte ?? undefined }));
-            }}
-            onBossQte={(bossQte) => {
-              setHudData((prev) => ({ ...prev, bossQte: bossQte ?? undefined }));
-            }}
-            canvasRef={canvasRef}
-            playSfx={audio.playSfx}
-            levelParams={levelParams}
-            levelId={selectedLevel.id}
-            paused={paused || rotateBlocked}
-            isMobile={IS_MOBILE}
-            crt={prefs.crt}
-            reducedMotion={reducedMotion}
-          />
-        </Suspense>
-      </Canvas>
-      <style>{`@keyframes mufRedFlash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}`}</style>
-      {lifeFlash > 0 && (
-        <div
-          key={lifeFlash}
-          className={styles.lifeFlash}
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(255,0,0,0) 45%, rgba(220,0,0,0.55) 100%)",
-            animation: "mufRedFlash 0.6s ease-out forwards",
+      {/* Lazy-loaded R3F chunk (ADR-0068): Three.js + Canvas + GameScene.
+          The outer Suspense shows a LoadingScreen while the JS chunk fetches;
+          the inner one (inside PlayingCanvas) handles Three.js texture streaming. */}
+      <Suspense fallback={<LoadingScreen label={selectedLevel?.name ?? "LOADING"} progress={1} />}>
+        <PlayingCanvas
+          canvasRef={canvasRef}
+          gameKey={gameKey}
+          lifeFlash={lifeFlash}
+          onHudUpdate={(data) => {
+            setHudData((prev) => ({
+              ...data,
+              levelName: selectedLevel.name,
+              isHighScore: isHighScore(selectedLevel.id, data.score),
+              // Delivery / QTE state arrive on separate channels; keep across refreshes.
+              delivery: prev.delivery,
+              hostageQte: prev.hostageQte,
+              bossQte: prev.bossQte,
+            }));
           }}
+          onDelivery={(delivery) => {
+            setHudData((prev) => ({ ...prev, delivery }));
+          }}
+          onHostageQte={(hostageQte) => {
+            setHudData((prev) => ({ ...prev, hostageQte: hostageQte ?? undefined }));
+          }}
+          onBossQte={(bossQte) => {
+            setHudData((prev) => ({ ...prev, bossQte: bossQte ?? undefined }));
+          }}
+          playSfx={audio.playSfx}
+          levelParams={levelParams}
+          levelId={selectedLevel.id}
+          paused={paused || rotateBlocked}
+          isMobile={IS_MOBILE}
+          crt={prefs.crt}
+          reducedMotion={reducedMotion}
         />
-      )}
+      </Suspense>
       <HUD data={hudData} />
       {paused && !rotateBlocked && (
         <PauseScreen
