@@ -5,7 +5,6 @@
  * - DIG: monochrome street-carry, business clandestine attaché, rave flight-case
  *
  * Outputs:
- *   public/assets/models/loot/cash-bundle.glb
  *   public/assets/models/loot/attache-case.glb
  *   public/assets/models/loot/backpack.glb
  *   public/assets/models/loot/flight-case.glb
@@ -27,37 +26,24 @@ const FORCE = process.env.FORCE === "1";
 
 const STYLE_SUFFIX =
   "low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, " +
-  "worn matte materials, monochrome-black base, subtle 1990s sportswear seam and panel language, restrained chrome details, readable silhouette";
+  "readable silhouette, visible texture detail at game scale, clear material separation, avoid flat pure-black surfaces";
 
 const ASSETS = [
   {
-    id: "cash-bundle",
-    outFile: "cash-bundle.glb",
-    seed: 6201,
-    prompt:
-      "a compact bundle of late-1990s french-franc banknotes wrapped by two rubber bands, slightly worn paper edges, discreet street-cash look, not luxurious, " +
-      STYLE_SUFFIX,
-    references: [
-      "https://en.wikipedia.org/wiki/French_franc",
-      "https://en.wikipedia.org/wiki/Banknote",
-      "https://en.wikipedia.org/wiki/Money_bag",
-    ],
-  },
-  {
     id: "attache-case",
     outFile: "attache-case.glb",
-    seed: 6202,
+    seed: 6212,
     prompt:
-      "a hard rectangular attache case, matte black shell with rounded edges, understated chrome latches and handle mounts, light scuffs, discreet clandestine-courier look, " +
+      "a hard rectangular attache case, deep charcoal shell (not pure black), brushed aluminum lower band, satin-chrome latches and hinges, black polymer handle, subtle scratches and edge wear, discreet clandestine-courier look, " +
       STYLE_SUFFIX,
     references: ["https://en.wikipedia.org/wiki/Briefcase", "https://en.wikipedia.org/wiki/Zero_Halliburton"],
   },
   {
     id: "backpack",
     outFile: "backpack.glb",
-    seed: 6203,
+    seed: 6213,
     prompt:
-      "a medium urban backpack, black canvas-nylon mix, front pocket, generic 1990s sportswear panel seams, worn straps, practical street utility look, " +
+      "a medium urban backpack, dark graphite fabric body with slightly lighter charcoal side panels, visible woven nylon texture, stitched seams, matte black straps with gray webbing accents, practical 1990s street utility look, " +
       STYLE_SUFFIX,
     references: [
       "https://en.wikipedia.org/wiki/Eastpak",
@@ -68,9 +54,9 @@ const ASSETS = [
   {
     id: "flight-case",
     outFile: "flight-case.glb",
-    seed: 6204,
+    seed: 6214,
     prompt:
-      "a compact rave logistics flight case, dark plywood panels, aluminum edge extrusions, corner protectors, recessed handle, slightly worn touring gear look, " +
+      "a compact rave logistics flight case, matte black birch-ply panels with subtle wood grain, bright aluminum edge extrusions, steel corner protectors, recessed handle plate, visible rivets, slightly worn touring gear look, " +
       STYLE_SUFFIX,
     references: ["https://en.wikipedia.org/wiki/Road_case", "https://en.wikipedia.org/wiki/Technics_SL-1200"],
   },
@@ -85,14 +71,14 @@ function writeReferencesSidecar(generatedAt) {
     generatedAt,
     source: "scripts/gen-loot-3d.mjs",
     selection: {
-      bagTypes: ["cash bundle", "attache case", "backpack", "flight case"],
+      bagTypes: ["attache case", "backpack", "flight case"],
       universes: ["A Monochrome Street", "B 90s Sportswear", "E Business Clandestine"],
       verdicts: {
         "monochrome street-carry": "DIG",
         "90s sportswear panel language": "KEEP",
         "business clandestine attache": "DIG",
         "rave logistics flight-case": "DIG",
-        "cash bundle realism": "KEEP",
+        "cash bundle realism": "DEFERRED",
       },
     },
     assets: ASSETS.map((asset) => ({
