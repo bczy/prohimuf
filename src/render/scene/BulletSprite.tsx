@@ -38,11 +38,10 @@ const FORWARD = new Vector3(0, 1, 0);
 
 // Uniform scale applied to a cloned generated-model instance so it reads at
 // roughly the same on-screen size as the procedural cylinder+cap it replaces.
-// The real generated model's native proportions are unknown until the CI
-// generation lands — TUNE THIS after the first real asset is committed, same
-// registration ritual as the vehicle `facing` / enemy `muzzle` anchors
-// (ADR-0049 consequences).
-const MODEL_SCALE = 1;
+// Calibrated with model-viewer.html against the real generated GLB (unscaled
+// bbox ~0.517 × 1.888 × 0.518, tall axis = Y) against the fallback's
+// BODY_LENGTH + CAP_RADIUS = 0.36 tall: 0.36 / 1.888 ≈ 0.19.
+const MODEL_SCALE = 0.19;
 
 interface Props {
   stateRef: React.RefObject<GameState>;

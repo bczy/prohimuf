@@ -74,17 +74,17 @@ drei` as a new dependency, `three` (already a dependency, pinned `^0.175.0`)
 - The bullet keeps rendering correctly (coloured primitive, trajectory-oriented)
   on every branch/PR that hasn't run the generation workflow — no regression risk,
   no blocked merge waiting on a paid external call.
-- `MODEL_SCALE` in `BulletSprite.tsx` is a placeholder (`1`) until the real GLB's
-  native proportions are known — a registration/tuning ritual identical to the
-  vehicle `facing` / enemy `muzzle` anchors (ADR-0049 consequences): whoever
-  reviews the first generated asset in-game MUST tune it (and, if the model's
-  default nose axis isn't local +Y, add an explicit rotation offset — none is
-  wired yet since there is nothing to calibrate against). `model-viewer.html`
-  (`yarn dev` → `/model-viewer.html`, or `yarn build:model-viewer`) is a standalone
-  dev-only Vite page for this: it reuses `bulletModel.ts` to load the same GLB,
-  shows the identical procedural fallback while missing, and reports the loaded
-  model's bounding-box size to size-check `MODEL_SCALE` before touching
-  `BulletSprite.tsx`.
+- `MODEL_SCALE` in `BulletSprite.tsx` was a placeholder (`1`) until the real GLB
+  landed — a registration/tuning ritual identical to the vehicle `facing` /
+  enemy `muzzle` anchors (ADR-0049 consequences). The first CI generation run
+  produced a model whose tall axis is local +Y (same as `FORWARD`, so no extra
+  rotation offset was needed) with an unscaled bounding box of
+  ~0.517 × 1.888 × 0.518; `model-viewer.html`
+  (`yarn dev` → `/model-viewer.html`, or `yarn build:model-viewer`) — a standalone
+  dev-only Vite page that reuses `bulletModel.ts` to load the same GLB, shows the
+  identical procedural fallback while missing, and reports the loaded model's
+  bounding-box size — was used to read that size and calibrate `MODEL_SCALE` to
+  `0.19` (`0.36` fallback height ÷ `1.888`).
 - The 3D generation is a metered, keyed API call (unlike the free-tier `flux`
   pipeline) — it must only ever run in CI with the repo secret, never dispatched
   ad hoc from an agent sandbox.
