@@ -12,30 +12,31 @@ Branch: `claude/street-graphics-effects-q8p59k`. Plan:
 
 ### File List
 
-Effect 1 — acid neon glow (`3b3b011`)
+Effect 1 — acid neon glow (`fccbb96`)
 
 - `src/render/scene/neonSignage.ts` (new)
 - `src/render/scene/__tests__/neonSignage.test.ts` (new)
 - `src/render/effects/radialGlowTexture.ts` (new)
 - `src/render/scene/NearForeground.tsx`
 
-Effect 2 — VHS scan lines (`850685c`)
+Effect 2 — VHS scan lines (`ad09155`)
 
 - `src/render/effects/vhsScanline.ts` (new)
 - `src/render/effects/__tests__/vhsScanline.test.ts` (new)
 - `src/render/effects/CrtPass.tsx`, `src/render/effects/crtShaders.ts`
 - `src/render/ui/menu/OptionsControls.tsx` (+ its spec)
 - `src/game/systems/prefsSystem.ts` (+ its spec) — **cross-lane, see below**
-- `src/render/scene/App.tsx`, `src/render/scene/GameScene.tsx`
+- `src/render/scene/App.tsx`, `src/render/scene/PlayingCanvas.tsx`,
+  `src/render/scene/GameScene.tsx`
 
-Effect 3 — entity shadow + energy glow (`5596e69`)
+Effect 3 — entity shadow + energy glow (`1e2d2a4`)
 
 - `src/render/effects/energyGlow.ts` (new), `src/render/effects/entityAura.ts` (new)
 - `src/render/effects/__tests__/energyGlow.test.ts` (new)
 - `src/render/scene/HostageQteSprite.tsx`, `src/render/scene/BossQteSprite.tsx`,
   `src/render/scene/LootCrate.tsx`
 
-Effect 5 — urban movement (`67b94a6`)
+Effect 5 — urban movement (`9c792a7`)
 
 - `src/render/effects/UrbanMotion.tsx` (new), `src/render/effects/urbanDebris.ts` (new)
 - `src/render/effects/__tests__/urbanDebris.test.ts` (new)
@@ -83,5 +84,10 @@ target, no new pass, `CrtPass`'s pass graph unchanged. Ben should still verdict 
 
 Another agent (Équipe 2, TITLE spray reveal) is working in the SAME checkout. My first
 commit swept their in-flight `TitleScreen` files in; it was reset and re-made with
-explicit paths, and their work is intact in `377f5c4` / `000a000`. Every commit here
+explicit paths, and their work is intact in `f3b4d35` / `5cbee47`. Every commit here
 stages explicit paths only — no `git add -A` on this branch.
+
+The branch was also rebased onto main mid-session (ADR-0068 lazy `PlayingCanvas`, the 3D
+loot models, `PlayerHitEffects`, the QTE bullets). Five conflicts, all resolved as unions
+of both sides: `vhs` now threads App → `PlayingCanvas` → `GameScene` → `CrtPass`. Post-
+rebase: `tsc` clean, 91 files / 1206 tests green, `eslint .` clean, prettier clean.
