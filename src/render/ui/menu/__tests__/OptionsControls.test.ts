@@ -26,26 +26,34 @@ const count = (html: string, re: RegExp): number => (html.match(re) ?? []).lengt
 describe("OptionsControls a11y contract", () => {
   const html = render(DEFAULT_PREFS);
 
-  it("wraps every ballot row in role=radiogroup (VIES, PRESSION, TUBE CATHODIQUE, MOUVEMENT RÉDUIT)", () => {
-    expect(count(html, /role="radiogroup"/g)).toBe(4);
+  it("wraps every ballot row in role=radiogroup (VIES, PRESSION, TUBE CATHODIQUE, BALAYAGE VHS, MOUVEMENT RÉDUIT)", () => {
+    expect(count(html, /role="radiogroup"/g)).toBe(5);
   });
 
   it("names each radiogroup from its visible row label", () => {
-    expect(count(html, /role="radiogroup" aria-labelledby="/g)).toBe(4);
+    expect(count(html, /role="radiogroup" aria-labelledby="/g)).toBe(5);
   });
 
   it("exposes role=radio + aria-checked on every choice", () => {
-    // 5 lives + 3 difficulties + 2 CRT + 2 reduced-motion choices = 12 radios.
-    expect(count(html, /role="radio"/g)).toBe(12);
-    expect(count(html, /aria-checked="/g)).toBe(12);
+    // 5 lives + 3 difficulties + 2 CRT + 2 VHS + 2 reduced-motion choices = 14 radios.
+    expect(count(html, /role="radio"/g)).toBe(14);
+    expect(count(html, /aria-checked="/g)).toBe(14);
   });
 
   it("checks exactly one choice per radiogroup", () => {
-    expect(count(html, /aria-checked="true"/g)).toBe(4);
+    expect(count(html, /aria-checked="true"/g)).toBe(5);
   });
 
   it("renders the MOUVEMENT RÉDUIT row (accessibility toggle)", () => {
     expect(html).toContain("MOUVEMENT RÉDUIT");
+  });
+
+  it("renders the BALAYAGE VHS row and tracks prefs.vhs", () => {
+    expect(html).toContain("BALAYAGE VHS");
+    // DEFAULT_PREFS.vhs is true ⇒ OUI checked; flipping the pref flips the mark.
+    const off = render({ ...DEFAULT_PREFS, vhs: false });
+    expect(count(off, /aria-checked="true"/g)).toBe(5);
+    expect(off).toContain("BALAYAGE VHS");
   });
 
   it("keeps the native range sliders for the two VU meters", () => {

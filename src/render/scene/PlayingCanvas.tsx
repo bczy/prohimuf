@@ -44,6 +44,8 @@ interface Props {
   paused: boolean;
   isMobile: boolean;
   crt: boolean;
+  /** VHS scan-line travel toggle (prefs.vhs) — forwarded to the CRT pass. */
+  vhs: boolean;
   reducedMotion: boolean;
 }
 
@@ -61,6 +63,7 @@ export default function PlayingCanvas({
   paused,
   isMobile,
   crt,
+  vhs,
   reducedMotion,
 }: Props): JSX.Element {
   return (
@@ -90,6 +93,7 @@ export default function PlayingCanvas({
             paused={paused}
             isMobile={isMobile}
             crt={crt}
+            vhs={vhs}
             reducedMotion={reducedMotion}
           />
         </Suspense>

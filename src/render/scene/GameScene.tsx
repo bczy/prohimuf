@@ -123,6 +123,9 @@ interface Props {
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
    *  and moves the crosshair to the flat overlay layer (ADR-0031). */
   crt?: boolean;
+  /** VHS scan-line travel toggle (prefs.vhs). Only bites while `crt` is on — it
+   *  makes the CRT composite's existing scanline comb crawl slowly upward. */
+  vhs?: boolean;
   /** Effective reduced motion (ADR-0054 §3): the shared derived signal, forwarded
    *  to CrtPass so the CRT grain/flicker freeze honours the in-app toggle + OS. */
   reducedMotion?: boolean;
@@ -140,6 +143,7 @@ export function GameScene({
   onBossQte,
   isMobile = false,
   crt = false,
+  vhs = false,
   reducedMotion = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art. The
@@ -468,6 +472,7 @@ export function GameScene({
           tier={isMobile ? "lite" : "full"}
           paused={paused === true}
           reducedMotion={reducedMotion}
+          vhs={vhs}
         />
       )}
     </>

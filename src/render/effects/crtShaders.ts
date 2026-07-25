@@ -83,6 +83,7 @@ uniform float uTime;
 uniform float uBloomStrength;
 uniform float uScanlineDarkening;
 uniform float uScanlinePeriod; // device px per comb line (CSS-locked: N CSS px × dpr)
+uniform float uScanlineScroll; // VHS travel offset, device px (0 = static comb)
 uniform float uVignette;
 uniform float uGrain;
 uniform float uFlicker;
@@ -113,7 +114,13 @@ void main() {
   // device period melts into invisibility at dpr ≥ 2. The squared profile narrows
   // the trough into a crisp dark line and leaves the rows between at full
   // brightness (readability), instead of a soft sinusoid that averages flat.
-  float phase = 0.5 - 0.5 * cos(gl_FragCoord.y * (6.28318531 / uScanlinePeriod));
+  // VHS travel: SUBTRACTING the offset shifts the comb toward larger y, and
+  // gl_FragCoord.y grows upward, so a growing offset makes the scan climb — « le
+  // scan remonte ». The offset is wrapped on the period host-side, so this stays
+  // exactly the old static comb whenever uScanlineScroll is 0 (toggle OFF,
+  // reduced motion, paused): byte-identical, no branch.
+  float phase =
+    0.5 - 0.5 * cos((gl_FragCoord.y - uScanlineScroll) * (6.28318531 / uScanlinePeriod));
   float line = phase * phase;
   col *= 1.0 - uScanlineDarkening * line;
 

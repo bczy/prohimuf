@@ -42,6 +42,11 @@ const CRT_CHOICES: readonly { value: boolean; label: string }[] = [
   { value: false, label: "NON" },
 ];
 
+const VHS_CHOICES: readonly { value: boolean; label: string }[] = [
+  { value: true, label: "OUI" },
+  { value: false, label: "NON" },
+];
+
 const REDUCED_MOTION_CHOICES: readonly { value: boolean; label: string }[] = [
   { value: true, label: "OUI" },
   { value: false, label: "NON" },
@@ -102,6 +107,15 @@ export function OptionsControls({
     },
   }));
 
+  const vhsOptions: BallotChoice[] = VHS_CHOICES.map((c) => ({
+    key: c.label,
+    label: c.label,
+    selected: prefs.vhs === c.value,
+    onSelect: () => {
+      onChange({ vhs: c.value });
+    },
+  }));
+
   const reducedMotionOptions = buildReducedMotionChoices(prefs, onChange);
 
   return (
@@ -136,6 +150,9 @@ export function OptionsControls({
         note={runScopedNote}
       />
       <BallotRow label="TUBE CATHODIQUE" hint="scanlines & courbure d'écran" options={crtOptions} />
+      {/* Sits under TUBE CATHODIQUE because it only bites when that one is ON:
+          the travel is a property of the comb the CRT pass draws. */}
+      <BallotRow label="BALAYAGE VHS" hint="le scan qui remonte" options={vhsOptions} />
       <BallotRow
         label="MOUVEMENT RÉDUIT"
         hint="moins d'animations & de flashs"
