@@ -428,7 +428,7 @@ export function tickGameState(
     const slot = facade.slots[enemy.slotIndex];
     if (slot === undefined) continue;
     _nextBulletId++;
-    // Aim jitter (ADR-0064): a deterministic per-bullet RNG offsets the aim
+    // Aim jitter (ADR-0065): a deterministic per-bullet RNG offsets the aim
     // point inside a small disc, so enemy fire is threatening but not a
     // guaranteed hit when the player holds still.
     const jitter = sampleDiscJitter(makeBulletRng(_nextBulletId, enemy.id), AIM_JITTER_RADIUS);
@@ -504,7 +504,7 @@ export function tickGameState(
       // open, or an earlier bullet THIS tick already opened one.
       if (invulnerable || damageTaken > 0) continue;
       damageTaken = b.damage;
-      // ADR-0064 — surface the crossing point for render (red flash + shake).
+      // ADR-0065 — surface the crossing point for render (red flash + shake).
       // Cosmetic-only: the `lives` rule below is unchanged.
       playerHitEvents.push({ worldPoint: { x: b.position.x, y: b.position.y } });
     }

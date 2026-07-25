@@ -23,7 +23,7 @@ const MAX_BULLETS = 20;
 // actual flight direction (not just a flat, direction-less disc). The group's
 // uniform scale still grows as the bullet closes on the camera (depth cue).
 //
-// ADR-0064: this code-drawn mesh is the GUARANTEED fallback. `bulletModel.ts`
+// ADR-0065: this code-drawn mesh is the GUARANTEED fallback. `bulletModel.ts`
 // async-loads a generated textured GLB (public/assets/models/bullet.glb); once it
 // resolves, each slot swaps its visible child from the procedural group to a
 // clone of the loaded model the next time useFrame revisits it (at most once
@@ -87,7 +87,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
     [],
   );
 
-  // Kick off the (at most once, ADR-0064) async GLB load. Never throws; a
+  // Kick off the (at most once, ADR-0065) async GLB load. Never throws; a
   // missing/404 model just leaves every slot on its procedural fallback.
   useEffect(() => {
     void warmBulletModel(`${import.meta.env.BASE_URL}${bulletModelPath()}`);
@@ -159,7 +159,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
           }}
           visible={false}
         >
-          {/* Procedural fallback (ADR-0064): hidden, not unmounted, once a slot
+          {/* Procedural fallback (ADR-0065): hidden, not unmounted, once a slot
               swaps to the generated-model clone — see modelAttached above. */}
           <group
             ref={(el) => {

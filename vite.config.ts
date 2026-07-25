@@ -8,7 +8,7 @@ import { resolve } from "path";
 // (→ dist-catalog); the dev server serves it directly at /catalog.html either way.
 const buildCatalog = process.env.BUILD_CATALOG === "1";
 
-// Same idiom for the 3D model viewer (ADR-0064 dev tool, `model-viewer.html`): a
+// Same idiom for the 3D model viewer (ADR-0065 dev tool, `model-viewer.html`): a
 // standalone page to inspect generated GLBs before wiring MODEL_SCALE, never part
 // of the game bundle. Build on demand with BUILD_MODEL_VIEWER=1.
 const buildModelViewer = process.env.BUILD_MODEL_VIEWER === "1";

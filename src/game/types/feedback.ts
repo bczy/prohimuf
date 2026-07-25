@@ -46,7 +46,7 @@ export interface ImpactEvent {
 }
 
 // One enemy bullet that entered the player-hit disc, surfaced for transient
-// render feedback (full-screen red flash, camera shake — ADR-0064). Mirror of
+// render feedback (full-screen red flash, camera shake — ADR-0065). Mirror of
 // ImpactEvent in the opposite direction (enemy → player). Cosmetic-only: the
 // rule change on `lives` still lives in stateMachine. Consumed per-frame by
 // the hooks bridge; never persisted.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate the enemy-bullet 3D model (ADR-0064) — a real textured GLB to replace
+ * Generate the enemy-bullet 3D model (ADR-0065) — a real textured GLB to replace
  * `BulletSprite.tsx`'s code-drawn cylinder+cap placeholder when present (ADR-0049
  * generated-with-procedural-fallback idiom: a missing/404 asset keeps the
  * procedural mesh, this script never needs to produce a placeholder itself).

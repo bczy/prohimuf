@@ -109,7 +109,7 @@ export function fluxUrl(prompt, seed, width, height) {
   return modelUrl({ prompt, seed, width, height, model: "flux" });
 }
 
-// Text-to-3D (ADR-0064): a DIFFERENT host (gen.pollinations.ai, not
+// Text-to-3D (ADR-0065): a DIFFERENT host (gen.pollinations.ai, not
 // image.pollinations.ai) and a DIFFERENT auth contract — the 3D endpoint
 // requires an API key (401 with none; there is no anonymous tier like flux),
 // so this is CI-only (`POLLINATIONS_TOKEN` secret; authHeaders() above already

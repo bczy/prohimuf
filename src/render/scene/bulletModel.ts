@@ -1,5 +1,5 @@
 /**
- * Enemy-bullet 3D model loader (ADR-0064): generated-with-procedural-fallback GLTF,
+ * Enemy-bullet 3D model loader (ADR-0065): generated-with-procedural-fallback GLTF,
  * mirroring `nearForegroundTextures.ts`'s async-swap idiom but for geometry instead
  * of a texture. `BulletSprite.tsx` always keeps its code-drawn cylinder+cap mesh
  * mounted (the guaranteed fallback, never removed); this module async-loads

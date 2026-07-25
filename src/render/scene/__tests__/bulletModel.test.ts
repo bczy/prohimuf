@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * ADR-0064 GLTF pipeline: {@link warmBulletModel} async-loads the generated bullet
+ * ADR-0065 GLTF pipeline: {@link warmBulletModel} async-loads the generated bullet
  * model; a 404/error keeps `getBulletModel()` returning null forever (the
  * procedural fallback in BulletSprite never swaps). Success caches the parsed
  * `gltf.scene` so later calls return the SAME object (callers must clone before
