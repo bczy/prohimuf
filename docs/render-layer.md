@@ -148,9 +148,11 @@ Its depth slot is not a local literal: it comes from `STREET_DEPTH.courier` in
 `src/render/scene/streetDepth.ts` — **renderOrder 5.5, z 0.65**, i.e. between the
 two near-foreground kerb rows (far row 4 / z 0.60, near row 5.75 / z 0.70), above
 the facade-attached ironwork (`ForegroundFrames` / `WindowGrilles`, renderOrder 5 /
-z 0.50) and below `DeliveryVehicleSprite` (6/7, z 0.71/0.72). See ADR-0047
-amendment 4 for the arbitration: the NEAR row may partially mask a livreur, the
-facade ironwork never may. Frame counts, fps, and per-layer `scale`/`offsetY`
+z 0.50) and — since 2026-07-25 — **in front of** `DeliveryVehicleSprite`
+(rim 5.2 / z 0.61, body 5.25 / z 0.62), which reads its own slots from the same
+table. See ADR-0047 amendment 4 for the arbitration: the NEAR row may partially
+mask a livreur AND the van, the facade ironwork never may. Frame counts, fps, and
+per-layer `scale`/`offsetY`
 registration knobs come from `courier.layers` in `levelArt.json` via
 `courierTextures.ts`; the id-phased clock keeps couriers out of lockstep. Until the
 rider's frame-1 PNG exists (generated later in CI, gated by `courierArtReady()`),

@@ -319,8 +319,8 @@ export function EnemySprite({
       </mesh>
       {/* renderOrder 4: above every backdrop panel (renderOrder 0..PANELS-1,
           drawn with depthWrite off) and below the foreground ironwork (5) and
-          the street actors — courier 5.5, delivery van 6/7 (see
-          src/render/scene/streetDepth.ts). depthWrite must stay OFF like every other transparent
+          the street actors — delivery van 5.2/5.25, courier 5.5, near prop row
+          5.75 (see src/render/scene/streetDepth.ts). depthWrite must stay OFF like every other transparent
           quad in the scene — with the default depthWrite the sprite's
           transparent pixels write z=0 and punch a quad-sized hole in any
           backdrop panel drawn after it (panel p>=1), exposing the overlapped

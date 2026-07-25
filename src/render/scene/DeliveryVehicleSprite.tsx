@@ -7,6 +7,7 @@ import type { GameState } from "@game/types/gameState";
 import type { DeliveryPhase, VehicleType } from "@game/types/delivery";
 import { isQteActive } from "@game/systems/qteSystem";
 import { applyPixelFilter } from "./pixelArt";
+import { STREET_DEPTH } from "./streetDepth";
 import { buildNeonSilhouette, computeHaloMarginPx, getVehicleNeonHex } from "./vehicleNeon";
 import { vehicleAssetPath } from "@game/systems/assetManifest";
 import type { HudDelivery } from "@render/ui/HUD";
@@ -21,10 +22,15 @@ function vehicleAspect(type: VehicleType): number {
   const s = levelArt.vehicles.types[type].size;
   return s.width / s.height;
 }
-// Sits on the courier street lane, in front of the whole near-foreground décor:
-// couriers ride at z 0.65 and the near prop row at z 0.7 (see streetDepth.ts),
-// so the van (renderOrder 7) still passes in front of everything.
-const VEHICLE_Z = 0.72;
+// Depth of the van on the street lane — single-sourced from {@link STREET_DEPTH},
+// never a local literal. Bertrand-directed 2026-07-25 (ADR-0047 amendment 4):
+// « le cycliste devrait être aussi devant le camion », so the van is now drawn
+// BEFORE the courier (5.25 < 5.5, z 0.62 < 0.65) and, as the assumed consequence,
+// also behind the NEAR prop row (5.75 / z 0.7) — the near props are the closest
+// plane, the van the street actor furthest from the kerb, the cyclist between the
+// two. It still passes in front of the FAR row (4) and of the facade-attached
+// ironwork (5): it is a street ACTOR, not a facade element.
+const VEHICLE_Z = STREET_DEPTH.vehicle.z;
 
 // The direction the committed source art faces, per vehicle type (art-gate
 // registration knob in levelArt.json `vehicles.types.<type>.facing`). FLUX won't
@@ -230,7 +236,7 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
         const worldH = VEHICLE_H;
         const padX = neon.srcW > 0 ? (2 * neon.marginPx) / neon.srcW : 0;
         const padY = neon.srcH > 0 ? (2 * neon.marginPx) / neon.srcH : 0;
-        rim.position.set(vehicle.position.x, vehicle.position.y, VEHICLE_Z - 0.01);
+        rim.position.set(vehicle.position.x, vehicle.position.y, STREET_DEPTH.vehicleRim.z);
         rim.scale.set(flipX * worldW * (1 + padX), worldH * (1 + padY), 1);
       }
     }
@@ -238,11 +244,14 @@ export function DeliveryVehicleSprite({ stateRef, onHudChange }: Props): JSX.Ele
 
   return (
     <>
-      <mesh ref={rimRef} renderOrder={6} visible={false}>
+      {/* Rim one slot behind the body (STREET_DEPTH.vehicleRim, z - 0.01) so the
+          additive glow reads as a halo drawn behind the sprite, exactly as
+          before — only the absolute slots moved (6/7 → 5.2/5.25). */}
+      <mesh ref={rimRef} renderOrder={STREET_DEPTH.vehicleRim.order} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} blending={AdditiveBlending} />
       </mesh>
-      <mesh ref={meshRef} renderOrder={7} visible={false}>
+      <mesh ref={meshRef} renderOrder={STREET_DEPTH.vehicle.order} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
