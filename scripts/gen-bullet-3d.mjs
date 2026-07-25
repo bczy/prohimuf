@@ -44,14 +44,17 @@ const FORCE = process.env.FORCE === "1";
 // group something to key emissive/metalness overrides onto render-side without
 // fighting a baked glossy highlight.
 const PROMPT =
-  "a single low-poly pistol bullet, brass cartridge case with pointed lead tip, " +
+  "a single low-poly pistol bullet, brass cartridge case with a pointed copper-jacketed tip, " +
+  "the tip a warm reddish-orange copper metal (not pink, not grey lead), " +
   "clean matte metal material, simple rounded cylindrical shape, isolated object, " +
   "no scene, no ground plane, no hands, no background";
 // pinned; bump to re-roll deterministically. Must stay <= 65535 — hyper3d-rodin
 // proxies to fal.ai's Hyper3D Rodin model, which rejects (HTTP 422) any larger
 // seed ("Input should be less than or equal to 65535"), unlike the flux 2D
 // endpoint's seeds elsewhere in this repo which have no such ceiling.
-const SEED = 6064;
+// Bumped from 6064: first roll's tip read as a dull pink lead rather than
+// copper — re-rolled with a prompt calling out copper explicitly.
+const SEED = 6065;
 
 function isGlb(buf) {
   // glTF binary container: 4-byte magic "glTF" at offset 0 (little-endian 0x46546C67).
