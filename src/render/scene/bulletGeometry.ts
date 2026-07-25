@@ -54,8 +54,9 @@ export function alignGeneratedBulletModel(clone: Object3D): void {
 // player's own shot and the QTE captor/accomplice round all read as the same
 // physical object, so they share one depth convention rather than three.
 //
-// The near-foreground props sit at z 0.6/0.7 (renderOrder 4/5), the delivery van
-// at 0.72 and the boss-QTE effects at renderOrder 20. At the old z 0.5 an
+// The whole street stack sits at z 0.5..0.7 and renderOrder 4..5.75 (kerb rows,
+// facade ironwork, delivery van, courier — see STREET_DEPTH in streetDepth.ts),
+// and the boss-QTE effects at renderOrder 20. At the old z 0.5 an
 // incoming round was drawn BEHIND balcony railings and shutters — exactly
 // backwards for the one object flying at the player's face. z 8 wins the depth
 // test against every world object; the renderOrder wins the transparent-draw
