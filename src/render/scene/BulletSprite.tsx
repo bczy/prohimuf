@@ -43,6 +43,18 @@ const FORWARD = new Vector3(0, 1, 0);
 // BODY_LENGTH + CAP_RADIUS = 0.36 tall: 0.36 / 1.888 ≈ 0.19.
 const MODEL_SCALE = 0.19;
 
+// Depth cue: the bullet is pushed slightly toward the camera so it never
+// z-fights with, or hides behind, the facade quads it flies over.
+const BULLET_Z = 0.5;
+
+// Distance-to-scale ramp. A bullet spawns roughly SCALE_FAR_DIST world units
+// from the camera and lands on it, so `dist` is remapped to [0, 1] over that
+// span and drives a linear scale from SCALE_MIN (just spawned, far) to
+// SCALE_MIN + SCALE_SPAN (about to hit, unmissable).
+const SCALE_FAR_DIST = 8;
+const SCALE_MIN = 0.6;
+const SCALE_SPAN = 1.4;
+
 interface Props {
   stateRef: React.RefObject<GameState>;
 }
@@ -100,7 +112,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
 
       group.position.x = bullet.position.x;
       group.position.y = bullet.position.y;
-      group.position.z = 0.5; // slightly in front so it's always visible
+      group.position.z = BULLET_Z;
 
       // Orient body along velocity. Bullets live in the 2D game plane, so the
       // velocity is (vx, vy, 0); the mesh rotates around Z only.
@@ -119,9 +131,8 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       const dx = bullet.position.x - camera.position.x;
       const dy = bullet.position.y - camera.position.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const t = Math.max(0, Math.min(1, 1 - dist / 8));
-      const s = 0.6 + t * 1.4;
-      group.scale.setScalar(s);
+      const t = Math.max(0, Math.min(1, 1 - dist / SCALE_FAR_DIST));
+      group.scale.setScalar(SCALE_MIN + t * SCALE_SPAN);
     }
   });
 
