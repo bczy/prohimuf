@@ -110,10 +110,16 @@ owning dev lane and validated by the triage job.
 
 ### 4. Merge gate
 
-Branch protection on `main` requires the `panel-verdict` check to be
-`PASS` or `CONDITIONAL` (never `FAIL`) before merging. A `CONDITIONAL` verdict
-means all CONFIRMED findings are `MINEUR` — merger's judgment call, logged as
-"conditional PASS accepted" in the story's handoff shard.
+The **intended** requirement is that `panel-verdict` must be `PASS` or
+`CONDITIONAL` (never `FAIL`) before any merge to `main`. A `CONDITIONAL`
+verdict means all CONFIRMED findings are `MINEUR` — merger's judgment call,
+logged as "conditional PASS accepted" in the story's handoff shard.
+
+`main` currently has **no branch protection rules configured**, so
+`panel-verdict` is **advisory** until that changes. Enforcing it as a hard
+gate requires a repository-settings action: add a branch protection rule (or a
+ruleset) on `main` that lists `panel-verdict` as a required status check.
+Activation timing is Bertrand's call.
 
 ### 5. Auto-remediation of BLOQUANT/MAJEUR findings
 
