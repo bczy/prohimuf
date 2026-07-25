@@ -61,7 +61,13 @@ const LIVE_ITEMS: readonly LiveItem[] = [
 interface ViewerConfig {
   readonly mode: ViewerMode;
   readonly spinAxis: SpinAxis;
-  readonly items: readonly { id: string; url: string; tier: Tier; reward: RewardType; rewardLabel: string }[];
+  readonly items: readonly {
+    id: string;
+    url: string;
+    tier: Tier;
+    reward: RewardType;
+    rewardLabel: string;
+  }[];
 }
 
 interface LoadedModel {
@@ -246,8 +252,10 @@ function ProceduralFallback(): JSX.Element {
 }
 
 function tierHalo(tier: Tier): { color: string; intensity: number; scale: number } {
-  if (tier === "objective") return { color: "#8cff44", intensity: 1.45 * HALO_INTENSITY_BOOST, scale: 2.35 };
-  if (tier === "premium") return { color: "#72ff4c", intensity: 1.15 * HALO_INTENSITY_BOOST, scale: 2.1 };
+  if (tier === "objective")
+    return { color: "#8cff44", intensity: 1.45 * HALO_INTENSITY_BOOST, scale: 2.35 };
+  if (tier === "premium")
+    return { color: "#72ff4c", intensity: 1.15 * HALO_INTENSITY_BOOST, scale: 2.1 };
   return { color: "#5eff40", intensity: 0.9 * HALO_INTENSITY_BOOST, scale: 1.9 };
 }
 
@@ -295,7 +303,8 @@ function RotatingModel({
     else if (axis === "z") ref.current.rotation.z += step;
     else ref.current.rotation.y += step;
 
-    const hover = Math.sin(state.clock.elapsedTime * LEVITATION_SPEED + phase) * LEVITATION_AMPLITUDE;
+    const hover =
+      Math.sin(state.clock.elapsedTime * LEVITATION_SPEED + phase) * LEVITATION_AMPLITUDE;
     ref.current.position.set(position[0], yOffset + hover, position[2]);
 
     if (haloRef.current !== null) {
@@ -449,7 +458,13 @@ function Scene({
 }): JSX.Element {
   const spacing = 2.9;
   const positions: [number, number, number][] =
-    mode === "loot-live" ? [[-spacing, 0, 0], [0, 0, 0], [spacing, 0, 0]] : [[0, 0, 0]];
+    mode === "loot-live"
+      ? [
+          [-spacing, 0, 0],
+          [0, 0, 0],
+          [spacing, 0, 0],
+        ]
+      : [[0, 0, 0]];
 
   return (
     <>
@@ -651,7 +666,9 @@ export function ModelViewer(): JSX.Element {
         }}
       >
         <div style={{ opacity: 0.95, pointerEvents: "auto" }}>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+          <label
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+          >
             <input
               type="checkbox"
               checked={showBelliardBackdrop}
@@ -661,7 +678,9 @@ export function ModelViewer(): JSX.Element {
             />
             fond Belliard
           </label>
-          <label style={{ display: "grid", gridTemplateColumns: "82px 1fr 44px", gap: 8, marginTop: 6 }}>
+          <label
+            style={{ display: "grid", gridTemplateColumns: "82px 1fr 44px", gap: 8, marginTop: 6 }}
+          >
             <span>Y fond</span>
             <input
               type="range"

@@ -2,16 +2,8 @@
   "generatedAt": "2026-07-25T19:26:36.059Z",
   "source": "scripts/gen-loot-3d.mjs",
   "selection": {
-    "bagTypes": [
-      "attache case",
-      "backpack",
-      "flight case"
-    ],
-    "universes": [
-      "A Monochrome Street",
-      "B 90s Sportswear",
-      "E Business Clandestine"
-    ],
+    "bagTypes": ["attache case", "backpack", "flight case"],
+    "universes": ["A Monochrome Street", "B 90s Sportswear", "E Business Clandestine"],
     "verdicts": {
       "monochrome street-carry": "DIG",
       "90s sportswear panel language": "KEEP",

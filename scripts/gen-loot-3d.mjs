@@ -36,7 +36,10 @@ const ASSETS = [
     prompt:
       "a hard rectangular attache case, medium gray shell with subtle grain, brushed aluminum lower band, satin-chrome latches and hinges, dark gray polymer handle, subtle scratches and edge wear, discreet clandestine-courier look, " +
       STYLE_SUFFIX,
-    references: ["https://en.wikipedia.org/wiki/Briefcase", "https://en.wikipedia.org/wiki/Zero_Halliburton"],
+    references: [
+      "https://en.wikipedia.org/wiki/Briefcase",
+      "https://en.wikipedia.org/wiki/Zero_Halliburton",
+    ],
   },
   {
     id: "backpack",
@@ -58,7 +61,10 @@ const ASSETS = [
     prompt:
       "a compact rave logistics flight case, medium charcoal birch-ply panels with visible wood grain, bright aluminum edge extrusions, steel corner protectors, recessed handle plate, visible rivets, slightly worn touring gear look, " +
       STYLE_SUFFIX,
-    references: ["https://en.wikipedia.org/wiki/Road_case", "https://en.wikipedia.org/wiki/Technics_SL-1200"],
+    references: [
+      "https://en.wikipedia.org/wiki/Road_case",
+      "https://en.wikipedia.org/wiki/Technics_SL-1200",
+    ],
   },
 ];
 
