@@ -1,11 +1,14 @@
-import { useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, TextureLoader, AdditiveBlending } from "three";
+import { Box3, Vector3 } from "three";
 import type { Texture, Mesh, MeshBasicMaterial, Group } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { GameState } from "@game/types/gameState";
 import type { WindowSlot } from "@game/types/map";
 import type { SpecialWeaponKind } from "@game/types/weapon";
+import type { LootRewardProfile } from "@game/types/loot";
 // LOOT_STREET_Y is a PURE game constant (single source of truth, lootSystem) read by both
 // the resolver and this render lane (ADR-0056 D2/D5) — imported, NEVER re-declared here.
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
@@ -53,6 +56,63 @@ const RIM_SCALE = 1.18; // rim-glow plane a touch larger than the body so the gl
 const APPEAR_SECONDS = 0.45;
 const DROP_HEIGHT = 2.2;
 const BLINK_WINDOW = 0.8;
+const MODEL_TARGET_HEIGHT = 1.15;
+
+const MODEL_ASSETS: Readonly<Record<LootRewardProfile, string>> = {
+  backpack: "assets/models/loot/backpack.glb",
+  "attache-case": "assets/models/loot/attache-case.glb",
+  "flight-case": "assets/models/loot/flight-case.glb",
+};
+
+const modelLoader = new GLTFLoader();
+const modelPromises: Partial<Record<LootRewardProfile, Promise<Group | null>>> = {};
+const modelCache: Partial<Record<LootRewardProfile, Group | null>> = {};
+
+function profileForLoot(
+  loot: NonNullable<GameState["loot"]>,
+): LootRewardProfile {
+  if (loot.reward !== undefined) return loot.reward.profile;
+  return loot.weapon === "spread" ? "attache-case" : "backpack";
+}
+
+function normalizedModel(scene: Group): Group {
+  const model = scene.clone(true);
+  const box = new Box3().setFromObject(model);
+  const size = box.getSize(new Vector3());
+  const height = Math.max(0.001, size.y);
+  const scale = MODEL_TARGET_HEIGHT / height;
+  model.scale.setScalar(scale);
+  const scaled = new Box3().setFromObject(model);
+  const center = scaled.getCenter(new Vector3());
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y -= scaled.min.y;
+  return model;
+}
+
+function loadModel(profile: LootRewardProfile): Promise<Group | null> {
+  const cached = modelCache[profile];
+  if (cached !== undefined) return Promise.resolve(cached);
+  const pending = modelPromises[profile];
+  if (pending !== undefined) return pending;
+  const promise = new Promise<Group | null>((resolve) => {
+    modelLoader.load(
+      `${import.meta.env.BASE_URL}${MODEL_ASSETS[profile]}`,
+      (gltf) => {
+        const model = normalizedModel(gltf.scene);
+        modelCache[profile] = model;
+        resolve(model);
+      },
+      undefined,
+      () => {
+        modelCache[profile] = null;
+        resolve(null);
+      },
+    );
+  });
+  modelPromises[profile] = promise;
+  return promise;
+}
 
 function makeCanvas(
   w: number,
@@ -214,8 +274,32 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
   const bodyRef = useRef<Mesh>(null);
   const glyphRef = useRef<Mesh>(null);
   const rimRef = useRef<Mesh>(null);
+  const backpackRef = useRef<Group>(null);
+  const attacheRef = useRef<Group>(null);
+  const flightCaseRef = useRef<Group>(null);
+  const [models, setModels] = useState<Partial<Record<LootRewardProfile, Group>>>({});
   const appearTimerRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(
+      (Object.keys(MODEL_ASSETS) as LootRewardProfile[]).map(async (profile) => ({
+        profile,
+        model: await loadModel(profile),
+      })),
+    ).then((loaded) => {
+      if (cancelled) return;
+      const next: Partial<Record<LootRewardProfile, Group>> = {};
+      for (const { profile, model } of loaded) {
+        if (model !== null) next[profile] = model;
+      }
+      setModels(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useFrame((_state, delta) => {
     const group = groupRef.current;
@@ -247,10 +331,27 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
       dropY = DROP_HEIGHT * (1 - easeOut(t)); // falls from +DROP_HEIGHT to 0
     }
     group.position.set(slot.screenPosition.x, LOOT_STREET_Y + dropY, 0);
+    const profile = profileForLoot(loot);
+    const has3d = models[profile] !== undefined;
+
+    const backpack = backpackRef.current;
+    if (backpack !== null) backpack.visible = has3d && profile === "backpack";
+    const attache = attacheRef.current;
+    if (attache !== null) attache.visible = has3d && profile === "attache-case";
+    const flightCase = flightCaseRef.current;
+    if (flightCase !== null) flightCase.visible = has3d && profile === "flight-case";
+
+    if (has3d) {
+      const spin = performance.now() * 0.00045;
+      if (backpack?.visible) backpack.rotation.y = spin;
+      if (attache?.visible) attache.rotation.y = spin;
+      if (flightCase?.visible) flightCase.rotation.y = spin;
+    }
 
     // Body: FLUX sprite when it has loaded, else the drawn plank fallback (never blocks).
     const body = bodyRef.current;
     if (body !== null) {
+      body.visible = !has3d;
       const mat = body.material as MeshBasicMaterial;
       const tex = getCrateSprite() ?? getCrateBodyFallback();
       if (tex !== null && mat.map !== tex) {
@@ -261,6 +362,7 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
     // Glyph for this crate's weapon (composited on the crate face).
     const glyphMesh = glyphRef.current;
     if (glyphMesh !== null) {
+      glyphMesh.visible = !has3d;
       const gmat = glyphMesh.material as MeshBasicMaterial;
       const gtex = getGlyphTexture(loot.weapon);
       if (gtex !== null && gmat.map !== gtex) {
@@ -295,6 +397,21 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
           depthWrite={false}
         />
       </mesh>
+      {models.backpack !== undefined && (
+        <group ref={backpackRef} visible={false} position={[0, 0, 0.03]} renderOrder={5}>
+          <primitive object={models.backpack} />
+        </group>
+      )}
+      {models["attache-case"] !== undefined && (
+        <group ref={attacheRef} visible={false} position={[0, 0, 0.03]} renderOrder={5}>
+          <primitive object={models["attache-case"]} />
+        </group>
+      )}
+      {models["flight-case"] !== undefined && (
+        <group ref={flightCaseRef} visible={false} position={[0, 0, 0.03]} renderOrder={5}>
+          <primitive object={models["flight-case"]} />
+        </group>
+      )}
       {/* Crate body (FLUX sprite | drawn plank fallback). depthWrite off like every other
           transparent quad so it never punches holes in the backdrop. */}
       <mesh ref={bodyRef} position={[0, 0, 0]} renderOrder={4}>
