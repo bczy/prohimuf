@@ -190,6 +190,16 @@ export function bulletAssetPath(): string {
 }
 
 /**
+ * Base-relative enemy-bullet 3D model path (ADR-0064, mirrors `bulletModel.ts`).
+ * Warming it only kicks off the async GLTF load — `BulletSprite` already renders
+ * its code-drawn cylinder+cap instantly, so a missing/404 model (not yet
+ * generated in CI) never stalls the gate.
+ */
+export function bulletModelPath(): string {
+  return "assets/models/bullet.glb";
+}
+
+/**
  * Base-relative boss QTE figure + décor-prop assets for a level that authors a boss
  * ("le Commandant" — ADR-0051/0058): the canon `commander_*` poses plus the generated
  * hall props (lustre, speaker_wall) from levelArt.json's `boss` block, so the loading
@@ -346,7 +356,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
   ];
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));
-  paths.push(bulletAssetPath(), facadeBackdropPath(), menuBackdropPath());
+  paths.push(bulletAssetPath(), bulletModelPath(), facadeBackdropPath(), menuBackdropPath());
   paths.push(...audioAssetPaths());
 
   const pre = PRE_LEVEL_NARRATIVE[level.id];
