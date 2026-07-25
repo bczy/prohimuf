@@ -70,6 +70,13 @@ integration review (one stage, one read) → `pm` accepts. `producer` drives the
 itself (stage tracking, tier calls, hand-off chasing, caps, escalations, ADR number
 allocation). Launch independent dev lanes in a single message (parallel Task calls).
 
+**Roundtable (not a pipeline stage):** to hear several lanes on an open question
+_before_ opening a story — a scope call, a design debate, a roadmap arbitration — use
+the `muf-party-mode` skill. It spawns the crew as real subagents (`--lane product |
+design | art | tech | quality | audio`, or `--all`) in read-only discussion mode: no
+gates, no files written, nothing binding. Use `bmad-party-mode` only when you want the
+6 generic BMAD personas instead of the muf crew.
+
 **Fix lane (two-tier rule):** a small diff owned by a SINGLE dev lane — no design, no
 asset, no dependency/boundary change, polish/bug-fix of already-gated behaviour — skips
 the full pipeline: owning dev lane → tsc/vitest/lint (+ `verify` if player-visible) →
