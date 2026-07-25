@@ -22,7 +22,7 @@ import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
-import type { ImpactEvent } from "@game/types/feedback";
+import type { ImpactEvent, PlayerHitEvent } from "@game/types/feedback";
 import type { Floater } from "@render/scene/FeedbackLayer";
 import { energyFloater } from "@render/scene/hostageCue";
 import type { CamPose } from "@render/scene/qteCamera";
@@ -180,6 +180,16 @@ export interface ImpactChannel {
   resetNonce: number;
 }
 
+/**
+ * Bridge→render transport for enemy-bullet hits on the player (ADR-0064).
+ * Mirror of {@link ImpactChannel} in the opposite direction (enemy → player).
+ * Same contract: per-frame queue + reset signal bumped on level restart.
+ */
+export interface PlayerHitChannel {
+  readonly queue: PlayerHitEvent[];
+  resetNonce: number;
+}
+
 export function useGameLoop(
   facade: FacadeMap,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -192,6 +202,7 @@ export function useGameLoop(
   roster?: LevelRoster,
   mobileControls?: MobileControls,
   impactChannelRef?: React.RefObject<ImpactChannel>,
+  playerHitChannelRef?: React.RefObject<PlayerHitChannel>,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -319,6 +330,7 @@ export function useGameLoop(
       // Level restart: bump the reset signal so the effects layer clears its
       // persistent wall-mark FIFO on a clean facade (spec D4.3).
       if (impactChannelRef?.current) impactChannelRef.current.resetNonce += 1;
+      if (playerHitChannelRef?.current) playerHitChannelRef.current.resetNonce += 1;
       gameStateRef.current = createInitialState(facade, levelParams, roster);
       return;
     }
@@ -483,6 +495,11 @@ export function useGameLoop(
     const impactChannel = impactChannelRef?.current;
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
+    }
+    // Enemy → player hits: same drain pattern, mirror direction (ADR-0064).
+    const playerHitChannel = playerHitChannelRef?.current;
+    if (playerHitChannel && next.playerHitEvents) {
+      for (const ev of next.playerHitEvents) playerHitChannel.queue.push(ev);
     }
     // Shoot cue (ADR-0055 MINEUR-1): keyed off RESOLUTION ACTIVITY, not the input gesture.
     // `impactEvents` is the per-tick transient set of player-shot resolutions (0..3), so a

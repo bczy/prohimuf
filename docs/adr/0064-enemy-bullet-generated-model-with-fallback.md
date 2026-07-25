@@ -68,6 +68,25 @@ drei` as a new dependency, `three` (already a dependency, pinned `^0.175.0`)
    `warmAssets.ts` routes any `models/` path to `warmBulletModel`. Warming only
    kicks off the async load — it never blocks the loading gate, since
    `BulletSprite` already renders instantly via the procedural fallback.
+5. **Aim jitter, so directional fire stays fair.** `aimBulletVelocity` points a
+   bullet exactly at the camera-centred player-hit disc, which would make every
+   enemy shot a guaranteed hit whenever the player holds still. A new pure
+   module, `src/game/systems/enemyFireSystem.ts`, offsets the aim point by a
+   uniform sample inside a disc of `AIM_JITTER_RADIUS` (1.2 world units, roughly
+   the diameter of the hit disc) so a fair fraction of shots graze or miss. The
+   sample uses inverse-CDF on the radius (√u) to avoid centre clumping, and the
+   RNG is a splitmix32 seeded from `(bulletId, enemyId)` — deterministic under
+   Vitest, independent of frame timing, and decorrelated between two windows
+   firing on the same tick. No `Math.random` in the pure layer.
+6. **Player-hit render channel.** `stateMachine` emits a transient
+   `playerHitEvents: PlayerHitEvent[]` (the world point at which an enemy bullet
+   crossed the hit disc) alongside the existing `impactEvents` — the mirror of
+   the player→enemy channel, in the enemy→player direction. It is cosmetic-only:
+   the `lives` rule is unchanged. `useGameLoop` drains it onto a
+   `PlayerHitChannel` (same queue + `resetNonce` contract as `ImpactChannel`),
+   and `PlayerHitEffects.tsx` turns it into a full-screen red flash plus a
+   decaying camera shake. The shake is suppressed under `reducedMotion`; the
+   flash stays, since it is a colour cue rather than a motion cue.
 
 ## Consequences
 

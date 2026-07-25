@@ -5,12 +5,17 @@ import type { Courier } from "@game/types/courier";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
-import type { HitEvent, ImpactEvent, PointHitEvent } from "@game/types/feedback";
+import type { HitEvent, ImpactEvent, PlayerHitEvent, PointHitEvent } from "@game/types/feedback";
 import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
 import { tickBullets, aimBulletVelocity } from "@game/systems/bulletSystem";
+import {
+  sampleDiscJitter,
+  makeBulletRng,
+  AIM_JITTER_RADIUS,
+} from "@game/systems/enemyFireSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
@@ -398,14 +403,18 @@ export function tickGameState(
     const slot = facade.slots[enemy.slotIndex];
     if (slot === undefined) continue;
     _nextBulletId++;
+    // Aim jitter (ADR-0064): a deterministic per-bullet RNG offsets the aim
+    // point inside a small disc, so enemy fire is threatening but not a
+    // guaranteed hit when the player holds still.
+    const jitter = sampleDiscJitter(makeBulletRng(_nextBulletId, enemy.id), AIM_JITTER_RADIUS);
     bullets = [
       ...bullets,
       {
         id: _nextBulletId,
         position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
         velocity: aimBulletVelocity(slot.screenPosition, {
-          x: cameraOffsetX,
-          y: cameraOffsetY,
+          x: cameraOffsetX + jitter.x,
+          y: cameraOffsetY + jitter.y,
         }),
         fromPlayer: false,
       },
@@ -448,6 +457,7 @@ export function tickGameState(
   // 8. Enemy bullet hits player (near camera centre)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
+  const playerHitEvents: PlayerHitEvent[] = [];
   for (const b of movedBullets) {
     if (b.fromPlayer) continue;
     const dx = b.position.x - cameraOffsetX;
@@ -455,6 +465,9 @@ export function tickGameState(
     if (Math.sqrt(dx * dx + dy * dy) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
       playerHit = true;
+      // ADR-0064 — surface the crossing point for render (red flash + shake).
+      // Cosmetic-only: the `lives` rule below is unchanged.
+      playerHitEvents.push({ worldPoint: { x: b.position.x, y: b.position.y } });
     }
   }
   const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
@@ -471,6 +484,7 @@ export function tickGameState(
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
+      playerHitEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -513,6 +527,7 @@ export function tickGameState(
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
+      playerHitEvents,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -551,6 +566,7 @@ export function tickGameState(
     feedback: feedbackEvents,
     pointFeedback,
     impactEvents,
+    playerHitEvents,
     couriers,
     courierTimer,
     couriersSpawned,
