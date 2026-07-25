@@ -251,9 +251,12 @@ jobs:
         with: { name: findings-confirmed, path: . }
       - name: Request Copilot remediation
         env:
-          # PANEL_BOT_TOKEN (a PAT) is preferred: a comment posted with the
-          # default GITHUB_TOKEN may not wake the Copilot coding agent.
+          # PANEL_BOT_TOKEN (a PAT) is required: verified on PR #133, a comment
+          # posted with the default GITHUB_TOKEN does not wake the Copilot
+          # coding agent. The fallback keeps the findings visible on the PR and
+          # the script warns that no fix will arrive.
           GH_TOKEN: ${{ secrets.PANEL_BOT_TOKEN || github.token }}
+          HAS_BOT_TOKEN: ${{ secrets.PANEL_BOT_TOKEN != '' }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           PANEL_AUTOFIX_MAX_ROUNDS: ${{ vars.PANEL_AUTOFIX_MAX_ROUNDS || '2' }}
         run: node scripts/panel-remediate.mjs

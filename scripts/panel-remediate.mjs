@@ -10,9 +10,13 @@
 // the PR back to a human — an unfixable finding must not spin forever.
 //
 // Inputs (env):
-//   GH_TOKEN                  — required. A PAT is preferred: it is not certain
-//                               that a comment posted with the default
-//                               GITHUB_TOKEN wakes the Copilot agent.
+//   GH_TOKEN                  — required. Must be a PAT (PANEL_BOT_TOKEN):
+//                               verified on PR #133, a request posted with the
+//                               default GITHUB_TOKEN does NOT wake the agent —
+//                               the comment appears and nothing happens.
+//   HAS_BOT_TOKEN             — "true" when GH_TOKEN is the PAT. Anything else
+//                               makes this script warn loudly rather than
+//                               no-op in silence.
 //   PR_NUMBER                 — required.
 //   GITHUB_REPOSITORY         — required.
 //   PANEL_AUTOFIX_MAX_ROUNDS  — optional, defaults to 2.
@@ -24,7 +28,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-const { GH_TOKEN, PR_NUMBER, PANEL_AUTOFIX_MAX_ROUNDS = "2" } = process.env;
+const { GH_TOKEN, PR_NUMBER, HAS_BOT_TOKEN, PANEL_AUTOFIX_MAX_ROUNDS = "2" } = process.env;
 const OWNER_REPO = process.env.GITHUB_REPOSITORY;
 
 const MARKER = "<!-- panel-autofix";
@@ -66,19 +70,31 @@ async function main() {
 
   console.log(`Requesting remediation round ${round}/${maxRounds} for ${actionable.length}.`);
   postComment(renderRequest(actionable, round, maxRounds));
+
+  // A request posted with GITHUB_TOKEN is inert: the comment lands, the agent
+  // never starts. Say so in the job summary rather than let the whole feature
+  // look like it worked.
+  if (HAS_BOT_TOKEN !== "true") {
+    console.log(
+      "::warning::PANEL_BOT_TOKEN is not set. The @copilot request was posted " +
+        "with GITHUB_TOKEN, which does not wake the coding agent, so no fix " +
+        "will arrive. Add a PAT as the PANEL_BOT_TOKEN secret.",
+    );
+  }
 }
 
 // Counts `@copilot` requests already posted on this PR, via the hidden marker.
+// Only a comment that *starts* with the marker counts: Copilot quotes the
+// request in its reply, so a substring match would see every round twice and
+// hit the cap after a single round.
 function countRounds() {
   const [owner, repo] = OWNER_REPO.split("/");
-  const raw = gh([
-    "api",
-    "--paginate",
-    `repos/${owner}/${repo}/issues/${PR_NUMBER}/comments`,
-    "-q",
-    ".[].body",
-  ]);
-  return raw.split("\n").filter((line) => line.includes(MARKER)).length;
+  const pages = JSON.parse(
+    gh(["api", "--paginate", "--slurp", `repos/${owner}/${repo}/issues/${PR_NUMBER}/comments`]) ||
+      "[]",
+  );
+  const bodies = pages.flat().map((c) => c.body || "");
+  return bodies.filter((body) => body.trimStart().startsWith(MARKER)).length;
 }
 
 function renderRequest(findings, round, maxRounds) {

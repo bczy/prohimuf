@@ -157,9 +157,12 @@ Guardrails, in order of importance:
 - **Advisory, never load-bearing.** `remediate` runs after `triage`, and a
   remediation failure never alters the published verdict.
 
-`PANEL_BOT_TOKEN` (a PAT) is used when present for the `@copilot` request. The
-mention was verified to wake the agent when posted through the API; it is not
-established that the default `GITHUB_TOKEN` does the same.
+**`PANEL_BOT_TOKEN` (a PAT) is required.** Verified on PR #133: an `@copilot`
+request posted with the default `GITHUB_TOKEN` is inert — the comment lands and
+the agent never starts, while the same request from a user token produced
+`copilot_work_started` within seconds. Without the secret the job still posts
+the findings and emits a workflow warning saying no fix will arrive; it must
+never look like it worked.
 
 **Repository-settings prerequisite.** By default GitHub holds every workflow
 run triggered by a Copilot commit in `action_required` pending manual approval,
