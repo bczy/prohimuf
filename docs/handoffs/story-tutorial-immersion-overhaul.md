@@ -47,6 +47,15 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 
 - claim: prepare verify matrix before execution / release: QA verify plan added at `docs/qa/plan-story-tutorial-immersion-overhaul.md` (plan-only, no execution verdict yet).
 
+## stage-5. VERIFY — qa-lead (Inès) — 2026-07-25 (execution, local run @ `6b477ea`)
+
+- claim: execute the verify matrix locally (vite + Playwright Chromium, desktop 1280×720 + iPhone-class landscape 844×390) / release: mechanical gate 4/4 green (`typecheck` · `vitest` 1174/1174 · `lint` · `test:coverage` exit 0, `src/game` thresholds held) · 16 scripted scenario checks executed, zero pageerrors.
+- Scenario results:
+  - PASS: TUT-FLOW-01/02 (16 panels desktop AND mobile, exits to menu) · TUT-FLOW-03 @0/@8/@15 (skip clean) · TUT-FLOW-04 (1st input completes line, 2nd advances exactly one panel) · TUT-FORK-02/03 (device-pure wording at indices 2–3) · TUT-CUE-05 (never >1 primary cue) · TUT-PERSIST-01 (only `muf_seen_tutorial_nudge` written; no `muf_progress`/`muf_scores_*`) · TUT-A11Y-01/02 (labels present, empty slots aria-hidden) · TUT-A11Y-04 (Passer 114×44 ≥ 44×44).
+  - **FAIL TUT-A11Y-03 (comprehension clause)** — motion IS stilled (0 animated nodes under `prefers-reduced-motion`), but the frozen frames break comprehension, runtime-evidenced by screenshots: panel 4 shows ONLY the player tracer (enemy projectile + warn ring absent — the "leurs balles voyagent" lesson is gone); panel 13 shows the timer box as overprinted illegible digits with both quota states painted. Matches panel MAJEURs 1–2.
+  - **FAIL TUT-CUE-06 (placement clause)** — bullet cap ≤2 holds, but bullets ship on panel indices [4, 5, 11, 14], fully disjoint from the spec §D2.2 whitelist. Matches panel MAJEUR 3.
+- **VERDICT: FAIL — QUALITY GATE (qa-lead)** — consistent with the stage-6 panel NO-MERGE; same root findings, now runtime-evidenced. Re-run after dev-r3f-render frozen-frame fixes + the D2.2 design decision land.
+
 ## stage-6. REVIEW PANEL — senior-architect (Winston) — 2026-07-25 (local run; CI panel DEGRADED, providers down)
 
 - claim: run the 4-reviewer merge-gate panel locally (CI panel-verdict DEGRADED: Anthropic credits + GitHub Models rate-limit) / release: panel executed on `pr-141` @ `8300b92` vs `origin/main` @ `c6404e4` — code-review(high) ∥ bmad-code-review ∥ edge-case-hunter ∥ security-review, findings adversarially verified (incl. skeptic re-check of the 5.9 MB `street-wide.png` size and the D2.2 bullet-whitelist disjunction).
@@ -72,7 +81,7 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 | 2. DESIGN GATE  | done (re-gate PASS)        | lead-game-designer            | —                                      | rework rounds used: 1/2                                        |
 | 3. ARCHITECTURE | in progress                | senior-architect              | finalize ADR-0069 gate outcome         | ADR still Proposed                                             |
 | 4. BUILD        | done                       | dev-gameplay ∥ dev-r3f-render | QA execution                           | none                                                           |
-| 5. VERIFY       | in progress (plan logged)  | qa-lead                       | run verify and log PASS/FAIL gate      | verify execution pending                                       |
+| 5. VERIFY       | run 1: FAIL (2 scenarios)  | dev lanes + design            | fixes → re-run verify                  | reduced-motion frozen frames (runtime-evidenced), D2.2 bullets |
 | 6. REVIEW       | run 1: NO-MERGE (5 MAJEUR) | dev lanes + design            | apply fixes → re-verify → re-run panel | reduced-motion frames, D2.2 bullets, AC2 HUD, 5.9 MB warm miss |
 | 7. PM ACCEPT    | pending                    | pm                            | merge                                  | waits stage-6 verdict                                          |
 | 8. MERGE        | pending                    | Bertrand/orchestrator         | close story                            | waits stage-7 accept                                           |
