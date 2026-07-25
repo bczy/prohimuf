@@ -54,8 +54,15 @@ export function fetchImage(url, redirects = 0) {
           return;
         }
         if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`HTTP ${res.statusCode}`));
+          // Surface the response body (JSON error envelope on this API, e.g.
+          // {"error":{"code":"...","message":"..."}}) instead of discarding it —
+          // a bare "HTTP 422" gave no way to diagnose a validation failure.
+          const errChunks = [];
+          res.on("data", (c) => errChunks.push(c));
+          res.on("end", () => {
+            const body = Buffer.concat(errChunks).toString("utf8").slice(0, 500);
+            reject(new Error(`HTTP ${res.statusCode}${body ? ` — ${body}` : ""}`));
+          });
           return;
         }
         const chunks = [];
