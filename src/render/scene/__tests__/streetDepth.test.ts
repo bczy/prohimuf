@@ -62,9 +62,19 @@ describe("street depth stack (ADR-0047 amendment 4)", () => {
     expect(STREET_DEPTH.courier.z).toBeLessThan(STREET_DEPTH.nearRow.z);
   });
 
+  it("puts the courier IN FRONT OF the delivery van (Bertrand, 2026-07-25)", () => {
+    // « le cycliste devrait être aussi devant le camion, là il passe derrière ».
+    // Both axes: paint order AND world depth, or the two stories contradict.
+    expect(STREET_DEPTH.courier.order).toBeGreaterThan(STREET_DEPTH.vehicle.order);
+    expect(STREET_DEPTH.courier.z).toBeGreaterThan(STREET_DEPTH.vehicle.z);
+    // ...rim included: the whole van assembly is behind the rider.
+    expect(STREET_DEPTH.courier.order).toBeGreaterThan(STREET_DEPTH.vehicleRim.order);
+    expect(STREET_DEPTH.courier.z).toBeGreaterThan(STREET_DEPTH.vehicleRim.z);
+  });
+
   it("keeps every street ACTOR above the facade-attached ironwork", () => {
     // ForegroundFrames / WindowGrilles are painted ON the facade (z 0.5), i.e.
-    // PHYSICALLY BEHIND the couriers and the van (z >= 0.65). All these materials
+    // PHYSICALLY BEHIND the couriers and the van (z >= 0.61). All these materials
     // are transparent + depthWrite:false in one sort list, so renderOrder alone
     // decides: an actor below slot 5 gets its head painted over by a balcony slab
     // (measured on `vitry`: slab world y -4.17..-4.55, rider centred at -4.8 with
@@ -78,28 +88,49 @@ describe("street depth stack (ADR-0047 amendment 4)", () => {
     expect(STREET_DEPTH.nearRow.order).toBeGreaterThan(STREET_DEPTH.facadeOverlay.order);
   });
 
-  it("keeps the delivery vehicle in front of the entire décor", () => {
-    for (const key of ["farRow", "courier", "nearRow"] as const) {
+  it("keeps the delivery van a STREET actor: above the facade, below the near row", () => {
+    // ASSUMED CONSEQUENCE of `vehicle < courier < nearRow` (see streetDepth.ts):
+    // the van cannot be in front of the near props while staying behind a
+    // courier that is itself behind them. So the near row may now partially mask
+    // BOTH "Livrer" targets. Explicit Bertrand arbitration, asserted here so a
+    // future "put the van back on top" is a red test, not a silent regression.
+    for (const key of ["farRow", "facadeOverlay"] as const) {
       expect(STREET_DEPTH.vehicle.order).toBeGreaterThan(STREET_DEPTH[key].order);
-      expect(STREET_DEPTH.vehicle.z).toBeGreaterThan(STREET_DEPTH[key].z);
+      expect(STREET_DEPTH.vehicleRim.order).toBeGreaterThan(STREET_DEPTH[key].order);
     }
-    // The van's neon rim rides just behind its body but still above both rows.
-    expect(STREET_DEPTH.vehicleRim.order).toBeGreaterThan(STREET_DEPTH.nearRow.order);
-    expect(STREET_DEPTH.vehicleRim.order).toBeLessThan(STREET_DEPTH.vehicle.order);
+    expect(STREET_DEPTH.vehicle.order).toBeLessThan(STREET_DEPTH.nearRow.order);
+    expect(STREET_DEPTH.vehicle.z).toBeLessThan(STREET_DEPTH.nearRow.z);
   });
 
-  it("gives the courier and the near row slots no other scene layer claims", () => {
+  it("keeps the van's neon rim glued just behind its body (same relative gap)", () => {
+    // The rim is an additive glow drawn BEHIND the sprite: strictly lower slot,
+    // and exactly the historical 0.01 world-depth setback (was 0.71 vs 0.72).
+    expect(STREET_DEPTH.vehicleRim.order).toBeLessThan(STREET_DEPTH.vehicle.order);
+    expect(STREET_DEPTH.vehicle.z - STREET_DEPTH.vehicleRim.z).toBeCloseTo(0.01, 10);
+    // Nothing may slip between the rim and its body.
+    for (const key of ["farRow", "courier", "nearRow", "facadeOverlay"] as const) {
+      const order = STREET_DEPTH[key].order;
+      expect(
+        order > STREET_DEPTH.vehicleRim.order && order < STREET_DEPTH.vehicle.order,
+        `${key} sits between the van rim and its body`,
+      ).toBe(false);
+    }
+  });
+
+  it("gives every street layer a slot no other scene module claims", () => {
     // Same-renderOrder transparent meshes fall back to distance sorting, which is
-    // exactly the ambiguity we removed. `others` is DERIVED from the source tree,
-    // so a future module taking 5.5 / 5.75 fails here.
+    // exactly the ambiguity we removed. The claimed set is DERIVED from the source
+    // tree, so a future module taking 5.2 / 5.25 / 5.5 / 5.75 fails here.
     const literals = literalRenderOrders();
-    for (const key of ["courier", "nearRow"] as const) {
+    for (const key of ["vehicleRim", "vehicle", "courier", "nearRow"] as const) {
       const clashes = literals.get(STREET_DEPTH[key].order) ?? [];
       expect(clashes, `${key} slot ${String(STREET_DEPTH[key].order)} is claimed`).toEqual([]);
     }
-    // Sanity: the scan really sees the tree (it must find the van's 6 and 7).
-    expect(literals.has(STREET_DEPTH.vehicle.order)).toBe(true);
-    expect(literals.has(STREET_DEPTH.facadeOverlay.order)).toBe(true);
+    // Sanity: the scan really sees the tree (it must find the enemies' 4 and the
+    // hostage-QTE tableau's 6/7, which are genuine literals elsewhere).
+    expect(literals.has(4)).toBe(true);
+    expect(literals.has(6)).toBe(true);
+    expect(literals.has(7)).toBe(true);
   });
 
   it("wires each NearForeground row to ITS OWN table entry (no swap possible)", () => {
@@ -123,6 +154,7 @@ describe("street depth stack (ADR-0047 amendment 4)", () => {
     for (const file of [
       "NearForeground.tsx",
       "CourierSprite.tsx",
+      "DeliveryVehicleSprite.tsx",
       "ForegroundFrames.tsx",
       "WindowGrilles.tsx",
     ]) {
@@ -134,11 +166,13 @@ describe("street depth stack (ADR-0047 amendment 4)", () => {
     const courier = read("CourierSprite.tsx");
     expect(courier).toContain("renderOrder={STREET_DEPTH.courier.order}");
     expect(courier).toContain("const RIDER_Z = STREET_DEPTH.courier.z;");
-    // The van keeps its own literals (unchanged by this amendment) — assert they
-    // still match the table so the two can never drift apart silently.
+    // The van too, now that it moved below the courier: body, rim slot and both
+    // z values are table-sourced, so the two can never drift apart silently.
     const van = read("DeliveryVehicleSprite.tsx");
-    expect(van).toContain(`renderOrder={${String(STREET_DEPTH.vehicleRim.order)}}`);
-    expect(van).toContain(`renderOrder={${String(STREET_DEPTH.vehicle.order)}}`);
-    expect(van).toContain(`const VEHICLE_Z = ${String(STREET_DEPTH.vehicle.z)};`);
+    expect(van).toContain("renderOrder={STREET_DEPTH.vehicleRim.order}");
+    expect(van).toContain("renderOrder={STREET_DEPTH.vehicle.order}");
+    expect(van).toContain("const VEHICLE_Z = STREET_DEPTH.vehicle.z;");
+    expect(van).toContain("STREET_DEPTH.vehicleRim.z");
+    expect(van).not.toMatch(/VEHICLE_Z\s*-\s*0\.01/);
   });
 });

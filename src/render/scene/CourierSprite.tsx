@@ -35,13 +35,16 @@ const BOB_LEAN = 0.05; // radians of body lean at the extremes
 const MAX_COURIERS = 4;
 // World height of the cyclist sprite; square flipbook cells.
 const COURIER_H = 2.6;
-// Depth of the rider sprite: BETWEEN the two near-foreground kerb rows
-// (Bertrand-directed 2026-07-25, ADR-0047 amendment 4) — behind the near row
-// (renderOrder 5.75, z 0.7), in front of the far row (renderOrder 4, z 0.6) and
-// still under the DeliveryVehicle sprite (VEHICLE_Z = 0.72). The near props may
-// therefore partially mask a passing livreur: depth ambiance wins over total
-// target legibility. The courier stays ABOVE the facade-attached ironwork
-// (renderOrder 5) — that art is physically behind him. See {@link STREET_DEPTH}.
+// Depth of the rider sprite: BETWEEN the two near-foreground kerb rows AND in
+// front of the delivery van (Bertrand-directed 2026-07-25, ADR-0047 amendment
+// 4) — behind the near row (renderOrder 5.75, z 0.7), in front of the far row
+// (renderOrder 4, z 0.6) and now in front of the DeliveryVehicle sprite
+// (renderOrder 5.25, z 0.62: « le cycliste devrait être aussi devant le camion »).
+// The near props may therefore partially mask a passing livreur — and the van
+// too, the assumed consequence of vehicle < courier < nearRow: depth ambiance
+// wins over total target legibility. The courier stays ABOVE the facade-attached
+// ironwork (renderOrder 5) — that art is physically behind him. See
+// {@link STREET_DEPTH}.
 const RIDER_Z = STREET_DEPTH.courier.z;
 
 interface Props {

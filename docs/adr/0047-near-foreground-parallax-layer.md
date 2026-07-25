@@ -161,67 +161,136 @@ Consequences of the carve-out, and what still holds:
   (the band ceiling); the non-occlusion test still guards them. Only `trafficLight`
   bypasses `maxH`, via its own `TRAFFIC_LIGHT_H_FRAC` allowance in `NearForeground`.
 
-## Amendment — courier between the two prop rows (Bertrand-directed, 2026-07-25)
+## Amendment — courier between the two prop rows, and in front of the van (Bertrand-directed, 2026-07-25)
 
 Bertrand, reviewing the shipped street: _« le cycliste est en premier plan… il devrait
 être dans la première et la seconde ligne de props »_. The livreur read as pasted on top
 of the décor instead of riding **in** it, which flattened the differential parallax the
-whole layer exists to sell.
+whole layer exists to sell. Reviewing the first pass the same day, he added: _« le
+cycliste devrait être aussi devant le camion, là il passe derrière »_.
 
-The courier now sits **in depth between the two kerb rows**: drawn after the FAR row,
-before the NEAR row. This **reverses finding #8 for the near row only** — the original
-rule that no near-foreground prop may ever mask a "Livrer" target. Bertrand's explicit
-arbitration: **depth ambiance over total target legibility**. The near row is the ONLY
-newly accepted occlusion of the courier; nothing else in the scene gained the right to
-paint over him.
+Two directives, one stack:
+
+1. The courier sits **in depth between the two kerb rows** — drawn after the FAR row,
+   before the NEAR row.
+2. The courier is drawn **after the delivery vehicle** — the vélo passes in front of the
+   camion, not behind it.
+
+Together they **reverse finding #8 for the near row only** — the original rule that no
+near-foreground prop may ever mask a "Livrer" target. Bertrand's explicit arbitration:
+**depth ambiance over total target legibility**. The near row is the ONLY newly accepted
+occlusion; nothing else in the scene gained the right to paint over a street actor.
+
+**Assumed consequence — the near row now masks BOTH "Livrer" targets.** `vehicle <
+courier < nearRow` admits no other arrangement: the van cannot be in front of the near
+props while staying behind a courier that is itself behind them. So the delivery vehicle,
+like the courier, may now be **partially masked by the near kerb row**. This is not a
+side effect we discovered afterwards, it is the arbitration Bertrand made: both delivery
+targets accept partial occlusion by the front prop row. In depth terms it reads straight
+— the near props are the closest plane, the van is the street actor furthest from the
+kerb, the cyclist rides between the two. What the van keeps: it is still a street
+**actor**, so it stays in front of the FAR row (4) and in front of the facade-attached
+ironwork (5); it is not a facade element.
 
 Final street stack, single-sourced in `src/render/scene/streetDepth.ts` (`STREET_DEPTH`)
 and guarded by `src/render/scene/__tests__/streetDepth.test.ts`:
 
-| layer                     | renderOrder | z    | masks the courier?    |
-| ------------------------- | ----------- | ---- | --------------------- |
-| far kerb row              | 4           | 0.60 | never                 |
-| facade ironwork (ceiling) | 5           | 0.50 | **never** (see below) |
-| **courier (vélo)**        | **5.5**     | 0.65 | —                     |
-| near kerb row             | 5.75        | 0.70 | **may, partially**    |
-| delivery vehicle rim      | 6           | 0.71 | n/a                   |
-| delivery vehicle          | 7           | 0.72 | n/a (stays in front)  |
+| layer                     | renderOrder | z    | masks the courier?    | masks the van?        |
+| ------------------------- | ----------- | ---- | --------------------- | --------------------- |
+| far kerb row              | 4           | 0.60 | never                 | never                 |
+| facade ironwork (ceiling) | 5           | 0.50 | **never** (see below) | **never** (see below) |
+| delivery vehicle rim      | 5.2         | 0.61 | n/a                   | —                     |
+| delivery vehicle          | 5.25        | 0.62 | n/a (now behind)      | —                     |
+| **courier (vélo)**        | **5.5**     | 0.65 | —                     | n/a (now in front)    |
+| near kerb row             | 5.75        | 0.70 | **may, partially**    | **may, partially**    |
 
 What still holds, and why the numbering looks like this:
 
-- The **delivery van is untouched** and still passes in front of the entire décor.
-- The **far row never masks the courier** — the guarantee of finding #8 survives for the
-  row that sits behind him.
-- **The courier still passes IN FRONT of the facade ironwork.** `ForegroundFrames` and
-  `WindowGrilles` are balcony/grille overlays painted ON the facade at z 0.50, i.e.
+- The **far row never masks a street actor** — the guarantee of finding #8 survives for
+  the row that sits behind both of them.
+- **Both street actors still pass IN FRONT of the facade ironwork.**
+  `ForegroundFrames` and `WindowGrilles` are balcony/grille overlays painted ON the facade at z 0.50, i.e.
   physically _behind_ every street actor, yet they own `renderOrder 5`. All these
   materials are `transparent` + `depthWrite:false` in one sort list, so renderOrder
   alone decides. A first cut of this amendment put the courier at 4.5 and thereby sent
   him **under** the ironwork: on `vitry` the opaque HLM balcony slab (`drawHlmZone`)
   lands at world y −4.17…−4.55 while couriers ride at `streetY` −4.8 with a 2.6-unit
   sprite, so a concrete rectangle painted straight across the rider's head and shoulders
-  at every window column; `niveau-final`'s haussmann balustrade did the same. Both
-  street-actor slots therefore stay **strictly above** `STREET_DEPTH.facadeOverlay` (5)
-  and strictly below the van rim (6): **5.5 / 5.75**. The layering test asserts this
-  explicitly (`street ACTOR above the facade-attached ironwork`), not merely that the
-  slot is free.
-- The fractional slots **5.5 / 5.75** (same device as `ImpactEffects`' 3.5 / 7.9 / 8.1)
-  keep every street layer on a **distinct, unambiguous** `renderOrder`: with
+  at every window column; `niveau-final`'s haussmann balustrade did the same. Every
+  street-actor slot therefore stays **strictly above** `STREET_DEPTH.facadeOverlay` (5)
+  and strictly below the near row: **5.2 / 5.25 / 5.5**, with the near row at 5.75. The
+  layering test asserts this explicitly (`street ACTOR above the facade-attached
+ironwork`), not merely that the slot is free — and the van is covered by the same
+  assertion, since it moved into the same 5..6 window.
+- The fractional slots **5.2 / 5.25 / 5.5 / 5.75** (same device as `ImpactEffects`'
+  3.5 / 7.9 / 8.1) keep every street layer on a **distinct, unambiguous** `renderOrder`: with
   `depthWrite:false` transparent materials, equal renderOrders fall back to distance
   sorting, which is precisely the ambiguity we refuse. The test derives the "already
   claimed" set by scanning `src/render/**` for literal renderOrders, so a future module
-  grabbing 5.5 or 5.75 fails the build. (`ForegroundImage` declares a renderOrder-6
+  grabbing any of the four fails the build. Everything above 6 (hostage QTE 6..8, impact
+  FX 7.9/8/8.1, crosshair 16384) is untouched: the whole street stack now fits between
+  the facade overlays (5) and the QTE tableau (6). (`ForegroundImage` declares a renderOrder-6
   plane but is **not mounted anywhere** in the scene graph — `ForegroundFrames` and
   `WindowGrilles` are the only real facade overlays; earlier drafts of this ADR listed
   `ForegroundImage` as an occupant of 6, which was wrong.)
 - `RIDER_Z` moved 0.701 → **0.65**, between the two rows' z, so world depth agrees with
-  paint order rather than contradicting it. `ForegroundFrames` / `WindowGrilles` now
-  read their own z + renderOrder from `STREET_DEPTH.facadeOverlay`, so the ceiling and
-  the actors can no longer drift apart silently.
+  paint order rather than contradicting it. Likewise `VEHICLE_Z` moved 0.72 → **0.62**,
+  below the courier's 0.65: paint order and world depth tell the same story on both
+  axes, which the test asserts on both (`order` AND `z`). `DeliveryVehicleSprite` lost
+  its literal `renderOrder={6}` / `renderOrder={7}` and its hard-coded `VEHICLE_Z`, just
+  like `ForegroundFrames` / `WindowGrilles` before it: everything now reads from
+  `STREET_DEPTH`, so ceiling, rows and actors can no longer drift apart silently. The
+  van's neon rim (ADR-0011) keeps exactly its former RELATIVE geometry — one slot below
+  its body, z − 0.01 — so the additive halo still draws behind the sprite; only the
+  absolute numbers moved.
 - The **feu tricolore carve-out compounds with this**: it lives in the NEAR row, so the
-  hero mast may now cross a passing livreur as well as a static cop window. Accepted,
-  same arbitration.
+  hero mast may now cross a passing livreur — and the van — as well as a static cop
+  window. Accepted, same arbitration.
 - **Known, pre-existing, out of scope:** the FAR row stays at `renderOrder 4`, below the
   facade overlays, so a deep balcony slab can still paint over a low far-row prop on
   `vitry`. Far-row props are décor, not "Livrer" targets; lifting the whole row over the
   overlays is a visible art call for Bertrand / senior-architect, not a silent fix here.
+
+### Same-day addendum — the réverbère is raised to the band ceiling (Bertrand-directed, 2026-07-25)
+
+Reviewing the same belliard frame, Bertrand: _« Essaie de réhausser ce lampadaire, il
+devrait être plus haut »_. On the capture the lantern of the réverbère haussmannien sat
+at the **cabin** height of the delivery truck — a dwarf lamp planted in front of a van,
+when the art (fluted mast, col-de-cygne) implies a lantern well above vehicle roofs.
+
+**Measured cause (belliard, `facadeH = 12`, near row `rowScale = 1.3`).** The binding
+ceiling was **not** the non-occlusion band: the natural height `0.62 × 12 × 1.3 = 9.67`
+was cut by the global "believable size" cap `MAX_PROP_WORLD_H × rowScale = 4.5 × 1.3 =
+5.85`, well under the band ceiling `maxH = 8.26` (desktop) / `7.66` (mobile). Because the
+plane keeps its aspect, that cap shrank the WHOLE sprite — mast _and_ lantern — so the
+lantern head landed at world y −5.18…−3.93 against a van roof at −3.30.
+
+**Fix — a per-kind cap, not a global raise.** `MAX_PROP_WORLD_H` (4.5) stays the default
+for every other prop; `KIND_MAX_WORLD_H` (`nearForegroundArt.ts`) overrides it for
+`lamppost` only, at **7.0** world-units pre-row-scale. That value is a _backstop_: on both
+levels that carry lampposts the **non-occlusion band becomes the operative ceiling**, so
+the raise buys exactly the room the band already allowed and not one unit more. The same
+commit makes that band clamp exact — it now clamps the sprite's **visible top**
+(`bandMaxH / (1 − footPadFrac)`) instead of the raw plane box, recovering the foot-pad
+slack the old `planeH ≤ maxH` silently discarded. Sizing moved into the pure
+`nearPropPlaneHeight()` so it is testable without an R3F scene.
+
+**This is not a second derogation.** `trafficLight` remains the ONE prop allowed above the
+band. The lamppost stays strictly inside it, i.e. the full `NEAR_BAND_MARGIN` (0.8 world
+units) below the lowest window row, at every pan offset:
+
+| level      | density | plane H (was → is) | visible top → lowest window bottom | lantern bottom vs van roof (−3.30) |
+| ---------- | ------- | ------------------ | ---------------------------------- | ---------------------------------- |
+| belliard   | desktop | 5.85 → **8.90**    | −1.15 → −0.18 = **0.97 u**         | −5.18 → **−3.07** (+0.23 above)    |
+| belliard   | mobile  | 5.85 → **8.25**    | −1.74 → −0.18 = **1.56 u**         | −5.18 → **−3.51**                  |
+| stalingrad | desktop | 5.85 → **8.81**    | −1.24 → −0.27 = **0.97 u**         | −5.18 → **−3.13** (+0.17 above)    |
+| stalingrad | mobile  | 5.85 → **8.16**    | −1.83 → −0.27 = **1.57 u**         | −5.18 → **−3.58**                  |
+
+(Lantern bounds from the committed `nearfg/lamppost.png` alpha profile: the head occupies
+texture rows 10..120 of 512.) The prop stays anchored on the kerb — the raise is pure
+upward growth, `footPadFrac` still lands the feet on the pavement band. Every other kind's
+computed height is bit-identical before/after (all are natural- or default-cap-bound, none
+was band-bound). Locked by
+`src/render/scene/__tests__/nearForegroundSizing.test.ts`, which walks both levels × both
+densities × both rows and asserts the band clearance, plus the lantern-above-the-roof
+target that fails the moment the lamppost falls back to the global 4.5 cap.
