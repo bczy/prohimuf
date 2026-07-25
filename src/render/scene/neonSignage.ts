@@ -8,13 +8,16 @@
  * core clears that gate and the CRT blooms it for free (no new pass, no new
  * render target, `CrtPass` untouched).
  *
- * Two families, per the art direction:
- *  - `warm` — the réverbère's sodium head (#FFA500), the one non-acid light in the
- *    street; it reads as a real lamp, not as rave signage.
- *  - `acid` — the fanzine neon triad, MIXED along the street: consecutive emitters
- *    take consecutive hues, so no two neighbours share a colour and a street never
- *    reads monochrome. Deterministic in the prop's stable index — never random —
- *    so a re-render/parallax pass can't reshuffle the street's colours.
+ * ONLY objects that ARE a light in the fiction emit (art gate 2026-07-25, §2 law 1
+ * « rien de décoratif ne brille » / proposed rule G1). Two families:
+ *  - `warm` — the réverbière's sodium bulb (#FFA500), the one legal non-acid light
+ *    in the street; it reads as a real lamp, not as rave signage.
+ *  - `acid` — the bible's anchored accents (§2 law 1), cycled across emitters by
+ *    their stable index. The cycle is DETERMINISTIC, never random, so a re-render
+ *    or a parallax pass can never reshuffle the street's colours. Note the
+ *    guarantee is exactly that — a fixed cycle over the prop index. Emitters are
+ *    not necessarily consecutive in that index, so two on-screen neighbours MAY
+ *    land on the same hue; what is ruled out is a monochrome street by default.
  *
  * Intensities are deliberately low and CONSTANT: no day/night and no combat-phase
  * signal exists anywhere in `src/game` (checked: `GameState`/`stateMachine` carry
@@ -26,8 +29,13 @@ import type { NearForegroundKind } from "@game/levels/levelArt";
 /** Sodium-lamp warm, the réverbère head. */
 export const LAMP_WARM = "#FFA500";
 
-/** The acid triad (fanzine neon), cycled across emitters so a street reads mixed. */
-export const ACID_HUES: readonly string[] = ["#00FF64", "#FF32B4", "#9664FF"];
+/**
+ * The acid triad, re-anchored on the bible's §2 law 1 hexes (art gate 2026-07-25):
+ * green, magenta, cyan. The first cut used `#00FF64/#FF32B4/#9664FF` — near-misses
+ * of the anchors, and `#9664FF` was a violet that exists nowhere in the palette, a
+ * fourth colour family. Family consistency (§2 law 2) is a colour law.
+ */
+export const ACID_HUES: readonly string[] = ["#78FF3C", "#FF3CDC", "#28F0FF"];
 
 export interface NeonSignage {
   /** Emitted hue, already resolved (warm constant, or the cycled acid hue). */
@@ -53,10 +61,21 @@ interface Emitter {
 }
 
 /**
- * Which near-foreground props emit, and where on their plane. `trafficLight` is
- * absent on purpose: it already carries its own animated lit-lens overlay
- * (`nearForegroundTextures.updateTrafficLightSignal`) and a second glow would
+ * Which near-foreground props emit, and where on their plane. The list is
+ * deliberately SHORT — every entry has to be a light source in the fiction.
+ *
+ * `trafficLight` is absent because it already carries its own animated lit-lens
+ * overlay (`nearForegroundTextures.updateTrafficLightSignal`); a second glow would
  * double the signal it exists to read out.
+ *
+ * `parkingMeter` / `bollard` / `scooter` were emitters in the first cut and were
+ * REMOVED at the art gate (Bertrand's ruling on escalation E1, 2026-07-25). They
+ * emit no light in the fiction, so an additive disc centred on them spends the
+ * « ce qui brille est interactif » contract for nothing; and `scooter` is the moto
+ * silhouette, a delivery-vehicle class whose interaction signal IS a neon rim
+ * (ADR-0011) — décor wearing a vehicle's badge (§2 law 3). If the "hint of colour
+ * on chrome" is ever wanted it is a REFLECTION: a thin crescent on the prop's lit
+ * side, keyed off the nearest emitter's hue, never a disc centred on the prop.
  *
  * `streetSign` stands in for the "enseigne boutique" of the brief: the level-art
  * shopfront signs are BAKED into the facade image, so there is no shopfront-sign
@@ -67,19 +86,9 @@ const EMITTERS: Partial<Record<NearForegroundKind, Emitter>> = {
   // right-of-centre in lamppost.png), so the glow is offset left and sits on the
   // luminous body, not on the arm joint (Bertrand-directed, 2026-07-25).
   lamppost: { family: "warm", x: -0.17, y: 0.32, size: 0.32, opacity: 0.55 },
-  // The sign panel itself — the street's acid read.
+  // An enseigne IS a lit object, so a halo on it is diegetic.
   streetSign: { family: "acid", x: 0, y: 0.24, size: 0.36, opacity: 0.4 },
-  // Metal/rebut: barely there. A hint of colour caught on a chrome edge.
-  parkingMeter: { family: "acid", x: 0, y: 0.26, size: 0.24, opacity: 0.14 },
-  bollard: { family: "acid", x: 0, y: 0.1, size: 0.4, opacity: 0.12 },
-  scooter: { family: "acid", x: 0, y: 0, size: 0.45, opacity: 0.12 },
 };
-
-/**
- * Ceiling on the "rebut/métal" family's opacity — the subtlety contract. Asserted
- * in the spec so a future tuning pass can't quietly promote a bollard into a sign.
- */
-export const SUBTLE_OPACITY_MAX = 0.2;
 
 /**
  * Resolve the emitter for a prop, or `null` when the kind does not emit.
