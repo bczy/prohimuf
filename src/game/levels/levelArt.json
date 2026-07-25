@@ -209,7 +209,8 @@
       "enemy_hostage": {
         "seed": 4813,
         "prompt": "a menacing kidnapper in a dark jacket, one arm wrapped forward around empty space at chest height as if gripping a captive in front of him, the other hand pressing a pistol forward, threatening hunched posture, standing facing forward",
-        "frames": [""]
+        "frames": [""],
+        "muzzle": [{ "x": 0.37, "y": 0.17 }]
       }
     }
   },

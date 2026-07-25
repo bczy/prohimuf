@@ -157,12 +157,22 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
     }
   });
 
+  // Sprites that show a drawn weapon WITHOUT being a "_shooting" plate. The
+  // hostage-duel captor is the only one: he is a static armed pose (pistol
+  // pressed forward at the player) rendered from his idle plate, so his barrel
+  // needs an anchor exactly like a shooter's. Anything else carrying an anchor
+  // is a manifest mistake.
+  const ARMED_IDLE_KEYS = new Set(["enemy_hostage"]);
+
   it("every muzzle anchor array is frames-aligned with null-or-normalized elements", () => {
     for (const [key, entry] of Object.entries(types)) {
       if (entry.muzzle === undefined) continue;
-      // The anchor is a pixel position on a SHOOTING sprite; idle entries must
-      // not carry one.
-      expect(key.includes("shooting"), `${key}.muzzle only on shooting entries`).toBe(true);
+      // The anchor is a pixel position on a sprite that actually shows a gun:
+      // a SHOOTING plate, or one of the explicitly armed idle poses above.
+      expect(
+        key.includes("shooting") || ARMED_IDLE_KEYS.has(key),
+        `${key}.muzzle only on shooting or explicitly armed idle entries`,
+      ).toBe(true);
       expect(
         entry.muzzle.length,
         `${key}.muzzle index-aligned with frames (element i anchors frame i+1)`,

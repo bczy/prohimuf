@@ -36,6 +36,12 @@ vi.mock("@game/levels/levelArt.json", async (importOriginal) => {
           enemy_biker_shooting: {
             frames: ["", "recoil"],
           },
+          // An ARMED IDLE plate: the hostage-duel captor holds his pistol in
+          // his idle pose, so his anchor lives on the non-shooting key.
+          enemy_hostage: {
+            frames: [""],
+            muzzle: [{ x: 0.37, y: 0.17 }],
+          },
         },
       },
     },
@@ -55,6 +61,14 @@ describe("muzzleFor", () => {
 
   it("returns null when the entry has no `muzzle` field", () => {
     expect(muzzleFor("biker", 1, 1)).toBeNull();
+  });
+
+  it("reads the IDLE plate's anchor when `shooting` is false (the duel captor)", () => {
+    expect(muzzleFor("hostage_taker", 1, 1, false)).toEqual({ x: 0.37, y: 0.17 });
+  });
+
+  it("still defaults to the shooting plate, which the captor does not author", () => {
+    expect(muzzleFor("hostage_taker", 1, 1)).toBeNull();
   });
 
   it("returns null for an out-of-range frame", () => {

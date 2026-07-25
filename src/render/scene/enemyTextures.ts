@@ -55,17 +55,21 @@ export function frameCountFor(kind: EnemyKind, variant: number, shooting: boolea
 }
 
 // Normalized [0..1] muzzle-flash anchor (from the PNG top-left) of this
-// kind/variant's SHOOTING sprite for a 1-based frame, or null when there is
+// kind/variant sprite for a 1-based frame, or null when there is
 // nothing to anchor. Absent field, null element and out-of-range frames all
 // collapse to null so the caller falls back to its fixed offset. Callers must
 // pass the frame of the texture ACTUALLY displayed (see resolveEnemyTexture),
 // not the requested one — anchors are pixel positions of a specific image.
+// `shooting` selects which plate the anchor belongs to and defaults to the
+// shooting one (the only armed pose for street enemies); the hostage-duel
+// captor is drawn from his IDLE plate and passes false.
 export function muzzleFor(
   kind: EnemyKind,
   variant: number,
   frame: number,
+  shooting = true,
 ): { x: number; y: number } | null {
-  const entry = ENEMY_TYPES[enemyBaseFileKey(kind, variant, true)];
+  const entry = ENEMY_TYPES[enemyBaseFileKey(kind, variant, shooting)];
   const anchors = entry?.muzzle;
   if (anchors === undefined) return null;
   return anchors[frame - 1] ?? null;
