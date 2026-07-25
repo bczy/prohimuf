@@ -60,31 +60,25 @@ jobs:
       # `--cache-strategy content` on the ESLint side makes the entries survive
       # a fresh checkout (git does not preserve mtimes).
       #
-      # Two entries on purpose. ESLint's cache records a per-file content hash
-      # and its lint result, but NOT the config that produced it — so a cache
-      # restored across a config change would report a file as clean under a
-      # rule that did not exist when it was cached. Its entry therefore never
-      # falls back below the config hash. Prettier embeds its version + resolved
-      # options in every cache entry and Vitest's cacheDir only holds the Vite
-      # dep-optimizer output, so both can take the wide per-OS fallback.
-      - name: Cache ESLint
+      # NO wide `tooling-cache-${{ runner.os }}-` fallback, on purpose. ESLint's
+      # cache records, per file, a content hash and the lint result — but NOT the
+      # config that produced it (`--cache-strategy content` governs how a *file*
+      # change is detected, nothing more). A cache restored across a config
+      # change would therefore report a file as clean under a rule that did not
+      # exist when it was cached: a green CI hiding a real violation. Hence the
+      # config hash in the key AND in the only restore-key.
+      #
+      # Accepted cost: a config change also sends Prettier and Vitest back to a
+      # cold cache, though their own entries would still have been valid. A few
+      # seconds on one run, in exchange for a single entry that is never restored
+      # across a config change.
+      - name: Cache lint/format/test tooling
         uses: actions/cache@v4
         with:
-          path: node_modules/.cache/eslint
-          key: tooling-cache-eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'package.json', 'yarn.lock') }}-${{ github.sha }}
+          path: node_modules/.cache
+          key: tooling-cache-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'prettier.config.ts', 'package.json', 'yarn.lock') }}-${{ github.sha }}
           restore-keys: |
-            tooling-cache-eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'package.json', 'yarn.lock') }}-
-
-      - name: Cache Prettier and Vitest
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules/.cache/prettier
-            node_modules/.cache/vitest
-          key: tooling-cache-${{ runner.os }}-${{ hashFiles('prettier.config.ts', 'package.json', 'yarn.lock') }}-${{ github.sha }}
-          restore-keys: |
-            tooling-cache-${{ runner.os }}-${{ hashFiles('prettier.config.ts', 'package.json', 'yarn.lock') }}-
-            tooling-cache-${{ runner.os }}-
+            tooling-cache-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'prettier.config.ts', 'package.json', 'yarn.lock') }}-
 
       - name: Typecheck
         run: yarn typecheck
