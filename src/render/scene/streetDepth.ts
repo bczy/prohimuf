@@ -11,12 +11,14 @@
  *
  * | layer                   | renderOrder | z     |
  * | ----------------------- | ----------- | ----- |
+ * | ambient street motion   | 3.6         | 0.40+ |
  * | far kerb row            | 4           | 0.60  |
  * | facade overlays (ceil.) | 5           | 0.50  |
  * | delivery van rim        | 5.2         | 0.61  |
  * | delivery van            | 5.25        | 0.62  |
  * | courier (vélo)          | 5.5         | 0.65  |
  * | near kerb row           | 5.75        | 0.70  |
+ * | QTE entity aura         | 5.9         | 0.48  |
  *
  * THE TWO DIRECTIVES THIS TABLE ENCODES.
  *  1. « le cycliste est en premier plan… il devrait être dans la première et la
@@ -52,6 +54,24 @@
  * additive glow still reads as a halo drawn behind the sprite; only the absolute
  * numbers moved (6/7 → 5.2/5.25, z 0.71/0.72 → 0.61/0.62).
  *
+ * THE TWO SLOTS OUTSIDE THE ROAD PLANE, and why they are in this table anyway.
+ *  - `ambient` (3.6) - `UrbanMotion`'s vent steam and blowing litter. Deliberately
+ *    the LOWEST street-adjacent band: above the facade panels (0..3) and strictly
+ *    below every actor and target, so no ambient pixel can mask something the
+ *    player must hit or must not hit.
+ *  - `qteAura` (5.9) - the contact shadow + energy rim drawn under the hostage-QTE
+ *    captor and the boss (`entityAura.ts`). Their bodies hold 6/7, so the aura needs
+ *    a slot immediately below its host - the same "rim one slot under its body"
+ *    idiom as `vehicleRim`/`vehicle` - while still clearing EVERY layer above
+ *    `facadeOverlay`. It first shipped at 5, which TIED the facade overlays and sat
+ *    below the van (5.2/5.25), the courier (5.5) and the near row (5.75): all four
+ *    are painted AFTER it while its own host body is painted at 6, so the ironwork
+ *    and a QTE-frozen courier bit into the rim. Architect finding I1.
+ *
+ * Both are listed here because THIS TABLE IS THE BAND REGISTRY. Omitting them is
+ * what let slot 5 look free in the first place: a band nobody wrote down cannot be
+ * reasoned about by the next lane.
+ *
  * KNOWN, PRE-EXISTING (not introduced by this amendment): the FAR row keeps
  * renderOrder 4, i.e. BELOW the facade overlays, so a low far-row prop can still
  * be painted over by a deep balcony slab on `vitry`. Far-row props are décor, not
@@ -59,8 +79,9 @@
  * for Bertrand / senior-architect, deliberately out of scope here.
  *
  * Neighbours for context (owned by their own modules): backdrop panels 0..3,
- * impact marks 3.5, enemies + LootCrate 4, facade overlays 5, hostage QTE 6..8,
- * impact backing/explosion/flash 7.9/8/8.1, crosshair 16384. (`ForegroundImage`
+ * impact marks 3.5, ambient street motion 3.6, enemies + LootCrate (and its own
+ * aura) 4, facade overlays 5, QTE auras 5.9, hostage QTE 6..8, impact
+ * backing/explosion/flash 7.9/8/8.1, crosshair 16384. (`ForegroundImage`
  * defines a renderOrder-6 plane but is NOT mounted anywhere in the scene graph —
  * `ForegroundFrames`/`WindowGrilles` are the only real facade overlays.)
  */
@@ -81,6 +102,19 @@ export const STREET_DEPTH = {
   courier: { order: 5.5, z: 0.65 },
   /** Near (front) kerb row — MAY partially mask the courier AND the van. */
   nearRow: { order: 5.75, z: 0.7 },
+  /**
+   * NOT a street layer: the ambient-motion band (`UrbanMotion` — vent steam and
+   * blowing litter). Held BELOW every actor and target on purpose. Its `z` varies
+   * per sub-layer (litter 0.42, vent plumes 0.40), so only `order` is load-bearing.
+   */
+  ambient: { order: 3.6, z: 0.4 },
+  /**
+   * NOT a street layer: the hostage-QTE captor's and the boss's contact shadow +
+   * energy rim. One slot under their bodies (6/7) and above everything the street
+   * stack paints, so no décor can bite the rim. `z` is the rim plane — both hosts
+   * sit at 0.5, so the rim is 0.48 and the shadow one hundredth behind it.
+   */
+  qteAura: { order: 5.9, z: 0.48 },
 } as const;
 
 /**

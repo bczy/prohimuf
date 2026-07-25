@@ -117,6 +117,55 @@ describe("street depth stack (ADR-0047 amendment 4)", () => {
     }
   });
 
+  it("paints the QTE aura above EVERY street layer, under its own host body", () => {
+    // Finding I1. The aura shipped at a bare 5: it TIED facadeOverlay and sat below
+    // the van (5.2/5.25), the courier (5.5) and the near row (5.75) — all painted
+    // after it — while its host body is painted at 6. So the balcony ironwork and a
+    // QTE-frozen courier bit into a rim that is supposed to sit behind its figure
+    // and in front of the street. Nothing the street stack owns may follow it.
+    for (const key of STREET_DEPTH_BACK_TO_FRONT) {
+      expect(
+        STREET_DEPTH.qteAura.order,
+        `${key} paints after the QTE aura and can bite the rim`,
+      ).toBeGreaterThan(STREET_DEPTH[key].order);
+    }
+    expect(STREET_DEPTH.qteAura.order).toBeGreaterThan(STREET_DEPTH.facadeOverlay.order);
+    // ...and strictly under the hostage-QTE tableau bodies (captor 6, hostage 7),
+    // the "rim one slot below its body" idiom the van rim already uses.
+    expect(STREET_DEPTH.qteAura.order).toBeLessThan(6);
+    // Its z stays behind those bodies (both at 0.5) so the sprite occludes the
+    // silhouette's interior and only the outward margin reads.
+    expect(STREET_DEPTH.qteAura.z).toBeLessThan(0.5);
+  });
+
+  it("keeps the ambient band below every actor and target", () => {
+    // UrbanMotion is décor: no ambient pixel may mask something the player must hit
+    // (enemies/LootCrate at 4) or must not hit (the courier).
+    for (const key of STREET_DEPTH_BACK_TO_FRONT) {
+      expect(STREET_DEPTH.ambient.order).toBeLessThan(STREET_DEPTH[key].order);
+    }
+    expect(STREET_DEPTH.ambient.order).toBeLessThan(STREET_DEPTH.facadeOverlay.order);
+    // Above the backdrop panels (0..3), which it must be visible over.
+    expect(STREET_DEPTH.ambient.order).toBeGreaterThan(3);
+    // Below the enemies + LootCrate band (4).
+    expect(STREET_DEPTH.ambient.order).toBeLessThan(4);
+  });
+
+  it("registers the bands the modules actually use, so the table stays the registry", () => {
+    // Finding I2: the table omitted both, which is exactly what let slot 5 look
+    // free. Each entry must match the literal its owning module ships.
+    const literals = literalRenderOrders();
+    expect(
+      literals.get(STREET_DEPTH.ambient.order),
+      "no module claims the registered ambient band",
+    ).toContain("effects/UrbanMotion.tsx");
+    // The QTE aura is table-sourced, so it must NOT appear as a literal anywhere.
+    expect(literals.get(STREET_DEPTH.qteAura.order) ?? []).toEqual([]);
+    for (const file of ["HostageQteSprite.tsx", "BossQteSprite.tsx"]) {
+      expect(read(file)).toContain("STREET_DEPTH.qteAura.order");
+    }
+  });
+
   it("gives every street layer a slot no other scene module claims", () => {
     // Same-renderOrder transparent meshes fall back to distance sorting, which is
     // exactly the ambiguity we removed. The claimed set is DERIVED from the source

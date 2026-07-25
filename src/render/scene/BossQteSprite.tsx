@@ -26,6 +26,7 @@ import type { BossPose } from "./bossTextures";
 import { createSmokeField } from "./smokeParticles";
 import { AURA_HIDDEN, createEntityAura } from "@render/effects/entityAura";
 import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
+import { STREET_DEPTH } from "./streetDepth";
 import type { HudBossQte } from "@render/ui/HUD";
 
 // The boss QTE tableau — "le Commandant" (ADR-0051, differentiation pack ADR-0052). A
@@ -458,14 +459,21 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
   // its billboards in world space each frame around the boss anchor.
   const smokeField = useMemo(() => createSmokeField(smokeMax), [smokeMax]);
-  // Contact shadow + energy RIM around the Commandant. One band below the boss and
+  // Contact shadow + energy RIM around the Commandant. Slot from STREET_DEPTH (I1:
+  // a bare 5 sat under the van, the courier and the near row, which all paint after
+  // it). One band below the boss and
   // behind him in z, so his body covers the silhouette's interior and only the
   // outward margin shows — the ADR-0052 stance TINT stays the dominant read and the
   // rim is peripheral. Was an additive DISC in the first cut; the composite gate
   // measured it covering 7.73 % of the world area, pooling on the road and clipping
   // the pavement to white. A silhouette rim cannot do either (see entityAura.ts).
   const bossAura = useMemo(
-    () => createEntityAura({ renderOrder: 5, rimZ: BOSS_Z - 0.02, shadowZ: BOSS_Z - 0.03 }),
+    () =>
+      createEntityAura({
+        renderOrder: STREET_DEPTH.qteAura.order,
+        rimZ: STREET_DEPTH.qteAura.z,
+        shadowZ: STREET_DEPTH.qteAura.z - 0.01,
+      }),
     [],
   );
 
@@ -1101,7 +1109,7 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       </mesh>
       {/* The drifting smoke particle field (renderOrder 10, set per-billboard in the module). */}
       <primitive object={smokeField.group} />
-      {/* The Commandant's contact shadow + energy rim (renderOrder 5, under him). */}
+      {/* The Commandant's contact shadow + energy rim (STREET_DEPTH.qteAura). */}
       <primitive object={bossAura.group} />
       {/* The parry halo (13) + glyph (14) draw ABOVE the smoke so the tell survives phase-3 smoke;
           the paper-white halo gives value contrast against the smoke + shoulder art. */}

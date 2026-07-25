@@ -38,6 +38,7 @@ import {
   ringZoneColour,
   ringZoneEmphasis,
 } from "./hostageCue";
+import { STREET_DEPTH } from "./streetDepth";
 import type { HudHostageQte } from "@render/ui/HUD";
 
 // The captor: a SQUARE plane (his texture is 256×256, figure centred — no aspect
@@ -395,10 +396,18 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   // says the opposite of the truth. `CourierSprite` was already excluded for exactly
   // this reason; the hostage is the original don't-shoot figure.
   //
-  // renderOrder 5 is strictly BELOW the captor mesh's 6, and `QTE_Z - 0.02` puts it
-  // behind him in z, so the rim can never draw over the body it traces.
+  // The slot comes from STREET_DEPTH: strictly below the captor mesh's 6 (so the rim
+  // never draws over the body it traces) but ABOVE the whole street stack. It shipped
+  // at a bare 5, which TIED the facade overlays and sat under the van (5.2/5.25), the
+  // courier (5.5) and the near row (5.75) — all painted after it, so the ironwork and
+  // a QTE-frozen courier bit the rim while its host body was painted at 6 (I1).
   const captorAura = useMemo(
-    () => createEntityAura({ renderOrder: 5, rimZ: QTE_Z - 0.02, shadowZ: QTE_Z - 0.03 }),
+    () =>
+      createEntityAura({
+        renderOrder: STREET_DEPTH.qteAura.order,
+        rimZ: STREET_DEPTH.qteAura.z,
+        shadowZ: STREET_DEPTH.qteAura.z - 0.01,
+      }),
     [],
   );
   useEffect(
@@ -757,7 +766,7 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     // The hostage's higher order + z draws her over the captor; the peek cue (8)
     // sits on top of both.
     <>
-      {/* The captor's contact shadow + energy rim (renderOrder 5, under him). */}
+      {/* The captor's contact shadow + energy rim (STREET_DEPTH.qteAura, under him). */}
       <primitive object={captorAura.group} />
       <mesh ref={captorRef} renderOrder={6} visible={false}>
         <planeGeometry args={[1, 1]} />
