@@ -9,7 +9,7 @@ description: >
   repairs an existing PR whose body is half-empty or whose preview link is wrong. It
   fills the body and ticks only what is genuinely done — an unticked box is information,
   a falsely ticked one is a lie to the merge gate. Owner: any lane (the one holding the
-  branch).
+  branch). If a PR already exists on the branch, the skill repairs it (see step 5).
 ---
 
 # open-pr — the bon de livraison, filled correctly
@@ -73,20 +73,34 @@ Start from `.github/pull_request_template.md` and keep every section and its ASC
   story shard) or 🛵 course express (`fix-lane`: one reviewer + one line in
   `docs/handoffs/fixes.md`).
 
-## Step 5 — open it as a draft
+## Step 5 — open or repair the PR
+
+First, detect whether a PR already exists on the branch:
+
+```bash
+gh pr view --json number,url 2>/dev/null
+```
+
+**PR does not exist** → create it as a draft:
 
 ```bash
 gh pr create --draft --title "<conventional-commit-style title>" --body-file <body.md>
 ```
 
-Draft is the default because the gates have not run yet: the CI panel
-(`code-review-panel.yml`, ADR-0063) publishes `panel-verdict` on the PR. Then watch it:
+**PR already exists** → repair it in-place (`gh pr edit` never changes draft status or reviewers):
+
+```bash
+gh pr edit --title "<conventional-commit-style title>" --body-file <body.md>
+```
+
+Then watch CI:
 
 ```bash
 gh pr checks --watch
 ```
 
-Ready-for-review is a deliberate act once checks are green — not part of opening.
+Draft is the default for new PRs because the gates have not run yet. Ready-for-review is a
+deliberate act once checks are green — not part of opening or repairing.
 
 ## Step 6 — report
 
