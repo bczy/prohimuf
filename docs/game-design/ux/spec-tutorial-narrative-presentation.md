@@ -161,4 +161,3 @@ Use `?preview=tutorial` desktop + mobile captures and reduced-motion variants.
 - **`narrative-designer`**: bullet microcopy and any line splits (French wording authority).
 - **`lead-art`**: final décor/cue rendering style within print-law constraints (I define hierarchy/readability only).
 - **`senior-architect` + `dev-r3f-render`**: field/UI contract changes required to support bullet-cue presentation and tutorial backdrop behavior.
-

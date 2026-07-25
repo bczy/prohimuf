@@ -205,14 +205,36 @@ function ShotReadPlayerVsEnemyBulletIcon(): JSX.Element {
       data-diagram-kind="shot-read-player-vs-enemy-bullet"
     >
       <style>{DIAGRAM_STYLES}</style>
-      <rect x="8" y="10" width="104" height="100" rx="6" fill={BODY} stroke="#141210" strokeWidth="2" />
+      <rect
+        x="8"
+        y="10"
+        width="104"
+        height="100"
+        rx="6"
+        fill={BODY}
+        stroke="#141210"
+        strokeWidth="2"
+      />
       <circle cx="28" cy="70" r="12" fill="none" stroke={INK} strokeWidth="1.8" />
       <line x1="28" y1="56" x2="28" y2="64" stroke={INK} strokeWidth="1.6" />
       <line x1="28" y1="76" x2="28" y2="84" stroke={INK} strokeWidth="1.6" />
       <line x1="14" y1="70" x2="22" y2="70" stroke={INK} strokeWidth="1.6" />
       <line x1="34" y1="70" x2="42" y2="70" stroke={INK} strokeWidth="1.6" />
-      <path d="M84 76 l10 0 l0 -26 l-10 0 l0 8 l-9 5 l9 5 z" fill="none" stroke={INK} strokeWidth="2" />
-      <line x1="39" y1="68" x2="82" y2="62" stroke={ACCENT} strokeWidth="2.4" strokeLinecap="round" />
+      <path
+        d="M84 76 l10 0 l0 -26 l-10 0 l0 8 l-9 5 l9 5 z"
+        fill="none"
+        stroke={INK}
+        strokeWidth="2"
+      />
+      <line
+        x1="39"
+        y1="68"
+        x2="82"
+        y2="62"
+        stroke={ACCENT}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
       <circle className="di-anim di-sr-bullet" cx="96" cy="63" r="3.2" fill={WARN} opacity="0" />
       <circle
         className="di-anim di-sr-warning"
@@ -237,17 +259,58 @@ function WeaponCrateLoopIcon(): JSX.Element {
       data-diagram-kind="weapon-crate-loop"
     >
       <style>{DIAGRAM_STYLES}</style>
-      <rect x="8" y="10" width="104" height="100" rx="6" fill={BODY} stroke="#141210" strokeWidth="2" />
+      <rect
+        x="8"
+        y="10"
+        width="104"
+        height="100"
+        rx="6"
+        fill={BODY}
+        stroke="#141210"
+        strokeWidth="2"
+      />
       <rect x="18" y="58" width="28" height="28" rx="3" fill="none" stroke={INK} strokeWidth="2" />
       <line x1="18" y1="69" x2="46" y2="69" stroke={INK} strokeWidth="1.4" />
       <line x1="32" y1="58" x2="32" y2="86" stroke={INK} strokeWidth="1.4" />
       <rect x="68" y="30" width="28" height="10" rx="2" fill="none" stroke={INK} strokeWidth="2" />
       <line x1="76" y1="30" x2="76" y2="22" stroke={INK} strokeWidth="1.6" />
       <line x1="62" y1="86" x2="96" y2="86" stroke={INK} strokeWidth="2" />
-      <path d="M70 80 C74 74 84 74 88 80 C92 86 102 86 106 80" fill="none" stroke={INK} strokeWidth="1.6" />
-      <line x1="46" y1="63" x2="68" y2="39" stroke={ACCENT} strokeWidth="2.2" strokeLinecap="round" className="di-anim di-wc-link-1" />
-      <line x1="82" y1="40" x2="82" y2="76" stroke={ACCENT} strokeWidth="2.2" strokeLinecap="round" className="di-anim di-wc-link-2" />
-      <line x1="62" y1="86" x2="40" y2="82" stroke={ACCENT} strokeWidth="2.2" strokeLinecap="round" className="di-anim di-wc-link-3" />
+      <path
+        d="M70 80 C74 74 84 74 88 80 C92 86 102 86 106 80"
+        fill="none"
+        stroke={INK}
+        strokeWidth="1.6"
+      />
+      <line
+        x1="46"
+        y1="63"
+        x2="68"
+        y2="39"
+        stroke={ACCENT}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        className="di-anim di-wc-link-1"
+      />
+      <line
+        x1="82"
+        y1="40"
+        x2="82"
+        y2="76"
+        stroke={ACCENT}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        className="di-anim di-wc-link-2"
+      />
+      <line
+        x1="62"
+        y1="86"
+        x2="40"
+        y2="82"
+        stroke={ACCENT}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        className="di-anim di-wc-link-3"
+      />
     </svg>
   );
 }
@@ -261,7 +324,16 @@ function ThreatHierarchyLadderIcon(): JSX.Element {
       data-diagram-kind="threat-hierarchy-ladder"
     >
       <style>{DIAGRAM_STYLES}</style>
-      <rect x="8" y="10" width="104" height="100" rx="6" fill={BODY} stroke="#141210" strokeWidth="2" />
+      <rect
+        x="8"
+        y="10"
+        width="104"
+        height="100"
+        rx="6"
+        fill={BODY}
+        stroke="#141210"
+        strokeWidth="2"
+      />
       <line x1="22" y1="30" x2="22" y2="94" stroke={INK} strokeWidth="1.6" opacity="0.7" />
       <rect x="26" y="22" width="72" height="10" rx="2" fill={WARN} fillOpacity="0.5" />
       <rect x="26" y="38" width="58" height="10" rx="2" fill={INK} fillOpacity="0.6" />
@@ -290,8 +362,26 @@ function BossFinaleSwitchIcon(): JSX.Element {
       data-diagram-kind="boss-finale-switch"
     >
       <style>{DIAGRAM_STYLES}</style>
-      <rect x="8" y="10" width="104" height="100" rx="6" fill={BODY} stroke="#141210" strokeWidth="2" />
-      <rect x="14" y="16" width="92" height="28" rx="3" fill="#100d20" stroke="#1b172a" strokeWidth="1.4" />
+      <rect
+        x="8"
+        y="10"
+        width="104"
+        height="100"
+        rx="6"
+        fill={BODY}
+        stroke="#141210"
+        strokeWidth="2"
+      />
+      <rect
+        x="14"
+        y="16"
+        width="92"
+        height="28"
+        rx="3"
+        fill="#100d20"
+        stroke="#1b172a"
+        strokeWidth="1.4"
+      />
       <image
         href={BELLIARD_FACADE_SRC}
         x="14"
@@ -301,7 +391,17 @@ function BossFinaleSwitchIcon(): JSX.Element {
         preserveAspectRatio="xMidYMid slice"
         style={{ imageRendering: "pixelated", opacity: 0.7 }}
       />
-      <rect className="di-anim di-bf-after" x="80" y="22" width="20" height="18" rx="2.5" fill="none" stroke={WARN} strokeWidth="1.5" />
+      <rect
+        className="di-anim di-bf-after"
+        x="80"
+        y="22"
+        width="20"
+        height="18"
+        rx="2.5"
+        fill="none"
+        stroke={WARN}
+        strokeWidth="1.5"
+      />
       <image
         className="di-anim di-bf-after"
         href={COMMANDANT_SRC}
@@ -316,17 +416,45 @@ function BossFinaleSwitchIcon(): JSX.Element {
         <rect x="16" y="55" width="34" height="16" rx="3" fill="none" />
         <line x1="22" y1="62" x2="44" y2="62" />
       </g>
-      <text className="di-anim di-bf-before" x="33" y="68" fill={INK} fontSize="7.6" textAnchor="middle" fontFamily="monospace">
+      <text
+        className="di-anim di-bf-before"
+        x="33"
+        y="68"
+        fill={INK}
+        fontSize="7.6"
+        textAnchor="middle"
+        fontFamily="monospace"
+      >
         00:05
       </text>
-      <text className="di-anim di-bf-after" x="33" y="68" fill={WARN} fontSize="7.6" textAnchor="middle" fontFamily="monospace">
+      <text
+        className="di-anim di-bf-after"
+        x="33"
+        y="68"
+        fill={WARN}
+        fontSize="7.6"
+        textAnchor="middle"
+        fontFamily="monospace"
+      >
         00:00
       </text>
-      <g className="di-anim di-bf-before" stroke={INK} strokeWidth="1.2" strokeLinecap="round" fill="none">
+      <g
+        className="di-anim di-bf-before"
+        stroke={INK}
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        fill="none"
+      >
         <rect x="16" y="78" width="34" height="12" rx="2.5" />
         <line x1="21" y1="84" x2="45" y2="84" />
       </g>
-      <g className="di-anim di-bf-after" stroke={WARN} strokeWidth="1.8" strokeLinecap="round" opacity="0.94">
+      <g
+        className="di-anim di-bf-after"
+        stroke={WARN}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        opacity="0.94"
+      >
         <line x1="18" y1="80" x2="48" y2="88" />
         <line x1="48" y1="80" x2="18" y2="88" />
       </g>
@@ -339,7 +467,14 @@ function BossFinaleSwitchIcon(): JSX.Element {
         strokeLinecap="round"
         strokeDasharray="6 6"
       />
-      <g className="di-anim di-bf-arrow" fill="none" stroke={WARN} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <g
+        className="di-anim di-bf-arrow"
+        fill="none"
+        stroke={WARN}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <line x1="56" y1="62" x2="72" y2="50" />
         <path d="M67 49 l5 1 l-1 5" />
       </g>

@@ -2,8 +2,9 @@
 
 **Author:** Yasmine (`narrative-designer`) · **Date:** 2026-07-25  
 **Target:** `src/game/systems/narrativeSystem.ts`  
-**Normative refs:**  
-- `docs/game-design/tutorial-immersion-teaching-spec.md` (accepted 16-panel map)  
+**Normative refs:**
+
+- `docs/game-design/tutorial-immersion-teaching-spec.md` (accepted 16-panel map)
 - `docs/game-design/ux/spec-tutorial-narrative-presentation.md` (channel + bullets rules)
 
 ## Alignment contract (must hold)
@@ -24,24 +25,24 @@
 
 ## Panel map (index-locked)
 
-| # | Segment | Desktop | Mobile |
-|---|---|---|---|
-| 0 | Opening | text | same |
-| 1 | Opening | image camion | same |
-| 2 | Controls (fork) | `gesture: mouse-click` | `gesture: two-finger-tap` |
-| 3 | Controls (fork) | `gesture: edge-scroll` | `gesture: swipe-pan` |
-| 4 | Field | `diagram: shot-read-player-vs-enemy-bullet` | same |
-| 5 | Field | `diagram: weapon-crate-loop` | same |
-| 6 | Bestiary | image flic | same |
-| 7 | Bestiary | image CRS | same |
-| 8 | Bestiary | image motard | same |
-| 9 | Bestiary | image bonus | same |
-| 10 | Bestiary | image livreur civil | same |
-| 11 | Field | `diagram: threat-hierarchy-ladder` | same |
-| 12 | Field | `diagram: hostage-ring` | same |
-| 13 | Field | `diagram: boss-finale-switch` | same |
-| 14 | HUD | text | same |
-| 15 | Outro | text | same |
+| #   | Segment         | Desktop                                     | Mobile                    |
+| --- | --------------- | ------------------------------------------- | ------------------------- |
+| 0   | Opening         | text                                        | same                      |
+| 1   | Opening         | image camion                                | same                      |
+| 2   | Controls (fork) | `gesture: mouse-click`                      | `gesture: two-finger-tap` |
+| 3   | Controls (fork) | `gesture: edge-scroll`                      | `gesture: swipe-pan`      |
+| 4   | Field           | `diagram: shot-read-player-vs-enemy-bullet` | same                      |
+| 5   | Field           | `diagram: weapon-crate-loop`                | same                      |
+| 6   | Bestiary        | image flic                                  | same                      |
+| 7   | Bestiary        | image CRS                                   | same                      |
+| 8   | Bestiary        | image motard                                | same                      |
+| 9   | Bestiary        | image bonus                                 | same                      |
+| 10  | Bestiary        | image livreur civil                         | same                      |
+| 11  | Field           | `diagram: threat-hierarchy-ladder`          | same                      |
+| 12  | Field           | `diagram: hostage-ring`                     | same                      |
+| 13  | Field           | `diagram: boss-finale-switch`               | same                      |
+| 14  | HUD             | text                                        | same                      |
+| 15  | Outro           | text                                        | same                      |
 
 ---
 

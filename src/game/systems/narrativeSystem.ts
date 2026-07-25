@@ -223,7 +223,10 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   {
     speaker: "DISPATCH",
     text: "En haut : score, niveau, vague, chrono, vies. Au passage du camion, la jauge de livraison doit rester au vert.",
-    teachingBullets: ["HUD: score/niveau/vague/temps/vies", "Livraison: jauge verte pendant le passage"],
+    teachingBullets: [
+      "HUD: score/niveau/vague/temps/vies",
+      "Livraison: jauge verte pendant le passage",
+    ],
   },
   {
     speaker: "DISPATCH",

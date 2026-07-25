@@ -49,17 +49,17 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 
 ## Pipeline status (stages 0-8)
 
-| Stage | Status | Owner now | Next hand-off | Blockers / risk |
-| --- | --- | --- | --- | --- |
-| 0. INTAKE | done | producer | — | none |
-| 1. SCOPE | done | pm | — | none |
-| 2. DESIGN GATE | done (re-gate PASS) | lead-game-designer | — | rework rounds used: 1/2 |
-| 3. ARCHITECTURE | in progress | senior-architect | finalize ADR-0069 gate outcome | ADR still Proposed |
-| 4. BUILD | done | dev-gameplay ∥ dev-r3f-render | QA execution | none |
-| 5. VERIFY | in progress (plan logged) | qa-lead | run verify and log PASS/FAIL gate | verify execution pending |
-| 6. REVIEW | pending | review panel | pm acceptance | waits stage-5 verdict |
-| 7. PM ACCEPT | pending | pm | merge | waits stage-6 verdict |
-| 8. MERGE | pending | Bertrand/orchestrator | close story | waits stage-7 accept |
+| Stage           | Status                    | Owner now                     | Next hand-off                     | Blockers / risk          |
+| --------------- | ------------------------- | ----------------------------- | --------------------------------- | ------------------------ |
+| 0. INTAKE       | done                      | producer                      | —                                 | none                     |
+| 1. SCOPE        | done                      | pm                            | —                                 | none                     |
+| 2. DESIGN GATE  | done (re-gate PASS)       | lead-game-designer            | —                                 | rework rounds used: 1/2  |
+| 3. ARCHITECTURE | in progress               | senior-architect              | finalize ADR-0069 gate outcome    | ADR still Proposed       |
+| 4. BUILD        | done                      | dev-gameplay ∥ dev-r3f-render | QA execution                      | none                     |
+| 5. VERIFY       | in progress (plan logged) | qa-lead                       | run verify and log PASS/FAIL gate | verify execution pending |
+| 6. REVIEW       | pending                   | review panel                  | pm acceptance                     | waits stage-5 verdict    |
+| 7. PM ACCEPT    | pending                   | pm                            | merge                             | waits stage-6 verdict    |
+| 8. MERGE        | pending                   | Bertrand/orchestrator         | close story                       | waits stage-7 accept     |
 
 Caps watch: design rework 1/2, asset-generation batches 0/2, verify↔build loops 0/2.  
 Cycle reset count: 0 (no reset declared).

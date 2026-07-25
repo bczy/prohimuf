@@ -64,9 +64,9 @@ export function NarrativeScreen({
   const fullText = currentLine?.text ?? "";
   const isTyping = charIndex < fullText.length;
   const teachingBullets = (currentLine?.teachingBullets ?? [])
-      .map((bullet) => bullet.trim())
-      .filter((bullet) => bullet.length > 0)
-      .slice(0, 2);
+    .map((bullet) => bullet.trim())
+    .filter((bullet) => bullet.length > 0)
+    .slice(0, 2);
 
   // Clear any previous sprite-load failure when the panel changes.
   useEffect(() => {
