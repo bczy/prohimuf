@@ -116,7 +116,11 @@ bending the pipeline silently is worse.
                 · qa-lead QUALITY GATE — the funnel verdict: plan ran and held
                   (PASS required before stage 6; FAIL routes back to the
                   owning lane with the failing case named)
-6. REVIEW     CODE-REVIEW PANEL + INTEGRATION TRIAGE — 4 parallel skills, findings
+6. REVIEW     The branch is pushed and the PR opened with the **`open-pr`** skill by
+              the lane that pushes (preview slug computed per BYTE, cargo table from
+              `--name-status`, draft by default, no box ticked that was not run) —
+              both tiers use it, only the ticked route differs.
+              CODE-REVIEW PANEL + INTEGRATION TRIAGE — 4 parallel skills, findings
               adversarially verified, then senior-architect TRIAGES the findings AND
               delivers his integration review & cross-lane sign-off in the SAME pass
               (he already reads the full diff to triage — one stage, one read;
