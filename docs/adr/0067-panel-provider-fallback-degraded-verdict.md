@@ -89,6 +89,49 @@ reviewed.
 `skipped` is deliberately **not** degraded: `edge-case-hunter` is legitimately
 skipped on the fix lane (ADR-0032).
 
+### D4 — The request budget is a property of the provider, so the diff is split
+
+The first live fallback run failed a second time, differently:
+
+```
+[panel-llm] github-models failed: github-models 413:
+  {"code":"tokens_limit_reached",
+   "message":"Request body too large for gpt-4o model. Max size: 8000 tokens."}
+```
+
+Measured against the live API (2026-07-25), that cap is **not** a property of
+`gpt-4o`: `gpt-4.1` and `gpt-4.1-mini` answer the identical 413. It is a
+platform limit of GitHub Models, so **moving to a bigger-context model does not
+help** — the payload has to change, not the model.
+
+The panel therefore no longer carries one hard-coded 200 KB budget. Each
+provider declares its own (`maxInputChars`, `maxOutputTokens`), and
+`callPanelModelBatched` splits the payload into as many calls as the answering
+provider needs:
+
+- the **reviewer** splits the unified diff **per file**, so batching never cuts
+  a hunk in half, then merges and de-duplicates the findings of every call;
+- the **skeptic** verifies findings in batches, each finding travelling with the
+  diff of the file it accuses instead of the whole patch — which is both smaller
+  and better grounding than the previous whole-diff dump.
+
+Anthropic keeps reading the diff in a single call; nothing about the primary
+path changes.
+
+Two safety nets back the character budget, because characters only approximate
+tokens (our own diff measures 3.9 chars/token; base64 or minified content is far
+worse):
+
+- a **413 shrink-retry** halves the budget on the same provider, up to 3 times,
+  rather than failing a whole reviewer over one pathological file;
+- a **429 backoff** honours the server's `retry-after`, and sequential calls are
+  paced. Measured: GitHub Models allows 1000 requests/min yet still 429s a burst
+  of 16 back-to-back calls — the wall is burst shaping, not quota.
+
+A provider that dies on *any* batch fails the whole call over to the next one: a
+half-reviewed diff must never be reported as a complete review. That is D2
+applied to batching.
+
 ## Consequences
 
 - **The gate can no longer go green on its own outage.** This is the whole
@@ -106,10 +149,16 @@ skipped on the fix lane (ADR-0032).
 - Cost/quota: GitHub Models is rate-limited per repo. A prolonged Anthropic
   outage on a busy day may exhaust it too — which now surfaces as DEGRADED
   instead of a hollow PASS.
+- **A fallback review is slower and more fragmented.** A 216 KB diff becomes 16
+  paced calls per reviewer (~2-4 min) instead of one, and each call sees a slice
+  of the diff rather than the whole. The prompt goes out in full every time, so
+  the reviewer's instructions are intact, but cross-file reasoning is weaker on
+  the fallback path than on Anthropic. This is an honest limitation of the
+  continuity measure, not a defect to hide: the primary path is unaffected.
 
 ## Verification
 
-`scripts/lib/__tests__/panelLlm.test.mjs` and `panelVerdict.test.mjs` (22 tests)
+`scripts/lib/__tests__/panelLlm.test.mjs` and `panelVerdict.test.mjs` (31 tests)
 lock the contract, including the exact production failure (HTTP 400, credit
 balance too low → falls through to GitHub Models) and the PR #130 shape (zero
 findings + a failed reviewer ⇒ **not** `success`).
@@ -117,3 +166,14 @@ findings + a failed reviewer ⇒ **not** `success`).
 Both scripts were additionally exercised end to end against a stubbed
 transport: Anthropic down ⇒ answered by `github-models`, exit 0; both down ⇒
 exit 1 with a well-formed artifact.
+
+D4 was verified against the **real** API rather than a stub, because the limits
+it works around were themselves discovered by measurement and not by reading
+docs:
+
+- the 8000-token cap was probed on `gpt-4o`, `gpt-4.1` and `gpt-4.1-mini` (all
+  413), and binary-searched with this branch's own patch to 3.9 chars/token;
+- `panel-invoke-reviewer.mjs` was then run for real against
+  `models.github.ai` with the full 216 KB diff and no Anthropic key: split into
+  16 calls, one 429 absorbed by the backoff, **17 findings written, exit 0**.
+  Prior to D4 the same run exited 1 on the 413.

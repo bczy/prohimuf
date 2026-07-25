@@ -21,10 +21,15 @@
 // skeptic's input contract holds, but it EXITS NON-ZERO. An unreviewed diff
 // must never be indistinguishable from a clean one — triage turns a failed
 // reviewer job into a DEGRADED verdict instead of a hollow PASS.
+//
+// Budget policy (ADR-0067): the diff is split per file and sent over as many
+// calls as the answering provider's request budget needs (GitHub Models caps
+// every model at 8000 input tokens). Findings from all calls are merged and
+// de-duplicated, so a fallback review still covers the WHOLE diff.
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { callPanelModel } from "./lib/panelLlm.mjs";
+import { callPanelModelBatched, splitUnifiedDiff } from "./lib/panelLlm.mjs";
 
 const { PROMPT_FILE, FINDINGS_FILE } = process.env;
 
@@ -40,14 +45,18 @@ async function main() {
     readFile("panel-input/files.txt", "utf8").catch(() => ""),
   ]);
 
-  // Guardrail: cap diff at ~200 KB to stay within reasonable token budget.
+  // Guardrail: cap the whole diff at ~200 KB. Beyond that even Anthropic gets a
+  // prompt too diluted to review usefully.
   const MAX_DIFF = 200 * 1024;
   const diffTrunc =
     diff.length > MAX_DIFF
-      ? `${diff.slice(0, MAX_DIFF)}\n\n[TRUNCATED: diff exceeded ${MAX_DIFF} bytes]`
+      ? `${diff.slice(0, MAX_DIFF)}\n\n[TRUNCATED: diff exceeded ${String(MAX_DIFF)} bytes]`
       : diff;
 
-  const userMessage = [
+  // The preamble is repeated in every call; only the diff is split. Each batch
+  // must therefore be self-sufficient — hence the metadata and the "emit ONLY
+  // JSON" instruction living here rather than around the payload.
+  const preamble = [
     "## PR metadata",
     "```json",
     pr.trim(),
@@ -58,20 +67,34 @@ async function main() {
     files.trim(),
     "```",
     "",
-    "## Unified diff (origin/main...HEAD)",
+    "## Unified diff (origin/main...HEAD) — this call may carry only PART of it;",
+    "review exactly what is below and emit ONLY the JSON array of findings.",
     "```diff",
-    diffTrunc,
-    "```",
     "",
-    "Emit ONLY the JSON array of findings, nothing else.",
   ].join("\n");
 
-  const { text, provider } = await callPanelModel({ system: prompt, user: userMessage });
-  console.log(`[panel-invoke-reviewer] answered by ${provider}`);
+  const parts = splitUnifiedDiff(diffTrunc);
+  const { texts, provider, calls } = await callPanelModelBatched({
+    system: prompt,
+    preamble,
+    parts: parts.length > 0 ? parts : [""],
+  });
+  console.log(`[panel-invoke-reviewer] answered by ${provider} in ${String(calls)} call(s)`);
 
-  const findings = extractJsonArray(text);
+  const findings = dedupe(texts.flatMap(extractJsonArray));
   await writeFile(FINDINGS_FILE, JSON.stringify(findings, null, 2));
-  console.log(`Wrote ${findings.length} finding(s) to ${FINDINGS_FILE}`);
+  console.log(`Wrote ${String(findings.length)} finding(s) to ${FINDINGS_FILE}`);
+}
+
+/** A file reviewed in two batches can yield the same finding twice. */
+function dedupe(findings) {
+  const seen = new Set();
+  return findings.filter((f) => {
+    const key = JSON.stringify([f?.file ?? "", f?.line ?? "", f?.title ?? "", f?.severity ?? ""]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function extractJsonArray(text) {
