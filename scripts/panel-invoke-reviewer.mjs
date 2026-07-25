@@ -3,10 +3,11 @@
 // and the assembled PR diff/context, then writes the findings JSON array.
 //
 // Inputs (env):
-//   ANTHROPIC_API_KEY  — required.
+//   ANTHROPIC_API_KEY  — primary provider (optional if GITHUB_TOKEN is set).
+//   GITHUB_TOKEN       — GitHub Models fallback (ADR-0067); needs `models: read`.
 //   PROMPT_FILE        — path to the reviewer prompt (.github/panel-prompts/*.md).
 //   FINDINGS_FILE      — path to write findings JSON array to.
-//   ANTHROPIC_MODEL    — optional, defaults to claude-sonnet-4-5.
+//   ANTHROPIC_MODEL / GITHUB_MODELS_MODEL — optional per-provider overrides.
 //
 // Inputs (files, in ./panel-input/):
 //   pr.json     — { title, body }
@@ -14,22 +15,20 @@
 //   files.txt   — name-status listing
 //
 // Output:
-//   Writes a JSON array of findings to $FINDINGS_FILE. On any error, writes []
-//   and exits 0 — the panel is fail-open at the reviewer level; the skeptic
-//   and triage jobs are the ones that hold the verdict.
+//   Writes a JSON array of findings to $FINDINGS_FILE.
+//
+// Failure policy (ADR-0067): the reviewer still writes [] on error so the
+// skeptic's input contract holds, but it EXITS NON-ZERO. An unreviewed diff
+// must never be indistinguishable from a clean one — triage turns a failed
+// reviewer job into a DEGRADED verdict instead of a hollow PASS.
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { callPanelModel } from "./lib/panelLlm.mjs";
 
-const {
-  ANTHROPIC_API_KEY,
-  PROMPT_FILE,
-  FINDINGS_FILE,
-  ANTHROPIC_MODEL = "claude-sonnet-4-5",
-} = process.env;
+const { PROMPT_FILE, FINDINGS_FILE } = process.env;
 
 async function main() {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
   if (!PROMPT_FILE) throw new Error("PROMPT_FILE missing");
   if (!FINDINGS_FILE) throw new Error("FINDINGS_FILE missing");
   if (!existsSync(PROMPT_FILE)) throw new Error(`prompt not found: ${PROMPT_FILE}`);
@@ -67,32 +66,8 @@ async function main() {
     "Emit ONLY the JSON array of findings, nothing else.",
   ].join("\n");
 
-  const body = {
-    model: ANTHROPIC_MODEL,
-    max_tokens: 8192,
-    system: prompt,
-    messages: [{ role: "user", content: userMessage }],
-  };
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`anthropic ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("\n");
+  const { text, provider } = await callPanelModel({ system: prompt, user: userMessage });
+  console.log(`[panel-invoke-reviewer] answered by ${provider}`);
 
   const findings = extractJsonArray(text);
   await writeFile(FINDINGS_FILE, JSON.stringify(findings, null, 2));
@@ -119,9 +94,10 @@ function extractJsonArray(text) {
 
 main().catch(async (err) => {
   console.error(`[panel-invoke-reviewer] ${err.message}`);
+  // Keep the artifact shape valid for the skeptic, then FAIL the job: an empty
+  // findings list must not read as "reviewed and clean" (see file header).
   if (FINDINGS_FILE) {
     await writeFile(FINDINGS_FILE, "[]").catch(() => {});
   }
-  // Exit 0 — fail-open at the reviewer level (see file header).
-  process.exit(0);
+  process.exit(1);
 });

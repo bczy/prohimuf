@@ -89,7 +89,10 @@ human). Two runtimes execute the same panel:
 - **CI panel** (`.github/workflows/code-review-panel.yml`, ADR-0063): 6 parallel
   jobs (4 reviewers + skeptic + triage) publishing the `panel-verdict` check
   run. This is the source of truth when the repo variable `PANEL_ENABLED=true`.
-  Any agent pushes and lets CI run — no local simulation.
+  Any agent pushes and lets CI run — no local simulation. Reviewers call
+  Anthropic first and fall back to GitHub Models (ADR-0067); if every provider
+  fails, the verdict is **DEGRADED**, never PASS — a green panel always means
+  the diff was actually reviewed.
 - **Local panel** (Claude Code `/review-panel` skill, `Task` + `subagent_type`):
   pre-push convenience for agents that have it. Its verdict is advisory once
   the CI panel is enabled.

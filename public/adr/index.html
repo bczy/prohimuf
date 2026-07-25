@@ -206,7 +206,8 @@
   ["0063","0063-ci-run-code-review-panel.md","ADR-0063 — CI-run code-review panel (portable merge gate)","Proposed","proposed","The mandatory merge gate defined in `.claude/agents/COLLABORATION.md:206-233` is a 4-reviewer code-review panel — four orthogonal review skills run in parallel over `git diff origin/main...HEAD`,…"],
   ["0064","0064-copilot-runtime-split-crew-orchestration.md","Copilot runtime split: the CLI/app orchestrates the crew, the Coding Agent does not","Proposed","proposed","ADR-0062 established `.github/copilot-instructions.md` as the Copilot overlay, written at a time when \"Copilot\" meant exactly one runtime: the Copilot Coding Agent on github.com, which has no…"],
   ["0065","0065-enemy-bullet-generated-model-with-fallback.md","Enemy bullet: generated textured GLB with procedural fallback","Proposed","proposed","`BulletSprite.tsx` renders enemy return-fire projectiles (player shots are instant hitscan, ADR-0040, and never enter `state.bullets`) as a code-drawn Three.js primitive: a `cylinderGeometry` body…"],
-  ["0066","0066-fractional-lives-per-archetype-damage.md","Fractional lives: per-archetype bullet damage in quarter-heart steps","Proposed","proposed","Enemy return fire cost a flat one heart per hit, and a level starts with 3 hearts."]
+  ["0066","0066-fractional-lives-per-archetype-damage.md","Fractional lives: per-archetype bullet damage in quarter-heart steps","Proposed","proposed","Enemy return fire cost a flat one heart per hit, and a level starts with 3 hearts."],
+  ["0067","0067-panel-provider-fallback-degraded-verdict.md","ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open)","Proposed","proposed","On PR #130 the merge gate published a green verdict:"]
       ];
       const rows = document.getElementById("rows");
       const q = document.getElementById("q");

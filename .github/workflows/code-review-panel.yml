@@ -40,6 +40,10 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
+  # GitHub Models fallback (ADR-0067): lets the reviewer/skeptic scripts fall
+  # back to Copilot-side inference with the workflow token when the primary
+  # provider is unavailable (e.g. an exhausted Anthropic balance).
+  models: read
 
 jobs:
   prepare:
@@ -101,10 +105,12 @@ jobs:
       - name: Invoke reviewer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           PROMPT_FILE: .github/panel-prompts/code-review.md
           FINDINGS_FILE: findings-code-review.json
         run: node scripts/panel-invoke-reviewer.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: findings-code-review
           path: findings-code-review.json
@@ -121,10 +127,12 @@ jobs:
       - name: Invoke reviewer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           PROMPT_FILE: .github/panel-prompts/edge-case-hunter.md
           FINDINGS_FILE: findings-edge-case-hunter.json
         run: node scripts/panel-invoke-reviewer.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: findings-edge-case-hunter
           path: findings-edge-case-hunter.json
@@ -141,10 +149,12 @@ jobs:
       - name: Invoke reviewer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           PROMPT_FILE: .github/panel-prompts/bmad-review.md
           FINDINGS_FILE: findings-bmad-review.json
         run: node scripts/panel-invoke-reviewer.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: findings-bmad-review
           path: findings-bmad-review.json
@@ -161,10 +171,12 @@ jobs:
       - name: Invoke reviewer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           PROMPT_FILE: .github/panel-prompts/security-review.md
           FINDINGS_FILE: findings-security-review.json
         run: node scripts/panel-invoke-reviewer.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: findings-security-review
           path: findings-security-review.json
@@ -186,25 +198,52 @@ jobs:
       - name: Invoke skeptic
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           PROMPT_FILE: .github/panel-prompts/skeptic.md
         run: node scripts/panel-invoke-skeptic.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: findings-confirmed
           path: findings-confirmed.json
 
   triage:
     name: "Triage · publish verdict"
-    needs: [prepare, verify]
+    needs: [prepare, code-review, edge-case-hunter, bmad-review, security-review, verify]
     if: ${{ always() && vars.PANEL_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4.1.3
+        continue-on-error: true
         with: { name: findings-confirmed, path: . }
+      # ADR-0067 — a panel job that FAILED means the diff was NOT fully reviewed,
+      # so triage must publish DEGRADED instead of a hollow PASS. `skipped` is
+      # deliberately NOT degraded: edge-case-hunter is legitimately skipped on
+      # the fix lane, and prepare skips everything when the panel is off.
+      - name: Collect failed panel jobs
+        id: degraded
+        env:
+          R_CODE_REVIEW: ${{ needs.code-review.result }}
+          R_EDGE_CASE: ${{ needs.edge-case-hunter.result }}
+          R_BMAD: ${{ needs.bmad-review.result }}
+          R_SECURITY: ${{ needs.security-review.result }}
+          R_SKEPTIC: ${{ needs.verify.result }}
+        run: |
+          failed=""
+          add() { case "$2" in failure|cancelled) failed="${failed:+$failed,}$1";; esac; }
+          add code-review "$R_CODE_REVIEW"
+          add edge-case-hunter "$R_EDGE_CASE"
+          add bmad-review "$R_BMAD"
+          add security-review "$R_SECURITY"
+          add skeptic "$R_SKEPTIC"
+          echo "jobs=$failed" >> "$GITHUB_OUTPUT"
+          echo "failed panel jobs: ${failed:-none}"
+
       - name: Publish findings + verdict
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          PANEL_FAILED_JOBS: ${{ steps.degraded.outputs.jobs }}
         run: node scripts/panel-triage.mjs

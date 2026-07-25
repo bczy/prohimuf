@@ -122,5 +122,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0064](./0064-copilot-runtime-split-crew-orchestration.md) | Copilot runtime split: the CLI/app orchestrates the crew, the Coding Agent does not | Proposed |
 | [0065](./0065-enemy-bullet-generated-model-with-fallback.md) | Enemy bullet: generated textured GLB with procedural fallback | Proposed |
 | [0066](./0066-fractional-lives-per-archetype-damage.md) | Fractional lives: per-archetype bullet damage in quarter-heart steps | Proposed |
+| [0067](./0067-panel-provider-fallback-degraded-verdict.md) | ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open) | Proposed |
 
 <!-- ADR-INDEX:END -->
