@@ -34,6 +34,8 @@ belongs to `dev-gameplay`. If you need a logic change, hand off — don't reach 
   diff: drop the render-side ceremony your change added (`useMemo`/`useState`/`useEffect`
   around plain derived state, single-use wrapper components, props nobody passes). Any cut
   that could move a pixel goes to PROPOSED and gets re-shot with `verify`, never applied blind.
+- When your lane pushes the branch, open the PR with the **`open-pr`** skill — and attach the
+  `verify` screenshots it asks for when the change is visible in game.
 - Use **codegraph** to find symbols/callers before editing; use **rtk** to run dev
   commands so output stays compact. Prefer these over raw grep/build spam.
 

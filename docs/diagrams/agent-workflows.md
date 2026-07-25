@@ -6,7 +6,9 @@ Visual companion to [`.claude/agents/COLLABORATION.md`](../../.claude/agents/COL
 (panel + integration triage) → accept → merge — driven by the `producer`. Small
 single-lane fixes take the **fix lane** instead (COLLABORATION.md §fix lane, packaged as
 the `fix-lane` skill): owning
-dev lane → mechanical checks → ONE `code-review` (high) reviewer → merge. Every gate
+dev lane → mechanical checks → ONE `code-review` (high) reviewer → merge. On both routes
+a defect is diagnosed with the `root-cause` skill before it is patched, and the PR is
+opened with the `open-pr` skill. Every gate
 verdict and hand-off is logged in the story's shard under
 [`docs/handoffs/`](../handoffs/) (index: [`agent-handoffs.md`](../agent-handoffs.md)).
 
@@ -136,17 +138,19 @@ flowchart TB
 
     subgraph P6["6. REVIEW — panel + integration triage (one stage)"]
         direction TB
+        PR["owning lane · open-pr skill<br/>push, preview slug per BYTE, cargo table,<br/>draft PR — no box ticked that was not run"]
         PANEL["CODE-REVIEW PANEL (merge gate)<br/>4 parallel skills: code-review (high) ·<br/>bmad-code-review · edge-case-hunter ·<br/>security-review — findings<br/>adversarially verified"]
         TRIAGE["senior-architect · Winston 🏗️<br/>finding triage + INTEGRATION REVIEW<br/>cross-lane sign-off — one pass over the diff"]
         TW["tech-writer · Otis 📚<br/>DOCS lane: ADR drafting,<br/>doc realignments, doc↔code coherence"]
         PANEL --> TRIAGE
+        PR --> PANEL
         TRIAGE -.->|"doc findings<br/>(ADR/bible/README/JSDoc)"| TW
     end
 
     ARCH -.->|"perf-sensitive:<br/>GPU-cost analysis at TECH PLAN"| PERF
     ARCH -.->|"unproven technique / model /<br/>API / dep: feasibility recon"| SCOUT
 
-    QGATE -->|PASS| PANEL
+    QGATE -->|PASS| PR
     SIMP -.->|"PROPOSED cuts<br/>(candidate findings)"| PANEL
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
     GATE4 -->|"FAIL → dev-r3f-render<br/>(the composite is render code)"| ARCH

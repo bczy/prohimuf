@@ -35,6 +35,8 @@ You own pipeline & config; you don't change game rules (`dev-gameplay`) or scene
 - Once green and before handing the story to review, run the **`simplify`** skill on your
   diff: scripts and workflows collect flags, env knobs and retry paths nobody sets — cut
   the ones your change added, propose the rest.
+- When your lane pushes the branch, open the PR with the **`open-pr`** skill — it computes the
+  preview slug with the CI's own per-byte `tr -c`, which your lane owns.
 - Use **rtk** for compact command output and **codegraph** to see who consumes a script's
   output before changing its contract.
 

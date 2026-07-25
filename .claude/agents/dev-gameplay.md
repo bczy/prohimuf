@@ -33,6 +33,8 @@ hand off to `dev-r3f-render`. Keep the core deterministic and unit-testable.
   diff: cut the weight your change added (single-use systems, guards for states the types
   forbid, tuning constants re-declared instead of read) and report what you left as
   PROPOSED. Only your own diff — never a drive-by refactor of `src/game/**`.
+- When your lane pushes the branch, open the PR with the **`open-pr`** skill — it fills the
+  cargo table, the preview slug and the route, and ticks only the checks you actually ran.
 - Use **codegraph** to trace call chains across systems before refactoring.
 - Honour the core loop `Récupérer → Livrer → Éviter` and PROJECT_GUIDELINES — no
   out-of-scope mechanics.
