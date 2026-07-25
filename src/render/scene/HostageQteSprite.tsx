@@ -13,7 +13,7 @@ import {
 } from "three";
 import type { GameState } from "@game/types/gameState";
 import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
-import { resolveEnemyTexture } from "./enemyTextures";
+import { resolveEnemyTexture, muzzleFor } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
 import { getAccompliceTexture } from "./accompliceTextures";
@@ -116,15 +116,35 @@ const PIP_COLOUR = "#f7f7f7"; // bone white — a neutral vitality read, not a z
 // authored no accomplice — the two channels are mutually exclusive (see qteSystem.ts
 // tickQte). Until now a blown peek drained energy with ZERO on-screen report — the
 // player felt the hit but never saw the shot. Mirrors the accomplice's muzzle flash
-// exactly (same brief bloom, same fade), parked at the captor's own gun hand
-// (front-right, clear of the front-left peek/head zone and the front-right hostage).
-const CAPTOR_MUZZLE_DX = 0.6;
-const CAPTOR_MUZZLE_DY = -0.15;
+// exactly (same brief bloom, same fade), originating at the pistol's own barrel.
+//
+// The offset below is only the FALLBACK: the live one is remapped from the sprite's
+// authored muzzle anchor by `captorMuzzleOffset()`, so flash and round keep tracking
+// the barrel when the real captor plate replaces today's placeholder.
+const CAPTOR_MUZZLE_DX = -0.26;
+const CAPTOR_MUZZLE_DY = 0.66;
 const CAPTOR_MUZZLE_SIZE = 0.5;
 const CAPTOR_MUZZLE_Z = 0.57;
 const CAPTOR_MUZZLE_COLOUR = "#fff2b0"; // same warm bloom as the accomplice's
 const CAPTOR_MUZZLE_FLASH_MS = 140;
 const CAPTOR_MUZZLE_FLASH_OPACITY = 0.9;
+
+/**
+ * Where the captor's barrel actually is, in world units relative to `qte.anchor`.
+ *
+ * His sprite fills the QTE_W × QTE_H plane centred on the anchor exactly, so the
+ * sprite's normalized muzzle anchor (from the PNG top-left) remaps to a world
+ * offset by a straight linear map. Reading it from the manifest instead of
+ * hand-placing it is what keeps the flash AND the round on the barrel when the
+ * real captor plate lands (today's sprite is a documented placeholder — see
+ * `resolveCaptorTexture`). Falls back to the fixed offset when no anchor is
+ * authored.
+ */
+function captorMuzzleOffset(): { dx: number; dy: number } {
+  const anchor = muzzleFor("hostage_taker", 1, 1, false);
+  if (anchor === null) return { dx: CAPTOR_MUZZLE_DX, dy: CAPTOR_MUZZLE_DY };
+  return { dx: (anchor.x - 0.5) * QTE_W, dy: (0.5 - anchor.y) * QTE_H };
+}
 
 // ── The accomplice: the SECOND armed figure (F4 / ADR-0036) ──────────────────
 // Drawn iff `qte.accomplice !== null` while ACTIVE, spatially DISTINCT from the
@@ -465,10 +485,11 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       muzzle.scale.set(ACCOMPLICE_MUZZLE_SIZE, ACCOMPLICE_MUZZLE_SIZE, 1);
       (muzzle.material as MeshBasicMaterial).color.set(ACCOMPLICE_MUZZLE_COLOUR);
       // The captor's own muzzle (P3-ACC — lit only on levels with no accomplice),
-      // parked at his own gun hand, static like the rest of the tableau.
+      // sat on his pistol's barrel, static like the rest of the tableau.
+      const captorMuzzleAt = captorMuzzleOffset();
       captorMuzzle.position.set(
-        qte.anchor.x + CAPTOR_MUZZLE_DX,
-        qte.anchor.y + CAPTOR_MUZZLE_DY,
+        qte.anchor.x + captorMuzzleAt.dx,
+        qte.anchor.y + captorMuzzleAt.dy,
         CAPTOR_MUZZLE_Z,
       );
       captorMuzzle.scale.set(CAPTOR_MUZZLE_SIZE, CAPTOR_MUZZLE_SIZE, 1);
@@ -622,7 +643,8 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     const captorFiresHere = qte.accomplice === null;
     if (captorFiresHere && qte.blownPeeks > prevBlownPeeksRef.current) {
       captorMuzzleFlashUntilRef.current = nowMs + CAPTOR_MUZZLE_FLASH_MS;
-      fireQteBullet(qte.anchor.x + CAPTOR_MUZZLE_DX, qte.anchor.y + CAPTOR_MUZZLE_DY, nowMs);
+      const firedFrom = captorMuzzleOffset();
+      fireQteBullet(qte.anchor.x + firedFrom.dx, qte.anchor.y + firedFrom.dy, nowMs);
     }
     prevBlownPeeksRef.current = qte.blownPeeks;
 
