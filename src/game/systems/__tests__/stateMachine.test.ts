@@ -206,7 +206,7 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet near center of screen decrements lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false }],
+      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false, damage: 1 }],
     };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.lives).toBe(2);
@@ -215,7 +215,7 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet near camera offset decrements lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 3, y: 2 }, velocity: { x: 0, y: 0 }, fromPlayer: false }],
+      bullets: [{ id: 99, position: { x: 3, y: 2 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage: 1 }],
     };
     // cameraOffsetX=3, cameraOffsetY=2 → bullet is at camera centre
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 3, 2);
@@ -225,7 +225,7 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet far from camera offset does NOT decrement lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false }],
+      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage: 1 }],
     };
     // cameraOffsetX=5 → bullet is 5 units from camera centre, well outside PLAYER_HIT_RADIUS
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 5, 0);
@@ -236,7 +236,7 @@ describe("tickGameState — enemy shot hits player", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
       lives: 1,
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false }],
+      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false, damage: 1 }],
     };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.phase).toBe("GAME_OVER");
@@ -1009,6 +1009,7 @@ describe("tickGameState — AC14 (A7 regression): a player hit never touches wea
           position: { x: 0, y: 0 },
           velocity: { x: 0, y: -BULLET_SPEED },
           fromPlayer: false,
+          damage: 1,
         },
       ],
     };
@@ -1138,5 +1139,109 @@ describe("createInitialState — resets _nextLootId for replay-safe crate picks 
     // Run a second session AFTER the first advanced the module counter — the reset
     // in createInitialState must make the two picks identical.
     expect(firstCrate()).toEqual(firstCrate());
+  });
+});
+
+describe("tickGameState — fractional damage and the invulnerability window", () => {
+  /** A stationary enemy bullet sitting exactly on the player-hit centre. */
+  function bulletOnPlayer(damage: number, id = 99): GameState["bullets"][number] {
+    return { id, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage };
+  }
+
+  it("a quarter-heart round removes 0.25, not a whole heart", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [bulletOnPlayer(0.25)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.lives).toBe(2.75);
+  });
+
+  it("a half-heart round removes 0.5", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [bulletOnPlayer(0.5)],
+    };
+    expect(tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01).lives).toBe(2.5);
+  });
+
+  it("opens the invulnerability window on a hit", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [bulletOnPlayer(0.25)],
+    };
+    expect(tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01).playerInvulnRemaining).toBe(0.4);
+  });
+
+  it("two bullets landing on the same tick cost only the first one's damage", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [bulletOnPlayer(0.25, 1), bulletOnPlayer(1, 2)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.lives).toBe(2.75);
+    // Both are still absorbed — neither survives to hit again next tick.
+    expect(next.bullets).toHaveLength(0);
+  });
+
+  it("absorbs a bullet for free while the window is still open", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      playerInvulnRemaining: 0.4,
+      bullets: [bulletOnPlayer(1)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.lives).toBe(3);
+    expect(next.bullets).toHaveLength(0);
+    expect(next.playerHitEvents).toHaveLength(0);
+  });
+
+  it("the window runs down with delta and lets a later bullet through", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      playerInvulnRemaining: 0.01,
+      bullets: [bulletOnPlayer(1)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.lives).toBe(2);
+  });
+
+  it("four quarter-heart rounds land exactly on a whole heart (no float drift)", () => {
+    let lives = 3;
+    for (let i = 0; i < 4; i++) {
+      const next = tickGameState(
+        { ...createInitialState(FACADE_01), lives, bullets: [bulletOnPlayer(0.25)] },
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+      );
+      lives = next.lives;
+    }
+    expect(lives).toBe(2);
+  });
+
+  it("GAME_OVER only once the last fraction is gone", () => {
+    const alive = tickGameState(
+      { ...createInitialState(FACADE_01), lives: 0.5, bullets: [bulletOnPlayer(0.25)] },
+      noFire,
+      0.5,
+      0.5,
+      0.016,
+      FACADE_01,
+    );
+    expect(alive.lives).toBe(0.25);
+    expect(alive.phase).toBe("PLAYING");
+
+    const dead = tickGameState(
+      { ...createInitialState(FACADE_01), lives: 0.25, bullets: [bulletOnPlayer(0.25)] },
+      noFire,
+      0.5,
+      0.5,
+      0.016,
+      FACADE_01,
+    );
+    expect(dead.phase).toBe("GAME_OVER");
   });
 });

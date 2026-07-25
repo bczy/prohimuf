@@ -18,6 +18,10 @@ export interface GameState {
   readonly bullets: readonly Bullet[];
   readonly score: number;
   readonly lives: number;
+  // Seconds of remaining post-hit immunity (0 = vulnerable). Ticked down every
+  // frame and reset to PLAYER_INVULN_SECONDS by a hit, so a burst from several
+  // windows costs one heart rather than one per bullet.
+  readonly playerInvulnRemaining: number;
   readonly timeRemaining: number;
   readonly wave: number;
   // Seconds elapsed since the level started (drives the scripted delivery

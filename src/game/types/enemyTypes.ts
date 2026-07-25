@@ -5,6 +5,9 @@ import type { EnemyKind } from "@game/types/enemy";
 export interface Archetype {
   readonly kind: EnemyKind;
   readonly hp: number;
+  // Hearts this archetype's return fire removes from the player, in quarter-heart
+  // steps. Only meaningful when `shoots` is true; non-shooters declare 0.
+  readonly bulletDamage: number;
   readonly hiddenDuration: number;
   readonly visibleDuration: number;
   readonly shoots: boolean;
@@ -32,6 +35,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   normal: {
     kind: "normal",
     hp: 1,
+    bulletDamage: 0.25,
     hiddenDuration: 1.5,
     visibleDuration: 3.2,
     shoots: true,
@@ -48,6 +52,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   riot: {
     kind: "riot",
     hp: 2,
+    bulletDamage: 1,
     hiddenDuration: 1.7,
     visibleDuration: 3.6,
     shoots: true,
@@ -64,6 +69,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   biker: {
     kind: "biker",
     hp: 1,
+    bulletDamage: 0.5,
     hiddenDuration: 1.2,
     visibleDuration: 2.0,
     shoots: true,
@@ -80,6 +86,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   bonus: {
     kind: "bonus",
     hp: 1,
+    bulletDamage: 0,
     hiddenDuration: 2.2,
     visibleDuration: 2.0,
     shoots: false,
@@ -96,6 +103,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   civilian: {
     kind: "civilian",
     hp: 1,
+    bulletDamage: 0,
     hiddenDuration: 1.6,
     visibleDuration: 2.6,
     shoots: false,
@@ -129,6 +137,7 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   hostage_taker: {
     kind: "hostage_taker",
     hp: 1,
+    bulletDamage: 0,
     hiddenDuration: 1.6,
     visibleDuration: 3.5,
     shoots: false,
