@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "build:catalog": "tsc -p tsconfig.json --noEmit && BUILD_CATALOG=1 vite build",
+    "build:model-viewer": "tsc -p tsconfig.json --noEmit && BUILD_MODEL_VIEWER=1 vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content",

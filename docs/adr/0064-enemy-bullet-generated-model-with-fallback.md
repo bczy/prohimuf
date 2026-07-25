@@ -79,7 +79,12 @@ Two constraints shape the decision:
   vehicle `facing` / enemy `muzzle` anchors (ADR-0049 consequences): whoever
   reviews the first generated asset in-game MUST tune it (and, if the model's
   default nose axis isn't local +Y, add an explicit rotation offset — none is
-  wired yet since there is nothing to calibrate against).
+  wired yet since there is nothing to calibrate against). `model-viewer.html`
+  (`yarn dev` → `/model-viewer.html`, or `yarn build:model-viewer`) is a standalone
+  dev-only Vite page for this: it reuses `bulletModel.ts` to load the same GLB,
+  shows the identical procedural fallback while missing, and reports the loaded
+  model's bounding-box size to size-check `MODEL_SCALE` before touching
+  `BulletSprite.tsx`.
 - The 3D generation is a metered, keyed API call (unlike the free-tier `flux`
   pipeline) — it must only ever run in CI with the repo secret, never dispatched
   ad hoc from an agent sandbox.

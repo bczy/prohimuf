@@ -55,6 +55,16 @@ export function getBulletModel(): Group | null {
   return cached;
 }
 
+/** Loader status, for callers (e.g. `model-viewer`) that want to show it. */
+export type BulletModelStatus = "idle" | "pending" | "loaded" | "failed";
+
+export function getBulletModelStatus(): BulletModelStatus {
+  if (cached !== null) return "loaded";
+  if (failed) return "failed";
+  if (pending) return "pending";
+  return "idle";
+}
+
 /** Test-only: reset module state between tests. Not exported from the public API. */
 export function __resetBulletModelForTest(): void {
   cached = null;

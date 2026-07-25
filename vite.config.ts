@@ -8,6 +8,11 @@ import { resolve } from "path";
 // (→ dist-catalog); the dev server serves it directly at /catalog.html either way.
 const buildCatalog = process.env.BUILD_CATALOG === "1";
 
+// Same idiom for the 3D model viewer (ADR-0064 dev tool, `model-viewer.html`): a
+// standalone page to inspect generated GLBs before wiring MODEL_SCALE, never part
+// of the game bundle. Build on demand with BUILD_MODEL_VIEWER=1.
+const buildModelViewer = process.env.BUILD_MODEL_VIEWER === "1";
+
 export default defineConfig({
   plugins: [react()],
 
@@ -33,13 +38,17 @@ export default defineConfig({
   build: {
     target: "es2022",
 
-    outDir: buildCatalog ? "dist-catalog" : "dist",
+    outDir: buildCatalog ? "dist-catalog" : buildModelViewer ? "dist-model-viewer" : "dist",
 
     sourcemap: true,
 
-    // Default (undefined) → Vite builds index.html only: the catalog never lands in
-    // the game bundle. BUILD_CATALOG=1 → build the catalog entry in isolation.
-    rollupOptions: buildCatalog ? { input: { catalog: resolve(__dirname, "catalog.html") } } : {},
+    // Default (undefined) → Vite builds index.html only: neither dev tool lands in
+    // the game bundle. BUILD_CATALOG=1 / BUILD_MODEL_VIEWER=1 build that entry alone.
+    rollupOptions: buildCatalog
+      ? { input: { catalog: resolve(__dirname, "catalog.html") } }
+      : buildModelViewer
+        ? { input: { "model-viewer": resolve(__dirname, "model-viewer.html") } }
+        : {},
   },
 
   server: {
