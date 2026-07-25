@@ -1088,7 +1088,13 @@ describe("tickGameState — AC7-loot: a crate hit equips with ZERO score/lives d
     expect(next.score).toBe(s.score);
     expect(next.lives).toBe(s.lives + 2);
     expect(next.pointFeedback).toEqual([
-      { x: FACADE_01.slots[CENTRE_SLOT]?.screenPosition.x ?? 0, y: LOOT_STREET_Y, scoreDelta: 0, livesDelta: 2, timeDelta: 0 },
+      {
+        x: FACADE_01.slots[CENTRE_SLOT]?.screenPosition.x ?? 0,
+        y: LOOT_STREET_Y,
+        scoreDelta: 0,
+        livesDelta: 2,
+        timeDelta: 0,
+      },
     ]);
   });
 });
