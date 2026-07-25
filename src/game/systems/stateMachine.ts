@@ -212,7 +212,18 @@ export function tickGameState(
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     // Idle terminal ticks must not replay last tick's transient events (they are
     // consumed once by the bridge; the transition tick already emitted its burst).
-    return { ...state, impactEvents: [], feedback: [], pointFeedback: [], weaponEmpty: false };
+    return {
+      ...state,
+      impactEvents: [],
+      feedback: [],
+      pointFeedback: [],
+      // The fatal hit's flash was emitted once on the transition tick; the bridge
+      // drains it every tick, so re-spreading it here (via `...state`) would replay
+      // the full-screen red flash + shake ~60×/s for the whole terminal screen
+      // (a photosensitivity hazard). Clear it like every other transient channel.
+      playerHitEvents: [],
+      weaponEmpty: false,
+    };
   }
 
   // Boss QTE encounter — "le Commandant" (ADR-0051 D3, retrigger amended by ADR-0059). Additive-
@@ -246,6 +257,9 @@ export function tickGameState(
         impactEvents: fire ? [{ classification: "miss" as const, impactPoint }] : [],
         feedback: [],
         pointFeedback: [],
+        // A hit landed the tick before the finale created the boss would otherwise
+        // ride `...state` and replay every frozen tick — clear it like the others.
+        playerHitEvents: [],
         // Weapon state (active/stock/burst) rides `...state` FROZEN through the duel
         // (ADR-0055 D7); only the transient empty flag is cleared.
         weaponEmpty: false,
@@ -263,6 +277,7 @@ export function tickGameState(
         impactEvents: [],
         feedback: [],
         pointFeedback: [],
+        playerHitEvents: [],
         weaponEmpty: false,
       };
     }
@@ -279,6 +294,7 @@ export function tickGameState(
       impactEvents: [],
       feedback: [],
       pointFeedback: [],
+      playerHitEvents: [],
       weaponEmpty: false,
     };
   }
@@ -323,6 +339,9 @@ export function tickGameState(
       impactEvents: fire ? [{ classification: "miss" as const, impactPoint }] : [],
       feedback: [],
       pointFeedback: [],
+      // A hit landed the tick before the QTE triggered would otherwise ride `...state`
+      // and replay every frozen tick — clear it like the other transient channels.
+      playerHitEvents: [],
       // Weapon+stock ride `...state` FROZEN through the QTE (ADR-0055 D7 / AC6); no
       // weapon/loot logic runs in this branch. Clear only the transient empty flag.
       weaponEmpty: false,
