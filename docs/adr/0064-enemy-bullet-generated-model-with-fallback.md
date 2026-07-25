@@ -23,10 +23,10 @@ Two constraints shape the decision:
    `UNAUTHORIZED` verified directly against the live endpoint), unlike the `flux`
    2D endpoint the rest of the asset pipeline uses, which is free anonymously and
    only optionally boosted by `POLLINATIONS_TOKEN`. Generation is therefore
-   CI-only, same as every other `gen-*` pipeline, but the token is now *required*,
+   CI-only, same as every other `gen-*` pipeline, but the token is now _required_,
    not optional.
 2. **No GLTF loader existed in the codebase.** Rather than adding `@react-three/
-   drei` as a new dependency, `three` (already a dependency, pinned `^0.175.0`)
+drei` as a new dependency, `three` (already a dependency, pinned `^0.175.0`)
    ships `GLTFLoader` under `three/examples/jsm/loaders/GLTFLoader.js` — verified
    importable directly. Using it avoids a new dependency for a single loader call,
    consistent with how `TextureLoader` (also from bare `three`) is already used

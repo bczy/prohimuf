@@ -97,8 +97,11 @@ const noopCtx = new Proxy(
 );
 
 beforeAll(() => {
+  // Cast through the real overloaded signature (not `any`) — @webgpu/types augments
+  // getContext with a "webgpu" overload returning GPUCanvasContext, which a plain
+  // `as unknown as CanvasRenderingContext2D` cast no longer satisfies.
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-    () => noopCtx as unknown as CanvasRenderingContext2D,
+    (() => noopCtx) as unknown as typeof HTMLCanvasElement.prototype.getContext,
   );
 });
 afterAll(() => {

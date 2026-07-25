@@ -1,5 +1,5 @@
 # Use npm/npx (not the corepack `yarn` shim) so the hook runs without needing
 # to fetch a package manager over the network.
 npx lint-staged
-npm run lint
-npm run format:check
+yarn lint
+yarn format:check
