@@ -63,6 +63,20 @@ export const ENEMIES_TO_WIN = 10;
 
 const PLAYER_HIT_RADIUS = 1.0;
 
+// Seconds of immunity granted by a hit. Short: it only swallows the instant
+// double-tap (two windows resolving on the same or adjacent ticks). Damage
+// magnitude, not immunity duration, is what keeps the game fair.
+const PLAYER_INVULN_SECONDS = 0.4;
+
+// Lives are tracked in quarter-heart steps. Every subtraction is snapped back
+// onto that lattice so repeated 0.25 hits can't leave a 0.7499999 residue that
+// would keep the player alive at "zero" hearts.
+const LIVES_QUANTUM = 0.25;
+
+function snapLives(lives: number): number {
+return Math.round(lives / LIVES_QUANTUM) * LIVES_QUANTUM;
+}
+
 let _nextBulletId = 1;
 let _nextCourierId = 1;
 let _nextLootId = 1;
@@ -153,6 +167,7 @@ export function createInitialState(
     bullets: [],
     score: 0,
     lives: params.lives,
+    playerInvulnRemaining: 0,
     timeRemaining: params.timeSeconds,
     wave: 1,
     elapsedSeconds: 0,
@@ -417,6 +432,9 @@ export function tickGameState(
           y: cameraOffsetY + jitter.y,
         }),
         fromPlayer: false,
+        // Per-archetype damage: a riot cop's round costs a full heart, a base
+        // cop's a quarter. Read at spawn so it survives the shooter's death.
+        damage: ARCHETYPES[enemy.kind].bulletDamage,
       },
     ];
   }
@@ -455,8 +473,16 @@ export function tickGameState(
   const newEnergy = state.energy;
 
   // 8. Enemy bullet hits player (near camera centre)
+  //
+  // Invulnerability window: after a hit the player is immune for
+  // PLAYER_INVULN_SECONDS. Bullets entering the disc during that window are
+  // still absorbed (removed, so they can't hit again next tick) but cost no
+  // life and raise no feedback event. Without this, two shooters firing on
+  // consecutive ticks drain the whole 3-heart bar in a fraction of a second.
+  const invulnAfterTick = Math.max(0, state.playerInvulnRemaining - delta);
+  const invulnerable = invulnAfterTick > 0;
   const hitBulletIds = new Set<number>();
-  let playerHit = false;
+  let damageTaken = 0;
   const playerHitEvents: PlayerHitEvent[] = [];
   for (const b of movedBullets) {
     if (b.fromPlayer) continue;
@@ -464,17 +490,24 @@ export function tickGameState(
     const dy = b.position.y - cameraOffsetY;
     if (Math.sqrt(dx * dx + dy * dy) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
-      playerHit = true;
+      // Absorbed but harmless: either the window from an earlier hit is still
+      // open, or an earlier bullet THIS tick already opened one.
+      if (invulnerable || damageTaken > 0) continue;
+      damageTaken = b.damage;
       // ADR-0064 — surface the crossing point for render (red flash + shake).
       // Cosmetic-only: the `lives` rule below is unchanged.
       playerHitEvents.push({ worldPoint: { x: b.position.x, y: b.position.y } });
     }
   }
+  const playerHit = damageTaken > 0;
   const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
+  // A fresh hit restarts the window; otherwise the countdown just runs down.
+  const newInvulnRemaining = playerHit ? PLAYER_INVULN_SECONDS : invulnAfterTick;
 
-  // Lives change from being shot AND from mistakes (shooting a civilian courier).
+  // Lives change from being shot (fractional, per shooter archetype) AND from
+  // mistakes (shooting a civilian courier — a fault, so still a whole heart).
   const feedbackEvents: readonly HitEvent[] = trigger.events;
-  const newLives = state.lives - (playerHit ? 1 : 0) + trigger.livesDelta;
+  const newLives = snapLives(state.lives - damageTaken + trigger.livesDelta);
 
   if (newLives <= 0) {
     return {
@@ -485,6 +518,7 @@ export function tickGameState(
       pointFeedback,
       impactEvents,
       playerHitEvents,
+      playerInvulnRemaining: newInvulnRemaining,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -528,6 +562,7 @@ export function tickGameState(
       pointFeedback,
       impactEvents,
       playerHitEvents,
+      playerInvulnRemaining: newInvulnRemaining,
       couriers,
       courierTimer,
       couriersSpawned,
@@ -567,6 +602,7 @@ export function tickGameState(
     pointFeedback,
     impactEvents,
     playerHitEvents,
+    playerInvulnRemaining: newInvulnRemaining,
     couriers,
     courierTimer,
     couriersSpawned,

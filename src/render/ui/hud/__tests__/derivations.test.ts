@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { weaponGlyph, isLowStock, LOW_STOCK_FRACTION } from "../derivations";
+import { weaponGlyph, isLowStock, splitHearts, LOW_STOCK_FRACTION } from "../derivations";
 import { WEAPON_SPECS } from "@game/types/weapon";
 
 /**
@@ -37,5 +37,28 @@ describe("isLowStock", () => {
 
   it("keeps the threshold ratio at the documented 0.2", () => {
     expect(LOW_STOCK_FRACTION).toBe(0.2);
+  });
+});
+
+describe("splitHearts", () => {
+  it("renders integral health as solid hearts with no partial", () => {
+    expect(splitHearts(3)).toEqual({ full: 3, partial: 0 });
+  });
+
+  it("splits a quarter-heart remainder", () => {
+    expect(splitHearts(2.75)).toEqual({ full: 2, partial: 0.75 });
+  });
+
+  it("splits a half-heart remainder", () => {
+    expect(splitHearts(1.5)).toEqual({ full: 1, partial: 0.5 });
+  });
+
+  it("shows a lone partial heart below one full heart", () => {
+    expect(splitHearts(0.25)).toEqual({ full: 0, partial: 0.25 });
+  });
+
+  it("clamps a dead player to nothing rather than negative glyphs", () => {
+    expect(splitHearts(0)).toEqual({ full: 0, partial: 0 });
+    expect(splitHearts(-1)).toEqual({ full: 0, partial: 0 });
   });
 });

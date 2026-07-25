@@ -41,6 +41,17 @@ export function livesColor(lives: number): string {
   return lives <= 1 ? MARK.pink : INK.full;
 }
 
+// Fractional lives → glyph run. Enemy return fire costs between a quarter and a
+// whole heart depending on the shooter's archetype, so the readout needs a count
+// of solid ♥ plus the fill ratio (0..1) of one trailing partial heart. `partial`
+// is 0 at integral health, which is what keeps a full 3-heart bar rendering as
+// exactly "♥♥♥". Negative input is clamped (a dead player shows nothing).
+export function splitHearts(lives: number): { full: number; partial: number } {
+  const safe = Math.max(0, lives);
+  const full = Math.floor(safe);
+  return { full, partial: safe - full };
+}
+
 // Active-weapon glyph — the roster picto (design §1/§6.2 "A/B/C picto"): A = base
 // (calibre), B = auto (sulfateuse), C = spread (éventail). Purely the render-side
 // display letter for a weapon kind; carries no rule.

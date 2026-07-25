@@ -14,3 +14,24 @@
 .value {
   composes: value from "./shared.module.css";
 }
+
+/* Partial heart (fractional lives). `--fill` (0..1) is set inline by the
+   component; everything else stays here per ADR-0046. The empty layer is the
+   same glyph knocked back to a faint outline; the fill layer is an exact copy
+   clipped from the left to `--fill` of its own width, so the two register
+   pixel-for-pixel whatever the font metrics. */
+.partial {
+  position: relative;
+  display: inline-block;
+}
+
+.partialEmpty {
+  opacity: 0.28;
+}
+
+.partialFill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  width: calc(var(--fill) * 100%);
+}
