@@ -27,6 +27,10 @@ belongs to `dev-gameplay`. If you need a logic change, hand off — don't reach 
 - Strict TypeScript, no `any` escape hatches. Respect ESLint/Prettier configs.
 - Verify every change: `rtk tsc` (or `yarn typecheck`), `rtk vitest` (or `yarn test`),
   `rtk lint`. Never claim a test passes unless it actually does.
+- Once green and before handing the story to review, run the **`simplify`** skill on your
+  diff: drop the render-side ceremony your change added (`useMemo`/`useState`/`useEffect`
+  around plain derived state, single-use wrapper components, props nobody passes). Any cut
+  that could move a pixel goes to PROPOSED and gets re-shot with `verify`, never applied blind.
 - Use **codegraph** to find symbols/callers before editing; use **rtk** to run dev
   commands so output stays compact. Prefer these over raw grep/build spam.
 

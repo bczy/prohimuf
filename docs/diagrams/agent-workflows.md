@@ -101,6 +101,7 @@ flowchart TB
     subgraph P5["5. VERIFY — the test stage, orchestrated by qa-lead"]
         direction TB
         CHECKS["rtk tsc · rtk vitest (100%) · rtk lint<br/>+ e2e / verify runs (player-visible changes)<br/>per qa-lead's test plan (docs/qa/)"]
+        SIMP["owning dev lane · simplify skill<br/>degrease the diff once green<br/>APPLIED (proven green) · PROPOSED → panel"]
         GATE4{"lead-art · Nico 🎯<br/>COMPOSITE GATE (Gate 4)<br/>runtime visuals on REAL screenshots"}
         PLAY["game-designer · Sacha 🎮<br/>PLAYTEST vs the gated spec"]
         UXR["ux-designer · Tony 🖱️<br/>UX REVIEW vs gated spec<br/>(real screenshots, both devices)"]
@@ -116,6 +117,7 @@ flowchart TB
         PLAY --> DACC
         UXR --> DACC
         CHECKS --> QGATE
+        CHECKS --> SIMP
         GATE4 -->|PASS| QGATE
         SDV -->|PASS| QGATE
         PERF -->|"PASS / DEFERRED-ON-TARGET<br/>(logged, chased by producer)"| QGATE
@@ -141,6 +143,7 @@ flowchart TB
     ARCH -.->|"unproven technique / model /<br/>API / dep: feasibility recon"| SCOUT
 
     QGATE -->|PASS| PANEL
+    SIMP -.->|"PROPOSED cuts<br/>(candidate findings)"| PANEL
     QGATE -->|"FAIL → back to the owning lane,<br/>failing case named"| ARCH
     GATE4 -->|"FAIL → dev-r3f-render<br/>(the composite is render code)"| ARCH
     SDV -->|"FAIL → owning dev lane,<br/>or spec re-gated via Malik"| ARCH

@@ -32,6 +32,9 @@ git diff --stat origin/main...HEAD
 
 If the diff is empty or the branch is behind, stop and say so. Note whether the change is
 player-visible (needs runtime evidence) or docs/config only (scope reviewers accordingly).
+If the owning lane's stage-5 `simplify` pass left **PROPOSED** items (cuts it judged were
+not its call), pass that list to reviewer A — they are candidate findings already scoped,
+not settled decisions.
 
 ## Step 2 — fan out the four reviewers IN PARALLEL
 
