@@ -54,6 +54,20 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # Tooling caches (ESLint / Prettier / Vitest) all live under
+      # node_modules/.cache — see package.json scripts and vitest.config.ts.
+      # Restored AFTER install (yarn install does not touch .cache).
+      # ESLint does NOT invalidate its cache when the config changes, hence the
+      # config files in the key hash; `--cache-strategy content` makes the
+      # entries survive a fresh checkout (mtimes are not preserved by git).
+      - name: Cache lint/format/test tooling
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache
+          key: tooling-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'prettier.config.ts', 'package.json', 'yarn.lock') }}-${{ github.sha }}
+          restore-keys: |
+            tooling-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'prettier.config.ts', 'package.json', 'yarn.lock') }}-
+
       - name: Typecheck
         run: yarn typecheck
 

@@ -185,6 +185,12 @@ Ouvrez ensuite l'URL affichée par Vite (par défaut `http://localhost:5173`).
 | `yarn test:watch`    | Tests en mode watch                              |
 | `yarn test:coverage` | Tests avec rapport de couverture                 |
 
+> **Caches outils.** `lint`, `lint:fix`, `format` et `format:check` utilisent le
+> cache d'ESLint et de Prettier, et Vitest écrit le sien au même endroit : tout
+> vit sous `node_modules/.cache/` (déjà ignoré par git, et mis en cache en CI).
+> ESLint n'invalide **pas** son cache quand `eslint.config.ts` change — après
+> une modification de config, purger avec `rm -rf node_modules/.cache`.
+
 ---
 
 ## Architecture

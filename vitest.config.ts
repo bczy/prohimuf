@@ -2,6 +2,11 @@ import { defineConfig } from "vitest/config";
 import { resolve } from "path";
 
 export default defineConfig({
+  // Vite-level cache dir (Vitest 3 deprecates `test.cache.dir`). Kept under
+  // node_modules/.cache so a single CI cache entry covers eslint + prettier +
+  // vitest.
+  cacheDir: "node_modules/.cache/vitest",
+
   test: {
     globals: true,
 
