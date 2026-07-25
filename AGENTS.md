@@ -60,8 +60,14 @@ Yes → implement faithfully. No → conscious, documented, justified extension 
 
 - Strict TypeScript, no `any`. Respect ESLint/Prettier; Husky + lint-staged run on commit.
 - TDD for `src/game`: tests in `src/game/systems/__tests__/` must pass 100%.
-- **Verify before claiming done:** `yarn typecheck` + `yarn test` + `yarn lint`. Never
-  report green tests that aren't.
+- **Do not manually run `yarn typecheck` / `yarn test` / `yarn lint` / `yarn format` (or
+  their `rtk`/individual-file equivalents) as a blanket verification pass before
+  committing.** The pre-commit hook (`.husky/pre-commit`: `lint-staged` + `lint` +
+  `format:check`) already runs these on every commit — let it do its job. Never skip or
+  bypass the hook (no `--no-verify`), and never report work as "verified" based on a
+  manual run instead of a real commit going through it. It is still fine to run a
+  single targeted test file while actively writing/debugging code (TDD red→green loop),
+  just not a full-suite check as a pre-commit ritual.
 - Adding a level = one entry in `src/game/levels/levelArt.json` + matching gameplay map
   (`HARNESS.md`). Art generation normally runs in CI, not the local sandbox.
 - Conventional Commits (commitlint enforced).
