@@ -630,3 +630,231 @@ or Three; no rule moved into `src/render`; the hooks layer is untouched and corr
 
 `producer` (Marion) drives B1 to `pm`, C4's ADR number, and the C1/C2 re-gate slot against
 `lead-art`'s remaining iteration budget (batch 2 of 2 — the last one).
+
+---
+
+## stage-5bis. ART RE-GATE batch 2 — lead-art (Nico) — 2026-07-25
+
+Batch **2 of 2**, the last (`art-direction.md` §6). Re-gate of the architect's merge
+conditions **C1** (energy aura) and **C2** (effects 1 & 5) on fresh in-game frames.
+Gate 4 (in-game composite) + Gate 3 (bible).
+
+### Evidence — frames captured for this pass, not the lane's
+
+`yarn build` + `vite preview` + Playwright on the headless **shell** binary
+(`chromium_headless_shell-1194`; the repo scripts still launch `--headless=old`, gone from
+the sandbox Chromium — worked around locally, not a finding against any lane). Every number
+below is a pixel sample off these PNGs.
+
+| Frame set                                  | Seam                                                       | n   |
+| ------------------------------------------ | ---------------------------------------------------------- | --- |
+| **Hostage QTE, ACTIVE PEEKING + COVERED**  | `__MUF_PLAY__`, belliard, polled to `qte.phase==="ACTIVE"` | 16  |
+| Boss duel, energy 78 → 54                  | `?preview=boss&at=phase2&blownImmune=1`                    | 8   |
+| Belliard / Stalingrad street, CRT on + off | `__MUF_FREEZE_COPS__`, `muf_prefs.crt`                     | 8   |
+| Belliard / Stalingrad panned (6 positions) | same + pointer sweep, to bring near-row props into frame   | 10  |
+
+**The hostage-QTE composite has now landed in a screenshot.** That was the standing hole
+from batch 1 ("only the boss host has been gated"); it is closed. `phase=ACTIVE` at
+`elapsed=12.0`, both stances, energy 100 → 76.
+
+### Verdicts
+
+| #      | Item                                      | Verdict        | Binding rule            |
+| ------ | ----------------------------------------- | -------------- | ----------------------- |
+| **C1** | Energy aura, re-cut as silhouette rim     | **PASS**       | §2.1, §2 law 1, law 3   |
+| **C2** | Effect 1 — acid neon (émetteurs + triade) | **PASS**       | §2 law 1, §2 law 2      |
+| **C2** | Effect 5 — détritus (gris toner + bande)  | **PASS**       | §1, §2 law 2            |
+| —      | TITLE — 3 reveal variants                 | **HORS BATCH** | re-directed by Bertrand |
+| —      | TITLE — chrome posterisé + stock jaune    | **PASS**       | §2bis, §2bis.1          |
+
+---
+
+#### C1 — Energy aura → PASS
+
+The batch-1 FAIL had three legs. All three are answered **by construction**, and measured.
+
+**Leg 1 — « une flaque au sol ».** Batch 1: the disc's core escaped below the feet and
+pooled on the black road as a green ellipse with no source; 7.73 % of the world area in one
+contiguous 430×454 block.
+
+```
+road band (y 500..719), saturated pixels:
+  hostage QTE, ACTIVE PEEKING   0.00 %   (no blob at all)
+  boss phase2, energy 72        0.13 %   bbox 150x6 px, at the kerb seam under the boots
+column x=625 through the feet, boss:  y=475 v=0.765 → y=495 v=0.016 → y=515 v=0.000
+```
+
+The flaque is gone. Not reduced — gone. A rim cannot pool, which was the point of the
+re-cut, and the frames confirm the geometry does what the code claims.
+
+**Leg 2 — « le preneur est lavé » / the aura says nothing about its object.** On the QTE
+frames the rim traces **the captor's silhouette only**. Sampled across the hostage's head at
+y=330: her shirt reads `254,254,254` (energy 100) and `254,136,144` (energy 76, the COVERED
+stance tint) — **her own sprite values, un-tinted**. She occludes the rim; the rim does not
+paint her. `renderOrder 5.9` + `rimZ` behind the body do exactly what they were moved for.
+The captor's body reads clean under his rim — dark hoodie, contour intact, not washed.
+
+The ramp is legible in-frame and it is one ramp: green `h≈102` at energy 100 → amber
+`h≈66` at 76 → the boss at 54 sits in the orange. `STATE_GREEN/AMBER/RED` single-sourced
+from `neonHeatColor` — finding G5 answered in code. `#FF3030` is still a red that exists
+nowhere in §2 law 1; it is now _one_ non-palette red instead of two, which is the state I
+asked for pending the bible amendment. Carried below, not held against the merge.
+
+**Leg 3 — « la façade B&W teintée ».** Batch 1: the shutter behind the boss sampled
+`#587E54`, s=0.33. Now the tinted region is confined to the rim band and the décor beyond it
+is **strictly neutral**: shutter at x≥640, `162,162,162`, **s=0.000**. Total saturated world
+area 2.50 % (CRT off) / 2.79 % (CRT on) — and that figure _includes_ the crosshair, the two
+QTE rings and the boss tableau's own décor glow, none of which is this effect. Against
+7.73 % for the aura alone in batch 1.
+
+**§2.1 — « un halo est un dégradé, jamais un aplat ».** Measured from the sprite edge
+outward, which is where the law says to measure:
+
+```
+CRT ON (the shipped default), boss coat edge → shutter, row y=360:
+  s = .352  .331  .301  .258  .174  .118  .024  .000
+  v = .714  .639  .561  .486  .427  .333  .329  .380 (shutter)
+  → monotonic, no clipping, terminates at 0. Textbook dégradé. §8.5 P3 satisfied.
+
+CRT OFF, boss coat edge → pavement, row y=430:
+  255,255,253 → 255,255,239 → 251,250,224 → 233,233,220 → 218,218,217 → 217 (pavement)
+  → the ramp is continuous and terminates on the pavement's own value in ~26 px,
+    but its crest is CLIPPED: ~14 px at v=1.00, s→0.000 over the light trottoir.
+```
+
+So: **le trottoir clippe encore.** The brief's "ne clippe plus" is not what the pixels say
+and I will not sign a claim I can measure to be false. What has changed is the _kind_ of
+defect. Batch 1 failed a **plateau** — a disc whose texture carries a 22 % opaque core, flat
+then cut, hue gone across its whole width. What is there now is the **crest of a continuous
+ramp**, blowing out for ~14 px where an additive band meets a 217-grey ground, with a proper
+falloff on both sides of it.
+
+That distinction is load-bearing, and so is consistency: **every rim in the game does this.**
+The already-gated ADR-0025 hostile rim measures `240,255,194 / 195,255,166` — v=1.00 — on the
+Belliard facade, and I PASSED the lamppost in batch 1 with this exact tolerance written down
+("the core clips to 255/255/x over the paper-white facade… tolerated here, it still ramps").
+Failing this one while those two ship would not be a gate, it would be a mood. And under the
+CRT — the default the player actually runs — the profile above has **no clipping at all**.
+
+The clipping is therefore a **bible gap, not a lane defect**. G3 lands below with a
+measurable ceiling, and it binds the whole rim family in one future pass — enemy rim,
+lamppost, aura together — never this asset alone.
+
+**Watch item (not a condition).** The captor stands _behind_ the hostage, so his rim emerges
+all around her outline: measured `s≈0.21–0.24` in a ~25 px band immediately right of her
+head. It is his rim, correctly occluded by her body, and at game size it reads as _he_ glows
+and _she_ is a dark cut-out in front of it — which is the right read. But it is one tuning
+step away from reading as a halo she owns. If the rim ever widens, this is where it breaks
+first.
+
+**I1 verified in-frame.** At `x=578` the rim paints continuously across the kerb band
+(`facadeOverlay`, slot 5) — `h=102, s=0.34→0.53` over y 400–432 — with no bite out of it,
+then resumes over the pavement. The aura sorts above the whole street stack, as slot 5.9
+promised. C3 holds on pixels, not on a code read.
+
+#### C2 / effect 1 — acid neon → PASS
+
+- **Décor emitters gone.** Verified over **10 framings** across both levels: belliard
+  (centre, pan L, pan R) and stalingrad (centre, pan L, pan R, + 4 intermediate positions).
+  Every `scooter` (belliard ×1, stalingrad ×3 seen), every `bollard`, every `parkingMeter`,
+  the Wallace fountains and the benches: **no additive disc, on any of them**. §2 law 1 is
+  respected literally — « ce qui brille est interactif », and a horodateur is not. The
+  archetype-impersonation leg (a décor scooter wearing the moto class's ADR-0011 badge) is
+  closed with it. Escalation **E1** is settled: Bertrand ruled with the bible.
+- **Triad re-anchored.** Belliard's panneau PARIS, measured on the halo: **`h=311°`**
+  across the whole band. `#FF3CDC` is h=310.8°; the first cut's `#FF32B4` is h=322°. This is
+  the bible's magenta, not a near-miss. The violet `#9664FF` — the fourth colour family that
+  existed nowhere in §2 law 1 — is out of the table. §2 law 2 (colour is a family law too)
+  satisfied.
+- **Falloff on the sign** — `s = .217 .338 .533 | .396 | .496 .341 .273 → .000` from left
+  margin through the sign face to right margin, monotone on both flanks, terminating on the
+  kerb's own `43,43,43` within ~50 px. A dégradé. §2.1 ✓.
+- **Lamppost unchanged and still right.** Warm sodium halo seated on the lantern bulb on
+  both levels, all framings. My batch-1 PASS stands untouched.
+
+_Coverage note, stated rather than glossed:_ **stalingrad's own streetSign never entered
+frame.** Its props sit at x=0.38/0.82 on the near row (parallax factor −0.38), which puts
+them outside every camera position reachable at 1280×720 — six pan positions tried. The hue
+is not level-data: `acidHue(index)` reads the one shared `ACID_HUES` table I measured on
+belliard, so the anchoring is proven at the mechanism. I am recording the gap, not pretending
+I closed it.
+
+#### C2 / effect 5 — détritus → PASS
+
+- **Neutral.** Every debris pixel sampled on belliard is exactly `R=G=B`: the scrap at
+  `163,163,163 / 160,160,160 / 165,165,165 / 135,135,135`, the leaf's blob peaking at `67`.
+  The warm cream `(232,230,224)` and the warm brown `(58,52,44)` are gone. §1 holds: the
+  only colour on the B&W layer is the neon.
+- **One value band.** Scrap ≈165, leaf ≈67 — against batch 1's 213 / 52, one glaring and
+  one absent. On the black kerb (`43`) the scrap now reads **≈5.8:1**, down from ≈14:1: it
+  is no longer the loudest moving thing in the band the courier and the van travel through
+  (courier peaks at 254). Both members read on both grounds. §2 law 2 inside the debris
+  family: satisfied.
+- **Visible on stalingrad, which is the level where it was invisible.** Two scraps tracked
+  across a 1.4 s pair, `152,144,142` and `153,151,150` on a road measuring `~95,45,40` — a
+  pale neutral diamond travelling over the dark tarmac, small and ambient, exactly the
+  register wanted. (The residual 8 % warmth is the backdrop showing through the 0.92 alpha,
+  not a hue of its own.)
+- **Band raised.** In-frame the litter straddles the kerb line on belliard and sits on the
+  road on stalingrad — inside the camera floor on both, no longer clipped away.
+- **Vapeur frozen cleanly.** No puff snap observed across the paused / QTE frames.
+
+#### TITLE — hors batch
+
+**Re-directed live by Bertrand on the preview** (paint does not read mono-point, the blast
+smoke clips to a square and its texture is to be redone); a dev lane restarted on it while
+this gate was running. The three reveal animations are therefore **ungated** — they get their
+verdict after the rework, against my batch-1 criteria.
+
+Two items I did measure this pass, and they are **not** what is being reworked, so the lane
+must not touch them:
+
+- **Chrome posterisé — PASS.** Six hard-stopped bands, zero fade between them. The 1997
+  WordArt ramp is gone; it reads as a photocopied metal sticker.
+- **`CHROME.hi` off quasi-white — PASS.** `#CFCCC3` (rel. lum ≈ 0.60) sits **below** the
+  jaune stock `#F1EC1F` (≈ 0.79). The brightest band is the paper, never brighter than it —
+  §2bis.2 pt4's ban on specular sheen respected.
+- **Stock jaune — PASS.** `STOCK.jaune` on TITLE, which is what §2bis.1 pins ("TITLE cover
+  **only**"). **Escalation E3 is closed**: Bertrand ruled, code and bible now agree.
+- Zero glow on the surface: the spray's overspray is **ink-black** and only darkens. Legal.
+
+### Bible amendments (Gate 3) — carried, one refined
+
+G1, G2, G4, G5 stand as written in batch 1. **G3 is refined by this batch's measurements**
+and is the one that now has a number:
+
+> **G3 — Glow geometry & measurement (§2.1 addendum).**
+> (a) _Shape:_ an entity glow **traces its silhouette**; a disc larger than the entity is a
+> point-source form and may not be used as an entity aura. (Vindicated: the disc→rim re-cut
+> took the road pooling from 7.73 % to 0.00 % without any tuning.)
+> (b) _Ground:_ falloff is measured **on the ground the glow actually lands on**, and on the
+> shipped composite (CRT on).
+> (c) _Ceiling (new, measurable):_ the fully-clipped core of a rim — `v = 1.00` with
+> `s ≤ 0.05` — may not exceed **~25 % of the rim's total band width** on any ground. Current
+> readings: aura ≈44 % over the trottoir, ADR-0025 hostile rim ≈**67 %** over the facade.
+> **Both are over.** This is a _family_ debt, and it is paid in one pass over every rim at
+> once — never retrofitted onto a single asset, which is why it is not a condition here.
+
+These land in `lead-art`'s own docs PR, as stated in batch 1. Not a merge condition.
+
+### Escalations
+
+- **E4 (still open, unchanged, out of scope).** Stalingrad's backdrop renders as a saturated
+  colour night photograph, not xerox B&W. Nothing to do with this branch; still the largest
+  single divergence from §1 on screen. It deserves its own pass.
+- **E5 (new, same class as E4, out of scope).** The hostage-QTE tableau ships in full
+  colour — pink shirt, skin tones, red hoodie — plus a magenta COVERED stance tint over both
+  figures. Pre-existing sprite art + pre-existing stance treatment, not this branch, but the
+  QTE is the most-looked-at composite in the game and it is currently the second-largest §1
+  divergence. Route with E4.
+- **E1 — closed.** Décor emitters dropped; Bertrand ruled with §2 law 1.
+- **E3 — closed.** TITLE on `stock-jaune`; code and bible agree.
+
+### Gate status
+
+**C1 and C2 have my PASS.** With effects 2 and 3b cleared in batch 1, every effect on this
+branch that is mine to gate is now gated **except the three TITLE reveal animations**, which
+Bertrand pulled out of this batch and which owe a verdict after their rework.
+
+Iteration budget: batch 2 of 2 spent. Nothing further from me on effects 1, 3, 5 — any
+subsequent change to them is a new cycle, and G3(c) is where that cycle starts.
