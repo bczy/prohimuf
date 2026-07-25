@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
+import { createEntityAura } from "@render/effects/entityAura";
 import { CanvasTexture, TextureLoader, AdditiveBlending } from "three";
 import { Box3, Vector3 } from "three";
 import type { Texture, Mesh, MeshBasicMaterial, Group } from "three";
@@ -278,6 +279,21 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
   const [models, setModels] = useState<Partial<Record<LootRewardProfile, Group>>>({});
   const appearTimerRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
+  // Energy aura + ground shadow. It lives INSIDE the crate group, so its
+  // coordinates are group-local (0,0) and it inherits the drop-and-settle for
+  // free. Drawn behind the ADR-0056 rim glow (z=-0.02) and wider than it, so the
+  // fixed acid-green "ce qui brille est interactif" rim stays the tight,
+  // unambiguous core read and the energy hue only tints the outer wash.
+  const aura = useMemo(
+    () => createEntityAura({ renderOrder: 4, glowZ: -0.05, shadowZ: -0.06 }),
+    [],
+  );
+  useEffect(
+    () => () => {
+      aura.dispose();
+    },
+    [aura],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -346,6 +362,15 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
       if (flightCase?.visible) flightCase.rotation.y = spin;
     }
 
+    aura.update({
+      visible: true,
+      x: 0,
+      y: 0,
+      width: CRATE_WORLD_W,
+      height: CRATE_WORLD_H,
+      energy: stateRef.current.energy,
+    });
+
     // Body: FLUX sprite when it has loaded, else the drawn plank fallback (never blocks).
     const body = bodyRef.current;
     if (body !== null) {
@@ -387,6 +412,9 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
 
   return (
     <group ref={groupRef} visible={false}>
+      {/* Energy aura: soft ground shadow + a wide glow whose hue tracks the
+          player's energy (green → yellow → red). Behind the rim glow. */}
+      <primitive object={aura.group} />
       {/* Rim glow behind the body (z=-0.02): additive green with the baked shadowBlur
           falloff; the body occludes the core, the outward falloff reads as the rim. */}
       <mesh ref={rimRef} position={[0, 0, -0.02]} renderOrder={4}>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -11,6 +11,7 @@ import {
   type OrthographicCamera,
   type Texture,
 } from "three";
+import { AURA_HIDDEN, createEntityAura } from "@render/effects/entityAura";
 import type { GameState } from "@game/types/gameState";
 import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
 import { resolveEnemyTexture, muzzleFor } from "./enemyTextures";
@@ -385,6 +386,25 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
   const positionedRef = useRef(false);
+  // Energy auras (soft shadow + energy-hued glow) for the two duel figures. Each
+  // sits one renderOrder band BELOW its figure and slightly behind it in z, so the
+  // opaque sprite occludes the glow core and only the rim reads — the hostage's
+  // aura therefore never washes over the captor she shields.
+  const captorAura = useMemo(
+    () => createEntityAura({ renderOrder: 5, glowZ: QTE_Z - 0.02, shadowZ: QTE_Z - 0.03 }),
+    [],
+  );
+  const hostageAura = useMemo(
+    () => createEntityAura({ renderOrder: 6, glowZ: HOSTAGE_Z - 0.02, shadowZ: HOSTAGE_Z - 0.03 }),
+    [],
+  );
+  useEffect(
+    () => () => {
+      captorAura.dispose();
+      hostageAura.dispose();
+    },
+    [captorAura, hostageAura],
+  );
   // Reduced motion (UX spec §4.1) now arrives via the `reducedMotion` prop — the
   // shared union signal from `useReducedMotionRoot` (App → GameScene), the ONE
   // authority (ADR-0054 §3) — degrading the peek cue / execution flash to a steady,
@@ -441,9 +461,32 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       for (const g of qteBulletGroups.current) {
         if (g !== null) g.visible = false;
       }
+      captorAura.update(AURA_HIDDEN);
+      hostageAura.update(AURA_HIDDEN);
       positionedRef.current = false;
       return;
     }
+
+    // Energy auras follow the (static) tableau anchor. Updated per FRAME, not once
+    // per activation like the meshes: the hue tracks the live energy, which the
+    // duel itself drains.
+    const energy = stateRef.current.energy;
+    captorAura.update({
+      visible: true,
+      x: qte.anchor.x,
+      y: qte.anchor.y,
+      width: QTE_W,
+      height: QTE_H,
+      energy,
+    });
+    hostageAura.update({
+      visible: true,
+      x: qte.anchor.x + HOSTAGE_DX,
+      y: qte.anchor.y + HOSTAGE_DY,
+      width: HOSTAGE_W,
+      height: HOSTAGE_H,
+      energy,
+    });
 
     // ── Static placement (once per activation) ────────────────────────────────
     // The captor and hostage never move (the static duel): place those two meshes
@@ -720,6 +763,9 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     // The hostage's higher order + z draws her over the captor; the peek cue (8)
     // sits on top of both.
     <>
+      {/* Energy auras, drawn under their figures (renderOrder 5/6). */}
+      <primitive object={captorAura.group} />
+      <primitive object={hostageAura.group} />
       <mesh ref={captorRef} renderOrder={6} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />

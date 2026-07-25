@@ -24,6 +24,7 @@ import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getBossPoseTexture, getBossDecorTexture } from "./bossTextures";
 import type { BossPose } from "./bossTextures";
 import { createSmokeField } from "./smokeParticles";
+import { AURA_HIDDEN, createEntityAura } from "@render/effects/entityAura";
 import { clamp01, lerpHex, ringZoneColour, ringZoneEmphasis } from "./hostageCue";
 import type { HudBossQte } from "@render/ui/HUD";
 
@@ -457,6 +458,14 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
   // The drifting smoke PARTICLE FIELD (own module). Added to the scene via <primitive>; positions
   // its billboards in world space each frame around the boss anchor.
   const smokeField = useMemo(() => createSmokeField(smokeMax), [smokeMax]);
+  // Energy aura (soft shadow + energy-hued glow) around the Commandant. One band
+  // below the boss and slightly behind him in z, so his silhouette occludes the
+  // core and only the rim reads — the ADR-0052 stance TINT on his body stays the
+  // dominant read, and the aura is peripheral.
+  const bossAura = useMemo(
+    () => createEntityAura({ renderOrder: 5, glowZ: BOSS_Z - 0.02, shadowZ: BOSS_Z - 0.03 }),
+    [],
+  );
 
   // Ring A geometries: the normal annulus (phase-1 single ring + the neutral tell) and a
   // bolder-stroke vital annulus (§21) swapped onto ring A in its vital branches. Ring B (limb)
@@ -479,10 +488,20 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       promptTex?.dispose();
       shieldReticleTex?.dispose();
       smokeField.dispose();
+      bossAura.dispose();
       ringGeoNormal.dispose();
       ringGeoVital.dispose();
     };
-  }, [glowTex, vignetteTex, promptTex, shieldReticleTex, smokeField, ringGeoNormal, ringGeoVital]);
+  }, [
+    glowTex,
+    vignetteTex,
+    promptTex,
+    shieldReticleTex,
+    smokeField,
+    bossAura,
+    ringGeoNormal,
+    ringGeoVital,
+  ]);
 
   // Reduced motion (UX D3.1) now arrives via the `reducedMotion` prop — the shared
   // union signal from `useReducedMotionRoot` (App → GameScene), the ONE authority
@@ -549,6 +568,7 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       finisherVignette.visible = false;
       finisherPrompt.visible = false;
       smokeField.group.visible = false;
+      bossAura.update(AURA_HIDDEN);
       for (const q of renfortRefs.current) if (q !== null) q.visible = false;
     };
 
@@ -648,6 +668,16 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
     if (finisher) posY -= FINISHER_KNEEL; // the commander drops to a defeated posture
     if (!reducedMotion && hitK > 0) posX += HIT_RECOIL * hitK;
     boss.position.set(posX, posY, BOSS_Z);
+    // The aura tracks the live pose (hunch, brace dip, kneel, hit recoil), so it
+    // stays welded to the figure instead of to the static anchor.
+    bossAura.update({
+      visible: true,
+      x: posX,
+      y: posY,
+      width: BOSS_W,
+      height: BOSS_H,
+      energy: state.energy,
+    });
 
     boss.visible = true;
     // ── Canon pose: decode the CURRENT boss state to a Commandant pose (bossTextures) ──
@@ -1066,6 +1096,8 @@ export function BossQteSprite({ stateRef, onBossQte, reducedMotion }: Props): JS
       </mesh>
       {/* The drifting smoke particle field (renderOrder 10, set per-billboard in the module). */}
       <primitive object={smokeField.group} />
+      {/* The Commandant's energy aura (renderOrder 5, under the boss). */}
+      <primitive object={bossAura.group} />
       {/* The parry halo (13) + glyph (14) draw ABOVE the smoke so the tell survives phase-3 smoke;
           the paper-white halo gives value contrast against the smoke + shoulder art. */}
       <mesh ref={parryHaloRef} renderOrder={13} rotation={[0, 0, Math.PI / 4]} visible={false}>
