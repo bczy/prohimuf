@@ -94,6 +94,20 @@ const PIP_DY = 1.18; // above his head (captor half-height ≈ QTE_H / 2 = 1.0)
 const PIP_Z = 0.56;
 const PIP_COLOUR = "#f7f7f7"; // bone white — a neutral vitality read, not a zone hue
 
+// The captor's OWN counter-fire (P3-ACC, ADR-0034/0036): armed only when this level
+// authored no accomplice — the two channels are mutually exclusive (see qteSystem.ts
+// tickQte). Until now a blown peek drained energy with ZERO on-screen report — the
+// player felt the hit but never saw the shot. Mirrors the accomplice's muzzle flash
+// exactly (same brief bloom, same fade), parked at the captor's own gun hand
+// (front-right, clear of the front-left peek/head zone and the front-right hostage).
+const CAPTOR_MUZZLE_DX = 0.6;
+const CAPTOR_MUZZLE_DY = -0.15;
+const CAPTOR_MUZZLE_SIZE = 0.5;
+const CAPTOR_MUZZLE_Z = 0.57;
+const CAPTOR_MUZZLE_COLOUR = "#fff2b0"; // same warm bloom as the accomplice's
+const CAPTOR_MUZZLE_FLASH_MS = 140;
+const CAPTOR_MUZZLE_FLASH_OPACITY = 0.9;
+
 // ── The accomplice: the SECOND armed figure (F4 / ADR-0036) ──────────────────
 // Drawn iff `qte.accomplice !== null` while ACTIVE, spatially DISTINCT from the
 // captor (screen-LEFT via ACCOMPLICE_OFFSET) so the player never confuses the
@@ -203,6 +217,13 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   // (presentation only — no game rule). Drives the brief muzzle flash.
   const accompliceTellRef = useRef(false);
   const muzzleFlashUntilRef = useRef(0);
+  const captorMuzzleRef = useRef<Mesh>(null);
+  // Rising-edge detector for the captor's OWN counter-fire: `qte.blownPeeks`
+  // increments exactly once per PEEKING→COVERED close that charges the
+  // player (P3-ACC — armed only when `qte.accomplice === null`), so a jump in
+  // this count is the render-side "he just fired" signal.
+  const prevBlownPeeksRef = useRef(0);
+  const captorMuzzleFlashUntilRef = useRef(0);
   // Fixed pool of captor-HP pips (diegetic HP read); populated by the JSX ref cbs.
   const pipRefs = useRef<(Mesh | null)[]>([]);
   const lastKeyRef = useRef<string>("none");
@@ -220,12 +241,14 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     const peekCue = peekCueRef.current;
     const accomplice = accompliceRef.current;
     const muzzle = muzzleRef.current;
+    const captorMuzzle = captorMuzzleRef.current;
     if (
       captor === null ||
       hostage === null ||
       peekCue === null ||
       accomplice === null ||
-      muzzle === null
+      muzzle === null ||
+      captorMuzzle === null
     )
       return;
 
@@ -249,8 +272,11 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       peekCue.visible = false;
       accomplice.visible = false;
       muzzle.visible = false;
+      captorMuzzle.visible = false;
       accompliceTellRef.current = false;
       muzzleFlashUntilRef.current = 0;
+      prevBlownPeeksRef.current = 0;
+      captorMuzzleFlashUntilRef.current = 0;
       for (const pip of pipRefs.current) {
         if (pip !== null) pip.visible = false;
       }
@@ -297,6 +323,15 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       );
       muzzle.scale.set(ACCOMPLICE_MUZZLE_SIZE, ACCOMPLICE_MUZZLE_SIZE, 1);
       (muzzle.material as MeshBasicMaterial).color.set(ACCOMPLICE_MUZZLE_COLOUR);
+      // The captor's own muzzle (P3-ACC — lit only on levels with no accomplice),
+      // parked at his own gun hand, static like the rest of the tableau.
+      captorMuzzle.position.set(
+        qte.anchor.x + CAPTOR_MUZZLE_DX,
+        qte.anchor.y + CAPTOR_MUZZLE_DY,
+        CAPTOR_MUZZLE_Z,
+      );
+      captorMuzzle.scale.set(CAPTOR_MUZZLE_SIZE, CAPTOR_MUZZLE_SIZE, 1);
+      (captorMuzzle.material as MeshBasicMaterial).color.set(CAPTOR_MUZZLE_COLOUR);
       positionedRef.current = true;
     }
 
@@ -431,6 +466,29 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
         : ACCOMPLICE_FLASH_OPACITY * k;
     }
 
+    // ── Captor's own muzzle flash (P3-ACC — armed only without an accomplice) ─
+    // `qte.blownPeeks` jumping is the render-side "he just fired" signal (see the
+    // ref comment above): a rising edge, tested against the PREVIOUS frame's
+    // count so it fires exactly once per shot, never on a reset (`!active` above
+    // already zeroes `prevBlownPeeksRef`). Guarded by `qte.accomplice === null`
+    // to mirror the game's own P3-ACC channel selection byte-for-byte — when an
+    // accomplice is present the captor stops firing at the player, so no flash.
+    const captorFiresHere = qte.accomplice === null;
+    if (captorFiresHere && qte.blownPeeks > prevBlownPeeksRef.current) {
+      captorMuzzleFlashUntilRef.current = nowMs + CAPTOR_MUZZLE_FLASH_MS;
+    }
+    prevBlownPeeksRef.current = qte.blownPeeks;
+
+    const captorFlashRemaining = captorMuzzleFlashUntilRef.current - nowMs;
+    const captorFlashing = qte.phase === "ACTIVE" && captorFlashRemaining > 0;
+    captorMuzzle.visible = captorFlashing;
+    if (captorFlashing) {
+      const ck = captorFlashRemaining / CAPTOR_MUZZLE_FLASH_MS; // 1 → 0 over the window
+      (captorMuzzle.material as MeshBasicMaterial).opacity = reducedMotion
+        ? CAPTOR_MUZZLE_FLASH_OPACITY
+        : CAPTOR_MUZZLE_FLASH_OPACITY * ck;
+    }
+
     // ── Captor HP pips (diegetic, no HUD bar) ─────────────────────────────────
     // Light one pip per remaining HP; they deplete as the captor is chipped. Only
     // during ACTIVE — on WON he is dead (HP 0) / the verdict reads, on LOST the
@@ -468,6 +526,12 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       <mesh ref={muzzleRef} renderOrder={8} visible={false}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      {/* The captor's OWN muzzle flash (P3-ACC) — lit only on levels with no
+          accomplice, so his counter-fire on a blown peek is finally visible. */}
+      <mesh ref={captorMuzzleRef} renderOrder={8} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
