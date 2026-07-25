@@ -596,6 +596,33 @@ describe("tickGameState — terminal ticks do not replay transient events (M1)",
       expect(next.pointFeedback).toEqual([]);
     },
   );
+
+  it("the fatal-hit flash fires once, then the idle terminal tick clears playerHitEvents", () => {
+    // Transition tick: the last heart is lost to an enemy bullet → GAME_OVER and the
+    // fatal hit surfaces exactly one playerHitEvent (the intended single red flash).
+    const dying: GameState = {
+      ...createInitialState(FACADE_01),
+      lives: 1,
+      bullets: [
+        {
+          id: 99,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: -1 },
+          fromPlayer: false,
+          damage: 1,
+        },
+      ],
+    };
+    const transition = tickGameState(dying, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(transition.phase).toBe("GAME_OVER");
+    expect(transition.playerHitEvents).toHaveLength(1);
+
+    // Next tick is an idle terminal tick: it must NOT re-queue the fatal hit, or
+    // PlayerHitEffects replays a full-screen red strobe ~60×/s for the whole screen.
+    const idle = tickGameState(transition, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(idle.phase).toBe("GAME_OVER");
+    expect(idle.playerHitEvents).toEqual([]);
+  });
 });
 
 describe("enemy spawn pool", () => {
