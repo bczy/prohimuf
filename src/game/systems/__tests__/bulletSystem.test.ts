@@ -326,6 +326,18 @@ describe("resolvePlayerShot — VISIBLE crate on the window channel (AC7-loot / 
     expect(result.events).toEqual([]);
   });
 
+  it("applies configured loot reward deltas on a loot-hit", () => {
+    const facade = facadeWithSlots([{ x: 0, y: 0 }]);
+    const rewardedCrate: LootCrate = {
+      ...crate,
+      reward: { profile: "backpack", scoreDelta: 150, livesDelta: 0 },
+    };
+    const result = resolvePlayerShot(streetAim, [], facade, 0, 0, 18, 12, rewardedCrate);
+    expect(result.outcome).toBe("loot-hit");
+    expect(result.scoreDelta).toBe(150);
+    expect(result.livesDelta).toBe(0);
+  });
+
   it("a non-VISIBLE crate is not a target (miss); loot threaded through unchanged", () => {
     const facade = facadeWithSlots([{ x: 0, y: 0 }]);
     const hidden: LootCrate = { ...crate, state: "HIDDEN" };

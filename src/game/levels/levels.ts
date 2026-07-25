@@ -171,7 +171,20 @@ export const LEVELS: readonly LevelConfig[] = [
     // not gated: a crate every ~15 s, carrying `auto` or `spread`.
     loot: {
       spawnIntervalSeconds: 15,
-      weapons: ["auto", "spread"],
+      drops: [
+        {
+          weapon: "auto",
+          reward: { profile: "backpack", scoreDelta: 150, livesDelta: 0 },
+        },
+        {
+          weapon: "spread",
+          reward: { profile: "attache-case", scoreDelta: 0, livesDelta: 2 },
+        },
+        {
+          weapon: "auto",
+          reward: { profile: "flight-case", scoreDelta: 500, livesDelta: 3 },
+        },
+      ],
     },
     // Boss QTE — "le Commandant", the required end-gate (story-boss-belliard-live, AC1). ATTACHED
     // ONLY behind the decouple flag (conditional spread so with the flag OFF the field is OMITTED,

@@ -1,6 +1,6 @@
 import type { Enemy } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
-import type { LootCrate, LootSpec } from "@game/types/loot";
+import type { LootCrate, LootDrop, LootSpec } from "@game/types/loot";
 
 // Pure armament-crate system (ADR-0055 D5): spawn (with the §5.4 exclusion rule)
 // + the small HIDDEN→APPEARING→VISIBLE state machine. A crate is a NEW entity,
@@ -32,6 +32,12 @@ export const CRATE_DELIVERY_GAP_X = 2.0;
 export const LOOT_HIDDEN_DURATION = 0.4;
 export const LOOT_APPEARING_DURATION = 0.45;
 export const LOOT_VISIBLE_DURATION = 6.0;
+
+function dropPool(spec: LootSpec): readonly LootDrop[] {
+  if (spec.drops !== undefined && spec.drops.length > 0) return spec.drops;
+  const weapons = spec.weapons ?? [];
+  return weapons.map((weapon) => ({ weapon }));
+}
 
 // The §5.4 spawn-exclusion predicate (AC9): a candidate column is eligible iff it
 // is ≥ LOOT_SPAWN_MIN_COL_GAP from EVERY active-engagement column. Empty ⇒ true.
@@ -111,7 +117,8 @@ function attemptSpawn(
 ): LootTickResult {
   const timer = lootTimer - delta;
   if (timer > 0) return { loot: null, lootTimer: timer, spawned: false };
-  if (spec.weapons.length === 0) return { loot: null, lootTimer: 0, spawned: false };
+  const drops = dropPool(spec);
+  if (drops.length === 0) return { loot: null, lootTimer: 0, spawned: false };
 
   const activeCols = activeEnemyCols(enemies, facade);
   // Co-location guard (ADR-0055 D5, direction a): a crate must not sit on ANY
@@ -135,8 +142,8 @@ function attemptSpawn(
   const seed = Math.abs(nextId);
   const chosen = eligible[seed % eligible.length];
   if (chosen === undefined) return { loot: null, lootTimer: 0, spawned: false };
-  const weapon = spec.weapons[seed % spec.weapons.length] ?? spec.weapons[0];
-  if (weapon === undefined) return { loot: null, lootTimer: 0, spawned: false };
+  const drop = drops[seed % drops.length] ?? drops[0];
+  if (drop === undefined) return { loot: null, lootTimer: 0, spawned: false };
 
   return {
     loot: {
@@ -144,7 +151,8 @@ function attemptSpawn(
       slotIndex: chosen.slotIndex,
       state: "HIDDEN",
       timer: LOOT_HIDDEN_DURATION,
-      weapon,
+      weapon: drop.weapon,
+      ...(drop.reward !== undefined ? { reward: drop.reward } : {}),
     },
     lootTimer: spec.spawnIntervalSeconds,
     spawned: true,

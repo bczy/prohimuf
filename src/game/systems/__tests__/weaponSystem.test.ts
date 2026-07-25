@@ -222,8 +222,23 @@ describe("resolveTrigger — LOOT equip (AC7-loot/AC8)", () => {
     expect(r.loot).toBeNull();
     expect(r.scoreDelta).toBe(0);
     expect(r.livesDelta).toBe(0);
+    expect(r.pointFeedback).toHaveLength(0);
     expect(r.impacts).toHaveLength(0); // loot pickup is its own render channel
     expect(r.weaponEmpty).toBe(false);
+  });
+
+  it("loot reward deltas are applied and surfaced as point feedback at street-y", () => {
+    const rewardedCrate: LootCrate = {
+      ...crate,
+      reward: { profile: "flight-case", scoreDelta: 500, livesDelta: 3 },
+    };
+    const r = trigger(baseW(), true, 0.016, [], rewardedCrate, facade, EMPTY, streetAim);
+    expect(r.scoreDelta).toBe(500);
+    expect(r.livesDelta).toBe(3);
+    expect(r.pointFeedback).toEqual([
+      { x: 0, y: LOOT_STREET_Y, scoreDelta: 500, livesDelta: 0, timeDelta: 0 },
+      { x: 0, y: LOOT_STREET_Y, scoreDelta: 0, livesDelta: 3, timeDelta: 0 },
+    ]);
   });
 
   it("equip takes effect from the NEXT trigger (the equipping shot used the old weapon)", () => {

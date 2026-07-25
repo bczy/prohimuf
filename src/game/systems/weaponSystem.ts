@@ -9,6 +9,7 @@ import { WEAPON_SPECS } from "@game/types/weapon";
 import { VIEW_W, VIEW_H } from "@game/systems/crosshairSystem";
 import { resolvePlayerShot } from "@game/systems/bulletSystem";
 import { resolveCourierShot } from "@game/systems/courierSystem";
+import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 
 // The pure weapon orchestrator (ADR-0055 D2): one trigger → 1..3 §2.1 hitscan
 // resolutions, folded sequentially left→centre→right, threading the enemy AND
@@ -126,6 +127,31 @@ export function resolveTrigger(
       for (const e of r.events) events.push(e);
       impacts.push(r.impact);
     } else if (r.outcome === "loot-hit") {
+      scoreDelta += r.scoreDelta;
+      livesDelta += r.livesDelta;
+      if ((r.scoreDelta !== 0 || r.livesDelta !== 0) && curLoot !== null) {
+        const slot = facade.slots[curLoot.slotIndex];
+        if (slot !== undefined) {
+          if (r.scoreDelta !== 0) {
+            pointFeedback.push({
+              x: slot.screenPosition.x,
+              y: LOOT_STREET_Y,
+              scoreDelta: r.scoreDelta,
+              livesDelta: 0,
+              timeDelta: 0,
+            });
+          }
+          if (r.livesDelta !== 0) {
+            pointFeedback.push({
+              x: slot.screenPosition.x,
+              y: LOOT_STREET_Y,
+              scoreDelta: 0,
+              livesDelta: r.livesDelta,
+              timeDelta: 0,
+            });
+          }
+        }
+      }
       curLoot = r.loot; // consumed (null)
       // Right-most crate hit wins within a press (P2/D6); only one crate exists,
       // so this is at most a single assignment in practice.

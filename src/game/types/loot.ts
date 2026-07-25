@@ -17,6 +17,21 @@ export interface LootCrate {
   readonly timer: number;
   // The special weapon this crate equips when shot (never "base", §5.2).
   readonly weapon: SpecialWeaponKind;
+  // Optional pickup reward granted when this crate is shot. Absent => equip-only.
+  readonly reward?: LootReward;
+}
+
+export type LootRewardProfile = "backpack" | "attache-case" | "flight-case";
+
+export interface LootReward {
+  readonly profile: LootRewardProfile;
+  readonly scoreDelta: number;
+  readonly livesDelta: number;
+}
+
+export interface LootDrop {
+  readonly weapon: SpecialWeaponKind;
+  readonly reward?: LootReward;
 }
 
 // Optional per-level loot config (ADR-0055 D8 — additive-and-optional). Absent on
@@ -26,5 +41,7 @@ export interface LootSpec {
   // Seconds between crate spawn attempts (the first crate spawns one interval in).
   readonly spawnIntervalSeconds: number;
   // The pool of special weapons a crate may carry (cycled deterministically).
-  readonly weapons: readonly SpecialWeaponKind[];
+  readonly weapons?: readonly SpecialWeaponKind[];
+  // Optional structured pool with per-drop rewards. Preferred over `weapons`.
+  readonly drops?: readonly LootDrop[];
 }
