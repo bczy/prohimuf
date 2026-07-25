@@ -131,15 +131,15 @@ All sprites are `<mesh position={[x,
  y,
  z]}><planeGeometry /><meshBasicMaterial /></mesh>` planes facing the camera.
 
-| Component         | Source data                         | Z depth    |
-| ----------------- | ----------------------------------- | ---------- |
-| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1          |
-| `BulletSprite`    | `stateRef.current.bullets`          | 2          |
-| `CrosshairSprite` | mouse position via camera unproject | 3          |
-| `PlayerSprite`    | `TopdownState.player`               | 1          |
-| `CopSprite`       | `TopdownState.cops[i]`              | 1          |
-| `DeliverySprite`  | `TopdownState.delivery`             | 1          |
-| `CourierSprite`   | `stateRef.current.couriers[i]`      | 0.65       |
+| Component         | Source data                         | Z depth |
+| ----------------- | ----------------------------------- | ------- |
+| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1       |
+| `BulletSprite`    | `stateRef.current.bullets`          | 2       |
+| `CrosshairSprite` | mouse position via camera unproject | 3       |
+| `PlayerSprite`    | `TopdownState.player`               | 1       |
+| `CopSprite`       | `TopdownState.cops[i]`              | 1       |
+| `DeliverySprite`  | `TopdownState.delivery`             | 1       |
+| `CourierSprite`   | `stateRef.current.couriers[i]`      | 0.65    |
 
 ### Courier composite
 

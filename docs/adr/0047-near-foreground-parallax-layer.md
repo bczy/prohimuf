@@ -153,18 +153,18 @@ Consequences of the carve-out, and what still holds:
   the camera pans. This is the accepted cost of the bigger signal — a conscious,
   documented relaxation of the iron rule, scoped to this ONE kind.
 - It is still drawn at `renderOrder 5`, **below** the courier (6) and delivery van (7),
-  so it can never mask a "Livrer" target (finding #8 still holds). *(Superseded on
+  so it can never mask a "Livrer" target (finding #8 still holds). _(Superseded on
   2026-07-25 — see the amendment below: the near row moved to `renderOrder 5.75`, above
   the courier (5.5), so the near row, traffic light included, now draws IN FRONT of
-  him.)*
+  him.)_
 - **Every other near/far prop is unchanged** — still strictly capped under `maxH`
   (the band ceiling); the non-occlusion test still guards them. Only `trafficLight`
   bypasses `maxH`, via its own `TRAFFIC_LIGHT_H_FRAC` allowance in `NearForeground`.
 
 ## Amendment — courier between the two prop rows (Bertrand-directed, 2026-07-25)
 
-Bertrand, reviewing the shipped street: *« le cycliste est en premier plan… il devrait
-être dans la première et la seconde ligne de props »*. The livreur read as pasted on top
+Bertrand, reviewing the shipped street: _« le cycliste est en premier plan… il devrait
+être dans la première et la seconde ligne de props »_. The livreur read as pasted on top
 of the décor instead of riding **in** it, which flattened the differential parallax the
 whole layer exists to sell.
 
@@ -178,14 +178,14 @@ paint over him.
 Final street stack, single-sourced in `src/render/scene/streetDepth.ts` (`STREET_DEPTH`)
 and guarded by `src/render/scene/__tests__/streetDepth.test.ts`:
 
-| layer                        | renderOrder | z    | masks the courier?   |
-| ---------------------------- | ----------- | ---- | -------------------- |
-| far kerb row                 | 4           | 0.60 | never                |
-| facade ironwork (ceiling)    | 5           | 0.50 | **never** (see below)|
-| **courier (vélo)**           | **5.5**     | 0.65 | —                    |
-| near kerb row                | 5.75        | 0.70 | **may, partially**   |
-| delivery vehicle rim         | 6           | 0.71 | n/a                  |
-| delivery vehicle             | 7           | 0.72 | n/a (stays in front) |
+| layer                     | renderOrder | z    | masks the courier?    |
+| ------------------------- | ----------- | ---- | --------------------- |
+| far kerb row              | 4           | 0.60 | never                 |
+| facade ironwork (ceiling) | 5           | 0.50 | **never** (see below) |
+| **courier (vélo)**        | **5.5**     | 0.65 | —                     |
+| near kerb row             | 5.75        | 0.70 | **may, partially**    |
+| delivery vehicle rim      | 6           | 0.71 | n/a                   |
+| delivery vehicle          | 7           | 0.72 | n/a (stays in front)  |
 
 What still holds, and why the numbering looks like this:
 
@@ -194,7 +194,7 @@ What still holds, and why the numbering looks like this:
   row that sits behind him.
 - **The courier still passes IN FRONT of the facade ironwork.** `ForegroundFrames` and
   `WindowGrilles` are balcony/grille overlays painted ON the facade at z 0.50, i.e.
-  physically *behind* every street actor, yet they own `renderOrder 5`. All these
+  physically _behind_ every street actor, yet they own `renderOrder 5`. All these
   materials are `transparent` + `depthWrite:false` in one sort list, so renderOrder
   alone decides. A first cut of this amendment put the courier at 4.5 and thereby sent
   him **under** the ironwork: on `vitry` the opaque HLM balcony slab (`drawHlmZone`)
