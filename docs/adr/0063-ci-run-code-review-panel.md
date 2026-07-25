@@ -127,20 +127,19 @@ Confirmed `BLOQUANT` and `MAJEUR` findings are handed to the **Copilot coding
 agent** automatically, so a red verdict produces a fix attempt rather than a
 waiting queue. Opt-in via the repo variable `PANEL_AUTOFIX=true`.
 
-GitHub's contract shapes the loop: mentioning `@copilot` on a pull request does
-**not** commit to that PR's branch — Copilot opens a _stacked_ pull request
-whose base is the branch under review. The loop is therefore:
+The loop:
 
 1. `remediate` (after `triage`) posts an `@copilot` request listing the
    confirmed `BLOQUANT`/`MAJEUR` findings — `scripts/panel-remediate.mjs`;
-2. Copilot opens a corrective PR onto the branch under review; `ci.yml` runs
-   on it like any other PR;
-3. `panel-autofix-merge.yml` merges that corrective PR once **every** check is
-   green, landing the fix on the branch;
-4. the panel is re-dispatched on the parent PR and re-judges the result.
+2. Copilot pushes a fix **directly to the branch under review**;
+3. that push is a `synchronize` event, so the panel re-runs and re-judges;
+4. still red after the cap ⇒ automation stops and the PR goes back to a human.
 
-Step 4 is an explicit `workflow_dispatch`, not a side effect: a merge performed
-with `GITHUB_TOKEN` does not trigger further workflow runs.
+Step 2 was verified empirically on PR #133: Copilot committed to the branch as
+`copilot-swe-agent[bot]`. Note that the October 2025 changelog describes the
+older behaviour — a _stacked_ pull request based on the branch under review.
+Should that behaviour ever return, the loop simply stalls at step 3 (the fix
+sits in an unmerged PR) and the round cap ends it; nothing incorrect merges.
 
 Guardrails, in order of importance:
 
@@ -151,16 +150,24 @@ Guardrails, in order of importance:
 - **False positives are expected.** The panel demonstrably emits them. The
   request tells Copilot to _refute a wrong finding in a comment rather than
   change code to satisfy it_, and never to weaken a test to silence one.
-- **Never reaches `main`.** Auto-merge only touches PRs authored by Copilot
-  whose base is not the default branch. Everything still has to clear the
-  panel and a human merge to land on `main`.
-- **Same-repo only.** Fork PRs are excluded from remediation and auto-merge.
+- **Nothing merges by itself.** Remediation only ever adds commits to a branch
+  already under review. Landing on `main` still requires the panel verdict and
+  a human merge.
+- **Same-repo only.** Fork PRs are excluded from remediation.
 - **Advisory, never load-bearing.** `remediate` runs after `triage`, and a
   remediation failure never alters the published verdict.
 
-`PANEL_BOT_TOKEN` (a PAT) is used when present for the `@copilot` request: it
-is not established that a comment posted with the default `GITHUB_TOKEN` wakes
-the coding agent.
+`PANEL_BOT_TOKEN` (a PAT) is used when present for the `@copilot` request. The
+mention was verified to wake the agent when posted through the API; it is not
+established that the default `GITHUB_TOKEN` does the same.
+
+**Repository-settings prerequisite.** By default GitHub holds every workflow
+run triggered by a Copilot commit in `action_required` pending manual approval,
+which stops the loop at step 3. Closing it requires enabling _Settings →
+Copilot → Coding agent → allow GitHub Actions workflows to run automatically
+when Copilot pushes_. There is no REST API for this toggle. Until it is
+enabled, remediation still produces the fix — a human just has to approve the
+re-run.
 
 ### 6. Local `/review-panel` remains as a pre-check
 

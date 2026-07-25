@@ -2,10 +2,8 @@
 // Panel remediation — hands the confirmed BLOQUANT/MAJEUR findings to the
 // Copilot coding agent by posting an `@copilot` request on the PR.
 //
-// GitHub's contract: mentioning `@copilot` on a pull request does NOT commit to
-// that PR's branch — Copilot opens a *stacked* pull request whose base is the
-// PR's branch. `panel-autofix-merge.yml` closes the loop by merging that
-// corrective PR once its own checks are green.
+// Copilot pushes its fix directly to the branch under review, which is a
+// `synchronize` event, so the panel re-runs and re-judges on its own.
 //
 // Rounds are capped: the request comment carries a hidden marker, and this
 // script counts previous markers before acting. At the cap it stops and hands
