@@ -3,9 +3,10 @@
 // with the skeptic prompt, and writes findings-confirmed.json.
 //
 // Inputs (env):
-//   ANTHROPIC_API_KEY  — required.
+//   ANTHROPIC_API_KEY  — primary provider (optional if GITHUB_TOKEN is set).
+//   GITHUB_TOKEN       — GitHub Models fallback (ADR-0067); needs `models: read`.
 //   PROMPT_FILE        — path to skeptic prompt (.github/panel-prompts/skeptic.md).
-//   ANTHROPIC_MODEL    — optional, defaults to claude-sonnet-4-5.
+//   ANTHROPIC_MODEL / GITHUB_MODELS_MODEL — optional per-provider overrides.
 //
 // Inputs (files):
 //   findings-in/findings-*/*.json  — one folder per reviewer artifact.
@@ -15,20 +16,22 @@
 //   Writes findings-confirmed.json (JSON array with `confirmed` + optional
 //   `refutation` fields added).
 //
-// Fail-open policy: if the API errors, we CONFIRM every finding (safer default
-// per skeptic prompt: "when in doubt, CONFIRM").
+// Failure policy (ADR-0067): if every provider errors we CONFIRM every finding
+// (safer default per skeptic prompt: "when in doubt, CONFIRM") and then EXIT
+// NON-ZERO, so triage reports DEGRADED rather than treating an unverified run
+// as authoritative.
 
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { callPanelModel } from "./lib/panelLlm.mjs";
 
-const { ANTHROPIC_API_KEY, PROMPT_FILE, ANTHROPIC_MODEL = "claude-sonnet-4-5" } = process.env;
+const { PROMPT_FILE } = process.env;
 
 const FINDINGS_IN = "findings-in";
 const OUT = "findings-confirmed.json";
 
 async function main() {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
   if (!PROMPT_FILE) throw new Error("PROMPT_FILE missing");
   if (!existsSync(PROMPT_FILE)) throw new Error(`prompt not found: ${PROMPT_FILE}`);
 
@@ -61,30 +64,8 @@ async function main() {
     "Emit ONLY the JSON array (same findings with `confirmed` + optional `refutation`), nothing else.",
   ].join("\n");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 8192,
-      system: prompt,
-      messages: [{ role: "user", content: userMessage }],
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`anthropic ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("\n");
+  const { text, provider } = await callPanelModel({ system: prompt, user: userMessage });
+  console.log(`[panel-invoke-skeptic] answered by ${provider}`);
 
   const verified = extractJsonArray(text);
   // Safety net: if verified array is shorter than input, confirm the missing
@@ -147,5 +128,6 @@ main().catch(async (err) => {
   const findings = await collectFindings().catch(() => []);
   const confirmed = findings.map((f) => ({ ...f, confirmed: true }));
   await writeFile(OUT, JSON.stringify(confirmed, null, 2)).catch(() => {});
-  process.exit(0);
+  // Fail the job too: an unverified panel is not an authoritative one.
+  process.exit(1);
 });
