@@ -49,21 +49,22 @@ export default defineConfig({
       : buildModelViewer
         ? { input: { "model-viewer": resolve(__dirname, "model-viewer.html") } }
         : {
-          output: {
-            // Split vendors by stability layer so the browser can cache Three.js,
-            // R3F and React independently from app code that changes every deploy.
-            manualChunks: (id: string) => {
-              if (id.includes("node_modules/three/")) return "vendor-three";
-              if (id.includes("node_modules/@react-three/fiber/")) return "vendor-r3f";
-              if (
-                id.includes("node_modules/react/") ||
-                id.includes("node_modules/react-dom/") ||
-                id.includes("node_modules/scheduler/")
-              ) return "vendor-react";
-              // All other modules → Rollup default chunking
+            output: {
+              // Split vendors by stability layer so the browser can cache Three.js,
+              // R3F and React independently from app code that changes every deploy.
+              manualChunks: (id: string) => {
+                if (id.includes("node_modules/three/")) return "vendor-three";
+                if (id.includes("node_modules/@react-three/fiber/")) return "vendor-r3f";
+                if (
+                  id.includes("node_modules/react/") ||
+                  id.includes("node_modules/react-dom/") ||
+                  id.includes("node_modules/scheduler/")
+                )
+                  return "vendor-react";
+                // All other modules → Rollup default chunking
+              },
             },
           },
-        },
   },
 
   server: {
