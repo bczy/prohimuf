@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CanvasTexture } from "three";
-import type { Mesh, MeshBasicMaterial, Texture } from "three";
+import type { Mesh, MeshBasicMaterial, OrthographicCamera, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { isQteActive } from "@game/systems/qteSystem";
@@ -54,6 +54,22 @@ const VENT_PARTICLES_DESKTOP = 10;
 const VENT_PARTICLES_MOBILE = 5;
 /** Plume opacity envelope. Low: this is haze behind the action, never a curtain. */
 const VENT_ENVELOPE = 0.45;
+/**
+ * World-size cap per puff (gpu-specialist verdict, item 1). `createSmokeField` grows a
+ * puff unbounded — it was authored against the ~2.2-unit boss tableau, where the frame
+ * bounds it. On the ambient street nothing does, and the worst case measured ≈3.0 world
+ * units (~113 px) with up to ten of them overlapping in one cluster: overdraw bandwidth
+ * for haze nobody is looking at. 1.2 keeps a puff comfortably wider than a grate and
+ * roughly a third of the worst case. Lifetime, drift and fade are untouched.
+ */
+const VENT_PUFF_MAX_SCALE = 1.2;
+/**
+ * Half-width of the on-screen margin, in world units, a vent must be inside before its
+ * field is stepped (gpu-specialist verdict, item 2). Generous on purpose: a plume is
+ * ~VENT_PUFF_MAX_SCALE wide and drifts sideways, so culling exactly at the frustum edge
+ * would freeze a plume that is still partly visible.
+ */
+const VENT_CULL_MARGIN = 3;
 
 // ── Silhouettes: B&W fanzine scraps, drawn once per session ──────────────────
 // STRICTLY NEUTRAL greys — §1 reserves colour for the neon, and the first cut used a
@@ -156,7 +172,8 @@ export function UrbanMotion({
   // model) but in the ambient render band so it can never mask a target.
   const ventParticles = isMobile ? VENT_PARTICLES_MOBILE : VENT_PARTICLES_DESKTOP;
   const vents = useMemo(
-    () => VENT_XS.map(() => createSmokeField(ventParticles, AMBIENT_RENDER_ORDER)),
+    () =>
+      VENT_XS.map(() => createSmokeField(ventParticles, AMBIENT_RENDER_ORDER, VENT_PUFF_MAX_SCALE)),
     [ventParticles],
   );
   useEffect(
@@ -166,7 +183,7 @@ export function UrbanMotion({
     [vents],
   );
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
     const bossFight = isBossQteActive(stateRef.current.bossQte);
     // Frozen, not hidden: the street keeps its arrangement through a hold.
     const frozen = paused || reducedMotion || isQteActive(stateRef.current.qte);
@@ -194,10 +211,25 @@ export function UrbanMotion({
       mesh.scale.set(next.size, next.size, 1);
     }
 
+    // Half-width of the camera's view in world units, for the vent cull below. The
+    // scene camera is the orthographic one GameScene frames the level with.
+    const ortho = state.camera as OrthographicCamera;
+    const viewHalfW = ortho.zoom > 0 ? state.size.width / ortho.zoom / 2 : Infinity;
+
     for (let v = 0; v < vents.length; v++) {
       const field = vents[v];
       const frac = VENT_XS[v];
       if (field === undefined || frac === undefined) continue;
+      const ventX = (frac - 0.5) * fullW;
+      // Skip a vent that is off screen: its field would otherwise keep stepping every
+      // puff for draws the GPU is already culling. `update()` only bails on
+      // `!ready || envelope <= 0.02`, and the envelope is a constant, so without this
+      // both fields ran every frame on a street far wider than the view. Hide the group
+      // as well, so a plume can never be left mid-frame when it scrolls back in.
+      if (Math.abs(ventX - state.camera.position.x) > viewHalfW + VENT_CULL_MARGIN) {
+        field.group.visible = false;
+        continue;
+      }
       field.update(step, {
         activeCount: ventParticles,
         // ONLY the real reduced-motion signal — never `frozen`. The field's
