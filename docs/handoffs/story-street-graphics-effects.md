@@ -404,17 +404,17 @@ could not have seen. Working tree clean at time of writing.
 
 ### 1. Panel findings — prescriptions
 
-| #   | Finding                                  | Prescription | State at `1fc6c7c`             |
-| --- | ---------------------------------------- | ------------ | ------------------------------ |
-| 1   | Vapeur snap on pause/QTE                 | CONFIRMED    | fixed in `30a91c8`             |
-| 2   | Effet 3 aura — composite FAIL            | CONFIRMED    | re-cut in `7251569`, UNGATED   |
-| 3   | Hostage aura shares renderOrder 6        | CONFIRMED    | fixed in `7251569`, see **I1** |
-| 4   | `DEBRIS_LINE` band under the camera floor| CONFIRMED    | fixed in `30a91c8`             |
+| #   | Finding                                   | Prescription | State at `1fc6c7c`             |
+| --- | ----------------------------------------- | ------------ | ------------------------------ |
+| 1   | Vapeur snap on pause/QTE                  | CONFIRMED    | fixed in `30a91c8`             |
+| 2   | Effet 3 aura — composite FAIL             | CONFIRMED    | re-cut in `7251569`, UNGATED   |
+| 3   | Hostage aura shares renderOrder 6         | CONFIRMED    | fixed in `7251569`, see **I1** |
+| 4   | `DEBRIS_LINE` band under the camera floor | CONFIRMED    | fixed in `30a91c8`             |
 
 **#1 — vapeur freeze.** Prescription confirmed, and the applied fix is the right one for
 the right reason. The bug was real: `UrbanMotion` passed its `frozen` (pause ∪ QTE ∪
 reduced-motion) into `SmokeField.update({ reducedMotion })`, and that branch does not
-freeze — it *repositions* every puff onto `staticOx/staticOy/staticRot/staticScale`
+freeze — it _repositions_ every puff onto `staticOx/staticOy/staticRot/staticScale`
 (`smokeParticles.ts` ~l.203). Snap out on pause, snap back on resume. The fix passes the
 **real** `reducedMotion` only and carries the pause/QTE hold through `step = 0`, which is
 already how the debris freezes. Correct: with `step = 0` the live branch recomputes the
@@ -425,7 +425,7 @@ instead of teleporting to a different one. One freeze semantics for the whole la
 render-only re-cut. The landed re-cut answers all three legs of the FAIL by construction,
 not by tuning — a silhouette rim (ADR-0025 machinery, `getSilhouetteFor` +
 `createEnemyRimMaterial`) exists only in the `marginPx` band outward from the sprite's own
-alpha edge, so it *cannot* pool on the road, clip a pavement to v=1.00 or tint a shutter;
+alpha edge, so it _cannot_ pool on the road, clip a pavement to v=1.00 or tint a shutter;
 the hostage carries no aura at all; and the hexes now come from the shared
 `STATE_GREEN/AMBER/RED` triple re-exported from `neonHeatColor` (finding G5 answered in
 the same stroke — one state ramp in the codebase, not two). Reusing the hostile-rim path
@@ -492,9 +492,9 @@ and an ADR. All four hold here. This rule gets written down: **C4**.
 `createEntityAura({ renderOrder: 5 })` in both `HostageQteSprite.tsx:401` and
 `BossQteSprite.tsx:468`, with `rimZ = 0.48`. Against `streetDepth.ts`: `facadeOverlay`
 **5** @ z 0.50, `vehicleRim` **5.2**, `vehicle` **5.25**, `courier` **5.5**, `nearRow`
-**5.75** — every one of them sorts *after* a rim at (5, z 0.48), while the host bodies own
+**5.75** — every one of them sorts _after_ a rim at (5, z 0.48), while the host bodies own
 **6** and sort after all of them. Result: wherever a balcony slab, a grille, a frozen
-courier or a near-row prop overlaps the figure, the ironwork/prop paints over the *rim*
+courier or a near-row prop overlaps the figure, the ironwork/prop paints over the _rim_
 while the body paints over the ironwork — a rim with a bite out of it. `streetDepth.ts`
 documents this exact hazard for `vitry`'s HLM slab (world y -4.17..-4.55 across the actor
 band). The boss aura additionally shares slot 5 with the boss tableau's own `decorRef`.
@@ -572,7 +572,7 @@ a rendering-effects PR through on a re-cut's coat-tails.
 
 ### 4. ADRs
 
-- **REQUIRED, this PR — energy-rim signalling contract.** The branch ships a *rule*: which
+- **REQUIRED, this PR — energy-rim signalling contract.** The branch ships a _rule_: which
   entity classes may carry a player-energy rim (crate, captor, boss), which may not
   (hostage, courier) and why — identification, not decoration; plus the single
   `STATE_GREEN/AMBER/RED` triple both ramps now import. It survived an escalation and it
@@ -587,7 +587,7 @@ a rendering-effects PR through on a re-cut's coat-tails.
   period, same trough, one offset uniform, 0 ⇒ byte-identical, pass graph unchanged. A
   one-line note in ADR-0031 is enough. `tech-writer`.
 - **NOT required for this merge — `docs/perf-budget.md`.** A budget that gates future
-  merges is ADR-worthy, but it is ADR-worthy *when ratified*, and B1 is unverified by
+  merges is ADR-worthy, but it is ADR-worthy _when ratified_, and B1 is unverified by
   construction in the sandbox (§6). Ships as PROPOSED. Follow-up: Bertrand ratifies →
   `producer` allocates → `tech-writer` drafts. The DEFERRED perf pass stands only while
   `producer` chases the §6 on-target protocol; over budget with the PR open revokes it.
@@ -601,19 +601,19 @@ quality:
 - **B1 — scope.** `749c3d0` adds an ungated feature after the merge gate ran. Owner `pm`
   (cut-or-split ruling), then `dev-r3f-render` executes. E3 (jaune stock) needs Bertrand.
 - **B2 — the quality gate is open.** Effects **1, 3, 4, 5** have no `lead-art` PASS. The
-  re-cuts have landed but nothing has re-measured them, and effect 3 failed on *pixels*.
+  re-cuts have landed but nothing has re-measured them, and effect 3 failed on _pixels_.
 
 Converts to MERGE when all of the following are true:
 
 - **C1** — `lead-art` re-gates the energy rim on a **hostage-QTE frame** (never once
-  captured — `?preview` harness or `__MUF_FREEZE_COPS__`) *and* a boss frame, post-I1.
+  captured — `?preview` harness or `__MUF_FREEZE_COPS__`) _and_ a boss frame, post-I1.
   Effect 3 does not merge on a code read.
 - **C2** — `lead-art` re-gates effects **1** (acid triad re-anchor + décor emitters
   dropped) and **5** (neutral mid-toner litter + the raised band) on belliard **and**
   stalingrad frames. Stalingrad specifically: it is the level where the litter was
   invisible.
 - **C3** — **I1** fixed: both QTE auras to `renderOrder 5.9`. `dev-r3f-render`. Must land
-  *before* the C1 frames are taken.
+  _before_ the C1 frames are taken.
 - **C4** — ADR-0054 amended with the Prefs admission rule; new ADR for the energy-rim
   contract (number from `producer`). `tech-writer`.
 - **C5** — **I2**: `streetDepth.ts`'s band table updated with 3.6 and the aura slot, in the
