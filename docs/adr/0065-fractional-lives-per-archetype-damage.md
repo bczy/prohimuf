@@ -51,6 +51,7 @@ string `♥♥♥` at a 3-heart start.
    Non-shooters (`bonus`, `civilian`, `hostage_taker`) declare 0. Shooting a
    civilian courier still costs a **whole** heart (`livesDelta: -1`): that is a
    fault, not damage, and stays on the integer lattice.
+
 3. **A short invulnerability window.** A hit sets `playerInvulnRemaining` to
    `PLAYER_INVULN_SECONDS` (0.4 s), ticked down by `delta`. Bullets entering the
    hit disc while the window is open — or after an earlier bullet already
