@@ -49,6 +49,18 @@ const HIT_RADIUS = 0.8;
 const OUT_OF_BOUNDS_X = 60;
 const OUT_OF_BOUNDS_Y = 15;
 
+/**
+ * Aim a bullet as a straight line from `spawn` to `target`, normalized to
+ * magnitude `speed`. tickBullets never re-steers a bullet after spawn, so this
+ * guarantees BOTH axes reach the target at the same time.
+ */
+export function aimBulletVelocity(spawn: Vec2, target: Vec2, speed = BULLET_SPEED): Vec2 {
+  const dx = target.x - spawn.x;
+  const dy = target.y - spawn.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { x: (dx / dist) * speed, y: (dy / dist) * speed };
+}
+
 export function tickBullets(bullets: readonly Bullet[], delta: number): readonly Bullet[] {
   return bullets
     .map((b) => ({
