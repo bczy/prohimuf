@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolvePlayerShot, tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { resolvePlayerShot, tickBullets, BULLET_SPEED, aimBulletVelocity } from "@game/systems/bulletSystem";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import type { Crosshair } from "@game/types/crosshair";
 import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
@@ -56,6 +56,43 @@ describe("tickBullets", () => {
 // Crosshair centre (0.5,0.5) with the default offsets maps to world (0,0), so a
 // slot placed at a given screenPosition is exactly `distance(0, slotPos)` from the
 // impact point. Tests build small custom facades to control that distance.
+
+describe("aimBulletVelocity", () => {
+  it("direction ratio matches (target - spawn)", () => {
+    const v = aimBulletVelocity({ x: 3, y: 4 }, { x: 0, y: 0 });
+    // direction is (-3, -4), normalised → (-0.6, -0.8)
+    expect(v.x / v.y).toBeCloseTo((-3) / (-4));
+  });
+
+  it("magnitude equals default BULLET_SPEED", () => {
+    const v = aimBulletVelocity({ x: 5, y: 0 }, { x: 0, y: 0 });
+    expect(Math.sqrt(v.x * v.x + v.y * v.y)).toBeCloseTo(BULLET_SPEED);
+  });
+
+  it("magnitude equals a custom speed", () => {
+    const v = aimBulletVelocity({ x: 1, y: 2 }, { x: 4, y: 6 }, 10);
+    expect(Math.sqrt(v.x * v.x + v.y * v.y)).toBeCloseTo(10);
+  });
+
+  it("ticking forward dist/speed seconds lands on target on BOTH axes", () => {
+    const spawn = { x: 6, y: 3 };
+    const target = { x: -2, y: 1 };
+    const speed = BULLET_SPEED;
+    const v = aimBulletVelocity(spawn, target, speed);
+    const dx = target.x - spawn.x;
+    const dy = target.y - spawn.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const t = dist / speed;
+    expect(spawn.x + v.x * t).toBeCloseTo(target.x, 6);
+    expect(spawn.y + v.y * t).toBeCloseTo(target.y, 6);
+  });
+
+  it("handles zero-distance gracefully (no NaN)", () => {
+    const v = aimBulletVelocity({ x: 1, y: 1 }, { x: 1, y: 1 });
+    expect(Number.isFinite(v.x)).toBe(true);
+    expect(Number.isFinite(v.y)).toBe(true);
+  });
+});
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } };
 // Aim at the crate's street row (world y = LOOT_STREET_Y) under an 18×12 view — the

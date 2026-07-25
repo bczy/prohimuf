@@ -212,6 +212,26 @@ describe("tickGameState — enemy shot hits player", () => {
     expect(next.lives).toBe(2);
   });
 
+  it("enemy bullet near camera offset decrements lives", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [{ id: 99, position: { x: 3, y: 2 }, velocity: { x: 0, y: 0 }, fromPlayer: false }],
+    };
+    // cameraOffsetX=3, cameraOffsetY=2 → bullet is at camera centre
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 3, 2);
+    expect(next.lives).toBe(2);
+  });
+
+  it("enemy bullet far from camera offset does NOT decrement lives", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false }],
+    };
+    // cameraOffsetX=5 → bullet is 5 units from camera centre, well outside PLAYER_HIT_RADIUS
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 5, 0);
+    expect(next.lives).toBe(3);
+  });
+
   it("lives reaching 0 → GAME_OVER", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),

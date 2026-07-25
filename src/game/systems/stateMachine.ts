@@ -10,7 +10,7 @@ import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import { tickBullets, BULLET_SPEED } from "@game/systems/bulletSystem";
+import { tickBullets, aimBulletVelocity } from "@game/systems/bulletSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
@@ -403,10 +403,10 @@ export function tickGameState(
       {
         id: _nextBulletId,
         position: { x: slot.screenPosition.x, y: slot.screenPosition.y },
-        velocity: {
-          x: -slot.screenPosition.x * 0.7,
-          y: -BULLET_SPEED,
-        },
+        velocity: aimBulletVelocity(slot.screenPosition, {
+          x: cameraOffsetX,
+          y: cameraOffsetY,
+        }),
         fromPlayer: false,
       },
     ];
@@ -445,12 +445,14 @@ export function tickGameState(
   // branch above); the normal tick leaves it unchanged.
   const newEnergy = state.energy;
 
-  // 8. Enemy bullet hits player (near screen center y=0)
+  // 8. Enemy bullet hits player (near camera centre)
   const hitBulletIds = new Set<number>();
   let playerHit = false;
   for (const b of movedBullets) {
     if (b.fromPlayer) continue;
-    if (Math.sqrt(b.position.x * b.position.x + b.position.y * b.position.y) <= PLAYER_HIT_RADIUS) {
+    const dx = b.position.x - cameraOffsetX;
+    const dy = b.position.y - cameraOffsetY;
+    if (Math.sqrt(dx * dx + dy * dy) <= PLAYER_HIT_RADIUS) {
       hitBulletIds.add(b.id);
       playerHit = true;
     }
