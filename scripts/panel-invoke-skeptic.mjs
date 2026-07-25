@@ -20,16 +20,23 @@
 // (safer default per skeptic prompt: "when in doubt, CONFIRM") and then EXIT
 // NON-ZERO, so triage reports DEGRADED rather than treating an unverified run
 // as authoritative.
+//
+// Budget policy (ADR-0067): findings are verified in batches, each finding
+// carried alongside the diff of the file it accuses rather than the whole
+// patch — better grounding, and small enough for GitHub Models' 8000-token
+// per-request cap when Anthropic is unavailable.
 
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { callPanelModel } from "./lib/panelLlm.mjs";
+import { callPanelModelBatched, indexDiffByFile } from "./lib/panelLlm.mjs";
 
 const { PROMPT_FILE } = process.env;
 
 const FINDINGS_IN = "findings-in";
 const OUT = "findings-confirmed.json";
+/** Ground truth per finding: enough context to refute, small enough to batch. */
+const MAX_FILE_DIFF = 12 * 1024;
 
 async function main() {
   if (!PROMPT_FILE) throw new Error("PROMPT_FILE missing");
@@ -47,34 +54,48 @@ async function main() {
     readFile("panel-input/diff.patch", "utf8").catch(() => ""),
   ]);
 
-  const MAX_DIFF = 200 * 1024;
-  const diffTrunc = diff.length > MAX_DIFF ? `${diff.slice(0, MAX_DIFF)}\n\n[TRUNCATED]` : diff;
+  // Each finding travels with the diff of the file it accuses, rather than the
+  // whole patch: better grounding AND small enough to batch under a provider
+  // budget as tight as GitHub Models' 8000 input tokens.
+  const byFile = indexDiffByFile(diff);
+  const parts = findings.map((f) => {
+    const fileDiff = byFile.get(f.file) ?? "[no diff hunk found for this path]";
+    return [
+      "### Finding",
+      "```json",
+      JSON.stringify(f, null, 2),
+      "```",
+      `### Ground truth — diff of ${f.file || "(unknown file)"}`,
+      "```diff",
+      fileDiff.slice(0, MAX_FILE_DIFF),
+      "```",
+      "",
+    ].join("\n");
+  });
 
-  const userMessage = [
-    "## Findings submitted by the four reviewers",
-    "```json",
-    JSON.stringify(findings, null, 2),
-    "```",
+  const preamble = [
+    "## Findings submitted by the reviewers, each with its ground-truth diff.",
+    "This call may carry only PART of the panel's findings; verify exactly the",
+    "ones below and emit ONLY the JSON array (same findings with `confirmed` +",
+    "optional `refutation`), nothing else.",
     "",
-    "## Unified diff (origin/main...HEAD) — ground truth",
-    "```diff",
-    diffTrunc,
-    "```",
-    "",
-    "Emit ONLY the JSON array (same findings with `confirmed` + optional `refutation`), nothing else.",
   ].join("\n");
 
-  const { text, provider } = await callPanelModel({ system: prompt, user: userMessage });
-  console.log(`[panel-invoke-skeptic] answered by ${provider}`);
+  const { texts, provider, calls } = await callPanelModelBatched({
+    system: prompt,
+    preamble,
+    parts,
+  });
+  console.log(`[panel-invoke-skeptic] answered by ${provider} in ${String(calls)} call(s)`);
 
-  const verified = extractJsonArray(text);
+  const verified = texts.flatMap(extractJsonArray);
   // Safety net: if verified array is shorter than input, confirm the missing
   // ones — the skeptic cannot silently drop findings.
   const byKey = new Map(verified.map((f) => [findingKey(f), f]));
   const merged = findings.map((f) => byKey.get(findingKey(f)) || { ...f, confirmed: true });
   await writeFile(OUT, JSON.stringify(merged, null, 2));
   console.log(
-    `Skeptic verdict: ${merged.filter((f) => f.confirmed).length}/${merged.length} confirmed`,
+    `Skeptic verdict: ${String(merged.filter((f) => f.confirmed).length)}/${String(merged.length)} confirmed`,
   );
 }
 
