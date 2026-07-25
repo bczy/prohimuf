@@ -5,13 +5,14 @@ import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
-import { NEAR_KIND_SPECS, type NearKindSpec } from "./nearForegroundArt";
+import { NEAR_KIND_SPECS, nearPropPlaneHeight, type NearKindSpec } from "./nearForegroundArt";
 import {
   getNearForegroundTexture,
   getTrafficLightOverlayTexture,
   updateTrafficLightSignal,
 } from "./nearForegroundTextures";
 import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
+import { STREET_DEPTH } from "./streetDepth";
 
 // The flat facade art has a single pavement at the bottom, so BOTH rows stand on
 // the same ground line (facade-normalized, y-down) — any vertical offset floats a
@@ -36,10 +37,10 @@ const MOBILE_NEAR_LINE_DROP = 0;
 // crossing a window row. The far row also drifts slower than the near row.
 const NEAR_SCALE = 1.3;
 const FAR_SCALE = 0.72;
-// Absolute height cap (world units): even on levels whose windows sit high (a tall
-// street→window band), props stay a believable size — a short readable pole
-// instead of a floor-to-window mast whose dark shaft vanishes and reads as floating.
-const MAX_PROP_WORLD_H = 4.5;
+// Absolute "believable size" height caps (world units, pre row scale) live with
+// the art specs in nearForegroundArt.ts: MAX_PROP_WORLD_H is the default,
+// KIND_MAX_WORLD_H the per-kind overrides (lamppost 7.0, Bertrand-directed
+// 2026-07-25). Both feed nearPropPlaneHeight, which also applies the band ceiling.
 // The far (back-of-road) row drifts only a little faster than the facade, the near
 // row much faster — so the two rows clearly separate in depth as the camera pans.
 const FAR_PARALLAX_RATIO = 0.18;
@@ -47,8 +48,10 @@ const FAR_PARALLAX_RATIO = 0.18;
 // Bertrand-directed). The traffic light is the one prop that DELIBERATELY breaks
 // the non-occlusion band: it rises well into the window rows for a dominant, close
 // signal, accepting that it may briefly mask a cop behind it as the camera pans.
-// It is still drawn BELOW the courier (6) / delivery van (7) — the "Livrer" targets
-// it must never mask (finding #8) — so only static cop windows can fall behind it.
+// It lives in the NEAR row, which since the 2026-07-25 re-ordering is drawn ABOVE
+// the courier (see {@link STREET_DEPTH}): the mast may now cross a passing livreur
+// as well as a static cop window. Accepted — Bertrand's arbitration is depth
+// ambiance over total target legibility. The delivery van still passes in front.
 const TRAFFIC_LIGHT_H_FRAC = 0.8;
 
 // Conservative extra downward drop of the near kerb on mobile (facade-normalized,
@@ -127,12 +130,13 @@ function Row({
         // The feu tricolore (hero prop) deliberately breaks the non-occlusion band
         // (ADR-0047 amendment): it bypasses BOTH the band ceiling (`maxH`) and the
         // "believable size" cap, bounded only by its own generous world-height
-        // allowance, so it can rise into the window rows. Every other prop stays
-        // strictly under `maxH` — non-occlusion still holds for them by construction.
+        // allowance, so it can rise into the window rows. Every other prop is sized
+        // by `nearPropPlaneHeight`, whose band ceiling keeps its VISIBLE TOP at or
+        // below the band top — non-occlusion still holds for them by construction.
         const isTrafficLight = obj.kind === "trafficLight";
-        const heightCap = isTrafficLight ? TRAFFIC_LIGHT_H_FRAC * facadeH : maxH;
-        const believableCap = isTrafficLight ? Infinity : MAX_PROP_WORLD_H * rowScale;
-        const planeH = Math.min(spec.heightFrac * facadeH * scale, heightCap, believableCap);
+        const planeH = isTrafficLight
+          ? Math.min(spec.heightFrac * facadeH * scale, TRAFFIC_LIGHT_H_FRAC * facadeH)
+          : nearPropPlaneHeight(obj.kind, facadeH, scale, rowScale, maxH);
         const planeW = planeH * spec.aspect;
         const worldX = (obj.x - 0.5) * fullW;
         // Drop the plane by the texture's transparent under-feet strip so the visible
@@ -142,7 +146,8 @@ function Row({
         const centerY = streetWorldY + planeH / 2 - footPad;
         // The feu tricolore adds a second co-located plane carrying the animated
         // lit-lens overlay, at z+0.001 so it sorts in FRONT of the dead-grey housing
-        // within the SAME renderOrder — still below courier (6) / delivery van (7).
+        // within the SAME renderOrder — i.e. it inherits its row's slot in the
+        // street stack (far row behind the courier, near row in front of it).
         const overlay = isTrafficLight ? getTrafficLightOverlayTexture() : null;
         return (
           <group key={`near-${obj.kind}-${String(index)}`}>
@@ -179,11 +184,17 @@ function Row({
  * the facade base) is small and drifts slow, so the street reads with depth. Every
  * prop stands on its kerb line and is scaled to stay under
  * {@link nearForegroundBandTop} (strictly below every window row), so none can
- * reach a window/cop at any pan offset. Drawn at renderOrder 4/5 — above the facade
- * panels (0..3) but BELOW the courier (6) and delivery vehicle (7), which are
- * "Livrer" targets it must never mask (finding #8). Purely decorative: plain
- * meshes, never registered as targets. Textures come from the shared session cache
- * warmed by the loading gate ({@link getNearForegroundTexture}).
+ * reach a window/cop at any pan offset. Depth slots come from {@link STREET_DEPTH}:
+ * the FAR row (renderOrder 4, z 0.6) sits above the facade panels (0..3) but BEHIND
+ * every street actor, which it must never mask; the NEAR row (renderOrder 5.75,
+ * z 0.7) is drawn IN FRONT of the whole street — courier (5.5) AND delivery van
+ * (5.25/5.2) — and may partially mask either (Bertrand-directed 2026-07-25,
+ * ADR-0047 amendment 4 — this reverses finding #8 for the near row, for both
+ * "Livrer" targets). The street actors stay above the facade-attached ironwork
+ * (5), which is physically behind them. Purely decorative: plain meshes, never
+ * registered as targets.
+ * Textures come from the shared session cache warmed by the loading gate
+ * ({@link getNearForegroundTexture}).
  */
 export function NearForeground({
   levelId,
@@ -259,7 +270,8 @@ export function NearForeground({
 
   return (
     <>
-      {/* Far kerb (back of the road): smaller, slower, drawn behind the near row. */}
+      {/* Far kerb (back of the road): smaller, slower, drawn behind the near row
+          AND behind every street actor — it must never mask a "Livrer" target. */}
       <group ref={farRef}>
         <Row
           objects={split("far")}
@@ -268,12 +280,13 @@ export function NearForeground({
           rowScale={FAR_SCALE}
           fullW={fullW}
           facadeH={facadeH}
-          renderOrder={4}
-          z={0.6}
+          renderOrder={STREET_DEPTH.farRow.order}
+          z={STREET_DEPTH.farRow.z}
         />
       </group>
-      {/* Near kerb (front): full size, full parallax, in front of the far row but
-          still below the courier (6) and delivery van (7) — see finding #8. */}
+      {/* Near kerb (front): full size, full parallax, in front of the far row AND
+          in front of BOTH "Livrer" targets — courier (5.5) and delivery van
+          (5.25) — which it may partially mask (ADR-0047 amendment 4). */}
       <group ref={nearRef}>
         <Row
           objects={split("near")}
@@ -282,8 +295,8 @@ export function NearForeground({
           rowScale={NEAR_SCALE}
           fullW={fullW}
           facadeH={facadeH}
-          renderOrder={5}
-          z={0.7}
+          renderOrder={STREET_DEPTH.nearRow.order}
+          z={STREET_DEPTH.nearRow.z}
         />
       </group>
     </>

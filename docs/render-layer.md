@@ -131,27 +131,32 @@ All sprites are `<mesh position={[x,
  y,
  z]}><planeGeometry /><meshBasicMaterial /></mesh>` planes facing the camera.
 
-| Component         | Source data                         | Z depth    |
-| ----------------- | ----------------------------------- | ---------- |
-| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1          |
-| `BulletSprite`    | `stateRef.current.bullets`          | 2          |
-| `CrosshairSprite` | mouse position via camera unproject | 3          |
-| `PlayerSprite`    | `TopdownState.player`               | 1          |
-| `CopSprite`       | `TopdownState.cops[i]`              | 1          |
-| `DeliverySprite`  | `TopdownState.delivery`             | 1          |
-| `CourierSprite`   | `stateRef.current.couriers[i]`      | 0.70/0.701 |
+| Component         | Source data                         | Z depth |
+| ----------------- | ----------------------------------- | ------- |
+| `EnemySprite`     | `stateRef.current.enemies[i]`       | 1       |
+| `BulletSprite`    | `stateRef.current.bullets`          | 2       |
+| `CrosshairSprite` | mouse position via camera unproject | 3       |
+| `PlayerSprite`    | `TopdownState.player`               | 1       |
+| `CopSprite`       | `TopdownState.cops[i]`              | 1       |
+| `DeliverySprite`  | `TopdownState.delivery`             | 1       |
+| `CourierSprite`   | `stateRef.current.couriers[i]`      | 0.65    |
 
 ### Courier composite
 
-`CourierSprite` is a two-plane composite per pooled courier: a **bike** plane
-(wheel-rotation flipbook, z 0.70) under a **rider** plane (pedalling flipbook,
-z 0.701, still below `DeliveryVehicleSprite` at z 0.72). Frame counts, fps, and
-per-layer `scale`/`offsetY` registration knobs come from `courier.layers` in
-`levelArt.json` via `courierTextures.ts`; both layers share one id-phased clock
-so wheels and legs stay in sync. Until BOTH layers' frame-1 PNGs exist
-(generated later in CI, gated by `courierArtReady()`), it falls back to the
-legacy single civilian sprite on the bike plane — pixel-identical to before the
-feature.
+`CourierSprite` draws ONE **rider** plane per pooled courier (pedalling flipbook).
+Its depth slot is not a local literal: it comes from `STREET_DEPTH.courier` in
+`src/render/scene/streetDepth.ts` — **renderOrder 5.5, z 0.65**, i.e. between the
+two near-foreground kerb rows (far row 4 / z 0.60, near row 5.75 / z 0.70), above
+the facade-attached ironwork (`ForegroundFrames` / `WindowGrilles`, renderOrder 5 /
+z 0.50) and — since 2026-07-25 — **in front of** `DeliveryVehicleSprite`
+(rim 5.2 / z 0.61, body 5.25 / z 0.62), which reads its own slots from the same
+table. See ADR-0047 amendment 4 for the arbitration: the NEAR row may partially
+mask a livreur AND the van, the facade ironwork never may. Frame counts, fps, and
+per-layer `scale`/`offsetY`
+registration knobs come from `courier.layers` in `levelArt.json` via
+`courierTextures.ts`; the id-phased clock keeps couriers out of lockstep. Until the
+rider's frame-1 PNG exists (generated later in CI, gated by `courierArtReady()`),
+the plane stays hidden.
 
 ### Enemy flipbook
 

@@ -45,8 +45,10 @@ const BACKING_POOL = 12;
 const FLASH_POOL = 12;
 
 // renderOrder layering (all scene materials are depthWrite:false, so paint order
-// is governed by renderOrder). Backdrop panels 0..3, enemies 4, foreground 5,
-// courier/vehicle 6..7, crosshair 16384.
+// is governed by renderOrder). Backdrop panels 0..3, enemies 4, near-fg far row 4,
+// facade overlays 5, delivery vehicle 5.2/5.25, courier 5.5, near-fg near row 5.75,
+// hostage QTE 6..8, crosshair 16384. See src/render/scene/streetDepth.ts for the
+// street stack.
 const MARK_RENDER_ORDER = 3.5; // in front of facade panels, behind enemies
 const BACKING_RENDER_ORDER = 7.9; // just below the explosion — dark ground
 const EXPLOSION_RENDER_ORDER = 8; // frames/engulfs the target, above the scene

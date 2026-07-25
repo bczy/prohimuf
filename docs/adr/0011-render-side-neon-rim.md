@@ -72,7 +72,10 @@ Why this shape:
   additive) draws first; the opaque B&W front sprite (renderOrder 7) draws over it. Where the
   body is opaque it fully covers the glow → body stays pure B&W; only the scaled-out margin
   (front alpha 0, silhouette alpha > 0) shows neon → a clean rim. It is structurally
-  impossible for the body to flood.
+  impossible for the body to flood. _(Amended 2026-07-25: the absolute slots moved to
+  `STREET_DEPTH.vehicleRim` / `STREET_DEPTH.vehicle` = **5.2 / 5.25** when the van dropped
+  behind the courier — see ADR-0047 amendment 4. The painter-order argument is unchanged:
+  the rim still draws exactly one slot before its body, z − 0.01.)_
 
 Specifics:
 

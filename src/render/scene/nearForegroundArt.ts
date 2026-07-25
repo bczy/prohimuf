@@ -61,6 +61,76 @@ export const NEAR_KIND_SPECS = {
   streetSign: { aspect: 0.75, heightFrac: 0.4, footPadFrac: 0.162 },
 } as const satisfies Record<NearForegroundKind, NearKindSpec>;
 
+/**
+ * Default absolute height cap (world units, BEFORE the row scale): even on levels
+ * whose windows sit high (a tall street→window band), props stay a believable size
+ * — a short readable pole instead of a floor-to-window mast whose dark shaft
+ * vanishes and reads as floating. This is a "credible street furniture" guard, not
+ * the non-occlusion invariant (that one is the band ceiling, see
+ * {@link nearPropPlaneHeight}).
+ */
+export const MAX_PROP_WORLD_H = 4.5;
+
+/**
+ * Per-kind override of {@link MAX_PROP_WORLD_H} (world units, BEFORE the row
+ * scale). A kind lands here only when the default "credible size" cap fights its
+ * real-world proportions.
+ *
+ * `lamppost` (Bertrand-directed, 2026-07-25 — « Essaie de réhausser ce lampadaire,
+ * il devrait être plus haut »): the réverbère haussmannien col-de-cygne is a ~9 m
+ * mast whose lantern hangs ABOVE vehicle roofs. Under the 4.5 default the whole
+ * SPRITE (mast + lanterne) was scaled down to 5.85 u in the near row, putting the
+ * lantern at the delivery van's CABIN height — a dwarf lamppost standing in front
+ * of a truck. Raising the cap to 7.0 lets the plane grow until the NON-OCCLUSION
+ * band ceiling stops it, which is what actually happens on both levels that carry
+ * lampposts (belliard, stalingrad): the cap is a pure backstop for a hypothetical
+ * level with very high windows, so the prop can never become a 12-u mast. This is
+ * NOT a derogation like the feu tricolore — the lamppost stays strictly inside the
+ * band, i.e. ≥ 0.8 world-units (NEAR_BAND_MARGIN) below every window row.
+ */
+export const KIND_MAX_WORLD_H: Partial<Record<NearForegroundKind, number>> = {
+  lamppost: 7.0,
+};
+
+/** The absolute "believable size" cap for a kind (world units, pre row scale). */
+export function propMaxWorldH(kind: NearForegroundKind): number {
+  return KIND_MAX_WORLD_H[kind] ?? MAX_PROP_WORLD_H;
+}
+
+/**
+ * Plane height (world units) of a non-derogating near-foreground prop, i.e. every
+ * kind except the feu tricolore (which deliberately breaks the band, see
+ * `TRAFFIC_LIGHT_H_FRAC` in NearForeground.tsx). Three ceilings, smallest wins:
+ *
+ *  1. its natural height `heightFrac · facadeH · scale`;
+ *  2. the NON-OCCLUSION band: the prop's VISIBLE TOP must stay at or below the
+ *     band ceiling. The plane is dropped by `footPadFrac · planeH` so its feet
+ *     land on the kerb, so a plane of height H tops out `H · (1 − footPadFrac)`
+ *     above the kerb line — hence `bandMaxH / (1 − footPadFrac)`. Clamping the
+ *     TOP (rather than the raw plane box) is what makes the ceiling exact:
+ *     the earlier `planeH ≤ bandMaxH` silently threw away the foot-pad slack;
+ *  3. the "credible size" cap {@link propMaxWorldH} × the row scale.
+ *
+ * Ceiling 2 is the invariant: the returned height can never put the visible top
+ * above `bandMaxH` over the kerb, and the band top itself sits NEAR_BAND_MARGIN
+ * (0.8 u) below the lowest window — so no prop can reach a window row / a cop at
+ * any pan offset, by construction.
+ */
+export function nearPropPlaneHeight(
+  kind: NearForegroundKind,
+  facadeH: number,
+  scale: number,
+  rowScale: number,
+  bandMaxH: number,
+): number {
+  const spec: NearKindSpec = NEAR_KIND_SPECS[kind];
+  const footPadFrac = Math.min(0.9, Math.max(0, spec.footPadFrac ?? 0));
+  const natural = spec.heightFrac * facadeH * scale;
+  const bandCap = bandMaxH / (1 - footPadFrac);
+  const believableCap = propMaxWorldH(kind) * rowScale;
+  return Math.max(0, Math.min(natural, bandCap, believableCap));
+}
+
 /** Soft ground shadow ellipse under a prop, drawn first so the body sits on it. */
 function groundShadow(
   g: CanvasRenderingContext2D,
