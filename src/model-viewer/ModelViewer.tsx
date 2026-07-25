@@ -26,13 +26,13 @@ type ModelStatus = "idle" | "pending" | "loaded" | "failed";
 type RewardType = "money" | "hearts" | "mixed";
 type Tier = "base" | "premium" | "objective";
 
-type LiveItem = {
+interface LiveItem {
   readonly id: string;
   readonly path: string;
   readonly tier: Tier;
   readonly reward: RewardType;
   readonly rewardLabel: string;
-};
+}
 
 const LIVE_ITEMS: readonly LiveItem[] = [
   {
@@ -58,22 +58,26 @@ const LIVE_ITEMS: readonly LiveItem[] = [
   },
 ];
 
-type ViewerConfig = {
+interface ViewerConfig {
   readonly mode: ViewerMode;
   readonly spinAxis: SpinAxis;
   readonly items: readonly { id: string; url: string; tier: Tier; reward: RewardType; rewardLabel: string }[];
-};
+}
 
-type LoadedModel = { scene: Group; size: Vector3; minY: number };
+interface LoadedModel {
+  scene: Group;
+  size: Vector3;
+  minY: number;
+}
 
-type BurstRequest = {
+interface BurstRequest {
   readonly reward: RewardType;
   readonly x: number;
   readonly y: number;
   readonly z: number;
-};
+}
 
-type ParticleState = {
+interface ParticleState {
   active: boolean;
   born: number;
   maxLife: number;
@@ -86,7 +90,7 @@ type ParticleState = {
   rot: number;
   size: number;
   tex: "money" | "heart";
-};
+}
 
 const PARTICLE_POOL = 96;
 const PARTICLES_PER_BURST = 18;
@@ -341,7 +345,7 @@ function RewardParticles({ requests }: { requests: React.RefObject<BurstRequest[
   useFrame(() => {
     const now = performance.now();
     const queue = requests.current;
-    while (queue !== null && queue.length > 0) {
+    while (queue.length > 0) {
       const req = queue.shift();
       if (req === undefined) break;
       for (let i = 0; i < PARTICLES_PER_BURST; i++) {
@@ -553,7 +557,14 @@ export function ModelViewer(): JSX.Element {
       config.items.map(
         (item) =>
           new Promise<Group>((resolve, reject) => {
-            loader.load(item.url, (gltf) => resolve(gltf.scene), undefined, reject);
+            loader.load(
+              item.url,
+              (gltf) => {
+                resolve(gltf.scene);
+              },
+              undefined,
+              reject,
+            );
           }),
       ),
     )
@@ -585,9 +596,13 @@ export function ModelViewer(): JSX.Element {
     const loader = new TextureLoader();
     loader.load(
       belliardIngameBackdropUrl,
-      (t) => setBelliardTexture(t),
+      (t) => {
+        setBelliardTexture(t);
+      },
       undefined,
-      () => setBelliardTexture(null),
+      () => {
+        setBelliardTexture(null);
+      },
     );
   }, [belliardIngameBackdropUrl]);
 
@@ -609,7 +624,9 @@ export function ModelViewer(): JSX.Element {
           models={models}
           axis={config.spinAxis}
           yOffsets={yOffsets}
-          onShoot={(reward, x, y, z) => burstRequests.current.push({ reward, x, y, z })}
+          onShoot={(reward, x, y, z) => {
+            burstRequests.current.push({ reward, x, y, z });
+          }}
           burstRequests={burstRequests}
           cameraPosition={cameraConfig.position}
           cameraTarget={cameraConfig.target}
@@ -638,7 +655,9 @@ export function ModelViewer(): JSX.Element {
             <input
               type="checkbox"
               checked={showBelliardBackdrop}
-              onChange={(e) => setShowBelliardBackdrop(e.target.checked)}
+              onChange={(e) => {
+                setShowBelliardBackdrop(e.target.checked);
+              }}
             />
             fond Belliard
           </label>
@@ -650,7 +669,9 @@ export function ModelViewer(): JSX.Element {
               max={8}
               step={0.05}
               value={belliardBackdropY}
-              onChange={(e) => setBelliardBackdropY(Number(e.target.value))}
+              onChange={(e) => {
+                setBelliardBackdropY(Number(e.target.value));
+              }}
             />
             <span>{belliardBackdropY.toFixed(2)}</span>
           </label>
