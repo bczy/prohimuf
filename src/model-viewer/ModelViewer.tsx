@@ -107,18 +107,23 @@ function GeneratedModel({
 }
 
 function Scene({
+  status,
   onStatus,
   onSize,
 }: {
+  status: BulletModelStatus;
   onStatus: (s: BulletModelStatus) => void;
   onSize: (size: Vector3 | null) => void;
 }): JSX.Element {
-  const status = useRef<BulletModelStatus>("idle");
+  // Mirrors the last status pushed via onStatus so useFrame can diff against
+  // it without re-subscribing; the actual render-driving value is the
+  // `status` prop (React state owned by ModelViewer), not this ref.
+  const lastStatus = useRef<BulletModelStatus>(status);
 
   useFrame(() => {
     const next = getBulletModelStatus();
-    if (next !== status.current) {
-      status.current = next;
+    if (next !== lastStatus.current) {
+      lastStatus.current = next;
       onStatus(next);
     }
   });
@@ -130,7 +135,7 @@ function Scene({
       <directionalLight position={[-3, -2, -4]} intensity={0.4} />
       <gridHelper args={[4, 16]} />
       <axesHelper args={[1]} />
-      <ProceduralFallback />
+      {status !== "loaded" && <ProceduralFallback />}
       <GeneratedModel onSize={onSize} />
       <OrbitRig />
     </>
@@ -150,7 +155,7 @@ export function ModelViewer(): JSX.Element {
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <Canvas camera={{ position: [1.2, 1, 1.2], fov: 45, near: 0.01, far: 100 }}>
         <color attach="background" args={["#1a1a1a"]} />
-        <Scene onStatus={setStatus} onSize={setSize} />
+        <Scene status={status} onStatus={setStatus} onSize={setSize} />
       </Canvas>
       <div
         style={{
