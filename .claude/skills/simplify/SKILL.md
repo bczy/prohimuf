@@ -79,7 +79,7 @@ Batch by theme (one concern at a time), and after **each** batch:
 rtk tsc && rtk vitest && rtk lint      # fallback: yarn typecheck && yarn test && yarn lint
 ```
 
-Red at any point → **revert that batch**, move the item to PROPOSE with the failure as
+Red at any point → **revert that batch**, move the item to REVERTED with the failure as
 its reason. Do not chase a fix: a cut that needs a fix was never a safe cut.
 Player-visible surface touched despite the rule → re-run `verify` for runtime evidence.
 
