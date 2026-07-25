@@ -56,7 +56,7 @@ check the suite goes red for the right reason. Do them **one at a time**:
 #  edit the source line (invert a comparison, off-by-one a bound,
 #  return early, drop a clamp, neutralise a state transition)
 rtk vitest <path/to/the.test.ts>       # expect RED, and read the failure message
-git checkout -- <mutated file>         # ALWAYS, immediately, before the next probe
+git checkout -- <mutated file> || git restore --source=HEAD <mutated file>  # ALWAYS, immediately, before the next probe
 ```
 
 High-value mutations in muf: flip a `<` to `<=` on a timer/score/ammo bound; make a
