@@ -25,14 +25,20 @@ describe("short-landscape breakpoint (ADR-0024)", () => {
 });
 
 /**
- * TITLE reveal: the motion tokens are a BUDGET, not decoration — the cover must be
- * finished before a player can plausibly have read it, and since the variant is DRAWN at
- * random the player must not be able to feel which one they got from its length. So every
- * variant is held to the same window. `TitleScreen.module.css` derives each letter's delay
- * as `index × stagger`, so a staggered variant's wall-clock total for the 3-letter wordmark
- * is `2 × stagger + duration`; the blast fires all three letters at once, so its total is
- * its cloud's life. These bounds stop a later "make it more dramatic" tweak from silently
- * pushing one variant past the window — or away from its siblings.
+ * TITLE reveal: the motion tokens are a BUDGET, not decoration. `TitleScreen.module.css`
+ * derives each letter's delay as `index × stagger`, so a staggered variant's wall-clock total
+ * for the 3-letter wordmark is `2 × stagger + duration`; the blast fires all three letters at
+ * once, so its total is its cloud's life.
+ *
+ * The three variants used to be held to ONE shared ~2s window, so the player could not feel
+ * from its length which one they had drawn. That parity was traded away on 2026-07-25
+ * (Bertrand): the paint variant now has to READ as a hand with a can — one line at a time, a
+ * silence while the arm travels, a second pass in the other colour — and a gesture that long
+ * cannot be squeezed into a spray's budget. So each variant gets its OWN window instead, and
+ * the "no tell" guard now covers only the two that reveal on the spot. The bounds still stop a
+ * later "make it more dramatic" tweak from pushing a variant out of its lane, and the hard cap
+ * (6s) is what keeps the cover from holding a player who wants to get on with it — the surface
+ * is click-through at any instant, but the wordmark must be finished before they wonder.
  */
 describe("TITLE reveal budget", () => {
   const WORDMARK_LETTERS = 3;
@@ -44,25 +50,70 @@ describe("TITLE reveal budget", () => {
     paint: staggered(MOTION.titlePaintMs, MOTION.titlePaintStaggerMs),
     blast: MOTION.titleBlastMs,
   };
+  // Per-variant windows (ms). The paint's is deliberately the long one.
+  const WINDOWS = {
+    spray: [1500, 2500],
+    blast: [1500, 3500],
+    paint: [3000, 6000],
+  } as const;
 
-  it("keeps one letter's stroke under the 1s-per-letter ceiling", () => {
+  it("keeps one can-stroke under the 1s ceiling", () => {
+    // The spray lays a letter in one stroke; the paint's unit of gesture is one PASS (the
+    // six lines of a single colour over one letter). Neither may outstay a second.
     expect(MOTION.titleSprayMs).toBeLessThanOrEqual(1000);
-    expect(MOTION.titlePaintMs).toBeLessThanOrEqual(1000);
+    expect(MOTION.titlePaintPassMs).toBeLessThanOrEqual(1000);
   });
 
-  it("finishes every variant within the 2–3s window", () => {
+  it("finishes every variant inside its own window", () => {
     for (const [variant, totalMs] of Object.entries(totals)) {
-      expect(totalMs, variant).toBeGreaterThanOrEqual(1500);
-      expect(totalMs, variant).toBeLessThanOrEqual(3000);
+      const [min, max] = WINDOWS[variant as keyof typeof WINDOWS];
+      expect(totalMs, variant).toBeGreaterThanOrEqual(min);
+      expect(totalMs, variant).toBeLessThanOrEqual(max);
     }
   });
 
-  it("keeps the three variants within half a second of each other (no tell)", () => {
-    const values = Object.values(totals);
-    expect(Math.max(...values) - Math.min(...values)).toBeLessThanOrEqual(500);
+  it("keeps the two on-the-spot variants within a second of each other (no tell)", () => {
+    expect(Math.abs(totals.spray - totals.blast)).toBeLessThanOrEqual(1000);
+  });
+
+  it("makes the paint the slowest variant, and caps it at 6s", () => {
+    expect(totals.paint).toBeGreaterThan(Math.max(totals.spray, totals.blast));
+    expect(totals.paint).toBeLessThanOrEqual(6000);
   });
 
   it("settles the blast's letters well before its cloud clears", () => {
     expect(MOTION.titleBlastSettleMs).toBeLessThan(MOTION.titleBlastMs);
+  });
+});
+
+/**
+ * The paint variant's RHYTHM (Bertrand, 2026-07-25: "c'est ce rythme qui vend le réalisme,
+ * plus encore que la vitesse du trait"). A can that never stops is a printer, not a hand: the
+ * silences — arm travel between two lines, can swap between two colours, the step across to
+ * the next letter — are load-bearing, so each is asserted to exist and to be longer than the
+ * gesture it separates. Everything here is derived arithmetic inside `tokens.ts`; these
+ * assertions are what stops a "just make it faster" edit from collapsing the pauses to zero
+ * and turning the fill back into a wipe.
+ */
+describe("TITLE paint rhythm", () => {
+  it("leaves the can silent longer than it sprays, between two lines", () => {
+    expect(MOTION.titlePaintLineGapMs).toBeGreaterThan(MOTION.titlePaintLineMs);
+  });
+
+  it("spends a pass on whole lines only (six of them, spray + travel)", () => {
+    expect(MOTION.titlePaintPassMs % (MOTION.titlePaintLineMs + MOTION.titlePaintLineGapMs)).toBe(
+      0,
+    );
+  });
+
+  it("pauses to swap cans between the two colour passes", () => {
+    const passGap = MOTION.titlePaintPassStepMs - MOTION.titlePaintPassMs;
+    expect(passGap).toBeGreaterThan(MOTION.titlePaintLineGapMs);
+    // A letter is both passes AND the swap between them, so no two colours overlap.
+    expect(MOTION.titlePaintMs).toBe(MOTION.titlePaintPassStepMs + MOTION.titlePaintPassMs);
+  });
+
+  it("pauses again before stepping across to the next letter", () => {
+    expect(MOTION.titlePaintStaggerMs).toBeGreaterThan(MOTION.titlePaintMs);
   });
 });

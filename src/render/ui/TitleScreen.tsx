@@ -27,11 +27,12 @@ const WORDMARK = ["M", "U", "F"] as const;
 /**
  * The three ways the cover can paint its wordmark. One is drawn at each mount, so the
  * same player meets a different cover on a second visit. All three end on the SAME
- * resting wordmark (chrome fill, ink-black contour) and share the same ~2s budget —
- * only the way the letters arrive differs:
+ * resting wordmark (chrome fill, ink-black contour); only the way the letters arrive —
+ * and, since 2026-07-25, how long it takes (see the TITLE reveal budget test) — differs:
  *   spray — an aerosol mist lands wide and soft, then bites into each letter in turn;
- *   paint — the can traces each glyph, dab by dab, along a predetermined path;
- *   blast — one detonation, and a halftone cloud that disperses off the finished word.
+ *   paint — a hand fills each letter line by line, one colour per pass, pausing between
+ *           strokes: the slow one, and the only one that reads as a gesture;
+ *   blast — one detonation, and a cloud of drifting puffs that clears off the word.
  */
 export type TitleAnimation = "spray" | "paint" | "blast";
 
@@ -47,6 +48,53 @@ export function pickTitleAnimation(rand: () => number): TitleAnimation {
   if (draw < 2 / 3) return "paint";
   return "blast";
 }
+
+/**
+ * ONE puff of the blast's smoke: where it starts (em, from the wordmark's centre), how big
+ * it is, where it drifts to, how much it grows on the way, how dark it gets at its peak, and
+ * the slice of the cloud's window it lives in — the same six behaviours the boss veil gives
+ * its particles (`createSmokeField`, `src/render/scene/smokeParticles.ts`).
+ */
+type SmokePuff = readonly [
+  x: number,
+  y: number,
+  size: number,
+  driftX: number,
+  driftY: number,
+  grow: number,
+  peak: number,
+  delay: number,
+  life: number,
+];
+
+/**
+ * The blast's smoke, as a fixed field of drifting puffs (the boss veil's model, ported to
+ * the DOM — see `.smoke` in TitleScreen.module.css). Drawn ONCE, offline, from the boss
+ * field's own spawn ranges over a 6×3 stratified grid so the cloud has no bald spot at its
+ * peak — the dispersal only reads as a reveal if the wordmark was actually hidden. Baked in
+ * as a table rather than drawn at mount: the cover must not shuffle its cloud on every
+ * visit, and the render path stays free of `Math.random` (the FLYER_*_SEED discipline).
+ */
+const SMOKE_PUFFS: readonly SmokePuff[] = [
+  [-1.22, -0.17, 1.16, -0.48, -0.65, 1.62, 0.83, 0.1, 0.68],
+  [-0.71, -0.23, 0.9, -0.62, -1.19, 1.55, 0.79, 0.03, 0.97],
+  [-0.35, -0.29, 1.02, -0.28, -0.63, 1.51, 0.84, 0.1, 0.75],
+  [0.33, -0.24, 1.1, 0.24, -1.02, 1.68, 0.67, 0.07, 0.8],
+  [0.65, -0.19, 1.19, 0.31, -0.61, 1.79, 0.74, 0.06, 0.92],
+  [1.05, -0.19, 1.04, 0.02, -0.69, 1.53, 0.68, 0.03, 0.95],
+  [-1.26, 0.14, 1.04, -0.45, -0.57, 1.89, 0.7, 0.04, 0.71],
+  [-0.73, 0.08, 1.03, -0.16, -0.87, 1.46, 0.91, 0.07, 0.83],
+  [-0.31, 0.0, 1.1, -0.2, -0.66, 1.3, 0.73, 0.1, 0.82],
+  [0.23, 0.08, 0.87, 0.01, -0.5, 1.52, 0.88, 0.1, 0.78],
+  [0.87, 0.09, 0.96, -0.08, -0.49, 1.83, 0.92, 0.01, 0.73],
+  [1.3, 0.06, 1.19, -0.01, -0.86, 1.47, 0.68, 0.06, 0.94],
+  [-1.27, 0.28, 0.92, -0.34, -0.9, 1.91, 0.89, 0.02, 0.7],
+  [-0.84, 0.27, 0.87, -0.6, -0.63, 1.87, 0.68, 0.1, 0.86],
+  [-0.33, 0.28, 1.06, -0.49, -0.71, 1.66, 0.75, 0.04, 0.8],
+  [0.31, 0.35, 0.89, 0.31, -0.97, 1.42, 0.78, 0.02, 0.97],
+  [0.8, 0.25, 1.14, 0.0, -0.5, 1.42, 0.83, 0.05, 0.76],
+  [1.11, 0.37, 0.82, -0.25, -0.98, 1.68, 0.71, 0.08, 0.72],
+];
 
 // Chrome band tones, handed to the CSS module as inline custom properties (ADR-0046: a
 // value with a single consumer flows inline rather than into the global token bridge).
@@ -176,9 +224,15 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
             </span>
           ))}
           {/* Detonation cloud — LAST so it paints over the letters (both are positioned,
-              so DOM order decides), and only for the variant that has one. */}
+              so DOM order decides), and only for the variant that has one. Each puff drifts
+              on its own clock (see `.puff`); the container only holds them and screens the
+              cloud through the print halftone. */}
           {animation === "blast" && (
-            <span aria-hidden={true} data-muf-title-smoke={true} className={styles.smoke} />
+            <span aria-hidden={true} data-muf-title-smoke={true} className={styles.smoke}>
+              {SMOKE_PUFFS.map((puff) => (
+                <span key={puff.join()} className={styles.puff} style={puffVars(puff)} />
+              ))}
+            </span>
           )}
         </div>
 
@@ -229,6 +283,23 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
       </div>
     </PaperSheet>
   );
+}
+
+// One puff's behaviour, handed to `.puff` as inline custom properties: geometry in `em` so
+// the cloud scales with the wordmark, life/delay as fractions of the blast's motion token
+// (ADR-0046 — a per-instance value has no business in the global token bridge).
+function puffVars([x, y, size, driftX, driftY, grow, peak, delay, life]: SmokePuff): CSSProperties {
+  return {
+    "--puff-x": `${x.toString()}em`,
+    "--puff-y": `${y.toString()}em`,
+    "--puff-size": `${size.toString()}em`,
+    "--puff-dx": `${driftX.toString()}em`,
+    "--puff-dy": `${driftY.toString()}em`,
+    "--puff-grow": grow.toString(),
+    "--puff-peak": peak.toString(),
+    "--puff-delay": delay.toString(),
+    "--puff-life": life.toString(),
+  } as CSSProperties;
 }
 
 // Per-line variable typography; static font/colour/transform live in styles.info.

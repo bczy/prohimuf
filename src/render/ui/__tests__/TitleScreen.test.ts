@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MOTION } from "@render/ui/print";
 import { TitleScreen, pickTitleAnimation, type TitleAnimation } from "../TitleScreen";
 
 const render = (): string =>
@@ -85,5 +88,56 @@ describe("TitleScreen wordmark reveal", () => {
       );
       vi.restoreAllMocks();
     }
+  });
+
+  /**
+   * The cloud is a FIELD, not a picture: every puff carries its own drift, growth, peak and
+   * slice of the cloud's life (the boss veil's model). If a puff ever shipped without them the
+   * CSS would fall back to an empty `var()` and the whole cloud would collapse onto one spot —
+   * so the presence of the per-puff steering is what this asserts, not a pixel.
+   */
+  it("gives the blast's cloud a field of individually steered puffs", () => {
+    const html = renderWithDraw(0.9);
+    const puffs = html.split("--puff-x").length - 1;
+    expect(puffs).toBeGreaterThanOrEqual(12);
+    for (const prop of ["--puff-dx", "--puff-dy", "--puff-grow", "--puff-peak", "--puff-life"]) {
+      expect(html.split(prop).length - 1, prop).toBe(puffs);
+    }
+  });
+});
+
+/**
+ * The paint variant's SILENCE is geometry, not a curve: each spray line grows at a constant
+ * speed for its whole slot, but only the first third of that growth crosses the letter — the
+ * rest happens outside the glyph, where nothing is revealed. So the CSS `--muf-line-on`
+ * overshoot IS the spray/travel ratio of the motion tokens, expressed as a size, and the two
+ * would drift apart silently on the next tuning pass. This binds them: retune the rhythm in
+ * `tokens.ts` and this test tells you the CSS constant must follow.
+ */
+describe("TITLE paint line overshoot", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/render/ui/TitleScreen.module.css"), "utf8");
+
+  it("derives --muf-line-on from the spray/travel split of the tokens", () => {
+    const match = /--muf-line-on:\s*(\d+)%/.exec(css);
+    expect(match, "--muf-line-on must be a percentage of the letter box").not.toBeNull();
+    const overshoot = Number(match?.[1]);
+    // A line has crossed the letter once it is ~the box wide; it must reach that at the end of
+    // the spray and keep growing (invisibly) for the whole travel.
+    const slotMs = MOTION.titlePaintLineMs + MOTION.titlePaintLineGapMs;
+    const expected = (100 * slotMs) / MOTION.titlePaintLineMs;
+    expect(overshoot).toBeGreaterThanOrEqual(expected * 0.95);
+    expect(overshoot).toBeLessThanOrEqual(expected * 1.15);
+  });
+
+  it("opens one line per step, and never two at once", () => {
+    const sweep = /@keyframes mufPaintSweep \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+    const stops = [...sweep.matchAll(/([\d.]+)% \{[\s\S]*?mask-size:([^;]+);/g)].map((m) => ({
+      at: Number(m[1] ?? ""),
+      open: (m[2] ?? "").split("--muf-line-on").length - 1,
+    }));
+    expect(stops.length).toBeGreaterThan(2);
+    stops.forEach((stop, i) => {
+      expect(stop.open, `stop ${stop.at.toString()}%`).toBe(i);
+    });
   });
 });
