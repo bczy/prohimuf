@@ -72,6 +72,22 @@ export const CHROME = {
   edge: "#46443F", // the fold itself; stays clear of the ink-black contour
 } as const;
 
+// Smoke — the TITLE blast cloud's fill, and NOT an ink: it is the desaturated grey the boss
+// veil tints its CC0 puff sprite with (`SMOKE_TINT`, `src/render/scene/smokeParticles.ts`),
+// mirrored here so the cover's cloud is the same smoke as the game's rather than a flat black.
+// The value is duplicated on purpose: the scene module owns a Three colour and importing it
+// here would drag three.js into the pre-game bundle (ADR-0068 keeps TITLE on plain DOM). Any
+// change to one must be made in both — the comment on each side names the other.
+// Deliberately OUT of the applyPrintTokens bridge (single consumer): TitleScreen injects it as
+// an inline custom property on the cloud, the ADR-0046 escape hatch, so no pre-game surface
+// gains a licence to paint grey.
+export const SMOKE_INK = "#9A9A9A";
+
+// The boss's own smoke sprite, reused by the TITLE blast cloud as the puffs' alpha (soft white
+// on transparent — all of its detail is in the alpha channel). Path relative to Vite's
+// BASE_URL, which the consumer prepends; provenance in `public/assets/fx/LICENSES.md`.
+export const SMOKE_SPRITE_PATH = "assets/fx/smoke.png";
+
 // In-game HUD accent — NOT a print marker ink: the acid neon of the game world,
 // drawn OVER the 3D scene only (never on a pre-game paper surface), always with
 // an ink-black keyline, flat fill, zero glow (§2bis).
@@ -151,11 +167,11 @@ export const TAPE_FRAY_SEED: Record<Corner, readonly number[]> = {
 // start of the next one (no paint in the air), and once the letter is filled the writer swaps
 // cans for the other colour and starts again. Everything below is derived from these four, so
 // the whole gesture is retuned by moving one number — and the wordmark's total with it.
-const TITLE_PAINT_LINES = 6; // spray lines per pass — the ladder in TitleScreen.module.css
-const TITLE_PAINT_LINE_MS = 45; // one line, laid across the letter
-const TITLE_PAINT_LINE_GAP_MS = 85; // …then the arm travels back: silence, no paint appears
-const TITLE_PAINT_PASS_GAP_MS = 300; // between two colours: put one can down, pick the next up
-const TITLE_PAINT_LETTER_GAP_MS = 200; // and the step across to the next letter
+const TITLE_PAINT_LINES = 4; // spray lines per pass — the ladder in TitleScreen.module.css
+const TITLE_PAINT_LINE_MS = 120; // one line, laid across the letter — see the ≥6-frame rule
+const TITLE_PAINT_LINE_GAP_MS = 80; // …then the arm travels back: silence, no paint appears
+const TITLE_PAINT_PASS_GAP_MS = 270; // between two colours: put one can down, pick the next up
+const TITLE_PAINT_LETTER_GAP_MS = 170; // and the step across to the next letter
 const TITLE_PAINT_PASSES = 2; // the ink contour, then the metal
 const TITLE_PAINT_PASS_MS = TITLE_PAINT_LINES * (TITLE_PAINT_LINE_MS + TITLE_PAINT_LINE_GAP_MS);
 const TITLE_PAINT_LETTER_MS = TITLE_PAINT_PASS_MS * TITLE_PAINT_PASSES + TITLE_PAINT_PASS_GAP_MS;
@@ -186,14 +202,14 @@ export const MOTION = {
   // from their ratio (bound by the tokens test).
   titlePaintLineMs: TITLE_PAINT_LINE_MS,
   titlePaintLineGapMs: TITLE_PAINT_LINE_GAP_MS,
-  // One pass = the six lines of one colour, travel time included.
+  // One pass = the four lines of one colour, travel time included.
   titlePaintPassMs: TITLE_PAINT_PASS_MS,
   // Pass 1 → pass 2, i.e. the first pass plus the can swap (the CSS reads it as a delay).
   titlePaintPassStepMs: TITLE_PAINT_PASS_MS + TITLE_PAINT_PASS_GAP_MS,
   // One letter, both passes and the swap between them…
   titlePaintMs: TITLE_PAINT_LETTER_MS,
   // …and the next letter only starts once the can has left this one: there is ONE can, so no
-  // two letters — and no two lines — are ever being painted at the same instant. ≈ 5.98s for
+  // two letters — and no two lines — are ever being painted at the same instant. ≈ 5.95s for
   // the wordmark, the slowest of the three variants by design (see the budget test).
   titlePaintStaggerMs: TITLE_PAINT_LETTER_MS + TITLE_PAINT_LETTER_GAP_MS,
   // "blast": ONE detonation for the whole wordmark (no per-letter stagger) — the smoke

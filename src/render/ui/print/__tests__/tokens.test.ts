@@ -96,11 +96,24 @@ describe("TITLE reveal budget", () => {
  * and turning the fill back into a wipe.
  */
 describe("TITLE paint rhythm", () => {
-  it("leaves the can silent longer than it sprays, between two lines", () => {
-    expect(MOTION.titlePaintLineGapMs).toBeGreaterThan(MOTION.titlePaintLineMs);
+  /**
+   * The first cut of this variant sprayed a line in 45ms. Frame-by-frame capture of the built
+   * cover (60fps) showed why that failed the brief: a line was laid in under three frames, so
+   * it never READ as a stroke crossing the letter — it popped, and because one horizontal line
+   * crosses several strokes of a glyph (the M's two stems), a popping line lights up two or
+   * three disjoint places at the same instant. A stroke has to last long enough to be SEEN
+   * travelling; six frames at 60fps is the floor. This is the assertion that keeps the next
+   * "make it snappier" edit from bringing the popping back.
+   */
+  it("sprays a line slowly enough to be seen crossing (≥6 frames at 60fps)", () => {
+    expect(MOTION.titlePaintLineMs).toBeGreaterThanOrEqual(100);
   });
 
-  it("spends a pass on whole lines only (six of them, spray + travel)", () => {
+  it("stops the can between two lines, long enough to register", () => {
+    expect(MOTION.titlePaintLineGapMs).toBeGreaterThanOrEqual(60);
+  });
+
+  it("spends a pass on whole lines only (four of them, spray + travel)", () => {
     expect(MOTION.titlePaintPassMs % (MOTION.titlePaintLineMs + MOTION.titlePaintLineGapMs)).toBe(
       0,
     );

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MOTION } from "@render/ui/print";
+import { MOTION, SMOKE_INK, SMOKE_SPRITE_PATH } from "@render/ui/print";
 import { TitleScreen, pickTitleAnimation, type TitleAnimation } from "../TitleScreen";
 
 const render = (): string =>
@@ -103,6 +103,21 @@ describe("TitleScreen wordmark reveal", () => {
     for (const prop of ["--puff-dx", "--puff-dy", "--puff-grow", "--puff-peak", "--puff-life"]) {
       expect(html.split(prop).length - 1, prop).toBe(puffs);
     }
+  });
+
+  /**
+   * The puffs' texture is the boss veil's own sprite, handed to the CSS as `--puff-sprite`
+   * because only the component can read Vite's BASE_URL. Drop that property and the mask
+   * declaration becomes invalid at computed-value time — which does NOT hide the cloud, it
+   * UNMASKS it: eighteen flat grey rectangles over the cover. A missing file degrades
+   * gracefully (an unloadable mask hides its element); a missing variable does not, so it is
+   * the variable that is asserted here.
+   */
+  it("paints the cloud with the boss veil's sprite and grey", () => {
+    const html = renderWithDraw(0.9);
+    expect(html).toContain(`--puff-sprite:url(`);
+    expect(html).toContain(SMOKE_SPRITE_PATH);
+    expect(html).toContain(`--puff-ink:${SMOKE_INK}`);
   });
 });
 

@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
-import { CHROME, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import {
+  CHROME,
+  MASTHEAD,
+  MOTION,
+  SMOKE_INK,
+  SMOKE_SPRITE_PATH,
+  STOCK,
+  SHORT_LANDSCAPE_MEDIA,
+} from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
 import { cx } from "./controls/cx";
 import styles from "./TitleScreen.module.css";
@@ -76,25 +84,34 @@ type SmokePuff = readonly [
  * visit, and the render path stays free of `Math.random` (the FLYER_*_SEED discipline).
  */
 const SMOKE_PUFFS: readonly SmokePuff[] = [
-  [-1.22, -0.17, 1.16, -0.48, -0.65, 1.62, 0.83, 0.1, 0.68],
-  [-0.71, -0.23, 0.9, -0.62, -1.19, 1.55, 0.79, 0.03, 0.97],
-  [-0.35, -0.29, 1.02, -0.28, -0.63, 1.51, 0.84, 0.1, 0.75],
-  [0.33, -0.24, 1.1, 0.24, -1.02, 1.68, 0.67, 0.07, 0.8],
-  [0.65, -0.19, 1.19, 0.31, -0.61, 1.79, 0.74, 0.06, 0.92],
-  [1.05, -0.19, 1.04, 0.02, -0.69, 1.53, 0.68, 0.03, 0.95],
-  [-1.26, 0.14, 1.04, -0.45, -0.57, 1.89, 0.7, 0.04, 0.71],
-  [-0.73, 0.08, 1.03, -0.16, -0.87, 1.46, 0.91, 0.07, 0.83],
-  [-0.31, 0.0, 1.1, -0.2, -0.66, 1.3, 0.73, 0.1, 0.82],
-  [0.23, 0.08, 0.87, 0.01, -0.5, 1.52, 0.88, 0.1, 0.78],
-  [0.87, 0.09, 0.96, -0.08, -0.49, 1.83, 0.92, 0.01, 0.73],
-  [1.3, 0.06, 1.19, -0.01, -0.86, 1.47, 0.68, 0.06, 0.94],
-  [-1.27, 0.28, 0.92, -0.34, -0.9, 1.91, 0.89, 0.02, 0.7],
-  [-0.84, 0.27, 0.87, -0.6, -0.63, 1.87, 0.68, 0.1, 0.86],
-  [-0.33, 0.28, 1.06, -0.49, -0.71, 1.66, 0.75, 0.04, 0.8],
-  [0.31, 0.35, 0.89, 0.31, -0.97, 1.42, 0.78, 0.02, 0.97],
-  [0.8, 0.25, 1.14, 0.0, -0.5, 1.42, 0.83, 0.05, 0.76],
-  [1.11, 0.37, 0.82, -0.25, -0.98, 1.68, 0.71, 0.08, 0.72],
+  [-1.22, -0.17, 1.64, -0.48, -0.65, 1.62, 0.95, 0.1, 0.68],
+  [-0.71, -0.23, 1.28, -0.62, -1.19, 1.55, 0.93, 0.03, 0.97],
+  [-0.35, -0.29, 1.45, -0.28, -0.63, 1.51, 0.96, 0.1, 0.75],
+  [0.33, -0.24, 1.55, 0.24, -1.02, 1.68, 0.86, 0.07, 0.8],
+  [0.65, -0.19, 1.68, 0.31, -0.61, 1.79, 0.9, 0.06, 0.92],
+  [1.05, -0.19, 1.48, 0.02, -0.69, 1.53, 0.87, 0.03, 0.95],
+  [-1.26, 0.14, 1.48, -0.45, -0.57, 1.89, 0.88, 0.04, 0.71],
+  [-0.73, 0.08, 1.46, -0.16, -0.87, 1.46, 0.99, 0.07, 0.83],
+  [-0.31, 0.0, 1.55, -0.2, -0.66, 1.3, 0.9, 0.1, 0.82],
+  [0.23, 0.08, 1.25, 0.01, -0.5, 1.52, 0.98, 0.1, 0.78],
+  [0.87, 0.09, 1.36, -0.08, -0.49, 1.83, 1.0, 0.01, 0.73],
+  [1.3, 0.06, 1.68, -0.01, -0.86, 1.47, 0.87, 0.06, 0.94],
+  [-1.27, 0.28, 1.32, -0.34, -0.9, 1.91, 0.98, 0.02, 0.7],
+  [-0.84, 0.27, 1.25, -0.6, -0.63, 1.87, 0.87, 0.1, 0.86],
+  [-0.33, 0.28, 1.5, -0.49, -0.71, 1.66, 0.91, 0.04, 0.8],
+  [0.31, 0.35, 1.27, 0.31, -0.97, 1.42, 0.93, 0.02, 0.97],
+  [0.8, 0.25, 1.61, 0.0, -0.5, 1.42, 0.95, 0.05, 0.76],
+  [1.11, 0.37, 1.17, -0.25, -0.98, 1.68, 0.89, 0.08, 0.72],
 ];
+
+// The cloud's paint, handed to `.puff` inline (same ADR-0046 escape hatch as CHROME_VARS): the
+// boss veil's grey, and the boss veil's own sprite as the puffs' alpha — the URL has to be
+// built here because a CSS module cannot read Vite's BASE_URL, and the cover ships under a
+// repo sub-path on the preview.
+const SMOKE_VARS = {
+  "--puff-ink": SMOKE_INK,
+  "--puff-sprite": `url(${import.meta.env.BASE_URL}${SMOKE_SPRITE_PATH})`,
+} as CSSProperties;
 
 // Chrome band tones, handed to the CSS module as inline custom properties (ADR-0046: a
 // value with a single consumer flows inline rather than into the global token bridge).
@@ -228,7 +245,12 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
               on its own clock (see `.puff`); the container only holds them and screens the
               cloud through the print halftone. */}
           {animation === "blast" && (
-            <span aria-hidden={true} data-muf-title-smoke={true} className={styles.smoke}>
+            <span
+              aria-hidden={true}
+              data-muf-title-smoke={true}
+              className={styles.smoke}
+              style={SMOKE_VARS}
+            >
               {SMOKE_PUFFS.map((puff) => (
                 <span key={puff.join()} className={styles.puff} style={puffVars(puff)} />
               ))}
