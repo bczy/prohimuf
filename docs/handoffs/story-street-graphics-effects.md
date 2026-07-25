@@ -80,6 +80,30 @@ No composite gate and no `gpu-specialist` verdict yet. Effect 5 adds ~14 debris 
 active QTE figure — all on layer 0, riding the existing CRT world pass; no new render
 target, no new pass, `CrtPass`'s pass graph unchanged. Ben should still verdict it.
 
+## stage-5. VERIFY (perf) — gpu-specialist (Ben) — 2026-07-25
+
+- claim: GPU cost audit + PERF verdict on the five street-graphics effects.
+- release: `docs/perf-budget.md` created (budget §2 PROPOSED, awaiting Bertrand's
+  ratification — there was no budget to verdict against), baseline A/B measured
+  `main c6404e4` vs branch, per-effect verdicts in §5, on-target protocol in §6.
+- VERDICT: PASS — GPU / frame budget (gpu-specialist)
+
+Per effect: acid neon glow APPROVE · VHS travel APPROVE · energy aura APPROVE
+(one DEFERRED-ON-TARGET item, boss-QTE concurrency) · urban motion OPTIMIZE
+(non-blocking, 3 named remedies routed to `dev-r3f-render`) · spray title APPROVE.
+
+Measured in-sandbox (headless Chromium + SwiftShader, `belliard`, `crt: true`,
+GL-level per-pass census, pointer sweep so frustum culling does not hide the delta):
+**+0 passes, +0 render targets, +0 RT-format change, +0 shader programs**; draw calls
+desktop 73 → 99 p50 (ceiling B2 = 150), mobile 57 → 58 p50 (ceiling 90). Ambient
+allowance B7 now 83–88 % consumed by `UrbanMotion` — recorded for the architect.
+
+**B1 (frame time) is NOT verified and cannot be here** — SwiftShader is a CPU
+rasteriser and gives no GPU timing. Escalated to Bertrand as a ready-to-run protocol
+(perf-budget §6: preview URL, 7 scenarios, 3 device classes, thresholds, and the
+branch-vs-main Δ that is the real gate). `producer` chases; over budget with the PR
+still open revokes this DEFERRED pass into a stage-5 FAIL.
+
 ### Concurrency note
 
 Another agent (Équipe 2, TITLE spray reveal) is working in the SAME checkout. My first
