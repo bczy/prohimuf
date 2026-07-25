@@ -53,6 +53,16 @@ describe("decide", () => {
   it("leaves a healthy verdict free of the degraded marker", () => {
     expect(decide(none).degraded).toBeUndefined();
   });
+
+  it("reports DEGRADED for a missing skeptic artifact", () => {
+    // Regression: artifact download fails silently, triage reads [],
+    // decide() sees no failed jobs → hollow PASS. Now triage injects
+    // "skeptic(artifact-missing)" into degraded.
+    const v = decide(none, ["skeptic(artifact-missing)"]);
+    expect(v.conclusion).toBe("failure");
+    expect(v.title).toContain("DEGRADED");
+    expect(v.summary).toContain("artifact-missing");
+  });
 });
 
 describe("degradedJobs", () => {

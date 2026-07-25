@@ -376,4 +376,23 @@ describe("provider budgets", () => {
     expect([...index.keys()]).toEqual(["a.ts", "b.ts"]);
     expect(index.get("a.ts")).toContain("+a");
   });
+
+  it("appends the suffix to every batched call", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(githubOk);
+    await callPanelModelBatched({
+      system: "s",
+      preamble: "PRE",
+      suffix: "\n</UNTRUSTED_DIFF>",
+      parts: splitUnifiedDiff(bigDiff),
+      env: { GITHUB_TOKEN: "t" },
+      fetchImpl,
+      log: silent,
+      sleepImpl: async () => {},
+    });
+    for (const [, init] of fetchImpl.mock.calls) {
+      const user = JSON.parse(init.body).messages[1].content;
+      expect(user).toMatch(/^PRE/);
+      expect(user).toMatch(/<\/UNTRUSTED_DIFF>$/);
+    }
+  });
 });

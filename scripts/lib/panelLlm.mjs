@@ -355,6 +355,7 @@ export async function callPanelModel({
 export async function callPanelModelBatched({
   system,
   preamble = "",
+  suffix = "",
   parts,
   env = process.env,
   fetchImpl = fetch,
@@ -365,7 +366,7 @@ export async function callPanelModelBatched({
     providers: providersFor(env, fetchImpl),
     log,
     run: async (p) => {
-      const full = Math.max(1000, p.maxInputChars - system.length - preamble.length);
+      const full = Math.max(1000, p.maxInputChars - system.length - preamble.length - suffix.length);
       return withShrink(
         async (budget) => {
           const batches = packParts(parts, budget);
@@ -379,7 +380,12 @@ export async function callPanelModelBatched({
             if (texts.length > 0) await sleepImpl(p.pacingMs);
             texts.push(
               await withRetry(
-                () => p.send({ system, user: `${preamble}${batch}`, maxTokens: p.maxOutputTokens }),
+                () =>
+                  p.send({
+                    system,
+                    user: `${preamble}${batch}${suffix}`,
+                    maxTokens: p.maxOutputTokens,
+                  }),
                 { log, provider: p.name, sleepImpl },
               ),
             );

@@ -40,7 +40,8 @@ async function main() {
   requireEnv("HEAD_SHA", HEAD_SHA);
   requireEnv("GITHUB_REPOSITORY", OWNER_REPO);
 
-  const findings = existsSync("findings-confirmed.json")
+  const artifactExists = existsSync("findings-confirmed.json");
+  const findings = artifactExists
     ? JSON.parse(await readFile("findings-confirmed.json", "utf8"))
     : [];
 
@@ -49,6 +50,14 @@ async function main() {
   const degraded = PANEL_FAILED_JOBS.split(",")
     .map((j) => j.trim())
     .filter(Boolean);
+
+  // ADR-0067 fail-safe: a missing findings-confirmed artifact from a job that
+  // reported success means the artifact was undownloadable — the diff was NOT
+  // reviewed. Treat as DEGRADED rather than an empty (and therefore green) PASS.
+  if (!artifactExists && !degraded.includes("skeptic")) {
+    degraded.push("skeptic(artifact-missing)");
+  }
+
   const verdict = decide(counts, degraded);
 
   const body = renderComment(confirmed, counts, verdict);
