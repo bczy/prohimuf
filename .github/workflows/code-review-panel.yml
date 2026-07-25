@@ -87,11 +87,22 @@ jobs:
           gh pr view "$PR_NUMBER" --json title,body > panel-input/pr.json
           # Diff the PR head explicitly rather than the checked-out HEAD: on a
           # workflow_dispatch run HEAD is the default branch, which would make
-          # the diff empty and every reviewer blind.
-          git fetch --no-tags origin main "pull/$PR_NUMBER/head"
-          git diff origin/main...FETCH_HEAD --unified=3 > panel-input/diff.patch
-          git diff --name-status origin/main...FETCH_HEAD > panel-input/files.txt
-          wc -c panel-input/diff.patch
+          # the diff empty and every reviewer blind. The PR head is fetched into
+          # a named ref — with two refspecs in one fetch, FETCH_HEAD resolves to
+          # the first one (main) and the diff silently comes out empty.
+          git fetch --no-tags origin main
+          git fetch --no-tags --force origin "pull/$PR_NUMBER/head:panel-head"
+          git diff origin/main...panel-head --unified=3 > panel-input/diff.patch
+          git diff --name-status origin/main...panel-head > panel-input/files.txt
+          bytes=$(wc -c < panel-input/diff.patch)
+          echo "diff bytes: $bytes"
+          # An empty diff means the panel would rubber-stamp the PR. Fail loudly
+          # instead: a silent PASS is exactly the failure mode this gate exists
+          # to prevent.
+          if [ "$bytes" -eq 0 ]; then
+            echo "::error::Empty diff for PR #$PR_NUMBER — refusing to run a blind panel."
+            exit 1
+          fi
 
       - name: Upload panel input
         uses: actions/upload-artifact@v4
