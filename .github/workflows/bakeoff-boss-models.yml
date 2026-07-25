@@ -1,0 +1,82 @@
+name: Banc d'essai — modèles d'image pour le boss
+
+# WHY THIS RUNS IN CI AND NOT LOCALLY.
+# POLLINATIONS_TOKEN is a write-only GitHub secret: the API never returns its
+# value and there is no `gh secret get`, so a developer machine cannot read it.
+# The runner is the only place the token exists in clear. Running the bake-off
+# here is therefore not a convenience — it is the only way to run it truthfully.
+#
+# WHY IT MUST BE AUTHENTICATED AT ALL.
+# Unauthenticated, image.pollinations.ai SILENTLY IGNORES `model=` and serves
+# `sana` with HTTP 200 — five different models returned one identical MD5 in
+# testing. The script targets gen.pollinations.ai (honest 401) and fingerprints
+# every response, so a silent fallback shows up as FALLBACK-SUSPECT in the report
+# instead of being presented as a result.
+#
+# COST. Several models in the matrix are premium and spend Pollen per image.
+# This workflow is `workflow_dispatch` ONLY — never on push, never on schedule —
+# so a run is always a deliberate human act. Trim `models` to cut the bill.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pose:
+        description: "Boss pose key from levelArt.json (boss.types)"
+        default: commander_shielded
+        type: string
+      models:
+        description: "Comma-separated model list. Empty = the full 14-model matrix (27 cells)."
+        default: ""
+        type: string
+      size:
+        description: "Square generation size in px"
+        default: "1024"
+        type: string
+
+# Read-only: this workflow produces an artifact for a human to look at. It never
+# commits, and nothing it generates touches public/assets — the bake-off decides
+# WHICH model to adopt; adopting it is a separate, gated act.
+permissions:
+  contents: read
+
+jobs:
+  bakeoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Plan (no generation, no spend)
+        run: |
+          node scripts/bakeoff-boss-models.mjs --dry \
+            --pose "${{ inputs.pose }}" \
+            ${{ inputs.models && format('--models "{0}"', inputs.models) || '' }}
+
+      - name: Run the bake-off
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+        run: |
+          if [ -z "$POLLINATIONS_TOKEN" ]; then
+            echo "::error::POLLINATIONS_TOKEN is not set on this repo — the bake-off"
+            echo "::error::would silently degrade to sana and report a false result."
+            exit 1
+          fi
+          node scripts/bakeoff-boss-models.mjs \
+            --pose "${{ inputs.pose }}" \
+            --size "${{ inputs.size }}" \
+            ${{ inputs.models && format('--models "{0}"', inputs.models) || '' }}
+
+      - name: Upload the preview + every generated PNG
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakeoff-${{ inputs.pose }}
+          path: bakeoff-out/
+          if-no-files-found: error
+          retention-days: 14
