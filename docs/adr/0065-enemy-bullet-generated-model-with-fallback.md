@@ -1,10 +1,10 @@
-# 0064 — Enemy bullet: generated textured GLB with procedural fallback
+# 0065 — Enemy bullet: generated textured GLB with procedural fallback
 
 - **Status:** Proposed
 - **Date:** 2026-07-25
-- **Number:** 0064, checked against local files, `docs/adr/README.md` index and
-  `origin/main` (max found = 0063) — no `producer` lane allocation for this
-  single-lane Copilot session.
+- **Number:** 0065, renumbered from 0064 after the `bczy-cuddly-succotash`
+  lane merged its own ADR-0064 (Copilot crew orchestration) into `main` first;
+  checked against `origin/main`, the local files and `docs/adr/README.md`.
 
 ## Context
 

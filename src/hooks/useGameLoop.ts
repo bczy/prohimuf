@@ -181,7 +181,7 @@ export interface ImpactChannel {
 }
 
 /**
- * Bridge→render transport for enemy-bullet hits on the player (ADR-0064).
+ * Bridge→render transport for enemy-bullet hits on the player (ADR-0065).
  * Mirror of {@link ImpactChannel} in the opposite direction (enemy → player).
  * Same contract: per-frame queue + reset signal bumped on level restart.
  */
@@ -496,7 +496,7 @@ export function useGameLoop(
     if (impactChannel && next.impactEvents) {
       for (const ev of next.impactEvents) impactChannel.queue.push(ev);
     }
-    // Enemy → player hits: same drain pattern, mirror direction (ADR-0064).
+    // Enemy → player hits: same drain pattern, mirror direction (ADR-0065).
     const playerHitChannel = playerHitChannelRef?.current;
     if (playerHitChannel && next.playerHitEvents) {
       for (const ev of next.playerHitEvents) playerHitChannel.queue.push(ev);

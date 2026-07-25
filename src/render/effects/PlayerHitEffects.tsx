@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial } from "three";
 import type { PlayerHitChannel } from "@hooks/useGameLoop";
 
-// ADR-0064 D4 — Player-hit render feedback: full-screen red flash + a decaying
+// ADR-0065 D4 — Player-hit render feedback: full-screen red flash + a decaying
 // translational camera shake. Categorical, unmissable "I've been hit" cue that
 // stands independent from the HUD lives counter. Cosmetic-only; the `lives`
 // rule stays in stateMachine.ts. Mirror of ImpactEffects (enemy → player).

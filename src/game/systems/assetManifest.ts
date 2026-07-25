@@ -190,7 +190,7 @@ export function bulletAssetPath(): string {
 }
 
 /**
- * Base-relative enemy-bullet 3D model path (ADR-0064, mirrors `bulletModel.ts`).
+ * Base-relative enemy-bullet 3D model path (ADR-0065, mirrors `bulletModel.ts`).
  * Warming it only kicks off the async GLTF load — `BulletSprite` already renders
  * its code-drawn cylinder+cap instantly, so a missing/404 model (not yet
  * generated in CI) never stalls the gate.

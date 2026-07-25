@@ -69,8 +69,8 @@ export interface GameState {
   // list and ImpactEffects pools it, so the widening needs no render change.
   readonly impactEvents?: readonly ImpactEvent[];
   // Enemy bullets that hit the player this tick (transient; drives full-screen
-  // red flash + camera shake — ADR-0064). Mirror of `impactEvents` in the
-  // opposite direction. Optional so the pre-ADR-0064 shape stays valid.
+  // red flash + camera shake — ADR-0065). Mirror of `impactEvents` in the
+  // opposite direction. Optional so the pre-ADR-0065 shape stays valid.
   readonly playerHitEvents?: readonly PlayerHitEvent[];
   // Active weapon + special stock + burst tick state (ADR-0055 D1). Rule-owned;
   // seeded `base`/∞ and always `base` on a level with no `lootSpec` (byte-identical

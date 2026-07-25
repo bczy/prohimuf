@@ -1,15 +1,16 @@
-# 0065 — Fractional lives: per-archetype bullet damage in quarter-heart steps
+# 0066 — Fractional lives: per-archetype bullet damage in quarter-heart steps
 
 - **Status:** Proposed
 - **Date:** 2026-07-25
-- **Number:** 0065, checked against local files, `docs/adr/README.md` index and
-  every remote branch (max `0064` found, claimed by this branch) — no `producer`
-  lane allocation for this single-lane Copilot session.
+- **Number:** 0066, allocated after ADR-0064 was taken by the merged
+  `bczy-cuddly-succotash` lane (Copilot crew orchestration); checked against
+  `origin/main`, the local files and `docs/adr/README.md` (max found = 0065,
+  claimed by this branch).
 
 ## Context
 
 Enemy return fire cost a flat **one heart per hit**, and a level starts with 3
-hearts. Combined with ADR-0064's directional aim — which points every round at
+hearts. Combined with ADR-0065's directional aim — which points every round at
 the player rather than dropping it straight down — three connecting shots ended
 a run, and there was no immunity window, so two windows resolving on adjacent
 ticks removed two hearts in under a tenth of a second. The result read as

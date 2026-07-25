@@ -1,6 +1,6 @@
 name: Generate bullet 3D model
 
-# Generates the enemy-bullet 3D model (ADR-0064) from a text prompt via
+# Generates the enemy-bullet 3D model (ADR-0065) from a text prompt via
 # Pollinations' `gen.pollinations.ai/3d` endpoint (hyper3d-rodin model, real
 # API key required — the 3D endpoint has no anonymous tier, unlike flux),
 # and commits the GLB to the current branch. `BulletSprite.tsx` keeps its

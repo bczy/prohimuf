@@ -11,7 +11,7 @@ import {
 } from "@render/scene/bulletModel";
 
 /*
- * Standalone 3D model viewer (ADR-0064 dev tool) — a bare page to actually LOOK at
+ * Standalone 3D model viewer (ADR-0065 dev tool) — a bare page to actually LOOK at
  * `assets/models/bullet.glb` once the CI generation workflow has produced it,
  * before wiring `BulletSprite.tsx`'s `MODEL_SCALE`/orientation. It reuses the same
  * `bulletModel.ts` loader the game uses (no separate loading code to drift), and
