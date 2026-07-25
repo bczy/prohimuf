@@ -122,8 +122,12 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
 
 ### Claude-specific working rules (on top of AGENTS.md)
 
-- **Verify before claiming done:** `rtk tsc` + `rtk vitest` + `rtk lint` (the rtk versions
-  of the yarn commands in `AGENTS.md`). Never report green tests that aren't.
+- **Do not manually run `rtk tsc`/`rtk lint` (or `yarn typecheck`/`yarn lint`/`yarn
+  format`) as a blanket verification pass before committing** — same rule as
+  `AGENTS.md`: the pre-commit hook already runs lint-staged + lint + format:check on
+  every commit, never bypass it with `--no-verify`. `rtk vitest` (or a targeted test
+  file) during active TDD red→green work is fine; a full manual check-everything pass
+  right before committing is not — let the hook do it.
 - Navigating code — who calls `X`, the impact of changing `Y`, where a symbol is defined —
   query **codegraph** first (`codegraph_callers/_callees/_impact/_search`): it returns a
   compact structured answer instead of grep/Read dumping whole files into context. Fall
