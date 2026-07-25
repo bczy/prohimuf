@@ -37,8 +37,8 @@ const DEBRIS_Z = 0.42;
 const VENT_Z = 0.4;
 
 /** Debris population. Halved on mobile, like every other ambient density. */
-const DEBRIS_COUNT_DESKTOP = 14;
-const DEBRIS_COUNT_MOBILE = 7;
+const DEBRIS_COUNT_DESKTOP = 8;
+const DEBRIS_COUNT_MOBILE = 4;
 
 /**
  * Vent positions along the street, as fractions of the full width. Fixed and

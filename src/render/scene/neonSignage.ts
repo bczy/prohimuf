@@ -63,8 +63,10 @@ interface Emitter {
  * entity a render-side emitter could be attached to. See the branch summary.
  */
 const EMITTERS: Partial<Record<NearForegroundKind, Emitter>> = {
-  // Lamp head, near the top of the mast.
-  lamppost: { family: "warm", x: 0, y: 0.4, size: 0.32, opacity: 0.55 },
+  // The lantern BULB — it hangs off the crosier arm LEFT of the mast (the mast sits
+  // right-of-centre in lamppost.png), so the glow is offset left and sits on the
+  // luminous body, not on the arm joint (Bertrand-directed, 2026-07-25).
+  lamppost: { family: "warm", x: -0.17, y: 0.32, size: 0.32, opacity: 0.55 },
   // The sign panel itself — the street's acid read.
   streetSign: { family: "acid", x: 0, y: 0.24, size: 0.36, opacity: 0.4 },
   // Metal/rebut: barely there. A hint of colour caught on a chrome edge.
