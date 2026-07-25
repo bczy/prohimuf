@@ -77,13 +77,13 @@ with it.
 
 ### 2. Class membership — which entities may carry the rim
 
-| Entity              | Aura   | Why                                                                                                                 |
-| -------------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
-| LOOT crate           | Yes    | Neutral object; no colour-code to contradict.                                                                     |
-| Hostage-taker captor | Yes    | The class you must shoot; identical semantics to the existing hostile rim.                                        |
-| Boss ("le Commandant") | Yes  | Same reasoning as the captor, at boss scale.                                                                      |
-| Hostage              | **No** | The **original** don't-shoot figure. A rim driven by a global energy scalar says nothing about the object it surrounds — la loi du glow's job is _identification_, and painting the same hue on captor and hostage identifies neither. |
-| Courier              | **No** | Already excluded, pre-dating this contract: the courier is a civilian and carries the "don't shoot" colour code (`docs/handoffs/story-street-graphics-effects.md` §"Open points for the design gate", item 2). This contract generalises that exclusion into a rule instead of a one-off. |
+| Entity                 | Aura   | Why                                                                                                                                                                                                                                                                                       |
+| ---------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LOOT crate             | Yes    | Neutral object; no colour-code to contradict.                                                                                                                                                                                                                                             |
+| Hostage-taker captor   | Yes    | The class you must shoot; identical semantics to the existing hostile rim.                                                                                                                                                                                                                |
+| Boss ("le Commandant") | Yes    | Same reasoning as the captor, at boss scale.                                                                                                                                                                                                                                              |
+| Hostage                | **No** | The **original** don't-shoot figure. A rim driven by a global energy scalar says nothing about the object it surrounds — la loi du glow's job is _identification_, and painting the same hue on captor and hostage identifies neither.                                                    |
+| Courier                | **No** | Already excluded, pre-dating this contract: the courier is a civilian and carries the "don't shoot" colour code (`docs/handoffs/story-street-graphics-effects.md` §"Open points for the design gate", item 2). This contract generalises that exclusion into a rule instead of a one-off. |
 
 **The rule, stated once so it does not need re-deriving per entity:** a player-energy rim may
 be added to an entity class **only if that class is not, and can never become, a
@@ -119,8 +119,7 @@ band**, following the `vehicleRim`/`vehicle` idiom already in `streetDepth.ts` (
 boss auras were first wired at `renderOrder: 5`, which collided with `facadeOverlay` (5),
 `vehicleRim` (5.2), `vehicle` (5.25), `courier` (5.5) and `nearRow` (5.75) — every one of
 those layers sorts after a rim at (5, z 0.48), so any balcony slab, grille, frozen courier
-or near-row prop overlapping the figure would paint over the rim while the host body (band
-6) painted over all of them: a rim with a bite out of it (triage finding **I1**).
+or near-row prop overlapping the figure would paint over the rim while the host body (band 6) painted over all of them: a rim with a bite out of it (triage finding **I1**).
 
 **Prescription (triage, not the code's momentary state — the render lane's fix rides a
 separate, parallel commit): both QTE auras take `renderOrder: 5.9`**, `rimZ`/`shadowZ`
