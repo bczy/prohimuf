@@ -60,11 +60,11 @@ eliminating the cold-load latency on the `MENU → PLAYING` transition.
 
 Three stable vendor chunks are declared:
 
-| Chunk key       | Modules                                        |
-| --------------- | ---------------------------------------------- |
-| `vendor-three`  | `three`                                        |
-| `vendor-r3f`    | `@react-three/fiber`      |
-| `vendor-react`  | `react`, `react-dom`, `scheduler`              |
+| Chunk key      | Modules                           |
+| -------------- | --------------------------------- |
+| `vendor-three` | `three`                           |
+| `vendor-r3f`   | `@react-three/fiber`              |
+| `vendor-react` | `react`, `react-dom`, `scheduler` |
 
 These chunks change only when the corresponding library version changes, enabling
 long-term HTTP caching per stability tier. The split is applied in the `game` build
