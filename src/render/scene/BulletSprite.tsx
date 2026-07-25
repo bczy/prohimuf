@@ -4,6 +4,13 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Quaternion, Vector3, type Group } from "three";
 import type { GameState } from "@game/types/gameState";
 import { warmBulletModel, getBulletModel } from "./bulletModel";
+import {
+  BULLET_BODY_LENGTH,
+  BULLET_BODY_RADIUS,
+  BULLET_CAP_RADIUS,
+  bulletForwardAxis,
+  BULLET_MODEL_SCALE,
+} from "./bulletGeometry";
 
 const MAX_BULLETS = 20;
 
@@ -23,25 +30,23 @@ const MAX_BULLETS = 20;
 // forever, so this fallback path is exercised on every build until the asset
 // is generated in CI.
 
-const BODY_LENGTH = 0.28;
-const BODY_RADIUS = 0.06;
-const CAP_RADIUS = 0.08;
+const BODY_LENGTH = BULLET_BODY_LENGTH;
+const BODY_RADIUS = BULLET_BODY_RADIUS;
+const CAP_RADIUS = BULLET_CAP_RADIUS;
 
 const ENEMY_BULLET_COLOR = "#ff4444";
 const ENEMY_BULLET_EMISSIVE = "#ff2222";
 const ENEMY_BULLET_EMISSIVE_INTENSITY = 0.7;
 
-// The cylinderGeometry's principal axis in Three is +Y; FORWARD is the local
-// axis we rotate FROM — per frame we compute the quaternion mapping it onto
-// the bullet's velocity direction.
-const FORWARD = new Vector3(0, 1, 0);
+// The cylinderGeometry's principal axis in Three is +Y; FORWARD is the local axis
+// we rotate FROM — per frame we compute the quaternion mapping it onto the
+// bullet's velocity direction. See bulletGeometry.ts (shared with the player's
+// own visual shot in ImpactEffects.tsx).
+const FORWARD = bulletForwardAxis();
 
-// Uniform scale applied to a cloned generated-model instance so it reads at
-// roughly the same on-screen size as the procedural cylinder+cap it replaces.
-// Calibrated with model-viewer.html against the real generated GLB (unscaled
-// bbox ~0.517 × 1.888 × 0.518, tall axis = Y) against the fallback's
-// BODY_LENGTH + CAP_RADIUS = 0.36 tall: 0.36 / 1.888 ≈ 0.19.
-const MODEL_SCALE = 0.19;
+// Uniform scale applied to a cloned generated-model instance — see
+// bulletGeometry.ts (BULLET_MODEL_SCALE) for the calibration note.
+const MODEL_SCALE = BULLET_MODEL_SCALE;
 
 // Depth cue: the bullet is pushed slightly toward the camera so it never
 // z-fights with, or hides behind, the facade quads it flies over.

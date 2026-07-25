@@ -206,7 +206,15 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet near center of screen decrements lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false, damage: 1 }],
+      bullets: [
+        {
+          id: 99,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: -1 },
+          fromPlayer: false,
+          damage: 1,
+        },
+      ],
     };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.lives).toBe(2);
@@ -215,7 +223,15 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet near camera offset decrements lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 3, y: 2 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage: 1 }],
+      bullets: [
+        {
+          id: 99,
+          position: { x: 3, y: 2 },
+          velocity: { x: 0, y: 0 },
+          fromPlayer: false,
+          damage: 1,
+        },
+      ],
     };
     // cameraOffsetX=3, cameraOffsetY=2 → bullet is at camera centre
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 3, 2);
@@ -225,7 +241,15 @@ describe("tickGameState — enemy shot hits player", () => {
   it("enemy bullet far from camera offset does NOT decrement lives", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage: 1 }],
+      bullets: [
+        {
+          id: 99,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: 0 },
+          fromPlayer: false,
+          damage: 1,
+        },
+      ],
     };
     // cameraOffsetX=5 → bullet is 5 units from camera centre, well outside PLAYER_HIT_RADIUS
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 5, 0);
@@ -236,7 +260,15 @@ describe("tickGameState — enemy shot hits player", () => {
     const state: GameState = {
       ...createInitialState(FACADE_01),
       lives: 1,
-      bullets: [{ id: 99, position: { x: 0, y: 0 }, velocity: { x: 0, y: -1 }, fromPlayer: false, damage: 1 }],
+      bullets: [
+        {
+          id: 99,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: -1 },
+          fromPlayer: false,
+          damage: 1,
+        },
+      ],
     };
     const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
     expect(next.phase).toBe("GAME_OVER");
@@ -1170,7 +1202,9 @@ describe("tickGameState — fractional damage and the invulnerability window", (
       ...createInitialState(FACADE_01),
       bullets: [bulletOnPlayer(0.25)],
     };
-    expect(tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01).playerInvulnRemaining).toBe(0.4);
+    expect(tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01).playerInvulnRemaining).toBe(
+      0.4,
+    );
   });
 
   it("two bullets landing on the same tick cost only the first one's damage", () => {

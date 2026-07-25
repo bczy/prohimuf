@@ -11,11 +11,7 @@ import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
 import { tickBullets, aimBulletVelocity } from "@game/systems/bulletSystem";
-import {
-  sampleDiscJitter,
-  makeBulletRng,
-  AIM_JITTER_RADIUS,
-} from "@game/systems/enemyFireSystem";
+import { sampleDiscJitter, makeBulletRng, AIM_JITTER_RADIUS } from "@game/systems/enemyFireSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
@@ -74,7 +70,7 @@ const PLAYER_INVULN_SECONDS = 0.4;
 const LIVES_QUANTUM = 0.25;
 
 function snapLives(lives: number): number {
-return Math.round(lives / LIVES_QUANTUM) * LIVES_QUANTUM;
+  return Math.round(lives / LIVES_QUANTUM) * LIVES_QUANTUM;
 }
 
 let _nextBulletId = 1;

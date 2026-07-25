@@ -49,7 +49,9 @@ function OrbitRig(): null {
   useEffect(() => {
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    return () => { controls.dispose(); };
+    return () => {
+      controls.dispose();
+    };
   }, [controls]);
 
   useFrame(() => controls.update());

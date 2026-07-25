@@ -45,13 +45,25 @@ describe("tickBullets", () => {
   });
 
   it("removes bullets out of bounds (|x| > 60)", () => {
-    const b = { id: 1, position: { x: 61, y: 0 }, velocity: { x: 1, y: 0 }, fromPlayer: true, damage: 0 };
+    const b = {
+      id: 1,
+      position: { x: 61, y: 0 },
+      velocity: { x: 1, y: 0 },
+      fromPlayer: true,
+      damage: 0,
+    };
     const result = tickBullets([b], 0.016);
     expect(result.length).toBe(0);
   });
 
   it("removes bullets out of bounds (|y| > 15)", () => {
-    const b = { id: 1, position: { x: 0, y: 16 }, velocity: { x: 0, y: 1 }, fromPlayer: true, damage: 0 };
+    const b = {
+      id: 1,
+      position: { x: 0, y: 16 },
+      velocity: { x: 0, y: 1 },
+      fromPlayer: true,
+      damage: 0,
+    };
     const result = tickBullets([b], 0.016);
     expect(result.length).toBe(0);
   });
