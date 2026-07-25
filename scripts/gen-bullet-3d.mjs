@@ -47,7 +47,11 @@ const PROMPT =
   "a single low-poly pistol bullet, brass cartridge case with pointed lead tip, " +
   "clean matte metal material, simple rounded cylindrical shape, isolated object, " +
   "no scene, no ground plane, no hands, no background";
-const SEED = 20260064; // pinned; bump to re-roll deterministically
+// pinned; bump to re-roll deterministically. Must stay <= 65535 — hyper3d-rodin
+// proxies to fal.ai's Hyper3D Rodin model, which rejects (HTTP 422) any larger
+// seed ("Input should be less than or equal to 65535"), unlike the flux 2D
+// endpoint's seeds elsewhere in this repo which have no such ceiling.
+const SEED = 6064;
 
 function isGlb(buf) {
   // glTF binary container: 4-byte magic "glTF" at offset 0 (little-endian 0x46546C67).
