@@ -14,6 +14,7 @@ import {
 } from "./courierTextures";
 import { flipbookFrame } from "./flipbook";
 import { wheelAngle } from "./deform";
+import { STREET_DEPTH } from "./streetDepth";
 
 // SPIKE (animation-2d-pipeline): procedural courier motion, additive over the
 // baked 6-frame flipbook. Flip to false to fall back to the pure flipbook baseline
@@ -34,9 +35,14 @@ const BOB_LEAN = 0.05; // radians of body lean at the extremes
 const MAX_COURIERS = 4;
 // World height of the cyclist sprite; square flipbook cells.
 const COURIER_H = 2.6;
-// Depth of the rider sprite: under the DeliveryVehicle sprite (VEHICLE_Z = 0.72
-// in DeliveryVehicleSprite.tsx).
-const RIDER_Z = 0.701;
+// Depth of the rider sprite: BETWEEN the two near-foreground kerb rows
+// (Bertrand-directed 2026-07-25, ADR-0047 amendment 4) — behind the near row
+// (renderOrder 5.75, z 0.7), in front of the far row (renderOrder 4, z 0.6) and
+// still under the DeliveryVehicle sprite (VEHICLE_Z = 0.72). The near props may
+// therefore partially mask a passing livreur: depth ambiance wins over total
+// target legibility. The courier stays ABOVE the facade-attached ironwork
+// (renderOrder 5) — that art is physically behind him. See {@link STREET_DEPTH}.
+const RIDER_Z = STREET_DEPTH.courier.z;
 
 interface Props {
   stateRef: React.RefObject<GameState>;
@@ -118,7 +124,7 @@ export function CourierSprite({ stateRef, paused = false }: Props): JSX.Element 
           ref={(el) => {
             riderRefs.current[i] = el;
           }}
-          renderOrder={6}
+          renderOrder={STREET_DEPTH.courier.order}
           visible={false}
         >
           <planeGeometry args={[COURIER_H, COURIER_H]} />

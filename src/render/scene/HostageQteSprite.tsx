@@ -712,8 +712,10 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   });
 
   return (
-    // renderOrder 6/7 = the STREET-actor layers (courier 6, delivery vehicle 7):
-    // the tableau stands on the sidewalk in front of the facade, drawn over the
+    // renderOrder 6/7 = the STREET-actor layers, at the delivery-vehicle level
+    // (the courier itself moved to 5.5 in the 2026-07-25 near-foreground
+    // re-ordering — see streetDepth.ts): the tableau stands on the sidewalk in
+    // front of the facade AND in front of both prop rows (4/5.75), drawn over the
     // balcony ironwork like every street actor. The hostage's higher order + z
     // draws her over the captor; the peek cue (8) sits on top of both.
     <>

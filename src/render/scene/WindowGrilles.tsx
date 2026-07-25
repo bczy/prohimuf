@@ -6,6 +6,7 @@ import { levelLayerUrl } from "@game/levels/levelArt";
 import type { WindowZone } from "@game/levels/levelArt";
 import { applyPixelFilter } from "./pixelArt";
 import { ENEMY_PLANE_SCALE, ENEMY_BODY_LIFT } from "./EnemySprite";
+import { STREET_DEPTH } from "./streetDepth";
 
 interface Props {
   /** Level id — resolves the `foreground.png` overlay via {@link levelLayerUrl}. */
@@ -94,9 +95,15 @@ export function WindowGrilles({
         // Centre the quad so its BOTTOM edge lands exactly on the feet line.
         const grilleCentreY = enemyFeetY + grilleH / 2;
         return (
-          // z 0.5 + renderOrder 5: in front of the enemies (renderOrder 4, z 0),
-          // the same slot the code-drawn ForegroundFrames used.
-          <mesh key={`grille-${String(i)}`} position={[worldX, grilleCentreY, 0.5]} renderOrder={5}>
+          // STREET_DEPTH.facadeOverlay (z 0.5, renderOrder 5): in front of the
+          // enemies (renderOrder 4, z 0), the same slot the code-drawn
+          // ForegroundFrames uses — and strictly BELOW every street actor
+          // (courier 5.5, delivery van 6/7), which pass in front of the facade.
+          <mesh
+            key={`grille-${String(i)}`}
+            position={[worldX, grilleCentreY, STREET_DEPTH.facadeOverlay.z]}
+            renderOrder={STREET_DEPTH.facadeOverlay.order}
+          >
             <planeGeometry args={[grilleW, grilleH]} />
             <meshBasicMaterial map={texture} transparent depthWrite={false} />
           </mesh>
