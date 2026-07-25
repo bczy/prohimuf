@@ -17,6 +17,13 @@ name: Banc d'essai — modèles d'image pour le boss
 # This workflow is `workflow_dispatch` ONLY — never on push, never on schedule —
 # so a run is always a deliberate human act. Trim `models` to cut the bill.
 
+# TRIGGERS. `workflow_dispatch` only becomes usable once this file reaches the
+# default branch — a GitHub platform rule about discoverability. Until then the
+# house marker-file pattern (spike-model-ab.yml, gen-courier-sprites.yml) is the
+# way in: a push touching .github/dispatch/bakeoff-boss-models, gated on a
+# `ci(dispatch):` commit subject so an ordinary merge or rebase touching that
+# path can never fire a paid run. A push event runs the workflow AS IT EXISTS ON
+# THE PUSHED BRANCH, which is exactly what a branch-local experiment needs.
 on:
   workflow_dispatch:
     inputs:
@@ -32,6 +39,10 @@ on:
         description: "Square generation size in px"
         default: "1024"
         type: string
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/bakeoff-boss-models"
 
 # Read-only: this workflow produces an artifact for a human to look at. It never
 # commits, and nothing it generates touches public/assets — the bake-off decides
@@ -39,10 +50,23 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: bakeoff-boss-models-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   bakeoff:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Never on main; on a push, only an explicit ci(dispatch): commit fires it —
+    # a merge or rebase could otherwise match the marker path and spend Pollen.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # A push event carries no `inputs`, so every parameter needs its default
+      # restated here rather than relying on the workflow_dispatch defaults.
+      POSE: ${{ github.event.inputs.pose || 'commander_shielded' }}
+      MODELS: ${{ github.event.inputs.models || '' }}
+      SIZE: ${{ github.event.inputs.size || '1024' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,9 +78,9 @@ jobs:
 
       - name: Plan (no generation, no spend)
         run: |
-          node scripts/bakeoff-boss-models.mjs --dry \
-            --pose "${{ inputs.pose }}" \
-            ${{ inputs.models && format('--models "{0}"', inputs.models) || '' }}
+          args=(--dry --pose "$POSE")
+          [ -n "$MODELS" ] && args+=(--models "$MODELS")
+          node scripts/bakeoff-boss-models.mjs "${args[@]}"
 
       - name: Run the bake-off
         env:
@@ -67,16 +91,15 @@ jobs:
             echo "::error::would silently degrade to sana and report a false result."
             exit 1
           fi
-          node scripts/bakeoff-boss-models.mjs \
-            --pose "${{ inputs.pose }}" \
-            --size "${{ inputs.size }}" \
-            ${{ inputs.models && format('--models "{0}"', inputs.models) || '' }}
+          args=(--pose "$POSE" --size "$SIZE")
+          [ -n "$MODELS" ] && args+=(--models "$MODELS")
+          node scripts/bakeoff-boss-models.mjs "${args[@]}"
 
       - name: Upload the preview + every generated PNG
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bakeoff-${{ inputs.pose }}
+          name: bakeoff-${{ github.event.inputs.pose || 'commander_shielded' }}
           path: bakeoff-out/
           if-no-files-found: error
           retention-days: 14

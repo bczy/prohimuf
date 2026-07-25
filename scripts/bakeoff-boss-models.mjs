@@ -205,8 +205,22 @@ async function run() {
   writeHtml(cells, { pose, seed, size, ok, total: cells.length });
 }
 
-const dataUri = (f) =>
-  f && fs.existsSync(f) ? `data:image/png;base64,${fs.readFileSync(f).toString("base64")}` : null;
+// Pollinations serves JPEG bytes even from a .png request path (verified: `file`
+// reports "JPEG image data" on a .png URL), so the mime is sniffed from the magic
+// bytes rather than assumed — a data: URI with the wrong mime is a coin flip.
+function dataUri(f) {
+  if (!f || !fs.existsSync(f)) return null;
+  const buf = fs.readFileSync(f);
+  const mime =
+    buf[0] === 0x89 && buf[1] === 0x50
+      ? "image/png"
+      : buf[0] === 0xff && buf[1] === 0xd8
+        ? "image/jpeg"
+        : buf.slice(0, 4).toString() === "RIFF"
+          ? "image/webp"
+          : "application/octet-stream";
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
 
 function writeHtml(cells, meta) {
   const refs = [
