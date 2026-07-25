@@ -128,7 +128,7 @@ worse):
   paced. Measured: GitHub Models allows 1000 requests/min yet still 429s a burst
   of 16 back-to-back calls — the wall is burst shaping, not quota.
 
-A provider that dies on *any* batch fails the whole call over to the next one: a
+A provider that dies on _any_ batch fails the whole call over to the next one: a
 half-reviewed diff must never be reported as a complete review. That is D2
 applied to batching.
 

@@ -57,9 +57,7 @@ async function callAnthropic({ apiKey, model, system, user, maxTokens, fetchImpl
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(
-      `anthropic ${String(res.status)}: ${retryAfterTag(res)}${text.slice(0, 300)}`,
-    );
+    throw new Error(`anthropic ${String(res.status)}: ${retryAfterTag(res)}${text.slice(0, 300)}`);
   }
   const data = await res.json();
   return (data.content || [])
@@ -249,7 +247,9 @@ async function withShrink(attempt, budget, log, provider) {
     } catch (err) {
       if (i >= 3 || !isTooLarge(err) || current <= 2000) throw err;
       current = Math.floor(current / 2);
-      log(`[panel-llm] ${provider} rejected the payload size, retrying at ${String(current)} chars`);
+      log(
+        `[panel-llm] ${provider} rejected the payload size, retrying at ${String(current)} chars`,
+      );
     }
   }
 }
@@ -364,8 +364,7 @@ export async function callPanelModelBatched({
             if (texts.length > 0) await sleepImpl(p.pacingMs);
             texts.push(
               await withRetry(
-                () =>
-                  p.send({ system, user: `${preamble}${batch}`, maxTokens: p.maxOutputTokens }),
+                () => p.send({ system, user: `${preamble}${batch}`, maxTokens: p.maxOutputTokens }),
                 { log, provider: p.name, sleepImpl },
               ),
             );

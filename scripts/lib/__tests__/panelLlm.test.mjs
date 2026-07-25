@@ -223,7 +223,9 @@ describe("provider budgets", () => {
     expect(res.texts).toHaveLength(res.calls);
     for (const [url, init] of fetchImpl.mock.calls) {
       expect(url).toContain("models.github.ai");
-      const sent = JSON.parse(init.body).messages.map((m) => m.content).join("");
+      const sent = JSON.parse(init.body)
+        .messages.map((m) => m.content)
+        .join("");
       // The budget is on the CONTENT the model tokenizes, not on JSON escaping.
       expect(sent.length).toBeLessThanOrEqual(21_000);
     }
