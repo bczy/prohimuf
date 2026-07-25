@@ -6,7 +6,8 @@ source of truth for project facts and universal rules. Vendor-specific
 overlays live in:
 
 - `CLAUDE.md` — Claude Code (subagent crew, BMAD orchestration, hooks, rtk/codegraph).
-- `.github/copilot-instructions.md` — GitHub Copilot (chat + coding agent).
+- `.github/copilot-instructions.md` — GitHub Copilot (CLI/app **and** coding agent;
+  starts by telling you which of the two you are, since they differ in tooling).
 
 Read this file first, then your vendor-specific overlay if any.
 
@@ -89,15 +90,20 @@ human). Two runtimes execute the same panel:
 
 Copilot Coding Agent and Cursor lack `Task` — they MUST NOT self-simulate the
 4-reviewer panel in a single conversation. Push, mark ready-for-review, let
-the CI panel run.
+the CI panel run. (Copilot **CLI/app** does have `Task` and loads
+`.claude/agents/**`; for it the local panel is an advisory pre-check like
+Claude's.)
 
 ## AIDD context (informational — not required to use it)
 
 This repo is scaffolded with **BMAD-METHOD v6.3** (`_bmad/`, artifacts in
 `_bmad-output/`). The BMAD personas (John/Winston/Amelia/Otis/Sally/Mary/Paige) are
 exposed to Claude Code as a full **subagent crew** (`.claude/agents/`) with a
-production pipeline; see `CLAUDE.md`. Other agents (Copilot, Cursor, …) don't need
-this machinery — they follow the rules above and produce single-agent output.
+production pipeline; see `CLAUDE.md`. Any runtime that loads `.claude/agents/**`
+as delegable agents — Claude Code, and the **Copilot CLI/app** — is expected to
+orchestrate that crew rather than work solo (Copilot's own overlay,
+`.github/copilot-instructions.md`, says how). Runtimes without it (Copilot
+Coding Agent, Cursor, …) follow the rules above and produce single-agent output.
 The gates that matter (CI typecheck/test/lint/e2e, code review, ADRs) apply
 equally regardless of which agent opened the PR.
 

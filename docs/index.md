@@ -13,7 +13,7 @@ Agents (Claude Code / Copilot / Cursor / …) start here.
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | [`AGENTS.md`](../AGENTS.md)                                             | Vendor-neutral orientation (canonical) — stack, commands, boundary law, scope guard, working rules |
 | [`CLAUDE.md`](../CLAUDE.md)                                             | Claude Code overlay — subagent crew, BMAD skills, rtk/codegraph tooling                            |
-| [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | GitHub Copilot overlay — sandbox setup, boundary reminders                                         |
+| [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | GitHub Copilot overlay — CLI vs Coding Agent runtimes, crew orchestration & routing, sandbox setup |
 | [`.claude/agents/COLLABORATION.md`](../.claude/agents/COLLABORATION.md) | Agent collaboration protocol — roster, production pipeline, gates, fix lane                        |
 
 ---
