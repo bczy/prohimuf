@@ -43,8 +43,25 @@ function nextState(enemy: Enemy): EnemyState {
   }
 }
 
-export function tickEnemy(enemy: Enemy, delta: number): Enemy {
+/**
+ * Advance one enemy by `delta`.
+ *
+ * `onScreen === false` FREEZES the enemy entirely: its state is held and its
+ * countdown is paused, so it neither pops up, ducks back, nor fires while the
+ * camera is looking elsewhere ("an off-screen enemy cannot shoot"). Because
+ * `SHOOTING` is only ever ENTERED through this transition, an unseen enemy can
+ * never start a shot — the bullet spawn needs no guard of its own.
+ *
+ * It can however be CAUGHT in `SHOOTING` (it fired, then the camera panned
+ * away) and stay frozen there: consumers that read the `SHOOTING` state
+ * CONTINUOUSLY rather than on its transition — the delivery-vehicle damage —
+ * must apply their own on-screen filter.
+ *
+ * Defaults to `true` so every existing call site keeps its exact behaviour.
+ */
+export function tickEnemy(enemy: Enemy, delta: number, onScreen = true): Enemy {
   if (enemy.state === "DEAD") return enemy;
+  if (!onScreen) return enemy;
 
   const newTimer = enemy.timer - delta;
   if (newTimer > 0) {

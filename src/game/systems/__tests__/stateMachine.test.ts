@@ -432,10 +432,12 @@ describe("tickGameState — scripted vehicle delivery", () => {
       windowRemaining: 5,
     };
     const state = withDelivery(failing, { elapsedSeconds: 25, score: 7, lives: 3 });
-    // 5 enemies shooting for a full second drains the tiny gauge.
+    // 5 enemies shooting for a full second drains the tiny gauge. Slots 5..9 sit
+    // at x = -8..0 — inside the default 18-wide view, so they actually shoot
+    // (an off-screen shooter is frozen and chips nothing; see the test below).
     const shooters: GameState["enemies"] = Array.from({ length: 5 }, (_e, i) => ({
       id: 1000 + i,
-      slotIndex: i,
+      slotIndex: 5 + i,
       state: "SHOOTING" as const,
       timer: 5,
       kind: "normal" as const,
@@ -1354,5 +1356,129 @@ describe("tickGameState — fractional damage and the invulnerability window", (
       FACADE_01,
     );
     expect(dead.phase).toBe("GAME_OVER");
+  });
+});
+
+// "An enemy that is not on screen cannot shoot." Enforced by FREEZING the unseen
+// enemy — state held, countdown paused — so it can never reach SHOOTING unseen.
+describe("tickGameState — off-screen enemies cannot shoot", () => {
+  // Slot 0 of FACADE_01 sits at x = -18: far outside the default 18-wide view
+  // centred on 0, and reachable by panning the camera to -18.
+  const OFFSCREEN_SLOT = 0;
+  const PAN_ONTO_SLOT = -18;
+  // Enemy fire is AIMED at the player since ADR-0065, so a spawned round closes on
+  // the hit disc fast. These ticks stay short enough that the round is still in
+  // flight when the tick ends — otherwise it would be consumed and uncountable.
+  const SHORT_TICK = 0.016;
+
+  function withOneEnemy(state: GameState["enemies"][number]): GameState {
+    return { ...createInitialState(FACADE_01), enemies: [state] };
+  }
+
+  const aboutToShoot = {
+    id: 1,
+    slotIndex: OFFSCREEN_SLOT,
+    state: "VISIBLE" as const,
+    timer: 0.001,
+    kind: "normal" as const,
+    hp: 1,
+  };
+
+  it("never fires while off screen, however long the camera looks away", () => {
+    let state = withOneEnemy(aboutToShoot);
+    for (let i = 0; i < 100; i++) {
+      state = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    }
+    expect(state.bullets.filter((b) => !b.fromPlayer)).toHaveLength(0);
+    expect(state.enemies[0]?.state).toBe("VISIBLE");
+  });
+
+  it("holds its countdown while off screen (frozen, not merely silenced)", () => {
+    const state = tickGameState(withOneEnemy(aboutToShoot), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies[0]?.timer).toBe(aboutToShoot.timer);
+  });
+
+  it("fires as soon as the camera pans onto it", () => {
+    const state = tickGameState(
+      withOneEnemy(aboutToShoot),
+      noFire,
+      0.5,
+      0.5,
+      SHORT_TICK,
+      FACADE_01,
+      PAN_ONTO_SLOT,
+    );
+    expect(state.enemies[0]?.state).toBe("SHOOTING");
+    expect(state.bullets.filter((b) => !b.fromPlayer)).toHaveLength(1);
+  });
+
+  it("does not pop up while off screen either", () => {
+    const hidden = { ...aboutToShoot, state: "HIDDEN" as const };
+    const state = tickGameState(withOneEnemy(hidden), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies[0]?.state).toBe("HIDDEN");
+  });
+
+  // The delivery gauge reads SHOOTING CONTINUOUSLY, so it needs its own on-screen
+  // filter: an enemy caught mid-shot by a camera pan stays frozen in SHOOTING and
+  // would otherwise chip the vehicle forever from out of sight.
+  describe("frozen mid-SHOOTING", () => {
+    const SPEC: DeliverySpec = {
+      vehicleType: "truck",
+      triggerAtElapsedSeconds: 20,
+      integrity: 100,
+      windowSeconds: 8,
+      bonus: 500,
+      entrySide: "left",
+      stopPosition: { x: 0, y: -5 },
+    };
+    const delivering: DeliveryVehicle = {
+      phase: "DELIVERING",
+      position: SPEC.stopPosition,
+      vehicleType: "truck",
+      integrity: 100,
+      integrityMax: 100,
+      windowRemaining: 5,
+    };
+    const shooter = {
+      id: 1,
+      slotIndex: OFFSCREEN_SLOT,
+      state: "SHOOTING" as const,
+      timer: 5,
+      kind: "normal" as const,
+      hp: 1,
+    };
+
+    function tickWithCamera(cameraOffsetX: number): GameState {
+      const base = createInitialState(FACADE_01, {
+        lives: 3,
+        timeSeconds: LEVEL_TIME_SECONDS,
+        enemiesToWin: ENEMIES_TO_WIN,
+        enemySpeedMultiplier: 1,
+        delivery: SPEC,
+      });
+      return tickGameState(
+        { ...base, deliveryVehicle: delivering, enemies: [shooter], elapsedSeconds: 25 },
+        noFire,
+        0.5,
+        0.5,
+        1,
+        FACADE_01,
+        cameraOffsetX,
+        0,
+        18,
+        12,
+        undefined,
+        FIELD,
+      );
+    }
+
+    it("chips no delivery integrity while off screen", () => {
+      expect(tickWithCamera(0).deliveryVehicle?.integrity).toBe(100);
+    });
+
+    it("still chips it once the camera pans onto it (the filter is not a blanket off-switch)", () => {
+      const integrity = tickWithCamera(PAN_ONTO_SLOT).deliveryVehicle?.integrity ?? 100;
+      expect(integrity).toBeLessThan(100);
+    });
   });
 });

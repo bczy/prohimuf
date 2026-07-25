@@ -84,6 +84,41 @@ describe("tickEnemy", () => {
   it("DEAD state does not change", () => {
     expect(tickEnemy(mk("DEAD", 0), 0.5).state).toBe("DEAD");
   });
+
+  // Off-screen freeze: an enemy the camera cannot see does not advance at all —
+  // state held, countdown paused. This is what makes "an off-screen enemy cannot
+  // shoot" true by construction: VISIBLE → SHOOTING is the only way into a shot.
+  describe("off-screen freeze", () => {
+    it("holds the state and pauses the countdown", () => {
+      const e = mk("VISIBLE", 0.05);
+      expect(tickEnemy(e, 0.1, false)).toBe(e); // same reference: nothing moved
+    });
+
+    it("never enters SHOOTING while off screen, however long it is ticked", () => {
+      let e = mk("VISIBLE", 0.05);
+      for (let i = 0; i < 100; i++) e = tickEnemy(e, 0.1, false);
+      expect(e.state).toBe("VISIBLE");
+    });
+
+    it("does not pop up either (HIDDEN stays HIDDEN)", () => {
+      expect(tickEnemy(mk("HIDDEN", 0.05), 0.1, false).state).toBe("HIDDEN");
+    });
+
+    it("resumes exactly where it was frozen once back on screen", () => {
+      const frozen = tickEnemy(mk("VISIBLE", 0.05), 0.1, false);
+      expect(tickEnemy(frozen, 0.1, true).state).toBe("SHOOTING");
+    });
+
+    it("stays frozen mid-SHOOTING when the camera pans away", () => {
+      expect(tickEnemy(mk("SHOOTING", 0.05), 0.1, false).state).toBe("SHOOTING");
+    });
+
+    it("omitting the flag keeps the legacy on-screen behaviour", () => {
+      expect(tickEnemy(mk("VISIBLE", 0.05), 0.1)).toEqual(
+        tickEnemy(mk("VISIBLE", 0.05), 0.1, true),
+      );
+    });
+  });
 });
 
 describe("hitEnemy", () => {

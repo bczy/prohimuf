@@ -10,6 +10,7 @@ import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
+import { isOnScreen } from "@game/systems/viewport";
 import { tickBullets, aimBulletVelocity, hasPassedPlayer } from "@game/systems/bulletSystem";
 import { sampleDiscJitter, makeBulletRng, AIM_JITTER_RADIUS } from "@game/systems/enemyFireSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
@@ -348,8 +349,19 @@ export function tickGameState(
     };
   }
 
-  // 2. Tick enemies
-  const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta));
+  // An enemy is "on screen" when the centre of the window it occupies is inside
+  // the camera rectangle. An enemy seated on a slot the facade does not define
+  // has no position at all ⇒ treated as off screen (fail-safe).
+  const enemyOnScreen = (e: Enemy): boolean => {
+    const slot = facade.slots[e.slotIndex];
+    if (slot === undefined) return false;
+    return isOnScreen(slot.screenPosition, cameraOffsetX, cameraOffsetY, viewW, viewH);
+  };
+
+  // 2. Tick enemies. Off-screen ones are FROZEN (state held, countdown paused),
+  // so an enemy the player cannot see never reaches SHOOTING and never fires —
+  // the rule is enforced at the transition, not at the muzzle.
+  const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta, enemyOnScreen(e)));
 
   // 3. Spawn new wave if all enemies dead
   const allDead = tickedEnemies.every((e) => e.state === "DEAD");
@@ -478,7 +490,13 @@ export function tickGameState(
   let deliveryVehicle: DeliveryVehicle | null = state.deliveryVehicle;
   let deliveryScoreDelta = 0;
   if (state.deliverySpec !== null && deliveryVehicle !== null && courierField !== undefined) {
-    const shootingCount = activeEnemies.filter((e) => e.state === "SHOOTING").length;
+    // On-screen shooters only. Unlike the bullet spawn above — which keys off the
+    // TRANSITION into SHOOTING and is therefore already covered by the freeze —
+    // this reads the state CONTINUOUSLY, and an enemy frozen mid-SHOOTING by a
+    // camera pan would otherwise chip the gauge forever from out of sight.
+    const shootingCount = activeEnemies.filter(
+      (e) => e.state === "SHOOTING" && enemyOnScreen(e),
+    ).length;
     const result = tickDelivery(
       deliveryVehicle,
       state.deliverySpec,
