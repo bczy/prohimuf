@@ -6,12 +6,13 @@ import type { Texture, Mesh, MeshBasicMaterial, Group, OrthographicCamera } from
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { writeMarkRing } from "./markRing";
 import { warmBulletModel, getBulletModel } from "@render/scene/bulletModel";
+import { bulletModelPath } from "@game/systems/assetManifest";
+import { ProceduralBullet } from "@render/scene/ProceduralBullet";
 import {
-  BULLET_BODY_LENGTH,
-  BULLET_BODY_RADIUS,
-  BULLET_CAP_RADIUS,
   bulletForwardAxis,
-  BULLET_MODEL_SCALE,
+  attachBulletModel,
+  BULLET_DEPTH_RATIO,
+  BULLET_Z,
 } from "@render/scene/bulletGeometry";
 
 // Transient player-shot impact effects (ADR-0040): acid-neon explosion over a
@@ -58,9 +59,39 @@ const FLASH_RENDER_ORDER = 8.1; // above the explosion — hit-only white punch
 // bottom of the viewport up to the already-resolved impact point, reusing the
 // enemy return-fire bullet's exact geometry/model/scale (bulletGeometry.ts,
 // bulletModel.ts) so the two never visually diverge. ---------------------------
-const PLAYER_BULLET_POOL = 8; // ≥ the weapon's max simultaneous per-trigger resolutions (3)
-const PLAYER_BULLET_TRAVEL_MS = 90; // fast — point-blank pistol range, but readable (~5-6 frames)
-const PLAYER_BULLET_Z = 0.5; // same depth convention as the enemy bullet (BulletSprite.tsx)
+// Pool: `spread` resolves 3 offsets per trigger (weapon.ts offsets [-2, 0, 2]) and
+// each one spawns its own tracer, so a fast trigger can have several volleys in
+// flight at once. 16 = ~5 full spread volleys — deep enough that a burst never
+// silently drops the shot the player just took.
+const PLAYER_BULLET_POOL = 16;
+// At 90ms the tracer lived ~5 frames and was effectively never seen leaving the
+// gun. 190ms still reads as a snappy pistol round but gives the eye a real streak
+// to follow — the player now SEES their own bullets go out, like the enemy's.
+const PLAYER_BULLET_TRAVEL_MS = 190;
+// Same depth + draw order as every other bullet — see bulletGeometry.ts. At the
+// old 0.5 the player's own tracer disappeared behind the near-foreground props.
+const PLAYER_BULLET_Z = BULLET_Z;
+// The player's round travels AWAY from the camera, so its depth leg is NEGATIVE
+// (the enemy's is positive, toward the player): we see it tail-on, receding, the
+// exact mirror of the incoming round's nose-on approach.
+const PLAYER_BULLET_DEPTH_RATIO = -BULLET_DEPTH_RATIO;
+// Outgoing rounds shrink as they go — under an orthographic camera the scale ramp
+// is the only depth cue, so this is the mirror of the enemy bullet's growth ramp
+// and is what makes the shot read as "leaving" rather than sliding up the screen.
+// NEAR is deliberately large: the round leaves the gun right under the player's
+// eyes, so the first frames are where the shot has to register. At 3.2 it was
+// already a legible bullet but still a small one at the bottom of the frame — the
+// departure read as a flicker. 7.5 makes the muzzle end unmistakable, and the fall
+// to FAR over the flight is what sells the distance it covers.
+const PLAYER_BULLET_SCALE_NEAR = 7.5;
+const PLAYER_BULLET_SCALE_FAR = 0.9;
+// Ease the shrink instead of running it linearly: the round holds its big muzzle
+// read for the first frames, then falls away fast. A linear ramp spends most of
+// the flight already small, which is exactly the "I never see it leave" problem.
+const PLAYER_BULLET_SCALE_EASE = 2.2;
+// Muzzle spawn height as a fraction of the viewport height below centre. Slightly
+// under 0.5 (the exact bottom edge) so the first frames are not clipped away.
+const PLAYER_BULLET_MUZZLE_INSET = 0.44;
 const PLAYER_BULLET_COLOR = "#ffe066"; // warm brass — reads as "yours", not enemy neon-red
 const PLAYER_BULLET_EMISSIVE = "#ffcf40";
 const PLAYER_BULLET_EMISSIVE_INTENSITY = 0.6;
@@ -267,7 +298,7 @@ export function ImpactEffects({
   // Kick off the (at most once, ADR-0065) async GLB load — idempotent no-op if
   // BulletSprite.tsx already warmed the same shared singleton.
   useEffect(() => {
-    void warmBulletModel(`${import.meta.env.BASE_URL}models/bullet.glb`);
+    void warmBulletModel(`${import.meta.env.BASE_URL}${bulletModelPath()}`);
   }, []);
 
   useFrame(() => {
@@ -352,7 +383,11 @@ export function ImpactEffects({
         pb.active = true;
         pb.born = now;
         pb.ox = camera.position.x;
-        pb.oy = camera.position.y - viewH / 2;
+        // Just INSIDE the bottom edge, not exactly on it: spawning at -viewH/2 put
+        // the muzzle on the frame boundary, so the round was half-clipped during the
+        // very frames where the departure has to read. This keeps the whole bullet
+        // on screen at t=0 while still reading as coming from below the frame.
+        pb.oy = camera.position.y - viewH * PLAYER_BULLET_MUZZLE_INSET;
         pb.tx = ev.impactPoint.x;
         pb.ty = ev.impactPoint.y;
       }
@@ -453,23 +488,35 @@ export function ImpactEffects({
       group.visible = true;
       group.position.set(pb.ox + (pb.tx - pb.ox) * t, pb.oy + (pb.ty - pb.oy) * t, PLAYER_BULLET_Z);
 
+      // Orientation is fixed for the whole flight: derived from the shot's own
+      // muzzle→impact vector (constant per tracer), never from the live camera,
+      // so the round never swivels mid-flight or re-aims when the camera pans.
+      // The negative depth leg tilts it INTO the screen — the mirror of the
+      // enemy round's approach.
       const dx = pb.tx - pb.ox;
       const dy = pb.ty - pb.oy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 0) {
-        bulletScratch.dir.set(dx / dist, dy / dist, 0);
+      const inPlane = Math.sqrt(dx * dx + dy * dy);
+      if (inPlane > 0) {
+        const dz = inPlane * PLAYER_BULLET_DEPTH_RATIO;
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        bulletScratch.dir.set(dx / len, dy / len, dz / len);
         bulletScratch.quat.setFromUnitVectors(PLAYER_BULLET_FORWARD, bulletScratch.dir);
         group.quaternion.copy(bulletScratch.quat);
       }
+
+      // Recede: big at the muzzle, small at the impact point, eased so the big
+      // muzzle read survives the first frames.
+      const shrink = Math.pow(t, PLAYER_BULLET_SCALE_EASE);
+      group.scale.setScalar(
+        PLAYER_BULLET_SCALE_NEAR + (PLAYER_BULLET_SCALE_FAR - PLAYER_BULLET_SCALE_NEAR) * shrink,
+      );
 
       // Swap in the generated model the first frame it's available for this
       // slot — reuses the exact same shared GLB/scale as the enemy bullet.
       if (model !== null && !playerBulletModelAttached.current[i]) {
         playerBulletModelAttached.current[i] = true;
-        const clone = model.clone(true);
-        clone.scale.setScalar(BULLET_MODEL_SCALE);
-        group.add(clone);
-        const procedural = playerBulletProcedural.current[i];
+        attachBulletModel(group, model);
+        const procedural = playerBulletProcedural.current[i] ?? null;
         if (procedural !== null) procedural.visible = false;
       }
     });
@@ -555,28 +602,11 @@ export function ImpactEffects({
               playerBulletProcedural.current[i] = el;
             }}
           >
-            <mesh>
-              <cylinderGeometry
-                args={[BULLET_BODY_RADIUS, BULLET_BODY_RADIUS, BULLET_BODY_LENGTH, 10]}
-              />
-              <meshStandardMaterial
-                color={PLAYER_BULLET_COLOR}
-                emissive={PLAYER_BULLET_EMISSIVE}
-                emissiveIntensity={PLAYER_BULLET_EMISSIVE_INTENSITY}
-                metalness={0.6}
-                roughness={0.4}
-              />
-            </mesh>
-            <mesh position={[0, BULLET_BODY_LENGTH / 2, 0]}>
-              <sphereGeometry args={[BULLET_CAP_RADIUS, 12, 8]} />
-              <meshStandardMaterial
-                color={PLAYER_BULLET_COLOR}
-                emissive={PLAYER_BULLET_EMISSIVE}
-                emissiveIntensity={PLAYER_BULLET_EMISSIVE_INTENSITY}
-                metalness={0.6}
-                roughness={0.4}
-              />
-            </mesh>
+            <ProceduralBullet
+              color={PLAYER_BULLET_COLOR}
+              emissive={PLAYER_BULLET_EMISSIVE}
+              emissiveIntensity={PLAYER_BULLET_EMISSIVE_INTENSITY}
+            />
           </group>
         </group>
       ))}

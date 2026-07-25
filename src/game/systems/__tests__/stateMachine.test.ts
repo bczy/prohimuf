@@ -711,6 +711,27 @@ describe("hostage-taker QTE — trigger, partial freeze & wiring (the static due
     expect(s.impactEvents).toEqual([]);
   });
 
+  it("a shot fired DURING the frozen QTE still emits its impact (the player sees their own round)", () => {
+    let s = tick(qteState(), noFire, 0, 0, 0.1);
+    s = tick(s, noFire, 0, 0, 2.0); // → ACTIVE
+    const after = tick(s, fire, 0.4, -0.5, 0.1);
+    // Exactly one resolution per press — `fire` is a consumed edge, not a held level.
+    expect(after.impactEvents).toHaveLength(1);
+    // Cosmetic channel only: the QTE owns the outcome, so it never claims a `hit`.
+    expect(after.impactEvents?.[0]?.classification).toBe("miss");
+    expect(after.impactEvents?.[0]?.hit).toBeUndefined();
+    // Anchored on the aim point, so the tracer flies where the player actually shot.
+    expect(after.impactEvents?.[0]?.impactPoint).toBeDefined();
+    // The duel itself is untouched: energy still carries the whole rule.
+    expect(after.energy).toBe(70);
+  });
+
+  it("a NON-firing frozen QTE tick still emits nothing (no phantom tracer per frame)", () => {
+    let s = tick(qteState(), noFire, 0, 0, 0.1);
+    s = tick(s, noFire, 0, 0, 2.0);
+    expect(tick(s, noFire, 0.4, -0.5, 0.1).impactEvents).toEqual([]);
+  });
+
   it("a QTE-less level ticks normally (elapsed advances, qte stays null)", () => {
     const s1 = tickGameState(createInitialState(FACADE_01), noFire, 0.5, 0.5, 0.1, FACADE_01);
     expect(s1.qte).toBeNull();

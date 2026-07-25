@@ -1,13 +1,31 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { JSX } from "react";
-import { useFrame } from "@react-three/fiber";
-import type { Mesh, MeshBasicMaterial } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import {
+  CanvasTexture,
+  Quaternion,
+  Vector3,
+  type Group,
+  type Mesh,
+  type MeshBasicMaterial,
+  type OrthographicCamera,
+  type Texture,
+} from "three";
 import type { GameState } from "@game/types/gameState";
 import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
 import { resolveEnemyTexture } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
 import { getAccompliceTexture } from "./accompliceTextures";
+import { bulletModelPath } from "@game/systems/assetManifest";
+import { warmBulletModel, getBulletModel } from "./bulletModel";
+import { ProceduralBullet } from "./ProceduralBullet";
+import {
+  attachBulletModel,
+  bulletForwardAxis,
+  BULLET_DEPTH_RATIO,
+  BULLET_Z,
+} from "./bulletGeometry";
 import {
   blownPeeksProximity,
   captorHpPipLit,
@@ -145,6 +163,69 @@ const ACCOMPLICE_FLASH_OPACITY = 0.9;
 const ACCOMPLICE_TINT_IDLE = "#9fb8cc";
 const ACCOMPLICE_TINT_AIM = "#ff6a4d";
 
+// Muzzle-flash falloff. Both flashes were untextured planes, i.e. a hard-edged
+// APLAT — a square of flat colour, which the house rule explicitly forbids ("loi
+// du glow": a glow is always a dégradé, never an aplat) and which read as a
+// mystery box parked on the gun once the round drew the eye there. Same lazy
+// module-scope CanvasTexture pattern as the impact burst's `getExplosionTexture`:
+// white-hot core → warm falloff → fully transparent at the rim, so the plane's
+// corners carry zero alpha and the flash reads as light instead of a card.
+let muzzleTex: Texture | null = null;
+function getMuzzleFlashTexture(): Texture | null {
+  if (muzzleTex !== null) return muzzleTex;
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext("2d");
+  if (g === null) return null;
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.3, "rgba(255,242,176,0.85)");
+  grad.addColorStop(1, "rgba(255,242,176,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  muzzleTex = new CanvasTexture(c);
+  return muzzleTex;
+}
+
+// ── The armed figure's actual ROUND (the same bullet everyone else fires) ─────
+// Until now the captor's counter-fire and the accomplice's shot reported only as
+// a muzzle bloom plus an energy drain: the player was hit by something they never
+// saw. These fire the SAME physical bullet as the street enemies and as the
+// player's own shot — same GLB, same procedural fallback, same depth convention
+// (bulletGeometry.ts) — so a round is a round wherever it comes from.
+//
+// It is a pure render transient: the QTE tick is frozen and owns the energy rule
+// (P3-ACC), so this adds no game state and changes no outcome. It is spawned off
+// the SAME two fire edges that already drive the muzzle flashes.
+const QTE_BULLET_POOL = 4; // fire cadence is ~1/s; 4 covers any overlap
+const QTE_BULLET_TRAVEL_MS = 520; // slow enough to read as a pass, short enough to stay a shot
+// How far past the viewport centre the round travels, as a fraction of the LIVE
+// viewport half-height. >0.5 so it leaves the frame at the bottom edge rather
+// than stopping politely in mid-air.
+const QTE_BULLET_EXIT_FACTOR = 0.85;
+// Mirrors BulletSprite's ramp: quadratic growth so the round reads as closing on
+// the player rather than sliding across the tableau.
+const QTE_BULLET_SCALE_MIN = 1.4;
+const QTE_BULLET_SCALE_SPAN = 14.6;
+// Warm brass, like the player's own tracer — this is a fired round, not neon.
+const QTE_BULLET_COLOR = "#ffd9a0";
+const QTE_BULLET_EMISSIVE = "#ffb45c";
+const QTE_BULLET_EMISSIVE_INTENSITY = 0.65;
+
+const QTE_BULLET_FORWARD = bulletForwardAxis();
+const qteBulletScratch = { dir: new Vector3(), quat: new Quaternion() };
+
+interface QteBullet {
+  active: boolean;
+  born: number;
+  ox: number;
+  oy: number;
+  tx: number;
+  ty: number;
+}
+
 type CaptorTexKey = "covered" | "peeking";
 
 /**
@@ -226,6 +307,60 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   const captorMuzzleFlashUntilRef = useRef(0);
   // Fixed pool of captor-HP pips (diegetic HP read); populated by the JSX ref cbs.
   const pipRefs = useRef<(Mesh | null)[]>([]);
+  // The armed figure's in-flight rounds — a pure render transient (see the
+  // QTE_BULLET_* block above). `camera` gives the live aim point: the round flies
+  // at the player, i.e. at the centre of whatever the QTE zoom is framing.
+  const { camera, size } = useThree();
+  const qteBulletGroups = useRef<(Group | null)[]>(
+    Array.from({ length: QTE_BULLET_POOL }, () => null),
+  );
+  const qteBulletProcedural = useRef<(Group | null)[]>(
+    Array.from({ length: QTE_BULLET_POOL }, () => null),
+  );
+  const qteBulletModelAttached = useRef<boolean[]>(
+    Array.from({ length: QTE_BULLET_POOL }, () => false),
+  );
+  const qteBullets = useRef<QteBullet[]>(
+    Array.from({ length: QTE_BULLET_POOL }, () => ({
+      active: false,
+      born: 0,
+      ox: 0,
+      oy: 0,
+      tx: 0,
+      ty: 0,
+    })),
+  );
+  // Idempotent: the shared singleton dedupes, so warming here too keeps the QTE
+  // self-contained rather than depending on BulletSprite having mounted first.
+  useEffect(() => {
+    void warmBulletModel(`${import.meta.env.BASE_URL}${bulletModelPath()}`);
+  }, []);
+  // Fire a round from a world-space muzzle at the player. No-op when the pool is
+  // saturated — a dropped cosmetic round is always preferable to stealing one
+  // that is mid-flight.
+  const fireQteBullet = (mx: number, my: number, nowMs: number): void => {
+    const slot = qteBullets.current.find((b) => !b.active);
+    if (slot === undefined) return;
+    // Where "at the player" is, during the QTE. The camera is ZOOMED ONTO THE
+    // CAPTOR, so the camera centre sits practically on the muzzle — aiming there
+    // gave the round ~0.6 world units of travel and it died on the gun hand
+    // without ever crossing the frame. Under an orthographic camera the round
+    // cannot actually fly along +Z toward the lens, so the pass is staged in
+    // screen space instead: it exits through the BOTTOM of the LIVE viewport,
+    // past the viewer, while the scale ramp does the "coming at you" work.
+    //
+    // The viewport half-height must be read from the LIVE zoom (the QTE zoom is
+    // 2.4×, and it eases): a fixed world constant would misjudge the travel by
+    // that factor. Same ADR-0040 discipline as the player tracer's own muzzle.
+    const ortho = camera as OrthographicCamera;
+    const viewH = size.height / ortho.zoom;
+    slot.active = true;
+    slot.born = nowMs;
+    slot.ox = mx;
+    slot.oy = my;
+    slot.tx = camera.position.x;
+    slot.ty = camera.position.y - viewH * QTE_BULLET_EXIT_FACTOR;
+  };
   const lastKeyRef = useRef<string>("none");
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
@@ -279,6 +414,12 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       captorMuzzleFlashUntilRef.current = 0;
       for (const pip of pipRefs.current) {
         if (pip !== null) pip.visible = false;
+      }
+      // Retire any round still in flight — the duel is over, nothing may linger
+      // into the unfrozen scene behind it.
+      for (const b of qteBullets.current) b.active = false;
+      for (const g of qteBulletGroups.current) {
+        if (g !== null) g.visible = false;
       }
       positionedRef.current = false;
       return;
@@ -446,6 +587,11 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       // the −8 drain itself reads through the energyFloater in useGameLoop.
       if (accompliceTellRef.current && !aiming) {
         muzzleFlashUntilRef.current = nowMs + ACCOMPLICE_FLASH_MS;
+        fireQteBullet(
+          qte.anchor.x + ACCOMPLICE_OFFSET.x + ACCOMPLICE_MUZZLE_DX,
+          qte.anchor.y + ACCOMPLICE_OFFSET.y + ACCOMPLICE_MUZZLE_DY,
+          nowMs,
+        );
       }
       accompliceTellRef.current = aiming;
     } else {
@@ -476,6 +622,7 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     const captorFiresHere = qte.accomplice === null;
     if (captorFiresHere && qte.blownPeeks > prevBlownPeeksRef.current) {
       captorMuzzleFlashUntilRef.current = nowMs + CAPTOR_MUZZLE_FLASH_MS;
+      fireQteBullet(qte.anchor.x + CAPTOR_MUZZLE_DX, qte.anchor.y + CAPTOR_MUZZLE_DY, nowMs);
     }
     prevBlownPeeksRef.current = qte.blownPeeks;
 
@@ -488,6 +635,48 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
         ? CAPTOR_MUZZLE_FLASH_OPACITY
         : CAPTOR_MUZZLE_FLASH_OPACITY * ck;
     }
+
+    // ── The round itself, in flight ───────────────────────────────────────────
+    // Straight muzzle→player line over QTE_BULLET_TRAVEL_MS, growing on the same
+    // quadratic ramp as the street bullets. Orientation is computed ONCE per
+    // round, at spawn, from its own fixed muzzle→target vector plus the shared
+    // depth leg — so it never swivels mid-flight (the enemy-bullet lesson).
+    const bulletModel = getBulletModel();
+    qteBullets.current.forEach((b, i) => {
+      const group = qteBulletGroups.current[i] ?? null;
+      if (group === null) return;
+      if (!b.active) {
+        group.visible = false;
+        return;
+      }
+      const t = (nowMs - b.born) / QTE_BULLET_TRAVEL_MS;
+      if (t >= 1) {
+        b.active = false;
+        group.visible = false;
+        return;
+      }
+      group.visible = true;
+      group.position.set(b.ox + (b.tx - b.ox) * t, b.oy + (b.ty - b.oy) * t, BULLET_Z);
+
+      const dx = b.tx - b.ox;
+      const dy = b.ty - b.oy;
+      const inPlane = Math.sqrt(dx * dx + dy * dy);
+      if (inPlane > 0) {
+        const dz = inPlane * BULLET_DEPTH_RATIO;
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        qteBulletScratch.dir.set(dx / len, dy / len, dz / len);
+        qteBulletScratch.quat.setFromUnitVectors(QTE_BULLET_FORWARD, qteBulletScratch.dir);
+        group.quaternion.copy(qteBulletScratch.quat);
+      }
+      group.scale.setScalar(QTE_BULLET_SCALE_MIN + t * t * QTE_BULLET_SCALE_SPAN);
+
+      if (bulletModel !== null && !qteBulletModelAttached.current[i]) {
+        qteBulletModelAttached.current[i] = true;
+        attachBulletModel(group, bulletModel);
+        const procedural = qteBulletProcedural.current[i] ?? null;
+        if (procedural !== null) procedural.visible = false;
+      }
+    });
 
     // ── Captor HP pips (diegetic, no HUD bar) ─────────────────────────────────
     // Light one pip per remaining HP; they deplete as the captor is chipped. Only
@@ -527,13 +716,13 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       </mesh>
       <mesh ref={muzzleRef} renderOrder={8} visible={false}>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial transparent depthWrite={false} />
+        <meshBasicMaterial map={getMuzzleFlashTexture()} transparent depthWrite={false} />
       </mesh>
       {/* The captor's OWN muzzle flash (P3-ACC) — lit only on levels with no
           accomplice, so his counter-fire on a blown peek is finally visible. */}
       <mesh ref={captorMuzzleRef} renderOrder={8} visible={false}>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial transparent depthWrite={false} />
+        <meshBasicMaterial map={getMuzzleFlashTexture()} transparent depthWrite={false} />
       </mesh>
       {/* Diegetic captor-HP pips (renderOrder 8, over the tableau). One per HP
           point; they deplete as `qte.captorHp` chips down. No HUD bar (U-1). */}
@@ -549,6 +738,30 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
           <planeGeometry args={[1, 1]} />
           <meshBasicMaterial transparent depthWrite={false} />
         </mesh>
+      ))}
+      {/* The armed figure's rounds in flight — same GLB + procedural fallback as
+          every other bullet in the game (bulletGeometry.ts). Pooled and hidden;
+          driven imperatively above so a shot costs no React re-render. */}
+      {Array.from({ length: QTE_BULLET_POOL }, (_, i) => (
+        <group
+          key={`qte-bullet-${String(i)}`}
+          ref={(el): void => {
+            qteBulletGroups.current[i] = el;
+          }}
+          visible={false}
+        >
+          <group
+            ref={(el): void => {
+              qteBulletProcedural.current[i] = el;
+            }}
+          >
+            <ProceduralBullet
+              color={QTE_BULLET_COLOR}
+              emissive={QTE_BULLET_EMISSIVE}
+              emissiveIntensity={QTE_BULLET_EMISSIVE_INTENSITY}
+            />
+          </group>
+        </group>
       ))}
     </>
   );

@@ -44,7 +44,11 @@ export interface PlayerShotResult {
   readonly impact: ImpactEvent;
 }
 
-export const BULLET_SPEED = 20;
+// Enemy return-fire travel speed (world units/s). Tuned for READABILITY, not
+// realism: the aim line from a facade window to the camera is ~6 world units, so
+// this gives the player roughly 0.6s of visible flight — long enough to see the
+// round coming and pan away, instead of the ~0.28s blink it used to be.
+export const BULLET_SPEED = 9;
 const HIT_RADIUS = 0.8;
 const OUT_OF_BOUNDS_X = 60;
 const OUT_OF_BOUNDS_Y = 15;
@@ -59,6 +63,25 @@ export function aimBulletVelocity(spawn: Vec2, target: Vec2, speed = BULLET_SPEE
   const dy = target.y - spawn.y;
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
   return { x: (dx / dist) * speed, y: (dy / dist) * speed };
+}
+
+/**
+ * Has this bullet already travelled PAST the player? A round is aimed at the
+ * player at spawn and is never re-steered, so the sign of
+ * `velocity · (player - position)` flips exactly once — at closest approach. Once
+ * negative the round is spent: it is behind the player and can no longer hit
+ * anything.
+ *
+ * Without this cull a round that misses (the aim jitter makes that common) stays
+ * alive until the out-of-bounds test, i.e. several seconds of flight. Since the
+ * renderer scales bullets by their distance to the camera, such a round grows to
+ * full size, then shrinks again as it recedes — which reads as the bullet
+ * BOUNCING off the player rather than whistling past them.
+ */
+export function hasPassedPlayer(bullet: Bullet, playerX: number, playerY: number): boolean {
+  const toPlayerX = playerX - bullet.position.x;
+  const toPlayerY = playerY - bullet.position.y;
+  return bullet.velocity.x * toPlayerX + bullet.velocity.y * toPlayerY <= 0;
 }
 
 export function tickBullets(bullets: readonly Bullet[], delta: number): readonly Bullet[] {
