@@ -81,9 +81,13 @@ The panel uses the **GitHub Models inference API**
 authenticated with the workflow's own `GITHUB_TOKEN` under
 `permissions: models: read`. No third-party API key and no external billing:
 inference is metered against the repo's GitHub Models quota. The model is
-`openai/gpt-4.1` by default, overridable with the repo variable `PANEL_MODEL`.
-Transport lives in `scripts/panel-llm.mjs`, shared by the reviewer and skeptic
-scripts.
+`openai/gpt-4.1` by default, overridable with the repo variable `PANEL_MODEL`
+(the escape hatch when a model regresses or its quota is exhausted).
+
+The invocation scripts live under `scripts/` — outside the `src/game` ↔
+`src/hooks` ↔ `src/render` boundary, which they do not touch. Their shared HTTP
+transport is `scripts/panel-llm.mjs`, imported by `panel-invoke-reviewer.mjs`
+and `panel-invoke-skeptic.mjs`: one module, two callers, no other consumer.
 
 The five system prompts live under `.github/panel-prompts/*.md`:
 

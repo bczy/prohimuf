@@ -6,21 +6,19 @@
 // billing. The calling job needs `permissions: models: read`.
 //
 // Inputs (env):
-//   GITHUB_TOKEN / MODELS_TOKEN — required (Actions provides GITHUB_TOKEN).
-//   PANEL_MODEL                 — optional, defaults to openai/gpt-4.1.
-//   PANEL_MODELS_ENDPOINT       — optional, defaults to models.github.ai.
+//   GITHUB_TOKEN — required (Actions provides it).
+//   PANEL_MODEL  — optional, defaults to openai/gpt-4.1.
 
-const DEFAULT_ENDPOINT = "https://models.github.ai/inference/chat/completions";
+const ENDPOINT = "https://models.github.ai/inference/chat/completions";
 const DEFAULT_MODEL = "openai/gpt-4.1";
 
 export async function callPanelModel({ system, user, maxTokens = 8192 }) {
-  const token = process.env.MODELS_TOKEN || process.env.GITHUB_TOKEN;
-  if (!token) throw new Error("GITHUB_TOKEN (or MODELS_TOKEN) missing");
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error("GITHUB_TOKEN missing");
 
   const model = process.env.PANEL_MODEL || DEFAULT_MODEL;
-  const endpoint = process.env.PANEL_MODELS_ENDPOINT || DEFAULT_ENDPOINT;
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
       "content-type": "application/json",
