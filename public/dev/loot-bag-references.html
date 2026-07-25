@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>muf: Loot Bag Reference Hunt</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --fg: #e0e0e0;
+      --accent: #00ff88;
+      --accent2: #ff00ff;
+      --accent3: #00ffff;
+      --card-bg: #1a1a1a;
+      --border: #333;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1, h2, h3, h4 {
+      font-family: "Impact", "Arial Narrow Bold", "Trebuchet MS", sans-serif;
+      letter-spacing: 0.04em;
+    }
+    h1 {
+      color: var(--accent);
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+    .subtitle {
+      color: var(--accent2);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .era-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--bg);
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      color: var(--accent3);
+      font-size: 1.4rem;
+      margin: 2rem 0 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    h3 {
+      color: var(--accent2);
+      font-size: 1.1rem;
+      margin: 1.5rem 0 0.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 4px;
+      transition: border-color 0.2s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+    }
+    .card h4 {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .card h4 input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+    .card p {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.5rem;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.5rem;
+    }
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 2px;
+      background: #333;
+      color: var(--accent3);
+    }
+    .tag.mood { background: #2a1a2a; color: var(--accent2); }
+    .tag.material { background: #1a2a1a; color: var(--accent); }
+    .universe {
+      background: linear-gradient(135deg, #1a1a2a 0%, #1a1a1a 100%);
+      border: 2px solid var(--accent2);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      border-radius: 8px;
+    }
+    .universe h3 {
+      margin-top: 0;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .universe h3 input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+    .universe-desc {
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      background: rgba(0,255,136,0.05);
+      border-radius: 4px;
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-top: 0.2rem;
+      accent-color: var(--accent);
+    }
+    .checkbox-item label {
+      cursor: pointer;
+    }
+    .checkbox-item .desc {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .section-intro {
+      color: #999;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .selection-form {
+      background: #131313;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .selection-group {
+      margin-bottom: 1rem;
+    }
+    .selection-group legend {
+      color: var(--accent3);
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    .selection-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.5rem;
+    }
+    .selection-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.9rem;
+      color: #d6d6d6;
+    }
+    .selection-options input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+    .submit-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .submit-btn {
+      border: 1px solid var(--accent);
+      background: #0b0b0b;
+      color: var(--accent);
+      padding: 0.5rem 0.85rem;
+      border-radius: 4px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .submit-btn:hover {
+      background: rgba(0, 255, 136, 0.08);
+    }
+    #selection-output {
+      color: #b8b8b8;
+      font-size: 0.85rem;
+    }
+    #reference-output {
+      color: #b8b8b8;
+      font-size: 0.85rem;
+    }
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .reference-card {
+      background: #141414;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .reference-card h4 {
+      color: var(--accent);
+      margin-bottom: 0.55rem;
+      font-size: 1rem;
+    }
+    .reference-card p {
+      color: #bcbcbc;
+      font-size: 0.9rem;
+      margin-bottom: 0.55rem;
+    }
+    .ref-preview {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #2f2f2f;
+      margin-bottom: 0.65rem;
+      background: #0f0f0f;
+    }
+    .reference-card a {
+      color: var(--accent3);
+      text-decoration: none;
+    }
+    .reference-card a:hover {
+      text-decoration: underline;
+    }
+    .ref-links {
+      margin-bottom: 0.6rem;
+    }
+    .verdict-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+    }
+    .verdict-row label {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      color: #d6d6d6;
+      font-size: 0.86rem;
+    }
+    .verdict-row input[type="checkbox"] {
+      accent-color: var(--accent2);
+    }
+    .status-panel {
+      background: #101010;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .status-panel h4 {
+      color: var(--accent3);
+      margin-bottom: 0.55rem;
+    }
+    .status-line {
+      font-size: 0.9rem;
+      color: #c7c7c7;
+      margin: 0.3rem 0;
+    }
+    .locked-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.45rem;
+    }
+    .locked-options label {
+      color: #dbdbdb;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 2rem 0;
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: #666;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎒 Loot Bag Reference Hunt</h1>
+<p class="subtitle">muf: 3D asset generation pipeline (ADR-0065 pattern)</p>
+<span class="era-badge">1998 PARIS · CLANDESTINE RAVE SCENE</span>
+
+<h2>📦 BAG TYPES: The Costco List</h2>
+<p class="section-intro">Pick all that could appear in the game. Each type = potentially a different 3D model.</p>
+
+<h3>💰 Cash & Valuables</h3>
+<div class="grid">
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="cash bundle"> Liasse de billets (Cash Bundle)</h4>
+    <p>Rubber-banded stack of francs. Classic dealer drop iconography.</p>
+    <div class="tags">
+      <span class="tag material">paper + rubber</span>
+      <span class="tag mood">street</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="brown envelope"> Enveloppe kraft (Brown Envelope)</h4>
+    <p>The discreet cash handoff. Bulging with bills.</p>
+    <div class="tags">
+      <span class="tag material">paper</span>
+      <span class="tag mood">clandestine</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="attache case"> Mallette attaché-case</h4>
+    <p>Black leather briefcase. The 90s drug money cliché — but it works.</p>
+    <div class="tags">
+      <span class="tag material">leather + metal</span>
+      <span class="tag mood">luxe</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="fanny pack"> Sac banane (Fanny Pack)</h4>
+    <p>90s rave essential. Nylon, usually black or neon. Worn cross-body.</p>
+    <div class="tags">
+      <span class="tag material">nylon</span>
+      <span class="tag mood">rave</span>
+    </div>
+  </div>
+</div>
+
+<h3>🎒 Bags & Carriers</h3>
+<div class="grid">
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="gym duffel"> Sac de sport (Gym Duffel)</h4>
+    <p>Adidas/Nike knockoff. Classic for moving product or cash. Cylindrical, shoulder strap.</p>
+    <div class="tags">
+      <span class="tag material">synthetic fabric</span>
+      <span class="tag mood">street utility</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="backpack"> Sac à dos (Backpack)</h4>
+    <p>Eastpak-style or military surplus. The courier's tool.</p>
+    <div class="tags">
+      <span class="tag material">canvas / nylon</span>
+      <span class="tag mood">urban</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="trash bag"> Sac poubelle (Trash Bag)</h4>
+    <p>Black plastic garbage bag. For the really sketchy drops.</p>
+    <div class="tags">
+      <span class="tag material">plastic</span>
+      <span class="tag mood">clandestine</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="grocery bag"> Sac de courses (Grocery Bag)</h4>
+    <p>Monoprix / Franprix plastic bag. Hiding in plain sight.</p>
+    <div class="tags">
+      <span class="tag material">plastic</span>
+      <span class="tag mood">camouflage</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="canvas tote"> Cabas en toile (Canvas Tote)</h4>
+    <p>Reusable shopping bag. Market vibes, worn aesthetic.</p>
+    <div class="tags">
+      <span class="tag material">canvas</span>
+      <span class="tag mood">quotidien</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="sailor duffel"> Sac marin (Sailor Duffel)</h4>
+    <p>Cylindrical canvas bag with rope closure. Military surplus chic.</p>
+    <div class="tags">
+      <span class="tag material">heavy canvas</span>
+      <span class="tag mood">rugged</span>
+    </div>
+  </div>
+</div>
+
+<h3>📦 Containers & Cases</h3>
+<div class="grid">
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="shoebox"> Boîte à chaussures (Shoebox)</h4>
+    <p>Nike/Adidas box. Classic stash container.</p>
+    <div class="tags">
+      <span class="tag material">cardboard</span>
+      <span class="tag mood">everyday</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="hard suitcase"> Valise rigide (Hard Suitcase)</h4>
+    <p>Samsonite-style. Serious business, airport aesthetic.</p>
+    <div class="tags">
+      <span class="tag material">plastic shell</span>
+      <span class="tag mood">luxe</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="wooden crate"> Caisse en bois (Wooden Crate)</h4>
+    <p>Small wooden box. Warehouse drops, contraband vibes.</p>
+    <div class="tags">
+      <span class="tag material">wood</span>
+      <span class="tag mood">industrial</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="metal box"> Boîte métallique (Metal Box)</h4>
+    <p>Cash box or ammo can style. Cold, secure.</p>
+    <div class="tags">
+      <span class="tag material">metal</span>
+      <span class="tag mood">military</span>
+    </div>
+  </div>
+</div>
+
+<h3>🎵 Rave-Specific</h3>
+<div class="grid">
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="flight case"> Flight case (DJ Case)</h4>
+    <p>Aluminum-edged road case for vinyl/gear. Rave infrastructure.</p>
+    <div class="tags">
+      <span class="tag material">plywood + aluminum</span>
+      <span class="tag mood">rave pro</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="record bag"> Pochette disques (Record Bag)</h4>
+    <p>Vinyl carrying bag. The DJ's signature accessory.</p>
+    <div class="tags">
+      <span class="tag material">leather / canvas</span>
+      <span class="tag mood">rave</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4><input type="checkbox" name="bagType" value="messenger bag"> Sacoche messenger</h4>
+    <p>Bike messenger bag. Cross-body, utilitarian, 90s urban.</p>
+    <div class="tags">
+      <span class="tag material">cordura</span>
+      <span class="tag mood">courier</span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<h2>🎨 UNIVERSE DIRECTIONS: Visual Moods</h2>
+<p class="section-intro">Different color/texture universes the 3D model could inhabit. Pick ONE direction per asset type.</p>
+
+<div class="universe">
+  <h3><input type="checkbox" name="universe" value="A Monochrome Street"> A. MONOCHROME STREET: Black & Worn</h3>
+  <p class="universe-desc">
+    Faded black nylon, scuffed leather, dirty canvas. The aesthetic of objects that have
+    been through a hundred drops. Matte surfaces, visible wear marks, frayed edges.
+    Rendered grayscale with neon rim applied by the shader.
+  </p>
+  <div class="tags">
+    <span class="tag">worn textures</span>
+    <span class="tag">matte black</span>
+    <span class="tag">photocopied fanzine</span>
+    <span class="tag">no logos</span>
+  </div>
+</div>
+
+<div class="universe">
+  <h3><input type="checkbox" name="universe" value="B 90s Sportswear"> B. 90s SPORTSWEAR: Brand-adjacent</h3>
+  <p class="universe-desc">
+    Generic 90s athletic aesthetic: navy blue, forest green, burgundy. Nylon with white
+    or silver accents. Think bootleg Adidas, market-stall Nike, the bags everyone had.
+    Clean but not new, lived-in.
+  </p>
+  <div class="tags">
+    <span class="tag">nylon sheen</span>
+    <span class="tag">generic stripes</span>
+    <span class="tag">90s palette</span>
+    <span class="tag">no real brands</span>
+  </div>
+</div>
+
+<div class="universe">
+  <h3><input type="checkbox" name="universe" value="C Military Surplus"> C. MILITARY SURPLUS: Olive & Khaki</h3>
+  <p class="universe-desc">
+    Army surplus shop vibes: olive drab canvas, khaki webbing, brass buckles. The gear
+    that ends up in squats and free parties. Rugged, utilitarian, slightly anachronistic
+    (Cold War surplus in 1998).
+  </p>
+  <div class="tags">
+    <span class="tag">heavy canvas</span>
+    <span class="tag">metal hardware</span>
+    <span class="tag">surplus store</span>
+    <span class="tag">rugged</span>
+  </div>
+</div>
+
+<div class="universe">
+  <h3><input type="checkbox" name="universe" value="D Disposable Urban"> D. DISPOSABLE URBAN: Plastic & Paper</h3>
+  <p class="universe-desc">
+    Cheap, throwaway containers: grocery bags, cardboard, black trash bags. The aesthetic
+    of hiding value in plain sight. Crinkled plastic, bent corners, anonymous.
+  </p>
+  <div class="tags">
+    <span class="tag">plastic sheen</span>
+    <span class="tag">cardboard texture</span>
+    <span class="tag">anonymous</span>
+    <span class="tag">disposable</span>
+  </div>
+</div>
+
+<div class="universe">
+  <h3><input type="checkbox" name="universe" value="E Business Clandestine"> E. BUSINESS CLANDESTINE: Leather & Chrome</h3>
+  <p class="universe-desc">
+    The upscale drug money aesthetic: black leather briefcases, chrome latches, serious
+    business. Not flashy luxury: understated, functional elegance. The stuff that goes
+    through airports.
+  </p>
+  <div class="tags">
+    <span class="tag">matte leather</span>
+    <span class="tag">chrome accents</span>
+    <span class="tag">serious business</span>
+    <span class="tag">90s executive</span>
+  </div>
+</div>
+
+<hr class="divider">
+
+<h2>🧭 REFERENCE DIRECTIONS: KEEP / DROP / DIG</h2>
+<p class="section-intro">Pick verdict checkboxes per direction. You can mark one or several before submit.</p>
+<form id="reference-form" class="selection-form">
+  <div class="reference-grid">
+    <article class="reference-card">
+      <h4>1. Monochrome street-carry (backpack focus)</h4>
+      <img class="ref-preview" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Rucksack1.jpg/330px-Rucksack1.jpg" alt="Backpack silhouette reference preview" loading="lazy">
+      <p class="ref-links">
+        <a href="https://en.wikipedia.org/wiki/Eastpak" target="_blank" rel="noreferrer">Eastpak</a>,
+        <a href="https://en.wikipedia.org/wiki/JanSport" target="_blank" rel="noreferrer">JanSport</a>,
+        <a href="https://archive.org/details/paris-tonkar-4-ans-de-graffitis" target="_blank" rel="noreferrer">Paris Tonkar (archive)</a>
+      </p>
+      <p>Readable 90s urban silhouette with worn black fabric for universe A.</p>
+      <div class="verdict-row">
+        <label><input type="checkbox" name="dir1" value="KEEP"> KEEP</label>
+        <label><input type="checkbox" name="dir1" value="DROP"> DROP</label>
+        <label><input type="checkbox" name="dir1" value="DIG"> DIG</label>
+      </div>
+    </article>
+
+    <article class="reference-card">
+      <h4>2. 90s sportswear panel language</h4>
+      <img class="ref-preview" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Windbreaker_Jacket%2C_Hood_Outside_Transparency.png/330px-Windbreaker_Jacket%2C_Hood_Outside_Transparency.png" alt="90s sportswear panel language reference preview" loading="lazy">
+      <p class="ref-links">
+        <a href="https://en.wikipedia.org/wiki/Adidas" target="_blank" rel="noreferrer">Adidas</a>,
+        <a href="https://en.wikipedia.org/wiki/Nike,_Inc." target="_blank" rel="noreferrer">Nike</a>,
+        <a href="https://en.wikipedia.org/wiki/Reebok" target="_blank" rel="noreferrer">Reebok</a>
+      </p>
+      <p>Generic seam and stripe vocabulary for universe B, logo-free.</p>
+      <div class="verdict-row">
+        <label><input type="checkbox" name="dir2" value="KEEP"> KEEP</label>
+        <label><input type="checkbox" name="dir2" value="DROP"> DROP</label>
+        <label><input type="checkbox" name="dir2" value="DIG"> DIG</label>
+      </div>
+    </article>
+
+    <article class="reference-card">
+      <h4>3. Business clandestine attaché</h4>
+      <img class="ref-preview" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Briefcase-photo.jpg/330px-Briefcase-photo.jpg" alt="Briefcase reference preview" loading="lazy">
+      <p class="ref-links">
+        <a href="https://en.wikipedia.org/wiki/Zero_Halliburton" target="_blank" rel="noreferrer">Zero Halliburton</a>,
+        <a href="https://en.wikipedia.org/wiki/Briefcase" target="_blank" rel="noreferrer">Briefcase</a>
+      </p>
+      <p>Understated hard-case shape with chrome latch grammar for universe E.</p>
+      <div class="verdict-row">
+        <label><input type="checkbox" name="dir3" value="KEEP"> KEEP</label>
+        <label><input type="checkbox" name="dir3" value="DROP"> DROP</label>
+        <label><input type="checkbox" name="dir3" value="DIG"> DIG</label>
+      </div>
+    </article>
+
+    <article class="reference-card">
+      <h4>4. Rave logistics flight-case</h4>
+      <img class="ref-preview" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Road_cases_2.jpg/330px-Road_cases_2.jpg" alt="Road case reference preview" loading="lazy">
+      <p class="ref-links">
+        <a href="https://en.wikipedia.org/wiki/Road_case" target="_blank" rel="noreferrer">Road case</a>,
+        <a href="https://en.wikipedia.org/wiki/Technics_SL-1200" target="_blank" rel="noreferrer">Technics SL-1200</a>
+      </p>
+      <p>Aluminum-edge and corner-protector silhouette, readable 1998 rave ops.</p>
+      <div class="verdict-row">
+        <label><input type="checkbox" name="dir4" value="KEEP"> KEEP</label>
+        <label><input type="checkbox" name="dir4" value="DROP"> DROP</label>
+        <label><input type="checkbox" name="dir4" value="DIG"> DIG</label>
+      </div>
+    </article>
+
+    <article class="reference-card">
+      <h4>5. Cash bundle realism (franc-era)</h4>
+      <img class="ref-preview" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/French_franc_last_series_banknotes.png/330px-French_franc_last_series_banknotes.png" alt="French franc banknotes reference preview" loading="lazy">
+      <p class="ref-links">
+        <a href="https://en.wikipedia.org/wiki/French_franc" target="_blank" rel="noreferrer">French franc</a>,
+        <a href="https://en.wikipedia.org/wiki/Banknote" target="_blank" rel="noreferrer">Banknote</a>,
+        <a href="https://en.wikipedia.org/wiki/Money_bag" target="_blank" rel="noreferrer">Money bag (visual convention)</a>
+      </p>
+      <p>Period-correct 1998 money cue while keeping low-poly pickup readability.</p>
+      <div class="verdict-row">
+        <label><input type="checkbox" name="dir5" value="KEEP"> KEEP</label>
+        <label><input type="checkbox" name="dir5" value="DROP"> DROP</label>
+        <label><input type="checkbox" name="dir5" value="DIG"> DIG</label>
+      </div>
+    </article>
+  </div>
+  <div class="submit-row">
+    <button type="submit" class="submit-btn">Submit reference verdicts</button>
+    <span id="reference-output">No reference verdict yet.</span>
+  </div>
+</form>
+
+<hr class="divider">
+
+<h2>📌 REFINE ROUND STATUS (from your last submit)</h2>
+<div class="status-panel">
+  <h4>Current verdict snapshot</h4>
+  <p class="status-line">Monochrome street-carry: <strong>KEEP</strong></p>
+  <p class="status-line">90s sportswear panel language: <strong>DIG</strong></p>
+  <p class="status-line">Business clandestine attache: <strong>DIG</strong></p>
+  <p class="status-line">Rave logistics flight-case: <strong>DIG</strong></p>
+  <p class="status-line">Cash bundle realism: <strong>KEEP</strong></p>
+</div>
+
+<div class="status-panel">
+  <h4>Locked set for generation prep</h4>
+  <div class="locked-options">
+    <label><input type="checkbox" checked> KEEP anchor: Monochrome street-carry</label>
+    <label><input type="checkbox" checked> KEEP anchor: Cash bundle realism</label>
+    <label><input type="checkbox" checked> DIG next pass: 90s sportswear panel language</label>
+    <label><input type="checkbox" checked> DIG next pass: Business clandestine attache</label>
+    <label><input type="checkbox" checked> DIG next pass: Rave logistics flight-case</label>
+  </div>
+</div>
+
+<hr class="divider">
+
+<h2>✅ YOUR SELECTIONS</h2>
+<p class="section-intro">
+  Tell me which bag types and which universe direction(s). Example reply:<br>
+  <code style="color: var(--accent);">TYPES: sac de sport, sac banane, mallette</code><br>
+  <code style="color: var(--accent);">UNIVERSE: A (monochrome) for bags, E (business) for mallette</code>
+</p>
+<form id="loot-bag-form" class="selection-form">
+  <fieldset class="selection-group">
+    <legend>Bag types</legend>
+    <div class="selection-options">
+      <label><input type="checkbox" name="bagType" value="cash bundle"> Cash bundle</label>
+      <label><input type="checkbox" name="bagType" value="brown envelope"> Brown envelope</label>
+      <label><input type="checkbox" name="bagType" value="attache case"> Attache case</label>
+      <label><input type="checkbox" name="bagType" value="fanny pack"> Fanny pack</label>
+      <label><input type="checkbox" name="bagType" value="gym duffel"> Gym duffel</label>
+      <label><input type="checkbox" name="bagType" value="backpack"> Backpack</label>
+      <label><input type="checkbox" name="bagType" value="trash bag"> Trash bag</label>
+      <label><input type="checkbox" name="bagType" value="grocery bag"> Grocery bag</label>
+      <label><input type="checkbox" name="bagType" value="flight case"> Flight case</label>
+      <label><input type="checkbox" name="bagType" value="record bag"> Record bag</label>
+    </div>
+  </fieldset>
+
+  <fieldset class="selection-group">
+    <legend>Universe directions</legend>
+    <div class="selection-options">
+      <label><input type="checkbox" name="universe" value="A Monochrome Street"> A. Monochrome Street</label>
+      <label><input type="checkbox" name="universe" value="B 90s Sportswear"> B. 90s Sportswear</label>
+      <label><input type="checkbox" name="universe" value="C Military Surplus"> C. Military Surplus</label>
+      <label><input type="checkbox" name="universe" value="D Disposable Urban"> D. Disposable Urban</label>
+      <label><input type="checkbox" name="universe" value="E Business Clandestine"> E. Business Clandestine</label>
+    </div>
+  </fieldset>
+
+  <div class="submit-row">
+    <button type="submit" class="submit-btn">Submit selection</button>
+    <span id="selection-output">No submission yet.</span>
+  </div>
+</form>
+
+<footer>
+  <p>muf reference hunt · graphic-references (Ray) · 2026-07-25</p>
+  <p>Era: 1998 Paris · Avoid: punk, post-2000, NSFW</p>
+</footer>
+
+<script>
+  const form = document.getElementById("loot-bag-form");
+  const output = document.getElementById("selection-output");
+  const referenceForm = document.getElementById("reference-form");
+  const referenceOutput = document.getElementById("reference-output");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const bagTypes = data.getAll("bagType");
+    const universes = data.getAll("universe");
+
+    output.textContent =
+      "Saved. TYPES: " +
+      (bagTypes.length ? bagTypes.join(", ") : "(none)") +
+      " | UNIVERSE: " +
+      (universes.length ? universes.join(", ") : "(none)");
+  });
+
+  referenceForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(referenceForm);
+    const directionNames = [
+      ["dir1", "Monochrome street-carry"],
+      ["dir2", "90s sportswear panel language"],
+      ["dir3", "Business clandestine attache"],
+      ["dir4", "Rave logistics flight-case"],
+      ["dir5", "Cash bundle realism"],
+    ];
+    const verdictSummary = directionNames.map(([key, label]) => {
+      const values = data.getAll(key);
+      return `${label}: ${values.length ? values.join("/") : "(none)"}`;
+    });
+    referenceOutput.textContent = "Saved verdicts. " + verdictSummary.join(" | ");
+  });
+</script>
+
+</body>
+</html>

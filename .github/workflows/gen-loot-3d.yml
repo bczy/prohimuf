@@ -1,0 +1,77 @@
+name: Generate loot 3D models
+
+# Generates selected loot 3D models (cash bundle, attaché case, backpack,
+# flight case) from text prompts through Pollinations' 3D endpoint and commits
+# the GLBs + attached reference sidecar JSON to the current branch.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-loot-3d (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-loot-3d"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-loot-3d-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate loot 3D models
+        run: FORCE=1 node scripts/gen-loot-3d.mjs
+
+      - name: Commit models
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "public/assets/models/loot/*.glb" > /dev/null; then
+            git add public/assets/models/loot/*.glb
+          fi
+          if [ -f public/assets/models/loot/references.json ]; then
+            git add public/assets/models/loot/references.json
+          fi
+          if git diff --cached --quiet; then
+            echo "No new models to commit."
+          else
+            git commit -m "chore(assets): generate loot 3D models"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated models (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loot-3d-unpushed
+          path: public/assets/models/loot/*
+          if-no-files-found: warn
+          retention-days: 14
