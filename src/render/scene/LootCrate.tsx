@@ -376,10 +376,13 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
     if (rim !== null) {
       const rmat = rim.material as MeshBasicMaterial;
       const now = performance.now();
+      const basePulse = 0.42 + Math.sin(now * 0.005) * 0.1;
       if (loot.state === "VISIBLE" && loot.timer < BLINK_WINDOW) {
-        rmat.opacity = Math.sin(now * 0.03) > 0 ? 0.72 : 0.12; // ~fast blink
+        const urgency = 1 - Math.max(0, loot.timer) / BLINK_WINDOW;
+        const fastPulse = 0.34 + (Math.sin(now * 0.015) + 1) * 0.18;
+        rmat.opacity = basePulse * (1 - urgency) + fastPulse * urgency;
       } else {
-        rmat.opacity = 0.4 + Math.sin(now * 0.005) * 0.12;
+        rmat.opacity = basePulse;
       }
     }
   });
