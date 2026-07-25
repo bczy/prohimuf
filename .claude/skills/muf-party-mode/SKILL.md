@@ -1,19 +1,16 @@
 ---
 name: muf-party-mode
 description: >
-  Réunit le crew muf (les 21 agents de `.claude/agents/**` — Marion, Winston, Nadia,
-  Karim, Sacha, Yasmine, Tony, Nico, Estelle, Ray, Maud, Serge, Malik, Inès, Ben, Otis,
-  John et les trois lanes Amelia) autour d'une vraie table, dans un vrai lieu, pour
-  débattre d'une question ouverte. À utiliser quand on dit "muf party mode", "réunis le
-  crew", "apéro", "clash", "pitch", "pre-mortem", "brainstorm", "qu'est-ce qu'en pense
-  l'équipe", "invite les 21 agents" — ou dès qu'une décision, un débat de design, un
-  arbitrage de roadmap ou une question de scope mérite plusieurs voix AVANT d'ouvrir une
-  story. Chaque agent est spawné en vrai subagent via Task/`subagent_type` : il pense
-  pour lui, avec sa fiche, son expertise et sa gueule. Formats : --apéro (défaut),
-  --clash, --pitch, --pre-mortem, --brainstorm, --table. C'est une surface de DISCUSSION —
-  lecture seule, aucun gate, aucun code, aucun commit. Ne remplace NI le pipeline de prod
-  (COLLABORATION.md) NI le merge gate (`/review-panel`). Animation : producer (Marion).
-  Nécessite l'outil Task.
+  Réunit le crew muf (les 21 agents de `.claude/agents/**`) autour d'une table, dans un
+  lieu, pour débattre d'une question ouverte. À utiliser quand on dit "muf party mode",
+  "réunis le crew", "apéro", "clash", "pitch", "pre-mortem", "brainstorm", "qu'est-ce
+  qu'en pense l'équipe" — ou dès qu'une décision, un débat de design ou une question de
+  scope mérite plusieurs voix AVANT d'ouvrir une story. Chaque agent est spawné en vrai
+  subagent via Task/`subagent_type` : il pense pour lui, avec sa fiche et sa gueule.
+  Formats : --apéro (défaut), --clash, --pitch, --pre-mortem, --brainstorm, --table.
+  Surface de DISCUSSION : lecture seule, aucun gate, aucun code, aucun commit. Ne
+  remplace ni le pipeline de prod ni le merge gate (`/review-panel`). Anim : producer
+  (Marion). Nécessite l'outil Task.
 ---
 
 # muf Party Mode
