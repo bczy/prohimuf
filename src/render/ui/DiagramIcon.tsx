@@ -28,6 +28,8 @@ const WARN = "#ffcf5a";
 // shield, exactly as the QTE tableau draws them. BASE_URL-prefixed like every asset path.
 const CAPTOR_SRC = `${import.meta.env.BASE_URL}assets/enemy_hostage.png`;
 const GIRL_SRC = `${import.meta.env.BASE_URL}assets/hostage/girl.png`;
+const BELLIARD_FACADE_SRC = `${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`;
+const COMMANDANT_SRC = `${import.meta.env.BASE_URL}assets/enemy_riot_shooting.png`;
 
 // The true in-game reticle hues (single source of truth: the render-side colour map).
 const GREEN = ringZoneColour("vital"); // head → lethal
@@ -98,16 +100,14 @@ const DIAGRAM_STYLES = `
   100%     { transform: translateY(0); opacity: 1; }
 }
 
-.di-bf-switch { animation: di-bf-switch 2.6s ease-in-out infinite; }
-.di-bf-timer  { animation: di-bf-timer 2.6s step-end infinite; }
-.di-bf-boss   { animation: di-bf-boss 2.6s step-end infinite; }
-@keyframes di-bf-switch {
-  0%,28%   { transform: translateX(0); }
-  43%,85%  { transform: translateX(34px); }
-  100%     { transform: translateX(0); }
-}
-@keyframes di-bf-timer { 0%,35%{opacity:1} 43%,100%{opacity:.35} }
-@keyframes di-bf-boss  { 0%,35%{opacity:.35} 43%,100%{opacity:1} }
+.di-bf-before { animation: di-bf-before 3.2s step-end infinite; }
+.di-bf-after  { animation: di-bf-after 3.2s step-end infinite; }
+.di-bf-arrow  { animation: di-bf-arrow 3.2s ease-in-out infinite; }
+.di-bf-flow   { animation: di-bf-flow 3.2s ease-in-out infinite; }
+@keyframes di-bf-before { 0%,38%{opacity:1} 46%,100%{opacity:.25} }
+@keyframes di-bf-after  { 0%,38%{opacity:.32} 46%,100%{opacity:1} }
+@keyframes di-bf-arrow  { 0%,38%{opacity:.25; transform:translateX(0)} 46%,84%{opacity:1; transform:translateX(4px)} 100%{opacity:.25; transform:translateX(0)} }
+@keyframes di-bf-flow   { 0%,38%{stroke-dashoffset:18; opacity:.3} 46%,84%{stroke-dashoffset:0; opacity:.95} 100%{stroke-dashoffset:-18; opacity:.3} }
 
 @media (prefers-reduced-motion: reduce) {
   .di-anim { animation: none !important; }
@@ -291,24 +291,64 @@ function BossFinaleSwitchIcon(): JSX.Element {
     >
       <style>{DIAGRAM_STYLES}</style>
       <rect x="8" y="10" width="104" height="100" rx="6" fill={BODY} stroke="#141210" strokeWidth="2" />
-      <circle className="di-anim di-bf-timer" cx="36" cy="48" r="16" fill="none" stroke={INK} strokeWidth="2.2" />
-      <line className="di-anim di-bf-timer" x1="36" y1="48" x2="36" y2="38" stroke={INK} strokeWidth="1.8" />
-      <line className="di-anim di-bf-timer" x1="36" y1="48" x2="44" y2="53" stroke={INK} strokeWidth="1.8" />
-      <path className="di-anim di-bf-boss" d="M78 36 l6 8 l8 -8 l8 8 l6 -8 l0 28 l-28 0 z" fill="none" stroke={WARN} strokeWidth="2" />
-      <circle className="di-anim di-bf-boss" cx="87" cy="52" r="2.2" fill={WARN} />
-      <circle className="di-anim di-bf-boss" cx="97" cy="52" r="2.2" fill={WARN} />
-      <line className="di-anim di-bf-boss" x1="88" y1="60" x2="96" y2="60" stroke={WARN} strokeWidth="1.8" />
-      <rect x="24" y="78" width="72" height="10" rx="4" fill="none" stroke={INK} strokeWidth="1.6" />
-      <rect
-        className="di-anim di-bf-switch"
-        x="30"
-        y="80"
-        width="26"
-        height="6"
-        rx="3"
-        fill={ACCENT}
-        fillOpacity="0.85"
+      <rect x="14" y="16" width="92" height="28" rx="3" fill="#100d20" stroke="#1b172a" strokeWidth="1.4" />
+      <image
+        href={BELLIARD_FACADE_SRC}
+        x="14"
+        y="16"
+        width="92"
+        height="28"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ imageRendering: "pixelated", opacity: 0.7 }}
       />
+      <rect className="di-anim di-bf-after" x="80" y="22" width="20" height="18" rx="2.5" fill="none" stroke={WARN} strokeWidth="1.5" />
+      <image
+        className="di-anim di-bf-after"
+        href={COMMANDANT_SRC}
+        x="77"
+        y="21"
+        width="24"
+        height="24"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ imageRendering: "pixelated" }}
+      />
+      <g className="di-anim di-bf-before" stroke={INK} strokeWidth="1.2" strokeLinecap="round">
+        <rect x="16" y="55" width="34" height="16" rx="3" fill="none" />
+        <line x1="22" y1="62" x2="44" y2="62" />
+      </g>
+      <text className="di-anim di-bf-before" x="33" y="68" fill={INK} fontSize="7.6" textAnchor="middle" fontFamily="monospace">
+        00:05
+      </text>
+      <text className="di-anim di-bf-after" x="33" y="68" fill={WARN} fontSize="7.6" textAnchor="middle" fontFamily="monospace">
+        00:00
+      </text>
+      <g className="di-anim di-bf-before" stroke={INK} strokeWidth="1.2" strokeLinecap="round" fill="none">
+        <rect x="16" y="78" width="34" height="12" rx="2.5" />
+        <line x1="21" y1="84" x2="45" y2="84" />
+      </g>
+      <g className="di-anim di-bf-after" stroke={WARN} strokeWidth="1.8" strokeLinecap="round" opacity="0.94">
+        <line x1="18" y1="80" x2="48" y2="88" />
+        <line x1="48" y1="80" x2="18" y2="88" />
+      </g>
+      <path
+        className="di-anim di-bf-flow"
+        d="M54 64 C63 61 70 55 76 45"
+        fill="none"
+        stroke={WARN}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="6 6"
+      />
+      <g className="di-anim di-bf-arrow" fill="none" stroke={WARN} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="56" y1="62" x2="72" y2="50" />
+        <path d="M67 49 l5 1 l-1 5" />
+      </g>
+      <g className="di-anim di-bf-after" opacity="0.95">
+        <circle cx="92" cy="58" r="8.5" fill="none" stroke={WARN} strokeWidth="1.7" />
+        <text x="92" y="61" fill={WARN} fontSize="9" textAnchor="middle" fontWeight="700">
+          !
+        </text>
+      </g>
     </svg>
   );
 }

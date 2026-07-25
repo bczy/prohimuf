@@ -34,6 +34,15 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 - claim: land render-side tutorial immersion cues / release: immersive diagram tokens + `teachingBullets` rendering + render tests landed.
   File List: `src/render/ui/DiagramIcon.tsx`, `src/render/ui/NarrativeScreen.tsx`, `src/render/ui/NarrativeScreen.module.css`, `src/render/ui/__tests__/DiagramIcon.test.ts`, `src/render/ui/__tests__/NarrativeScreen.test.ts`.
 
+## stage-4. BUILD — dev-r3f-render (Amelia) — 2026-07-25 (review feedback patch)
+
+- claim: clarify two tutorial panels flagged in PR review / release: boss-finale diagram now uses concrete Belliard windows + commandant threat flow; edge-scroll panel now embeds the real Belliard in-game backdrop strip with explicit lateral motion; focused render tests updated.
+  File List: `src/render/ui/DiagramIcon.tsx`, `src/render/ui/GestureIcon.tsx`, `src/render/ui/__tests__/DiagramIcon.test.ts`, `src/render/ui/__tests__/GestureIcon.test.ts`.
+
+## stage-4. BUILD — dev-r3f-render (Amelia) — 2026-07-25 (simplify pre-review pass)
+
+- claim: run simplify pass on the review-feedback diff / release: APPLIED none, PROPOSED none, REVERTED none (diff already minimal for visible behavior change).
+
 ## stage-5. VERIFY — qa-lead (Inès) — 2026-07-25
 
 - claim: prepare verify matrix before execution / release: QA verify plan added at `docs/qa/plan-story-tutorial-immersion-overhaul.md` (plan-only, no execution verdict yet).

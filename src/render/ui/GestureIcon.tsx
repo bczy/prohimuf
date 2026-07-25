@@ -20,6 +20,7 @@ import type { GestureKind } from "@game/systems/narrativeSystem";
 const NEON = "#ffe600";
 const INK = "#ededed";
 const BODY = "#0b0916";
+const BELLIARD_STREET_SRC = `${import.meta.env.BASE_URL}assets/levels/belliard/street-wide.png`;
 
 /**
  * Hand silhouettes for the two mobile icons — v5 iStock touch-pictogram vocabulary. Each is ONE
@@ -63,11 +64,13 @@ const GESTURE_STYLES = `
 @keyframes gi-mc-ripple { 0%{opacity:0;transform:scale(.35)} 12%{opacity:.85} 29%{opacity:0;transform:scale(1.15)} 100%{opacity:0;transform:scale(1.15)} }
 
 .gi-es-cursor { animation: gi-es-cursor 4.8s ease-in-out infinite; }
+.gi-es-bg-scroll { animation: gi-es-bg-scroll 4.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .gi-es-glow-r { animation: gi-es-glow-r 4.8s ease-out infinite; }
 .gi-es-glow-l { animation: gi-es-glow-l 4.8s ease-out infinite; }
 .gi-es-chev-r { animation: gi-es-chev-r 4.8s ease-out infinite; }
 .gi-es-chev-l { animation: gi-es-chev-l 4.8s ease-out infinite; }
 @keyframes gi-es-cursor { 0%{transform:translateX(0)} 12%{transform:translateX(38px)} 29%{transform:translateX(38px)} 33%{transform:translateX(0)} 50%{transform:translateX(0)} 62%{transform:translateX(-38px)} 79%{transform:translateX(-38px)} 83%{transform:translateX(0)} 100%{transform:translateX(0)} }
+@keyframes gi-es-bg-scroll { 0%{transform:translateX(-6px)} 12%{transform:translateX(-30px)} 29%{transform:translateX(-30px)} 33%{transform:translateX(-6px)} 50%{transform:translateX(-6px)} 62%{transform:translateX(20px)} 79%{transform:translateX(20px)} 83%{transform:translateX(-6px)} 100%{transform:translateX(-6px)} }
 @keyframes gi-es-glow-r { 0%,12%{opacity:0} 16%{opacity:1} 29%{opacity:1} 34%{opacity:0} 100%{opacity:0} }
 @keyframes gi-es-glow-l { 0%,62%{opacity:0} 66%{opacity:1} 79%{opacity:1} 84%{opacity:0} 100%{opacity:0} }
 @keyframes gi-es-chev-r { 0%,12%{opacity:0;transform:translateX(0)} 16%{opacity:.9} 29%{opacity:.9;transform:translateX(9px)} 34%{opacity:0;transform:translateX(11px)} 100%{opacity:0} }
@@ -189,6 +192,9 @@ function EdgeScrollIcon(): JSX.Element {
     <svg viewBox="0 0 120 120" style={ICON_SVG_STYLE} aria-hidden="true">
       <style>{GESTURE_STYLES}</style>
       <defs>
+        <clipPath id="gi-es-screen-clip">
+          <rect x="12" y="22" width="96" height="76" rx="4" />
+        </clipPath>
         <linearGradient id="gi-es-gr" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={NEON} stopOpacity="0" />
           <stop offset="55%" stopColor={NEON} stopOpacity="0.04" />
@@ -213,6 +219,19 @@ function EdgeScrollIcon(): JSX.Element {
         stroke={INK}
         strokeWidth="2.5"
       />
+      <g clipPath="url(#gi-es-screen-clip)">
+        <rect x="12" y="22" width="96" height="76" fill={BODY} />
+        <image
+          className="gi-anim gi-es-bg-scroll"
+          href={BELLIARD_STREET_SRC}
+          x="-40"
+          y="22"
+          width="210"
+          height="76"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ imageRendering: "pixelated", opacity: 0.92 }}
+        />
+      </g>
       {/* edge bands: bright at the edge, falloff INWARD to 0. Static values encode the readable
           reduced-motion base frame — RIGHT band lit, LEFT band off; animation overrides both. */}
       <rect

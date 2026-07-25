@@ -23,4 +23,11 @@ describe("DiagramIcon", () => {
     expect(html).toContain("assets/enemy_hostage.png");
     expect(html).toContain("assets/hostage/girl.png");
   });
+
+  it("renders boss-finale-switch with Belliard windows and a commandant threat marker", () => {
+    const html = renderToStaticMarkup(createElement(DiagramIcon, { kind: "boss-finale-switch" }));
+    expect(html).toContain("assets/levels/belliard/facade.png");
+    expect(html).toContain("assets/enemy_riot_shooting.png");
+    expect(html).toContain("di-bf-flow");
+  });
 });
