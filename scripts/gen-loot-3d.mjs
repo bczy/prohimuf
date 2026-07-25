@@ -26,24 +26,24 @@ const FORCE = process.env.FORCE === "1";
 
 const STYLE_SUFFIX =
   "low-poly game asset, isolated object, no scene, no floor, no hands, no character, no text, no logo, no watermark, " +
-  "readable silhouette, visible texture detail at game scale, clear material separation, avoid flat pure-black surfaces";
+  "readable silhouette, visible texture detail at game scale, clear material separation, no pure-black materials, no near-black albedo, use mid-gray to light-gray base tones";
 
 const ASSETS = [
   {
     id: "attache-case",
     outFile: "attache-case.glb",
-    seed: 6212,
+    seed: 6222,
     prompt:
-      "a hard rectangular attache case, deep charcoal shell (not pure black), brushed aluminum lower band, satin-chrome latches and hinges, black polymer handle, subtle scratches and edge wear, discreet clandestine-courier look, " +
+      "a hard rectangular attache case, medium gray shell with subtle grain, brushed aluminum lower band, satin-chrome latches and hinges, dark gray polymer handle, subtle scratches and edge wear, discreet clandestine-courier look, " +
       STYLE_SUFFIX,
     references: ["https://en.wikipedia.org/wiki/Briefcase", "https://en.wikipedia.org/wiki/Zero_Halliburton"],
   },
   {
     id: "backpack",
     outFile: "backpack.glb",
-    seed: 6213,
+    seed: 6223,
     prompt:
-      "a medium urban backpack, dark graphite fabric body with slightly lighter charcoal side panels, visible woven nylon texture, stitched seams, matte black straps with gray webbing accents, practical 1990s street utility look, " +
+      "a medium urban backpack, medium graphite fabric body with clearly lighter gray side panels, visible woven nylon texture, stitched seams, dark gray straps with light gray webbing accents, practical 1990s street utility look, " +
       STYLE_SUFFIX,
     references: [
       "https://en.wikipedia.org/wiki/Eastpak",
@@ -54,9 +54,9 @@ const ASSETS = [
   {
     id: "flight-case",
     outFile: "flight-case.glb",
-    seed: 6214,
+    seed: 6224,
     prompt:
-      "a compact rave logistics flight case, matte black birch-ply panels with subtle wood grain, bright aluminum edge extrusions, steel corner protectors, recessed handle plate, visible rivets, slightly worn touring gear look, " +
+      "a compact rave logistics flight case, medium charcoal birch-ply panels with visible wood grain, bright aluminum edge extrusions, steel corner protectors, recessed handle plate, visible rivets, slightly worn touring gear look, " +
       STYLE_SUFFIX,
     references: ["https://en.wikipedia.org/wiki/Road_case", "https://en.wikipedia.org/wiki/Technics_SL-1200"],
   },
