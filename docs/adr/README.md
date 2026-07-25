@@ -124,7 +124,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0066](./0066-fractional-lives-per-archetype-damage.md) | Fractional lives: per-archetype bullet damage in quarter-heart steps | Proposed |
 | [0067](./0067-panel-provider-fallback-degraded-verdict.md) | ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open) | Proposed (partially superseded by 0070) |
 | [0068](./0068-lazy-load-threejs-r3f.md) | ADR-0068 — Lazy-load du runtime Three.js/R3F | Accepted |
-| [0069](./0069-energy-rim-signalling-contract.md) | Energy-rim signalling contract | Proposed |
+| [0069](./0069-energy-rim-signalling-contract.md) | Energy-rim signalling contract | Accepted |
 | [0070](./0070-ci-panel-subscription-auth-claude-code-action.md) | CI code-review panel moves to subscription auth via `claude-code-action`, retires the GitHub Models fallback | Accepted |
 
 <!-- ADR-INDEX:END -->

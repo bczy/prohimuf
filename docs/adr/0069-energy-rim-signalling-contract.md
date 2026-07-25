@@ -1,10 +1,11 @@
 # 0069 — Energy-rim signalling contract
 
-- **Status:** Proposed — decision content ruled by `senior-architect` (Winston) in
+- **Status:** Accepted — decision content ruled by `senior-architect` (Winston) in
   `docs/handoffs/story-street-graphics-effects.md` stage-6 TRIAGE ARCHITECTE §4 ("ADRs");
-  drafted by `tech-writer` (Otis) per that ruling. Awaiting Winston's sign-off on this draft
-  and the branch's own merge (currently NO-MERGE, condition **C1**: `lead-art` has not yet
-  re-gated the re-cut on a hostage-QTE or post-fix boss frame).
+  drafted by `tech-writer` (Otis) per that ruling. **Signed by Winston on 2026-07-25**
+  (delta pass C7, shard §stage-7): the draft says what the triage ruled, and the two
+  conditions it was waiting on are both closed — `lead-art` re-gated the re-cut (C1 PASS,
+  shard §stage-5bis) and the render band landed in `b735f87`.
 - **Date:** 2026-07-25
 - **Number:** self-allocated as 0069 (max+1 over local `docs/adr/`, `origin/main`, and the
   index — no collision found) via the `adr-new` skill. The triage asked for the number to
@@ -121,9 +122,9 @@ boss auras were first wired at `renderOrder: 5`, which collided with `facadeOver
 those layers sorts after a rim at (5, z 0.48), so any balcony slab, grille, frozen courier
 or near-row prop overlapping the figure would paint over the rim while the host body (band 6) painted over all of them: a rim with a bite out of it (triage finding **I1**).
 
-**Prescription (triage, not the code's momentary state — the render lane's fix rides a
-separate, parallel commit): both QTE auras take `renderOrder: 5.9`**, `rimZ`/`shadowZ`
-unchanged. `5.75 (nearRow) < 5.9 < 6 (host band)` keeps the aura above the whole street
+**Both QTE auras take `renderOrder: 5.9`**, `rimZ`/`shadowZ` unchanged — prescribed by the
+triage, and **shipped in `b735f87`**: the slot is now a registered `streetDepth.ts` entry
+(`qteAura`) that both `HostageQteSprite` and `BossQteSprite` read, not a literal. `5.75 (nearRow) < 5.9 < 6 (host band)` keeps the aura above the whole street
 stack, like the tableau it belongs to. `LootCrate`'s aura at `renderOrder: 4` is **correct
 as shipped** — same band as its own host body (4), disambiguated by `z`, which is the
 `EnemySprite` rim idiom, not the QTE one; it does not need to move.
@@ -165,10 +166,10 @@ table, and never share an integer band with a layer the aura does not belong to.
   ADR-0011/ADR-0025's `bollard`/`parkingMeter`/`scooter` question) — those remain
   `pm`/`lead-game-designer` and Bertrand calls respectively, tracked in the story's handoffs
   shard, not here.
-- The renderOrder prescription above (`5.9`) is the triage's PRESCRIPTION, not necessarily
-  what any given commit's working tree shows at read time — the render lane (`dev-r3f-render`)
-  and the `streetDepth.ts` table are the sources of truth for the value actually shipped;
-  verify against the file, not this ADR, if they ever disagree.
+- `streetDepth.ts` stays the source of truth for the value actually shipped: this ADR states
+  the RULE (a fractional slot immediately below the host's band, registered in the table),
+  the table states the NUMBER. If the two ever disagree, the file wins and this ADR is the
+  thing that gets amended.
 - Reviewers should reject any new `createEntityAura()` consumer that (1) targets a
   don't-shoot-eligible class, (2) defines its own green/amber/red hex literals instead of
   importing `STATE_GREEN/AMBER/RED`, or (3) shares an integer `renderOrder` band with a layer

@@ -858,3 +858,152 @@ Bertrand pulled out of this batch and which owe a verdict after their rework.
 
 Iteration budget: batch 2 of 2 spent. Nothing further from me on effects 1, 3, 5 — any
 subsequent change to them is a new cycle, and G3(c) is where that cycle starts.
+
+---
+
+## stage-7. DELTA PANEL C7 — senior-architect (Winston) — 2026-07-25
+
+Condition **C7** of the stage-6 verdict: one read over `git diff 1fc6c7c...HEAD` (11 commits,
+15 files, +1322/−203), triage of the delta only. This is not a second full read of the branch
+— stage-6 §2 already read it — it is the gate reading what actually moved under it afterwards.
+
+Surfaces in the delta, by risk: the two TITLE commits (`698e1cd`, `9517c48` — CSS masks,
+motion tokens, new tests), the C3/C5 render-band fix (`b735f87`), the C4 ADR work
+(`18df159`, `7975156`), the discriminant VHS test (`2c12605`), three Prettier commits, and
+the art re-gate record (`8cefc45`).
+
+### 1. What I verified and dismissed
+
+Recorded so the "nothing survives" below is a result, not an absence of looking.
+
+- **Boundary law — intact.** The delta touches `src/render`, `docs/`, `public/adr` and tests
+  only. Zero `src/game` change; no new dependency; `smoke.png` was already vendored and
+  CC0-attributed (`public/assets/fx/LICENSES.md`) for the boss veil — the cover reuses the
+  file, it does not import one.
+- **The 5.95 s paint reveal does not hold the player.** The tokens test claims the surface
+  is "click-through at any instant"; that claim checks out in `TitleScreen.tsx` — the whole
+  cover is the hit target and a global `keydown` fires `onEnter` on any printable key /
+  Enter / Space / Escape, independent of the animation. Tripling the paint variant's length
+  (1.98 s → 5.95 s) therefore costs a player nothing, and trading the three-variant parity
+  away is a legitimate PO call, not a UX regression.
+- **Reduced motion still lands on the finished wordmark.** The two triggers now cover
+  `.glyph::before` (the chrome pass) and `.puff`, i.e. every node the delta animates. And
+  the paint variant's resting state really is an unmasked letter: four 40 %-tall rungs at
+  −30/19/68/117 % with a 167 % width overlap to full coverage on both axes, so
+  `animation: none` shows the whole glyph rather than a sliced one. Checked by hand, since
+  no test asserts geometry.
+- **The renderOrder move is z-neutral.** `rimZ 0.48` / `shadowZ 0.47` are identical to the
+  old `BOSS_Z`/`QTE_Z`-derived values (both hosts sit at 0.5); only the paint band moved
+  5 → 5.9. Bonus, unlooked for: inside the boss tableau 5.9 also breaks the pre-existing tie
+  with `decorRef`'s literal `renderOrder={5}`.
+- **The VHS test is now genuinely discriminant.** The old assertion counted
+  `aria-checked="true"` document-wide — exactly one per radiogroup by construction, so it
+  could not fail whatever choice each row marked. `checkedIn()` reads the marked label
+  _inside_ the named row and pins the neighbouring CRT row as a control. This is the fix C6
+  asked for, done properly.
+- **Greens re-run here, not taken on trust:** `yarn typecheck` clean; the four test files the
+  delta touches, 48/48 green.
+
+### 2. Findings — four, all minor, none blocking
+
+No CONFIRMED blocking or major finding in the delta. Everything below is fix-lane material
+(`docs/handoffs/fixes.md`), and **none of it gates the merge**.
+
+- **D1 — a comment that describes the bug it fixed (minor, `TitleScreen.tsx`).** The smoke
+  container's new comment ends "…the container only holds them and screens the cloud through
+  the print halftone". The halftone mask on `.smoke` is precisely what this commit REMOVED
+  — it was the hard rectangular clip Bertrand saw — and the CSS says so two files away. The
+  sentence contradicts itself and the code. One line.
+- **D2 — `TITLE_PAINT_LINES` is not bound to the CSS ladder (minor, tokens ↔ CSS).**
+  `tokens.ts` claims "the whole gesture is retuned by moving one number", but the ladder is
+  hard-coded at four mask layers and four keyframe stops, and nothing binds the two. Drop
+  `TITLE_PAINT_LINES` to 3 and every test stays green (600 % 200 === 0, 600 ≤ 1000) while
+  the CSS still opens four lines inside a 600 ms pass — 90 ms of spray per line, i.e. the
+  ≥6-frames-at-60 fps floor the rhythm test exists to defend, silently broken. Prescription:
+  one assertion in the "TITLE paint line overshoot" describe binding the CSS's stop count to
+  `titlePaintPassMs / (titlePaintLineMs + titlePaintLineGapMs)`.
+- **D3 — off-by-two in a test comment (nit).** `tokens.test.ts` calls a pass "the six lines
+  of a single colour over one letter". Four lines; six is the chrome band count.
+- **D4 — the reciprocal comment that guards `SMOKE_INK` does not exist (minor).**
+  `tokens.ts` says of the duplicated grey: "the comment on each side names the other". The
+  scene side (`smokeParticles.ts`, `SMOKE_TINT = "#9a9a9a"`) has no back-reference. That
+  comment is the ONLY guard on the duplication — there is no test, and the real dedup is
+  blocked behind ADR-0068 (tracked for the transverse story). Make the claim true: one line
+  on `SMOKE_TINT`. Note also the case differs (`#9A9A9A` vs `#9a9a9a`) — irrelevant to CSS,
+  relevant the day someone binds them with a string equality.
+- **D5 — registry exclusivity is asymmetric (nit, `streetDepth.test.ts`).** `qteAura` gets a
+  real exclusivity check (`literals.get(5.9) === []`); `ambient` is only asserted to be
+  claimed BY `UrbanMotion.tsx`, not claimed ONLY by it, and the "slot no other module claims"
+  loop still covers just the four street slots. No impact today.
+- **D6 — observation, no action.** The cover now animates 18 masked spans. It is a pre-game
+  DOM surface with no frame-budget contract, Three is not yet loaded (ADR-0068) and reduced
+  motion kills the field outright — so no `gpu-specialist` verdict is owed. Filed in case a
+  low-end device report ever comes back.
+
+### 3. B1 (scope) — ruling: PROVENANCE, not creep
+
+Stage-6 §3 blocked on B1: an ungated feature landing after the merge gate had run. The
+provenance is now established and it changes the ruling. The three title variants and the
+`STOCK.jaune` cover are **explicit Bertrand requests made in session**, and he then directed
+the tuning himself across four iterations on the branch preview. That is the PO specifying
+and accepting, live — the shortest legitimate path there is, not a lane widening its own
+scope. `lead-art` independently closed **E3** on the same basis (code and bible now agree).
+
+**B1 is resolved.** The process lesson stands and is worth keeping: a PO-directed change that
+arrives after stage-6 does not skip the gate, it re-enters it — which is exactly what C7 is,
+and why the delta got read.
+
+### 4. ADRs
+
+- **ADR-0069 — SIGNED, `Proposed` → `Accepted`.** The draft says what stage-6 §4 ruled, on
+  all four sections: rim-not-disc by construction, class membership as a stated rule
+  (hostage and courier excluded — a don't-shoot figure never carries an energy rim), one
+  shared `STATE_GREEN/AMBER/RED` ramp, and the fractional-slot render band. Three corrections
+  applied on signature, all status-only, no decision content touched: the status block (it
+  still cited the NO-MERGE and condition C1, both now closed), §4's "prescription, not the
+  code's momentary state" caveat (the fix landed in `b735f87` and the slot is a registered
+  table entry), and the matching gotcha, rewritten to the durable form — this ADR states the
+  RULE, `streetDepth.ts` states the NUMBER, and if they disagree the file wins. Index
+  regenerated (`scripts/gen-adr-index.mjs --write`).
+  I keep §4's `LootCrate` exception exactly as drafted (aura at band 4, same slot as its host,
+  disambiguated by z — the `EnemySprite` rim idiom, not the QTE one). It is a reasoned,
+  written-down exception rather than a hole, and reopening it buys nothing.
+  The number stays flagged: self-allocated max+1 over local / index / `origin/main`, no
+  collision found. `producer` re-checks against the ledger at merge; a clash is a rename of
+  three lines, not a re-decision.
+- **ADR-0054 amendment — coherent with the shipped code.** I checked the four admission
+  conditions against `prefsSystem.ts` rather than against the amendment's own prose:
+  `vhs` is a boolean (1); it has a default plus a type-guarded migration with round-trip,
+  legacy-blob and wrong-type tests (2); it has an OPTIONS row (3); and no `src/game` system
+  branches on it — grep returns the storage record and its own tests, nothing else (4).
+  The H1 renumber 0052 → 0054 is a real defect fixed, and both indexes carry
+  "Accepted (amended)".
+
+### 5. VERDICT — MERGE
+
+**MERGE.** No CONFIRMED blocking or major finding survives the delta; B1 is resolved by
+provenance; C1–C6 are met and C7 is this section. Boundary law respected across the whole
+branch, delta included.
+
+Conditions that ride ALONG WITH the merge, none of them a gate:
+
+1. **The three TITLE reveal animations are still ungated by `lead-art`** (his own words,
+   §stage-5bis: "hors batch… they owe a verdict after their rework", iteration budget spent).
+   This delta IS that rework. I merge anyway, deliberately: the change was directed and
+   accepted live by Bertrand on the preview, which is the PO acting as the gate of last
+   resort, and `lead-art` framed the remaining verdict as a NEW cycle. Route it as one —
+   with G3(c) and the cover's cloud against the print law (§2/§2bis) in the same pass, since
+   the halftone screen on the smoke is what got removed.
+2. **D1–D5 to `docs/handoffs/fixes.md`** as fix-lane items, `dev-r3f-render` owning D1–D4 and
+   D5. D2 is the only one with teeth; the rest are one-liners.
+3. **`producer` confirms ADR-0069's number** against the ledger.
+4. Unchanged and out of branch: **E4/E5** (pre-existing colour composites), bible debt
+   **G3(c)**, the `SMOKE_INK`/`SMOKE_TINT` duplication (blocked by ADR-0068, transverse
+   story), and the perf-budget ratification + on-target protocol, which await Bertrand.
+
+**On the CI check.** `panel-verdict` stays **DEGRADED** until the API credits are recharged
+(ADR-0067: the gate must not fail open, so a degraded panel is a degraded verdict, never a
+green one). The effective merge is therefore **Bertrand's human decision** — either an
+explicit waive of the check, or waiting for the re-run. My verdict above is the documented
+substitute for the automated panel, not a replacement for his call: it says the diff was read
+by the gate that signs it, which is the whole point of C7.
