@@ -37,6 +37,7 @@ import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
 import { ImpactEffects } from "@render/effects/ImpactEffects";
 import { PlayerHitEffects } from "@render/effects/PlayerHitEffects";
+import { UrbanMotion } from "@render/effects/UrbanMotion";
 import { CrtPass } from "@render/effects/CrtPass";
 import type { ImpactChannel, PlayerHitChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
@@ -463,6 +464,16 @@ export function GameScene({
       <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} reducedMotion={reducedMotion} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
+      {/* Ambient street life (vent steam + blowing litter). Suppressed for the
+          whole boss fight and frozen on pause / hostage QTE / reduced motion. */}
+      <UrbanMotion
+        stateRef={stateRef}
+        fullW={fullW}
+        facadeH={facadeH}
+        isMobile={isMobile}
+        paused={paused === true}
+        reducedMotion={reducedMotion}
+      />
       <ImpactEffects channelRef={impactChannelRef} />
       <PlayerHitEffects channelRef={playerHitChannelRef} reducedMotion={reducedMotion} />
       <FeedbackLayer queueRef={feedbackRef} />

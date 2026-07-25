@@ -113,8 +113,15 @@ export interface SmokeField {
  * Build a pooled smoke particle field of `maxParticles` billboards (shared geometry, per-particle
  * material so each puff fades independently). The sprite loads once, shared by every material; the
  * field stays hidden until it arrives so no untextured square ever flashes.
+ *
+ * `renderOrder` defaults to {@link SMOKE_RENDER_ORDER} (the boss veil's band, unchanged). The
+ * street-vent plumes pass a LOWER band so ambient smoke can never drift in front of the courier
+ * or the delivery van — the "Livrer" targets it must never mask.
  */
-export function createSmokeField(maxParticles: number): SmokeField {
+export function createSmokeField(
+  maxParticles: number,
+  renderOrder: number = SMOKE_RENDER_ORDER,
+): SmokeField {
   const group = new Group();
   const geometry = new PlaneGeometry(1, 1);
   const meshes: Mesh[] = [];
@@ -129,7 +136,7 @@ export function createSmokeField(maxParticles: number): SmokeField {
     });
     material.color.set(SMOKE_TINT);
     const mesh = new Mesh(geometry, material);
-    mesh.renderOrder = SMOKE_RENDER_ORDER;
+    mesh.renderOrder = renderOrder;
     mesh.visible = false;
     group.add(mesh);
     meshes.push(mesh);
