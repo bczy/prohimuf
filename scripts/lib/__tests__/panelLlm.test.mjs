@@ -342,6 +342,29 @@ describe("provider budgets", () => {
     expect(waits).toEqual([2000]);
   });
 
+  it("gives up on a provider whose retry-after outlasts the job", async () => {
+    // Measured 2026-07-25: a *quota* 429 from GitHub Models asks for 67435s
+    // (~19h). Sleeping that long parks the runner until the job times out.
+    const waits = [];
+    const throttled = {
+      ...err(429, "Rate limit of 50 per 86400s exceeded."),
+      headers: { get: (h) => (h === "retry-after" ? "67435" : null) },
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(throttled);
+    await expect(
+      callPanelModel({
+        system: "s",
+        user: "u",
+        env: { GITHUB_TOKEN: "t" },
+        fetchImpl,
+        log: silent,
+        sleepImpl: async (ms) => void waits.push(ms),
+      }),
+    ).rejects.toThrow(/every LLM provider failed/);
+    expect(waits).toEqual([]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("truncates a single oversized part rather than dropping the file", () => {
     const packed = packParts(["x".repeat(5000), "short"], 1000);
     expect(packed[0]).toContain("[TRUNCATED — part exceeds budget]");
