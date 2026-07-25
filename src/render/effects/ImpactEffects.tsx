@@ -1,10 +1,18 @@
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
-import { useFrame } from "@react-three/fiber";
-import { CanvasTexture, AdditiveBlending } from "three";
-import type { Texture, Mesh, MeshBasicMaterial } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { CanvasTexture, AdditiveBlending, Quaternion, Vector3 } from "three";
+import type { Texture, Mesh, MeshBasicMaterial, Group, OrthographicCamera } from "three";
 import type { ImpactChannel } from "@hooks/useGameLoop";
 import { writeMarkRing } from "./markRing";
+import { warmBulletModel, getBulletModel } from "@render/scene/bulletModel";
+import {
+  BULLET_BODY_LENGTH,
+  BULLET_BODY_RADIUS,
+  BULLET_CAP_RADIUS,
+  bulletForwardAxis,
+  BULLET_MODEL_SCALE,
+} from "@render/scene/bulletGeometry";
 
 // Transient player-shot impact effects (ADR-0040): acid-neon explosion over a
 // brief dark backing disc (so additive neon reads against a bright facade), a
@@ -42,6 +50,23 @@ const MARK_RENDER_ORDER = 3.5; // in front of facade panels, behind enemies
 const BACKING_RENDER_ORDER = 7.9; // just below the explosion — dark ground
 const EXPLOSION_RENDER_ORDER = 8; // frames/engulfs the target, above the scene
 const FLASH_RENDER_ORDER = 8.1; // above the explosion — hit-only white punch
+
+// --- Player shot visual tracer (ADR-0040 amendment: the flat line tracer was
+// dropped, but a real oriented 3D projectile — the same one enemies fire back
+// — was never tried). Hit resolution stays instant/hitscan (unchanged); this
+// is a purely cosmetic, fast-travelling bullet from an implied muzzle at the
+// bottom of the viewport up to the already-resolved impact point, reusing the
+// enemy return-fire bullet's exact geometry/model/scale (bulletGeometry.ts,
+// bulletModel.ts) so the two never visually diverge. ---------------------------
+const PLAYER_BULLET_POOL = 8; // ≥ the weapon's max simultaneous per-trigger resolutions (3)
+const PLAYER_BULLET_TRAVEL_MS = 90; // fast — point-blank pistol range, but readable (~5-6 frames)
+const PLAYER_BULLET_Z = 0.5; // same depth convention as the enemy bullet (BulletSprite.tsx)
+const PLAYER_BULLET_COLOR = "#ffe066"; // warm brass — reads as "yours", not enemy neon-red
+const PLAYER_BULLET_EMISSIVE = "#ffcf40";
+const PLAYER_BULLET_EMISSIVE_INTENSITY = 0.6;
+// Module-scope: the local axis rotated FROM onto the travel direction, shared
+// with BulletSprite.tsx's own FORWARD (see bulletGeometry.ts).
+const PLAYER_BULLET_FORWARD = bulletForwardAxis();
 
 // Acid-neon burst: radial white-hot core → cyan (#28F0FF) → transparent. A true
 // dégradé (loi du glow — never an aplat); additive so it reads as light.
@@ -157,6 +182,17 @@ interface MarkPos {
   y: number;
 }
 
+interface PlayerBullet {
+  active: boolean;
+  born: number;
+  // Muzzle origin (world) — bottom-centre of the viewport at fire time.
+  ox: number;
+  oy: number;
+  // Target — the resolved impact point, unchanged for the tracer's whole flight.
+  tx: number;
+  ty: number;
+}
+
 export function ImpactEffects({
   channelRef,
 }: {
@@ -200,6 +236,40 @@ export function ImpactEffects({
   const markCursor = useRef(0);
   const lastNonce = useRef(0);
 
+  // Player-bullet visual tracer pool. `camera`/`size` drive the muzzle origin
+  // (bottom-centre of the LIVE viewport, ADR-0040 gotcha) every frame.
+  const { camera, size } = useThree();
+  const playerBulletGroups = useRef<(Group | null)[]>(
+    Array.from({ length: PLAYER_BULLET_POOL }, () => null),
+  );
+  // Procedural fallback's own wrapper group per slot — hidden (not unmounted)
+  // once a slot swaps to the generated-model clone, mirroring BulletSprite.tsx.
+  const playerBulletProcedural = useRef<(Group | null)[]>(
+    Array.from({ length: PLAYER_BULLET_POOL }, () => null),
+  );
+  const playerBulletModelAttached = useRef<boolean[]>(
+    Array.from({ length: PLAYER_BULLET_POOL }, () => false),
+  );
+  const playerBullets = useRef<PlayerBullet[]>(
+    Array.from({ length: PLAYER_BULLET_POOL }, () => ({
+      active: false,
+      born: 0,
+      ox: 0,
+      oy: 0,
+      tx: 0,
+      ty: 0,
+    })),
+  );
+  // Scratch quaternion/vector for the per-frame orientation — allocated once,
+  // this useFrame runs at 60fps × PLAYER_BULLET_POOL.
+  const bulletScratch = useMemo(() => ({ dir: new Vector3(), quat: new Quaternion() }), []);
+
+  // Kick off the (at most once, ADR-0065) async GLB load — idempotent no-op if
+  // BulletSprite.tsx already warmed the same shared singleton.
+  useEffect(() => {
+    void warmBulletModel(`${import.meta.env.BASE_URL}models/bullet.glb`);
+  }, []);
+
   useFrame(() => {
     const now = performance.now();
     const channel = channelRef.current;
@@ -213,6 +283,7 @@ export function ImpactEffects({
       for (const b of bursts.current) b.active = false;
       for (const d of backings.current) d.active = false;
       for (const f of flashes.current) f.active = false;
+      for (const p of playerBullets.current) p.active = false;
       markCursor.current = 0;
     }
 
@@ -267,6 +338,23 @@ export function ImpactEffects({
           flash.x = ex;
           flash.y = ey;
         }
+      }
+
+      // Player-bullet tracer: spawns from the LIVE viewport's bottom-centre
+      // (ADR-0040 gotcha — never a fixed world constant, or it drifts off-screen
+      // whenever the camera pans/zooms) toward the already-resolved impact
+      // point. Purely cosmetic: the hit/miss classification above is unaffected.
+      const ortho = camera as OrthographicCamera;
+      const viewH = size.height / ortho.zoom;
+      const pbi = playerBullets.current.findIndex((p) => !p.active);
+      const pb = pbi >= 0 ? playerBullets.current[pbi] : undefined;
+      if (pb !== undefined) {
+        pb.active = true;
+        pb.born = now;
+        pb.ox = camera.position.x;
+        pb.oy = camera.position.y - viewH / 2;
+        pb.tx = ev.impactPoint.x;
+        pb.ty = ev.impactPoint.y;
       }
     }
 
@@ -344,6 +432,47 @@ export function ImpactEffects({
       mesh.scale.set(FLASH_DIAMETER, FLASH_DIAMETER, 1);
       (mesh.material as MeshBasicMaterial).opacity = 1;
     });
+
+    // Player-bullet tracer: linear travel from muzzle to impact point,
+    // oriented along the travel direction — same idiom as BulletSprite.tsx's
+    // enemy return-fire bullet (velocity-driven quaternion, procedural→GLB swap).
+    const model = getBulletModel();
+    playerBullets.current.forEach((pb, i) => {
+      const group = playerBulletGroups.current[i];
+      if (!group) return;
+      if (!pb.active) {
+        group.visible = false;
+        return;
+      }
+      const t = (now - pb.born) / PLAYER_BULLET_TRAVEL_MS;
+      if (t >= 1) {
+        pb.active = false;
+        group.visible = false;
+        return;
+      }
+      group.visible = true;
+      group.position.set(pb.ox + (pb.tx - pb.ox) * t, pb.oy + (pb.ty - pb.oy) * t, PLAYER_BULLET_Z);
+
+      const dx = pb.tx - pb.ox;
+      const dy = pb.ty - pb.oy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        bulletScratch.dir.set(dx / dist, dy / dist, 0);
+        bulletScratch.quat.setFromUnitVectors(PLAYER_BULLET_FORWARD, bulletScratch.dir);
+        group.quaternion.copy(bulletScratch.quat);
+      }
+
+      // Swap in the generated model the first frame it's available for this
+      // slot — reuses the exact same shared GLB/scale as the enemy bullet.
+      if (model !== null && !playerBulletModelAttached.current[i]) {
+        playerBulletModelAttached.current[i] = true;
+        const clone = model.clone(true);
+        clone.scale.setScalar(BULLET_MODEL_SCALE);
+        group.add(clone);
+        const procedural = playerBulletProcedural.current[i];
+        if (procedural !== null) procedural.visible = false;
+      }
+    });
   });
 
   return (
@@ -410,6 +539,46 @@ export function ImpactEffects({
             depthWrite={false}
           />
         </mesh>
+      ))}
+      {Array.from({ length: PLAYER_BULLET_POOL }).map((_, i) => (
+        <group
+          key={`player-bullet-${String(i)}`}
+          ref={(el) => {
+            playerBulletGroups.current[i] = el;
+          }}
+          visible={false}
+        >
+          {/* Procedural fallback (ADR-0065): hidden, not unmounted, once a slot
+              swaps to the generated-model clone — see BulletSprite.tsx. */}
+          <group
+            ref={(el) => {
+              playerBulletProcedural.current[i] = el;
+            }}
+          >
+            <mesh>
+              <cylinderGeometry
+                args={[BULLET_BODY_RADIUS, BULLET_BODY_RADIUS, BULLET_BODY_LENGTH, 10]}
+              />
+              <meshStandardMaterial
+                color={PLAYER_BULLET_COLOR}
+                emissive={PLAYER_BULLET_EMISSIVE}
+                emissiveIntensity={PLAYER_BULLET_EMISSIVE_INTENSITY}
+                metalness={0.6}
+                roughness={0.4}
+              />
+            </mesh>
+            <mesh position={[0, BULLET_BODY_LENGTH / 2, 0]}>
+              <sphereGeometry args={[BULLET_CAP_RADIUS, 12, 8]} />
+              <meshStandardMaterial
+                color={PLAYER_BULLET_COLOR}
+                emissive={PLAYER_BULLET_EMISSIVE}
+                emissiveIntensity={PLAYER_BULLET_EMISSIVE_INTENSITY}
+                metalness={0.6}
+                roughness={0.4}
+              />
+            </mesh>
+          </group>
+        </group>
       ))}
     </>
   );
