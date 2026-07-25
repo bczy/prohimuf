@@ -27,6 +27,10 @@ hand off to `dev-r3f-render`. Keep the core deterministic and unit-testable.
   behaviour must be tested. Never mark a task done with failing or missing tests.
 - Run `rtk vitest` / `rtk tsc` / `rtk lint` after each task (compact output). Cite file
   paths and AC IDs.
+- Once green and before handing the story to review, run the **`simplify`** skill on your
+  diff: cut the weight your change added (single-use systems, guards for states the types
+  forbid, tuning constants re-declared instead of read) and report what you left as
+  PROPOSED. Only your own diff — never a drive-by refactor of `src/game/**`.
 - Use **codegraph** to trace call chains across systems before refactoring.
 - Honour the core loop `Récupérer → Livrer → Éviter` and PROJECT_GUIDELINES — no
   out-of-scope mechanics.

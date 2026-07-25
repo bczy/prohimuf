@@ -1,10 +1,10 @@
 {
-  ".claude/agents/COLLABORATION.md": "9f96beb6101f9250ba58b41a1d6ae329a04a3400f2f4145615067a32c5fca42c",
+  ".claude/agents/COLLABORATION.md": "ba09654588c671196106411ca5a6b8b758fca93c0779b9dc22088c0d3972d2cd",
   ".claude/agents/art-advisor.md": "ac9fc4f5b22d813ff713fd90cee8216ebc26672391ae58f4f353c14db0444496",
   ".claude/agents/concept-artist.md": "3fafea74f410344056bae292642fe5fe3d56673229133c853fc160fb1e7e317a",
-  ".claude/agents/dev-gameplay.md": "62d54a2ab8adde532a85fcae657ef7d2935db1216f0c12f5b293d2fff03517ec",
-  ".claude/agents/dev-r3f-render.md": "595ad2a9d47c2a5486db4a17b402fa2eeca8a2163f6c77ac85d2c91d421acd83",
-  ".claude/agents/dev-tooling-assets.md": "9c4d9020d325b7717af9ded846ab52aaafafab5e193d6d5269a45ce97c5f4d48",
+  ".claude/agents/dev-gameplay.md": "ab7dcf809a7fc7863a67d7c0aca1ecdf954391b83ce5851274305a98714ef42d",
+  ".claude/agents/dev-r3f-render.md": "13704acbbe47baa9f3c867378c2c8ecc6e107bbbb7d78f6fc96d87f48a2269bd",
+  ".claude/agents/dev-tooling-assets.md": "8263cb046e36142b79e681dba1d9c00d84490c8868b49ba6bfc5ed52b1a3f329",
   ".claude/agents/game-designer.md": "c82ad58ee8e7966890857f528fc35f8f4d8df563f2ebad1a14dc8018c62ee2b2",
   ".claude/agents/game-graphist.md": "fceff4afea486822d615788794259843f4d5d95f04c89115e7fe496fb64a097a",
   ".claude/agents/gpu-specialist.md": "1bf11441140045d793727d207e802b0e904187c1461937a3202b56b59b275632",
@@ -20,6 +20,6 @@
   ".claude/agents/tech-scout.md": "436fd5d5a13b54c6d997cda41cddffd71f0648edcc38422b96ffb8c510cf7d90",
   ".claude/agents/tech-writer.md": "29e7090f3415d77e4382f768af987e8c096d78ceb3465b495e7e8d68d7e076af",
   ".claude/agents/ux-designer.md": "c266d4a5564c438e18202c916f7a8c64c6adaa3293c6aaeffef1e395c0ffa4b1",
-  "docs/diagrams/agent-workflows.md": "57a69169abb030197e1dbc7d7ec8f951a165bcb6679062a566a22467ce757925",
+  "docs/diagrams/agent-workflows.md": "0ee4233e1aebce762f739c0d753d5ea82ec14d26bfdc0fb773d836ccd17a4449",
   "docs/muf-crew-bitmap.py": "424bbb4cbbb6ed12dc8e6fe9a958e7c2230a1efd643a82b955c74a210fa5409f"
 }

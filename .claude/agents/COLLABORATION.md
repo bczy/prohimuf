@@ -76,6 +76,12 @@ bending the pipeline silently is worse.
 5. VERIFY     the test stage, before any review — orchestrated by qa-lead
               against her per-story test plan (docs/qa/):
                 · rtk tsc + rtk vitest (100%) + rtk lint — all green, no claims
+                · owning dev lane runs the `simplify` skill on the diff ONCE
+                  green — the pre-review degreasing pass: behaviour-preserving
+                  cuts applied and re-proven green, judgement calls carried
+                  into stage 6 as PROPOSED items. Not a gate, no verdict; it
+                  shrinks what the panel reads. Skipped for docs/config-only
+                  or sub-30-line diffs.
                 · e2e / `verify` skill runs for anything player-visible
                 · runtime-composed visuals → screenshots → lead-art Gate 4
                 · audible behaviour changes → sound-designer behaviour verdict
@@ -154,7 +160,10 @@ qualifies for the fix lane when ALL of these hold:
   fix, a copy-size tweak, a tap-target enlargement — not a feature in disguise).
 
 Route: owning dev lane implements → `rtk tsc` + `rtk vitest` + `rtk lint` all green
-(+ `verify`/e2e screenshots when the change is player-visible) → **ONE reviewer**
+(+ `verify`/e2e screenshots when the change is player-visible) → `simplify` only if the
+fix grew past the skill's floor (~30 lines of code); a genuine fix-lane diff is already
+small, and paying a degreasing pass on it is the ceremony this tier exists to avoid →
+**ONE reviewer**
 running `code-review` (effort high) on `git diff origin/main...HEAD`, findings fixed
 or refuted → Bertrand merges. No pm story, no design gate, no architect stage, no
 4-reviewer panel. The cycle is logged as ONE line in `docs/handoffs/fixes.md`.
