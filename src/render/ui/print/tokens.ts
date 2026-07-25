@@ -55,6 +55,20 @@ export const MARK = {
   pink: "#D62A7A", // DIFFICILE
 } as const;
 
+// Chrome / silver ramp — the TITLE wordmark fill ONLY (spray-can reveal). NOT an ink and
+// NOT a marker: the letter is still DEFINED by its ink-black contour (art-direction §2bis),
+// the ramp only fills the inside of that contour, so the cover stays "loi de l'imprimé"
+// with one metallic accent. Neutral greys (no blue tint) so it reads as a photocopied metal
+// sticker on the jaune stock, not a 3D chrome logo. Deliberately OUT of the applyPrintTokens
+// bridge (single consumer): TitleScreen injects these as inline CSS custom properties on the
+// wordmark — the ADR-0046 escape hatch — so `--chrome-*` never becomes a global paint license.
+export const CHROME = {
+  hi: "#FBFBF9", // top highlight / lower re-lit band
+  mid: "#BFC2C4", // body silver
+  edge: "#5C5F62", // the horizon line where the metal folds
+  lo: "#8E9194", // shadow just under the fold
+} as const;
+
 // In-game HUD accent — NOT a print marker ink: the acid neon of the game world,
 // drawn OVER the 3D scene only (never on a pre-game paper surface), always with
 // an ink-black keyline, flat fill, zero glow (§2bis).
@@ -139,6 +153,12 @@ export const MOTION = {
   charDelayMs: 28, // reuse the shipped NarrativeScreen value (consistency)
   cursorBlinkMs: 850,
   lockedShakeMs: 180,
+  // TITLE spray reveal: ONE letter's can-stroke (well under the 1s/letter budget)…
+  titleSprayMs: 620,
+  // …and the gap between two strokes — the hand moving to the next letter. Total for
+  // "MUF" = 2 × stagger + duration ≈ 2.0s. Killed (animation: none, letters shown at
+  // their resolved state) under either reduced-motion trigger, in TitleScreen.module.css.
+  titleSprayStaggerMs: 700,
 } as const;
 
 // Typographic size scale (px) — NAMED from the sizes the HUD/menus already use

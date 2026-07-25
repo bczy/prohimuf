@@ -4,6 +4,10 @@
  * mufTitleBlink cursor keyframe stay in the component's <style> block; the
  * media-driven padding/wordmark-size/display values stay inline as var(--muf-*)
  * reads. Every colour/font references a var(--…) injected from tokens.ts.
+ *
+ * Exception: the wordmark spray reveal (mufSprayIn) keyframes live HERE, not in the
+ * <style> block — CSS Modules scopes the keyframe name to this file, so the animation
+ * has no global name to collide with and stays next to the rule that uses it.
  */
 
 /* Printed masthead ink bar pinned to the top edge. */
@@ -50,6 +54,87 @@
   letter-spacing: 0.05em;
   color: var(--ink-full);
   margin-top: var(--space-md);
+}
+
+/*
+ * Spray-can reveal, one letter per can-stroke. Structure (why two layers): the SPAN paints
+ * the ink-black contour with `-webkit-text-stroke` over transparent glyph text — the stroke
+ * straddles the outline, so half of it sits outside the glyph. The `::before` clone then
+ * paints the chrome ramp clipped to the same glyph ON TOP (positioned descendant → painted
+ * after the parent's inline content), covering the inner half. Result: the letter is defined
+ * by its black contour, filled with metal — never a chrome blob with a fuzzy edge.
+ *
+ * The `--chrome-*` ramp stops and `--muf-letter-index` come in inline from TitleScreen.tsx
+ * (ADR-0046 escape hatch for values with a single consumer); the durations are the bridged
+ * `--motion-title-spray-*` tokens. NO literal colour or timing here.
+ */
+.letter {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 0.05em var(--ink-full);
+  animation-name: mufSprayIn;
+  animation-duration: var(--motion-title-spray-ms);
+  animation-timing-function: cubic-bezier(0.16, 0.9, 0.3, 1);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--muf-letter-index, 0) * var(--motion-title-spray-stagger-ms));
+}
+
+.letter::before {
+  content: attr(data-char);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: linear-gradient(
+    180deg,
+    var(--chrome-hi) 0%,
+    var(--chrome-mid) 30%,
+    var(--chrome-edge) 47%,
+    var(--chrome-lo) 53%,
+    var(--chrome-hi) 74%,
+    var(--chrome-mid) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0;
+  color: transparent;
+}
+
+/* The can-stroke itself: aerosol mist lands wide + soft, then bites into a hard-edged
+   letter. Ends on the element's resting state (opacity 1 / no blur / no transform), so
+   killing the animation below yields the finished wordmark, not an invisible one. */
+@keyframes mufSprayIn {
+  0% {
+    opacity: 0;
+    filter: blur(0.16em);
+    transform: scale(1.22);
+  }
+
+  45% {
+    opacity: 1;
+    filter: blur(0.06em);
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+/* Reduced motion — both triggers (ADR-0054 §3): the OS query and the in-app MOUVEMENT
+   RÉDUIT toggle's root attribute. Handled here rather than by zeroing --motion-* in
+   base.css, because a 0ms spray would still run the blur/scale frames on the compositor;
+   `animation: none` is the honest "reveal instantly, already painted" state. */
+@media (prefers-reduced-motion: reduce) {
+  .letter {
+    animation: none;
+  }
+}
+
+:global(html[data-reduced-motion="true"]) .letter {
+  animation: none;
 }
 
 /* Ink divider rule; the responsive display toggle stays inline. */

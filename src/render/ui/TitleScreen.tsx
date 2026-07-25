@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CSSProperties, JSX } from "react";
-import { MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { CHROME, MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
 import { cx } from "./controls/cx";
 import styles from "./TitleScreen.module.css";
@@ -20,6 +20,18 @@ const TEASERS = [
 const INFOLINE_ROW = "☎ INFO-LINE · 08 36 23 98 23";
 const CTA = "[ COMPOSE L'INFO-LINE ]";
 const MICROCOPY = "le répondeur donne le point de RV";
+
+// The wordmark, one entry per can-stroke of the spray reveal (see TitleScreen.module.css).
+const WORDMARK = ["M", "U", "F"] as const;
+
+// Chrome ramp stops, handed to the CSS module as inline custom properties (ADR-0046: a
+// value with a single consumer flows inline rather than into the global token bridge).
+const CHROME_VARS = {
+  "--chrome-hi": CHROME.hi,
+  "--chrome-mid": CHROME.mid,
+  "--chrome-edge": CHROME.edge,
+  "--chrome-lo": CHROME.lo,
+} as CSSProperties;
 
 /**
  * TITLE surface (ADR-0021 D1) — the zine cover on `STOCK.shell`. Single-action entry:
@@ -103,11 +115,27 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           {ISSUE_LABEL}
         </div>
 
+        {/* Wordmark — sprayed on letter by letter the moment the cover shows (each span
+            carries its stagger index; `data-char` feeds the chrome-fill clone). Purely
+            declarative: no timer, no state, so a reduced-motion user gets the finished
+            wordmark from the very first paint. */}
         <div
           className={styles.wordmark}
-          style={{ fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))" }}
+          style={{
+            ...CHROME_VARS,
+            fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
+          }}
         >
-          MUF
+          {WORDMARK.map((char, i) => (
+            <span
+              key={char}
+              data-char={char}
+              className={styles.letter}
+              style={{ "--muf-letter-index": i.toString() } as CSSProperties}
+            >
+              {char}
+            </span>
+          ))}
         </div>
 
         <div
