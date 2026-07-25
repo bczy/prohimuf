@@ -32,7 +32,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       mesh.position.z = 0.5; // slightly in front so it's always visible
       // Scale grows as bullet travels toward camera for 3D depth feel
       const t = Math.max(0, 1 - bullet.position.y / 8);
-      const s = 0.8 + t * 0.6;
+      const s = 0.6 + t * 1.4;
       mesh.scale.set(s, s, s);
     }
   });
