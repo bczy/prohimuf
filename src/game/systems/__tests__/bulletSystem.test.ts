@@ -4,6 +4,7 @@ import {
   tickBullets,
   BULLET_SPEED,
   aimBulletVelocity,
+  hasPassedPlayer,
 } from "@game/systems/bulletSystem";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import type { Crosshair } from "@game/types/crosshair";
@@ -11,6 +12,7 @@ import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
 import type { LootCrate } from "@game/types/loot";
+import type { Bullet } from "@game/types/bullet";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { ARCHETYPES } from "@game/types/enemyTypes";
 
@@ -379,5 +381,43 @@ describe("resolvePlayerShot — crate resolves at LOOT_STREET_Y (ADR-0056 D3)", 
     const result = resolvePlayerShot(streetAim, [], facade, 0, 0, 18, 12, crate);
     expect(result.outcome).toBe("loot-hit");
     expect(result.equippedWeapon).toBe("auto");
+  });
+});
+
+describe("hasPassedPlayer — a missed round is spent once it is behind the player", () => {
+  const bullet = (position: Vec2, velocity: Vec2): Bullet => ({
+    id: 1,
+    position,
+    velocity,
+    damage: 0.5,
+    fromPlayer: false,
+  });
+
+  it("is false while the round is still closing on the player", () => {
+    // Spawned left of the player and travelling right, toward them.
+    expect(hasPassedPlayer(bullet({ x: -5, y: 0 }, { x: BULLET_SPEED, y: 0 }), 0, 0)).toBe(false);
+  });
+
+  it("is true once the round is beyond the player, still travelling the same way", () => {
+    expect(hasPassedPlayer(bullet({ x: 5, y: 0 }, { x: BULLET_SPEED, y: 0 }), 0, 0)).toBe(true);
+  });
+
+  it("flips exactly at closest approach (the degenerate dot === 0 counts as passed)", () => {
+    expect(hasPassedPlayer(bullet({ x: 0, y: 0 }, { x: BULLET_SPEED, y: 0 }), 0, 0)).toBe(true);
+  });
+
+  it("uses the player's ACTUAL position, not the origin (camera offsets move it)", () => {
+    // Same round as the 'still closing' case, but the player panned left of it:
+    // the round is now flying away from them.
+    const closing = bullet({ x: -5, y: 0 }, { x: BULLET_SPEED, y: 0 });
+    expect(hasPassedPlayer(closing, -8, 0)).toBe(true);
+    expect(hasPassedPlayer(closing, 12, 0)).toBe(false);
+  });
+
+  it("a round aimed at the player never counts as passed at spawn", () => {
+    // aimBulletVelocity is what stateMachine uses; the invariant must hold for it.
+    const spawn = { x: 6, y: 4 };
+    const velocity = aimBulletVelocity(spawn, { x: -1, y: -2 });
+    expect(hasPassedPlayer(bullet(spawn, velocity), -1, -2)).toBe(false);
   });
 });

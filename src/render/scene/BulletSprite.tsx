@@ -3,13 +3,14 @@ import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Quaternion, Vector3, type Group } from "three";
 import type { GameState } from "@game/types/gameState";
+import { bulletModelPath } from "@game/systems/assetManifest";
 import { warmBulletModel, getBulletModel } from "./bulletModel";
+import { ProceduralBullet } from "./ProceduralBullet";
 import {
-  BULLET_BODY_LENGTH,
-  BULLET_BODY_RADIUS,
-  BULLET_CAP_RADIUS,
   bulletForwardAxis,
-  BULLET_MODEL_SCALE,
+  attachBulletModel,
+  BULLET_DEPTH_RATIO,
+  BULLET_Z,
 } from "./bulletGeometry";
 
 const MAX_BULLETS = 20;
@@ -30,10 +31,6 @@ const MAX_BULLETS = 20;
 // forever, so this fallback path is exercised on every build until the asset
 // is generated in CI.
 
-const BODY_LENGTH = BULLET_BODY_LENGTH;
-const BODY_RADIUS = BULLET_BODY_RADIUS;
-const CAP_RADIUS = BULLET_CAP_RADIUS;
-
 const ENEMY_BULLET_COLOR = "#ff4444";
 const ENEMY_BULLET_EMISSIVE = "#ff2222";
 const ENEMY_BULLET_EMISSIVE_INTENSITY = 0.7;
@@ -44,21 +41,28 @@ const ENEMY_BULLET_EMISSIVE_INTENSITY = 0.7;
 // own visual shot in ImpactEffects.tsx).
 const FORWARD = bulletForwardAxis();
 
-// Uniform scale applied to a cloned generated-model instance — see
-// bulletGeometry.ts (BULLET_MODEL_SCALE) for the calibration note.
-const MODEL_SCALE = BULLET_MODEL_SCALE;
+const DEPTH_RATIO = BULLET_DEPTH_RATIO;
 
-// Depth cue: the bullet is pushed slightly toward the camera so it never
-// z-fights with, or hides behind, the facade quads it flies over.
-const BULLET_Z = 0.5;
-
-// Distance-to-scale ramp. A bullet spawns roughly SCALE_FAR_DIST world units
-// from the camera and lands on it, so `dist` is remapped to [0, 1] over that
-// span and drives a linear scale from SCALE_MIN (just spawned, far) to
-// SCALE_MIN + SCALE_SPAN (about to hit, unmissable).
+// Distance-to-scale ramp — under an ORTHOGRAPHIC camera this is the only depth
+// cue there is (no perspective foreshortening), so it carries the whole
+// "incoming round" read on its own. A bullet spawns roughly SCALE_FAR_DIST world
+// units away and lands on the camera, so `dist` is remapped to [0, 1] over that
+// span and drives the scale from SCALE_MIN (just fired) to SCALE_MIN+SCALE_SPAN
+// (about to hit).
+//
+// The impact end is large because the round is seen NOSE-ON: what reaches the
+// player is the bullet's cross-section (0.463 × MODEL_SCALE ≈ 0.088 world units,
+// a mere ~4px at zoom 50), not its 0.36-long silhouette. Roughly 4× more scale is
+// therefore needed than a broadside presentation would want — ×16 puts a ~70px
+// ogive dead centre of the screen.
+//
+// The ramp is QUADRATIC: linear growth reads as a sprite calmly sliding across
+// the facade, whereas t² holds the round small for most of its flight then blows
+// it up over the last couple of metres, which is what sells "it's about to hit
+// me".
 const SCALE_FAR_DIST = 8;
-const SCALE_MIN = 0.6;
-const SCALE_SPAN = 1.4;
+const SCALE_MIN = 1.4;
+const SCALE_SPAN = 14.6;
 
 interface Props {
   stateRef: React.RefObject<GameState>;
@@ -86,7 +90,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
   // Kick off the (at most once, ADR-0064) async GLB load. Never throws; a
   // missing/404 model just leaves every slot on its procedural fallback.
   useEffect(() => {
-    void warmBulletModel(`${import.meta.env.BASE_URL}models/bullet.glb`);
+    void warmBulletModel(`${import.meta.env.BASE_URL}${bulletModelPath()}`);
   }, []);
 
   useFrame(() => {
@@ -103,14 +107,12 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       group.visible = true;
 
       // Swap in the generated model the first frame it's available for this
-      // slot (see MODEL_SCALE for the tuning note). The clone becomes a plain
+      // slot (see bulletGeometry.ts for the calibration). The clone becomes a plain
       // child of `group`, so it inherits the same per-frame position/
       // orientation/scale driven below — no separate transform logic needed.
       if (model !== null && !modelAttached.current[i]) {
         modelAttached.current[i] = true;
-        const clone = model.clone(true);
-        clone.scale.setScalar(MODEL_SCALE);
-        group.add(clone);
+        attachBulletModel(group, model);
         const procedural = proceduralRefs.current[i] ?? null;
         if (procedural !== null) procedural.visible = false;
       }
@@ -119,15 +121,21 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       group.position.y = bullet.position.y;
       group.position.z = BULLET_Z;
 
-      // Orient body along velocity. Bullets live in the 2D game plane, so the
-      // velocity is (vx, vy, 0); the mesh rotates around Z only.
-      // `setFromUnitVectors` handles the zero-velocity degenerate case
-      // gracefully (identity quaternion).
+      // Orient the round along its own fixed 3D travel direction, so it is seen
+      // nose-on (red ogive toward the player). Derived ONLY from the bullet's
+      // velocity — which `tickBullets` never re-steers — so the orientation is
+      // locked at spawn: it does not swivel during the flight, and panning the
+      // camera does not re-aim a round already in the air. (Deriving it from the
+      // live camera position, as an earlier revision did, made bullets visibly
+      // rotate mid-flight and contradicted their actual trajectory.)
+      // `setFromUnitVectors` handles the zero-velocity degenerate case.
       const vx = bullet.velocity.x;
       const vy = bullet.velocity.y;
       const speed = Math.sqrt(vx * vx + vy * vy);
       if (speed > 0) {
-        scratch.dir.set(vx / speed, vy / speed, 0);
+        const vz = speed * DEPTH_RATIO;
+        const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        scratch.dir.set(vx / len, vy / len, vz / len);
         scratch.quat.setFromUnitVectors(FORWARD, scratch.dir);
         group.quaternion.copy(scratch.quat);
       }
@@ -137,7 +145,7 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
       const dy = bullet.position.y - camera.position.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const t = Math.max(0, Math.min(1, 1 - dist / SCALE_FAR_DIST));
-      group.scale.setScalar(SCALE_MIN + t * SCALE_SPAN);
+      group.scale.setScalar(SCALE_MIN + t * t * SCALE_SPAN);
     }
   });
 
@@ -158,28 +166,11 @@ export function BulletSprite({ stateRef }: Props): JSX.Element {
               proceduralRefs.current[i] = el;
             }}
           >
-            {/* Body — cylinder along local +Y, offset so its centre is the group origin. */}
-            <mesh>
-              <cylinderGeometry args={[BODY_RADIUS, BODY_RADIUS, BODY_LENGTH, 10]} />
-              <meshStandardMaterial
-                color={ENEMY_BULLET_COLOR}
-                emissive={ENEMY_BULLET_EMISSIVE}
-                emissiveIntensity={ENEMY_BULLET_EMISSIVE_INTENSITY}
-                metalness={0.6}
-                roughness={0.4}
-              />
-            </mesh>
-            {/* Cap — sphere at the leading (velocity-forward) end. */}
-            <mesh position={[0, BODY_LENGTH / 2, 0]}>
-              <sphereGeometry args={[CAP_RADIUS, 12, 8]} />
-              <meshStandardMaterial
-                color={ENEMY_BULLET_COLOR}
-                emissive={ENEMY_BULLET_EMISSIVE}
-                emissiveIntensity={ENEMY_BULLET_EMISSIVE_INTENSITY}
-                metalness={0.6}
-                roughness={0.4}
-              />
-            </mesh>
+            <ProceduralBullet
+              color={ENEMY_BULLET_COLOR}
+              emissive={ENEMY_BULLET_EMISSIVE}
+              emissiveIntensity={ENEMY_BULLET_EMISSIVE_INTENSITY}
+            />
           </group>
         </group>
       ))}

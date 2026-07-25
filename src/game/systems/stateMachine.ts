@@ -10,7 +10,7 @@ import type { FacadeMap } from "@game/types/map";
 import { tickTimer } from "@game/systems/timer";
 import { moveCrosshair, crosshairToWorld } from "@game/systems/crosshairSystem";
 import { spawnWave, tickEnemy } from "@game/systems/enemySystem";
-import { tickBullets, aimBulletVelocity } from "@game/systems/bulletSystem";
+import { tickBullets, aimBulletVelocity, hasPassedPlayer } from "@game/systems/bulletSystem";
 import { sampleDiscJitter, makeBulletRng, AIM_JITTER_RADIUS } from "@game/systems/enemyFireSystem";
 import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
@@ -236,7 +236,14 @@ export function tickGameState(
         bossQte: r.qte,
         // Energy is the boss QTE's sole outcome currency (ADR-0051 D2); score is untouched.
         energy: applyEnergy(state.energy, r.energyDelta),
-        impactEvents: [],
+        // The player's own shot stays VISIBLE during the frozen duel. This channel is
+        // purely cosmetic (tracer + puff + shoot cue); the QTE keeps sole ownership of
+        // the outcome, which is why the resolution is reported as a `miss` — the captor
+        // is not a facade enemy, so there is no slot to anchor a `hit` on, and his real
+        // damage read is his own HP pips. Emitted only on the tick the player actually
+        // fires (`fire` is a consumed edge, one per press), so a non-firing frozen tick
+        // still clears every transient channel exactly as before.
+        impactEvents: fire ? [{ classification: "miss" as const, impactPoint }] : [],
         feedback: [],
         pointFeedback: [],
         // Weapon state (active/stock/burst) rides `...state` FROZEN through the duel
@@ -306,7 +313,14 @@ export function tickGameState(
       qte: r.qte,
       // Energy is the QTE's sole outcome currency (ADR-0034 D5); score is untouched.
       energy: applyEnergy(state.energy, r.energyDelta),
-      impactEvents: [],
+      // The player's own shot stays VISIBLE during the frozen duel. This channel is
+      // purely cosmetic (tracer + puff + shoot cue); the QTE keeps sole ownership of
+      // the outcome, which is why the resolution is reported as a `miss` — the captor
+      // is not a facade enemy, so there is no slot to anchor a `hit` on, and his real
+      // damage read is his own HP pips. Emitted only on the tick the player actually
+      // fires (`fire` is a consumed edge, one per press), so a non-firing frozen tick
+      // still clears every transient channel exactly as before.
+      impactEvents: fire ? [{ classification: "miss" as const, impactPoint }] : [],
       feedback: [],
       pointFeedback: [],
       // Weapon+stock ride `...state` FROZEN through the QTE (ADR-0055 D7 / AC6); no
@@ -496,7 +510,14 @@ export function tickGameState(
     }
   }
   const playerHit = damageTaken > 0;
-  const finalBullets = movedBullets.filter((b) => !hitBulletIds.has(b.id));
+  // Drop bullets consumed by a hit AND rounds that have already whistled past the
+  // player — a missed round is spent, and leaving it in flight makes it grow then
+  // shrink again, reading as a bounce off the camera.
+  const finalBullets = movedBullets.filter(
+    (b) =>
+      !hitBulletIds.has(b.id) &&
+      (b.fromPlayer || !hasPassedPlayer(b, cameraOffsetX, cameraOffsetY)),
+  );
   // A fresh hit restarts the window; otherwise the countdown just runs down.
   const newInvulnRemaining = playerHit ? PLAYER_INVULN_SECONDS : invulnAfterTick;
 
