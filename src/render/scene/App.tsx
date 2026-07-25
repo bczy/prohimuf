@@ -551,7 +551,7 @@ export function App(): JSX.Element {
       {/* Lazy-loaded R3F chunk (ADR-0068): Three.js + Canvas + GameScene.
           The outer Suspense shows a LoadingScreen while the JS chunk fetches;
           the inner one (inside PlayingCanvas) handles Three.js texture streaming. */}
-      <Suspense fallback={<LoadingScreen label={selectedLevel?.name ?? "LOADING"} progress={1} />}>
+      <Suspense fallback={<LoadingScreen label={selectedLevel.name} progress={0} />}>
         <PlayingCanvas
           canvasRef={canvasRef}
           gameKey={gameKey}

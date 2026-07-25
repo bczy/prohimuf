@@ -1,9 +1,9 @@
 /**
  * Lazy-load cut point for Three.js / React Three Fiber (ADR-0068).
  *
- * This is the **only** file in the project that statically imports
- * `@react-three/fiber` or anything from `three`. It is loaded via
- * `React.lazy` in App.tsx so the ~700 kB R3F bundle is split out of the
+ * This is the **only** file in App.tsx's static import graph that imports
+ * `@react-three/fiber` or `three`, making it the lazy cut point. It is loaded
+ * via `React.lazy` in App.tsx so the ~700 kB R3F bundle is split out of the
  * initial chunk and only fetched when the player is about to enter PLAYING.
  *
  * Responsibilities:
