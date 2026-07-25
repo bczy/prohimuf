@@ -50,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       is_fix_lane: ${{ steps.classify.outputs.is_fix_lane }}
+      is_fork: ${{ steps.classify.outputs.is_fork }}
       head_sha: ${{ steps.classify.outputs.head_sha }}
     steps:
       - name: Checkout
@@ -64,12 +65,16 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
           set -euo pipefail
-          pr_json=$(gh pr view "$PR_NUMBER" --json headRefOid,labels,baseRefName)
+          pr_json=$(gh pr view "$PR_NUMBER" --json headRefOid,labels,baseRefName,headRepositoryOwner)
           head_sha=$(printf '%s' "$pr_json" | jq -r .headRefOid)
           base_ref=$(printf '%s' "$pr_json" | jq -r .baseRefName)
+          head_owner=$(printf '%s' "$pr_json" | jq -r .headRepositoryOwner.login)
           is_fix=$(printf '%s' "$pr_json" | jq -r '[.labels[].name] | index("fix-lane") != null | tostring')
+          # A fork PR must never trigger auto-remediation on someone else's branch.
+          if [ "$head_owner" = "${GITHUB_REPOSITORY%%/*}" ]; then is_fork=false; else is_fork=true; fi
           printf 'head_sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
           printf 'is_fix_lane=%s\n' "$is_fix" >> "$GITHUB_OUTPUT"
+          printf 'is_fork=%s\n' "$is_fork" >> "$GITHUB_OUTPUT"
           printf 'base_ref=%s\n' "$base_ref" >> "$GITHUB_OUTPUT"
 
       - name: Assemble reviewer input
@@ -80,9 +85,13 @@ jobs:
           set -euo pipefail
           mkdir -p panel-input
           gh pr view "$PR_NUMBER" --json title,body > panel-input/pr.json
-          git fetch --no-tags origin main
-          git diff origin/main...HEAD --unified=3 > panel-input/diff.patch
-          git diff --name-status origin/main...HEAD > panel-input/files.txt
+          # Diff the PR head explicitly rather than the checked-out HEAD: on a
+          # workflow_dispatch run HEAD is the default branch, which would make
+          # the diff empty and every reviewer blind.
+          git fetch --no-tags origin main "pull/$PR_NUMBER/head"
+          git diff origin/main...FETCH_HEAD --unified=3 > panel-input/diff.patch
+          git diff --name-status origin/main...FETCH_HEAD > panel-input/files.txt
+          wc -c panel-input/diff.patch
 
       - name: Upload panel input
         uses: actions/upload-artifact@v4
@@ -215,3 +224,25 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
         run: node scripts/panel-triage.mjs
+
+  remediate:
+    name: "Remediate · hand findings to Copilot"
+    needs: [prepare, verify, triage]
+    # Opt-in and same-repo only. Runs after triage so the verdict is published
+    # first: remediation is an extra, never a precondition of the merge gate.
+    if: >-
+      ${{ always() && vars.PANEL_ENABLED == 'true' && vars.PANEL_AUTOFIX == 'true'
+      && needs.prepare.outputs.is_fork == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4.1.3
+        with: { name: findings-confirmed, path: . }
+      - name: Request Copilot remediation
+        env:
+          # PANEL_BOT_TOKEN (a PAT) is preferred: a comment posted with the
+          # default GITHUB_TOKEN may not wake the Copilot coding agent.
+          GH_TOKEN: ${{ secrets.PANEL_BOT_TOKEN || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PANEL_AUTOFIX_MAX_ROUNDS: ${{ vars.PANEL_AUTOFIX_MAX_ROUNDS || '2' }}
+        run: node scripts/panel-remediate.mjs

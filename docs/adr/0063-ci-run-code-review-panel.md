@@ -115,7 +115,48 @@ Branch protection on `main` requires the `panel-verdict` check to be
 means all CONFIRMED findings are `MINEUR` — merger's judgment call, logged as
 "conditional PASS accepted" in the story's handoff shard.
 
-### 5. Local `/review-panel` remains as a pre-check
+### 5. Auto-remediation of BLOQUANT/MAJEUR findings
+
+Confirmed `BLOQUANT` and `MAJEUR` findings are handed to the **Copilot coding
+agent** automatically, so a red verdict produces a fix attempt rather than a
+waiting queue. Opt-in via the repo variable `PANEL_AUTOFIX=true`.
+
+GitHub's contract shapes the loop: mentioning `@copilot` on a pull request does
+**not** commit to that PR's branch — Copilot opens a _stacked_ pull request
+whose base is the branch under review. The loop is therefore:
+
+1. `remediate` (after `triage`) posts an `@copilot` request listing the
+   confirmed `BLOQUANT`/`MAJEUR` findings — `scripts/panel-remediate.mjs`;
+2. Copilot opens a corrective PR onto the branch under review; `ci.yml` runs
+   on it like any other PR;
+3. `panel-autofix-merge.yml` merges that corrective PR once **every** check is
+   green, landing the fix on the branch;
+4. the panel is re-dispatched on the parent PR and re-judges the result.
+
+Step 4 is an explicit `workflow_dispatch`, not a side effect: a merge performed
+with `GITHUB_TOKEN` does not trigger further workflow runs.
+
+Guardrails, in order of importance:
+
+- **Bounded.** `PANEL_AUTOFIX_MAX_ROUNDS` (default 2) caps the rounds. Each
+  request carries a hidden marker that the script counts before acting; at the
+  cap it stops and hands the PR back to a human. An unfixable — or false —
+  finding must not spin forever.
+- **False positives are expected.** The panel demonstrably emits them. The
+  request tells Copilot to _refute a wrong finding in a comment rather than
+  change code to satisfy it_, and never to weaken a test to silence one.
+- **Never reaches `main`.** Auto-merge only touches PRs authored by Copilot
+  whose base is not the default branch. Everything still has to clear the
+  panel and a human merge to land on `main`.
+- **Same-repo only.** Fork PRs are excluded from remediation and auto-merge.
+- **Advisory, never load-bearing.** `remediate` runs after `triage`, and a
+  remediation failure never alters the published verdict.
+
+`PANEL_BOT_TOKEN` (a PAT) is used when present for the `@copilot` request: it
+is not established that a comment posted with the default `GITHUB_TOKEN` wakes
+the coding agent.
+
+### 6. Local `/review-panel` remains as a pre-check
 
 The existing Claude Code `Skill: /review-panel` (which fan-outs `Task` calls)
 remains supported as a **pre-flight** — fast feedback while the branch is
@@ -123,7 +164,7 @@ still being built. Its verdict is advisory; only the CI panel verdict is
 merge-gating. This preserves the Claude Code workflow speed while
 guaranteeing agent-independent enforcement.
 
-### 6. Rollout — inert by default
+### 7. Rollout — inert by default
 
 To avoid breaking in-flight PRs (notably #128, which ships this ADR), the
 workflow is committed with `on:` restricted to `workflow_dispatch` and
