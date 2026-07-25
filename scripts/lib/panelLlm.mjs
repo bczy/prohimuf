@@ -207,10 +207,19 @@ function isTransient(err) {
 }
 
 /**
+ * Longest `retry-after` we will actually sleep. A burst-shaping 429 clears in
+ * seconds; a *quota* 429 reports the seconds until the window resets — measured
+ * 2026-07-25 on GitHub Models: 67435s, ~19h. Honouring that parks the runner
+ * until the job times out, so beyond this cap the provider is written off for
+ * the run and the fallback (or the degraded verdict) takes over at once.
+ */
+const MAX_RETRY_WAIT_MS = 60_000;
+
+/**
  * Retry a throttled or wobbling provider. Measured 2026-07-25: GitHub Models
  * allows 1000 requests/min, yet answers 429 to a burst of 16 back-to-back
  * calls — the wall is burst shaping, not quota, so pacing clears it. Honours
- * the server's own `retry-after` when it sends one.
+ * the server's own `retry-after` when it sends one, up to MAX_RETRY_WAIT_MS.
  */
 async function withRetry(send, { log, provider, sleepImpl }) {
   const backoff = [2000, 5000, 15000, 30000];
@@ -220,6 +229,12 @@ async function withRetry(send, { log, provider, sleepImpl }) {
     } catch (err) {
       if (i >= backoff.length || !isTransient(err)) throw err;
       const hinted = Number(/retry-after=(\d+)/.exec(err.message)?.[1]) * 1000;
+      if (hinted > MAX_RETRY_WAIT_MS) {
+        log(
+          `[panel-llm] ${provider} is rate-limited for ${String(Math.round(hinted / 1000))}s — giving up on it`,
+        );
+        throw err;
+      }
       const wait = Number.isFinite(hinted) && hinted > 0 ? hinted : backoff[i];
       log(`[panel-llm] ${provider} throttled, retrying in ${String(wait / 1000)}s`);
       await sleepImpl(wait);
