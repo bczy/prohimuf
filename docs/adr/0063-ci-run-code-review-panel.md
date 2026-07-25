@@ -76,8 +76,16 @@ review comments and publishes a check run
 
 ### 2. Provider & prompts
 
-The panel uses **Anthropic Claude Sonnet** via `ANTHROPIC_API_KEY` (repo
-secret). The five system prompts live under `.github/panel-prompts/*.md`:
+The panel uses the **GitHub Models inference API**
+(`https://models.github.ai/inference/chat/completions`, OpenAI-compatible),
+authenticated with the workflow's own `GITHUB_TOKEN` under
+`permissions: models: read`. No third-party API key and no external billing:
+inference is metered against the repo's GitHub Models quota. The model is
+`openai/gpt-4.1` by default, overridable with the repo variable `PANEL_MODEL`.
+Transport lives in `scripts/panel-llm.mjs`, shared by the reviewer and skeptic
+scripts.
+
+The five system prompts live under `.github/panel-prompts/*.md`:
 
 - `code-review.md`
 - `edge-case-hunter.md`

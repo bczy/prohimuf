@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Panel skeptic invocation — reads all reviewer findings, calls Anthropic
-// with the skeptic prompt, and writes findings-confirmed.json.
+// Panel skeptic invocation — reads all reviewer findings, calls the GitHub
+// Models inference API with the skeptic prompt, and writes findings-confirmed.json.
 //
 // Inputs (env):
-//   ANTHROPIC_API_KEY  — required.
-//   PROMPT_FILE        — path to skeptic prompt (.github/panel-prompts/skeptic.md).
-//   ANTHROPIC_MODEL    — optional, defaults to claude-sonnet-4-5.
+//   GITHUB_TOKEN  — required (provided by Actions; job needs `models: read`).
+//   PROMPT_FILE   — path to skeptic prompt (.github/panel-prompts/skeptic.md).
+//   PANEL_MODEL   — optional, defaults to openai/gpt-4.1.
 //
 // Inputs (files):
 //   findings-in/findings-*/*.json  — one folder per reviewer artifact.
@@ -21,14 +21,14 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { callPanelModel, extractJsonArray } from "./panel-llm.mjs";
 
-const { ANTHROPIC_API_KEY, PROMPT_FILE, ANTHROPIC_MODEL = "claude-sonnet-4-5" } = process.env;
+const { PROMPT_FILE } = process.env;
 
 const FINDINGS_IN = "findings-in";
 const OUT = "findings-confirmed.json";
 
 async function main() {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
   if (!PROMPT_FILE) throw new Error("PROMPT_FILE missing");
   if (!existsSync(PROMPT_FILE)) throw new Error(`prompt not found: ${PROMPT_FILE}`);
 
@@ -61,30 +61,7 @@ async function main() {
     "Emit ONLY the JSON array (same findings with `confirmed` + optional `refutation`), nothing else.",
   ].join("\n");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 8192,
-      system: prompt,
-      messages: [{ role: "user", content: userMessage }],
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`anthropic ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("\n");
+  const text = await callPanelModel({ system: prompt, user: userMessage });
 
   const verified = extractJsonArray(text);
   // Safety net: if verified array is shorter than input, confirm the missing
@@ -122,23 +99,6 @@ async function collectFindings() {
 
 function findingKey(f) {
   return `${f._reviewer || ""}::${f.file || ""}:${f.line || ""}::${f.title || ""}`;
-}
-
-function extractJsonArray(text) {
-  try {
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    /* fall through */
-  }
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
-  try {
-    const parsed = JSON.parse(match[0]);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 main().catch(async (err) => {

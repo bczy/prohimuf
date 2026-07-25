@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Panel reviewer invocation — calls the Anthropic API with a reviewer prompt
-// and the assembled PR diff/context, then writes the findings JSON array.
+// Panel reviewer invocation — calls the GitHub Models inference API with a
+// reviewer prompt and the assembled PR diff/context, then writes the findings
+// JSON array.
 //
 // Inputs (env):
-//   ANTHROPIC_API_KEY  — required.
-//   PROMPT_FILE        — path to the reviewer prompt (.github/panel-prompts/*.md).
-//   FINDINGS_FILE      — path to write findings JSON array to.
-//   ANTHROPIC_MODEL    — optional, defaults to claude-sonnet-4-5.
+//   GITHUB_TOKEN   — required (provided by Actions; job needs `models: read`).
+//   PROMPT_FILE    — path to the reviewer prompt (.github/panel-prompts/*.md).
+//   FINDINGS_FILE  — path to write findings JSON array to.
+//   PANEL_MODEL    — optional, defaults to openai/gpt-4.1.
 //
 // Inputs (files, in ./panel-input/):
 //   pr.json     — { title, body }
@@ -20,16 +21,11 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { callPanelModel, extractJsonArray } from "./panel-llm.mjs";
 
-const {
-  ANTHROPIC_API_KEY,
-  PROMPT_FILE,
-  FINDINGS_FILE,
-  ANTHROPIC_MODEL = "claude-sonnet-4-5",
-} = process.env;
+const { PROMPT_FILE, FINDINGS_FILE } = process.env;
 
 async function main() {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
   if (!PROMPT_FILE) throw new Error("PROMPT_FILE missing");
   if (!FINDINGS_FILE) throw new Error("FINDINGS_FILE missing");
   if (!existsSync(PROMPT_FILE)) throw new Error(`prompt not found: ${PROMPT_FILE}`);
@@ -67,54 +63,11 @@ async function main() {
     "Emit ONLY the JSON array of findings, nothing else.",
   ].join("\n");
 
-  const body = {
-    model: ANTHROPIC_MODEL,
-    max_tokens: 8192,
-    system: prompt,
-    messages: [{ role: "user", content: userMessage }],
-  };
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`anthropic ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("\n");
+  const text = await callPanelModel({ system: prompt, user: userMessage });
 
   const findings = extractJsonArray(text);
   await writeFile(FINDINGS_FILE, JSON.stringify(findings, null, 2));
   console.log(`Wrote ${findings.length} finding(s) to ${FINDINGS_FILE}`);
-}
-
-function extractJsonArray(text) {
-  // Try direct parse first, then extract the first [...] block.
-  try {
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    /* fall through */
-  }
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
-  try {
-    const parsed = JSON.parse(match[0]);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 main().catch(async (err) => {
