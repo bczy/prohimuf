@@ -4,7 +4,8 @@ Visual companion to [`.claude/agents/COLLABORATION.md`](../../.claude/agents/COL
 (the normative protocol). One pipeline: every feature passes hand to hand through stages
 0-8 — product → design → tech plan → build (dev ∥ art ∥ audio) → verify → review
 (panel + integration triage) → accept → merge — driven by the `producer`. Small
-single-lane fixes take the **fix lane** instead (COLLABORATION.md §fix lane): owning
+single-lane fixes take the **fix lane** instead (COLLABORATION.md §fix lane, packaged as
+the `fix-lane` skill): owning
 dev lane → mechanical checks → ONE `code-review` (high) reviewer → merge. Every gate
 verdict and hand-off is logged in the story's shard under
 [`docs/handoffs/`](../handoffs/) (index: [`agent-handoffs.md`](../agent-handoffs.md)).
@@ -109,6 +110,9 @@ flowchart TB
         SDV{"sound-designer · Malik 🎧<br/>behaviour verdict<br/>(audible changes)"}
         PERF{"gpu-specialist · Ben 🏍️<br/>PERF VERDICT vs perf-budget.md<br/>(perf-sensitive changes; on-target<br/>runs escalated as ready protocols)"}
         QGATE{"qa-lead · Inès 🧪<br/>QUALITY GATE<br/>plan ran and held"}
+        TQ["qa-lead · test-quality skill<br/>mutate the source, check the new tests<br/>go RED — BITES / SURVIVES / NOISY"]
+        CHECKS --> TQ
+        TQ --> QGATE
         CHECKS --> GATE4
         CHECKS --> SDV
         CHECKS --> PERF

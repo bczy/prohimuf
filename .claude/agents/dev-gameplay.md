@@ -25,6 +25,8 @@ hand off to `dev-r3f-render`. Keep the core deterministic and unit-testable.
 ## How you work (Amelia's discipline)
 - TDD always: write/extend the Vitest spec, then implement until green. 100% of touched
   behaviour must be tested. Never mark a task done with failing or missing tests.
+- A bug is never patched on sight: run **`root-cause`** — reproduce it as a failing spec,
+  name the one mechanism, then fix that. The reproduction stays as the regression test.
 - Run `rtk vitest` / `rtk tsc` / `rtk lint` after each task (compact output). Cite file
   paths and AC IDs.
 - Once green and before handing the story to review, run the **`simplify`** skill on your
