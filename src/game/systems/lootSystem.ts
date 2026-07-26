@@ -114,6 +114,7 @@ function attemptSpawn(
   facade: FacadeMap,
   nextId: number,
   deliveryGap: DeliveryGap | null,
+  excludeSlots: readonly number[],
 ): LootTickResult {
   const timer = lootTimer - delta;
   if (timer > 0) return { loot: null, lootTimer: timer, spawned: false };
@@ -124,7 +125,12 @@ function attemptSpawn(
   // Co-location guard (ADR-0055 D5, direction a): a crate must not sit on ANY
   // non-DEAD enemy's slot — including HIDDEN/HIT, which the §5.4 column-gap rule
   // (active states only) does not catch. Applied ALONGSIDE the column-gap rule.
+  // …plus the slots the caller has reserved for something else entirely (the
+  // delivery assault's window slots, ADR-0069 story / D2.8). Pure slot indices, so
+  // `lootSystem` stays agnostic of WHY they are reserved — the same seam shape as
+  // `deliveryGap`.
   const occupied = new Set(enemies.filter((e) => e.state !== "DEAD").map((e) => e.slotIndex));
+  for (const slotIndex of excludeSlots) occupied.add(slotIndex);
   const eligible = facade.slots
     .map((slot, slotIndex) => ({ slotIndex, col: slot.col, x: slot.screenPosition.x }))
     .filter(
@@ -162,7 +168,8 @@ function attemptSpawn(
 // Tick the loot channel: advance a live crate, or count down and (maybe) spawn one.
 // `deliveryGap` is the pre-computed pure delivery snapshot for the D9-2 x-gap
 // (null ⇒ no active delivery this tick); defaults to null so callers without a
-// delivery need not pass it.
+// delivery need not pass it. `excludeSlots` are slot indices the crate must never
+// take (empty/omitted ⇒ the legacy eligibility, byte-for-byte).
 export function tickLoot(
   loot: LootCrate | null,
   spec: LootSpec | null,
@@ -172,8 +179,9 @@ export function tickLoot(
   facade: FacadeMap,
   nextId: number,
   deliveryGap: DeliveryGap | null = null,
+  excludeSlots: readonly number[] = [],
 ): LootTickResult {
   if (spec === null) return { loot: null, lootTimer, spawned: false };
   if (loot !== null) return advanceCrate(loot, spec, lootTimer, delta);
-  return attemptSpawn(spec, lootTimer, delta, enemies, facade, nextId, deliveryGap);
+  return attemptSpawn(spec, lootTimer, delta, enemies, facade, nextId, deliveryGap, excludeSlots);
 }

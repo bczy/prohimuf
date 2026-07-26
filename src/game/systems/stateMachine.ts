@@ -17,6 +17,12 @@ import { resolveTrigger } from "@game/systems/weaponSystem";
 import { tickLoot } from "@game/systems/lootSystem";
 import { tickDelivery, seedDeliveryVehicle } from "@game/systems/deliverySystem";
 import {
+  countAliveAssailants,
+  reservedAssaultSlots,
+  retireAssault,
+  seatAssault,
+} from "@game/systems/deliveryAssault";
+import {
   courierSpawnInterval,
   FIRST_COURIER_DELAY,
   spawnCourier,
@@ -160,7 +166,16 @@ export function createInitialState(
   return {
     phase: "PLAYING",
     crosshair: { position: { x: 0.5, y: 0.5 } },
-    enemies: spawnWave(1, facade, windowPoolFor(roster)),
+    // The delivery's assault slots are reserved for the WHOLE level, wave 1
+    // included (D2.8 / K-8): the ignore case never rolls a wave over (no kills ⇒
+    // `allDead` false), so wave 1's seating IS the seating the objective runs
+    // against. No delivery ⇒ no reservation ⇒ the legacy `spawnWave` path.
+    enemies: spawnWave(
+      1,
+      facade,
+      windowPoolFor(roster),
+      reservedAssaultSlots(facade, deliverySpec),
+    ),
     bullets: [],
     score: 0,
     lives: params.lives,
@@ -363,19 +378,25 @@ export function tickGameState(
   // the rule is enforced at the transition, not at the muzzle.
   const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta, enemyOnScreen(e)));
 
+  // The delivery's reserved assault slots, computed ONCE for the whole tick: every
+  // slot consumer below must honour them (the wave rollover AND the crate spawn),
+  // or a wave cop / a crate squats an ambush window and the objective silently
+  // loses an assailant (D2.8, found twice in review as K-3 then K-8). Empty for a
+  // level with no delivery, so those levels stay on the legacy paths.
+  const reservedSlots = reservedAssaultSlots(facade, state.deliverySpec);
+
   // 3. Spawn new wave if all enemies dead
   const allDead = tickedEnemies.every((e) => e.state === "DEAD");
   const newWave = allDead ? state.wave + 1 : state.wave;
   // On a wave rollover, exclude the live crate's slot so a fresh enemy never seats
   // on it (ADR-0055 D5 co-location guard, direction b). `state.loot` is the pre-tick
-  // crate; its slot is stable across the tick.
+  // crate; its slot is stable across the tick. The assault's reserved slots are
+  // excluded ALONGSIDE it — a UNION, never a replacement, or D5 reopens in silence.
   const activeEnemies: readonly Enemy[] = allDead
-    ? spawnWave(
-        newWave,
-        facade,
-        windowPoolFor(roster),
-        state.loot !== null ? [state.loot.slotIndex] : [],
-      )
+    ? spawnWave(newWave, facade, windowPoolFor(roster), [
+        ...(state.loot !== null ? [state.loot.slotIndex] : []),
+        ...reservedSlots,
+      ])
     : tickedEnemies;
 
   // 3b. Armament crate (ADR-0055 D5 / ADR-0056): advance / spawn the LOOT crate.
@@ -400,6 +421,11 @@ export function tickGameState(
     facade,
     _nextLootId,
     deliveryGap,
+    // Same seam as `deliveryGap`: the stateMachine knows the delivery types and
+    // hands `lootSystem` pure slot indices, so a crate can never squat an ambush
+    // window before the delivery arms (`CRATE_DELIVERY_GAP_X` only guards the
+    // INCOMING | DELIVERING phases).
+    reservedSlots,
   );
   if (lootTick.spawned) _nextLootId++;
 
@@ -484,29 +510,57 @@ export function tickGameState(
   const movedBullets = tickBullets(bullets, delta);
 
   // 7c. Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
-  // Enemies currently in SHOOTING chip the vehicle's integrity during the
-  // window; surviving it awards a one-shot score bonus. Shares the courier
+  // The vehicle is chipped by its OWN scripted assault — two enemies seated at the
+  // reserved window slots next to the stop position when it starts rolling in — for
+  // as long as they are ALIVE, and by nothing else (`deliveryAssault`, D1/D2).
+  // There is NO camera term and no pop-up-state term in that rule, so no camera
+  // position and no pan timing can make the objective free. Shares the courier
   // street lane, so it only runs when a courier field is supplied.
   let deliveryVehicle: DeliveryVehicle | null = state.deliveryVehicle;
   let deliveryScoreDelta = 0;
+  // The enemy array carried to EVERY return site below (the seating appends to it,
+  // the retirement rewrites it) — one variable, so no return can miss it.
+  let finalEnemies: readonly Enemy[] = shotEnemies;
   if (state.deliverySpec !== null && deliveryVehicle !== null && courierField !== undefined) {
-    // On-screen shooters only. Unlike the bullet spawn above — which keys off the
-    // TRANSITION into SHOOTING and is therefore already covered by the freeze —
-    // this reads the state CONTINUOUSLY, and an enemy frozen mid-SHOOTING by a
-    // camera pan would otherwise chip the gauge forever from out of sight.
-    const shootingCount = activeEnemies.filter(
-      (e) => e.state === "SHOOTING" && enemyOnScreen(e),
-    ).length;
+    // Counted on the POST-shot array: an assailant the player just took down must
+    // not still be charged to the gauge, which is the "engaging punishes the van"
+    // flavour this rule exists to delete.
+    const assailantCount = countAliveAssailants(shotEnemies);
     const result = tickDelivery(
       deliveryVehicle,
       state.deliverySpec,
       elapsedSeconds,
-      shootingCount,
+      assailantCount,
       courierField,
       delta,
     );
+    const wasPhase = deliveryVehicle.phase;
     deliveryVehicle = result.vehicle;
     deliveryScoreDelta = result.scoreDelta;
+
+    if (wasPhase === "IDLE" && deliveryVehicle.phase === "INCOMING") {
+      // Seat the assault one roll-in BEFORE the damage window opens: the roll-in
+      // becomes a real telegraph and a present player can clear the ambush
+      // pre-emptively. Damage is phase-gated to DELIVERING, so an early seating can
+      // never chip.
+      finalEnemies = [
+        ...shotEnemies,
+        ...seatAssault(
+          facade,
+          state.deliverySpec,
+          windowPoolFor(roster),
+          shotEnemies,
+          trigger.loot?.slotIndex ?? null,
+        ),
+      ];
+    } else if (
+      wasPhase === "DELIVERING" &&
+      (deliveryVehicle.phase === "SUCCESS" || deliveryVehicle.phase === "FAILED")
+    ) {
+      // The escort leaves when the van leaves (D3): no score, no kill credit, no
+      // quota credit — and `allDead` becomes reachable again.
+      finalEnemies = retireAssault(shotEnemies);
+    }
   }
 
   // Score folds in the delivery bonus; the win gate below stays on kills only.
@@ -567,7 +621,7 @@ export function tickGameState(
     return {
       ...state,
       crosshair,
-      enemies: shotEnemies,
+      enemies: finalEnemies,
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
@@ -611,7 +665,7 @@ export function tickGameState(
     return {
       ...state,
       crosshair,
-      enemies: shotEnemies,
+      enemies: finalEnemies,
       feedback: feedbackEvents,
       pointFeedback,
       impactEvents,
@@ -651,7 +705,7 @@ export function tickGameState(
   return {
     phase: finalPhase,
     crosshair,
-    enemies: shotEnemies,
+    enemies: finalEnemies,
     feedback: feedbackEvents,
     pointFeedback,
     impactEvents,

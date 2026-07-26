@@ -16,6 +16,7 @@ import type { LootCrate, LootSpec } from "@game/types/loot";
 import { BULLET_SPEED } from "@game/systems/bulletSystem";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { spawnWave } from "@game/systems/enemySystem";
+import { DELIVERY_ASSAULT_ID_BASE } from "@game/systems/deliveryAssault";
 import { pickKind } from "@game/types/enemyTypes";
 
 /** Mirror of the render lane's LevelConfig -> LevelParams mapping. */
@@ -432,11 +433,12 @@ describe("tickGameState — scripted vehicle delivery", () => {
       windowRemaining: 5,
     };
     const state = withDelivery(failing, { elapsedSeconds: 25, score: 7, lives: 3 });
-    // 5 enemies shooting for a full second drains the tiny gauge. Slots 5..9 sit
-    // at x = -8..0 — inside the default 18-wide view, so they actually shoot
-    // (an off-screen shooter is frozen and chips nothing; see the test below).
-    const shooters: GameState["enemies"] = Array.from({ length: 5 }, (_e, i) => ({
-      id: 1000 + i,
+    // The delivery's own assault (ids from `DELIVERY_ASSAULT_ID_BASE`) is what
+    // chips the gauge; a full second of it drains the tiny gauge. Seated already
+    // SHOOTING, so no TRANSITION happens this tick and no round is spawned — this
+    // test is about the FAILED outcome, not about return fire.
+    const shooters: GameState["enemies"] = Array.from({ length: 2 }, (_e, i) => ({
+      id: DELIVERY_ASSAULT_ID_BASE + i,
       slotIndex: 5 + i,
       state: "SHOOTING" as const,
       timer: 5,
@@ -1435,67 +1437,12 @@ describe("tickGameState — off-screen enemies cannot shoot", () => {
     expect(state.enemies.length).toBeGreaterThan(0);
   });
 
-  // The delivery gauge reads SHOOTING CONTINUOUSLY, so it needs its own on-screen
-  // filter: an enemy caught mid-shot by a camera pan stays frozen in SHOOTING and
-  // would otherwise chip the vehicle forever from out of sight.
-  describe("frozen mid-SHOOTING", () => {
-    const SPEC: DeliverySpec = {
-      vehicleType: "truck",
-      triggerAtElapsedSeconds: 20,
-      integrity: 100,
-      windowSeconds: 8,
-      bonus: 500,
-      entrySide: "left",
-      stopPosition: { x: 0, y: -5 },
-    };
-    const delivering: DeliveryVehicle = {
-      phase: "DELIVERING",
-      position: SPEC.stopPosition,
-      vehicleType: "truck",
-      integrity: 100,
-      integrityMax: 100,
-      windowRemaining: 5,
-    };
-    const shooter = {
-      id: 1,
-      slotIndex: OFFSCREEN_SLOT,
-      state: "SHOOTING" as const,
-      timer: 5,
-      kind: "normal" as const,
-      hp: 1,
-    };
-
-    function tickWithCamera(cameraOffsetX: number): GameState {
-      const base = createInitialState(FACADE_01, {
-        lives: 3,
-        timeSeconds: LEVEL_TIME_SECONDS,
-        enemiesToWin: ENEMIES_TO_WIN,
-        enemySpeedMultiplier: 1,
-        delivery: SPEC,
-      });
-      return tickGameState(
-        { ...base, deliveryVehicle: delivering, enemies: [shooter], elapsedSeconds: 25 },
-        noFire,
-        0.5,
-        0.5,
-        1,
-        FACADE_01,
-        cameraOffsetX,
-        0,
-        18,
-        12,
-        undefined,
-        FIELD,
-      );
-    }
-
-    it("chips no delivery integrity while off screen", () => {
-      expect(tickWithCamera(0).deliveryVehicle?.integrity).toBe(100);
-    });
-
-    it("still chips it once the camera pans onto it (the filter is not a blanket off-switch)", () => {
-      const integrity = tickWithCamera(PAN_ONTO_SLOT).deliveryVehicle?.integrity ?? 100;
-      expect(integrity).toBeLessThan(100);
-    });
-  });
+  // The `describe("frozen mid-SHOOTING")` block that stood here is DELETED per AC2
+  // of `spec-delivery-van-assault.md` Rev.2: its two cases pinned the free objective
+  // ("chips no delivery integrity while off screen") and the INVERTED incentive
+  // ("still chips it once the camera pans onto it") as expected behaviour — the
+  // merge-gate panel's own blocker. The delivery gauge no longer reads `SHOOTING`
+  // at all, so it needs no camera filter; what survives of the intent lives in
+  // `deliveryAssaultTick.test.ts` (AC6 at tick level, and AC14 for the ADR-0069
+  // freeze invariants with the assault live).
 });

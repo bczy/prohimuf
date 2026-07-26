@@ -5,9 +5,11 @@ import type { Vec2 } from "@game/types/vector";
  * Types only — zero React/Three, zero functions.
  *
  * A vehicle rolls onto the street lane (same space as couriers), stops to
- * deliver, and the player protects it: enemies in the `SHOOTING` state chip at
- * its integrity gauge during the window. Survive the window → score bonus;
- * integrity hits zero → the vehicle flees (no bonus, no malus).
+ * deliver, and the player protects it from its own scripted assault: the two
+ * enemies seated at the reserved window slots next to the stop position chip at
+ * its integrity gauge, for as long as they are ALIVE, and nothing else does
+ * (`deliveryAssault`). Survive the window → score bonus; integrity hits zero →
+ * the vehicle flees (no bonus, no malus).
  */
 
 /** Which vehicle sprite drives the delivery (shared key with the render lane). */
