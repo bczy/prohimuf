@@ -74,6 +74,12 @@ runs:
       uses: anthropics/claude-code-action@v1
       with:
         claude_code_oauth_token: ${{ inputs.oauth_token }}
+        # Without an explicit token the action tries to mint a GitHub App one
+        # through an OIDC exchange, which needs `id-token: write` and fails
+        # with "Could not fetch an OIDC token". The panel only ever READS the
+        # repo — triage owns publication — so the workflow token is both
+        # sufficient and the smaller grant.
+        github_token: ${{ github.token }}
         allowed_bots: "Copilot"
         prompt: ${{ steps.prompt.outputs.text }}
         claude_args: |
