@@ -163,3 +163,31 @@ reste cassé sur disque. **Suite : `dev-tooling-assets`** régénère `public/as
 
 - plus aucune masse opaque non-magenta sur les flancs). Le blocker 1 (van-objective gratuit,
   `game-designer`) est hors de ma lane et reste ouvert.
+
+## Blocker 2 — FERMÉ : asset régénéré et gated (2026-07-26)
+
+Dispatch `gen-boss-sprites.yml` (run [30206080475](https://github.com/bczy/prohimuf/actions/runs/30206080475),
+seed 4878 épinglé, `regenerate: false` — idiome missing-file, PNG cassé supprimé au préalable
+en `3c928274`). Résultat : le conflit de fond est bien résolu — sujet isolé, dominance 100%,
+plus aucune masse noire opaque — mais le run a échoué sur un gate DIFFÉRENT et plus étroit :
+`Sprite integrity gate` a compté **546 px semi-transparents** (`0<alpha<255`), 0 autorisé.
+Cause : `keyAndDown()` (scripts/lib/gptimage.mjs) binarise bien l'alpha à pleine résolution,
+mais le crop+resize final (`imageSmoothingEnabled: true`) lisse les bords — `speaker_wall`
+est un PROP, explicitement exclu du passage `fill-sprite-holes.mjs` (finding E4, réservé aux
+7 figures humanoïdes) qui aurait sinon absorbé ce résidu comme effet de bord.
+
+Pas de nouveau régen payant : le PNG généré par ce run a été récupéré depuis l'artefact CI
+(`boss-sprites-unpushed`, le job échoue avant `Commit sprites` donc rien n'atterrit sur la
+branche automatiquement), puis binarisé localement (seuil alpha à 128, contenu RGB inchangé)
+avec `@napi-rs/canvas` déjà en dépendance. Revérifié en local avec les deux scripts réels :
+`node scripts/check-sprite-integrity.mjs --file …` → PASS (dominance 100%, 0 semi px, 0 comp
+speckle) ; `node scripts/desaturate-enemy-figure.mjs --check …` → PASS. Committé en `50739cfa`.
+
+**Note pour `dev-tooling-assets` (hors scope de ce fix, à considérer séparément)** : `keyAndDown()`
+peut laisser des pixels semi-alpha après le resize sur des PROPS non couverts par le solidify
+figures — un futur regen d'un autre prop pourrait retomber sur le même gate sans ce filet local.
+Piste : binariser l'alpha (seuil 128) juste après le `drawImage` de resize dans `keyAndDown()`
+elle-même, universellement, plutôt que de compter sur le hasard du contenu.
+
+**Blocker 2 : CLOS.** Reste ouvert : **Blocker 1** (van-objective gratuit) — voir la section
+game-designer ci-dessus/à venir.
