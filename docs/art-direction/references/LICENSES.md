@@ -73,7 +73,7 @@ Sourced for `board-tag-live-paint.md` (future tag-reveal FX reference hunt, `gra
 Reference URLs only; never download, re-encode, or frame-scrape any of these videos, and
 never trace a named artist's letterforms into a prompt.
 
-- INA — "Rap et Tag" (France 2, *Envoyé spécial*, 19 avril 1990), Paris tagging + Mode 2
+- INA — "Rap et Tag" (France 2, _Envoyé spécial_, 19 avril 1990), Paris tagging + Mode 2
   mural footage: https://www.ina.fr/ina-eclaire-actu/video/cab90016065/rap-et-tag —
   copyrighted French national-archive footage, describe/link only (same regime as
   _Prohibition_ §1).

@@ -62,7 +62,12 @@ const REF_IMAGES = [`${RAW}/enemy_sprite.png`, `${RAW}/enemy_riot.png`];
 // The table from chat. `ref` = max_reference_images advertised by the /models
 // endpoint (0 = text-only model).
 const MATRIX = [
-  { model: "gptimage-large", ref: 16, note: "le modèle des ennemis — la référence à battre", control: true },
+  {
+    model: "gptimage-large",
+    ref: 16,
+    note: "le modèle des ennemis — la référence à battre",
+    control: true,
+  },
   { model: "gpt-image-2", ref: 16, note: "successeur, jamais essayé ici" },
   { model: "gptimage", ref: 16, note: "GPT Image 1 Mini" },
   { model: "nanobanana-2", ref: 14, note: "celui que tu visais" },
@@ -105,7 +110,9 @@ function fetchBuf(url, token, redir = 0, originHost = null) {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           if (redir >= 5) return reject(new Error("too many redirects"));
           res.resume();
-          return resolve(fetchBuf(new URL(res.headers.location, url).toString(), token, redir + 1, origin));
+          return resolve(
+            fetchBuf(new URL(res.headers.location, url).toString(), token, redir + 1, origin),
+          );
         }
         const chunks = [];
         res.on("data", (c) => chunks.push(c));
@@ -139,7 +146,9 @@ async function run() {
   const dry = argv.includes("--dry");
 
   const matrix = only
-    ? only.split(",").map((m) => MATRIX.find((x) => x.model === m.trim()) ?? { model: m.trim(), ref: 0 })
+    ? only
+        .split(",")
+        .map((m) => MATRIX.find((x) => x.model === m.trim()) ?? { model: m.trim(), ref: 0 })
     : MATRIX;
 
   // Rebuild the page from what is already on disk — no network, no spend. Used
@@ -157,13 +166,23 @@ async function run() {
   // committing outputs back to the branch. One run, many poses, avoids that.
   // Poses are interleaved LAST — all models for pose A, then pose B — so an
   // aborted run leaves whole comparable sections rather than ragged ones.
-  const poses = pose.split(",").map((p) => p.trim()).filter(Boolean);
+  const poses = pose
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   const cells = [];
   for (const p of poses) {
     const { subject, seed } = poseData(p);
     const base = { pose: p, seed };
     for (const m of matrix) {
-      cells.push({ ...m, ...base, tail: "comic", mode: "texte seul", prompt: subject + COMIC_TAIL, refs: null });
+      cells.push({
+        ...m,
+        ...base,
+        tail: "comic",
+        mode: "texte seul",
+        prompt: subject + COMIC_TAIL,
+        refs: null,
+      });
       if (m.ref > 0)
         cells.push({
           ...m,
@@ -174,11 +193,20 @@ async function run() {
           refs: REF_IMAGES.slice(0, Math.min(m.ref, REF_IMAGES.length)),
         });
       if (m.control)
-        cells.push({ ...m, ...base, tail: "legacy", mode: "témoin (ancienne queue)", prompt: subject + LEGACY_TAIL, refs: null });
+        cells.push({
+          ...m,
+          ...base,
+          tail: "legacy",
+          mode: "témoin (ancienne queue)",
+          prompt: subject + LEGACY_TAIL,
+          refs: null,
+        });
     }
   }
 
-  console.log(`poses=${poses.join(",")} size=${size} modèles=${matrix.length} cellules=${cells.length}`);
+  console.log(
+    `poses=${poses.join(",")} size=${size} modèles=${matrix.length} cellules=${cells.length}`,
+  );
   if (dry) {
     cells.forEach((c) => console.log(`  ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode}`));
     return;
@@ -213,9 +241,20 @@ async function run() {
   for (const [i, c] of cells.entries()) {
     const slug = `${c.model.replace(/[^\w.-]/g, "_")}__${c.tail}__${c.refs ? "ref" : "txt"}`;
     const file = path.join(OUT, `${c.pose}__${slug}.png`);
-    const record = { pose: c.pose, seed: c.seed, size, model: c.model, tail: c.tail, mode: c.mode, note: c.note ?? "" };
+    const record = {
+      pose: c.pose,
+      seed: c.seed,
+      size,
+      model: c.model,
+      tail: c.tail,
+      mode: c.mode,
+      note: c.note ?? "",
+    };
     try {
-      const buf = await fetchBuf(urlFor({ prompt: c.prompt, seed: c.seed, model: c.model, size, refs: c.refs }), token);
+      const buf = await fetchBuf(
+        urlFor({ prompt: c.prompt, seed: c.seed, model: c.model, size, refs: c.refs }),
+        token,
+      );
       fs.writeFileSync(file, buf);
       const md5 = crypto.createHash("md5").update(buf).digest("hex");
       // Byte-identical output from two different models means the model param
@@ -226,11 +265,15 @@ async function run() {
       ok++;
       console.log(
         `  [ok ] ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${buf.length}B` +
-          (record.fallbackSuspect ? `  !! FALLBACK-SUSPECT (mêmes octets que ${record.fallbackSuspect})` : ""),
+          (record.fallbackSuspect
+            ? `  !! FALLBACK-SUSPECT (mêmes octets que ${record.fallbackSuspect})`
+            : ""),
       );
     } catch (e) {
       record.error = e.message;
-      console.log(`  [ERR] ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${e.message}`);
+      console.log(
+        `  [ERR] ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${e.message}`,
+      );
     }
     upsert(manifest, record);
     saveManifest(manifest);
@@ -325,9 +368,21 @@ async function writeHtml(manifest, meta = {}) {
     uri.set(src, dataUri(await thumbFor(src)));
   };
   const refs = [
-    { label: "enemy_sprite.png", sub: "CIBLE — le registre à atteindre", f: `${REPO}/public/assets/enemy_sprite.png` },
-    { label: "enemy_riot.png", sub: "CIBLE — identité composée (24 mots)", f: `${REPO}/public/assets/enemy_riot.png` },
-    { label: "enemy_shooting.png", sub: "CIBLE — pose de tir", f: `${REPO}/public/assets/enemy_shooting.png` },
+    {
+      label: "enemy_sprite.png",
+      sub: "CIBLE — le registre à atteindre",
+      f: `${REPO}/public/assets/enemy_sprite.png`,
+    },
+    {
+      label: "enemy_riot.png",
+      sub: "CIBLE — identité composée (24 mots)",
+      f: `${REPO}/public/assets/enemy_riot.png`,
+    },
+    {
+      label: "enemy_shooting.png",
+      sub: "CIBLE — pose de tir",
+      f: `${REPO}/public/assets/enemy_shooting.png`,
+    },
     ...poses.map((p) => ({
       label: `${p}.png`,
       sub: "REJETÉ — l'art shippé aujourd'hui",
@@ -416,7 +471,11 @@ ${poses
           r.model,
           r.file ? uri.get(path.join(OUT, r.file)) : null,
           `${r.mode}${r.note ? ` · ${r.note}` : ""}`,
-          r.error ? `échec : ${r.error}` : r.fallbackSuspect ? `octets identiques à ${r.fallbackSuspect}` : null,
+          r.error
+            ? `échec : ${r.error}`
+            : r.fallbackSuspect
+              ? `octets identiques à ${r.fallbackSuspect}`
+              : null,
         ),
       )
       .join("")}</div>`,

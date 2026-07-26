@@ -90,7 +90,9 @@ function loadBossFigures() {
       // Generating them would silently bake the literal string "undefined"
       // into the request. Skip them here rather than at the request layer.
       if (def.pending) {
-        console.log(`  [pending] ${key} — no prompt yet, skipped (see levelArt.json boss.types.${key})`);
+        console.log(
+          `  [pending] ${key} — no prompt yet, skipped (see levelArt.json boss.types.${key})`,
+        );
         return false;
       }
       return true;
@@ -103,7 +105,9 @@ function loadBossFigures() {
         throw new Error(`boss.types.${key}: "asset" must be a non-empty path`);
       }
       if (typeof def.prompt !== "string" || def.prompt.trim() === "") {
-        throw new Error(`boss.types.${key}: "prompt" must be a non-empty string (or set pending: true)`);
+        throw new Error(
+          `boss.types.${key}: "prompt" must be a non-empty string (or set pending: true)`,
+        );
       }
       // Per-entry `size` override ([S13], nearForegroundArt.types precedent): the
       // 7 humanoid figures share the block-default square canvas; `lustre`
@@ -212,7 +216,9 @@ async function main() {
     const { s, opaque } = await keyAndDown(buf, { targetW: f.width, targetH: f.height, tol: 150 });
     fs.mkdirSync(path.dirname(f.outFile), { recursive: true });
     fs.writeFileSync(f.outFile, s.toBuffer("image/png"));
-    console.log(`  [ok ] wrote ${path.relative(ROOT, f.outFile)} (opaque ${(opaque * 100).toFixed(1)}%)`);
+    console.log(
+      `  [ok ] wrote ${path.relative(ROOT, f.outFile)} (opaque ${(opaque * 100).toFixed(1)}%)`,
+    );
     await tryDespeckle(f.outFile, f.key);
   }
 }
