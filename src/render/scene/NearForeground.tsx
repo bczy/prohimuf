@@ -1,10 +1,12 @@
-import type { JSX } from "react";
+import type { JSX, RefObject } from "react";
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { AdditiveBlending } from "three";
 import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
+import type { GameState } from "@game/types/gameState";
+import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
 import { NEAR_KIND_SPECS, nearPropPlaneHeight, type NearKindSpec } from "./nearForegroundArt";
 import {
@@ -80,6 +82,29 @@ interface Props {
    * so this layer honours the in-app MOUVEMENT RÉDUIT toggle, not just the OS query.
    */
   reducedMotion: boolean;
+  /**
+   * Read-only game-state handle, optional (Vitry's near-foreground preview and any other
+   * caller with no live game loop pass nothing — the row stays visible, unchanged from
+   * before this prop existed). When present, the two kerb rows HIDE for the frames the
+   * Commandant boss-QTE tableau holds the screen.
+   *
+   * Why hide instead of re-sorting: Bertrand reported (2026-07-26, Belliard) a kerb prop
+   * (the `lamppost`) painting OVER the frozen Commandant, cutting through his torso. The
+   * near row's own renderOrder is `STREET_DEPTH.nearRow.order` (5.75); the boss tableau
+   * was moved to sit strictly above it (`TABLEAU_ORDER` in BossQteSprite.tsx, verified via
+   * a live scene-graph dump to carry the higher renderOrder AND `depthTest:false`) and the
+   * prop STILL painted on top in a live repro (`?preview=boss&level=belliard&at=phase1`) —
+   * confirmed by directly toggling that exact mesh's `.visible` in the running scene, which
+   * is the only manipulation that reliably cleared the tableau. Three.js's documented
+   * transparent-object sort (`renderOrder` first, camera-z tiebreak, `sortObjects` verified
+   * `true` on this project's renderer) says the higher renderOrder should already win; it
+   * doesn't in practice, and this component takes the working lever rather than trusting
+   * the next untested renderOrder guess. During the tableau the parallax kerb rows contend
+   * with nothing anyway (camera is locked to the QTE anchor zoom, ADR-0051) — there is no
+   * gameplay reason for a courier or the delivery van to be visible mid-tableau either, so
+   * hiding here costs no readable interaction.
+   */
+  stateRef?: RefObject<GameState>;
 }
 
 interface RowProps {
@@ -232,6 +257,7 @@ export function NearForeground({
   facadeH,
   panels,
   reducedMotion,
+  stateRef,
 }: Props): JSX.Element | null {
   const { camera } = useThree();
   const nearRef = useRef<Group>(null);
@@ -263,6 +289,12 @@ export function NearForeground({
   // the sky in LevelBackdrop. No per-frame allocation.
   useFrame((state) => {
     if (layer === null) return;
+    // Hide the whole kerb-prop layer while the boss tableau holds the screen — see the
+    // `stateRef` doc comment above for why a visibility gate, not a renderOrder bump.
+    const bossActive = isBossQteActive(stateRef?.current?.bossQte ?? null);
+    if (nearRef.current) nearRef.current.visible = !bossActive;
+    if (farRef.current) farRef.current.visible = !bossActive;
+    if (bossActive) return;
     const f = camera.position.x * deriveNearParallaxFactor(layer.factor, reducedMotion, isMobile);
     if (nearRef.current) nearRef.current.position.x = f;
     if (farRef.current) farRef.current.position.x = f * FAR_PARALLAX_RATIO;

@@ -449,6 +449,7 @@ export function GameScene({
         facadeH={facadeH}
         panels={layout.mode === "single-facade" ? PANELS : 1}
         reducedMotion={reducedMotion}
+        stateRef={stateRef}
       />
       {/* Armament crate (ADR-0055 → ADR-0056): the single LOOT entity is now a static
           SIDEWALK object at LOOT_STREET_Y — it reads only its world-X from the slot
