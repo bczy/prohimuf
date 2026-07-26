@@ -121,7 +121,7 @@ function renderComment(findings, counts, verdict) {
   }
 
   if (verdict.degraded !== undefined) {
-    return (
+    const degradedNotice =
       `${header}\n` +
       `These panel jobs did not complete: **${verdict.degraded.join(", ")}**.\n\n` +
       "The diff was therefore NOT fully reviewed — the counts above are not a\n" +
@@ -129,15 +129,24 @@ function renderComment(findings, counts, verdict) {
       "cause: if the subscription's quota window is exhausted, re-run this\n" +
       "panel via `workflow_dispatch` once it resets; if `CLAUDE_CODE_OAUTH_TOKEN`\n" +
       "has expired, rotate the repo secret (`claude setup-token`). Otherwise\n" +
-      "merge only on an explicit human decision to waive the gate.\n"
-    );
+      "merge only on an explicit human decision to waive the gate.\n";
+    // A degraded run is exactly the case where a human needs the detail most
+    // (deciding whether to wait for a clean re-run or waive the gate on what
+    // DID get reviewed) — so whatever the completed reviewers/skeptic found
+    // still gets listed below the notice, same as a non-degraded run.
+    if (findings.length === 0) return degradedNotice;
+    return `${degradedNotice}\n${renderFindingRows(findings).join("\n")}`;
   }
 
   if (findings.length === 0) {
     return `${header}\nNo confirmed findings. See ADR-0063 for the panel contract.\n`;
   }
 
-  const rows = findings.map((f) => {
+  return `${header}\n${renderFindingRows(findings).join("\n")}`;
+}
+
+function renderFindingRows(findings) {
+  return findings.map((f) => {
     const sev = (f.severity || "?").toUpperCase();
     const reviewer = f._reviewer || "?";
     const loc = f.file ? `\`${f.file}${f.line ? `:${f.line}` : ""}\`` : "";
@@ -155,8 +164,6 @@ function renderComment(findings, counts, verdict) {
       .filter(Boolean)
       .join("\n");
   });
-
-  return `${header}\n${rows.join("\n")}`;
 }
 
 function postComment(body) {
