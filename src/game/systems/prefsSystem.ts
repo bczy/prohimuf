@@ -4,6 +4,14 @@ export interface Prefs {
   readonly lives: number; // 1–5
   readonly difficulty: "easy" | "normal" | "hard";
   readonly crt: boolean;
+  /**
+   * VHS scan-line scroll. The CRT composite's scanline comb is always on with
+   * `crt`; this toggles its slow upward TRAVEL (the VHS tell) on top of it —
+   * some players read a crawling comb as flicker, so it is a separate switch.
+   * Default true; inert when `crt` is off (the pass is not mounted) and frozen
+   * under the effective reduced-motion signal.
+   */
+  readonly vhs: boolean;
   // Player's own reduced-motion toggle. Default false (ADR-0054): the OS
   // `prefers-reduced-motion` signal is unioned LIVE at the render/bridge edge —
   // never seeded into or stored by this pure reducer.
@@ -16,6 +24,7 @@ export const DEFAULT_PREFS: Prefs = {
   lives: 3,
   difficulty: "normal",
   crt: true,
+  vhs: true,
   reducedMotion: false,
 };
 
@@ -34,6 +43,7 @@ export function loadPrefs(): Prefs {
         ? parsed.difficulty
         : DEFAULT_PREFS.difficulty,
       crt: typeof parsed.crt === "boolean" ? parsed.crt : DEFAULT_PREFS.crt,
+      vhs: typeof parsed.vhs === "boolean" ? parsed.vhs : DEFAULT_PREFS.vhs,
       reducedMotion:
         typeof parsed.reducedMotion === "boolean"
           ? parsed.reducedMotion

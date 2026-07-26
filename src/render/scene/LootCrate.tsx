@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
+import { createEntityAura } from "@render/effects/entityAura";
+import { getSilhouetteFor } from "./enemyTextures";
 import { CanvasTexture, TextureLoader, AdditiveBlending } from "three";
 import { Box3, Vector3 } from "three";
 import type { Texture, Mesh, MeshBasicMaterial, Group } from "three";
@@ -278,6 +280,19 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
   const [models, setModels] = useState<Partial<Record<LootRewardProfile, Group>>>({});
   const appearTimerRef = useRef(0);
   const prevStateRef = useRef<string>("HIDDEN");
+  // Contact shadow + energy rim. It lives INSIDE the crate group, so its
+  // coordinates are group-local (0,0) and it inherits the drop-and-settle for free.
+  // Drawn behind the ADR-0056 rim glow (z=-0.02), so the fixed acid-green
+  // « ce qui brille est interactif » rim stays the tight, unambiguous core read and
+  // the energy hue only tints the outward margin beyond it. Was an additive disc in
+  // the first cut, FAILED at the composite gate (see entityAura.ts).
+  const aura = useMemo(() => createEntityAura({ renderOrder: 4, rimZ: -0.05, shadowZ: -0.06 }), []);
+  useEffect(
+    () => () => {
+      aura.dispose();
+    },
+    [aura],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -348,15 +363,29 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
 
     // Body: FLUX sprite when it has loaded, else the drawn plank fallback (never blocks).
     const body = bodyRef.current;
+    const sprite = getCrateSprite();
     if (body !== null) {
       body.visible = !has3d;
       const mat = body.material as MeshBasicMaterial;
-      const tex = getCrateSprite() ?? getCrateBodyFallback();
+      const tex = sprite ?? getCrateBodyFallback();
       if (tex !== null && mat.map !== tex) {
         mat.map = tex;
         mat.needsUpdate = true;
       }
     }
+    // The rim traces the 2D crate sprite, so it is fed ONLY while that sprite is
+    // what renders: a 3D loot model has no 2D silhouette to trace, and the drawn
+    // plank fallback is a CanvasTexture the bake cannot read. In both cases the rim
+    // stays hidden and the crate keeps its own ADR-0056 glow plus the contact shadow.
+    aura.update({
+      visible: true,
+      x: 0,
+      y: 0,
+      width: CRATE_WORLD_W,
+      height: CRATE_WORLD_H,
+      energy: stateRef.current.energy,
+      silhouette: has3d || sprite === null ? null : getSilhouetteFor(sprite),
+    });
     // Glyph for this crate's weapon (composited on the crate face).
     const glyphMesh = glyphRef.current;
     if (glyphMesh !== null) {
@@ -387,6 +416,9 @@ export function LootCrate({ stateRef, slots }: Props): JSX.Element {
 
   return (
     <group ref={groupRef} visible={false}>
+      {/* Contact shadow + an energy rim tracing the crate silhouette (green →
+          amber → red). Behind the ADR-0056 interactive rim glow. */}
+      <primitive object={aura.group} />
       {/* Rim glow behind the body (z=-0.02): additive green with the baked shadowBlur
           falloff; the body occludes the core, the outward falloff reads as the rim. */}
       <mesh ref={rimRef} position={[0, 0, -0.02]} renderOrder={4}>

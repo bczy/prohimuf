@@ -4,16 +4,21 @@
  * mufTitleBlink cursor keyframe stay in the component's <style> block; the
  * media-driven padding/wordmark-size/display values stay inline as var(--muf-*)
  * reads. Every colour/font references a var(--…) injected from tokens.ts.
+ *
+ * Exception: the wordmark reveal keyframes (one set per variant of `TitleAnimation`) live
+ * HERE, not in the <style> block: CSS Modules scopes keyframe names to this file, so they
+ * have no global name to collide with and each stays next to the rule that uses it.
  */
 
-/* Printed masthead ink bar pinned to the top edge. */
+/* Printed masthead ink bar pinned to the top edge. The knockout is the cover's own stock
+   (jaune, TITLE-only) so the strip reads as paper showing through the ink, not as a tint. */
 .masthead {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   background: var(--ink-full);
-  color: var(--stock-shell);
+  color: var(--stock-jaune);
   padding: var(--space-xs) var(--space-lg);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -43,13 +48,470 @@
   text-transform: uppercase;
 }
 
-/* MUF wordmark; the responsive var(--muf-wordmark-size) font-size stays inline. */
+/* MUF wordmark; the responsive var(--muf-wordmark-size) font-size stays inline.
+   `position: relative` is the containing block for the blast variant's smoke cloud. */
 .wordmark {
+  position: relative;
   font-family: var(--font-display);
   line-height: 0.9;
   letter-spacing: 0.05em;
   color: var(--ink-full);
   margin-top: var(--space-md);
+}
+
+/*
+ * The letter CELL: layout, and the containing block for the overspray it paints in ::after.
+ * It is deliberately never faded — the mist and the ink have to come and go on their own
+ * clocks, and a parent's opacity would drag its children along.
+ */
+.letter {
+  position: relative;
+  display: inline-block;
+}
+
+/*
+ * Between two turns of the cycle: the finished wordmark is wiped off so the next variant
+ * starts on a blank cover. A short fade rather than a cut — a sheet going instantly empty
+ * reads as a glitch, and the eye needs the beat to accept that the mark is being redone.
+ * Written as an ANIMATION, not a transition, so the two reduced-motion guards at the bottom
+ * of this file cover it exactly like every other moving part of this surface; `both` holds
+ * the wordmark invisible until the remount, so it cannot flash back on the way out.
+ */
+.clearing {
+  animation: mufTitleClear var(--motion-title-cycle-clear-ms) linear both;
+}
+
+@keyframes mufTitleClear {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * The INK — what every variant actually reveals. Two layers: this span paints the ink-black
+ * contour with `-webkit-text-stroke` over transparent glyph text (the stroke straddles the
+ * outline, so half of it sits outside the glyph), and its `::before` clone paints the chrome
+ * bands clipped to the same glyph ON TOP (positioned descendant → painted after the parent's
+ * inline content), covering the inner half. Result: the letter is defined by its black
+ * contour, filled with metal — never a chrome blob with a fuzzy edge.
+ *
+ * ONE resting state, three ways to arrive at it: the variant class on `.wordmark` supplies
+ * the animation-name/duration/delay below, and every variant's last keyframe lands on the
+ * element's own resting style — so `animation: none` (reduced motion) is always the finished
+ * wordmark, never a half-painted one.
+ *
+ * The `--chrome-*` tones and `--muf-letter-index` come in inline from TitleScreen.tsx
+ * (ADR-0046 escape hatch for values with a single consumer); the durations are the bridged
+ * `--motion-title-*` tokens. NO literal colour or timing here.
+ */
+.glyph {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 0.05em var(--ink-full);
+  animation-fill-mode: both;
+}
+
+/*
+ * — variant "spray": the can lays an OVERSPRAY, then the stencil bites. —
+ *
+ * Not a focus pull: a spray can does not defocus, it wastes ink. The mist (`.letter::after`)
+ * blooms wide, weak and speckled around the letter first; the ink then simply appears inside
+ * it, crisp, as if a stencil had been lifted. The two clocks share the letter's stagger delay
+ * so each letter gets its own can-stroke.
+ */
+.spray .glyph {
+  animation-name: mufStencilBite;
+  animation-duration: var(--motion-title-spray-ms);
+  animation-timing-function: linear;
+  animation-delay: calc(var(--muf-letter-index, 0) * var(--motion-title-spray-stagger-ms));
+}
+
+/* The overspray itself: ink-black, wide, weak — and moucheté by the same tiled halftone dot
+   the print system uses everywhere else, so the waste ink is PRINTED grain, never an
+   airbrush. Resting `opacity: 0`, so with the animation killed there is no mist at all. */
+.spray .letter::after {
+  content: "";
+  position: absolute;
+  inset: -26% -30%;
+  opacity: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% 48%, rgb(0 0 0 / 42%) 0 14%, transparent 58%);
+  -webkit-mask-image: radial-gradient(circle, #000 40%, transparent 76%);
+  mask-image: radial-gradient(circle, #000 40%, transparent 76%);
+  -webkit-mask-size: 4px 4px;
+  mask-size: 4px 4px;
+  animation-name: mufOverspray;
+  animation-duration: var(--motion-title-spray-ms);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-delay: calc(var(--muf-letter-index, 0) * var(--motion-title-spray-stagger-ms));
+}
+
+/* The chrome fill: SIX hard-stopped bands, no fade between them. A copier cannot hold a
+   continuous ramp — it thresholds it — so the sticker's metal collapses to flat tones, and
+   the fold (--chrome-edge) is a band like the others, not a specular line. The six bands are
+   ONE can to the eye — the paint variant lays them in a single "metal" pass, after the ink. */
+.glyph::before {
+  content: attr(data-char);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: linear-gradient(
+    180deg,
+    var(--chrome-hi) 0 24%,
+    var(--chrome-mid) 24% 44%,
+    var(--chrome-edge) 44% 52%,
+    var(--chrome-lo) 52% 70%,
+    var(--chrome-mid) 70% 88%,
+    var(--chrome-hi) 88% 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0;
+  color: transparent;
+}
+
+/* The stencil bite: nothing while the mist builds, then the ink is simply THERE, hard-edged.
+   Ends on the element's resting state (opacity 1), so killing the animation below yields the
+   finished wordmark, not an invisible one. */
+@keyframes mufStencilBite {
+  0% {
+    opacity: 0;
+  }
+
+  26% {
+    opacity: 0;
+  }
+
+  38% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Waste ink: blooms fast and wide as the can opens, hangs while the stencil is lifted, then
+   settles out. Ends on the resting `opacity: 0`. */
+@keyframes mufOverspray {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  16% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  46% {
+    opacity: 0.75;
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
+}
+
+/*
+ * — variant "paint": the can FILLS each letter, line by line, one colour per pass. —
+ *
+ * Three rules of a real can drive this variant (Bertrand, 2026-07-25):
+ *   1. a letter cannot fill itself from several places at once — there is ONE nozzle, so a
+ *      single line is being laid at any instant, and the next letter waits its turn;
+ *   2. a can sprays ONE colour at a time — so the sticker is built in two mono-colour passes
+ *      over the same letter: the ink contour (the sketch every writer lays first), then the
+ *      metal (the six chrome bands are one can to the eye);
+ *   3. the paint STOPS between two lines — the arm has to travel back to the start of the
+ *      next one, and swapping cans between passes takes longer still. That silence is the
+ *      whole rhythm: pssschit… (travel)… pssschit…
+ *
+ * Mechanically: each of the two ink layers carries its own mask made of FOUR horizontal spray
+ * lines, and `mufPaintSweep` opens them one after the other — line 1 finishes before line 2
+ * starts. Few and slow on purpose: a line has to be seen CROSSING the letter (≈7 frames at
+ * 60fps). Sprayed in 3 frames, as the first cut did, a line pops instead of travelling — and
+ * since one horizontal line meets several strokes of a glyph (the M has two stems), a popping
+ * line lights up two or three disjoint places at once, which is exactly what a hand never does. The lines alternate their side (left edge, then right edge, …), so the nozzle reads
+ * as one hand going back and forth down the letter, and the two ladders (down, then up) let
+ * the second pass pick up where the first stopped instead of teleporting back to the top.
+ *
+ * Why a line ladder rather than a traced glyph outline: the mask only has to COVER the ink,
+ * the letter's own glyph does the shaping — so the ladder stays font-independent (percentages
+ * of the letter box), and a fallback face or a `font-display: swap` hand-off cannot
+ * desynchronise a path from its glyph the way hand-authored outline paths would. It is also
+ * what filling with a can actually looks like: horizontal back-and-forth, not calligraphy.
+ */
+.paint .glyph,
+.paint .glyph::before {
+  /* One spray line: 40% of the letter box tall, with a TIGHT falloff at its long edges. The
+     softness is deliberately small — a wide falloff bleeds a second, fainter front into the
+     next rung while this one is still travelling, and two fronts is the very thing this
+     variant must not show. The four rungs sit ~29% apart, so every finished line still
+     OVERLAPS its neighbours and the four of them cover the glyph — contour included, which
+     overhangs the box by half the `-webkit-text-stroke` — with no gap. That is why this variant needs no final "flood"
+     coat: its resting state is simply four open lines, i.e. an unmasked letter, and
+     `animation: none` (reduced motion) lands on the finished wordmark. */
+  --muf-line: linear-gradient(180deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+  --muf-line-h: 40%;
+  --muf-line-off: 0 var(--muf-line-h);
+  /* THE PAUSE. A line is grown at a constant speed over its whole slot, but it only has to
+     reach ~100% of the box to have crossed the letter — the rest of the growth happens
+     outside the glyph, where nothing is revealed. So the sprayed part of a slot is
+     100/167 = 60% of it (`titlePaintLineMs` of `titlePaintLineMs + titlePaintLineGapMs`,
+     120ms of 200ms), and the remaining 80ms is the arm travelling: no paint appears. Change
+     that ratio in tokens.ts and this 167% moves with it (a test binds the two together). */
+  --muf-line-on: 167% var(--muf-line-h);
+  /* The rungs, in the hand's order. Down: top to bottom, starting from the left edge.
+     Up: the same four rungs climbed back. The out-of-range percentages are deliberate — a
+     mask-position percentage places the line's own edge, so it takes -27% / 115% to sit the
+     top and bottom lines over the ink's extremes. */
+  --muf-ladder-down: 0% -30%, 100% 19%, 0% 68%, 100% 117%;
+  --muf-ladder-up: 0% 117%, 100% 68%, 0% 19%, 100% -30%;
+
+  animation-name: mufPaintSweep;
+  animation-duration: var(--motion-title-paint-pass-ms);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  -webkit-mask-image: var(--muf-line), var(--muf-line), var(--muf-line), var(--muf-line);
+  mask-image: var(--muf-line), var(--muf-line), var(--muf-line), var(--muf-line);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: var(--muf-ladder);
+  mask-position: var(--muf-ladder);
+  /* Resting state = every line open = indistinguishable from an unmasked letter. The
+     prefixed pair is the safety net: an engine too old for unprefixed masks ignores
+     mufPaintSweep's `mask-size` and simply shows the finished letter. */
+  -webkit-mask-size: var(--muf-line-on), var(--muf-line-on), var(--muf-line-on), var(--muf-line-on);
+  mask-size: var(--muf-line-on), var(--muf-line-on), var(--muf-line-on), var(--muf-line-on);
+}
+
+/* Pass 1 — the ink contour, swept top-down. Masking the ink span masks its chrome clone with
+   it, so no metal can show up before its own pass: the letter is a black outline first,
+   exactly as it would be on a wall. */
+.paint .glyph {
+  --muf-ladder: var(--muf-ladder-down);
+
+  animation-delay: calc(var(--muf-letter-index, 0) * var(--motion-title-paint-stagger-ms));
+}
+
+/* Pass 2 — the metal, swept back UP from where pass 1 stopped, one can-swap later
+   (`titlePaintPassStepMs` = the first pass plus the time to pick up the other can). */
+.paint .glyph::before {
+  --muf-ladder: var(--muf-ladder-up);
+
+  animation-delay: calc(
+    var(--muf-letter-index, 0) * var(--motion-title-paint-stagger-ms) +
+      var(--motion-title-paint-pass-step-ms)
+  );
+}
+
+/* One line per step, opened in the hand's order and never two at once: at any instant a
+   single line is being laid, the ones before it are finished, the ones after it have not been
+   started. Linear timing — the nozzle crosses at a constant speed, and the silence between
+   two lines comes from `--muf-line-on` overshooting the letter, not from a curve. */
+@keyframes mufPaintSweep {
+  0% {
+    mask-size: var(--muf-line-off), var(--muf-line-off), var(--muf-line-off), var(--muf-line-off);
+  }
+
+  25% {
+    mask-size: var(--muf-line-on), var(--muf-line-off), var(--muf-line-off), var(--muf-line-off);
+  }
+
+  50% {
+    mask-size: var(--muf-line-on), var(--muf-line-on), var(--muf-line-off), var(--muf-line-off);
+  }
+
+  75% {
+    mask-size: var(--muf-line-on), var(--muf-line-on), var(--muf-line-on), var(--muf-line-off);
+  }
+
+  100% {
+    mask-size: var(--muf-line-on), var(--muf-line-on), var(--muf-line-on), var(--muf-line-on);
+  }
+}
+
+/*
+ * — variant "blast": one detonation, and the smoke clears off the finished wordmark. —
+ *
+ * No per-letter stagger: it is a single event, so the three letters are thrown out and
+ * settle together while the cloud does the reveal.
+ */
+.blast .glyph {
+  animation-name: mufBlastIn;
+  animation-duration: var(--motion-title-blast-settle-ms);
+  animation-timing-function: cubic-bezier(0.12, 0.86, 0.3, 1);
+  /* `backwards`, not the inherited `both`: this is the one variant that animates a TRANSFORM,
+     and a transform that keeps filling after the animation ends leaves the glyph pinned to the
+     transformed paint path (an identity `matrix()` is still a matrix) — its edges then land a
+     hair off an untransformed letter's, 7432 pixels' worth. Releasing the fill hands the glyph
+     back to its own resting style, which is byte-for-byte where this animation's last frame
+     already was: opacity 1, no transform. Now that the cover CYCLES, that matters — the three
+     variants' finished wordmarks are held one after the other and must be the same pixels. */
+  animation-fill-mode: backwards;
+}
+
+/*
+ * The cloud — a real PARTICLE FIELD, the boss veil's model ported to the DOM (Bertrand,
+ * 2026-07-25: the previous animated dot screen did not read as smoke). Same puff behaviour
+ * as `src/render/scene/smokeParticles.ts`: each puff spawns low and small, DRIFTS upward
+ * and sideways, expands as it goes, fades in then out over its own life, and dies on its
+ * own clock — which is what makes a cloud read as smoke rather than as an effect. No Three,
+ * no canvas, no rAF: the title surface stays pure DOM (ADR-0068), so each puff is one span
+ * carrying its own drift/scale/life as inline custom properties, and CSS does the rest.
+ *
+ * The container paints NOTHING and clips nothing: it is only the origin the puffs are
+ * positioned from (its centre = the wordmark's centre, whatever its inset). It used to carry
+ * the print halftone as a tiled mask, and that mask was the bug Bertrand saw — a mask covers
+ * the element's box and nothing beyond it, so the cloud was sliced off along a hard rectangle
+ * at the container's edge. The grain now lives on the puffs themselves (their own texture),
+ * and a puff is free to drift out over the whole cover; the only thing that ever clips it is
+ * the sheet's own edge, which is the page.
+ */
+.smoke {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/*
+ * One puff — and its TEXTURE is the boss veil's, not a gradient blob (Bertrand, 2026-07-25:
+ * "pourquoi ne pas prendre une texture de fumée comme le shader du boss ?"). It is literally
+ * the same sprite: `assets/fx/smoke.png`, the CC0 puff `smokeParticles.ts` loads for the boss
+ * tableau, handed in as `--puff-sprite` (the URL needs Vite's BASE_URL, so it comes inline
+ * from TitleScreen.tsx). The sprite is pure white with every detail in its ALPHA channel, so
+ * masking with it and filling with the boss's own desaturated grey reproduces exactly what
+ * the boss material does (tint × texture alpha) — soft, mottled, never a flat black disc.
+ * Resting state is `opacity: 0`: with the animation killed (reduced motion) there is no cloud
+ * at all, and the wordmark is simply there.
+ */
+.puff {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--puff-size);
+  height: var(--puff-size);
+  margin: calc(var(--puff-size) / -2);
+  opacity: 0;
+  background-color: var(--puff-ink);
+  /* The sprite laid TWICE — the mask layers composite by addition, so the puff's core goes
+     from the texture's own ~0.5 alpha to ~0.75 while its mottled edge stays soft. A second
+     coat, exactly like a can: it buys the density the cloud needs to actually hide the
+     wordmark (a dispersal only reads as a reveal if there was something to reveal) without
+     touching the boss's grey or flattening the texture into a disc. */
+  -webkit-mask-image: var(--puff-sprite), var(--puff-sprite);
+  mask-image: var(--puff-sprite), var(--puff-sprite);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation-name: mufSmokePuff;
+  /* Each puff lives a FRACTION of the cloud's window and starts on its own beat, so the
+     field never pulses in unison — the boss field's `maxLife`/staggered spawn, expressed
+     against the one budget the title owns. */
+  animation-duration: calc(var(--motion-title-blast-ms) * var(--puff-life));
+  animation-delay: calc(var(--motion-title-blast-ms) * var(--puff-delay));
+  /* Linear, like the boss field's per-frame integration: a puff drifts at a constant speed
+     and grows at a constant rate. The detonation is in the KEYFRAMES (the pop at 14%), not
+     in an easing curve — an ease-out here would fly the whole cloud off the wordmark before
+     it had finished darkening, and the dispersal would stop being a reveal. */
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+/* The letters are thrown out by the blast and settle — they are already at rest behind the
+   cloud, which is what actually reveals them.
+   The last frame is written as `transform: none` rather than `scale(1)` so that it is
+   LITERALLY the element's resting style — which is the precondition that lets the rule above
+   release the fill (`animation-fill-mode: backwards`) without anything moving. `none`
+   interpolates as the identity matrix, so the settle itself is unchanged. */
+@keyframes mufBlastIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.34);
+  }
+
+  6% {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* One puff's whole life: thrown out of the detonation, then drifting up and out while it
+   expands, fading IN fast and OUT slowly (the boss field's `sin(πt)` envelope, skewed to the
+   front because this cloud starts with a bang). Transform is keyed only at the ends, so the
+   drift and the growth run at their own steady pace under the opacity envelope. Ends on the
+   resting `opacity: 0` — nothing is left over the finished wordmark. */
+@keyframes mufSmokePuff {
+  0% {
+    opacity: 0;
+    transform: translate(var(--puff-x), var(--puff-y)) scale(0.34);
+  }
+
+  /* The detonation: the puff is thrown to nearly its full size and to full ink almost at
+     once, while it has barely moved — this is the instant the cloud actually hides the
+     wordmark. */
+  9% {
+    opacity: var(--puff-peak);
+    transform: translate(
+        calc(var(--puff-x) + var(--puff-dx) * 0.08),
+        calc(var(--puff-y) + var(--puff-dy) * 0.08)
+      )
+      scale(calc(var(--puff-grow) * 0.62));
+  }
+
+  55% {
+    opacity: calc(var(--puff-peak) * 0.76);
+  }
+
+  /* …then the long part: it just keeps rising, spreading and thinning out. */
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--puff-x) + var(--puff-dx)), calc(var(--puff-y) + var(--puff-dy)))
+      scale(var(--puff-grow));
+  }
+}
+
+/* Reduced motion — both triggers (ADR-0054 §3): the OS query and the in-app MOUVEMENT
+   RÉDUIT toggle's root attribute. Handled here rather than by zeroing --motion-* in
+   base.css, because a 0ms reveal would still run the blur/scale/mask frames on the
+   compositor; `animation: none` is the honest "already painted" state, and it is the same
+   answer for all three variants — whatever was drawn, the wordmark is simply there.
+   `!important` because the variant rules above are descendant selectors (0,2,0) and would
+   otherwise outrank a bare `.glyph` (0,1,0) — same reason as WeaponReadout's `.stockLow`.
+   The list covers every animated node of every variant: the ink and its chrome clone (the
+   paint variant sweeps each on its own pass), the spray's overspray pseudo, the blast
+   cloud's puffs — and the wipe between two turns of the cycle, which cannot happen anyway
+   (the cycle schedules no timer under reduced motion) but must not be reachable by accident. */
+@media (prefers-reduced-motion: reduce) {
+  .glyph,
+  .glyph::before,
+  .letter::after,
+  .puff,
+  .clearing {
+    animation: none !important;
+  }
+}
+
+:global(html[data-reduced-motion="true"]) .glyph,
+:global(html[data-reduced-motion="true"]) .glyph::before,
+:global(html[data-reduced-motion="true"]) .letter::after,
+:global(html[data-reduced-motion="true"]) .puff,
+:global(html[data-reduced-motion="true"]) .clearing {
+  animation: none !important;
 }
 
 /* Ink divider rule; the responsive display toggle stays inline. */

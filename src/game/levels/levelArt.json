@@ -486,7 +486,7 @@
       },
       "ironwork": "haussmann",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0047), repositioned for the single-wide street-wide.png d\u00e9cor (ADR-0057) per docs/game-design/spec-belliard-street-wide-repositioning.md \u00a72 (13 props, gate lead-game-designer PASS 2026-07-21). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right). trafficLight (x=0.388, on the passage) is the ONLY prop exempt from the maxH clamp (TRAFFIC_LIGHT_H_FRAC, NearForeground.tsx) and thus the only one that can rise into the window band \u2014 deliberately placed over the passage exclusion zone so its mast never sweeps an active pop window; the other props are clamped to maxH so non-occlusion holds by construction regardless of x. 2026-07-25 amendment (Bertrand-directed, \"on ne voit plus le panneau Paris\", then \"ne garde qu'un seul panneau, celui de droite\"): the \u00a72.4 table left belliard with a SINGLE streetSign (x=0.46) and NearForeground.tsx halves each row on mobile by dropping every ODD entry of that row's list ORDER \u2014 that lone sign sat at near-row index 3 (odd), so belliard showed ZERO panneau PARIS on any mobile UA (verified in-browser). A first pass added two more signs (0.66, 0.885); Bertrand ruled three panneaux too many and kept only the RIGHTMOST, so the 0.46 and 0.66 signs are gone and the prop count is back to 13. The surviving streetSign x=0.885 is listed BEFORE the lamppost x=0.8 (x order DELIBERATELY broken there, and only there) so it takes near-row index 6 \u2014 EVEN, hence drawn on mobile; in x order it would fall on near-row index 7 (odd) and vanish again, reintroducing the exact original bug. The lamppost x=0.495 is back in plain x order (it had only been swapped to hand the now-deleted 0.46 sign an even index). ORDER IS LOAD-BEARING in this array: the mobile filter reads list order, not x. Drawn near row is x=[0.16,0.34,0.388,0.495,0.6,0.72,0.885,0.8] on desktop and x=[0.16,0.388,0.6,0.885] on mobile; the sign's nearest same-row neighbour is 0.8 (clearance 0.085 \u2265 0.06) on desktop and 0.6 on mobile. Both invariants (a mobile-surviving sign + \u22650.06 same-row x clearance on the row actually drawn in each mode) are pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts \u2014 re-run it before reordering or inserting props.",
+        "$comment": "Near-foreground parallax props (ADR-0047), repositioned for the single-wide street-wide.png d\u00e9cor (ADR-0057) per docs/game-design/spec-belliard-street-wide-repositioning.md \u00a72 (13 props, gate lead-game-designer PASS 2026-07-21). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right). trafficLight (x=0.388, on the passage) is the ONLY prop exempt from the maxH clamp (TRAFFIC_LIGHT_H_FRAC, NearForeground.tsx) and thus the only one that can rise into the window band \u2014 deliberately placed over the passage exclusion zone so its mast never sweeps an active pop window; the other props are clamped to maxH so non-occlusion holds by construction regardless of x. 2026-07-25 amendment (Bertrand-directed, \"on ne voit plus le panneau Paris\", then \"ne garde qu'un seul panneau, celui de droite\"): the \u00a72.4 table left belliard with a SINGLE streetSign (x=0.46) and NearForeground.tsx halves each row on mobile by dropping every ODD entry of that row's list ORDER \u2014 that lone sign sat at near-row index 3 (odd), so belliard showed ZERO panneau PARIS on any mobile UA (verified in-browser). A first pass added two more signs (0.66, 0.885); Bertrand ruled three panneaux too many and kept only the RIGHTMOST, so the 0.46 and 0.66 signs are gone and the prop count is back to 13. The surviving streetSign x=0.885 is listed BEFORE the lamppost x=0.8 (x order DELIBERATELY broken there, and only there) so it takes near-row index 6 \u2014 EVEN, hence drawn on mobile; in x order it would fall on near-row index 7 (odd) and vanish again, reintroducing the exact original bug. The lamppost x=0.495 is back in plain x order (it had only been swapped to hand the now-deleted 0.46 sign an even index). ORDER IS LOAD-BEARING in this array: the mobile filter reads list order, not x. 2026-07-26 amendment (Bertrand-directed, \"sur mobile on voit pas le lampadaire\"): plain x order put BOTH lampposts (x=0.495, x=0.8) on odd near-row indices, so neither survived mobile \u2014 the streetSign fix above only ever guarded the sign. The lamppost x=0.495 is now listed BEFORE the bench x=0.6 (x order broken there, mirroring the streetSign trick) to take the EVEN index; that bench drops on mobile instead (the other bench, x=0.16, still shows). The x=0.8 lamppost is unchanged and still drops \u2014 one surviving lamppost is the fix, same bar as the streetSign. Drawn near row is now x=[0.16,0.34,0.388,0.6,0.495,0.72,0.885,0.8] on desktop and x=[0.16,0.388,0.495,0.885] on mobile; the sign's nearest same-row neighbour is 0.8 (clearance 0.085 \u2265 0.06) on desktop and 0.495 (clearance 0.39) on mobile. These invariants (a mobile-surviving sign + lamppost, \u22650.06 same-row x clearance on the row actually drawn in each mode) are pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts \u2014 re-run it before reordering or inserting props.",
         "factor": -0.34,
         "objects": [
           {
@@ -525,13 +525,13 @@
             "row": "far"
           },
           {
-            "kind": "lamppost",
-            "x": 0.495,
+            "kind": "bench",
+            "x": 0.6,
             "row": "near"
           },
           {
-            "kind": "bench",
-            "x": 0.6,
+            "kind": "lamppost",
+            "x": 0.495,
             "row": "near"
           },
           {
@@ -608,7 +608,7 @@
       },
       "ironwork": "plain",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0047). factor NEGATIVE, clamped to [-0.5,-0.1]. x full-street normalized (0..1). ORDER IS LOAD-BEARING: NearForeground.tsx halves each row on mobile by dropping every odd entry of that row's LIST ORDER, so the streetSign (panneau PARIS) x=0.38 is listed BEFORE the horodateur x=0.27 (x order deliberately broken there) to take an EVEN near-row index and survive the halving — before that swap both stalingrad signs sat on odd indices and the level showed no panneau at all on mobile, the same latent bug that hit belliard. Pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts.",
+        "$comment": "Near-foreground parallax props (ADR-0047). factor NEGATIVE, clamped to [-0.5,-0.1]. x full-street normalized (0..1). ORDER IS LOAD-BEARING: NearForeground.tsx halves each row on mobile by dropping every odd entry of that row's LIST ORDER, so the streetSign (panneau PARIS) x=0.38 is listed BEFORE the horodateur x=0.27 (x order deliberately broken there) to take an EVEN near-row index and survive the halving — before that swap both stalingrad signs sat on odd indices and the level showed no panneau at all on mobile, the same latent bug that hit belliard. 2026-07-26 amendment (Bertrand-directed, \"sur mobile on voit pas le lampadaire\"): both lampposts (x=0.16, x=0.6) also sat on odd near-row indices, so NEITHER survived mobile — the streetSign fix only ever guarded the sign. The lamppost x=0.16 is now listed BEFORE the trafficLight x=0.05 (x order broken there, mirroring the streetSign trick) to take the EVEN index; the trafficLight drops on mobile instead (two others, x=0.49/0.93, still show). x=0.6 lamppost is unchanged and still drops — one surviving lamppost is the fix, same bar as the streetSign. Pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts.",
         "factor": -0.38,
         "objects": [
           {
@@ -657,13 +657,13 @@
             "row": "far"
           },
           {
-            "kind": "trafficLight",
-            "x": 0.05,
+            "kind": "lamppost",
+            "x": 0.16,
             "row": "near"
           },
           {
-            "kind": "lamppost",
-            "x": 0.16,
+            "kind": "trafficLight",
+            "x": 0.05,
             "row": "near"
           },
           {

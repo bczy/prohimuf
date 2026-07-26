@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
-import { MASTHEAD, MOTION, STOCK, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import {
+  CHROME,
+  MASTHEAD,
+  MOTION,
+  REDUCED_MOTION_QUERY,
+  SMOKE_INK,
+  SMOKE_SPRITE_PATH,
+  STOCK,
+  SHORT_LANDSCAPE_MEDIA,
+  unionReducedMotion,
+  useMediaQuery,
+} from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
 import { cx } from "./controls/cx";
 import styles from "./TitleScreen.module.css";
@@ -21,6 +32,175 @@ const INFOLINE_ROW = "☎ INFO-LINE · 08 36 23 98 23";
 const CTA = "[ COMPOSE L'INFO-LINE ]";
 const MICROCOPY = "le répondeur donne le point de RV";
 
+// The wordmark, one entry per letter the reveal animates (see TitleScreen.module.css).
+const WORDMARK = ["M", "U", "F"] as const;
+
+/**
+ * The three ways the cover can paint its wordmark. One is drawn at each mount, so the
+ * same player meets a different cover on a second visit. All three end on the SAME
+ * resting wordmark (chrome fill, ink-black contour); only the way the letters arrive —
+ * and, since 2026-07-25, how long it takes (see the TITLE reveal budget test) — differs:
+ *   spray — an aerosol mist lands wide and soft, then bites into each letter in turn;
+ *   paint — a hand fills each letter line by line, one colour per pass, pausing between
+ *           strokes: the slow one, and the only one that reads as a gesture;
+ *   blast — one detonation, and a cloud of drifting puffs that clears off the word.
+ */
+export type TitleAnimation = "spray" | "paint" | "blast";
+
+/**
+ * Equiprobable draw over the three variants. The RNG is injected (the `makeDebris`
+ * idiom) so the partition is unit-testable without stubbing globals, and the final
+ * `return` is total: a `rand()` of exactly 1 — or a NaN from a broken stub — still
+ * yields a real variant instead of `undefined`.
+ *
+ * Only the FIRST cover of a visit is drawn: from there the cycle rotates in a fixed order
+ * (see `nextTitleAnimation`), so a player who waits sees all three whatever they drew.
+ */
+export function pickTitleAnimation(rand: () => number): TitleAnimation {
+  const draw = rand();
+  if (draw < 1 / 3) return "spray";
+  if (draw < 2 / 3) return "paint";
+  return "blast";
+}
+
+// The rotation, in the order the cover works through it. Deliberately fixed rather than
+// re-drawn each cycle: a second random draw can repeat itself, and a player watching the
+// cover twice in a row would be shown the same trick — the whole point of cycling is that
+// all three are eventually seen.
+const ANIMATION_ORDER: readonly TitleAnimation[] = ["spray", "paint", "blast"];
+
+/** The variant that follows `current` in the cycle; wraps, and is total on a bad input. */
+export function nextTitleAnimation(current: TitleAnimation): TitleAnimation {
+  const at = ANIMATION_ORDER.indexOf(current);
+  return ANIMATION_ORDER[(at + 1) % ANIMATION_ORDER.length] ?? ANIMATION_ORDER[0] ?? "spray";
+}
+
+/**
+ * How long each variant takes to finish the WHOLE wordmark — the moment its last letter
+ * lands, and so the moment the cover starts holding the finished mark. Derived from the
+ * motion tokens and from the wordmark the DOM actually renders (`WORDMARK.length`), because
+ * a staggered variant's wall-clock life is `(letters - 1) × stagger + duration`; the blast
+ * fires all three letters at once, so its life is its cloud's. Exported: the reveal-budget
+ * test measures THIS, not a copy of the arithmetic.
+ */
+export const TITLE_REVEAL_MS: Readonly<Record<TitleAnimation, number>> = {
+  spray: (WORDMARK.length - 1) * MOTION.titleSprayStaggerMs + MOTION.titleSprayMs,
+  paint: (WORDMARK.length - 1) * MOTION.titlePaintStaggerMs + MOTION.titlePaintMs,
+  blast: MOTION.titleBlastMs,
+};
+
+/**
+ * One turn of the cover's cycle: which variant is being painted, and whether it is being
+ * wiped off to make room for the next one. `n` is the turn counter and nothing else — it is
+ * the React `key` of the wordmark, so every new turn REMOUNTS the letters and their CSS
+ * animations start again from their first frame. (Restarting a CSS animation in place would
+ * mean toggling the animation name and forcing a reflow between the two; a remount is the
+ * honest version of the same thing, and it also gives the blast a fresh cloud.)
+ */
+interface TitleCycle {
+  readonly n: number;
+  readonly animation: TitleAnimation;
+  readonly clearing: boolean;
+}
+
+/**
+ * The reduced-motion signal, read (never written) by the title cover: the OS query unioned
+ * with the in-app MOUVEMENT RÉDUIT toggle, which `applyReducedMotion` mirrors onto the
+ * document root. Both triggers matter here for the same reason they matter in the stylesheet
+ * (ADR-0054 §3) — except this one has to reach JS, because a cover that keeps re-painting
+ * itself every ten seconds is exactly what a player asking for reduced motion is asking to be
+ * spared, and no `animation: none` can stop a timer.
+ */
+function useTitleReducedMotion(): boolean {
+  const osReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  const [appReducedMotion, setAppReducedMotion] = useState(readRootReducedMotion);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const sync = (): void => {
+      setAppReducedMotion(readRootReducedMotion());
+    };
+    sync(); // the attribute may have been written between the first render and this effect
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-reduced-motion"],
+    });
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  return unionReducedMotion(appReducedMotion, osReducedMotion);
+}
+
+const readRootReducedMotion = (): boolean =>
+  typeof document !== "undefined" &&
+  document.documentElement.getAttribute("data-reduced-motion") === "true";
+
+/**
+ * ONE puff of the blast's smoke: where it starts (em, from the wordmark's centre), how big
+ * it is, where it drifts to, how much it grows on the way, how dark it gets at its peak, and
+ * the slice of the cloud's window it lives in — the same six behaviours the boss veil gives
+ * its particles (`createSmokeField`, `src/render/scene/smokeParticles.ts`).
+ */
+type SmokePuff = readonly [
+  x: number,
+  y: number,
+  size: number,
+  driftX: number,
+  driftY: number,
+  grow: number,
+  peak: number,
+  delay: number,
+  life: number,
+];
+
+/**
+ * The blast's smoke, as a fixed field of drifting puffs (the boss veil's model, ported to
+ * the DOM — see `.smoke` in TitleScreen.module.css). Drawn ONCE, offline, from the boss
+ * field's own spawn ranges over a 6×3 stratified grid so the cloud has no bald spot at its
+ * peak — the dispersal only reads as a reveal if the wordmark was actually hidden. Baked in
+ * as a table rather than drawn at mount: the cover must not shuffle its cloud on every
+ * visit, and the render path stays free of `Math.random` (the FLYER_*_SEED discipline).
+ */
+const SMOKE_PUFFS: readonly SmokePuff[] = [
+  [-1.22, -0.17, 1.64, -0.48, -0.65, 1.62, 0.95, 0.1, 0.68],
+  [-0.71, -0.23, 1.28, -0.62, -1.19, 1.55, 0.93, 0.03, 0.97],
+  [-0.35, -0.29, 1.45, -0.28, -0.63, 1.51, 0.96, 0.1, 0.75],
+  [0.33, -0.24, 1.55, 0.24, -1.02, 1.68, 0.86, 0.07, 0.8],
+  [0.65, -0.19, 1.68, 0.31, -0.61, 1.79, 0.9, 0.06, 0.92],
+  [1.05, -0.19, 1.48, 0.02, -0.69, 1.53, 0.87, 0.03, 0.95],
+  [-1.26, 0.14, 1.48, -0.45, -0.57, 1.89, 0.88, 0.04, 0.71],
+  [-0.73, 0.08, 1.46, -0.16, -0.87, 1.46, 0.99, 0.07, 0.83],
+  [-0.31, 0.0, 1.55, -0.2, -0.66, 1.3, 0.9, 0.1, 0.82],
+  [0.23, 0.08, 1.25, 0.01, -0.5, 1.52, 0.98, 0.1, 0.78],
+  [0.87, 0.09, 1.36, -0.08, -0.49, 1.83, 1.0, 0.01, 0.73],
+  [1.3, 0.06, 1.68, -0.01, -0.86, 1.47, 0.87, 0.06, 0.94],
+  [-1.27, 0.28, 1.32, -0.34, -0.9, 1.91, 0.98, 0.02, 0.7],
+  [-0.84, 0.27, 1.25, -0.6, -0.63, 1.87, 0.87, 0.1, 0.86],
+  [-0.33, 0.28, 1.5, -0.49, -0.71, 1.66, 0.91, 0.04, 0.8],
+  [0.31, 0.35, 1.27, 0.31, -0.97, 1.42, 0.93, 0.02, 0.97],
+  [0.8, 0.25, 1.61, 0.0, -0.5, 1.42, 0.95, 0.05, 0.76],
+  [1.11, 0.37, 1.17, -0.25, -0.98, 1.68, 0.89, 0.08, 0.72],
+];
+
+// The cloud's paint, handed to `.puff` inline (same ADR-0046 escape hatch as CHROME_VARS): the
+// boss veil's grey, and the boss veil's own sprite as the puffs' alpha — the URL has to be
+// built here because a CSS module cannot read Vite's BASE_URL, and the cover ships under a
+// repo sub-path on the preview.
+const SMOKE_VARS = {
+  "--puff-ink": SMOKE_INK,
+  "--puff-sprite": `url(${import.meta.env.BASE_URL}${SMOKE_SPRITE_PATH})`,
+} as CSSProperties;
+
+// Chrome band tones, handed to the CSS module as inline custom properties (ADR-0046: a
+// value with a single consumer flows inline rather than into the global token bridge).
+const CHROME_VARS = {
+  "--chrome-hi": CHROME.hi,
+  "--chrome-mid": CHROME.mid,
+  "--chrome-lo": CHROME.lo,
+  "--chrome-edge": CHROME.edge,
+} as CSSProperties;
+
 /**
  * TITLE surface (ADR-0021 D1) — the zine cover on `STOCK.shell`. Single-action entry:
  * the whole surface is the hit target; a click / tap / printable key / Enter / Space /
@@ -30,6 +210,45 @@ const MICROCOPY = "le répondeur donne le point de RV";
  */
 export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
   const ctaRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useTitleReducedMotion();
+  // The FIRST variant is drawn ONCE per mount (lazy initialiser), never per render — a
+  // re-render must not restart the cover with a different animation. Cosmetic randomness in
+  // the render layer, the same licence UrbanMotion's debris field takes; nothing in
+  // `src/game` observes it, so no seeded PRNG is owed. Every variant after it comes from the
+  // fixed rotation, not from a second draw.
+  const [cycle, setCycle] = useState<TitleCycle>(() => ({
+    n: 0,
+    animation: pickTitleAnimation(Math.random),
+    clearing: false,
+  }));
+
+  // The cycle itself: paint the variant, hold the finished wordmark long enough to read it,
+  // wipe it, start the next one. ONE timer is ever pending, and re-running this effect on
+  // each turn is what schedules the following one — so there is no interval to leak, and
+  // unmounting mid-turn cancels the only thing outstanding. Under reduced motion no timer is
+  // scheduled at all: the first cover is painted (as `animation: none`, i.e. instantly
+  // finished) and the cover then stays exactly as it is.
+  useEffect(() => {
+    if (reducedMotion) return;
+    const holdMs = TITLE_REVEAL_MS[cycle.animation] + MOTION.titleCycleHoldMs;
+    const id = window.setTimeout(
+      () => {
+        setCycle((current) =>
+          current.clearing
+            ? {
+                n: current.n + 1,
+                animation: nextTitleAnimation(current.animation),
+                clearing: false,
+              }
+            : { ...current, clearing: true },
+        );
+      },
+      cycle.clearing ? MOTION.titleCycleClearMs : holdMs,
+    );
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [cycle, reducedMotion]);
 
   const enter = useCallback((): void => {
     onEnter();
@@ -63,8 +282,10 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
     enter();
   }
 
+  // Jaune stock — TITLE only (art-direction §2bis.1 pins the fluo copier card to the cover;
+  // every other pre-game surface stays on newsprint/shell).
   return (
-    <PaperSheet stock={STOCK.shell} style={{ userSelect: "none" }}>
+    <PaperSheet stock={STOCK.jaune} style={{ userSelect: "none" }}>
       <style>{`
         @keyframes mufTitleBlink{0%,100%{opacity:1}50%{opacity:0}}
         /* Short-landscape (ADR-0024): keep the single centered column but shrink the
@@ -103,11 +324,58 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           {ISSUE_LABEL}
         </div>
 
+        {/* Wordmark — painted the moment the cover shows, by the variant whose turn it is
+            (the class picks the keyframes; `data-muf-title-anim` is the stable hook for tests
+            and the screenshot harness). Each span carries its stagger index and its
+            `data-char` (which feeds the chrome-fill clone). The `key` is the cycle counter:
+            a new turn remounts these spans, which is what makes their CSS animations run
+            again from the first frame. Nothing here is per-frame state — a reduced-motion
+            user gets the finished wordmark from the very first paint, and it never changes. */}
         <div
-          className={styles.wordmark}
-          style={{ fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))" }}
+          key={cycle.n}
+          className={cx(
+            styles.wordmark,
+            styles[cycle.animation],
+            cycle.clearing && styles.clearing,
+          )}
+          data-muf-title-anim={cycle.animation}
+          style={{
+            ...CHROME_VARS,
+            fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
+          }}
         >
-          MUF
+          {WORDMARK.map((char, i) => (
+            // Two nested spans, because the can's mist and the letter's ink must fade
+            // INDEPENDENTLY (a parent's opacity would take its children with it): the outer
+            // cell owns layout + the overspray it paints in ::after, the inner one owns the
+            // ink (contour + chrome clone) and is what every variant actually reveals.
+            <span
+              key={char}
+              className={styles.letter}
+              style={{ "--muf-letter-index": i.toString() } as CSSProperties}
+            >
+              <span data-char={char} className={styles.glyph}>
+                {char}
+              </span>
+            </span>
+          ))}
+          {/* Detonation cloud — LAST so it paints over the letters (both are positioned,
+              so DOM order decides), and only for the variant that has one. Each puff drifts
+              on its own clock (see `.puff`); the container only positions them — it holds no
+              mask of its own (a container-level halftone mask was the clip bug Bertrand saw),
+              so the cloud can drift past its edges. The halftone grain lives on each puff. */}
+          {cycle.animation === "blast" && (
+            <span
+              aria-hidden={true}
+              data-muf-title-smoke={true}
+              className={styles.smoke}
+              style={SMOKE_VARS}
+            >
+              {SMOKE_PUFFS.map((puff) => (
+                <span key={puff.join()} className={styles.puff} style={puffVars(puff)} />
+              ))}
+            </span>
+          )}
         </div>
 
         <div
@@ -157,6 +425,23 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
       </div>
     </PaperSheet>
   );
+}
+
+// One puff's behaviour, handed to `.puff` as inline custom properties: geometry in `em` so
+// the cloud scales with the wordmark, life/delay as fractions of the blast's motion token
+// (ADR-0046 — a per-instance value has no business in the global token bridge).
+function puffVars([x, y, size, driftX, driftY, grow, peak, delay, life]: SmokePuff): CSSProperties {
+  return {
+    "--puff-x": `${x.toString()}em`,
+    "--puff-y": `${y.toString()}em`,
+    "--puff-size": `${size.toString()}em`,
+    "--puff-dx": `${driftX.toString()}em`,
+    "--puff-dy": `${driftY.toString()}em`,
+    "--puff-grow": grow.toString(),
+    "--puff-peak": peak.toString(),
+    "--puff-delay": delay.toString(),
+    "--puff-life": life.toString(),
+  } as CSSProperties;
 }
 
 // Per-line variable typography; static font/colour/transform live in styles.info.

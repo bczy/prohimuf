@@ -20,7 +20,10 @@ import type { Texture } from "three";
 
 // The CC0 sprite (see `public/assets/fx/LICENSES.md`). Loaded ONCE, shared by every material.
 const SMOKE_URL = `${import.meta.env.BASE_URL}assets/fx/smoke.png`;
-const SMOKE_TINT = "#9a9a9a"; // desaturated haze; never bright (would trip the CRT bloom gate)
+// Desaturated haze; never bright (would trip the CRT bloom gate). Mirrored, NOT imported, as
+// `SMOKE_INK` in `src/render/ui/print/tokens.ts` (ADR-0068 keeps TITLE off three.js) — any
+// change to one must be made in both.
+const SMOKE_TINT = "#9A9A9A";
 export const SMOKE_RENDER_ORDER = 10; // in front of boss(6)/rings(8), below parry halo/glyph(13/14)
 
 // The world region the field fills, anchor-relative (the boss tableau is ~2.2 units wide).
@@ -113,8 +116,25 @@ export interface SmokeField {
  * Build a pooled smoke particle field of `maxParticles` billboards (shared geometry, per-particle
  * material so each puff fades independently). The sprite loads once, shared by every material; the
  * field stays hidden until it arrives so no untextured square ever flashes.
+ *
+ * `renderOrder` defaults to {@link SMOKE_RENDER_ORDER} (the boss veil's band, unchanged). The
+ * street-vent plumes pass a LOWER band so ambient smoke can never drift in front of the courier
+ * or the delivery van — the "Livrer" targets it must never mask.
+ *
+ * `maxScale` caps a puff's world size. It defaults to unbounded, which is the boss tableau's
+ * behaviour to the byte: that veil is authored against a ~2.2-unit tableau and its growth is
+ * sized for it. An AMBIENT consumer has no such frame — a puff spawns at 0.5–0.95 and grows
+ * 0.14–0.4/s over a 2.6–5.2 s life, so the worst case reaches ≈3.0 world units (~113 px) with
+ * up to `maxParticles` of them overlapping in one cluster. That is overdraw bandwidth for
+ * pixels nobody asked for, so the street vents pass a cap (gpu-specialist verdict, item 1).
+ * The cap bounds the SIZE only: lifetime, drift, fade and respawn are untouched, so a capped
+ * puff still lives and dies on its own schedule, it just stops inflating.
  */
-export function createSmokeField(maxParticles: number): SmokeField {
+export function createSmokeField(
+  maxParticles: number,
+  renderOrder: number = SMOKE_RENDER_ORDER,
+  maxScale: number = Number.POSITIVE_INFINITY,
+): SmokeField {
   const group = new Group();
   const geometry = new PlaneGeometry(1, 1);
   const meshes: Mesh[] = [];
@@ -129,7 +149,7 @@ export function createSmokeField(maxParticles: number): SmokeField {
     });
     material.color.set(SMOKE_TINT);
     const mesh = new Mesh(geometry, material);
-    mesh.renderOrder = SMOKE_RENDER_ORDER;
+    mesh.renderOrder = renderOrder;
     mesh.visible = false;
     group.add(mesh);
     meshes.push(mesh);
@@ -188,7 +208,8 @@ export function createSmokeField(maxParticles: number): SmokeField {
       if (opts.reducedMotion) {
         mesh.position.set(opts.centreX + p.staticOx, opts.centreY + p.staticOy, p.z);
         mesh.rotation.z = p.staticRot;
-        mesh.scale.set(p.staticScale, p.staticScale, 1);
+        const staticScale = Math.min(p.staticScale, maxScale);
+        mesh.scale.set(staticScale, staticScale, 1);
         mat.opacity = p.staticOpacity * opts.envelope;
         continue;
       }
@@ -196,13 +217,16 @@ export function createSmokeField(maxParticles: number): SmokeField {
       if (p.life >= p.maxLife) spawn(p, false);
       p.ox += p.vx * step;
       p.oy += p.vy * step;
-      p.scale += p.growth * step;
+      p.scale = Math.min(p.scale + p.growth * step, maxScale);
       p.rot += p.rotSpeed * step;
       const lifeT = p.life / p.maxLife; // 0..1
       const fade = Math.sin(lifeT * Math.PI); // fade in then out
       mesh.position.set(opts.centreX + p.ox, opts.centreY + p.oy, p.z);
       mesh.rotation.z = p.rot;
-      mesh.scale.set(p.scale, p.scale, 1);
+      // Clamped at DRAW too, not only on growth: a puff spawns at 0.5–0.95, so a cap
+      // tighter than the spawn range must still bind on its first frame.
+      const drawScale = Math.min(p.scale, maxScale);
+      mesh.scale.set(drawScale, drawScale, 1);
       mat.opacity = p.peakOpacity * fade * opts.envelope;
     }
   };

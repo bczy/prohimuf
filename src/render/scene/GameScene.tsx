@@ -37,6 +37,7 @@ import { FeedbackLayer } from "./FeedbackLayer";
 import type { Floater } from "./FeedbackLayer";
 import { ImpactEffects } from "@render/effects/ImpactEffects";
 import { PlayerHitEffects } from "@render/effects/PlayerHitEffects";
+import { UrbanMotion } from "@render/effects/UrbanMotion";
 import { CrtPass } from "@render/effects/CrtPass";
 import type { ImpactChannel, PlayerHitChannel } from "@hooks/useGameLoop";
 import { useMouse } from "@hooks/useMouse";
@@ -123,6 +124,9 @@ interface Props {
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
    *  and moves the crosshair to the flat overlay layer (ADR-0031). */
   crt?: boolean;
+  /** VHS scan-line travel toggle (prefs.vhs). Only bites while `crt` is on — it
+   *  makes the CRT composite's existing scanline comb crawl slowly upward. */
+  vhs?: boolean;
   /** Effective reduced motion (ADR-0054 §3): the shared derived signal, forwarded
    *  to CrtPass so the CRT grain/flicker freeze honours the in-app toggle + OS. */
   reducedMotion?: boolean;
@@ -140,6 +144,7 @@ export function GameScene({
   onBossQte,
   isMobile = false,
   crt = false,
+  vhs = false,
   reducedMotion = false,
 }: Props): JSX.Element {
   // The level is an image now: size the playfield from the facade art. The
@@ -459,6 +464,16 @@ export function GameScene({
       <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} reducedMotion={reducedMotion} />
       <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
       <BulletSprite stateRef={stateRef} />
+      {/* Ambient street life (vent steam + blowing litter). Suppressed for the
+          whole boss fight and frozen on pause / hostage QTE / reduced motion. */}
+      <UrbanMotion
+        stateRef={stateRef}
+        fullW={fullW}
+        facadeH={facadeH}
+        isMobile={isMobile}
+        paused={paused === true}
+        reducedMotion={reducedMotion}
+      />
       <ImpactEffects channelRef={impactChannelRef} />
       <PlayerHitEffects channelRef={playerHitChannelRef} reducedMotion={reducedMotion} />
       <FeedbackLayer queueRef={feedbackRef} />
@@ -468,6 +483,7 @@ export function GameScene({
           tier={isMobile ? "lite" : "full"}
           paused={paused === true}
           reducedMotion={reducedMotion}
+          vhs={vhs}
         />
       )}
     </>

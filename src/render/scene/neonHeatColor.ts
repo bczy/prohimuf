@@ -30,14 +30,25 @@ function hexToRgb(hex: string): Rgb {
 }
 
 /**
- * Heat-ramp anchors. Green and orange are bible accents (docs/art-direction.md
- * §2.1); the red is a deliberate non-palette "time's up" urgency hue (see
- * ADR-0025). The wide flat orange band (0.35→0.70) makes the rim linger in
- * orange — « passant par le orange plus longtemps ».
+ * The codebase's ONE green/amber/red state triple. Green and orange are bible
+ * accents (docs/art-direction.md §2 law 1 / §2.1); the red is a deliberate
+ * non-palette "time's up" urgency hue (see ADR-0025).
+ *
+ * Exported since the art gate's finding G5 — « green/amber/red as a state language
+ * needs one anchored triple, or every feature will mint its own ». The energy aura
+ * (`@render/effects/energyGlow`) consumes these exact three rather than inventing a
+ * second ramp, so a future bible amendment moves both at once.
+ *
+ * The wide flat orange band (0.35→0.70) below is the ENEMY ramp's own shaping —
+ * « passant par le orange plus longtemps » — not part of the shared anchors.
  */
-const GREEN = "#78FF3C";
-const ORANGE = "#FF8C14";
-const RED = "#FF3030";
+export const STATE_GREEN = "#78FF3C";
+export const STATE_AMBER = "#FF8C14";
+export const STATE_RED = "#FF3030";
+
+const GREEN = STATE_GREEN;
+const ORANGE = STATE_AMBER;
+const RED = STATE_RED;
 
 const STOPS: readonly Stop[] = [
   { at: 0.0, rgb: hexToRgb(GREEN) },

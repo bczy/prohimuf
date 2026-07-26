@@ -582,6 +582,7 @@ export function App(): JSX.Element {
           paused={paused || rotateBlocked}
           isMobile={IS_MOBILE}
           crt={prefs.crt}
+          vhs={prefs.vhs}
           reducedMotion={reducedMotion}
         />
       </Suspense>

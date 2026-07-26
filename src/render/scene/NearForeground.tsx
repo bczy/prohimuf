@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { AdditiveBlending } from "three";
 import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
 import type { NearForegroundObject } from "@game/levels/levelArt";
@@ -13,6 +14,8 @@ import {
 } from "./nearForegroundTextures";
 import { DEFAULT_SIGNAL, signalKey, trafficSignalPhase } from "./trafficSignal";
 import { STREET_DEPTH } from "./streetDepth";
+import { neonSignageFor } from "./neonSignage";
+import { getRadialGlowTexture } from "@render/effects/radialGlowTexture";
 
 // The flat facade art has a single pavement at the bottom, so BOTH rows stand on
 // the same ground line (facade-normalized, y-down) — any vertical offset floats a
@@ -149,6 +152,15 @@ function Row({
         // within the SAME renderOrder — i.e. it inherits its row's slot in the
         // street stack (far row behind the courier, near row in front of it).
         const overlay = isTrafficLight ? getTrafficLightOverlayTexture() : null;
+        // Acid-neon signage: an additive glow quad over the emitting props
+        // (réverbère head warm, signage/métal acid). It rides layer 0 into the CRT
+        // composite's pass 1, so its saturated core clears the bright-pass gate and
+        // the existing bloom draws the halo — no new pass, `CrtPass` untouched.
+        // Drawn at z+0.002 (in front of the traffic-light overlay's z+0.001) within
+        // the SAME renderOrder, so the prop stack's ordering vs courier/van is
+        // unchanged. Static: no day/night or combat signal exists to modulate it.
+        const neon = neonSignageFor(obj.kind, index);
+        const neonMap = neon === null ? null : getRadialGlowTexture();
         return (
           <group key={`near-${obj.kind}-${String(index)}`}>
             <mesh position={[worldX, centerY, z]} renderOrder={renderOrder}>
@@ -167,6 +179,23 @@ function Row({
               <mesh position={[worldX, centerY, z + 0.001]} renderOrder={renderOrder}>
                 <planeGeometry args={[planeW, planeH]} />
                 <meshBasicMaterial map={overlay} transparent depthWrite={false} />
+              </mesh>
+            )}
+            {neon !== null && neonMap !== null && (
+              <mesh
+                position={[worldX + neon.x * planeW, centerY + neon.y * planeH, z + 0.002]}
+                scale={[neon.size * planeH, neon.size * planeH, 1]}
+                renderOrder={renderOrder}
+              >
+                <planeGeometry args={[1, 1]} />
+                <meshBasicMaterial
+                  map={neonMap}
+                  color={neon.color}
+                  opacity={neon.opacity}
+                  transparent
+                  blending={AdditiveBlending}
+                  depthWrite={false}
+                />
               </mesh>
             )}
           </group>

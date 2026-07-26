@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -11,9 +11,10 @@ import {
   type OrthographicCamera,
   type Texture,
 } from "three";
+import { AURA_HIDDEN, createEntityAura } from "@render/effects/entityAura";
 import type { GameState } from "@game/types/gameState";
 import { isQteActive, RING_HIT_RADIUS } from "@game/systems/qteSystem";
-import { resolveEnemyTexture, muzzleFor } from "./enemyTextures";
+import { resolveEnemyTexture, muzzleFor, getSilhouetteFor } from "./enemyTextures";
 import type { ResolvedEnemyTexture } from "./enemyTextures";
 import { getHostageGirlTexture } from "./hostageTextures";
 import { getAccompliceTexture } from "./accompliceTextures";
@@ -37,6 +38,7 @@ import {
   ringZoneColour,
   ringZoneEmphasis,
 } from "./hostageCue";
+import { STREET_DEPTH } from "./streetDepth";
 import type { HudHostageQte } from "@render/ui/HUD";
 
 // The captor: a SQUARE plane (his texture is 256×256, figure centred — no aspect
@@ -385,6 +387,35 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
   // The static tableau is positioned ONCE per activation (the captor never moves);
   // reset when the QTE goes inactive so a fresh QTE re-places from its own anchor.
   const positionedRef = useRef(false);
+  // Contact shadow + energy rim for the CAPTOR only.
+  //
+  // The hostage had one too in the first cut and it was cut at the art gate
+  // (2026-07-25): one global `energy` scalar painted the SAME hue on the man you
+  // must shoot and on the woman you must not. La loi du glow's job is identification
+  // — a rim says "this object, this class" — so a red rim on a don't-shoot figure
+  // says the opposite of the truth. `CourierSprite` was already excluded for exactly
+  // this reason; the hostage is the original don't-shoot figure.
+  //
+  // The slot comes from STREET_DEPTH: strictly below the captor mesh's 6 (so the rim
+  // never draws over the body it traces) but ABOVE the whole street stack. It shipped
+  // at a bare 5, which TIED the facade overlays and sat under the van (5.2/5.25), the
+  // courier (5.5) and the near row (5.75) — all painted after it, so the ironwork and
+  // a QTE-frozen courier bit the rim while its host body was painted at 6 (I1).
+  const captorAura = useMemo(
+    () =>
+      createEntityAura({
+        renderOrder: STREET_DEPTH.qteAura.order,
+        rimZ: STREET_DEPTH.qteAura.z,
+        shadowZ: STREET_DEPTH.qteAura.z - 0.01,
+      }),
+    [],
+  );
+  useEffect(
+    () => () => {
+      captorAura.dispose();
+    },
+    [captorAura],
+  );
   // Reduced motion (UX spec §4.1) now arrives via the `reducedMotion` prop — the
   // shared union signal from `useReducedMotionRoot` (App → GameScene), the ONE
   // authority (ADR-0054 §3) — degrading the peek cue / execution flash to a steady,
@@ -441,6 +472,7 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       for (const g of qteBulletGroups.current) {
         if (g !== null) g.visible = false;
       }
+      captorAura.update(AURA_HIDDEN);
       positionedRef.current = false;
       return;
     }
@@ -512,6 +544,20 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
       captorMat.map = captorTex.texture;
       captorMat.needsUpdate = true;
     }
+    // Contact shadow + energy rim, keyed to the pose the captor ACTUALLY displays —
+    // hence placed here, after the stance texture resolves, not with the static
+    // placement below: the silhouette must be re-baked per stance or the rim would
+    // trace the covered pose while he peeks. `getSilhouetteFor` caches per texture,
+    // so a stance swap is a map lookup, not a bake.
+    captorAura.update({
+      visible: true,
+      x: qte.anchor.x,
+      y: qte.anchor.y,
+      width: QTE_W,
+      height: QTE_H,
+      energy: stateRef.current.energy,
+      silhouette: captorTex === null ? null : getSilhouetteFor(captorTex.texture),
+    });
     // On LOST he strobes the alarm (the execution); on WON he reads the resolved
     // win green — NOT the PEEKING danger red the tick leaves his stance in through
     // the win hold. Otherwise the live COVERED/PEEKING reinforcement tint.
@@ -720,6 +766,8 @@ export function HostageQteSprite({ stateRef, onHostageQte, reducedMotion }: Prop
     // The hostage's higher order + z draws her over the captor; the peek cue (8)
     // sits on top of both.
     <>
+      {/* The captor's contact shadow + energy rim (STREET_DEPTH.qteAura, under him). */}
+      <primitive object={captorAura.group} />
       <mesh ref={captorRef} renderOrder={6} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial transparent depthWrite={false} />

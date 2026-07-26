@@ -55,6 +55,39 @@ export const MARK = {
   pink: "#D62A7A", // DIFFICILE
 } as const;
 
+// Chrome / silver bands — the TITLE wordmark fill ONLY. NOT an ink and NOT a marker: the
+// letter is still DEFINED by its ink-black contour (art-direction §2bis), the bands only
+// fill the inside of that contour, so the cover stays "loi de l'imprimé" with one metallic
+// accent. Four POSTERISED tones, laid down as hard stops (lead-art gate): a page whose
+// identity is the degraded photocopy cannot carry the one object with a continuous ramp and
+// a specular fold — a metal sticker run through a copier collapses to flat bands. Every tone
+// stays inside the printable band: no near-white sheen on a light stock (§2bis.2). Neutral
+// greys (no blue tint). Deliberately OUT of the applyPrintTokens bridge (single consumer):
+// TitleScreen injects these as inline CSS custom properties on the wordmark — the ADR-0046
+// escape hatch — so `--chrome-*` never becomes a global paint license.
+export const CHROME = {
+  hi: "#CFCCC3", // lightest printable band — toner grey, NOT a highlight
+  mid: "#9E9B94", // body band
+  lo: "#6E6C66", // shadow band under the fold
+  edge: "#46443F", // the fold itself; stays clear of the ink-black contour
+} as const;
+
+// Smoke — the TITLE blast cloud's fill, and NOT an ink: it is the desaturated grey the boss
+// veil tints its CC0 puff sprite with (`SMOKE_TINT`, `src/render/scene/smokeParticles.ts`),
+// mirrored here so the cover's cloud is the same smoke as the game's rather than a flat black.
+// The value is duplicated on purpose: the scene module owns a Three colour and importing it
+// here would drag three.js into the pre-game bundle (ADR-0068 keeps TITLE on plain DOM). Any
+// change to one must be made in both — the comment on each side names the other.
+// Deliberately OUT of the applyPrintTokens bridge (single consumer): TitleScreen injects it as
+// an inline custom property on the cloud, the ADR-0046 escape hatch, so no pre-game surface
+// gains a licence to paint grey.
+export const SMOKE_INK = "#9A9A9A";
+
+// The boss's own smoke sprite, reused by the TITLE blast cloud as the puffs' alpha (soft white
+// on transparent — all of its detail is in the alpha channel). Path relative to Vite's
+// BASE_URL, which the consumer prepends; provenance in `public/assets/fx/LICENSES.md`.
+export const SMOKE_SPRITE_PATH = "assets/fx/smoke.png";
+
 // In-game HUD accent — NOT a print marker ink: the acid neon of the game world,
 // drawn OVER the 3D scene only (never on a pre-game paper surface), always with
 // an ink-black keyline, flat fill, zero glow (§2bis).
@@ -130,6 +163,19 @@ export const TAPE_FRAY_SEED: Record<Corner, readonly number[]> = {
   br: [0.7, 1.5, 1.7, 1.0, 1.3, 1.8],
 };
 
+// The paint variant's rhythm, from the bottom up: a can lays ONE line, the arm travels to the
+// start of the next one (no paint in the air), and once the letter is filled the writer swaps
+// cans for the other colour and starts again. Everything below is derived from these four, so
+// the whole gesture is retuned by moving one number — and the wordmark's total with it.
+const TITLE_PAINT_LINES = 4; // spray lines per pass — the ladder in TitleScreen.module.css
+const TITLE_PAINT_LINE_MS = 120; // one line, laid across the letter — see the ≥6-frame rule
+const TITLE_PAINT_LINE_GAP_MS = 80; // …then the arm travels back: silence, no paint appears
+const TITLE_PAINT_PASS_GAP_MS = 270; // between two colours: put one can down, pick the next up
+const TITLE_PAINT_LETTER_GAP_MS = 170; // and the step across to the next letter
+const TITLE_PAINT_PASSES = 2; // the ink contour, then the metal
+const TITLE_PAINT_PASS_MS = TITLE_PAINT_LINES * (TITLE_PAINT_LINE_MS + TITLE_PAINT_LINE_GAP_MS);
+const TITLE_PAINT_LETTER_MS = TITLE_PAINT_PASS_MS * TITLE_PAINT_PASSES + TITLE_PAINT_PASS_GAP_MS;
+
 // Motion tokens (ms) — all forced to 0 under prefers-reduced-motion except the typewriter.
 export const MOTION = {
   titleToMenu: 280,
@@ -139,6 +185,49 @@ export const MOTION = {
   charDelayMs: 28, // reuse the shipped NarrativeScreen value (consistency)
   cursorBlinkMs: 850,
   lockedShakeMs: 180,
+  // TITLE wordmark reveal — ONE of three variants is drawn at each mount (see
+  // `pickTitleAnimation`). Each variant gets its OWN budget (they are no longer held to a
+  // single shared window: see the TITLE reveal budget test for why the parity was traded
+  // away). All are killed (animation: none, wordmark shown at its resolved state) under
+  // either reduced-motion trigger, in TitleScreen.module.css.
+  //
+  // "spray": one can-stroke per letter (well under the 1s/letter budget)…
+  titleSprayMs: 620,
+  // …and the gap between two strokes — the hand moving to the next letter. ≈ 2.02s.
+  titleSprayStaggerMs: 700,
+  // "paint": the can FILLS each letter line by line, and it lays one colour at a time — so a
+  // letter takes one sweep per colour: the ink contour, then the metal (Bertrand,
+  // 2026-07-25). The two halves of a line's slot — the spray, then the silence while the arm
+  // travels — are what the rhythm is made of; the CSS derives its `--muf-line-on` overshoot
+  // from their ratio (bound by the tokens test).
+  titlePaintLineMs: TITLE_PAINT_LINE_MS,
+  titlePaintLineGapMs: TITLE_PAINT_LINE_GAP_MS,
+  // One pass = the four lines of one colour, travel time included.
+  titlePaintPassMs: TITLE_PAINT_PASS_MS,
+  // Pass 1 → pass 2, i.e. the first pass plus the can swap (the CSS reads it as a delay).
+  titlePaintPassStepMs: TITLE_PAINT_PASS_MS + TITLE_PAINT_PASS_GAP_MS,
+  // One letter, both passes and the swap between them…
+  titlePaintMs: TITLE_PAINT_LETTER_MS,
+  // …and the next letter only starts once the can has left this one: there is ONE can, so no
+  // two letters — and no two lines — are ever being painted at the same instant. ≈ 5.95s for
+  // the wordmark, the slowest of the three variants by design (see the budget test).
+  titlePaintStaggerMs: TITLE_PAINT_LETTER_MS + TITLE_PAINT_LETTER_GAP_MS,
+  // "blast": ONE detonation for the whole wordmark (no per-letter stagger) — the smoke
+  // cloud's full life. Long enough for the puffs to visibly DRIFT (they are a particle
+  // field now, not a dot screen: a cloud that never moves does not read as smoke).
+  titleBlastMs: 2800,
+  // …and the much shorter settle of the letters themselves, which are thrown out by the
+  // blast and are already at rest behind the cloud long before it clears.
+  titleBlastSettleMs: 520,
+  // The cover does not paint its wordmark once and stop: it CYCLES while the title screen is
+  // up (Bertrand, 2026-07-26), so a player who lingers sees all three variants instead of
+  // whichever one their draw happened to give them. Once a variant has finished, the wordmark
+  // stays up long enough to be READ…
+  titleCycleHoldMs: 4000,
+  // …then it is wiped off — a short fade, not a cut, so the sheet going blank is not a flash —
+  // and the next variant starts on a clean cover. Killed with everything else under reduced
+  // motion: there, the wordmark is simply there, and it never moves again.
+  titleCycleClearMs: 320,
 } as const;
 
 // Typographic size scale (px) — NAMED from the sizes the HUD/menus already use

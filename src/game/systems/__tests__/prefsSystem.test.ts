@@ -72,6 +72,48 @@ describe("loadPrefs", () => {
     expect(loaded.crt).toBe(false);
   });
 
+  it("vhs par défaut à true", () => {
+    expect(DEFAULT_PREFS.vhs).toBe(true);
+    expect(loadPrefs().vhs).toBe(true);
+  });
+
+  it("round-trip vhs via savePrefs/loadPrefs", () => {
+    const prefs = { ...DEFAULT_PREFS, vhs: false };
+    savePrefs(prefs);
+    expect(loadPrefs()).toEqual(prefs);
+    expect(loadPrefs().vhs).toBe(false);
+  });
+
+  it("migration blob legacy sans vhs → default true", () => {
+    localStorage.setItem(
+      "muf_prefs",
+      JSON.stringify({
+        soundVolume: 0.7,
+        musicVolume: 0.5,
+        lives: 3,
+        difficulty: "normal",
+        crt: true,
+        reducedMotion: false,
+      }),
+    );
+    expect(loadPrefs().vhs).toBe(true);
+  });
+
+  it("vhs non-booléen → default true", () => {
+    localStorage.setItem("muf_prefs", JSON.stringify({ ...DEFAULT_PREFS, vhs: "yes" }));
+    expect(loadPrefs().vhs).toBe(true);
+  });
+
+  it("vhs=false n'affecte pas les autres champs", () => {
+    const prefs = { ...DEFAULT_PREFS, vhs: false, lives: 5, crt: true };
+    savePrefs(prefs);
+    const loaded = loadPrefs();
+    expect(loaded.lives).toBe(5);
+    expect(loaded.crt).toBe(true);
+    expect(loaded.reducedMotion).toBe(DEFAULT_PREFS.reducedMotion);
+    expect(loaded.vhs).toBe(false);
+  });
+
   it("reducedMotion par défaut à false (ADR-0054 — jamais seed depuis l'OS)", () => {
     expect(DEFAULT_PREFS.reducedMotion).toBe(false);
     expect(loadPrefs().reducedMotion).toBe(false);

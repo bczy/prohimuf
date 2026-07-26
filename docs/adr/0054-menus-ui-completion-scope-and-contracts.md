@@ -1,11 +1,13 @@
-# 0052 — Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract
+# 0054 — Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract
 
-- **Status:** Accepted
+- **Status:** Accepted (amended)
 - **Date:** 2026-07-20
-- **Number:** 0052, allocated via the `adr-new` skill during the `senior-architect` lane
-  cut for `epic-menus-ui-completion` (no `producer` number was pre-recorded in
+- **Number:** self-allocated as 0052 via the `adr-new` skill during the `senior-architect`
+  lane cut for `epic-menus-ui-completion` (no `producer` number was pre-recorded in
   `docs/handoffs/story-menus-ui-completion.md`; self-allocated as max+1 over local files,
-  the index, and `origin/main`, same posture as ADR-0038/0039). Re-check at merge.
+  the index, and `origin/main`, same posture as ADR-0038/0039). The file now ships as
+  **0054** (filename + index) — the H1 above previously still read "0052"; corrected here
+  for internal consistency, no content change (tech-writer, doc-hygiene pass, 2026-07-25).
 
 ## Context
 
@@ -193,3 +195,49 @@ entanglement while still guaranteeing M2 never ships a half-a11y ballot.
 - `NAME_ENTRY` is render-layer only — reviewers must reject any PR that adds it to the
   `src/game` `stateMachine` or reads `isHighScore`/`localStorage` from inside `src/game/`
   render code.
+
+## Amendment — 2026-07-25: the `Prefs` admission rule (four conditions), from `Prefs.vhs`
+
+**Context.** `story-street-graphics-effects` (`docs/handoffs/story-street-graphics-effects.md`,
+stage-6 triage) added a third render-owned field to `Prefs`: `vhs` (boolean, default `true`),
+gating the VHS scan-line travel in `CrtPass`. `prefsSystem.ts` is `dev-gameplay` territory, so
+the lane flagged the cross-lane touch as an escalation rather than assuming it belonged there
+— the behaviour this ADR wants reviewers and lanes to keep having.
+
+`senior-architect` (Winston) ruled the field **legitimate**, on the same reasoning §3 already
+used for `reducedMotion`: `Prefs` is, by design, the persisted OPTIONS record for the whole
+app, not a gameplay struct. `crt` was the first pure post-process toggle stored there;
+`reducedMotion` the second (§3); `vhs` is the third instance of exactly that shape. No rule
+moved — `src/game` gains no import of React or Three (the field is a `boolean`), and nothing
+in `src/game` reads `vhs`; its single consumer is `CrtPass`, reached through
+`App → PlayingCanvas → GameScene`. Refactoring it out into a second, render-owned persistence
+store would mean two migration paths and an OPTIONS screen reading from two places — more
+surface for a purity the boundary law does not actually ask for.
+
+**Decision — the rule is now written down, so the next render-owned field is judged against
+it instead of re-litigated case by case.** A render-owned preference field is admitted into
+`Prefs` **iff all four hold**:
+
+1. **Pure data.** Boolean / number / string-union only — never a function, never a Three or
+   React type.
+2. **A default plus a type-guarded migration, with round-trip tests.** Same shape as `crt`,
+   `reducedMotion`, and now `vhs` in `prefsSystem.ts`.
+3. **A player-facing OPTIONS row.** No hidden render config rides in `Prefs` — if it isn't
+   exposed to the player, it does not belong in the shared OPTIONS/PAUSE record.
+4. **No `src/game` system ever branches on it.** The day one does, the field stops being a
+   display preference and owes a design pass and its own ADR — it has become a gameplay rule
+   wearing a display pref's clothes.
+
+All four held for `vhs`; it is kept in `prefsSystem.ts` on that basis.
+
+## Consequences (amendment)
+
+- `Prefs` gets a durable admission test instead of a fresh escalation every time a render lane
+  needs to persist a toggle. The default expectation is now: escalate, check against the four
+  conditions, decide — not "always ask `senior-architect` from scratch".
+- The guardrail is explicitly there to keep `Prefs` from becoming a junk drawer: condition (4)
+  is the tripwire. A field that starts satisfying all four and later gains a `src/game` reader
+  has silently crossed the boundary law and must be re-designed, not patched.
+- No file in `src/game` or `src/render` changes as a result of this amendment; it documents a
+  ruling already applied to shipped code (`prefsSystem.ts`'s `vhs` field, `CrtPass`'s
+  consumption of it).

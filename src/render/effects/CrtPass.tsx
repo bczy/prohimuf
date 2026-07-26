@@ -18,6 +18,7 @@ import type { Texture } from "three";
 import { deriveCrtParams } from "./crtParams";
 import type { CrtTier } from "./crtParams";
 import { CRT_OVERLAY_LAYER } from "./crtLayers";
+import { SCANLINE_PERIOD_CSS, advanceScanlineScroll, scanlineScrollDevicePx } from "./vhsScanline";
 import { BLUR_FRAG, BRIGHT_FRAG, COMPOSITE_FRAG, FULLSCREEN_VERT } from "./crtShaders";
 
 // Strength of the additive neon halo in the composite. Not a per-tier param
@@ -26,10 +27,6 @@ import { BLUR_FRAG, BRIGHT_FRAG, COMPOSITE_FRAG, FULLSCREEN_VERT } from "./crtSh
 const BLOOM_STRENGTH = 0.45;
 // Soft-knee width above the saturation gate — rejects near-neutral pixels cleanly.
 const SATURATION_KNEE = 0.15;
-// Scanline spacing in CSS pixels — multiplied by devicePixelRatio before it
-// reaches the shader so the visible line pitch is display-independent. 4 gives
-// the chunky late-90s tube read Bertrand asked for (3 was still too discreet).
-const SCANLINE_PERIOD_CSS = 4;
 // Soft-knee width above the brightness gate — feathers the mid-tone → glow cutoff.
 const BRIGHTNESS_KNEE = 0.2;
 // Upper bound for the accumulated frame clock (G). The luminance breathe is
@@ -56,9 +53,17 @@ export function CrtPass({
   tier,
   paused = false,
   reducedMotion = false,
+  vhs = false,
 }: {
   tier: CrtTier;
   paused?: boolean;
+  /**
+   * VHS scan-line travel (`prefs.vhs`): makes the existing scanline comb crawl
+   * slowly UP the frame. Off ⇒ the offset uniform stays 0 and the composite is
+   * exactly the static comb it was before. Frozen alongside the grain/flicker
+   * clock under reduced motion and while paused.
+   */
+  vhs?: boolean;
   /**
    * Effective reduced motion, the shared derived signal (ADR-0054 §3): freezes the
    * animated grain/flicker. Owned once at the render/bridge edge
@@ -134,6 +139,7 @@ export function CrtPass({
       tBloom: { value: null as Texture | null },
       uResolution: { value: new Vector2(1, 1) },
       uScanlinePeriod: { value: SCANLINE_PERIOD_CSS },
+      uScanlineScroll: { value: 0 },
       uTime: { value: 0 },
       uBloomStrength: { value: BLOOM_STRENGTH },
       uScanlineDarkening: { value: 0 },
@@ -232,6 +238,11 @@ export function CrtPass({
   }, [rts, quad, brightMat, blurMat, compositeMat]);
 
   const timeRef = useRef(0);
+  // VHS travel offset, in CSS px, wrapped on the comb period by the pure helper —
+  // its OWN accumulator, not derived from timeRef: timeRef wraps on the flicker
+  // period, which is not a whole number of comb periods, so reusing it would snap
+  // the comb's phase once per wrap (the G problem, one class down).
+  const scanScrollRef = useRef(0);
   // Scratch vector for reading the renderer's drawing-buffer size in-frame (H).
   const drawBufferSize = useMemo(() => new Vector2(), []);
 
@@ -243,6 +254,8 @@ export function CrtPass({
     // the flicker period so the modulo never introduces a breathe phase jump (G).
     if (!reducedMotion && !paused) {
       timeRef.current = (timeRef.current + delta) % FLICKER_TIME_WRAP;
+      // Same freeze gate as the grain/flicker clock: a crawling comb IS motion.
+      if (vhs) scanScrollRef.current = advanceScanlineScroll(scanScrollRef.current, delta);
     }
     const renderer = state.gl;
     const worldScene = state.scene;
@@ -297,6 +310,12 @@ export function CrtPass({
     compositeU.tScene.value = rts.scene.texture;
     compositeU.tBloom.value = rts.blur.texture;
     compositeU.uTime.value = timeRef.current;
+    // Converted through the LIVE device period so the travel speed a viewer sees
+    // is display-independent, and can't drift from the period mid-resize. Toggle
+    // OFF ⇒ 0 ⇒ the comb is exactly the pre-VHS static one.
+    compositeU.uScanlineScroll.value = vhs
+      ? scanlineScrollDevicePx(scanScrollRef.current, compositeU.uScanlinePeriod.value)
+      : 0;
     renderer.setRenderTarget(null);
     renderer.render(quad.scene, quad.camera);
 
