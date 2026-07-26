@@ -76,6 +76,11 @@ async function captureLevel(context, level, withMenu) {
   await enterMenuFromTitle(page);
 
   if (withMenu) {
+    // Let the flyer-wall float-in entrance settle (last flyer's stagger delay +
+    // its animation duration) before capturing — `data-flyers-armed` only gates
+    // click-through, not the visual settle. Matches the 2500ms already used for
+    // the same screen in captureScreen() below.
+    await sleep(2500);
     await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
     console.log("  captured 00_menu.png");
   }
