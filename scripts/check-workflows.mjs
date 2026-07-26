@@ -109,7 +109,10 @@ function checkLocalActionExists(file, uses) {
   }
 }
 
-const PR_HEAD_REF = /head_sha|head\.sha|head\.ref/;
+// Every idiom GitHub offers for "the PR's own head". `github.head_ref` uses
+// an UNDERSCORE, so a pattern written only with `head\.ref` silently misses
+// the most common form of all.
+const PR_HEAD_REF = /head_sha|head[._]sha|head[._]ref/;
 
 /** Any `${{ secrets.* }}` reference anywhere in a step's inputs or env. */
 function stepUsesASecret(step) {
@@ -125,11 +128,17 @@ function stepUsesASecret(step) {
  * skeptic — which receives the same token — was missed, staying on PR head.
  */
 function checkSecretProvenance(file, jobName, steps) {
-  const headCheckout = steps.some(
+  const at = steps.findIndex(
     (s) => isRootCheckout(s) && PR_HEAD_REF.test(String(s?.with?.ref ?? "")),
   );
-  if (!headCheckout) return;
-  const secretSteps = steps.filter(stepUsesASecret).map((s) => s.name ?? s.uses ?? "?");
+  if (at === -1) return;
+  // Only steps AFTER the untrusted checkout can be running PR-authored code.
+  // Without this slice the check over-warns on jobs that check out the head
+  // early for an unrelated reason, and a checker that cries wolf gets ignored.
+  const secretSteps = steps
+    .slice(at + 1)
+    .filter(stepUsesASecret)
+    .map((s) => s.name ?? s.uses ?? "?");
   if (secretSteps.length === 0) return;
   warn(
     file,
