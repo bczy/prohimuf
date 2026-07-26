@@ -20,6 +20,10 @@
 //   3. `uses: ./path` pointing at a directory with no action.yml — a typo or
 //      a rename that only surfaces on the runner.
 //
+//   4. A job that hands a secret to code checked out from the PR head. Added
+//      after the four reviewer jobs were moved to a base checkout and the
+//      skeptic — which receives the same token — was missed.
+//
 // Usage:
 //   node scripts/check-workflows.mjs [file...]   (defaults to all workflows
 //                                                 and local actions)
@@ -105,10 +109,42 @@ function checkLocalActionExists(file, uses) {
   }
 }
 
+const PR_HEAD_REF = /head_sha|head\.sha|head\.ref/;
+
+/** Any `${{ secrets.* }}` reference anywhere in a step's inputs or env. */
+function stepUsesASecret(step) {
+  return JSON.stringify(step ?? {}).includes("secrets.");
+}
+
+/**
+ * Trap 4 — a job that hands a secret to code it checked out from the PR head.
+ *
+ * The step running with the secret is whatever is on disk, so a PR that edits
+ * that script or action can read the secret before any sandbox applies. Found
+ * the hard way: the four reviewer jobs were moved to a base checkout and the
+ * skeptic — which receives the same token — was missed, staying on PR head.
+ */
+function checkSecretProvenance(file, jobName, steps) {
+  const headCheckout = steps.some(
+    (s) => isRootCheckout(s) && PR_HEAD_REF.test(String(s?.with?.ref ?? "")),
+  );
+  if (!headCheckout) return;
+  const secretSteps = steps.filter(stepUsesASecret).map((s) => s.name ?? s.uses ?? "?");
+  if (secretSteps.length === 0) return;
+  warn(
+    file,
+    `job \`${jobName}\`: checks out the PR head at the workspace ROOT and passes a secret (${secretSteps.join(", ")})`,
+    "Whatever runs with that secret comes from the PR author. Check out the " +
+      "BASE ref at the root for the code, and put the PR tree under a " +
+      "`path:` subdirectory if the job needs to read it as data.",
+  );
+}
+
 /** Trap 1 — a local action needs the repo checked out at the ROOT first. */
 function checkJobs(file, doc) {
   for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
     const steps = Array.isArray(job?.steps) ? job.steps : [];
+    checkSecretProvenance(file, jobName, steps);
     let rootCheckedOut = false;
 
     steps.forEach((step, idx) => {
