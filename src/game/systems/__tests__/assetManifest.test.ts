@@ -32,9 +32,10 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 // near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
 const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z]+)$/;
 
-// Every level id we build a full manifest for, plus the two special targets.
+// Every level id we build a full manifest for, plus the three non-level targets.
 const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
-const ALL_TARGETS = ["menu", "tutorial", ...LEVEL_IDS, "does-not-exist"] as const;
+const NON_LEVEL_TARGETS = ["menu", "tutorial-desktop", "tutorial-mobile"] as const;
+const ALL_TARGETS = [...NON_LEVEL_TARGETS, ...LEVEL_IDS, "does-not-exist"] as const;
 
 describe("assetManifest — global invariants", () => {
   it("is deterministic (same output on repeated calls)", () => {
@@ -87,47 +88,87 @@ describe("assetManifest — menu & tutorial", () => {
     expect(menuBackdropPath()).toBe("assets/levels/belliard/facade.png");
   });
 
-  it("tutorial manifest = menu backdrop ∪ both tutorial forks' authored backdrops ∪ illustrations", () => {
-    const m = manifestFor("tutorial");
-    const expected = new Set([
-      menuBackdropPath(),
-      ...(TUTORIAL_NARRATIVE_DESKTOP.backdrop ? [TUTORIAL_NARRATIVE_DESKTOP.backdrop] : []),
-      ...(TUTORIAL_NARRATIVE_MOBILE.backdrop ? [TUTORIAL_NARRATIVE_MOBILE.backdrop] : []),
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
-      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP),
-      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_MOBILE),
+  // The tutorial manifest is DEVICE-FORKED (MAJEUR-R2-01): the render layer picks the
+  // fork it will actually render (ADR-0015 — the game layer never sees the device) and
+  // asks for THAT target, so a device never pays for the other fork's panels. Pinned as
+  // exact ORDERED arrays, not supersets: every extra entry here is a download a real
+  // player makes before the onboarding screen opens.
+  const TUTORIAL_SHARED_HEAD = [
+    // Menu backdrop; both forks author the same one, so it dedupes to a single entry.
+    "assets/levels/belliard/facade.png",
+    // `image:` panels — shared opening + shared bestiary/field lines.
+    "assets/vehicles/truck.png",
+    "assets/enemy_shooting.png",
+    "assets/enemy_riot_shooting.png",
+    "assets/enemy_biker_shooting.png",
+    "assets/enemy_bonus.png",
+    "assets/courier/rider.png",
+  ] as const;
+  // Bitmaps embedded in the SHARED code-drawn diagrams (hostage-ring, boss-finale-switch).
+  const TUTORIAL_SHARED_DIAGRAM_ASSETS = [
+    "assets/enemy_hostage.png",
+    "assets/hostage/girl.png",
+    "assets/boss/commander_shielded.png",
+  ] as const;
+  // The desktop-only `edge-scroll` gesture panel frames the REAL Belliard street inside its
+  // mini-screen: 5.7 MB on disk, ~30 MB decoded, for a ~96×76 px strip mobile never draws.
+  const EDGE_SCROLL_BITMAP = "assets/levels/belliard/street-wide.png";
+
+  it("tutorial-desktop manifest is exactly the desktop fork's assets (edge-scroll bitmap included)", () => {
+    expect(manifestFor("tutorial-desktop")).toEqual([
+      ...TUTORIAL_SHARED_HEAD,
+      EDGE_SCROLL_BITMAP,
+      ...TUTORIAL_SHARED_DIAGRAM_ASSETS,
     ]);
-    expect(new Set(m)).toEqual(expected);
-    // The desktop and mobile forks share the same illustration set (they differ
-    // only on code-drawn gesture panels), and both must be present.
-    for (const img of narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP)) {
-      expect(m).toContain(img);
-    }
-    for (const img of narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE)) {
-      expect(m).toContain(img);
-    }
-    expect(m).toContain("assets/vehicles/truck.png"); // the opening panel's image
-    expect(m).toContain(menuBackdropPath());
+  });
+
+  it("tutorial-mobile manifest is exactly the mobile fork's assets — NO desktop street bitmap", () => {
+    const m = manifestFor("tutorial-mobile");
+    expect(m).toEqual([...TUTORIAL_SHARED_HEAD, ...TUTORIAL_SHARED_DIAGRAM_ASSETS]);
+    // The regression this fork exists for: 93.5 % of the old mobile tutorial preload was
+    // this one file, for a panel only the desktop fork authors.
+    expect(m).not.toContain(EDGE_SCROLL_BITMAP);
   });
 
   // ADR-0069 D5 (preload-explicitness): a "code-drawn" panel is only vector-pure when it
   // draws nothing but vectors. The edge-scroll gesture icon frames the REAL Belliard street
-  // (5.9 MB) inside its mini-screen and the hostage-ring diagram embeds the REAL captor +
-  // girl sprites, so those bitmaps are tutorial-panel assets like any `image:` — the gate
-  // must warm them, or they fetch cold while the panel is already on screen.
-  it("warms the bitmaps embedded in the tutorial's code-drawn gesture/diagram panels", () => {
-    const m = manifestFor("tutorial");
-    expect(m).toContain("assets/levels/belliard/street-wide.png"); // edge-scroll mini-screen
-    expect(m).toContain("assets/enemy_hostage.png"); // hostage-ring captor
-    expect(m).toContain("assets/hostage/girl.png"); // hostage-ring hostage
-    // boss-finale-switch shows the Commandant in his SHIELDED QTE pose — the real boss
-    // sprite, no longer the CRS one it used to borrow (render-lane sprite-identity fix).
-    // The tutorial branch is the only thing that warms it here: bossAssetPaths runs on
-    // the level branch, which the tutorial target never reaches.
-    expect(m).toContain("assets/boss/commander_shielded.png");
-    for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
+  // inside its mini-screen and the hostage-ring diagram embeds the REAL captor + girl
+  // sprites, so those bitmaps are tutorial-panel assets like any `image:` — the gate must
+  // warm them for the fork that draws them, or they fetch cold while the panel is up.
+  it("warms each fork's own code-drawn gesture/diagram bitmaps, and its authored channels", () => {
+    for (const [target, scene] of [
+      ["tutorial-desktop", TUTORIAL_NARRATIVE_DESKTOP],
+      ["tutorial-mobile", TUTORIAL_NARRATIVE_MOBILE],
+    ] as const) {
+      const m = manifestFor(target);
+      expect(m).toContain(menuBackdropPath());
+      if (scene.backdrop !== undefined) expect(m).toContain(scene.backdrop);
+      for (const path of narrativeImagePaths(scene)) expect(m).toContain(path);
+      // boss-finale-switch shows the Commandant in his SHIELDED QTE pose — the real boss
+      // sprite, no longer the CRS one it used to borrow (render-lane sprite-identity fix).
+      // The tutorial branch is the only thing that warms it: bossAssetPaths runs on the
+      // level branch, which a tutorial target never reaches.
       for (const path of illustrationAssetPaths(scene)) expect(m).toContain(path);
+    }
+  });
+
+  // Footgun pin (panel run 2, §3): `LEVELS` carries the onboarding stage as a REAL entry
+  // with `id: "tutorial"` (levels.ts:90) whose gameplay fields are inert. So a bare
+  // "tutorial" string is a LEVEL id, never a tutorial target: it falls through to the level
+  // branch and silently builds a full level manifest (audio + enemy sprites + backdrop).
+  // Nothing calls it that way — App.tsx passes one of the two device targets — and this
+  // test is what keeps it that way: re-introducing a bare "tutorial" tutorial case, or a
+  // caller typo'ing one, turns red here instead of loading the wrong set at runtime.
+  it("dispatches only the two device targets to the tutorial manifest; bare 'tutorial' is the level id", () => {
+    const bare = manifestFor("tutorial");
+    expect(bare).not.toEqual(manifestFor("tutorial-desktop"));
+    expect(bare).not.toEqual(manifestFor("tutorial-mobile"));
+    // Level-branch fingerprints, absent from every tutorial manifest.
+    expect(bare).toContain("assets/audio/bgm_loop.mp3");
+    expect(bare).toContain("assets/bullet_player.png");
+    for (const t of ["tutorial-desktop", "tutorial-mobile"] as const) {
+      expect(manifestFor(t)).not.toContain("assets/audio/bgm_loop.mp3");
+      expect(manifestFor(t)).not.toContain("assets/bullet_player.png");
     }
   });
 
@@ -144,7 +185,8 @@ describe("assetManifest — menu & tutorial", () => {
 
   it("illustrationAssetPaths reads the gesture/diagram channels, not the image channel", () => {
     // Desktop-only gesture (`edge-scroll`) vs mobile-only gestures: the fork that does not
-    // author edge-scroll must not claim its bitmap — the manifest unions BOTH forks instead.
+    // author edge-scroll must not claim its bitmap. The `manifestFor` twin above enforces
+    // the same exclusion one level up, where it is actually consumed.
     expect(illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP)).toContain(
       "assets/levels/belliard/street-wide.png",
     );
@@ -354,7 +396,7 @@ describe("assetManifest — gameplay audio in level manifests", () => {
   });
 
   it("menu and tutorial manifests contain NONE of the audio paths", () => {
-    for (const t of ["menu", "tutorial"] as const) {
+    for (const t of NON_LEVEL_TARGETS) {
       const m = manifestFor(t);
       for (const audio of audioAssetPaths()) expect(m).not.toContain(audio);
     }

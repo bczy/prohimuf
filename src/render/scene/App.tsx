@@ -45,6 +45,7 @@ import {
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
+import type { NarrativeScene } from "@game/systems/narrativeSystem";
 
 // Lazy-loaded R3F/Three.js chunk (ADR-0068): Canvas + GameScene only reach the
 // network when the player is about to enter PLAYING. Prefetch fires on MENU entry
@@ -108,8 +109,18 @@ installBossCaptureSeam();
 // it never flips mid-session — devtools emulation needs a refresh.
 const IS_MOBILE = detectMobile();
 
-// Device-forked tutorial script (ADR-0015): same once-at-load decision as IS_MOBILE.
-const TUTORIAL_SCENE = IS_MOBILE ? TUTORIAL_NARRATIVE_MOBILE : TUTORIAL_NARRATIVE_DESKTOP;
+// Device-forked tutorial (ADR-0015): the render layer owns the device decision, so it picks the
+// fork ONCE — the script it will DRAW and the manifest target it will PRELOAD come out of a single
+// `IS_MOBILE` read and travel together. `manifestFor` takes a widened `ManifestTarget`, so a second
+// ternary drifting to the other fork would type-check and silently make a mobile player download
+// the desktop-only `edge-scroll` panel's 5.7 MB street bitmap it never draws. `manifestTarget` is
+// annotated to the two literals (NOT `ManifestTarget`, whose `(string & {})` arm swallows typos).
+const TUTORIAL_FORK: {
+  readonly scene: NarrativeScene;
+  readonly manifestTarget: "tutorial-desktop" | "tutorial-mobile";
+} = IS_MOBILE
+  ? { scene: TUTORIAL_NARRATIVE_MOBILE, manifestTarget: "tutorial-mobile" }
+  : { scene: TUTORIAL_NARRATIVE_DESKTOP, manifestTarget: "tutorial-desktop" };
 
 // Stable empty manifest: reused when a target needs no warming (preview bypass or
 // already-loaded) so `useAssetPreloader`'s `paths` identity doesn't churn.
@@ -408,7 +419,7 @@ export function App(): JSX.Element {
     appPhase === "MENU" || appPhase === "TITLE"
       ? "menu"
       : appPhase === "TUTORIAL"
-        ? "tutorial"
+        ? TUTORIAL_FORK.manifestTarget
         : selectedLevel.id;
   // Targets warmed this session — a target skips its manifest once settled so
   // revisiting it (or advancing TITLE→MENU→level→END) never re-shows the loader.
@@ -440,8 +451,16 @@ export function App(): JSX.Element {
   }
 
   if (!done) {
+    // Keyed off the SAME constant the target is built from above, never a re-typed
+    // `"tutorial"` literal: with the target now device-forked, a hardcoded string would miss
+    // on one device and silently fall through to `selectedLevel.name` (a level name on the
+    // tutorial loader).
     const label =
-      target === "menu" ? "MENU" : target === "tutorial" ? "Tutoriel" : selectedLevel.name;
+      target === "menu"
+        ? "MENU"
+        : target === TUTORIAL_FORK.manifestTarget
+          ? "Tutoriel"
+          : selectedLevel.name;
     return renderAppShell(
       <LoadingScreen label={label} progress={total ? loaded / total : 1} />,
       rotateBlocked,
@@ -497,7 +516,7 @@ export function App(): JSX.Element {
     // muf_progress or high scores.
     return renderAppShell(
       <NarrativeScreen
-        scene={TUTORIAL_SCENE}
+        scene={TUTORIAL_FORK.scene}
         showSkipButton
         onDone={handleBackToMenu}
         doneLabel="TERMINER"

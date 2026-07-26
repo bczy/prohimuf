@@ -9,8 +9,9 @@ import { ringZoneColour } from "@render/scene/hostageCue";
  * reads as a snippet of the actual duel — no new asset generation.
  *
  * `hostage-ring` teaches the hostage-QTE spatial-colour reticle: a ring sweeps the captor and
- * changes colour by the anatomy under its centre — RED off-body (wasted), YELLOW on a limb
- * (partial), GREEN on the head (lethal) — so the lesson is "aligne, attends le vert, tire". The
+ * changes colour by the anatomy under its centre — RED off-body (wasted), YELLOW on the torso or
+ * a shoulder (partial — the `"limb"` zone of `ringZoneAt`, whose bands cover torso + both
+ * shoulders), GREEN on the head (lethal) — so the lesson is "aligne, attends le vert, tire". The
  * three hues are pulled from `ringZoneColour` (the SAME map the in-game ring uses) so the tutorial
  * shows the true colours. The captor (`enemy_hostage.png`) and hostage (`hostage/girl.png`) sprites
  * sit on a dark "screen" inset (so the acid hues read on the light newsprint panel); the RING is
@@ -42,7 +43,7 @@ const COMMANDANT_SRC = `${import.meta.env.BASE_URL}assets/boss/commander_shielde
 
 // The true in-game reticle hues (single source of truth: the render-side colour map).
 const GREEN = ringZoneColour("vital"); // head → lethal
-const YELLOW = ringZoneColour("limb"); // limb → partial
+const YELLOW = ringZoneColour("limb"); // "limb" zone = torso + shoulders → partial
 const RED = ringZoneColour("off"); // off-body → wasted
 
 const ICON_SVG_STYLE: CSSProperties = {
@@ -113,10 +114,20 @@ const DIAGRAM_STYLES = `
 
 .di-bf-before { animation: di-bf-before 3.2s step-end infinite; }
 .di-bf-after  { animation: di-bf-after 3.2s step-end infinite; }
+/* The two timer readouts are painted at the SAME anchor (x=33,y=68, same size, same
+   textAnchor), so unlike the chrono box and the quota bar — where the .25/.32 residual
+   correctly reads as "dimmed = deprecated" — they must not both be on screen at once: the
+   residual would ghost "00:05" through "00:00" in amber-on-ink for the whole cycle. Their
+   own keyframe pair drives the hidden phase to a hard 0. Same 3.2s/step-end timing and the
+   same 38%/46% switch as the -before/-after pair, so the two states still flip together. */
+.di-bf-timer-before { animation: di-bf-timer-before 3.2s step-end infinite; }
+.di-bf-timer-after  { animation: di-bf-timer-after 3.2s step-end infinite; }
 .di-bf-arrow  { animation: di-bf-arrow 3.2s ease-in-out infinite; }
 .di-bf-flow   { animation: di-bf-flow 3.2s ease-in-out infinite; }
 @keyframes di-bf-before { 0%,38%{opacity:1} 46%,100%{opacity:.25} }
 @keyframes di-bf-after  { 0%,38%{opacity:.32} 46%,100%{opacity:1} }
+@keyframes di-bf-timer-before { 0%,38%{opacity:1} 46%,100%{opacity:0} }
+@keyframes di-bf-timer-after  { 0%,38%{opacity:0} 46%,100%{opacity:1} }
 @keyframes di-bf-arrow  { 0%,38%{opacity:.25; transform:translateX(0)} 46%,84%{opacity:1; transform:translateX(4px)} 100%{opacity:.25; transform:translateX(0)} }
 @keyframes di-bf-flow   { 0%,38%{stroke-dashoffset:18; opacity:.3} 46%,84%{stroke-dashoffset:0; opacity:.95} 100%{stroke-dashoffset:-18; opacity:.3} }
 
@@ -127,7 +138,7 @@ const DIAGRAM_STYLES = `
 :root[data-reduced-motion="true"] .di-anim { animation: none !important; }
 `;
 
-/** The hostage-QTE colour-ring diagram (the only `DiagramKind` today). */
+/** The hostage-QTE colour-ring diagram. */
 function HostageRingIcon(): JSX.Element {
   return (
     <svg
@@ -432,9 +443,11 @@ function BossFinaleSwitchIcon(): JSX.Element {
       {/* BEFORE state (chrono still running). Its base attributes ARE the reduced-motion frozen
           frame, and that frame is the AFTER beat — the one the panel teaches: the chrono box and
           the quota bar stay at the .25 the animation dims them to, while the "00:05" digits go to
-          a hard 0 so they never overprint the WARN "00:00" painted at the same x=33,y=68. With
-          motion ON nothing changes: every `di-bf-*` keyframe set pins opacity at both 0% and 100%,
-          so the animation fully overrides these presentation attributes. */}
+          a hard 0 so they never overprint the WARN "00:00" painted at the same x=33,y=68. The two
+          digit nodes carry `di-bf-timer-*` rather than the group's `di-bf-*` for the same reason
+          under motion ON: their hidden phase reaches a hard 0, the box/bar keep the .25 residual.
+          Either way the animation fully overrides these presentation attributes — every
+          `di-bf-*` keyframe set pins opacity at both 0% and 100%. */}
       <g
         className="di-anim di-bf-before"
         stroke={INK}
@@ -446,7 +459,7 @@ function BossFinaleSwitchIcon(): JSX.Element {
         <line x1="22" y1="62" x2="44" y2="62" />
       </g>
       <text
-        className="di-anim di-bf-before"
+        className="di-anim di-bf-timer-before"
         x="33"
         y="68"
         fill={INK}
@@ -458,7 +471,7 @@ function BossFinaleSwitchIcon(): JSX.Element {
         00:05
       </text>
       <text
-        className="di-anim di-bf-after"
+        className="di-anim di-bf-timer-after"
         x="33"
         y="68"
         fill={WARN}

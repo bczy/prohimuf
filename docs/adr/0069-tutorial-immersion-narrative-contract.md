@@ -1,6 +1,6 @@
 # 0069 — Tutorial immersion narrative contract (decor context + mechanic cue diagrams)
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-25
 - **Number:** 0069, allocated by `producer` (Marion) at story opening in
   `docs/handoffs/story-tutorial-immersion-overhaul.md` (stage 0, 2026-07-25), to be re-checked at merge.
@@ -74,9 +74,13 @@ reference between variants.
   or level facade framed inside otherwise-vector SVG line art) to teach the true silhouette. Every such
   embedded bitmap is declared in `assetManifest.ts`'s `GESTURE_EMBEDDED_ASSETS` / `DIAGRAM_EMBEDDED_ASSETS`
   maps (one entry per `GestureKind` / `DiagramKind`, exhaustive over the closed unions) and warmed via
-  `illustrationAssetPaths()`, which `manifestFor("tutorial")` includes alongside the backdrop and
-  `narrativeImagePaths()` channels. If tutorial backdrops are authored, the same manifest inclusion rule
-  applies to `NarrativeScene.backdrop`.
+  `illustrationAssetPaths()`. The manifest target is device-forked — `manifestFor("tutorial-desktop")` /
+  `manifestFor("tutorial-mobile")`, chosen by the render layer from the same `IS_MOBILE` read that picks
+  the narrative scene constant (`TUTORIAL_NARRATIVE_DESKTOP` / `TUTORIAL_NARRATIVE_MOBILE`) — so each
+  fork's manifest only warms that fork's own embedded illustration assets, alongside its backdrop and
+  `narrativeImagePaths()` channels. There is deliberately no bare `"tutorial"` target: the device must
+  not leak into `src/game` (ADR-0015), and one fork must never preload the other's panels. If tutorial
+  backdrops are authored, the same manifest inclusion rule applies to `NarrativeScene.backdrop`.
 
 ## Consequences
 

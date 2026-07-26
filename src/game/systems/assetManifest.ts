@@ -26,7 +26,15 @@ import levelArt from "@game/levels/levelArt.json";
  * Zero React / Three imports — this module stays in the pure game core.
  */
 
-export type ManifestTarget = "menu" | "tutorial" | (string & {});
+/**
+ * What a caller asks a manifest for. The tutorial is DEVICE-FORKED: the render layer
+ * already owns the device decision (it picks the scene it will draw via `IS_MOBILE`), so
+ * it names the fork it wants and the game layer only maps string → scene. There is
+ * deliberately NO bare `"tutorial"` target and no `isMobile` parameter — the device must
+ * not leak into `src/game` (ADR-0015), and a device must not preload the other fork's
+ * panels. Any other string is a level id.
+ */
+export type ManifestTarget = "menu" | "tutorial-desktop" | "tutorial-mobile" | (string & {});
 
 // The three backdrop layers a level preloads, in draw order. Mirrors `LAYER_NAMES`
 // in levelArt.ts (and what LevelBackdrop actually loads) — duplicated as a local
@@ -370,35 +378,41 @@ export function illustrationAssetPaths(scene: NarrativeScene): readonly string[]
 }
 
 /**
+ * Everything ONE tutorial fork puts on screen: the menu backdrop the narrative screen
+ * shares, the scene's own backdrop, its `image:` panels and the bitmaps its code-drawn
+ * gesture/diagram panels embed. Takes the already-selected scene, so no fork ever warms
+ * the other's assets — the desktop-only `edge-scroll` panel embeds the 5.7 MB Belliard
+ * street image, which a mobile player never draws and must not download.
+ */
+function tutorialManifest(scene: NarrativeScene): readonly string[] {
+  return dedupe([
+    menuBackdropPath(),
+    ...(scene.backdrop !== undefined ? [scene.backdrop] : []),
+    ...narrativeImagePaths(scene),
+    ...illustrationAssetPaths(scene),
+  ]);
+}
+
+/**
  * The full de-duplicated, stably-ordered manifest to preload for a target:
  * - `"menu"` — just the menu backdrop.
- * - `"tutorial"` — the menu backdrop plus BOTH tutorial forks' illustrations
- *   (desktop + mobile), so either device path is covered deterministically —
- *   including the bitmaps embedded in their code-drawn gesture/diagram panels.
+ * - `"tutorial-desktop"` / `"tutorial-mobile"` — the corresponding tutorial fork's
+ *   assets (see `tutorialManifest`). The caller names the fork; this layer never
+ *   looks at the device.
  * - any other string is treated as a level id — its backdrop layers, enemy
  *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops, the
  *   boss QTE poses + décor props (when the level authors a boss), and its
  *   pre/post-level narrative illustrations. Unknown ids fall back to the first
- *   playable level.
+ *   playable level. NOTE: `LEVELS` holds the onboarding stage as a real entry with
+ *   `id: "tutorial"`, so a bare `"tutorial"` lands HERE, on the level branch — it is a
+ *   level id, not a tutorial target (behaviour pinned in `assetManifest.test.ts`).
  */
 export function manifestFor(target: ManifestTarget): readonly string[] {
   if (target === "menu") {
     return dedupe([menuBackdropPath()]);
   }
-  if (target === "tutorial") {
-    const tutorialBackdrops = [
-      TUTORIAL_NARRATIVE_DESKTOP.backdrop,
-      TUTORIAL_NARRATIVE_MOBILE.backdrop,
-    ].filter((backdrop): backdrop is string => backdrop !== undefined);
-    return dedupe([
-      menuBackdropPath(),
-      ...tutorialBackdrops,
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
-      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP),
-      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_MOBILE),
-    ]);
-  }
+  if (target === "tutorial-desktop") return tutorialManifest(TUTORIAL_NARRATIVE_DESKTOP);
+  if (target === "tutorial-mobile") return tutorialManifest(TUTORIAL_NARRATIVE_MOBILE);
 
   const level = levelConfigFor(target);
   const paths: string[] = [

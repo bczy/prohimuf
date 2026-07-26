@@ -93,12 +93,61 @@ describe("DiagramIcon reduced-motion frozen frame", () => {
     expect(digits.length).toBe(2);
     expect(digits.filter((element) => element.opacity > 0).length).toBe(1);
 
-    const [before] = withClass(digits, "di-bf-before");
-    const [after] = withClass(digits, "di-bf-after");
+    const [before] = withClass(digits, "di-bf-timer-before");
+    const [after] = withClass(digits, "di-bf-timer-after");
     expect(before?.opacity).toBe(0);
     expect(after?.opacity).toBeGreaterThan(0);
     // The boss-trigger state is the one kept, with the Commandant it announces.
     expect(html).toContain("00:00");
     expect(html).toContain("assets/boss/commander_shielded.png");
+  });
+});
+
+/**
+ * Motion ON (the DEFAULT path, twin of the frozen frame above). `boss-finale-switch` paints two
+ * timer readouts at the SAME anchor (x=33,y=68, same size, same textAnchor). The group keyframes
+ * bottom out at a deliberate residual (.25 / .32 = "dimmed, deprecated") which is right for the
+ * chrono box and the quota bar and WRONG for two texts on one anchor: it ghosts "00:05" through
+ * "00:00" for most of the 3.2s cycle. The digits therefore ride their own `di-bf-timer-*` pair,
+ * which reaches a hard 0. Asserted off the inline `<style>` the component ships.
+ */
+
+/** The opacity values a one-line `@keyframes <name> { … }` rule declares, in source order. */
+function keyframeOpacities(css: string, name: string): readonly number[] {
+  const rule = new RegExp(`@keyframes\\s+${name}\\s*\\{(.*)$`, "m").exec(css);
+  return [...(rule?.[1] ?? "").matchAll(/opacity:\s*([\d.]+)/g)].map(([, v]) => Number(v));
+}
+
+describe("DiagramIcon boss-finale-switch timer separation with motion ON", () => {
+  const html = renderToStaticMarkup(createElement(DiagramIcon, { kind: "boss-finale-switch" }));
+
+  it("vanishes each timer readout in its hidden phase instead of merely dimming it", () => {
+    const digits = frozenFrame(html).filter((element) => element.tag === "text");
+    expect(digits.length).toBe(2);
+    for (const digit of digits) {
+      // The classes driving this digit, `di-anim` (the reduced-motion kill switch) aside.
+      const [animation, ...extra] = (/class="([^"]*)"/.exec(digit.attrs)?.[1] ?? "")
+        .split(/\s+/)
+        .filter((name) => name !== "" && name !== "di-anim");
+      // One animation per digit: two opacity animations on one node is how they overprint.
+      expect(extra).toEqual([]);
+      const opacities = keyframeOpacities(html, animation ?? "");
+      expect(opacities.length).toBeGreaterThan(1);
+      // Two states on ONE anchor (x=33,y=68): the hidden phase must reach 0. This is also what
+      // keeps the digits OFF the `.25`/`.32` group keyframes — those would fail right here.
+      expect(Math.min(...opacities)).toBe(0);
+      expect(Math.max(...opacities)).toBe(1);
+    }
+  });
+
+  it("leaves the box/bar residual and the position keyframes untouched", () => {
+    // Non-regression: the .25/.32 dimming IS the intended read for the deprecated chrono box and
+    // quota bar (they stay on screen, faded), and the arrow/flow motion math is unchanged.
+    expect(keyframeOpacities(html, "di-bf-before")).toEqual([1, 0.25]);
+    expect(keyframeOpacities(html, "di-bf-after")).toEqual([0.32, 1]);
+    expect(html).toContain("transform:translateX(0)}");
+    expect(html).toContain("transform:translateX(4px)}");
+    expect(html).toContain("stroke-dashoffset:18");
+    expect(html).toContain("stroke-dashoffset:-18");
   });
 });
