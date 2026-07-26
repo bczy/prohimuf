@@ -112,7 +112,20 @@ function checkLocalActionExists(file, uses) {
 // Every idiom GitHub offers for "the PR's own head". `github.head_ref` uses
 // an UNDERSCORE, so a pattern written only with `head\.ref` silently misses
 // the most common form of all.
-const PR_HEAD_REF = /head_sha|head[._]sha|head[._]ref/;
+//
+// RESIDUAL RISK, on purpose: this matches the TEXT of the ref expression, it
+// does not resolve it. A job that funnels the head SHA through a differently
+// named output — `needs.prepare.outputs.commit` — checks out PR code with no
+// warning here. Treat a clean run as "no KNOWN untrusted checkout", never as
+// proof the job is safe.
+const PR_HEAD_REF = /head[._]sha|head[._]ref/;
+
+/** Triggers on which GitHub's default checkout already contains PR code. */
+function isPrTriggered(doc) {
+  const on = doc?.on ?? doc?.true; // YAML 1.1 parses a bare `on:` key as true
+  const names = Array.isArray(on) ? on : typeof on === "string" ? [on] : Object.keys(on ?? {});
+  return names.some((n) => n === "pull_request" || n === "pull_request_target");
+}
 
 /** Any `${{ secrets.* }}` reference anywhere in a step's inputs or env. */
 function stepUsesASecret(step) {
@@ -127,10 +140,15 @@ function stepUsesASecret(step) {
  * the hard way: the four reviewer jobs were moved to a base checkout and the
  * skeptic — which receives the same token — was missed, staying on PR head.
  */
-function checkSecretProvenance(file, jobName, steps) {
-  const at = steps.findIndex(
-    (s) => isRootCheckout(s) && PR_HEAD_REF.test(String(s?.with?.ref ?? "")),
-  );
+function checkSecretProvenance(file, jobName, steps, prTriggered) {
+  const at = steps.findIndex((s) => {
+    if (!isRootCheckout(s)) return false;
+    const ref = s?.with?.ref;
+    // No `ref:` on a PR-triggered workflow is the textbook pwn-request shape:
+    // GitHub checks out the auto-merge commit, which carries the PR's code.
+    if (ref === undefined) return prTriggered;
+    return PR_HEAD_REF.test(String(ref));
+  });
   if (at === -1) return;
   // Only steps AFTER the untrusted checkout can be running PR-authored code.
   // Without this slice the check over-warns on jobs that check out the head
@@ -153,7 +171,7 @@ function checkSecretProvenance(file, jobName, steps) {
 function checkJobs(file, doc) {
   for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
     const steps = Array.isArray(job?.steps) ? job.steps : [];
-    checkSecretProvenance(file, jobName, steps);
+    checkSecretProvenance(file, jobName, steps, isPrTriggered(doc));
     let rootCheckedOut = false;
 
     steps.forEach((step, idx) => {

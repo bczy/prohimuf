@@ -173,6 +173,40 @@ jobs:
     expect(r.out).not.toContain("passes a secret");
   });
 
+  it("flags a checkout with NO ref on a pull_request workflow — the pwn-request shape", () => {
+    // GitHub checks out the auto-merge commit by default, which carries the
+    // PR's code. This is the more dangerous instance of the same class.
+    const r = run(`name: t
+on: [pull_request]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        with:
+          token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+`);
+    expect(r.out).toContain("passes a secret");
+  });
+
+  it("does NOT flag a no-ref checkout on a push-triggered workflow", () => {
+    // Outside pull_request the default checkout is the pushed ref itself —
+    // already trusted, so warning here would be noise.
+    const r = run(`name: t
+on: [push]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        with:
+          token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+`);
+    expect(r.out).not.toContain("passes a secret");
+  });
+
   it("is silent when no secret is involved at all", () => {
     const r = run(`name: t
 on: [pull_request]
