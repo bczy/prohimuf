@@ -439,6 +439,9 @@ jobs:
           # check BEFORE publishing anything — and `panel-verdict` is a
           # required check, so an unpublished one wedges the PR shut forever.
           # That is the exact failure §5 exists to close; fail loudly instead.
+          # `gh --jq` prints the literal string "null" for a missing field,
+          # which is non-empty and would sail past the check below.
+          if [ "$sha" = "null" ]; then sha=""; fi
           if [ -z "$sha" ]; then
             echo "::error::could not resolve a head SHA for PR ${PR_NUMBER} — refusing to continue without one, as panel-verdict would never be published." >&2
             exit 1

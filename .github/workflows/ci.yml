@@ -86,6 +86,14 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      # Also wired into lint-staged, but a pre-commit hook is not a gate: it
+      # can be bypassed with --no-verify, and husky is simply absent in a
+      # clone where `yarn install` never ran — which is exactly how a
+      # malformed workflow reaches CI in the first place. Runs after install
+      # because it parses YAML with the `yaml` package.
+      - name: Workflow & composite-action validation
+        run: yarn workflows:check
+
       # ART GATE 1 — static prompt-contract lint over levelArt.json (no network,
       # <1s). Catches house-style/neon-field/negation/word-budget violations in
       # the art prompts before any paid FLUX generation runs. Pure node, so it
