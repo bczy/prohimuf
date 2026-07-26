@@ -74,6 +74,14 @@ const REF_IMAGES = [
   "https://raw.githubusercontent.com/bczy/prohimuf/main/public/assets/enemy_riot.png",
 ];
 
+// Style-match test (scripts/style-match-test.mjs, 4 variants on commander_shielded,
+// same seed/refs, phrasing-only): opening the WHOLE prompt with the style-lock —
+// ahead of the subject, not appended after the tail — read as the cleanest linework
+// of the four and was Bertrand's pick ("beaucoup mieux"). Kept as its own constant
+// (not folded into COMIC_TAIL) so the two ideas — "what to draw" vs "match this
+// reference technique" — stay separately editable.
+const STYLE_LOCK = "in the exact art style of the two attached reference character images: ";
+
 // ── Load the boss definitions from levelArt.json (single source) ────────────
 function loadBossFigures() {
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
@@ -135,7 +143,7 @@ function loadBossFigures() {
 // sprites as visual references.
 async function generate(fig, token) {
   console.log(`  [seed] ${fig.key} seed=${fig.seed} (pinned)`);
-  const url = genUrl(`${fig.subject}${COMIC_TAIL}`, fig.seed, { gen: GEN, refs: REF_IMAGES });
+  const url = genUrl(`${STYLE_LOCK}${fig.subject}${COMIC_TAIL}`, fig.seed, { gen: GEN, refs: REF_IMAGES });
   return withRetry(url, token);
 }
 
