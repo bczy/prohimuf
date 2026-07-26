@@ -16,6 +16,7 @@ import {
   tickCameraPan,
 } from "@game/systems/cameraPanSystem";
 import type { GameState } from "@game/types/gameState";
+import { isOnScreen } from "@game/systems/viewport";
 import type { BossQte } from "@game/types/bossQte";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
@@ -131,6 +132,52 @@ function computeTargetIndicator(
     down: crosshairWorld.y - nearestSlot.y > DIRECTION_DEAD_ZONE,
     left: crosshairWorld.x - nearestSlot.x > DIRECTION_DEAD_ZONE,
     right: nearestSlot.x - crosshairWorld.x > DIRECTION_DEAD_ZONE,
+  };
+}
+
+/**
+ * Off-screen direction cue toward the delivery rendez-vous (telegraph spec D2).
+ *
+ * Active iff the delivery is in flight (`INCOMING` or `DELIVERING`) AND the
+ * rendez-vous point is not framed; `undefined` otherwise, so no glyph renders.
+ *
+ * Anchored on `deliverySpec.stopPosition`, NOT on the vehicle's live position
+ * (correction T-2): during `INCOMING` the van sits at the street's entry edge,
+ * OUTSIDE the camera pan clamp and sometimes on the opposite side of the street
+ * from the rendez-vous — a cue pointing there would point at a place the player
+ * cannot reach, then flip as the van crosses. The stop position is fixed, always
+ * inside the clamp, and identical to the vehicle's position once `DELIVERING`.
+ *
+ * Must be called with the LIVE camera offsets and the LIVE view extents — the same
+ * four values this tick hands `tickGameState` (correction T-1). `isOnScreen`'s
+ * defaults (18/12) are a lie under the mobile `MOBILE_ZOOM_FACTOR` crop, and the
+ * whole point of reusing ADR-0069's own predicate is that the cue and the
+ * off-screen enemy freeze can never disagree about what counts as "on screen".
+ *
+ * Takes only the two state fields it reads (a `Pick`, not the whole `GameState`),
+ * so "the cue depends on nothing else" is true by signature. Pure.
+ */
+export function computeDeliveryDirection(
+  state: Pick<GameState, "deliverySpec" | "deliveryVehicle">,
+  cameraOffsetX: number,
+  cameraOffsetY: number,
+  viewW: number,
+  viewH: number,
+): HudData["deliveryDirection"] {
+  const spec = state.deliverySpec;
+  const phase = state.deliveryVehicle?.phase;
+  if (spec === null || (phase !== "INCOMING" && phase !== "DELIVERING")) return undefined;
+  const stop = spec.stopPosition;
+  if (isOnScreen(stop, cameraOffsetX, cameraOffsetY, viewW, viewH)) return undefined;
+  // Same half-extents as the predicate above, so the per-axis booleans and the
+  // on-screen verdict are one computation: an off-frame point lights exactly the
+  // axes it overflows (X-only pan ⇒ no vertical glyph, and vice versa — ADR-0008's
+  // two-axis pan can push a street actor off the top/bottom, not only off a side).
+  return {
+    up: stop.y - cameraOffsetY > viewH / 2,
+    down: cameraOffsetY - stop.y > viewH / 2,
+    left: cameraOffsetX - stop.x > viewW / 2,
+    right: stop.x - cameraOffsetX > viewW / 2,
   };
 }
 
@@ -351,6 +398,13 @@ export function useGameLoop(
     const aimX = mobileControls !== undefined ? aimRef.current.x : mouse.x;
     const aimY = mobileControls !== undefined ? aimRef.current.y : mouse.y;
 
+    // Captured, not re-read at the push site: the QTE cinematic below moves
+    // `camera.position` after the tick, and the delivery cue must read the EXACT
+    // offsets the tick fed `isOnScreen` (T-1) so it can never disagree with
+    // ADR-0069's off-screen freeze — including while a cinematic holds the camera.
+    const tickCameraX = camera.position.x;
+    const tickCameraY = camera.position.y;
+
     const next = tickGameState(
       prev,
       didFire,
@@ -358,8 +412,8 @@ export function useGameLoop(
       aimY,
       safeDelta,
       facade,
-      camera.position.x,
-      camera.position.y,
+      tickCameraX,
+      tickCameraY,
       viewW,
       viewH,
       levelParams?.enemiesToWin,
@@ -538,6 +592,13 @@ export function useGameLoop(
 
     const targetIndicator = computeTargetIndicator(next, facade, nextCrosshairWorld);
     const prevTargetIndicator = computeTargetIndicator(prev, facade, prevCrosshairWorld);
+    const deliveryDirection = computeDeliveryDirection(
+      next,
+      tickCameraX,
+      tickCameraY,
+      viewW,
+      viewH,
+    );
 
     if (
       next.score !== prev.score ||
@@ -551,7 +612,13 @@ export function useGameLoop(
       next.weapon.active !== prev.weapon.active ||
       next.weapon.stock !== prev.weapon.stock ||
       next.weaponEmpty === true ||
-      !isSameIndicator(prevTargetIndicator, targetIndicator)
+      !isSameIndicator(prevTargetIndicator, targetIndicator) ||
+      // The delivery cue turns on/off with the CAMERA, not with the game state, so
+      // it is compared against the value last PUSHED (not against `prev`, which
+      // would be re-derived from this same camera and so almost never differ).
+      // Without this term the cue would refresh at the 1 Hz `Math.floor(timeRemaining)`
+      // cadence — a direction arrow up to a second stale (D2.6, Karim's advisory).
+      !isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection)
     ) {
       const hudData: HudData = {
         score: next.score,
@@ -561,6 +628,7 @@ export function useGameLoop(
         wave: next.wave,
         energy: next.energy,
         targetIndicator,
+        deliveryDirection,
         weapon: { active: next.weapon.active, stock: next.weapon.stock },
         weaponEmptyNonce: weaponEmptyNonceRef.current,
       };

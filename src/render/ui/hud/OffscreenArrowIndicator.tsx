@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import type { HudTargetIndicator } from "./types";
-import { INK, ACID, SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { ARROW_ROTATION, ArrowGlyphSvg } from "./arrowGlyph";
 import styles from "./OffscreenArrowIndicator.module.css";
 
 function ArrowIndicator({
@@ -10,16 +11,10 @@ function ArrowIndicator({
   direction: "up" | "down" | "left" | "right";
   active: boolean;
 }): JSX.Element {
-  const rotation = {
-    right: "rotate(0deg)",
-    down: "rotate(90deg)",
-    left: "rotate(180deg)",
-    up: "rotate(270deg)",
-  }[direction];
+  const rotation = ARROW_ROTATION[direction];
 
-  // Single inline SVG (not the old shaft-span + CSS-border-triangle pair): a CSS
-  // triangle can't take an outline, and these arrows need a black keyline to read
-  // over the scene. Acid-yellow fill, black keyline — flat, NO blur/glow/shadow.
+  // The glyph shape itself is the shared token (`arrowGlyph.tsx`); this ring owns
+  // the anchoring, the active scale/opacity and their 120 ms fade.
   return (
     <span
       className={styles.arrowCore}
@@ -32,29 +27,10 @@ function ArrowIndicator({
         transition: "opacity 120ms ease, transform 120ms ease",
       }}
     >
-      {/* display:block — an inline svg sits on the text baseline and drifts off
-          the span's geometric centre, which is also the rotation origin. */}
-      {/* width/height 100%: .arrowCore (CSS module) is the single owner of the
-          rendered size; the viewBox scales the glyph to fill it. */}
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 34 34"
-        aria-hidden="true"
-        style={{ display: "block" }}
-      >
-        <polygon
-          points="3,13 18,13 18,7 31,17 18,27 18,21 3,21"
-          fill={ACID.yellow}
-          stroke={INK.black}
-          // non-scaling-stroke: strokeWidth is device px, so the keyline holds
-          // the HUD's 2px ink-rule weight at both the desktop (102px) and
-          // short-landscape (51px) render sizes (Bertrand: don't scale it).
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-        />
-      </svg>
+      {/* .arrowCore (CSS module) is the single owner of the rendered size — the
+          keyline still holds the HUD's 2px ink-rule weight at both the desktop
+          (102px) and short-landscape (51px) sizes (Bertrand: don't scale it). */}
+      <ArrowGlyphSvg />
     </span>
   );
 }

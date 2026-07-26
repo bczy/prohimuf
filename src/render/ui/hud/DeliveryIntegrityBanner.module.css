@@ -20,12 +20,56 @@
   gap: var(--space-sm);
 }
 
-.chipDelivering {
+/* Chip row: keeps the chip centred in the banner column while the direction cue
+   hangs OUTSIDE its right edge — so adding the cue never shifts the chip, and
+   neither glyph can cover the copy text or the gauge track (D2.3). */
+.chipRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Banner chip — carries BOTH in-flight phases (INCOMING and DELIVERING); the two
+   are distinguished by their copy, not by this ruleset. */
+.deliveryChip {
   padding: var(--space-sm) var(--space-lg);
   border: var(--keyline-width) solid var(--ink-black);
   font-size: var(--font-size-base);
   letter-spacing: 0.1em;
   color: var(--ink-full);
+}
+
+/* Direction cue toward the delivery point (D2.3). Sized in `em` off the chip's own
+   font token (D2.4) — no size literal, no new breakpoint.
+   T-3 (measured adjacency, NOT structural immunity): the nearest-enemy ring's `up`
+   slot is a 102px glyph (51px short-landscape) centred on `top: 52px; left: 50%`,
+   i.e. the SAME anchor as this banner (`top: 58px`) — two same-family glyphs meaning
+   different things. Hanging the cue outside the chip's right edge moves it clear of
+   that centred box, and HUD.tsx renders the banner AFTER the ring so the banner
+   paints on top wherever they still meet. The final visual call (offset/side, or a
+   dedicated slot) is `lead-art`'s — this is the constraint, handled, not a no-op. */
+.deliveryDirection {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-base);
+}
+
+/* One arrow glyph; rotation arrives inline (state-driven). NO transition and NO
+   animation, in either motion mode (D3.3/A9, correction T-4): the cue's
+   appearance/disappearance is a discrete phase/camera state change, and
+   `OffscreenArrowIndicator`'s ungated 120ms fade is deliberately not inherited. */
+.directionGlyph {
+  flex: none;
+  width: 1.5em;
+  height: 1.5em;
+  transition: none;
+  animation: none;
 }
 
 .deliveryTrack {

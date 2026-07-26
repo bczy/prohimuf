@@ -291,7 +291,8 @@ export function NearForeground({
     if (layer === null) return;
     // Hide the whole kerb-prop layer while the boss tableau holds the screen — see the
     // `stateRef` doc comment above for why a visibility gate, not a renderOrder bump.
-    const bossActive = isBossQteActive(stateRef?.current?.bossQte ?? null);
+    // `RefObject<GameState>.current` is non-nullish, so only the PROP is optional-chained.
+    const bossActive = isBossQteActive(stateRef?.current.bossQte ?? null);
     if (nearRef.current) nearRef.current.visible = !bossActive;
     if (farRef.current) farRef.current.visible = !bossActive;
     if (bossActive) return;
