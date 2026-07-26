@@ -20,7 +20,10 @@ import type { Texture } from "three";
 
 // The CC0 sprite (see `public/assets/fx/LICENSES.md`). Loaded ONCE, shared by every material.
 const SMOKE_URL = `${import.meta.env.BASE_URL}assets/fx/smoke.png`;
-const SMOKE_TINT = "#9a9a9a"; // desaturated haze; never bright (would trip the CRT bloom gate)
+// Desaturated haze; never bright (would trip the CRT bloom gate). Mirrored, NOT imported, as
+// `SMOKE_INK` in `src/render/ui/print/tokens.ts` (ADR-0068 keeps TITLE off three.js) — any
+// change to one must be made in both.
+const SMOKE_TINT = "#9A9A9A";
 export const SMOKE_RENDER_ORDER = 10; // in front of boss(6)/rings(8), below parry halo/glyph(13/14)
 
 // The world region the field fills, anchor-relative (the boss tableau is ~2.2 units wide).

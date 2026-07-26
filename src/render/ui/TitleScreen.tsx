@@ -361,8 +361,9 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           ))}
           {/* Detonation cloud — LAST so it paints over the letters (both are positioned,
               so DOM order decides), and only for the variant that has one. Each puff drifts
-              on its own clock (see `.puff`); the container only holds them and screens the
-              cloud through the print halftone. */}
+              on its own clock (see `.puff`); the container only positions them — it holds no
+              mask of its own (a container-level halftone mask was the clip bug Bertrand saw),
+              so the cloud can drift past its edges. The halftone grain lives on each puff. */}
           {cycle.animation === "blast" && (
             <span
               aria-hidden={true}

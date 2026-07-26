@@ -195,7 +195,8 @@ describe("TITLE reveal budget", () => {
 
   it("keeps one can-stroke under the 1s ceiling", () => {
     // The spray lays a letter in one stroke; the paint's unit of gesture is one PASS (the
-    // six lines of a single colour over one letter). Neither may outstay a second.
+    // four lines of a single colour over one letter — TITLE_PAINT_LINES). Neither may
+    // outstay a second.
     expect(MOTION.titleSprayMs).toBeLessThanOrEqual(1000);
     expect(MOTION.titlePaintPassMs).toBeLessThanOrEqual(1000);
   });
