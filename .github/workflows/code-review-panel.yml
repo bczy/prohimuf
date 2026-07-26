@@ -154,20 +154,20 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # Resolves `uses: ./...` below. TODO(follow-up PR): switch this ref to
-      # `${{ github.event.pull_request.base.sha }}` so the secret-bearing
-      # action is never loaded from PR-authored code. It cannot be done in
-      # THIS PR: main has no .github/actions/panel-reviewer yet, so a
-      # base-ref checkout finds no action.yml and every reviewer job dies
-      # before starting. Once this is merged, that one-line change works and
-      # the panel can still review it. See ADR-0070 "Prompt injection
-      # surface" for the residual risk this leaves open meanwhile — note it
-      # is not specific to the composite action: on `pull_request`, GitHub
-      # already runs the PR's own copy of this workflow file.
-      - name: Checkout panel code
+      # TRUSTED checkout — the base branch, never the PR head. This is what
+      # `uses: ./...` resolves against and what receives the OAuth secret, so
+      # it must not be PR-authored: otherwise a PR editing the composite
+      # action could exfiltrate a year-valid subscription token before the
+      # sandboxed agent ever starts.
+      #
+      # Note this does NOT make the run fully trusted: on `pull_request`,
+      # GitHub already executes the PR's own copy of THIS workflow file. The
+      # complete control is a `workflow_run` trigger or an Environment with
+      # required reviewers — tracked in ADR-0070, not done here.
+      - name: Checkout trusted panel code (base)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.head_sha }}
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
 
       # The PR's tree as read-only DATA for the agent, at the path the
       # harness prompt tells it to read. Kept as a separate checkout so the
@@ -196,20 +196,20 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # Resolves `uses: ./...` below. TODO(follow-up PR): switch this ref to
-      # `${{ github.event.pull_request.base.sha }}` so the secret-bearing
-      # action is never loaded from PR-authored code. It cannot be done in
-      # THIS PR: main has no .github/actions/panel-reviewer yet, so a
-      # base-ref checkout finds no action.yml and every reviewer job dies
-      # before starting. Once this is merged, that one-line change works and
-      # the panel can still review it. See ADR-0070 "Prompt injection
-      # surface" for the residual risk this leaves open meanwhile — note it
-      # is not specific to the composite action: on `pull_request`, GitHub
-      # already runs the PR's own copy of this workflow file.
-      - name: Checkout panel code
+      # TRUSTED checkout — the base branch, never the PR head. This is what
+      # `uses: ./...` resolves against and what receives the OAuth secret, so
+      # it must not be PR-authored: otherwise a PR editing the composite
+      # action could exfiltrate a year-valid subscription token before the
+      # sandboxed agent ever starts.
+      #
+      # Note this does NOT make the run fully trusted: on `pull_request`,
+      # GitHub already executes the PR's own copy of THIS workflow file. The
+      # complete control is a `workflow_run` trigger or an Environment with
+      # required reviewers — tracked in ADR-0070, not done here.
+      - name: Checkout trusted panel code (base)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.head_sha }}
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
 
       # The PR's tree as read-only DATA for the agent, at the path the
       # harness prompt tells it to read. Kept as a separate checkout so the
@@ -238,20 +238,20 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # Resolves `uses: ./...` below. TODO(follow-up PR): switch this ref to
-      # `${{ github.event.pull_request.base.sha }}` so the secret-bearing
-      # action is never loaded from PR-authored code. It cannot be done in
-      # THIS PR: main has no .github/actions/panel-reviewer yet, so a
-      # base-ref checkout finds no action.yml and every reviewer job dies
-      # before starting. Once this is merged, that one-line change works and
-      # the panel can still review it. See ADR-0070 "Prompt injection
-      # surface" for the residual risk this leaves open meanwhile — note it
-      # is not specific to the composite action: on `pull_request`, GitHub
-      # already runs the PR's own copy of this workflow file.
-      - name: Checkout panel code
+      # TRUSTED checkout — the base branch, never the PR head. This is what
+      # `uses: ./...` resolves against and what receives the OAuth secret, so
+      # it must not be PR-authored: otherwise a PR editing the composite
+      # action could exfiltrate a year-valid subscription token before the
+      # sandboxed agent ever starts.
+      #
+      # Note this does NOT make the run fully trusted: on `pull_request`,
+      # GitHub already executes the PR's own copy of THIS workflow file. The
+      # complete control is a `workflow_run` trigger or an Environment with
+      # required reviewers — tracked in ADR-0070, not done here.
+      - name: Checkout trusted panel code (base)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.head_sha }}
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
 
       # The PR's tree as read-only DATA for the agent, at the path the
       # harness prompt tells it to read. Kept as a separate checkout so the
@@ -280,20 +280,20 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # Resolves `uses: ./...` below. TODO(follow-up PR): switch this ref to
-      # `${{ github.event.pull_request.base.sha }}` so the secret-bearing
-      # action is never loaded from PR-authored code. It cannot be done in
-      # THIS PR: main has no .github/actions/panel-reviewer yet, so a
-      # base-ref checkout finds no action.yml and every reviewer job dies
-      # before starting. Once this is merged, that one-line change works and
-      # the panel can still review it. See ADR-0070 "Prompt injection
-      # surface" for the residual risk this leaves open meanwhile — note it
-      # is not specific to the composite action: on `pull_request`, GitHub
-      # already runs the PR's own copy of this workflow file.
-      - name: Checkout panel code
+      # TRUSTED checkout — the base branch, never the PR head. This is what
+      # `uses: ./...` resolves against and what receives the OAuth secret, so
+      # it must not be PR-authored: otherwise a PR editing the composite
+      # action could exfiltrate a year-valid subscription token before the
+      # sandboxed agent ever starts.
+      #
+      # Note this does NOT make the run fully trusted: on `pull_request`,
+      # GitHub already executes the PR's own copy of THIS workflow file. The
+      # complete control is a `workflow_run` trigger or an Environment with
+      # required reviewers — tracked in ADR-0070, not done here.
+      - name: Checkout trusted panel code (base)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.head_sha }}
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
 
       # The PR's tree as read-only DATA for the agent, at the path the
       # harness prompt tells it to read. Kept as a separate checkout so the
