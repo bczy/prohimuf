@@ -93,8 +93,11 @@ async function run() {
       const buf = await withRetry(genUrl(v.prompt, seed, { gen: GEN, refs: REF_IMAGES }), token);
       const { s, opaque } = await keyAndDown(buf, { targetW: 256, targetH: 256, tol: 150 });
       const file = `${POSE}__${v.label}.png`;
-      fs.writeFileSync(path.join(OUT, file), s);
-      manifest.push({ ...v, file, opaquePct: +((opaque * 100) / (256 * 256)).toFixed(1) });
+      // `s` is a @napi-rs/canvas CanvasElement (see gen-boss-sprites.mjs's identical call
+      // site) — writeFileSync needs its encoded bytes, not the canvas object itself.
+      // `opaque` is already a 0..1 fraction of the target canvas, not a raw pixel count.
+      fs.writeFileSync(path.join(OUT, file), s.toBuffer("image/png"));
+      manifest.push({ ...v, file, opaquePct: +(opaque * 100).toFixed(1) });
       console.log(`  [ok] ${file} — ${opaque} opaque px`);
     } catch (e) {
       manifest.push({ ...v, error: e.message });
