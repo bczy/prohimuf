@@ -89,6 +89,42 @@ describe("narrativeSystem data integrity", () => {
     }
   });
 
+  // The gate finding 3 escaped in run 1: the old coverage only checked bullets were
+  // ≤2 and non-empty — it never checked WHICH panels carry them, so the build could
+  // (and did) drift to a set disjoint from the spec's whitelist without a red test.
+  // EQUALITY, not subset: an extra bullet-carrying panel is exactly the defect.
+  it("A9: only the whitelisted tutorial panels carry teachingBullets (spec D2.2)", () => {
+    // 0-based indices in the gated 16-panel map, identical on both variants (shared
+    // field lines): 5 weapon-crate/HUD-arme (C2), 10 civilian courier (C3),
+    // 12 hostage ring (C3), 14 HUD recap (C1).
+    const WHITELIST = [5, 10, 12, 14];
+    for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
+      const carriers = scene.lines
+        .map((line, i) => (line.teachingBullets === undefined ? -1 : i))
+        .filter((i) => i >= 0);
+      expect(carriers).toEqual(WHITELIST);
+    }
+  });
+
+  it("A9: each whitelisted panel teaches the fact its cue and sentence do not carry", () => {
+    // Pins the payload, not just the placement — a whitelisted panel emptied of its
+    // teaching content would still satisfy the index set above.
+    const lines = TUTORIAL_NARRATIVE_DESKTOP.lines;
+    expect(lines[5]?.teachingBullets).toEqual([
+      "HUD arme : A = calibre, stock ∞",
+      "B/C = spécial : compteur, clignote sur réserve",
+    ]);
+    expect(lines[10]?.teachingBullets).toEqual(["On tire aux fenêtres, jamais dans la rue"]);
+    expect(lines[12]?.teachingBullets).toEqual([
+      "La couleur suit la zone sous l'anneau",
+      "Vert = tête, jaune = torse, rouge = 0 dégât",
+    ]);
+    expect(lines[14]?.teachingBullets).toEqual([
+      "HUD: score/niveau/vague/temps/vies/arme",
+      "Livraison: jauge verte pendant le passage",
+    ]);
+  });
+
   it("A8: teachingBullets are optional, capped at 2, and non-empty when authored", () => {
     const scenes = [
       ...Object.values(PRE_LEVEL_NARRATIVE),

@@ -131,7 +131,9 @@ export function NarrativeScreen({
               `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
               (§2bis). Its facade layer is a CSS background-image, so a 404 leaves at most the
               faint dot-screen grain — never a broken-image glyph, and no coupling to the per-line
-              `imageError`. Absent on tutorial scenes. */}
+              `imageError`. Since ADR-0069 (D1), tutorial scenes may carry this backdrop too —
+              both TUTORIAL_NARRATIVE_DESKTOP and TUTORIAL_NARRATIVE_MOBILE now author
+              `backdrop: "assets/levels/belliard/facade.png"`. */}
           {scene.backdrop !== undefined && (
             <HalftoneHero
               src={`${import.meta.env.BASE_URL}${scene.backdrop}`}
@@ -252,8 +254,14 @@ export function NarrativeScreen({
 
             {teachingBullets.length > 0 && (
               <ul className={styles.teachingBullets}>
-                {teachingBullets.map((bullet) => (
-                  <li key={bullet} className={styles.teachingBullet}>
+                {/* Composite key (panel index + slot): two panels — or two slots on one panel —
+                    may legitimately carry the same bullet text, and the text alone would then
+                    collide. The list is a fixed ≤2 slots re-derived per panel, never reordered. */}
+                {teachingBullets.map((bullet, slot) => (
+                  <li
+                    key={`${String(lineIndex)}-${String(slot)}`}
+                    className={styles.teachingBullet}
+                  >
                     {bullet}
                   </li>
                 ))}

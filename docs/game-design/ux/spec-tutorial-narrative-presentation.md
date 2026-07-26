@@ -46,11 +46,34 @@ Tutorial panels use **one primary visual channel per panel** + optional short bu
 
 - Never show more than **one** of `{image, gesture, diagram}` simultaneously.
 - Bullet reinforcement max **2 bullets** per panel, each one action-oriented.
-- Use bullet cues on high-risk misunderstanding panels only:
-  - mobile shoot gesture,
-  - “never shoot courier,”
-  - hostage-ring “shoot on green.”
-- If panel already decodes in one glance with visual + sentence, omit bullets.
+- If panel already decodes in one glance with visual + sentence, omit bullets. A bullet must
+  carry a fact the panel’s **sentence + primary cue do not already carry**; restating the
+  line in shorter words is not reinforcement, it is noise.
+- A panel earns bullets only when at least one criterion holds:
+  - **C1 — no primary cue channel:** the panel is text-only and enumerates ≥3 discrete facts;
+    the bullets supply the scannable structure prose cannot.
+  - **C2 — HUD instrument:** the panel teaches how to _read_ a persistent HUD readout that its
+    cue does not depict.
+  - **C3 — punished player action:** the panel teaches a rule whose violation costs a life, a
+    point or a QTE — a mistake the player _makes_, not a threat they merely face.
+- Resulting whitelist — the ONLY tutorial panels that may carry bullets (0-based indices in the
+  gated 16-panel map; identical on both device variants, these are shared field lines):
+
+| Index | Panel                     | Criterion                                                                               |
+| ----- | ------------------------- | --------------------------------------------------------------------------------------- |
+| 5     | weapon crate / LOOT loop  | C2 — the `arme` readout (A/B/C · ∞ · stock · blink) is nowhere in the crate diagram     |
+| 10    | civilian courier “JAMAIS” | C3 — −1 vie et −1 point, and the sprite is Muf’s own rider art (identity confusion)     |
+| 12    | hostage ring              | C3 — the line reads as a _timing_ sequence when the ring colour is a _position_ readout |
+| 14    | HUD recap                 | C1 — text-only panel enumerating the whole ticker strip                                 |
+
+- Every other panel omits bullets — including the two control panels: their animated cue plus
+  two short imperative sentences already decode in one glance.
+- Reduced-motion comprehension is **never** bought with bullets: a frozen cue that stops teaching
+  is an AC9 defect to fix in the cue itself (render lane), not a copy problem.
+
+_Amended 2026-07-26 (`lead-game-designer`, post stage-6 panel finding 3). The original whitelist
+(mobile shoot / courier / hostage ring) named panels without stating a criterion, which is why the
+build diverged to a disjoint set. The criterion is now the gate; the table is its result._
 
 ### D2.3 Bullet cue format contract
 

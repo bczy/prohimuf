@@ -155,7 +155,6 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     diagram: "shot-read-player-vs-enemy-bullet",
     diagramAlt:
       "Comparaison tir joueur et balle ennemie : impact immédiat côté joueur, projectile visible côté ennemi avec trajectoire à éviter.",
-    teachingBullets: ["Ton tir: impact direct", "Leur tir: projectile à esquiver"],
   },
   {
     speaker: "DISPATCH",
@@ -163,7 +162,12 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     diagram: "weapon-crate-loop",
     diagramAlt:
       "Boucle d'armement : tir sur caisse, arme spéciale active, munitions spéciales épuisées, retour automatique à l'arme de base.",
-    teachingBullets: ["LOOT → spécial actif", "Stock épuisé → arme de base (∞)"],
+    // C2 (spec D2.2): the crate diagram animates the LOOT loop but never shows the HUD
+    // `arme` readout that reports it — so the bullets teach the instrument, not the loop.
+    teachingBullets: [
+      "HUD arme : A = calibre, stock ∞",
+      "B/C = spécial : compteur, clignote sur réserve",
+    ],
   },
   {
     speaker: "KENZA",
@@ -197,6 +201,9 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     // shipped rider flipbook frame 1).
     image: MUF_RIDER_IMAGE,
     imageAlt: "Le livreur civil dans la rue",
+    // C3 (spec D2.2): a punished action (−1 vie, −1 point) illustrated by Muf's OWN
+    // rider art — the bullet gives the rule that resolves the identity confusion.
+    teachingBullets: ["On tire aux fenêtres, jamais dans la rue"],
   },
   {
     speaker: "DISPATCH",
@@ -204,7 +211,6 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     diagram: "threat-hierarchy-ladder",
     diagramAlt:
       "Échelle de priorité des menaces : CRS en tête, puis motard, puis flic standard ; bonus et livreur en bas de l'échelle.",
-    teachingBullets: ["CRS > motard > flic", "Bonus/livreur = non prioritaires"],
   },
   {
     speaker: "DISPATCH",
@@ -212,6 +218,12 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
     diagram: "hostage-ring",
     diagramAlt:
       "Un anneau de visée passe du rouge au jaune puis au vert sur le preneur d'otage ; on tire au vert.",
+    // C3 (spec D2.2): the line reads as a TIMING sequence ("passe rouge, jaune, vert"),
+    // but the ring colour is a POSITION readout — a mis-timed shot costs the QTE.
+    teachingBullets: [
+      "La couleur suit la zone sous l'anneau",
+      "Vert = tête, jaune = torse, rouge = 0 dégât",
+    ],
   },
   {
     speaker: "DISPATCH",
@@ -223,8 +235,11 @@ const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
   {
     speaker: "DISPATCH",
     text: "En haut : score, niveau, vague, chrono, vies. Au passage du camion, la jauge de livraison doit rester au vert.",
+    // C1 (spec D2.2): text-only panel enumerating the whole ticker strip — the bullets
+    // supply the scannable structure prose cannot, `arme` included (the readout panel 5
+    // teaches, listed here where the strip is enumerated).
     teachingBullets: [
-      "HUD: score/niveau/vague/temps/vies",
+      "HUD: score/niveau/vague/temps/vies/arme",
       "Livraison: jauge verte pendant le passage",
     ],
   },

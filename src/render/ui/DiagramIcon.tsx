@@ -16,6 +16,12 @@ import { ringZoneColour } from "@render/scene/hostageCue";
  * sit on a dark "screen" inset (so the acid hues read on the light newsprint panel); the RING is
  * the one lit element (`la loi du glow`). `prefers-reduced-motion` freezes the ring on its
  * GREEN-on-the-head payoff frame (the panel text and the `diagramAlt` carry the full rule).
+ *
+ * Reduced-motion contract (AC9): `.di-anim` only kills the animation, so what stays on screen is
+ * each element's PRESENTATION ATTRIBUTES. Every diagram therefore encodes ONE legible frozen frame
+ * in those attributes — a single state of any two-state pair, never both overprinted, never an
+ * `opacity="0"` actor that carries the lesson. A keyframe set that pins opacity at both 0% and 100%
+ * fully overrides them, so the frozen frame costs the animated frame nothing.
  */
 
 const BODY = "#0b0916"; // the dark "screen" inset ground
@@ -29,7 +35,10 @@ const WARN = "#ffcf5a";
 const CAPTOR_SRC = `${import.meta.env.BASE_URL}assets/enemy_hostage.png`;
 const GIRL_SRC = `${import.meta.env.BASE_URL}assets/hostage/girl.png`;
 const BELLIARD_FACADE_SRC = `${import.meta.env.BASE_URL}assets/levels/belliard/facade.png`;
-const COMMANDANT_SRC = `${import.meta.env.BASE_URL}assets/enemy_riot_shooting.png`;
+// The Commandant is the BOSS identity, not a riot trooper: the boss-finale panel draws the shipped
+// `boss/commander_shielded.png` pose so the figure the tutorial announces is the figure the player
+// meets at expiry.
+const COMMANDANT_SRC = `${import.meta.env.BASE_URL}assets/boss/commander_shielded.png`;
 
 // The true in-game reticle hues (single source of truth: the render-side colour map).
 const GREEN = ringZoneColour("vital"); // head → lethal
@@ -71,10 +80,10 @@ const DIAGRAM_STYLES = `
 .di-sr-bullet { animation: di-sr-bullet 1.6s linear infinite; transform-box: fill-box; transform-origin: center; }
 .di-sr-warning { animation: di-sr-warning 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes di-sr-bullet {
-  0%   { transform: translateX(0); opacity: 0; }
+  0%   { transform: translateX(28px); opacity: 0; }
   12%  { opacity: 1; }
   88%  { opacity: 1; }
-  100% { transform: translateX(-56px); opacity: 0; }
+  100% { transform: translateX(-28px); opacity: 0; }
 }
 @keyframes di-sr-warning {
   0%   { opacity: 0; transform: scale(.5); }
@@ -88,7 +97,9 @@ const DIAGRAM_STYLES = `
 .di-wc-link-3 { animation: di-wc-link-3 2.1s ease-out infinite; }
 @keyframes di-wc-link-1 { 0%,7%{opacity:.25} 28%,58%{opacity:1} 100%{opacity:.25} }
 @keyframes di-wc-link-2 { 0%,36%{opacity:.25} 58%,80%{opacity:1} 100%{opacity:.25} }
-@keyframes di-wc-link-3 { 0%,63%{opacity:.25} 80%,100%{opacity:1} }
+/* link-3 closes the loop back down to .25 (like links 1-2) instead of ending lit — otherwise the
+   restart snaps 1 → .25 and the chain pops every cycle. */
+@keyframes di-wc-link-3 { 0%,63%{opacity:.25} 80%,92%{opacity:1} 100%{opacity:.25} }
 
 .di-th-marker { animation: di-th-marker 3.2s ease-in-out infinite; }
 @keyframes di-th-marker {
@@ -235,7 +246,13 @@ function ShotReadPlayerVsEnemyBulletIcon(): JSX.Element {
         strokeWidth="2.4"
         strokeLinecap="round"
       />
-      <circle className="di-anim di-sr-bullet" cx="96" cy="63" r="3.2" fill={WARN} opacity="0" />
+      {/* Enemy round in flight + the danger ring closing on the player. The base attributes ARE
+          the reduced-motion frozen frame (`.di-anim` kills the animation, presentation attributes
+          then apply): the round sits mid-course at the travel midpoint (the animation swings it
+          ±28px around that same midpoint, so the moving frame is byte-identical to before) and the
+          ring is frozen on its `scale(1)/opacity .8` payoff beat. Motion off, the lesson "leurs
+          balles voyagent — esquive" still has a picture. */}
+      <circle className="di-anim di-sr-bullet" cx="68" cy="63" r="3.2" fill={WARN} opacity="1" />
       <circle
         className="di-anim di-sr-warning"
         cx="28"
@@ -244,7 +261,7 @@ function ShotReadPlayerVsEnemyBulletIcon(): JSX.Element {
         fill="none"
         stroke={WARN}
         strokeWidth="1.8"
-        opacity="0"
+        opacity="0.8"
       />
     </svg>
   );
@@ -412,7 +429,19 @@ function BossFinaleSwitchIcon(): JSX.Element {
         preserveAspectRatio="xMidYMid meet"
         style={{ imageRendering: "pixelated" }}
       />
-      <g className="di-anim di-bf-before" stroke={INK} strokeWidth="1.2" strokeLinecap="round">
+      {/* BEFORE state (chrono still running). Its base attributes ARE the reduced-motion frozen
+          frame, and that frame is the AFTER beat — the one the panel teaches: the chrono box and
+          the quota bar stay at the .25 the animation dims them to, while the "00:05" digits go to
+          a hard 0 so they never overprint the WARN "00:00" painted at the same x=33,y=68. With
+          motion ON nothing changes: every `di-bf-*` keyframe set pins opacity at both 0% and 100%,
+          so the animation fully overrides these presentation attributes. */}
+      <g
+        className="di-anim di-bf-before"
+        stroke={INK}
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity="0.25"
+      >
         <rect x="16" y="55" width="34" height="16" rx="3" fill="none" />
         <line x1="22" y1="62" x2="44" y2="62" />
       </g>
@@ -424,6 +453,7 @@ function BossFinaleSwitchIcon(): JSX.Element {
         fontSize="7.6"
         textAnchor="middle"
         fontFamily="monospace"
+        opacity="0"
       >
         00:05
       </text>
@@ -444,6 +474,7 @@ function BossFinaleSwitchIcon(): JSX.Element {
         strokeWidth="1.2"
         strokeLinecap="round"
         fill="none"
+        opacity="0.25"
       >
         <rect x="16" y="78" width="34" height="12" rx="2.5" />
         <line x1="21" y1="84" x2="45" y2="84" />

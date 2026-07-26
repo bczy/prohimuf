@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   manifestFor,
   enemyBaseFileKey,
@@ -14,6 +16,7 @@ import {
   facadeBackdropPath,
   menuBackdropPath,
   narrativeImagePaths,
+  illustrationAssetPaths,
   audioAssetPaths,
 } from "@game/systems/assetManifest";
 import {
@@ -92,6 +95,8 @@ describe("assetManifest — menu & tutorial", () => {
       ...(TUTORIAL_NARRATIVE_MOBILE.backdrop ? [TUTORIAL_NARRATIVE_MOBILE.backdrop] : []),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
+      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP),
+      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_MOBILE),
     ]);
     expect(new Set(m)).toEqual(expected);
     // The desktop and mobile forks share the same illustration set (they differ
@@ -104,6 +109,69 @@ describe("assetManifest — menu & tutorial", () => {
     }
     expect(m).toContain("assets/vehicles/truck.png"); // the opening panel's image
     expect(m).toContain(menuBackdropPath());
+  });
+
+  // ADR-0069 D5 (preload-explicitness): a "code-drawn" panel is only vector-pure when it
+  // draws nothing but vectors. The edge-scroll gesture icon frames the REAL Belliard street
+  // (5.9 MB) inside its mini-screen and the hostage-ring diagram embeds the REAL captor +
+  // girl sprites, so those bitmaps are tutorial-panel assets like any `image:` — the gate
+  // must warm them, or they fetch cold while the panel is already on screen.
+  it("warms the bitmaps embedded in the tutorial's code-drawn gesture/diagram panels", () => {
+    const m = manifestFor("tutorial");
+    expect(m).toContain("assets/levels/belliard/street-wide.png"); // edge-scroll mini-screen
+    expect(m).toContain("assets/enemy_hostage.png"); // hostage-ring captor
+    expect(m).toContain("assets/hostage/girl.png"); // hostage-ring hostage
+    // boss-finale-switch shows the Commandant in his SHIELDED QTE pose — the real boss
+    // sprite, no longer the CRS one it used to borrow (render-lane sprite-identity fix).
+    // The tutorial branch is the only thing that warms it here: bossAssetPaths runs on
+    // the level branch, which the tutorial target never reaches.
+    expect(m).toContain("assets/boss/commander_shielded.png");
+    for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
+      for (const path of illustrationAssetPaths(scene)) expect(m).toContain(path);
+    }
+  });
+
+  // The map states what the diagrams DRAW, so it must move when they do. This is the pin
+  // that goes red if the Commandant pose is swapped again without the manifest following.
+  it("states the diagram bitmaps by their current sprite, and every one of them ships", () => {
+    const embedded = illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP);
+    expect(embedded).toContain("assets/boss/commander_shielded.png");
+    expect(embedded).not.toContain("assets/enemy_riot_shooting.png"); // stale Commandant pose
+    for (const path of embedded) {
+      expect(existsSync(resolve(process.cwd(), "public", path))).toBe(true);
+    }
+  });
+
+  it("illustrationAssetPaths reads the gesture/diagram channels, not the image channel", () => {
+    // Desktop-only gesture (`edge-scroll`) vs mobile-only gestures: the fork that does not
+    // author edge-scroll must not claim its bitmap — the manifest unions BOTH forks instead.
+    expect(illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP)).toContain(
+      "assets/levels/belliard/street-wide.png",
+    );
+    expect(illustrationAssetPaths(TUTORIAL_NARRATIVE_MOBILE)).not.toContain(
+      "assets/levels/belliard/street-wide.png",
+    );
+    // `image:` panels stay the business of narrativeImagePaths (no double bookkeeping).
+    expect(illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP)).not.toContain(
+      "assets/vehicles/truck.png",
+    );
+    // A scene with no gesture/diagram panel contributes nothing.
+    expect(illustrationAssetPaths({ id: "empty", lines: [] })).toEqual([]);
+  });
+
+  // The illustration warming above is applied to the tutorial branch ONLY, which is honest
+  // exactly as long as no pre/post-level scene authors a gesture or a diagram. If one ever
+  // does, this fails and the warming must be extended to the level branch too.
+  it("no pre/post-level scene authors a gesture or diagram channel", () => {
+    for (const scene of [
+      ...Object.values(PRE_LEVEL_NARRATIVE),
+      ...Object.values(POST_LEVEL_NARRATIVE),
+    ]) {
+      for (const line of scene.lines) {
+        expect(line.gesture).toBeUndefined();
+        expect(line.diagram).toBeUndefined();
+      }
+    }
   });
 });
 

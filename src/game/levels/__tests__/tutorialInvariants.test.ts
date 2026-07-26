@@ -115,10 +115,14 @@ describe("tutorial stage invariants (ADR-0012)", () => {
 
   it("keeps the shared segments free of device-specific control tokens (ADR-0015)", () => {
     // Shared panels must carry none of the four fork tokens, or a shared panel would
-    // leak device-specific copy onto the wrong variant.
+    // leak device-specific copy onto the wrong variant. `teachingBullets` is copy on the
+    // same shared object as `text` (spec D2.3 holds them to the same vocabulary law), and
+    // every bullet-carrying panel is a shared field line — so it is swept identically.
     for (const i of [0, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
-      const text = TUTORIAL_NARRATIVE_DESKTOP.lines[i]?.text ?? "";
-      expect(text).not.toMatch(/clic|souris|doigt|balay/i);
+      const line = TUTORIAL_NARRATIVE_DESKTOP.lines[i];
+      for (const copy of [line?.text ?? "", ...(line?.teachingBullets ?? [])]) {
+        expect(copy).not.toMatch(/clic|souris|doigt|balay/i);
+      }
     }
   });
 

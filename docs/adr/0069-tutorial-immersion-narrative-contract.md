@@ -69,8 +69,14 @@ reference between variants.
 
 - Existing `PRE_LEVEL_NARRATIVE` / `POST_LEVEL_NARRATIVE` data remains valid with no required edits.
 - Existing tutorial lines without new fields render exactly as before.
-- Asset-preload behavior remains explicit: diagram cues are code-drawn; if tutorial backdrops are authored,
-  tutorial manifest inclusion is updated in `assetManifest.ts`.
+- Asset-preload behavior remains explicit: diagram/gesture cues are code-drawn, but code-drawn does not
+  mean asset-free — a code-drawn diagram or gesture icon MAY embed real bitmaps (e.g. an in-game sprite
+  or level facade framed inside otherwise-vector SVG line art) to teach the true silhouette. Every such
+  embedded bitmap is declared in `assetManifest.ts`'s `GESTURE_EMBEDDED_ASSETS` / `DIAGRAM_EMBEDDED_ASSETS`
+  maps (one entry per `GestureKind` / `DiagramKind`, exhaustive over the closed unions) and warmed via
+  `illustrationAssetPaths()`, which `manifestFor("tutorial")` includes alongside the backdrop and
+  `narrativeImagePaths()` channels. If tutorial backdrops are authored, the same manifest inclusion rule
+  applies to `NarrativeScene.backdrop`.
 
 ## Consequences
 

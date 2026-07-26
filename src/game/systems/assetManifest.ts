@@ -9,7 +9,7 @@ import {
   PRE_LEVEL_NARRATIVE,
   POST_LEVEL_NARRATIVE,
 } from "@game/systems/narrativeSystem";
-import type { NarrativeScene } from "@game/systems/narrativeSystem";
+import type { DiagramKind, GestureKind, NarrativeScene } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
 
 /**
@@ -324,10 +324,57 @@ export function narrativeImagePaths(scene: NarrativeScene): readonly string[] {
 }
 
 /**
+ * Bitmaps embedded INSIDE the code-drawn gesture icons (`src/render/ui/GestureIcon.tsx`),
+ * keyed by the `GestureKind` a panel authors. "Code-drawn" means the icon is vector line
+ * art, NOT that it references no asset: `edge-scroll` frames the real Belliard street in
+ * its mini-screen (5.9 MB), so that panel costs a fetch like any `image:` panel and must be
+ * warmed (ADR-0069 D5, preload-explicitness). The other three icons are pure vector — an
+ * empty list, not an omission. Exhaustive over the closed union: a fifth `GestureKind`
+ * fails the build here until someone states what it loads (same guard as GestureIcon's own
+ * `Record<GestureKind, …>`), so the manifest cannot silently fall behind the icons.
+ */
+const GESTURE_EMBEDDED_ASSETS: Record<GestureKind, readonly string[]> = {
+  "mouse-click": [],
+  "edge-scroll": ["assets/levels/belliard/street-wide.png"],
+  "two-finger-tap": [],
+  "swipe-pan": [],
+};
+
+/**
+ * Same contract for the code-drawn MECHANIC diagrams (`src/render/ui/DiagramIcon.tsx`):
+ * `hostage-ring` and `boss-finale-switch` show the REAL in-game sprites so the tutorial
+ * teaches the true silhouettes; the three flow/ladder diagrams are pure vector. The
+ * Commandant is his SHIELDED QTE pose (`commander_shielded.png`) — the tutorial branch is
+ * the ONLY thing that warms it here, since `bossAssetPaths` runs on the level branch.
+ */
+const DIAGRAM_EMBEDDED_ASSETS: Record<DiagramKind, readonly string[]> = {
+  "shot-read-player-vs-enemy-bullet": [],
+  "weapon-crate-loop": [],
+  "threat-hierarchy-ladder": [],
+  "hostage-ring": ["assets/enemy_hostage.png", "assets/hostage/girl.png"],
+  "boss-finale-switch": ["assets/levels/belliard/facade.png", "assets/boss/commander_shielded.png"],
+};
+
+/**
+ * The bitmaps a scene's code-drawn illustrations embed, base-relative and de-duplicated.
+ * Twin of `narrativeImagePaths`, for the other two illustration channels (`gesture` /
+ * `diagram`) — together they cover every asset a panel can put on screen.
+ */
+export function illustrationAssetPaths(scene: NarrativeScene): readonly string[] {
+  const paths: string[] = [];
+  for (const line of scene.lines) {
+    if (line.gesture !== undefined) paths.push(...GESTURE_EMBEDDED_ASSETS[line.gesture]);
+    if (line.diagram !== undefined) paths.push(...DIAGRAM_EMBEDDED_ASSETS[line.diagram]);
+  }
+  return dedupe(paths);
+}
+
+/**
  * The full de-duplicated, stably-ordered manifest to preload for a target:
  * - `"menu"` — just the menu backdrop.
  * - `"tutorial"` — the menu backdrop plus BOTH tutorial forks' illustrations
- *   (desktop + mobile), so either device path is covered deterministically.
+ *   (desktop + mobile), so either device path is covered deterministically —
+ *   including the bitmaps embedded in their code-drawn gesture/diagram panels.
  * - any other string is treated as a level id — its backdrop layers, enemy
  *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops, the
  *   boss QTE poses + décor props (when the level authors a boss), and its
@@ -348,6 +395,8 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
       ...tutorialBackdrops,
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
       ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
+      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_DESKTOP),
+      ...illustrationAssetPaths(TUTORIAL_NARRATIVE_MOBILE),
     ]);
   }
 
