@@ -66,3 +66,37 @@ All CC0 — safe to download and commit samples when network allows.
 - Kenney — Space Shooter Extension (CC0, 270 assets): https://kenney.nl/assets/space-shooter-extension
 - OpenGameArt — "Neon Node" (CC0, dark sci-fi vector neon tiles/sprites): https://opengameart.org/content/neon-node
 - OpenGameArt — "Neon Town" (CC0, neon lights + cars): https://opengameart.org/content/neon-town
+
+## 5. Graffiti live-paint process & alphabet construction — reference pages/videos (do not download/scan)
+
+Sourced for `board-tag-live-paint.md` (future tag-reveal FX reference hunt, `graphic-references`).
+Reference URLs only; never download, re-encode, or frame-scrape any of these videos, and
+never trace a named artist's letterforms into a prompt.
+
+- INA — "Rap et Tag" (France 2, *Envoyé spécial*, 19 avril 1990), Paris tagging + Mode 2
+  mural footage: https://www.ina.fr/ina-eclaire-actu/video/cab90016065/rap-et-tag —
+  copyrighted French national-archive footage, describe/link only (same regime as
+  _Prohibition_ §1).
+- Style Wars (1983, dir. Tony Silver, prod. Henry Chalfant) — official reference only:
+  https://www.stylewars.com/ , https://www.folkstreams.net/films/style-wars — copyrighted
+  theatrical/PBS documentary; do not link unofficial full-film uploads.
+- "Writers, 20 ans de graffiti à Paris" (dir. Marc-Aurèle Vecchione, 2004) — reference page:
+  https://www.film-documentaire.fr/4DACTION/w_fiche_film/12443_0 — commercial French DVD
+  release, reference-page only.
+- SOFLES — LIMITLESS (dir. Selina Miles, prod. Ironlak, 2013) — official page:
+  https://ironlak.com/sofles-limitless/ — copyrighted contemporary commercial work,
+  mechanic/timing reference only, explicitly anachronistic for 1998 Paris — never a look
+  reference, never named-artist mimicry.
+- Art in Context — "How to Draw Graffiti Bubble Letters":
+  https://artincontext.org/how-to-draw-graffiti-bubble-letters/ — commercial editorial
+  site, all rights reserved, describe/study only.
+- Bombing Science — "23 Mind-Blowing Graffiti Alphabets":
+  https://www.bombingscience.com/graffiti-alphabets-will-blow-mind/ — each alphabet is a
+  named living artist's copyrighted work (credited on page) — study for stylization range
+  only, never reproduce or trace a named set.
+- Art Crimes / graffiti.org (est. May 1994): https://www.graffiti.org/ — contributor/
+  photographer-owned content per the site's own terms (not independently re-verified this
+  session, `WebFetch` 403'd — proxy block, see `board-tag-live-paint.md`) — reference/study
+  only until re-verified.
+- Wikipedia — Throw-up (graffiti), Piece (graffiti), Glossary of graffiti: standard CC
+  BY-SA, textual/vocabulary reference only.
