@@ -142,25 +142,45 @@ async function run() {
     ? only.split(",").map((m) => MATRIX.find((x) => x.model === m.trim()) ?? { model: m.trim(), ref: 0 })
     : MATRIX;
 
-  const { subject, seed } = poseData(pose);
-  const cells = [];
-  for (const m of matrix) {
-    cells.push({ ...m, tail: "comic", mode: "texte seul", prompt: subject + COMIC_TAIL, refs: null });
-    if (m.ref > 0)
-      cells.push({
-        ...m,
-        tail: "comic",
-        mode: "guidé par les ennemis",
-        prompt: subject + COMIC_TAIL,
-        refs: REF_IMAGES.slice(0, Math.min(m.ref, REF_IMAGES.length)),
-      });
-    if (m.control)
-      cells.push({ ...m, tail: "legacy", mode: "témoin (ancienne queue)", prompt: subject + LEGACY_TAIL, refs: null });
+  // Rebuild the page from what is already on disk — no network, no spend. Used
+  // to re-render after a template change, and to inspect a run that was killed.
+  if (argv.includes("--report-only")) {
+    const m = loadManifest();
+    await writeHtml(m, { running: 0 });
+    console.log(`${m.length} cellules dans le manifeste.`);
+    return;
   }
 
-  console.log(`pose=${pose} seed=${seed} size=${size} modèles=${matrix.length} cellules=${cells.length}`);
+  // `--pose a,b,c` runs several poses in ONE invocation. That is what makes the
+  // page fill up progressively without needing state to survive between runs:
+  // a CI runner starts clean every time, so cross-run accumulation would mean
+  // committing outputs back to the branch. One run, many poses, avoids that.
+  // Poses are interleaved LAST — all models for pose A, then pose B — so an
+  // aborted run leaves whole comparable sections rather than ragged ones.
+  const poses = pose.split(",").map((p) => p.trim()).filter(Boolean);
+  const cells = [];
+  for (const p of poses) {
+    const { subject, seed } = poseData(p);
+    const base = { pose: p, seed };
+    for (const m of matrix) {
+      cells.push({ ...m, ...base, tail: "comic", mode: "texte seul", prompt: subject + COMIC_TAIL, refs: null });
+      if (m.ref > 0)
+        cells.push({
+          ...m,
+          ...base,
+          tail: "comic",
+          mode: "guidé par les ennemis",
+          prompt: subject + COMIC_TAIL,
+          refs: REF_IMAGES.slice(0, Math.min(m.ref, REF_IMAGES.length)),
+        });
+      if (m.control)
+        cells.push({ ...m, ...base, tail: "legacy", mode: "témoin (ancienne queue)", prompt: subject + LEGACY_TAIL, refs: null });
+    }
+  }
+
+  console.log(`poses=${poses.join(",")} size=${size} modèles=${matrix.length} cellules=${cells.length}`);
   if (dry) {
-    cells.forEach((c) => console.log(`  ${c.model.padEnd(22)} ${c.tail.padEnd(7)} ${c.mode}`));
+    cells.forEach((c) => console.log(`  ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode}`));
     return;
   }
 
@@ -177,32 +197,105 @@ async function run() {
   }
 
   fs.mkdirSync(OUT, { recursive: true });
-  const seen = new Map();
+
+  // The report is written INCREMENTALLY — rebuilt from the manifest after every
+  // single cell, not once at the end. Two reasons, both practical: a 14-minute
+  // run is watchable instead of opaque, and a run that dies at cell 20 still
+  // leaves 19 usable results instead of nothing. The manifest also PERSISTS
+  // across runs, so generating a second pose adds a section to the same page
+  // rather than replacing it.
+  const manifest = loadManifest();
+  const seen = new Map(
+    manifest.filter((m) => m.md5).map((m) => [m.md5, `${m.model}/${m.mode} (${m.pose})`]),
+  );
   let ok = 0;
-  for (const c of cells) {
+
+  for (const [i, c] of cells.entries()) {
     const slug = `${c.model.replace(/[^\w.-]/g, "_")}__${c.tail}__${c.refs ? "ref" : "txt"}`;
-    const file = path.join(OUT, `${pose}__${slug}.png`);
+    const file = path.join(OUT, `${c.pose}__${slug}.png`);
+    const record = { pose: c.pose, seed: c.seed, size, model: c.model, tail: c.tail, mode: c.mode, note: c.note ?? "" };
     try {
-      const buf = await fetchBuf(urlFor({ prompt: c.prompt, seed, model: c.model, size, refs: c.refs }), token);
+      const buf = await fetchBuf(urlFor({ prompt: c.prompt, seed: c.seed, model: c.model, size, refs: c.refs }), token);
       fs.writeFileSync(file, buf);
       const md5 = crypto.createHash("md5").update(buf).digest("hex");
       // Byte-identical output from two different models means the model param
       // was ignored — a silent fallback, not an agreement between models.
-      c.fallbackSuspect = seen.get(md5) ?? null;
-      seen.set(md5, `${c.model}/${c.mode}`);
-      Object.assign(c, { file, md5, bytes: buf.length });
+      record.fallbackSuspect = seen.get(md5) ?? null;
+      seen.set(md5, `${c.model}/${c.mode} (${c.pose})`);
+      Object.assign(record, { file: path.basename(file), md5, bytes: buf.length });
       ok++;
       console.log(
-        `  [ok ] ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${buf.length}B` +
-          (c.fallbackSuspect ? `  !! FALLBACK-SUSPECT (mêmes octets que ${c.fallbackSuspect})` : ""),
+        `  [ok ] ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${buf.length}B` +
+          (record.fallbackSuspect ? `  !! FALLBACK-SUSPECT (mêmes octets que ${record.fallbackSuspect})` : ""),
       );
     } catch (e) {
-      c.error = e.message;
-      console.log(`  [ERR] ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${e.message}`);
+      record.error = e.message;
+      console.log(`  [ERR] ${c.pose.padEnd(24)} ${c.model.padEnd(22)} ${c.mode.padEnd(24)} ${e.message}`);
     }
+    upsert(manifest, record);
+    saveManifest(manifest);
+    await writeHtml(manifest, { running: cells.length - (i + 1) });
   }
 
-  writeHtml(cells, { pose, seed, size, ok, total: cells.length });
+  await writeHtml(manifest, { running: 0 });
+  console.log(`\n${ok}/${cells.length} cellules générées.`);
+}
+
+// ── Manifest: the report's source of truth, so a rerun accumulates ────────────
+const MANIFEST = () => path.join(OUT, "results.json");
+
+function loadManifest() {
+  try {
+    return JSON.parse(fs.readFileSync(MANIFEST(), "utf8"));
+  } catch {
+    // Absent or unreadable manifest is the normal first-run case, not a failure.
+    return [];
+  }
+}
+
+function saveManifest(m) {
+  fs.writeFileSync(MANIFEST(), JSON.stringify(m, null, 1));
+}
+
+/** Replace the row for this exact cell identity, or append it. */
+function upsert(manifest, record) {
+  const key = (r) => `${r.pose}|${r.model}|${r.tail}|${r.mode}`;
+  const i = manifest.findIndex((r) => key(r) === key(record));
+  if (i >= 0) manifest[i] = record;
+  else manifest.push(record);
+}
+
+// ── Thumbnails ───────────────────────────────────────────────────────────────
+// The report inlines every image as a data: URI so the page is one portable
+// file. At full size that is ~8 MB for ONE pose — nine poses would be unopenable,
+// which defeats the point of a page you fill up progressively. So each source
+// image is downscaled once into a disk cache and the page inlines the thumb.
+// The full-resolution PNGs stay untouched next to it for the real judging.
+const THUMB_PX = 384;
+const THUMBS = () => path.join(OUT, ".thumbs");
+let canvasLib = null;
+
+async function thumbFor(src) {
+  if (!src || !fs.existsSync(src)) return null;
+  if (canvasLib === null) {
+    // Optional dependency: without it the page still builds, just heavier.
+    canvasLib = await import("@napi-rs/canvas").catch(() => false);
+  }
+  if (canvasLib === false) return src;
+  const dst = path.join(THUMBS(), `${path.basename(src)}.jpg`);
+  if (fs.existsSync(dst) && fs.statSync(dst).mtimeMs >= fs.statSync(src).mtimeMs) return dst;
+  try {
+    const img = await canvasLib.loadImage(src);
+    const scale = Math.min(1, THUMB_PX / Math.max(img.width, img.height));
+    const c = canvasLib.createCanvas(Math.round(img.width * scale), Math.round(img.height * scale));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    fs.mkdirSync(THUMBS(), { recursive: true });
+    fs.writeFileSync(dst, c.toBuffer("image/jpeg", 82));
+    return dst;
+  } catch {
+    // A corrupt or half-written frame must not abort the whole report.
+    return src;
+  }
 }
 
 // Pollinations serves JPEG bytes even from a .png request path (verified: `file`
@@ -222,13 +315,29 @@ function dataUri(f) {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
-function writeHtml(cells, meta) {
+async function writeHtml(manifest, meta = {}) {
+  const running = meta.running > 0;
+  const poses = [...new Set(manifest.map((r) => r.pose))];
+  // Resolve every thumbnail up front so the template stays a pure string build.
+  const uri = new Map();
+  const resolve = async (src) => {
+    if (!src || uri.has(src)) return;
+    uri.set(src, dataUri(await thumbFor(src)));
+  };
   const refs = [
     { label: "enemy_sprite.png", sub: "CIBLE — le registre à atteindre", f: `${REPO}/public/assets/enemy_sprite.png` },
     { label: "enemy_riot.png", sub: "CIBLE — identité composée (24 mots)", f: `${REPO}/public/assets/enemy_riot.png` },
     { label: "enemy_shooting.png", sub: "CIBLE — pose de tir", f: `${REPO}/public/assets/enemy_shooting.png` },
-    { label: `${meta.pose}.png`, sub: "REJETÉ — ce que Bertrand a renvoyé", f: `${REPO}/public/assets/boss/${meta.pose}.png`, bad: true },
+    ...poses.map((p) => ({
+      label: `${p}.png`,
+      sub: "REJETÉ — l'art shippé aujourd'hui",
+      f: `${REPO}/public/assets/boss/${p}.png`,
+      bad: true,
+    })),
   ];
+
+  for (const r of refs) await resolve(r.f);
+  for (const r of manifest) if (r.file) await resolve(path.join(OUT, r.file));
 
   const card = (label, uri, sub, warn, bad) => `
     <figure class="cell${warn ? " warn" : ""}${bad ? " bad" : ""}">
@@ -237,8 +346,13 @@ function writeHtml(cells, meta) {
     </figure>`;
 
   const html = `<!doctype html><meta charset="utf-8">
-<title>Banc d'essai multi-modèles — boss ${meta.pose}</title>
+${running ? '<meta http-equiv="refresh" content="10">' : ""}
+<title>Banc d'essai multi-modèles — boss</title>
 <style>
+ .live{display:inline-flex;align-items:center;gap:7px;background:#1c1408;border:1px solid #6b4c12;
+   color:#f0c674;border-radius:999px;padding:3px 11px;font-size:12px;margin-left:10px;vertical-align:2px}
+ .live i{width:7px;height:7px;border-radius:50%;background:#f0c674;animation:p 1.2s infinite}
+ @keyframes p{50%{opacity:.25}}
  :root{color-scheme:dark}
  body{font:14px/1.6 ui-sans-serif,system-ui,sans-serif;margin:0;padding:36px 32px 64px;background:#0b0b0c;color:#e8e8ea;max-width:1400px}
  h1{font-size:21px;margin:0 0 6px;letter-spacing:-.01em}
@@ -261,8 +375,8 @@ function writeHtml(cells, meta) {
  figcaption em{color:#ff8a8a;font-style:normal;font-size:11px}
 </style>
 
-<h1>Banc d'essai multi-modèles — boss <code>${meta.pose}</code></h1>
-<div class="meta">seed ${meta.seed} · ${meta.size}px · ${meta.ok}/${meta.total} cellules générées</div>
+<h1>Banc d'essai multi-modèles — boss${running ? '<span class="live"><i></i>génération en cours</span>' : ""}</h1>
+<div class="meta">${manifest.filter((r) => !r.error).length} cellules générées${manifest.some((r) => r.error) ? ` · ${manifest.filter((r) => r.error).length} en échec` : ""} · ${poses.length} pose(s)${running ? " · la page se recharge toute seule toutes les 10 s" : ""}</div>
 
 <div class="brief">
  <h3>Ce qu'on cherche</h3>
@@ -290,23 +404,29 @@ function writeHtml(cells, meta) {
 </div>
 
 <h2>Références</h2>
-<div class="grid">${refs.map((r) => card(r.label, dataUri(r.f), r.sub, null, r.bad)).join("")}</div>
+<div class="grid">${refs.map((r) => card(r.label, uri.get(r.f), r.sub, null, r.bad)).join("")}</div>
 
-<h2>Candidats</h2>
-<div class="grid">${cells
-    .map((c) =>
-      card(
-        c.model,
-        dataUri(c.file),
-        `${c.mode}${c.note ? ` · ${c.note}` : ""}`,
-        c.error ? `échec : ${c.error}` : c.fallbackSuspect ? `octets identiques à ${c.fallbackSuspect}` : null,
-      ),
-    )
-    .join("")}</div>`;
+${poses
+  .map(
+    (p) => `<h2>${p} — seed ${manifest.find((r) => r.pose === p)?.seed ?? "?"}</h2>
+<div class="grid">${manifest
+      .filter((r) => r.pose === p)
+      .map((r) =>
+        card(
+          r.model,
+          r.file ? uri.get(path.join(OUT, r.file)) : null,
+          `${r.mode}${r.note ? ` · ${r.note}` : ""}`,
+          r.error ? `échec : ${r.error}` : r.fallbackSuspect ? `octets identiques à ${r.fallbackSuspect}` : null,
+        ),
+      )
+      .join("")}</div>`,
+  )
+  .join("\n")}`;
 
-  const out = path.join(OUT, `bakeoff-${meta.pose}.html`);
+  const out = path.join(OUT, "bakeoff.html");
   fs.writeFileSync(out, html);
-  console.log(`\nPreview: ${out}`);
+  // Only announce once the run is done — this function fires after every cell.
+  if (!running) console.log(`\nPreview: ${out}`);
 }
 
 run().catch((e) => {

@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
     inputs:
       pose:
-        description: "Boss pose key from levelArt.json (boss.types)"
+        description: "Boss pose key(s) from levelArt.json boss.types — comma-separated for several"
         default: commander_shielded
         type: string
       models:
@@ -75,6 +75,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Install @napi-rs/canvas (report thumbnails)
+        # Same pinned version/flags as spike-model-ab.yml. Only used to downscale
+        # the inlined preview images: full-size data URIs put ONE pose at ~8 MB,
+        # which would make a nine-pose page unopenable. Optional by design — the
+        # script falls back to full-size inlining if the import fails.
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Plan (no generation, no spend)
         run: |
