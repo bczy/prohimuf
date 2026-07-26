@@ -1418,6 +1418,23 @@ describe("tickGameState — off-screen enemies cannot shoot", () => {
     expect(state.enemies[0]?.state).toBe("HIDDEN");
   });
 
+  // The freeze must NOT strand an already-killed enemy: `allDead` gates the wave
+  // rollover on every enemy reaching DEAD, and a HIT enemy is not re-targetable,
+  // so a frozen corpse would empty the facade for the rest of the level.
+  it("an enemy killed just before the camera leaves it still dies, and the wave rolls over", () => {
+    const dying = {
+      ...aboutToShoot,
+      state: "HIT" as const,
+      timer: 0.001, // mid hit-flash
+      hp: 0, // the kill is already banked
+    };
+    // Camera at 0 ⇒ slot 0 (x = -18) is off screen for the whole tick.
+    const state = tickGameState(withOneEnemy(dying), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies.every((e) => e.state !== "HIT")).toBe(true);
+    expect(state.wave).toBe(2);
+    expect(state.enemies.length).toBeGreaterThan(0);
+  });
+
   // The delivery gauge reads SHOOTING CONTINUOUSLY, so it needs its own on-screen
   // filter: an enemy caught mid-shot by a camera pan stays frozen in SHOOTING and
   // would otherwise chip the vehicle forever from out of sight.

@@ -118,6 +118,28 @@ describe("tickEnemy", () => {
         tickEnemy(mk("VISIBLE", 0.05), 0.1, true),
       );
     });
+
+    // HIT is exempt: the player already banked the kill and a HIT enemy is not
+    // re-targetable, so freezing it would strand an hp-0 corpse short of DEAD and
+    // stall wave rollover for the rest of the level.
+    describe("HIT is exempt from the freeze", () => {
+      it("a killed enemy still reaches DEAD off screen", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1)); // hp 1 -> 0
+        expect(tickEnemy(hit, 0.3, false).state).toBe("DEAD");
+      });
+
+      it("a riot cop that survives still pops back to VISIBLE off screen", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1, { kind: "riot", hp: 2 })); // hp 2 -> 1
+        expect(tickEnemy(hit, 0.3, false).state).toBe("VISIBLE");
+      });
+
+      it("and then freezes in VISIBLE — the exemption does not leak into a shot", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1, { kind: "riot", hp: 2 }));
+        let e = tickEnemy(hit, 0.3, false); // HIT -> VISIBLE, still off screen
+        for (let i = 0; i < 100; i++) e = tickEnemy(e, 0.1, false);
+        expect(e.state).toBe("VISIBLE"); // never SHOOTING
+      });
+    });
   });
 });
 

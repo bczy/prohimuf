@@ -46,22 +46,32 @@ function nextState(enemy: Enemy): EnemyState {
 /**
  * Advance one enemy by `delta`.
  *
- * `onScreen === false` FREEZES the enemy entirely: its state is held and its
- * countdown is paused, so it neither pops up, ducks back, nor fires while the
- * camera is looking elsewhere ("an off-screen enemy cannot shoot"). Because
- * `SHOOTING` is only ever ENTERED through this transition, an unseen enemy can
- * never start a shot — the bullet spawn needs no guard of its own.
+ * `onScreen === false` FREEZES the enemy: its state is held and its countdown is
+ * paused, so it neither pops up, ducks back, nor fires while the camera is
+ * looking elsewhere ("an off-screen enemy cannot shoot"). Because `SHOOTING` is
+ * only ever ENTERED through this transition, an unseen enemy can never start a
+ * shot — the bullet spawn needs no guard of its own.
  *
- * It can however be CAUGHT in `SHOOTING` (it fired, then the camera panned
- * away) and stay frozen there: consumers that read the `SHOOTING` state
- * CONTINUOUSLY rather than on its transition — the delivery-vehicle damage —
- * must apply their own on-screen filter.
+ * `HIT` is EXEMPT from the freeze, and that exemption is load-bearing. The hit
+ * flash is a reaction the player already paid for: the kill is banked at shot
+ * resolution, and a `HIT` enemy is not re-targetable, so freezing it strands a
+ * hp-0 corpse that can never reach `DEAD`. `allDead` then never turns true and
+ * the wave stops rolling over — a progression stall, since the only cure is
+ * re-framing that one slot for `HIT_DURATION` with nothing on screen to hint at
+ * it. Exempting `HIT` costs the rule nothing: `nextState("HIT")` is `DEAD` or
+ * `VISIBLE`, never `SHOOTING`, so no shot can start out of sight (an off-screen
+ * riot cop that survives resolves to `VISIBLE` and freezes there instead).
+ *
+ * An enemy CAN still be caught frozen in `SHOOTING` (it fired, then the camera
+ * panned away). Consumers that read `SHOOTING` CONTINUOUSLY rather than on its
+ * transition must therefore apply their own on-screen filter; ADR-0069 lists which
+ * ones do.
  *
  * Defaults to `true` so every existing call site keeps its exact behaviour.
  */
 export function tickEnemy(enemy: Enemy, delta: number, onScreen = true): Enemy {
   if (enemy.state === "DEAD") return enemy;
-  if (!onScreen) return enemy;
+  if (!onScreen && enemy.state !== "HIT") return enemy;
 
   const newTimer = enemy.timer - delta;
   if (newTimer > 0) {
