@@ -9,6 +9,19 @@ Fiches : [`spec-boss-encounter-fiction.md`](../../game-design/spec-boss-encounte
 **Statut : DRAFT — game-graphist PRE-PROD PASS INTÉGRÉE (Serge, 2026-07-20, 9/9
 PASS-WITH-CORRECTION) ; lead-art PROMPT GATE requis avant tout commit/génération.**
 
+> ## ⚠ SUPERSEDED — voir [RULING (2) — le registre du sujet](#ruling-2--le-registre-du-sujet-lead-art-nico-2026-07-26) en fin de fichier
+>
+> **Rejet Bertrand 2026-07-26 sur les 9 PNG livrés : « L'art du boss est catastrophique, il
+> ne colle pas du tout au reste des graphismes. »** J'ai confirmé le FAIL de famille sur les
+> pixels. **La cause racine est le patch de valeur [S1]-[S11] / [B1]-[B4] documenté ci-dessous :
+> il a guéri le keying et provoqué la maladie.** Tout ce qui suit dans les sections « PRE-PROD
+> corrections intégrées » et « BATCH-2 reroll [B1]-[B4] » est **caduc en tant que doctrine** —
+> conservé comme archive de la boucle qui a échoué, **plus jamais comme recette**. Les 9 blocs
+> de prompt cités dans les sections A/B/C ne correspondent PLUS aux strings live de
+> `src/game/levels/levelArt.json` ; **la source de vérité est le JSON**, et le corps de ce
+> shard reste à réécrire par `concept-artist` contre le RULING (2). Les budgets en fin de
+> fichier (116-119 mots) sont périmés : les 9 assemblés sont maintenant **82-98**.
+
 ## PRE-PROD corrections intégrées (Serge, game-graphist, 2026-07-20)
 
 Toutes value-language + continuité, **aucune ne change le sujet/silhouette** (les poses sont
@@ -437,6 +450,181 @@ ground` → **[S10]** : masse-sombre-continue verrouillée en valeur claire + co
    lockstep avec le roster (inchangé du V1).
 5. **Anchors render-side** (dev-tooling, pas moi) : `muzzle` sur `commander_exposed`, `parryPoint`
    (bras armé) sur `commander_parry_windup`, deux rings (VITAL/LIMB) sur `commander_weakpoint`.
+
+---
+
+# RULING (2) — le registre du sujet (lead-art, Nico, 2026-07-26)
+
+**Déclencheur :** rejet direct de Bertrand sur les 9 PNG livrés — « L'art du boss est
+catastrophique, il ne colle pas du tout au reste des graphismes. Change-moi ce design,
+base-toi sur les ennemis, eux sont très bien. » PROMPT GATE sur la réécriture `concept-artist`
+des 9 `prompt` (aucun autre champ touché).
+
+## Verdict de famille : **PASS-WITH-CHANGES (9/9)**. La réécriture est ratifiée.
+
+J'ai calé l'œil sur les pixels avant de lire un mot : `enemy_sprite` / `enemy_riot` (la cible)
+contre `commander_shielded` / `commander_exposed` / `commander_finisher` / `lustre` /
+`speaker_wall` (le rejeté). Le constat est sans appel et Bertrand a raison :
+
+- **Les ennemis sont de l'ENCRE.** Masses noires pleines, arêtes dures, un liséré blanc, zéro
+  rampe. Une affiche. C'est §1 (fanzine photocopié, haut contraste) et c'est ce qui leur donne
+  aussi des bords que le key mord proprement.
+- **Le boss est du RENDU.** Rampes douces, tons chair, crâne sculpté, micro-détail
+  photographique, **et de la couleur cuite** (olive/kaki sur `commander_finisher`, beige sur
+  `speaker_wall`, argent spéculaire sur `lustre`) dans un monde où **la seule couleur c'est le
+  néon** (§1). Trois violations empilées : §2 loi 2 (family consistency — un asset hors famille
+  fait tomber le set), §1 (couleur), §2 loi 3 (le `lustre` est une purée de micro-détail,
+  illisible en silhouette à taille de jeu).
+
+**Le diagnostic de `concept-artist` est exact et je l'entérine comme cause racine.** Le patch
+[S1]-[S11] / [B1]-[B4] a fait exactement ce qu'il disait : `lighter than the black backdrop`,
+`a pale contour of light tracing…`, `mid-charcoal`, `each with a bright rim` sont des
+**instructions d'éclairage**. On ne peut pas demander à un modèle « éclaire et ombre ce sujet »
+puis lui demander « rends-le en aplats d'encre » dans la queue et espérer l'encre : FLUX a
+deux voix contradictoires sur la valeur, il arbitre pour la version rendue, et c'est la version
+rendue qui a shippé. **Le patch a guéri le keying et provoqué la maladie.** Les ennemis gagnent
+parce que leur sujet est **muet sur la valeur** et laisse la queue régner seule.
+
+## R1 — LOI DU REGISTRE DU SUJET (nouvelle règle, binding roster-wide)
+
+> **Le `prompt` (sujet) décrit une FORME et une IDENTITÉ. Le `style` (queue) décrit un
+> TRAITEMENT. Un mot de traitement dans le sujet est une faute, pas une optimisation.**
+>
+> Interdits dans un sujet : valeur (`charcoal`, `mid-grey`, `pale`, `lighter than`), lumière
+> (`a contour of light`, `bright rim`, `highlight`, `lit`, `shadow`), matière spéculaire
+> (`faceted`, `shiny`, `polished`), medium (`photographic`, `rendered`).
+> Autorisés : géométrie, vêtement, accessoire, pose, orientation, topologie
+> (`every drop attached to the frame`), cadrage/fond (`on a flat uniform black background`).
+>
+> Test : si la clause survivrait telle quelle dans un prompt d'ennemi, elle est en registre.
+> `reflective armband` passe — c'est le **nom d'un vêtement**, comme `sunglasses` ou
+> `leather jacket` chez les mooks ; `a pale contour of light tracing the hem` ne passe pas.
+
+Vérifié après application : les 9 sujets ne contiennent plus **aucun** token de valeur/lumière.
+Seuls survivants : `reflective armband` (nom de vêtement, mandaté par le RULING (1)) et le
+verrou de fond noir de `speaker_wall` (composition, cf. §9 ci-dessous).
+
+## Les 3 questions posées au gate — tranchées
+
+### 1. BANDE DE MOTS — **elle a raison, je recadre ma propre demande.** 25-35 mots ratifiés.
+
+Mes « 12-20 » étaient une moyenne des mooks à identité bon marché, pas une loi. **Le roster live
+me contredit déjà** : `enemy_riot` = 24 mots de sujet, `enemy_hostage` = 39. Ce ne sont pas des
+dérives, ce sont les deux entrées à identité composée — exactement le cas du Commandant, dont
+l'identité gatée (tête nue + manteau au genou + brassard + radio + stature, RULING (1)) coûte
+cinq tells AVANT la moindre pose. **La contrainte qui compte est le REGISTRE (R1), pas le
+compte.** Bande boss : **≤ 35 mots de sujet**, assemblé ≤ 100, chaque mot portant forme,
+identité ou pose. Un sujet de 20 mots contenant une clause d'éclairage est PIRE qu'un sujet de
+35 mots entièrement en forme.
+
+### 2. STEM PARTAGÉ — **ratifié**, avec une discipline supplémentaire.
+
+`a towering bare-headed french police commander in a knee-length overcoat, reflective armband,
+shoulder radio` = 14 mots, verbatim sur les 7 figures. Son raisonnement est juste : **« the same
+… » est une instruction narrative que FLUX ne peut pas honorer** — il n'a aucune mémoire d'une
+génération à l'autre. La continuité de personnage dans cette maison vient du **seed épinglé + une
+clause d'identité identique**, exactement comme `enemy_shooting` prolonge `enemy_sprite`. Le stem
+est au slot sujet ce que la queue `style` est au set : la version personnage de §2 loi 2.
+
+> **R2 — un token d'identité sur lequel la POSE agit est énoncé UNE SEULE FOIS, dans la clause
+> de pose, et retiré du stem.** Jamais deux mentions. Deux mentions du même accessoire dans un
+> prompt = risque d'objet surnuméraire, qui est une catégorie de FAIL automatique au gate asset
+> (§2 loi 3, « duplicated »). C'est le seul défaut que le stem partagé a introduit, et il était
+> présent sur 2 entrées (corrigées ci-dessous).
+
+### 3. RÉGRESSION KEYING — **j'accepte le risque, explicitement, et je l'assume.**
+
+Trois raisons, dans cet ordre :
+
+1. **Le contrôle expérimental existe et il est dans le repo.** Les ennemis portent des vêtements
+   aussi sombres, zéro langage de valeur, et keyent proprement. Sa lecture causale est la bonne :
+   **c'est le registre d'encre qui fabrique les bords durs dont le key a besoin ; c'était le
+   registre ombré qui fabriquait les bords doux quasi-noirs que le key mangeait.** Le patch
+   [S1] combattait un trou que le patch [S1] créait.
+2. **Le filet n'existait pas quand [S1] a été écrit** : `fill-sprite-holes`,
+   `check-sprite-integrity` en CI, la skill `sprite-hole-audit`.
+3. **Hiérarchie des fautes.** Un trou de key est un défaut **mécaniquement réparable** (reroll,
+   retouche scriptée documentée). Un échec de style est **irréparable sans regénérer** et c'est
+   celui que le propriétaire vient de rejeter. Entre les deux, on prend le réparable.
+
+> **R3 — protocole de trou, binding.** Un trou de keying se répare, dans cet ordre : (1) **reroll
+> de seed** (§3.10 : un défaut de composition/génération prend un seed neuf, prompt tenu verbatim) ;
+> (2) si deux rerolls trouent au même endroit, **une clause de FORME** — vêtement plus épais ou
+> continu, manche jusqu'au poignet, main fermée, membre non croisé ; (3) retouche scriptée
+> documentée. **Jamais de prose de valeur.** Réintroduire « lighter than the black backdrop »
+> re-invoque exactement l'art que Bertrand vient de rejeter — c'est un FAIL de gate, pas un fix.
+
+## La tension que le gate devait arbitrer : famille ↔ lecture « chef »
+
+C'était la vraie question, et elle se dissout une fois R1 posée — **parce que les deux exigences
+ne vivent pas dans le même slot** :
+
+- **La famille est portée par le TRAITEMENT**, donc par la queue `style`, byte-identique au
+  roster (§2 loi 2). Sujet muet sur la valeur ⇒ la queue règne seule ⇒ même tirage.
+- **Le « chef » est porté par la SILHOUETTE**, donc par le sujet : **manteau jusqu'au genou**
+  (unique dans un roster de blousons à la hanche et d'armure CRS), **tête nue** (le seul crâne
+  découvert d'un roster casqué/casquetté), **stature** (`towering`, et le render le pose à 2,2
+  unités monde — plus gros que n'importe quel mook à l'écran). Ces trois tells sont
+  silhouette-level, sans couleur, et **survivent intégralement** à la réécriture.
+
+**Ce sont donc deux axes orthogonaux, pas deux forces opposées.** L'art rejeté les confondait :
+il **achetait la lisibilité avec du rendu** au lieu de l'acheter avec de la forme. Précision
+utile pour la suite : **le brassard et la radio ne sont PAS la lecture < 0,3 s** — ce sont des
+micro-tells qui ne paient qu'au zoom du tableau QTE. Ils gagnent leurs mots pour l'identité du
+personnage, pas pour le coup d'œil. Si un jour il faut couper, on coupe là, jamais dans le
+manteau ni la tête nue.
+
+## Verdicts par entrée (9/9) — les clauses corrigées sont ÉCRITES dans `levelArt.json`
+
+| #   | Entrée                   | Verdict               | Correction que j'ai appliquée                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --- | ------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `commander_shielded`     | **PASS**              | — (la perte du `holstered sidearm` est acceptée : moins d'objets à 256 px, le read SHIELDED tient sur la posture fermée)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2   | `commander_exposed`      | **PASS**              | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 3   | `commander_hit`          | **PASS-WITH-CHANGES** | R2 : `armband` était énoncé deux fois (stem + pose). Retiré du stem, la pose porte `the reflective armband torn loose and flapping from his sleeve`                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 4   | `commander_down`         | **PASS**              | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 5   | `commander_weakpoint`    | **PASS-WITH-CHANGES** | L'arme avait disparu : bras écartés + mains vides lit **reddition**, et ça casse la contrainte fiche §3.7 « silhouette d'arme conservée partout, jamais un tell melee », sur la pose même que le joueur tire en phase 2+. Restauré en forme pure : `a boxy handgun held low in one hand` (tenu bas ⇒ bande LIMB toujours dégagée)                                                                                                                                                                                                                                                                                |
+| 6   | `commander_parry_windup` | **PASS-WITH-CHANGES** | `elbows drawn in tight` restauré : c'est LE contraste catégorique bras-rentrés vs bras-étendus qu'exige spec §3-C (« a shared tell = a bullshit whiff »), et c'est de la forme pure — zéro raison de le payer au budget de valeur                                                                                                                                                                                                                                                                                                                                                                                |
+| 7   | `commander_finisher`     | **PASS-WITH-CHANGES** | (a) R2 : `shoulder radio` énoncé deux fois → retiré du stem, la pose le porte comme cible du geste ; (b) `[S7] sleeved to the wrist` **restauré** — ce n'était PAS du langage de valeur mais un **garde-fou d'anatomie** (membre épais et continu, anti limb-detach), et c'était l'entrée la plus trouée du set. R3 point 2 en action                                                                                                                                                                                                                                                                            |
+| 8   | `lustre`                 | **PASS-WITH-CHANGES** | `faceted crystal drops` → `rows of teardrop crystal drops`. `faceted` est un mot de **comportement de la lumière** : il invite la scintillation spéculaire qui a détruit les deux batchs et fait une purée illisible au downscale (§2 loi 3). `teardrop` est un mot de **forme**. Les garde-fous topologiques (`one … chandelier`, `every drop attached to the frame`) sont conservés — ils sont en registre. **Note importante :** `each with a bright rim` devait sauter deux fois — langage de lumière ET halo cuit sur un objet **interactif** dont le rim est render-side (ADR-0011). Bonne suppression     |
+| 9   | `speaker_wall`           | **PASS-WITH-CHANGES** | Verrou de fond noir **restauré** : `on a completely flat uniform black background filling the frame`. [B4] mélangeait deux fixes de nature différente — le retrait de `from the ground up`/`scaffold` (langage photo-évocateur, **bien** retiré et maintenu) et un **verrou de composition** qui n'est ni valeur ni lumière. C'est la seule entrée du set avec un échec **mesuré** à 94,3 % (vraie photo outdoor) attribuable à la traction du sujet ; la queue porte bien le fond noir mais en **zone d'attention la plus faible** (§3.3). Clause de fix per-asset load-bearing, explicitement tolérée par §3.3 |
+
+## Budgets après mes corrections (assemblé = `prompt` + `style`, queue = 57 mots)
+
+| entrée                | sujet | assemblé |     | entrée                   | sujet | assemblé |
+| --------------------- | ----- | -------- | --- | ------------------------ | ----- | -------- |
+| `commander_shielded`  | 25    | 82       |     | `commander_parry_windup` | 34    | 91       |
+| `commander_exposed`   | 28    | 85       |     | `commander_finisher`     | 35    | 92       |
+| `commander_hit`       | 29    | 86       |     | `lustre`                 | 33    | 90       |
+| `commander_down`      | 31    | 88       |     | `speaker_wall`           | 41    | 98       |
+| `commander_weakpoint` | 35    | 92       |     |                          |       |          |
+
+**0 négation dans les 9 sujets** (la queue en porte 2 → assemblé = 2, budget §3.1 tenu). Tous
+loin sous le plafond dur 120 — on est passé de 117-120 (au ras) à 82-98, et la bande ennemie est
+69-96. `node scripts/check-art-prompts.mjs` vert, 14 warnings tous préexistants, aucun sur `boss`.
+
+## Conditions et suites
+
+1. **PROMPT GATE PASS accordé sur les 9** dans l'état actuel du fichier (mes corrections
+   incluses). La génération peut être dispatchée. **Rien n'est commité par moi.**
+2. **Cap d'itération remis à zéro** pour cette famille : c'est un changement de direction sur
+   rejet propriétaire, pas une 3ᵉ passe du cycle précédent. Nouveau cycle, **2 batchs**.
+3. **Gate 2 (asset gate) reste dû sur les 9 PNG** — ce PASS ne couvre que les strings. Je lirai
+   les PNG sur fond contrastant (magenta + gris moyen + downscale taille de jeu). Watches
+   nommées : `commander_down` (la plus grosse masse continue couchée), `commander_finisher`
+   (14,6 % de trous au batch précédent), `lustre` (registre + micro-détail), `speaker_wall`
+   (retour de la photo outdoor). **Un trou ⇒ R3, jamais de prose de valeur.**
+4. **Ce shard doit être réécrit par `concept-artist`** contre ce ruling : sections A/B/C
+   re-alignées sur les strings live, [S1]-[S11]/[B1]-[B4] déplacés en annexe historique
+   « ce qui a échoué et pourquoi », budgets corrigés. Le bandeau en tête tient jusque-là.
+5. **`docs/art-direction.md` §3 doit recevoir R1/R2/R3** comme règles de prompt roster-wide
+   (elles ne valent pas que pour le boss). Je ne l'ai pas édité ici : le fichier était hors du
+   périmètre de fichiers qui m'a été donné pour cette passe. **Amendement du bible en attente,
+   à ouvrir séparément — il passe par moi (Gate 3).**
+6. **Hors périmètre, non gaté, rappel :** `shield_cover_raised` / `shield_cover_lowered` restent
+   `pending: true` avec `prompt: ""`. Quand `concept-artist` les rédigera, elles naissent
+   directement sous R1 — **aucune clause de valeur, jamais**, même « pour sécuriser le key ».
+
+RULING: (2) — le registre du sujet (lead-art)
 
 ## [B5] `speaker_wall` — conflit de fond avec la queue magenta (concept-artist, Maud, 2026-07-26)
 
