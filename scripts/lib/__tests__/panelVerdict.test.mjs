@@ -55,6 +55,33 @@ describe("decide", () => {
   });
 });
 
+describe("decide — SKIPPED (panel never started)", () => {
+  it("is neutral, not failure, when the panel is disabled", () => {
+    const v = decide(none, [], "PANEL_ENABLED unset");
+    expect(v.conclusion).toBe("neutral");
+    expect(v.title).toContain("SKIPPED");
+    expect(v.title).toContain("PANEL_ENABLED unset");
+    expect(v.skipped).toBe("PANEL_ENABLED unset");
+  });
+
+  it("takes priority over a blocking tally — an unset panel never reviewed anything", () => {
+    const v = decide({ ...none, BLOQUANT: 1 }, [], "CLAUDE_CODE_OAUTH_TOKEN secret not set");
+    expect(v.conclusion).toBe("neutral");
+    expect(v.title).toContain("SKIPPED");
+  });
+
+  it("takes priority over DEGRADED — a panel that never started has no failed jobs to report", () => {
+    const v = decide(none, ["code-review"], "PANEL_ENABLED unset");
+    expect(v.title).toContain("SKIPPED");
+    expect(v.title).not.toContain("DEGRADED");
+  });
+
+  it("does not appear when the panel ran (no skippedReason)", () => {
+    expect(decide(none).skipped).toBeUndefined();
+    expect(decide(none, ["code-review"]).skipped).toBeUndefined();
+  });
+});
+
 describe("degradedJobs", () => {
   it("counts failed and cancelled jobs", () => {
     expect(degradedJobs({ a: "failure", b: "cancelled" })).toEqual(["a", "b"]);

@@ -1,22 +1,42 @@
 // Panel verdict decision — pure, so it can be unit-tested without touching the
 // GitHub API (the rest of panel-triage.mjs is I/O).
 //
-// Verdict ladder (ADR-0063 + ADR-0067):
+// Verdict ladder (ADR-0063; DEGRADED per ADR-0067; SKIPPED per ADR-0070):
+//   - Panel could not even START (disabled, or no auth) → SKIPPED (neutral)
 //   - Any panel job that FAILED → DEGRADED  (the diff was not fully reviewed)
 //   - Any confirmed BLOQUANT    → FAIL
 //   - Any confirmed MAJEUR      → CONDITIONAL
 //   - Otherwise                 → PASS
 //
-// DEGRADED is checked FIRST and on purpose. Zero findings has two very
-// different causes — "reviewed and clean" or "never reviewed" (an LLM provider
-// outage) — and before ADR-0067 both published PASS, so the gate went green
-// exactly when it had stopped working. A degraded run is never `success`.
+// SKIPPED and DEGRADED are checked ahead of the tally, in that order, and on
+// purpose. Zero findings has THREE very different causes — "reviewed and
+// clean", "never started" (panel disabled, or the auth secret is absent) and
+// "started and broke" (token invalid/expired, quota exhausted, agent
+// answered garbage, zero coverage) — and before ADR-0067 the first two both
+// published PASS, so the gate went green exactly when it had stopped
+// working. SKIPPED is distinct from DEGRADED on purpose: a panel that never
+// had a chance to run (config gap) must not block a required status check
+// the way a panel that broke mid-review does — see ADR-0070 for why
+// `panel-verdict` would otherwise wedge every PR shut whenever the panel is
+// merely turned off.
 
 /**
  * @param {{BLOQUANT: number, MAJEUR: number, MINEUR: number}} counts
  * @param {readonly string[]} degraded names of panel jobs that did not complete
+ * @param {string | undefined} skippedReason set when the panel never started
+ *   (e.g. `PANEL_ENABLED` unset, or the OAuth token secret is absent) — takes
+ *   priority over `degraded`, which cannot itself be non-empty in that case
+ *   (jobs that never ran report `skipped`, not `failure`).
  */
-export function decide(counts, degraded = []) {
+export function decide(counts, degraded = [], skippedReason) {
+  if (skippedReason) {
+    return {
+      conclusion: "neutral",
+      title: `SKIPPED — ${skippedReason}`,
+      summary: "panel did not run — this is not a review result",
+      skipped: skippedReason,
+    };
+  }
   if (degraded.length > 0) {
     return {
       conclusion: "failure",

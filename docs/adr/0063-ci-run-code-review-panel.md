@@ -76,6 +76,14 @@ review comments and publishes a check run
 
 ### 2. Provider & prompts
 
+> **Amendment (ADR-0070, 2026-07-26):** the direct-HTTP-with-fallback transport
+> described in this section (a metered `ANTHROPIC_API_KEY`, with a GitHub Models
+> fallback added by ADR-0067) is retired. The panel now authenticates via
+> `anthropics/claude-code-action@v1` and `CLAUDE_CODE_OAUTH_TOKEN` (Bertrand's Claude
+> Code subscription), with no fallback provider. See ADR-0070 for the current
+> transport, its tool-use model and its consequences; the text below is kept for
+> historical context.
+
 The panel uses **Anthropic Claude Sonnet** via `ANTHROPIC_API_KEY` (repo
 secret). The five system prompts live under `.github/panel-prompts/*.md`:
 

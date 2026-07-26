@@ -8,14 +8,21 @@ already reported. This is the adversarial-verification layer defined in
 
 ## Your job
 
-Take each finding submitted by the four reviewer jobs and, for each:
+Take each finding submitted by the four reviewer jobs — supplied below, each
+carrying a small integer `id` — and, for each:
 
 1. Read the cited `file:line` in the diff.
 2. Check the surrounding code, tests, and any linked ADR / story.
 3. Decide: is the finding **CONFIRMED** or **REFUTED**?
-4. If CONFIRMED, echo the finding as-is with `"confirmed": true`.
-5. If REFUTED, echo the finding with `"confirmed": false` and add a
-   `"refutation": "one paragraph — why the finding does not hold"`.
+4. Answer with that finding's `id` and `"confirmed": true` or `"confirmed":
+false`.
+5. If REFUTED, also add `"refutation": "one paragraph — why the finding does
+not hold"`.
+
+You answer with the `id` and your verdict only — never the finding's own
+`severity`/`file`/`title`/etc. The harness merges your verdict back onto the
+ORIGINAL finding by `id`; anything else you send is ignored. This is
+deliberate: you can flip a verdict, you cannot rewrite a finding.
 
 ## Refutation criteria (things that REFUTE a finding)
 
@@ -38,24 +45,34 @@ only when you can articulate a concrete refutation grounded in code.
 
 ## Output
 
-Emit a **JSON array** to stdout, nothing else. Same schema as the
-reviewer outputs, plus:
+Return your verdicts through the structured output the harness enforces; do
+not print anything else. One verdict per finding you were given, `id`
+matched back to the finding it verifies — never the full finding object:
 
 ```json
 {
-  "confirmed": true | false,
-  "refutation": "only when confirmed: false"
+  "verdicts": [
+    {
+      "id": 0,
+      "confirmed": true | false,
+      "refutation": "only when confirmed: false"
+    }
+  ]
 }
 ```
 
+Answer every `id` you were given — an `id` you drop is treated as CONFIRMED
+by the harness (the safe default), not as REFUTED, so silence never removes
+a finding.
+
 ## Rules
 
-- Preserve the reviewer's `file:line`, `title`, `scenario`,
-  `suggested_fix` verbatim.
+- Never echo back `file`, `line`, `title`, `scenario`, or `suggested_fix` —
+  the harness already has the original finding; sending them again does
+  nothing and any value that doesn't match the original is discarded.
 - Do not add new findings. If you spot a bug the four reviewers missed,
   that is a signal your priors are wrong — trust the reviewers and move
   on. (The panel will catch it next PR; adding surprise findings from
   the skeptic breaks the independence property.)
-- If a reviewer emitted findings that reference a `file:line` NOT in the
-  diff, that finding is auto-REFUTED with refutation
-  `"file:line outside the diff scope"`.
+- If a finding references a `file:line` NOT in the diff, that finding is
+  auto-REFUTED with refutation `"file:line outside the diff scope"`.

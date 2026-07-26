@@ -122,7 +122,9 @@ the old one `Superseded by ADR-XXXX`.
 | [0064](./0064-copilot-runtime-split-crew-orchestration.md) | Copilot runtime split: the CLI/app orchestrates the crew, the Coding Agent does not | Proposed |
 | [0065](./0065-enemy-bullet-generated-model-with-fallback.md) | Enemy bullet: generated textured GLB with procedural fallback | Proposed |
 | [0066](./0066-fractional-lives-per-archetype-damage.md) | Fractional lives: per-archetype bullet damage in quarter-heart steps | Proposed |
-| [0067](./0067-panel-provider-fallback-degraded-verdict.md) | ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open) | Proposed |
+| [0067](./0067-panel-provider-fallback-degraded-verdict.md) | ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open) | Proposed (partially superseded by 0070) |
 | [0068](./0068-lazy-load-threejs-r3f.md) | ADR-0068 — Lazy-load du runtime Three.js/R3F | Accepted |
+| [0069](./0069-offscreen-enemies-frozen.md) | Un ennemi hors-champ est gelé : il ne peut pas tirer | Proposed |
+| [0070](./0070-ci-panel-subscription-auth-claude-code-action.md) | CI code-review panel moves to subscription auth via `claude-code-action`, retires the GitHub Models fallback | Accepted |
 
 <!-- ADR-INDEX:END -->
