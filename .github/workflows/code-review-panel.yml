@@ -154,12 +154,18 @@ jobs:
       pull-requests: read
       issues: read
     steps:
+      # The local composite action can only be resolved once the repo is on
+      # disk — GitHub reads its action.yml BEFORE running any of its steps.
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.head_sha }}
+
       - uses: ./.github/actions/panel-reviewer
         with:
           role: code-review
           findings_file: findings-code-review.json
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          head_sha: ${{ needs.prepare.outputs.head_sha }}
           findings_schema: ${{ env.PANEL_FINDINGS_SCHEMA }}
 
   edge-case-hunter:
@@ -173,12 +179,18 @@ jobs:
       pull-requests: read
       issues: read
     steps:
+      # The local composite action can only be resolved once the repo is on
+      # disk — GitHub reads its action.yml BEFORE running any of its steps.
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.head_sha }}
+
       - uses: ./.github/actions/panel-reviewer
         with:
           role: edge-case-hunter
           findings_file: findings-edge-case-hunter.json
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          head_sha: ${{ needs.prepare.outputs.head_sha }}
           findings_schema: ${{ env.PANEL_FINDINGS_SCHEMA }}
 
   bmad-review:
@@ -192,12 +204,18 @@ jobs:
       pull-requests: read
       issues: read
     steps:
+      # The local composite action can only be resolved once the repo is on
+      # disk — GitHub reads its action.yml BEFORE running any of its steps.
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.head_sha }}
+
       - uses: ./.github/actions/panel-reviewer
         with:
           role: bmad-review
           findings_file: findings-bmad-review.json
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          head_sha: ${{ needs.prepare.outputs.head_sha }}
           findings_schema: ${{ env.PANEL_FINDINGS_SCHEMA }}
 
   security-review:
@@ -211,12 +229,18 @@ jobs:
       pull-requests: read
       issues: read
     steps:
+      # The local composite action can only be resolved once the repo is on
+      # disk — GitHub reads its action.yml BEFORE running any of its steps.
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.head_sha }}
+
       - uses: ./.github/actions/panel-reviewer
         with:
           role: security-review
           findings_file: findings-security-review.json
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          head_sha: ${{ needs.prepare.outputs.head_sha }}
           findings_schema: ${{ env.PANEL_FINDINGS_SCHEMA }}
 
   verify:

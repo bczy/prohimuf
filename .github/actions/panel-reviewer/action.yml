@@ -22,11 +22,6 @@ inputs:
   oauth_token:
     description: "CLAUDE_CODE_OAUTH_TOKEN secret value."
     required: true
-  head_sha:
-    description: >
-      PR head commit to check out and review — NOT the default ref, which is
-      wrong on workflow_dispatch (today's bug this action fixes).
-    required: true
   findings_schema:
     description: >
       The shared findings JSON schema (workflow-level env.PANEL_FINDINGS_SCHEMA
@@ -39,11 +34,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # a. Checkout at the PR head, not the default ref.
-    - name: Checkout PR head
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.head_sha }}
+    # a. NOTE — the checkout lives in the CALLING JOB, not here. GitHub must
+    # read this very file off the runner's disk before it can run any step of
+    # it, so a `uses: ./.github/actions/...` job with no prior checkout fails
+    # with "Can't find 'action.yml'". Each reviewer job therefore checks out
+    # the PR head itself, immediately before calling this action.
 
     # b. The diff/PR-context bundle the `prepare` job assembled.
     - name: Download panel input
