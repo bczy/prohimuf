@@ -282,7 +282,13 @@ export function FlyerWall({
           // width in both the portrait column (full width) and the landscape rack (fixed
           // card width, set by the `.muf-flyer-slot` class rule above).
           return (
-            <div key={level.id} className={cx("muf-flyer-slot", styles.slot)}>
+            <div
+              key={level.id}
+              className={cx("muf-flyer-slot", styles.slot)}
+              // Quick spike (test rapide, non gated): stagger the float-in entrance
+              // per flyer so the wall "flies in" one sheet at a time instead of all at once.
+              style={{ "--slot-delay": `${String(i * 180)}ms` } as React.CSSProperties}
+            >
               {/* First-run nudge (spec §4): a modest felt-tip "start here" scrawl above
                   the tutorial flyer, shown only on the first-ever NIVEAUX visit and never
                   again (same `firstVisit`/`muf_seen_tutorial_nudge` gate as the auto-focus).
