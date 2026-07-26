@@ -437,3 +437,57 @@ ground` → **[S10]** : masse-sombre-continue verrouillée en valeur claire + co
    lockstep avec le roster (inchangé du V1).
 5. **Anchors render-side** (dev-tooling, pas moi) : `muzzle` sur `commander_exposed`, `parryPoint`
    (bras armé) sur `commander_parry_windup`, deux rings (VITAL/LIMB) sur `commander_weakpoint`.
+
+## [B5] `speaker_wall` — conflit de fond avec la queue magenta (concept-artist, Maud, 2026-07-26)
+
+**Déclencheur** : merge-gate panel du 2026-07-26 (`docs/handoffs/story-offscreen-enemies-frozen.md`),
+finding MAJEUR sur `public/assets/boss/speaker_wall.png`. Le PNG commité porte deux **masses noires
+opaques** qui flanquent la pile d'enceintes ; elles sont à ~250 de distance chromatique de la clé
+`#FF3CDC`, donc **inkeyables** à `tol: 150`. Aucun gate ne les voit (`check-sprite-integrity` lit un
+seul composant dominant, `desaturate-enemy-figure --check` accepte le noir comme neutre).
+
+**Cause** : le pipeline live (`scripts/gen-boss-sprites.mjs`) n'assemble PAS `boss.style` — il appende
+son propre `COMIC_TAIL` script-local, qui exige `perfectly flat solid uniform bright magenta #FF3CDC
+background, empty flat magenta backdrop, no ground, no floor, no cast shadow`. Le sujet
+`speaker_wall`, seul du set, portait encore le verrou **fond NOIR** de [B4] (restauré par le
+RULING (2) de lead-art). Les deux clauses se battent ; le modèle a arbitré en faveur du noir sur les
+flancs. **La prémisse du RULING (2) — « la queue porte bien le fond noir » — est devenue fausse le
+jour où le set est passé sur la queue comic-ink/magenta.** Ce n'est pas un revirement de goût : c'est
+la même intention appliquée à la queue réelle.
+
+**Correction — une seule variable, la clause de fond, échangée en place :**
+
+|       | prompt `boss.types.speaker_wall`                                                                                                                                                                                                                                               |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| AVANT | `a hand-built teknival sound-system wall `**`on a completely flat uniform black background filling the frame`**`, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face` |
+| APRÈS | `one hand-built teknival sound-system wall `**`as a single isolated object`**`, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face`                                   |
+
+Rationale par clause touchée (les autres sont intactes, byte pour byte) :
+
+- **`one` (ex-`a`)** — garde-fou mono-objet, exactement le patron de `lustre` (`one ballroom
+chandelier`). Empêche la dérive « plusieurs murs de son / rangée de rigs » qui rouvrirait une scène.
+- **`as a single isolated object`** — reprend la charge utile de [B4] (tuer la traction
+  photo-outdoor du sujet : le référent réel d'un teknival est une photo de nuit avec foule, champ,
+  camions) **sans nommer aucun fond ni aucune couleur**. Il ne peut donc plus contredire la queue :
+  il **renforce** son `floating isolated on a … magenta background`. C'est un verrou de
+  **composition**, pas de valeur — conforme à R1 (aucune prose de valeur dans le sujet).
+- **Aucune clause de fond dans le sujet** — le sujet rejoint le patron des 8 autres entrées
+  (`commander_*`, `lustre`) : sujet seul, le fond appartient à la queue, une seule autorité.
+
+Budget : sujet **36** mots (41 avant), assemblé avec `COMIC_TAIL` (71 mots) = **106** — la bande du
+set est 95-105, on rentre dedans ; assemblé avec `boss.style` = 93. **0 négation dans le sujet**,
+0 token de couleur/hue, 0 mot de fond. `node scripts/check-art-prompts.mjs` vert (14 warnings,
+tous préexistants, aucun sur `boss` — le bloc n'est pas couvert par le lint, contrat tenu à la main).
+
+**Variante rejetée** — _retrait sec_ de la clause (`a hand-built teknival sound-system wall, a wide
+pyramid of …`, sujet 32 / assemblé 102). C'est la lecture la plus littérale du patron des 7 figures,
+mais les figures n'ont pas de référent-scène : `speaker_wall` est la seule entrée du set avec un
+échec **mesuré** à 94,3 % en photo outdoor. Laisser le slot vide rendrait 6 mots au budget et
+reprendrait le risque documenté. Gardée comme **fallback** si un roll revient avec un objet dupliqué
+ou une lecture « produit sur fond studio » trop propre.
+
+**Suite** : `dev-tooling-assets` régénère `public/assets/boss/speaker_wall.png` (seed 4878 épinglé,
+inchangé — le sujet a changé, pas la composition voulue) ; `lead-art` verdicte le PNG au Gate 2, la
+watch nommée reste la même (retour de la photo outdoor) **plus** une vérif de keying : plus aucune
+masse opaque non-magenta sur les flancs. La ligne `speaker_wall | 41 | 98` du tableau de budgets
+plus haut est périmée — lire **36 / 93** (et 106 avec la queue réellement envoyée).

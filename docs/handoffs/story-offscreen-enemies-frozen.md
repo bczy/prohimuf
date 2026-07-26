@@ -29,7 +29,7 @@ real files/image by the triager below before being accepted.
   the same lines. ADR-0069 §Négatif discloses this verbatim and explicitly asks for a
   `game-designer` arbitration ("mérite un arbitrage game-designer plutôt qu'un choix
   implicite") that has not happened — the diff instead ships a new test
-  (`stateMachine.test.ts:1492`) that *pins* the exploit as expected behaviour rather
+  (`stateMachine.test.ts:1492`) that _pins_ the exploit as expected behaviour rather
   than guarding it. **Owner: `game-designer`** (decide fix — e.g. gate on
   shooter-to-vehicle proximity instead of camera position, or redesign the objective)
   → `dev-gameplay` implements. **Not fixed — blocks merge.**
@@ -42,7 +42,7 @@ real files/image by the triager below before being accepted.
   (`Read` on the committed PNG): large opaque black masses flare left/right of the
   stack, un-keyable at any chroma tolerance (~250 away from #FF3CDC). Every gate passes
   it (`check-sprite-integrity` sees one dominant component; `desaturate-enemy-figure
-  --check` accepts black as neutral). **Owner: `concept-artist`** fixes the
+--check` accepts black as neutral). **Owner: `concept-artist`** fixes the
   `speaker_wall` prompt (drop/align the background clause with the magenta tail),
   `dev-tooling-assets` regenerates. **Not fixed — blocks merge.**
 
@@ -104,7 +104,7 @@ MINEUR above).
   `src/game`-pure (no React/Three); the `EnemySprite.tsx` muzzle-flash NIT is a
   `src/render` cosmetic reader, not a boundary violation.
 - New deps: `@napi-rs/canvas@1.0.2` (bake-off only), pinned, `--ignore-scripts
-  --no-save` — no supply-chain concern.
+--no-save` — no supply-chain concern.
 - Two new GH Actions workflows are least-privilege (`contents: read`, no commit step);
   no secret reachable outside the `Authorization` header.
 - No SSRF / attacker-controlled surface in the gameplay diff (pure in-memory state).
@@ -113,6 +113,7 @@ MINEUR above).
 
 Blockers (both owned outside this session's lane, neither touched by our reference-hunt
 commits):
+
 1. Van-objective-becomes-free — needs `game-designer` arbitration + `dev-gameplay` fix.
 2. `speaker_wall.png` broken chroma background — needs `concept-artist` prompt fix +
    `dev-tooling-assets` regen.
@@ -127,3 +128,38 @@ a concurrent session (CI review-panel automation itself — `panelFindings.mjs`,
 `NearForeground.tsx` boss-QTE z-order fix). None of it is in `origin/main...HEAD`, none
 of it was touched or reviewed by this panel, per Bertrand's explicit instruction to
 leave it alone.
+
+## Blocker 2 levé côté prompt — `speaker_wall` conflit chroma (concept-artist, Maud, 2026-07-26)
+
+Réponse au finding **[MAJEUR] public/assets/boss/speaker_wall.png** ci-dessus. Corrigé :
+**uniquement** la clause de fond du prompt `boss.types.speaker_wall` dans
+`src/game/levels/levelArt.json` (1 ligne, 0 autre clé touchée).
+
+- **AVANT** — `a hand-built teknival sound-system wall `**`on a completely flat uniform black background filling the frame`**`, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face`
+- **APRÈS** — `one hand-built teknival sound-system wall `**`as a single isolated object`**`, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face`
+
+Pourquoi ça ne peut plus contredire `COMIC_TAIL` : le sujet ne nomme **plus aucun fond ni aucune
+couleur** (0 occurrence de `background`/`backdrop`/`black`/`magenta`), donc la queue est la **seule
+autorité** sur le fond — même patron que les 8 autres entrées `boss.types.*`. La clause de
+remplacement est un verrou de **composition** (objet unique, isolé), qui _renforce_ le
+`floating isolated on a … #FF3CDC background` de la queue au lieu de se battre avec lui ; elle
+reprend la charge utile de [B4] (tuer la traction photo-outdoor du référent teknival, échec mesuré
+à 94,3 %) sans rouvrir le conflit. `one` (ex-`a`) est le garde-fou mono-objet de `lustre`. Contenu
+du sujet inchangé par ailleurs (pile teknival, bass-bins/horns contreplaqué, pallet rig, câbles,
+stencil spray).
+
+Budget : sujet **36** mots (41 avant), **assemblé 106** avec le `COMIC_TAIL` réellement envoyé
+(bande du set 95-105), 93 avec `boss.style` ; **0 négation** dans le sujet ; `<= 120` §3.3 tenu.
+`node scripts/check-art-prompts.mjs` **vert** (14 warnings préexistants, aucun sur `boss`),
+`prettier --check` vert. Rationale complète + variante rejetée (retrait sec de la clause, gardée en
+fallback) : `docs/art-direction/prompt-drafts/boss-commander.md` §[B5]. Note : la prémisse du
+RULING (2) de lead-art qui avait _restauré_ ce verrou noir (« la queue porte bien le fond noir ») est
+devenue fausse au passage du set sur la queue comic-ink/magenta — la correction sert la même
+intention sur la queue réelle.
+
+**Non fait, délibérément** : aucune régénération d'asset (pas de script, pas d'appel API) — le PNG
+reste cassé sur disque. **Suite : `dev-tooling-assets`** régénère `public/assets/boss/speaker_wall.png`
+(seed 4878, épinglé, inchangé) → **`lead-art` Gate 2** sur le PNG (watch : retour de la photo outdoor
+
+- plus aucune masse opaque non-magenta sur les flancs). Le blocker 1 (van-objective gratuit,
+  `game-designer`) est hors de ma lane et reste ouvert.
