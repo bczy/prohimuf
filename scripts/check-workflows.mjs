@@ -174,7 +174,10 @@ function checkFile(file) {
 const files =
   process.argv.slice(2).length > 0
     ? process.argv.slice(2)
-    : [...globSync(".github/workflows/*.y?(a)ml"), ...globSync(".github/actions/*/action.y?(a)ml")];
+    : [
+        ...globSync(".github/workflows/*.{yml,yaml}"),
+        ...globSync(".github/actions/*/action.{yml,yaml}"),
+      ];
 
 for (const f of files) {
   if (existsSync(f)) checkFile(f);

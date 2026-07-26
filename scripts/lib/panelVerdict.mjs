@@ -2,14 +2,14 @@
 // GitHub API (the rest of panel-triage.mjs is I/O).
 //
 // Verdict ladder (ADR-0063; DEGRADED per ADR-0067; SKIPPED per ADR-0070):
-//   - Panel could not even START (disabled, or no auth) → SKIPPED (neutral)
 //   - Any panel job that FAILED → DEGRADED  (the diff was not fully reviewed)
+//   - Panel could not even START (disabled, or no auth) → SKIPPED (neutral)
 //   - Any confirmed BLOQUANT    → FAIL
 //   - Any confirmed MAJEUR      → CONDITIONAL
 //   - Otherwise                 → PASS
 //
-// SKIPPED and DEGRADED are checked ahead of the tally, in that order, and on
-// purpose. Zero findings has THREE very different causes — "reviewed and
+// DEGRADED and SKIPPED are both checked ahead of the tally, in that order,
+// and on purpose. Zero findings has THREE very different causes — "reviewed and
 // clean", "never started" (panel disabled, or the auth secret is absent) and
 // "started and broke" (token invalid/expired, quota exhausted, agent
 // answered garbage, zero coverage) — and before ADR-0067 the first two both
