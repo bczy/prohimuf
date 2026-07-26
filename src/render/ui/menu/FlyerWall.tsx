@@ -41,6 +41,58 @@ interface FlyerMeta {
 }
 
 /**
+ * Float-in fall paths (drop height, drift amplitude/direction, rotation) for the
+ * `--fio-*` custom properties consumed by FlyerWall.module.css's `mufFlyerFloatIn`
+ * keyframe. Three deterministic variants cycled by flyer index — same doctrine as the
+ * imported FLYER_REST_ROTATION_DEG/FLYER_JITTER_PX print tokens, no Math.random — so
+ * consecutive flyers don't drift the same distance in the same direction.
+ */
+const FLYER_FLOAT_IN_VARIANTS: readonly Record<string, string>[] = [
+  {
+    "--fio-y0": "-190px",
+    "--fio-x0": "-36px",
+    "--fio-r0": "-22deg",
+    "--fio-y1": "-105px",
+    "--fio-x1": "28px",
+    "--fio-r1": "14deg",
+    "--fio-y2": "-43px",
+    "--fio-x2": "-20px",
+    "--fio-r2": "-10deg",
+    "--fio-y3": "-8px",
+    "--fio-x3": "10px",
+    "--fio-r3": "5deg",
+  },
+  {
+    "--fio-y0": "-230px",
+    "--fio-x0": "44px",
+    "--fio-r0": "19deg",
+    "--fio-y1": "-116px",
+    "--fio-x1": "-32px",
+    "--fio-r1": "-14deg",
+    "--fio-y2": "-40px",
+    "--fio-x2": "14px",
+    "--fio-r2": "7deg",
+    "--fio-y3": "-4px",
+    "--fio-x3": "-6px",
+    "--fio-r3": "-3deg",
+  },
+  {
+    "--fio-y0": "-142px",
+    "--fio-x0": "-20px",
+    "--fio-r0": "-12deg",
+    "--fio-y1": "-78px",
+    "--fio-x1": "24px",
+    "--fio-r1": "11deg",
+    "--fio-y2": "-30px",
+    "--fio-x2": "-13px",
+    "--fio-r2": "-6deg",
+    "--fio-y3": "-5px",
+    "--fio-x3": "6px",
+    "--fio-r3": "3deg",
+  },
+];
+
+/**
  * PRESSION choices — labels identical to `OptionsControls`' `DIFFICULTIES` (one
  * `Prefs.difficulty` field surfaced on two surfaces). Defined locally from the
  * `Prefs["difficulty"]` union rather than imported, since `OptionsControls` does not
@@ -286,8 +338,13 @@ export function FlyerWall({
               key={level.id}
               className={cx("muf-flyer-slot", styles.slot)}
               // Staggers the float-in entrance (FlyerWall.module.css) so flyers appear
-              // one sheet at a time instead of all at once.
-              style={{ "--slot-delay": `${String(i * 180)}ms` } as React.CSSProperties}
+              // one sheet at a time instead of all at once, each on its own fall path.
+              style={
+                {
+                  "--slot-delay": `${String(i * 180)}ms`,
+                  ...FLYER_FLOAT_IN_VARIANTS[i % FLYER_FLOAT_IN_VARIANTS.length],
+                } as React.CSSProperties
+              }
             >
               {/* First-run nudge (spec §4): a modest felt-tip "start here" scrawl above
                   the tutorial flyer, shown only on the first-ever NIVEAUX visit and never

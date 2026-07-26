@@ -29,27 +29,55 @@
   flex-direction: column;
   width: min(100%, var(--flyer-max-width));
   /* Flyers float in one by one on mount instead of appearing all at once,
-     staggered per-slot via the inline --slot-delay custom property (FlyerWall.tsx). */
-  animation: mufFlyerFloatIn 1400ms ease-in-out both;
+     staggered per-slot via the inline --slot-delay custom property (FlyerWall.tsx).
+     The --fio-* drop/drift/rotate values below default to one path; FlyerWall.tsx
+     overrides all of them per flyer index (one of three deterministic variants) so
+     the wall doesn't read as one path copy-pasted in time. Values only (not
+     identifiers), so this stays safe under CSS Modules' local scoping — unlike
+     @keyframes names, custom-property values are never renamed. */
+  --fio-y0: -190px;
+  --fio-x0: -36px;
+  --fio-r0: -22deg;
+  --fio-y1: -105px;
+  --fio-x1: 28px;
+  --fio-r1: 14deg;
+  --fio-y2: -43px;
+  --fio-x2: -20px;
+  --fio-r2: -10deg;
+  --fio-y3: -8px;
+  --fio-x3: 10px;
+  --fio-r3: 5deg;
+  animation: mufFlyerFloatIn 1400ms both;
   animation-delay: var(--slot-delay, 0ms);
 }
 
+/* The transform stops carry their own timing-function so the fall doesn't read as
+   evenly-paced steps: hard accelerating drop, decelerating swings, a soft back-out
+   overshoot on the settle — instead of one flat ease over the whole fall. A stop's
+   timing-function only governs the segment that follows it FOR THE PROPERTIES THAT
+   STOP DECLARES, so the 22% stop (opacity only, and opacity holds at 1 from there on)
+   deliberately carries none: the transform interval it sits inside is 0%→38% and is
+   driven end to end by the 0% curve. */
 @keyframes mufFlyerFloatIn {
   0% {
     opacity: 0;
-    transform: translateY(-140px) translateX(-36px) rotate(-22deg);
+    transform: translateY(var(--fio-y0)) translateX(var(--fio-x0)) rotate(var(--fio-r0));
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
   }
   22% {
     opacity: 1;
   }
   38% {
-    transform: translateY(-78px) translateX(28px) rotate(14deg);
+    transform: translateY(var(--fio-y1)) translateX(var(--fio-x1)) rotate(var(--fio-r1));
+    animation-timing-function: ease-in-out;
   }
   60% {
-    transform: translateY(-32px) translateX(-20px) rotate(-10deg);
+    transform: translateY(var(--fio-y2)) translateX(var(--fio-x2)) rotate(var(--fio-r2));
+    animation-timing-function: ease-out;
   }
   80% {
-    transform: translateY(-6px) translateX(10px) rotate(5deg);
+    transform: translateY(var(--fio-y3)) translateX(var(--fio-x3)) rotate(var(--fio-r3));
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   100% {
     opacity: 1;
