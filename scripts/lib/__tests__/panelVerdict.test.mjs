@@ -55,6 +55,41 @@ describe("decide", () => {
   });
 });
 
+describe("decide — SKIPPED (panel never started)", () => {
+  it("is neutral, not failure, when the panel is disabled", () => {
+    const v = decide(none, [], "PANEL_ENABLED unset");
+    expect(v.conclusion).toBe("neutral");
+    expect(v.title).toContain("SKIPPED");
+    expect(v.title).toContain("PANEL_ENABLED unset");
+    expect(v.skipped).toBe("PANEL_ENABLED unset");
+  });
+
+  it("takes priority over a blocking tally — an unset panel never reviewed anything", () => {
+    const v = decide({ ...none, BLOQUANT: 1 }, [], "CLAUDE_CODE_OAUTH_TOKEN secret not set");
+    expect(v.conclusion).toBe("neutral");
+    expect(v.title).toContain("SKIPPED");
+  });
+
+  it("yields to DEGRADED when a job actually failed", () => {
+    // This asserted the opposite until a panel review pointed out the
+    // premise was wrong: a panel that never started was assumed to have no
+    // failed jobs to report, but `preflight` crashing produces BOTH — an
+    // absent `enabled` output (which reads as "disabled") and a failed job.
+    // Ranking SKIPPED first published an inert neutral for a panel that had
+    // broken, i.e. the fail-open ADR-0067 exists to prevent. A deliberately
+    // disabled panel leaves its jobs `skipped`, not `failure`, so it still
+    // reaches SKIPPED through the empty-`degraded` case above.
+    const v = decide(none, ["preflight"], "PANEL_ENABLED unset");
+    expect(v.title).toContain("DEGRADED");
+    expect(v.conclusion).toBe("failure");
+  });
+
+  it("does not appear when the panel ran (no skippedReason)", () => {
+    expect(decide(none).skipped).toBeUndefined();
+    expect(decide(none, ["code-review"]).skipped).toBeUndefined();
+  });
+});
+
 describe("degradedJobs", () => {
   it("counts failed and cancelled jobs", () => {
     expect(degradedJobs({ a: "failure", b: "cancelled" })).toEqual(["a", "b"]);

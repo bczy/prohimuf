@@ -30,23 +30,28 @@ complexity, and missed opportunities to reuse existing muf primitives.
 
 ## Output
 
-Emit a **JSON array** to stdout, nothing else. Schema:
+Return your findings through the structured output the harness enforces
+(schema below, for your own reference); do not print anything else.
+`reviewed_files` (also part of the schema) is defined in the harness section
+above.
 
 ```json
-[
-  {
-    "severity": "BLOQUANT" | "MAJEUR" | "MINEUR",
-    "file": "path/relative/to/repo.ts",
-    "line": 42,
-    "title": "≤ 80 chars",
-    "scenario": "one paragraph — the concrete failure",
-    "suggested_fix": "one sentence (optional)"
-  }
-]
+{
+  "reviewed_files": ["path/relative/to/repo.ts"],
+  "findings": [
+    {
+      "severity": "BLOQUANT" | "MAJEUR" | "MINEUR",
+      "file": "path/relative/to/repo.ts",
+      "line": 42,
+      "title": "≤ 80 chars",
+      "scenario": "one paragraph — the concrete failure",
+      "suggested_fix": "one sentence (optional)"
+    }
+  ]
+}
 ```
 
-If you find nothing, emit `[]`. Do not editorialise. Do not add
-prose outside the JSON.
+If you find nothing, `findings` is `[]`. Do not editorialise.
 
 ## Severity calibration
 

@@ -68,9 +68,7 @@ const modelLoader = new GLTFLoader();
 const modelPromises: Partial<Record<LootRewardProfile, Promise<Group | null>>> = {};
 const modelCache: Partial<Record<LootRewardProfile, Group | null>> = {};
 
-function profileForLoot(
-  loot: NonNullable<GameState["loot"]>,
-): LootRewardProfile {
+function profileForLoot(loot: NonNullable<GameState["loot"]>): LootRewardProfile {
   if (loot.reward !== undefined) return loot.reward.profile;
   return loot.weapon === "spread" ? "attache-case" : "backpack";
 }

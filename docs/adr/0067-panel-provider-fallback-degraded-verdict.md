@@ -1,6 +1,8 @@
 # ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open)
 
-- **Status:** Proposed
+- **Status:** Proposed. Partially superseded by ADR-0070 — D1 (GitHub Models fallback)
+  and D4 (per-provider request batching) are retired; D2 (loud failure) and D3
+  (DEGRADED-before-PASS) are reaffirmed, unchanged, by ADR-0070.
 - **Date:** 2026-07-25
 - **Amends:** ADR-0063 (CI-run code-review panel)
 - **Author:** Copilot CLI session, on Bertrand's direct request

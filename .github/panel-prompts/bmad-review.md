@@ -44,11 +44,12 @@ without matching claim, is a finding.
 
 ## Output
 
-Emit a **JSON array** to stdout, nothing else. Schema identical to the
-`code-review` prompt.
+Return your findings through the structured output the harness enforces;
+schema identical to the `code-review` prompt (`reviewed_files` + `findings`).
+Do not print anything else.
 
-If you find nothing, emit `[]`. Prefix the `title` with the layer that
-produced the finding: `[BH]`, `[EC]`, `[AA]`.
+If you find nothing, `findings` is `[]`. Prefix each `title` with the layer
+that produced the finding: `[BH]`, `[EC]`, `[AA]`.
 
 ## Severity calibration
 
