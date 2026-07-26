@@ -4,10 +4,13 @@ import {
   CHROME,
   MASTHEAD,
   MOTION,
+  REDUCED_MOTION_QUERY,
   SMOKE_INK,
   SMOKE_SPRITE_PATH,
   STOCK,
   SHORT_LANDSCAPE_MEDIA,
+  unionReducedMotion,
+  useMediaQuery,
 } from "@render/ui/print";
 import { MarkerCircle, PaperSheet } from "@render/ui/print";
 import { cx } from "./controls/cx";
@@ -49,6 +52,9 @@ export type TitleAnimation = "spray" | "paint" | "blast";
  * idiom) so the partition is unit-testable without stubbing globals, and the final
  * `return` is total: a `rand()` of exactly 1 — or a NaN from a broken stub — still
  * yields a real variant instead of `undefined`.
+ *
+ * Only the FIRST cover of a visit is drawn: from there the cycle rotates in a fixed order
+ * (see `nextTitleAnimation`), so a player who waits sees all three whatever they drew.
  */
 export function pickTitleAnimation(rand: () => number): TitleAnimation {
   const draw = rand();
@@ -56,6 +62,79 @@ export function pickTitleAnimation(rand: () => number): TitleAnimation {
   if (draw < 2 / 3) return "paint";
   return "blast";
 }
+
+// The rotation, in the order the cover works through it. Deliberately fixed rather than
+// re-drawn each cycle: a second random draw can repeat itself, and a player watching the
+// cover twice in a row would be shown the same trick — the whole point of cycling is that
+// all three are eventually seen.
+const ANIMATION_ORDER: readonly TitleAnimation[] = ["spray", "paint", "blast"];
+
+/** The variant that follows `current` in the cycle; wraps, and is total on a bad input. */
+export function nextTitleAnimation(current: TitleAnimation): TitleAnimation {
+  const at = ANIMATION_ORDER.indexOf(current);
+  return ANIMATION_ORDER[(at + 1) % ANIMATION_ORDER.length] ?? ANIMATION_ORDER[0] ?? "spray";
+}
+
+/**
+ * How long each variant takes to finish the WHOLE wordmark — the moment its last letter
+ * lands, and so the moment the cover starts holding the finished mark. Derived from the
+ * motion tokens and from the wordmark the DOM actually renders (`WORDMARK.length`), because
+ * a staggered variant's wall-clock life is `(letters - 1) × stagger + duration`; the blast
+ * fires all three letters at once, so its life is its cloud's. Exported: the reveal-budget
+ * test measures THIS, not a copy of the arithmetic.
+ */
+export const TITLE_REVEAL_MS: Readonly<Record<TitleAnimation, number>> = {
+  spray: (WORDMARK.length - 1) * MOTION.titleSprayStaggerMs + MOTION.titleSprayMs,
+  paint: (WORDMARK.length - 1) * MOTION.titlePaintStaggerMs + MOTION.titlePaintMs,
+  blast: MOTION.titleBlastMs,
+};
+
+/**
+ * One turn of the cover's cycle: which variant is being painted, and whether it is being
+ * wiped off to make room for the next one. `n` is the turn counter and nothing else — it is
+ * the React `key` of the wordmark, so every new turn REMOUNTS the letters and their CSS
+ * animations start again from their first frame. (Restarting a CSS animation in place would
+ * mean toggling the animation name and forcing a reflow between the two; a remount is the
+ * honest version of the same thing, and it also gives the blast a fresh cloud.)
+ */
+interface TitleCycle {
+  readonly n: number;
+  readonly animation: TitleAnimation;
+  readonly clearing: boolean;
+}
+
+/**
+ * The reduced-motion signal, read (never written) by the title cover: the OS query unioned
+ * with the in-app MOUVEMENT RÉDUIT toggle, which `applyReducedMotion` mirrors onto the
+ * document root. Both triggers matter here for the same reason they matter in the stylesheet
+ * (ADR-0054 §3) — except this one has to reach JS, because a cover that keeps re-painting
+ * itself every ten seconds is exactly what a player asking for reduced motion is asking to be
+ * spared, and no `animation: none` can stop a timer.
+ */
+function useTitleReducedMotion(): boolean {
+  const osReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  const [appReducedMotion, setAppReducedMotion] = useState(readRootReducedMotion);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const sync = (): void => {
+      setAppReducedMotion(readRootReducedMotion());
+    };
+    sync(); // the attribute may have been written between the first render and this effect
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-reduced-motion"],
+    });
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  return unionReducedMotion(appReducedMotion, osReducedMotion);
+}
+
+const readRootReducedMotion = (): boolean =>
+  typeof document !== "undefined" &&
+  document.documentElement.getAttribute("data-reduced-motion") === "true";
 
 /**
  * ONE puff of the blast's smoke: where it starts (em, from the wordmark's centre), how big
@@ -131,11 +210,45 @@ const CHROME_VARS = {
  */
 export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
   const ctaRef = useRef<HTMLDivElement>(null);
-  // Drawn ONCE per mount (lazy initialiser), never per render — a re-render must not
-  // restart the cover with a different animation. Cosmetic randomness in the render
-  // layer, the same licence UrbanMotion's debris field takes; nothing in `src/game`
-  // observes it, so no seeded PRNG is owed.
-  const [animation] = useState<TitleAnimation>(() => pickTitleAnimation(Math.random));
+  const reducedMotion = useTitleReducedMotion();
+  // The FIRST variant is drawn ONCE per mount (lazy initialiser), never per render — a
+  // re-render must not restart the cover with a different animation. Cosmetic randomness in
+  // the render layer, the same licence UrbanMotion's debris field takes; nothing in
+  // `src/game` observes it, so no seeded PRNG is owed. Every variant after it comes from the
+  // fixed rotation, not from a second draw.
+  const [cycle, setCycle] = useState<TitleCycle>(() => ({
+    n: 0,
+    animation: pickTitleAnimation(Math.random),
+    clearing: false,
+  }));
+
+  // The cycle itself: paint the variant, hold the finished wordmark long enough to read it,
+  // wipe it, start the next one. ONE timer is ever pending, and re-running this effect on
+  // each turn is what schedules the following one — so there is no interval to leak, and
+  // unmounting mid-turn cancels the only thing outstanding. Under reduced motion no timer is
+  // scheduled at all: the first cover is painted (as `animation: none`, i.e. instantly
+  // finished) and the cover then stays exactly as it is.
+  useEffect(() => {
+    if (reducedMotion) return;
+    const holdMs = TITLE_REVEAL_MS[cycle.animation] + MOTION.titleCycleHoldMs;
+    const id = window.setTimeout(
+      () => {
+        setCycle((current) =>
+          current.clearing
+            ? {
+                n: current.n + 1,
+                animation: nextTitleAnimation(current.animation),
+                clearing: false,
+              }
+            : { ...current, clearing: true },
+        );
+      },
+      cycle.clearing ? MOTION.titleCycleClearMs : holdMs,
+    );
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [cycle, reducedMotion]);
 
   const enter = useCallback((): void => {
     onEnter();
@@ -211,15 +324,21 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
           {ISSUE_LABEL}
         </div>
 
-        {/* Wordmark — painted on the moment the cover shows, by whichever of the three
-            variants was drawn (the class picks the keyframes; `data-muf-title-anim` is
-            the stable hook for tests and the screenshot harness). Each span carries its
-            stagger index and its `data-char` (which feeds the chrome-fill clone).
-            Purely declarative: no timer, no per-frame state, so a reduced-motion user
-            gets the finished wordmark from the very first paint. */}
+        {/* Wordmark — painted the moment the cover shows, by the variant whose turn it is
+            (the class picks the keyframes; `data-muf-title-anim` is the stable hook for tests
+            and the screenshot harness). Each span carries its stagger index and its
+            `data-char` (which feeds the chrome-fill clone). The `key` is the cycle counter:
+            a new turn remounts these spans, which is what makes their CSS animations run
+            again from the first frame. Nothing here is per-frame state — a reduced-motion
+            user gets the finished wordmark from the very first paint, and it never changes. */}
         <div
-          className={cx(styles.wordmark, styles[animation])}
-          data-muf-title-anim={animation}
+          key={cycle.n}
+          className={cx(
+            styles.wordmark,
+            styles[cycle.animation],
+            cycle.clearing && styles.clearing,
+          )}
+          data-muf-title-anim={cycle.animation}
           style={{
             ...CHROME_VARS,
             fontSize: "var(--muf-wordmark-size, clamp(80px, 14vw, 160px))",
@@ -244,7 +363,7 @@ export function TitleScreen({ onEnter }: TitleScreenProps): JSX.Element {
               so DOM order decides), and only for the variant that has one. Each puff drifts
               on its own clock (see `.puff`); the container only holds them and screens the
               cloud through the print halftone. */}
-          {animation === "blast" && (
+          {cycle.animation === "blast" && (
             <span
               aria-hidden={true}
               data-muf-title-smoke={true}

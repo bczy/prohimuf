@@ -70,6 +70,28 @@
 }
 
 /*
+ * Between two turns of the cycle: the finished wordmark is wiped off so the next variant
+ * starts on a blank cover. A short fade rather than a cut — a sheet going instantly empty
+ * reads as a glitch, and the eye needs the beat to accept that the mark is being redone.
+ * Written as an ANIMATION, not a transition, so the two reduced-motion guards at the bottom
+ * of this file cover it exactly like every other moving part of this surface; `both` holds
+ * the wordmark invisible until the remount, so it cannot flash back on the way out.
+ */
+.clearing {
+  animation: mufTitleClear var(--motion-title-cycle-clear-ms) linear both;
+}
+
+@keyframes mufTitleClear {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
  * The INK — what every variant actually reveals. Two layers: this span paints the ink-black
  * contour with `-webkit-text-stroke` over transparent glyph text (the stroke straddles the
  * outline, so half of it sits outside the glyph), and its `::before` clone paints the chrome
@@ -327,6 +349,14 @@
   animation-name: mufBlastIn;
   animation-duration: var(--motion-title-blast-settle-ms);
   animation-timing-function: cubic-bezier(0.12, 0.86, 0.3, 1);
+  /* `backwards`, not the inherited `both`: this is the one variant that animates a TRANSFORM,
+     and a transform that keeps filling after the animation ends leaves the glyph pinned to the
+     transformed paint path (an identity `matrix()` is still a matrix) — its edges then land a
+     hair off an untransformed letter's, 7432 pixels' worth. Releasing the fill hands the glyph
+     back to its own resting style, which is byte-for-byte where this animation's last frame
+     already was: opacity 1, no transform. Now that the cover CYCLES, that matters — the three
+     variants' finished wordmarks are held one after the other and must be the same pixels. */
+  animation-fill-mode: backwards;
 }
 
 /*
@@ -398,7 +428,11 @@
 }
 
 /* The letters are thrown out by the blast and settle — they are already at rest behind the
-   cloud, which is what actually reveals them. */
+   cloud, which is what actually reveals them.
+   The last frame is written as `transform: none` rather than `scale(1)` so that it is
+   LITERALLY the element's resting style — which is the precondition that lets the rule above
+   release the fill (`animation-fill-mode: backwards`) without anything moving. `none`
+   interpolates as the identity matrix, so the settle itself is unchanged. */
 @keyframes mufBlastIn {
   0% {
     opacity: 0;
@@ -412,7 +446,7 @@
 
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
 
@@ -459,13 +493,15 @@
    `!important` because the variant rules above are descendant selectors (0,2,0) and would
    otherwise outrank a bare `.glyph` (0,1,0) — same reason as WeaponReadout's `.stockLow`.
    The list covers every animated node of every variant: the ink and its chrome clone (the
-   paint variant sweeps each on its own pass), the spray's overspray pseudo, and the
-   blast cloud's puffs. */
+   paint variant sweeps each on its own pass), the spray's overspray pseudo, the blast
+   cloud's puffs — and the wipe between two turns of the cycle, which cannot happen anyway
+   (the cycle schedules no timer under reduced motion) but must not be reachable by accident. */
 @media (prefers-reduced-motion: reduce) {
   .glyph,
   .glyph::before,
   .letter::after,
-  .puff {
+  .puff,
+  .clearing {
     animation: none !important;
   }
 }
@@ -473,7 +509,8 @@
 :global(html[data-reduced-motion="true"]) .glyph,
 :global(html[data-reduced-motion="true"]) .glyph::before,
 :global(html[data-reduced-motion="true"]) .letter::after,
-:global(html[data-reduced-motion="true"]) .puff {
+:global(html[data-reduced-motion="true"]) .puff,
+:global(html[data-reduced-motion="true"]) .clearing {
   animation: none !important;
 }
 

@@ -219,6 +219,15 @@ export const MOTION = {
   // …and the much shorter settle of the letters themselves, which are thrown out by the
   // blast and are already at rest behind the cloud long before it clears.
   titleBlastSettleMs: 520,
+  // The cover does not paint its wordmark once and stop: it CYCLES while the title screen is
+  // up (Bertrand, 2026-07-26), so a player who lingers sees all three variants instead of
+  // whichever one their draw happened to give them. Once a variant has finished, the wordmark
+  // stays up long enough to be READ…
+  titleCycleHoldMs: 4000,
+  // …then it is wiped off — a short fade, not a cut, so the sheet going blank is not a flash —
+  // and the next variant starts on a clean cover. Killed with everything else under reduced
+  // motion: there, the wordmark is simply there, and it never moves again.
+  titleCycleClearMs: 320,
 } as const;
 
 // Typographic size scale (px) — NAMED from the sizes the HUD/menus already use
