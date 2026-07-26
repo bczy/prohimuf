@@ -26,9 +26,13 @@ inputs:
     description: >
       The shared findings JSON schema (workflow-level env.PANEL_FINDINGS_SCHEMA
       in code-review-panel.yml), threaded through as an input because a
-      composite action's own `${{ }}` expressions do not see the calling
+      composite action's own expression syntax does not see the calling
       workflow's `env` context — only `inputs`. Passing it by env instead
       would silently disable the schema enforcement below.
+      (Do NOT write a literal dollar-brace-brace pair anywhere in this file
+      outside a real expression: GitHub parses it even inside a description,
+      and an empty one fails the whole action with "An expression was
+      expected".)
     required: true
 
 runs:
