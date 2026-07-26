@@ -133,10 +133,10 @@ panel disabled, `triage` publishes `panel-verdict` with conclusion **`neutral`**
 
 The distinction that matters:
 
-| State        | Meaning                                                      | Blocking? |
-| ------------ | -------------------------------------------------------------| --------- |
-| **SKIPPED**  | Could not start — config gap (disabled, or secret absent)    | No        |
-| **DEGRADED** | Started and broke — invalid/expired token, quota exhausted, agent failure, zero coverage | Yes |
+| State        | Meaning                                                                                  | Blocking? |
+| ------------ | ---------------------------------------------------------------------------------------- | --------- |
+| **SKIPPED**  | Could not start — config gap (disabled, or secret absent)                                | No        |
+| **DEGRADED** | Started and broke — invalid/expired token, quota exhausted, agent failure, zero coverage | Yes       |
 
 SKIPPED is visible but never reads as a PASS, so ADR-0067's core invariant — "a review
 that could not happen must never look like a clean PASS" — holds under this ADR too.
