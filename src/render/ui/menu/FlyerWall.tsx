@@ -285,8 +285,8 @@ export function FlyerWall({
             <div
               key={level.id}
               className={cx("muf-flyer-slot", styles.slot)}
-              // Quick spike (test rapide, non gated): stagger the float-in entrance
-              // per flyer so the wall "flies in" one sheet at a time instead of all at once.
+              // Staggers the float-in entrance (FlyerWall.module.css) so flyers appear
+              // one sheet at a time instead of all at once.
               style={{ "--slot-delay": `${String(i * 180)}ms` } as React.CSSProperties}
             >
               {/* First-run nudge (spec §4): a modest felt-tip "start here" scrawl above

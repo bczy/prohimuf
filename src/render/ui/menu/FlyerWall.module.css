@@ -28,9 +28,8 @@
   display: flex;
   flex-direction: column;
   width: min(100%, var(--flyer-max-width));
-  /* Quick spike (test rapide, non gated) — flyers float/fly in one by one on mount,
-     staggered per-slot via the inline --slot-delay custom property (FlyerWall.tsx).
-     Slowed + given a leaf-like zigzag drift per Bertrand's "too quick" feedback. */
+  /* Flyers float in one by one on mount instead of appearing all at once,
+     staggered per-slot via the inline --slot-delay custom property (FlyerWall.tsx). */
   animation: mufFlyerFloatIn 1400ms ease-in-out both;
   animation-delay: var(--slot-delay, 0ms);
 }
