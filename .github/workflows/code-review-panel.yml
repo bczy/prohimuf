@@ -457,6 +457,7 @@ jobs:
       - name: Collect failed panel jobs
         id: degraded
         env:
+          R_PREFLIGHT: ${{ needs.preflight.result }}
           R_CODE_REVIEW: ${{ needs.code-review.result }}
           R_EDGE_CASE: ${{ needs.edge-case-hunter.result }}
           R_BMAD: ${{ needs.bmad-review.result }}
@@ -465,6 +466,10 @@ jobs:
         run: |
           failed=""
           add() { case "$2" in failure|cancelled) failed="${failed:+$failed,}$1";; esac; }
+          # preflight included on purpose: if IT crashes there is no `enabled`
+          # output, which otherwise reads as "panel deliberately off" and
+          # publishes an inert neutral for a panel that actually broke.
+          add preflight "$R_PREFLIGHT"
           add code-review "$R_CODE_REVIEW"
           add edge-case-hunter "$R_EDGE_CASE"
           add bmad-review "$R_BMAD"

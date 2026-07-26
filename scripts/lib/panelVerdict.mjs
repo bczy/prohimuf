@@ -24,25 +24,30 @@
  * @param {{BLOQUANT: number, MAJEUR: number, MINEUR: number}} counts
  * @param {readonly string[]} degraded names of panel jobs that did not complete
  * @param {string | undefined} skippedReason set when the panel never started
- *   (e.g. `PANEL_ENABLED` unset, or the OAuth token secret is absent) — takes
- *   priority over `degraded`, which cannot itself be non-empty in that case
- *   (jobs that never ran report `skipped`, not `failure`).
+ *   (e.g. `PANEL_ENABLED` unset, or the OAuth token secret is absent).
  */
 export function decide(counts, degraded = [], skippedReason) {
-  if (skippedReason) {
-    return {
-      conclusion: "neutral",
-      title: `SKIPPED — ${skippedReason}`,
-      summary: "panel did not run — this is not a review result",
-      skipped: skippedReason,
-    };
-  }
+  // DEGRADED outranks SKIPPED. A deliberately disabled panel leaves its jobs
+  // `skipped`, never `failure`, so `degraded` is empty and SKIPPED still wins
+  // below — the ordering only bites when something genuinely BROKE. It has to
+  // be this way round because `preflight` failing produces BOTH signals at
+  // once: no `enabled` output (which reads as "disabled", i.e. SKIPPED) and a
+  // failed job. Letting SKIPPED win there would publish an inert neutral for
+  // a panel that crashed — the fail-open ADR-0067 exists to prevent.
   if (degraded.length > 0) {
     return {
       conclusion: "failure",
       title: "DEGRADED — panel incomplete, verdict not authoritative",
       summary: `${String(degraded.length)} panel job(s) failed: ${degraded.join(", ")}`,
       degraded: [...degraded],
+    };
+  }
+  if (skippedReason) {
+    return {
+      conclusion: "neutral",
+      title: `SKIPPED — ${skippedReason}`,
+      summary: "panel did not run — this is not a review result",
+      skipped: skippedReason,
     };
   }
   if (counts.BLOQUANT > 0) {

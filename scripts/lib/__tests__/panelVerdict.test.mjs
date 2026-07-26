@@ -70,10 +70,18 @@ describe("decide — SKIPPED (panel never started)", () => {
     expect(v.title).toContain("SKIPPED");
   });
 
-  it("takes priority over DEGRADED — a panel that never started has no failed jobs to report", () => {
-    const v = decide(none, ["code-review"], "PANEL_ENABLED unset");
-    expect(v.title).toContain("SKIPPED");
-    expect(v.title).not.toContain("DEGRADED");
+  it("yields to DEGRADED when a job actually failed", () => {
+    // This asserted the opposite until a panel review pointed out the
+    // premise was wrong: a panel that never started was assumed to have no
+    // failed jobs to report, but `preflight` crashing produces BOTH — an
+    // absent `enabled` output (which reads as "disabled") and a failed job.
+    // Ranking SKIPPED first published an inert neutral for a panel that had
+    // broken, i.e. the fail-open ADR-0067 exists to prevent. A deliberately
+    // disabled panel leaves its jobs `skipped`, not `failure`, so it still
+    // reaches SKIPPED through the empty-`degraded` case above.
+    const v = decide(none, ["preflight"], "PANEL_ENABLED unset");
+    expect(v.title).toContain("DEGRADED");
+    expect(v.conclusion).toBe("failure");
   });
 
   it("does not appear when the panel ran (no skippedReason)", () => {
