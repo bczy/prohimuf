@@ -60,12 +60,18 @@ export function readToken({ env = process.env, readFileSync = fs.readFileSync } 
   );
 }
 
-/** genUrl(prompt, seed, { gen, model }) -> the gptimage-large request URL (always square). */
-export function genUrl(prompt, seed, { gen = 1024, model = "gptimage-large" } = {}) {
-  return (
+/**
+ * genUrl(prompt, seed, { gen, model, refs }) -> the gptimage-large request URL
+ * (always square). `refs` (optional array of image URLs) appends `&image=…`
+ * to steer ref-capable models — the same reference-guided mode
+ * bakeoff-boss-models.mjs validated against the shipped enemy sprites.
+ */
+export function genUrl(prompt, seed, { gen = 1024, model = "gptimage-large", refs } = {}) {
+  let u =
     `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}` +
-    `?model=${encodeURIComponent(model)}&width=${gen}&height=${gen}&nologo=true&quality=high&seed=${seed}`
-  );
+    `?model=${encodeURIComponent(model)}&width=${gen}&height=${gen}&nologo=true&quality=high&seed=${seed}`;
+  if (refs?.length) u += `&image=${encodeURIComponent(refs.join(","))}`;
+  return u;
 }
 
 /**
