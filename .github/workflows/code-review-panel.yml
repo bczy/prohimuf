@@ -154,12 +154,23 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # The local composite action can only be resolved once the repo is on
-      # disk — GitHub reads its action.yml BEFORE running any of its steps.
-      - name: Checkout PR head
+      # TRUSTED checkout — base branch, never the PR head. This is what
+      # `uses: ./...` below resolves against and what receives the OAuth
+      # secret, so it must not be attacker-influenceable: a PR that edited
+      # the composite action could otherwise add a step exfiltrating the
+      # token before the sandboxed agent ever runs.
+      - name: Checkout trusted panel code (base)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+
+      # The PR's own code, as read-only DATA for the agent to ground its
+      # findings against. Never executed, never on the `uses:` path.
+      - name: Checkout PR head as data
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare.outputs.head_sha }}
+          path: pr-head
 
       - uses: ./.github/actions/panel-reviewer
         with:
@@ -179,12 +190,23 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # The local composite action can only be resolved once the repo is on
-      # disk — GitHub reads its action.yml BEFORE running any of its steps.
-      - name: Checkout PR head
+      # TRUSTED checkout — base branch, never the PR head. This is what
+      # `uses: ./...` below resolves against and what receives the OAuth
+      # secret, so it must not be attacker-influenceable: a PR that edited
+      # the composite action could otherwise add a step exfiltrating the
+      # token before the sandboxed agent ever runs.
+      - name: Checkout trusted panel code (base)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+
+      # The PR's own code, as read-only DATA for the agent to ground its
+      # findings against. Never executed, never on the `uses:` path.
+      - name: Checkout PR head as data
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare.outputs.head_sha }}
+          path: pr-head
 
       - uses: ./.github/actions/panel-reviewer
         with:
@@ -204,12 +226,23 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # The local composite action can only be resolved once the repo is on
-      # disk — GitHub reads its action.yml BEFORE running any of its steps.
-      - name: Checkout PR head
+      # TRUSTED checkout — base branch, never the PR head. This is what
+      # `uses: ./...` below resolves against and what receives the OAuth
+      # secret, so it must not be attacker-influenceable: a PR that edited
+      # the composite action could otherwise add a step exfiltrating the
+      # token before the sandboxed agent ever runs.
+      - name: Checkout trusted panel code (base)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+
+      # The PR's own code, as read-only DATA for the agent to ground its
+      # findings against. Never executed, never on the `uses:` path.
+      - name: Checkout PR head as data
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare.outputs.head_sha }}
+          path: pr-head
 
       - uses: ./.github/actions/panel-reviewer
         with:
@@ -229,12 +262,23 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      # The local composite action can only be resolved once the repo is on
-      # disk — GitHub reads its action.yml BEFORE running any of its steps.
-      - name: Checkout PR head
+      # TRUSTED checkout — base branch, never the PR head. This is what
+      # `uses: ./...` below resolves against and what receives the OAuth
+      # secret, so it must not be attacker-influenceable: a PR that edited
+      # the composite action could otherwise add a step exfiltrating the
+      # token before the sandboxed agent ever runs.
+      - name: Checkout trusted panel code (base)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+
+      # The PR's own code, as read-only DATA for the agent to ground its
+      # findings against. Never executed, never on the `uses:` path.
+      - name: Checkout PR head as data
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.prepare.outputs.head_sha }}
+          path: pr-head
 
       - uses: ./.github/actions/panel-reviewer
         with:
@@ -280,7 +324,12 @@ jobs:
         if: steps.collect.outputs.has_findings == 'true'
         run: |
           set -euo pipefail
-          { echo 'text<<PANEL_EOF'
+          # Random per-run delimiter. This step is the sharper case of the
+          # two: findings-with-ids.json carries the reviewers' free text,
+          # which is shaped by the diff — a fixed terminator appearing in it
+          # would let the remainder be parsed as `name=value` output entries.
+          delim="PANEL_EOF_$(openssl rand -hex 16)"
+          { echo "text<<${delim}"
             cat .github/panel-prompts/_harness.md
             cat .github/panel-prompts/skeptic.md
             echo ''
@@ -289,7 +338,7 @@ jobs:
             echo '```json'
             cat findings-with-ids.json
             echo '```'
-            echo 'PANEL_EOF'; } >> "$GITHUB_OUTPUT"
+            echo "${delim}"; } >> "$GITHUB_OUTPUT"
 
       - name: Skeptic review
         id: claude
@@ -354,13 +403,21 @@ jobs:
           PREPARE_HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
           EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
           if [ -n "$PREPARE_HEAD_SHA" ]; then
             sha="$PREPARE_HEAD_SHA"
           elif [ -n "$EVENT_HEAD_SHA" ]; then
             sha="$EVENT_HEAD_SHA"
           else
             sha=$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)
+          fi
+          # An empty SHA would make panel-triage.mjs throw on its required-env
+          # check BEFORE publishing anything — and `panel-verdict` is a
+          # required check, so an unpublished one wedges the PR shut forever.
+          # That is the exact failure §5 exists to close; fail loudly instead.
+          if [ -z "$sha" ]; then
+            echo "::error::could not resolve a head SHA for PR ${PR_NUMBER} — refusing to continue without one, as panel-verdict would never be published." >&2
+            exit 1
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 

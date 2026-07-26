@@ -53,7 +53,7 @@ function dedupe(findings) {
 
 /** Identity of a finding for dedup/matching purposes. */
 export function findingKey(f) {
-  return `${f._reviewer || ""}::${f.file || ""}:${f.line || ""}::${f.title || ""}`;
+  return `${f._reviewer || ""}::${f.file || ""}:${f.line ?? ""}::${f.title || ""}`;
 }
 
 /**

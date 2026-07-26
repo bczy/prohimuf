@@ -60,10 +60,14 @@ runs:
         ROLE: ${{ inputs.role }}
       run: |
         set -euo pipefail
-        { echo 'text<<PANEL_EOF'
+        # Random per-run delimiter: a fixed one can be terminated early by
+        # content that happens to contain that exact line, letting the rest
+        # be parsed as new `name=value` output entries.
+        delim="PANEL_EOF_$(openssl rand -hex 16)"
+        { echo "text<<${delim}"
           cat .github/panel-prompts/_harness.md
           cat ".github/panel-prompts/${ROLE}.md"
-          echo 'PANEL_EOF'; } >> "$GITHUB_OUTPUT"
+          echo "${delim}"; } >> "$GITHUB_OUTPUT"
 
     # d. The reviewer itself — read-only, subscription auth. ANTHROPIC_API_KEY
     # must never appear in this job's env: Claude Code's credential chain
