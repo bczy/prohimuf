@@ -300,3 +300,65 @@ jobs:
     expect(r.out).not.toContain("passes a credential");
   });
 });
+
+describe("trap 4 — permissions and env declared at WORKFLOW level", () => {
+  it("counts a write scope inherited from workflow-level permissions", () => {
+    const r = run(`name: t
+on: [pull_request]
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - name: Publish
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: gh release create
+`);
+    expect(r.out).toContain("passes a credential");
+  });
+
+  it("lets a job-level permissions block OVERRIDE a privileged workflow one", () => {
+    // GitHub replaces rather than merges, so a read-only job block wins.
+    const r = run(`name: t
+on: [pull_request]
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - name: Read
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: gh pr view 1
+`);
+    expect(r.out).not.toContain("passes a credential");
+  });
+
+  it("catches a secret hoisted to workflow-level env", () => {
+    const r = run(`name: t
+on: [pull_request]
+env:
+  TOKEN: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - run: node scripts/whatever.mjs
+`);
+    expect(r.out).toContain("passes a credential");
+  });
+});

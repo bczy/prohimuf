@@ -135,9 +135,16 @@ function isPrTriggered(doc) {
   return names.includes("pull_request");
 }
 
-/** Job-level `permissions:` granting anything beyond read. */
-function jobHasWritePermission(job) {
-  const p = job?.permissions;
+/**
+ * Whether the job's token carries a write scope.
+ *
+ * A job-level `permissions:` block REPLACES the workflow-level one outright —
+ * GitHub does not merge them — so the job's block wins when present and the
+ * workflow's applies otherwise. Reading only the job level (as this did at
+ * first) misses every job that inherits a privileged workflow-wide grant.
+ */
+function hasWritePermission(job, doc) {
+  const p = job?.permissions ?? doc?.permissions;
   if (p === "write-all") return true;
   if (!p || typeof p !== "object") return false;
   return Object.values(p).some((v) => v === "write");
@@ -150,12 +157,13 @@ function jobHasWritePermission(job) {
  * `contents: read` it can do little, while with `contents: write` it is as
  * dangerous as any secret. `secrets.*` always counts.
  *
- * `env` is passed separately because job-level `env:` is visible to EVERY
- * step — a secret hoisted there reaches a plain `run:` that mentions no
- * credential at all.
+ * `env` is passed separately because env declared ABOVE a step is visible to
+ * it — a secret hoisted to the job, or to the whole workflow, reaches a plain
+ * `run:` that mentions no credential at all. Workflow env is inherited and
+ * job env overrides it key by key, so the two are merged in that order.
  */
-function stepUsesASecret(step, jobEnv, tokenIsPrivileged) {
-  const blob = JSON.stringify({ step: step ?? {}, jobEnv: jobEnv ?? {} });
+function stepUsesASecret(step, env, tokenIsPrivileged) {
+  const blob = JSON.stringify({ step: step ?? {}, env: env ?? {} });
   if (blob.includes("secrets.")) return true;
   return tokenIsPrivileged && /github\.token|github_token|GITHUB_TOKEN|GH_TOKEN/.test(blob);
 }
@@ -168,7 +176,7 @@ function stepUsesASecret(step, jobEnv, tokenIsPrivileged) {
  * the hard way: the four reviewer jobs were moved to a base checkout and the
  * skeptic — which receives the same token — was missed, staying on PR head.
  */
-function checkSecretProvenance(file, jobName, job, steps, prTriggered) {
+function checkSecretProvenance(file, jobName, job, steps, prTriggered, doc) {
   const at = steps.findIndex((s) => {
     if (!isRootCheckout(s)) return false;
     const ref = s?.with?.ref;
@@ -178,13 +186,15 @@ function checkSecretProvenance(file, jobName, job, steps, prTriggered) {
     return PR_HEAD_REF.test(String(ref));
   });
   if (at === -1) return;
-  const privileged = jobHasWritePermission(job);
+  const privileged = hasWritePermission(job, doc);
+  // Workflow env is inherited; job env overrides it key by key.
+  const env = { ...(doc?.env ?? {}), ...(job?.env ?? {}) };
   // Only steps AFTER the untrusted checkout can be running PR-authored code.
   // Without this slice the check over-warns on jobs that check out the head
   // early for an unrelated reason, and a checker that cries wolf gets ignored.
   const secretSteps = steps
     .slice(at + 1)
-    .filter((s) => stepUsesASecret(s, job?.env, privileged))
+    .filter((s) => stepUsesASecret(s, env, privileged))
     .map((s) => s.name ?? s.uses ?? "?");
   if (secretSteps.length === 0) return;
   warn(
@@ -200,7 +210,7 @@ function checkSecretProvenance(file, jobName, job, steps, prTriggered) {
 function checkJobs(file, doc) {
   for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
     const steps = Array.isArray(job?.steps) ? job.steps : [];
-    checkSecretProvenance(file, jobName, job, steps, isPrTriggered(doc));
+    checkSecretProvenance(file, jobName, job, steps, isPrTriggered(doc), doc);
     let rootCheckedOut = false;
 
     steps.forEach((step, idx) => {
