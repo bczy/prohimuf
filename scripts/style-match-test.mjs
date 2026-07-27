@@ -158,7 +158,9 @@ function writeHtml(manifest) {
       card(
         m.label,
         m.file ? dataUri(path.join(OUT, m.file)) : null,
-        m.error ? `échec: ${m.error}` : `${m.note}${m.opaquePct !== undefined ? ` · ${m.opaquePct}% opaque` : ""}`,
+        m.error
+          ? `échec: ${m.error}`
+          : `${m.note}${m.opaquePct !== undefined ? ` · ${m.opaquePct}% opaque` : ""}`,
       ),
     )
     .join("")}</div>`;

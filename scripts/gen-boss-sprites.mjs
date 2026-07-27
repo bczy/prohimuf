@@ -143,7 +143,10 @@ function loadBossFigures() {
 // sprites as visual references.
 async function generate(fig, token) {
   console.log(`  [seed] ${fig.key} seed=${fig.seed} (pinned)`);
-  const url = genUrl(`${STYLE_LOCK}${fig.subject}${COMIC_TAIL}`, fig.seed, { gen: GEN, refs: REF_IMAGES });
+  const url = genUrl(`${STYLE_LOCK}${fig.subject}${COMIC_TAIL}`, fig.seed, {
+    gen: GEN,
+    refs: REF_IMAGES,
+  });
   return withRetry(url, token);
 }
 
