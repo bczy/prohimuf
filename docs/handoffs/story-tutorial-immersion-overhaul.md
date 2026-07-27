@@ -1035,3 +1035,11 @@ precondition (commit the uncommitted round without `--no-verify`, push, wait for
   TUT-A11Y-01 container role/name, `[ CONTINUER ]` blink under reduced motion (all owner
   `ux-designer`) · 2 NITs from stage-6 run 3 (hand-written kind lists in the binding test;
   ADR-0071 D5 → test cross-reference), owners `dev-r3f-render` / `tech-writer`.
+
+## stage-6. CI PANEL — run 4 (first live CI run) — 2026-07-27
+
+- claim: CI panel on `b0de0ab` (providers restored) / release: FAIL — 1 BLOQUANT + 2 MAJEUR, all three triaged and closed same cycle:
+  - BLOQUANT (PR body cites 0069 ADR path): already fixed pre-verdict — the run snapshotted the body before the 0071 update; current body correct. No code change.
+  - MAJEUR (agent-handoffs.md:39): blanket 0069→0071 sed had corrupted the UNRELATED story-street-graphics-effects row (energy-rim really is ADR-0069) — reverted that cell only.
+  - MAJEUR (tutorial-script-visual-gestures.md): transcription block + bullet checklist drifted from shipped narrativeSystem.ts — block rewritten as a literal mirror of shipped code (source-of-truth pointer added), checklist realigned to the amended §D2.2 whitelist [5, 10, 12, 14].
+- Next: push → CI re-run for a clean panel-verdict.
