@@ -20,6 +20,10 @@
 //   3. `uses: ./path` pointing at a directory with no action.yml — a typo or
 //      a rename that only surfaces on the runner.
 //
+//   4. A job that hands a secret to code checked out from the PR head. Added
+//      after the four reviewer jobs were moved to a base checkout and the
+//      skeptic — which receives the same token — was missed.
+//
 // Usage:
 //   node scripts/check-workflows.mjs [file...]   (defaults to all workflows
 //                                                 and local actions)
@@ -105,10 +109,69 @@ function checkLocalActionExists(file, uses) {
   }
 }
 
+// Every idiom GitHub offers for "the PR's own head". `github.head_ref` uses
+// an UNDERSCORE, so a pattern written only with `head\.ref` silently misses
+// the most common form of all.
+//
+// RESIDUAL RISK, on purpose: this matches the TEXT of the ref expression, it
+// does not resolve it. A job that funnels the head SHA through a differently
+// named output — `needs.prepare.outputs.commit` — checks out PR code with no
+// warning here. Treat a clean run as "no KNOWN untrusted checkout", never as
+// proof the job is safe.
+const PR_HEAD_REF = /head[._]sha|head[._]ref/;
+
+/** Triggers on which GitHub's default checkout already contains PR code. */
+function isPrTriggered(doc) {
+  const on = doc?.on ?? doc?.true; // YAML 1.1 parses a bare `on:` key as true
+  const names = Array.isArray(on) ? on : typeof on === "string" ? [on] : Object.keys(on ?? {});
+  return names.some((n) => n === "pull_request" || n === "pull_request_target");
+}
+
+/** Any `${{ secrets.* }}` reference anywhere in a step's inputs or env. */
+function stepUsesASecret(step) {
+  return JSON.stringify(step ?? {}).includes("secrets.");
+}
+
+/**
+ * Trap 4 — a job that hands a secret to code it checked out from the PR head.
+ *
+ * The step running with the secret is whatever is on disk, so a PR that edits
+ * that script or action can read the secret before any sandbox applies. Found
+ * the hard way: the four reviewer jobs were moved to a base checkout and the
+ * skeptic — which receives the same token — was missed, staying on PR head.
+ */
+function checkSecretProvenance(file, jobName, steps, prTriggered) {
+  const at = steps.findIndex((s) => {
+    if (!isRootCheckout(s)) return false;
+    const ref = s?.with?.ref;
+    // No `ref:` on a PR-triggered workflow is the textbook pwn-request shape:
+    // GitHub checks out the auto-merge commit, which carries the PR's code.
+    if (ref === undefined) return prTriggered;
+    return PR_HEAD_REF.test(String(ref));
+  });
+  if (at === -1) return;
+  // Only steps AFTER the untrusted checkout can be running PR-authored code.
+  // Without this slice the check over-warns on jobs that check out the head
+  // early for an unrelated reason, and a checker that cries wolf gets ignored.
+  const secretSteps = steps
+    .slice(at + 1)
+    .filter(stepUsesASecret)
+    .map((s) => s.name ?? s.uses ?? "?");
+  if (secretSteps.length === 0) return;
+  warn(
+    file,
+    `job \`${jobName}\`: checks out the PR head at the workspace ROOT and passes a secret (${secretSteps.join(", ")})`,
+    "Whatever runs with that secret comes from the PR author. Check out the " +
+      "BASE ref at the root for the code, and put the PR tree under a " +
+      "`path:` subdirectory if the job needs to read it as data.",
+  );
+}
+
 /** Trap 1 — a local action needs the repo checked out at the ROOT first. */
 function checkJobs(file, doc) {
   for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
     const steps = Array.isArray(job?.steps) ? job.steps : [];
+    checkSecretProvenance(file, jobName, steps, isPrTriggered(doc));
     let rootCheckedOut = false;
 
     steps.forEach((step, idx) => {
