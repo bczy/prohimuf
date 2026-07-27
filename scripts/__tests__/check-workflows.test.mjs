@@ -129,7 +129,7 @@ jobs:
     "github.event.pull_request.head.ref",
   ])("warns when the root checkout is %s", (ref) => {
     const r = run(job(ref));
-    expect(r.out).toContain("passes a secret");
+    expect(r.out).toContain("passes a credential");
   });
 
   it("stays silent on a base checkout with the PR tree under path:", () => {
@@ -150,7 +150,7 @@ jobs:
         with:
           token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 `);
-    expect(r.out).not.toContain("passes a secret");
+    expect(r.out).not.toContain("passes a credential");
     expect(r.status).toBe(0);
   });
 
@@ -170,7 +170,7 @@ jobs:
         with:
           ref: \${{ github.head_ref }}
 `);
-    expect(r.out).not.toContain("passes a secret");
+    expect(r.out).not.toContain("passes a credential");
   });
 
   it("flags a checkout with NO ref on a pull_request workflow — the pwn-request shape", () => {
@@ -187,7 +187,7 @@ jobs:
         with:
           token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 `);
-    expect(r.out).toContain("passes a secret");
+    expect(r.out).toContain("passes a credential");
   });
 
   it("does NOT flag a no-ref checkout on a push-triggered workflow", () => {
@@ -204,7 +204,7 @@ jobs:
         with:
           token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 `);
-    expect(r.out).not.toContain("passes a secret");
+    expect(r.out).not.toContain("passes a credential");
   });
 
   it("is silent when no secret is involved at all", () => {
@@ -219,6 +219,84 @@ jobs:
           ref: \${{ github.head_ref }}
       - run: yarn test
 `);
-    expect(r.out).not.toContain("passes a secret");
+    expect(r.out).not.toContain("passes a credential");
+  });
+});
+
+describe("trap 4 — credential shapes beyond a step-level secrets.*", () => {
+  it("catches a secret hoisted to JOB-level env, invisible on the step", () => {
+    // The step mentions no credential at all; job-level env reaches it anyway.
+    const r = run(`name: t
+on: [pull_request]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    env:
+      TOKEN: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - run: node scripts/panel-write-confirmed.mjs
+`);
+    expect(r.out).toContain("passes a credential");
+  });
+
+  it("counts github.token when the job grants a WRITE scope", () => {
+    const r = run(`name: t
+on: [pull_request]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - name: Publish
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: gh release create
+`);
+    expect(r.out).toContain("passes a credential");
+  });
+
+  it("ignores github.token when every scope is read-only", () => {
+    // With contents: read it can do little; warning would be noise.
+    const r = run(`name: t
+on: [pull_request]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref }}
+      - name: Read something
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: gh pr view 1
+`);
+    expect(r.out).not.toContain("passes a credential");
+  });
+
+  it("does NOT flag an unref'd checkout on pull_request_target — its default is the base", () => {
+    // pull_request_target is dangerous for the opposite reason (secrets on a
+    // fork-triggered run), but its default checkout is trusted.
+    const r = run(`name: t
+on: [pull_request_target]
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        with:
+          token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+`);
+    expect(r.out).not.toContain("passes a credential");
   });
 });

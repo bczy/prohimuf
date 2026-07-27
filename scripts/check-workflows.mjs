@@ -120,16 +120,44 @@ function checkLocalActionExists(file, uses) {
 // proof the job is safe.
 const PR_HEAD_REF = /head[._]sha|head[._]ref/;
 
-/** Triggers on which GitHub's default checkout already contains PR code. */
+/**
+ * Triggers whose DEFAULT checkout (no `ref:`) already contains PR code.
+ *
+ * `pull_request` is the one: GitHub checks out the auto-merge commit.
+ * `pull_request_target` is deliberately NOT here — its default checkout is
+ * the BASE ref, which is trusted. That trigger is dangerous for the opposite
+ * reason (it hands secrets to a fork-triggered run), but flagging its default
+ * checkout would be wrong.
+ */
 function isPrTriggered(doc) {
-  const on = doc?.on ?? doc?.true; // YAML 1.1 parses a bare `on:` key as true
+  const on = doc?.on;
   const names = Array.isArray(on) ? on : typeof on === "string" ? [on] : Object.keys(on ?? {});
-  return names.some((n) => n === "pull_request" || n === "pull_request_target");
+  return names.includes("pull_request");
 }
 
-/** Any `${{ secrets.* }}` reference anywhere in a step's inputs or env. */
-function stepUsesASecret(step) {
-  return JSON.stringify(step ?? {}).includes("secrets.");
+/** Job-level `permissions:` granting anything beyond read. */
+function jobHasWritePermission(job) {
+  const p = job?.permissions;
+  if (p === "write-all") return true;
+  if (!p || typeof p !== "object") return false;
+  return Object.values(p).some((v) => v === "write");
+}
+
+/**
+ * Credentials a step can hand to code on disk.
+ *
+ * `github.token` counts, but only when the job grants it a write scope: with
+ * `contents: read` it can do little, while with `contents: write` it is as
+ * dangerous as any secret. `secrets.*` always counts.
+ *
+ * `env` is passed separately because job-level `env:` is visible to EVERY
+ * step — a secret hoisted there reaches a plain `run:` that mentions no
+ * credential at all.
+ */
+function stepUsesASecret(step, jobEnv, tokenIsPrivileged) {
+  const blob = JSON.stringify({ step: step ?? {}, jobEnv: jobEnv ?? {} });
+  if (blob.includes("secrets.")) return true;
+  return tokenIsPrivileged && /github\.token|github_token|GITHUB_TOKEN|GH_TOKEN/.test(blob);
 }
 
 /**
@@ -140,29 +168,30 @@ function stepUsesASecret(step) {
  * the hard way: the four reviewer jobs were moved to a base checkout and the
  * skeptic — which receives the same token — was missed, staying on PR head.
  */
-function checkSecretProvenance(file, jobName, steps, prTriggered) {
+function checkSecretProvenance(file, jobName, job, steps, prTriggered) {
   const at = steps.findIndex((s) => {
     if (!isRootCheckout(s)) return false;
     const ref = s?.with?.ref;
-    // No `ref:` on a PR-triggered workflow is the textbook pwn-request shape:
-    // GitHub checks out the auto-merge commit, which carries the PR's code.
+    // No `ref:` on a `pull_request` workflow is the textbook pwn-request
+    // shape: GitHub checks out the auto-merge commit, which carries PR code.
     if (ref === undefined) return prTriggered;
     return PR_HEAD_REF.test(String(ref));
   });
   if (at === -1) return;
+  const privileged = jobHasWritePermission(job);
   // Only steps AFTER the untrusted checkout can be running PR-authored code.
   // Without this slice the check over-warns on jobs that check out the head
   // early for an unrelated reason, and a checker that cries wolf gets ignored.
   const secretSteps = steps
     .slice(at + 1)
-    .filter(stepUsesASecret)
+    .filter((s) => stepUsesASecret(s, job?.env, privileged))
     .map((s) => s.name ?? s.uses ?? "?");
   if (secretSteps.length === 0) return;
   warn(
     file,
-    `job \`${jobName}\`: checks out the PR head at the workspace ROOT and passes a secret (${secretSteps.join(", ")})`,
-    "Whatever runs with that secret comes from the PR author. Check out the " +
-      "BASE ref at the root for the code, and put the PR tree under a " +
+    `job \`${jobName}\`: checks out the PR head at the workspace ROOT and passes a credential (${secretSteps.join(", ")})`,
+    "Whatever runs with that credential comes from the PR author. Check out " +
+      "the BASE ref at the root for the code, and put the PR tree under a " +
       "`path:` subdirectory if the job needs to read it as data.",
   );
 }
@@ -171,7 +200,7 @@ function checkSecretProvenance(file, jobName, steps, prTriggered) {
 function checkJobs(file, doc) {
   for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
     const steps = Array.isArray(job?.steps) ? job.steps : [];
-    checkSecretProvenance(file, jobName, steps, isPrTriggered(doc));
+    checkSecretProvenance(file, jobName, job, steps, isPrTriggered(doc));
     let rootCheckedOut = false;
 
     steps.forEach((step, idx) => {
