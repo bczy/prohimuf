@@ -336,7 +336,7 @@ export function narrativeImagePaths(scene: NarrativeScene): readonly string[] {
  * keyed by the `GestureKind` a panel authors. "Code-drawn" means the icon is vector line
  * art, NOT that it references no asset: `edge-scroll` frames the real Belliard street in
  * its mini-screen (5.9 MB), so that panel costs a fetch like any `image:` panel and must be
- * warmed (ADR-0069 D5, preload-explicitness). The other three icons are pure vector — an
+ * warmed (ADR-0071 D5, preload-explicitness). The other three icons are pure vector — an
  * empty list, not an omission. Exhaustive over the closed union: a fifth `GestureKind`
  * fails the build here until someone states what it loads (same guard as GestureIcon's own
  * `Record<GestureKind, …>`), so the manifest cannot silently fall behind the icons.

@@ -12,7 +12,7 @@ import { GestureIcon } from "../GestureIcon";
  *
  * `GESTURE_EMBEDDED_ASSETS` / `DIAGRAM_EMBEDDED_ASSETS` (game side, `assetManifest.ts`) declare
  * which bitmaps `GestureIcon` / `DiagramIcon` (render side) embed, so the loading gate can warm
- * them (ADR-0069 D5). Their exhaustive `Record<Kind, …>` types guard the KEYS only: adding a
+ * them (ADR-0071 D5). Their exhaustive `Record<Kind, …>` types guard the KEYS only: adding a
  * bitmap to a kind whose entry is already `[]` compiles, ships, and cold-fetches mid-panel. That
  * seam has drifted twice (stage-6 run-1 MAJEUR 5, then the Commandant sprite swap).
  *

@@ -65,7 +65,7 @@ describe("narrativeSystem data integrity", () => {
     }
   });
 
-  it("A6: tutorial scenes may now carry authored scene backdrops (ADR-0069)", () => {
+  it("A6: tutorial scenes may now carry authored scene backdrops (ADR-0071)", () => {
     for (const scene of [TUTORIAL_NARRATIVE_DESKTOP, TUTORIAL_NARRATIVE_MOBILE]) {
       expect(scene.backdrop).toBeDefined();
       expect(scene.backdrop?.startsWith("/")).toBe(false);

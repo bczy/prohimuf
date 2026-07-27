@@ -1,8 +1,8 @@
-# 0069 — Tutorial immersion narrative contract (decor context + mechanic cue diagrams)
+# 0071 — Tutorial immersion narrative contract (decor context + mechanic cue diagrams)
 
 - **Status:** Accepted
 - **Date:** 2026-07-25
-- **Number:** 0069, allocated by `producer` (Marion) at story opening in
+- **Number:** 0071, allocated by `producer` (Marion) at story opening in
   `docs/handoffs/story-tutorial-immersion-overhaul.md` (stage 0, 2026-07-25), to be re-checked at merge.
 - **Amends:** [ADR-0012](./0012-optional-scripted-tutorial-stage.md) (tutorial informative surface),
   [ADR-0015](./0015-device-forked-tutorial-script.md) (fork-only controls invariant),

@@ -131,7 +131,7 @@ export function NarrativeScreen({
               `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
               (§2bis). Its facade layer is a CSS background-image, so a 404 leaves at most the
               faint dot-screen grain — never a broken-image glyph, and no coupling to the per-line
-              `imageError`. Since ADR-0069 (D1), tutorial scenes may carry this backdrop too —
+              `imageError`. Since ADR-0071 (D1), tutorial scenes may carry this backdrop too —
               both TUTORIAL_NARRATIVE_DESKTOP and TUTORIAL_NARRATIVE_MOBILE now author
               `backdrop: "assets/levels/belliard/facade.png"`. */}
           {scene.backdrop !== undefined && (
