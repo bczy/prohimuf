@@ -42,8 +42,17 @@ dans le même chantier :
 
 - `DeliveryIntegrityBanner` (HUD) — l'état de la jauge devient lisible en permanence.
 - `OffscreenArrowIndicator` + `arrowGlyph` — direction de la menace hors-cadre.
-- Consommateurs de `viewport.isOnScreen` côté render, câblés via `useGameLoop` /
-  `GameScene` / `NearForeground`.
+- Consommateurs de `viewport.isOnScreen` côté render, câblés via `useGameLoop` et
+  `GameScene`.
+
+> **Correction (panel PR #143, BLOQUANT).** Une version antérieure de ce shard citait aussi
+> `NearForeground.tsx` parmi les consommateurs du télégraphe. **C'est faux** : son diff est
+> un correctif de z-order sans rapport (masquer les rangées de props de trottoir pendant le
+> tableau boss, après le signalement de Bertrand du 26/07 sur le lampadaire coupant le
+> Commandant). Décrire ce fichier comme du câblage de télégraphe faisait passer du code non
+> relu pour du travail gaté — exactement l'erreur que le panel existe pour attraper. Le sort
+> de ce hunk (sorti du diff, ou assumé avec sa propre traçabilité) est un arbitrage Bertrand,
+> non tranché ici.
 
 ## Specs et preuves
 

@@ -145,10 +145,22 @@ async function run() {
   const only = arg("--models");
   const dry = argv.includes("--dry");
 
+  // `--models` is attacker-reachable: it comes from a workflow_dispatch input, so
+  // anyone with repo write (no secret access) can set it. Accepting an unknown
+  // token used to echo it verbatim into the generated report; reject instead, so
+  // the freeform string never enters the pipeline at all. A typo now fails loudly
+  // rather than rendering an empty card (panel finding, PR #143).
   const matrix = only
-    ? only
-        .split(",")
-        .map((m) => MATRIX.find((x) => x.model === m.trim()) ?? { model: m.trim(), ref: 0 })
+    ? only.split(",").map((raw) => {
+        const m = raw.trim();
+        const known = MATRIX.find((x) => x.model === m);
+        if (known === undefined) {
+          throw new Error(
+            `--models: unknown model "${m}". Known: ${MATRIX.map((x) => x.model).join(", ")}`,
+          );
+        }
+        return known;
+      })
     : MATRIX;
 
   // Rebuild the page from what is already on disk — no network, no spend. Used
@@ -394,10 +406,22 @@ async function writeHtml(manifest, meta = {}) {
   for (const r of refs) await resolve(r.f);
   for (const r of manifest) if (r.file) await resolve(path.join(OUT, r.file));
 
+  // Defence in depth behind the `--models` allow-list above: every manifest-derived
+  // string reaching this template is escaped, so no input can close a tag or open a
+  // <script>. The report is downloaded and opened in a human's browser, which is
+  // what makes an unescaped value executable rather than merely ugly.
+  const esc = (v) =>
+    String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
   const card = (label, uri, sub, warn, bad) => `
     <figure class="cell${warn ? " warn" : ""}${bad ? " bad" : ""}">
-      <div class="thumb">${uri ? `<img src="${uri}" alt="${label}">` : `<div class="missing">non généré</div>`}</div>
-      <figcaption><b>${label}</b>${sub ? `<span>${sub}</span>` : ""}${warn ? `<em>${warn}</em>` : ""}</figcaption>
+      <div class="thumb">${uri ? `<img src="${uri}" alt="${esc(label)}">` : `<div class="missing">non généré</div>`}</div>
+      <figcaption><b>${esc(label)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${warn ? `<em>${esc(warn)}</em>` : ""}</figcaption>
     </figure>`;
 
   const html = `<!doctype html><meta charset="utf-8">
