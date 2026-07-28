@@ -8,7 +8,7 @@ import {
 } from "@game/systems/bulletSystem";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import type { Crosshair } from "@game/types/crosshair";
-import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
+import type { CoreEnemyKind, Enemy, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
 import type { LootCrate } from "@game/types/loot";
@@ -236,7 +236,7 @@ describe("resolvePlayerShot — hittable states (D1.4)", () => {
 });
 
 describe("resolvePlayerShot — reward parity with checkBulletHits (AC5)", () => {
-  it.each<EnemyKind>(["normal", "riot", "biker", "bonus", "civilian"])(
+  it.each<CoreEnemyKind>(["normal", "riot", "biker", "bonus", "civilian"])(
     "a lethal hit on %s yields the CORE_ARCHETYPES deltas and the same HitEvent",
     (kind) => {
       const a = CORE_ARCHETYPES[kind];

@@ -1,4 +1,4 @@
-import type { EnemyKind } from "@game/types/enemy";
+import type { CoreEnemyKind, EnemyKind } from "@game/types/enemy";
 
 // Per-archetype tuning. Durations are seconds spent in each shown state; the
 // renderer keys sprite/tint off `spriteBase`, `variants` and `tint`.
@@ -38,7 +38,7 @@ export interface Archetype {
  * from: level-authored archetypes live outside it (see `archetype()`), which is
  * what keeps the frozen spawn pool frozen (spec-level-harness-sp1 §4.1/§4.2).
  */
-export const CORE_ARCHETYPES: Record<EnemyKind, Archetype> = {
+export const CORE_ARCHETYPES: Record<CoreEnemyKind, Archetype> = {
   normal: {
     kind: "normal",
     hp: 1,
@@ -160,23 +160,40 @@ export const CORE_ARCHETYPES: Record<EnemyKind, Archetype> = {
   },
 };
 
+// Archetypes declared by generated levels, keyed by their namespaced id. Filled
+// once at import by `levels/generated/index.ts` and never mutated afterwards;
+// they all carry `weight: 0` (enforced by validateLevelPlan), so they cannot
+// enter any default pool — a level activates its own via roster.windowWeights.
+const generated = new Map<string, Archetype>();
+
+/**
+ * Register the archetypes of a generated level. Idempotent per key: re-registering
+ * the same id overwrites the same slot, so import order carries no meaning.
+ */
+export function registerGeneratedArchetypes(entries: readonly Archetype[]): void {
+  for (const entry of entries) generated.set(entry.kind, entry);
+}
+
 /**
  * The archetype of a kind — the single resolution point every reader goes
- * through. Direct table indexing is deliberately not the public path: a kind is
- * not always a core kind (level-authored archetypes are registered separately),
- * and this is where that lookup is resolved.
+ * through, core or level-authored. Falls back to `normal` for an unknown kind,
+ * exactly like `pickKind` does, so a stale roster id degrades to a plain cop
+ * instead of crashing the tick.
  */
 export function archetype(kind: EnemyKind): Archetype {
-  return CORE_ARCHETYPES[kind];
+  // The core table read through the WIDE key: over a generated id the lookup is
+  // genuinely partial, which is the whole reason this accessor exists.
+  const core: Partial<Record<EnemyKind, Archetype>> = CORE_ARCHETYPES;
+  return generated.get(kind) ?? core[kind] ?? CORE_ARCHETYPES.normal;
 }
 
 // The frozen default window pool: one entry per unit of `weight`, in archetype
 // declaration order. `pickKind` / `WEIGHTED` are the legacy default path and must
 // NOT change (window-spawn determinism is guaranteed against this constant) —
 // hence CORE_ARCHETYPES, never a table a level can extend.
-export const WEIGHTED: readonly EnemyKind[] = (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).flatMap(
-  (k) => Array.from({ length: CORE_ARCHETYPES[k].weight }, () => k),
-);
+export const WEIGHTED: readonly EnemyKind[] = (
+  Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]
+).flatMap((k) => Array.from({ length: CORE_ARCHETYPES[k].weight }, () => k));
 
 // Deterministic weighted pick so spawns are reproducible per (wave, index).
 export function pickKind(seed: number): EnemyKind {
@@ -191,7 +208,7 @@ export function pickKind(seed: number): EnemyKind {
 export function buildWeightedFrom(
   overrides: Partial<Record<EnemyKind, number>>,
 ): readonly EnemyKind[] {
-  return (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).flatMap((k) => {
+  return (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).flatMap((k) => {
     const weight = overrides[k] ?? CORE_ARCHETYPES[k].weight;
     return Array.from({ length: Math.max(0, weight) }, () => k);
   });

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { LEVELS } from "@game/levels/levels";
 import { PRE_LEVEL_NARRATIVE, POST_LEVEL_NARRATIVE } from "@game/systems/narrativeSystem";
 import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
-import type { EnemyKind } from "@game/types/enemy";
+import type { CoreEnemyKind } from "@game/types/enemy";
 import manifest from "../levelArt.json";
 
 /**
@@ -85,14 +85,14 @@ interface EnemyFlipbookEntry {
 // Mirror of enemyTextures.ts `fileFor()` root computation (kept in the render
 // lane): idle root = spriteBase; shooting root = spriteBase + "_shooting",
 // except the irregular legacy case spriteBase "enemy_sprite" -> "enemy_shooting".
-function root(kind: EnemyKind, shooting: boolean): string {
+function root(kind: CoreEnemyKind, shooting: boolean): string {
   const base = CORE_ARCHETYPES[kind].spriteBase;
   if (!shooting) return base;
   return base === "enemy_sprite" ? "enemy_shooting" : `${base}_shooting`;
 }
 
 // The variant suffix scheme: variant 1 is the unsuffixed base, 2..N add `_v`.
-function keysFor(kind: EnemyKind, shooting: boolean): string[] {
+function keysFor(kind: CoreEnemyKind, shooting: boolean): string[] {
   const r = root(kind, shooting);
   const keys: string[] = [];
   for (let v = 1; v <= CORE_ARCHETYPES[kind].variants; v += 1) {
@@ -107,8 +107,8 @@ function keysFor(kind: EnemyKind, shooting: boolean): string[] {
 // draws from the rider flipbook. Excluded from the expected manifest key set, so
 // their absence from levelArt.json is correct and a re-added key would be flagged.
 // Derived from the archetype's own `artRetired` flag — the single source of truth.
-const ART_RETIRED_KINDS = new Set<EnemyKind>(
-  (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).filter(
+const ART_RETIRED_KINDS = new Set<CoreEnemyKind>(
+  (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).filter(
     (k) => CORE_ARCHETYPES[k].artRetired === true,
   ),
 );
@@ -116,7 +116,7 @@ const ART_RETIRED_KINDS = new Set<EnemyKind>(
 // Every legal base filename the renderer can request: idle for every variant,
 // plus shooting for every variant of archetypes that shoot.
 function allExpectedKeys(): string[] {
-  const kinds = (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).filter(
+  const kinds = (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).filter(
     (k) => !ART_RETIRED_KINDS.has(k),
   );
   return kinds.flatMap((kind) => {
@@ -205,7 +205,7 @@ describe("levelArt.json enemies flipbook ↔ CORE_ARCHETYPES sprite-key contract
     // Scope guard: bonus is a static pose; a 1-frame flipbook is valid and
     // completeness must NOT demand a second frame for it. (civilian's sprite was
     // retired — ADR-0029 — so it no longer appears in the manifest.)
-    for (const kind of ["bonus"] as EnemyKind[]) {
+    for (const kind of ["bonus"] as CoreEnemyKind[]) {
       const key = root(kind, false); // variant 1, idle
       const entry = types[key];
       expect(entry, `missing idle sprite for ${kind}`).toBeDefined();

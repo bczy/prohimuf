@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { CORE_ARCHETYPES, WEIGHTED, archetype } from "@game/types/enemyTypes";
+import {
+  CORE_ARCHETYPES,
+  WEIGHTED,
+  archetype,
+  registerGeneratedArchetypes,
+  type Archetype,
+} from "@game/types/enemyTypes";
+
+const VIGILE: Archetype = {
+  kind: "spec:vigile",
+  hp: 2,
+  bulletDamage: 0.5,
+  hiddenDuration: 1.6,
+  visibleDuration: 3,
+  shoots: true,
+  scoreDelta: 2,
+  livesDelta: 0,
+  timeDelta: 0,
+  countsAsTarget: true,
+  weight: 0,
+  spriteBase: "enemy_spec_vigile",
+  variants: 1,
+  tint: "#ffffff",
+  aspect: 1,
+};
 
 /**
  * The archetype registry (spec-level-harness-sp1 §4.1). `CORE_ARCHETYPES` is the
@@ -27,5 +51,29 @@ describe("archetype registry", () => {
     for (const kind of Object.keys(CORE_ARCHETYPES) as (keyof typeof CORE_ARCHETYPES)[]) {
       expect(archetype(kind)).toBe(CORE_ARCHETYPES[kind]);
     }
+  });
+
+  it("falls back to normal for a kind nobody registered", () => {
+    expect(archetype("pigalle:inexistant")).toBe(CORE_ARCHETYPES.normal);
+  });
+
+  it("resolves a registered level-authored archetype without touching the core", () => {
+    const coreKeysBefore = Object.keys(CORE_ARCHETYPES);
+    const weightedBefore = [...WEIGHTED];
+
+    registerGeneratedArchetypes([VIGILE]);
+
+    expect(archetype("spec:vigile")).toBe(VIGILE);
+    // The frozen pool and the core table are untouched: a level-authored kind is
+    // activated by its own roster.windowWeights, never by the default pool.
+    expect(Object.keys(CORE_ARCHETYPES)).toEqual(coreKeysBefore);
+    expect(WEIGHTED).toEqual(weightedBefore);
+  });
+
+  it("is idempotent per kind: re-registering the same id overwrites in place", () => {
+    registerGeneratedArchetypes([VIGILE]);
+    const again: Archetype = { ...VIGILE, hp: 3 };
+    registerGeneratedArchetypes([again]);
+    expect(archetype("spec:vigile")).toBe(again);
   });
 });

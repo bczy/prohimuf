@@ -5,7 +5,7 @@ import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
 import { crosshairToWorld, VIEW_W, VIEW_H } from "@game/systems/crosshairSystem";
 import { hitEnemy } from "@game/systems/enemySystem";
-import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
+import { archetype } from "@game/types/enemyTypes";
 import type { HitEvent, ImpactEvent } from "@game/types/feedback";
 import type { LootCrate } from "@game/types/loot";
 import type { WeaponKind } from "@game/types/weapon";
@@ -204,7 +204,7 @@ export function resolvePlayerShot(
   const events: HitEvent[] = [];
   // Effects only land when this hit takes the enemy down (hp -> 0).
   if (enemy.hp - 1 <= 0) {
-    const a = CORE_ARCHETYPES[enemy.kind];
+    const a = archetype(enemy.kind);
     scoreDelta += a.scoreDelta;
     livesDelta += a.livesDelta;
     timeDelta += a.timeDelta;
