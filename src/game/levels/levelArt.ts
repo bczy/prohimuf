@@ -1,5 +1,6 @@
 import manifest from "./levelArt.json";
 import generatedZones from "./windowZones.generated.json";
+import { GENERATED_LEVEL_ART } from "@game/levels/generated";
 import type { WindowSlot } from "@game/types/map";
 
 export type LayerName = "sky" | "facade" | "street" | "foreground";
@@ -238,12 +239,17 @@ function requireFirstLevel(): LevelArt {
 
 const FIRST_LEVEL = requireFirstLevel();
 
-/** All level-art definitions, in declaration order. */
-export const LEVEL_ART_LIST: readonly LevelArt[] = LEVELS;
+/**
+ * All level-art definitions, in declaration order: the manifest's first, then the
+ * harness-generated ones (spec-level-harness-sp1 §4.3). The manifest keeps the HEAD
+ * of the list on purpose — `FIRST_LEVEL`, the fallback of {@link getLevelArt}, is
+ * read off `LEVELS[0]` and must stay belliard whatever the harness declares.
+ */
+export const LEVEL_ART_LIST: readonly LevelArt[] = [...LEVELS, ...GENERATED_LEVEL_ART];
 
 /** Lookup by level id. */
 export const LEVEL_ART: Readonly<Record<string, LevelArt>> = Object.fromEntries(
-  LEVELS.map((l) => [l.id, l]),
+  LEVEL_ART_LIST.map((l) => [l.id, l]),
 );
 
 export const LAYER_NAMES: readonly LayerName[] = ["sky", "facade", "street"];

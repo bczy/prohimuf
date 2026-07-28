@@ -208,8 +208,22 @@ export function pickKind(seed: number): EnemyKind {
 export function buildWeightedFrom(
   overrides: Partial<Record<EnemyKind, number>>,
 ): readonly EnemyKind[] {
-  return (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).flatMap((k) => {
-    const weight = overrides[k] ?? CORE_ARCHETYPES[k].weight;
+  const core = Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[];
+  // A level-authored archetype is ABSENT from CORE_ARCHETYPES and carries `weight: 0`
+  // (spec-level-harness-sp1 §4.2), so iterating the core alone would silently drop it
+  // and its level could never spawn it. It joins the pool ONLY through an explicit
+  // override, and only if it actually resolves to a registered archetype — a typo
+  // contributes nothing rather than spawning a fallback cop. Appended AFTER the core so
+  // the default pool (and thus `WEIGHTED` and `pickKind` determinism) is unchanged.
+  const authored = (Object.keys(overrides) as EnemyKind[]).filter(
+    (k) => !(k in CORE_ARCHETYPES) && generated.has(k),
+  );
+  // The core table read through the WIDE key, like `archetype()` does: over an
+  // authored id the lookup is genuinely partial, and casting that away would make
+  // the compiler believe a guard we actually need at runtime is dead code.
+  const coreTable: Partial<Record<EnemyKind, Archetype>> = CORE_ARCHETYPES;
+  return [...core, ...authored].flatMap((k) => {
+    const weight = overrides[k] ?? coreTable[k]?.weight ?? 0;
     return Array.from({ length: Math.max(0, weight) }, () => k);
   });
 }

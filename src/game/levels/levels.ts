@@ -15,4 +15,6 @@ export {
   BOSS_QTE_DEV_HARNESS_LEVEL,
   FIRST_PLAYABLE_LEVEL,
   DIFFICULTY_CONFIG,
+  GENERATED_LEVELS,
+  ALL_LEVELS,
 } from "@game/levels/levels.data";

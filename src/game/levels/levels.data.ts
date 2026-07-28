@@ -1,5 +1,6 @@
 import type { Prefs } from "@game/systems/prefsSystem";
 import type { LevelConfig } from "@game/types/level";
+import { GENERATED_LEVEL_CONFIGS } from "@game/levels/generated";
 
 /**
  * The level catalogue — pure data (ADR-0074 §2). Every export here MUST be computable at
@@ -365,3 +366,22 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   normal: { enemySpeedMult: 1.0, livesOverride: null, bulletSpeedMult: 1.0 },
   hard: { enemySpeedMult: 1.4, livesOverride: null, bulletSpeedMult: 0.9 },
 };
+
+/**
+ * The harness-generated levels (spec-level-harness-sp1 §4.3), each derived from
+ * the single `LevelPlan` of its own module.
+ *
+ * They are deliberately NOT in `LEVELS`, which is the SHIPPED CAMPAIGN: its order
+ * drives the index-based unlock hop (App.tsx `LEVELS[i + 1]`), niveau-final is its
+ * last playable level, its ids mirror `levelArt.json` one for one, and every sprite
+ * it rosters must ship on disk. A generated level satisfies none of that by design —
+ * promoting one to the campaign is a deliberate, separate act.
+ *
+ * Import-time note (ADR-0074 §2): `GENERATED_LEVEL_CONFIGS` is a pure projection of
+ * literal `LevelPlan`s — computable at import time, no I/O — so this stays within the
+ * data-module rule. Countersign requested from senior-architect in the SP1 shard.
+ */
+export const GENERATED_LEVELS: readonly LevelConfig[] = GENERATED_LEVEL_CONFIGS;
+
+/** Every level this build can run: the shipped campaign plus the generated ones. */
+export const ALL_LEVELS: readonly LevelConfig[] = [...LEVELS, ...GENERATED_LEVELS];
