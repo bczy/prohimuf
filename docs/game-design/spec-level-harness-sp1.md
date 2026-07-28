@@ -160,7 +160,9 @@ export const plan: LevelPlan = {
     {
       kind: "pigalle:kiosque",
       asset: "assets/nearfg/pigalle/kiosque.png",
-      worldHeight: 1.4, // en données, pas dans NEAR_KIND_SPECS — voir §4.5
+      aspect: 0.6, // même triplet que NEAR_KIND_SPECS, mais en données — voir §4.5
+      heightFrac: 0.28, // fraction de la hauteur de façade, pas une hauteur absolue
+      footPadFrac: 0.15,
       aspect: 0.6,
       x: 0.22,
       row: "far",
@@ -177,7 +179,9 @@ export const plan: LevelPlan = {
 
 ### 4.5 Props scopés
 
-Un prop généré porte son sizing monde **en données** (`worldHeight`, `aspect`) au lieu de
+Un prop généré porte son sizing monde **en données** — le même triplet
+`{ aspect, heightFrac, footPadFrac }` que `NearKindSpec`, où `heightFrac` est une
+fraction de la hauteur de façade et non une hauteur absolue — au lieu de
 `NEAR_KIND_SPECS`, qui reste en code pour les 8 kinds du pool global, inchangés.
 
 Il n'a **pas** de dessin procédural de secours : `nearForegroundArt.ts` porte un
@@ -198,7 +202,7 @@ Absent son PNG, un prop généré **ne s'affiche pas** — silencieusement, jama
 - `src/game/types/enemyTypes.ts` — scission `CORE_ARCHETYPES` / `ARCHETYPES` fusionné,
   ajout de l'accesseur `archetype(kind)`, `WEIGHTED` restreint au core.
 - `src/game/types/enemy.ts` — `EnemyKind = CoreEnemyKind | GeneratedEnemyKind`.
-- Les ~5 call sites `ARCHETYPES[kind]` → `archetype(kind)` : sous
+- Les **14** call sites `ARCHETYPES[kind]` de production → `archetype(kind)` : sous
   `noUncheckedIndexedAccess`, une clé string rend l'accès direct possiblement `undefined`.
   L'accesseur replie sur `normal`, exactement comme `pickKind` le fait déjà.
 - `src/game/levels/levels.ts` — concaténation des levels générés à `LEVELS`.
@@ -217,7 +221,7 @@ Absent son PNG, un prop généré **ne s'affiche pas** — silencieusement, jama
 1. `WEIGHTED` est identique à un tableau golden figé.
 2. Tout archétype généré déclare `weight: 0`.
 3. Aucun kind généré n'apparaît dans le pool d'un level qui ne le possède pas.
-4. Tout prop généré déclare son `worldHeight` et son `aspect`.
+4. Tout prop généré déclare son triplet `aspect` / `heightFrac` / `footPadFrac` complet.
 5. L'ordre du tableau de props survit au **halving mobile** : `NearForeground.tsx`
    supprime un élément sur deux de l'ordre de la liste sur mobile. C'est le bug
    documenté deux fois dans `levelArt.json`, qui a fait disparaître les panneaux PARIS
@@ -245,8 +249,11 @@ disponibilité du réseau, des quotas et du token payant.
 
 ## 10. Points à vérifier à l'implémentation
 
-- Le comptage exact des call sites `ARCHETYPES[kind]` (estimé à ~5) et l'absence d'autre
-  dépendance à l'exhaustivité de `Record<EnemyKind, …>`.
+- ~~Le comptage exact des call sites~~ — **fait** : 14 en production
+  (`EnemySprite.tsx` ×1, `enemyTypes.ts` ×2, `stateMachine.ts` ×2, `assetManifest.ts` ×3,
+  `enemySystem.ts` ×3, `bulletSystem.ts` ×1, `deliveryAssault.ts` ×2) plus 5 dans les
+  tests. Reste à confirmer l'absence d'autre dépendance à l'exhaustivité de
+  `Record<EnemyKind, …>`.
 - La forme exacte du bloc `nearForegroundArt` de `levelArt.json` et de `NEAR_KIND_SPECS`,
   pour dimensionner le passage du sizing en données.
 - L'ordre d'import entre `generated/index.ts`, `levels.ts` et `enemyTypes.ts` : la fusion
