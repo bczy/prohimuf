@@ -77,7 +77,7 @@ jobs:
           # prebuilt native binary is fetched by the package resolution itself.
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
-      - name: Generate boss sprites (FLUX → chroma-key)
+      - name: Generate boss sprites (gptimage-large → chroma-key)
         # Default: MISSING-FILE semantics — generates only entries whose PNG is
         # absent (delete a REGEN entry's file to target it; an already-accepted
         # CLEAN entry's committed PNG is left completely alone). FORCE=1 (full
@@ -85,8 +85,17 @@ jobs:
         # dispatched with regenerate=true via the Actions UI — never on the
         # marker-triggered push path, so a routine re-dispatch cannot blow away
         # already-accepted sprites.
+        #
+        # SECURITY: flows through `env:` rather than interpolated inline — same
+        # fix as bakeoff-boss-models.yml's "Resolve parameters" step (PR #143
+        # panel finding). `regenerate` is a `type: boolean` UI checkbox, so the
+        # blast radius here is smaller than a free-text input, but the anti-
+        # pattern (raw `${{ github.event.* }}` inside a `run:` block) is the
+        # same one the project's security doctrine flags unconditionally.
+        env:
+          INPUT_REGENERATE: ${{ github.event.inputs.regenerate }}
         run: |
-          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+          if [ "$INPUT_REGENERATE" = "true" ]; then
             echo "Forcing full regeneration of all 9 boss entries"
             FORCE=1 node scripts/gen-boss-sprites.mjs
           else

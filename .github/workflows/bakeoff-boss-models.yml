@@ -77,6 +77,18 @@ jobs:
         # simple `key=value` lines, parsed with grep (never sourced — a shell
         # `.` on a repo file would execute whatever it contains). Explicit
         # workflow_dispatch inputs win over the file when both are present.
+        #
+        # SECURITY: the three inputs below flow through `env:`, never interpolated
+        # directly into the `run:` script. `${{ github.event.inputs.* }}` is
+        # substituted by GitHub as literal text BEFORE bash ever parses the step —
+        # embedding it inline lets anyone with workflow_dispatch access (repo
+        # write, no secret access needed) break out of the string and run
+        # arbitrary shell on the runner, which then sits one step away from
+        # POLLINATIONS_TOKEN in "Run the bake-off" below (panel finding, PR #143).
+        env:
+          INPUT_POSE: ${{ github.event.inputs.pose }}
+          INPUT_MODELS: ${{ github.event.inputs.models }}
+          INPUT_SIZE: ${{ github.event.inputs.size }}
         run: |
           MARKER=.github/dispatch/bakeoff-boss-models
           # `[ -z "$x" ] && y` returns 1 when x is NON-empty, and GitHub runs
@@ -87,9 +99,9 @@ jobs:
               grep -E "^$1=" "$MARKER" | tail -1 | cut -d= -f2-
             fi
           }
-          POSE="${{ github.event.inputs.pose }}"
-          MODELS="${{ github.event.inputs.models }}"
-          SIZE="${{ github.event.inputs.size }}"
+          POSE="$INPUT_POSE"
+          MODELS="$INPUT_MODELS"
+          SIZE="$INPUT_SIZE"
           if [ -z "$POSE" ]; then POSE="$(from_marker pose)"; fi
           if [ -z "$MODELS" ]; then MODELS="$(from_marker models)"; fi
           if [ -z "$SIZE" ]; then SIZE="$(from_marker size)"; fi
