@@ -26,7 +26,7 @@ import {
   POST_LEVEL_NARRATIVE,
 } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 
 // Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
 // near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
@@ -68,7 +68,7 @@ describe("assetManifest — global invariants", () => {
   // art before the kind can ship (the manifest mirrors the real spawn pool, so
   // a runtime filter would only hide the 404 — this is the true gate).
   it("no manifest ever references an art-retired archetype's sprite files", () => {
-    const retiredBases = Object.values(ARCHETYPES)
+    const retiredBases = Object.values(CORE_ARCHETYPES)
       .filter((a) => a.artRetired === true)
       .map((a) => a.spriteBase);
     expect(retiredBases).toContain("enemy_civilian"); // the guard actually guards

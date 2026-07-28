@@ -5,7 +5,7 @@ import { CanvasTexture, AdditiveBlending } from "three";
 import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import {
   resolveEnemyTexture,
   frameCountFor,
@@ -123,7 +123,7 @@ export function EnemySprite({
       return;
     }
 
-    const archetype = ARCHETYPES[enemy.kind];
+    const archetype = CORE_ARCHETYPES[enemy.kind];
 
     const stateChanged = prevStateRef.current !== enemy.state;
     // Reset unfold timer when entering APPEARING

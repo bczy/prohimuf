@@ -40,7 +40,7 @@ import {
 import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
 import { WEAPON_SPECS } from "@game/types/weapon";
 import type { LootSpec } from "@game/types/loot";
-import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
 import { hostageBossMarginIssue } from "@game/levels/validateLevel";
 import type { EnemyKind } from "@game/types/enemy";
@@ -51,7 +51,7 @@ function windowPoolFor(roster?: LevelRoster): readonly EnemyKind[] | undefined {
   const overrides = roster?.windowWeights;
   if (overrides === undefined) return undefined;
   const defaults = Object.fromEntries(
-    (Object.keys(ARCHETYPES) as EnemyKind[]).map((k) => [k, ARCHETYPES[k].weight]),
+    (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).map((k) => [k, CORE_ARCHETYPES[k].weight]),
   ) as Record<EnemyKind, number>;
   return buildWeightedFrom({ ...defaults, ...overrides });
 }
@@ -489,7 +489,7 @@ export function tickGameState(
         fromPlayer: false,
         // Per-archetype damage: a riot cop's round costs a full heart, a base
         // cop's a quarter. Read at spawn so it survives the shooter's death.
-        damage: ARCHETYPES[enemy.kind].bulletDamage,
+        damage: CORE_ARCHETYPES[enemy.kind].bulletDamage,
       },
     ];
   }

@@ -31,7 +31,14 @@ export interface Archetype {
   readonly artRetired?: boolean;
 }
 
-export const ARCHETYPES: Record<EnemyKind, Archetype> = {
+/**
+ * The 6 core archetypes — the exhaustive, shipped table. Keyed by the closed
+ * union, so adding a core kind is a TypeScript error here until it is authored.
+ * It is the ONLY table `WEIGHTED` and the per-level default weights are built
+ * from: level-authored archetypes live outside it (see `archetype()`), which is
+ * what keeps the frozen spawn pool frozen (spec-level-harness-sp1 §4.1/§4.2).
+ */
+export const CORE_ARCHETYPES: Record<EnemyKind, Archetype> = {
   normal: {
     kind: "normal",
     hp: 1,
@@ -153,11 +160,22 @@ export const ARCHETYPES: Record<EnemyKind, Archetype> = {
   },
 };
 
+/**
+ * The archetype of a kind — the single resolution point every reader goes
+ * through. Direct table indexing is deliberately not the public path: a kind is
+ * not always a core kind (level-authored archetypes are registered separately),
+ * and this is where that lookup is resolved.
+ */
+export function archetype(kind: EnemyKind): Archetype {
+  return CORE_ARCHETYPES[kind];
+}
+
 // The frozen default window pool: one entry per unit of `weight`, in archetype
 // declaration order. `pickKind` / `WEIGHTED` are the legacy default path and must
-// NOT change (window-spawn determinism is guaranteed against this constant).
-export const WEIGHTED: readonly EnemyKind[] = (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap(
-  (k) => Array.from({ length: ARCHETYPES[k].weight }, () => k),
+// NOT change (window-spawn determinism is guaranteed against this constant) —
+// hence CORE_ARCHETYPES, never a table a level can extend.
+export const WEIGHTED: readonly EnemyKind[] = (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).flatMap(
+  (k) => Array.from({ length: CORE_ARCHETYPES[k].weight }, () => k),
 );
 
 // Deterministic weighted pick so spawns are reproducible per (wave, index).
@@ -173,8 +191,8 @@ export function pickKind(seed: number): EnemyKind {
 export function buildWeightedFrom(
   overrides: Partial<Record<EnemyKind, number>>,
 ): readonly EnemyKind[] {
-  return (Object.keys(ARCHETYPES) as EnemyKind[]).flatMap((k) => {
-    const weight = overrides[k] ?? ARCHETYPES[k].weight;
+  return (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).flatMap((k) => {
+    const weight = overrides[k] ?? CORE_ARCHETYPES[k].weight;
     return Array.from({ length: Math.max(0, weight) }, () => k);
   });
 }

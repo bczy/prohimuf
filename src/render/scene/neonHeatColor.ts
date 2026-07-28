@@ -6,7 +6,7 @@
  * popped up, lingering through orange, to red as its window to be shot closes.
  * Both helpers are numeric-only so they unit-test without a browser or Three,
  * mirroring {@link ./haloFalloff}. The render layer feeds them the fields it
- * already holds (`enemy.state`, `enemy.timer`, `ARCHETYPES[kind].visibleDuration`)
+ * already holds (`enemy.state`, `enemy.timer`, `CORE_ARCHETYPES[kind].visibleDuration`)
  * — no game-logic change (boundary law, CLAUDE.md).
  */
 import type { EnemyState } from "@game/types/enemy";

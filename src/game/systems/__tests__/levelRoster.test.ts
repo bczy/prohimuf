@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  ARCHETYPES,
+  CORE_ARCHETYPES,
   WEIGHTED,
   buildWeightedFrom,
   pickKind,
@@ -14,12 +14,12 @@ import type { EnemyKind } from "@game/types/enemy";
 // The default window pool, expressed as a weight map. This is the source of
 // truth a level with no `roster` field implicitly uses.
 const DEFAULT_WEIGHTS: Record<EnemyKind, number> = {
-  normal: ARCHETYPES.normal.weight,
-  riot: ARCHETYPES.riot.weight,
-  biker: ARCHETYPES.biker.weight,
-  bonus: ARCHETYPES.bonus.weight,
-  civilian: ARCHETYPES.civilian.weight,
-  hostage_taker: ARCHETYPES.hostage_taker.weight,
+  normal: CORE_ARCHETYPES.normal.weight,
+  riot: CORE_ARCHETYPES.riot.weight,
+  biker: CORE_ARCHETYPES.biker.weight,
+  bonus: CORE_ARCHETYPES.bonus.weight,
+  civilian: CORE_ARCHETYPES.civilian.weight,
+  hostage_taker: CORE_ARCHETYPES.hostage_taker.weight,
 };
 
 describe("AC1 — no roster ⇒ byte-for-byte identical window distribution", () => {
@@ -89,7 +89,7 @@ describe("AC2 — roster.windowWeights override builds the pool from { ...defaul
     const riotCount = pool.filter((k) => k === "riot").length;
     const bikerCount = pool.filter((k) => k === "biker").length;
     expect(riotCount).toBe(200);
-    expect(bikerCount).toBe(ARCHETYPES.biker.weight);
+    expect(bikerCount).toBe(CORE_ARCHETYPES.biker.weight);
   });
 
   it("weight: 0 removes a kind from the pool entirely", () => {

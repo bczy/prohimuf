@@ -1,4 +1,4 @@
-import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { EnemyKind } from "@game/types/enemy";
 import type { VehicleType } from "@game/types/delivery";
 import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
@@ -75,7 +75,7 @@ function dedupe(paths: readonly string[]): readonly string[] {
  * `_shooting`), and a variant > 1 appends `_<variant>`.
  */
 export function enemyBaseFileKey(kind: EnemyKind, variant: number, shooting: boolean): string {
-  const a = ARCHETYPES[kind];
+  const a = CORE_ARCHETYPES[kind];
   const root = shooting
     ? a.spriteBase === "enemy_sprite"
       ? "enemy_shooting"
@@ -111,7 +111,7 @@ function frameCountForKey(key: string): number {
 // Every idle + (if the archetype shoots) shooting path for one enemy kind, across
 // all its variants and each state's authored frame count.
 function enemyKindPaths(kind: EnemyKind): string[] {
-  const a = ARCHETYPES[kind];
+  const a = CORE_ARCHETYPES[kind];
   const states: boolean[] = a.shoots ? [false, true] : [false];
   const paths: string[] = [];
   for (let variant = 1; variant <= a.variants; variant++) {
@@ -135,7 +135,7 @@ function levelConfigFor(levelId: string): LevelConfig {
 function windowPoolKinds(level: LevelConfig): EnemyKind[] {
   const overrides = level.roster?.windowWeights;
   const defaults = Object.fromEntries(
-    (Object.keys(ARCHETYPES) as EnemyKind[]).map((k) => [k, ARCHETYPES[k].weight]),
+    (Object.keys(CORE_ARCHETYPES) as EnemyKind[]).map((k) => [k, CORE_ARCHETYPES[k].weight]),
   ) as Record<EnemyKind, number>;
   const pool = buildWeightedFrom({ ...defaults, ...overrides });
   return [...new Set(pool)];

@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial, Texture } from "three";
 import type { GameState } from "@game/types/gameState";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import { isQteActive } from "@game/systems/qteSystem";
 import {
   courierArtReady,
@@ -174,5 +174,5 @@ function updateLayer(
   mesh.rotation.z = courier.dir * lean;
   setMap(mesh, getCourierTexture(layer, frame));
   // Civilian tint = gameplay "don't shoot" colour-code.
-  (mesh.material as MeshBasicMaterial).color.set(ARCHETYPES.civilian.tint);
+  (mesh.material as MeshBasicMaterial).color.set(CORE_ARCHETYPES.civilian.tint);
 }

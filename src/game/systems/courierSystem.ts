@@ -1,7 +1,7 @@
 import type { Courier } from "@game/types/courier";
 import type { PointHitEvent } from "@game/types/feedback";
 import type { Vec2 } from "@game/types/vector";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 
 /** Where couriers live: the wide street's half-width and the road's world y. */
 export interface CourierField {
@@ -83,7 +83,7 @@ export function resolveCourierShot(
   }
 
   const { courier } = best;
-  const a = ARCHETYPES.civilian;
+  const a = CORE_ARCHETYPES.civilian;
   return {
     couriers: couriers.filter((c) => c.id !== courier.id),
     scoreDelta: a.scoreDelta,

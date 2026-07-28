@@ -13,7 +13,7 @@ export type WeaponKind = "base" | "auto" | "spread";
 // A special (non-base) weapon — the only kinds a LOOT crate can carry (§5.2).
 export type SpecialWeaponKind = Exclude<WeaponKind, "base">;
 
-// Data descriptor for a weapon kind (ADR-0055 D1; ARCHETYPES precedent). Carries
+// Data descriptor for a weapon kind (ADR-0055 D1; CORE_ARCHETYPES precedent). Carries
 // the §7 tuning: how many resolutions a trigger produces (`offsets`), the burst
 // cadence (`auto` only), the post-fire lockout, and the starting stock.
 export interface WeaponSpec {
