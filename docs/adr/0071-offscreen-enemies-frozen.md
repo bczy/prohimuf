@@ -98,13 +98,19 @@ transition doit donc filtrer lui-même sur `isOnScreen`. Les lecteurs continus r
   caméra arrive sur lui, sans télégraphe. Jugé mineur (la balle met encore le temps de vol à
   arriver, et l'invulnérabilité d'ADR-0066 absorbe le doublé) ; un délai de grâce reste
   possible si le jeu le réclame.
-- **L'objectif « protéger la camionnette » devient gratuit.** Le filtre du grignotage étant
-  positionnel, pointer la caméra sur n'importe quelle portion de rue sans ennemi donne
-  `shootingCount === 0` pendant toute la fenêtre `DELIVERING` : l'intégrité ne descend
-  jamais, `SUCCESS` et le bonus (500) tombent à tous les coups. C'est la conséquence directe
-  de la règle, pas un bug — mais elle vide un objectif de son enjeu et mérite un arbitrage
-  `game-designer` plutôt qu'un choix implicite. Une piste : faire dépendre le grignotage de
-  la proximité du tireur au véhicule plutôt que de la caméra.
+- ~~**L'objectif « protéger la camionnette » devient gratuit.**~~ Le filtre du grignotage
+  étant positionnel, pointer la caméra sur n'importe quelle portion de rue sans ennemi
+  donnait `shootingCount === 0` pendant toute la fenêtre `DELIVERING` : l'intégrité ne
+  descendait jamais, `SUCCESS` et le bonus (500) tombaient à tous les coups.
+
+  > **RÉSOLU dans la même PR (#143) — ne plus lire cette puce comme un défaut ouvert.**
+  > L'arbitrage `game-designer` appelé ici a été rendu, et il a supprimé la règle plutôt
+  > que de vivre avec : `src/game/systems/deliveryAssault.ts` introduit des assaillants
+  > scriptés sur slots réservés, et `deliverySystem` remplace
+  > `DAMAGE_PER_SHOOTER_PER_SECOND` par `DAMAGE_PER_ASSAILANT_PER_SECOND` — **le terme
+  > caméra disparaît entièrement**. Regarder ailleurs ne protège donc plus rien. Détail et
+  > traçabilité : [`docs/handoffs/story-delivery-van-assault.md`](../handoffs/story-delivery-van-assault.md).
+
 - Le blocage de slot pour les caisses d'armement (`lootSystem`) dure plus longtemps. La règle
   effective est `state !== "DEAD"` (le garde de co-location), donc un slot gelé en `HIDDEN`
   bloque autant qu'un `VISIBLE` — pas seulement les trois états de la règle d'écart de
