@@ -1,9 +1,9 @@
-# Story — off-screen enemies frozen (ADR-0069) — merge-gate panel
+# Story — off-screen enemies frozen (ADR-0071) — merge-gate panel
 
 ## Panel run — 2026-07-26 (Bertrand: "ok could we merge?" — whole branch `claude/offscreen-enemies-cannot-shoot` → main)
 
 Scope: `git diff origin/main...HEAD` at panel time (31 files, 1552+/87- — the
-offscreen-enemies freeze + ADR-0069, the boss multi-model bake-off tooling, regenerated
+offscreen-enemies freeze + ADR-0071, the boss multi-model bake-off tooling, regenerated
 boss PNGs, and this session's tag-live-paint reference board/curation). Player-visible
 (gameplay) + tooling/CI + docs/assets.
 
@@ -26,7 +26,7 @@ real files/image by the triager below before being accepted.
   pendant la fenêtre `DELIVERING` donne `shootingCount === 0`, l'intégrité ne descend
   jamais, `SUCCESS` + bonus (belliard 500 / stalingrad 400) tombent à tous les coups.
   **Unanimously confirmed by all 3 code reviewers** (A/B/C), independently traced to
-  the same lines. ADR-0069 §Négatif discloses this verbatim and explicitly asks for a
+  the same lines. ADR-0071 §Négatif discloses this verbatim and explicitly asks for a
   `game-designer` arbitration ("mérite un arbitrage game-designer plutôt qu'un choix
   implicite") that has not happened — the diff instead ships a new test
   (`stateMachine.test.ts:1492`) that _pins_ the exploit as expected behaviour rather
@@ -49,12 +49,12 @@ real files/image by the triager below before being accepted.
 - **[MAJEUR→downgraded on verification] "3 of 4 levels enemy-inert at camera rest" /
   unpinned viewport-reachability invariant** (stateMachine.ts:364 / viewport.ts:17,
   raised independently by B and C). Triager re-verified the underlying numbers: A's
-  own re-derivation of max\|slotX\| vs the pan-clamp bound (`fullW/2`) matches ADR-0069's
+  own re-derivation of max\|slotX\| vs the pan-clamp bound (`fullW/2`) matches ADR-0071's
   disclosed figure exactly (vitry 39.4586/40, margin 0.54) and shows **every shipped
   level's slots are currently reachable — no permanent stall exists today.** The
   "3 levels empty at camera rest for the whole level" framing describes a pre-existing
   level-geometry/camera-control property (player-driven pan, no autoscroll — confirmed
-  in `GameScene.tsx`), not a regression this diff introduces; ADR-0069 §Négatif already
+  in `GameScene.tsx`), not a regression this diff introduces; ADR-0071 §Négatif already
   names this pacing change and records it as knowingly accepted, with a mitigation path
   if it proves to feel broken. **Not a merge blocker as a correctness bug** — but the
   ADR is still `Proposed` (not `Accepted`) and self-commits to adding a test for
@@ -62,7 +62,7 @@ real files/image by the triager below before being accepted.
   measurement (0% active frames for a full level, not "one cycles"), **recommend**
   Bertrand/`game-designer` re-confirm the pacing call now that it's quantified, and
   `dev-gameplay` add the invariant test per the ADR's own to-do before flipping
-  ADR-0069 to `Accepted`. Non-blocking for this panel's verdict, but should not be
+  ADR-0071 to `Accepted`. Non-blocking for this panel's verdict, but should not be
   dropped silently.
 
 ### MINEUR (non-blocking, recommended before/soon after merge)
@@ -91,9 +91,9 @@ real files/image by the triager below before being accepted.
 
 ### NIT
 
-Muzzle flash cosmetic on a frozen mid-`SHOOTING` enemy (ADR-0069 already discloses,
+Muzzle flash cosmetic on a frozen mid-`SHOOTING` enemy (ADR-0071 already discloses,
 accepted); dead default params on `viewport.ts` (single call site passes all args);
-ADR-0069 leads its Context sentence with backticked snake_case (violates this diff's
+ADR-0071 leads its Context sentence with backticked snake_case (violates this diff's
 own `adr-new` SKILL.md style rule, added same commit) — **routed to `tech-writer`**;
 `urlFor()`/`fetchBuf()` duplicate `genUrl()`/`fetchImg()` (same root cause as the
 MINEUR above).
@@ -133,7 +133,7 @@ leave it alone.
 
 ## Design arbitration — van objective (blocker #1) — `game-designer` (Sacha), 2026-07-26
 
-**Requested by:** the panel above (MAJEUR #2, 4/4 reviewers CONFIRMED) and ADR-0069 §Négatif's own
+**Requested by:** the panel above (MAJEUR #2, 4/4 reviewers CONFIRMED) and ADR-0071 §Négatif's own
 explicit call for a `game-designer` ruling. **Spec:**
 `docs/game-design/spec-delivery-van-assault.md` (status DRAFT — needs `lead-game-designer` PASS
 before `senior-architect` plans it; `dev-gameplay` implements, I do NOT).
@@ -153,14 +153,14 @@ QTE isolated, camera parked). Findings sharper than the panel's:
    the van → **exactly 0 damage**. Today's rule reads "the van is hurt in proportion to how much
    the player engages the fight somewhere else"; optimal play during `DELIVERING` is to stop
    playing.
-3. **ADR-0069's own suggested fix (proximity filter) is a measured NO-OP** — 0 damage in 7/7 runs,
+3. **ADR-0071's own suggested fix (proximity filter) is a measured NO-OP** — 0 damage in 7/7 runs,
    because (i) the freeze means an off-screen enemy never _enters_ `SHOOTING`, so a proximity filter
    has nothing to count, and it re-opens the frozen-shooter-chips-forever hole the camera filter was
    added to close; (ii) slots near the van are a small minority (R = 7: 10/54 belliard, 7/48
    stalingrad, 28/152 vitry, 2/16 niveau-final) against waves of `1 + wave` enemies, so the outcome
    would be decided by the `spawnWave` shuffle — predetermined, zero agency.
 
-**Key properties of the ruling:** ADR-0069 needs **no exception and no amendment to its rule** — a
+**Key properties of the ruling:** ADR-0071 needs **no exception and no amendment to its rule** — a
 frozen assailant threatens the _vehicle_ (a HUD gauge) and never the _player_ (it cannot enter
 `SHOOTING` off-screen ⇒ no bullet), so Bertrand's "off-screen enemy cannot shoot" holds literally.
 Seating at `INCOMING` (4.4-5.8 s before the window) turns the roll-in into a real telegraph and
@@ -194,9 +194,9 @@ verified 54/48/152/16 — so slot-index exclusion suffices.)
 - `lead-art` — read requirement only: the two assailants must read as firing DOWN at the vehicle,
   not at the player.
 - `narrative-designer` — one line on who ambushes the delivery.
-- `senior-architect` + `tech-writer` — ADR-0069 §Négatif's van bullet is now resolved by this spec
+- `senior-architect` + `tech-writer` — ADR-0071 §Négatif's van bullet is now resolved by this spec
   (the ADR's rule itself stands unamended); architect's call whether the assault warrants its own
-  ADR before ADR-0069 flips to Accepted.
+  ADR before ADR-0071 flips to Accepted.
 
 **Panel blocker #1 status:** design DECIDED (this section). Still NO-MERGE until the gate PASSes and
 `dev-gameplay` lands it (plus blocker #2, `speaker_wall.png`, owned by `concept-artist`).
@@ -277,14 +277,14 @@ game-designer ci-dessus/à venir.
 ### VERDICT: **PASS WITH CORRECTIONS** — spine RATIFIED, 4 blocking corrections (K-1…K-4)
 
 The decision itself is right and I ratify it whole: the threat must be **directed**, not derived
-from the ambient wave. §2's rejection of ADR-0069's own suggested fix is **measured, not argued**
+from the ambient wave. §2's rejection of ADR-0071's own suggested fix is **measured, not argued**
 (no-op in 7/7 runs) and independently coherent with the code — `SHOOTING` is only ever _entered_
 on screen, so a proximity filter over the wave has nothing to count. D1 (targetable-set damage),
 D2 (seating at `INCOMING` as telegraph), D3 (retirement) and §7's alternative table are sound and
 need no rework.
 
 But three of the spec's load-bearing artefacts are arithmetically wrong _because they forgot
-ADR-0069 applies to the assault too_: the assailants are ordinary window enemies, so an **on-screen**
+ADR-0071 applies to the assault too_: the assailants are ordinary window enemies, so an **on-screen**
 assailant cycles (≈72 % exposure duty) while an **off-screen** one freezes exposed (100 %). That
 single omission falsifies AC2, softens the whole §4.2 table, and leaves the "watch the van and do
 nothing" player possibly still free on Belliard. Corrections are surgical — no re-architecture.
@@ -302,7 +302,7 @@ nothing" player possibly still free on Belliard. Corrections are surgical — no
    untouched (no added phase, no added time).
 2. **Core loop — PASS.** `Récupérer → Livrer → Éviter` all three served: the assault restores a real
    `Livrer` stake, is cleared by the shooting core verb, and its return fire feeds `Éviter`.
-3. **ADR-0069 coherence — the spec's reading is CORRECT, verified line by line.** No exception and no
+3. **ADR-0071 coherence — the spec's reading is CORRECT, verified line by line.** No exception and no
    amendment needed: the bullet spawn keys off the **transition** into `SHOOTING`
    (`stateMachine.ts:454-458`, `wasShooting` edge), and `tickEnemy` (`enemySystem.ts:74`) freezes
    every state but `HIT` — so a frozen assailant can never spawn a round. It threatens the **gauge**,
@@ -328,7 +328,7 @@ nothing" player possibly still free on Belliard. Corrections are surgical — no
 
 ### BLOCKING corrections — `game-designer` (Sacha) owns all four; `dev-gameplay` does not open a red test before my re-check
 
-**K-1 — AC2 is falsified by ADR-0069 and cannot pass as written. Replace it.**
+**K-1 — AC2 is falsified by ADR-0071 and cannot pass as written. Replace it.**
 AC2 demands an _identical integrity series_ for `cameraOffsetX` 0 vs 25. It cannot be identical: the
 assailants are ordinary enemies, so at camera 0 they cycle (`VISIBLE→SHOOTING→HIDDEN→APPEARING`,
 targetable ≈72 % of the time) and at camera 25 they freeze in `VISIBLE` (targetable 100 %). Integrity
@@ -346,7 +346,7 @@ of the panel's own blocker. Replace with the properties that are true AND that k
   inversion the panel found is reversed, engagement never punishes the van.
   Keep AC2's deletion instruction for `describe("frozen mid-SHOOTING")`
   (`src/game/systems/__tests__/stateMachine.test.ts:1441-1499`, cases at 1492 and 1496 — I verified
-  both pin the exploit as expected behaviour) and keep AC14 as the ADR-0069 survivor. Also fix the
+  both pin the exploit as expected behaviour) and keep AC14 as the ADR-0071 survivor. Also fix the
   over-claim in §0/D1: "the camera is not a **term of the damage rule**" is true and sufficient;
   "integrity is camera-independent" is false — say the former.
 
@@ -432,7 +432,7 @@ stays lead-art's call; the mechanical truth is ours.
 - **A2** — the objective now costs **lives**: each on-screen assailant fires once per cycle, aimed,
   `riot` = 1 full heart of 3. §4.2 prices integrity only. Add "lives lost during the window" to the
   §6 mobile playtest capture — that is the sharpest stage-5 risk after K-2.
-- **A3** — ADR-0069's accepted muzzle-flash cosmetic (frozen mid-`SHOOTING` = permanent flash) will
+- **A3** — ADR-0071's accepted muzzle-flash cosmetic (frozen mid-`SHOOTING` = permanent flash) will
   now occur **next to the van**, in the player's focus. Known-cosmetic, route as a note to
   `lead-art` / `dev-r3f-render`, not a blocker.
 - **A4** — while assailants live, `allDead` is false ⇒ the wave rollover pauses for the duration of
@@ -469,13 +469,13 @@ correctif neutre + une story d'assaut scripté séparée plus tard est préféra
 
 Pas de version minimale honnête qui vaille la peine d'être livrée séparément :
 
-- Le §2 du spec **mesure** que la propre suggestion de l'ADR-0069 (filtre de proximité sur la vague
+- Le §2 du spec **mesure** que la propre suggestion de l'ADR-0071 (filtre de proximité sur la vague
   ambiante — c'est exactement le « fix neutre » qu'on pourrait envisager comme lot minimal) est un
   **no-op** : 0 dégât sur 7/7 runs, pour deux raisons structurelles (le freeze prive le filtre de
   toute matière à compter ; les slots proches du van sont une minorité de la vague, donc l'issue
   serait décidée par le shuffle de `spawnWave` — une loterie, pas un objectif). Il n'existe donc pas
   de « petit fix propre » à livrer maintenant : les seules alternatives neutres sont un objectif
-  encore gratuit (le no-op ci-dessus), un retour à la règle pré-ADR-0069 (réintroduit le trou du
+  encore gratuit (le no-op ci-dessus), un retour à la règle pré-ADR-0071 (réintroduit le trou du
   tireur gelé qui grignote à l'infini — §7), ou `bonus: 0` qui retire un pilier du core loop
   documenté. Le spec les classe lui-même comme pires (§7), une seule explicitement « fallback si pm
   refuse, non recommandée ». Reporter D1-D4 ne réduit donc pas le risque, ça retarde le seul design
@@ -485,7 +485,7 @@ Pas de version minimale honnête qui vaille la peine d'être livrée séparémen
   une seule lane, aucun changement de rendu/art/audio/dépendance/frontière, aucun nouveau champ
   `levels.ts`. C'est le profil exact d'un changement qui appartient à la story qui l'a fait remonter,
   pas d'un scope creep qu'on isolerait.
-- Le blocage de merge porte précisément sur cette question, et l'ADR-0069 demandait explicitement
+- Le blocage de merge porte précisément sur cette question, et l'ADR-0071 demandait explicitement
   cet arbitrage plutôt qu'un choix implicite — le reporter reviendrait à re-choisir implicitement
   (en gardant le statu quo cassé) ce que l'ADR refusait de trancher seul.
 
@@ -524,7 +524,7 @@ surface de rendu (KISS).
 1. `lead-game-designer` (Karim) — gate qualité du spec (PASS/révision), inchangé par cet arbitrage de
    scope.
 2. `senior-architect` (Winston) — confirme la lane (`dev-gameplay` seul, single-lane) et tranche si
-   l'assaut mérite sa propre ADR ou reste sous ADR-0069 inchangé (le spec argue que non — D4).
+   l'assaut mérite sa propre ADR ou reste sous ADR-0071 inchangé (le spec argue que non — D4).
 3. `dev-gameplay` implémente AC1-AC15 (spec §5) **maintenant**, sur cette même branche/story — pas de
    story séparée, pas de fix "neutre" intermédiaire.
 4. `ux-designer` : story de suivi ouverte tout de suite après (fast-follow recommandé, non
@@ -558,7 +558,7 @@ exact où le gauge commence à descendre).
    peut tirer dans une direction totalement différente au même instant — collision de lecture si on
    partage ses 4 slots d'écran). Nouveau calcul, ancré sur le banner lui-même (pas les bords d'écran) :
    actif ssi `phase ∈ {INCOMING, DELIVERING}` ET `!isOnScreen(vehicle.position, cameraOffsetX,
-cameraOffsetY)` — **le même prédicat pur que ADR-0069 utilise pour geler les ennemis**
+cameraOffsetY)` — **le même prédicat pur que ADR-0071 utilise pour geler les ennemis**
    (`src/game/systems/viewport.ts`), donc le repère et le gel des assaillants ne peuvent jamais se
    contredire. Calculé dans `useGameLoop.ts` (même endroit que `computeTargetIndicator`, même forme
    `HudTargetIndicator` réutilisée), zéro changement `src/game`.
@@ -601,7 +601,7 @@ D3, §7). Round 1 de 2 consommé — retour à `lead-game-designer` pour re-chec
   (c) `dégâts(caméra sur le van) ≤ dégâts(caméra ailleurs)`. Wording §0/D1 corrigé : « aucun terme
   caméra dans la règle de dégâts », l'over-claim « intégrité caméra-indépendante » est retiré et
   n'est re-revendiqué qu'en AC2(d), là où il devient vrai. Le `describe("frozen mid-SHOOTING")`
-  (1441-1499) reste à supprimer, AC14 reste le survivant ADR-0069.
+  (1441-1499) reste à supprimer, AC14 reste le survivant ADR-0071.
 - **K-2 — §4.2/§4.3 retablés, `D` re-tuné, lockstep tranché.** Duty cycles re-vérifiés sur le vrai
   code, **chiffres de Karim exacts au chiffre près** (normal 4.0/5.5 = 72,7 % ; riot 4.4/6.1 = 72,1 % ;
   biker 2.8/4.0 = 70 %). Sa lecture était même trop douce : en marche discrète, `riot+riot` on-screen
@@ -861,7 +861,7 @@ translateX(-50%)` (`DeliveryIntegrityBanner.module.css:10-14`) — the same anch
 1. **`senior-architect` (Winston) — unblocked now, both lanes.** Plan: K-4's id-range discriminator
    (overrule to a typed field is pre-authorised; one predicate line, no §4 value moves), the
    `excludeSlots` seam on **both** `spawnWave` call sites + `lootSystem` eligibility (K-8), the
-   seating hook at the `IDLE → INCOMING` edge, the ADR call (my design-side read: ADR-0069 stands
+   seating hook at the `IDLE → INCOMING` edge, the ADR call (my design-side read: ADR-0071 stands
    unamended, this spec resolves its §Négatif van bullet), and the render-lane confirmation that
    `HudData.deliveryDirection` needs no ADR (`targetIndicator` precedent).
 2. **`dev-gameplay`** implements AC1-AC16 with K-7…K-11 applied — may open red tests immediately.
@@ -899,7 +899,7 @@ branch.
 | `src/game/systems/__tests__/**` + `src/game/levels/__tests__/**` | AC1-AC16 + the two guard tests of §2.3 and §5.                                                                                                                                                                                                                                                                                                                        |
 
 **Additions to the spec's file list (all lane A, all `src/game`):** `lootSystem.ts` (Sacha names the
-seam but not the file), and the **ADR-0069 reachability invariant test** — see §5.
+seam but not the file), and the **ADR-0071 reachability invariant test** — see §5.
 `enemySystem.ts` needs **no change**: `spawnWave` already accepts `excludeSlots`
 (`enemySystem.ts:101`) and the seating only _imports_ `ARCHETYPES`/`pickKindFor`. Do not touch it.
 
@@ -1016,7 +1016,7 @@ one-tick lag is invisible and is what AC10 asserts anyway.
 **4.1 — T-1 is implementable in its strongest form.** At the push site, `camera.position.x`,
 `camera.position.y`, `viewW` and `viewH` are the **exact four values the tick itself receives**
 (`useGameLoop.ts:354-364`). Call `isOnScreen(stopPosition, camera.position.x, camera.position.y, viewW, viewH)`
-— same arguments, same function ⇒ the cue and ADR-0069's freeze cannot disagree, on any device class.
+— same arguments, same function ⇒ the cue and ADR-0071's freeze cannot disagree, on any device class.
 Never rely on the defaults (18/12): on mobile `MOBILE_ZOOM_FACTOR` makes them a lie.
 
 **4.2 — Karim's push-gate advisory is CONFIRMED and load-bearing.** `useGameLoop.ts:542-554` gates
@@ -1036,13 +1036,13 @@ glyph" reads the phase from `__MUF_STATE__.game.deliveryVehicle.phase`, not from
 
 ### 5. ADR decisions
 
-**5.1 — ADR-0069 stands UNAMENDED. Karim's reading CONFIRMED, and Rev.2 makes it stronger than he
+**5.1 — ADR-0071 stands UNAMENDED. Karim's reading CONFIRMED, and Rev.2 makes it stronger than he
 argues.** The damage rule now reads `state !== "DEAD"` only: no `isOnScreen`, no `state`-per-se, no
 `timer`. The freeze acts exclusively on `state` and `timer`, so after Rev.2 there is no shared term
 left in either direction — not an exception granted, an interaction that ceased to exist. The bullet
 rule keys off the _transition_ into `SHOOTING` (`:454-458`, `wasShooting` edge) and `tickEnemy`
 freezes every state but `HIT` (`enemySystem.ts:74`), so a frozen assailant threatens the gauge and
-never the player. Bertrand's rule holds literally. And yes — **this spec resolves ADR-0069
+never the player. Bertrand's rule holds literally. And yes — **this spec resolves ADR-0071
 §Négatif's van bullet** (`0069:101-105`), which asked for this exact arbitration.
 
 **5.2 — a NEW ADR IS REQUIRED for the assault. I contradict the "no ADR needed" reading, narrowly.**
@@ -1060,7 +1060,7 @@ are invisible from the files that must honour them:
    with a deliberate refusal to widen `Enemy` for boundary reasons. A convention with a documented
    rationale is an ADR; a convention without one is folklore.
 3. Plus the record that the damage rule contains no camera and no pop-up-state term, superseding
-   the implicit camera-filter choice — and closing ADR-0069's §Négatif.
+   the implicit camera-filter choice — and closing ADR-0071's §Négatif.
    Precedent density settles it: ADR-0055 D5 (`excludeSlots` for crates) and ADR-0056 D9-2 (the
    crate/delivery x-gap) are _smaller_ decisions than this one and both got ADRs. Not writing one
    here would be inconsistent with the project's own record.
@@ -1073,13 +1073,13 @@ in every respect that matters: a derived view value computed in `useGameLoop` fr
 already reads, surfaced as an optional `HudData` field, reusing the existing `HudTargetIndicator`
 type, zero `src/game` change, zero boundary movement, zero new dependency. Render-lane-internal.
 
-**5.4 — ADR-0069 → `Accepted` needs its own missing test, and it belongs to lane A.** The ADR is
+**5.4 — ADR-0071 → `Accepted` needs its own missing test, and it belongs to lane A.** The ADR is
 still `Proposed` and self-commits (`0069:119`) to pinning `max |slotX| <= fullW/2`; no test does
 (`backdropLayout.test.ts` pins `fullW`, not the slot bound). The panel explicitly asked that this not
 be dropped silently, and the reservation makes slot geometry _more_ load-bearing, not less — it
 removes two slots per delivery level. **Lane A adds it in `src/game/levels/__tests__/`, next to
 AC12.1's geometry guard** (same family, DRY, test-only, no production code, no overlap with lane B).
-Then `tech-writer` flips ADR-0069 to `Accepted` with the van bullet marked resolved.
+Then `tech-writer` flips ADR-0071 to `Accepted` with the van bullet marked resolved.
 
 ### 6. Corrections carried to the lanes — confirmed in the package, unchanged
 
@@ -1128,7 +1128,7 @@ rather than asserted away.
 | `src/game/types/delivery.ts`                                     | Doc de tête corrigée (elle décrivait encore « enemies in the SHOOTING state chip »). Aucun champ ajouté.                                                                                                                                                                                                                 |
 | **NEW** `src/game/systems/__tests__/deliveryAssault.test.ts`     | 42 tests : AC5, AC6, AC7 (+ clause K-9), AC8, AC9, AC15, AC2(b), invariant d'id exécutable.                                                                                                                                                                                                                              |
 | **NEW** `src/game/systems/__tests__/deliveryAssaultTick.test.ts` | 48 tests : AC2(a/c/d), AC3 (4 niveaux × 6 caméras), AC4, AC10, AC11, AC12.2/12.3, AC13, AC14, AC16, K-8.                                                                                                                                                                                                                 |
-| **NEW** `src/game/levels/__tests__/slotGeometryGuards.test.ts`   | AC12.1 + le garde géométrique auto-promis par ADR-0069 (`max \|slotX\| <= fullW/2`).                                                                                                                                                                                                                                     |
+| **NEW** `src/game/levels/__tests__/slotGeometryGuards.test.ts`   | AC12.1 + le garde géométrique auto-promis par ADR-0071 (`max \|slotX\| <= fullW/2`).                                                                                                                                                                                                                                     |
 | **NEW** `src/game/levels/__tests__/levelFacade.ts`               | Fixture de test : la façade RÉELLE d'un niveau livré (voir « écart 1 »).                                                                                                                                                                                                                                                 |
 | `src/game/systems/__tests__/stateMachine.test.ts`                | `describe("frozen mid-SHOOTING")` **supprimé** (AC2, il épinglait l'exploit) + le test « a failed delivery adds no score and no life penalty » réécrit sur des assaillants.                                                                                                                                              |
 | `src/game/systems/__tests__/lootSystem.test.ts`                  | 3 tests unitaires du nouveau `excludeSlots`.                                                                                                                                                                                                                                                                             |
@@ -1194,7 +1194,7 @@ Chaque mutation appliquée puis **immédiatement révoquée** ; rien de tout cec
    le tick reçoit RÉELLEMENT est composée par `GameScene` **avec le draw-scale 1,08** du mode
    `single-facade` ; `computeBackdropSlots` (côté game) est la géométrie _nominale_, non étirée. Les
    valeurs gatées (candidats 10/7/28/2, slots #107/#102 sur vitry, et la marge 39,4586/40 que
-   l'ADR-0069 cite lui-même comme « mangée par le draw-scale 1,08 ») ne sont vraies que sur la
+   l'ADR-0071 cite lui-même comme « mangée par le draw-scale 1,08 ») ne sont vraies que sur la
    géométrie étirée. Choix : passer par le **même helper pur** (aucun React/Three) plutôt que de
    redéclarer le facteur dans `src/game`. **Test-only** — aucun module de production `src/game` ne
    lit `@render`, la boundary law tient. Si `senior-architect` préfère, l'alternative est d'exposer
@@ -1235,7 +1235,7 @@ Chaque mutation appliquée puis **immédiatement révoquée** ; rien de tout cec
 
 - `qa-lead` / `game-designer` : stage 5 (§6 du spec + capture A2 des vies + lecture du duck K-10).
 - `tech-writer` / `producer` : l'ADR de l'assaut (§5.2 du plan) — non bloquant pour ce diff ; le
-  garde `max |slotX| <= fullW/2` que l'ADR-0069 se devait est **livré** ici, ADR-0069 peut passer
+  garde `max |slotX| <= fullW/2` que l'ADR-0071 se devait est **livré** ici, ADR-0071 peut passer
   `Accepted` avec le bullet van marqué résolu par ce spec.
 - `senior-architect` : les deux points 1 et 2 ci-dessus sont ce que je lui dois avant le panel.
 
@@ -1325,7 +1325,7 @@ hors cadre, 03 desktop `INCOMING` cadré (sans repère), 04-05 niveaux de gris, 
 **Méthode de capture, à savoir pour stage 5 :** j'ai dû jouer **Stalingrad**, pas Belliard — le QTE
 otage de Belliard gèle le tick indéfiniment dans un run non piloté (« duel statique », aucune
 horloge), donc la livraison à 20 s n'arrive jamais. Stalingrad livre à 25 s et n'a pas de QTE. Et il
-faut **rester panné loin** : cadrer la façade réveille les flics (ADR-0069) qui tuent le joueur
+faut **rester panné loin** : cadrer la façade réveille les flics (ADR-0071) qui tuent le joueur
 inactif vers 15 s. Seeds `localStorage` utilisés : `muf_progress` (déblocage) + `muf_prefs`
 (5 vies / easy / CRT off).
 

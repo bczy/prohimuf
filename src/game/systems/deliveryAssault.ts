@@ -88,7 +88,7 @@ export function reservedAssaultSlots(
  * a real telegraph and a present player can clear the ambush pre-emptively).
  *
  * State at seating is `VISIBLE`, and that is FAIRNESS-load-bearing (K-9), not a
- * read preference: ADR-0069 freezes an off-screen enemy in the state it holds, so
+ * read preference: ADR-0071 freezes an off-screen enemy in the state it holds, so
  * a player who is absent for the whole roll-in finds two EXPOSED, immediately
  * shootable targets at the window opening — never a frozen duck. Timers are
  * staggered with `spawnWave`'s own `(1 + i·0.3)` factor so two identical kinds do

@@ -64,7 +64,7 @@ function nextState(enemy: Enemy): EnemyState {
  *
  * An enemy CAN still be caught frozen in `SHOOTING` (it fired, then the camera
  * panned away). Consumers that read `SHOOTING` CONTINUOUSLY rather than on its
- * transition must therefore apply their own on-screen filter; ADR-0069 lists which
+ * transition must therefore apply their own on-screen filter; ADR-0071 lists which
  * ones do.
  *
  * Defaults to `true` so every existing call site keeps its exact behaviour.

@@ -37,7 +37,7 @@ Today (`src/render/ui/hud/DeliveryIntegrityBanner.tsx:26`) the only visible sign
 `deliveryPhase === "DELIVERING"` — i.e. the player is told the objective exists at the **same tick**
 the gauge starts draining. `INCOMING` (4.4–5.8 s per level, Sacha's spec D2) already elapses in
 complete silence on the HUD. A player at the far end of the street (edge-scroll 8 u/s, up to 31 u,
-ADR-0069/§4 of Sacha's spec) who is not already looking toward the stop position has **zero** warning
+ADR-0071/§4 of Sacha's spec) who is not already looking toward the stop position has **zero** warning
 time and must physically travel during the fraction of `DELIVERING` that remains before `t_fail` —
 today's disclosed shortfall is exactly the panel's K-5 finding. Two independent gaps compound this:
 
@@ -113,10 +113,10 @@ D2.3.
 
 **D2.2 — Trigger predicate: reuse `isOnScreen`, not a dead-zone.** The cue is active iff
 `data.delivery.phase ∈ { "INCOMING", "DELIVERING" }` **and** the delivery vehicle's world position is
-NOT on screen, using **the exact same predicate ADR-0069 uses to freeze enemies**:
+NOT on screen, using **the exact same predicate ADR-0071 uses to freeze enemies**:
 `isOnScreen(vehicle.position, cameraOffsetX, cameraOffsetY)` (`src/game/systems/viewport.ts`, already
 pure, already imported by `stateMachine.ts`). This is a fairness-critical reuse, not a convenience one:
-by construction, **the cue is on exactly when the assailants are frozen-and-exposed** (ADR-0069) — the
+by construction, **the cue is on exactly when the assailants are frozen-and-exposed** (ADR-0071) — the
 cue and the mechanic can never disagree about what counts as "off screen". `useGameLoop.ts` already has
 both `cameraOffsetX/Y` and `next.deliveryVehicle` in scope (it reads the latter nowhere yet, but the
 type is already `GameState.deliveryVehicle`) — no `src/game` change is needed, only a new derivation

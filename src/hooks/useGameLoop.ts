@@ -151,7 +151,7 @@ function computeTargetIndicator(
  * Must be called with the LIVE camera offsets and the LIVE view extents — the same
  * four values this tick hands `tickGameState` (correction T-1). `isOnScreen`'s
  * defaults (18/12) are a lie under the mobile `MOBILE_ZOOM_FACTOR` crop, and the
- * whole point of reusing ADR-0069's own predicate is that the cue and the
+ * whole point of reusing ADR-0071's own predicate is that the cue and the
  * off-screen enemy freeze can never disagree about what counts as "on screen".
  *
  * Takes only the two state fields it reads (a `Pick`, not the whole `GameState`),
@@ -401,7 +401,7 @@ export function useGameLoop(
     // Captured, not re-read at the push site: the QTE cinematic below moves
     // `camera.position` after the tick, and the delivery cue must read the EXACT
     // offsets the tick fed `isOnScreen` (T-1) so it can never disagree with
-    // ADR-0069's off-screen freeze — including while a cinematic holds the camera.
+    // ADR-0071's off-screen freeze — including while a cinematic holds the camera.
     const tickCameraX = camera.position.x;
     const tickCameraY = camera.position.y;
 

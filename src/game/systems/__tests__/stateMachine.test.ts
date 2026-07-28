@@ -1443,6 +1443,6 @@ describe("tickGameState — off-screen enemies cannot shoot", () => {
   // ("still chips it once the camera pans onto it") as expected behaviour — the
   // merge-gate panel's own blocker. The delivery gauge no longer reads `SHOOTING`
   // at all, so it needs no camera filter; what survives of the intent lives in
-  // `deliveryAssaultTick.test.ts` (AC6 at tick level, and AC14 for the ADR-0069
+  // `deliveryAssaultTick.test.ts` (AC6 at tick level, and AC14 for the ADR-0071
   // freeze invariants with the assault live).
 });

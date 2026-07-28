@@ -11,7 +11,7 @@ import { levelFacade } from "./levelFacade";
  *
  * Both are load-bearing for gameplay and invisible from the data they guard: a
  * window-zone retouch is an art/tooling change that can silently gut a core-loop
- * objective (AC12.1) or strand an enemy out of reach forever (ADR-0069). They fail
+ * objective (AC12.1) or strand an enemy out of reach forever (ADR-0071). They fail
  * CI instead.
  */
 
@@ -50,11 +50,11 @@ describe("AC12.1 — every delivery level can host its assault (the authoring gu
   });
 });
 
-describe("ADR-0069 — every window slot stays reachable by the camera pan", () => {
+describe("ADR-0071 — every window slot stays reachable by the camera pan", () => {
   // The ADR self-commits to this test (`0069:119`) and no test pinned it: the pan
   // clamp is `rangeX = fullW/2 − viewW/2` and the camera rect reaches `viewW/2`
   // past its centre, so the furthest reachable slot centre is exactly `fullW/2`.
-  // Since ADR-0069 an unreachable slot is not a cosmetic wart but a HARD
+  // Since ADR-0071 an unreachable slot is not a cosmetic wart but a HARD
   // progression stall: a frozen enemy there can never be killed, `allDead` never
   // turns true and the wave stops rolling over. The assault reservation makes slot
   // geometry MORE load-bearing, not less — it removes two slots per delivery level.
@@ -68,7 +68,7 @@ describe("ADR-0069 — every window slot stays reachable by the camera pan", () 
     expect(worst).toBeLessThanOrEqual(bound);
   });
 
-  it("the thinnest margin is vitry's, and it is still positive (ADR-0069 measured 39.4586 / 40)", () => {
+  it("the thinnest margin is vitry's, and it is still positive (ADR-0071 measured 39.4586 / 40)", () => {
     const margins = LEVELS.map((l) => {
       const worst = Math.max(...levelFacade(l.id).slots.map((s) => Math.abs(s.screenPosition.x)));
       return { id: l.id, margin: getBackdropLayout(l.id).fullW / 2 - worst };

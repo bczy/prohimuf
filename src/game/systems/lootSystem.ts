@@ -126,7 +126,7 @@ function attemptSpawn(
   // non-DEAD enemy's slot — including HIDDEN/HIT, which the §5.4 column-gap rule
   // (active states only) does not catch. Applied ALONGSIDE the column-gap rule.
   // …plus the slots the caller has reserved for something else entirely (the
-  // delivery assault's window slots, ADR-0069 story / D2.8). Pure slot indices, so
+  // delivery assault's window slots, ADR-0071 story / D2.8). Pure slot indices, so
   // `lootSystem` stays agnostic of WHY they are reserved — the same seam shape as
   // `deliveryGap`.
   const occupied = new Set(enemies.filter((e) => e.state !== "DEAD").map((e) => e.slotIndex));

@@ -226,7 +226,7 @@ describe("AC2(a)/AC3 — no camera position makes the delivery free", () => {
     });
   }
 
-  it("ADR-0069's frozen mid-SHOOTING wave cop no longer chips the gauge (AC6 at tick level)", () => {
+  it("ADR-0071's frozen mid-SHOOTING wave cop no longer chips the gauge (AC6 at tick level)", () => {
     // The two cases this replaces (`stateMachine.test.ts` describe("frozen
     // mid-SHOOTING")) pinned the free objective and the INVERTED incentive as
     // expected behaviour. What survives is: an ambient shooter — frozen or not,
@@ -411,7 +411,7 @@ describe("AC4/AC10 — the engaged player (belliard)", () => {
   });
 });
 
-describe("AC11/AC14 — retirement and the ADR-0069 invariants, in a controlled scene", () => {
+describe("AC11/AC14 — retirement and the ADR-0071 invariants, in a controlled scene", () => {
   const spec: DeliverySpec = {
     vehicleType: "truck",
     triggerAtElapsedSeconds: 20,
@@ -479,7 +479,7 @@ describe("AC11/AC14 — retirement and the ADR-0069 invariants, in a controlled 
         0.5,
         DT,
         FACADE_01,
-        // Camera 40: nothing on this facade is on screen, so ADR-0069 freezes the
+        // Camera 40: nothing on this facade is on screen, so ADR-0071 freezes the
         // whole scene — including the assault.
         40,
         0,

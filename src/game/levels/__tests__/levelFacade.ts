@@ -12,8 +12,8 @@ import { facadeDrawScale, stretchAboutCentre } from "@render/scene/facadeLayout"
  * windows as the facade IMAGE draws them. `computeBackdropSlots` is the nominal,
  * un-stretched geometry and is therefore NOT what the game runs on.
  *
- * The delivery-assault reservation and ADR-0069's reachability bound are both
- * claims about the geometry the game runs on (ADR-0069:116 names the 1.08
+ * The delivery-assault reservation and ADR-0071's reachability bound are both
+ * claims about the geometry the game runs on (ADR-0071:116 names the 1.08
  * draw-scale explicitly as what eats vitry's margin), so the fixture goes through
  * the SAME pure helper the scene uses rather than re-declaring the factor. It is
  * imported by tests only — no `src/game` production module reads `@render`.

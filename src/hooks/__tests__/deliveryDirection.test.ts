@@ -8,7 +8,7 @@ import type { DeliveryPhase, DeliverySpec, DeliveryVehicle } from "@game/types/d
  *
  * The cue is a VIEW derivation, but it carries a fairness invariant: it must be on
  * exactly when the delivery point is outside the frame the game itself measures
- * (ADR-0069's `isOnScreen`), on every device class. These tests pin that invariant
+ * (ADR-0071's `isOnScreen`), on every device class. These tests pin that invariant
  * plus the two corrections that make it true — T-1 (live viewport, never the 18/12
  * defaults) and T-2 (anchored on `stopPosition`, not on the rolling van).
  */

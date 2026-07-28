@@ -1,7 +1,7 @@
-# Spec — "Protéger la camionnette": the delivery assault (arbitration of ADR-0069's free objective)
+# Spec — "Protéger la camionnette": the delivery assault (arbitration of ADR-0071's free objective)
 
 **Feature:** the damage rule of the `Livrer` pillar — what makes the `DELIVERING` window a real
-objective now that ADR-0069 freezes off-screen enemies. Replaces the camera-filtered
+objective now that ADR-0071 freezes off-screen enemies. Replaces the camera-filtered
 `shootingCount` (`stateMachine.ts:497-499`) with a **directed assault, seated next to the vehicle at
 its arrival, whose damage rule contains no camera term**.
 **Author:** `game-designer` (Sacha) · **Date:** 2026-07-26 · **Revision: Rev.2**
@@ -9,7 +9,7 @@ its arrival, whose damage rule contains no camera term**.
 consumed) before `senior-architect` plans it and `dev-gameplay` implements it.
 **Trigger:** merge-gate panel verdict NO-MERGE on `claude/offscreen-enemies-cannot-shoot`
 (`docs/handoffs/story-offscreen-enemies-frozen.md`, MAJEUR #2 — 4/4 reviewers CONFIRMED), and
-ADR-0069 §Négatif's own explicit request: _"mérite un arbitrage `game-designer` plutôt qu'un choix
+ADR-0071 §Négatif's own explicit request: _"mérite un arbitrage `game-designer` plutôt qu'un choix
 implicite"_.
 **Lane surface:** `src/game/**` ONLY (deliverySystem + stateMachine + enemySystem call site + their
 tests). No render, no art, no audio, no `levels.ts` data change. See §8.
@@ -91,22 +91,22 @@ Three facts fall out, and they are worse than "the objective is free":
 3. **The damage is non-local.** On belliard the van at x=0 lost 14 integrity to shooters 18 world
    units away, off-frame from the van, that the player could not have been "protecting it" from.
 
-## 2. Why ADR-0069's own suggested fix (option a) is rejected — RATIFIED, unchanged
+## 2. Why ADR-0071's own suggested fix (option a) is rejected — RATIFIED, unchanged
 
-> ADR-0069 §Négatif: _"Une piste : faire dépendre le grignotage de la proximité du tireur au
+> ADR-0071 §Négatif: _"Une piste : faire dépendre le grignotage de la proximité du tireur au
 > véhicule plutôt que de la caméra."_
 
 Measured counterfactually on the same 7 trajectories, with R = 9 world units (half a viewport):
 
 | candidate damage rule                                 | damage over the whole window, all 7 runs |
 | ----------------------------------------------------- | ---------------------------------------- |
-| `SHOOTING` anywhere (pre-ADR-0069)                    | 0.0 – 14.1                               |
+| `SHOOTING` anywhere (pre-ADR-0071)                    | 0.0 – 14.1                               |
 | `SHOOTING` **and** within R of the van (**option a**) | **0.0 in 7/7 runs**                      |
 | targetable **and** within R of the van (option a+)    | **0.0 in 7/7 runs**                      |
 
 Option (a) is not a weak fix, it is a **no-op**, for two compounding reasons:
 
-- **The freeze eats it.** `SHOOTING` is only ever _entered_ on screen (ADR-0069). An enemy near the
+- **The freeze eats it.** `SHOOTING` is only ever _entered_ on screen (ADR-0071). An enemy near the
   van, off-screen, is frozen and never becomes a shooter — so a proximity filter has nothing to
   count. The only way an off-screen enemy is in `SHOOTING` is if the player framed it and panned
   away inside its 0.5 s shot; and that case is precisely the "frozen shooter chips the gauge
@@ -139,7 +139,7 @@ use (`stateMachine.ts:367`, `lootSystem.ts:127`), so no new predicate enters the
 - **No camera term.** `isOnScreen` / `cameraOffsetX` / `cameraOffsetY` are not read by the delivery
   selection path at all any more. This is asserted **structurally** (the selection helper takes no
   camera argument), not by comparing two runs — see AC2(b).
-- **No freezable term either.** ADR-0069's freeze acts on `state` and `timer`. The count reads
+- **No freezable term either.** ADR-0071's freeze acts on `state` and `timer`. The count reads
   neither, so the freeze cannot move the gauge in either direction. Consequence: `t_fail` is one
   number per level (`integrity / (N·D)`), identical for every camera trajectory — a _provable_
   property, which is why §4.2 no longer needs a per-case table.
@@ -200,7 +200,7 @@ roll-in before the damage window opens), seat `DELIVERY_ASSAILANTS = 2` enemies:
    window-zone retouch fails CI instead of silently gutting the objective).
 4. **State at seating: `VISIBLE`**, timer = `ARCHETYPES[kind].visibleDuration × (1 + i × 0.3)`.
    - The `VISIBLE` choice is Rev.1's, unchanged and re-ratified: an assailant the player never looks
-     at freezes exposed (ADR-0069) and an assailant the player does look at is immediately shootable
+     at freezes exposed (ADR-0071) and an assailant the player does look at is immediately shootable
      and will cycle into `SHOOTING` and fire back. Seating in `HIDDEN` would freeze the threat away;
      seating in `APPEARING` would leave half-unfolded sprites frozen in the windows (bad read).
      Under D1-Rev.2 the seating state no longer changes the _damage_, so this is now purely a
@@ -280,7 +280,7 @@ expression this objective was missing, and it costs nothing: damage is phase-gat
 On the `DELIVERING → SUCCESS | FAILED` transition, every surviving assault enemy becomes `DEAD`
 with **no score, no kill credit, no quota credit** — the escort leaves when the van leaves.
 Rationale: the set-piece owns its actors; without this, 2 permanently-frozen enemies would sit in
-the wave array and block `allDead` (ADR-0069's wave-rollover cost) for the rest of the level, in a
+the wave array and block `allDead` (ADR-0071's wave-rollover cost) for the rest of the level, in a
 zone the player may never revisit.
 
 **Disclosure (A4):** while the assailants live, `allDead` is false, so the **wave rollover pauses**
@@ -298,7 +298,7 @@ it read as one. D3's retirement guarantees the pause ends with the beat.
 - The phase machine `IDLE → INCOMING → DELIVERING → SUCCESS|FAILED → GONE`, the one-shot bonus,
   `FAILED` costing no life and no points, and the per-level `integrity` / `windowSeconds` / `bonus`
   authored in `levels.ts` — **all unchanged**.
-- **ADR-0069 is untouched and needs no exception.** This is _stronger_ in Rev.2 than in Rev.1: the
+- **ADR-0071 is untouched and needs no exception.** This is _stronger_ in Rev.2 than in Rev.1: the
   damage rule no longer reads any state the freeze can touch, so there is no interaction left to
   reason about, in either direction. A frozen assailant is a threat to the _vehicle_ (a gauge in the
   HUD) and never to the _player_ (it cannot enter `SHOOTING` off-screen, so it cannot spawn a
@@ -328,7 +328,7 @@ it read as one. D3's retirement guarantees the pause ends with the beat.
      connect the two without being told;
   2. they must **stay legible as live, dangerous shooters who will fire at the player** the moment he
      frames them — nothing that reads as "busy elsewhere", "occupied", or "not a threat to me".
-     Also route A3 as a note: ADR-0069's accepted muzzle-flash cosmetic (an enemy frozen
+     Also route A3 as a note: ADR-0071's accepted muzzle-flash cosmetic (an enemy frozen
      mid-`SHOOTING` holds its flash) will now happen **next to the van, in the player's focus**.
      Known-cosmetic, not a blocker.
 - `narrative-designer`: one line of fiction on who ambushes the delivery (same faction as the window
@@ -344,7 +344,7 @@ it read as one. D3's retirement guarantees the pause ends with the beat.
 | --------------------------------- | ----------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DAMAGE_PER_ASSAILANT_PER_SECOND` | **9**       | `deliverySystem.ts`         | Was 8. **The single tuned number** (one variable at a time). Lower bound: the ignore case must fail with ≥ 20 % of the window to spare on every level ⇒ `D ≥ I / (1.6·N·W)` ⇒ `D ≥ 7.81` (belliard binds). Upper bound: the slow-mobile reference player must still win ⇒ `D ≤ 9` (measured: at 10 he loses Vitry and Niveau Final against `riot+riot`). 9 is the top of the feasible band, i.e. maximum pressure on the exploit the panel found, with the player still winning. §4.2, §4.4. Fallback 8 pre-declared in D5. |
 | `DELIVERY_ASSAILANTS` (N)         | **2**       | `deliverySystem.ts`         | 1 makes ignoring survivable on the 60/6 levels (`t_fail` 6.67 s > 6 s window at D = 9 — literally free). 3 exceeds niveau-final's candidate supply (2 slots within R) and turns the window into a spray. 2 is the smallest count that is decisive everywhere. Constant, NOT a per-level field (YAGNI — `integrity`/`windowSeconds` already give per-level control).                                                                                                                                                         |
-| `ASSAULT_RADIUS` (R)              | **7**       | `deliverySystem.ts`         | Half a viewport is 9 (`VIEW_W = 18`); an enemy plane is ≈ 2.1 wide (ADR-0069). 7 guarantees **the van and every assailant fit in one frame, uncropped**, with ≈ 0.95 u of margin, when the camera is centred on the stop position. Hard ceiling 7.9 — not approached (K-3 is solved by the reservation, not by widening R). Verified ≥ N candidates on all four shipped levels (10 / 7 / 28 / 2).                                                                                                                           |
+| `ASSAULT_RADIUS` (R)              | **7**       | `deliverySystem.ts`         | Half a viewport is 9 (`VIEW_W = 18`); an enemy plane is ≈ 2.1 wide (ADR-0071). 7 guarantees **the van and every assailant fit in one frame, uncropped**, with ≈ 0.95 u of margin, when the camera is centred on the stop position. Hard ceiling 7.9 — not approached (K-3 is solved by the reservation, not by widening R). Verified ≥ N candidates on all four shipped levels (10 / 7 / 28 / 2).                                                                                                                           |
 | `DELIVERY_ASSAULT_ID_BASE`        | 900000      | `deliverySystem.ts`         | Disjoint from `spawnWave`'s `wave·100 + i` (would need 9 000 waves to collide). Also the identity discriminator — D2.6.                                                                                                                                                                                                                                                                                                                                                                                                     |
 | seating timer factor              | `1 + i·0.3` | `stateMachine.ts` (seating) | `spawnWave`'s own stagger factor (`enemySystem.ts:130`), DRY. Read + shooting-rhythm decision only — D2.4.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
@@ -512,7 +512,7 @@ Boundaries / regressions
      evidence.
 - **AC13** A level with `deliveries: []` (the tutorial, the boss harness) is byte-for-byte
   unchanged: no reservation, empty `excludeSlots`, no assault, no new enemy, no extra tick cost.
-- **AC14** ADR-0069 invariants still hold with the assault live: an off-screen assault enemy stays
+- **AC14** ADR-0071 invariants still hold with the assault live: an off-screen assault enemy stays
   in `VISIBLE` (frozen, timer unchanged) and **spawns no bullet** (`state.bullets` length unchanged
   across the whole ignore-case window), while still bleeding the gauge.
 - **AC15 — [MADE EXPLICIT, K-4]** `src/game` purity untouched (no React/Three import),
@@ -551,14 +551,14 @@ Once implemented I playtest with the `verify` skill and report PASS/deviations t
 
 | Option                                                                                                     | Why rejected                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **(a) ADR-0069's own suggestion**: proximity filter on the ambient wave                                    | Measured **no-op** (0 damage in 7/7 runs) and it re-opens the frozen-shooter-chips-forever hole. §2.                                                                                                                                                                                                                                                                                                                                                                          |
+| **(a) ADR-0071's own suggestion**: proximity filter on the ambient wave                                    | Measured **no-op** (0 damage in 7/7 runs) and it re-opens the frozen-shooter-chips-forever hole. §2.                                                                                                                                                                                                                                                                                                                                                                          |
 | **[NEW] Rev.1's `targetable` predicate** (`APPEARING\|VISIBLE\|SHOOTING`, shared with `resolvePlayerShot`) | Elegant and DRY, but **camera-gameable in outcome**: freezing both assailants while `HIDDEN` suspends the damage. Exhaustive pan-start sweep at the real 8 u/s edge-scroll, D = 12, staggered: **254-382 of 1 484 pan timings survive the window with the full bonus and zero shots on belliard** (17-26 %), 6-144 of ~1 400 on the other three, minimum damage **0.0** in most pairs. No `D` closes a hole whose floor is 0. Superseded by D1-Rev.2 — see the amendment box. |
 | **[NEW] `max(1, targetableCount)`** (keep the predicate, floor the drain at one assailant)                 | Seals every trajectory **only** at `D ≥ 13` (the bound is `D·W ≥ integrity`: belliard 13×8 = 104 ≥ 100 — verified, 0/1 484 survivors). But at D = 13 the slow-mobile reference row **FAILS** Vitry and Niveau Final, and at D = 12 belliard is still exploitable (minimum damage 96.2 vs a 100 gauge). The band is empty. Also two rate concepts in one rule (0 exposed → 13/s, 1 exposed → 13/s) is a worse read than "alive". Kept as Karim's overrule option.              |
-| **Revert to the pre-ADR-0069 global count**                                                                | Keeps the inverted incentive (engaging the fight elsewhere hurts the van) and lets a frozen shooter chip forever. §1.2.                                                                                                                                                                                                                                                                                                                                                       |
+| **Revert to the pre-ADR-0071 global count**                                                                | Keeps the inverted incentive (engaging the fight elsewhere hurts the van) and lets a frozen shooter chip forever. §1.2.                                                                                                                                                                                                                                                                                                                                                       |
 | **[NEW] Widen `ASSAULT_RADIUS` to buy candidate supply on niveau-final** (K-3 alternative)                 | Doesn't work and breaks §4.1: R = 7.5 or 7.9 lifts niveau-final from 2 to 4 candidates, but the live cohort still leaves only **1** free at `w9`/`w10` — no guarantee, just a longer lottery. 7.9 is also the hard ceiling of the one-frame guarantee. The reservation (D2.8) is deterministic and costs no framing.                                                                                                                                                          |
 | **[NEW] Relocate the ambient occupant instead of reserving** (K-3 alternative)                             | A live wave enemy would have to teleport out of a reserved window mid-level — visible when it is `VISIBLE`, and it perturbs kill/quota bookkeeping for a case the reservation prevents outright. Pruning only the **corpses** would fix the corpse case but not the live-enemy case (measured: both occur).                                                                                                                                                                   |
 | **Accept the safe spot, rework the scoring** (bonus scaled by framing time, or by remaining integrity)     | Rewards holding a camera still rather than shooting — a new attention-metric mechanic Prohibition never had, for less stake. And a bonus scaled on a gauge nothing can dent is still free.                                                                                                                                                                                                                                                                                    |
-| **Exempt the delivery neighbourhood from the freeze**                                                      | Would work, but needs a muzzle guard on the bullet spawn and breaks ADR-0069's "no transition off-screen ⇒ no guard needed" invariant — more code, weaker rule. D1-Rev.2 gets a stronger guarantee for free by not reading state at all.                                                                                                                                                                                                                                      |
+| **Exempt the delivery neighbourhood from the freeze**                                                      | Would work, but needs a muzzle guard on the bullet spawn and breaks ADR-0071's "no transition off-screen ⇒ no guard needed" invariant — more code, weaker rule. D1-Rev.2 gets a stronger guarantee for free by not reading state at all.                                                                                                                                                                                                                                      |
 | **Pin the assault `VISIBLE` for the whole beat** (no duck ⇒ `targetable == alive`)                         | Would preserve the shared predicate, but the assailants would never reach `SHOOTING`, so they would never fire at the player (D2.7 and K-6's threat read both die), and two sprites frozen in a pose for 12 s reads as broken. Also needs a special case inside `tickEnemy` — the assault stops being an ordinary enemy.                                                                                                                                                      |
 | **Per-level `assailantCount` in `DeliverySpec`**                                                           | YAGNI: the tuning table needs 2 everywhere, and `integrity`/`windowSeconds` already give per-level control.                                                                                                                                                                                                                                                                                                                                                                   |
 | **Bias `spawnWave` toward the van during a delivery**                                                      | No guarantee (a rollover may never occur inside the window) and it perturbs the heavily-pinned `spawnWave` determinism far more than D2.8's `excludeSlots` (an argument `spawnWave` already accepts).                                                                                                                                                                                                                                                                         |
@@ -596,7 +596,7 @@ conclusion:
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **A1** — assault kills are quota-eligible (`countsAsTarget`), so clearing the assault can cross `enemiesToWin` and end the level mid-window, voiding the bonus being earned. | **ACCEPT + disclose**, explicitly. Excluding them would make two identical-looking cops score differently from their neighbours — an invisible rule the player cannot learn, and it would need a `countsAsTarget` override keyed on the id range (more surface than the defect). The cost is bounded: it needs the player to be within 2 kills of the quota _and_ to clear the assault _inside_ the window, and the outcome (LEVEL_COMPLETE) is the better one. On the finale it cannot happen at all — a boss level's quota never completes the level (`stateMachine.ts:291`). Disclosed here; **not** an AC. |
 | **A2** — the objective also costs **lives** (each on-screen assailant fires once per cycle, aimed; `riot` = 1 heart of 3), which §4 does not price.                          | **ADOPTED into §6.7** as a stage-5 capture on both device classes, with the Rev.3 levers named in advance. Not a Rev.2 tuning change: I will not price a cost I have not measured in the real build.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **A3** — ADR-0069's accepted muzzle-flash cosmetic (frozen mid-`SHOOTING` = held flash) will now occur next to the van, in focus.                                            | **Routed to `lead-art` / `dev-r3f-render`** as a note inside D5's reframed read requirement. Known-cosmetic, not a blocker, no gameplay effect (a frozen enemy spawns no bullet — AC14).                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **A3** — ADR-0071's accepted muzzle-flash cosmetic (frozen mid-`SHOOTING` = held flash) will now occur next to the van, in focus.                                            | **Routed to `lead-art` / `dev-r3f-render`** as a note inside D5's reframed read requirement. Known-cosmetic, not a blocker, no gameplay effect (a frozen enemy spawns no bullet — AC14).                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **A4** — while assailants live, `allDead` is false ⇒ the wave rollover pauses for the set-piece.                                                                             | **DISCLOSED in D3**, and re-read as intended: freezing the ambient escalation while a set-piece runs makes it read as a set-piece. Bounded by D3's retirement (≤ 13.4 s worst case, belliard).                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **A5** — §8 should be re-framed as the repair of a mandated pillar.                                                                                                          | **ADOPTED**, §8 rewritten.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
@@ -604,6 +604,6 @@ conclusion:
 D1 amendment), `ux-designer` (K-5 telegraph, commissioned separately), `lead-art` (K-6-reframed
 double read + A3 note), `narrative-designer` (D5 fiction), `senior-architect` (plan; K-4's
 discriminator is stated but overrulable, K-3's `excludeSlots` seam touches `spawnWave` + `lootSystem`
-call sites, and the ADR call), `tech-writer` (ADR-0069 §Négatif's van bullet is resolved by this
+call sites, and the ADR call), `tech-writer` (ADR-0071 §Négatif's van bullet is resolved by this
 spec — the ADR's rule itself stands unamended). All logged in
 `docs/handoffs/story-offscreen-enemies-frozen.md`.
