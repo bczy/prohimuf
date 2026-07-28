@@ -1043,7 +1043,7 @@ left in either direction — not an exception granted, an interaction that cease
 rule keys off the _transition_ into `SHOOTING` (`:454-458`, `wasShooting` edge) and `tickEnemy`
 freezes every state but `HIT` (`enemySystem.ts:74`), so a frozen assailant threatens the gauge and
 never the player. Bertrand's rule holds literally. And yes — **this spec resolves ADR-0071
-§Négatif's van bullet** (`0069:101-105`), which asked for this exact arbitration.
+§Négatif's van bullet** (`0071:101-105`), which asked for this exact arbitration.
 
 **5.2 — a NEW ADR IS REQUIRED for the assault. I contradict the "no ADR needed" reading, narrowly.**
 Not because the damage rule changed — the spec and this thread document that better than an ADR
@@ -1074,7 +1074,7 @@ already reads, surfaced as an optional `HudData` field, reusing the existing `Hu
 type, zero `src/game` change, zero boundary movement, zero new dependency. Render-lane-internal.
 
 **5.4 — ADR-0071 → `Accepted` needs its own missing test, and it belongs to lane A.** The ADR is
-still `Proposed` and self-commits (`0069:119`) to pinning `max |slotX| <= fullW/2`; no test does
+still `Proposed` and self-commits (`0071:119`) to pinning `max |slotX| <= fullW/2`; no test does
 (`backdropLayout.test.ts` pins `fullW`, not the slot bound). The panel explicitly asked that this not
 be dropped silently, and the reservation makes slot geometry _more_ load-bearing, not less — it
 removes two slots per delivery level. **Lane A adds it in `src/game/levels/__tests__/`, next to

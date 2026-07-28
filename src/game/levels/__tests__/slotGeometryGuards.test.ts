@@ -51,7 +51,7 @@ describe("AC12.1 — every delivery level can host its assault (the authoring gu
 });
 
 describe("ADR-0071 — every window slot stays reachable by the camera pan", () => {
-  // The ADR self-commits to this test (`0069:119`) and no test pinned it: the pan
+  // The ADR self-commits to this test (`0071:119`) and no test pinned it: the pan
   // clamp is `rangeX = fullW/2 − viewW/2` and the camera rect reaches `viewW/2`
   // past its centre, so the furthest reachable slot centre is exactly `fullW/2`.
   // Since ADR-0071 an unreachable slot is not a cosmetic wart but a HARD
