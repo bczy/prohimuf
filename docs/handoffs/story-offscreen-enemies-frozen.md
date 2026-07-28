@@ -1353,3 +1353,82 @@ inactif vers 15 s. Seeds `localStorage` utilisés : `muf_progress` (déblocage) 
 `npx eslint src/render src/hooks` **vert** (0 issue) et `npx prettier --check src/render src/hooks`
 **vert**. Le `rtk lint` global reste rouge sur `src/game/systems/__tests__/deliveryAssault.test.ts`
 — c'est le chantier **en cours de lane A** dans le même arbre de travail, pas mon diff. Rien commité.
+
+## Panel round 2 — verdict final (2026-07-29)
+
+Re-run complet des 4 reviewers (`code-review` high, `bmad-code-review`,
+`bmad-review-edge-case-hunter`, `security-review`) en parallèle sur le diff matérialisé
+depuis le round 1 (67+ fichiers, le mécanisme d'assaut de livraison + son télégraphe, plus
+le travail parallèle de la session concurrente — bake-off style-match, fix `keyAndDown`,
+regen boss, tooling CI). Deux tentatives ont échoué sur des incidents d'infra transitoires
+(déconnexions API, stall watchdog) sans rapport avec le contenu — relancées jusqu'à
+complétion propre des 4.
+
+**[BLOQUANT] trouvé par Reviewer D, FIXÉ (commit `84e782ba` + `9648a6b5`) :** collision de
+numéro ADR — `origin/main` porte déjà un ADR-0069 différent et Accepted (« Energy-rim
+signalling contract »). La branche avait été rebasée pour renuméroter l'ADR de ce chantier
+en **0071**, mais **77 références** en prose (commentaires de code de prod, tests, specs,
+ce journal) pointaient encore vers « ADR-0069 » — donc, post-rebase, vers le MAUVAIS ADR.
+Corrigé en deux passes mécaniques (77 puis 3 références manquées, repérées indépendamment
+par Reviewer A) : `sed` ciblé sur les 13 fichiers légitimement concernés (2 faux positifs
+identifiés et exclus — une citation historique de PR dans `adr-new/SKILL.md`, une vraie
+référence au ADR-0069 réel dans `agent-handoffs.md`). Vert : tsc/vitest(1401)/lint/index ADR.
+
+**Aucun autre BLOQUANT ni MAJEUR n'a survécu à la vérification adversariale**, sur les
+4 reviewers. Les 4 revendications les plus spécifiques du spec (dégât = assaillants VIVANTS
+pas ciblables ; réservation de slot aux 2 sites `spawnWave` + `lootSystem` ; discriminant
+id-range sans occurrence inline hors `deliveryAssault.ts` ; repère du télégraphe utilisant
+les vraies valeurs caméra/viewport du tick) ont chacune été revérifiées ligne à ligne contre
+le code réel et tiennent. Reviewer C a mutation-testé les 3 points de réservation de slot
+(retirer la garde loot rougit 1 test, retirer `retireAssault` en rougit 25, substituer le
+prédicat ALIVE par `targetable` en rougit 18) — les tests ne sont pas de façade.
+
+**MINEUR (non-bloquants, suivi recommandé, aucun ne remet en cause le mécanisme livré) :**
+
+- `reservedAssaultSlots` est recalculé à CHAQUE tick alors que ses deux entrées sont
+  invariantes pour tout le niveau (152 objets jetables/tick sur vitry) — trouvé
+  indépendamment par A et B. `seatAssault` le recalcule une **3e fois** en interne. Un seul
+  calcul à `createInitialState`, propagé, réglerait les trois. Owner : `dev-gameplay`.
+- **Reviewer C : la garantie « le van + les 2 assaillants tiennent dans UN cadre » n'est
+  vérifiée que sur l'axe X** (`ASSAULT_RADIUS = 7` contre `VIEW_W = 18`, une constante qui
+  n'est le viewport RÉEL d'aucun mode). Sur mobile (`viewH` réel 5,44, clamp caméra-Y
+  ±3,28), cadrer le van et cadrer un assaillant exige des plages de `cameraY` **disjointes
+  sur 3 niveaux sur 4** (belliard/stalingrad/niveau-final ; vitry est correct). Le test de
+  garde ne regarde que X et passe alors que la propriété qu'il prétend garantir est fausse
+  en Y sur mobile. Borné en pratique (jauge côté HUD, pinch-out, le nouveau repère D2 pointe
+  déjà vers le point d'arrêt) mais mérite confirmation `game-designer`/`ux-designer` avant
+  de considérer le mobile totalement fair. Owner : `game-designer`.
+- ADR-0071 reste `Status: Proposed` et son texte se contredit lui-même : il dit encore
+  « aucun test n'épingle X, à ajouter » alors que ce diff ajoute exactement ce test. Owner :
+  `senior-architect`/`tech-writer` — décider du flip vers `Accepted`.
+- `keyAndDown()`'s nouveau re-snap binaire post-resize est partagé avec
+  `gen-nearfg-sprites.mjs`/`gen-gptimage-asset.mjs` — leur prochaine régénération en hérite
+  sans qu'aucun gate art ne l'ait revu pour ces familles. Aucun asset livré affecté
+  aujourd'hui. Owner : `dev-tooling-assets`.
+- `shield_cover_raised`'s `$comment` promet un skip silencieux sur `prompt` vide ; le loader
+  réécrit ne skip que sur `pending: true` et lève sur un `prompt` vide sans ce flag. Owner :
+  `dev-tooling-assets`.
+- `REF_IMAGES` (bake-off, `gen-boss-sprites.mjs`) n'a toujours pas de vérification de statut
+  HTTP — un 404 dégraderait silencieusement le style sans qu'aucun gate actuel (neutralité,
+  topologie) ne le détecte. Round-1 MINEUR, toujours ouvert. Owner : `dev-tooling-assets`.
+
+**NIT (hygiène, aucune action requise avant merge) :** un label de log dans
+`style-match-test.mjs` dit « px » pour une fraction 0..1 (fichier de la session concurrente,
+non touché — pas bloquant) ; un commentaire CSS référence une classe renommée
+(`.chipDelivering` → `.deliveryChip`) ; le test d'invariant du discriminant id-range ne
+couvre qu'une liste blanche de 4 fichiers alors que la revendication est repo-wide (vraie
+aujourd'hui, non structurellement garantie) ; la revendication « la plage id n'est jamais
+atteinte avant la vague 9000 » est en réalité dépendante de la taille de façade (atteinte
+dès w8999 sur vitry, opérationnellement inatteignable) ; pas d'hystérésis sur le basculement
+on/off du repère (propriété déjà présente sur `targetIndicator`, cohérent avec le reste du
+code) ; le terme de cadence anti-stale du repère (`useGameLoop.ts:621`) n'a pas de test
+dédié. `docs/agent-handoffs.md` a une table d'index dupliquée — confirmé **pré-existant sur
+`origin/main`**, pas introduit par cette branche, hors scope.
+
+### Verdict : **MERGE**
+
+Aucun CONFIRMED BLOQUANT/MAJEUR non résolu. Les deux blockers du round 1
+(objectif camionnette gratuit/inversé, `speaker_wall.png` cassé) sont fermés et
+re-vérifiés ; le blocker du round 2 (collision ADR) est fermé et re-vérifié. Le punch-list
+MINEUR ci-dessus est un suivi légitime, aucun ne bloque ce merge. `tsc`/`vitest`
+(1401/1401)/`lint`/index ADR verts sur l'état poussé (`9648a6b5`).
