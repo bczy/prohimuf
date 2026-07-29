@@ -224,7 +224,14 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // kind into this pool, and a typo would be dropped in silence by
   // `buildWeightedFrom` (0 % spawn, no error). Unprefixed keys are the core kinds
   // and stay allowed — tuning them is a level's right.
-  for (const kind of Object.keys(plan.gameplay.windowWeights)) {
+  for (const [kind, weight] of Object.entries(plan.gameplay.windowWeights)) {
+    // The VALUE first (panel run-10 BLOQUANT): buildWeightedFrom does
+    // `Array.from({ length: Math.max(0, weight) })` per kind — Infinity resolves to
+    // 2^53-1, past the engine's max array length, and throws RangeError on EVERY
+    // boot of the level; NaN silently contributes zero entries and skews the pool.
+    if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 0) {
+      errors.push(`windowWeights ${kind}: weight must be a finite number >= 0`);
+    }
     if (!kind.includes(":")) continue;
     if (!kind.startsWith(ns)) {
       errors.push(`windowWeights ${kind}: expected namespace "${ns}"`);
@@ -272,11 +279,6 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
 }
 
 /**
- * The default delivery of a generated level, modelled on belliard's. A playable
- * level needs one: `deliveries[0]` seeds `GameState.deliveryVehicle`, so an empty
- * array would leave the `Livrer` half of the core loop on an untested path.
- */
-/**
  * Mirrors `levelArt.ts` `WORLD_HEIGHT` (manifest `world.heightUnits`) — duplicated
  * with a cross-reference because this module imports `levelArt.ts` as TYPES ONLY
  * (`assetManifest.ts` documents that it wants no import-time dependency on it).
@@ -297,6 +299,11 @@ function deliveryTravelAllowanceSeconds(aspect: number): number {
   return Math.ceil(((WORLD_HEIGHT_UNITS * aspect) / 2 + VEHICLE_MARGIN) / VEHICLE_SPEED);
 }
 
+/**
+ * The default delivery of a generated level, modelled on belliard's. A playable
+ * level needs one: `deliveries[0]` seeds `GameState.deliveryVehicle`, so an empty
+ * array would leave the `Livrer` half of the core loop on an untested path.
+ */
 const DEFAULT_DELIVERY: DeliverySpec = {
   vehicleType: "truck",
   triggerAtElapsedSeconds: 20,

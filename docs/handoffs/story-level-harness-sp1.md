@@ -49,6 +49,55 @@ absolument tout »_ (2026-07-27).
   widened to generated archetypes.
 - Untraced-diff MAJEUR: closed by this shard.
 
+## 4. DESIGN GATE (rétroactif) — lead-game-designer — 2026-07-29
+
+**PASS** — gate rétroactif, périmètre strictement limité au tuning de l'archétype
+`fixture:vigile` et à son activation dans le roster du level `fixture` (aucun autre
+élément du diff PR #149 n'est gaté ici ; l'architecture, le validateur et le seam de
+preview restent la lane `senior-architect`).
+
+Justification :
+
+1. **Scope** — extension consciente et déjà documentée, pas une nouveauté non déclarée :
+   le spec gaté §2.1 autorise « un archétype inédit au maximum par level », défini comme
+   une recombinaison de primitives mécaniques existantes. `fixture:vigile` n'introduit
+   aucune primitive, aucune règle, aucun `switch (kind)` : c'est une ligne de table. Le
+   level est hors `LEVELS`, sans assets, atteignable uniquement par
+   `?preview=level&level=fixture` ; c'est de l'outillage de vérification, pas du contenu
+   joueur.
+2. **Tuning dans les eaux de `CORE_ARCHETYPES`** — hp 2 = `riot` ; bulletDamage 0.5 =
+   `biker` ; hidden 1.6 / visible 3.0 encadrés par `normal` (1.5/3.2) et `riot`
+   (1.7/3.6) ; scoreDelta 2 = `riot` ; livesDelta/timeDelta 0 ; `countsAsTarget: true` ;
+   tint `#ffffff` et aspect 1 = `normal`. Aucune valeur hors enveloppe, aucun effet
+   exotique. `spriteBase: "enemy_fixture_vigile"` inexistant exprès pour forcer le repli
+   `enemy_sprite`.
+3. **Loi d'activation** — `weight: 0` respecté (§4.2), activation par le seul
+   `roster.windowWeights` du level `fixture` : `WEIGHTED` et le pool par défaut des 4
+   levels shippés sont intacts. C'est la conformité qui compte le plus dans ce gate, et
+   elle est tenue.
+4. **Boucle core** — non diluée : `Récupérer → Livrer → Éviter` inchangée, l'archétype
+   se comporte comme un pop-fenêtre standard. Cadrage 60 s / 5 ennemis : bien sous le
+   plafond « une mission = 3-5 minutes » (PROJECT_GUIDELINES) — c'est un plafond, pas un
+   plancher, et une fixture doit se dérouler vite pour servir de preuve rejouable.
+5. **Vérifiabilité** — toutes les valeurs sont des nombres pinnés dans le module, et
+   l'activation est épinglée par le test de composition de pool
+   (`generatedLevels.test.ts`). Rien à deviner pour un dev.
+
+Réserve non bloquante (advisory) : le level `fixture` doit rester ce qu'il est — hors
+campagne, sans assets, hors du menu. Toute demande future de lui générer de l'art, de le
+nommer en fiction ou de le rendre atteignable autrement que par le seam de vérification
+annule ce PASS et le renvoie en gate plein.
+
+**Précédent SP2/SP3 — confirmé, sans amendement** : ce PASS est un précédent de portée
+volontairement étroite, réservé aux levels de vérification (hors `LEVELS`, sans assets,
+atteignables uniquement par le seam de preview) ; tout level généré destiné à être joué
+en SP2/SP3 repasse le **gate design plein** — tuning d'archétype, composition de
+roster/poids, courbe de difficulté et cohérence fiction — level par level et avant
+merge, exactement comme l'en-tête « Lanes » du spec `spec-level-harness-sp1.md` le
+prévoit.
+
+— Karim, `lead-game-designer`, 2026-07-29.
+
 ## Suivi
 
 - [ ] Panel re-run after remediation push → zero unaddressed CONFIRMED bloquant/majeur
@@ -72,5 +121,8 @@ absolument tout »_ (2026-07-27).
       is documented on the barrel where it now lives. The former countersign ask
       (was: bless the placement IN the data module) is moot; `senior-architect`
       still reviews this at his panel-triage/integration read like the rest of the diff
+- [x] Design gate on the tuning/roster surface (spec lane header): retroactive
+      scope-limited PASS by `lead-game-designer` on `fixture:vigile` — §4 above
+      (panel run-10 MAJEUR closed); SP2/SP3 playable levels take the FULL design gate
 - [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
 - [ ] SP2 opens only after this merges

@@ -170,6 +170,23 @@ describe("validateLevelPlan — panel run-9 hardenings", () => {
     }
   });
 
+  // Run-10 BLOQUANT: buildWeightedFrom does Array.from({ length: weight }) per kind —
+  // Infinity resolves past the max array length and throws RangeError on EVERY boot
+  // of the level; NaN silently contributes zero entries (and blinded the winnable
+  // check below); negative is nonsense the runtime clamps in silence.
+  it("rejects non-finite or negative windowWeights VALUES", () => {
+    for (const weight of [Number.POSITIVE_INFINITY, Number.NaN, -5]) {
+      const bad: LevelPlan = {
+        ...base,
+        archetypes: [vigile],
+        gameplay: { ...base.gameplay, windowWeights: { "fixture:vigile": weight } },
+      };
+      expect(validateLevelPlan(bad)).toContainEqual(
+        expect.stringContaining("weight must be a finite number >= 0"),
+      );
+    }
+  });
+
   // Victory counts only countsAsTarget kinds (normal/riot/biker in the core pool):
   // zeroing them all while activating only a non-countable kind is a permanent
   // softlock — enemiesToWin can never be reached.

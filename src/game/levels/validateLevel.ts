@@ -121,15 +121,18 @@ export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
             `Unknown window spawn slot "${slot}": roster.windowWeights may only key real enemy ` +
             `kinds (${knownKinds().join(", ")}).`,
         });
-      } else if (slot.includes(":") && slot.slice(0, slot.indexOf(":")) !== config.id) {
+      } else if (slot.includes(":") && !slot.startsWith(`${config.id}:`)) {
+        // Ownership = FULL-id prefix, the same rule as validateLevelPlan's `ns` and
+        // levelArt's isOwnedGeneratedPropKind — never a split on the first colon,
+        // which would mis-own kinds of a level whose id itself contains ':'.
         issues.push({
           code: "foreign-enemy-kind",
           severity: "error",
           field: `roster.windowWeights.${slot}`,
           message:
             `Foreign window spawn slot "${slot}": a namespaced kind may only appear in the ` +
-            `pool of the level that owns it ("${slot.slice(0, slot.indexOf(":"))}"), not ` +
-            `"${config.id}" — a generated archetype never leaks into another level's pool.`,
+            `pool of the level whose id prefixes it — not "${config.id}". A generated ` +
+            `archetype never leaks into another level's pool.`,
         });
       }
     }
