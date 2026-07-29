@@ -642,3 +642,76 @@ record the panel verdict, the ADR-0073 number re-check, and the three story-③ 
 Runs: `yarn vitest run src/game/levels` **12 files / 134 tests passed**; full `yarn vitest run`
 **100 files / 1436 tests passed** (+1 test vs the BUILD entry: the NaN pin); `yarn typecheck`
 clean, 0 error; targeted `eslint` + `prettier --check` on `src/game/levels` clean. Not committed.
+
+---
+
+## 7. ACCEPTANCE — pm (John) — 2026-07-29
+
+- claim: stage-7 acceptance — re-read AC1-AC9 against §4/addendum (BUILD), §5 (VERIFY), §6
+  (TRIAGE) and `PROJECT_GUIDELINES.md`
+- release: this section, the VERDICT line
+
+### 7.1 AC-by-AC re-review (pm)
+
+AC1-AC7, AC9: I concur with qa-lead's §5.3 table and the panel's §6 countersign — each is
+evidenced by a specific mechanism this story's own risk profile calls for (the frozen
+pre-refactor fixture for AC1/AC2, mutation probes P1-P11 for AC5-AC7, `tsc`/`vitest`/`vite
+build` for AC9), not by assertion. The two deviations (§3.5 `QTE_RESULT_HOLD` import; §4
+deviation 2, no boss trigger field) are correctly resolved — deviation 1 by Winston's §6.1
+ADR-consequence ruling, deviation 2 by inspection (`BossQteSpec` genuinely has no
+`triggerAtElapsedSeconds`, ADR-0059 Am. 2). Cahier-des-charges test: not applicable — this is
+an internal refactor, not a new player-facing feature.
+
+**AC8, as literally written ("played through all 5 levels end to end"): NOT fully executed.**
+Inès's §5.4 smoke covers cold load → menu → BELLIARD → PLAYING on both device classes, and
+exercises live, in the production bundle, the two risks this specific diff actually creates
+(bundle/barrel resolution, and the new `systems → levels → systems` import edge via the
+`hostageBossMarginIssue` predicate firing without throwing at `belliard` load). It does not
+cover a full traversal to victory on all 5 levels, in-run hostage/boss QTE resolution, or
+unlock-persistence across a reload — named as such, not hidden, in §5.4's closing paragraph.
+
+**Ruling: AC8 ACCEPTED WITH DOCUMENTED RESERVE, not FAIL.** Reasoning: the systems a full
+playthrough would additionally exercise (delivery timing, hostage/boss QTE, unlock
+persistence) are **untouched by this diff** except through the one moved predicate, which
+IS proven live (§5.4) and by mutation (P12/P13, §5.2) to still throw correctly when the
+margin invariant is violated. AC1's byte-for-byte parity guard is a strictly stronger proof
+against silent data drift than a human playthrough would be — a playthrough can miss a value
+divergence that never manifests inside the ~90s test window; `toStrictEqual` against the
+frozen fixture cannot. For a story whose entire contract is "zero observable behaviour
+change" on a _data_ move, targeted evidence on the two genuinely new risk surfaces plus a
+frozen-value parity guard is the right-shaped proof, not a lesser substitute for the literal
+AC text. Accepting outright without the reserve would misrepresent what was actually run.
+
+**Reserve, logged as a condition, not a blocker:** before `producer` opens STORY ②'s BUILD
+stage (which starts _authoring new data_ — timeline events — on top of this foundation), a
+full 5-level playthrough-to-victory including hostage/boss QTE resolution and unlock
+persistence across a reload must run at least once on the merged `main`. It is cheap
+insurance at the one point where an untested full traversal stops being a theoretical gap and
+starts sitting under new authored content. Owner: `qa-lead`, tracked by `producer` as a story
+② pre-BUILD gate, not a re-open of this story.
+
+### 7.2 Scope / non-goals re-check
+
+No non-goal was crossed: no timeline field, no MCP surface, no balcony placer, no UI, no
+tuned value changed (`BELLIARD_BOSS_ENABLED` stays `true`, parity-locked). Background enemy
+spawn is untouched (not even referenced by this diff). PROJECT_GUIDELINES §9 Definition of
+Done items are all satisfied: tests written and green (TDD per §4), `tsc`/lint clean, no
+`--no-verify`, ADR-0073 filed for the two decisions that outlive this story (import-time-
+computable rule, single-source-of-invariants rule).
+
+### 7.3 Sequencing note for `producer`
+
+This story is confirmed as the prerequisite gate for ②/③/④ per its own §1 framing:
+`producer` should not open ②'s BUILD stage until (a) this story merges and (b) the §7.1
+reserve's playthrough runs once on `main`.
+
+**VERDICT: PASS — PM ACCEPTANCE (pm)** — AC1-AC7 and AC9 fully evidenced and accepted as
+written; AC8 accepted WITH DOCUMENTED RESERVE (full 5-level playthrough-to-victory not run;
+targeted evidence on this diff's two actual new risk surfaces plus the AC1 parity guard
+accepted as sufficient for a byte-for-byte data-move story, with the outstanding playthrough
+logged as a pre-BUILD gate for STORY ②, not a blocker on this story's own merge). No non-goal
+crossed. Story ① is DONE; ②/③/④ may be opened once the §7.1 reserve is honoured.
+
+**Next hand-off:** `producer` (Marion) — merge ADR-0073 number re-check, close this shard's
+index row to `pm-accepted`, and hold STORY ②'s BUILD stage on the §7.1 playthrough reserve;
+`qa-lead` (Inès) — own the reserve's playthrough as a ②-pre-BUILD gate item.
