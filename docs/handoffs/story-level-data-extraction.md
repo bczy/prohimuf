@@ -29,7 +29,7 @@ one module:
 
 There is exactly one generic structural invariant enforced today, and it lives in the wrong
 place for reuse: the hostage/boss timing-margin guard in
-`createInitialState` (`src/game/systems/stateMachine.ts:148-164`) throws at level *load* time
+`createInitialState` (`src/game/systems/stateMachine.ts:148-164`) throws at level _load_ time
 if a level authors both `hostageQte` and `bossQteSpec` without enough safety margin between
 the hostage's worst-case resolution and the boss's timed-finale trigger. That's a real,
 already-battle-tested `LevelConfig` invariant, currently only reachable by actually
@@ -80,17 +80,17 @@ to re-derive or duplicate correctness checks against a module that also touches
 
 ### Acceptance criteria
 
-| # | Given | When | Then |
-| --- | --- | --- | --- |
-| AC1 | The extracted data module | Any consumer imports `LEVELS` (and `BOSS_QTE_DEV_HARNESS_LEVEL`, `FIRST_PLAYABLE_LEVEL`, `DIFFICULTY_CONFIG`) after the refactor | The values are byte-for-byte identical (same objects/fields/order) to today's `levels.ts` exports — verified by a test that snapshots or deep-equals the pre/post arrays, not just "it typechecks." |
-| AC2 | The data module (whatever it is named) | Grepped for imports | It contains **no** import of/reference to `localStorage`, `loadUnlockedLevels`, or `unlockLevel` — progression is fully out. |
-| AC3 | `loadUnlockedLevels()` / `unlockLevel()` | Called from their new home by existing call sites | Behaviour (return values, `localStorage` key `muf_progress`, try/catch-swallow semantics) is unchanged — existing tests for progression pass unmodified or with import-path-only edits. |
-| AC4 | `validateLevel(config)` | Called on any of the 4 currently-shipped `LevelConfig`s (`tutorial`, `belliard`, `stalingrad`, `vitry`, `niveau-final`) and the dev harness | Returns `[]` (no issues) — the shipped catalogue is valid by construction, proving the validator doesn't cry wolf on real data. |
-| AC5 | `validateLevel(config)` | Called on a config whose `hostageQte`/`bossQteSpec` pair violates the safety-margin invariant (mirroring the existing `stateMachine.ts` throw's own trigger condition) | Returns at least one issue describing the timing violation — parity with today's throw, but returned not thrown. |
-| AC6 | `validateLevel(config)` | Called on a config with a `roster.windowWeights` key that is not a valid `EnemyKind` | Returns at least one issue naming the unknown slot. |
-| AC7 | `validateLevel(config)` | Called on a config with any trigger-time field (`triggerAtElapsedSeconds` on a delivery/hostageQte/bossQteSpec, or `loot.spawnIntervalSeconds`) `< 0` or `> timeSeconds` | Returns at least one issue naming the offending field and value. |
-| AC8 | The full game | Built, typechecked, played through all 5 levels end to end | Zero observable behaviour change — no gameplay, timing, HUD, or menu regression. This is a refactor + a new pure function, not a feature. |
-| AC9 | `rtk tsc` / `rtk lint` / `rtk vitest` | Run against the branch | All green; no `any`; no `--no-verify`. |
+| #   | Given                                    | When                                                                                                                                                                     | Then                                                                                                                                                                                                |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC1 | The extracted data module                | Any consumer imports `LEVELS` (and `BOSS_QTE_DEV_HARNESS_LEVEL`, `FIRST_PLAYABLE_LEVEL`, `DIFFICULTY_CONFIG`) after the refactor                                         | The values are byte-for-byte identical (same objects/fields/order) to today's `levels.ts` exports — verified by a test that snapshots or deep-equals the pre/post arrays, not just "it typechecks." |
+| AC2 | The data module (whatever it is named)   | Grepped for imports                                                                                                                                                      | It contains **no** import of/reference to `localStorage`, `loadUnlockedLevels`, or `unlockLevel` — progression is fully out.                                                                        |
+| AC3 | `loadUnlockedLevels()` / `unlockLevel()` | Called from their new home by existing call sites                                                                                                                        | Behaviour (return values, `localStorage` key `muf_progress`, try/catch-swallow semantics) is unchanged — existing tests for progression pass unmodified or with import-path-only edits.             |
+| AC4 | `validateLevel(config)`                  | Called on any of the 4 currently-shipped `LevelConfig`s (`tutorial`, `belliard`, `stalingrad`, `vitry`, `niveau-final`) and the dev harness                              | Returns `[]` (no issues) — the shipped catalogue is valid by construction, proving the validator doesn't cry wolf on real data.                                                                     |
+| AC5 | `validateLevel(config)`                  | Called on a config whose `hostageQte`/`bossQteSpec` pair violates the safety-margin invariant (mirroring the existing `stateMachine.ts` throw's own trigger condition)   | Returns at least one issue describing the timing violation — parity with today's throw, but returned not thrown.                                                                                    |
+| AC6 | `validateLevel(config)`                  | Called on a config with a `roster.windowWeights` key that is not a valid `EnemyKind`                                                                                     | Returns at least one issue naming the unknown slot.                                                                                                                                                 |
+| AC7 | `validateLevel(config)`                  | Called on a config with any trigger-time field (`triggerAtElapsedSeconds` on a delivery/hostageQte/bossQteSpec, or `loot.spawnIntervalSeconds`) `< 0` or `> timeSeconds` | Returns at least one issue naming the offending field and value.                                                                                                                                    |
+| AC8 | The full game                            | Built, typechecked, played through all 5 levels end to end                                                                                                               | Zero observable behaviour change — no gameplay, timing, HUD, or menu regression. This is a refactor + a new pure function, not a feature.                                                           |
+| AC9 | `rtk tsc` / `rtk lint` / `rtk vitest`    | Run against the branch                                                                                                                                                   | All green; no `any`; no `--no-verify`.                                                                                                                                                              |
 
 ### Non-goals (explicit)
 
@@ -150,6 +150,7 @@ ADR-0072).
 ### ADR question (to be decided at tech plan)
 
 The extraction touches `src/game/levels` (internal boundary) and establishes data structures for downstream stories ②③④ (timeline, MCP level-editor, dev-only balcon-placer). The senior-architect will decide during tech plan:
+
 1. Whether an ADR is required (if yes, next free is 0073)
 2. Module boundary scope (extracted module name/location, where `BELLIARD_BOSS_ENABLED` conditional-spread construction lands)
 3. Whether to consolidate `stateMachine.ts`'s existing hostage/boss throw into a `validateLevel` call now or defer as logged fast-follow
