@@ -98,6 +98,20 @@ _Why it serves muf:_ gives `dev-r3f-render` a real, sourced menu of what "painti
 in real time" actually looks like at three different registers (documentary Paris
 1990, documentary NYC 1983, modern hyperlapse) instead of one invented assumption,
 plus a stable textual source for the layer order itself.
+
+_Implementation constraint surfaced by Bertrand (2026-07-29), worth pinning now before
+this story is picked up:_ the close hand-and-can footage in **Style Wars** is a spray
+can **tracing the actual contour of each letterform** — the gesture follows the
+glyph's own path, stroke by stroke. It is structurally incapable of reading as a
+raster/line-by-line reveal (a "laser printer" look) because outlining a letter with a
+can IS tracing a path; there is no scan line. This means the eventual reveal mechanic
+should be a **path-following animation** (e.g. SVG `stroke-dasharray`/
+`stroke-dashoffset` driven along the letterform's real outline path, or an equivalent
+shader-space "distance along curve" technique) — never a linear wipe or a row-by-row
+raster reveal. INA's 1990 footage is softer on this specific point (it documents the
+layer _sequence_ — outline pass, fill pass, etc. — more than a close-up of the hand
+tracing one letter's contour); Style Wars is the sharper source for this exact
+behavior.
 _Risk:_ INA is the only genuinely period+place-correct footage found; the Vecchione
 documentary lead is unconfirmed (no verified painting-process clip located this
 session); Style Wars and Sofles are both explicitly off-register (wrong city/decade)
