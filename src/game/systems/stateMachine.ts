@@ -30,13 +30,7 @@ import {
   tickCouriers,
 } from "@game/systems/courierSystem";
 import type { CourierField } from "@game/systems/courierSystem";
-import {
-  isQteActive,
-  shouldTriggerQte,
-  createQte,
-  tickQte,
-  QTE_RESULT_HOLD,
-} from "@game/systems/qteSystem";
+import { isQteActive, shouldTriggerQte, createQte, tickQte } from "@game/systems/qteSystem";
 import {
   isBossQteActive,
   shouldTriggerBossFinale,
@@ -48,6 +42,7 @@ import { WEAPON_SPECS } from "@game/types/weapon";
 import type { LootSpec } from "@game/types/loot";
 import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
+import { hostageBossMarginIssue } from "@game/levels/validateLevel";
 import type { EnemyKind } from "@game/types/enemy";
 
 // Resolve the active window pool from a roster: absent `windowWeights` ⇒ the
@@ -145,23 +140,16 @@ export function createInitialState(
   // margin here — fail LOUD at level load if a future retune (a shorter `timeSeconds`, a later
   // `triggerAtElapsedSeconds`, more `maxBlownPeeks`) ever closes it, rather than risk the hostage
   // QTE silently never triggering.
-  if (hostageQteSpec !== null && bossQteSpec !== null) {
-    const hostageWorstCaseEnd =
-      hostageQteSpec.triggerAtElapsedSeconds +
-      hostageQteSpec.zoomSeconds +
-      hostageQteSpec.maxBlownPeeks * hostageQteSpec.peekCadenceSeconds +
-      QTE_RESULT_HOLD;
-    const SAFETY_MARGIN_SECONDS = 5;
-    if (hostageWorstCaseEnd + SAFETY_MARGIN_SECONDS >= params.timeSeconds) {
-      throw new Error(
-        `LevelConfig invariant: hostageQte and bossQte are authored together but are not safely ` +
-          `sequential — the hostage's worst-case resolution (${String(hostageWorstCaseEnd)}s) leaves ` +
-          `less than the required ${String(SAFETY_MARGIN_SECONDS)}s margin before the level's ` +
-          `timeSeconds (${String(params.timeSeconds)}s), when the timed-finale boss is created. ` +
-          `Widen timeSeconds, move triggerAtElapsedSeconds earlier, or shrink maxBlownPeeks/` +
-          `peekCadenceSeconds so the hostage always resolves well before the boss can exist.`,
-      );
-    }
+  // The arithmetic itself lives in `validateLevel.ts` (ADR-0073 §3): ONE predicate, two exits
+  // — reported as an issue by `validateLevel`, thrown here. Fail-loud-at-load is a different
+  // contract from report-and-return: a level violating the margin must not boot.
+  const marginIssue = hostageBossMarginIssue({
+    hostageQte: hostageQteSpec,
+    bossQteSpec,
+    timeSeconds: params.timeSeconds,
+  });
+  if (marginIssue !== null) {
+    throw new Error(marginIssue.message);
   }
   return {
     phase: "PLAYING",

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { LEVELS, FIRST_PLAYABLE_LEVEL, loadUnlockedLevels } from "@game/levels/levels";
+import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import { loadUnlockedLevels } from "@game/systems/progressSystem";
 import {
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,

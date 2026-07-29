@@ -287,3 +287,76 @@ a refactor across several modules + an ADR, not fix-lane material).
 
 **Next hand-off:** `dev-gameplay` (Amelia) for BUILD in the order of §3.4;
 `producer` (Marion) to track ADR-0074's number re-check at merge.
+
+---
+
+## 4. BUILD — dev-gameplay (Amelia) — 2026-07-29
+
+- claim: sole lane on the extraction; §3.4 steps 1→6 executed in order, TDD on `validateLevel`
+- release: the module split + `validateLevel` + the AC1 parity guard, all green; ready for
+  stage 5 VERIFY (`qa-lead`: `test-quality` on the new validator tests, AC8 5-level playthrough)
+
+### File List
+
+**Created**
+
+- `src/game/types/level.ts` — `LevelConfig` / `LevelRoster`, moved verbatim. Type-only, no
+  `@game/systems` import (step 1).
+- `src/game/systems/progressSystem.ts` — `loadUnlockedLevels` / `unlockLevel` + `PROGRESS_KEY`,
+  moved verbatim, byte-identical semantics (step 2, AC3).
+- `src/game/levels/levels.data.ts` — the catalogue: `LEVELS`, `BOSS_QTE_DEV_HARNESS_LEVEL`,
+  `FIRST_PLAYABLE_LEVEL`, `DIFFICULTY_CONFIG`, `Difficulty` / `DifficultyConfig`,
+  `BELLIARD_BOSS_ENABLED` + its conditional spread (step 3, ADR-0074 §2).
+- `src/game/levels/validateLevel.ts` — `LevelIssue`, `LevelIssueSeverity`, `validateLevel`,
+  `hostageBossMarginIssue`, `SAFETY_MARGIN_SECONDS` (step 4, ADR-0074 §3).
+- `src/game/levels/__tests__/validateLevel.test.ts` — 21 tests, AC4→AC7 (written before the
+  implementation; first run red on the missing module).
+- `src/game/levels/__tests__/levelsCatalogue.parity.test.ts` — AC1/AC2 guard.
+- `src/game/levels/__tests__/fixtures/levelsCatalogue.pre.json` — the frozen PRE-refactor
+  catalogue, serialised from `HEAD:src/game/levels/levels.ts` before the split. Reference
+  artefact: it must never be regenerated to make a failing parity test pass.
+
+**Modified**
+
+- `src/game/levels/levels.ts` — now a pure re-export barrel (types + data only, no
+  progression). 441 → 18 lines; the ~25 consumer import lines are untouched.
+- `src/game/systems/stateMachine.ts` — the margin arithmetic and its threshold are gone; the
+  guard now calls `hostageBossMarginIssue` and throws the returned `message`. The unused
+  `QTE_RESULT_HOLD` import dropped with it. `stateMachine.test.ts` unmodified, incl. the
+  `toThrow(/not safely sequential/)` assertion.
+- `src/game/levels/__tests__/tutorialInvariants.test.ts` — import line only
+  (`loadUnlockedLevels` now from `@game/systems/progressSystem`). No assertion touched.
+- `src/render/scene/App.tsx` — import line only (the single file outside `src/game`).
+
+### Verification
+
+- `yarn vitest run` (rtk unavailable in this sandbox): **100 files / 1435 tests passed**
+  (baseline before the story: 98 / 1408 — +2 files, +27 tests, 0 modified assertions).
+- `yarn typecheck` (`tsc --noEmit`): clean, 0 error. Targeted `eslint` + `prettier --check` on
+  the touched paths: clean. No full manual lint pass (pre-commit hook owns it).
+- Not run by this lane: AC8's 5-level playthrough (stage 5, `verify` + `game-designer`).
+
+### Deviations from §3 (and why)
+
+1. **`validateLevel.ts` imports `QTE_RESULT_HOLD` from `@game/systems/qteSystem`** — §3.1 says
+   "imports `@game/types/*` only". The margin predicate needs the real result-hold constant;
+   re-declaring `2.2` here would recreate exactly the duplicated-formula drift the ADR exists to
+   prevent. The hard rule (never import `levels.data.ts`) is respected, and `qteSystem` imports
+   types only, so no cycle is created. Flagged for `senior-architect`: either the ADR §3 wording
+   softens to "no catalogue import; runtime constants may be read from their owning system", or
+   the constant moves to `@game/types`.
+2. **No boss-QTE trigger check in AC7** — `BossQteSpec` carries **no** `triggerAtElapsedSeconds`
+   (it is a timed finale created at timer expiry, ADR-0059 Amendment 2). The AC7 field set is
+   therefore `deliveries[i].triggerAtElapsedSeconds`, `hostageQte.triggerAtElapsedSeconds` and
+   `loot.spawnIntervalSeconds`. Nothing was skipped — the field does not exist.
+3. **`PROGRESS_KEY` is module-private**, not exported (§3.1 lists it as module contents). It had
+   no consumer before the move and none after; exporting it would add public surface for nothing.
+4. **`hostageBossMarginIssue`'s input type is inline**, not a named exported interface — one
+   call site outside the module, so a named type would be single-use indirection (`simplify`).
+
+`simplify` pass run on the diff (own diff only): cut the named input interface (4) and a
+parity assertion already subsumed by the `toStrictEqual` deep-equal. Nothing left PROPOSED.
+
+**Next hand-off:** `qa-lead` (Inès) for stage 5 VERIFY — `test-quality` mutation probes on
+`validateLevel.test.ts` per §3.4, then the AC8 playthrough; `senior-architect` (Winston) to rule
+on deviation 1.
