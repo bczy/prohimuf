@@ -339,6 +339,13 @@ export function Catalog(): JSX.Element {
         <Stage label="OffscreenArrowIndicator (up+right active)">
           <OffscreenArrowIndicator
             targetIndicator={{ up: true, down: false, left: false, right: true }}
+            topCentreOccupied={false}
+          />
+        </Stage>
+        <Stage label="OffscreenArrowIndicator (up glyph aside — delivery call-out up)">
+          <OffscreenArrowIndicator
+            targetIndicator={{ up: true, down: false, left: false, right: true }}
+            topCentreOccupied={true}
           />
         </Stage>
         <Stage label="PhaseMessageBanner — GAME_OVER">

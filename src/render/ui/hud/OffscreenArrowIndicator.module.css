@@ -16,6 +16,38 @@
   justify-content: center;
 }
 
+/* UP slot anchor. The only one whose anchor is state-driven, so it lives here as a
+   pair of classes rather than inline: the top-centre band is SHARED with the delivery
+   call-out (`DeliveryIntegrityBanner`), and HUD.tsx paints that call-out after this
+   ring. */
+.arrowWrapUp {
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* …so while the call-out holds the band, the up glyph steps into the left gutter at
+   the SAME height (S1 — `spec-delivery-van-assault.md` §4.5: the glyph was computed
+   right and 100 % hidden behind "LIVRAISON — PROTÉGEZ LE VÉHICULE !").
+
+   `right: calc(75% + gap)` puts this box's right edge at `25% − gap`, and the call-out
+   is capped at 50 % width around the centre (`.deliveryBanner`/`.deliveryVerdict`
+   `max-width: 50%`) so it never reaches the 25 % vertical: the two boxes cannot meet at
+   ANY viewport size. That is why this is a static rule and not a measured offset — the
+   chip's height varies with the copy wrap (54 px at 1920 → 94 px at 568), its horizontal
+   extent does not. LEFT and not right, because the banner hangs its OWN delivery cues
+   outside its right edge (`.deliveryDirection`), and because a dodge DOWNWARD would park
+   a 51 px glyph at ~45 % of a 390 px-tall phone — mid-scene, no longer an edge cue.
+   No transition, by design: the band changing hands is a discrete phase change (D3.3).
+   Lower bound: the gutter fits the glyph while `0.25 × viewport ≥ wrap + gap`, i.e.
+   ≥ 264 px wide short-landscape / ≥ 504 px elsewhere — under every supported landscape
+   viewport (ADR-0024's breakpoint starts at phone-landscape widths). */
+.arrowWrapUpAside {
+  left: auto;
+  right: calc(75% + var(--space-sm));
+  transform: none;
+}
+
 /* Arrow core — opacity/transform (rotation + active scale) and the transition
    stay inline (state-driven / motion literal). */
 .arrowCore {

@@ -6,7 +6,7 @@ import { TimerReadout } from "./hud/TimerReadout";
 import { LivesReadout } from "./hud/LivesReadout";
 import { EnergyGauge } from "./hud/EnergyGauge";
 import { WeaponReadout } from "./hud/WeaponReadout";
-import { DeliveryIntegrityBanner } from "./hud/DeliveryIntegrityBanner";
+import { DeliveryIntegrityBanner, isDeliveryCallOutVisible } from "./hud/DeliveryIntegrityBanner";
 import { HostageQteOverlay, isQteSetPieceVisible } from "./hud/HostageQteOverlay";
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "./hud/PhaseMessageBanner";
@@ -58,16 +58,22 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         />
       </div>
 
-      {/* Rendered before the delivery banner: both are center-anchored fixed
-          siblings near y=58, and the enlarged up-arrow overlaps the banner's track —
-          the delivery readout must paint on top of the direction cue. */}
+      {/* Still rendered BEFORE the delivery call-out (paint order unchanged: the
+          delivery readout wins the top-centre band), but the two no longer overlap —
+          `topCentreOccupied` moves the up glyph into the left gutter for as long as the
+          call-out is up. Fixes S1 (`spec-delivery-van-assault.md` §4.5): the "look up
+          toward the assailants" cue was computed correctly and painted under the
+          banner, invisible during the one beat it exists for. */}
       {/* Hidden for the whole QTE set-piece (zoom → duel → verdict): the scene is
           frozen on the tableau, so the direction cue is meaningless there and the
           enlarged arrows would poke into it. Back as soon as the verdict clears. The
           BOSS QTE (ADR-0051) freezes the scene on the same locked camera, so gate on it
           too — `bossQte` is undefined exactly while it is inactive (Tony story-2 UX). */}
       {!isQteSetPieceVisible(data.hostageQte) && data.bossQte === undefined && (
-        <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+        <OffscreenArrowIndicator
+          targetIndicator={data.targetIndicator}
+          topCentreOccupied={isDeliveryCallOutVisible(data.delivery)}
+        />
       )}
 
       {/* The banner also carries the off-screen cue toward the delivery point

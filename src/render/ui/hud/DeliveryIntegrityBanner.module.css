@@ -6,11 +6,20 @@
   composes: chip from "./shared.module.css";
 }
 
-/* Delivery call-out banner (centred, top). */
+/* Delivery call-out banner (centred, top).
+
+   `max-width: 50%` PINS what `left: 50%` already produces: a fixed, shrink-to-fit box
+   whose available width is `viewport − left`, i.e. half the viewport, so with the
+   -50% recentre the banner never crosses the 25 % / 75 % verticals (measured 1/2/3-line
+   wraps at 568→1920 px: widths 284/422/…, all ≤ 50 %). `OffscreenArrowIndicator`'s
+   up-glyph dodge (S1) parks in that guaranteed-free left gutter, so the cap is now a
+   contract between the two widgets, not an accident of shrink-to-fit — stating it here
+   is what stops a later `width: max-content` from silently re-occluding the cue. */
 .deliveryBanner {
   position: fixed;
   top: 58px;
   left: 50%;
+  max-width: 50%;
   transform: translateX(-50%);
   pointer-events: none;
   user-select: none;
@@ -85,11 +94,15 @@
   composes: gaugeFill from "./shared.module.css";
 }
 
-/* Delivery verdict stamp (SUCCESS / FAILED) — combined with .chip; ink inline. */
+/* Delivery verdict stamp (SUCCESS / FAILED) — combined with .chip; ink inline.
+   Same 50 % cap and the same reason as `.deliveryBanner`: it is the second opaque chip
+   that holds the top-centre band, and `isDeliveryCallOutVisible` moves the up glyph
+   aside for it too. */
 .deliveryVerdict {
   position: fixed;
   top: 64px;
   left: 50%;
+  max-width: 50%;
   transform: translateX(-50%);
   pointer-events: none;
   user-select: none;

@@ -30,6 +30,24 @@ function DirectionGlyph({
 }
 
 /**
+ * True while this widget holds the top-centre band with an OPAQUE paper chip — the
+ * in-flight banner (`INCOMING`/`DELIVERING`) or the verdict stamp (`SUCCESS`/`FAILED`).
+ *
+ * Exported for `HUD.tsx` (same pattern as `isQteSetPieceVisible`), which hands it to
+ * `OffscreenArrowIndicator` so the nearest-enemy UP glyph steps out of the band instead
+ * of being painted over. Fix for S1 (`spec-delivery-van-assault.md` §4.5): the cue was
+ * computed correctly (`targetIndicator.up === true` on 3 of the 4 delivery levels with
+ * the camera on the van) and 100 % occluded by this chip, during the exact beat it
+ * exists for.
+ */
+export function isDeliveryCallOutVisible(delivery: HudDelivery | undefined): boolean {
+  const phase = delivery?.phase;
+  return (
+    phase === "INCOMING" || phase === "DELIVERING" || phase === "SUCCESS" || phase === "FAILED"
+  );
+}
+
+/**
  * Delivery set-piece: the centred "LIVRAISON" call-out banner and the SUCCESS/FAILED
  * verdict stamp. The gauge fill %/hue flow inline as custom properties; the verdict
  * ink stays inline.

@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { HudTargetIndicator } from "./types";
 import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import { ARROW_ROTATION, ArrowGlyphSvg } from "./arrowGlyph";
+import { cx } from "./cx";
 import styles from "./OffscreenArrowIndicator.module.css";
 
 function ArrowIndicator({
@@ -38,11 +39,17 @@ function ArrowIndicator({
 /**
  * Off-screen target indicator ring: four edge arrows pointing at the current target
  * when it drifts out of frame. Anchor coords + rotation stay inline (state-driven).
+ *
+ * `topCentreOccupied` — an opaque HUD chip (today: the delivery call-out) holds the
+ * top-centre band, so the UP glyph steps aside into the left gutter for as long as it
+ * does. See `.arrowWrapUpAside` for why the dodge is horizontal and static.
  */
 export function OffscreenArrowIndicator({
   targetIndicator,
+  topCentreOccupied,
 }: {
   targetIndicator: HudTargetIndicator | undefined;
+  topCentreOccupied: boolean;
 }): JSX.Element {
   const indicator = targetIndicator ?? { up: false, down: false, left: false, right: false };
 
@@ -61,8 +68,11 @@ export function OffscreenArrowIndicator({
         }
       `}</style>
       <span
-        className={styles.arrowWrap}
-        style={{ top: 52, left: "50%", transform: "translateX(-50%)" }}
+        className={cx(
+          styles.arrowWrap,
+          styles.arrowWrapUp,
+          topCentreOccupied ? styles.arrowWrapUpAside : undefined,
+        )}
       >
         <ArrowIndicator direction="up" active={indicator.up} />
       </span>
