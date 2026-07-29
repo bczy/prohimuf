@@ -91,6 +91,11 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
   the moment a future generated level (SP2/SP3) declares an archetype wider than the
   core max, the debug alignment box widens for ALL levels — expected, not a surprise.
   `validateLevelPlan` guards the input (`aspect` finite > 0 per archetype).
+- Delivery tuning is DELIBERATELY not in SP1's `LevelPlan` schema: every generated
+  level gets `DEFAULT_DELIVERY` verbatim (belliard-modelled — trigger 20s, window 8s,
+  bonus 500), so the « Livrer » half is byte-identical across generated levels until a
+  later sub-project lifts those fields into `gameplay`. The runway check derives from
+  this constant; making delivery data-driven re-opens it.
 - Verification reachability: the `?preview=level&level=<id>` URL seam boots a generated
   level for §8-style verification. Lookup restricted to `GENERATED_LEVEL_CONFIGS`
   (never `LEVELS` — the shipped campaign is not URL-bootable through it), persistence

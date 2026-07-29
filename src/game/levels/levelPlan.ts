@@ -102,9 +102,11 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
-    // non-integer means NaN sprite keys and an EMPTY preload manifest.
-    if (!Number.isInteger(a.variants) || a.variants < 1) {
-      errors.push(`archetype ${a.kind}: variants must be an integer >= 1`);
+    // non-integer means NaN sprite keys and an EMPTY preload manifest. Capped as
+    // well as floored — transposed digits (100000 for 1) would fan out a huge
+    // preload manifest with a green CI; the core table's max is 3, 16 is headroom.
+    if (!Number.isInteger(a.variants) || a.variants < 1 || a.variants > 16) {
+      errors.push(`archetype ${a.kind}: variants must be an integer in [1, 16]`);
     }
     if (!Number.isInteger(a.hp) || a.hp < 1) {
       errors.push(`archetype ${a.kind}: hp must be an integer >= 1`);
@@ -229,8 +231,12 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // `Array.from({ length: Math.max(0, weight) })` per kind — Infinity resolves to
     // 2^53-1, past the engine's max array length, and throws RangeError on EVERY
     // boot of the level; NaN silently contributes zero entries and skews the pool.
-    if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 0) {
-      errors.push(`windowWeights ${kind}: weight must be a finite number >= 0`);
+    // Bounded above too: buildWeightedFrom materializes `weight` ARRAY ENTRIES per
+    // kind on every level boot, so a large-but-finite typo (200000 for 20) is the
+    // same Array.from blow-up as Infinity, just below the RangeError threshold —
+    // a frozen tab instead of a crash. 1000 dwarfs the whole core pool (93).
+    if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 0 || weight > 1000) {
+      errors.push(`windowWeights ${kind}: weight must be a finite number in [0, 1000]`);
     }
     if (!kind.includes(":")) continue;
     if (!kind.startsWith(ns)) {

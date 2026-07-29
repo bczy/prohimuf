@@ -174,15 +174,17 @@ describe("validateLevelPlan — panel run-9 hardenings", () => {
   // Infinity resolves past the max array length and throws RangeError on EVERY boot
   // of the level; NaN silently contributes zero entries (and blinded the winnable
   // check below); negative is nonsense the runtime clamps in silence.
-  it("rejects non-finite or negative windowWeights VALUES", () => {
-    for (const weight of [Number.POSITIVE_INFINITY, Number.NaN, -5]) {
+  it("rejects non-finite, negative or absurdly large windowWeights VALUES", () => {
+    // 200000 (run-11): same Array.from blow-up class as Infinity, below the
+    // RangeError threshold — a frozen tab on boot instead of a crash.
+    for (const weight of [Number.POSITIVE_INFINITY, Number.NaN, -5, 200000]) {
       const bad: LevelPlan = {
         ...base,
         archetypes: [vigile],
         gameplay: { ...base.gameplay, windowWeights: { "fixture:vigile": weight } },
       };
       expect(validateLevelPlan(bad)).toContainEqual(
-        expect.stringContaining("weight must be a finite number >= 0"),
+        expect.stringContaining("weight must be a finite number in [0, 1000]"),
       );
     }
   });
@@ -328,6 +330,13 @@ describe("validateLevelPlan — panel run-2 hardenings", () => {
       ],
     } as LevelPlan;
     expect(validateLevelPlan(two)).toContainEqual(expect.stringContaining("cap is 1"));
+  });
+
+  it("rejects variants above the cap (16) — preload fan-out guard, run-11", () => {
+    const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, variants: 100000 }] };
+    expect(validateLevelPlan(bad)).toContainEqual(
+      expect.stringContaining("variants must be an integer in [1, 16]"),
+    );
   });
 
   it("rejects variants < 1 and non-integer hp — runtime divides and loops on them", () => {
