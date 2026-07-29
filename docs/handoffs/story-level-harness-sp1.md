@@ -134,8 +134,8 @@ prévoit.
       (spec §4.5), backdrop `single-wide` canonique (spec §2.3, `planToLevelArt` test).
       Additif confirmé en dur : `LEVELS` n'est jamais muté (`GENERATED_LEVELS`/
       `ALL_LEVELS` séparés — `generatedLevels.test.ts` « leaves the shipped campaign
-      untouched », ids pinnés `["tutorial","belliard","stalingrad","vitry",
-    "niveau-final"]`), et `WEIGHTED`/`pickKind` sont épinglés par golden
+      untouched », les 5 ids shippés pinnés de `tutorial` à `niveau-final`), et
+      `WEIGHTED`/`pickKind` sont épinglés par golden
       (`archetypeRegistry.test.ts` : ordre + longueur 93 figés, immutabilité vérifiée
       après enregistrement d'archétypes générés ; `levelRoster.test.ts` :
       `buildWeightedFrom(defaults)` reproduit `WEIGHTED` byte-for-byte). Chaque critère
