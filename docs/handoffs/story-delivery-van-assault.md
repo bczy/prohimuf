@@ -50,9 +50,10 @@ dans le même chantier :
 > un correctif de z-order sans rapport (masquer les rangées de props de trottoir pendant le
 > tableau boss, après le signalement de Bertrand du 26/07 sur le lampadaire coupant le
 > Commandant). Décrire ce fichier comme du câblage de télégraphe faisait passer du code non
-> relu pour du travail gaté — exactement l'erreur que le panel existe pour attraper. Le sort
-> de ce hunk (sorti du diff, ou assumé avec sa propre traçabilité) est un arbitrage Bertrand,
-> non tranché ici.
+> relu pour du travail gaté — exactement l'erreur que le panel existe pour attraper.
+> **Tranché par Bertrand le 29/07 : le hunk est assumé**, avec sa propre traçabilité dans
+> [`story-boss-tableau-kerb-occlusion.md`](./story-boss-tableau-kerb-occlusion.md). Il ne
+> fait toujours pas partie de ce chantier-ci.
 
 ## Specs et preuves
 
