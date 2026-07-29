@@ -346,9 +346,11 @@ const isOwnedGeneratedPropKind = (kind: unknown, ownerId: string): kind is Gener
  * clamped to [-0.5, -0.1] — a non-finite value first falls back to a safe
  * default so `NaN` cannot leak through the clamp. Objects with an unknown `kind`
  * or a non-finite `x` are dropped; an object whose `scale` is present but
- * non-positive or non-finite is normalized to `1`. A generated level's own props
- * (namespaced kinds) are dropped here too — they are not part of the drawable
- * global pool.
+ * non-positive or non-finite is normalized to `1`. An object is KEPT when its
+ * kind is a pool kind OR is namespaced under this level's own id
+ * (`isOwnedGeneratedPropKind` — ADR-0075 §4.5, generated props render for their
+ * owner); a namespaced kind belonging to a DIFFERENT level is dropped, exactly
+ * like an unknown pool kind.
  */
 export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
   const art = id !== undefined ? LEVEL_ART[id] : undefined;

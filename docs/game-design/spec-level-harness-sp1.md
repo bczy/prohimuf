@@ -163,7 +163,6 @@ export const plan: LevelPlan = {
       aspect: 0.6, // même triplet que NEAR_KIND_SPECS, mais en données — voir §4.5
       heightFrac: 0.28, // fraction de la hauteur de façade, pas une hauteur absolue
       footPadFrac: 0.15,
-      aspect: 0.6,
       x: 0.22,
       row: "far",
     },
