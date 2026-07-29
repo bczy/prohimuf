@@ -52,6 +52,20 @@ export interface LevelPlan {
 }
 
 /**
+ * The props of ONE kerb row that survive the mobile density halving. Mirrors
+ * `NearForeground.tsx`'s `split()` exactly: filter by row FIRST (a prop with no
+ * `row` stands in the near row), THEN keep the even indices of the row's own
+ * order. That parity is what made the panneaux PARIS vanish on mobile twice
+ * (see nearForegroundDensity.test.ts), so a plan's prop order is load-bearing.
+ */
+export function mobileVisibleProps(
+  props: readonly GeneratedPropSpec[],
+  row: "near" | "far",
+): readonly GeneratedPropSpec[] {
+  return props.filter((p) => (p.row ?? "near") === row).filter((_, i) => i % 2 === 0);
+}
+
+/**
  * Check the invariants a plan must hold. Returns the list of violations — empty
  * when the plan is sound. Called from a test, so a violation breaks CI and never
  * the runtime.
@@ -59,6 +73,7 @@ export interface LevelPlan {
 export function validateLevelPlan(plan: LevelPlan): string[] {
   const errors: string[] = [];
   const ns = `${plan.id}:`;
+  const declared = new Set<string>(plan.archetypes.map((a) => a.kind));
 
   for (const a of plan.archetypes) {
     // weight 0 is the activation law (§4.2): a level-authored kind never enters
@@ -75,6 +90,29 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!p.kind.startsWith(ns)) errors.push(`prop ${p.kind}: expected namespace "${ns}"`);
     for (const field of ["aspect", "heightFrac", "footPadFrac"] as const) {
       if (!Number.isFinite(p[field])) errors.push(`prop ${p.kind}: ${field} missing or non-finite`);
+    }
+  }
+
+  // The activation seam is also the leak: `windowWeights` is projected verbatim
+  // into roster.windowWeights, so a foreign namespace would pull ANOTHER level's
+  // kind into this pool, and a typo would be dropped in silence by
+  // `buildWeightedFrom` (0 % spawn, no error). Unprefixed keys are the core kinds
+  // and stay allowed — tuning them is a level's right.
+  for (const kind of Object.keys(plan.gameplay.windowWeights)) {
+    if (!kind.includes(":")) continue;
+    if (!kind.startsWith(ns)) {
+      errors.push(`windowWeights ${kind}: expected namespace "${ns}"`);
+    } else if (!declared.has(kind)) {
+      errors.push(`windowWeights ${kind}: no archetype of the plan declares this kind`);
+    }
+  }
+
+  // Mobile halves each kerb row by list parity: a row whose props all land on an
+  // odd index of its own order is drawn EMPTY on mobile (see mobileVisibleProps).
+  for (const row of ["near", "far"] as const) {
+    const inRow = plan.props.filter((p) => (p.row ?? "near") === row);
+    if (inRow.length > 0 && mobileVisibleProps(plan.props, row).length === 0) {
+      errors.push(`row ${row}: every prop is dropped by the mobile halving`);
     }
   }
 

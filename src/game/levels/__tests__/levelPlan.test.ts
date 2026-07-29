@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  mobileVisibleProps,
   planToLevelArt,
   planToLevelConfig,
   validateLevelPlan,
+  type GeneratedPropSpec,
   type LevelPlan,
 } from "@game/levels/levelPlan";
 
@@ -37,6 +39,17 @@ const vigile = {
   tint: "#ffffff",
   aspect: 1,
 } as const;
+
+/** A sound prop, so a test only has to spell the field it is about. */
+const prop = (kind: `${string}:${string}`, row?: "near" | "far"): GeneratedPropSpec => ({
+  kind,
+  asset: `assets/nearfg/${kind.replace(":", "/")}.png`,
+  aspect: 0.6,
+  heightFrac: 0.28,
+  footPadFrac: 0.15,
+  x: 0.2,
+  ...(row === undefined ? {} : { row }),
+});
 
 describe("validateLevelPlan", () => {
   it("accepts a minimal plan", () => {
@@ -76,6 +89,71 @@ describe("validateLevelPlan", () => {
       ],
     };
     expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+  });
+
+  it("rejects a windowWeights key namespaced on another level", () => {
+    // Would leak a foreign level's kind into THIS level's window pool.
+    const plan: LevelPlan = {
+      ...base,
+      archetypes: [vigile],
+      gameplay: { ...base.gameplay, windowWeights: { "autre:vigile": 50 } },
+    };
+    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+  });
+
+  it("keeps the unprefixed core kinds allowed in windowWeights", () => {
+    const plan: LevelPlan = {
+      ...base,
+      gameplay: { ...base.gameplay, windowWeights: { riot: 30, normal: 0 } },
+    };
+    expect(validateLevelPlan(plan)).toEqual([]);
+  });
+
+  it("rejects a windowWeights key no archetype of the plan declares (typo)", () => {
+    // `buildWeightedFrom` drops an unregistered kind in silence: 0 % spawn, no error.
+    const plan: LevelPlan = {
+      ...base,
+      archetypes: [vigile],
+      gameplay: { ...base.gameplay, windowWeights: { "fixture:vigille": 20 } },
+    };
+    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("fixture:vigille"));
+  });
+
+  it("accepts a windowWeights key backed by a declared archetype", () => {
+    const plan: LevelPlan = {
+      ...base,
+      archetypes: [vigile],
+      gameplay: { ...base.gameplay, windowWeights: { "fixture:vigile": 20 } },
+    };
+    expect(validateLevelPlan(plan)).toEqual([]);
+  });
+
+  it("accepts a plan whose every non-empty row survives the mobile halving", () => {
+    const plan: LevelPlan = {
+      ...base,
+      props: [prop("fixture:kiosque", "far"), prop("fixture:borne")],
+    };
+    expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});
+
+describe("mobileVisibleProps", () => {
+  // Mirrors NearForeground.tsx `split()`: row filter FIRST, then even indices of
+  // the ROW's own order — the parity that made the panneaux PARIS vanish.
+  const props: readonly GeneratedPropSpec[] = [
+    prop("fixture:a", "far"),
+    prop("fixture:b"),
+    prop("fixture:c", "far"),
+    prop("fixture:d", "far"),
+    prop("fixture:e"),
+  ];
+
+  it("keeps one prop out of two of the row's own order", () => {
+    expect(mobileVisibleProps(props, "far").map((p) => p.kind)).toEqual(["fixture:a", "fixture:d"]);
+  });
+
+  it("treats a prop without a row as belonging to the near row", () => {
+    expect(mobileVisibleProps(props, "near").map((p) => p.kind)).toEqual(["fixture:b"]);
   });
 });
 
