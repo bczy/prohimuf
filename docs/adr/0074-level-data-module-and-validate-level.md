@@ -45,9 +45,15 @@ one day write — mechanically, and make the invariant set additive rather than 
   `Difficulty` / `DifficultyConfig` types. `Difficulty` stays here, not in `types/level.ts`,
   because it derives from `Prefs["difficulty"]` and `types/` must not depend on `systems/`.
 - `src/game/levels/validateLevel.ts` — `LevelIssue`, `validateLevel`, and the shared
-  invariant predicates. Imports types only; it must never import `levels.data.ts`, so the
+  invariant predicates. **No catalogue import**: it must never import `levels.data.ts`, so the
   validator can be applied to a config that does not exist in the catalogue (story ③ validates
-  edits before they are written).
+  edits before they are written). Beyond that it imports `@game/types/*`, plus — where an
+  invariant's arithmetic needs a real tuning constant — that constant **read from the system
+  that owns it** (e.g. `QTE_RESULT_HOLD` from `@game/systems/qteSystem`), never a redeclared
+  copy. Re-declaring the value in the validator would recreate exactly the duplicated-formula
+  drift this ADR exists to prevent. Such an import is admissible only while it stays
+  value-only and acyclic; if a needed constant ever sits in a module that imports the
+  catalogue, move the constant, not the boundary.
 - `src/game/systems/progressSystem.ts` — `loadUnlockedLevels`, `unlockLevel`, `PROGRESS_KEY`.
   This is player-save state and belongs beside its two existing siblings, `prefsSystem.ts` and
   `highScoreSystem.ts`, which own the other `muf_*` storage keys with the same

@@ -288,6 +288,28 @@ a refactor across several modules + an ADR, not fix-lane material).
 **Next hand-off:** `dev-gameplay` (Amelia) for BUILD in the order of §3.4;
 `producer` (Marion) to track ADR-0074's number re-check at merge.
 
+### 3.5 Addendum — 2026-07-29, ruling on `validateLevel`'s `QTE_RESULT_HOLD` import
+
+Amelia's deviation is **APPROVED as written — option (a), no code change**. §3.1's "imports
+`@game/types/*` only" was shorthand for the rule that actually matters, and I'm restating the
+rule properly: **no catalogue import** (`levels.data.ts` stays forbidden, that line is hard),
+plus `@game/types/*`, plus a runtime tuning constant read **from the system that owns it**
+(here `QTE_RESULT_HOLD` from `@game/systems/qteSystem`) when an invariant's arithmetic needs
+the real value. Redeclaring 2.2 in the validator would rebuild the duplicated-formula drift
+ADR-0073 exists to kill — the deviation serves the ADR's intent against its own wording, which
+is the right way round. Option (b) is refused: `QTE_RESULT_HOLD` is a tuning constant owned by
+the QTE system and read at runtime by it; parking it in `@game/types` would split ownership
+from its primary consumer to satisfy a formulation, not a boundary.
+
+Admissibility conditions, checked: the import is value-only, `qteSystem.ts` imports nothing but
+types (no cycle), and the direction `levels/validateLevel → systems/qteSystem` is fine because
+`validateLevel` is authoring-time logic, not data. If a future constant lives in a module that
+itself imports the catalogue, **move the constant, not the boundary**.
+
+ADR-0073 §3 amended accordingly (same PR). Noted for a later fix lane, out of scope here:
+`bossQteSystem.ts:28` declares its own `QTE_RESULT_HOLD = 2.2` beside `qteSystem.ts:30` — a
+pre-existing duplicate this story neither created nor must fix.
+
 ---
 
 ## 4. BUILD — dev-gameplay (Amelia) — 2026-07-29
