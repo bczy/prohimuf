@@ -156,3 +156,134 @@ The extraction touches `src/game/levels` (internal boundary) and establishes dat
 3. Whether to consolidate `stateMachine.ts`'s existing hostage/boss throw into a `validateLevel` call now or defer as logged fast-follow
 
 **Next hand-off:** `senior-architect` for TECH PLAN (lane cut + module boundary + ADR scope decision).
+
+---
+
+## 3. TECH PLAN — senior-architect (Winston) — 2026-07-29
+
+- claim: module boundary, `validateLevel` contract, ADR call and lane cut for story ①
+- release: this section + `docs/adr/0074-level-data-module-and-validate-level.md` (Proposed),
+  ADR index regenerated (`README.md` + `public/adr/index.html`, 73 ADR, fresh)
+
+Decisions below are binding for the BUILD stage. The ADR carries the rationale in full; this
+section is the buildable plan.
+
+### 3.1 Module cut
+
+Four modules plus one barrel. `@game/…` paths as usual.
+
+| Module                               | Contents                                                                                                                                       | Rules                                                                                                                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/game/types/level.ts`            | `LevelConfig`, `LevelRoster` (declarations only)                                                                                               | Type-only, zero runtime. MUST NOT import from `@game/systems` (that's why `Difficulty` does not come here). This is where ② adds `timeline?: readonly TimelineEvent[]` and ④ adds slot-origin tagging.           |
+| `src/game/levels/levels.data.ts`     | `LEVELS`, `BOSS_QTE_DEV_HARNESS_LEVEL`, `FIRST_PLAYABLE_LEVEL`, `DIFFICULTY_CONFIG`, `Difficulty`, `DifficultyConfig`, `BELLIARD_BOSS_ENABLED` | Import-time computable: literals only, no I/O, no env read, no clock, no randomness (ADR-0074 §2).                                                                                                               |
+| `src/game/levels/validateLevel.ts`   | `LevelIssue`, `LevelIssueSeverity`, `validateLevel`, the shared invariant predicates                                                           | Imports `@game/types/*` only. MUST NOT import `levels.data.ts` — ③ validates configs that are not in the catalogue.                                                                                              |
+| `src/game/systems/progressSystem.ts` | `loadUnlockedLevels`, `unlockLevel`, `PROGRESS_KEY`                                                                                            | New home for player-save state, beside its siblings `prefsSystem.ts` / `highScoreSystem.ts` which already own the other `muf_*` keys with identical try/catch-swallow semantics. Behaviour byte-identical (AC3). |
+| `src/game/levels/levels.ts`          | **pure re-export barrel** of the types + the data. No logic, no progression.                                                                   | Keeps all ~25 existing import sites untouched. Deliberately does NOT re-export progression, so nothing importing the catalogue can reach `localStorage` transitively (AC2).                                      |
+
+Consumers are **not** migrated to direct imports in this story: a 25-file import rewrite inside
+a byte-for-byte refactor would drown the diff that proves nothing changed. Logged as a
+mechanical follow-up, not a fast-follow blocker.
+
+**`BELLIARD_BOSS_ENABLED` and the conditional spread stay in `levels.data.ts`**, next to the
+`belliard` entry they compose, as the ONE grandfathered non-literal construct. A dedicated
+`levelFlags.ts` was considered and rejected: single caller, and the spread has to sit beside
+the entry regardless. The constraint that replaces it is a rule, not a file: **no new
+conditional / loop / computed entry in the catalogue — a new level is a plain object literal.**
+When the decouple flag retires, flag + spread are deleted and the field becomes literal.
+`FIRST_PLAYABLE_LEVEL`'s `find` + invariant throw is allowed under the rule (pure derivation
+over literals in the same file, no outside input).
+
+Non-negotiable: nothing in the catalogue's VALUES changes. `BELLIARD_BOSS_ENABLED` stays
+`true as boolean`; the composed `belliard` object must deep-equal today's, key-presence
+included (`exactOptionalPropertyTypes` — the field is OMITTED when the flag is false, not
+`undefined`). The AC1 deep-equal pre/post test is the guard and is the one test that must not
+be weakened.
+
+### 3.2 `validateLevel` — contract and relationship with the existing throw
+
+```ts
+export type LevelIssueSeverity = "error" | "warning";
+export interface LevelIssue {
+  readonly code: string; // stable machine key, e.g. "hostage-boss-margin"
+  readonly severity: LevelIssueSeverity;
+  readonly field: string; // dotted path, e.g. "hostageQte.triggerAtElapsedSeconds"
+  readonly message: string; // human sentence, safe to hand an agent or a dev
+}
+export function validateLevel(config: LevelConfig): readonly LevelIssue[];
+```
+
+- Lives in `src/game/levels/`, **not** `src/game/systems/`: `systems/` is per-frame
+  `GameState`-in / `GameState`-out simulation; this is authoring-time validation of level data.
+  It also keeps the ③-facing surface out of the simulation layer.
+- Never throws, never mutates. `[]` = no issue. Issues returned in a **deterministic order**
+  (check declaration order, then field order) so ③ and the tests can compare verbatim.
+- `severity` is in the shape from day one because ③ will need "won't boot" vs "smells wrong";
+  V1 emits only `"error"` — do not invent warnings in this story.
+- V1 check set = AC5/AC6/AC7 exactly. Nothing else.
+
+**The `stateMachine.ts` throw STAYS, and stops owning its arithmetic** (this is the
+consolidation the story called encouraged-but-optional — I'm mandating it, in this form):
+
+- the margin computation and `SAFETY_MARGIN_SECONDS = 5` move into `validateLevel.ts` as ONE
+  exported predicate (shape: takes `{ hostageQte?, bossQteSpec?, timeSeconds }`, returns
+  `LevelIssue | null`);
+- `validateLevel` calls it; `createInitialState` calls it too and throws with the returned
+  issue's message when it fires.
+- Why not "the throw calls `validateLevel`": `createInitialState` takes `LevelParams`, not a
+  `LevelConfig` — wiring `validateLevel` in would force a signature restructure this refactor
+  does not want. And fail-loud-at-load is a genuinely different contract from
+  report-and-return: a level violating the margin must not boot even if a caller ignores the
+  array. Sharing the predicate makes AC5 parity true by construction instead of by a duplicated
+  formula.
+- The existing test asserts `toThrow(/not safely sequential/)` (`stateMachine.test.ts:969`) —
+  that regex must keep matching. Keep the message text; if it must be rebuilt from the issue,
+  rebuild it verbatim.
+
+Runtime `EnemyKind` list for AC6: `EnemyKind` is a bare union with no runtime value. Use the
+keys of `ARCHETYPES` (`@game/types/enemyTypes`) — the existing runtime source. Do **not**
+hand-maintain a second list.
+
+Forward-compat, do NOT implement: ② adds timeline checks INTO `validateLevel.ts`; ④'s slot
+tagging (`origin: "window" | "balcony"`, per Amelia's recommendation over a composite SlotRef)
+stays open — nothing here narrows a slot to a bare index in a validator signature.
+
+### 3.3 ADR — YES, ADR-0074
+
+`docs/adr/0074-level-data-module-and-validate-level.md`, Status **Proposed**, number allocated
+by Marion at story opening (re-check at merge per the `adr-new` guardrail). It earns an ADR on
+two counts that outlive this story: the **import-time-computable rule** on `levels.data.ts`
+(invisible from the file it constrains, and the contract ③'s tooling will read — and one day
+write — against), and **"`validateLevel` is the single source of generic `LevelConfig`
+invariants; `systems/` may consume it, never re-derive locally"**. Both are exactly the kind of
+call a future contributor would otherwise re-litigate — same reasoning as ADR-0072's
+reserved-slot invariant, whose precedent this follows (data crosses the seam, the assembling
+module owns composition).
+
+The ADR ships in the SAME PR as the change.
+
+### 3.4 Lane cut — single lane, `dev-gameplay`
+
+Confirmed single-lane. No boundary is crossed: `src/game` only, plus **one** file outside it.
+
+Order (each step green before the next):
+
+1. `src/game/types/level.ts` — move `LevelConfig` / `LevelRoster`, re-export from `levels.ts`. Type-only move, no runtime diff.
+2. `src/game/systems/progressSystem.ts` — move the two functions + `PROGRESS_KEY` verbatim; rewire the two call sites (`src/render/scene/App.tsx:33`, `src/game/levels/__tests__/tutorialInvariants.test.ts:4`). **Import-path rewrite ONLY** in `App.tsx` — no other line of render code is touched (AC3).
+3. `src/game/levels/levels.data.ts` + `levels.ts` barrel. Land the AC1 deep-equal pre/post test WITH this step, not after.
+4. `src/game/levels/validateLevel.ts`, TDD, AC4→AC7 as the test list.
+5. Fold the margin predicate into `stateMachine.ts`; `stateMachine.test.ts:940-969` must pass unmodified.
+6. Regression pass AC8/AC9.
+
+`src/render/scene/App.tsx` is the only file outside `src/game`, and only its import line moves —
+that does not open a `dev-r3f-render` lane, and it is not a shared-file conflict since no other
+lane is live on this story. `src/hooks/useGameLoop.ts` and `stateMachine.ts` import
+`type LevelRoster` from the barrel: type-only, erased, untouched by steps 1-3.
+
+No `tech-scout` recon needed (no unproven technique, no new dependency). No design loop (no
+gameplay/fiction/screen surface). Stage 5 VERIFY is tsc/vitest/lint + the AC8 5-level
+playthrough; `qa-lead` should run `test-quality` on the new `validateLevel` tests — a validator
+whose tests never go red is worse than no validator. Stage 6 is the full `review-panel` (this is
+a refactor across several modules + an ADR, not fix-lane material).
+
+**Next hand-off:** `dev-gameplay` (Amelia) for BUILD in the order of §3.4;
+`producer` (Marion) to track ADR-0074's number re-check at merge.
