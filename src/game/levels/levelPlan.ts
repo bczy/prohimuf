@@ -53,16 +53,19 @@ export interface LevelPlan {
 }
 
 /**
- * The props of ONE kerb row that survive the mobile density halving. Mirrors
- * `NearForeground.tsx`'s `split()` exactly: filter by row FIRST (a prop with no
- * `row` stands in the near row), THEN keep the even indices of the row's own
- * order. That parity is what made the panneaux PARIS vanish on mobile twice
- * (see nearForegroundDensity.test.ts), so a plan's prop order is load-bearing.
+ * The items of ONE kerb row that survive the mobile density halving — THE single
+ * copy of the rule (panel run-8): `NearForeground.tsx`'s `split()` calls this, so
+ * game-side reasoning and the renderer can never drift apart again. Filter by row
+ * FIRST (an item with no `row` stands in the near row), THEN keep the even indices
+ * of the row's own order. That parity is what made the panneaux PARIS vanish on
+ * mobile twice (see nearForegroundDensity.test.ts), so prop order is load-bearing.
+ * Note a non-empty row always keeps its index-0 item — the halving can thin a row,
+ * never empty it.
  */
-export function mobileVisibleProps(
-  props: readonly GeneratedPropSpec[],
+export function mobileVisibleProps<T extends { readonly row?: "near" | "far" | undefined }>(
+  props: readonly T[],
   row: "near" | "far",
-): readonly GeneratedPropSpec[] {
+): readonly T[] {
   return props.filter((p) => (p.row ?? "near") === row).filter((_, i) => i % 2 === 0);
 }
 
@@ -90,8 +93,11 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (a.weight !== 0) {
       errors.push(`archetype ${a.kind}: weight must be 0 (activation via windowWeights)`);
     }
-    if (!a.kind.startsWith(ns)) {
-      errors.push(`archetype ${a.kind}: expected namespace "${ns}"`);
+    // `length <= ns.length` catches the template typo `"<id>:"` (empty name):
+    // startsWith alone accepts it, but isOwnedGeneratedPropKind / the sprite
+    // pipeline require a non-empty name segment and would silently drop it.
+    if (!a.kind.startsWith(ns) || a.kind.length <= ns.length) {
+      errors.push(`archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`);
     }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
@@ -112,7 +118,11 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   }
 
   for (const p of plan.props) {
-    if (!p.kind.startsWith(ns)) errors.push(`prop ${p.kind}: expected namespace "${ns}"`);
+    if (!p.kind.startsWith(ns) || p.kind.length <= ns.length) {
+      // Same empty-name law as the archetype check above: getNearForeground's
+      // isOwnedGeneratedPropKind requires a non-empty name at runtime.
+      errors.push(`prop ${p.kind}: expected namespace "${ns}" plus a non-empty name`);
+    }
     // `x` included: getNearForeground silently DROPS a non-finite-x object at
     // runtime, which would desynchronize the mobile-halving parity this
     // validator certifies below from the list the renderer actually indexes.
@@ -204,18 +214,10 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     }
   }
 
-  // Mobile halves each kerb row by list parity: a row whose props all land on an
-  // odd index of its own order is drawn EMPTY on mobile (see mobileVisibleProps).
-  // Parity is computed on the SAME list the renderer indexes — the one
-  // getNearForeground survives (finite x) — not the raw authored array, so a
-  // dropped object can never desynchronize the certified parity from the drawn one.
-  const drawable = plan.props.filter((p) => Number.isFinite(p.x));
-  for (const row of ["near", "far"] as const) {
-    const inRow = drawable.filter((p) => (p.row ?? "near") === row);
-    if (inRow.length > 0 && mobileVisibleProps(drawable, row).length === 0) {
-      errors.push(`row ${row}: every prop is dropped by the mobile halving`);
-    }
-  }
+  // No mobile-halving row check here, deliberately (panel run-8): the halving keeps
+  // even indices OF THE ROW'S OWN ORDER, so a non-empty row always keeps its index-0
+  // prop — an "emptied row" is unconstructible. The rule itself lives in
+  // `mobileVisibleProps`, the ONE copy NearForeground.tsx also renders from.
 
   return errors;
 }
@@ -231,7 +233,7 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
  * (`assetManifest.ts` documents that it wants no import-time dependency on it).
  * The wide-aspect boundary test in levelPlan.test.ts pins the derived arithmetic.
  */
-const WORLD_HEIGHT_UNITS = 12;
+export const WORLD_HEIGHT_UNITS = 12;
 
 /**
  * Validation-time model of the vehicle's INCOMING travel (field edge → stopPosition),

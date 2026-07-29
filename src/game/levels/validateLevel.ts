@@ -2,6 +2,13 @@ import type { LevelConfig } from "@game/types/level";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 import { hasArchetype, knownKinds } from "@game/types/enemyTypes";
+// Side-effect import, DELIBERATE (panel run-8): `hasArchetype`/`knownKinds` read the
+// generated registry in `enemyTypes`, populated only by `generated/index.ts`'s module
+// body. A STANDALONE consumer (story ③'s MCP `validate` tool) imports this module in
+// isolation — without this line, every legitimate generated kind would report
+// `unknown-enemy-kind` purely by import order. This is NOT the catalogue: the
+// "never import levels.data.ts" rule below still holds.
+import "@game/levels/generated";
 import { QTE_RESULT_HOLD } from "@game/systems/qteSystem";
 
 /**

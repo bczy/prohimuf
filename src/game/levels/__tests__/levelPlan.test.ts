@@ -4,9 +4,11 @@ import {
   planToLevelArt,
   planToLevelConfig,
   validateLevelPlan,
+  WORLD_HEIGHT_UNITS,
   type GeneratedPropSpec,
   type LevelPlan,
 } from "@game/levels/levelPlan";
+import { WORLD_HEIGHT } from "@game/levels/levelArt";
 
 /**
  * The LevelPlan schema (spec-level-harness-sp1 §4.4) and the invariants a plan
@@ -64,6 +66,16 @@ describe("validateLevelPlan", () => {
   it("rejects an archetype id namespaced on another level", () => {
     const plan: LevelPlan = { ...base, archetypes: [{ ...vigile, kind: "autre:vigile" }] };
     expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+  });
+
+  // Run-8: `"<id>:"` (empty name — the copy-paste-template typo) passes a bare
+  // startsWith but isOwnedGeneratedPropKind / the sprite pipeline silently drop it
+  // at runtime; the CI-time rule must be byte-for-byte the runtime contract.
+  it("rejects an empty name after the namespace prefix (archetype AND prop)", () => {
+    const badArch: LevelPlan = { ...base, archetypes: [{ ...vigile, kind: "fixture:" }] };
+    expect(validateLevelPlan(badArch)).toContainEqual(expect.stringContaining("non-empty name"));
+    const badProp: LevelPlan = { ...base, props: [{ ...prop("fixture:x"), kind: "fixture:" }] };
+    expect(validateLevelPlan(badProp)).toContainEqual(expect.stringContaining("non-empty name"));
   });
 
   it("rejects a prop with an incomplete sizing triplet", () => {
@@ -134,6 +146,16 @@ describe("validateLevelPlan", () => {
       props: [prop("fixture:kiosque", "far"), prop("fixture:borne")],
     };
     expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});
+
+describe("WORLD_HEIGHT_UNITS drift pin (panel run-8)", () => {
+  // levelPlan.ts hand-duplicates the manifest's world.heightUnits because it imports
+  // levelArt as TYPES ONLY. This test (which may import both freely) is the guard:
+  // retune levelArt.json's world.heightUnits and this goes red until the validator's
+  // copy — and therefore the delivery-runway arithmetic — is updated with it.
+  it("equals levelArt's live WORLD_HEIGHT (manifest world.heightUnits)", () => {
+    expect(WORLD_HEIGHT_UNITS).toBe(WORLD_HEIGHT);
   });
 });
 
