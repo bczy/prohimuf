@@ -57,12 +57,13 @@ dans le même chantier :
 
 ## Specs et preuves
 
-| Artefact                | Chemin                                                                              |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| Spec gameplay           | `docs/game-design/spec-delivery-van-assault.md`                                     |
-| Spec UX du télégraphe   | `docs/game-design/ux/spec-delivery-assault-telegraph.md`                            |
-| Preuves QA (7 captures) | `docs/qa/evidence/story-delivery-telegraph/`                                        |
-| Tests                   | `src/game/systems/__tests__/deliveryAssault.test.ts`, `deliveryAssaultTick.test.ts` |
+| Artefact                | Chemin                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spec gameplay           | `docs/game-design/spec-delivery-van-assault.md`                                                                                                                                                                                                                                                                                                                                                                           |
+| Spec UX du télégraphe   | `docs/game-design/ux/spec-delivery-assault-telegraph.md`                                                                                                                                                                                                                                                                                                                                                                  |
+| Preuves QA (7 captures) | `docs/qa/evidence/story-delivery-telegraph/`                                                                                                                                                                                                                                                                                                                                                                              |
+| Tests                   | `src/game/systems/__tests__/deliveryAssault.test.ts`, `deliveryAssaultTick.test.ts`                                                                                                                                                                                                                                                                                                                                       |
+| Harnais de capture      | `src/render/scene/deliveryHarness.ts` (`?preview=delivery&at=incoming\|delivering`), câblé dans `App.tsx` (`installDeliveryCaptureSeam`, `DELIVERY_HARNESS_PREVIEW`) et `useGameLoop.ts` (`fastForwardDeliveryState`) — miroir de `bossHarness.ts`/`?preview=boss`, produit très probablement les 7 captures QA ci-dessus. Ajouté après-coup (panel finding MAJEUR, PR #143) : le fichier existait sans être déclaré ici. |
 
 ## État
 
