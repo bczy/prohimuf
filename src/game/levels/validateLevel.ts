@@ -1,7 +1,7 @@
 import type { LevelConfig } from "@game/types/level";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { hasArchetype, knownKinds } from "@game/types/enemyTypes";
 import { QTE_RESULT_HOLD } from "@game/systems/qteSystem";
 
 /**
@@ -94,18 +94,19 @@ export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
   if (marginIssue !== null) issues.push(marginIssue);
 
   // 2 — every `roster.windowWeights` slot must be a real enemy kind. `EnemyKind` is a bare
-  // union with no runtime value; `ARCHETYPES`'s keys are the existing runtime source.
+  // union with no runtime value; `hasArchetype` (core table + the generated-level registry,
+  // SP1) is the runtime source — validation-side, no silent `normal` fallback.
   const windowWeights = config.roster?.windowWeights;
   if (windowWeights !== undefined) {
     for (const slot of Object.keys(windowWeights)) {
-      if (!Object.prototype.hasOwnProperty.call(ARCHETYPES, slot)) {
+      if (!hasArchetype(slot)) {
         issues.push({
           code: "unknown-enemy-kind",
           severity: "error",
           field: `roster.windowWeights.${slot}`,
           message:
             `Unknown window spawn slot "${slot}": roster.windowWeights may only key real enemy ` +
-            `kinds (${Object.keys(ARCHETYPES).join(", ")}).`,
+            `kinds (${knownKinds().join(", ")}).`,
         });
       }
     }

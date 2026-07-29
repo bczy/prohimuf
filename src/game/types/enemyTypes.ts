@@ -180,6 +180,23 @@ export function registerGeneratedArchetypes(entries: readonly Archetype[]): void
  * exactly like `pickKind` does, so a stale roster id degrades to a plain cop
  * instead of crashing the tick.
  */
+/**
+ * Whether a kind resolves to a REAL archetype — a core kind or a registered
+ * generated one — without the silent `normal` fallback `archetype()` applies.
+ * This is the validation-side view (validateLevel): the fallback is a runtime
+ * safety net, not a claim that the kind exists.
+ */
+export function hasArchetype(kind: string): boolean {
+  return (
+    Object.prototype.hasOwnProperty.call(CORE_ARCHETYPES, kind) || generated.has(kind)
+  );
+}
+
+/** The kind ids `hasArchetype` currently accepts, core first — for messages. */
+export function knownKinds(): readonly string[] {
+  return [...Object.keys(CORE_ARCHETYPES), ...generated.keys()];
+}
+
 export function archetype(kind: EnemyKind): Archetype {
   // The core table read through the WIDE key: over a generated id the lookup is
   // genuinely partial, which is the whole reason this accessor exists.
