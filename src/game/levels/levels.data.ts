@@ -2,7 +2,7 @@ import type { Prefs } from "@game/systems/prefsSystem";
 import type { LevelConfig } from "@game/types/level";
 
 /**
- * The level catalogue — pure data (ADR-0073 §2). Every export here MUST be computable at
+ * The level catalogue — pure data (ADR-0074 §2). Every export here MUST be computable at
  * import time from literals: no I/O, no environment read, no clock, no randomness. A new
  * level is a plain object literal — no new conditional, loop or computed entry. The ONE
  * grandfathered exception is `BELLIARD_BOSS_ENABLED` and its conditional spread below, which
@@ -10,7 +10,7 @@ import type { LevelConfig } from "@game/types/level";
  *
  * Player-save progression state deliberately does NOT live here — it moved to
  * `@game/systems/progressSystem`, so importing the catalogue can never reach browser
- * storage (ADR-0073 §1). Keep this module free of any such reference.
+ * storage (ADR-0074 §1). Keep this module free of any such reference.
  */
 
 /**

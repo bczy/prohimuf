@@ -5,7 +5,7 @@ import { ARCHETYPES } from "@game/types/enemyTypes";
 import { QTE_RESULT_HOLD } from "@game/systems/qteSystem";
 
 /**
- * The single source of generic `LevelConfig` invariants (ADR-0073 §3).
+ * The single source of generic `LevelConfig` invariants (ADR-0074 §3).
  *
  * Pure: never throws, never mutates, no I/O. `[]` means "no issue found". Issues come back
  * in a deterministic order — checks in their declaration order below, fields in authoring

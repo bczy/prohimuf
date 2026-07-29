@@ -5,7 +5,7 @@ import type { EnemyKind } from "@game/types/enemy";
 import type { LootSpec } from "@game/types/loot";
 
 /**
- * Level authoring types (ADR-0073 §1). Type-only, zero runtime — and deliberately free of
+ * Level authoring types (ADR-0074 §1). Type-only, zero runtime — and deliberately free of
  * any `@game/systems` import, so `types/` never depends on the simulation layer. The
  * catalogue itself lives in `@game/levels/levels.data`; the invariants that constrain these
  * shapes live in `@game/levels/validateLevel`.

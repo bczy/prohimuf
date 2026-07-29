@@ -11,7 +11,7 @@ import {
 import PRE from "./fixtures/levelsCatalogue.pre.json";
 
 /**
- * AC1 (story-level-data-extraction / ADR-0073): the data/code split must not move a single
+ * AC1 (story-level-data-extraction / ADR-0074): the data/code split must not move a single
  * value. `fixtures/levelsCatalogue.pre.json` was serialised from the PRE-refactor
  * `levels.ts` (the 441-line mixed module, at HEAD before the split) and is the frozen
  * reference; every export re-exported by the barrel must still deep-equal it.

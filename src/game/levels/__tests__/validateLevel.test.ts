@@ -7,7 +7,7 @@ import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 
 /**
- * `validateLevel` — the single source of generic `LevelConfig` invariants (ADR-0073 §3).
+ * `validateLevel` — the single source of generic `LevelConfig` invariants (ADR-0074 §3).
  * AC4→AC7 of story-level-data-extraction are this file's test list.
  */
 

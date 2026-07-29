@@ -296,7 +296,7 @@ rule properly: **no catalogue import** (`levels.data.ts` stays forbidden, that l
 plus `@game/types/*`, plus a runtime tuning constant read **from the system that owns it**
 (here `QTE_RESULT_HOLD` from `@game/systems/qteSystem`) when an invariant's arithmetic needs
 the real value. Redeclaring 2.2 in the validator would rebuild the duplicated-formula drift
-ADR-0073 exists to kill — the deviation serves the ADR's intent against its own wording, which
+ADR-0074 exists to kill — the deviation serves the ADR's intent against its own wording, which
 is the right way round. Option (b) is refused: `QTE_RESULT_HOLD` is a tuning constant owned by
 the QTE system and read at runtime by it; parking it in `@game/types` would split ownership
 from its primary consumer to satisfy a formulation, not a boundary.
@@ -306,7 +306,7 @@ types (no cycle), and the direction `levels/validateLevel → systems/qteSystem`
 `validateLevel` is authoring-time logic, not data. If a future constant lives in a module that
 itself imports the catalogue, **move the constant, not the boundary**.
 
-ADR-0073 §3 amended accordingly (same PR). Noted for a later fix lane, out of scope here:
+ADR-0074 §3 amended accordingly (same PR). Noted for a later fix lane, out of scope here:
 `bossQteSystem.ts:28` declares its own `QTE_RESULT_HOLD = 2.2` beside `qteSystem.ts:30` — a
 pre-existing duplicate this story neither created nor must fix.
 
@@ -418,7 +418,7 @@ Probes are **source** mutations only, one at a time, `git checkout --` immediate
 | P4  | invert the unknown-`EnemyKind` condition                            | `validateLevel.test`     | **BITES** — 5 red, incl. **AC4 on `niveau-final`** → the catalogue tests are not vacuous for check 2                                |
 | P5  | drop the `value >= 0` half of the range guard                       | `validateLevel.test`     | **BITES** — the negative-trigger test, and only it                                                                                  |
 | P6  | upper bound `<=` → `<`                                              | `validateLevel.test`     | **BITES** — "accepts both interval bounds (0 and timeSeconds)" reds                                                                 |
-| P7  | return `[...issues].reverse()` (break determinism)                  | `validateLevel.test`     | **BITES** — 3 red; the ADR-0073 §3 stable-order contract is genuinely pinned, not just asserted                                     |
+| P7  | return `[...issues].reverse()` (break determinism)                  | `validateLevel.test`     | **BITES** — 3 red; the ADR-0074 §3 stable-order contract is genuinely pinned, not just asserted                                     |
 | P8  | catalogue value drift (`belliard.enemiesToWin` 10 → 11)             | `levelsCatalogue.parity` | **BITES** — `LEVELS` + `FIRST_PLAYABLE_LEVEL` red                                                                                   |
 | P9  | `BELLIARD_BOSS_ENABLED` `true` → `false`                            | `levelsCatalogue.parity` | **BITES** — 3 red; diff shows `{ id: 'belliard', …(11) }` vs `…(12)` → **key-presence** is what fails                               |
 | P10 | `stalingrad` gains `bossQteSpec: undefined` (key present, no value) | `levelsCatalogue.parity` | **BITES** — `toStrictEqual` distinguishes an omitted key from `undefined`; the test's own docstring claim is TRUE, not aspirational |
@@ -551,7 +551,7 @@ not a blocker; `producer` (Marion) to record that the quality gate RAN and PASSE
 - claim: stage-6 merge gate on `git diff origin/main...HEAD` — triage of the 4-reviewer panel
   (A/B/C/D, all findings adversarially verified by their authors) IS my integration review; one
   pass over the full diff, not two serial reads
-- release: this section, the per-finding rulings below, two doc fixes applied by me to ADR-0073,
+- release: this section, the per-finding rulings below, two doc fixes applied by me to ADR-0074,
   and the VERDICT line
 
 Panel input: **zero BLOCKING, zero MAJOR** across all four reviewers. Three MINOR and four NIT,
@@ -561,13 +561,13 @@ all CONFIRMED. Nothing below changes the shipped behaviour of the game.
 
 | #   | Finding                                                                                                                                                                     | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Owner                               |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| 1   | `validateLevel` throws `TypeError` on a structurally malformed candidate (`deliveries.forEach`, `Object.keys` on a non-object) — the exact input class ③'s MCP will receive | **DEFER to story ③, by design — not a defect here.** Ruling recorded so ③ cannot re-litigate it: `validateLevel` is a validator of TYPED data; parsing untrusted input belongs at the boundary that receives it. ③'s MCP `validate` parses/shape-guards an agent-supplied candidate into a `LevelConfig` first, and must NOT push defensive `typeof` checks into this module (that would make every invariant carry a shape check and rot the deterministic issue order). Written into ADR-0073 Consequences by me, this pass, as an inherited precondition. | `senior-architect` (done) → story ③ |
+| 1   | `validateLevel` throws `TypeError` on a structurally malformed candidate (`deliveries.forEach`, `Object.keys` on a non-object) — the exact input class ③'s MCP will receive | **DEFER to story ③, by design — not a defect here.** Ruling recorded so ③ cannot re-litigate it: `validateLevel` is a validator of TYPED data; parsing untrusted input belongs at the boundary that receives it. ③'s MCP `validate` parses/shape-guards an agent-supplied candidate into a `LevelConfig` first, and must NOT push defensive `typeof` checks into this module (that would make every invariant carry a shape check and rot the deterministic issue order). Written into ADR-0074 Consequences by me, this pass, as an inherited precondition. | `senior-architect` (done) → story ③ |
 | 2   | `timeSeconds: NaN` diverges: old guard didn't throw, new predicate does                                                                                                     | **ACCEPT the divergence — it is strictly better**, and it is unreachable from the shipped catalogue. `NaN` timeSeconds is garbage authoring; silently passing it was the old bug, not the old contract. Prescribed, pre-merge, cheap: one comment line at `hostageBossMarginIssue` stating the `<`-form is deliberate and that a non-finite `timeSeconds` fails loud, plus one test pinning it. Do NOT restore the old `>=` form.                                                                                                                            | `dev-gameplay`                      |
 | 3   | `fixtures/levelsCatalogue.pre.json:8` pins `BELLIARD_BOSS_ENABLED: true`; flipping the documented decouple seam OFF reddens AC1                                             | **PRESCRIBE option C-lite: a retirement note, NOT a flag-aware comparison.** One line in the fixture's test header saying the fixture is a flag-ON parity snapshot of the PRE-refactor catalogue, valid only while `BELLIARD_BOSS_ENABLED === true`, and to be regenerated (or deleted with the story) when the flag flips or retires. Building flag-aware comparison logic into a one-shot parity fixture is machinery for a seam that is documented as temporary — and the fixture's whole value is that it is dumb and literal.                           | `dev-gameplay`                      |
 | 4   | `field: "hostageQte"` bare vs the ADR's dotted example                                                                                                                      | **REJECT, with reason.** The ADR says "dotted path into the config, e.g. …" — `"hostageQte"` IS a path into the config, and it is the RIGHT one: the margin issue is a property of the hostage/boss/`timeSeconds` RELATIONSHIP, not of one scalar. Pointing it at `hostageQte.triggerAtElapsedSeconds` would name one of three fields a fix could legitimately touch (the message already lists all three). Object-level paths are legal `field` values; ③ must not assume `field` is always leaf-depth.                                                     | — (no change)                       |
 | 5   | `loot.spawnIntervalSeconds === 0` passes; "would never fire" is semantically wrong for an interval                                                                          | **SPLIT.** (a) Message: **prescribed, pre-merge** — drop the "it would never fire" clause from `pushRangeIssue`; the field-agnostic helper must not claim a trigger semantic it can't know. Keep the range sentence + the remedy sentence. (b) `interval === 0` as an issue: **DEFER, logged** — that is a NEW invariant, outside AC7's `[0, timeSeconds]` mandate, and it is the natural first `severity: "warning"` (bad authoring, not an unbootable level). It lands with ③'s warning surface, in `validateLevel.ts`, never anywhere else.               | (a) `dev-gameplay` / (b) story ③    |
 | 6   | `timeSeconds` itself never validated                                                                                                                                        | **DEFER, with the reason that makes it non-trivial: the tutorial authors `timeSeconds: 0`.** A naive `timeSeconds > 0` check reddens AC4 on the shipped catalogue. Any future check must be `kind`-aware (`"tutorial"` entries carry inert gameplay fields by construction, ADR-0012 D1). That is a design call on the issue set, not a nit to slip in at the merge gate. Logged for ③.                                                                                                                                                                      | story ③                             |
-| 7   | ADR-0073 says "25 import sites"; truth is 23 files / 32 lines                                                                                                               | **CONFIRMED, my error, fixed in this pass** (both occurrences, §Context and §Consequences). Not routed to `tech-writer`: it is a factual correction inside my own decision text, and the ADR is unmerged (`Proposed`) — routing a two-word fix would cost more than it saves. ADR index regenerated, `--check` fresh (73 ADR).                                                                                                                                                                                                                               | `senior-architect` (done)           |
+| 7   | ADR-0074 says "25 import sites"; truth is 23 files / 32 lines                                                                                                               | **CONFIRMED, my error, fixed in this pass** (both occurrences, §Context and §Consequences). Not routed to `tech-writer`: it is a factual correction inside my own decision text, and the ADR is unmerged (`Proposed`) — routing a two-word fix would cost more than it saves. ADR index regenerated, `--check` fresh (73 ADR).                                                                                                                                                                                                                               | `senior-architect` (done)           |
 
 ### 6.2 Integration review (countersigned)
 
@@ -612,12 +612,12 @@ QA's own F1/F2 stand as logged follow-ups (`dev-gameplay`), unchanged by this tr
 fixes applied here, 3 one-line prescriptions to `dev-gameplay`, 1 rejected with reason, 3
 deferred to story ③ with the ruling recorded so it is not re-litigated); integration review
 signed off — boundary law intact, new `systems → levels → systems` edge acyclic and proven live,
-parity evidenced against `origin/main`, zero dependency movement. ADR-0073 ships in this PR
+parity evidenced against `origin/main`, zero dependency movement. ADR-0074 ships in this PR
 (`Proposed`); `producer` re-checks its number at merge per the `adr-new` guardrail.
 
 **Next hand-off:** `dev-gameplay` (Amelia) for findings 2, 3 and 5(a) on this branch (or one
 fix-lane cycle logged before merge); `pm` (John) for stage-7 acceptance; `producer` (Marion) to
-record the panel verdict, the ADR-0073 number re-check, and the three story-③ defers (findings
+record the panel verdict, the ADR-0074 number re-check, and the three story-③ defers (findings
 1, 5(b), 6) on ③'s intake.
 
 ### §4 addendum — post-panel fixes — dev-gameplay (Amelia) — 2026-07-29
@@ -696,7 +696,7 @@ No non-goal was crossed: no timeline field, no MCP surface, no balcony placer, n
 tuned value changed (`BELLIARD_BOSS_ENABLED` stays `true`, parity-locked). Background enemy
 spawn is untouched (not even referenced by this diff). PROJECT_GUIDELINES §9 Definition of
 Done items are all satisfied: tests written and green (TDD per §4), `tsc`/lint clean, no
-`--no-verify`, ADR-0073 filed for the two decisions that outlive this story (import-time-
+`--no-verify`, ADR-0074 filed for the two decisions that outlive this story (import-time-
 computable rule, single-source-of-invariants rule).
 
 ### 7.3 Sequencing note for `producer`
@@ -712,6 +712,6 @@ accepted as sufficient for a byte-for-byte data-move story, with the outstanding
 logged as a pre-BUILD gate for STORY ②, not a blocker on this story's own merge). No non-goal
 crossed. Story ① is DONE; ②/③/④ may be opened once the §7.1 reserve is honoured.
 
-**Next hand-off:** `producer` (Marion) — merge ADR-0073 number re-check, close this shard's
+**Next hand-off:** `producer` (Marion) — merge ADR-0074 number re-check, close this shard's
 index row to `pm-accepted`, and hold STORY ②'s BUILD stage on the §7.1 playthrough reserve;
 `qa-lead` (Inès) — own the reserve's playthrough as a ②-pre-BUILD gate item.

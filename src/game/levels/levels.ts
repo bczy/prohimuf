@@ -1,5 +1,5 @@
 /**
- * Public barrel over the level types + the level catalogue (ADR-0073 §1). Pure re-exports:
+ * Public barrel over the level types + the level catalogue (ADR-0074 §1). Pure re-exports:
  * no logic lives here, and it deliberately does NOT re-export progression, so nothing that
  * imports the catalogue can reach browser storage transitively — the two player-save
  * functions are imported from `@game/systems/progressSystem` instead.

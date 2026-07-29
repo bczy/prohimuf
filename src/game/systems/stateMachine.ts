@@ -140,7 +140,7 @@ export function createInitialState(
   // margin here — fail LOUD at level load if a future retune (a shorter `timeSeconds`, a later
   // `triggerAtElapsedSeconds`, more `maxBlownPeeks`) ever closes it, rather than risk the hostage
   // QTE silently never triggering.
-  // The arithmetic itself lives in `validateLevel.ts` (ADR-0073 §3): ONE predicate, two exits
+  // The arithmetic itself lives in `validateLevel.ts` (ADR-0074 §3): ONE predicate, two exits
   // — reported as an issue by `validateLevel`, thrown here. Fail-loud-at-load is a different
   // contract from report-and-return: a level violating the margin must not boot.
   const marginIssue = hostageBossMarginIssue({

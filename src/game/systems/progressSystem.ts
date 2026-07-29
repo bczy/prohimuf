@@ -1,5 +1,5 @@
 /**
- * Player progression save state (ADR-0073 §1). Moved verbatim out of the level catalogue:
+ * Player progression save state (ADR-0074 §1). Moved verbatim out of the level catalogue:
  * unlocked-level ids are player-save state, not level data, and belong beside the other
  * `muf_*` storage owners (`prefsSystem.ts`, `highScoreSystem.ts`) with the same
  * try/catch-swallow semantics. Behaviour is byte-identical to the pre-move version.
