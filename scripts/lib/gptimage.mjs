@@ -122,6 +122,59 @@ export async function withRetry(url, token, n = 3) {
 }
 
 /**
+ * checkUrlReachable(url) -> Promise<number> (the resolved HTTP status code).
+ * A single HEAD request, following up to 5 redirects; no retry — this is a
+ * fail-fast preflight, not a generation call.
+ */
+function checkUrlReachable(url, redir = 0) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, { method: "HEAD" }, (res) => {
+      res.resume();
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redir < 5) {
+        checkUrlReachable(new URL(res.headers.location, url).toString(), redir + 1)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+      resolve(res.statusCode);
+    });
+    req.on("error", reject);
+    req.setTimeout(15000, () => req.destroy(new Error("timeout")));
+    req.end();
+  });
+}
+
+/**
+ * assertRefsReachable(refs) -> Promise<void>
+ *
+ * Preflight guard for `refs` URLs passed as `&image=` style references
+ * (genUrl's `refs` option): Pollinations silently IGNORES a 404'd reference
+ * and generates without style guidance instead of erroring, so a moved/renamed
+ * ref would otherwise degrade every downstream sprite without any generation
+ * failure to catch it — off-style art that still passes the chroma-key/
+ * integrity gates (neither tests style-match). Fails loudly, once, before any
+ * generation call is made, rather than retrying or falling back.
+ */
+export async function assertRefsReachable(refs) {
+  const results = await Promise.all(
+    refs.map(async (url) => {
+      try {
+        return { url, status: await checkUrlReachable(url) };
+      } catch (e) {
+        return { url, status: null, error: e.message };
+      }
+    }),
+  );
+  const bad = results.filter((r) => r.status !== 200);
+  if (bad.length) {
+    const detail = bad
+      .map((r) => `  - ${r.url} → ${r.error ? r.error : `HTTP ${r.status}`}`)
+      .join("\n");
+    throw new Error(`Unreachable reference image(s), aborting before generation:\n${detail}`);
+  }
+}
+
+/**
  * cropRectForAspect(W, H, targetW, targetH) -> { cropX, cropY, cropW, cropH }
  *
  * Pure geometry: the largest centered rectangle of aspect targetW/targetH that

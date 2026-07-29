@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // fetchImg()/withRetry() hit `https.get` directly — mock the built-in so retry
 // and redirect handling are exercised deterministically, no real network I/O
 // and no timing dependency (same pattern as scripts/lib/pollinations.test.mjs).
-vi.mock("https", () => ({ default: { get: vi.fn() } }));
+vi.mock("https", () => ({ default: { get: vi.fn(), request: vi.fn() } }));
 
 import https from "https";
 import {
@@ -15,6 +15,7 @@ import {
   cropRectForAspect,
   cyanPreviewCanvas,
   keyAndDown,
+  assertRefsReachable,
 } from "../gptimage.mjs";
 import { createCanvas } from "@napi-rs/canvas";
 
@@ -346,5 +347,70 @@ describe("withRetry", () => {
     await expect(withRetry("https://gen.pollinations.ai/image/x", "tok", 1)).rejects.toThrow(
       /HTTP 500/,
     );
+  });
+});
+
+describe("assertRefsReachable — reference-image preflight guard", () => {
+  function fakeReq() {
+    const req = { on: vi.fn(() => req), setTimeout: vi.fn(), destroy: vi.fn(), end: vi.fn() };
+    return req;
+  }
+
+  beforeEach(() => {
+    https.request.mockReset();
+  });
+
+  it("resolves without throwing when every ref answers 200", async () => {
+    https.request.mockImplementation((url, opts, cb) => {
+      cb(fakeResponse(200));
+      return fakeReq();
+    });
+    await expect(
+      assertRefsReachable(["https://raw.githubusercontent.com/x/enemy_sprite.png"]),
+    ).resolves.toBeUndefined();
+  });
+
+  it("throws a clear, aggregate error naming every ref that 404s", async () => {
+    https.request.mockImplementation((url, opts, cb) => {
+      cb(fakeResponse(url.includes("riot") ? 404 : 200));
+      return fakeReq();
+    });
+    await expect(
+      assertRefsReachable([
+        "https://raw.githubusercontent.com/x/enemy_sprite.png",
+        "https://raw.githubusercontent.com/x/enemy_riot.png",
+      ]),
+    ).rejects.toThrow(/enemy_riot\.png.*HTTP 404/s);
+  });
+
+  it("follows a redirect before judging reachability", async () => {
+    let calls = 0;
+    https.request.mockImplementation((url, opts, cb) => {
+      calls++;
+      if (calls === 1) {
+        cb(fakeResponse(301, { location: "https://raw.githubusercontent.com/x/moved.png" }));
+      } else {
+        cb(fakeResponse(200));
+      }
+      return fakeReq();
+    });
+    await expect(
+      assertRefsReachable(["https://raw.githubusercontent.com/x/enemy_sprite.png"]),
+    ).resolves.toBeUndefined();
+    expect(calls).toBe(2);
+  });
+
+  it("surfaces a network error (not just a bad status) in the aggregate message", async () => {
+    https.request.mockImplementation(() => {
+      const req = fakeReq();
+      req.on.mockImplementation((ev, fn) => {
+        if (ev === "error") fn(new Error("ENOTFOUND"));
+        return req;
+      });
+      return req;
+    });
+    await expect(
+      assertRefsReachable(["https://raw.githubusercontent.com/x/enemy_sprite.png"]),
+    ).rejects.toThrow(/ENOTFOUND/);
   });
 });

@@ -50,7 +50,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { readToken, genUrl, withRetry, keyAndDown } from "./lib/gptimage.mjs";
+import { readToken, genUrl, withRetry, keyAndDown, assertRefsReachable } from "./lib/gptimage.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -93,11 +93,15 @@ function loadBossFigures() {
   const blockHeight = block.size?.height ?? 256;
   return Object.entries(block.types)
     .filter(([key, def]) => {
-      // `pending: true` entries (shield_cover_raised/lowered today) carry no
-      // `prompt` yet — a deliberate not-ready-to-draft marker, not a defect.
-      // Generating them would silently bake the literal string "undefined"
-      // into the request. Skip them here rather than at the request layer.
-      if (def.pending) {
+      // Skip any entry with no prompt yet — whether or not it's flagged
+      // `pending: true` (shield_cover_raised/lowered today set both, but the
+      // skip must hold on the empty-prompt condition alone: an entry
+      // scaffolded with `"prompt": ""` and no `pending` flag must not reach
+      // the throw below and abort the whole (paid) generation run). A
+      // `pending: true` entry with a real prompt is still a deliberate
+      // not-ready-to-draft marker and is skipped too.
+      const hasPrompt = typeof def.prompt === "string" && def.prompt.trim() !== "";
+      if (def.pending || !hasPrompt) {
         console.log(
           `  [pending] ${key} — no prompt yet, skipped (see levelArt.json boss.types.${key})`,
         );
@@ -112,11 +116,9 @@ function loadBossFigures() {
       if (typeof def.asset !== "string" || def.asset.trim() === "") {
         throw new Error(`boss.types.${key}: "asset" must be a non-empty path`);
       }
-      if (typeof def.prompt !== "string" || def.prompt.trim() === "") {
-        throw new Error(
-          `boss.types.${key}: "prompt" must be a non-empty string (or set pending: true)`,
-        );
-      }
+      // No empty-prompt check here: the filter above already excludes every
+      // entry with no prompt (pending or not), so every `def` reaching this
+      // map step is guaranteed to carry one.
       // Per-entry `size` override ([S13], nearForegroundArt.types precedent): the
       // 7 humanoid figures share the block-default square canvas; `lustre`
       // (portrait) and `speaker_wall` (landscape) each carry their own
@@ -208,6 +210,11 @@ async function main() {
     pending.push(f);
   }
   if (pending.length === 0) return;
+  // Fail fast, once, before spending any Pollen: a 404'd style reference is
+  // silently ignored by Pollinations (not an error), so every sprite below
+  // would otherwise generate off-style with nothing to catch it (see
+  // assertRefsReachable's doc comment in scripts/lib/gptimage.mjs).
+  await assertRefsReachable(REF_IMAGES);
   const token = readToken();
 
   for (const f of pending) {
