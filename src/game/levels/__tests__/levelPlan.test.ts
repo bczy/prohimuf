@@ -307,6 +307,18 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     }
   });
 
+  // Run-7: prop.aspect feeds `planeW = planeH * aspect` UNCLAMPED in NearForeground —
+  // 0 renders an invisible prop, negative mirrors it — so it gets the same > 0 law as
+  // archetype.aspect (NaN already caught by the finite-triplet check above).
+  it("rejects a zero/negative prop aspect (plane width is aspect-scaled, unclamped)", () => {
+    for (const aspect of [0, -0.6]) {
+      const bad: LevelPlan = { ...base, props: [{ ...prop("fixture:kiosque"), aspect }] };
+      expect(validateLevelPlan(bad)).toContainEqual(
+        expect.stringContaining("aspect must be a finite number > 0"),
+      );
+    }
+  });
+
   it("rejects a NaN/non-positive backdrop.aspect (it seeds the layout AND the runway math)", () => {
     const nan = { ...base, backdrop: { ...base.backdrop, aspect: Number.NaN } };
     expect(validateLevelPlan(nan)).toContainEqual(expect.stringContaining("backdrop.aspect"));

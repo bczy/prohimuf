@@ -119,6 +119,12 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     for (const field of ["aspect", "heightFrac", "footPadFrac", "x"] as const) {
       if (!Number.isFinite(p[field])) errors.push(`prop ${p.kind}: ${field} missing or non-finite`);
     }
+    // Same law as archetype.aspect above: NearForeground computes the plane width as
+    // `planeH * aspect` UNCLAMPED (heightFrac/footPadFrac are clamped downstream,
+    // aspect is not), so 0 renders nothing and negative mirrors the prop.
+    if (Number.isFinite(p.aspect) && p.aspect <= 0) {
+      errors.push(`prop ${p.kind}: aspect must be a finite number > 0`);
+    }
   }
 
   // Two placements of the SAME kind must agree on sizing and asset: the render

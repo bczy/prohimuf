@@ -55,7 +55,8 @@ absolument tout »_ (2026-07-27).
 - [x] `verify` §8 acceptance evidence — DONE 2026-07-29 (re-run after the run-2
       roster fix): `?preview=level&level=fixture` seam (generatedHarness.ts, boss-seam
       reachability discipline — generated-only, never shipped), headless Playwright:
-      zero pageerror, HUD `NIVEAU Fixture`, timer 60→47 ticking, flat-colour backdrop
+      zero pageerror, HUD `NIVEAU Fixture`, timer 57→54 ticking (TEMPS 48s at the
+      last HUD snapshot — the exact report.json values), flat-colour backdrop
       fallback, enemies firing and dealing damage. CORRECTION of the first run's claim:
       that run resolved the roster off `LEVELS` (run-2 MAJEUR) so it played the DEFAULT
       pool — `fixture:vigile` was not in it. Now `GameScene`/`handlePlay` resolve via

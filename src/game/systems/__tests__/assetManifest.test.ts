@@ -33,7 +33,8 @@ import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 // `nearfg:<kind>` for the 8 pool kinds, `nearfg:<levelId>:<name>` for a generated
 // level's own prop (spec-level-harness-sp1 §4.5) — the shape invariant must cover
 // the namespaced case too, or generated manifests silently escape it.
-const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z]+(:[a-zA-Z]+)?)$/;
+const ASSET_RE =
+  /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z][a-zA-Z0-9-]*(:[a-zA-Z][a-zA-Z0-9-]*)?)$/;
 
 // Every level id we build a full manifest for, plus the three non-level targets.
 // "fixture" (generated, asset-less by design) keeps the generic shape invariant
