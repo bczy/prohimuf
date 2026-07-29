@@ -715,3 +715,27 @@ crossed. Story ① is DONE; ②/③/④ may be opened once the §7.1 reserve is 
 **Next hand-off:** `producer` (Marion) — merge ADR-0074 number re-check, close this shard's
 index row to `pm-accepted`, and hold STORY ②'s BUILD stage on the §7.1 playthrough reserve;
 `qa-lead` (Inès) — own the reserve's playthrough as a ②-pre-BUILD gate item.
+
+### §4 addendum — CI-panel MAJOR fix (progressSystem spec) — dev-gameplay (Amelia) — 2026-07-29
+
+- claim: the CI panel's MAJOR on PR #150 — `src/game/systems/progressSystem.ts` shipped without
+  a spec (also Inès's VERIFY F2). A byte-identical move does not exempt a new `src/game` module
+  from its own tests.
+- release: `src/game/systems/__tests__/progressSystem.test.ts` — 12 tests, mutation-probed.
+
+Created: `src/game/systems/__tests__/progressSystem.test.ts`. Coverage, exactly the panel's list
+plus F2: `loadUnlockedLevels` — key absent → `{belliard}` fallback, valid array, duplicate ids
+(it is a Set), non-array JSON, malformed JSON, non-string entries filtered (array kept), stored
+empty array → empty set, and a THROWING `getItem` → fallback, swallowed silently.
+`unlockLevel` — round-trip (unlock then reload contains it, `belliard` survives), accumulation
+persisted verbatim under `muf_progress`, re-unlock does not duplicate, and a THROWING `setItem`
+→ swallowed, caller does not crash. Storage stubbed with `vi.spyOn(localStorage, …)` +
+`vi.restoreAllMocks()` on top of the happy-dom `localStorage.clear()` beforeEach — the
+`prefsSystem` / `highScoreSystem` family pattern.
+
+Mutation probe (throwaway, reverted): removing the read `catch` fallback and the write
+`try/catch` turns 3 tests red, including both swallow tests — they bite.
+
+Runs: `yarn vitest run src/game/systems` **27 files / 698 tests passed** (+1 file, +12 tests);
+`yarn typecheck` clean, 0 error; targeted `eslint` + `prettier --check` on the new file clean.
+No other file touched. Not committed.
