@@ -223,3 +223,36 @@ describe("planToLevelArt", () => {
     ]);
   });
 });
+
+describe("validateLevelPlan — panel run-2 hardenings", () => {
+  it("caps level-authored archetypes at ONE (spec §2.1 design decision)", () => {
+    const two = {
+      ...base,
+      archetypes: [
+        { ...vigile, kind: "fixture:a" },
+        { ...vigile, kind: "fixture:b" },
+      ],
+    } as LevelPlan;
+    expect(validateLevelPlan(two)).toContainEqual(expect.stringContaining("cap is 1"));
+  });
+
+  it("rejects variants < 1 and non-integer hp — runtime divides and loops on them", () => {
+    const bad = {
+      ...base,
+      archetypes: [{ ...vigile, variants: 0, hp: 0 }],
+    } as LevelPlan;
+    const errors = validateLevelPlan(bad);
+    expect(errors).toContainEqual(expect.stringContaining("variants"));
+    expect(errors).toContainEqual(expect.stringContaining("hp"));
+  });
+
+  it("rejects a non-finite prop x — getNearForeground would silently drop it", () => {
+    const bad = {
+      ...base,
+      props: [{ ...prop("fixture:kiosque"), x: Number.NaN }],
+    } as LevelPlan;
+    expect(validateLevelPlan(bad)).toContainEqual(
+      expect.stringContaining("x missing or non-finite"),
+    );
+  });
+});

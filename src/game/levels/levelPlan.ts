@@ -75,6 +75,14 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   const ns = `${plan.id}:`;
   const declared = new Set<string>(plan.archetypes.map((a) => a.kind));
 
+  // Bertrand's framing decision (spec §2.1): at most ONE novel archetype per
+  // level — the design-gated cap on a generated level's mechanical surface.
+  if (plan.archetypes.length > 1) {
+    errors.push(
+      `archetypes: ${String(plan.archetypes.length)} declared, the design cap is 1 per level (spec §2.1)`,
+    );
+  }
+
   for (const a of plan.archetypes) {
     // weight 0 is the activation law (§4.2): a level-authored kind never enters
     // a default pool, it is opted in by its own roster.windowWeights.
@@ -84,11 +92,23 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!a.kind.startsWith(ns)) {
       errors.push(`archetype ${a.kind}: expected namespace "${ns}"`);
     }
+    // Runtime divides by `variants` (EnemySprite keys the flipbook off
+    // slotIndex % variants) and loops preload paths 1..variants: 0 or a
+    // non-integer means NaN sprite keys and an EMPTY preload manifest.
+    if (!Number.isInteger(a.variants) || a.variants < 1) {
+      errors.push(`archetype ${a.kind}: variants must be an integer >= 1`);
+    }
+    if (!Number.isInteger(a.hp) || a.hp < 1) {
+      errors.push(`archetype ${a.kind}: hp must be an integer >= 1`);
+    }
   }
 
   for (const p of plan.props) {
     if (!p.kind.startsWith(ns)) errors.push(`prop ${p.kind}: expected namespace "${ns}"`);
-    for (const field of ["aspect", "heightFrac", "footPadFrac"] as const) {
+    // `x` included: getNearForeground silently DROPS a non-finite-x object at
+    // runtime, which would desynchronize the mobile-halving parity this
+    // validator certifies below from the list the renderer actually indexes.
+    for (const field of ["aspect", "heightFrac", "footPadFrac", "x"] as const) {
       if (!Number.isFinite(p[field])) errors.push(`prop ${p.kind}: ${field} missing or non-finite`);
     }
   }
@@ -109,9 +129,13 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
 
   // Mobile halves each kerb row by list parity: a row whose props all land on an
   // odd index of its own order is drawn EMPTY on mobile (see mobileVisibleProps).
+  // Parity is computed on the SAME list the renderer indexes — the one
+  // getNearForeground survives (finite x) — not the raw authored array, so a
+  // dropped object can never desynchronize the certified parity from the drawn one.
+  const drawable = plan.props.filter((p) => Number.isFinite(p.x));
   for (const row of ["near", "far"] as const) {
-    const inRow = plan.props.filter((p) => (p.row ?? "near") === row);
-    if (inRow.length > 0 && mobileVisibleProps(plan.props, row).length === 0) {
+    const inRow = drawable.filter((p) => (p.row ?? "near") === row);
+    if (inRow.length > 0 && mobileVisibleProps(drawable, row).length === 0) {
       errors.push(`row ${row}: every prop is dropped by the mobile halving`);
     }
   }

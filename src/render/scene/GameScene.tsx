@@ -20,7 +20,7 @@ import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui
 import type { LevelParams } from "@game/systems/stateMachine";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
-import { LEVELS } from "@game/levels/levels";
+import { ALL_LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { WindowGrilles } from "./WindowGrilles";
@@ -295,8 +295,12 @@ export function GameScene({
   );
 
   // Per-level roster gate (ADR-0004): drives the window pool + street spawns.
-  // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster).
-  const roster = useMemo(() => LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
+  // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster). Resolved off
+  // ALL_LEVELS (shipped first, so shipped ids resolve identically) because a
+  // generated level's roster is the ONE thing that activates its level-authored
+  // archetypes (ADR-0073 §3) — reading LEVELS here silently played a generated
+  // level on the default pool (panel run-2 MAJEUR on PR #149).
+  const roster = useMemo(() => ALL_LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
 
   const feedbackRef = useRef<Floater[]>([]);
   const impactChannelRef = useRef<ImpactChannel>({ queue: [], resetNonce: 0 });

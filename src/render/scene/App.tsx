@@ -32,7 +32,7 @@ import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { loadUnlockedLevels, unlockLevel } from "@game/systems/progressSystem";
-import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import { LEVELS, ALL_LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import {
   saveScore,
@@ -381,7 +381,11 @@ export function App(): JSX.Element {
   }, [appPhase]);
 
   function handlePlay(levelId: string): void {
-    const level = LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
+    // ALL_LEVELS, not LEVELS: the menu only ever passes shipped ids (identical
+    // resolution — shipped levels are the list's head), but a generated id
+    // invoked directly must resolve to ITS level, not silently substitute
+    // belliard (panel run-2 MAJEUR on PR #149).
+    const level = ALL_LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
     // Scripted onboarding stage (ADR-0012, D3): no game state, no `setSelectedLevel`
     // (keeps `selectedLevel` playable so the audio-tension divisor never sees a
     // `timeSeconds: 0` and pushes NaN into tension). Finish or skip → MENU.

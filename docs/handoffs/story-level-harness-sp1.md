@@ -52,11 +52,16 @@ absolument tout »_ (2026-07-27).
 ## Suivi
 
 - [ ] Panel re-run after remediation push → zero unaddressed CONFIRMED bloquant/majeur
-- [x] `verify` §8 acceptance evidence — DONE 2026-07-29: `?preview=level&level=fixture`
-      seam (generatedHarness.ts, boss-seam reachability discipline — generated-only,
-      never shipped), headless Playwright run: zero pageerror, HUD `NIVEAU Fixture`,
-      timer 60→47 ticking, flat-colour backdrop fallback, pool + `fixture:vigile`
-      enemies popping on fallback sprites AND dealing damage (1.5 hearts lost).
-      Evidence: `docs/qa/evidence/story-level-harness-sp1/` (3 PNG + report.json)
+- [x] `verify` §8 acceptance evidence — DONE 2026-07-29 (re-run after the run-2
+      roster fix): `?preview=level&level=fixture` seam (generatedHarness.ts, boss-seam
+      reachability discipline — generated-only, never shipped), headless Playwright:
+      zero pageerror, HUD `NIVEAU Fixture`, timer 60→47 ticking, flat-colour backdrop
+      fallback, enemies firing and dealing damage. CORRECTION of the first run's claim:
+      that run resolved the roster off `LEVELS` (run-2 MAJEUR) so it played the DEFAULT
+      pool — `fixture:vigile` was not in it. Now `GameScene`/`handlePlay` resolve via
+      `ALL_LEVELS`, and the vigile's activation is pinned by the pool-composition unit
+      test (`generatedLevels.test.ts`); on screen it is indistinguishable anyway (it
+      renders on the same fallback sprite). Evidence:
+      `docs/qa/evidence/story-level-harness-sp1/` (3 PNG + report.json)
 - [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
 - [ ] SP2 opens only after this merges

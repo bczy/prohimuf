@@ -30,10 +30,15 @@ import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 
 // Real file assets, plus the synthetic `nearfg:<kind>` scheme for the code-drawn
 // near-foreground props (ADR-0047) — no PNG on disk, warmed by building a texture.
-const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z]+)$/;
+// `nearfg:<kind>` for the 8 pool kinds, `nearfg:<levelId>:<name>` for a generated
+// level's own prop (spec-level-harness-sp1 §4.5) — the shape invariant must cover
+// the namespaced case too, or generated manifests silently escape it.
+const ASSET_RE = /^(assets\/.+\.(png|jpg|webp|mp3|wav|glb)|nearfg:[a-zA-Z]+(:[a-zA-Z]+)?)$/;
 
 // Every level id we build a full manifest for, plus the three non-level targets.
-const LEVEL_IDS = ["belliard", "stalingrad", "vitry"] as const;
+// "fixture" (generated, asset-less by design) keeps the generic shape invariant
+// honest over generated-level manifests, not just shipped ones.
+const LEVEL_IDS = ["belliard", "stalingrad", "vitry", "fixture"] as const;
 const NON_LEVEL_TARGETS = ["menu", "tutorial-desktop", "tutorial-mobile"] as const;
 const ALL_TARGETS = [...NON_LEVEL_TARGETS, ...LEVEL_IDS, "does-not-exist"] as const;
 
