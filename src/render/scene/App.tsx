@@ -17,6 +17,7 @@ import {
   resolveBossPreviewLevel,
 } from "./bossHarness";
 import { installDeliveryCaptureSeam, resolveDeliveryPreviewLevel } from "./deliveryHarness";
+import { resolveGeneratedPreviewLevel } from "./generatedHarness";
 import { nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
@@ -100,11 +101,21 @@ const BOSS_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.sear
 const DELIVERY_HARNESS_PREVIEW = PREVIEW_SCREEN === "delivery";
 const DELIVERY_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.search : "";
 
+// Generated-level verification seam (spec-level-harness-sp1 §8): `?preview=level&
+// level=<generated id>` boots PLAYING on a harness-generated level — which is
+// deliberately absent from the menu (`LEVELS` is the shipped campaign, ADR-0074 §6),
+// so no menu path can reach it. The resolver is restricted to generated configs
+// (a shipped id yields null → normal boot), the same reachability discipline as
+// `?preview=boss`; persistence stays inert via the `PREVIEW_SCREEN !== null` guard.
+const GENERATED_PREVIEW_LEVEL: LevelConfig | null =
+  PREVIEW_SCREEN === "level" ? resolveGeneratedPreviewLevel(BOSS_PREVIEW_SEARCH) : null;
+const GENERATED_HARNESS_PREVIEW = GENERATED_PREVIEW_LEVEL !== null;
+
 const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
   ? resolveBossPreviewLevel(BOSS_PREVIEW_SEARCH)
   : DELIVERY_HARNESS_PREVIEW
     ? resolveDeliveryPreviewLevel(DELIVERY_PREVIEW_SEARCH)
-    : FIRST_PLAYABLE_LEVEL;
+    : (GENERATED_PREVIEW_LEVEL ?? FIRST_PLAYABLE_LEVEL);
 // True when the seam booted a SHIPPED level (niveau-final IS in LEVELS, unlike the harness). Folded
 // into the persistence guard below so a seam-booted shipped level NEVER writes muf_scores_*/
 // muf_progress — belt-and-suspenders behind the `PREVIEW_SCREEN !== null` early-return.
@@ -194,7 +205,7 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
-    BOSS_HARNESS_PREVIEW || DELIVERY_HARNESS_PREVIEW
+    BOSS_HARNESS_PREVIEW || DELIVERY_HARNESS_PREVIEW || GENERATED_HARNESS_PREVIEW
       ? "PLAYING"
       : PREVIEW_SCREEN === "narrative"
         ? "NARRATIVE_PRE"

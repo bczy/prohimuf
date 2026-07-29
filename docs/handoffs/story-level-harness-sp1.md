@@ -52,6 +52,11 @@ absolument tout »_ (2026-07-27).
 ## Suivi
 
 - [ ] Panel re-run after remediation push → zero unaddressed CONFIRMED bloquant/majeur
-- [ ] `verify` §8 acceptance evidence (fixture starts and plays) attached to PR #149
+- [x] `verify` §8 acceptance evidence — DONE 2026-07-29: `?preview=level&level=fixture`
+      seam (generatedHarness.ts, boss-seam reachability discipline — generated-only,
+      never shipped), headless Playwright run: zero pageerror, HUD `NIVEAU Fixture`,
+      timer 60→47 ticking, flat-colour backdrop fallback, pool + `fixture:vigile`
+      enemies popping on fallback sprites AND dealing damage (1.5 hearts lost).
+      Evidence: `docs/qa/evidence/story-level-harness-sp1/` (3 PNG + report.json)
 - [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
 - [ ] SP2 opens only after this merges
