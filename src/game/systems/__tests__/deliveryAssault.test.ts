@@ -152,12 +152,52 @@ describe("reservedAssaultSlots — the level-wide reservation (D2.8)", () => {
   );
 });
 
+// Panel round 2, MINEUR (2 reviewers): both inputs are LEVEL-invariant (the facade
+// is a stable `useMemo`, the spec never changes once a level loads), so the
+// map→filter→sort→slice pipeline — 152 throwaway candidate objects on vitry — must
+// run ONCE per level, not 60×/s. Memoised on argument IDENTITY, which is what makes
+// the hoist behaviour-free: a different facade or a different spec still recomputes.
+describe("reservedAssaultSlots — computed once per level, not once per tick", () => {
+  const vitry = levelFacade("vitry");
+  const vitrySpec = DELIVERY_LEVELS.find((l) => l.id === "vitry")?.spec;
+
+  it("returns the very same array for the same facade+spec references (no per-tick recompute)", () => {
+    expect(vitrySpec).toBeDefined();
+    if (vitrySpec === undefined) return;
+    const first = reservedAssaultSlots(vitry, vitrySpec);
+    // 1000 ticks' worth of calls: one computation, then pure cache reads.
+    for (let i = 0; i < 1000; i++) {
+      expect(reservedAssaultSlots(vitry, vitrySpec)).toBe(first);
+    }
+  });
+
+  it("never serves a stale answer: a different facade recomputes, and back again", () => {
+    const a = facadeAtX([-3, 1, -2, 6]);
+    const b = facadeAtX([2, -2, 1, -1]);
+    expect(reservedAssaultSlots(a, SPEC)).toEqual([1, 2]);
+    expect(reservedAssaultSlots(b, SPEC)).toEqual([2, 3]);
+    expect(reservedAssaultSlots(a, SPEC)).toEqual([1, 2]);
+  });
+
+  it("never serves a stale answer when only the spec changes (incl. the null spec)", () => {
+    const facade = facadeAtX([-3, 1, -2, 6]);
+    const movedStop: DeliverySpec = { ...SPEC, stopPosition: { x: 6, y: -5 } };
+    expect(reservedAssaultSlots(facade, SPEC)).toEqual([1, 2]);
+    expect(reservedAssaultSlots(facade, movedStop)).toEqual([3, 1]);
+    expect(reservedAssaultSlots(facade, null)).toEqual([]);
+    expect(reservedAssaultSlots(facade, SPEC)).toEqual([1, 2]);
+  });
+});
+
 describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", () => {
   const facade = levelFacade("belliard");
+  // The caller (`stateMachine`) already holds the level's reservation and hands it
+  // over, so the pipeline runs once per level and not a third time here.
   const reserved = [23, 42];
+  const RESERVATION = reservedAssaultSlots(facade, SPEC);
 
   it("AC7: seats exactly DELIVERY_ASSAILANTS on the reserved slots, ids from the base", () => {
-    const seated = seatAssault(facade, SPEC, undefined, [], null);
+    const seated = seatAssault(RESERVATION, undefined, [], null);
     expect(seated).toHaveLength(DELIVERY_ASSAILANTS);
     expect(seated.map((e) => e.id)).toEqual([
       DELIVERY_ASSAULT_ID_BASE,
@@ -170,7 +210,7 @@ describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", ()
   // the freeze holds the seating state, so a player absent for the whole roll-in
   // finds two EXPOSED, immediately shootable targets, never a frozen duck.
   it("AC7 (K-9): both assailants are seated EXPOSED, with the archetype's full timer", () => {
-    const seated = seatAssault(facade, SPEC, undefined, [], null);
+    const seated = seatAssault(RESERVATION, undefined, [], null);
     seated.forEach((e, i) => {
       expect(e.state).toBe("VISIBLE");
       expect(e.timer).toBeCloseTo(ARCHETYPES[e.kind].visibleDuration * (1 + i * 0.3), 10);
@@ -179,7 +219,7 @@ describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", ()
   });
 
   it("AC8: never seats on a slot held by a live enemy", () => {
-    const seated = seatAssault(facade, SPEC, undefined, [enemy({ id: 1, slotIndex: 23 })], null);
+    const seated = seatAssault(RESERVATION, undefined, [enemy({ id: 1, slotIndex: 23 })], null);
     expect(seated.map((e) => e.slotIndex)).toEqual([42]);
   });
 
@@ -188,38 +228,38 @@ describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", ()
   // behind a corpse renders NOTHING — an invisible source of damage.
   it("AC8: never seats on a slot held by a DEAD enemy either", () => {
     const corpse = enemy({ id: 1, slotIndex: 42, state: "DEAD", hp: 0 });
-    const seated = seatAssault(facade, SPEC, undefined, [corpse], null);
+    const seated = seatAssault(RESERVATION, undefined, [corpse], null);
     expect(seated.map((e) => e.slotIndex)).toEqual([23]);
   });
 
   it("AC8: never seats on the live loot crate's slot", () => {
-    const seated = seatAssault(facade, SPEC, undefined, [], 23);
+    const seated = seatAssault(RESERVATION, undefined, [], 23);
     expect(seated.map((e) => e.slotIndex)).toEqual([42]);
   });
 
   it("AC9: only shooting kinds are seated, from the level's own pool", () => {
     const pool: readonly EnemyKind[] = ["riot", "bonus", "biker", "bonus"];
-    for (const e of seatAssault(facade, SPEC, pool, [], null)) {
+    for (const e of seatAssault(RESERVATION, pool, [], null)) {
       expect(ARCHETYPES[e.kind].shoots).toBe(true);
       expect(pool).toContain(e.kind);
     }
   });
 
   it("AC9: a pool with no shooter at all still seats a shooter", () => {
-    for (const e of seatAssault(facade, SPEC, ["bonus"], [], null)) {
+    for (const e of seatAssault(RESERVATION, ["bonus"], [], null)) {
       expect(ARCHETYPES[e.kind].shoots).toBe(true);
     }
   });
 
   it("AC9: deterministic — two identical runs give identical kinds, slots and ids", () => {
     const pool: readonly EnemyKind[] = ["normal", "riot", "biker"];
-    expect(seatAssault(facade, SPEC, pool, [], null)).toEqual(
-      seatAssault(facade, SPEC, pool, [], null),
+    expect(seatAssault(RESERVATION, pool, [], null)).toEqual(
+      seatAssault(RESERVATION, pool, [], null),
     );
   });
 
   it("seats nothing when the level authors no delivery (AC13)", () => {
-    expect(seatAssault(facade, null, undefined, [], null)).toEqual([]);
+    expect(seatAssault(reservedAssaultSlots(facade, null), undefined, [], null)).toEqual([]);
   });
 });
 
@@ -238,7 +278,12 @@ describe("countAliveAssailants — D1 amended: ALIVE, never `targetable` (AC5/AC
   });
 
   it("counts the whole live assault", () => {
-    const seated = seatAssault(levelFacade("belliard"), SPEC, undefined, [], null);
+    const seated = seatAssault(
+      reservedAssaultSlots(levelFacade("belliard"), SPEC),
+      undefined,
+      [],
+      null,
+    );
     expect(countAliveAssailants(seated)).toBe(DELIVERY_ASSAILANTS);
     expect(countAliveAssailants([])).toBe(0);
   });
@@ -261,7 +306,12 @@ describe("AC15 — the assault widens no contract and keeps `src/game` pure", ()
     // by `EnemySprite`, and an assailant renders exactly like any window cop, so a
     // field here would be a fact the renderer must ignore — and a fact a renderer
     // can see is a fact a renderer eventually reads.
-    const seated = seatAssault(levelFacade("belliard"), SPEC, undefined, [], null);
+    const seated = seatAssault(
+      reservedAssaultSlots(levelFacade("belliard"), SPEC),
+      undefined,
+      [],
+      null,
+    );
     const waveCop = spawnWave(1, levelFacade("belliard"))[0];
     expect(waveCop).toBeDefined();
     for (const e of seated) {

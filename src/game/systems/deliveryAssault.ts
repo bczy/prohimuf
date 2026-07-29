@@ -27,9 +27,14 @@ export const DELIVERY_ASSAILANTS = 2;
 
 /**
  * World-x radius around the stop position within which a slot may be reserved for
- * the assault. 7 guarantees the van AND both assailants fit in ONE uncropped
- * frame (`VIEW_W = 18` ⇒ half-frame 9; an enemy plane is ≈ 2.1 wide) with ≈ 0.95 u
- * of margin. Hard ceiling 7.9 — widening it is measured and rejected (spec §7).
+ * the assault. 7 buys **F1, mutual shootability** (spec §4.5): both assailants are
+ * simultaneously in frame and within the crosshair's reach at some camera position
+ * the pan clamp allows, on every real device frame measured (36/36, worst X margin
+ * 1.72 u on niveau-final's arches). It is an X-only radius on slot centres and it
+ * does NOT frame the van as well — that is F2, ruled a luxury and not defended,
+ * because the van cannot be shot or helped while it unloads. Pinned by AC17/AC18
+ * in `slotGeometryGuards.test.ts`. Widening it is measured and rejected (spec §7);
+ * shrinking it breaks niveau-final, which is AT the two-candidate floor (§4.5).
  */
 export const ASSAULT_RADIUS = 7;
 
@@ -54,6 +59,12 @@ export function isDeliveryAssailant(enemy: Enemy): boolean {
   return enemy.id >= DELIVERY_ASSAULT_ID_BASE;
 }
 
+// The one computed reservation of the level, and the argument identities it was
+// computed from (see {@link reservedAssaultSlots}).
+let cachedFacade: FacadeMap | null = null;
+let cachedSpec: DeliverySpec | null = null;
+let cachedSlots: readonly number[] | null = null;
+
 /**
  * The slots this level reserves for its delivery assault, nearest the stop
  * position first (exact ties → lower slot index), within {@link ASSAULT_RADIUS}.
@@ -65,21 +76,39 @@ export function isDeliveryAssailant(enemy: Enemy): boolean {
  * assailant. Fewer than {@link DELIVERY_ASSAILANTS} results means the level's
  * window geometry cannot host the assault — an authoring error, pinned by a test
  * on every shipped level rather than papered over here.
+ *
+ * Both inputs are LEVEL-invariant — the facade is built once per level, the spec
+ * never changes once loaded — so the answer is computed ONCE and then served from a
+ * single-entry cache keyed on argument IDENTITY (`===`), instead of rebuilding a
+ * candidate object per window slot (152 of them on vitry) on every one of the 60
+ * ticks a second. Identity is what makes the hoist behaviour-free: a call with a
+ * different facade or a different spec recomputes, so no caller can be served a
+ * stale reservation. The returned array is shared, hence `readonly`: consumers read
+ * it (an exclusion `Set`, a `filter`), none may mutate it.
  */
 export function reservedAssaultSlots(
   facade: FacadeMap,
   spec: DeliverySpec | null,
 ): readonly number[] {
-  if (spec === null) return [];
-  const stopX = spec.stopPosition.x;
-  return facade.slots
-    .map((slot, slotIndex) => ({ slotIndex, distance: Math.abs(slot.screenPosition.x - stopX) }))
-    .filter((c) => c.distance <= ASSAULT_RADIUS)
-    .sort((a, b) =>
-      a.distance === b.distance ? a.slotIndex - b.slotIndex : a.distance - b.distance,
-    )
-    .slice(0, DELIVERY_ASSAILANTS)
-    .map((c) => c.slotIndex);
+  if (cachedSlots !== null && facade === cachedFacade && spec === cachedSpec) return cachedSlots;
+  const slots =
+    spec === null
+      ? []
+      : facade.slots
+          .map((slot, slotIndex) => ({
+            slotIndex,
+            distance: Math.abs(slot.screenPosition.x - spec.stopPosition.x),
+          }))
+          .filter((c) => c.distance <= ASSAULT_RADIUS)
+          .sort((a, b) =>
+            a.distance === b.distance ? a.slotIndex - b.slotIndex : a.distance - b.distance,
+          )
+          .slice(0, DELIVERY_ASSAILANTS)
+          .map((c) => c.slotIndex);
+  cachedFacade = facade;
+  cachedSpec = spec;
+  cachedSlots = slots;
+  return slots;
 }
 
 /**
@@ -99,20 +128,24 @@ export function reservedAssaultSlots(
  * crate is not seated on, because `EnemySprite` resolves a slot's occupant with a
  * first-match `find`, so an assailant seated behind a corpse would render nothing
  * while chipping the gauge.
+ *
+ * Takes the level's {@link reservedAssaultSlots} as a PARAMETER rather than deriving
+ * it from `(facade, spec)` again: the caller already holds it (`stateMachine` reads
+ * it once for the wave rollover and the crate eligibility), and a level with no
+ * delivery reserves nothing, so an empty reservation IS the "no delivery ⇒ no
+ * seating" case (AC13) — one source of truth, one computation.
  */
 export function seatAssault(
-  facade: FacadeMap,
-  spec: DeliverySpec | null,
+  reservedSlots: readonly number[],
   pool: readonly EnemyKind[] | undefined,
   enemies: readonly Enemy[],
   lootSlotIndex: number | null,
 ): readonly Enemy[] {
-  if (spec === null) return [];
   const occupied = new Set<number>(enemies.map((e) => e.slotIndex));
   if (lootSlotIndex !== null) occupied.add(lootSlotIndex);
   const shooters = (pool ?? WEIGHTED).filter((k) => ARCHETYPES[k].shoots);
 
-  return reservedAssaultSlots(facade, spec)
+  return reservedSlots
     .filter((slotIndex) => !occupied.has(slotIndex))
     .map((slotIndex, i) => {
       const kind = pickKindFor(ASSAULT_SEED_BASE + slotIndex * 7 + i * 17, shooters);

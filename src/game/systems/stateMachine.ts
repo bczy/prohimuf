@@ -378,11 +378,13 @@ export function tickGameState(
   // the rule is enforced at the transition, not at the muzzle.
   const tickedEnemies = state.enemies.map((e) => tickEnemy(e, delta, enemyOnScreen(e)));
 
-  // The delivery's reserved assault slots, computed ONCE for the whole tick: every
-  // slot consumer below must honour them (the wave rollover AND the crate spawn),
-  // or a wave cop / a crate squats an ambush window and the objective silently
-  // loses an assailant (D2.8, found twice in review as K-3 then K-8). Empty for a
-  // level with no delivery, so those levels stay on the legacy paths.
+  // The delivery's reserved assault slots, read ONCE for the whole tick — and, since
+  // `facade` and `deliverySpec` are level-invariant, actually computed once for the
+  // whole LEVEL (`reservedAssaultSlots` caches on argument identity). Every slot
+  // consumer below must honour them (the wave rollover, the crate spawn AND the
+  // seating), or a wave cop / a crate squats an ambush window and the objective
+  // silently loses an assailant (D2.8, found twice in review as K-3 then K-8). Empty
+  // for a level with no delivery, so those levels stay on the legacy paths.
   const reservedSlots = reservedAssaultSlots(facade, state.deliverySpec);
 
   // 3. Spawn new wave if all enemies dead
@@ -546,8 +548,7 @@ export function tickGameState(
       finalEnemies = [
         ...shotEnemies,
         ...seatAssault(
-          facade,
-          state.deliverySpec,
+          reservedSlots,
           windowPoolFor(roster),
           shotEnemies,
           trigger.loot?.slotIndex ?? null,
