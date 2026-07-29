@@ -182,6 +182,7 @@ describe("validateLevel — namespaced kind ownership (panel: cross-level leak)"
     spriteBase: "enemy_sprite",
     variants: 1,
     tint: "#ffffff",
+    aspect: 1,
   };
   registerGeneratedArchetypes([FOREIGN]);
 
