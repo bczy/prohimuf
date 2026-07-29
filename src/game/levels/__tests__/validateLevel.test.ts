@@ -5,6 +5,8 @@ import { LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
 import type { LevelConfig, LevelRoster } from "@game/levels/levels";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
+import { registerGeneratedArchetypes } from "@game/types/enemyTypes";
+import type { Archetype } from "@game/types/enemyTypes";
 
 /**
  * `validateLevel` — the single source of generic `LevelConfig` invariants (ADR-0074 §3).
@@ -158,6 +160,54 @@ describe("validateLevel — roster.windowWeights slots (AC6)", () => {
       "roster.windowWeights.zombie",
       "roster.windowWeights.ghost",
     ]);
+  });
+});
+
+describe("validateLevel — namespaced kind ownership (panel: cross-level leak)", () => {
+  // A REGISTERED generated archetype, namespaced on a level that is NOT the config under
+  // test: `hasArchetype` resolves it (it exists), so only the ownership check can reject
+  // it. Unique namespace so this registration never collides with the real generated set.
+  const FOREIGN: Archetype = {
+    kind: "vl-foreign-owner:goon",
+    hp: 1,
+    bulletDamage: 0,
+    hiddenDuration: 1,
+    visibleDuration: 1,
+    shoots: false,
+    scoreDelta: 0,
+    livesDelta: 0,
+    timeDelta: 0,
+    countsAsTarget: false,
+    weight: 0,
+    spriteBase: "enemy_sprite",
+    variants: 1,
+    tint: "#ffffff",
+  };
+  registerGeneratedArchetypes([FOREIGN]);
+
+  it("rejects a registered kind namespaced on ANOTHER level (no cross-level leak)", () => {
+    const roster = {
+      windowWeights: { "vl-foreign-owner:goon": 10 },
+    } as unknown as LevelRoster;
+    const issues = validateLevel({ ...BASE, roster });
+    expect(codes(issues)).toStrictEqual(["foreign-enemy-kind"]);
+    expect(issues[0]?.field).toBe("roster.windowWeights.vl-foreign-owner:goon");
+    expect(issues[0]?.message).toContain("vl-foreign-owner");
+    expect(issues[0]?.severity).toBe("error");
+  });
+
+  it("accepts the same kind on the level that OWNS its namespace", () => {
+    const roster = {
+      windowWeights: { "vl-foreign-owner:goon": 10 },
+    } as unknown as LevelRoster;
+    expect(validateLevel({ ...BASE, id: "vl-foreign-owner", roster })).toStrictEqual([]);
+  });
+
+  it("still reports an UNKNOWN namespaced kind as unknown, not foreign", () => {
+    const roster = {
+      windowWeights: { "vl-nowhere:ghost": 10 },
+    } as unknown as LevelRoster;
+    expect(codes(validateLevel({ ...BASE, roster }))).toStrictEqual(["unknown-enemy-kind"]);
   });
 });
 

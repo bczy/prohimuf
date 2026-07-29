@@ -131,10 +131,14 @@ export type DrawableNearForegroundObject = NearForegroundObjectOf<
   NearForegroundKind | GeneratedPropKind
 >;
 
-/** A prop as AUTHORED: a pool kind, or a generated level's own prop. */
-export type AuthoredNearForegroundObject = NearForegroundObjectOf<
-  NearForegroundKind | GeneratedPropKind
->;
+/**
+ * A prop as AUTHORED: a pool kind, or a generated level's own prop. Deliberately a
+ * bare alias of {@link DrawableNearForegroundObject} — the names document which side
+ * of `getNearForeground`'s validation a value sits on, but TypeScript's structural
+ * typing enforces NOTHING between them (no nominal brand); do not rely on the
+ * distinction for safety, only `getNearForeground` filters.
+ */
+export type AuthoredNearForegroundObject = DrawableNearForegroundObject;
 
 export interface NearForegroundLayer {
   /** Engine parallax factor (NEGATIVE). mesh.x = camera.x * factor; screen speed S = 1 - factor. */

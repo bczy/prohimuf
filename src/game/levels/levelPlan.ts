@@ -138,15 +138,27 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
 
   // Gameplay sanity: these values seed divisors and loop bounds at runtime.
   // timeSeconds = 0 divides the tension derivation by zero on the first tick
-  // (the tutorial's timeSeconds: 0 is special-cased on ITS path, not this one),
-  // and a timer at or below the default delivery trigger ships a level whose
-  // Livrer half structurally cannot fire before time runs out.
+  // (the tutorial's timeSeconds: 0 is special-cased on ITS path, not this one).
+  // The Livrer loop needs runway beyond its trigger: firing is not completing —
+  // after t=trigger the vehicle still TRAVELS from the field edge to stopPosition
+  // (≈(halfWidth+VEHICLE_MARGIN)/VEHICLE_SPEED ≈ 1.6s on the standard street; the
+  // width is a render-time value, so we budget a conservative allowance) and then
+  // holds its FULL windowSeconds before the bonus is awarded. A timer at or below
+  // trigger+travel+window ships a level whose delivery bonus is structurally
+  // unearnable on every playthrough.
   const g = plan.gameplay;
+  const minDeliveryRunway =
+    DEFAULT_DELIVERY.triggerAtElapsedSeconds +
+    DELIVERY_TRAVEL_ALLOWANCE_SECONDS +
+    DEFAULT_DELIVERY.windowSeconds;
   if (!Number.isFinite(g.timeSeconds) || g.timeSeconds <= 0) {
     errors.push(`gameplay.timeSeconds: must be a finite number > 0`);
-  } else if (g.timeSeconds <= DEFAULT_DELIVERY.triggerAtElapsedSeconds) {
+  } else if (g.timeSeconds <= minDeliveryRunway) {
     errors.push(
-      `gameplay.timeSeconds: must exceed the delivery trigger (${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s), or the Livrer loop never fires`,
+      `gameplay.timeSeconds: must exceed ${String(minDeliveryRunway)}s — delivery trigger ` +
+        `(${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s) + vehicle travel allowance ` +
+        `(${String(DELIVERY_TRAVEL_ALLOWANCE_SECONDS)}s) + delivery window ` +
+        `(${String(DEFAULT_DELIVERY.windowSeconds)}s) — or the delivery bonus can never be earned`,
     );
   }
   if (!Number.isInteger(g.enemiesToWin) || g.enemiesToWin < 1) {
@@ -191,6 +203,14 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
  * level needs one: `deliveries[0]` seeds `GameState.deliveryVehicle`, so an empty
  * array would leave the `Livrer` half of the core loop on an untested path.
  */
+/**
+ * Validation-time budget for the vehicle's INCOMING travel (field edge →
+ * stopPosition). The real duration is ≈(halfWidth+VEHICLE_MARGIN)/VEHICLE_SPEED
+ * ≈ 1.6s on the standard street, but the field width is a render-time value this
+ * pure module cannot read — so the check budgets a conservative round number.
+ */
+const DELIVERY_TRAVEL_ALLOWANCE_SECONDS = 4;
+
 const DEFAULT_DELIVERY: DeliverySpec = {
   vehicleType: "truck",
   triggerAtElapsedSeconds: 20,

@@ -377,9 +377,13 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
  * it rosters must ship on disk. A generated level satisfies none of that by design —
  * promoting one to the campaign is a deliberate, separate act.
  *
- * Import-time note (ADR-0074 §2): `GENERATED_LEVEL_CONFIGS` is a pure projection of
- * literal `LevelPlan`s — computable at import time, no I/O — so this stays within the
- * data-module rule. Countersign requested from senior-architect in the SP1 shard.
+ * Import-time note (ADR-0074 §2): the PROJECTION itself (`planToLevelConfig`) is pure
+ * and literal-derived, no I/O — but importing `GENERATED_LEVEL_CONFIGS` transitively
+ * runs `generated/index.ts`, whose module body registers each plan's archetypes into
+ * `enemyTypes`' module-level registry (a cross-module Map mutation) and asserts
+ * distinct plan ids (can throw at import). Whether that side effect fits §2 or needs
+ * a documented exception (à la `BELLIARD_BOSS_ENABLED`) is exactly the open
+ * senior-architect countersign tracked in the SP1 shard's Suivi.
  */
 export const GENERATED_LEVELS: readonly LevelConfig[] = GENERATED_LEVEL_CONFIGS;
 

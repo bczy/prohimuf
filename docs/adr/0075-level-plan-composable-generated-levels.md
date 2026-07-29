@@ -73,7 +73,12 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
   CI-time guard (weight-0, the 1-archetype cap, namespace ownership of archetypes,
   props AND `windowWeights` keys, sizing completeness incl. `x`, `variants`/`hp` floors,
   gameplay sanity, duplicate-kind consistency, mobile-halving row parity): a bad plan
-  fails tests, never play. Id-collision is the exception and is NOT in the validator:
+  fails tests, never play. Namespace ownership is ALSO enforced config-side by
+  `validateLevel` (`foreign-enemy-kind`, ADR-0074 §3): a `LevelConfig` that reaches
+  validation WITHOUT going through `validateLevelPlan` (hand-authored, story ③'s MCP
+  edits) still cannot key another level's namespaced kind in `roster.windowWeights` —
+  the runtime resolvers (`archetype`, `buildWeightedFrom`) stay deliberately global
+  and unscoped, so this validator check is the isolation guarantee, not them. Id-collision is the exception and is NOT in the validator:
   `assertDistinctPlanIds` (generated/index.ts) throws at IMPORT time — a deliberate
   fail-fast, because a colliding id would silently corrupt `LEVEL_ART` (last-wins)
   while `ALL_LEVELS.find` returns the other entry (first-wins), a split-brain no test

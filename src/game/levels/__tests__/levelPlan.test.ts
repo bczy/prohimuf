@@ -263,6 +263,24 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     expect(validateLevelPlan(short)).toContainEqual(expect.stringContaining("delivery trigger"));
   });
 
+  // Panel run-4: firing is not completing. After the 20s trigger the vehicle still
+  // travels to stopPosition and then holds its FULL 8s window before the bonus is
+  // awarded — a timer in (20, 32] passes the trigger check yet ships a level whose
+  // delivery bonus is structurally unearnable. 32 = trigger 20 + travel allowance 4
+  // + window 8; the boundary itself is rejected (`<=`), 33 is the first legal value.
+  it("rejects a timer where the delivery fires but can never COMPLETE (bonus unearnable)", () => {
+    const fires = { ...base, gameplay: { ...base.gameplay, timeSeconds: 25 } };
+    expect(validateLevelPlan(fires)).toContainEqual(
+      expect.stringContaining("delivery bonus can never be earned"),
+    );
+    const boundary = { ...base, gameplay: { ...base.gameplay, timeSeconds: 32 } };
+    expect(validateLevelPlan(boundary)).toContainEqual(
+      expect.stringContaining("delivery bonus can never be earned"),
+    );
+    const enough = { ...base, gameplay: { ...base.gameplay, timeSeconds: 33 } };
+    expect(validateLevelPlan(enough)).toStrictEqual([]);
+  });
+
   it("rejects zero/non-finite timeSeconds and bad enemiesToWin/speed", () => {
     const bad = {
       ...base,

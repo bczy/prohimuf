@@ -96,6 +96,12 @@ export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
   // 2 — every `roster.windowWeights` slot must be a real enemy kind. `EnemyKind` is a bare
   // union with no runtime value; `hasArchetype` (core table + the generated-level registry,
   // SP1) is the runtime source — validation-side, no silent `normal` fallback.
+  //
+  // A namespaced kind (`levelId:name`) additionally belongs to ONE level: the one whose id
+  // is its prefix. `validateLevelPlan` enforces that on the harness authoring path, but this
+  // validator is the gate for every OTHER path (hand-authored configs, story ③'s MCP edits),
+  // and the runtime resolvers (`buildWeightedFrom`, `archetype`) are deliberately global —
+  // so without this check a config could spawn another level's authored enemy in its pool.
   const windowWeights = config.roster?.windowWeights;
   if (windowWeights !== undefined) {
     for (const slot of Object.keys(windowWeights)) {
@@ -107,6 +113,16 @@ export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
           message:
             `Unknown window spawn slot "${slot}": roster.windowWeights may only key real enemy ` +
             `kinds (${knownKinds().join(", ")}).`,
+        });
+      } else if (slot.includes(":") && slot.slice(0, slot.indexOf(":")) !== config.id) {
+        issues.push({
+          code: "foreign-enemy-kind",
+          severity: "error",
+          field: `roster.windowWeights.${slot}`,
+          message:
+            `Foreign window spawn slot "${slot}": a namespaced kind may only appear in the ` +
+            `pool of the level that owns it ("${slot.slice(0, slot.indexOf(":"))}"), not ` +
+            `"${config.id}" — a generated archetype never leaks into another level's pool.`,
         });
       }
     }
