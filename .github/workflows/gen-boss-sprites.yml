@@ -77,7 +77,7 @@ jobs:
           # prebuilt native binary is fetched by the package resolution itself.
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
-      - name: Generate boss sprites (FLUX → chroma-key)
+      - name: Generate boss sprites (gptimage-large → chroma-key)
         # Default: MISSING-FILE semantics — generates only entries whose PNG is
         # absent (delete a REGEN entry's file to target it; an already-accepted
         # CLEAN entry's committed PNG is left completely alone). FORCE=1 (full
@@ -85,8 +85,17 @@ jobs:
         # dispatched with regenerate=true via the Actions UI — never on the
         # marker-triggered push path, so a routine re-dispatch cannot blow away
         # already-accepted sprites.
+        #
+        # SECURITY: flows through `env:` rather than interpolated inline — same
+        # fix as bakeoff-boss-models.yml's "Resolve parameters" step (PR #143
+        # panel finding). `regenerate` is a `type: boolean` UI checkbox, so the
+        # blast radius here is smaller than a free-text input, but the anti-
+        # pattern (raw `${{ github.event.* }}` inside a `run:` block) is the
+        # same one the project's security doctrine flags unconditionally.
+        env:
+          INPUT_REGENERATE: ${{ github.event.inputs.regenerate }}
         run: |
-          if [ "${{ github.event.inputs.regenerate }}" = "true" ]; then
+          if [ "$INPUT_REGENERATE" = "true" ]; then
             echo "Forcing full regeneration of all 9 boss entries"
             FORCE=1 node scripts/gen-boss-sprites.mjs
           else
@@ -123,6 +132,28 @@ jobs:
           else
             echo "no figure PNGs present (props-only regen) — nothing to solidify"
           fi
+
+      - name: Flatten sprites to neutral tones (parity with the enemies set)
+        # THE GAP THIS CLOSES. The shipped Commandant PNGs measured 4%-52% of
+        # their opaque pixels non-neutral (max-min channel > 12) — skin tones on
+        # the face, olive/kaki on the gear — while every enemy_*.png measures
+        # EXACTLY 0.00% across 21 files and 21 seeds. That precision is the
+        # fingerprint of an explicit luma flatten, and the boss pipeline never
+        # had one: the enemies' neutrality came from a one-off gptimage-large
+        # regen (8ca0975c) with the flatten baked into that script, never from a
+        # CI step. So this is inertia being turned into a gate, not a new rule.
+        #
+        # Runs on all 9 PNGs, props included: the transform makes no figure-shape
+        # assumption (unlike fill-sprite-holes.mjs above, which is why that step
+        # excludes the 2 props). Reuses the enemies' own script rather than
+        # forking one — its EXCLUDE_RE only spares `enemy_bonus*` (a deliberate
+        # golden glow), and no boss entry has any legitimate colour: every boss
+        # prompt is written in grey/pale/black terms and boss.style is textually
+        # identical to enemies.style. @napi-rs/canvas is already installed above.
+        run: node scripts/desaturate-enemy-figure.mjs public/assets/boss/*.png
+
+      - name: Gate — no boss sprite may ship non-neutral colour
+        run: node scripts/desaturate-enemy-figure.mjs --check public/assets/boss/*.png
 
       - name: Sprite integrity gate (figure/prop topology)
         run: |

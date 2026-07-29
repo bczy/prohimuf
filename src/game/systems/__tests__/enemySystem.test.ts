@@ -84,6 +84,63 @@ describe("tickEnemy", () => {
   it("DEAD state does not change", () => {
     expect(tickEnemy(mk("DEAD", 0), 0.5).state).toBe("DEAD");
   });
+
+  // Off-screen freeze: an enemy the camera cannot see does not advance at all —
+  // state held, countdown paused. This is what makes "an off-screen enemy cannot
+  // shoot" true by construction: VISIBLE → SHOOTING is the only way into a shot.
+  describe("off-screen freeze", () => {
+    it("holds the state and pauses the countdown", () => {
+      const e = mk("VISIBLE", 0.05);
+      expect(tickEnemy(e, 0.1, false)).toBe(e); // same reference: nothing moved
+    });
+
+    it("never enters SHOOTING while off screen, however long it is ticked", () => {
+      let e = mk("VISIBLE", 0.05);
+      for (let i = 0; i < 100; i++) e = tickEnemy(e, 0.1, false);
+      expect(e.state).toBe("VISIBLE");
+    });
+
+    it("does not pop up either (HIDDEN stays HIDDEN)", () => {
+      expect(tickEnemy(mk("HIDDEN", 0.05), 0.1, false).state).toBe("HIDDEN");
+    });
+
+    it("resumes exactly where it was frozen once back on screen", () => {
+      const frozen = tickEnemy(mk("VISIBLE", 0.05), 0.1, false);
+      expect(tickEnemy(frozen, 0.1, true).state).toBe("SHOOTING");
+    });
+
+    it("stays frozen mid-SHOOTING when the camera pans away", () => {
+      expect(tickEnemy(mk("SHOOTING", 0.05), 0.1, false).state).toBe("SHOOTING");
+    });
+
+    it("omitting the flag keeps the legacy on-screen behaviour", () => {
+      expect(tickEnemy(mk("VISIBLE", 0.05), 0.1)).toEqual(
+        tickEnemy(mk("VISIBLE", 0.05), 0.1, true),
+      );
+    });
+
+    // HIT is exempt: the player already banked the kill and a HIT enemy is not
+    // re-targetable, so freezing it would strand an hp-0 corpse short of DEAD and
+    // stall wave rollover for the rest of the level.
+    describe("HIT is exempt from the freeze", () => {
+      it("a killed enemy still reaches DEAD off screen", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1)); // hp 1 -> 0
+        expect(tickEnemy(hit, 0.3, false).state).toBe("DEAD");
+      });
+
+      it("a riot cop that survives still pops back to VISIBLE off screen", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1, { kind: "riot", hp: 2 })); // hp 2 -> 1
+        expect(tickEnemy(hit, 0.3, false).state).toBe("VISIBLE");
+      });
+
+      it("and then freezes in VISIBLE — the exemption does not leak into a shot", () => {
+        const hit = hitEnemy(mk("VISIBLE", 1, { kind: "riot", hp: 2 }));
+        let e = tickEnemy(hit, 0.3, false); // HIT -> VISIBLE, still off screen
+        for (let i = 0; i < 100; i++) e = tickEnemy(e, 0.1, false);
+        expect(e.state).toBe("VISIBLE"); // never SHOOTING
+      });
+    });
+  });
 });
 
 describe("hitEnemy", () => {

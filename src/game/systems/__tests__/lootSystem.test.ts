@@ -264,6 +264,31 @@ describe("tickLoot — delivery x-gap (D9-2 / AC-D6)", () => {
   });
 });
 
+describe("tickLoot — caller-reserved slots (delivery assault, D2.8)", () => {
+  it("never spawns on an excluded slot", () => {
+    const facade = mergedFacade([-6, 0, 6]);
+    for (let id = 1; id <= 6; id++) {
+      const r = tickLoot(null, SPEC, 0, 1, [], facade, id, null, [0, 2]);
+      expect(r.spawned).toBe(true);
+      expect(r.loot?.slotIndex).toBe(1);
+    }
+  });
+
+  it("defers (never force-places) when every eligible slot is excluded", () => {
+    const facade = mergedFacade([0]);
+    const r = tickLoot(null, SPEC, 0, 1, [], facade, 1, null, [0]);
+    expect(r.spawned).toBe(false);
+    expect(r.loot).toBeNull();
+  });
+
+  it("omitted/empty ⇒ the legacy eligibility, byte-for-byte", () => {
+    const facade = mergedFacade([-6, 0, 6]);
+    expect(tickLoot(null, SPEC, 0, 1, [], facade, 1, null, [])).toEqual(
+      tickLoot(null, SPEC, 0, 1, [], facade, 1, null),
+    );
+  });
+});
+
 describe("lootSystem — sidewalk durations (delta D4/D5)", () => {
   it("VISIBLE lifetime is 6.0 s and APPEARING is 0.45 s", () => {
     expect(LOOT_VISIBLE_DURATION).toBe(6.0);

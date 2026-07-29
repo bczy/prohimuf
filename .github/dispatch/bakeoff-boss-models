@@ -1,0 +1,6 @@
+# Parametres du banc d'essai — lus par .github/workflows/bakeoff-boss-models.yml
+# (un evenement push ne porte aucun `inputs`, donc la config voyage ici).
+# Toucher ce fichier dans un commit `ci(dispatch):` declenche un run PAYANT.
+pose=commander_exposed,commander_weakpoint,commander_parry_windup,commander_hit,commander_finisher,commander_down,lustre,speaker_wall
+models=gptimage-large
+size=1024

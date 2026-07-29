@@ -7,9 +7,10 @@ description: >
   must not re-litigate — or when someone asks to "write an ADR", "record this decision",
   "add an ADR", or "what's the next ADR number". It allocates the next `NNNN` by checking
   local files, the index, AND origin/main together (the guard against the duplicate-number
-  bug that produced two ADR-0020s), scaffolds the Nygard template, and appends the index
-  row. Owner: tech-writer / producer. It scaffolds and numbers — the DECISION content stays
-  the deciding lane's (usually senior-architect).
+  bug that produced two ADR-0020s), scaffolds the Nygard template, and regenerates the
+  index with scripts/gen-adr-index.mjs so the CI freshness gate stays green. Owner:
+  tech-writer / producer. It scaffolds and numbers — the DECISION content stays the
+  deciding lane's (usually senior-architect).
 ---
 
 # adr-new — scaffold a collision-safe ADR
@@ -53,26 +54,53 @@ Copy `assets/adr-template.md` to `docs/adr/NNNN-kebab-title.md` and fill it:
 - **Context / Decision / Consequences:** the Nygard trio — forces at play, what was
   decided, what follows (positive, negative, gotchas).
 
-## Step 3 — append the index row
+## Step 3 — regenerate the index (never hand-edit it)
 
-Add one row to the table in `docs/adr/README.md`, in number order at the end:
+The index is **generated**, not written. Since ADR-0041 `scripts/gen-adr-index.mjs` owns it,
+and CI enforces it (`Lint · Typecheck · Test` → step "ADR registry freshness"). Run:
 
+```bash
+node scripts/gen-adr-index.mjs --write   # regenerate
+node scripts/gen-adr-index.mjs --check   # must print: fresh — N ADR, registry in sync
 ```
-| [NNNN](./NNNN-kebab-title.md) | <Title> | <Status> |
-```
 
-Don't hand-align the pipes — `yarn format` / prettier reflows the table on commit.
+It writes **two** artifacts, both derived from the ADR files — commit BOTH:
+
+- the `## Index` table in `docs/adr/README.md` (between the `ADR-INDEX` markers)
+- `public/adr/index.html`, the page deployed at <https://bczy.github.io/prohimuf/adr/>
+
+Adding the row by hand leaves the HTML behind and CI fails with `[adr-index] STALE`
+(observed on PR #143 / ADR-0069). Both files are **prettier-ignored** — the generator owns
+their bytes so `--check` can compare verbatim, so never reformat them either.
+
+Because the row is derived, three things in your ADR file are load-bearing:
+
+- **The H1 must be `# NNNN — Title`**, the template's form. The generator strips a leading
+  `NNNN — ` to fill the Title column (which already has its own ADR column). `# ADR-NNNN — `
+  is NOT stripped and leaves the number duplicated in the row — 3 files have drifted that
+  way against 66 correct ones; don't add a fourth.
+- **The `- **Status:**` line** feeds the Status column (`Proposed` reads as a draft).
+- **The first sentence of `## Context`** becomes the one-line summary on the deployed page.
+  Write it as a standalone sentence — it is read by people who never open the file. Avoid
+  leading with `snake_case` identifiers in backticks: the generator strips markdown emphasis
+  bluntly and eats the underscores (`FACADE_01` renders as `FACADE01`).
+
+A missing H1 or a duplicate number makes the generator exit 1 with the reason — it is the
+duplicate-number gate as much as an index builder.
 
 ## Step 4 — re-check at merge
 
 Right before merge, re-run Step 1. If another branch took your number in the meantime,
-renumber this ADR (file, in-file Number line, and index row) to the new next value. This is
-the cheap check that prevents the duplicate-number bug from reaching `main`.
+renumber this ADR to the new next value: rename the file, fix the in-file H1 and Number
+line, then **re-run Step 3's `--write`** to rebuild both artifacts (never edit the row by
+hand). This is the cheap check that prevents the duplicate-number bug from reaching `main`.
 
 ## Guardrails
 
 - Prefer the `producer`-allocated number; self-allocate only when no producer is in the loop, and say so.
 - Re-check the number at merge — allocation at open is necessary but not sufficient.
+- Never hand-edit `docs/adr/README.md`'s index table or `public/adr/index.html`; run
+  `gen-adr-index.mjs --write` and commit both. CI checks it.
 - Never rewrite an Accepted ADR — write a new one and mark the old `Superseded by ADR-XXXX`.
 - The decision is the deciding lane's; this skill only scaffolds, numbers, and indexes.
 - If the change alters boundaries/deps/deployment, the ADR ships in the SAME PR as the change.

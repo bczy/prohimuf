@@ -1,0 +1,55 @@
+name: Test de style — boss (une pose, phrasing)
+
+# THROWAWAY EVAL. Same house pattern as bakeoff-boss-models.yml: workflow_dispatch
+# only becomes usable once this file reaches main, so a push touching the marker
+# file is the way in from a branch, gated on a `ci(dispatch):` commit subject so
+# an ordinary merge/rebase can never fire a paid run.
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/style-match-test"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: style-match-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install @napi-rs/canvas (chroma-key + downscale)
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Run the 4-variant style test
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+        run: |
+          if [ -z "$POLLINATIONS_TOKEN" ]; then
+            echo "::error::POLLINATIONS_TOKEN is not set on this repo."
+            exit 1
+          fi
+          node scripts/style-match-test.mjs
+
+      - name: Upload preview + PNGs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: style-match-test
+          path: style-test-out/
+          if-no-files-found: error
+          retention-days: 14

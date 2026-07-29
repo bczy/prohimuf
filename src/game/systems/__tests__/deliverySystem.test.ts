@@ -4,7 +4,7 @@ import {
   seedDeliveryVehicle,
   VEHICLE_SPEED,
   VEHICLE_MARGIN,
-  DAMAGE_PER_SHOOTER_PER_SECOND,
+  DAMAGE_PER_ASSAILANT_PER_SECOND,
 } from "@game/systems/deliverySystem";
 import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { CourierField } from "@game/systems/courierSystem";
@@ -101,18 +101,27 @@ describe("tickDelivery — INCOMING (A1 movement)", () => {
 });
 
 describe("tickDelivery — DELIVERING damage (A3)", () => {
-  it("no shooters → integrity is untouched", () => {
+  it("no assailants → integrity is untouched", () => {
     const v = at({ phase: "DELIVERING", windowRemaining: 5, integrity: 100 });
     const r = tickDelivery(v, SPEC, 25, 0, FIELD, 0.5);
     expect(r.vehicle.integrity).toBe(100);
     expect(r.vehicle.phase).toBe("DELIVERING");
   });
 
-  it("shooters chip the gauge: dmg = rate × shooters × delta", () => {
+  it("assailants chip the gauge: dmg = rate × assailants × delta", () => {
     const v = at({ phase: "DELIVERING", windowRemaining: 5, integrity: 100 });
     const r = tickDelivery(v, SPEC, 25, 3, FIELD, 0.5);
-    expect(r.vehicle.integrity).toBeCloseTo(100 - DAMAGE_PER_SHOOTER_PER_SECOND * 3 * 0.5);
+    expect(r.vehicle.integrity).toBeCloseTo(100 - DAMAGE_PER_ASSAILANT_PER_SECOND * 3 * 0.5);
     expect(r.scoreDelta).toBe(0);
+  });
+
+  // AC1 (spec-delivery-van-assault Rev.2 §5): the tuned rate is 9/s per assailant,
+  // so the full assault (DELIVERY_ASSAILANTS = 2) costs 18 integrity per second.
+  it("AC1: 2 assailants for 1 s take a 100 gauge to 82 (rate 9/s/assailant)", () => {
+    expect(DAMAGE_PER_ASSAILANT_PER_SECOND).toBe(9);
+    const v = at({ phase: "DELIVERING", windowRemaining: 5, integrity: 100 });
+    const r = tickDelivery(v, SPEC, 25, 2, FIELD, 1);
+    expect(r.vehicle.integrity).toBeCloseTo(82);
   });
 
   it("counts down the window while it survives", () => {

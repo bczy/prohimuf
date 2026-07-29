@@ -60,12 +60,18 @@ export function readToken({ env = process.env, readFileSync = fs.readFileSync } 
   );
 }
 
-/** genUrl(prompt, seed, { gen, model }) -> the gptimage-large request URL (always square). */
-export function genUrl(prompt, seed, { gen = 1024, model = "gptimage-large" } = {}) {
-  return (
+/**
+ * genUrl(prompt, seed, { gen, model, refs }) -> the gptimage-large request URL
+ * (always square). `refs` (optional array of image URLs) appends `&image=…`
+ * to steer ref-capable models — the same reference-guided mode
+ * bakeoff-boss-models.mjs validated against the shipped enemy sprites.
+ */
+export function genUrl(prompt, seed, { gen = 1024, model = "gptimage-large", refs } = {}) {
+  let u =
     `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}` +
-    `?model=${encodeURIComponent(model)}&width=${gen}&height=${gen}&nologo=true&quality=high&seed=${seed}`
-  );
+    `?model=${encodeURIComponent(model)}&width=${gen}&height=${gen}&nologo=true&quality=high&seed=${seed}`;
+  if (refs?.length) u += `&image=${encodeURIComponent(refs.join(","))}`;
+  return u;
 }
 
 /**
@@ -263,6 +269,23 @@ export function keyAndDown(
     sx.imageSmoothingEnabled = true;
     sx.imageSmoothingQuality = "high";
     sx.drawImage(c, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+
+    // The source canvas `c` is strictly binary alpha (every pixel above is either
+    // keyed to 0 or forced to 255) — but bilinear/bicubic resampling on the
+    // resize above interpolates alpha too, so any pixel straddling the
+    // silhouette edge comes out semi-transparent (verified: commander_down.png,
+    // CI run 30206728584, 450 such pixels, values like 59/127/196 — the
+    // interpolation signature, not real edge content). check-sprite-integrity.mjs
+    // enforces MAX_SEMI_ALPHA_PX = 0 — zero tolerance — so re-snap alpha to
+    // binary post-resize rather than leave it to luck whether a given
+    // silhouette's edge geometry happens to land on exact sample points.
+    const sid = sx.getImageData(0, 0, targetW, targetH);
+    const sd = sid.data;
+    for (let i = 0; i < targetW * targetH; i++) {
+      sd[i * 4 + 3] = sd[i * 4 + 3] >= 128 ? 255 : 0;
+    }
+    sx.putImageData(sid, 0, 0);
+
     return { s, ground: [cr | 0, cg | 0, cb | 0], opaque: op / (W * H) };
   });
 }

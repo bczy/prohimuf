@@ -1,0 +1,148 @@
+name: Banc d'essai — modèles d'image pour le boss
+
+# WHY THIS RUNS IN CI AND NOT LOCALLY.
+# POLLINATIONS_TOKEN is a write-only GitHub secret: the API never returns its
+# value and there is no `gh secret get`, so a developer machine cannot read it.
+# The runner is the only place the token exists in clear. Running the bake-off
+# here is therefore not a convenience — it is the only way to run it truthfully.
+#
+# WHY IT MUST BE AUTHENTICATED AT ALL.
+# Unauthenticated, image.pollinations.ai SILENTLY IGNORES `model=` and serves
+# `sana` with HTTP 200 — five different models returned one identical MD5 in
+# testing. The script targets gen.pollinations.ai (honest 401) and fingerprints
+# every response, so a silent fallback shows up as FALLBACK-SUSPECT in the report
+# instead of being presented as a result.
+#
+# COST. Several models in the matrix are premium and spend Pollen per image.
+# This workflow is `workflow_dispatch` ONLY — never on push, never on schedule —
+# so a run is always a deliberate human act. Trim `models` to cut the bill.
+
+# TRIGGERS. `workflow_dispatch` only becomes usable once this file reaches the
+# default branch — a GitHub platform rule about discoverability. Until then the
+# house marker-file pattern (spike-model-ab.yml, gen-courier-sprites.yml) is the
+# way in: a push touching .github/dispatch/bakeoff-boss-models, gated on a
+# `ci(dispatch):` commit subject so an ordinary merge or rebase touching that
+# path can never fire a paid run. A push event runs the workflow AS IT EXISTS ON
+# THE PUSHED BRANCH, which is exactly what a branch-local experiment needs.
+on:
+  workflow_dispatch:
+    inputs:
+      pose:
+        description: "Boss pose key(s) from levelArt.json boss.types — comma-separated for several"
+        default: commander_shielded
+        type: string
+      models:
+        description: "Comma-separated model list. Empty = the full 14-model matrix (27 cells)."
+        default: ""
+        type: string
+      size:
+        description: "Square generation size in px"
+        default: "1024"
+        type: string
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/bakeoff-boss-models"
+
+# Read-only: this workflow produces an artifact for a human to look at. It never
+# commits, and nothing it generates touches public/assets — the bake-off decides
+# WHICH model to adopt; adopting it is a separate, gated act.
+permissions:
+  contents: read
+
+concurrency:
+  group: bakeoff-boss-models-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bakeoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Never on main; on a push, only an explicit ci(dispatch): commit fires it —
+    # a merge or rebase could otherwise match the marker path and spend Pollen.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve parameters
+        # A `push` event carries NO `inputs`, so a marker-triggered run would
+        # otherwise always fall back to the defaults and silently ignore what the
+        # dispatcher asked for. The marker file therefore doubles as the config:
+        # simple `key=value` lines, parsed with grep (never sourced — a shell
+        # `.` on a repo file would execute whatever it contains). Explicit
+        # workflow_dispatch inputs win over the file when both are present.
+        #
+        # SECURITY: the three inputs below flow through `env:`, never interpolated
+        # directly into the `run:` script. `${{ github.event.inputs.* }}` is
+        # substituted by GitHub as literal text BEFORE bash ever parses the step —
+        # embedding it inline lets anyone with workflow_dispatch access (repo
+        # write, no secret access needed) break out of the string and run
+        # arbitrary shell on the runner, which then sits one step away from
+        # POLLINATIONS_TOKEN in "Run the bake-off" below (panel finding, PR #143).
+        env:
+          INPUT_POSE: ${{ github.event.inputs.pose }}
+          INPUT_MODELS: ${{ github.event.inputs.models }}
+          INPUT_SIZE: ${{ github.event.inputs.size }}
+        run: |
+          MARKER=.github/dispatch/bakeoff-boss-models
+          # `[ -z "$x" ] && y` returns 1 when x is NON-empty, and GitHub runs
+          # `run:` blocks under `bash -e` — so the && form would abort the step in
+          # the nominal case. Hence explicit if/fi.
+          from_marker() {
+            if [ -f "$MARKER" ]; then
+              grep -E "^$1=" "$MARKER" | tail -1 | cut -d= -f2-
+            fi
+          }
+          POSE="$INPUT_POSE"
+          MODELS="$INPUT_MODELS"
+          SIZE="$INPUT_SIZE"
+          if [ -z "$POSE" ]; then POSE="$(from_marker pose)"; fi
+          if [ -z "$MODELS" ]; then MODELS="$(from_marker models)"; fi
+          if [ -z "$SIZE" ]; then SIZE="$(from_marker size)"; fi
+          {
+            echo "POSE=${POSE:-commander_shielded}"
+            echo "MODELS=${MODELS}"
+            echo "SIZE=${SIZE:-1024}"
+          } >> "$GITHUB_ENV"
+          echo "pose=${POSE:-commander_shielded} models=${MODELS:-<tous>} size=${SIZE:-1024}"
+
+      - name: Install @napi-rs/canvas (report thumbnails)
+        # Same pinned version/flags as spike-model-ab.yml. Only used to downscale
+        # the inlined preview images: full-size data URIs put ONE pose at ~8 MB,
+        # which would make a nine-pose page unopenable. Optional by design — the
+        # script falls back to full-size inlining if the import fails.
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Plan (no generation, no spend)
+        run: |
+          args=(--dry --pose "$POSE")
+          [ -n "$MODELS" ] && args+=(--models "$MODELS")
+          node scripts/bakeoff-boss-models.mjs "${args[@]}"
+
+      - name: Run the bake-off
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+        run: |
+          if [ -z "$POLLINATIONS_TOKEN" ]; then
+            echo "::error::POLLINATIONS_TOKEN is not set on this repo — the bake-off"
+            echo "::error::would silently degrade to sana and report a false result."
+            exit 1
+          fi
+          args=(--pose "$POSE" --size "$SIZE")
+          [ -n "$MODELS" ] && args+=(--models "$MODELS")
+          node scripts/bakeoff-boss-models.mjs "${args[@]}"
+
+      - name: Upload the preview + every generated PNG
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakeoff-${{ github.run_number }}
+          path: bakeoff-out/
+          if-no-files-found: error
+          retention-days: 14
