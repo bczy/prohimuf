@@ -130,5 +130,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0072](./0072-delivery-assault-reserved-slots.md) | Assaut de livraison : slots réservés au niveau et identité par plage d'id | Proposed |
 | [0073](./0073-tutorial-immersion-narrative-contract.md) | Tutorial immersion narrative contract (decor context + mechanic cue diagrams) | Accepted |
 | [0074](./0074-level-data-module-and-validate-level.md) | Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants | Proposed |
+| [0075](./0075-level-plan-composable-generated-levels.md) | Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/` | Proposed |
 
 <!-- ADR-INDEX:END -->
