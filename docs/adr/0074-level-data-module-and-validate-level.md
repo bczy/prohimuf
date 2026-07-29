@@ -2,7 +2,7 @@
 
 - **Status:** Proposed
 - **Date:** 2026-07-29
-- **Number:** 0073, allocated by `producer` (Marion) at story opening, recorded in
+- **Number:** 0074 — allocated as 0073 by `producer` (Marion) at story opening, recorded in
   `docs/handoffs/story-level-data-extraction.md` §2. Re-check at merge.
 - **Decision owner:** `senior-architect` (Winston), TECH PLAN of
   `docs/handoffs/story-level-data-extraction.md` §3.
