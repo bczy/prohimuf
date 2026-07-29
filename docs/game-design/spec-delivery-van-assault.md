@@ -4,9 +4,13 @@
 objective now that ADR-0071 freezes off-screen enemies. Replaces the camera-filtered
 `shootingCount` (`stateMachine.ts:497-499`) with a **directed assault, seated next to the vehicle at
 its arrival, whose damage rule contains no camera term**.
-**Author:** `game-designer` (Sacha) · **Date:** 2026-07-26 · **Revision: Rev.2**
-**Status:** DRAFT Rev.2 — **needs `lead-game-designer` (Karim) design-gate re-check** (round 1 of 2
-consumed) before `senior-architect` plans it and `dev-gameplay` implements it.
+**Author:** `game-designer` (Sacha) · **Date:** 2026-07-29 · **Revision: Rev.3**
+**Status:** Rev.2 **GATED** (Karim, round 2, PASS WITH CORRECTIONS) and **IMPLEMENTED** — the
+mechanic below is shipped and merge-approved. **Rev.3 is a post-merge correction of a false design
+claim** (§4.1 → §4.5) raised as a non-blocking MINEUR by the round-2 merge-gate panel: it changes
+**no mechanic and no tuning value**. It needs `lead-game-designer` (Karim) to ratify the downgrade
+of the "one frame" claim, and hands AC17-AC19 (test correction, `dev-gameplay`) and S1/S2 (HUD
+signage, `ux-designer` + `dev-r3f-render`) as follow-ups.
 **Trigger:** merge-gate panel verdict NO-MERGE on `claude/offscreen-enemies-cannot-shoot`
 (`docs/handoffs/story-offscreen-enemies-frozen.md`, MAJEUR #2 — 4/4 reviewers CONFIRMED), and
 ADR-0071 §Négatif's own explicit request: _"mérite un arbitrage `game-designer` plutôt qu'un choix
@@ -18,10 +22,11 @@ tests). No render, no art, no audio, no `levels.ts` data change. See §8.
 
 ## Revision history
 
-| Rev.      | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rev.1     | 2026-07-26 | Initial arbitration. Verdict `PASS WITH CORRECTIONS` (Karim): spine RATIFIED, 4 blocking corrections K-1…K-4 (+ K-6 wording).                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Rev.2** | 2026-07-26 | **K-1** AC2 replaced by the three true properties (a/b/c) + §0/D1 wording fixed. **K-2** §4.2/§4.3 recomputed against the real per-archetype duty cycle, `D` re-tuned, lockstep ruled on. **K-3** deterministic seating guarantee (slot reservation) replaces "seat as many as available"; AC12 now pins the SEATED count. **K-4** identity discriminator named. **K-6** `lead-art` read requirement reframed (double read). Advisories A1-A5 ruled. **Plus one AMENDMENT to a ratified decision — see the box below.** |
+| Rev.      | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rev.1     | 2026-07-26 | Initial arbitration. Verdict `PASS WITH CORRECTIONS` (Karim): spine RATIFIED, 4 blocking corrections K-1…K-4 (+ K-6 wording).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Rev.3** | 2026-07-29 | **Round-2 merge-gate MINEUR (Reviewer C) arbitrated.** §4.1's "van + assailants in one frame" claim was checked on X only, against a `VIEW_W` no viewport has. Re-measured on the real runtime geometry and in the real build; claim **downgraded, not defended**: new **§4.5** splits the fairness property (**F1**, true 36/36) from the composition luxury (**F2**, impossible on mobile at max zoom on 3/4 levels). Five candidate fixes measured and rejected. New **AC17/AC18/AC19** replace the false guard test. Two HUD **signage** defects (S1 occluded up-cue, S2 cues point at the inert half) routed to `ux-designer`/`dev-r3f-render`. **No mechanic, no tuning value, no `src/game` behaviour changes.** |
+| **Rev.2** | 2026-07-26 | **K-1** AC2 replaced by the three true properties (a/b/c) + §0/D1 wording fixed. **K-2** §4.2/§4.3 recomputed against the real per-archetype duty cycle, `D` re-tuned, lockstep ruled on. **K-3** deterministic seating guarantee (slot reservation) replaces "seat as many as available"; AC12 now pins the SEATED count. **K-4** identity discriminator named. **K-6** `lead-art` read requirement reframed (double read). Advisories A1-A5 ruled. **Plus one AMENDMENT to a ratified decision — see the box below.**                                                                                                                                                                                                 |
 
 > ### ⚠ AMENDMENT to a RATIFIED decision — needs Karim's explicit re-ratification
 >
@@ -154,7 +159,9 @@ set. Rev.2 gives that up (the amendment box says why) and asserts the **per-beat
 what actually protects the player:
 
 > Every point of integrity lost is attributable to an assailant the player has a shooting
-> opportunity on **inside the same beat**: it is framed with the van (§4.1's one-frame guarantee), it
+> opportunity on **inside the same beat**: it is reachable and shootable together with its partner in
+> a single frame on every device class (**§4.5 F1** — Rev.2 said "framed with the van", which is
+> false on mobile and was never the property the fairness argument needs), it
 > is exposed at least 70 % of the time, its longest un-shootable stretch is **1.7 s**
 > (`riot.hiddenDuration`, the worst archetype), and the beat opens with a **4.4-5.8 s** roll-in
 > during which killing it costs the gauge nothing (D2). A 0-damage window is always attainable, by
@@ -315,6 +322,16 @@ it read as one. D3's retirement guarantees the pause ends with the beat.
   **8 u/s** over up to ~31 u of street (3.1-3.9 s of travel) against a `t_fail` of **3.33 s** on
   Vitry and Niveau Final; without a pre-window warning the objective is lost for reasons the player
   could not perceive, on the two hardest levels. Commissioned separately (K-5), not re-specified here.
+  **[Rev.3 ADDENDUM — S1/S2, from the §4.5 measurement, non-blocking follow-up.]** The telegraph
+  shipped; two defects remain, and they are the **real** mobile cost of the F2 downgrade, not the
+  geometry. **S1:** the up-arrow that points at the assailants is computed
+  (`targetIndicator.up === true` on 3/4 levels with the camera on the van) but **occluded by the
+  delivery banner** (`OffscreenArrowIndicator.tsx:63-68` box vs `HUD.tsx:70` painted before
+  `HUD.tsx:78`). **S2:** every cue — banner copy and `computeDeliveryDirection`
+  (`useGameLoop.ts:176`, anchored on `stopPosition`) — points at the van, which is mechanically
+  inert. Design ask, read not style: during `DELIVERING` the direction cue must resolve toward a
+  **live assailant** when one is off-frame, and the up glyph must clear the banner. HUD only, no
+  `src/game` change, no tuning value moves.
   **Pre-declared design-lane fallback if UX slips:** `DAMAGE_PER_ASSAILANT_PER_SECOND` 9 → **8**
   (measured: `t_fail` 6.25 / 5.00 / 3.75 / 3.75 s, ignore-case margin still 22-38 %, i.e. still above
   Karim's 20 % floor, and +25 % more reaction time on the two 6 s windows). One variable, stated in
@@ -340,13 +357,13 @@ it read as one. D3's retirement guarantees the pause ends with the beat.
 
 ### 4.1 New / changed values
 
-| Constant                          | Value       | Where                       | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --------------------------------- | ----------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DAMAGE_PER_ASSAILANT_PER_SECOND` | **9**       | `deliverySystem.ts`         | Was 8. **The single tuned number** (one variable at a time). Lower bound: the ignore case must fail with ≥ 20 % of the window to spare on every level ⇒ `D ≥ I / (1.6·N·W)` ⇒ `D ≥ 7.81` (belliard binds). Upper bound: the slow-mobile reference player must still win ⇒ `D ≤ 9` (measured: at 10 he loses Vitry and Niveau Final against `riot+riot`). 9 is the top of the feasible band, i.e. maximum pressure on the exploit the panel found, with the player still winning. §4.2, §4.4. Fallback 8 pre-declared in D5. |
-| `DELIVERY_ASSAILANTS` (N)         | **2**       | `deliverySystem.ts`         | 1 makes ignoring survivable on the 60/6 levels (`t_fail` 6.67 s > 6 s window at D = 9 — literally free). 3 exceeds niveau-final's candidate supply (2 slots within R) and turns the window into a spray. 2 is the smallest count that is decisive everywhere. Constant, NOT a per-level field (YAGNI — `integrity`/`windowSeconds` already give per-level control).                                                                                                                                                         |
-| `ASSAULT_RADIUS` (R)              | **7**       | `deliverySystem.ts`         | Half a viewport is 9 (`VIEW_W = 18`); an enemy plane is ≈ 2.1 wide (ADR-0071). 7 guarantees **the van and every assailant fit in one frame, uncropped**, with ≈ 0.95 u of margin, when the camera is centred on the stop position. Hard ceiling 7.9 — not approached (K-3 is solved by the reservation, not by widening R). Verified ≥ N candidates on all four shipped levels (10 / 7 / 28 / 2).                                                                                                                           |
-| `DELIVERY_ASSAULT_ID_BASE`        | 900000      | `deliverySystem.ts`         | Disjoint from `spawnWave`'s `wave·100 + i` (would need 9 000 waves to collide). Also the identity discriminator — D2.6.                                                                                                                                                                                                                                                                                                                                                                                                     |
-| seating timer factor              | `1 + i·0.3` | `stateMachine.ts` (seating) | `spawnWave`'s own stagger factor (`enemySystem.ts:130`), DRY. Read + shooting-rhythm decision only — D2.4.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Constant                          | Value       | Where                       | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------- | ----------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DAMAGE_PER_ASSAILANT_PER_SECOND` | **9**       | `deliverySystem.ts`         | Was 8. **The single tuned number** (one variable at a time). Lower bound: the ignore case must fail with ≥ 20 % of the window to spare on every level ⇒ `D ≥ I / (1.6·N·W)` ⇒ `D ≥ 7.81` (belliard binds). Upper bound: the slow-mobile reference player must still win ⇒ `D ≤ 9` (measured: at 10 he loses Vitry and Niveau Final against `riot+riot`). 9 is the top of the feasible band, i.e. maximum pressure on the exploit the panel found, with the player still winning. §4.2, §4.4. Fallback 8 pre-declared in D5.                                                                                                                                                                                                                 |
+| `DELIVERY_ASSAILANTS` (N)         | **2**       | `deliverySystem.ts`         | 1 makes ignoring survivable on the 60/6 levels (`t_fail` 6.67 s > 6 s window at D = 9 — literally free). 3 exceeds niveau-final's candidate supply (2 slots within R) and turns the window into a spray. 2 is the smallest count that is decisive everywhere. Constant, NOT a per-level field (YAGNI — `integrity`/`windowSeconds` already give per-level control).                                                                                                                                                                                                                                                                                                                                                                         |
+| `ASSAULT_RADIUS` (R)              | **7**       | `deliverySystem.ts`         | **[CORRECTED in Rev.3 — see §4.5]** R is an **X-only** radius on slot centres. It guarantees **F1: both assailants are shootable together in one frame on every device class** (measured margin ≥ 4.07 u even at the tightest real viewport). It does **NOT** guarantee the van in that same frame — Rev.2's "the van and every assailant fit in one frame, uncropped, ≈ 0.95 u of margin" was computed against `VIEW_W = 18`, which is **no real viewport** (measured 15.00-23.53 desktop, 11.76-27.68 mobile), and never looked at Y at all. §4.5 states what is true. Hard ceiling on R is unchanged in role: K-3 is solved by the reservation, not by widening R. Verified ≥ N candidates on all four shipped levels (10 / 7 / 28 / 2). |
+| `DELIVERY_ASSAULT_ID_BASE`        | 900000      | `deliverySystem.ts`         | Disjoint from `spawnWave`'s `wave·100 + i` (would need 9 000 waves to collide). Also the identity discriminator — D2.6.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| seating timer factor              | `1 + i·0.3` | `stateMachine.ts` (seating) | `spawnWave`'s own stagger factor (`enemySystem.ts:130`), DRY. Read + shooting-rhythm decision only — D2.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ### 4.2 Per-level consequences (authored data unchanged) — RETABLED FOR K-2
 
@@ -427,6 +444,89 @@ The stress row is what sets `D ≤ 9`: at D = 10 it FAILS Vitry and Niveau Final
 D = 9 it survives at 8 %. If stage-5 verify (§6) shows the stress row is the _representative_ mobile
 player rather than the tail, the pre-declared fallback is `D = 9 → 8` (ignore-case margin 22-38 %,
 stress row 18 %).
+
+### 4.5 The framing contract — **[NEW in Rev.3]** what R actually guarantees
+
+Rev.2's §4.1 claimed R = 7 puts "the van and every assailant in one frame, uncropped". Round-2's
+merge-gate panel (Reviewer C, MINEUR) found the claim was only ever checked on X. Re-measured on the
+**real** runtime geometry — `baseZoom = max(w/panelW, h/12) × MOBILE_ZOOM_FACTOR(1.7) ×
+belliardFactor(0.85)` (`GameScene.tsx:332`), pinch fraction ∈ `[MIN_ZOOM_FRACTION 0.5,
+MAX_ZOOM_FRACTION 1]` default **0.7** (`useTouchControls.ts:41-46`), pan clamp
+`rangeY = (12 − viewH)/2`, van sprite `VEHICLE_H = 2.4` centred on `stopPosition.y = −4.5`, shot
+hit-test = a `HIT_RADIUS = 0.8` disc on the **slot centre** (`bulletSystem.ts:52,129-132`) — the
+claim is **false on mobile**, and R was never the lever that could make it true. R is an X-only
+radius on slot centres; the failure is on Y.
+
+**Two properties, ruled apart.**
+
+**F1 — MUTUAL SHOOTABILITY (fairness; TRUE everywhere; this is what R + the D2.8 reservation buy).**
+Both assailants are simultaneously inside one frame and inside the crosshair's reach, at some camera
+position the clamp allows. Requirement `viewW ≥ Δx + 2·HIT_RADIUS`, `viewH ≥ Δy + 2·HIT_RADIUS`:
+
+| Level        | slot pair       | Δx   | Δy   | needs viewW ≥ | needs viewH ≥ | tightest real viewport (mobile landscape, max zoom, 932×430) | verdict                 |
+| ------------ | --------------- | ---- | ---- | ------------- | ------------- | ------------------------------------------------------------ | ----------------------- |
+| belliard     | `#23` / `#42`   | 0.00 | 1.44 | **1.60**      | **3.04**      | 13.84 × 6.39                                                 | PASS, margin 12.2 / 3.4 |
+| stalingrad   | `#19` / `#23`   | 0.03 | 1.56 | **1.62**      | **3.16**      | 11.76 × 5.43                                                 | PASS, margin 10.1 / 2.3 |
+| vitry        | `#107` / `#102` | 0.13 | 1.00 | **1.73**      | **2.59**      | 11.76 × 5.43                                                 | PASS, margin 10.0 / 2.8 |
+| niveau-final | `#7` / `#8`     | 6.09 | 0.00 | **7.69**      | **1.60**      | 11.76 × 5.43                                                 | PASS, margin 4.07 / 3.8 |
+
+Swept over 4 levels × 6 real viewports (3 desktop, 3 mobile landscape) × 3 zoom fractions
+(1.0 / 0.7 / 0.5): **36 / 36 PASS**, worst margin 4.07 u (niveau-final on X). F1 is what §4.4's
+reference-player table assumes — the `switch` cost is a re-aim (0.15-0.8 s), never a camera pan.
+**AC17 pins it.**
+
+**F2 — COMPOSITION (van sprite uncropped + both slot centres in the same frame; a LUXURY, not a
+guarantee).** Not achievable on mobile at max zoom, and only inside a sliver of the pan at the
+default zoom. Camera-y band that satisfies it, as a fraction of the reachable pan range:
+
+| Level        | desktop 1920×1080 | desktop 1440×900 / 1280×1024 | mobile max zoom (f = 1) | mobile default (f = 0.7) | mobile min zoom (f = 0.5) |
+| ------------ | ----------------- | ---------------------------- | ----------------------- | ------------------------ | ------------------------- |
+| belliard     | PASS (cam locked) | PASS (cam locked)            | **IMPOSSIBLE**          | PASS, 10.5 % of pan      | PASS (cam locked)         |
+| stalingrad   | PASS, 40 %        | PASS (cam locked)            | **IMPOSSIBLE**          | PASS, **0.8 %** of pan   | PASS, 26.6 %              |
+| vitry        | PASS, 40 %        | PASS (cam locked)            | PASS, 4.6 %             | PASS, 7.1 %              | PASS, 26.6 %              |
+| niveau-final | PASS, 40 %        | PASS (cam locked)            | **IMPOSSIBLE**          | PASS, 7.1 %              | PASS, 26.6 %              |
+
+Confirmed in the real build (`?preview=delivery`, 844×390 landscape, iPhone UA, screenshots):
+stalingrad panned to the van → van fully framed, **zero** assailants on screen; niveau-final panned
+to the van → only the assailants' **boots** in frame; belliard → one assailant in frame (under the
+integrity bar), one behind the banner. Integrity fell 100 → 69 (belliard) and 60 → 51.6
+(niveau-final) during those captures, i.e. **D1's no-camera-term rule verified live**.
+
+**RULING — F2 is not a fairness property and is not defended.** Framing the van is mechanically
+**inert**: during `DELIVERING` the van cannot be shot, cannot be helped, does not move, and its
+integrity is read from the **HUD** (`DeliveryIntegrityBanner` + bar, top strip, present in 8/8
+captures at every camera position). The only outcome-bearing act is killing the assailants, so the
+frame the player must hold is theirs — F1 — and it is always available. F2 buys a better _image_
+(cause and effect in one shot), not a better _chance_. Where it holds it is a gift; where it does
+not, nothing the player needs is withheld. **AC18 pins F2's real, per-device values as a
+characterisation test** so the sliver is documented rather than claimed.
+
+**Two signage defects found while measuring this — the real mobile cost, and they are HUD, not
+mechanics.** Routed to `ux-designer` + `dev-r3f-render`, non-blocking (§D5):
+
+- **S1 — the "look up" cue exists and is invisible.** With the camera on the van,
+  `targetIndicator.up === true` on belliard / stalingrad / niveau-final (read from the ADR-0005 state
+  seam): the game _computes_ the cue. But the up glyph is anchored at `top: 52px, left: 50%` with a
+  60 px wrap in short-landscape (`OffscreenArrowIndicator.tsx:63-68`) ⇒ CSS box x 392-452, y 52-112,
+  and the delivery banner occupies x ≈ 210-632, y ≈ 59-111 — and `HUD.tsx` paints the banner
+  (line 78) **after** the arrow ring (line 70). The cue is **fully occluded by
+  "LIVRAISON — PROTÉGEZ LE VÉHICULE !", during the exact beat it exists for.** Verified: absent from
+  the stalingrad and niveau-final captures while the state says it is active.
+- **S2 — every cue points at the inert half of the beat.** The banner copy says _protect the
+  vehicle_ and `computeDeliveryDirection` (`useGameLoop.ts:176`) points at `spec.stopPosition`. On
+  mobile, obeying the signage costs the player sight of the threat. Design ask (read, not style): the
+  `DELIVERING` cue must resolve toward a **live assailant** when one is off-frame, and the up glyph
+  must clear the banner. No `src/game` change.
+
+**Rejected fixes (measured before rejecting).**
+
+| Candidate                                                  | Why it does not work                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shrink `ASSAULT_RADIUS` (per-device or globally)           | R is X-only; the failure is Y. It buys **zero** vertical span, and niveau-final has **exactly 2** candidates at R = 7 — AC12.1 is AT the floor, so any shrink breaks the gated deterministic-seating guarantee (D2.8). Strictly worse, for nothing.                                                                                                                          |
+| Prefer the LOWEST slot instead of the nearest              | Trims 1.44 u (belliard) / 1.56 u (stalingrad) — still short at max zoom — and is a **no-op on niveau-final**, the binding level (single arch row, all 16 slots at y = 1.44). Cost: re-open ratified D2.1, re-pin AC7's four slot pairs, re-run D2.8's reservation measurements, and lose the "two empty windows **above** the van" telegraph. Does not fix the binding case. |
+| Raise `stopPosition.y`                                     | `levels.ts` authored data + street/sidewalk registration (the van would float). Explicitly outside this spec's lane (§8), and it is an art call, not mine.                                                                                                                                                                                                                   |
+| Lower `MIN_ZOOM_FRACTION` 0.5 → 0.41 (niveau-final's need) | A **global 3C** change touching every beat of every level, to buy one. At 0.41 `viewH` = 13.3 > `facadeH` 12 ⇒ the facade letterboxes and the camera locks; target size drops ~20 % below the finger-size floor ADR-0003/ADR-0015 tuned. Rejected.                                                                                                                           |
+| Scripted auto-framing of the beat                          | A new camera mechanic Prohibition never had, fighting the player's ownership of the camera (the `Éviter` pillar), colliding with the QTE cinematic camera owner. Disproportionate to a composition nicety.                                                                                                                                                                   |
 
 ---
 
@@ -523,6 +623,67 @@ Boundaries / regressions
   an empty wave: it returns `min(1 + wave, slots.length − DELIVERY_ASSAILANTS)` enemies (niveau-final
   caps at 14 from wave 14 — unreachable in a shipped run, asserted so it stays graceful).
 
+Framing — **[NEW in Rev.3; AC17+AC18 REPLACE the case `"%s frames the van and both assailants
+together"` in `src/game/levels/__tests__/slotGeometryGuards.test.ts:38-50`]**
+
+> That case must be **deleted**. It asserts `slotDistance + 2.1/2 < VIEW_W/2` and is wrong three
+> times over: `VIEW_W = 18` is no real viewport (measured 15.00-23.53 desktop, 11.76-27.68 mobile);
+> `2.1` is `EnemySprite`'s **fallback** plane width, used only when `size` is `undefined` — the real
+> plane is `slot.size.y × ENEMY_PLANE_SCALE` = 1.40 / 1.89 / 1.24 / **9.67** (niveau-final's arches);
+> and it never looks at Y, which is the axis that fails. Its name claims a property it does not test.
+> A guard that is green while the property it names is false is worse than no guard.
+
+- **AC17 — MUTUAL SHOOTABILITY (§4.5 F1, the property that is true and load-bearing).** For every
+  shipped level authoring a delivery, and for **every** entry of a declared table of real viewports ×
+  zoom fractions, there exists a camera position **inside the pan clamp** that puts **both** reserved
+  assault slot centres within the frame with a full `HIT_RADIUS` of margin on each axis. Concretely,
+  with `viewW`/`viewH` derived per row and `rangeX`/`rangeY` the clamps, both intervals must be
+  non-empty:
+  - `[max(maxSlotX + HIT_RADIUS − viewW/2, −rangeX), min(minSlotX − HIT_RADIUS + viewW/2, rangeX)]`
+  - `[max(maxSlotY + HIT_RADIUS − viewH/2, −rangeY), min(minSlotY − HIT_RADIUS + viewH/2, rangeY)]`
+
+  Pinned requirement per level (`Δ + 2·HIT_RADIUS`, measured today): belliard **1.60 × 3.04**,
+  stalingrad **1.62 × 3.16**, vitry **1.73 × 2.59**, niveau-final **7.69 × 1.60**. Expected result:
+  **36/36 PASS**, worst margin **4.07** u. Niveau-final's `Δx = 6.09` is the binding case — this is
+  the assertion that makes a window-zone retouch that pulls the two arches apart fail CI.
+
+  **Viewport table (declare it in the test with its provenance, do not import from `src/render`).**
+  Rows: desktop 1920×1080, 1440×900, 1280×1024 (f = 1); mobile landscape 844×390, 932×430, 1024×768 ×
+  f ∈ {`MAX_ZOOM_FRACTION` 1, default 0.7, `MIN_ZOOM_FRACTION` 0.5}. Formula, with each constant
+  commented with its source file **and line** so drift is visible in review:
+  `baseZoom = max(w / (WORLD_HEIGHT × FACADE_ASPECT), h / WORLD_HEIGHT) × (mobile ? 1.7 : 1) ×
+(id === "belliard" ? 0.85 : 1)` (`GameScene.tsx:332-335`, `MOBILE_ZOOM_FACTOR` line 107);
+  `viewW = w / (baseZoom × f)`, `viewH = h / (baseZoom × f)`;
+  `rangeY = max(0, (WORLD_HEIGHT − viewH) / 2)`, `rangeX = max(0, (fullW − viewW) / 2)`
+  (`GameScene.tsx:385-386`, mobile equivalent `useGameLoop.ts:367-368`);
+  `HIT_RADIUS = 0.8` (`bulletSystem.ts:52`) — the hit test is a disc on the **slot centre**
+  (`bulletSystem.ts:129-132`), which is why this AC measures centres and not sprite planes.
+
+- **AC18 — HONEST NON-GUARANTEE (§4.5 F2), a characterisation test.** Same table, same formula, plus
+  the van sprite extent `[stopPosition.y ∓ VEHICLE_H/2]`, `VEHICLE_H = 2.4`
+  (`DeliveryVehicleSprite.tsx:20`). For each level × row compute the camera-y band that frames the
+  van **uncropped** together with both slot centres —
+  `[max(maxSlotY − viewH/2, −rangeY), min(stopY − VEHICLE_H/2 + viewH/2, rangeY)]` — and assert it
+  against this pinned table (band width in world units; `LOCKED` = the clamp is a single point and it
+  satisfies the composition; `NONE` = no camera position does):
+
+  | Level        | 1920×1080 | 1440×900 | 1280×1024 | 844×390 f1 | 932×430 f1 | 1024×768 f1 | 844×390 f.7 | 932×430 f.7 | 844×390 f.5 |
+  | ------------ | --------- | -------- | --------- | ---------- | ---------- | ----------- | ----------- | ----------- | ----------- |
+  | belliard     | LOCKED    | LOCKED   | LOCKED    | **NONE**   | **NONE**   | 0.300       | 0.300       | 0.300       | LOCKED      |
+  | stalingrad   | 0.300     | LOCKED   | LOCKED    | **NONE**   | **NONE**   | **NONE**    | **0.045**   | **0.033**   | 0.300       |
+  | vitry        | 0.300     | LOCKED   | LOCKED    | 0.300      | 0.300      | 0.300       | 0.300       | 0.300       | 0.300       |
+  | niveau-final | 0.300     | LOCKED   | LOCKED    | **NONE**   | **NONE**   | **NONE**    | 0.300       | 0.300       | 0.300       |
+
+  Tolerance ±0.01. The test's docstring must say, in one sentence, that **`NONE` is an accepted,
+  ruled state (§4.5 RULING) and not a bug** — and that any cell moving in **either** direction means
+  the geometry changed and §4.5's table is stale. That is the point: this test exists to make the
+  limitation loud, not to defend it.
+
+- **AC19 — the false claim cannot come back.** No test and no production comment asserts a framing
+  property against `VIEW_W`/`VIEW_H` (18/12) or against the `2.1` fallback plane width. In
+  particular `deliveryAssault.ts:31`'s comment ("`VIEW_W = 18` ⇒ half-frame 9; an enemy plane is
+  ≈ 2.1 wide … ≈ 0.95 u of margin") must be rewritten to F1's terms and point at §4.5.
+
 ## 6. Design acceptance (stage 5, mine)
 
 Once implemented I playtest with the `verify` skill and report PASS/deviations to
@@ -534,9 +695,14 @@ Once implemented I playtest with the `verify` skill and report PASS/deviations t
 2. Belliard, arrive at the window and clear both assailants → `LIVRAISON SÉCURISÉE`, gauge visibly
    dented (expected 50-75 % left), +500.
 3. Belliard, pre-empt during `INCOMING` → gauge untouched at 100 %.
-4. The two assailants are **in the same frame as the van** when the camera is centred on it
-   (§4.1's one-frame guarantee, screenshot), and their two windows read as **empty before the
-   van arrives** (D2.8's diegetic telegraph — screenshot both states).
+4. **[REWRITTEN in Rev.3 — the old wording tested a property that is false, §4.5]** The two
+   assailants are **in the same frame as each other, both shootable without a camera move** (F1),
+   on desktop **and** on mobile landscape at max zoom — screenshot both. Their two windows read as
+   **empty before the van arrives** (D2.8's diegetic telegraph — screenshot both states). Do **not**
+   assert the van in that frame: on mobile it is not there, by ruling (F2).
+   **Status: DONE (2026-07-29).** Captured on the real build via `?preview=delivery&at=incoming`,
+   844×390 landscape + iPhone UA + 1920×1080 desktop, all four levels. F1 holds. F2 fails on mobile
+   exactly as §4.5's table predicts, on all four levels — model validated against the build.
 5. **Niveau-final, at a late wave**: exactly 2 assailants seated, with corpses on the facade
    (AC12.3 in the real build, not just in a unit test).
 6. Mobile emulation (ADR-0015 scheme), runs 1-3: the mobile reference row must still win. If it does

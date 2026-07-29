@@ -1432,3 +1432,707 @@ Aucun CONFIRMED BLOQUANT/MAJEUR non résolu. Les deux blockers du round 1
 re-vérifiés ; le blocker du round 2 (collision ADR) est fermé et re-vérifié. Le punch-list
 MINEUR ci-dessus est un suivi légitime, aucun ne bloque ce merge. `tsc`/`vitest`
 (1401/1401)/`lint`/index ADR verts sur l'état poussé (`9648a6b5`).
+
+---
+
+## D5 — fiction (narrative-designer, Yasmine), 2026-07-29
+
+Answers the third bullet of `docs/game-design/spec-delivery-van-assault.md` §D5 — _"one line of
+fiction on who ambushes the delivery (same faction as the window roster? a tip-off?). Fiction, not
+mechanic."_ **Fiction only:** no new mechanic, no new named character, no new faction, no new
+sprite, no new asset, no code change requested. This is canon to be used **if and when** an in-game
+string is added; the shipped mechanism stands unchanged without it.
+
+### The answer, in one line
+
+**Same faction, forewarned: they are BAC de nuit — the same cops as the window roster — but posted
+in advance, because the drop address is the one address that has to circulate.**
+
+### Why this and not a patrol coincidence / a new faction / a traitor-of-the-week
+
+1. **Roster pin.** `PROJECT_GUIDELINES` §7 scopes three arms — **BAC de nuit / RG en civil /
+   indics** — and the assailants are drawn from the level's own window pool (spec D2.5): they render
+   as ordinary window cops. Inventing a 4th arm for them would contradict the sprite AND the
+   standing pin of `spec-boss-belliard-fiction.md` §4 ("pas de nouvelle faction").
+2. **A coincidence explains nothing.** The mechanic is _directed_ (spec §2: "the threat has to be
+   _directed_"); a patrol that happens to pass would not explain **those two windows**, nor **that
+   exact moment**. A directed threat needs a directed cause.
+3. **The leak is structural, not a betrayal.** In 1998 a party address travels late — by phone,
+   by info-line, mouth to mouth — precisely because anything given early reaches the cops. But a
+   **delivery point cannot be improvised**: a truck needs a street, an hour, a door, and people told
+   in advance to open it. So the drop is the one address that leaks, on every level, **without
+   needing a traitor per level and without making DISPATCH look incompetent**. It is the price of
+   moving a sound system, not a plot twist. (An `indic` is the canon channel — §7 — but the fiction
+   deliberately does not name one: naming one would owe us a character with a gameplay function,
+   which is out of my lane's own scope rule.)
+4. **It fits the shipped mechanic point for point** — which is the whole test:
+   - the two reserved slots read **empty until the van rolls in** (D2.8's diegetic telegraph) ⇒
+     they were never on patrol, they were **posted**, waiting on the cargo;
+   - seating at **`INCOMING`** ⇒ they take position as the van engages the street, so pre-empting
+     them is legitimate, not a cheat;
+   - the ambient wave chips **nothing** (D1, "and by nothing else") ⇒ the patrol is hunting **Muf**;
+     the two posted men are on the **load**. Two different jobs, two different damage sources.
+   - **K-6 guard respected.** The copy never says they are "busy with the van" or harmless to Muf —
+     that false affordance would cost the player a heart (ADR-0065, aimed rounds). They are there
+     for the cargo **and** they will shoot him.
+
+### RETAINED LINE (French, shipping language) — DISPATCH, burner-phone register
+
+> **`DISPATCH — « Quelqu'un a donné le point de chute. Les deux fenêtres au-dessus sont vides — pas
+pour longtemps. »`**
+
+Usable as a pre-level beat or as a radio line at `INCOMING`. Two short sentences, no exposition, and
+it teaches the telegraph (empty windows now = occupied when the van arrives) without naming a rule.
+
+**Optional second beat**, only if a scene has room — keeps K-6's threat read explicit:
+
+> `DISPATCH — « Ils sont là pour le son. Ça les empêchera pas de te viser. »`
+
+Vocabulary check: **"le son"** = the sound system, already shipped verbatim (`« Livre le son, Muf »`,
+`« Le son passe. »`, `« Le son tient jusqu'à l'aube »`). `« point de chute »` is period-plain. Zero
+anachronism, zero new proper noun, zero new sprite referenced (both lines are text-only panels under
+the `NarrativeLine` contract).
+
+### Optional per-level colour (NOT required — the canon rule above is level-agnostic)
+
+| Level          | Colour available (one line max, only if a scene is opened)                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `belliard`     | Nothing to add — the shipped `« Les flics patrouillent depuis la manif. »` already seats a forewarned BAC.                                                              |
+| `stalingrad`   | KENZA's `« Ils ont des planques là-dedans depuis '95 »` — the drop address reaches the planque before it reaches the street.                                            |
+| `vitry`        | Nothing to add — `« les barres ont des yeux partout… Pas les nouveaux. »` already **is** the leak.                                                                      |
+| `niveau-final` | The Commandant is the BAC×RG node (`spec-boss-encounter-fiction.md` §1.2): there, the two windows are **his**, not an indic's. He does not need to be told the address. |
+
+### Adjacent ask, ruled but not merged into this hand-off
+
+The K-5 section routes me `"LIVRAISON EN APPROCHE"` (banner placeholder,
+`DeliveryIntegrityBanner.tsx`). **Verdict: keep it as shipped.** Right register, reads at a glance,
+distinct from the `DELIVERING` label by text alone (A3/A8). The ambush fiction needs no banner space
+— a chip is not a place for a story. If Karim ever wants the ambush telegraphed in the chip itself,
+my proposal on file is `« ILS ATTENDENT LA CAISSE »`, but that is a separate copy change with its own
+gate and I do **not** recommend spending the chip on it.
+
+### Status / hand-off
+
+**DRAFT — needs `lead-game-designer` (Karim) PASS** before any of this copy reaches a dev; no
+unreviewed words ship. Nothing downstream is blocked: `dev-gameplay` and `ux-designer` only consume
+this if a scene or a string is later authored. `game-designer` (Sacha) FYI — the fiction is aligned
+
+## Round-2 panel MINEUR fixes — `dev-tooling-assets` (Amelia), 2026-07-29
+
+Both MINEUR findings from "Panel round 2 — verdict final" (§ above) closed. Both are in
+`scripts/gen-boss-sprites.mjs` / `scripts/lib/gptimage.mjs`; no story-scope change, no ADR needed.
+
+**1. `shield_cover_raised` doc/loader mismatch — fixed via option (a).** `loadBossFigures()`'s
+filter in `scripts/gen-boss-sprites.mjs` now skips an entry whenever its `prompt` is empty/missing,
+**regardless of the `pending` flag** — matching what the `$comment` on
+`boss.types.shield_cover_raised`/`shield_cover_lowered` already promises ("skips any boss.types
+entry with no prompt rather than failing the whole block"). Previously only `def.pending === true`
+triggered the skip; an entry scaffolded with `"prompt": ""` and no `pending` flag would have hit the
+throw in the `.map()` step and aborted the whole (paid) CI run before any of the 9 real poses
+generated. Verified the existing scaffold doesn't regress: both `shield_cover_raised` and
+`shield_cover_lowered` in `levelArt.json` carry `pending: true` **and** `"prompt": ""` today, so they
+still skip under the new (broader) condition — confirmed with `node scripts/gen-boss-sprites.mjs
+--list`, same 9 commander/lustre/speaker_wall entries listed, same 2 `[pending]` skip lines. The
+now-unreachable empty-prompt throw in the `.map()` step was removed (dead code once the filter
+covers it) and replaced with a one-line comment explaining why.
+
+**2. `REF_IMAGES` preflight check — added.** New `assertRefsReachable(refs)` in
+`scripts/lib/gptimage.mjs` (plus a private `checkUrlReachable()` HEAD-request helper, redirect-aware,
+15s timeout, no retry — a fail-fast guard, not a retry/fallback system per the finding's ask). Wired
+into `scripts/gen-boss-sprites.mjs`'s `main()`: called once against `REF_IMAGES` right before
+`readToken()`, i.e. before any Pollen is spent, so a moved/renamed/404'd reference now aborts the CI
+job loudly with an aggregate per-URL error message instead of Pollinations silently generating
+off-style art that would then pass every existing gate (`desaturate --check` tests neutrality only,
+`check-sprite-integrity` tests topology only — neither tests style-match). Left
+`scripts/style-match-test.mjs` and `scripts/bakeoff-boss-models.mjs` (the other two `REF_IMAGES`
+consumers) unchanged — both are one-off CLI/bake-off tools, not the production CI generator the
+finding is about; out of scope for this mechanical fix.
+
+**Verification:** `node --check` on both files; `node scripts/gen-boss-sprites.mjs --list` (regen
+check above); `npx vitest run scripts/` — 236/236 passing, incl. 4 new tests in
+`scripts/lib/__tests__/gptimage.test.mjs` for `assertRefsReachable` (all-200 resolves, one 404 throws
+naming the bad URL, redirect-then-200 resolves, network error surfaces in the message); manual live
+check against `raw.githubusercontent.com` confirmed both the reachable and unreachable code paths.
+`npx prettier --check` clean. ESLint doesn't cover `scripts/**` (ignore-pattern warning only, no
+errors) — expected, same as every other script in this dir.
+
+**Not committed** — left for review per the requesting agent's instruction.
+
+Files touched: `scripts/gen-boss-sprites.mjs`, `scripts/lib/gptimage.mjs`,
+`scripts/lib/__tests__/gptimage.test.mjs`.
+with D1/D2.8/D5 as gated in Rev.2 and asks for **no** mechanical change.
+
+---
+
+## ADR-0071 → **Accepted** — ratification `senior-architect` (Winston), 2026-07-29
+
+**Saisine :** round-2 panel MINEUR "ADR-0071 reste `Proposed` et son texte se contredit lui-même"
+(owner `senior-architect`/`tech-writer`). **Verdict : FLIP — `Proposed` → `Accepted`**, texte corrigé
+dans le même geste. Édits faits par moi, **non commités**, laissés à revue.
+
+### Pourquoi c'est mûr (les deux conditions posées au round 1 sont tenues)
+
+Le round-1 panel avait explicitement conditionné ce flip à deux choses. Vérifiées une par une contre
+le code livré, pas contre la prose :
+
+1. **Le garde géométrique auto-promis est livré.** `src/game/levels/__tests__/slotGeometryGuards.test.ts`
+   épingle `max |slotX| <= fullW/2` sur les 4 niveaux livrés **plus** le harnais boss-QTE, et fixe en
+   plus la marge la plus fine (vitry, 0,54) — sur la géométrie **réellement** reçue par le tick
+   (`levelFacade`, draw-scale `single-facade` compris), pas sur la géométrie nominale. C'est le test
+   que l'ADR se devait, dans sa forme forte.
+2. **La conséquence divulguée est résolue, pas seulement décrite.** Arbitrage `game-designer` rendu,
+   gaté deux rounds par `lead-game-designer`, planifié, implémenté et re-vérifié ligne à ligne par le
+   panel round 2 — verdict **MERGE**, aucun BLOQUANT/MAJEUR non résolu. Convention maison
+   (`adr-new/SKILL.md`) : `Accepted` = « décidé et en cours de livraison ». C'est le cas.
+
+La règle elle-même n'a jamais été amendée depuis ma passe de plan (§5.1) : le gel agit sur `state` et
+`timer`, la nouvelle règle de dégât ne lit ni l'un ni l'autre — l'interaction n'a pas été exemptée,
+elle a **cessé d'exister**.
+
+### Ce que j'ai corrigé dans le corps de l'ADR (5 points, dont un que le panel n'avait pas vu)
+
+Le panel avait signalé deux bouts périmés. En relisant à froid j'en ai trouvé un **troisième, plus
+porteur** :
+
+- **[le plus important, non signalé par le panel] Le corollaire des « lecteurs continus » était
+  devenu FAUX.** L'ADR listait `stateMachine` — grignotage camionnette — comme lecteur continu
+  **filtré** sur `isOnScreen`. ADR-0072 a supprimé ce lecteur (dégâts = assaillants vivants, zéro
+  terme caméra). Ce n'est pas une coquette : `enemySystem.ts` (doc de `tickEnemy`) renvoie le lecteur
+  à cette liste — « ADR-0071 lists which ones do ». Une liste fausse citée par du code de prod est un
+  piège pour la prochaine personne qui ajoutera un lecteur continu. Réécrit : plus aucun lecteur
+  continu **porteur de règle**, seulement les deux cosmétiques (`EnemySprite`, `neonHeatColor`) ;
+  vérifié `grep isOnScreen src` — 2 appelants hors tests, `stateMachine.ts:373` (le gel) et
+  `useGameLoop.ts:177` (le repère HUD, qui lit **le même** prédicat, donc ne peut pas contredire le
+  gel). Le §Positif qui disait « dont un filtré dans ce même diff » suit.
+- **La ligne « aucun test n'épingle … — à ajouter »** est remplacée par le test livré et ce qu'il
+  couvre réellement (les 4 niveaux + harnais, marge 0,54, géométrie étirée).
+- **La puce « objectif gratuit »** : le bloc RÉSOLU pointait seulement le shard de traçabilité. Il
+  pointe maintenant les trois artefacts, dans le bon ordre de responsabilité — décision de design
+  (`spec-delivery-van-assault.md` Rev.2), décision d'architecture ([ADR-0072](../adr/0072-delivery-assault-reserved-slots.md)),
+  traçabilité (`story-delivery-van-assault.md`) — et nomme comment c'est épinglé (AC2 : aucune
+  position caméra gratuite + l'assertion structurelle « le helper de comptage ne prend aucun argument
+  caméra »).
+- **La puce de rythme** absorbe la mesure plus dure du panel (3 niveaux sur 4 sans aucun ennemi actif
+  caméra au repos) au lieu de l'échantillon doux d'origine, et déclare le rythme accepté **à la
+  ratification**. J'y ajoute la seule interaction nouvelle : la réservation d'ADR-0072 vide en plus
+  deux fenêtres près du point de dépôt.
+- **En-tête :** `Accepted` + date de ratification, la collision de numéro notée **fermée** (elle
+  portait encore « à re-vérifier au merge », alors que le round 2 l'a trouvée et fermée —
+  `84e782ba`/`9648a6b5`), et un renvoi `Suite : ADR-0072`. Le rappel de `DAMAGE_PER_SHOOTER_PER_SECOND`
+  en §Context est marqué comme état du code **au moment de la décision** (la constante n'existe plus,
+  un lecteur qui la grepperait ne trouverait rien).
+
+### Ce que je n'ai PAS fait, et pourquoi
+
+- **Pas de hand-off `tech-writer`.** Les trois corrections qui comptent sont du **contenu de
+  décision** (quel consommateur porte une règle, quelle conséquence est fermée, par quel artefact),
+  pas de la prose : c'est ma lane, et les faire relayer aurait ajouté un aller-retour sur un texte
+  d'une page. Otis garde la lane DOCS pour la suite ; rien ne lui est dû ici. **Reste au panel/CI :**
+  le NIT round-1 sur le style backticked snake_case en tête de phrase §Context, déjà routé
+  `tech-writer`, non traité ici (cosmétique, aucun rapport avec le flip).
+- **Pas de re-confirmation formelle du rythme par `game-designer` avant le flip.** Le round 1 la
+  _recommandait_ en la classant elle-même non bloquante, et le round 2 ne l'a pas re-soulevée. Elle
+  est de facto acquise : la lane design a rejoué les 4 niveaux avec le gel en vigueur (7 runs + des
+  balayages exhaustifs de trajectoires caméra à 60 Hz) sans jamais objecter sur le rythme. Un ADR
+  `Accepted` ne veut pas dire « toutes les conséquences sont refermées » — le §Négatif est exactement
+  l'endroit où vivent les conséquences assumées les yeux ouverts. La lecture de rythme y reste
+  nommée comme **propriété de design ouverte**, à la main du `game-designer` au prochain playtest de
+  pacing. Pas un blocage de merge.
+- **Rien touché d'autre.** `viewport.ts` reste gelé, aucun code de prod modifié, aucun autre ADR.
+  L'arbre de travail porte du travail concurrent (`deliveryAssault.ts`, `stateMachine.ts`,
+  `gptimage.mjs` …) : pas mon diff, pas touché.
+
+### Fichiers modifiés (non commités)
+
+- `docs/adr/0071-offscreen-enemies-frozen.md` — statut + les 5 corrections ci-dessus.
+- `docs/adr/README.md` + `public/adr/index.html` — régénérés par `node scripts/gen-adr-index.mjs --write`
+  (la colonne Status alimente le gate de fraîcheur CI). Vert : `gen-adr-index.mjs` → `fresh — 72 ADR`,
+  `prettier --check` → OK.
+- ce shard.
+
+**Reste ouvert sur ADR-0072 :** lui aussi est `Proposed`. Il est le bon statut aujourd'hui — c'est
+`producer` qui doit lui allouer/confirmer son numéro (il est auto-alloué), et son flip suit le même
+critère que celui-ci. Non bloquant pour le merge.
+
+## Round-2 panel MINEUR — réservation d'assaut hoistée hors du tick — `dev-gameplay` (Amelia), 2026-07-29
+
+**Constat du panel (confirmé par 2 relecteurs, §"Panel round 2 — verdict final") :**
+`reservedAssaultSlots(facade, state.deliverySpec)` était recalculé à **chaque tick** alors que ses
+deux entrées sont invariantes pour tout le niveau (`facade` = `useMemo` stable dans `GameScene`,
+`deliverySpec` figé au chargement) — soit un pipeline `.map → .filter → .sort → .slice` sur
+**152 slots de fenêtre à vitry**, 60 fois par seconde, pour une valeur qui ne bouge jamais. Et
+`seatAssault` le recalculait une **3e fois** en interne alors que son appelant tenait déjà le
+résultat.
+
+**Correctif (perf pure, zéro changement de comportement) :**
+
+- `src/game/systems/deliveryAssault.ts` — `reservedAssaultSlots` sert désormais un cache
+  mono-entrée clé sur l'**identité** des arguments (`facade === cachedFacade && spec === cachedSpec`).
+  L'identité est ce qui rend le hoist gratuit en comportement : une autre façade ou un autre spec
+  recalcule, donc aucun appelant ne peut recevoir une réservation périmée. La géométrie n'a pas
+  bougé d'une ligne (mêmes `map/filter/sort/slice`, mêmes tie-breaks).
+- `src/game/systems/deliveryAssault.ts` — `seatAssault(reservedSlots, pool, enemies, lootSlotIndex)`
+  prend la réservation en **paramètre** (4 args au lieu de 5 : `facade` et `spec` ne lui servaient
+  qu'à la recalculer). Le garde `spec === null` disparaît sans perte : une réservation vide EST le
+  cas « pas de livraison ⇒ pas d'assaut » (AC13), une seule source de vérité.
+- `src/game/systems/stateMachine.ts` — l'appel de seating passe le `reservedSlots` déjà lu au tick
+  (l.386), le même que consomment le rollover de vague et l'éligibilité de caisse. Commentaire mis à
+  jour : « lu une fois par tick », et de fait **calculé une fois par niveau**.
+
+**Mesure (sonde jetable, supprimée) :** `createInitialState` + 600 ticks sur vitry (152 slots),
+compteur sur `facade.slots.map` — **avant : 601 exécutions du pipeline ; après : 1**. Le tick n'en
+déclenche plus aucune ; la seule reste celle du chargement de niveau.
+
+**TDD / anti-régression :** nouveau `describe` dans `deliveryAssault.test.ts` — (1) 1000 appels
+consécutifs rendent la **même instance** (`toBe`), (2) une façade différente puis un retour à la
+première ne sert jamais de réponse périmée, (3) idem quand seul le spec change (spec déplacé, spec
+`null`). Probe de mutation : cache-read retiré ⇒ seul le test (1) passe au rouge, les 45 autres
+restent verts (le cache est bien testé pour ce qu'il fait, pas pour ce qu'il calcule).
+Les assertions existantes (delivery-assault, deliveryAssaultTick, stateMachine, lootSystem,
+slotGeometryGuards) sont **inchangées** ; seule la façon dont les fixtures appellent `seatAssault`
+a suivi la signature.
+
+**Gates :** `rtk vitest` → **PASS 1409 / FAIL 0** · `rtk tsc` → **No errors** · `rtk lint` →
+**No issues**. `src/game` reste sans React ni Three.
+
+**Fichiers (non commités, laissés au review) :** `src/game/systems/deliveryAssault.ts`,
+`src/game/systems/stateMachine.ts`, `src/game/systems/__tests__/deliveryAssault.test.ts`, ce shard.
+
+---
+
+## D5 / K-6 — double lecture des deux assaillants — verdict `lead-art` (Nico), 2026-07-29
+
+**Saisine :** `docs/game-design/spec-delivery-van-assault.md` §D5, puce `lead-art` (K-6 reformulé) —
+les 2 assaillants doivent tenir une **double lecture** : (a) ils pincent la camionnette, (b) ils
+restent lisibles comme des tireurs vivants qui viseront le joueur. Question posée : la réutilisation
+intégrale des sprites de fenêtre existants (zéro nouvel asset, D2.7) suffit-elle, ou faut-il une
+pose / un angle de tir différencié ?
+
+### VERDICT — **PASS. Zéro nouvel asset, zéro changement de prompt, zéro changement de rendu.**
+
+Et plus que « ça suffit » : **une pose visant vers le bas serait un FAIL**, sur cinq motifs de la
+bible, pas sur du goût. La demande de différenciation est refusée à la source.
+
+### Ce que j'ai lu
+
+- **Les 8 sprites de la famille ennemie sur fond contrastant** (`public/assets/enemy_*.png`,
+  planche montée à 256 px/case sur magenta). Les 5 poses `*_shooting` sont **toutes** frontales,
+  bras tendus vers l'objectif, arme pointée sur le joueur — le prompt de famille dit littéralement
+  _« aiming a handgun forward **at the viewer** »_ (`levelArt.json` → `enemies.types`, 5 entrées
+  identiques sur ce point). Les poses idle sont neutres, debout, mains basses.
+- **Le composite réel en jeu** : `docs/qa/evidence/story-delivery-telegraph/03-desktop-incoming-framed-no-cue.png`
+  (Stalingrad, `INCOMING`, les 2 assaillants assis), recadré ×4 sur la paire.
+- `src/render/scene/EnemySprite.tsx` (plan 1,3×, ancre muzzle par frame, recul, rim ADR-0025).
+
+### Pourquoi une pose « visant le van » serait un FAIL
+
+1. **§1 + §3.6 — la caméra est verrouillée frontale/orthographique.** Un flic braquant vers le bas
+   dans la rue demande une perspective plongeante que la famille n'a pas. C'est un asset
+   **hors-famille** ⇒ §2 loi 2, FAIL automatique du set. Le jeu est **une affiche, pas un diorama** :
+   le pop-up de Prohibition fait face au dehors, point.
+2. **§2 loi 2 — un seul tirage d'imprimerie.** Par D2.7 les assaillants sont tirés du pool du niveau
+   et rendus comme n'importe quel flic de fenêtre. Deux poses spéciales dans deux fenêtres, au
+   milieu de fenêtres voisines non différenciées, casse la cohérence de famille pour de bon.
+3. **C'est la fausse affordance que K-6 interdit explicitement**, et une infraction à
+   `PROJECT_GUIDELINES` §5 règle 6 (« jamais de mort bullshit »). Un flic visiblement braqué
+   ailleurs dit « occupé, pas une menace pour moi », puis tire une balle **visée** (ADR-0065, un
+   `riot` = un cœur sur trois). La lecture (b) mourrait pour financer la lecture (a). C'est
+   exactement l'erreur de la Rev.1 que la Rev.2 a corrigée ; je ne la réintroduis pas par l'art.
+4. **Coût pipeline hors de proportion** : nouvelle famille de prompts, batches sous le plafond de 2,
+   risque de défaut de génération, **et** re-mesure des ancres `muzzle` par frame. Pire,
+   `EnemySprite.tsx:202` dérive la direction de recul de `muzzle.x - 0.5` : une pose plongeante
+   ramène l'ancre vers le centre en x et neutralise/inverse le kick. On paierait de la dette de
+   rendu pour dégrader une lecture.
+5. **Canon narratif (Yasmine, §D5 fiction ci-dessus)** : « ils se rendent comme des flics de fenêtre
+   ordinaires », pas de nouvelle faction, pas de nouveau sprite. Une variante visuelle devrait une
+   explication que la fiction refuse de donner.
+
+### Ce qui porte réellement la lecture (a) « ils pincent le van » — et pourquoi c'est le bon porteur
+
+La pose ne peut pas la porter dans un monde frontal plat : l'axe vers le van est un axe de
+profondeur qu'un quad orthographique ne sait pas montrer sans casser §3.6. Elle est portée, mieux,
+par trois choses **déjà livrées et gratuites** :
+
+- **La co-location** — `ASSAULT_RADIUS = 7` contre `VIEW_W = 18` : les deux hommes et le véhicule
+  tiennent dans un cadre, non rognés (§4.1). Dans une affiche, « la menace est là où est la chose »
+  EST la phrase.
+- **La synchronie** — la réservation D2.8 laisse les deux fenêtres **vides** jusqu'à l'arrivée, puis
+  elles s'occupent au tick exact d'`INCOMING`. Un **changement dans le temps** lit toujours plus fort
+  qu'une pose statique à la taille de jeu. C'est le meilleur télégraphe du lot, et il est diégétique.
+- **La conséquence** — la jauge descend tant qu'ils vivent, s'arrête quand ils tombent, avec le
+  bandeau `LIVRAISON EN APPROCHE` / `PROTÉGEZ LE VÉHICULE` et le repère directionnel du télégraphe
+  K-5 qui nomment la causalité. Vérifié sur capture réelle.
+
+### Ce qui porte la lecture (b) « tireur vivant, dangereux, pour MOI »
+
+- **La pose de tir frontale existante**, qui est l'énoncé le plus fort disponible : il vise
+  l'objectif, donc le joueur. Rien à ajouter.
+- **Le rim néon de chauffe (ADR-0025)**, vert→orange→rouge, réservé aux hostiles. Sur le composite
+  recadré il est **franc, dégradé, à falloff jusqu'à zéro** (§2.1 respectée : un halo, pas un aplat)
+  et les deux assaillants sont à des stades de chauffe **différents** — le décalage de timer de D2.4
+  se voit à l'œil. Deux hommes, pas une animation scriptée : exactement ce que K-2 cherchait.
+
+Les deux lectures cohabitent sans se voler : (a) est spatiale et temporelle, (b) est posturale et
+lumineuse. Elles n'occupent pas le même canal, donc elles ne sont pas exclusives — ce que K-6
+demandait.
+
+### Notes consignées (aucune ne conditionne le PASS)
+
+- **N1 — la sélection « plus proche en x » empile les deux assaillants dans la MÊME colonne.**
+  Constaté sur données et sur capture : belliard `#23`/`#42` tous deux à `x = 0,99` ; stalingrad
+  `#19`/`#23` à `−5,06`/`−5,09` ; vitry `#107`/`#102` à `2,98`/`3,11`. Le tri ne portant que sur x,
+  il choisit naturellement une pile verticale. Avec `ENEMY_PLANE_SCALE = 1,3` (figure plus haute que
+  sa fenêtre, documenté et voulu), **les bottes du flic du haut recouvrent la casquette de celui du
+  bas** (visible au ×4). Aujourd'hui ça reste lisible parce que le tirage a donné deux archétypes
+  distincts (riot + civil) et que le décalage de timer désynchronise les rims. À surveiller sur un
+  tirage `riot+riot`, où deux silhouettes identiques empilées à la même abscisse liraient comme un
+  seul sprite dupliqué. **Ce n'est pas un problème d'asset** : remède éventuel côté géométrie
+  (préférer deux colonnes distinctes au tie-break), coût art nul. **→ `game-designer` (Sacha),
+  non bloquant**, à regarder au playtest §6 plutôt qu'à spéculer maintenant.
+- **N2 — A3, le muzzle flash figé.** Vérifié à la source : le flash est
+  `getGlowTexture()` (`EnemySprite.tsx:49-65`), un `createRadialGradient` blanc→ambre→**alpha 0** au
+  rayon. C'est un dégradé, pas un aplat : §2.1 tenue même figé. Cosmétique déjà assumé par ADR-0071,
+  **aucune action**, pas un bloqueur.
+- **N3 — la capture §6.4 m'est toujours due.** `docs/qa/evidence/story-delivery-telegraph/` ne
+  contient aucune image montrant **les deux assaillants dans le même cadre que le van au point
+  d'arrêt** — c'est précisément la preuve de la lecture (a). Mon PASS d'asset ne l'attend pas (le
+  sprite n'est pas la variable), mais je veux la lire au stage 5. **Si (a) ne passe pas sur cette
+  capture, le correctif sera géométrique ou HUD — explicitement PAS un nouveau sprite.**
+
+### Règle manquante dans la bible — proposition (non appliquée)
+
+`docs/art-direction.md` est muet sur « comment se lit la **cible** d'une menace dans un monde frontal
+plat », et la question reviendra à chaque set-piece « l'ennemi attaque l'objet X ». Je propose
+l'ajout suivant en §5 (anchors de silhouette), à appliquer sur demande — la bible ne bouge que par
+moi, et je ne la touche pas dans un log de gate :
+
+> **La cible d'une menace se lit par la place et le moment, jamais par l'angle de visée.** La caméra
+> est frontale et orthographique (§3.6) : un sprite ne peut pas montrer qu'il vise quelque chose
+> hors de son plan sans quitter sa famille. Un hostile qui menace un objet du monde est donc
+> désigné par sa **co-location** (il tient dans le même cadre que l'objet, non rogné), sa
+> **synchronie** (il apparaît au moment où l'objet arrive) et sa **conséquence** (une jauge qui
+> descend tant qu'il vit). La pose de tir, elle, reste **toujours frontale, vers le joueur** — c'est
+> la promesse que ce qui est armé peut te toucher, et la trahir fabrique une mort bullshit
+> (`PROJECT_GUIDELINES` §5 règle 6).
+
+---
+
+### Constat séparé, hors périmètre de cette saisine — **composite du télégraphe : FAIL avec rework**
+
+En lisant les captures réelles j'ai relevé un défaut qui n'appartient pas à l'histoire de l'assaut
+mais qui est de ma juridiction (Gate 4, visuel composé au runtime), et que je ne peux pas voir sans
+le verdicter. Je le loge ici faute de shard dédié — `story-delivery-van-assault.md` ne porte aucun
+verdict `lead-art` : **le télégraphe a franchi le merge gate sans passer par la porte 4.** C'est
+exactement le trou que cette porte existe pour fermer.
+
+**Le défaut :** le bandeau de livraison et sa jauge sont dessinés **par-dessus la flèche du bord
+HAUT** de l'anneau d'aide à la visée (`OffscreenArrowIndicator`). Visible sur
+`03-desktop-incoming-framed-no-cue.png` et `02-desktop-delivering-offscreen-cue.png`, top-center :
+la pointe de la flèche est tronquée par la puce, et la barre verte de la jauge traverse son fût. Le
+joueur ne voit pas une flèche — il voit **un moignon jaune rectangulaire empalant la jauge**, deux
+petites ailerons dépassant au-dessus. Deux signaux HUD sans rapport se mutilent dans les mêmes
+pixels : c'est littéralement la collision que §D2.1 de `spec-delivery-assault-telegraph.md`
+prétendait éviter en refusant les 4 fentes de bord — évitée en sémantique, pas en géométrie.
+
+**Ce n'est pas un nit :** l'anneau est le seul repère « où est la cible » du jeu, et il est illisible
+dans une de ses 4 fentes pendant tout le set-piece où le joueur en a le plus besoin.
+
+**→ `ux-designer` (Tony) + `dev-r3f-render`, correctif attendu :** faire cohabiter les deux, pas les
+superposer — décaler verticalement la fente HAUT de l'anneau sous le bandeau quand
+`delivery.phase ∈ {INCOMING, DELIVERING}`, ou réserver la fente et laisser le bandeau descendre.
+Le choix est à Tony ; ma condition est qu'**aucune des deux formes ne soit rognée par l'autre** sur
+capture réelle. Je re-verdicte sur nouvelles captures in-game.
+
+**Verdict D5/K-6 en une phrase : PASS — les sprites de fenêtre existants portent déjà la double
+lecture (pose frontale + rim de chauffe pour « il te tirera dessus », co-location + fenêtres vides
+puis occupées à l'arrivée du van + jauge pour « ils pincent la camionnette »), et une pose visant
+vers le bas serait un FAIL de famille et une fausse affordance — aucun nouvel asset, aucun
+changement de prompt, aucun changement de rendu n'est requis.**
+
+---
+
+## Arbitrage du MINEUR « un seul cadre » — `game-designer` (Sacha), 2026-07-29
+
+Tranche du MINEUR round-2 de Reviewer C (§ « Panel round 2 — verdict final ») : la garantie
+« le van + les 2 assaillants tiennent dans UN cadre » (`ASSAULT_RADIUS = 7` justifié §4.1
+contre `VIEW_W = 18`) n'était vérifiée que sur X. **VERDICT : option (a) — je ne défends pas
+la revendication, je la corrige.** Aucun changement de mécanique, aucune valeur de tuning ne
+bouge, aucun changement `src/game` de comportement.
+
+### Ce que j'ai mesuré moi-même (géométrie runtime réelle + build réel)
+
+Reviewer C a raison sur le fond et j'ai reconstruit ses chiffres à partir du code shippé —
+`baseZoom` (`GameScene.tsx:332-335`, `MOBILE_ZOOM_FACTOR = 1.7` l.107), clamp
+(`GameScene.tsx:385-386` / `useGameLoop.ts:367-368`), `VEHICLE_H = 2.4`
+(`DeliveryVehicleSprite.tsx:20`), test de touche = disque `HIT_RADIUS = 0.8` sur le **centre
+de slot** (`bulletSystem.ts:52,129-132`). Deux corrections importantes à son analyse :
+
+1. **Le zoom mobile par défaut n'est pas le zoom max.** `DEFAULT_ZOOM_FRACTION = 0.7`
+   (`useTouchControls.ts:46`), plage `[0.5, 1]`. Son `viewH = 5,44` est le cadrage le plus
+   serré que le joueur _peut choisir_, pas celui qu'il a au démarrage (7,75). Le vrai énoncé
+   est donc plus nuancé — et plus dur : **impossible** au zoom max sur belliard/stalingrad/
+   niveau-final, et seulement **0,8 % à 10,5 % de la plage de pan** au zoom par défaut
+   (0,033 unité sur 4,25 pour stalingrad — inatteignable au doigt en pratique).
+2. **L'axe X non plus n'est pas garanti par ce test.** `2.1` est la largeur de plan de
+   **repli** d'`EnemySprite` (utilisée seulement si `size` est `undefined`) ; le vrai plan est
+   `slot.size.y × ENEMY_PLANE_SCALE` = 1,40 / 1,89 / 1,24 / **9,67** (les arches de
+   niveau-final). Le test passait par coïncidence de données, pas par propriété.
+
+**Vérifié dans le build** (`?preview=delivery`, 844×390 landscape + UA iPhone, et 1920×1080
+desktop, 4 niveaux, captures d'écran) : caméra amenée sur le van → stalingrad **zéro**
+assaillant à l'écran ; niveau-final seulement les **bottes** ; belliard 1 assaillant sur 2
+(sous la jauge d'intégrité). Le modèle prédit les 4 cas au bon endroit du clamp. Au passage,
+**D1 est re-vérifié en vrai** : l'intégrité tombe 100 → 69 (belliard) et 60 → 51,6
+(niveau-final) caméra parquée sur le van, donc loin des assaillants — la règle de dégât n'a
+bien aucun terme de caméra.
+
+### La décision, et pourquoi ce n'est pas de la complaisance
+
+Le spec confondait deux propriétés. Elles sont désormais séparées dans un **§4.5** neuf :
+
+- **F1 — TIRABILITÉ MUTUELLE (équité, VRAIE partout).** Les 2 assaillants tiennent ensemble
+  dans un cadre, à portée de viseur, à une position caméra que le clamp autorise. Balayé sur
+  4 niveaux × 6 viewports réels × 3 fractions de zoom : **36/36 PASS**, pire marge **4,07 u**.
+  C'est ça que `ASSAULT_RADIUS` + la réservation D2.8 achètent réellement, et c'est
+  l'hypothèse de la table joueur-référence §4.4 (le coût de `switch` est une re-visée de
+  0,15-0,8 s, jamais un pan de caméra).
+- **F2 — COMPOSITION (van non rogné + les 2 slots dans le même cadre) : un luxe.** Cadrer le
+  van est **mécaniquement inerte** pendant `DELIVERING` : il ne se tire pas dessus, ne s'aide
+  pas, ne bouge pas, et sa jauge est côté **HUD** (présente dans 8/8 captures, à toutes les
+  positions caméra). Le seul acte qui change l'issue est de tuer les assaillants ⇒ le cadre
+  que le joueur doit tenir est le leur, F1, et il est toujours disponible. F2 achète une
+  meilleure _image_, pas une meilleure _chance_.
+
+Option (b) évaluée sérieusement avant d'être écartée — 5 pistes, chacune mesurée (table
+complète en §4.5) : réduire `ASSAULT_RADIUS` (rayon **X**, le défaut est en **Y** ; et
+niveau-final est **exactement** à 2 candidats à R = 7, donc AC12.1 est au plancher — tout
+rétrécissement casse la garantie de placement déterministe déjà gatée), préférer le slot le
+plus bas (no-op sur niveau-final : rangée d'arches unique, les 16 slots à y = 1,44 — donc ne
+règle pas le cas contraignant, et rouvrirait D2.1 + AC7), remonter `stopPosition.y` (données
+`levels.ts` + calage trottoir, hors lane), descendre `MIN_ZOOM_FRACTION` à 0,41 (change le 3C
+**global** pour un seul beat, et à 0,41 la façade se letterboxe, la caméra se verrouille et
+les cibles passent ~20 % sous le plancher doigt d'ADR-0003/0015), auto-cadrage scripté (une
+mécanique caméra que Prohibition n'a jamais eue, qui se bat contre la propriété du joueur sur
+la caméra — pilier `Éviter`). Aucune ne vaut son prix ; la seule qui règle niveau-final est la
+plus chère et la plus globale.
+
+### Ce que je RETIENS quand même comme défaut — et ce n'est pas la géométrie
+
+Deux défauts de **signalétique**, trouvés en mesurant, bornés et réels :
+
+- **S1** — la flèche « regarde en haut » **existe et est invisible**. Caméra sur le van,
+  `targetIndicator.up === true` sur belliard/stalingrad/niveau-final (lu via le seam ADR-0005) :
+  le jeu _calcule_ le repère. Mais le glyphe haut est ancré `top: 52px, left: 50%`, wrap 60 px
+  en short-landscape (`OffscreenArrowIndicator.tsx:63-68`) ⇒ boîte CSS x 392-452 / y 52-112, et
+  la bannière de livraison occupe x ≈ 210-632 / y ≈ 59-111 — et `HUD.tsx` peint la bannière
+  (l.78) **après** l'anneau de flèches (l.70). **Le repère est entièrement masqué par
+  « LIVRAISON — PROTÉGEZ LE VÉHICULE ! », pendant exactement le beat pour lequel il existe.**
+- **S2** — toute la signalétique pointe vers la moitié inerte du beat (copie de bannière +
+  `computeDeliveryDirection`, `useGameLoop.ts:176`, ancré sur `stopPosition`). Sur mobile,
+  obéir à la signalétique coûte au joueur la vue de la menace.
+
+C'est **là** qu'est le vrai coût mobile, pas dans le cadre. HUD seulement, aucun changement
+`src/game`.
+
+### Livrables
+
+**Doc (fait) — `docs/game-design/spec-delivery-van-assault.md` Rev.3 :** §4.1 corrigé (ne
+revendique plus le cadre unique), §D1 invariant d'équité reformulé sur F1, **§4.5 nouveau**
+(F1/F2 + tables mesurées + S1/S2 + les 5 pistes rejetées), §D5 addendum S1/S2, §6.4 réécrit et
+marqué DONE (playtest fait ce jour), historique de révision.
+
+**Code (à faire, petit) — `dev-gameplay`, `src/game/levels/__tests__/slotGeometryGuards.test.ts` :**
+**AC17/AC18/AC19** (§5 du spec, valeurs épinglées fournies). Supprimer le cas
+`"%s frames the van and both assailants together"` (l.38-50) : il affirme
+`distance + 2.1/2 < VIEW_W/2`, faux trois fois (viewport irréel, largeur de plan de repli, et
+aucun axe Y) — un garde vert alors que la propriété qu'il nomme est fausse est pire que pas de
+garde. Le remplacer par AC17 (F1, 36/36, la vraie garantie) + AC18 (caractérisation honnête de
+F2, avec `NONE` documenté comme état **réglé** et non comme bug) + AC19 (le commentaire
+`deliveryAssault.ts:31` doit cesser de citer `VIEW_W = 18` / la largeur 2.1). Le premier
+MINEUR du panel (`reservedAssaultSlots` recalculé à chaque tick) touche le même fichier de
+lane et peut voyager avec — **fix lane**, une seule lane, comportement déjà gaté.
+
+**HUD (à faire) — `ux-designer` (Tony) + `dev-r3f-render` :** S1 et S2. Non bloquants : le beat
+reste gagnable sans (le cas « j'ignore » échoue toujours, le cas engagé gagne toujours) — mais
+S1 est un décalage de layout, c'est-à-dire le meilleur rapport qualité/prix du lot.
+
+**Hand-offs :** `lead-game-designer` (Karim — ratifier le déclassement de la revendication
+« un seul cadre » : c'est une décision de conception, pas une correction de coquille),
+`dev-gameplay` (AC17-AC19), `ux-designer` + `dev-r3f-render` (S1/S2), `producer` (tiering :
+AC17-AC19 = fix lane à mon sens).
+
+---
+
+## S1 corrigé / S2 documenté — `dev-r3f-render` (Amelia), 2026-07-29
+
+Lane HUD uniquement (`src/render/ui/**` + le catalogue). **Aucun changement `src/game`, aucun
+changement `src/hooks`.** Non commité — laissé pour relecture.
+
+### S1 — la flèche « regarde en haut » est visible (corrigé)
+
+**Reproduit d'abord, mesuré, puis corrigé** (`?preview=delivery&at=delivering`, `__MUF_PLAY__`,
+seam ADR-0005). Les chiffres de Sacha sont exacts, à la ligne près : 844×390 UA iPhone,
+`targetIndicator.up === true`, glyphe haut en x 392-452 / y 52-112, bannière en x 211-633 /
+y 58-132, bannière peinte après l'anneau ⇒ **occlusion à 100 %** (capture avant : la flèche
+gauche brille, la flèche haute n'existe visuellement pas).
+
+**Cause, nommée avant de toucher au code :** les deux surfaces se disputent la **bande
+haut-centre**. Ce n'est pas un problème d'ordre de peinture — inverser le `z-index` ne fait que
+retourner le sandwich (un glyphe de 51 px par-dessus la copie « PROTÉGEZ LE VÉHICULE ! » et la
+jauge, ce que HUD.tsx interdisait explicitement). C'est un problème de **place**.
+
+**Correctif — la flèche haute s'écarte dans la gouttière gauche tant que l'appel de livraison
+tient la bande, à la même hauteur** (c'est l'énoncé littéral de la demande design §4.5 : « the
+up glyph must clear the banner ») :
+
+| Fichier                                  | Changement                                                                                                                                                                                                                                                              |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hud/DeliveryIntegrityBanner.tsx`        | exporte `isDeliveryCallOutVisible(delivery)` — vrai sur `INCOMING`/`DELIVERING` (bannière) **et** `SUCCESS`/`FAILED` (tampon verdict, qui occultait tout autant). Même patron que `isQteSetPieceVisible`.                                                               |
+| `hud/DeliveryIntegrityBanner.module.css` | `max-width: 50%` sur `.deliveryBanner` et `.deliveryVerdict` — **épingle** ce que `left: 50%` produit déjà (boîte fixed shrink-to-fit ⇒ largeur dispo = moitié du viewport), donc no-op visuel mesuré, mais l'invariant devient un contrat écrit au lieu d'un accident. |
+| `hud/OffscreenArrowIndicator.module.css` | `.arrowWrapUp` (ancre nominale 52/50 %, sortie de l'inline) + `.arrowWrapUpAside` : `right: calc(75% + var(--space-sm))`.                                                                                                                                               |
+| `hud/OffscreenArrowIndicator.tsx`        | nouvelle prop **requise** `topCentreOccupied`.                                                                                                                                                                                                                          |
+| `HUD.tsx`                                | la passe (`isDeliveryCallOutVisible(data.delivery)`) ; commentaire « la bannière doit peindre par-dessus » corrigé, il décrivait l'ancien mécanisme.                                                                                                                    |
+| `catalog/Catalog.tsx`                    | la nouvelle variante « up glyph aside » entre au catalogue.                                                                                                                                                                                                             |
+
+**Pourquoi latéral et statique, plutôt que « sous la bannière » :** la hauteur du chip dépend du
+retour à la ligne de la copie (mesuré : bas de bannière **112 px** à 1920 → **152 px** à 568) —
+un décalage vertical correct exigerait donc une mesure DOM au runtime (ResizeObserver), et sur un
+téléphone de 390 px de haut il garerait un glyphe de 51 px à ~45 % de l'écran, au milieu de la
+scène : ce n'est plus un repère de bord. L'extension **horizontale**, elle, est bornée par
+construction (l'appel de livraison ne franchit jamais les verticales 25 % / 75 %), donc une règle
+CSS statique suffit et ne peut pas dériver. Gouttière **gauche** parce que la bannière accroche
+ses **propres** repères de livraison hors de son bord droit (`.deliveryDirection`) : les deux
+familles de glyphes sont désormais séparées dans l'espace — le risque « deux repères de sens
+différent dans le même slot pixel » de D2.1 devient structurellement impossible.
+
+**Vérification runtime (Playwright + Chromium, seam ADR-0005) :**
+
+- **21/21 sans recouvrement** : {stalingrad, belliard, niveau-final} × {568×320, 667×375,
+  844×390, 932×430 (UA iPhone, `pointer: coarse`), 1024×768, 1280×720, 1920×1080} en
+  `DELIVERING`. Écart minimal bord-à-bord = **6 px** (`--space-sm`) et jamais négatif ; idem en
+  `INCOMING`.
+- **Cycle de phases complet** (844×390) : `none` → up en 392/52 (identique à avant) ; `INCOMING`
+  /`DELIVERING` → up en 145/52 (écarté) ; `FAILED` (tampon verdict, x 256-588) → up écarté ;
+  `GONE` → up **de retour en 392/52**. Hors du beat, zéro pixel bouge.
+- Captures : avant/après 844×390 stalingrad (flèche invisible → flèche jaune pleine à gauche de
+  la bannière, opacité active 1.0), après 1280×720 belliard desktop, tampon `FAILED`.
+
+### S2 — documenté, pas codé (et pourquoi)
+
+**Non corrigé volontairement : ce n'est pas un correctif de lane, c'est une re-décision de
+design.** `computeDeliveryDirection` (`useGameLoop.ts:166-188`) pointe `spec.stopPosition` **par
+spécification gatée**, pas par accident : `spec-delivery-assault-telegraph.md` **D2.2** impose la
+réutilisation d'`isOnScreen` sur le véhicule (« fairness-critical reuse » : le repère est actif
+exactement quand les assaillants sont gelés-exposés) et **D2.7** tranche explicitement « un repère
+pour tout le set-piece, celui du **véhicule**, pas un par assaillant ». Repointer le repère vers un
+assaillant vivant contredit D2.2 **et** D2.7 et change ce que signifie un repère déjà expédié —
+ça passe par `ux-designer` + `lead-game-designer`, pas par un patch render. Idem pour la copie
+« PROTÉGEZ LE VÉHICULE ! » (lane copie/narration).
+
+**Ce que S1 règle déjà de S2, gratuitement :** la moitié mécaniquement utile du signal. L'anneau
+plus proche-ennemi, lui, pointe bien les assaillants (c'est le « useful side-effect » noté en
+D2.7) — il était simplement invisible pendant le beat. Il est maintenant lisible **en même temps**
+que la bannière, à côté d'elle : le joueur a enfin, à l'écran, un repère vers la seule chose sur
+laquelle il peut agir (F1). Reste ouvert pour `ux-designer` : hiérarchiser les deux repères
+(taille/ink/priorité) et arbitrer la copie de bannière — ce n'est plus une invisibilité, c'est un
+arbitrage de lecture.
+
+### Qualité
+
+- `rtk tsc` : **0 erreur**. `rtk lint` : **0 issue**. `prettier --check` sur les 6 fichiers : OK.
+- `yarn vitest run src/render src/hooks` : **381/381 vertes** (40 fichiers).
+- `rtk vitest` (suite complète) : **1489 vertes, 1 rouge — non liée à cette lane** :
+  `deliveryAssault.test.ts` « AC2(b) … the module reads no camera term » échoue parce que le
+  commentaire tout neuf de `deliveryAssault.ts:32` (travail `dev-gameplay` AC17-AC19 en cours dans
+  le même worktree) contient le mot `viewport`, que sa propre assertion interdit. À `dev-gameplay`.
+
+### File List
+
+- `src/render/ui/HUD.tsx`
+- `src/render/ui/hud/DeliveryIntegrityBanner.tsx`
+- `src/render/ui/hud/DeliveryIntegrityBanner.module.css`
+- `src/render/ui/hud/OffscreenArrowIndicator.tsx`
+- `src/render/ui/hud/OffscreenArrowIndicator.module.css`
+- `src/catalog/Catalog.tsx`
+
+**Hand-offs :** `ux-designer` (Tony — hiérarchie des deux repères + copie de bannière, S2),
+`lead-game-designer` (Karim — S2 touche D2.2/D2.7, donc re-gate design si on veut le repère
+assaillant), `producer` (tiering : S1 = fix lane, une seule lane, comportement gaté, pas de
+mécanique touchée).
+
+---
+
+## AC17 / AC18 / AC19 — le faux garde « un seul cadre » remplacé — `dev-gameplay` (Amelia), 2026-07-29
+
+Fix lane (une seule lane, comportement déjà gaté, aucun changement de mécanique ni de tuning).
+Suite de l'arbitrage de Sacha (§ « Arbitrage du MINEUR "un seul cadre" ») et du spec Rev.3 §4.5/§5.
+
+### Fichiers (non commités, laissés pour revue)
+
+- `src/game/levels/__tests__/slotGeometryGuards.test.ts` — cas `"%s frames the van and both
+assailants together"` (l.38-50) **supprimé**, remplacé par AC17 + AC18 + AC19. 93 tests dans le
+  fichier (dont le balayage 36 cellules).
+- `src/game/systems/deliveryAssault.ts` — commentaire d'`ASSAULT_RADIUS` réécrit en termes de F1
+  (AC19) ; ne cite plus les constantes de vue du viseur ni la largeur de plan de repli.
+
+### Ce que le garde supprimé valait vraiment — pire que « coïncidence de données »
+
+Il était **tautologique**. Le filtre `d <= ASSAULT_RADIUS` borne la distance à 7 ; l'assertion
+était `d + 1.05 < 9`, c'est-à-dire au pire `8.05 < 9` — **vrai pour n'importe quelle géométrie**,
+tant que `ASSAULT_RADIUS <= 7.95`. Aucune retouche de zones de fenêtres n'aurait pu le faire
+rougir. Vérifié en le remettant tel quel dans un fichier sonde : il reste **vert** sous une
+mutation qui écarte les deux arches de niveau-final de 6,09 u à 11 u (cas où le joueur mobile ne
+peut plus tenir les deux assaillants dans un cadre), alors qu'AC17 rougit sur les 3 lignes mobiles.
+
+### AC17 — F1, la vraie garantie (36/36)
+
+Balayage 4 niveaux × 9 lignes (3 desktop + 6 mobile = les 9 colonnes épinglées d'AC18) : pour
+chaque cellule, les deux intervalles caméra d'AC17 (clampés par `rangeX`/`rangeY`) sont non vides
+⇒ **36/36 PASS**. Modèle caméra redéclaré dans le test avec la provenance ligne à ligne
+(`GameScene.tsx:107/159/332-335/385-386`, `useTouchControls.ts:41-46`, `bulletSystem.ts:52,129-132`,
+`DeliveryVehicleSprite.tsx:20`) — **aucun import `@render` de production**, la géométrie des slots
+vient du vrai facade runtime (`levelFacade`) et de la vraie réservation (`reservedAssaultSlots`),
+pas d'une re-dérivation. Besoins par niveau épinglés : belliard 1,60 × 3,04 ; stalingrad 1,62 ×
+3,16 ; vitry 1,73 × 2,59 ; niveau-final **7,69 × 1,60** (Δx = 6,09, le cas contraignant).
+
+**Un écart mesuré, à faire trancher (non bloquant) :** §4.5 annonce « pire marge 4,07 u ». C'est
+exact **sur la ligne que le spec appelle le viewport réel le plus serré** (932×430 zoom max →
+11,76 u de large) — le test l'épingle telle quelle. Mais la ligne **1024×768 f = 1** de la même
+table déclarée produit un cadre plus étroit encore (`viewW` = 9,41 u), où niveau-final ne garde que
+**1,72 u**. F1 tient quand même (c'est bien 36/36), donc la conclusion de Sacha est intacte ; c'est
+la valeur d'affichage « pire marge » de §4.5 qui vaut 1,72 et non 4,07. Les deux sont épinglées
+dans le test, avec le commentaire qui dit laquelle est laquelle. À `game-designer` de décider s'il
+corrige le chiffre dans §4.5.
+
+### AC18 — F2 caractérisé (les 36 cellules, valeurs reproduites à l'identique)
+
+Les 36 cellules de la table épinglée §5 AC18 sont **reproduites exactement** par le calcul sur la
+géométrie réelle (`LOCKED` / `NONE` / largeur de bande, tolérance ±0,01) : belliard NONE ×2,
+stalingrad NONE ×3 + les slivers **0,045** et **0,033**, vitry PASS partout, niveau-final NONE ×3.
+Le docstring dit que `NONE` est un état **réglé** (§4.5 RULING), pas un bug, et qu'une cellule qui
+bouge dans un sens **ou dans l'autre** signifie que la table de §4.5 est périmée.
+
+### AC19 — la fausse revendication ne peut pas revenir
+
+Scan de source sur la surface livraison/assaut (`deliveryAssault.ts`, `deliverySystem.ts` et leurs
+deux specs) : ni les constantes de vue du viseur, ni la largeur de plan de repli. Le look-behind
+évite les faux positifs sur `AC12.1` / `§2.1`.
+
+### Mutation-probes (est-ce que ça mord ?)
+
+| Mutation (production, révoquée aussitôt)                              | Attendu | Observé                                                            |
+| --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------ |
+| arches de niveau-final écartées (zones générées, Δx 6,09 → 11 u)      | rouge   | **5 rouges** : 3 cellules mobiles + besoin 7,69 + marges           |
+| arches rapprochées (Δx 6,09 → 0,56 u)                                 | rouge   | **rouge** (besoin 7,69 + marges) — l'ancien garde restait **vert** |
+| `stopPosition.y` de stalingrad −4,5 → −3,5                            | rouge   | **5 cellules AC18** rouges (dont un `NONE` → bande)                |
+| commentaire faux réinjecté dans `deliveryAssault.ts` (deux variantes) | rouge   | **AC19 rouge**, une fois par motif                                 |
+
+Trou trouvé par la 2e sonde et bouché : une réservation à moins de 2 slots rendait les intervalles
+trivialement non vides ⇒ `expect(count).toBe(DELIVERY_ASSAILANTS)` ajouté dans chaque cellule du
+balayage.
+
+### Vert / rouge
+
+`rtk tsc` **vert** (0 erreur) · `rtk lint` **vert** (0) · `rtk vitest` **vert** (1486 PASS / 0 FAIL,
+93 dans le fichier touché) · `prettier --check` vert. Passe `simplify` faite sur mon propre diff
+(helper `shootableBand` à usage unique inliné). **Rien n'est commité.**
