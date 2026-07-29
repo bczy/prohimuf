@@ -63,5 +63,9 @@ absolument tout »_ (2026-07-27).
       test (`generatedLevels.test.ts`); on screen it is indistinguishable anyway (it
       renders on the same fallback sprite). Evidence:
       `docs/qa/evidence/story-level-harness-sp1/` (3 PNG + report.json)
+- [ ] `senior-architect` countersign: `GENERATED_LEVEL_CONFIGS` / `GENERATED_LEVELS` /
+      `ALL_LEVELS` placement in `levels.data.ts` satisfies ADR-0074 §2's
+      import-time-computable rule (pure projection at import, no runtime state) —
+      requested post-rebase on #150; the JSDoc on `GENERATED_LEVELS` points here
 - [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
 - [ ] SP2 opens only after this merges
