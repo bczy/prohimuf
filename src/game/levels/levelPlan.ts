@@ -1,4 +1,5 @@
 import type { Archetype } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import type { EnemyKind } from "@game/types/enemy";
 import type { LevelConfig } from "@game/levels/levels";
 import type { AuthoredNearForegroundObject, LevelArt } from "@game/levels/levelArt";
@@ -108,6 +109,24 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!Number.isInteger(a.hp) || a.hp < 1) {
       errors.push(`archetype ${a.kind}: hp must be an integer >= 1`);
     }
+    // The remaining numeric fields are read just as directly at runtime, with no
+    // clamp on the way: `bulletDamage` flows into `snapLives(lives - damage + …)`
+    // (a NaN corrupts lives forever — game-over compares then never fire) and the
+    // hidden/visible durations feed enemySystem's timers (NaN ⇒ state flips every
+    // frame). Score/lives/time deltas land in the HUD arithmetic on every kill.
+    if (!Number.isFinite(a.bulletDamage) || a.bulletDamage < 0) {
+      errors.push(`archetype ${a.kind}: bulletDamage must be a finite number >= 0`);
+    }
+    for (const field of ["hiddenDuration", "visibleDuration"] as const) {
+      if (!Number.isFinite(a[field]) || a[field] <= 0) {
+        errors.push(`archetype ${a.kind}: ${field} must be a finite number > 0`);
+      }
+    }
+    for (const field of ["scoreDelta", "livesDelta", "timeDelta"] as const) {
+      if (!Number.isFinite(a[field])) {
+        errors.push(`archetype ${a.kind}: ${field} must be a finite number`);
+      }
+    }
     // Runtime reads `aspect` just as directly: EnemySprite scales the mesh by it
     // (NaN/0/negative → invisible or mirrored sprite), and GameScene folds EVERY
     // generated archetype's aspect into the module-level WIDEST_ASPECT at import —
@@ -212,6 +231,36 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     } else if (!declared.has(kind)) {
       errors.push(`windowWeights ${kind}: no archetype of the plan declares this kind`);
     }
+  }
+
+  // Victory is `kills >= enemiesToWin` and kills only count `countsAsTarget` kinds —
+  // so the EFFECTIVE pool (core defaults merged with the plan's overrides, exactly
+  // how call sites feed `buildWeightedFrom`) must keep at least one countsAsTarget
+  // kind at positive weight. Tuning core weights is a level's right, but zeroing
+  // normal/riot/biker while activating only a non-countable kind ships a permanent
+  // softlock: the win quota is structurally unreachable on every playthrough — the
+  // same "structurally unearnable" class the delivery-runway check closes above.
+  const effectivePool: Partial<Record<string, number>> = {
+    ...Object.fromEntries(
+      (Object.keys(CORE_ARCHETYPES) as (keyof typeof CORE_ARCHETYPES)[]).map((k) => [
+        k,
+        CORE_ARCHETYPES[k].weight,
+      ]),
+    ),
+    ...plan.gameplay.windowWeights,
+  };
+  const declaredByKind = new Map<string, Archetype>(plan.archetypes.map((a) => [a.kind, a]));
+  const core: Partial<Record<string, Archetype>> = CORE_ARCHETYPES;
+  const winnable = Object.entries(effectivePool).some(([kind, weight]) => {
+    if (typeof weight !== "number" || weight <= 0) return false;
+    const arch = declaredByKind.get(kind) ?? core[kind];
+    return arch?.countsAsTarget === true;
+  });
+  if (!winnable) {
+    errors.push(
+      `gameplay.windowWeights: no countsAsTarget kind survives with positive weight — ` +
+        `enemiesToWin can never be reached`,
+    );
   }
 
   // No mobile-halving row check here, deliberately (panel run-8): the halving keeps

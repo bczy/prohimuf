@@ -9,6 +9,7 @@ import {
   type LevelPlan,
 } from "@game/levels/levelPlan";
 import { WORLD_HEIGHT } from "@game/levels/levelArt";
+import type { Archetype } from "@game/types/enemyTypes";
 
 /**
  * The LevelPlan schema (spec-level-harness-sp1 §4.4) and the invariants a plan
@@ -146,6 +147,60 @@ describe("validateLevelPlan", () => {
       props: [prop("fixture:kiosque", "far"), prop("fixture:borne")],
     };
     expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});
+
+describe("validateLevelPlan — panel run-9 hardenings", () => {
+  // Runtime reads these unclamped: bulletDamage → snapLives (NaN corrupts lives
+  // forever), hidden/visible durations → enemySystem timers (NaN flips state every
+  // frame), the deltas → HUD arithmetic on every kill.
+  it("rejects non-finite/out-of-range bulletDamage, durations and deltas", () => {
+    const cases: readonly (readonly [Partial<Archetype>, string])[] = [
+      [{ bulletDamage: Number.NaN }, "bulletDamage"],
+      [{ bulletDamage: -0.5 }, "bulletDamage"],
+      [{ hiddenDuration: 0 }, "hiddenDuration"],
+      [{ visibleDuration: Number.NaN }, "visibleDuration"],
+      [{ scoreDelta: Number.NaN }, "scoreDelta"],
+      [{ livesDelta: Number.POSITIVE_INFINITY }, "livesDelta"],
+      [{ timeDelta: Number.NaN }, "timeDelta"],
+    ];
+    for (const [patch, field] of cases) {
+      const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, ...patch }] };
+      expect(validateLevelPlan(bad)).toContainEqual(expect.stringContaining(field));
+    }
+  });
+
+  // Victory counts only countsAsTarget kinds (normal/riot/biker in the core pool):
+  // zeroing them all while activating only a non-countable kind is a permanent
+  // softlock — enemiesToWin can never be reached.
+  it("rejects a windowWeights override that leaves no countsAsTarget kind in the pool", () => {
+    const softlock: LevelPlan = {
+      ...base,
+      archetypes: [{ ...vigile, countsAsTarget: false }],
+      gameplay: {
+        ...base.gameplay,
+        windowWeights: { normal: 0, riot: 0, biker: 0, "fixture:vigile": 20 },
+      },
+    };
+    expect(validateLevelPlan(softlock)).toContainEqual(
+      expect.stringContaining("enemiesToWin can never be reached"),
+    );
+  });
+
+  it("accepts zeroed core kinds when the plan's OWN countable archetype takes over", () => {
+    const spotlight: LevelPlan = {
+      ...base,
+      archetypes: [vigile], // countsAsTarget: true
+      gameplay: {
+        ...base.gameplay,
+        windowWeights: { normal: 0, riot: 0, biker: 0, "fixture:vigile": 20 },
+      },
+    };
+    expect(validateLevelPlan(spotlight)).toStrictEqual([]);
+  });
+
+  it("keeps the default pool winnable with no overrides at all", () => {
+    expect(validateLevelPlan(base)).toStrictEqual([]);
   });
 });
 
