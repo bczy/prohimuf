@@ -9,7 +9,7 @@ import {
   PRE_LEVEL_NARRATIVE,
   POST_LEVEL_NARRATIVE,
 } from "@game/systems/narrativeSystem";
-import type { NarrativeScene } from "@game/systems/narrativeSystem";
+import type { DiagramKind, GestureKind, NarrativeScene } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
 
 /**
@@ -26,7 +26,15 @@ import levelArt from "@game/levels/levelArt.json";
  * Zero React / Three imports — this module stays in the pure game core.
  */
 
-export type ManifestTarget = "menu" | "tutorial" | (string & {});
+/**
+ * What a caller asks a manifest for. The tutorial is DEVICE-FORKED: the render layer
+ * already owns the device decision (it picks the scene it will draw via `IS_MOBILE`), so
+ * it names the fork it wants and the game layer only maps string → scene. There is
+ * deliberately NO bare `"tutorial"` target and no `isMobile` parameter — the device must
+ * not leak into `src/game` (ADR-0015), and a device must not preload the other fork's
+ * panels. Any other string is a level id.
+ */
+export type ManifestTarget = "menu" | "tutorial-desktop" | "tutorial-mobile" | (string & {});
 
 // The three backdrop layers a level preloads, in draw order. Mirrors `LAYER_NAMES`
 // in levelArt.ts (and what LevelBackdrop actually loads) — duplicated as a local
@@ -324,27 +332,87 @@ export function narrativeImagePaths(scene: NarrativeScene): readonly string[] {
 }
 
 /**
+ * Bitmaps embedded INSIDE the code-drawn gesture icons (`src/render/ui/GestureIcon.tsx`),
+ * keyed by the `GestureKind` a panel authors. "Code-drawn" means the icon is vector line
+ * art, NOT that it references no asset: `edge-scroll` frames the real Belliard street in
+ * its mini-screen (5.9 MB), so that panel costs a fetch like any `image:` panel and must be
+ * warmed (ADR-0073 D5, preload-explicitness). The other three icons are pure vector — an
+ * empty list, not an omission. Exhaustive over the closed union: a fifth `GestureKind`
+ * fails the build here until someone states what it loads (same guard as GestureIcon's own
+ * `Record<GestureKind, …>`), so the manifest cannot silently fall behind the icons.
+ */
+const GESTURE_EMBEDDED_ASSETS: Record<GestureKind, readonly string[]> = {
+  "mouse-click": [],
+  "edge-scroll": ["assets/levels/belliard/street-wide.png"],
+  "two-finger-tap": [],
+  "swipe-pan": [],
+};
+
+/**
+ * Same contract for the code-drawn MECHANIC diagrams (`src/render/ui/DiagramIcon.tsx`):
+ * `hostage-ring` and `boss-finale-switch` show the REAL in-game sprites so the tutorial
+ * teaches the true silhouettes; the three flow/ladder diagrams are pure vector. The
+ * Commandant is his SHIELDED QTE pose (`commander_shielded.png`) — the tutorial branch is
+ * the ONLY thing that warms it here, since `bossAssetPaths` runs on the level branch.
+ */
+const DIAGRAM_EMBEDDED_ASSETS: Record<DiagramKind, readonly string[]> = {
+  "shot-read-player-vs-enemy-bullet": [],
+  "weapon-crate-loop": [],
+  "threat-hierarchy-ladder": [],
+  "hostage-ring": ["assets/enemy_hostage.png", "assets/hostage/girl.png"],
+  "boss-finale-switch": ["assets/levels/belliard/facade.png", "assets/boss/commander_shielded.png"],
+};
+
+/**
+ * The bitmaps a scene's code-drawn illustrations embed, base-relative and de-duplicated.
+ * Twin of `narrativeImagePaths`, for the other two illustration channels (`gesture` /
+ * `diagram`) — together they cover every asset a panel can put on screen.
+ */
+export function illustrationAssetPaths(scene: NarrativeScene): readonly string[] {
+  const paths: string[] = [];
+  for (const line of scene.lines) {
+    if (line.gesture !== undefined) paths.push(...GESTURE_EMBEDDED_ASSETS[line.gesture]);
+    if (line.diagram !== undefined) paths.push(...DIAGRAM_EMBEDDED_ASSETS[line.diagram]);
+  }
+  return dedupe(paths);
+}
+
+/**
+ * Everything ONE tutorial fork puts on screen: the menu backdrop the narrative screen
+ * shares, the scene's own backdrop, its `image:` panels and the bitmaps its code-drawn
+ * gesture/diagram panels embed. Takes the already-selected scene, so no fork ever warms
+ * the other's assets — the desktop-only `edge-scroll` panel embeds the 5.7 MB Belliard
+ * street image, which a mobile player never draws and must not download.
+ */
+function tutorialManifest(scene: NarrativeScene): readonly string[] {
+  return dedupe([
+    menuBackdropPath(),
+    ...(scene.backdrop !== undefined ? [scene.backdrop] : []),
+    ...narrativeImagePaths(scene),
+    ...illustrationAssetPaths(scene),
+  ]);
+}
+
+/**
  * The full de-duplicated, stably-ordered manifest to preload for a target:
  * - `"menu"` — just the menu backdrop.
- * - `"tutorial"` — the menu backdrop plus BOTH tutorial forks' illustrations
- *   (desktop + mobile), so either device path is covered deterministically.
+ * - `"tutorial-desktop"` / `"tutorial-mobile"` — the corresponding tutorial fork's
+ *   assets (see `tutorialManifest`). The caller names the fork; this layer never
+ *   looks at the device.
  * - any other string is treated as a level id — its backdrop layers, enemy
  *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops, the
  *   boss QTE poses + décor props (when the level authors a boss), and its
  *   pre/post-level narrative illustrations. Unknown ids fall back to the first
- *   playable level.
+ *   playable level. NOTE: `LEVELS` holds the onboarding stage as a real entry with
+ *   `id: "tutorial"`, so a bare `"tutorial"` lands HERE, on the level branch — it is a
+ *   level id, not a tutorial target (behaviour pinned in `assetManifest.test.ts`).
  */
 export function manifestFor(target: ManifestTarget): readonly string[] {
   if (target === "menu") {
     return dedupe([menuBackdropPath()]);
   }
-  if (target === "tutorial") {
-    return dedupe([
-      menuBackdropPath(),
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_DESKTOP),
-      ...narrativeImagePaths(TUTORIAL_NARRATIVE_MOBILE),
-    ]);
-  }
+  if (target === "tutorial-desktop") return tutorialManifest(TUTORIAL_NARRATIVE_DESKTOP);
+  if (target === "tutorial-mobile") return tutorialManifest(TUTORIAL_NARRATIVE_MOBILE);
 
   const level = levelConfigFor(target);
   const paths: string[] = [

@@ -1,147 +1,204 @@
-# Tutorial script — visual & gesture pass (expanded copy)
+# Tutorial script — visual gestures + 16-panel contract lock
 
-**Author:** Yasmine (`narrative-designer`) · **Date:** 2026-07-14 ·
-**Story:** `_bmad-output/planning-artifacts/story-tutorial-visual-gestures.md` ·
-**Extends:** ADR-0012 (optional tutorial), ADR-0015 (device fork, shared-by-reference) ·
-**Gate:** `lead-game-designer` (Karim) PASS required before `dev-gameplay` transcribes ·
-**Target file:** `src/game/systems/narrativeSystem.ts` — constants
-`TUTORIAL_OPENING_LINES` / `DESKTOP_CONTROL_LINES` / `MOBILE_CONTROL_LINES` /
-`TUTORIAL_FIELD_LINES`.
+**Author:** Yasmine (`narrative-designer`) · **Date:** 2026-07-25  
+**Target:** `src/game/systems/narrativeSystem.ts`  
+**Normative refs:**
 
-This is the **words spec**. `dev-gameplay` transcribes the `text`/`image`/`imageAlt`
-verbatim; `game-designer` owns the gesture-icon slot names + final panel structure;
-final sprite pick is a design/lead call (see `[FLAG]` notes). I write zero production code.
+- `docs/game-design/tutorial-immersion-teaching-spec.md` (accepted 16-panel map)
+- `docs/game-design/ux/spec-tutorial-narrative-presentation.md` (channel + bullets rules)
 
-## Voice pins (do not drift)
+## Alignment contract (must hold)
 
-Terse, imperative, diegetic — DISPATCH/KENZA briefing Muf over the wire, not a narrator.
-KENZA carries the tactical/field beats (controls + bestiary); DISPATCH bookends (loop,
-HUD, "bouge"). Same zine as the shipped scenes. French, ~2 sentences max per panel so it
-fits one typewriter panel and stays skippable.
-
-## ADR-0015 device-accurate copy pins (must stay green)
-
-- **Mobile scene** mentions `deux doigts`; NEVER `clic` / `souris`.
-- **Desktop scene** mentions `souris` and `clic`; NEVER `doigt` / `balay`.
-- Shared opening + field panels contain **none** of those tokens (verified below), so the
-  fork stays control-panels-only and the regex pins hold on both variants.
-
-## Fork invariant (ADR-0015 D1 / AC9)
-
-Opening + field segments are **shared by reference**; only the 2 control panels fork.
-Both variants land at the **same panel count** (see count table). New bestiary panels go
-in the **shared field segment** — never in a fork.
+- **16 panels per variant** (desktop 16, mobile 16).
+- **Fork only at indices [2,3]** (controls only).
+- Dedicated shared panels for:
+  - `diagram: threat-hierarchy-ladder` (index 11),
+  - `diagram: boss-finale-switch` (index 13).
+- Mechanic cues use accepted **diagram tokens** where mapped by spec.
+- Bullet reinforcement only on **high-risk** panels, **max 2 bullets**.
+- Device wording constraints explicit:
+  - desktop control lines: `souris` / `clic`, no `doigt` / `balay`;
+  - mobile control lines: `doigt` / `deux doigts`, no `souris` / `clic`;
+  - shared lines: no device-control vocabulary.
 
 ---
 
-## Segment 1 — `TUTORIAL_OPENING_LINES` (shared, 2 panels)
+## Panel map (index-locked)
 
-| #   | Speaker  | Text                                                                                               | Visual                                                      |
-| --- | -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| O1  | DISPATCH | `Écoute bien, Muf. La règle tient en trois mots : Récupérer, Livrer, Éviter.`                      | text-only                                                   |
-| O2  | DISPATCH | `Le colis arrive par le véhicule. Couvre-le pendant la livraison, puis laisse-le repartir intact.` | `assets/vehicles/truck.png` — alt: `Le camion de livraison` |
-
-O1 unchanged from shipped. O2 lightly tightened from shipped to name the "couvrir
-pendant la livraison" beat the story calls for (the delivery-window rule itself is
-recalled in the HUD panel H1).
-
----
-
-## Segment 2 — `DESKTOP_CONTROL_LINES` (forked, 2 panels)
-
-| #   | Speaker | Text                                                                                                 | Gesture icon slot | Visual                                |
-| --- | ------- | ---------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------- |
-| DC1 | KENZA   | `Pour tirer : le viseur suit ta souris. Clic gauche, un coup part — une seule action, rien de plus.` | `mouse-click`     | gesture icon (souris + clic gauche)   |
-| DC2 | KENZA   | `La rue déborde de l'écran. Pousse le curseur au bord — la vue suit, dans les deux sens.`            | `edge-scroll`     | gesture icon (curseur poussé au bord) |
-
-DC1/DC2 = shipped copy, kept. Gesture-icon slot is the story's proposed
-`NarrativeLine.gesture` field. **NO drag** anywhere (edge-scroll only, ADR-0015). Copy
-carries `souris` + `clic`, never `doigt`/`balay`.
+| #   | Segment         | Desktop                                     | Mobile                    |
+| --- | --------------- | ------------------------------------------- | ------------------------- |
+| 0   | Opening         | text                                        | same                      |
+| 1   | Opening         | image camion                                | same                      |
+| 2   | Controls (fork) | `gesture: mouse-click`                      | `gesture: two-finger-tap` |
+| 3   | Controls (fork) | `gesture: edge-scroll`                      | `gesture: swipe-pan`      |
+| 4   | Field           | `diagram: shot-read-player-vs-enemy-bullet` | same                      |
+| 5   | Field           | `diagram: weapon-crate-loop`                | same                      |
+| 6   | Bestiary        | image flic                                  | same                      |
+| 7   | Bestiary        | image CRS                                   | same                      |
+| 8   | Bestiary        | image motard                                | same                      |
+| 9   | Bestiary        | image bonus                                 | same                      |
+| 10  | Bestiary        | image livreur civil                         | same                      |
+| 11  | Field           | `diagram: threat-hierarchy-ladder`          | same                      |
+| 12  | Field           | `diagram: hostage-ring`                     | same                      |
+| 13  | Field           | `diagram: boss-finale-switch`               | same                      |
+| 14  | HUD             | text                                        | same                      |
+| 15  | Outro           | text                                        | same                      |
 
 ---
 
-## Segment 3 — `MOBILE_CONTROL_LINES` (forked, 2 panels)
+## Transcription-ready script block
 
-| #   | Speaker | Text                                                                                                                    | Gesture icon slot | Visual                                   |
-| --- | ------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------- |
-| MC1 | KENZA   | `Pour tirer : tape à DEUX doigts en même temps, bref et net. La balle part pile entre tes doigts.`                      | `two-finger-tap`  | gesture icon (deux doigts, UN tap)       |
-| MC2 | KENZA   | `La rue déborde de l'écran. Un doigt pour balayer — haut, bas, gauche, droite. Une pichenette, et ça glisse tout seul.` | `swipe-pan`       | gesture icon (un doigt, balayage 4 sens) |
+> **Source of truth : `src/game/systems/narrativeSystem.ts`.** Ce bloc en est le miroir
+> littéral (commentaires de code omis, constante `MUF_RIDER_IMAGE` inlinée) — toute
+> évolution du code doit être répercutée ici dans le même cycle, sinon ce document ment.
+> Aligné sur le code shippé le 2026-07-27 (post-amendement §D2.2 : puces sur les index
+> 5, 10, 12, 14).
 
-MC1 adds **`en même temps`** to the shipped line — this is the load-bearing correction:
-the real gesture is a **single simultaneous two-finger tap**, NOT a double-tap (PM ruling
-1, ADR-0015 D1). The icon MUST read as one tap with two fingers. MC2 = shipped copy
-(balayage + pichenette inertie). Copy carries `deux doigts`, never `clic`/`souris`.
+```ts
+// Shared opening (indices 0-1)
+const TUTORIAL_OPENING_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "DISPATCH",
+    text: "Muf, écoute. Façades fermées, rue sous tension : Récupérer, Livrer, Éviter.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Le camion porte le son. Couvre son arrêt, puis laisse-le repartir intact.",
+    image: "assets/vehicles/truck.png",
+    imageAlt: "Le camion de livraison",
+  },
+];
+
+// Desktop controls (indices 2-3, fork)
+const DESKTOP_CONTROL_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "KENZA",
+    text: "Pour tirer : le viseur suit ta souris. Clic gauche, un coup part — une seule action, rien de plus.",
+    gesture: "mouse-click",
+    gestureAlt: "Souris : un clic gauche, un tir.",
+  },
+  {
+    speaker: "KENZA",
+    text: "La rue déborde de l'écran. Pousse le curseur au bord — la vue suit, dans les deux sens.",
+    gesture: "edge-scroll",
+    gestureAlt: "Curseur poussé au bord de l'écran : la vue défile.",
+  },
+];
+
+// Mobile controls (indices 2-3, fork)
+const MOBILE_CONTROL_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "KENZA",
+    text: "Tire au tap à deux doigts, en même temps. Ou double-tap d'un doigt là où tu vises.",
+    gesture: "two-finger-tap",
+    gestureAlt: "Tap simultané à deux doigts, ou double-tap d'un doigt, pour tirer.",
+  },
+  {
+    speaker: "KENZA",
+    text: "Un doigt balaie la rue : haut, bas, gauche, droite. Pichenette, ça continue seul.",
+    gesture: "swipe-pan",
+    gestureAlt: "Un doigt balaye l'écran pour déplacer la vue avec inertie.",
+  },
+];
+
+// Shared field / threats / systems (indices 4-15)
+const TUTORIAL_FIELD_LINES: readonly NarrativeLine[] = [
+  {
+    speaker: "DISPATCH",
+    text: "Ton tir frappe instantané à l'impact. Leurs balles voyagent : lis la trajectoire et décale-toi.",
+    diagram: "shot-read-player-vs-enemy-bullet",
+    diagramAlt:
+      "Comparaison tir joueur et balle ennemie : impact immédiat côté joueur, projectile visible côté ennemi avec trajectoire à éviter.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Caisse d'armement : tire dessus pour équiper spécial. Stock fini, retour automatique au calibre de base.",
+    diagram: "weapon-crate-loop",
+    diagramAlt:
+      "Boucle d'armement : tir sur caisse, arme spéciale active, munitions spéciales épuisées, retour automatique à l'arme de base.",
+    teachingBullets: [
+      "HUD arme : A = calibre, stock ∞",
+      "B/C = spécial : compteur, clignote sur réserve",
+    ],
+  },
+  {
+    speaker: "KENZA",
+    text: "Flic fenêtre : cible directe. Une balle suffit, mais il tire vite.",
+    image: "assets/enemy_shooting.png",
+    imageAlt: "Un flic qui dégaine à la fenêtre",
+  },
+  {
+    speaker: "KENZA",
+    text: "CRS : deux balles minimum. Tu lâches pas après la première.",
+    image: "assets/enemy_riot_shooting.png",
+    imageAlt: "Un CRS anti-émeute qui dégaine",
+  },
+  {
+    speaker: "KENZA",
+    text: "Motard : apparition éclair. Tu vois, tu tires.",
+    image: "assets/enemy_biker_shooting.png",
+    imageAlt: "Un motard qui dégaine à la fenêtre",
+  },
+  {
+    speaker: "KENZA",
+    text: "Bonus : il tire pas. Tu le prends pour +5 secondes, pas pour le quota.",
+    image: "assets/enemy_bonus.png",
+    imageAlt: "Une cible bonus qui donne du temps",
+  },
+  {
+    speaker: "KENZA",
+    text: "Le livreur civil dans la rue, tu le touches JAMAIS. Un tir sur lui : une vie et un point en moins.",
+    image: "assets/courier/rider.png", // MUF_RIDER_IMAGE
+    imageAlt: "Le livreur civil dans la rue",
+    teachingBullets: ["On tire aux fenêtres, jamais dans la rue"],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Priorité menace : CRS d'abord, puis motard, puis flic. Bonus et livreur ne font pas monter le danger.",
+    diagram: "threat-hierarchy-ladder",
+    diagramAlt:
+      "Échelle de priorité des menaces : CRS en tête, puis motard, puis flic standard ; bonus et livreur en bas de l'échelle.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Parfois, prise d'otage : l'anneau passe rouge, jaune, vert. Tu tires au vert.",
+    diagram: "hostage-ring",
+    diagramAlt:
+      "Un anneau de visée passe du rouge au jaune puis au vert sur le preneur d'otage ; on tire au vert.",
+    teachingBullets: [
+      "La couleur suit la zone sous l'anneau",
+      "Vert = tête, jaune = torse, rouge = 0 dégât",
+    ],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "En niveau boss, chrono à zéro : bascule finale Commandant. Le quota ne termine plus la manche.",
+    diagram: "boss-finale-switch",
+    diagramAlt:
+      "Bascule de fin de niveau boss : expiration du chrono active la phase finale Commandant et remplace la fin par quota.",
+  },
+  {
+    speaker: "DISPATCH",
+    text: "En haut : score, niveau, vague, chrono, vies. Au passage du camion, la jauge de livraison doit rester au vert.",
+    teachingBullets: [
+      "HUD: score/niveau/vague/temps/vies/arme",
+      "Livraison: jauge verte pendant le passage",
+    ],
+  },
+  {
+    speaker: "DISPATCH",
+    text: "Compris ? Bouge. Rue Belliard t'attend.",
+  },
+];
+```
 
 ---
 
-## Segment 4 — `TUTORIAL_FIELD_LINES` (shared, 7 panels)
+## Bullet discipline checklist
 
-Bestiary expanded to the full shipped Belliard pool (AC5). One line = one rule, TRUE to
-`ARCHETYPES` in `src/game/types/enemyTypes.ts`. KENZA reads the enemies; DISPATCH closes.
-
-| #   | Speaker  | Text                                                                                                                  | Visual                                                                        | Archetype truth                                   |
-| --- | -------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| F1  | KENZA    | `Le flic à la fenêtre, c'est ta cible. Une balle suffit — mais il dégaine avant toi si tu traînes.`                   | `assets/enemy_shooting.png` — alt: `Un flic qui dégaine à la fenêtre`         | normal · hp 1 · shoots · +1 · target              |
-| F2  | KENZA    | `Le CRS en tenue anti-émeute encaisse DEUX balles. Un seul tir le fait pas tomber — insiste.`                         | `assets/enemy_riot_shooting.png` — alt: `Un CRS anti-émeute qui dégaine`      | riot · hp 2 · shoots · +2 · target                |
-| F3  | KENZA    | `Le motard surgit vite et repart vite. Il reste jamais longtemps — vise dès qu'il paraît.`                            | `assets/enemy_biker_shooting.png` — alt: `Un motard qui dégaine à la fenêtre` | biker · hp 1 · shoots · fast (2.0s) · +1 · target |
-| F4  | KENZA    | `Celui-là ne tire jamais. Descends-le pour +5 secondes au chrono — mais il compte pas dans ton quota d'éliminations.` | `assets/enemy_bonus.png` — alt: `Une cible bonus qui donne du temps`          | bonus · never shoots · +5s · +1 · NOT a target    |
-| F5  | KENZA    | `Le livreur civil dans la rue, tu le touches JAMAIS. Un tir sur lui : une vie et un point en moins.`                  | `assets/enemy_civilian.png` — alt: `Le livreur civil dans la rue`             | civilian · never shoots · -1 vie · -1 point       |
-| H1  | DISPATCH | `En haut : le chrono, tes vies, ton score, le compteur d'éliminations à atteindre, et la fenêtre de livraison.`       | text-only                                                                     | HUD                                               |
-| F6  | DISPATCH | `Compris ? Alors bouge. Rue Belliard t'attend.`                                                                       | text-only                                                                     | outro                                             |
-
-### Bestiary copy notes (TRUE-to-numbers audit)
-
-- **F1 normal** — kept shipped copy, added `Une balle suffit` (hp 1). Still shows the
-  dégaine pose (threat framing).
-- **F2 riot** — teaches the ONE must-know trait: **2 HP / two shots** (story open Q3). I
-  do not surface the +2 score in copy — over-explains for an arcade panel; the number
-  rewards discovery.
-- **F3 biker** — teaches **speed** only (visibleDuration 2.0 vs normal 3.2). "surgit
-  vite et repart vite" = the read; no HP mention (it's 1, same as normal).
-- **F4 bonus** — this is the corrected truth Bertrand flagged: shooting the bonus is
-  **not** "temps perdu", it **grants +5 s and +1 point** (`timeDelta 5`, `scoreDelta 1`),
-  it simply does **not advance the elimination quota** (`countsAsTarget false`). Copy says
-  exactly that: shoot it for time, it won't tick your quota. It is a reward pop-up, not a
-  trap and not a mandatory kill.
-- **F5 civilian/courier** — the only NEVER-SHOOT. Copy now states the real penalty
-  (`livesDelta -1`, `scoreDelta -1`) instead of the vaguer shipped "c'est fini pour nous",
-  so the stakes are legible.
-
----
-
-## Production annotations & `[FLAG]`s for the lead gate
-
-1. **`[FLAG]` shooter-pose sprite rule.** F1/F2/F3 all use the `_shooting` variant
-   (`enemy_shooting`, `enemy_riot_shooting`, `enemy_biker_shooting`) so every armed enemy
-   is shown _dégainant_ (consistent threat read); bonus/civilian shown neutral. If
-   `game-designer` prefers idle silhouettes for the armored/fast reads, the idle sprites
-   also ship (`enemy_riot.png`, `enemy_biker.png`, `enemy_sprite.png`) — either is on disk,
-   design's call. My copy works with either pose.
-2. **`[FLAG]` courier sprite mismatch.** F5 shows `enemy_civilian.png`, matching the
-   shipped tutorial. But the _live_ courier rides the street as `courier/rider.png`
-   (`enemyTypes.ts` note + `courierSystem`). The player will meet the rider, not the
-   window-civilian sprite. Consider `assets/courier/rider.png` for on-sight accuracy;
-   `enemy_civilian.png` is the canonical "civilian" sprite and carries the shoot-penalty.
-   Design/lead pick.
-3. **Gesture-icon slots** (`mouse-click` / `edge-scroll` / `two-finger-tap` / `swipe-pan`)
-   are the story's proposed `NarrativeLine.gesture` field — architect owns the field
-   shape, `game-designer` owns icon fidelity (animated vs static). I only pin which slot
-   sits on which panel and that the mobile-shoot icon is **one tap, two fingers** (never a
-   double-tap, never one finger).
-4. **Accessibility (AC10).** Every illustrated panel carries a French `imageAlt` above;
-   each gesture icon needs an equivalent accessible label (game-designer/dev to author the
-   icon `aria`), degrading to the text panel if the icon fails.
-5. **No new art.** Every `image` path above already ships in `public/assets/`. Gesture
-   icons are code-drawn (story ruling 5). Nothing here commissions a sprite.
-
-## Panel count per variant
-
-| Variant | Opening | Control (fork) | Field | **Total** |
-| ------- | :-----: | :------------: | :---: | :-------: |
-| Desktop |    2    |       2        |   7   |  **11**   |
-| Mobile  |    2    |       2        |   7   |  **11**   |
-
-Parity holds (11 = 11). Shared segments (opening 2 + field 7 = 9 panels) are
-reference-identical across variants; only the 2 control panels differ — fork invariant
-intact (ADR-0015 D1 / AC9). Was 8; +3 comes from the 3 new bestiary panels (riot, biker,
-bonus).
+- Bullets used only on the amended §D2.2 whitelist (spec-tutorial-narrative-presentation.md):
+  **weapon-crate-loop** (index 5), **never shoot courier** (index 10),
+  **hostage green shot** (index 12), **HUD recap** (index 14).
+- Each panel using bullets has **2 max**, action-oriented.
+- No bullets on already one-glance decode panels (the mobile shoot gesture decodes in
+  one glance with its icon — its former bullets were removed by the amendment).

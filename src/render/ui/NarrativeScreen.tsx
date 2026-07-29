@@ -63,6 +63,10 @@ export function NarrativeScreen({
   const currentLine = scene.lines[lineIndex];
   const fullText = currentLine?.text ?? "";
   const isTyping = charIndex < fullText.length;
+  const teachingBullets = (currentLine?.teachingBullets ?? [])
+    .map((bullet) => bullet.trim())
+    .filter((bullet) => bullet.length > 0)
+    .slice(0, 2);
 
   // Clear any previous sprite-load failure when the panel changes.
   useEffect(() => {
@@ -127,7 +131,9 @@ export function NarrativeScreen({
               `HalftoneHero` forces grayscale(1) — kills the source facade's warm window-glow
               (§2bis). Its facade layer is a CSS background-image, so a 404 leaves at most the
               faint dot-screen grain — never a broken-image glyph, and no coupling to the per-line
-              `imageError`. Absent on tutorial scenes. */}
+              `imageError`. Since ADR-0071 (D1), tutorial scenes may carry this backdrop too —
+              both TUTORIAL_NARRATIVE_DESKTOP and TUTORIAL_NARRATIVE_MOBILE now author
+              `backdrop: "assets/levels/belliard/facade.png"`. */}
           {scene.backdrop !== undefined && (
             <HalftoneHero
               src={`${import.meta.env.BASE_URL}${scene.backdrop}`}
@@ -232,8 +238,7 @@ export function NarrativeScreen({
 
           {/* Transcript box — the fax/répondeur note, ink on paper. On a backdrop scene the
               ground is forced to SOLID newsprint (lead-art constraint) so the ink text never
-              rides over the halftone facade; backdrop-less scenes (tutorial) keep `transparent`
-              and are byte-identical to before. */}
+              rides over the halftone facade; backdrop-less scenes keep `transparent`. */}
           <div
             className={styles.transcript}
             style={{ background: scene.backdrop !== undefined ? STOCK.shell : "transparent" }}
@@ -246,6 +251,22 @@ export function NarrativeScreen({
               {displayedText}
               {isTyping && <span className={styles.caret} />}
             </div>
+
+            {teachingBullets.length > 0 && (
+              <ul className={styles.teachingBullets}>
+                {/* Composite key (panel index + slot): two panels — or two slots on one panel —
+                    may legitimately carry the same bullet text, and the text alone would then
+                    collide. The list is a fixed ≤2 slots re-derived per panel, never reordered. */}
+                {teachingBullets.map((bullet, slot) => (
+                  <li
+                    key={`${String(lineIndex)}-${String(slot)}`}
+                    className={styles.teachingBullet}
+                  >
+                    {bullet}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* Continue hint — inked, with a typewriter cursor blink (the one allowed pulse).
                 On the final panel the "done" tell is a black-keylined green box accent, not
