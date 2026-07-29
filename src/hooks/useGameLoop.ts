@@ -18,6 +18,8 @@ import {
 import type { GameState } from "@game/types/gameState";
 import { isOnScreen } from "@game/systems/viewport";
 import type { BossQte } from "@game/types/bossQte";
+import { fastForwardDeliveryState } from "@render/scene/deliveryHarness";
+import type { DeliveryHarnessTarget } from "@render/scene/deliveryHarness";
 import type { FacadeMap } from "@game/types/map";
 import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
@@ -68,6 +70,10 @@ interface HarnessWindow {
   /** Re-seed the boss on the blown-window LOSS so an unattended capture stays pinned at its
    *  fast-forwarded phase (`?preview=boss&…&blownImmune=1`). Harness-only. */
   __MUF_BOSS_IMMUNE__?: boolean;
+  /** Delivery-assault capture seam target (`?preview=delivery&at=…`, see
+   *  `render/scene/deliveryHarness.ts`). Read once at boot, same discipline as
+   *  `__MUF_BOSS_BOOT__`. */
+  __MUF_DELIVERY_TARGET__?: DeliveryHarnessTarget;
 }
 
 /** Read-only state seam payload (ADR-0005): a frozen game + last-HUD snapshot. */
@@ -271,6 +277,33 @@ export function useGameLoop(
     const boot = w?.__MUF_BOSS_BOOT__;
     if (boot !== undefined && gameStateRef.current.bossQteSpec !== null) {
       gameStateRef.current = { ...gameStateRef.current, bossQte: boot() };
+    }
+  }
+  // Delivery-assault capture seam: if the render layer installed a target
+  // (`?preview=delivery&at=…`, see `render/scene/deliveryHarness.ts`), fast-forward the
+  // initial state to it ONCE. Unlike the boss seam this has no isolated pure sub-tick to
+  // precompute — it drives the SAME `tickGameState` this hook calls every frame, with the
+  // SAME `facade`/`courierField`/`roster` already in scope here. Guarded the same way: the
+  // target only exists under `?preview=delivery` (deliveryHarness install), never in
+  // production, AND by `deliverySpec !== null`.
+  const deliveryBootedRef = useRef(false);
+  if (!deliveryBootedRef.current) {
+    deliveryBootedRef.current = true;
+    const w = typeof window !== "undefined" ? (window as unknown as HarnessWindow) : undefined;
+    const target = w?.__MUF_DELIVERY_TARGET__;
+    if (
+      target !== undefined &&
+      gameStateRef.current.deliverySpec !== null &&
+      courierField !== undefined
+    ) {
+      gameStateRef.current = fastForwardDeliveryState(
+        gameStateRef.current,
+        facade,
+        courierField,
+        levelParams?.enemiesToWin,
+        roster,
+        target,
+      );
     }
   }
   // Viewport state, not a game rule — lives in the bridge, not GameState (ADR-0003).
