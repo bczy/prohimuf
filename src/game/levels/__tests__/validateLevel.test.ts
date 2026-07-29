@@ -105,6 +105,22 @@ describe("validateLevel — hostage/boss timing margin (AC5)", () => {
     ).toStrictEqual([]);
   });
 
+  it("treats a non-finite timeSeconds as a violation (deliberate, stricter than the old guard)", () => {
+    // The clearance test returns null only when the margin HOLDS, so NaN falls through to an
+    // issue — and therefore to the `createInitialState` throw. A level whose clock is NaN
+    // cannot honour a timing invariant and must not boot; the pre-refactor `>=` let it pass.
+    const issues = validateLevel({
+      ...BASE,
+      timeSeconds: NaN,
+      hostageQte: HOSTAGE,
+      bossQteSpec: BOSS,
+    });
+    expect(codes(issues)).toContain("hostage-boss-margin");
+    expect(
+      hostageBossMarginIssue({ hostageQte: HOSTAGE, bossQteSpec: BOSS, timeSeconds: NaN })?.code,
+    ).toBe("hostage-boss-margin");
+  });
+
   it("exposes the margin as a shared predicate the state machine can call", () => {
     expect(
       hostageBossMarginIssue({ hostageQte: HOSTAGE, bossQteSpec: BOSS, timeSeconds: 90 }),

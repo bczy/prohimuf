@@ -16,6 +16,12 @@ import PRE from "./fixtures/levelsCatalogue.pre.json";
  * `levels.ts` (the 441-line mixed module, at HEAD before the split) and is the frozen
  * reference; every export re-exported by the barrel must still deep-equal it.
  *
+ * FIXTURE WITHDRAWAL NOTE (JSON carries no comments, so it lives here): the fixture freezes
+ * `BELLIARD_BOSS_ENABLED: true` AND the resulting `bossQteSpec` on `belliard`. Flipping the flag
+ * OFF is a sanctioned seam, not a regression — when that happens, regenerate the fixture from
+ * the commit of the flip and re-read this test. Do NOT make the comparison flag-aware: the
+ * fixture stays dumb and literal (ruling: `senior-architect`, stage-6 panel triage).
+ *
  * `toStrictEqual` is deliberate: the fixture carries NO `bossQteSpec` key on the levels that
  * author none, so a regression that made the conditional spread emit `bossQteSpec: undefined`
  * (instead of omitting the key — `exactOptionalPropertyTypes`) fails here. This is the one

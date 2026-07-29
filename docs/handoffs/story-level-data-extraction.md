@@ -619,3 +619,26 @@ parity evidenced against `origin/main`, zero dependency movement. ADR-0073 ships
 fix-lane cycle logged before merge); `pm` (John) for stage-7 acceptance; `producer` (Marion) to
 record the panel verdict, the ADR-0073 number re-check, and the three story-③ defers (findings
 1, 5(b), 6) on ③'s intake.
+
+### §4 addendum — post-panel fixes — dev-gameplay (Amelia) — 2026-07-29
+
+- claim: the three fixes prescribed by the stage-6 triage (§6), nothing else
+- release: all three applied, `src/game/levels` + full suite green, typecheck clean
+
+1. **NaN is accepted as strictly better** — `hostageBossMarginIssue` keeps its
+   "return null when the margin HOLDS" form (the old `>=` is NOT restored). Documented on the
+   predicate's docblock: a non-finite `timeSeconds` now yields the margin issue, hence a throw at
+   load, where the pre-refactor guard let it through — a level whose clock is NaN cannot honour a
+   timing invariant and must not boot. Pinned by a new test ("treats a non-finite timeSeconds as a
+   violation") covering both `validateLevel` and the shared predicate.
+2. **Fixture withdrawal note** — JSON carries no comments, so it heads
+   `levelsCatalogue.parity.test.ts`: the fixture freezes `BELLIARD_BOSS_ENABLED: true` and the
+   resulting `belliard.bossQteSpec`; a flag flip OFF is a sanctioned seam ⇒ regenerate the fixture
+   from the commit of the flip and re-read the test. No flag-aware comparison — the fixture stays
+   dumb and literal (Winston's ruling).
+3. **Wording** — "it would never fire" dropped from `pushRangeIssue` (false for an interval
+   field); the message is now neutral: `…s, outside [0, <timeSeconds>]s — the level's own clock.`
+
+Runs: `yarn vitest run src/game/levels` **12 files / 134 tests passed**; full `yarn vitest run`
+**100 files / 1436 tests passed** (+1 test vs the BUILD entry: the NaN pin); `yarn typecheck`
+clean, 0 error; targeted `eslint` + `prettier --check` on `src/game/levels` clean. Not committed.

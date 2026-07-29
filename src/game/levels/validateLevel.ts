@@ -49,6 +49,11 @@ const SAFETY_MARGIN_SECONDS = 5;
  * `validateLevel` reports the returned issue; `createInitialState` throws its `message` — same
  * arithmetic, two exits, no duplicated formula. Returns `null` when the invariant holds or
  * when the level authors fewer than both cinematics.
+ *
+ * The clearance test is expressed as "return null when the margin HOLDS", so a non-finite
+ * `timeSeconds` (NaN) makes the comparison false and yields an issue — i.e. it now throws at
+ * load where the old `>=` guard let it through. That is deliberate and strictly better: a level
+ * whose clock is NaN cannot honour a timing invariant and must not boot. Pinned by test.
  */
 export function hostageBossMarginIssue(input: {
   readonly hostageQte?: QteSpec | null | undefined;
@@ -148,7 +153,7 @@ function pushRangeIssue(
     severity: "error",
     field,
     message:
-      `${field} is ${String(value)}s, outside the level's [0, ${String(timeSeconds)}]s window — ` +
-      `it would never fire. Move it inside the level's own clock or widen timeSeconds.`,
+      `${field} is ${String(value)}s, outside [0, ${String(timeSeconds)}]s — the level's own ` +
+      `clock. Move it inside that range or widen timeSeconds.`,
   });
 }
