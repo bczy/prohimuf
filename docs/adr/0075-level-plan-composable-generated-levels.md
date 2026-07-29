@@ -53,8 +53,11 @@ The `:` never appears in core ids, so the two namespaces are disjoint by constru
 6. **Generated levels live OUTSIDE the shipped campaign.** `LEVELS` keeps its exact
    shipped content and order — the index-based unlock hop (`levelProgress.ts`
    `LEVELS[shippedIdx + 1]`) and the menu wall index into it. Generated levels are
-   exposed as `GENERATED_LEVELS` and `ALL_LEVELS = [...LEVELS, ...GENERATED_LEVELS]`;
-   promoting one into the campaign is a deliberate, separate act.
+   exposed as `GENERATED_LEVELS` and `ALL_LEVELS = [...LEVELS, ...GENERATED_LEVELS]`,
+   defined in the `levels.ts` BARREL — not in `levels.data.ts`, which ADR-0074 §2
+   binds to literal-only, side-effect-free imports; the generated import registers
+   archetypes and can throw on a duplicate id, so it lives outside the data module.
+   Promoting one into the campaign is a deliberate, separate act.
 7. **Generated props carry their sizing as data** — the same `{aspect, heightFrac,
 footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
    generated prop has NO procedural fallback drawing: without its PNG it silently does

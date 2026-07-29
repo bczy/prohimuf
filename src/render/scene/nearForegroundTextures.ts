@@ -96,10 +96,18 @@ function ensureProcedural(kind: NearForegroundKind): Texture | null {
 // / 404 / non-DOM keep the procedural entry. Never throws / never rejects; at most
 // one load per kind (loaded/pending/failed guards).
 function loadGenerated(kind: NearForegroundKind): void {
-  if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
-  if (typeof document === "undefined") return; // non-DOM (node/SSR): keep procedural
   const rel = nearForegroundArtAsset(kind);
   if (rel === null) return; // block absent → procedural stays
+  loadIntoCache(kind, rel);
+}
+
+// The ONE PNG-loading path both loaders share: pending/failed/loaded bookkeeping
+// around a single loader.load, swapping the cache entry on success. Any change to
+// the loading contract (progress callback, base prefixing, failure disposal) lands
+// here once and covers pool kinds and generated props alike.
+function loadIntoCache(kind: string, rel: string): void {
+  if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
+  if (typeof document === "undefined") return; // non-DOM (node/SSR): nothing to load
   pending.add(kind);
   loader.load(
     `${base}${rel}`,
@@ -139,24 +147,9 @@ export function warmNearForegroundTexture(kind: string): Promise<void> {
 // silently, never a crash, never a fallback drawing (spec §4.5/§6). Unknown kinds
 // (no asset in any plan) are a no-op.
 function loadGeneratedProp(kind: string): void {
-  if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
-  if (typeof document === "undefined") return; // non-DOM (node/SSR): nothing to build
   const rel = GENERATED_PROP_ASSETS[kind];
   if (rel === undefined) return;
-  pending.add(kind);
-  loader.load(
-    `${base}${rel}`,
-    (t) => {
-      pending.delete(kind);
-      loaded.add(kind);
-      cache.set(kind, applyPixelFilter(t));
-    },
-    undefined,
-    () => {
-      pending.delete(kind);
-      failed.add(kind);
-    },
-  );
+  loadIntoCache(kind, rel);
 }
 
 /**

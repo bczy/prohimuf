@@ -263,22 +263,43 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     expect(validateLevelPlan(short)).toContainEqual(expect.stringContaining("delivery trigger"));
   });
 
-  // Panel run-4: firing is not completing. After the 20s trigger the vehicle still
-  // travels to stopPosition and then holds its FULL 8s window before the bonus is
-  // awarded — a timer in (20, 32] passes the trigger check yet ships a level whose
-  // delivery bonus is structurally unearnable. 32 = trigger 20 + travel allowance 4
-  // + window 8; the boundary itself is rejected (`<=`), 33 is the first legal value.
+  // Panel run-4/run-5: firing is not completing. After the 20s trigger the vehicle
+  // still travels to stopPosition — a distance that SCALES with backdrop.aspect
+  // (fullW = WORLD_HEIGHT 12 × aspect, halved, + VEHICLE_MARGIN 4, at VEHICLE_SPEED 8)
+  // — then holds its FULL 8s window before the bonus is awarded. For base's aspect
+  // 5.14 the allowance is ceil((30.84+4)/8) = 5s → minimum 33; the boundary itself is
+  // rejected (`<=`), 34 is the first legal value.
   it("rejects a timer where the delivery fires but can never COMPLETE (bonus unearnable)", () => {
     const fires = { ...base, gameplay: { ...base.gameplay, timeSeconds: 25 } };
     expect(validateLevelPlan(fires)).toContainEqual(
       expect.stringContaining("delivery bonus can never be earned"),
     );
-    const boundary = { ...base, gameplay: { ...base.gameplay, timeSeconds: 32 } };
+    const boundary = { ...base, gameplay: { ...base.gameplay, timeSeconds: 33 } };
     expect(validateLevelPlan(boundary)).toContainEqual(
       expect.stringContaining("delivery bonus can never be earned"),
     );
-    const enough = { ...base, gameplay: { ...base.gameplay, timeSeconds: 33 } };
+    const enough = { ...base, gameplay: { ...base.gameplay, timeSeconds: 34 } };
     expect(validateLevelPlan(enough)).toStrictEqual([]);
+  });
+
+  // Run-5 hardening: the allowance follows the plan's OWN backdrop. Aspect 10 travels
+  // ceil((60+4)/8) = 8s → minimum 36: a timer legal on the 5.14 street (34) is
+  // rejected on the wide one, and 37 is the first legal value there.
+  it("scales the travel allowance with backdrop.aspect (wide street needs more runway)", () => {
+    const wide = { ...base, backdrop: { ...base.backdrop, aspect: 10 } };
+    const tooShort = { ...wide, gameplay: { ...wide.gameplay, timeSeconds: 34 } };
+    expect(validateLevelPlan(tooShort)).toContainEqual(
+      expect.stringContaining("delivery bonus can never be earned"),
+    );
+    const enough = { ...wide, gameplay: { ...wide.gameplay, timeSeconds: 37 } };
+    expect(validateLevelPlan(enough)).toStrictEqual([]);
+  });
+
+  it("rejects a NaN/non-positive backdrop.aspect (it seeds the layout AND the runway math)", () => {
+    const nan = { ...base, backdrop: { ...base.backdrop, aspect: Number.NaN } };
+    expect(validateLevelPlan(nan)).toContainEqual(expect.stringContaining("backdrop.aspect"));
+    const zero = { ...base, backdrop: { ...base.backdrop, aspect: 0 } };
+    expect(validateLevelPlan(zero)).toContainEqual(expect.stringContaining("backdrop.aspect"));
   });
 
   it("rejects zero/non-finite timeSeconds and bad enemiesToWin/speed", () => {

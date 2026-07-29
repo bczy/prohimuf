@@ -3,6 +3,7 @@ import type { EnemyKind } from "@game/types/enemy";
 import type { LevelConfig } from "@game/levels/levels";
 import type { AuthoredNearForegroundObject, LevelArt } from "@game/levels/levelArt";
 import type { DeliverySpec } from "@game/types/delivery";
+import { VEHICLE_MARGIN, VEHICLE_SPEED } from "@game/systems/deliverySystem";
 
 /**
  * The single description of a generated level (spec-level-harness-sp1 §4.4).
@@ -147,18 +148,26 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // trigger+travel+window ships a level whose delivery bonus is structurally
   // unearnable on every playthrough.
   const g = plan.gameplay;
+  // The travel allowance derives from backdrop.aspect, so the aspect must be sane
+  // FIRST — a NaN/non-positive aspect would poison the runway arithmetic below
+  // (and the runtime layout math it mirrors).
+  if (!Number.isFinite(plan.backdrop.aspect) || plan.backdrop.aspect <= 0) {
+    errors.push(`backdrop.aspect: must be a finite number > 0`);
+  }
+  const travelAllowance = Number.isFinite(plan.backdrop.aspect)
+    ? deliveryTravelAllowanceSeconds(plan.backdrop.aspect)
+    : deliveryTravelAllowanceSeconds(0);
   const minDeliveryRunway =
-    DEFAULT_DELIVERY.triggerAtElapsedSeconds +
-    DELIVERY_TRAVEL_ALLOWANCE_SECONDS +
-    DEFAULT_DELIVERY.windowSeconds;
+    DEFAULT_DELIVERY.triggerAtElapsedSeconds + travelAllowance + DEFAULT_DELIVERY.windowSeconds;
   if (!Number.isFinite(g.timeSeconds) || g.timeSeconds <= 0) {
     errors.push(`gameplay.timeSeconds: must be a finite number > 0`);
   } else if (g.timeSeconds <= minDeliveryRunway) {
     errors.push(
       `gameplay.timeSeconds: must exceed ${String(minDeliveryRunway)}s — delivery trigger ` +
         `(${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s) + vehicle travel allowance ` +
-        `(${String(DELIVERY_TRAVEL_ALLOWANCE_SECONDS)}s) + delivery window ` +
-        `(${String(DEFAULT_DELIVERY.windowSeconds)}s) — or the delivery bonus can never be earned`,
+        `(${String(travelAllowance)}s for backdrop aspect ${String(plan.backdrop.aspect)}) + ` +
+        `delivery window (${String(DEFAULT_DELIVERY.windowSeconds)}s) — or the delivery ` +
+        `bonus can never be earned`,
     );
   }
   if (!Number.isInteger(g.enemiesToWin) || g.enemiesToWin < 1) {
@@ -204,12 +213,25 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
  * array would leave the `Livrer` half of the core loop on an untested path.
  */
 /**
- * Validation-time budget for the vehicle's INCOMING travel (field edge →
- * stopPosition). The real duration is ≈(halfWidth+VEHICLE_MARGIN)/VEHICLE_SPEED
- * ≈ 1.6s on the standard street, but the field width is a render-time value this
- * pure module cannot read — so the check budgets a conservative round number.
+ * Mirrors `levelArt.ts` `WORLD_HEIGHT` (manifest `world.heightUnits`) — duplicated
+ * with a cross-reference because this module imports `levelArt.ts` as TYPES ONLY
+ * (`assetManifest.ts` documents that it wants no import-time dependency on it).
+ * The wide-aspect boundary test in levelPlan.test.ts pins the derived arithmetic.
  */
-const DELIVERY_TRAVEL_ALLOWANCE_SECONDS = 4;
+const WORLD_HEIGHT_UNITS = 12;
+
+/**
+ * Validation-time model of the vehicle's INCOMING travel (field edge → stopPosition),
+ * scaled by the plan's OWN backdrop: the runtime distance is `fullW/2 + VEHICLE_MARGIN`
+ * with `fullW = WORLD_HEIGHT × aspect` for `single-wide` (levelArt.ts
+ * `buildSingleWideLayout` → GameScene's `courierField.halfWidth`), covered at
+ * `VEHICLE_SPEED`. A fixed budget would under-estimate wide backdrops (aspect 5.14
+ * already travels ≈4.4s; aspect 10 ≈8s) and re-open the unearnable-bonus gap this
+ * check exists to close. `Math.ceil` keeps the allowance conservative.
+ */
+function deliveryTravelAllowanceSeconds(aspect: number): number {
+  return Math.ceil(((WORLD_HEIGHT_UNITS * aspect) / 2 + VEHICLE_MARGIN) / VEHICLE_SPEED);
+}
 
 const DEFAULT_DELIVERY: DeliverySpec = {
   vehicleType: "truck",

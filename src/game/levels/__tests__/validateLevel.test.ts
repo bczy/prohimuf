@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateLevel, hostageBossMarginIssue } from "@game/levels/validateLevel";
 import type { LevelIssue } from "@game/levels/validateLevel";
-import { LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
+import { LEVELS, GENERATED_LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
 import type { LevelConfig, LevelRoster } from "@game/levels/levels";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
@@ -61,7 +61,13 @@ function codes(issues: readonly LevelIssue[]): readonly string[] {
 }
 
 describe("validateLevel — the shipped catalogue (AC4)", () => {
-  it.each([...LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL].map((l) => [l.id, l] as const))(
+  // GENERATED_LEVELS included (panel run-5): validateLevelPlan guards the PLAN, but the
+  // projected LevelConfig must also hold the generic invariants — validateLevel is the
+  // single source (ADR-0074 §3), and an invariant added there alone must still cover
+  // every generated level. Importing the barrel registers the generated archetypes.
+  it.each(
+    [...LEVELS, ...GENERATED_LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL].map((l) => [l.id, l] as const),
+  )(
     "reports no issue on %s",
     (_id, level) => {
       expect(validateLevel(level)).toStrictEqual([]);

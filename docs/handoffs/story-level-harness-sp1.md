@@ -63,9 +63,13 @@ absolument tout »_ (2026-07-27).
       test (`generatedLevels.test.ts`); on screen it is indistinguishable anyway (it
       renders on the same fallback sprite). Evidence:
       `docs/qa/evidence/story-level-harness-sp1/` (3 PNG + report.json)
-- [ ] `senior-architect` countersign: `GENERATED_LEVEL_CONFIGS` / `GENERATED_LEVELS` /
-      `ALL_LEVELS` placement in `levels.data.ts` satisfies ADR-0074 §2's
-      import-time-computable rule (pure projection at import, no runtime state) —
-      requested post-rebase on #150; the JSDoc on `GENERATED_LEVELS` points here
+- [x] ADR-0074 §2 placement question RESOLVED by relocation (panel run-5, 2026-07-29):
+      `GENERATED_LEVELS` / `ALL_LEVELS` moved OUT of `levels.data.ts` into the
+      `levels.ts` barrel, which §2 does not bind — the data module is back to pure
+      literals with zero import side effect, consumers' import lines unchanged. The
+      generated import's side effect (archetype registration + duplicate-id throw)
+      is documented on the barrel where it now lives. The former countersign ask
+      (was: bless the placement IN the data module) is moot; `senior-architect`
+      still reviews this at his panel-triage/integration read like the rest of the diff
 - [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
 - [ ] SP2 opens only after this merges
