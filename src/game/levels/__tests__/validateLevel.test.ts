@@ -67,12 +67,9 @@ describe("validateLevel — the shipped catalogue (AC4)", () => {
   // every generated level. Importing the barrel registers the generated archetypes.
   it.each(
     [...LEVELS, ...GENERATED_LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL].map((l) => [l.id, l] as const),
-  )(
-    "reports no issue on %s",
-    (_id, level) => {
-      expect(validateLevel(level)).toStrictEqual([]);
-    },
-  );
+  )("reports no issue on %s", (_id, level) => {
+    expect(validateLevel(level)).toStrictEqual([]);
+  });
 
   it("reports no issue on a minimal config", () => {
     expect(validateLevel(BASE)).toStrictEqual([]);
