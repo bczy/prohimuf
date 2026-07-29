@@ -100,7 +100,8 @@ prévoit.
 
 ## Suivi
 
-- [ ] Panel re-run after remediation push → zero unaddressed CONFIRMED bloquant/majeur
+- [x] Panel re-run after remediation push → **PASS on `392ec4c`** (0 bloquant, 0 majeur)
+      after 7 remediation waves; the PASS run's 2 doc-only MINEUR taken by `3b67d9b`
 - [x] `verify` §8 acceptance evidence — DONE 2026-07-29 (re-run after the run-2
       roster fix): `?preview=level&level=fixture` seam (generatedHarness.ts, boss-seam
       reachability discipline — generated-only, never shipped), headless Playwright:
@@ -124,5 +125,29 @@ prévoit.
 - [x] Design gate on the tuning/roster surface (spec lane header): retroactive
       scope-limited PASS by `lead-game-designer` on `fixture:vigile` — §4 above
       (panel run-10 MAJEUR closed); SP2/SP3 playable levels take the FULL design gate
-- [ ] `pm` acceptance vs this shard + PROJECT_GUIDELINES
-- [ ] SP2 opens only after this merges
+- [x] `pm` acceptance vs this shard + PROJECT_GUIDELINES — **ACCEPTÉ**, 2026-07-29,
+      John (`pm`). La story livrée = la story commandée. §1 du shard : les 4 décisions
+      de cadrage de Bertrand sont tenues — skins per-level gratuites via `ARCHETYPES`
+      fusionné (spec §3), UN archétype max design-gaté (`fixture:vigile`, gate
+      rétroactif Karim §4, cap testé `levelPlan.test.ts` « caps level-authored
+      archetypes at ONE »), props per-level scopés sans dessin procédural de secours
+      (spec §4.5), backdrop `single-wide` canonique (spec §2.3, `planToLevelArt` test).
+      Additif confirmé en dur : `LEVELS` n'est jamais muté (`GENERATED_LEVELS`/
+      `ALL_LEVELS` séparés — `generatedLevels.test.ts` « leaves the shipped campaign
+      untouched », ids pinnés `["tutorial","belliard","stalingrad","vitry",
+    "niveau-final"]`), et `WEIGHTED`/`pickKind` sont épinglés par golden
+      (`archetypeRegistry.test.ts` : ordre + longueur 93 figés, immutabilité vérifiée
+      après enregistrement d'archétypes générés ; `levelRoster.test.ts` :
+      `buildWeightedFrom(defaults)` reproduit `WEIGHTED` byte-for-byte). Chaque critère
+      de spec §7/§8 a soit un test dédié soit la preuve §8 commitée
+      (`docs/qa/evidence/story-level-harness-sp1/`, 3 PNG + report.json, seam
+      `?preview=level&level=fixture`, HUD vivant, timer qui tourne, tirs qui touchent).
+      Aucun débordement de scope : ni image ni orchestrateur livrés (hors périmètre §9
+      du spec respecté), aucune dépendance ajoutée, campagne shippée intacte à la
+      donnée près. Panel CI PASS sur HEAD `392ec4c`, ADR-0075 présent, suite verte
+      (1561/110). Hors mandat, non re-jugé : code (panel), tuning (gate Karim §4),
+      architecture (triage senior-architect).
+- [ ] SP2 opens only after this merges — rappel `pm` : SP2 (génération par phase en
+      CI) ne s'ouvre qu'après le merge de cette PR sur `main`, comme l'ordre forcé du
+      spec (§1, tableau des 3 sous-projets) l'impose. Ouvrir la story SP2 = un nouveau
+      cycle `pm` intake, pas une continuation de celui-ci.
