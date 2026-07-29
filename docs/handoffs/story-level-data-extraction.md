@@ -382,3 +382,164 @@ parity assertion already subsumed by the `toStrictEqual` deep-equal. Nothing lef
 **Next hand-off:** `qa-lead` (Inès) for stage 5 VERIFY — `test-quality` mutation probes on
 `validateLevel.test.ts` per §3.4, then the AC8 playthrough; `senior-architect` (Winston) to rule
 on deviation 1.
+
+---
+
+## 5. VERIFY — qa-lead (Inès) — 2026-07-29
+
+- claim: stage-5 QUALITY GATE on the extraction — `test-quality` mutation audit of the two
+  ADDED test files, mechanical gate, AC-by-AC evidence, AC8 runtime smoke on the PRODUCTION
+  build, both device classes
+- release: this section + the verdict line; two non-blocking follow-up specs routed to
+  `dev-gameplay`
+
+### 5.1 Mechanical gate
+
+| Check                             | Result                                                                |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `tsc --noEmit`                    | **EXIT 0**, 0 error                                                   |
+| `vitest run` (full)               | **100 files / 1435 tests passed**, 0 skipped (baseline 98 / 1408)     |
+| `vitest run --coverage`           | `src/game` **96.15 %** lines / 92.79 % branches — thresholds (80) met |
+| `vite build` (production, Rollup) | **✓ built in 7.34 s**, no resolution/cycle error                      |
+
+`rtk` unavailable in this sandbox; `npx tsc`/`npx vitest` used directly. Lint not run
+manually per the standing rule (pre-commit hook owns lint/format).
+
+### 5.2 `test-quality` — 13 mutation probes, all reverted
+
+Probes are **source** mutations only, one at a time, `git checkout --` immediately after each.
+`git status --porcelain` empty at the start and at the end of the audit; no stash left behind.
+
+| #   | Mutation (source)                                                   | Suite run                | Result                                                                                                                              |
+| --- | ------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | margin guard `<` → `<=` (`validateLevel.ts:68`)                     | `validateLevel.test`     | **BITES** — only the boundary test reds: `expected [] to strictly equal [ 'hostage-boss-margin' ]`                                  |
+| P2  | `SAFETY_MARGIN_SECONDS` 5 → 0                                       | `validateLevel.test`     | **BITES** — 3 red (AC5 issue, boundary, shared-predicate)                                                                           |
+| P3  | drop `QTE_RESULT_HOLD` from the worst-case sum                      | `validateLevel.test`     | **BITES** — 2 red; message assertion names the arithmetic (`expected … to contain '22.2'`)                                          |
+| P4  | invert the unknown-`EnemyKind` condition                            | `validateLevel.test`     | **BITES** — 5 red, incl. **AC4 on `niveau-final`** → the catalogue tests are not vacuous for check 2                                |
+| P5  | drop the `value >= 0` half of the range guard                       | `validateLevel.test`     | **BITES** — the negative-trigger test, and only it                                                                                  |
+| P6  | upper bound `<=` → `<`                                              | `validateLevel.test`     | **BITES** — "accepts both interval bounds (0 and timeSeconds)" reds                                                                 |
+| P7  | return `[...issues].reverse()` (break determinism)                  | `validateLevel.test`     | **BITES** — 3 red; the ADR-0073 §3 stable-order contract is genuinely pinned, not just asserted                                     |
+| P8  | catalogue value drift (`belliard.enemiesToWin` 10 → 11)             | `levelsCatalogue.parity` | **BITES** — `LEVELS` + `FIRST_PLAYABLE_LEVEL` red                                                                                   |
+| P9  | `BELLIARD_BOSS_ENABLED` `true` → `false`                            | `levelsCatalogue.parity` | **BITES** — 3 red; diff shows `{ id: 'belliard', …(11) }` vs `…(12)` → **key-presence** is what fails                               |
+| P10 | `stalingrad` gains `bossQteSpec: undefined` (key present, no value) | `levelsCatalogue.parity` | **BITES** — `toStrictEqual` distinguishes an omitted key from `undefined`; the test's own docstring claim is TRUE, not aspirational |
+| P11 | a `localStorage` mention re-enters `levels.data.ts`                 | `levelsCatalogue.parity` | **BITES** — the AC2 guard reds                                                                                                      |
+| P12 | remove the fail-loud `throw` in `createInitialState`                | `stateMachine.test`      | **BITES** — the pre-existing `toThrow(/not safely sequential/)` guard reds; the consolidation did not silently drop the throw       |
+| P13 | `SAFETY_MARGIN_SECONDS` 5 → 1, run the **state-machine** suite      | `stateMachine.test`      | **SURVIVES** — see below (accepted, non-blocking)                                                                                   |
+
+**P13 SURVIVES — analysed, accepted, documented here.** `stateMachine.test.ts`'s UNSAFE
+fixture is `timeSeconds: 15` against a 22.2 s worst case: it violates the invariant at _any_
+margin ≥ 0, and the SAFE fixture (`timeSeconds: 90`) has ~63 s of slack. That suite therefore
+tests the guard's **wiring** (P12 proves it bites there), not its **threshold**. The threshold
+is pinned exactly once — by P2 and the 27.2/27.3 boundary test in `validateLevel.test.ts` —
+which is precisely the single-owner property §3.2 mandated. A duplicated-formula drift is
+impossible by construction (one predicate, two exits, P12+P2 both bite). Not a finding.
+
+**Smells:** none of the seven cheap smells. AC4 is data-driven over the real catalogue
+(`it.each([...LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL])`), boundaries are covered on both sides
+(margin 27.2/27.3, range 0/`timeSeconds`, negative, empty roster, multi-issue ordering), no
+mock asserts a mock, no snapshot, no silent async. **Coverage is a secondary signal only** and
+is not offered as evidence here — the probes are.
+
+### 5.3 AC-by-AC
+
+| AC  | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                | Verdict |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| AC1 | `levelsCatalogue.parity.test.ts` vs the frozen `levelsCatalogue.pre.json`; probes P8/P9/P10 prove it bites on value drift, on flag drift AND on key-presence drift                                                                                                                                                                                                                                                      | PASS    |
+| AC2 | parity test's source guard; P11 bites. Textual, not behavioural — see finding F1                                                                                                                                                                                                                                                                                                                                        | PASS    |
+| AC3 | `progressSystem.ts` diffed against `5d06de5~1:levels.ts` — **byte-identical** body, key `muf_progress`, both try/catch-swallow paths, `new Set(["belliard"])` defaults. Call sites: `App.tsx` import line only, `tutorialInvariants.test.ts` import line only (no assertion touched, 15 tests green). Runtime confirmed in 5.4: cold load with `muf_progress === null` shows BELLIARD unlocked, STALINGRAD/VITRY locked | PASS    |
+| AC4 | 6 catalogue configs + a minimal config return `[]`; P4 proves this is a real assertion (it reds on `niveau-final`)                                                                                                                                                                                                                                                                                                      | PASS    |
+| AC5 | issue returned with `code`/`severity`/`field` + `/not safely sequential/` message; parity with the throw proven live by P12 (same predicate, still throws) and P2/P3 (same arithmetic)                                                                                                                                                                                                                                  | PASS    |
+| AC6 | unknown slot named in `field` and `message`; `ARCHETYPES` keys are the runtime source (no hand-maintained second list); multi-slot ordering asserted                                                                                                                                                                                                                                                                    | PASS    |
+| AC7 | deliveries / hostage / loot, both bounds + negative + multi-field ordering; P5/P6 bite. Deviation 2 verified: `BossQteSpec` genuinely carries no `triggerAtElapsedSeconds` (ADR-0059 Am. 2) — nothing was skipped                                                                                                                                                                                                       | PASS    |
+| AC8 | see 5.4                                                                                                                                                                                                                                                                                                                                                                                                                 | PASS    |
+| AC9 | 5.1. No `any` introduced (`tsc` under the project's strict config, EXIT 0); no `--no-verify`                                                                                                                                                                                                                                                                                                                            | PASS    |
+
+### 5.4 AC8 — runtime smoke (and why I did not accept the unit suite alone)
+
+The parity fixture proves the **values** are identical, but it runs under Vitest's own module
+resolution. Two risk classes it structurally cannot cover, both created by this diff:
+
+1. **Production bundle resolution** — a 441-line module became a 4-module barrel graph; alias
+   resolution, re-export shape and tree-shaking are Rollup's job, not Vitest's.
+2. **A new `systems → levels → systems` edge** — `stateMachine.ts` now imports
+   `@game/levels/validateLevel`, which imports `@game/systems/qteSystem`. Statically there is
+   no cycle (`qteSystem` imports types only), but init-order/TDZ faults of this family surface
+   in the bundle, not in the unit run.
+
+So the existing proof was **not** sufficient and I ran the smoke on the **production build**
+(`vite build` + `vite preview`), not the dev server, on both device classes (ADR-0003/0015):
+
+| Profile                           | Evidence                                                                                                                                                                                                                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop 1280×800                  | Title → menu → BELLIARD → narrative → `Passer` → PLAYING. Level select renders TUTORIEL + BELLIARD (unlocked, pink flyer) + STALINGRAD/VITRY ("PAS ENCORE POUR TOI") from `LEVELS` × `loadUnlockedLevels()`. HUD `TEMPS 88s → 85s` (sim running). `muf_progress` correctly `null` on cold load |
+| Mobile 844×390 (iPhone UA, touch) | Same flow, same catalogue, HUD `TEMPS 88s → 86s`, in-game canvas correct                                                                                                                                                                                                                       |
+
+`belliard` carries `bossQteSpec` (flag `true`), so **`createInitialState` executed the new
+shared `hostageBossMarginIssue` predicate in the real bundle without throwing** — the P12/P13
+wiring verified at runtime, not just in the unit run.
+
+**Zero `pageerror`, zero React error, zero failing request on cold load.** The single
+`console.error` observed is `GET http://localhost:4173/favicon.ico → 404` — the _preview
+server root_, outside the `/prohimuf/` base, unrelated to the diff (no asset path in the
+diff, and any such path is locked by the AC1 fixture anyway). Not a finding.
+
+Screenshots (session scratchpad, not committed): `desktop-1..5`, `mobile-1..5`.
+
+**Not run by this gate — named, not hidden:** a full 5-level _playthrough to completion_
+(kill quotas, deliveries, hostage/boss QTE resolution, unlock persistence across reloads) was
+NOT executed. It is a design-acceptance and endurance concern, not a correctness one for a
+byte-for-byte data move — the values are frozen by AC1 and every consumer reads them through
+an unchanged import line. Conformity-to-design remains `game-designer`'s verdict, not mine.
+
+### 5.5 Findings — both NON-BLOCKING, routed to `dev-gameplay`
+
+- **F1 — AC2 is guarded textually, not behaviourally.** `levelsCatalogue.parity.test.ts:46-51`
+  greps the _source text_ of `levels.data.ts` / `levels.ts` for `/localStorage|…/`. It bites
+  (P11) but it fired on a mere **comment**, and it is blind to a _transitive_ leak: if
+  `levels.data.ts` ever imported a module that itself touches `localStorage`, AC2 would be
+  violated with the test still green. Regression spec: import the barrel in a jsdom env with a
+  spy/throwing `localStorage` and assert **zero storage access at import time**. That asserts
+  the property AC2 actually states. Owner: `dev-gameplay`. Not blocking: the property holds
+  today, verified by inspection of the import graph.
+- **F2 — `progressSystem.ts` coverage 35 % (lines 14-19, 23-30).** The two try/catch-swallow
+  paths and the `raw === null` / non-array fallbacks have **no direct test** — the move made a
+  pre-existing hole visible rather than creating one (identical lines were equally untested
+  inside `levels.ts`). AC3 holds regardless: the body is byte-identical and the call sites are
+  import-line-only. Regression spec: 5 cases on `loadUnlockedLevels` (absent key → `{belliard}`,
+  valid array, non-array JSON → `{belliard}`, malformed JSON → `{belliard}`, non-string entries
+  filtered) + 2 on `unlockLevel` (round-trip through `muf_progress`, throwing `setItem`
+  swallowed). Owner: `dev-gameplay`. Not blocking this story; it is the natural first payment
+  now that the module owns its own file.
+- Not mine to rule on: deviation 1 (`validateLevel.ts` importing `QTE_RESULT_HOLD` from
+  `@game/systems/qteSystem` against §3.1's "types only") — `senior-architect`'s call. I note
+  only that it creates no cycle and that the alternative (re-declaring `2.2`) is exactly what
+  P3 proves the tests would let drift silently in a duplicated formula.
+
+### 5.6 Tree hygiene
+
+`git status --porcelain` **empty**, `git stash list` **empty** at close. All 13 mutations
+reverted; nothing written outside this section. No commit, no push.
+
+VERDICT: PASS — QUALITY GATE (qa-lead) — the plan ran and held. Mechanical gate GREEN
+(tsc EXIT 0, 1435/1435 tests over 100 files, coverage 96.15 % on `src/game`, production
+`vite build` clean). The two ADDED test files were audited by mutation, not by exit code: **12
+of 13 probes BITE**, each red for the right reason and naming the behaviour — including the
+three that matter most for this refactor's specific failure modes (P9/P10 key-presence parity
+under `exactOptionalPropertyTypes`, P12 the fail-loud throw surviving the predicate
+consolidation, P4 proving the AC4 catalogue tests are not vacuous). The single SURVIVES (P13)
+is analysed and accepted: the state-machine suite owns the guard's wiring, `validateLevel.test`
+owns its threshold — no behaviour is unpinned. AC1-AC9 all VERIFIED; AC8 proven on the
+PRODUCTION build in a headless browser on BOTH device classes (desktop + mobile-landscape),
+which the unit suite structurally could not do — bundle resolution and the new
+`systems → levels → systems` import edge were the two real risks and both are clean, with the
+new shared margin predicate executing live at `belliard` load. Two non-blocking findings routed
+to `dev-gameplay` (F1 AC2 asserted textually rather than behaviourally; F2 `progressSystem`
+try/catch paths untested). Explicitly NOT covered by this gate and named as such: the 5-level
+playthrough-to-completion and unlock persistence across reloads (design-acceptance surface,
+`game-designer`); deviation 1 (`senior-architect`). Tree clean, every probe reverted. Stage 6
+(4-reviewer merge panel) may open.
+
+**Next hand-off:** `senior-architect` (Winston) for the stage-6 `review-panel` + integration
+triage, and to rule on BUILD deviation 1; `game-designer` (Sacha) if `producer` wants a design
+-acceptance pass on a data-only refactor; `dev-gameplay` (Amelia) for F1/F2 as a follow-up,
+not a blocker; `producer` (Marion) to record that the quality gate RAN and PASSED.
