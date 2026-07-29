@@ -102,6 +102,13 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!Number.isInteger(a.hp) || a.hp < 1) {
       errors.push(`archetype ${a.kind}: hp must be an integer >= 1`);
     }
+    // Runtime reads `aspect` just as directly: EnemySprite scales the mesh by it
+    // (NaN/0/negative → invisible or mirrored sprite), and GameScene folds EVERY
+    // generated archetype's aspect into the module-level WIDEST_ASPECT at import —
+    // so one bad value corrupts the window-fit harness box of every OTHER level too.
+    if (!Number.isFinite(a.aspect) || a.aspect <= 0) {
+      errors.push(`archetype ${a.kind}: aspect must be a finite number > 0`);
+    }
   }
 
   for (const p of plan.props) {

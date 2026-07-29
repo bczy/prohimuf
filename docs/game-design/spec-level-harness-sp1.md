@@ -235,7 +235,7 @@ SP1 se prouve avec **un level fixture écrit à la main** dans `generated/`, **s
 asset** — donc tous les replis actifs : ennemis en `enemy_sprite`, props invisibles,
 décor absent (le `LevelBackdrop` retombe déjà sur des couleurs plates).
 
-**Amendement (2026-07-29, aligné sur ADR-0074 §6)** : un level généré vit HORS du menu
+**Amendement (2026-07-29, aligné sur ADR-0075 §6)** : un level généré vit HORS du menu
 par décision d'architecture — « apparaît au menu » contredisait cette décision. Le
 critère est donc : bootable par le seam de vérification `?preview=level&level=<id>`,
 démarre, et se joue. La preuve déroulée est dans

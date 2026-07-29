@@ -295,6 +295,18 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     expect(validateLevelPlan(enough)).toStrictEqual([]);
   });
 
+  // Run-6: archetype.aspect is read as directly as variants/hp — EnemySprite scales
+  // the mesh by it, and GameScene folds every generated aspect into WIDEST_ASPECT at
+  // import, so a NaN would leak into every level's window-fit harness box.
+  it("rejects a NaN/non-positive archetype aspect (sprite scale + WIDEST_ASPECT seed)", () => {
+    for (const aspect of [Number.NaN, 0, -1]) {
+      const bad = { ...base, archetypes: [{ ...vigile, aspect }] };
+      expect(validateLevelPlan(bad)).toContainEqual(
+        expect.stringContaining("aspect must be a finite number > 0"),
+      );
+    }
+  });
+
   it("rejects a NaN/non-positive backdrop.aspect (it seeds the layout AND the runway math)", () => {
     const nan = { ...base, backdrop: { ...base.backdrop, aspect: Number.NaN } };
     expect(validateLevelPlan(nan)).toContainEqual(expect.stringContaining("backdrop.aspect"));

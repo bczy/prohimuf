@@ -103,7 +103,7 @@ const DELIVERY_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.
 
 // Generated-level verification seam (spec-level-harness-sp1 §8): `?preview=level&
 // level=<generated id>` boots PLAYING on a harness-generated level — which is
-// deliberately absent from the menu (`LEVELS` is the shipped campaign, ADR-0074 §6),
+// deliberately absent from the menu (`LEVELS` is the shipped campaign, ADR-0075 §6),
 // so no menu path can reach it. The resolver is restricted to generated configs
 // (a shipped id yields null → normal boot), the same reachability discipline as
 // `?preview=boss`; persistence stays inert via the `PREVIEW_SCREEN !== null` guard.

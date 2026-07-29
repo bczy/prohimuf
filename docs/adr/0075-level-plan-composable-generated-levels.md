@@ -86,6 +86,11 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
   fail-fast, because a colliding id would silently corrupt `LEVEL_ART` (last-wins)
   while `ALL_LEVELS.find` returns the other entry (first-wins), a split-brain no test
   fixture can represent without triggering it.
+- `WIDEST_ASPECT` (GameScene's window-fit harness box, reported for shipped levels
+  too) now folds in every generated archetype's `aspect` alongside the core table's:
+  the moment a future generated level (SP2/SP3) declares an archetype wider than the
+  core max, the debug alignment box widens for ALL levels — expected, not a surprise.
+  `validateLevelPlan` guards the input (`aspect` finite > 0 per archetype).
 - Verification reachability: the `?preview=level&level=<id>` URL seam boots a generated
   level for §8-style verification. Lookup restricted to `GENERATED_LEVEL_CONFIGS`
   (never `LEVELS` — the shipped campaign is not URL-bootable through it), persistence

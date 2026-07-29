@@ -6,7 +6,7 @@ import { GENERATED_LEVEL_CONFIGS } from "@game/levels/generated";
  * `resolveBossPreviewLevel` for harness-generated levels: `?preview=level&level=<id>`
  * boots straight into PLAYING on that level so a headless run (or Bertrand, on a
  * branch preview) can verify a generated candidate that is DELIBERATELY absent from
- * the menu (`LEVELS` is the shipped campaign — ADR-0074 §6).
+ * the menu (`LEVELS` is the shipped campaign — ADR-0075 §6).
  *
  * Reachability discipline, same as the boss seam (ADR-0051 D4 / E9): the lookup is
  * restricted to `GENERATED_LEVEL_CONFIGS`, so a SHIPPED level id yields null and the
