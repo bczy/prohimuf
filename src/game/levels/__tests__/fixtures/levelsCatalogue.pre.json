@@ -1,0 +1,355 @@
+{
+  "BELLIARD_BOSS_ENABLED": true,
+  "LEVELS": [
+    {
+      "id": "tutorial",
+      "kind": "tutorial",
+      "name": "Tutoriel",
+      "district": "Repérage",
+      "year": "1998",
+      "enemySpeedMultiplier": 1,
+      "enemiesToWin": 0,
+      "timeSeconds": 0,
+      "unlocked": true,
+      "deliveries": []
+    },
+    {
+      "id": "belliard",
+      "name": "Rue Belliard",
+      "district": "19e Arrondissement",
+      "year": "1998",
+      "enemySpeedMultiplier": 1,
+      "enemiesToWin": 10,
+      "timeSeconds": 90,
+      "unlocked": true,
+      "deliveries": [
+        {
+          "vehicleType": "truck",
+          "triggerAtElapsedSeconds": 20,
+          "integrity": 100,
+          "windowSeconds": 8,
+          "bonus": 500,
+          "entrySide": "left",
+          "stopPosition": {
+            "x": 0,
+            "y": -4.5
+          }
+        }
+      ],
+      "roster": {
+        "streetSpawns": ["courier"]
+      },
+      "hostageQte": {
+        "triggerAtElapsedSeconds": 12,
+        "zoomSeconds": 2,
+        "anchor": {
+          "x": 9.9,
+          "y": -5
+        },
+        "maxBlownPeeks": 4,
+        "peekCadenceSeconds": 1.5,
+        "peekDurationSeconds": 1.5,
+        "captorHp": 3,
+        "targetSeed": 20260718
+      },
+      "loot": {
+        "spawnIntervalSeconds": 15,
+        "drops": [
+          {
+            "weapon": "auto",
+            "reward": {
+              "profile": "backpack",
+              "scoreDelta": 150,
+              "livesDelta": 0
+            }
+          },
+          {
+            "weapon": "spread",
+            "reward": {
+              "profile": "attache-case",
+              "scoreDelta": 0,
+              "livesDelta": 2
+            }
+          },
+          {
+            "weapon": "auto",
+            "reward": {
+              "profile": "flight-case",
+              "scoreDelta": 500,
+              "livesDelta": 3
+            }
+          }
+        ]
+      },
+      "bossQteSpec": {
+        "zoomSeconds": 2,
+        "anchor": {
+          "x": 0,
+          "y": -5
+        },
+        "phaseCount": 3,
+        "bossHp": 24,
+        "maxBlownWindows": 10,
+        "targetSeed": 20260719,
+        "decorProp": {
+          "position": {
+            "x": 1.4,
+            "y": 0.2
+          },
+          "armPhaseIndex": 1
+        }
+      }
+    },
+    {
+      "id": "stalingrad",
+      "name": "Stalingrad",
+      "district": "19e Arrondissement",
+      "year": "1998",
+      "enemySpeedMultiplier": 1.3,
+      "enemiesToWin": 12,
+      "timeSeconds": 80,
+      "unlocked": false,
+      "deliveries": [
+        {
+          "vehicleType": "car",
+          "triggerAtElapsedSeconds": 25,
+          "integrity": 80,
+          "windowSeconds": 7,
+          "bonus": 400,
+          "entrySide": "right",
+          "stopPosition": {
+            "x": -2,
+            "y": -4.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "vitry",
+      "name": "Vitry — 94",
+      "district": "Val-de-Marne",
+      "year": "1998",
+      "enemySpeedMultiplier": 1.6,
+      "enemiesToWin": 15,
+      "timeSeconds": 70,
+      "unlocked": false,
+      "deliveries": [
+        {
+          "vehicleType": "moto",
+          "triggerAtElapsedSeconds": 18,
+          "integrity": 60,
+          "windowSeconds": 6,
+          "bonus": 300,
+          "entrySide": "left",
+          "stopPosition": {
+            "x": 2,
+            "y": -4.5
+          }
+        }
+      ],
+      "hostageQte": {
+        "triggerAtElapsedSeconds": 10,
+        "zoomSeconds": 2,
+        "anchor": {
+          "x": 0,
+          "y": -5
+        },
+        "maxBlownPeeks": 4,
+        "peekCadenceSeconds": 1.5,
+        "peekDurationSeconds": 1.5,
+        "captorHp": 3,
+        "targetSeed": 19940715,
+        "accomplice": {
+          "fireIntervalSeconds": 2.8
+        }
+      }
+    },
+    {
+      "id": "niveau-final",
+      "name": "L'Éden — 31 déc. 1999",
+      "district": "Paris",
+      "year": "1999",
+      "enemySpeedMultiplier": 1.8,
+      "enemiesToWin": 16,
+      "timeSeconds": 70,
+      "unlocked": false,
+      "deliveries": [
+        {
+          "vehicleType": "truck",
+          "triggerAtElapsedSeconds": 18,
+          "integrity": 60,
+          "windowSeconds": 6,
+          "bonus": 300,
+          "entrySide": "left",
+          "stopPosition": {
+            "x": 0,
+            "y": -4.5
+          }
+        }
+      ],
+      "roster": {
+        "streetSpawns": ["courier"],
+        "windowWeights": {
+          "normal": 40,
+          "riot": 28,
+          "biker": 20,
+          "bonus": 10
+        }
+      },
+      "bossQteSpec": {
+        "zoomSeconds": 2,
+        "anchor": {
+          "x": 0,
+          "y": -5
+        },
+        "phaseCount": 3,
+        "bossHp": 24,
+        "maxBlownWindows": 10,
+        "targetSeed": 19991232,
+        "decorProp": {
+          "position": {
+            "x": 0.2,
+            "y": 1.5
+          },
+          "armPhaseIndex": 1
+        }
+      }
+    }
+  ],
+  "BOSS_QTE_DEV_HARNESS_LEVEL": {
+    "id": "boss-harness",
+    "name": "Le Commandant (harness)",
+    "district": "Dev — Belliard",
+    "year": "1998",
+    "enemySpeedMultiplier": 1,
+    "enemiesToWin": 0,
+    "timeSeconds": 90,
+    "unlocked": false,
+    "deliveries": [],
+    "roster": {
+      "streetSpawns": ["courier"]
+    },
+    "bossQteSpec": {
+      "zoomSeconds": 2,
+      "anchor": {
+        "x": 0,
+        "y": -5
+      },
+      "phaseCount": 3,
+      "bossHp": 24,
+      "maxBlownWindows": 10,
+      "targetSeed": 20260719,
+      "decorProp": {
+        "position": {
+          "x": 1.4,
+          "y": 0.2
+        },
+        "armPhaseIndex": 1
+      }
+    }
+  },
+  "FIRST_PLAYABLE_LEVEL": {
+    "id": "belliard",
+    "name": "Rue Belliard",
+    "district": "19e Arrondissement",
+    "year": "1998",
+    "enemySpeedMultiplier": 1,
+    "enemiesToWin": 10,
+    "timeSeconds": 90,
+    "unlocked": true,
+    "deliveries": [
+      {
+        "vehicleType": "truck",
+        "triggerAtElapsedSeconds": 20,
+        "integrity": 100,
+        "windowSeconds": 8,
+        "bonus": 500,
+        "entrySide": "left",
+        "stopPosition": {
+          "x": 0,
+          "y": -4.5
+        }
+      }
+    ],
+    "roster": {
+      "streetSpawns": ["courier"]
+    },
+    "hostageQte": {
+      "triggerAtElapsedSeconds": 12,
+      "zoomSeconds": 2,
+      "anchor": {
+        "x": 9.9,
+        "y": -5
+      },
+      "maxBlownPeeks": 4,
+      "peekCadenceSeconds": 1.5,
+      "peekDurationSeconds": 1.5,
+      "captorHp": 3,
+      "targetSeed": 20260718
+    },
+    "loot": {
+      "spawnIntervalSeconds": 15,
+      "drops": [
+        {
+          "weapon": "auto",
+          "reward": {
+            "profile": "backpack",
+            "scoreDelta": 150,
+            "livesDelta": 0
+          }
+        },
+        {
+          "weapon": "spread",
+          "reward": {
+            "profile": "attache-case",
+            "scoreDelta": 0,
+            "livesDelta": 2
+          }
+        },
+        {
+          "weapon": "auto",
+          "reward": {
+            "profile": "flight-case",
+            "scoreDelta": 500,
+            "livesDelta": 3
+          }
+        }
+      ]
+    },
+    "bossQteSpec": {
+      "zoomSeconds": 2,
+      "anchor": {
+        "x": 0,
+        "y": -5
+      },
+      "phaseCount": 3,
+      "bossHp": 24,
+      "maxBlownWindows": 10,
+      "targetSeed": 20260719,
+      "decorProp": {
+        "position": {
+          "x": 1.4,
+          "y": 0.2
+        },
+        "armPhaseIndex": 1
+      }
+    }
+  },
+  "DIFFICULTY_CONFIG": {
+    "easy": {
+      "enemySpeedMult": 0.7,
+      "livesOverride": null,
+      "bulletSpeedMult": 1.2
+    },
+    "normal": {
+      "enemySpeedMult": 1,
+      "livesOverride": null,
+      "bulletSpeedMult": 1
+    },
+    "hard": {
+      "enemySpeedMult": 1.4,
+      "livesOverride": null,
+      "bulletSpeedMult": 0.9
+    }
+  }
+}

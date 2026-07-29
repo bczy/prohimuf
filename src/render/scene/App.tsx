@@ -30,7 +30,8 @@ import type { ManifestTarget } from "@game/systems/assetManifest";
 import { detectMobile } from "@utils/platform";
 import { loadPrefs, savePrefs } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { loadUnlockedLevels, unlockLevel, LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import { loadUnlockedLevels, unlockLevel } from "@game/systems/progressSystem";
+import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
 import {
   saveScore,
