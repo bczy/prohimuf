@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getBackdropLayout, getNearForeground, WORLD_HEIGHT } from "@game/levels/levelArt";
-import type { NearForegroundKind } from "@game/levels/levelArt";
 import { NEAR_BAND_MARGIN, nearForegroundBandTop } from "../nearParallax";
 import {
   KIND_MAX_WORLD_H,
   MAX_PROP_WORLD_H,
   NEAR_KIND_SPECS,
+  nearKindSpec,
   nearPropPlaneHeight,
   propMaxWorldH,
 } from "../nearForegroundArt";
@@ -51,7 +51,7 @@ const ROWS = [
 ];
 
 interface Placed {
-  readonly kind: NearForegroundKind;
+  readonly kind: string;
   readonly planeH: number;
   /** World Y of the sprite's plane top (feet already dropped by the foot pad). */
   readonly topY: number;
@@ -81,7 +81,7 @@ function place(levelId: string, mobile: boolean): Placed[] {
         rowScale,
         maxH,
       );
-      const footPad = NEAR_KIND_SPECS[obj.kind].footPadFrac * planeH;
+      const footPad = (nearKindSpec(obj.kind).footPadFrac ?? 0) * planeH;
       out.push({
         kind: obj.kind,
         planeH,

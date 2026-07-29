@@ -120,6 +120,17 @@ interface NearForegroundObjectOf<K extends string> {
 /** A prop of the global pool, validated: what the render layer actually draws. */
 export type NearForegroundObject = NearForegroundObjectOf<NearForegroundKind>;
 
+/**
+ * A validated, drawable prop: a pool kind, or a generated level's OWN prop (its
+ * namespaced kind — `getNearForeground` only lets through the requesting level's).
+ * This is what {@link NearForegroundLayer} carries since generated props became
+ * renderable (spec-level-harness-sp1 §4.5); render-side sizing goes through
+ * `nearKindSpec`, which resolves a generated kind from its plan.
+ */
+export type DrawableNearForegroundObject = NearForegroundObjectOf<
+  NearForegroundKind | GeneratedPropKind
+>;
+
 /** A prop as AUTHORED: a pool kind, or a generated level's own prop. */
 export type AuthoredNearForegroundObject = NearForegroundObjectOf<
   NearForegroundKind | GeneratedPropKind
@@ -128,7 +139,7 @@ export type AuthoredNearForegroundObject = NearForegroundObjectOf<
 export interface NearForegroundLayer {
   /** Engine parallax factor (NEGATIVE). mesh.x = camera.x * factor; screen speed S = 1 - factor. */
   readonly factor: number;
-  readonly objects: readonly NearForegroundObject[];
+  readonly objects: readonly DrawableNearForegroundObject[];
 }
 
 /** The layer as authored on a level, before `getNearForeground` validates it. */
@@ -312,6 +323,16 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
   typeof kind === "string" && (NEAR_FOREGROUND_KINDS as readonly string[]).includes(kind);
 
 /**
+ * A generated prop kind OWNED by `ownerId` — `<ownerId>:<name>` with a non-empty
+ * name. Ownership is the whole check: a foreign level's namespaced kind is dropped
+ * exactly like an unknown pool kind, so a generated level can only ever draw the
+ * props its own plan declares (validateLevelPlan enforces the same rule at CI time;
+ * this is the runtime source-hardening twin).
+ */
+const isOwnedGeneratedPropKind = (kind: unknown, ownerId: string): kind is GeneratedPropKind =>
+  typeof kind === "string" && kind.startsWith(`${ownerId}:`) && kind.length > ownerId.length + 1;
+
+/**
  * The near-foreground parallax layer for a level (ADR-0047), or `null` when the
  * level opts out (no `nearForeground` field) or the id is unknown. Unlike
  * {@link getLevelArt} this does NOT fall back to the first level: an unknown id
@@ -327,7 +348,8 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
  */
 export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
   const art = id !== undefined ? LEVEL_ART[id] : undefined;
-  const layer = art?.nearForeground;
+  if (art === undefined) return null;
+  const layer = art.nearForeground;
   if (layer === undefined) return null;
 
   const rawFactor = Number.isFinite(layer.factor) ? layer.factor : NEAR_FOREGROUND_FACTOR_DEFAULT;
@@ -338,8 +360,9 @@ export function getNearForeground(id: string | undefined): NearForegroundLayer |
 
   const objects = layer.objects
     .filter(
-      (obj): obj is NearForegroundObject =>
-        isNearForegroundKind(obj.kind) && Number.isFinite(obj.x),
+      (obj): obj is DrawableNearForegroundObject =>
+        (isNearForegroundKind(obj.kind) || isOwnedGeneratedPropKind(obj.kind, art.id)) &&
+        Number.isFinite(obj.x),
     )
     .map((obj) =>
       obj.scale === undefined || (Number.isFinite(obj.scale) && obj.scale > 0)

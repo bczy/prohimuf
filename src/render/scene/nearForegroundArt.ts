@@ -17,6 +17,7 @@
  */
 
 import type { LensAnchor, NearForegroundKind, SignalLenses } from "@game/levels/levelArt";
+import { GENERATED_PLANS } from "@game/levels/generated";
 import type { SignalState } from "./trafficSignal";
 
 // Grey palette — same register as foregroundArt.ts (IRON / HILIGHT / SHADOW),
@@ -92,9 +93,35 @@ export const KIND_MAX_WORLD_H: Partial<Record<NearForegroundKind, number>> = {
   lamppost: 7.0,
 };
 
-/** The absolute "believable size" cap for a kind (world units, pre row scale). */
-export function propMaxWorldH(kind: NearForegroundKind): number {
-  return KIND_MAX_WORLD_H[kind] ?? MAX_PROP_WORLD_H;
+/** The absolute "believable size" cap for a kind (world units, pre row scale).
+ *  A generated kind has no per-kind override — it gets the default cap. */
+export function propMaxWorldH(kind: string): number {
+  const overrides: Partial<Record<string, number>> = KIND_MAX_WORLD_H;
+  return overrides[kind] ?? MAX_PROP_WORLD_H;
+}
+
+// Sizing triplets of every generated level's props, keyed by namespaced kind
+// (spec-level-harness-sp1 §4.5): the data-side twin of NEAR_KIND_SPECS. Built once
+// at import — GENERATED_PLANS is static data, registered before any render reads.
+const GENERATED_SPECS: Readonly<Record<string, NearKindSpec>> = Object.fromEntries(
+  GENERATED_PLANS.flatMap((p) =>
+    p.props.map((prop) => [
+      prop.kind,
+      { aspect: prop.aspect, heightFrac: prop.heightFrac, footPadFrac: prop.footPadFrac },
+    ]),
+  ),
+);
+
+/**
+ * The sizing spec of ANY drawable prop kind: the 8 pool kinds read the code-side
+ * {@link NEAR_KIND_SPECS} (unchanged), a generated kind reads the triplet its own
+ * plan declares. Degrades to the neutral bollard for an unknown kind so a stale id
+ * can never crash the plane-height math — the texture side independently refuses to
+ * draw a kind it has no PNG for, so the fallback sizing is never visible.
+ */
+export function nearKindSpec(kind: string): NearKindSpec {
+  const pool: Partial<Record<string, NearKindSpec>> = NEAR_KIND_SPECS;
+  return GENERATED_SPECS[kind] ?? pool[kind] ?? NEAR_KIND_SPECS.bollard;
 }
 
 /**
@@ -117,13 +144,13 @@ export function propMaxWorldH(kind: NearForegroundKind): number {
  * any pan offset, by construction.
  */
 export function nearPropPlaneHeight(
-  kind: NearForegroundKind,
+  kind: string,
   facadeH: number,
   scale: number,
   rowScale: number,
   bandMaxH: number,
 ): number {
-  const spec: NearKindSpec = NEAR_KIND_SPECS[kind];
+  const spec: NearKindSpec = nearKindSpec(kind);
   const footPadFrac = Math.min(0.9, Math.max(0, spec.footPadFrac ?? 0));
   const natural = spec.heightFrac * facadeH * scale;
   const bandCap = bandMaxH / (1 - footPadFrac);

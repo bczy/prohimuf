@@ -14,6 +14,7 @@ import {
 } from "@game/levels/levelArt";
 import type { WindowSlot } from "@game/types/map";
 import type { WindowZone } from "@game/levels/levelArt";
+import { GENERATED_PLANS } from "@game/levels/generated";
 import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
@@ -89,11 +90,16 @@ interface HarnessWindow extends Window {
   __MUF_PROJECT__?: (panel: number, x: number, y: number) => { sx: number; sy: number };
 }
 
-// Widest sprite aspect across all archetypes. The harness box reports this
-// conservative worst case (if the widest occupant fits the opening, every kind
-// fits); __MUF_FREEZE_COPS__ cycles every window kind through the windows
-// (civilian excluded since its window art was retired — ADR-0029).
-const WIDEST_ASPECT = Math.max(...Object.values(CORE_ARCHETYPES).map((a) => a.aspect));
+// Widest sprite aspect across all archetypes — core AND level-authored (a
+// generated level may declare an archetype wider than any core kind, and the
+// harness box must keep reporting the true worst case: if the widest occupant
+// fits the opening, every kind fits). __MUF_FREEZE_COPS__ cycles every window
+// kind through the windows (civilian excluded since its window art was
+// retired — ADR-0029).
+const WIDEST_ASPECT = Math.max(
+  ...Object.values(CORE_ARCHETYPES).map((a) => a.aspect),
+  ...GENERATED_PLANS.flatMap((p) => p.archetypes.map((a) => a.aspect)),
+);
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
