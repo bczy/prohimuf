@@ -298,7 +298,7 @@ export function GameScene({
   // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster). Resolved off
   // ALL_LEVELS (shipped first, so shipped ids resolve identically) because a
   // generated level's roster is the ONE thing that activates its level-authored
-  // archetypes (ADR-0073 §3) — reading LEVELS here silently played a generated
+  // archetypes (ADR-0074 §3) — reading LEVELS here silently played a generated
   // level on the default pool (panel run-2 MAJEUR on PR #149).
   const roster = useMemo(() => ALL_LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
 

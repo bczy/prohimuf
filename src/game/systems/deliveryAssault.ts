@@ -1,7 +1,7 @@
 import type { Enemy, EnemyKind } from "@game/types/enemy";
 import type { DeliverySpec } from "@game/types/delivery";
 import type { FacadeMap } from "@game/types/map";
-import { ARCHETYPES, WEIGHTED, pickKindFor } from "@game/types/enemyTypes";
+import { archetype, WEIGHTED, pickKindFor } from "@game/types/enemyTypes";
 
 /**
  * The delivery's own scripted assault — "protéger la camionnette"
@@ -110,20 +110,20 @@ export function seatAssault(
   if (spec === null) return [];
   const occupied = new Set<number>(enemies.map((e) => e.slotIndex));
   if (lootSlotIndex !== null) occupied.add(lootSlotIndex);
-  const shooters = (pool ?? WEIGHTED).filter((k) => ARCHETYPES[k].shoots);
+  const shooters = (pool ?? WEIGHTED).filter((k) => archetype(k).shoots);
 
   return reservedAssaultSlots(facade, spec)
     .filter((slotIndex) => !occupied.has(slotIndex))
     .map((slotIndex, i) => {
       const kind = pickKindFor(ASSAULT_SEED_BASE + slotIndex * 7 + i * 17, shooters);
-      const archetype = ARCHETYPES[kind];
+      const arch = archetype(kind);
       return {
         id: DELIVERY_ASSAULT_ID_BASE + i,
         slotIndex,
         state: "VISIBLE" as const,
-        timer: archetype.visibleDuration * (1 + i * 0.3),
+        timer: arch.visibleDuration * (1 + i * 0.3),
         kind,
-        hp: archetype.hp,
+        hp: arch.hp,
       };
     });
 }

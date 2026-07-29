@@ -38,7 +38,7 @@ absolument tout »_ (2026-07-27).
 ## 3. STAGE 6 — panel CI run on PR #149 — 2026-07-29
 
 - Verdict **FAIL**: 1 BLOQUANT (this ADR-worthy change shipped without an ADR —
-  closed by `docs/adr/0073-level-plan-composable-generated-levels.md` in the same PR),
+  closed by `docs/adr/0074-level-plan-composable-generated-levels.md` in the same PR — allocated 0073, renumbered 0074 at rebase: main took 0073 meanwhile),
   8 MAJEUR, 1 MINEUR.
 - Remediation split across two lanes on disjoint files (no-commit rule, orchestrator
   commits after review): `dev-gameplay` — validator hardening (windowWeights namespace +
