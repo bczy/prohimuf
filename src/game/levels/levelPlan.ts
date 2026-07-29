@@ -113,6 +113,49 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     }
   }
 
+  // Two placements of the SAME kind must agree on sizing and asset: the render
+  // side resolves both PER KIND (Object.fromEntries — last entry wins), so a
+  // divergent second entry would silently re-size and re-skin every placement
+  // of that kind, including the first.
+  const byKind = new Map<string, GeneratedPropSpec>();
+  for (const p of plan.props) {
+    const first = byKind.get(p.kind);
+    if (first === undefined) {
+      byKind.set(p.kind, p);
+      continue;
+    }
+    const agrees =
+      first.asset === p.asset &&
+      first.aspect === p.aspect &&
+      first.heightFrac === p.heightFrac &&
+      first.footPadFrac === p.footPadFrac;
+    if (!agrees) {
+      errors.push(
+        `prop ${p.kind}: two placements disagree on sizing/asset (per-kind resolution is last-wins)`,
+      );
+    }
+  }
+
+  // Gameplay sanity: these values seed divisors and loop bounds at runtime.
+  // timeSeconds = 0 divides the tension derivation by zero on the first tick
+  // (the tutorial's timeSeconds: 0 is special-cased on ITS path, not this one),
+  // and a timer at or below the default delivery trigger ships a level whose
+  // Livrer half structurally cannot fire before time runs out.
+  const g = plan.gameplay;
+  if (!Number.isFinite(g.timeSeconds) || g.timeSeconds <= 0) {
+    errors.push(`gameplay.timeSeconds: must be a finite number > 0`);
+  } else if (g.timeSeconds <= DEFAULT_DELIVERY.triggerAtElapsedSeconds) {
+    errors.push(
+      `gameplay.timeSeconds: must exceed the delivery trigger (${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s), or the Livrer loop never fires`,
+    );
+  }
+  if (!Number.isInteger(g.enemiesToWin) || g.enemiesToWin < 1) {
+    errors.push(`gameplay.enemiesToWin: must be an integer >= 1`);
+  }
+  if (!Number.isFinite(g.enemySpeedMultiplier) || g.enemySpeedMultiplier <= 0) {
+    errors.push(`gameplay.enemySpeedMultiplier: must be a finite number > 0`);
+  }
+
   // The activation seam is also the leak: `windowWeights` is projected verbatim
   // into roster.windowWeights, so a foreign namespace would pull ANOTHER level's
   // kind into this pool, and a typo would be dropped in silence by

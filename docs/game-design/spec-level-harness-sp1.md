@@ -233,8 +233,13 @@ Absent son PNG, un prop généré **ne s'affiche pas** — silencieusement, jama
 
 SP1 se prouve avec **un level fixture écrit à la main** dans `generated/`, **sans aucun
 asset** — donc tous les replis actifs : ennemis en `enemy_sprite`, props invisibles,
-décor absent (le `LevelBackdrop` retombe déjà sur des couleurs plates). Si ce level
-apparaît au menu, démarre et se joue jusqu'à sa condition de victoire, le schéma tient.
+décor absent (le `LevelBackdrop` retombe déjà sur des couleurs plates).
+
+**Amendement (2026-07-29, aligné sur ADR-0074 §6)** : un level généré vit HORS du menu
+par décision d'architecture — « apparaît au menu » contredisait cette décision. Le
+critère est donc : bootable par le seam de vérification `?preview=level&level=<id>`,
+démarre, et se joue. La preuve déroulée est dans
+`docs/qa/evidence/story-level-harness-sp1/`.
 
 Ce critère est délibérément indépendant de toute génération d'image : il isole SP1 de la
 disponibilité du réseau, des quotas et du token payant.

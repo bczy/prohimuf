@@ -69,8 +69,19 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
 - The boundary law holds: `levelPlan.ts` and `generated/**` are pure game data
   (type-only imports toward `levels.ts`/`levelArt.ts`); render reads game, never the
   reverse.
-- `validateLevelPlan` is the CI-time guard (weight-0, namespace ownership of archetypes,
-  props AND `windowWeights` keys, sizing triplet completeness, id-collision,
-  mobile-halving row parity). Runtime never validates: a bad plan fails tests, not play.
+- Two guards, two failure times — deliberately distinct. `validateLevelPlan` is the
+  CI-time guard (weight-0, the 1-archetype cap, namespace ownership of archetypes,
+  props AND `windowWeights` keys, sizing completeness incl. `x`, `variants`/`hp` floors,
+  gameplay sanity, duplicate-kind consistency, mobile-halving row parity): a bad plan
+  fails tests, never play. Id-collision is the exception and is NOT in the validator:
+  `assertDistinctPlanIds` (generated/index.ts) throws at IMPORT time — a deliberate
+  fail-fast, because a colliding id would silently corrupt `LEVEL_ART` (last-wins)
+  while `ALL_LEVELS.find` returns the other entry (first-wins), a split-brain no test
+  fixture can represent without triggering it.
+- Verification reachability: the `?preview=level&level=<id>` URL seam boots a generated
+  level for §8-style verification. Lookup restricted to `GENERATED_LEVEL_CONFIGS`
+  (never `LEVELS` — the shipped campaign is not URL-bootable through it), persistence
+  inert behind the existing `PREVIEW_SCREEN !== null` guard; mirrors the
+  `?preview=boss` reachability discipline (ADR-0051 D4/E9).
 - SP2 (per-phase CI generation) and SP3 (pitch → candidate orchestration) build on this
   schema; nothing here presumes them.

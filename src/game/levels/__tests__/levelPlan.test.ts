@@ -256,3 +256,37 @@ describe("validateLevelPlan — panel run-2 hardenings", () => {
     );
   });
 });
+
+describe("validateLevelPlan — panel run-3 hardenings", () => {
+  it("rejects a timer the default delivery can never fire within", () => {
+    const short = { ...base, gameplay: { ...base.gameplay, timeSeconds: 15 } };
+    expect(validateLevelPlan(short)).toContainEqual(expect.stringContaining("delivery trigger"));
+  });
+
+  it("rejects zero/non-finite timeSeconds and bad enemiesToWin/speed", () => {
+    const bad = {
+      ...base,
+      gameplay: { enemiesToWin: 0, timeSeconds: 0, enemySpeedMultiplier: 0, windowWeights: {} },
+    };
+    const errors = validateLevelPlan(bad);
+    expect(errors).toContainEqual(expect.stringContaining("timeSeconds"));
+    expect(errors).toContainEqual(expect.stringContaining("enemiesToWin"));
+    expect(errors).toContainEqual(expect.stringContaining("enemySpeedMultiplier"));
+  });
+
+  it("rejects two placements of one kind that disagree on sizing (last-wins hazard)", () => {
+    const twice = {
+      ...base,
+      props: [prop("fixture:kiosque"), { ...prop("fixture:kiosque"), aspect: 0.9, x: 0.8 }],
+    };
+    expect(validateLevelPlan(twice)).toContainEqual(expect.stringContaining("disagree"));
+  });
+
+  it("accepts two AGREEING placements of one kind at different anchors", () => {
+    const twice = {
+      ...base,
+      props: [prop("fixture:kiosque"), { ...prop("fixture:kiosque"), x: 0.8 }],
+    };
+    expect(validateLevelPlan(twice)).toEqual([]);
+  });
+});
