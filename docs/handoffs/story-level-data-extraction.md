@@ -543,3 +543,79 @@ playthrough-to-completion and unlock persistence across reloads (design-acceptan
 triage, and to rule on BUILD deviation 1; `game-designer` (Sacha) if `producer` wants a design
 -acceptance pass on a data-only refactor; `dev-gameplay` (Amelia) for F1/F2 as a follow-up,
 not a blocker; `producer` (Marion) to record that the quality gate RAN and PASSED.
+
+---
+
+## 6. REVIEW — code-review panel triage + integration review — senior-architect (Winston) — 2026-07-29
+
+- claim: stage-6 merge gate on `git diff origin/main...HEAD` — triage of the 4-reviewer panel
+  (A/B/C/D, all findings adversarially verified by their authors) IS my integration review; one
+  pass over the full diff, not two serial reads
+- release: this section, the per-finding rulings below, two doc fixes applied by me to ADR-0073,
+  and the VERDICT line
+
+Panel input: **zero BLOCKING, zero MAJOR** across all four reviewers. Three MINOR and four NIT,
+all CONFIRMED. Nothing below changes the shipped behaviour of the game.
+
+### 6.1 Triage
+
+| #   | Finding                                                                                                                                                                     | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Owner                               |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| 1   | `validateLevel` throws `TypeError` on a structurally malformed candidate (`deliveries.forEach`, `Object.keys` on a non-object) — the exact input class ③'s MCP will receive | **DEFER to story ③, by design — not a defect here.** Ruling recorded so ③ cannot re-litigate it: `validateLevel` is a validator of TYPED data; parsing untrusted input belongs at the boundary that receives it. ③'s MCP `validate` parses/shape-guards an agent-supplied candidate into a `LevelConfig` first, and must NOT push defensive `typeof` checks into this module (that would make every invariant carry a shape check and rot the deterministic issue order). Written into ADR-0073 Consequences by me, this pass, as an inherited precondition. | `senior-architect` (done) → story ③ |
+| 2   | `timeSeconds: NaN` diverges: old guard didn't throw, new predicate does                                                                                                     | **ACCEPT the divergence — it is strictly better**, and it is unreachable from the shipped catalogue. `NaN` timeSeconds is garbage authoring; silently passing it was the old bug, not the old contract. Prescribed, pre-merge, cheap: one comment line at `hostageBossMarginIssue` stating the `<`-form is deliberate and that a non-finite `timeSeconds` fails loud, plus one test pinning it. Do NOT restore the old `>=` form.                                                                                                                            | `dev-gameplay`                      |
+| 3   | `fixtures/levelsCatalogue.pre.json:8` pins `BELLIARD_BOSS_ENABLED: true`; flipping the documented decouple seam OFF reddens AC1                                             | **PRESCRIBE option C-lite: a retirement note, NOT a flag-aware comparison.** One line in the fixture's test header saying the fixture is a flag-ON parity snapshot of the PRE-refactor catalogue, valid only while `BELLIARD_BOSS_ENABLED === true`, and to be regenerated (or deleted with the story) when the flag flips or retires. Building flag-aware comparison logic into a one-shot parity fixture is machinery for a seam that is documented as temporary — and the fixture's whole value is that it is dumb and literal.                           | `dev-gameplay`                      |
+| 4   | `field: "hostageQte"` bare vs the ADR's dotted example                                                                                                                      | **REJECT, with reason.** The ADR says "dotted path into the config, e.g. …" — `"hostageQte"` IS a path into the config, and it is the RIGHT one: the margin issue is a property of the hostage/boss/`timeSeconds` RELATIONSHIP, not of one scalar. Pointing it at `hostageQte.triggerAtElapsedSeconds` would name one of three fields a fix could legitimately touch (the message already lists all three). Object-level paths are legal `field` values; ③ must not assume `field` is always leaf-depth.                                                     | — (no change)                       |
+| 5   | `loot.spawnIntervalSeconds === 0` passes; "would never fire" is semantically wrong for an interval                                                                          | **SPLIT.** (a) Message: **prescribed, pre-merge** — drop the "it would never fire" clause from `pushRangeIssue`; the field-agnostic helper must not claim a trigger semantic it can't know. Keep the range sentence + the remedy sentence. (b) `interval === 0` as an issue: **DEFER, logged** — that is a NEW invariant, outside AC7's `[0, timeSeconds]` mandate, and it is the natural first `severity: "warning"` (bad authoring, not an unbootable level). It lands with ③'s warning surface, in `validateLevel.ts`, never anywhere else.               | (a) `dev-gameplay` / (b) story ③    |
+| 6   | `timeSeconds` itself never validated                                                                                                                                        | **DEFER, with the reason that makes it non-trivial: the tutorial authors `timeSeconds: 0`.** A naive `timeSeconds > 0` check reddens AC4 on the shipped catalogue. Any future check must be `kind`-aware (`"tutorial"` entries carry inert gameplay fields by construction, ADR-0012 D1). That is a design call on the issue set, not a nit to slip in at the merge gate. Logged for ③.                                                                                                                                                                      | story ③                             |
+| 7   | ADR-0073 says "25 import sites"; truth is 23 files / 32 lines                                                                                                               | **CONFIRMED, my error, fixed in this pass** (both occurrences, §Context and §Consequences). Not routed to `tech-writer`: it is a factual correction inside my own decision text, and the ADR is unmerged (`Proposed`) — routing a two-word fix would cost more than it saves. ADR index regenerated, `--check` fresh (73 ADR).                                                                                                                                                                                                                               | `senior-architect` (done)           |
+
+### 6.2 Integration review (countersigned)
+
+I re-read the diff against the four things this refactor could plausibly have broken, and
+countersign the reviewers' findings on each:
+
+- **Boundary law — clean.** No `src/game` module gained a React or Three import; no rule moved
+  into `src/render`. `src/render/scene/App.tsx` is the only file outside `src/game` and only its
+  import line moved (progression now from `@game/systems/progressSystem`), exactly as §3.4
+  scoped it. `src/hooks` untouched.
+- **New import edge `systems → levels → systems`** (`stateMachine` → `validateLevel` →
+  `qteSystem`) — verified acyclic: `qteSystem.ts` imports types only. This is the edge deviation
+  1 (§3.5) created and it is the one I most wanted proof of; QA exercised it live on the
+  production build at `belliard` load, not just in a unit. Accepted.
+- **Seams held.** `levels.data.ts` stays import-time computable — the flag + its one grandfathered
+  spread are the only non-literal construct, no new conditional entered the catalogue.
+  `validateLevel.ts` imports no catalogue. The barrel re-exports data + types and **not**
+  progression, so no consumer of `LEVELS` can reach `localStorage` transitively (AC2).
+- **Deps** — zero added, zero removed, zero version moved.
+- **Parity** — deep-equal against a fixture serialised from `origin/main` in a throwaway
+  worktree, key-presence included under `exactOptionalPropertyTypes`; the throw's message is
+  char-identical and `stateMachine.test.ts:940-969` passes unmodified. That is the claim this
+  whole story rests on and it is properly evidenced, not asserted.
+- Security: nothing to say (D) — no new I/O, no new input surface, one storage call site moved
+  verbatim.
+
+Nothing here is cross-cutting in the sense that needed my sign-off mid-flight: the change is
+single-lane by construction and stayed that way.
+
+### 6.3 Conditions of merge
+
+Findings 2, 3 and 5(a) are prescribed pre-merge because each is a one-to-three-line edit inside
+files this diff already owns — batching them into a follow-up would cost a second review of the
+same lines. They are NOT blocking findings; if `producer` prefers, they may ship as one fix-lane
+cycle immediately after merge, provided each is logged as an open line in `docs/handoffs/fixes.md`
+before the merge button. My preference, and the cheaper path: land them on this branch, re-run
+`rtk vitest` on `src/game/levels`, no new panel pass (no new behaviour, no new surface).
+
+QA's own F1/F2 stand as logged follow-ups (`dev-gameplay`), unchanged by this triage.
+
+**VERDICT: MERGE** — panel returned zero blocking/major; 7 minor/nit findings triaged (2 doc
+fixes applied here, 3 one-line prescriptions to `dev-gameplay`, 1 rejected with reason, 3
+deferred to story ③ with the ruling recorded so it is not re-litigated); integration review
+signed off — boundary law intact, new `systems → levels → systems` edge acyclic and proven live,
+parity evidenced against `origin/main`, zero dependency movement. ADR-0073 ships in this PR
+(`Proposed`); `producer` re-checks its number at merge per the `adr-new` guardrail.
+
+**Next hand-off:** `dev-gameplay` (Amelia) for findings 2, 3 and 5(a) on this branch (or one
+fix-lane cycle logged before merge); `pm` (John) for stage-7 acceptance; `producer` (Marion) to
+record the panel verdict, the ADR-0073 number re-check, and the three story-③ defers (findings
+1, 5(b), 6) on ③'s intake.

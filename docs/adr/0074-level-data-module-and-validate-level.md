@@ -29,7 +29,8 @@ constructing live `GameState` through `createInitialState` (`src/game/systems/st
 where it throws. An agent-facing validator cannot call a throw buried in the state machine,
 and re-deriving the same arithmetic in a second place is how the two copies drift.
 
-The forces are therefore: keep 25 existing import sites working unchanged (this is a
+The forces are therefore: keep the 32 existing import lines across 23 files working unchanged
+(this is a
 byte-for-byte refactor, not a feature), give story ③ a data module that a tool can read — and
 one day write — mechanically, and make the invariant set additive rather than duplicated.
 
@@ -124,9 +125,17 @@ first, and consumed from there.
 - Importing the level catalogue no longer drags `localStorage` into the module graph, which
   also removes a jsdom dependency from any future headless/tooling consumer of `LEVELS`.
 - Negative: `levels.ts` becoming a barrel means two names for one concept for a while.
-  Consumers are deliberately **not** migrated to direct imports in this story — a 25-file
-  import rewrite inside a byte-for-byte refactor would drown the diff that proves nothing
-  changed. Migration is a later, mechanical follow-up.
+  Consumers are deliberately **not** migrated to direct imports in this story — a 23-file /
+  32-line import rewrite inside a byte-for-byte refactor would drown the diff that proves
+  nothing changed. Migration is a later, mechanical follow-up.
+- Gotcha, and a precondition story ③ inherits: `validateLevel`'s "never throws" contract holds
+  for a **structurally well-formed** `LevelConfig` — i.e. one the type system vouches for. It
+  indexes `config.deliveries` and `roster.windowWeights` directly, so a malformed object cast
+  through the type would raise a `TypeError` instead of returning issues. That is deliberate:
+  the core stays a validator of typed data, and **parsing untrusted input is the caller's job at
+  its own boundary**. Story ③'s MCP surface must parse/shape-guard an agent-supplied candidate
+  into a `LevelConfig` before calling `validateLevel`; it must not push defensive `typeof`
+  checks into this module.
 - Negative: the invariant now has two exits — a returned issue and a throw. They share one
   computation, but a contributor adding an invariant must decide consciously whether it is also
   load-fatal. Default: it is not; only invariants that make the level unplayable earn a throw.
