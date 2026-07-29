@@ -2,7 +2,7 @@
 
 **Story:** `_bmad-output/planning-artifacts/story-tutorial-immersion-overhaul.md`  
 **Specs:** `docs/game-design/tutorial-immersion-teaching-spec.md`, `docs/game-design/ux/spec-tutorial-narrative-presentation.md`  
-**ADR:** `docs/adr/0071-tutorial-immersion-narrative-contract.md`  
+**ADR:** `docs/adr/0073-tutorial-immersion-narrative-contract.md`  
 **Owner:** `qa-lead` (Inès) · **Stage:** 5 (VERIFY) · **Status:** PLAN-ONLY (pre-implementation)
 
 ## 1) Verify scope (must hold)

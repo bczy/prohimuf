@@ -279,52 +279,52 @@
       "commander_shielded": {
         "asset": "assets/boss/commander_shielded.png",
         "seed": 4870,
-        "prompt": "a towering french plainclothes commander, facing forward, bare-headed, a long knee-length charcoal-grey overcoat lighter than the black backdrop, a pale contour of light tracing the coat lower hem and hip edge, broad squared shoulders, a reflective brassard on the sleeve, a shoulder radio, a gloved hand in a halt gesture, the other on a holstered boxy sidearm, closed guarded stance"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, shoulder radio, one gloved palm raised in a halt gesture, standing facing forward"
       },
       "commander_exposed": {
         "asset": "assets/boss/commander_exposed.png",
         "seed": 4871,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey overcoat, reflective armband and shoulder radio, lunging one stride forward into the open, both arms thrust forward presenting a boxy service pistol straight at the viewer, big bright muzzle flash, the long coat flaring open to reveal a pale contrasting grey lining, aggressive firing stance, facing forward"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, shoulder radio, striding forward, aiming a boxy handgun at the viewer, muzzle flash, coat flaring open"
       },
       "commander_hit": {
         "asset": "assets/boss/commander_hit.png",
         "seed": 4872,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey overcoat, staggered back by a bullet, torso recoiling and head snapping back, the reflective brassard torn loose and flapping from his sleeve, the shoulder radio knocked spinning off its clip, both still tethered to him by a strap and cord, the pistol arm falling loose, reeling off-balance, facing forward"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, shoulder radio, staggering backward, head snapping back, the reflective armband torn loose and flapping from his sleeve, facing forward"
       },
       "commander_down": {
         "asset": "assets/boss/commander_down.png",
         "seed": 4873,
-        "prompt": "the same towering bare-headed french plainclothes commander defeated and fallen, sprawled on his back flat on the ground, his long overcoat splayed around him in mid-grey fabric lighter than the pitch-black ground and traced by a thin pale contour, the torn brassard and knocked-loose shoulder radio lying beside him, a boxy service pistol dropped from his open hand, a motionless heap"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, shoulder radio, sprawled flat on his back, coat splayed around him, a boxy handgun fallen from his open hand"
       },
       "commander_weakpoint": {
         "$comment": "Phase-2+ dual weak-point frontal pose (spec-boss-qte-differentiation.md §1-A/C): the render draws two simultaneous rings (VITAL = head band, LIMB = torso band) over this sprite. ANCHOR GAP (flag for senior-architect, see block-level $comment): the tech plan names VITAL/LIMB band anchors for this entry, but the only anchor mechanism this file has (enemies.*.muzzle) is a per-FRAME array and this entry has no frames array — it does not fit. No band anchor recorded here; needs an architecture call on the anchor shape (a band range, not a point) before render-integration, and can only be measured against the real generated PNG (not yet generated).",
         "asset": "assets/boss/commander_weakpoint.png",
         "seed": 4874,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length mid-grey charcoal overcoat clearly lighter than the black backdrop, reflective armband and shoulder radio, square and still facing forward, chin lifted and head fully clear, torso squared flat to the viewer, both arms held out wide, a boxy service pistol low in one hand, clear of the chest, frontal readable stance"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, shoulder radio, standing square, arms held wide away from the body, a boxy handgun held low in one hand, chin lifted, facing forward"
       },
       "commander_parry_windup": {
         "$comment": "Charged parry-window pose (spec-boss-qte-differentiation.md §3-C): the tech plan names a `parryPoint` render anchor (the raised pistol) for this entry. ANCHOR GAP (flag for senior-architect, see block-level $comment): same reason as commander_weakpoint — the only anchor mechanism in this file (enemies.*.muzzle) is per-frame-array and does not fit a single-image boss entry. No `parryPoint` recorded here; needs an architecture call on the anchor shape before render-integration, and can only be measured against the real generated PNG (not yet generated).",
         "asset": "assets/boss/commander_parry_windup.png",
         "seed": 4875,
-        "prompt": "the same towering bare-headed french plainclothes commander in his long knee-length charcoal-grey overcoat clearly lighter than the black backdrop, the long coat still hanging closed, reflective armband, shoulder radio, coiled a beat before firing, elbows drawn in tight, a boxy service pistol gripped two-handed, angled steeply upward mid-raise, short of firing level, shoulders hunched, tense wound-up crouch, facing forward"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, shoulder radio, crouched and coiled, coat hanging closed, elbows drawn in tight, a boxy handgun gripped two-handed angled steeply upward, facing forward"
       },
       "commander_finisher": {
         "asset": "assets/boss/commander_finisher.png",
         "seed": 4876,
-        "prompt": "the same bare-headed french plainclothes commander on one knee, his long overcoat pooling at his leg, its torso and thigh folds a mid-charcoal, lighter than the pitch-black backdrop, upright from the waist, head up, one arm reaching up, sleeved to the wrist, the closed hand on the shoulder radio, calling it in, the other on his knee, straining unfinished effort, facing forward"
+        "prompt": "a towering bare-headed french police commander in a knee-length overcoat, reflective armband, kneeling on one knee, torso upright, one arm sleeved to the wrist reaching up, the closed hand on the shoulder radio, facing forward"
       },
       "lustre": {
         "$comment": "Seed re-rolled 4877→4879 (Bertrand escalation + lead-art Nico's ASSET GATE FAIL, 2026-07-21, docs/handoffs/story-boss-niveau-final-live.md): batch-2 art (seed 4877, prompt UNCHANGED from the B3 armature-lock fix) showed two parasitic flanking column masses — a FLUX COMPOSITION defect, not a value/hole defect the prompt caused. Per Nico's §3.10 rule, a composition defect gets a NEW SEED with the prompt held verbatim (prompt surgery is reserved for value/text-attributable defects); only this seed field changed, nothing else in the entry.",
         "asset": "assets/boss/lustre.png",
         "size": { "width": 320, "height": 512 },
         "seed": 4879,
-        "prompt": "one grand ballroom chandelier on a single chain up top, a multi-tier cone-and-umbrella wrought-iron armature, the whole frame a solid pale-to-mid grey lighter than the black backdrop, hung with solid pale grey-white crystal drops, each with a bright rim, every drop attached to the frame, two adjacent drops missing, a wide notch, slightly tilted and dusty, decayed 1900s grandeur, centered and fully visible"
+        "prompt": "one ballroom chandelier on a single chain, a multi-tier cone-and-umbrella wrought-iron frame hung with rows of teardrop crystal drops, every drop attached to the frame, two adjacent drops missing in a wide notch"
       },
       "speaker_wall": {
         "asset": "assets/boss/speaker_wall.png",
         "size": { "width": 512, "height": 320 },
         "seed": 4878,
-        "prompt": "a hand-built teknival sound-system wall on a completely flat uniform black background filling the frame, a pyramid of mismatched plywood bass-bins and horns, cabinet faces flat pale grey panels with black outlines, the stack clearly lighter than the black ground, on a pallet rig, cables as pale grey lines, lighter gaffer wraps, a sprayed stencil spiral mark, chunky unbranded mass, fully visible"
+        "prompt": "one hand-built teknival sound-system wall as a single isolated object, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face"
       },
       "shield_cover_raised": {
         "$comment": "SHIELD COVER PROP, read 1/2 — RAISED/intact (docs/game-design/spec-boss-belliard-fiction.md §2, docs/game-design/spec-boss-shield-break-tempo-shot.md §6-A/6-C). Canon lead-art ruling: the Commandant is bare-headed with NOTHING shootable modelled on his body (block-level $comment RULING 2026-07-20) — the shield the player shoots is a SEPARATE cover-prop object he crouches behind at the porte-cochère, not armour on him. Two mutually-exclusive reads driven by the boss stance: this one renders while he is SHIELDED (behind cover, un-shootable, no hit point) — a riot shield stood/propped upright, or a porch door-leaf folded across as improvised cover. `shield_cover_lowered` is the companion read, live only during a phase-2+ normal EXPOSED window, presenting the fixed BOSS_SHIELD_POINT {x:0.4,y:-0.32} (anchor-relative) on its exposed low edge — same ANCHOR SCHEMA GAP as commander_weakpoint/commander_parry_windup (flagged block-level, needs senior-architect sign-off; no anchor field added here, only the requirement noted). STRUCTURE IS PROVISIONAL, owned by dev-tooling-assets, mirroring the lustre/speaker_wall precedent ([S13]): block sibling of the commander_* figures (not on his body, so not folded into any commander_* key), a portrait `size` override (a shield/door stood upright reads taller than wide, unlike the figures' square 256x256), a placeholder seed pending the prompt gate. `pending: true` + an EMPTY \"prompt\" are DELIBERATE: gen-boss-sprites.mjs skips any boss.types entry with no prompt rather than failing the whole block, so this scaffold does not block generating the 7 already-ratified commander_* poses. PROMPT AUTHORSHIP is concept-artist's lane (Maud), NOT dev-tooling's — see the brief this entry was scaffolded from (docs/handoffs/story-boss-belliard-live.md §2, dev-tooling-assets entry) for the read requirements to turn into a prompt. DO NOT GENERATE until: (1) concept-artist fills `prompt` (silhouette-first, positively described, FLUX-aware, house style verbatim per this block's `style`), (2) lead-art PROMPT GATE PASS, (3) `pending` flips to false or is removed.",

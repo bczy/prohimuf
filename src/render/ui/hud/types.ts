@@ -82,6 +82,14 @@ export interface HudData {
   isHighScore?: boolean;
   targetIndicator?: HudTargetIndicator | undefined;
   delivery?: HudDelivery | undefined;
+  // Direction cue toward the delivery rendez-vous (telegraph spec D2). Present only
+  // while the delivery is INCOMING/DELIVERING **and** its stop position is off frame;
+  // `undefined` otherwise, so no glyph renders. Same shape as `targetIndicator` (the
+  // type is reused, never duplicated) and same nature: a derived VIEW value computed
+  // in `useGameLoop` from state the hook already reads — it carries no game rule, and
+  // it is a sibling of `delivery`, never a field of it (`HudDelivery` is emitted by
+  // `DeliveryVehicleSprite`, which has no camera in scope).
+  deliveryDirection?: HudTargetIndicator | undefined;
   hostageQte?: HudHostageQte | undefined;
   bossQte?: HudBossQte | undefined;
   // Active weapon + special stock (ADR-0055). Absent only on the pre-tick initial

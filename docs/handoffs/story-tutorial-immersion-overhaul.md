@@ -4,7 +4,7 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 
 ## stage-0. INTAKE — producer (Marion) — 2026-07-25
 
-- claim: open shard + route pipeline tier / release: shard opened, **tier=FULL PIPELINE**, ADR-0071 reserved.
+- claim: open shard + route pipeline tier / release: shard opened, **tier=FULL PIPELINE**, ADR-0073 reserved.
 
 ## stage-1. SCOPE — pm (John) — 2026-07-25
 
@@ -22,7 +22,7 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 
 ## stage-3. ARCHITECTURE — senior-architect (Winston) — 2026-07-25
 
-- claim: publish architecture decision draft for tutorial contract delta / release: ADR draft present at `docs/adr/0071-tutorial-immersion-narrative-contract.md` (**Status: Proposed**).
+- claim: publish architecture decision draft for tutorial contract delta / release: ADR draft present at `docs/adr/0073-tutorial-immersion-narrative-contract.md` (**Status: Proposed**).
 
 ## stage-4. BUILD — dev-gameplay (Amelia) — 2026-07-25
 
@@ -64,11 +64,11 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
   2. [MAJEUR] `DiagramIcon.tsx:238-247` — `shot-read` enemy projectile + warn ring `opacity="0"` static → the "leurs balles voyagent" lesson has no visual under reduced motion. Same AC9 class, fix with (1). Owner: dev-r3f-render.
   3. [MAJEUR] `narrativeSystem.ts:158/166/207/226` vs UX spec §D2.2 — `teachingBullets` ship on 4 panels fully disjoint from the gated whitelist (mobile-shoot / courier / hostage-ring); the recorded "re-gate PASS" is false vs shipped code. → DESIGN DECISION: align code to whitelist OR re-gate a spec amendment (ux-designer + lead-game-designer), then dev-gameplay applies.
   4. [MAJEUR] `narrativeSystem.ts:224-231` — story AC2 "HUD weapon readout semantics" never taught (panel 14 covers score/vague/chrono/vies only). → add weapon-readout beat in the same design pass as (3). Owner: design lane + dev-gameplay.
-  5. [MAJEUR] `GestureIcon.tsx:23` + `assetManifest.ts:342-351` — edge-scroll embeds `street-wide.png` (5 939 784 B) absent from `manifestFor("tutorial")` → unpreloaded 5.9 MB fetch for a ~96×76 px strip; contradicts ADR-0071 D5 preload-explicitness. → warm it in the tutorial manifest (+ test); architect note on bitmap-in-diagram tension. Owner: dev-gameplay.
+  5. [MAJEUR] `GestureIcon.tsx:23` + `assetManifest.ts:342-351` — edge-scroll embeds `street-wide.png` (5 939 784 B) absent from `manifestFor("tutorial")` → unpreloaded 5.9 MB fetch for a ~96×76 px strip; contradicts ADR-0073 D5 preload-explicitness. → warm it in the tutorial manifest (+ test); architect note on bitmap-in-diagram tension. Owner: dev-gameplay.
 - MINEUR: Commandant drawn with `enemy_riot_shooting.png` though `commander_shielded.png` ships (identity mislead; swap + warm — dev-r3f-render) · stage-5 verify unexecuted (merge would front-run the quality gate — qa-lead).
 - NIT: `di-wc-link-3` opacity pop at loop restart · `key={bullet}` duplicate-risk (index-suffix) · stale comment `NarrativeScreen.tsx:134` ("Absent on tutorial scenes.").
 - Integration review (same pass): boundary law CLEAN (game = pure authored data, render owns pixels, hooks untouched) · seam under load = warm-list contract game↔render (finding 5) · no new deps · deploy unaffected · ADR renumbered 0068→0069 at rebase, registry in sync (69 ADR).
-- DOC findings → tech-writer: D2.2↔code divergence (pending design decision on 3), stale NarrativeScreen comment, ADR-0071 D5 wording vs embedded bitmaps.
+- DOC findings → tech-writer: D2.2↔code divergence (pending design decision on 3), stale NarrativeScreen comment, ADR-0073 D5 wording vs embedded bitmaps.
 - Security (D): zero findings — no URL/localStorage/preview surface touched, static JSX/SVG only, no new deps/URLs.
 - Cleared by verification: all tutorial copy gameplay claims accurate vs shipped systems (hitscan, BULLET_SPEED 9, damage ladder 1/0.5/0.25, LOOT loop, boss-at-expiry) · threat-ladder geometry · fork invariant [2,3] · persistence-inertness · 1174/1174 tests, tsc/lint clean.
 
@@ -84,7 +84,7 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
   and 14, dropped 4 and 11, added 10 and 12.
 - **Finding 4** — the weapon readout is taught at panel 5 (the crate/LOOT panel), not panel 14: the
   readout is the instrument that shows where you are in the loop the diagram draws. No 17th panel,
-  16-panel map and ADR-0071 unchanged.
+  16-panel map and ADR-0073 unchanged.
 - Cross-finding ruling: bullets must NOT be used to compensate a frozen reduced-motion cue —
   MAJEUR 1 & 2 stay render-lane AC9 fixes.
 - VERDICT: PASS — DESIGN GATE (lead-game-designer), spec amendment gated. `dev-gameplay` applies
@@ -132,7 +132,7 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 | 0. INTAKE       | done                                                                        | producer                          | —                                          | none                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 1. SCOPE        | done                                                                        | pm                                | —                                          | none                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2. DESIGN GATE  | done (§D2.2 amended, PASS)                                                  | lead-game-designer → dev-gameplay | apply whitelist {5,10,12,14} + weapon beat | rework rounds used: 1/2 (the 2026-07-26 amendment is a post-panel correct-course, not a rework round)                                                                                                                                                                                                                                                                                                                    |
-| 3. ARCHITECTURE | **done — ADR-0071 Accepted**                                                | senior-architect                  | —                                          | closed at stage-6 run 3: D5 now names the shipped device-forked API and the render-knowledge-in-`src/game` placement is enforced by `illustrationAssetBinding.test.ts`, so the condition I held the ADR on is met. `docs/adr/README.md` + `public/adr/index.html` regenerated (`gen-adr-index.mjs --check` fresh)                                                                                                        |
+| 3. ARCHITECTURE | **done — ADR-0073 Accepted**                                                | senior-architect                  | —                                          | closed at stage-6 run 3: D5 now names the shipped device-forked API and the render-knowledge-in-`src/game` placement is enforced by `illustrationAssetBinding.test.ts`, so the condition I held the ADR on is met. `docs/adr/README.md` + `public/adr/index.html` regenerated (`gen-adr-index.mjs --check` fresh)                                                                                                        |
 | 4. BUILD        | done                                                                        | dev-gameplay ∥ dev-r3f-render     | QA execution                               | none                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5. VERIFY       | run 4: **PASS — CLOSED** (verify↔build loops **2/2, at cap, not exceeded**) | qa-lead → pm                      | —                                          | none blocking. Targeted re-verify of the MAJEUR-R2-01 round held 4/4 on both device profiles (mobile launch −90.9 %, no `street-wide.png`; "Tutoriel" label on both forks; panel 13 zero timer overlap over the full 3.2 s cycle; mechanical 5/5). Follow-up, non-blocking: regression spec TUT-LOAD-01 → `dev-tooling-assets` (loading label + fork warm-list have no automated guard; probe 6 SURVIVES, documented)    |
 | 6. REVIEW       | run 3: **MERGE — CLOSED**                                                   | senior-architect → pm             | stage-7 acceptance                         | MAJEUR-R2-01 + the 2 bundled MINEURs + the NIT all CONFIRMED closed on the diff, not on self-report. Integration review CLEAN (unchanged from run 2). **Merge precondition, mechanical:** the whole fix round is still UNCOMMITTED/UNTRACKED — commit + push, then the CI `panel-verdict` check run (ADR-0063) is the blocking authority on the pushed diff. 2 new NITs routed, non-blocking. AC3 waiver call still → pm |
@@ -146,14 +146,14 @@ Story source: Bertrand approval, 2026-07-25, branch `bczy-tutorial-immersion-ove
 - **Stale comment (`NarrativeScreen.tsx:134`)** — checked: `TUTORIAL_NARRATIVE_DESKTOP` and
   `TUTORIAL_NARRATIVE_MOBILE` (`narrativeSystem.ts:237/243`) now both author
   `backdrop: "assets/levels/belliard/facade.png"`, and `narrativeSystem.test.ts` A6 locks this in as an
-  ADR-0071-sanctioned change. "Absent on tutorial scenes." was stale; comment now states the ADR-0071
+  ADR-0073-sanctioned change. "Absent on tutorial scenes." was stale; comment now states the ADR-0073
   (D1) exception by name.
-- **ADR-0071 D5 wording** — read `assetManifest.ts`'s current `GESTURE_EMBEDDED_ASSETS` /
+- **ADR-0073 D5 wording** — read `assetManifest.ts`'s current `GESTURE_EMBEDDED_ASSETS` /
   `DIAGRAM_EMBEDDED_ASSETS` maps + `illustrationAssetPaths()` and their test coverage; D5's old text
   ("if tutorial backdrops are authored…") only covered the backdrop channel and didn't name the
   embedded-bitmap mechanism dev-gameplay actually built. Tightened D5 to state the real rule:
   code-drawn diagrams/gestures MAY embed real bitmaps, every one is declared in the two per-kind maps
-  and warmed via `illustrationAssetPaths()` inside `manifestFor("tutorial")`. No other ADR-0071 section
+  and warmed via `illustrationAssetPaths()` inside `manifestFor("tutorial")`. No other ADR-0073 section
   touched; the 5.9 MB-bitmap-in-a-96×76px-diagram tension stays senior-architect's to note, not
   addressed here.
 
@@ -389,7 +389,7 @@ below that is worth doing is bundled into the same round.
   the reconciliation (D2.3 becomes the _format_ contract subordinate to the C1/C2/C3 _eligibility_
   contract), **`lead-game-designer` signs it off** — D2.3 is design law, not prose. Doc-only: no
   re-verify, does not consume the loop.
-- **[DOC, required, no code]** ADR-0071 §D5 — tech-writer's run-1 pass tightened D5 to name the
+- **[DOC, required, no code]** ADR-0073 §D5 — tech-writer's run-1 pass tightened D5 to name the
   embedded-bitmap mechanism; MAJEUR-R2-01 changes the contract again (the tutorial manifest becomes
   device-forked). D5 must state it: _the tutorial warms the illustration assets of the fork the
   device will actually render, not the union._ → **`tech-writer`**, after the fix lands.
@@ -401,7 +401,7 @@ below that is worth doing is bundled into the same round.
   level finale condition". Panel 13 ships 2 of the 3 clauses (chrono-à-zéro telegraph, quota-no-
   longer-ends condition) and the diagram carries the danger _window_ visually; only "boss HP" is
   absent. That is materially different from run-1 MAJEUR 4, where AC2 was absent outright. Closing
-  it needs either new copy on an already-dense panel or a 17th panel, which reopens ADR-0071's
+  it needs either new copy on an already-dense panel or a 17th panel, which reopens ADR-0073's
   16-panel map and burns design round 2/2. **→ `pm`, as an explicit accept-or-waive at stage 7.**
   My recommendation: **waive with a follow-up story** — `BossHpBar` is a level-3 surface the
   tutorial's first-session player will not meet for a long while. If `pm` does not waive, it returns
@@ -456,7 +456,7 @@ below that is worth doing is bundled into the same round.
 - **The one architectural tension, ruled.** `GESTURE_EMBEDDED_ASSETS` / `DIAGRAM_EMBEDDED_ASSETS`
   put _render knowledge_ (which bitmap a component draws) inside `src/game`. That is not an import
   violation, and I **accept the placement**: a preload manifest is by nature a declaration of what
-  will be drawn, it must be computable without React, and ADR-0071 D5 already sanctions it. I accept
+  will be drawn, it must be computable without React, and ADR-0073 D5 already sanctions it. I accept
   it **conditionally on the binding test above** — an unenforced declaration of another layer's
   behaviour is a comment wearing a type's clothes, and this one has already drifted twice.
 - **Cross-lane seams:** exactly one, `assetManifest.ts` (game) ↔ `App.tsx` (render), and the fix
@@ -467,8 +467,8 @@ below that is worth doing is bundled into the same round.
   surface unchanged; `street-wide.png` was already shipped and served.
 - **Security (reviewer D):** zero findings, and I concur — every new string is a compile-time
   literal under `BASE_URL`, scene data has fixed non-attacker-reachable provenance.
-- **ADR-0071 stays `Proposed`.** I will not finalise it while MAJEUR-R2-01 changes the D5 contract
-  it documents. Sequence: fix lands → tech-writer's D5 addendum → I flip ADR-0071 to `Accepted` at
+- **ADR-0073 stays `Proposed`.** I will not finalise it while MAJEUR-R2-01 changes the D5 contract
+  it documents. Sequence: fix lands → tech-writer's D5 addendum → I flip ADR-0073 to `Accepted` at
   the stage-6 sign-off, and stage 3 closes with it.
 
 - **NO-MERGE. Blocking: MAJEUR-R2-01, owning lanes `dev-gameplay` (game) then `dev-r3f-render`
@@ -514,7 +514,7 @@ Cycle reset count: 0 (no reset declared).
   `src/render/scene/App.tsx` (import `:27`, call `:421`) — three touch points to update per the
   triage (`:112` fork constant, `:411` TUTORIAL branch, `:444` label where `target === "tutorial"`
   no longer matches). Grep over `src/`, `demo/`, `scripts/` found no other call site.
-  Doc-only leftover for `tech-writer`: ADR-0071 §D5 line 77 still says `manifestFor("tutorial")`.
+  Doc-only leftover for `tech-writer`: ADR-0073 §D5 line 77 still says `manifestFor("tutorial")`.
 
 ## stage-6. REWORK — dev-r3f-render (Amelia) — 2026-07-26 (MAJEUR-R2-01 render half + 3 bundled)
 
@@ -575,12 +575,12 @@ Cycle reset count: 0 (no reset declared).
   devices) → `qa-lead`. I covered the mechanism with the mutation-probed attribute test rather than
   a single frame, because a screenshot samples one t of a 3.2s cycle while the keyframe assertion
   holds for all t; a frame is still worth attaching to the PR as evidence. Doc leftovers for
-  `tech-writer` stand: ADR-0071 §D5 (device-forked contract + `manifestFor("tutorial")` on line 77).
+  `tech-writer` stand: ADR-0073 §D5 (device-forked contract + `manifestFor("tutorial")` on line 77).
 - NOT committed, NOT pushed, as instructed.
 
 ## stage-6. REWORK — tech-writer (Otis) — 2026-07-26 (MAJEUR-R2-01, doc leftover)
 
-- claim/release: `docs/adr/0071-tutorial-immersion-narrative-contract.md` §D5 only — no other file,
+- claim/release: `docs/adr/0073-tutorial-immersion-narrative-contract.md` §D5 only — no other file,
   no other section touched.
 - **Wording fix, not a redesign.** §D5's asset-preload paragraph named `manifestFor("tutorial")`,
   an API `dev-gameplay`'s stage-6 rework retired (that bare target now falls through to the level
@@ -808,12 +808,12 @@ MINEUR level.
   adding a bitmap to an existing kind was the silent one — and that is now covered. Fix when next in
   the file: derive the lists from an exported `Record<Kind, true>` (or from the components' own
   `DIAGRAMS`/`ICONS` maps) so the union drives the test.
-- **[NIT → `tech-writer`] ADR-0071 D5 states the declaration mechanism but not its enforcement.** My
+- **[NIT → `tech-writer`] ADR-0073 D5 states the declaration mechanism but not its enforcement.** My
   acceptance of render-knowledge-inside-`src/game` was explicitly conditional on the binding test
   existing (run-2 integration review). D5 now correctly names the device-forked API and the two maps,
   but not `illustrationAssetBinding.test.ts` — so a future contributor could delete the test without
   knowing it is load-bearing for an architectural acceptance. The test's own 16-line header does cite
-  ADR-0071 D5, so the link exists in one direction; make it two. One clause, no re-verify.
+  ADR-0073 D5, so the link exists in one direction; make it two. One clause, no re-verify.
 - **[checked, not a finding]** `assetManifest.test.ts` now does filesystem I/O (`existsSync` over
   `public/`) inside a `src/game` unit test. Faint purity smell, but it is a test asserting that
   declared bitmaps actually ship, `src/game` **source** stays pure, and it is the pin that catches
@@ -834,7 +834,7 @@ MINEUR level.
 - **The one architectural tension, now unconditionally accepted.** `GESTURE_EMBEDDED_ASSETS` /
   `DIAGRAM_EMBEDDED_ASSETS` put render knowledge in `src/game`. I accepted the placement in run 2
   **conditionally on a mechanical binding**; that binding now exists and is mutation-proven (probe 5).
-  The condition is met, so the acceptance is now unconditional and ADR-0071 can carry it.
+  The condition is met, so the acceptance is now unconditional and ADR-0073 can carry it.
 - **Cross-lane seams:** the single `assetManifest.ts` (game) ↔ `App.tsx` (render) seam was
   **serialised as instructed** — `dev-gameplay` landed step 1 and released the file, `dev-r3f-render`
   then landed step 2 and touched no `src/game` file. The shipped API matches the handed-off API
@@ -850,7 +850,7 @@ MINEUR level.
   escalation to `producer`, not a rework. Design rework 1/2, asset-generation batches 0/2, cycle
   resets 0. All within cap.
 
-#### ADR-0071 — Proposed → **Accepted** (done in this pass)
+#### ADR-0073 — Proposed → **Accepted** (done in this pass)
 
 The reason I held it at Proposed in run 2 was that MAJEUR-R2-01 was about to change the D5 contract
 it documents. That fix has landed and `tech-writer`'s §D5 correction names the shipped API
@@ -858,7 +858,7 @@ it documents. That fix has landed and `tech-writer`'s §D5 correction names the 
 single `IS_MOBILE` read, each fork warming only its own embedded illustration assets, no bare
 `"tutorial"` target). I verified D5's text against the shipped code rather than against the
 hand-off note. Status flipped to `Accepted` in
-`docs/adr/0071-tutorial-immersion-narrative-contract.md`.
+`docs/adr/0073-tutorial-immersion-narrative-contract.md`.
 **Mechanical consequence handled:** the Status string is embedded in two GENERATED artifacts
 (`docs/adr/README.md` and `public/adr/index.html`), and CI runs
 `node scripts/gen-adr-index.mjs --check`. Flipping the field alone would have shipped a red freshness
@@ -887,7 +887,7 @@ label has no mechanical guard — `qa-lead`'s probe 6 SURVIVES, documented, and 
 - **MERGE.** Zero unresolved CONFIRMED blocking or major findings. Hand to `pm` for stage-7
   acceptance (with the AC3 call), then Bertrand merges once the pushed diff clears the CI panel.
 - Files I touched in this pass, and no others: `docs/handoffs/story-tutorial-immersion-overhaul.md`
-  (this entry + pipeline table rows 3/5/6/7), `docs/adr/0071-tutorial-immersion-narrative-contract.md`
+  (this entry + pipeline table rows 3/5/6/7), `docs/adr/0073-tutorial-immersion-narrative-contract.md`
   (Status field only), plus the two generator outputs `docs/adr/README.md` and `public/adr/index.html`
   (regenerated, not hand-edited — required by the freshness gate).
 
@@ -965,7 +965,7 @@ runs) and the scope artifact side by side. AC-by-AC:
 
 Senior-architect's recommendation (run 2, re-stood at run 3): waive AC3's boss-HP clause
 for this story and ship as-is; open a follow-up rather than reopening the gated,
-design-capped 16-panel map (ADR-0071) a second time.
+design-capped 16-panel map (ADR-0073) a second time.
 
 **I accept the waiver.** Reasoning, as a cost/value call — not a shrug:
 
@@ -978,7 +978,7 @@ design-capped 16-panel map (ADR-0071) a second time.
    encounter surface. A first-session tutorial player will not meet it for several
    missions after the tutorial — the teaching debt sits far from the moment it would
    bite, unlike, say, a control scheme taught wrong on panel 1.
-3. **The cost to close it now is real and disproportionate.** ADR-0071 froze the
+3. **The cost to close it now is real and disproportionate.** ADR-0073 froze the
    tutorial at 16 panels; that map has already been re-gated once (design rework 1/2)
    and the story has already run 3 full QA execution passes and 3 stage-6 panel passes.
    Reopening design for a 17th panel (or restructuring the already-dense panel 13) means
@@ -1022,7 +1022,7 @@ precondition (commit the uncommitted round without `--no-verify`, push, wait for
   prioritized. Scope sketch for whoever opens it: teach "watch the boss HP bar" as a
   live mechanic, either as a new beat on the existing panel 13 (`boss-finale-switch`) if
   it can be added without breaking AC9-class reduced-motion/overprint constraints already
-  hard-won on that panel, or as a 17th panel if not — either way it REOPENS ADR-0071's
+  hard-won on that panel, or as a 17th panel if not — either way it REOPENS ADR-0073's
   16-panel map and needs a fresh `lead-game-designer` design-gate pass (its own rework
   cap, independent of this story's spent 2/2). Truth source: `BossHpBar.tsx` (render) +
   the boss HP/finale data it reads (game) — keep it as truthful-to-shipped as the rest of
@@ -1034,7 +1034,7 @@ precondition (commit the uncommitted round without `--no-verify`, push, wait for
   `onError` fallback (standing render-lane debt) · `shot-read` freeze-point separation,
   TUT-A11Y-01 container role/name, `[ CONTINUER ]` blink under reduced motion (all owner
   `ux-designer`) · 2 NITs from stage-6 run 3 (hand-written kind lists in the binding test;
-  ADR-0071 D5 → test cross-reference), owners `dev-r3f-render` / `tech-writer`.
+  ADR-0073 D5 → test cross-reference), owners `dev-r3f-render` / `tech-writer`.
 
 ## stage-6. CI PANEL — run 4 (first live CI run) — 2026-07-27
 

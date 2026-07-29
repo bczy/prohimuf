@@ -16,6 +16,7 @@ import type { LootCrate, LootSpec } from "@game/types/loot";
 import { BULLET_SPEED } from "@game/systems/bulletSystem";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { spawnWave } from "@game/systems/enemySystem";
+import { DELIVERY_ASSAULT_ID_BASE } from "@game/systems/deliveryAssault";
 import { pickKind } from "@game/types/enemyTypes";
 
 /** Mirror of the render lane's LevelConfig -> LevelParams mapping. */
@@ -432,10 +433,13 @@ describe("tickGameState — scripted vehicle delivery", () => {
       windowRemaining: 5,
     };
     const state = withDelivery(failing, { elapsedSeconds: 25, score: 7, lives: 3 });
-    // 5 enemies shooting for a full second drains the tiny gauge.
-    const shooters: GameState["enemies"] = Array.from({ length: 5 }, (_e, i) => ({
-      id: 1000 + i,
-      slotIndex: i,
+    // The delivery's own assault (ids from `DELIVERY_ASSAULT_ID_BASE`) is what
+    // chips the gauge; a full second of it drains the tiny gauge. Seated already
+    // SHOOTING, so no TRANSITION happens this tick and no round is spawned — this
+    // test is about the FAILED outcome, not about return fire.
+    const shooters: GameState["enemies"] = Array.from({ length: 2 }, (_e, i) => ({
+      id: DELIVERY_ASSAULT_ID_BASE + i,
+      slotIndex: 5 + i,
       state: "SHOOTING" as const,
       timer: 5,
       kind: "normal" as const,
@@ -1355,4 +1359,90 @@ describe("tickGameState — fractional damage and the invulnerability window", (
     );
     expect(dead.phase).toBe("GAME_OVER");
   });
+});
+
+// "An enemy that is not on screen cannot shoot." Enforced by FREEZING the unseen
+// enemy — state held, countdown paused — so it can never reach SHOOTING unseen.
+describe("tickGameState — off-screen enemies cannot shoot", () => {
+  // Slot 0 of FACADE_01 sits at x = -18: far outside the default 18-wide view
+  // centred on 0, and reachable by panning the camera to -18.
+  const OFFSCREEN_SLOT = 0;
+  const PAN_ONTO_SLOT = -18;
+  // Enemy fire is AIMED at the player since ADR-0065, so a spawned round closes on
+  // the hit disc fast. These ticks stay short enough that the round is still in
+  // flight when the tick ends — otherwise it would be consumed and uncountable.
+  const SHORT_TICK = 0.016;
+
+  function withOneEnemy(state: GameState["enemies"][number]): GameState {
+    return { ...createInitialState(FACADE_01), enemies: [state] };
+  }
+
+  const aboutToShoot = {
+    id: 1,
+    slotIndex: OFFSCREEN_SLOT,
+    state: "VISIBLE" as const,
+    timer: 0.001,
+    kind: "normal" as const,
+    hp: 1,
+  };
+
+  it("never fires while off screen, however long the camera looks away", () => {
+    let state = withOneEnemy(aboutToShoot);
+    for (let i = 0; i < 100; i++) {
+      state = tickGameState(state, noFire, 0.5, 0.5, 0.1, FACADE_01);
+    }
+    expect(state.bullets.filter((b) => !b.fromPlayer)).toHaveLength(0);
+    expect(state.enemies[0]?.state).toBe("VISIBLE");
+  });
+
+  it("holds its countdown while off screen (frozen, not merely silenced)", () => {
+    const state = tickGameState(withOneEnemy(aboutToShoot), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies[0]?.timer).toBe(aboutToShoot.timer);
+  });
+
+  it("fires as soon as the camera pans onto it", () => {
+    const state = tickGameState(
+      withOneEnemy(aboutToShoot),
+      noFire,
+      0.5,
+      0.5,
+      SHORT_TICK,
+      FACADE_01,
+      PAN_ONTO_SLOT,
+    );
+    expect(state.enemies[0]?.state).toBe("SHOOTING");
+    expect(state.bullets.filter((b) => !b.fromPlayer)).toHaveLength(1);
+  });
+
+  it("does not pop up while off screen either", () => {
+    const hidden = { ...aboutToShoot, state: "HIDDEN" as const };
+    const state = tickGameState(withOneEnemy(hidden), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies[0]?.state).toBe("HIDDEN");
+  });
+
+  // The freeze must NOT strand an already-killed enemy: `allDead` gates the wave
+  // rollover on every enemy reaching DEAD, and a HIT enemy is not re-targetable,
+  // so a frozen corpse would empty the facade for the rest of the level.
+  it("an enemy killed just before the camera leaves it still dies, and the wave rolls over", () => {
+    const dying = {
+      ...aboutToShoot,
+      state: "HIT" as const,
+      timer: 0.001, // mid hit-flash
+      hp: 0, // the kill is already banked
+    };
+    // Camera at 0 ⇒ slot 0 (x = -18) is off screen for the whole tick.
+    const state = tickGameState(withOneEnemy(dying), noFire, 0.5, 0.5, 0.1, FACADE_01);
+    expect(state.enemies.every((e) => e.state !== "HIT")).toBe(true);
+    expect(state.wave).toBe(2);
+    expect(state.enemies.length).toBeGreaterThan(0);
+  });
+
+  // The `describe("frozen mid-SHOOTING")` block that stood here is DELETED per AC2
+  // of `spec-delivery-van-assault.md` Rev.2: its two cases pinned the free objective
+  // ("chips no delivery integrity while off screen") and the INVERTED incentive
+  // ("still chips it once the camera pans onto it") as expected behaviour — the
+  // merge-gate panel's own blocker. The delivery gauge no longer reads `SHOOTING`
+  // at all, so it needs no camera filter; what survives of the intent lives in
+  // `deliveryAssaultTick.test.ts` (AC6 at tick level, and AC14 for the ADR-0071
+  // freeze invariants with the assault live).
 });

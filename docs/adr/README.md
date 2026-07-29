@@ -126,6 +126,8 @@ the old one `Superseded by ADR-XXXX`.
 | [0068](./0068-lazy-load-threejs-r3f.md) | ADR-0068 — Lazy-load du runtime Three.js/R3F | Accepted |
 | [0069](./0069-energy-rim-signalling-contract.md) | Energy-rim signalling contract | Accepted |
 | [0070](./0070-ci-panel-subscription-auth-claude-code-action.md) | CI code-review panel moves to subscription auth via `claude-code-action`, retires the GitHub Models fallback | Accepted |
-| [0071](./0071-tutorial-immersion-narrative-contract.md) | Tutorial immersion narrative contract (decor context + mechanic cue diagrams) | Accepted |
+| [0071](./0071-offscreen-enemies-frozen.md) | Un ennemi hors-champ est gelé : il ne peut pas tirer | Proposed |
+| [0072](./0072-delivery-assault-reserved-slots.md) | Assaut de livraison : slots réservés au niveau et identité par plage d'id | Proposed |
+| [0073](./0073-tutorial-immersion-narrative-contract.md) | Tutorial immersion narrative contract (decor context + mechanic cue diagrams) | Accepted |
 
 <!-- ADR-INDEX:END -->

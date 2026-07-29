@@ -8,9 +8,13 @@ import type { CourierField } from "@game/systems/courierSystem";
  *    then places the vehicle at its entry edge and starts rolling in.
  *  - `INCOMING`: slides along the street toward `stopPosition.x`; on arrival →
  *    `DELIVERING` with a fresh window.
- *  - `DELIVERING`: each `SHOOTING` enemy chips the integrity gauge. Window
- *    survived with integrity > 0 → `SUCCESS` (`scoreDelta === bonus`, once).
- *    Integrity ≤ 0 → `FAILED` (no bonus, no penalty).
+ *  - `DELIVERING`: each ALIVE assailant of this delivery's own scripted assault
+ *    chips the integrity gauge (`spec-delivery-van-assault.md` Rev.2, D1). The
+ *    SELECTION of who counts belongs to the caller (`stateMachine`, which owns
+ *    the facade); this module only does the arithmetic and stays facade-free and
+ *    camera-free. Window survived with integrity > 0 → `SUCCESS`
+ *    (`scoreDelta === bonus`, once). Integrity ≤ 0 → `FAILED` (no bonus, no
+ *    penalty).
  *  - `SUCCESS` / `FAILED`: the vehicle departs along its travel direction until
  *    off-screen, then `GONE`.
  * Fully deterministic — no randomness anywhere.
@@ -20,8 +24,15 @@ import type { CourierField } from "@game/systems/courierSystem";
 export const VEHICLE_SPEED = 8;
 /** How far past the street half-width the vehicle spawns / vanishes. */
 export const VEHICLE_MARGIN = 4;
-/** Integrity lost per second, per enemy currently in the `SHOOTING` state. */
-export const DAMAGE_PER_SHOOTER_PER_SECOND = 8;
+/**
+ * Integrity lost per second, per ALIVE assailant of this delivery's assault
+ * (`spec-delivery-van-assault.md` Rev.2 §4.1 — the single tuned number). Lower
+ * bound: the ignore case must fail with ≥ 20 % of the window to spare on every
+ * level (`D >= I/(0.8·N·W)`, belliard binds at 7.81). Upper bound: the slow-mobile
+ * reference player must still win (`D <= 9`). Pre-declared fallback if stage-5
+ * verify or the UX telegraph slips: 8.
+ */
+export const DAMAGE_PER_ASSAILANT_PER_SECOND = 9;
 
 export interface DeliveryTickResult {
   /** The vehicle after this tick (same reference when nothing changes). */
@@ -67,7 +78,7 @@ export function tickDelivery(
   vehicle: DeliveryVehicle,
   spec: DeliverySpec,
   elapsedSeconds: number,
-  shootingCount: number,
+  assailantCount: number,
   field: CourierField,
   delta: number,
 ): DeliveryTickResult {
@@ -110,7 +121,7 @@ export function tickDelivery(
     }
 
     case "DELIVERING": {
-      const damage = DAMAGE_PER_SHOOTER_PER_SECOND * shootingCount * delta;
+      const damage = DAMAGE_PER_ASSAILANT_PER_SECOND * assailantCount * delta;
       const integrity = Math.max(0, vehicle.integrity - damage);
       const windowRemaining = vehicle.windowRemaining - delta;
 

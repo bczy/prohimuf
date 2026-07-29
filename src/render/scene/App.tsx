@@ -16,6 +16,7 @@ import {
   isBossSeamShippedLevel,
   resolveBossPreviewLevel,
 } from "./bossHarness";
+import { installDeliveryCaptureSeam, resolveDeliveryPreviewLevel } from "./deliveryHarness";
 import { nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
@@ -87,9 +88,22 @@ const BOSS_HARNESS_PREVIEW = PREVIEW_SCREEN === "boss";
 // `?preview=boss` boots the non-shipped harness by default; `&level=<id>` (C-QA3) boots a shipped
 // level (niveau-final) so the boss renders over its real backdrop. Resolved view-side from the URL.
 const BOSS_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.search : "";
+
+// Delivery-assault capture seam (harness-only, non-shipped): `?preview=delivery&at=
+// incoming|delivering` boots straight into a SHIPPED level (belliard by default, or
+// `&level=<id>` naming another delivery-bearing level) with the vehicle already
+// fast-forwarded to that phase — see `deliveryHarness.ts` for why this can't precompute
+// a state the way the boss seam does. Every delivery-bearing level is already shipped,
+// so persistence stays inert via the generic `PREVIEW_SCREEN !== null` guard alone (no
+// second `BOSS_SEAM_SHIPPED_LEVEL`-style guard needed — there is no non-shipped variant).
+const DELIVERY_HARNESS_PREVIEW = PREVIEW_SCREEN === "delivery";
+const DELIVERY_PREVIEW_SEARCH = typeof window !== "undefined" ? window.location.search : "";
+
 const INITIAL_LEVEL: LevelConfig = BOSS_HARNESS_PREVIEW
   ? resolveBossPreviewLevel(BOSS_PREVIEW_SEARCH)
-  : FIRST_PLAYABLE_LEVEL;
+  : DELIVERY_HARNESS_PREVIEW
+    ? resolveDeliveryPreviewLevel(DELIVERY_PREVIEW_SEARCH)
+    : FIRST_PLAYABLE_LEVEL;
 // True when the seam booted a SHIPPED level (niveau-final IS in LEVELS, unlike the harness). Folded
 // into the persistence guard below so a seam-booted shipped level NEVER writes muf_scores_*/
 // muf_progress — belt-and-suspenders behind the `PREVIEW_SCREEN !== null` early-return.
@@ -104,6 +118,7 @@ const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 // SHIPPED level's real bossQteSpec (niveau-final over l'Éden) instead of the harness; persistence
 // stays inert via the `PREVIEW_SCREEN !== null` guard + `BOSS_SEAM_SHIPPED_LEVEL`. See `bossHarness.ts`.
 installBossCaptureSeam();
+installDeliveryCaptureSeam();
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
@@ -178,7 +193,7 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
-    BOSS_HARNESS_PREVIEW
+    BOSS_HARNESS_PREVIEW || DELIVERY_HARNESS_PREVIEW
       ? "PLAYING"
       : PREVIEW_SCREEN === "narrative"
         ? "NARRATIVE_PRE"

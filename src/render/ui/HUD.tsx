@@ -70,7 +70,13 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
         <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
       )}
 
-      <DeliveryIntegrityBanner delivery={data.delivery} />
+      {/* The banner also carries the off-screen cue toward the delivery point
+          (telegraph spec D2.3): anchored on the objective's own call-out, NOT on the
+          edge ring above — that ring means "nearest enemy to shoot". */}
+      <DeliveryIntegrityBanner
+        delivery={data.delivery}
+        deliveryDirection={data.deliveryDirection}
+      />
 
       <HostageQteOverlay hostageQte={data.hostageQte} />
 

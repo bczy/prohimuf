@@ -130,7 +130,7 @@ describe("assetManifest — menu & tutorial", () => {
     expect(m).not.toContain(EDGE_SCROLL_BITMAP);
   });
 
-  // ADR-0071 D5 (preload-explicitness): a "code-drawn" panel is only vector-pure when it
+  // ADR-0073 D5 (preload-explicitness): a "code-drawn" panel is only vector-pure when it
   // draws nothing but vectors. The edge-scroll gesture icon frames the REAL Belliard street
   // inside its mini-screen and the hostage-ring diagram embeds the REAL captor + girl
   // sprites, so those bitmaps are tutorial-panel assets like any `image:` — the gate must
