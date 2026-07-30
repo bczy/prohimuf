@@ -7,7 +7,8 @@
 > (playthrough 5 levels) bloque ② — **pas cette story**.
 > **Lanes** — `dev-tooling-assets` (serveur), `dev-gameplay` (le passage à
 > l'enregistrement paresseux, §4.3), `senior-architect` (ADR du serveur — nouveau process
-> et dépendance — ET le countersign ADR-0074 §2 encore ouvert au shard SP1, que §4.3 clôt).
+> et dépendance — ET le sign-off de la proposition NOUVELLE de §4.3, qui renverse un
+> point acté d'ADR-0075).
 > **Chantier frère** — SP2 ([`spec-level-harness-sp2.md`](./spec-level-harness-sp2.md))
 > consomme le même cœur en bibliothèque ; chemins disjoints, parallélisables.
 
@@ -34,20 +35,25 @@ scripts CI de SP2/SP3 (batch) — jamais deux implémentations.
 
 ## 3. Les outils
 
-| Outil      | Signature (esquisse)                                                | S'appuie sur                                                                     |
-| ---------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `validate` | `{ plan? , levelId? } → { issues: LevelIssue[] }`                   | `validateLevelPlan` + `validateLevel(planToLevelConfig(plan))` + unicité des ids |
-| `inspect`  | `{ levelId } → { plan, config, art, assets: { present, missing } }` | projections SP1 + scan des chemins d'assets conventionnels                       |
-| `scaffold` | `{ plan } → { path }` (refus si `validate` non vide)                | template du module `generated/<id>.ts`                                           |
-| `dryrun`   | `{ levelId } → report.json` (§8)                                    | le driver Playwright de SP1                                                      |
-| `preview`  | `{ levelId } → { url }` (+ screenshot optionnel)                    | le seam `?preview=level&level=<id>`                                              |
+| Outil      | Signature (esquisse)                                                | S'appuie sur                                                                                                            |
+| ---------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `validate` | `{ plan? , levelId? } → { issues: LevelIssue[] }`                   | `validateLevelPlan` (migré vers `LevelIssue[]`, voir §4.1) + `validateLevel(planToLevelConfig(plan))` + unicité des ids |
+| `inspect`  | `{ levelId } → { plan, config, art, assets: { present, missing } }` | projections SP1 + scan des chemins d'assets conventionnels                                                              |
+| `scaffold` | `{ plan } → { path }` (refus si `validate` non vide)                | template du module `generated/<id>.ts`                                                                                  |
+| `dryrun`   | `{ levelId } → report.json` (§8)                                    | le driver Playwright de SP1                                                                                             |
+| `preview`  | `{ levelId } → { url }` (+ screenshot optionnel)                    | le seam `?preview=level&level=<id>`                                                                                     |
 
 ## 4. Architecture
 
 ### 4.1 Le cœur
 
 `validateLevelPlan`, `validateLevel`, `planToLevelConfig`/`planToLevelArt` existent
-(SP1 + ADR-0074). La story ajoute un module mince d'orchestration
+(SP1 + ADR-0074). **Contrat unifié** : `validateLevelPlan` rend aujourd'hui `string[]`
+alors que `validateLevel` rend des `LevelIssue` structurés (ADR-0074 §3) ; la story
+MIGRE `validateLevelPlan` vers `LevelIssue[]` (tâche TDD `dev-gameplay`, un `code`
+stable par garde — `plan/weight-nonzero`, `plan/namespace`, `plan/sizing`, … — tests
+existants mis à jour), pour que `validate` compose les deux sans emballage ad hoc. La
+story ajoute ensuite un module mince d'orchestration
 (`scripts/mcp-level-editor/core.mjs` ou équivalent TS) : résolution d'un plan par id,
 scan d'assets, template de scaffold. **Aucune règle de validation n'est écrite côté
 serveur** — tout invariant nouveau va dans `validateLevelPlan`/`validateLevel`.
@@ -58,21 +64,31 @@ serveur** — tout invariant nouveau va dans `validateLevelPlan`/`validateLevel`
 serveur ne détient **aucun secret** : la génération payée reste en CI ; `dryrun`/
 `preview` n'utilisent que vite + Playwright locaux.
 
-### 4.3 Le préalable : enregistrement paresseux (clôt le countersign ADR-0074 §2)
+### 4.3 Le préalable : enregistrement paresseux — proposition NOUVELLE, sign-off requis
 
-`generated/index.ts` enregistre aujourd'hui les archétypes **à l'import** et peut
-**throw** (`assertDistinctPlanIds`) — incompatible avec un outil qui importe le
-catalogue mécaniquement, et en tension actée avec ADR-0074 §2 (l'ADR-0075 le documente
-comme fail-fast assumé ; le countersign architecte est resté ouvert au shard SP1).
-Décision proposée au countersign : **rendre l'enregistrement paresseux** —
-`generated/index.ts` n'exporte plus que des données pures ; le bootstrap du jeu appelle
-`registerGeneratedLevels()` (une ligne, un point d'entrée) ; `assertDistinctPlanIds`
-devient un invariant de `validate` + un test. Alternative écartée : amender ADR-0074
-pour une seconde exception — l'exception existante est un flag littéral, pas une
-mutation de registre ni un throw ; élargir la catégorie affaiblirait la règle que la
-piste éditeur exige. Micro-risque du paresseux : un oubli d'appel au bootstrap — gardé
-par un test e2e existant (un level généré qui ne résout pas ses archétypes fait échouer
-le test de pool de `generatedLevels.test.ts` s'il est branché sur le chemin runtime).
+Cadrage honnête du statut (corrigé après panel run 1 de cette PR) : la question
+ADR-0074 §2 ouverte au shard SP1 portait sur le **placement** de
+`GENERATED_LEVELS`/`ALL_LEVELS` et a été **résolue** par leur relocation dans le barrel
+(`story-level-harness-sp1.md` §Suivi — « the former countersign ask is moot »). Ce que
+cette section propose est donc **autre chose et nouveau** : renverser le comportement
+acté par ADR-0075 §6 — le fail-fast à l'import de `assertDistinctPlanIds` +
+l'enregistrement des archétypes au corps du module — qui reste incompatible avec un
+outil important le catalogue mécaniquement. Ce renversement exige son propre sign-off
+`senior-architect`, en repesant la raison d'être du fail-fast (le split-brain
+`LEVEL_ART` last-wins / `ALL_LEVELS.find` first-wins qu'aucun test fixture ne peut
+représenter sans le déclencher).
+
+Proposition : **déplacer, pas supprimer**. `generated/index.ts` n'exporte plus que des
+données pures ; le bootstrap du jeu appelle `registerGeneratedLevels()`, qui exécute
+`assertDistinctPlanIds` PUIS l'enregistrement — le fail-fast split-brain est
+**préservé au démarrage de l'app** (même crash impossible à rater, une frame plus
+tard), seul l'import redevient pur. En plus, l'unicité devient un invariant de
+`validate`/CI, donc un id en collision est rejeté avant même d'atteindre un runtime.
+Alternative écartée : amender ADR-0074 pour une seconde exception — l'exception
+existante est un flag littéral, pas une mutation de registre ni un throw ; élargir la
+catégorie affaiblirait la règle que la piste éditeur exige. Micro-risque : un oubli
+d'appel au bootstrap — gardé par le test de pool de `generatedLevels.test.ts` branché
+sur le chemin runtime.
 
 ## 5. Sécurité (surface d'écriture agent)
 

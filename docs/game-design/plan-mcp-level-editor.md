@@ -2,10 +2,10 @@
 
 > **Pour les lanes agentiques :** exécution tâche par tâche, cases `- [ ]`. Spec :
 > [`spec-mcp-level-editor.md`](./spec-mcp-level-editor.md). Branche :
-> `feat/mcp-level-editor` (après merge des specs). Lanes : `dev-gameplay` (T1),
-> `dev-tooling-assets` (T2-T5). L'ADR du serveur (nouveau process + devDependency) est
-> rédigé en T2 et le countersign ADR-0074 §2 se prend sur T1 — les deux par
-> `senior-architect`.
+> `feat/mcp-level-editor` (après merge des specs). Lanes : `dev-gameplay` (T1, T2b),
+> `dev-tooling-assets` (T2-T6). L'ADR du serveur (nouveau process + devDependency) est
+> rédigé en T2, et T1 porte une proposition NOUVELLE renversant ADR-0075 §6 (fail-fast
+> déplacé de l'import au bootstrap) — sign-off `senior-architect` sur les deux.
 
 **Objectif** — un cœur de fonctions pures, deux surfaces : serveur MCP stdio
 (interactif local) et appels bibliothèque (scripts CI SP2/SP3).
@@ -18,7 +18,7 @@
   `validateLevelPlan`/`validateLevel`.
 - Le serveur ne détient aucun secret ; la génération payée reste en CI.
 
-### Tâche 1 — enregistrement paresseux (lane dev-gameplay, TDD, countersign architecte)
+### Tâche 1 — enregistrement paresseux (lane dev-gameplay, TDD, **sign-off architecte : proposition NOUVELLE renversant ADR-0075 §6**, voir spec §4.3)
 
 **Fichiers** : `src/game/levels/generated/index.ts`, le point d'entrée du jeu
 (`src/main.tsx` ou le seam de bootstrap existant), `src/game/types/enemyTypes.ts`
@@ -28,10 +28,12 @@
 - [ ] Implémentation :
 
 ```ts
-// generated/index.ts — plus AUCUN effet de bord au corps du module (ADR-0074 §2 :
-// le catalogue redevient importable mécaniquement — la story MCP en dépend).
+// generated/index.ts — plus AUCUN effet de bord au corps du module : le catalogue
+// redevient importable mécaniquement (la story MCP en dépend). Renverse le
+// fail-fast À L'IMPORT d'ADR-0075 §6 en le DÉPLAÇANT au bootstrap — même crash
+// impossible à rater au démarrage de l'app, import pur (sign-off architecte requis).
 export function registerGeneratedLevels(): void {
-  assertDistinctPlanIds(GENERATED_PLANS); // fail-fast conservé, mais au BOOTSTRAP
+  assertDistinctPlanIds(GENERATED_PLANS); // fail-fast split-brain conservé, au BOOTSTRAP
   for (const plan of GENERATED_PLANS) registerGeneratedArchetypes(plan.archetypes);
 }
 ```
@@ -39,7 +41,7 @@ export function registerGeneratedLevels(): void {
 - [ ] Bootstrap : UN appel `registerGeneratedLevels()` au point d'entrée du jeu, avant le premier render (et dans le setup des tests qui exercent le chemin runtime).
 - [ ] L'unicité des ids devient un invariant de `validateLevelPlan`-niveau-catalogue (nouvelle fonction `validateCatalogue(plans)` appelée par les tests ET par l'outil `validate`).
 - [ ] Mettre à jour ADR-0075 §Consequences (l'attribution des gardes change) — petit amendement daté, pas de renumérotation.
-- [ ] Commit `refactor(game): enregistrement paresseux des levels générés (clôt le countersign ADR-0074 §2)`.
+- [ ] Commit `refactor(game): déplace le fail-fast des levels générés de l'import au bootstrap (renverse ADR-0075 §6, sign-off architecte)`.
 
 ### Tâche 2 — ADR du serveur + squelette
 
@@ -51,6 +53,19 @@ contre TOUTES les branches distantes — la leçon 0073→0074→0075), `package
 - [ ] `yarn add -D @modelcontextprotocol/sdk` ; serveur stdio minimal qui s'enregistre et expose `ping` ; entrée `.mcp.json` calquée sur codegraph.
 - [ ] Vérif : `claude mcp list` (ou un client de test du SDK) voit le serveur.
 - [ ] Commit `feat(tooling): squelette du serveur MCP level-editor (ADR-00NN)`.
+
+### Tâche 2b — `validateLevelPlan` migre vers `LevelIssue[]` (lane dev-gameplay, TDD)
+
+**Fichiers** : `src/game/levels/levelPlan.ts`, `__tests__/levelPlan.test.ts`.
+
+- [ ] Test rouge : chaque garde rend un `LevelIssue` avec un `code` stable
+      (`plan/weight-nonzero`, `plan/namespace`, `plan/sizing`, `plan/window-weights`,
+      `plan/gameplay-bounds`, `plan/prop-consistency`, `plan/mobile-halving`), un
+      `message` humain identique à l'actuel, `severity: "error"`.
+- [ ] Migration de la signature + mise à jour des tests existants (les assertions
+      `toContainEqual(stringContaining(...))` deviennent des matchs sur `message` ou
+      `code`). Aucun changement de LOGIQUE de garde.
+- [ ] Commit `refactor(game): validateLevelPlan rend des LevelIssue structurés (contrat MCP §4.1)`.
 
 ### Tâche 3 — le cœur + `validate` / `inspect`
 
@@ -87,6 +102,6 @@ SP2 T6 s'il a mergé, sinon l'inline du même code), `server.mjs`.
 ## Auto-revue
 
 Couverture spec : §2.1→T4 · §2.2→T5 · §2.3→T2 · §3 table→T3-T5 · §4.1/4.2→T2/T3 ·
-§4.3→T1 · §5→T4 · §6→T3/T4/T5/T6. Ordre : T1 (gameplay) et T2 (tooling) parallèles ;
+§4.3→T1 · §5→T4 · §6→T3/T4/T5/T6. Ordre : T1 et T2b (gameplay, séquentielles) ∥ T2 (tooling) ;
 T3→T4→T5 séquentielles côté tooling ; T6 ferme. Croisement SP2 : seul le driver §8
 généralisé (SP2 T6) est partagé — si SP2 ne l'a pas mergé, T5 inline et SP2 dédupliquera.
