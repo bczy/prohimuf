@@ -67,42 +67,124 @@ interface FlyerSpec {
 // the register of the period references (PAF in francs, navettes, Minitel 3615).
 const FLYERS: FlyerSpec[] = [
   {
-    color: "#ece7da", crew: "SANS SYSTÈME · AVANT LE SON", title: "REPÉRAGE",
-    slogan: "TA PREMIÈRE — LIS TOUT", dateLine: "ICI, MAINTENANT", zoneLine: "PAS BESOIN D'APPELER",
-    infoLine: "—", smallPrint: ["ON T'APPREND À ROULER.", "À RÉCUPÉRER. À LIVRER.", "À ESQUIVER.", "PRENDS TON TEMPS."],
-    code: "3615 MUF", badge: "TUTORIEL", template: "minimal", motif: "smiley", targetX: -7.6, order: 0, rest: -2, tear: true,
+    color: "#ece7da",
+    crew: "SANS SYSTÈME · AVANT LE SON",
+    title: "REPÉRAGE",
+    slogan: "TA PREMIÈRE — LIS TOUT",
+    dateLine: "ICI, MAINTENANT",
+    zoneLine: "PAS BESOIN D'APPELER",
+    infoLine: "—",
+    smallPrint: [
+      "ON T'APPREND À ROULER.",
+      "À RÉCUPÉRER. À LIVRER.",
+      "À ESQUIVER.",
+      "PRENDS TON TEMPS.",
+    ],
+    code: "3615 MUF",
+    badge: "TUTORIEL",
+    template: "minimal",
+    motif: "smiley",
+    targetX: -7.6,
+    order: 0,
+    rest: -2,
+    tear: true,
   },
   {
-    color: "#ff4fa3", crew: "SPIRALE 23", title: "BELLIARD",
-    slogan: "LE SON MONTE PAR LES TOITS", dateLine: "SAM. → DIM. · 23H → ?", zoneLine: "QUELQUE PART DANS LE 19e",
+    color: "#ff4fa3",
+    crew: "SPIRALE 23",
+    title: "BELLIARD",
+    slogan: "LE SON MONTE PAR LES TOITS",
+    dateLine: "SAM. → DIM. · 23H → ?",
+    zoneLine: "QUELQUE PART DANS LE 19e",
     infoLine: "08 36 23 19 98",
-    smallPrint: ["RV : SUR L'INFO-LINE", "NAVETTES : DÉPARTS 23H, 00H, 01H", "P.A.F. : 60 F · AFTER : 30 F", "AMBIANCE : ÇA ROULE", "NO DRUG. SECURITY FRIENDLY BUT FIRM."],
-    code: "3615 MUF", badge: "FACILE", template: "classic", motif: "spiral", targetX: -3.8, order: 1, rest: 3, tear: true, slit: true,
+    smallPrint: [
+      "RV : SUR L'INFO-LINE",
+      "NAVETTES : DÉPARTS 23H, 00H, 01H",
+      "P.A.F. : 60 F · AFTER : 30 F",
+      "AMBIANCE : ÇA ROULE",
+      "NO DRUG. SECURITY FRIENDLY BUT FIRM.",
+    ],
+    code: "3615 MUF",
+    badge: "FACILE",
+    template: "classic",
+    motif: "spiral",
+    targetX: -3.8,
+    order: 1,
+    rest: 3,
+    tear: true,
+    slit: true,
   },
   {
-    color: "#b7f32b", crew: "KANAL SYSTEM", title: "STALINGRAD",
-    slogan: "UN ENTREPÔT · UN MUR DE SON", dateLine: "NUIT ENTIÈRE · 00H → AUBE", zoneLine: "BORDS DU CANAL · 19e",
+    color: "#b7f32b",
+    crew: "KANAL SYSTEM",
+    title: "STALINGRAD",
+    slogan: "UN ENTREPÔT · UN MUR DE SON",
+    dateLine: "NUIT ENTIÈRE · 00H → AUBE",
+    zoneLine: "BORDS DU CANAL · 19e",
     infoLine: "08 36 23 95 19",
-    smallPrint: ["RV : SUR L'INFO-LINE", "SUIVRE LE FLÉCHAGE DEPUIS LE QUAI", "P.A.F. : 80 F · PARKING GARDÉ", "AMBIANCE : CHAUD", "NO DRUG. PAS DE VERRE."],
-    code: "3615 MUF", badge: "NORMAL", template: "hand", motif: "rings", targetX: 0, order: 2, rest: -1.5, tear: true, slit: true,
+    smallPrint: [
+      "RV : SUR L'INFO-LINE",
+      "SUIVRE LE FLÉCHAGE DEPUIS LE QUAI",
+      "P.A.F. : 80 F · PARKING GARDÉ",
+      "AMBIANCE : CHAUD",
+      "NO DRUG. PAS DE VERRE.",
+    ],
+    code: "3615 MUF",
+    badge: "NORMAL",
+    template: "hand",
+    motif: "rings",
+    targetX: 0,
+    order: 2,
+    rest: -1.5,
+    tear: true,
+    slit: true,
   },
   {
-    color: "#f5762a", crew: "NADIR 94", title: "VITRY",
-    slogan: "AU PIED DES BARRES · SON MAXIMAL", dateLine: "JUSQU'AU LEVER DU JOUR", zoneLine: "VAL-DE-MARNE · 94 · TU CONNAIS ?",
+    color: "#f5762a",
+    crew: "NADIR 94",
+    title: "VITRY",
+    slogan: "AU PIED DES BARRES · SON MAXIMAL",
+    dateLine: "JUSQU'AU LEVER DU JOUR",
+    zoneLine: "VAL-DE-MARNE · 94 · TU CONNAIS ?",
     infoLine: "08 36 23 94 09",
-    smallPrint: ["RV : SUR L'INFO-LINE", "A 12 KM DE PORTE D'ITALIE · N7", "P.A.F. : 80 F · AFTER : 40 F", "AMBIANCE : BRÛLANT", "NO DRUG. ON RANGE EN PARTANT."],
-    code: "3615 MUF", badge: "DIFFICILE", template: "block", motif: "halftone", targetX: 3.8, order: 3, rest: 2, tear: true,
+    smallPrint: [
+      "RV : SUR L'INFO-LINE",
+      "A 12 KM DE PORTE D'ITALIE · N7",
+      "P.A.F. : 80 F · AFTER : 40 F",
+      "AMBIANCE : BRÛLANT",
+      "NO DRUG. ON RANGE EN PARTANT.",
+    ],
+    code: "3615 MUF",
+    badge: "DIFFICILE",
+    template: "block",
+    motif: "halftone",
+    targetX: 3.8,
+    order: 3,
+    rest: 2,
+    tear: true,
   },
   {
-    color: "#9a9a9a", crew: "SPIRALE 23 · KANAL SYSTEM · NADIR 94", title: "L'ÉDEN",
-    slogan: "LE DERNIER SON DU SIÈCLE", dateLine: "31 DÉC. 1999 → JUSQU'EN 2000", zoneLine: "L'ÉDEN · ANCIEN DANCING",
+    color: "#9a9a9a",
+    crew: "SPIRALE 23 · KANAL SYSTEM · NADIR 94",
+    title: "L'ÉDEN",
+    slogan: "LE DERNIER SON DU SIÈCLE",
+    dateLine: "31 DÉC. 1999 → JUSQU'EN 2000",
+    zoneLine: "L'ÉDEN · ANCIEN DANCING",
     infoLine: "08 36 · · · · ·",
     smallPrint: ["RV : INCONNU", "LIGNE MUETTE", "DATE À VENIR", "PAS ENCORE POUR TOI"],
-    code: "LIGNE FERMÉE", badge: "LIGNE FERMÉE", template: "minimal", motif: "invader", targetX: 7.6, order: 4, rest: -2.5, tear: true,
+    code: "LIGNE FERMÉE",
+    badge: "LIGNE FERMÉE",
+    template: "minimal",
+    motif: "invader",
+    targetX: 7.6,
+    order: 4,
+    rest: -2.5,
+    tear: true,
   },
 ];
 
-const ENTRY_RADIUS_X = 15, ENTRY_RADIUS_Y = 10;
+const ENTRY_RADIUS_X = 15,
+  ENTRY_RADIUS_Y = 10;
 
 function entryPoint(i: number, total: number): THREE.Vector3 {
   const baseDeg = -90 + (i * 360) / total;
@@ -114,7 +196,12 @@ function entryPoint(i: number, total: number): THREE.Vector3 {
   return new THREE.Vector3(Math.cos(rad) * ENTRY_RADIUS_X, Math.sin(rad) * ENTRY_RADIUS_Y, z);
 }
 
-function bezier3(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, t: number): THREE.Vector3 {
+function bezier3(
+  p0: THREE.Vector3,
+  p1: THREE.Vector3,
+  p2: THREE.Vector3,
+  t: number,
+): THREE.Vector3 {
   const it = 1 - t;
   return new THREE.Vector3(
     it * it * p0.x + 2 * it * t * p1.x + t * t * p2.x,
@@ -231,19 +318,22 @@ function drawRings(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: num
  */
 function drawHalftoneBlock(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, i: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  i: number,
 ): void {
   ctx.save();
   ctx.fillStyle = INK;
   const step = 11;
   for (let py = y; py < y + h; py += step) {
     for (let px = x; px < x + w; px += step) {
-      const u = (px - x) / w, v = (py - y) / h;
+      const u = (px - x) / w,
+        v = (py - y) / h;
       // A soft blob shape, thresholded into dot SIZE — the halftone's whole trick.
       const field =
-        0.55 +
-        0.45 * Math.sin(u * 5 + i) * Math.cos(v * 4.2 - i) +
-        0.25 * Math.sin((u + v) * 9);
+        0.55 + 0.45 * Math.sin(u * 5 + i) * Math.cos(v * 4.2 - i) + 0.25 * Math.sin((u + v) * 9);
       const rad = Math.max(0, Math.min(1, field)) * step * 0.62;
       if (rad < 0.6) continue;
       ctx.beginPath();
@@ -262,7 +352,8 @@ function drawHalftoneBlock(
  */
 function makeCardTexture(f: FlyerSpec, i: number): THREE.CanvasTexture {
   const c = document.createElement("canvas");
-  c.width = 768; c.height = 1024; // 3:4, matching the card aspect so nothing is squashed
+  c.width = 768;
+  c.height = 1024; // 3:4, matching the card aspect so nothing is squashed
   const ctx = c.getContext("2d")!;
   const mid = c.width / 2;
 
@@ -281,8 +372,10 @@ function makeCardTexture(f: FlyerSpec, i: number): THREE.CanvasTexture {
   ctx.fillStyle = "rgba(0,0,0,0.08)";
   for (let s = 0; s < 7; s++) {
     ctx.fillRect(
-      seeded(i, s) * c.width, seeded(i, s + 10) * c.height,
-      2 + seeded(i, s + 20) * 4, 50 + seeded(i, s + 30) * 170,
+      seeded(i, s) * c.width,
+      seeded(i, s + 10) * c.height,
+      2 + seeded(i, s + 20) * 4,
+      50 + seeded(i, s + 30) * 170,
     );
   }
 
@@ -439,8 +532,10 @@ function makeCardTexture(f: FlyerSpec, i: number): THREE.CanvasTexture {
   // just the stock — a fold that spared the lettering would read as a fake.
   const foldGrime = (x0: number, y0: number, x1: number, y1: number, span: number) => {
     const g = ctx.createLinearGradient(
-      x0 - (y1 - y0 ? span : 0), y0 - (x1 - x0 ? span : 0),
-      x0 + (y1 - y0 ? span : 0), y0 + (x1 - x0 ? span : 0),
+      x0 - (y1 - y0 ? span : 0),
+      y0 - (x1 - x0 ? span : 0),
+      x0 + (y1 - y0 ? span : 0),
+      y0 + (x1 - x0 ? span : 0),
     );
     g.addColorStop(0, "rgba(0,0,0,0)");
     g.addColorStop(0.42, "rgba(0,0,0,0.09)");
@@ -472,7 +567,8 @@ function makeCardTexture(f: FlyerSpec, i: number): THREE.CanvasTexture {
   return tex;
 }
 
-const W = 3.4, H = 4.53;
+const W = 3.4,
+  H = 4.53;
 
 /** A crease: near-flat away from the line, breaking hard along it. */
 function foldRidge(d: number, amp: number, sharp: number): number {
@@ -515,7 +611,8 @@ function crumpleZ(x: number, y: number, i: number): number {
 // Dense grid: the tear/slit are made by DROPPING cells, so the cell size IS the
 // resolution of their outline — a coarse grid gives the staircase look of a pixelated
 // edge rather than a fibre one, and cannot represent a slit thinner than one cell.
-const SEG_X = 128, SEG_Y = 170;
+const SEG_X = 128,
+  SEG_Y = 170;
 
 /** RIGHT | LEFT | TOP | BOTTOM. */
 type Edge = 0 | 1 | 2 | 3;
@@ -621,7 +718,10 @@ function isInSlit(x: number, y: number, i: number): boolean {
  *    no staircase to see — and being a real hole, it shows the backdrop and punches
  *    through the cast shadow.
  */
-function makeCrumpledGeometry(i: number, opts: { tear?: boolean; slit?: boolean }): THREE.BufferGeometry {
+function makeCrumpledGeometry(
+  i: number,
+  opts: { tear?: boolean; slit?: boolean },
+): THREE.BufferGeometry {
   const gx1 = SEG_X + 1;
   const positions: number[] = [];
   const uvs: number[] = [];
@@ -677,14 +777,16 @@ function makeCrumpledGeometry(i: number, opts: { tear?: boolean; slit?: boolean 
 /** Fine paper-fibre bump, shared by every card (one texture, not one per flyer). */
 function makeFibreBump(): THREE.CanvasTexture {
   const c = document.createElement("canvas");
-  c.width = 256; c.height = 256;
+  c.width = 256;
+  c.height = 256;
   const ctx = c.getContext("2d")!;
   const img = ctx.createImageData(c.width, c.height);
   for (let p = 0; p < c.width * c.height; p++) {
-    const px = p % c.width, py = (p / c.width) | 0;
+    const px = p % c.width,
+      py = (p / c.width) | 0;
     // Directional fibre streaks + speckle — mid-grey base so bump reads both ways.
     const fibre = Math.sin(px * 0.9 + Math.sin(py * 0.12) * 6) * 10;
-    const speck = (Math.sin(px * 12.9898 + py * 78.233) * 43758.5453 % 1) * 18;
+    const speck = ((Math.sin(px * 12.9898 + py * 78.233) * 43758.5453) % 1) * 18;
     const val = 128 + fibre + speck;
     img.data[p * 4] = img.data[p * 4 + 1] = img.data[p * 4 + 2] = val;
     img.data[p * 4 + 3] = 255;
@@ -695,7 +797,6 @@ function makeFibreBump(): THREE.CanvasTexture {
   tex.repeat.set(3, 4);
   return tex;
 }
-
 
 function Flyer({ f, i, bump }: { f: FlyerSpec; i: number; bump: THREE.Texture }) {
   const group = useRef<THREE.Group>(null);
@@ -724,9 +825,19 @@ function Flyer({ f, i, bump }: { f: FlyerSpec; i: number; bump: THREE.Texture })
     const idleFreq = 0.3 + seeded(i, 44) * 0.22;
     const idlePhase = seeded(i, 45) * Math.PI * 2;
     return {
-      start, control, end, restRot, spinX, spinY, spinZ,
+      start,
+      control,
+      end,
+      restRot,
+      spinX,
+      spinY,
+      spinZ,
       delay: f.order * 320,
-      wobbleAmpX, wobbleFreq, wobblePhase, idleFreq, idlePhase,
+      wobbleAmpX,
+      wobbleFreq,
+      wobblePhase,
+      idleFreq,
+      idlePhase,
     };
   }, [f, i]);
 
@@ -740,11 +851,15 @@ function Flyer({ f, i, bump }: { f: FlyerSpec; i: number; bump: THREE.Texture })
     const pos = bezier3(params.start, params.control, params.end, eased);
 
     const decay = Math.exp(-2.6 * Math.max(0, tFull));
-    const wobbleX = params.wobbleAmpX * decay * Math.sin(tFull * params.wobbleFreq * Math.PI * 2 + params.wobblePhase);
+    const wobbleX =
+      params.wobbleAmpX *
+      decay *
+      Math.sin(tFull * params.wobbleFreq * Math.PI * 2 + params.wobblePhase);
 
     const idleT = state.clock.elapsedTime;
     const idleRotZ = 0.022 * Math.sin(idleT * params.idleFreq * Math.PI * 2 + params.idlePhase);
-    const idleRotY = 0.05 * Math.sin(idleT * params.idleFreq * Math.PI * 1.4 + params.idlePhase + 0.8);
+    const idleRotY =
+      0.05 * Math.sin(idleT * params.idleFreq * Math.PI * 1.4 + params.idlePhase + 0.8);
 
     if (!group.current) return;
 
@@ -883,7 +998,13 @@ function Page() {
       <p style={{ padding: "10px 20px", fontSize: 11 }}>
         Caméra perspective + parallaxe à la souris · les feuilles culbutent en 3D sur les 3 axes en
         arrivant de la profondeur · ombres douces · UV corrigées.{" "}
-        <button onClick={() => { setReplayKey((k) => k + 1); }}>rejouer ↻</button>
+        <button
+          onClick={() => {
+            setReplayKey((k) => k + 1);
+          }}
+        >
+          rejouer ↻
+        </button>
       </p>
     </div>
   );

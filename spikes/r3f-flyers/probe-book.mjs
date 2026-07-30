@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 
-const OUT = "/private/tmp/claude-502/-Users-bertrand-coizy-git-perso-prohimuf/a864b394-18d0-441c-8ce2-185c08432f8c/scratchpad";
+const OUT =
+  "/private/tmp/claude-502/-Users-bertrand-coizy-git-perso-prohimuf/a864b394-18d0-441c-8ce2-185c08432f8c/scratchpad";
 const BOOK = "http://localhost:4180/prohimuf/spikes/r3f-flyers/book.html";
 const WALL = "http://localhost:4180/prohimuf/spikes/r3f-flyers/wall.html";
 
@@ -9,10 +10,17 @@ const browser = await chromium.launch({
 });
 
 async function shoot(url, name, extra) {
-  const page = await browser.newPage({ viewport: { width: 1500, height: 950 }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({
+    viewport: { width: 1500, height: 950 },
+    deviceScaleFactor: 2,
+  });
   const errs = [];
-  page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
-  page.on("pageerror", (e) => { errs.push(e.message); });
+  page.on("console", (m) => {
+    if (m.type() === "error") errs.push(m.text());
+  });
+  page.on("pageerror", (e) => {
+    errs.push(e.message);
+  });
   await page.goto(url, { waitUntil: "networkidle" });
   await new Promise((r) => setTimeout(r, 5000));
   await page.screenshot({ path: `${OUT}/${name}.png` });

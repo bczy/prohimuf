@@ -49,6 +49,18 @@ export default defineConfig({
       : buildModelViewer
         ? { input: { "model-viewer": resolve(__dirname, "model-viewer.html") } }
         : {
+            // SPIKE BRANCH ONLY (`claude/spike-r3f-flyers`) — MUST NOT MERGE TO MAIN.
+            // The two exploration pages are declared as extra entries so the branch
+            // preview actually serves them; without this they are absent from `dist`
+            // and their preview URLs 404. This deliberately departs from the
+            // catalog/model-viewer convention above (dev tools stay out of the game
+            // bundle behind an env flag) because a parked spike is only worth keeping
+            // if it can be looked at. See spikes/r3f-flyers/README.md.
+            input: {
+              index: resolve(__dirname, "index.html"),
+              "spike-wall": resolve(__dirname, "spikes/r3f-flyers/wall.html"),
+              "spike-book": resolve(__dirname, "spikes/r3f-flyers/book.html"),
+            },
             output: {
               // Split vendors by stability layer so the browser can cache Three.js,
               // R3F and React independently from app code that changes every deploy.

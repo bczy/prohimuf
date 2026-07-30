@@ -19,6 +19,13 @@ export default tseslint.config(
 
       "scripts/**",
       // Gemini asset generation scripts — linted separately
+
+      // SPIKE BRANCH ONLY (`claude/spike-r3f-flyers`) — MUST NOT MERGE TO MAIN.
+      // Parked exploration pages living outside tsconfig's project, so the typed
+      // rules cannot parse them and `yarn lint` fails repo-wide without this. They
+      // are prototypes nothing imports; see spikes/r3f-flyers/README.md.
+      "spikes/**",
+
       "eslint.config.ts",
       // self-referential lint causes false positives
       "vite.config.ts",
