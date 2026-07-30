@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { validateLevel, hostageBossMarginIssue } from "@game/levels/validateLevel";
+import {
+  validateLevel,
+  hostageBossMarginIssue,
+  deliveryBossMarginIssue,
+} from "@game/levels/validateLevel";
 import type { LevelIssue } from "@game/levels/validateLevel";
 import { LEVELS, GENERATED_LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
 import type { LevelConfig, LevelRoster } from "@game/levels/levels";
@@ -73,6 +77,41 @@ describe("validateLevel — the shipped catalogue (AC4)", () => {
 
   it("reports no issue on a minimal config", () => {
     expect(validateLevel(BASE)).toStrictEqual([]);
+  });
+});
+
+describe("validateLevel — delivery/boss timing margin (panel PR #143 follow-up)", () => {
+  it("reports delivery-boss-margin with the per-delivery field path when the bound overruns", () => {
+    // Width-independent bound (no street width on a bare LevelConfig): 20 + 8 = 28 s
+    // + 5 s margin = 33 ⇒ a 30 s level violates it.
+    const issues = validateLevel({
+      ...BASE,
+      timeSeconds: 30,
+      deliveries: [DELIVERY],
+      bossQteSpec: BOSS,
+    });
+    expect(codes(issues)).toContain("delivery-boss-margin");
+    const issue = issues.find((i) => i.code === "delivery-boss-margin");
+    expect(issue?.severity).toBe("error");
+    expect(issue?.field).toBe("deliveries[0]");
+    // Parity with the `createInitialState` throw, which must keep matching this regex.
+    expect(issue?.message).toMatch(/delivery.*not safely sequential/s);
+  });
+
+  it("does not fire when only one of delivery / boss is authored", () => {
+    expect(validateLevel({ ...BASE, timeSeconds: 30, deliveries: [DELIVERY] })).toStrictEqual([]);
+    expect(validateLevel({ ...BASE, timeSeconds: 30, bossQteSpec: BOSS })).toStrictEqual([]);
+  });
+
+  it("the shared predicate tightens the bound with the real street half-width", () => {
+    // halfWidth 40 ⇒ edges ±44, speed 8: 5.5 s in + 5.5 s out ⇒ worst case 39 s.
+    // A 40 s timer passes the width-independent bound (33 < 40) but not the real one.
+    const input = { delivery: DELIVERY, bossQteSpec: BOSS, timeSeconds: 40 };
+    expect(deliveryBossMarginIssue(input)).toBeNull();
+    expect(deliveryBossMarginIssue({ ...input, streetHalfWidth: 40 })?.code).toBe(
+      "delivery-boss-margin",
+    );
+    expect(deliveryBossMarginIssue({ ...input, streetHalfWidth: 40, timeSeconds: 90 })).toBeNull();
   });
 });
 
