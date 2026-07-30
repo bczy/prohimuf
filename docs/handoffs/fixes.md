@@ -8,6 +8,15 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-07-30 · fix/delivery-boss-guard (PR #152) · dev-gameplay · authoring guard: a
+  timed-finale boss can no longer orphan a delivery in flight (root cause: the `bossQte`
+  branch of `tickGameState` early-returns before the delivery block and
+  `shouldTriggerBossFinale` is blind to the delivery phase — panel PR #143 finding left
+  open). `deliveryBossMarginIssue` in `validateLevel.ts` (ADR-0074 §3 shape, mirror of
+  the hostage+boss guard), thrown by `createInitialState` with the real street half-width
+  via a new optional `courierField` param · checks: tsc/vitest(1570)/lint · review:
+  code-review(high) CLEAR (test-quality observation → covered in follow-up commit)
+
 - 2026-07-20 · claude/missing-menus-ui-aa87gt (PR #116) · dev-gameplay+dev-r3f-render ·
   NAME_ENTRY live input ate internal spaces ("DJ MEHDI"→"DJMEHDI"): per-keystroke
   `sanitizeName` trims edges, so the just-typed space vanished. Added pure
