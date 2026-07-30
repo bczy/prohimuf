@@ -55,7 +55,30 @@ export const FLOAT_IN_STAGGER_MS = 180;
  * imported FLYER_REST_ROTATION_DEG/FLYER_JITTER_PX print tokens, no Math.random — so
  * consecutive flyers don't drift the same distance in the same direction.
  */
-const FLYER_FLOAT_IN_VARIANTS: readonly Record<string, string>[] = [
+/**
+ * The exact 12 custom properties `mufFlyerFloatIn` reads. Spelled out as a key union
+ * rather than `Record<string, string>`: a mistyped key (`--fio-yo` for `--fio-y0`) would
+ * type-check silently, fall back to the zeroed CSS default and quietly flatten that axis
+ * of the fall — with no compiler, lint or test signal. This animation has already been
+ * through three tuning passes, so that is a live risk, not a hypothetical one.
+ */
+type FloatInVars = Record<
+  | "--fio-y0"
+  | "--fio-x0"
+  | "--fio-r0"
+  | "--fio-y1"
+  | "--fio-x1"
+  | "--fio-r1"
+  | "--fio-y2"
+  | "--fio-x2"
+  | "--fio-r2"
+  | "--fio-y3"
+  | "--fio-x3"
+  | "--fio-r3",
+  string
+>;
+
+const FLYER_FLOAT_IN_VARIANTS: readonly FloatInVars[] = [
   {
     "--fio-y0": "-190px",
     "--fio-x0": "-36px",

@@ -12,6 +12,7 @@
  *
  *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
+ *   - waitForFlyerWallSettled(p, o)  — hold until every NIVEAUX float-in has finished.
  *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default).
  *   - seedPlay(page, ids, o)          — ADR-0005 "play" mode: __MUF_PLAY__ + mute + unlock (never __MUF_FREEZE_COPS__).
  *   - readState(page)                 — one window.__MUF_STATE__() read (null if the seam isn't installed yet).
