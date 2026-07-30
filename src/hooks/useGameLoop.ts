@@ -25,6 +25,7 @@ import type { HudData } from "@render/ui/HUD";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
+import { buildRunSummary } from "@game/systems/runStatsSystem";
 import type { ImpactEvent, PlayerHitEvent } from "@game/types/feedback";
 import type { Floater } from "@render/scene/FeedbackLayer";
 import { energyFloater } from "@render/scene/hostageCue";
@@ -653,6 +654,18 @@ export function useGameLoop(
       // cadence — a direction arrow up to a second stale (D2.6, Karim's advisory).
       !isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection)
     ) {
+      // Project the finished run once the phase is terminal (ADR-0076 D6). The
+      // loop keeps TICKING in a terminal phase — the early-return above is
+      // conditioned on a RESTART INPUT, not on the phase — so this push can fire
+      // again (the camera-driven delivery-arrow term alone can trigger it) and
+      // hand out a NEW `RunSummary` object carrying the same frozen numbers. The
+      // derivation is value-idempotent, never identity-stable: consumers must key
+      // their side-effects on the run identity, not on this object (see the
+      // end-of-run effect in `App.tsx`). The render never touches `next.stats`.
+      const runSummary =
+        next.phase === "GAME_OVER" || next.phase === "LEVEL_COMPLETE"
+          ? buildRunSummary(next)
+          : undefined;
       const hudData: HudData = {
         score: next.score,
         lives: next.lives,
@@ -664,6 +677,7 @@ export function useGameLoop(
         deliveryDirection,
         weapon: { active: next.weapon.active, stock: next.weapon.stock },
         weaponEmptyNonce: weaponEmptyNonceRef.current,
+        runSummary,
       };
       // Cache for the __MUF_STATE__ read seam (ADR-0005) before handing it out.
       lastHudRef.current = hudData;

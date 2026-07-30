@@ -199,6 +199,33 @@ describe("resolveTrigger — discrimination integrity (AC5): full penalty per re
     expect(r.scoreDelta).toBe(civ.scoreDelta * 3);
   });
 
+  it("surfaces the courier-fault term alone, separated from a crate heart reward (ADR-0076 D3)", () => {
+    // The same tick: a crate that GIVES a heart, and a barrel that hits a civilian.
+    // `livesDelta` nets the two — only `faultLivesDelta` still reads the fault, which
+    // is why the run record cannot be derived from the net gauge movement.
+    const facade = facadeWithSlots([{ x: 100, y: 100 }]);
+    const r = trigger(spreadW(), true, 0.016, [], null, facade, [courier(1, 0)]);
+    expect(r.faultLivesDelta).toBe(civ.livesDelta);
+    expect(r.livesDelta).toBe(civ.livesDelta);
+  });
+
+  it("leaves the fault term at 0 when only a crate moves lives", () => {
+    const facade = facadeWithSlots([{ x: 0, y: 0 }]);
+    const rewarded: LootCrate = {
+      id: 1,
+      slotIndex: 0,
+      state: "VISIBLE",
+      timer: 1,
+      weapon: "spread",
+      reward: { profile: "flight-case", scoreDelta: 0, livesDelta: 2 },
+    };
+    const r = trigger(baseW(), true, 0.016, [], rewarded, facade, EMPTY, {
+      position: { x: 0.5, y: 0.5 - LOOT_STREET_Y / 12 },
+    });
+    expect(r.livesDelta).toBe(2);
+    expect(r.faultLivesDelta).toBe(0);
+  });
+
   it("threads couriers so one courier reachable by two barrels is hit only once (no double-hit)", () => {
     const facade = facadeWithSlots([{ x: 100, y: 100 }]);
     // A single courier at x=1 sits within COURIER_HIT_RADIUS (1.2) of BOTH the

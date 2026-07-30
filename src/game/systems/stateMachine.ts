@@ -38,6 +38,7 @@ import {
   tickBossQte,
 } from "@game/systems/bossQteSystem";
 import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
+import { createRunStats, foldRunStats } from "@game/systems/runStatsSystem";
 import { WEAPON_SPECS } from "@game/types/weapon";
 import type { LootSpec } from "@game/types/loot";
 import { CORE_ARCHETYPES, archetype, buildWeightedFrom } from "@game/types/enemyTypes";
@@ -195,6 +196,10 @@ export function createInitialState(
     loot: null,
     lootSpec,
     lootTimer: lootSpec !== null ? lootSpec.spawnIntervalSeconds : 0,
+    // Run statistics (ADR-0076 D1). A run is one attempt on one level (spec F1),
+    // so the record is empty by construction here — never reset mid-run. Seeded
+    // from the player's gauge preference, not a constant.
+    stats: createRunStats(params.lives),
   };
 }
 
@@ -506,6 +511,10 @@ export function tickGameState(
   // street lane, so it only runs when a courier field is supplied.
   let deliveryVehicle: DeliveryVehicle | null = state.deliveryVehicle;
   let deliveryScoreDelta = 0;
+  // The delivery's terminal transition THIS tick, hoisted out of the branch below
+  // so the run record can latch it (ADR-0076 D3 / spec D2.2.2). The vehicle runs on
+  // to GONE right after, and then the outcome is unreadable from the state.
+  let deliveryOutcomeThisTick: "SUCCESS" | "FAILED" | null = null;
   // The enemy array carried to EVERY return site below (the seating appends to it,
   // the retirement rewrites it) — one variable, so no return can miss it.
   let finalEnemies: readonly Enemy[] = shotEnemies;
@@ -548,6 +557,7 @@ export function tickGameState(
       // The escort leaves when the van leaves (D3): no score, no kill credit, no
       // quota credit — and `allDead` becomes reachable again.
       finalEnemies = retireAssault(shotEnemies);
+      deliveryOutcomeThisTick = deliveryVehicle.phase;
     }
   }
 
@@ -605,6 +615,29 @@ export function tickGameState(
   const feedbackEvents: readonly HitEvent[] = trigger.events;
   const newLives = snapLives(state.lives - damageTaken + trigger.livesDelta);
 
+  // Run statistics — THE single fold point of the tick (ADR-0076 D3). Placed right
+  // after `newLives` because every countable fact of the tick exists by now; the
+  // three return sites below carry the result. The six early returns above it are
+  // frozen or terminal and produce no countable event by construction, so `stats`
+  // rides through them unchanged via `...state` (asserted by a test).
+  const stats = foldRunStats(state.stats, {
+    crateSpawned: lootTick.spawned,
+    // A crate is consumed only by a shot; expiry already happened inside `tickLoot`.
+    // Structurally exactly 1 pickup under a spread volley (spec AC-4): offsets 2
+    // and 3 no longer see the crate.
+    cratePicked: lootTick.loot !== null && trigger.loot === null,
+    damageTaken,
+    // `trigger.livesDelta` mixes faults with crate heart rewards; only the courier
+    // term is a loss (spec D2.3.2). It is a negative delta — the record counts
+    // magnitudes.
+    faultLivesLost: -trigger.faultLivesDelta,
+    // The gauge BEFORE this tick's deltas — the clip reference for both terms, so a
+    // blow bigger than what is left is charged only for what it really took.
+    livesBefore: state.lives,
+    deliveryOutcome: deliveryOutcomeThisTick,
+    deliveryIntegrity: deliveryVehicle?.integrity ?? null,
+  });
+
   if (newLives <= 0) {
     return {
       ...state,
@@ -634,6 +667,7 @@ export function tickGameState(
       lootSpec: state.lootSpec,
       lootTimer: lootTick.lootTimer,
       weaponEmpty: trigger.weaponEmpty,
+      stats,
     };
   }
 
@@ -680,6 +714,7 @@ export function tickGameState(
       lootSpec: state.lootSpec,
       lootTimer: lootTick.lootTimer,
       weaponEmpty: trigger.weaponEmpty,
+      stats,
     };
   }
 
@@ -725,5 +760,6 @@ export function tickGameState(
     lootSpec: state.lootSpec,
     lootTimer: lootTick.lootTimer,
     weaponEmpty: trigger.weaponEmpty,
+    stats,
   };
 }

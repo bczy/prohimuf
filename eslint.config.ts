@@ -13,6 +13,13 @@ export default tseslint.config(
 
       "node_modules/**",
 
+      // Nested git worktrees of parallel Claude sessions (already excluded from
+      // git via `.git/info/exclude`, but flat-config ESLint lints dot-directories):
+      // they are OTHER checkouts of this repo, outside the root tsconfig project,
+      // so every file in them fails the type-aware parser and blocks `yarn lint`
+      // (and therefore every commit) for reasons unrelated to the working tree.
+      ".claude/worktrees/**",
+
       "coverage/**",
 
       ".yarn/**",

@@ -25,6 +25,14 @@ export interface TriggerResult {
   // Aggregate deltas for the tick (enemy rewards + per-resolution courier penalties).
   readonly scoreDelta: number;
   readonly livesDelta: number;
+  /**
+   * The COURIER-FAULT half of `livesDelta` (≤ 0), surfaced on its own (ADR-0076
+   * D3). `livesDelta` mixes civil-courier faults with crate heart rewards, and the
+   * two are already separated inside the fold below — additive and behaviour-free.
+   * Filtering `pointFeedback` on the sign of `livesDelta` instead would be a
+   * heuristic that the next negative-reward crate breaks in silence.
+   */
+  readonly faultLivesDelta: number;
   readonly timeDelta: number;
   readonly energyDelta: number;
   readonly targetsDown: number;
@@ -97,6 +105,8 @@ export function resolveTrigger(
   let curCouriers = couriers;
   let scoreDelta = 0;
   let livesDelta = 0;
+  // The courier-fault term alone (ADR-0076 D3): only `resolveCourierShot` feeds it.
+  let faultLivesDelta = 0;
   let timeDelta = 0;
   let energyDelta = 0;
   let targetsDown = 0;
@@ -164,6 +174,7 @@ export function resolveTrigger(
       curCouriers = cs.couriers;
       scoreDelta += cs.scoreDelta;
       livesDelta += cs.livesDelta;
+      faultLivesDelta += cs.livesDelta;
       for (const ev of cs.events) pointFeedback.push(ev);
     }
   }
@@ -234,6 +245,7 @@ export function resolveTrigger(
     couriers: curCouriers,
     scoreDelta,
     livesDelta,
+    faultLivesDelta,
     timeDelta,
     energyDelta,
     targetsDown,
