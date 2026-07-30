@@ -100,6 +100,37 @@ describe("useRunReport", () => {
     expect(latest?.payload).toBeNull();
   });
 
+  it("re-arms the FULL 2.5 s window on a second copy inside the first (UX §2.2)", async () => {
+    setClipboard({ writeText: vi.fn(() => Promise.resolve()) });
+    mount();
+    await act(async () => {
+      latest?.copy();
+      await Promise.resolve();
+    });
+    // Mid-window: the feedback is still up, and a second copy lands here.
+    act(() => {
+      vi.advanceTimersByTime(COPY_FEEDBACK_MS - 1000);
+    });
+    expect(latest?.status).toBe("copied");
+    await act(async () => {
+      latest?.copy();
+      await Promise.resolve();
+    });
+
+    // The FIRST timer's deadline passes: without the nonce the status would flip
+    // to idle here, 1 s after the second copy.
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(latest?.status).toBe("copied");
+
+    // …and the second copy gets its own full window, not the remainder of the first.
+    act(() => {
+      vi.advanceTimersByTime(COPY_FEEDBACK_MS - 1000);
+    });
+    expect(latest?.status).toBe("idle");
+  });
+
   it("hands the payload back on rejection, and stays there (recoverable, never silent)", async () => {
     setClipboard({ writeText: vi.fn(() => Promise.reject(new Error("denied"))) });
     mount();

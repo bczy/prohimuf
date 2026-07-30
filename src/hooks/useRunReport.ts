@@ -31,9 +31,16 @@ export interface RunReportCopy {
 interface CopyState {
   readonly status: CopyStatus;
   readonly payload: string | null;
+  /**
+   * Monotonic per successful copy. The 2.5 s feedback timer is keyed on it, so a
+   * SECOND copy inside the window re-arms a full window instead of inheriting the
+   * remainder of the first (an effect on `status` alone never re-runs: the value
+   * is already `"copied"`). UX §2.2 promises the feedback, not a slice of it.
+   */
+  readonly nonce: number;
 }
 
-const IDLE: CopyState = { status: "idle", payload: null };
+const IDLE: CopyState = { status: "idle", payload: null, nonce: 0 };
 
 export function useRunReport(
   summary: RunSummary,
@@ -50,31 +57,33 @@ export function useRunReport(
       // this fallback exists for, hence the narrowing cast.
       const { clipboard } = navigator as { clipboard?: Clipboard };
       if (clipboard === undefined) {
-        setState({ status: "failed", payload });
+        setState((prev) => ({ status: "failed", payload, nonce: prev.nonce }));
         return;
       }
       void clipboard.writeText(payload).then(
         () => {
-          setState({ status: "copied", payload: null });
+          setState((prev) => ({ status: "copied", payload: null, nonce: prev.nonce + 1 }));
         },
         () => {
-          setState({ status: "failed", payload });
+          setState((prev) => ({ status: "failed", payload, nonce: prev.nonce }));
         },
       );
     } catch {
-      setState({ status: "failed", payload });
+      setState((prev) => ({ status: "failed", payload, nonce: prev.nonce }));
     }
   }, [summary, funnel, levelId]);
 
   useEffect(() => {
     if (state.status !== "copied") return;
     const timer = setTimeout(() => {
-      setState(IDLE);
+      // Keeps the nonce monotonic across the idle hop so a later copy can never
+      // collide with an already-seen (status, nonce) pair.
+      setState((prev) => ({ ...IDLE, nonce: prev.nonce }));
     }, COPY_FEEDBACK_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [state.status]);
+  }, [state.status, state.nonce]);
 
   return { status: state.status, payload: state.payload, copy };
 }
