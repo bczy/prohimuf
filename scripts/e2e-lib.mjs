@@ -87,6 +87,33 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
 }
 
 /**
+ * Wait until the NIVEAUX flyer wall has visually SETTLED — every float-in entrance
+ * animation finished — which is what a capture of that screen must wait for.
+ *
+ * Asks the browser whether the animations are done (Web Animations API) rather than
+ * sleeping for `(count - 1) * stagger + duration`. That arithmetic would restate three
+ * values owned elsewhere — the 180ms stagger in FlyerWall.tsx, the 1400ms duration in
+ * FlyerWall.module.css, and LEVELS.length — with nothing keeping the copies in sync, so
+ * adding a level would silently push the real settle time past a fixed budget and bring
+ * back mid-animation screenshots. Waiting on the actual end state cannot drift: change
+ * the stagger, the duration or the level count and this still holds exactly long enough.
+ * It is also correct under reduced motion, where there is no animation to await.
+ *
+ * `data-flyers-armed` is NOT a substitute: it gates click-through, not the visual settle.
+ */
+export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
+  await page.locator(".muf-flyer-slot").first().waitFor({ timeout });
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll(".muf-flyer-slot")).every((el) =>
+        el.getAnimations().every((a) => a.playState === "finished"),
+      ),
+    undefined,
+    { timeout },
+  );
+}
+
+/**
  * The pre-level narrative interstitial has a "Passer" (skip) button; clear it so
  * we reach the actual gameplay canvas. Mirrors screenshot-preview.mjs.
  *

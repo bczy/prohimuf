@@ -13,7 +13,7 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
-import { enterMenuFromTitle } from "./e2e-lib.mjs";
+import { enterMenuFromTitle, waitForFlyerWallSettled } from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const BASE_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -76,11 +76,9 @@ async function captureLevel(context, level, withMenu) {
   await enterMenuFromTitle(page);
 
   if (withMenu) {
-    // Let the flyer-wall float-in entrance settle (last flyer's stagger delay +
-    // its animation duration) before capturing — `data-flyers-armed` only gates
-    // click-through, not the visual settle. Matches the 2500ms already used for
-    // the same screen in captureScreen() below.
-    await sleep(2500);
+    // Hold until the flyer-wall entrance has actually finished, not for a duration
+    // guessed from its stagger and length (see waitForFlyerWallSettled).
+    await waitForFlyerWallSettled(page);
     await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
     console.log("  captured 00_menu.png");
   }
@@ -97,11 +95,15 @@ async function captureLevel(context, level, withMenu) {
 }
 
 // Capture a front-end screen booted directly via the ?preview= hook (no play).
-async function captureScreen(context, file, query) {
+// `settleFlyers` additionally waits out the NIVEAUX entrance animation; the flat sleep
+// covers the typewriter/backdrop, but only the flyer wall has a settle condition we can
+// actually observe, so that screen waits on the real thing instead of a duration.
+async function captureScreen(context, file, query, { settleFlyers = false } = {}) {
   const page = await context.newPage();
   try {
     await page.goto(`${BASE_URL}${query}`, { waitUntil: "networkidle" });
     await sleep(2500); // let the typewriter / backdrop settle
+    if (settleFlyers) await waitForFlyerWallSettled(page);
     await page.screenshot({ path: path.join(OUT_DIR, file) });
     console.log(`  captured ${file}`);
   } catch (e) {
@@ -191,7 +193,7 @@ async function main() {
   console.log("[screen] title");
   await captureScreen(context, "00_title.png", "?preview=title");
   console.log("[screen] menu");
-  await captureScreen(context, "00_menu.png", "?preview=menu");
+  await captureScreen(context, "00_menu.png", "?preview=menu", { settleFlyers: true });
 
   console.log("[screen] narrative");
   await captureScreen(context, "01_narrative.png", "?preview=narrative");
