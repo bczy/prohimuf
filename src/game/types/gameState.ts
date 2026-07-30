@@ -8,6 +8,7 @@ import type { DeliverySpec, DeliveryVehicle } from "@game/types/delivery";
 import type { HitEvent, ImpactEvent, PlayerHitEvent, PointHitEvent } from "@game/types/feedback";
 import type { WeaponState } from "@game/types/weapon";
 import type { LootCrate, LootSpec } from "@game/types/loot";
+import type { RunStats } from "@game/types/runStats";
 
 export type Phase = "PLAYING" | "GAME_OVER" | "LEVEL_COMPLETE";
 
@@ -87,4 +88,10 @@ export interface GameState {
   // AC10). Transient like `impactEvents`: one tick, consumed by the bridge (HUD
   // flash + culasse-à-vide SFX), never persisted. Distinct from `impactEvents`.
   readonly weaponEmpty?: boolean;
+  // Run statistics accumulator (ADR-0076 D1). Holds ONLY what the tick destroys
+  // and cannot be recovered from the terminal state: crate pickups, hearts lost
+  // split by source, the starting gauge, and the latched delivery outcome. Folded
+  // exactly once per tick, reset by construction at every new run. PRIVATE to the
+  // pure layer — the render lane reads `RunSummary`, never this (D6).
+  readonly stats: RunStats;
 }

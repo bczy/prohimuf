@@ -4,6 +4,7 @@ import {
   tickGameState,
   LEVEL_TIME_SECONDS,
   ENEMIES_TO_WIN,
+  DEFAULT_LEVEL_PARAMS,
 } from "../stateMachine";
 import type { LevelParams } from "../stateMachine";
 import { FACADE_01 } from "@game/maps/facade01";
@@ -16,6 +17,8 @@ import type { LootCrate, LootSpec } from "@game/types/loot";
 import { BULLET_SPEED } from "@game/systems/bulletSystem";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
 import { spawnWave } from "@game/systems/enemySystem";
+import { createBossQte } from "@game/systems/bossQteSystem";
+import { buildRunSummary } from "@game/systems/runStatsSystem";
 import { DELIVERY_ASSAULT_ID_BASE } from "@game/systems/deliveryAssault";
 import { pickKind } from "@game/types/enemyTypes";
 
@@ -1445,4 +1448,326 @@ describe("tickGameState — off-screen enemies cannot shoot", () => {
   // at all, so it needs no camera filter; what survives of the intent lives in
   // `deliveryAssaultTick.test.ts` (AC6 at tick level, and AC14 for the ADR-0071
   // freeze invariants with the assault live).
+});
+
+describe("tickGameState — run statistics (ADR-0076): seed, single fold point, carries", () => {
+  const chX = (wx: number) => wx / 18 + 0.5;
+  const chY = (wy: number) => 0.5 - wy / 12;
+
+  /** A stationary enemy bullet sitting exactly on the player-hit centre. */
+  function bulletOnPlayer(damage: number, id = 99): GameState["bullets"][number] {
+    return { id, position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, fromPlayer: false, damage };
+  }
+
+  it("seeds an empty record carrying the level's gauge, not a constant", () => {
+    const s = createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, lives: 5 });
+    expect(s.stats).toMatchObject({
+      pickupsCollected: 0,
+      cratesSpawned: 0,
+      heartsLostToDamage: 0,
+      heartsLostToFaults: 0,
+      heartsAtStart: 5,
+      deliveryOutcome: null,
+    });
+  });
+
+  it("folds a hit into the damage term (and nothing else)", () => {
+    const state: GameState = { ...createInitialState(FACADE_01), bullets: [bulletOnPlayer(0.5)] };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.stats.heartsLostToDamage).toBe(0.5);
+    expect(next.stats.heartsLostToFaults).toBe(0);
+  });
+
+  it("carries the fold to the GAME_OVER return site, clipped to the starting gauge", () => {
+    // A full-heart round on a 1-heart gauge: the run records 1, never 1 ⨯ oversize.
+    const state: GameState = {
+      ...createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, lives: 1 }),
+      bullets: [bulletOnPlayer(1)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.phase).toBe("GAME_OVER");
+    expect(next.stats.heartsLostToDamage).toBe(1);
+    expect(buildRunSummary(next).heartsLost).toEqual({ total: 1, damage: 1, faults: 0, max: 1 });
+  });
+
+  it("carries the fold to the timer-expiry return site", () => {
+    const state: GameState = {
+      ...createInitialState(FACADE_01),
+      timeRemaining: 0.01,
+      bullets: [bulletOnPlayer(0.25)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.phase).toBe("GAME_OVER");
+    expect(next.timeRemaining).toBe(0);
+    expect(next.stats.heartsLostToDamage).toBe(0.25);
+    expect(buildRunSummary(next).endCause).toBe("TEMPS");
+  });
+
+  it("counts a crate pickup once, and its spawn in the denominator", () => {
+    const LOOT: LootSpec = { spawnIntervalSeconds: 0.05, drops: [{ weapon: "spread" }] };
+    let state = createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, loot: LOOT });
+    // Advance until a crate is VISIBLE, then shoot it.
+    for (let i = 0; i < 400 && state.loot?.state !== "VISIBLE"; i++) {
+      state = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+    }
+    const crate = state.loot;
+    expect(crate?.state).toBe("VISIBLE");
+    expect(state.stats.cratesSpawned).toBe(1);
+    const aim = aimAtCrate(crate?.slotIndex ?? 0);
+    const shot = tickGameState(
+      state,
+      fire,
+      aim.mx,
+      aim.my,
+      0.016,
+      FACADE_01,
+      0,
+      0,
+      18,
+      12,
+      10,
+      FIELD,
+    );
+    expect(shot.loot).toBeNull();
+    expect(shot.stats.pickupsCollected).toBe(1);
+    // The crate is gone: the next tick cannot bill a second pickup.
+    const after = tickGameState(
+      shot,
+      fire,
+      aim.mx,
+      aim.my,
+      0.016,
+      FACADE_01,
+      0,
+      0,
+      18,
+      12,
+      10,
+      FIELD,
+    );
+    expect(after.stats.pickupsCollected).toBe(1);
+  });
+
+  describe("the early returns above the fold leave the record untouched", () => {
+    it("a terminal idle tick", () => {
+      const over: GameState = { ...createInitialState(FACADE_01), phase: "GAME_OVER" };
+      expect(tickGameState(over, fire, 0.5, 0.5, 0.016, FACADE_01).stats).toBe(over.stats);
+    });
+
+    it("a completed level's idle tick", () => {
+      const won: GameState = { ...createInitialState(FACADE_01), phase: "LEVEL_COMPLETE" };
+      expect(tickGameState(won, fire, 0.5, 0.5, 0.016, FACADE_01).stats).toBe(won.stats);
+    });
+
+    it("the quota → LEVEL_COMPLETE transition tick", () => {
+      const s: GameState = { ...createInitialState(FACADE_01), kills: 10 };
+      const next = tickGameState(s, fire, 0.5, 0.5, 0.016, FACADE_01);
+      expect(next.phase).toBe("LEVEL_COMPLETE");
+      expect(next.stats).toBe(s.stats);
+    });
+
+    it("a frozen hostage-QTE tick", () => {
+      const s = createInitialState(FACADE_01, {
+        ...DEFAULT_LEVEL_PARAMS,
+        hostageQte: {
+          triggerAtElapsedSeconds: 0,
+          zoomSeconds: 2,
+          anchor: { x: 0, y: 0 },
+          maxBlownPeeks: 4,
+          peekCadenceSeconds: 1.5,
+          peekDurationSeconds: 1.5,
+          targetSeed: 20260718,
+          captorHp: 3,
+        },
+      });
+      const next = tickGameState(s, fire, chX(0), chY(0), 0.1, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+      expect(next.qte?.phase).toBe("ZOOMING");
+      expect(next.stats).toBe(s.stats);
+    });
+
+    it("a frozen boss-duel tick and the boss-resolved tick", () => {
+      const BOSS_SPEC = {
+        zoomSeconds: 2,
+        anchor: { x: 0, y: 0 },
+        phaseCount: 3,
+        bossHp: 24,
+        maxBlownWindows: 10,
+        targetSeed: 20260719,
+      };
+      const base = createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, bossQte: BOSS_SPEC });
+      const active: GameState = { ...base, bossQte: createBossQte(BOSS_SPEC) };
+      const frozen = tickGameState(
+        active,
+        fire,
+        chX(0),
+        chY(0),
+        0.1,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(frozen.stats).toBe(active.stats);
+
+      const done: GameState = {
+        ...base,
+        bossQte: { ...createBossQte(BOSS_SPEC), phase: "DONE", bossHp: 0 },
+      };
+      const resolved = tickGameState(
+        done,
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(resolved.phase).toBe("LEVEL_COMPLETE");
+      expect(resolved.stats).toBe(done.stats);
+      expect(buildRunSummary(resolved).endCause).toBe("BOSS_GAGNE");
+    });
+  });
+
+  describe("delivery latch (spec D2.2.2 / D2.2.5)", () => {
+    const SPEC: DeliverySpec = {
+      vehicleType: "truck",
+      triggerAtElapsedSeconds: 0,
+      integrity: 100,
+      windowSeconds: 8,
+      bonus: 300,
+      entrySide: "left",
+      stopPosition: { x: 0, y: -5 },
+    };
+    /** A state parked on the last tick of the delivery window. */
+    function atWindowEnd(integrity: number, windowRemaining: number): GameState {
+      const base = createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, delivery: SPEC });
+      return {
+        ...base,
+        deliveryVehicle: {
+          phase: "DELIVERING",
+          position: SPEC.stopPosition,
+          vehicleType: "truck",
+          integrity,
+          integrityMax: 100,
+          windowRemaining,
+        },
+      };
+    }
+
+    it("latches SUCCESS with the integrity of the transition tick", () => {
+      const next = tickGameState(
+        atWindowEnd(78.9, 0.005),
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(next.deliveryVehicle?.phase).toBe("SUCCESS");
+      expect(next.stats.deliveryOutcome).toBe("SUCCESS");
+      // Floored, never rounded up (D2.2.4).
+      expect(buildRunSummary(next).delivery).toEqual({ issue: "REUSSIE", integrityPct: 78 });
+    });
+
+    it("survives the vehicle leaving AND a later GAME_OVER (the latch never re-writes)", () => {
+      let s = tickGameState(
+        atWindowEnd(100, 0.005),
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      // Run the van off the street: its phase becomes GONE and the outcome is
+      // unreadable from the state — the latch is the only source left.
+      for (let i = 0; i < 2000 && s.deliveryVehicle?.phase !== "GONE"; i++) {
+        s = tickGameState(s, noFire, 0.5, 0.5, 0.016, FACADE_01, 0, 0, 18, 12, 10, FIELD);
+      }
+      expect(s.deliveryVehicle?.phase).toBe("GONE");
+      const dead = tickGameState(
+        { ...s, lives: 0.25, bullets: [bulletOnPlayer(1)] },
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(dead.phase).toBe("GAME_OVER");
+      expect(buildRunSummary(dead).delivery?.issue).toBe("REUSSIE");
+    });
+
+    it("reads INTERROMPUE when the run ends mid-window, with no latch written", () => {
+      const mid = atWindowEnd(78.9, 5);
+      const dead = tickGameState(
+        { ...mid, lives: 0.25, bullets: [bulletOnPlayer(1)] },
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(dead.phase).toBe("GAME_OVER");
+      expect(dead.stats.deliveryOutcome).toBeNull();
+      expect(buildRunSummary(dead).delivery?.issue).toBe("INTERROMPUE");
+    });
+
+    it("reads NON_DECLENCHEE when the run ends before the scripted trigger", () => {
+      const base = createInitialState(FACADE_01, {
+        ...DEFAULT_LEVEL_PARAMS,
+        delivery: { ...SPEC, triggerAtElapsedSeconds: 60 },
+        lives: 1,
+      });
+      const dead = tickGameState(
+        { ...base, bullets: [bulletOnPlayer(1)] },
+        noFire,
+        0.5,
+        0.5,
+        0.016,
+        FACADE_01,
+        0,
+        0,
+        18,
+        12,
+        10,
+        FIELD,
+      );
+      expect(dead.phase).toBe("GAME_OVER");
+      expect(buildRunSummary(dead).delivery).toEqual({
+        issue: "NON_DECLENCHEE",
+        integrityPct: null,
+      });
+    });
+  });
 });
