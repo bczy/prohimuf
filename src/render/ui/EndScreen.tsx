@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { JSX, MouseEvent } from "react";
 import type { FunnelState, RunSummary } from "@game/types/runStats";
 import { detectMobile } from "@utils/platform";
@@ -46,6 +46,17 @@ export function EndScreen({
   const [detailOpen, setDetailOpen] = useState(false);
   const detailId = useId();
   const { status, payload, copy } = useRunReport(summary, funnel, levelId);
+  // The AC5 fallback pre-selects ONCE per revealed payload. An inline `ref`
+  // arrow would be a new function on every render, so React would re-invoke it
+  // (null, then the element) on EVERY re-render — re-selecting and stealing the
+  // focus each time the detail panel toggles, the aria-live text changes or the
+  // 2.5 s feedback timer expires. Keyed on the payload VALUE: the same string
+  // across re-renders is one selection, a new copy attempt is a new one.
+  const fallbackRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (payload === null) return;
+    fallbackRef.current?.select();
+  }, [payload]);
 
   const label = isGameOver ? "— UNE —" : "— SUCCÈS —";
   const title = isGameOver ? "LE LIVREUR DU 19ÈME INTERPELLÉ" : "LA RAVE A EU LIEU";
@@ -145,14 +156,7 @@ export function EndScreen({
           </span>
 
           {payload !== null && (
-            <textarea
-              className={styles.fallback}
-              readOnly
-              value={payload}
-              ref={(el) => {
-                el?.select();
-              }}
-            />
+            <textarea className={styles.fallback} readOnly value={payload} ref={fallbackRef} />
           )}
         </div>
 

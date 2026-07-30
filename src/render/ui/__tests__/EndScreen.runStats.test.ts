@@ -242,6 +242,25 @@ describe("EndScreen — copier mon rapport (A4, A5)", () => {
     );
   });
 
+  it("pre-selects the fallback ONCE per payload — a later re-render never re-steals it", async () => {
+    const select = vi.spyOn(HTMLTextAreaElement.prototype, "select");
+    stubClipboard(() => Promise.reject(new Error("denied")));
+    const el = mount();
+    click(button(el, "COPIER MON RAPPORT"));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(select).toHaveBeenCalledTimes(1);
+
+    // Any re-render of the screen (here: opening then closing the detail panel)
+    // used to re-invoke the inline `ref` arrow and re-select the textarea.
+    click(button(el, "DÉTAIL DE LA COURSE"));
+    click(button(el, "DÉTAIL DE LA COURSE"));
+    expect(el.querySelector("textarea")).not.toBeNull();
+    expect(select).toHaveBeenCalledTimes(1);
+    select.mockRestore();
+  });
+
   it("never leaks the player byline into the payload (gate A1)", async () => {
     stubClipboard(() => Promise.reject(new Error("denied")));
     localStorage.setItem("muf_player_name", "DJ MEHDI");
