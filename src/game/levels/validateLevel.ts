@@ -10,6 +10,8 @@ import { hasArchetype, knownKinds } from "@game/types/enemyTypes";
 // "never import levels.data.ts" rule below still holds.
 import "@game/levels/generated";
 import { QTE_RESULT_HOLD } from "@game/systems/qteSystem";
+import type { DeliverySpec } from "@game/types/delivery";
+import { VEHICLE_SPEED, VEHICLE_MARGIN } from "@game/systems/deliverySystem";
 
 /**
  * The single source of generic `LevelConfig` invariants (ADR-0074 §3).
@@ -93,12 +95,82 @@ export function hostageBossMarginIssue(input: {
   };
 }
 
+/**
+ * The delivery/boss sequential-coexistence invariant (panel PR #143 follow-up), as ONE
+ * shared predicate — the delivery mirror of {@link hostageBossMarginIssue}.
+ *
+ * The boss branch of `tickGameState` early-returns before the delivery block, so a delivery
+ * still `INCOMING`/`DELIVERING` (or departing) when the timed finale fires at TIMER EXPIRY
+ * would freeze on screen forever. `tickDelivery` is fully deterministic — fixed speed, no
+ * randomness — so the worst case IS the only case: trigger + roll-in + full window +
+ * roll-out until `GONE` (the scene must be FREE, same bar as the hostage guard).
+ *
+ * The two travel legs need the street half-width, which is render-owned (`CourierField`).
+ * When the caller cannot supply it (`streetHalfWidth` undefined) the predicate keeps the
+ * width-independent bound (trigger + window) rather than going blind. Same NaN posture as
+ * the hostage predicate: a non-finite `timeSeconds` fails the "margin HOLDS" comparison
+ * and yields an issue.
+ */
+export function deliveryBossMarginIssue(input: {
+  readonly delivery?: DeliverySpec | null | undefined;
+  readonly bossQteSpec?: BossQteSpec | null | undefined;
+  readonly timeSeconds: number;
+  /** Street half-width in world units (`CourierField.halfWidth`); travel legs skipped when unknown. */
+  readonly streetHalfWidth?: number | undefined;
+}): LevelIssue | null {
+  const delivery = input.delivery;
+  const boss = input.bossQteSpec;
+  if (delivery === null || delivery === undefined) return null;
+  if (boss === null || boss === undefined) return null;
+
+  let travelSeconds = 0;
+  if (input.streetHalfWidth !== undefined) {
+    const edge = input.streetHalfWidth + VEHICLE_MARGIN;
+    const entryX = delivery.entrySide === "left" ? -edge : edge;
+    const exitX = -entryX;
+    travelSeconds =
+      (Math.abs(delivery.stopPosition.x - entryX) + Math.abs(exitX - delivery.stopPosition.x)) /
+      VEHICLE_SPEED;
+  }
+  const deliveryWorstCaseEnd =
+    delivery.triggerAtElapsedSeconds + travelSeconds + delivery.windowSeconds;
+  if (deliveryWorstCaseEnd + SAFETY_MARGIN_SECONDS < input.timeSeconds) return null;
+
+  return {
+    code: "delivery-boss-margin",
+    severity: "error",
+    field: "deliveries",
+    message:
+      `LevelConfig invariant: a delivery and bossQte are authored together but are not safely ` +
+      `sequential — the delivery's worst-case end (${String(deliveryWorstCaseEnd)}s: trigger + ` +
+      `travel + window + departure) leaves less than the required ` +
+      `${String(SAFETY_MARGIN_SECONDS)}s margin before the level's timeSeconds ` +
+      `(${String(input.timeSeconds)}s), when the timed-finale boss is created and freezes the ` +
+      `delivery tick. Move triggerAtElapsedSeconds earlier, shrink windowSeconds, or widen ` +
+      `timeSeconds so the vehicle is always GONE before the boss can exist.`,
+  };
+}
+
 export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
   const issues: LevelIssue[] = [];
 
   // 1 — hostage/boss sequential coexistence.
   const marginIssue = hostageBossMarginIssue(config);
   if (marginIssue !== null) issues.push(marginIssue);
+
+  // 1bis — delivery/boss sequential coexistence (width-independent bound here: the street
+  // half-width is render-owned and unknown to a bare `LevelConfig`; `createInitialState`
+  // re-runs the same predicate with the real width at level load).
+  for (const [index, delivery] of config.deliveries.entries()) {
+    const deliveryIssue = deliveryBossMarginIssue({
+      delivery,
+      bossQteSpec: config.bossQteSpec,
+      timeSeconds: config.timeSeconds,
+    });
+    if (deliveryIssue !== null) {
+      issues.push({ ...deliveryIssue, field: `deliveries[${String(index)}]` });
+    }
+  }
 
   // 2 — every `roster.windowWeights` slot must be a real enemy kind. `EnemyKind` is a bare
   // union with no runtime value; `hasArchetype` (core table + the generated-level registry,
