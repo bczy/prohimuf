@@ -120,11 +120,28 @@ async function captureLevel(context, level, withMenu) {
 // actually observe, so that screen waits on the real thing instead of a duration.
 async function captureScreen(context, file, query, { settleFlyers = false } = {}) {
   const page = await context.newPage();
+  const out = path.join(OUT_DIR, file);
   try {
     await page.goto(`${BASE_URL}${query}`, { waitUntil: "networkidle" });
     await sleep(2500); // let the typewriter / backdrop settle
-    if (settleFlyers) await waitForFlyerWallSettled(page);
-    await page.screenshot({ path: path.join(OUT_DIR, file) });
+
+    if (settleFlyers) {
+      try {
+        await waitForFlyerWallSettled(page);
+      } catch (e) {
+        // A settle failure here is WORSE than a missing file. This capture is the
+        // authoritative one and overwrites the best-effort shot taken while driving
+        // through the UI — so bailing out would leave that earlier, possibly
+        // mid-animation, PNG on disk and ship it in the contact sheet as if it were
+        // this one. Delete it: an absent screenshot is visibly absent, a stale one
+        // silently lies. Then re-throw so the outer catch reports the failure.
+        fs.rmSync(out, { force: true });
+        console.error(`  ${file}: flyer wall never settled — stale capture removed`);
+        throw e;
+      }
+    }
+
+    await page.screenshot({ path: out });
     console.log(`  captured ${file}`);
   } catch (e) {
     console.error(`  failed ${file}: ${e.message}`);
