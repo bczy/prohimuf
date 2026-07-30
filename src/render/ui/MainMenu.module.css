@@ -61,17 +61,17 @@
      NIVEAUX float-in entrance — which drifts each flyer up to ±44px sideways — grew this
      container's scrollable width and could pop a transient horizontal scrollbar for the
      ~2s of the animation. A transform counts toward scrollable overflow even though it
-     never affects layout, so this was real, not just visual bleed. `clip` (not `hidden`)
-     because this axis must never become scrollable; the small margin keeps focus rings
-     and the flyers' tape/marker ink from being shaved at the edge.
-     The short-landscape rack is unaffected: `.muf-flyerwall` is a descendant with its
-     own `overflow-x: auto`, so it stays its own scroll container.
+     never affects layout, so this was real, not just visual bleed.
 
-     `hidden`, not `clip`, deliberately: with a scrolling value on the other axis the
-     spec makes `clip` compute to `hidden` anyway (verified in-browser — computed
-     overflow-x came back `hidden`), so writing `clip` would only describe a behaviour
-     the page never gets. `hidden` also guarantees the part that matters: this axis can
-     never paint a scrollbar. */
+     `hidden` rather than `clip`: with a scrolling value on the other axis the spec makes
+     `clip` compute to `hidden` regardless (verified in-browser — computed overflow-x came
+     back `hidden` while the sheet still said `clip`), so writing `clip` would only
+     describe a behaviour the page never gets. `hidden` delivers the part that matters
+     here: this axis can never paint a scrollbar. No `overflow-clip-margin` either — it
+     only applies to `clip`, so it would be inert.
+
+     The short-landscape rack is unaffected: `.muf-flyerwall` is a descendant with its
+     own `overflow-x: auto`, so it stays its own scroll container. */
   overflow-x: hidden;
 }
 
