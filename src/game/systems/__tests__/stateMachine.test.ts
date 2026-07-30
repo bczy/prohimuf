@@ -1478,7 +1478,7 @@ describe("tickGameState — run statistics (ADR-0076): seed, single fold point, 
     expect(next.stats.heartsLostToFaults).toBe(0);
   });
 
-  it("carries the fold to the GAME_OVER return site, clipped to the starting gauge", () => {
+  it("carries the fold to the GAME_OVER return site, clipped to the live gauge", () => {
     // A full-heart round on a 1-heart gauge: the run records 1, never 1 ⨯ oversize.
     const state: GameState = {
       ...createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, lives: 1 }),
@@ -1488,6 +1488,20 @@ describe("tickGameState — run statistics (ADR-0076): seed, single fold point, 
     expect(next.phase).toBe("GAME_OVER");
     expect(next.stats.heartsLostToDamage).toBe(1);
     expect(buildRunSummary(next).heartsLost).toEqual({ total: 1, damage: 1, faults: 0, max: 1 });
+  });
+
+  it("clips against the gauge the tick actually holds, not against the starting one", () => {
+    // Gauge of 1, but a crate has already handed hearts back: the player really is
+    // carrying 3 ♥, so a 2 ♥ round costs 2 ♥ of exposure — the starting gauge is a
+    // landmark, not a ceiling (fix B / spec D2.3.4).
+    const state: GameState = {
+      ...createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, lives: 1 }),
+      lives: 3,
+      bullets: [bulletOnPlayer(2)],
+    };
+    const next = tickGameState(state, noFire, 0.5, 0.5, 0.016, FACADE_01);
+    expect(next.stats.heartsLostToDamage).toBe(2);
+    expect(next.stats.heartsAtStart).toBe(1);
   });
 
   it("carries the fold to the timer-expiry return site", () => {

@@ -40,7 +40,7 @@ export type DeliveryIssue = "REUSSIE" | "PERDUE" | "INTERROMPUE" | "NON_DECLENCH
  * once per tick (ADR-0076 D3). It holds only the irrecoverable:
  * - crate pickups (a crate is consumed by the shot that takes it),
  * - hearts lost split by source (the net `lives` delta is polluted by crate heals),
- * - the starting heart gauge (the clip ceiling for the fatal blow),
+ * - the starting heart gauge (a reading landmark, not a ceiling on the total),
  * - the latched delivery outcome and its integrity at the latch tick (the vehicle
  *   goes `→ GONE` right after, so the outcome is unreadable from the final state).
  *
@@ -55,7 +55,11 @@ export interface RunStats {
   readonly heartsLostToDamage: number;
   /** Hearts lost to civil-courier faults, whole hearts. Never decreases. */
   readonly heartsLostToFaults: number;
-  /** The gauge the run started with (player preference, 1..5) — the clip ceiling. */
+  /**
+   * The gauge the run STARTED with (player preference, 1..5) — a reading landmark
+   * reported alongside the losses, NOT a ceiling on their total: a crate heal can
+   * hand hearts back, so exposure may legitimately exceed it (spec D2.3.4).
+   */
   readonly heartsAtStart: number;
   /** The latched delivery outcome, written once, never re-written (spec D2.2.2). */
   readonly deliveryOutcome: "SUCCESS" | "FAILED" | null;
@@ -80,6 +84,12 @@ export interface RunStatsTickFacts {
   readonly damageTaken: number;
   /** Hearts removed by a civil-courier fault this tick (positive magnitude). */
   readonly faultLivesLost: number;
+  /**
+   * The player's gauge BEFORE this tick's deltas. The tick's contribution is clipped
+   * to it (damage first, then the fault) so a 1.0 blow landing on 0.5 heart charges
+   * 0.5 — never a loss the player did not take (spec D2.3.4).
+   */
+  readonly livesBefore: number;
   /** The delivery's terminal transition this tick, or `null`. */
   readonly deliveryOutcome: "SUCCESS" | "FAILED" | null;
   /** Vehicle integrity on that transition tick (ignored when outcome is `null`). */
@@ -105,11 +115,11 @@ export interface DeliverySummary {
 
 /** The damage line of the summary — hearts lost, split by source. */
 export interface HeartsLostSummary {
-  /** `damage + faults`, clipped to `max` (spec AC-6). */
+  /** `damage + faults` — total exposure, each tick clipped to the live gauge (D2.3.4). */
   readonly total: number;
   readonly damage: number;
   readonly faults: number;
-  /** The starting gauge — the ceiling `total` can never exceed. */
+  /** The STARTING gauge — a reading landmark; `total` may exceed it after a heal. */
   readonly max: number;
 }
 

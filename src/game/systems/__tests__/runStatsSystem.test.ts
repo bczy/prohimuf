@@ -14,6 +14,7 @@ const NO_FACTS: RunStatsTickFacts = {
   cratePicked: false,
   damageTaken: 0,
   faultLivesLost: 0,
+  livesBefore: 3,
   deliveryOutcome: null,
   deliveryIntegrity: null,
 };
@@ -126,26 +127,50 @@ describe("foldRunStats — hearts lost", () => {
     expect(s.heartsLostToDamage).toBe(0.5);
   });
 
-  it("clips an oversized fatal blow to the starting gauge (AC-6)", () => {
-    // 2.75 already lost on a 3-heart gauge, then a riot cop lands 1.0 → 3, not 3.75.
+  it("clips an oversized fatal blow to what the gauge actually held (AC-6)", () => {
+    // 2.75 already lost on a 3-heart gauge, then a riot cop lands 1.0 on the 0.25
+    // that is left → 3, not 3.75: never charge damage the player did not take.
     let s = createRunStats(3);
-    s = foldRunStats(s, facts({ damageTaken: 2.75 }));
-    s = foldRunStats(s, facts({ damageTaken: 1 }));
+    s = foldRunStats(s, facts({ damageTaken: 2.75, livesBefore: 3 }));
+    s = foldRunStats(s, facts({ damageTaken: 1, livesBefore: 0.25 }));
     expect(s.heartsLostToDamage).toBe(3);
   });
 
-  it("clips a fault against the same ceiling, damage first", () => {
+  it("clips a fault against the live gauge too, damage first", () => {
     let s = createRunStats(3);
-    s = foldRunStats(s, facts({ damageTaken: 2.5 }));
-    s = foldRunStats(s, facts({ faultLivesLost: 1 }));
+    s = foldRunStats(s, facts({ damageTaken: 2.5, livesBefore: 3 }));
+    s = foldRunStats(s, facts({ faultLivesLost: 1, livesBefore: 0.5 }));
     expect(s.heartsLostToDamage + s.heartsLostToFaults).toBe(3);
     expect(s.heartsLostToFaults).toBe(0.5);
   });
 
-  it("clips damage and fault landing on the same tick", () => {
-    const s = foldRunStats(createRunStats(1), facts({ damageTaken: 0.5, faultLivesLost: 1 }));
+  it("clips damage and fault landing on the same tick against the same gauge", () => {
+    const s = foldRunStats(
+      createRunStats(1),
+      facts({ damageTaken: 0.5, faultLivesLost: 1, livesBefore: 1 }),
+    );
     expect(s.heartsLostToDamage).toBe(0.5);
     expect(s.heartsLostToFaults).toBe(0.5);
+  });
+
+  it("lets total exposure exceed the starting gauge after a crate heal (fix B)", () => {
+    // Gauge 3 → the run eats the whole gauge, a crate hands 3 hearts back, the run
+    // eats 2 more. Exposure is 5 ♥: the starting gauge is a reading landmark, not a
+    // ceiling on the total (spec D2.3.3 — the measure is exposure, not balance).
+    let s = createRunStats(3);
+    s = foldRunStats(s, facts({ damageTaken: 3, livesBefore: 3 }));
+    s = foldRunStats(s, facts({ damageTaken: 2, livesBefore: 3 }));
+    expect(s.heartsLostToDamage).toBe(5);
+    expect(s.heartsAtStart).toBe(3);
+  });
+
+  it("still refuses to charge more than the gauge held on the healed tick", () => {
+    // Same shape, but the killing blow oversizes what is left after the heal.
+    let s = createRunStats(3);
+    s = foldRunStats(s, facts({ damageTaken: 3, livesBefore: 3 }));
+    s = foldRunStats(s, facts({ damageTaken: 1, faultLivesLost: 1, livesBefore: 0.5 }));
+    expect(s.heartsLostToDamage).toBe(3.5);
+    expect(s.heartsLostToFaults).toBe(0);
   });
 });
 

@@ -16,7 +16,7 @@ import type {
  * from the same tick sequence produces the same summary (story AC1/AC8).
  */
 
-/** Seed an empty run record. `heartsAtStart` is the player's gauge (1..5). */
+/** Seed an empty run record. `heartsAtStart` is the player's starting gauge (1..5). */
 export function createRunStats(heartsAtStart: number): RunStats {
   return {
     pickupsCollected: 0,
@@ -34,17 +34,20 @@ export function createRunStats(heartsAtStart: number): RunStats {
  * after `newLives` is computed (ADR-0076 D3).
  *
  * Monotone by construction: the facts only ever carry losses (a crate heal moves
- * the player's gauge, never this exposure record — spec D2.3.3), the total is
- * clipped to the starting gauge so an oversized fatal blow can never print
- * `3.25 / 3` (spec AC-6), and the delivery latch is written once and never
- * re-written (spec D2.2.5).
+ * the player's gauge, never this exposure record — spec D2.3.3), the delivery latch
+ * is written once and never re-written (spec D2.2.5), and each tick's contribution
+ * is clipped to what the LIVE gauge actually held that tick (spec D2.3.4) so an
+ * oversized fatal blow never charges damage the player did not take.
+ *
+ * There is deliberately NO ceiling on the run total: a crate can hand hearts back,
+ * so cumulated exposure may legitimately exceed the starting gauge (`4.5 ♥` on a
+ * gauge of 3 is a fact, not a bug — the measure is exposure, not balance).
  */
 export function foldRunStats(prev: RunStats, facts: RunStatsTickFacts): RunStats {
-  // Remaining room under the ceiling. Damage is charged first, then the fault:
-  // both are clipped against the same total, so `damage + faults <= heartsAtStart`.
-  const room = prev.heartsAtStart - prev.heartsLostToDamage - prev.heartsLostToFaults;
-  const damage = Math.min(facts.damageTaken, room);
-  const fault = Math.min(facts.faultLivesLost, room - damage);
+  // Room in the gauge AT THIS TICK. Damage is charged first, then the fault, both
+  // against the same live gauge — the two can land on the same tick.
+  const damage = Math.min(facts.damageTaken, facts.livesBefore);
+  const fault = Math.min(facts.faultLivesLost, facts.livesBefore - damage);
 
   const latching = prev.deliveryOutcome === null && facts.deliveryOutcome !== null;
 

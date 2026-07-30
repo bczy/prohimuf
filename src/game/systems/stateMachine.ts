@@ -631,6 +631,9 @@ export function tickGameState(
     // term is a loss (spec D2.3.2). It is a negative delta — the record counts
     // magnitudes.
     faultLivesLost: -trigger.faultLivesDelta,
+    // The gauge BEFORE this tick's deltas — the clip reference for both terms, so a
+    // blow bigger than what is left is charged only for what it really took.
+    livesBefore: state.lives,
     deliveryOutcome: deliveryOutcomeThisTick,
     deliveryIntegrity: deliveryVehicle?.integrity ?? null,
   });
