@@ -103,3 +103,10 @@ gaspillés » du spec §7).
 Couverture spec : §2.1→T3/T4 · §2.2→T2/T5 · §2.3→T1/T4 · §2.4→T7 · §3 table→T2-T6 ·
 §4.1→T2 · §4.2→T1/T4 · §5→T7. Ordre : T1 seule en gameplay ; T2→T3 ; T4 après T1+T3 ;
 T5, T6 indépendantes après T1 ; T7 ferme.
+
+**Croisements MCP (séquencement obligatoire, miroir de l'Auto-revue du plan MCP)** :
+T1 (garde `calibration`) et MCP T2b (migration `LevelIssue[]`) touchent tous deux le
+corps de `validateLevelPlan` dans `levelPlan.ts` — atterrissage séquentiel : la seconde
+branche rebase sur la première et adapte (T1 émet alors des `LevelIssue` avec le code
+`plan/calibration` ; T2b ajoute ce code à sa liste). T6 (driver §8 généralisé) est
+l'autre point partagé — dédupliqué par la première lane qui merge.
