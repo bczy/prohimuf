@@ -8,8 +8,9 @@
 > candidat, §5). `producer` ouvre le shard et alloue l'ADR si besoin.
 > **Chantier frère** — la story ③ (MCP level-editor,
 > [`spec-mcp-level-editor.md`](./spec-mcp-level-editor.md)) fournit le cœur de
-> validation que les phases appellent en bibliothèque ; les deux avancent en parallèle
-> sur des chemins disjoints.
+> validation que les phases appellent en bibliothèque ; parallélisables, avec DEUX
+> points de contact séquencés (le corps de `validateLevelPlan` — SP2 T1 vs MCP T2b —
+> et le driver §8 généralisé) : la seconde branche à atterrir rebase et adapte.
 
 ## 1. Objet
 

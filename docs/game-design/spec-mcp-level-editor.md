@@ -10,7 +10,9 @@
 > et dépendance — ET le sign-off de la proposition NOUVELLE de §4.3, qui renverse un
 > point acté d'ADR-0075).
 > **Chantier frère** — SP2 ([`spec-level-harness-sp2.md`](./spec-level-harness-sp2.md))
-> consomme le même cœur en bibliothèque ; chemins disjoints, parallélisables.
+> consomme le même cœur en bibliothèque ; parallélisables, avec DEUX points de
+> contact séquencés (le corps de `validateLevelPlan`, le driver §8 généralisé — voir
+> l'Auto-revue du plan MCP).
 
 ## 1. Objet
 

@@ -60,7 +60,9 @@ contre TOUTES les branches distantes — la leçon 0073→0074→0075), `package
 
 - [ ] Test rouge : chaque garde rend un `LevelIssue` avec un `code` stable
       (`plan/weight-nonzero`, `plan/namespace`, `plan/sizing`, `plan/window-weights`,
-      `plan/gameplay-bounds`, `plan/prop-consistency`, `plan/mobile-halving`), un
+      `plan/gameplay-bounds`, `plan/prop-consistency`, `plan/mobile-halving` — plus
+      `plan/calibration` si SP2 T1 a déjà mergé sa garde, cf. la note de séquencement
+      de l'Auto-revue), un
       `message` humain identique à l'actuel, `severity: "error"`.
 - [ ] Migration de la signature + mise à jour des tests existants (les assertions
       `toContainEqual(stringContaining(...))` deviennent des matchs sur `message` ou
@@ -101,7 +103,13 @@ SP2 T6 s'il a mergé, sinon l'inline du même code), `server.mjs`.
 
 ## Auto-revue
 
-Couverture spec : §2.1→T4 · §2.2→T5 · §2.3→T2 · §3 table→T3-T5 · §4.1/4.2→T2/T3 ·
-§4.3→T1 · §5→T4 · §6→T3/T4/T5/T6. Ordre : T1 et T2b (gameplay, séquentielles) ∥ T2 (tooling) ;
-T3→T4→T5 séquentielles côté tooling ; T6 ferme. Croisement SP2 : seul le driver §8
-généralisé (SP2 T6) est partagé — si SP2 ne l'a pas mergé, T5 inline et SP2 dédupliquera.
+Couverture spec : §2.1→T4 · §2.2→T5 · §2.3→T2 · §3 table→T3-T5 · **§4.1→T2b/T3** ·
+§4.2→T2 · §4.3→T1 · §5→T4 · §6→T3/T4/T5/T6. Ordre : T1 et T2b (gameplay,
+séquentielles) ∥ T2 (tooling) ; T3→T4→T5 séquentielles côté tooling ; T6 ferme.
+
+**Croisements SP2 (les chemins ne sont PAS entièrement disjoints — séquencement
+obligatoire)** : (1) SP2 T1 (garde `calibration`) et MCP T2b (migration `LevelIssue[]`)
+touchent tous deux le corps de `validateLevelPlan` dans `levelPlan.ts` — la seconde
+branche à atterrir REBASE sur la première et adapte (T2b ajoute alors le code
+`plan/calibration` ; SP2 T1 émet alors des `LevelIssue`). (2) Le driver §8 généralisé
+(SP2 T6) est partagé — si SP2 ne l'a pas mergé, T5 inline et SP2 dédupliquera.
