@@ -13,7 +13,7 @@ import {
 } from "@game/systems/deliveryAssault";
 import { DAMAGE_PER_ASSAILANT_PER_SECOND } from "@game/systems/deliverySystem";
 import { spawnWave } from "@game/systems/enemySystem";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { archetype } from "@game/types/enemyTypes";
 import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { DeliverySpec } from "@game/types/delivery";
 import type { FacadeMap, WindowSlot } from "@game/types/map";
@@ -173,8 +173,8 @@ describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", ()
     const seated = seatAssault(facade, SPEC, undefined, [], null);
     seated.forEach((e, i) => {
       expect(e.state).toBe("VISIBLE");
-      expect(e.timer).toBeCloseTo(ARCHETYPES[e.kind].visibleDuration * (1 + i * 0.3), 10);
-      expect(e.hp).toBe(ARCHETYPES[e.kind].hp);
+      expect(e.timer).toBeCloseTo(archetype(e.kind).visibleDuration * (1 + i * 0.3), 10);
+      expect(e.hp).toBe(archetype(e.kind).hp);
     });
   });
 
@@ -200,14 +200,14 @@ describe("seatAssault — AC7/AC8/AC9 (seating at the IDLE→INCOMING edge)", ()
   it("AC9: only shooting kinds are seated, from the level's own pool", () => {
     const pool: readonly EnemyKind[] = ["riot", "bonus", "biker", "bonus"];
     for (const e of seatAssault(facade, SPEC, pool, [], null)) {
-      expect(ARCHETYPES[e.kind].shoots).toBe(true);
+      expect(archetype(e.kind).shoots).toBe(true);
       expect(pool).toContain(e.kind);
     }
   });
 
   it("AC9: a pool with no shooter at all still seats a shooter", () => {
     for (const e of seatAssault(facade, SPEC, ["bonus"], [], null)) {
-      expect(ARCHETYPES[e.kind].shoots).toBe(true);
+      expect(archetype(e.kind).shoots).toBe(true);
     }
   });
 

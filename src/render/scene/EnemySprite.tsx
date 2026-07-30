@@ -5,7 +5,7 @@ import { CanvasTexture, AdditiveBlending } from "three";
 import type { Texture, Mesh, MeshBasicMaterial } from "three";
 import type { GameState } from "@game/types/gameState";
 import type { Vec2 } from "@game/types/vector";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { archetype } from "@game/types/enemyTypes";
 import {
   resolveEnemyTexture,
   frameCountFor,
@@ -123,7 +123,7 @@ export function EnemySprite({
       return;
     }
 
-    const archetype = ARCHETYPES[enemy.kind];
+    const arch = archetype(enemy.kind);
 
     const stateChanged = prevStateRef.current !== enemy.state;
     // Reset unfold timer when entering APPEARING
@@ -141,7 +141,7 @@ export function EnemySprite({
 
     // Per-kind width (square base plane scaled on X). Paper Mario unfold scales
     // Y 0 → 1 over the APPEARING phase (~0.3s), keeping the kind's width.
-    const aspect = archetype.aspect;
+    const aspect = arch.aspect;
     if (enemy.state === "APPEARING") {
       unfoldTimerRef.current = Math.min(unfoldTimerRef.current + delta, 0.3);
       const t = unfoldTimerRef.current / 0.3;
@@ -155,7 +155,7 @@ export function EnemySprite({
     // back to the normal cop until they exist). The flipbook advances via the
     // per-state clock; HIT pins frame 1 since the white flash dominates and a
     // missing `_f2` frame degrades to frame 1 inside resolveEnemyTexture.
-    const variant = (slotIndex % archetype.variants) + 1;
+    const variant = (slotIndex % arch.variants) + 1;
     const shooting = enemy.state === "SHOOTING";
     animClockRef.current += delta;
     const frame =
@@ -179,7 +179,7 @@ export function EnemySprite({
     if (enemy.state === "HIT") {
       mat.color.set("#ffffff");
     } else {
-      mat.color.set(archetype.tint);
+      mat.color.set(arch.tint);
     }
 
     // Baked-in per-frame muzzle anchor (normalized tex coords), keyed to the frame
@@ -218,8 +218,7 @@ export function EnemySprite({
     // covers the interior glow and only the scaled-out margin shows as a rim.
     const rim = rimRef.current;
     if (rim !== null) {
-      const neon =
-        archetype.shoots && resolved !== null ? getSilhouetteFor(resolved.texture) : null;
+      const neon = arch.shoots && resolved !== null ? getSilhouetteFor(resolved.texture) : null;
       rim.visible = neon !== null;
       if (neon !== null) {
         // Follow the body's recoil nudge AND tilt so the rim stays flush behind
@@ -242,9 +241,7 @@ export function EnemySprite({
           mesh.scale.y * (1 + padY * zoomComp),
           1,
         );
-        const [r, g, b] = heatColor(
-          heatProgress(enemy.state, enemy.timer, archetype.visibleDuration),
-        );
+        const [r, g, b] = heatColor(heatProgress(enemy.state, enemy.timer, arch.visibleDuration));
         const col = rimMat.uniforms.uColor.value;
         col.r = r;
         col.g = g;

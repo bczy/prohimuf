@@ -97,8 +97,13 @@ const EMITTERS: Partial<Record<NearForegroundKind, Emitter>> = {
  * @param index The prop's stable index in its level layer — the ONLY input to the
  *              acid hue choice, so the street's colour mix is deterministic.
  */
-export function neonSignageFor(kind: NearForegroundKind, index: number): NeonSignage | null {
-  const e = EMITTERS[kind];
+export function neonSignageFor(kind: string, index: number): NeonSignage | null {
+  // Read through the wide key: a generated level's namespaced prop kind is a
+  // legitimate caller (it renders from its own PNG) but never an emitter — the
+  // partial lookup simply yields undefined, i.e. no neon, which is the C1-correct
+  // default for décor whose art was not authored with an emitter anchor.
+  const emitters: Partial<Record<string, Emitter>> = EMITTERS;
+  const e = emitters[kind];
   if (e === undefined) return null;
   return {
     color: e.family === "warm" ? LAMP_WARM : acidHue(index),

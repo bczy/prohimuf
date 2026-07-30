@@ -1,8 +1,9 @@
-import { ARCHETYPES, buildWeightedFrom } from "@game/types/enemyTypes";
-import type { EnemyKind } from "@game/types/enemy";
+import { CORE_ARCHETYPES, archetype, buildWeightedFrom } from "@game/types/enemyTypes";
+import type { CoreEnemyKind, EnemyKind } from "@game/types/enemy";
 import type { VehicleType } from "@game/types/delivery";
-import { LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
+import { ALL_LEVELS, LEVELS, FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 import type { LevelConfig } from "@game/levels/levels";
+import { GENERATED_LEVEL_ART } from "@game/levels/generated";
 import {
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
@@ -75,7 +76,7 @@ function dedupe(paths: readonly string[]): readonly string[] {
  * `_shooting`), and a variant > 1 appends `_<variant>`.
  */
 export function enemyBaseFileKey(kind: EnemyKind, variant: number, shooting: boolean): string {
-  const a = ARCHETYPES[kind];
+  const a = archetype(kind);
   const root = shooting
     ? a.spriteBase === "enemy_sprite"
       ? "enemy_shooting"
@@ -111,7 +112,7 @@ function frameCountForKey(key: string): number {
 // Every idle + (if the archetype shoots) shooting path for one enemy kind, across
 // all its variants and each state's authored frame count.
 function enemyKindPaths(kind: EnemyKind): string[] {
-  const a = ARCHETYPES[kind];
+  const a = archetype(kind);
   const states: boolean[] = a.shoots ? [false, true] : [false];
   const paths: string[] = [];
   for (let variant = 1; variant <= a.variants; variant++) {
@@ -125,8 +126,19 @@ function enemyKindPaths(kind: EnemyKind): string[] {
   return paths;
 }
 
+// ALL_LEVELS, not LEVELS: a generated level is playable but outside the campaign,
+// and resolving it to FIRST_PLAYABLE_LEVEL would preload belliard's roster (its
+// enemy skins, its vehicle) instead of the level actually about to start.
 function levelConfigFor(levelId: string): LevelConfig {
-  return LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
+  return ALL_LEVELS.find((l) => l.id === levelId) ?? FIRST_PLAYABLE_LEVEL;
+}
+
+// The art of a generated level is a projection of its plan, NOT a levelArt.json
+// entry — so every JSON lookup below must consult this first or fall through to
+// the first declared level (belliard). `generated/index.ts` is game-pure and has
+// no import-time dependency on levelArt.ts, which this module still refuses.
+function generatedArtFor(levelId: string) {
+  return GENERATED_LEVEL_ART.find((a) => a.id === levelId);
 }
 
 // Unique enemy kinds actually spawned in a level's windows, mirroring
@@ -135,7 +147,7 @@ function levelConfigFor(levelId: string): LevelConfig {
 function windowPoolKinds(level: LevelConfig): EnemyKind[] {
   const overrides = level.roster?.windowWeights;
   const defaults = Object.fromEntries(
-    (Object.keys(ARCHETYPES) as EnemyKind[]).map((k) => [k, ARCHETYPES[k].weight]),
+    (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).map((k) => [k, CORE_ARCHETYPES[k].weight]),
   ) as Record<EnemyKind, number>;
   const pool = buildWeightedFrom({ ...defaults, ...overrides });
   return [...new Set(pool)];
@@ -252,6 +264,12 @@ function resolveLevelArtId(levelId: string): string {
  * required for a complete playable frame and need not gate the loading screen.
  */
 export function levelLayerPaths(levelId: string): readonly string[] {
+  const generated = generatedArtFor(levelId)?.backdrop;
+  // A generated level is single-wide by contract (`LevelPlan.backdrop`): one opaque
+  // image, warmed alone — the same branch the JSON path takes below.
+  if (generated?.mode === "single-wide") {
+    return [`assets/levels/${levelId}/${generated.file}.png`];
+  }
   const id = resolveLevelArtId(levelId);
   const lvl = levelArt.levels.find((l) => l.id === id) as
     | { backdrop?: { mode?: string; file?: string; tiles?: readonly { file: string }[] } }
@@ -290,11 +308,14 @@ export function facadeBackdropPath(): string {
  * De-duplicated; empty for a level that opts out (no `nearForeground` field).
  */
 export function nearForegroundPaths(levelId: string): readonly string[] {
+  const generated = generatedArtFor(levelId);
   const id = resolveLevelArtId(levelId);
   const lvl = levelArt.levels.find((l) => l.id === id) as
     | { nearForeground?: { objects: readonly { kind: string }[] } }
     | undefined;
-  const objects = lvl?.nearForeground?.objects;
+  // The generated props come from the plan, never from the JSON (whose fallback
+  // would hand the level belliard's kerb).
+  const objects = (generated ?? lvl)?.nearForeground?.objects;
   if (objects === undefined) return [];
   return dedupe(objects.map((o) => `nearfg:${o.kind}`));
 }

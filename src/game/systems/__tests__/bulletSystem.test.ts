@@ -8,13 +8,13 @@ import {
 } from "@game/systems/bulletSystem";
 import { crosshairToWorld } from "@game/systems/crosshairSystem";
 import type { Crosshair } from "@game/types/crosshair";
-import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
+import type { CoreEnemyKind, Enemy, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
 import type { Vec2 } from "@game/types/vector";
 import type { LootCrate } from "@game/types/loot";
 import type { Bullet } from "@game/types/bullet";
 import { LOOT_STREET_Y } from "@game/systems/lootSystem";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 
 describe("crosshairToWorld (single source of truth — ADR-0002)", () => {
   it("adds cameraOffsetY on the Y axis exactly like cameraOffsetX on the X axis", () => {
@@ -236,10 +236,10 @@ describe("resolvePlayerShot — hittable states (D1.4)", () => {
 });
 
 describe("resolvePlayerShot — reward parity with checkBulletHits (AC5)", () => {
-  it.each<EnemyKind>(["normal", "riot", "biker", "bonus", "civilian"])(
-    "a lethal hit on %s yields the ARCHETYPES deltas and the same HitEvent",
+  it.each<CoreEnemyKind>(["normal", "riot", "biker", "bonus", "civilian"])(
+    "a lethal hit on %s yields the CORE_ARCHETYPES deltas and the same HitEvent",
     (kind) => {
-      const a = ARCHETYPES[kind];
+      const a = CORE_ARCHETYPES[kind];
       const facade = facadeWithSlots([{ x: 0, y: 0 }]);
       // hp 1 so this single hit is lethal for every kind (isolates reward parity).
       const enemy = enemyAt(0, { id: 42, kind, hp: 1 });

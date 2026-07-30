@@ -19,6 +19,7 @@ import { CanvasTexture, TextureLoader } from "three";
 import type { Texture } from "three";
 import { nearForegroundArtAsset, trafficLightLenses } from "@game/levels/levelArt";
 import type { NearForegroundKind } from "@game/levels/levelArt";
+import { GENERATED_PLANS } from "@game/levels/generated";
 import { applyPixelFilter } from "./pixelArt";
 import { drawNearForegroundObject, drawSignalLenses, NEAR_KIND_SPECS } from "./nearForegroundArt";
 import { DEFAULT_SIGNAL, type SignalState } from "./trafficSignal";
@@ -28,8 +29,9 @@ import { DEFAULT_SIGNAL, type SignalState } from "./trafficSignal";
 const TEX_H = 512;
 
 // Cache holds the CURRENT best texture per kind: the procedural CanvasTexture until
-// the generated PNG swaps in, so the type is the wider `Texture`.
-const cache = new Map<NearForegroundKind, Texture>();
+// the generated PNG swaps in, so the type is the wider `Texture`. Keys are strings:
+// a pool kind, or a generated level's namespaced prop kind (PNG-only, no procedural).
+const cache = new Map<string, Texture>();
 
 // Procedural fallback textures, retained per kind and NEVER disposed. A live
 // material can still bind the procedural texture after the async swap — the
@@ -41,10 +43,17 @@ const procedural = new Map<NearForegroundKind, CanvasTexture>();
 // Generated-PNG loading — mirror enemyTextures' pending/failed guards so a swap is
 // attempted at most once per kind and can never be re-issued per frame.
 const loader = new TextureLoader();
-const pending = new Set<NearForegroundKind>();
-const failed = new Set<NearForegroundKind>();
-const loaded = new Set<NearForegroundKind>();
+const pending = new Set<string>();
+const failed = new Set<string>();
+const loaded = new Set<string>();
 const base = import.meta.env.BASE_URL;
+
+// Asset path of each generated level's props, keyed by namespaced kind. A generated
+// prop is PNG-or-nothing (spec-level-harness-sp1 §4.5): no procedural drawing exists
+// for it, so a missing/failed PNG leaves NO cache entry and the prop never renders.
+const GENERATED_PROP_ASSETS: Readonly<Record<string, string>> = Object.fromEntries(
+  GENERATED_PLANS.flatMap((p) => p.props.map((prop) => [prop.kind, prop.asset])),
+);
 
 function isKind(kind: string): kind is NearForegroundKind {
   return Object.prototype.hasOwnProperty.call(NEAR_KIND_SPECS, kind);
@@ -87,10 +96,18 @@ function ensureProcedural(kind: NearForegroundKind): Texture | null {
 // / 404 / non-DOM keep the procedural entry. Never throws / never rejects; at most
 // one load per kind (loaded/pending/failed guards).
 function loadGenerated(kind: NearForegroundKind): void {
-  if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
-  if (typeof document === "undefined") return; // non-DOM (node/SSR): keep procedural
   const rel = nearForegroundArtAsset(kind);
   if (rel === null) return; // block absent → procedural stays
+  loadIntoCache(kind, rel);
+}
+
+// The ONE PNG-loading path both loaders share: pending/failed/loaded bookkeeping
+// around a single loader.load, swapping the cache entry on success. Any change to
+// the loading contract (progress callback, base prefixing, failure disposal) lands
+// here once and covers pool kinds and generated props alike.
+function loadIntoCache(kind: string, rel: string): void {
+  if (loaded.has(kind) || pending.has(kind) || failed.has(kind)) return;
+  if (typeof document === "undefined") return; // non-DOM (node/SSR): nothing to load
   pending.add(kind);
   loader.load(
     `${base}${rel}`,
@@ -118,18 +135,34 @@ export function warmNearForegroundTexture(kind: string): Promise<void> {
   if (isKind(kind)) {
     ensureProcedural(kind);
     loadGenerated(kind);
+  } else {
+    loadGeneratedProp(kind);
   }
   return Promise.resolve();
+}
+
+// Async-load a generated level's prop PNG (namespaced kind). Same guards as
+// loadGenerated, but with NO procedural first step: success is the ONLY way this
+// kind ever gets a cache entry, so a 404 simply leaves the prop invisible —
+// silently, never a crash, never a fallback drawing (spec §4.5/§6). Unknown kinds
+// (no asset in any plan) are a no-op.
+function loadGeneratedProp(kind: string): void {
+  const rel = GENERATED_PROP_ASSETS[kind];
+  if (rel === undefined) return;
+  loadIntoCache(kind, rel);
 }
 
 /**
  * The cached texture for a kind (loaded PNG once swapped, else the procedural
  * fallback), building the procedural texture on demand if the gate never warmed it.
- * Null only in non-DOM contexts. Does NOT issue a PNG load — only the loading gate
- * ({@link warmNearForegroundTexture}) does.
+ * A generated (namespaced) kind has NO procedural fallback: null until — and
+ * unless — its PNG loads, which is exactly what keeps an asset-less generated prop
+ * invisible. Null also in non-DOM contexts. Does NOT issue a PNG load — only the
+ * loading gate ({@link warmNearForegroundTexture}) does.
  */
-export function getNearForegroundTexture(kind: NearForegroundKind): Texture | null {
-  return ensureProcedural(kind);
+export function getNearForegroundTexture(kind: string): Texture | null {
+  if (isKind(kind)) return ensureProcedural(kind);
+  return cache.get(kind) ?? null;
 }
 
 // --- Feu tricolore lit-lens overlay ---------------------------------------

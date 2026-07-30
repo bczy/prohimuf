@@ -1,7 +1,7 @@
 import type { SpecialWeaponKind } from "@game/types/weapon";
 
 // The armament crate — a NEW entity, NOT an `EnemyKind` (ADR-0055 D5). Kept
-// structurally off the `ARCHETYPES`/score-lives path so a crate hit can never
+// structurally off the `CORE_ARCHETYPES`/score-lives path so a crate hit can never
 // emit a stray `scoreDelta`/`livesDelta` (AC7-loot). Type-only module.
 
 // Crate lifecycle — reuses the shipped window state-machine shape (§5.2, AC7-loot:

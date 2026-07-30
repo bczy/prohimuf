@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { LEVELS } from "@game/levels/levels";
 import { PRE_LEVEL_NARRATIVE, POST_LEVEL_NARRATIVE } from "@game/systems/narrativeSystem";
-import { ARCHETYPES } from "@game/types/enemyTypes";
-import type { EnemyKind } from "@game/types/enemy";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
+import type { CoreEnemyKind } from "@game/types/enemy";
 import manifest from "../levelArt.json";
 
 /**
@@ -65,7 +65,7 @@ describe("levelArt.json ↔ levels.ts ↔ narrative consistency", () => {
  * block) in sync with the sprite-key scheme the renderer computes in
  * `fileFor()` (src/render/scene/enemyTextures.ts). The manifest keys are the
  * exact base filenames (asset root + legacy variant suffix, no path/extension)
- * derived from ARCHETYPES. A key the renderer never asks for — or a
+ * derived from CORE_ARCHETYPES. A key the renderer never asks for — or a
  * kind/variant/state the manifest forgets — would ship a broken or missing
  * flipbook; these assertions turn that into a failing unit test.
  *
@@ -85,48 +85,52 @@ interface EnemyFlipbookEntry {
 // Mirror of enemyTextures.ts `fileFor()` root computation (kept in the render
 // lane): idle root = spriteBase; shooting root = spriteBase + "_shooting",
 // except the irregular legacy case spriteBase "enemy_sprite" -> "enemy_shooting".
-function root(kind: EnemyKind, shooting: boolean): string {
-  const base = ARCHETYPES[kind].spriteBase;
+function root(kind: CoreEnemyKind, shooting: boolean): string {
+  const base = CORE_ARCHETYPES[kind].spriteBase;
   if (!shooting) return base;
   return base === "enemy_sprite" ? "enemy_shooting" : `${base}_shooting`;
 }
 
 // The variant suffix scheme: variant 1 is the unsuffixed base, 2..N add `_v`.
-function keysFor(kind: EnemyKind, shooting: boolean): string[] {
+function keysFor(kind: CoreEnemyKind, shooting: boolean): string[] {
   const r = root(kind, shooting);
   const keys: string[] = [];
-  for (let v = 1; v <= ARCHETYPES[kind].variants; v += 1) {
+  for (let v = 1; v <= CORE_ARCHETYPES[kind].variants; v += 1) {
     keys.push(v > 1 ? `${r}_${String(v)}` : r);
   }
   return keys;
 }
 
-// Enemy kinds whose sprite art was retired (ADR-0029): they stay in ARCHETYPES
+// Enemy kinds whose sprite art was retired (ADR-0029): they stay in CORE_ARCHETYPES
 // for gameplay (weight 0, shoot-penalty reused by the street courier) but no
 // longer ship an enemy_*.png and the renderer never requests one — the courier
 // draws from the rider flipbook. Excluded from the expected manifest key set, so
 // their absence from levelArt.json is correct and a re-added key would be flagged.
 // Derived from the archetype's own `artRetired` flag — the single source of truth.
-const ART_RETIRED_KINDS = new Set<EnemyKind>(
-  (Object.keys(ARCHETYPES) as EnemyKind[]).filter((k) => ARCHETYPES[k].artRetired === true),
+const ART_RETIRED_KINDS = new Set<CoreEnemyKind>(
+  (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).filter(
+    (k) => CORE_ARCHETYPES[k].artRetired === true,
+  ),
 );
 
 // Every legal base filename the renderer can request: idle for every variant,
 // plus shooting for every variant of archetypes that shoot.
 function allExpectedKeys(): string[] {
-  const kinds = (Object.keys(ARCHETYPES) as EnemyKind[]).filter((k) => !ART_RETIRED_KINDS.has(k));
+  const kinds = (Object.keys(CORE_ARCHETYPES) as CoreEnemyKind[]).filter(
+    (k) => !ART_RETIRED_KINDS.has(k),
+  );
   return kinds.flatMap((kind) => {
     const keys = keysFor(kind, false);
-    if (ARCHETYPES[kind].shoots) keys.push(...keysFor(kind, true));
+    if (CORE_ARCHETYPES[kind].shoots) keys.push(...keysFor(kind, true));
     return keys;
   });
 }
 
-describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", () => {
+describe("levelArt.json enemies flipbook ↔ CORE_ARCHETYPES sprite-key contract", () => {
   const enemies = manifest.enemies;
   const types = enemies.types as Record<string, EnemyFlipbookEntry>;
 
-  it("has no orphan keys: every types key is a legal ARCHETYPES-derived base filename", () => {
+  it("has no orphan keys: every types key is a legal CORE_ARCHETYPES-derived base filename", () => {
     const legal = new Set(allExpectedKeys());
     for (const key of Object.keys(types)) {
       expect(legal.has(key), `unexpected enemy sprite key "${key}"`).toBe(true);
@@ -201,7 +205,7 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
     // Scope guard: bonus is a static pose; a 1-frame flipbook is valid and
     // completeness must NOT demand a second frame for it. (civilian's sprite was
     // retired — ADR-0029 — so it no longer appears in the manifest.)
-    for (const kind of ["bonus"] as EnemyKind[]) {
+    for (const kind of ["bonus"] as CoreEnemyKind[]) {
       const key = root(kind, false); // variant 1, idle
       const entry = types[key];
       expect(entry, `missing idle sprite for ${kind}`).toBeDefined();
@@ -219,7 +223,7 @@ describe("levelArt.json enemies flipbook ↔ ARCHETYPES sprite-key contract", ()
  * a strip-sliced flipbook (ADR 0017).
  *
  * These checks are deliberately LOOSE (vehicles-style register, not the
- * ARCHETYPES-strict enemies register): they validate shape and bounds, not a
+ * CORE_ARCHETYPES-strict enemies register): they validate shape and bounds, not a
  * closed key set — the courier is a single fixed entity, not an archetype
  * table. The manifest is owned by another lane: these tests only *read* it. A
  * failure here is a contract mismatch to report, not a manifest to "fix".

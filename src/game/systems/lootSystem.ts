@@ -4,7 +4,7 @@ import type { LootCrate, LootDrop, LootSpec } from "@game/types/loot";
 
 // Pure armament-crate system (ADR-0055 D5): spawn (with the §5.4 exclusion rule)
 // + the small HIDDEN→APPEARING→VISIBLE state machine. A crate is a NEW entity,
-// structurally off the ARCHETYPES/score-lives path — nothing here touches score,
+// structurally off the CORE_ARCHETYPES/score-lives path — nothing here touches score,
 // lives or the enemy set; a crate hit is resolved by weaponSystem/bulletSystem.
 
 // §5.4 — the crate's column must clear EVERY active engaged column by this gap.

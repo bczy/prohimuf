@@ -1,5 +1,6 @@
 import manifest from "./levelArt.json";
 import generatedZones from "./windowZones.generated.json";
+import { GENERATED_LEVEL_ART } from "@game/levels/generated";
 import type { WindowSlot } from "@game/types/map";
 
 export type LayerName = "sky" | "facade" | "street" | "foreground";
@@ -98,8 +99,16 @@ export type NearForegroundKind =
   | "bench"
   | "streetSign";
 
-export interface NearForegroundObject {
-  readonly kind: NearForegroundKind;
+/**
+ * A prop declared by a generated level (spec-level-harness-sp1 §4.5), namespaced
+ * `<levelId>:<name>`. It carries its world sizing in its plan instead of
+ * `NEAR_KIND_SPECS`, and has no procedural fallback drawing: without its PNG it
+ * simply does not show.
+ */
+export type GeneratedPropKind = `${string}:${string}`;
+
+interface NearForegroundObjectOf<K extends string> {
+  readonly kind: K;
   /** Anchor x in full-street normalized units (0 = left edge of the street, 1 = right edge). */
   readonly x: number;
   readonly scale?: number; // default 1
@@ -108,10 +117,39 @@ export interface NearForegroundObject {
   readonly row?: "near" | "far";
 }
 
+/** A prop of the global pool, validated: what the render layer actually draws. */
+export type NearForegroundObject = NearForegroundObjectOf<NearForegroundKind>;
+
+/**
+ * A validated, drawable prop: a pool kind, or a generated level's OWN prop (its
+ * namespaced kind — `getNearForeground` only lets through the requesting level's).
+ * This is what {@link NearForegroundLayer} carries since generated props became
+ * renderable (spec-level-harness-sp1 §4.5); render-side sizing goes through
+ * `nearKindSpec`, which resolves a generated kind from its plan.
+ */
+export type DrawableNearForegroundObject = NearForegroundObjectOf<
+  NearForegroundKind | GeneratedPropKind
+>;
+
+/**
+ * A prop as AUTHORED: a pool kind, or a generated level's own prop. Deliberately a
+ * bare alias of {@link DrawableNearForegroundObject} — the names document which side
+ * of `getNearForeground`'s validation a value sits on, but TypeScript's structural
+ * typing enforces NOTHING between them (no nominal brand); do not rely on the
+ * distinction for safety, only `getNearForeground` filters.
+ */
+export type AuthoredNearForegroundObject = DrawableNearForegroundObject;
+
 export interface NearForegroundLayer {
   /** Engine parallax factor (NEGATIVE). mesh.x = camera.x * factor; screen speed S = 1 - factor. */
   readonly factor: number;
-  readonly objects: readonly NearForegroundObject[];
+  readonly objects: readonly DrawableNearForegroundObject[];
+}
+
+/** The layer as authored on a level, before `getNearForeground` validates it. */
+export interface AuthoredNearForegroundLayer {
+  readonly factor: number;
+  readonly objects: readonly AuthoredNearForegroundObject[];
 }
 
 /**
@@ -199,8 +237,9 @@ export interface LevelArt {
   readonly windowGrid?: WindowGrid;
   /** Hand-authored window zones (level design); takes priority over windowGrid. */
   readonly windows?: WindowRows;
-  /** Near-foreground parallax layer (ADR-0047); absent = opt-out for this level. */
-  readonly nearForeground?: NearForegroundLayer;
+  /** Near-foreground parallax layer (ADR-0047); absent = opt-out for this level.
+   *  Authored shape: `getNearForeground` is what narrows it to drawable props. */
+  readonly nearForeground?: AuthoredNearForegroundLayer;
 }
 
 const LEVELS = manifest.levels as readonly LevelArt[];
@@ -215,12 +254,17 @@ function requireFirstLevel(): LevelArt {
 
 const FIRST_LEVEL = requireFirstLevel();
 
-/** All level-art definitions, in declaration order. */
-export const LEVEL_ART_LIST: readonly LevelArt[] = LEVELS;
+/**
+ * All level-art definitions, in declaration order: the manifest's first, then the
+ * harness-generated ones (spec-level-harness-sp1 §4.3). The manifest keeps the HEAD
+ * of the list on purpose — `FIRST_LEVEL`, the fallback of {@link getLevelArt}, is
+ * read off `LEVELS[0]` and must stay belliard whatever the harness declares.
+ */
+export const LEVEL_ART_LIST: readonly LevelArt[] = [...LEVELS, ...GENERATED_LEVEL_ART];
 
 /** Lookup by level id. */
 export const LEVEL_ART: Readonly<Record<string, LevelArt>> = Object.fromEntries(
-  LEVELS.map((l) => [l.id, l]),
+  LEVEL_ART_LIST.map((l) => [l.id, l]),
 );
 
 export const LAYER_NAMES: readonly LayerName[] = ["sky", "facade", "street"];
@@ -283,6 +327,16 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
   typeof kind === "string" && (NEAR_FOREGROUND_KINDS as readonly string[]).includes(kind);
 
 /**
+ * A generated prop kind OWNED by `ownerId` — `<ownerId>:<name>` with a non-empty
+ * name. Ownership is the whole check: a foreign level's namespaced kind is dropped
+ * exactly like an unknown pool kind, so a generated level can only ever draw the
+ * props its own plan declares (validateLevelPlan enforces the same rule at CI time;
+ * this is the runtime source-hardening twin).
+ */
+const isOwnedGeneratedPropKind = (kind: unknown, ownerId: string): kind is GeneratedPropKind =>
+  typeof kind === "string" && kind.startsWith(`${ownerId}:`) && kind.length > ownerId.length + 1;
+
+/**
  * The near-foreground parallax layer for a level (ADR-0047), or `null` when the
  * level opts out (no `nearForeground` field) or the id is unknown. Unlike
  * {@link getLevelArt} this does NOT fall back to the first level: an unknown id
@@ -292,11 +346,16 @@ const isNearForegroundKind = (kind: unknown): kind is NearForegroundKind =>
  * clamped to [-0.5, -0.1] — a non-finite value first falls back to a safe
  * default so `NaN` cannot leak through the clamp. Objects with an unknown `kind`
  * or a non-finite `x` are dropped; an object whose `scale` is present but
- * non-positive or non-finite is normalized to `1`.
+ * non-positive or non-finite is normalized to `1`. An object is KEPT when its
+ * kind is a pool kind OR is namespaced under this level's own id
+ * (`isOwnedGeneratedPropKind` — ADR-0075 §4.5, generated props render for their
+ * owner); a namespaced kind belonging to a DIFFERENT level is dropped, exactly
+ * like an unknown pool kind.
  */
 export function getNearForeground(id: string | undefined): NearForegroundLayer | null {
   const art = id !== undefined ? LEVEL_ART[id] : undefined;
-  const layer = art?.nearForeground;
+  if (art === undefined) return null;
+  const layer = art.nearForeground;
   if (layer === undefined) return null;
 
   const rawFactor = Number.isFinite(layer.factor) ? layer.factor : NEAR_FOREGROUND_FACTOR_DEFAULT;
@@ -306,7 +365,11 @@ export function getNearForeground(id: string | undefined): NearForegroundLayer |
   );
 
   const objects = layer.objects
-    .filter((obj) => isNearForegroundKind(obj.kind) && Number.isFinite(obj.x))
+    .filter(
+      (obj): obj is DrawableNearForegroundObject =>
+        (isNearForegroundKind(obj.kind) || isOwnedGeneratedPropKind(obj.kind, art.id)) &&
+        Number.isFinite(obj.x),
+    )
     .map((obj) =>
       obj.scale === undefined || (Number.isFinite(obj.scale) && obj.scale > 0)
         ? obj

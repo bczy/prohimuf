@@ -10,7 +10,7 @@ import type { Courier } from "@game/types/courier";
 import type { FacadeMap } from "@game/types/map";
 import type { LootCrate } from "@game/types/loot";
 import type { Vec2 } from "@game/types/vector";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 
 const centre: Crosshair = { position: { x: 0.5, y: 0.5 } }; // → world (0,0)
 // Aim at the crate's street row (world y = LOOT_STREET_Y) under the default 18×12
@@ -188,7 +188,7 @@ describe("resolveTrigger — C spread (AC4): 3 simultaneous resolutions at ±2 u
 });
 
 describe("resolveTrigger — discrimination integrity (AC5): full penalty per resolution, no amnesty", () => {
-  const civ = ARCHETYPES.civilian;
+  const civ = CORE_ARCHETYPES.civilian;
 
   it("a spread press landing on 3 couriers charges the civilian penalty 3 times", () => {
     const facade = facadeWithSlots([{ x: 100, y: 100 }]); // no window hits

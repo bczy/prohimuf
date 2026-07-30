@@ -77,7 +77,7 @@ export interface GameState {
   // to ADR-0040). Frozen through a QTE (rides `...state`, D7).
   readonly weapon: WeaponState;
   // The single in-flight armament crate, or null (ADR-0055 D5). Off the
-  // `ARCHETYPES`/score-lives path — a crate hit equips only, never scores.
+  // `CORE_ARCHETYPES`/score-lives path — a crate hit equips only, never scores.
   readonly loot: LootCrate | null;
   // Per-level loot config (null = no crates this level; parallels `deliverySpec`).
   readonly lootSpec: LootSpec | null;

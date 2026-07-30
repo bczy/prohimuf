@@ -1,7 +1,14 @@
 import type { LevelConfig } from "@game/types/level";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { hasArchetype, knownKinds } from "@game/types/enemyTypes";
+// Side-effect import, DELIBERATE (panel run-8): `hasArchetype`/`knownKinds` read the
+// generated registry in `enemyTypes`, populated only by `generated/index.ts`'s module
+// body. A STANDALONE consumer (story ③'s MCP `validate` tool) imports this module in
+// isolation — without this line, every legitimate generated kind would report
+// `unknown-enemy-kind` purely by import order. This is NOT the catalogue: the
+// "never import levels.data.ts" rule below still holds.
+import "@game/levels/generated";
 import { QTE_RESULT_HOLD } from "@game/systems/qteSystem";
 
 /**
@@ -94,18 +101,38 @@ export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
   if (marginIssue !== null) issues.push(marginIssue);
 
   // 2 — every `roster.windowWeights` slot must be a real enemy kind. `EnemyKind` is a bare
-  // union with no runtime value; `ARCHETYPES`'s keys are the existing runtime source.
+  // union with no runtime value; `hasArchetype` (core table + the generated-level registry,
+  // SP1) is the runtime source — validation-side, no silent `normal` fallback.
+  //
+  // A namespaced kind (`levelId:name`) additionally belongs to ONE level: the one whose id
+  // is its prefix. `validateLevelPlan` enforces that on the harness authoring path, but this
+  // validator is the gate for every OTHER path (hand-authored configs, story ③'s MCP edits),
+  // and the runtime resolvers (`buildWeightedFrom`, `archetype`) are deliberately global —
+  // so without this check a config could spawn another level's authored enemy in its pool.
   const windowWeights = config.roster?.windowWeights;
   if (windowWeights !== undefined) {
     for (const slot of Object.keys(windowWeights)) {
-      if (!Object.prototype.hasOwnProperty.call(ARCHETYPES, slot)) {
+      if (!hasArchetype(slot)) {
         issues.push({
           code: "unknown-enemy-kind",
           severity: "error",
           field: `roster.windowWeights.${slot}`,
           message:
             `Unknown window spawn slot "${slot}": roster.windowWeights may only key real enemy ` +
-            `kinds (${Object.keys(ARCHETYPES).join(", ")}).`,
+            `kinds (${knownKinds().join(", ")}).`,
+        });
+      } else if (slot.includes(":") && !slot.startsWith(`${config.id}:`)) {
+        // Ownership = FULL-id prefix, the same rule as validateLevelPlan's `ns` and
+        // levelArt's isOwnedGeneratedPropKind — never a split on the first colon,
+        // which would mis-own kinds of a level whose id itself contains ':'.
+        issues.push({
+          code: "foreign-enemy-kind",
+          severity: "error",
+          field: `roster.windowWeights.${slot}`,
+          message:
+            `Foreign window spawn slot "${slot}": a namespaced kind may only appear in the ` +
+            `pool of the level whose id prefixes it — not "${config.id}". A generated ` +
+            `archetype never leaks into another level's pool.`,
         });
       }
     }

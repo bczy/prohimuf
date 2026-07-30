@@ -4,11 +4,12 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { AdditiveBlending } from "three";
 import type { Group, MeshBasicMaterial } from "three";
 import { getBackdropLayout, getNearForeground } from "@game/levels/levelArt";
-import type { NearForegroundObject } from "@game/levels/levelArt";
+import { mobileVisibleProps } from "@game/levels/levelPlan";
+import type { DrawableNearForegroundObject } from "@game/levels/levelArt";
 import type { GameState } from "@game/types/gameState";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
 import { deriveNearParallaxFactor, nearForegroundBandTop } from "./nearParallax";
-import { NEAR_KIND_SPECS, nearPropPlaneHeight, type NearKindSpec } from "./nearForegroundArt";
+import { nearKindSpec, nearPropPlaneHeight, type NearKindSpec } from "./nearForegroundArt";
 import {
   getNearForegroundTexture,
   getTrafficLightOverlayTexture,
@@ -108,7 +109,7 @@ interface Props {
 }
 
 interface RowProps {
-  objects: readonly { obj: NearForegroundObject; index: number }[];
+  objects: readonly { obj: DrawableNearForegroundObject; index: number }[];
   streetWorldY: number;
   maxH: number;
   rowScale: number;
@@ -153,7 +154,7 @@ function Row({
       {objects.map(({ obj, index }) => {
         const texture = getNearForegroundTexture(obj.kind);
         if (texture === null) return null;
-        const spec: NearKindSpec = NEAR_KIND_SPECS[obj.kind];
+        const spec: NearKindSpec = nearKindSpec(obj.kind);
         const scale = (obj.scale ?? 1) * rowScale;
         // The feu tricolore (hero prop) deliberately breaks the non-occlusion band
         // (ADR-0047 amendment): it bypasses BOTH the band ceiling (`maxH`) and the
@@ -323,12 +324,15 @@ export function NearForeground({
   const nearMaxH = Math.max(0, bandTopWorldY - nearStreetWorldY);
   const farMaxH = Math.max(0, bandTopWorldY - farStreetWorldY);
 
-  // Mobile density halved per row (drop every other on-screen instance by parity).
-  const split = (row: "near" | "far"): { obj: NearForegroundObject; index: number }[] =>
-    layer.objects
-      .map((obj, index) => ({ obj, index }))
-      .filter(({ obj }) => (obj.row ?? "near") === row)
-      .filter((_, i) => !isMobile || i % 2 === 0);
+  // Mobile density halved per row. The halving rule (row filter FIRST, then even
+  // indices of the row's own order) has ONE copy: `mobileVisibleProps` on the game
+  // side (panel run-8) — the pair carries `row` so the shared helper can read it.
+  const split = (row: "near" | "far"): { obj: DrawableNearForegroundObject; index: number }[] => {
+    const pairs = layer.objects.map((obj, index) => ({ obj, index, row: obj.row }));
+    return isMobile
+      ? [...mobileVisibleProps(pairs, row)]
+      : pairs.filter(({ row: r }) => (r ?? "near") === row);
+  };
 
   return (
     <>

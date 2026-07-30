@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getNearForeground, LEVEL_ART_LIST } from "@game/levels/levelArt";
-import type { NearForegroundObject } from "@game/levels/levelArt";
+import type { DrawableNearForegroundObject } from "@game/levels/levelArt";
 
 /**
  * Near-foreground DENSITY + PLACEMENT invariants for the panneau PARIS
@@ -40,10 +40,10 @@ const MIN_SIGN_CLEARANCE = 0.06;
 
 /** Mirrors NearForeground.tsx `split()`: row filter, then mobile parity halving. */
 function drawnRow(
-  objects: readonly NearForegroundObject[],
+  objects: readonly DrawableNearForegroundObject[],
   row: "near" | "far",
   isMobile: boolean,
-): NearForegroundObject[] {
+): DrawableNearForegroundObject[] {
   return objects
     .filter((obj) => (obj.row ?? "near") === row)
     .filter((_, i) => !isMobile || i % 2 === 0);

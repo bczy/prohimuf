@@ -14,12 +14,13 @@ import {
 } from "@game/levels/levelArt";
 import type { WindowSlot } from "@game/types/map";
 import type { WindowZone } from "@game/levels/levelArt";
-import { ARCHETYPES } from "@game/types/enemyTypes";
+import { GENERATED_PLANS } from "@game/levels/generated";
+import { CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
-import { LEVELS } from "@game/levels/levels";
+import { ALL_LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
 import { WindowGrilles } from "./WindowGrilles";
@@ -89,11 +90,16 @@ interface HarnessWindow extends Window {
   __MUF_PROJECT__?: (panel: number, x: number, y: number) => { sx: number; sy: number };
 }
 
-// Widest sprite aspect across all archetypes. The harness box reports this
-// conservative worst case (if the widest occupant fits the opening, every kind
-// fits); __MUF_FREEZE_COPS__ cycles every window kind through the windows
-// (civilian excluded since its window art was retired — ADR-0029).
-const WIDEST_ASPECT = Math.max(...Object.values(ARCHETYPES).map((a) => a.aspect));
+// Widest sprite aspect across all archetypes — core AND level-authored (a
+// generated level may declare an archetype wider than any core kind, and the
+// harness box must keep reporting the true worst case: if the widest occupant
+// fits the opening, every kind fits). __MUF_FREEZE_COPS__ cycles every window
+// kind through the windows (civilian excluded since its window art was
+// retired — ADR-0029).
+const WIDEST_ASPECT = Math.max(
+  ...Object.values(CORE_ARCHETYPES).map((a) => a.aspect),
+  ...GENERATED_PLANS.flatMap((p) => p.archetypes.map((a) => a.aspect)),
+);
 
 // Edge zones and speed (mouse-at-edge scrolling when the level is larger than the view)
 const EDGE_ZONE = 0.12;
@@ -289,8 +295,12 @@ export function GameScene({
   );
 
   // Per-level roster gate (ADR-0004): drives the window pool + street spawns.
-  // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster).
-  const roster = useMemo(() => LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
+  // Absent ⇒ legacy behaviour (stalingrad / vitry carry no roster). Resolved off
+  // ALL_LEVELS (shipped first, so shipped ids resolve identically) because a
+  // generated level's roster is the ONE thing that activates its level-authored
+  // archetypes (ADR-0075 §3) — reading LEVELS here silently played a generated
+  // level on the default pool (panel run-2 MAJEUR on PR #149).
+  const roster = useMemo(() => ALL_LEVELS.find((l) => l.id === levelId)?.roster, [levelId]);
 
   const feedbackRef = useRef<Floater[]>([]);
   const impactChannelRef = useRef<ImpactChannel>({ queue: [], resetNonce: 0 });

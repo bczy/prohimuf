@@ -1,13 +1,13 @@
 import type { Enemy, EnemyKind, EnemyState } from "@game/types/enemy";
 import type { FacadeMap } from "@game/types/map";
-import { ARCHETYPES, pickKind, pickKindFor } from "@game/types/enemyTypes";
+import { archetype, pickKind, pickKindFor } from "@game/types/enemyTypes";
 
 const APPEARING_DURATION = 0.3;
 const SHOOTING_DURATION = 0.5;
 const HIT_DURATION = 0.2;
 
 function durationFor(enemy: Enemy, state: EnemyState): number {
-  const a = ARCHETYPES[enemy.kind];
+  const a = archetype(enemy.kind);
   switch (state) {
     case "HIDDEN":
       return a.hiddenDuration;
@@ -25,7 +25,7 @@ function durationFor(enemy: Enemy, state: EnemyState): number {
 }
 
 function nextState(enemy: Enemy): EnemyState {
-  const a = ARCHETYPES[enemy.kind];
+  const a = archetype(enemy.kind);
   switch (enemy.state) {
     case "HIDDEN":
       return "APPEARING";
@@ -122,14 +122,14 @@ export function spawnWave(
   return usable.slice(0, count).map((slotIndex, i) => {
     const seed = wave * 31 + i * 17 + slotIndex * 7;
     const kind = weights === undefined ? pickKind(seed) : pickKindFor(seed, weights);
-    const archetype = ARCHETYPES[kind];
+    const a = archetype(kind);
     return {
       id: wave * 100 + i,
       slotIndex,
       state: "HIDDEN" as const,
-      timer: archetype.hiddenDuration * (1 + i * 0.3),
+      timer: a.hiddenDuration * (1 + i * 0.3),
       kind,
-      hp: archetype.hp,
+      hp: a.hp,
     };
   });
 }
