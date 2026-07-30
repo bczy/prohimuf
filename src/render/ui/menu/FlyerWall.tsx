@@ -41,6 +41,14 @@ interface FlyerMeta {
 }
 
 /**
+ * Delay between two consecutive flyers' entrances, ms. EXPORTED so the test asserts the
+ * real step rather than re-typing the number: a test that only pinned "delays increase"
+ * stayed green when the step shrank to a couple of ms, which silently destroys the
+ * cascade this feature exists to produce.
+ */
+export const FLOAT_IN_STAGGER_MS = 180;
+
+/**
  * Float-in fall paths (drop height, drift amplitude/direction, rotation) for the
  * `--fio-*` custom properties consumed by FlyerWall.module.css's `mufFlyerFloatIn`
  * keyframe. Three deterministic variants cycled by flyer index — same doctrine as the
@@ -341,7 +349,7 @@ export function FlyerWall({
               // one sheet at a time instead of all at once, each on its own fall path.
               style={
                 {
-                  "--slot-delay": `${String(i * 180)}ms`,
+                  "--slot-delay": `${String(i * FLOAT_IN_STAGGER_MS)}ms`,
                   ...FLYER_FLOAT_IN_VARIANTS[i % FLYER_FLOAT_IN_VARIANTS.length],
                 } as React.CSSProperties
               }

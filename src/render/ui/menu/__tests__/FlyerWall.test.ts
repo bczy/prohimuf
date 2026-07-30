@@ -10,6 +10,7 @@ import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import {
+  FLOAT_IN_STAGGER_MS,
   FlyerWall,
   buildPressionChoices,
   hasSeenTutorialNudge,
@@ -202,14 +203,17 @@ describe("FlyerWall float-in entrance — per-slot wiring", () => {
     expect(slotStyles.every((s) => s.includes("--slot-delay"))).toBe(true);
   });
 
-  it("staggers --slot-delay by list position, starting at zero", () => {
+  it("staggers --slot-delay by exactly FLOAT_IN_STAGGER_MS per position", () => {
     const delays = slotStyles.map((s) => Number(/--slot-delay:\s*(-?\d+)ms/.exec(s)?.[1]));
     expect(delays[0]).toBe(0);
-    // Strictly increasing: a constant (or reset) delay would mean the wall lands at once,
-    // which is precisely the "all at the same time" look this feature replaced.
-    // `?? Infinity` keeps this assertion-free and still fails on a missing value.
-    const strictlyIncreasing = delays.every((d, i) => i === 0 || d > (delays[i - 1] ?? Infinity));
-    expect(strictlyIncreasing).toBe(true);
+    // Pin the actual STEP, not just monotonicity. Asserting "delays increase" let the
+    // cascade be destroyed while staying green: shrinking the stagger to a couple of ms
+    // still increases, but every flyer then lands at once — the very look this feature
+    // replaced. Compared against the exported constant so the test cannot drift from
+    // the component by restating the number.
+    for (let i = 1; i < delays.length; i++) {
+      expect(delays[i]).toBe(i * FLOAT_IN_STAGGER_MS);
+    }
   });
 
   it("does not give two consecutive flyers the same fall path", () => {

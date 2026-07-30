@@ -104,10 +104,17 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
 export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   await page.locator(".muf-flyer-slot").first().waitFor({ timeout });
   await page.waitForFunction(
-    () =>
-      Array.from(document.querySelectorAll(".muf-flyer-slot")).every((el) =>
-        el.getAnimations().every((a) => a.playState === "finished"),
-      ),
+    () => {
+      const slots = Array.from(document.querySelectorAll(".muf-flyer-slot"));
+      // `.every()` on an EMPTY array is true, so without this length guard the predicate
+      // reports "settled" on any poll tick where no slot exists. FlyerWall is mounted
+      // conditionally and unmounts fully on every rubrique round-trip, and the waitFor
+      // above only proves a slot existed at that earlier instant — not at this one.
+      return (
+        slots.length > 0 &&
+        slots.every((el) => el.getAnimations().every((a) => a.playState === "finished"))
+      );
+    },
     undefined,
     { timeout },
   );
