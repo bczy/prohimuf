@@ -26,7 +26,6 @@ export function createRunStats(heartsAtStart: number): RunStats {
     heartsAtStart,
     deliveryOutcome: null,
     deliveryIntegrityAtLatch: null,
-    deliveryIntegrityMaxAtLatch: null,
   };
 }
 
@@ -57,9 +56,6 @@ export function foldRunStats(prev: RunStats, facts: RunStatsTickFacts): RunStats
     heartsAtStart: prev.heartsAtStart,
     deliveryOutcome: latching ? facts.deliveryOutcome : prev.deliveryOutcome,
     deliveryIntegrityAtLatch: latching ? facts.deliveryIntegrity : prev.deliveryIntegrityAtLatch,
-    deliveryIntegrityMaxAtLatch: latching
-      ? facts.deliveryIntegrityMax
-      : prev.deliveryIntegrityMaxAtLatch,
   };
 }
 
@@ -94,9 +90,13 @@ function deriveDelivery(state: GameState): DeliverySummary | null {
 
   if (stats.deliveryOutcome === "FAILED") return { issue: "PERDUE", integrityPct: null };
   if (stats.deliveryOutcome === "SUCCESS") {
+    // `integrityMax` is seeded once and never mutated, so the live vehicle still
+    // carries the denominator of the latch tick.
     const integrity = stats.deliveryIntegrityAtLatch ?? 0;
-    const max = stats.deliveryIntegrityMaxAtLatch ?? deliveryVehicle.integrityMax;
-    return { issue: "REUSSIE", integrityPct: integrityPct(integrity, max) };
+    return {
+      issue: "REUSSIE",
+      integrityPct: integrityPct(integrity, deliveryVehicle.integrityMax),
+    };
   }
   // No latch: either the run ended while the vehicle was on the street (neither a
   // success nor a failure — spec D2.2.5), or it ended before the scripted trigger.

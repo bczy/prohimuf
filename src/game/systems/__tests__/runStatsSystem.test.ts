@@ -16,7 +16,6 @@ const NO_FACTS: RunStatsTickFacts = {
   faultLivesLost: 0,
   deliveryOutcome: null,
   deliveryIntegrity: null,
-  deliveryIntegrityMax: null,
 };
 
 const facts = (over: Partial<RunStatsTickFacts>): RunStatsTickFacts => ({ ...NO_FACTS, ...over });
@@ -71,7 +70,6 @@ describe("createRunStats", () => {
       heartsAtStart: 3,
       deliveryOutcome: null,
       deliveryIntegrityAtLatch: null,
-      deliveryIntegrityMaxAtLatch: null,
     } satisfies RunStats);
   });
 
@@ -155,19 +153,18 @@ describe("foldRunStats — delivery latch", () => {
   it("latches the outcome and the integrity of the transition tick", () => {
     const s = foldRunStats(
       createRunStats(3),
-      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 78, deliveryIntegrityMax: 100 }),
+      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 78 }),
     );
     expect(s).toMatchObject({
       deliveryOutcome: "SUCCESS",
       deliveryIntegrityAtLatch: 78,
-      deliveryIntegrityMaxAtLatch: 100,
     });
   });
 
   it("never re-writes the latch — a SUCCESS followed by anything stays SUCCESS (D2.2.5)", () => {
     let s = foldRunStats(
       createRunStats(3),
-      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 78, deliveryIntegrityMax: 100 }),
+      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 78 }),
     );
     s = foldRunStats(s, facts({ deliveryOutcome: "FAILED", deliveryIntegrity: 0 }));
     s = foldRunStats(s, facts({ damageTaken: 0.25 }));
@@ -274,7 +271,7 @@ describe("buildRunSummary — delivery issue (spec D2.2.3)", () => {
   it("REUSSIE with a FLOORED integrity percentage (D2.2.4 — 99.6 ⇒ 99)", () => {
     const stats = foldRunStats(
       createRunStats(3),
-      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 99.6, deliveryIntegrityMax: 100 }),
+      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 99.6 }),
     );
     expect(buildRunSummary(withDelivery({ stats })).delivery).toEqual({
       issue: "REUSSIE",
@@ -285,7 +282,7 @@ describe("buildRunSummary — delivery issue (spec D2.2.3)", () => {
   it("PERDUE carries no percentage — it is 0 by construction", () => {
     const stats = foldRunStats(
       createRunStats(3),
-      facts({ deliveryOutcome: "FAILED", deliveryIntegrity: 0, deliveryIntegrityMax: 100 }),
+      facts({ deliveryOutcome: "FAILED", deliveryIntegrity: 0 }),
     );
     expect(buildRunSummary(withDelivery({ stats })).delivery).toEqual({
       issue: "PERDUE",
@@ -296,7 +293,7 @@ describe("buildRunSummary — delivery issue (spec D2.2.3)", () => {
   it("stays REUSSIE when the run later ends in GAME_OVER (D2.2.5)", () => {
     const stats = foldRunStats(
       createRunStats(3),
-      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 100, deliveryIntegrityMax: 100 }),
+      facts({ deliveryOutcome: "SUCCESS", deliveryIntegrity: 100 }),
     );
     // The vehicle is long GONE by then — the latch is the only readable source.
     const s = withDelivery({

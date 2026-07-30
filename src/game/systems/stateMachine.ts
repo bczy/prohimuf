@@ -633,7 +633,6 @@ export function tickGameState(
     faultLivesLost: -trigger.faultLivesDelta,
     deliveryOutcome: deliveryOutcomeThisTick,
     deliveryIntegrity: deliveryVehicle?.integrity ?? null,
-    deliveryIntegrityMax: deliveryVehicle?.integrityMax ?? null,
   });
 
   if (newLives <= 0) {

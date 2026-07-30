@@ -59,10 +59,12 @@ export interface RunStats {
   readonly heartsAtStart: number;
   /** The latched delivery outcome, written once, never re-written (spec D2.2.2). */
   readonly deliveryOutcome: "SUCCESS" | "FAILED" | null;
-  /** Vehicle integrity at the latch tick, `null` while no outcome is latched. */
+  /**
+   * Vehicle integrity at the latch tick, `null` while no outcome is latched. The
+   * gauge MAXIMUM is not recorded: it is seeded once from the spec and never
+   * mutated, so it is still readable from the vehicle at the end of the run.
+   */
   readonly deliveryIntegrityAtLatch: number | null;
-  /** Vehicle integrity maximum at the latch tick, `null` while none is latched. */
-  readonly deliveryIntegrityMaxAtLatch: number | null;
 }
 
 /**
@@ -82,8 +84,6 @@ export interface RunStatsTickFacts {
   readonly deliveryOutcome: "SUCCESS" | "FAILED" | null;
   /** Vehicle integrity on that transition tick (ignored when outcome is `null`). */
   readonly deliveryIntegrity: number | null;
-  /** Vehicle integrity max on that transition tick (ignored when outcome is `null`). */
-  readonly deliveryIntegrityMax: number | null;
 }
 
 /** The pickups line of the summary — `null` on a level that authors no crates. */
