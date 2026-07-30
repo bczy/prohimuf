@@ -214,7 +214,8 @@
   ["0071","0071-offscreen-enemies-frozen.md","Un ennemi hors-champ est gelé : il ne peut pas tirer","Proposed","proposed","La façade d'un niveau est nettement plus large que le cadre : `FACADE01` s'étale sur ~38 unités monde pour un viewport de `VIEWW = 18`, et les niveaux livrés composent leurs slots depuis les zones…"],
   ["0072","0072-delivery-assault-reserved-slots.md","Assaut de livraison : slots réservés au niveau et identité par plage d'id","Proposed","proposed","ADR-0071 gèle les ennemis hors-champ."],
   ["0073","0073-tutorial-immersion-narrative-contract.md","Tutorial immersion narrative contract (decor context + mechanic cue diagrams)","Accepted","accepted","The current tutorial contract is intentionally simple:"],
-  ["0074","0074-level-data-module-and-validate-level.md","Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants","Proposed","proposed","The level catalogue module mixed three unrelated concerns in one 441-line file, which blocks the whole level-editor track that follows it."]
+  ["0074","0074-level-data-module-and-validate-level.md","Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants","Proposed","proposed","The level catalogue module mixed three unrelated concerns in one 441-line file, which blocks the whole level-editor track that follows it."],
+  ["0075","0075-level-plan-composable-generated-levels.md","Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/`","Proposed","proposed","The level harness (SP1 of three sub-projects) needs a level to be describable entirely as data: backdrop, per-level enemy skins, at most one level-authored archetype, per-level props, tuning, fiction."]
       ];
       const rows = document.getElementById("rows");
       const q = document.getElementById("q");
