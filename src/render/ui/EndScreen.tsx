@@ -50,8 +50,8 @@ export function EndScreen({
   // arrow would be a new function on every render, so React would re-invoke it
   // (null, then the element) on EVERY re-render — re-selecting and stealing the
   // focus each time the detail panel toggles, the aria-live text changes or the
-  // 2.5 s feedback timer expires. Keyed on the payload VALUE: the same string
-  // across re-renders is one selection, a new copy attempt is a new one.
+  // 2.5 s feedback timer expires. Keyed on the payload VALUE: the summary is
+  // frozen, so the payload never changes once revealed — one selection per run.
   const fallbackRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (payload === null) return;

@@ -119,6 +119,20 @@ Story: [`_bmad-output/planning-artifacts/story-run-stats-system.md`](../../_bmad
   de fin n'a jamais de négatif ni de signe à gérer. Aucune autre clause impactée — le score
   reste le phare H1, lu tel quel.
 
+- **Amendement 2026-07-30 (transcription §6.2, finding B — pas de re-gate)** : 2e ligne du
+  tableau D2.3.4 remplacée **verbatim** par les mots de Winston — l'écrêtage passe du plafond
+  global « jauge de départ » à un **écrêtage par tick contre la jauge vivante**, et le total de
+  la run n'est plus plafonné (une caisse de soin rend des cœurs, donc l'exposition cumulée peut
+  légitimement dépasser la jauge de départ : `4,5 ♥` sur une jauge de 3 est un fait, pas un
+  bug). D2.3.3 **inchangée** — l'amendement va dans son sens (« la mesure porte sur
+  l'exposition, pas sur le solde ») ; c'est précisément le plafond global qui la contredisait.
+  **Un ajustement de cohérence que le renvoi exigeait : AC-6** (§6) reprenait mot pour mot le
+  plafond global supprimé et serait devenu autocontradictoire au stage 5. Reformulé sur
+  l'intention que Winston déclare tenir (écrêtage du **tick**), et dédoublé en deux tests :
+  (a) coup fatal surdimensionné ⇒ le tick compte le reste réel ; (b) soin puis exposition
+  supérieure à la jauge de départ ⇒ le total la dépasse. Aucune règle de jeu touchée, aucune
+  autre clause modifiée.
+
 - next: `ux-designer` (en parallèle, contrats de lecture et d'entrée D3.4/D3.5 à satisfaire) →
   **gate `lead-game-designer`** (Karim) sur cette spec + la passe UX → `senior-architect`
   (plan tech + contenu ADR-0076). Aucune lane dev ne démarre avant le PASS du gate.
@@ -546,6 +560,216 @@ A, importé par B. `src/render/ui/hud/types.ts` est bien lane B (`HudData` vit c
   dérive du contrat §4.2 (render lisant `stats`, réimplémentation d'un builder, édition croisée
   de `runStats.ts`) remonte ici avant d'être codée.
 
+## 6. PANEL DE REVUE + TRIAGE / REVUE D'INTÉGRATION — senior-architect (Winston) — 2026-07-30
+
+- claim: stage 6 sur `feat/run-stats-system` — triage des 6 findings du panel 4 reviewers,
+  arbitrage de la tension de spec sur l'overheal, revue d'intégration (frontières, seams,
+  dépendances) en **un seul passage** sur le diff. /
+  release: **NO-MERGE conditionnel** — 3 correctifs requis (A, B, C) + 1 nit requis + 1
+  correction de commentaire. Aucun n'est structurel : le contrat §4.2 tient, la loi de
+  frontière tient, aucune décision d'ADR-0076 n'est remise en cause.
+
+### 6.1 Triage — un verdict par finding
+
+| #   | Finding                                                                 | Verdict                                                                               | Lane                                             |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| A   | `App.tsx` — dep `hudData.runSummary` re-déclenche l'effet de fin de run | **CONFIRMÉ, BLOQUANT — fix prescrit**                                                 | `dev-r3f-render`                                 |
+| B   | Plafond `heartsAtStart` vs overheal des caisses                         | **CONFIRMÉ — spec ET code à corriger** (arbitrage §6.2)                               | `dev-gameplay` (+ `game-designer` pour les mots) |
+| C   | `EndScreen` — ref callback inline du `<textarea>`                       | **CONFIRMÉ, BLOQUANT — fix prescrit**                                                 | `dev-r3f-render`                                 |
+| D   | `useRunReport` — 2e copie ne ré-arme pas le timer 2,5 s                 | **CONFIRMÉ — fix requis** (promu au-dessus de nit : casse une promesse d'interaction) | `dev-r3f-render`                                 |
+| E   | `runFunnelSystem` — branche `QUOTA` de belliard « inatteignable »       | **PARTIELLEMENT REJETÉ** — le code reste, le commentaire change                       | `dev-gameplay`                                   |
+| F   | Garde `integrityMax > 0` + clamp des magnitudes négatives               | **REJETÉ, motivé**                                                                    | —                                                |
+
+**A — vérifié dans le build, c'est bien une régression neuve.** Le commentaire de
+`useGameLoop.ts:658-661` (« the loop early-returns above until a restart ») est **faux** : le
+retour anticipé de `useGameLoop.ts:406-418` est conditionné à une **entrée de redémarrage**, pas
+à la phase terminale. Sans entrée, la boucle continue de ticker, la caméra continue de bouger, et
+le terme `!isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection)` peut
+re-déclencher un push HUD en phase terminale. Chaque push fabrique un **nouvel objet**
+`RunSummary` ⇒ nouvelle identité ⇒ effet relancé ⇒ `saveScore` en double (aucun dédoublonnage
+dans `highScoreSystem.ts:81-92`) et `clearTimeout` du minuteur 1500 ms.
+**Fix prescrit :** garder l'effet sur des dépendances **à valeur stable** et le rendre
+**idempotent par run** — un `useRef` de garde armé sur l'identité de la run (`gameKey`), qui
+autorise le bloc de persistance **une fois par run**, `runSummary` étant lu sans figurer dans les
+deps. Ne PAS tenter de stabiliser l'identité du résumé côté `useGameLoop` (un `useMemo` sur un
+objet dérivé d'un `ref` mutable est un piège) — la garde côté effet est la solution simple.
+Corriger aussi le commentaire mensonger de `useGameLoop.ts:658-661` dans le même commit.
+**Observation adjacente (PRÉ-EXISTANTE, hors périmètre de cette branche mais couverte par le même
+fix) :** `unlockedLevels` est déjà dans les deps et `setUnlockedLevels(loadUnlockedLevels())`
+crée un nouveau `Set` ⇒ sur un `LEVEL_COMPLETE` avec déverrouillage et score non qualifiant,
+`saveScore` était **déjà** appelé deux fois. La garde par run l'élimine aussi. À signaler dans le
+corps de PR, pas à traiter comme un finding de cette story.
+
+**C — confirmé.** Une fonction fléchée inline en `ref` est recréée à chaque rendu : React
+l'appelle avec `null` puis avec l'élément **à chaque re-rendu**, donc `el.select()` re-sélectionne
+et vole le focus dès que quoi que ce soit re-rend (ouverture du détail, changement de
+l'annonce `aria-live`, expiration du minuteur de 2,5 s). Le repli AC5 doit rester récupérable et
+non intrusif. **Fix prescrit :** `useRef` + `useEffect` one-shot indexé sur `payload` (une
+sélection à la révélation, plus jamais ensuite).
+
+**D — promu de nit à fix requis.** L'effet a `[state.status]` en deps ; une 2e copie pendant la
+fenêtre réécrit `status: "copied"` (valeur inchangée) ⇒ l'effet ne re-tourne pas ⇒ le minuteur
+n'est pas ré-armé et le retour visuel disparaît avant 2,5 s. UX §2.2 fait du retour après copie
+une promesse explicite ; une promesse qui s'évapore plus tôt selon l'historique des clics est un
+bug d'interaction, pas un détail. **Fix prescrit :** un nonce monotone dans l'état `copied`
+(`{ status: "copied", nonce }`) et l'effet indexé dessus.
+
+**E — rejet partiel, motivé.** Le reviewer a raison sur le fait (`BELLIARD_BOSS_ENABLED = true`,
+`levels.data.ts:32` ⇒ belliard embarque bien un boss aujourd'hui, et
+`stateMachine.ts` ne complète jamais un niveau à boss par le quota, donc `endCause === "QUOTA"`
+est actuellement inatteignable **sur belliard**). Mais la conclusion « sur-ensemble sûr » sous-vend
+la réalité : `BELLIARD_BOSS_ENABLED` est un **seam de découplage typé `as boolean`**, documenté
+comme rabattable à `false` — auquel cas `QUOTA` devient l'**unique** cause atteignable et la
+branche `BOSS_GAGNE` devient la morte. Les deux termes sont donc requis pour la **parité de
+flag**, pas tolérés par prudence. **Le code ne change pas.** Ce qui change : le commentaire et le
+test, qui affirment aujourd'hui que les deux branches sont vivantes. Les reformuler en « les deux
+causes de `LEVEL_COMPLETE` sur belliard, dont une seule est atteignable à la fois selon
+`BELLIARD_BOSS_ENABLED` — ne pas en supprimer une ».
+
+**F — rejeté, motivé.** (a) `integrityMax > 0` : un `DeliverySpec` avec `integrity: 0` produirait
+un véhicule mort-né et casserait `deliverySystem` bien avant d'atteindre les stats. Ajouter une
+garde ici, c'est du code défensif contre un état impossible dans un module qui n'est pas le
+gardien de cette donnée — et si la crainte est réelle, le domicile correct est
+`validateLevel.ts`, pas `runStatsSystem.ts`. (b) Clamp des magnitudes négatives dans
+`foldRunStats` : par ADR-0076 D3, la fonction a **un seul appelant par conception**, qui la
+nourrit de `damageTaken` (dégât d'archétype, positif) et du terme fautes. Un clamp runtime
+paierait une branche par tick pour un état que la structure interdit. **Garder l'invariant en
+test** (monotonie + `damage + faults` jamais négatif), pas en runtime.
+
+### 6.2 Arbitrage overheal (B) — je tranche : **spec ET code**
+
+Le code suit la **lettre** de D2.3.4 (« Plafond = valeur de départ de la jauge ») et viole
+l'**esprit** de D2.3.3 (« la mesure porte sur l'**exposition**, pas sur le solde ») exactement là
+où les deux se croisent. Le cas est **atteignable sur le niveau vitrine** : les caisses de
+belliard rendent des cœurs (`livesDelta: 2`, `levels.data.ts:131`) et `newLives` n'a **aucun
+plafond haut** — une run peut donc exposer 5 ♥ et en afficher 3. Sous-déclaré, jamais
+sur-déclaré, et précisément sur les runs où le joueur a bien joué les caisses. C'est une des 3
+métriques phares, et c'est la donnée qu'un rapport de playtest existe pour porter.
+
+Le **motif** de D2.3.4 est pourtant explicite et étroit : « `3,25 / 3` se lirait comme un bug » —
+la crainte est de **facturer au joueur un dégât qu'il n'a pas subi** au tick fatal (un CRS à 1,0
+sur 0,5 cœur restant). Ce motif est **entièrement servi par un écrêtage par tick contre la jauge
+vivante**. L'écrêtage du total de la run contre la jauge de départ est une sur-généralisation qui
+n'était pas nécessaire au problème posé.
+
+**Ruling :**
+
+1. **Code (`dev-gameplay`)** — l'écrêtage devient **par tick, contre la jauge vivante**, pas
+   contre le total : ajouter `livesBefore: number` à `RunStatsTickFacts` (alimenté par
+   `state.lives`, le tick l'a sous la main au point de pli), puis
+   `damage = Math.min(facts.damageTaken, facts.livesBefore)` et
+   `fault = Math.min(facts.faultLivesLost, facts.livesBefore - damage)`. Supprimer le calcul de
+   `room` contre `heartsAtStart`. `heartsAtStart` **reste** dans `RunStats` et dans l'export
+   (`heartsLost.max`) mais change de sens documenté : **jauge de départ**, plus « plafond du
+   total ». Tests à ajouter : run avec soin de caisse puis exposition > jauge de départ ⇒ le
+   total dépasse `heartsAtStart` ; coup fatal surdimensionné ⇒ toujours écrêté au reste réel
+   (AC-6 tient).
+2. **Spec (`game-designer`, transcription — pas de re-gate,** même catégorie que R1-R5**)** —
+   remplacer la 2e ligne du tableau D2.3.4 par exactement :
+
+   > | Le coup fatal dépasse les cœurs restants (CRS à 1,0 sur 0,5 cœur restant) | La contribution du tick est **écrêtée au contenu réel de la jauge à cet instant** : on ne facture jamais un dégât que le joueur n'a pas subi. Il n'y a **pas** de plafond sur le total de la run : une caisse de soin peut rendre des cœurs, donc l'exposition cumulée peut légitimement dépasser la jauge de départ (`4,5 ♥` sur une jauge de 3 est un fait, pas un bug — cf. D2.3.3, la mesure porte sur l'exposition, pas sur le solde). La jauge de départ reste reportée à part, comme repère de lecture. |
+
+   Le reste de D2.3.3 et D2.3.4 est inchangé. Aucune règle de jeu n'est touchée.
+
+**Note de conception au passage :** l'écran n'affiche **pas** de dénominateur (`x ♥` seul,
+vérifié dans `runStatsLabels.ts`), donc l'amendement ne crée aucun affichage du type `5/3`. Seule
+la charge exportée porte `max`, comme repère.
+
+### 6.3 Revue d'intégration — frontières, seams, dépendances
+
+**Loi de frontière — CONFORME, vérifiée fichier par fichier.**
+
+- `src/game/**` : aucun des 4 nouveaux modules n'importe React, Three, `@render` ou `@hooks`
+  (vérifié par grep sur `runStatsSystem.ts`, `runFunnelSystem.ts`, `runReport.ts`,
+  `types/runStats.ts`). Aucun `Date.now()`, aucun `Math.random()` sur le chemin de comptage.
+- `src/render/**` ne détient **aucune règle** : `runStatsLabels.ts` ne contient que des tables de
+  libellés et un formateur décimal français ; arrondis, précédence de cause et `—`-vs-`0` restent
+  dans la couche pure (ADR-0076 D6).
+- **Contrat §4.2 respecté à la lettre.** Aucun `.stats` lu côté render (les seules occurrences
+  sont des commentaires qui le rappellent, plus un `styles.stats` sans rapport dans
+  `LevelFlyer`). `src/hooks` est le seul pont impur : `useRunReport` n'importe que
+  `buildRunReport`/`serializeRunReport`, `runFunnelStorage` que `parseFunnel`/`withMilestones` —
+  exactement les signatures gelées, zéro réimplémentation.
+- **Un seul fichier partagé, un seul auteur** : `src/game/types/runStats.ts` est écrit par
+  `dev-gameplay` et importé en type-only par 5 fichiers de lane B. Aucun fichier touché par les
+  deux lanes.
+
+**Seams — OK.**
+
+- `NarrativeScreen.onSkip = onDone` par défaut : les 3 sites d'appel existants restent
+  byte-identiques, et la sémantique est juste (un jalon qui se verrouillerait sur le bouton
+  PASSER ferait mentir l'entonnoir).
+- `PREVIEW_END_SUMMARY` : le harnais `?preview=end` avait besoin d'une fixture, elle est isolée,
+  commentée, et le repli `?? PREVIEW_END_SUMMARY` n'est jamais ce qu'un joueur voit. Bon réflexe.
+- Écritures de jalons : les 2 jalons de navigation côté shell, les 2 jalons de run via
+  `milestonesFromRun`, tous en fusion OU, tous inertes sous `?preview=`. D4.3 tenu.
+- `muf_funnel` : aucune lecture ni écriture croisée avec les 4 clés existantes (AC7 tenu).
+
+**Hors périmètre repéré, non bloquant :** `eslint.config.ts` gagne un `.claude/worktrees/**` dans
+les ignorés. C'est de l'hygiène d'outillage sans rapport avec la story, dans un fichier partagé
+qui appartient à `dev-tooling-assets`. Ça débloque réellement les commits, donc je ne le fais pas
+retirer — mais **à déclarer explicitement dans le corps de la PR**, pas à faire passer en
+silence avec une feature.
+
+### 6.4 Verdict
+
+**NO-MERGE en l'état — MERGE dès que les 4 correctifs ci-dessous sont verts.** Aucun n'est
+structurel ; le plan technique du §4 et les décisions d'ADR-0076 tiennent sans amendement.
+
+| Ordre | Correctif                                                                                            | Lane                                         | Vérification                                                                                   |
+| ----- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1     | **A** — garde d'idempotence par run sur l'effet de fin de run + commentaire de `useGameLoop` corrigé | `dev-r3f-render`                             | test de régression : deux pushes HUD terminaux ⇒ **un seul** `saveScore`, minuteur non ré-armé |
+| 2     | **B** — écrêtage par tick contre la jauge vivante + amendement de spec D2.3.4                        | `dev-gameplay` (+ `game-designer` transcrit) | test : soin puis exposition > jauge de départ ⇒ total > `heartsAtStart` ; AC-6 toujours vert   |
+| 3     | **C** — `useRef` + effet one-shot pour la sélection du `<textarea>`                                  | `dev-r3f-render`                             | test : re-rendu après ouverture du détail ⇒ pas de re-sélection                                |
+| 4     | **D** — nonce sur l'état `copied` pour ré-armer le minuteur                                          | `dev-r3f-render`                             | test : 2e copie pendant la fenêtre ⇒ retour visuel tenu 2,5 s de plus                          |
+| 5     | **E** — commentaire + test reformulés (parité de flag), **code inchangé**                            | `dev-gameplay`                               | relecture                                                                                      |
+
+Findings **F** rejetés, motivés ci-dessus — à ne pas rouvrir en second tour.
+Sécurité (lane D) : aucun finding, cohérent avec la garantie structurelle d'ADR-0076 D5 (les
+entrées de `buildRunReport` ne peuvent pas atteindre `muf_player_name`, aucun `fetch` sur le
+chemin).
+
+- next: `dev-r3f-render` (A, C, D) ∥ `dev-gameplay` (B, E) — chemins toujours disjoints, donc en
+  parallèle ; `game-designer` transcrit l'amendement D2.3.4 (pas de re-gate) ; puis re-run ciblé
+  du panel sur le diff des correctifs seulement, et acceptation `pm`.
+
+### 6.5 FIXES — lane `dev-gameplay` (Amelia) — 2026-07-30
+
+- claim/release: **B et E faits, `src/game/**` uniquement, 2 commits atomiques.** B (`242d3563`)
+— `livesBefore`ajouté à`RunStatsTickFacts`, écrêtage par tick contre la jauge vivante
+(`damage`puis`fault`), plafond global `room`vs`heartsAtStart`supprimé,`heartsAtStart`conservé avec son sens redocumenté (jauge de départ, repère de lecture) dans`types/runStats.ts`+`HeartsLostSummary.max`;`stateMachine.ts`alimente`livesBefore:
+  state.lives`au point de pli unique. TDD : test rouge d'abord sur le cas cible (jauge 3 → 3 ♥
+→ caisse +3 → 2 ♥ ⇒ total 5), plus un test de non-régression AC-6 (coup surdimensionné après
+soin toujours écrêté au reste réel) et un test d'intégration`stateMachine`prouvant le câblage
+(jauge de départ 1,`lives` à 3, round de 2 ♥ ⇒ 2 comptés) — rouge sur l'ancien code. E
+(`00f855bb`) — **code inchangé** : commentaire et noms de tests reformulés en parité de flag
+`BELLIARD_BOSS_ENABLED`. Vérif : `rtk tsc`sans erreur, **973 tests`src/game` verts**.
+Aucun fichier hors lane stagé (`EndScreen.tsx`et les 2 docs seulement passés au`prettier --write`pour débloquer`format:check`, non stagés).
+
+### 6.6 FIXES — lane `dev-r3f-render` (Amelia) — 2026-07-30
+
+- claim/release: **A, C et D faits, `src/render/**`+`src/hooks/**` uniquement, 3 commits
+  atomiques, suite verte** (`rtk tsc` sans erreur, 446 tests `src/render` + `src/hooks` verts).
+  A (`95ac4e19`) — garde d'idempotence **par run** (`useRef` armé sur `gameKey`) sur le bloc de
+  persistance de fin de run dans `App.tsx`, deps ramenées à des valeurs stables (`runSummary` et
+  `unlockedLevels` lus HORS deps, sinon leur ré-entrée détruit aussi le minuteur de routage de
+  1500 ms) + commentaire mensonger de `useGameLoop.ts` corrigé (la boucle continue de ticker en
+  phase terminale : la dérivation est idempotente **en valeur**, jamais **en identité**) ;
+  nouveau test d'intégration `src/render/scene/__tests__/appEndOfRun.test.ts` (2 pushes HUD
+  terminaux ⇒ **un seul** `saveScore`, et l'écran de fin arrive quand même à 1500 ms) — **rouge
+  sur l'ancien code** (2 appels), vert après. **Le même garde élimine le double-`saveScore`
+  PRÉ-EXISTANT** via `unlockedLevels` (Set recréé par `setUnlockedLevels`) signalé par Winston —
+  à mentionner dans le corps de PR, ce n'est pas un finding de cette story. C (`f0402d0c`) —
+  `useRef` + effet one-shot indexé sur `payload` pour la sélection du `<textarea>` de repli
+  (test : réouverture/fermeture du détail ⇒ `select()` toujours appelé **une seule** fois).
+  D (`659f92f9`) — nonce monotone dans l'état `copied` (préservé à travers le retour à `idle`),
+  effet indexé dessus (test : 2e copie à t+1,5 s ⇒ retour visuel tenu jusqu'à t+4 s).
+- écarts : (1) la substitution du chunk R3F dans le test A se fait au **point `lazy`**
+  (`vi.mock("react", …)` ne remplaçant que `lazy`) — mocker `./PlayingCanvas` laisse le vrai
+  module être chargé par le `import()` dynamique ; (2) `docs/handoffs/story-run-stats-system.md`
+  passé au `prettier --write` (fichier hors lane) pour débloquer `format:check`, **non stagé**.
+- next: re-run ciblé du panel sur le diff des correctifs, puis acceptation `pm`.
+
 ## 5. DEV — lane A · `dev-gameplay` (Amelia) — 2026-07-30
 
 - claim: `src/game/**` uniquement — le contrat de types (commit 0), les trois systèmes purs
@@ -647,3 +871,21 @@ référence) sur les 5 branches atteignables — idle terminal `GAME_OVER`, idle
 - next: `dev-r3f-render` termine son écran (l'intégration §4.4-3 est chez elle) → `qa-lead`
   (stage 5 : quality gate + playtest AC-1→AC-15 + revue UX deux classes d'appareils) →
   panel de revue de code → acceptation `pm`.
+
+## 7. STAGE-6 PANEL — verdict final — 2026-07-30
+
+- Panel 4 reviewers (code-review high · bmad-code-review · edge-case-hunter · security-review) :
+  1 MAJEUR + 2 MINEUR + 3 NIT ; security : néant. Triage Winston §6 : NO-MERGE conditionnel,
+  5 correctifs prescrits (A/B/C/D fix, E reformulation), arbitrage overheal tranché spec ET code.
+- Correctifs livrés : lane render `95ac4e19`/`f0402d0c`/`659f92f9`, lane gameplay
+  `242d3563`/`00f855bb` ; spec D2.3.4 + AC-6 transcrites (game-designer, verbatim §6.2, pas de
+  re-gate). Effet de bord assumé : le double-saveScore PRÉ-EXISTANT (deps `unlockedLevels`)
+  est éliminé par la même garde.
+- Re-run ciblé du panel sur `f0e1d1d1..HEAD` : chaque fix vérifié clos par test rouge→vert,
+  aucune régression, frontière `src/game` pure. 2 NIT documentaires (1 corrigé au merge,
+  1 noté : `livesBefore` exclut le heal du même tick — direction conservatrice documentée).
+- Suite complète : `rtk tsc` 0 erreur · vitest **1663 PASS / 0 FAIL** · lint via hook pre-commit.
+- VERDICT: MERGE — panel stage-6 (senior-architect)
+  Aucun CONFIRMED BLOQUANT/MAJEUR non résolu. Merge exécuté sur instruction directe de
+  Bertrand (2026-07-30, « ok merge ça mais pas les essais 3d ») — `public/madeleine-tag.html`
+  (essai 3D, untracked) explicitement exclu du merge.
