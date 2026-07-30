@@ -83,12 +83,23 @@ async function captureLevel(context, level, withMenu) {
     // job is the level shot below. Letting the settle wait throw here would abort before
     // the level click and silently drop `level_<first>.png`, which nothing else in the
     // script re-attempts — a cosmetic wait must not be able to cost an unrelated capture.
+    // Two separate catches, not one around both: a single block would report a disk or
+    // page-crash failure in `screenshot()` as "flyer wall never settled", sending the
+    // next engineer after a phantom animation-timing bug.
+    let settled = true;
     try {
       await waitForFlyerWallSettled(page);
-      await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
-      console.log("  captured 00_menu.png");
     } catch (e) {
+      settled = false;
       console.error(`  failed 00_menu.png (flyer wall never settled): ${e.message}`);
+    }
+    if (settled) {
+      try {
+        await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
+        console.log("  captured 00_menu.png");
+      } catch (e) {
+        console.error(`  failed 00_menu.png (screenshot failed): ${e.message}`);
+      }
     }
   }
 

@@ -135,7 +135,13 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
         </div>
 
         {/* Active rubrique surface */}
-        <div className={styles.rubriques}>
+        {/* `rubriquesLevels` scopes the overflow-x clip to NIVEAUX, the only rubrique whose
+            content drifts sideways (the flyer float-in). SCORES and OPTIONS keep the default
+            behaviour, so if either ever overflows it surfaces a scrollbar instead of being
+            silently cut. */}
+        <div
+          className={cx(styles.rubriques, active === "levels" ? styles.rubriquesLevels : undefined)}
+        >
           {active === "levels" && (
             <FlyerWall
               unlockedLevels={unlockedLevels}
