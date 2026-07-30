@@ -78,9 +78,18 @@ async function captureLevel(context, level, withMenu) {
   if (withMenu) {
     // Hold until the flyer-wall entrance has actually finished, not for a duration
     // guessed from its stagger and length (see waitForFlyerWallSettled).
-    await waitForFlyerWallSettled(page);
-    await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
-    console.log("  captured 00_menu.png");
+    //
+    // Isolated on purpose: this menu capture is a BYSTANDER in this function, whose real
+    // job is the level shot below. Letting the settle wait throw here would abort before
+    // the level click and silently drop `level_<first>.png`, which nothing else in the
+    // script re-attempts — a cosmetic wait must not be able to cost an unrelated capture.
+    try {
+      await waitForFlyerWallSettled(page);
+      await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
+      console.log("  captured 00_menu.png");
+    } catch (e) {
+      console.error(`  failed 00_menu.png (flyer wall never settled): ${e.message}`);
+    }
   }
 
   await page.getByText(level.name, { exact: true }).first().click();
