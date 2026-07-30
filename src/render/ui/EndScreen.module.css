@@ -10,11 +10,25 @@
   background: var(--stock-shell);
   cursor: pointer;
   user-select: none;
+  overflow-y: auto;
+  padding: var(--space-xl) 0;
 }
 
+/*
+ * The screen grew a controls block (~240px) and no longer fits a phone in
+ * landscape: measured at 844x390 and 667x375, the dismiss prompt ended up 76px
+ * BELOW the fold and the open detail panel with it. Two independent guards, so
+ * neither has to be perfect: the frame scrolls when its content overflows
+ * (`margin: auto` keeps the centring while letting the top stay reachable — a
+ * flex-centred child clips its own head when it overflows), and the short-landscape
+ * block below trims the display type and the vertical rhythm so the closed screen
+ * fits without scrolling at all. The 24px inert padding of the controls block is a
+ * ruled floor (gate R1) and is deliberately NOT part of what shrinks.
+ */
 .content {
   position: relative;
   text-align: center;
+  margin: auto;
 }
 
 .label {
@@ -147,6 +161,32 @@
   color: var(--ink-full);
   margin-top: 48px;
   animation: blink 1s step-start infinite;
+}
+
+/*
+ * Short landscape (the phone-on-its-side case ADR-0024 names, threshold reused from
+ * SHORT_LANDSCAPE_MAX_H): height is the scarce axis, so the 64px masthead and the
+ * 48px prompt gap pay for the controls block instead of the player's dismiss line.
+ * Nothing that carries a measured guarantee moves — the block's 24px inert padding
+ * (R1) and the 44px control boxes (A3) are untouched, and no value text shrinks.
+ */
+@media (max-height: 480px) {
+  .title {
+    font-size: 32px;
+  }
+
+  .label {
+    margin-bottom: var(--space-md);
+  }
+
+  .controls {
+    margin-top: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .prompt {
+    margin-top: var(--space-xl);
+  }
 }
 
 @keyframes blink {
