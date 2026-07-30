@@ -23,7 +23,7 @@ import type {
 } from "@game/types/runStats";
 
 /** What an absent (`null`) value prints — never `0`, never `0/0` (spec §2.1.3). */
-export const ABSENT = "—";
+const ABSENT = "—";
 
 /** Heart glyph used by the damage readouts (spec D3.1 line 3). */
 const HEART = "♥";
@@ -38,7 +38,7 @@ export const END_CAUSE_LABELS: Readonly<Record<EndCause, string>> = {
 };
 
 /** The delivery issues (spec D2.2.3); the fifth value, "no delivery", is `ABSENT`. */
-export const DELIVERY_ISSUE_LABELS: Readonly<Record<DeliverySummary["issue"], string>> = {
+const DELIVERY_ISSUE_LABELS: Readonly<Record<DeliverySummary["issue"], string>> = {
   REUSSIE: "RÉUSSIE",
   PERDUE: "PERDUE",
   INTERROMPUE: "INTERROMPUE",
