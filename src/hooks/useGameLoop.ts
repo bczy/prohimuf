@@ -655,9 +655,13 @@ export function useGameLoop(
       !isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection)
     ) {
       // Project the finished run once the phase is terminal (ADR-0076 D6). The
-      // terminal state is frozen — the loop early-returns above until a restart —
-      // so re-deriving it on a later push is idempotent, and the render never
-      // touches `next.stats` itself.
+      // loop keeps TICKING in a terminal phase — the early-return above is
+      // conditioned on a RESTART INPUT, not on the phase — so this push can fire
+      // again (the camera-driven delivery-arrow term alone can trigger it) and
+      // hand out a NEW `RunSummary` object carrying the same frozen numbers. The
+      // derivation is value-idempotent, never identity-stable: consumers must key
+      // their side-effects on the run identity, not on this object (see the
+      // end-of-run effect in `App.tsx`). The render never touches `next.stats`.
       const runSummary =
         next.phase === "GAME_OVER" || next.phase === "LEVEL_COMPLETE"
           ? buildRunSummary(next)

@@ -256,6 +256,14 @@ export function App(): JSX.Element {
       : initial;
   });
   const [gameKey, setGameKey] = useState(0);
+  // Idempotence guard for the end-of-run persistence block below: holds the
+  // `gameKey` of the run whose side-effects (score, unlock, funnel milestones)
+  // already fired. The terminal HUD push is NOT a one-shot — the loop keeps
+  // ticking after `GAME_OVER`/`LEVEL_COMPLETE` (its early-return needs a RESTART
+  // input, not a terminal phase), so a later push carrying the same frozen
+  // numbers can re-enter this effect. Armed per run, so a restart (`gameKey + 1`)
+  // re-opens the block exactly once (review-panel finding A, PR run-stats).
+  const persistedRunRef = useRef<number | null>(null);
   // The 4-milestone funnel (ADR-0076 D4). Read once at boot; every write goes
   // through `recordMilestones`, which OR-merges and hands back the new state.
   // Purely internal in v1 — it is rendered NOWHERE (UX §4, gate T1); its only
@@ -368,7 +376,12 @@ export function App(): JSX.Element {
     // UNAFFECTED either way — it fires on today's schedule, never gated behind typing a name.
     const qualifies = isShippedLevel && isHighScore(selectedLevel.id, hudData.score);
 
-    if (isShippedLevel) {
+    // ONE pass per run: the persistence block is armed on the run identity, never
+    // on the HUD push that revealed the terminal phase. Without it, a second
+    // terminal push (a stale delivery-arrow diff, a fresh `unlockedLevels` Set)
+    // wrote the score twice — `saveScore` de-duplicates nothing.
+    if (isShippedLevel && persistedRunRef.current !== gameKey) {
+      persistedRunRef.current = gameKey;
       const dateStr = new Date().toISOString();
       if (qualifies) {
         setPendingScore({ score: hudData.score, wave: hudData.wave, date: dateStr });
@@ -412,14 +425,12 @@ export function App(): JSX.Element {
     return () => {
       clearTimeout(timer);
     };
-  }, [
-    hudData.phase,
-    hudData.score,
-    hudData.wave,
-    hudData.runSummary,
-    selectedLevel.id,
-    unlockedLevels,
-  ]);
+    // Deps are STABLE-VALUED on purpose: `hudData.runSummary` (a fresh object on
+    // every terminal push) and `unlockedLevels` (a fresh Set after the unlock
+    // write) are read inside but kept OUT — either one re-running this effect
+    // tears down the 1500 ms routing timer and re-enters the persistence block.
+    // `gameKey` is the run identity the guard above is armed on.
+  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, gameKey]);
 
   // Prefetch the R3F/Three.js chunk as soon as the player reaches the MENU so
   // the dynamic import is already cached when "Play" is clicked (ADR-0068).
