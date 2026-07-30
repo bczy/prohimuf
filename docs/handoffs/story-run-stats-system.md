@@ -110,6 +110,15 @@ Story: [`_bmad-output/planning-artifacts/story-run-stats-system.md`](../../_bmad
   (sinon le jalon 4 double le jalon 2 et casse l'ordre annoncé par l'AC6), Q5 l'historique
   local.
 
+- **Amendement 2026-07-30 (renvoi ADR-0076 C6, `senior-architect`)** : D2.5.3 réécrite. La
+  clause disait « score négatif affiché tel quel, ne pas plancher à 0 » — **inatteignable** :
+  le tick plafonne déjà le score par le bas (`Math.max(0, …)`), une pénalité sur un score de 0
+  laisse 0. Arbitrage architecte retenu : **aucun changement de code** (toucher une règle de
+  score depuis une feature qui a promis d'observer la boucle serait hors mandat), c'est la
+  spec qui s'aligne. Nouvelle rédaction : le score final est toujours un entier ≥ 0, l'écran
+  de fin n'a jamais de négatif ni de signe à gérer. Aucune autre clause impactée — le score
+  reste le phare H1, lu tel quel.
+
 - next: `ux-designer` (en parallèle, contrats de lecture et d'entrée D3.4/D3.5 à satisfaire) →
   **gate `lead-game-designer`** (Karim) sur cette spec + la passe UX → `senior-architect`
   (plan tech + contenu ADR-0076). Aucune lane dev ne démarre avant le PASS du gate.
