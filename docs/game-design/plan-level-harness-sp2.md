@@ -56,7 +56,15 @@ readonly calibration?: {
 `gen-level-art.yml`).
 
 - [ ] Input `level_id` (workflow_dispatch) ; job unique : checkout → setup → `node scripts/gen-street-paid.mjs --plan $level_id` → commit-back `public/assets/levels/<id>/`.
-- [ ] **Cap 3** : avant génération, `git log --oneline origin/main..HEAD -- public/assets/levels/<id>/ | wc -l` ≥ 3 ⇒ fail avec message d'escalade explicite. Testé par un dry-run du step en bash local.
+- [ ] **Cap 3 — compter les TENTATIVES payées, pas les commits** (un tirage payé dont
+      le commit-back échoue doit compter quand même) : un fichier compteur
+      `public/assets/levels/<id>/.paid-attempts` est incrémenté et committé-poussé
+      AVANT l'appel payé (un step dédié, qui fail le job si ce push échoue — pas
+      d'appel payé sans trace) ; le step de garde lit ce compteur sur
+      `origin/main..HEAD` et fail à ≥ 3 avec message d'escalade explicite. En plus,
+      un échec du commit-back APRÈS un appel payé réussi met le job en FAIL (jamais
+      warn) — un tirage dépensé ne disparaît jamais du compte. Testé par un dry-run
+      des deux steps en bash local.
 - [ ] Jamais sur main (le garde `if:` de `gen-level-art.yml`, copié).
 - [ ] Commit `ci(harness): workflow backdrop payé par plan, cap 3 tirages par PR`.
 
