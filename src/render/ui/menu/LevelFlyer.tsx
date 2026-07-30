@@ -17,7 +17,38 @@ import {
 import type { Corner } from "@render/ui/print";
 import { cx } from "../controls";
 import { difficultyMark } from "./derivations";
+import { FlyerMotif, MOTIF_BY_LEVEL_ID } from "./FlyerMotif";
 import styles from "./LevelFlyer.module.css";
+
+/**
+ * Emblem size per level, in px. Deliberately UNEVEN: five sheets printed by five crews
+ * on five different machines would never carry the same stamp at the same size, and a
+ * uniform size is the tell that gives away a template. Indexed by id like every other
+ * flyer jitter — never Math.random, so the wall is identical on every render.
+ *
+ * The spread is bounded by what the sheet can host: the halftone lozenge reads as mud
+ * below ~70px, and anything past ~100 starts crowding the info block on a narrow column.
+ */
+const MOTIF_SIZE_PX: Readonly<Partial<Record<string, number>>> = {
+  tutorial: 76,
+  belliard: 96,
+  stalingrad: 84,
+  vitry: 100,
+  "niveau-final": 88,
+};
+
+/** Fallback for a level with a motif but no size entry — mid-range, never zero. */
+const MOTIF_SIZE_FALLBACK_PX = 84;
+
+/** Deterministic per-level tilt (degrees), in the same spirit as FLYER_REST_ROTATION_DEG:
+ *  a stamp banged on by hand is never square to the sheet. */
+const MOTIF_TILT_DEG: Readonly<Partial<Record<string, number>>> = {
+  tutorial: -4,
+  belliard: 3,
+  stalingrad: -2,
+  vitry: 5,
+  "niveau-final": -3,
+};
 
 /**
  * One rave flyer per level (NIVEAUX). Three artifact modes — playable, tutorial
@@ -142,6 +173,36 @@ function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
   return <div className={styles.infoRow}>{children}</div>;
 }
 
+/**
+ * The crew's emblem, if that level has one. Renders NOTHING for a level absent from
+ * `MOTIF_BY_LEVEL_ID` — decoration must never turn a new level into a broken slot, so
+ * this is an early return rather than a fallback motif.
+ *
+ * The tilt is derived from the level id, not `Math.random`: the flyer wall's whole
+ * materiality doctrine is that every jitter is deterministic, so a re-render can never
+ * shuffle the sheet under the player's eyes.
+ */
+function CrewMotif({
+  levelId,
+  locked = false,
+}: {
+  levelId: string;
+  locked?: boolean;
+}): JSX.Element | null {
+  const kind = MOTIF_BY_LEVEL_ID[levelId];
+  if (kind === undefined) return null;
+  const tiltDeg = MOTIF_TILT_DEG[levelId] ?? 0;
+  return (
+    <div className={cx(styles.motifRow, locked ? styles.motifRowLocked : undefined)}>
+      <FlyerMotif
+        kind={kind}
+        size={MOTIF_SIZE_PX[levelId] ?? MOTIF_SIZE_FALLBACK_PX}
+        tiltDeg={tiltDeg}
+      />
+    </div>
+  );
+}
+
 export function LevelFlyer({
   level,
   flyerIndex,
@@ -227,6 +288,7 @@ export function LevelFlyer({
                 <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
                 <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
                 <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
+                <CrewMotif levelId={level.id} />
                 <div className={styles.markTop}>
                   <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
                 </div>
@@ -323,6 +385,8 @@ function PlayableBody({
         </>
       )}
 
+      <CrewMotif levelId={level.id} />
+
       <div className={styles.stats}>
         <span>⏱ {level.timeSeconds} s</span>
         <span>{level.enemiesToWin} cibles</span>
@@ -345,6 +409,7 @@ function LockedBody({ level }: { level: LevelConfig }): JSX.Element {
       <InfoRow>{LOCKED_COPY.dateLine}</InfoRow>
       <InfoRow>{LOCKED_COPY.rvLine}</InfoRow>
       <InfoRow>☎ {LOCKED_COPY.infoLine}</InfoRow>
+      <CrewMotif levelId={level.id} locked />
       <div className={styles.markTop}>
         <Stamp label={LOCKED_COPY.overlay} ink={INK.full} shape="diagonal" />
       </div>
