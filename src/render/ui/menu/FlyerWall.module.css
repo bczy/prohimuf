@@ -28,25 +28,33 @@
   display: flex;
   flex-direction: column;
   width: min(100%, var(--flyer-max-width));
-  /* Flyers float in one by one on mount instead of appearing all at once,
-     staggered per-slot via the inline --slot-delay custom property (FlyerWall.tsx).
-     The --fio-* drop/drift/rotate values below default to one path; FlyerWall.tsx
-     overrides all of them per flyer index (one of three deterministic variants) so
-     the wall doesn't read as one path copy-pasted in time. Values only (not
-     identifiers), so this stays safe under CSS Modules' local scoping — unlike
-     @keyframes names, custom-property values are never renamed. */
-  --fio-y0: -190px;
-  --fio-x0: -36px;
-  --fio-r0: -22deg;
-  --fio-y1: -105px;
-  --fio-x1: 28px;
-  --fio-r1: 14deg;
-  --fio-y2: -43px;
-  --fio-x2: -20px;
-  --fio-r2: -10deg;
-  --fio-y3: -8px;
-  --fio-x3: 10px;
-  --fio-r3: 5deg;
+  /* Flyers float in one by one on mount instead of appearing all at once, staggered
+     per-slot via the inline --slot-delay custom property (FlyerWall.tsx). The real
+     drop/drift/rotate values come from FLYER_FLOAT_IN_VARIANTS, set inline per flyer
+     index (one of three deterministic paths) so the wall doesn't read as one path
+     copy-pasted in time. Values only (not identifiers), so this stays safe under CSS
+     Modules' local scoping — unlike @keyframes names, custom-property values survive
+     the build verbatim.
+
+     These defaults are NEUTRAL on purpose. They must exist — `FLYER_FLOAT_IN_VARIANTS[
+     i % 3]` is `| undefined` under noUncheckedIndexedAccess, and a `var()` with no value
+     and no fallback makes the whole `transform` invalid at computed-value time — but
+     they must NOT restate variant 0: a second hand-maintained copy of real values drifts
+     silently the next time the animation is tuned (it has been, three times already).
+     Zeroed, they can never drift, and the degenerate case degrades to "appears in place"
+     rather than to a broken transform. */
+  --fio-y0: 0px;
+  --fio-x0: 0px;
+  --fio-r0: 0deg;
+  --fio-y1: 0px;
+  --fio-x1: 0px;
+  --fio-r1: 0deg;
+  --fio-y2: 0px;
+  --fio-x2: 0px;
+  --fio-r2: 0deg;
+  --fio-y3: 0px;
+  --fio-x3: 0px;
+  --fio-r3: 0deg;
   animation: mufFlyerFloatIn 1400ms both;
   animation-delay: var(--slot-delay, 0ms);
 }

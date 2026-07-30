@@ -183,3 +183,50 @@ describe("FlyerWall first-run — auto-focus + flag timing (client mount)", () =
     expect(el.textContent).not.toContain("COMMENCE ICI");
   });
 });
+
+/**
+ * Float-in entrance wiring. The animation itself is CSS (untestable here, and not worth
+ * asserting on timing), but the CONTRACT the TSX owns is: every slot gets its staggered
+ * delay, and consecutive flyers get DIFFERENT fall paths. Both are values a future
+ * tuning pass edits by hand — this component has already had three — so they are pinned
+ * rather than left to a screenshot to catch.
+ */
+describe("FlyerWall float-in entrance — per-slot wiring", () => {
+  const html = markup(DEFAULT_PREFS);
+  const slotStyles: string[] = [
+    ...html.matchAll(/class="muf-flyer-slot[^"]*"\s+style="([^"]*)"/g),
+  ].flatMap((m) => (m[1] === undefined ? [] : [m[1]]));
+
+  it("gives every flyer slot an inline --slot-delay", () => {
+    expect(slotStyles.length).toBeGreaterThan(1);
+    expect(slotStyles.every((s) => s.includes("--slot-delay"))).toBe(true);
+  });
+
+  it("staggers --slot-delay by list position, starting at zero", () => {
+    const delays = slotStyles.map((s) => Number(/--slot-delay:\s*(-?\d+)ms/.exec(s)?.[1]));
+    expect(delays[0]).toBe(0);
+    // Strictly increasing: a constant (or reset) delay would mean the wall lands at once,
+    // which is precisely the "all at the same time" look this feature replaced.
+    // `?? Infinity` keeps this assertion-free and still fails on a missing value.
+    const strictlyIncreasing = delays.every((d, i) => i === 0 || d > (delays[i - 1] ?? Infinity));
+    expect(strictlyIncreasing).toBe(true);
+  });
+
+  it("does not give two consecutive flyers the same fall path", () => {
+    // Guards the `i % FLYER_FLOAT_IN_VARIANTS.length` cycling: dropping it (or letting
+    // the array collapse to one entry) would restore the copy-pasted-path look.
+    const firstDrop = slotStyles.map((s) => /--fio-y0:\s*(-?\d+)px/.exec(s)?.[1]);
+    expect(firstDrop.every((v) => v !== undefined)).toBe(true);
+    for (let i = 1; i < firstDrop.length; i++) {
+      expect(firstDrop[i]).not.toBe(firstDrop[i - 1]);
+    }
+  });
+
+  it("keeps the reduced-motion escape hatch reachable on every slot", () => {
+    // The two kill-switches (@media prefers-reduced-motion and the in-app
+    // :root[data-reduced-motion="true"]) both target `.slot` via its CSS-module class.
+    // If the class ever stops being emitted, the animation would still run but neither
+    // guard could stop it — an accessibility regression no visual test would show.
+    expect(count(html, /class="muf-flyer-slot [^"]+"/g)).toBe(slotStyles.length);
+  });
+});
