@@ -34,12 +34,111 @@
   max-width: 700px;
 }
 
-.score {
+/*
+ * The single non-closing controls block (gate R1, UX §1.4). `padding: 24px` IS the
+ * inert margin the ruling pins — a thumb that misses a control by half a touch
+ * target lands here, and the block's click handler swallows it. The value is
+ * var(--space-xxl) (24px), the scale step, not a new literal; it is a floor, so any
+ * future increase must keep >= that step. `cursor: default` reverses the overlay's
+ * `pointer` so the block reads as "this does not close".
+ */
+.controls {
+  padding: var(--space-xxl);
+  margin-top: var(--space-xl);
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-lg);
+  max-width: 640px;
+}
+
+/* End-of-run cause (R5): subordinate to the title, neutral, never outcome-coloured. */
+.endCause {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  color: var(--ink-black);
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+/* Exactly three slots (story AC2) — H2 takes twice the width budget (R2). */
+.headlineRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-lg);
+  text-align: center;
+}
+
+.slot {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.slotWide {
+  flex-grow: 2;
+}
+
+.slotLabel {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--ink-black);
+  letter-spacing: 0.14em;
+}
+
+/*
+ * Never truncates, never ellipsises, never shrinks (UX §1.2c forbids all three):
+ * the value wraps inside its own slot instead. `overflow-wrap: anywhere` is the
+ * last-resort guard for a slot narrower than one word.
+ */
+.slotValue {
   font-family: var(--font-mono);
   font-size: var(--font-size-base);
-  color: var(--ink-black);
-  margin-top: var(--space-xxl);
+  color: var(--ink-full);
+  letter-spacing: 0.06em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Detail toggle + export row — native buttons, >=44px hit box on both devices (A3). */
+.control {
+  min-height: 44px;
+  padding: var(--space-md) var(--space-lg);
+  border: var(--keyline-width) solid var(--ink-black);
+  background: transparent;
+  color: var(--ink-full);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
   letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+/* Clipboard fallback (AC5): read-only, pre-selected, stays until the screen leaves. */
+.fallback {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: transparent;
+  color: var(--ink-black);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+/* Visually hidden aria-live region — the copy confirmation for assistive tech (A4). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .prompt {
