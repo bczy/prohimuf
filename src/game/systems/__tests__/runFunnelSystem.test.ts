@@ -117,12 +117,15 @@ describe("milestonesFromRun", () => {
     }
   });
 
-  it("locks `belliardCleared` when belliard completes on quota (gate Q3)", () => {
+  // Flag parity: `BELLIARD_BOSS_ENABLED` (`levels.data.ts`) decides WHICH of the two
+  // `LEVEL_COMPLETE` causes is reachable — boss ON ⇒ `BOSS_GAGNE`, boss OFF ⇒ `QUOTA`.
+  // Both are pinned here so flipping the seam cannot silently stop locking the funnel.
+  it("locks `belliardCleared` on quota — the live cause when the boss seam is OFF (gate Q3)", () => {
     const s = summary({ endCause: "QUOTA" });
     expect(milestonesFromRun(s, "belliard")).toContain("belliardCleared");
   });
 
-  it("locks `belliardCleared` when belliard completes on a boss win", () => {
+  it("locks `belliardCleared` on a boss win — the live cause when the boss seam is ON", () => {
     const s = summary({ endCause: "BOSS_GAGNE" });
     expect(milestonesFromRun(s, "belliard")).toContain("belliardCleared");
   });

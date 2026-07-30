@@ -66,7 +66,12 @@ export function milestonesFromRun(summary: RunSummary, levelId: string): readonl
   const ms: Milestone[] = [];
   // The milestone marks having DONE the delivery, not having seen it pass (D4.1).
   if (summary.delivery?.issue === "REUSSIE") ms.push("firstDeliveryDone");
-  // `LEVEL_COMPLETE` on belliard — its two causes are the quota and a boss win.
+  // The two causes of `LEVEL_COMPLETE` on belliard — quota and boss win. Only ONE
+  // is reachable at a time, and which one is decided by `BELLIARD_BOSS_ENABLED`
+  // (`levels.data.ts`, a decoupling seam typed `as boolean` and documented as
+  // switchable back to `false`): boss ON ⇒ `BOSS_GAGNE` is the live cause and
+  // `QUOTA` is dead; boss OFF ⇒ the exact opposite. Both terms are REQUIRED for
+  // flag parity — do NOT delete the one that looks unreachable today.
   if (
     levelId === FUNNEL_LEVEL_ID &&
     (summary.endCause === "QUOTA" || summary.endCause === "BOSS_GAGNE")
