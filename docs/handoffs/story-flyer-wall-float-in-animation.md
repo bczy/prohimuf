@@ -95,3 +95,23 @@ L'escalade est acceptée par le panel. Les 2 mineurs traités :
   durée dans le CSS, compte dans les données). L'attente elle-même passe déjà à l'échelle
   gratuitement puisqu'elle observe l'état final réel ; seul le garde-fou est fixe, et le
   commentaire dit quoi faire si le jeu s'en approche.
+
+## Tour 13 (CONDITIONAL — 1 majeur, 2 mineurs, tous traités)
+
+- **MAJEUR — suppression de capture trop zélée, régression que J'AI introduite** en
+  corrigeant le majeur du tour 11. Mes deux correctifs combinés rendent le `rm`
+  contre-productif : depuis que `captureLevel` attend lui aussi le settle ET saute sa
+  capture quand l'attente échoue, un `00_menu.png` en pleine animation **ne peut plus
+  exister**. Supprimer le fichier lors de la seconde passe ne détruisait donc plus une
+  capture périmée mais une capture BONNE, sur un échec sans rapport (runner lent, hoquet
+  sur `?preview=menu`). `rm` retiré, l'erreur remonte simplement au catch externe.
+- **MINEUR — le plafond documenté était faux** : les 20 s étaient dépensées DEUX fois
+  (montage puis settle), soit ~40 s réelles contre les 20 s annoncées, et mon calcul des
+  ~105 niveaux reposait sur un seul budget. Les deux attentes partagent désormais une
+  échéance unique, donc le chiffre documenté est le vrai.
+- **MINEUR — les 12 défauts `--fio-*` neutres** doublaient ce qu'un repli `var(x, 0px)`
+  donne gratuitement. Remplacés par des replis à l'usage dans le keyframe ; il n'y a plus
+  de seconde liste à tenir à jour. **Vérifié en navigateur** (et pas seulement en test
+  unitaire, qui n'aurait pas vu un `var()` cassé) : 5 slots déplacés en vol avec 5
+  transforms DISTINCTS — les variantes s'appliquent toujours — et tous à l'identité une
+  fois stabilisés.

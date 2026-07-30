@@ -36,25 +36,13 @@
      Modules' local scoping — unlike @keyframes names, custom-property values survive
      the build verbatim.
 
-     These defaults are NEUTRAL on purpose. They must exist — `FLYER_FLOAT_IN_VARIANTS[
-     i % 3]` is `| undefined` under noUncheckedIndexedAccess, and a `var()` with no value
-     and no fallback makes the whole `transform` invalid at computed-value time — but
-     they must NOT restate variant 0: a second hand-maintained copy of real values drifts
-     silently the next time the animation is tuned (it has been, three times already).
-     Zeroed, they can never drift, and the degenerate case degrades to "appears in place"
-     rather than to a broken transform. */
-  --fio-y0: 0px;
-  --fio-x0: 0px;
-  --fio-r0: 0deg;
-  --fio-y1: 0px;
-  --fio-x1: 0px;
-  --fio-r1: 0deg;
-  --fio-y2: 0px;
-  --fio-x2: 0px;
-  --fio-r2: 0deg;
-  --fio-y3: 0px;
-  --fio-x3: 0px;
-  --fio-r3: 0deg;
+     The neutral fallbacks live at each `var()` USE SITE in the keyframe below, not as a
+     second block of declarations here. Some fallback is required — `FLYER_FLOAT_IN_VARIANTS[
+     i % 3]` is `| undefined` under noUncheckedIndexedAccess, and a `var()` with neither
+     value nor fallback makes the whole `transform` invalid at computed-value time — but a
+     hand-maintained copy of all 12 properties is a second thing to keep in step, and this
+     animation has already been tuned three times. At the use site there is nothing to
+     drift, and the degenerate case degrades to "appears in place". */
   animation: mufFlyerFloatIn 1400ms both;
   animation-delay: var(--slot-delay, 0ms);
 }
@@ -69,22 +57,26 @@
 @keyframes mufFlyerFloatIn {
   0% {
     opacity: 0;
-    transform: translateY(var(--fio-y0)) translateX(var(--fio-x0)) rotate(var(--fio-r0));
+    transform: translateY(var(--fio-y0, 0px)) translateX(var(--fio-x0, 0px))
+      rotate(var(--fio-r0, 0deg));
     animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
   }
   22% {
     opacity: 1;
   }
   38% {
-    transform: translateY(var(--fio-y1)) translateX(var(--fio-x1)) rotate(var(--fio-r1));
+    transform: translateY(var(--fio-y1, 0px)) translateX(var(--fio-x1, 0px))
+      rotate(var(--fio-r1, 0deg));
     animation-timing-function: ease-in-out;
   }
   60% {
-    transform: translateY(var(--fio-y2)) translateX(var(--fio-x2)) rotate(var(--fio-r2));
+    transform: translateY(var(--fio-y2, 0px)) translateX(var(--fio-x2, 0px))
+      rotate(var(--fio-r2, 0deg));
     animation-timing-function: ease-out;
   }
   80% {
-    transform: translateY(var(--fio-y3)) translateX(var(--fio-x3)) rotate(var(--fio-r3));
+    transform: translateY(var(--fio-y3, 0px)) translateX(var(--fio-x3, 0px))
+      rotate(var(--fio-r3, 0deg));
     animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   100% {
