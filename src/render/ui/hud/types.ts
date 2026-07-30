@@ -2,6 +2,7 @@ import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
 import type { QtePhase } from "@game/types/hostageQte";
+import type { RunSummary } from "@game/types/runStats";
 import type { WeaponKind } from "@game/types/weapon";
 
 /*
@@ -95,6 +96,12 @@ export interface HudData {
   // Active weapon + special stock (ADR-0055). Absent only on the pre-tick initial
   // HUD before the first loop tick populates it; the readout defaults to base/∞.
   weapon?: HudWeapon | undefined;
+  // The finished run, projected by `useGameLoop` on a terminal phase only
+  // (ADR-0076 D6). The render consumes THIS — never `GameState.stats`, which is
+  // private to the pure layer: no rounding rule, no `—`-vs-`0` decision and no
+  // cause precedence ever crosses the seam. `undefined` on every non-terminal
+  // frame, so nothing downstream can read a half-finished run.
+  runSummary?: RunSummary | undefined;
   // Monotonic counter bumped the tick a special empties and auto-returns to base
   // (the `weaponEmpty` transient, drained by useGameLoop). Drives the same-frame
   // HUD empty-flash (W3/AC10) — the widget re-keys its flash on each change.

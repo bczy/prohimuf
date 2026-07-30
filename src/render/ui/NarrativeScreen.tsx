@@ -12,6 +12,13 @@ interface Props {
   onDone: () => void;
   showSkipButton?: boolean;
   /**
+   * Optional distinct exit for the PASSER button. Defaults to `onDone`, so every
+   * existing call site is byte-identical; the tutorial passes its own so that
+   * skipping does not lock the "tutorial cleared" funnel milestone (ADR-0076 D4 —
+   * a milestone that fires on a skip would make the funnel lie).
+   */
+  onSkip?: () => void;
+  /**
    * Label for the final "advance" hint shown when the scene is done. Defaults to
    * "JOUER" (pre/post-level flow, where onDone starts/continues play). The tutorial
    * passes "TERMINER" because its onDone returns to the MENU, not into a level.
@@ -53,6 +60,7 @@ export function NarrativeScreen({
   scene,
   onDone,
   showSkipButton = false,
+  onSkip = onDone,
   doneLabel = "JOUER",
 }: Props): JSX.Element {
   const [lineIndex, setLineIndex] = useState(0);
@@ -118,7 +126,7 @@ export function NarrativeScreen({
 
   function handleSkip(event: React.MouseEvent<HTMLButtonElement>): void {
     event.stopPropagation();
-    onDone();
+    onSkip();
   }
 
   return (

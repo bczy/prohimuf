@@ -49,6 +49,9 @@ import {
   TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
 import type { NarrativeScene } from "@game/systems/narrativeSystem";
+import { milestonesFromRun } from "@game/systems/runFunnelSystem";
+import type { FunnelState, RunSummary } from "@game/types/runStats";
+import { loadFunnel, recordMilestones } from "@hooks/runFunnelStorage";
 
 // Lazy-loaded R3F/Three.js chunk (ADR-0068): Canvas + GameScene only reach the
 // network when the player is about to enter PLAYING. Prefetch fires on MENU entry
@@ -153,6 +156,23 @@ const TUTORIAL_FORK: {
 // already-loaded) so `useAssetPreloader`'s `paths` identity doesn't churn.
 const NO_PATHS: readonly string[] = [];
 
+// `?preview=end` boots straight into the end screen with NO run behind it (the
+// hudData above is seeded GAME_OVER / 4200 / wave 3 by hand), so the screenshot
+// harness needs a run summary to render — one value per branch of the screen: a
+// crate ratio, the long H2 string (the R2 worst case, minus its 100 %), a fault
+// share on the damage line. Harness fixture, and the type-total fallback at the
+// END call site: a real run always carries its own summary (the terminal HUD push
+// derives it), so this value is never what a player sees.
+const PREVIEW_END_SUMMARY: RunSummary = {
+  score: 4200,
+  durationSeconds: 68.4,
+  wave: 3,
+  endCause: "SANTE",
+  pickups: { collected: 3, spawned: 4 },
+  delivery: { issue: "INTERROMPUE", integrityPct: 78 },
+  heartsLost: { total: 1.5, damage: 0.5, faults: 1, max: 3 },
+};
+
 // The rotate overlay covers every app phase, menus included (ADR-0003).
 // The fullscreen button (ADR-0008) is always appended; it self-hides when
 // element fullscreen is unsupported.
@@ -236,6 +256,11 @@ export function App(): JSX.Element {
       : initial;
   });
   const [gameKey, setGameKey] = useState(0);
+  // The 4-milestone funnel (ADR-0076 D4). Read once at boot; every write goes
+  // through `recordMilestones`, which OR-merges and hands back the new state.
+  // Purely internal in v1 — it is rendered NOWHERE (UX §4, gate T1); its only
+  // consumer is the "copier mon rapport" payload.
+  const [funnel, setFunnel] = useState<FunnelState>(loadFunnel);
   // Held when a run qualifies for the board; the single deferred saveScore reads it on
   // NAME_ENTRY resolution (ADR-0054 §2). `null` = nothing pending (non-high-score path).
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
@@ -253,6 +278,14 @@ export function App(): JSX.Element {
   }, [hudData.lives]);
 
   const { playBgm, stopBgm, setTension } = audio;
+
+  // Funnel milestone 1 — the cover was seen. A navigation event, not a run event,
+  // so it is written here and never from the pure loop. Inert under `?preview=`
+  // like every other persistence side-effect on this screen.
+  useEffect(() => {
+    if (PREVIEW_SCREEN !== null || appPhase !== "TITLE") return;
+    setFunnel(recordMilestones(["titleSeen"]));
+  }, [appPhase]);
 
   // Escape toggles pause — only during active gameplay
   useEffect(() => {
@@ -352,6 +385,15 @@ export function App(): JSX.Element {
         unlockLevel(unlockId);
         setUnlockedLevels(loadUnlockedLevels());
       }
+
+      // Funnel milestones 3/4 — read off the finished run, never chained (D4.3):
+      // clearing Belliard without ever seeing a delivery locks 4 and leaves 3
+      // alone. Scoped to shipped levels like the two writes above, and idempotent,
+      // so this effect re-running costs one identical rewrite.
+      const summary = hudData.runSummary;
+      if (summary !== undefined) {
+        setFunnel(recordMilestones(milestonesFromRun(summary, selectedLevel.id)));
+      }
     }
 
     const timer = setTimeout(() => {
@@ -370,7 +412,14 @@ export function App(): JSX.Element {
     return () => {
       clearTimeout(timer);
     };
-  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, unlockedLevels]);
+  }, [
+    hudData.phase,
+    hudData.score,
+    hudData.wave,
+    hudData.runSummary,
+    selectedLevel.id,
+    unlockedLevels,
+  ]);
 
   // Prefetch the R3F/Three.js chunk as soon as the player reaches the MENU so
   // the dynamic import is already cached when "Play" is clicked (ADR-0068).
@@ -549,7 +598,14 @@ export function App(): JSX.Element {
       <NarrativeScreen
         scene={TUTORIAL_FORK.scene}
         showSkipButton
-        onDone={handleBackToMenu}
+        onDone={() => {
+          // Funnel milestone 2 — the tutorial was CLEARED, i.e. read to the end.
+          // Skipping routes through `onSkip` below and locks nothing: a milestone
+          // that fires on the skip button would make the funnel lie.
+          if (PREVIEW_SCREEN === null) setFunnel(recordMilestones(["tutorialCleared"]));
+          handleBackToMenu();
+        }}
+        onSkip={handleBackToMenu}
         doneLabel="TERMINER"
       />,
       rotateBlocked,
@@ -579,8 +635,9 @@ export function App(): JSX.Element {
     return renderAppShell(
       <EndScreen
         phase={endPhase}
-        score={hudData.score}
-        wave={hudData.wave}
+        summary={hudData.runSummary ?? PREVIEW_END_SUMMARY}
+        funnel={funnel}
+        levelId={selectedLevel.id}
         onRestart={handleBackToMenu}
       />,
       rotateBlocked,
