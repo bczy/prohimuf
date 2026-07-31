@@ -767,6 +767,21 @@ FORCE=1 POLLINATIONS_TOKEN=... node scripts/gen-street-paid.mjs --plan <levelId>
   (one image per `MODELS`×`SEEDS`, written to `street-experiments/`, never
   committed). Kept for reference; do not extend it.
 
+### `.github/workflows/gen-plan-backdrop.yml` — dispatch + the 3-paid-attempt cap
+
+`workflow_dispatch` input `level_id` → one job: checkout → sync with
+`origin/main` → **guard** (fails at ≥3 prior attempts) → **record the attempt**
+(commit + PUSH a `.paid-attempts` trace file, BEFORE the paid call — a push
+failure here aborts the job) → `gen-street-paid.mjs --plan <level_id>` → commit
+the generated PNG back (a push failure here is a hard FAIL, never a warning:
+the attempt already counts). `concurrency: { group: gen-plan-backdrop-<level_id>,
+cancel-in-progress: false }` serializes concurrent dispatches for the SAME
+level, so two in-flight runs can never both read the guard's count before
+either's trace commit lands. Never runs on `main`. Dry-run tested (no real
+GitHub runner) in `scripts/__tests__/gen-plan-backdrop-workflow.test.mjs`: the
+guard and record-attempt steps' `run:` blocks are extracted from the YAML and
+executed with bash against a throwaway origin/work git repo pair.
+
 ---
 
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
