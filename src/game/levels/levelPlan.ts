@@ -51,6 +51,14 @@ export interface LevelPlan {
     readonly enemySpeedMultiplier: number;
     readonly windowWeights: Partial<Record<EnemyKind, number>>;
   };
+  /** Point de départ de la calibration des fenêtres (spec SP2 §2.3, décision Bertrand) :
+   *  la bande verticale (normalisée y-down sur l'image) où chercher les ouvertures, et
+   *  le nombre de colonnes attendu. Optionnel : absent ⇒ la phase (b) refuse de tourner
+   *  pour ce level (pas de LEVEL_CFG manuel de repli pour un level généré). */
+  readonly calibration?: {
+    readonly windowBand: { readonly top: number; readonly bottom: number };
+    readonly expectedCols?: number;
+  };
 }
 
 /**
@@ -280,6 +288,26 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // even indices OF THE ROW'S OWN ORDER, so a non-empty row always keeps its index-0
   // prop — an "emptied row" is unconstructible. The rule itself lives in
   // `mobileVisibleProps`, the ONE copy NearForeground.tsx also renders from.
+
+  // Calibration (SP2 §2.3): optional — a level with no `calibration` simply cannot
+  // run phase (b) yet (align-windows.mjs refuses, see planCalibration.mjs). When
+  // declared, the band must be a sane, normalized (y-down) [0,1] window with
+  // top < bottom, and expectedCols (if given) a positive integer — both feed the
+  // detection loop's config directly, with no manual LEVEL_CFG fallback.
+  if (plan.calibration !== undefined) {
+    const { windowBand, expectedCols } = plan.calibration;
+    const { top, bottom } = windowBand;
+    const finiteInUnit = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
+    if (!finiteInUnit(top) || !finiteInUnit(bottom) || !(top < bottom)) {
+      errors.push(
+        `calibration.windowBand: top (${String(top)}) and bottom (${String(bottom)}) must ` +
+          `be finite numbers in [0, 1] with top < bottom`,
+      );
+    }
+    if (expectedCols !== undefined && (!Number.isInteger(expectedCols) || expectedCols < 1)) {
+      errors.push(`calibration.expectedCols: must be an integer >= 1`);
+    }
+  }
 
   return errors;
 }

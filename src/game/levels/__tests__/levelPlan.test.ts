@@ -455,4 +455,61 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     };
     expect(validateLevelPlan(twice)).toEqual([]);
   });
+
+  // SP2 §2.3: `calibration` is the plan's own point of departure for the
+  // `align-windows` loop — optional (absent for a level that doesn't need phase (b)
+  // yet), but when declared it must describe a sane vertical band and column count.
+  describe("calibration (SP2 §2.3)", () => {
+    it("accepts a plan with a sound calibration band", () => {
+      const plan: LevelPlan = {
+        ...base,
+        calibration: { windowBand: { top: 0.12, bottom: 0.5 }, expectedCols: 7 },
+      };
+      expect(validateLevelPlan(plan)).toEqual([]);
+    });
+
+    it("accepts a plan with no calibration at all (phase (b) simply refuses later)", () => {
+      expect(validateLevelPlan(base)).toEqual([]);
+    });
+
+    it("rejects top >= bottom", () => {
+      const plan: LevelPlan = {
+        ...base,
+        calibration: { windowBand: { top: 0.5, bottom: 0.5 } },
+      };
+      expect(validateLevelPlan(plan)).toContainEqual(
+        expect.stringContaining("calibration.windowBand"),
+      );
+    });
+
+    it("rejects a band bound outside [0, 1]", () => {
+      for (const band of [
+        { top: -0.1, bottom: 0.5 },
+        { top: 0.1, bottom: 1.5 },
+        { top: Number.NaN, bottom: 0.5 },
+      ]) {
+        const plan: LevelPlan = { ...base, calibration: { windowBand: band } };
+        expect(validateLevelPlan(plan)).toContainEqual(
+          expect.stringContaining("calibration.windowBand"),
+        );
+      }
+    });
+
+    it("rejects expectedCols < 1 or non-integer", () => {
+      for (const expectedCols of [0, -1, 2.5, Number.NaN]) {
+        const plan: LevelPlan = {
+          ...base,
+          calibration: { windowBand: { top: 0.12, bottom: 0.5 }, expectedCols },
+        };
+        expect(validateLevelPlan(plan)).toContainEqual(
+          expect.stringContaining("calibration.expectedCols"),
+        );
+      }
+    });
+
+    it("accepts calibration with no expectedCols (optional)", () => {
+      const plan: LevelPlan = { ...base, calibration: { windowBand: { top: 0.12, bottom: 0.5 } } };
+      expect(validateLevelPlan(plan)).toEqual([]);
+    });
+  });
 });
