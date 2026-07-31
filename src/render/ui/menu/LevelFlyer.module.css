@@ -325,3 +325,12 @@
 .motifRowLocked {
   opacity: 0.5;
 }
+
+/* The sheet that leads with its image: the block runs across the top and the lettering
+   starts underneath. Pulled to the paper's edges so it reads as a printed band rather
+   than an icon dropped into the margin. */
+.motifHero {
+  margin: -2px -4px 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink-black);
+}

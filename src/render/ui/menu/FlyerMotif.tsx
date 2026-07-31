@@ -173,11 +173,23 @@ interface FlyerMotifProps {
   size: number;
   /** Deterministic zine tilt, degrees — never Math.random (flyer-wall doctrine). */
   tiltDeg?: number;
+  /** Distinguishes this instance's filter ids; two motifs on a page must not collide. */
+  instanceId: string;
+  /** Turbulence seed — vary it per sheet so no two share the same ink breakup. */
+  wearSeed?: number;
   className?: string;
 }
 
-export function FlyerMotif({ kind, size, tiltDeg = 0, className }: FlyerMotifProps): JSX.Element {
+export function FlyerMotif({
+  kind,
+  size,
+  tiltDeg = 0,
+  instanceId,
+  wearSeed = 1,
+  className,
+}: FlyerMotifProps): JSX.Element {
   const Shape = MOTIF_SHAPES[kind];
+  const filterId = `muf-motif-wear-${instanceId}`;
   return (
     <svg
       // Decorative only: it carries no information the player needs, and every flyer
@@ -191,7 +203,46 @@ export function FlyerMotif({ kind, size, tiltDeg = 0, className }: FlyerMotifPro
       viewBox="0 0 100 100"
       style={{ transform: tiltDeg === 0 ? undefined : `rotate(${String(tiltDeg)}deg)` }}
     >
-      <Shape />
+      <defs>
+        {/*
+          Tired print. A perfectly clean vector edge is the one thing a 1998 photocopier
+          could never produce, and it is what made these read as UI icons rather than ink.
+          Turbulence displaces the outline by a pixel or so, which breaks the geometric
+          perfection the way toner does on cheap stock: edges wobble, thin strokes thin
+          out further, dots lose their roundness.
+
+          `seed` is explicit and per-sheet — feTurbulence is only deterministic if you fix
+          it, and the flyer wall forbids anything that reshuffles between renders.
+        */}
+        <filter id={filterId} x="-12%" y="-12%" width="124%" height="124%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.055"
+            numOctaves={2}
+            seed={wearSeed}
+            result="grain"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="grain"
+            scale={2.1}
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+      {/*
+        Misregistration ghost: a second, fainter pull of the same plate a hair off
+        register — the cheap two-pass artefact. Drawn UNDER the real ink and slightly
+        offset, so it reads as a printing fault rather than as a drop shadow (a shadow
+        would imply light, which the menu's zéro-glow rule forbids).
+      */}
+      <g transform="translate(0.9 0.7)" opacity={0.28} filter={`url(#${filterId})`}>
+        <Shape />
+      </g>
+      <g filter={`url(#${filterId})`}>
+        <Shape />
+      </g>
     </svg>
   );
 }

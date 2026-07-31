@@ -40,6 +40,38 @@ const MOTIF_SIZE_PX: Readonly<Partial<Record<string, number>>> = {
 /** Fallback for a level with a motif but no size entry — mid-range, never zero. */
 const MOTIF_SIZE_FALLBACK_PX = 84;
 
+/**
+ * WHERE the stamp landed on each sheet — vertically. `hero` prints it above the
+ * masthead (the sheet whose front IS the image, type pushed under it), `mid` drops it
+ * between the difficulty row and the slogan, `body` after the info lines.
+ *
+ * Horizontally every emblem stays CENTRED: a stamp that wandered sideways too fought
+ * the flyer's centred masthead and left ragged white on one flank. The variety lives on
+ * the vertical axis instead — plus a per-sheet nudge in px, so two sheets sharing a slot
+ * still don't line up. Indexed by id, deterministic, never Math.random.
+ */
+type MotifSlot = "hero" | "mid" | "body";
+
+const MOTIF_PLACEMENT: Readonly<Partial<Record<string, { slot: MotifSlot; offsetY: number }>>> = {
+  tutorial: { slot: "mid", offsetY: 14 },
+  belliard: { slot: "body", offsetY: -6 },
+  stalingrad: { slot: "mid", offsetY: -10 },
+  // The one sheet that leads with its image: NADIR 94's halftone runs across the top
+  // and the lettering starts below it.
+  vitry: { slot: "hero", offsetY: 0 },
+  "niveau-final": { slot: "body", offsetY: 18 },
+};
+
+/** Per-sheet turbulence seed, so no two emblems break up the same way. Fixed values,
+ *  not derived at runtime: feTurbulence is deterministic only with an explicit seed. */
+const MOTIF_WEAR_SEED: Readonly<Partial<Record<string, number>>> = {
+  tutorial: 7,
+  belliard: 21,
+  stalingrad: 13,
+  vitry: 34,
+  "niveau-final": 3,
+};
+
 /** Deterministic per-level tilt (degrees), in the same spirit as FLYER_REST_ROTATION_DEG:
  *  a stamp banged on by hand is never square to the sheet. */
 const MOTIF_TILT_DEG: Readonly<Partial<Record<string, number>>> = {
@@ -184,20 +216,34 @@ function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
  */
 function CrewMotif({
   levelId,
+  slot,
   locked = false,
 }: {
   levelId: string;
+  /** Only renders when this level's placement asks for this slot. */
+  slot: MotifSlot;
   locked?: boolean;
 }): JSX.Element | null {
   const kind = MOTIF_BY_LEVEL_ID[levelId];
   if (kind === undefined) return null;
-  const tiltDeg = MOTIF_TILT_DEG[levelId] ?? 0;
+  const placement = MOTIF_PLACEMENT[levelId] ?? { slot: "body" as const, offsetY: 0 };
+  if (placement.slot !== slot) return null;
   return (
-    <div className={cx(styles.motifRow, locked ? styles.motifRowLocked : undefined)}>
+    <div
+      className={cx(
+        styles.motifRow,
+        slot === "hero" ? styles.motifHero : undefined,
+        locked ? styles.motifRowLocked : undefined,
+      )}
+      // Vertical nudge only — the horizontal axis stays centred by the row's flexbox.
+      style={placement.offsetY === 0 ? undefined : { marginTop: placement.offsetY }}
+    >
       <FlyerMotif
         kind={kind}
         size={MOTIF_SIZE_PX[levelId] ?? MOTIF_SIZE_FALLBACK_PX}
-        tiltDeg={tiltDeg}
+        tiltDeg={MOTIF_TILT_DEG[levelId] ?? 0}
+        instanceId={levelId}
+        wearSeed={MOTIF_WEAR_SEED[levelId] ?? 1}
       />
     </div>
   );
@@ -285,10 +331,11 @@ export function LevelFlyer({
                 <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
                 <div className={styles.tutorialName}>{level.name}</div>
                 <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
+                <CrewMotif levelId={level.id} slot="mid" />
                 <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
                 <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
                 <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
-                <CrewMotif levelId={level.id} />
+                <CrewMotif levelId={level.id} slot="body" />
                 <div className={styles.markTop}>
                   <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
                 </div>
@@ -355,6 +402,8 @@ function PlayableBody({
 
   return (
     <>
+      <CrewMotif levelId={level.id} slot="hero" />
+
       <div className={styles.playableHead}>
         <div>
           <div className={styles.crew}>{copy?.crew ?? level.district}</div>
@@ -375,6 +424,8 @@ function PlayableBody({
         {copy !== undefined && <span className={styles.ambiance}>{copy.ambiance}</span>}
       </div>
 
+      <CrewMotif levelId={level.id} slot="mid" />
+
       {copy !== undefined && (
         <>
           <div className={styles.slogan}>{copy.slogan}</div>
@@ -385,7 +436,7 @@ function PlayableBody({
         </>
       )}
 
-      <CrewMotif levelId={level.id} />
+      <CrewMotif levelId={level.id} slot="body" />
 
       <div className={styles.stats}>
         <span>⏱ {level.timeSeconds} s</span>
@@ -406,10 +457,11 @@ function LockedBody({ level }: { level: LevelConfig }): JSX.Element {
       <div className={styles.stampBlock}>
         <Stamp label={LOCKED_COPY.badge} ink={INK.black} shape="diagonal" struck />
       </div>
+      <CrewMotif levelId={level.id} slot="mid" locked />
       <InfoRow>{LOCKED_COPY.dateLine}</InfoRow>
       <InfoRow>{LOCKED_COPY.rvLine}</InfoRow>
       <InfoRow>☎ {LOCKED_COPY.infoLine}</InfoRow>
-      <CrewMotif levelId={level.id} locked />
+      <CrewMotif levelId={level.id} slot="body" locked />
       <div className={styles.markTop}>
         <Stamp label={LOCKED_COPY.overlay} ink={INK.full} shape="diagonal" />
       </div>
