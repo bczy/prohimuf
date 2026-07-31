@@ -587,6 +587,21 @@ while any defect remains.
 > the 8 dense HLM floors). Fewer or more, but every cop now frames a real window; dark
 > windows are left empty by design.
 
+### Generated levels (level-harness SP2 phase (b), T4) — zero hand-written LEVEL_CFG
+
+An id absent from `levelArt.json`'s shipped manifest is treated as a **generated
+level**: its plan (`src/game/levels/generated/<id>.ts`, `scripts/lib/loadPlan.mjs`)
+is loaded, and `scripts/lib/planCalibration.mjs`'s `levelCfgFromPlan(plan)` builds
+its detection cfg from the plan's own `calibration` block (`windowBand` +
+optional `expectedCols`, spec §2.3) — injected into `LEVEL_CFG` at run time
+(the same pattern `align-troncon.mjs` already uses for its own namespaced ids),
+**never** a hand-authored entry in this file. Its single-wide backdrop
+(`public/assets/levels/<id>/<plan.backdrop.file>.png`, phase (a)) is read in
+place of `facade.png`. A plan with no `calibration` throws immediately, with a
+clear message — phase (b) simply refuses to run for that level; **it never
+regenerates the backdrop image** on a convergence failure (spec §2.1) — a
+non-converging `--fix` exits non-zero with the defect report, same as today.
+
 ---
 
 ## align-troncon.mjs — Window-alignment harness (tronçon-sequence levels)

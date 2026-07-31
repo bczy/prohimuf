@@ -69,6 +69,8 @@ import {
 } from "./e2e-lib.mjs";
 import { misaligned, ALIGN_TOL } from "./lib/alignment.mjs";
 import { coverStrips, coverDefects } from "./lib/coverage.mjs";
+import { loadPlan } from "./lib/loadPlan.mjs";
+import { levelCfgFromPlan } from "./lib/planCalibration.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
@@ -78,6 +80,12 @@ const ZONES_JSON = path.resolve(ROOT, "src/game/levels/windowZones.generated.jso
 // "troncon-sequence") resolves that level's OWN tronçon PNG instead — level ids
 // never contain "/", so the two never collide.
 const facadeFile = (id) => {
+  // A GENERATED level (T4) has no facade.png of its own — its single-wide
+  // backdrop (phase (a)) IS the file the detection loop reads. main() injects
+  // this override into LEVEL_CFG[id] alongside the plan-derived cfg, the same
+  // way align-troncon.mjs injects a whole cfg entry per namespaced id below.
+  const override = LEVEL_CFG[id]?.facadeFilePath;
+  if (override) return override;
   const slash = id.indexOf("/");
   if (slash < 0) return path.resolve(ROOT, "public/assets/levels", id, "facade.png");
   const level = id.slice(0, slash);
@@ -1155,19 +1163,43 @@ async function main() {
   const mode = args.includes("--check") ? "check" : "fix";
   const requested = args.filter((a) => !a.startsWith("--"));
 
-  const { manifest, levels } = loadLevelManifest(ROOT);
+  const { manifest, levels: shippedLevels } = loadLevelManifest(ROOT);
   const bandOf = (id) => {
     const l = manifest.levels.find((x) => x.id === id);
     const g = l.windowGrid ?? manifest.windowGrid;
     return [g.top, g.bottom];
   };
-  const targetIds = requested.length > 0 ? requested : levels.map((l) => l.id);
+  const targetIds = requested.length > 0 ? requested : shippedLevels.map((l) => l.id);
+
+  // T4 (spec-level-harness-sp2 §2.3): an id absent from the shipped manifest
+  // is a GENERATED level — resolve its LevelPlan and inject a calibration-
+  // derived cfg into LEVEL_CFG (the same pattern align-troncon.mjs already
+  // uses to add its own namespaced ids), never a hand-written entry. This
+  // NEVER writes back to levelArt.json (spec §3's "single source" contract for
+  // a generated level) and never regenerates the backdrop image — a plan with
+  // no `calibration` throws here with a clear message (levelCfgFromPlan).
+  const levels = [...shippedLevels];
+  for (const id of targetIds) {
+    if (shippedLevels.find((l) => l.id === id)) continue; // shipped path, unchanged
+    if (LEVEL_CFG[id]) continue; // already injected earlier in this same run
+    const plan = await loadPlan(id);
+    LEVEL_CFG[id] = {
+      ...levelCfgFromPlan(plan),
+      facadeFilePath: path.resolve(
+        ROOT,
+        "public/assets/levels",
+        plan.id,
+        `${plan.backdrop.file}.png`,
+      ),
+    };
+    levels.push({ id: plan.id, name: plan.fiction.name });
+  }
   for (const id of targetIds) {
     if (!LEVEL_CFG[id]) throw new Error(`no detection config for level "${id}"`);
     if (!levels.find((l) => l.id === id)) throw new Error(`levelArt.json has no level "${id}"`);
   }
 
-  const { levelIds } = loadLevelManifest(ROOT);
+  const levelIds = levels.map((l) => l.id);
   const browser = await chromium.launch({ args: SWIFTSHADER_ARGS });
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -1179,7 +1211,11 @@ async function main() {
   try {
     for (const id of targetIds) {
       const level = levels.find((l) => l.id === id);
-      const band = bandOf(id);
+      // A generated level's cfg.band is already set from its plan's
+      // calibration — bandOf() would throw on a manifest lookup miss, so it
+      // is only ever called for a shipped id (detectOpenings ignores `band`
+      // whenever cfg.band !== null anyway).
+      const band = shippedLevels.find((l) => l.id === id) ? bandOf(id) : null;
       const d =
         mode === "check" ? await checkLevel(page, level, band) : await fixLevel(page, level, band);
       totalDefects += d;
