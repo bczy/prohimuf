@@ -4,6 +4,10 @@ import type { EnemyKind } from "@game/types/enemy";
 import type { LevelConfig } from "@game/levels/levels";
 import type { AuthoredNearForegroundObject, LevelArt } from "@game/levels/levelArt";
 import type { DeliverySpec } from "@game/types/delivery";
+// Types only: `validateLevel.ts` owns the `LevelIssue` shape (ADR-0074 §3) and this
+// module speaks it verbatim — one issue contract for the MCP `validate` tool, no
+// parallel type. Type-only, so no import-time dependency is added.
+import type { LevelIssue } from "@game/levels/validateLevel";
 import { VEHICLE_MARGIN, VEHICLE_SPEED } from "@game/systems/deliverySystem";
 
 /**
@@ -70,13 +74,24 @@ export function mobileVisibleProps<T extends { readonly row?: "near" | "far" | u
   return props.filter((p) => (p.row ?? "near") === row).filter((_, i) => i % 2 === 0);
 }
 
+/** Build one plan-level issue. Plan codes are namespaced `plan/…` (spec-mcp §4.1). */
+function planIssue(code: string, field: string, message: string): LevelIssue {
+  return { code: `plan/${code}`, severity: "error", field, message };
+}
+
 /**
  * Check the invariants a plan must hold. Returns the list of violations — empty
  * when the plan is sound. Called from a test, so a violation breaks CI and never
  * the runtime.
+ *
+ * Issues are the SAME structured `LevelIssue` as `validateLevel` (ADR-0074 §3), so
+ * story ③'s MCP `validate` tool composes plan-level and config-level validation
+ * without an ad-hoc wrapper (spec-mcp-level-editor §4.1). Each guard owns a stable
+ * `plan/…` `code` — the machine key an agent branches on; the `message` stays the
+ * human sentence, `field` the dotted path into the plan.
  */
-export function validateLevelPlan(plan: LevelPlan): string[] {
-  const errors: string[] = [];
+export function validateLevelPlan(plan: LevelPlan): readonly LevelIssue[] {
+  const errors: LevelIssue[] = [];
   const ns = `${plan.id}:`;
   const declared = new Set<string>(plan.archetypes.map((a) => a.kind));
 
@@ -84,21 +99,38 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // level — the design-gated cap on a generated level's mechanical surface.
   if (plan.archetypes.length > 1) {
     errors.push(
-      `archetypes: ${String(plan.archetypes.length)} declared, the design cap is 1 per level (spec §2.1)`,
+      planIssue(
+        "archetype-cap",
+        "archetypes",
+        `archetypes: ${String(plan.archetypes.length)} declared, the design cap is 1 per level (spec §2.1)`,
+      ),
     );
   }
 
-  for (const a of plan.archetypes) {
+  plan.archetypes.forEach((a, i) => {
+    const at = `archetypes[${String(i)}]`;
     // weight 0 is the activation law (§4.2): a level-authored kind never enters
     // a default pool, it is opted in by its own roster.windowWeights.
     if (a.weight !== 0) {
-      errors.push(`archetype ${a.kind}: weight must be 0 (activation via windowWeights)`);
+      errors.push(
+        planIssue(
+          "weight-nonzero",
+          `${at}.weight`,
+          `archetype ${a.kind}: weight must be 0 (activation via windowWeights)`,
+        ),
+      );
     }
     // `length <= ns.length` catches the template typo `"<id>:"` (empty name):
     // startsWith alone accepts it, but isOwnedGeneratedPropKind / the sprite
     // pipeline require a non-empty name segment and would silently drop it.
     if (!a.kind.startsWith(ns) || a.kind.length <= ns.length) {
-      errors.push(`archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`);
+      errors.push(
+        planIssue(
+          "namespace",
+          `${at}.kind`,
+          `archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`,
+        ),
+      );
     }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
@@ -106,10 +138,22 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // well as floored — transposed digits (100000 for 1) would fan out a huge
     // preload manifest with a green CI; the core table's max is 3, 16 is headroom.
     if (!Number.isInteger(a.variants) || a.variants < 1 || a.variants > 16) {
-      errors.push(`archetype ${a.kind}: variants must be an integer in [1, 16]`);
+      errors.push(
+        planIssue(
+          "archetype-bounds",
+          `${at}.variants`,
+          `archetype ${a.kind}: variants must be an integer in [1, 16]`,
+        ),
+      );
     }
     if (!Number.isInteger(a.hp) || a.hp < 1) {
-      errors.push(`archetype ${a.kind}: hp must be an integer >= 1`);
+      errors.push(
+        planIssue(
+          "archetype-bounds",
+          `${at}.hp`,
+          `archetype ${a.kind}: hp must be an integer >= 1`,
+        ),
+      );
     }
     // The remaining numeric fields are read just as directly at runtime, with no
     // clamp on the way: `bulletDamage` flows into `snapLives(lives - damage + …)`
@@ -117,16 +161,34 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // hidden/visible durations feed enemySystem's timers (NaN ⇒ state flips every
     // frame). Score/lives/time deltas land in the HUD arithmetic on every kill.
     if (!Number.isFinite(a.bulletDamage) || a.bulletDamage < 0) {
-      errors.push(`archetype ${a.kind}: bulletDamage must be a finite number >= 0`);
+      errors.push(
+        planIssue(
+          "archetype-bounds",
+          `${at}.bulletDamage`,
+          `archetype ${a.kind}: bulletDamage must be a finite number >= 0`,
+        ),
+      );
     }
     for (const field of ["hiddenDuration", "visibleDuration"] as const) {
       if (!Number.isFinite(a[field]) || a[field] <= 0) {
-        errors.push(`archetype ${a.kind}: ${field} must be a finite number > 0`);
+        errors.push(
+          planIssue(
+            "archetype-bounds",
+            `${at}.${field}`,
+            `archetype ${a.kind}: ${field} must be a finite number > 0`,
+          ),
+        );
       }
     }
     for (const field of ["scoreDelta", "livesDelta", "timeDelta"] as const) {
       if (!Number.isFinite(a[field])) {
-        errors.push(`archetype ${a.kind}: ${field} must be a finite number`);
+        errors.push(
+          planIssue(
+            "archetype-bounds",
+            `${at}.${field}`,
+            `archetype ${a.kind}: ${field} must be a finite number`,
+          ),
+        );
       }
     }
     // Runtime reads `aspect` just as directly: EnemySprite scales the mesh by it
@@ -134,40 +196,59 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // generated archetype's aspect into the module-level WIDEST_ASPECT at import —
     // so one bad value corrupts the window-fit harness box of every OTHER level too.
     if (!Number.isFinite(a.aspect) || a.aspect <= 0) {
-      errors.push(`archetype ${a.kind}: aspect must be a finite number > 0`);
+      errors.push(
+        planIssue(
+          "archetype-bounds",
+          `${at}.aspect`,
+          `archetype ${a.kind}: aspect must be a finite number > 0`,
+        ),
+      );
     }
-  }
+  });
 
-  for (const p of plan.props) {
+  plan.props.forEach((p, i) => {
+    const at = `props[${String(i)}]`;
     if (!p.kind.startsWith(ns) || p.kind.length <= ns.length) {
       // Same empty-name law as the archetype check above: getNearForeground's
       // isOwnedGeneratedPropKind requires a non-empty name at runtime.
-      errors.push(`prop ${p.kind}: expected namespace "${ns}" plus a non-empty name`);
+      errors.push(
+        planIssue(
+          "namespace",
+          `${at}.kind`,
+          `prop ${p.kind}: expected namespace "${ns}" plus a non-empty name`,
+        ),
+      );
     }
     // `x` included: getNearForeground silently DROPS a non-finite-x object at
     // runtime, which would desynchronize the mobile-halving parity this
     // validator certifies below from the list the renderer actually indexes.
     for (const field of ["aspect", "heightFrac", "footPadFrac", "x"] as const) {
-      if (!Number.isFinite(p[field])) errors.push(`prop ${p.kind}: ${field} missing or non-finite`);
+      if (!Number.isFinite(p[field])) {
+        errors.push(
+          planIssue("sizing", `${at}.${field}`, `prop ${p.kind}: ${field} missing or non-finite`),
+        );
+      }
     }
     // Same law as archetype.aspect above: NearForeground computes the plane width as
     // `planeH * aspect` UNCLAMPED (heightFrac/footPadFrac are clamped downstream,
     // aspect is not), so 0 renders nothing and negative mirrors the prop.
     if (Number.isFinite(p.aspect) && p.aspect <= 0) {
-      errors.push(`prop ${p.kind}: aspect must be a finite number > 0`);
+      errors.push(
+        planIssue("sizing", `${at}.aspect`, `prop ${p.kind}: aspect must be a finite number > 0`),
+      );
     }
-  }
+  });
 
   // Two placements of the SAME kind must agree on sizing and asset: the render
   // side resolves both PER KIND (Object.fromEntries — last entry wins), so a
   // divergent second entry would silently re-size and re-skin every placement
   // of that kind, including the first.
   const byKind = new Map<string, GeneratedPropSpec>();
-  for (const p of plan.props) {
+  plan.props.forEach((p, i) => {
     const first = byKind.get(p.kind);
     if (first === undefined) {
       byKind.set(p.kind, p);
-      continue;
+      return;
     }
     const agrees =
       first.asset === p.asset &&
@@ -176,10 +257,14 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
       first.footPadFrac === p.footPadFrac;
     if (!agrees) {
       errors.push(
-        `prop ${p.kind}: two placements disagree on sizing/asset (per-kind resolution is last-wins)`,
+        planIssue(
+          "prop-consistency",
+          `props[${String(i)}]`,
+          `prop ${p.kind}: two placements disagree on sizing/asset (per-kind resolution is last-wins)`,
+        ),
       );
     }
-  }
+  });
 
   // Gameplay sanity: these values seed divisors and loop bounds at runtime.
   // timeSeconds = 0 divides the tension derivation by zero on the first tick
@@ -196,7 +281,9 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // FIRST — a NaN/non-positive aspect would poison the runway arithmetic below
   // (and the runtime layout math it mirrors).
   if (!Number.isFinite(plan.backdrop.aspect) || plan.backdrop.aspect <= 0) {
-    errors.push(`backdrop.aspect: must be a finite number > 0`);
+    errors.push(
+      planIssue("sizing", "backdrop.aspect", `backdrop.aspect: must be a finite number > 0`),
+    );
   }
   const travelAllowance = Number.isFinite(plan.backdrop.aspect)
     ? deliveryTravelAllowanceSeconds(plan.backdrop.aspect)
@@ -204,21 +291,43 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   const minDeliveryRunway =
     DEFAULT_DELIVERY.triggerAtElapsedSeconds + travelAllowance + DEFAULT_DELIVERY.windowSeconds;
   if (!Number.isFinite(g.timeSeconds) || g.timeSeconds <= 0) {
-    errors.push(`gameplay.timeSeconds: must be a finite number > 0`);
+    errors.push(
+      planIssue(
+        "gameplay-bounds",
+        "gameplay.timeSeconds",
+        `gameplay.timeSeconds: must be a finite number > 0`,
+      ),
+    );
   } else if (g.timeSeconds <= minDeliveryRunway) {
     errors.push(
-      `gameplay.timeSeconds: must exceed ${String(minDeliveryRunway)}s — delivery trigger ` +
-        `(${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s) + vehicle travel allowance ` +
-        `(${String(travelAllowance)}s for backdrop aspect ${String(plan.backdrop.aspect)}) + ` +
-        `delivery window (${String(DEFAULT_DELIVERY.windowSeconds)}s) — or the delivery ` +
-        `bonus can never be earned`,
+      planIssue(
+        "gameplay-bounds",
+        "gameplay.timeSeconds",
+        `gameplay.timeSeconds: must exceed ${String(minDeliveryRunway)}s — delivery trigger ` +
+          `(${String(DEFAULT_DELIVERY.triggerAtElapsedSeconds)}s) + vehicle travel allowance ` +
+          `(${String(travelAllowance)}s for backdrop aspect ${String(plan.backdrop.aspect)}) + ` +
+          `delivery window (${String(DEFAULT_DELIVERY.windowSeconds)}s) — or the delivery ` +
+          `bonus can never be earned`,
+      ),
     );
   }
   if (!Number.isInteger(g.enemiesToWin) || g.enemiesToWin < 1) {
-    errors.push(`gameplay.enemiesToWin: must be an integer >= 1`);
+    errors.push(
+      planIssue(
+        "gameplay-bounds",
+        "gameplay.enemiesToWin",
+        `gameplay.enemiesToWin: must be an integer >= 1`,
+      ),
+    );
   }
   if (!Number.isFinite(g.enemySpeedMultiplier) || g.enemySpeedMultiplier <= 0) {
-    errors.push(`gameplay.enemySpeedMultiplier: must be a finite number > 0`);
+    errors.push(
+      planIssue(
+        "gameplay-bounds",
+        "gameplay.enemySpeedMultiplier",
+        `gameplay.enemySpeedMultiplier: must be a finite number > 0`,
+      ),
+    );
   }
 
   // The activation seam is also the leak: `windowWeights` is projected verbatim
@@ -235,14 +344,27 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // kind on every level boot, so a large-but-finite typo (200000 for 20) is the
     // same Array.from blow-up as Infinity, just below the RangeError threshold —
     // a frozen tab instead of a crash. 1000 dwarfs the whole core pool (93).
+    const at = `gameplay.windowWeights.${kind}`;
     if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 0 || weight > 1000) {
-      errors.push(`windowWeights ${kind}: weight must be a finite number in [0, 1000]`);
+      errors.push(
+        planIssue(
+          "window-weights",
+          at,
+          `windowWeights ${kind}: weight must be a finite number in [0, 1000]`,
+        ),
+      );
     }
     if (!kind.includes(":")) continue;
     if (!kind.startsWith(ns)) {
-      errors.push(`windowWeights ${kind}: expected namespace "${ns}"`);
+      errors.push(planIssue("namespace", at, `windowWeights ${kind}: expected namespace "${ns}"`));
     } else if (!declared.has(kind)) {
-      errors.push(`windowWeights ${kind}: no archetype of the plan declares this kind`);
+      errors.push(
+        planIssue(
+          "window-weights",
+          at,
+          `windowWeights ${kind}: no archetype of the plan declares this kind`,
+        ),
+      );
     }
   }
 
@@ -271,8 +393,12 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   });
   if (!winnable) {
     errors.push(
-      `gameplay.windowWeights: no countsAsTarget kind survives with positive weight — ` +
-        `enemiesToWin can never be reached`,
+      planIssue(
+        "window-weights",
+        "gameplay.windowWeights",
+        `gameplay.windowWeights: no countsAsTarget kind survives with positive weight — ` +
+          `enemiesToWin can never be reached`,
+      ),
     );
   }
 
