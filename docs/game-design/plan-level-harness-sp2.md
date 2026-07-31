@@ -65,20 +65,40 @@ cancel-in-progress: false }` au niveau du workflow — deux dispatches sur le m�
      touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
      (`git log --oneline origin/main..HEAD -- <chemin> | wc -l`) — PAS la valeur du
      fichier (le contenu n'est qu'informatif : timestamp + run id). Un commit = une
-     tentative ; la sémantique par commits, combinée à la sérialisation du point 1,
-     élimine la race read-modify-write. Fichier jamais commité = 0 (cas bootstrap
-     d'un level neuf — la phase (a) doit pouvoir tourner la première fois).
-  3. **Ordre des steps** : le step de GARDE tourne en premier, après un
-     `git fetch origin` + pull de la branche, et lit le compte TEL QU'IL EXISTAIT
-     AVANT cette tentative — fail à ≥ 3 avec message d'escalade explicite (le cap
-     autorise donc bien 3 tirages, pas 2).
-  4. **Trace avant dépense** : ensuite seulement, le step d'incrément committe et
-     POUSSE un commit touchant `.paid-attempts` ; si ce push échoue, le job FAIL
-     avant tout appel payé — pas d'appel sans trace.
-  5. **Après dépense** : un échec du commit-back des assets APRÈS un appel payé
-     réussi met le job en FAIL (jamais warn) — le tirage reste compté par son commit
-     de trace du point 4.
-     Testé par un dry-run bash local des steps 2-4 (y compris le cas fichier absent).
+     tentative (y compris merge ou revert : TOUT commit touchant le chemin compte) ;
+     la sémantique par commits, combinée à la sérialisation du point 1, élimine la
+     race read-modify-write. Fichier jamais commité = 0 (cas bootstrap d'un level
+     neuf — la phase (a) doit pouvoir tourner la première fois).
+  3. **Ordre des steps et lecture robuste** : le step de GARDE tourne en premier et
+     lit le compte TEL QU'IL EXISTAIT AVANT cette tentative — fail à ≥ 3 avec
+     message d'escalade explicite (le cap autorise donc bien 3 tirages, pas 2).
+     Lecture robuste ou rien : checkout `fetch-depth: 0` (le shallow clone par
+     défaut de `checkout@v4` ne ramène pas `origin/main`), `set -euo pipefail`,
+     `git fetch origin` puis `git reset --hard origin/<branche>` (sûr aussi en
+     re-run d'un job), et FAIL si `origin/main` ne résout pas — un échec git ne
+     vaut JAMAIS 0 tentative.
+  4. **Trace avant dépense** : ensuite seulement, le step d'incrément committe
+     (`git add -f`, le pattern du commit-back de `gen-level-art.yml`) et POUSSE un
+     commit touchant `.paid-attempts` ; si ce push échoue, le job FAIL avant tout
+     appel payé — pas d'appel sans trace (rien de dépensé : re-dispatch et repartir).
+  5. **Après dépense** : le push du commit-back des assets suit le pattern retry de
+     `gen-level-art.yml` (3 tentatives, `git pull --rebase --autostash` entre chaque
+     — les pushes concurrents des autres workflows sur la même branche ne brûlent
+     pas un tirage) ; s'il échoue quand même APRÈS un appel payé réussi, le job FAIL
+     (jamais warn) — le tirage reste compté par son commit de trace du point 4.
+  6. **Limites assumées, dites dans le message d'escalade** : une tentative tracée
+     sans image (annulation entre la trace et l'appel, 500/timeout de l'API payante)
+     ne se récupère NI par revert (le commit de revert toucherait `.paid-attempts`
+     et compterait comme tentative) NI par réécriture d'historique — un
+     rebase/squash/force-push qui réécrit les commits de trace remet le compteur à
+     zéro : c'est le contournement HUMAIN volontaire assumé du mécanisme, jamais un
+     geste de workflow. Lever le cap est une décision de Bertrand — le message
+     d'escalade le dit et pointe le geste autorisé (re-dispatch après merge, ou
+     nouvelle PR). Et la file de concurrency GitHub ne gardant qu'un run en attente
+     par groupe, un 3e dispatch pendant un run annule le 2e en attente — re-dispatch
+     nécessaire, zéro dépense fantôme.
+     Testé par un dry-run bash local des steps 2-4 (y compris le cas fichier absent,
+     le cas `origin/main` non résolu, et le push simulé contre un remote fictif).
 - [ ] Jamais sur main (le garde `if:` de `gen-level-art.yml`, copié).
 - [ ] Commit `ci(harness): workflow backdrop payé par plan, cap 3 tirages par PR`.
 
