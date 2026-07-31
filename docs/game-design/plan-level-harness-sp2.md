@@ -84,8 +84,11 @@ cancel-in-progress: false }` au niveau du workflow — au plus UN run par `level
      vaut JAMAIS 0 tentative.
   4. **Trace avant dépense** : ensuite seulement, le step d'incrément committe
      (`git add -f`, le pattern du commit-back de `gen-level-art.yml`) et POUSSE un
-     commit touchant `.paid-attempts` ; si ce push échoue, le job FAIL avant tout
-     appel payé — pas d'appel sans trace (rien de dépensé : re-dispatch et repartir).
+     commit touchant `.paid-attempts` — avec le MÊME pattern retry que le point 5
+     (3 tentatives, `git pull --rebase --autostash` entre chaque : un push concurrent
+     bénin d'un autre workflow sur la branche ne doit pas coûter un re-dispatch) ;
+     si le push échoue après les retries, le job FAIL avant tout appel payé — pas
+     d'appel sans trace (rien de dépensé : re-dispatch et repartir).
   5. **Après dépense** : le push du commit-back des assets suit le pattern retry de
      `gen-level-art.yml` (3 tentatives, `git pull --rebase --autostash` entre chaque
      — les pushes concurrents des autres workflows sur la même branche ne brûlent
