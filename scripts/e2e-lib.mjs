@@ -119,7 +119,10 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
  */
 export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   const deadline = Date.now() + timeout;
-  const left = () => Math.max(0, deadline - Date.now());
+  // Floor of 1ms, NOT 0: Playwright reads `timeout: 0` as "disable the timeout" and
+  // waits forever. Clamping to 0 once the budget is spent — a slow mount eating it all,
+  // or a caller passing `{ timeout: 0 }` — would turn this safety net into a hang.
+  const left = () => Math.max(1, deadline - Date.now());
   await page.locator(".muf-flyer-slot").first().waitFor({ timeout: left() });
   await page.waitForFunction(
     () => {
