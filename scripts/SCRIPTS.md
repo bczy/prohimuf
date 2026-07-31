@@ -733,6 +733,42 @@ JPEG-despite-`.png` `facade.png`).
 
 ---
 
+## gen-street-paid.mjs — Single-wide PAID backdrop (level-harness SP2 phase (a))
+
+Generates the ONE baked single-wide backdrop image (ADR-0057 style, e.g.
+`street-wide.png`) for a **generated level** (`src/game/levels/generated/<id>.ts`),
+via a PAID (non-flux) Pollinations model at exact dimensions (`gen.pollinations.ai`
+honours width/height exactly — required for a wide backdrop's precise aspect).
+spec-level-harness-sp2 §3/§4.1.
+
+```bash
+POLLINATIONS_TOKEN=... node scripts/gen-street-paid.mjs --plan <levelId>
+FORCE=1 POLLINATIONS_TOKEN=... node scripts/gen-street-paid.mjs --plan <levelId>  # regenerate
+```
+
+- **Prompt** — `scripts/lib/paidPrompt.mjs`'s `buildPaidPrompt(plan)`: the plan's
+  own content (district, year, and — when the plan declares `calibration` — the
+  gable-wall + passage clause the window-detection harness needs) THEN the shared
+  `STYLE_BLOCK` (the house "Tardi ink, three values" law, verbatim) — content
+  before style, never concatenated the other way, so one level's decor cannot
+  bleed into another's (the "Belliard déteint sur tout" risk, spec §4.1).
+- **Seed** — `seedFromLevelId(plan.id)` (`scripts/lib/paidPrompt.mjs`): a pure,
+  deterministic hash of the level id, NEVER random (spec §2.2) — re-dispatching
+  the same level's backdrop workflow always requests the same image.
+- **Output** — `public/assets/levels/<id>/<plan.backdrop.file>.png`, committable.
+  Idempotent: skipped when the file exists, unless `FORCE=1`.
+- **Plan loading** — `scripts/lib/loadPlan.mjs` (`jiti`, `tsconfigPaths: true`):
+  the ONE way any `scripts/` generator reads a `LevelPlan`, so every phase script
+  compiles the SAME module graph the app/tests do.
+- **Cap** — this script has none of its own; the 3-paid-attempt cap lives in the
+  CI workflow that dispatches it (`gen-plan-backdrop.yml`), never here (a
+  local/manual run is one attempt with no counter to trip).
+- **Legacy mode** (no `--plan`) — UNCHANGED: the original Belliard A/B experiment
+  (one image per `MODELS`×`SEEDS`, written to `street-experiments/`, never
+  committed). Kept for reference; do not extend it.
+
+---
+
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
 
 Generates the enemy archetype sprites (base cops + variants, riot/CRS,
