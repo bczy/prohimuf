@@ -7,8 +7,10 @@ import type { MotifKind } from "../FlyerMotif";
 
 const ALL_KINDS: readonly MotifKind[] = ["spiral", "smiley", "rings", "halftone", "invader"];
 
-function render(kind: MotifKind, tiltDeg = 0): string {
-  return renderToStaticMarkup(createElement(FlyerMotif, { kind, size: 54, tiltDeg }));
+function render(kind: MotifKind, tiltDeg = 0, instanceId = "t", wearSeed = 5): string {
+  return renderToStaticMarkup(
+    createElement(FlyerMotif, { kind, size: 54, tiltDeg, instanceId, wearSeed }),
+  );
 }
 
 describe("FlyerMotif", () => {
@@ -48,6 +50,21 @@ describe("FlyerMotif", () => {
     for (const kind of ALL_KINDS) {
       expect(render(kind), kind).toBe(render(kind));
     }
+  });
+
+  it("wears the ink with a FIXED turbulence seed", () => {
+    // feTurbulence is only deterministic when the seed is explicit; leaving it to the
+    // default would let the browser reshuffle the ink breakup between renders.
+    const html = render("rings", 0, "a", 12);
+    expect(html).toContain("feTurbulence");
+    expect(html).toContain('seed="12"');
+    expect(html).toContain("feDisplacementMap");
+  });
+
+  it("scopes filter ids per instance so two sheets never collide", () => {
+    // A shared id would make every emblem on the wall inherit the first one's filter.
+    expect(render("rings", 0, "belliard")).toContain("muf-motif-wear-belliard");
+    expect(render("rings", 0, "vitry")).toContain("muf-motif-wear-vitry");
   });
 
   it("applies the tilt only when asked, so an untilted motif carries no transform", () => {
