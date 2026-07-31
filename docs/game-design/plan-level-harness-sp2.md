@@ -56,7 +56,60 @@ readonly calibration?: {
 `gen-level-art.yml`).
 
 - [ ] Input `level_id` (workflow_dispatch) ; job unique : checkout → setup → `node scripts/gen-street-paid.mjs --plan $level_id` → commit-back `public/assets/levels/<id>/`.
-- [ ] **Cap 3** : avant génération, `git log --oneline origin/main..HEAD -- public/assets/levels/<id>/ | wc -l` ≥ 3 ⇒ fail avec message d'escalade explicite. Testé par un dry-run du step en bash local.
+- [ ] **Cap 3 — mécanisme exact, dans cet ordre** (un tirage payé dont le commit-back
+      échoue doit compter quand même) :
+  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>,
+cancel-in-progress: false }` au niveau du workflow — au plus UN run par `level_id`
+     à tout instant ; jamais deux runs concurrents, mais pas une file FIFO non plus
+     (GitHub ne garde qu'un run en attente par groupe — le point 6 documente
+     l'absorption des dispatches intermédiaires, sans dépense fantôme).
+  2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
+     touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
+     (`git log --oneline --full-history origin/main..HEAD -- <chemin> | wc -l` —
+     `--full-history` est OBLIGATOIRE : sans lui, la simplification d'historique de
+     git peut omettre un commit de merge touchant le chemin, donc sous-compter) —
+     PAS la valeur du
+     fichier (le contenu n'est qu'informatif : timestamp + run id). Un commit = une
+     tentative (y compris merge ou revert : TOUT commit touchant le chemin compte) ;
+     la sémantique par commits, combinée à la sérialisation du point 1, élimine la
+     race read-modify-write. Fichier jamais commité = 0 (cas bootstrap d'un level
+     neuf — la phase (a) doit pouvoir tourner la première fois).
+  3. **Ordre des steps et lecture robuste** : le step de GARDE tourne en premier et
+     lit le compte TEL QU'IL EXISTAIT AVANT cette tentative — fail à ≥ 3 avec
+     message d'escalade explicite (le cap autorise donc bien 3 tirages, pas 2).
+     Lecture robuste ou rien : checkout `fetch-depth: 0` (le shallow clone par
+     défaut de `checkout@v4` ne ramène pas `origin/main`), `set -euo pipefail`,
+     `git fetch origin` puis `git reset --hard origin/<branche>` (sûr aussi en
+     re-run d'un job), et FAIL si `origin/main` ne résout pas — un échec git ne
+     vaut JAMAIS 0 tentative.
+  4. **Trace avant dépense** : ensuite seulement, le step d'incrément committe
+     (`git add -f`, le pattern du commit-back de `gen-level-art.yml`) et POUSSE un
+     commit touchant `.paid-attempts` — avec le MÊME pattern retry que le point 5
+     (3 tentatives, `git pull --rebase --autostash` entre chaque : un push concurrent
+     bénin d'un autre workflow sur la branche ne doit pas coûter un re-dispatch) ;
+     si le push échoue après les retries, le job FAIL avant tout appel payé — pas
+     d'appel sans trace (rien de dépensé : re-dispatch et repartir).
+  5. **Après dépense** : le push du commit-back des assets suit le pattern retry de
+     `gen-level-art.yml` (3 tentatives, `git pull --rebase --autostash` entre chaque
+     — les pushes concurrents des autres workflows sur la même branche ne brûlent
+     pas un tirage) ; s'il échoue quand même APRÈS un appel payé réussi, le job FAIL
+     (jamais warn) — le tirage reste compté par son commit de trace du point 4.
+  6. **Limites assumées, dites dans le message d'escalade** : une tentative tracée
+     sans image (annulation entre la trace et l'appel, 500/timeout de l'API payante)
+     ne se récupère NI par revert (le commit de revert toucherait `.paid-attempts`
+     et compterait comme tentative) NI par réécriture d'historique — un
+     rebase/squash/force-push qui réécrit les commits de trace remet le compteur à
+     zéro : c'est le contournement HUMAIN volontaire assumé du mécanisme, jamais un
+     geste de workflow. Lever le cap est une décision de Bertrand — le message
+     d'escalade le dit et pointe le geste autorisé (re-dispatch après merge, ou
+     nouvelle PR). Et la file de concurrency GitHub ne gardant qu'un run en attente
+     par groupe, un 3e dispatch pendant un run annule le 2e en attente — re-dispatch
+     nécessaire, zéro dépense fantôme.
+     Testé par un dry-run bash local des steps 2-5 — y compris le cas fichier absent,
+     le cas `origin/main` non résolu, le push simulé contre un remote fictif, ET le
+     cas « commit-back des assets échoue après dépense » (step 5) : le script doit
+     exit non-zéro — ni `continue-on-error: true`, ni un `|| true` qui avalerait le
+     code de sortie du push.
 - [ ] Jamais sur main (le garde `if:` de `gen-level-art.yml`, copié).
 - [ ] Commit `ci(harness): workflow backdrop payé par plan, cap 3 tirages par PR`.
 
