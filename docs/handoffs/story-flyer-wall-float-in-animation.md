@@ -39,6 +39,23 @@ déborder le diff sur un second lane — n'a pas d'issue proportionnée. Une tro
 Elle n'a PAS été appliquée ici : on ne s'autorise pas une exception avant qu'elle soit
 doctrine.
 
+## Porte de design (rétroactive)
+
+Le panel a relevé — à raison — que l'escalade en pipeline complet avait rouvert le critère
+mono-lane sans jamais rouvrir le critère **« zéro design »**, que ce changement casse aussi :
+régler le ressenti d'une animation d'écran relève d'`ux-designer`, pas d'un lane dev.
+
+**Revue `ux-designer` passée**, verdict « acceptable avec changements nommés », dont **un
+bloquant** : l'entrée rejouait à chaque aller-retour de rubrique et masquait ~2,5 s durant
+les noms de niveaux et les cadenas déjà lus. Corrigé — la cascade joue au plus **une fois
+par session** (`sessionStorage`, clé distincte du drapeau à vie du nudge), validé par deux
+mutations. Les quatre autres points sont validés en l'état (focus au montage avec
+`preventScroll`, mouvement réduit en coupure franche, portée du clip d'overflow).
+
+Décisions consignées dans
+[`docs/game-design/ux/decision-niveaux-entrance-animation.md`](../game-design/ux/decision-niveaux-entrance-animation.md),
+pour qu'un contributeur ultérieur les trouve au lieu de les redéduire du CSS.
+
 ## Signatures de lane
 
 - **`dev-r3f-render`** — moitié render (`src/render/ui/**`).
@@ -51,6 +68,7 @@ doctrine.
   importateurs dont les gates bloquants ; la suppression de la capture périmée puis
   re-throw sur le `00_menu.png` autoritaire est le bon arbitrage vu que `preview.yml` ne
   gate rien et que chaque capture y est déjà best-effort.
+- **`ux-designer`** — porte de design rétroactive (ci-dessus).
 - **`senior-architect`** — analyse du rayon de souffle conservée comme argumentaire (elle
   reste juste sur le fond), mais elle ne vaut PAS dérogation : c'est la double signature
   de lane qui autorise le merge, pas elle.

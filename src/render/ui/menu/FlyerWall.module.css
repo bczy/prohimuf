@@ -138,3 +138,10 @@
     width: var(--flyer-max-width);
   }
 }
+
+/* Already played this session (ux-designer, PR #145): render in the resting position at
+   once. Same end state as the reduced-motion kill switches, reached the same way — by
+   removing the animation, not by adding a second one. */
+.slotSettled {
+  animation: none;
+}

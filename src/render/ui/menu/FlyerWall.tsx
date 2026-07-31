@@ -49,13 +49,6 @@ interface FlyerMeta {
 export const FLOAT_IN_STAGGER_MS = 180;
 
 /**
- * Float-in fall paths (drop height, drift amplitude/direction, rotation) for the
- * `--fio-*` custom properties consumed by FlyerWall.module.css's `mufFlyerFloatIn`
- * keyframe. Three deterministic variants cycled by flyer index — same doctrine as the
- * imported FLYER_REST_ROTATION_DEG/FLYER_JITTER_PX print tokens, no Math.random — so
- * consecutive flyers don't drift the same distance in the same direction.
- */
-/**
  * The exact 12 custom properties `mufFlyerFloatIn` reads. Spelled out as a key union
  * rather than `Record<string, string>`: a mistyped key (`--fio-yo` for `--fio-y0`) would
  * type-check silently, fall back to the zeroed CSS default and quietly flatten that axis
@@ -78,6 +71,13 @@ type FloatInVars = Record<
   string
 >;
 
+/**
+ * Float-in fall paths (drop height, drift amplitude/direction, rotation) for the
+ * `--fio-*` custom properties consumed by FlyerWall.module.css's `mufFlyerFloatIn`
+ * keyframe. Three deterministic variants cycled by flyer index — same doctrine as the
+ * imported FLYER_REST_ROTATION_DEG/FLYER_JITTER_PX print tokens, no Math.random — so
+ * consecutive flyers don't drift the same distance in the same direction.
+ */
 const FLYER_FLOAT_IN_VARIANTS: readonly FloatInVars[] = [
   {
     "--fio-y0": "-190px",
@@ -165,6 +165,37 @@ export function buildPressionChoices(
  */
 const SEEN_TUTORIAL_NUDGE_KEY = "muf_seen_tutorial_nudge";
 
+/**
+ * Has the entrance cascade already played THIS session? (`ux-designer` review, PR #145.)
+ *
+ * `sessionStorage`, deliberately NOT the lifetime `muf_seen_tutorial_nudge` key: the two
+ * answer different questions and conflating them would either make the nudge reappear or
+ * freeze the cascade forever. NIVEAUX is the screen a returning player passes through
+ * constantly, and it unmounts on every rubrique switch — so without this, an
+ * OPTIONS→NIVEAUX round trip replayed ~2.5s of moving paper and hid the level names and
+ * lock badges the player read three seconds earlier. Once per session keeps the
+ * first-impression moment and drops the tax on the browse→options→browse→play loop.
+ */
+const CASCADE_PLAYED_KEY = "muf_flyer_cascade_played";
+
+/** Guarded like `hasSeenTutorialNudge`: no storage ⇒ treat as already played, so a
+ *  private-mode session degrades to "no animation" rather than replaying every mount. */
+export function hasCascadePlayed(): boolean {
+  try {
+    return sessionStorage.getItem(CASCADE_PLAYED_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+export function markCascadePlayed(): void {
+  try {
+    sessionStorage.setItem(CASCADE_PLAYED_KEY, "1");
+  } catch {
+    // storage unavailable — the cascade simply won't be marked; harmless
+  }
+}
+
 /** True once the first-run tutorial nudge has been shown (or storage is unavailable — a
  *  guarded read that treats absence-of-storage as "already seen", so it never nags nor
  *  throws). Exported pure so the first-run decision is unit-testable DOM-free. */
@@ -199,6 +230,9 @@ export function FlyerWall({
   // flag below never retroactively hides the nudge or drops the focus steal during this
   // same visit. Absent flag ⇒ first-timer: auto-focus the tutorial flyer + show the nudge.
   const [firstVisit] = useState(() => !hasSeenTutorialNudge());
+  // Captured ONCE at mount, before the effect below marks it — so this same mount still
+  // animates while every later one in the session does not.
+  const [playCascade] = useState(() => !hasCascadePlayed());
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -208,6 +242,10 @@ export function FlyerWall({
   const [armed, setArmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    markCascadePlayed();
+  }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -227,7 +265,12 @@ export function FlyerWall({
     if (!firstVisit) return;
     markTutorialNudgeSeen();
     if (tutorialIndex >= 0) {
-      itemRefs.current[tutorialIndex]?.focus();
+      // `preventScroll` because this fires while the flyer is mid-entrance: its rect is
+      // still translated up to -230px / ±44px, and the browser's implicit scroll-into-view
+      // reads that transformed rect — so it would scroll to where the sheet ISN'T. Keeping
+      // the focus itself on mount (rather than deferring it until the animation settles)
+      // is deliberate: a screen-reader user should not wait ~2s for focus to land.
+      itemRefs.current[tutorialIndex]?.focus({ preventScroll: true });
     }
   }, [firstVisit, tutorialIndex]);
 
@@ -367,7 +410,11 @@ export function FlyerWall({
           return (
             <div
               key={level.id}
-              className={cx("muf-flyer-slot", styles.slot)}
+              className={cx(
+                "muf-flyer-slot",
+                styles.slot,
+                playCascade ? undefined : styles.slotSettled,
+              )}
               // Staggers the float-in entrance (FlyerWall.module.css) so flyers appear
               // one sheet at a time instead of all at once, each on its own fall path.
               style={

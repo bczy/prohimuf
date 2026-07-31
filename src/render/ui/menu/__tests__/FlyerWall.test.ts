@@ -12,6 +12,8 @@ import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
 import {
   FLOAT_IN_STAGGER_MS,
   FlyerWall,
+  hasCascadePlayed,
+  markCascadePlayed,
   buildPressionChoices,
   hasSeenTutorialNudge,
   markTutorialNudgeSeen,
@@ -232,5 +234,56 @@ describe("FlyerWall float-in entrance — per-slot wiring", () => {
     // If the class ever stops being emitted, the animation would still run but neither
     // guard could stop it — an accessibility regression no visual test would show.
     expect(count(html, /class="muf-flyer-slot [^"]+"/g)).toBe(slotStyles.length);
+  });
+});
+
+/**
+ * Once-per-SESSION cascade (`ux-designer` gate, PR #145). NIVEAUX unmounts on every
+ * rubrique switch, so without this the ~2.5s entrance replayed on each OPTIONS→NIVEAUX
+ * round trip, hiding level names and lock badges the player had just read.
+ */
+describe("FlyerWall float-in — once per session", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("uses sessionStorage, so a new session animates again", () => {
+    expect(hasCascadePlayed()).toBe(false);
+    markCascadePlayed();
+    expect(hasCascadePlayed()).toBe(true);
+    // A *session* flag, not a lifetime one: clearing the session must re-arm it, which is
+    // what separates it from muf_seen_tutorial_nudge.
+    sessionStorage.clear();
+    expect(hasCascadePlayed()).toBe(false);
+  });
+
+  it("marks the cascade played on mount, so a remount renders settled", () => {
+    expect(hasCascadePlayed()).toBe(false);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        createElement(FlyerWall, {
+          unlockedLevels: new Set<string>(),
+          onPlay: () => undefined,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: () => undefined,
+        }),
+      );
+    });
+    expect(hasCascadePlayed()).toBe(true);
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("does not touch the lifetime nudge flag", () => {
+    // Conflating the two keys would either freeze the cascade forever or make the
+    // first-run nudge reappear every session.
+    markCascadePlayed();
+    expect(localStorage.getItem("muf_seen_tutorial_nudge")).toBeNull();
   });
 });
