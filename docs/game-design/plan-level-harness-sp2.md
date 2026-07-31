@@ -65,7 +65,10 @@ cancel-in-progress: false }` au niveau du workflow — au plus UN run par `level
      l'absorption des dispatches intermédiaires, sans dépense fantôme).
   2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
      touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
-     (`git log --oneline origin/main..HEAD -- <chemin> | wc -l`) — PAS la valeur du
+     (`git log --oneline --full-history origin/main..HEAD -- <chemin> | wc -l` —
+     `--full-history` est OBLIGATOIRE : sans lui, la simplification d'historique de
+     git peut omettre un commit de merge touchant le chemin, donc sous-compter) —
+     PAS la valeur du
      fichier (le contenu n'est qu'informatif : timestamp + run id). Un commit = une
      tentative (y compris merge ou revert : TOUT commit touchant le chemin compte) ;
      la sémantique par commits, combinée à la sérialisation du point 1, élimine la
