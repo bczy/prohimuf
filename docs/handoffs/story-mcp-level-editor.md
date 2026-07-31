@@ -34,9 +34,9 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 ## Suivi
 
 - [x] PR #151 (specs+plans) : panel PASS → acceptation pm → merge (commit 3ba17a4, 2026-07-30)
-- [ ] **Sign-off senior-architect au BUILD** : (1) le renversement ADR-0075 §6 de T1,
-      avec le risque split-brain repesé ; (2) l'ADR du serveur (T2, nouveau process +
-      devDependency, numéro par adr-new vérifié contre TOUTES les branches distantes)
+- [x] **Sign-off senior-architect au BUILD** (2026-07-31, §4) : (1) renversement ADR-0075 §6
+      → **PASS avec conditions** (version ÉTROITE : seul le throw se déplace) ; (2) ADR du
+      serveur → **PASS**, `docs/adr/0077-mcp-level-editor-server.md`, index régénéré
 - [ ] T1 (dev-gameplay) : fail-fast bootstrap, sign-off bloquant
 - [ ] T2b (dev-gameplay) : validateLevelPlan → LevelIssue[], code stable par garde
 - [ ] T2 (dev-tooling-assets) : serveur MCP, ADR du process, après sign-off
@@ -97,3 +97,113 @@ Rien n'a mergé côté SP2 (`story-level-harness-sp2.md` toujours en SPECS REVIE
 5. **VERIFY** (qa-lead) : mutation tests + integration
 6. **simplify** → **review-panel** → **PR draft**
 7. **pm acceptance** → **merge**
+
+## 4. Sign-offs senior-architect — 2026-07-31
+
+Contexte du sign-off : contrairement à ce qu'annonçait §3, **T1 n'est pas commité** (la
+branche `feat/mcp-level-editor` n'a jamais existé sur `origin`). Ces deux sign-offs portent
+donc sur le **design, avant implémentation** — ce qui est la bonne place pour eux.
+
+### (a) Renversement d'ADR-0075 §6 (T1) — **PASS AVEC CONDITIONS**
+
+Le renversement est accordé dans une **version étroite** : seul le `throw` se déplace de
+l'import au bootstrap. La proposition §4.3 en l'état est refusée sur un point (le
+déplacement de l'enregistrement des archétypes), pour les raisons ci-dessous.
+
+**Ce que j'ai repesé, honnêtement.**
+
+1. *Le crash au bootstrap est-il aussi impossible à rater qu'à l'import ?* **Pour
+   l'application, oui** (appel au corps de `src/main.tsx`, avant `createRoot(...).render` :
+   même écran blanc, même stack, une frame plus tard). **Pour le reste, non** — et la spec
+   §4.3 le dit trop vite. Aujourd'hui le throw à l'import atteint *toute* surface qui touche
+   le catalogue : tests, scripts, driver e2e, futur outil MCP. Après déplacement, ces
+   surfaces n'ont plus de fail-fast. C'est **voulu** (l'outil doit rapporter une issue, pas
+   mourir), mais ça se paie : entre l'écriture d'un doublon et le passage CI/app, le
+   split-brain `LEVEL_ART` last-wins / `ALL_LEVELS.find` first-wins existe silencieusement.
+   La compensation `validateCatalogue` n'est donc pas un bonus mais la **contrepartie
+   obligatoire** du renversement (condition C2).
+2. *Le micro-risque « oubli d'appel au bootstrap » est-il couvert par le test de pool ?*
+   **Non — la phrase de §4.3 est fausse en l'état et doit être corrigée.** Le test
+   « activates a level-authored kind in ITS pool » ne passe aujourd'hui que parce que
+   `buildWeightedFrom` lit `generated` peuplé *par l'import*. Or le plan T1 prévoit
+   explicitement d'appeler `registerGeneratedLevels()` « dans le setup des tests qui exercent
+   le chemin runtime » : un test qui appelle lui-même la fonction ne peut, par construction,
+   rien dire du site d'appel de `src/main.tsx`. Le garde doit porter sur le **site d'appel
+   réel** (condition C3).
+3. *Un point que ni la spec ni le plan ne relèvent — et qui est le vrai coût du déplacement
+   de l'enregistrement.* `src/game/levels/validateLevel.ts:11` porte
+   `import "@game/levels/generated";` avec un commentaire explicite : effet de bord
+   **délibéré** (panel run-8) pour que le consommateur STANDALONE — « story ③'s MCP `validate`
+   tool » — voie les kinds générés via `hasArchetype`/`knownKinds`. Rendre le module
+   totalement pur casse ce contrat et ferait rapporter `unknown-enemy-kind` sur tout kind
+   généré légitime : la story se tirerait une balle dans son propre outil. `validateLevel.ts`
+   n'est même pas dans la liste de fichiers de T1.
+
+**La conclusion architecturale.** Ce qui bloque l'import mécanique du catalogue est le
+**throw**, pas l'enregistrement. Enregistrer des archétypes tous à `weight: 0` dans une `Map`
+privée est idempotent, inobservable et ne peut corrompre aucun pool ; c'est même ce dont
+l'outil MCP dépend. Déplacer le throw livre 100 % du besoin de la story ; déplacer aussi
+l'enregistrement ajoute un rayon d'explosion (validateLevel, tous les tests qui passaient par
+l'import, le cœur MCP) pour un bénéfice de pureté théorique. **On déplace le throw. On garde
+l'enregistrement.**
+
+**Conditions (bloquantes, à vérifier au review-panel) :**
+
+- **C1 — Périmètre.** Seul `assertDistinctPlanIds(GENERATED_PLANS)` quitte le corps de
+  `generated/index.ts`. La boucle `registerGeneratedArchetypes` **reste**. `validateLevel.ts`
+  garde son import à effet de bord et son commentaire (mis à jour pour dire que seul le
+  fail-fast a bougé). Vouloir malgré tout déplacer l'enregistrement ⇒ **nouveau sign-off**,
+  avec inventaire préalable des consommateurs et mise à jour de `validateLevel.ts`.
+- **C2 — Contrepartie.** `validateCatalogue(plans): LevelIssue[]` (code `plan/duplicate-id`)
+  vit dans `levelPlan.ts` et est la **source unique** de la règle : `assertDistinctPlanIds`
+  devient un wrapper mince qui throw sur son résultat (pas deux implémentations de
+  l'unicité). Elle est appelée par l'outil `validate` **et** par `scaffold` avant écriture, et
+  un test CI l'exécute sur le **vrai** `GENERATED_PLANS` (pas seulement sur une paire
+  synthétique — le test actuel ne prouve que la fonction, pas le catalogue).
+- **C3 — Garde du site d'appel.** Un test dédié doit rougir quand l'appel disparaît de
+  `src/main.tsx`. Le test de pool ne compte pas. Moyen laissé à la lane (assertion sur la
+  source de `main.tsx`, ou extraction du bootstrap dans un module importable et testé), mais
+  la preuve est une **mutation** : supprimer l'appel ⇒ suite rouge, vérifié par `qa-lead`
+  (skill `test-quality`) au VERIFY. Sans cette preuve, T1 ne passe pas le panel.
+- **C4 — Forme de l'appel.** `registerGeneratedLevels()` est idempotente et appelée au
+  **corps du module** `src/main.tsx`, avant `createRoot(...).render` — jamais dans un effet
+  React (StrictMode double-monte). Un test asserte que le double appel est un no-op.
+- **C5 — Frontière.** `registerGeneratedLevels` vit dans `src/game/levels/generated/`
+  (couche pure, zéro React/Three). Seul le composition root (`src/main.tsx`) l'appelle ;
+  aucun module de `src/render` ne le fait.
+- **C6 — Traçabilité.** Amendement daté de la Consequence d'ADR-0075 (« throws at IMPORT
+  time ») renvoyant à ADR-0077, sans renumérotation ni réécriture de la décision. Et
+  **correction de la spec §4.3** : la phrase « gardé par le test de pool de
+  `generatedLevels.test.ts` » est fausse et doit être remplacée par C3.
+
+### (b) ADR du serveur (T2) — **PASS**
+
+**ADR alloué : 0077** — `docs/adr/0077-mcp-level-editor-server.md`, index régénéré
+(`gen-adr-index.mjs --write` puis `--check` : *fresh — 77 ADR, registry in sync*, README +
+`public/adr/index.html`).
+
+Vérification du numéro (leçon 0073→0074→0075) : `adr-new` (local + index + `origin/main`)
+**plus** un contrôle indépendant sur **toutes** les branches distantes — `git fetch origin
+--prune` (98 heads distants = 98 remote-tracking, fetch complet vérifié) puis
+`git log --all --name-only -- 'docs/adr/*.md'` : numéro le plus haut existant **0076**, sur
+tout ref connu. Aucun `producer` n'avait réservé de numéro dans ce shard ⇒ auto-allocation
+déclarée comme telle dans l'ADR. **À re-vérifier avant merge.**
+
+Contenu acté : D1 process `scripts/mcp-level-editor/server.mjs` stdio hors bundle (tranche
+l'hésitation `server.ts` de la spec §4.2 — `scripts/` est en `.mjs`) · D2
+`@modelcontextprotocol/sdk` en devDependency, interdit d'import depuis `src/**` · D3 cinq
+outils fermés, zéro règle côté serveur, cœur unique prouvé par l'appel bibliothèque · D4 les
+trois disciplines d'écriture + écriture atomique + pas d'écrasement implicite + `scaffold`
+n'édite pas `index.ts` · D5 non-secret · D6 l'amendement ADR-0075 §6 en version étroite du
+sign-off (a).
+
+**Ce que l'ADR n'autorise pas** (nouvel ADR requis, pas une itération) : tout transport autre
+que stdio local, tout outil supplémentaire, toute écriture hors `generated/`, tout geste git.
+
+### Assignation de lanes (inchangée, chemins disjoints)
+
+`dev-gameplay` sur `src/game/levels/**` (T1 puis T2b, séquentielles — même fichier
+`levelPlan.ts`) ∥ `dev-tooling-assets` sur `scripts/mcp-level-editor/**`, `.mcp.json`,
+`package.json` (T2 → T3 → T4 → T5 → T6). **Fichier partagé à sérialiser** : `levelPlan.ts`
+(T1 y ajoute `validateCatalogue`, T2b y migre les signatures) — T1 atterrit avant T2b. T3
+consomme `validateCatalogue` : ne pas démarrer T3 avant que T1 soit vert.

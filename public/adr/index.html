@@ -216,7 +216,8 @@
   ["0073","0073-tutorial-immersion-narrative-contract.md","Tutorial immersion narrative contract (decor context + mechanic cue diagrams)","Accepted","accepted","The current tutorial contract is intentionally simple:"],
   ["0074","0074-level-data-module-and-validate-level.md","Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants","Proposed","proposed","The level catalogue module mixed three unrelated concerns in one 441-line file, which blocks the whole level-editor track that follows it."],
   ["0075","0075-level-plan-composable-generated-levels.md","Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/`","Proposed","proposed","The level harness (SP1 of three sub-projects) needs a level to be describable entirely as data: backdrop, per-level enemy skins, at most one level-authored archetype, per-level props, tuning, fiction."],
-  ["0076","0076-run-stats-system-local-first.md","Run stats system (local-first)","Accepted","accepted","The game ends a run with one line (`SCORE FINAL : 4200 | VAGUE 3`) that vanishes when the tab closes."]
+  ["0076","0076-run-stats-system-local-first.md","Run stats system (local-first)","Accepted","accepted","The game ends a run with one line (`SCORE FINAL : 4200 | VAGUE 3`) that vanishes when the tab closes."],
+  ["0077","0077-mcp-level-editor-server.md","Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur","Proposed","proposed","Les levels générés sont désormais entièrement descriptibles comme données (ADR-0075), mais aucun agent ne peut les travailler sans lire le repo à la main : rien ne valide un plan avant de…"]
       ];
       const rows = document.getElementById("rows");
       const q = document.getElementById("q");
