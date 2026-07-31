@@ -37,8 +37,14 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] **Sign-off senior-architect au BUILD** (2026-07-31, §4) : (1) renversement ADR-0075 §6
       → **PASS avec conditions** (version ÉTROITE : seul le throw se déplace) ; (2) ADR du
       serveur → **PASS**, `docs/adr/0077-mcp-level-editor-server.md`, index régénéré
-- [ ] T1 (dev-gameplay) : fail-fast bootstrap, sign-off bloquant
-- [ ] T2b (dev-gameplay) : validateLevelPlan → LevelIssue[], code stable par garde
+- [x] T1 (dev-gameplay, 2026-07-31) : fail-fast déplacé au bootstrap, **version étroite**
+      (C1→C6 tenues) — `validateCatalogue` source unique dans `levelPlan.ts`,
+      `registerGeneratedLevels()` au corps de `src/main.tsx`, garde du site d'appel
+      `bootstrapRegistration.test.ts` prouvée par mutation (retrait de l'appel ⇒ 2 tests
+      rouges, le test de pool restant vert — exactement le point du sign-off). Amendement
+      daté ADR-0075 §Consequences + correction de la phrase fausse du spec §4.3.
+      1679 tests ✓ / 117 fichiers, tsc ✓
+- [x] T2b (dev-gameplay) : validateLevelPlan → LevelIssue[], code stable par garde
 - [ ] T2 (dev-tooling-assets) : serveur MCP, ADR du process, après sign-off
 - [ ] T3–T6 (dev-tooling-assets) : tooling séquentiel (inspect/scaffold/dryrun/preview)
 - [ ] VERIFY (qa-lead) : 187 tests baseline, integration tests

@@ -80,17 +80,26 @@ outil important le catalogue mécaniquement. Ce renversement exige son propre si
 `LEVEL_ART` last-wins / `ALL_LEVELS.find` first-wins qu'aucun test fixture ne peut
 représenter sans le déclencher).
 
-Proposition : **déplacer, pas supprimer**. `generated/index.ts` n'exporte plus que des
-données pures ; le bootstrap du jeu appelle `registerGeneratedLevels()`, qui exécute
-`assertDistinctPlanIds` PUIS l'enregistrement — le fail-fast split-brain est
-**préservé au démarrage de l'app** (même crash impossible à rater, une frame plus
-tard), seul l'import redevient pur. En plus, l'unicité devient un invariant de
-`validate`/CI, donc un id en collision est rejeté avant même d'atteindre un runtime.
+Proposition : **déplacer, pas supprimer**. Version **arbitrée par le sign-off
+`senior-architect` du 2026-07-31 (ADR-0077 D6, conditions C1→C6)** : seul le `throw`
+quitte le corps de `generated/index.ts`. Le bootstrap du jeu (corps de module de
+`src/main.tsx`, avant le premier render) appelle `registerGeneratedLevels()`, qui exécute
+le fail-fast — le split-brain reste **impossible à rater au démarrage de l'app**, une
+frame plus tard. **L'enregistrement des archétypes RESTE à l'import** : idempotent,
+`weight: 0`, inobservable, et `validateLevel.ts` en dépend par un import à effet de bord
+délibéré pour que l'outil `validate` STANDALONE voie les kinds générés. En plus,
+l'unicité devient un invariant de `validate`/CI — `validateCatalogue(plans)` dans
+`levelPlan.ts`, source unique de la règle, dont `assertDistinctPlanIds` n'est que le
+wrapper qui throw — donc un id en collision est rejeté avant même d'atteindre un runtime.
 Alternative écartée : amender ADR-0074 pour une seconde exception — l'exception
 existante est un flag littéral, pas une mutation de registre ni un throw ; élargir la
 catégorie affaiblirait la règle que la piste éditeur exige. Micro-risque : un oubli
-d'appel au bootstrap — gardé par le test de pool de `generatedLevels.test.ts` branché
-sur le chemin runtime.
+d'appel au bootstrap — **le test de pool de `generatedLevels.test.ts` ne le couvre PAS**
+(il passe sur l'enregistrement des archétypes, qui n'a pas bougé, et un test qui
+appellerait lui-même `registerGeneratedLevels()` ne dirait rien du site d'appel). Le
+garde est `bootstrapRegistration.test.ts` (condition C3) : il lit la SOURCE de
+`src/main.tsx` et rougit si l'appel disparaît, s'indente hors du corps de module ou passe
+après `createRoot` — assumé comme assertion textuelle, prouvé par mutation.
 
 ## 5. Sécurité (surface d'écriture agent)
 

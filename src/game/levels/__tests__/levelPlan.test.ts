@@ -3,6 +3,7 @@ import {
   mobileVisibleProps,
   planToLevelArt,
   planToLevelConfig,
+  validateCatalogue,
   validateLevelPlan,
   WORLD_HEIGHT_UNITS,
   type GeneratedPropSpec,
@@ -618,5 +619,41 @@ describe("validateLevelPlan — LevelIssue contract (MCP §4.1)", () => {
         field: "gameplay.windowWeights",
       }),
     );
+  });
+});
+
+/**
+ * `validateCatalogue` is the SINGLE source of the id-uniqueness rule (ADR-0077 D6,
+ * sign-off condition C2): the same invariant that used to live as a bare `throw` in
+ * `generated/index.ts`'s module body, now expressed as `LevelIssue`s so the MCP
+ * `validate`/`scaffold` tools can REPORT a collision instead of dying on it. The
+ * bootstrap wrapper (`registerGeneratedLevels`) is the only surface that still throws.
+ */
+describe("validateCatalogue (id uniqueness, MCP §4.1)", () => {
+  const other: LevelPlan = { ...base, id: "other" };
+
+  it("accepts a catalogue of distinct ids", () => {
+    expect(validateCatalogue([base, other])).toEqual([]);
+    expect(validateCatalogue([])).toEqual([]);
+  });
+
+  it("reports a duplicate id as one plan/duplicate-id issue naming the id", () => {
+    const issues = validateCatalogue([base, other, base]);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toEqual({
+      code: "plan/duplicate-id",
+      severity: "error",
+      field: "plans[2].id",
+      // The split-brain sentence of ADR-0075 §6, kept verbatim: LEVEL_ART is
+      // last-wins while ALL_LEVELS.find is first-wins.
+      message: 'generated level "fixture" is declared twice — ids must be unique',
+    });
+  });
+
+  it("reports one issue per extra copy, not one per colliding pair", () => {
+    expect(validateCatalogue([base, base, base]).map((i) => i.field)).toEqual([
+      "plans[1].id",
+      "plans[2].id",
+    ]);
   });
 });

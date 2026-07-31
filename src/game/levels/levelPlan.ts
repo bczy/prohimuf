@@ -411,6 +411,36 @@ export function validateLevelPlan(plan: LevelPlan): readonly LevelIssue[] {
 }
 
 /**
+ * The invariant that spans the WHOLE catalogue, not a single plan: two plans sharing
+ * an id corrupt the level tables silently — `LEVEL_ART` is last-wins while
+ * `ALL_LEVELS.find` is first-wins, so one level would be played with the other's
+ * decor, a split-brain no fixture can represent without triggering it.
+ *
+ * This is THE single implementation of the rule (ADR-0077 D6, amending ADR-0075 §6).
+ * It reports instead of throwing, so story ③'s MCP `validate`/`scaffold` tools can tell
+ * an agent about a collision rather than dying on the import; `assertDistinctPlanIds`
+ * (generated/index.ts) is the thin wrapper that turns the same result into the
+ * bootstrap fail-fast.
+ */
+export function validateCatalogue(plans: readonly LevelPlan[]): readonly LevelIssue[] {
+  const issues: LevelIssue[] = [];
+  const seen = new Set<string>();
+  plans.forEach((plan, i) => {
+    if (seen.has(plan.id)) {
+      issues.push(
+        planIssue(
+          "duplicate-id",
+          `plans[${String(i)}].id`,
+          `generated level "${plan.id}" is declared twice — ids must be unique`,
+        ),
+      );
+    }
+    seen.add(plan.id);
+  });
+  return issues;
+}
+
+/**
  * Mirrors `levelArt.ts` `WORLD_HEIGHT` (manifest `world.heightUnits`) — duplicated
  * with a cross-reference because this module imports `levelArt.ts` as TYPES ONLY
  * (`assetManifest.ts` documents that it wants no import-time dependency on it).
