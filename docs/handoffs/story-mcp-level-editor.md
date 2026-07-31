@@ -33,9 +33,67 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 
 ## Suivi
 
-- [ ] PR #151 (specs+plans) : panel PASS → acceptation pm → merge
+- [x] PR #151 (specs+plans) : panel PASS → acceptation pm → merge (commit 3ba17a4, 2026-07-30)
 - [ ] **Sign-off senior-architect au BUILD** : (1) le renversement ADR-0075 §6 de T1,
       avec le risque split-brain repesé ; (2) l'ADR du serveur (T2, nouveau process +
       devDependency, numéro par adr-new vérifié contre TOUTES les branches distantes)
-- [ ] BUILD : branche `feat/mcp-level-editor`, T1+T2b (dev-gameplay, séquentielles) ∥
-      T2 (dev-tooling-assets), puis T3→T6
+- [ ] T1 (dev-gameplay) : fail-fast bootstrap, sign-off bloquant
+- [ ] T2b (dev-gameplay) : validateLevelPlan → LevelIssue[], code stable par garde
+- [ ] T2 (dev-tooling-assets) : serveur MCP, ADR du process, après sign-off
+- [ ] T3–T6 (dev-tooling-assets) : tooling séquentiel (inspect/scaffold/dryrun/preview)
+- [ ] VERIFY (qa-lead) : 187 tests baseline, integration tests
+- [ ] simplify : compaction diff
+- [ ] review-panel : 4 reviewers, architecture triage
+- [ ] PR draft → acceptation pm
+- [ ] Merge
+
+## 3. BUILD — reprise 2026-07-31 (session remote)
+
+### Constat : branche fantasme résolue
+
+La branche `feat/mcp-level-editor` annoncée par Bertrand n'existe ni sur `origin` ni en
+local. Les 2 commits (T1 + T2b) restent introuvables — probablement demeurés sur une
+machine locale. Vérification :
+
+- `git ls-remote origin | grep -i mcp` → aucun match
+- `git branch -a | grep mcp` → seulement `claude/mcp-level-editor-build-iy2jaw`
+- Baseline code sur `main` : `assertDistinctPlanIds` toujours importé (line 35,
+  `src/generated/index.ts`) ; `validateLevelPlan` rend toujours `string[]` (pas
+  `LevelIssue[]`).
+
+**Décision** : T1 et T2b seront (ré)implémentés dans cette session sur
+`claude/mcp-level-editor-build-iy2jaw`. Si les commits locaux de Bertrand refont
+surface, réconciliation manuelle ou abandon selon l'ordre d'arrivée.
+
+### Branche BUILD effective
+
+`claude/mcp-level-editor-build-iy2jaw` (imposée par la session remote, remplace
+`feat/mcp-level-editor` du plan de la PR #151).
+
+### Auto-revue des croisements SP2
+
+Rien n'a mergé côté SP2 (`story-level-harness-sp2.md` toujours en SPECS REVIEWED) :
+
+- **Pas de garde `calibration` dans `levelPlan.ts`** — T2b n'ajoute pas le code
+  `plan/calibration` ; ce seul point relève du processus SP2 sur `main` après cette
+  story.
+- **Driver §8 pour T5** — T5 (dryrun) inline le driver Playwright §8 (référence :
+  `docs/qa/evidence/story-level-harness-sp1/report.json`), externalise la soumise vers
+  SP2 (deduplication possible post-merge).
+
+### Baseline verte au départ
+
+- 187 tests ✓ / 14 fichiers (`src/game/levels/**/*`)
+- Lint/tsc ✓
+- Aucune branche distante parallèle n'interfère
+
+### Séquencement des lanes (rework du suivi §2)
+
+1. **Sign-off senior-architect** (bloquant) : T1 ADR-0075 reverse + T2 ADR-server ∥
+2. **T2b** (dev-gameplay, après sign-off) : validateLevelPlan → LevelIssue[]
+3. **T1** (dev-gameplay, après sign-off) : bootstrap fail-fast ∥ **T2** (dev-tooling-assets,
+   après ADR) : serveur MCP
+4. **T3** → T4 → T5 → T6 (dev-tooling-assets, séquentielles) : inspect/scaffold/dryrun/preview
+5. **VERIFY** (qa-lead) : mutation tests + integration
+6. **simplify** → **review-panel** → **PR draft**
+7. **pm acceptance** → **merge**
