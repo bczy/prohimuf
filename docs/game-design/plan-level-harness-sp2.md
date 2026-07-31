@@ -59,8 +59,10 @@ readonly calibration?: {
 - [ ] **Cap 3 — mécanisme exact, dans cet ordre** (un tirage payé dont le commit-back
       échoue doit compter quand même) :
   1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>,
-cancel-in-progress: false }` au niveau du workflow — deux dispatches sur le même
-     `level_id` s'exécutent l'un APRÈS l'autre, jamais en course.
+cancel-in-progress: false }` au niveau du workflow — au plus UN run par `level_id`
+     à tout instant ; jamais deux runs concurrents, mais pas une file FIFO non plus
+     (GitHub ne garde qu'un run en attente par groupe — le point 6 documente
+     l'absorption des dispatches intermédiaires, sans dépense fantôme).
   2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
      touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
      (`git log --oneline origin/main..HEAD -- <chemin> | wc -l`) — PAS la valeur du
@@ -97,8 +99,11 @@ cancel-in-progress: false }` au niveau du workflow — deux dispatches sur le m�
      nouvelle PR). Et la file de concurrency GitHub ne gardant qu'un run en attente
      par groupe, un 3e dispatch pendant un run annule le 2e en attente — re-dispatch
      nécessaire, zéro dépense fantôme.
-     Testé par un dry-run bash local des steps 2-4 (y compris le cas fichier absent,
-     le cas `origin/main` non résolu, et le push simulé contre un remote fictif).
+     Testé par un dry-run bash local des steps 2-5 — y compris le cas fichier absent,
+     le cas `origin/main` non résolu, le push simulé contre un remote fictif, ET le
+     cas « commit-back des assets échoue après dépense » (step 5) : le script doit
+     exit non-zéro — ni `continue-on-error: true`, ni un `|| true` qui avalerait le
+     code de sortie du push.
 - [ ] Jamais sur main (le garde `if:` de `gen-level-art.yml`, copié).
 - [ ] Commit `ci(harness): workflow backdrop payé par plan, cap 3 tirages par PR`.
 
