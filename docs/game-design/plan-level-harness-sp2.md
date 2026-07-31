@@ -56,15 +56,29 @@ readonly calibration?: {
 `gen-level-art.yml`).
 
 - [ ] Input `level_id` (workflow_dispatch) ; job unique : checkout → setup → `node scripts/gen-street-paid.mjs --plan $level_id` → commit-back `public/assets/levels/<id>/`.
-- [ ] **Cap 3 — compter les TENTATIVES payées, pas les commits** (un tirage payé dont
-      le commit-back échoue doit compter quand même) : un fichier compteur
-      `public/assets/levels/<id>/.paid-attempts` est incrémenté et committé-poussé
-      AVANT l'appel payé (un step dédié, qui fail le job si ce push échoue — pas
-      d'appel payé sans trace) ; le step de garde lit ce compteur sur
-      `origin/main..HEAD` et fail à ≥ 3 avec message d'escalade explicite. En plus,
-      un échec du commit-back APRÈS un appel payé réussi met le job en FAIL (jamais
-      warn) — un tirage dépensé ne disparaît jamais du compte. Testé par un dry-run
-      des deux steps en bash local.
+- [ ] **Cap 3 — mécanisme exact, dans cet ordre** (un tirage payé dont le commit-back
+      échoue doit compter quand même) :
+  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>,
+cancel-in-progress: false }` au niveau du workflow — deux dispatches sur le même
+     `level_id` s'exécutent l'un APRÈS l'autre, jamais en course.
+  2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
+     touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
+     (`git log --oneline origin/main..HEAD -- <chemin> | wc -l`) — PAS la valeur du
+     fichier (le contenu n'est qu'informatif : timestamp + run id). Un commit = une
+     tentative ; la sémantique par commits, combinée à la sérialisation du point 1,
+     élimine la race read-modify-write. Fichier jamais commité = 0 (cas bootstrap
+     d'un level neuf — la phase (a) doit pouvoir tourner la première fois).
+  3. **Ordre des steps** : le step de GARDE tourne en premier, après un
+     `git fetch origin` + pull de la branche, et lit le compte TEL QU'IL EXISTAIT
+     AVANT cette tentative — fail à ≥ 3 avec message d'escalade explicite (le cap
+     autorise donc bien 3 tirages, pas 2).
+  4. **Trace avant dépense** : ensuite seulement, le step d'incrément committe et
+     POUSSE un commit touchant `.paid-attempts` ; si ce push échoue, le job FAIL
+     avant tout appel payé — pas d'appel sans trace.
+  5. **Après dépense** : un échec du commit-back des assets APRÈS un appel payé
+     réussi met le job en FAIL (jamais warn) — le tirage reste compté par son commit
+     de trace du point 4.
+     Testé par un dry-run bash local des steps 2-4 (y compris le cas fichier absent).
 - [ ] Jamais sur main (le garde `if:` de `gen-level-art.yml`, copié).
 - [ ] Commit `ci(harness): workflow backdrop payé par plan, cap 3 tirages par PR`.
 
