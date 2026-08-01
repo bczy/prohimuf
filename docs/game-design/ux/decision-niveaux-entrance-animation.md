@@ -37,11 +37,21 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
 4. **`overflow-x: hidden` reste limité à NIVEAUX.** SCORES et OPTIONS gardent une barre de
    défilement visible plutôt qu'un contenu coupé en silence.
 
+5. **L'arrivée d'un utilisateur au clavier stabilise le mur immédiatement.** La suite
+   « anneau de focus rogné » notée plus bas s'est révélée réelle, pas théorique : la dérive
+   latérale atteint 44 px alors que le rembourrage du mur vaut 16 px, donc pendant l'entrée
+   une feuille de bord — et son anneau de focus — dépasse le clip `overflow-x` de
+   `.rubriquesLevels` et se fait couper, jusqu'à 28 px. Plutôt que de rogner la dérive
+   (réglage validé par Bertrand) ou d'affaiblir le clip (qui protège d'une barre de
+   défilement parasite), le mur se stabilise dès qu'un focus **du joueur** entre : la
+   fenêtre de rognage disparaît. L'auto-focus du premier lancement, lui, ne compte pas —
+   il est nôtre, pas celui du joueur, sinon le primo-visiteur serait le seul à ne jamais
+   voir la cascade. Au passage c'est le bon ordre de priorité : qui a commencé à
+   interagir prime sur une animation décorative.
+
 ## Suites, non bloquantes
 
 - Passe lecteur d'écran réelle pour confirmer que `opacity: 0` au premier keyframe n'empêche
   pas l'annonce (attendu : non, ce n'est ni `visibility:hidden` ni `display:none`).
-- Vérifier en capture, pendant la fenêtre d'entrée, que l'anneau de focus ne se fait pas
-  rogner au bord du conteneur sur les largeurs mobiles étroites.
 - Éventuel troisième palier de mouvement (« fondu doux » pour qui tolère un peu de
   mouvement) : nouvelle demande, pas un manque de cette PR.

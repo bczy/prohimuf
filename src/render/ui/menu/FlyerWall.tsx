@@ -233,6 +233,16 @@ export function FlyerWall({
   // Captured ONCE at mount, before the effect below marks it — so this same mount still
   // animates while every later one in the session does not.
   const [playCascade] = useState(() => !hasCascadePlayed());
+  // A keyboard user who reaches the wall mid-cascade settles it AT ONCE. Two reasons, and
+  // the accessibility one is the binding one: the sideways drift (up to ±44px) exceeds the
+  // wall's 16px padding, so during the entrance an edge flyer — and its focus ring — pokes
+  // past `.rubriquesLevels`' overflow-x clip and gets cut. Settling on arrival removes the
+  // window entirely, rather than trimming the drift or weakening the clip. It is also
+  // simply right: someone who has started interacting outranks a decorative animation.
+  const [interrupted, setInterrupted] = useState(false);
+  // The first-visit auto-focus is OURS, not the player's, and must not count as arrival —
+  // otherwise a first-time visitor is the one person who never sees the cascade.
+  const autoFocusing = useRef(false);
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -270,7 +280,9 @@ export function FlyerWall({
       // reads that transformed rect — so it would scroll to where the sheet ISN'T. Keeping
       // the focus itself on mount (rather than deferring it until the animation settles)
       // is deliberate: a screen-reader user should not wait ~2s for focus to land.
+      autoFocusing.current = true;
       itemRefs.current[tutorialIndex]?.focus({ preventScroll: true });
+      autoFocusing.current = false;
     }
   }, [firstVisit, tutorialIndex]);
 
@@ -356,6 +368,7 @@ export function FlyerWall({
         data-flyers-armed={armed ? "true" : "false"}
         onFocus={() => {
           setFocusWithin(true);
+          if (!autoFocusing.current) setInterrupted(true);
         }}
         onBlur={(e) => {
           if (!containerRef.current?.contains(e.relatedTarget)) {
@@ -413,7 +426,7 @@ export function FlyerWall({
               className={cx(
                 "muf-flyer-slot",
                 styles.slot,
-                playCascade ? undefined : styles.slotSettled,
+                playCascade && !interrupted ? undefined : styles.slotSettled,
               )}
               // Staggers the float-in entrance (FlyerWall.module.css) so flyers appear
               // one sheet at a time instead of all at once, each on its own fall path.

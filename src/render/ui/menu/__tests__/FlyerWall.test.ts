@@ -351,6 +351,31 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(el?.className).not.toContain(settled);
   });
 
+  it("settles the wall at once when a keyboard user arrives mid-cascade", () => {
+    // The drift (±44px) exceeds the wall's 16px padding, so mid-entrance an edge flyer and
+    // its focus ring poke past `.rubriquesLevels`' overflow-x clip and get cut. Settling on
+    // arrival closes that window; without it a keyboard user can lose their focus indicator.
+    markTutorialNudgeSeen(); // not a first visit ⇒ no auto-focus to muddy the signal
+    const el = mountWall().querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    expect(el).not.toBeNull();
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    expect(container?.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+    act(() => {
+      el?.focus();
+    });
+    expect(container?.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
+  it("does NOT let the first-visit auto-focus cancel the cascade", () => {
+    // That focus is ours, not the player's. Counting it would make a first-time visitor
+    // the only person who never sees the entrance.
+    const el = mountWall().querySelector(".muf-flyer-slot");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    expect(el?.className).not.toContain(settled);
+  });
+
   it("focuses the first-visit flyer with preventScroll", () => {
     const focusSpy = vi.spyOn(HTMLElement.prototype, "focus");
     mountWall();
