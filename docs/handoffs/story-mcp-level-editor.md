@@ -57,7 +57,11 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       `40fd9ac6` (imports type namespace). Fixes VERIFY O1/O2 en `0ff370bb`
       (`preview()` rend la main : stdio ignore ; assertion C3 ancrée). tsc ✓ /
       1715 tests ✓ / lint ✓ re-prouvés sur l'ensemble.
-- [ ] review-panel : 4 reviewers, architecture triage
+- [x] **review-panel (2026-08-01) : 4 reviewers + triage architecte (§6) → fixes
+      prescrits atterris → re-vérification incrémentale architecte (§6.7) :
+      verdict MERGE CONDITIONNEL** — 2 gestes courts restants (R1 + ruling ADR)
+- [ ] **R1** (`dev-tooling-assets`, tier fix-lane) : `validate({plan: null})` throw encore
+- [ ] **Numéro ADR** : ruling `producer` — collision 0077 avec `origin/claude/flyer-wall-float-in-animation`
 - [ ] PR draft → acceptation pm
 - [ ] Merge
 
@@ -500,3 +504,113 @@ plan malformé qui rend des issues **sans throw** ; registre non pollué après 
 plan refusé). Pas de nouveau tour de panel complet : les fixes sont locaux et bornés, je
 re-vérifie moi-même sur le diff incrémental. Rappel du sign-off (b), toujours dû :
 **re-vérifier le numéro ADR-0077 contre toutes les branches distantes juste avant le merge.**
+
+### 6.7 Re-vérification incrémentale architecte (2026-08-01, `108c4ef2..9c35b344`)
+
+Une passe sur le diff incrémental (10 fichiers, +710/−51 hors `yarn.lock`), plus mes propres
+exécutions. Pas de nouveau tour de panel, comme cadré au §6.6.
+
+**Conformité des prescriptions — 15/15 fidèles.**
+
+| Prescription | Vérification | Verdict |
+| ------------ | ------------ | ------- |
+| **M1** upsert | `[...plans.filter((p) => p.id !== plan.id), plan]`, branche `levelId` supprimée, JSDoc réécrit avec la séparation catalogue/disque que j'avais fixée. Probe : `validate({plan: fixture})` → `[]` (était `plan/duplicate-id`), `validate({levelId})` → `[]` inchangé. | ✅ |
+| M1 test de collision | Réécrit comme demandé : `plans: [soundPlan("dup"), soundPlan("dup")]` — **deux entrées distinctes partageant un id**, plan candidat tiers. Plus le cas inverse (re-soumission d'un id du catalogue ⇒ pas de `duplicate-id`) et les deux tests `scaffold` (refus `scaffold/exists` puis passage avec `overwrite: true`). La boucle d'itération que M1 bloquait est prouvée débloquée. | ✅ |
+| **M2a** `plan/malformed` | `planShapeIssues` en tête de `validateLevelPlan`, retour anticipé. Couvre ce que les gardes déréférencent (`archetypes`/`props` + forme par ÉLÉMENT, `fiction`/`backdrop`/`gameplay`, `gameplay.windowWeights`) — la forme par élément n'était pas dans ma prescription et est un ajout juste. Contrat « ne throw jamais » écrit dans le JSDoc. | ✅ |
+| **M2b + m3** ordonnancement | Plan-check + catalogue d'abord, `registerGeneratedArchetypes` + `validateLevel` seulement si propre. Probe : `validate({plan:{id:"safe"}})` → 5 × `plan/malformed`, **sans throw**. Test de non-pollution du registre (hp 2 reste 2 après un plan refusé) présent. | ✅ |
+| **m2** garde is-main | `isMainModule()` par comparaison `fileURLToPath(import.meta.url)` vs `path.resolve(argv[1])`. **Correctif réel découvert par la lane** : `vite-node` sans `--script` réécrit `process.argv` et fait taire le serveur ; `mcp:level-editor` passe donc à `vite-node --script`. Bien trouvé — c'est le genre de piège qu'un garde is-main copié-collé introduit en silence. | ✅ |
+| m2 → `.mcp.json` | **Non régressé, vérifié par smoke JSON-RPC de ma main** : `.mcp.json` invoque `yarn mcp:level-editor`, donc hérite du `--script`. Handshake `initialize` → `serverInfo {level-editor, 0.1.0}` puis `tools/list` → les 6 outils. L'entrée MCP est intacte. | ✅ |
+| **m6** listener `'error'` | Posé, converti en throw dans la boucle d'attente. | ✅ |
+| **m7** `finally` imbriqué | `proc.kill()` hors d'atteinte d'un throw de `browser.close()`. | ✅ |
+| **W1** pin SDK | `"@modelcontextprotocol/sdk": "1.30.0"` exact. | ✅ |
+| m4 runbook | Shebang `env -S vite-node` + runbook corrigé (`yarn vite-node`), fichier passé exécutable. | ✅ |
+| **m5** paramétrage | `compareDryrunReport(actual, expected, { base, levelId })`, regex construite avec `escapeRegExp`, défauts inchangés. **Le seam SP2 est débloqué** : un second level réutilise ce comparateur au lieu d'en forker un. | ✅ |
+| n2 / n3 / n5 / n6b | Garde `Number.isFinite` sur les deux lectures ; `labelOrder` trie par position réelle (`indexOf`) ⇒ la promesse « same ordered set » devient vraie ; flag `i` retiré de `SAFE_ID` + message aligné ; `looksLikeThisDevServer` exige `id="root"` **et** `/@vite/client`. | ✅ |
+| n4 `spriteBase` | Garde dans `validateLevelPlan` sous `plan/archetype-bounds`, avec le motif écrit (préfixe de nom de fichier ⇒ vide = matche tout `public/assets/`). Au bon étage : c'est une règle de plan. | ✅ |
+| **n1** ADR-0077 D6 | Phrase fausse remplacée : « n'enregistre rien elle-même (l'enregistrement des archétypes reste à l'import) : elle ne fait qu'exécuter le fail-fast ». Exact. | ✅ |
+
+Gates re-déclarées par la lane : tsc ✓, **1734 tests / 121 fichiers** ✓ (+19 depuis le triage),
+lint ✓.
+
+**Deux résiduels, trouvés par mes probes.**
+
+- **R1 — `validate({plan: null})` throw encore. BLOQUANT (tier fix-lane).**
+  Probe : `TypeError: Cannot read properties of null (reading 'id')`. C'est le fix M1 qui
+  l'introduit : la jointure upsert déréférence `plan.id` **avant** que `validateLevelPlan`
+  n'ait pu rendre `plan/malformed`. Autrement dit la classe de défaut que M2 vient de fermer
+  est ré-ouverte à cinq lignes de là, dans la même fonction. Inatteignable sur le fil (le
+  `z.record` du serveur rejette `null`), mais la **surface bibliothèque est de premier rang**
+  (D3, « deux surfaces, une implémentation », épinglée par `mcpLibrarySurface.test.mjs`) — et
+  le JSDoc de `validateLevelPlan` promet désormais noir sur blanc « never throws, whatever it
+  is handed », promesse que `core.validate` ne tient pas. Fix prescrit, qui préserve le
+  feedback one-shot (donc pas un simple retour anticipé) :
+
+  ```js
+  const planIssues = validateLevelPlan(plan);
+  if (planIssues.some((i) => i.code === "plan/malformed")) return { issues: planIssues };
+  const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
+  const issues = [...planIssues, ...validateCatalogue(catalogue)];
+  if (issues.length > 0) return { issues };
+  registerGeneratedArchetypes(plan.archetypes);
+  return { issues: validateLevel(planToLevelConfig(plan)) };
+  ```
+
+  `plan/malformed` devient de ce fait une **clé machine porteuse** — c'est cohérent, le panel
+  l'a justement établie comme le code du contrat. Test attendu : `validate({plan: null})` rend
+  des issues sans throw. → `dev-tooling-assets`, un fichier, une lane, aucun enjeu de design :
+  **fix lane, un seul reviewer, pas de retour panel ni architecte.**
+
+- **R2 — angle de l'upsert à documenter. NON BLOQUANT, doc seule.**
+  Probe : `validate({plan: X}, {plans: [dup, dup]})` → `[]`. L'upsert filtre **toutes** les
+  entrées partageant l'id du candidat, donc un catalogue déjà corrompu *sur cet id précis* est
+  silencieusement assaini dans la jointure. C'est une conséquence correcte de la sémantique que
+  j'ai choisie (« l'agrégation humaine tient une ligne par id »), et la couverture n'est pas
+  perdue globalement — `assertDistinctPlanIds` au bootstrap et le test CI sur le vrai
+  `GENERATED_PLANS` attrapent le doublon, et toute autre paire dupliquée reste vue. Mais mon
+  §6.2 laissait entendre l'inverse. Une phrase à ajouter au JSDoc de `validate`, rien de plus.
+  → `dev-tooling-assets`, avec R1.
+
+**Condition de sign-off (b) — le numéro ADR : elle FIRE. Escalade `producer`.**
+
+Re-vérification faite contre **101 têtes distantes** (`git ls-remote --heads origin`, puis
+`git log --all --diff-filter=A -- 'docs/adr/0077-*.md'`) :
+
+- `docs/adr/0077-mcp-level-editor-server.md` — cette branche, revendiqué le **2026-07-31**.
+- `docs/adr/0077-flyer-cascade-session-key.md` — commit `24762f7a`, **2026-08-01**, porté par
+  `origin/claude/flyer-wall-float-in-animation` **et par elle seule**.
+
+Aucun des deux n'est sur `main` : la collision ne se matérialise qu'au **second** merge. C'est
+exactement le scénario des deux ADR-0020 que la discipline `adr-new` existe pour empêcher, et
+c'est pourquoi j'avais fait de cette re-vérification une condition au lieu d'un rituel.
+
+Je **ne tranche pas le numéro** : l'allocation appartient à `producer` (COLLABORATION.md — les
+numéros d'ADR viennent de Marion, jamais d'auto-allocation, et mon propre en-tête d'ADR admet
+s'être auto-alloué faute de réservation). Les faits pour la décision : notre revendication est
+antérieure d'un jour et c'est cette branche qui est au merge gate, l'autre n'y est pas. La
+résolution naturelle est donc « cette branche garde 0077 et passe la première, la branche
+flyer renumérote en 0078 au rebase » — mais elle exige un hand-off vers la lane flyer, et c'est
+`producer` qui l'ouvre et l'enregistre. **Merger cette branche sans ce ruling posé, c'est armer
+la collision pour quelqu'un d'autre.**
+
+### 6.8 Verdict final
+
+**MERGE CONDITIONNEL.** Les 15 prescriptions du triage sont implémentées fidèlement, y compris
+les deux majeurs sur le contrat d'entrée, et la lane a trouvé en chemin un vrai piège
+(`vite-node --script`) que je n'avais pas vu — l'entrée `.mcp.json` est prouvée intacte par mon
+propre smoke JSON-RPC. La revue d'intégration du §6.5 est **inchangée et confirmée** : loi de
+frontière tenue, condition C3 satisfaite, seam SP2 désormais réellement réutilisable (m5),
+impact bundle/déploiement nul.
+
+Ne pas pousser sur `main` avant ces deux gestes, tous deux courts :
+
+1. **R1** — `validate({plan: null})` ne doit pas throw · `dev-tooling-assets` · **tier fix-lane**
+   (une lane, un fichier, aucun enjeu de design) · R2 documenté dans la même édition.
+2. **Ruling `producer` sur le numéro ADR** — collision 0077 avec
+   `origin/claude/flyer-wall-float-in-animation`, hand-off à ouvrir vers cette lane.
+
+**Je ne redemande ni passage panel ni passe architecte** : R1 est couvert par le reviewer unique
+de la fix lane, le ruling ADR est un geste de production. Dès qu'ils sont verts, la branche part
+en acceptation `pm`. Ma condition de sign-off (b) est **close** — non pas « rien trouvé », mais
+« trouvé, tracé, escaladé à qui de droit ».
+
+— `senior-architect` (Winston), 2026-08-01.
