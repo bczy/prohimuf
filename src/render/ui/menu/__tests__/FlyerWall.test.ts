@@ -13,6 +13,7 @@ import wallStyles from "../FlyerWall.module.css";
 import {
   FLOAT_IN_STAGGER_MS,
   FlyerWall,
+  clearCascadePlayed,
   hasCascadePlayed,
   markCascadePlayed,
   buildPressionChoices,
@@ -465,5 +466,49 @@ describe("FlyerWall — reduced motion does not burn the session's cascade", () 
       root.unmount();
     });
     container.remove();
+  });
+});
+
+/** The OS half of `reducedMotion` is live: it can turn on WHILE the cascade is falling,
+ *  cutting it off via the CSS kill switch. The session's one showing must not be spent on
+ *  a cascade the player only half saw. */
+describe("FlyerWall — reduced motion turning on mid-cascade hands the showing back", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("clears the flag when reduced motion turns on during a playing cascade", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const render = (reducedMotion: boolean) => {
+      act(() => {
+        root.render(
+          createElement(FlyerWall, {
+            reducedMotion,
+            unlockedLevels: new Set<string>(),
+            onPlay: () => undefined,
+            prefs: DEFAULT_PREFS,
+            onSavePrefs: () => undefined,
+          }),
+        );
+      });
+    };
+    render(false);
+    expect(hasCascadePlayed()).toBe(true); // cascade started, session marked
+    render(true); // OS switch flipped mid-fall
+    expect(hasCascadePlayed()).toBe(false); // showing handed back
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("exposes clearCascadePlayed as the inverse of markCascadePlayed", () => {
+    markCascadePlayed();
+    expect(hasCascadePlayed()).toBe(true);
+    clearCascadePlayed();
+    expect(hasCascadePlayed()).toBe(false);
   });
 });

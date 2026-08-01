@@ -200,6 +200,15 @@ export function markCascadePlayed(): void {
   }
 }
 
+/** Give the session's showing back — used when reduced motion cuts a cascade short. */
+export function clearCascadePlayed(): void {
+  try {
+    sessionStorage.removeItem(CASCADE_PLAYED_KEY);
+  } catch {
+    // storage unavailable — nothing was stored to begin with
+  }
+}
+
 /** True once the first-run tutorial nudge has been shown (or storage is unavailable — a
  *  guarded read that treats absence-of-storage as "already seen", so it never nags nor
  *  throws). Exported pure so the first-run decision is unit-testable DOM-free. */
@@ -280,6 +289,19 @@ export function FlyerWall({
     // turns the toggle off and comes back would never see the entrance.
     if (playCascade) markCascadePlayed();
   }, [playCascade]);
+
+  useEffect(() => {
+    // The OS half of `reducedMotion` is LIVE and can flip while the wall stays mounted. If
+    // it turns on mid-fall, the CSS kill switch cuts the animation off — but the flag was
+    // already set at mount, so the session's one showing would have been spent on a
+    // cascade the player only half saw. Hand it back.
+    //
+    // This cannot resurrect the replay bug the design gate blocked: the flag is only
+    // cleared when reduced motion is ON, and that same signal suppresses the animation. A
+    // later mount therefore either stays reduced (no animation, nothing marked) or has had
+    // the setting turned back off, which is exactly when replaying is what the player wants.
+    if (playCascade && reducedMotion) clearCascadePlayed();
+  }, [playCascade, reducedMotion]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {

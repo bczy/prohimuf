@@ -72,6 +72,15 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    rien : un joueur qui désactive ensuite la bascule in-app et revient sur NIVEAUX ne
    verrait jamais l'entrée. Le drapeau n'est posé que si l'animation a réellement pu jouer.
 
+   **Et il est RENDU si le mouvement réduit s'active en cours de chute.** La moitié OS de
+   ce signal est vivante : elle peut basculer pendant que le mur est monté. La coupure CSS
+   tronque alors l'animation, alors que le drapeau était déjà posé au montage — la séance
+   aurait dépensé son unique passage pour une cascade vue à moitié. Le drapeau est donc
+   effacé. Cela ne peut pas ressusciter le rejeu bloqué en §1 : l'effacement n'a lieu que
+   lorsque le mouvement réduit est ACTIF, et ce même signal supprime l'animation ; un
+   montage ultérieur reste donc soit réduit (rien ne joue, rien n'est marqué), soit remis
+   en mouvement normal — cas où rejouer est précisément ce que le joueur veut.
+
 ## Suites, non bloquantes
 
 - Passe lecteur d'écran réelle pour confirmer que `opacity: 0` au premier keyframe n'empêche
