@@ -132,5 +132,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0074](./0074-level-data-module-and-validate-level.md) | Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants | Proposed |
 | [0075](./0075-level-plan-composable-generated-levels.md) | Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/` | Proposed |
 | [0076](./0076-run-stats-system-local-first.md) | Run stats system (local-first) | Accepted |
+| [0077](./0077-qte-photo-paparazzi-set-pieces.md) | QTE photo paparazzi : set-pieces de preuve photographique | Proposed |
 
 <!-- ADR-INDEX:END -->
