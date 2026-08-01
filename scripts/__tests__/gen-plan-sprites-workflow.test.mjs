@@ -57,6 +57,70 @@ it("FAILS (non-zero) when the --list subprocess itself fails — no vacuous PASS
   expect(res.status).not.toBe(0);
 });
 
+it("gates a prop whose kind contains a SPACE — never a silent skip (panel run-2)", () => {
+  // `GeneratedPropSpec.kind` is any `<id>:<name>` string, so a space in the
+  // name segment ("fixture:vieux kiosque") is legal. The old loop split the
+  // --list line on whitespace (`read -r kind _size arrow asset`): the shifted
+  // fields missed the arrow and `continue`d — check-nearfg-style.mjs was
+  // NEVER invoked for that prop and the step exited 0, a vacuous pass. Stubs
+  // stand in for both node scripts so the dry run proves the LOOP's parsing,
+  // not the scripts.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gen-plan-sprites-space-"));
+  try {
+    const scriptsDir = path.join(tmp, "scripts");
+    fs.mkdirSync(scriptsDir, { recursive: true });
+    // Stub --list: byte-for-byte the real script's line format (2-space
+    // indent, padEnd(16), WxH, arrow) with a space-carrying kind.
+    fs.writeFileSync(
+      path.join(scriptsDir, "gen-nearfg-sprites.mjs"),
+      `console.log("Defined near-foreground props:");
+console.log(\`  \${"fixture:vieux kiosque".padEnd(16)} 307x512  → assets/nearfg/fixture/vieux-kiosque.png\`);
+`,
+    );
+    // Stub the style check: record its exact argv, exit per CHECK_EXIT.
+    fs.writeFileSync(
+      path.join(scriptsDir, "check-nearfg-style.mjs"),
+      `import fs from "fs";
+fs.appendFileSync(process.env.CHECK_LOG, JSON.stringify(process.argv.slice(2)) + "\\n");
+process.exit(Number(process.env.CHECK_EXIT ?? "0"));
+`,
+    );
+    const log = path.join(tmp, "calls.log");
+    const run = (checkExit) =>
+      spawnSync("bash", ["-c", STYLE_GATE_SCRIPT], {
+        cwd: tmp,
+        env: { ...process.env, LEVEL_ID: "fixture", CHECK_LOG: log, CHECK_EXIT: checkExit },
+        encoding: "utf8",
+      });
+
+    // The check receives the FULL kind (space included) and the right file.
+    const pass = run("0");
+    expect(pass.status).toBe(0);
+    const calls = fs
+      .readFileSync(log, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+    expect(calls).toEqual([
+      [
+        "--file",
+        "public/assets/nearfg/fixture/vieux-kiosque.png",
+        "--kind",
+        "fixture:vieux kiosque",
+      ],
+    ]);
+
+    // Mutation half: the SAME prop failing its check must fail the gate —
+    // a skipped line would exit 0 without ever calling the check.
+    fs.rmSync(log, { force: true });
+    const fail = run("1");
+    expect(fail.status).not.toBe(0);
+    expect(fs.readFileSync(log, "utf8")).toContain("vieux kiosque");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 it("FAILS (non-zero) when the plan's prop file is missing — real bash run", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gen-plan-sprites-"));
   try {

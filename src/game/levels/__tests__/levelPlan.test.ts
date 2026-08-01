@@ -87,6 +87,24 @@ describe("validateLevelPlan", () => {
     expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("heightFrac"));
   });
 
+  it("rejects a prop asset that could escape public/ (absolute path or .. segment)", () => {
+    // The asset string becomes a real filesystem WRITE target in the sprite
+    // pipeline (gen-nearfg-sprites.mjs resolves it under public/) — panel
+    // run-2: an absolute path drops the public/ prefix, ".." climbs out.
+    const abs: LevelPlan = {
+      ...base,
+      props: [{ ...prop("fixture:x"), asset: "/etc/evil.png" }],
+    };
+    expect(validateLevelPlan(abs)).toContainEqual(expect.stringContaining("relative path"));
+    const traversal: LevelPlan = {
+      ...base,
+      props: [{ ...prop("fixture:x"), asset: "assets/nearfg/../../outside.png" }],
+    };
+    expect(validateLevelPlan(traversal)).toContainEqual(expect.stringContaining('".." segment'));
+    // The documented shape stays valid.
+    expect(validateLevelPlan({ ...base, props: [prop("fixture:x")] })).toEqual([]);
+  });
+
   it("rejects a prop namespaced on another level", () => {
     const plan: LevelPlan = {
       ...base,

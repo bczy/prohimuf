@@ -63,8 +63,10 @@
  * still reused (house pixel-art look), so a generated cast reads as the SAME
  * family, not a one-off. Seeds are FREE (spec §2.2 — re-run to reroll, unlike
  * the backdrop's pinned seed) and every step past loading (kontext/matched-pair,
- * cutout, fill-holes, check-sprite-integrity) is UNCHANGED — they already match
+ * cutout, fill-holes SOLIDIFY + `--check`) is UNCHANGED — they already match
  * the `enemy_*.png` glob regardless of where the key came from.
+ * (check-sprite-integrity.mjs is deliberately NOT in that list: it is un-wired
+ * from the enemy pipeline — ADR-0029 — in plan mode exactly as in table mode.)
  */
 import fs from "fs";
 import path from "path";

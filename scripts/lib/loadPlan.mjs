@@ -20,12 +20,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
 
 /**
+ * The ONE shape a generated plan id may take (lowercase alphanumerics and
+ * hyphens — the shape of every existing level id, e.g. "fixture"). Enforced
+ * here as defense in depth behind the gen-plan-*.yml workflows' own allowlist
+ * step (panel run-2 on PR #156): the id is resolved into a path that jiti then
+ * TRANSPILES AND EXECUTES, so a "/", ".." or NUL smuggled into it could run an
+ * arbitrary checked-out file. The regex forbids all of those by construction.
+ */
+const LEVEL_ID_SHAPE = /^[a-z0-9-]+$/;
+
+/**
  * loadPlan(levelId) -> Promise<LevelPlan>
- * Throws a clear, actionable error when the module is missing or does not
- * export `plan` — a silent `undefined` plan would fail confusingly several
- * calls deeper (e.g. "Cannot read properties of undefined (reading 'backdrop')").
+ * Throws a clear, actionable error when the id is malformed, the module is
+ * missing, or it does not export `plan` — a silent `undefined` plan would fail
+ * confusingly several calls deeper (e.g. "Cannot read properties of undefined
+ * (reading 'backdrop')").
  */
 export async function loadPlan(levelId) {
+  if (typeof levelId !== "string" || !LEVEL_ID_SHAPE.test(levelId)) {
+    throw new Error(
+      `loadPlan: invalid level id ${JSON.stringify(levelId)} — a generated plan id must ` +
+        `match ${String(LEVEL_ID_SHAPE)} (see src/game/levels/generated/)`,
+    );
+  }
   const file = path.resolve(ROOT, "src/game/levels/generated", `${levelId}.ts`);
   if (!fs.existsSync(file)) {
     throw new Error(

@@ -152,6 +152,17 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
       // isOwnedGeneratedPropKind requires a non-empty name at runtime.
       errors.push(`prop ${p.kind}: expected namespace "${ns}" plus a non-empty name`);
     }
+    // The asset string becomes a real filesystem WRITE target in the sprite
+    // pipeline (gen-nearfg-sprites.mjs resolves it under public/): an absolute
+    // path or a ".." segment would silently escape public/ on the CI runner.
+    // The generator carries its own containment throw; this is the CI-time
+    // seat of the same law, next to the rest of the prop invariants.
+    if (p.asset.startsWith("/") || p.asset.split("/").includes("..")) {
+      errors.push(
+        `prop ${p.kind}: asset "${p.asset}" must be a relative path under public/ ` +
+          `with no ".." segment (documented shape: assets/nearfg/<id>/<name>.png)`,
+      );
+    }
     // `x` included: getNearForeground silently DROPS a non-finite-x object at
     // runtime, which would desynchronize the mobile-halving parity this
     // validator certifies below from the list the renderer actually indexes.

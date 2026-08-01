@@ -46,4 +46,28 @@ describe("loadNearForegroundArtFromPlan (gen-nearfg-sprites.mjs --plan wiring, T
     expect(p.height).toBe(512);
     expect(p.width).toBe(Math.round(512 * plan.props[0].aspect));
   });
+
+  it("refuses an asset that resolves outside public/ (panel run-2: first real write target)", async () => {
+    // path.resolve(ROOT, "public", asset) silently DROPS the public/ prefix
+    // for an absolute asset, and climbs out of it for a ".."-laden one —
+    // either would write the generated PNG anywhere on the CI runner.
+    const plan = await loadPlan("fixture");
+    const withAsset = (asset) => ({
+      ...plan,
+      props: [{ ...plan.props[0], asset }],
+    });
+    expect(() => loadNearForegroundArtFromPlan(withAsset("/etc/evil.png"))).toThrow(
+      /escapes public\//,
+    );
+    expect(() => loadNearForegroundArtFromPlan(withAsset("../outside.png"))).toThrow(
+      /escapes public\//,
+    );
+    expect(() =>
+      loadNearForegroundArtFromPlan(withAsset("assets/nearfg/../../../outside.png")),
+    ).toThrow(/escapes public\//);
+    // The documented shape still passes.
+    expect(() =>
+      loadNearForegroundArtFromPlan(withAsset("assets/nearfg/fixture/kiosque.png")),
+    ).not.toThrow();
+  });
 });

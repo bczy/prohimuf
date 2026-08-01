@@ -32,6 +32,20 @@ jobs:
     env:
       LEVEL_ID: ${{ github.event.inputs.level_id }}
     steps:
+      # FIRST, before the id touches any path or dynamic import: level_id is
+      # the one attacker-influenced input of this job (contents: write), and
+      # e2e-generated-level.mjs feeds it to loadPlan.mjs's jiti import, which
+      # EXECUTES the resolved module (panel run-2 on PR #156). Same step as
+      # gen-plan-backdrop.yml / gen-plan-sprites.yml.
+      - name: Validate level_id (allowlist)
+        run: |
+          set -euo pipefail
+          if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
+            echo "::error::invalid level_id '${LEVEL_ID}' — a generated plan id must match ^[a-z0-9-]+$ (see src/game/levels/generated/); refusing to use it in paths or dynamic imports."
+            exit 1
+          fi
+          echo "level_id '${LEVEL_ID}' is well-formed"
+
       - name: Checkout
         uses: actions/checkout@v4
 

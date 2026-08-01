@@ -126,10 +126,24 @@ export function loadNearForegroundArt() {
  */
 export function loadNearForegroundArtFromPlan(plan, { opening = "", style = "" } = {}) {
   const ns = `${plan.id}:`;
+  const publicRoot = path.resolve(ROOT, "public");
   return plan.props.map((p) => {
     const descriptor = p.kind.startsWith(ns) ? p.kind.slice(ns.length) : p.kind;
     const clean = descriptor.replace(/[-_]+/g, " ").trim();
     const prompt = `a ${clean}`;
+    // This is the first code path that turns a plan's `asset` string into a
+    // real filesystem WRITE target: an absolute path makes path.resolve drop
+    // the public/ prefix entirely, and a ".."-laden one climbs out of it —
+    // either would let malformed plan data write anywhere on the runner
+    // (panel run-2 on PR #156). validateLevelPlan enforces the same law at
+    // CI time; this containment check is the generator's own last line.
+    const outFile = path.resolve(publicRoot, p.asset);
+    if (!outFile.startsWith(publicRoot + path.sep)) {
+      throw new Error(
+        `prop ${p.kind}: asset "${p.asset}" escapes public/ (absolute path or ".." traversal) — ` +
+          `expected the documented shape assets/nearfg/<id>/<name>.png`,
+      );
+    }
     return {
       kind: p.kind,
       prompt,
@@ -138,7 +152,7 @@ export function loadNearForegroundArtFromPlan(plan, { opening = "", style = "" }
       height: 512,
       seed: null, // free seed (spec §2.2) — same as the hand-authored table's null path
       asset: p.asset,
-      outFile: path.resolve(ROOT, "public", p.asset),
+      outFile,
     };
   });
 }
