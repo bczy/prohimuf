@@ -270,7 +270,9 @@ async function main() {
   let enemies = await resolveEnemies(args);
 
   if (list) {
-    console.log("Defined enemy keys (from levelArt.json):");
+    // Plan-agnostic header (like gen-nearfg-sprites.mjs's): in --plan mode the
+    // keys come from the plan's archetypes[], not levelArt.json.
+    console.log("Defined enemy keys:");
     enemies.forEach((e) =>
       console.log(`  ${e.key.padEnd(24)} ${e.frames.length} frame(s) ${e.width}x${e.height}`),
     );

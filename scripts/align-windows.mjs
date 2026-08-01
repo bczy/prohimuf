@@ -68,6 +68,7 @@ import {
   sleep,
 } from "./e2e-lib.mjs";
 import { misaligned, ALIGN_TOL } from "./lib/alignment.mjs";
+import { bootNavigation } from "./lib/bootNavigation.mjs";
 import { coverStrips, coverDefects } from "./lib/coverage.mjs";
 import { loadPlan } from "./lib/loadPlan.mjs";
 import { levelCfgFromPlan } from "./lib/planCalibration.mjs";
@@ -992,11 +993,18 @@ function makeWarmDensity(det) {
 
 // ---- Browser plumbing ---------------------------------------------------------
 
-async function enterLevel(page, levelName) {
-  await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
-  await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });
-  await page.getByText(levelName, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
-  await dismissNarrative(page);
+async function enterLevel(page, level) {
+  // Path choice lives in bootNavigation (pure, unit-tested): a shipped level
+  // goes title → menu wall → flyer click; a generated level is NOT on the menu
+  // wall (ADR-0075 §6) and boots ONLY through the ?preview=level&level=<id>
+  // seam, landing directly in PLAYING (no menu, no narrative card).
+  const nav = bootNavigation(level, PREVIEW_URL);
+  await page.goto(nav.url, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
+  if (nav.path === "menu") {
+    await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });
+    await page.getByText(level.name, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
+    await dismissNarrative(page);
+  }
   await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
   await page.waitForFunction(
     () =>
@@ -1031,7 +1039,7 @@ async function checkLevel(page, level, band) {
   const warmDensity = makeWarmDensity(det);
   const committed = readAllZones()[level.id];
   if (!Array.isArray(committed)) throw new Error(`windowZones.generated.json has no ${level.id}[]`);
-  await enterLevel(page, level.name);
+  await enterLevel(page, level);
   await applyAndRead(page, committed);
   await sleep(300);
   const slots = await readSlots(page);
@@ -1063,7 +1071,7 @@ async function fixLevel(page, level, band) {
       `row centres ${det.rowCenters.map((c) => c.toFixed(3)).join(", ")}`,
   );
 
-  await enterLevel(page, level.name);
+  await enterLevel(page, level);
 
   // Calibrate the h→(size,y,size-x) map from a first probe render.
   const probeH = det.cfg.probeH;
@@ -1173,11 +1181,14 @@ async function main() {
 
   // T4 (spec-level-harness-sp2 §2.3): an id absent from the shipped manifest
   // is a GENERATED level — resolve its LevelPlan and inject a calibration-
-  // derived cfg into LEVEL_CFG (the same pattern align-troncon.mjs already
-  // uses to add its own namespaced ids), never a hand-written entry. This
-  // NEVER writes back to levelArt.json (spec §3's "single source" contract for
-  // a generated level) and never regenerates the backdrop image — a plan with
-  // no `calibration` throws here with a clear message (levelCfgFromPlan).
+  // derived cfg into LEVEL_CFG, never a hand-written entry. This NEVER writes
+  // back to levelArt.json (spec §3's "single source" contract for a generated
+  // level) and never regenerates the backdrop image — a plan with no
+  // `calibration` throws here with a clear message (levelCfgFromPlan). Unlike
+  // align-troncon.mjs's namespaced ids (sub-facades of a level the menu DOES
+  // list), a generated level is absent from the menu wall entirely, so its
+  // entry is flagged `generated: true` and enterLevel boots it through the
+  // ?preview=level seam instead of a menu click (see lib/bootNavigation.mjs).
   const levels = [...shippedLevels];
   for (const id of targetIds) {
     if (shippedLevels.find((l) => l.id === id)) continue; // shipped path, unchanged
@@ -1192,7 +1203,7 @@ async function main() {
         `${plan.backdrop.file}.png`,
       ),
     };
-    levels.push({ id: plan.id, name: plan.fiction.name });
+    levels.push({ id: plan.id, name: plan.fiction.name, generated: true });
   }
   for (const id of targetIds) {
     if (!LEVEL_CFG[id]) throw new Error(`no detection config for level "${id}"`);

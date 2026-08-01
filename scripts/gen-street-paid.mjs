@@ -86,7 +86,7 @@ async function fetchImg(u, bearer, tries = 3) {
       await sleep(3000 * (i + 1));
     }
   }
-  return undefined;
+  // Unreachable: the last attempt either returned the buffer or re-threw.
 }
 
 /**

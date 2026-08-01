@@ -14,8 +14,11 @@ name: Generate plan backdrop (paid)
 #     is appended to and PUSHED before the paid call ever runs (a push failure
 #     here aborts the job — no paid call without a trace);
 #   - the guard step counts commits touching that file on `origin/main..HEAD`
-#     and fails at >= 3, BEFORE the increment step runs (so exactly 3 attempts
-#     are allowed, not 2);
+#     with `--full-history` (default history simplification can prune a
+#     path-touching commit away across a merge — under-counting paid attempts
+#     is the one direction this guard must never err in) and fails at >= 3,
+#     BEFORE the increment step runs (so exactly 3 attempts are allowed,
+#     not 2);
 #   - a commit-back failure AFTER a successful paid call is a hard FAIL, never
 #     a warning — the spent attempt is never silently dropped from the count
 #     (its trace commit is already pushed).
@@ -66,13 +69,27 @@ jobs:
           git fetch origin main
           git pull --ff-only origin "$GITHUB_REF_NAME"
 
+      - name: Enable Corepack
+        run: corepack enable
+
+      # gen-street-paid.mjs --plan resolves the LevelPlan through
+      # scripts/lib/loadPlan.mjs → jiti (a devDependency): without a real
+      # install the import throws before any paid call — AFTER the attempt
+      # trace is already pushed, silently burning one of the 3 capped tries.
+      # Runs AFTER the branch sync so the install matches the pulled lockfile.
+      - name: Install dependencies
+        run: yarn install --immutable
+
       - name: Guard — cap 3 PAID ATTEMPTS per level per PR
         run: |
           set -euo pipefail
           counter="public/assets/levels/${LEVEL_ID}/.paid-attempts"
           # A counter never committed on this branch counts as 0 attempts —
           # `git log` on a path with no history simply returns nothing.
-          attempts=$(git log --oneline origin/main..HEAD -- "$counter" | wc -l | tr -d ' ')
+          # --full-history: never let default history simplification prune a
+          # path-touching commit across a merge — a paid attempt whose change
+          # a merge resolution later discarded STILL counts against the cap.
+          attempts=$(git log --full-history --oneline origin/main..HEAD -- "$counter" | wc -l | tr -d ' ')
           echo "paid attempts so far for '${LEVEL_ID}': ${attempts}"
           if [ "$attempts" -ge 3 ]; then
             echo "::error::level '${LEVEL_ID}' already has ${attempts} paid backdrop attempt(s) on this PR (hard cap: 3) — escalate to a human before dispatching this workflow again for this level."

@@ -54,8 +54,16 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install @napi-rs/canvas (chroma-key / style gate)
-        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+      - name: Enable Corepack
+        run: corepack enable
+
+      # Both --plan generators resolve the LevelPlan through
+      # scripts/lib/loadPlan.mjs → jiti (a devDependency): without a real
+      # install the import throws on every dispatch. The full install also
+      # provides @napi-rs/canvas (pinned 1.0.2 in package.json) for the
+      # chroma-key / style-gate steps — no separate npm one-off needed.
+      - name: Install dependencies
+        run: yarn install --immutable
 
       # ── skins (phase (c)) ──────────────────────────────────────────────────
       - name: "[skins] Generate enemy-type flipbook frames"
@@ -111,13 +119,19 @@ jobs:
         run: |
           set -euo pipefail
           fail=0
-          # Process substitution, NOT a pipe into `while read` — piping would run
-          # the loop in a subshell, where `fail=1` is invisible to the `exit`
+          # Capture the list FIRST, as a plain assignment: under `set -e` a
+          # failing --list aborts the step right here. Feeding the loop from a
+          # process-substitution redirect would hide the list command's exit
+          # status — a crashed --list would gate ZERO props and exit 0, a
+          # silent vacuous PASS.
+          list=$(node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID" --list)
+          # Here-string, NOT a pipe into `while read` — piping would run the
+          # loop in a subshell, where `fail=1` is invisible to the `exit`
           # below (the classic bash pipe-subshell scoping trap).
           while read -r kind _size arrow asset; do
             [ "$arrow" = "→" ] || continue
             node scripts/check-nearfg-style.mjs --file "public/$asset" --kind "$kind" || fail=1
-          done < <(node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID" --list)
+          done <<< "$list"
           exit "$fail"
 
       - name: "[props] Commit sprites"

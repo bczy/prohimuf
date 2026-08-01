@@ -9,10 +9,13 @@ import { parse } from "yaml";
 /**
  * Dry-run of gen-plan-sprites.yml's "[props] Style gate" step (SP2 T5) — the
  * loop reads `gen-nearfg-sprites.mjs --plan <id> --list` and calls
- * check-nearfg-style.mjs per prop. A naive `cmd | while read; do fail=1; done`
- * runs the loop body in a SUBSHELL in bash, so a `fail=1` set inside it never
- * reaches the `exit "$fail"` after the loop — this pins the process-
- * substitution fix (`done < <(cmd)`) that avoids that trap.
+ * check-nearfg-style.mjs per prop. Two bash traps are pinned here:
+ *   - `cmd | while read; do fail=1; done` runs the loop body in a SUBSHELL,
+ *     so `fail=1` never reaches the `exit "$fail"` after the loop;
+ *   - `done < <(cmd)` hides cmd's exit status from `set -e`, so a crashed
+ *     --list would gate ZERO props and exit 0 — a silent vacuous PASS
+ *     (PR #156 panel finding). The list is captured via a plain assignment
+ *     (errexit-visible) and fed to the loop with a here-string instead.
  */
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,7 +36,25 @@ it("never pipes the per-prop loop into a subshell (fail=1 must survive the loop)
   // Static guard against the exact regression this test exists for: a pipe
   // into `while read` — `| while read` — silently drops `fail=1`.
   expect(STYLE_GATE_SCRIPT).not.toMatch(/\|\s*while\s+read/);
-  expect(STYLE_GATE_SCRIPT).toMatch(/done\s*<\s*<\(/);
+});
+
+it("never feeds the loop from a process substitution (--list's own failure must be seen)", () => {
+  // `done < <(cmd)` hides cmd's exit status from errexit — the list must be
+  // captured as a plain assignment first, then fed to the loop.
+  expect(STYLE_GATE_SCRIPT).not.toMatch(/<\s*<\(/);
+  expect(STYLE_GATE_SCRIPT).toMatch(/list=\$\(node scripts\/gen-nearfg-sprites\.mjs/);
+});
+
+it("FAILS (non-zero) when the --list subprocess itself fails — no vacuous PASS", () => {
+  // A level id with no plan makes `gen-nearfg-sprites.mjs --plan … --list`
+  // itself exit non-zero before printing a single prop line. The gate must
+  // fail loudly, not iterate zero times and exit 0.
+  const res = spawnSync("bash", ["-c", STYLE_GATE_SCRIPT], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, LEVEL_ID: "no-such-generated-level" },
+    encoding: "utf8",
+  });
+  expect(res.status).not.toBe(0);
 });
 
 it("FAILS (non-zero) when the plan's prop file is missing — real bash run", () => {

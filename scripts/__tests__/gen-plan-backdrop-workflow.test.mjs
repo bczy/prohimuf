@@ -106,6 +106,26 @@ describe("gen-plan-backdrop.yml — guard step (dry run)", () => {
     expect(res.stdout).toMatch(/cap/i);
   });
 
+  it("counts attempts across a merge whose resolution DISCARDED them (--full-history)", () => {
+    // Attempt 2 lands on a side branch, then a `-s ours` merge discards its
+    // change to the counter. Default `git log <range> -- <path>` history
+    // simplification follows only the TREESAME parent and never shows that
+    // commit (count: 1 → guard passes). With --full-history the pruned side
+    // is walked too (attempt 2 AND the non-TREESAME merge count), so the
+    // guard sees >= 3 and must FAIL — a paid attempt whose trace a merge
+    // resolution dropped still spent real money.
+    commitPaidAttemptTrace(1);
+    git(work, "checkout", "-q", "-b", "side");
+    commitPaidAttemptTrace(2);
+    git(work, "checkout", "-q", "feat/test");
+    git(work, "merge", "-q", "-s", "ours", "--no-edit", "side");
+    git(work, "fetch", "-q", "origin", "main");
+    const res = runStep(GUARD_SCRIPT, work, { LEVEL_ID });
+    expect(res.stdout).toContain(": 3");
+    expect(res.status).not.toBe(0);
+    expect(res.stdout).toMatch(/cap/i);
+  });
+
   it("counts ATTEMPTS (commits touching the counter), not the counter's own content", () => {
     // Two commits, but each appends TWO lines to the counter — content is not
     // what the cap reads, only commit count on the path.
