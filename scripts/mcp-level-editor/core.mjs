@@ -334,9 +334,12 @@ async function ensureDevServer({
   const url = `http://localhost:${String(port)}${base}`;
   if (await isServerUp(url)) return { url, proc: null };
 
+  // stdio fully ignored: readiness is polled via isServerUp, and piped stdout/
+  // stderr would keep a short-lived library caller's event loop alive forever
+  // after preview() returns (unref only detaches the child handle, not pipes).
   const proc = spawn("yarn", ["vite", "--port", String(port), "--strictPort"], {
     cwd: rootDir,
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: "ignore",
   });
   proc.unref();
 

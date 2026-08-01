@@ -40,7 +40,8 @@ describe("bootstrap registration of the generated levels (main.tsx)", () => {
   });
 
   it("calls it BEFORE the first render", () => {
-    const call = source.indexOf("registerGeneratedLevels();");
+    // search(anchored regex), not indexOf: a commented-out call must not match.
+    const call = source.search(/^registerGeneratedLevels\(\);$/m);
     const render = source.indexOf("createRoot(");
     expect(call).toBeGreaterThanOrEqual(0);
     expect(render).toBeGreaterThanOrEqual(0);
