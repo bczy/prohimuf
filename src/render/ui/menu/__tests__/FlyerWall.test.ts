@@ -142,6 +142,9 @@ describe("FlyerWall first-run — auto-focus + flag timing (client mount)", () =
 
   beforeEach(() => {
     localStorage.clear();
+    // FlyerWall now writes a sessionStorage flag on every real mount; leaving it set
+    // would make the second mount in this describe render settled instead of animating.
+    sessionStorage.clear();
   });
 
   afterEach(() => {

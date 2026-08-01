@@ -124,6 +124,14 @@ export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   // or a caller passing `{ timeout: 0 }` — would turn this safety net into a hang.
   const left = () => Math.max(1, deadline - Date.now());
   await page.locator(".muf-flyer-slot").first().waitFor({ timeout: left() });
+  // Two frames before polling. A slot can be in the DOM — the waitFor above proves it —
+  // BEFORE the browser has run the style pass that creates its CSSAnimation object, and an
+  // empty getAnimations() is indistinguishable from a finished one. Without this, the poll
+  // could read "settled" on a wall that has not started animating. Two frames because the
+  // first only guarantees style resolution is scheduled.
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
+  );
   await page.waitForFunction(
     () => {
       const slots = Array.from(document.querySelectorAll(".muf-flyer-slot"));

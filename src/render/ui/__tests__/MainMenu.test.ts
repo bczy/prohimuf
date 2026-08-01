@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { createElement } from "react";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+import { createRoot } from "react-dom/client";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import { MainMenu } from "../MainMenu";
 import styles from "../MainMenu.module.css";
@@ -56,5 +58,91 @@ describe("MainMenu — NIVEAUX overflow clip", () => {
     const cls = styles.rubriques;
     if (cls === undefined) throw new Error("styles.rubriques missing from the stylesheet");
     expect(markup()).toContain(cls);
+  });
+});
+
+/**
+ * The OTHER half of the contract. The tests above only prove the clip is PRESENT on
+ * NIVEAUX; inverting the condition, or applying the class unconditionally, would leave
+ * them all green while silently clipping SCORES and OPTIONS — which is precisely what
+ * decision §4 forbids, since those two must keep a visible scrollbar rather than cut copy.
+ */
+describe("MainMenu — the clip is absent on the other rubriques", () => {
+  let root: ReturnType<typeof createRoot> | null = null;
+  let container: HTMLDivElement | null = null;
+
+  beforeEach(() => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      // storage unavailable — the component's guarded reads handle it
+    }
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    container?.remove();
+    root = null;
+    container = null;
+  });
+
+  function mountMenu(): HTMLDivElement {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => {
+      root?.render(
+        createElement(MainMenu, {
+          unlockedLevels: new Set<string>(),
+          onPlay: () => undefined,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: () => undefined,
+        }),
+      );
+    });
+    return container;
+  }
+
+  function surface(): Element | null {
+    // The rubrique surface is the tabpanel-ish container that carries `.rubriques`.
+    const cls = styles.rubriques;
+    if (cls === undefined) throw new Error("styles.rubriques missing from the stylesheet");
+    return container?.querySelector(`.${cls}`) ?? null;
+  }
+
+  function clipClass(): string {
+    const cls = styles.rubriquesLevels;
+    if (cls === undefined) throw new Error("styles.rubriquesLevels missing from the stylesheet");
+    return cls;
+  }
+
+  function selectTab(label: string): void {
+    const tab = Array.from(container?.querySelectorAll('[role="tab"]') ?? []).find((el) =>
+      el.textContent.includes(label),
+    );
+    if (!(tab instanceof HTMLElement)) throw new Error(`tab ${label} not found`);
+    act(() => {
+      tab.click();
+    });
+  }
+
+  it("clips on NIVEAUX", () => {
+    mountMenu();
+    expect(surface()?.className).toContain(clipClass());
+  });
+
+  it("does NOT clip on SCORES", () => {
+    mountMenu();
+    selectTab("SCORES");
+    expect(surface()?.className).not.toContain(clipClass());
+  });
+
+  it("does NOT clip on OPTIONS", () => {
+    mountMenu();
+    selectTab("OPTIONS");
+    expect(surface()?.className).not.toContain(clipClass());
   });
 });
