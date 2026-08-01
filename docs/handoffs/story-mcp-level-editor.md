@@ -50,7 +50,13 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] **VERIFY (qa-lead, 2026-08-01, §5) : QUALITY GATE PASS** — 1715 tests ✓ / 121 fichiers,
       tsc ✓, lint ✓, les 6 points du critère §6 attestés un par un, 6 mutations (5 BITES,
       1 SURVIVES documentée)
-- [ ] simplify : compaction diff
+- [x] simplify (2026-08-01) : diff déjà discipliné — 1 APPLIED (dédoublonnage
+      `inspect`↔`resolvePlanOrThrow`, `4c238071`), 0 PROPOSED, 0 coupe rouge. La passe a
+      surfacé un lint rouge pré-panel (`typeof import()` vs `consistent-type-imports`
+      dans `generatedLevels.test.ts`, masqué au VERIFY par le cache eslint) — corrigé en
+      `40fd9ac6` (imports type namespace). Fixes VERIFY O1/O2 en `0ff370bb`
+      (`preview()` rend la main : stdio ignore ; assertion C3 ancrée). tsc ✓ /
+      1715 tests ✓ / lint ✓ re-prouvés sur l'ensemble.
 - [ ] review-panel : 4 reviewers, architecture triage
 - [ ] PR draft → acceptation pm
 - [ ] Merge
