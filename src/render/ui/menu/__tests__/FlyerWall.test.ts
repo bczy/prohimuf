@@ -394,6 +394,25 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
+  it("still settles for a keyboard arrival right after a pointer release", () => {
+    // The window must be the GESTURE, not a flat 300ms: clicking a locked flyer only
+    // shakes it and leaves the player on the menu, so a keyboard arrival a few frames
+    // later is a real arrival — and it is the one the settle exists to serve.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    });
+    act(() => {
+      el?.focus();
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
   it("does NOT let the first-visit auto-focus cancel the cascade", () => {
     // That focus is ours, not the player's. Counting it would make a first-time visitor
     // the only person who never sees the entrance.

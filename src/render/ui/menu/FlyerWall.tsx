@@ -388,6 +388,18 @@ export function FlyerWall({
         onPointerDown={() => {
           lastPointerDown.current = Date.now();
         }}
+        onPointerUp={() => {
+          // CLEARED on release, so the window is the gesture itself rather than a flat
+          // 300ms. Without this, a click on a LOCKED flyer (which only shakes, leaving the
+          // player on the menu) would swallow a keyboard arrival made in the next few
+          // frames — and that arrival is exactly the case the settle exists to serve.
+          // The recency check below remains as the fallback for a release that lands
+          // outside the wall, where no pointerup reaches us.
+          lastPointerDown.current = 0;
+        }}
+        onPointerCancel={() => {
+          lastPointerDown.current = 0;
+        }}
         onFocus={() => {
           setFocusWithin(true);
           if (autoFocusing.current) return;

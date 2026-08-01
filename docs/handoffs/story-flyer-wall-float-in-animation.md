@@ -65,9 +65,16 @@ pour qu'un contributeur ultérieur les trouve au lieu de les redéduire du CSS.
   `getAnimations()` vide ⇒ prédicat vrai au tick suivant), la garde tableau-vide est
   porteuse (FlyerWall se démonte à chaque aller-retour de rubrique), le timeout de 20 s
   vaut ~8× le pire cas mesuré, et l'export additif est sans risque pour les 12
-  importateurs dont les gates bloquants ; la suppression de la capture périmée puis
-  re-throw sur le `00_menu.png` autoritaire est le bon arbitrage vu que `preview.yml` ne
-  gate rien et que chaque capture y est déjà best-effort.
+  importateurs dont les gates bloquants.
+
+  **Périmètre exact de cette signature.** Elle porte sur `waitForFlyerWallSettled` et sur
+  l'isolation des captures, qui n'ont pas bougé depuis. Elle validait AUSSI un mécanisme de
+  « suppression de la capture périmée puis re-throw » — **retiré depuis** : un tour ultérieur
+  a montré qu'il détruisait une capture saine quand l'échec n'avait rien à voir avec
+  l'animation. Le comportement actuel est plus simple : un échec de settle est logué et la
+  capture est sautée, sans rien supprimer. Cette moitié de la signature ne porte donc sur
+  aucun code vivant, et n'est conservée ici que pour l'historique.
+
 - **`ux-designer`** — porte de design rétroactive (ci-dessus).
 - **`senior-architect`** — analyse du rayon de souffle conservée comme argumentaire (elle
   reste juste sur le fond), mais elle ne vaut PAS dérogation : c'est la double signature
