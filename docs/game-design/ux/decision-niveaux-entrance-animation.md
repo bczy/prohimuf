@@ -58,13 +58,14 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    où il est immobile et paraît donc prêt à recevoir le clic. Aucune perte : le rognage
    d'anneau de focus que cette règle protège est un problème strictement clavier.
 
-   **Détection : le TYPE de la dernière entrée.** Un `keydown` dit « clavier », un
-   `pointerdown` dit « pointeur », et seule une arrivée clavier stabilise. Les deux écoutes
-   sont posées sur `window` : le Tab d'une arrivée venue de l'EXTÉRIEUR du mur se déclenche
-   sur l'élément qu'on quitte, jamais sur nous.
+   **Détection : stabiliser par DÉFAUT, sauf pour le focus d'un geste pointeur.** Toute
+   arrivée de focus stabilise le mur. Une seule est écartée : celle qui appartient à un
+   geste pointeur, reconnaissable à ce qu'elle atterrit sur l'élément que ce geste vient
+   d'appuyer. C'est la seule qu'il ne faut pas suivre — retirer l'animation en plein geste
+   arrache la feuille de sous le doigt ou le curseur avant que le clic n'aboutisse.
 
-   Deux détections antérieures ont été essayées et retirées ; elles sont consignées ici
-   parce que chacune paraît la solution évidente et casse une plateforme différente :
+   Trois règles plus étroites ont été essayées et retirées ; chacune paraît la solution
+   évidente et chacune exclut une population réelle :
    - **`:focus-visible`** — l'élément focusé est un `div[role="button"]`, pas un `<button>`
      natif, et sur ce type d'élément les moteurs divergent : WebKit a livré des versions où
      un focus souris matche. Sur Safari le clic aurait re-cassé le démarrage d'un niveau,
@@ -72,12 +73,16 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    - **Récence du pointeur** (« un appui a-t-il eu lieu il y a moins de 300 ms ») — cassait
      le **tactile**. L'ordre des événements d'un tap est `pointerdown` → `pointerup` →
      `mousedown` synthétique → `focus` : le focus du tap arrive APRÈS la fin de son propre
-     geste, donc il était lu comme une arrivée clavier et la feuille sautait sous le doigt.
-     Aucun seuil ne pouvait convenir — il aurait dû être à la fois assez long pour ce focus
-     tardif et assez court pour laisser passer un Tab suivant un clic.
+     geste. Aucun seuil ne pouvait convenir — il lui aurait fallu être à la fois assez long
+     pour ce focus tardif et assez court pour laisser passer un Tab suivant un clic.
+   - **Exiger un `keydown`** — excluait les **technologies d'assistance**. Un balayage
+     VoiceOver ou un saut au rotor NVDA déplace le focus DOM sans qu'aucune touche
+     n'atteigne la page. La règle ignorait donc précisément l'utilisateur pour qui elle
+     existe : l'anneau rogné est un problème d'accessibilité avant d'être un problème de
+     confort.
 
-   Le type d'événement n'a ni l'un ni l'autre défaut, et supprime le réglage au lieu de le
-   déplacer.
+   Comparer la CIBLE plutôt que deviner l'intention n'a aucun de ces défauts, et supprime
+   le réglage au lieu de le déplacer.
 
 6. **Le mouvement réduit ne consomme pas la cascade de la session.** L'animation étant
    supprimée, marquer la session comme « déjà jouée » dépenserait son unique passage pour
@@ -85,13 +90,19 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    verrait jamais l'entrée. Le drapeau n'est posé que si l'animation a réellement pu jouer.
 
    **Et il est RENDU si le mouvement réduit s'active EN COURS DE CHUTE** — en cours de
-   chute seulement. Une fois la cascade terminée, la séance a eu son passage : le rendre
-   offrirait une seconde cascade complète plus tard dans la même session, soit §1 cassé par
-   l'autre bout. Or la bascule OS n'a pas de date limite, un joueur peut l'actionner une
-   heure après l'entrée pour des raisons étrangères à cet écran. La fin est détectée par
-   l'`animationend` de la dernière feuille — celle qui finit en dernier — plutôt qu'en
+   chute seulement. Une fois la séance **consommée**, la rendre offrirait une seconde
+   cascade complète plus tard dans la même session. Consommée veut dire deux choses, pas
+   une : soit la cascade est allée jusqu'au bout, soit le joueur l'a lui-même close en
+   arrivant sur le mur (§5) — une stabilisation retire une animation en cours, qui émet donc
+   `animationcancel` et jamais `animationend`, et s'en tenir à « allée au bout » lirait ce
+   mur-là comme n'ayant rien montré. C'est §1 cassé par l'autre bout, et la bascule OS n'a
+   pas de date limite : un joueur peut l'actionner une heure après l'entrée, pour des
+   raisons étrangères à cet écran.
+
+   La fin de chute est détectée par l'`animationend` de la dernière feuille — celle qui
+   finit en dernier, même durée partout et délai croissant avec l'index — plutôt qu'en
    recalculant `(n-1) × stagger + durée`, qui obligerait à tenir ces trois valeurs
-   synchronisées dans un troisième endroit. La moitié OS de
+   synchronisées dans un endroit de plus. La moitié OS de
    ce signal est vivante : elle peut basculer pendant que le mur est monté. La coupure CSS
    tronque alors l'animation, alors que le drapeau était déjà posé au montage — la séance
    aurait dépensé son unique passage pour une cascade vue à moitié. Le drapeau est donc

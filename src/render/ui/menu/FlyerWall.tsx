@@ -261,24 +261,29 @@ export function FlyerWall({
   // The first-visit auto-focus is OURS, not the player's, and must not count as arrival —
   // otherwise a first-time visitor is the one person who never sees the cascade.
   const autoFocusing = useRef(false);
-  // What the player last used: keyboard, or a pointer/touch. Tracked at the WINDOW, which
-  // is the only place that sees the Tab keydown of an arrival coming from OUTSIDE the wall
-  // (that key event fires on the previously focused element, never on us).
+  // What a pointer gesture last pressed, tracked at the WINDOW (a Tab arriving from OUTSIDE
+  // the wall fires its keydown on the element being left, never on us) and voided by any
+  // keystroke. It exists to recognise ONE thing: the focus that belongs to a pointer
+  // gesture, which is the only focus we must not act on — it lands on the very element
+  // that was just pressed, so that is what we compare against.
   //
-  // Two earlier attempts failed on real input, both worth remembering:
+  // Settling is the default for every other focus, deliberately. Three narrower rules were
+  // tried and each shut out a real population:
   //   - `:focus-visible` — engine-dependent on a script-focusable div[role=button]; WebKit
   //     has shipped versions where a MOUSE focus matches, which would settle mid-click.
-  //   - pointer RECENCY cleared on pointerup — broken on touch, where the order is
-  //     pointerdown → pointerup → synthetic mousedown → focus: the marker was already
-  //     cleared when the tap's own focus arrived, so a tap read as a keyboard arrival.
-  // Event TYPE has neither problem: a tap sets "pointer" and nothing resets it before the
-  // synthetic focus, and a Tab sets "keyboard" wherever it was pressed.
-  const lastInputWasKeyboard = useRef(false);
+  //   - pointer RECENCY — broken on touch, where the order is pointerdown → pointerup →
+  //     synthetic mousedown → focus: a tap's own focus arrives after its gesture has ended.
+  //   - requiring a KEYDOWN — shut out assistive tech. A VoiceOver swipe or an NVDA rotor
+  //     jump moves DOM focus with no key event reaching the page at all, so the reader user
+  //     — the one this settle rule exists to protect from the clipped focus ring — was
+  //     precisely the one it ignored.
+  const pointerPressed = useRef<EventTarget | null>(null);
 
-  // Whether the cascade ran to its end, set by the last slot's animationend below. A ref,
-  // not state: nothing renders differently because of it — it only decides, later, whether
-  // an interruption is worth handing the session's showing back.
-  const cascadeFinished = useRef(false);
+  // Whether the session's one showing has been SPENT — either the cascade ran to its end
+  // (the last slot's animationend, below) or the player resolved it themselves by arriving
+  // on the wall. Both mean the same thing here: handing the flag back would buy a second
+  // cascade later in the session. A ref, not state: nothing renders from it.
+  const showingConsumed = useRef(false);
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -302,13 +307,14 @@ export function FlyerWall({
     // already set at mount, so the session's one showing would have been spent on a
     // cascade the player only half saw. Hand it back.
     //
-    // Only a cascade the player did NOT get to see through is worth handing back. Once it
-    // has finished, the session got its showing, and clearing the flag would buy a SECOND
-    // full cascade later in the same session — the per-session guarantee of decision §1,
-    // broken from the other end. `reducedMotion` toggling has no deadline: a player can
-    // flip it an hour into a visit, for reasons that have nothing to do with this wall.
+    // Only a showing the player did NOT get is worth handing back. If the cascade ran to
+    // its end, or the player themselves put the wall at rest by arriving on it, the session
+    // HAS had its showing — clearing the flag would buy a SECOND full cascade later in the
+    // same session, the per-session guarantee of decision §1 broken from the other end.
+    // `reducedMotion` toggling has no deadline: a player can flip it an hour into a visit,
+    // for reasons that have nothing to do with this wall.
     if (!playCascade || !reducedMotion) return;
-    if (!cascadeFinished.current) clearCascadePlayed();
+    if (!showingConsumed.current) clearCascadePlayed();
     // LATCHED for this mount, finished or not: the OS switch can flip back to OFF while we
     // stay mounted, and `playCascade` is decided once at mount — so without this the CSS
     // kill switch would stop applying, re-applying the animation from the top, and the
@@ -319,10 +325,10 @@ export function FlyerWall({
 
   useEffect(() => {
     const onKey = () => {
-      lastInputWasKeyboard.current = true;
+      pointerPressed.current = null;
     };
-    const onPointer = () => {
-      lastInputWasKeyboard.current = false;
+    const onPointer = (e: PointerEvent) => {
+      pointerPressed.current = e.target;
     };
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("pointerdown", onPointer, true);
@@ -441,13 +447,18 @@ export function FlyerWall({
         // `armed` state so automation can wait for a real actionable state instead of
         // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
         data-flyers-armed={armed ? "true" : "false"}
-        onFocus={() => {
+        onFocus={(e) => {
           setFocusWithin(true);
           if (autoFocusing.current) return;
-          // Only a keyboard arrival settles: that is the only case where a clipped focus
-          // ring can be seen, and settling on a pointer gesture yanks the flyer out from
-          // under the cursor mid-click.
-          if (lastInputWasKeyboard.current) setInterrupted(true);
+          // A focus that BELONGS to a pointer gesture lands on the very element that
+          // gesture pressed; settling on it would yank the flyer out from under the finger
+          // or cursor before the click resolves. Every other focus — a Tab, an arrow, a
+          // screen reader's virtual cursor, which reaches us with no key event at all —
+          // is a player arriving, and settles the wall so no focus ring gets clipped.
+          const pressed = pointerPressed.current;
+          if (pressed instanceof Node && e.target.contains(pressed)) return;
+          setInterrupted(true);
+          showingConsumed.current = true;
         }}
         onBlur={(e) => {
           if (!containerRef.current?.contains(e.relatedTarget)) {
@@ -517,7 +528,7 @@ export function FlyerWall({
                 i === LEVELS.length - 1
                   ? (e) => {
                       // Not a child's animation bubbling up through us.
-                      if (e.target === e.currentTarget) cascadeFinished.current = true;
+                      if (e.target === e.currentTarget) showingConsumed.current = true;
                     }
                   : undefined
               }

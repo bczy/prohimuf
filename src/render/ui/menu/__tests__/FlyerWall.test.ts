@@ -422,6 +422,58 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
+  it("settles for a focus that arrives with NO input event at all (assistive tech)", () => {
+    // A VoiceOver swipe or an NVDA rotor jump moves DOM focus without the page ever seeing
+    // a keydown. Requiring one shut out exactly the population this rule protects: the
+    // clipped focus ring is the accessibility reason it exists in the first place. So
+    // settling is the DEFAULT, and only a focus belonging to a pointer gesture is skipped.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.focus(); // no keydown, no pointerdown — focus simply moves
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
+  it("does not hand the showing back after the player settled the wall themselves", () => {
+    // Settling on arrival REMOVES a running animation, so the last slot fires
+    // animationcancel, never animationend — "ran to its end" alone would read this wall as
+    // never having shown. It did show: the player ended it. A later, unrelated reduced-motion
+    // flip must not treat that as a cascade owed back, or they get a second one.
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const render = (reducedMotion: boolean) => {
+      act(() => {
+        root.render(
+          createElement(FlyerWall, {
+            reducedMotion,
+            unlockedLevels: new Set<string>(),
+            onPlay: () => undefined,
+            prefs: DEFAULT_PREFS,
+            onSavePrefs: () => undefined,
+          }),
+        );
+      });
+    };
+    markTutorialNudgeSeen();
+    render(false);
+    expect(hasCascadePlayed()).toBe(true);
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+      container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']")?.focus();
+    });
+    render(true); // unrelated OS flip, later in the same visit
+    expect(hasCascadePlayed()).toBe(true);
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it("still settles for a keyboard arrival right after a pointer release", () => {
     // Clicking a locked flyer only shakes it and leaves the player on the menu, so a Tab
     // pressed immediately afterwards is a real arrival — and it is the one the settle
