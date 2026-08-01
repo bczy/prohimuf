@@ -1,0 +1,159 @@
+name: Generate plan skins and props
+
+# SP2 phases (c)+(d) — spec-level-harness-sp2 §3, plan T5. Dispatches, for ONE
+# generated level (src/game/levels/generated/<level_id>.ts), both:
+#   - "skins"  — gen-enemy-types.mjs --plan (enemy archetype flipbook frames,
+#     public/assets/enemy_<spriteBase>*.png), through the SAME existing gates
+#     the hand-authored roster uses (cutout, fill-holes SOLIDIFY + --check) —
+#     they already match the enemy_*.png glob regardless of where the key
+#     came from;
+#   - "props"  — gen-nearfg-sprites.mjs --plan (near-foreground props,
+#     public/assets/nearfg/<level_id>/<name>.png), through check-nearfg-style.mjs
+#     (C1 grey + non-empty silhouette), one prop at a time via its own
+#     `--file`/`--kind` mode.
+#
+# Seeds for both families are FREE (spec §2.2) — unlike the pinned backdrop
+# seed, a failing gate is meant to be repaired by simply re-dispatching (a
+# fresh roll), not escalated. Matrix keeps the two families independent: a
+# props failure never blocks skins from landing, and vice versa.
+on:
+  workflow_dispatch:
+    inputs:
+      level_id:
+        description: "Generated level id (src/game/levels/generated/<id>.ts)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [skins, props]
+    runs-on: ubuntu-latest
+    # Never on main — same guard as every other gen-*.yml in this family.
+    if: github.ref_name != 'main'
+    # Per level_id AND per family: skins and props push independently and must
+    # never block each other, but two concurrent dispatches for the SAME level
+    # + family would race their own commit-back retries against each other.
+    concurrency:
+      group: gen-plan-sprites-${{ github.event.inputs.level_id }}-${{ matrix.family }}
+      cancel-in-progress: false
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      LEVEL_ID: ${{ github.event.inputs.level_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key / style gate)
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      # ── skins (phase (c)) ──────────────────────────────────────────────────
+      - name: "[skins] Generate enemy-type flipbook frames"
+        if: matrix.family == 'skins'
+        run: node scripts/gen-enemy-types.mjs --plan "$LEVEL_ID"
+
+      - name: "[skins] Chroma-key sprite backgrounds to transparency"
+        if: matrix.family == 'skins'
+        run: node scripts/cutout-enemies.mjs
+
+      - name: "[skins] Solidify enemy sprite figures"
+        if: matrix.family == 'skins'
+        run: node scripts/fill-sprite-holes.mjs
+
+      - name: "[skins] Gate — no enemy figure may ship porous"
+        if: matrix.family == 'skins'
+        run: node scripts/fill-sprite-holes.mjs --check
+
+      - name: "[skins] Commit sprites"
+        if: matrix.family == 'skins'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "public/assets/enemy_*.png" > /dev/null; then
+            git add -f public/assets/enemy_*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new skins to commit."
+          else
+            git commit -m "chore(assets): generate enemy skins for ${LEVEL_ID} (plan T5)"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      # ── props (phase (d)) ───────────────────────────────────────────────────
+      - name: "[props] Generate near-foreground props"
+        if: matrix.family == 'props'
+        run: node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID"
+
+      - name: "[props] Style gate (grey/C1 + silhouette) — one per plan prop"
+        if: matrix.family == 'props'
+        run: |
+          set -euo pipefail
+          fail=0
+          # Process substitution, NOT a pipe into `while read` — piping would run
+          # the loop in a subshell, where `fail=1` is invisible to the `exit`
+          # below (the classic bash pipe-subshell scoping trap).
+          while read -r kind _size arrow asset; do
+            [ "$arrow" = "→" ] || continue
+            node scripts/check-nearfg-style.mjs --file "public/$asset" --kind "$kind" || fail=1
+          done < <(node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID" --list)
+          exit "$fail"
+
+      - name: "[props] Commit sprites"
+        if: matrix.family == 'props'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "public/assets/nearfg/${LEVEL_ID}/*.png" > /dev/null; then
+            git add -f "public/assets/nearfg/${LEVEL_ID}"
+          fi
+          if git diff --cached --quiet; then
+            echo "No new props to commit."
+          else
+            git commit -m "chore(assets): generate near-foreground props for ${LEVEL_ID} (plan T5)"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated art (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-sprites-unpushed-${{ matrix.family }}
+          path: |
+            public/assets/enemy_*.png
+            public/assets/nearfg/**
+          if-no-files-found: warn
+          retention-days: 14

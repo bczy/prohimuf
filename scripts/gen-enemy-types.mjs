@@ -50,6 +50,21 @@
  *
  * node scripts/gen-enemy-types.mjs --list           # list defined enemy keys (no network)
  * node scripts/gen-enemy-types.mjs --asset <key>    # restrict the run to one enemy key
+ *
+ * `--plan <id>` (SP2 phase (c), T5) — additive path: instead of levelArt.json's
+ * `enemies.types`, iterates `plan.archetypes[]` (`src/game/levels/generated/<id>.ts`,
+ * `scripts/lib/loadPlan.mjs`). Each archetype's `spriteBase` is the output key
+ * (so its files land at `public/assets/<spriteBase>*.png`, namespaced by
+ * construction — a level's archetypes are validated to declare a spriteBase of
+ * its own), its prompt is derived from the kind's name segment (after the
+ * `<id>:` namespace) plus a standard pose clause for frame 2 (aiming/firing when
+ * `shoots`, reaching forward otherwise) — same 2-frame flipbook shape as the
+ * hand-authored table. The shared `enemies.style`/`size` from levelArt.json is
+ * still reused (house pixel-art look), so a generated cast reads as the SAME
+ * family, not a one-off. Seeds are FREE (spec §2.2 — re-run to reroll, unlike
+ * the backdrop's pinned seed) and every step past loading (kontext/matched-pair,
+ * cutout, fill-holes, check-sprite-integrity) is UNCHANGED — they already match
+ * the `enemy_*.png` glob regardless of where the key came from.
  */
 import fs from "fs";
 import path from "path";
@@ -58,6 +73,7 @@ import { sleep, fetchWithRetry, fluxUrl, buildRequestUrl } from "./lib/pollinati
 import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
+import { loadPlan } from "./lib/loadPlan.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -98,6 +114,32 @@ function loadEnemies() {
       prompt: def.prompt ?? "",
       frames: Array.isArray(def.frames) ? def.frames : [""],
       style: styleSuffix,
+      width,
+      height,
+    };
+  });
+}
+
+/**
+ * loadEnemiesFromPlan(plan, styleAndSize) — plan-mode equivalent of loadEnemies():
+ * same output shape ({key, seed, prompt, frames, style, width, height}), one
+ * entry per archetype. Pure (no fs/network): a test can assert the mapping
+ * without loading a real plan.
+ */
+export function loadEnemiesFromPlan(plan, { style = "", width = 256, height = 256 } = {}) {
+  const ns = `${plan.id}:`;
+  return plan.archetypes.map((a) => {
+    const descriptor = a.kind.startsWith(ns) ? a.kind.slice(ns.length) : a.kind;
+    const clean = descriptor.replace(/[-_]+/g, " ").trim();
+    const poseClause = a.shoots ? ", aiming and firing a weapon" : ", reaching forward";
+    return {
+      key: a.spriteBase,
+      // FREE seed (spec §2.2): re-running rerolls, unlike the backdrop's
+      // pinned seed — the plan has no per-archetype seed field to pin from.
+      seed: Math.floor(Math.random() * 99999) + 1,
+      prompt: `a ${clean}, standing guard`,
+      frames: ["", poseClause],
+      style,
       width,
       height,
     };
@@ -208,10 +250,24 @@ async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
   }
 }
 
+/** Resolve the enemy list: `--plan <id>` (T5) or the levelArt.json table (default). */
+async function resolveEnemies(args) {
+  const i = args.indexOf("--plan");
+  if (i === -1) return loadEnemies();
+  const levelId = args[i + 1];
+  if (!levelId || levelId.startsWith("--")) throw new Error("--plan requires a level id");
+  const plan = await loadPlan(levelId);
+  const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
+  const style = json.enemies?.style ?? "";
+  const width = json.enemies?.size?.width ?? 256;
+  const height = json.enemies?.size?.height ?? 256;
+  return loadEnemiesFromPlan(plan, { style, width, height });
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const { list, target } = parseAssetArgs(args);
-  let enemies = loadEnemies();
+  let enemies = await resolveEnemies(args);
 
   if (list) {
     console.log("Defined enemy keys (from levelArt.json):");

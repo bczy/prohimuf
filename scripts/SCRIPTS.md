@@ -837,6 +837,27 @@ normally blocked in the local sandbox; real art is produced in CI via
 `.github/workflows/gen-sprites.yml`, whose `enemy_*.png` glob already covers the
 new frame files — no structural workflow change).
 
+### `--plan <id>` (level-harness SP2 phase (c), T5) — additive path
+
+```bash
+node scripts/gen-enemy-types.mjs --plan <levelId> --list  # no network
+node scripts/gen-enemy-types.mjs --plan <levelId>          # network
+```
+
+Instead of `levelArt.json`'s `enemies.types`, iterates the plan's
+`archetypes[]` (`scripts/lib/loadPlan.mjs`). Each archetype's `spriteBase` is
+the output key (`public/assets/<spriteBase>*.png` — namespaced by construction,
+since a plan's own convention embeds the id in `spriteBase`, e.g.
+`enemy_fixture_vigile`); its prompt is derived from the kind's name segment
+(after the `<id>:` namespace) plus a standard pose clause for frame 2 (aiming
+
+- firing when `shoots`, reaching forward otherwise) — same 2-frame shape as
+  the hand-authored table, reusing `enemies.style`/`size` from levelArt.json so
+  a generated cast matches the house look. Seeds are FREE (spec §2.2 — re-run
+  to reroll), unlike the backdrop's pinned seed. Every step AFTER loading
+  (kontext/matched-pair generation, `cutout-enemies.mjs`, `fill-sprite-holes.mjs`)
+  is **unchanged** — they already match the `enemy_*.png` glob.
+
 ---
 
 ## gen-hostage-sprites.mjs — QTE hostage figures (the `girl`)
@@ -979,6 +1000,42 @@ prompt gate (`check-art-prompts.mjs`) before any paid generation, then
 `FORCE=1 node scripts/gen-nearfg-sprites.mjs`, then the grey/C1 style gate
 (`check-nearfg-style.mjs`) with a bounded regen retry, then commits
 `public/assets/nearfg/*.png`.
+
+### `--plan <id>` (level-harness SP2 phase (d), T5) — additive path
+
+```bash
+node scripts/gen-nearfg-sprites.mjs --plan <levelId> --list  # no network
+node scripts/gen-nearfg-sprites.mjs --plan <levelId>          # network
+```
+
+Instead of `levelArt.json`'s `nearForegroundArt.types`, iterates the plan's
+`props[]` and writes each one to `public/assets/nearfg/<id>/<name>.png` — the
+EXACT path `GeneratedPropSpec.asset` declares (`assets/nearfg/<id>/<name>.png`),
+so the namespace lives in the OUTPUT PATH, not just the prop's `kind` (whose
+`<id>:` prefix is unusable as a filename). The shared
+`nearForegroundArt.opening`/`style` from levelArt.json are still reused (house
+décor look); only the per-prop prompt is plan-derived (the kind's name segment
+after the namespace). Seeds are FREE (spec §2.2). `check-nearfg-style.mjs`'s
+own `--file`/`--kind` single-file mode gates each prop individually — see
+`.github/workflows/gen-plan-sprites.yml` below.
+
+### `.github/workflows/gen-plan-sprites.yml` — dispatch (skins + props matrix)
+
+`workflow_dispatch` input `level_id` → a `strategy.matrix.family: [skins,
+props]` job (independent concurrency group per level_id AND family, so a
+props failure never blocks skins landing and vice versa):
+
+- **skins** — `gen-enemy-types.mjs --plan` → `cutout-enemies.mjs` →
+  `fill-sprite-holes.mjs` (+ `--check` gate) → commit `public/assets/enemy_*.png`.
+- **props** — `gen-nearfg-sprites.mjs --plan` → a loop over
+  `gen-nearfg-sprites.mjs --plan <id> --list`'s output calling
+  `check-nearfg-style.mjs --file <path> --kind <kind>` per prop (process
+  substitution — `done < <(cmd)` — NOT a pipe into `while read`, which would
+  run the loop in a subshell and silently swallow a `fail=1`) → commit
+  `public/assets/nearfg/<id>/`.
+
+Never on `main`. Dry-run tested (no real runner) in
+`scripts/__tests__/gen-plan-sprites-workflow.test.mjs`.
 
 ---
 
