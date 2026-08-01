@@ -7,8 +7,8 @@
     },
     "level-editor": {
       "type": "stdio",
-      "command": "node",
-      "args": ["scripts/mcp-level-editor/server.mjs"]
+      "command": "yarn",
+      "args": ["mcp:level-editor"]
     }
   }
 }

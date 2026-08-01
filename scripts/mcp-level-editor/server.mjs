@@ -11,9 +11,29 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+import { inspect, validate } from "./core.mjs";
 
 export const SERVER_NAME = "level-editor";
 export const SERVER_VERSION = "0.1.0";
+
+// Loose on purpose: the SHAPE of a `LevelPlan` is `core.mjs`'s business
+// (`validateLevelPlan` is the actual schema check) — the server only needs
+// enough of a zod shape to accept an arbitrary plan object over MCP's JSON-RPC
+// wire without re-declaring the type here.
+const planShape = z.record(z.string(), z.unknown());
+
+function jsonResult(value) {
+  return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
+}
+
+function errorResult(error) {
+  return {
+    content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }],
+    isError: true,
+  };
+}
 
 export function createServer() {
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
@@ -27,6 +47,48 @@ export function createServer() {
     async () => ({
       content: [{ type: "text", text: `pong ${SERVER_VERSION}` }],
     }),
+  );
+
+  server.registerTool(
+    "validate",
+    {
+      title: "Validate",
+      description:
+        "Validate a level plan (or an already-registered level id) against every " +
+        "game-side invariant: validateLevelPlan + validateLevel + validateCatalogue. " +
+        "Returns { issues } — empty when the plan is sound.",
+      inputSchema: {
+        plan: planShape.optional(),
+        levelId: z.string().optional(),
+      },
+    },
+    async (input) => {
+      try {
+        return jsonResult(validate(input));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "inspect",
+    {
+      title: "Inspect",
+      description:
+        "Inspect an already-registered generated level: its plan, its gameplay/art " +
+        "projections, and which conventional asset paths are present vs missing on disk.",
+      inputSchema: {
+        levelId: z.string(),
+      },
+    },
+    async (input) => {
+      try {
+        return jsonResult(inspect(input));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
   );
 
   return server;
