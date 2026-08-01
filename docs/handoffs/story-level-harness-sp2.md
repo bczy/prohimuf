@@ -27,7 +27,8 @@ Auto-revue des deux plans.
 
 ## Suivi
 
-- [ ] PR #151 (specs+plans) : panel PASS → acceptation pm → merge
+- [x] PR #151 (specs+plans) : panel PASS (4 runs convergents) → MERGÉE (3ba17a47,
+      2026-07-30)
 - [ ] BUILD : branche `feat/level-harness-sp2`, T1 (dev-gameplay) puis T2-T6
       (dev-tooling-assets), T7 (boucle design du level candidat) ferme
 - [ ] Le level candidat : id/quartier/fiction proposés par game-designer +

@@ -3,7 +3,8 @@
 Story slug: `story-level-harness-sp3` · ouverte 2026-07-30 sur intake direct de Bertrand
 (« sp3 »). Feature : l'orchestrateur qui ferme la boucle du harness — une ligne de pitch
 → une PR draft avec level candidat complet + gate packet. Dernier des 3 sous-projets
-(SP1 mergé ADR-0075, SP2 spec/plan mergés PR #151).
+(SP1 mergé ADR-0075 ; SP2 : spec/plan mergés via PR #151 — 3ba17a47 —, BUILD en
+PR #156 non mergée : la précondition de séquencement ci-dessous porte sur CE merge-là).
 
 **SÉQUENCEMENT : BUILD bloqué jusqu'au merge de SP2** — SP3 orchestre les phases que SP2
 rend autonomes. Ce shard trace le cadrage ; rien ne se code avant.
