@@ -17,8 +17,10 @@
 // point for this module.
 
 import { existsSync, mkdirSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
 
 import {
   planToLevelArt,
@@ -29,6 +31,7 @@ import {
 import { validateLevel } from "@game/levels/validateLevel";
 import { GENERATED_PLANS } from "@game/levels/generated";
 import { registerGeneratedArchetypes } from "@game/types/enemyTypes";
+import { SWIFTSHADER_ARGS, seedDeterminism, sleep } from "../e2e-lib.mjs";
 
 const CORE_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -293,4 +296,234 @@ export function scaffold(
       `src/game/levels/generated/index.ts — scaffold never edits index.ts, that ` +
       `line stays a reviewed human gesture.`,
   };
+}
+
+// ---------------------------------------------------------------------------
+// dryrun / preview (T5) — the ONLY seam these two tools use is the generated-level
+// verification route booted straight into PLAYING, `?preview=level&level=<id>`
+// (spec-level-harness-sp1 §8, `src/render/scene/generatedHarness.ts`). Both need a
+// local vite dev server and, for `dryrun`, a local headless Chromium — no secret,
+// no network beyond localhost (ADR-0077 D5).
+
+const DEFAULT_PORT = 5173;
+// Mirrors `vite.config.ts`'s own default (`VITE_BASE`) — not re-read from that file
+// (a .ts import here would pull Vite's own build-time env handling into this
+// runtime module) but pinned to the same literal, and overridable the same way.
+const DEFAULT_BASE = process.env.VITE_BASE ?? "/prohimuf/";
+
+async function isServerUp(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Reuse a vite dev server already serving at `port`/`base` (fetches the root
+ * page), or spawn one under `rootDir` and wait for it to come up. Never kills a
+ * server it did not start itself — `proc` is `null` when reused, so a caller
+ * only tears down what it spawned.
+ */
+async function ensureDevServer({
+  rootDir = repoRoot(),
+  port = DEFAULT_PORT,
+  base = DEFAULT_BASE,
+} = {}) {
+  const url = `http://localhost:${String(port)}${base}`;
+  if (await isServerUp(url)) return { url, proc: null };
+
+  const proc = spawn("yarn", ["vite", "--port", String(port), "--strictPort"], {
+    cwd: rootDir,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  proc.unref();
+
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    if (await isServerUp(url)) return { url, proc };
+    await sleep(300);
+  }
+  proc.kill();
+  throw new Error(`dryrun/preview: dev server did not become ready at ${url} within 20s`);
+}
+
+function resolvePlanOrThrow(levelId, plans, caller) {
+  const plan = plans.find((p) => p.id === levelId);
+  if (plan === undefined) {
+    throw new Error(
+      `${caller}: no generated level with id "${levelId}" (known ids: ` +
+        `${plans.map((p) => p.id).join(", ") || "none"})`,
+    );
+  }
+  return plan;
+}
+
+/** The value span immediately after the "temps" label span, e.g. "48s" → 48. */
+async function readTempsSeconds(page) {
+  const text = await page.locator("span:text-is('temps') + span").first().innerText();
+  const match = /(\d+)/.exec(text);
+  if (match === null) throw new Error(`dryrun: could not parse TEMPS from "${text}"`);
+  return Number(match[1]);
+}
+
+/**
+ * The HUD ticker's rendered text, whitespace-collapsed — same content as the
+ * SP1 §8 evidence's `hudSnippet` field. Located by CSS `:has()` rather than a
+ * hashed CSS-module class name: the smallest element containing BOTH the
+ * "score" and "temps" labels is the HUD container (`:has()` matches every
+ * ancestor, `.last()` picks the innermost — the two labels are siblings, so no
+ * element nested any deeper also has both).
+ */
+async function readHudSnippet(page) {
+  const hud = page.locator("div:has(span:text-is('score')):has(span:text-is('temps'))").last();
+  return (await hud.innerText()).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * `dryrun({ levelId }) → report.json` (spec-mcp-level-editor §3/§6): boots the
+ * `?preview=level&level=<id>` seam headless, reads the timer twice (proving the
+ * clock ticks) and the HUD text, and reports any uncaught page error. The ONE
+ * driver both this tool and a future SP2/SP3 CI script call (§6's "two
+ * surfaces" — SP2 T6 did not land its own generalized driver yet, so this is
+ * the sole implementation for now; SP2 dedupes onto it later).
+ */
+export async function dryrun(
+  { levelId },
+  {
+    rootDir = repoRoot(),
+    plans = GENERATED_PLANS,
+    port = DEFAULT_PORT,
+    base = DEFAULT_BASE,
+    settleMs = 3000,
+  } = {},
+) {
+  resolvePlanOrThrow(levelId, plans, "dryrun");
+  const { url: baseUrl, proc } = await ensureDevServer({ rootDir, port, base });
+  const navUrl = `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}`;
+
+  // `PLAYWRIGHT_CHROMIUM_PATH` is an escape hatch for a sandbox whose preinstalled
+  // Chromium revision does not match this repo's pinned `playwright` version
+  // (CI installs the matching revision itself — `playwright install` in
+  // preview.yml — so this is unset there). Unset by default: `undefined` makes
+  // Playwright resolve its own bundled browser, same as every other e2e-*.mjs.
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  const browser = await chromium.launch({
+    args: SWIFTSHADER_ARGS,
+    ...(executablePath === undefined ? {} : { executablePath }),
+  });
+  try {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await context.newPage();
+    const pageErrors = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // No unlock list needed: the preview seam bypasses menu/unlock entirely
+    // (generatedHarness.ts) — only the mute/lives/difficulty prefs matter here.
+    await seedDeterminism(page, [], { crt: false });
+    await page.goto(navUrl, { waitUntil: "networkidle", timeout: 30000 });
+    await page.locator("canvas").first().waitFor({ timeout: 20000 });
+    await page.locator("span:text-is('temps')").first().waitFor({ timeout: 20000 });
+
+    const tempsFirstRead = await readTempsSeconds(page);
+    await sleep(settleMs);
+    const tempsSecondRead = await readTempsSeconds(page);
+    const hudSnippet = await readHudSnippet(page);
+
+    return {
+      url: navUrl,
+      pageErrors,
+      tempsFirstRead,
+      tempsSecondRead,
+      timerTicking: tempsSecondRead < tempsFirstRead,
+      hudSnippet,
+    };
+  } finally {
+    await browser.close();
+    // Only tear down a server WE spawned — `ensureDevServer` never kills one it
+    // reused, and neither do we.
+    if (proc !== null) proc.kill();
+  }
+}
+
+/**
+ * `preview({ levelId }) → { url }` (spec-mcp-level-editor §3): ensures a local
+ * vite dev server is up (reusing one already running) and returns the
+ * `?preview=level&level=<id>` URL for a human (or a real browser) to open. Never
+ * tears the server down — unlike `dryrun`, the whole point is for it to keep
+ * serving after this call returns.
+ */
+export async function preview(
+  { levelId },
+  { rootDir = repoRoot(), plans = GENERATED_PLANS, port = DEFAULT_PORT, base = DEFAULT_BASE } = {},
+) {
+  resolvePlanOrThrow(levelId, plans, "preview");
+  const { url: baseUrl } = await ensureDevServer({ rootDir, port, base });
+  return { url: `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}` };
+}
+
+/**
+ * Structural comparison for the spec §6 acceptance criterion — `dryrun("fixture")`
+ * against the COMMITTED evidence report
+ * (`docs/qa/evidence/story-level-harness-sp1/report.json`) — with the volatile
+ * fields named and excluded explicitly rather than silently:
+ *  - `pageErrors`: exact equality. Deterministic — cops are frozen
+ *    (`seedDeterminism`), so a fresh run must be just as error-free.
+ *  - `timerTicking`: exact equality. Deterministic BEHAVIOURAL claim (the level
+ *    clock counts down), not a value.
+ *  - `tempsFirstRead` / `tempsSecondRead`: EXCLUDED from cross-report comparison
+ *    (volatile — real elapsed wall-clock seconds, machine-speed-dependent). Only
+ *    checked for INTERNAL consistency against the actual report's own
+ *    `timerTicking`.
+ *  - `url`: EXCLUDED from exact-string comparison (the dev server port is an
+ *    environment detail, not a level property) — checked structurally, the
+ *    `?preview=level&level=<id>` query survives on ANY `http://localhost:<port>`
+ *    origin.
+ *  - `hudSnippet`: EXCLUDED from exact-string comparison — score/lives/energy
+ *    are gameplay state that legitimately drifts between two independent runs
+ *    even with cops frozen (e.g. authoring changes to the fixture's starting
+ *    stats). Checked structurally: the same ORDERED set of HUD labels must
+ *    appear (SCORE, NIVEAU, VAGUE, TEMPS, VIES, ÉNERGIE, ARME).
+ */
+export function compareDryrunReport(actual, expected) {
+  const mismatches = [];
+
+  if (JSON.stringify(actual.pageErrors) !== JSON.stringify(expected.pageErrors)) {
+    mismatches.push(
+      `pageErrors: expected ${JSON.stringify(expected.pageErrors)}, got ${JSON.stringify(actual.pageErrors)}`,
+    );
+  }
+
+  if (actual.timerTicking !== expected.timerTicking) {
+    mismatches.push(`timerTicking: expected ${String(expected.timerTicking)}, got ${String(actual.timerTicking)}`);
+  }
+  if ((actual.tempsSecondRead < actual.tempsFirstRead) !== actual.timerTicking) {
+    mismatches.push(
+      `timerTicking (${String(actual.timerTicking)}) disagrees with the actual report's own ` +
+        `tempsFirstRead/tempsSecondRead (${String(actual.tempsFirstRead)} → ${String(actual.tempsSecondRead)})`,
+    );
+  }
+
+  const urlPattern = /^http:\/\/localhost:\d+\/prohimuf\/\?preview=level&level=fixture$/;
+  if (!urlPattern.test(actual.url)) {
+    mismatches.push(`url: "${actual.url}" does not match the expected preview-seam shape`);
+  }
+
+  const HUD_LABELS = ["SCORE", "NIVEAU", "VAGUE", "TEMPS", "VIES", "ÉNERGIE", "ARME"];
+  const labelOrder = (snippet) =>
+    HUD_LABELS.filter((label) => snippet.toUpperCase().includes(label));
+  const actualLabels = labelOrder(actual.hudSnippet ?? "");
+  const expectedLabels = labelOrder(expected.hudSnippet ?? "");
+  if (JSON.stringify(actualLabels) !== JSON.stringify(expectedLabels)) {
+    mismatches.push(
+      `hudSnippet labels: expected ${JSON.stringify(expectedLabels)}, got ${JSON.stringify(actualLabels)} ` +
+        `(full snippet: "${actual.hudSnippet}")`,
+    );
+  }
+  if (!(actual.hudSnippet ?? "").includes("Fixture")) {
+    mismatches.push(`hudSnippet: expected it to contain the level name "Fixture", got "${actual.hudSnippet}"`);
+  }
+
+  return { ok: mismatches.length === 0, mismatches };
 }

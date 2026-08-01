@@ -13,7 +13,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { inspect, scaffold, validate } from "./core.mjs";
+import { dryrun, inspect, preview, scaffold, validate } from "./core.mjs";
 
 export const SERVER_NAME = "level-editor";
 export const SERVER_VERSION = "0.1.0";
@@ -109,6 +109,51 @@ export function createServer() {
     async (input) => {
       try {
         return jsonResult(scaffold(input));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "dryrun",
+    {
+      title: "Dryrun",
+      description:
+        "Boot an already-registered generated level headless (?preview=level&level=<id> " +
+        "seam), read the HUD/timer twice and report any uncaught page error. Starts (or " +
+        "reuses) a local vite dev server and a local headless Chromium — no secret, no " +
+        "network beyond localhost. Slow (real browser + real server): expect several " +
+        "seconds. Returns { url, pageErrors, tempsFirstRead, tempsSecondRead, " +
+        "timerTicking, hudSnippet }.",
+      inputSchema: {
+        levelId: z.string(),
+      },
+    },
+    async (input) => {
+      try {
+        return jsonResult(await dryrun(input));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "preview",
+    {
+      title: "Preview",
+      description:
+        "Start (or reuse) a local vite dev server and return the ?preview=level&level=<id> " +
+        "URL for an already-registered generated level, to open in a real browser. Never " +
+        "stops the server after returning.",
+      inputSchema: {
+        levelId: z.string(),
+      },
+    },
+    async (input) => {
+      try {
+        return jsonResult(await preview(input));
       } catch (error) {
         return errorResult(error);
       }

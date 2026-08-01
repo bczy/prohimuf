@@ -24,11 +24,11 @@ function jsonOf(result) {
 }
 
 describe("level-editor MCP server", () => {
-  it("lists ping, validate, inspect and scaffold among its tools", async () => {
+  it("lists ping, validate, inspect, scaffold, dryrun and preview among its tools", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual(
-      expect.arrayContaining(["ping", "validate", "inspect", "scaffold"]),
+      expect.arrayContaining(["ping", "validate", "inspect", "scaffold", "dryrun", "preview"]),
     );
   });
 
@@ -75,5 +75,27 @@ describe("level-editor MCP server", () => {
     const parsed = jsonOf(result);
     expect(parsed.ok).toBe(false);
     expect(parsed.issues[0].code).toBe("scaffold/invalid-id");
+  });
+
+  // dryrun/preview resolve the plan and throw on an unknown id BEFORE touching a
+  // dev server or a browser (`resolvePlanOrThrow` runs first in core.mjs) — so
+  // this exercises the wire without needing Chromium or vite in this suite; the
+  // browser-driving path is `dryrun-fixture.mjs` (see its own header comment).
+  it("dryrun on an unknown levelId surfaces the thrown error as an MCP tool error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "dryrun",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("preview on an unknown levelId surfaces the thrown error as an MCP tool error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "preview",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).toBe(true);
   });
 });
