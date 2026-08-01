@@ -58,15 +58,22 @@ readonly calibration?: {
 - [ ] Input `level_id` (workflow_dispatch) ; job unique : checkout → setup → `node scripts/gen-street-paid.mjs --plan $level_id` → commit-back `public/assets/levels/<id>/`.
 - [ ] **Cap 3 — mécanisme exact, dans cet ordre** (un tirage payé dont le commit-back
       échoue doit compter quand même) :
-  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>-<ref>,
-cancel-in-progress: false }` au niveau du workflow — au plus UN run par couple
+  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>-${{
+github.ref }}, cancel-in-progress: false }` au niveau du workflow — `${{
+github.ref }}` EXACTEMENT, la forme pleine `refs/heads/...` : `github.head_ref`
+     est VIDE en `workflow_dispatch` (toutes les branches retomberaient en silence
+     dans le même groupe, l'ancien comportement) et `github.ref_name` fait
+     collisionner une branche et un tag homonymes. Au plus UN run par couple
      (`level_id`, branche) à tout instant : le scope du groupe SUIT celui du cap
      (par level/PR, point 2) — deux branches ne partagent ni compteur ni historique,
      les sérialiser entre elles ne protégerait rien et ferait attendre une tentative
      légitime derrière le budget d'une autre branche. Jamais deux runs concurrents
      sur le même couple, mais pas une file FIFO non plus (GitHub ne garde qu'un run
      en attente par groupe — le point 6 documente l'absorption des dispatches
-     intermédiaires, sans dépense fantôme).
+     intermédiaires, sans dépense fantôme). Nuances sans danger (sur-sérialisation
+     au pire, jamais un run concurrent en trop) : les `-` du level_id rendent le
+     délimiteur du groupe ambigu, et les noms de groupes GitHub sont insensibles à
+     la casse — deux couples distincts peuvent occasionnellement partager un groupe.
   2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
      touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
      (`git log --oneline --full-history origin/main..HEAD -- <chemin> | wc -l` —
@@ -108,7 +115,10 @@ cancel-in-progress: false }` au niveau du workflow — au plus UN run par couple
      d'escalade le dit et pointe le geste autorisé (re-dispatch après merge, ou
      nouvelle PR). Et la file de concurrency GitHub ne gardant qu'un run en attente
      par groupe, un 3e dispatch pendant un run annule le 2e en attente — re-dispatch
-     nécessaire, zéro dépense fantôme.
+     nécessaire, zéro dépense fantôme. Enfin, si deux branches génèrent le même
+     level, un merge de synchronisation (main → branche) qui touche `.paid-attempts`
+     compte comme une tentative du budget de la branche (point 2 : tout commit
+     compte) — coût de synchro assumé, le cas nominal reste un level par branche.
      Testé par un dry-run bash local des steps 2-5 — y compris le cas fichier absent,
      le cas `origin/main` non résolu, le push simulé contre un remote fictif, ET le
      cas « commit-back des assets échoue après dépense » (step 5) : le script doit
