@@ -58,11 +58,15 @@ readonly calibration?: {
 - [ ] Input `level_id` (workflow_dispatch) ; job unique : checkout → setup → `node scripts/gen-street-paid.mjs --plan $level_id` → commit-back `public/assets/levels/<id>/`.
 - [ ] **Cap 3 — mécanisme exact, dans cet ordre** (un tirage payé dont le commit-back
       échoue doit compter quand même) :
-  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>,
-cancel-in-progress: false }` au niveau du workflow — au plus UN run par `level_id`
-     à tout instant ; jamais deux runs concurrents, mais pas une file FIFO non plus
-     (GitHub ne garde qu'un run en attente par groupe — le point 6 documente
-     l'absorption des dispatches intermédiaires, sans dépense fantôme).
+  1. **Sérialisation** : `concurrency: { group: gen-plan-backdrop-<level_id>-<ref>,
+cancel-in-progress: false }` au niveau du workflow — au plus UN run par couple
+     (`level_id`, branche) à tout instant : le scope du groupe SUIT celui du cap
+     (par level/PR, point 2) — deux branches ne partagent ni compteur ni historique,
+     les sérialiser entre elles ne protégerait rien et ferait attendre une tentative
+     légitime derrière le budget d'une autre branche. Jamais deux runs concurrents
+     sur le même couple, mais pas une file FIFO non plus (GitHub ne garde qu'un run
+     en attente par groupe — le point 6 documente l'absorption des dispatches
+     intermédiaires, sans dépense fantôme).
   2. **Sémantique du compteur** : le compte de tentatives est le **nombre de commits**
      touchant `public/assets/levels/<id>/.paid-attempts` sur `origin/main..HEAD`
      (`git log --oneline --full-history origin/main..HEAD -- <chemin> | wc -l` —
