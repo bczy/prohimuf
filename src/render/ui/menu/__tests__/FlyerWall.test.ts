@@ -30,6 +30,7 @@ const NO_UNLOCKS: ReadonlySet<string> = new Set<string>();
 function markup(prefs: Prefs): string {
   return renderToStaticMarkup(
     createElement(FlyerWall, {
+      reducedMotion: false,
       unlockedLevels: NO_UNLOCKS,
       onPlay: noop,
       prefs,
@@ -163,6 +164,7 @@ describe("FlyerWall first-run — auto-focus + flag timing (client mount)", () =
     act(() => {
       root?.render(
         createElement(FlyerWall, {
+          reducedMotion: false,
           unlockedLevels: NO_UNLOCKS,
           onPlay: noop,
           prefs: DEFAULT_PREFS,
@@ -270,6 +272,7 @@ describe("FlyerWall float-in — once per session", () => {
     act(() => {
       root.render(
         createElement(FlyerWall, {
+          reducedMotion: false,
           unlockedLevels: new Set<string>(),
           onPlay: () => undefined,
           prefs: DEFAULT_PREFS,
@@ -325,6 +328,7 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     act(() => {
       root?.render(
         createElement(FlyerWall, {
+          reducedMotion: false,
           unlockedLevels: new Set<string>(),
           onPlay: () => undefined,
           prefs: DEFAULT_PREFS,
@@ -447,9 +451,11 @@ describe("FlyerWall — reduced motion does not burn the session's cascade", () 
     act(() => {
       root.render(
         createElement(FlyerWall, {
+          // The PROP, not prefs: App derives it once and threads it (ADR-0054 §3).
+          reducedMotion: true,
           unlockedLevels: new Set<string>(),
           onPlay: () => undefined,
-          prefs: { ...DEFAULT_PREFS, reducedMotion: true },
+          prefs: DEFAULT_PREFS,
           onSavePrefs: () => undefined,
         }),
       );

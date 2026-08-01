@@ -11,7 +11,6 @@ import {
   MOTION,
   useRovingIndex,
   useMediaQuery,
-  useReducedMotionRoot,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
 import { LevelFlyer } from "./LevelFlyer";
@@ -34,6 +33,10 @@ interface FlyerWallProps {
   prefs: Prefs;
   /** Persist a prefs change; the App-owned store is the single source of truth. */
   onSavePrefs: (prefs: Prefs) => void;
+  /** Derived ONCE by `useReducedMotionRoot` in App and threaded down (ADR-0054 §3), like
+   *  CrtPass/NearForeground/the QTE sprites. Calling the hook again here would add a second
+   *  matchMedia listener and a second source of truth for the same signal. */
+  reducedMotion: boolean;
 }
 
 interface FlyerMeta {
@@ -220,6 +223,7 @@ export function markTutorialNudgeSeen(): void {
 }
 
 export function FlyerWall({
+  reducedMotion,
   unlockedLevels,
   onPlay,
   prefs,
@@ -233,10 +237,11 @@ export function FlyerWall({
   const [firstVisit] = useState(() => !hasSeenTutorialNudge());
   // Captured ONCE at mount, before the effect below marks it — so this same mount still
   // animates while every later one in the session does not.
-  // The union of the OS query and the in-app toggle — the same signal the two CSS kill
-  // switches use, so the flag and the animation can never disagree about what happened.
-  const reducedMotion = useReducedMotionRoot(prefs.reducedMotion);
-  const [playCascade] = useState(() => !hasCascadePlayed());
+  // LATCHED at mount, reduced motion included. The OS half of that signal is live and can
+  // flip without unmounting us; recomputing would then start the cascade in the middle of a
+  // visit, long after the entrance moment, and mark the session on an animation nobody
+  // asked to see. Deciding once per mount keeps the flag and what was shown in agreement.
+  const [playCascade] = useState(() => !hasCascadePlayed() && !reducedMotion);
   // A keyboard user who reaches the wall mid-cascade settles it AT ONCE. Two reasons, and
   // the accessibility one is the binding one: the sideways drift (up to ±44px) exceeds the
   // wall's 16px padding, so during the entrance an edge flyer — and its focus ring — pokes
@@ -270,11 +275,11 @@ export function FlyerWall({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    // Only if it actually PLAYED. Under reduced motion the animation is suppressed, so
-    // marking it played would spend the session's one showing on nothing — and a player
-    // who then turns the in-app toggle off and comes back would never see the entrance.
-    if (!reducedMotion) markCascadePlayed();
-  }, [reducedMotion]);
+    // Only when it actually plays. Under reduced motion the animation is suppressed, so
+    // marking it would spend the session's one showing on nothing — and a player who then
+    // turns the toggle off and comes back would never see the entrance.
+    if (playCascade) markCascadePlayed();
+  }, [playCascade]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {

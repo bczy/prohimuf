@@ -25,6 +25,10 @@ import styles from "./MainMenu.module.css";
 interface Props {
   unlockedLevels: ReadonlySet<string>;
   prefs: Prefs;
+  /** Derived ONCE by `useReducedMotionRoot` in App and threaded down (ADR-0054 §3) —
+   *  never re-derived downstream, so every consumer reads the same signal and only one
+   *  matchMedia listener exists. Relayed to FlyerWall. */
+  reducedMotion: boolean;
   onPlay: (levelId: string) => void;
   onSavePrefs: (prefs: Prefs) => void;
 }
@@ -35,7 +39,13 @@ const RUBRIQUES = [
   { key: "prefs", label: "OPTIONS" },
 ] as const;
 
-export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props): JSX.Element {
+export function MainMenu({
+  unlockedLevels,
+  prefs,
+  reducedMotion,
+  onPlay,
+  onSavePrefs,
+}: Props): JSX.Element {
   const [focusWithin, setFocusWithin] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -144,6 +154,7 @@ export function MainMenu({ unlockedLevels, prefs, onPlay, onSavePrefs }: Props):
         >
           {active === "levels" && (
             <FlyerWall
+              reducedMotion={reducedMotion}
               unlockedLevels={unlockedLevels}
               onPlay={onPlay}
               prefs={prefs}

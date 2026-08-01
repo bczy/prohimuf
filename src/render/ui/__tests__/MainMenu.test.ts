@@ -18,6 +18,7 @@ import styles from "../MainMenu.module.css";
 function markup(): string {
   return renderToStaticMarkup(
     createElement(MainMenu, {
+      reducedMotion: false,
       unlockedLevels: new Set<string>(),
       onPlay: () => undefined,
       prefs: DEFAULT_PREFS,
@@ -96,6 +97,7 @@ describe("MainMenu — the clip is absent on the other rubriques", () => {
     act(() => {
       root?.render(
         createElement(MainMenu, {
+          reducedMotion: false,
           unlockedLevels: new Set<string>(),
           onPlay: () => undefined,
           prefs: DEFAULT_PREFS,
