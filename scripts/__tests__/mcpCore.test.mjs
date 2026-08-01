@@ -85,10 +85,14 @@ describe("validate", () => {
     expect(issues[0].code).toBe("plan/unknown-level-id");
   });
 
-  it("catches an id collision between a fresh plan and the known catalogue", () => {
+  it("catches a genuine id collision already aggregated in the catalogue (two DISTINCT entries sharing an id)", () => {
+    // Resubmitting the SAME id (`{ plan }` upserting its own slot) is no longer a
+    // collision (M1) — a real collision is two DIFFERENT catalogue entries sharing
+    // an id, which can only happen upstream of this call (a corrupted aggregation
+    // in generated/index.ts). `validateCatalogue` still catches it.
     const { issues } = validate(
-      { plan: soundPlan("dup") },
-      { plans: [soundPlan("dup")] },
+      { plan: soundPlan("other") },
+      { plans: [soundPlan("dup"), soundPlan("dup")] },
     );
     expect(issues.map((i) => i.code)).toContain("plan/duplicate-id");
   });
@@ -96,6 +100,35 @@ describe("validate", () => {
   it("does not flag an already-registered levelId as its own duplicate", () => {
     const plan = soundPlan("already-in");
     expect(validate({ levelId: "already-in" }, { plans: [plan] })).toEqual({ issues: [] });
+  });
+
+  it("does not flag a fresh { plan } re-submission of an id already in the catalogue (upsert, not concat — M1)", () => {
+    const plan = soundPlan("already-in");
+    const { issues } = validate({ plan }, { plans: [plan] });
+    expect(issues.map((i) => i.code)).not.toContain("plan/duplicate-id");
+  });
+
+  it("rends des issues sans throw pour un plan malformé (M2)", () => {
+    expect(() => validate({ plan: { id: "safe" } })).not.toThrow();
+    const { issues } = validate({ plan: { id: "safe" } });
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it("does not pollute the archetype registry when validating a rejected plan (m3)", async () => {
+    const { archetype, registerGeneratedArchetypes } = await import("@game/types/enemyTypes");
+    const id = "regcheck";
+    const original = { ...soundPlan(id).archetypes[0], hp: 2 };
+    registerGeneratedArchetypes([original]);
+    expect(archetype(original.kind).hp).toBe(2);
+
+    // Same kind, but weight-nonzero ⇒ rejected by validateLevelPlan before the
+    // registry is ever touched — the process's registered entry must stay hp: 2,
+    // not silently become hp: -99.
+    const rejected = { ...soundPlan(id), archetypes: [{ ...original, hp: -99, weight: 3 }] };
+    const { issues } = validate({ plan: rejected });
+    expect(issues.map((i) => i.code)).toContain("plan/weight-nonzero");
+
+    expect(archetype(original.kind).hp).toBe(2);
   });
 });
 
@@ -200,6 +233,23 @@ describe("scaffold", () => {
     const id = "replaceme";
     expect(scaffold({ plan: soundPlan(id) }, { rootDir }).ok).toBe(true);
     const second = scaffold({ plan: soundPlan(id), overwrite: true }, { rootDir });
+    expect(second.ok).toBe(true);
+  });
+
+  it("refuses to re-scaffold a level ALREADY in the catalogue with scaffold/exists, not plan/duplicate-id (M1)", () => {
+    const rootDir = rootDirFor();
+    const plan = soundPlan("cataloged");
+    expect(scaffold({ plan }, { rootDir, plans: [plan] }).ok).toBe(true);
+    const second = scaffold({ plan }, { rootDir, plans: [plan] });
+    expect(second.ok).toBe(false);
+    expect(second.issues[0].code).toBe("scaffold/exists");
+  });
+
+  it("re-scaffolds a level already in the catalogue when overwrite: true is explicit (M1)", () => {
+    const rootDir = rootDirFor();
+    const plan = soundPlan("cataloged2");
+    expect(scaffold({ plan }, { rootDir, plans: [plan] }).ok).toBe(true);
+    const second = scaffold({ plan, overwrite: true }, { rootDir, plans: [plan] });
     expect(second.ok).toBe(true);
   });
 });

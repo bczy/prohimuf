@@ -9,6 +9,9 @@
 // Not part of the app: nothing under src/** imports this file, no build
 // references it. Registered in `.mcp.json` on the `codegraph` entry's model.
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -169,7 +172,30 @@ async function main() {
   await server.connect(transport);
 }
 
-main().catch((error) => {
-  console.error("[level-editor] fatal:", error);
-  process.exitCode = 1;
-});
+/**
+ * True only when THIS module is the process entry point — `import { createServer }
+ * from "./server.mjs"` (the test suite, `mcpServer.test.mjs`) must never connect a
+ * stdio transport as a side effect of merely importing the file (panel §6.3 m2).
+ *
+ * `process.argv[1]` is the invoked script path under plain `node` — but NOT under
+ * plain `vite-node scripts/…`, which reassigns `process.argv` to `[node, vite-node's
+ * OWN bin path]` and drops the target file entirely (verified by a smoke test: with
+ * a bare `argv[1]` check this guard silently never fires, so `main()` never runs and
+ * the server produces no output at all under `yarn mcp:level-editor`). `vite-node
+ * --script <file>` is the one invocation mode where it restores the plain-`node`
+ * convention (`argv[1]` = the resolved file path) — which is why `package.json`'s
+ * `mcp:level-editor` entry passes `--script`, matching every other `isMain` guard in
+ * `scripts/**`.
+ */
+function isMainModule() {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  return fileURLToPath(import.meta.url) === path.resolve(entry);
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error("[level-editor] fatal:", error);
+    process.exitCode = 1;
+  });
+}

@@ -85,4 +85,39 @@ describe("compareDryrunReport", () => {
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.includes('contain the level name "Fixture"'))).toBe(true);
   });
+
+  it("rejects timerTicking: false on a report missing tempsFirstRead/tempsSecondRead, instead of silently agreeing (n2)", () => {
+    const actual = { ...freshMatching, timerTicking: false, tempsFirstRead: undefined, tempsSecondRead: undefined };
+    const { ok, mismatches } = compareDryrunReport(actual, { ...committed, timerTicking: false });
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("tempsFirstRead/tempsSecondRead:"))).toBe(true);
+  });
+
+  it("rejects a hudSnippet whose labels are present but out of order (n3)", () => {
+    const actual = {
+      ...freshMatching,
+      hudSnippet: "NIVEAU Fixture SCORE 0000 VAGUE 1 TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100 ARME A ∞",
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
+  });
+
+  it("derives the url pattern from { base, levelId } instead of hardcoding /prohimuf/ and level=fixture (m5)", () => {
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:5173/other-base/?preview=level&level=second-level",
+    };
+    const expected = { ...committed, url: actual.url };
+    expect(compareDryrunReport(actual, expected, { base: "/other-base/", levelId: "second-level" }).ok).toBe(true);
+  });
+
+  it("still rejects the default fixture url shape when a non-default base/levelId is expected (m5)", () => {
+    const { ok, mismatches } = compareDryrunReport(freshMatching, committed, {
+      base: "/other-base/",
+      levelId: "second-level",
+    });
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("url:"))).toBe(true);
+  });
 });

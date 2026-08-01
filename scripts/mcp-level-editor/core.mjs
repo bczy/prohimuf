@@ -80,36 +80,45 @@ function resolveInputPlan(input, plans) {
 
 /**
  * `validate({ plan } | { levelId }) → { issues: LevelIssue[] }` (spec-mcp-level-editor
- * §3). Composes `validateLevelPlan` + `validateLevel(planToLevelConfig(plan))` +
- * `validateCatalogue` — the last one against the candidate joined to the known
- * catalogue when a fresh `plan` is supplied (so a colliding id is caught before
- * `scaffold` would ever write it), or against the catalogue as-is when resolving
- * an already-registered `levelId` (the plan IS already one of `plans`, so it must
- * not be counted twice).
+ * §3). The catalogue join is an **upsert**, not a concatenation (panel §6.2 M1):
+ * `scaffold` writes `<id>.ts`, so a plan replaces any existing entry sharing its
+ * id, it never sits beside it. That upsert is identity for the `{ levelId }` path
+ * (the plan IS already `plans[i]`; replacing it with itself is a no-op) — so the
+ * SAME join serves both resolution paths, with no separate branch. `plan/duplicate-id`
+ * is therefore purely a catalogue-integrity invariant (two DIFFERENT aggregated
+ * plans sharing an id); overwrite protection for an existing `<id>.ts` on disk is a
+ * disk invariant owned entirely by `scaffold` (`scaffold/exists` + `overwrite`).
  *
- * Before running `validateLevel`, the plan's own archetypes are registered
- * through `registerGeneratedArchetypes` (the SAME idempotent, all-`weight: 0`
- * call `generated/index.ts` makes at import) — otherwise `validateLevel`'s
- * `unknown-enemy-kind` check would reject every `windowWeights` slot of a plan
- * that has not been scaffolded yet, since it consults the same global registry
- * `hasArchetype` reads. No new rule: `validate` simulates the exact state a
- * successful `scaffold` would leave behind.
+ * Composes `validateLevelPlan` + `validateCatalogue` FIRST — structural/plan-level
+ * checks that never touch the global archetype registry and never throw on a
+ * malformed plan (they return `LevelIssue[]`, including `plan/malformed`). Only when
+ * that first pass is clean does `validate` register the plan's archetypes
+ * (`registerGeneratedArchetypes`, the SAME idempotent, all-`weight: 0` call
+ * `generated/index.ts` makes at import — otherwise `validateLevel`'s
+ * `unknown-enemy-kind` check would reject every `windowWeights` slot of a plan that
+ * has not been scaffolded yet) and run `validateLevel(planToLevelConfig(plan))`,
+ * which assumes a structurally sound plan and would throw on a malformed one. This
+ * ordering is also what keeps a rejected plan's archetypes OUT of the process-wide
+ * registry (panel §6.2 m3) — no pollution across levels validated in the same
+ * server process.
+ *
+ * Known angle case (documented, not coded around): a plan aggregated into
+ * `index.ts` from a file that is not named `<id>.ts` escapes `scaffold`'s own
+ * `scaffold/exists` check. Not exploitable — `scaffold` never edits `index.ts`, so
+ * nothing gets aggregated without a human gesture, and `validateCatalogue` in CI
+ * still catches the resulting id collision.
  */
 export function validate(input, { plans = GENERATED_PLANS } = {}) {
   const resolved = resolveInputPlan(input, plans);
   if (resolved.issue !== undefined) return { issues: [resolved.issue] };
   const { plan } = resolved;
+
+  const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
+  const planIssues = [...validateLevelPlan(plan), ...validateCatalogue(catalogue)];
+  if (planIssues.length > 0) return { issues: planIssues };
+
   registerGeneratedArchetypes(plan.archetypes);
-
-  const catalogue = input?.levelId !== undefined ? plans : [...plans, plan];
-
-  return {
-    issues: [
-      ...validateLevelPlan(plan),
-      ...validateLevel(planToLevelConfig(plan)),
-      ...validateCatalogue(catalogue),
-    ],
-  };
+  return { issues: [...planIssues, ...validateLevel(planToLevelConfig(plan))] };
 }
 
 /**
@@ -167,8 +176,12 @@ export function inspect({ levelId }, { plans = GENERATED_PLANS, rootDir = repoRo
 // Filesystem-safe namespace: letters, digits, "-", "_", starting with an
 // alphanumeric — the same shape as the shipped/fixture ids and the literal
 // `<id>.ts` filename `scaffold` derives from it. Rejects a separator or ".."
-// outright (D4's "chemin dérivé de l'id, jamais fourni par l'appelant").
-const SAFE_ID = /^[a-z0-9][a-z0-9_-]*$/i;
+// outright (D4's "chemin dérivé de l'id, jamais fourni par l'appelant"). No
+// `i` flag: every shipped/fixture id is lowercase BY CONSTRUCTION, so an
+// uppercase id is rejected outright rather than silently accepted and later
+// mismatched against a lowercase filename convention elsewhere in the pipeline
+// (panel §6.4 n5).
+const SAFE_ID = /^[a-z0-9][a-z0-9_-]*$/;
 
 function scaffoldIdIssue(id) {
   if (typeof id !== "string" || id.length === 0) {
@@ -192,7 +205,7 @@ function scaffoldIdIssue(id) {
       code: "scaffold/invalid-id",
       severity: "error",
       field: "plan.id",
-      message: `plan.id "${id}" is outside the safe namespace (letters, digits, "-", "_" only)`,
+      message: `plan.id "${id}" is outside the safe namespace (lowercase letters, digits, "-", "_" only)`,
     };
   }
   return null;
@@ -305,10 +318,20 @@ const DEFAULT_PORT = 5173;
 // runtime module) but pinned to the same literal, and overridable the same way.
 const DEFAULT_BASE = process.env.VITE_BASE ?? "/prohimuf/";
 
+// A bare HTTP 200 is not enough (panel §6.4 n6b): SOMETHING could already be
+// listening on 5173, and `dryrun`/`preview` would then silently drive a
+// stranger's app and report a false verdict. Require this repo's own dev-server
+// signature — `index.html`'s `id="root"` mount point PLUS vite's own injected
+// dev-mode client script, both present on any `yarn vite` root response.
+function looksLikeThisDevServer(body) {
+  return body.includes('id="root"') && body.includes("/@vite/client");
+}
+
 async function isServerUp(url) {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
-    return res.ok;
+    if (!res.ok) return false;
+    return looksLikeThisDevServer(await res.text());
   } catch {
     return false;
   }
@@ -336,9 +359,19 @@ async function ensureDevServer({
     stdio: "ignore",
   });
   proc.unref();
+  // Without this listener, a spawn failure (ENOENT — `yarn` not on PATH) fires
+  // an unhandled 'error' event and crashes the WHOLE server process instead of
+  // surfacing as a reportable failure of this one tool call.
+  let spawnError = null;
+  proc.on("error", (err) => {
+    spawnError = err;
+  });
 
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    if (spawnError !== null) {
+      throw new Error(`dryrun/preview: failed to start the dev server: ${spawnError.message}`);
+    }
     if (await isServerUp(url)) return { url, proc };
     await sleep(300);
   }
@@ -437,10 +470,16 @@ export async function dryrun(
       hudSnippet,
     };
   } finally {
-    await browser.close();
-    // Only tear down a server WE spawned — `ensureDevServer` never kills one it
-    // reused, and neither do we.
-    if (proc !== null) proc.kill();
+    // `proc.kill()` must run even when `browser.close()` throws — nested
+    // try/finally so a Chromium teardown error can never orphan a `--strictPort`
+    // vite server that would then block every subsequent `dryrun` (panel §6.3 m7).
+    try {
+      await browser.close();
+    } finally {
+      // Only tear down a server WE spawned — `ensureDevServer` never kills one it
+      // reused, and neither do we.
+      if (proc !== null) proc.kill();
+    }
   }
 }
 
@@ -458,6 +497,11 @@ export async function preview(
   resolvePlanOrThrow(levelId, plans, "preview");
   const { url: baseUrl } = await ensureDevServer({ rootDir, port, base });
   return { url: `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}` };
+}
+
+/** Escapes regex metacharacters — used to embed `base`/`levelId` literally in a pattern. */
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -481,9 +525,17 @@ export async function preview(
  *    are gameplay state that legitimately drifts between two independent runs
  *    even with cops frozen (e.g. authoring changes to the fixture's starting
  *    stats). Checked structurally: the same ORDERED set of HUD labels must
- *    appear (SCORE, NIVEAU, VAGUE, TEMPS, VIES, ÉNERGIE, ARME).
+ *    appear, in the same left-to-right order (SCORE, NIVEAU, VAGUE, TEMPS,
+ *    VIES, ÉNERGIE, ARME).
+ *
+ * `{ base, levelId }` mirror `dryrun`'s own options (same `DEFAULT_BASE`,
+ * default `levelId: "fixture"` matching the committed fixture evidence) — the
+ * url pattern is derived from them rather than hardcoding `/prohimuf/` and
+ * `level=fixture`, so a second level (SP2) can reuse this SAME comparator
+ * instead of forking one (spec-mcp-level-editor §6, D3 "two surfaces, one
+ * core"). Defaults are unchanged, so no existing caller moves.
  */
-export function compareDryrunReport(actual, expected) {
+export function compareDryrunReport(actual, expected, { base = DEFAULT_BASE, levelId = "fixture" } = {}) {
   const mismatches = [];
 
   if (JSON.stringify(actual.pageErrors) !== JSON.stringify(expected.pageErrors)) {
@@ -495,21 +547,36 @@ export function compareDryrunReport(actual, expected) {
   if (actual.timerTicking !== expected.timerTicking) {
     mismatches.push(`timerTicking: expected ${String(expected.timerTicking)}, got ${String(actual.timerTicking)}`);
   }
-  if ((actual.tempsSecondRead < actual.tempsFirstRead) !== actual.timerTicking) {
+  if (!Number.isFinite(actual.tempsFirstRead) || !Number.isFinite(actual.tempsSecondRead)) {
+    mismatches.push(
+      `tempsFirstRead/tempsSecondRead: expected both to be finite numbers, got ` +
+        `${JSON.stringify(actual.tempsFirstRead)} → ${JSON.stringify(actual.tempsSecondRead)}`,
+    );
+  } else if ((actual.tempsSecondRead < actual.tempsFirstRead) !== actual.timerTicking) {
     mismatches.push(
       `timerTicking (${String(actual.timerTicking)}) disagrees with the actual report's own ` +
         `tempsFirstRead/tempsSecondRead (${String(actual.tempsFirstRead)} → ${String(actual.tempsSecondRead)})`,
     );
   }
 
-  const urlPattern = /^http:\/\/localhost:\d+\/prohimuf\/\?preview=level&level=fixture$/;
+  const urlPattern = new RegExp(
+    `^http://localhost:\\d+${escapeRegExp(base)}\\?preview=level&level=${escapeRegExp(levelId)}$`,
+  );
   if (!urlPattern.test(actual.url)) {
     mismatches.push(`url: "${actual.url}" does not match the expected preview-seam shape`);
   }
 
   const HUD_LABELS = ["SCORE", "NIVEAU", "VAGUE", "TEMPS", "VIES", "ÉNERGIE", "ARME"];
-  const labelOrder = (snippet) =>
-    HUD_LABELS.filter((label) => snippet.toUpperCase().includes(label));
+  // Ordered by ACTUAL position in the snippet (not declaration order) — the
+  // promise is "same ordered set", so a scrambled HUD must be caught, not just
+  // a missing label (panel §6.4 n3).
+  const labelOrder = (snippet) => {
+    const upper = snippet.toUpperCase();
+    return HUD_LABELS.map((label) => ({ label, at: upper.indexOf(label) }))
+      .filter((entry) => entry.at !== -1)
+      .sort((a, b) => a.at - b.at)
+      .map((entry) => entry.label);
+  };
   const actualLabels = labelOrder(actual.hudSnippet ?? "");
   const expectedLabels = labelOrder(expected.hudSnippet ?? "");
   if (JSON.stringify(actualLabels) !== JSON.stringify(expectedLabels)) {
