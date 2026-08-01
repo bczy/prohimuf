@@ -543,6 +543,47 @@ describe("FlyerWall — reduced motion turning on mid-cascade hands the showing 
     container.remove();
   });
 
+  it("does NOT hand the showing back once the cascade has run to its end", () => {
+    // The hand-back exists for a cascade the player only half saw. After it finishes, the
+    // session HAS had its showing, and clearing the flag would buy a second full cascade
+    // later in the same session — decision §1 broken from the other end. Reduced motion
+    // can be toggled at any moment of a visit, for reasons unrelated to this wall.
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const render = (reducedMotion: boolean) => {
+      act(() => {
+        root.render(
+          createElement(FlyerWall, {
+            reducedMotion,
+            unlockedLevels: new Set<string>(),
+            onPlay: () => undefined,
+            prefs: DEFAULT_PREFS,
+            onSavePrefs: () => undefined,
+          }),
+        );
+      });
+    };
+    render(false);
+    expect(hasCascadePlayed()).toBe(true);
+
+    // The LAST slot's animationend is the end of the cascade: same duration everywhere,
+    // delay growing with the index. jsdom runs no animation, so it is dispatched here.
+    const slots = container.querySelectorAll(".muf-flyer-slot");
+    const last = slots[slots.length - 1];
+    expect(last).toBeDefined();
+    act(() => {
+      last?.dispatchEvent(new AnimationEvent("animationend", { bubbles: true }));
+    });
+
+    render(true); // OS switch flipped LONG after the fall ended
+    expect(hasCascadePlayed()).toBe(true); // showing kept — it was fully seen
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it("exposes clearCascadePlayed as the inverse of markCascadePlayed", () => {
     markCascadePlayed();
     expect(hasCascadePlayed()).toBe(true);

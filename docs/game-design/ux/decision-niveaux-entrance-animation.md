@@ -84,7 +84,14 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    rien : un joueur qui désactive ensuite la bascule in-app et revient sur NIVEAUX ne
    verrait jamais l'entrée. Le drapeau n'est posé que si l'animation a réellement pu jouer.
 
-   **Et il est RENDU si le mouvement réduit s'active en cours de chute.** La moitié OS de
+   **Et il est RENDU si le mouvement réduit s'active EN COURS DE CHUTE** — en cours de
+   chute seulement. Une fois la cascade terminée, la séance a eu son passage : le rendre
+   offrirait une seconde cascade complète plus tard dans la même session, soit §1 cassé par
+   l'autre bout. Or la bascule OS n'a pas de date limite, un joueur peut l'actionner une
+   heure après l'entrée pour des raisons étrangères à cet écran. La fin est détectée par
+   l'`animationend` de la dernière feuille — celle qui finit en dernier — plutôt qu'en
+   recalculant `(n-1) × stagger + durée`, qui obligerait à tenir ces trois valeurs
+   synchronisées dans un troisième endroit. La moitié OS de
    ce signal est vivante : elle peut basculer pendant que le mur est monté. La coupure CSS
    tronque alors l'animation, alors que le drapeau était déjà posé au montage — la séance
    aurait dépensé son unique passage pour une cascade vue à moitié. Le drapeau est donc

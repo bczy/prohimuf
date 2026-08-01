@@ -39,7 +39,16 @@ Ajouter **une** clé `sessionStorage` : `muf_flyer_cascade_played`, écrite au m
 ## Consequences
 
 **Positif.** Le rejeu à chaque changement d'onglet disparaît. La surface ajoutée est
-minimale et cloisonnée : une clé, une valeur constante, deux fonctions exportées et testées.
+minimale et cloisonnée : une clé, une valeur constante, et **trois** fonctions exportées et
+testées — nommées ici plutôt que comptées, un décompte se périmant au premier ajout, ce qui
+est exactement arrivé à cette ligne :
+
+- `hasCascadePlayed()` — lecture (`getItem`) ;
+- `markCascadePlayed()` — écriture (`setItem`), au montage, quand l'animation peut jouer ;
+- `clearCascadePlayed()` — effacement (`removeItem`), qui rend la séance quand le mouvement
+  réduit tronque une cascade **en cours** (décision §6 du doc UX lié). Seule cette fonction
+  retire la clé.
+
 Rien n'est lu depuis cette clé pour piloter autre chose que l'animation.
 
 **Négatif / à savoir.** C'est une troisième clé de stockage côté render, après

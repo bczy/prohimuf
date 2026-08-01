@@ -274,6 +274,11 @@ export function FlyerWall({
   // Event TYPE has neither problem: a tap sets "pointer" and nothing resets it before the
   // synthetic focus, and a Tab sets "keyboard" wherever it was pressed.
   const lastInputWasKeyboard = useRef(false);
+
+  // Whether the cascade ran to its end, set by the last slot's animationend below. A ref,
+  // not state: nothing renders differently because of it — it only decides, later, whether
+  // an interruption is worth handing the session's showing back.
+  const cascadeFinished = useRef(false);
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -297,16 +302,18 @@ export function FlyerWall({
     // already set at mount, so the session's one showing would have been spent on a
     // cascade the player only half saw. Hand it back.
     //
-    // This cannot resurrect the replay bug the design gate blocked: the flag is only
-    // cleared when reduced motion is ON, and that same signal suppresses the animation. A
-    // later mount therefore either stays reduced (no animation, nothing marked) or has had
-    // the setting turned back off, which is exactly when replaying is what the player wants.
+    // Only a cascade the player did NOT get to see through is worth handing back. Once it
+    // has finished, the session got its showing, and clearing the flag would buy a SECOND
+    // full cascade later in the same session — the per-session guarantee of decision §1,
+    // broken from the other end. `reducedMotion` toggling has no deadline: a player can
+    // flip it an hour into a visit, for reasons that have nothing to do with this wall.
     if (!playCascade || !reducedMotion) return;
-    clearCascadePlayed();
-    // LATCHED for this mount too: the OS switch can flip back to OFF while we stay
-    // mounted, and `playCascade` is decided once at mount — so without this the CSS kill
-    // switch would stop applying and the whole cascade would restart mid-visit, which is
-    // the replay the design gate blocked. The handed-back flag lets a LATER mount play it.
+    if (!cascadeFinished.current) clearCascadePlayed();
+    // LATCHED for this mount, finished or not: the OS switch can flip back to OFF while we
+    // stay mounted, and `playCascade` is decided once at mount — so without this the CSS
+    // kill switch would stop applying, re-applying the animation from the top, and the
+    // whole cascade would restart mid-visit. That is the replay the design gate blocked,
+    // and it happens whether or not the fall had completed.
     setInterrupted(true);
   }, [playCascade, reducedMotion]);
 
@@ -500,6 +507,20 @@ export function FlyerWall({
                 styles.slot,
                 playCascade && !interrupted ? undefined : styles.slotSettled,
               )}
+              // The LAST slot is the one that finishes last — every slot runs the same
+              // duration and the delay grows with the index — so its animationend IS the
+              // end of the cascade. Watching the real event rather than recomputing
+              // `(n-1) * stagger + duration` keeps the stagger, the duration and the level
+              // count from having to be kept in step in a third place (same reasoning as
+              // waitForFlyerWallSettled in scripts/e2e-lib.mjs).
+              onAnimationEnd={
+                i === LEVELS.length - 1
+                  ? (e) => {
+                      // Not a child's animation bubbling up through us.
+                      if (e.target === e.currentTarget) cascadeFinished.current = true;
+                    }
+                  : undefined
+              }
               // Staggers the float-in entrance (FlyerWall.module.css) so flyers appear
               // one sheet at a time instead of all at once, each on its own fall path.
               style={
