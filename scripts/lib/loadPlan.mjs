@@ -55,5 +55,17 @@ export async function loadPlan(levelId) {
   if (!mod || typeof mod !== "object" || !("plan" in mod)) {
     throw new Error(`loadPlan: ${path.relative(ROOT, file)} does not export "plan"`);
   }
+  // The id lock (panel #156 run 3 MAJEUR): every consumer keys its OUTPUT on
+  // plan.id while the workflow's cap counter and precheck key on the REQUESTED
+  // id. A copy-pasted module whose stale `id` field was not updated would spend
+  // a capped paid attempt for one level while silently overwriting a SIBLING
+  // level's committed art. One check here closes the gap for all consumers.
+  if (mod.plan?.id !== levelId) {
+    throw new Error(
+      `loadPlan: ${path.relative(ROOT, file)} exports plan.id ` +
+        `${JSON.stringify(mod.plan?.id)} but was loaded as "${levelId}" — a generated ` +
+        `plan's id must match its filename (copy-paste leftover?)`,
+    );
+  }
   return mod.plan;
 }

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadPlan } from "../lib/loadPlan.mjs";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /**
  * The loader-side half of the level-id allowlist (panel run-2 on PR #156,
@@ -28,5 +33,24 @@ describe("loadPlan — level id allowlist", () => {
 
   it("still rejects a well-formed id whose module does not exist under generated/", async () => {
     await expect(loadPlan("no-such-level")).rejects.toThrow(/no generated plan/);
+  });
+});
+
+describe("loadPlan — le verrou d'id (panel #156 run 3)", () => {
+  it("refuse un module dont plan.id ne correspond pas au fichier (copy-paste leftover)", async () => {
+    const dir = path.resolve(ROOT, "src/game/levels/generated");
+    const file = path.join(dir, "mismatch.ts");
+    fs.writeFileSync(
+      file,
+      'import type { LevelPlan } from "@game/levels/levelPlan";\n' +
+        'export const plan = { id: "fixture" } as unknown as LevelPlan;\n',
+    );
+    try {
+      await expect(loadPlan("mismatch")).rejects.toThrow(
+        /plan\.id "fixture".*loaded as "mismatch"/s,
+      );
+    } finally {
+      fs.rmSync(file);
+    }
   });
 });
