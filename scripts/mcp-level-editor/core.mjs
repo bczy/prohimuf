@@ -155,13 +155,7 @@ function scanAssets(plan, rootDir) {
  * bad id, so a thrown error is the server's to turn into an MCP error result.
  */
 export function inspect({ levelId }, { plans = GENERATED_PLANS, rootDir = repoRoot() } = {}) {
-  const plan = plans.find((p) => p.id === levelId);
-  if (plan === undefined) {
-    throw new Error(
-      `inspect: no generated level with id "${levelId}" (known ids: ` +
-        `${plans.map((p) => p.id).join(", ") || "none"})`,
-    );
-  }
+  const plan = resolvePlanOrThrow(levelId, plans, "inspect");
   return {
     plan,
     config: planToLevelConfig(plan),
