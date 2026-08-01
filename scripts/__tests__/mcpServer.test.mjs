@@ -24,10 +24,12 @@ function jsonOf(result) {
 }
 
 describe("level-editor MCP server", () => {
-  it("lists ping, validate and inspect among its tools", async () => {
+  it("lists ping, validate, inspect and scaffold among its tools", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(expect.arrayContaining(["ping", "validate", "inspect"]));
+    expect(tools.map((t) => t.name)).toEqual(
+      expect.arrayContaining(["ping", "validate", "inspect", "scaffold"]),
+    );
   });
 
   it("validate({ levelId: 'fixture' }) round-trips through the wire to core.mjs", async () => {
@@ -61,5 +63,17 @@ describe("level-editor MCP server", () => {
       arguments: { levelId: "does-not-exist" },
     });
     expect(result.isError).toBe(true);
+  });
+
+  it("scaffold refuses an unsafe id over the wire, before any disk access", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "scaffold",
+      arguments: { plan: { id: "../escape" } },
+    });
+    expect(result.isError).not.toBe(true);
+    const parsed = jsonOf(result);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.issues[0].code).toBe("scaffold/invalid-id");
   });
 });

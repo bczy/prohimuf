@@ -13,7 +13,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { inspect, validate } from "./core.mjs";
+import { inspect, scaffold, validate } from "./core.mjs";
 
 export const SERVER_NAME = "level-editor";
 export const SERVER_VERSION = "0.1.0";
@@ -85,6 +85,30 @@ export function createServer() {
     async (input) => {
       try {
         return jsonResult(inspect(input));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "scaffold",
+    {
+      title: "Scaffold",
+      description:
+        "Write a NEW generated level module (src/game/levels/generated/<id>.ts) from a " +
+        "sound plan. Refuses before touching disk: an unsafe id (path separator, '..', " +
+        "outside the filesystem-safe namespace) or any `validate` issue. Never edits " +
+        "generated/index.ts, never runs git — { overwrite: true } is required to replace " +
+        "an existing module. Returns { ok, path, issues, reminder }.",
+      inputSchema: {
+        plan: planShape,
+        overwrite: z.boolean().optional(),
+      },
+    },
+    async (input) => {
+      try {
+        return jsonResult(scaffold(input));
       } catch (error) {
         return errorResult(error);
       }
