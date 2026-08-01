@@ -25,6 +25,21 @@ Le corps de `validateLevelPlan` (SP2 T1 vs MCP T2b) et le driver §8 généralis
 (SP2 T6 vs MCP T5) — la seconde branche à atterrir rebase et adapte. Détail :
 Auto-revue des deux plans.
 
+## 2b. BUILD — dev-tooling-assets (+ dev-gameplay T1) — 2026-08-01
+
+- T1→T6 committées (e65eb68f, 9dedb821, abe060aa, e5191bd2, a85c120a, 81745518) :
+  schéma calibration, générateur payé paramétré (style/contenu séparés), workflow
+  cap-3 en version durcie panel (#153 : tentatives par commits --full-history,
+  concurrency par level_id, garde avant incrément, FAIL dur post-dépense),
+  align-windows depuis le plan, skins/props du plan, e2e-generated-level.
+- Écarts assumés : check-sprite-integrity non branché (retiré du pipeline enemy,
+  ADR-0029) ; évidence du run d'essai non commitée (artefact CI) ; bug subshell
+  du gate props trouvé et épinglé par test.
+- État : typecheck vert, 1705/1705 tests (×2), workflows:check ok (6 warnings
+  préexistants). Douteux tracé : intégration navigateur d'align-windows testable
+  seulement en CI réelle ; seeds libres de T5 sans cap (à borner si besoin, hors
+  périmètre).
+
 ## Suivi
 
 - [x] PR #151 (specs+plans) : panel PASS (4 runs convergents) → MERGÉE (3ba17a47,
