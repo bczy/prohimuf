@@ -26,12 +26,6 @@
         height: auto;
         overflow: visible;
       }
-      path {
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        filter: url(#spray);
-      }
       .can {
         filter: drop-shadow(0 0 8px currentColor);
       }
@@ -49,14 +43,55 @@
         background: #39ff6a;
         color: #232327;
       }
+      /* Throw-up/blockbuster stack (réf. textstudio graffiti-tag-102) :
+         extrusion 3D -> contour sombre -> contour blanc -> fill dégradé + keyline */
+      text {
+        font-family: "Arial Black", "Impact", "Helvetica Neue", sans-serif;
+        font-weight: 900;
+        font-size: 218px;
+        letter-spacing: 0.01em;
+      }
+      .extrude {
+        fill: #2a0a3a;
+      }
+      .outline-dark {
+        fill: none;
+        stroke: #14081a;
+        stroke-width: 30;
+        stroke-linejoin: round;
+      }
+      .outline-white {
+        fill: none;
+        stroke: #ffffff;
+        stroke-width: 14;
+        stroke-linejoin: round;
+      }
+      .fill {
+        fill: url(#lava);
+        stroke: #7a2d00;
+        stroke-width: 3;
+        stroke-linejoin: round;
+        paint-order: stroke;
+      }
+      .deco {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: url(#spray);
+      }
     </style>
   </head>
   <body>
     <div id="stage">
-      <svg id="art" viewBox="0 0 1750 620" xmlns="http://www.w3.org/2000/svg">
+      <svg id="art" viewBox="0 0 1560 660" xmlns="http://www.w3.org/2000/svg">
         <defs>
+          <linearGradient id="lava" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffe93c" />
+            <stop offset="0.55" stop-color="#ff9a00" />
+            <stop offset="1" stop-color="#ff5a1f" />
+          </linearGradient>
           <!-- userSpaceOnUse: % regions collapse on straight strokes (zero-size bbox) -->
-          <filter id="spray" filterUnits="userSpaceOnUse" x="-80" y="-80" width="1950" height="800">
+          <filter id="spray" filterUnits="userSpaceOnUse" x="-80" y="-80" width="1720" height="820">
             <feTurbulence
               type="fractalNoise"
               baseFrequency="0.8"
@@ -66,136 +101,149 @@
             />
             <feDisplacementMap in="SourceGraphic" in2="n" scale="5" />
           </filter>
+          <!-- rideau de révélation : un rect animé en width, façon wipe à la bombe -->
+          <clipPath id="wipe"><rect id="wipeRect" x="0" y="0" width="0" height="660" /></clipPath>
+          <!-- gloss clippé DANS les lettres -->
+          <clipPath id="letters">
+            <text x="70" y="420" transform="rotate(-3 780 330)">Madeleine</text>
+          </clipPath>
         </defs>
-        <g id="tag"></g>
+
+        <g clip-path="url(#wipe)">
+          <g id="word" transform="rotate(-3 780 330)">
+            <!-- extrusion 3D : copies décalées vers le bas-droite -->
+            <g class="extrude" aria-hidden="true">
+              <text x="88" y="438">Madeleine</text>
+              <text x="85" y="435">Madeleine</text>
+              <text x="82" y="432">Madeleine</text>
+              <text x="79" y="429">Madeleine</text>
+              <text x="76" y="426">Madeleine</text>
+              <text x="73" y="423">Madeleine</text>
+            </g>
+            <text class="outline-dark" x="70" y="420">Madeleine</text>
+            <text class="outline-white" x="70" y="420">Madeleine</text>
+            <text class="fill" x="70" y="420">Madeleine</text>
+          </g>
+          <!-- gloss diagonal, clippé dans les lettres -->
+          <g clip-path="url(#letters)" opacity="0.5">
+            <rect
+              x="-200"
+              y="150"
+              width="2000"
+              height="46"
+              fill="#ffffff"
+              transform="rotate(-8 780 330)"
+            />
+            <rect
+              x="-200"
+              y="215"
+              width="2000"
+              height="14"
+              fill="#ffffff"
+              transform="rotate(-8 780 330)"
+            />
+          </g>
+        </g>
+
+        <!-- déco peinte APRÈS le wipe : couronne, étincelles, coulures -->
+        <g id="deco"></g>
         <circle class="can" r="9" opacity="0" id="canDot" fill="#fff" />
       </svg>
       <button id="replay">rejouer</button>
     </div>
 
     <script>
-      // Handstyle glyphs — angular, right-slanted, street. Local coords:
-      // baseline ~400, caps ~180, ascenders overshoot, kicks below baseline.
-      const GLYPHS = {
-        m: { w: 260, d: ["M0,470 L95,190 L130,330 L180,185 L215,400 L250,372"] },
-        a: { w: 150, d: ["M105,255 L28,272 L22,372 L108,382 L112,262 L125,400 L158,372"] },
-        d: { w: 140, d: ["M112,120 L122,398", "M112,250 L30,262 L26,368 L114,378"] },
-        e: { w: 120, d: ["M8,278 L98,240 L104,296 L34,306 L44,368 L118,352"] },
-        l: { w: 90, d: ["M18,140 L30,392 L82,366"] },
-        i: { w: 70, d: ["M28,268 L40,392", "M14,220 L54,230"] },
-        n: { w: 150, d: ["M10,398 L20,262 L30,248 L98,380 L108,392 L118,250"] },
+      // Déco en coordonnées globales (post-rotation approximée à l'œil).
+      const CROWN = {
+        d: "M96,128 L128,58 L168,112 L206,50 L244,112 L284,58 L316,128 Z",
+        color: "#ffe93c",
+        width: 10,
+        speed: 1.2,
       };
-
-      const WORD = "madeleine";
-      const START_X = 120;
-      const GAP = 18;
-
-      // build the letter geometry once (path d + x offset per stroke)
-      const letterStrokes = [];
-      {
-        let x = START_X;
-        for (const ch of WORD) {
-          const g = GLYPHS[ch];
-          for (const d of g.d) letterStrokes.push({ d, x });
-          x += g.w + GAP;
-        }
-      }
-
-      // decoration geometry (global coords)
-      const CROWN = ["M128,150 L152,96 L180,140 L210,90 L240,136 L268,88 L292,150 L128,150"];
-      const QUOTES = ["M1598,238 L1622,200", "M1638,246 L1662,208"];
-      const UNDERLINE = ["M1608,430 Q900,520 250,462", "M318,424 L242,460 L322,498"];
+      const SPARKS = [
+        "M1382,120 L1402,160 M1362,150 L1422,130", // étoile 4 branches
+        "M1470,220 L1482,252 M1456,242 L1496,230",
+      ].map((d) => ({ d, color: "#ffffff", width: 7, speed: 1.2 }));
       const DRIPS = [
-        "M352,384 L358,478",
-        "M746,380 L753,500",
-        "M1010,370 L1015,448",
-        "M1490,356 L1496,452",
-      ];
-      const HIGHLIGHTS = [
-        "M208,222 L221,264",
-        "M836,152 L842,216",
-        "M986,176 L992,238",
-        "M1392,280 L1400,332",
-      ];
+        "M300,505 L306,600",
+        "M642,512 L648,632",
+        "M905,505 L910,585",
+        "M1258,492 L1264,600",
+      ].map((d) => ({ d, color: "#ff5a1f", width: 9, speed: 2.6 }));
+      const UNDERLINE = {
+        d: "M1420,560 Q780,640 150,570",
+        color: "#39ff6a",
+        width: 10,
+        speed: 0.9,
+      };
+      const DECO = [CROWN, ...SPARKS, UNDERLINE, ...DRIPS];
 
-      // passes, in the gated order: fat fill -> dark keyline -> white highlights -> deco
-      const PASSES = [
-        { strokes: letterStrokes, color: "#ff3cdc", width: 30, opacity: 0.92, speed: 2.2 },
-        { strokes: letterStrokes, color: "#1b0a18", width: 9, opacity: 1, speed: 1.3 },
-        {
-          strokes: HIGHLIGHTS.map((d) => ({ d, x: 0 })),
-          color: "#ffffff",
-          width: 5,
-          opacity: 0.95,
-          speed: 1.6,
-        },
-        {
-          strokes: [...CROWN, ...QUOTES, ...UNDERLINE].map((d) => ({ d, x: 0 })),
-          color: "#39ff6a",
-          width: 8,
-          opacity: 1,
-          speed: 1.4,
-        },
-        {
-          strokes: DRIPS.map((d) => ({ d, x: 0 })),
-          color: "#ff3cdc",
-          width: 5,
-          opacity: 0.9,
-          speed: 3.5,
-        },
-      ];
-
-      const gEl = document.getElementById("tag");
+      const decoEl = document.getElementById("deco");
       const can = document.getElementById("canDot");
+      const wipeRect = document.getElementById("wipeRect");
       const NS = "http://www.w3.org/2000/svg";
-      const all = [];
+      const decoPaths = [];
 
-      for (const pass of PASSES) {
-        for (const s of pass.strokes) {
-          const p = document.createElementNS(NS, "path");
-          p.setAttribute("d", s.d);
-          if (s.x) p.setAttribute("transform", `translate(${s.x},0)`);
-          p.setAttribute("stroke", pass.color);
-          p.setAttribute("stroke-width", pass.width);
-          p.setAttribute("stroke-opacity", pass.opacity);
-          gEl.appendChild(p);
-          all.push({ p, x: s.x || 0, color: pass.color, speed: pass.speed });
-        }
+      for (const s of DECO) {
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", s.d);
+        p.setAttribute("class", "deco");
+        p.setAttribute("stroke", s.color);
+        p.setAttribute("stroke-width", s.width);
+        decoPaths.push({ p, ...s });
+        decoEl.appendChild(p);
       }
 
-      function reset() {
-        for (const { p } of all) {
+      function resetDeco() {
+        for (const { p } of decoPaths) {
           const len = p.getTotalLength();
           p.setAttribute("stroke-dasharray", `${len} ${len}`);
           p.setAttribute("stroke-dashoffset", len);
         }
       }
 
+      function animate(duration, step) {
+        const start = performance.now();
+        return new Promise((resolve) => {
+          function tick(now) {
+            const t = Math.min(1, (now - start) / duration);
+            step(1 - Math.pow(1 - t, 2));
+            if (t < 1) requestAnimationFrame(tick);
+            else resolve();
+          }
+          requestAnimationFrame(tick);
+        });
+      }
+
       let running = false;
       async function play() {
         if (running) return;
         running = true;
-        reset();
+        resetDeco();
+        wipeRect.setAttribute("width", "0");
         can.setAttribute("opacity", "1");
-        for (const { p, x, color, speed } of all) {
-          can.setAttribute("fill", color === "#1b0a18" ? "#8a4a80" : color);
+        can.setAttribute("fill", "#ff9a00");
+
+        // 1) wipe du bloc lettré, la bombe suit le bord du rideau
+        await animate(2600, (e) => {
+          const w = 1560 * e;
+          wipeRect.setAttribute("width", w);
+          can.setAttribute("cx", w - 20);
+          can.setAttribute("cy", 330);
+        });
+
+        // 2) passes déco, la bombe suit chaque tracé
+        for (const { p, color, speed } of decoPaths) {
+          can.setAttribute("fill", color);
           const len = p.getTotalLength();
-          const duration = Math.max(120, len * speed);
-          const start = performance.now();
-          await new Promise((resolve) => {
-            function tick(now) {
-              const t = Math.min(1, (now - start) / duration);
-              const eased = 1 - Math.pow(1 - t, 2);
-              p.setAttribute("stroke-dashoffset", len * (1 - eased));
-              const tip = p.getPointAtLength(len * eased);
-              can.setAttribute("cx", tip.x + x);
-              can.setAttribute("cy", tip.y);
-              if (t < 1) requestAnimationFrame(tick);
-              else resolve();
-            }
-            requestAnimationFrame(tick);
+          await animate(Math.max(150, len * speed), (e) => {
+            p.setAttribute("stroke-dashoffset", len * (1 - e));
+            const tip = p.getPointAtLength(len * e);
+            can.setAttribute("cx", tip.x);
+            can.setAttribute("cy", tip.y);
           });
         }
+
         can.setAttribute("opacity", "0");
         running = false;
       }
