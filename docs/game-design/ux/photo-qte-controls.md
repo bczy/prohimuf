@@ -4,7 +4,10 @@
 (desktop + mobile), HUD dress inside that view, and the planche-contact (contact sheet)
 screen at scene end.
 **Author:** `ux-designer` (Tony) · **Date:** 2026-08-01
-**Status:** DRAFT — awaiting `lead-game-designer` (Karim) DESIGN GATE PASS.
+**Status:** DRAFT — Rev.2, addressing the round-1 design gate
+(`docs/game-design/design-gate-photo-qte.md`): blocking **T-1** (third bracket state,
+`locked`) and **T-2** (mobile simultaneous-contact budget), plus conditions **T-3…T-6**.
+Round 2, awaiting `lead-game-designer` (Karim) DESIGN GATE PASS.
 **Decided upstream (not re-opened here):**
 [ADR-0077](../../adr/0077-qte-photo-paparazzi-set-pieces.md) — the verb is frame + zoom +
 shoot (D2), zoom is a fill-the-frame/sway trade-off (D3), feedback is two-beat (mechanical
@@ -41,12 +44,12 @@ rule 5's spirit (core game is "move + one action"; a dedicated set-piece may nee
 every added verb still needs a reason — here each of the four maps to one ADR mechanic,
 none is decorative).
 
-| Verb                     | Desktop                                           | Mobile                                                                    | Reuses                                                                                                                                                                  |
-| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Move the viewfinder      | Mouse position (absolute)                         | One-finger drag (relative pan)                                            | Core-game aim model: mouse = absolute crosshair, touch = relative pan (`useGameLoop.ts` "on mobile the crosshair sits at the last tap; on desktop it tracks the mouse") |
-| Zoom (fill-frame ↔ sway) | Mouse wheel, continuous                           | Two-finger pinch, continuous                                              | `useTouchControls.ts` `MIN_ZOOM_FRACTION`/`MAX_ZOOM_FRACTION` pinch model, same axis (in = tighter/riskier)                                                             |
-| Shutter                  | Left click                                        | Two-finger tap                                                            | Core-game "shoot" gesture (`pendingTaps` two-finger tap), re-skinned: same muscle memory, different consequence (evidentiary, not lethal)                               |
-| Raise / lower the camera | Hold **Space** (press-and-hold, released = lower) | Hold a fixed on-screen button, bottom-corner, thumb zone (press-and-hold) | New — no existing analog; §1.5                                                                                                                                          |
+| Verb                     | Desktop                                           | Mobile                                                                                     | Reuses                                                                                                                                                                  |
+| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Move the viewfinder      | Mouse position (absolute)                         | One-finger drag (relative pan)                                                             | Core-game aim model: mouse = absolute crosshair, touch = relative pan (`useGameLoop.ts` "on mobile the crosshair sits at the last tap; on desktop it tracks the mouse") |
+| Zoom (fill-frame ↔ sway) | Mouse wheel, continuous                           | Two-finger pinch, continuous                                                               | `useTouchControls.ts` `MIN_ZOOM_FRACTION`/`MAX_ZOOM_FRACTION` pinch model, same axis (in = tighter/riskier)                                                             |
+| Shutter                  | Left click                                        | Two-finger tap                                                                             | Core-game "shoot" gesture (`pendingTaps` two-finger tap), re-skinned: same muscle memory, different consequence (evidentiary, not lethal)                               |
+| Raise / lower the camera | Hold **Space** (press-and-hold, released = lower) | **Tap-to-toggle** a fixed on-screen button, bottom-corner, thumb zone (§1.4 — device fork) | New — no existing analog; §1.5                                                                                                                                          |
 
 ### 1.1 Move the viewfinder (D2)
 
@@ -96,24 +99,51 @@ This is the one verb the ADR does not describe mechanically, only names. Design 
   preview of the scene (helps the player reacquire where the action is inside a narrow
   telephoto FOV — a real problem at high zoom), sway resets to zero, and **suspicion does
   not climb**. The shutter is disarmed (§1.3).
-- **Hold-to-raise, not a mode toggle switch.** Both devices use a **press-and-hold**
-  control (Space on desktop, a fixed on-screen button on mobile), not a tap-to-toggle. This
-  matters for two reasons: (a) it mirrors the real-world action it depicts (you hold a
-  camera up to your eye; you don't flip a switch), so no copy is needed to explain it — the
-  affordance is physically self-evident; (b) it gives the player a **zero-cost bail-out at
-  all times** — releasing the hold instantly and unconditionally returns to the suspicion-
-  safe, sway-safe lowered state, which doubles as an escape hatch inside the set-piece
-  (§3.4) without a separate control to learn.
-- **Mobile placement:** a fixed-position button in a bottom screen corner, chosen away from
-  the one-finger pan zone (anywhere on the viewfinder) and the two-finger tap shutter (also
-  anywhere on the viewfinder), so raising/lowering never competes for the same screen real
-  estate as framing or firing. Exact corner (bottom-left vs bottom-right) is a `lead-art`
-  layout call inside this spec's "away from the other two gestures" constraint.
-- **Rejected alternative — tap-to-toggle raise/lower.** A tap toggle would need an explicit
-  visual mode indicator (raised vs lowered isn't otherwise obvious at a glance the way "my
-  thumb is on the button" is) and loses the free escape-hatch property above. Hold-to-raise
-  costs nothing (holding a button is not fatiguing over a set-piece's short duration, ADR-0077
-  Context: scripted, per-level, not open-ended) and buys the escape hatch for free.
+
+**Device fork (T-2, round-2 correction).** Round 1 specified press-and-hold on both devices.
+Karim's gate named the resulting mobile contact budget precisely: while raised, the scheme
+demanded the held raise button (1 contact) **+** one-finger pan (1) **+** two-finger pinch
+(2) **+** two-finger tap shutter (2) simultaneously — up to **3 concurrent contacts** on a
+hand-held landscape phone, one of which (the raise thumb) must not drift for the whole
+framing or it silently disarms the shutter for 0.40 s (D1.b) at the worst possible moment.
+ADR-0003 makes mobile _supported_, and supported means playable at that budget — it wasn't.
+The fix is a **device fork on this one verb only**, not a redesign of the other three:
+
+- **Desktop — unchanged, hold-to-raise.** Space, press-and-hold, released = lower. It
+  mirrors the real-world action it depicts (you hold a camera up to your eye), needs no
+  copy, and the mouse/keyboard split means the hold costs no contact the other three verbs
+  need — desktop was never in K-2's budget.
+- **Mobile — tap-to-toggle, not hold.** A single tap on the fixed on-screen button raises;
+  a single tap on the same button lowers. This removes the sustained raise contact
+  entirely: the canvas gesture layer (`useTouchControls.ts`) already time-multiplexes pan
+  (1 finger) and pinch/shutter (2 fingers, disambiguated by movement, never both at once —
+  `mode: "pan" | "two"`) onto **at most 2 simultaneous contacts**, and the toggle now adds
+  **zero** sustained contacts on top of that. Framing + zooming + shooting on mobile never
+  requires more than 2 fingers down at once, satisfying the gate's "≤2 simultaneous
+  contacts, one of which may be the held raise" constraint with margin — there is no longer
+  a third contact to spend the budget on. It also removes the drift-disarm failure mode
+  outright: there is no held thumb to slip.
+- **The escape hatch survives the toggle, as required.** §1.5's original objection to
+  tap-to-toggle was the missing "obviously held" affordance and the loss of a _free_
+  bail-out. Both are answered directly: (a) the button's **icon swaps on state change**
+  (raised icon ↔ lowered icon — a code-drawn gesture icon per the ADR-0020 precedent, no
+  copy), so posture is legible at a glance without relying on proprioception; (b) the
+  bail-out is still **one tap, zero cost** — tapping the same button while raised lowers
+  immediately, freezing suspicion and resetting sway exactly as the held-release did in
+  round 1. "Free" survives; "held" does not need to.
+- **Mobile placement:** unchanged — a fixed-position button in a bottom screen corner,
+  chosen away from the one-finger pan zone (anywhere on the viewfinder) and the two-finger
+  tap shutter (also anywhere on the viewfinder). Exact corner (bottom-left vs bottom-right)
+  is a `lead-art` layout call inside this spec's "away from the other two gestures"
+  constraint.
+- **Why not "shrink the touch budget some other way" instead (e.g. one-finger tap
+  shutter).** Rejected: the two-finger tap is the core game's shared shoot gesture (§1.3);
+  re-deriving a one-finger shutter here would desync it from `pendingTaps`/`isDoubleTap` and
+  create the exact "double-tap shoots" ambiguity that ADR-0003/D7 already solved once for
+  pan vs. fire. The raise verb was the only one both (a) new to this set-piece and (b) not
+  load-bearing on a _held_ semantic for the fiction (§1.4's diegesis is "the camera reaches
+  your eye," which a tap-raise still depicts — it is the _release_ that is the hold, not the
+  raise). Fixing the one new verb is cheaper and safer than touching three shipped ones.
 
 ### 1.5 Rejected alternatives (control scheme)
 
@@ -124,6 +154,9 @@ This is the one verb the ADR does not describe mechanically, only names. Design 
   with the standing convention wins over device symmetry.
 - **A separate "abort scene" button.** Not needed — see §3.4: the standing pause control and
   the free lower-camera bail already cover this without adding a fifth verb.
+- **Hold-to-raise on mobile too, round 1's shape.** Rejected in round 2 — see T-2 above:
+  it is the specific scheme that breaches the ≤2-simultaneous-contact floor. Kept on
+  desktop, where the budget problem does not exist.
 
 **Acceptance (§1):**
 
@@ -134,8 +167,15 @@ This is the one verb the ADR does not describe mechanically, only names. Design 
   viewfinder with **no** residual motion after finger-lift (flick disabled, assert
   `flickVelocityX/Y` unused in this handler); a two-finger pinch changes zoom without
   triggering a shutter tap, and vice versa.
-- A3. Shutter input while the hold-button/Space is released produces zero film consumption,
-  zero suspicion delta, zero click sound — assert on the game-state delta across the tick.
+- A3. Shutter input while lowered (Space released on desktop; toggled-lowered on mobile)
+  produces zero film consumption, zero suspicion delta, zero click sound — assert on the
+  game-state delta across the tick.
+- A3bis (T-2). e2e at a mobile-landscape viewport, camera raised: a single tap on the
+  raise/lower button toggles posture with **no other finger down** (assert the toggle needs
+  zero sustained contact); count the maximum simultaneous `touches.length` observed across
+  a full frame-attempt (raise → pan → pinch → shutter tap) and assert it never exceeds
+  **2**; assert the button's rendered icon differs between raised and lowered states
+  (grayscale-legible, no colour-only tell, same floor as A6).
 
 ---
 
@@ -157,11 +197,11 @@ dials, in-world.
 │                    ┌ ┐          ┌ ┐                    │
 │                                                        │
 │                    └ ┘  target  └ ┘                    │  ← centre: AF-style corner
-│                                                        │     brackets = focus indicator
+│                                                        │     brackets — 3 states, §2.3
 │                                                        │
 │                                                        │
-│                                        [ hold: 👁 ]    │  ← mobile only: raise/lower
-└──────────────────────────────────────────────────────┘
+│                                          [ 👁 raise ]  │  ← mobile only: raise/lower
+└──────────────────────────────────────────────────────┘   (tap-to-toggle, §1.4)
 ```
 
 ### 2.1 Film counter — diegetic, top-left (or wherever `lead-art` frames the eyepiece vignette)
@@ -171,14 +211,22 @@ on every shutter release regardless of the shot's eventual verdict (a "wasted" f
 uses film — the ADR is explicit that every frame counts). No colour semantics; a numeral in
 the fanzine mono/stencil face already used elsewhere. This is the sole moment-to-moment
 "how many chances do I have left" read — it must be visible in **both** raised and lowered
-posture (running out of film is a stake that exists regardless of posture).
+posture (running out of film is a stake that exists regardless of posture); at the ratified
+`filmCount = 6` it counts down `6 → 0` across the scene.
 
-### 2.2 Suspicion — a needle, not a bar
+**T-6 reconciliation (minor, no re-gate).** Round 1 specified a mechanical dial with a bare
+numeral; the fiction spec's §4.2 independently supplied a `POSES : {n}` (12-character)
+caption. **Decision: the dial with its numeral is the counter itself; `POSES` is used only
+as the dial's engraved caption if `lead-art`'s eyepiece-vignette treatment needs a label at
+all** (a real SLR frame-counter window is often unlabelled, so the caption is optional
+dressing, not a second readout) — there is one number on screen, not two, whichever way
+`lead-art` frames it.
 
-**Decision: the suspicion gauge is rendered as an analogue needle/dial (light-meter or VU-
-meter form), not a linear HUD bar.** This satisfies ADR-0077 D6's mandatory display while
-keeping the "no abstract stress bar" spirit the hostage-duel gate already established for
-this codebase. The needle:
+### 2.2 Suspicion — a needle, not a bar, and not a light meter (T-4)
+
+**Decision: the suspicion gauge is rendered as an analogue needle/dial, not a linear HUD
+bar.** This satisfies ADR-0077 D6's mandatory display while keeping the "no abstract stress
+bar" spirit the hostage-duel gate already established for this codebase. The needle:
 
 - Only moves while the camera is **raised** (§1.4) — a lowered camera cannot be spotted
   from noise it isn't making, so the needle visibly holds still, teaching the raise/lower
@@ -189,36 +237,79 @@ this codebase. The needle:
   left" readouts (time-pressure via suspicion, attempts-pressure via film) don't compete for
   the same glance.
 
-### 2.3 Focus / frame-fill indicator — AF brackets, not a proof verdict
+**T-4 correction — the dial form is ratified, the light-meter _reading_ is not.** Round 1's
+"light-meter or VU-meter form" phrasing invited exactly the wrong metaphor: a light meter
+measures _light_, and this gauge is driven purely by shutter-noise-vs-sound-cover (D6), not
+brightness. If the dress reads as an exposure meter, an attentive player will build a false
+causal model — "shoot in the bright parts" — for a mechanic that has nothing to do with
+light. **Decision: keep the analogue-dial form (needle + scale, the VU-meter's mechanical
+silhouette), but no copy, glyph, numeral, or art treatment on this dial may present it as a
+light/exposure instrument** (no lux markings, no sun/aperture iconography, no "EV" framing).
+The house rule this satisfies (G-2, gate §6) is: an instrument of the fiction's own tool,
+carrying no numeral, readable by shape/position — a VU-meter-style noise gauge clears that
+bar; a light meter does not, because it teaches the wrong lever. **Handed to `lead-art`
+(Nico) as a hard constraint on the dress, not a look choice** — see the seams list.
+
+### 2.3 Focus / frame-fill indicator — AF brackets, three states, never the verdict (T-1)
 
 **Decision: corner brackets around the viewfinder's centre, exactly like a phone or DSLR's
 autofocus-confirmation frame** — a convention every player already knows from a real
-camera app, requiring zero new copy. Brackets read:
+camera app, requiring zero new copy. Round 2 correction (T-1, imposed by the gate, mirrored
+by the mechanic spec's `T5 FOCUS HELD` test): a two-state bracket (dashed/solid) can show
+composition validity but cannot show that the **0.35 s continuous hold** (D2/T5,
+`FOCUS_HOLD`) the shutter actually checks has been satisfied — a player who releases the
+instant the brackets turn solid, before the hold completes, gets a silent `REJECTED` with no
+warning they were ever close. **The brackets now carry three states:**
 
-- **Loose/dashed** when the current frame-fill is outside the valid window (too wide or too
-  tight, ADR-0077 D3a).
-- **Tight/solid** when the frame-fill is inside the valid window — this is a **composition**
-  read only ("this shot is well-framed"), never a **content** read ("this is the master
-  proof"). Those are two different axes: frame-fill validity is knowable and shown live;
-  which specific well-framed shot counts as master vs bonus vs nothing is reserved for the
-  contact sheet per ADR-0077 D8's two-beat rule. The brackets must never pre-empt that by
-  changing form/colour for master-vs-bonus — only for in-frame vs out-of-frame.
-- Sway (D3b) visibly perturbs the brackets' position/jitter, which is the only depiction of
-  sway difficulty — see §3.1 for its reduced-motion form.
+- **`dashed`** — composition invalid (frame-fill outside the valid window, too wide or too
+  tight, ADR-0077 D3a) **or** containment/margin broken. Nothing is charging.
+- **`solid`** — composition valid (inside the fill window, contained with margin) and the
+  focus hold has **started charging**, but has not yet reached `FOCUS_HOLD`. A shutter
+  release here still `REJECTED`s (T5 not yet true) — the bracket only promises "you are on
+  the right track," not "shoot now."
+- **`locked`** — focus has been held continuously for `FOCUS_HOLD ≥ 0.35 s`; a release now
+  will pass T5. This is the only state in which the shutter's outcome depends solely on
+  which instant (`I.role`) the timeline is in — a fact the brackets never disclose.
+
+**What the three states must never do — the anti-leak floor (F12, gate §3).** All three
+readbacks are **composition/focus-mechanics only**:
+
+- They never change form/colour for master-vs-bonus-vs-nothing — that axis is reserved for
+  the contact sheet (ADR-0077 D8's two-beat rule). `locked` on a `NO_SUBJECT` frame and
+  `locked` on the master instant must render **identically**.
+- They must not pre-empt or anticipate "something is about to happen now" — per the
+  mechanic spec's F12(2), the subject track's own transit between instants must not begin
+  before that instant's authored tell, and the brackets, reading the track live, inherit
+  that guarantee rather than adding a leak of their own. `locked`/`solid`/`dashed` transitions
+  driven by the player's own framing and hold timing are fine; a transition driven by the
+  track pre-empting the next instant is not, and is a `dev-gameplay` implementation
+  obligation (F12), not a UX one.
+- Sway (D3b) visibly perturbs the brackets' position/jitter in all three states — that is
+  the only depiction of sway difficulty (§3.1 for its reduced-motion form), and it does not
+  change which of the three states is showing.
+
+**Rejected alternative — a numeric or progress-ring hold timer.** A visible "0.35 s"
+countdown or filling ring would be a stronger tell than the state machine needs and would
+read as exactly the kind of stress-bar numeral PROJECT_GUIDELINES §6 forbids; `solid →
+locked` as a binary state change is legible without a number and matches the AF-confirmation
+convention the whole indicator borrows.
 
 ### 2.4 What stays OFF this HUD
 
-- **No numeric suspicion value, no numeric sway value.** Per D8, the player gets mechanical
-  feedback at the shutter and semantic feedback at the contact sheet — a live number for
-  either would leak a running verdict the ADR reserves for those two beats.
-  Contradicts nothing above: the needle shows relative position (a glance read, "am I
-  getting risky"), not a resolved value.
-- **No standing global energy readout inside this view.** Unlike the hostage duel (where
-  energy is the literal stake, D1.3bis), the photo QTE's stake per ADR-0077 D7 is scene
-  abort/retry, not energy loss — carrying the energy stat into a scene where it is inert
-  would mislead the player into believing it's live. **Flag to `game-designer`:** confirm no
-  hidden energy cost exists on "spotted"; if one is added later, the energy readout must
-  return per the same D1.3bis principle.
+- **No numeric suspicion value, no numeric sway value, no hold-timer numeral.** Per D8, the
+  player gets mechanical feedback at the shutter and semantic feedback at the contact sheet
+  — a live number for any of these would leak a running verdict the ADR reserves for those
+  two beats. Contradicts nothing above: the needle shows relative position and the brackets
+  show a three-state read (a glance read, "am I getting risky" / "am I locked"), never a
+  resolved value.
+- **No standing global energy readout inside this view — ratified, not a flag.** Round 1
+  flagged this pending confirmation; the mechanic spec now states it flatly (§D7.1 / F8:
+  `SPOTTED` moves **no** energy, no score, no run, no quota, asserted as a zero-delta test).
+  Unlike the hostage duel (where energy is the literal stake, D1.3bis), the photo QTE's
+  stake is scene abort/retry only — carrying the energy stat into a scene where it is
+  structurally inert would mislead the player into believing it's live. Closed: the energy
+  readout stays off this HUD, full stop, no future re-open unless a future ADR moves energy
+  onto this set-piece (at which point D1.3bis applies again by the same logic).
 
 **Acceptance (§2):**
 
@@ -227,10 +318,14 @@ camera app, requiring zero new copy. Brackets read:
 - A5. Screenshot during the QTE, camera lowered: frame counter still visible; suspicion
   needle frozen (assert no delta across ticks while lowered); AF brackets not required to
   render (no framing to validate without a live viewfinder).
-- A6. Grayscale screenshot: suspicion needle position and AF-bracket state are both
-  distinguishable without colour.
-- A7. No numeric suspicion or sway value appears anywhere in the DOM/canvas text during
-  `ACTIVE` (grep the frame's text content in the e2e capture).
+- A6. Grayscale screenshot: suspicion needle position and **all three** AF-bracket states
+  (`dashed`/`solid`/`locked`) are each distinguishable from the other two, without colour.
+- A7. No numeric suspicion, sway, or hold-timer value appears anywhere in the DOM/canvas
+  text during `ACTIVE` (grep the frame's text content in the e2e capture).
+- A7bis (T-1/F12). Scripted playtest capture: a `locked`-state frame shot on a `NO_SUBJECT`
+  interval and a `locked`-state frame shot on the master interval render **pixel-identical**
+  bracket dress (diff the bracket region only) — the lock state never varies with the
+  hidden verdict.
 
 ---
 
@@ -262,9 +357,11 @@ holds, checked at playtest.
 
 ### 3.2 Touch targets ≥ 44×44 CSS px (project standing floor)
 
-- The mobile raise/lower hold-button (§1.4): ≥44×44px, and given it is **held** rather than
-  tapped, err generously larger (recommend ≥56px) so a held thumb doesn't drift off the hit
-  area mid-hold and accidentally lower the camera during a critical frame.
+- The mobile raise/lower toggle button (§1.4, T-2 correction): ≥44×44px. It is now a
+  **tap**, not a hold, so the round-1 "err larger for a held thumb" reasoning no longer
+  applies — but keep the generous ≥56px target anyway, since a mis-tap on a moving thumb
+  mid-reframe (toggling posture by accident) is exactly as costly as the round-1 drift-off
+  failure it replaces, just triggered differently.
 - Any contact-sheet navigation control (§4.3): ≥44×44px, same floor as
   `ux-run-stats-endscreen.md` §3.2 and `spec-boss-qte-differentiation-ux.md`.
 
@@ -287,13 +384,25 @@ path (which is a gameplay outcome, not an accessibility affordance):
 
 - **Standing pause stays live.** The QTE does not intercept or disable the game's existing
   pause control. Pausing mid-photo-QTE freezes film count, suspicion needle position and
-  sway exactly where they were (no gauge decay/growth while paused) and resumes to the same
-  state — same "a toggle/escape that doesn't persist is a lie" standard this brief opens
-  with, applied to "pausing must not cost you the attempt."
-- **Free zero-cost bail via lower-camera (§1.4).** Releasing the hold at any time returns to
-  the safe, suspicion-frozen, sway-reset lowered posture with no penalty — a player who
-  feels rushed, motion-sick, or just needs to reorient always has an immediate, self-evident
-  way to step back without losing film or triggering "spotted."
+  sway exactly where they were (no gauge decay/growth while paused) — same "a toggle/escape
+  that doesn't persist is a lie" standard this brief opens with, applied to "pausing must
+  not cost you the attempt."
+- **Free zero-cost bail via lower-camera (§1.4).** Desktop: releasing the Space hold at any
+  time returns to the safe, suspicion-frozen, sway-reset lowered posture. Mobile (T-2): a
+  single tap on the same button does the same. Either way, no penalty — a player who feels
+  rushed, motion-sick, or just needs to reorient always has an immediate, self-evident way
+  to step back without losing film or triggering "spotted."
+- **T-5 correction — posture on resume-from-pause, previously unspecified.** Round 1 said
+  "resumes to the same state," but a **held** control (desktop Space, and round 1's mobile
+  hold) is not reliably still held across a pause overlay — the player's finger/key may have
+  left the input entirely while the overlay had focus, and "resume to RAISED" would then be
+  reviving a hold that no longer physically exists. **Decision: posture always resumes
+  `LOWERED`**, regardless of the posture at the moment pause was triggered. The focal value
+  is retained (D1.a — this is not a re-zoom penalty), sway is at zero (as it always is when
+  lowered), and the shutter re-arms from a fresh raise (`SHUTTER_ARM_SECONDS` runs again) on
+  whichever device: press-and-hold Space again on desktop, one tap on mobile. This is one
+  rule for both devices — the toggle model (T-2) makes it cheap on mobile too (a single tap
+  re-raises), so there is no asymmetric cost to pausing on either input scheme.
 - **Flag to `dev-gameplay`/`senior-architect`:** confirm the pause implementation
   (`paused` flag in `useGameLoop`) already freezes this QTE's own gauges by construction
   (tick-gated) rather than needing bespoke pause-handling in the new state machine — if the
@@ -304,11 +413,14 @@ path (which is a gameplay outcome, not an accessibility affordance):
 - A8. e2e with emulated `prefers-reduced-motion: reduce`: capture sequence during rising
   zoom shows smooth, non-strobing bracket drift (no frame-to-frame jump exceeding a "slow
   drift" delta budget) — no high-frequency jitter present.
-- A9. e2e: pausing mid-QTE and resuming after a delay shows identical film count, needle
-  position and (reduced-motion) drift phase before and after — zero gauge movement while
-  paused.
-- A10. e2e: releasing the raise hold immediately (next tick) freezes the suspicion needle
-  and disarms the shutter, at both device classes.
+- A9. e2e: pausing mid-QTE (both while raised and while lowered) and resuming after a delay
+  shows (a) identical film count and needle position immediately before pause vs immediately
+  after resume — zero gauge movement while paused — and (b) posture is **`LOWERED`** on
+  resume in both cases, shutter disarmed, focal value unchanged from its pre-pause value
+  (T-5).
+- A10. e2e: releasing the raise hold on desktop, or tapping the toggle button on mobile,
+  immediately (next tick) freezes the suspicion needle and disarms the shutter — at both
+  device classes.
 - A11. Touch-target audit: raise/lower button and contact-sheet nav controls both ≥44×44
   CSS px at a mobile-landscape viewport.
 
@@ -316,21 +428,22 @@ path (which is a gameplay outcome, not an accessibility affordance):
 
 ## 4. Planche contact (contact sheet) — reading verdicts, navigation
 
-Appears once per set-piece conclusion (success, or film exhausted without a master proof —
-"spotted" scatters the scene per D7 and likely skips straight to checkpoint-retry rather
-than a contact sheet; **flag to `game-designer`:** confirm whether "spotted" ever reaches
-the contact sheet or always bypasses it — this spec covers the sheet's contents either way).
+Appears once per set-piece conclusion — **ratified by the gate, no longer an open flag**:
+`SPOTTED` reaches the contact sheet exactly like `ROLL_END`/`SCENE_END` (mechanic spec §1.1),
+truncated to whatever frames were actually shot before the scatter. This is the sheet's only
+mode of appearance; there is no bypass path to design against.
 
-### 4.1 Layout — one glance, no pagination, while film count stays small
+### 4.1 Layout — one glance, no pagination, at the ratified film count
 
 Every frame shot during the scene renders as one thumbnail in a single grid, sized to fit
 one viewport without scrolling or paging, following the same "3 cards max per viewport row"
 discipline as level-select and the same "no extra step" principle as the run-stats endscreen
-detail panel. **Constraint on tuning:** this only holds if authored film counts
-(`game-designer`'s call, ADR-0077 D6) stay within a glanceable ceiling — **recommend ≤8
-frames per set-piece** so the grid never needs pagination; if a design wants more, flag back
-to me before shipping, since a paginated contact sheet reintroduces the "extra step" cost
-this genre of screen exists to avoid.
+detail panel. **Ratified, not a recommendation any more:** `filmCount = 6` (mechanic spec
+§5.1 — 3 authored instants + 3 spare frames), which lays out as a clean **2 × 3 grid**
+(3 thumbnails per row × 2 rows), inside this spec's own ≤8 no-pagination ceiling (mechanic
+spec F6) with headroom to spare. If a future set-piece wants a different film count, the
+ceiling (≤8, no-pagination) is the standing constraint to check against, not this specific
+grid shape.
 
 ### 4.2 Verdict stamps — legible without colour, three states
 
@@ -353,59 +466,119 @@ moment ADR-0077 D8 promised the player the semantic verdict it withheld at the s
 the three states aren't unambiguous here, the whole two-beat feedback design fails its one
 job.
 
-### 4.3 Navigation and exit
+### 4.3 Navigation and exit — retry AND decline, never retry alone (T-3, pairs with K-4/F-1)
 
-- **No per-frame drill-down required for the common case** (§4.1's ≤8-frame ceiling): the
-  grid itself, plus its stamps, is the full read. If `lead-art`/`game-designer` still want a
+- **No per-frame drill-down required for the common case** (§4.1's 2×3 grid): the grid
+  itself, plus its stamps, is the full read. If `lead-art`/`game-designer` still want a
   tap-to-enlarge inspect state for storytelling value, it is additive, optional, and must
   not gate the primary CTA behind it.
-- **One primary CTA**, sized ≥44×44px, whose label matches the outcome
-  (`Continuer` if the master proof was captured, `Réessayer` otherwise) — exact trigger
-  condition is `dev-gameplay`'s state machine, this spec only requires the CTA read matches
-  the state the player is looking at (never a generic "OK" that hides whether they passed).
-- Standard input equivalence: click/tap the CTA on both devices; no keyboard-only trap
-  (Enter/Space also triggers it, consistent with the project's existing menu-button
-  convention).
+- **T-3 correction — two CTAs on the no-master-proof branch, not one.** Round 1 specified a
+  single primary CTA whose label switched between `Continuer` and `Réessayer`. The gate
+  named the resulting contradiction directly: both specs simultaneously assert the
+  set-piece is "bonus, never a gate," yet a player without a master proof was offered
+  exactly one button, and it read "do it again" — an unbounded retry loop bolted in front of
+  a 3–5 minute mission, which _is_ a soft gate in practice however the docs describe it.
+  **Decision:** on a no-master-proof outcome (whether via `ROLL_END`, `SCENE_END`, or
+  `SPOTTED`), the sheet shows **two** controls:
+  - **`Réessayer`** (primary, as before) — checkpoint retry, unchanged.
+  - **A decline CTA** (secondary, same row, both ≥44×44px) that leaves the set-piece for
+    good and returns to the Stalingrad delivery at the baseline (×1.00) boss state — no
+    master proof, no bonus, no bad ending, just "you didn't get the shot, moving on." Exact
+    label is `narrative-designer`'s (F-1 pairs this UX correction with Yasmine's decline
+    copy — fiction variant (c), _"Alors ils remettront ça. Ils remettent toujours ça,"_
+    already reads as a decline, not a retry, so the button text should say so plainly rather
+    than implying another attempt is expected).
+  - On a **master-proof** outcome there remains exactly **one** CTA, `Continuer` — the
+    two-button layout only appears on the branch where a choice (retry vs move on) actually
+    exists.
+- Standard input equivalence: click/tap either CTA on both devices; no keyboard-only trap
+  (Enter/Space also triggers the focused CTA, consistent with the project's existing
+  menu-button convention); Tab/arrow order between the two CTAs on the no-master branch
+  follows the project's standing focus-order convention (primary action first).
 
 **Acceptance (§4):**
 
-- A12. Screenshot of the contact sheet at both device classes: all shots fit one viewport,
-  no scroll/pagination control present, for a set-piece authored at or under 8 frames.
+- A12. Screenshot of the contact sheet at both device classes: all 6 shots fit one viewport
+  in a 2×3 grid, no scroll/pagination control present.
 - A13. Grayscale screenshot: master-proof, bonus-proof and rejected stamps are each
   distinguishable from the other two by shape/text alone.
-- A14. Screenshot on a "no master proof" outcome vs a "master proof captured" outcome: CTA
-  label differs and matches the state.
-- A15. CTA hit area ≥44×44 CSS px at a mobile-landscape viewport; Enter/Space also
-  activates it on desktop.
+- A14. Screenshot on a "no master proof" outcome (including a truncated `SPOTTED` sheet)
+  shows **two** CTAs, `Réessayer` and the decline control, both labelled distinctly from
+  each other and from `Continuer`; screenshot on a "master proof captured" outcome shows
+  **exactly one** CTA, `Continuer`.
+- A14bis (T-3/K-4). e2e: activating the decline CTA on a no-master-proof outcome returns
+  play to the Stalingrad delivery with the boss `rewardMultiplier` at its baseline (×1.00)
+  and consumes **zero** additional retries/time beyond the single press — assert the
+  transition happens in one input, no confirmation dialog, no second screen.
+- A15. Both CTAs (where two are shown) hit area ≥44×44 CSS px at a mobile-landscape
+  viewport, with visible spacing so a fat-finger tap cannot trigger the wrong one; Enter/Space
+  also activates the focused CTA on desktop.
 
 ---
 
-## Seams handed off explicitly
+## Seams handed off explicitly (round 2, post-gate)
 
-- **→ `game-designer` (Sacha):** reduced-motion drift-curve calibration (§3.1); confirm
-  whether "spotted" reaches the contact sheet or bypasses it (§4); confirm no hidden energy
-  cost on abort, or restore the energy readout if one exists (§2.4); film-count ceiling for
-  the no-pagination contact sheet (§4.1, recommend ≤8).
-- **→ `narrative-designer` (Yasmine):** none directly from this spec — the raise/lower and
-  shutter copy (if any on-screen label is needed beyond the self-evident hold-button icon)
-  should stay wordless per the tutorial's device-fork precedent (ADR-0015 D3: no extra copy
-  where the affordance is physically self-evident); flag if a label is wanted after all.
+**Closed by the round-1 gate — no longer open flags, restated here so this spec is
+self-contained:**
+
+- `SPOTTED` reaches the contact sheet, truncated, with `Réessayer` + decline (§4). Not a
+  bypass path — settled.
+- No hidden energy cost on any outcome; the energy readout stays off this HUD, structurally
+  (§2.4). Closed, not conditional.
+- `filmCount = 6`, laid out as a fixed **2 × 3** grid, no pagination (§4.1). Not a
+  recommendation — the ratified value.
+- Reduced-motion sway (§3.1: slow positional drift, non-strobing, comparable challenge) —
+  form ratified by the gate; the exact drift-curve **calibration** remains
+  `game-designer`'s tuning call, checked at playtest against the "comparable challenge"
+  property this spec states.
+
+**Still open, this round's hand-offs:**
+
+- **→ `game-designer` (Sacha):** reduced-motion drift-curve calibration against the standard
+  sway curve (§3.1, tuning only, form is fixed); the F12(1)/(2) authored-data legs that make
+  §2.3's anti-leak floor assertable (subject-box-matches-silhouette tolerance, no-early-transit
+  keyframes) are yours per the mechanic spec's K-2 correction — this UX spec only states what
+  the brackets must never leak, not how the track data proves it.
+- **→ `narrative-designer` (Yasmine):** the decline CTA's label (§4.3, T-3/F-1 pairing) —
+  fiction variant (c) already supplies the tone (_"Alors ils remettront ça"_), this spec only
+  fixes that it must be a visually and semantically distinct **second** button, never folded
+  into `Réessayer`'s copy. Raise/lower and shutter stay wordless per the tutorial's
+  device-fork precedent (ADR-0015 D3: no extra copy where the affordance is physically
+  self-evident) — the mobile toggle's icon swap (§1.4) is a code-drawn gesture icon
+  (ADR-0020 precedent), not a copy need; flag if a label is wanted after all.
 - **→ `lead-art` (Nico):** exact placement/skin of the frame counter, needle dial, AF
-  brackets and verdict stamps (functions fixed above, look is yours); mobile raise/lower
-  button corner choice within the "away from pan/tap zones" constraint (§1.4).
+  brackets (now three states, §2.3) and verdict stamps (functions fixed above, look is
+  yours); mobile raise/lower button corner choice within the "away from pan/tap zones"
+  constraint (§1.4), plus its two icon states (raised/lowered, §1.4); **two hard
+  constraints, not look choices** — (1) T-4: the suspicion dial's dress may never present as
+  a light/exposure meter (no lux markings, no sun/aperture iconography) since the mechanic
+  it reads is shutter-noise-vs-cover, not brightness; (2) F-4/F12: the drawn subject at every
+  keyframe must match the validation box the mechanic spec authors — the art and the
+  keyframe table are one deliverable, and this scene's subject must read **without** the
+  interactive-glow vocabulary (guidelines §5) since it is the interactive element but must
+  never itself be shot.
 - **→ `dev-gameplay`:** flick-disabled scoped pan handler for the photo QTE (§1.1); shutter
-  input swallowed while lowered, no state/side-effect (§1.3); suspicion frozen while lowered
-  and while paused (§2.2, §3.4); frame-fill vs master/bonus content are two separate,
-  independently computed fields — the render lane must not be handed a single flag that
-  conflates them (§2.3).
-- **→ `dev-r3f-render`:** everything drawn — §2 HUD dress, §3 reduced-motion branch, §4
-  contact sheet. Verify on both device classes at VERIFY; I review the built screens against
-  A1–A15 there.
-- **→ `sound-designer`:** the shutter's crisp/dull click timbre pairing with D8's
+  input swallowed while lowered, no state/side-effect (§1.3); mobile raise/lower as a
+  **toggle** (tap raises, tap lowers — no held-contact state to track, §1.4, T-2); posture
+  always resumes `LOWERED` on unpause regardless of pre-pause posture, focal retained,
+  shutter re-arms on next raise (§3.4, T-5); suspicion frozen while lowered and while paused
+  (§2.2, §3.4); the third bracket state (`dashed`/`solid`/`locked`) is driven by `T3∧T4`
+  (composition) and `T5` (`FOCUS_HOLD` continuity) only, and must render identically
+  regardless of the hidden `NO_SUBJECT`/`master`/`bonus` verdict (§2.3, F12 — A7bis is the
+  check); frame-fill vs master/bonus content stay two separate, independently computed
+  fields, never a single flag (§2.3); the decline CTA (§4.3) transitions to the Stalingrad
+  delivery at baseline (×1.00) `rewardMultiplier` in one input, no intermediate state.
+- **→ `dev-r3f-render`:** everything drawn — §2 HUD dress (three-state brackets, non-light-
+  meter needle dress), §3 reduced-motion branch, §4 contact sheet (2×3 grid, two-CTA
+  no-master branch), the mobile toggle button's two icon states. Verify on both device
+  classes at VERIFY; I review the built screens against A1–A15 (+ A3bis, A7bis, A14bis)
+  there.
+- **→ `sound-designer` (Malik):** the shutter's crisp/dull click timbre pairing with D8's
   focus-held/blurred outcome is a joint UX×audio read (mechanical feedback channel) — audio
   carries the "crisp vs dull" distinction as much as any visual does; reconcile the exact
   sound design with this spec's requirement that the click alone, with no visual cue,
-  should already hint focus state to an attentive ear.
+  should already hint focus state to an attentive ear. Unchanged by round 2.
 
 **Gate:** this spec needs `lead-game-designer` DESIGN GATE PASS before it reaches
-`senior-architect`. Flagged, per the standard design-loop protocol.
+`senior-architect`. Round 2, submitted against the cap in
+`docs/game-design/design-gate-photo-qte.md` §8.

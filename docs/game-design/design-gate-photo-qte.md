@@ -350,3 +350,336 @@ re-litigated per set-piece. **Both are Bertrand's to adopt (E-3).**
 5. No hand-off to `senior-architect` until round 2 passes **and** E-1 is closed.
 
 _Karim — `lead-game-designer`, 2026-08-01._
+
+---
+
+---
+
+# ROUND 2 (FINAL) — the set PASSES
+
+**Gate:** `lead-game-designer` (Karim) · **Date:** 2026-08-01 ·
+**Branch:** `design/qte-photo-paparazzi` · **Rework round: 2 of 2 — the cap. No round 3.**
+
+| #   | Deliverable                                             | Author                         | **VERDICT ROUND 2**                                              |
+| --- | ------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------------- |
+| 1   | `docs/game-design/spec-photo-qte-paparazzi.md` (Rev. 2) | `game-designer` (Sacha)        | **PASS** — K-1…K-4 closed. 2 binding amendments + 1 added AC.    |
+| 2   | `docs/game-design/spec-photo-qte-fiction.md` (Rev. 2)   | `narrative-designer` (Yasmine) | **PASS** — F-1…F-4 closed. 1 editorial correction (C-1).         |
+| 3   | `docs/game-design/ux/photo-qte-controls.md` (Rev. 2)    | `ux-designer` (Tony)           | **PASS** — T-1…T-6 closed. 1 binding amendment (shared with #1). |
+
+**Set-level verdict: PASS. The set ships to `senior-architect`.** All three specs are
+scope-legal, serve the core loop without diluting it, are implementable without guessing, and
+are now mutually coherent — after the three reconciliations ruled below, which are **gate
+rulings to transcribe, not a rework round**. The escalation package (§E) travels with them.
+
+---
+
+## 0. E-1 — CLOSED
+
+`docs/adr/0077-qte-photo-paparazzi-set-pieces.md` **is present on this branch** and I have read
+it. Compared line-by-line against the frame I reconstructed at round 1 from the three specs'
+restatements:
+
+| ADR-0077  | Text on branch                                                                            | Round-1 reconstruction | Verdict |
+| --------- | ----------------------------------------------------------------------------------------- | ---------------------- | ------- |
+| D1        | authored set-pieces, one system / scripted instances                                      | identical              | ✓       |
+| D2        | frame + zoom + shoot, dedicated full-screen telephoto view, world paused                  | identical              | ✓       |
+| D3        | zoom = double trade-off (fill-the-frame validation **+** sway growing with magnification) | identical              | ✓       |
+| D4        | hybrid briefing (dossier = WHO/WHERE, lens = WHEN/WHAT), telegraphed deterministic poses  | identical              | ✓       |
+| D5        | multi-moment scene, exactly one master proof, others bonus                                | identical              | ✓       |
+| D6        | suspicion from shutter noise vs. sound cover **+** finite authored film                   | identical              | ✓       |
+| D7        | spotted = scene aborted, checkpoint retry, no death, no run loss                          | identical              | ✓       |
+| D8        | two beats: mechanical click at the shutter, semantic verdict at the contact sheet         | identical              | ✓       |
+| D9        | dedicated 2D backdrop + key-pose sprites, no zoom into live layers                        | identical              | ✓       |
+| guardrail | determinism: no `Math.random`, no `Date.now`                                              | identical              | ✓       |
+
+**Zero divergence. No round-1 verdict re-opens.** Every ruling of round 1 and round 2 is now
+**final, not provisional**. Two residuals travel with the ADR, neither design-side:
+
+- The ADR is `Status: Proposed` and its number is **self-allocated** with an explicit
+  "re-check at merge per the adr-new guard" clause; ADR-0078 §Number records the claim. →
+  **`producer`** owns the merge-time number re-check. Not a gate condition.
+- ADR-0077's Consequences name a stage-5 obligation none of the three AC sets carried:
+  _"playtest must specifically verify that players do not burn full film rolls unknowingly."_
+  I impose it as **AC14** below rather than let the ADR's own follow-up evaporate.
+
+---
+
+## 1. The three rulings Sacha asked for (§11.3)
+
+### R2-1 — `SWAY_AMP_X = 2.00 su`. **RATIFIED.**
+
+My K-1 named a hole and a **closing condition** (`≤ 2.131 su`), explicitly not a value —
+"Sacha re-derives and re-tunes". 2.00 is inside the condition. I re-derived the whole ladder
+independently and it holds: `s_eff` = 5.128 / 3.697 / 2.664 su, shares **39.0 / 54.1 / 75.1 %**
+against 80 / 60 / 80, isotropy proof `s_eff_y = s_eff_x / 1.7778` exact, ceiling
+`min(0.60 × 3.697, 0.80 × 2.664) = 2.131` confirmed.
+
+The argument for the extra headroom is the correct one and I want it on the record as gate
+doctrine: **a fairness floor satisfied at 0.0 % margin is a floor the next re-author breaks
+silently.** LA PLAQUE's box is an art-dependent value (F12(1) ties it to the delivered
+sprite's opaque-pixel AABB); a 4 % shrink of that sprite at the art gate would have re-breached
+a 2.131 tuning without anyone touching the tuning. 2.00 su buys ≈ 5 pp on both binding cells
+for 3 pp of master difficulty against an intent that was never actually shipped. Right trade.
+
+**Pinned as a consequence:** `SWAY_AMP_X` may not be raised above **2.10 su** without
+re-running §3.3.a's table — write the ceiling next to the constant, not only in the floor.
+The ×0.55 counter-offer (2.03) is **declined**: it buys ~1 pp of master tension and spends
+most of the plaque's margin.
+
+### R2-2 — The phase-scoped multiplier (phases 1-2 only, phase 3 always ×1.00). **RATIFIED, and it is the better answer than the one I asked for.**
+
+This is a flagged deviation from my correction's literal wording, and it is the right kind:
+the correction asked for a compound floor **asserted**, Sacha asserted it, and the assert then
+falsified the uniform shape. I re-derived `m ≥ (tell + CUT + ε)/lull` per phase: **×0.650 /
+×0.781 / ×1.000**. Phase 3 admits no compression at any honest ε. The alternatives were (a)
+shave ε to ≤ 0.05 s — the non-recovery I already refused in round 1, (b) ship a uniform
+×0.875 that moves nothing anyone can feel, (c) scope the lever out of the phase that has no
+room. (c) is correct.
+
+Three things make me ratify rather than merely accept:
+
+1. **ε is a quotation, not a preference.** `LULL_RESIDUAL_FLOOR = 0.35 s` is the worst headroom
+   `spec-boss-shield-break-tempo-shot.md` §6-B **already ships and was already gated at**
+   (phase 3: 0.70 − 0.35). That construction makes the photo reward provably **additive** to
+   the shield-break experience, and it removes the one thing I feared: a designer picking ε to
+   fit the multiplier they wanted.
+2. **The fiction says the same sentence.** "Il est moins couvert" has almost nothing to say in
+   the frenzy, where the boss barely hunkers. The reward moves the **waiting**, not the
+   **climax** — that is Yasmine's §5.4 invariant expressed in the phase index.
+3. **The rejected `min()` alternative is rejected for the right reason** and is recorded so it
+   is not reinvented: it makes the reward invisible on exactly the lulls a good player
+   creates. Recorded, closed.
+
+**Two pins, binding, and the second is a real trap I want caught before dev:**
+
+- **The compound assert is NON-STRICT (`≥`), and that is deliberate.** My round-1 wording said
+  `> telegraphLead + ε`; with ε pinned by quotation, phase 3 at ×1.00 sits at **exactly**
+  0.70 = 0.35 + 0.35, so a strict `>` would fail the **shipped baseline**. Amendment A1 point 3
+  correctly uses `≥`. **Do not "tighten" it to `>` in review** — the equality case is the
+  shipped state ADR-0060 was gated at.
+- **Phase 3 must be asserted byte-identical at every tier** (AC12 already says so). The
+  phase-scoping is the whole safety argument; a future refactor that applies `m` uniformly
+  "for consistency" reopens K-3.
+
+### R2-3 — F5b's bonus ceiling of **1.30**. **RATIFIED, with one condition attached.**
+
+"A bonus may require tracking, a master may not" is the right fairness line, and it is the
+first threshold in this spec that encodes a _difficulty policy_ rather than a geometry. I
+re-derived: master 0.541 ≤ 1.00, plaque **1.158** ≤ 1.30, and the derived demand
+`v_required = (1.158 − 1) × 2.664 / 0.35 = 1.20 su/s` — 39 % of the subject's own speed, 10 %
+of `PAN_RATE_MAX`. The numbers say what the fiction says (§3.2: "le bonus le plus utile est le
+plus dur"), which is the test I care about.
+
+**Condition (binding, cheap):** F5b's ceiling above 1.00 is legal **only when the spec also
+publishes the derived `v_required` as a number and an AC asserts it** (AC6c does). A ceiling
+of 1.30 without a stated pan demand is an adjective wearing a decimal point — the next
+set-piece must inherit the pair, not the number. Write that sentence into F5b's own row.
+
+---
+
+## 2. Yasmine's two peer-lane syncs (§9.3)
+
+### R2-4 — The plaque as a distinct boolean on the contact sheet. **YES, and it costs nothing.**
+
+Fiction §4.4 point 2 needs `hasPlaque`, not `hasAnyBonus`, to choose variant (b). The mechanic
+already carries it: every `Frame` record stores its candidate instant `I` and its verdict
+(§2.2), so the sheet selects on
+`frames.some(f => f.verdict === BONUS && f.instant === LA_PLAQUE)`. **Ruling: it is a
+derivation from the frame records, NOT a new authored field and NOT a change to the reward
+tiers.** R1 stays flat (any one bonus ⇒ ×0.80) and the fiction stays plaque-specific: the two
+lanes are describing different things — R1 pays the effort, (b) reports the information.
+Sacha: state the derivation explicitly in §4.4 so a dev does not invent a second flag.
+
+**And the trap:** the run-scoped carry (E-4e) is 3-valued — `none | master | master+bonus`.
+That is **sufficient today** because variant (b) is chosen on the contact sheet, in-scene,
+with the frames still in hand. It becomes **insufficient the day `pm` un-defers the
+`PARIS-MINUIT` UNE variant (F-2)**, which is read on the scores screen, a different level and
+a different surface. **Carried into E-4 and E-5 as an explicit conditional:** un-deferring the
+UNE variant requires the carry to gain a `hasPlaque` bit. Say it now, not in a bug report.
+
+### R2-5 — `[ LAISSER TOMBER ]` readable without being attractive — **and the contradiction none of the three lanes noticed.**
+
+Yasmine asked for a hierarchy. Reading the three Rev.2s side by side, the lanes do not agree on
+what the hierarchy IS, on **either** branch. This is the one genuine cross-lane break of round 2
+and I arbitrate it here.
+
+| Branch              | Sacha §1.1/§1.3                              | Tony §4.3 / A14                 | Yasmine §4.3/§4.4               |
+| ------------------- | -------------------------------------------- | ------------------------------- | ------------------------------- |
+| **Master proof**    | **two** controls (`Continuer` + `Réessayer`) | **exactly one** (`Continuer`)   | one button (`[ CONTINUER ]`)    |
+| **No master proof** | two, **the leaving one is primary**          | two, **`Réessayer` is primary** | two, "ni invisible ni attirant" |
+
+**Ruling A — master-proof branch: EXACTLY ONE CTA, `[ CONTINUER ]`.** Two lanes of three
+already say it, and the design reason is Sacha's own: the bonus tier is **deliberately flat**,
+so a `Réessayer` offered on a successful roll invites re-rolling for a second bonus that pays
+**nothing mechanical** — precisely the completionist pressure §D7.2 rejects in the same
+paragraph that justifies the flat tier. Offering a retry on success would re-import it through
+the button. `spec-photo-qte-paparazzi.md` §1.1 ("Two exits, always") and the §1.3 table are
+**amended: two controls on the no-master branch, one on the master branch.**
+_Re-opens only if `pm` un-defers the UNE variant (F-2) — at that point the plaque acquires a
+visible payoff and "retry for the plaque" stops being an empty loop._
+
+**Ruling B — no-master branch: TWO PEER CTAs, neither styled primary.** Sacha's "the leaving
+control is primary" over-reads my K-4, which asked for _"retry, and an explicit decline… in one
+press"_ — availability, not precedence. Tony's "`Réessayer` primary, decline secondary" makes
+the decline the thing you have to go looking for, which is how an invariant quietly dies.
+Yasmine names the target exactly and she is right. **Binding shape, transcribe verbatim into
+both specs:**
+
+> On the no-master-proof branch the contact sheet shows **two peer controls**, side by side in
+> the same row, with **identical visual weight** (same size, same treatment, same type scale) —
+> neither is styled as a primary action. Both ≥ 44×44 CSS px with visible spacing (A15).
+> **Initial keyboard/gamepad focus rests on `[ RECOMMENCER ]`** — the failing player's most
+> likely intent, and it keeps `[ LAISSER TOMBER ]` from being pre-armed by a reflex Enter.
+> `[ LAISSER TOMBER ]` is **one press away at all times** (one Tab, or a direct tap) and is
+> never nested, never behind a confirmation, never on a second screen.
+
+That is "readable without being attractive" made testable. Consequences: Sacha §1.3 bullet 1
+amended (leaving control is **always present, always one press, never subordinate** — not
+"primary"); Tony §4.3 amended (`Réessayer` is a **peer**, not the primary) and **A14 must assert
+equal weight**, not a primary/secondary pair, plus the initial-focus target. Visual dress inside
+those constraints stays Tony's + Nico's. No re-gate.
+
+**Naming pin (C-3):** the shipped strings are **Yasmine's** — `[ CONTINUER ]` /
+`[ RECOMMENCER ]` / `[ LAISSER TOMBER ]`. `Continuer` / `Réessayer` / `Décliner` in the mechanic
+and UX specs are **role names**, not copy. Nobody ships the English-lane word.
+
+---
+
+## 3. Cross-coherence of the three Rev.2 — what I checked and what broke
+
+**Verified sound, independently re-derived (no drift):** the whole `s_eff` ladder and the
+isotropy proof; the nine keyframes against §4.2's instants (transits land exactly on
+`[9.2,11.0] [34.7,36.5] [51.2,53.0]` = the three 1.8 s tells; constancy on `[15.5,34.7]` and
+`[40.3,51.2]` holds by construction; K6→K7 = 3.103 su/s and K7→K8 = 3.098 su/s, i.e. the car
+does not change speed at the window's close — no motion tell); the pan budget K4→K6
+(`√(8.00² + 5.72²) = 9.835 su / 12.0 = 0.82 s`) against the 1.8 s tell with the 0.66 s zoom
+traverse concurrent; every focal band's endpoints against `FILL_MIN`/`FILL_MAX` and every
+sweet spot as the exact geometric mid-band; F5c's 10.19 with 17.7 % headroom; the 258 mm
+self-punishing threshold and the 124 % at `FOCAL_MAX`; F1/F2/F3/F4/F6/F7/F9/F13 against the
+authored data; the compound F10 table and the ×0.781 wall.
+
+**Bracket states ↔ F12: coherent.** Tony's three states are driven by `T3∧T4` and `T5` only;
+F12(1a) forces one call site so the brackets and the tests cannot diverge; A7bis (pixel-diff of
+the bracket region, `locked` on `NO_SUBJECT` vs `locked` on master) is the right assertion and
+is stronger than my T-1 asked for. Sacha's §2.1 piecewise-constant track means the brackets'
+motion becomes a **channel of the tell** instead of a leak, and it kills the symmetric
+retro-leak I had not named. Accepted as specified.
+
+**Décliner ↔ variante (c) ↔ T-3: coherent after R2-5.** Yasmine's §4.4 coverage table has no
+hole: every terminal × roll-content combination lands in exactly one variant, the failure
+line-1 is conditioned on the terminal (guidelines §5 rule 4 satisfied per-terminal, including
+the "rouleau intact" case nobody had written), and the decline path adds **zero** copy.
+
+**Budgets: they hold, with 2.2 s of slack — and I want the knob named now.** F13 = 87.8 ≤ 90 s
+authored; AC13's measured ≤ 2 min must absorb F13 **plus** `CONTACT_SHEET_READ_BUDGET = 30 s`
+= 117.8 s. That is real but thin. **Advisory A-2 (verify-leg):** if AC13 misses at playtest,
+the knob is `PHOTO_BRIEFING_MAX_SECONDS` (25 s, and the briefing is skippable) — **not** the
+read budget. A verdict screen hurried to fit a stopwatch defeats the two-beat feedback the
+whole feature is built on. Named so the playtest does not guess.
+
+**Two editorial drifts — non-blocking, but they must land before transcription.** Both are one
+lane citing another lane's number and going stale. Neither is a design disagreement, so neither
+re-opens the gate; both would ship as bugs.
+
+- **C-1 (Yasmine, blocking transcription).** `spec-photo-qte-fiction.md` §4.4 point 2 still says
+  _"R1 est plate (un bonus quelconque = ×0.75)"_. Rev. 2 of the mechanic withdrew ×0.75 — it
+  breaches phase 2's compound floor. Correct to **×0.80**. The mechanic spec is the source of
+  truth for every tier value; the fiction should cite the mechanism, not the number, wherever
+  it can.
+- **C-2 (Sacha, blocking transcription).** `spec-photo-qte-paparazzi.md` §1.2 still describes
+  the posture as _"Space held on desktop, **a held on-screen button on mobile**"_. Tony's T-2
+  fix is a **device fork**: hold on desktop, **tap-to-toggle on mobile**. §6.3 says the UX
+  bindings are adopted unchanged, so the spec contradicts what it claims to adopt — and it is
+  `dev-gameplay`'s own reading. Correct §1.2 and cross-reference UX §1.4.
+
+**One playtest watch item, not a correction.** The mobile toggle makes a sway re-roll (lower →
+raise resets the waypoint path to zero offset **and** zero velocity, §3.3) cost **two taps**
+instead of a press-release. D1.b's 0.40 s arm still lands the re-raise at `u = 0.73` of the
+first leg (the fast part), and each re-roll costs ≥ 0.40 s inside a 2.9-4.5 s window, so the
+anti-spam argument survives the fork on paper. **Confirm it in the built game** — AC6c and AC10
+are the right place. If re-rolling turns out to dominate on mobile, the fix is a raise-index
+continuity rule, **not** a punishment (D1.c stands: spam costs time, never suspicion or film).
+
+---
+
+## 4. Gate-imposed additions (transcribe verbatim, no re-gate)
+
+- **AC14 (new, Sacha's spec) — the ADR's own stage-5 obligation, previously uncarried.**
+
+  > **AC14 — the two-beat frustration hunt (ADR-0077 §Consequences).** At `verify`, a
+  > first-time player must not reach `ROLL_END` with zero valid frames **without having
+  > understood why**. The taught channel is the three-state bracket (`dashed` → `solid` →
+  > `locked`) plus the crisp/dull click; the contact sheet's `rejectReason` stamps are the
+  > diagnostic of last resort, not the teaching. If the observed failure mode is "the player
+  > never saw `locked` before spending the roll", the deviation is reported to the design gate
+  > — it is a spec problem, not a player problem.
+
+- **F5b row (Sacha):** append the R2-3 condition — _a ceiling above 1.00 is legal only when the
+  derived `v_required` is published as a number and asserted (AC6c)._
+- **§3.3 constants table (Sacha):** write `SWAY_AMP_X ≤ 2.10 su` next to the constant (R2-1).
+- **§1.1 / §1.3 (Sacha), §4.3 + A14 (Tony):** the R2-5 CTA shape, verbatim.
+- **§4.4 (Sacha):** state the `hasPlaque` derivation from the frame records (R2-4).
+- **C-1 (Yasmine), C-2 (Sacha), C-3 (all three):** the editorial fixes above.
+
+None of these is a design decision left open — each is a sentence with its exact content given.
+Transcription is `game-designer` / `narrative-designer` / `ux-designer` housekeeping; **no
+fourth review of mine is required**, and the specs may travel to `senior-architect` in parallel
+with the transcription.
+
+---
+
+## 5. Scope, loop and verifiability — the gate's own four tests, round 2
+
+1. **Scope.** [EXTENSION], conscious and documented, and the document now exists on the branch
+   (§0). Same standard as ADR-0012 / 0030 / 0034 / 0051. **PASS.**
+2. **Core loop.** `Récupérer → Livrer → Éviter` untouched: no loop verb added, no rule added to
+   `Éviter`, no energy, no score, no quota (F8, asserted as a zero-delta test). The set-piece
+   plays before the delivery and outside the mission timer. **"Une mission = 3-5 minutes"
+   survives** because the retry loop is now bounded on both legs: F13 (≤ 90 s authored,
+   code-asserted) and AC13 (≤ 2 min measured), with a decline exit in one press. That was the
+   whole of K-4 and it is closed. **PASS.**
+3. **Verifiability.** The nine-keyframe table replaced the adjective; every floor F1–F13 is an
+   assert against authored data; every threshold above 1.00 now publishes its derived demand.
+   A dev can build this without guessing. **PASS.**
+4. **Coherence.** Mechanics ↔ fiction ↔ UX reconciled by R2-4 / R2-5 / C-1 / C-2; against the
+   gated set — ADR-0060 (compound F10 + amendment A1), the décor aim-honesty ruling (F12(1)),
+   ADR-0034 Rev. 3 (determinism, seed pin), ADR-0003 (mobile is supported ⇒ ≤ 2 contacts) — no
+   contradiction survives. Art conflicts are **flagged to `lead-art`, not arbitrated** (E-6).
+   **PASS.**
+
+**G-1 / G-2:** per Bertrand's E-3 ruling they stand as a **local exception for this QTE only**
+and do **not** enter `PROJECT_GUIDELINES.md`. Recorded in fiction §7. Consequence I accept and
+name: **the next set-piece re-argues both at the gate from zero** — this set creates no
+opposable precedent. That is the cost of the ruling, and it is Bertrand's to have chosen.
+
+---
+
+## E. Consolidated outgoing escalation package
+
+E-1 **CLOSED** (§0). E-2 **CLOSED** — ratified by Bertrand, canon gravé. E-3 **CLOSED** —
+G-1/G-2 = local exception, not general rules. The four below travel with the PASS.
+
+| ID      | To                       | Payload                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **E-4** | `senior-architect`       | Seven asks. Round 1: **(a)** tick-gate the set-piece on the existing `paused` flag (design requirement, not a nicety — an unpausable deterministic scene is a broken one); **(b)** composition-validity and master/bonus role reach the render as **two independently computed fields**, never conflated; **(c)** `photoQteSpec === null` levels byte-identical. Rev. 2 adds: **(d)** `subjectTrack` data shape — `{t, cx, cy, w, h}[]` sorted on `t`, linear on all four components, F12(3) totality asserted at construction, and the brackets must consume the **same evaluated value** as T3/T4 (one call site — F12(1a) holds by construction, not by inspection); **(e)** a **run-scoped carry Stalingrad → Niveau Final** for the roll outcome — no such carry exists today outside ADR-0076's run-stats work; **it is 3-valued (`none｜master｜master+bonus`) and that is sufficient ONLY while the `PARIS-MINUIT` UNE variant stays deferred — un-deferring it (E-5) requires a `hasPlaque` bit** (R2-4); **(f)** `rewardMultiplier` authored on the **Niveau Final `bossQteSpec` row**, never a module constant, applied **before** `SHIELD_BREAK_LULL_CUT` and **before** the existing clamp, **phases 1-2 only** (amendment A1 point 2), **and the compound assert is non-strict `≥` — do not tighten it to `>`, the shipped baseline sits on the equality** (R2-2); **(g)** the decline exit returns control to the interrupted delivery **without a reload of the Stalingrad level state** — an exit from the set-piece, not a level restart. Plus: **amendment A1 (§D7.2) is transcribed verbatim into the gated `spec-boss-shield-break-tempo-shot.md` by that spec's lane** — no re-gate if verbatim. `producer`: ADR-0077's self-allocated number needs the merge-time re-check per the adr-new guard. |
+| **E-5** | `pm`                     | (1) Set-piece is **bonus, never gate** — ratified, and now implemented (the `[ LAISSER TOMBER ]` button IS the invariant; if it disappears from the build, the claim becomes a lie — that is the design-acceptance check at stage 5). (2) Confirm placement in the Stalingrad story's scope and the build-order relative to the rest of Stalingrad (with `senior-architect` + `producer`). (3) **Rule on the deferred `PARIS-MINUIT` UNE variant** (F-2, ~2 strings, scores screen) — **and be told the price: un-deferring it makes the cross-level carry 4-valued (E-4e), i.e. it is no longer a 2-string change.** (4) The whole first-playthrough attempt is budgeted at ≤ 2 min (AC13) in front of a 3-5 min mission.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **E-6** | `lead-art` (Nico)        | Peer lane — **flagged, not arbitrated** (`docs/art-direction.md` is yours). Four constraints, all functional: (1) **T-4** — the suspicion dial keeps its analogue-needle form but **no copy, glyph, numeral or treatment may present it as a light/exposure meter** (no lux markings, no sun/aperture iconography, no "EV"): the mechanic is shutter-noise-vs-cover, and a light-meter dress teaches a false causal model. (2) **F-4/glow** — guidelines §5 _"ce qui brille est interactif"_: here the subject **is** the interactive element but must **never be shot**, so the plate must make it read **without** the interactive-glow vocabulary (same trap as delivery-assault K-6 and the mur-d'enceintes note). (3) **F12(1) — the drawn subject and the keyframe table are ONE deliverable, not two**: at each of the 9 keyframes the delivered sprite's opaque-pixel AABB must match the authored box within `SUBJECT_BOX_TOLERANCE = max(0.40 su, 5 %)`; direct application of the gated décor aim-honesty ruling (2026-07-20). (4) **Two non-drifting hold poses are required** — the pair standing/talking (K2→K3, 19.2 s) and the pair post-exchange, heads still close (K4→K5, 14.7 s): their idle animation must stay inside the same tolerance, because **a dead beat where the actors drift is a semantic leak with extra steps**. Plus the three bracket states and three verdict stamps, all grayscale-distinguishable; mobile toggle button corner within "away from the pan and two-finger-tap zones"; asset list = fiction §6.                                                                                                                                                                                                                                                                     |
+| **E-7** | `sound-designer` (Malik) | The cover windows are **gameplay state, not ambience**: `[10,17] [31,38] [52,59]` s with a **1.8 s audible approach** before each (`TRAIN_TELL_SECONDS`) — the approach must be audible **before** it is visible, and "covered" vs. "silent" must be unmistakable **without looking at the needle**. The shutter's **crisp vs. dull** click is the **sole** audio channel for T5 (focus held): an attentive ear must hear the difference with the visuals off. **The K-1 retune moved `SWAY_AMP_X` only — not one window, tell or cadence value changed**, so nothing you were briefed on at round 1 has moved. Malik gates his own deliverable; this is the design data it must be built against.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+---
+
+## 6. What happens next
+
+1. Sacha / Yasmine / Tony transcribe §4's additions (no fourth gate pass, no re-gate).
+2. The set goes to **`senior-architect`** with E-4; `pm` picks up E-5; the art request opens to
+   `concept-artist` → `lead-art` with E-6; `sound-designer` picks up E-7.
+3. Amendment **A1** is transcribed verbatim into `spec-boss-shield-break-tempo-shot.md` by that
+   spec's lane. Verbatim ⇒ no re-gate of the boss spec.
+4. **Stage 5:** Sacha playtests the built set-piece against **AC1–AC14** and reports to me; I
+   verdict **design acceptance** on that report. A feature that drifted from this spec goes back
+   to the dev lane, or the spec is amended and re-gated — explicitly, never by silent drift. The
+   three things I will look at first: the `[ LAISSER TOMBER ]` button exists and works in one
+   press (the invariant), AC14 (the frustration hunt), and AC6b(d) (drawn == box, at the art
+   composite).
+
+_Karim — `lead-game-designer`, 2026-08-01, round 2, final._
