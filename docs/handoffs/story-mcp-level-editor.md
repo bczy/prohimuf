@@ -45,9 +45,11 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       daté ADR-0075 §Consequences + correction de la phrase fausse du spec §4.3.
       1679 tests ✓ / 117 fichiers, tsc ✓
 - [x] T2b (dev-gameplay) : validateLevelPlan → LevelIssue[], code stable par garde
-- [ ] T2 (dev-tooling-assets) : serveur MCP, ADR du process, après sign-off
-- [ ] T3–T6 (dev-tooling-assets) : tooling séquentiel (inspect/scaffold/dryrun/preview)
-- [ ] VERIFY (qa-lead) : 187 tests baseline, integration tests
+- [x] T2 (dev-tooling-assets) : serveur MCP, ADR du process, après sign-off
+- [x] T3–T6 (dev-tooling-assets) : tooling séquentiel (inspect/scaffold/dryrun/preview)
+- [x] **VERIFY (qa-lead, 2026-08-01, §5) : QUALITY GATE PASS** — 1715 tests ✓ / 121 fichiers,
+      tsc ✓, lint ✓, les 6 points du critère §6 attestés un par un, 6 mutations (5 BITES,
+      1 SURVIVES documentée)
 - [ ] simplify : compaction diff
 - [ ] review-panel : 4 reviewers, architecture triage
 - [ ] PR draft → acceptation pm
@@ -213,3 +215,72 @@ que stdio local, tout outil supplémentaire, toute écriture hors `generated/`, 
 `package.json` (T2 → T3 → T4 → T5 → T6). **Fichier partagé à sérialiser** : `levelPlan.ts`
 (T1 y ajoute `validateCatalogue`, T2b y migre les signatures) — T1 atterrit avant T2b. T3
 consomme `validateCatalogue` : ne pas démarrer T3 avant que T1 soit vert.
+
+## 5. VERIFY — quality gate (qa-lead, 2026-08-01)
+
+Stage 5 orchestré sur `claude/mcp-level-editor-build-iy2jaw` @ `c6f35425` (T1→T6 commitées).
+Verdict rendu AVANT `simplify` et le review-panel. Aucun fichier de code touché : les probes
+de cette session sont toutes revenues (`git status` vide après chacune).
+
+### 5.1 Gates mécaniques — PASS
+
+| Gate             | Commande          | Résultat                                       |
+| ---------------- | ----------------- | ---------------------------------------------- |
+| Typecheck        | `yarn typecheck`  | ✓ exit 0                                        |
+| Suite COMPLÈTE   | `yarn vitest run` | ✓ **1715 tests / 121 fichiers**, 0 échec (44.9 s) |
+| Lint             | `yarn lint`       | ✓ exit 0                                        |
+
+### 5.2 Critère d'acceptation spec §6 — 6/6 attestés
+
+| §6 | Point | Preuve exécutée par qa-lead | Verdict |
+| -- | ----- | --------------------------- | ------- |
+| a | `validate` d'un plan cassé rend les issues attendues | appel bibliothèque direct sur un plan `weight: 3` + kind `autre:vigile` → `plan/weight-nonzero`, `plan/namespace` (×2) **et** `foreign-enemy-kind` — preuve que `validate` COMPOSE bien `validateLevelPlan` + `validateLevel` (§3), pas seulement le premier. Plan cassé de `mcpCore.test.mjs` conforme au §6. | PASS |
+| b | `scaffold` écrit un module que la suite accepte tel quel | **preuve réelle, pas en tmpdir** : `scaffold({plan: qaprobe})` → `src/game/levels/generated/qaprobe.ts` écrit dans le VRAI dossier, ligne d'agrégation ajoutée à la main dans `index.ts` (l'outil ne la touche pas, conforme D4) → `yarn vitest run src/game/levels` **204 tests ✓ / 15 fichiers** + `yarn typecheck` ✓ sur le module généré. Module et ligne RETIRÉS ensuite, worktree propre. | PASS |
+| c | `inspect` liste les assets manquants du fixture | `inspect({levelId:"fixture"})` → `present: []`, `missing: ["assets/levels/fixture/street-wide.png", "assets/enemy_fixture_vigile.png", "assets/nearfg/fixture/kiosque.png"]` — les trois familles conventionnelles (backdrop / sprite ennemi / prop). | PASS |
+| d | `dryrun("fixture")` ≡ report §8 commité | `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers vite-node scripts/mcp-level-editor/dryrun-fixture.mjs` → **PASSED**, exit 0. `pageErrors: []`, `tempsFirstRead: 60 → tempsSecondRead: 59`, `timerTicking: true`, `hudSnippet: "SCORE 0000 NIVEAU Fixture VAGUE 1 TEMPS 59s VIES ♥♥♥ ÉNERGIE ⚡100 ARME A ∞"`. Rejoué par qa-lead, pas repris de la lane. | PASS |
+| e | `preview` rend l'URL du seam | appel bibliothèque direct → `{"url":"http://localhost:5173/prohimuf/?preview=level&level=fixture"}` ; id inconnu ⇒ `throw` (`preview: no generated level with id "nope"`). Serveur vite laissé par la probe tué, port 5173 rendu (`curl` → down). | PASS |
+| f | surface bibliothèque, zéro serveur | `mcpLibrarySurface.test.mjs` ✓ 2 tests dans la passe complète (preuve statique : `core.mjs` n'importe ni `server.mjs` ni le SDK ; preuve dynamique : `validate({levelId:"fixture"})` par import nu). | PASS |
+
+### 5.3 Qualité des tests — 6 mutations ciblées (skill `test-quality`)
+
+Probes jetables, chacune revertée immédiatement (`git checkout --`), rien n'atteint un commit.
+
+| # | Mutation (discipline §5 / condition visée) | Résultat |
+| - | ------------------------------------------ | -------- |
+| M1 | confinement d'id neutralisé (refus `/`, `\`, `..` + charset `SAFE_ID` désarmés) | **BITES** — 3 rouges : `mcpCore` ×2 (séparateur, backslash) + `mcpServer` ×1 (refus sur le fil). Le cas `..` reste vert : rattrapé par la 2ᵉ couche (cf. M4). |
+| M2 | `validate` bloquant avant écriture désarmé | **BITES** — 1 rouge : « refuses a plan that validate rejects, before touching disk ». |
+| M3 | garde d'écrasement (`existsSync && !overwrite`) désarmée | **BITES** — 1 rouge : « refuses to overwrite an existing module without overwrite: true ». |
+| M4 | confinement de chemin belt-and-suspenders (`targetPath.startsWith(generated/)`) désarmé SEUL | **SURVIVES** — 25/25 verts. **Documentée et acceptée** : c'est une 2ᵉ couche derrière M1, explicitement commentée comme telle dans `core.mjs`, et M1 prouve qu'elle n'est PAS du code mort (c'est elle qui attrape `..`). Aucune couche n'est simultanément non couverte. |
+| M5 | condition **C3** : appel `registerGeneratedLevels()` COMMENTÉ dans `src/main.tsx` | **BITES** — 1 rouge (« calls it at MODULE BODY level »). |
+| M6 | condition **C3** : appel + import SUPPRIMÉS de `src/main.tsx` (l'accident réaliste) | **BITES** — 3/3 rouges dans `bootstrapRegistration.test.ts`. |
+
+**C3 du sign-off architecte est donc vérifiée par `qa-lead`, par mutation, comme exigé.**
+
+### 5.4 Observations non bloquantes (pour le review-panel / la lane propriétaire)
+
+- **O1 — `preview()` en bibliothèque ne rend jamais la main.** Le vite spawné a des pipes
+  `stdout`/`stderr` refed ; `proc.unref()` ne détache que le handle enfant, pas ses flux.
+  Constaté : ma probe imprime l'URL correcte puis reste bloquée jusqu'au `timeout` (exit 124).
+  Sans effet sur le serveur MCP (process long) et aucun script CI n'appelle `preview`, mais un
+  appelant bibliothèque doit `process.exit`. À documenter ou passer `stdio: "ignore"` —
+  `dev-tooling-assets`, NON bloquant.
+- **O2 — précision d'une assertion C3.** `bootstrapRegistration.test.ts` › « calls it BEFORE
+  the first render » utilise `indexOf("registerGeneratedLevels();")`, qui matche un appel
+  COMMENTÉ (survivant de M5). Le fichier rougit quand même via l'assertion ancrée `^…$`, donc
+  C3 tient ; note de précision seulement — `dev-gameplay`, NON bloquant.
+- **O3 — trou de couverture assumé.** Le chemin navigateur de `dryrun`/`preview` n'est pas dans
+  `yarn vitest run` (précédent des `e2e-*.mjs`) : il est couvert par `dryrun-fixture.mjs`, lancé
+  à la main au VERIFY — fait ici, PASSED. Rien de **CI-DEFERRED** : tout ce que le plan exigeait
+  a pu tourner dans ce sandbox.
+
+### 5.5 Verdict
+
+**QUALITY GATE : PASS.** Les trois gates mécaniques sont vertes sur la suite complète, les six
+points du critère d'acceptation §6 sont attestés un par un par mes propres exécutions (dont la
+preuve de scaffold dans le VRAI `generated/`, et non en tmpdir), et les disciplines de sécurité
+§5 mordent sous mutation (5 BITES / 1 SURVIVES documentée et redondante). Les trois observations
+ci-dessus sont non bloquantes et routées sans reprise de gate.
+
+Reste dû avant merge : `simplify`, puis le review-panel 4 reviewers + triage architecte, puis
+acceptation `pm`. Rappel du sign-off (b) : **re-vérifier le numéro ADR-0077 contre toutes les
+branches distantes juste avant le merge.**
