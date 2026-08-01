@@ -290,3 +290,213 @@ ci-dessus sont non bloquantes et routées sans reprise de gate.
 Reste dû avant merge : `simplify`, puis le review-panel 4 reviewers + triage architecte, puis
 acceptation `pm`. Rappel du sign-off (b) : **re-vérifier le numéro ADR-0077 contre toutes les
 branches distantes juste avant le merge.**
+
+---
+
+## 6. Panel stage 6 — triage architecte
+
+`senior-architect` (Winston), 2026-08-01. Une passe sur `git diff origin/main...HEAD`
+(21 fichiers hors `yarn.lock`), findings des 4 reviewers re-vérifiés par exécution là où
+j'avais un doute, plus la revue d'intégration. Ce triage EST ma revue d'intégration : une
+étape, une lecture (COLLABORATION.md §code-review panel).
+
+### 6.1 Ré-exécutions faites de ma main
+
+| Probe | Résultat |
+| ----- | -------- |
+| `validate({plan: fixture})` (plan DÉJÀ au catalogue) | `plan/duplicate-id` sur `plans[1].id` — **M1 confirmé** |
+| `validate({levelId: "fixture"})` | `[]` — l'asymétrie est bien dans la branche de jointure |
+| `validate({plan: {id:"safe"}})` | `THREW: TypeError entries is not iterable` — **M2 confirmé** |
+| `scaffold({plan: {id:"safe"}})` | même throw — le contrat `{ok,path,issues}` est bien cassé |
+| frontières : `rg` sur `src/**` → `mcp-level-editor` / `modelcontextprotocol` / `zod` | **aucune occurrence** (hors commentaires sans rapport) |
+| `yarn.lock` : instances de `zod` | **une seule** (`4.4.3`, satisfait aussi le `^3.25 \|\| ^4.0` du SDK) — pas de doublon |
+
+### 6.2 Triage — MAJEURS
+
+**M1 · le contrat de `validate({plan})` pour un id déjà au catalogue — TRANCHÉ.**
+CONFIRMÉ, et la question posée est la bonne : ce n'est pas un bug de garde, c'est un
+contrat manquant. Je tranche.
+
+> **Décision.** La jointure de `validate` modélise le catalogue **APRÈS l'écriture
+> qu'on est en train de valider**, et `scaffold` écrit `<id>.ts` — donc il **remplace**
+> l'entrée de cet id, il ne s'ajoute pas à côté. La jointure correcte est un **upsert**,
+> pas une concaténation :
+>
+> ```js
+> const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
+> ```
+>
+> C'est vrai des DEUX chemins de résolution : par `{levelId}`, le plan EST déjà
+> `plans[i]`, et l'upsert le remplace par lui-même (identité). **La branche
+> `input?.levelId !== undefined` disparaît donc entièrement** — et avec elle m1, qui
+> n'est que le symptôme de cette branche.
+
+Séparation des rôles que cette décision fixe, et qu'il faut écrire dans le JSDoc :
+`plan/duplicate-id` est un invariant **d'intégrité du catalogue** (deux entrées agrégées
+partagent un id) ; la protection contre l'écrasement d'un level existant est un invariant
+**de disque**, et elle est déjà portée par `scaffold/exists` + `overwrite`. Les confondre
+est ce qui rendait `overwrite: true` inatteignable et le message menteur. Après le fix,
+la boucle d'itération normale marche : `validate` propre → `scaffold` refuse avec
+`scaffold/exists` → `scaffold({overwrite:true})` passe. Le conseil du message devient
+suivable, ce qui est le vrai critère.
+
+Alternative **écartée** : un paramètre explicite (`intent: "create" | "update"`).
+Il duplique une information déjà portée deux fois (par `overwrite` et par le catalogue
+lui-même), crée un nouvel invariant « les deux drapeaux doivent s'accorder », et élargit
+la surface d'outils que D3 tient fermée. Non.
+
+Reste un angle mort assumé, à documenter en une ligne : un plan agrégé dans `index.ts`
+depuis un fichier qui ne s'appelle PAS `<id>.ts` échappe à `scaffold/exists`. Il n'est pas
+exploitable (scaffold n'édite jamais `index.ts`, donc rien n'est agrégé sans geste humain,
+et `validateCatalogue` en CI attrape le doublon) — **note dans le JSDoc, pas de code**.
+
+→ **Lane `dev-tooling-assets`** — `scripts/mcp-level-editor/core.mjs` (`validate`,
+`resolveInputPlan`, JSDoc). **BLOQUANT.**
+
+**M2 · `validate` throw sur un plan malformé.** CONFIRMÉ (probe ci-dessus). C'est une
+violation du contrat `{issues}` / `{ok,path,issues}`, pas une rugosité : le `planShape`
+zod du serveur est lâche **par décision** (D3 — la forme d'un `LevelPlan` est l'affaire
+de `src/game`, pas du transport), donc c'est précisément à la couche game de rendre le
+verdict. Le fix a deux moitiés, et la ligne de partage est la loi de frontière :
+
+1. **La règle de forme est une règle de plan ⇒ elle vit dans `validateLevelPlan`**, pas
+   dans `core.mjs`. Ajouter en tête une précondition structurelle qui rend des
+   `LevelIssue` de code `plan/malformed` (champ manquant ou non-array parmi
+   `archetypes`, `props`, `gameplay`, `backdrop` ; `gameplay.windowWeights` non-objet) et
+   **retourne immédiatement** — sans jamais entrer dans les boucles. Bénéfice au-delà du
+   serveur : SP2 et la CI héritent de la même protection.
+   → **Lane `dev-gameplay`** — `src/game/levels/levelPlan.ts`. **BLOQUANT.**
+2. `core.validate` ne doit plus appeler `planToLevelConfig`/`validateLevel` sur un plan
+   que `validateLevelPlan` vient de déclarer malformé (ils throwent aussi).
+   → **Lane `dev-tooling-assets`** — voir l'ordonnancement prescrit en m3, qui règle les
+   deux d'un seul geste. **BLOQUANT.**
+
+Les deux moitiés portent sur des fichiers disjoints (`src/game/` vs `scripts/`) : les deux
+lanes peuvent tourner **en parallèle** sur le contrat convenu ici (`code = "plan/malformed"`,
+retour anticipé). Pas de sérialisation nécessaire, contrat figé par ce paragraphe.
+
+### 6.3 Triage — MINEURS
+
+| # | Verdict | Fix prescrit | Lane | Bloquant |
+| - | ------- | ------------ | ---- | -------- |
+| m1 | CONFIRMÉ, **subsumé par M1** | aucun fix propre : la branche `levelId !== undefined` disparaît avec l'upsert. Ajouter un test qui pose `{plan, levelId}` avec un plan en collision réelle. | `dev-tooling-assets` | oui (via M1) |
+| m2 | CONFIRMÉ | garde is-main-module autour de `main()` dans `server.mjs` (`process.argv[1]` résolu vs `fileURLToPath(import.meta.url)`). `createServer` est déjà exporté et testé — un import de test qui branche un transport stdio orphelin est un piège, pas une hypothèse. | `dev-tooling-assets` | oui |
+| m3 | CONFIRMÉ | **réordonner `core.validate`** : (a) `validateLevelPlan(plan)` + `validateCatalogue(catalogue)` toujours — aucun des deux ne touche le registre global ni ne peut throw après le fix M2 ; (b) `registerGeneratedArchetypes` + `validateLevel(planToLevelConfig(plan))` **seulement si `validateLevelPlan` est revenu vide**. Un plan aux archétypes cassés (hp −99) n'atteint donc jamais le registre du process serveur, et le feedback one-shot est préservé pour le cas qui compte (plan structurellement sain). Mettre à jour le JSDoc, qui décrit aujourd'hui l'ordre inverse. | `dev-tooling-assets` | oui |
+| m4 | CONFIRMÉ | `dryrun-fixture.mjs` : shebang + runbook de l'en-tête passent à `vite-node` (l'invocation réellement attestée au §5.2 d). Un runbook qui crashe est pire qu'absent. | `dev-tooling-assets` | non |
+| m5 | CONFIRMÉ, **portée relevée** — voir §6.5 | `compareDryrunReport(actual, expected, { base = DEFAULT_BASE, levelId = "fixture" } = {})`, regex construite à partir des deux (base échappée). Défauts inchangés ⇒ aucun appelant actuel ne bouge. | `dev-tooling-assets` | non (mais **doit** atterrir dans cette branche) |
+| m6 | CONFIRMÉ | listener `'error'` sur le child vite dans `ensureDevServer` — un `ENOENT` (yarn hors PATH) tue aujourd'hui **tout le process serveur** au lieu de rendre un `isError`. Le convertir en rejet de la promesse d'attente. | `dev-tooling-assets` | oui |
+| m7 | PLAUSIBLE → **CONFIRMÉ par lecture** | dans le `finally` de `dryrun`, `proc.kill()` doit être hors d'atteinte d'un throw de `browser.close()` : tuer le serveur d'abord, ou envelopper la fermeture du navigateur dans son propre `try`. Un vite orphelin sur `--strictPort` bloque tous les `dryrun` suivants. | `dev-tooling-assets` | oui |
+
+### 6.4 Triage — NITS
+
+| # | Verdict | Suite |
+| - | ------- | ----- |
+| n1 | **CONFIRMÉ, et c'est mon texte.** ADR-0077 D6 dit « `registerGeneratedLevels()` reste idempotente et ré-enregistre sans effet observable » : faux, elle ne ré-enregistre rien — l'enregistrement des archétypes est resté au corps du module, comme le reste du même bullet le dit correctement. Phrase à remplacer par « reste idempotente : c'est une pure vérification ». Un ADR est l'artefact durable ; une phrase fausse dedans coûte plus cher qu'un bug. → **`tech-writer`, BLOQUANT.** |
+| n2 | CONFIRMÉ | `timerTicking: false` passe sur un report sans `tempsFirstRead`/`tempsSecondRead` (`undefined < undefined` ⇒ `false === false`). Garde `Number.isFinite` sur les deux lectures avant la comparaison de cohérence interne. À plier dans l'édition m5. → `dev-tooling-assets`, non bloquant. |
+| n3 | CONFIRMÉ | `labelOrder` vérifie la présence, pas l'ordre, alors que le JSDoc promet « the same ORDERED set ». Le fix honnête est d'implémenter l'ordre réel (tri des labels par `indexOf` dans le snippet) — 3 lignes, et la promesse du doc devient vraie. → `dev-tooling-assets`, non bloquant. |
+| n4 | CONFIRMÉ | `spriteBase` vide ⇒ `startsWith("")` matche tous les png de `public/assets/`. C'est une **règle de plan** ⇒ garde dans `validateLevelPlan` (`spriteBase` chaîne non vide), pas un rustine dans `scanAssets`. → `dev-gameplay`, non bloquant, même édition que M2. |
+| n5 | CONFIRMÉ | Fix ennuyeux plutôt que malin : retirer le flag `i` de `SAFE_ID` (`/^[a-z0-9][a-z0-9_-]*$/`). Tous les ids expédiés sont minuscules ; on supprime l'ambiguïté par construction au lieu de la détecter en dépendant du système de fichiers. → `dev-tooling-assets`, non bloquant. |
+| n6a (TOCTOU) | **REJETÉ, motivé.** Outil de dev local, mono-utilisateur, sans écrivain concurrent ; l'écriture est déjà tmp+rename atomique, donc le pire cas est un dernier-écrivain-gagne sur une course qui n'existe pas dans le modèle d'usage. Refermer la fenêtre exigerait un `wx` + gestion d'`EEXIST` qui complique la garde `overwrite` pour un risque non réel. Risque **accepté et tracé ici**. |
+| n6b (`isServerUp`) | CONFIRMÉ, durcissement bon marché : accepter la réponse seulement si le corps ressemble à l'app (p.ex. contient `/@vite/client` ou `id="root"`). Sinon `dryrun` peut piloter l'app de quelqu'un d'autre sur 5173 et rendre un verdict faux. → `dev-tooling-assets`, non bloquant. |
+
+Reviewer D (security) : **RAS confirmé**. J'ajoute que la fermeture par construction de la
+surface d'écriture (D4) est bien effective dans le diff : charset d'id → refus explicite des
+séparateurs et de `..` → `targetPath.startsWith(generated/ + sep)` en seconde couche, les
+trois AVANT tout accès disque, et le §5.3 prouve par mutation que les couches 1 et 3 mordent.
+
+### 6.5 Revue d'intégration
+
+**Loi de frontière — PASS.** Vérifié, pas supposé :
+
+- `src/game/levels/levelPlan.ts` ne gagne qu'un import **type-only** de `LevelIssue` depuis
+  `validateLevel` : aucune arête d'exécution, aucun React, aucun Three. Le contrat d'issue
+  reste unique (ADR-0074 §3), il n'y a pas de type parallèle côté outil.
+- `validateCatalogue` est **au bon étage** : c'est une règle, elle vit dans `game`, et
+  `assertDistinctPlanIds` n'est plus qu'un wrapper qui throw sur son résultat. Une règle,
+  une implémentation — exactement ce que D6 exigeait, et ce que D3 protège (`core.mjs` ne
+  réécrit aucune règle, il compose).
+- Sens de dépendance : `scripts/` → `@game/**`, jamais l'inverse. Aucun module de `src/**`
+  ne référence `mcp-level-editor`, ni le SDK MCP, ni `zod`. Et `mcpLibrarySurface.test.mjs`
+  épingle l'autre sens (`core.mjs` n'importe ni `server.mjs` ni le SDK). **Les deux sens
+  sont désormais tenus par un test** — c'est la bonne façon de rendre une frontière durable.
+- `src/main.tsx` appelle une fonction de bootstrap **pure** de `game` depuis la racine de
+  composition : direction légitime, aucune règle n'a fui dans `render`.
+
+**Le risque que D6 a créé est couvert.** Déplacer le fail-fast de l'import au bootstrap
+affaiblit une garantie structurelle au profit d'un site d'appel unique et supprimable ;
+c'est pourquoi j'avais posé la condition C3 (garde sur le VRAI site d'appel, prouvée par
+mutation). `bootstrapRegistration.test.ts` la tient, `qa-lead` l'a prouvée par mutation
+(M5 commenté ⇒ rouge, M6 supprimé ⇒ 3/3 rouges). **C3 satisfaite.** Résiduel assumé et
+déjà écrit dans le test lui-même : c'est une assertion textuelle, elle ne survivrait pas à
+une réécriture exotique de l'appel (import aliasé, indirection). Le prix est accepté tant
+que `main.tsx` reste le bootstrap plat qu'il est ; si un jour il ne l'est plus, la garde
+doit être repensée, pas rafistolée.
+
+**Seams cross-lane — SP2 consomme le même cœur.** Deux points de contact, déjà séquencés
+au §2 du handoff SP2 ; l'état du diff en change un :
+
+1. *Corps de `validateLevelPlan`* (SP2 T1 vs MCP T2b) — la migration `LevelIssue[]` a
+   atterri **ici**. SP2 **rebase et adapte**, il ne re-migre pas. Le fix M2 (précondition
+   `plan/malformed`) atterrit dans le même corps de fonction : autre raison de le faire
+   maintenant plutôt qu'après, sinon SP2 rebase sur une base que l'on rouvre juste après.
+2. *Driver §8 généralisé* (SP2 T6 vs MCP T5) — `core.dryrun` est déclaré, dans son propre
+   JSDoc et dans D3, comme **la** seule implémentation sur laquelle SP2 dédoublonnera.
+   **C'est ce qui relève la portée de m5** : en l'état, `compareDryrunReport` durcit
+   `/prohimuf/` ET `level=fixture` dans sa regex, donc le comparateur n'est réutilisable
+   par aucun second level. Un SP2 qui rebase là-dessus forkera un comparateur au lieu de
+   dédoublonner — exactement ce que D3 interdit. m5 n'est pas un cosmétique : c'est la
+   condition pour que la promesse « deux surfaces, une implémentation » tienne au-delà du
+   fixture. **Doit atterrir dans cette branche.**
+3. Corollaire du même raisonnement pour **m3** : SP2 validera un second level candidat
+   **dans le même process**. La pollution du registre global par les archétypes d'un plan
+   refusé cesse alors d'être une curiosité pour devenir une contamination inter-levels.
+   Must-fix maintenant, pas plus tard.
+
+**Dépendances & déploiement — impact nul sur le jeu, une remarque.**
+
+- +3 `devDependencies` (`@modelcontextprotocol/sdk`, `zod`, `vite-node`), **aucune**
+  atteignable depuis `src/**` (vérifié) ⇒ **zéro impact bundle, zéro impact déploiement**,
+  aucun workflow CI touché. Conforme à D2.
+- `zod` **dédoublonné** dans le lock : une seule instance `4.4.3`, qui satisfait aussi le
+  `^3.25 || ^4.0` du SDK. Rien à faire.
+- **W1 — finding que j'ajoute au panel (discipline de pin incohérente).**
+  `@modelcontextprotocol/sdk` est en `^1.30.0` (caret) alors que `zod` et `vite-node` sont
+  pinnés à l'exact. C'est à l'envers : la Consequence d'ADR-0077 dit elle-même « protocole
+  jeune, versions rapides » — la dépendance la plus volatile des trois est la seule laissée
+  flottante, et un `yarn install` ultérieur peut casser l'outillage sans qu'aucun commit ne
+  le montre. **Pin exact `1.30.0`.** → `dev-tooling-assets`, **BLOQUANT** (coût : un
+  caractère ; bénéfice : la reproductibilité que les deux autres pins visent déjà).
+- `.mcp.json` gagne une seconde entrée qui lance `vite-node` : chaque session Claude
+  démarre désormais un pipeline Vite et charge le graphe TS du jeu, même quand elle ne
+  touche à aucun level. C'est le coût qu'ADR-0077 a explicitement accepté ; je le laisse
+  passer et je le **trace** pour la re-pesée annoncée à l'arrivée d'un troisième serveur.
+- `dryrun-fixture.mjs` reste hors de `yarn vitest run` (O3, précédent des `e2e-*.mjs`) :
+  accepté, la logique pure comparée est couverte, elle, à chaque passe.
+
+### 6.6 Verdict
+
+**NO-MERGE en l'état — MERGE conditionnel** dès que les fixes ci-dessous sont verts.
+
+Aucun finding confirmé n'est un défaut de conception : la frontière game/render/hooks est
+tenue, la règle d'unicité est bien redescendue en une seule implémentation côté `game`, et
+la surface d'écriture agent est fermée par construction et prouvée par mutation. Ce qui
+bloque, c'est un **contrat manquant** (M1) et un **contrat non tenu** (M2) sur la porte
+d'entrée de l'outil — plus quatre robustesses de process serveur long-vécu.
+
+Conditions du passage à MERGE :
+
+1. **M1** — jointure upsert, branche `levelId` supprimée, JSDoc à jour · `dev-tooling-assets`
+2. **M2a** — précondition `plan/malformed` dans `validateLevelPlan` · `dev-gameplay`
+3. **M2b + m3** — ordonnancement de `core.validate` (registre après plan-check) · `dev-tooling-assets`
+4. **m2, m6, m7** — garde is-main-module, listener `'error'`, ordre du `finally` · `dev-tooling-assets`
+5. **W1** — pin exact du SDK MCP · `dev-tooling-assets`
+6. **n1** — phrase fausse d'ADR-0077 D6 · `tech-writer`
+7. Non bloquants mais **à faire atterrir dans la même branche** : m4, m5, n2, n3, n4, n5,
+   n6b. m5 est le plus important des sept (seam SP2).
+
+Vérification attendue au retour : `yarn vitest run` complet + un test neuf par finding
+majeur (re-scaffold d'un level agrégé avec `overwrite: true` **qui passe** ; `validate` d'un
+plan malformé qui rend des issues **sans throw** ; registre non pollué après validation d'un
+plan refusé). Pas de nouveau tour de panel complet : les fixes sont locaux et bornés, je
+re-vérifie moi-même sur le diff incrémental. Rappel du sign-off (b), toujours dû :
+**re-vérifier le numéro ADR-0077 contre toutes les branches distantes juste avant le merge.**

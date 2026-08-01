@@ -86,8 +86,9 @@ l'unicité devient un invariant de validation.** Le renversement est **accordé 
   qui ne peut corrompre aucun pool — et c'est exactement ce dont dépend le consommateur
   standalone `validateLevel.ts` (son import à effet de bord, posé délibérément au panel run-8
   pour la story ③ précisément). Ce qui bloquait l'import mécanique du catalogue était le
-  **throw**, pas l'enregistrement ; seul le throw part. `registerGeneratedLevels()` reste
-  idempotente et ré-enregistre sans effet observable.
+  **throw**, pas l'enregistrement ; seul le throw part. `registerGeneratedLevels()`
+  n'enregistre rien elle-même (l'enregistrement des archétypes reste à l'import) : elle
+  ne fait qu'exécuter le fail-fast, et rappeler deux fois est un no-op.
 - La règle d'unicité gagne une forme *données* : `validateCatalogue(plans): LevelIssue[]`
   (code `plan/duplicate-id`) dans `levelPlan.ts`, **source unique** de la règle —
   `assertDistinctPlanIds` devient un mince wrapper qui throw sur son résultat. Elle est
