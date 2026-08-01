@@ -1221,6 +1221,55 @@ Console errors are logged as a soft signal only.
 
 ---
 
+## e2e-generated-level.mjs — Generated-level playability proof (level-harness SP2 phase (e))
+
+Generalizes the SP1 §8 session-only driver
+(`docs/qa/evidence/story-level-harness-sp1/report.json` was hand-run, not
+CI-produced) into a committed script. Boots STRAIGHT into a generated level via
+the SP1 verification seam (`?preview=level&level=<id>`,
+`src/render/scene/generatedHarness.ts` — restricted to
+`GENERATED_LEVEL_CONFIGS`, so a shipped id is never bootable through this
+path) — no title/menu navigation, `App.tsx` lands directly in `PLAYING`.
+
+```bash
+node scripts/e2e-generated-level.mjs <levelId>
+PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/e2e-generated-level.mjs fixture
+```
+
+Hard gates (exit 1 on any):
+
+- the game `<canvas>` mounts with real pixel dimensions,
+- the DOM HUD renders (`score` readout present),
+- the HUD's `temps` timer value (`TimerReadout.tsx`, read directly off the DOM —
+  not a hardcoded CSS Module class name, which is content-hashed) strictly
+  DECREASES between two reads 3s apart — proves the game loop is actually
+  ticking, not a frozen/crashed scene showing a static HUD,
+- zero `pageerror` (uncaught runtime exception).
+
+**Output:** `docs/qa/evidence/<id>/{01-boot-playing.png,02-playing-later.png,
+report.json}` (`00-failure.png` instead, on a failed run). `report.json`
+mirrors the SP1 §8 session report's shape
+(`url`/`pageErrors`/`tempsFirstRead`/`tempsSecondRead`/`timerTicking`/`hudSnippet`).
+
+Reuses `e2e-lib.mjs` (`SWIFTSHADER_ARGS`, `sleep`) — no new browser-plumbing
+primitive. Expects a server already serving the production build at
+`PREVIEW_URL` (same assumption as every other `e2e-*.mjs`); never builds or
+serves anything itself.
+
+### `.github/workflows/gen-plan-verify.yml` — dispatch (build → serve → prove)
+
+`workflow_dispatch` input `level_id`: checkout → install → `yarn build` →
+serve (`vite preview`) → `e2e-generated-level.mjs "$LEVEL_ID"` → commit
+`docs/qa/evidence/<level_id>/` (committed even when the proof step FAILED —
+the evidence, including the failure screenshot and captured `pageErrors`, is
+exactly what a human needs to diagnose it) → a final step re-reads
+`report.json` and fails the WORKFLOW if `timerTicking` isn't `true` or any
+`pageErrors` were captured, so the commit-always step can never mask a real
+failure as green. Never on `main`. Meant to run LAST, after phases (a)-(d)
+have landed the level's assets on the branch.
+
+---
+
 ## check-halo-gradient.mjs — Vehicle neon-halo gradient gate
 
 Mechanical regression lock (story-halo-alpha-composite-gate, AC4) for the
