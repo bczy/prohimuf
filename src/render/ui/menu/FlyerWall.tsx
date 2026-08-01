@@ -11,6 +11,7 @@ import {
   MOTION,
   useRovingIndex,
   useMediaQuery,
+  useReducedMotionRoot,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
 import { LevelFlyer } from "./LevelFlyer";
@@ -232,6 +233,9 @@ export function FlyerWall({
   const [firstVisit] = useState(() => !hasSeenTutorialNudge());
   // Captured ONCE at mount, before the effect below marks it — so this same mount still
   // animates while every later one in the session does not.
+  // The union of the OS query and the in-app toggle — the same signal the two CSS kill
+  // switches use, so the flag and the animation can never disagree about what happened.
+  const reducedMotion = useReducedMotionRoot(prefs.reducedMotion);
   const [playCascade] = useState(() => !hasCascadePlayed());
   // A keyboard user who reaches the wall mid-cascade settles it AT ONCE. Two reasons, and
   // the accessibility one is the binding one: the sideways drift (up to ±44px) exceeds the
@@ -243,6 +247,18 @@ export function FlyerWall({
   // The first-visit auto-focus is OURS, not the player's, and must not count as arrival —
   // otherwise a first-time visitor is the one person who never sees the cascade.
   const autoFocusing = useRef(false);
+  // When a pointer gesture last began. A click focuses too, and settling mid-gesture rips
+  // the animation off the flyer so it jumps out from under the cursor between mousedown
+  // and mouseup — the click then lands on nothing and the level never starts.
+  //
+  // This replaces a `:focus-visible` test, which looked equivalent but is NOT portable:
+  // on a script-focusable `div[role="button"]` (what LevelFlyer renders — not a native
+  // <button>) engines disagree, and WebKit has shipped versions where a mouse focus DOES
+  // match. There it would have re-broken starting a level, on a path the Chromium-only
+  // golden gate cannot see. Pointer RECENCY encodes the real invariant — "no settle while
+  // a pointer gesture is in flight" — with no engine heuristic in the way, and needs no
+  // listener teardown since it is just a timestamp.
+  const lastPointerDown = useRef(0);
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -254,8 +270,11 @@ export function FlyerWall({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    markCascadePlayed();
-  }, []);
+    // Only if it actually PLAYED. Under reduced motion the animation is suppressed, so
+    // marking it played would spend the session's one showing on nothing — and a player
+    // who then turns the in-app toggle off and comes back would never see the entrance.
+    if (!reducedMotion) markCascadePlayed();
+  }, [reducedMotion]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -366,19 +385,17 @@ export function FlyerWall({
         // `armed` state so automation can wait for a real actionable state instead of
         // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
         data-flyers-armed={armed ? "true" : "false"}
-        onFocus={(e) => {
+        onPointerDown={() => {
+          lastPointerDown.current = Date.now();
+        }}
+        onFocus={() => {
           setFocusWithin(true);
           if (autoFocusing.current) return;
-          // KEYBOARD arrivals only, via :focus-visible. A pointer click focuses too, and
-          // settling on it removes the animation mid-gesture, so the flyer JUMPS from its
-          // delay-phase start position to its resting one — out from under the cursor,
-          // between mousedown and mouseup. The pending click then lands on nothing and the
-          // level never starts. The golden E2E gate caught exactly that: it clicks a flyer
-          // during its delay phase, where the sheet is stationary and so looks click-ready.
-          // No loss: the clipped focus ring this guards against is a keyboard-only problem.
-          if (e.target instanceof Element && e.target.matches(":focus-visible")) {
-            setInterrupted(true);
-          }
+          // Focus that follows a pointer press within a few frames IS that gesture's
+          // focus, whatever the engine thinks of :focus-visible. Keyboard arrivals carry
+          // no recent press, so they settle — which is the only case the clipped focus
+          // ring needs.
+          if (Date.now() - lastPointerDown.current > 300) setInterrupted(true);
         }}
         onBlur={(e) => {
           if (!containerRef.current?.contains(e.relatedTarget)) {

@@ -376,6 +376,24 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container?.querySelector(".muf-flyer-slot")?.className).toContain(settled);
   });
 
+  it("does NOT settle when the focus follows a pointer press", () => {
+    // The regression the golden E2E gate caught: settling mid-click rips the animation off
+    // the flyer, it jumps out from under the cursor between mousedown and mouseup, and the
+    // click lands on nothing. Pointer RECENCY is what guards it — deliberately not
+    // :focus-visible, whose result on a script-focusable div differs between engines.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    expect(el).not.toBeNull();
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      el?.focus();
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+  });
+
   it("does NOT let the first-visit auto-focus cancel the cascade", () => {
     // That focus is ours, not the player's. Counting it would make a first-time visitor
     // the only person who never sees the entrance.
@@ -392,5 +410,35 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     // i.e. to where the sheet is NOT. document.activeElement alone cannot catch that.
     const withPrevent = focusSpy.mock.calls.some((args) => args[0]?.preventScroll === true);
     expect(withPrevent).toBe(true);
+  });
+});
+
+/** Reduced motion suppresses the animation, so the session's one showing must not be
+ *  spent on it — otherwise turning the in-app toggle off mid-session shows nothing. */
+describe("FlyerWall — reduced motion does not burn the session's cascade", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("leaves the flag unset when reduced motion is on", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        createElement(FlyerWall, {
+          unlockedLevels: new Set<string>(),
+          onPlay: () => undefined,
+          prefs: { ...DEFAULT_PREFS, reducedMotion: true },
+          onSavePrefs: () => undefined,
+        }),
+      );
+    });
+    expect(hasCascadePlayed()).toBe(false);
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
   });
 });

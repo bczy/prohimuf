@@ -134,9 +134,14 @@ export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   // could hang past the ceiling this function documents. Losing the race is harmless: the
   // frames are an anti-race precaution, and the settle poll below still has the last word.
   await Promise.race([
-    page.evaluate(
-      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
-    ),
+    // `.catch` on the racer itself, not on the race: whichever promise loses keeps
+    // running unobserved, and this one rejects with "execution context destroyed" once the
+    // caller closes or navigates the page — an unhandled rejection that can abort Node.
+    page
+      .evaluate(
+        () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
+      )
+      .catch(() => undefined),
     new Promise((resolve) => setTimeout(resolve, Math.min(left(), 1000))),
   ]);
   await page.waitForFunction(

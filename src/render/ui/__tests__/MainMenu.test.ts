@@ -120,6 +120,15 @@ describe("MainMenu — the clip is absent on the other rubriques", () => {
   }
 
   function selectTab(label: string): void {
+    // `el.textContent` is read DIRECTLY, and that is deliberate — please do not "fix" it.
+    // Under this project's TypeScript setup `textContent` resolves to `string`, not
+    // `string | null` (a probe assigning null to it fails TS2322), so `tsc` is clean. Every
+    // null-handling form is REJECTED by the type-aware lint, which reads the same types:
+    //   `?.`            → no-unnecessary-condition ("unnecessary optional chain")
+    //   `?? ""`         → no-unnecessary-condition ("left side never nullish")
+    //   `String(...)`   → no-unnecessary-type-conversion ("already a string")
+    // So no form satisfies both a `string | null` reading and this repo's lint; the direct
+    // call is the only one that builds here.
     const tab = Array.from(container?.querySelectorAll('[role="tab"]') ?? []).find((el) =>
       el.textContent.includes(label),
     );

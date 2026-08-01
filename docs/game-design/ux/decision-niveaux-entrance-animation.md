@@ -58,6 +58,20 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    où il est immobile et paraît donc prêt à recevoir le clic. Aucune perte : le rognage
    d'anneau de focus que cette règle protège est un problème strictement clavier.
 
+   **Détection : récence du pointeur, PAS `:focus-visible`.** La première tentative testait
+   `:focus-visible` sur l'élément focusé. Or celui-ci est un `div[role="button"]` — pas un
+   `<button>` natif — et sur ce type d'élément les moteurs divergent : WebKit a livré des
+   versions où un focus souris matche. Sur Safari, le clic aurait donc re-cassé le
+   démarrage d'un niveau, sur un chemin que la gate golden, qui ne teste que Chromium, ne
+   peut pas voir. On mesure donc si un appui pointeur vient d'avoir lieu (< 300 ms), ce qui
+   exprime l'invariant réel — « pas de stabilisation pendant un geste pointeur » — sans
+   dépendre d'une heuristique de moteur.
+
+6. **Le mouvement réduit ne consomme pas la cascade de la session.** L'animation étant
+   supprimée, marquer la session comme « déjà jouée » dépenserait son unique passage pour
+   rien : un joueur qui désactive ensuite la bascule in-app et revient sur NIVEAUX ne
+   verrait jamais l'entrée. Le drapeau n'est posé que si l'animation a réellement pu jouer.
+
 ## Suites, non bloquantes
 
 - Passe lecteur d'écran réelle pour confirmer que `opacity: 0` au premier keyframe n'empêche
