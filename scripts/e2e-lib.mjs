@@ -129,9 +129,16 @@ export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   // empty getAnimations() is indistinguishable from a finished one. Without this, the poll
   // could read "settled" on a wall that has not started animating. Two frames because the
   // first only guarantees style resolution is scheduled.
-  await page.evaluate(
-    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
-  );
+  // Raced against the shared deadline: `page.evaluate` honours no timeout of its own, and
+  // rAF does not fire at all in a backgrounded/hidden renderer — so an unraced await here
+  // could hang past the ceiling this function documents. Losing the race is harmless: the
+  // frames are an anti-race precaution, and the settle poll below still has the last word.
+  await Promise.race([
+    page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
+    ),
+    new Promise((resolve) => setTimeout(resolve, Math.min(left(), 1000))),
+  ]);
   await page.waitForFunction(
     () => {
       const slots = Array.from(document.querySelectorAll(".muf-flyer-slot"));

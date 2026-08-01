@@ -73,6 +73,23 @@ pour qu'un contributeur ultérieur les trouve au lieu de les redéduire du CSS.
   reste juste sur le fond), mais elle ne vaut PAS dérogation : c'est la double signature
   de lane qui autorise le merge, pas elle.
 
+## Débordements de périmètre, déclarés
+
+Deux changements de ce diff sortent de « une animation d'entrée », et méritent d'être
+nommés plutôt que découverts en relecture :
+
+1. **`errText()` appliqué à TOUS les `catch` de `screenshot-preview.mjs`**, pas seulement
+   aux deux du correctif de settle — dont la boucle de capture par niveau et le handler
+   `main().catch`, tous deux antérieurs. Motif : `throw` peut porter autre chose qu'une
+   `Error`, auquel cas `e.message` affiche `undefined` et fait perdre le détail réel dans
+   un run CI qu'on ne reproduit pas. Laisser deux sites sur l'ancienne forme aurait figé
+   un défaut connu à côté de sa correction. Change ce que CI imprime en cas d'échec, jamais
+   ce qui réussit ou échoue.
+2. **`overflow-x: hidden` sur `.rubriquesLevels`** (`MainMenu.tsx`/`.module.css`), qui
+   n'est pas le mur de flyers : la dérive latérale de l'entrée faisait apparaître une barre
+   de défilement horizontale transitoire sur le conteneur de rubrique. Cause et correctif
+   appartiennent au même diff.
+
 ## Vérification
 
 `tsc` / `eslint` / `prettier` verts · suite `src/render/ui` verte. **Pas de décompte de
@@ -92,9 +109,19 @@ pointeur vers l'autorité, jamais l'instantané.
 
 ## Assumé, hors périmètre
 
-Ticket `ux-designer` à ouvrir : l'auto-focus du premier lancement part pendant l'entrée, et
-l'entrée rejoue à chaque retour sur NIVEAUX. Aucun des deux n'est créé ni aggravé par ce
-diff.
+**Rien.** Les deux réserves qui figuraient ici ont été traitées dans cette PR, et laisser
+la mention aurait fait mentir le document dont c'est justement le rôle de servir de
+référence :
+
+- _le rejeu de l'entrée à chaque retour sur NIVEAUX_ — c'était le finding **bloquant** de
+  la porte `ux-designer` ; corrigé, la cascade joue au plus une fois par session
+  (§Porte de design, et décision §1 de la note UX) ;
+- _l'auto-focus qui part pendant l'animation_ — corrigé par `preventScroll: true`
+  (décision §2), qui supprime le défilement vers la position transformée sans retarder le
+  focus.
+
+Restent ouverts, hors de ce diff et non créés par lui : la passe lecteur d'écran réelle et
+l'éventuel troisième palier de mouvement, tous deux listés dans la note UX.
 
 ## Historique de la revue
 
