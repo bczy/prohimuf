@@ -287,3 +287,70 @@ describe("FlyerWall float-in — once per session", () => {
     expect(localStorage.getItem("muf_seen_tutorial_nudge")).toBeNull();
   });
 });
+
+/**
+ * The two decisions recorded in docs/game-design/ux/decision-niveaux-entrance-animation.md
+ * pinned at the RENDER level. Both were previously only documented: the session flag was
+ * round-tripped without ever asserting what the markup does with it, and the focus test
+ * passed identically with or without `preventScroll` — so either could have been undone
+ * without a red test.
+ */
+describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
+  let root: ReturnType<typeof createRoot> | null = null;
+  let container: HTMLDivElement | null = null;
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    container?.remove();
+    root = null;
+    container = null;
+    vi.restoreAllMocks();
+  });
+
+  function mountWall(): HTMLDivElement {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => {
+      root?.render(
+        createElement(FlyerWall, {
+          unlockedLevels: new Set<string>(),
+          onPlay: () => undefined,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: () => undefined,
+        }),
+      );
+    });
+    return container;
+  }
+
+  it("renders slots SETTLED when the cascade already played this session", () => {
+    markCascadePlayed();
+    const el = mountWall().querySelector(".muf-flyer-slot");
+    expect(el).not.toBeNull();
+    // The settled class is what removes `animation`, so its absence would silently bring
+    // back the replay-on-every-rubrique-switch the ux-designer gate blocked.
+    expect(el?.className).toContain("slotSettled");
+  });
+
+  it("renders slots ANIMATING on the first mount of a session", () => {
+    const el = mountWall().querySelector(".muf-flyer-slot");
+    expect(el?.className).not.toContain("slotSettled");
+  });
+
+  it("focuses the first-visit flyer with preventScroll", () => {
+    const focusSpy = vi.spyOn(HTMLElement.prototype, "focus");
+    mountWall();
+    // Without preventScroll the browser scrolls to the flyer's still-transformed rect —
+    // i.e. to where the sheet is NOT. document.activeElement alone cannot catch that.
+    const withPrevent = focusSpy.mock.calls.some((args) => args[0]?.preventScroll === true);
+    expect(withPrevent).toBe(true);
+  });
+});

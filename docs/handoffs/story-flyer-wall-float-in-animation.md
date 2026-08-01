@@ -75,7 +75,9 @@ pour qu'un contributeur ultérieur les trouve au lieu de les redéduire du CSS.
 
 ## Vérification
 
-`tsc` / `eslint` / `prettier` verts · `src/render/ui` 114 tests verts. Tests validés **par
+`tsc` / `eslint` / `prettier` verts · suite `src/render/ui` verte. **Pas de décompte de
+tests écrit ici** : ce nombre a déjà été faux une fois, et il le redevient à chaque test
+ajouté — même travers que les affirmations de verdict ci-dessous. Tests validés **par
 mutation**, pas seulement verts : pas de stagger → 2 ms ⇒ rouge ; typo `"level"` dans le
 littéral ⇒ rouge ; clé `--fio-*` inconnue ⇒ `TS2353` ; attente de settle cassée ⇒ le script
 poursuit au lieu d'abandonner la capture du niveau.
