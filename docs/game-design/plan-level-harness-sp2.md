@@ -64,9 +64,9 @@ github.ref }}` EXACTEMENT, la forme pleine `refs/heads/...` : `github.head_ref`
      est VIDE en `workflow_dispatch` (toutes les branches retomberaient en silence
      dans le même groupe, l'ancien comportement) et `github.ref_name` fait
      collisionner une branche et un tag homonymes. Au plus UN run par couple
-     (`level_id`, branche) à tout instant : le scope du groupe SUIT celui du cap
-     (par level/PR, point 2) — deux branches ne partagent ni compteur ni historique,
-     les sérialiser entre elles ne protégerait rien et ferait attendre une tentative
+     (`level_id`, `ref`) à tout instant : le scope du groupe SUIT celui du cap
+     (par level/PR, point 2) — deux refs (branches) ne partagent ni compteur ni
+     historique, les sérialiser ne protégerait rien et ferait attendre une tentative
      légitime derrière le budget d'une autre branche. Jamais deux runs concurrents
      sur le même couple, mais pas une file FIFO non plus (GitHub ne garde qu'un run
      en attente par groupe — le point 6 documente l'absorption des dispatches
