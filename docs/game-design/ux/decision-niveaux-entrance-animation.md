@@ -49,6 +49,15 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    voir la cascade. Au passage c'est le bon ordre de priorité : qui a commencé à
    interagir prime sur une animation décorative.
 
+   **Restriction au clavier (correctif E2E).** La stabilisation ne se déclenche que sur un
+   focus **clavier** (`:focus-visible`), pas sur n'importe quel focus. La première version
+   réagissait à tout focus, y compris celui d'un clic : retirer l'animation en plein geste
+   faisait **sauter** la feuille de sa position de départ à sa position de repos, entre le
+   `mousedown` et le `mouseup` — le clic tombait dans le vide et le niveau ne démarrait
+   jamais. La gate E2E golden l'a attrapé, en cliquant un flyer pendant sa phase de délai
+   où il est immobile et paraît donc prêt à recevoir le clic. Aucune perte : le rognage
+   d'anneau de focus que cette règle protège est un problème strictement clavier.
+
 ## Suites, non bloquantes
 
 - Passe lecteur d'écran réelle pour confirmer que `opacity: 0` au premier keyframe n'empêche

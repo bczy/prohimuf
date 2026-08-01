@@ -366,9 +366,19 @@ export function FlyerWall({
         // `armed` state so automation can wait for a real actionable state instead of
         // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
         data-flyers-armed={armed ? "true" : "false"}
-        onFocus={() => {
+        onFocus={(e) => {
           setFocusWithin(true);
-          if (!autoFocusing.current) setInterrupted(true);
+          if (autoFocusing.current) return;
+          // KEYBOARD arrivals only, via :focus-visible. A pointer click focuses too, and
+          // settling on it removes the animation mid-gesture, so the flyer JUMPS from its
+          // delay-phase start position to its resting one — out from under the cursor,
+          // between mousedown and mouseup. The pending click then lands on nothing and the
+          // level never starts. The golden E2E gate caught exactly that: it clicks a flyer
+          // during its delay phase, where the sheet is stationary and so looks click-ready.
+          // No loss: the clipped focus ring this guards against is a keyboard-only problem.
+          if (e.target instanceof Element && e.target.matches(":focus-visible")) {
+            setInterrupted(true);
+          }
         }}
         onBlur={(e) => {
           if (!containerRef.current?.contains(e.relatedTarget)) {

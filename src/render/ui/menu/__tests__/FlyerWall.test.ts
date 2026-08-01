@@ -358,6 +358,12 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     // The drift (±44px) exceeds the wall's 16px padding, so mid-entrance an edge flyer and
     // its focus ring poke past `.rubriquesLevels`' overflow-x clip and get cut. Settling on
     // arrival closes that window; without it a keyboard user can lose their focus indicator.
+    //
+    // LIMIT, stated plainly: this drives focus programmatically, and jsdom reports
+    // `:focus-visible` as matching for that — a real browser generally would not. So this
+    // pins the WIRING (focus in ⇒ settled) but not the :focus-visible discrimination
+    // itself. That half is what the golden E2E gate covers from the other side: it clicks
+    // a flyer with a real pointer and would fail again if pointer focus resumed settling.
     markTutorialNudgeSeen(); // not a first visit ⇒ no auto-focus to muddy the signal
     const el = mountWall().querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
     expect(el).not.toBeNull();
