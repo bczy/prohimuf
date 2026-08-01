@@ -623,6 +623,177 @@ describe("validateLevelPlan — LevelIssue contract (MCP §4.1)", () => {
 });
 
 /**
+ * Structural precondition (panel stage 6, M2a). `validateLevelPlan` is the entry door of
+ * the MCP `validate`/`scaffold` tools, whose `planShape` zod schema is LOOSE BY DECISION
+ * (ADR-0077 D3: the shape of a `LevelPlan` is `src/game`'s business, not the transport's).
+ * So an agent can hand this function literally anything, and the contract is absolute:
+ * **it returns issues, it never throws.** Before the fix, `{ id: "safe" }` blew up with
+ * `TypeError: entries is not iterable` and broke the `{issues}` / `{ok,path,issues}`
+ * contract of both tools.
+ */
+describe("validateLevelPlan — structural precondition (plan/malformed)", () => {
+  /** The one thing the whole section exists to prove. */
+  const junk: readonly unknown[] = [
+    undefined,
+    null,
+    42,
+    "a plan",
+    [],
+    {},
+    { id: "safe" },
+    { ...base, archetypes: undefined },
+    { ...base, gameplay: null },
+    { ...base, gameplay: { ...base.gameplay, windowWeights: undefined } },
+    { ...base, archetypes: [null] },
+    { ...base, props: [{ asset: "a.png" }] },
+  ];
+
+  it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {
+    for (const input of junk) {
+      const plan = input as LevelPlan;
+      expect(() => validateLevelPlan(plan)).not.toThrow();
+      const issues = validateLevelPlan(plan);
+      expect(issues.length).toBeGreaterThan(0);
+      for (const issue of issues) {
+        expect(issue.code).toBe("plan/malformed");
+        expect(issue.severity).toBe("error");
+        expect(issue.field.length).toBeGreaterThan(0);
+        expect(issue.message.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("names every load-bearing field a bare { id } plan is missing", () => {
+    const issues = validateLevelPlan({ id: "safe" } as unknown as LevelPlan);
+    expect(issues.map((i) => i.field)).toEqual([
+      "archetypes",
+      "props",
+      "fiction",
+      "backdrop",
+      "gameplay",
+    ]);
+  });
+
+  it("reports a non-object plan as a single issue on the plan itself", () => {
+    for (const notAnObject of [undefined, null, 42, "a plan", []]) {
+      const issues = validateLevelPlan(notAnObject as unknown as LevelPlan);
+      expect(issues).toEqual([
+        {
+          code: "plan/malformed",
+          severity: "error",
+          field: "plan",
+          message: "plan: expected an object describing a level plan",
+        },
+      ]);
+    }
+  });
+
+  it("states the expected SHAPE, field by field", () => {
+    const cases: readonly (readonly [Partial<Record<string, unknown>>, string, string])[] = [
+      [{ id: 7 }, "id", "non-empty string"],
+      [{ id: "" }, "id", "non-empty string"],
+      [{ archetypes: {} }, "archetypes", "an array"],
+      [{ props: "none" }, "props", "an array"],
+      [{ fiction: [] }, "fiction", "an object"],
+      [{ backdrop: null }, "backdrop", "an object"],
+      [{ gameplay: 3 }, "gameplay", "an object"],
+    ];
+    for (const [patch, field, expected] of cases) {
+      const issues = validateLevelPlan({ ...base, ...patch });
+      expect(issues).toContainEqual(
+        expect.objectContaining({
+          code: "plan/malformed",
+          field,
+          message: expect.stringContaining(expected) as unknown as string,
+        }),
+      );
+    }
+  });
+
+  // `Object.entries(windowWeights)` is the exact line that threw on `{ id: "safe" }`.
+  it("guards gameplay.windowWeights, the field whose absence produced the original throw", () => {
+    for (const windowWeights of [undefined, null, 12, [] as unknown]) {
+      const plan = {
+        ...base,
+        gameplay: { ...base.gameplay, windowWeights },
+      } as unknown as LevelPlan;
+      expect(validateLevelPlan(plan)).toContainEqual(
+        expect.objectContaining({ code: "plan/malformed", field: "gameplay.windowWeights" }),
+      );
+    }
+  });
+
+  // Per-ELEMENT shape: the guards call `a.kind.startsWith(ns)` on every entry, so a null
+  // entry or a kind-less object throws just as surely as a missing array.
+  it("guards the shape of each archetype and prop entry (kind is read as a string)", () => {
+    const badArch = { ...base, archetypes: [{ ...vigile }, null] } as unknown as LevelPlan;
+    expect(validateLevelPlan(badArch)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "archetypes[1]" }),
+    );
+
+    const noKind = { ...base, archetypes: [{ ...vigile, kind: 3 }] } as unknown as LevelPlan;
+    expect(validateLevelPlan(noKind)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "archetypes[0]" }),
+    );
+
+    const badProp = {
+      ...base,
+      props: [prop("fixture:a"), { asset: "a.png" }],
+    } as unknown as LevelPlan;
+    expect(validateLevelPlan(badProp)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "props[1]" }),
+    );
+  });
+
+  // The precondition SHORT-CIRCUITS: the downstream guards are the very code that throws
+  // on a malformed plan, so they must not run at all — not "run and be tolerated".
+  it("returns early: no downstream guard issue is mixed into a malformed verdict", () => {
+    const malformedAndUnsound = {
+      ...base,
+      archetypes: [{ ...vigile, weight: 3, kind: "autre:vigile" }],
+      gameplay: { ...base.gameplay, timeSeconds: 1, windowWeights: undefined },
+    } as unknown as LevelPlan;
+    const codes = new Set(validateLevelPlan(malformedAndUnsound).map((i) => i.code));
+    expect([...codes]).toEqual(["plan/malformed"]);
+  });
+
+  it("leaves sound and merely-unsound plans exactly as they were (non-regression)", () => {
+    expect(validateLevelPlan(base)).toStrictEqual([]);
+    expect(validateLevelPlan({ ...base, archetypes: [vigile] })).toStrictEqual([]);
+    // A well-FORMED plan that breaks a rule still gets that rule's own code, not malformed.
+    const unsound: LevelPlan = { ...base, archetypes: [{ ...vigile, weight: 3 }] };
+    expect(validateLevelPlan(unsound).map((i) => i.code)).toEqual(["plan/weight-nonzero"]);
+  });
+});
+
+/**
+ * n4 (panel stage 6). `spriteBase` is the PREFIX the MCP `inspect` tool matches sprite
+ * files on: an empty one makes `startsWith("")` claim every png of `public/assets/` as
+ * this archetype's. That is a rule about the plan, so it belongs here and not in the
+ * scanner. Code: `plan/archetype-bounds`, the existing "this archetype field's value is
+ * outside what the runtime accepts" key (it already carries nine fields) — a tenth code
+ * would widen the machine-key contract without giving an agent a new branch to take.
+ */
+describe("validateLevelPlan — spriteBase guard (n4)", () => {
+  it("rejects an empty or non-string spriteBase, naming the field", () => {
+    for (const spriteBase of ["", "   ", undefined, 7]) {
+      const bad = { ...base, archetypes: [{ ...vigile, spriteBase }] } as unknown as LevelPlan;
+      expect(validateLevelPlan(bad)).toContainEqual({
+        code: "plan/archetype-bounds",
+        severity: "error",
+        field: "archetypes[0].spriteBase",
+        message:
+          "archetype fixture:vigile: spriteBase must be a non-empty string (it is the sprite filename prefix)",
+      });
+    }
+  });
+
+  it("accepts the fixture's own spriteBase", () => {
+    expect(validateLevelPlan({ ...base, archetypes: [vigile] })).toStrictEqual([]);
+  });
+});
+
+/**
  * `validateCatalogue` is the SINGLE source of the id-uniqueness rule (ADR-0077 D6,
  * sign-off condition C2): the same invariant that used to live as a bare `throw` in
  * `generated/index.ts`'s module body, now expressed as `LevelIssue`s so the MCP

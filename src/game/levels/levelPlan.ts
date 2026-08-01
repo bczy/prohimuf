@@ -79,10 +79,85 @@ function planIssue(code: string, field: string, message: string): LevelIssue {
   return { code: `plan/${code}`, severity: "error", field, message };
 }
 
+/** A non-null, non-array object — what "an object" means for every check below. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The STRUCTURAL precondition of `validateLevelPlan` (panel stage 6, M2a). The rule
+ * guards below read a plan through its shape — `plan.archetypes.forEach`,
+ * `a.kind.startsWith(ns)`, `Object.entries(plan.gameplay.windowWeights)` — so on a
+ * malformed input they do not report, they THROW (`TypeError: entries is not
+ * iterable` for `{ id: "safe" }`). That breaks the `{issues}` contract of the MCP
+ * tools, whose zod `planShape` is loose BY DECISION (ADR-0077 D3: a `LevelPlan`'s
+ * shape is `src/game`'s business, not the transport's) — so the verdict is ours to
+ * give, in issues, never in an exception.
+ *
+ * Checked here is exactly what the downstream guards dereference, plus `fiction`,
+ * which `planToLevelConfig`/`planToLevelArt` dereference one step later on the very
+ * same tool call. Field VALUES (a wrong `hp`, a foreign namespace) are not this
+ * function's business — they are the rules, and they run only once the shape holds.
+ */
+function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
+  if (!isRecord(plan)) {
+    return [planIssue("malformed", "plan", "plan: expected an object describing a level plan")];
+  }
+  const issues: LevelIssue[] = [];
+  const p: Record<string, unknown> = plan;
+
+  // `id` seeds the namespace prefix every kind is matched against.
+  if (typeof p.id !== "string" || p.id.length === 0) {
+    issues.push(
+      planIssue("malformed", "id", "id: expected a non-empty string (the level's namespace)"),
+    );
+  }
+  for (const field of ["archetypes", "props"] as const) {
+    const list: unknown = p[field];
+    if (!Array.isArray(list)) {
+      issues.push(planIssue("malformed", field, `${field}: expected an array`));
+      continue;
+    }
+    // Per-ELEMENT shape: `kind` is dereferenced as a string on every entry of both
+    // lists, so one null entry throws just as surely as a missing array.
+    (list as readonly unknown[]).forEach((entry, i) => {
+      if (!isRecord(entry) || typeof entry.kind !== "string") {
+        issues.push(
+          planIssue(
+            "malformed",
+            `${field}[${String(i)}]`,
+            `${field}[${String(i)}]: expected an object with a string kind`,
+          ),
+        );
+      }
+    });
+  }
+  for (const field of ["fiction", "backdrop", "gameplay"] as const) {
+    if (!isRecord(p[field])) {
+      issues.push(planIssue("malformed", field, `${field}: expected an object`));
+    }
+  }
+  if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {
+    issues.push(
+      planIssue(
+        "malformed",
+        "gameplay.windowWeights",
+        "gameplay.windowWeights: expected an object mapping enemy kinds to weights",
+      ),
+    );
+  }
+  return issues;
+}
+
 /**
  * Check the invariants a plan must hold. Returns the list of violations — empty
  * when the plan is sound. Called from a test, so a violation breaks CI and never
  * the runtime.
+ *
+ * **This function never throws**, whatever it is handed: a structurally malformed
+ * input comes back as `plan/malformed` issues and short-circuits every rule below
+ * (see `planShapeIssues`). Agent-facing callers — the MCP `validate`/`scaffold`
+ * tools — rely on that contract, and so does the CI catalogue check.
  *
  * Issues are the SAME structured `LevelIssue` as `validateLevel` (ADR-0074 §3), so
  * story ③'s MCP `validate` tool composes plan-level and config-level validation
@@ -91,6 +166,11 @@ function planIssue(code: string, field: string, message: string): LevelIssue {
  * human sentence, `field` the dotted path into the plan.
  */
 export function validateLevelPlan(plan: LevelPlan): readonly LevelIssue[] {
+  // Shape FIRST, and nothing else if it fails: the guards below are the code that
+  // throws on a malformed plan, so they must not run at all.
+  const malformed = planShapeIssues(plan);
+  if (malformed.length > 0) return malformed;
+
   const errors: LevelIssue[] = [];
   const ns = `${plan.id}:`;
   const declared = new Set<string>(plan.archetypes.map((a) => a.kind));
@@ -129,6 +209,20 @@ export function validateLevelPlan(plan: LevelPlan): readonly LevelIssue[] {
           "namespace",
           `${at}.kind`,
           `archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`,
+        ),
+      );
+    }
+    // `spriteBase` is the sprite FILENAME PREFIX: the preload manifest builds
+    // `${spriteBase}_${n}.png` from it, and story ③'s `inspect` tool claims a level's
+    // sprites by `file.startsWith(spriteBase)` — which an empty string makes match
+    // EVERY png of public/assets/ (panel stage 6, n4). The rule is about the plan, so
+    // it lives here rather than in the scanner.
+    if (typeof a.spriteBase !== "string" || a.spriteBase.trim().length === 0) {
+      errors.push(
+        planIssue(
+          "archetype-bounds",
+          `${at}.spriteBase`,
+          `archetype ${a.kind}: spriteBase must be a non-empty string (it is the sprite filename prefix)`,
         ),
       );
     }
