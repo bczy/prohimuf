@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
 import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import wallStyles from "../FlyerWall.module.css";
 import {
   FLOAT_IN_STAGGER_MS,
   FlyerWall,
@@ -335,14 +336,19 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     markCascadePlayed();
     const el = mountWall().querySelector(".muf-flyer-slot");
     expect(el).not.toBeNull();
-    // The settled class is what removes `animation`, so its absence would silently bring
-    // back the replay-on-every-rubrique-switch the ux-designer gate blocked.
-    expect(el?.className).toContain("slotSettled");
+    // Asserted against the CSS-module TOKEN, not the literal "slotSettled": the emitted
+    // class name is a build artefact, so a hash-only naming strategy would fail this test
+    // while the behaviour stayed correct.
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    expect(el?.className).toContain(settled);
   });
 
   it("renders slots ANIMATING on the first mount of a session", () => {
     const el = mountWall().querySelector(".muf-flyer-slot");
-    expect(el?.className).not.toContain("slotSettled");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    expect(el?.className).not.toContain(settled);
   });
 
   it("focuses the first-visit flyer with preventScroll", () => {

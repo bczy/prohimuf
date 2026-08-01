@@ -31,6 +31,11 @@ const LEVELS = manifest.levels.map((l) => ({ id: l.id, name: l.name }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// `throw` can carry any value, not just an Error — a rejected string or a thrown object
+// would log `undefined` through `e.message` and cost us the actual failure detail in a CI
+// run we cannot reproduce locally.
+const errText = (e) => (e instanceof Error ? e.message : String(e));
+
 async function dismissNarrative(page) {
   for (let i = 0; i < 8; i++) {
     const skip = page.getByRole("button", { name: "Passer" });
@@ -91,14 +96,14 @@ async function captureLevel(context, level, withMenu) {
       await waitForFlyerWallSettled(page);
     } catch (e) {
       settled = false;
-      console.error(`  failed 00_menu.png (flyer wall never settled): ${e.message}`);
+      console.error(`  failed 00_menu.png (flyer wall never settled): ${errText(e)}`);
     }
     if (settled) {
       try {
         await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
         console.log("  captured 00_menu.png");
       } catch (e) {
-        console.error(`  failed 00_menu.png (screenshot failed): ${e.message}`);
+        console.error(`  failed 00_menu.png (screenshot failed): ${errText(e)}`);
       }
     }
   }
@@ -136,7 +141,7 @@ async function captureScreen(context, file, query, { settleFlyers = false } = {}
     await page.screenshot({ path: out });
     console.log(`  captured ${file}`);
   } catch (e) {
-    console.error(`  failed ${file}: ${e.message}`);
+    console.error(`  failed ${file}: ${errText(e)}`);
   } finally {
     await page.close();
   }
@@ -212,7 +217,7 @@ async function main() {
     try {
       await captureLevel(context, LEVELS[i], i === 0);
     } catch (e) {
-      console.error(`  failed ${LEVELS[i].id}: ${e.message}`);
+      console.error(`  failed ${LEVELS[i].id}: ${errText(e)}`);
     }
   }
 
