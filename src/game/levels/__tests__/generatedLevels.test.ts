@@ -11,6 +11,10 @@ import { enemyAssetPathsFor, levelLayerPaths, manifestFor } from "@game/systems/
 import { archetype, buildWeightedFrom, CORE_ARCHETYPES } from "@game/types/enemyTypes";
 import type { CoreEnemyKind } from "@game/types/enemy";
 import type { LevelIssue } from "@game/levels/validateLevel";
+// Namespace type-only imports (no runtime evaluation — bare-import purity intact):
+// consistent-type-imports forbids `typeof import(...)` query positions.
+import type * as GeneratedBarrel from "@game/levels/generated";
+import type * as LevelPlanModule from "@game/levels/levelPlan";
 
 /**
  * The generated-level harness end to end (spec-level-harness-sp1 §8): a plan
@@ -147,13 +151,11 @@ describe("generated levels — fail-fast at the bootstrap, not at import", () =>
     validateCatalogueImpl: () => readonly LevelIssue[],
   ): Promise<{
     spy: ReturnType<typeof vi.fn>;
-    barrel: typeof import("@game/levels/generated");
+    barrel: typeof GeneratedBarrel;
   }> => {
     const spy = vi.fn(validateCatalogueImpl);
     vi.doMock("@game/levels/levelPlan", async () => {
-      const actual = await vi.importActual<typeof import("@game/levels/levelPlan")>(
-        "@game/levels/levelPlan",
-      );
+      const actual = await vi.importActual<typeof LevelPlanModule>("@game/levels/levelPlan");
       return { ...actual, validateCatalogue: spy };
     });
     vi.resetModules();
