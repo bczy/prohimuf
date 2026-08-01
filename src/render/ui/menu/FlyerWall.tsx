@@ -261,18 +261,19 @@ export function FlyerWall({
   // The first-visit auto-focus is OURS, not the player's, and must not count as arrival —
   // otherwise a first-time visitor is the one person who never sees the cascade.
   const autoFocusing = useRef(false);
-  // When a pointer gesture last began. A click focuses too, and settling mid-gesture rips
-  // the animation off the flyer so it jumps out from under the cursor between mousedown
-  // and mouseup — the click then lands on nothing and the level never starts.
+  // What the player last used: keyboard, or a pointer/touch. Tracked at the WINDOW, which
+  // is the only place that sees the Tab keydown of an arrival coming from OUTSIDE the wall
+  // (that key event fires on the previously focused element, never on us).
   //
-  // This replaces a `:focus-visible` test, which looked equivalent but is NOT portable:
-  // on a script-focusable `div[role="button"]` (what LevelFlyer renders — not a native
-  // <button>) engines disagree, and WebKit has shipped versions where a mouse focus DOES
-  // match. There it would have re-broken starting a level, on a path the Chromium-only
-  // golden gate cannot see. Pointer RECENCY encodes the real invariant — "no settle while
-  // a pointer gesture is in flight" — with no engine heuristic in the way, and needs no
-  // listener teardown since it is just a timestamp.
-  const lastPointerDown = useRef(0);
+  // Two earlier attempts failed on real input, both worth remembering:
+  //   - `:focus-visible` — engine-dependent on a script-focusable div[role=button]; WebKit
+  //     has shipped versions where a MOUSE focus matches, which would settle mid-click.
+  //   - pointer RECENCY cleared on pointerup — broken on touch, where the order is
+  //     pointerdown → pointerup → synthetic mousedown → focus: the marker was already
+  //     cleared when the tap's own focus arrived, so a tap read as a keyboard arrival.
+  // Event TYPE has neither problem: a tap sets "pointer" and nothing resets it before the
+  // synthetic focus, and a Tab sets "keyboard" wherever it was pressed.
+  const lastInputWasKeyboard = useRef(false);
   // The tutorial is its own flyer, first in the pile (LEVELS order); resolve its index
   // rather than hard-coding 0 so the focus target + nudge slot stay correct if order shifts.
   const tutorialIndex = LEVELS.findIndex((level) => level.kind === "tutorial");
@@ -300,8 +301,29 @@ export function FlyerWall({
     // cleared when reduced motion is ON, and that same signal suppresses the animation. A
     // later mount therefore either stays reduced (no animation, nothing marked) or has had
     // the setting turned back off, which is exactly when replaying is what the player wants.
-    if (playCascade && reducedMotion) clearCascadePlayed();
+    if (!playCascade || !reducedMotion) return;
+    clearCascadePlayed();
+    // LATCHED for this mount too: the OS switch can flip back to OFF while we stay
+    // mounted, and `playCascade` is decided once at mount — so without this the CSS kill
+    // switch would stop applying and the whole cascade would restart mid-visit, which is
+    // the replay the design gate blocked. The handed-back flag lets a LATER mount play it.
+    setInterrupted(true);
   }, [playCascade, reducedMotion]);
+
+  useEffect(() => {
+    const onKey = () => {
+      lastInputWasKeyboard.current = true;
+    };
+    const onPointer = () => {
+      lastInputWasKeyboard.current = false;
+    };
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("pointerdown", onPointer, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("pointerdown", onPointer, true);
+    };
+  }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -412,29 +434,13 @@ export function FlyerWall({
         // `armed` state so automation can wait for a real actionable state instead of
         // racing MOTION.titleToMenu (used by the e2e/screenshot flows before a flyer click).
         data-flyers-armed={armed ? "true" : "false"}
-        onPointerDown={() => {
-          lastPointerDown.current = Date.now();
-        }}
-        onPointerUp={() => {
-          // CLEARED on release, so the window is the gesture itself rather than a flat
-          // 300ms. Without this, a click on a LOCKED flyer (which only shakes, leaving the
-          // player on the menu) would swallow a keyboard arrival made in the next few
-          // frames — and that arrival is exactly the case the settle exists to serve.
-          // The recency check below remains as the fallback for a release that lands
-          // outside the wall, where no pointerup reaches us.
-          lastPointerDown.current = 0;
-        }}
-        onPointerCancel={() => {
-          lastPointerDown.current = 0;
-        }}
         onFocus={() => {
           setFocusWithin(true);
           if (autoFocusing.current) return;
-          // Focus that follows a pointer press within a few frames IS that gesture's
-          // focus, whatever the engine thinks of :focus-visible. Keyboard arrivals carry
-          // no recent press, so they settle — which is the only case the clipped focus
-          // ring needs.
-          if (Date.now() - lastPointerDown.current > 300) setInterrupted(true);
+          // Only a keyboard arrival settles: that is the only case where a clipped focus
+          // ring can be seen, and settling on a pointer gesture yanks the flyer out from
+          // under the cursor mid-click.
+          if (lastInputWasKeyboard.current) setInterrupted(true);
         }}
         onBlur={(e) => {
           if (!containerRef.current?.contains(e.relatedTarget)) {

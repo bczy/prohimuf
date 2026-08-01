@@ -364,11 +364,10 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     // its focus ring poke past `.rubriquesLevels`' overflow-x clip and get cut. Settling on
     // arrival closes that window; without it a keyboard user can lose their focus indicator.
     //
-    // LIMIT, stated plainly: this drives focus programmatically, and jsdom reports
-    // `:focus-visible` as matching for that — a real browser generally would not. So this
-    // pins the WIRING (focus in ⇒ settled) but not the :focus-visible discrimination
-    // itself. That half is what the golden E2E gate covers from the other side: it clicks
-    // a flyer with a real pointer and would fail again if pointer focus resumed settling.
+    // The keydown is dispatched on WINDOW, not on the flyer, because that is where the
+    // real one lands: a Tab that arrives from outside the wall fires on whatever had focus
+    // before, never on us. Dispatching it on the flyer would pass while the production
+    // listener sat on the wrong node.
     markTutorialNudgeSeen(); // not a first visit ⇒ no auto-focus to muddy the signal
     const el = mountWall().querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
     expect(el).not.toBeNull();
@@ -376,6 +375,7 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
     expect(container?.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
     act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
       el?.focus();
     });
     expect(container?.querySelector(".muf-flyer-slot")?.className).toContain(settled);
@@ -384,8 +384,9 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
   it("does NOT settle when the focus follows a pointer press", () => {
     // The regression the golden E2E gate caught: settling mid-click rips the animation off
     // the flyer, it jumps out from under the cursor between mousedown and mouseup, and the
-    // click lands on nothing. Pointer RECENCY is what guards it — deliberately not
-    // :focus-visible, whose result on a script-focusable div differs between engines.
+    // click lands on nothing. The guard is the last INPUT TYPE — deliberately neither
+    // :focus-visible (engine-dependent on a script-focusable div) nor a pointer-recency
+    // window (broken on touch, pinned by the next test).
     markTutorialNudgeSeen();
     const container = mountWall();
     const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
@@ -399,10 +400,33 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
+  it("does NOT settle on a touch tap, whose own focus arrives AFTER its pointerup", () => {
+    // The exact event order of a tap, which is what makes this different from a mouse
+    // click: pointerdown → pointerup → (synthetic) mousedown → focus → mouseup → click.
+    // The focus lands after the gesture has already ENDED, so any guard that treats
+    // pointerup as "the gesture is over" reads a tap as a keyboard arrival, settles, and
+    // yanks the flyer out from under the finger before its click — the mobile twin of the
+    // desktop regression above.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "touch" }));
+    });
+    act(() => {
+      el?.focus(); // the tap's OWN focus, arriving late
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+  });
+
   it("still settles for a keyboard arrival right after a pointer release", () => {
-    // The window must be the GESTURE, not a flat 300ms: clicking a locked flyer only
-    // shakes it and leaves the player on the menu, so a keyboard arrival a few frames
-    // later is a real arrival — and it is the one the settle exists to serve.
+    // Clicking a locked flyer only shakes it and leaves the player on the menu, so a Tab
+    // pressed immediately afterwards is a real arrival — and it is the one the settle
+    // exists to serve. Keyed on the key event, so no elapsed-time window has to be tuned
+    // to be both long enough for a tap's late focus and short enough for this.
     markTutorialNudgeSeen();
     const container = mountWall();
     const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
@@ -413,6 +437,7 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
       el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
     });
     act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
       el?.focus();
     });
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
@@ -499,6 +524,19 @@ describe("FlyerWall — reduced motion turning on mid-cascade hands the showing 
     expect(hasCascadePlayed()).toBe(true); // cascade started, session marked
     render(true); // OS switch flipped mid-fall
     expect(hasCascadePlayed()).toBe(false); // showing handed back
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+
+    // ...and flipping it back OFF, still on this SAME mount, must NOT restart the fall.
+    // `playCascade` is latched at mount, so once the CSS kill switch stops applying there
+    // is nothing left to hold the wall down unless the interruption was latched too — the
+    // player would watch the whole cascade replay in the middle of their visit, which is
+    // precisely what decision §6 of the UX gate forbids. The flag stays handed back, so a
+    // LATER mount still gets its showing.
+    render(false);
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+    expect(hasCascadePlayed()).toBe(false);
+
     act(() => {
       root.unmount();
     });

@@ -131,8 +131,9 @@ export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   // first only guarantees style resolution is scheduled.
   // Raced against the shared deadline: `page.evaluate` honours no timeout of its own, and
   // rAF does not fire at all in a backgrounded/hidden renderer — so an unraced await here
-  // could hang past the ceiling this function documents. Losing the race is harmless: the
-  // frames are an anti-race precaution, and the settle poll below still has the last word.
+  // could hang past the ceiling this function documents. Losing the race is NOT harmless on
+  // its own — the fallback can hand control to the poll before any CSSAnimation exists —
+  // so the predicate below closes that hole itself rather than trusting these frames.
   await Promise.race([
     // `.catch` on the racer itself, not on the race: whichever promise loses keeps
     // running unobserved, and this one rejects with "execution context destroyed" once the
@@ -153,7 +154,25 @@ export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
       // above only proves a slot existed at that earlier instant — not at this one.
       return (
         slots.length > 0 &&
-        slots.every((el) => el.getAnimations().every((a) => a.playState === "finished"))
+        slots.every((el) => {
+          // `getComputedStyle` FORCES the style pass, so this is true even on the very
+          // first tick — including the case where the two-frame wait above lost its race
+          // and rAF never fired at all (backgrounded renderer). Without it, a slot whose
+          // CSSAnimation the browser had not created yet returns `[]` from
+          // getAnimations(), and `.every()` on an empty array reports "settled" on a wall
+          // that has not started falling.
+          //
+          // Empty is only accepted when the computed animation is genuinely `none` — the
+          // reduced-motion kill switches and `.slotSettled`, where no animation will EVER
+          // exist. Demanding a non-empty list unconditionally would instead hang for the
+          // full timeout on a wall that is correctly, permanently at rest — a runner
+          // honouring `prefers-reduced-motion`, or any future caller that reaches the wall
+          // with the session key already set (each harness page is a fresh tab today, and
+          // sessionStorage is per-tab, so that second case does not arise here yet).
+          const animations = el.getAnimations();
+          if (animations.length === 0) return getComputedStyle(el).animationName === "none";
+          return animations.every((a) => a.playState === "finished");
+        })
       );
     },
     undefined,
