@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Madeleine — tag live-paint</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #232327;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, sans-serif;
+      }
+      #stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+      }
+      svg#art {
+        width: min(96vw, 1300px);
+        height: auto;
+        overflow: visible;
+      }
+      path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: url(#spray);
+      }
+      .can {
+        filter: drop-shadow(0 0 8px currentColor);
+      }
+      button {
+        background: none;
+        border: 1px solid #39ff6a;
+        color: #39ff6a;
+        font: 13px/1 monospace;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #39ff6a;
+        color: #232327;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <svg id="art" viewBox="0 0 1750 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- userSpaceOnUse: % regions collapse on straight strokes (zero-size bbox) -->
+          <filter id="spray" filterUnits="userSpaceOnUse" x="-80" y="-80" width="1950" height="800">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.8"
+              numOctaves="2"
+              result="n"
+              seed="7"
+            />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="5" />
+          </filter>
+        </defs>
+        <g id="tag"></g>
+        <circle class="can" r="9" opacity="0" id="canDot" fill="#fff" />
+      </svg>
+      <button id="replay">rejouer</button>
+    </div>
+
+    <script>
+      // Handstyle glyphs — angular, right-slanted, street. Local coords:
+      // baseline ~400, caps ~180, ascenders overshoot, kicks below baseline.
+      const GLYPHS = {
+        m: { w: 260, d: ["M0,470 L95,190 L130,330 L180,185 L215,400 L250,372"] },
+        a: { w: 150, d: ["M105,255 L28,272 L22,372 L108,382 L112,262 L125,400 L158,372"] },
+        d: { w: 140, d: ["M112,120 L122,398", "M112,250 L30,262 L26,368 L114,378"] },
+        e: { w: 120, d: ["M8,278 L98,240 L104,296 L34,306 L44,368 L118,352"] },
+        l: { w: 90, d: ["M18,140 L30,392 L82,366"] },
+        i: { w: 70, d: ["M28,268 L40,392", "M14,220 L54,230"] },
+        n: { w: 150, d: ["M10,398 L20,262 L30,248 L98,380 L108,392 L118,250"] },
+      };
+
+      const WORD = "madeleine";
+      const START_X = 120;
+      const GAP = 18;
+
+      // build the letter geometry once (path d + x offset per stroke)
+      const letterStrokes = [];
+      {
+        let x = START_X;
+        for (const ch of WORD) {
+          const g = GLYPHS[ch];
+          for (const d of g.d) letterStrokes.push({ d, x });
+          x += g.w + GAP;
+        }
+      }
+
+      // decoration geometry (global coords)
+      const CROWN = ["M128,150 L152,96 L180,140 L210,90 L240,136 L268,88 L292,150 L128,150"];
+      const QUOTES = ["M1598,238 L1622,200", "M1638,246 L1662,208"];
+      const UNDERLINE = ["M1608,430 Q900,520 250,462", "M318,424 L242,460 L322,498"];
+      const DRIPS = [
+        "M352,384 L358,478",
+        "M746,380 L753,500",
+        "M1010,370 L1015,448",
+        "M1490,356 L1496,452",
+      ];
+      const HIGHLIGHTS = [
+        "M208,222 L221,264",
+        "M836,152 L842,216",
+        "M986,176 L992,238",
+        "M1392,280 L1400,332",
+      ];
+
+      // passes, in the gated order: fat fill -> dark keyline -> white highlights -> deco
+      const PASSES = [
+        { strokes: letterStrokes, color: "#ff3cdc", width: 30, opacity: 0.92, speed: 2.2 },
+        { strokes: letterStrokes, color: "#1b0a18", width: 9, opacity: 1, speed: 1.3 },
+        {
+          strokes: HIGHLIGHTS.map((d) => ({ d, x: 0 })),
+          color: "#ffffff",
+          width: 5,
+          opacity: 0.95,
+          speed: 1.6,
+        },
+        {
+          strokes: [...CROWN, ...QUOTES, ...UNDERLINE].map((d) => ({ d, x: 0 })),
+          color: "#39ff6a",
+          width: 8,
+          opacity: 1,
+          speed: 1.4,
+        },
+        {
+          strokes: DRIPS.map((d) => ({ d, x: 0 })),
+          color: "#ff3cdc",
+          width: 5,
+          opacity: 0.9,
+          speed: 3.5,
+        },
+      ];
+
+      const gEl = document.getElementById("tag");
+      const can = document.getElementById("canDot");
+      const NS = "http://www.w3.org/2000/svg";
+      const all = [];
+
+      for (const pass of PASSES) {
+        for (const s of pass.strokes) {
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("d", s.d);
+          if (s.x) p.setAttribute("transform", `translate(${s.x},0)`);
+          p.setAttribute("stroke", pass.color);
+          p.setAttribute("stroke-width", pass.width);
+          p.setAttribute("stroke-opacity", pass.opacity);
+          gEl.appendChild(p);
+          all.push({ p, x: s.x || 0, color: pass.color, speed: pass.speed });
+        }
+      }
+
+      function reset() {
+        for (const { p } of all) {
+          const len = p.getTotalLength();
+          p.setAttribute("stroke-dasharray", `${len} ${len}`);
+          p.setAttribute("stroke-dashoffset", len);
+        }
+      }
+
+      let running = false;
+      async function play() {
+        if (running) return;
+        running = true;
+        reset();
+        can.setAttribute("opacity", "1");
+        for (const { p, x, color, speed } of all) {
+          can.setAttribute("fill", color === "#1b0a18" ? "#8a4a80" : color);
+          const len = p.getTotalLength();
+          const duration = Math.max(120, len * speed);
+          const start = performance.now();
+          await new Promise((resolve) => {
+            function tick(now) {
+              const t = Math.min(1, (now - start) / duration);
+              const eased = 1 - Math.pow(1 - t, 2);
+              p.setAttribute("stroke-dashoffset", len * (1 - eased));
+              const tip = p.getPointAtLength(len * eased);
+              can.setAttribute("cx", tip.x + x);
+              can.setAttribute("cy", tip.y);
+              if (t < 1) requestAnimationFrame(tick);
+              else resolve();
+            }
+            requestAnimationFrame(tick);
+          });
+        }
+        can.setAttribute("opacity", "0");
+        running = false;
+      }
+
+      document.getElementById("replay").addEventListener("click", play);
+      play();
+    </script>
+  </body>
+</html>
