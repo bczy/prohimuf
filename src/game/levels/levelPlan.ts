@@ -94,9 +94,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * shape is `src/game`'s business, not the transport's) — so the verdict is ours to
  * give, in issues, never in an exception.
  *
- * Checked here is exactly what the downstream guards dereference, plus `fiction`,
- * which `planToLevelConfig`/`planToLevelArt` dereference one step later on the very
- * same tool call. Field VALUES (a wrong `hp`, a foreign namespace) are not this
+ * Checked here is what ANY consumer of a validated plan dereferences on that same
+ * tool call — the guards below, the `planToLevelConfig`/`planToLevelArt`
+ * projections, and the MCP tools' own asset scan — not merely what this file's
+ * guards touch. Field VALUES (a wrong `hp`, a foreign namespace) are not this
  * function's business — they are the rules, and they run only once the shape holds.
  */
 function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
@@ -137,22 +138,41 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       issues.push(planIssue("malformed", field, `${field}: expected an object`));
     }
   }
-  // `fiction`'s own strings, not just its objecthood: they are the menu card's
-  // visible text, and nothing downstream checks them. A `fiction: {}` would pass
-  // every other guard, scaffold to disk, and render a literal "undefined" on the
-  // card once a human aggregates the level (CI panel MAJEUR on b3e96f5c).
+  // EVERY required string the plan carries, walked from one table instead of one
+  // guard per field. Three review rounds each surfaced another unchecked string
+  // (`fiction.*`, then `backdrop.file`, then `props[].asset`) with the identical
+  // failure: a "sound" verdict, a module scaffolded to disk, and `undefined`
+  // reaching a filesystem path or the menu card. This closes the class rather than
+  // the instances. (`archetypes[].spriteBase` is checked by the rules below;
+  // `backdrop.mode` is a one-literal union — a wrong value is a rule question, not
+  // a crash.)
+  const requiredStrings: (readonly [string, unknown, string])[] = [];
   if (isRecord(p.fiction)) {
     for (const key of ["name", "label", "district", "year"] as const) {
-      const value = p.fiction[key];
-      if (typeof value !== "string" || value.trim().length === 0) {
-        issues.push(
-          planIssue(
-            "malformed",
-            `fiction.${key}`,
-            `fiction.${key}: expected a non-empty string (it shows on the level's menu card)`,
-          ),
-        );
+      requiredStrings.push([`fiction.${key}`, p.fiction[key], "it shows on the level's menu card"]);
+    }
+  }
+  if (isRecord(p.backdrop)) {
+    requiredStrings.push([
+      "backdrop.file",
+      p.backdrop.file,
+      "it names the backdrop under public/assets/levels/<id>/",
+    ]);
+  }
+  if (Array.isArray(p.props)) {
+    (p.props as readonly unknown[]).forEach((prop, i) => {
+      if (isRecord(prop)) {
+        requiredStrings.push([
+          `props[${String(i)}].asset`,
+          prop.asset,
+          "it is the prop's own asset path under public/",
+        ]);
       }
+    });
+  }
+  for (const [field, value, why] of requiredStrings) {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      issues.push(planIssue("malformed", field, `${field}: expected a non-empty string (${why})`));
     }
   }
   if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {

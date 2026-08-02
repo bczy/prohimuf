@@ -108,6 +108,15 @@ describe("validate", () => {
     expect(issues.map((i) => i.code)).not.toContain("plan/duplicate-id");
   });
 
+  it("reports plan/missing-input when neither { plan } nor { levelId } is given", () => {
+    // Wire-reachable: the server's zod schema makes BOTH optional, so `validate {}`
+    // is a shape the transport accepts and this branch must answer for.
+    for (const input of [{}, { overwrite: true }, undefined]) {
+      const { issues } = validate(input);
+      expect(issues.map((i) => i.code)).toEqual(["plan/missing-input"]);
+    }
+  });
+
   it("rends des issues sans throw pour un plan malformé (M2)", () => {
     expect(() => validate({ plan: { id: "safe" } })).not.toThrow();
     const { issues } = validate({ plan: { id: "safe" } });

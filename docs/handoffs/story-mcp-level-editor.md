@@ -719,8 +719,17 @@ qu'une note vague. C'est le niveau de preuve que ce critère demande.
 
 - **Renumérotation flyer 0077→0078** : ruling `producer` rendu et enregistré dans
   `docs/handoffs/story-flyer-wall-float-in-animation.md` (vérifié — geste explicite listé,
-  renommage + régénération d'index + mise à jour du handoff avant rebase sur `main`). Propre :
-  la story flyer porte sa propre dette, pas cette branche.
+  renommage + régénération d'index + mise à jour du handoff avant rebase sur `main`).
+  **À dire exactement (panel round 3, MAJEUR de traçabilité)** : c'est bien CETTE branche
+  qui porte l'artefact de coordination — elle crée `story-flyer-wall-float-in-animation.md`
+  et ses deux lignes d'index, contenu qui ne trace à aucun élément du spec/plan/ADR de la
+  story ③. C'est assumé, pas accidentel : la collision de numéro a été DÉCOUVERTE par la
+  condition de sign-off de cette story, le ruling `producer` devait atterrir quelque part,
+  et le laisser dans une branche flyer non ouverte l'aurait rendu invisible au moment où il
+  compte (le merge de celle-ci). Ce que la branche flyer porte, c'est le GESTE
+  (renuméroter 0077→0078 à son rebase) ; la trace du ruling voyage ici. La rédaction
+  antérieure — « la story flyer porte sa propre dette, pas cette branche » — disait
+  l'inverse du diff et est corrigée par la présente.
 - **Dédup driver §8 par SP2** : `compareDryrunReport` paramétré (`base`, `levelId`, regex
   échappée) précisément pour que SP2 dédoublonne au lieu de forker (m5, §6.5 et §6.7) — seam
   ouvert, documenté, non bloquant pour CETTE story puisque SP2 n'a pas encore mergé.
@@ -780,3 +789,31 @@ intégralement (arbres comparés, seul écart = les 4 fichiers SP3 hérités de 
   EADDRINUSE au lieu de réutiliser le serveur du gagnant. Sur échec de spawn, on
   re-sonde une fois avant d'abandonner — et on rend `proc: null`, donc on ne tue jamais
   le serveur d'autrui.
+
+### Round 3 — `0071b4ff` : CONDITIONAL (0 BLOQUANT, 3 MAJEUR, 2 MINEUR)
+
+- **[MAJEUR, traçabilité] la branche porte un shard hors-story (flyer) que le §7.4
+  désavouait** — fondé sur le fond documentaire : le diff crée bien
+  `story-flyer-wall-float-in-animation.md` + 2 lignes d'index, contenu qui ne trace à
+  rien du spec/plan/ADR de la story ③, pendant que §7.4 affirmait « pas cette branche ».
+  Des deux issues proposées, je retiens la seconde (dire vrai plutôt que retirer) :
+  supprimer le fichier ferait disparaître un ruling `producer` découvert PAR cette story
+  et dû AU moment de son merge. §7.4 réécrit pour dire ce que le diff fait réellement,
+  en distinguant l'artefact (ici) du geste de renumérotation (branche flyer).
+- **[MAJEUR] `backdrop.file` jamais vérifié** et **[MAJEUR] `props[].asset` jamais
+  vérifié** — fondés tous deux, et **même classe que le MAJEUR du round 2**
+  (`fiction.*`) : une chaîne requise que rien ne contrôle, un verdict « sain », un module
+  écrit sur disque, puis `undefined` qui atterrit dans un chemin (`undefined.png`,
+  `path.join` qui throw un `TypeError` brut depuis `inspect`) ou dans l'UI. Trois rounds,
+  trois instances : j'ai donc **fermé la classe, pas les instances** — toutes les chaînes
+  requises du `LevelPlan` sont désormais balayées depuis une table unique
+  (`fiction.name/label/district/year`, `backdrop.file`, `props[i].asset`), avec le
+  périmètre dit explicitement dans le JSDoc (`spriteBase` relève des règles,
+  `backdrop.mode` est une union à un littéral). Le commentaire qui prétendait vérifier
+  « exactement ce que les gardes en aval déréférencent » disait faux : il vérifiait moins
+  que ce que les projections et les outils MCP déréférencent — corrigé.
+- **[MINEUR] `plan/missing-input` sans couverture** — retenu : chemin atteignable sur le
+  fil (le schéma zod rend `plan` ET `levelId` optionnels). Test ajouté sur `{}`,
+  `{overwrite:true}` et `undefined`.
+- **[MINEUR] table de cargaison de la PR fausse (7 .md annoncés, 6 réels)** — retenu et
+  recompté depuis `git diff --name-status`, corps de PR corrigé.

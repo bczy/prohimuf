@@ -653,6 +653,12 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, fiction: { ...base.fiction, name: "" } },
     { ...base, fiction: { ...base.fiction, district: undefined } },
     { ...base, fiction: { ...base.fiction, year: 1998 } },
+    // Same class, the two other required strings a consumer dereferences: without
+    // them the asset scan builds "undefined.png" and path.join throws.
+    { ...base, backdrop: { ...base.backdrop, file: undefined } },
+    { ...base, backdrop: { ...base.backdrop, file: "  " } },
+    { ...base, props: [{ ...base.props[0], asset: undefined }] },
+    { ...base, props: [{ ...base.props[0], asset: "" }] },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {
