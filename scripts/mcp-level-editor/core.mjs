@@ -177,7 +177,14 @@ function scanAssets(plan, rootDir) {
   const assetsDir = path.join(publicDir, "assets");
   const topLevelFiles = existsSync(assetsDir) ? readdirSync(assetsDir) : [];
   for (const a of plan.archetypes) {
-    const matches = topLevelFiles.filter((f) => f.startsWith(a.spriteBase) && f.endsWith(".png"));
+    // Delimiter-aware, not a bare prefix: the convention is `<spriteBase>_<n>.png`
+    // (or the bare `<spriteBase>.png`), and a raw startsWith would let a LONGER
+    // spriteBase of another level — "enemy_porte_flic_vigile" vs "enemy_porte_flic" —
+    // be reported as this level's asset (panel r5).
+    const matches = topLevelFiles.filter(
+      (f) =>
+        f === `${a.spriteBase}.png` || (f.startsWith(`${a.spriteBase}_`) && f.endsWith(".png")),
+    );
     if (matches.length > 0) {
       present.push(...matches.map((f) => `assets/${f}`));
     } else {

@@ -71,6 +71,22 @@ describe("validate", () => {
     expect(codes).toContain("plan/namespace");
   });
 
+  it("composes validateLevel too — a plan validateLevelPlan ACCEPTS can still be rejected (panel r5)", () => {
+    // The only composition path the short-circuit ordering leaves reachable, and the
+    // one the §5.2 evidence used to describe wrongly: an UNPREFIXED windowWeights key
+    // skips every plan-level guard (`if (!kind.includes(":")) continue`), so
+    // validateLevelPlan returns [] and only validateLevel knows the kind is unknown.
+    // If someone reorders registerGeneratedArchetypes/validateLevel back before the
+    // plan gate — or drops the composition — this goes red.
+    const plan = soundPlan("composed");
+    plan.gameplay.windowWeights = { gendarme: 20 };
+    plan.archetypes = [];
+    const { issues } = validate({ plan });
+    expect(issues).toHaveLength(1);
+    expect(issues[0].code).toBe("unknown-enemy-kind");
+    expect(issues[0].code.startsWith("plan/")).toBe(false);
+  });
+
   it("resolves a sound plan to no issues", () => {
     expect(validate({ plan: soundPlan("mcpvalidatesound") })).toEqual({ issues: [] });
   });
