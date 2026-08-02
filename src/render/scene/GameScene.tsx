@@ -44,6 +44,7 @@ import { UrbanMotion } from "@render/effects/UrbanMotion";
 import { CrtPass } from "@render/effects/CrtPass";
 import type { ImpactChannel, PhotoControlChannel, PlayerHitChannel } from "@hooks/useGameLoop";
 import type { PhotoPosture, PhotoSheetView } from "@render/ui/photo/photoSeam";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
 import { createCameraPan, driveEdgeScroll, edgeScrollRamp } from "@game/systems/cameraPanSystem";
@@ -128,6 +129,8 @@ interface Props {
   onHostageQte?: (qte: HudHostageQte | null) => void;
   /** Surfaces boss-QTE HUD state (the "le Commandant" HP bar) to the DOM HUD. */
   onBossQte?: (qte: HudBossQte | null) => void;
+  /** The photo proof, pushed on the frame the tick banks it onto `GameState`. */
+  onPhotoLeverage?: (leverage: PhotoLeverage) => void;
   /** Photo set-piece posture, `null` while it does not hold the scene (mobile button). */
   onPhotoPosture?: (posture: PhotoPosture | null) => void;
   /** The contact sheet, hoisted to the DOM sibling of the Canvas — it is a screen. */
@@ -157,6 +160,7 @@ export function GameScene({
   onDelivery,
   onHostageQte,
   onBossQte,
+  onPhotoLeverage,
   onPhotoPosture,
   onPhotoSheet,
   photoChannelRef,
@@ -531,6 +535,9 @@ export function GameScene({
         }}
         onSheet={(sheet) => {
           onPhotoSheet?.(sheet);
+        }}
+        onLeverage={(leverage) => {
+          onPhotoLeverage?.(leverage);
         }}
       />
       {crt && (

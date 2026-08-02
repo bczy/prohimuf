@@ -18,7 +18,7 @@ import {
 } from "./bossHarness";
 import { installDeliveryCaptureSeam, resolveDeliveryPreviewLevel } from "./deliveryHarness";
 import { resolveGeneratedPreviewLevel } from "./generatedHarness";
-import { nextLevelToUnlock } from "./levelProgress";
+import { isPhotoQteUnlocked, nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
 import styles from "./App.module.css";
@@ -52,6 +52,8 @@ import type { NarrativeScene } from "@game/systems/narrativeSystem";
 import { milestonesFromRun } from "@game/systems/runFunnelSystem";
 import type { FunnelState, RunSummary } from "@game/types/runStats";
 import { loadFunnel, recordMilestones } from "@hooks/runFunnelStorage";
+import { loadPhotoLeverage, recordPhotoLeverage } from "@hooks/photoLeverageStorage";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 
 // Lazy-loaded R3F/Three.js chunk (ADR-0068): Canvas + GameScene only reach the
 // network when the player is about to enter PLAYING. Prefetch fires on MENU entry
@@ -135,6 +137,20 @@ const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 installBossCaptureSeam();
 installDeliveryCaptureSeam();
 
+/**
+ * HARD harness override for every scripted set-piece (techplan §3.2). Read ONCE at module
+ * load, exactly like `PREVIEW_SCREEN`, because `seedPlay(page, ids, { setPieces })` writes it
+ * from an `addInitScript` before the app boots (lane C, `scripts/e2e-lib.mjs`).
+ *
+ * It is an OVERRIDE, not a second predicate: truthy ⇒ no set-piece, whatever the player's
+ * progression says. Three REQUIRED CI checks (`harness-assert`, `harness-motion`,
+ * `e2e-delivery`) drive a level that now carries a frozen-scene set-piece; without this they
+ * would sit behind a four-minute photo scene and break.
+ */
+const NO_SET_PIECE =
+  typeof window !== "undefined" &&
+  (window as Window & { __MUF_NO_SETPIECE__?: boolean }).__MUF_NO_SETPIECE__ === true;
+
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
 const IS_MOBILE = detectMobile();
@@ -202,7 +218,12 @@ function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   };
 }
 
-function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
+function buildLevelParams(
+  level: LevelConfig,
+  prefs: Prefs,
+  photoQteEnabled: boolean,
+  photoLeverage: PhotoLeverage,
+): LevelParams {
   const diffCfg = DIFFICULTY_CONFIG[prefs.difficulty];
   return {
     lives: prefs.lives,
@@ -220,6 +241,13 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.
     loot: level.loot ?? null,
+    // Scripted photo set-piece (ADR-0077). Authored on the level; the two gates are the
+    // caller's: the progression predicate (Q-3) and the harness override.
+    photoQte: level.photoQte ?? null,
+    photoQteEnabled,
+    // The cross-level carry (ADR-0080): the proof earned on Belliard, read from
+    // `muf_photo_leverage` and spent at the Niveau Final. `"none"` on a fresh save.
+    photoLeverage,
   };
 }
 
@@ -269,6 +297,10 @@ export function App(): JSX.Element {
   // Purely internal in v1 — it is rendered NOWHERE (UX §4, gate T1); its only
   // consumer is the "copier mon rapport" payload.
   const [funnel, setFunnel] = useState<FunnelState>(loadFunnel);
+  // The photo proof carried across levels (ADR-0080). Read once at boot and re-read from the
+  // merge on every bank, so the value seeded into the NEXT level's `LevelParams` is the one
+  // storage actually holds — never a second in-memory accumulator racing it.
+  const [photoLeverage, setPhotoLeverage] = useState<PhotoLeverage>(loadPhotoLeverage);
   // Held when a run qualifies for the board; the single deferred saveScore reads it on
   // NAME_ENTRY resolution (ADR-0054 §2). `null` = nothing pending (non-high-score path).
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
@@ -655,7 +687,13 @@ export function App(): JSX.Element {
     );
   }
 
-  const levelParams = buildLevelParams(selectedLevel, prefs);
+  // The set-piece's two gates, resolved here and nowhere else:
+  //  - the PROGRESSION predicate (Q-3), a pure read of the persisted `muf_progress`;
+  //  - the HARD harness override, which wins over it in both directions.
+  // `?preview=` sessions keep their byte-for-byte boot behaviour: they never persist, so a
+  // preview save is empty and the predicate reads `false` on its own.
+  const photoQteEnabled = !NO_SET_PIECE && isPhotoQteUnlocked(selectedLevel.id, unlockedLevels);
+  const levelParams = buildLevelParams(selectedLevel, prefs, photoQteEnabled, photoLeverage);
 
   return renderAppShell(
     <div
@@ -693,6 +731,13 @@ export function App(): JSX.Element {
           }}
           onBossQte={(bossQte) => {
             setHudData((prev) => ({ ...prev, bossQte: bossQte ?? undefined }));
+          }}
+          onPhotoLeverage={(leverage) => {
+            // The BANK (ADR-0080). The tick already merged it monotonically onto
+            // `GameState.photoLeverage`; this only mirrors that into storage, through the
+            // same monotone merge, so a replay or a lesser outcome can never demote the
+            // proof. Inert under `?preview=`, like every other persistence write here.
+            if (PREVIEW_SCREEN === null) setPhotoLeverage(recordPhotoLeverage(leverage));
           }}
           playSfx={audio.playSfx}
           levelParams={levelParams}

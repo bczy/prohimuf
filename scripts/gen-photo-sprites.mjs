@@ -20,9 +20,11 @@
  *     assets/levels/belliard/street-wide.png around x_norm 0.30-0.45 (continuity is a gate
  *     criterion, not a style note). Pinned seed, enhance=false, nologo, private. `flux` on
  *     the same prompt string is the pre-authorised fallback if kontext returns mushy/over-
- *     locked art. CAP: 2 batches for this whole asset set — past that, options go to
- *     Bertrand, not more rolls (gate §4 C4). The crop itself is produced ONCE by
- *     `--make-crop` and committed (reproducible, never regenerated per-run).
+ *     locked art. CAP: 2 batches FOR THE PLATE (kontext, then the flux fallback — exactly
+ *     what `generate()` below does, no further re-roll) — past that, options go to Bertrand,
+ *     not more rolls (gate §4 C4; the cap is scoped to the plate's own generation method,
+ *     not to the 8-asset set as a whole). The crop itself is produced ONCE by `--make-crop`
+ *     and committed (reproducible, never regenerated per-run).
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *
@@ -53,7 +55,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
-const CAP_BATCHES = 2; // gate §4 C4 — this whole asset set, not per-asset.
 
 const REPO = process.env.GITHUB_REPOSITORY ?? "bczy/prohimuf";
 const SHA = process.env.GITHUB_SHA ?? "main";
@@ -221,17 +222,10 @@ async function main() {
     process.exit(1);
   }
 
-  let batches = 0;
   for (const a of todo) {
     if (skip(a.outFile, { force: FORCE, existsSync: fs.existsSync })) {
       console.log(`[skip] ${a.key} — ${path.relative(ROOT, a.outFile)} exists (FORCE=1 to redo)`);
       continue;
-    }
-    if (batches >= CAP_BATCHES) {
-      console.log(
-        `[cap] ${a.key} — CAP_BATCHES=${CAP_BATCHES} reached for this run; stopping (gate §4 C4).`,
-      );
-      break;
     }
     console.log(`[gen ] ${a.key} ${a.width}x${a.height}`);
     let buf;
@@ -243,7 +237,6 @@ async function main() {
     }
     fs.mkdirSync(path.dirname(a.outFile), { recursive: true });
     fs.writeFileSync(a.outFile, buf);
-    batches += 1;
     console.log(`  [ok ] wrote ${path.relative(ROOT, a.outFile)} (${buf.length} bytes)`);
     if (!a.opaque) await tryCutout(a.outFile, a.key);
     await downsampleMobile(a);

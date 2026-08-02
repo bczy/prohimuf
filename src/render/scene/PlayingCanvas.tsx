@@ -25,6 +25,7 @@ import { GameScene } from "./GameScene";
 import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
 import type { PhotoControlChannel } from "@hooks/useGameLoop";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 import type { PhotoPosture, PhotoSheetView } from "@render/ui/photo/photoSeam";
 import { ContactSheet } from "@render/ui/photo/ContactSheet";
 import { PhotoRaiseButton } from "@render/ui/controls/PhotoRaiseButton";
@@ -41,6 +42,8 @@ interface Props {
   onDelivery: (delivery: HudDelivery) => void;
   onHostageQte: (qte: HudHostageQte | null) => void;
   onBossQte: (qte: HudBossQte | null) => void;
+  /** The photo proof, pushed when the tick banks it — App owns the persistence write. */
+  onPhotoLeverage: (leverage: PhotoLeverage) => void;
   playSfx: (name: "shoot" | "hit" | "death" | "win") => void;
   levelParams: LevelParams;
   levelId: string;
@@ -61,6 +64,7 @@ export default function PlayingCanvas({
   onDelivery,
   onHostageQte,
   onBossQte,
+  onPhotoLeverage,
   playSfx,
   levelParams,
   levelId,
@@ -102,6 +106,7 @@ export default function PlayingCanvas({
             onDelivery={onDelivery}
             onHostageQte={onHostageQte}
             onBossQte={onBossQte}
+            onPhotoLeverage={onPhotoLeverage}
             onPhotoPosture={setPhotoPosture}
             onPhotoSheet={setPhotoSheet}
             photoChannelRef={photoChannelRef}

@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { GameState } from "@game/types/gameState";
 import type { PhotoPosture, PhotoSceneView, PhotoSheetView } from "@render/ui/photo/photoSeam";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 import {
   PLATE_HEIGHT,
   PLATE_WIDTH,
@@ -33,6 +34,7 @@ export function PhotoQteLayer({
   stateRef,
   onPosture,
   onSheet,
+  onLeverage,
 }: {
   stateRef: React.RefObject<GameState>;
   /**
@@ -43,17 +45,30 @@ export function PhotoQteLayer({
   onPosture: (posture: PhotoPosture | null) => void;
   /** The verdict surface, hoisted to the DOM sibling of the Canvas (it is a screen). */
   onSheet: (sheet: PhotoSheetView | null) => void;
+  /**
+   * The banked proof, on the frame `GameState.photoLeverage` changes. The tick owns the
+   * merge (monotone, at the set-piece's exit); this is a pure edge report so App can mirror
+   * it into storage — no second channel, no render-side derivation of the outcome.
+   */
+  onLeverage: (leverage: PhotoLeverage) => void;
 }): JSX.Element | null {
   const [view, setView] = useState<PhotoSceneView | null>(null);
   const [sweepPhase, setSweepPhase] = useState(0);
-  // Edge memos for the two callbacks. They cross into the DOM tree (the world group's
-  // visibility, the contact sheet), so they fire on TRANSITIONS only: pushing a fresh
-  // object every frame would re-render the Canvas' DOM siblings at 60 Hz — the exact cost
-  // this layer exists to contain.
+  // Edge memos for the three callbacks. They all cross into the DOM tree (the world group's
+  // visibility, the contact sheet, a localStorage write), so they fire on TRANSITIONS only:
+  // pushing a fresh value every frame would re-render the Canvas' DOM siblings at 60 Hz — and
+  // hit storage 60 times a second — which is the exact cost this layer exists to contain.
   const postureRef = useRef<PhotoPosture | null>(null);
   const sheetRef = useRef(false);
+  const leverageRef = useRef<PhotoLeverage>(stateRef.current.photoLeverage);
 
   useFrame(() => {
+    const banked = stateRef.current.photoLeverage;
+    if (banked !== leverageRef.current) {
+      leverageRef.current = banked;
+      onLeverage(banked);
+    }
+
     const qte = stateRef.current.photoQte;
     const active = isPhotoQteActive(qte) && qte !== null;
     const posture = active ? qte.posture : null;

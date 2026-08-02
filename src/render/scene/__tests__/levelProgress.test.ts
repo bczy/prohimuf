@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextLevelToUnlock } from "../levelProgress";
+import { isPhotoQteUnlocked, nextLevelToUnlock } from "../levelProgress";
 import { LEVELS, BOSS_QTE_DEV_HARNESS_LEVEL } from "@game/levels/levels";
 
 // The next-level unlock decision App.tsx runs on a terminal phase (ADR-0059 §D4). These
@@ -59,5 +59,34 @@ describe("levelProgress.nextLevelToUnlock — failable shipped level unlock rout
 
   it("the mid-play phase never unlocks (only a terminal LEVEL_COMPLETE does)", () => {
     expect(nextLevelToUnlock("PLAYING", "belliard")).toBeNull();
+  });
+});
+
+// The photo set-piece's progression gate (pm ruling Q-3): never on a first Belliard. The
+// predicate stands on the progression `muf_progress` ALREADY holds — no new key, no new
+// write — and it is pure, so a harness seeds the state from an addInitScript.
+describe("isPhotoQteUnlocked", () => {
+  const host = LEVELS[0].id; // belliard, the host level
+  const nextId = LEVELS[1].id;
+
+  it("is false on a fresh save — a first Belliard never opens the set-piece", () => {
+    expect(isPhotoQteUnlocked(host, new Set())).toBe(false);
+    expect(isPhotoQteUnlocked(host, new Set([host]))).toBe(false);
+  });
+
+  it("is true once the level after the host is unlocked (i.e. the host was cleared)", () => {
+    expect(isPhotoQteUnlocked(host, new Set([nextId]))).toBe(true);
+  });
+
+  it("reads the level asked for, not the campaign's head", () => {
+    // The last shipped level has nothing after it to stand on.
+    const last = LEVELS[LEVELS.length - 1].id;
+    expect(isPhotoQteUnlocked(last, new Set(LEVELS.map((l) => l.id)))).toBe(false);
+  });
+
+  it("is false for a level outside the shipped campaign (dev harness)", () => {
+    expect(
+      isPhotoQteUnlocked(BOSS_QTE_DEV_HARNESS_LEVEL.id, new Set(LEVELS.map((l) => l.id))),
+    ).toBe(false);
   });
 });
