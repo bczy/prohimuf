@@ -109,7 +109,11 @@ bloc (workflow, ou job quand il porte une matrice).
 - [x] PR #151 (specs+plans) : panel PASS (4 runs convergents) → MERGÉE (3ba17a47,
       2026-07-30)
 - [x] BUILD : T1-T6 livrées (PR #156), 11 rounds de panel remédiés, ADR-0078
-- [ ] **Follow-ups tracés** (mineurs du run 11, hors périmètre de cette PR) :
+- [x] **Panel stage-6 : PASS** au run 14 (0 BLOQUANT, 0 MAJEUR) sur 1933f86f —
+      14 rounds, ~45 findings, 5 bloquants, tous remédiés et prouvés (mutations).
+- [ ] **Follow-ups tracés** (mineurs des runs 11 à 14, hors périmètre de cette PR) :
+      (0) l'upload d'artefact de gen-plan-sprites globe les DEUX familles quel que
+      soit `matrix.family` — à scoper par famille (bruit d'artefact, pas un risque) ;
       (a) la boucle push-avec-retry est recopiée 5× dans 3 workflows — à factoriser
       en script partagé ou action composite ; (b) le gate props re-parse la sortie
       humaine de `--list` par découpage shell — un mode `--list --json` serait plus
