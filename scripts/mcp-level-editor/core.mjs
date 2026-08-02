@@ -390,16 +390,53 @@ async function isServerUp(url) {
 /**
  * Reuse a vite dev server already serving at `port`/`base` (fetches the root
  * page), or spawn one under `rootDir` and wait for it to come up. Never kills a
- * server it did not start itself — `proc` is `null` when reused, so a caller
- * only tears down what it spawned.
+ * server it did not start itself.
+ *
+ * Returns a `release()` the caller MUST invoke when done. Concurrency is real on
+ * both ends here (panel r5 fixed the startup race, r6 this one): several
+ * `dryrun`/`preview` calls can share one dev server, so the spawner cannot simply
+ * kill it in its own `finally` — that would yank the server out from under a
+ * concurrent call still mid-navigation and report a spurious failure for a level
+ * that is sound. A per-port reference count decides instead: the server dies when
+ * the LAST holder releases it. A server we merely reused is never counted and never
+ * killed. `preview` deliberately holds its reference forever — its whole contract is
+ * that the server keeps serving after it returns — which is also what stops a
+ * concurrent `dryrun` from tearing down the URL it just handed a human.
  */
+const spawnedServers = new Map();
+
+/** Drop one hold on the port's server; the last one out kills what WE spawned. */
+function releaseDevServer(port) {
+  const entry = spawnedServers.get(port);
+  if (entry === undefined) return;
+  entry.refs -= 1;
+  if (entry.refs > 0) return;
+  spawnedServers.delete(port);
+  entry.proc.kill();
+}
+
+/** A reused (not spawned by us) server: nothing to count, nothing to kill. */
+function NO_RELEASE() {
+  // Intentionally empty: we never started this server, so we never stop it.
+}
+
 async function ensureDevServer({
   rootDir = repoRoot(),
   port = DEFAULT_PORT,
   base = DEFAULT_BASE,
 } = {}) {
   const url = `http://localhost:${String(port)}${base}`;
-  if (await isServerUp(url)) return { url, proc: null };
+  const held = spawnedServers.get(port);
+  if (held !== undefined && (await isServerUp(url))) {
+    held.refs += 1;
+    return {
+      url,
+      release: () => {
+        releaseDevServer(port);
+      },
+    };
+  }
+  if (await isServerUp(url)) return { url, release: NO_RELEASE };
 
   // stdio fully ignored: readiness is polled via isServerUp, and piped stdout/
   // stderr would keep a short-lived library caller's event loop alive forever
@@ -424,10 +461,18 @@ async function ensureDevServer({
       // see "no server", both spawn, and the loser dies on EADDRINUSE while the
       // winner's server is still coming up. Re-poll once before giving up — if
       // the winner is serving, reuse it (proc: null, so we never kill THEIRS).
-      if (await isServerUp(url)) return { url, proc: null };
+      if (await isServerUp(url)) return { url, release: NO_RELEASE };
       throw new Error(`dryrun/preview: failed to start the dev server: ${spawnError.message}`);
     }
-    if (await isServerUp(url)) return { url, proc };
+    if (await isServerUp(url)) {
+      spawnedServers.set(port, { proc, refs: 1 });
+      return {
+        url,
+        release: () => {
+          releaseDevServer(port);
+        },
+      };
+    }
     await sleep(300);
   }
   proc.kill();
@@ -485,7 +530,7 @@ export async function dryrun(
   } = {},
 ) {
   resolvePlanOrThrow(levelId, plans, "dryrun");
-  const { url: baseUrl, proc } = await ensureDevServer({ rootDir, port, base });
+  const { url: baseUrl, release } = await ensureDevServer({ rootDir, port, base });
   const navUrl = `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}`;
 
   // `PLAYWRIGHT_CHROMIUM_PATH` is an escape hatch for a sandbox whose preinstalled
@@ -530,16 +575,15 @@ export async function dryrun(
       hudSnippet,
     };
   } finally {
-    // `proc.kill()` must run even when the browser never opened or `close()`
-    // throws — nested try/finally so neither a failed launch nor a teardown error
-    // can orphan a `--strictPort` vite server that would then block every
-    // subsequent `dryrun` (panel §6.3 m7, CI panel MAJEUR on ae1aa10b).
+    // `release()` must run even when the browser never opened or `close()` throws —
+    // nested try/finally so neither a failed launch nor a teardown error can orphan a
+    // `--strictPort` vite server that would then block every subsequent `dryrun`
+    // (panel §6.3 m7, CI panel MAJEUR on ae1aa10b). `release` drops THIS call's hold;
+    // the server only dies if no concurrent dryrun/preview still holds one (r6).
     try {
       if (browser !== null) await browser.close();
     } finally {
-      // Only tear down a server WE spawned — `ensureDevServer` never kills one it
-      // reused, and neither do we.
-      if (proc !== null) proc.kill();
+      release();
     }
   }
 }
@@ -556,6 +600,10 @@ export async function preview(
   { rootDir = repoRoot(), plans = GENERATED_PLANS, port = DEFAULT_PORT, base = DEFAULT_BASE } = {},
 ) {
   resolvePlanOrThrow(levelId, plans, "preview");
+  // The hold is taken and DELIBERATELY never released: preview's contract is that the
+  // URL it returns keeps working after it returns, so its reference is what stops a
+  // concurrent `dryrun` from killing the server out from under the human it was
+  // handed to. The dev server outlives this process only until it exits.
   const { url: baseUrl } = await ensureDevServer({ rootDir, port, base });
   return { url: `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}` };
 }

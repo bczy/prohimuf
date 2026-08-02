@@ -72,6 +72,14 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       (1 BLOQUANT, 2 MAJEUR, 1 MINEUR), les 4 findings traités, voir §8
 - [x] **Panel CI — round 2 : CONDITIONAL** sur `b3e96f5c` (0 BLOQUANT, 1 MAJEUR,
       3 MINEUR), les 4 findings traités, voir §8
+- [x] **Panel CI — round 3 : CONDITIONAL** sur `0071b4ff` (0 BLOQUANT, 3 MAJEUR,
+      2 MINEUR), traités, voir §8
+- [x] **Panel CI — round 4 : FAIL** sur `f867734b` (**1 BLOQUANT** — l'ADR se déclarait
+      encore 0077 après renumérotation —, 1 MAJEUR de sécurité, 2 MINEUR), traités, voir §8
+- [x] **Panel CI — round 5 : CONDITIONAL** sur `9ed5f9d2` (0 BLOQUANT, 1 MAJEUR,
+      1 MINEUR), traités, voir §8
+- [x] **Panel CI — round 6 : CONDITIONAL** sur `5ad75f3e` (0 BLOQUANT, 2 MAJEUR,
+      1 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -895,3 +903,46 @@ donc **0081**, hors zone de choc ; les trous 0079/0080 sont assumés et document
   `enemy_porte_flic_vigile`) se voyait attribuer les assets du voisin. Match désormais
   délimité (`<base>.png` exact, ou `<base>_…`), conforme à la convention documentée juste
   à côté.
+
+### Round 6 — `5ad75f3e` : CONDITIONAL (0 BLOQUANT, 2 MAJEUR, 1 MINEUR)
+
+- **[MAJEUR, traçabilité] le Suivi et le corps de PR s'arrêtaient au round 3** — fondé.
+  §8 documentait bien les rounds 4 et 5 (dont un BLOQUANT), mais les deux endroits que le
+  process traite comme faisant foi — la checklist §Suivi et le corps de PR — n'en
+  portaient pas trace : un auditeur en aurait conclu que l'historique s'arrêtait au round
+  3 et n'aurait jamais su qu'un BLOQUANT était apparu ensuite. Les 6 rounds sont désormais
+  listés dans §Suivi, avec la sévérité de chacun ; corps de PR aligné.
+- **[MAJEUR] course de teardown du serveur de dev** — la moitié manquante du fix de course
+  du round 5 : j'avais traité le DÉMARRAGE (deux appels sur un port froid) sans traiter
+  l'ARRÊT (celui qui a démarré le serveur le tuait dans son `finally`, sans regarder si un
+  appel concurrent s'en servait encore). Corrigé par un compteur de références par port :
+  le serveur meurt quand le DERNIER porteur relâche ; `preview` prend une référence et ne
+  la relâche jamais, ce qui est exactement son contrat (l'URL rendue doit continuer de
+  servir) et ce qui empêche un `dryrun` concurrent de la lui couper.
+  **Honnêteté sur la preuve** : la probe de concurrence (deux `dryrun` chevauchants sur
+  port froid) passe avec le fix — mais la MUTATION (remettre le `kill` inconditionnel) ne
+  la fait PAS rougir. Une fois la page chargée, tuer vite ne casse pas les lectures DOM en
+  cours ; la fenêtre réelle exige que l'appel survivant fasse encore une requête réseau
+  après la libération (plausible avec les chunks Three.js différés d'ADR-0068, non
+  reproduit ici). Le refcount est donc gardé comme correction de classe, pas comme
+  correctif d'un bug observé — et c'est dit plutôt que sous-entendu.
+- **[MINEUR] avis de sécurité des devDeps non re-vérifiable hors ligne** — le finding dit
+  lui-même « No action required to merge ». Sa recommandation (faire re-jouer
+  périodiquement l'audit par un outil CI en réseau — Dependabot / osv-scanner — au lieu de
+  s'appuyer sur l'attestation ponctuelle d'ADR-0081 D2) est un chantier d'outillage propre,
+  hors périmètre de cette story. **Hand-off ouvert ci-dessous.**
+
+### Hand-offs ouverts à la sortie de cette story
+
+- `dev-tooling-assets` — **audit de dépendances en CI** : brancher osv-scanner ou
+  Dependabot sur le dépôt pour que l'attestation d'ADR-0081 D2 (`yarn npm audit`, ponctuelle
+  et hors ligne côté panel) devienne une vérification continue. Recommandé par le panel CI
+  (r4, r6, security-review).
+- `dev-tooling-assets` — **le workflow du panel compte un job `cancelled` comme `failed`**
+  et publie alors un diagnostic d'authentification trompeur (« quota épuisé / token
+  expiré ») alors qu'il s'agit d'une run supersédée par une poussée. Quatre DEGRADED de
+  cette PR viennent de là. Le workflow vit sur `main`, hors périmètre de ce diff.
+- `producer` — **collision 0078 non arbitrée** entre `claude/flyer-wall-float-in-animation`
+  (#145) et `feat/level-harness-sp2` (#156), plus `design/qte-photo-paparazzi` (#163) qui
+  doit quitter 0077. Détail et tableau des numéros :
+  `docs/handoffs/story-flyer-wall-float-in-animation.md`.
