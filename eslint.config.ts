@@ -86,6 +86,9 @@ export default tseslint.config(
   // scripts/** — Node CLI tooling (asset gen, checks, e2e). Plain .mjs files
   // sit outside every tsconfig project, so type-aware rules cannot run on
   // them; everything else (js recommended + non-type-aware strict) applies.
+  // NOTE: only scripts/ is covered — an .mjs anywhere else hits the base
+  // type-aware config and fails to parse (projectService knows no .mjs), and
+  // lint-staged stages *.mjs repo-wide. If one ever appears, extend `files`.
   {
     files: ["scripts/**/*.mjs"],
 
