@@ -84,6 +84,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       3 MINEUR), traités, voir §8
 - [x] **Panel CI — round 8 : CONDITIONAL** sur `633f91d5` (0 BLOQUANT, 3 MAJEUR,
       2 MINEUR), traités, voir §8
+- [x] **Panel CI — round 9 : CONDITIONAL** sur `758ee575` (0 BLOQUANT, 2 MAJEUR,
+      1 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -1021,3 +1023,30 @@ correctifs — dont le plus grave manquement au contrat de toute la série.
   principale, et prise de référence sur l'entrée du gagnant.
 - **[MINEUR] double sonde réseau sur entrée périmée** — corrigé, une seule sonde.
 - **[MINEUR] devDeps** — « no action required », l'attestation D2 tient.
+
+### Round 9 — `758ee575` : CONDITIONAL (0 BLOQUANT, 2 MAJEUR, 1 MINEUR)
+
+- **[MAJEUR] le VRAI point d'entrée `yarn mcp:level-editor` n'avait aucune couverture** —
+  la meilleure suggestion de couverture de toute la série, et elle ne vise aucun de mes
+  correctifs : c'est un trou depuis T2. `mcpServer.test.mjs` pilote `createServer()` par
+  un transport en mémoire, donc ne touche jamais `main()` ni la garde is-main-module. Or
+  cette garde repose sur un fait réellement surprenant : sous `vite-node <fichier>` nu,
+  vite-node RÉÉCRIT `process.argv`, la garde lit faux, `main()` ne tourne pas, et le
+  process sort **sans rien imprimer**. Le drapeau `--script` de `package.json` est tout ce
+  qui l'empêche — un drapeau qui a l'air redondant à côté des autres entrées de
+  `scripts/**` (toutes sous `node` nu) et que le prochain nettoyage supprimera. Sans
+  garde, la fonctionnalité entière de cette story pouvait régresser au silence avec
+  tsc/vitest/lint/panel au vert. Nouveau `scripts/__tests__/mcpEntryPoint.test.mjs` :
+  spawn de la commande réelle, JSON-RPC `initialize` sur son vrai stdio, réponse exigée
+  (~5 s pour les deux cas). **Vérifié discriminant par mutation** : `--script` retiré de
+  `package.json` ⇒ rouge. Le second cas épingle la surprise elle-même (invocation nue =
+  silence), pour qu'un futur vite-node qui corrigerait ce comportement le signale au lieu
+  de laisser le drapeau vivre comme folklore.
+- **[MAJEUR] lecture périmée de `held` à travers l'await** — **régression que J'AI
+  introduite au round 8** en corrigeant le MINEUR de la double sonde : `held` était capturé
+  AVANT `await isServerUp`, donc une inscription atterrissant pendant la sonde n'était pas
+  vue, l'appel prenait `NO_RELEASE` sans compter son hold, et le porteur d'en face pouvait
+  tuer le serveur en pleine navigation — soit exactement la course que r6/r7 prétendaient
+  avoir fermée. Table relue APRÈS l'await.
+- **[MINEUR] audit de dépendances non câblé en CI** — le finding demande lui-même de
+  « suivre le hand-off ouvert », ce qui est déjà fait (liste en fin de shard). Sans action.

@@ -465,10 +465,14 @@ async function ensureDevServer({
     };
   };
 
-  // UNE seule sonde réseau : l'écrire en deux conditions faisait payer deux
-  // fetch-avec-timeout à tout appel tombant sur une entrée périmée (panel r8).
-  const held = spawnedServers.get(key);
+  // UNE seule sonde réseau (panel r8 : deux conditions faisaient payer deux
+  // fetch-avec-timeout à tout appel tombant sur une entrée périmée) — mais la table
+  // est relue APRÈS l'await, jamais avant (panel r9). Une inscription qui atterrit
+  // pendant la sonde doit être vue : la lire d'abord faisait prendre la branche
+  // NO_RELEASE à un appel qui va pourtant piloter ce serveur, donc sans compter son
+  // hold — et le porteur d'en face pouvait le tuer en pleine navigation.
   if (await isServerUp(url)) {
+    const held = spawnedServers.get(key);
     return held === undefined ? { url, release: NO_RELEASE } : holdOn(held);
   }
 
