@@ -67,7 +67,7 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       ses 2 LOW appliqués dans la foulée (phrase R2 déplacée dans le JSDoc de
       `validate`, probe du cumul promue en test commité)
 - [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0077; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
-- [ ] PR draft → acceptation pm
+- [x] PR draft → acceptation pm — **ACCEPTED**, voir §7
 - [ ] Merge
 
 ## 3. BUILD — reprise 2026-07-31 (session remote)
@@ -619,3 +619,87 @@ en acceptation `pm`. Ma condition de sign-off (b) est **close** — non pas « r
 « trouvé, tracé, escaladé à qui de droit ».
 
 — `senior-architect` (Winston), 2026-08-01.
+
+## 7. Acceptation pm — stage 8
+
+`pm` (John), 2026-08-02, sur `claude/mcp-level-editor-build-iy2jaw` @ `87114205` (PR #159
+draft). Jugement de la livraison CONTRE `spec-mcp-level-editor.md`, `plan-mcp-level-editor.md`,
+PROJECT_GUIDELINES et ce shard — pas une reprise des gates amont (tous PASS, déjà tracés) mais
+un contrôle direct sur trois axes : cadrage, périmètre, honnêteté de la trace.
+
+### 7.1 Cahier des charges
+
+Prohibition (Atari ST) n'a pas d'outil d'édition de niveaux pour agents — cet outil n'est pas
+une fonctionnalité du jeu, c'est un outil de production pour la piste éditeur (ADR-0074/0075).
+Le test "cahier des charges" ne s'applique pas directement à un outil interne ; ce qui s'applique
+est la discipline de scope de la spec elle-même (§2, §7), qui EST le cadrage de Bertrand pour cet
+outil. Vérifié ligne à ligne :
+
+- **Décision 1 (écriture v1, triple discipline)** — tenue. `scaffold` écrit uniquement sous
+  `src/game/levels/generated/` (charset d'id + refus `/`, `\`, `..` + `targetPath.startsWith`
+  en 2ᵉ couche, les trois couches prouvées par mutation §5.3 M1/M4) ; `validate` bloquant avant
+  écriture (M2/R1 fermés — un plan malformé ou `null` rend des issues, ne throw plus, donc ne
+  peut plus contourner le blocage par effet de bord) ; aucun geste git dans l'outil (`rg` sur
+  `src/**`/`scripts/mcp-level-editor/**` ne montre aucun appel `git`/`commit`/`push`, conforme
+  §6.1 du panel et à D3/D4 de l'ADR).
+- **Décision 2 (navigateur local uniquement)** — tenue. `dryrun`/`preview` pilotent un vite +
+  Playwright locaux, aucun token/secret côté serveur (D5, vérifié §6.5) ; `dryrun-fixture.mjs`
+  n'est pas dans le CI mais exécuté à la main au VERIFY (§5.2d, PASSED, report identique au
+  commité).
+- **Décision 3 (SDK officiel, stdio, `.mcp.json`)** — tenue. `@modelcontextprotocol/sdk`
+  `1.30.0` pin exact en devDependency (W1 fermé), interdit d'import depuis `src/**` (vérifié par
+  `rg`, §6.1), `.mcp.json` porte `"type": "stdio"` (vérifié directement par moi) et le smoke
+  JSON-RPC de l'architecte confirme le handshake + les 6 outils.
+
+### 7.2 Hors périmètre (§7)
+
+Aucune trace de timeline (story ②, toujours bloquée par sa réserve §7.1 — non touchée ici), de
+placeur de balcons (story ④), de génération d'assets (réservée à SP2) ou de transport MCP autre
+que stdio local dans le diff. L'ADR-0077 D2/D3 ferme explicitement toute extension de ces
+surfaces à un nouvel ADR — ce n'est pas seulement respecté aujourd'hui, c'est verrouillé pour
+demain. Confirmé par ma propre lecture de la spec/plan/ADR et par les vérifications de frontière
+répétées de l'architecte (§6.1, §6.5, §6.7) : rien à retrancher.
+
+### 7.3 Critère d'acceptation §6
+
+Les 6 points sont attestés par des **exécutions réelles**, pas sur parole : qa-lead a rejoué
+`validate`/`scaffold`/`inspect`/`dryrun`/`preview` en direct (§5.2, dont le scaffold dans le VRAI
+`generated/` et non en tmpdir — la preuve la plus exigeante), et l'architecte a rejoué une partie
+de ces mêmes probes lui-même en triage (§6.1) puis en re-vérification incrémentale (§6.7),
+trouvant au passage deux résiduels (R1, ADR#) qui ont chacun reçu un traitement fermé plutôt
+qu'une note vague. C'est le niveau de preuve que ce critère demande.
+
+### 7.4 Dette et hand-offs ouverts — tracés, pas de dette silencieuse
+
+- **Renumérotation flyer 0077→0078** : ruling `producer` rendu et enregistré dans
+  `docs/handoffs/story-flyer-wall-float-in-animation.md` (vérifié — geste explicite listé,
+  renommage + régénération d'index + mise à jour du handoff avant rebase sur `main`). Propre :
+  la story flyer porte sa propre dette, pas cette branche.
+- **Dédup driver §8 par SP2** : `compareDryrunReport` paramétré (`base`, `levelId`, regex
+  échappée) précisément pour que SP2 dédoublonne au lieu de forker (m5, §6.5 et §6.7) — seam
+  ouvert, documenté, non bloquant pour CETTE story puisque SP2 n'a pas encore mergé.
+- **Garde `plan/calibration` côté SP2** : notée en §3 comme non ajoutée ici par construction
+  (SP2 toujours en SPECS REVIEWED au moment du build) — pas un oubli, une séquence attendue
+  documentée dans le plan (Auto-revue, croisement SP2 point 1).
+- **Constat "branche fantasme"** (§3) : le shard trace honnêtement que la branche
+  `feat/mcp-level-editor` annoncée par Bertrand n'a jamais existé sur `origin`, que T1/T2b ont
+  été réimplémentées sur `claude/mcp-level-editor-build-iy2jaw`, et que si les commits locaux de
+  Bertrand refont surface une réconciliation manuelle sera nécessaire. C'est exactement la
+  transparence attendue — rien à corriger, sauf attirer l'attention de Bertrand dessus (fait
+  dans mon verdict ci-dessous) au cas où des commits locaux existent encore quelque part et
+  mériteraient un coup d'œil avant qu'on les considère caducs.
+
+### 7.5 Verdict
+
+**ACCEPTED, sans réserve bloquante.** Les 3 décisions de cadrage sont tenues à la lettre, aucune
+extension hors §7 n'est livrée, le critère §6 est attesté par des exécutions réelles rejouées à
+deux niveaux indépendants (qa-lead, senior-architect), et toute la dette ouverte (renumérotation
+ADR, dédup SP2, garde calibration) est tracée avec un porteur et un déclencheur clairs — rien
+n'est laissé en dette silencieuse. Un seul point à porter à l'attention de Bertrand hors gate :
+le constat §3 sur la branche `feat/mcp-level-editor` jamais poussée — si des commits locaux
+existent encore de son côté, un coup d'œil avant de les considérer perdus, sinon rien à faire.
+
+Prêt pour merge dès que `producer`/l'architecte confirment le numéro ADR-0077 une dernière fois
+juste avant le push sur `main` (rituel déjà cadré au §6.7, pas une nouvelle condition).
+
+— `pm` (John), 2026-08-02.
