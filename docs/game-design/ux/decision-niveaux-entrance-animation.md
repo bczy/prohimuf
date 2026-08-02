@@ -88,6 +88,14 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    son exception et la feuille sauterait sous le doigt, soit la régression même que cette
    règle existe pour empêcher, réintroduite par la règle.
 
+   Et la **libération** doit être par pointeur elle aussi. Seuls `pointerup` et
+   `pointercancel` terminent un geste ; `click`, `contextmenu` et une frappe ne font que
+   jeter ceux qui sont DÉJÀ terminés. Vider la table en bloc — ce qu'un marqueur unique
+   permettait — reviendrait à ce qu'un doigt qui se lève efface la marque d'un doigt encore
+   posé, ou qu'une touche frappée en pleine pression efface celle du doigt qui presse. Le
+   `pointerup` ne supprime pas, il marque « terminé » : sur tactile, le focus d'un tap
+   arrive après que son doigt s'est levé, et supprimer là rouvrirait le bug d'origine.
+
 6. **Le mouvement réduit ne consomme pas la cascade de la session.** L'animation étant
    supprimée, marquer la session comme « déjà jouée » dépenserait son unique passage pour
    rien : un joueur qui désactive ensuite la bascule in-app et revient sur NIVEAUX ne

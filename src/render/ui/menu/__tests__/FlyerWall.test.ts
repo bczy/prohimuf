@@ -482,12 +482,61 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
     act(() => {
       el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 2 }));
+      // pointerup included because a browser always sends one: only pointerup/pointercancel
+      // END a gesture, and click/contextmenu then drop the ended ones. A marker released
+      // without its pointer having lifted would be the wholesale clearing that wipes a
+      // second finger still down.
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, button: 2 }));
       el?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
     });
     act(() => {
       el?.focus(); // assistive tech arriving on the same flyer, no click in between
     });
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
+  it("keeps a still-pressed finger's marker when another finger's click fires", () => {
+    // Pointers overlap: finger A lifting fires the click that used to wipe the WHOLE map,
+    // including finger B still down. B's own focus would then match nothing and settle the
+    // wall out from under it. Only ENDED gestures are released, so B survives A's click.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const slots = container.querySelectorAll<HTMLElement>(".muf-flyer-slot [role='button']");
+    const a = slots[0];
+    const b = slots[1];
+    expect(b).toBeDefined();
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      a?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      b?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 2 }));
+      // Finger A completes its whole gesture. Finger B is still down.
+      a?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      a?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    act(() => {
+      b?.focus(); // finger B's own focus, its gesture still live
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+  });
+
+  it("keeps a live tap's marker when a stray keydown lands mid-gesture", () => {
+    // A keystroke anywhere used to clear the whole map. On a tablet with a keyboard, a key
+    // pressed while a finger is down would strip that finger's marker, and the tap's own
+    // focus would settle the wall from under it. Only ended gestures are released.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+    });
+    act(() => {
+      el?.focus();
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
   it("still settles when assistive tech lands on a flyer clicked earlier", () => {
@@ -503,6 +552,7 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
     act(() => {
       el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
       el?.dispatchEvent(new MouseEvent("click", { bubbles: true })); // gesture over, no focus
     });
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);

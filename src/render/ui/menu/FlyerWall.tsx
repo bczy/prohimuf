@@ -278,7 +278,7 @@ export function FlyerWall({
   // broke what is written up once, in decision §5 of
   // docs/game-design/ux/decision-niveaux-entrance-animation.md; repeating it here is how
   // that document and this file drifted apart in the first place.
-  const pointerPressed = useRef(new Map<number, EventTarget>());
+  const pointerPressed = useRef(new Map<number, { target: EventTarget; ended: boolean }>());
 
   // Whether the session's one showing has been SPENT — either the cascade ran to its end
   // (the last slot's animationend, below) or the player resolved it themselves by arriving
@@ -321,39 +321,52 @@ export function FlyerWall({
   }, [playCascade, reducedMotion]);
 
   useEffect(() => {
-    const forget = () => {
-      pointerPressed.current.clear();
+    // Release only the gestures that have ENDED, never the whole map. Wholesale clearing
+    // was safe while a single marker was tracked; with one per pointer it is not, because
+    // pointers overlap: a finger lifting fires the click that would wipe the marker of a
+    // finger still down, and that second finger's own focus would then match nothing and
+    // settle the wall out from under it — the very yank this guard exists to prevent.
+    const releaseEnded = () => {
+      for (const [id, entry] of pointerPressed.current) {
+        if (entry.ended) pointerPressed.current.delete(id);
+      }
     };
-    const onPointer = (e: PointerEvent) => {
+    const onDown = (e: PointerEvent) => {
       // A pointerdown with no target has nothing a later focus could be compared against,
       // so recording it would only ever be a stale entry that suppresses nothing.
-      if (e.target !== null) pointerPressed.current.set(e.pointerId, e.target);
+      if (e.target !== null)
+        pointerPressed.current.set(e.pointerId, { target: e.target, ended: false });
     };
-    window.addEventListener("keydown", forget, true);
-    window.addEventListener("pointerdown", onPointer, true);
-    // The gesture's END releases the markers, so they can only ever suppress the focus of
-    // a gesture still in flight. Left to be overwritten by the next pointerdown, one would
-    // keep pointing at a flyer indefinitely whenever a press produces NO focus — macOS Safari
-    // without Full Keyboard Access does not focus a control on click, and a locked flyer
-    // only shakes — and a screen reader landing on that same flyer later would be read as
-    // that old gesture's own focus and silently denied the settle it needs.
-    //
-    // `click` and not `pointerup`: on touch the order is pointerdown → pointerup →
-    // synthetic mousedown → focus → mouseup → click, so pointerup still precedes the tap's
-    // own focus. `click` is the first event that is always after it. `pointercancel`
-    // covers the gestures that never reach a click at all (scroll takeover, palm reject),
-    // and `contextmenu` the third way out: a right-click dispatches no click, and a
-    // long-press the OS takes over does not reliably cancel either, so without it those
-    // two gestures would leave a marker live until the player's next interaction anywhere.
-    window.addEventListener("click", forget, true);
-    window.addEventListener("pointercancel", forget, true);
-    window.addEventListener("contextmenu", forget, true);
+    // Lifted, but NOT yet forgotten: on touch the order is pointerdown → pointerup →
+    // synthetic mousedown → focus → mouseup → click, so a tap's own focus still arrives
+    // after its finger is up. Deleting here would reopen the touch bug this guard was
+    // written for; marking it ended lets the click that follows do the deleting.
+    const onUp = (e: PointerEvent) => {
+      const entry = pointerPressed.current.get(e.pointerId);
+      if (entry !== undefined) entry.ended = true;
+    };
+    // Cancelled gestures produce no focus at all, so theirs can go immediately.
+    const onCancel = (e: PointerEvent) => {
+      pointerPressed.current.delete(e.pointerId);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    // `click` is the first event guaranteed to come after a tap's own focus, so it is where
+    // an ended gesture is finally dropped. `contextmenu` is the way out for the gestures
+    // that never reach a click — a right-click dispatches none, and a long-press the OS
+    // takes over does not reliably cancel. `keydown` covers the last case: a player who
+    // pressed, released, and reached for the keyboard instead of completing the click.
+    window.addEventListener("click", releaseEnded, true);
+    window.addEventListener("contextmenu", releaseEnded, true);
+    window.addEventListener("keydown", releaseEnded, true);
     return () => {
-      window.removeEventListener("keydown", forget, true);
-      window.removeEventListener("pointerdown", onPointer, true);
-      window.removeEventListener("click", forget, true);
-      window.removeEventListener("pointercancel", forget, true);
-      window.removeEventListener("contextmenu", forget, true);
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
+      window.removeEventListener("click", releaseEnded, true);
+      window.removeEventListener("contextmenu", releaseEnded, true);
+      window.removeEventListener("keydown", releaseEnded, true);
     };
   }, []);
 
@@ -476,8 +489,8 @@ export function FlyerWall({
           // is a player arriving, and settles the wall so no focus ring gets clipped.
           // ANY live gesture, not just the newest: with two fingers down, the one that
           // produces this focus is not necessarily the one that pressed last.
-          for (const pressed of pointerPressed.current.values()) {
-            if (pressed instanceof Node && e.target.contains(pressed)) return;
+          for (const { target } of pointerPressed.current.values()) {
+            if (target instanceof Node && e.target.contains(target)) return;
           }
           setInterrupted(true);
           showingConsumed.current = true;
