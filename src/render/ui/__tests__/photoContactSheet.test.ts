@@ -132,3 +132,39 @@ describe("ContactSheet — the R2-5 CTA shape", () => {
     expect(ctaLabels(html)).toEqual(["[ CONTINUER ]"]);
   });
 });
+
+describe("ContactSheet — thumbnails are two DOM layers (lead-art ruling)", () => {
+  const crop = { x: 0.25, y: 0.5, w: 0.2, h: 0.2 } as const;
+
+  function withThumb(poseUrl: string | null): string {
+    return renderToStaticMarkup(
+      createElement(ContactSheet, {
+        sheet: sheet({ frames: [frame({ ordinal: 1, verdict: "MASTER", rejectReason: null })] }),
+        filmCount: 6,
+        thumbnails: new Map([[1, { plateUrl: "assets/plate.png", poseUrl, crop }]]),
+        onCta: () => {
+          /* noop */
+        },
+      }),
+    );
+  }
+
+  it("prints the plate AND the pose on the same rectangle — never the plate alone", () => {
+    const html = withThumb("assets/pose.png");
+    expect(html).toContain("url(assets/plate.png)");
+    expect(html).toContain("url(assets/pose.png)");
+    // Same crop on both layers: two identical background-position declarations.
+    expect(html.match(/background-position:25% 50%/g)).toHaveLength(2);
+  });
+
+  it("crops with CSS only — no canvas, no readback, no pre-rendered sheet bitmap", () => {
+    const html = withThumb("assets/pose.png");
+    expect(html).not.toMatch(/<canvas|toDataURL|data:image/);
+    expect(html).toContain("background-size");
+  });
+
+  it("falls back to the toner placeholder when a frame has no imagery yet", () => {
+    const html = markup(sheet({ frames: [frame({ ordinal: 1 })] }));
+    expect(html).not.toContain("url(");
+  });
+});

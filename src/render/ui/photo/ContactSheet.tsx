@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { JSX } from "react";
+import type { CSSProperties } from "react";
 import type { PhotoCta, PhotoFrameRecord, PhotoSheetView } from "./photoSeam";
 import { cx } from "@render/ui/hud/cx";
 import styles from "./ContactSheet.module.css";
@@ -8,6 +9,13 @@ import styles from "./ContactSheet.module.css";
  * The planche contact — the set-piece's SECOND beat (ADR-0077 D8): the only surface that
  * ever discloses a verdict. Photocopy B&W fanzine treatment, 2×3 grid at the authored
  * `filmCount = 6`, no scroll and no pagination (UX §4.1).
+ *
+ * Thumbnails are TWO DOM LAYERS per window — the plate and the pose, cropped to the SAME
+ * rectangle (`lead-art` ruling, `photo-qte-resolution-and-sweep-ruling.md`). Six crops of
+ * the bare plate would print six photos of a wall with nobody in them, which is a contact
+ * print that lies about the photo taken. Both layers are already-decoded images reused by
+ * CSS `background-position`/`background-size`: zero VRAM, zero draw, zero readback — no
+ * canvas readback and no pre-rendered sheet bitmap, both explicitly forbidden.
  *
  * The render decides NOTHING here. The outcome is not re-derived from `frames` and the CTA
  * shape is not inferred from a stamp count: `leavingCta` (continue on a MASTER roll,
@@ -48,14 +56,59 @@ function EmptyWindow({ ordinal }: { ordinal: number }): JSX.Element {
   );
 }
 
-function Thumb({ frame }: { frame: PhotoFrameRecord }): JSX.Element {
+/**
+ * One exposed frame's imagery: the plate crop and the pose crop, same rectangle, layered.
+ * Supplied per ordinal by the caller (the URLs are the manifest's and the crop is the
+ * exposure's — neither is the render's to invent). Absent ⇒ the toner placeholder.
+ */
+export interface PhotoThumbnail {
+  readonly plateUrl: string;
+  readonly poseUrl: string | null;
+  /** The exposed rectangle, as fractions of the plate: origin top-left, y DOWN. */
+  readonly crop: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+}
+
+/** CSS background crop for one layer — the image is decoded once and reused per window. */
+function cropStyle(url: string, crop: PhotoThumbnail["crop"]): CSSProperties {
+  const scale = (v: number): string => `${String(100 / (v > 0 ? v : 1))}%`;
+  return {
+    backgroundImage: `url(${url})`,
+    backgroundSize: `${scale(crop.w)} ${scale(crop.h)}`,
+    backgroundPosition: `${String(crop.x * 100)}% ${String(crop.y * 100)}%`,
+    backgroundRepeat: "no-repeat",
+  };
+}
+
+function Thumb({
+  frame,
+  thumbnail,
+}: {
+  frame: PhotoFrameRecord;
+  thumbnail: PhotoThumbnail | undefined;
+}): JSX.Element {
   const rejected = frame.verdict === "REJECTED";
+  const degraded = rejected ? styles.thumbRejected : undefined;
   return (
     <li className={styles.cell}>
-      <div
-        className={cx(styles.thumb, rejected ? styles.thumbRejected : undefined)}
-        aria-hidden={true}
-      />
+      {thumbnail === undefined ? (
+        <div className={cx(styles.thumb, degraded)} aria-hidden={true} />
+      ) : (
+        <>
+          <div
+            className={cx(styles.layer, degraded)}
+            style={cropStyle(thumbnail.plateUrl, thumbnail.crop)}
+            aria-hidden={true}
+          />
+          {thumbnail.poseUrl !== null && (
+            <div
+              className={cx(styles.layer, degraded)}
+              style={cropStyle(thumbnail.poseUrl, thumbnail.crop)}
+              aria-hidden={true}
+            />
+          )}
+        </>
+      )}
+      <div className={cx(styles.grain, degraded)} aria-hidden={true} />
       <span
         className={cx(
           styles.stamp,
@@ -74,6 +127,7 @@ function Thumb({ frame }: { frame: PhotoFrameRecord }): JSX.Element {
 export function ContactSheet({
   sheet,
   filmCount,
+  thumbnails,
   onCta,
 }: {
   sheet: PhotoSheetView | null;
@@ -83,6 +137,8 @@ export function ContactSheet({
    * grid at one full roll so a truncated or empty sheet keeps its shape (T-11).
    */
   filmCount: number;
+  /** Imagery per exposed frame, keyed by `ordinal`. Empty ⇒ the toner placeholder prints. */
+  thumbnails?: ReadonlyMap<number, PhotoThumbnail>;
   onCta: (cta: PhotoCta) => void;
 }): JSX.Element | null {
   const retryRef = useRef<HTMLButtonElement | null>(null);
@@ -117,7 +173,7 @@ export function ContactSheet({
             full roll of windows, the missing ones simply unexposed (T-11). */}
         <ul className={styles.grid}>
           {sheet.frames.map((frame) => (
-            <Thumb key={frame.ordinal} frame={frame} />
+            <Thumb key={frame.ordinal} frame={frame} thumbnail={thumbnails?.get(frame.ordinal)} />
           ))}
           {blanks.map((ordinal) => (
             <EmptyWindow key={`blank-${String(ordinal)}`} ordinal={ordinal} />

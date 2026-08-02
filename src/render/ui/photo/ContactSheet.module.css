@@ -72,6 +72,23 @@
   filter: grayscale(1) contrast(1.35);
 }
 
+/* One cropped image layer (plate, then pose) — the crop arrives inline as a background
+   position/size, so both images are decoded once and reused across the six windows. */
+.layer {
+  position: absolute;
+  inset: 0;
+  filter: grayscale(1) contrast(1.2);
+}
+
+/* The photocopy grain laid over whatever printed underneath. */
+.grain {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, var(--ink-black) 0 1px, transparent 1px 3px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 /* Rejected frames print visibly degraded, so the reject reads even to a player who
    cannot parse the stamp glyph (UX §4.2). */
 .thumbRejected {
