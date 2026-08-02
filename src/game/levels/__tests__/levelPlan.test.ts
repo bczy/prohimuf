@@ -659,6 +659,11 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, backdrop: { ...base.backdrop, file: "  " } },
     { ...base, props: [{ ...base.props[0], asset: undefined }] },
     { ...base, props: [{ ...base.props[0], asset: "" }] },
+    // Path fragments that escape public/: without the traversal guard, inspect's
+    // asset scan becomes an arbitrary-path file-existence oracle (panel r4 security).
+    { ...base, backdrop: { ...base.backdrop, file: "../../../../etc/passwd" } },
+    { ...base, props: [{ ...base.props[0], asset: "../../../etc/hostname" }] },
+    { ...base, props: [{ ...base.props[0], asset: "assets\\win\\path.png" }] },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

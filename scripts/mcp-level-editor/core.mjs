@@ -51,6 +51,21 @@ function generatedDir(rootDir) {
  * throws, so a bad id is a reportable `LevelIssue`, not a crash.
  */
 function resolveInputPlan(input, plans) {
+  // Both given is a legal SHAPE on the wire (the zod schema makes each optional and
+  // independent), and silently letting `plan` win would validate a cached/edited plan
+  // while the caller believes it scoped the call by id. Say so instead of choosing.
+  if (input?.plan !== undefined && input.levelId !== undefined) {
+    return {
+      issue: {
+        code: "plan/ambiguous-input",
+        severity: "error",
+        field: "",
+        message:
+          "validate accepts { plan } OR { levelId }, not both — they can disagree, and " +
+          "picking one silently would hide that. Drop whichever is not the subject.",
+      },
+    };
+  }
   if (input?.plan !== undefined) return { plan: input.plan };
   if (input?.levelId !== undefined) {
     const plan = plans.find((p) => p.id === input.levelId);
@@ -145,8 +160,19 @@ function scanAssets(plan, rootDir) {
   const present = [];
   const missing = [];
 
+  // Belt-and-suspenders over `validateLevelPlan`'s traversal guard on the same two
+  // fields: THIS is the code that touches the disk, so it confines the resolved path
+  // itself rather than trusting that every caller validated first. An escaping path
+  // is reported missing — `inspect` never answers for a file outside public/.
+  const publicRoot = path.resolve(publicDir);
+  const existsInsidePublic = (relPath) => {
+    const resolved = path.resolve(publicDir, relPath);
+    if (!resolved.startsWith(publicRoot + path.sep)) return false;
+    return existsSync(resolved);
+  };
+
   const backdropRelPath = `assets/levels/${plan.id}/${plan.backdrop.file}.png`;
-  (existsSync(path.join(publicDir, backdropRelPath)) ? present : missing).push(backdropRelPath);
+  (existsInsidePublic(backdropRelPath) ? present : missing).push(backdropRelPath);
 
   const assetsDir = path.join(publicDir, "assets");
   const topLevelFiles = existsSync(assetsDir) ? readdirSync(assetsDir) : [];
@@ -160,7 +186,7 @@ function scanAssets(plan, rootDir) {
   }
 
   for (const p of plan.props) {
-    (existsSync(path.join(publicDir, p.asset)) ? present : missing).push(p.asset);
+    (existsInsidePublic(p.asset) ? present : missing).push(p.asset);
   }
 
   return { present, missing };

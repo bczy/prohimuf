@@ -1,13 +1,21 @@
-# 0077 — Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur
+# 0081 — Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur
 
 - **Status:** Proposed
 - **Date:** 2026-07-31
-- **Number:** 0077, self-allocated via the `adr-new` discipline — no number was reserved by
-  `producer` in `docs/handoffs/story-mcp-level-editor.md`. Checked against the local
-  `docs/adr/`, the generated index, `origin/main` AND **every remote branch** (98 heads
-  fetched, `git log --all` over `docs/adr/*.md` — highest existing number 0076). The
-  0073→0074→0075 renumber is the reason this check covers unmerged branches, not just
-  `main`; re-check at merge.
+- **Number:** 0081. **Rédigé initialement en 0077, renuméroté en 0081 le 2026-08-02** —
+  l'historique vaut d'être dit, il est la raison d'être de la leçon ci-dessous. À
+  l'écriture (2026-07-31), 0077 était libre : vérifié contre `docs/adr/` local, l'index
+  généré, `origin/main` ET toutes les branches distantes (plus haut numéro existant :
+  0076). Une collision est apparue le 2026-08-01 avec `claude/flyer-wall-float-in-animation`,
+  arbitrée par `producer` en notre faveur — puis **un tiers a mergé 0077 sur `main`**
+  (`0077-couverture-tsc-eslint-scripts`, PR #161) pendant que cette PR était au merge
+  gate. Leçon actée : un arbitrage ne réserve pas un numéro, **seul un merge le fait**.
+  Le report vers 0081 (et non 0079, pourtant libre à l'instant) vient d'un balayage
+  exhaustif des 103 branches distantes : 0078 est disputé entre PR #145 et #156, #163
+  doit quitter 0077, et 0080 est déjà pris — 0078/0079 sont la zone d'atterrissage de
+  ces glissements. Trous 0079/0080 assumés. La renumérotation 0073→0074→0075 est déjà la
+  raison pour laquelle ce contrôle couvre les branches non mergées et pas seulement
+  `main` ; celle-ci ajoute la sienne : **re-vérifier le numéro juste avant le merge**.
 - **Relates to:** ADR-0074 (module de données de level + `validateLevel`/`LevelIssue` — le
   contrat que les outils consomment), ADR-0075 (`LevelPlan` composable, seam `generated/` —
   dont le §6 est amendé ici, voir D6), ADR-0063 (précédent d'un outillage d'agents porté en
@@ -45,6 +53,15 @@ transport (HTTP, SSE, distant) est hors périmètre et exige un nouvel ADR.
 officiel évite de réimplémenter le protocole ; il entre en `devDependencies` et reste
 interdit d'import depuis `src/**` (la loi de frontière ne bouge pas : ni `src/game` ni
 `src/render` ne gagnent une dépendance).
+
+Trois devDependencies entrent au total, toutes pinnées exact : `@modelcontextprotocol/sdk@1.30.0`,
+`vite-node@3.2.4`, `zod@4.4.3`. **Contrôle d'avis de sécurité, consigné ici pour être
+reproductible** (le panel CI tourne sans réseau et ne peut pas le refaire lui-même) —
+`yarn npm audit --all --recursive` au 2026-08-02 : 7 avis dans l'arbre, **aucun ne touche
+ces trois paquets ni leurs transitifs**. Les 7 préexistent sur `main` et lui appartiennent :
+`brace-expansion` (×3, via `minimatch`), `git-raw-commits` (via `@commitlint/read`), `glob`
+(via `test-exclude`), `playwright`, `tar` (via `node-gyp`). À rejouer d'une ligne :
+`yarn npm audit --all --recursive`.
 
 **D3 — Cinq outils fermés, aucune règle chez le serveur.** `validate`, `inspect`,
 `scaffold`, `dryrun`, `preview` — énumération fermée : pas d'outil « exec », « shell » ou

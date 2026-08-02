@@ -175,6 +175,30 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       issues.push(planIssue("malformed", field, `${field}: expected a non-empty string (${why})`));
     }
   }
+  // The two strings above that become FILESYSTEM PATHS get the same traversal
+  // discipline the MCP `scaffold` tool applies to `plan.id` — the rule being that a
+  // path fragment supplied by the caller never escapes its root. Without it, a
+  // `backdrop.file` of "../../../etc/passwd" validates clean, gets scaffolded
+  // verbatim, and turns the `inspect` tool's asset scan into an arbitrary-path
+  // file-existence oracle (CI panel MAJEUR, security-review, on f867734b).
+  const pathFragments: (readonly [string, unknown])[] = [];
+  if (isRecord(p.backdrop)) pathFragments.push(["backdrop.file", p.backdrop.file]);
+  if (Array.isArray(p.props)) {
+    (p.props as readonly unknown[]).forEach((prop, i) => {
+      if (isRecord(prop)) pathFragments.push([`props[${String(i)}].asset`, prop.asset]);
+    });
+  }
+  for (const [field, value] of pathFragments) {
+    if (typeof value === "string" && (value.includes("..") || value.includes("\\"))) {
+      issues.push(
+        planIssue(
+          "malformed",
+          field,
+          `${field}: must stay inside public/ — no ".." segment and no "\\" separator`,
+        ),
+      );
+    }
+  }
   if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {
     issues.push(
       planIssue(

@@ -845,3 +845,33 @@ distantes, PR croisées) l'a corrigée : 0079 est libre à l'instant T mais c'es
 naturelle de trois glissements déjà armés — #163 doit quitter 0077, et #145/#156 se
 disputent 0078. Camper sur 0079 aurait rejoué le pari perdu le matin même. La story prend
 donc **0081**, hors zone de choc ; les trous 0079/0080 sont assumés et documentés.
+
+### Round 4 — `f867734b` : FAIL (1 BLOQUANT, 1 MAJEUR, 2 MINEUR)
+
+- **[BLOQUANT] le corps de l'ADR se déclarait encore « 0077 »** — fondé, et de ma main :
+  mon `sed` de renumérotation ciblait `ADR-0077` et `0077-mcp-level-editor-server`, deux
+  motifs qu'aucun des deux champs propres du document ne porte (`# 0077 — …` en titre,
+  `**Number:** 0077` en métadonnée). Le fichier s'appelait 0081 et se disait 0077 —
+  exactement le genre de document auto-contradictoire que la story prétend éviter. Titre
+  et champ Number corrigés, et le bloc Number RACONTE désormais la renumérotation plutôt
+  que de la masquer : c'est lui le porteur de la leçon (un arbitrage ne réserve pas un
+  numéro, seul un merge le fait).
+- **[MAJEUR, sécurité] `backdrop.file` et `props[].asset` sans garde de traversée** —
+  fondé et bien vu. J'avais ajouté au round 3 l'exigence « chaîne non vide » sur ces deux
+  champs, sans voir qu'ils deviennent des CHEMINS. Un `backdrop.file` valant
+  `../../../../etc/passwd` validait proprement, se scaffoldait tel quel, et transformait
+  le scan d'assets d'`inspect` en oracle d'existence de fichiers arbitraires — alors que
+  la doctrine du même diff impose ce confinement à `plan.id`. Corrigé aux DEUX étages :
+  la règle (rejet de `..` et `\`) vit dans `validateLevelPlan` où vivent les invariants,
+  et `scanAssets` confine en plus le chemin résolu sous `public/` puisque c'est LUI qui
+  touche le disque. Probe : les deux champs rendent maintenant `plan/malformed`.
+- **[MINEUR] `{plan}` + `{levelId}` ensemble : le levelId était ignoré en silence** —
+  retenu. Des deux issues proposées (documenter la précédence ou la refuser), j'ai pris
+  la seconde : un agent qui envoie les deux croit avoir cadré son appel par id, et laisser
+  le plan gagner sans rien dire masque leur désaccord. Nouveau code `plan/ambiguous-input`,
+  testé.
+- **[MINEUR] avis de sécurité non re-vérifiable par le panel** — juste sur la forme : le
+  panel CI n'a pas de réseau, donc ma ligne dans le corps de PR ne lui est pas
+  reproductible. Le résultat de `yarn npm audit --all --recursive` (7 avis, aucun sur nos
+  3 paquets, les 7 préexistants nommés un par un) est désormais **dans l'ADR D2**, avec la
+  commande pour le rejouer.

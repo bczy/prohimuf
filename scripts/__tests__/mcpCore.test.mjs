@@ -117,6 +117,12 @@ describe("validate", () => {
     }
   });
 
+  it("refuses { plan } and { levelId } together instead of silently preferring one (panel r4)", () => {
+    const plan = soundPlan("ambig");
+    const { issues } = validate({ plan, levelId: "fixture" }, { plans: [plan] });
+    expect(issues.map((i) => i.code)).toEqual(["plan/ambiguous-input"]);
+  });
+
   it("rends des issues sans throw pour un plan malformé (M2)", () => {
     expect(() => validate({ plan: { id: "safe" } })).not.toThrow();
     const { issues } = validate({ plan: { id: "safe" } });
