@@ -405,13 +405,19 @@ async function isServerUp(url) {
  */
 const spawnedServers = new Map();
 
-/** Drop one hold on the port's server; the last one out kills what WE spawned. */
-function releaseDevServer(port) {
-  const entry = spawnedServers.get(port);
+/** One slot per distinct target: two calls on the same port but a different base or
+ * rootDir are NOT the same server, and must never share a Map entry (panel r7). */
+function serverKey(port, base, rootDir) {
+  return `${String(port)}::${base}::${rootDir}`;
+}
+
+/** Drop one hold on that server; the last one out kills what WE spawned. */
+function releaseDevServer(key) {
+  const entry = spawnedServers.get(key);
   if (entry === undefined) return;
   entry.refs -= 1;
   if (entry.refs > 0) return;
-  spawnedServers.delete(port);
+  spawnedServers.delete(key);
   entry.proc.kill();
 }
 
@@ -426,16 +432,19 @@ async function ensureDevServer({
   base = DEFAULT_BASE,
 } = {}) {
   const url = `http://localhost:${String(port)}${base}`;
-  const held = spawnedServers.get(port);
-  if (held !== undefined && (await isServerUp(url))) {
-    held.refs += 1;
+  const key = serverKey(port, base, rootDir);
+  const holdOn = (entry) => {
+    entry.refs += 1;
     return {
       url,
       release: () => {
-        releaseDevServer(port);
+        releaseDevServer(key);
       },
     };
-  }
+  };
+
+  const held = spawnedServers.get(key);
+  if (held !== undefined && (await isServerUp(url))) return holdOn(held);
   if (await isServerUp(url)) return { url, release: NO_RELEASE };
 
   // stdio fully ignored: readiness is polled via isServerUp, and piped stdout/
@@ -446,32 +455,48 @@ async function ensureDevServer({
     stdio: "ignore",
   });
   proc.unref();
-  // Without this listener, a spawn failure (ENOENT — `yarn` not on PATH) fires
-  // an unhandled 'error' event and crashes the WHOLE server process instead of
-  // surfacing as a reportable failure of this one tool call.
+  // TWO distinct ways our child can fail, and they arrive on different channels
+  // (panel r7 MAJEUR — only the first was handled, and the comment wrongly claimed
+  // the second was too):
+  //  - 'error': the spawn itself failed (ENOENT — `yarn` not on PATH). Without a
+  //    listener this is an unhandled event that kills the WHOLE server process.
+  //  - 'exit' non-zero: the spawn worked but vite died — notably on EADDRINUSE when
+  //    another call won the race for this port. That is an ordinary exit, NOT an
+  //    'error', so it must be watched separately or we would poll on believing our
+  //    own dead child is the live server.
   let spawnError = null;
+  let exited = false;
   proc.on("error", (err) => {
     spawnError = err;
   });
+  proc.on("exit", () => {
+    exited = true;
+  });
+
+  /** Our child is gone: adopt whoever IS serving, or report the failure. */
+  const adoptOrFail = async (reason) => {
+    if (await isServerUp(url)) return { url, release: NO_RELEASE };
+    throw new Error(`dryrun/preview: failed to start the dev server: ${reason}`);
+  };
 
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
-    if (spawnError !== null) {
-      // A failed spawn is not always fatal: two calls racing on a cold port both
-      // see "no server", both spawn, and the loser dies on EADDRINUSE while the
-      // winner's server is still coming up. Re-poll once before giving up — if
-      // the winner is serving, reuse it (proc: null, so we never kill THEIRS).
-      if (await isServerUp(url)) return { url, release: NO_RELEASE };
-      throw new Error(`dryrun/preview: failed to start the dev server: ${spawnError.message}`);
-    }
+    if (spawnError !== null) return await adoptOrFail(spawnError.message);
+    // Our own process died (EADDRINUSE and friends). Never register a dead `proc`
+    // in the Map: doing so would overwrite the real winner's entry, reset its
+    // refcount, and leak the live server while `release()` kills a corpse.
+    if (exited) return await adoptOrFail(`the dev server on port ${String(port)} exited`);
     if (await isServerUp(url)) {
-      spawnedServers.set(port, { proc, refs: 1 });
-      return {
-        url,
-        release: () => {
-          releaseDevServer(port);
-        },
-      };
+      // Only OUR live child gets registered — and only if nobody registered this
+      // target while we were polling (first writer wins, later ones just hold).
+      const existing = spawnedServers.get(key);
+      if (existing !== undefined) {
+        proc.kill();
+        return holdOn(existing);
+      }
+      const entry = { proc, refs: 0 };
+      spawnedServers.set(key, entry);
+      return holdOn(entry);
     }
     await sleep(300);
   }

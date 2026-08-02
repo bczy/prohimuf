@@ -189,12 +189,15 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
     });
   }
   for (const [field, value] of pathFragments) {
-    if (typeof value === "string" && (value.includes("..") || value.includes("\\"))) {
+    if (
+      typeof value === "string" &&
+      (value.includes("..") || value.includes("\\") || value.startsWith("/"))
+    ) {
       issues.push(
         planIssue(
           "malformed",
           field,
-          `${field}: must stay inside public/ — no ".." segment and no "\\" separator`,
+          `${field}: must stay inside public/ — no ".." segment, no "\\" separator, not absolute`,
         ),
       );
     }

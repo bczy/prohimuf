@@ -25,7 +25,13 @@ export const SERVER_VERSION = "0.1.0";
 // (`validateLevelPlan` is the actual schema check) — the server only needs
 // enough of a zod shape to accept an arbitrary plan object over MCP's JSON-RPC
 // wire without re-declaring the type here.
-const planShape = z.record(z.string(), z.unknown());
+// `z.unknown()`, not `z.record(...)`: the transport must let ANY JSON value through
+// to `core.validate`, which answers a malformed plan with a `plan/malformed` issue —
+// the graceful, agent-actionable shape ADR-0081 D3 promises. A `z.record` rejects
+// `null`, arrays and primitives at the schema layer BEFORE the tool runs, so a client
+// sending `{ plan: null }` would get an opaque JSON-RPC validation error instead of
+// that contract (panel r7). Shape validation belongs to `src/game`, not here.
+const planShape = z.unknown();
 
 function jsonResult(value) {
   return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };

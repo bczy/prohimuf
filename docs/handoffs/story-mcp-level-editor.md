@@ -80,6 +80,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       1 MINEUR), traités, voir §8
 - [x] **Panel CI — round 6 : CONDITIONAL** sur `5ad75f3e` (0 BLOQUANT, 2 MAJEUR,
       1 MINEUR), traités, voir §8
+- [x] **Panel CI — round 7 : CONDITIONAL** sur `5fbc3586` (0 BLOQUANT, 2 MAJEUR,
+      3 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -946,3 +948,37 @@ donc **0081**, hors zone de choc ; les trous 0079/0080 sont assumés et document
   (#145) et `feat/level-harness-sp2` (#156), plus `design/qte-photo-paparazzi` (#163) qui
   doit quitter 0077. Détail et tableau des numéros :
   `docs/handoffs/story-flyer-wall-float-in-animation.md`.
+
+### Round 7 — `5fbc3586` : CONDITIONAL (0 BLOQUANT, 2 MAJEUR, 3 MINEUR)
+
+Observation à porter au dossier : **les deux MAJEUR de ce round portent sur du code écrit
+aux rounds 4 et 6** — la garde de traversée et le compteur de références. Chaque correctif
+ouvre sa propre surface, et c'est le signal que le rendement de ces tours décroît sur le
+code pendant que le risque de régression, lui, ne décroît pas.
+
+- **[MAJEUR] la garde de traversée ratait le chemin ABSOLU** — fondé et embarrassant :
+  `/etc/passwd` ne contient ni `..` ni `\`, donc `validateLevelPlan` rendait un verdict
+  « sain » pour exactement la classe d'entrée que la garde existe pour confiner. Aucun de
+  mes trois tests ne couvrait la forme la plus simple. Pas exploitable aujourd'hui
+  (`scaffold` ne dérive son chemin que de `plan.id`, et `scanAssets` re-borne de son côté),
+  mais le contrat de `validate` était faux. Condition ajoutée, deux tests ajoutés.
+- **[MAJEUR] `ensureDevServer` corrompait sa table sur une course de port froid** — le
+  meilleur finding du round, et il vise le fix du round 6. Le perdant d'une course meurt en
+  EADDRINUSE par une **sortie non nulle**, pas par un événement `error` — mon commentaire
+  affirmait pourtant que la branche `spawnError` couvrait ce cas. Résultat : les deux appels
+  finissaient par voir le serveur du gagnant, tous deux écrivaient dans la Map, et le
+  dernier écrasait l'entrée avec un handle de process MORT en remettant le compteur à 1 —
+  après quoi `release()` tuait un cadavre et le vrai serveur fuyait. Corrigé : écoute de
+  `exit` en plus d'`error`, adoption du gagnant via `NO_RELEASE` sans jamais s'enregistrer,
+  et enregistrement réservé au process dont on a constaté qu'il est vivant (premier
+  écrivain gagne, les suivants prennent une référence).
+- **[MINEUR] table clé par port seul** — corrigé : clé `port::base::rootDir`, deux cibles
+  distinctes ne partagent plus un emplacement.
+- **[MINEUR] `z.record` rejetait avant que le contrat « ne throw jamais » s'applique** —
+  fondé, et l'écart était réel entre les deux surfaces : le test bibliothèque prouvait que
+  `core.validate` rend `plan/malformed` pour `null`, mais sur le FIL le schéma zod rejetait
+  d'abord, et l'agent recevait une erreur JSON-RPC opaque au lieu de la forme documentée
+  par D3. `planShape` passe à `z.unknown()` — la validation de forme appartient à
+  `src/game`, pas au transport. Test de niveau fil ajouté, **et vérifié discriminant par
+  mutation** (retour à `z.record` ⇒ rouge).
+- **[MINEUR] devDeps** — « no action required », l'attestation d'ADR-0081 D2 est à jour.

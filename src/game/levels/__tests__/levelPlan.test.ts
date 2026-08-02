@@ -664,6 +664,9 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, backdrop: { ...base.backdrop, file: "../../../../etc/passwd" } },
     { ...base, props: [{ ...base.props[0], asset: "../../../etc/hostname" }] },
     { ...base, props: [{ ...base.props[0], asset: "assets\\win\\path.png" }] },
+    // Absolu, sans aucun ".." — la forme que la garde ratait (panel r7).
+    { ...base, backdrop: { ...base.backdrop, file: "/etc/passwd" } },
+    { ...base, props: [{ ...base.props[0], asset: "/etc/hostname" }] },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

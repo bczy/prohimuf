@@ -24,6 +24,18 @@ function jsonOf(result) {
 }
 
 describe("level-editor MCP server", () => {
+  it("answers a null/primitive plan over the WIRE with plan/malformed, not a schema error (panel r7)", async () => {
+    // The library test proves core.validate never throws; this proves the TRANSPORT
+    // lets those values reach it. A z.record planShape used to reject them first, so
+    // an agent got an opaque JSON-RPC error instead of the documented issue shape.
+    const client = await connectedClient();
+    for (const plan of [null, 42, "plan", [], true]) {
+      const result = await client.callTool({ name: "validate", arguments: { plan } });
+      expect(result.isError).not.toBe(true);
+      expect(jsonOf(result).issues.map((i) => i.code)).toContain("plan/malformed");
+    }
+  });
+
   it("lists ping, validate, inspect, scaffold, dryrun and preview among its tools", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
