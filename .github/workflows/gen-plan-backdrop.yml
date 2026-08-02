@@ -80,6 +80,7 @@ jobs:
       # escape (panel run-2 on PR #156; same defense-in-depth doctrine as the
       # env-var indirection already used for run: interpolation).
       - name: Validate level_id (allowlist)
+        id: validate
         run: |
           set -euo pipefail
           if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
@@ -225,8 +226,15 @@ jobs:
       # The recovery path the commit step's error message promises: a paid
       # call's output must survive the runner even when every push failed —
       # never regenerate (and re-pay) what this run already produced.
+      # `steps.validate.outcome == 'success'` is load-bearing, not belt-and-braces
+      # (panel run-4 on PR #156): this is the ONE step with `if: failure()`, so on a
+      # malformed level_id — the exact case the allowlist exists to refuse — it would
+      # otherwise be the only step to still run, feeding the raw unvalidated id into
+      # `path:` and packaging files from OUTSIDE public/assets/levels/<id>/ into a
+      # downloadable artifact. Gating on the validate step's own outcome keeps the
+      # allowlist a hard boundary for every step of the job, failure path included.
       - name: Upload generated backdrop (push failed)
-        if: failure()
+        if: failure() && steps.validate.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: plan-backdrop-unpushed

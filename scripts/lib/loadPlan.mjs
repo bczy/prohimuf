@@ -26,8 +26,11 @@ const ROOT = path.resolve(__dirname, "..", "..");
  * step (panel run-2 on PR #156): the id is resolved into a path that jiti then
  * TRANSPILES AND EXECUTES, so a "/", ".." or NUL smuggled into it could run an
  * arbitrary checked-out file. The regex forbids all of those by construction.
+ * Exported so every OTHER consumer of a level id (e2e-generated-level.mjs's
+ * argv, which becomes a docs/qa/evidence/<id>/ write path) reuses THIS shape
+ * instead of hand-rolling a copy that could drift (panel run-4 on PR #156).
  */
-const LEVEL_ID_SHAPE = /^[a-z0-9-]+$/;
+export const LEVEL_ID_SHAPE = /^[a-z0-9-]+$/;
 
 /**
  * loadPlan(levelId) -> Promise<LevelPlan>
@@ -67,5 +70,34 @@ export async function loadPlan(levelId) {
         `plan's id must match its filename (copy-paste leftover?)`,
     );
   }
+  // Validate the plan itself, HERE (panel #156 run 4 MAJEUR). The plan invariants
+  // are otherwise enforced only by generatedLevels.test.ts, which iterates
+  // GENERATED_PLANS — so a draft module that exists on disk but is not yet wired
+  // into generated/index.ts (the natural in-progress state while authoring a level
+  // WITH this harness) never runs through the validator at all. Without this, a
+  // draft with `backdrop.aspect: 0` passes the workflow's precheck and guard,
+  // pushes its `.paid-attempts` trace — SPENDING one of the hard-capped 3 attempts —
+  // and only then builds a request with a non-finite height that the paid API can
+  // only reject. Validating before returning makes every consumer fail BEFORE the
+  // guard/record/generate chain can spend anything.
+  const validate = await loadValidateLevelPlan(jiti);
+  const issues = validate(mod.plan);
+  if (issues.length > 0) {
+    throw new Error(
+      `loadPlan: ${path.relative(ROOT, file)} is not a valid LevelPlan — refusing to ` +
+        `run before anything is spent:\n  - ${issues.join("\n  - ")}`,
+    );
+  }
   return mod.plan;
+}
+
+// `validateLevelPlan` lives in TypeScript next to the schema it guards; the same
+// jiti instance that transpiled the plan module loads it, so there is exactly ONE
+// copy of the invariants (never a re-derived script-side twin).
+async function loadValidateLevelPlan(jiti) {
+  const mod = await jiti.import(path.resolve(ROOT, "src/game/levels/levelPlan.ts"));
+  if (typeof mod?.validateLevelPlan !== "function") {
+    throw new Error("loadPlan: src/game/levels/levelPlan.ts does not export validateLevelPlan");
+  }
+  return mod.validateLevelPlan;
 }

@@ -108,6 +108,20 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!a.kind.startsWith(ns) || a.kind.length <= ns.length) {
       errors.push(`archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`);
     }
+    // The spriteBase becomes a real filesystem WRITE target in the sprite
+    // pipeline (gen-enemy-types.mjs writes public/assets/<spriteBase>*.png for
+    // frame 1 AND every extra frame): a "/", ".." or absolute segment would
+    // silently escape public/assets on the CI runner — the same class of bug
+    // already closed for props[].asset below (panel run-4 on PR #156). The
+    // generator carries its own containment throw; this is the CI-time seat
+    // of the same law. The shape is the one every existing spriteBase has
+    // (enemy_sprite, enemy_fixture_vigile, …): a plain lowercase filename stem.
+    if (!/^[a-z0-9_]+$/.test(a.spriteBase)) {
+      errors.push(
+        `archetype ${a.kind}: spriteBase "${a.spriteBase}" must match ^[a-z0-9_]+$ ` +
+          `(a plain filename stem — it is joined into public/assets/<spriteBase>*.png)`,
+      );
+    }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
     // non-integer means NaN sprite keys and an EMPTY preload manifest. Capped as

@@ -58,6 +58,7 @@ import { sleep } from "./lib/pollinations.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
 import { loadPlan } from "./lib/loadPlan.mjs";
+import { promptDescriptor } from "./lib/planNamespace.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -125,12 +126,11 @@ export function loadNearForegroundArt() {
  * fs/network.
  */
 export function loadNearForegroundArtFromPlan(plan, { opening = "", style = "" } = {}) {
-  const ns = `${plan.id}:`;
   const publicRoot = path.resolve(ROOT, "public");
   return plan.props.map((p) => {
-    const descriptor = p.kind.startsWith(ns) ? p.kind.slice(ns.length) : p.kind;
-    const clean = descriptor.replace(/[-_]+/g, " ").trim();
-    const prompt = `a ${clean}`;
+    // Shared with gen-enemy-types.mjs — the ONE copy of the namespace-
+    // stripping rule (panel run-4 on PR #156).
+    const prompt = `a ${promptDescriptor(p.kind, plan.id)}`;
     // This is the first code path that turns a plan's `asset` string into a
     // real filesystem WRITE target: an absolute path makes path.resolve drop
     // the public/ prefix entirely, and a ".."-laden one climbs out of it —

@@ -73,3 +73,18 @@ describe.each(WORKFLOWS)("%s — level_id allowlist", (file) => {
     }
   });
 });
+
+describe("l'allowlist vaut aussi sur le chemin d'échec (panel #156 run 4)", () => {
+  it.each([
+    ["gen-plan-backdrop.yml", "plan-backdrop-unpushed"],
+    ["gen-plan-sprites.yml", "plan-sprites-unpushed"],
+  ])("%s : le step d'upload est gaté sur le succès de la validation", (file, artifactName) => {
+    const steps = jobsOf(file).flatMap((j) => j.steps ?? []);
+    const validate = steps.find((s) => String(s.name ?? "").startsWith("Validate level_id"));
+    expect(validate?.id).toBe("validate");
+    const upload = steps.find((s) => String(s.with?.name ?? "").startsWith(artifactName));
+    expect(upload, `${file}: step d'upload introuvable`).toBeDefined();
+    // if: failure() SEUL laisserait tourner ce step alors que l'id a été refusé
+    expect(upload.if).toContain("steps.validate.outcome == 'success'");
+  });
+});

@@ -52,6 +52,7 @@ jobs:
       # EXECUTES the resolved module (panel run-2 on PR #156). Same step as
       # gen-plan-backdrop.yml / gen-plan-verify.yml.
       - name: Validate level_id (allowlist)
+        id: validate
         run: |
           set -euo pipefail
           if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
@@ -191,8 +192,12 @@ jobs:
             fi
           fi
 
+      # Gated on the validate step like gen-plan-backdrop's twin: this path uses
+      # fixed globs (no LEVEL_ID interpolation) so it carries no traversal risk of
+      # its own, but the rule stands for every step of the job — a run refused by
+      # the allowlist produces no artifact at all.
       - name: Upload generated art (push failed)
-        if: failure()
+        if: failure() && steps.validate.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: plan-sprites-unpushed-${{ matrix.family }}

@@ -246,7 +246,10 @@ describe("gen-plan-backdrop.yml — commit-back step and artifact fallback (stat
       (s) => s.name === "Upload generated backdrop (push failed)",
     );
     expect(step).toBeDefined();
-    expect(step.if).toBe("failure()");
+    // failure() SEUL ne suffit pas (panel run 4) : ce step étant le seul à tourner
+    // sur le chemin d'échec, un level_id refusé par l'allowlist l'atteindrait quand
+    // même et empaquetterait un chemin hors public/assets/levels/<id>/.
+    expect(step.if).toBe("failure() && steps.validate.outcome == 'success'");
     expect(step.uses).toMatch(/^actions\/upload-artifact@/);
     expect(step.with.name).toBe("plan-backdrop-unpushed");
     expect(step.with.path).toContain("public/assets/levels/");

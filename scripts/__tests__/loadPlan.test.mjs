@@ -54,3 +54,25 @@ describe("loadPlan — le verrou d'id (panel #156 run 3)", () => {
     }
   });
 });
+
+describe("loadPlan — validation du plan (panel #156 run 4)", () => {
+  it("refuse un brouillon invalide AVANT toute dépense (aspect 0)", async () => {
+    const file = path.resolve(ROOT, "src/game/levels/generated/draft-invalid.ts");
+    fs.writeFileSync(
+      file,
+      'import type { LevelPlan } from "@game/levels/levelPlan";\n' +
+        "export const plan = {\n" +
+        '  id: "draft-invalid",\n' +
+        '  fiction: { name: "D", label: "D", district: "D", year: "1998" },\n' +
+        '  backdrop: { mode: "single-wide", file: "street-wide", aspect: 0 },\n' +
+        "  archetypes: [],\n  props: [],\n" +
+        "  gameplay: { enemiesToWin: 5, timeSeconds: 60, enemySpeedMultiplier: 1, windowWeights: {} },\n" +
+        "} as unknown as LevelPlan;\n",
+    );
+    try {
+      await expect(loadPlan("draft-invalid")).rejects.toThrow(/not a valid LevelPlan|aspect/i);
+    } finally {
+      fs.rmSync(file);
+    }
+  });
+});

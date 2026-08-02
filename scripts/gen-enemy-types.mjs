@@ -76,12 +76,36 @@ import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
 import { loadPlan } from "./lib/loadPlan.mjs";
+import { promptDescriptor } from "./lib/planNamespace.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.resolve(ROOT, process.env.OUT_DIR ?? "public/assets");
 const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
+
+/**
+ * Resolve `<name>.png` under OUT_DIR and ASSERT containment (panel run-4 on
+ * PR #156, MAJEUR): in `--plan` mode the enemy key comes straight from plan
+ * data (`archetype.spriteBase`), so it is the same class of write-target input
+ * as `GeneratedPropSpec.asset` — an absolute path or a ".."-laden one would
+ * let a malformed plan write PNGs anywhere reachable from public/assets on a
+ * `contents: write` CI runner. Mirrors gen-nearfg-sprites.mjs's outFile check
+ * (the props[].asset fix of run 2); validateLevelPlan enforces the same law on
+ * `spriteBase`'s shape at CI time — this throw is the generator's own last
+ * line. EVERY fs.writeFileSync target of this script resolves through here.
+ */
+export function resolveEnemyOutFile(name) {
+  const out = path.resolve(OUT_DIR, `${name}.png`);
+  if (!out.startsWith(OUT_DIR + path.sep)) {
+    throw new Error(
+      `enemy key "${name}" escapes ${path.relative(ROOT, OUT_DIR)}/ (absolute path or ` +
+        `".." traversal) — a spriteBase must be a plain filename stem matching ^[a-z0-9_]+$ ` +
+        `(see validateLevelPlan)`,
+    );
+  }
+  return out;
+}
 
 // Raw URL of a committed frame-1 PNG — the kontext img2img `image=` source when
 // the slot has no promoted hero (ADR-0043). In CI these resolve to the exact
@@ -129,10 +153,10 @@ function loadEnemies() {
  * without loading a real plan.
  */
 export function loadEnemiesFromPlan(plan, { style = "", width = 256, height = 256 } = {}) {
-  const ns = `${plan.id}:`;
   return plan.archetypes.map((a) => {
-    const descriptor = a.kind.startsWith(ns) ? a.kind.slice(ns.length) : a.kind;
-    const clean = descriptor.replace(/[-_]+/g, " ").trim();
+    // Shared with gen-nearfg-sprites.mjs — the ONE copy of the namespace-
+    // stripping rule (panel run-4 on PR #156).
+    const clean = promptDescriptor(a.kind, plan.id);
     const poseClause = a.shoots ? ", aiming and firing a weapon" : ", reaching forward";
     return {
       key: a.spriteBase,
@@ -234,7 +258,7 @@ async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
   // the pose delta is consistent; OVERWRITES the committed frame 1 (goes through
   // the human art gate in the PR). Both buffers are fetched before either write:
   // a partial failure must never destroy frame 1 without its matching frame 2.
-  const frame1Out = path.join(OUT_DIR, `${e.key}.png`);
+  const frame1Out = resolveEnemyOutFile(e.key);
   try {
     console.log(`  [gen]  ${name} — strategy=MATCHED FLUX PAIR (also overwrites ${e.key}.png)`);
     const buf1 = await fetchWithRetry(fluxUrl(`${e.prompt}${e.style}`, e.seed, e.width, e.height));
@@ -299,7 +323,7 @@ async function main() {
     let frame1Fresh = false;
     for (let i = 0; i < e.frames.length; i++) {
       const name = i === 0 ? e.key : `${e.key}_f${i + 1}`;
-      const out = path.join(OUT_DIR, `${name}.png`);
+      const out = resolveEnemyOutFile(name);
 
       if (i === 0) {
         // Frame 1: only ever generated when MISSING — FORCE=1 does not apply

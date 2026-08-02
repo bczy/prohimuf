@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { loadEnemiesFromPlan } from "../gen-enemy-types.mjs";
+import { loadEnemiesFromPlan, resolveEnemyOutFile } from "../gen-enemy-types.mjs";
 import { loadPlan } from "../lib/loadPlan.mjs";
 
 describe("loadEnemiesFromPlan (gen-enemy-types.mjs --plan wiring, T5)", () => {
@@ -45,5 +45,29 @@ describe("loadEnemiesFromPlan (gen-enemy-types.mjs --plan wiring, T5)", () => {
     // Overwhelmingly likely to see more than one distinct value in 20 rolls
     // over a [1, 99999] range if the seed is really randomized per call.
     expect(seeds.size).toBeGreaterThan(1);
+  });
+});
+
+describe("resolveEnemyOutFile — containment (panel #156 run 4)", () => {
+  it("accepte un spriteBase de forme filename", () => {
+    expect(resolveEnemyOutFile("enemy_fixture_vigile")).toMatch(
+      /public\/assets\/enemy_fixture_vigile\.png$/,
+    );
+  });
+
+  it.each([
+    ["traversal", "../../../../tmp/pwned"],
+    ["absolu", "/tmp/pwned"],
+    ["traversal remontant puis redescendant", "../assets-evil/x"],
+  ])("refuse un spriteBase %s qui SORT de public/assets", (_label, name) => {
+    expect(() => resolveEnemyOutFile(name)).toThrow(/escapes|plain filename stem/);
+  });
+
+  it("un sous-dossier reste DANS public/assets : c'est la garde de FORME du validateur qui le refuse, pas le containment", () => {
+    // Documente honnêtement la répartition des deux gardes (panel run 4) : le
+    // containment n'attrape que l'évasion ; ^[a-z0-9_]+$ dans validateLevelPlan
+    // refuse tout ce qui n'est pas un stem de fichier plat, sous-dossiers compris.
+    expect(() => resolveEnemyOutFile("sub/evil")).not.toThrow();
+    expect(/^[a-z0-9_]+$/.test("sub/evil")).toBe(false);
   });
 });

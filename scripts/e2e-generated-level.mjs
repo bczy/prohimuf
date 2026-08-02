@@ -74,6 +74,16 @@ async function main() {
     console.error("Usage: node scripts/e2e-generated-level.mjs <levelId>");
     process.exit(2);
   }
+  // The SAME shape loadPlan enforces (imported, never re-typed): this id becomes a
+  // docs/qa/evidence/<id>/ write path, so it is a write-target input like every
+  // other level id in the harness (panel run-4 on PR #156).
+  if (!LEVEL_ID_SHAPE.test(id)) {
+    console.error(
+      `e2e-generated-level: invalid level id ${JSON.stringify(id)} — must match ` +
+        `${String(LEVEL_ID_SHAPE)} (it is resolved into docs/qa/evidence/<id>/)`,
+    );
+    process.exit(2);
+  }
 
   const outDir = path.resolve(ROOT, "docs/qa/evidence", id);
   fs.mkdirSync(outDir, { recursive: true });
