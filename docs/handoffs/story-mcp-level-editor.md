@@ -90,6 +90,9 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       2 MINEUR), traités, voir §8
 - [x] **Panel CI — round 11 : CONDITIONAL** sur `c4cadfbf` (0 BLOQUANT, 1 MAJEUR,
       2 MINEUR), traités, voir §8
+- [x] **Panel CI — round 12 : PASS** sur `69d0f69e` — **0 BLOQUANT, 0 MAJEUR, 0 MINEUR,
+      aucun finding confirmé**. Le merge gate de l'ADR-0063 est SATISFAIT ; les 13 check
+      runs de la PR sont verts (panel-verdict, lint/typecheck/test, e2e, art, preview).
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -1103,3 +1106,35 @@ le gel) : les deux MAJEUR visent le contrat de `validate`/`scaffold`, et ils son
   forme, puis `validateLevelPlan` construisait le namespace `"   :"`. `trim()` ajouté,
   aligné sur les six autres champs. `scaffold` n'était pas touché (son `SAFE_ID` refusait
   déjà), donc le trou ne concernait que la surface `validate`.
+
+### Round 12 — `69d0f69e` : **PASS** (0 BLOQUANT, 0 MAJEUR, 0 MINEUR)
+
+Aucun finding confirmé par les quatre reviewers ni par la passe sceptique. **Le merge gate
+CI, autorité bloquante depuis ADR-0063, est satisfait.** Tous les gates de la PR sont au
+vert simultanément sur ce HEAD.
+
+**Ce que douze rounds ont réellement produit** — utile pour la prochaine story, et pas
+seulement pour celle-ci :
+
+- **Deux BLOQUANTS**, tous deux documentaires : une trace de fix lane qui se contredisait
+  (r1) et un ADR qui se déclarait 0077 après renumérotation (r4). Les deux venaient d'une
+  mise à jour partielle — le code corrigé, la trace pas encore. C'est le motif le plus
+  récurrent de toute la série, et il a fini par produire sa propre règle : **le corps de PR
+  et le shard se mettent à jour dans le MÊME geste** (r6 puis r11 pour l'avoir oubliée).
+- **Le trou le plus grave n'était pas dans le code neuf mais dans une promesse écrite** :
+  « scaffold ne touche jamais `index.ts` » ne tenait que par la valeur par défaut
+  d'`overwrite` (r8). Une garantie non gardée par un test n'est pas une garantie.
+- **Une classe de défaut a occupé cinq rounds** (verdict sain → module scaffoldé → `tsc`
+  rouge) parce que je l'ai déclarée fermée trois fois avant de l'être : chaînes manquantes
+  (r3), clés en trop (r8), types erronés et littéraux (r10). La leçon n'est pas « mieux
+  balayer » mais **énoncer un périmètre vérifiable plutôt qu'une affirmation en bloc**.
+- **Le mécanisme de refcount du serveur de dev a régressé aux rounds 7, 8 et 9**, chaque
+  fois en corrigeant le finding précédent, sur un chemin qu'aucun test n'exerce et dont
+  l'utilité n'a jamais pu être prouvée par mutation. Les rounds 10-12 ne l'ont plus touché.
+  La recommandation de simplification (teardown simple + course documentée par écrit)
+  reste ouverte pour une story ultérieure — elle n'est plus urgente, elle reste honnête.
+- **Quatre `DEGRADED` sur douze rounds étaient des faux signaux** : jobs `cancelled` par
+  supersession, préflight vert à chaque fois, et un message de workflow qui accusait le
+  quota ou le token. Hand-off ouvert côté `dev-tooling-assets`.
+
+Reste dû, et à Bertrand seul : **le merge**.
