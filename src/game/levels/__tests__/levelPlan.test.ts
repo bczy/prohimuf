@@ -563,3 +563,32 @@ describe("validateLevelPlan — les cibles d'écriture du plan (panel #156 run 8
     expect(validateLevelPlan(plan)).toEqual([]);
   });
 });
+
+describe("validateLevelPlan — un id de level à TIRETS (panel #156 run 9)", () => {
+  // Les deux règles sur spriteBase (forme sans tiret + préfixe portant l'id) étaient
+  // mutuellement exclusives pour un id comme "porte-de-vanves" : aucun archétype
+  // n'était déclarable. Tous les tests d'alors utilisaient "fixture", sans tiret.
+  const hyphenated: LevelPlan = {
+    ...base,
+    id: "porte-de-vanves",
+    archetypes: [
+      { ...vigile, kind: "porte-de-vanves:vigile", spriteBase: "enemy_porte_de_vanves_vigile" },
+    ],
+    props: [],
+    gameplay: { ...base.gameplay, windowWeights: { "porte-de-vanves:vigile": 20 } },
+  };
+
+  it("accepte un plan à id tiré dont le spriteBase normalise les tirets", () => {
+    expect(validateLevelPlan(hyphenated)).toEqual([]);
+  });
+
+  it("rejette encore un spriteBase qui ne porte pas l'id normalisé", () => {
+    const plan = {
+      ...hyphenated,
+      archetypes: [{ ...hyphenated.archetypes[0], spriteBase: "enemy_sprite" }],
+    } as LevelPlan;
+    expect(validateLevelPlan(plan)).toContainEqual(
+      expect.stringContaining("enemy_porte_de_vanves_"),
+    );
+  });
+});

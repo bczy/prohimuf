@@ -55,7 +55,9 @@ point de repère, et le raisonnement ne survivrait que dans un fil de commentair
    qui reste à l'intérieur sans être un stem de fichier (un sous-dossier, par exemple).
    Corollaire de la même loi : le namespace des sprites est **plat**
    (`public/assets/<spriteBase>*.png`, sans sous-dossier par level, contrairement aux
-   props), donc `spriteBase` doit porter l'id de son level (`enemy_<id>_…`) — sans quoi
+   props), donc `spriteBase` doit porter l'id de son level, **normalisé** (les tirets d'un id
+   deviennent des underscores : `porte-de-vanves` → `enemy_porte_de_vanves_…`, sans quoi
+   la règle de forme et celle de préfixe seraient mutuellement exclusives) — sans quoi
    une collision avec la table shippée ou un level frère échoue _silencieusement en
    vert_ : le générateur ne produit une frame que si elle MANQUE.
 4. **Verrou d'identité et validation avant dépense.** `loadPlan` refuse un module dont

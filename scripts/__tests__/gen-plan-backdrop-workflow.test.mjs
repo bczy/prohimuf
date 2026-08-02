@@ -201,6 +201,9 @@ describe("gen-plan-backdrop.yml — record-attempt step (dry run)", () => {
     fs.rmSync(check, { recursive: true, force: true });
   });
 
+  // 30 s explicites : ce cas déroule les TROIS tentatives de push (avec leurs
+  // pull --rebase) contre de vrais dépôts jetables — le défaut de 5 s tient en
+  // isolation mais rougit sous charge, ce qui en ferait un test instable en CI.
   it("FAILS after 3 persistent rejections — never spends without a pushed trace", () => {
     // The branch exists on origin, then origin starts refusing every push
     // (pre-receive hook): the retry loop must exhaust its 3 attempts and fail
@@ -218,7 +221,7 @@ describe("gen-plan-backdrop.yml — record-attempt step (dry run)", () => {
     expect(res.status).not.toBe(0);
     expect(res.stdout).toMatch(/push attempt 3 rejected/);
     expect(res.stdout).toMatch(/refusing to spend a paid call/);
-  });
+  }, 30_000);
 });
 
 describe("gen-plan-backdrop.yml — commit-back step and artifact fallback (static)", () => {

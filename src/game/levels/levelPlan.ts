@@ -130,10 +130,16 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     // generation, commits nothing, exits 0 — and the level ships forever wearing
     // another level's sprite. Requiring the plan's own id in the stem makes the
     // flat namespace collision-free by construction.
-    if (!a.spriteBase.startsWith(`enemy_${plan.id}_`)) {
+    // L'id est NORMALISÉ (tirets → underscores) avant de former le préfixe : un id de
+    // level admet les tirets (`porte-de-vanves`) alors que la forme d'un spriteBase les
+    // interdit — sans cette normalisation les deux règles seraient mutuellement
+    // exclusives et AUCUN level à tiret ne pourrait déclarer d'ennemi (panel run-9 ;
+    // tous les tests précédents utilisaient "fixture", sans tiret, d'où le trou).
+    const spritePrefix = `enemy_${plan.id.replace(/-/g, "_")}_`;
+    if (!a.spriteBase.startsWith(spritePrefix)) {
       errors.push(
         `archetype ${a.kind}: spriteBase "${a.spriteBase}" must start with ` +
-          `"enemy_${plan.id}_" — the sprite namespace is FLAT (public/assets/), so a ` +
+          `"${spritePrefix}" — the sprite namespace is FLAT (public/assets/), so a ` +
           `stem that does not carry this level's id can silently collide with the ` +
           `shipped table or a sibling generated level`,
       );
