@@ -37,6 +37,7 @@ import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { SWIFTSHADER_ARGS, sleep } from "./e2e-lib.mjs";
+import { LEVEL_ID_SHAPE } from "./lib/loadPlan.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
