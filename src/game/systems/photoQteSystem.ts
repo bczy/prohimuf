@@ -272,10 +272,23 @@ export const COVER_OVERLAP_FLOOR = 1.2; // F3
 export const FOCAL_BAND_FLOOR = 1.1; // F4
 export const F13_ATTEMPT_BUDGET_SECONDS = 90; // F13
 export const F14_MISSION_BUDGET_SECONDS = 155; // F14a
-/** Imported by `scripts/check-photo-subject-boxes.mjs` — the tolerance lives HERE, in the
- *  game module, and is never re-typed in a script (F12(1b)). */
-export const SUBJECT_BOX_TOLERANCE_SU = 0.4;
-export const SUBJECT_BOX_TOLERANCE_FRACTION = 0.05;
+/**
+ * F12(1b)'s tolerance — `max(0.40 su, 5 % of the edge's own authored size)` per edge. ONE
+ * exported object, imported by `scripts/check-photo-subject-boxes.mjs`: the tolerance is a
+ * game value, so it lives here and is never re-typed (nor half re-typed) in a script.
+ */
+export const SUBJECT_BOX_TOLERANCE = {
+  absoluteFloorSu: 0.4,
+  fraction: 0.05,
+} as const;
+
+/** The per-edge tolerance for an authored edge size. The script calls THIS, not the numbers. */
+export function subjectBoxEdgeTolerance(authoredSize: number): number {
+  return Math.max(
+    SUBJECT_BOX_TOLERANCE.absoluteFloorSu,
+    SUBJECT_BOX_TOLERANCE.fraction * Math.abs(authoredSize),
+  );
+}
 
 function fail(message: string): never {
   throw new Error(`photoQte: ${message}`);
@@ -306,7 +319,7 @@ export function focalBandOf(box: Box): { lo: number; hi: number; sweet: number }
  * subtraction from the very room the sway is allowed to use. Measuring against the raw
  * slack is the bug this function exists to make impossible.
  */
-export function effectiveSlack(box: Box, focalMm: number): number {
+function effectiveSlack(box: Box, focalMm: number): number {
   const fovW = fovWidthAt(focalMm);
   return (fovW - box.w) / 2 - FRAME_MARGIN * fovW;
 }
@@ -880,6 +893,11 @@ export function photoSceneView(qte: PhotoQte): PhotoSceneView {
     // the mouth of the passage. The plate's traffic light is decor and is never read.
     headlightsLit:
       qte.phase === "ACTIVE" && inCover(qte.spec.cover, qte.sceneClock, qte.spec.sceneDuration),
+    // The tell's VISUAL channel: the headlights swinging into the street 1.8 s before the
+    // cover opens. Its twin is the audio channel (engines rising at the line) — both read the
+    // same authored generator, so the two cues can never disagree.
+    headlightsApproaching:
+      qte.phase === "ACTIVE" && coverTellAt(qte.spec.cover, qte.sceneClock, qte.spec.sceneDuration),
     plate: qte.spec.plate,
   };
 }
@@ -898,5 +916,8 @@ export function photoSheetView(qte: PhotoQte): PhotoSheetView | null {
     // imposed (K-4). Declining is a legal way to play the game.
     leavingCta: master ? "continue" : "decline",
     retryOffered: qte.attemptIndex + 1 < PHOTO_MAX_ATTEMPTS,
+    // R2-4: DERIVED from the frames on the sheet, in scene, with the roll still in hand —
+    // never a carried fact, which is why `PhotoLeverage` stays 3-valued today.
+    hasPlaque: hasPlaqueBonus(qte.frames),
   };
 }

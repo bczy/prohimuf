@@ -20,6 +20,7 @@ function sheet(over: Partial<PhotoSheetView> = {}): PhotoSheetView {
     outcome: "none",
     leavingCta: "decline",
     retryOffered: true,
+    hasPlaque: false,
     ...over,
   };
 }

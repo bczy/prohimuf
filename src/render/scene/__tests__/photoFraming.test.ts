@@ -24,6 +24,7 @@ function sceneView(over: Partial<PhotoSceneView> = {}): PhotoSceneView {
     subjectBox: { cx: 50, cy: 28.125, w: 8, h: 6 },
     bracket: "solid",
     headlightsLit: false,
+    headlightsApproaching: false,
     ...over,
   };
 }

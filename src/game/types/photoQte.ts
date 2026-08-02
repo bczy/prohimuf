@@ -224,8 +224,12 @@ export interface PhotoSceneView {
   readonly focalMm: number;
   readonly film: number;
   readonly suspicion: number;
-  /** The ONLY projection of the cover state: the packet's headlights (D-J / R3-2). */
+  /** The ONLY projection of the cover state (D-J / R3-2): the packet's headlights raking the
+   *  mouth of the passage. The plate's traffic light is decor and is NEVER read from this. */
   readonly headlightsLit: boolean;
+  /** The tell's VISUAL channel, 1.8 s before the cover opens (the headlights swinging into
+   *  the street). Its twin is the audio channel; both read the same authored generator. */
+  readonly headlightsApproaching: boolean;
   readonly plate: PhotoPlate;
 }
 
@@ -240,4 +244,6 @@ export interface PhotoSheetView {
   readonly leavingCta: Extract<PhotoCta, "continue" | "decline">;
   /** `retry` is offered iff the mission-scoped attempt budget has room (spec §1.3.a). */
   readonly retryOffered: boolean;
+  /** Whether the roll holds the PLAQUE bonus — derived from the frames, never carried. */
+  readonly hasPlaque: boolean;
 }

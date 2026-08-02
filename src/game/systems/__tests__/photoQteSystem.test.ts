@@ -557,3 +557,40 @@ describe("composition (AC5) — the double trade-off is geometric, not two bolte
     expect(qte.viewfinder.cy + qte.viewfinder.h / 2).toBeLessThanOrEqual(56.25 + 1e-9);
   });
 });
+
+describe("the tell's two channels, and the plaque derivation (R2-4)", () => {
+  it("the headlights approach 1.8 s before the cover opens and light it while it holds", () => {
+    const base = active();
+    const at = (t: number) => photoSceneView({ ...base, sceneClock: t });
+    // The first wave opens at 10.0 s; its tell runs from 8.2 s.
+    expect(at(8.0).headlightsApproaching).toBe(false);
+    expect(at(8.5).headlightsApproaching).toBe(true);
+    expect(at(9.9).headlightsApproaching).toBe(true);
+    expect(at(9.9).headlightsLit).toBe(false);
+    expect(at(10.5).headlightsApproaching).toBe(false);
+    expect(at(10.5).headlightsLit).toBe(true);
+  });
+
+  it("nothing but the headlights projects the cover — the tell is never the verdict", () => {
+    const lit = photoSceneView({ ...active(), sceneClock: 12.0 });
+    const dark = photoSceneView({ ...active(), sceneClock: 20.0 });
+    // The two differ ONLY on the cover channels, never on a bracket or a composition read.
+    expect(lit.bracket).toBe(dark.bracket);
+    expect(lit.headlightsLit).not.toBe(dark.headlightsLit);
+  });
+
+  it("hasPlaque is derived from the frames on the sheet, never carried", () => {
+    const frame = (verdict: "MASTER" | "BONUS", instantId: string) => ({
+      ordinal: 1,
+      verdict,
+      instantId,
+      rejectReason: null,
+      inCover: true,
+    });
+    const sheet = (frames: ReturnType<typeof frame>[]) =>
+      photoSheetView({ ...active(), phase: "CONTACT_SHEET", frames });
+    expect(sheet([frame("MASTER", "ECHANGE")])?.hasPlaque).toBe(false);
+    expect(sheet([frame("BONUS", "ARRIVEE")])?.hasPlaque).toBe(false);
+    expect(sheet([frame("MASTER", "ECHANGE"), frame("BONUS", "PLAQUE")])?.hasPlaque).toBe(true);
+  });
+});
