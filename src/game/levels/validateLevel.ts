@@ -1,6 +1,7 @@
 import type { LevelConfig } from "@game/types/level";
 import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
+import type { PhotoQteSpec } from "@game/types/photoQte";
 import { hasArchetype, knownKinds } from "@game/types/enemyTypes";
 // Side-effect import, DELIBERATE (panel run-8): `hasArchetype`/`knownKinds` read the
 // generated registry in `enemyTypes`, populated only by `generated/index.ts`'s module
@@ -93,12 +94,74 @@ export function hostageBossMarginIssue(input: {
   };
 }
 
+/**
+ * The photo set-piece ORDERING invariant (techplan §2.7, D-K) — the exact analogue of
+ * `hostageBossMarginIssue`, and deliberately a SEQUENCING rule rather than a ban.
+ *
+ * Rev.2 proposed forbidding `photoQte` and `hostageQte` on the same level; the host level is
+ * Belliard, which authors a hostage duel AND a boss finale, so that rule would reject the host
+ * row. It is withdrawn. What replaces it answers a different failure mode: the runtime guard
+ * (`stateMachine` block 1a) makes a COLLISION impossible, but no guard can make STARVATION
+ * visible — a photo trigger authored after the hostage's, or after `timeSeconds`, would simply
+ * never fire, and nobody would notice. That is the failure a data-driven level system produces
+ * most easily and reports least loudly, so it is caught at load instead.
+ *
+ * Reuses `SAFETY_MARGIN_SECONDS`, never re-typed. On Belliard (hostage 12 s, timeSeconds 90 s)
+ * this pins the photo trigger below ~7 s — which is the gate's `[2, 8]` recommendation
+ * DERIVED rather than asserted.
+ */
+export function photoSetpieceOrderingIssue(input: {
+  readonly photoQte?: PhotoQteSpec | null | undefined;
+  readonly hostageQte?: QteSpec | null | undefined;
+  readonly timeSeconds: number;
+}): LevelIssue | null {
+  const photo = input.photoQte;
+  if (photo === null || photo === undefined) return null;
+  const trigger = photo.triggerAtElapsedSeconds;
+
+  const hostage = input.hostageQte;
+  if (hostage !== null && hostage !== undefined) {
+    if (!(trigger < hostage.triggerAtElapsedSeconds - SAFETY_MARGIN_SECONDS)) {
+      return {
+        code: "photo-setpiece-ordering",
+        severity: "error",
+        field: "photoQte.triggerAtElapsedSeconds",
+        message:
+          `LevelConfig invariant: the photo set-piece triggers at ${String(trigger)}s, which is ` +
+          `not strictly before the hostage QTE's ${String(hostage.triggerAtElapsedSeconds)}s ` +
+          `minus the ${String(SAFETY_MARGIN_SECONDS)}s margin. The runtime guard would then ` +
+          `suppress it for the whole level and the set-piece would silently not exist. Move ` +
+          `triggerAtElapsedSeconds earlier.`,
+      };
+    }
+  }
+
+  if (!(trigger < input.timeSeconds - SAFETY_MARGIN_SECONDS)) {
+    return {
+      code: "photo-setpiece-ordering",
+      severity: "error",
+      field: "photoQte.triggerAtElapsedSeconds",
+      message:
+        `LevelConfig invariant: the photo set-piece triggers at ${String(trigger)}s, at or past ` +
+        `the level's timeSeconds (${String(input.timeSeconds)}s) minus the ` +
+        `${String(SAFETY_MARGIN_SECONDS)}s margin — the timed-finale boss would win the race, ` +
+        `or the level would end first, and the set-piece would never fire.`,
+    };
+  }
+
+  return null;
+}
+
 export function validateLevel(config: LevelConfig): readonly LevelIssue[] {
   const issues: LevelIssue[] = [];
 
   // 1 — hostage/boss sequential coexistence.
   const marginIssue = hostageBossMarginIssue(config);
   if (marginIssue !== null) issues.push(marginIssue);
+
+  // 1bis — the photo set-piece's ordering (starvation, not collision).
+  const orderingIssue = photoSetpieceOrderingIssue(config);
+  if (orderingIssue !== null) issues.push(orderingIssue);
 
   // 2 — every `roster.windowWeights` slot must be a real enemy kind. `EnemyKind` is a bare
   // union with no runtime value; `hasArchetype` (core table + the generated-level registry,

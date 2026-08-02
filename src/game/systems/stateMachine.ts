@@ -32,6 +32,14 @@ import {
 import type { CourierField } from "@game/systems/courierSystem";
 import { isQteActive, shouldTriggerQte, createQte, tickQte } from "@game/systems/qteSystem";
 import {
+  createPhotoQte,
+  isPhotoQteActive,
+  shouldTriggerPhotoQte,
+  tickPhotoQte,
+} from "@game/systems/photoQteSystem";
+import type { PhotoInput, PhotoQteSpec } from "@game/types/photoQte";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
+import {
   isBossQteActive,
   shouldTriggerBossFinale,
   createBossQte,
@@ -106,6 +114,21 @@ export interface LevelParams {
    * byte-for-byte identical to ADR-0040. Belliard-first for V1.
    */
   loot?: LootSpec | null;
+  /**
+   * Scripted photo set-piece (ADR-0077, from `LevelConfig.photoQte`). Omitted / null = no
+   * set-piece ⇒ the block below is never entered and the level is tick-identical.
+   */
+  photoQte?: PhotoQteSpec | null;
+  /**
+   * Progression gate for the set-piece (ruling R3-5: it never fires on the player's FIRST
+   * Belliard run). Absent ⇒ `true`, so no existing caller or test changes. The PREDICATE is
+   * computed in the bridge from persisted state — the pure layer reads a spec, never storage.
+   */
+  photoQteEnabled?: boolean;
+  /**
+   * The carry earned on a previous run (ADR-0080), loaded by the bridge. Absent ⇒ `"none"`.
+   */
+  photoLeverage?: PhotoLeverage;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -124,6 +147,9 @@ export function createInitialState(
   const hostageQteSpec = params.hostageQte ?? null;
   const bossQteSpec = params.bossQte ?? null;
   const lootSpec = params.loot ?? null;
+  // Ruling R3-5: a disabled run collapses onto the already-tested null-spec path, so there is
+  // exactly ONE code path to reason about instead of a second "enabled" branch in the tick.
+  const photoQteSpec = params.photoQteEnabled === false ? null : (params.photoQte ?? null);
   // Reset the crate-id counter per session (MINEUR-2): unlike bullet/courier ids
   // (identity only), the loot id is the RNG seed for the slot+weapon pick
   // (lootSystem), so resetting it makes the "deterministic, replay-safe" claim true
@@ -178,6 +204,10 @@ export function createInitialState(
     couriersSpawned: 0,
     energy: ENERGY_INITIAL,
     qteSpec: hostageQteSpec,
+    photoQteSpec,
+    photoQte: null,
+    photoQteAttempts: 0,
+    photoLeverage: params.photoLeverage ?? "none",
     qte: null,
     bossQteSpec: bossQteSpec,
     bossQte: null,
@@ -203,6 +233,22 @@ export function createInitialState(
   };
 }
 
+/**
+ * The device-neutral photo input at rest (D-B). Every existing caller of `tickGameState`
+ * gets this by default, so the new parameter costs no call site and no test.
+ */
+export const NEUTRAL_PHOTO_INPUT: PhotoInput = {
+  aim: null,
+  panDx: 0,
+  panDy: 0,
+  focalDelta: 0,
+  shutter: false,
+  raiseIntent: false,
+  skipBriefing: false,
+  cta: null,
+  reducedMotion: false,
+};
+
 export function tickGameState(
   state: GameState,
   fire: boolean,
@@ -217,6 +263,7 @@ export function tickGameState(
   enemiesToWin = ENEMIES_TO_WIN,
   courierField?: CourierField,
   roster?: LevelRoster,
+  photoInput: PhotoInput = NEUTRAL_PHOTO_INPUT,
 ): GameState {
   if (state.phase === "GAME_OVER" || state.phase === "LEVEL_COMPLETE") {
     // Idle terminal ticks must not replay last tick's transient events (they are
@@ -313,6 +360,63 @@ export function tickGameState(
 
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
+
+  // 1a. Photo QTE "paparazzi" — the FOURTH frozen-scene block (ADR-0077, techplan D-A).
+  // Same shape as the hostage duel below and the boss encounter above: an authored spec, a
+  // runtime sub-record, a scripted trigger, and an early return that spreads `...state` with
+  // `elapsedSeconds` FROZEN. Consequences that come for free and are asserted, not assumed:
+  // the set-piece cannot advance while `paused` (the bridge returns before this function),
+  // the decline exit needs no level reload (the level state was never destroyed), and the
+  // beat costs the level timer ZERO seconds — the hostage still triggers at 12 s of played
+  // time and the truck still lands at 20 s.
+  //
+  // D-K: the trigger is guarded on the OTHER frozen-scene blocks, so two can never hold the
+  // scene on the same tick whatever a future row authors. Placed BEFORE 1b, a photo trigger
+  // at or below the hostage's frozen `elapsedSeconds` would otherwise pre-empt a duel already
+  // on screen — a bug no authored value alone can rule out.
+  let photoQte = state.photoQte;
+  let photoQteAttempts = state.photoQteAttempts;
+  if (
+    // The set-piece fires ONCE per level state: `photoQteAttempts` counts entries and is
+    // never reset here, so clearing `photoQte` on the exit (E-4g) cannot re-open it.
+    photoQteAttempts === 0 &&
+    !isQteActive(state.qte) &&
+    !isBossQteActive(state.bossQte) &&
+    shouldTriggerPhotoQte(state.photoQteSpec, photoQte, elapsedSeconds) &&
+    state.photoQteSpec !== null
+  ) {
+    photoQte = createPhotoQte(state.photoQteSpec, photoQteAttempts);
+    photoQteAttempts += 1;
+  }
+  if (isPhotoQteActive(photoQte) && photoQte !== null) {
+    const r = tickPhotoQte(photoQte, photoInput, delta);
+    // `[ RECOMMENCER ]`: re-enter at `attemptIndex + 1`, on the SAME tick — this is why the
+    // counter lives on the level state and not inside the object the retry recreates (T-2).
+    // At the cap `tickPhotoQte` never returns this exit, so there is no unbounded loop here.
+    const next = r.exit === "retry" ? createPhotoQte(photoQte.spec, photoQteAttempts) : r.qte;
+    if (r.exit === "retry") photoQteAttempts += 1;
+    return {
+      ...state,
+      // The pointer still moves; nothing else does.
+      crosshair,
+      // Frozen — the beat is outside time (F8, and what makes A-T12(b) true).
+      elapsedSeconds: state.elapsedSeconds,
+      photoQte: next,
+      photoQteAttempts,
+      // F8, asserted as a ZERO-DELTA test: energy, score, lives, kills and the quota are
+      // untouched. Only the transient channels are cleared, exactly as the duel does.
+      impactEvents: [],
+      feedback: [],
+      pointFeedback: [],
+      playerHitEvents: [],
+      weaponEmpty: false,
+    };
+  }
+  if (photoQte !== null && photoQte.phase === "EXITED") {
+    // The player left. Clear the sub-record and fall through to the ordinary path — the run
+    // resumes exactly where it froze. No level restart, no checkpoint system (E-4g).
+    photoQte = null;
+  }
 
   // 1b. Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034).
   // When its scripted trigger fires, the REST OF THE SCENE FREEZES: only the
@@ -740,6 +844,13 @@ export function tickGameState(
     energy: newEnergy,
     qteSpec: state.qteSpec,
     qte,
+    // The photo set-piece rides the ordinary path INERT: `photoQte` is whatever block 1a
+    // left (null before the trigger, null again after the exit), and the spec, the
+    // mission-scoped attempt count and the carry are carried untouched.
+    photoQteSpec: state.photoQteSpec,
+    photoQte,
+    photoQteAttempts,
+    photoLeverage: state.photoLeverage,
     // Boss QTE carried inert through normal play: it only triggers on quota-completion
     // (handled above), so here `bossQte` is always `state.bossQte` (null pre-trigger).
     bossQteSpec: state.bossQteSpec,

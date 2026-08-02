@@ -39,6 +39,121 @@
       "roster": {
         "streetSpawns": ["courier"]
       },
+      "photoQte": {
+        "triggerAtElapsedSeconds": 2.5,
+        "sceneDuration": 60,
+        "filmCount": 6,
+        "swaySeed": 19980215,
+        "briefingMaxSeconds": 15,
+        "briefingLines": [
+          {
+            "speaker": "DISPATCH",
+            "text": "La lucarne en haut de la rue. Tu montes, tu attends, tu ne descends pas avant d'avoir la photo."
+          },
+          {
+            "speaker": "MUF",
+            "text": "Six poses. Et une bagnole qui recule dans le passage."
+          }
+        ],
+        "cover": {
+          "firstOpenAt": 10,
+          "periodSeconds": 21,
+          "coverSeconds": 7,
+          "tellSeconds": 1.8
+        },
+        "subjectTrack": [
+          {
+            "t": 0,
+            "cx": 65,
+            "cy": 12.75,
+            "w": 6,
+            "h": 13.5
+          },
+          {
+            "t": 9.2,
+            "cx": 65,
+            "cy": 12.75,
+            "w": 6,
+            "h": 13.5
+          },
+          {
+            "t": 11,
+            "cx": 54,
+            "cy": 12.75,
+            "w": 24,
+            "h": 13.5
+          },
+          {
+            "t": 34.7,
+            "cx": 54,
+            "cy": 12.75,
+            "w": 24,
+            "h": 13.5
+          },
+          {
+            "t": 36.5,
+            "cx": 54,
+            "cy": 14.72,
+            "w": 17,
+            "h": 9.56
+          },
+          {
+            "t": 51.2,
+            "cx": 54,
+            "cy": 14.72,
+            "w": 17,
+            "h": 9.56
+          },
+          {
+            "t": 53,
+            "cx": 62,
+            "cy": 9,
+            "w": 7.5,
+            "h": 4.22
+          },
+          {
+            "t": 55.9,
+            "cx": 71,
+            "cy": 9,
+            "w": 7.5,
+            "h": 4.22
+          },
+          {
+            "t": 60,
+            "cx": 83.7,
+            "cy": 9,
+            "w": 7.5,
+            "h": 4.22
+          }
+        ],
+        "instants": [
+          {
+            "id": "ARRIVEE",
+            "role": "bonus",
+            "tellAt": 9.2,
+            "openAt": 11,
+            "closeAt": 15.5
+          },
+          {
+            "id": "ECHANGE",
+            "role": "master",
+            "tellAt": 34.7,
+            "openAt": 36.5,
+            "closeAt": 40.3
+          },
+          {
+            "id": "PLAQUE",
+            "role": "bonus",
+            "tellAt": 51.2,
+            "openAt": 53,
+            "closeAt": 55.9
+          }
+        ],
+        "plate": {
+          "plateId": "belliard-passage-plate",
+          "poseIds": ["pose-arrivee", "pose-echange", "pose-plaque"]
+        }
+      },
       "hostageQte": {
         "triggerAtElapsedSeconds": 12,
         "zoomSeconds": 2,
@@ -273,6 +388,121 @@
     ],
     "roster": {
       "streetSpawns": ["courier"]
+    },
+    "photoQte": {
+      "triggerAtElapsedSeconds": 2.5,
+      "sceneDuration": 60,
+      "filmCount": 6,
+      "swaySeed": 19980215,
+      "briefingMaxSeconds": 15,
+      "briefingLines": [
+        {
+          "speaker": "DISPATCH",
+          "text": "La lucarne en haut de la rue. Tu montes, tu attends, tu ne descends pas avant d'avoir la photo."
+        },
+        {
+          "speaker": "MUF",
+          "text": "Six poses. Et une bagnole qui recule dans le passage."
+        }
+      ],
+      "cover": {
+        "firstOpenAt": 10,
+        "periodSeconds": 21,
+        "coverSeconds": 7,
+        "tellSeconds": 1.8
+      },
+      "subjectTrack": [
+        {
+          "t": 0,
+          "cx": 65,
+          "cy": 12.75,
+          "w": 6,
+          "h": 13.5
+        },
+        {
+          "t": 9.2,
+          "cx": 65,
+          "cy": 12.75,
+          "w": 6,
+          "h": 13.5
+        },
+        {
+          "t": 11,
+          "cx": 54,
+          "cy": 12.75,
+          "w": 24,
+          "h": 13.5
+        },
+        {
+          "t": 34.7,
+          "cx": 54,
+          "cy": 12.75,
+          "w": 24,
+          "h": 13.5
+        },
+        {
+          "t": 36.5,
+          "cx": 54,
+          "cy": 14.72,
+          "w": 17,
+          "h": 9.56
+        },
+        {
+          "t": 51.2,
+          "cx": 54,
+          "cy": 14.72,
+          "w": 17,
+          "h": 9.56
+        },
+        {
+          "t": 53,
+          "cx": 62,
+          "cy": 9,
+          "w": 7.5,
+          "h": 4.22
+        },
+        {
+          "t": 55.9,
+          "cx": 71,
+          "cy": 9,
+          "w": 7.5,
+          "h": 4.22
+        },
+        {
+          "t": 60,
+          "cx": 83.7,
+          "cy": 9,
+          "w": 7.5,
+          "h": 4.22
+        }
+      ],
+      "instants": [
+        {
+          "id": "ARRIVEE",
+          "role": "bonus",
+          "tellAt": 9.2,
+          "openAt": 11,
+          "closeAt": 15.5
+        },
+        {
+          "id": "ECHANGE",
+          "role": "master",
+          "tellAt": 34.7,
+          "openAt": 36.5,
+          "closeAt": 40.3
+        },
+        {
+          "id": "PLAQUE",
+          "role": "bonus",
+          "tellAt": 51.2,
+          "openAt": 53,
+          "closeAt": 55.9
+        }
+      ],
+      "plate": {
+        "plateId": "belliard-passage-plate",
+        "poseIds": ["pose-arrivee", "pose-echange", "pose-plaque"]
+      }
     },
     "hostageQte": {
       "triggerAtElapsedSeconds": 12,

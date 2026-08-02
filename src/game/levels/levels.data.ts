@@ -1,5 +1,6 @@
 import type { Prefs } from "@game/systems/prefsSystem";
 import type { LevelConfig } from "@game/types/level";
+import { BELLIARD_PHOTO_QTE } from "@game/levels/photoQteBelliard";
 
 /**
  * The level catalogue — pure data (ADR-0074 §2). Every export here MUST be computable at
@@ -93,6 +94,12 @@ export const LEVELS: readonly LevelConfig[] = [
     // never run concurrently even though both are authored. `createInitialState` in stateMachine.ts
     // ASSERTS this timing margin (not a blanket ban) — fails LOUD at load if a future retune ever
     // lets the hostage's worst case run past the boss's earliest trigger.
+    // Photo QTE "paparazzi" set-piece (ADR-0077, spec Rev.5). Coexists with the hostage duel
+    // and the boss finale on this row by a runtime guard + the `photo-setpiece-ordering`
+    // invariant, never by exclusivity: it fires at 2.5 s, resolves outside the level clock,
+    // and leaves 9.5 s of PLAYED separation before the duel at 12 s (F15). The data itself is
+    // a 9-keyframe table and lives in its own module.
+    photoQte: BELLIARD_PHOTO_QTE,
     hostageQte: {
       triggerAtElapsedSeconds: 12,
       zoomSeconds: 2,

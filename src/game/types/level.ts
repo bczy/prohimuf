@@ -3,6 +3,7 @@ import type { QteSpec } from "@game/types/hostageQte";
 import type { BossQteSpec } from "@game/types/bossQte";
 import type { EnemyKind } from "@game/types/enemy";
 import type { LootSpec } from "@game/types/loot";
+import type { PhotoQteSpec } from "@game/types/photoQte";
 
 /**
  * Level authoring types (ADR-0074 §1). Type-only, zero runtime — and deliberately free of
@@ -52,6 +53,13 @@ export interface LevelConfig {
    * The seed of `GameState.qteSpec` reads this. Belliard-first.
    */
   readonly hostageQte?: QteSpec;
+  /**
+   * Scripted photo QTE "paparazzi" set-piece (ADR-0077). Absent ⇒ no set-piece and the level
+   * is tick-identical to a build without the feature. Authored on BELLIARD only; it coexists
+   * with the row's `hostageQte` / `loot` / `bossQteSpec` by a runtime guard plus an ORDERING
+   * invariant (`validateLevel`, techplan D-K/§2.7), never by an exclusivity ban.
+   */
+  readonly photoQte?: PhotoQteSpec;
   /**
    * Scripted boss QTE encounter — "le Commandant" (ADR-0051). Absent ⇒ no boss. V1 authored it
    * only on the NON-SHIPPED `BOSS_QTE_DEV_HARNESS_LEVEL` (D4), deliberately EXCLUDED from the

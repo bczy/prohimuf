@@ -9,6 +9,8 @@ import type { HitEvent, ImpactEvent, PlayerHitEvent, PointHitEvent } from "@game
 import type { WeaponState } from "@game/types/weapon";
 import type { LootCrate, LootSpec } from "@game/types/loot";
 import type { RunStats } from "@game/types/runStats";
+import type { PhotoQte, PhotoQteSpec } from "@game/types/photoQte";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 
 export type Phase = "PLAYING" | "GAME_OVER" | "LEVEL_COMPLETE";
 
@@ -54,6 +56,23 @@ export interface GameState {
   // duel (D3). Additive-and-optional: `bossQteSpec === null` is byte-for-byte identical.
   readonly bossQteSpec: BossQteSpec | null;
   readonly bossQte: BossQte | null;
+  // Photo QTE "paparazzi" set-piece (ADR-0077 / ADR-0080). `photoQteSpec` is the authored
+  // per-level data (null = no set-piece — EVERY level but Belliard, and Belliard itself on a
+  // run where `photoQteEnabled` is false); `photoQte` is the runtime sub-record (null until
+  // triggered, then null again once the player has left). While it is active the general sim
+  // is frozen and `elapsedSeconds` does not advance, so the beat costs the level timer ZERO
+  // seconds. Additive-and-optional: `photoQteSpec === null` is byte-for-byte identical.
+  readonly photoQteSpec: PhotoQteSpec | null;
+  readonly photoQte: PhotoQte | null;
+  // The MISSION-scoped attempt counter (spec §1.3.a, D-1) — the AUTHORITY behind
+  // `PhotoQte.attemptIndex`. It counts entries (the first included) and is never reset while
+  // this level state lives, so `[ RECOMMENCER ]` cannot mint itself a fresh budget by
+  // re-creating the sub-record. Leaving Belliard and replaying it gives a fresh one, which is
+  // what keeps ruling R3-6 (no rarity) intact.
+  readonly photoQteAttempts: number;
+  // The cross-level carry (ADR-0080), seeded from persisted storage by the bridge and read
+  // by `createBossQte`. The pure layer NEVER reads storage — it reads this.
+  readonly photoLeverage: PhotoLeverage;
   // Scripted vehicle delivery (core loop `Livrer` — protect the vehicle).
   // `deliverySpec` is the authored data for this level (null = no delivery);
   // `deliveryVehicle` is its runtime state the render lane draws (phase,
