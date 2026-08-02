@@ -244,6 +244,40 @@ export function bossAssetPaths(levelId: string): readonly string[] {
   return dedupe(paths);
 }
 
+/**
+ * Base-relative QTE photo paparazzi set-piece assets (STORY-QTE-PHOTO-PAPARAZZI) for a level
+ * that authors `photoQte` (mirrors `bossAssetPaths`' shape: additive-and-optional, `[]` for a
+ * photoQte-less level). Reads `levelArt.json`'s `photoQte.plateAsset` + `photoQte.types`
+ * (dev-tooling-assets' structure fields — the sibling `photoQte.plate` STRING is the
+ * concept-artist's gated prompt and is never read here).
+ *
+ * Desktop is the loading-screen default (mirrors every other preloaded PNG in this file);
+ * the ruling's mobile `_mobile.png` variant is a same-session pipeline downsample of the
+ * SAME desktop file (never a second generation, docs/art-direction/gates/
+ * photo-qte-resolution-and-sweep-ruling.md §1.6) and is fetched by the render lane only once
+ * device is known, so it is intentionally NOT warmed here (would double the download on the
+ * device that never draws it).
+ *
+ * `enabledOnFirstRun: false` (ruling §1.6, gpu-specialist's D2) means an ordinary level entry
+ * must NOT warm this group — only a level whose `LevelConfig.photoQte` is actually authored
+ * does, so the first Belliard run never downloads a set-piece it will not draw.
+ */
+export function photoAssetPaths(levelId: string): readonly string[] {
+  const level = LEVELS.find((l) => l.id === levelId);
+  if (level?.photoQte === undefined) return [];
+  const photoQte = levelArt.photoQte as {
+    readonly plateAsset?: { readonly asset: string };
+    readonly types: Record<string, { readonly asset: string } | undefined>;
+  };
+  const paths: string[] = [];
+  if (photoQte.plateAsset?.asset !== undefined) paths.push(photoQte.plateAsset.asset);
+  for (const key of Object.keys(photoQte.types)) {
+    const entry = photoQte.types[key];
+    if (entry?.asset !== undefined) paths.push(entry.asset);
+  }
+  return dedupe(paths);
+}
+
 // The level-art id to build layer paths from: the requested level when it has
 // art, else the first declared level — same fallback as `getLevelArt`, but read
 // straight from the JSON so we avoid levelArt.ts's import-time side effects.
@@ -422,7 +456,8 @@ function tutorialManifest(scene: NarrativeScene): readonly string[] {
  *   looks at the device.
  * - any other string is treated as a level id — its backdrop layers, enemy
  *   sprites, couriers, delivery vehicle, bullet, facade + menu backdrops, the
- *   boss QTE poses + décor props (when the level authors a boss), and its
+ *   boss QTE poses + décor props (when the level authors a boss), the photo paparazzi
+ *   set-piece plate/poses/stamps (when the level authors `photoQte`), and its
  *   pre/post-level narrative illustrations. Unknown ids fall back to the first
  *   playable level. NOTE: `LEVELS` holds the onboarding stage as a real entry with
  *   `id: "tutorial"`, so a bare `"tutorial"` lands HERE, on the level branch — it is a
@@ -442,6 +477,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
     ...courierAssetPaths(),
     ...nearForegroundPaths(target),
     ...bossAssetPaths(target),
+    ...photoAssetPaths(target),
   ];
   const delivery = level.deliveries[0];
   if (delivery !== undefined) paths.push(vehicleAssetPath(delivery.vehicleType));

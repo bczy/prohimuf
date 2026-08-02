@@ -12,6 +12,7 @@ import {
   bulletAssetPath,
   bulletModelPath,
   bossAssetPaths,
+  photoAssetPaths,
   levelLayerPaths,
   facadeBackdropPath,
   menuBackdropPath,
@@ -276,6 +277,23 @@ describe("assetManifest — belliard level manifest", () => {
 
   it("a boss-less level preloads no boss assets", () => {
     expect(bossAssetPaths("stalingrad")).toEqual([]);
+  });
+
+  it("preloads the photo paparazzi set-piece plate + poses + stamps for belliard", () => {
+    const photo = photoAssetPaths("belliard");
+    expect(photo).toContain("assets/photoqte/plate.png");
+    expect(photo).toContain("assets/photoqte/commandant_wait.png");
+    expect(photo).toContain("assets/photoqte/pair_facing.png");
+    expect(photo).toContain("assets/photoqte/exchange_close.png");
+    expect(photo).toContain("assets/photoqte/berline_plate.png");
+    expect(photo).toContain("assets/photoqte/stamp_master.png");
+    expect(photo).toContain("assets/photoqte/stamp_bonus.png");
+    expect(photo).toContain("assets/photoqte/stamp_reject.png");
+    for (const p of photo) expect(m).toContain(p);
+  });
+
+  it("a photoQte-less level preloads no photo QTE assets (first-run download guard)", () => {
+    expect(photoAssetPaths("stalingrad")).toEqual([]);
   });
 
   it("contains the pre- and post-level narrative illustrations when defined", () => {
