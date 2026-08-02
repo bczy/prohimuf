@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import path from "path";
 import { fileURLToPath } from "url";
 import { spawnSync } from "child_process";
+import fs from "fs";
+import os from "os";
 
 // Black-box, subprocess-driven exercise of main()'s argv validation (same
 // pattern as check-art-prompts.test.mjs / gen-nearfg-sprites.test.mjs's
@@ -39,11 +41,18 @@ describe("e2e-generated-level.mjs — la validation de forme est réellement att
     // Pas de serveur ni de build ici : le script doit dépasser la validation puis
     // échouer sur le navigateur/la connexion — ce qui prouve que la ligne
     // LEVEL_ID_SHAPE s'exécute sans exploser.
+    // OUT_ROOT détourné vers un dossier jetable : le script écrit son dossier
+    // de preuve dès qu'il dépasse la validation, et cette sortie d'échec n'a
+    // rien à faire dans docs/qa/evidence/ (l'évidence réelle est produite par
+    // le job CI, jamais par un test).
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "e2e-idshape-"));
     const res = spawnSync(process.execPath, [SCRIPT, "fixture"], {
       encoding: "utf8",
       timeout: 60_000,
+      cwd: tmp,
       env: { ...process.env, PREVIEW_URL: "http://127.0.0.1:1/prohimuf/" },
     });
+    fs.rmSync(tmp, { recursive: true, force: true });
     expect(res.stderr ?? "").not.toMatch(/is not defined/);
     expect(res.stderr ?? "").not.toMatch(/invalid level id/);
   });
