@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 
-const API_KEY = process.env.GOOGLE_AI_API_KEY;
+const API_KEY = process.env.GOOGLE_AI_API_KEY ?? "";
 if (!API_KEY) {
   console.error("Missing GOOGLE_AI_API_KEY environment variable.");
   console.error("  export GOOGLE_AI_API_KEY=your_key");
@@ -20,12 +20,21 @@ const BASE_STYLE =
   "grain texture, slightly dirty, flat 2D sprite, transparent background, " +
   "Paris underground rave 90s aesthetic, Paper Mario pop-up style";
 
-type Asset = {
+interface Asset {
   name: string;
   description: string;
   prompt: string;
   size: "1024x1024" | "1024x1792" | "1792x1024";
-};
+}
+
+interface GeminiPart {
+  inlineData?: { mimeType?: string; data?: string };
+}
+
+interface GeminiResponse {
+  error?: { message?: string };
+  candidates?: { content?: { parts?: GeminiPart[] } }[];
+}
 
 const ASSETS: Asset[] = [
   // --- Player ---
@@ -155,32 +164,7 @@ const ASSETS: Asset[] = [
 
 async function generateImage(asset: Asset): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      instances: [{ prompt: asset.prompt }],
-
-      parameters: {
-        sampleCount: 1,
-
-        aspectRatio:
-          asset.size === "1792x1024" ? "16:9" : asset.size === "1024x1792" ? "9:16" : "1:1",
-      },
-    });
-
-    const options = {
-      hostname: "us-central1-aiplatform.googleapis.com",
-
-      path: `/v1/projects/placeholder/locations/us-central1/publishers/google/models/imagen-3.0-generate-002:predict`,
-
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-
-        Authorization: `Bearer ${API_KEY}`,
-      },
-    };
-
-    // Use Gemini Developer API instead (simpler, works with API key)
+    // Gemini Developer API (simpler than Vertex AI, works with an API key)
     const geminiBody = JSON.stringify({
       contents: [{ parts: [{ text: asset.prompt }] }],
 
@@ -201,23 +185,24 @@ async function generateImage(asset: Asset): Promise<Buffer> {
 
     const req = https.request(geminiOptions, (res) => {
       const chunks: Buffer[] = [];
-      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("data", (chunk: Buffer) => chunks.push(chunk));
       res.on("end", () => {
         const raw = Buffer.concat(chunks).toString();
         try {
-          const json = JSON.parse(raw);
+          const json = JSON.parse(raw) as GeminiResponse;
           if (json.error) {
-            reject(new Error(`API error: ${json.error.message}`));
+            reject(new Error(`API error: ${json.error.message ?? raw.slice(0, 500)}`));
             return;
           }
           const parts = json.candidates?.[0]?.content?.parts ?? [];
-          const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-          if (!imagePart) {
+          const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
+          const data = imagePart?.inlineData?.data;
+          if (data === undefined) {
             reject(new Error(`No image in response. Full response: ${raw.slice(0, 500)}`));
             return;
           }
-          resolve(Buffer.from(imagePart.inlineData.data, "base64"));
-        } catch (e) {
+          resolve(Buffer.from(data, "base64"));
+        } catch {
           reject(new Error(`Failed to parse response: ${raw.slice(0, 500)}`));
         }
       });
@@ -246,7 +231,9 @@ async function main() {
 
   if (args.includes("--list")) {
     console.log("Available assets:");
-    ASSETS.forEach((a) => console.log(`  ${a.name.padEnd(30)} ${a.description}`));
+    ASSETS.forEach((a) => {
+      console.log(`  ${a.name.padEnd(30)} ${a.description}`);
+    });
     return;
   }
 
@@ -261,14 +248,14 @@ async function main() {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  console.log(`Generating ${toGenerate.length} asset(s) → ${OUTPUT_DIR}\n`);
+  console.log(`Generating ${String(toGenerate.length)} asset(s) → ${OUTPUT_DIR}\n`);
   for (const asset of toGenerate) {
     await generateAsset(asset);
   }
   console.log("\nDone.");
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err.message);
+main().catch((err: unknown) => {
+  console.error("Fatal:", err instanceof Error ? err.message : err);
   process.exit(1);
 });

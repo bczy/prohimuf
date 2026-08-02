@@ -217,7 +217,7 @@
   ["0074","0074-level-data-module-and-validate-level.md","Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants","Proposed","proposed","The level catalogue module mixed three unrelated concerns in one 441-line file, which blocks the whole level-editor track that follows it."],
   ["0075","0075-level-plan-composable-generated-levels.md","Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/`","Proposed","proposed","The level harness (SP1 of three sub-projects) needs a level to be describable entirely as data: backdrop, per-level enemy skins, at most one level-authored archetype, per-level props, tuning, fiction."],
   ["0076","0076-run-stats-system-local-first.md","Run stats system (local-first)","Accepted","accepted","The game ends a run with one line (`SCORE FINAL : 4200 | VAGUE 3`) that vanishes when the tab closes."],
-  ["0077","0077-flyer-cascade-session-key.md","Clé de session pour l'entrée du mur de flyers","Accepted","accepted","L'animation d'entrée de l'écran NIVEAUX ne doit jouer qu'une fois par session, décision bloquante rendue par `ux-designer` : `FlyerWall` se démonte à chaque changement de rubrique, si bien qu'un…"]
+  ["0077","0077-couverture-tsc-eslint-scripts.md","Couvrir scripts/ par tsc et ESLint via tsconfig.node.json et @types/node explicite","Accepted","accepted","Les 104 fichiers du dossier scripts (103 modules .mjs et un script TypeScript) étaient invisibles pour tout l'outillage de qualité du repo : `tsconfig.json` n'inclut que `src`, `eslint.config.ts`…"]
       ];
       const rows = document.getElementById("rows");
       const q = document.getElementById("q");

@@ -10,7 +10,7 @@
     "build:catalog": "tsc -p tsconfig.json --noEmit && BUILD_CATALOG=1 vite build",
     "build:model-viewer": "tsc -p tsconfig.json --noEmit && BUILD_MODEL_VIEWER=1 vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "lint": "eslint . --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content",
     "lint:fix": "eslint . --fix --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content",
     "format": "prettier --write . --cache --cache-location node_modules/.cache/prettier/.prettier-cache",
@@ -46,6 +46,7 @@
     "@napi-rs/canvas": "1.0.2",
     "@types/eslint": "^9.6.1",
     "@types/howler": "^2.2.12",
+    "@types/node": "^24",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
@@ -68,7 +69,7 @@
     "yaml": "^2.9.0"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.{ts,tsx,mjs}": [
       "eslint --fix",
       "prettier --write"
     ],
