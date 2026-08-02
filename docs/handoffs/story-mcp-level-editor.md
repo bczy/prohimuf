@@ -88,6 +88,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       1 MINEUR), traités, voir §8
 - [x] **Panel CI — round 10 : CONDITIONAL** sur `32efe777` (0 BLOQUANT, 2 MAJEUR,
       2 MINEUR), traités, voir §8
+- [x] **Panel CI — round 11 : CONDITIONAL** sur `c4cadfbf` (0 BLOQUANT, 1 MAJEUR,
+      2 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -1081,3 +1083,23 @@ le gel) : les deux MAJEUR visent le contrat de `validate`/`scaffold`, et ils son
   fichiers de la PR au moment du merge pour demander à une autre branche de les reprendre
   — du churn contre un bénéfice de forme. Point noté, non actionné, assumé.
 - **[MINEUR] devDeps** — « no action required », l'attestation D2 tient.
+
+### Round 11 — `c4cadfbf` : CONDITIONAL (0 BLOQUANT, 1 MAJEUR, 2 MINEUR)
+
+- **[MAJEUR, traçabilité] le corps de PR omettait le round 10** — fondé, et c'est le même
+  retard de paperasse que le round 6 avait déjà relevé : j'avais mis le corps de PR à jour
+  au check-in, le round 10 est arrivé ensuite, je l'ai consigné au shard sans revenir sur
+  la PR. La leçon tient en une phrase : **le corps de PR se met à jour dans le MÊME geste
+  que le shard, pas au check-in suivant.** Tableau complété jusqu'au round 11.
+- **[MINEUR] l'assertion NÉGATIVE du test de point d'entrée réutilisait le budget de 60 s
+  du cas positif** — juste : prouver une absence ne doit pas coûter une minute à chaque
+  `yarn vitest`. Le cas positif garde son budget large (démarrage à froid légitime), le
+  négatif descend à 10 s / 20 s — le silence observé est de ~2 s, l'enfant sortant de
+  lui-même. Le finding envisageait aussi de sortir ce test de la passe par défaut :
+  écarté, c'est précisément sa présence dans la passe par défaut qui fait la garde (round
+  9), et son coût mesuré est de ~5 s pour les deux cas.
+- **[MINEUR] `id` blanc-seulement accepté** — juste, et c'est une incohérence avec la
+  table de chaînes requises que j'ai écrite moi-même : `id: "   "` passait la garde de
+  forme, puis `validateLevelPlan` construisait le namespace `"   :"`. `trim()` ajouté,
+  aligné sur les six autres champs. `scaffold` n'était pas touché (son `SAFE_ID` refusait
+  déjà), donc le trou ne concernait que la surface `validate`.

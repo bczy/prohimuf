@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** Minimal newline-delimited JSON-RPC exchange against the spawned server. */
-async function initializeOverStdio(command, args) {
+async function initializeOverStdio(command, args, waitMs = 60000) {
   const proc = spawn(command, args, { cwd: REPO_ROOT, stdio: ["pipe", "pipe", "pipe"] });
   try {
     proc.stdin.write(
@@ -48,7 +48,7 @@ async function initializeOverStdio(command, args) {
       };
       const timer = setTimeout(() => {
         done(null);
-      }, 60000);
+      }, waitMs);
       proc.stdout.on("data", (chunk) => {
         out += String(chunk);
         for (const line of out.split("\n")) {
@@ -81,10 +81,16 @@ describe("the real MCP entry point (`yarn mcp:level-editor`)", () => {
     // Pinning the surprise itself: if a future vite-node makes plain invocation work,
     // this goes red and the `--script` flag in package.json can be revisited on
     // evidence instead of folklore.
-    const response = await initializeOverStdio("yarn", [
-      "vite-node",
-      "scripts/mcp-level-editor/server.mjs",
-    ]);
+    //
+    // Proving an ABSENCE gets its own short budget (panel r11): the positive case may
+    // legitimately need a slow cold start, but waiting a full minute to conclude
+    // "nothing came" would tax every default `yarn vitest` run. Observed silence here
+    // is ~2s (the child exits on its own), so 10s is generous without being a stall.
+    const response = await initializeOverStdio(
+      "yarn",
+      ["vite-node", "scripts/mcp-level-editor/server.mjs"],
+      10000,
+    );
     expect(response).toBeNull();
-  }, 90000);
+  }, 20000);
 });

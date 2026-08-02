@@ -108,7 +108,9 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
   const p: Record<string, unknown> = plan;
 
   // `id` seeds the namespace prefix every kind is matched against.
-  if (typeof p.id !== "string" || p.id.length === 0) {
+  // `trim()`, comme toute autre chaîne requise ici : un id " " passait, et
+  // `validateLevelPlan` construisait ensuite le namespace "   :" (panel r11).
+  if (typeof p.id !== "string" || p.id.trim().length === 0) {
     issues.push(
       planIssue("malformed", "id", "id: expected a non-empty string (the level's namespace)"),
     );
